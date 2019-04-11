@@ -1,0 +1,3 @@
+sys_unknown_errors='未知错误'
+sys_not_found='访问地址有误'
+no_privilege='没有相应权限'
