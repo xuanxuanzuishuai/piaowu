@@ -17,8 +17,67 @@ class Valid
     const CODE_EXCEPTION = 2;
     const CODE_UNAUTHOR = 3;
     const CODE_CONFIRM = 9;
-    const CODE_NOT_FOUNT = 404;
 
+    /**
+     * parameters validate
+     *
+     * @param array $params
+     * @param array $rules inspection rules
+     * @return array
+     */
+    public static function validate($params, $rules, $app = false)
+    {
+        if (empty($rules)) {
+            return array(
+                'code' => 0,
+                'data' => array()
+            );
+        }
+        $v = new Validator($params);
+
+        foreach ($rules as $key => $rule) {
+            if (empty($rule['key'])) {
+                throw new \InvalidArgumentException('each rule must be have the key attribute');
+            }
+
+            if (empty($rule['type'])) {
+                throw new \InvalidArgumentException('each rule must be have the type attribute');
+            }
+
+            $errorMsg = isset($rule['error_code']) ? Lang::getWord($rule['error_code']) : '';
+
+            $value = isset($rule['value']) ? $rule['value'] : null;
+
+            $msg = [
+                'err_no' => $rule['error_code'],
+                'err_msg' => $errorMsg
+            ];
+
+            $v->rule($rule['type'], $rule['key'], $value)->message(json_encode($msg));
+        }
+
+        if ($v->validate()) {
+            return array(
+                'code' => 0,
+                'data' => $v->data()
+            );
+        }
+
+        $errors = $v->errors();
+        foreach ($errors as $key => $err) {
+            foreach ($err as $i => $emsg) {
+                $emsg = json_decode($emsg, 1);
+                $errors[$key][$i] = $emsg;
+            }
+        }
+
+        return [
+            'code' => 1,
+            'data' => [
+                'errors' => $errors
+            ]
+        ];
+    }
 
     /**
      * parameters validate
@@ -48,6 +107,7 @@ class Valid
             $value = isset($rule['value']) ? $rule['value'] : null;
 
             $msg = [
+                'err_type' => $rule['key'],
                 'err_no' => $rule['error_code'],
                 'err_msg' => $errorMsg
             ];
@@ -68,28 +128,71 @@ class Valid
             }
         }
 
-        return $result;
+        return [
+            'errors' => $result
+        ];
     }
 
     /**
      * 添加错误信息
      *
      * @param array $result 原有错误信息
-     * @param $errNo
+     * @param $key
      * @param $errorCode
      * @param array $args
      * @return array
      */
-    public static function addErrors($result, $errNo, $errorCode, $args = array())
+    public static function addErrors($result, $key, $errorCode, ...$args)
     {
-        if (empty($result['errors'])) {
-            $result['errors'] = [];
+        if (empty($result)) {
+            $result = [
+                'code' => self::CODE_PARAMS_ERROR,
+                'data' => []
+            ];
+        } else if ($result['code'] === 0) {
+            $result = [
+                'code' => self::CODE_PARAMS_ERROR,
+                'data' => []
+            ];
         }
-        array_push($result['errors'], [
+        if (empty($result['data']['errors'])) {
+            $result['data']['errors'] = [];
+        }
+        if (empty($result['data']['errors'][$key])) {
+            $result['data']['errors'][$key] = [];
+        }
+
+        array_push($result['data']['errors'][$key], [
             'err_no' => $errorCode,
-            'err_msg' => sprintf(Lang::getWord($errorCode), $args)
+            'err_msg' => sprintf(Lang::getWord($errorCode), ...$args)
         ]);
 
-        return ['data' => [], 'err_no' => $errNo, 'err_msg' => $result['errors']];
+        return $result;
+    }
+
+    /**
+     * 返回错误信息的HTML文档
+     * @param $errors
+     * @return string
+     */
+    public static function errorHTMLPage($errors)
+    {
+        $errorMSG = '';
+
+        foreach ($errors['data']['errors'] as $k => $err) {
+            $errorMSG .= '<p>' . $err[0]['err_msg'] . '</p>';
+        }
+        $html = <<<EOS
+    <!DOCTYPE html>
+      <html id="finance">
+        <head>
+          <meta charset="utf-8">
+        </head>
+        <body>
+          {$errorMSG}
+        </body>
+      </html>
+EOS;
+        return $html;
     }
 }

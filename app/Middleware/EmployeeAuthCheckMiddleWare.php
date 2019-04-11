@@ -11,7 +11,6 @@ namespace App\Middleware;
 use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Models\EmployeeModel;
-use Psr\Container\ContainerInterface;
 use Slim\Http\Request;
 use Slim\Http\Response;
 
@@ -29,15 +28,15 @@ class EmployeeAuthCheckMiddleWare extends MiddlewareBase
 
         if (empty($token) || empty($token[0])) {
             SimpleLogger::error(__FILE__ . __LINE__, ['code' => 'JWT is empty', 'errs' => []]);
-             $this->container['result'] = Valid::addErrors([], 'auth_check', 'token_can_not_empty');
-             return $response;
+
+            return $response->withJson(Valid::addErrors(['code' => -1], 'auth_check1', 'token_can_not_empty'));
+
         }
         $token = $token[0];
         $cacheEmployeeId = EmployeeModel::getEmployeeToken($token);
         if (empty($cacheEmployeeId)) {
             SimpleLogger::error(__FILE__ . ":" . __LINE__, ['code' => 'Employee had logouted', 'errs' => []]);
-            $this->container['result'] = Valid::addErrors(['code' => -1], 'auth_check', 'employee_has_logout');
-            return $response;
+            return $response->withJson(Valid::addErrors(['code' => -1], 'auth_check1', 'employee_has_logout'));
         }
 
         $employee = EmployeeModel::getById($cacheEmployeeId);

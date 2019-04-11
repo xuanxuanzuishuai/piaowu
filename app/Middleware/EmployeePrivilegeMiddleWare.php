@@ -6,26 +6,16 @@
  * Time: 下午6:23
  */
 
-
-/**
- * 登录控制
- * @author tianye@xiaoyezi.com
- * @since 2016-08-04 15:17:00
- */
-
-
 namespace App\Middleware;
 
 use App\Models\PrivilegeModel;
 use App\Services\EmployeePrivilegeService;
-use Psr\Container\ContainerInterface;
 use Slim\Http\Request;
 use App\Libs\Valid;
 use Slim\Http\Response;
 
 class EmployeePrivilegeMiddleWare extends MiddlewareBase
 {
-
     public function __invoke(Request $request, Response $response, $next)
     {
         //验证权限
@@ -43,9 +33,8 @@ class EmployeePrivilegeMiddleWare extends MiddlewareBase
         if (EmployeePrivilegeService::hasPermission($privilege, $pIds, $pathStr, $method)) {
             return $response = $next($request, $response);
         } else {
-            $errs = Valid::addErrors([], 'author', 'no_privilege');
-            $this->container['result'] = $errs;
-            return $response;
+            $errs = Valid::addErrors(['code'=> -1], 'author', 'no_privilege');
+            return $response->withJson($errs, 200);
         }
 
     }
