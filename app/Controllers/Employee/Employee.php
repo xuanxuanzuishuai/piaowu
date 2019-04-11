@@ -6,12 +6,16 @@
  * Time: 11:32 AM
  */
 
-namespace App\Controllers;
+namespace App\Controllers\Employee;
 
+use App\Controllers\ControllerBase;
+use App\Libs\Constants;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\EmployeeModel;
 use App\Models\RoleModel;
+use App\Services\DictService;
+use App\Services\EmployeePrivilegeService;
 use App\Services\EmployeeService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -71,7 +75,6 @@ class Employee extends ControllerBase
      */
     public function list(Request $request, Response $response, $args)
     {
-        echo 'ssss';exit();
         $params = $request->getParams();
         list($page, $count) = Util::formatPageCount($params);
 
