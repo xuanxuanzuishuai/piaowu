@@ -17,6 +17,7 @@ class Valid
     const CODE_EXCEPTION = 2;
     const CODE_UNAUTHOR = 3;
     const CODE_CONFIRM = 9;
+    const CODE_NOT_FOUNT = 4;
 
     /**
      * parameters validate

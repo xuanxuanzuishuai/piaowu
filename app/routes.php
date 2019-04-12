@@ -10,26 +10,34 @@ use Slim\Http\Response;
 
 $arr = array(
 
-    '/boss/employee/login' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Employee:login', 'middles' => array()),
-    '/boss/employee/logout' => array('method' => array('post'), 'call' => '\App\Controllers\MyClass:method2', 'middles' => array('\App\Middleware\EmployeeAuthCheckMiddleware')),
-    '/boss/employee/list' => array('method' => array('get'), 'call' => '\App\Controllers\Employee\Employee:list', 'middles' => array('\App\Middleware\EmployeePrivilegeMiddleware', '\App\Middleware\EmployeeAuthCheckMiddleware')),
-    '/boss/employee/detail' => array('method' => array('get'), 'call' => '\App\Controllers\Employee\Employee:detail', 'middles' => array('\App\Middleware\EmployeePrivilegeMiddleware', '\App\Middleware\EmployeeAuthCheckMiddleware')),
-    '/boss/employee/modify' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Employee:modify', 'middles' => array('\App\Middleware\EmployeePrivilegeMiddleware', '\App\Middleware\EmployeeAuthCheckMiddleware')),
-    '/boss/employee/setPwd' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Employee:setPwd', 'middles' => array('\App\Middleware\EmployeePrivilegeMiddleware', '\App\Middleware\EmployeeAuthCheckMiddleware')),
-    '/boss/employee/userSetPwd' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Employee:userSetPwd', 'middles' => array('\App\Middleware\EmployeePrivilegeMiddleware', '\App\Middleware\EmployeeAuthCheckMiddleware')),
-    '/boss/employee/setExcludePrivilege' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Employee:setExcludePrivilege', 'middles' => array('\App\Middleware\EmployeePrivilegeMiddleware', '\App\Middleware\EmployeeAuthCheckMiddleware')),
-    '/boss/employee/setExtendPrivilege' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Employee:setExtendPrivilege', 'middles' => array('\App\Middleware\EmployeePrivilegeMiddleware', '\App\Middleware\EmployeeAuthCheckMiddleware')),
-    '/boss/employee/getEmployeeListWithRole' => array('method' => array('get'), 'call' => '\App\Controllers\Employee\Employee:getEmployeeListWithRole', 'middles' => array('\App\Middleware\EmployeePrivilegeMiddleware', '\App\Middleware\EmployeeAuthCheckMiddleware')),
-    '/boss/employee/list' => array('method' => array('get'), 'call' => '\App\Controllers\Employee:list', 'middles' => array('\App\Middleware\EmployeePrivilegeMiddleware', '\App\Middleware\EmployeeAuthCheckMiddleware')),
-    '/boss/employee/list' => array('method' => array('get'), 'call' => '\App\Controllers\Employee:list', 'middles' => array('\App\Middleware\EmployeePrivilegeMiddleware', '\App\Middleware\EmployeeAuthCheckMiddleware')),
-    '/boss/employee/list' => array('method' => array('get'), 'call' => '\App\Controllers\Employee:list', 'middles' => array('\App\Middleware\EmployeePrivilegeMiddleware', '\App\Middleware\EmployeeAuthCheckMiddleware')),
-    '/boss/employee/list' => array('method' => array('get'), 'call' => '\App\Controllers\Employee:list', 'middles' => array('\App\Middleware\EmployeePrivilegeMiddleware', '\App\Middleware\EmployeeAuthCheckMiddleware')),
-    '/boss/employee/list' => array('method' => array('get'), 'call' => '\App\Controllers\Employee:list', 'middles' => array('\App\Middleware\EmployeePrivilegeMiddleware', '\App\Middleware\EmployeeAuthCheckMiddleware')),
-    '/boss/employee/list' => array('method' => array('get'), 'call' => '\App\Controllers\Employee:list', 'middles' => array('\App\Middleware\EmployeePrivilegeMiddleware', '\App\Middleware\EmployeeAuthCheckMiddleware')),
-    '/boss/employee/list' => array('method' => array('get'), 'call' => '\App\Controllers\Employee:list', 'middles' => array('\App\Middleware\EmployeePrivilegeMiddleware', '\App\Middleware\EmployeeAuthCheckMiddleware')),
-    '/boss/employee/list' => array('method' => array('get'), 'call' => '\App\Controllers\Employee:list', 'middles' => array('\App\Middleware\EmployeePrivilegeMiddleware', '\App\Middleware\EmployeeAuthCheckMiddleware')),
+    '/employee/auth/login' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Auth:tokenlogin', 'middles' => array()),
+    '/employee/auth/signout' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Auth:signout', 'middles' => array('\App\Middleware\EmployeeAuthCheckMiddleware')),
+    '/employee/auth/usercenterurl' => array('method' => array('get'), 'call' => '\App\Controllers\Employee\Auth:usercenterurl', 'middles' => array()),
 
-    '/boss/privilege/employee_menu' => array('method' => array('post'), 'call' => '\App\Controllers\MyClass:method2', 'middles' => array('\App\Middleware\EmployeeAuthCheckMiddleware'))
+    '/employee/employee/list' => array('method' => array('get'), 'call' => '\App\Controllers\Employee\Employee:list', 'middles' => array('\App\Middleware\EmployeePrivilegeMiddleware', '\App\Middleware\EmployeeAuthCheckMiddleware')),
+    '/employee/employee/detail' => array('method' => array('get'), 'call' => '\App\Controllers\Employee\Employee:detail', 'middles' => array('\App\Middleware\EmployeePrivilegeMiddleware', '\App\Middleware\EmployeeAuthCheckMiddleware')),
+    '/employee/employee/modify' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Employee:modify', 'middles' => array('\App\Middleware\EmployeePrivilegeMiddleware', '\App\Middleware\EmployeeAuthCheckMiddleware')),
+    '/employee/employee/setPwd' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Employee:setPwd', 'middles' => array('\App\Middleware\EmployeePrivilegeMiddleware', '\App\Middleware\EmployeeAuthCheckMiddleware')),
+    '/employee/employee/userSetPwd' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Employee:userSetPwd', 'middles' => array('\App\Middleware\EmployeePrivilegeMiddleware', '\App\Middleware\EmployeeAuthCheckMiddleware')),
+    '/employee/employee/setExcludePrivilege' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Employee:setExcludePrivilege', 'middles' => array('\App\Middleware\EmployeePrivilegeMiddleware', '\App\Middleware\EmployeeAuthCheckMiddleware')),
+    '/employee/employee/setExtendPrivilege' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Employee:setExtendPrivilege', 'middles' => array('\App\Middleware\EmployeePrivilegeMiddleware', '\App\Middleware\EmployeeAuthCheckMiddleware')),
+    '/employee/employee/getEmployeeListWithRole' => array('method' => array('get'), 'call' => '\App\Controllers\Employee\Employee:getEmployeeListWithRole', 'middles' => array('\App\Middleware\EmployeePrivilegeMiddleware', '\App\Middleware\EmployeeAuthCheckMiddleware')),
+
+    '/privilege/privilege/employee_menu' => array('method' => array('get'), 'call' => '\App\Controllers\Privilege\Privilege:employee_menu', 'middles' => array('\App\Middleware\EmployeePrivilegeMiddleware', '\App\Middleware\EmployeeAuthCheckMiddleware')),
+    '/privilege/privilege/list' => array('method' => array('get'), 'call' => '\App\Controllers\Privilege\Privilege:list', 'middles' => array('\App\Middleware\EmployeePrivilegeMiddleware', '\App\Middleware\EmployeeAuthCheckMiddleware')),
+    '/privilege/privilege/detail' => array('method' => array('get'), 'call' => '\App\Controllers\Privilege\Privilege:detail', 'middles' => array('\App\Middleware\EmployeePrivilegeMiddleware', '\App\Middleware\EmployeeAuthCheckMiddleware')),
+    '/privilege/privilege/modify' => array('method' => array('post'), 'call' => '\App\Controllers\Privilege\Privilege:modify', 'middles' => array('\App\Middleware\EmployeePrivilegeMiddleware', '\App\Middleware\EmployeeAuthCheckMiddleware')),
+    '/privilege/privilege/menu' => array('method' => array('get'), 'call' => '\App\Controllers\Privilege\Privilege:menu', 'middles' => array('\App\Middleware\EmployeePrivilegeMiddleware', '\App\Middleware\EmployeeAuthCheckMiddleware')),
+
+    '/privilege/privilegeGroup/list' => array('method' => array('get'), 'call' => '\App\Controllers\Privilege\privilegeGroup:list', 'middles' => array('\App\Middleware\EmployeePrivilegeMiddleware', '\App\Middleware\EmployeeAuthCheckMiddleware')),
+    '/privilege/privilegeGroup/detail' => array('method' => array('get'), 'call' => '\App\Controllers\Privilege\privilegeGroup:detail', 'middles' => array('\App\Middleware\EmployeePrivilegeMiddleware', '\App\Middleware\EmployeeAuthCheckMiddleware')),
+    '/privilege/privilegeGroup/modify' => array('method' => array('post'), 'call' => '\App\Controllers\Privilege\privilegeGroup:post', 'middles' => array('\App\Middleware\EmployeePrivilegeMiddleware', '\App\Middleware\EmployeeAuthCheckMiddleware')),
+
+    '/privilege/role/list' => array('method' => array('get'), 'call' => '\App\Controllers\Privilege\Role:list', 'middles' => array('\App\Middleware\EmployeePrivilegeMiddleware', '\App\Middleware\EmployeeAuthCheckMiddleware')),
+    '/privilege/role/detail' => array('method' => array('get'), 'call' => '\App\Controllers\Privilege\Role:detail', 'middles' => array('\App\Middleware\EmployeePrivilegeMiddleware', '\App\Middleware\EmployeeAuthCheckMiddleware')),
+    '/privilege/role/modify' => array('method' => array('post'), 'call' => '\App\Controllers\Privilege\Role:modify', 'middles' => array('\App\Middleware\EmployeePrivilegeMiddleware', '\App\Middleware\EmployeeAuthCheckMiddleware')),
+    '' => array(),
+
 );
 
 /** @var App $app */
