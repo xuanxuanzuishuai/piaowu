@@ -6,14 +6,14 @@
  * Time: 下午5:50
  */
 
-namespace ERP\Models;
+namespace App\Models;
 
 
-use ERP\Libs\MysqlDB;
+use App\Libs\MysqlDB;
 
 class EmployeeSeatModel extends Model
 {
-    public static $table = "erp_employee_seat";
+    public static $table = "employee_seat";
     public static $redisDB;
 
     const STATUS_NORMAL = 1;
