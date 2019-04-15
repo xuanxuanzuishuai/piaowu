@@ -93,4 +93,29 @@ class Campus extends ControllerBase
             ]
         ], StatusCode::HTTP_OK);
     }
+
+    public function add(Request $request, Response $response, $args)
+    {
+        $rules = [
+            [
+                "key" => "name",
+                "type" => "required",
+                "error_code" => "campus name is required"
+            ]
+        ];
+
+        $param = $request->getParams();
+        $result = Valid::validate($param, $rules);
+        if ($result["code"] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $campusId = CampusService::insertOrUpdate($param["id"], $param);
+        return $response->withJson([
+            "code" => Valid::CODE_SUCCESS,
+            "data" => [
+                "campusId" => $campusId
+            ]
+        ], StatusCode::HTTP_OK);
+    }
 }

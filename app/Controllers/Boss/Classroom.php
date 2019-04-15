@@ -99,5 +99,34 @@ class Classroom extends ControllerBase
             ]
         ], StatusCode::HTTP_OK);
     }
+
+    public function add(Request $request, Response $response, $args)
+    {
+        $rules = [
+            [
+                "key" => "name",
+                "type" => "required",
+                "error_code" => "classroom name is required"
+            ],
+            [
+                "key" => "campus_id",
+                "type" => "required",
+                "error_code" => "classroom campus_id is required"
+            ]
+        ];
+
+        $param = $request->getParams();
+        $result = Valid::validate($param, $rules);
+        if ($result["code"] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $cRId = ClassroomService::insertOrUpdateClassroom($param["id"], $param);
+        return $response->withJson([
+            "code" => Valid::CODE_SUCCESS,
+            "data" => [
+                "classroom_id" => $cRId
+            ]
+        ], StatusCode::HTTP_OK);
+    }
 }
 
