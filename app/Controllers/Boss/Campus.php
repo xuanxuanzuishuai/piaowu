@@ -7,6 +7,7 @@
 namespace App\Controllers\Boss;
 
 use App\Controllers\ControllerBase;
+use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Models\CampusModel;
 use App\Services\CampusService;
@@ -29,9 +30,11 @@ class Campus extends ControllerBase
 
     public static function detail(Request $request, Response $response, $args) {
         $rules = [
-            "key" => "id",
-            "type" => "required",
-            "error_code" => "campus id is required"
+            [
+                "key" => "id",
+                "type" => "required",
+                "error_code" => "campus id is required"
+            ]
         ];
         $param = $request->getParams();
         $result = Valid::validate($param, $rules);
@@ -50,11 +53,6 @@ class Campus extends ControllerBase
 
     public static function modify(Request $request, Response $response, $args) {
         $rules = [
-            [
-                "key" => "id",
-                "type" => "required",
-                "error_code" => "campus id is required"
-            ],
             [
                 "key" => "name",
                 "type" => "required",

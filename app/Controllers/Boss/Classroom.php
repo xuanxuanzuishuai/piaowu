@@ -7,6 +7,7 @@
 namespace App\Controllers\Boss;
 
 use App\Controllers\ControllerBase;
+use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Models\ClassroomModel;
 use App\Services\ClassroomService;
@@ -29,12 +30,15 @@ class Classroom extends ControllerBase
 
     public static function detail(Request $request, Response $response, $args) {
         $rules = [
-            "key" => "id",
-            "type" => "required",
-            "error_code" => "classroom id is required"
+            [
+                "key" => "id",
+                "type" => "required",
+                "error_code" => "classroom id is required"
+            ]
         ];
 
         $param = $request->getParams();
+
         $result = Valid::validate($param, $rules);
         if ($result["code"] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
@@ -51,11 +55,6 @@ class Classroom extends ControllerBase
 
     public static function modify(Request $request, Response $response, $args) {
         $rules = [
-            [
-                "key" => "id",
-                "type" => "required",
-                "error_code" => "classroom id is required"
-            ],
             [
                 "key" => "name",
                 "type" => "required",
