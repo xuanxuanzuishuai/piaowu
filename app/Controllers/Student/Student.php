@@ -12,10 +12,12 @@ namespace App\Controllers\Student;
 
 use App\Controllers\ControllerBase;
 use App\Libs\MysqlDB;
+use App\Libs\UserCenter;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\EmployeeModel;
 use App\Models\StudentAppModel;
+use App\Models\StudentModel;
 use App\Services\ChannelService;
 use App\Services\StudentAppService;
 use App\Services\StudentService;
@@ -282,11 +284,6 @@ class Student extends ControllerBase
                 'error_code' => 'app_id_is_required',
             ],
             [
-                'key' => 'ca_id',
-                'type' => 'required',
-                'error_code' => 'ca_id_is_required',
-            ],
-            [
                 'key' => 'channel_id',
                 'type' => 'numeric',
                 'error_code' => 'channel_id_must_be_numeric',
@@ -296,16 +293,12 @@ class Student extends ControllerBase
                 'type' => 'numeric',
                 'error_code' => 'app_id_must_be_numeric',
             ],
-            [
-                'key' => 'ca_id',
-                'type' => 'numeric',
-                'error_code' => 'ca_id_must_be_numeric',
-            ],
         ];
         $result = Valid::validate($params, $rules);
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
+        $params['app_id'] = UserCenter::AUTH_APP_ID_STUDENT;
         if (!Util::isMobile($params['mobile'])) {
             return $response->withJson(Valid::addErrors([], 'relation', 'student_tel_format_error'), StatusCode::HTTP_OK);
         }
@@ -344,7 +337,7 @@ class Student extends ControllerBase
         $params['is_manual'] = StudentAppModel::MANUAL_ENTRY;
         $db = MysqlDB::getDB();
         $db->beginTransaction();
-        $res = StudentService::studentRegister($params, $this->ci['employee']['id']);
+        $res = StudentService::studentRegister($params, $params['employee_id']);
         if ($res['code'] == Valid::CODE_PARAMS_ERROR) {
             $db->rollBack();
             return $response->withJson($res, StatusCode::HTTP_OK);

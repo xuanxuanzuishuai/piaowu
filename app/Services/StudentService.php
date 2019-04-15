@@ -388,10 +388,10 @@ class StudentService
         //添加学生app
         StudentAppService::erpAddStudentApp($studentId, $params);
         //注册赠课
-        $gift = StudentCourseService::normalStudentRegisterGiftCourse($studentId, $params['app_id'], $employeeId, ScheduleService::FROM_BACKEND);
-        if (!empty($gift['error'])) {
-            return Valid::addErrors([], 'gift', 'give_student_gift_failed');
-        }
+//        $gift = StudentCourseService::normalStudentRegisterGiftCourse($studentId, $params['app_id'], $employeeId, ScheduleService::FROM_BACKEND);
+//        if (!empty($gift['error'])) {
+//            return Valid::addErrors([], 'gift', 'give_student_gift_failed');
+//        }
 
         return [
             'code' => 0,

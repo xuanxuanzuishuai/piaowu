@@ -32,8 +32,8 @@ class UserCenter
     const API_UPDATEUSER = '/rapi/v1/user/';
     const API_CHANGEPASSWORD = '/rapi/v1/changepassword/';
 
-    const AUTH_APP_ID_STUDENT = 1;
-    const AUTH_APP_ID_TEACHER = 2;
+    const AUTH_APP_ID_STUDENT = 11;
+    const AUTH_APP_ID_TEACHER = 12;
     const AUTH_APP_ID_ERP = 4;
     const AUTH_APP_ID_LIEBAO = 5;
     const AUTH_APP_ID_AIPEILIAN = 8;

@@ -13,8 +13,6 @@ use App\Services\ChannelService;
 
 class StudentModel extends Model
 {
-    const  MANUAL_ENTRY = 1;//手动添加学生
-
     public static $table = 'student';
     public static $redisExpire = 1;
 
