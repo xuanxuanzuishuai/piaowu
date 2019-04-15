@@ -5,7 +5,7 @@
  * Date: 2018/11/09
  */
 
-namespace Erp\Routers\Dept;
+namespace Erp\Controllers\Dept;
 
 use Erp\Services\DeptDataService;
 use Slim\App;

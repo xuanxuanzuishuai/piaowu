@@ -37,6 +37,7 @@ class UserCenter
     const AUTH_APP_ID_ERP = 4;
     const AUTH_APP_ID_LIEBAO = 5;
     const AUTH_APP_ID_AIPEILIAN = 8;
+    const AUTH_APP_ID_DSS = 10;
 
 
 
@@ -318,7 +319,7 @@ class UserCenter
             ],
             'json' => [
                 'auth' => $auth,
-                'auth_app_id' => self::AUTH_APP_ID_ERP,
+                'auth_app_id' => self::AUTH_APP_ID_DSS,
                 'user_info' => $userInfo,
                 'password_encoded' => $encode,
             ]
@@ -340,7 +341,7 @@ class UserCenter
         $api = self::API_AUTH_UNAUTH . $uuid;
         $data = [
             'auth' => false,
-            'auth_app_id' => self::AUTH_APP_ID_ERP
+            'auth_app_id' => self::AUTH_APP_ID_DSS
         ];
         $result = $this->commonAPI($api, [
             'headers' => [

@@ -6,7 +6,7 @@
  * Time: 下午2:18
  */
 
-namespace App\Routers\Goods;
+namespace App\Controllers\Course;
 
 use App\Controllers\ControllerBase;
 use App\Libs\Util;

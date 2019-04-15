@@ -8,7 +8,7 @@
  * 客户数据相关功能
  */
 
-namespace App\Routers\Student;
+namespace App\Controllers\Student;
 
 use App\Controllers\ControllerBase;
 use App\Libs\MysqlDB;

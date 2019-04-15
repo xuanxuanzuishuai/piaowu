@@ -6,7 +6,7 @@
  * Time: 上午11:30
  */
 
-namespace App\Routers\Dept;
+namespace App\Controllers\Dept;
 
 use App\Controllers\ControllerBase;
 use App\Libs\Dict;

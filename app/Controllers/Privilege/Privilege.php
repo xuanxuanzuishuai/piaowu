@@ -136,9 +136,7 @@ class Privilege extends ControllerBase
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-
-        $menus = PrivilegeService::getEmployeeMenuService($params['employee_id']);
-
+        $menus = PrivilegeService::getEmployeeMenuService($this->ci['employee']['id']);
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => [
