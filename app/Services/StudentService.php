@@ -56,7 +56,7 @@ class StudentService
                 $studentRelationsMap = StudentRelationService::getStudentRelationMap($studentIdArray);
                 $studentEmployeeMap = EmployeeService::getStudentCaMap($studentEmployeeIdArray);
                 $studentChannelMap = ChannelService::getChannelMap($studentChannelIdArray);
-                $studentWeiXinMap = UserWeiXinService::getWeiXinMapByStudent($studentIdArray, $params['app_id']);
+                $studentWeiXinMap = [];//UserWeiXinService::getWeiXinMapByStudent($studentIdArray, $params['app_id']);
                 $app = AppModel::getById($params['app_id']);
                 $levels = DictService::getTypeMap(Constants::DICT_TYPE_STUDENT_LEVEL);
                 //遍历student数据，格式化数据内容

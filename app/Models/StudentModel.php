@@ -57,41 +57,12 @@ class StudentModel extends Model
                        sa.level,
                        sa.ca_id,
                        sa.cc_id,
-                  (SELECT sum(used_count)
-                   FROM '.ScheduleUserModel::$table.' su
-                   INNER JOIN '.ScheduleModel::$table.' sch ON sch.id = su.schedule_id
-                   WHERE start_time >= '.$time_thirty_days_ago.'
-                     AND end_time <= '.$time_now.'
-                     AND su.user_role = '.ScheduleUserModel::USER_ROLE_STUDENT.'
-                     AND su.user_id = s.id) AS 30_days_expend_class_count,
-                  (SELECT sum(used_lesson_count+used_free_count+deducted_count)
-                   FROM '.StudentCourseModel::$table.' sc
-                   INNER JOIN '.CourseModel::$table.' c ON sc.`course_id` = c.id
-                   WHERE sc.student_id = s.id
-                     AND c.`app_id` = :app_id ) expend_class_count,
-                  (SELECT sum(lesson_count+free_count)
-                   FROM '.StudentCourseModel::$table.' sc
-                   WHERE sc.student_id = s.id) AS remain_count,
-                  (SELECT max(sch.create_time)
-                   FROM '.ScheduleUserModel::$table.' su
-                   INNER JOIN '.ScheduleModel::$table.' sch ON sch.id = su.schedule_id
-                   WHERE su.user_role = '.ScheduleUserModel::USER_ROLE_STUDENT.'
-                     AND sch.status IN ('.
-                        ScheduleModel::STATUS_FINISH.','.
-                        ScheduleModel::STATUS_BOOK.','.
-                        ScheduleModel::STATUS_IN_CLASS.')
-                     AND su.user_id = s.id) AS last_book_class_time,
-                  (SELECT max(sch.start_time)
-                   FROM '.ScheduleUserModel::$table.' su
-                   INNER JOIN '.ScheduleModel::$table.' sch ON sch.id = su.schedule_id
-                   WHERE su.user_role = '.ScheduleUserModel::USER_ROLE_STUDENT.'
-                     AND sch.status IN ('.
-                        ScheduleModel::STATUS_FINISH.','.
-                        ScheduleModel::STATUS_IN_CLASS.')
-                     AND su.user_id = s.id) AS last_in_class_time,
-                  (SELECT max(create_time)
-                   FROM '.CommentsModel::$table.'
-                   WHERE student_id = s.id ) AS last_remark_time
+                  0 AS 30_days_expend_class_count,
+                  0 AS expend_class_count,
+                  0 AS remain_count,
+                  0 AS last_book_class_time,
+                  0 AS last_in_class_time,
+                  0 AS last_remark_time
                 FROM '.StudentModel::$table.' s
                 INNER JOIN '.StudentAppModel::$table.' sa ON s.id = sa.student_id
                 WHERE sa.app_id = :app_id AND s.id IN ('.implode(',', $ids).')

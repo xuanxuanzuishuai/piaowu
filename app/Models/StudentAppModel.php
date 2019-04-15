@@ -13,7 +13,7 @@ use App\Libs\MysqlDB;
 
 class StudentAppModel extends Model
 {
-    public static $table = 'erp_student_app';
+    public static $table = 'student_app';
     public static $redisExpire = 1;
 
     const STATUS_REGISTER = 1;      // 注册
