@@ -7,9 +7,7 @@
 namespace App\Controllers\Boss;
 
 use App\Controllers\ControllerBase;
-use App\Libs\SimpleLogger;
 use App\Libs\Valid;
-use App\Models\CampusModel;
 use App\Services\CampusService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -18,8 +16,15 @@ use Slim\Http\StatusCode;
 
 class Campus extends ControllerBase
 {
-    public static function list(Request $request, Response $response, $args) {
-        $campus = CampusModel::getCampus();
+    /**
+     * Get all campus information
+     * @param Request $request
+     * @param Response $response
+     * @param $args
+     * @return Response
+     */
+    public function list(Request $request, Response $response, $args) {
+        $campus = CampusService::getCampus();
         return $response->withJson([
             "code" => Valid::CODE_SUCCESS,
             "data" => [
@@ -28,7 +33,14 @@ class Campus extends ControllerBase
         ], StatusCode::HTTP_OK);
     }
 
-    public static function detail(Request $request, Response $response, $args) {
+    /**
+     * Get a campus's information
+     * @param Request $request
+     * @param Response $response
+     * @param $args
+     * @return Response
+     */
+    public function detail(Request $request, Response $response, $args) {
         $rules = [
             [
                 "key" => "id",
@@ -42,7 +54,7 @@ class Campus extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $campus = CampusModel::getById($param["id"]);
+        $campus = CampusService::getById($param["id"]);
         return $response->withJson([
             "code" => Valid::CODE_SUCCESS,
             "data" => [
@@ -51,7 +63,14 @@ class Campus extends ControllerBase
         ], StatusCode::HTTP_OK);
     }
 
-    public static function modify(Request $request, Response $response, $args) {
+    /**
+     * Create or modify a campus's information
+     * @param Request $request
+     * @param Response $response
+     * @param $args
+     * @return Response
+     */
+    public function modify(Request $request, Response $response, $args) {
         $rules = [
             [
                 "key" => "name",

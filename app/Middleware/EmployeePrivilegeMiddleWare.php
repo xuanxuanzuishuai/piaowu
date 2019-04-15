@@ -36,7 +36,6 @@ class EmployeePrivilegeMiddleWare extends MiddlewareBase
             $errs = Valid::addErrors(['code'=> -1], 'author', 'no_privilege');
             return $response->withJson($errs, 200);
         }
-
     }
 }
 

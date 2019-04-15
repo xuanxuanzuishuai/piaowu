@@ -47,6 +47,5 @@ class EmployeeAuthCheckMiddleWare extends MiddlewareBase
         $response = $next($request, $response);
 
         return $response;
-
     }
 }

@@ -33,4 +33,8 @@ class CampusService
     public static function getById($campusId) {
         return CampusModel::getById($campusId);
     }
+
+    public static function getCampus() {
+        return CampusModel::getCampus();
+    }
 }
