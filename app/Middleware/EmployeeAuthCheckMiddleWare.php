@@ -36,7 +36,7 @@ class EmployeeAuthCheckMiddleWare extends MiddlewareBase
         $cacheEmployeeId = EmployeeModel::getEmployeeToken($token);
         if (empty($cacheEmployeeId)) {
             SimpleLogger::error(__FILE__ . ":" . __LINE__, ['code' => 'Employee had logouted', 'errs' => []]);
-            return $response->withJson(Valid::addErrors(['code' => -1], 'auth_check1', 'employee_has_logout'));
+            return $response->withJson(Valid::addErrors(['code' => -1], 'auth_check', 'employee_has_logout'));
         }
 
         $employee = EmployeeModel::getById($cacheEmployeeId);
