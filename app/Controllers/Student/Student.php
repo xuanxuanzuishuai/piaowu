@@ -16,15 +16,8 @@ use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\EmployeeModel;
 use App\Models\StudentAppModel;
-use App\Models\StudentModel;
 use App\Services\ChannelService;
-use App\Services\CommentsService;
-use App\Services\CommonCategoryService;
-use App\Services\Queue\QueueService;
-use App\Services\Queue\StudentStatusTopic;
-use App\Services\StudentAddressService;
 use App\Services\StudentAppService;
-use App\Services\StudentCouponService;
 use App\Services\StudentService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -115,7 +108,7 @@ class Student extends ControllerBase
      * @param $argv
      * @return Response
      */
-    public function get_channels(Request $request, Response $response, $argv)
+    public function getSChannels(Request $request, Response $response, $argv)
     {
         $parent_id = $request->getParam('parent_id', 0);
 
@@ -133,7 +126,7 @@ class Student extends ControllerBase
      * @param $argv
      * @return Response
      */
-    public function student_detail(Request $request, Response $response, $argv)
+    public function detail(Request $request, Response $response, $argv)
     {
         $params = $request->getParams();
         $rules = [
@@ -348,7 +341,7 @@ class Student extends ControllerBase
         }
         $params['channel_level'] = $channel['level'];
         //设置学生手动添加属性
-        $params['is_manual'] = StudentModel::MANUAL_ENTRY;
+        $params['is_manual'] = StudentAppModel::MANUAL_ENTRY;
         $db = MysqlDB::getDB();
         $db->beginTransaction();
         $res = StudentService::studentRegister($params, $this->ci['employee']['id']);
@@ -373,7 +366,7 @@ class Student extends ControllerBase
      * @param $args
      * @return Response
      */
-    public function BatchAssignCC(Request $request, Response $response, $args)
+    public function batchAssignCC(Request $request, Response $response, $args)
     {
         $rules = [
             [

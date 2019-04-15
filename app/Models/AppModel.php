@@ -13,7 +13,7 @@ use App\Libs\RedisDB;
 
 class AppModel extends Model
 {
-    public static $table = "erp_app";
+    public static $table = "app";
     public static $redisExpire = 3600 * 8;
     public static $redisDB;
     // 应用类型缓存键名称
