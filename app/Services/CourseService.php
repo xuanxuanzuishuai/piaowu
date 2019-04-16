@@ -6,7 +6,7 @@
  * Time: 下午9:15
  */
 
-namespace App\Services\Product;
+namespace App\Services;
 use App\Libs\Constants;
 use App\Libs\Dict;
 use App\Libs\Valid;
@@ -48,6 +48,7 @@ class CourseService
             'class_lowest'  => $params['class_lowest'],
             'class_highest' => $params['class_highest'],
             'operator_id'   => $params['operator_id'],
+            'num'           => $params['num'],
         ];
         if ($courseId != null) {
             $courseData['update_time'] = $cTime;
@@ -83,7 +84,7 @@ class CourseService
 
         // 数据处理
         foreach ($courseUnitList as $k => $v) {
-            $courseUnitList[$k] = CourseModel::courseDataToHumanReadable($v);
+            $courseUnitList[$k] = CourseModel::courseDataToHumanReadable($v,true);
         }
         return [$totalCount, $courseUnitList] ;
     }

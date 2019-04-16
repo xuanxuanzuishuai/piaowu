@@ -12,14 +12,13 @@ use App\Controllers\ControllerBase;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\CourseModel;
-use App\Services\Product\CourseService;
+use App\Services\CourseService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
 
 class Course extends ControllerBase
 {
-
 
     /**
      * 课程添加
@@ -28,7 +27,6 @@ class Course extends ControllerBase
      * @param $args
      * @return Response
      */
-
     public function add(Request $request, Response $response, $args)
     {
         // 参数校验
@@ -122,6 +120,11 @@ class Course extends ControllerBase
                 'type' => 'required',
                 'error_code' => 'course_thumb_is_required',
             ],
+            [
+                'key' => 'num',
+                'type' => 'required',
+                'error_code' => 'course_thumb_is_required',
+            ],
         ];
 
         $result = Valid::validate($params, $rules);
@@ -129,8 +132,8 @@ class Course extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $operatorId = $this->employee['id'];
-        $params['operator_id'] = $operatorId;
+
+        $params['operator_id'] = $this->ci['employee']['id'];
 
         // 班型最低人数必须小于等于班型最高人数
         if ($params['class_lowest'] > $params['class_highest']) {
@@ -349,6 +352,11 @@ class Course extends ControllerBase
                 'type' => 'required',
                 'error_code' => 'course_thumb_is_required',
             ],
+            [
+                'key' => 'num',
+                'type' => 'required',
+                'error_code' => 'period_thumb_is_required',
+            ],
         ];
 
         $result = Valid::validate($params, $rules);
@@ -367,8 +375,7 @@ class Course extends ControllerBase
             return $response->withJson(Valid::addErrors([], 'course_id', 'course_status_must_be_wait'));
         }
 
-        $operatorId = $this->employee['id'];
-        $params['operator_id'] = $operatorId;
+        $params['operator_id'] = $this->ci['employee']['id'];
 
         $result = Valid::validate($params, $rules);
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {

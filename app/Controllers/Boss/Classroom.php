@@ -24,7 +24,8 @@ class Classroom extends ControllerBase
      * @return Response
      */
     public function list(Request $request, Response $response, $args) {
-        $classrooms = ClassroomService::getClassrooms();
+        $params = $request->getParams();
+        $classrooms = ClassroomService::getClassrooms($params);
         return $response->withJson([
             "code" => Valid::CODE_SUCCESS,
             "data" => [
@@ -100,6 +101,12 @@ class Classroom extends ControllerBase
         ], StatusCode::HTTP_OK);
     }
 
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @param $args
+     * @return Response
+     */
     public function add(Request $request, Response $response, $args)
     {
         $rules = [

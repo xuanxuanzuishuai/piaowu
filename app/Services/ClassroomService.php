@@ -32,7 +32,7 @@ class ClassroomService
         return ClassroomModel::getById($cRId);
     }
 
-    public static function getClassrooms() {
-        return ClassroomModel::getClassrooms();
+    public static function getClassrooms($params = null) {
+        return ClassroomModel::getClassrooms($params);
     }
 }

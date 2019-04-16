@@ -23,8 +23,12 @@ class ClassroomModel extends Model
         return ($result && $result > 0);
     }
 
-    public static function getClassrooms() {
+    public static function getClassrooms($params = null) {
         $db = MysqlDB::getDB();
-        return $db->select(self::$table, "*");
+        $where = [];
+        if(!empty($params['campus_id'])) {
+            $where['campus_id'] = $params['campus_id'];
+        }
+        return $db->select(self::$table, "*",$where);
     }
 }

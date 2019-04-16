@@ -14,7 +14,7 @@ use App\Libs\Util;
 
 class CourseModel extends Model
 {
-    public static $table = "erp_course";
+    public static $table = "course";
 
     /** 课程类型 */
     const TYPE_TEST = 1;         // 体验课

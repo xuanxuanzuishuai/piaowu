@@ -6,7 +6,7 @@
  * Time: 11:51 AM
  */
 
-namespace App\Routers\Area;
+namespace App\Controllers\Area;
 
 use App\Controllers\ControllerBase;
 use App\Libs\Valid;

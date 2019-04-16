@@ -14,7 +14,6 @@ use App\Libs\Constants;
 use App\Libs\UserCenter;
 use App\Libs\Util;
 use App\Libs\Valid;
-use App\Models\AiUserModel;
 use App\Models\AppModel;
 use App\Models\StudentModel;
 
@@ -150,12 +149,12 @@ class StudentService
     public static function fetchStudentAiRecord($studentId)
     {
         $res = [];
-        $data = AiUserModel::getRecord(['student_id' => $studentId]);
-        if(!empty($data)){
-            $res['id'] = $data['id'];
-            $res['sub_start_date'] = empty($data['sub_start_date'])?'-':date('Y-m-d', strtotime($data['sub_start_date']));
-            $res['sub_end_date'] = empty($data['sub_end_date'])?'-':date('Y-m-d', strtotime($data['sub_end_date']));
-        }
+//        $data = AiUserModel::getRecord(['student_id' => $studentId]);
+//        if(!empty($data)){
+//            $res['id'] = $data['id'];
+//            $res['sub_start_date'] = empty($data['sub_start_date'])?'-':date('Y-m-d', strtotime($data['sub_start_date']));
+//            $res['sub_end_date'] = empty($data['sub_end_date'])?'-':date('Y-m-d', strtotime($data['sub_end_date']));
+//        }
         return $res;
     }
 
