@@ -143,8 +143,8 @@ class TeacherModel extends Model
     {
         $sql_list = "select t.*, " .
             " co.college_name as college_name ".
-            " from " . TeacherModel::$table . " as t " .
-            " left join " . TeacherCollegeModel::$table . " as co on t.college_id = co.id ";
+            " from " . TeacherModel::$table . " as t " ;
+            //" left join " . TeacherCollegeModel::$table . " as co on t.college_id = co.id ";
         $sql_count = "select count(t.id) as totalCount from " . TeacherModel::$table . " as t ";
 
         list($where, $map) = self::whereForEntry($params, $operator_id, $ta_role_id);
@@ -234,10 +234,10 @@ class TeacherModel extends Model
             $map[':name_id'] = "%".$params['name_id']."%";
         }
         //所属课程
-        if (!empty($params['app_id'])) {
-            $where .= ' AND EXISTS (SELECT * FROM '.TeacherAppExtendModel::$table.' as ta WHERE ta.teacher_id = t.id AND ta.app_id= :app_id and ta.status = '.TeacherAppExtendModel::STATUS_NORMAL.')';
-            $map[':app_id'] = $params['app_id'];
-        }
+//        if (!empty($params['app_id'])) {
+//            $where .= ' AND EXISTS (SELECT * FROM '.TeacherAppExtendModel::$table.' as ta WHERE ta.teacher_id = t.id AND ta.app_id= :app_id and ta.status = '.TeacherAppExtendModel::STATUS_NORMAL.')';
+//            $map[':app_id'] = $params['app_id'];
+//        }
         //性别
         if (!empty($params['gender'])) {
             $where .= " AND t.gender = :gender ";
@@ -253,11 +253,11 @@ class TeacherModel extends Model
             $where .= " AND t.level = :level ";
             $map[':level'] = $params['level'];
         }
-        // 星级
-        if (!empty($params['evaluate_level'])) {
-            $where .= ' AND EXISTS (SELECT * FROM '.TeacherAppExtendModel::$table.' as ta WHERE ta.teacher_id = t.id AND ta.evaluate_level= :evaluate_level and ta.status = '.TeacherAppExtendModel::STATUS_NORMAL.')';
-            $map[':evaluate_level'] = $params['evaluate_level'];
-        }
+//        // 星级
+//        if (!empty($params['evaluate_level'])) {
+//            $where .= ' AND EXISTS (SELECT * FROM '.TeacherAppExtendModel::$table.' as ta WHERE ta.teacher_id = t.id AND ta.evaluate_level= :evaluate_level and ta.status = '.TeacherAppExtendModel::STATUS_NORMAL.')';
+//            $map[':evaluate_level'] = $params['evaluate_level'];
+//        }
         // 毕业院校
         if (!empty($params['college_id'])) {
             $where .= " AND t.college_id = :college_id ";
@@ -282,11 +282,11 @@ class TeacherModel extends Model
             $where .= " AND t.status = :status ";
             $map[':status'] = $params['status'];
         }
-        // 教管
-        if (!empty($params['employee_id'])) {
-            $where .= ' AND EXISTS (SELECT 1 FROM '.TeacherAppExtendModel::$table.' as ta WHERE ta.teacher_id = t.id AND ta.employee_id= :employee_id and ta.status = '.TeacherAppExtendModel::STATUS_NORMAL.')';
-            $map[':employee_id'] = $params['employee_id'];
-        }
+//        // 教管
+//        if (!empty($params['employee_id'])) {
+//            $where .= ' AND EXISTS (SELECT 1 FROM '.TeacherAppExtendModel::$table.' as ta WHERE ta.teacher_id = t.id AND ta.employee_id= :employee_id and ta.status = '.TeacherAppExtendModel::STATUS_NORMAL.')';
+//            $map[':employee_id'] = $params['employee_id'];
+//        }
         // 创建时间开始
         if (!empty($params['create_time_start'])) {
             $where .= " AND t.create_time >= :create_time_start ";
@@ -317,33 +317,33 @@ class TeacherModel extends Model
             $where .= " AND t.last_class_time < :last_class_time_end ";
             $map[':last_class_time_end'] = strtotime($params['last_class_time_end']);
         }
-        //标签ID
-        if (!empty($params['tag_ids']) && is_array($params['tag_ids'])){
-            $tag_ids = $params['tag_ids'];
-            foreach ($tag_ids as $key => $value){
-                $tag_key = ':tag_id_'.$key;
-                $tag_arr[] = $tag_key;
-                $map[$tag_key] = $value;
-                $map[':tag_id_count'] = count($tag_ids);
-            }
-            $where .= 'AND EXISTS (SELECT count(distinct tag_id) n FROM '.TeacherTagRelationModel::$table.' as tr WHERE tr.teacher_id = t.id  AND tr.tag_id in('.implode(",", $tag_arr).') group by teacher_id having n = :tag_id_count) ';
-        }
+//        //标签ID
+//        if (!empty($params['tag_ids']) && is_array($params['tag_ids'])){
+//            $tag_ids = $params['tag_ids'];
+//            foreach ($tag_ids as $key => $value){
+//                $tag_key = ':tag_id_'.$key;
+//                $tag_arr[] = $tag_key;
+//                $map[$tag_key] = $value;
+//                $map[':tag_id_count'] = count($tag_ids);
+//            }
+//            $where .= 'AND EXISTS (SELECT count(distinct tag_id) n FROM '.TeacherTagRelationModel::$table.' as tr WHERE tr.teacher_id = t.id  AND tr.tag_id in('.implode(",", $tag_arr).') group by teacher_id having n = :tag_id_count) ';
+//        }
         //无标签筛选
-        $params['no_tags'] = $params['no_tags'] ?? 0;
-        if ($params['no_tags'] == 1){
-            $where .= ' AND NOT EXISTS (SELECT 1 FROM '.TeacherTagRelationModel::$table.' as tr WHERE tr.teacher_id = t.id) ';
-        }
-        if (!empty($params['ts_course_type'])){
-            $where .= ' AND EXISTS (SELECT 1 FROM '.TeacherAppExtendModel::$table.' as ta WHERE ta.teacher_id = t.id AND ta.ts_course_type= :ts_course_type and ta.status = '.TeacherAppExtendModel::STATUS_NORMAL.')';
-            $map[':ts_course_type'] = $params['ts_course_type'];
-        }
-        //教管权限数据过滤
-        if (!empty($operator_id)){
-            $operator_info = EmployeeModel::getById($operator_id);
-            if (!empty($ta_role_id) && $operator_info['role_id'] == $ta_role_id){
-                $where .= ' AND EXISTS (SELECT 1 FROM '.TeacherAppExtendModel::$table.' as ta WHERE ta.teacher_id = t.id AND ta.employee_id= '.$operator_id.' and ta.status = '.TeacherAppExtendModel::STATUS_NORMAL.')';
-            }
-        }
+//        $params['no_tags'] = $params['no_tags'] ?? 0;
+//        if ($params['no_tags'] == 1){
+//            $where .= ' AND NOT EXISTS (SELECT 1 FROM '.TeacherTagRelationModel::$table.' as tr WHERE tr.teacher_id = t.id) ';
+//        }
+//        if (!empty($params['ts_course_type'])){
+//            $where .= ' AND EXISTS (SELECT 1 FROM '.TeacherAppExtendModel::$table.' as ta WHERE ta.teacher_id = t.id AND ta.ts_course_type= :ts_course_type and ta.status = '.TeacherAppExtendModel::STATUS_NORMAL.')';
+//            $map[':ts_course_type'] = $params['ts_course_type'];
+//        }
+//        //教管权限数据过滤
+//        if (!empty($operator_id)){
+//            $operator_info = EmployeeModel::getById($operator_id);
+//            if (!empty($ta_role_id) && $operator_info['role_id'] == $ta_role_id){
+//                $where .= ' AND EXISTS (SELECT 1 FROM '.TeacherAppExtendModel::$table.' as ta WHERE ta.teacher_id = t.id AND ta.employee_id= '.$operator_id.' and ta.status = '.TeacherAppExtendModel::STATUS_NORMAL.')';
+//            }
+//        }
         return [$where, $map];
     }
 
