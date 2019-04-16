@@ -320,13 +320,14 @@ class EmployeeService
             'mobile' => $mobile,
             'name' => $name
         ];
-        // 创建老师
-        $result = TeacherService::register($data);
-        if (empty($result['teacher_id'])) {
-            return null;
-        }
-        EmployeeModel::updateEmployee($employeeId, ['teacher_id' => $result['teacher_id']]);
-        return $result['teacher_id'];
+//        // 创建老师
+//        $result = TeacherService::register($data);
+//        if (empty($result['teacher_id'])) {
+//            return null;
+//        }
+//        EmployeeModel::updateEmployee($employeeId, ['teacher_id' => $result['teacher_id']]);
+//        return $result['teacher_id'];
+        return 0;
     }
 
     /**

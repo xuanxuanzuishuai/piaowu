@@ -337,7 +337,7 @@ class Student extends ControllerBase
         $params['is_manual'] = StudentAppModel::MANUAL_ENTRY;
         $db = MysqlDB::getDB();
         $db->beginTransaction();
-        $res = StudentService::studentRegister($params, $params['employee_id']);
+        $res = StudentService::studentRegister($params, $this->ci['employee']['id']);
         if ($res['code'] == Valid::CODE_PARAMS_ERROR) {
             $db->rollBack();
             return $response->withJson($res, StatusCode::HTTP_OK);

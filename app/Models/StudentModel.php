@@ -424,7 +424,7 @@ class StudentModel extends Model
      * @param $uuid
      * @return int|mixed|null|string
      */
-    public static function erpInsertStudent($params, $uuid)
+    public static function erpInsertStudent($params, $uuid,$operatorId = 0 )
     {
         $data = [];
         $data['name'] = $params['name'];
@@ -439,6 +439,7 @@ class StudentModel extends Model
         if(!empty($params['birthday'])){
             $data['birthday'] = $params['birthday'];
         }
+        $data['operator_id'] = $operatorId;
         return MysqlDB::getDB()->insertGetID(self::$table, $data);
     }
 

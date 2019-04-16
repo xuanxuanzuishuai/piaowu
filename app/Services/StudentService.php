@@ -372,10 +372,10 @@ class StudentService
      * @return int|mixed|null|string
      * @throws \Exception
      */
-    public static function studentRegister($params, $employeeId)
+    public static function studentRegister($params, $employeeId = 0)
     {
         //添加学生
-        $res = self::erpAddStudent($params);
+        $res = self::erpAddStudent($params,$employeeId);
         if($res['code'] != Valid::CODE_SUCCESS){
             return $res;
         }
@@ -396,16 +396,17 @@ class StudentService
         return [
             'code' => 0,
             'student' => $student,
-            'bill_id' => $gift
+            'bill_id' => 0,//$gift
         ];
     }
 
     /**
      * erp添加学生
      * @param $params
+     * @param int $operatorId
      * @return array
      */
-    public static function erpAddStudent($params)
+    public static function erpAddStudent($params,$operatorId = 0)
     {
         // 用户中心授权
         $userCenter = new UserCenter();
@@ -413,7 +414,7 @@ class StudentService
         if (empty($authResult["uuid"])) {
             return Valid::addErrors([], "user_center", "uc_user_add_failed");
         }
-        $studentId = StudentModel::erpInsertStudent($params, $authResult["uuid"]);
+        $studentId = StudentModel::erpInsertStudent($params, $authResult["uuid"],$operatorId);
         return ['code'=>Valid::CODE_SUCCESS, 'data'=>['studentId'=>$studentId]];
     }
 
