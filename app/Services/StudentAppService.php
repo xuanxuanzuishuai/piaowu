@@ -31,7 +31,7 @@ class StudentAppService
     public static function getStudentAppList($studentId)
     {
         $student_app = StudentAppModel::getStudentAppList($studentId);
-        $studentWeiXinMap = UserWeiXinService::getWeiXinMapByApp($studentId);
+        $studentWeiXinMap = [];//UserWeiXinService::getWeiXinMapByApp($studentId);
         $instrumentMap = DictService::getTypeMap(Constants::DICT_TYPE_INSTRUMENT);
         $data = [];
         foreach($student_app as $app){

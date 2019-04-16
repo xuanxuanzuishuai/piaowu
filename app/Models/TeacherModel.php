@@ -142,7 +142,7 @@ class TeacherModel extends Model
     public static function getTeacherList($operator_id, $page, $count, $params, $ta_role_id)
     {
         $sql_list = "select t.*, " .
-            " co.college_name as college_name ".
+            " '' as college_name ".
             " from " . TeacherModel::$table . " as t " ;
             //" left join " . TeacherCollegeModel::$table . " as co on t.college_id = co.id ";
         $sql_count = "select count(t.id) as totalCount from " . TeacherModel::$table . " as t ";
