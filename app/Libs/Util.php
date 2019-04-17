@@ -474,8 +474,8 @@ class Util
         list($domain, $qiniuFolder) = DictService::getKeyValuesByArray(
             Constants::DICT_TYPE_SYSTEM_ENV,
             [
-                'QINIU_DOMAIN_1',
-                'QINIU_FOLDER_1'
+                'QINIU_DOMAIN_10',
+                'QINIU_FOLDER_10'
             ]);
         $img_url = 'https://' . $domain . '/' . $qiniuFolder . "/" . $img;
         return $img_url;

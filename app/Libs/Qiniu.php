@@ -23,11 +23,11 @@ class Qiniu
 
         $url = "";
         list($bucket, $accessKey, $secretKey, $domain, $qiniuFolder) = DictService::getKeyValuesByArray(Constants::DICT_TYPE_SYSTEM_ENV,[
-            'QINIU_BUCKET_1',
-            'QINIU_ACCESS_KEY_1',
-            'QINIU_SECRET_KEY_1',
-            'QINIU_DOMAIN_1',
-            'QINIU_FOLDER_1'
+            'QINIU_BUCKET_10',
+            'QINIU_ACCESS_KEY_10',
+            'QINIU_SECRET_KEY_10',
+            'QINIU_DOMAIN_10',
+            'QINIU_FOLDER_10'
         ]);
 
         if (empty($bucket) || empty($secretKey) || empty($accessKey) || empty($domain)){
