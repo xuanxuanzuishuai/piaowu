@@ -6,6 +6,7 @@
 
 namespace App\Services;
 
+use App\Libs\Util;
 use App\Models\ClassroomModel;
 
 
@@ -33,6 +34,11 @@ class ClassroomService
     }
 
     public static function getClassrooms($params = null) {
-        return ClassroomModel::getClassrooms($params);
+        $res =  ClassroomModel::getClassrooms($params);
+        foreach($res as $key => $value) {
+            if(!empty($value['pic_url']))
+                $res[$key]['pic_url'] = Util::getQiNiuFullImgUrl($value['pic_url']);
+        }
+        return $res;
     }
 }

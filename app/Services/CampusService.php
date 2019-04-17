@@ -6,6 +6,7 @@
 
 namespace App\Services;
 
+use App\Libs\Util;
 use App\Models\CampusModel;
 
 
@@ -35,6 +36,11 @@ class CampusService
     }
 
     public static function getCampus() {
-        return CampusModel::getCampus();
+        $res =  CampusModel::getCampus();
+        foreach($res as $key => $value) {
+            if(!empty($value['pic_url']))
+            $res[$key]['pic_url'] = Util::getQiNiuFullImgUrl($value['pic_url']);
+        }
+        return $res;
     }
 }
