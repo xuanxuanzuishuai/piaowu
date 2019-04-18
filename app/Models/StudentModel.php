@@ -9,6 +9,7 @@
 namespace App\Models;
 
 use App\Libs\MysqlDB;
+use App\Libs\Util;
 use App\Services\ChannelService;
 
 class StudentModel extends Model
@@ -523,5 +524,57 @@ class StudentModel extends Model
         ], [
             self::$table . '.id' => $studentId
         ]);
+    }
+
+    /**
+     * 查询所有学生，或者查询指定机构下学生
+     * @param $orgId
+     * @param $page
+     * @param $count
+     * @param $params
+     * @return array
+     */
+    public static function selectStudentByOrg($orgId, $page, $count, $params)
+    {
+        $db = MysqlDB::getDB();
+        $s = StudentModel::$table;
+        $so = StudentOrgModel::$table;
+        $st = StudentOrgModel::STATUS_NORMAL;
+
+        $limit = Util::limitation($page, $count);
+
+        if(empty($orgId)) {
+            $sql = "select * from {$s} order by create_time desc {$limit}";
+            $countSql = "select count(*) count from {$s}";
+        } else {
+            $sql = "select s.* from {$s} s,{$so} so where s.id = so.student_id and so.status = {$st}  
+                    and so.org_id = {$orgId} order by s.create_time desc {$limit}";
+            $countSql = "select count(*) count from {$s} s,{$so} so where s.id = so.student_id and so.status = {$st} 
+                        and so.org_id = {$orgId}";
+        }
+
+        $list = $db->queryAll($sql);
+        $total = $db->queryAll($countSql);
+
+        return [$list,$total[0]['count']];
+    }
+
+    /**
+     * 查询一条指定机构和学生id的记录
+     * @param $orgId
+     * @param $studentId
+     * @return array|null
+     */
+    public static function getOrgStudent($orgId, $studentId)
+    {
+        $db = MysqlDB::getDB();
+        $s = StudentModel::$table;
+        $so = StudentOrgModel::$table;
+        $st = StudentOrgModel::STATUS_NORMAL;
+
+        $record = $db->queryAll("select s.* from {$s} s,{$so} so where s.id = so.student_id
+        and so.status = {$st} and so.org_id = {$orgId} and s.id = {$studentId}");
+
+        return $record;
     }
 }

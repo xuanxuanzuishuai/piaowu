@@ -15,7 +15,11 @@ use App\Libs\MysqlDB;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\TeacherModel;
+use App\Libs\ResponseError;
+use App\Services\StudentService;
+use App\Services\TeacherOrgService;
 use App\Services\TeacherService;
+use App\Services\TeacherStudentService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -191,8 +195,9 @@ class Teacher extends ControllerBase
     {
         $params = $request->getParams();
         list($page, $count) = Util::formatPageCount($params);
+        $orgId = $this->getEmployeeOrgId();
 
-        list($teachers, $totalCount) = TeacherService::getList($this->ci['employee']['id'], $page, $count, $params);
+        list($teachers, $totalCount) = TeacherService::getList($orgId, $page, $count, $params);
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
@@ -203,4 +208,120 @@ class Teacher extends ControllerBase
         ], StatusCode::HTTP_OK);
     }
 
+    /**
+     * 管理员查看所有老师，或指定机构下老师
+     * @param Request $request
+     * @param Response $response
+     * @param $args
+     * @return Response
+     */
+    public function listByOrg(Request $request, Response $response, $args)
+    {
+        $params = $request->getParams();
+        list($page, $count) = Util::formatPageCount($params);
+        $orgId = $params['org_id'] ?? null;
+
+        list($teachers, $totalCount) = TeacherService::getList($orgId, $page, $count, $params);
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => [
+                'teachers' => $teachers,
+                'total_count' => $totalCount[0]['totalCount']
+            ]
+        ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * 绑定学生，机构操作
+     * @param Request $request
+     * @param Response $response
+     * @param $args
+     * @return Teacher|Response
+     */
+    public function bindStudent(Request $request, Response $response, $args)
+    {
+        $rules = [
+            [
+                'key'        => 'teacher_id',
+                'type'       => 'required',
+                'error_code' => 'teacher_is_required'
+            ],
+            [
+                'key'        => 'student_id',
+                'type'       => 'required',
+                'error_code' => 'student_id_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $teacherId = $params['teacher_id'];
+        $studentId = $params['student_id'];
+        $orgId     = $this->getEmployeeOrgId();
+
+        //检查当前机构是否绑定老师
+        $relation = TeacherOrgService::getTeacherByOrgAndId($orgId, $teacherId);
+        if(empty($relation)) {
+            return $response->withJson(Valid::addErrors([],'teacher','have_no_binding_to_teacher'));
+        }
+
+        //检查当前机构是否绑定学生
+        $student = StudentService::getOrgStudent($orgId, $studentId);
+        if(empty($student)) {
+            return $response->withJson(Valid::addErrors([],'teacher','have_no_binding_to_student'));
+        }
+
+        //绑定失败返回错误，成功返回id
+        $errOrLastId = TeacherStudentService::bindStudent($orgId, $teacherId, $studentId);
+        if($errOrLastId instanceof ResponseError) {
+            return $response->withJson(Valid::addErrors([],'teacher',$errOrLastId->getErrorMsg()));
+        }
+
+        return $this->success($response, ['last_id' => $errOrLastId]);
+    }
+
+    /**
+     * 解绑学生，机构操作
+     * @param Request $request
+     * @param Response $response
+     * @param $args
+     * @return Response
+     */
+    public function unbindStudent(Request $request, Response $response, $args)
+    {
+        $rules = [
+            [
+                'key'        => 'teacher_id',
+                'type'       => 'required',
+                'error_code' => 'teacher_is_required'
+            ],
+            [
+                'key'        => 'student_id',
+                'type'       => 'required',
+                'error_code' => 'student_id_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $teacherId = $params['teacher_id'];
+        $studentId = $params['student_id'];
+        $orgId     = $this->getEmployeeOrgId();
+
+        $affectRows = TeacherStudentService::unbindStudent($orgId, $teacherId, $studentId);
+        if($affectRows == 0) {
+            return $response->withJson(Valid::addErrors([],'teacher','unbind_fail'));
+        }
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS
+        ]);
+    }
 }

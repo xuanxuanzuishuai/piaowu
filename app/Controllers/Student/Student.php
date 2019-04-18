@@ -44,63 +44,65 @@ class Student extends ControllerBase
         $params = $request->getParams();
         $rules = [
             [
-                'key' => 'app_id',
-                'type' => 'required',
-                'error_code' => 'app_id_is_required',
-            ],
-            [
-                'key' => 'page',
-                'type' => 'required',
+                'key'        => 'page',
+                'type'       => 'required',
                 'error_code' => 'page_is_required',
             ],
             [
-                'key' => 'count',
-                'type' => 'required',
+                'key'        => 'count',
+                'type'       => 'required',
                 'error_code' => 'count_is_required',
-            ],
-            [
-                'key' => 'app_id',
-                'type' => 'numeric',
-                'error_code' => 'app_id_must_be_numeric',
             ]
         ];
         $result = Valid::validate($params, $rules);
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, 200);
         }
-        //格式化分页参数
-        list($params['page'], $params['count']) = Util::formatPageCount($params);
-        //时间、条目 前后范围检查
-        $res = Util::checkRange($params['expend_class_start'], $params['expend_class_end'], 'expend_class_params_error');
-        if ($res['code'] != Valid::CODE_SUCCESS) {
-            return $response->withJson($res, StatusCode::HTTP_OK);
-        }
-        $res = Util::checkRange($params['remain_class_count_start'], $params['remain_class_count_end'], 'remain_class_count_error');
-        if ($res['code'] != Valid::CODE_SUCCESS) {
-            return $response->withJson($res, StatusCode::HTTP_OK);
-        }
-        $res = Util::checkRange($params['payed_date_start'], $params['payed_date_end'], 'payed_date_error');
-        if ($res['code'] != Valid::CODE_SUCCESS) {
-            return $response->withJson($res, StatusCode::HTTP_OK);
-        }
-        $res = Util::checkRange($params['last_book_date_start'], $params['last_book_date_end'], 'last_book_date_error');
-        if ($res['code'] != Valid::CODE_SUCCESS) {
-            return $response->withJson($res, StatusCode::HTTP_OK);
-        }
-        $res = Util::checkRange($params['last_in_class_date_start'], $params['last_in_class_date_end'], 'last_in_class_date_error');
-        if ($res['code'] != Valid::CODE_SUCCESS) {
-            return $response->withJson($res, StatusCode::HTTP_OK);
-        }
-        $res = Util::checkRange($params['last_remark_date_start'], $params['last_remark_date_end'], 'last_remark_date_error');
-        if ($res['code'] != Valid::CODE_SUCCESS) {
-            return $response->withJson($res, StatusCode::HTTP_OK);
+
+        $orgId = $this->getEmployeeOrgId();
+
+        list($data, $total) = StudentService::selectStudentByOrg($orgId,$params['page'], $params['count'], $params);
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => [
+                'students'    => $data,
+                'total_count' => $total
+            ],
+        ]);
+    }
+
+    public function listByOrg(Request $request, Response $response, $argv)
+    {
+        $params = $request->getParams();
+        $rules = [
+            [
+                'key'        => 'page',
+                'type'       => 'required',
+                'error_code' => 'page_is_required',
+            ],
+            [
+                'key'        => 'count',
+                'type'       => 'required',
+                'error_code' => 'count_is_required',
+            ]
+        ];
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, 200);
         }
 
-        $data = StudentService::fetchStudentListData($params['page'], $params['count'], $params);
+        $orgId = $params['org_id'] ?? null;
+
+        list($data, $total) = StudentService::selectStudentByOrg($orgId,$params['page'], $params['count'], $params);
+
         return $response->withJson([
-            'code' => 0,
-            'data' => $data
-        ], 200);
+            'code' => Valid::CODE_SUCCESS,
+            'data' => [
+                'students'    => $data,
+                'total_count' => $total
+            ],
+        ]);
     }
 
     /**

@@ -132,22 +132,30 @@ class TeacherModel extends Model
 
     /**
      * 获取入职老师列表，排除注册、待入职、不入职老师之外的所有老师
-     * @param $operator_id
+     * @param $orgId
      * @param $page
      * @param $count
      * @param $params
      * @param $ta_role_id
      * @return array
      */
-    public static function getTeacherList($operator_id, $page, $count, $params, $ta_role_id)
+    public static function getTeacherList($orgId, $page, $count, $params, $ta_role_id)
     {
-        $sql_list = "select t.*, " .
-            " '' as college_name ".
-            " from " . TeacherModel::$table . " as t " ;
-            //" left join " . TeacherCollegeModel::$table . " as co on t.college_id = co.id ";
-        $sql_count = "select count(t.id) as totalCount from " . TeacherModel::$table . " as t ";
+        $t = TeacherModel::$table;
+        $to = TeacherOrg::$table;
+        $s = TeacherOrg::STATUS_NORMAL;
 
-        list($where, $map) = self::whereForEntry($params, $operator_id, $ta_role_id);
+        if(empty($orgId)) {
+            $sql_list = "select t.*,'' as college_name from {$t} t ";
+            $sql_count = "select count(t.id) as totalCount from {$t} t";
+        } else {
+            $sql_list = "select t.*,'' as college_name from {$t} t inner join {$to} tr on 
+                    tr.teacher_id = t.id and tr.status = {$s} and tr.org_id = {$orgId} ";
+            $sql_count = "select count(t.id) as totalCount from {$t} t inner join {$to} tr on 
+                    tr.teacher_id = t.id and tr.status = {$s} and tr.org_id = {$orgId} ";
+        }
+
+        list($where, $map) = self::whereForEntry($params, $ta_role_id);
 
         //排序
         if (!empty($params['sort'])){
@@ -218,12 +226,11 @@ class TeacherModel extends Model
 
     /**
      * 在职老师搜索条件
-     * @param $operator_id
      * @param $params
      * @param $ta_role_id
      * @return array
      */
-    public static function whereForEntry($params, $operator_id = '', $ta_role_id = '')
+    public static function whereForEntry($params, $ta_role_id = '')
     {
         /** 以下是老师的搜索条件 */
         $where = " where t.status not in (".TeacherModel::ENTRY_REGISTER.", " . TeacherModel::ENTRY_WAIT . ", ".TeacherModel::ENTRY_NO.") ";

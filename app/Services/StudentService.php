@@ -16,6 +16,7 @@ use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\AppModel;
 use App\Models\StudentModel;
+use App\Models\StudentOrgModel;
 
 class StudentService
 {
@@ -100,6 +101,24 @@ class StudentService
         $data['total_count'] = $studentCount;
         $data['students'] = $students;
         return $data;
+    }
+
+    /**
+     * 查看机构下学生
+     * @param $orgId
+     * @param $page
+     * @param $count
+     * @param $params
+     * @return array
+     */
+    public static function selectStudentByOrg($orgId, $page, $count, $params)
+    {
+        list($records, $total) = StudentModel::selectStudentByOrg($orgId, $page, $count, $params);
+        foreach($records as &$r) {
+            $r['student_level'] = DictService::getKeyValue(Constants::DICT_TYPE_STUDENT_LEVEL, $r['student_level']);
+        }
+
+        return [$records, $total];
     }
 
     /**
@@ -449,5 +468,16 @@ class StudentService
     public static function getStudentCountryCode($studentId)
     {
         return StudentModel::getCountryCode($studentId);
+    }
+
+    /**
+     * 查询一条指定机构和学生id的记录
+     * @param $orgId
+     * @param $studentId
+     * @return array|null
+     */
+    public static function getOrgStudent($orgId, $studentId)
+    {
+        return StudentModel::getOrgStudent($orgId, $studentId);
     }
 }

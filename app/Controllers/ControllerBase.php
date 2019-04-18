@@ -49,4 +49,26 @@ class ControllerBase
     {
         $this->ci->view->render($response, $template, $data);
     }
+
+    public function success(Response $response, $data = [])
+    {
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $data
+        ]);
+    }
+
+    public function fail(Response $response, $key, $errorCode, $result = [])
+    {
+        return $response->withJson(Valid::addErrors($result, $key, $errorCode));
+    }
+
+    public function getEmployeeId()
+    {
+        return $this->ci['employee']['id'];
+    }
+
+    public function getEmployeeOrgId() {
+        return $this->ci['employee']['org_id'];
+    }
 }

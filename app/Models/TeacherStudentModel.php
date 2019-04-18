@@ -1,6 +1,7 @@
 <?php
 /**
  * Created by PhpStorm.
+<<<<<<< HEAD
  * User: mncu
  * Date: 2019/4/16
  * Time: 16:30
@@ -16,9 +17,11 @@ class TeacherStudentModel extends Model
 
     const STATUS_VALID = 1;
 
+    const STATUS_STOP = 0; //解除绑定
+    const STATUS_NORMAL = 1;  //绑定
+
     /** 获取老师管理的学生
      * @param $teacher_id
-     * @param $org_id
      * @return array
      */
     public static function getStudents($teacher_id) {
@@ -33,5 +36,27 @@ class TeacherStudentModel extends Model
             self::$table . ".org_id",
             OrganizationModel::$table . ".name(org_name)"
         ], $where);
+    }
+
+    /**
+     * 更新老师学生关系状态
+     * @param $orgId
+     * @param $teacherId
+     * @param $studentId
+     * @param $status
+     * @return int|null
+     */
+    public static function updateStatus($orgId, $teacherId, $studentId, $status)
+    {
+        $db         = MysqlDB::getDB();
+        $affectRows = $db->updateGetCount(self::$table, [
+            'status'      => $status,
+            'update_time' => time(),
+        ], [
+            'org_id'     => $orgId,
+            'teacher_id' => $teacherId,
+            'student_id' => $studentId,
+        ]);
+        return $affectRows;
     }
 }

@@ -577,4 +577,17 @@ class Util
         }
         return true;
     }
+
+    /**
+     * 组装limit语句
+     * @param $page
+     * @param $count
+     * @return string
+     */
+    public static function limitation($page, $count)
+    {
+        list($page, $count) = self::formatPageCount(['page' => $page,'count' => $count]);
+        $limit = ($page - 1) * $count;
+        return " limit {$limit},{$count} ";
+    }
 }

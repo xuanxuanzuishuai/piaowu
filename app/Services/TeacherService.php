@@ -466,24 +466,25 @@ class TeacherService
 
     /**
      * 获取老师列表
-     * @param $operator_id
+     * @param $orgId
      * @param $page
      * @param $count
      * @param $params
      * @return array
      */
-    public static function getList($operator_id, $page, $count, $params)
+    public static function getList($orgId, $page, $count, $params)
     {
         $ta_role_id = DictService::getKeyValue(Constants::DICT_TYPE_ROLE_ID, 'TA_ROLE_ID');
-        list($teachers, $totalCount) = TeacherModel::getTeacherList($operator_id, $page, $count, $params, $ta_role_id);
+        list($teachers, $totalCount) = TeacherModel::getTeacherList($orgId, $page, $count, $params, $ta_role_id);
 
-//        foreach ($teachers as $key => $teacher) {
-//            $teachers[$key]['app_extend'] = TeacherAppExtendService::getAppAndEmployeeExtendInfoByTeacherID($teacher['id']);
-//            $teachers[$key]['status_name'] = DictService::getKeyValue(Constants::DICT_TYPE_TEACHER_STATUS, $teacher['status']);
-//            $teachers[$key]['teacher_leave'] = TeacherLeaveService::getEffectLeave($teacher['id']);
-//            $teachers[$key]['tag_info'] = TeacherTagRelationsService::getTagInfoByTeacherID($teacher['id']);
-//            $teachers[$key]['mobile'] = Util::hideUserMobile($teacher['mobile']);
-//        }
+        foreach($teachers as &$t) {
+            $t['status']    = DictService::getKeyValue(Constants::DICT_TYPE_TEACHER_STATUS, $t['status']);
+            $t['gender']    = DictService::getKeyValue(Constants::DICT_TYPE_GENDER, $t['gender']);
+            $t['type']      = DictService::getKeyValue(Constants::DICT_TYPE_TEACHER_TYPE, $t['type']);
+            $t['level']     = DictService::getKeyValue(Constants::DICT_TYPE_TEACHER_LEVEL, $t['level']);
+            $t['education'] = DictService::getKeyValue(Constants::DICT_TYPE_TEACHER_EDUCATION, $t['education']);
+        }
+
         return [$teachers, $totalCount];
     }
 

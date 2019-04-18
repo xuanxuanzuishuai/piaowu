@@ -27,13 +27,21 @@ class EmployeeAuthCheckMiddleWare extends MiddlewareBase
         SimpleLogger::info('token',[$token]);
 
         if (empty($token) || empty($token[0])) {
-            SimpleLogger::error(__FILE__ . __LINE__, ['code' => 'JWT is empty', 'errs' => []]);
-
-            return $response->withJson(Valid::addErrors(['code' => -1], 'auth_check1', 'token_can_not_empty'));
-
+            // token为空时检查是否是开发环境，如果是，设置一个默认的登录用户
+            if(isset($_ENV['ENV_NAME']) && $_ENV['ENV_NAME'] == 'dev') {
+                if(empty($_ENV['DEV_EMPLOYEE_ID'])) {
+                    return $response->withJson(Valid::addErrors([],'error','lack_DEV_EMPLOYEE_ID_in_dev_environment'));
+                }
+                $cacheEmployeeId = $_ENV['DEV_EMPLOYEE_ID'];
+            }else{
+                SimpleLogger::error(__FILE__ . __LINE__, ['code' => 'JWT is empty', 'errs' => []]);
+                return $response->withJson(Valid::addErrors(['code' => -1], 'auth_check1', 'token_can_not_empty'));
+            }
+        }else{
+            $token = $token[0];
+            $cacheEmployeeId = EmployeeModel::getEmployeeToken($token);
         }
-        $token = $token[0];
-        $cacheEmployeeId = EmployeeModel::getEmployeeToken($token);
+
         if (empty($cacheEmployeeId)) {
             SimpleLogger::error(__FILE__ . ":" . __LINE__, ['code' => 'Employee had logouted', 'errs' => []]);
             return $response->withJson(Valid::addErrors(['code' => -1], 'auth_check', 'employee_has_logout'));
@@ -42,7 +50,6 @@ class EmployeeAuthCheckMiddleWare extends MiddlewareBase
         $employee = EmployeeModel::getById($cacheEmployeeId);
         // 延长登录token过期时间
         EmployeeModel::refreshEmployeeCache($token);
-
         $this->container['employee'] = $employee;
         global $orgId;
         $orgId = $employee['org_id'];

@@ -47,7 +47,7 @@ $arr = array(
     '/boss/classroom/modify' => array('method' => array('post'), 'call' => '\App\Controllers\Boss\Classroom:modify', 'middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
     '/boss/classroom/add' => array('method' => array('post'), 'call' => '\App\Controllers\Boss\Classroom:add', 'middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
 
-    '/student/student/search_students' => array('method'=> array('get'),'call'=> '\App\Controllers\Student\Student:list','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
+    '/student/student/list' => array('method'=> array('get'),'call'=> '\App\Controllers\Student\Student:list','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
     '/student/student/student_detail' => array('method'=> array('get'),'call'=> '\App\Controllers\Student\Student:detail','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
     '/student/student/student_modify' => array('method'=> array('post'),'call'=> '\App\Controllers\Student\Student:modify','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
     '/student/student/add_student' => array('method'=> array('post'),'call'=> '\App\Controllers\Student\Student:add','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
@@ -77,6 +77,45 @@ $arr = array(
     '/api/qiniu/token' => array('method'=> array('get'),'call'=> '\App\Controllers\API\Qiniu:token','middles' => array()),
     '/api/qiniu/callback' => array('method'=> array('get'),'call'=> '\App\Controllers\API\Qiniu:callback','middles' => array()),
     '/api/uictl/dropdown' =>array('method'=> array('get'),'call'=> '\App\Controllers\API\UICtl:dropdown','middles' => array()),
+
+    // 机构相关接口
+
+    //添加或更新机构
+    '/org_web/org/add_or_update' => [ // for super admin
+        'method'  => ['post'],
+        'call'    => '\App\Controllers\Org\Org:addOrUpdate',
+        'middles' => ['\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare'],
+    ],
+    //机构列表
+    '/org_web/org/list' => [ // for super admin
+        'method'  => ['get'],
+        'call'    => '\App\Controllers\Org\Org:list',
+        'middles' => ['\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare'],
+    ],
+    //管理员可以查看所有老师，或者指定机构下老师
+    '/teacher/teacher/list_by_org' => [ // for super admin
+        'method'  => ['get'],
+        'call'    => '\App\Controllers\Teacher\Teacher:listByOrg',
+        'middles' => ['\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare'],
+    ],
+    //管理员可以查看所有学生，或者指定机构下学生
+    '/student/student/list_by_org' => [ // for super admin
+        'method'  => ['get'],
+        'call'    => '\App\Controllers\Student\Student:listByOrg',
+        'middles' => ['\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare'],
+    ],
+    //机构管理员绑定老师和学生
+    '/org_web/teacher/bind_student' => [
+        'method'  => ['post'],
+        'call'    => '\App\Controllers\Teacher\Teacher:bindStudent',
+        'middles' => ['\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare'],
+    ],
+    //机构管理员解绑老师和学生
+    '/org_web/teacher/unbind_student' => [
+        'method'  => ['post'],
+        'call'    => '\App\Controllers\Teacher\Teacher:unbindStudent',
+        'middles' => ['\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare'],
+    ],
 );
 
 /** @var App $app */

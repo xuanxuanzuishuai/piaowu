@@ -248,4 +248,7 @@ class Constants
     const DICT_KEY_ALIOSS_CALLBACK_URL = "callback_url";
     const DICT_KEY_ALIOSS_EXPIRE = "expire";
     const DICT_KEY_ALIOSS_MAX_FILE_SIZE = "max_file_size";
+
+    //机构状态
+    const DICT_TYPE_ORG_STATUS = 'org_status';
 };
