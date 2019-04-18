@@ -1,7 +1,7 @@
 <?php
 /**
  * Created by PhpStorm.
- * User: fll
+ * Student: fll
  * Date: 2018/11/9
  * Time: 6:14 PM
  */
@@ -9,496 +9,352 @@
 namespace App\Services;
 
 
-use App\Libs\Constants;
-use App\Libs\Dict;
-use App\Libs\UserCenter;
-use App\Libs\Valid;
-use App\Models\CourseModel;
-use App\Models\PrivilegeModel;
-use App\Models\ScheduleModel;
-use App\Models\ScheduleUserModel;
+use App\Libs\APIValid;
+use App\Libs\NewSMS;
+use App\Libs\RedisDB;
+use App\Libs\SimpleLogger;
+use App\Libs\Util;
+use APP\Models\AppConfigModel;
 use App\Models\StudentAppModel;
-use App\Models\StudentModel;
-use App\Services\Queue\QueueService;
+use App\Models\GiftCodeModel;
+use GuzzleHttp\Client;
 
 class StudentAppService
 {
+    const VALIDATE_CODE_CACHE_KEY_PRI = 'v_code_';
+    const VALIDATE_CODE_TIME_CACHE_KEY_PRI = 'v_code_time_';
+    const VALIDATE_CODE_EX = 300;
+    const VALIDATE_CODE_WAIT_TIME = 60;
+
     /**
-     * 获取学生应用列表
-     * @param $studentId
-     * @return array
+     * 手机验证码登录
+     *
+     * @param string $mobile 手机号
+     * @param int $code 短信验证码
+     * @return array [0]errorCode [1]登录数据
      */
-    public static function getStudentAppList($studentId)
+    public static function login($mobile, $code)
     {
-        $student_app = StudentAppModel::getStudentAppList($studentId);
-        $studentWeiXinMap = [];//UserWeiXinService::getWeiXinMapByApp($studentId);
-        $instrumentMap = DictService::getTypeMap(Constants::DICT_TYPE_INSTRUMENT);
-        $data = [];
-        foreach($student_app as $app){
-            $row = [];
-            $row['id'] = $app['id'];
-            $row['app_name'] = $app['name'];
-            $row['cc_id'] = $app['cc_id'];
-            $row['cc_name'] = $app['cc_name'];
-            $row['ca_id'] = $app['ca_id'];
-            $row['ca_name'] = $app['ca_name'];
-            $row['is_bind_weixin'] = empty($studentWeiXinMap[$app['app_id']]['open_id']) ? 0 : 1;
-            $data[$app['instrument']]['instrument_name'] = $instrumentMap[$app['instrument']];
-            $data[$app['instrument']]['has_instrument'] = $app['has_instrument'];
-            $data[$app['instrument']]['level'] = $app['level'];
-            $data[$app['instrument']]['start_year'] = $app['start_year'];
-            $data[$app['instrument']]['apps'][] = $row;
+        // 检查验证码
+        if (!self::checkValidateCode($mobile, $code)) {
+            return ['validate_code_error'];
         }
-        return $data;
-    }
 
-    /**
-     * 更新学生应用数据
-     * @param $data
-     */
-    public static function updateStudentApp($data)
-    {
-        StudentAppModel::updateStudentAppData($data);
-    }
+        $student = StudentAppModel::getStudentInfo(null, $mobile);
 
-    /**
-     * 获取学生应用数据
-     * @param $studentId
-     * @return array
-     */
-    public static function getStudentAppMap($studentId)
-    {
-        $apps = StudentAppModel::getStudentAppList($studentId);
-        $data = [];
-        foreach ($apps as $app){
-            $data[$app['id']] = $app;
+        // 新用户自动注册
+        if (empty($student)) {
+            $newStudent = self::studentRegister($mobile);
+
+            if (empty($newStudent)) {
+                return ['student_register_fail'];
+            }
+
+            $student = StudentAppModel::getStudentInfo(null, $mobile);
         }
-        return $data;
+
+        if (empty($student)) {
+            return ['unknown_student'];
+        }
+
+        $token = StudentAppModel::genStudentToken($student['id']);
+        StudentAppModel::setStudentToken($student['id'], $token);
+
+        $loginData = [
+            'id' => $student['id'],
+            'uuid' => $student['uuid'],
+            'username' => $student['name'],
+            'avatar' => Util::getQiNiuFullImgUrl($student['thumb']),
+            'mobile' => $student['mobile'],
+            'sub_status' => $student['sub_status'],
+            'sub_start_date' => $student['sub_start_date'],
+            'sub_end_date' => $student['sub_end_date'],
+            'config' => '{}',
+            'token' => $token
+        ];
+
+        return [null, $loginData];
+    }
+
+
+    /**
+     * token登录
+     *
+     * @param string $mobile 手机号
+     * @param string $token 登录返回的token
+     * @return array [0]errorCode [1]登录数据
+     */
+    public static function loginWithToken($mobile, $token)
+    {
+        $student = StudentAppModel::getStudentInfo(null, $mobile);
+        $cacheToken = StudentAppModel::getStudentToken($student['id']);
+
+        if (empty($cacheToken) || $cacheToken != $token) {
+            return ['invalid_token'];
+        }
+
+        $loginData = [
+            'id' => $student['id'],
+            'uuid' => $student['uuid'],
+            'studentname' => $student['name'],
+            'avatar' => Util::getQiNiuFullImgUrl($student['thumb']),
+            'mobile' => $student['mobile'],
+            'sub_status' => $student['sub_status'],
+            'sub_start_date' => $student['sub_start_date'],
+            'sub_end_date' => $student['sub_end_date'],
+            'config' => '{}',
+            'token' => $token
+        ];
+
+        return [null, $loginData];
     }
 
     /**
-     * 更新学生状态
-     * @param $studentId
-     * @param $status
-     * @param $appId
-     * @return int
+     * 注册新用户
+     *
+     * @param $mobile
+     * @return null|array 失败返回null 成功返回['student_id' => x, 'uuid' => x, 'is_new' => x]
      */
-    public static function updateStudentStatus($studentId, $status, $appId)
+    public static function studentRegister($mobile)
     {
-        if (self::isPaidStatus($studentId, $appId)) {
+        $params = [
+            'mobile' => $mobile,
+            'source_id' => 1,
+            'app_id' => 1,
+        ];
+
+        $client = new Client();
+
+        $url = AppConfigModel::get(AppConfigModel::ERP_URL_KEY);
+        $api = AppConfigModel::get(AppConfigModel::ERP_API_STUDENT_REGISTER_KEY);
+        $response = $client->request('POST', $url . $api, [
+            'form_params' => $params,
+            'debug' => false
+        ]);
+
+        $body = $response->getBody()->getContents();
+        $statusCode = $response->getStatusCode();
+        if (200 != $statusCode) {
+            SimpleLogger::error(__FILE__ . __LINE__, [
+                'msg' => 'student reg error, network error.',
+                'statusCode' => $statusCode
+            ]);
             return null;
         }
-        return StudentAppModel::updateStudentStatus($studentId, $status, $appId);
+
+        $data = json_decode($body, true);
+        if (empty($data)) {
+            SimpleLogger::error(__FILE__ . __LINE__, [
+                'msg' => 'student reg error, response body decode error.',
+                'body' => $body,
+                'data' => $data
+            ]);
+            return null;
+        }
+
+        if ($data['code'] != APIValid::CODE_SUCCESS) {
+            SimpleLogger::info(__FILE__ . __LINE__, [
+                'msg' => 'student reg failure.',
+                'data' => $data
+            ]);
+            return null;
+        }
+
+        $student = self::addStudent($mobile);
+
+        if (empty($student)) {
+            SimpleLogger::info(__FILE__ . __LINE__, [
+                'msg' => 'student reg error, add new student error.',
+            ]);
+            return null;
+        }
+
+        return $student;
     }
 
     /**
-     * 更新第一次支付时间
-     * @param $studentId
-     * @param $appId
-     * @param $firstPayTime
-     * @return int
+     * 添加app新用户
+     *
+     * @param string $mobile 手机号
+     * @return array|null 用户数据
      */
-    public static function updateStudentFirstPayTime($studentId,$appId,$firstPayTime){
-        return StudentAppModel::updateFirstPayTime($studentId,$appId,$firstPayTime);
+    public static function addStudent($mobile)
+    {
+        $student = StudentService::getStudentByMobile($mobile);
+        $user = [
+            'student_id' => $student['id'],
+            'uuid' => $student['uuid'],
+            'mobile' => $mobile,
+            'create_time' => time(),
+            'sub_status' => StudentAppModel::SUB_STATUS_ON,
+            'sub_start_date' => 0,
+            'sub_end_date' => 0,
+        ];
+
+        $id = StudentAppModel::insertRecord($user);
+        return empty($id) ? null : $user;
     }
 
     /**
-     * 获取学生应用ID
-     * @param $studentId
-     * @param $appId
+     * 发送短信验证码
+     * 有效期5分钟
+     * 重复发送间隔1分钟
+     *
+     * @param string $mobile 手机号
+     * @return null|string
+     */
+    public static function sendValidateCode($mobile)
+    {
+        $redis = RedisDB::getConn();
+        $sendTimeCacheKey = self::VALIDATE_CODE_TIME_CACHE_KEY_PRI . $mobile;
+        $lastSendTime = $redis->get($sendTimeCacheKey);
+
+        $now = time();
+        if (!empty($lastSendTime) && $now - $lastSendTime <= self::VALIDATE_CODE_WAIT_TIME) {
+            return 'send_validate_code_in_wait_time';
+        }
+
+        $code = rand(1000, 9999);
+        $sms = new NewSMS(AppConfigModel::get(AppConfigModel::SMS_URL_CACHE_KEY),
+            AppConfigModel::get(AppConfigModel::SMS_API_CACHE_KEY));
+        $success = $sms->sendValidateCode($mobile, $code);
+        if (!$success) {
+            return 'send_validate_code_failure';
+        }
+
+        $redis = RedisDB::getConn();
+        $cacheKey = self::VALIDATE_CODE_CACHE_KEY_PRI . $mobile;
+        $redis->setex($cacheKey, self::VALIDATE_CODE_EX, $code);
+        $redis->setex($sendTimeCacheKey, self::VALIDATE_CODE_WAIT_TIME, $now);
+
+        return null;
+    }
+
+    /**
+     * 检查手机验证码
+     *
+     * @param string $mobile 手机号
+     * @param int $code 验证码
      * @return bool
      */
-    public static function getStudentAppId($studentId, $appId)
+    public static function checkValidateCode($mobile, $code)
     {
-        $studentApp = StudentAppModel::getStudentApp($studentId, $appId);
-        if(empty($studentApp)){
+        if (empty($mobile) || empty($code)) {
             return false;
         }
-        return $studentApp['id'];
-    }
 
-    /**
-     * CRM获取业务线学生信息, 没有则创建
-     * @param $mobile
-     * @param $appId
-     * @param $studentName
-     * @param $channelId
-     * @param $uuId
-     * @param $employeeId
-     * @return mixed
-     * @throws \Exception
-     */
-    public static function crmAddStudentApp($mobile, $appId, $studentName, $channelId, $uuId, $employeeId)
-    {
-        $studentApp = StudentAppModel::getStudentAppByMobile($mobile, $appId);
-        if (empty($studentApp)) {
-           $student = StudentService::getStudentByMobile($mobile);
-           if (empty($student)) {
-               // add student
-               $authAppId = UserCenter::AUTH_APP_ID_STUDENT;
-               $result = StudentService::addStudent($authAppId, $studentName, $mobile, $channelId, $uuId);
-
-               if (!empty($result) && $result['code'] == Valid::CODE_PARAMS_ERROR) {
-                   return Valid::addErrors([], 'student_id', 'insert_student_failed');
-               }
-               $student['id'] = $result['data']['studentId'];
-           }
-
-           // add student_app
-           self::addStudentApp($student['id'], $appId, $employeeId);
-           return StudentAppModel::getStudentAppByMobile($mobile, $appId);
-        }
-        return $studentApp;
-    }
-
-    /**
-     * 添加学生应用信息
-     * @param $studentId
-     * @param $appId
-     * @param $ccId
-     * @param $start_year
-     * @param $has_instrument
-     * @return int|mixed|null|string
-     */
-    public static function addStudentApp($studentId, $appId, $ccId = null, $start_year = '', $has_instrument = '')
-    {
-        $now = time();
-        $data = [
-            'student_id' => $studentId,
-            'app_id' => $appId,
-            'create_time' => $now,
-            'status'=> StudentAppModel::STATUS_REGISTER
-        ];
-        if (!empty($ccId)) {
-            $data['cc_id'] = $ccId;
-            $data['cc_update_time'] = $now;
-        }
-        !empty($start_year) && $data['start_year'] = $start_year;
-        !empty($has_instrument) && $data['has_instrument'] = $has_instrument;
-        return StudentAppModel::insertRecord($data);
-    }
-
-    /**
-     * 添加学生应用信息
-     * @param $studentId
-     * @param $params
-     * @return int|mixed|null|string
-     */
-    public static function erpAddStudentApp($studentId, $params)
-    {
-        $now = time();
-        $data = [
-            'student_id' => $studentId,
-            'app_id' => $params['app_id'],
-            'create_time' => $now,
-            'status'=> StudentAppModel::STATUS_REGISTER
-        ];
-        if(!empty($params['has_instrument'])){
-            $data['has_instrument'] = $params['has_instrument'];
-        }
-        if(!empty($params['start_year'])){
-            $data['start_year'] = $params['start_year'];
-        }
-        if(!empty($params['level'])){
-            $data['level'] = $params['level'];
-        }
-        if(!empty($params['is_manual'])){
-            $data['is_manual'] = $params['is_manual'];
-        }
-        if(!empty($params['ca_id'])){
-            $data['ca_id'] = $params['ca_id'];
-            $data['ca_update_time'] = $now;
-        }
-        return StudentAppModel::insertRecord($data);
-    }
-
-    /**
-     * 更新学生应用信息
-     * @param $studentAppId
-     * @param $params
-     */
-    public static function crmUpdateData($studentAppId, $params)
-    {
-        $studentAppData = [];
-        if (isset($params['level'])) {
-            $studentAppData['level'] = $params['level'];
-        }
-        if (isset($params['start_y'])) {
-            $studentAppData['start_year'] = $params['start_y'];
-        }
-        if (isset($params['has_instrument'])) {
-            $studentAppData['has_instrument'] = $params['has_instrument'];
-        }
-        if(!empty($studentAppData)){
-            $studentAppData['update_time'] = time();
-            StudentAppModel::updateRecord($studentAppId, $studentAppData);
-        }
-    }
-
-    /**
-     * 更新学生设备测试课信息
-     * @param $studentId
-     * @param $appId
-     * @param $deviceScheduleId
-     * @param $deviceStatus
-     */
-    public static function updateStudentDevice($studentId, $appId, $deviceScheduleId, $deviceStatus)
-    {
-        StudentAppModel::updateStudentDeviceSchedule($studentId, $appId, $deviceScheduleId, $deviceStatus);
-    }
-
-    /**
-     * 学生状态改变队列
-     * @param $scheduleId
-     * @param $studentStatus
-     * @throws \Exception
-     */
-    public static function pushStudentStatusQueue($scheduleId, $studentStatus)
-    {
-        $schedule = ScheduleService::getScheduleInfo($scheduleId);
-        $studentId = $schedule['student_id'];
-        $appId = $schedule['app_id'];
-        if ($schedule['course_type'] == CourseModel::TYPE_TEST && !self::isPaidStatus($studentId, $appId)) {
-            $student = StudentService::getStudentById($studentId);
-            $queue = new QueueService();
-            switch ($studentStatus) {
-                case StudentAppModel::STATUS_CANCEL:
-                    $queue->StudentStatusCancel($student['uuid'], $scheduleId, $appId, $studentId);
-                    break;
-                case StudentAppModel::STATUS_ATTEND:
-                    if ($schedule['s_student_status'] == ScheduleUserModel::STUDENT_STATUS_ATTEND && $schedule['status'] == ScheduleModel::STATUS_IN_CLASS) {
-                        $queue->StudentStatusAttend($student['uuid'], $scheduleId, $appId, $schedule['s_enter_time'], $studentId);
-                    }
-                    break;
-                case StudentAppModel::STATUS_NOT_ATTEND:
-                    $queue->StudentStatusNotAttend($student['uuid'], $scheduleId, $appId, $studentId);
-                    break;
-                case StudentAppModel::STATUS_FINISH:
-                    $queue->StudentStatusFinish($student['uuid'], $scheduleId, $appId, $studentId, $schedule['s_teacher_status']);
-                    break;
-            }
-        }
-    }
-
-    /**
-     * 获取学生ID
-     * @param $studentAppId
-     * @return mixed
-     */
-    public static function getStudentIdByStudentAppId($studentAppId)
-    {
-        $studentApp = StudentAppModel::getById($studentAppId);
-        return $studentApp['student_id'];
-    }
-
-    /**
-     * 获取studentApp信息
-     * @param $studentAppId
-     * @return mixed|null
-     */
-    public static function getStudentAppById($studentAppId)
-    {
-        return StudentAppModel::getById($studentAppId);
-    }
-
-
-    /**
-     * 获取学生的详细信息
-     * @param $studentId
-     * @param $appId
-     * @return mixed
-     */
-    public static function getStudentInfo($studentId, $appId)
-    {
-        return StudentAppModel::getStudentInfo($studentId, $appId);
-    }
-
-    /**
-     * 获取学生的详细信息
-     * @param $studentAppId
-     * @param $employeeId
-     * @return mixed
-     */
-    public static function updateStudentCC($studentAppId, $employeeId)
-    {
-        return StudentAppModel::updateStudentAppCC($studentAppId, $employeeId);
-    }
-
-    /**
-     * 获取学生appId
-     * @param $studentId
-     * @return array
-     */
-    public static function getAppIds($studentId)
-    {
-        return StudentAppModel::getAppIds($studentId);
-    }
-
-    /**
-     * 更新学生应用信息
-     * @param $studentAppId
-     * @param $params
-     */
-    public static function refereeUpdateData($studentAppId, $params)
-    {
-        $t = time();
-        $studentAppData = [];
-        if (isset($params['start_year'])) {
-            $studentAppData['start_year'] = $params['start_year'];
-        }
-        if (isset($params['has_instrument'])) {
-            $studentAppData['has_instrument'] = $params['has_instrument'];
-        }
-        $studentAppData['update_time'] = $t;
-        StudentAppModel::updateRecord($studentAppId, $studentAppData);
-    }
-
-    public static function crmUpdateStudentStatus($studentAppId, $status)
-    {
-        $t = time();
-        $studentAppData['status'] = $status;
-        $studentAppData['update_time'] = $t;
-        StudentAppModel::updateRecord($studentAppId, $studentAppData);
-    }
-
-    /**
-     * 更新学生等级
-     * @param $studentId
-     * @param $appId
-     * @param $level
-     * @return int|null
-     */
-    public static function updateStudentLevel($studentId, $appId, $level)
-    {
-        return StudentAppModel::updateStudentLevel($studentId, $appId, $level);
-    }
-
-    /**
-     * 获取学生等级
-     * @param $studentId
-     * @param $appId
-     * @return mixed
-     */
-    public static function getStudentLevel($studentId, $appId)
-    {
-        return StudentAppModel::getLevel($studentId, $appId);
-    }
-
-    /**
-     * 低级学生等级
-     * @param $level
-     * @return bool
-     */
-    public static function isLowStudentLevel($level)
-    {
-        return in_array($level, [StudentAppModel::STUDENT_LEVEL_ENLIGNTENMENT, StudentAppModel::STUDENT_LEVEL_STANDARD]);
-    }
-
-    /**
-     * 获取学生数据
-     * @param $id
-     * @param $level
-     * @param $studentId
-     * @param $operatorId
-     * @return mixed
-     */
-    public static function updateStudentAppLevel($level, $id, $studentId, $operatorId)
-    {
-        $count = StudentAppModel::updateRecord($id, ['level' => $level]);
-        $content = '手动修改, 级别：' . Dict::getStudentLevel($level);
-        CommentsService::addStudentLevelRecord($studentId, $content, $operatorId, '');
-        return $count;
-    }
-
-    /**
-     * 获取学生数据
-     * @param $id
-     * @return mixed
-     */
-    public static function getStudentData($id)
-    {
-        return StudentAppModel::getStudentData($id);
-    }
-
-
-    public static function checkModifyStudentLevelPrivilege($operatorId)
-    {
-        $pathStr = Constants::DICT_MODIFY_STUDENT_LEVEL_URI;
-        $method = 'post';
-        $employee = EmployeeService::getById($operatorId);
-        $privilege = PrivilegeModel::getPIdByUri($pathStr, $method);
-        $pIds = EmployeePrivilegeService::getEmployeePIds($employee);
-        return EmployeePrivilegeService::hasPermission($privilege, $pIds, $pathStr, $method);
-    }
-
-    /**
-     * 导入付费学员等级信息
-     * @param $data
-     * @return int
-     */
-    public static function importPayStudentLevel($data) {
-        // 获取学员等级
-        $studentLevel = DictService::getList(Constants::DICT_TYPE_STUDENT_LEVEL);
-
-        // key_value，key_code作为值的新数组
-        $level = array_column($studentLevel, 'key_code', 'key_value');
-
-        $cleanData = [];
-        $mobile = [];
-        $mobileLevel = [];
-
-        foreach ($data as $key => $value) {
-            // 整理后的数据
-            $mobileLevel[$value[0]] = $level[$value[1]];
-            // 学员的手机号码
-            $mobile [] = $value[0];
-        }
-
-        // 获取手机号码对应的学员ID
-        $studentInfo = StudentModel::getRecords(['mobile'  => $mobile]);
-        // 学员手机号对应的ID(应用表中的student_id)
-        $mobileStudentId = array_column($studentInfo, null,'mobile');
-        foreach ($mobileLevel as $k => $v) {
-            if(!empty($mobileStudentId[$k]['mobile']) && $k == $mobileStudentId[$k]['mobile']) {
-                $cleanData[$v][] = $mobileStudentId[$k]['id'];
-            }
-        }
-
-        $cnt = 0;
-        // 更新次数较少，更新次数与等级个数有关
-        foreach ($cleanData as $k => $v) {
-            // 批量更新学员等级信息,$k为等级信息，$v学员ID
-            $count = StudentAppModel::batchUpdateStudentLevel($k, $v);
-            $cnt += $count;
-        }
-        return $cnt;
-    }
-
-    /**
-     * 批量更新学生课管
-     * @param  array $students 
-     * @param  int $ca_id    
-     * @return 
-     */
-    public static function batchUpdateStudentCA($app_id,$students,$ca_id){
-        return StudentAppModel::batchUpdateRecord([
-            'ca_id' => $ca_id, 
-            'ca_update_time' => time()
-        ],['student_id' => $students,'app_id' => $app_id]);
-    }
-
-    /**
-     * 获取学生状态
-     * @param $studentId
-     * @param $appId
-     * @return mixed
-     */
-    public static function isPaidStatus($studentId, $appId)
-    {
-        $status = StudentAppModel::getStudentStatus($studentId, $appId);
-        if ($status == StudentAppModel::STATUS_PAID) {
+        // 超级验证码，可以直接在redis里设置或清空
+        $redis = RedisDB::getConn();
+        $superCodeCache = $redis->get('SUPER_VALIDATE_CODE');
+        if ($superCodeCache == $code) {
             return true;
         }
-        return false;
+
+        // 审核专用账号和验证码
+        $reviewStudentMobile = AppConfigModel::get('REVIEW_USER_MOBILE');
+        $reviewValidateCode = AppConfigModel::get('REVIEW_VALIDATE_CODE');
+        if ($mobile == $reviewStudentMobile && $code == $reviewValidateCode) {
+            return true;
+        }
+
+        $cacheKey = self::VALIDATE_CODE_CACHE_KEY_PRI . $mobile;
+        $codeCache = $redis->get($cacheKey);
+
+        if ($codeCache != $code) {
+            return false;
+        }
+
+        $redis->del($cacheKey);
+        return true;
+    }
+
+    /**
+     * 使用激活码
+     * @param string $code 激活码
+     * @param int $studentID 用户
+     * @return array [0]errorCode [1]成功返回到期时间，失败返回null
+     */
+    public static function redeemGiftCode($code, $studentID)
+    {
+        // 验证code
+        $gift = GiftCodeModel::getByCode($code);
+        if (empty($gift)) {
+            return ['gift_code_error'];
+        }
+
+        switch ($gift['code_status']) {
+            case GiftCodeModel::CODE_STATUS_HAS_REDEEMED:
+                return ['gift_code_has_been_redeemed'];
+            case GiftCodeModel::CODE_STATUS_INVALID:
+                return ['gift_code_is_invalid'];
+        }
+
+        // 添加时间
+
+        $student = StudentAppModel::getStudentInfo($studentID, null);
+        if (empty($student)) {
+            return ['unknown_student'];
+        }
+
+        $today = date('Ymd');
+        if (empty($student['sub_end_date']) || $student['sub_end_date'] < $today) {
+            $subEndDate = $today;
+        } else {
+            $subEndDate = $student['sub_end_date'];
+        }
+        $subEndTime = strtotime($subEndDate);
+
+        $timeStr = '+' . $gift['valid_num'] . ' ';
+        switch ($gift['valid_units']) {
+            case GiftCodeModel::CODE_TIME_DAY:
+                $timeStr .= 'day';
+                break;
+            case GiftCodeModel::CODE_TIME_MONTH:
+                $timeStr .= 'month';
+                break;
+            case GiftCodeModel::CODE_TIME_YEAR:
+                $timeStr .= 'year';
+                break;
+            default:
+                $timeStr .= 'day';
+        }
+        $newSubEndDate = date('Ymd', strtotime($timeStr, $subEndTime));
+
+        $studentUpdate = ['sub_end_date' => $newSubEndDate];
+        if (empty($student['sub_start_date'])) {
+            $studentUpdate['sub_start_date'] = $today;
+        }
+        StudentAppModel::updateRecord($student['id'], $studentUpdate);
+
+        GiftCodeModel::updateRecord($gift['id'], [
+            'apply_student' => $student['student_id'],
+            'be_active_time' => time(),
+            'code_status' => GiftCodeModel::CODE_STATUS_HAS_REDEEMED,
+        ]);
+
+        $result = [
+            'new_sub_end_date' => $newSubEndDate,
+            'generate_channel' => $gift['generate_channel'],
+            'buyer' => $gift['buyer'] ?? 0,
+            'buy_time' => $gift['buy_time'] ?? 0,
+        ];
+
+        return [null, $result];
+    }
+
+    /**
+     * 获取用户服务订阅状态
+     * @param $studentID
+     * @return bool
+     */
+    public static function getSubStatus($studentID)
+    {
+        $student = StudentAppModel::getStudentInfo($studentID, null);
+        if ($student['sub_status'] != StudentAppModel::SUB_STATUS_ON) {
+            return false;
+        }
+
+        $endTime = strtotime($student['sub_end_date']) + 86400;
+        return $endTime > time();
     }
 }

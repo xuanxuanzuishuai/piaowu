@@ -1,328 +1,158 @@
 <?php
 /**
  * Created by PhpStorm.
- * User: fll
+ * Student: fll
  * Date: 2018/11/6
  * Time: 8:09 PM
  */
 
 namespace App\Models;
 
-
 use App\Libs\MysqlDB;
+use App\Libs\RedisDB;
 
 class StudentAppModel extends Model
 {
-    public static $table = 'student_app';
-    public static $redisExpire = 1;
+    const SUB_STATUS_ON = 1;
+    const SUB_STATUS_OFF = 0;
 
-    const STATUS_REGISTER = 1;      // 注册
-    const STATUS_BOOK = 2;          // 已预约
-    const STATUS_CONFIRM = 3;       // 待出席
-    const STATUS_ATTEND = 4;        // 已出席
-    const STATUS_FINISH = 41;       // 已完课
-    const STATUS_NOT_ATTEND = 5;    // 未出席
-    const STATUS_CANCEL = 6;        // 已取消
-    const STATUS_PAID = 7;          // 付费
+    public static $table = 'student';
+    public static $cacheKeyTokenPri = "token_";
+    public static $cacheKeyUidPri = "uid_";
+    public static $redisExpire = 2592000; // 30 days
 
-    const DEVICE_PASS = 1;          // 设备测试通过
-    const DEVICE_NOT_PASS = 0;      // 设备测试未通过
-    const MANUAL_ENTRY = 1;         // 手动添加学生
-
-    /** @var int 乐器演奏等级  0 未定级 1 启蒙 2 标准 3 资深 4 高级 5 特级 */
-    const STUDENT_LEVEL_UNDEFINED = 0;      // 未定级
-    const STUDENT_LEVEL_ENLIGNTENMENT = 1;  // 启蒙
-    const STUDENT_LEVEL_STANDARD = 2;       // 标准
-    const STUDENT_LEVEL_SENIOR = 3;         // 资深
-    const STUDENT_LEVEL_ADVANCED = 4;       // 高级
-    const STUDENT_LEVEL_SPECIAL = 5;       // 特级
-
-
-    const FIRST_PAY_YES = 1;      // 首次付费
-    const FIRST_PAY_NO = 0;       // 不是首次付费
-
-    /**
-     * 获取学生应用列表
-     * @param $studentId
-     * @return array
-     */
-    public static function getStudentAppList($studentId)
+    public static function getStudentInfo($studentID, $mobile)
     {
+        if (empty($studentID) && empty($mobile)) {
+            return null;
+        }
+
+        $where = [];
+        if (!empty($studentID)) {
+            $where[self::$table . '.id'] = $studentID;
+        }
+        if (!empty($mobile)) {
+            $where[self::$table . '.mobile'] = $mobile;
+        }
+
         $db = MysqlDB::getDB();
-        $sql = "SELECT `app`.*, `ea`.name, `ea`.instrument, 
-                       `cau`.`name` AS `ca_name`,
-                       `ccu`.`name` AS `cc_name`
-                FROM `".self::$table."` AS `app`
-                LEFT JOIN `".AppModel::$table."` AS `ea` ON app.app_id = ea.id 
-                LEFT JOIN `".EmployeeModel::$table."` AS `cau` ON app.`ca_id` = `cau`.`id`
-                LEFT JOIN `".EmployeeModel::$table."` AS `ccu` ON app.`cc_id` = `ccu`.`id`
-                WHERE `app`.`student_id` = :student_id ";
-        return $db->queryAll($sql, [':student_id'=>$studentId]);
+        return $db->get(self::$table, [
+            '[><]' . StudentModel::$table => ['student_id' => 'id']
+        ], [
+            self::$table . '.id',
+            self::$table . '.student_id',
+            self::$table . '.uuid',
+            self::$table . '.mobile',
+            self::$table . '.create_time',
+            self::$table . '.status',
+            self::$table . '.sub_status',
+            self::$table . '.sub_start_date',
+            self::$table . '.sub_end_date',
+            StudentModel::$table . '.name',
+            StudentModel::$table . '.thumb',
+        ], $where);
     }
 
-    /**
-     * 更新学生应用数据
-     * @param $data
-     */
-    public static function updateStudentAppData($data)
+    public static function genStudentToken($studentID)
     {
-        $appData = self::makeStudentAppData($data);
-        foreach($appData as $item) {
-            self::updateRecord($item['id'], $item);
-        }
+        $rand = mt_rand(1, 9999);
+        $token = md5(uniqid($studentID . $rand, true));
+        return $token;
     }
 
     /**
-     * 生成学生应用更新数据
-     * @param $instruments
-     * @return array
-     */
-    public static function makeStudentAppData($instruments)
-    {
-        $data = [];
-        $t = time();
-        foreach($instruments as $instrument){
-            foreach($instrument['apps'] as $app){
-                $row = [];
-                $row['id'] = $app['id'];
-                if(!empty($app['ca_id'])){
-                    if(self::checkUpdateCa($app['ca_id'], $app['id'])){
-                        $row['ca_id'] = $app['ca_id'];
-                        $row['ca_update_time'] = $t;
-                    }
-                }
-                $row['has_instrument'] = $instrument['has_instrument'];
-                $row['level'] = $instrument['level'];
-                $row['start_year'] = $instrument['start_year'];
-                $row['update_time'] = $t;
-                $data[] = $row;
-            }
-        }
-
-        return $data;
-    }
-
-    /**
-     * 判断学员CA是否变更
-     * @param $caId
-     * @param $studentAppId
+     * 缓存用户token，用于登录信息获取
+     * @param $studentID
+     * @param $token
      * @return bool
      */
-    public static function checkUpdateCa($caId, $studentAppId){
-        $data = self::getById($studentAppId);
-        return $caId == $data['ca_id'] ? false : true;
+    public static function setStudentToken($studentID, $token)
+    {
+        $redis = RedisDB::getConn();
+
+        self::delStudentToken($studentID);
+
+        $tokenKey = self::$cacheKeyTokenPri . $token;
+        $redis->setex($tokenKey, self::$redisExpire, $studentID);
+
+        $uidKey = self::$cacheKeyUidPri  . $studentID;
+        $redis->setex($uidKey, self::$redisExpire, $token);
+
+        return true;
     }
 
     /**
-     * 更新学生状态
-     * @param $studentId
-     * @param $status
-     * @param $appId
-     * @return int|null
+     * 操作延长过期时间
+     * @param $studentID
+     * @return bool
      */
-    public static function updateStudentStatus($studentId, $status, $appId)
+    public static function refreshStudentToken($studentID)
     {
-        return self::batchUpdateRecord([
-            'status' => $status,
-            'update_time' => time()
-        ], [
-            'student_id' => $studentId,
-            'app_id' => $appId
-        ]);
-    }
+        $redis = RedisDB::getConn(self::$redisDB);
 
-    /**
-     * 更新设备测试课课程状态
-     * @param $studentId
-     * @param $appId
-     * @param $deviceScheduleId
-     * @param $deviceStatus
-     * @return int|null
-     */
-    public static function updateStudentDeviceSchedule($studentId, $appId, $deviceScheduleId, $deviceStatus)
-    {
-        $update = [
-            'device_schedule_id' => $deviceScheduleId,
-            'update_time' => time()
-        ];
-        if (isset($deviceStatus)) {
-            $update['device_status'] = $deviceStatus;
+        $uidKey = self::$cacheKeyUidPri  . $studentID;
+        $ret = $redis->expire($uidKey, self::$redisExpire);
+        if ($ret == 0) {
+            return false;
         }
-        return self::batchUpdateRecord($update, [
-            'student_id' => $studentId,
-            'app_id' => $appId
-        ]);
+
+        $token = $redis->get($uidKey);
+        if (empty($token)) {
+            $redis->del($uidKey);
+            return false;
+        }
+
+        $tokenKey = self::$cacheKeyTokenPri . $token;
+        $ret = $redis->expire($tokenKey, self::$redisExpire);
+        if ($ret == 0) {
+            $redis->del($uidKey);
+            return false;
+        }
+
+        $uid = $redis->get($tokenKey);
+        if ($uid != $studentID) {
+            $redis->del([$uidKey, $tokenKey]);
+            return false;
+        }
+
+        return true;
     }
 
     /**
-     * 更新学生等级
-     * @param $studentId
-     * @param $appId
-     * @param $level
-     * @return int|null
+     * 用uid获取token
+     * @param $studentID
+     * @return string
      */
-    public static function updateStudentLevel($studentId, $appId, $level)
+    public static function getStudentToken($studentID)
     {
-        return self::batchUpdateRecord([
-            'level' => $level,
-            'update_time' => time()
-        ], [
-            'student_id' => $studentId,
-            'app_id' => $appId
-        ]);
+        $redis = RedisDB::getConn(self::$redisDB);
+        $uidKey = self::$cacheKeyUidPri  . $studentID;
+        return $redis->get($uidKey);
     }
 
     /**
-     * 获取学生应用数据
-     * @param $studentId
-     * @param $appId
-     * @return mixed
+     * 用token获取uid
+     * @param $token
+     * @return string
      */
-    public static function getStudentApp($studentId, $appId)
+    public static function getStudentUid($token)
     {
-        return MysqlDB::getDB()->get(self::$table, '*', ['student_id' => $studentId, 'app_id' => $appId]);
+        $redis = RedisDB::getConn(self::$redisDB);
+        $tokenKey = self::$cacheKeyTokenPri . $token;
+        return $redis->get($tokenKey);
     }
 
     /**
-     * 根据手机号、业务线获取学生信息
-     * @param $mobile
-     * @param $appId
-     * @return mixed
+     * 删除用户token cache
+     * @param $studentID
      */
-    public static function getStudentAppByMobile($mobile, $appId)
+    public static function delStudentToken($studentID)
     {
-        return MysqlDB::getDB()->get(self::$table, [
-            '[><]' . StudentModel::$table => ['student_id' => 'id']
-        ], [
-            self::$table . '.level',
-            self::$table . '.student_id',
-            StudentModel::$table . '.name',
-            StudentModel::$table . '.mobile',
-            StudentModel::$table . '.uuid',
-            StudentModel::$table . '.channel_id'
-        ], [
-            StudentModel::$table . '.mobile' => $mobile,
-            self::$table . '.app_id' => $appId
-        ]);
-    }
+        $redis = RedisDB::getConn(self::$redisDB);
 
-    /**
-     * 获取学生的详细信息
-     * @param $studentId
-     * @param $appId
-     * @return mixed
-     */
-    public static function getStudentInfo($studentId, $appId)
-    {
-        return MysqlDB::getDB()->get(self::$table, [
-            '[><]' . StudentModel::$table => ['student_id' => 'id']
-        ], [
-            self::$table . '.id(student_app_id)',
-            self::$table . '.level',
-            self::$table . '.student_id',
-            self::$table . '.start_year',
-            self::$table . '.status',
-            self::$table . '.has_instrument',
-            self::$table . '.device_schedule_id',
-            self::$table . '.device_status',
-            self::$table . '.create_time',
-            StudentModel::$table . '.name',
-            StudentModel::$table . '.uuid',
-            StudentModel::$table . '.birthday',
-            StudentModel::$table . '.gender',
-            StudentModel::$table . '.channel_id',
-            StudentModel::$table . '.channel_level',
-            StudentModel::$table . '.mobile'
-        ], [
-            self::$table . '.student_id' => $studentId,
-            self::$table . '.app_id' => $appId
-        ]);
-    }
-
-    /**
-     * 更新学生CC数据
-     * @param $studentAppId
-     * @param $employeeId
-     * @return int|null
-     */
-    public static function updateStudentAppCC($studentAppId, $employeeId)
-    {
-        $update = [
-            'cc_id' => $employeeId,
-            'cc_update_time' => time()
-        ];
-        return self::updateRecord($studentAppId, $update);
-    }
-
-    /**
-     * 获取学生的AppId
-     * @param $studentId
-     * @return array
-     */
-    public static function getAppIds($studentId)
-    {
-        return MysqlDB::getDB()->select(self::$table, 'app_id', ['student_id' => $studentId]);
-    }
-
-    /**
-     * 获取学生等级
-     * @param $studentId
-     * @param $appId
-     * @return mixed
-     */
-    public static function getLevel($studentId, $appId)
-    {
-        return MysqlDB::getDB()->get(self::$table, 'level', ['student_id' => $studentId, 'app_id' => $appId]);
-    }
-
-    /**
-     * 获取学生数据
-     * @param $id
-     * @return mixed
-     */
-    public static function getStudentData($id)
-    {
-        return MysqlDB::getDB()->get(self::$table.'(sa)', [
-        '[><]'.StudentModel::$table.'(s)' => ['sa.student_id' => 'id']
-        ], ['s.id(student_id)', 's.uuid', 'sa.app_id', 'sa.status'], ['sa.id' => $id]);
-    }
-
-    /**
-    * 更新第一次支付时间
-    * @param $studentId
-    * @param $appId
-    * @param $firstPayTime
-    * @return int
-    */
-    public static function updateFirstPayTime($studentId,$appId,$firstPayTime)
-    {
-        $where = [
-            'student_id'     => $studentId,
-            'app_id'         => $appId,
-            'first_pay_time' => null,
-        ];
-        return MysqlDB::getDB()->update(self::$table, ['first_pay_time' => $firstPayTime], $where)->rowCount();
-    }
-
-
-    /**
-     * 批量更新学员等级
-     * @param $level
-     * @param $where
-     * @return int
-     */
-    public static  function batchUpdateStudentLevel($level, $where) {
-        return StudentAppModel::batchUpdateRecord(['level' => $level], ['student_id'  => $where]);
-    }
-
-    /**
-     * 获取学生状态
-     * @param $studentId
-     * @param $appId
-     * @return mixed
-     */
-    public static function getStudentStatus($studentId, $appId)
-    {
-        return MysqlDB::getDB()->get(self::$table, 'status', ['student_id' => $studentId, 'app_id' => $appId]);
+        $uidKey = self::$cacheKeyUidPri  . $studentID;
+        $token = $redis->get($uidKey);
+        $tokenKey = self::$cacheKeyTokenPri . $token;
+        $redis->del([$uidKey, $tokenKey]);
     }
 }

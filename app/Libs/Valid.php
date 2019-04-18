@@ -26,7 +26,7 @@ class Valid
      * @param array $rules inspection rules
      * @return array
      */
-    public static function validate($params, $rules, $app = false)
+    public static function validate($params, $rules)
     {
         if (empty($rules)) {
             return array(
@@ -166,6 +166,37 @@ class Valid
         array_push($result['data']['errors'][$key], [
             'err_no' => $errorCode,
             'err_msg' => sprintf(Lang::getWord($errorCode), ...$args)
+        ]);
+
+        return $result;
+    }
+
+    /**
+     * 添加错误信息(APP端)
+     * @param array $result 原有错误信息
+     * @param $errorCode
+     * @param array $args
+     * @return array
+     */
+    public static function addAppErrors($result, $errorCode, ...$args)
+    {
+        if (empty($result) || $result['code'] === self::CODE_SUCCESS) {
+            $result = [
+                'code' => self::CODE_PARAMS_ERROR,
+                'errors' => []
+            ];
+        }
+
+        $msgTemp = Lang::getWord($errorCode);
+        if (empty($msgTemp)) {
+            $msg = $errorCode;
+        } else {
+            $msg = sprintf($msgTemp, ...$args);
+        }
+
+        array_push($result['errors'], [
+            'err_no' => $errorCode,
+            'err_msg' => $msg
         ]);
 
         return $result;
