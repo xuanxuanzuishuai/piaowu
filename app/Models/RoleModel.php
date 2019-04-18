@@ -25,13 +25,12 @@ class RoleModel extends Model
 
     public static function insertRole($insert)
     {
-        $db = MysqlDB::getDB();
-        return $db->insertGetID(self::$table, $insert);
+        return MysqlDB::getDB()->insertGetID(self::$table, $insert);
     }
 
     public static function updateRole($id, $update)
     {
-       $result = self::updateRecord($id, $update);
+       $result = self::updateRecord($id, $update,false);
        return ($result && $result > 0);
     }
 }

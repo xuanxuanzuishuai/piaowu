@@ -19,7 +19,6 @@ class PlaySaveModel extends Model
 
     public static function getByOpern($userID, $opernID)
     {
-        $db = MysqlDB::getDB();
-        return $db->get(self::$table, '*', ['user_id' => $userID, 'opern_id' => $opernID]);
+        return self::getRecord(['user_id' => $userID, 'opern_id' => $opernID],'*',false);
     }
 }

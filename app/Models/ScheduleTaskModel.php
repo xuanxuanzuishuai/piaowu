@@ -28,9 +28,10 @@ class ScheduleTaskModel extends Model
      * @param $params
      * @param int $page
      * @param int $count
+     * @param bool $isOrg
      * @return array
      */
-    public static function getSTList($params, $page = -1, $count = 20)
+    public static function getSTList($params, $page = -1, $count = 20,$isOrg = true)
     {
         $db = MysqlDB::getDB();
         $where = [];
@@ -45,6 +46,11 @@ class ScheduleTaskModel extends Model
         }
         if (isset($params['weekday'])) {
             $where['weekday'] = $params['weekday'];
+        }
+        if($isOrg == true) {
+            global $orgId;
+            if($orgId > 0 )
+                $where['org_id'] = $orgId;
         }
         $totalCount = 0;
         if ($page != -1) {
@@ -116,7 +122,7 @@ class ScheduleTaskModel extends Model
      */
     public static function addST($insert)
     {
-        return MysqlDB::getDB()->insertGetID(self::$table, $insert);
+        return self::insertRecord($insert);
     }
 
     /**
@@ -130,12 +136,15 @@ class ScheduleTaskModel extends Model
         return ($result && $result > 0);
     }
 
-    public static function getSTByRId($rId)
-    {
-        return MysqlDB::getDB()->select(self::$table, '*', ['relation_id' => $rId]);
-    }
 
-    public static function getSTListByUser($userIds, $userRole, $time = null)
+    /**
+     * @param $userIds
+     * @param $userRole
+     * @param null $time
+     * @param bool $isOrg
+     * @return array
+     */
+    public static function getSTListByUser($userIds, $userRole, $time = null, $isOrg = true)
     {
         $time = empty($time) ?? time();
         $where = [
@@ -151,6 +160,12 @@ class ScheduleTaskModel extends Model
                 'stu.status' => array(ScheduleTaskUserModel::STATUS_NORMAL,ScheduleTaskUserModel::STATUS_BACKUP),
             ]
         ];
+
+        if($isOrg == true) {
+            global $orgId;
+            if($orgId > 0 )
+                $where['org_id'] = $orgId;
+        }
         $columns = [
             'st.id',
             'stu.user_id',

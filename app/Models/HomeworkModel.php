@@ -27,7 +27,7 @@ class HomeworkModel extends Model
      */
     public static function createHomework($opern_id, $book_id, $teacher_id, $student_id, $create_time, $stop_time, $content)
     {
-        return MysqlDB::getDB()->insertGetID(HomeworkModel::$table, [
+        return self::insertRecord([
             'opern_id' => $opern_id,
             'book_id' => $book_id,
             'create_time' => $create_time,
@@ -42,13 +42,20 @@ class HomeworkModel extends Model
      * @param int $teacher_id
      * @param int $page 从1开始
      * @param int $limit
+     * @param bool $isOrg
      * @return array
      */
-    public static function getRecentBookIds($teacher_id, $page, $limit)
+    public static function getRecentBookIds($teacher_id, $page, $limit,$isOrg = true)
     {
+        $where = "";
+        if($isOrg == true) {
+            global $orgId;
+            if($orgId > 0 )
+                $where = " and org_id = ".$orgId;
+        }
         $start = ($page - 1) * $limit;
         $query = "select distinct book_id from " . HomeworkModel::$table .
-            " where teacher_id=" . $teacher_id . " order by create_time desc limit " . $start . ", " . $limit;
+            " where teacher_id=" . $teacher_id . $where ." order by create_time desc limit " . $start . ", " . $limit;
         $bookIdList = MysqlDB::getDB()->queryAll($query);
         return $bookIdList;
     }
@@ -57,13 +64,20 @@ class HomeworkModel extends Model
      * @param int $teacher_id
      * @param int $page
      * @param int $limit
+     * @param bool $isOrg
      * @return array
      */
-    public static function getRecentOpernIds($teacher_id, $page, $limit)
+    public static function getRecentOpernIds($teacher_id, $page, $limit,$isOrg = true)
     {
+        $where = "";
+        if($isOrg == true) {
+            global $orgId;
+            if($orgId > 0 )
+                $where = " and org_id = ".$orgId;
+        }
         $start = ($page - 1) * $limit;
         $query = "select distinct opern_id from " . HomeworkModel::$table .
-            " where teacher_id=" . $teacher_id . " order by create_time desc limit " . $start . ", " . $limit;
+            " where teacher_id=" . $teacher_id . $where. " order by create_time desc limit " . $start . ", " . $limit;
         $opernIdList = MysqlDB::getDB()->queryAll($query);
         return $opernIdList;
     }

@@ -40,9 +40,10 @@ class CourseModel extends Model
      * @param $page
      * @param $count
      * @param $params
+     * @param bool $isOrg
      * @return array
      */
-    public static function getCourseListByFilter($page, $count, $params) {
+    public static function getCourseListByFilter($page, $count, $params,$isOrg = true) {
         $where = [];
         $db = MysqlDB::getDB();
 
@@ -71,7 +72,11 @@ class CourseModel extends Model
         if (isset($params['status']) && $params['status'] !== '') {
             $where['AND']['c.status'] = $params['status'];
         }
-
+        if($isOrg == true) {
+            global $orgId;
+            if($orgId > 0 )
+                $where['c.org_id'] = $orgId;
+        }
         $columns = [
             "c.id(course_id)",
             "c.name",
@@ -204,7 +209,7 @@ class CourseModel extends Model
      * @return int|null
      */
     public static function updateCourseRecordById($courseId, $updateData) {
-        return self::updateRecord($courseId, $updateData);
+        return self::updateRecord($courseId,$updateData);
     }
 
     /**
@@ -214,15 +219,15 @@ class CourseModel extends Model
      */
     public static function getCoursesByType($types)
     {
-        return MysqlDB::getDB()->select(self::$table, [
+        return self::getRecords([
+            self::$table . '.status' => self::COURSE_STATUS_NORMAL,
+            self::$table . '.type' => $types
+        ],[
             self::$table . '.id(course_id)',
             self::$table . '.name',
             self::$table . '.duration',
             self::$table . '.app_id',
             self::$table . '.type'
-        ], [
-            self::$table . '.status' => self::COURSE_STATUS_NORMAL,
-            self::$table . '.type' => $types
         ]);
     }
 

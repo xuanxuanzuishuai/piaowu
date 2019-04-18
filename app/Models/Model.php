@@ -18,15 +18,13 @@ class Model
     protected static $table = "";
     protected static $redisDB;
     protected static $redisExpire = 0;
+    const ORG_ID_STR = "org_id";
 
-    const GENDER_MAN = '1';
-    const GENDER_WOMAN = '2';
-    const GENDER_UNKNOWN = '3';
-
-    private static function getDefaultCacheKeyPri(){
+    private static function getDefaultCacheKeyPri()
+    {
         $className = get_called_class();
         $className = substr($className, strrpos($className, '\\') + 1);
-        return 'erp' . Util::humpToUnderline(preg_replace('/Model$/i','',$className)) . '_';
+        return 'erp' . Util::humpToUnderline(preg_replace('/Model$/i', '', $className)) . '_';
     }
 
     public static function createCacheKey($key, $pri = null)
@@ -52,7 +50,7 @@ class Model
         $expireTime = static::$redisExpire > 0 ? static::$redisExpire : Util::TIMESTAMP_ONEWEEK;
         if (empty($res)) {
             $ret = $db->get(static::$table, '*', ['id' => $id]);
-            if (!empty($ret)){
+            if (!empty($ret)) {
                 $redis->set($cacheKey, json_encode($ret));
                 $expire = $_ENV['DEBUG_MODE'] ? 100 : $expireTime;
                 if ($expire > 0) {
@@ -92,11 +90,11 @@ class Model
         $redis = RedisDB::getConn(static::$redisDB);
         $idArr = $db->select(static::$table, 'id', $where);
         $prefix = static::createCacheKey('', $pri);
-        $cacheKeys = array_map(function($v) use ($prefix) {
+        $cacheKeys = array_map(function ($v) use ($prefix) {
             return $prefix . $v;
         }, $idArr);
 
-        if (count($cacheKeys) > 0){
+        if (count($cacheKeys) > 0) {
             return $redis->del($cacheKeys);
         }
         return 0;
@@ -105,23 +103,40 @@ class Model
     /**
      * 获取指定记录
      * @param $where
+     * @param array $fields
+     * @param bool $isOrg
      * @return mixed
      */
-    public static function getRecord($where)
+    public static function getRecord($where,$fields = [], $isOrg = true)
     {
+        if (empty($fields)) {
+            $fields = '*';
+        }
+        if ($isOrg == true) {
+            global $orgId;
+            if ($orgId > 0 &&  empty($where[self::ORG_ID_STR]))
+                $where[self::ORG_ID_STR] = $orgId;
+        }
         $db = MysqlDB::getDB();
-        return $db->get(static::$table, '*', $where);
+        return $db->get(static::$table, $fields, $where);
     }
 
     /**
      * 获取指定字段
      * @param $fields
      * @param $where
+     * @param bool $isOrg
      * @return array
      */
-    protected static function getOneFields($fields, $where){
-        if (empty($fields)){
+    protected static function getOneFields($fields, $where, $isOrg = true)
+    {
+        if (empty($fields)) {
             $fields = '*';
+        }
+        if ($isOrg == true) {
+            global $orgId;
+            if ($orgId > 0 &&  empty($where[self::ORG_ID_STR]))
+                $where[self::ORG_ID_STR] = $orgId;
         }
         $db = MysqlDB::getDB();
         return $db->get(static::$table, $fields, $where);
@@ -132,12 +147,18 @@ class Model
      * 获取记录列表
      * @param       $where
      * @param array $fields
+     * @param bool $isOrg
      * @return array
      */
-    public static function getRecords($where, $fields = [])
+    public static function getRecords($where, $fields = [], $isOrg = true)
     {
-        if (empty($fields)){
+        if (empty($fields)) {
             $fields = '*';
+        }
+        if ($isOrg == true) {
+            global $orgId;
+            if ($orgId > 0 &&  empty($where[self::ORG_ID_STR]))
+                $where[self::ORG_ID_STR] = $orgId;
         }
         $db = MysqlDB::getDB();
         return $db->select(static::$table, $fields, $where);
@@ -147,12 +168,19 @@ class Model
      * 更新记录内容
      * @param $id
      * @param $data
+     * @param bool $isOrg
      * @return int|null
      */
-    public static function updateRecord($id, $data)
+    public static function updateRecord($id, $data, $isOrg = true)
     {
-        if (empty($data)){
+        $where = ['id' => $id];
+        if (empty($data)) {
             return 0;
+        }
+        if ($isOrg == true) {
+            global $orgId;
+            if ($orgId > 0 &&  empty($where[self::ORG_ID_STR]))
+                $where[self::ORG_ID_STR] = $orgId;
         }
         $db = MysqlDB::getDB();
         $cnt = $db->updateGetCount(static::$table, $data, ['id' => $id]);
@@ -164,12 +192,18 @@ class Model
      * 更新多条记录内容
      * @param $data
      * @param $where
+     * @param bool $isOrg
      * @return int|null
      */
-    public static function batchUpdateRecord($data, $where)
+    public static function batchUpdateRecord($data, $where, $isOrg = true)
     {
-        if (empty($data)){
+        if (empty($data)) {
             return 0;
+        }
+        if ($isOrg == true) {
+            global $orgId;
+            if ($orgId > 0 &&  empty($where[self::ORG_ID_STR]))
+                $where[self::ORG_ID_STR] = $orgId;
         }
         $db = MysqlDB::getDB();
         self::batchDelCache($where);
@@ -180,12 +214,18 @@ class Model
     /**
      * 添加数据
      * @param $data
+     * @param bool $isOrg
      * @return int|mixed|null|string
      */
-    public static function insertRecord($data)
+    public static function insertRecord($data, $isOrg = true)
     {
-        if (empty($data)){
+        if (empty($data)) {
             return 0;
+        }
+        if ($isOrg == true) {
+            global $orgId;
+            if ($orgId > 0 && empty($data[self::ORG_ID_STR]))
+                $data[self::ORG_ID_STR] = $orgId;
         }
         $db = MysqlDB::getDB();
         return $db->insertGetID(static::$table, $data);
@@ -194,11 +234,20 @@ class Model
     /**
      * 批量插入数据
      * @param $arr
+     * @param bool $isOrg
      * @return bool
      */
-    public static function batchInsert($arr){
-        if (empty($arr)){
+    public static function batchInsert($arr, $isOrg = true)
+    {
+        if (empty($arr)) {
             return false;
+        }
+        if ($isOrg == true) {
+            global $orgId;
+            foreach ($arr as $key => $val) {
+                if ($orgId > 0 && empty($val[self::ORG_ID_STR]))
+                    $arr[$key][self::ORG_ID_STR] = $orgId;
+            }
         }
         $db = MysqlDB::getDB();
         $pdo = $db->insert(static::$table, $arr);
@@ -208,14 +257,15 @@ class Model
     /**
      * @param       $where
      * @param array $join
-     * @param int   $page
-     * @param int   $pageSize
-     * @param bool  $onlyCount
+     * @param int $page
+     * @param int $pageSize
+     * @param bool $onlyCount
      * @param array $fields
      * @return array
      */
-    public static function getPage($where, $page = -1, $pageSize = 0, $onlyCount = false, $fields = [], $join = [], $order = [], $group = []){
-        if (empty($fields)){
+    public static function getPage($where, $page = -1, $pageSize = 0, $onlyCount = false, $fields = [], $join = [], $order = [], $group = [])
+    {
+        if (empty($fields)) {
             $fields = '*';
         }
         $db = MysqlDB::getDB();
@@ -223,19 +273,19 @@ class Model
         $order = $where['ORDER'];
         unset($where['ORDER']);
         $cnt = 0;
-        if (empty($join)){
-            $cnt = $db->count(static::$table,$where);
+        if (empty($join)) {
+            $cnt = $db->count(static::$table, $where);
         } else {
-            $cnt = $db->count(static::$table, $join,'*',$where);
+            $cnt = $db->count(static::$table, $join, '*', $where);
         }
         $where['ORDER'] = $order;
-        if ($onlyCount){
+        if ($onlyCount) {
             return [$cnt, []];
         }
-        if (!empty($page) && $page > 0 && !empty($pageSize) && $pageSize > 0 && empty($where['LIMIT'] && empty($where['limit']))){
+        if (!empty($page) && $page > 0 && !empty($pageSize) && $pageSize > 0 && empty($where['LIMIT'] && empty($where['limit']))) {
             $where['LIMIT'] = [($page - 1) * $pageSize, $pageSize];
         }
-        if (!empty($join)){
+        if (!empty($join)) {
             $data = $db->select(static::$table, $join, $fields, $where);
         } else {
             $data = $db->select(static::$table, $fields, $where);

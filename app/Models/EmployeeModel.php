@@ -37,22 +37,21 @@ class EmployeeModel extends Model
      */
     public static function getEmployeeByLoginName($loginName)
     {
-        $user = MysqlDB::getDB()->get(self::$table, [
-            self::$table . '.id',
-            self::$table . '.name',
-            self::$table . '.role_id',
-            self::$table . '.status',
-            self::$table . '.login_name',
-            self::$table . '.pwd',
-            self::$table . '.is_leader',
-            self::$table . '.last_update_pwd_time',
-        ], [
-            'AND' => [
+        return self::getRecord(
+            [
                 'login_name' => $loginName,
-                self::$table . '.status' => self::STATUS_NORMAL
-            ]
-        ]);
-        return $user;
+                'status' => self::STATUS_NORMAL
+            ],
+            [
+                'id',
+                'name',
+                'role_id',
+                'status',
+                'login_name',
+                'pwd',
+                'is_leader',
+                'last_update_pwd_time',
+            ]);
     }
 
     /**
@@ -74,7 +73,8 @@ class EmployeeModel extends Model
      * @param $token
      * @return bool
      */
-    public static function refreshEmployeeCache($token){
+    public static function refreshEmployeeCache($token)
+    {
         $redis = RedisDB::getConn(self::$redisDB);
         $cacheKey = self::createCacheKey($token, self::$cacheKeyTokenPri);
         $redis->expire($cacheKey, self::$redisExpire);
@@ -107,15 +107,20 @@ class EmployeeModel extends Model
      * @param int $page
      * @param int $count
      * @param $where
+     * @param bool $isOrg
      * @return mixed
      */
-    public static function getEmployees($page = 0, $count = 0, $where)
+    public static function getEmployees($page = 0, $count = 0, $where,$isOrg = true)
     {
         $db = MysqlDB::getDB();
         if ($page > 0 && $count > 0) {
             $where['LIMIT'] = [($page - 1) * $count, $count];
         }
-
+        if($isOrg == true) {
+            global $orgId;
+            if($orgId > 0 )
+                $where[self::$table.'.org_id'] = $orgId;
+        }
         $users = $db->select(self::$table, [
             '[>]' . RoleModel::$table => ['role_id' => 'id']
         ], [
@@ -137,10 +142,16 @@ class EmployeeModel extends Model
     /**
      * 获取员工总数
      * @param $where
+     * @param bool $isOrg
      * @return number
      */
-    public static function getEmployeeCount($where)
+    public static function getEmployeeCount($where,$isOrg = true)
     {
+        if($isOrg == true) {
+            global $orgId;
+            if($orgId > 0 )
+                $where[self::$table.'.org_id'] = $orgId;
+        }
         return MysqlDB::getDB()->count(self::$table, '*', $where);
     }
 
@@ -151,8 +162,7 @@ class EmployeeModel extends Model
      */
     public static function insertEmployee($insert)
     {
-        $db = MysqlDB::getDB();
-        return $db->insertGetID(self::$table, $insert);
+        return self::insertRecord($insert);
     }
 
     /**
@@ -189,14 +199,14 @@ class EmployeeModel extends Model
     /**
      * 获取指定雇员
      * @param $studentCaIds
+     * @param bool $isOrg
      * @return array
      */
     public static function getEmployeeWithIds($studentCaIds)
     {
-        return MysqlDB::getDB()->select(self::$table, '*', [
+        return self::getRecords([
             'status' => self::STATUS_NORMAL,
-            'id' => $studentCaIds
-        ]);
+            'id' => $studentCaIds]);
     }
 
     /**
@@ -206,10 +216,11 @@ class EmployeeModel extends Model
      */
     public static function getEmployeeWithRole($roleId)
     {
-        return MysqlDB::getDB()->select(self::$table, ['id', 'name'], [
+        return self::getRecords([
             'role_id' => $roleId,
-            'status' => self::STATUS_NORMAL
-        ]);
+            'status' => self::STATUS_NORMAL],
+            ['id', 'name']
+            );
     }
 
     /**
@@ -219,14 +230,14 @@ class EmployeeModel extends Model
      */
     public static function selectEmployeePwdExpire($notExpireRole)
     {
-        return MysqlDB::getDB()->select(self::$table, [
-            self::$table . '.id(employee_id)',
-            'expire_days' => Medoo::raw("floor((last_update_pwd_time + " . EmployeeService::ONE_MONTH_TIMESTAMP . " - unix_timestamp()) / 86400)")
-        ], [
+        return self::getRecords([
             'role_id[!]' => $notExpireRole,
-            self::$table . '.status' => self::STATUS_NORMAL,
+            'status' => self::STATUS_NORMAL,
             'last_update_pwd_time[<=]' => strtotime(date("Y-m-d") . "-25 day"),
             'last_update_pwd_time[>]' => strtotime(date("Y-m-d") . "-30 day")
+        ],[
+            'id(employee_id)',
+            'expire_days' => Medoo::raw("floor((last_update_pwd_time + " . EmployeeService::ONE_MONTH_TIMESTAMP . " - unix_timestamp()) / 86400)")
         ]);
     }
 
@@ -266,9 +277,9 @@ class EmployeeModel extends Model
     public static function getByUuid($uuid)
     {
         $user = MysqlDB::getDB()->get(self::$table, [
-                '[>]' . DeptModel::$table => ['dept_id' => 'id'],
-                '[>]' . EmployeeSeatModel::$table => ['id' => 'employee_id']
-            ],[
+            '[>]' . DeptModel::$table => ['dept_id' => 'id'],
+            '[>]' . EmployeeSeatModel::$table => ['id' => 'employee_id']
+        ], [
             self::$table . '.id',
             self::$table . '.name',
             self::$table . '.role_id',
