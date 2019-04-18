@@ -255,7 +255,7 @@ class Model
     }
 
     /**
-     * @param       $where
+     * @param array $where
      * @param array $join
      * @param int $page
      * @param int $pageSize
@@ -263,7 +263,7 @@ class Model
      * @param array $fields
      * @return array
      */
-    public static function getPage($where, $page = -1, $pageSize = 0, $onlyCount = false, $fields = [], $join = [], $order = [], $group = [])
+    public static function getPage($where, $page = -1, $pageSize = 0, $onlyCount = false, $fields = [], $join = [])
     {
         if (empty($fields)) {
             $fields = '*';
@@ -272,24 +272,29 @@ class Model
         $join = empty($join) ? null : $join;
         $order = $where['ORDER'];
         unset($where['ORDER']);
-        $cnt = 0;
+
         if (empty($join)) {
             $cnt = $db->count(static::$table, $where);
         } else {
             $cnt = $db->count(static::$table, $join, '*', $where);
         }
-        $where['ORDER'] = $order;
+
         if ($onlyCount) {
             return [$cnt, []];
         }
+
+        $where['ORDER'] = $order;
+
         if (!empty($page) && $page > 0 && !empty($pageSize) && $pageSize > 0 && empty($where['LIMIT'] && empty($where['limit']))) {
             $where['LIMIT'] = [($page - 1) * $pageSize, $pageSize];
         }
+
         if (!empty($join)) {
             $data = $db->select(static::$table, $join, $fields, $where);
         } else {
             $data = $db->select(static::$table, $fields, $where);
         }
+
         return [$cnt, $data];
     }
 }
