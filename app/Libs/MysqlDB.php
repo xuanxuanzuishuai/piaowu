@@ -217,6 +217,9 @@ class MysqlDB
      * @return mixed
      */
     public static function addOrgId($where,$column = '') {
+        if (!empty($where['org_id'])) {
+            return $where;
+        }
         global $orgId ;
         $column = empty($column)?"org_id":$column;
         $where[$column] = $orgId;
