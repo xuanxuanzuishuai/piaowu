@@ -44,6 +44,8 @@ class EmployeeAuthCheckMiddleWare extends MiddlewareBase
         EmployeeModel::refreshEmployeeCache($token);
 
         $this->container['employee'] = $employee;
+        global $orgId;
+        $orgId = $employee['org_id'];
         $response = $next($request, $response);
 
         return $response;

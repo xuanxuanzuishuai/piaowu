@@ -123,7 +123,7 @@ class Course extends ControllerBase
             [
                 'key' => 'num',
                 'type' => 'required',
-                'error_code' => 'course_thumb_is_required',
+                'error_code' => 'num_is_required',
             ],
         ];
 
@@ -355,7 +355,7 @@ class Course extends ControllerBase
             [
                 'key' => 'num',
                 'type' => 'required',
-                'error_code' => 'period_thumb_is_required',
+                'error_code' => 'num_is_required',
             ],
         ];
 

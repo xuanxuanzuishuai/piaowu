@@ -9,6 +9,7 @@
 namespace App\Models;
 
 
+use App\Controllers\Schedule\ScheduleTaskUser;
 use App\Libs\MysqlDB;
 
 class ScheduleTaskModel extends Model
@@ -16,6 +17,12 @@ class ScheduleTaskModel extends Model
     public static $table = "schedule_task";
     public static $redisExpire = 0;
     public static $redisDB;
+
+    const STATUS_CANCEL = 0;//取消排课
+    const STATUS_NORMAL = 1;//正常排课
+    const STATUS_BEGIN = 2;//开课
+    const STATUS_END = 3;//结课
+    const STATUS_TEMP = 4;//临时调课
 
     /**
      * @param $params
@@ -36,16 +43,42 @@ class ScheduleTaskModel extends Model
         if (isset($params['status'])) {
             $where['status'] = $params['status'];
         }
-        // 获取总数
-        $totalCount = $db->count(self::$table, "*", $where);
-        // 分页设置
-        $where['LIMIT'] = [($page - 1) * $count, $count];
+        if (isset($params['weekday'])) {
+            $where['weekday'] = $params['weekday'];
+        }
+        $totalCount = 0;
+        if ($page != -1) {
+            // 获取总数
+            $totalCount = $db->count(self::$table, "*", $where);
+            // 分页设置
+            $where['LIMIT'] = [($page - 1) * $count, $count];
+        }
         // 排序设置
         $where['ORDER'] = [
-            'classroom_id' => 'ASC',
-            'create_time' => 'DESC'
+            'relation_id' => 'ASC',
+            'weekday' => 'ASC',
+            'start_time' => 'ASC'
         ];
-        $result = $db->select(self::$table, '*', $where);
+        $join = [
+            '[>]'.CourseModel::$table." (c)" => ['c.id'=>'course_id'],
+            '[>]'.ClassroomModel::$table." (cr)" => ['cr.id'=>'classroom_id'],
+        ];
+        $result = $db->select(self::$table." (st)", $join,[
+            'st.id',
+            'st.course_id',
+            'st.start_time',
+            'st.end_time',
+            'st.classroom_id',
+            'st.create_time',
+            'st.status',
+            'st.weekday',
+            'st.org_id',
+            'st.expire_time',
+            'st.real_schedule_id',
+            'c.name (course_name)',
+            'cr.name (classroom_name)'
+
+        ], $where);
         return array($totalCount, $result);
     }
 
@@ -53,25 +86,83 @@ class ScheduleTaskModel extends Model
      * @param $id
      * @return array
      */
-    public static function getSTDetail($id) {
-        return MysqlDB::getDB()->select(self::$table,'*',['id'=>$id]);
+    public static function getSTDetail($id)
+    {
+        $join = [
+            '[>]'.CourseModel::$table." (c)" => ['c.id'=>'course_id'],
+            '[>]'.ClassroomModel::$table." (cr)" => ['cr.id'=>'classroom_id'],
+        ];
+
+        return MysqlDB::getDB()->select(self::$table, $join,[
+            'st.id',
+            'st.course_id',
+            'st.start_time',
+            'st.end_time',
+            'st.classroom_id',
+            'st.create_time',
+            'st.status',
+            'st.weekday',
+            'st.org_id',
+            'st.expire_time',
+            'st.real_schedule_id',
+            'c.name (course_name)',
+            'cr.name (classroom_name)'
+        ], ['id' => $id]);
     }
 
     /**
      * @param $insert
      * @return int|mixed|string|null
      */
-    public static function addST($insert) {
-        return MysqlDB::getDB()->insertGetID(self::$table,$insert);
+    public static function addST($insert)
+    {
+        return MysqlDB::getDB()->insertGetID(self::$table, $insert);
     }
 
     /**
-     * @param $id
+     * @param $ids
      * @param $update
      * @return bool
      */
-    public static function modifyST($id,$update) {
-        $result = self::updateRecord($id, $update);
+    public static function modifyST($ids, $update)
+    {
+        $result = self::updateRecord($ids, $update);
         return ($result && $result > 0);
+    }
+
+    public static function getSTByRId($rId)
+    {
+        return MysqlDB::getDB()->select(self::$table, '*', ['relation_id' => $rId]);
+    }
+
+    public static function getSTListByUser($userIds, $userRole, $time = null)
+    {
+        $time = empty($time) ?? time();
+        $where = [
+            'AND' =>
+            [
+                'stu.user_id' => $userIds,
+                'stu.user_role' => $userRole,
+                'or' => [
+                    'expire_time' => null,
+                    'expire_time[>]' => $time
+                ],
+                'st.status' => array(ScheduleTaskModel::STATUS_NORMAL, ScheduleTaskModel::STATUS_BEGIN, ScheduleTaskModel::STATUS_TEMP),
+                'stu.status' => array(ScheduleTaskUserModel::STATUS_NORMAL,ScheduleTaskUserModel::STATUS_BACKUP),
+            ]
+        ];
+        $columns = [
+            'st.id',
+            'stu.user_id',
+            'stu.user_role',
+            'st.classroom_id',
+            'st.real_schedule_id',
+        ];
+
+        $join = [
+            '[><]' . ScheduleTaskUserModel::$table . ' (stu)' => ['st_id' => 'st.id'],
+        ];
+
+        return MysqlDB::getDB()->select(self::$table . ' (st)', $join, $columns, $where);
     }
 }

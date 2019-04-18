@@ -210,4 +210,16 @@ class MysqlDB
                 ];
         }
     }
+
+    /**
+     * @param $where
+     * @param string $column
+     * @return mixed
+     */
+    public static function addOrgId($where,$column = '') {
+        global $orgId ;
+        $column = empty($column)?"org_id":$column;
+        $where[$column] = $orgId;
+        return $where;
+    }
 }

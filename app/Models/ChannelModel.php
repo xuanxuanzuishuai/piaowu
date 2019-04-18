@@ -9,6 +9,7 @@
 namespace App\Models;
 
 use App\Libs\MysqlDB;
+use App\Libs\SimpleLogger;
 
 class ChannelModel extends Model
 {

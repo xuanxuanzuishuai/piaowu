@@ -14,11 +14,14 @@ class CampusModel extends Model
     public static $table = "campus";
 
     public static function getCampus() {
+        $where = MysqlDB::addOrgId(["ORDER" => ["create_time" => "DESC"]]);
+
         $db = MysqlDB::getDB();
-        return $db->select(self::$table, "*", ["ORDER" => ["create_time" => "DESC"]]);
+        return $db->select(self::$table, "*", $where);
     }
 
     public static function insertCampus($insert) {
+        $insert = MysqlDB::addOrgId($insert);
         $db = MysqlDB::getDB();
         return $db->insertGetID(self::$table, $insert);
     }
