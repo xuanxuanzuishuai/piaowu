@@ -78,9 +78,9 @@ class TeacherService
 
         //如果 teacher_id 为空，验证手机号是否存在，如果存在，并且为注册状态，更新老师信息，并标记为待入职状态
         if (empty($teacher_id)) {
-            $teacher_base_info = TeacherModel::getRecordByMobile($update['mobile']);
-            if (!empty($teacher_base_info) && $teacher_base_info['status'] == TeacherModel::ENTRY_REGISTER) {
-                $teacher_id = $teacher_base_info['id'];
+            $teacher = TeacherModel::getRecordByMobile($update['mobile']);
+            if (!empty($teacher) && $teacher['status'] == TeacherModel::ENTRY_REGISTER) {
+                $teacher_id = $teacher['id'];
                 $update['status'] = TeacherModel::ENTRY_WAIT;
             }
         }

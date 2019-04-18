@@ -15,7 +15,7 @@ use App\Libs\Util;
 
 class TeacherModel extends Model
 {
-    public static $table = "teacher_base_info";
+    public static $table = "teacher";
     public static $redisExpire = 1;
     public static $redisDB;
 

@@ -492,13 +492,13 @@ CREATE TABLE `student_leave` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `teacher_base_info`
+-- Table structure for table `teacher`
 --
 
-DROP TABLE IF EXISTS `teacher_base_info`;
+DROP TABLE IF EXISTS `teacher`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `teacher_base_info` (
+CREATE TABLE `teacher` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `uuid` varchar(32) NOT NULL COMMENT '用户唯一id',
   `name` varchar(50) NOT NULL COMMENT '姓名',
