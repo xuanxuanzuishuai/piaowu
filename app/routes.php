@@ -57,8 +57,9 @@ $arr = array(
     // 从ai_peilian_backend迁移至此 TODO:与dss_crm风格保持一致
     '/user/play/end' => array('method'=> array('post'),'call'=> '\App\Controllers\StudentApp\Play:PlayEnd','middles' => array('\App\Middleware\EmployeeAuthCheckMiddleWare')),
     '/user/play/save' => array('method'=> array('post'),'call'=> '\App\Controllers\StudentApp\Play:PlaySave','middles' => array('\App\Middleware\EmployeeAuthCheckMiddleWare')),
-    '/student_app/play/ai_end' => array('method'=> array('post'),'call'=> '\App\Controllers\StudentApp\Play:AiPlayEnd','middles' => array('\App\Middleware\EmployeeAuthCheckMiddleWare')),
-    '/student_app/homework/record' => array('method'=> array('get'),'call'=> '\App\Controllers\StudentApp\Homework:homeworkRecord','middles' => array('\App\Middleware\EmployeeAuthCheckMiddleWare')),
+    '/student_app/play/ai_end' => array('method'=> array('post'),'call'=> '\App\Controllers\StudentApp\Play:AiPlayEnd','middles' => array()),
+    '/homework/record' => array('method'=> array('get'),'call'=> '\App\Controllers\StudentApp\Homework:HomeworkPracticeRecord','middles' => array()),
+    '/homework/list' => array('method'=> array('get'),'call'=> '\App\Controllers\StudentApp\Homework:HomeworkList','middles' => array()),
 
     '/goods/course/list' => array('method'=> array('get'),'call'=> '\App\Controllers\Course\Course:list','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
     '/goods/course/detail' => array('method'=> array('get'),'call'=> '\App\Controllers\Course\Course:detail','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),

@@ -7,7 +7,7 @@
  * 练琴记录相关
  */
 
-namespace App\Controllers\Play;
+namespace App\Controllers\StudentApp;
 
 use App\Controllers\ControllerBase;
 use App\Libs\MysqlDB;
@@ -149,7 +149,8 @@ class Play extends ControllerBase
         $db = MysqlDB::getDB();
         $db->beginTransaction();
 
-        $userId = $this->user['id'];
+        //$userId = $this->ci['user']['id']
+        $userId = 888888;
         $param['data']['record_type'] = PlayRecordModel::TYPE_AI;
         $param['data']['situation_type'] = PlayRecordModel::TYPE_OFF_CLASS;
         list($errCode, $ret) = UserPlayServices::addRecord($userId, $param['data']);
@@ -157,7 +158,8 @@ class Play extends ControllerBase
             $errors = Valid::addAppErrors([], $errCode);
             return $response->withJson($errors, StatusCode::HTTP_OK);
         }
-        list($homeworkErrCode, $homework) = HomeworkService::updateHomework($userId, $param['data']);
+        $param['data']['record_id'] = $ret['record_id'];
+        list($homeworkErrCode, $homework) = HomeworkService::checkHomework($userId, $param['data']);
         if (!empty($homeworkErrCode)) {
             $errors = Valid::addAppErrors([], $homeworkErrCode);
             return $response->withJson($errors, StatusCode::HTTP_OK);
@@ -170,4 +172,5 @@ class Play extends ControllerBase
         ];
         return $response->withJson($data, StatusCode::HTTP_OK);
     }
+
 }

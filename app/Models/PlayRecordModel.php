@@ -8,6 +8,8 @@
 
 namespace App\Models;
 
+use App\Libs\MysqlDB;
+
 class PlayRecordModel extends Model
 {
     public static $table = 'play_record';
@@ -19,4 +21,15 @@ class PlayRecordModel extends Model
     /** 课上课下 */
     const TYPE_ON_CLASS = 0;       // 课上练琴
     const TYPE_OFF_CLASS = 1;      // 课下练琴
+
+
+    public static function getPlayRecordByLessonId($lessonId, $recordType=null){
+        $db = MysqlDB::getDB();
+        $where = ['lesson_id' => $lessonId];
+        if (!empty($recordType)){
+            $where['record_type'] = $recordType;
+        }
+        $result = $db->select(PlayRecordModel::$table, '*', $where);
+        return $result;
+    }
 }

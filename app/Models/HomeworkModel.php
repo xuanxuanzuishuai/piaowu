@@ -83,21 +83,35 @@ class HomeworkModel extends Model
     }
 
     /**
-     * 获取学生当前周期内未完成的作业
-     * @param $userId
+     * 查询作业
+     * @param array $where
+     * @return array
      */
-    public static function getStudentUnfinishedWork($studentId, $opernId){
-
-        $query = "";
-        $opernIdList = MysqlDB::getDB()->queryAll($query);
+    public static function getHomeworkList($where=[]){
+        $result = MysqlDB::getDB()->select(
+                HomeworkModel::$table,
+                [
+                    '[>]'.HomeworkTaskModel::$table => ['id' => 'homework_id']
+                ],
+                [
+                    HomeworkModel::$table.'id',
+                    HomeworkModel::$table.'student_id',
+                    HomeworkModel::$table.'teacher_id',
+                    HomeworkModel::$table.'org_id',
+                    HomeworkModel::$table.'schedule_id',
+                    HomeworkModel::$table.'created_time',
+                    HomeworkModel::$table.'end_time',
+                    HomeworkModel::$table.'remark',
+                    HomeworkTaskModel::$table.'id(task_id)',
+                    HomeworkTaskModel::$table.'lesson_id',
+                    HomeworkTaskModel::$table.'lesson_name',
+                    HomeworkTaskModel::$table.'collection_id',
+                    HomeworkTaskModel::$table.'collection_name',
+                    HomeworkTaskModel::$table.'baseline',
+                    HomeworkTaskModel::$table.'is_complete(complete)'
+                ],
+                $where
+            );
+        return $result;
     }
-
-    /**
-     * 作业完成
-     * @param $finishedHomework
-     */
-    public static function finishHomework($finishedHomework){
-
-    }
-
 }

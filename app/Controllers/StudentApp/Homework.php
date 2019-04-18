@@ -4,9 +4,10 @@
  * User: dahua
  * Date: 2019/4/17
  * Time: 16:40
+ * 学生作业相关接口
  */
 
-namespace App\Controllers\Homework;
+namespace App\Controllers\StudentApp;
 
 use App\Controllers\ControllerBase;
 use App\Libs\Util;
@@ -17,22 +18,23 @@ use Slim\Http\Response;
 use Slim\Http\StatusCode;
 
 /**
- * 学生作业
+ * 学生作业相关
  */
 class Homework extends ControllerBase
 {
     /**
+     * 作业的练习记录
      * @param Request $request
      * @param Response $response
      * @return mixed
      */
-    public function homeworkRecord(Request $request, Response $response)
+    public function HomeworkPracticeRecord(Request $request, Response $response)
     {
         $rules = [
             [
-                'key' => 'opern_id',
+                'key' => 'lesson_id',
                 'type' => 'required',
-                'opern_id_is_required' => 'opern_id_is_required'
+                'lesson_id_is_required' => 'lesson_id_is_required'
             ]
         ];
         $params = $request->getParams();
@@ -41,9 +43,77 @@ class Homework extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        list($pageId, $pageLimit) = Util::formatPageCount($params);
-        $userId = $this->user['id'];
-        $data = HomeworkService::getHomework($userId, $params['opern_id'], $pageId, $pageLimit);
-        return $response->withJson($data, StatusCode::HTTP_OK);
+        // $userId = $this->ci['user']['id'];
+        $userId = 888888;
+        list($homework, $playRecord) = HomeworkService::getStudentHomeworkPractice($userId, $params['lesson_id']);
+        if(empty($homework)){
+            return $response->withJson([], StatusCode::HTTP_OK);
+        }
+        $returnData = [
+            'homework' => [
+                'id' => $homework[0]['id'],
+                'task_id' => $homework[0]['task_id'],
+                'baseline' => json_decode($homework[0]['baseline'])
+            ],
+            'play_record' => [],
+        ];
+        foreach ($playRecord as $item) {
+            $temp = [
+                'time' => $item['duration'],
+                'score' => $item['score'],
+                'complete' => $item['complete']
+            ];
+            array_push($returnData[play_record], $temp);
+        }
+
+        return $response->withJson(['code'=>0, 'data'=>$returnData], StatusCode::HTTP_OK);
     }
+
+    /**
+     * 作业列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function HomeworkList(Request $request, Response $response){
+        $params = $request->getParams();
+        list($pageId, $pageLimit) = Util::formatPageCount($params);
+        //$userId = $this->ci['user']['id'];
+        $userId = 888888;
+        $data = HomeworkService::getStudentHomeWorkList($userId, $pageId, $pageLimit);
+
+        $temp = [];
+        foreach ($data as $homework){
+            $task = [
+                'lesson_id' => $homework['lesson_id'],
+                'complete' => $homework['complete'],
+                'score_detail' => [
+                    "type_1" => ["high" => 80, "baseline" => 80],
+                    "type_2" => ["high"=> 70, "baseline" => 60]
+                ]
+            ];
+            $homeworkId = $homework['id'];
+            if(array_key_exists($homeworkId, $temp)){
+                array_push($temp['tasks'], $task);
+            }else{
+                $temp[$homeworkId] = [
+                    'teacher_name' => $homework['teacher_id'],
+                    "start_time" => $homework['start_time'],
+                    "end_time" => $homework['end_time'],
+                    "tasks" => [$task]
+                ];
+            }
+        }
+
+        $return_data = [];
+        foreach ($temp as $k=>$v){
+            array_push($return_data, $v);
+        }
+
+        return $response->withJson($return_data, StatusCode::HTTP_OK);
+    }
+
+
+
+
 }

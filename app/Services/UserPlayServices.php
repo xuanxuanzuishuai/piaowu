@@ -19,29 +19,30 @@ class UserPlayServices
      * 添加一次演奏记录
      * @param $userID
      * @param array $playData 演奏数据
-     * @param int $record_type 演奏类型
      * @return array [0]errorCode [1]演奏的结果，返回前端
      */
-    public static function addRecord($userID, $playData, $record_type = 0)
+    public static function addRecord($userID, $playData)
     {
         $recordData = [
-            'user_id' => $userID,
-            'series_id' => $playData['series_id'],
-            'book_id' => $playData['book_id'],
-            'opern_id' => $playData['opern_id'],
-            'opern_sub_id' => $playData['opern_sub_id'],
-            'play_time' => time(),
+            'student_id' => $userID,
+            'category_id' => $playData['category_id'],
+            'collection_id' => $playData['collection_id'],
+            'lesson_id' => $playData['lesson_id'],
+            'lesson_sub_id' => $playData['lesson_sub_id'],
+            'created_time' => time(),
             'duration' => $playData['duration'],
             'score' => $playData['score'],
             'midi' => $playData['midi'],
             'data' => json_encode($playData),
-            'record_type' => $record_type,
+            'record_type' => $playData['record_type'],
+            'situation_type' => $playData['situation_type'],
         ];
 
         $recordID =  PlayRecordModel::insertRecord($recordData);
 
         //只有练习动态曲谱时更新
-        if ($record_type == 0){
+        $playResult = [];
+        if ($playData['record_type'] == PlayRecordModel::TYPE_DYNAMIC){
             list($saveID, $playResult) = self::updateSave($userID, $playData);
             if (empty($saveID)) {
                 return ['play_save_failure'];
