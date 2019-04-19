@@ -94,21 +94,21 @@ class HomeworkModel extends Model
                     '[>]'.HomeworkTaskModel::$table => ['id' => 'homework_id']
                 ],
                 [
-                    HomeworkModel::$table.'id',
-                    HomeworkModel::$table.'student_id',
-                    HomeworkModel::$table.'teacher_id',
-                    HomeworkModel::$table.'org_id',
-                    HomeworkModel::$table.'schedule_id',
-                    HomeworkModel::$table.'created_time',
-                    HomeworkModel::$table.'end_time',
-                    HomeworkModel::$table.'remark',
-                    HomeworkTaskModel::$table.'id(task_id)',
-                    HomeworkTaskModel::$table.'lesson_id',
-                    HomeworkTaskModel::$table.'lesson_name',
-                    HomeworkTaskModel::$table.'collection_id',
-                    HomeworkTaskModel::$table.'collection_name',
-                    HomeworkTaskModel::$table.'baseline',
-                    HomeworkTaskModel::$table.'is_complete(complete)'
+                    HomeworkModel::$table.'.id',
+                    HomeworkModel::$table.'.student_id',
+                    HomeworkModel::$table.'.teacher_id',
+                    HomeworkModel::$table.'.org_id',
+                    HomeworkModel::$table.'.schedule_id',
+                    HomeworkModel::$table.'.created_time',
+                    HomeworkModel::$table.'.end_time',
+                    HomeworkModel::$table.'.remark',
+                    HomeworkTaskModel::$table.'.id(task_id)',
+                    HomeworkTaskModel::$table.'.lesson_id',
+                    HomeworkTaskModel::$table.'.lesson_name',
+                    HomeworkTaskModel::$table.'.collection_id',
+                    HomeworkTaskModel::$table.'.collection_name',
+                    HomeworkTaskModel::$table.'.baseline',
+                    HomeworkTaskModel::$table.'.is_complete(complete)'
                 ],
                 $where
             );
