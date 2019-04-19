@@ -89,8 +89,8 @@ class Homework extends ControllerBase
                 'lesson_id' => $homework['lesson_id'],
                 'complete' => $homework['complete'],
                 'score_detail' => [
-                    "type_1" => ["high" => 80, "baseline" => 80],
-                    "type_2" => ["high"=> 70, "baseline" => 60]
+                    "pitch" => ["high" => 80, "baseline" => 80],
+                    "rhythm" => ["high"=> 70, "baseline" => 60]
                 ]
             ];
             $homeworkId = $homework['id'];
@@ -112,7 +112,7 @@ class Homework extends ControllerBase
                 array_push($returnData, $v);
             }
         }
-        return $response->withJson(['code'=>0, 'data'=>$returnData], StatusCode::HTTP_OK);
+        return $response->withJson(['code'=>0, 'data'=>['homework'=>$returnData]], StatusCode::HTTP_OK);
     }
 
 
