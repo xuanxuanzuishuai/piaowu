@@ -11,6 +11,7 @@ namespace App\Controllers\StudentApp;
 
 use App\Controllers\ControllerBase;
 use App\Libs\MysqlDB;
+use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Models\PlayRecordModel;
 use App\Services\UserPlayServices;
@@ -55,7 +56,7 @@ class Play extends ControllerBase
         $db = MysqlDB::getDB();
         $db->beginTransaction();
 
-        $userID = $this->user['id'];
+        $userID = $this->ci['user']['id'];
         // 新增record_type字段区分演奏类型，situation_type区分课上课下
         $params['data']['record_type'] = PlayRecordModel::TYPE_DYNAMIC;
         $params['data']['situation_type'] = PlayRecordModel::TYPE_ON_CLASS;
@@ -110,7 +111,7 @@ class Play extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $userID = $this->user['id'];
+        $userID = $this->ci['user']['id'];
 
         $save = UserPlayServices::getSave($userID, $params['opern_id']);
         if (empty($save)) {
@@ -131,6 +132,7 @@ class Play extends ControllerBase
      * @return Response
      */
     public function AiPlayEnd(Request $request, Response $response){
+        // 验证请求参数
         $rules = [
             [
                 'key' => 'data',
@@ -138,10 +140,8 @@ class Play extends ControllerBase
                 'play_data_is_required' => 'play_data_is_required'
             ]
         ];
-
         $param = $request->getParams();
         $result = Valid::validate($param, $rules);
-
         if($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
@@ -149,6 +149,7 @@ class Play extends ControllerBase
         $db = MysqlDB::getDB();
         $db->beginTransaction();
 
+        // 插入练琴纪录表
         //$userId = $this->ci['user']['id']
         $userId = 888888;
         $param['data']['record_type'] = PlayRecordModel::TYPE_AI;
@@ -158,6 +159,8 @@ class Play extends ControllerBase
             $errors = Valid::addAppErrors([], $errCode);
             return $response->withJson($errors, StatusCode::HTTP_OK);
         }
+
+        // 检查作业
         $param['data']['record_id'] = $ret['record_id'];
         list($homeworkErrCode, $homework) = HomeworkService::checkHomework($userId, $param['data']);
         if (!empty($homeworkErrCode)) {
@@ -166,11 +169,22 @@ class Play extends ControllerBase
         }
         $db->commit();
 
-        $data = [
-            'record_id' => $ret['record_id'],
-            'homework' => $homework
-        ];
-        return $response->withJson($data, StatusCode::HTTP_OK);
+        // 处理返回数据
+        $data = ['record_id' => $ret['record_id']];
+        if(!empty($homework)){
+            $homework = $homework[0];
+            $homeworkInfo = [
+                'id'=> $homework['id'],
+                'task_id'=> $homework['task_id'],
+                'baseline'=> json_decode($homework['baseline']),
+                'complete'=> 1
+            ];
+        }else{
+            //$homeworkInfo = new stdClass();
+            $homeworkInfo = null;
+        }
+        $data['homework'] = $homeworkInfo;
+        return $response->withJson(['code'=>0, 'data'=>$data], StatusCode::HTTP_OK);
     }
 
 }

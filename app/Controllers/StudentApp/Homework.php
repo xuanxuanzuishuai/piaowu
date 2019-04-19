@@ -59,11 +59,12 @@ class Homework extends ControllerBase
         ];
         foreach ($playRecord as $item) {
             $temp = [
-                'time' => $item['duration'],
+                'time' => $item['created_time'],
                 'score' => $item['score'],
-                'complete' => $item['complete']
+                'complete' => $item['complete'],
+                'record_id' => $item['id']
             ];
-            array_push($returnData[play_record], $temp);
+            array_push($returnData['play_record'], $temp);
         }
 
         return $response->withJson(['code'=>0, 'data'=>$returnData], StatusCode::HTTP_OK);
@@ -105,12 +106,13 @@ class Homework extends ControllerBase
             }
         }
 
-        $return_data = [];
+        $returnData = [];
         foreach ($temp as $k=>$v){
-            array_push($return_data, $v);
+            if(!empty($v)){
+                array_push($returnData, $v);
+            }
         }
-
-        return $response->withJson($return_data, StatusCode::HTTP_OK);
+        return $response->withJson(['code'=>0, 'data'=>$returnData], StatusCode::HTTP_OK);
     }
 
 
