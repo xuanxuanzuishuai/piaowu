@@ -48,11 +48,11 @@ class UserCenter
         list($hostBaseUrl, $ucAppId, $ucAppSecret) = DictService::getKeyValuesByArray(Constants::DICT_TYPE_SYSTEM_ENV,
             [Constants::DICT_KEY_UC_HOST_URL, Constants::DICT_KEY_UC_APP_ID, Constants::DICT_KEY_UC_APP_SECRET]);
         $this->hostBaseUrl = $hostBaseUrl . '/api';
-        if (empty($appId) || empty($appSecret)){
-            $this->appId = $ucAppId;
-            $this->appSecret = $ucAppSecret;
-        }
+
+        $this->appId = empty($appId) ? $ucAppId : $appId;
+        $this->appSecret = empty($appSecret) ? $ucAppSecret : $appSecret;
     }
+
     private function commonAPI($api,  $data = [], $method = 'POST')
     {
         try {

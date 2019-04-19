@@ -11,7 +11,7 @@ namespace App\Controllers\StudentApp;
 use App\Controllers\ControllerBase;
 use App\Libs\Valid;
 use App\Models\AppConfigModel;
-use App\Services\StudentAppService;
+use App\Services\StudentServiceForApp;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -50,7 +50,7 @@ class Auth extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        list($errorCode, $loginData) = StudentAppService::login($params['mobile'], $params['code']);
+        list($errorCode, $loginData) = StudentServiceForApp::login($params['mobile'], $params['code']);
 
         if (!empty($errorCode)) {
             $result = Valid::addAppErrors([], $errorCode);
@@ -93,7 +93,7 @@ class Auth extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        list($errorCode, $loginData) = StudentAppService::loginWithToken($params['mobile'], $params['token']);
+        list($errorCode, $loginData) = StudentServiceForApp::loginWithToken($params['mobile'], $params['token']);
 
         if (!empty($errorCode)) {
             $result = Valid::addAppErrors([], $errorCode);
@@ -145,7 +145,7 @@ class Auth extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $errorCode = StudentAppService::sendValidateCode($params['mobile']);
+        $errorCode = StudentServiceForApp::sendValidateCode($params['mobile']);
         if (!empty($errorCode)) {
             $result = Valid::addAppErrors([], $errorCode);
             return $response->withJson($result, StatusCode::HTTP_OK);

@@ -11,7 +11,7 @@ namespace app\Controllers\StudentApp;
 use App\Controllers\ControllerBase;
 use App\Libs\MysqlDB;
 use App\Libs\Valid;
-use App\Services\StudentAppService;
+use App\Services\StudentServiceForApp;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -38,7 +38,7 @@ class Subscription extends ControllerBase
         $db = MysqlDB::getDB();
         $db->beginTransaction();
 
-        list($errorCode, $ret) = StudentAppService::redeemGiftCode($params['code'], $this->ci['user']['id']);
+        list($errorCode, $ret) = StudentServiceForApp::redeemGiftCode($params['code'], $this->ci['user']['id']);
 
         if (!empty($errorCode)) {
             $result = Valid::addAppErrors([], $errorCode);

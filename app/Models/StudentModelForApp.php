@@ -11,7 +11,14 @@ namespace App\Models;
 use App\Libs\MysqlDB;
 use App\Libs\RedisDB;
 
-class StudentAppModel extends Model
+/**
+ *
+ *
+ * Class StudentAppModel
+ * @package App\Models
+ *
+ */
+class StudentModelForApp extends Model
 {
     const SUB_STATUS_ON = 1;
     const SUB_STATUS_OFF = 0;
@@ -37,10 +44,7 @@ class StudentAppModel extends Model
 
         $db = MysqlDB::getDB();
         return $db->get(self::$table, [
-            '[><]' . StudentModel::$table => ['student_id' => 'id']
-        ], [
             self::$table . '.id',
-            self::$table . '.student_id',
             self::$table . '.uuid',
             self::$table . '.mobile',
             self::$table . '.create_time',
@@ -48,8 +52,8 @@ class StudentAppModel extends Model
             self::$table . '.sub_status',
             self::$table . '.sub_start_date',
             self::$table . '.sub_end_date',
-            StudentModel::$table . '.name',
-            StudentModel::$table . '.thumb',
+            self::$table . '.name',
+            self::$table . '.thumb',
         ], $where);
     }
 

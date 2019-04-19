@@ -9,17 +9,16 @@
 namespace App\Services;
 
 
-use App\Libs\APIValid;
 use App\Libs\NewSMS;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
+use App\Libs\UserCenter;
 use App\Libs\Util;
 use App\Models\AppConfigModel;
-use App\Models\StudentAppModel;
+use App\Models\StudentModelForApp;
 use App\Models\GiftCodeModel;
-use GuzzleHttp\Client;
 
-class StudentAppService
+class StudentServiceForApp
 {
     const VALIDATE_CODE_CACHE_KEY_PRI = 'v_code_';
     const VALIDATE_CODE_TIME_CACHE_KEY_PRI = 'v_code_time_';
@@ -40,7 +39,7 @@ class StudentAppService
             return ['validate_code_error'];
         }
 
-        $student = StudentAppModel::getStudentInfo(null, $mobile);
+        $student = StudentModelForApp::getStudentInfo(null, $mobile);
 
         // 新用户自动注册
         if (empty($student)) {
@@ -50,15 +49,15 @@ class StudentAppService
                 return ['student_register_fail'];
             }
 
-            $student = StudentAppModel::getStudentInfo(null, $mobile);
+            $student = StudentModelForApp::getStudentInfo(null, $mobile);
         }
 
         if (empty($student)) {
             return ['unknown_student'];
         }
 
-        $token = StudentAppModel::genStudentToken($student['id']);
-        StudentAppModel::setStudentToken($student['id'], $token);
+        $token = StudentModelForApp::genStudentToken($student['id']);
+        StudentModelForApp::setStudentToken($student['id'], $token);
 
         $loginData = [
             'id' => $student['id'],
@@ -86,8 +85,8 @@ class StudentAppService
      */
     public static function loginWithToken($mobile, $token)
     {
-        $student = StudentAppModel::getStudentInfo(null, $mobile);
-        $cacheToken = StudentAppModel::getStudentToken($student['id']);
+        $student = StudentModelForApp::getStudentInfo(null, $mobile);
+        $cacheToken = StudentModelForApp::getStudentToken($student['id']);
 
         if (empty($cacheToken) || $cacheToken != $token) {
             return ['invalid_token'];
@@ -109,6 +108,13 @@ class StudentAppService
         return [null, $loginData];
     }
 
+    public static function registerStudentInUserCenter($name, $mobile, $uuid = '', $birthday = '', $gender = '')
+    {
+        $userCenter = new UserCenter(UserCenter::AUTH_APP_ID_AIPEILIAN, 'e5ded0be7bbaf0e2');
+        $authResult = $userCenter->studentAuthorization(8, $mobile, $name, $uuid, $birthday, $gender);
+        return $authResult;
+    }
+
     /**
      * 注册新用户
      *
@@ -117,82 +123,46 @@ class StudentAppService
      */
     public static function studentRegister($mobile)
     {
-        $params = [
-            'mobile' => $mobile,
-            'source_id' => 1,
-            'app_id' => 1,
-        ];
-
-        $client = new Client();
-
-        $url = AppConfigModel::get(AppConfigModel::ERP_URL_KEY);
-        $api = AppConfigModel::get(AppConfigModel::ERP_API_STUDENT_REGISTER_KEY);
-        $response = $client->request('POST', $url . $api, [
-            'form_params' => $params,
-            'debug' => false
-        ]);
-
-        $body = $response->getBody()->getContents();
-        $statusCode = $response->getStatusCode();
-        if (200 != $statusCode) {
-            SimpleLogger::error(__FILE__ . __LINE__, [
-                'msg' => 'student reg error, network error.',
-                'statusCode' => $statusCode
-            ]);
+        $result = self::registerStudentInUserCenter($mobile, $mobile);
+        if (empty($result['uuid'])) {
+            SimpleLogger::info(__FILE__ . __LINE__, $result);
             return null;
         }
 
-        $data = json_decode($body, true);
-        if (empty($data)) {
-            SimpleLogger::error(__FILE__ . __LINE__, [
-                'msg' => 'student reg error, response body decode error.',
-                'body' => $body,
-                'data' => $data
-            ]);
-            return null;
-        }
+        $uuid = $result['uuid'];
+        $lastId = self::addStudent($mobile, $uuid);
 
-        if ($data['code'] != APIValid::CODE_SUCCESS) {
+        if (empty($lastId)) {
             SimpleLogger::info(__FILE__ . __LINE__, [
-                'msg' => 'student reg failure.',
-                'data' => $data
+                'msg' => 'user reg error, add new user error.',
             ]);
             return null;
         }
 
-        $student = self::addStudent($mobile);
-
-        if (empty($student)) {
-            SimpleLogger::info(__FILE__ . __LINE__, [
-                'msg' => 'student reg error, add new student error.',
-            ]);
-            return null;
-        }
-
-        return $student;
+        return $lastId;
     }
 
     /**
      * 添加app新用户
      *
      * @param string $mobile 手机号
+     * @param string $uuid
      * @return array|null 用户数据
      */
-    public static function addStudent($mobile)
+    public static function addStudent($mobile, $uuid)
     {
-        $student = StudentService::getStudentByMobile($mobile);
         $user = [
-            'student_id' => $student['id'],
-            'uuid' => $student['uuid'],
-            'mobile' => $mobile,
-            'create_time' => time(),
-            'sub_status' => StudentAppModel::SUB_STATUS_ON,
+            'uuid'           => $uuid,
+            'mobile'         => $mobile,
+            'create_time'    => time(),
+            'sub_status'     => StudentModelForApp::SUB_STATUS_ON,
             'sub_start_date' => 0,
-            'sub_end_date' => 0,
+            'sub_end_date'   => 0,
         ];
 
-        $id = StudentAppModel::insertRecord($user);
-        return empty($id) ? null : $user;
+        $id = StudentModelForApp::insertRecord($user);
+
+        return $id == 0 ? null : $id;
     }
 
     /**
@@ -291,7 +261,7 @@ class StudentAppService
 
         // 添加时间
 
-        $student = StudentAppModel::getStudentInfo($studentID, null);
+        $student = StudentModelForApp::getStudentInfo($studentID, null);
         if (empty($student)) {
             return ['unknown_student'];
         }
@@ -324,7 +294,7 @@ class StudentAppService
         if (empty($student['sub_start_date'])) {
             $studentUpdate['sub_start_date'] = $today;
         }
-        StudentAppModel::updateRecord($student['id'], $studentUpdate);
+        StudentModelForApp::updateRecord($student['id'], $studentUpdate);
 
         GiftCodeModel::updateRecord($gift['id'], [
             'apply_student' => $student['student_id'],
@@ -349,8 +319,8 @@ class StudentAppService
      */
     public static function getSubStatus($studentID)
     {
-        $student = StudentAppModel::getStudentInfo($studentID, null);
-        if ($student['sub_status'] != StudentAppModel::SUB_STATUS_ON) {
+        $student = StudentModelForApp::getStudentInfo($studentID, null);
+        if ($student['sub_status'] != StudentModelForApp::SUB_STATUS_ON) {
             return false;
         }
 
