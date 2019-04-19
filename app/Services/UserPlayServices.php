@@ -87,12 +87,12 @@ class UserPlayServices
     /**
      * 获取演奏记录存档
      * @param int $userID
-     * @param int $opernID
+     * @param int $lessonID
      * @return mixed
      */
-    public static function getSave($userID, $opernID)
+    public static function getSave($userID, $lessonID)
     {
-        $save = PlaySaveModel::getByOpern($userID, $opernID);
+        $save = PlaySaveModel::getByLesson($userID, $lessonID);
         return $save;
     }
 
@@ -105,8 +105,8 @@ class UserPlayServices
      */
     public static function updateSave($userID, $playData)
     {
-        $opernID = $playData['opern_id'];
-        $save = PlaySaveModel::getByOpern($userID, $opernID);
+        $lessonID = $playData['lesson_id'];
+        $save = PlaySaveModel::getByLesson($userID, $lessonID);
 
         if (empty($save)) {
             list($newSave, $playResult) = self::createNewSave($userID, $playData);
@@ -136,27 +136,27 @@ class UserPlayServices
         ];
 
         $save = [
-            'user_id' => $userID,
-            'series_id' => $playData['series_id'],
-            'book_id' => $playData['book_id'],
-            'opern_id' => $playData['opern_id'],
+            'student_id' => $userID,
+            'category_id' => $playData['category_id'],
+            'collection_id' => $playData['collection_id'],
+            'lesson_id' => $playData['lesson_id'],
             'last_play_time' => time(),
             'total_duration' => $playData['duration'],
         ];
 
         // 创建json数据，保存步骤的演奏完成情况
         $jsonData = [
-            'opern_sub_complete' => []
+            'lesson_sub_complete' => []
         ];
 
-        if (empty($playData['opern_sub_id'])) {
+        if (empty($playData['lesson_sub_id'])) {
             // 未传子步骤id表示是全曲分数
             $save['high_score'] = $playData['score'];
             $playResult['high_score'] = $playData['score'];
         } else {
             // 子步骤的最高分保存在json里
-            $stepID = $playData['opern_sub_id'];
-            $jsonData['opern_sub_complete'][$stepID] = [
+            $stepID = $playData['lesson_sub_id'];
+            $jsonData['lesson_sub_complete'][$stepID] = [
                 'complete' => true,
                 'high_score' => $playData['score']
             ];
@@ -187,7 +187,7 @@ class UserPlayServices
             'total_duration[+]' => $playData['duration'],
         ];
 
-        if (empty($playData['opern_sub_id'])) {
+        if (empty($playData['lesson_sub_id'])) {
             // 全曲检查最高分
             if ($playData['score'] > $save['high_score']) {
                 $saveUpdate['high_score'] = $playData['score'];
@@ -200,15 +200,15 @@ class UserPlayServices
 
         } else {
             // 步骤检查最高分
-            $stepID = $playData['opern_sub_id'];
+            $stepID = $playData['lesson_sub_id'];
             $jsonData = json_decode($save['data'], true);
-            $stepData = $jsonData['opern_sub_complete'][$stepID];
+            $stepData = $jsonData['lesson_sub_complete'][$stepID];
 
             if (empty($stepData)) { // 没有步骤信息时创建一份
                 $playResult['high_score'] = 0;
                 $playResult['is_new_high_score'] = true;
 
-                $jsonData['opern_sub_complete'][$stepID] = [
+                $jsonData['lesson_sub_complete'][$stepID] = [
                     'complete' => true,
                     'high_score' => $playData['score']
                 ];
@@ -219,7 +219,7 @@ class UserPlayServices
                 $playResult['high_score'] = $stepData['high_score'];
                 $playResult['is_new_high_score'] = true;
 
-                $jsonData['opern_sub_complete'][$stepID]['high_score'] = $playData['score'];
+                $jsonData['lesson_sub_complete'][$stepID]['high_score'] = $playData['score'];
 
                 $saveUpdate['data'] = json_encode($jsonData);
             }

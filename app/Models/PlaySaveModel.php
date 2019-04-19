@@ -17,9 +17,9 @@ class PlaySaveModel extends Model
 
     public static $table = 'play_save';
 
-    public static function getByOpern($userID, $opernID)
+    public static function getByLesson($userID, $lessonID)
     {
         $db = MysqlDB::getDB();
-        return $db->get(self::$table, '*', ['student_id' => $userID, 'lesson_id' => $opernID]);
+        return $db->get(self::$table, '*', ['student_id' => $userID, 'lesson_id' => $lessonID]);
     }
 }

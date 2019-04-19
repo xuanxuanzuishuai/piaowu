@@ -30,7 +30,7 @@ class Play extends ControllerBase
 {
 
     /**
-     * url:/user/play/end
+     * url:/student_app/play/end
      * 学生练琴结束，上传练琴记录
      * @param Request $request
      * @param Response $response
@@ -98,9 +98,9 @@ class Play extends ControllerBase
     public function PlaySave(Request $request, Response $response){
         $rules = [
             [
-                'key' => 'opern_id',
+                'key' => 'lesson_id',
                 'type' => 'required',
-                'error_code' => 'opern_id_is_required'
+                'error_code' => 'lesson_id_is_required'
             ]
         ];
 
@@ -113,7 +113,7 @@ class Play extends ControllerBase
 
         $userID = $this->ci['user']['id'];
 
-        $save = UserPlayServices::getSave($userID, $params['opern_id']);
+        $save = UserPlayServices::getSave($userID, $params['lesson_id']);
         if (empty($save)) {
             $save = null;
         }
@@ -170,8 +170,10 @@ class Play extends ControllerBase
         $db->commit();
 
         // 处理返回数据
+        SimpleLogger::debug("*********check homework******", ['unfinished'=>$unfinished, 'finished'=>$homework]);
         $data = ['record_id' => $ret['record_id']];
         if(!empty($homework)){
+            // 优先返回达成的作业
             $homework = $homework[0];
             $homeworkInfo = [
                 'id'=> $homework['id'],
@@ -180,6 +182,7 @@ class Play extends ControllerBase
                 'complete'=> 1
             ];
         }else{
+            // 如果未达成，返回未达成的作业
             $homework = $unfinished[0];
             $homeworkInfo = [
                 'id'=> $homework['id'],

@@ -55,8 +55,8 @@ $arr = array(
     '/student/student/batch_assign_cc' => array('method'=> array('post'),'call'=> '\App\Controllers\Student\Student:batchAssignCC','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
 
     // 从ai_peilian_backend迁移至此 TODO:与dss_crm风格保持一致
-    '/user/play/end' => array('method'=> array('post'),'call'=> '\App\Controllers\StudentApp\Play:PlayEnd','middles' => array('\App\Middleware\EmployeeAuthCheckMiddleWare')),
-    '/user/play/save' => array('method'=> array('post'),'call'=> '\App\Controllers\StudentApp\Play:PlaySave','middles' => array('\App\Middleware\EmployeeAuthCheckMiddleWare')),
+    '/student_app/play/end' => array('method'=> array('post'),'call'=> '\App\Controllers\StudentApp\Play:PlayEnd','middles' => array('\App\Middleware\EmployeeAuthCheckMiddleWare')),
+    '/student_app/play/save' => array('method'=> array('post'),'call'=> '\App\Controllers\StudentApp\Play:PlaySave','middles' => array('\App\Middleware\EmployeeAuthCheckMiddleWare')),
     '/student_app/play/ai_end' => array('method'=> array('post'),'call'=> '\App\Controllers\StudentApp\Play:AiPlayEnd','middles' => array()),
     '/student_app/homework/record' => array('method'=> array('get'),'call'=> '\App\Controllers\StudentApp\Homework:HomeworkPracticeRecord','middles' => array()),
     '/student_app/homework/list' => array('method'=> array('get'),'call'=> '\App\Controllers\StudentApp\Homework:HomeworkList','middles' => array()),
