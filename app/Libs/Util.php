@@ -590,4 +590,26 @@ class Util
         $limit = ($page - 1) * $count;
         return " limit {$limit},{$count} ";
     }
+
+    /**
+     * app端分页
+     * @param $params
+     * @return array
+     */
+    public static function appPageLimit($params)
+    {
+        //格式化page 页数
+        if (empty($params['page_id']) || !is_numeric($params['page_id']) || (int)$params['page_id'] < 1) {
+            $page = 1;
+        } else {
+            $page = (int)$params['page_id'];
+        }
+        //格式化count 分页数量
+        if (empty($params['page_limit']) || !is_numeric($params['page_limit']) || (int)$params['page_limit'] < 1) {
+            $count = 10;
+        } else {
+            $count = (int)$params['page_limit'];
+        }
+        return [$page, $count];
+    }
 }

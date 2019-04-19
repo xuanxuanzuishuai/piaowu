@@ -13,13 +13,12 @@ use App\Controllers\ControllerBase;
 use App\Libs\MysqlDB;
 use App\Libs\Valid;
 use App\Models\AppConfigModel;
-use App\Libs\SimpleLogger;
 use App\Services\HomeworkService;
+use App\Libs\OpernCenter;
+use App\Models\HomeworkTaskModel;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
-use App\Libs\OpernCenterLib;
-use App\Models\HomeworkTaskModel;
 
 class HomeWork extends ControllerBase
 {
@@ -27,10 +26,9 @@ class HomeWork extends ControllerBase
     /**
      * @param Request $request
      * @param Response $response
-     * @param $args
      * @return Response
      */
-    public function add(Request $request, Response $response, $args)
+    public function add(Request $request, Response $response)
     {
 
         $rules = [
@@ -93,11 +91,10 @@ class HomeWork extends ControllerBase
     /** 获取最近的教程
      * @param Request $request
      * @param Response $response
-     * @param $args
      * @return Response
-     * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function getRecentCollections(Request $request, Response $response, $args){
+    public function getRecentCollections(Request $request, Response $response)
+    {
         $rules = [
             [
                 'key' => 'page',
@@ -127,7 +124,6 @@ class HomeWork extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-         $erp = new OpernCenterLib();
         // $user_id = $this->ci['user']['id'];
         // todo 因为这里微信端登陆的逻辑还没做，暂时先写死
         $user_id = 460;
@@ -136,7 +132,8 @@ class HomeWork extends ControllerBase
         // $collection_ids = [22, 23, 24];
         $collection_list = [];
         if (!empty($collection_ids)) {
-            $res = $erp->collectionsByIds(self::version, $collection_ids);
+            $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, self::version);
+            $res = $opn->collectionsByIds($collection_ids);
             if (!empty($res['code']) && $res['code'] !== Valid::CODE_SUCCESS) {
                 $collection_list = [];
             } else {
@@ -153,11 +150,10 @@ class HomeWork extends ControllerBase
     /** 获取最近的课程
      * @param Request $request
      * @param Response $response
-     * @param $args
      * @return Response
-     * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function getRecentLessons(Request $request, Response $response, $args){
+    public function getRecentLessons(Request $request, Response $response)
+    {
         $rules = [
             [
                 'key' => 'page',
@@ -187,7 +183,6 @@ class HomeWork extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $erp = new OpernCenterLib();
         // $user_id = $this->ci['user']['id'];
         // todo 因为这里微信端登陆的逻辑还没做，暂时先写死
         $user_id = 460;
@@ -197,7 +192,8 @@ class HomeWork extends ControllerBase
         $lesson_list = [];
         if (!empty($lesson_ids)) {
             // todo 这里等待杜老师提供接口
-            $res = $erp->collectionsByIds(self::version, $lesson_ids);
+            $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, self::version);
+            $res = $opn->collectionsByIds($lesson_ids);
             if (!empty($res['code']) && $res['code'] !== Valid::CODE_SUCCESS) {
                 $lesson_list = [];
             } else {
@@ -214,11 +210,10 @@ class HomeWork extends ControllerBase
     /** 模糊查询合集
      * @param Request $request
      * @param Response $response
-     * @param $args
      * @return Response
-     * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function searchCollections(Request $request, Response $response, $args){
+    public function searchCollections(Request $request, Response $response)
+    {
         $rules = [
             [
                 'key' => 'keyword',
@@ -259,8 +254,8 @@ class HomeWork extends ControllerBase
             ], StatusCode::HTTP_OK);
         }
 
-        $erp = new OpernCenterLib();
-        $res = $erp->searchCollections(self::version, $params["keyword"], $params["page"], $params["limit"], 0);
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, self::version);
+        $res = $opn->searchCollections($params["keyword"], 1, $params["page"], $params["limit"]);
         if (!empty($res['code']) && $res['code'] !== Valid::CODE_SUCCESS) {
             $result = [];
         } else {
@@ -276,11 +271,10 @@ class HomeWork extends ControllerBase
     /** 模糊查询课程
      * @param Request $request
      * @param Response $response
-     * @param $args
      * @return Response
-     * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function searchLessons(Request $request, Response $response, $args){
+    public function searchLessons(Request $request, Response $response)
+    {
         $rules = [
             [
                 'key' => 'keyword',
@@ -321,8 +315,8 @@ class HomeWork extends ControllerBase
             ], StatusCode::HTTP_OK);
         }
 
-        $erp = new OpernCenterLib();
-        $res = $erp->searchLessons(self::version, $params["keyword"], $params["page"], $params["limit"], 0, 1);
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, self::version);
+        $res = $opn->searchLessons($params["keyword"], 0, 1, $params["page"], $params["limit"]);
         if (!empty($res['code']) && $res['code'] !== Valid::CODE_SUCCESS) {
             $result = [];
         } else {
@@ -335,14 +329,14 @@ class HomeWork extends ControllerBase
         ], StatusCode::HTTP_OK);
     }
 
-    /** 获取某个集合下的课程
+    /**
+     * 获取某个集合下的课程
      * @param Request $request
      * @param Response $response
-     * @param $args
      * @return Response
-     * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function getLessons(Request $request, Response $response, $args){
+    public function getLessons(Request $request, Response $response)
+    {
         $rules = [
             [
                 'key' => 'collection_id',
@@ -377,8 +371,8 @@ class HomeWork extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $erp = new OpernCenterLib();
-        $res = $erp->lessonsList($params["page"], $params["limit"], self::version, $params["collection_id"]);
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, self::version);
+        $res = $opn->lessons($params["collection_id"], $params["page"], $params["limit"]);
         if (!empty($res['code']) && $res['code'] !== Valid::CODE_SUCCESS) {
             $lesson_list = [];
         } else {
@@ -391,14 +385,14 @@ class HomeWork extends ControllerBase
         ], StatusCode::HTTP_OK);
     }
 
-    /** 获取作业标准
+    /**
+     * 获取作业标准
      * @param Request $request
      * @param Response $response
-     * @param $args
      * @return Response
      */
-    public function getHomeworkDemand(Request $request, Response $response, $args){
-
+    public function getHomeworkDemand(Request $request, Response $response)
+    {
         $result = AppConfigModel::get(AppConfigModel::AI_HOMEWORK_DEMAND_KEY);
 
         return $response->withJson([
