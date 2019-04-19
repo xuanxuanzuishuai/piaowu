@@ -14,7 +14,7 @@ use App\Libs\NewSMS;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
-use APP\Models\AppConfigModel;
+use App\Models\AppConfigModel;
 use App\Models\StudentAppModel;
 use App\Models\GiftCodeModel;
 use GuzzleHttp\Client;

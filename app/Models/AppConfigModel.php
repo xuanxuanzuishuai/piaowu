@@ -6,11 +6,10 @@
  * Time: 3:54 PM
  */
 
-namespace APP\Models;
+namespace App\Models;
 
 use App\Libs\MysqlDB;
 use App\Libs\RedisDB;
-use App\Libs\SimpleLogger;
 
 class AppConfigModel
 {
