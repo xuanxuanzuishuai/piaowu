@@ -124,7 +124,7 @@ class HomeworkService
         $lessonId = $playInfo['lesson_id'];
         $unFinishedHomeWorks = self::getStudentUnfinishedWork($studentId, $lessonId);
         $finishedHomework = self::_checkHomework($playInfo, $unFinishedHomeWorks);
-        return [null, $finishedHomework];
+        return [null, $unFinishedHomeWorks, $finishedHomework];
     }
 
     /**

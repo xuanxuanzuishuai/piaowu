@@ -162,7 +162,7 @@ class Play extends ControllerBase
 
         // 检查作业
         $param['data']['record_id'] = $ret['record_id'];
-        list($homeworkErrCode, $homework) = HomeworkService::checkHomework($userId, $param['data']);
+        list($homeworkErrCode, $unfinished, $homework) = HomeworkService::checkHomework($userId, $param['data']);
         if (!empty($homeworkErrCode)) {
             $errors = Valid::addAppErrors([], $homeworkErrCode);
             return $response->withJson($errors, StatusCode::HTTP_OK);
@@ -180,8 +180,13 @@ class Play extends ControllerBase
                 'complete'=> 1
             ];
         }else{
-            //$homeworkInfo = new stdClass();
-            $homeworkInfo = null;
+            $homework = $unfinished[0];
+            $homeworkInfo = [
+                'id'=> $homework['id'],
+                'task_id'=> $homework['task_id'],
+                'baseline'=> json_decode($homework['baseline']),
+                'complete'=> 0
+            ];
         }
         $data['homework'] = $homeworkInfo;
         return $response->withJson(['code'=>0, 'data'=>$data], StatusCode::HTTP_OK);
