@@ -136,6 +136,10 @@ $app->add(function (Request $request, Response $response, $next) use ($app, $arr
     $method = $request->getMethod();
     SimpleLogger::debug(__FILE__ . ":" . __LINE__, ["== method: $method, path: $uri START =="]);
 
+    $params = $request->getParams();
+    $headers = $request->getHeaders();
+    SimpleLogger::debug(__FILE__ . ":" . __LINE__, ['headers' => $headers, 'params' => $params]);
+
     if (!empty($arr[$uri])) {
         $r = $app->map($arr[$uri]['method'], $uri, $arr[$uri]['call']);
         if (!empty($arr[$uri]['middles']) && is_array($arr[$uri]['middles'])) {
