@@ -13,12 +13,36 @@ use App\Controllers\ControllerBase;
 use App\Libs\Valid;
 use APP\Models\AppConfigModel;
 use App\Models\FeedbackModel;
+use App\Services\AppVersionService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
 
 class App extends ControllerBase
 {
+    public function version(Request $request, Response $response)
+    {
+        $platform = $request->getHeader('platform');
+        $platform = $platform[0] ?? AppVersionService::PLAT_UNKNOWN;
+        $version = $request->getHeader('version');
+        $version = $version[0] ?? '';
+
+        $platformId = AppVersionService::getPlatformId($platform);
+        $lastVersion = AppVersionService::getLastVersion($platformId, $version);
+        $hotfix = AppVersionService::getHotfixConfig($platformId, $version);
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => [
+                'version' => $lastVersion,
+                'hotfix' => $hotfix,
+            ],
+            'meta' => [
+                'code' => 0,
+            ]
+        ], StatusCode::HTTP_OK);
+    }
+
     public function guide(Request $request, Response $response)
     {
         if (empty($request)) { NULL; /* unused params */ }
@@ -67,6 +91,32 @@ class App extends ControllerBase
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => []
+        ], StatusCode::HTTP_OK);
+    }
+
+    public function oldVersion(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        $rules = [
+            [
+                'key' => 'platform',
+                'type' => 'required',
+                'error_code' => 'platform_is_required'
+            ],
+        ];
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $platformId = AppVersionService::getPlatformId($params['platform']);
+        $lastVersion = AppVersionService::getLastVersion($platformId, '');
+
+        return $response->withJson([
+            'code'=> Valid::CODE_SUCCESS,
+            'data'=> [
+                'version' => $lastVersion
+            ],
         ], StatusCode::HTTP_OK);
     }
 }
