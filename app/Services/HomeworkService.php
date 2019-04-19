@@ -15,22 +15,29 @@ use App\Libs\SimpleLogger;
 use App\Models\PlayRecordModel;
 
 
+
 class HomeworkService
 {
     /** 创建作业
-     * @param $opern_id
-     * @param $book_id
+     * @param $schedule_id
+     * @param $org_id
      * @param $teacher_id
      * @param $student_id
      * @param $days_limit
+     * @param $remark
      * @param $content
      * @return int|mixed|null|string
      */
-    public static function createHomework($opern_id, $book_id, $teacher_id, $student_id, $days_limit, $content)
+    public static function createHomework($schedule_id, $org_id, $teacher_id, $student_id, $days_limit, $remark, $content)
     {
-        $create_time = time();
-        return HomeworkModel::createHomework($opern_id, $book_id, $teacher_id, $student_id, $create_time,
-            $create_time + $days_limit * 3600 * 24, $content);
+        $created_time = time();
+        $homework_id = HomeworkModel::createHomework($schedule_id, $org_id, $teacher_id, $student_id, $created_time,
+            $created_time + $days_limit * 3600 * 24, $remark);
+        foreach ($content as $task) {
+            HomeworkTaskModel::createHomeworkTask($homework_id, $task["lesson_id"], $task["lesson_name"], $task["collection_id"],
+                $task["collection_name"], json_encode($task["baseline"]));
+        }
+        return $homework_id;
     }
 
     /**

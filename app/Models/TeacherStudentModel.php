@@ -15,8 +15,6 @@ class TeacherStudentModel extends Model
 {
     public static $table = "teacher_student";
 
-    const STATUS_VALID = 1;
-
     const STATUS_STOP = 0; //解除绑定
     const STATUS_NORMAL = 1;  //绑定
 
@@ -25,7 +23,7 @@ class TeacherStudentModel extends Model
      * @return array
      */
     public static function getStudents($teacher_id) {
-        $where = [self::$table .".teacher_id" => $teacher_id, self::$table .".status" => self::STATUS_VALID, "ORDER" => "org_id"];
+        $where = [self::$table .".teacher_id" => $teacher_id, self::$table .".status" => self::STATUS_NORMAL, "ORDER" => "org_id"];
 
         return MysqlDB::getDB()->select(self::$table, [
             '[><]' . StudentModel::$table => ["student_id" => "id"],

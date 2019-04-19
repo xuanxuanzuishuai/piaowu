@@ -15,26 +15,26 @@ class HomeworkModel extends Model
     public static $table = "homework";
 
 
-    /**
-     * @param $opern_id
+    /** 创建
+     * @param $schedule_id
+     * @param $org_id
      * @param $teacher_id
-     * @param $book_id
      * @param $student_id
-     * @param $create_time
-     * @param $stop_time
-     * @param $content
+     * @param $created_time
+     * @param $end_time
+     * @param $remark
      * @return int|mixed|null|string
      */
-    public static function createHomework($opern_id, $book_id, $teacher_id, $student_id, $create_time, $stop_time, $content)
+    public static function createHomework($schedule_id, $org_id, $teacher_id, $student_id, $created_time, $end_time, $remark)
     {
-        return self::insertRecord([
-            'opern_id' => $opern_id,
-            'book_id' => $book_id,
-            'create_time' => $create_time,
+        return MysqlDB::getDB()->insertGetID(self::$table, [
+            'schedule_id' => $schedule_id,
+            'org_id' => $org_id,
+            'created_time' => $created_time,
             'teacher_id' => $teacher_id,
             'student_id' => $student_id,
-            'stop_time' => $stop_time,
-            'content' => $content
+            'end_time' => $end_time,
+            'remark' => $remark
         ]);
     }
 

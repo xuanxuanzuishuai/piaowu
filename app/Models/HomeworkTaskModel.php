@@ -29,4 +29,36 @@ class HomeworkTaskModel extends Model
             ['id' => $taskIds]
         );
     }
+
+    public static function createHomeworkTask($homework_id, $lesson_id, $lesson_name, $collection_id, $collection_name, $baseline) {
+        return MysqlDB::getDB()->insertGetID(self::$table, [
+            'homework_id' => $homework_id,
+            'lesson_id' => $lesson_id,
+            'lesson_name' => $lesson_name,
+            'collection_id' => $collection_id,
+            'collection_name' => $collection_name,
+            'baseline' => $baseline,
+        ]);
+    }
+
+    public static function getRecentCollectionIds($teacher_id, $page, $limit) {
+        $start = ($page - 1) * $limit;
+
+        $query = "select distinct " . self::$table . ".collection_id from " . self::$table . " inner join "
+            . HomeworkModel::$table . " on " . self::$table . ".homework_id = " . HomeworkModel::$table . ".id" .
+            " where " . HomeworkModel::$table . ".teacher_id=" . $teacher_id . " order by " . HomeworkModel::$table .
+            ".created_time desc limit " . $start . ", " . $limit;
+        return MysqlDB::getDB()->queryAll($query);
+    }
+
+    public static function getRecentLessonIds($teacher_id, $page, $limit) {
+        $start = ($page - 1) * $limit;
+
+        $query = "select distinct " . self::$table . ".lesson_id from " . self::$table . " inner join "
+            . HomeworkModel::$table . " on " . self::$table . ".homework_id = " . HomeworkModel::$table . ".id" .
+            " where " . HomeworkModel::$table . ".teacher_id=" . $teacher_id . " order by " . HomeworkModel::$table .
+            ".created_time desc limit " . $start . ", " . $limit;
+        return MysqlDB::getDB()->queryAll($query);
+    }
+
 }

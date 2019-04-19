@@ -10,10 +10,11 @@ namespace APP\Models;
 
 use App\Libs\MysqlDB;
 use App\Libs\RedisDB;
+use App\Libs\SimpleLogger;
 
 class AppConfigModel
 {
-    const TABLE = 'ai_app_config';
+    const TABLE = 'app_config';
     const CACHE_KEY = 'APP_CONFIG';
 
     const SMS_URL_CACHE_KEY = 'SMS_CENTER_URL';
@@ -28,6 +29,8 @@ class AppConfigModel
     const OPERN_API_LESSONS_KEY = 'OPERN_API_LESSONS';
     const OPERN_API_SEARCH_COLLECTIONS_KEY = 'OPERN_API_SEARCH_COLLECTIONS';
     const OPERN_API_SEARCH_OPERN_KEY = 'OPERN_API_SEARCH_OPERN';
+
+    const AI_HOMEWORK_DEMAND_KEY = 'AI_HOMEWORK_DEMAND';
 
     const REVIEW_VERSION = 'REVIEW_VERSION';
 
