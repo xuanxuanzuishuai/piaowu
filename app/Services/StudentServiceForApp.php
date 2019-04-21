@@ -59,6 +59,8 @@ class StudentServiceForApp
         $token = StudentModelForApp::genStudentToken($student['id']);
         StudentModelForApp::setStudentToken($student['id'], $token);
 
+        $teachers = StudentModelForApp::getTeacherIds($student['id']);
+
         $loginData = [
             'id' => $student['id'],
             'uuid' => $student['uuid'],
@@ -70,7 +72,7 @@ class StudentServiceForApp
             'sub_end_date' => $student['sub_end_date'],
             'config' => '{}',
             'token' => $token,
-            'teachers' => []
+            'teachers' => $teachers
         ];
 
         return [null, $loginData];
@@ -93,6 +95,8 @@ class StudentServiceForApp
             return ['invalid_token'];
         }
 
+        $teachers = StudentModelForApp::getTeacherIds($student['id']);
+
         $loginData = [
             'id' => $student['id'],
             'uuid' => $student['uuid'],
@@ -104,7 +108,7 @@ class StudentServiceForApp
             'sub_end_date' => $student['sub_end_date'],
             'config' => '{}',
             'token' => $token,
-            'teachers' => []
+            'teachers' => $teachers
         ];
 
         return [null, $loginData];
@@ -112,7 +116,7 @@ class StudentServiceForApp
 
     public static function registerStudentInUserCenter($name, $mobile, $uuid = '', $birthday = '', $gender = '')
     {
-        $userCenter = new UserCenter(UserCenter::AUTH_APP_ID_AIPEILIAN, 'e5ded0be7bbaf0e2');
+        $userCenter = new UserCenter(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT, 'e5ded0be7bbaf0e2');
         $authResult = $userCenter->studentAuthorization(8, $mobile, $name, $uuid, $birthday, $gender);
         return $authResult;
     }

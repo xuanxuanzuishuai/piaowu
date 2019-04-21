@@ -57,6 +57,20 @@ class StudentModelForApp extends Model
         ], $where);
     }
 
+    public static function getTeacherIds($studentID)
+    {
+        if (empty($studentID)) {
+            return null;
+        }
+
+        $db = MysqlDB::getDB();
+        $teacherIds = $db->select(TeacherStudentModel::$table, 'teacher_id', [
+            'student_id' => $studentID,
+            'status' => 1
+        ]);
+        return $teacherIds;
+    }
+
     public static function genStudentToken($studentID)
     {
         $rand = mt_rand(1, 9999);
