@@ -11,7 +11,11 @@ namespace App\Controllers\Org;
 use App\Controllers\ControllerBase;
 use App\Libs\Valid;
 use App\Models\OrganizationModel;
+use App\Models\StudentOrgModel;
+use App\Models\TeacherOrgModel;
 use App\Services\OrganizationService;
+use App\Services\StudentService;
+use App\Services\TeacherService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -273,6 +277,116 @@ class Org extends ControllerBase
             'data' => [
                 'record' => $record
             ]
+        ]);
+    }
+
+    /**
+     * 解绑/绑定 学生和机构
+     * @param Request $request
+     * @param Response $response
+     * @param $args
+     * @return Response
+     */
+    public function bindUnbindStudent(Request $request, Response $response, $args)
+    {
+        $rules = [
+            [
+                'key'        => 'student_id',
+                'type'       => 'required',
+                'error_code' => 'student_id_is_required'
+            ],
+            [
+                'key'        => 'bind',
+                'type'       => 'required',
+                'error_code' => 'bind_is_required'
+            ],
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $studentId = $params['student_id'];
+        $bind      = $params['bind'];
+        $orgId     = $this->getEmployeeOrgId();
+
+        $entry = StudentOrgModel::getRecord([
+            'org_id'     => $orgId,
+            'student_id' => $studentId,
+        ]);
+
+        if(empty($entry)) {
+            return $response->withJson(Valid::addErrors([], 'student','no_bind_relation'));
+        }
+
+        //状态不同时才更新
+        if($entry['status'] != $bind) {
+            $affectRows = StudentService::updateStatusWithOrg($orgId, $studentId, $bind);
+            if($affectRows == 0) {
+                return $response->withJson(Valid::addErrors([],'student','bind_unbind_fail'));
+            }
+        }
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => [],
+        ]);
+    }
+
+    /**
+     * 解绑/绑定 老师和机构
+     * @param Request $request
+     * @param Response $response
+     * @param $args
+     * @return Response
+     */
+    public function bindUnbindTeacher(Request $request, Response $response, $args)
+    {
+        $rules = [
+            [
+                'key'        => 'teacher_id',
+                'type'       => 'required',
+                'error_code' => 'teacher_id_is_required'
+            ],
+            [
+                'key'        => 'bind',
+                'type'       => 'required',
+                'error_code' => 'bind_is_required'
+            ],
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $teacherId = $params['teacher_id'];
+        $bind      = $params['bind'];
+        $orgId     = $this->getEmployeeOrgId();
+
+        $entry = TeacherOrgModel::getRecord([
+            'org_id'     => $orgId,
+            'teacher_id' => $teacherId,
+        ]);
+
+        if(empty($entry)) {
+            return $response->withJson(Valid::addErrors([], 'student','no_bind_relation'));
+        }
+
+        //状态不同时才更新
+        if($entry['status'] != $bind) {
+            $affectRows = TeacherService::updateStatusWithOrg($orgId, $teacherId, $bind);
+            if($affectRows == 0) {
+                return $response->withJson(Valid::addErrors([],'teacher','bind_unbind_fail'));
+            }
+        }
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => [],
         ]);
     }
 }

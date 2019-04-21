@@ -1,7 +1,6 @@
 <?php
 /**
  * Created by PhpStorm.
-<<<<<<< HEAD
  * User: mncu
  * Date: 2019/4/16
  * Time: 16:30
@@ -45,5 +44,17 @@ class OrganizationModel extends Model
      */
     public static function generateQrCode(){
 
+    }
+
+    /** 根据ID查询一条机构记录
+     * @param $orgId
+     * @return array|null
+     */
+    public static function getInfo($orgId)
+    {
+        $db = MysqlDB::getDB();
+        $record = $db->queryAll("select o.*,o2.name parent_name from organization o left join 
+        organization o2 on o.parent_id = o2.id where o.id = :org_id",[':org_id' => $orgId]);
+        return $record;
     }
 }

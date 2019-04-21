@@ -1,7 +1,6 @@
 <?php
 /**
  * Created by PhpStorm.
-<<<<<<< HEAD
  * User: mncu
  * Date: 2019/4/16
  * Time: 16:30

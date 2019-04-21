@@ -356,10 +356,14 @@ class StudentModel extends Model
      * 更新学生信息
      * @param $studentId
      * @param $data
+     * @return int|null affectRow
      */
     public static function updateStudent($studentId, $data)
     {
-        $params = [];
+        $params = [
+            'update_time' => time()
+        ];
+
         if(isset($data['name'])){
             $params['name'] = $data['name'];
         }
@@ -369,8 +373,8 @@ class StudentModel extends Model
         if(isset($data['birthday'])){
             $params['birthday'] = $data['birthday'];
         }
-        $params['update_time'] = time();
-        self::updateRecord($studentId, $params);
+
+        return self::updateRecord($studentId, $params);
     }
 
     /**
@@ -425,24 +429,27 @@ class StudentModel extends Model
      * erp添加学生
      * @param $params
      * @param $uuid
+     * @param $operatorId
      * @return int|mixed|null|string
      */
     public static function erpInsertStudent($params, $uuid,$operatorId = 0 )
     {
-        $data = [];
-        $data['name'] = $params['name'];
-        $data['mobile'] = $params['mobile'];
-        $data['uuid'] = $uuid;
-        $data['channel_id'] = $params['channel_id'];
-        $data['channel_level'] = $params['channel_level'];
-        $data['create_time'] = time();
+        $data = ['operator_id' => $operatorId];
+
+        $data['name']          = $params['name'];
+        $data['mobile']        = $params['mobile'];
+        $data['uuid']          = $uuid;
+//        $data['channel_id']    = $params['channel_id'];
+//        $data['channel_level'] = $params['channel_level'];
+        $data['create_time']   = time();
+
         if(!empty($params['gender'])){
             $data['gender'] = $params['gender'];
         }
         if(!empty($params['birthday'])){
             $data['birthday'] = $params['birthday'];
         }
-        $data['operator_id'] = $operatorId;
+
         return MysqlDB::getDB()->insertGetID(self::$table, $data);
     }
 
@@ -541,9 +548,7 @@ class StudentModel extends Model
         $db = MysqlDB::getDB();
         $s = StudentModel::$table;
         $so = StudentOrgModel::$table;
-        $st = StudentOrgModel::STATUS_NORMAL;
         $t = TeacherStudentModel::$table;
-        $tStatus = TeacherStudentModel::STATUS_NORMAL;
 
         $limit = Util::limitation($page, $count);
 
@@ -551,10 +556,12 @@ class StudentModel extends Model
             $sql = "select * from {$s} order by create_time desc {$limit}";
             $countSql = "select count(*) count from {$s}";
         } else {
-            $sql = "select s.*,t.teacher_id from {$s} s inner join {$so} so on s.id = so.student_id and so.status = {$st}  
-                    and so.org_id = {$orgId} left join {$t} t on s.id = t.student_id and t.status = {$tStatus}
+            $sql = "select s.*,t.teacher_id,te.name teacher_name,so.status bind_status from {$s} s inner join {$so} so 
+                    on s.id = so.student_id 
+                    and so.org_id = {$orgId} left join {$t} t on s.id = t.student_id 
+                    left join teacher te on te.id = t.teacher_id
                     order by s.create_time desc {$limit}";
-            $countSql = "select count(*) count from {$s} s,{$so} so where s.id = so.student_id and so.status = {$st} 
+            $countSql = "select count(*) count from {$s} s,{$so} so where s.id = so.student_id  
                         and so.org_id = {$orgId}";
         }
 
@@ -569,17 +576,24 @@ class StudentModel extends Model
      * 查询一条指定机构和学生id的记录
      * @param $orgId
      * @param $studentId
+     * @param $status null表示不限制状态
      * @return array|null
      */
-    public static function getOrgStudent($orgId, $studentId)
+    public static function getOrgStudent($orgId, $studentId, $status = null)
     {
         $db = MysqlDB::getDB();
         $s = StudentModel::$table;
         $so = StudentOrgModel::$table;
         $st = StudentOrgModel::STATUS_NORMAL;
 
-        $record = $db->queryAll("select s.* from {$s} s,{$so} so where s.id = so.student_id
-        and so.status = {$st} and so.org_id = {$orgId} and s.id = {$studentId}");
+        $sql = "select s.* from {$s} s,{$so} so where s.id = so.student_id
+        and so.status = {$st} and so.org_id = {$orgId} and s.id = {$studentId} ";
+
+        if(!is_null($status)) {
+            $sql .= " and so.status = {$status} ";
+        }
+
+        $record = $db->queryAll($sql);
 
         return $record;
     }

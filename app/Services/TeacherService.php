@@ -116,9 +116,10 @@ class TeacherService
                 return Valid::addErrors([], 'teacher', 'teacher_update_error');
             }
 
+            $update['gender'] = empty($update['gender']) ? '1' : strval($update['gender']);
             //请求用户中心修改用户信息
             $modifyResult = $userCenter->modifyTeacher($update['uuid'], $update['mobile'], $update['name'],
-                $update['birthday'],intval($update['gender']));
+                $update['birthday'],$update['gender']);
 
             if(isset($modifyResult['code'])) {
                 return $modifyResult; //已经用Valid::addErrors包装过
@@ -1838,5 +1839,17 @@ class TeacherService
     public static function getOrgTeacherById($orgId, $teacherId)
     {
         return TeacherModel::getOrgTeacherById($orgId, $teacherId);
+    }
+
+    /**
+     * 更新老师和机构的绑定状态
+     * @param $orgId
+     * @param $teacherId
+     * @param $status
+     * @return int|null
+     */
+    public static function updateStatusWithOrg($orgId, $teacherId, $status)
+    {
+        return TeacherOrgModel::updateStatus($orgId, $teacherId, $status);
     }
 }

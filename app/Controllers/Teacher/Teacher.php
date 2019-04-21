@@ -14,6 +14,7 @@ use App\Libs\Constants;
 use App\Libs\MysqlDB;
 use App\Libs\Util;
 use App\Libs\Valid;
+use App\Models\StudentOrgModel;
 use App\Models\TeacherModel;
 use App\Libs\ResponseError;
 use App\Models\TeacherOrgModel;
@@ -147,7 +148,12 @@ class Teacher extends ControllerBase
                 'type'       => 'regex',
                 'value'      => Constants::MOBILE_REGEX,
                 'error_code' => 'teacher_mobile_format_is_error'
-            ]
+            ],
+            [
+                'key'        => 'gender',
+                'type'       => 'required',
+                'error_code' => 'gender_is_required'
+            ],
         ];
 
         $params = $request->getParams();
@@ -218,7 +224,12 @@ class Teacher extends ControllerBase
                 'type'       => 'regex',
                 'value'      => Constants::MOBILE_REGEX,
                 'error_code' => 'teacher_mobile_format_is_error'
-            ]
+            ],
+            [
+                'key'        => 'gender',
+                'type'       => 'required',
+                'error_code' => 'gender_is_required'
+            ],
         ];
 
         $params = $request->getParams();
@@ -341,8 +352,8 @@ class Teacher extends ControllerBase
             return $response->withJson(Valid::addErrors([],'teacher','have_no_binding_to_teacher'));
         }
 
-        //检查当前机构是否绑定学生
-        $student = StudentService::getOrgStudent($orgId, $studentId);
+        //检查当前机构是否绑定学生(正常绑定，不是曾经绑定)
+        $student = StudentService::getOrgStudent($orgId, $studentId, StudentOrgModel::STATUS_NORMAL);
         if(empty($student)) {
             return $response->withJson(Valid::addErrors([],'teacher','have_no_binding_to_student'));
         }

@@ -55,9 +55,10 @@ $arr = array(
     '/boss/classroom/add' => array('method' => array('post'), 'call' => '\App\Controllers\Boss\Classroom:add', 'middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
 
     '/student/student/list' => array('method'=> array('get'),'call'=> '\App\Controllers\Student\Student:list','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
-    '/student/student/student_detail' => array('method'=> array('get'),'call'=> '\App\Controllers\Student\Student:detail','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
-    '/student/student/student_modify' => array('method'=> array('post'),'call'=> '\App\Controllers\Student\Student:modify','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
-    '/student/student/add_student' => array('method'=> array('post'),'call'=> '\App\Controllers\Student\Student:add','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
+    '/student/student/detail' => array('method'=> array('get'),'call'=> '\App\Controllers\Student\Student:detail','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
+    '/student/student/info' => array('method'=> array('get'),'call'=> '\App\Controllers\Student\Student:info','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
+    '/student/student/modify' => array('method'=> array('post'),'call'=> '\App\Controllers\Student\Student:modify','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
+    '/student/student/add' => array('method'=> array('post'),'call'=> '\App\Controllers\Student\Student:add','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
     '/student/student/get_channels' => array('method'=> array('get'),'call'=> '\App\Controllers\Student\Student:getSChannels','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
     '/student/student/batch_assign_cc' => array('method'=> array('post'),'call'=> '\App\Controllers\Student\Student:batchAssignCC','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
 
@@ -239,7 +240,18 @@ $arr = array(
     '/teacher_wx/homework/homework_demand' => array('method'=>array('get'),'call'=>'\App\Controllers\TeacherWX\Homework:getHomeworkDemand', array( '\App\Middleware\WeChatAuthCheckMiddleware', '\App\Middleware\WeChatOpenIdCheckMiddleware')),
     '/teacher_wx/homework/add' => array('method'=>array('post'),'call'=>'\App\Controllers\TeacherWX\Homework:add', 'middles' => array( '\App\Middleware\WeChatAuthCheckMiddleware', '\App\Middleware\WeChatOpenIdCheckMiddleware')),
     '/teacher_wx/teacher/register' => array('method'=>array('post'),'call'=>'\App\Controllers\TeacherWX\Teacher:register', 'middles' => array('\App\Middleware\WeChatOpenIdCheckMiddleware')),
-    '/teacher_wx/teacher/login' => array('method'=>array('post'),'call'=>'\App\Controllers\TeacherWX\Teacher:login', 'middles' => array('\App\Middleware\WeChatOpenIdCheckMiddleware'))
+    '/teacher_wx/teacher/login' => array('method'=>array('post'),'call'=>'\App\Controllers\TeacherWX\Teacher:login', 'middles' => array('\App\Middleware\WeChatOpenIdCheckMiddleware')),
+
+    '/org_web/org/bind_unbind_student' => [
+        'method'  => ['post'],
+        'call'    => '\App\Controllers\Org\Org:bindUnbindStudent',
+        'middles' => ['\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare'],
+    ],
+    '/org_web/org/bind_unbind_teacher' => [
+        'method'  => ['post'],
+        'call'    => '\App\Controllers\Org\Org:bindUnbindTeacher',
+        'middles' => ['\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare'],
+    ],
 );
 
 /** @var App $app */

@@ -144,16 +144,15 @@ class TeacherModel extends Model
     {
         $t = TeacherModel::$table;
         $to = TeacherOrgModel::$table;
-        $s = TeacherOrgModel::STATUS_NORMAL;
 
         if(empty($orgId)) {
-            $sql_list = "select t.*,'' as college_name from {$t} t ";
+            $sql_list = "select t.* from {$t} t ";
             $sql_count = "select count(t.id) as totalCount from {$t} t";
         } else {
-            $sql_list = "select t.*,'' as college_name from {$t} t inner join {$to} tr on 
-                    tr.teacher_id = t.id and tr.status = {$s} and tr.org_id = {$orgId} ";
+            $sql_list = "select t.*,tr.status bind_status from {$t} t inner join {$to} tr on 
+                    tr.teacher_id = t.id and tr.org_id = {$orgId} ";
             $sql_count = "select count(t.id) as totalCount from {$t} t inner join {$to} tr on 
-                    tr.teacher_id = t.id and tr.status = {$s} and tr.org_id = {$orgId} ";
+                    tr.teacher_id = t.id and tr.org_id = {$orgId} ";
         }
 
         list($where, $map) = self::whereForEntry($params, $ta_role_id);

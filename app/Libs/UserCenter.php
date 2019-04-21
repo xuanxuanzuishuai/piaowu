@@ -38,7 +38,7 @@ class UserCenter
     const AUTH_APP_ID_LIEBAO = 5;
     const AUTH_APP_ID_AIPEILIAN_STUDENT = 8; //AI陪练学生
     const AUTH_APP_ID_AIPEILIAN_TEACHER = 13; //AI陪练老师
-    const AUTH_APP_ID_DSS = 10;
+    const AUTH_APP_ID_DSS = 10; //机构员工
 
     private $hostBaseUrl, $appId, $appSecret;
 
@@ -47,7 +47,6 @@ class UserCenter
         list($hostBaseUrl, $ucAppId, $ucAppSecret) = DictService::getKeyValuesByArray(Constants::DICT_TYPE_SYSTEM_ENV,
             [Constants::DICT_KEY_UC_HOST_URL, Constants::DICT_KEY_UC_APP_ID, Constants::DICT_KEY_UC_APP_SECRET]);
         $this->hostBaseUrl = $hostBaseUrl . '/api';
-
         $this->appId = empty($appId) ? $ucAppId : $appId;
         $this->appSecret = empty($appSecret) ? $ucAppSecret : $appSecret;
     }
@@ -170,6 +169,7 @@ class UserCenter
             ],
             'json' => $userInfo
         ]);
+
         if (!$result){
             return Valid::addErrors([], 'uc_update_error', 'uc_update_failed');
         }

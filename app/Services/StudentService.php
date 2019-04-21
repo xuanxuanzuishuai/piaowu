@@ -11,6 +11,7 @@
 namespace App\Services;
 
 use App\Libs\Constants;
+use App\Libs\ResponseError;
 use App\Libs\UserCenter;
 use App\Libs\Util;
 use App\Libs\Valid;
@@ -180,7 +181,7 @@ class StudentService
     /**
      * 更新学生详细信息
      * @param $params
-     * @return array
+     * @return array|int
      */
     public static function updateStudentDetail($params)
     {
@@ -189,23 +190,17 @@ class StudentService
             return Valid::addErrors([], 'student_id', 'student_not_exist');
         }
 
+        $gender = empty($params['gender']) ? '1' : strval($params['gender']);
+
         $userCenter = new UserCenter();
-        $updResult = $userCenter->modifyStudent($student['uuid'], $params['name'], $params['birthday'], $params['gender']);
+        $updResult = $userCenter->modifyStudent($student['uuid'], $params['name'], $params['birthday'], $gender);
         if (!empty($updResult) && $updResult['code'] != 0){
             return $updResult;
         }
 
-        // 更新学生基本信息
-        StudentModel::updateStudent($params['student_id'], $params);
-        StudentRelationService::delStudentRelation($params['student_id']);
+        $affectRow = StudentModel::updateStudent($params['student_id'], $params);
 
-        //更新学生关联人
-        if (!empty($params['relations'])) {
-            StudentRelationService::addStudentRelations($params['student_id'], $params['relations']);
-        }
-
-        // 更新学生应用信息
-        StudentAppService::updateStudentApp($params['instruments']);
+        return $affectRow;
     }
 
     /**
@@ -386,35 +381,23 @@ class StudentService
     /**
      * 学生注册
      * @param $params
-     * @param $employeeId
+     * @param $operatorId
      * @return int|mixed|null|string
      * @throws \Exception
      */
-    public static function studentRegister($params, $employeeId = 0)
+    public static function studentRegister($params, $operatorId = 0)
     {
         //添加学生
-        $res = self::erpAddStudent($params,$employeeId);
+        $res = self::erpAddStudent($params, $operatorId);
         if($res['code'] != Valid::CODE_SUCCESS){
             return $res;
         }
+
         $studentId = $res['data']['studentId'];
-        $student = StudentModel::getById($studentId);
-        //添加学生关联人
-        if (!empty($params['relations'])) {
-            StudentRelationService::addStudentRelations($studentId, $params['relations']);
-        }
-        //添加学生app
-        StudentAppService::erpAddStudentApp($studentId, $params);
-        //注册赠课
-//        $gift = StudentCourseService::normalStudentRegisterGiftCourse($studentId, $params['app_id'], $employeeId, ScheduleService::FROM_BACKEND);
-//        if (!empty($gift['error'])) {
-//            return Valid::addErrors([], 'gift', 'give_student_gift_failed');
-//        }
 
         return [
-            'code' => 0,
-            'student' => $student,
-            'bill_id' => 0,//$gift
+            'code'       => 0,
+            'student_id' => $studentId,
         ];
     }
 
@@ -424,16 +407,20 @@ class StudentService
      * @param int $operatorId
      * @return array
      */
-    public static function erpAddStudent($params,$operatorId = 0)
+    public static function erpAddStudent($params, $operatorId = 0)
     {
         // 用户中心授权
         $userCenter = new UserCenter();
-        $authResult = $userCenter->studentAuthorization(UserCenter::AUTH_APP_ID_STUDENT, $params['mobile'], $params['name'], '');
+        $authResult = $userCenter->studentAuthorization(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
+            $params['mobile'], $params['name'], '');
+
         if (empty($authResult["uuid"])) {
             return Valid::addErrors([], "user_center", "uc_user_add_failed");
         }
-        $studentId = StudentModel::erpInsertStudent($params, $authResult["uuid"],$operatorId);
-        return ['code'=>Valid::CODE_SUCCESS, 'data'=>['studentId'=>$studentId]];
+
+        $studentId = StudentModel::erpInsertStudent($params, $authResult["uuid"], $operatorId);
+
+        return ['code' => Valid::CODE_SUCCESS, 'data' => ['studentId' => $studentId]];
     }
 
     /**
@@ -474,10 +461,59 @@ class StudentService
      * 查询一条指定机构和学生id的记录
      * @param $orgId
      * @param $studentId
+     * @param $status
      * @return array|null
      */
-    public static function getOrgStudent($orgId, $studentId)
+    public static function getOrgStudent($orgId, $studentId, $status = null)
     {
-        return StudentModel::getOrgStudent($orgId, $studentId);
+        return StudentModel::getOrgStudent($orgId, $studentId, $status);
+    }
+
+    /**
+     * 绑定学生和机构，返回lastId
+     * 关系存在时候，只更新，不插入新的记录
+     * 已经绑定的不会返回错误，同样返回lastId
+     * @param $orgId
+     * @param $studentId
+     * @return ResponseError|int|mixed|null|string
+     */
+    public static function bindOrg($orgId, $studentId)
+    {
+        $studentOrg = StudentOrgModel::getRecord(['org_id' => $orgId, 'student_id' => $studentId]);
+        if(empty($studentOrg)) {
+            //save
+            $lastId = StudentOrgModel::insertRecord([
+                'org_id'      => $orgId,
+                'student_id'  => $studentId,
+                'status'      => StudentOrgModel::STATUS_NORMAL,
+                'update_time' => time(),
+                'create_time' => time(),
+            ]);
+            if($lastId == 0) {
+                return new ResponseError('save_student_org_fail');
+            }
+            return $lastId;
+        } else {
+            //update
+            if($studentOrg['status'] != StudentOrgModel::STATUS_NORMAL) {
+                $affectRows = StudentOrgModel::updateStatus($orgId, $studentId, StudentOrgModel::STATUS_NORMAL);
+                if($affectRows == 0) {
+                    return new ResponseError('update_student_org_status_error');
+                }
+                return $studentOrg['id'];
+            }
+            return $studentOrg['id'];
+        }
+    }
+
+    /**
+     * 更新学生和机构关系的状态(解绑/绑定)
+     * @param $orgId
+     * @param $studentId
+     * @param $status
+     * @return int|null
+     */
+    public static function updateStatusWithOrg($orgId, $studentId, $status) {
+        return StudentOrgModel::updateStatus($orgId, $studentId, $status);
     }
 }
