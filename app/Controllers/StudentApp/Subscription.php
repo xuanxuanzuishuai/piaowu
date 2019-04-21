@@ -38,7 +38,7 @@ class Subscription extends ControllerBase
         $db = MysqlDB::getDB();
         $db->beginTransaction();
 
-        list($errorCode, $ret) = StudentServiceForApp::redeemGiftCode($params['code'], $this->ci['user']['id']);
+        list($errorCode, $ret) = StudentServiceForApp::redeemGiftCode($params['code'], $this->ci['student']['id']);
 
         if (!empty($errorCode)) {
             $result = Valid::addAppErrors([], $errorCode);

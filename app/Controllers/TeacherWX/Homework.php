@@ -71,7 +71,7 @@ class HomeWork extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        // $user_id = $this->ci['user']['id'];
+        // $user_id = $this->ci['student']['id'];
         // todo 因为这里微信端登陆的逻辑还没做，暂时先写死
         $user_id = 460;
         $db = MysqlDB::getDB();
@@ -124,7 +124,7 @@ class HomeWork extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        // $user_id = $this->ci['user']['id'];
+        // $user_id = $this->ci['student']['id'];
         // todo 因为这里微信端登陆的逻辑还没做，暂时先写死
         $user_id = 460;
 
@@ -183,7 +183,7 @@ class HomeWork extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        // $user_id = $this->ci['user']['id'];
+        // $user_id = $this->ci['student']['id'];
         // todo 因为这里微信端登陆的逻辑还没做，暂时先写死
         $user_id = 460;
 

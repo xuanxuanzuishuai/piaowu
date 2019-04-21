@@ -43,7 +43,7 @@ class Homework extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        // $userId = $this->ci['user']['id'];
+        // $userId = $this->ci['student']['id'];
         $userId = 888888;
         list($homework, $playRecord) = HomeworkService::getStudentHomeworkPractice($userId, $params['lesson_id']);
         if(empty($homework)){
@@ -79,7 +79,7 @@ class Homework extends ControllerBase
     public function HomeworkList(Request $request, Response $response){
         $params = $request->getParams();
         list($pageId, $pageLimit) = Util::formatPageCount($params);
-        //$userId = $this->ci['user']['id'];
+        //$userId = $this->ci['student']['id'];
         $userId = 888888;
         $data = HomeworkService::getStudentHomeWorkList($userId, $pageId, $pageLimit);
 

@@ -38,7 +38,7 @@ class Opn extends ControllerBase
 
         $version = $this->ci['version'];
 
-        if ($this->ci['tester']) {
+        if ($this->ci['opn_is_tester']) {
             $auditing = 0;
             $publish = 0;
         } else {
@@ -78,7 +78,7 @@ class Opn extends ControllerBase
 
         $version = $this->ci['version'];
 
-        if ($this->ci['is_opn_tester']) {
+        if ($this->ci['opn_is_tester']) {
             $auditing = 0;
             $publish = 0;
         } else {
@@ -129,7 +129,7 @@ class Opn extends ControllerBase
 
         $version = $this->ci['version'];
 
-        if ($this->ci['is_opn_tester']) {
+        if ($this->ci['opn_is_tester']) {
             $auditing = 0;
             $publish = 0;
         } else {
@@ -179,7 +179,7 @@ class Opn extends ControllerBase
 
         $version = $this->ci['version'];
 
-        if ($this->ci['tester']) {
+        if ($this->ci['opn_is_tester']) {
             $auditing = 0;
             $publish = 0;
         } else {
@@ -229,7 +229,7 @@ class Opn extends ControllerBase
 
         $version = $this->ci['version'];
 
-        if ($this->ci['tester']) {
+        if ($this->ci['opn_is_tester']) {
             $auditing = 0;
             $publish = 0;
         } else {

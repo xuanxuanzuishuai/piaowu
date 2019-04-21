@@ -2,8 +2,11 @@
 
 namespace App;
 
+use App\Controllers\StudentApp\Auth;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
+use App\Middleware\AppApi;
+use App\Middleware\StudentAuthCheckMiddleWareForApp;
 use Slim\App;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -54,12 +57,28 @@ $arr = array(
     '/student/student/get_channels' => array('method'=> array('get'),'call'=> '\App\Controllers\Student\Student:getSChannels','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
     '/student/student/batch_assign_cc' => array('method'=> array('post'),'call'=> '\App\Controllers\Student\Student:batchAssignCC','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
 
-    // 从ai_peilian_backend迁移至此 TODO:与dss_crm风格保持一致
+    // /student_app/auth
     '/student_app/auth/login' => [
         'method' => ['post'],
-        'call' => '\App\Controllers\StudentApp\Auth::login',
-        'middles' => []
+        'call' => Auth::class . ':login',
+        'middles' => [AppApi::class]
     ],
+    '/student_app/auth/token_login' => [
+        'method' => ['post'],
+        'call' => Auth::class . ':tokenLogin',
+        'middles' => [AppApi::class]
+    ],
+    '/student_app/auth/validate_code' => [
+        'method' => ['get'],
+        'call' => Auth::class . ':validateCode',
+        'middles' => [AppApi::class]
+    ],
+    '/student_app/auth/get_user_id' => [
+        'method' => ['get'],
+        'call' => Auth::class . ':getUserId',
+        'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApi::class]
+    ],
+
     '/student_app/play/end' => array('method'=> array('post'),'call'=> '\App\Controllers\StudentApp\Play:PlayEnd','middles' => array('\App\Middleware\EmployeeAuthCheckMiddleWare')),
     '/student_app/play/save' => array('method'=> array('post'),'call'=> '\App\Controllers\StudentApp\Play:PlaySave','middles' => array('\App\Middleware\EmployeeAuthCheckMiddleWare')),
     '/student_app/play/ai_end' => array('method'=> array('post'),'call'=> '\App\Controllers\StudentApp\Play:AiPlayEnd','middles' => array()),

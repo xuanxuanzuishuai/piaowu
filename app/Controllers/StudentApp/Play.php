@@ -56,7 +56,7 @@ class Play extends ControllerBase
         $db = MysqlDB::getDB();
         $db->beginTransaction();
 
-        $userID = $this->ci['user']['id'];
+        $userID = $this->ci['student']['id'];
         // 新增record_type字段区分演奏类型，situation_type区分课上课下
         $params['data']['record_type'] = PlayRecordModel::TYPE_DYNAMIC;
         $params['data']['situation_type'] = PlayRecordModel::TYPE_ON_CLASS;
@@ -111,7 +111,7 @@ class Play extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $userID = $this->ci['user']['id'];
+        $userID = $this->ci['student']['id'];
 
         $save = UserPlayServices::getSave($userID, $params['lesson_id']);
         if (empty($save)) {
@@ -150,7 +150,7 @@ class Play extends ControllerBase
         $db->beginTransaction();
 
         // 插入练琴纪录表
-        //$userId = $this->ci['user']['id']
+        //$userId = $this->ci['student']['id']
         $userId = 888888;
         $param['data']['record_type'] = PlayRecordModel::TYPE_AI;
         $param['data']['situation_type'] = PlayRecordModel::TYPE_OFF_CLASS;
