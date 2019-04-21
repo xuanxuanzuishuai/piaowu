@@ -18,6 +18,7 @@ use App\Models\StudentOrgModel;
 use App\Models\TeacherModel;
 use App\Libs\ResponseError;
 use App\Models\TeacherOrgModel;
+use App\Models\TeacherStudentModel;
 use App\Services\StudentService;
 use App\Services\TeacherOrgService;
 use App\Services\TeacherService;
@@ -359,10 +360,10 @@ class Teacher extends ControllerBase
         }
 
         //学生是否已经绑定其他老师
-        $entries = StudentOrgModel::getRecords([
+        $entries = TeacherStudentModel::getRecords([
             'org_id'     => $orgId,
             'student_id' => $studentId,
-            'status'     => StudentOrgModel::STATUS_NORMAL,
+            'status'     => TeacherStudentModel::STATUS_NORMAL,
         ]);
         foreach($entries as $e) {
             if($e['teacher_id'] != $teacherId) {
