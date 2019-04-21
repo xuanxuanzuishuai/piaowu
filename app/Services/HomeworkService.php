@@ -49,7 +49,7 @@ class HomeworkService
     public static function getStudentUnfinishedWork($studentId, $lessonId=null){
         $where = [
             HomeworkModel::$table . ".student_id" => $studentId,
-            HomeworkModel::$table . ".end_time[<]" => time(),
+            HomeworkModel::$table . ".end_time[>]" => time(),
             HomeworkTaskModel::$table . ".is_complete" => HomeworkTaskModel::TYPE_UNCOMPLETE
         ];
         if (!empty($lessonId)){
