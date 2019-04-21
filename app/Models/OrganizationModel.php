@@ -53,8 +53,8 @@ class OrganizationModel extends Model
     public static function getInfo($orgId)
     {
         $db = MysqlDB::getDB();
-        $record = $db->queryAll("select o.*,o2.name parent_name from organization o left join 
+        $records = $db->queryAll("select o.*,o2.name parent_name from organization o left join 
         organization o2 on o.parent_id = o2.id where o.id = :org_id",[':org_id' => $orgId]);
-        return $record;
+        return empty($records) ? [] : $records[0];
     }
 }
