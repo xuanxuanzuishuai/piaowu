@@ -6,7 +6,7 @@
  * Time: 8:44 PM
  */
 
-namespace app\Controllers\StudentApp;
+namespace App\Controllers\StudentApp;
 
 use App\Controllers\ControllerBase;
 use App\Libs\MysqlDB;

@@ -6,7 +6,7 @@
  * Time: 1:16 PM
  */
 
-namespace app\Controllers\StudentApp;
+namespace App\Controllers\StudentApp;
 
 
 use App\Controllers\ControllerBase;
@@ -14,7 +14,7 @@ use App\Libs\OpernCenter;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\AppConfigModel;
-use app\Services\OpernService;
+use App\Services\OpernService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -76,20 +76,12 @@ class Opn extends ControllerBase
     {
         $params = $request->getParams();
 
-        $version = $this->ci['version'];
-
-        if ($this->ci['opn_is_tester']) {
-            $auditing = 0;
-            $publish = 0;
-        } else {
-            $reviewVersion = AppConfigModel::get(AppConfigModel::REVIEW_VERSION);
-            $auditing = ($reviewVersion == $params['version']) ? 1 : 0;
-            $publish = 1;
-        }
-
         list($pageId, $pageLimit) = Util::appPageLimit($params);
 
-        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, $version, $auditing, $publish);
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT,
+            $this->ci['version'],
+            $this->ci['opn_auditing'],
+            $this->ci['opn_publish']);
         $result = $opn->categories($pageId, $pageLimit);
         if (empty($result) || !empty($result['errors'])) {
             return $response->withJson($result, StatusCode::HTTP_OK);

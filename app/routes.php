@@ -8,6 +8,7 @@ use App\Middleware\AppApi;
 use App\Middleware\StudentAuthCheckMiddleWareForApp;
 use App\Controllers\StudentApp\App as StudentAppApp;
 use App\Controllers\StudentApp\Auth as StudentAppAuth;
+use App\Controllers\StudentApp\Opn as StudentAppOpn;
 use Slim\App;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -94,6 +95,23 @@ $arr = array(
     '/student_app/app/feedback' => [
         'method' => ['post'],
         'call' => StudentAppApp::class . ':feedback',
+        'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApi::class]
+    ],
+
+    // /student_app/opn
+    '/student_app/opn/categories' => [
+        'method' => ['get'],
+        'call' => StudentAppOpn::class . ':categories',
+        'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApi::class]
+    ],
+    '/student_app/opn/collections' => [
+        'method' => ['get'],
+        'call' => StudentAppOpn::class . ':collections',
+        'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApi::class]
+    ],
+    '/student_app/opn/lessons' => [
+        'method' => ['get'],
+        'call' => StudentAppOpn::class . ':lessons',
         'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApi::class]
     ],
 
