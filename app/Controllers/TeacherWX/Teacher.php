@@ -9,13 +9,14 @@
 namespace App\Controllers\TeacherWX;
 
 use App\Controllers\ControllerBase;
+use App\Libs\Util;
 use App\Libs\Valid;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
 use App\Libs\MysqlDB;
 use App\Models\TeacherModelForApp;
-use App\Services\TeacherForAppService;
+use App\Services\TeacherServiceForApp;
 use App\Services\WeChatService;
 use App\Models\UserWeixinModel;
 
@@ -75,7 +76,7 @@ class Teacher extends ControllerBase
         $db->beginTransaction();
         if (empty($teacher_info["id"])) {
 
-            $teacher_id = TeacherForAppService::teacherRegister($params["mobile"], $params["name"]);
+            $teacher_id = TeacherServiceForApp::teacherRegister($params["mobile"], $params["name"]);
             if (empty($teacher_id)) {
                 return $response->withJson(Valid::addAppErrors([], 'register_failed'), StatusCode::HTTP_OK);
             }
@@ -104,6 +105,8 @@ class Teacher extends ControllerBase
      */
     public function login(Request $request, Response $response)
     {
+        Util::unusedParam($request);
+
         $openId = $this->ci["open_id"];
         if (empty($openId)) {
             return $response->withJson(Valid::addAppErrors([], 'not_found_open_id'), StatusCode::HTTP_OK);
