@@ -71,9 +71,7 @@ class HomeWork extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        // $user_id = $this->ci['student']['id'];
-        // todo 因为这里微信端登陆的逻辑还没做，暂时先写死
-        $user_id = 460;
+        $user_id = $this->ci['user']['id'];
         $db = MysqlDB::getDB();
         $db->beginTransaction();
         $homework_id = HomeworkService::createHomework($params["schedule_id"], $params["org_id"], $user_id, $params["student_id"],
@@ -124,10 +122,7 @@ class HomeWork extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        // $user_id = $this->ci['student']['id'];
-        // todo 因为这里微信端登陆的逻辑还没做，暂时先写死
-        $user_id = 460;
-
+        $user_id = $this->ci['user']['id'];
         $collection_ids = HomeworkTaskModel::getRecentCollectionIds($user_id, $params["page"], $params["limit"]);
         // $collection_ids = [22, 23, 24];
         $collection_list = [];
@@ -183,27 +178,22 @@ class HomeWork extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        // $user_id = $this->ci['student']['id'];
-        // todo 因为这里微信端登陆的逻辑还没做，暂时先写死
-        $user_id = 460;
-
+        $user_id = $this->ci['user']['id'];
         $lesson_ids = HomeworkTaskModel::getRecentLessonIds($user_id, $params["page"], $params["limit"]);
-        // $collection_ids = [22, 23, 24];
         $lesson_list = [];
         if (!empty($lesson_ids)) {
-            // todo 这里等待杜老师提供接口
             $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, self::version);
-            $res = $opn->collectionsByIds($lesson_ids);
+            $res = $opn->lessonsByIds($lesson_ids);
             if (!empty($res['code']) && $res['code'] !== Valid::CODE_SUCCESS) {
                 $lesson_list = [];
             } else {
-                $lesson_list = $res["data"];
+                $lesson_list = $res["data"] ? $res["data"]: $res;
             }
         }
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
-            'data' => [] // todo 暂时先返回空
+            'data' => $lesson_list
         ], StatusCode::HTTP_OK);
     }
 
