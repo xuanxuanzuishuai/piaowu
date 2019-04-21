@@ -11,6 +11,7 @@ namespace App\Controllers\TeacherWX;
 
 use App\Controllers\ControllerBase;
 use App\Libs\MysqlDB;
+use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Models\AppConfigModel;
 use App\Services\HomeworkService;
@@ -44,18 +45,13 @@ class HomeWork extends ControllerBase
             ],
             [
                 'key' => 'schedule_id',
-                'type' => 'required',
+                'type' => 'integer',
                 'error_code' => 'schedule_id_is_required'
             ],
             [
                 'key' => 'days_limit',
                 'type' => 'required',
                 'error_code' => 'days_limit_is_required'
-            ],
-            [
-                'key' => 'remark',
-                'type' => 'required',
-                'error_code' => 'remark_is_required'
             ],
             [
                 'key' => 'content',
@@ -71,11 +67,11 @@ class HomeWork extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $user_id = $this->ci['user']['id'];
+        $user_id = $this->ci['user_info']['user_id'];
         $db = MysqlDB::getDB();
         $db->beginTransaction();
         $homework_id = HomeworkService::createHomework($params["schedule_id"], $params["org_id"], $user_id, $params["student_id"],
-            $params["days_limit"], $params["remark"], $params["content"]);
+            $params["days_limit"], $params["remark"] ?? "", $params["content"]);
 
         $db->commit();
 
@@ -122,9 +118,8 @@ class HomeWork extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $user_id = $this->ci['user']['id'];
+        $user_id = $this->ci['user_info']['user_id'];
         $collection_ids = HomeworkTaskModel::getRecentCollectionIds($user_id, $params["page"], $params["limit"]);
-        // $collection_ids = [22, 23, 24];
         $collection_list = [];
         if (!empty($collection_ids)) {
             $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, self::version);
@@ -178,7 +173,7 @@ class HomeWork extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $user_id = $this->ci['user']['id'];
+        $user_id = $this->ci['user_info']['user_id'];
         $lesson_ids = HomeworkTaskModel::getRecentLessonIds($user_id, $params["page"], $params["limit"]);
         $lesson_list = [];
         if (!empty($lesson_ids)) {

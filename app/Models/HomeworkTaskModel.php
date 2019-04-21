@@ -48,7 +48,9 @@ class HomeworkTaskModel extends Model
             . HomeworkModel::$table . " on " . self::$table . ".homework_id = " . HomeworkModel::$table . ".id" .
             " where " . HomeworkModel::$table . ".teacher_id=" . $teacher_id . " order by " . HomeworkModel::$table .
             ".created_time desc limit " . $start . ", " . $limit;
-        return MysqlDB::getDB()->queryAll($query);
+        $result = MysqlDB::getDB()->queryAll($query);
+        $result = array_column($result, "collection_id");
+        return $result;
     }
 
     public static function getRecentLessonIds($teacher_id, $page, $limit) {
@@ -58,7 +60,9 @@ class HomeworkTaskModel extends Model
             . HomeworkModel::$table . " on " . self::$table . ".homework_id = " . HomeworkModel::$table . ".id" .
             " where " . HomeworkModel::$table . ".teacher_id=" . $teacher_id . " order by " . HomeworkModel::$table .
             ".created_time desc limit " . $start . ", " . $limit;
-        return MysqlDB::getDB()->queryAll($query);
+        $result = MysqlDB::getDB()->queryAll($query);
+        $result = array_column($result, "lesson_id");
+        return $result;
     }
 
 }

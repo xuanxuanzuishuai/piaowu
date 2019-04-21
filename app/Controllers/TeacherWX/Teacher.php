@@ -9,7 +9,6 @@
 namespace App\Controllers\TeacherWX;
 
 use App\Controllers\ControllerBase;
-use App\Libs\Util;
 use App\Libs\Valid;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -17,6 +16,7 @@ use Slim\Http\StatusCode;
 use App\Libs\MysqlDB;
 use App\Models\TeacherModelForApp;
 use App\Services\TeacherServiceForApp;
+use App\Models\TeacherOrgModel;
 use App\Services\WeChatService;
 use App\Models\UserWeixinModel;
 
@@ -63,6 +63,7 @@ class Teacher extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
+        $app_id = $params["app_id"];
         $openId = $this->ci["open_id"];
         if (empty($openId)) {
             return $response->withJson(Valid::addAppErrors([], 'not_found_open_id'), StatusCode::HTTP_OK);
@@ -87,10 +88,12 @@ class Teacher extends ControllerBase
             $params["app_id"], $openId);
 
         // 绑定该用户与微信
-        UserWeixinModel::boundUser($openId, $teacher_info["id"], $params["app_id"], WeChatService::USER_TYPE_STUDENT, 1);
+        UserWeixinModel::boundUser($openId, $teacher_info["id"], $app_id, WeChatService::USER_TYPE_STUDENT, 1);
+        if (!empty($params["org_id"])) {
+            // 绑定机构
+            TeacherOrgModel::boundTeacher($params["org_id"], $teacher_info["id"]);
+        }
         $db->commit();
-
-
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
@@ -105,11 +108,23 @@ class Teacher extends ControllerBase
      */
     public function login(Request $request, Response $response)
     {
-        Util::unusedParam($request);
 
+        $rules = [
+            [
+                'key' => 'app_id',
+                'type' => 'required',
+                'error_code' => 'app_id_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $app_id = $params["app_id"];
         $openId = $this->ci["open_id"];
         if (empty($openId)) {
-            return $response->withJson(Valid::addAppErrors([], 'not_found_open_id'), StatusCode::HTTP_OK);
+            return $response->withJson(Valid::addAppErrors([], 'need_bound'), StatusCode::HTTP_OK);
         }
         $bound_info = UserWeixinModel::getBoundInfoByOpenId($openId);
         // 没有找到该openid的绑定关系
@@ -118,7 +133,7 @@ class Teacher extends ControllerBase
         }
 
         $token = WeChatService::generateToken($bound_info["user_id"], WeChatService::USER_TYPE_STUDENT,
-            $bound_info["app_id"], $openId);
+            $app_id, $openId);
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,

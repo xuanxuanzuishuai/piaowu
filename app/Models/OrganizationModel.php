@@ -11,6 +11,7 @@ namespace App\Models;
 
 use App\Libs\MysqlDB;
 use App\Libs\Util;
+//use Intervention\Image\ImageManagerStatic as Image;
 
 class OrganizationModel extends Model
 {
@@ -37,5 +38,12 @@ class OrganizationModel extends Model
         $total = $db->count(self::$table);
 
         return [$records, $total];
+    }
+
+    /**
+     *
+     */
+    public static function generateQrCode(){
+
     }
 }

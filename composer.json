@@ -26,6 +26,7 @@
         "guzzlehttp/guzzle": "^6.2",
         "qiniu/php-sdk": "^7.2",
         "ext-ftp": "*",
+        "intervention/image": "dev-master",
         "okstuff/phpnsq": "dev-master",
         "sentry/sentry":"1.10.0",
         "slim/http-cache": "^0.4.0",
