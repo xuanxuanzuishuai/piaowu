@@ -46,6 +46,9 @@ class Valid
             }
 
             $errorMsg = isset($rule['error_code']) ? Lang::getWord($rule['error_code']) : '';
+            if (empty($errorMsg)) {
+                $errorMsg = $rule['error_code'];
+            }
 
             $value = isset($rule['value']) ? $rule['value'] : null;
 
@@ -104,6 +107,9 @@ class Valid
             }
 
             $errorMsg = isset($rule['error_code']) ? Lang::getWord($rule['error_code']) : '';
+            if (empty($errorMsg)) {
+                $errorMsg = $rule['error_code'];
+            }
 
             $value = isset($rule['value']) ? $rule['value'] : null;
 
@@ -117,7 +123,9 @@ class Valid
         }
 
         if ($v->validate()) {
-            return [];
+            return [
+                'code' => self::CODE_SUCCESS
+            ];
         }
 
         $errors = $v->errors();
@@ -130,6 +138,7 @@ class Valid
         }
 
         return [
+            'code' => self::CODE_PARAMS_ERROR,
             'errors' => $result
         ];
     }
