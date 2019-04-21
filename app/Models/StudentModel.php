@@ -556,7 +556,7 @@ class StudentModel extends Model
             $sql = "select * from {$s} order by create_time desc {$limit}";
             $countSql = "select count(*) count from {$s}";
         } else {
-            $sql = "select s.*,t.teacher_id,te.name teacher_name,so.status bind_status from {$s} s inner join {$so} so 
+            $sql = "select s.*,t.teacher_id,te.name teacher_name,t.status ts_status,so.status bind_status from {$s} s inner join {$so} so 
                     on s.id = so.student_id 
                     and so.org_id = {$orgId} left join {$t} t on s.id = t.student_id 
                     left join teacher te on te.id = t.teacher_id
