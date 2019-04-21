@@ -154,12 +154,13 @@ class StudentServiceForApp
     public static function addStudent($mobile, $uuid)
     {
         $user = [
-            'uuid'           => $uuid,
-            'mobile'         => $mobile,
-            'create_time'    => time(),
-            'sub_status'     => StudentModelForApp::SUB_STATUS_ON,
+            'uuid' => $uuid,
+            'mobile' => $mobile,
+            'name' => $mobile,
+            'create_time' => time(),
+            'sub_status' => StudentModelForApp::SUB_STATUS_ON,
             'sub_start_date' => 0,
-            'sub_end_date'   => 0,
+            'sub_end_date' => 0,
         ];
 
         $id = StudentModelForApp::insertRecord($user);
