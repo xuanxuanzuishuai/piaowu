@@ -28,7 +28,7 @@ class Homework extends ControllerBase
      * @param Response $response
      * @return mixed
      */
-    public function HomeworkPracticeRecord(Request $request, Response $response)
+    public function practiceRecord(Request $request, Response $response)
     {
         $rules = [
             [
@@ -43,8 +43,7 @@ class Homework extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        // $userId = $this->ci['student']['id'];
-        $userId = 888888;
+        $userId = $this->ci['student']['id'];
         list($homework, $playRecord) = HomeworkService::getStudentHomeworkPractice($userId, $params['lesson_id']);
         if(empty($homework)){
             return $response->withJson([], StatusCode::HTTP_OK);
@@ -76,11 +75,10 @@ class Homework extends ControllerBase
      * @param Response $response
      * @return Response
      */
-    public function HomeworkList(Request $request, Response $response){
+    public function list(Request $request, Response $response){
         $params = $request->getParams();
         list($pageId, $pageLimit) = Util::formatPageCount($params);
-        //$userId = $this->ci['student']['id'];
-        $userId = 888888;
+        $userId = $this->ci['student']['id'];
         $data = HomeworkService::getStudentHomeWorkList($userId, $pageId, $pageLimit);
 
         $temp = [];

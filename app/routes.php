@@ -10,6 +10,7 @@ use App\Controllers\StudentApp\App as StudentAppApp;
 use App\Controllers\StudentApp\Auth as StudentAppAuth;
 use App\Controllers\StudentApp\Opn as StudentAppOpn;
 use App\Controllers\StudentApp\Play as StudentAppPlay;
+use App\Controllers\StudentApp\Homework as StudentAppHomework;
 use Slim\App;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -143,8 +144,17 @@ $arr = array(
         'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApi::class]
     ],
 
-    '/student_app/homework/record' => array('method'=> array('get'),'call'=> '\App\Controllers\StudentApp\Homework:HomeworkPracticeRecord','middles' => array()),
-    '/student_app/homework/list' => array('method'=> array('get'),'call'=> '\App\Controllers\StudentApp\Homework:HomeworkList','middles' => array()),
+    // /student_app/homework
+    '/student_app/homework/record' => [
+        'method' => ['get'],
+        'call' => StudentAppHomework::class . ':practiceRecord',
+        'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApi::class]
+    ],
+    '/student_app/homework/list' => [
+        'method' => ['get'],
+        'call' => StudentAppHomework::class . ':list',
+        'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApi::class]
+    ],
 
     '/goods/course/list' => array('method'=> array('get'),'call'=> '\App\Controllers\Course\Course:list','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
     '/goods/course/detail' => array('method'=> array('get'),'call'=> '\App\Controllers\Course\Course:detail','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
