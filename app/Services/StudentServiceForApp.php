@@ -62,14 +62,15 @@ class StudentServiceForApp
         $loginData = [
             'id' => $student['id'],
             'uuid' => $student['uuid'],
-            'username' => $student['name'],
+            'student_name' => $student['name'],
             'avatar' => Util::getQiNiuFullImgUrl($student['thumb']),
             'mobile' => $student['mobile'],
             'sub_status' => $student['sub_status'],
             'sub_start_date' => $student['sub_start_date'],
             'sub_end_date' => $student['sub_end_date'],
             'config' => '{}',
-            'token' => $token
+            'token' => $token,
+            'teachers' => []
         ];
 
         return [null, $loginData];
@@ -95,14 +96,15 @@ class StudentServiceForApp
         $loginData = [
             'id' => $student['id'],
             'uuid' => $student['uuid'],
-            'studentname' => $student['name'],
+            'student_name' => $student['name'],
             'avatar' => Util::getQiNiuFullImgUrl($student['thumb']),
             'mobile' => $student['mobile'],
             'sub_status' => $student['sub_status'],
             'sub_start_date' => $student['sub_start_date'],
             'sub_end_date' => $student['sub_end_date'],
             'config' => '{}',
-            'token' => $token
+            'token' => $token,
+            'teachers' => []
         ];
 
         return [null, $loginData];
