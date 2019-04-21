@@ -358,6 +358,18 @@ class Teacher extends ControllerBase
             return $response->withJson(Valid::addErrors([],'teacher','have_no_binding_to_student'));
         }
 
+        //学生是否已经绑定其他老师
+        $entries = StudentOrgModel::getRecords([
+            'org_id'     => $orgId,
+            'student_id' => $studentId,
+            'status'     => StudentOrgModel::STATUS_NORMAL,
+        ]);
+        foreach($entries as $e) {
+            if($e['teacher_id'] != $teacherId) {
+                return $response->withJson(Valid::addErrors([],'teacher','have_bind_other_teacher'));
+            }
+        }
+
         //绑定失败返回错误，成功返回id
         $errOrLastId = TeacherStudentService::bindStudent($orgId, $teacherId, $studentId);
         if($errOrLastId instanceof ResponseError) {
