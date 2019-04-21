@@ -6,10 +6,11 @@
  * Time: 8:51 PM
  */
 
-namespace app\Controllers\StudentApp;
+namespace App\Controllers\StudentApp;
 
 
 use App\Controllers\ControllerBase;
+use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\AppConfigModel;
 use App\Models\FeedbackModel;
@@ -22,14 +23,11 @@ class App extends ControllerBase
 {
     public function version(Request $request, Response $response)
     {
-        $platform = $request->getHeader('platform');
-        $platform = $platform[0] ?? AppVersionService::PLAT_UNKNOWN;
-        $version = $request->getHeader('version');
-        $version = $version[0] ?? '';
+        Util::unusedParam($request);
 
-        $platformId = AppVersionService::getPlatformId($platform);
-        $lastVersion = AppVersionService::getLastVersion($platformId, $version);
-        $hotfix = AppVersionService::getHotfixConfig($platformId, $version);
+        $platformId = AppVersionService::getPlatformId($this->ci['platform']);
+        $lastVersion = AppVersionService::getLastVersion($platformId, $this->ci['version']);
+        $hotfix = AppVersionService::getHotfixConfig($platformId, $this->ci['version']);
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
@@ -45,7 +43,7 @@ class App extends ControllerBase
 
     public function guide(Request $request, Response $response)
     {
-        if (empty($request)) { NULL; /* unused params */ }
+        Util::unusedParam($request);
 
         $version = $this->ci['version'];
         if ($version == AppConfigModel::get('REVIEW_VERSION')) {

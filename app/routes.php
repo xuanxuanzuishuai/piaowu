@@ -2,11 +2,12 @@
 
 namespace App;
 
-use App\Controllers\StudentApp\Auth;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Middleware\AppApi;
 use App\Middleware\StudentAuthCheckMiddleWareForApp;
+use App\Controllers\StudentApp\App as StudentAppApp;
+use App\Controllers\StudentApp\Auth as StudentAppAuth;
 use Slim\App;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -60,22 +61,39 @@ $arr = array(
     // /student_app/auth
     '/student_app/auth/login' => [
         'method' => ['post'],
-        'call' => Auth::class . ':login',
+        'call' => StudentAppAuth::class . ':login',
         'middles' => [AppApi::class]
     ],
     '/student_app/auth/token_login' => [
         'method' => ['post'],
-        'call' => Auth::class . ':tokenLogin',
+        'call' => StudentAppAuth::class . ':tokenLogin',
         'middles' => [AppApi::class]
     ],
     '/student_app/auth/validate_code' => [
         'method' => ['get'],
-        'call' => Auth::class . ':validateCode',
+        'call' => StudentAppAuth::class . ':validateCode',
         'middles' => [AppApi::class]
     ],
     '/student_app/auth/get_user_id' => [
         'method' => ['get'],
-        'call' => Auth::class . ':getUserId',
+        'call' => StudentAppAuth::class . ':getUserId',
+        'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApi::class]
+    ],
+
+    // /student_app/app
+    '/student_app/app/version' => [
+        'method' => ['get'],
+        'call' => StudentAppApp::class . ':version',
+        'middles' => [AppApi::class]
+    ],
+    '/student_app/app/guide' => [
+        'method' => ['get'],
+        'call' => StudentAppApp::class . ':guide',
+        'middles' => [AppApi::class]
+    ],
+    '/student_app/app/feedback' => [
+        'method' => ['post'],
+        'call' => StudentAppApp::class . ':feedback',
         'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApi::class]
     ],
 

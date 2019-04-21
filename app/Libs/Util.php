@@ -612,4 +612,9 @@ class Util
         }
         return [$page, $count];
     }
+
+    public static function unusedParam($param)
+    {
+        if (empty($param)) { NULL; /* unused params */ }
+    }
 }
