@@ -137,8 +137,6 @@ class UserPlayServices
 
         $save = [
             'student_id' => $userID,
-            'category_id' => $playData['category_id'],
-            'collection_id' => $playData['collection_id'],
             'lesson_id' => $playData['lesson_id'],
             'last_play_time' => time(),
             'total_duration' => $playData['duration'],

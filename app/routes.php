@@ -9,6 +9,7 @@ use App\Middleware\StudentAuthCheckMiddleWareForApp;
 use App\Controllers\StudentApp\App as StudentAppApp;
 use App\Controllers\StudentApp\Auth as StudentAppAuth;
 use App\Controllers\StudentApp\Opn as StudentAppOpn;
+use App\Controllers\StudentApp\Play as StudentAppPlay;
 use Slim\App;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -125,9 +126,23 @@ $arr = array(
         'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApi::class]
     ],
 
-    '/student_app/play/end' => array('method'=> array('post'),'call'=> '\App\Controllers\StudentApp\Play:PlayEnd','middles' => array('\App\Middleware\EmployeeAuthCheckMiddleWare')),
-    '/student_app/play/save' => array('method'=> array('post'),'call'=> '\App\Controllers\StudentApp\Play:PlaySave','middles' => array('\App\Middleware\EmployeeAuthCheckMiddleWare')),
-    '/student_app/play/ai_end' => array('method'=> array('post'),'call'=> '\App\Controllers\StudentApp\Play:AiPlayEnd','middles' => array()),
+    // /student_app/play
+    '/student_app/play/save' => [
+        'method' => ['get'],
+        'call' => StudentAppPlay::class . ':save',
+        'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApi::class]
+    ],
+    '/student_app/play/end' => [
+        'method' => ['post'],
+        'call' => StudentAppPlay::class . ':end',
+        'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApi::class]
+    ],
+    '/student_app/play/ai_end' => [
+        'method' => ['post'],
+        'call' => StudentAppPlay::class . ':aiEnd',
+        'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApi::class]
+    ],
+
     '/student_app/homework/record' => array('method'=> array('get'),'call'=> '\App\Controllers\StudentApp\Homework:HomeworkPracticeRecord','middles' => array()),
     '/student_app/homework/list' => array('method'=> array('get'),'call'=> '\App\Controllers\StudentApp\Homework:HomeworkList','middles' => array()),
 

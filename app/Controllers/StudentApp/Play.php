@@ -30,14 +30,55 @@ class Play extends ControllerBase
 {
 
     /**
-     * url:/student_app/play/end
-     * 学生练琴结束，上传练琴记录
+     * url:/user/play/save
      * @param Request $request
      * @param Response $response
      * @return mixed
-     *
      */
-    public function PlayEnd(Request $request, Response $response){
+    public function save(Request $request, Response $response){
+        $rules = [
+            [
+                'key' => 'lesson_id',
+                'type' => 'required',
+                'error_code' => 'lesson_id_is_required'
+            ]
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+
+        SimpleLogger::debug('>>>>>>> appValidate', [
+            '$params' => $params,
+            '$rules' => $rules,
+            '$result' => $result,
+        ]);
+
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $userID = $this->ci['student']['id'];
+
+        $save = UserPlayServices::getSave($userID, $params['lesson_id']);
+        if (empty($save)) {
+            $save = null;
+        }
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => [
+                'save' => $save
+            ]
+        ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * 静态演奏结束，上传练琴记录
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function end(Request $request, Response $response){
         $rules = [
             [
                 'key' => 'data',
@@ -59,7 +100,7 @@ class Play extends ControllerBase
         $userID = $this->ci['student']['id'];
         // 新增record_type字段区分演奏类型，situation_type区分课上课下
         $params['data']['record_type'] = PlayRecordModel::TYPE_DYNAMIC;
-        $params['data']['situation_type'] = PlayRecordModel::TYPE_ON_CLASS;
+        $params['data']['situation_type'] = PlayRecordModel::TYPE_OFF_CLASS;
         list($errorCode, $ret) = UserPlayServices::addRecord($userID, $params['data']);
 
         if (!empty($errorCode)) {
@@ -90,48 +131,12 @@ class Play extends ControllerBase
     }
 
     /**
-     * url:/user/play/save
-     * @param Request $request
-     * @param Response $response
-     * @return mixed
-     */
-    public function PlaySave(Request $request, Response $response){
-        $rules = [
-            [
-                'key' => 'lesson_id',
-                'type' => 'required',
-                'error_code' => 'lesson_id_is_required'
-            ]
-        ];
-
-        $params = $request->getParams();
-        $result = Valid::appValidate($params, $rules);
-
-        if ($result['code'] != Valid::CODE_SUCCESS) {
-            return $response->withJson($result, StatusCode::HTTP_OK);
-        }
-
-        $userID = $this->ci['student']['id'];
-
-        $save = UserPlayServices::getSave($userID, $params['lesson_id']);
-        if (empty($save)) {
-            $save = null;
-        }
-
-        return $response->withJson([
-            'code' => Valid::CODE_SUCCESS,
-            'data' => [
-                'save' => $save
-            ]
-        ], StatusCode::HTTP_OK);
-    }
-
-    /**
+     * 动态演奏结束
      * @param Request $request
      * @param Response $response
      * @return Response
      */
-    public function AiPlayEnd(Request $request, Response $response){
+    public function aiEnd(Request $request, Response $response){
         // 验证请求参数
         $rules = [
             [
@@ -150,8 +155,7 @@ class Play extends ControllerBase
         $db->beginTransaction();
 
         // 插入练琴纪录表
-        //$userId = $this->ci['student']['id']
-        $userId = 888888;
+        $userId = $this->ci['student']['id'];
         $param['data']['record_type'] = PlayRecordModel::TYPE_AI;
         $param['data']['situation_type'] = PlayRecordModel::TYPE_OFF_CLASS;
         list($errCode, $ret) = UserPlayServices::addRecord($userId, $param['data']);
