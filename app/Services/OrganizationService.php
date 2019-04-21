@@ -70,9 +70,9 @@ class OrganizationService
      * @param $id
      * @return mixed
      */
-    public static function getById($id)
+    public static function getInfo($id)
     {
-        return OrganizationModel::getRecord(['id' => $id], '*', false);
+        return OrganizationModel::getInfo($id);
     }
 
     public static function generateOrganization($orgId) {

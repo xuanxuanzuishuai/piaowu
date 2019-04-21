@@ -270,7 +270,7 @@ class Org extends ControllerBase
 
         $orgId = $params['id'];
 
-        $record = OrganizationService::getById($orgId);
+        $record = OrganizationService::getInfo($orgId);
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,

@@ -593,8 +593,8 @@ class StudentModel extends Model
             $sql .= " and so.status = {$status} ";
         }
 
-        $record = $db->queryAll($sql);
+        $records = $db->queryAll($sql);
 
-        return $record;
+        return empty($records) ? [] : $records[0];
     }
 }
