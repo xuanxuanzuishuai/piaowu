@@ -9,7 +9,7 @@
 namespace App\Models;
 
 
-class TeacherOrg extends Model
+class TeacherOrgModel extends Model
 {
     const STATUS_STOP = 0; // 解除绑定
     const STATUS_NORMAL = 1; // 绑定

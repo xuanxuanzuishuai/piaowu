@@ -36,10 +36,9 @@ class UserCenter
     const AUTH_APP_ID_TEACHER = 12;
     const AUTH_APP_ID_ERP = 4;
     const AUTH_APP_ID_LIEBAO = 5;
-    const AUTH_APP_ID_AIPEILIAN = 8;
+    const AUTH_APP_ID_AIPEILIAN_STUDENT = 8; //AI陪练学生
+    const AUTH_APP_ID_AIPEILIAN_TEACHER = 13; //AI陪练老师
     const AUTH_APP_ID_DSS = 10;
-
-
 
     private $hostBaseUrl, $appId, $appSecret;
 
@@ -115,7 +114,7 @@ class UserCenter
      */
     function studentAuthorization($authAppID, $mobile, $name, $uuid="", $birthday = "", $gender ="", $auth = true ){
         if (empty($authAppID)) {
-            $authAppID = self::AUTH_APP_ID_STUDENT;
+            $authAppID = self::AUTH_APP_ID_AIPEILIAN_TEACHER;
         }
 
         $userInfo = [];
@@ -140,7 +139,7 @@ class UserCenter
             ],
             'json' => [
                 'auth' => $auth,
-                'auth_app_id' => (int)$authAppID,
+                'auth_app_id' => intval($authAppID),
                 'user_info' => $userInfo
             ]
         ]);
@@ -218,11 +217,10 @@ class UserCenter
             ],
             'json' => [
                 'auth' => $auth,
-                'auth_app_id' => self::AUTH_APP_ID_TEACHER,
+                'auth_app_id' => self::AUTH_APP_ID_AIPEILIAN_TEACHER,
                 'user_info' => $userInfo
             ]
         ]);
-
         if (!$result){
             return Valid::addErrors([], 'uc_conflict_user', 'uc_conflict_user');
         }
@@ -252,6 +250,7 @@ class UserCenter
             ],
             'json' => $userInfo
         ]);
+
         if (!$result){
             return Valid::addErrors([], 'uc_update_error', 'uc_update_failed');
         }

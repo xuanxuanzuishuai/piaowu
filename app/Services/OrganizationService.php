@@ -48,7 +48,30 @@ class OrganizationService
         list($records, $total) = OrganizationModel::selectOrgList($page, $count, $params);
         foreach($records as &$r) {
             $r['status'] = DictService::getKeyValue(Constants::DICT_TYPE_ORG_STATUS, $r['status']);
+            $r['amount'] /= 100;
         }
         return [$records, $total];
+    }
+
+    /**
+     * 按机构名称模糊搜索机构
+     * @param $key
+     * @return array
+     */
+    public static function fuzzySearch($key)
+    {
+        return OrganizationModel::getRecords([
+            'name[~]' => $key
+        ],['id','name'],false);
+    }
+
+    /**
+     * 根据机构ID查询一条记录
+     * @param $id
+     * @return mixed
+     */
+    public static function getById($id)
+    {
+        return OrganizationModel::getRecord(['id' => $id],'*',false);
     }
 }

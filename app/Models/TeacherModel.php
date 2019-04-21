@@ -22,6 +22,7 @@ class TeacherModel extends Model
     //老师导入头像处理队列
     public static $teacher_thumb_handle = "teacher_thumb_list";
 
+    const GENDER_UNKNOWN = 3; // 保密/未知
     /**
      * 定义老师状态相关代码
      * 1注册，2待入职，3在职，4冻结，5离职，6辞退，7不入职
@@ -142,8 +143,8 @@ class TeacherModel extends Model
     public static function getTeacherList($orgId, $page, $count, $params, $ta_role_id)
     {
         $t = TeacherModel::$table;
-        $to = TeacherOrg::$table;
-        $s = TeacherOrg::STATUS_NORMAL;
+        $to = TeacherOrgModel::$table;
+        $s = TeacherOrgModel::STATUS_NORMAL;
 
         if(empty($orgId)) {
             $sql_list = "select t.*,'' as college_name from {$t} t ";
@@ -1143,5 +1144,19 @@ WHERE " . $where . $order . "LIMIT 3";
         ], [
             'id' => $teacherId
         ]);
+    }
+
+    /**
+     * 查询指定机构下老师
+     * @param $orgId
+     * @param $teacherId
+     * @return array|null
+     */
+    public static function getOrgTeacherById($orgId, $teacherId)
+    {
+        $db = MysqlDB::getDB();
+        $records = $db->queryAll("select t.*,o.org_id from teacher t,teacher_org o
+        where t.id = o.teacher_id and o.org_id = :org_id and t.id = :id",[':org_id' => $orgId,':id' => $teacherId]);
+        return empty($records) ? [] : $records[0];
     }
 }

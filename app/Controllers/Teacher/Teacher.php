@@ -16,6 +16,7 @@ use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\TeacherModel;
 use App\Libs\ResponseError;
+use App\Models\TeacherOrgModel;
 use App\Services\StudentService;
 use App\Services\TeacherOrgService;
 use App\Services\TeacherService;
@@ -36,13 +37,13 @@ class Teacher extends ControllerBase
     {
         $rules = [
             [
-                'key' => 'id',
-                'type' => 'required',
+                'key'        => 'id',
+                'type'       => 'required',
                 'error_code' => 'teacher_id_is_required'
             ],
             [
-                'key' => 'id',
-                'type' => 'integer',
+                'key'        => 'id',
+                'type'       => 'integer',
                 'error_code' => 'teacher_id_must_be_integer'
             ]
         ];
@@ -66,46 +67,24 @@ class Teacher extends ControllerBase
     }
 
     /**
+     * 查看机构下老师详情
      * @param Request $request
      * @param Response $response
      * @param $args
      * @return Response
      */
-    public function modify(Request $request, Response $response, $args)
+    public function info(Request $request, Response $response, $args)
     {
-
         $rules = [
             [
-                'key' => 'id',
-                'type' => 'required',
+                'key'        => 'id',
+                'type'       => 'required',
                 'error_code' => 'teacher_id_is_required'
             ],
             [
-                'key' => 'id',
-                'type' => 'integer',
+                'key'        => 'id',
+                'type'       => 'integer',
                 'error_code' => 'teacher_id_must_be_integer'
-            ],
-            [
-                'key' => 'name',
-                'type' => 'required',
-                'error_code' => 'teacher_name_is_required'
-            ],
-            [
-                'key' => 'name',
-                'type' => 'lengthMax',
-                'value' => 10,
-                'error_code' => 'teacher_name_format_is_error'
-            ],
-            [
-                'key' => 'mobile',
-                'type' => 'required',
-                'error_code' => 'teacher_mobile_is_required'
-            ],
-            [
-                'key' => 'mobile',
-                'type' => 'regex',
-                'value' => Constants::MOBILE_REGEX,
-                'error_code' => 'teacher_mobile_format_is_error'
             ]
         ];
         $params = $request->getParams();
@@ -114,20 +93,99 @@ class Teacher extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
+        global $orgId;
+
+        $teacherId = $params['id'];
+
+        $teacher = TeacherService::getOrgTeacherById($orgId, $teacherId);
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => [
+                'teacher' => $teacher
+            ]
+        ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @param $args
+     * @return Response
+     */
+    public function modify(Request $request, Response $response, $args)
+    {
+        $rules = [
+            [
+                'key'        => 'id',
+                'type'       => 'required',
+                'error_code' => 'teacher_id_is_required'
+            ],
+            [
+                'key'        => 'id',
+                'type'       => 'integer',
+                'error_code' => 'teacher_id_must_be_integer'
+            ],
+            [
+                'key'        => 'name',
+                'type'       => 'required',
+                'error_code' => 'teacher_name_is_required'
+            ],
+            [
+                'key'        => 'name',
+                'type'       => 'lengthMax',
+                'value'      => 10,
+                'error_code' => 'teacher_name_format_is_error'
+            ],
+            [
+                'key'        => 'mobile',
+                'type'       => 'required',
+                'error_code' => 'teacher_mobile_is_required'
+            ],
+            [
+                'key'        => 'mobile',
+                'type'       => 'regex',
+                'value'      => Constants::MOBILE_REGEX,
+                'error_code' => 'teacher_mobile_format_is_error'
+            ]
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        //编辑老师，状态缺省时，设为在职
         if (empty($params['status'])) {
             $params['status'] = TeacherModel::ENTRY_ON;
         }
+
+        $teacherId = $params['id'];
+        $orgId = $this->getEmployeeOrgId();
+
+        //查询老师是否和机构有绑定关系（或曾经有绑定关系）
+        $teacher = TeacherService::getOrgTeacherById($orgId, $teacherId);
+        if(empty($teacher)) {
+            return $response->withJson(Valid::addErrors([], 'teacher', 'have_not_binding_with_org'));
+        }
+
+        //手机号不能编辑，一旦添加不能修改
+        if($teacher['mobile'] != $params['mobile']) {
+            return $response->withJson(Valid::addErrors([],'teacher','mobile_can_not_different'));
+        }
+
         $db = MysqlDB::getDB();
         $db->beginTransaction();
-        $res = TeacherService::insertOrUpdateTeacher($params, $this->ci['employee']);
+
+        $res = TeacherService::insertOrUpdateTeacher($params);
         if ($res['code'] != Valid::CODE_SUCCESS) {
             $db->rollBack();
             return $response->withJson($res, StatusCode::HTTP_OK);
         }
+
         $db->commit();
 
         return $response->withJson($res, StatusCode::HTTP_OK);
-
     }
 
     /**
@@ -138,47 +196,61 @@ class Teacher extends ControllerBase
      */
     public function add(Request $request, Response $response, $args)
     {
-
         $rules = [
             [
-                'key' => 'name',
-                'type' => 'required',
+                'key'        => 'name',
+                'type'       => 'required',
                 'error_code' => 'teacher_name_is_required'
             ],
             [
-                'key' => 'name',
-                'type' => 'lengthMax',
-                'value' => 10,
+                'key'        => 'name',
+                'type'       => 'lengthMax',
+                'value'      => 10,
                 'error_code' => 'teacher_name_format_is_error'
             ],
             [
-                'key' => 'mobile',
-                'type' => 'required',
+                'key'        => 'mobile',
+                'type'       => 'required',
                 'error_code' => 'teacher_mobile_is_required'
             ],
             [
-                'key' => 'mobile',
-                'type' => 'regex',
-                'value' => Constants::MOBILE_REGEX,
+                'key'        => 'mobile',
+                'type'       => 'regex',
+                'value'      => Constants::MOBILE_REGEX,
                 'error_code' => 'teacher_mobile_format_is_error'
             ]
         ];
+
         $params = $request->getParams();
         $result = Valid::validate($params, $rules);
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
+        // 新增一个老师时，设为在职状态
         if (empty($params['status'])) {
             $params['status'] = TeacherModel::ENTRY_ON;
         }
+
+        $orgId = $this->getEmployeeOrgId();
+
         $db = MysqlDB::getDB();
         $db->beginTransaction();
-        $res = TeacherService::insertOrUpdateTeacher($params, $this->ci['employee']);
+
+        //新增老师
+        $res = TeacherService::insertOrUpdateTeacher($params);
         if ($res['code'] != Valid::CODE_SUCCESS) {
             $db->rollBack();
             return $response->withJson($res, StatusCode::HTTP_OK);
         }
+
+        //绑定机构
+        $errOrId = TeacherService::bindOrg($orgId, $res['data']['id']);
+        if($errOrId instanceof ResponseError) {
+            $db->rollBack();
+            return $response->withJson(Valid::addErrors([],'teacher',$errOrId->getErrorMsg()));
+        }
+
         $db->commit();
 
         return $response->withJson($res, StatusCode::HTTP_OK);
@@ -264,7 +336,7 @@ class Teacher extends ControllerBase
         $orgId     = $this->getEmployeeOrgId();
 
         //检查当前机构是否绑定老师
-        $relation = TeacherOrgService::getTeacherByOrgAndId($orgId, $teacherId);
+        $relation = TeacherOrgService::getTeacherByOrgAndId($orgId, $teacherId, TeacherOrgModel::STATUS_NORMAL);
         if(empty($relation)) {
             return $response->withJson(Valid::addErrors([],'teacher','have_no_binding_to_teacher'));
         }

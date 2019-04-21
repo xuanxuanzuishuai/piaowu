@@ -14,12 +14,14 @@ use App\Libs\Dict;
 use App\Libs\FTP;
 use App\Libs\Qiniu;
 use App\Libs\RedisDB;
+use App\Libs\ResponseError;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\AppModel;
 use App\Models\TeacherModel;
+use App\Models\TeacherOrgModel;
 use App\Services\Product\CourseService;
 
 class TeacherService
@@ -27,201 +29,101 @@ class TeacherService
     /**
      * 插入或更新老师数据
      * @param $params
-     * @param $operator
      * @return int|mixed|null|string
      */
-    public static function insertOrUpdateTeacher($params, $operator)
+    public static function insertOrUpdateTeacher($params)
     {
-        $teacher_id = $params['id'] ?? '';
+        // 必填参数
+        $teacher_id       = $params['id'] ?? '';
         $update['mobile'] = $params['mobile'] ?? '';
-        $update['name'] = $params['name'] ?? '';
+        $update['name']   = $params['name'] ?? '';
 
-        //判断其他可选填参数是否有填写
-        $update['gender'] = empty($params['gender']) ? TeacherModel::GENDER_UNKNOWN : $params['gender'];
-        $update['birthday'] = $params['birthday'] ?? null;
-        $update['thumb'] = $params['thumb'] ?? '';
-        $update['country_code'] = $params['country_code'] ?? '';
-        $update['province_code'] = $params['province_code'] ?? '';
-        $update['city_code'] = $params['city_code'] ?? '';
-        $update['district_code'] = $params['district_code'] ?? '';
-        $update['address'] = $params['address'] ?? '';
-        $update['channel_id'] = empty($params['channel_id']) ? null : $params['channel_id'];
-        $update['id_card'] = $params['id_card'] ?? '';
-        $update['bank_card_number'] = $params['bank_card_number'] ?? '';
-        $update['opening_bank'] = $params['opening_bank'] ?? '';
+        // 可选参数
+        $update['gender']               = empty($params['gender']) ? TeacherModel::GENDER_UNKNOWN : $params['gender'];
+        $update['birthday']             = $params['birthday'] ?? null;
+        $update['thumb']                = $params['thumb'] ?? '';
+        $update['country_code']         = $params['country_code'] ?? '';
+        $update['province_code']        = $params['province_code'] ?? '';
+        $update['city_code']            = $params['city_code'] ?? '';
+        $update['district_code']        = $params['district_code'] ?? '';
+        $update['address']              = $params['address'] ?? '';
+        $update['channel_id']           = empty($params['channel_id']) ? null : $params['channel_id'];
+        $update['id_card']              = $params['id_card'] ?? '';
+        $update['bank_card_number']     = $params['bank_card_number'] ?? '';
+        $update['opening_bank']         = $params['opening_bank'] ?? '';
         $update['bank_reserved_mobile'] = $params['bank_reserved_mobile'] ?? null;
-        $update['type'] = empty($params['type']) ? null : $params['type'];
-        $update['level'] = empty($params['level']) ? null : $params['level'];
-        $update['start_year'] = empty($params['start_year']) ? null : $params['start_year'];
-        $update['learn_start_year'] = empty($params['learn_start_year']) ? null : $params['learn_start_year'];
-        $update['college_id'] = empty($params['college_id']) ? null : $params['college_id'];
-        $update['major_id'] = empty($params['major_id']) ? null : $params['major_id'];
-        $update['graduation_date'] = empty($params['graduation_date']) ? null : $params['graduation_date'];
-        $update['education'] = empty($params['education']) ? null : $params['education'];
-        $update['music_level'] = empty($params['music_level']) ? null : $params['music_level'];
-        $update['teach_experience'] = $params['teach_experience'] ?? '';
-        $update['prize'] = $params['prize'] ?? '';
-        $update['teach_results'] = $params['teach_results'] ?? null;
-        $update['teach_style'] = $params['teach_style'] ?? null;
-        $update['status'] = empty($params['status']) ? 1 : $params['status'];
-
-        // 用户中心处理
-        $userCenter = new UserCenter();
-        $auth = true;
-
-        $zoom_name = $params['zoom_name'] ?? null;
-        $zoom_pwd = $params['zoom_pwd'] ?? null;
-        $zoom_id = $params['zoom_id'] ?? null;
-        // 图片简介或视频简介
-        $briefImage = !empty($params['brief_image']) ? $params['brief_image'] : null;
-        $briefVideo = !empty($params['brief_video']) ? $params['brief_video'] : null;
+        $update['type']                 = empty($params['type']) ? null : $params['type'];
+        $update['level']                = empty($params['level']) ? null : $params['level'];
+        $update['start_year']           = empty($params['start_year']) ? null : $params['start_year'];
+        $update['learn_start_year']     = empty($params['learn_start_year']) ? null : $params['learn_start_year'];
+        $update['college_id']           = empty($params['college_id']) ? null : $params['college_id'];
+        $update['major_id']             = empty($params['major_id']) ? null : $params['major_id'];
+        $update['graduation_date']      = empty($params['graduation_date']) ? null : $params['graduation_date'];
+        $update['education']            = empty($params['education']) ? null : $params['education'];
+        $update['music_level']          = empty($params['music_level']) ? null : $params['music_level'];
+        $update['teach_experience']     = $params['teach_experience'] ?? '';
+        $update['prize']                = $params['prize'] ?? '';
+        $update['teach_results']        = $params['teach_results'] ?? null;
+        $update['teach_style']          = $params['teach_style'] ?? null;
+        $update['status']               = empty($params['status']) ? TeacherModel::ENTRY_REGISTER : $params['status'];
 
         //如果 teacher_id 为空，验证手机号是否存在，如果存在，并且为注册状态，更新老师信息，并标记为待入职状态
         if (empty($teacher_id)) {
             $teacher = TeacherModel::getRecordByMobile($update['mobile']);
-            if (!empty($teacher) && $teacher['status'] == TeacherModel::ENTRY_REGISTER) {
+//            if (!empty($teacher) && $teacher['status'] == TeacherModel::ENTRY_REGISTER) {
+//                $teacher_id = $teacher['id'];
+//                $update['status'] = TeacherModel::ENTRY_WAIT;
+//            }
+            if (!empty($teacher)) {
                 $teacher_id = $teacher['id'];
-                $update['status'] = TeacherModel::ENTRY_WAIT;
             }
         }
+
+        $userCenter = new UserCenter();
 
         if (empty($teacher_id)) {
             //验证手机号是否已存在
             if (TeacherModel::isMobileExist($update['mobile'])) {
                 return Valid::addErrors([], 'mobile', 'teacher_mobile_is_exist');
             }
+
             $uuid = $params['uuid'] ?? '';
-            $authResult = $userCenter->teacherAuthorization($update['mobile'], $update['name'], $uuid, $update['birthday'], $update['gender'], $update['thumb'], $auth);
+            $auth = true;
+
+            $authResult = $userCenter->teacherAuthorization($update['mobile'], $update['name'], $uuid,
+                $update['birthday'], $update['gender'], $update['thumb'], $auth);
             if (empty($authResult["uuid"])) {
                 return Valid::addErrors([], "user_center", "uc_user_add_failed");
             }
+
             $update['uuid'] = $authResult['uuid'];
             $update['create_time'] = time();
-
-            $teacher_id = TeacherModel::insertRecord($update);
+            $teacher_id = TeacherModel::insertRecord($update, false);
             if ($teacher_id == false) {
                 return Valid::addErrors([], 'teacher', 'teacher_add_error');
             }
-
-//            // 图片简介和视频简介
-//            if (!empty($briefImage) || !empty($briefVideo)) {
-//                // 添加教师简介（图片+视频）
-//                $briefResult = self::addOrUpdateTeacherBriefIntroduction($briefImage, $briefVideo, $teacher_id);
-//                if ($briefResult['code'] != Valid::CODE_SUCCESS) {
-//                    return $briefResult;
-//                }
-//            }
-
         } else {
             //验证数据是否存在
             $teacher_info = TeacherModel::getById($teacher_id);
             if (empty($teacher_info['id'])) {
                 return Valid::addErrors([], 'teacher', 'teacher_is_not_exist');
             }
-            //编辑时验证手机号是否存在
-            $exist_teacher_info = TeacherModel::getRecordByMobile($update['mobile']);
-//            if (!empty($exist_teacher_info) && $exist_teacher_info['id'] != $teacher_id) {
-//                // 注册、待入职、不入职 状态询问是否删除
-//                if (in_array($exist_teacher_info['status'],
-//                    array(TeacherModel::ENTRY_REGISTER, TeacherModel::ENTRY_WAIT, TeacherModel::ENTRY_NO))){
-//                    if ($params['dup_del_confirm'] == '1'){ // 确认删除目标手机号用户
-//                        // 物理删除，记录日志
-//                        SimpleLogger::warning('物理删除老师信息：', $exist_teacher_info);
-//                        // 添加老师操作记录
-//                        $remark = '变更手机号: ' . $teacher_info['mobile'] . '=>' . $update['mobile'] . ' 同时删除重复数据: [id:' .
-//                            $exist_teacher_info['id'] . ' 姓名:' . $exist_teacher_info['name'] . ' 状态:' .
-//                            DictService::getKeyValue(Constants::DICT_TYPE_TEACHER_STATUS, $exist_teacher_info['status']) .
-//                            ' UUID:' . $exist_teacher_info['uuid'] . ']';
-//                        //TeacherOperateLogService::insertData($teacher_id, $operator['id'], $teacher_info['status'],$remark);
-//                        // 用户中心解绑老师
-//                        $uc = new UserCenter();
-//                        $uc->teacherUnauthorization($exist_teacher_info['uuid']);
-//                        // 删除未入职老师
-//                        TeacherModel::deleteNotEntryTeacher($exist_teacher_info);
-//                    }else{
-//                        return [
-//                            'code' => Valid::CODE_CONFIRM,
-//                            'data' => [
-//                                'teacher_id' => $exist_teacher_info['id'],
-//                                'mobile' => $exist_teacher_info['mobile'],
-//                                'name' => $exist_teacher_info['name'],
-//                                'status' => $exist_teacher_info['status'],
-//                                'status_name' => DictService::getKeyValue(Constants::DICT_TYPE_TEACHER_STATUS, $exist_teacher_info['status'])
-//                            ]
-//                        ];
-//                    }
-//
-//                }else{
-//                    // 在职、冻结、离职、辞退状态不允许删除
-//                    return Valid::addErrors([], 'teacher', 'teacher_mobile_is_exist');
-//                }
-//            }
-//            $authResult = $userCenter->modifyTeacher($teacher_info['uuid'], $update['mobile'],
-//                $update['name'], $update['birthday'], $update['gender'], $update['thumb']);
-//            if (empty($authResult["uuid"])) {
-//                return Valid::addErrors([], "user_center", "uc_user_add_failed");
-//            }
-//            if ($auth) {
-//                $userCenter->teacherAuthorization("", "", $authResult['uuid']);
-//            } else {
-//                $userCenter->teacherUnauthorization($authResult['uuid']);
-//            }
-
-//            //入职编辑
-//            if ($teacher_info['status'] == TeacherModel::ENTRY_WAIT && $update['status'] == TeacherModel::ENTRY_ON) {
-//                $update['first_entry_time'] = time();
-//            }
 
             $update['uuid'] = $teacher_info['uuid'];
 
-            $result = TeacherModel::updateRecord($teacher_id, $update);
+            $result = TeacherModel::updateRecord($teacher_id, $update, false);
             if (!is_numeric($result)) {
                 return Valid::addErrors([], 'teacher', 'teacher_update_error');
             }
-//            // 图片简介和视频简介
-//            if (!empty($briefImage) || !empty($briefVideo)) {
-//                // 编辑教师简介（图片+视频）
-//                $briefResult = self::addOrUpdateTeacherBriefIntroduction($briefImage, $briefVideo, $teacher_id, true);
-//                if ($briefResult['code'] != Valid::CODE_SUCCESS) {
-//                    return $briefResult;
-//                }
-//            }
-//            // 先添加图片或视频，后编辑时全部删除的情况
-//            $updateResult = self::updateImageOrVideoStatus($teacher_id, $params, $briefImage, $briefVideo);
-//            if ($updateResult['code'] != Valid::CODE_SUCCESS) {
-//                return $updateResult;
-//            }
+
+            //请求用户中心修改用户信息
+            $modifyResult = $userCenter->modifyTeacher($update['uuid'], $update['mobile'], $update['name'],
+                $update['birthday'],intval($update['gender']));
+
+            if(isset($modifyResult['code'])) {
+                return $modifyResult; //已经用Valid::addErrors包装过
+            }
         }
-
-//        //判断zoom三个值有一个不为空，其他均不能为空
-//        if ($zoom_name !== null && $zoom_id !== null && $zoom_pwd !== null) {
-//            $zoom_num = TeacherZoomService::insertOrUpdate($teacher_id, $zoom_name, $zoom_pwd, $zoom_id);
-//            if (!is_numeric($zoom_num)) {
-//                return Valid::addErrors([], 'teacher', 'teacher_zoom_add_error');
-//            }
-//        } elseif ($zoom_name === null && $zoom_id === null && $zoom_pwd === null) {
-//            //nothing to do!!
-//        } else {
-//            return Valid::addErrors([], 'teacher', 'teacher_zoom_parameter_error');
-//        }
-
-//        //提交所属课程的数据
-//        if (!empty($params['teacher_app_extend'])) {
-//            $teacher_product_extend = $params['teacher_app_extend'];
-//            $app_extend = TeacherAppExtendService::insertOrUpdate($teacher_id,$teacher_product_extend, $operator);
-//            if (!$app_extend) {
-//                return Valid::addErrors([], 'teacher', 'teacher_app_extend_add_error');
-//            }
-//        }
-
-//        //提交标签组数据
-//        if (!empty($params['tag_ids'])) {
-//            $teacher_tags = $params['tag_ids'];
-//            $result = TeacherTagRelationsService::insertOrUpdate($teacher_id, $teacher_tags);
-//            if (!$result) {
-//                return Valid::addErrors([], 'teacher', 'teacher_tag_add_error');
-//            }
-//        }
 
         return [
             'code' => Valid::CODE_SUCCESS,
@@ -1886,5 +1788,55 @@ class TeacherService
     public static function updateTeacherLastClassTime($teacherId, $time)
     {
         return TeacherModel::updateLastClassTime($teacherId, $time);
+    }
+
+    /**
+     * 绑定老师和机构，数据库操作失败时才返回错误，已经绑定不会返回错误，正确时候返回操作行的id
+     * @param $orgId
+     * @param $teacherId
+     * @return ResponseError|int|mixed|null|string
+     */
+    public static function bindOrg($orgId, $teacherId)
+    {
+        $record = TeacherOrgModel::getRecord([
+            'org_id'     => $orgId,
+            'teacher_id' => $teacherId,
+        ]);
+
+        if(empty($record)) {
+            $lastId = TeacherOrgModel::insertRecord([
+                'teacher_id'  => $teacherId,
+                'org_id'      => $orgId,
+                'status'      => TeacherOrgModel::STATUS_NORMAL,
+                'update_time' => time(),
+                'create_time' => time(),
+            ], false);
+            if(empty($lastId)) {
+                return new ResponseError('save_teacher_org_fail');
+            }
+            return $lastId;
+        } else {
+            if($record['status'] != TeacherOrgModel::STATUS_NORMAL) {
+                $affectRows = TeacherOrgModel::updateRecord($record['id'],[
+                    'status' => TeacherOrgModel::STATUS_NORMAL
+                ]);
+                if($affectRows == 0) {
+                    return new ResponseError('update_teacher_org_status_fail');
+                }
+                return $record['id'];
+            }
+            return $record['id'];
+        }
+    }
+
+    /**
+     * 查询指定机构下老师，不区分状态
+     * @param $orgId
+     * @param $teacherId
+     * @return array|null
+     */
+    public static function getOrgTeacherById($orgId, $teacherId)
+    {
+        return TeacherModel::getOrgTeacherById($orgId, $teacherId);
     }
 }

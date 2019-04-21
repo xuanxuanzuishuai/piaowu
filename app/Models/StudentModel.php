@@ -17,6 +17,8 @@ class StudentModel extends Model
     public static $table = 'student';
     public static $redisExpire = 1;
 
+    const GENDER_UNKNOWN = 3; // 保密
+
     /**
      * 获取客户数据
      * @param $page
@@ -540,6 +542,8 @@ class StudentModel extends Model
         $s = StudentModel::$table;
         $so = StudentOrgModel::$table;
         $st = StudentOrgModel::STATUS_NORMAL;
+        $t = TeacherStudentModel::$table;
+        $tStatus = TeacherStudentModel::STATUS_NORMAL;
 
         $limit = Util::limitation($page, $count);
 
@@ -547,13 +551,15 @@ class StudentModel extends Model
             $sql = "select * from {$s} order by create_time desc {$limit}";
             $countSql = "select count(*) count from {$s}";
         } else {
-            $sql = "select s.* from {$s} s,{$so} so where s.id = so.student_id and so.status = {$st}  
-                    and so.org_id = {$orgId} order by s.create_time desc {$limit}";
+            $sql = "select s.*,t.teacher_id from {$s} s inner join {$so} so on s.id = so.student_id and so.status = {$st}  
+                    and so.org_id = {$orgId} left join {$t} t on s.id = t.student_id and t.status = {$tStatus}
+                    order by s.create_time desc {$limit}";
             $countSql = "select count(*) count from {$s} s,{$so} so where s.id = so.student_id and so.status = {$st} 
                         and so.org_id = {$orgId}";
         }
 
         $list = $db->queryAll($sql);
+
         $total = $db->queryAll($countSql);
 
         return [$list,$total[0]['count']];

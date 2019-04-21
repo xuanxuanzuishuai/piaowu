@@ -9,7 +9,7 @@
 namespace App\Services;
 
 
-use App\Models\TeacherOrg;
+use App\Models\TeacherOrgModel;
 
 class TeacherOrgService
 {
@@ -17,14 +17,18 @@ class TeacherOrgService
      * 根据机构和老师ID查询一条记录
      * @param $orgId
      * @param $teacherId
+     * @param $status null表示不限制状态
      * @return mixed
      */
-    public static function getTeacherByOrgAndId($orgId, $teacherId)
+    public static function getTeacherByOrgAndId($orgId, $teacherId, $status = null)
     {
-        return TeacherOrg::getRecord([
+        $where = [
             'org_id'     => $orgId,
             'teacher_id' => $teacherId,
-            'status'     => TeacherOrg::STATUS_NORMAL,
-        ]);
+        ];
+        if(!is_null($status)) {
+            $where['status'] = $status;
+        }
+        return TeacherOrgModel::getRecord($where);
     }
 }

@@ -62,11 +62,6 @@ class Org extends ControllerBase
             ],
             [
                 'key'        => 'city_code',
-                'type'       => 'required',
-                'error_code' => 'city_code_is_required'
-            ],
-            [
-                'key'        => 'city_code',
                 'type'       => 'integer',
                 'error_code' => 'city_code_must_be_integer'
             ],
@@ -212,6 +207,72 @@ class Org extends ControllerBase
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => ['records' => $records,'total_count' => $total]
+        ]);
+    }
+
+    /**
+     * 模糊搜索机构
+     * @param Request $request
+     * @param Response $response
+     * @param $args
+     * @return Response
+     */
+    public function fuzzySearch(Request $request, Response $response, $args)
+    {
+        $rules = [
+            [
+                'key'        => 'key',
+                'type'       => 'required',
+                'error_code' => 'key_is_required'
+            ]
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $records = OrganizationService::fuzzySearch($params['key']);
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $records
+        ]);
+    }
+
+    /**
+     * 查询指定机构详情
+     * @param Request $request
+     * @param Response $response
+     * @param $args
+     * @return Response
+     */
+    public function detail(Request $request, Response $response, $args)
+    {
+        $rules = [
+            [
+                'key'        => 'id',
+                'type'       => 'required',
+                'error_code' => 'id_is_required'
+            ]
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $orgId = $params['id'];
+
+        $record = OrganizationService::getById($orgId);
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => [
+                'record' => $record
+            ]
         ]);
     }
 }

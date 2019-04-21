@@ -25,7 +25,6 @@ class PhpError
         } else {
             $errMsg = $e->getMessage();
             $trace = $e->getTrace();
-
             SimpleLogger::error(__FILE__ . ":" . __LINE__ . " Exception:", [$errMsg, $trace]);
             if ($request->getContentType() == 'application/json'
                 || preg_match('/.*application\/json.*/', $request->getHeaderLine("Accept")))

@@ -163,10 +163,27 @@ $arr = array(
         'call'    => '\App\Controllers\Org\Org:list',
         'middles' => ['\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare'],
     ],
+    //模糊搜索机构
+    '/org_web/org/fuzzy_search' => [ // for super admin
+        'method'  => ['get'],
+        'call'    => '\App\Controllers\Org\Org:fuzzySearch',
+        'middles' => ['\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare'],
+    ],
+    //机构详情
+    '/org_web/org/detail' => [ // for super admin
+        'method'  => ['get'],
+        'call'    => '\App\Controllers\Org\Org:detail',
+        'middles' => ['\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare'],
+    ],
     //管理员可以查看所有老师，或者指定机构下老师
     '/teacher/teacher/list_by_org' => [ // for super admin
         'method'  => ['get'],
         'call'    => '\App\Controllers\Teacher\Teacher:listByOrg',
+        'middles' => ['\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare'],
+    ],
+    '/teacher/teacher/info' => [ // 用于编辑前的查看
+        'method'  => ['get'],
+        'call'    => '\App\Controllers\Teacher\Teacher::info',
         'middles' => ['\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare'],
     ],
     //管理员可以查看所有学生，或者指定机构下学生
@@ -187,7 +204,6 @@ $arr = array(
         'call'    => '\App\Controllers\Teacher\Teacher:unbindStudent',
         'middles' => ['\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare'],
     ],
-
     '/teacher_wx/student/list' => array('method'=>array('get'),'call'=>'\App\Controllers\TeacherWX\Student:get', 'middles' => array()),
     '/teacher_wx/homework/collection_list' => array('method'=>array('get'),'call'=>'\App\Controllers\TeacherWX\Homework:getRecentCollections', 'middles' => array()),
     '/teacher_wx/homework/lesson_list' => array('method'=>array('get'),'call'=>'\App\Controllers\TeacherWX\Homework:getRecentLessons', 'middles' => array()),
