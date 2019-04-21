@@ -55,19 +55,19 @@ class Opn extends ControllerBase
         $collections = OpernService::appFormatCollections($collections['data']['list']);
 
         list($pageId, $pageLimit) = Util::appPageLimit($params);
-        $lessons = $opn->searchLessons($params['key'], 1, 0, $pageId, $pageLimit);
-        if (empty($lessons) || !empty($lessons['errors'])) {
-            return $response->withJson($lessons, StatusCode::HTTP_OK);
+        $result = $opn->searchLessons($params['key'], 1, 0, $pageId, $pageLimit);
+        if (empty($result) || !empty($result['errors'])) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $lessons = OpernService::appSearchLessons($lessons['data']['list']);
+        $lessons = OpernService::appSearchLessons($result['data']['list']);
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => [
                 'collections' => $collections,
                 'lessons' => $lessons,
-                'lesson_count' => $lessons['data']['total_count']
+                'lesson_count' => $result['data']['total_count']
             ]
         ], StatusCode::HTTP_OK);
     }
@@ -119,20 +119,12 @@ class Opn extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $version = $this->ci['version'];
-
-        if ($this->ci['opn_is_tester']) {
-            $auditing = 0;
-            $publish = 0;
-        } else {
-            $reviewVersion = AppConfigModel::get(AppConfigModel::REVIEW_VERSION);
-            $auditing = ($reviewVersion == $version) ? 1 : 0;
-            $publish = 1;
-        }
-
         list($pageId, $pageLimit) = Util::appPageLimit($params);
 
-        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, $version, $auditing, $publish);
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT,
+            $this->ci['version'],
+            $this->ci['opn_auditing'],
+            $this->ci['opn_publish']);
         $result = $opn->collections($params['category_id'], $pageId, $pageLimit);
         if (empty($result) || !empty($result['errors'])) {
             return $response->withJson($result, StatusCode::HTTP_OK);
@@ -169,20 +161,12 @@ class Opn extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $version = $this->ci['version'];
-
-        if ($this->ci['opn_is_tester']) {
-            $auditing = 0;
-            $publish = 0;
-        } else {
-            $reviewVersion = AppConfigModel::get(AppConfigModel::REVIEW_VERSION);
-            $auditing = ($reviewVersion == $version) ? 1 : 0;
-            $publish = 1;
-        }
-
         list($pageId, $pageLimit) = Util::appPageLimit($params);
 
-        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, $version, $auditing, $publish);
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT,
+            $this->ci['version'],
+            $this->ci['opn_auditing'],
+            $this->ci['opn_publish']);
         $result = $opn->lessons($params['collection_id'], $pageId, $pageLimit);
         if (empty($result) || !empty($result['errors'])) {
             return $response->withJson($result, StatusCode::HTTP_OK);
@@ -219,33 +203,22 @@ class Opn extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $version = $this->ci['version'];
-
-        if ($this->ci['opn_is_tester']) {
-            $auditing = 0;
-            $publish = 0;
-        } else {
-            $reviewVersion = AppConfigModel::get(AppConfigModel::REVIEW_VERSION);
-            $auditing = ($reviewVersion == $version) ? 1 : 0;
-            $publish = 1;
-        }
-
-        list($pageId, $pageLimit) = Util::appPageLimit($params);
-
-        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, $version, $auditing, $publish);
-        $result = $opn->lessons($params['lesson_id'], $pageId, $pageLimit);
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT,
+            $this->ci['version'],
+            $this->ci['opn_auditing'],
+            $this->ci['opn_publish']);
+        $result = $opn->lessonsByIds($params['lesson_id']);
         if (empty($result) || !empty($result['errors'])) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $data = $result['data'];
-        $list = OpernService::appFormatLessons($data['list']);
+        // TODO 曲谱库这个接口没有data层，应该为和其他接口一样
+//        $data = $result['data'];
+        $data = $result;
+        $list = OpernService::appFormatLessonByIds($data['list']);
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
-            'data' => [
-                'lessons' => $list,
-                'count' => $data['total_count']
-            ]
+            'data' => $list ?? []
         ], StatusCode::HTTP_OK);
     }
 }

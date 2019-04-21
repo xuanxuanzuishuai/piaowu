@@ -84,6 +84,29 @@ class OpernService
     }
 
     /**
+     * 格式化曲谱列表
+     * @param $data
+     * @return array
+     */
+    public static function appFormatLessonByIds($data)
+    {
+        if (empty($data)) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($data as $lesson) {
+            $opern['id'] = $lesson['lesson_id'];
+            $opern['name'] = $lesson['opern_name'];
+            $opern['score_id'] = $lesson['opern_id'];
+            $opern['res'] = !empty($lesson['resources']) ? $lesson['resources'][0]['resource_url'] : '';
+            $opern['is_free'] = $lesson['freeflag'] ? '1' : '0';
+            $result[] = $opern;
+        }
+        return $result;
+    }
+
+    /**
      * 格式化搜索结果
      * @param $data
      * @return array

@@ -23,8 +23,8 @@ class OpernCenter
     const OPERN_API_CATEGORIES = '/api/opern/categories';
     const OPERN_API_COLLECTIONS = '/api/opern/collections';
     const OPERN_API_LESSONS = '/api/opern/lessons';
-    const OPERN_API_COLLECTIONS_BY_IDS = '/api/opern/collectionsbyid';
-    const OPERN_API_LESSONS_BY_IDS = '/api/opern/lessonsbyid';
+    const OPERN_API_COLLECTIONS_BY_IDS = '/api/opern/collectionsbyids';
+    const OPERN_API_LESSONS_BY_IDS = '/api/opern/lessonsbyids';
     const OPERN_API_SEARCH_COLLECTIONS = '/api/opern/search_collection';
     const OPERN_API_SEARCH_LESSONS = '/api/opern/search_opern';
 
@@ -137,17 +137,20 @@ class OpernCenter
 
     /**
      * 根据ids获取课程列表
-     * @param $collection_ids
+     * @param int|array $collectionIds id或id数组
      * @return array|bool|mixed
      */
-    public function collectionsByIds($collection_ids)
+    public function collectionsByIds($collectionIds)
     {
+        if (is_array($collectionIds)) {
+            $collectionIds = implode(",", $collectionIds);
+        }
         $result = self::commonAPI(self::OPERN_API_COLLECTIONS_BY_IDS, [
             'pro_id' => $this->proId,
             'pro_ver' => $this->proVer,
             'auditing' => $this->auditing,
             'publish' => $this->publish,
-            'collection_ids' => implode(",", $collection_ids),
+            'collection_ids' => implode(",", $collectionIds),
         ]);
 
         return empty($result) ? [] : $result;
@@ -177,17 +180,20 @@ class OpernCenter
 
     /**
      * 根据ids获取曲谱列表
-     * @param $lesson_ids
+     * @param int|array $lessonIds id或id数组
      * @return array|bool|mixed
      */
-    public function lessonsByIds($lesson_ids)
+    public function lessonsByIds($lessonIds)
     {
+        if (is_array($lessonIds)) {
+            $lessonIds = implode(",", $lessonIds);
+        }
         $result = self::commonAPI(self::OPERN_API_LESSONS_BY_IDS, [
             'pro_id' => $this->proId,
             'pro_ver' => $this->proVer,
             'auditing' => $this->auditing,
             'publish' => $this->publish,
-            'lesson_ids' => implode(",", $lesson_ids),
+            'lesson_ids' => $lessonIds,
         ]);
 
         return empty($result) ? [] : $result;

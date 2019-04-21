@@ -114,6 +114,16 @@ $arr = array(
         'call' => StudentAppOpn::class . ':lessons',
         'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApi::class]
     ],
+    '/student_app/opn/lesson' => [
+        'method' => ['get'],
+        'call' => StudentAppOpn::class . ':lesson',
+        'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApi::class]
+    ],
+    '/student_app/opn/search' => [
+        'method' => ['get'],
+        'call' => StudentAppOpn::class . ':search',
+        'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApi::class]
+    ],
 
     '/student_app/play/end' => array('method'=> array('post'),'call'=> '\App\Controllers\StudentApp\Play:PlayEnd','middles' => array('\App\Middleware\EmployeeAuthCheckMiddleWare')),
     '/student_app/play/save' => array('method'=> array('post'),'call'=> '\App\Controllers\StudentApp\Play:PlaySave','middles' => array('\App\Middleware\EmployeeAuthCheckMiddleWare')),
