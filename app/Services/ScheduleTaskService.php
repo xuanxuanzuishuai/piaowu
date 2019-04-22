@@ -29,15 +29,16 @@ class ScheduleTaskService
         $stus[ScheduleTaskUserModel::USER_ROLE_S] = $studentIds;
         $stus[ScheduleTaskUserModel::USER_ROLE_T] = $teacherIds;
 
-        if(!empty($stus)) {
-            $res = ScheduleTaskUserService::bindSTUs($stId,$stus);
-            if($res == false) {
+        if (!empty($stus)) {
+            $res = ScheduleTaskUserService::bindSTUs($stId, $stus);
+            if ($res == false) {
                 return $res;
             }
 
         }
         return $stId;
     }
+
     /**
      * @param $stId
      * @param $userId
@@ -114,26 +115,8 @@ class ScheduleTaskService
      */
     public static function checkST($st)
     {
-        $now = time();
         $sts = ScheduleTaskModel::checkSTList($st);
-        //检查教室，时间是否冲突
-//        list($count,$sts) = ScheduleTaskModel::getSTList(
-//            [
-//                'AND' => [
-//                    'classroom_id' => $st['classroom_id'],
-//                    'weekday' => $st['weekday'],
-//                    'status' => array(ScheduleTaskModel::STATUS_NORMAL, ScheduleTaskModel::STATUS_BEGIN, ScheduleTaskModel::STATUS_TEMP),
-//                    'start_time[<]' => $st['end_time'],
-//                    'end_time[>]' => $st['start_time'],
-//
-//                    'or' => [
-//                        'expire_time' => null,
-//                        'expire_time[>]' => $now
-//                    ]
-//                ]
-//            ],-1
-//        );
-        return empty($sts)?true:$sts;
+        return empty($sts) ? true : $sts;
     }
 
     /**
@@ -141,11 +124,13 @@ class ScheduleTaskService
      * @param $start_time
      * @param $end_time
      * @param $weekday
+     * @param null $orgSTId
      * @return array|bool
      */
-    public static function checkStudent($sIds,$start_time,$end_time,$weekday) {
-        $sts = ScheduleTaskModel::getSTListByUser($sIds,ScheduleTaskUserModel::USER_ROLE_S,$start_time,$end_time,$weekday);
-        return empty($sts)?true:$sts;
+    public static function checkStudent($sIds, $start_time, $end_time, $weekday, $orgSTId = null)
+    {
+        $sts = ScheduleTaskModel::getSTListByUser($sIds, ScheduleTaskUserModel::USER_ROLE_S, $start_time, $end_time, $weekday, $orgSTId);
+        return empty($sts) ? true : $sts;
     }
 
     /**
@@ -153,10 +138,17 @@ class ScheduleTaskService
      * @param $start_time
      * @param $end_time
      * @param $weekday
+     * @param null $orgSTId
      * @return array|bool
      */
-    public static function checkTeacher($tIds,$start_time,$end_time,$weekday) {
-        $sts = ScheduleTaskModel::getSTListByUser($tIds,ScheduleTaskUserModel::USER_ROLE_T,$start_time,$end_time,$weekday);
-        return empty($sts)?true:$sts;
+    public static function checkTeacher($tIds, $start_time, $end_time, $weekday, $orgSTId = null)
+    {
+        $sts = ScheduleTaskModel::getSTListByUser($tIds, ScheduleTaskUserModel::USER_ROLE_T, $start_time, $end_time, $weekday, $orgSTId);
+        return empty($sts) ? true : $sts;
+    }
+
+    public static function modifyST($st)
+    {
+        return ScheduleTaskModel::modifyST($st);
     }
 }

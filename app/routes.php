@@ -183,6 +183,7 @@ $arr = array(
 
 
     '/schedule/task/add' => array('method'=>array('post'),'call'=>'\App\Controllers\Schedule\ScheduleTask:add','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
+    '/schedule/task/modify' => array('method'=>array('post'),'call'=>'\App\Controllers\Schedule\ScheduleTask:modify','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
     '/schedule/task/list' => array('method'=>array('get'),'call'=>'\App\Controllers\Schedule\ScheduleTask:list','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
     '/schedule/task/detail' => array('method'=>array('get'),'call'=>'\App\Controllers\Schedule\ScheduleTask:detail','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
     '/schedule/task/bindStudents' => array('method'=>array('post'),'call'=>'\App\Controllers\Schedule\ScheduleTask:bindStudents','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),

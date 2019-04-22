@@ -183,7 +183,7 @@ class Model
                 $where[self::ORG_ID_STR] = $orgId;
         }
         $db = MysqlDB::getDB();
-        $cnt = $db->updateGetCount(static::$table, $data, ['id' => $id]);
+        $cnt = $db->updateGetCount(static::$table, $data, $where);
         self::delCache($id);
         return $cnt;
     }

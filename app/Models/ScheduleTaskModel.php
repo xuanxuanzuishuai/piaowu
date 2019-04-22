@@ -133,13 +133,12 @@ class ScheduleTaskModel extends Model
     }
 
     /**
-     * @param $ids
-     * @param $update
+     * @param $st
      * @return bool
      */
-    public static function modifyST($ids, $update)
+    public static function modifyST($st)
     {
-        $result = self::updateRecord($ids, $update);
+        $result = self::updateRecord($st['id'], $st);
         return ($result && $result > 0);
     }
 
@@ -150,11 +149,12 @@ class ScheduleTaskModel extends Model
      * @param $start_time
      * @param $end_time
      * @param $weekday
+     * @param null $orgSTId
      * @param null $time
      * @param bool $isOrg
      * @return array
      */
-    public static function getSTListByUser($userIds, $userRole, $start_time, $end_time, $weekday, $time = null, $isOrg = true)
+    public static function getSTListByUser($userIds, $userRole, $start_time, $end_time, $weekday, $orgSTId = null,$time = null, $isOrg = true)
     {
         $time = empty($time) ? time() : $time;
         $where = [
@@ -171,7 +171,9 @@ class ScheduleTaskModel extends Model
             'st.end_time[>]' => $start_time,
             'stu.status' => array(ScheduleTaskUserModel::STATUS_NORMAL, ScheduleTaskUserModel::STATUS_BACKUP),
         ];
-
+        if(!empty($orgSTId)) {
+            $where['st.id[!]'] = $orgSTId;
+        }
         if ($isOrg == true) {
             global $orgId;
             if ($orgId > 0)
@@ -210,6 +212,9 @@ class ScheduleTaskModel extends Model
             ]
 
         ];
+        if(!empty($st['id'])) {
+            $where['st.id[!]'] = $st['id'];
+        }
         $join = [
             '[>]' . CourseModel::$table . " (c)" => ['st.course_id' => 'id'],
             '[>]' . ClassroomModel::$table . " (cr)" => ['st.classroom_id' => 'id'],
