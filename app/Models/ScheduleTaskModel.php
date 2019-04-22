@@ -9,7 +9,6 @@
 namespace App\Models;
 
 
-use App\Controllers\Schedule\ScheduleTaskUser;
 use App\Libs\MysqlDB;
 
 class ScheduleTaskModel extends Model
@@ -31,7 +30,7 @@ class ScheduleTaskModel extends Model
      * @param bool $isOrg
      * @return array
      */
-    public static function getSTList($params, $page = -1, $count = 20,$isOrg = true)
+    public static function getSTList($params, $page = -1, $count = 20, $isOrg = true)
     {
         $db = MysqlDB::getDB();
         $where = [];
@@ -47,29 +46,28 @@ class ScheduleTaskModel extends Model
         if (isset($params['weekday'])) {
             $where['weekday'] = $params['weekday'];
         }
-        if($isOrg == true) {
+        if ($isOrg == true) {
             global $orgId;
-            if($orgId > 0 )
-                $where['org_id'] = $orgId;
+            if ($orgId > 0)
+                $where['st.org_id'] = $orgId;
         }
         $totalCount = 0;
         if ($page != -1) {
             // 获取总数
-            $totalCount = $db->count(self::$table, "*", $where);
+            $totalCount = $db->count(self::$table." (st)", "*", $where);
             // 分页设置
             $where['LIMIT'] = [($page - 1) * $count, $count];
         }
         // 排序设置
         $where['ORDER'] = [
-            'relation_id' => 'ASC',
             'weekday' => 'ASC',
             'start_time' => 'ASC'
         ];
         $join = [
-            '[>]'.CourseModel::$table." (c)" => ['c.id'=>'course_id'],
-            '[>]'.ClassroomModel::$table." (cr)" => ['cr.id'=>'classroom_id'],
+            '[>]' . CourseModel::$table . " (c)" => ['st.course_id' => 'id'],
+            '[>]' . ClassroomModel::$table . " (cr)" => ['st.classroom_id' => 'id'],
         ];
-        $result = $db->select(self::$table." (st)", $join,[
+        $result = $db->select(self::$table . " (st)", $join, [
             'st.id',
             'st.course_id',
             'st.start_time',
@@ -82,6 +80,7 @@ class ScheduleTaskModel extends Model
             'st.expire_time',
             'st.real_schedule_id',
             'c.name (course_name)',
+            'c.class_highest',
             'cr.name (classroom_name)'
 
         ], $where);
@@ -90,16 +89,23 @@ class ScheduleTaskModel extends Model
 
     /**
      * @param $id
+     * @param bool $isOrg
      * @return array
      */
-    public static function getSTDetail($id)
+    public static function getSTDetail($id,$isOrg = true)
     {
+        $where = ['st.id' => $id];
+        if ($isOrg == true) {
+            global $orgId;
+            if ($orgId > 0)
+                $where['st.org_id'] = $orgId;
+        }
         $join = [
-            '[>]'.CourseModel::$table." (c)" => ['c.id'=>'course_id'],
-            '[>]'.ClassroomModel::$table." (cr)" => ['cr.id'=>'classroom_id'],
+            '[>]' . CourseModel::$table . " (c)" => ['st.course_id'=>'id'],
+            '[>]' . ClassroomModel::$table . " (cr)" => ['st.classroom_id'=>'id'],
         ];
 
-        return MysqlDB::getDB()->select(self::$table, $join,[
+        return MysqlDB::getDB()->get(self::$table." (st)", $join, [
             'st.id',
             'st.course_id',
             'st.start_time',
@@ -112,8 +118,9 @@ class ScheduleTaskModel extends Model
             'st.expire_time',
             'st.real_schedule_id',
             'c.name (course_name)',
+            'c.class_highest',
             'cr.name (classroom_name)'
-        ], ['id' => $id]);
+        ], $where);
     }
 
     /**
@@ -140,30 +147,34 @@ class ScheduleTaskModel extends Model
     /**
      * @param $userIds
      * @param $userRole
+     * @param $start_time
+     * @param $end_time
+     * @param $weekday
      * @param null $time
      * @param bool $isOrg
      * @return array
      */
-    public static function getSTListByUser($userIds, $userRole, $time = null, $isOrg = true)
+    public static function getSTListByUser($userIds, $userRole, $start_time, $end_time, $weekday, $time = null, $isOrg = true)
     {
-        $time = empty($time) ?? time();
+        $time = empty($time) ? time() : $time;
         $where = [
-            'AND' =>
-            [
-                'stu.user_id' => $userIds,
-                'stu.user_role' => $userRole,
-                'or' => [
-                    'expire_time' => null,
-                    'expire_time[>]' => $time
-                ],
-                'st.status' => array(ScheduleTaskModel::STATUS_NORMAL, ScheduleTaskModel::STATUS_BEGIN, ScheduleTaskModel::STATUS_TEMP),
-                'stu.status' => array(ScheduleTaskUserModel::STATUS_NORMAL,ScheduleTaskUserModel::STATUS_BACKUP),
-            ]
+
+            'stu.user_id' => $userIds,
+            'stu.user_role' => $userRole,
+            'OR' => [
+                'expire_time' => null,
+                'expire_time[>]' => $time
+            ],
+            'st.status' => array(ScheduleTaskModel::STATUS_NORMAL, ScheduleTaskModel::STATUS_BEGIN, ScheduleTaskModel::STATUS_TEMP),
+            'st.weekday' => $weekday,
+            'st.start_time[<]' => $end_time,
+            'st.end_time[>]' => $start_time,
+            'stu.status' => array(ScheduleTaskUserModel::STATUS_NORMAL, ScheduleTaskUserModel::STATUS_BACKUP),
         ];
 
-        if($isOrg == true) {
+        if ($isOrg == true) {
             global $orgId;
-            if($orgId > 0 )
+            if ($orgId > 0)
                 $where['org_id'] = $orgId;
         }
         $columns = [
@@ -175,9 +186,51 @@ class ScheduleTaskModel extends Model
         ];
 
         $join = [
-            '[><]' . ScheduleTaskUserModel::$table . ' (stu)' => ['st_id' => 'st.id'],
+            '[><]' . ScheduleTaskUserModel::$table . ' (stu)' => ['st.id' => 'st_id'],
         ];
 
         return MysqlDB::getDB()->select(self::$table . ' (st)', $join, $columns, $where);
+    }
+
+    public static function checkSTList($st)
+    {
+        $now = time();
+        $db = MysqlDB::getDB();
+        $where = [
+
+            'st.classroom_id' => $st['classroom_id'],
+            'st.weekday' => $st['weekday'],
+            'st.status' => array(ScheduleTaskModel::STATUS_NORMAL, ScheduleTaskModel::STATUS_BEGIN, ScheduleTaskModel::STATUS_TEMP),
+            'st.start_time[<]' => $st['end_time'],
+            'st.end_time[>]' => $st['start_time'],
+            'st.org_id' => $st['org_id'],
+            'OR' => [
+                'expire_time' => Null,
+                'expire_time[>]' => $now
+            ]
+
+        ];
+        $join = [
+            '[>]' . CourseModel::$table . " (c)" => ['st.course_id' => 'id'],
+            '[>]' . ClassroomModel::$table . " (cr)" => ['st.classroom_id' => 'id'],
+        ];
+        $result = $db->select(self::$table . " (st)", $join, [
+            'st.id',
+            'st.course_id',
+            'st.start_time',
+            'st.end_time',
+            'st.classroom_id',
+            'st.create_time',
+            'st.status',
+            'st.weekday',
+            'st.org_id',
+            'st.expire_time',
+            'st.real_schedule_id',
+            'c.name (course_name)',
+            'cr.name (classroom_name)'
+
+        ], $where);
+        return $result;
+
     }
 }

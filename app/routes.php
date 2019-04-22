@@ -171,6 +171,14 @@ $arr = array(
     '/area/area/getByParentCode' => array('method'=>array('get'),'call'=>'\App\Controllers\Area\Area:getByParentCode','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
     '/area/area/getByCode' => array('method'=>array('get'),'call'=>'\App\Controllers\Area\Area:getByCode','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
 
+
+    '/schedule/task/add' => array('method'=>array('post'),'call'=>'\App\Controllers\Schedule\ScheduleTask:add','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
+    '/schedule/task/list' => array('method'=>array('get'),'call'=>'\App\Controllers\Schedule\ScheduleTask:list','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
+    '/schedule/task/detail' => array('method'=>array('get'),'call'=>'\App\Controllers\Schedule\ScheduleTask:detail','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
+    '/schedule/task/bindStudents' => array('method'=>array('post'),'call'=>'\App\Controllers\Schedule\ScheduleTask:bindStudents','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
+    '/schedule/task/bindTeachers' => array('method'=>array('post'),'call'=>'\App\Controllers\Schedule\ScheduleTask:bindTeachers','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
+    '/schedule/task/unbindUsers' => array('method'=>array('post'),'call'=>'\App\Controllers\Schedule\ScheduleTask:unbindUsers','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
+
     '/api/qiniu/token' => array('method'=> array('get'),'call'=> '\App\Controllers\API\Qiniu:token','middles' => array()),
     '/api/qiniu/callback' => array('method'=> array('get'),'call'=> '\App\Controllers\API\Qiniu:callback','middles' => array()),
     '/api/uictl/dropdown' =>array('method'=> array('get'),'call'=> '\App\Controllers\API\UICtl:dropdown','middles' => array()),
