@@ -60,7 +60,6 @@ class HomeWork extends ControllerBase
             ]
         ];
 
-
         $params = $request->getParams();
         $result = Valid::appValidate($params, $rules);
         if ($result['code'] != Valid::CODE_SUCCESS) {
@@ -90,16 +89,7 @@ class HomeWork extends ControllerBase
     public function getRecentCollections(Request $request, Response $response)
     {
         $rules = [
-            [
-                'key' => 'page',
-                'type' => 'required',
-                'error_code' => 'page_is_required'
-            ],
-            [
-                'key' => 'limit',
-                'type' => 'required',
-                'error_code' => 'limit_is_required'
-            ],
+
             [
                 'key' => 'page',
                 'type' => 'integer',
@@ -109,6 +99,11 @@ class HomeWork extends ControllerBase
                 'key' => 'limit',
                 'type' => 'integer',
                 'error_code' => 'limit_must_be_integer'
+            ],
+            [
+                'key' => 'student_id',
+                'type' => 'integer',
+                'error_code' => 'student_id_must_be_integer'
             ]
         ];
 
@@ -117,9 +112,11 @@ class HomeWork extends ControllerBase
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-
+        $page = $params["page"] ?? 1;
+        $limit = $params["limit"] ?? 20;
         $user_id = $this->ci['user_info']['user_id'];
-        $collection_ids = HomeworkTaskModel::getRecentCollectionIds($user_id, $params["page"], $params["limit"]);
+        $collection_ids = HomeworkTaskModel::getRecentCollectionIds($user_id, $page,
+            $limit, $params["student_id"]);
         $collection_list = [];
         if (!empty($collection_ids)) {
             $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, self::version);
@@ -147,16 +144,6 @@ class HomeWork extends ControllerBase
         $rules = [
             [
                 'key' => 'page',
-                'type' => 'required',
-                'error_code' => 'page_is_required'
-            ],
-            [
-                'key' => 'limit',
-                'type' => 'required',
-                'error_code' => 'limit_is_required'
-            ],
-            [
-                'key' => 'page',
                 'type' => 'integer',
                 'error_code' => 'page_must_be_integer'
             ],
@@ -164,17 +151,24 @@ class HomeWork extends ControllerBase
                 'key' => 'limit',
                 'type' => 'integer',
                 'error_code' => 'limit_must_be_integer'
+            ],
+            [
+                'key' => 'student_id',
+                'type' => 'integer',
+                'error_code' => 'student_id_must_be_integer'
             ]
         ];
 
         $params = $request->getParams();
         $result = Valid::appValidate($params, $rules);
+
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-
+        $page = $params["page"] ?? 1;
+        $limit = $params["limit"] ?? 20;
         $user_id = $this->ci['user_info']['user_id'];
-        $lesson_ids = HomeworkTaskModel::getRecentLessonIds($user_id, $params["page"], $params["limit"]);
+        $lesson_ids = HomeworkTaskModel::getRecentLessonIds($user_id, $page, $limit, $params["student_id"]);
         $lesson_list = [];
         if (!empty($lesson_ids)) {
             $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, self::version);
