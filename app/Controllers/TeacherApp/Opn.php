@@ -1,19 +1,22 @@
 <?php
 /**
  * Created by PhpStorm.
- * User: newtype0092
- * Date: 2019/4/19
- * Time: 1:16 PM
+ * User: dahua
+ * Date: 2019/4/22
+ * Time: 15:27
  */
 
-namespace App\Controllers\StudentApp;
+
+namespace App\Controllers\TeacherApp;
 
 
 use App\Controllers\ControllerBase;
 use App\Libs\OpernCenter;
+use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\AppConfigModel;
+use App\Models\HomeworkModel;
 use App\Services\OpernService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -77,11 +80,14 @@ class Opn extends ControllerBase
         $params = $request->getParams();
 
         list($pageId, $pageLimit) = Util::appPageLimit($params);
-
-        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT,
+        // TODO 请求erp的参数
+        /**
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER,
             $this->ci['version'],
             $this->ci['opn_auditing'],
             $this->ci['opn_publish']);
+         */
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER, 2);
         $result = $opn->categories($pageId, $pageLimit);
         if (empty($result) || !empty($result['errors'])) {
             return $response->withJson($result, StatusCode::HTTP_OK);
@@ -120,11 +126,13 @@ class Opn extends ControllerBase
         }
 
         list($pageId, $pageLimit) = Util::appPageLimit($params);
-
-        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT,
+        /**
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER,
             $this->ci['version'],
             $this->ci['opn_auditing'],
             $this->ci['opn_publish']);
+        */
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER, 1);
         $result = $opn->collections($params['category_id'], $pageId, $pageLimit);
         if (empty($result) || !empty($result['errors'])) {
             return $response->withJson($result, StatusCode::HTTP_OK);
@@ -162,11 +170,13 @@ class Opn extends ControllerBase
         }
 
         list($pageId, $pageLimit) = Util::appPageLimit($params);
-
+        /**
         $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT,
             $this->ci['version'],
             $this->ci['opn_auditing'],
             $this->ci['opn_publish']);
+         */
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER, 1);
         $result = $opn->lessons($params['collection_id'], $pageId, $pageLimit);
         if (empty($result) || !empty($result['errors'])) {
             return $response->withJson($result, StatusCode::HTTP_OK);
@@ -202,21 +212,54 @@ class Opn extends ControllerBase
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-
+        /**
         $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT,
             $this->ci['version'],
             $this->ci['opn_auditing'],
             $this->ci['opn_publish']);
+         */
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER, 1);
         $result = $opn->lessonsByIds($params['lesson_id']);
         if (empty($result) || !empty($result['errors'])) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $data = $result['data'];
-        $list = OpernService::appFormatLessonByIds($data)[0] ?? [];
+        // TODO 曲谱库这个接口没有data层，应该为和其他接口一样
+        // $data = $result['data'];
+        $data = $result;
+        $list = OpernService::appFormatLessonByIds($data['list'])[0] ?? [];
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => $list
         ], StatusCode::HTTP_OK);
     }
+
+    /**
+     * 获取老师最近使用书籍
+     * @param Request $request
+     * @param Response $response
+     */
+    public function recentCollections(Request $request, Response $response){
+        $params = $request->getParams();
+        list($pageId, $pageLimit) = Util::formatPageCount($params);
+        // $userId = $this->ci['teacher']['id'];
+        $userId = 460;
+        $collectionIds = HomeworkModel::getRecentBookIds($userId, $pageId, $pageLimit);
+        SimpleLogger::debug("******************", $collectionIds);
+    }
+
+    /**
+     * 获取老师最近课程
+     * @param Request $request
+     * @param Response $response
+     */
+    public function recentLessons(Request $request, Response $response){
+        $params = $request->getParams();
+        list($pageId, $pageLimit) = Util::formatPageCount($params);
+        // $userId = $this->ci['teacher']['id'];
+        $userId = 460;
+        $lessonIds = HomeworkModel::getRecentOpernIds($userId, $pageId, $pageLimit);
+        SimpleLogger::debug("******************", $lessonIds);
+    }
+
 }

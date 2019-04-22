@@ -9,6 +9,7 @@ namespace App\Models;
 
 
 use App\Libs\MysqlDB;
+use App\Libs\SimpleLogger;
 
 class HomeworkModel extends Model
 {
@@ -54,7 +55,7 @@ class HomeworkModel extends Model
                 $where = " and org_id = ".$orgId;
         }
         $start = ($page - 1) * $limit;
-        $query = "select distinct book_id from " . HomeworkModel::$table .
+        $query = "select distinct collection_id from " . HomeworkModel::$table .
             " where teacher_id=" . $teacher_id . $where ." order by create_time desc limit " . $start . ", " . $limit;
         $bookIdList = MysqlDB::getDB()->queryAll($query);
         return $bookIdList;

@@ -182,7 +182,7 @@ class HomeWork extends ControllerBase
             if (!empty($res['code']) && $res['code'] !== Valid::CODE_SUCCESS) {
                 $lesson_list = [];
             } else {
-                $lesson_list = $res["data"] ? $res["data"]: $res;
+                $lesson_list = $res["data"];
             }
         }
 
