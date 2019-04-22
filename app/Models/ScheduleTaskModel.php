@@ -22,6 +22,8 @@ class ScheduleTaskModel extends Model
     const STATUS_BEGIN = 2;//开课
     const STATUS_END = 3;//结课
     const STATUS_TEMP = 4;//临时调课
+    const STATUS_UNFULL = 5; // 未满员
+    const STATUS_FULL = 6; // 已满员
 
     /**
      * @param $params
@@ -101,8 +103,8 @@ class ScheduleTaskModel extends Model
                 $where['st.org_id'] = $orgId;
         }
         $join = [
-            '[>]' . CourseModel::$table . " (c)" => ['st.course_id'=>'id'],
-            '[>]' . ClassroomModel::$table . " (cr)" => ['st.classroom_id'=>'id'],
+            '[><]' . CourseModel::$table . " (c)" => ['st.course_id'=>'id'],
+            '[><]' . ClassroomModel::$table . " (cr)" => ['st.classroom_id'=>'id'],
         ];
 
         return MysqlDB::getDB()->get(self::$table." (st)", $join, [
@@ -119,6 +121,8 @@ class ScheduleTaskModel extends Model
             'st.real_schedule_id',
             'c.name (course_name)',
             'c.class_highest',
+            'c.num',
+            'c.duration',
             'cr.name (classroom_name)'
         ], $where);
     }

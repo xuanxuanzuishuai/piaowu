@@ -8,6 +8,9 @@
 
 namespace App\Services;
 
+use App\Libs\Constants;
+use App\Libs\Dict;
+use App\Libs\SimpleLogger;
 use App\Models\ScheduleTaskModel;
 use App\Models\ScheduleTaskUserModel;
 
@@ -75,6 +78,7 @@ class ScheduleTaskService
         $stIds = $result = [];
         list($count, $sts) = ScheduleTaskModel::getSTList($params, $page, $count);
         foreach ($sts as $st) {
+            $st = self::formatST($st);
             $stIds[] = $st['id'];
             $result[$st['id']] = $st;
         }
@@ -98,9 +102,18 @@ class ScheduleTaskService
         if (empty($st)) {
             return null;
         }
+        $st = self::formatST($st);
+        SimpleLogger::error('ssss',$st);
+
+
+
+
+
+
 
         $stus = ScheduleTaskUserModel::getSTUBySTIds([$st['id']]);
         foreach ($stus as $stu) {
+            $stu = ScheduleTaskUserService::formatSTU($stu);
             if ($stu['user_role'] == ScheduleTaskUserModel::USER_ROLE_S) {
                 $st['students'][] = $stu;
             } else
@@ -147,8 +160,27 @@ class ScheduleTaskService
         return empty($sts) ? true : $sts;
     }
 
+    /**
+     * @param $st
+     * @return bool
+     */
     public static function modifyST($st)
     {
         return ScheduleTaskModel::modifyST($st);
+    }
+
+    /**
+     * @param $st
+     * @return mixed
+     */
+    public static function formatST($st) {
+        if($st['status'] == ScheduleTaskModel::STATUS_NORMAL) {
+            $st['st_status'] = $st['class_highest'] > count($st['student'])?ScheduleTaskModel::STATUS_UNFULL:ScheduleTaskModel::STATUS_FULL;
+        }
+        else {
+            $st['st_status'] = $st['status'];
+        }
+        $st['st_status'] = DictService::getKeyValue(Constants::DICT_TYPE_SCHEDULE_TASK_STATUS,$st['st_status']);
+        return $st;
     }
 }

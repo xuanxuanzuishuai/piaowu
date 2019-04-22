@@ -10,7 +10,6 @@ namespace App\Models;
 
 
 use App\Libs\MysqlDB;
-use Medoo\Medoo;
 
 class ScheduleTaskUserModel extends Model
 {
