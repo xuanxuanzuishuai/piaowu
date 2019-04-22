@@ -92,8 +92,8 @@ class EmployeeService
     /**
      * 修改密码
      * @param $userId
-     * @param $newPassword
-     * @param 后台修改不设置、不检查，|string $oldPassword 后台修改不设置、不检查， 自己修改检查旧密码
+     * @param string $newPassword 后台修改不设置、不检查
+     * @param string $oldPassword 后台修改不设置、不检查， 自己修改检查旧密码
      * @return array
      */
     public static function changePassword($userId, $newPassword, $oldPassword = ""){
@@ -101,7 +101,7 @@ class EmployeeService
         $userCenter = new UserCenter();
         $authResult = $userCenter->changePassword($employee['uuid'], $newPassword, $oldPassword);
         if (empty($authResult['code'])){
-            EmployeeModel::updateUsAppassWord($userId, $newPassword);
+            EmployeeModel::updateUserPassWord($userId, $newPassword);
         }
         return $authResult;
     }
