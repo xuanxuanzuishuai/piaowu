@@ -96,7 +96,7 @@ class Homework extends ControllerBase
                 array_push($temp['tasks'], $task);
             }else{
                 $temp[$homeworkId] = [
-                    'teacher_name' => $homework['teacher_id'],
+                    'teacher_name' => $homework['teacher_name'],
                     "start_time" => $homework['start_time'],
                     "end_time" => $homework['end_time'],
                     "tasks" => [$task]

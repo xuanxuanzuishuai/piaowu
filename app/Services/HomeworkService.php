@@ -50,7 +50,7 @@ class HomeworkService
         $where = [
             HomeworkModel::$table . ".student_id" => $studentId,
             HomeworkModel::$table . ".end_time[>]" => time(),
-            HomeworkTaskModel::$table . ".is_complete" => HomeworkTaskModel::TYPE_UNCOMPLETE
+            //HomeworkTaskModel::$table . ".is_complete" => HomeworkTaskModel::TYPE_UNCOMPLETE
         ];
         if (!empty($lessonId)){
             $where[HomeworkTaskModel::$table . ".lesson_id"] = $lessonId;

@@ -40,13 +40,9 @@ class UserPlayServices
 
         $recordID =  PlayRecordModel::insertRecord($recordData);
 
-        //只有练习动态曲谱时更新
-        $playResult = [];
-        if ($playData['record_type'] == PlayRecordModel::TYPE_DYNAMIC){
-            list($saveID, $playResult) = self::updateSave($userID, $playData);
-            if (empty($saveID)) {
-                return ['play_save_failure'];
-            }
+        list($saveID, $playResult) = self::updateSave($userID, $playData);
+        if (empty($saveID)) {
+            return ['play_save_failure'];
         }
         return [null, ['record_id' => $recordID, 'play_result' => $playResult]];
     }

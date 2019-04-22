@@ -78,7 +78,8 @@ $arr = array(
         'call' => StudentAppAuth::class . ':validateCode',
         'middles' => [AppApi::class]
     ],
-    '/student_app/auth/get_user_id' => [
+//    '/student_app/auth/get_user_id' => [
+    '/user/auth/get_user_id' => [ // musvg访问
         'method' => ['get'],
         'call' => StudentAppAuth::class . ':getUserId',
         'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApi::class]
