@@ -109,6 +109,7 @@ class Homework extends ControllerBase
                 'task_id' => $homework['task_id'],
                 'lesson_id' => $homework['lesson_id'],
                 'complete' => $homework['complete'],
+                'lesson_name' => $homework['lesson_name'],
                 'score_detail' => [
                     'pitch' => ['high' => $pitch, 'baseline' => $baseline['pitch']],
                     'rhythm' => ['high' => $rhythm, 'baseline' => $baseline['rhythm']]

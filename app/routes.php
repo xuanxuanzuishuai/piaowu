@@ -15,6 +15,9 @@ use App\Controllers\StudentApp\Opn as StudentAppOpn;
 use App\Controllers\StudentApp\Play as StudentAppPlay;
 use App\Controllers\StudentApp\Homework as StudentAppHomework;
 use App\Controllers\StudentApp\Subscription as StudentAppSubscription;
+use App\Controllers\TeacherApp\Opn as TeacherAppOpn;
+use App\Controllers\TeacherApp\Schedule as TeacherAppSchedule;
+use App\Controllers\TeacherApp\Play as TeacherAppPlay;
 use Slim\App;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -173,6 +176,57 @@ $arr = array(
         'method' => ['get'],
         'call' => StudentAppHomework::class . ':list',
         'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApi::class]
+    ],
+    // 爱学琴老师端
+    '/teacher_app/opn/categories' => [
+        'method' => ['get'],
+        'call' => TeacherAppOpn::class . ':categories',
+        'middles' => []
+    ],
+    '/teacher_app/opn/collections' => [
+        'method' => ['get'],
+        'call' => TeacherAppOpn::class . ':collections',
+        'middles' => []
+    ],
+    '/teacher_app/opn/lessons' => [
+        'method' => ['get'],
+        'call' => TeacherAppOpn::class . ':lessons',
+        'middles' => []
+    ],
+    '/teacher_app/opn/lesson' => [
+        'method' => ['get'],
+        'call' => TeacherAppOpn::class . ':lesson',
+        'middles' => []
+    ],
+    '/teacher_app/opn/recent_collections' => [
+        'method' => ['get'],
+        'call' => TeacherAppOpn::class . ':recentCollections',
+        'middles' => []
+    ],
+    '/teacher_app/opn/recent_tunes' => [
+        'method' => ['get'],
+        'call' => TeacherAppOpn::class . ':recentTunes',
+        'middles' => []
+    ],
+    '/teacher_app/opn/recent_lessons' => [
+        'method' => ['get'],
+        'call' => TeacherAppOpn::class . ':recentLessons',
+        'middles' => []
+    ],
+    '/teacher_app/schedule/end' => [
+        'method' => ['post'],
+        'call' => TeacherAppSchedule::class . ':end',
+        'middles' => []
+    ],
+    '/teacher_app/play/end' => [
+        'method' => ['post'],
+        'call' => TeacherAppPlay::class . ':end',
+        'middles' => []
+    ],
+    '/teacher_app/play/ai_end' => [
+        'method' => ['post'],
+        'call' => TeacherAppPlay::class . ':aiEnd',
+        'middles' => []
     ],
 
     '/goods/course/list' => array('method'=> array('get'),'call'=> '\App\Controllers\Course\Course:list','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
