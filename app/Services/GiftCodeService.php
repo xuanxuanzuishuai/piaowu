@@ -132,8 +132,8 @@ class GiftCodeService
         $idsArr = explode(',', $params['ids']);
         if (!empty($idsArr)) {
             return GiftCodeModel::batchUpdateRecord(
-                ['code_status' => GiftCodeModel::CODE_STATUS_NOT_REDEEMED],
-                ['id' => $idsArr, 'code_status' => GiftCodeModel::CODE_STATUS_INVALID],
+                ['code_status' => GiftCodeModel::CODE_STATUS_INVALID],
+                ['id' => $idsArr, 'code_status' => GiftCodeModel::CODE_STATUS_NOT_REDEEMED],
                 false);
         }
         return 0;
