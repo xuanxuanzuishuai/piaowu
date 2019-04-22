@@ -64,7 +64,7 @@ class GiftCode extends ControllerBase
             $params['valid_units'],
             $params['generate_channel'],
             $params['buyer'],
-            GiftCodeModel::MANUAL_CREATE,
+            GiftCodeModel::CREATE_BY_MANUAL,
             $params['remarks'],
             $employeeId);
 

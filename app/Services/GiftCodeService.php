@@ -107,13 +107,13 @@ class GiftCodeService
                 }
                 //购买人（根据购买渠道区分）
                 switch ($value['generate_channel']) {
-                    case GiftCodeModel::AGENT_CHANNEL:
+                    case GiftCodeModel::BUYER_TYPE_ORG:
                         $data[$key]['buyer_name'] = $value['agent_name'];
                         break;
-                    case GiftCodeModel::PANDA_CHANNEL:
+                    case GiftCodeModel::BUYER_TYPE_STUDENT:
                         $data[$key]['buyer_name'] = $value['name'] . '(' . $value['mobile'] . ')';
                         break;
-                    case GiftCodeModel::OTHER_CHANNEL:
+                    case GiftCodeModel::BUYER_TYPE_OTHER:
                         $data[$key]['buyer_name'] = Dict::getCodeOtherChannelBuyer($value['buyer']);
                         break;
                 }

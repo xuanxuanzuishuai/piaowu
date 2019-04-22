@@ -19,16 +19,16 @@ class GiftCodeModel extends Model
      * 生成方式
      * 1系统生成，2手工生成
      */
-    const SYSTEM_CREATE = 1;
-    const MANUAL_CREATE = 2;
+    const CREATE_BY_SYSTEM = 1;
+    const CREATE_BY_MANUAL = 2;
 
     /**
      * 生成渠道
      * 1机构，2个人，3其他
      */
-    const AGENT_CHANNEL = 1;
-    const PANDA_CHANNEL = 2;
-    const OTHER_CHANNEL = 3;
+    const BUYER_TYPE_ORG = 1;
+    const BUYER_TYPE_STUDENT = 2;
+    const BUYER_TYPE_OTHER = 3;
 
     /**
      * 兑换码状态
@@ -105,43 +105,69 @@ class GiftCodeModel extends Model
      */
     public static function getLikeCodeInfo($params)
     {
+        $gift_code = self::$table;
+        $organization = OrganizationModel::$table;
+        $student = StudentModel::$table;
+
         $where = ' where 1 = 1 ';
         if (!empty($params['code'])) {
-            $where .= " and erp_code.code like '%{$params['code']}%'";
+            $where .= " and {$gift_code}.code like '%{$params['code']}%'";
         }
 
         if (!empty($params['generate_channel'])) {
-            $where .= " and erp_code.generate_channel = " . $params['generate_channel'];
+            $where .= " and {$gift_code}.generate_channel = " . $params['generate_channel'];
         }
 
         if (!empty($params['generate_way'])) {
-            $where .= " and erp_code.generate_way = " . $params['generate_way'];
+            $where .= " and {$gift_code}.generate_way = " . $params['generate_way'];
         }
 
         if (!empty($params['code_status'])) {
-            $where .= " and erp_code.code_status = " . $params['code_status'];
+            $where .= " and {$gift_code}.code_status = " . $params['code_status'];
         }
 
-        if (!empty($params['agent_name'])) {
-            $where .= " and erp_agent.agent_name like '%{$params['agent_name']}%'";
+        if (!empty($params['name'])) {
+            $where .= " and {$organization}.name like '%{$params['name']}%'";
         }
 
         $db = MysqlDB::getDB();
 
-        $join = "left join erp_agent on erp_code.buyer = erp_agent.id and erp_code.generate_channel = " . self::AGENT_CHANNEL . " 
-      left join erp_student on erp_code.buyer = erp_student.id and erp_code.generate_channel = " . self::PANDA_CHANNEL . "
-      left join erp_student apply_user on erp_code.apply_user = apply_user.id";
+        $join = "
+LEFT JOIN {$organization} ON {$gift_code}.buyer = {$organization}.id AND {$gift_code}.generate_channel = '1'
+LEFT JOIN {$student} ON {$gift_code}.buyer = {$student}.id AND {$gift_code}.generate_channel = '2'
+LEFT JOIN {$student} apply_user ON {$gift_code}.apply_user = apply_user.id ";
         $totalCount = self::getCodeCount($join, $where);
         //格式化分页参数
         list($page, $count) = Util::formatPageCount($params);
         $offset = ($page - 1) * $count;
 
-        $sql = "select erp_code.id, erp_code.code, erp_code.generate_channel, erp_code.generate_way, erp_code.code_status,
-                  erp_code.buyer, erp_code.buy_time, erp_code.apply_user, erp_code.valid_num, erp_code.valid_units, erp_code.be_active_time,
-                  erp_code.operate_user, erp_code.operate_time, erp_student.name, erp_student.mobile, erp_agent.agent_name, 
-                  apply_user.name apply_name, apply_user.mobile apply_mobile
-      from erp_code {$join} {$where} order by erp_code.id DESC";
-        $sql .= " limit $offset, $count";
+        $sql = "
+SELECT 
+    {$gift_code}.id,
+    {$gift_code}.code,
+    {$gift_code}.generate_channel,
+    {$gift_code}.generate_way,
+    {$gift_code}.code_status,
+    {$gift_code}.buyer,
+    {$gift_code}.buy_time,
+    {$gift_code}.apply_user,
+    {$gift_code}.valid_num,
+    {$gift_code}.valid_units,
+    {$gift_code}.be_active_time,
+    {$gift_code}.operate_user,
+    {$gift_code}.operate_time,
+    {$student}.name,
+    {$student}.mobile,
+    {$organization}.name,
+    apply_user.name apply_name,
+    apply_user.mobile apply_mobile
+FROM
+    {$gift_code}
+    {$join}
+    {$where}
+ORDER BY {$gift_code}.id DESC
+LIMIT $offset, $count
+";
         return [$totalCount, $db->queryAll($sql)];
     }
 
