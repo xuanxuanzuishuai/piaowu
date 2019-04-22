@@ -56,4 +56,22 @@ class TeacherStudentModel extends Model
         ]);
         return $affectRows;
     }
+
+    /**
+     * 查找学生和老师除了指定teacherId外的绑定关系
+     * @param $orgId
+     * @param $studentId
+     * @param $teacherId
+     * @return mixed
+     */
+    public static function getRecordExceptTeacher($orgId, $studentId, $teacherId)
+    {
+        $record = self::getRecord([
+            'org_id'        => $orgId,
+            'student_id'    => $studentId,
+            'teacher_id[!]' => $teacherId,
+            'status'        => self::STATUS_NORMAL,
+        ]);
+        return $record;
+    }
 }

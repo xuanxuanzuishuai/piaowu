@@ -70,6 +70,13 @@ class Student extends ControllerBase
         ]);
     }
 
+    /**
+     * 机构下的学生列表
+     * @param Request $request
+     * @param Response $response
+     * @param $argv
+     * @return Response
+     */
     public function listByOrg(Request $request, Response $response, $argv)
     {
         $params = $request->getParams();
@@ -313,12 +320,6 @@ class Student extends ControllerBase
         $result = Valid::validate($params, $rules);
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
-        }
-
-        //检查手机号是否已经注册（本地数据库）
-        $student = StudentService::getStudentByMobile($params['mobile']);
-        if (!empty($student)) {
-            return $response->withJson(Valid::addErrors([], 'student_mobile', 'mobile_is_exist'), StatusCode::HTTP_OK);
         }
 
         $orgId = $this->getEmployeeOrgId();

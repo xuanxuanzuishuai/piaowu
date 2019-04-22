@@ -388,7 +388,7 @@ class StudentService
     public static function studentRegister($params, $operatorId = 0)
     {
         //添加学生
-        $res = self::erpAddStudent($params, $operatorId);
+        $res = self::insertStudent($params, $operatorId);
         if($res['code'] != Valid::CODE_SUCCESS){
             return $res;
         }
@@ -402,23 +402,46 @@ class StudentService
     }
 
     /**
-     * erp添加学生
+     * 添加学生
+     * 本地如果已经存在此学生，更新学生信息，返回学生id
+     * 如果没有，新增学生记录，返回id
      * @param $params
      * @param int $operatorId
      * @return array
      */
-    public static function erpAddStudent($params, $operatorId = 0)
+    public static function insertStudent($params, $operatorId = 0)
     {
-        // 用户中心授权
+        $birthday   = $params['birthday'] ?? '';
+        $gender     = $params['gender'] ?? StudentModel::GENDER_MALE;
+
         $userCenter = new UserCenter();
+
         $authResult = $userCenter->studentAuthorization(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
-            $params['mobile'], $params['name'], '');
+            $params['mobile'], $params['name'], '',$birthday, strval($gender));
 
         if (empty($authResult["uuid"])) {
             return Valid::addErrors([], "user_center", "uc_user_add_failed");
         }
 
-        $studentId = StudentModel::erpInsertStudent($params, $authResult["uuid"], $operatorId);
+        $uuid = $authResult['uuid'];
+
+        $student = StudentModel::getRecord([
+            'uuid' => $uuid,
+        ]);
+
+        if(empty($student)) {
+            $studentId = StudentModel::saveStudent($params, $authResult["uuid"], $operatorId);
+            if(empty($studentId)) {
+                return Valid::addErrors([], 'student', 'save_student_fail');
+            }
+        } else {
+            $studentId = $student['id'];
+            $params['update_time'] = time();
+            $affectRows = StudentModel::updateRecord($studentId, $params);
+            if($affectRows == 0) {
+                return Valid::addErrors([], 'student', 'update_student_fail');
+            }
+        }
 
         return ['code' => Valid::CODE_SUCCESS, 'data' => ['studentId' => $studentId]];
     }

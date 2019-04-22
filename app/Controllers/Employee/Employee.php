@@ -133,27 +133,32 @@ class Employee extends ControllerBase
     {
         $rules = [
             [
-                'key' => 'role_id',
-                'type' => 'required',
+                'key'        => 'role_id',
+                'type'       => 'required',
                 'error_code' => 'role_id_is_required'
             ],
             [
-                'key' => 'login_name',
-                'type' => 'required',
+                'key'        => 'login_name',
+                'type'       => 'required',
                 'error_code' => 'login_name_is_required'
             ],
             [
-                'key' => 'name',
-                'type' => 'required',
+                'key'        => 'name',
+                'type'       => 'required',
                 'error_code' => 'employee_name_is_required'
+            ],
+            [
+                'key'        => 'org_id',
+                'type'       => 'integer',
+                'error_code' => 'org_id_must_be_integer'
             ]
         ];
+
         $params = $request->getParams();
         $result = Valid::validate($params, $rules);
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-
 
         if (!empty($params['mobile']) && !Util::isMobile($params['mobile'])) {
             $result = Valid::addErrors([], 'mobile', 'employee_mobile_format_is_error');

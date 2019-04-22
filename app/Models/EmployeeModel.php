@@ -162,7 +162,7 @@ class EmployeeModel extends Model
      */
     public static function insertEmployee($insert)
     {
-        return self::insertRecord($insert);
+        return self::insertRecord($insert, false);
     }
 
     /**
@@ -173,7 +173,7 @@ class EmployeeModel extends Model
      */
     public static function updateEmployee($id, $update)
     {
-        $result = self::updateRecord($id, $update);
+        $result = self::updateRecord($id, $update, false);
         return ($result && $result > 0);
     }
 

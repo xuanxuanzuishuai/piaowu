@@ -167,12 +167,13 @@ class EmployeeService
         $params['mobile'] = !empty($params['mobile']) ? trim($params['mobile']) : '';
         $update = [
             'login_name' => $params['login_name'],
-            'name' => $params['name'],
-            'role_id' => $params['role_id'],
-            'mobile' => $params['mobile'] ?? '',
-            'status' => $params['status'] ?? EmployeeModel::STATUS_NORMAL,
-            'is_leader' => $params['is_leader'] ?? 0,
-            'teacher_id' => $params['teacher_id'] ?? null
+            'name'       => $params['name'],
+            'role_id'    => $params['role_id'],
+            'mobile'     => $params['mobile'] ?? '',
+            'status'     => $params['status'] ?? EmployeeModel::STATUS_NORMAL,
+            'is_leader'  => $params['is_leader'] ?? 0,
+            'teacher_id' => $params['teacher_id'] ?? null,
+            'org_id'     => $params['org_id'] ?? 0,
         ];
 
         /**

@@ -168,6 +168,7 @@ class Teacher extends ControllerBase
         }
 
         $teacherId = $params['id'];
+        unset($params['id']);
         $orgId = $this->getEmployeeOrgId();
 
         //查询老师是否和机构有绑定关系（或曾经有绑定关系）
@@ -184,7 +185,7 @@ class Teacher extends ControllerBase
         $db = MysqlDB::getDB();
         $db->beginTransaction();
 
-        $res = TeacherService::insertOrUpdateTeacher($params);
+        $res = TeacherService::updateTeacher($teacherId,$params);
         if ($res['code'] != Valid::CODE_SUCCESS) {
             $db->rollBack();
             return $response->withJson($res, StatusCode::HTTP_OK);
@@ -250,7 +251,7 @@ class Teacher extends ControllerBase
         $db->beginTransaction();
 
         //新增老师
-        $res = TeacherService::insertOrUpdateTeacher($params);
+        $res = TeacherService::saveAndUpdateTeacher($params);
         if ($res['code'] != Valid::CODE_SUCCESS) {
             $db->rollBack();
             return $response->withJson($res, StatusCode::HTTP_OK);
@@ -360,15 +361,9 @@ class Teacher extends ControllerBase
         }
 
         //学生是否已经绑定其他老师
-        $entries = TeacherStudentModel::getRecords([
-            'org_id'     => $orgId,
-            'student_id' => $studentId,
-            'status'     => TeacherStudentModel::STATUS_NORMAL,
-        ]);
-        foreach($entries as $e) {
-            if($e['teacher_id'] != $teacherId) {
-                return $response->withJson(Valid::addErrors([],'teacher','have_bind_other_teacher'));
-            }
+        $entry = TeacherStudentModel::getRecordExceptTeacher($orgId, $studentId, $teacherId);
+        if(!empty($entry)) {
+            return $response->withJson(Valid::addErrors([], 'teacher','have_bind_other_teacher'));
         }
 
         //绑定失败返回错误，成功返回id

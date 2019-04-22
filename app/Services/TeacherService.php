@@ -26,15 +26,9 @@ use App\Services\Product\CourseService;
 
 class TeacherService
 {
-    /**
-     * 插入或更新老师数据
-     * @param $params
-     * @return int|mixed|null|string
-     */
-    public static function insertOrUpdateTeacher($params)
+    public static function saveAndUpdateTeacher($params)
     {
         // 必填参数
-        $teacher_id       = $params['id'] ?? '';
         $update['mobile'] = $params['mobile'] ?? '';
         $update['name']   = $params['name'] ?? '';
 
@@ -67,69 +61,118 @@ class TeacherService
         $update['teach_style']          = $params['teach_style'] ?? null;
         $update['status']               = empty($params['status']) ? TeacherModel::ENTRY_REGISTER : $params['status'];
 
-        //如果 teacher_id 为空，验证手机号是否存在，如果存在，并且为注册状态，更新老师信息，并标记为待入职状态
-        if (empty($teacher_id)) {
-            $teacher = TeacherModel::getRecordByMobile($update['mobile']);
-//            if (!empty($teacher) && $teacher['status'] == TeacherModel::ENTRY_REGISTER) {
-//                $teacher_id = $teacher['id'];
-//                $update['status'] = TeacherModel::ENTRY_WAIT;
-//            }
-            if (!empty($teacher)) {
-                $teacher_id = $teacher['id'];
+        $userCenter = new UserCenter();
+        $auth = true;
+
+        $authResult = $userCenter->teacherAuthorization($update['mobile'], $update['name'], '',
+            $update['birthday'], strval($update['gender']), $update['thumb'], $auth);
+        if (empty($authResult["uuid"])) {
+            return Valid::addErrors([], "user_center", "uc_user_add_failed");
+        }
+
+        $uuid = $authResult['uuid'];
+        $teacher = TeacherModel::getRecord([
+            'uuid' => $uuid
+        ],'*',false);
+
+        if(empty($teacher)) {
+            $update['uuid'] = $uuid;
+            $update['update_time'] = time();
+            $update['create_time'] = time();
+            $teacherId = TeacherModel::insertRecord($update, false);
+            if (empty($teacherId)) {
+                return Valid::addErrors([], 'teacher', 'save_teacher_fail');
+            }
+        } else {
+            $teacherId = $teacher['id'];
+            $update['update_time'] = time();
+            $affectRows = TeacherModel::updateRecord($teacherId, $update, false);
+            if($affectRows == 0) {
+                return Valid::addErrors([], 'teacher', 'update_teacher_fail');
             }
         }
 
-        $userCenter = new UserCenter();
-
-        if (empty($teacher_id)) {
-            //验证手机号是否已存在
-            if (TeacherModel::isMobileExist($update['mobile'])) {
-                return Valid::addErrors([], 'mobile', 'teacher_mobile_is_exist');
-            }
-
-            $uuid = $params['uuid'] ?? '';
-            $auth = true;
-
-            $authResult = $userCenter->teacherAuthorization($update['mobile'], $update['name'], $uuid,
-                $update['birthday'], $update['gender'], $update['thumb'], $auth);
-            if (empty($authResult["uuid"])) {
-                return Valid::addErrors([], "user_center", "uc_user_add_failed");
-            }
-
-            $update['uuid'] = $authResult['uuid'];
-            $update['create_time'] = time();
-            $teacher_id = TeacherModel::insertRecord($update, false);
-            if ($teacher_id == false) {
-                return Valid::addErrors([], 'teacher', 'teacher_add_error');
-            }
-        } else {
-            //验证数据是否存在
-            $teacher_info = TeacherModel::getById($teacher_id);
-            if (empty($teacher_info['id'])) {
-                return Valid::addErrors([], 'teacher', 'teacher_is_not_exist');
-            }
-
-            $update['uuid'] = $teacher_info['uuid'];
-
-            $result = TeacherModel::updateRecord($teacher_id, $update, false);
-            if (!is_numeric($result)) {
-                return Valid::addErrors([], 'teacher', 'teacher_update_error');
-            }
-
-            $update['gender'] = empty($update['gender']) ? '1' : strval($update['gender']);
-            //请求用户中心修改用户信息
-            $modifyResult = $userCenter->modifyTeacher($update['uuid'], $update['mobile'], $update['name'],
-                $update['birthday'],$update['gender']);
-
-            if(isset($modifyResult['code'])) {
-                return $modifyResult; //已经用Valid::addErrors包装过
-            }
+        $modifyResult = $userCenter->modifyTeacher($uuid, $update['mobile'], $update['name'],
+            $update['birthday'],strval($update['gender']));
+        if(isset($modifyResult['code'])) {
+            return $modifyResult; //已经用Valid::addErrors包装过
         }
 
         return [
             'code' => Valid::CODE_SUCCESS,
             'data' => [
-                'id' => $teacher_id
+                'id' => $teacherId
+            ]
+        ];
+    }
+    /**
+     * 插入或更新老师数据
+     * @param $teacherId
+     * @param $params
+     * @return int|mixed|null|string
+     */
+    public static function updateTeacher($teacherId, $params)
+    {
+        $update['mobile'] = $params['mobile'] ?? '';
+        $update['name']   = $params['name'] ?? '';
+
+        // 可选参数
+        $update['gender']               = empty($params['gender']) ? TeacherModel::GENDER_UNKNOWN : $params['gender'];
+        $update['birthday']             = $params['birthday'] ?? null;
+        $update['thumb']                = $params['thumb'] ?? '';
+        $update['country_code']         = $params['country_code'] ?? '';
+        $update['province_code']        = $params['province_code'] ?? '';
+        $update['city_code']            = $params['city_code'] ?? '';
+        $update['district_code']        = $params['district_code'] ?? '';
+        $update['address']              = $params['address'] ?? '';
+        $update['channel_id']           = empty($params['channel_id']) ? null : $params['channel_id'];
+        $update['id_card']              = $params['id_card'] ?? '';
+        $update['bank_card_number']     = $params['bank_card_number'] ?? '';
+        $update['opening_bank']         = $params['opening_bank'] ?? '';
+        $update['bank_reserved_mobile'] = $params['bank_reserved_mobile'] ?? null;
+        $update['type']                 = empty($params['type']) ? null : $params['type'];
+        $update['level']                = empty($params['level']) ? null : $params['level'];
+        $update['start_year']           = empty($params['start_year']) ? null : $params['start_year'];
+        $update['learn_start_year']     = empty($params['learn_start_year']) ? null : $params['learn_start_year'];
+        $update['college_id']           = empty($params['college_id']) ? null : $params['college_id'];
+        $update['major_id']             = empty($params['major_id']) ? null : $params['major_id'];
+        $update['graduation_date']      = empty($params['graduation_date']) ? null : $params['graduation_date'];
+        $update['education']            = empty($params['education']) ? null : $params['education'];
+        $update['music_level']          = empty($params['music_level']) ? null : $params['music_level'];
+        $update['teach_experience']     = $params['teach_experience'] ?? '';
+        $update['prize']                = $params['prize'] ?? '';
+        $update['teach_results']        = $params['teach_results'] ?? null;
+        $update['teach_style']          = $params['teach_style'] ?? null;
+        $update['status']               = empty($params['status']) ? TeacherModel::ENTRY_REGISTER : $params['status'];
+
+        $userCenter = new UserCenter();
+
+        $teacher = TeacherModel::getById($teacherId);
+        if (empty($teacher)) {
+            return Valid::addErrors([], 'teacher', 'teacher_is_not_exist');
+        }
+
+        $update['uuid'] = $teacher['uuid'];
+        $update['update_time'] = time();
+
+        $affectRows = TeacherModel::updateRecord($teacherId, $update, false);
+        if ($affectRows == 0) {
+            return Valid::addErrors([], 'teacher', 'update_teacher_fail');
+        }
+
+        $update['gender'] = empty($update['gender']) ? TeacherModel::GENDER_UNKNOWN : strval($update['gender']);
+
+        $modifyResult = $userCenter->modifyTeacher($update['uuid'], $update['mobile'], $update['name'],
+            $update['birthday'],strval($update['gender']));
+
+        if(isset($modifyResult['code'])) {
+            return $modifyResult; //已经用Valid::addErrors包装过
+        }
+
+        return [
+            'code' => Valid::CODE_SUCCESS,
+            'data' => [
+                'id' => $teacherId
             ]
         ];
     }

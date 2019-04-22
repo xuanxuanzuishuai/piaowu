@@ -155,7 +155,7 @@ class Org extends ControllerBase
         $params['update_time'] = $now;
         $params['operator_id'] = $this->getEmployeeId();
 
-        if(isset($params['id'])) {
+        if(isset($params['id']) && !empty($params['id'])) {
             $id = $params['id'];
             unset($params['id']);
             $affectRows = OrganizationService::updateById($id, $params);
@@ -300,6 +300,12 @@ class Org extends ControllerBase
                 'type'       => 'required',
                 'error_code' => 'bind_is_required'
             ],
+            [
+                'key'        => 'bind',
+                'type'       => 'in',
+                'value'      => [0, 1],
+                'error_code' => 'bind_must_be_in_[0, 1]'
+            ]
         ];
 
         $params = $request->getParams();

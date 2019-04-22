@@ -18,6 +18,8 @@ class StudentModel extends Model
     public static $redisExpire = 1;
 
     const GENDER_UNKNOWN = 3; // 保密
+    const GENDER_MALE = 1; //男
+    const GENDER_FEMALE = 2; //女
 
     /**
      * 获取客户数据
@@ -426,21 +428,19 @@ class StudentModel extends Model
     }
 
     /**
-     * erp添加学生
+     * 添加学生
      * @param $params
      * @param $uuid
      * @param $operatorId
      * @return int|mixed|null|string
      */
-    public static function erpInsertStudent($params, $uuid,$operatorId = 0 )
+    public static function saveStudent($params, $uuid,$operatorId = 0 )
     {
         $data = ['operator_id' => $operatorId];
 
         $data['name']          = $params['name'];
         $data['mobile']        = $params['mobile'];
         $data['uuid']          = $uuid;
-//        $data['channel_id']    = $params['channel_id'];
-//        $data['channel_level'] = $params['channel_level'];
         $data['create_time']   = time();
 
         if(!empty($params['gender'])){
