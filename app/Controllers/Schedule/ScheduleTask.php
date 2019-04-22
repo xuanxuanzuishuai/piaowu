@@ -101,6 +101,8 @@ class ScheduleTask extends ControllerBase
         if ($result !== true) {
             return $response->withJson(Valid::addErrors(['data' => ['result' => $result]], 'schedule_task_classroom', 'schedule_task_classroom_error'), StatusCode::HTTP_OK);
         }
+
+        SimpleLogger::error('tttt',[$params['studentIds'],$params['teacherIds']]);
         if (!empty($params['studentIds'])) {
             if (count($params['studentIds']) > $course['class_highest']) {
                 return $response->withJson(Valid::addErrors(['data' => ['result' => $result]], 'schedule_task_student', 'schedule_task_student_num_more_than_max'), StatusCode::HTTP_OK);
@@ -116,13 +118,14 @@ class ScheduleTask extends ControllerBase
                 return $response->withJson(Valid::addErrors(['data' => ['result' => $result]], 'schedule_task_teacher', 'schedule_task_teacher_time_error'), StatusCode::HTTP_OK);
             }
         }
-        $result = ScheduleTaskService::addST($st, $params['studentIds'], $params['teacherIds']);
-        if (empty($result)) {
+        $stId = ScheduleTaskService::addST($st, $params['studentIds'], $params['teacherIds']);
+        if (empty($stId)) {
             return $response->withJson(Valid::addErrors([], 'schedule_task_failure', 'schedule_task_add_failure'), StatusCode::HTTP_OK);
         }
+        $st = ScheduleTaskService::getSTDetail($stId);
         return $response->withJson([
             'code' => 0,
-            'data' => ['st_id' => $result]
+            'data' => ['st' => $st]
         ], 200);
     }
 
@@ -270,9 +273,10 @@ class ScheduleTask extends ControllerBase
         }else {
             ScheduleTaskUserService::unBindUser($params['stu_ids']);
         }
+        $st = ScheduleTaskService::getSTDetail($st['id']);
         return $response->withJson([
             'code' => 0,
-            'data' => ['st'=>0]
+            'data' => ['st'=> $st]
         ], StatusCode::HTTP_OK);
     }
 
