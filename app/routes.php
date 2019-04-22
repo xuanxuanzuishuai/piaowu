@@ -2,10 +2,12 @@
 
 namespace App;
 
-use App\Controllers\StudentApp\Subscription;
+use App\Controllers\Boss\GiftCode;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Middleware\AppApi;
+use App\Middleware\EmployeeAuthCheckMiddleWare;
+use App\Middleware\EmployeePrivilegeMiddleWare;
 use App\Middleware\StudentAuthCheckMiddleWareForApp;
 use App\Controllers\StudentApp\App as StudentAppApp;
 use App\Controllers\StudentApp\Auth as StudentAppAuth;
@@ -270,6 +272,23 @@ $arr = array(
         'method'  => ['post'],
         'call'    => '\App\Controllers\Org\Org:bindUnbindTeacher',
         'middles' => ['\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare'],
+    ],
+
+    // /boss/gift_code
+    '/boss/gift_code/list' => [
+        'method' => ['get'],
+        'call' => GiftCode::class . ':list',
+        'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class]
+    ],
+    '/boss/gift_code/add' => [
+        'method' => ['post'],
+        'call' => GiftCode::class . ':add',
+        'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class]
+    ],
+    '/boss/gift_code/abandon' => [
+        'method' => ['post'],
+        'call' => GiftCode::class . ':abandon',
+        'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class]
     ],
 );
 
