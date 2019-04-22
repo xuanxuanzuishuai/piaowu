@@ -37,6 +37,24 @@ class Role extends ControllerBase
     }
 
     /**
+     * 为机构管理员使用的查询角色接口
+     * @param Request $request
+     * @param Response $response
+     * @param $args
+     * @return Response
+     */
+    public function listForOrg(Request $request, Response $response, $args)
+    {
+        $records = RoleModel::selectOrgRoles();
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => [
+                'roles' => $records
+            ],
+        ]);
+    }
+
+    /**
      * @param Request $request
      * @param Response $response
      * @param $args

@@ -8,7 +8,6 @@
 
 namespace App\Models;
 
-
 use App\Libs\MysqlDB;
 use App\Libs\RedisDB;
 use App\Services\EmployeeService;
@@ -110,19 +109,23 @@ class EmployeeModel extends Model
      * @param bool $isOrg
      * @return mixed
      */
-    public static function getEmployees($page = 0, $count = 0, $where,$isOrg = true)
+    public static function getEmployees($page = 0, $count = 0, $where, $isOrg = true)
     {
         $db = MysqlDB::getDB();
         if ($page > 0 && $count > 0) {
             $where['LIMIT'] = [($page - 1) * $count, $count];
         }
-        if($isOrg == true) {
+
+        if($isOrg) {
             global $orgId;
-            if($orgId > 0 )
+            if($orgId > 0) {
                 $where[self::$table.'.org_id'] = $orgId;
+            }
         }
+
         $users = $db->select(self::$table, [
-            '[>]' . RoleModel::$table => ['role_id' => 'id']
+            '[>]' . RoleModel::$table => ['role_id' => 'id'],
+            '[>]' . OrganizationModel::$table => ['org_id' => 'id']
         ], [
             self::$table . '.id',
             self::$table . '.name',
@@ -133,8 +136,11 @@ class EmployeeModel extends Model
             self::$table . '.dept_id',
             self::$table . '.is_leader',
             self::$table . '.last_login_time',
-            RoleModel::$table . '.name(role_name)'
+            self::$table . '.org_id',
+            RoleModel::$table . '.name(role_name)',
+            OrganizationModel::$table . '.name(org_name)',
         ], $where);
+
         return $users ?: [];
     }
 
@@ -250,7 +256,7 @@ class EmployeeModel extends Model
     {
         $user = MysqlDB::getDB()->get(self::$table, [
             '[>]' . RoleModel::$table => ['role_id' => 'id'],
-            '[>]' . EmployeeSeatModel::$table => ['id' => 'employee_id'],
+            '[>]' . OrganizationModel::$table => ['org_id' => 'id']
         ], [
             self::$table . '.id',
             self::$table . '.name',
@@ -261,11 +267,11 @@ class EmployeeModel extends Model
             self::$table . '.dept_id',
             self::$table . '.is_leader',
             self::$table . '.last_login_time',
+            self::$table . '.org_id',
+            OrganizationModel::$table . '.name(org_name)',
             RoleModel::$table . '.name(role_name)',
-            EmployeeSeatModel::$table . ".seat_type",
-            EmployeeSeatModel::$table . ".seat_id",
-            EmployeeSeatModel::$table . '.seat_tel',
         ], [self::$table . '.id' => $id]);
+
         return $user;
     }
 

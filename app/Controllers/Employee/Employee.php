@@ -92,6 +92,31 @@ class Employee extends ControllerBase
     }
 
     /**
+     * 机构查询名下雇员
+     * @param Request $request
+     * @param Response $response
+     * @param $args
+     * @return Response
+     */
+    public function listForOrg(Request $request, Response $response, $args)
+    {
+        $params = $request->getParams();
+        list($page, $count) = Util::formatPageCount($params);
+
+        list($users, $totalCount) = EmployeeService::getEmployeeService($page, $count, $params);
+        $roles = RoleModel::getRoles();
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => [
+                'employee' => $users,
+                'total_count' => $totalCount,
+                'roles' => $roles,
+            ]
+        ], StatusCode::HTTP_OK);
+    }
+
+    /**
      * @param Request $request
      * @param Response $response
      * @param $args
@@ -124,6 +149,7 @@ class Employee extends ControllerBase
     }
 
     /**
+     * 添加和编辑 雇员
      * @param Request $request
      * @param Response $response
      * @param $args
@@ -163,6 +189,12 @@ class Employee extends ControllerBase
         if (!empty($params['mobile']) && !Util::isMobile($params['mobile'])) {
             $result = Valid::addErrors([], 'mobile', 'employee_mobile_format_is_error');
             return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        global $orgId;
+        if ($orgId > 0) {
+            //机构管理员添加雇员时，不能指定雇员所属机构，必须与添加者同属一个机构
+            $params['org_id'] = $orgId;
         }
 
         $userId = EmployeeService::insertOrUpdateEmployee($params);
@@ -210,7 +242,13 @@ class Employee extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
+        global $orgId;
         $user = EmployeeModel::getById($params['id']);
+        //检查当前用户是否有权限修改此雇员
+        if($orgId > 0 && $user['org_id'] != $orgId) {
+            return $response->withJson(Valid::addErrors([],'password','employee_not_belong_your_org'));
+        }
+
         if ($user['pwd'] == md5($params['pwd'])) {
             return $response->withJson(Valid::addErrors([], 'pwd', 'employee_pwd_can_not_same'), StatusCode::HTTP_OK);
         }
