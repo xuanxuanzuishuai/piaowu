@@ -125,17 +125,17 @@ class GiftCodeService
     /**
      * 作废激活码
      * @param $params
+     * @return int 修改的数量
      */
     public static function abandonCode($params)
     {
         $idsArr = explode(',', $params['ids']);
         if (!empty($idsArr)) {
-            foreach ($idsArr as $value) {
-                GiftCodeModel::batchUpdateRecord(
-                    ['id' => $value, 'code_status' => GiftCodeModel::CODE_STATUS_NOT_REDEEMED],
-                    ['code_status' => GiftCodeModel::CODE_STATUS_INVALID],
-                    false);
-            }
+            return GiftCodeModel::batchUpdateRecord(
+                ['code_status' => GiftCodeModel::CODE_STATUS_NOT_REDEEMED],
+                ['id' => $idsArr, 'code_status' => GiftCodeModel::CODE_STATUS_INVALID],
+                false);
         }
+        return 0;
     }
 }
