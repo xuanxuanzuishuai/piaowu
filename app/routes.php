@@ -2,6 +2,7 @@
 
 namespace App;
 
+use App\Controllers\StudentApp\Subscription;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Middleware\AppApi;
@@ -11,6 +12,7 @@ use App\Controllers\StudentApp\Auth as StudentAppAuth;
 use App\Controllers\StudentApp\Opn as StudentAppOpn;
 use App\Controllers\StudentApp\Play as StudentAppPlay;
 use App\Controllers\StudentApp\Homework as StudentAppHomework;
+use App\Controllers\StudentApp\Subscription as StudentAppSubscription;
 use Slim\App;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -99,6 +101,13 @@ $arr = array(
     '/student_app/app/feedback' => [
         'method' => ['post'],
         'call' => StudentAppApp::class . ':feedback',
+        'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApi::class]
+    ],
+
+    // /student_app/sub
+    '/student_app/subscription/redeem_gift_code' => [
+        'method' => ['post'],
+        'call' => StudentAppSubscription::class . ':redeemGiftCode',
         'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApi::class]
     ],
 
