@@ -399,8 +399,12 @@ class ScheduleTask extends ControllerBase
     public function list(Request $request, Response $response, $args)
     {
         $params = $request->getParams();
-        list($params['page'], $params['count']) = Util::formatPageCount($params);
-        $sts = ScheduleTaskService::getSTList($params, -1, $params['count']);
+        if(isset($params['page'])) {
+            list($params['page'], $params['count']) = Util::formatPageCount($params);
+        }else {
+            $params['page'] = -1 ;
+        }
+        $sts = ScheduleTaskService::getSTList($params, $params['page'], $params['count']);
         return $response->withJson([
             'code' => 0,
             'data' => ['count' => $sts[0], 'sts' => $sts[1]]
