@@ -19,6 +19,7 @@ use App\Services\TeacherServiceForApp;
 use App\Models\TeacherOrgModel;
 use App\Services\WeChatService;
 use App\Models\UserWeixinModel;
+use App\Libs\UserCenter;
 
 class Teacher extends ControllerBase
 {
@@ -110,18 +111,13 @@ class Teacher extends ControllerBase
     {
 
         $rules = [
-            [
-                'key' => 'app_id',
-                'type' => 'required',
-                'error_code' => 'app_id_is_required'
-            ]
         ];
         $params = $request->getParams();
         $result = Valid::appValidate($params, $rules);
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        $app_id = $params["app_id"];
+        $app_id = UserCenter::AUTH_APP_ID_AIPEILIAN_TEACHER;
         $openId = $this->ci["open_id"];
         if (empty($openId)) {
             return $response->withJson(Valid::addAppErrors([], 'need_bound'), StatusCode::HTTP_OK);
