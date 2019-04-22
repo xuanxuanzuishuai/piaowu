@@ -295,6 +295,14 @@ $app->add(function (Request $request, Response $response, $next) use ($app, $arr
     }
 
     $response = $next($request, $response);
+    $body = $response->getBody();
+    // 只输出JSON数据
+    if (preg_match('/^\{([\s\S].*)\}$/', $body)) {
+        SimpleLogger::debug(__FILE__ . ':' . __LINE__, [
+            '== RESPONSE ==' => json_decode($body, true)
+        ]);
+    }
+
     $endTime = Util::microtime_float();
     $t = $endTime - $startTime;
     SimpleLogger::debug(__FILE__ . ":" . __LINE__, ["== path: $uri END ({$t}) =="]);
