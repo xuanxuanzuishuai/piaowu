@@ -25,7 +25,8 @@ class HomeworkCompleteModel extends Model
             array_push($data, [
                 'homework_id' => $homework['id'],
                 'play_record_id' => $playRecordId,
-                'task_id' => $homework['task_id']
+                'task_id' => $homework['task_id'],
+                'create_time' => time()
             ]);
         }
         if(empty($data)){
@@ -44,5 +45,4 @@ class HomeworkCompleteModel extends Model
         );
         return $result;
     }
-
 }

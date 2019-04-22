@@ -46,7 +46,7 @@ class HomeworkService
      * @param int $lessonId 曲谱ID
      * @return array
      */
-    public static function getStudentUnfinishedWork($studentId, $lessonId=null){
+    public static function getStudentUnexpiredWork($studentId, $lessonId=null){
         $where = [
             HomeworkModel::$table . ".student_id" => $studentId,
             HomeworkModel::$table . ".end_time[>]" => time(),
@@ -79,27 +79,27 @@ class HomeworkService
     /**
      * 私有方法，检查作业
      * @param array $playInfo
-     * @param array $unFinishedHomeWorks
+     * @param array $homeworks
      * @return array
      */
-    private static function _checkHomework($playInfo, $unFinishedHomeWorks){
-        if(empty($unFinishedHomeWorks)){
+    private static function _checkHomework($playInfo, $homeworks){
+        if(empty($homeworks)){
             return [];
         }
         $scoreDetail = $playInfo['score_detail'];
         $finished = [];
-        foreach ($unFinishedHomeWorks as $homework){
-            $baseLine = json_decode($homework['baseline']);
-            $meetRequirment = true;
-            foreach ($baseLine as $requirement => $score){
+        foreach ($homeworks as $homework){
+            $baseline = json_decode($homework['baseline']);
+            $meetRequirement = true;
+            foreach ($baseline as $requirement => $score){
                 if(array_key_exists($requirement, $scoreDetail)&&($scoreDetail[$requirement] >= $score)){
                     continue;
                 }else{
-                    $meetRequirment = false;
+                    $meetRequirement = false;
                     break;
                 }
             }
-            if($meetRequirment){
+            if($meetRequirement){
                 array_push($finished, $homework);
             }
         }
@@ -122,9 +122,13 @@ class HomeworkService
      */
     public static function checkHomework($studentId, $playInfo){
         $lessonId = $playInfo['lesson_id'];
-        $unFinishedHomeWorks = self::getStudentUnfinishedWork($studentId, $lessonId);
-        $finishedHomework = self::_checkHomework($playInfo, $unFinishedHomeWorks);
-        return [null, $unFinishedHomeWorks, $finishedHomework];
+        $allHomeworks = self::getStudentUnexpiredWork($studentId, $lessonId);
+        // 理论上一定有作业
+        if(empty($allHomeworks)){
+            return ['homework_not_found', [], []];
+        }
+        $finishedHomework = self::_checkHomework($playInfo, $allHomeworks);
+        return [null, $allHomeworks, $finishedHomework];
     }
 
     /**
@@ -154,9 +158,33 @@ class HomeworkService
             }else{
                 $play['complete'] = 0;
             }
-            array_push($plays,$play );
+            array_push($plays, $play);
         }
         return [$homework, $plays];
+    }
+
+    /**
+     * 根据课程ID获取最优弹奏记录
+     * @param $lessonIds
+     * @return array
+     */
+    public static function getBestPlayRecordByLessonId($lessonIds){
+        $playRecords = PlayRecordModel::getPlayRecordByLessonId($lessonIds, PlayRecordModel::TYPE_AI);
+        $container = array();
+        foreach($playRecords as $record){
+            $lesson_id = $record['lesson_id'];
+            $score_info = json_decode($record['data'], 1);
+            $new_score = $score_info['score'];
+            if(array_key_exists($lesson_id, $container)){
+                $current_score = $container[$lesson_id];
+                if($current_score < $new_score){
+                    $container[$lesson_id] = $score_info;
+                }
+            }else{
+                $container[$lesson_id] = $score_info;
+            }
+        }
+        return $container;
     }
 
 }

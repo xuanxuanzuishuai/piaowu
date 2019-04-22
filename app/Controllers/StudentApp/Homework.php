@@ -9,6 +9,7 @@
 
 namespace App\Controllers\StudentApp;
 
+use App\Libs\SimpleLogger;
 use App\Controllers\ControllerBase;
 use App\Libs\Util;
 use App\Libs\Valid;
@@ -46,8 +47,11 @@ class Homework extends ControllerBase
         $userId = $this->ci['student']['id'];
         list($homework, $playRecord) = HomeworkService::getStudentHomeworkPractice($userId, $params['lesson_id']);
         if(empty($homework)){
-            return $response->withJson([], StatusCode::HTTP_OK);
+            $errors = Valid::addAppErrors([], "homework_not_found");
+            return $response->withJson($errors, StatusCode::HTTP_OK);
         }
+
+        // 组装数据
         $returnData = [
             'homework' => [
                 'id' => $homework[0]['id'],
@@ -81,25 +85,45 @@ class Homework extends ControllerBase
         $userId = $this->ci['student']['id'];
         $data = HomeworkService::getStudentHomeWorkList($userId, $pageId, $pageLimit);
 
+        // 获取最好弹奏小分
+        $lessonIds = array_column($data, 'lesson_id');
+        $container = HomeworkService::getBestPlayRecordByLessonId($lessonIds);
+
+        // 组装数据
         $temp = [];
         foreach ($data as $homework){
+            // 获取最优小分
+            $lesson_id = $homework['lesson_id'];
+            $baseline = json_decode($homework['baseline'], 1);
+            $score_info = $container[$lesson_id];
+            if(!empty($score_info)){
+                $pitch = $score_info['score_detail']['pitch'];
+                $rhythm = $score_info['score_detail']['rhythm'];
+            }else{
+                $pitch = 0;
+                $rhythm = 0;
+            }
+
+            // 以homework为单位聚合task
             $task = [
+                'task_id' => $homework['task_id'],
                 'lesson_id' => $homework['lesson_id'],
                 'complete' => $homework['complete'],
                 'score_detail' => [
-                    "pitch" => ["high" => 80, "baseline" => 80],
-                    "rhythm" => ["high"=> 70, "baseline" => 60]
+                    'pitch' => ['high' => $pitch, 'baseline' => $baseline['pitch']],
+                    'rhythm' => ['high' => $rhythm, 'baseline' => $baseline['rhythm']]
                 ]
             ];
             $homeworkId = $homework['id'];
             if(array_key_exists($homeworkId, $temp)){
-                array_push($temp['tasks'], $task);
+                array_push($temp[$homeworkId]['tasks'], $task);
             }else{
                 $temp[$homeworkId] = [
                     'teacher_name' => $homework['teacher_name'],
-                    "start_time" => $homework['start_time'],
-                    "end_time" => $homework['end_time'],
-                    "tasks" => [$task]
+                    'start_time' => $homework['created_time'],
+                    'end_time' => $homework['end_time'],
+                    'homework_id' => $homework['id'],
+                    'tasks' => [$task]
                 ];
             }
         }
@@ -110,10 +134,8 @@ class Homework extends ControllerBase
                 array_push($returnData, $v);
             }
         }
+
         return $response->withJson(['code'=>0, 'data'=>['homework'=>$returnData]], StatusCode::HTTP_OK);
     }
-
-
-
 
 }

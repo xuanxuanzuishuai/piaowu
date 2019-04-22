@@ -8,6 +8,7 @@
 namespace App\Models;
 
 use App\Libs\MysqlDB;
+use App\Libs\SimpleLogger;
 
 
 class HomeworkTaskModel extends Model
@@ -18,8 +19,19 @@ class HomeworkTaskModel extends Model
     const TYPE_COMPLETE = 1;                 // 已经完成
     const TYPE_UNCOMPLETE = 0;               // 未完成
 
+
+    /**
+     * 标记task已经达成
+     * @param $tasks
+     */
     public static function completeTask($tasks){
-        $taskIds = array_column($tasks, 'task_id');
+        $taskIds = [];
+        foreach ($tasks as $task){
+            $complete = (int)$task['complete'];
+            if ($complete == self::TYPE_UNCOMPLETE){
+                array_push($taskIds, $task['task_id']);
+            }
+        }
         if(empty($taskIds)){
             return;
         }
@@ -30,6 +42,16 @@ class HomeworkTaskModel extends Model
         );
     }
 
+    /**
+     * 创建task
+     * @param $homework_id
+     * @param $lesson_id
+     * @param $lesson_name
+     * @param $collection_id
+     * @param $collection_name
+     * @param $baseline
+     * @return int|mixed|null|string
+     */
     public static function createHomeworkTask($homework_id, $lesson_id, $lesson_name, $collection_id, $collection_name, $baseline) {
         return MysqlDB::getDB()->insertGetID(self::$table, [
             'homework_id' => $homework_id,
