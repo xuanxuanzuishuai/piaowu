@@ -23,8 +23,8 @@ class OpernCenter
     const OPERN_API_CATEGORIES = '/api/opern/categories';
     const OPERN_API_COLLECTIONS = '/api/opern/collections';
     const OPERN_API_LESSONS = '/api/opern/lessons';
-    const OPERN_API_COLLECTIONS_BY_IDS = '/api/opern/collectionsbyid';
-    const OPERN_API_LESSONS_BY_IDS = '/api/opern/lessonsbyids';
+    const OPERN_API_COLLECTIONS_BY_ID = '/api/opern/collectionsbyid';
+    const OPERN_API_LESSONS_BY_ID = '/api/opern/lessonsbyid';
     const OPERN_API_SEARCH_COLLECTIONS = '/api/opern/search_collection';
     const OPERN_API_SEARCH_LESSONS = '/api/opern/search_opern';
 
@@ -146,7 +146,7 @@ class OpernCenter
             $collectionIds = implode(",", $collectionIds);
         }
 
-        $result = self::commonAPI(self::OPERN_API_COLLECTIONS_BY_IDS, [
+        $result = self::commonAPI(self::OPERN_API_COLLECTIONS_BY_ID, [
             'pro_id' => $this->proId,
             'pro_ver' => $this->proVer,
             'auditing' => $this->auditing,
@@ -189,7 +189,7 @@ class OpernCenter
         if (is_array($lessonIds)) {
             $lessonIds = implode(",", $lessonIds);
         }
-        $result = self::commonAPI(self::OPERN_API_LESSONS_BY_IDS, [
+        $result = self::commonAPI(self::OPERN_API_LESSONS_BY_ID, [
             'pro_id' => $this->proId,
             'pro_ver' => $this->proVer,
             'auditing' => $this->auditing,
