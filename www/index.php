@@ -26,6 +26,8 @@ require APP_ROOT.'/dependencies.php';
 
 // Register routes
 require APP_ROOT.'/routes.php';
+header("Access-Control-Allow-Origin: *");
+header('Access-Control-Allow-Headers: X-Requested-With,X_Requested_With');
 
 // Run app
 $app->run();
