@@ -91,7 +91,8 @@ class HomeworkModel extends Model
         $result = MysqlDB::getDB()->select(
                 HomeworkModel::$table,
                 [
-                    '[>]'.HomeworkTaskModel::$table => ['id' => 'homework_id']
+                    '[>]'.HomeworkTaskModel::$table => ['id' => 'homework_id'],
+                    '[>]'.TeacherModel::$table => [self::$table.'.teacher_id' => 'id']
                 ],
                 [
                     HomeworkModel::$table.'.id',
@@ -108,7 +109,8 @@ class HomeworkModel extends Model
                     HomeworkTaskModel::$table.'.collection_id',
                     HomeworkTaskModel::$table.'.collection_name',
                     HomeworkTaskModel::$table.'.baseline',
-                    HomeworkTaskModel::$table.'.is_complete(complete)'
+                    HomeworkTaskModel::$table.'.is_complete(complete)',
+                    TeacherModel::$table.'.name(teacher_name)'
                 ],
                 $where
             );

@@ -175,6 +175,10 @@ class Play extends ControllerBase
 
         // 处理返回数据
         SimpleLogger::debug("*********check homework******", ['unfinished'=>$unfinished, 'finished'=>$homework]);
+        if(empty($unfinished)&&empty($homework)){
+            $errors = Valid::addAppErrors([], "homework_not_found");
+            return $response->withJson($errors, StatusCode::HTTP_OK);
+        }
         $data = ['record_id' => $ret['record_id']];
         if(!empty($homework)){
             // 优先返回达成的作业
