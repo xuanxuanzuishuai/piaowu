@@ -37,16 +37,16 @@ class ScheduleTaskModel extends Model
         $db = MysqlDB::getDB();
         $where = [];
         if (!empty($params['classroom_id'])) {
-            $where['classroom_id'] = $params['classroom_id'];
+            $where['st.classroom_id'] = $params['classroom_id'];
         }
         if (!empty($params['course_id'])) {
-            $where['course_id'] = $params['course_id'];
+            $where['st.course_id'] = $params['course_id'];
         }
         if (isset($params['status'])) {
-            $where['status'] = $params['status'];
+            $where['st.status'] = $params['status'];
         }
         if (isset($params['weekday'])) {
-            $where['weekday'] = $params['weekday'];
+            $where['st.weekday'] = $params['weekday'];
         }
         if ($isOrg == true) {
             global $orgId;
@@ -62,8 +62,8 @@ class ScheduleTaskModel extends Model
         }
         // 排序设置
         $where['ORDER'] = [
-            'weekday' => 'ASC',
-            'start_time' => 'ASC'
+            'st.weekday' => 'ASC',
+            'st.start_time' => 'ASC'
         ];
         $join = [
             '[><]' . CourseModel::$table . " (c)" => ['st.course_id' => 'id'],

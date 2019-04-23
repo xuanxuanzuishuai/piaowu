@@ -81,6 +81,12 @@ class Schedule extends ControllerBase
 
     }
 
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @param $args
+     * @return Response
+     */
     public function append(Request $request, Response $response, $args) {
         $rules = [
             [
@@ -103,6 +109,8 @@ class Schedule extends ControllerBase
         }
 
         $beginDate = empty($params['beginDate'])?date("Y-m-d"):$params['beginDate'];
+        $endDate = date('Y-m-d',strtotime($beginDate,"+".$params['period']." w")+86400);
+
         $weekday = date("w");
         if($weekday <= $st['weekday']) {
             $beginTime = strtotime($beginDate." ".$st['start_time'])+86400*($st['weekday']-$weekday);
