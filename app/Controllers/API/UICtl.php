@@ -46,21 +46,9 @@ class UICtl extends ControllerBase
 
         $keys = explode(",", $params['dp_types']);
 
-        // 如果存在应用业务，作单独处理
-        $appType = [];
-        $appTypeName = 'app_type';
-        if (in_array($appTypeName, $keys)) {
-            $keys = array_diff($keys, [$appTypeName]);
-            // 应用类型单独处理，不从dict中获取（先查询缓存是否存在，没有则从数据库取）
-            $appType = AppService::getAppTypeList($appTypeName);
-        }
-
         $result = DictService::getListsByTypes($keys);
 
-        // 存在应用业务
-        if (!empty($appType)) {
-            $result = array_merge($result, $appType);
-        }
+
 
         return $response->withJson($result, StatusCode::HTTP_OK);
 

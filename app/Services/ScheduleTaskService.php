@@ -103,13 +103,6 @@ class ScheduleTaskService
             return null;
         }
         $st = self::formatST($st);
-        SimpleLogger::error('ssss',$st);
-
-
-
-
-
-
 
         $stus = ScheduleTaskUserModel::getSTUBySTIds([$st['id']]);
         foreach ($stus as $stu) {
@@ -137,12 +130,13 @@ class ScheduleTaskService
      * @param $start_time
      * @param $end_time
      * @param $weekday
+     * @param $expireStartDate
      * @param null $orgSTId
      * @return array|bool
      */
-    public static function checkStudent($sIds, $start_time, $end_time, $weekday, $orgSTId = null)
+    public static function checkStudent($sIds, $start_time, $end_time, $weekday, $expireStartDate,$orgSTId = null)
     {
-        $sts = ScheduleTaskModel::getSTListByUser($sIds, ScheduleTaskUserModel::USER_ROLE_S, $start_time, $end_time, $weekday, $orgSTId);
+        $sts = ScheduleTaskModel::getSTListByUser($sIds, ScheduleTaskUserModel::USER_ROLE_S, $start_time, $end_time, $weekday, $expireStartDate,$orgSTId);
         return empty($sts) ? true : $sts;
     }
 
@@ -151,12 +145,13 @@ class ScheduleTaskService
      * @param $start_time
      * @param $end_time
      * @param $weekday
+     * @param $expireStartDate
      * @param null $orgSTId
      * @return array|bool
      */
-    public static function checkTeacher($tIds, $start_time, $end_time, $weekday, $orgSTId = null)
+    public static function checkTeacher($tIds, $start_time, $end_time, $weekday, $expireStartDate,$orgSTId = null)
     {
-        $sts = ScheduleTaskModel::getSTListByUser($tIds, ScheduleTaskUserModel::USER_ROLE_T, $start_time, $end_time, $weekday, $orgSTId);
+        $sts = ScheduleTaskModel::getSTListByUser($tIds, ScheduleTaskUserModel::USER_ROLE_T, $start_time, $end_time, $weekday, $expireStartDate,$orgSTId);
         return empty($sts) ? true : $sts;
     }
 
@@ -181,6 +176,7 @@ class ScheduleTaskService
             $st['st_status'] = $st['status'];
         }
         $st['st_status'] = DictService::getKeyValue(Constants::DICT_TYPE_SCHEDULE_TASK_STATUS,$st['st_status']);
+        $st['course_type'] =  DictService::getKeyValue(Constants::DICT_COURSE_TYPE,$st['course_type']);
         return $st;
     }
 }

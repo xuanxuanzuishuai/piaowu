@@ -26,6 +26,8 @@ class Constants
     const DICT_TYPE_SCHEDULE_USER_ROLE = 'schedule_user_role';
     // 课程状态
     const DICT_TYPE_SCHEDULE_STATUS = 'schedule_status';
+    // 课程用户状态
+    const DICT_TYPE_SCHEDULE_USER_STATUS = 'schedule_user_status';
     // 课程类型
     const DICT_TYPE_COURSE_TYPE = 'course_type';
     // 学生子状态

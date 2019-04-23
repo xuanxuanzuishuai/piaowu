@@ -8,6 +8,7 @@
 
 namespace App\Services;
 
+use App\Libs\Constants;
 use App\Models\ScheduleModel;
 use App\Models\ScheduleTaskUserModel;
 use App\Models\ScheduleUserModel;
@@ -17,7 +18,6 @@ class ScheduleService
 
     public static function beginSchedule($st,$params,$beginTime) {
         $now = time();
-        $flag = true;
         for($i=0;$i<$params['period'];$i++) {
             $schedule = [
                 'classroom_id'=>$st['classroom_id'],
@@ -32,8 +32,7 @@ class ScheduleService
             ];
             $sId = ScheduleModel::insertSchedule($schedule);
             if(empty($sId)) {
-                $flag = false;
-                break;
+                return false;
             }
             $users = [];
             foreach($st['students']  as $student) {
@@ -47,13 +46,30 @@ class ScheduleService
                 }
             }
             $flag = ScheduleUserModel::insertSUs($users);
+            if($flag == false)
+                return false;
             $beginTime += 7*86400;
         }
-        return $flag;
+        return true;
     }
 
-    public static function getList($parmas,$page = -1,$count = 20) {
-
+    public static function getList($params,$page = -1,$count = 20) {
+        $sIds = $result = [];
+        list($count, $schedules) = ScheduleModel::getList($params, $page, $count);
+        foreach ($schedules as $schedule) {
+            $schedule = self::formatSchedule($schedule);
+            $sIds[] = $schedule['id'];
+            $result[$schedule['id']] = $schedule;
+        }
+        $sus = ScheduleUserModel::getSUBySIds($sIds);
+        foreach ($sus as $su) {
+            $su = self::formatScheduleUser($su);
+            if ($su['user_role'] == ScheduleTaskUserModel::USER_ROLE_S) {
+                $result[$su['schedule_id']]['students']++;
+            } else
+                $result[$su['schedule_id']]['teachers']++;
+        }
+        return [$count, $result];
     }
 
     /**
@@ -78,10 +94,20 @@ class ScheduleService
     }
 
     public static function formatSchedule($schedule) {
+        $schedule['s_status'] = DictService::getKeyValue(Constants::DICT_TYPE_SCHEDULE_STATUS,$schedule['status']);
+        $schedule['course_type'] = DictService::getKeyValue(Constants::DICT_COURSE_TYPE,$schedule['course_type']);
         return $schedule;
     }
 
     public static function formatScheduleUser($su) {
+        $su['su_user_role'] = DictService::getKeyValue(Constants::DICT_TYPE_SCHEDULE_USER_ROLE,$su['user_role']);
+        $su['su_status'] = DictService::getKeyValue(Constants::DICT_TYPE_SCHEDULE_USER_STATUS,$su['status']);
+        if($su['user_role'] == ScheduleTaskUserModel::USER_ROLE_S) {
+            $su['student_status'] = DictService::getKeyValue(Constants::DICT_TYPE_SCHEDULE_STUDENT_STATUS, $su['user_status']);
+        }
+        if($su['user_role'] == ScheduleTaskUserModel::USER_ROLE_T) {
+            $su['teacher_status'] = DictService::getKeyValue(Constants::DICT_TYPE_SCHEDULE_TEACHER_STATUS, $su['user_status']);
+        }
         return $su;
     }
 
