@@ -50,7 +50,7 @@ class Schedule extends ControllerBase
             $param['homework']['tasks'],
             $param['remark']
         );
-        // 写入课后报告
+
         // 结束上课
         ScheduleService::endSchedule($param);
         $db->commit();

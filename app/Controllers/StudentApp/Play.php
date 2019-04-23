@@ -185,7 +185,7 @@ class Play extends ControllerBase
                 'baseline'=> json_decode($homework['baseline'], true),
                 'complete'=> 1
             ];
-        }elseif(!empty($finished)){
+        }elseif(!empty($allHomeworks)){
             // 如果未达成，返回未达成的作业
             $homework = $allHomeworks[0];
             $homeworkInfo = [
