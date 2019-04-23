@@ -129,14 +129,15 @@ class StudentServiceForApp
      */
     public static function studentRegister($mobile)
     {
-        $result = self::registerStudentInUserCenter($mobile, $mobile);
+        $name = Util::defaultStudentName($mobile);
+        $result = self::registerStudentInUserCenter($name, $mobile);
         if (empty($result['uuid'])) {
             SimpleLogger::info(__FILE__ . __LINE__, $result);
             return null;
         }
 
         $uuid = $result['uuid'];
-        $lastId = self::addStudent($mobile, $uuid);
+        $lastId = self::addStudent($mobile, $name, $uuid);
 
         if (empty($lastId)) {
             SimpleLogger::info(__FILE__ . __LINE__, [
@@ -152,15 +153,16 @@ class StudentServiceForApp
      * 添加app新用户
      *
      * @param string $mobile 手机号
+     * @param string $name 昵称
      * @param string $uuid
      * @return array|null 用户数据
      */
-    public static function addStudent($mobile, $uuid)
+    public static function addStudent($mobile, $name, $uuid)
     {
         $user = [
             'uuid' => $uuid,
             'mobile' => $mobile,
-            'name' => $mobile,
+            'name' => $name,
             'create_time' => time(),
             'sub_status' => StudentModelForApp::SUB_STATUS_ON,
             'sub_start_date' => 0,

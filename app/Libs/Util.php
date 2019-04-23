@@ -617,4 +617,14 @@ class Util
     {
         if (empty($param)) { NULL; /* unused params */ }
     }
+
+    /**
+     * 学生注册时的默认昵称
+     * @param $mobile
+     * @return string
+     */
+    public static function defaultStudentName($mobile)
+    {
+        return '宝宝' . substr($mobile, -4, 4);
+    }
 }
