@@ -24,7 +24,7 @@ use App\Libs\UserCenter;
 class Teacher extends ControllerBase
 {
 
-    /** 注册
+    /** 注册并绑定
      * @param Request $request
      * @param Response $response
      * @return Response
@@ -48,11 +48,6 @@ class Teacher extends ControllerBase
                 'error_code' => 'sms_code_is_required'
             ],
             [
-                'key' => 'app_id',
-                'type' => 'required',
-                'error_code' => 'app_id_is_required'
-            ],
-            [
                 'key' => 'org_id',
                 'type' => 'integer'
             ]
@@ -64,11 +59,8 @@ class Teacher extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $app_id = $params["app_id"];
+        $app_id = UserCenter::AUTH_APP_ID_AIPEILIAN_TEACHER;
         $openId = $this->ci["open_id"];
-        if (empty($openId)) {
-            return $response->withJson(Valid::addAppErrors([], 'not_found_open_id'), StatusCode::HTTP_OK);
-        }
         // todo 验证sms_code
 
         //验证手机号是否已存在
@@ -85,11 +77,12 @@ class Teacher extends ControllerBase
 
             $teacher_info = TeacherModelForApp::getTeacherInfo("", $params['mobile']);
         }
-        $token = WeChatService::generateToken($teacher_info["id"], WeChatService::USER_TYPE_STUDENT,
-            $params["app_id"], $openId);
 
-        // 绑定该用户与微信
-        UserWeixinModel::boundUser($openId, $teacher_info["id"], $app_id, WeChatService::USER_TYPE_STUDENT, 1);
+        if (!empty($openId)) {
+            // 绑定该用户与微信
+            UserWeixinModel::boundUser($openId, $teacher_info["id"], $app_id, WeChatService::USER_TYPE_STUDENT, 1);
+        }
+
         if (!empty($params["org_id"])) {
             // 绑定机构
             TeacherOrgModel::boundTeacher($params["org_id"], $teacher_info["id"]);
@@ -98,7 +91,7 @@ class Teacher extends ControllerBase
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
-            'data' => ["token" => $token]
+            'data' => []
         ], StatusCode::HTTP_OK);
     }
 

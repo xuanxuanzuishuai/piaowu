@@ -21,10 +21,15 @@ use App\Services\WeChatService;
  */
 class WeChatOpenIdCheckMiddleware extends MiddlewareBase
 {
+    // 在此数组中的url，如果带了code就检查，没有也不会报错
+    public static $ignoreCheckCodeUrlList = [
+        "/teacher_wx/teacher/register"
+    ];
+
     public function __invoke(Request $request, Response $response, $next)
     {
+        $currentUrl = $request->getUri()->getPath();
         SimpleLogger::info('--WeChatAuthCheckMiddleware--', []);
-
 
         $checkResult = $this::checkNeedWeChatCode($request);
         // 是否要跳转到微信端获取用户code
@@ -39,7 +44,7 @@ class WeChatOpenIdCheckMiddleware extends MiddlewareBase
 
         $this->container['open_id'] = $openId;
         // 需要获取微信code
-        if ($needWeChatCode) {
+        if ($needWeChatCode and !in_array($currentUrl, self::$ignoreCheckCodeUrlList)) {
             SimpleLogger::info('need weixin code:', []);
             return $response->withJson(Valid::addAppErrors([], 'need_code'), StatusCode::HTTP_OK);
         }
