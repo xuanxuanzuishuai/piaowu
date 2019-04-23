@@ -180,6 +180,7 @@ class TeacherModel extends Model
             return [[], 0];
         }
         $teachers = self::getRecordBySql($sql_list, $map);
+
         return [$teachers, $totalCount];
     }
 
@@ -233,7 +234,7 @@ class TeacherModel extends Model
     public static function whereForEntry($params, $ta_role_id = '')
     {
         /** 以下是老师的搜索条件 */
-        $where = " where t.status not in (".TeacherModel::ENTRY_REGISTER.", " . TeacherModel::ENTRY_WAIT . ", ".TeacherModel::ENTRY_NO.") ";
+        $where = '';
         $map = [];
         // 姓名/手机号/ID
         if (!empty($params['name_id'])) {
@@ -324,6 +325,12 @@ class TeacherModel extends Model
             $where .= " AND t.last_class_time < :last_class_time_end ";
             $map[':last_class_time_end'] = strtotime($params['last_class_time_end']);
         }
+
+        if(count($map) > 0) {
+            $where = ' where '.$where;
+        }
+
+
 //        //标签ID
 //        if (!empty($params['tag_ids']) && is_array($params['tag_ids'])){
 //            $tag_ids = $params['tag_ids'];

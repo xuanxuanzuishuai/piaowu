@@ -560,6 +560,7 @@ class StudentModel extends Model
                     from {$s} s inner join {$so} so 
                     on s.id = so.student_id 
                     and so.org_id = {$orgId} left join {$t} t on s.id = t.student_id and t.status = {$status}
+                    and t.org_id = {$orgId}
                     left join teacher te on te.id = t.teacher_id
                     order by s.create_time desc {$limit}";
             $countSql = "select count(*) count from {$s} s,{$so} so where s.id = so.student_id  
