@@ -56,7 +56,7 @@ class Homework extends ControllerBase
             'homework' => [
                 'id' => $homework[0]['id'],
                 'task_id' => $homework[0]['task_id'],
-                'baseline' => json_decode($homework[0]['baseline'])
+                'baseline' => json_decode($homework[0]['baseline'], true)
             ],
             'play_record' => [],
         ];
@@ -88,7 +88,7 @@ class Homework extends ControllerBase
         // 组装数据
         $temp = [];
         foreach ($data as $homework){
-            $baseline = json_decode($homework['baseline'], 1);
+            $baseline = json_decode($homework['baseline'], true);
 
             // 以homework为单位聚合task
             $task = [

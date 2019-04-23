@@ -22,10 +22,9 @@ use Slim\Http\Response;
 use Slim\Http\StatusCode;
 
 /**
- * 老师演奏曲谱
+ * 1v1老师端，学生演奏曲谱
  *
  */
-
 class Play extends ControllerBase
 {
 
@@ -56,10 +55,10 @@ class Play extends ControllerBase
         $db->beginTransaction();
 
         //$userID = $this->ci['student']['id'];
-        $userID = 329;
+        $userID = 22;
         // 新增record_type字段区分演奏类型，situation_type区分课上课下
         $params['data']['record_type'] = PlayRecordModel::TYPE_DYNAMIC;
-        $params['data']['situation_type'] = PlayRecordModel::TYPE_OFF_CLASS;
+        $params['data']['situation_type'] = PlayRecordModel::TYPE_ON_CLASS;
         list($errorCode, $ret) = UserPlayServices::addRecord($userID, $params['data']);
 
         if (!empty($errorCode)) {
@@ -116,9 +115,9 @@ class Play extends ControllerBase
 
         // 插入练琴纪录表
         // $userId = $this->ci['student']['id'];
-        $userId = 329;
+        $userId = 22;
         $param['data']['record_type'] = PlayRecordModel::TYPE_AI;
-        $param['data']['situation_type'] = PlayRecordModel::TYPE_OFF_CLASS;
+        $param['data']['situation_type'] = PlayRecordModel::TYPE_ON_CLASS;
         list($errCode, $ret) = UserPlayServices::addRecord($userId, $param['data']);
         if (!empty($errCode)) {
             $errors = Valid::addAppErrors([], $errCode);
@@ -147,21 +146,22 @@ class Play extends ControllerBase
             $homeworkInfo = [
                 'id' => $homework['id'],
                 'task_id' => $homework['task_id'],
-                'baseline' => json_decode($homework['baseline']),
+                'baseline' => json_decode($homework['baseline'], true),
                 'complete' => 1
             ];
-        } else {
+        } elseif (!empty($allHomeworks)) {
             // 如果未达成，返回未达成的作业
             $homework = $allHomeworks[0];
             $homeworkInfo = [
                 'id' => $homework['id'],
                 'task_id' => $homework['task_id'],
-                'baseline' => json_decode($homework['baseline']),
+                'baseline' => json_decode($homework['baseline'], true),
                 'complete' => 0
             ];
+        } else {
+            $homeworkInfo = [];
         }
         $data['homework'] = $homeworkInfo;
         return $response->withJson(['code' => 0, 'data' => $data], StatusCode::HTTP_OK);
     }
-
 }

@@ -182,7 +182,7 @@ class Play extends ControllerBase
             $homeworkInfo = [
                 'id'=> $homework['id'],
                 'task_id'=> $homework['task_id'],
-                'baseline'=> json_decode($homework['baseline']),
+                'baseline'=> json_decode($homework['baseline'], true),
                 'complete'=> 1
             ];
         }elseif(!empty($finished)){
@@ -191,11 +191,11 @@ class Play extends ControllerBase
             $homeworkInfo = [
                 'id'=> $homework['id'],
                 'task_id'=> $homework['task_id'],
-                'baseline'=> json_decode($homework['baseline']),
+                'baseline'=> json_decode($homework['baseline'], true),
                 'complete'=> 0
             ];
         }else{
-            $homeworkInfo = json_decode( '{}');
+            $homeworkInfo = [];
         }
         $data['homework'] = $homeworkInfo;
         return $response->withJson(['code'=>0, 'data'=>$data], StatusCode::HTTP_OK);

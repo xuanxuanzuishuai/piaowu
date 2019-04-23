@@ -111,4 +111,9 @@ class ScheduleService
         return $su;
     }
 
+    public static function endSchedule($schedule){
+        // 处理课后单
+        // 其他
+    }
+
 }

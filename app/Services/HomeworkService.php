@@ -42,7 +42,7 @@ class HomeworkService
     }
 
     /**
-     * 获取学生当前未完成的作业
+     * 获取学生当前未过期的作业
      * @param int $studentId 学生ID
      * @param int $lessonId 曲谱ID
      * @return array
@@ -90,7 +90,7 @@ class HomeworkService
         $scoreDetail = $playInfo['score_detail'];
         $finished = [];
         foreach ($homeworks as $homework){
-            $baseline = json_decode($homework['baseline']);
+            $baseline = json_decode($homework['baseline'], true);
             $meetRequirement = true;
             foreach ($baseline as $requirement => $score){
                 if(array_key_exists($requirement, $scoreDetail)&&($scoreDetail[$requirement] >= $score)){
@@ -174,7 +174,7 @@ class HomeworkService
         $container = array();
         foreach($playRecords as $record){
             $lesson_id = $record['lesson_id'];
-            $score_info = json_decode($record['data'], 1);
+            $score_info = json_decode($record['data'], true);
             $new_score = $score_info['score'];
             if(array_key_exists($lesson_id, $container)){
                 $current_score = $container[$lesson_id];
