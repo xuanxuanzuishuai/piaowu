@@ -23,7 +23,8 @@ class WeChatOpenIdCheckMiddleware extends MiddlewareBase
 {
     // 在此数组中的url，如果带了code就检查，没有也不会报错
     public static $ignoreCheckCodeUrlList = [
-        "/teacher_wx/teacher/register"
+        "/teacher_wx/teacher/register",
+        "/student_wx/student/register"
     ];
 
     public function __invoke(Request $request, Response $response, $next)

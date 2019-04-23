@@ -125,11 +125,14 @@ class StudentServiceForApp
      * 注册新用户
      *
      * @param $mobile
+     * @param $name
      * @return null|array 失败返回null 成功返回['student_id' => x, 'uuid' => x, 'is_new' => x]
      */
-    public static function studentRegister($mobile)
+    public static function studentRegister($mobile, $name=null)
     {
-        $name = Util::defaultStudentName($mobile);
+        if (empty($name)) {
+            $name = Util::defaultStudentName($mobile);
+        }
         $result = self::registerStudentInUserCenter($name, $mobile);
         if (empty($result['uuid'])) {
             SimpleLogger::info(__FILE__ . __LINE__, $result);

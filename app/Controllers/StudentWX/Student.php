@@ -2,11 +2,11 @@
 /**
  * Created by PhpStorm.
  * User: mncu
- * Date: 2019/4/21
- * Time: 11:07
+ * Date: 2019/4/23
+ * Time: 15:41
  */
 
-namespace App\Controllers\TeacherWX;
+namespace App\Controllers\StudentWX;
 
 use App\Controllers\ControllerBase;
 use App\Libs\Valid;
@@ -14,14 +14,16 @@ use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
 use App\Libs\MysqlDB;
-use App\Models\TeacherModelForApp;
-use App\Services\TeacherServiceForApp;
-use App\Services\TeacherOrgService;
+use App\Models\StudentModelForApp;
+use App\Services\StudentServiceForApp;
 use App\Services\WeChatService;
+use App\Services\StudentService;
+use App\Models\StudentOrgModel;
+use App\Models\UserRefereeModel;
 use App\Models\UserWeixinModel;
 use App\Libs\UserCenter;
 
-class Teacher extends ControllerBase
+class Student extends ControllerBase
 {
 
     /** 注册并绑定
@@ -50,6 +52,14 @@ class Teacher extends ControllerBase
             [
                 'key' => 'org_id',
                 'type' => 'integer'
+            ],
+            [
+                'key' => 'referee_type',
+                'type' => 'integer'
+            ],
+            [
+                'key' => 'referee_id',
+                'type' => 'integer'
             ]
         ];
 
@@ -59,33 +69,37 @@ class Teacher extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $app_id = UserCenter::AUTH_APP_ID_AIPEILIAN_TEACHER;
+        $app_id = UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT;
         $openId = $this->ci["open_id"];
         // todo 验证sms_code
 
         //验证手机号是否已存在
-        $teacher_info = TeacherModelForApp::getTeacherInfo("", $params['mobile']);
+        $student_info = StudentModelForApp::getStudentInfo("", $params['mobile']);
 
         $db = MysqlDB::getDB();
         $db->beginTransaction();
-        if (empty($teacher_info["id"])) {
-
-            $teacher_id = TeacherServiceForApp::teacherRegister($params["mobile"], $params["name"]);
-            if (empty($teacher_id)) {
+        if (empty($student_info["id"])) {
+            $student_id = StudentServiceForApp::studentRegister($params["mobile"], $params["name"]);
+            if (empty($student_id)) {
                 return $response->withJson(Valid::addAppErrors([], 'register_failed'), StatusCode::HTTP_OK);
             }
 
-            $teacher_info = TeacherModelForApp::getTeacherInfo("", $params['mobile']);
+            // 转介绍
+            if (!empty($params["referee_id"]) and !empty($params["referee_type"])) {
+                UserRefereeModel::insertReferee($params["referee_id"], $params["referee_type"], $student_id);
+            }
+
+            $student_info = StudentModelForApp::getStudentInfo("", $params['mobile']);
         }
 
+        // 绑定该用户与微信
         if (!empty($openId)) {
-            // 绑定该用户与微信
-            UserWeixinModel::boundUser($openId, $teacher_info["id"], $app_id, WeChatService::USER_TYPE_TEACHER, 1);
+            UserWeixinModel::boundUser($openId, $student_info["id"], $app_id, WeChatService::USER_TYPE_STUDENT, 1);
         }
 
+        // 绑定机构
         if (!empty($params["org_id"])) {
-            // 绑定机构
-            TeacherOrgService::boundTeacher($params["org_id"], $teacher_info["id"]);
+            StudentService::bindOrg($params["org_id"], $student_info["id"]);
         }
         $db->commit();
 
@@ -110,7 +124,7 @@ class Teacher extends ControllerBase
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        $app_id = UserCenter::AUTH_APP_ID_AIPEILIAN_TEACHER;
+        $app_id = UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT;
         $openId = $this->ci["open_id"];
         if (empty($openId)) {
             return $response->withJson(Valid::addAppErrors([], 'need_bound'), StatusCode::HTTP_OK);
@@ -121,7 +135,7 @@ class Teacher extends ControllerBase
             return $response->withJson(Valid::addAppErrors([], 'need_bound'), StatusCode::HTTP_OK);
         }
 
-        $token = WeChatService::generateToken($bound_info["user_id"], WeChatService::USER_TYPE_TEACHER,
+        $token = WeChatService::generateToken($bound_info["user_id"], WeChatService::USER_TYPE_STUDENT,
             $app_id, $openId);
 
         return $response->withJson([
