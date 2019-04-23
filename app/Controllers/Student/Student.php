@@ -257,7 +257,6 @@ class Student extends ControllerBase
         $db->beginTransaction();
 
         $errOrAffectRows = StudentService::updateStudentDetail($params);
-
         if(is_array($errOrAffectRows)) {
             $db->rollBack();
             return $response->withJson($errOrAffectRows);

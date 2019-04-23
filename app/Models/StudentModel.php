@@ -375,8 +375,7 @@ class StudentModel extends Model
         if(isset($data['birthday'])){
             $params['birthday'] = $data['birthday'];
         }
-
-        return self::updateRecord($studentId, $params);
+        return self::updateRecord($studentId, $params,false);
     }
 
     /**

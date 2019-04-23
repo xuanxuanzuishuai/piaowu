@@ -152,7 +152,13 @@ class EmployeeService
     public static function getEmployeeDetail($userId)
     {
         $user = EmployeeModel::getEmployeeById($userId);
-        $roles = RoleModel::getRoles();
+        global $orgId;
+        //根据当前登录用户查询不同的角色
+        if($orgId > 0) {
+            $roles = RoleModel::selectOrgRoles();
+        } else {
+            $roles = RoleModel::getRoles();
+        }
         return [$user, $roles];
     }
 

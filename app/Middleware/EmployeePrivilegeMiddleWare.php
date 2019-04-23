@@ -29,11 +29,10 @@ class EmployeePrivilegeMiddleWare extends MiddlewareBase
         if (EmployeePrivilegeService::checkIsSuperAdmin($this->container['employee'])) {
             return $response = $next($request, $response);
         }
-
         if (EmployeePrivilegeService::hasPermission($privilege, $pIds, $pathStr, $method)) {
             return $response = $next($request, $response);
         } else {
-            $errs = Valid::addErrors(['code'=> -1], 'author', 'no_privilege');
+            $errs = Valid::addErrors(['code'=> 1], 'author', 'no_privilege');
             return $response->withJson($errs, 200);
         }
     }
