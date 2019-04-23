@@ -21,14 +21,14 @@ class StorageService
     /**
      * 获取指定演奏记录的保存文件的OSS访问授权
      *
-     * @param $userID
+     * @param $studentID
      * @param $recordID
      * @return array
      */
-    public static function getAccessCredentials($userID, $recordID)
+    public static function getAccessCredentials($studentID, $recordID)
     {
         $record = PlayRecordModel::getById($recordID);
-        if (empty($record) || $record['user_id'] != $userID) {
+        if (empty($record) || $record['student_id'] != $studentID) {
             return ['access_denied'];
         }
 
@@ -36,7 +36,7 @@ class StorageService
         $path = "${_ENV['ENV_NAME']}/record_${recordID}*";
 
         $roleArn = AppConfigModel::get('ALI_ARN_RECORD_FILE');
-        $sessionName = 'ai_peilian_' . $userID;
+        $sessionName = 'ai_peilian_' . $studentID;
         $policy = [
             'Version' => '1',
             'Statement' => [
