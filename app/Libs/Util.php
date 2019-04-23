@@ -625,6 +625,6 @@ class Util
      */
     public static function defaultStudentName($mobile)
     {
-        return '宝宝' . substr($mobile, -4, 4);
+        return '宝贝' . substr($mobile, -4, 4);
     }
 }
