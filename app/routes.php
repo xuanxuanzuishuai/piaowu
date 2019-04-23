@@ -203,11 +203,6 @@ $arr = array(
         'call' => TeacherAppOpn::class . ':recentCollections',
         'middles' => []
     ],
-    '/teacher_app/opn/recent_tunes' => [
-        'method' => ['get'],
-        'call' => TeacherAppOpn::class . ':recentTunes',
-        'middles' => []
-    ],
     '/teacher_app/opn/recent_lessons' => [
         'method' => ['get'],
         'call' => TeacherAppOpn::class . ':recentLessons',

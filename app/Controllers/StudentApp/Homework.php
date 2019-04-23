@@ -85,24 +85,10 @@ class Homework extends ControllerBase
         $userId = $this->ci['student']['id'];
         $data = HomeworkService::getStudentHomeWorkList($userId, $pageId, $pageLimit);
 
-        // 获取最好弹奏小分
-        $lessonIds = array_column($data, 'lesson_id');
-        $container = HomeworkService::getBestPlayRecordByLessonId($lessonIds);
-
         // 组装数据
         $temp = [];
         foreach ($data as $homework){
-            // 获取最优小分
-            $lesson_id = $homework['lesson_id'];
             $baseline = json_decode($homework['baseline'], 1);
-            $score_info = $container[$lesson_id];
-            if(!empty($score_info)){
-                $pitch = $score_info['score_detail']['pitch'];
-                $rhythm = $score_info['score_detail']['rhythm'];
-            }else{
-                $pitch = 0;
-                $rhythm = 0;
-            }
 
             // 以homework为单位聚合task
             $task = [
@@ -111,8 +97,8 @@ class Homework extends ControllerBase
                 'complete' => $homework['complete'],
                 'lesson_name' => $homework['lesson_name'],
                 'score_detail' => [
-                    'pitch' => ['high' => $pitch, 'baseline' => $baseline['pitch']],
-                    'rhythm' => ['high' => $rhythm, 'baseline' => $baseline['rhythm']]
+                    'pitch' => ['high' => 0, 'baseline' => $baseline['pitch']],
+                    'rhythm' => ['high' => 0, 'baseline' => $baseline['rhythm']]
                 ]
             ];
             $homeworkId = $homework['id'];

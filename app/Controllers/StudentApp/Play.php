@@ -175,10 +175,6 @@ class Play extends ControllerBase
 
         // 处理返回数据
         SimpleLogger::debug("*********check homework******", ['all'=>$allHomeworks, 'finished'=>$finished]);
-        if(empty($allHomeworks)&&empty($finished)){
-            $errors = Valid::addAppErrors([], "homework_not_found");
-            return $response->withJson($errors, StatusCode::HTTP_OK);
-        }
         $data = ['record_id' => $ret['record_id']];
         if(!empty($finished)){
             // 优先返回达成的作业
@@ -189,7 +185,7 @@ class Play extends ControllerBase
                 'baseline'=> json_decode($homework['baseline']),
                 'complete'=> 1
             ];
-        }else{
+        }elseif(!empty($finished)){
             // 如果未达成，返回未达成的作业
             $homework = $allHomeworks[0];
             $homeworkInfo = [
@@ -198,6 +194,8 @@ class Play extends ControllerBase
                 'baseline'=> json_decode($homework['baseline']),
                 'complete'=> 0
             ];
+        }else{
+            $homeworkInfo = json_decode( '{}');
         }
         $data['homework'] = $homeworkInfo;
         return $response->withJson(['code'=>0, 'data'=>$data], StatusCode::HTTP_OK);

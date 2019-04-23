@@ -17,6 +17,7 @@ use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\AppConfigModel;
 use App\Models\HomeworkModel;
+use App\Models\HomeworkTaskModel;
 use App\Services\OpernService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -244,7 +245,7 @@ class Opn extends ControllerBase
         list($pageId, $pageLimit) = Util::formatPageCount($params);
         // $userId = $this->ci['teacher']['id'];
         $userId = 460;
-        $collectionIds = HomeworkModel::getRecentBookIds($userId, $pageId, $pageLimit);
+        $collectionIds = HomeworkTaskModel::getRecentCollectionIds($userId, $pageId, $pageLimit);
         SimpleLogger::debug("******************", $collectionIds);
     }
 
@@ -258,7 +259,7 @@ class Opn extends ControllerBase
         list($pageId, $pageLimit) = Util::formatPageCount($params);
         // $userId = $this->ci['teacher']['id'];
         $userId = 460;
-        $lessonIds = HomeworkModel::getRecentOpernIds($userId, $pageId, $pageLimit);
+        $lessonIds = HomeworkTaskModel::getRecentLessonIds($userId, $pageId, $pageLimit);
         SimpleLogger::debug("******************", $lessonIds);
     }
 
