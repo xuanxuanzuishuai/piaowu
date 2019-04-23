@@ -16,7 +16,7 @@ use Slim\Http\StatusCode;
 use App\Libs\MysqlDB;
 use App\Models\TeacherModelForApp;
 use App\Services\TeacherServiceForApp;
-use App\Models\TeacherOrgModel;
+use App\Services\TeacherOrgService;
 use App\Services\WeChatService;
 use App\Models\UserWeixinModel;
 use App\Libs\UserCenter;
@@ -85,7 +85,7 @@ class Teacher extends ControllerBase
 
         if (!empty($params["org_id"])) {
             // 绑定机构
-            TeacherOrgModel::boundTeacher($params["org_id"], $teacher_info["id"]);
+            TeacherOrgService::boundTeacher($params["org_id"], $teacher_info["id"]);
         }
         $db->commit();
 

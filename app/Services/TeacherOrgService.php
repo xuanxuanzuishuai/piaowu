@@ -10,6 +10,7 @@ namespace App\Services;
 
 
 use App\Models\TeacherOrgModel;
+use App\Models\OrganizationModel;
 
 class TeacherOrgService
 {
@@ -30,5 +31,23 @@ class TeacherOrgService
             $where['status'] = $status;
         }
         return TeacherOrgModel::getRecord($where);
+    }
+
+    /**
+     * @param $org_id
+     * @param $teacher_id
+     * @return int|null|void
+     */
+    public static function boundTeacher($org_id, $teacher_id){
+        $orgObj = OrganizationModel::getById($org_id);
+        if (empty($orgObj)) {
+            return;
+        }
+        $boundInfo = TeacherOrgModel::getBoundInfo($org_id, $teacher_id);
+        if (empty($boundInfo)){
+            TeacherOrgModel::createBoundInfo($org_id, $teacher_id);
+        } else {
+            TeacherOrgModel::updateStatus($org_id, $teacher_id, TeacherOrgModel::STATUS_NORMAL);
+        }
     }
 }

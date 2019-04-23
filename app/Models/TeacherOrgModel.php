@@ -15,22 +15,34 @@ class TeacherOrgModel extends Model
     const STATUS_NORMAL = 1; // 绑定
     public static $table = 'teacher_org';
 
-    public static function boundTeacher($org_id, $teacher_id)
+    /** 创建绑定关系
+     * @param $org_id
+     * @param $teacher_id
+     */
+    public static function createBoundInfo($org_id, $teacher_id)
     {
-        $db     = MysqlDB::getDB();
-        $orgObj = OrganizationModel::getById($org_id);
-        if (empty($orgObj)) {
-            return null;
-        }
         $create_time = time();
-        $id          = $db->insertGetID(self::$table, [
+        MysqlDB::getDB()->insertGetID(self::$table, [
             "org_id"      => $org_id,
             "teacher_id"  => $teacher_id,
             "status"      => 1,
             "create_time" => $create_time,
             "update_time" => $create_time,
         ]);
-        return $id;
+
+    }
+
+    /** 获取老师与该机构的绑定关系
+     * @param $org_id
+     * @param $teacher_id
+     * @return mixed
+     */
+    public static function getBoundInfo($org_id, $teacher_id){
+        $boundInfo = MysqlDB::getDB()->get(self::$table, ["id", "status"], [
+            "org_id" => $org_id,
+            "teacher_id" => $teacher_id
+        ]);
+        return $boundInfo;
     }
 
     /**
