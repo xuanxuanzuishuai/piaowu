@@ -427,7 +427,7 @@ class StudentService
 
         $student = StudentModel::getRecord([
             'uuid' => $uuid,
-        ]);
+        ],[],false);
 
         if(empty($student)) {
             $studentId = StudentModel::saveStudent($params, $authResult["uuid"], $operatorId);
@@ -437,7 +437,7 @@ class StudentService
         } else {
             $studentId = $student['id'];
             $params['update_time'] = time();
-            $affectRows = StudentModel::updateRecord($studentId, $params);
+            $affectRows = StudentModel::updateRecord($studentId, $params, false);
             if($affectRows == 0) {
                 return Valid::addErrors([], 'student', 'update_student_fail');
             }
