@@ -190,13 +190,13 @@ class Org extends ControllerBase
         $rules = [
             [
                 'key'        => 'page',
-                'type'       => 'required',
-                'error_code' => 'page_is_required'
+                'type'       => 'integer',
+                'error_code' => 'page_is_integer'
             ],
             [
                 'key'        => 'count',
-                'type'       => 'required',
-                'error_code' => 'count_is_required'
+                'type'       => 'integer',
+                'error_code' => 'count_is_integer'
             ]
         ];
 

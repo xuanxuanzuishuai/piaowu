@@ -16,6 +16,7 @@ use App\Libs\MysqlDB;
 use App\Libs\ResponseError;
 use App\Libs\Valid;
 use App\Models\StudentAppModel;
+use App\Models\StudentModel;
 use App\Models\StudentOrgModel;
 use App\Services\ChannelService;
 use App\Services\StudentAppService;
@@ -43,13 +44,13 @@ class Student extends ControllerBase
         $rules = [
             [
                 'key'        => 'page',
-                'type'       => 'required',
-                'error_code' => 'page_is_required',
+                'type'       => 'integer',
+                'error_code' => 'page_is_integer',
             ],
             [
                 'key'        => 'count',
-                'type'       => 'required',
-                'error_code' => 'count_is_required',
+                'type'       => 'integer',
+                'error_code' => 'count_is_integer',
             ]
         ];
         $result = Valid::validate($params, $rules);
@@ -83,13 +84,13 @@ class Student extends ControllerBase
         $rules = [
             [
                 'key'        => 'page',
-                'type'       => 'required',
-                'error_code' => 'page_is_required',
+                'type'       => 'integer',
+                'error_code' => 'page_is_integer',
             ],
             [
                 'key'        => 'count',
-                'type'       => 'required',
-                'error_code' => 'count_is_required',
+                'type'       => 'integer',
+                'error_code' => 'count_is_integer',
             ]
         ];
         $result = Valid::validate($params, $rules);
@@ -222,6 +223,12 @@ class Student extends ControllerBase
                 'error_code' => 'name_is_required',
             ],
             [
+                'key'        => 'name',
+                'type'       => 'lengthMax',
+                'value'      => 10,
+                'error_code' => 'student_name_length_more_then_10'
+            ],
+            [
                 'key'        => 'gender',
                 'type'       => 'required',
                 'error_code' => 'gender_is_required',
@@ -345,6 +352,41 @@ class Student extends ControllerBase
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => ['last_id' => $studentId]
+        ]);
+    }
+
+    /**
+     * 模糊查询学生，根据姓名或手机号
+     * 姓名模糊匹配，手机号等于匹配
+     * @param Request $request
+     * @param Response $response
+     * @param $argv
+     * @return Response
+     */
+    public function fuzzySearch(Request $request, Response $response, $argv)
+    {
+        $params = $request->getParams();
+        $rules = [
+            [
+                'key'        => 'key', //手机号或姓名
+                'type'       => 'required',
+                'error_code' => 'key_is_required'
+            ],
+        ];
+
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $key = $params['key'];
+        global $orgId;
+
+        $records = StudentModel::fuzzySearch($orgId, $key);
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $records
         ]);
     }
 }

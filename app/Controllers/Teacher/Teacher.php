@@ -415,4 +415,39 @@ class Teacher extends ControllerBase
             'code' => Valid::CODE_SUCCESS
         ]);
     }
+
+    /**
+     * 模糊查询老师，根据姓名或手机号
+     * 姓名模糊匹配，手机号等于匹配
+     * @param Request $request
+     * @param Response $response
+     * @param $args
+     * @return Response
+     */
+    public function fuzzySearch(Request $request, Response $response, $args)
+    {
+        $params = $request->getParams();
+        $rules = [
+            [
+                'key'        => 'key', //手机号或姓名
+                'type'       => 'required',
+                'error_code' => 'key_is_required'
+            ],
+        ];
+
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $key = $params['key'];
+        global $orgId;
+
+        $records = TeacherModel::fuzzySearch($orgId, $key);
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $records
+        ]);
+    }
 }

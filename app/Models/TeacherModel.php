@@ -1158,4 +1158,31 @@ WHERE " . $where . $order . "LIMIT 3";
         where t.id = o.teacher_id and o.org_id = :org_id and t.id = :id",[':org_id' => $orgId,':id' => $teacherId]);
         return empty($records) ? [] : $records[0];
     }
+
+    /**
+     * 模糊查询老师，根据姓名或手机号
+     * 姓名模糊匹配，手机号等于匹配
+     * @param $orgId
+     * @param $key
+     * @return array|null
+     */
+    public static function fuzzySearch($orgId, $key)
+    {
+        $db = MysqlDB::getDB();
+        $t = TeacherModel::$table;
+        $tm = TeacherOrgModel::$table;
+        $st = TeacherOrgModel::STATUS_NORMAL;
+
+        if(!empty(preg_match('/^1\d{10}$/', $key))) {
+            $sql = "select t.name,t.mobile,tm.org_id from {$t} t,{$tm} tm where t.id = tm.teacher_id
+        and tm.status = {$st} and tm.org_id = {$orgId} and t.mobile = {$key}";
+        } else {
+            $sql = "select t.name,t.mobile,tm.org_id from {$t} t,{$tm} tm where t.id = tm.teacher_id
+        and tm.status = {$st} and tm.org_id = {$orgId} and t.name like '%{$key}%'";
+        }
+
+        $records = $db->queryAll($sql);
+
+        return $records;
+    }
 }

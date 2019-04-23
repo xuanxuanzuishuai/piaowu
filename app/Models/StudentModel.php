@@ -598,4 +598,31 @@ class StudentModel extends Model
 
         return empty($records) ? [] : $records[0];
     }
+
+    /**
+     * 模糊查询，根据学生姓名或者手机号
+     * 姓名模糊匹配，手机号等于匹配
+     * @param $orgId
+     * @param $key
+     * @return array|null
+     */
+    public static function fuzzySearch($orgId, $key)
+    {
+        $db = MysqlDB::getDB();
+        $s = StudentModel::$table;
+        $so = StudentOrgModel::$table;
+        $st = StudentOrgModel::STATUS_NORMAL;
+
+        if(!empty(preg_match('/^1\d{10}$/', $key))) {
+            $sql = "select s.name,s.mobile,so.org_id from {$s} s,{$so} so where s.id = so.student_id
+        and so.status = {$st} and so.org_id = {$orgId} and s.mobile = {$key}";
+        } else {
+            $sql = "select s.name,s.mobile,so.org_id from {$s} s,{$so} so where s.id = so.student_id
+        and so.status = {$st} and so.org_id = {$orgId} and s.name like '%{$key}%'";
+        }
+
+        $records = $db->queryAll($sql);
+
+        return $records;
+    }
 }
