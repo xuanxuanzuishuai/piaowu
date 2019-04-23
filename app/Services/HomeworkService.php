@@ -31,8 +31,9 @@ class HomeworkService
     public static function createHomework($schedule_id, $org_id, $teacher_id, $student_id, $days_limit, $remark, $content)
     {
         $created_time = time();
+        $end_time = strtotime('today') + $days_limit * 86400 + 86399;
         $homework_id = HomeworkModel::createHomework($schedule_id, $org_id, $teacher_id, $student_id, $created_time,
-            $created_time + $days_limit * 3600 * 24, $remark);
+            $end_time, $remark);
         foreach ($content as $task) {
             HomeworkTaskModel::createHomeworkTask($homework_id, $task["lesson_id"], $task["lesson_name"], $task["collection_id"],
                 $task["collection_name"], json_encode($task["baseline"]));
