@@ -114,8 +114,14 @@ class GiftCodeModel extends Model
             $where .= " and {$gift_code}.code like '%{$params['code']}%'";
         }
 
-        if (!empty($params['generate_channel'])) {
-            $where .= " and {$gift_code}.generate_channel = " . $params['generate_channel'];
+        //如果机构不为空，则查询指定机构下的激活码
+        if(!empty($params['org_id'])) {
+            $where .= " and {$gift_code}.generate_channel = " . self::BUYER_TYPE_ORG;
+            $where .= " and {$gift_code}.buyer = " . $params['org_id'];
+        } else {
+            if (!empty($params['generate_channel'])) {
+                $where .= " and {$gift_code}.generate_channel = " . $params['generate_channel'];
+            }
         }
 
         if (!empty($params['generate_way'])) {

@@ -19,7 +19,7 @@ use Slim\Http\StatusCode;
 
 class GiftCode extends ControllerBase
 {
-    function add(Request $request, Response $response)
+    public function add(Request $request, Response $response)
     {
         $params = $request->getParams();
         $rules = [
@@ -75,7 +75,7 @@ class GiftCode extends ControllerBase
     }
 
     //获取激活码列表
-    function list(Request $request, Response $response)
+    public function list(Request $request, Response $response)
     {
         $params = $request->getParams();
         //获取激活码
@@ -89,8 +89,30 @@ class GiftCode extends ControllerBase
         ], StatusCode::HTTP_OK);
     }
 
+    /**
+     * 机构激活码列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function listForOrg(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        global $orgId;
+        $params['org_id'] = $orgId;
+
+        list($totalCount, $codeData) = GiftCodeService::batchGetCode($params);
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => [
+                'total_count' => $totalCount,
+                'code_data' => $codeData
+            ]
+        ], StatusCode::HTTP_OK);
+    }
+
     //作废激活码
-    function abandon(Request $request, Response $response) {
+    public function abandon(Request $request, Response $response) {
         $params = $request->getParams();
         $rules = [
             [

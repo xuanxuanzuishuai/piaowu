@@ -1181,10 +1181,10 @@ WHERE " . $where . $order . "LIMIT 3";
         $st = TeacherOrgModel::STATUS_NORMAL;
 
         if(!empty(preg_match('/^1\d{10}$/', $key))) {
-            $sql = "select t.name,t.mobile,tm.org_id from {$t} t,{$tm} tm where t.id = tm.teacher_id
+            $sql = "select t.id,t.name,t.mobile,tm.org_id from {$t} t,{$tm} tm where t.id = tm.teacher_id
         and tm.status = {$st} and tm.org_id = {$orgId} and t.mobile = {$key}";
         } else {
-            $sql = "select t.name,t.mobile,tm.org_id from {$t} t,{$tm} tm where t.id = tm.teacher_id
+            $sql = "select t.id,t.name,t.mobile,tm.org_id from {$t} t,{$tm} tm where t.id = tm.teacher_id
         and tm.status = {$st} and tm.org_id = {$orgId} and t.name like '%{$key}%'";
         }
 

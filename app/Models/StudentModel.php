@@ -615,10 +615,10 @@ class StudentModel extends Model
         $st = StudentOrgModel::STATUS_NORMAL;
 
         if(!empty(preg_match('/^1\d{10}$/', $key))) {
-            $sql = "select s.name,s.mobile,so.org_id from {$s} s,{$so} so where s.id = so.student_id
+            $sql = "select s.id,s.name,s.mobile,so.org_id from {$s} s,{$so} so where s.id = so.student_id
         and so.status = {$st} and so.org_id = {$orgId} and s.mobile = {$key}";
         } else {
-            $sql = "select s.name,s.mobile,so.org_id from {$s} s,{$so} so where s.id = so.student_id
+            $sql = "select s.id,s.name,s.mobile,so.org_id from {$s} s,{$so} so where s.id = so.student_id
         and so.status = {$st} and so.org_id = {$orgId} and s.name like '%{$key}%'";
         }
 

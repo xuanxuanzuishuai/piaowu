@@ -3,6 +3,9 @@
 namespace App;
 
 use App\Controllers\Boss\GiftCode;
+use App\Controllers\Org\Org;
+use App\Controllers\Student\Student;
+use App\Controllers\Teacher\Teacher;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Middleware\AppApi;
@@ -266,55 +269,55 @@ $arr = array(
     //添加或更新机构
     '/org_web/org/add_or_update' => [ // for super admin
         'method'  => ['post'],
-        'call'    => '\App\Controllers\Org\Org:addOrUpdate',
-        'middles' => ['\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare'],
+        'call'    => Org::class . ':addOrUpdate',
+        'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class],
     ],
     //机构列表
     '/org_web/org/list' => [ // for super admin
         'method'  => ['get'],
-        'call'    => '\App\Controllers\Org\Org:list',
-        'middles' => ['\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare'],
+        'call'    => Org::class . ':list',
+        'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class],
     ],
     //模糊搜索机构
     '/org_web/org/fuzzy_search' => [ // for super admin
         'method'  => ['get'],
-        'call'    => '\App\Controllers\Org\Org:fuzzySearch',
-        'middles' => ['\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare'],
+        'call'    => Org::class . ':fuzzySearch',
+        'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class],
     ],
     //机构详情
     '/org_web/org/detail' => [ // for super admin
         'method'  => ['get'],
-        'call'    => '\App\Controllers\Org\Org:detail',
-        'middles' => ['\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare'],
+        'call'    => Org::class . ':detail',
+        'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class],
     ],
     //管理员可以查看所有老师，或者指定机构下老师
     '/teacher/teacher/list_by_org' => [ // for super admin
         'method'  => ['get'],
-        'call'    => '\App\Controllers\Teacher\Teacher:listByOrg',
-        'middles' => ['\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare'],
+        'call'    => Teacher::class . ':listByOrg',
+        'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class],
     ],
     '/teacher/teacher/info' => [ // 用于编辑前的查看
         'method'  => ['get'],
-        'call'    => '\App\Controllers\Teacher\Teacher::info',
-        'middles' => ['\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare'],
+        'call'    => Teacher::class . '::info',
+        'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class],
     ],
     //管理员可以查看所有学生，或者指定机构下学生
     '/student/student/list_by_org' => [ // for super admin
         'method'  => ['get'],
-        'call'    => '\App\Controllers\Student\Student:listByOrg',
-        'middles' => ['\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare'],
+        'call'    => Student::class . ':listByOrg',
+        'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class],
     ],
     //机构管理员绑定老师和学生
     '/org_web/teacher/bind_student' => [
         'method'  => ['post'],
-        'call'    => '\App\Controllers\Teacher\Teacher:bindStudent',
-        'middles' => ['\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare'],
+        'call'    => Teacher::class . ':bindStudent',
+        'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class],
     ],
     //机构管理员解绑老师和学生
     '/org_web/teacher/unbind_student' => [
         'method'  => ['post'],
-        'call'    => '\App\Controllers\Teacher\Teacher:unbindStudent',
-        'middles' => ['\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare'],
+        'call'    => Teacher::class . ':unbindStudent',
+        'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class],
     ],
 
     '/teacher_wx/student/list' => array('method'=>array('get'),'call'=>'\App\Controllers\TeacherWX\Student:get', 'middles' => array( '\App\Middleware\WeChatAuthCheckMiddleware')),
@@ -334,19 +337,25 @@ $arr = array(
 
     '/org_web/org/bind_unbind_student' => [
         'method'  => ['post'],
-        'call'    => '\App\Controllers\Org\Org:bindUnbindStudent',
-        'middles' => ['\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare'],
+        'call'    => Org::class . ':bindUnbindStudent',
+        'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class],
     ],
     '/org_web/org/bind_unbind_teacher' => [
         'method'  => ['post'],
-        'call'    => '\App\Controllers\Org\Org:bindUnbindTeacher',
-        'middles' => ['\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare'],
+        'call'    => Org::class . ':bindUnbindTeacher',
+        'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class],
     ],
 
     // /boss/gift_code
     '/boss/gift_code/list' => [
         'method' => ['get'],
         'call' => GiftCode::class . ':list',
+        'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class]
+    ],
+    // for org
+    '/boss/gift_code/list_for_org' => [
+        'method' => ['get'],
+        'call' => GiftCode::class . ':listForOrg',
         'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class]
     ],
     '/boss/gift_code/add' => [
