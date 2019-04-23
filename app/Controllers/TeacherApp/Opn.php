@@ -225,10 +225,8 @@ class Opn extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        // TODO 曲谱库这个接口没有data层，应该为和其他接口一样
-        // $data = $result['data'];
-        $data = $result;
-        $list = OpernService::appFormatLessonByIds($data['list'])[0] ?? [];
+        $data = $result['data'];
+        $list = OpernService::appFormatLessonByIds($data)[0] ?? [];
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => $list
