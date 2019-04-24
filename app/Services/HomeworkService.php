@@ -66,7 +66,7 @@ class HomeworkService
      * @param int $pageLimit 每页条数
      * @return array
      */
-    public static function getStudentHomeWorkList($studentId, $pageId, $pageLimit){
+    public static function getStudentHomeWorkList($studentId, $pageId=-1, $pageLimit=0){
         $where = [
             HomeworkModel::$table . ".student_id" => $studentId,
             'ORDER' => ['created_time' => 'DESC']

@@ -131,15 +131,6 @@ class ScheduleService
         return $su;
     }
 
-
-    /**
-     * @param $schedule
-     */
-    public static function endSchedule($schedule){
-        // 处理课后单
-        // 其他
-    }
-
     /**
      * @param $schedule
      * @return array|bool

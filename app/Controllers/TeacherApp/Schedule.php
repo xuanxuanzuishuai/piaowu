@@ -54,7 +54,6 @@ class Schedule extends ControllerBase
         // 结束上课
         ScheduleService::endSchedule($param);
         $db->commit();
-
     }
 
 }

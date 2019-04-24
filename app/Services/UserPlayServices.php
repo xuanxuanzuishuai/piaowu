@@ -29,6 +29,7 @@ class UserPlayServices
             'collection_id' => $playData['collection_id'],
             'lesson_id' => $playData['lesson_id'],
             'lesson_sub_id' => $playData['lesson_sub_id'],
+            'ai_record_id' => $playData['ai_record_id'],
             'created_time' => time(),
             'duration' => $playData['duration'],
             'score' => $playData['score'],

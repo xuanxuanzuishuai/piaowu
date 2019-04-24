@@ -80,10 +80,8 @@ class Homework extends ControllerBase
      * @return Response
      */
     public function list(Request $request, Response $response){
-        $params = $request->getParams();
-        list($pageId, $pageLimit) = Util::formatPageCount($params);
         $userId = $this->ci['student']['id'];
-        $data = HomeworkService::getStudentHomeWorkList($userId, $pageId, $pageLimit);
+        $data = HomeworkService::getStudentHomeWorkList($userId);
 
         // 组装数据
         $temp = [];
@@ -91,6 +89,7 @@ class Homework extends ControllerBase
             $baseline = json_decode($homework['baseline'], true);
 
             // 以homework为单位聚合task
+            $homeworkId = $homework['id'];
             $task = [
                 'task_id' => $homework['task_id'],
                 'lesson_id' => $homework['lesson_id'],
@@ -101,7 +100,6 @@ class Homework extends ControllerBase
                     'rhythm' => ['high' => 0, 'baseline' => $baseline['rhythm']]
                 ]
             ];
-            $homeworkId = $homework['id'];
             if(array_key_exists($homeworkId, $temp)){
                 array_push($temp[$homeworkId]['tasks'], $task);
             }else{
