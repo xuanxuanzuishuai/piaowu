@@ -9,12 +9,42 @@
 namespace App\Services;
 
 
+use App\Libs\SimpleLogger;
 use App\Models\PlayRecordModel;
 use App\Libs\OpernCenter;
+use Lcobucci\JWT\Signer\Hmac\Sha256;
+use Lcobucci\JWT\Builder;
+use Lcobucci\JWT\Parser;
 
 
 class PlayRecordService
 {
+    const signKey = "wblMloJrdkUwIxVLchlXB9Unvr68dJo";
+
+    public static function getShareReportToken($student_id, $date) {
+        $builder = new Builder();
+        $signer = new Sha256();
+        $builder->set("student_id", $student_id);
+        $builder->set("date", $date);
+        $builder->sign($signer, self::signKey);
+        $token = $builder->getToken();
+        return (string)$token;
+    }
+
+    /** 解析jwt获取信息
+     * @param $token
+     * @return array
+     */
+    public static function parseShareReportToken($token){
+        $parse = (new Parser())->parse((string)$token);
+        $signer = new Sha256();
+        if (!$parse->verify($signer,self::signKey)) {
+            return ["code" => 1];
+        };
+        $student_id = $parse->getClaim("student_id");
+        $date = $parse->getClaim("date");
+        return ["student_id" => $student_id, "date" => $date, "code" => 0];
+    }
 
     /** 学生练琴报告
      * @param $student_id
@@ -98,9 +128,8 @@ class PlayRecordService
             $statistics[$i]["collection_name"] = $lesson_info[$cur_lesson_id]["collection_name"];
         }
 
+        array_push($statistics[$max_duration_index]["tags"], "时间最长");
         $max_duration_lesson = $statistics[$max_duration_index];
-        array_push($max_duration_lesson["tags"], "时间最长");
-
         if ($max_duration_index != null and $max_duration_index > 0 and $max_duration_index != 1) {
             $tmp_lesson = $statistics[1];
             $statistics[1] = $max_duration_lesson;
