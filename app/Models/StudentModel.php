@@ -17,7 +17,7 @@ class StudentModel extends Model
     public static $table = 'student';
     public static $redisExpire = 1;
 
-    const GENDER_UNKNOWN = 3; // 保密
+    const GENDER_UNKNOWN = 0; // 保密
     const GENDER_MALE = 1; //男
     const GENDER_FEMALE = 2; //女
 

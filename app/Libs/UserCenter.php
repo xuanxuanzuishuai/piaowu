@@ -129,9 +129,9 @@ class UserCenter
         if (!empty($birthday)){
             $userInfo['birthday'] = $birthday;
         }
-        if (!empty($gender)){
-            $userInfo['gender'] = $gender > 2 ? 0 : $gender;
-        }
+
+        $userInfo['gender'] = strval(empty($gender) ? StudentModel::GENDER_UNKNOWN : $gender);
+
         $result = $this->commonAPI(self::API_AUTHORIZATION, [
             'headers' => [
                 'Content-Type' => 'application/json'
@@ -162,7 +162,7 @@ class UserCenter
         $userInfo = [];
         $userInfo['name'] = empty($name) ? "" : $name;
         $userInfo['birthday'] = empty($birthday) ? "" : $birthday;
-        $userInfo['gender'] = empty($gender) ? StudentModel::GENDER_UNKNOWN : $gender;
+        $userInfo['gender'] = strval(empty($gender) ? StudentModel::GENDER_UNKNOWN : $gender);
         $result = $this->commonAPI($api, [
             'headers' => [
                 'Content-Type' => 'application/json'
@@ -205,12 +205,12 @@ class UserCenter
         if (!empty($birthday)){
             $userInfo['birthday'] = $birthday;
         }
-        if (!empty($gender)){
-            $userInfo['gender'] = $gender;
-        }
         if (!empty($avatar)){
             $userInfo['avatar'] = $avatar;
         }
+
+        $userInfo['gender'] = strval(empty($gender) ? TeacherModel::GENDER_UNKNOWN : $gender);
+
         $result = $this->commonAPI(self::API_AUTHORIZATION, [
             'headers' => [
                 'Content-Type' => 'application/json'
@@ -242,7 +242,7 @@ class UserCenter
         $userInfo['mobile'] = empty($mobile) ? "" : $mobile;
         $userInfo['name'] = empty($name) ? "" : $name;
         $userInfo['birthday'] = empty($birthday) ? "" : $birthday;
-        $userInfo['gender'] = empty($gender) ? TeacherModel::GENDER_UNKNOWN : $gender;
+        $userInfo['gender'] = strval(empty($gender) ? TeacherModel::GENDER_UNKNOWN : $gender);
         $userInfo['avatar'] = empty($avatar) ? "" : $avatar;
         $result = $this->commonAPI($api, [
             'headers' => [

@@ -22,7 +22,9 @@ class TeacherModel extends Model
     //老师导入头像处理队列
     public static $teacher_thumb_handle = "teacher_thumb_list";
 
-    const GENDER_UNKNOWN = 3; // 保密/未知
+    const GENDER_MALE = 1; //男
+    const GENDER_FEMALE = 2; //女
+    const GENDER_UNKNOWN = 0; // 保密/未知
     /**
      * 定义老师状态相关代码
      * 1注册，2待入职，3在职，4冻结，5离职，6辞退，7不入职

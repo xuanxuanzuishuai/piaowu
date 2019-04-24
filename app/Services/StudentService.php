@@ -412,7 +412,7 @@ class StudentService
     public static function insertStudent($params, $operatorId = 0)
     {
         $birthday   = $params['birthday'] ?? '';
-        $gender     = $params['gender'] ?? StudentModel::GENDER_MALE;
+        $gender     = $params['gender'] ?? StudentModel::GENDER_UNKNOWN;
 
         $userCenter = new UserCenter();
 

@@ -12,6 +12,8 @@ use App\Controllers\ControllerBase;
 use App\Libs\Constants;
 use App\Libs\SimpleLogger;
 use App\Libs\Valid;
+use App\Models\EmployeeModel;
+use App\Models\OrganizationModel;
 use App\Services\DictService;
 use App\Services\EmployeeService;
 use Slim\Http\Request;
@@ -56,6 +58,14 @@ class Auth extends ControllerBase
             return $response->withJson($res, StatusCode::HTTP_OK);
         }
         list($token, $userInfo, $expires) = $res;
+
+        //判断机构是否被废除，废除要返回错误
+        if(!empty($userInfo['org_id']) && $userInfo['org_id'] > 0) {
+            $org = OrganizationModel::getById($userInfo['org_id']);
+            if($org['status'] == OrganizationModel::STATUS_STOP) {
+                return $response->withJson(Valid::addErrors([],'auth','org_is_disabled'));
+            }
+        }
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,

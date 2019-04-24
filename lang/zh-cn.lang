@@ -9,6 +9,7 @@ mobile_is_exist='手机号已存在'
 gender_is_required='性别是必填项'
 have_bind_other_teacher='已经绑定其他老师'
 student_name_length_more_then_10='姓名字符长度不能大于10'
+org_can_not_be_empty='机构不能为空'
 
 sub_verify_error='用户未激活'
 user_register_fail='用户注册失败'
