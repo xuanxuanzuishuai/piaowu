@@ -34,11 +34,6 @@ class Student extends ControllerBase
     {
         $rules = [
             [
-                'key' => 'name',
-                'type' => 'required',
-                'error_code' => 'name_is_required'
-            ],
-            [
                 'key' => 'mobile',
                 'type' => 'required',
                 'error_code' => 'mobile_is_required'

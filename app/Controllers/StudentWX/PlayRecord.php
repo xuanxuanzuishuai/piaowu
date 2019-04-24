@@ -41,15 +41,12 @@ class PlayRecord extends ControllerBase
         }
 
         $user_id = $this->ci['user_info']['user_id'];
+//        $user_id = 22;
         $result = PlayRecordService::getDayRecordReport($user_id, $params["date"]);
-        $token = PlayRecordService::getShareReportToken($user_id, $params["date"]);
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
-            'data' => [
-                "report_list" => $result,
-                "jwt" => $token
-            ]
+            'data' => $result
         ], StatusCode::HTTP_OK);
     }
 
@@ -79,14 +76,10 @@ class PlayRecord extends ControllerBase
             $response->withJson(Valid::addAppErrors([], 'jwt_invalid'), StatusCode::HTTP_OK);
         }
         $result = PlayRecordService::getDayRecordReport($data["student_id"], $data["date"]);
-        $token = PlayRecordService::getShareReportToken($data["student_id"], $data["date"]);
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
-            'data' => [
-                "report_list" => $result,
-                "jwt" => $token
-            ]
+            'data' => $result
         ], StatusCode::HTTP_OK);
     }
 }

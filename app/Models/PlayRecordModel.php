@@ -33,7 +33,7 @@ class PlayRecordModel extends Model
         return $result;
     }
 
-    /**
+    /** 获取学生课程报告
      * @param $student_id
      * @param $start_time
      * @param $end_time
@@ -61,4 +61,27 @@ class PlayRecordModel extends Model
         $result = $db->queryAll($sql, $map);
         return $result;
     }
+
+    /**
+     * @param $lesson_id
+     * @param $student_id
+     * @param $start_time
+     * @param $end_time
+     * @return mixed
+     */
+    public static function getWonderfulAIRecordId($lesson_id, $student_id, $start_time, $end_time) {
+        $db = MysqlDB::getDB();
+        $result = $db->get(self::$table, ["ai_record_id", "score"], [
+            "lesson_id" => $lesson_id,
+            "student_id" => $student_id,
+            "created_time[>=]" => $start_time,
+            "created_time[<]" => $end_time,
+            "lesson_type" => self::TYPE_AI,
+            "ORDER" => [
+                "score" => "DESC"
+            ]
+        ]);
+        return $result;
+    }
+
 }

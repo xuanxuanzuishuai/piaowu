@@ -15,6 +15,7 @@ use App\Libs\OpernCenter;
 use Lcobucci\JWT\Signer\Hmac\Sha256;
 use Lcobucci\JWT\Builder;
 use Lcobucci\JWT\Parser;
+use App\Models\StudentModelForApp;
 
 
 class PlayRecordService
@@ -53,13 +54,20 @@ class PlayRecordService
      * @return array
      */
     public static function getRecordReport($student_id, $start_time, $end_time) {
-        $result = PlayRecordModel::getPlayRecordReport($student_id, $start_time, $end_time);
-
+        $records = PlayRecordModel::getPlayRecordReport($student_id, $start_time, $end_time);
+        $student_info = StudentModelForApp::getStudentInfo($student_id, "");
+        $result = [
+            "name" => $student_info["name"],
+            "duration" => 0,
+            "lesson_count" => 0,
+            "max_score" => 0,
+            "report_list" => []
+        ];
         $ret = [];
-        if (empty($result)) {
-            return [];
+        if (empty($records)) {
+            return $result;
         }
-        foreach ($result as $value) {
+        foreach ($records as $value) {
             $lesson_id = $value["lesson_id"];
             if (!isset($ret[$lesson_id])) {
                 $ret[$lesson_id] = [
@@ -71,6 +79,7 @@ class PlayRecordService
                     "max_dmc_score" => $value["max_dmc"],
                     "max_ai_score" => $value["max_ai"],
                     "lesson_id" => $lesson_id,
+                    "ai_record_id" => null,
                     "tags" => [],
                 ];
             } else {
@@ -92,6 +101,7 @@ class PlayRecordService
         }
 
         array_multisort($score, SORT_DESC, $statistics);
+        $result["max_score"] = $statistics[0]["max_score"];
 
         $lesson_list = [];
         // 获取lesson的信息
@@ -114,18 +124,25 @@ class PlayRecordService
             ];
         }
 
+        $sum_duration = 0;
         $max_duration = 0;
         $max_duration_index = null;
         for ($i = 0; $i < count($statistics); $i++) {
+            $result["lesson_count"] += 1;
             $cur_duration = $statistics[$i]["duration"];
+            $sum_duration += $cur_duration;
             $cur_lesson_id = $statistics[$i]["lesson_id"];
             if ($cur_duration > $max_duration) {
                 $max_duration = $cur_duration;
                 $max_duration_index = $i;
             }
 
-            $statistics[$i]["lesson_name"] = $lesson_info[$cur_lesson_id]["lesson_name"];
+            $statistics[$i]["lesson_name"] = $lesson_info[$cur_lesson_id]["opern_name"];
             $statistics[$i]["collection_name"] = $lesson_info[$cur_lesson_id]["collection_name"];
+            $ai_record_info = PlayRecordModel::getWonderfulAIRecordId($cur_lesson_id, $student_id, $start_time, $end_time);
+            if (!empty($ai_record_info and $ai_record_info["score"] >= 90)){
+                $statistics[$i]["ai_record_id"] = $ai_record_info["ai_record_id"];
+            }
         }
 
         array_push($statistics[$max_duration_index]["tags"], "时间最长");
@@ -136,11 +153,13 @@ class PlayRecordService
             $statistics[$max_duration_index] = $tmp_lesson;
         }
 
-        return $statistics;
+        $result["report_list"] = $statistics;
+        $result["duration"] = $sum_duration;
+        return $result;
 
     }
 
-    /**
+    /** 学生练琴日报
      * @param $student_id
      * @param null $date
      * @return array
@@ -151,6 +170,10 @@ class PlayRecordService
         }
         $start_time = strtotime($date);
         $end_time = $start_time + 86399;
-        return self::getRecordReport($student_id, $start_time, $end_time);
+        $result = self::getRecordReport($student_id, $start_time, $end_time);
+        $token = self::getShareReportToken($student_id, $date);
+        $result["date"] = date("Y年m月d日", $start_time);
+        $result["jwt"] = $token;
+        return $result;
     }
 }
