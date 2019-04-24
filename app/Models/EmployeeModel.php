@@ -294,9 +294,10 @@ class EmployeeModel extends Model
             self::$table . '.pwd',
             self::$table . '.is_leader',
             self::$table . '.last_update_pwd_time',
+            self::$table . '.org_id',
             EmployeeSeatModel::$table . '.seat_type',
             EmployeeSeatModel::$table . '.seat_id',
-            DeptModel::$table . '.dept_name'
+            DeptModel::$table . '.dept_name',
         ], [
             'AND' => [
                 self::$table . '.uuid' => $uuid,
