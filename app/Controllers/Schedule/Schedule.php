@@ -187,8 +187,10 @@ class Schedule extends ControllerBase
             'end_time' => date('H:i',strtotime($params['end_time'])),
             'course_id' => $params['course_id'],
             'weekday' => date('w',strtotime($params['start_time'])),
-            'expire_start_date' => $params['expire_start_date'],
+            'expire_start_date' => date("Y-m-d",strtotime($params['start_time'])),
+            'expire_end_date' => date("Y-m-d",strtotime($params['start_time'])+86400),
             'create_time' => time(),
+            'real_schedule_id' => $schedule['id'],
             'status' => ScheduleTaskModel::STATUS_TEMP,
         ];
         ScheduleTaskService::addST($st,$params['studentIds'],$params['teacherIds']);

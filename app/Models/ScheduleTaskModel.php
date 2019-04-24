@@ -126,6 +126,7 @@ class ScheduleTaskModel extends Model
             'c.name (course_name)',
             'c.class_highest',
             'c.num',
+            'cr.campus_id',
             'c.duration',
             'cr.name (classroom_name)'
         ], $where);

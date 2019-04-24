@@ -115,16 +115,16 @@ class ScheduleUserModel extends Model
     public static function cancelScheduleUsers($userIds,$st_id,$beginTime) {
         $where = [];
         if(!empty($userIds[ScheduleTaskUserModel::USER_ROLE_S])){
-            $where[] = "(su.user_role = ".ScheduleTaskUserModel::USER_ROLE_S." and su.user_id in (".explode(',',$userIds[ScheduleTaskUserModel::USER_ROLE_S])."))";
+            $where[] = "(su.user_role = ".ScheduleTaskUserModel::USER_ROLE_S." and su.user_id in (".implode(',',$userIds[ScheduleTaskUserModel::USER_ROLE_S])."))";
         }
         if(!empty($userIds[ScheduleTaskUserModel::USER_ROLE_T])){
-            $where[] = "(su.user_role = ".ScheduleTaskUserModel::USER_ROLE_T." and su.user_id in (".explode(',',$userIds[ScheduleTaskUserModel::USER_ROLE_T])."))";
+            $where[] = "(su.user_role = ".ScheduleTaskUserModel::USER_ROLE_T." and su.user_id in (".implode(',',$userIds[ScheduleTaskUserModel::USER_ROLE_T])."))";
         }
         $sql = "update ".self::$table." as su inner join ".ScheduleModel::$table." as s on s.id = su.schedule_id
-          set status = ".self::STATUS_CANCEL." where s.start_time >= $beginTime 
+          set su.status = ".self::STATUS_CANCEL." where s.start_time >= $beginTime 
           and s.st_id = $st_id and su.status = ".self::STATUS_NORMAL;
         if(!empty($where)) {
-            $sql = " and (".implode(" or ",$where).")";
+            $sql .= " and (".implode(" or ",$where).")";
         }
         $statement =  MysqlDB::getDB()->query($sql);
         if ($statement && $statement->errorCode() == MysqlDB::ERROR_CODE_NO_ERROR) {

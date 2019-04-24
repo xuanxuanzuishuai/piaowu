@@ -9,6 +9,7 @@
 namespace App\Services;
 
 use App\Libs\Constants;
+use App\Libs\SimpleLogger;
 use App\Models\ScheduleModel;
 use App\Models\ScheduleTaskUserModel;
 use App\Models\ScheduleUserModel;
@@ -73,13 +74,15 @@ class ScheduleService
             $sIds[] = $schedule['id'];
             $result[$schedule['id']] = $schedule;
         }
-        $sus = ScheduleUserModel::getSUBySIds($sIds);
-        foreach ($sus as $su) {
-            $su = self::formatScheduleUser($su);
-            if ($su['user_role'] == ScheduleTaskUserModel::USER_ROLE_S) {
-                $result[$su['schedule_id']]['students']++;
-            } else
-                $result[$su['schedule_id']]['teachers']++;
+        if(!empty($sIds)) {
+            $sus = ScheduleUserModel::getSUBySIds($sIds);
+            foreach ($sus as $su) {
+                $su = self::formatScheduleUser($su);
+                if ($su['user_role'] == ScheduleTaskUserModel::USER_ROLE_S) {
+                    $result[$su['schedule_id']]['students']++;
+                } else
+                    $result[$su['schedule_id']]['teachers']++;
+            }
         }
         return [$count, $result];
     }
@@ -155,7 +158,7 @@ class ScheduleService
     public static function bindSUs($stId,$userIds,$userRole) {
         $sus = [];
         $now = time();
-        $schedules = self::getList(['st_id'=>$stId]);
+        list($count,$schedules) = self::getList(['st_id'=>$stId,'status'=>ScheduleModel::STATUS_BOOK]);
         foreach($schedules as $schedule) {
             foreach($userIds as $userId){
                 $suStatus = $schedule['status'] != ScheduleModel::STATUS_BOOK?ScheduleUserModel::STATUS_CANCEL:ScheduleUserModel::STATUS_NORMAL;
@@ -163,6 +166,7 @@ class ScheduleService
                 $sus[] = ['schedule_id'=>$schedule['id'],'user_id'=>$userId,'user_role'=>$userRole,'user_status'=>$userStatus,'status'=>$suStatus,'create_time'=> $now];
             }
         }
+        SimpleLogger::error('mmmm',[$schedules,$userIds,$sus]);
         if (!empty($sus)) {
             $ret = ScheduleUserModel::insertSUs($sus);
             if (is_null($ret))

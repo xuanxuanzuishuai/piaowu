@@ -63,7 +63,8 @@ class ScheduleModel extends Model
             'c.name (course_name)',
             'c.type (course_type)',
             'c.duration',
-            'cr.name (classroom_name)'
+            'cr.name (classroom_name)',
+            'cr.campus_id'
         ], $where);
     }
 
@@ -125,8 +126,10 @@ class ScheduleModel extends Model
             's.create_time',
             's.status',
             's.org_id',
+            's.st_id',
             'c.type (course_type)',
             'c.name (course_name)',
+            'cr.campus_id',
             'cr.name (classroom_name)'
 
         ], $where);
@@ -163,8 +166,7 @@ class ScheduleModel extends Model
             's.org_id',
             'c.type (course_type)',
             'c.name (course_name)',
-            'cr.name (classroom_name)'
-
+            'cr.name (classroom_name)',
         ], $where);
         return $result;
     }

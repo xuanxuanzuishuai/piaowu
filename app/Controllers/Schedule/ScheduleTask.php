@@ -11,6 +11,7 @@ namespace App\Controllers\Schedule;
 
 use App\Controllers\ControllerBase;
 use App\Libs\MysqlDB;
+use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\EmployeeModel;
@@ -356,11 +357,12 @@ class ScheduleTask extends ControllerBase
             $db->rollBack();
             return $response->withJson(Valid::addErrors([], 'schedule_task_bind_student', 'schedule_task_bind_student_error'), StatusCode::HTTP_OK);
         }
-        $res = ScheduleTaskUserService::bindSTUs([$st['id']], [ScheduleTaskUserModel::USER_ROLE_S => [$params['studentIds']]]);
+        $res = ScheduleTaskUserService::bindSTUs([$st['id']], [ScheduleTaskUserModel::USER_ROLE_S => $params['studentIds']]);
         if ($res == false) {
             $db->rollBack();
             return $response->withJson(Valid::addErrors([], 'schedule_task_bind_student', 'schedule_task_bind_student_error'), StatusCode::HTTP_OK);
         }
+        $db->commit();
         $st = ScheduleTaskService::getSTDetail($st['id']);
         return $response->withJson([
             'code' => 0,
@@ -418,11 +420,12 @@ class ScheduleTask extends ControllerBase
             $db->rollBack();
             return $response->withJson(Valid::addErrors([], 'schedule_task_bind_student', 'schedule_task_bind_teacher_error'), StatusCode::HTTP_OK);
         }
-        $res = ScheduleTaskUserService::bindSTUs([$st['id']], [ScheduleTaskUserModel::USER_ROLE_T => [$params['teacherIds']]]);
+        $res = ScheduleTaskUserService::bindSTUs([$st['id']], [ScheduleTaskUserModel::USER_ROLE_T => $params['teacherIds']]);
         if ($res == false) {
             $db->rollBack();
             return $response->withJson(Valid::addErrors([], 'schedule_task_bind_student', 'schedule_task_bind_teacher_error'), StatusCode::HTTP_OK);
         }
+        $db->commit();
         $st = ScheduleTaskService::getSTDetail($st['id']);
         return $response->withJson([
             'code' => 0,
@@ -439,7 +442,6 @@ class ScheduleTask extends ControllerBase
      */
     public function unbindUsers(Request $request, Response $response, $args)
     {
-
         $rules = [
             [
                 'key' => 'st_id',
@@ -481,8 +483,12 @@ class ScheduleTask extends ControllerBase
         $beginDate = empty($params['beginDate']) ? date("Y-m-d") : $params['beginDate'];
         $db = MysqlDB::getDB();
         $db->beginTransaction();
-        ScheduleUserService::cancelScheduleUsers($users, $st['id'], $beginDate);
-        ScheduleTaskUserService::unBindUser($stuIds, $st['id']);
+        if(!empty($users)) {
+            ScheduleUserService::cancelScheduleUsers($users, $st['id'], $beginDate);
+        }
+        if(!empty($stuIds)) {
+            ScheduleTaskUserService::unBindUser($stuIds, $st['id']);
+        }
         $db->commit();
 
         $st = ScheduleTaskService::getSTDetail($st['id']);
@@ -609,6 +615,12 @@ class ScheduleTask extends ControllerBase
 
     }
 
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @param $args
+     * @return Response
+     */
     public function cancelST(Request $request, Response $response, $args)
     {
         $rules = [
