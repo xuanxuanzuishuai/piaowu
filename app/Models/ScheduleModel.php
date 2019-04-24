@@ -93,6 +93,9 @@ class ScheduleModel extends Model
         if (!empty($params['s_time_end'])) {
             $where['s.start_time[<]'] = strtotime($params['s_time_end']);
         }
+        if (!empty($params['st_id'])) {
+            $where['s.st_id'] = $params['st_id'];
+        }
         if ($isOrg == true) {
             global $orgId;
             if ($orgId > 0)
@@ -174,6 +177,11 @@ class ScheduleModel extends Model
     {
         $result = self::updateRecord($schedule['id'], $schedule);
         return ($result && $result > 0);
+    }
+
+    public static function modifyScheduleBySTId($data,$where) {
+        $result = self::batchUpdateRecord($data,$where);
+            return ($result && $result > 0);
     }
 
 }

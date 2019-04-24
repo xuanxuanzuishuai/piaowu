@@ -59,16 +59,16 @@ class ScheduleTaskUserModel extends Model
     }
 
     /**
-     * @param $ids
+     * @param $where
      * @param $status
      * @param null $now
      * @return int|null
      */
-    public static function updateSTUStatus($ids, $status, $now = null)
+    public static function updateSTUStatus($where, $status, $now = null)
     {
         if (empty($now)) {
             $now = time();
         }
-        return MysqlDB::getDB()->updateGetCount(self::$table, ['status' => $status, 'update_time'=>$now], ['id' => $ids]);
+        return MysqlDB::getDB()->updateGetCount(self::$table, ['status' => $status, 'update_time'=>$now], $where);
     }
 }

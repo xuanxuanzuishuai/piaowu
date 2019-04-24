@@ -131,6 +131,7 @@ class Schedule extends ControllerBase
         $newSchedule['status'] = $params['status'];
         $newSchedule['classroom_id'] = $params['classroom_id'];
         $newSchedule['course_id'] = $params['course_id'];
+        $newSchedule['update_time'] = time();
 
         $result = ScheduleService::checkSchedule($newSchedule);
         if($result != true) {
@@ -167,15 +168,19 @@ class Schedule extends ControllerBase
         $db = MysqlDB::getDB();
         $db->beginTransaction();
         ScheduleService::modifySchedule($newSchedule);
-        if (!empty(array_diff($params['studentIds'], $studentIds))) {
-            ScheduleUserService::unBindUser($ssuIds);
-            ScheduleUserService::bindSUs([$newSchedule['id']], [ScheduleTaskUserModel::USER_ROLE_S => $params['studentIds']]);
+        if($newSchedule['status'] == ScheduleModel::STATUS_CANCEL) {
+            ScheduleUserService::unBindUser(array_merge($ssuIds,$stuIds));
         }
-        if (!empty(array_diff($params['teacherIds'], $teacherIds))) {
-            ScheduleUserService::unBindUser($stuIds);
-            ScheduleUserService::bindSUs([$newSchedule['id']], [ScheduleTaskUserModel::USER_ROLE_T => $params['teacherIds']]);
+        else {
+            if ($params['studentIds'] != $studentIds) {
+                ScheduleUserService::unBindUser($ssuIds);
+                ScheduleUserService::bindSUs([$newSchedule['id']], [ScheduleTaskUserModel::USER_ROLE_S => $params['studentIds']]);
+            }
+            if ($params['teacherIds'] != $teacherIds) {
+                ScheduleUserService::unBindUser($stuIds);
+                ScheduleUserService::bindSUs([$newSchedule['id']], [ScheduleTaskUserModel::USER_ROLE_T => $params['teacherIds']]);
+            }
         }
-
         $st = [
             'classroom_id' => $params['classroom_id'],
             'start_time' => date('H:i',strtotime($params['start_time'])),

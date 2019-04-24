@@ -57,4 +57,16 @@ class ScheduleUserService
         $sus = ScheduleUserModel::checkScheduleUser($userIds,$userRols,$startTime,$endTime,$orgId);
         return empty($sus) ? true :$sus;
     }
+
+    /**
+     * @param $users
+     * @param $st_id
+     * @param $beginDate
+     * @return int|null
+     */
+    public static function cancelScheduleUsers($users,$st_id,$beginDate) {
+        return ScheduleUserModel::cancelScheduleUsers($users,$st_id,$beginDate);
+    }
+
+
 }

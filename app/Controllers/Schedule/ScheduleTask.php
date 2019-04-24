@@ -21,6 +21,7 @@ use App\Services\CourseService;
 use App\Services\ScheduleService;
 use App\Services\ScheduleTaskService;
 use App\Services\ScheduleTaskUserService;
+use App\Services\ScheduleUserService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -62,6 +63,12 @@ class ScheduleTask extends ControllerBase
                 'error_code' => 'weekday_is_required',
             ],
             [
+                'key' => 'weekday',
+                'type' => 'in',
+                'value' => [0, 1, 2, 3, 4, 5, 6],
+                'error_code' => 'weekday_is_invalid',
+            ],
+            [
                 'key' => 'expire_start_date',
                 'type' => 'required',
                 'error_code' => 'expire_start_date_is_required',
@@ -98,7 +105,7 @@ class ScheduleTask extends ControllerBase
             if ($params['expire_end_date'] <= $params['expire_start_date']) {
                 return $response->withJson(Valid::addErrors([], 'schedule_task_expire', 'expire_end_date_before_start_date'), StatusCode::HTTP_OK);
             }
-            $st['expire_start_date'] = $params['expire_start_date'];
+            $st['expire_end_date'] = $params['expire_end_date'];
         }
         global $orgId;
         if ($orgId > 0) {
@@ -280,13 +287,17 @@ class ScheduleTask extends ControllerBase
         $db = MysqlDB::getDB();
         $db->beginTransaction();
         ScheduleTaskService::modifyST($newSt);
-        if (!empty(array_diff($params['studentIds'], $studentIds))) {
-            ScheduleTaskUserService::unBindUser($ssuIds);
-            ScheduleTaskUserService::bindSTUs([$newSt['id']], [ScheduleTaskUserModel::USER_ROLE_S => $params['studentIds']]);
-        }
-        if (!empty(array_diff($params['teacherIds'], $teacherIds))) {
-            ScheduleTaskUserService::unBindUser($stuIds);
-            ScheduleTaskUserService::bindSTUs([$newSt['id']], [ScheduleTaskUserModel::USER_ROLE_T => $params['teacherIds']]);
+        if ($newSt['status'] == ScheduleTaskModel::STATUS_CANCEL) {
+            ScheduleTaskUserService::unBindUser(array_merge($ssuIds, $stuIds), $st['id']);
+        } else {
+            if ($studentIds != $params['studentIds']) {
+                ScheduleTaskUserService::unBindUser($ssuIds, $st['id']);
+                ScheduleTaskUserService::bindSTUs([$newSt['id']], [ScheduleTaskUserModel::USER_ROLE_S => $params['studentIds']]);
+            }
+            if ($teacherIds != $params['teacherIds']) {
+                ScheduleTaskUserService::unBindUser($stuIds, $st['id']);
+                ScheduleTaskUserService::bindSTUs([$newSt['id']], [ScheduleTaskUserModel::USER_ROLE_T => $params['teacherIds']]);
+            }
         }
         $db->commit();
         $st = ScheduleTaskService::getSTDetail($newSt['id']);
@@ -327,6 +338,9 @@ class ScheduleTask extends ControllerBase
         if (empty($st)) {
             return $response->withJson(Valid::addErrors([], 'schedule_task', 'schedule_task_not_exist'), StatusCode::HTTP_OK);
         }
+        if ($st['status'] != ScheduleTaskModel::STATUS_BEGIN) {
+            return $response->withJson(Valid::addErrors([], 'schedule_task', 'schedule_task_status_invalid'), StatusCode::HTTP_OK);
+        }
         if (count($params['studentIds']) + count($st['students']) > $st['class_highest']) {
             return $response->withJson(Valid::addErrors([], 'schedule_task_student', 'schedule_task_student_num_more_than_max'), StatusCode::HTTP_OK);
         }
@@ -334,9 +348,17 @@ class ScheduleTask extends ControllerBase
         if ($result !== true) {
             return $response->withJson(Valid::addErrors([], 'schedule_task_student', 'schedule_task_student_time_error'), StatusCode::HTTP_OK);
         }
+        $db = MysqlDB::getDB();
+        $db->beginTransaction();
 
+        $res = ScheduleService::bindSUs($st['id'], $params['studentIds'], ScheduleTaskUserModel::USER_ROLE_S);
+        if ($res == false) {
+            $db->rollBack();
+            return $response->withJson(Valid::addErrors([], 'schedule_task_bind_student', 'schedule_task_bind_student_error'), StatusCode::HTTP_OK);
+        }
         $res = ScheduleTaskUserService::bindSTUs([$st['id']], [ScheduleTaskUserModel::USER_ROLE_S => [$params['studentIds']]]);
         if ($res == false) {
+            $db->rollBack();
             return $response->withJson(Valid::addErrors([], 'schedule_task_bind_student', 'schedule_task_bind_student_error'), StatusCode::HTTP_OK);
         }
         $st = ScheduleTaskService::getSTDetail($st['id']);
@@ -374,22 +396,32 @@ class ScheduleTask extends ControllerBase
             return $response->withJson($result, 200);
         }
         $st = ScheduleTaskService::getSTDetail($params['st_id']);
-
+        if (empty($st)) {
+            return $response->withJson(Valid::addErrors([], 'schedule_task', 'schedule_task_not_exist'), StatusCode::HTTP_OK);
+        }
+        if ($st['status'] != ScheduleTaskModel::STATUS_BEGIN) {
+            return $response->withJson(Valid::addErrors([], 'schedule_task', 'schedule_task_status_invalid'), StatusCode::HTTP_OK);
+        }
         if (!empty($st['teachers'])) {
-            foreach ($st['teachers'] as $stu) {
-                if ($stu['status'] == ScheduleTaskUserModel::STATUS_NORMAL) {
-                    return $response->withJson(Valid::addErrors([], 'schedule_task_teacher', 'schedule_task_teacher_exist'), StatusCode::HTTP_OK);
-                }
-            }
+            return $response->withJson(Valid::addErrors([], 'schedule_task_teacher', 'schedule_task_teacher_exist'), StatusCode::HTTP_OK);
         }
         $result = ScheduleTaskService::checkTeacher($params['teacherIds'], $st['start_time'], $st['end_time'], $st['weekday'], $st['expire_start_date']);
         if ($result !== true) {
             return $response->withJson(Valid::addErrors([], 'schedule_task_teacher', 'schedule_task_teacher_time_error'), StatusCode::HTTP_OK);
         }
 
+        $db = MysqlDB::getDB();
+        $db->beginTransaction();
+
+        $res = ScheduleService::bindSUs($st['id'], $params['teacherIds'], ScheduleTaskUserModel::USER_ROLE_T);
+        if ($res == false) {
+            $db->rollBack();
+            return $response->withJson(Valid::addErrors([], 'schedule_task_bind_student', 'schedule_task_bind_teacher_error'), StatusCode::HTTP_OK);
+        }
         $res = ScheduleTaskUserService::bindSTUs([$st['id']], [ScheduleTaskUserModel::USER_ROLE_T => [$params['teacherIds']]]);
         if ($res == false) {
-            return $response->withJson(Valid::addErrors([], 'schedule_task_bind_student', 'schedule_task_bind_student_error'), StatusCode::HTTP_OK);
+            $db->rollBack();
+            return $response->withJson(Valid::addErrors([], 'schedule_task_bind_student', 'schedule_task_bind_teacher_error'), StatusCode::HTTP_OK);
         }
         $st = ScheduleTaskService::getSTDetail($st['id']);
         return $response->withJson([
@@ -417,9 +449,8 @@ class ScheduleTask extends ControllerBase
             [
                 'key' => 'stu_ids',
                 'type' => 'required',
-                'error_code' => 'stu_ids_are_required',
-            ],
-
+                'error_code' => 'user_id_is_required',
+            ]
         ];
         $params = $request->getParams();
         $result = Valid::validate($params, $rules);
@@ -427,14 +458,33 @@ class ScheduleTask extends ControllerBase
             return $response->withJson($result, 200);
         }
         $st = ScheduleTaskService::getSTDetail($params['st_id']);
-        if (empty($st) || $st['status'] != ScheduleTaskModel::STATUS_NORMAL) {
+        if (empty($st) || $st['status'] != ScheduleTaskModel::STATUS_BEGIN) {
             return $response->withJson(Valid::addErrors([], 'schedule_task', 'schedule_task_not_exist'), StatusCode::HTTP_OK);
         }
-        if (empty($st['students'])) {
-            return $response->withJson(Valid::addErrors([], 'schedule_task', 'schedule_task_student_not_exist'), StatusCode::HTTP_OK);
-        } else {
-            ScheduleTaskUserService::unBindUser($params['stu_ids']);
+        $users = $stuIds = [];
+        if (!empty($st['students'])) {
+            foreach ($st['students'] as $user) {
+                if (in_array($user['id'], $params['stu_ids'])) {
+                    $users[ScheduleTaskUserModel::USER_ROLE_S][] = $user['user_id'];
+                    $stuIds[] = $user['id'];
+                }
+            }
         }
+        if (!empty($st['teachers'])) {
+            foreach ($st['teachers'] as $user) {
+                if (in_array($user['id'], $params['stu_ids'])) {
+                    $users[ScheduleTaskUserModel::USER_ROLE_T][] = $user['user_id'];
+                    $stuIds[] = $user['id'];
+                }
+            }
+        }
+        $beginDate = empty($params['beginDate']) ? date("Y-m-d") : $params['beginDate'];
+        $db = MysqlDB::getDB();
+        $db->beginTransaction();
+        ScheduleUserService::cancelScheduleUsers($users, $st['id'], $beginDate);
+        ScheduleTaskUserService::unBindUser($stuIds, $st['id']);
+        $db->commit();
+
         $st = ScheduleTaskService::getSTDetail($st['id']);
         return $response->withJson([
             'code' => 0,
@@ -559,11 +609,50 @@ class ScheduleTask extends ControllerBase
 
     }
 
-    /**
-     * Todo merge schedule tasks which had already begun
-     */
-    public function merge()
+    public function cancelST(Request $request, Response $response, $args)
     {
+        $rules = [
+            [
+                'key' => 'st_id',
+                'type' => 'required',
+                'error_code' => 'schedule_task_id_is_required'
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $st = ScheduleTaskService::getSTDetail($params['st_id']);
+        if (empty($st)) {
+            return $response->withJson(Valid::addErrors([], 'schedule_task', 'schedule_task_not_exist'), StatusCode::HTTP_OK);
+        }
+        if ($st['status'] != ScheduleTaskModel::STATUS_BEGIN) {
+            return $response->withJson(Valid::addErrors([], 'schedule_task', 'schedule_task_status_invalid'), StatusCode::HTTP_OK);
+        }
+        if (!empty($st['students'])) {
+            return $response->withJson(Valid::addErrors([], 'schedule_task', 'schedule_task_students_is_not_empty'), StatusCode::HTTP_OK);
+        }
+        if (!empty($st['teachers'])) {
+            return $response->withJson(Valid::addErrors([], 'schedule_task', 'schedule_task_teachers_is_not_empty'), StatusCode::HTTP_OK);
+        }
+
+        $db = MysqlDB::getDB();
+        $db->beginTransaction();
+        $res = ScheduleService::cancelScheduleBySTId($st['id']);
+        if ($res == false) {
+            $db->rollBack();
+        }
+        $res = ScheduleTaskService::modifyST(['id' => $st['id'], 'status' => ScheduleTaskModel::STATUS_CANCEL, 'update_time' => time()]);
+        if ($res == false) {
+            $db->rollBack();
+        }
+        $db->commit();
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => [
+            ]
+        ], StatusCode::HTTP_OK);
 
     }
 }

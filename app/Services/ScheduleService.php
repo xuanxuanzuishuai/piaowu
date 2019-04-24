@@ -147,4 +147,27 @@ class ScheduleService
     public static function modifySchedule($newSchedule) {
         return ScheduleModel::modifySchedule($newSchedule);
     }
+
+    public static function cancelScheduleBySTId($stId) {
+        return ScheduleModel::modifyScheduleBySTId(['status'=>ScheduleModel::STATUS_CANCEL,'update_time'=>time()],['st_id'=>$stId,'status'=>ScheduleModel::STATUS_BOOK]);
+    }
+
+    public static function bindSUs($stId,$userIds,$userRole) {
+        $sus = [];
+        $now = time();
+        $schedules = self::getList(['st_id'=>$stId]);
+        foreach($schedules as $schedule) {
+            foreach($userIds as $userId){
+                $suStatus = $schedule['status'] != ScheduleModel::STATUS_BOOK?ScheduleUserModel::STATUS_CANCEL:ScheduleUserModel::STATUS_NORMAL;
+                $userStatus = $userRole == ScheduleTaskUserModel::USER_ROLE_S ? ScheduleUserModel::STUDENT_STATUS_BOOK: ScheduleUserModel::TEACHER_STATUS_SET;
+                $sus[] = ['schedule_id'=>$schedule['id'],'user_id'=>$userId,'user_role'=>$userRole,'user_status'=>$userStatus,'status'=>$suStatus,'create_time'=> $now];
+            }
+        }
+        if (!empty($sus)) {
+            $ret = ScheduleUserModel::insertSUs($sus);
+            if (is_null($ret))
+                return false;
+        }
+        return true;
+    }
 }

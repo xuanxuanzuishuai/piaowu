@@ -29,7 +29,6 @@ class ScheduleTaskUserService
                 }
             }
         }
-        SimpleLogger::error('sssss',$stus);
         if (!empty($stus)) {
             $ret = ScheduleTaskUserModel::addSTU($stus);
             if (is_null($ret))
@@ -40,11 +39,12 @@ class ScheduleTaskUserService
 
     /**
      * @param $stuIds
+     * @param $stId
      * @return int|null
      */
-    public static function unBindUser($stuIds)
+    public static function unBindUser($stuIds,$stId)
     {
-        return ScheduleTaskUserModel::updateSTUStatus($stuIds, ScheduleTaskUserModel::STATUS_CANCEL);
+        return ScheduleTaskUserModel::updateSTUStatus(['id'=>$stuIds,'st_id'=>$stId], ScheduleTaskUserModel::STATUS_CANCEL);
     }
 
     /**

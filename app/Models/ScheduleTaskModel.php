@@ -17,6 +17,7 @@ class ScheduleTaskModel extends Model
     public static $redisExpire = 0;
     public static $redisDB;
 
+    const STATUS_CANCEL_AFTER_BEGIN= -1;//开课后取消
     const STATUS_CANCEL = 0;//取消排课
     const STATUS_NORMAL = 1;//正常排课
     const STATUS_BEGIN = 2;//开课
@@ -36,16 +37,16 @@ class ScheduleTaskModel extends Model
     {
         $db = MysqlDB::getDB();
         $where = [];
-        if (!empty($params['classroom_id'])) {
+        if (is_numeric($params['classroom_id'])) {
             $where['st.classroom_id'] = $params['classroom_id'];
         }
-        if (!empty($params['course_id'])) {
+        if (is_numeric($params['course_id'])) {
             $where['st.course_id'] = $params['course_id'];
         }
-        if (isset($params['status'])) {
+        if (is_numeric($params['status'])) {
             $where['st.status'] = $params['status'];
         }
-        if (isset($params['weekday'])) {
+        if (is_numeric($params['weekday'])) {
             $where['st.weekday'] = $params['weekday'];
         }
         if ($isOrg == true) {
