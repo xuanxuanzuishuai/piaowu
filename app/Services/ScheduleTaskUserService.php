@@ -8,8 +8,8 @@
 
 namespace App\Services;
 
-use App\Controllers\Schedule\ScheduleTaskUser;
 use App\Libs\Constants;
+use App\Libs\SimpleLogger;
 use App\Models\ScheduleTaskUserModel;
 
 class ScheduleTaskUserService
@@ -19,16 +19,18 @@ class ScheduleTaskUserService
      * @param $STUs
      * @return bool
      */
-    public static function bindSTUs($stIds,$STUs) {
+    public static function bindSTUs($stIds, $STUs)
+    {
         $now = time();
-        foreach($stIds as $stId) {
+        foreach ($stIds as $stId) {
             foreach ($STUs as $role => $userIds) {
                 foreach ($userIds as $userId) {
                     $stus[] = ['status' => ScheduleTaskUserModel::STATUS_NORMAL, 'st_id' => $stId, 'user_id' => $userId, 'user_role' => $role, 'create_time' => $now];
                 }
             }
         }
-        if(!empty($stus)) {
+        SimpleLogger::error('sssss',$stus);
+        if (!empty($stus)) {
             $ret = ScheduleTaskUserModel::addSTU($stus);
             if (is_null($ret))
                 return false;
@@ -45,9 +47,14 @@ class ScheduleTaskUserService
         return ScheduleTaskUserModel::updateSTUStatus($stuIds, ScheduleTaskUserModel::STATUS_CANCEL);
     }
 
-    public static function formatSTU($stu) {
-        $stu['stu_user_role'] = DictService::getKeyValue(Constants::DICT_TYPE_SCHEDULE_USER_ROLE,$stu['user_role']);
-        $stu['stu_status'] = DictService::getKeyValue(Constants::DICT_TYPE_SCHEDULE_TASK_USER_STATUS,$stu['status']);
+    /**
+     * @param $stu
+     * @return mixed
+     */
+    public static function formatSTU($stu)
+    {
+        $stu['stu_user_role'] = DictService::getKeyValue(Constants::DICT_TYPE_SCHEDULE_USER_ROLE, $stu['user_role']);
+        $stu['stu_status'] = DictService::getKeyValue(Constants::DICT_TYPE_SCHEDULE_TASK_USER_STATUS, $stu['status']);
         return $stu;
     }
 }

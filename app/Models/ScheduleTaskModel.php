@@ -187,7 +187,7 @@ class ScheduleTaskModel extends Model
         if ($isOrg == true) {
             global $orgId;
             if ($orgId > 0)
-                $where['org_id'] = $orgId;
+                $where['st.org_id'] = $orgId;
         }
         $columns = [
             'st.id',
@@ -204,7 +204,12 @@ class ScheduleTaskModel extends Model
         return MysqlDB::getDB()->select(self::$table . ' (st)', $join, $columns, $where);
     }
 
-    public static function checkSTList($st)
+    /**
+     * @param $st
+     * @param bool $isOrg
+     * @return array
+     */
+    public static function checkSTList($st,$isOrg = true)
     {
         $db = MysqlDB::getDB();
         $where = [
@@ -226,9 +231,14 @@ class ScheduleTaskModel extends Model
         if (!empty($st['id'])) {
             $where['st.id[!]'] = $st['id'];
         }
+        if ($isOrg == true) {
+            global $orgId;
+            if ($orgId > 0)
+                $where['st.org_id'] = $orgId;
+        }
         $join = [
-            '[>]' . CourseModel::$table . " (c)" => ['st.course_id' => 'id'],
-            '[>]' . ClassroomModel::$table . " (cr)" => ['st.classroom_id' => 'id'],
+            '[><]' . CourseModel::$table . " (c)" => ['st.course_id' => 'id'],
+            '[><]' . ClassroomModel::$table . " (cr)" => ['st.classroom_id' => 'id'],
         ];
         $result = $db->select(self::$table . " (st)", $join, [
             'st.id',

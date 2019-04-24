@@ -33,7 +33,7 @@ class ScheduleTaskService
         $stus[ScheduleTaskUserModel::USER_ROLE_T] = $teacherIds;
 
         if (!empty($stus)) {
-            $res = ScheduleTaskUserService::bindSTUs($stId, $stus);
+            $res = ScheduleTaskUserService::bindSTUs([$stId], $stus);
             if ($res == false) {
                 return $res;
             }

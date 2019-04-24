@@ -34,9 +34,14 @@ class ScheduleUserModel extends Model
      * @return bool
      */
     public static function insertSUs($inserts) {
-        return self::batchInsert($inserts,false);
+        return MysqlDB::getDB()->insertGetID(self::$table, $inserts);
     }
 
+    /**
+     * @param $sIds
+     * @param array $status
+     * @return array|null
+     */
     public static function getSUBySIds($sIds,$status = array(self::STATUS_NORMAL)) {
         $sql = "select su.user_id,su.user_role,su.id,su.schedule_id,su.create_time,su.status,t.name as teacher_name,s.name as student_name,su.user_status from ".self::$table ." as su "
             ." left join ".StudentModel::$table." as s on su.user_id = s.id and su.user_role = ".ScheduleTaskUserModel::USER_ROLE_S
@@ -44,5 +49,60 @@ class ScheduleUserModel extends Model
             ." where su.schedule_id in (".implode(',',$sIds).") and su.status in (".implode(",",$status).")";
 
         return MysqlDB::getDB()->queryAll($sql,\PDO::FETCH_COLUMN);
+    }
+
+    /**
+     * @param $userIds
+     * @param $userRole
+     * @param $startTime
+     * @param $endTime
+     * @param $orgSId
+     * @param bool $isOrg
+     * @return array
+     */
+    public static function checkScheduleUser($userIds,$userRole,$startTime,$endTime,$orgSId,$isOrg = true) {
+        $where = [
+            'su.user_id' => $userIds,
+            'su.user_role' => $userRole,
+            's.status' => array(ScheduleModel::STATUS_BOOK,ScheduleModel::STATUS_IN_CLASS),
+            's.start_time[<]' => $endTime,
+            's.end_time[>]' => $startTime,
+            'su.status' => array(self::STATUS_NORMAL),
+        ];
+        if (!empty($orgSTId)) {
+            $where['s.id[!]'] = $orgSId;
+        }
+        if ($isOrg == true) {
+            global $orgId;
+            if ($orgId > 0)
+                $where['s.org_id'] = $orgId;
+        }
+        $columns = [
+            's.id',
+            'su.user_id',
+            'su.user_role',
+            's.classroom_id',
+        ];
+
+        $join = [
+            '[><]' . ScheduleUserModel::$table . ' (su)' => ['s.id' => 'schedule_id'],
+        ];
+
+        return MysqlDB::getDB()->select(self::$table . ' (s)', $join, $columns, $where);
+
+    }
+
+    /**
+     * @param $ids
+     * @param $status
+     * @param null $now
+     * @return int|null
+     */
+    public static function updateSUStatus($ids, $status, $now = null)
+    {
+        if (empty($now)) {
+            $now = time();
+        }
+        return MysqlDB::getDB()->updateGetCount(self::$table, ['status' => $status, 'update_time'=>$now], ['id' => $ids]);
     }
 }

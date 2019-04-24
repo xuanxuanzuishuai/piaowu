@@ -43,7 +43,7 @@ class CourseModel extends Model
      * @param bool $isOrg
      * @return array
      */
-    public static function getCourseListByFilter($page, $count, $params,$isOrg = true) {
+    public static function getCourseListByFilter($page = -1, $count, $params,$isOrg = true) {
         $where = [];
         $db = MysqlDB::getDB();
 
@@ -96,10 +96,13 @@ class CourseModel extends Model
             "c.thumb",
             "e.name(operator_name)"
         ];
+
         // 获取总数
         $totalCount = $db->count(self::$table . "(c)", $join, "*", $where);
         // 分页设置
-        $where['LIMIT'] = [($page - 1) * $count, $count];
+        if($page != -1) {
+            $where['LIMIT'] = [($page - 1) * $count, $count];
+        }
         // 排序设置
         $where['ORDER'] = [
             'c.update_time' => 'DESC'

@@ -190,7 +190,13 @@ class Course extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         //格式化分页参数
-        list($page, $count) = Util::formatPageCount($params);
+        if(isset($params['page'])) {
+            list($page, $count) = Util::formatPageCount($params);
+        }
+        else {
+            $page = -1;
+            $count = 20;
+        }
         list($totalCount, $courseData) = CourseService::getCourseUnitList($page, $count, $params);
 
         return $response->withJson([
