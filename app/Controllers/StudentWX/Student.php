@@ -18,7 +18,6 @@ use App\Models\StudentModelForApp;
 use App\Services\StudentServiceForApp;
 use App\Services\WeChatService;
 use App\Services\StudentService;
-use App\Models\StudentOrgModel;
 use App\Models\UserRefereeModel;
 use App\Models\UserWeixinModel;
 use App\Libs\UserCenter;

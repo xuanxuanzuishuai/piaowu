@@ -16,7 +16,6 @@ use GuzzleHttp\Client;
 class WeChatService
 {
     const cacheKeyTokenPri = "wechat_token_";
-    const cookieTokenKey = "wechat_token";
 
     const USER_TYPE_STUDENT = 1;
     const USER_TYPE_TEACHER = 2;

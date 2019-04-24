@@ -43,6 +43,9 @@ class TeacherOrgService
         if (empty($orgObj)) {
             return;
         }
+        if ($orgObj["status"] != OrganizationModel::STATUS_NORMAL) {
+            return;
+        }
         $boundInfo = TeacherOrgModel::getBoundInfo($org_id, $teacher_id);
         if (empty($boundInfo)){
             TeacherOrgModel::createBoundInfo($org_id, $teacher_id);
