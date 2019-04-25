@@ -11,6 +11,7 @@ use App\Libs\Util;
 use App\Middleware\AppApi;
 use App\Middleware\EmployeeAuthCheckMiddleWare;
 use App\Middleware\EmployeePrivilegeMiddleWare;
+use App\Middleware\OrgAuthCheckMiddleWareForApp;
 use App\Middleware\StudentAuthCheckMiddleWareForApp;
 use App\Controllers\StudentApp\App as StudentAppApp;
 use App\Controllers\StudentApp\Auth as StudentAppAuth;
@@ -18,9 +19,11 @@ use App\Controllers\StudentApp\Opn as StudentAppOpn;
 use App\Controllers\StudentApp\Play as StudentAppPlay;
 use App\Controllers\StudentApp\Homework as StudentAppHomework;
 use App\Controllers\StudentApp\Subscription as StudentAppSubscription;
+use App\Controllers\TeacherApp\Auth as TeacherAppAuth;
 use App\Controllers\TeacherApp\Opn as TeacherAppOpn;
 use App\Controllers\TeacherApp\Schedule as TeacherAppSchedule;
 use App\Controllers\TeacherApp\Play as TeacherAppPlay;
+use App\Controllers\TeacherApp\Org as TeacherAppOrg;
 use Slim\App;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -181,6 +184,29 @@ $arr = array(
         'call' => StudentAppHomework::class . ':list',
         'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApi::class]
     ],
+
+    // /teacher_app/auth/login
+    '/teacher_app/auth/login' => [
+        'method' => ['post'],
+        'call' => TeacherAppAuth::class . ':login',
+        'middles' => [AppApi::class]
+    ],
+    '/teacher_app/auth/token_login' => [
+        'method' => ['post'],
+        'call' => TeacherAppAuth::class . ':tokenLogin',
+        'middles' => [AppApi::class]
+    ],
+    '/teacher_app/org/get_students' => [
+        'method' => ['get'],
+        'call' => TeacherAppOrg::class . ':getStudents',
+        'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApi::class]
+    ],
+    '/teacher_app/org/select_student' => [
+        'method' => ['post'],
+        'call' => TeacherAppOrg::class . ':selectStudent',
+        'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApi::class]
+    ],
+
     // 爱学琴老师端
     '/teacher_app/opn/categories' => [
         'method' => ['get'],

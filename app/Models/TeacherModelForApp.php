@@ -54,4 +54,14 @@ class TeacherModelForApp extends Model
             self::$table . '.thumb',
         ], $where);
     }
+
+    /**
+     * 获取机构下可用老师的列表
+     * @param $orgId
+     * @return array
+     */
+    public static function getTeacherNameByOrg($orgId)
+    {
+        return [];
+    }
 }

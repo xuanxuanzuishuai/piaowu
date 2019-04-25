@@ -16,10 +16,6 @@ use App\Models\TeacherModelForApp;
 
 class TeacherServiceForApp
 {
-    const VALIDATE_CODE_CACHE_KEY_PRI = 'v_code_';
-    const VALIDATE_CODE_TIME_CACHE_KEY_PRI = 'v_code_time_';
-    const VALIDATE_CODE_EX = 300;
-    const VALIDATE_CODE_WAIT_TIME = 60;
 
     public static function registerTeacherInUserCenter($name, $mobile, $uuid = '', $birthday = '', $gender = '')
     {

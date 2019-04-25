@@ -128,4 +128,12 @@ class OpernService
         }
         return $result;
     }
+
+    /**
+     * 默认曲集列表
+     */
+    public static function getDefaultCollections()
+    {
+        return [];
+    }
 }
