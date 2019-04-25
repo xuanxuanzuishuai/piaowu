@@ -74,4 +74,40 @@ class TeacherStudentModel extends Model
         ]);
         return $record;
     }
+
+    /**
+     * 解绑指定机构下指定学生与其已经绑定老师的绑定关系
+     * @param $orgId
+     * @param $studentId
+     * @return int|null
+     */
+    public static function unbindTeacherStudentByStudent($orgId, $studentId)
+    {
+        $db = MysqlDB::getDB();
+        return $db->updateGetCount(self::$table,[
+            'status'      => self::STATUS_STOP,
+            'update_time' => time(),
+        ],[
+            'org_id'     => $orgId,
+            'student_id' => $studentId,
+        ]);
+    }
+
+    /**
+     * 解绑指定机构下指定老师与其已经绑定学生的绑定关系
+     * @param $orgId
+     * @param $teacherId
+     * @return int|null
+     */
+    public static function unbindTeacherStudentByTeacher($orgId, $teacherId)
+    {
+        $db = MysqlDB::getDB();
+        return $db->updateGetCount(self::$table,[
+            'status'      => self::STATUS_STOP,
+            'update_time' => time(),
+        ],[
+            'org_id'     => $orgId,
+            'teacher_id' => $teacherId,
+        ]);
+    }
 }

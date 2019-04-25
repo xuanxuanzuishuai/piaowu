@@ -302,23 +302,35 @@ class StudentServiceForApp
         }
         $newSubEndDate = date('Ymd', strtotime($timeStr, $subEndTime));
 
-        $studentUpdate = ['sub_end_date' => $newSubEndDate];
+        $studentUpdate = [
+            'sub_end_date' => $newSubEndDate,
+            'update_time'  => time(),
+        ];
         if (empty($student['sub_start_date'])) {
             $studentUpdate['sub_start_date'] = $today;
         }
-        StudentModelForApp::updateRecord($student['id'], $studentUpdate);
 
-        GiftCodeModel::updateRecord($gift['id'], [
-            'apply_student' => $student['student_id'],
+        $studentId = $student['id'];
+
+        $affectRows = StudentModelForApp::updateRecord($studentId, $studentUpdate);
+        if($affectRows == 0) {
+            return ['update_student_fail'];
+        }
+
+        $affectRows = GiftCodeModel::updateRecord($gift['id'], [
+            'apply_user'     => $studentId,
             'be_active_time' => time(),
-            'code_status' => GiftCodeModel::CODE_STATUS_HAS_REDEEMED,
+            'code_status'    => GiftCodeModel::CODE_STATUS_HAS_REDEEMED,
         ]);
+        if($affectRows == 0) {
+            return ['update_gift_code_fail'];
+        }
 
         $result = [
             'new_sub_end_date' => $newSubEndDate,
             'generate_channel' => $gift['generate_channel'],
-            'buyer' => $gift['buyer'] ?? 0,
-            'buy_time' => $gift['buy_time'] ?? 0,
+            'buyer'            => $gift['buyer'] ?? 0,
+            'buy_time'         => $gift['buy_time'] ?? 0,
         ];
 
         return [null, $result];

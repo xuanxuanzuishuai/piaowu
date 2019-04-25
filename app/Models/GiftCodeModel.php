@@ -174,7 +174,9 @@ FROM
 ORDER BY {$gift_code}.id DESC
 LIMIT $offset, $count
 ";
-        return [$totalCount, $db->queryAll($sql)];
+        $records = $db->queryAll($sql);
+
+        return [$totalCount, $records];
     }
 
 

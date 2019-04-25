@@ -90,6 +90,7 @@ class GiftCodeService
     public static function batchGetCode($params)
     {
         list($totalCount, $data) = GiftCodeModel::getLikeCodeInfo($params);
+
         if (!empty($data)) {
             foreach ($data as $key => $value) {
                 $data[$key]['generate_channel'] = Dict::getCodeChannel($value['generate_channel']);
@@ -108,7 +109,7 @@ class GiftCodeService
                 //购买人（根据购买渠道区分）
                 switch ($value['generate_channel']) {
                     case GiftCodeModel::BUYER_TYPE_ORG:
-                        $data[$key]['buyer_name'] = $value['agent_name'];
+                        $data[$key]['buyer_name'] = $value['name'];
                         break;
                     case GiftCodeModel::BUYER_TYPE_STUDENT:
                         $data[$key]['buyer_name'] = $value['name'] . '(' . $value['mobile'] . ')';

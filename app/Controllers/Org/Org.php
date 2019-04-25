@@ -9,10 +9,13 @@
 namespace App\Controllers\Org;
 
 use App\Controllers\ControllerBase;
+use App\Libs\MysqlDB;
 use App\Libs\Valid;
 use App\Models\OrganizationModel;
+use App\Models\StudentModel;
 use App\Models\StudentOrgModel;
 use App\Models\TeacherOrgModel;
+use App\Models\TeacherStudentModel;
 use App\Services\OrganizationService;
 use App\Services\StudentService;
 use App\Services\TeacherService;
@@ -329,9 +332,29 @@ class Org extends ControllerBase
 
         //状态不同时才更新
         if($entry['status'] != $bind) {
-            $affectRows = StudentService::updateStatusWithOrg($orgId, $studentId, $bind);
-            if($affectRows == 0) {
-                return $response->withJson(Valid::addErrors([],'student','bind_unbind_fail'));
+            //解绑机构和学生时，同时也解绑学生同其机构下的老师
+            if($bind == StudentOrgModel::STATUS_STOP) {
+                $db = MysqlDB::getDB();
+                $db->beginTransaction();
+
+                $affectRows = StudentService::updateStatusWithOrg($orgId, $studentId, $bind);
+                if($affectRows == 0) {
+                    $db->rollBack();
+                    return $response->withJson(Valid::addErrors([],'student','bind_unbind_fail'));
+                }
+
+                $affectRows = TeacherStudentModel::unbindTeacherStudentByStudent($orgId, $studentId);
+                if(is_null($affectRows)) {
+                    $db->rollBack();
+                    return $response->withJson(Valid::addErrors([],'student','unbind_teacher_and_student_fail'));
+                }
+
+                $db->commit();
+            } else {
+                $affectRows = StudentService::updateStatusWithOrg($orgId, $studentId, $bind);
+                if($affectRows == 0) {
+                    return $response->withJson(Valid::addErrors([],'student','bind_unbind_fail'));
+                }
             }
         }
 
@@ -384,9 +407,29 @@ class Org extends ControllerBase
 
         //状态不同时才更新
         if($entry['status'] != $bind) {
-            $affectRows = TeacherService::updateStatusWithOrg($orgId, $teacherId, $bind);
-            if($affectRows == 0) {
-                return $response->withJson(Valid::addErrors([],'teacher','bind_unbind_fail'));
+            //解绑机构和老师时，同时也解绑老师同其机构下的学生
+            if($bind == TeacherOrgModel::STATUS_STOP) {
+                $db = MysqlDB::getDB();
+                $db->beginTransaction();
+
+                $affectRows = TeacherService::updateStatusWithOrg($orgId, $teacherId, $bind);
+                if($affectRows == 0) {
+                    $db->rollBack();
+                    return $response->withJson(Valid::addErrors([],'student','bind_unbind_fail'));
+                }
+
+                $affectRows = TeacherStudentModel::unbindTeacherStudentByTeacher($orgId, $teacherId);
+                if(is_null($affectRows)) {
+                    $db->rollBack();
+                    return $response->withJson(Valid::addErrors([],'student','unbind_teacher_and_student_fail'));
+                }
+
+                $db->commit();
+            } else {
+                $affectRows = TeacherService::updateStatusWithOrg($orgId, $teacherId, $bind);
+                if($affectRows == 0) {
+                    return $response->withJson(Valid::addErrors([],'teacher','bind_unbind_fail'));
+                }
             }
         }
 

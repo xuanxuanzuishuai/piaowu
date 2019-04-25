@@ -11,6 +11,7 @@ namespace App\Models;
 use App\Libs\MysqlDB;
 use App\Libs\Util;
 use App\Services\ChannelService;
+use Medoo\Medoo;
 
 class StudentModel extends Model
 {
@@ -20,6 +21,9 @@ class StudentModel extends Model
     const GENDER_UNKNOWN = 0; // 保密
     const GENDER_MALE = 1; //男
     const GENDER_FEMALE = 2; //女
+
+    const STATUS_NORMAL = 1;
+    const STATUS_STOP = 0;
 
     /**
      * 获取客户数据
@@ -550,28 +554,46 @@ class StudentModel extends Model
         $t = TeacherStudentModel::$table;
         $status = TeacherStudentModel::STATUS_NORMAL;
 
-        $limit = Util::limitation($page, $count);
-
-        if(empty($orgId)) {
-            $sql = "select * from {$s} order by create_time desc {$limit}";
-            $countSql = "select count(*) count from {$s}";
-        } else {
-            $sql = "select s.*,t.teacher_id,te.name teacher_name,t.status ts_status,so.status bind_status 
-                    from {$s} s inner join {$so} so 
-                    on s.id = so.student_id 
-                    and so.org_id = {$orgId} left join {$t} t on s.id = t.student_id and t.status = {$status}
-                    and t.org_id = {$orgId}
-                    left join teacher te on te.id = t.teacher_id
-                    order by s.create_time desc {$limit}";
-            $countSql = "select count(*) count from {$s} s,{$so} so where s.id = so.student_id  
-                        and so.org_id = {$orgId}";
+        //按姓名或手机号模糊查询,查询出结果后直接返回
+        if(!empty($params['key'])) {
+            $key = $params['key'];
+            $records = $db->queryAll("select * from {$s} s where s.name like :name or mobile like :mobile", [
+                ':name'   => "%{$key}%",
+                ':mobile' => "{$key}%",
+            ]);
+            return [$records, count($records)];
         }
 
-        $list = $db->queryAll($sql);
+        $limit = Util::limitation($page, $count);
+        $where = ' where 1=1 ';
+        $map = [];
 
-        $total = $db->queryAll($countSql);
+        if(!empty($params['name'])) {
+            $where .= " and s.name like :name ";
+            $map[':name'] = "%{$params['name']}%";
+        }
+        if(!empty($params['mobile'])) {
+            $where .= " and s.mobile like :mobile ";
+            $map[':mobile'] = "{$params['mobile']}%";
+        }
 
-        return [$list,$total[0]['count']];
+        $sql = "select s.*,t.teacher_id,te.name teacher_name,t.status ts_status,so.status bind_status
+                from {$s} s inner join {$so} so
+                on s.id = so.student_id
+                and so.org_id = {$orgId} left join {$t} t on s.id = t.student_id and t.status = {$status}
+                and t.org_id = {$orgId}
+                left join teacher te on te.id = t.teacher_id
+                {$where}
+                order by s.create_time desc {$limit}";
+
+        $countSql = "select count(*) count from {$s} s inner join {$so} so on s.id = so.student_id
+                    and so.org_id = {$orgId} {$where}";
+
+        $records = $db->queryAll($sql, $map);
+
+        $total = $db->queryAll($countSql, $map);
+
+        return [$records, $total[0]['count']];
     }
 
     /**

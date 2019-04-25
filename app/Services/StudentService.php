@@ -117,6 +117,7 @@ class StudentService
         list($records, $total) = StudentModel::selectStudentByOrg($orgId, $page, $count, $params);
         foreach($records as &$r) {
             $r['student_level'] = DictService::getKeyValue(Constants::DICT_TYPE_STUDENT_LEVEL, $r['student_level']);
+            $r['gender']        = DictService::getKeyValue(Constants::DICT_TYPE_GENDER, $r['gender']);
         }
 
         return [$records, $total];

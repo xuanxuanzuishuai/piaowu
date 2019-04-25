@@ -15,6 +15,9 @@ use App\Libs\Util;
 
 class TeacherModel extends Model
 {
+    const STATUS_NORMAL = 1;
+    const STATUS_STOP = 0;
+
     public static $table = "teacher";
     public static $redisExpire = 1;
     public static $redisDB;
@@ -236,8 +239,14 @@ class TeacherModel extends Model
     public static function whereForEntry($params, $ta_role_id = '')
     {
         /** 以下是老师的搜索条件 */
-        $where = '';
+        $where = ' where 1=1 ';
         $map = [];
+
+        //是否已经绑定机构
+        if(!empty($params['is_bind'])) {
+            $where .= " AND tr.status = :is_bind ";
+            $map[':is_bind'] = $params['is_bind'];
+        }
         // 姓名/手机号/ID
         if (!empty($params['name_id'])) {
             $where .= " AND (t.id like :name_id or t.name like :name_id or mobile like :name_id) ";
@@ -326,10 +335,6 @@ class TeacherModel extends Model
         if (!empty($params['last_class_time_end'])) {
             $where .= " AND t.last_class_time < :last_class_time_end ";
             $map[':last_class_time_end'] = strtotime($params['last_class_time_end']);
-        }
-
-        if(count($map) > 0) {
-            $where = ' where '.$where;
         }
 
 
