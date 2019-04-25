@@ -1895,4 +1895,8 @@ class TeacherService
     {
         return TeacherOrgModel::updateStatus($orgId, $teacherId, $status);
     }
+
+    public static function getTeacherByIds($tIds) {
+        return TeacherOrgModel::getRecords(['teacher_id'=>$tIds,'status'=>TeacherOrgModel::STATUS_NORMAL]);
+    }
 }

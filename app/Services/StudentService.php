@@ -539,4 +539,9 @@ class StudentService
     public static function updateStatusWithOrg($orgId, $studentId, $status) {
         return StudentOrgModel::updateStatus($orgId, $studentId, $status);
     }
+
+    public static function getStudentByIds($sIds)
+    {
+        return StudentModel::getRecords(['id'=>$sIds]);
+    }
 }
