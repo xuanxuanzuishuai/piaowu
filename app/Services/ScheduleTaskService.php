@@ -78,17 +78,25 @@ class ScheduleTaskService
     {
         $stIds = $result = [];
         list($count, $sts) = ScheduleTaskModel::getSTList($params, $page, $count);
+        if(empty($sts)) {
+            return [0,[]];
+        }
         foreach ($sts as $st) {
-            $st = self::formatST($st);
             $stIds[] = $st['id'];
             $result[$st['id']] = $st;
         }
-        $stus = ScheduleTaskUserModel::getSTUBySTIds($stIds);
-        foreach ($stus as $stu) {
-            if ($stu['user_role'] == ScheduleTaskUserModel::USER_ROLE_S) {
-                $result[$stu['st_id']]['students']++;
-            } else
-                $result[$stu['st_id']]['teachers']++;
+
+            $stus = ScheduleTaskUserModel::getSTUBySTIds($stIds);
+            foreach ($stus as $stu) {
+                if ($stu['user_role'] == ScheduleTaskUserModel::USER_ROLE_S) {
+                    $result[$stu['st_id']]['students']++;
+                } else
+                    $result[$stu['st_id']]['teachers']++;
+            }
+
+
+        foreach($result as $st_id => $st) {
+            $result[$st_id] = self::formatST($st);
         }
         return [$count, $result];
     }
@@ -103,7 +111,6 @@ class ScheduleTaskService
         if (empty($st)) {
             return null;
         }
-        $st = self::formatST($st);
 
         $stus = ScheduleTaskUserModel::getSTUBySTIds([$st['id']]);
         foreach ($stus as $stu) {
@@ -113,6 +120,7 @@ class ScheduleTaskService
             } else
                 $st['teachers'][] = $stu;
         }
+        $st = self::formatST($st);
         return $st;
     }
 
@@ -171,7 +179,8 @@ class ScheduleTaskService
      */
     public static function formatST($st) {
         if($st['status'] == ScheduleTaskModel::STATUS_NORMAL) {
-            $st['st_status'] = $st['class_highest'] > count($st['student'])?ScheduleTaskModel::STATUS_UNFULL:ScheduleTaskModel::STATUS_FULL;
+            $num = is_array($st['students'])?count($st['students']):$st['students'];
+            $st['st_status'] = $st['class_highest'] > $num ?ScheduleTaskModel::STATUS_UNFULL:ScheduleTaskModel::STATUS_FULL;
         }
         else {
             $st['st_status'] = $st['status'];

@@ -37,16 +37,16 @@ class Course extends ControllerBase
                 'type' => 'required',
                 'error_code' => 'level_is_required',
             ],
-            [
-                'key' => 'product_line',
-                'type' => 'required',
-                'error_code' => 'product_line_is_required',
-            ],
-            [
-                'key' => 'product_line',
-                'type' => 'integer',
-                'error_code' => 'product_line_must_be_integer',
-            ],
+//            [
+//                'key' => 'product_line',
+//                'type' => 'required',
+//                'error_code' => 'product_line_is_required',
+//            ],
+//            [
+//                'key' => 'product_line',
+//                'type' => 'integer',
+//                'error_code' => 'product_line_must_be_integer',
+//            ],
             [
                 'key' => 'course_type',
                 'type' => 'required',

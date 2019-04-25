@@ -85,7 +85,7 @@ class ScheduleTaskModel extends Model
             'st.real_schedule_id',
             'c.name (course_name)',
             'c.class_highest',
-            'c.type',
+            'c.type (course_type)',
             'cr.name (classroom_name)'
 
         ], $where);
@@ -128,6 +128,7 @@ class ScheduleTaskModel extends Model
             'c.num',
             'cr.campus_id',
             'c.duration',
+            'c.type (course_type)',
             'cr.name (classroom_name)'
         ], $where);
     }

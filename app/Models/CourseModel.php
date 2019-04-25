@@ -48,17 +48,9 @@ class CourseModel extends Model
         $db = MysqlDB::getDB();
 
         $join = [
-            '[><]' . AppModel::$table .  "(a)"    => ['c.app_id' => 'id'],
             '[><]' . EmployeeModel::$table . "(e)" => ['c.operator_id' => 'id']
         ];
 
-        // 筛选参数
-        if (!empty($params['product_line'])) {
-            $where['AND']['a.type'] = $params['product_line'];
-        }
-        if (!empty($params['instrument'])) {
-            $where['AND']['a.instrument'] = $params['instrument'];
-        }
         if (!empty($params['course_type'])) {
             $where['AND']['c.type'] = $params['course_type'];
         }
@@ -80,9 +72,7 @@ class CourseModel extends Model
         $columns = [
             "c.id(course_id)",
             "c.name",
-            "a.type(product_line)",
             "c.type(course_type)",
-            "a.instrument",
             "c.duration",
             "c.level",
             "c.oprice",
@@ -94,7 +84,8 @@ class CourseModel extends Model
             "c.create_time",
             "c.update_time",
             "c.thumb",
-            "e.name(operator_name)"
+            "e.name(operator_name)",
+            "c.num",
         ];
 
         // 获取总数
@@ -126,18 +117,13 @@ class CourseModel extends Model
     public static function getCourseUnitDetailById($courseId) {
         $db = MysqlDB::getDB();
         $where['c.id'] = $courseId;
-        $join = [
-            '[><]' . AppModel::$table . "(a)" => ['c.app_id' => 'id'],
-        ];
+
         // 获取数据
         $courseUnitList = $db->get(self::$table ."(c)",
-            $join,
             [
                 "c.id(course_id)",
                 "c.name",
-                "a.type(product_line)",
                 "c.type(course_type)",
-                "a.instrument",
                 "c.duration",
                 "c.level",
                 "c.oprice",
@@ -147,7 +133,7 @@ class CourseModel extends Model
                 "c.thumb",
                 "c.status",
                 "c.create_time",
-                "a.id(app_id)",
+                "c.num",
             ],
             $where
         );
@@ -162,8 +148,8 @@ class CourseModel extends Model
      * @return array
      */
     public static function courseDataToHumanReadable($params, $isTranslate = true) {
-        $isTranslate && $params['product_line'] = AppModel::getAppName($params['product_line']);
-        $isTranslate && $params['instrument'] = DictModel::getKeyValue(Constants::DICT_TYPE_INSTRUMENT, $params['instrument']);
+//        $isTranslate && $params['product_line'] = AppModel::getAppName($params['product_line']);
+//        $isTranslate && $params['instrument'] = DictModel::getKeyValue(Constants::DICT_TYPE_INSTRUMENT, $params['instrument']);
         $isTranslate && $params['course_type'] = DictModel::getKeyValue(Constants::DICT_COURSE_TYPE, $params['course_type']);
         $isTranslate && $params['status'] = DictModel::getKeyValue(Constants::DICT_COURSE_STATUS, $params['status']);
         $isTranslate && $params['level'] = DictModel::getKeyValue(Constants::DICT_COURSE_LEVEL, $params['level']);

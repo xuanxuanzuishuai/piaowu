@@ -51,11 +51,6 @@ class ScheduleTask extends ControllerBase
                 'error_code' => 'start_time_is_required',
             ],
             [
-                'key' => 'end_time',
-                'type' => 'required',
-                'error_code' => 'end_time_is_required',
-            ],
-            [
                 'key' => 'course_id',
                 'type' => 'required',
                 'error_code' => 'course_id_is_required',
@@ -82,9 +77,7 @@ class ScheduleTask extends ControllerBase
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, 200);
         }
-        if ($params['start_time'] >= $params['end_time']) {
-            return $response->withJson(Valid::addErrors([], 'schedule_task_time', 'end_time_before_start_time'), StatusCode::HTTP_OK);
-        }
+
         $classroom = ClassroomService::getById($params['classroom_id']);
         if (empty($classroom)) {
             return $response->withJson(Valid::addErrors([], 'schedule_classroom', 'schedule_classroom_not_exist'), StatusCode::HTTP_OK);
@@ -94,6 +87,7 @@ class ScheduleTask extends ControllerBase
         if (empty($course)) {
             return $response->withJson(Valid::addErrors([], 'schedule_course', 'schedule_course_not_exist'), StatusCode::HTTP_OK);
         }
+        $params['end_time'] = date("H:i",strtotime($params['start_time'])+$course['duration']);
         $st = [
             'classroom_id' => $params['classroom_id'],
             'start_time' => $params['start_time'],
@@ -186,11 +180,6 @@ class ScheduleTask extends ControllerBase
                 'error_code' => 'start_time_is_required',
             ],
             [
-                'key' => 'end_time',
-                'type' => 'required',
-                'error_code' => 'end_time_is_required',
-            ],
-            [
                 'key' => 'course_id',
                 'type' => 'required',
                 'error_code' => 'course_id_is_required',
@@ -227,9 +216,6 @@ class ScheduleTask extends ControllerBase
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, 200);
         }
-        if ($params['start_time'] >= $params['end_time']) {
-            return $response->withJson(Valid::addErrors([], 'schedule_task_time', 'end_time_before_start_time'), StatusCode::HTTP_OK);
-        }
         if ($params['expire_end_date'] > '0000-00-00' && $params['expire_end_date'] <= $params['expire_start_date']) {
             return $response->withJson(Valid::addErrors([], 'schedule_task_expire', 'expire_end_date_before_start_date'), StatusCode::HTTP_OK);
         }
@@ -240,12 +226,12 @@ class ScheduleTask extends ControllerBase
         if ($st['status'] != ScheduleTaskModel::STATUS_NORMAL) {
             return $response->withJson(Valid::addErrors([], 'schedule_task', 'schedule_task_not_1exist'), StatusCode::HTTP_OK);
         }
+
         $newSt['id'] = $st['id'];
         $newSt['course_id'] = $params['course_id'];
         $newSt['classroom_id'] = $params['classroom_id'];
         $newSt['status'] = $params['status'];
         $newSt['start_time'] = $params['start_time'];
-        $newSt['end_time'] = $params['end_time'];
         $newSt['weekday'] = $params['weekday'];
         $newSt['expire_start_date'] = $params['expire_start_date'];
         $newSt['expire_end_date'] = $params['expire_end_date'];
@@ -262,13 +248,14 @@ class ScheduleTask extends ControllerBase
             if (empty($course)) {
                 return $response->withJson(Valid::addErrors([], 'schedule_course', 'schedule_course_not_exist'), StatusCode::HTTP_OK);
             }
+            $newSt['end_time'] = date("H:i",strtotime($params['start_time'])+$course['duration']);
         }
         $result = ScheduleTaskService::checkST($newSt);
         if ($result !== true) {
             return $response->withJson(Valid::addErrors(['data' => ['result' => $result]], 'schedule_task_classroom', 'schedule_task_classroom_conflict'), StatusCode::HTTP_OK);
         }
 
-        $studentIds = [];
+        $studentIds = $ssuIds = $stuIds =[];
         if (!empty($st['students'])) {
             foreach ($st['students'] as $student) {
                 $studentIds[] = $student['user_id'];
@@ -314,11 +301,15 @@ class ScheduleTask extends ControllerBase
             ScheduleTaskUserService::unBindUser(array_merge($ssuIds, $stuIds), $st['id']);
         } else {
             if ($studentIds != $params['studentIds']) {
-                ScheduleTaskUserService::unBindUser($ssuIds, $st['id']);
+                if(!empty($ssuIds)) {
+                    ScheduleTaskUserService::unBindUser($ssuIds, $st['id']);
+                }
                 ScheduleTaskUserService::bindSTUs([$newSt['id']], [ScheduleTaskUserModel::USER_ROLE_S => $params['studentIds']]);
             }
             if ($teacherIds != $params['teacherIds']) {
-                ScheduleTaskUserService::unBindUser($stuIds, $st['id']);
+                if(!empty($stuIds)) {
+                    ScheduleTaskUserService::unBindUser($stuIds, $st['id']);
+                }
                 ScheduleTaskUserService::bindSTUs([$newSt['id']], [ScheduleTaskUserModel::USER_ROLE_T => $params['teacherIds']]);
             }
         }

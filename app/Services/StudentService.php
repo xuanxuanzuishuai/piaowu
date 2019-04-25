@@ -543,6 +543,6 @@ class StudentService
 
     public static function getStudentByIds($sIds)
     {
-        return StudentModel::getRecords(['id'=>$sIds]);
+        return StudentOrgModel::getRecords(['student_id'=>$sIds,'status'=>StudentOrgModel::STATUS_NORMAL]);
     }
 }
