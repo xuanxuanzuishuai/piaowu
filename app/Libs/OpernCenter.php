@@ -16,7 +16,7 @@ use Slim\Http\StatusCode;
 class OpernCenter
 {
     // 曲谱资源的appId
-    const PRO_ID_AI_STUDENT = 4; // 爱学琴
+    const PRO_ID_AI_STUDENT = 1; // 爱学琴
     const PRO_ID_MUSIC_CENTER = 2; // 直营
     const PRO_ID_AI_TEACHER = 4; // 爱练琴
 
