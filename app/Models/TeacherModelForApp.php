@@ -62,6 +62,20 @@ class TeacherModelForApp extends Model
      */
     public static function getTeacherNameByOrg($orgId)
     {
-        return [];
+        $db = MysqlDB::getDB();
+        $teachers = $db->select(TeacherOrgModel::$table . '(to)',
+            [
+                '[><]' . TeacherModel::$table . '(t)' => ['to.teacher_id' => 'id']
+            ], ['t.id', 't.name'],
+            [
+                'to.org_id' => $orgId,
+                'to.status' => TeacherOrgModel::STATUS_NORMAL,
+                't.status' => StudentModel::STATUS_NORMAL
+            ]);
+
+        if (empty($teachers)) {
+            return [];
+        }
+        return $teachers;
     }
 }

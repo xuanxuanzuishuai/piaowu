@@ -185,8 +185,8 @@ class OrganizationServiceForApp
         $onlineTeachers = OrganizationModelForApp::getOnlineTeacher($orgId);
         $onlineTeacherIds = array_column($onlineTeachers, 'teacher_id');
 
-        foreach ($teachers as $teacher) {
-            $teacher['online'] = in_array($teacher['id'], $onlineTeacherIds) ? 1 : 0;
+        foreach ($teachers as $idx => $teacher) {
+            $teachers[$idx]['online'] = in_array($teacher['id'], $onlineTeacherIds) ? 1 : 0;
         }
 
         return $teachers;
