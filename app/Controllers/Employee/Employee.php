@@ -104,7 +104,7 @@ class Employee extends ControllerBase
         list($page, $count) = Util::formatPageCount($params);
 
         list($users, $totalCount) = EmployeeService::getEmployeeService($page, $count, $params);
-        $roles = RoleModel::getRoles();
+        $roles = RoleModel::selectOrgRoles();
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
