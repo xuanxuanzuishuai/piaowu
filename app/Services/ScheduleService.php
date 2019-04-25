@@ -9,7 +9,6 @@
 namespace App\Services;
 
 use App\Libs\Constants;
-use App\Libs\SimpleLogger;
 use App\Models\ScheduleModel;
 use App\Models\ScheduleTaskUserModel;
 use App\Models\ScheduleUserModel;
@@ -151,10 +150,20 @@ class ScheduleService
         return ScheduleModel::modifySchedule($newSchedule);
     }
 
+    /**
+     * @param $stId
+     * @return bool
+     */
     public static function cancelScheduleBySTId($stId) {
         return ScheduleModel::modifyScheduleBySTId(['status'=>ScheduleModel::STATUS_CANCEL,'update_time'=>time()],['st_id'=>$stId,'status'=>ScheduleModel::STATUS_BOOK]);
     }
 
+    /**
+     * @param $stId
+     * @param $userIds
+     * @param $userRole
+     * @return bool
+     */
     public static function bindSUs($stId,$userIds,$userRole) {
         $sus = [];
         $now = time();
@@ -172,5 +181,13 @@ class ScheduleService
                 return false;
         }
         return true;
+    }
+
+    /**
+     * @param $scheduleId
+     * @return int|null
+     */
+    public static function finish($scheduleId) {
+        return ScheduleModel::updateRecord($scheduleId,['status'=>ScheduleModel::STATUS_FINISH,'update_time'=>time()]);
     }
 }

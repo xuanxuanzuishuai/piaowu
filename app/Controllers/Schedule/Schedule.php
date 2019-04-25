@@ -336,4 +336,32 @@ class Schedule extends ControllerBase
         ]);
     }
 
+    public function finish(Request $request, Response $response, $args)
+    {
+        $rules = [
+            [
+                'key' => 'schedule_id',
+                'type' => 'required',
+                'error_code' => 'schedule_id_is_required',
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, 200);
+        }
+        $schedule = ScheduleService::getDetail($params['schedule_id']);
+        if (empty($schedule) || $schedule['status'] != ScheduleModel::STATUS_BOOK) {
+            return $response->withJson(Valid::addErrors([], 'schedule', 'schedule_not_exist'));
+        }
+
+        ScheduleService::finish($schedule['id']);
+        $schedule = ScheduleService::getDetail($params['schedule_id']);
+        return $response->withJson([
+            'code' => 0,
+            'data' => ['schedule' => $schedule]
+        ]);
+
+    }
+
 }
