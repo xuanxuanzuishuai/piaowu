@@ -138,22 +138,31 @@ class HomeworkService
      * @param int $lessonId  课程ID(曲谱ID)
      * @return mixed
      */
-    public static function getStudentHomeworkPractice($studentId, $lessonId){
+    public static function getStudentHomeworkPractice($studentId, $taskId){
         // 获取作业
         $where = [
             HomeworkModel::$table . ".student_id" => $studentId,
-            HomeworkTaskModel::$table . ".lesson_id" => $lessonId
+            HomeworkTaskModel::$table . ".id" => $taskId
         ];
         $homework = HomeworkModel::getHomeworkList($where);
-
+        if(empty($homework)){
+            return [null, null];
+        }
+        $homework = $homework[0];
         // 获取达成作业子任务的练琴记录
-        $taskId = array_column($homework, 'task_id');
         $playRecordMeetRequiremnet = HomeworkCompleteModel::getPlayRecordIdByTaskId($taskId);
         $playRecordMeetRequiremnetIds = array_column($playRecordMeetRequiremnet, 'play_record_id');
+
         // 全部练习纪录
-        $playRecords = PlayRecordModel::getPlayRecordByLessonId($lessonId, PlayRecordModel::TYPE_AI);
+        $playRecords = PlayRecordModel::getPlayRecordByLessonId($homework['lesson_id'],
+            $studentId, PlayRecordModel::TYPE_AI);
         $plays = [];
+        list($start, $end) = [$homework['created_time'], $homework['end_time']];
         foreach ($playRecords as $play){
+            $play_time = $play['created_time'];
+            if ( $play_time < $start || $play_time > $end){
+                continue;
+            }
             if(in_array($play['id'] , $playRecordMeetRequiremnetIds)){
                 $play['complete'] = 1;
             }else{
@@ -169,8 +178,8 @@ class HomeworkService
      * @param $lessonIds
      * @return array
      */
-    public static function getBestPlayRecordByLessonId($lessonIds){
-        $playRecords = PlayRecordModel::getPlayRecordByLessonId($lessonIds, PlayRecordModel::TYPE_AI);
+    public static function getBestPlayRecordByLessonId($lessonIds, $studentId){
+        $playRecords = PlayRecordModel::getPlayRecordByLessonId($lessonIds, $studentId, PlayRecordModel::TYPE_AI);
         $container = array();
         foreach($playRecords as $record){
             $lesson_id = $record['lesson_id'];

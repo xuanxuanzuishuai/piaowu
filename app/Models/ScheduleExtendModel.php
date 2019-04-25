@@ -9,9 +9,6 @@
 namespace App\Models;
 
 
-use App\Libs\MysqlDB;
-use App\Libs\SimpleLogger;
-
 class ScheduleExtendModel extends Model
 {
     public static $table = "schedule_extend";
@@ -22,9 +19,8 @@ class ScheduleExtendModel extends Model
      * @param bool $isOrg TODO $isOrg means what
      * @return int|mixed|null|string
      */
-    public static function insertRecord($data, $isOrg=false)
+    public static function insertReport($data, $isOrg=false)
     {
-        $report = $data['report'];
-        return parent::insertRecord($report, $isOrg);
+        return self::insertRecord($data, $isOrg);
     }
 }

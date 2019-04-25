@@ -12,6 +12,7 @@ student_name_length_more_then_10='姓名字符长度不能大于10'
 org_can_not_be_empty='机构不能为空'
 org_is_disabled='机构账号被禁用'
 have_no_binding_to_student='没有绑定学生'
+role_error='角色不正确'
 
 sub_verify_error='用户未激活'
 user_register_fail='用户注册失败'

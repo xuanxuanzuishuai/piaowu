@@ -6,17 +6,13 @@
  * Time: 15:28
  */
 
-
 namespace App\Controllers\TeacherApp;
-
 
 use App\Controllers\ControllerBase;
 use App\Libs\MysqlDB;
-use App\Libs\Util;
 use App\Libs\Valid;
-use App\Models\AppConfigModel;
 use App\Services\HomeworkService;
-use App\Services\ScheduleService;
+use App\Services\ScheduleServiceForApp;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -37,23 +33,31 @@ class Schedule extends ControllerBase
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
+        $param = $param['data'];
 
         $db = MysqlDB::getDB();
         $db->beginTransaction();
-        // 写入课后作业
-        HomeworkService::createHomework(
-            $param['schedule_id'],
-            $param['$org_id'],
-            $param['teacher_id'],
-            $param['student_id'],
-            $param['homework']['limited_days'],
-            $param['homework']['tasks'],
-            $param['remark']
-        );
-
         // 结束上课
-        ScheduleService::endSchedule($param);
+        list($scheduleEndError, $scheduleId) = ScheduleServiceForApp::endSchedule($param);
+        if($scheduleEndError){
+            $result = Valid::addAppErrors([], $scheduleEndError);
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        // 写入课后作业
+        foreach ($param['homework'] as $homework){
+            HomeworkService::createHomework(
+                $scheduleId,
+                $param['org_id'],
+                $param['teacher_id'],
+                $param['student_id'],
+                $homework['limited_days'],
+                $homework['remark'],
+                $homework['tasks']
+            );
+        }
         $db->commit();
+        return $response->withJson(['code'=>0], StatusCode::HTTP_OK);
     }
 
 }

@@ -104,7 +104,7 @@ class Employee extends ControllerBase
         list($page, $count) = Util::formatPageCount($params);
 
         list($users, $totalCount) = EmployeeService::getEmployeeService($page, $count, $params);
-        $roles = RoleModel::getRoles();
+        $roles = RoleModel::selectOrgRoles();
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
@@ -191,17 +191,22 @@ class Employee extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
+        $role = RoleModel::getById($params['role_id']);
+        if(empty($role)) {
+            return $response->withJson(Valid::addErrors([],'employee','role_not_exist'));
+        }
+
         global $orgId;
 
         if ($orgId > 0) {
+            //机构管理员不能创建内部角色
+            if($role['is_internal'] == RoleModel::IS_INTERNAL) {
+                return $response->withJson(Valid::addErrors([], 'employee', 'role_error'));
+            }
             //机构管理员添加雇员时，不能指定雇员所属机构，必须与添加者同属一个机构
             $params['org_id'] = $orgId;
         } else {
             //内部管理员添加雇员时，角色是内部角色时，传入的org_id不能为空
-            $role = RoleModel::getById($params['role_id']);
-            if(empty($role)) {
-                return $response->withJson(Valid::addErrors([],'employee','role_not_exist'));
-            }
             if($role['is_internal'] == RoleModel::NOT_INTERNAL && empty($params['org_id'])) {
                 return $response->withJson(Valid::addErrors([],'employee','org_can_not_be_empty'));
             }

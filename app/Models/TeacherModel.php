@@ -258,7 +258,7 @@ class TeacherModel extends Model
 //            $map[':app_id'] = $params['app_id'];
 //        }
         //性别
-        if (!empty($params['gender'])) {
+        if (isset($params['gender'])) {
             $where .= " AND t.gender = :gender ";
             $map[':gender'] = $params['gender'];
         }

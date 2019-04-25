@@ -577,7 +577,8 @@ class StudentModel extends Model
             $map[':mobile'] = "{$params['mobile']}%";
         }
 
-        $sql = "select s.*,t.teacher_id,te.name teacher_name,t.status ts_status,so.status bind_status
+        if ($orgId > 0) {
+            $sql = "select s.*,t.teacher_id,te.name teacher_name,t.status ts_status,so.status bind_status
                 from {$s} s inner join {$so} so
                 on s.id = so.student_id
                 and so.org_id = {$orgId} left join {$t} t on s.id = t.student_id and t.status = {$status}
@@ -586,8 +587,19 @@ class StudentModel extends Model
                 {$where}
                 order by s.create_time desc {$limit}";
 
-        $countSql = "select count(*) count from {$s} s inner join {$so} so on s.id = so.student_id
+            $countSql = "select count(*) count from {$s} s inner join {$so} so on s.id = so.student_id
                     and so.org_id = {$orgId} {$where}";
+        } else {
+            $sql = "select s.*,t.teacher_id,te.name teacher_name,t.status ts_status,so.status bind_status
+                from {$s} s inner join {$so} so
+                on s.id = so.student_id
+                left join {$t} t on s.id = t.student_id and t.status = {$status}
+                left join teacher te on te.id = t.teacher_id
+                {$where}
+                order by s.create_time desc {$limit}";
+
+            $countSql = "select count(*) count from {$s} s inner join {$so} so on s.id = so.student_id {$where}";
+        }
 
         $records = $db->queryAll($sql, $map);
 
