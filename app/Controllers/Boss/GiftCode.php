@@ -66,7 +66,8 @@ class GiftCode extends ControllerBase
             $params['buyer'],
             GiftCodeModel::CREATE_BY_MANUAL,
             $params['remarks'],
-            $employeeId);
+            $employeeId,
+            time());
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
