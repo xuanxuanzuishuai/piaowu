@@ -184,6 +184,7 @@ class OrganizationServiceForApp
         $onlineTeacherIds = array_column($onlineTeachers, 'teacher_id');
 
         foreach ($teachers as $idx => $teacher) {
+            $teachers[$idx]['id'] = intval($teachers[$idx]['id']);
             $teachers[$idx]['online'] = in_array($teacher['id'], $onlineTeacherIds) ? 1 : 0;
         }
 
