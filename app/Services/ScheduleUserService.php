@@ -9,6 +9,7 @@
 namespace App\Services;
 
 
+use App\Controllers\Schedule\ScheduleTaskUser;
 use App\Models\ScheduleTaskUserModel;
 use App\Models\ScheduleUserModel;
 
@@ -68,5 +69,8 @@ class ScheduleUserService
         return ScheduleUserModel::cancelScheduleUsers($users,$st_id,$beginDate);
     }
 
-
+    public static function signIn($suIds,$userRole) {
+        $userStatus = $userRole == ScheduleTaskUserModel::USER_ROLE_S?ScheduleUserModel::STUDENT_STATUS_ATTEND:ScheduleUserModel::TEACHER_STATUS_ATTEND;
+        return ScheduleUserModel::batchUpdateRecord(['user_status'=>$userStatus],['id'=>$suIds]);
+    }
 }

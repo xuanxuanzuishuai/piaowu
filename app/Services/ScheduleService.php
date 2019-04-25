@@ -44,12 +44,12 @@ class ScheduleService
             $users = [];
             foreach($st['students']  as $student) {
                 if($student['status'] == ScheduleUserModel::STATUS_NORMAL) {
-                    $users[] = ['schedule_id' => $sId, 'user_id' => $student['user_id'], 'user_role' => $student['user_role'], 'status' => ScheduleModel::STATUS_NORMAL, 'create_time' => $now, 'user_status' => ScheduleUserModel::STUDENT_STATUS_BOOK];
+                    $users[] = ['schedule_id' => $sId, 'user_id' => $student['user_id'], 'user_role' => $student['user_role'], 'status' => ScheduleModel::STATUS_BOOK, 'create_time' => $now, 'user_status' => ScheduleUserModel::STUDENT_STATUS_BOOK];
                 }
             }
             foreach($st['teachers']  as $teacher) {
                 if($teacher['status'] == ScheduleUserModel::STATUS_NORMAL) {
-                    $users[] = ['schedule_id' => $sId, 'user_id' => $teacher['user_id'], 'user_role' => $teacher['user_role'], 'status' => ScheduleModel::STATUS_NORMAL, 'create_time' => $now, 'user_status' => ScheduleUserModel::TEACHER_STATUS_SET];
+                    $users[] = ['schedule_id' => $sId, 'user_id' => $teacher['user_id'], 'user_role' => $teacher['user_role'], 'status' => ScheduleModel::STATUS_BOOK, 'create_time' => $now, 'user_status' => ScheduleUserModel::TEACHER_STATUS_SET];
                 }
             }
             $flag = ScheduleUserModel::insertSUs($users);
