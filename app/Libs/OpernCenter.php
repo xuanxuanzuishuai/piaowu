@@ -164,7 +164,7 @@ class OpernCenter
      * @param $pageSize
      * @return array|bool|mixed
      */
-    public function lessons($collectionId, $page, $pageSize = self::DEFAULT_PAGE_SIZE)
+    public function lessons($collectionId, $page, $pageSize = self::DEFAULT_PAGE_SIZE, $resourceType='dynamic')
     {
         $result = self::commonAPI(self::OPERN_API_LESSONS, [
             'pro_id' => $this->proId,
@@ -174,8 +174,8 @@ class OpernCenter
             'collection_id' => $collectionId,
             'page' => $page,
             'page_size' => $pageSize,
+            'resource_types' => $resourceType
         ]);
-
         return empty($result) ? [] : $result;
     }
 
@@ -184,7 +184,7 @@ class OpernCenter
      * @param int|array $lessonIds id或id数组
      * @return array|bool|mixed
      */
-    public function lessonsByIds($lessonIds)
+    public function lessonsByIds($lessonIds, $resourceTypes='dynamic')
     {
         if (is_array($lessonIds)) {
             $lessonIds = implode(",", $lessonIds);
@@ -195,6 +195,7 @@ class OpernCenter
             'auditing' => $this->auditing,
             'publish' => $this->publish,
             'lesson_ids' => $lessonIds,
+            'resource_types' => $resourceTypes
         ]);
 
         return empty($result) ? [] : $result;

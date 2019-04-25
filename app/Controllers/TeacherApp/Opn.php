@@ -310,4 +310,40 @@ class Opn extends ControllerBase
             'data' => $list
         ], StatusCode::HTTP_OK);
     }
+
+
+    /**
+     * 获取课程资源
+     * @param Request $request
+     * @param Response $response
+     * @return mixed
+     */
+    public function getLessonResource(Request $request, Response $response){
+        // 验证请求参数
+        $rules = [
+            [
+                'key' => 'lesson_ids',
+                'type' => 'required',
+                'lesson_ids_is_required' => 'lesson_ids_is_required'
+            ]
+        ];
+        $param = $request->getParams();
+        $result = Valid::validate($param, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $lessonIds = $param['lesson_ids'];
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, 1);
+        $result = $opn->lessonsByIds($lessonIds, 'png');
+        if (empty($result) || !empty($result['errors'])) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $data = $result;
+        $list = OpernService::appFormatLessonByIds($data['data']);
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $list
+        ], StatusCode::HTTP_OK);
+    }
 }

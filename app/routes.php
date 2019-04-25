@@ -239,6 +239,11 @@ $arr = array(
         'call' => TeacherAppOpn::class . ':recentLessons',
         'middles' => []
     ],
+    '/teacher_app/opn/lesson_resource' => [
+        'method' => ['get'],
+        'call' => TeacherAppOpn::class . ':getLessonResource',
+        'middles' => []
+    ],
     '/teacher_app/schedule/end' => [
         'method' => ['post'],
         'call' => TeacherAppSchedule::class . ':end',
