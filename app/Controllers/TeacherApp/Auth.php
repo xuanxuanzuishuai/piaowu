@@ -11,6 +11,7 @@ namespace App\Controllers\TeacherApp;
 
 use App\Controllers\ControllerBase;
 use App\Libs\Valid;
+use App\Services\OpernService;
 use App\Services\OrganizationServiceForApp;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -51,6 +52,9 @@ class Auth extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
+        $defaultCollections = OpernService::getDefaultCollections($this->ci['version']);
+        $loginData['default_collections'] = $defaultCollections;
+
         return $response->withJson([
             'code'=> Valid::CODE_SUCCESS,
             'data'=> $loginData,
@@ -89,6 +93,9 @@ class Auth extends ControllerBase
             $result = Valid::addAppErrors([], $errorCode);
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
+
+        $defaultCollections = OpernService::getDefaultCollections($this->ci['version']);
+        $loginData['default_collections'] = $defaultCollections;
 
         return $response->withJson([
             'code'=> Valid::CODE_SUCCESS,

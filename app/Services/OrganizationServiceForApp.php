@@ -39,7 +39,6 @@ class OrganizationServiceForApp
         $orgInfo = self::getOrgInfo($orgAccount['org_id']);
         $orgInfo['account'] = $account;
         $orgTeachers = self::getTeachers($orgAccount['org_id']);
-        $defaultCollections = OpernService::getDefaultCollections();
 
         $token = OrganizationModelForApp::genToken($orgAccount['org_id']);
         OrganizationModelForApp::setOrgToken($orgAccount['org_id'], $token);
@@ -47,7 +46,6 @@ class OrganizationServiceForApp
         $loginData = [
             'org_info' => $orgInfo,
             'teachers' => $orgTeachers,
-            'default_collections' => $defaultCollections,
             'app_settings' => [],
             'org_token' => $token
         ];
@@ -77,12 +75,10 @@ class OrganizationServiceForApp
         $orgInfo = self::getOrgInfo($orgAccount['org_id']);
         $orgInfo['account'] = $account;
         $orgTeachers = self::getTeachers($orgAccount['org_id']);
-        $defaultCollections = OpernService::getDefaultCollections();
 
         $loginData = [
             'org_info' => $orgInfo,
             'teachers' => $orgTeachers,
-            'default_collections' => $defaultCollections,
             'app_settings' => [],
             'org_token' => $token
         ];

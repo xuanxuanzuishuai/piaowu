@@ -9,6 +9,10 @@
 namespace App\Services;
 
 
+use App\Libs\OpernCenter;
+use App\Libs\Valid;
+use App\Models\AppConfigModel;
+
 class OpernService
 {
     /**
@@ -131,9 +135,25 @@ class OpernService
 
     /**
      * 默认曲集列表
+     * @param $proVer
+     * @return array
      */
-    public static function getDefaultCollections()
+    public static function getDefaultCollections($proVer)
     {
-        return [];
+        $defaultCollectionIds = AppConfigModel::get('DEFAULT_COLLECTION_IDS_FOR_TEACHER_APP');
+        if (empty($defaultCollectionIds)) {
+            return [];
+        }
+
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER, $proVer);
+        $res = $opn->collectionsByIds($defaultCollectionIds);
+        if (!empty($res['code']) && $res['code'] !== Valid::CODE_SUCCESS) {
+            $defaultCollections = [];
+        } else {
+            $defaultCollections = $res["data"];
+        }
+        $defaultCollections = self::appFormatCollections($defaultCollections);
+
+        return $defaultCollections;
     }
 }
