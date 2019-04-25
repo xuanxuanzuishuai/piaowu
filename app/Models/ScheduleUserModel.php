@@ -17,6 +17,9 @@ class ScheduleUserModel extends Model
     const STATUS_CANCEL = 0; //废除
     const STATUS_NORMAL = 1; //正常
 
+    const USER_ROLE_STUDENT = 1; //学生
+    const USER_ROLE_TEACHER = 2; //老师
+
     // 学生子状态
     const STUDENT_STATUS_BOOK = 1;         // 已预约
     const STUDENT_STATUS_CANCEL = 2;       // 已取消 只有体验课有已取消状态

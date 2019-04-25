@@ -190,4 +190,23 @@ class ScheduleService
     public static function finish($scheduleId) {
         return ScheduleModel::updateRecord($scheduleId,['status'=>ScheduleModel::STATUS_FINISH,'update_time'=>time()]);
     }
+
+    /** 学员上课记录
+    * @param $orgId
+    * @param $page
+    * @param $count
+    * @param $params
+    * @return array
+    */
+    public static function attendRecord($orgId, $page, $count, $params)
+    {
+        list($records, $total) = ScheduleModel::attendRecord($orgId, $page, $count, $params);
+
+        foreach ($records as &$r) {
+            $r['status']   = DictService::getKeyValue(Constants::DICT_TYPE_SCHEDULE_STATUS, $r['status']);
+            $r['duration'] /= 60;
+        }
+
+        return [$records, $total];
+    }
 }

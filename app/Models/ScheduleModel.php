@@ -10,6 +10,7 @@ namespace App\Models;
 
 
 use App\Libs\MysqlDB;
+use App\Libs\Util;
 
 class ScheduleModel extends Model
 {
@@ -184,6 +185,75 @@ class ScheduleModel extends Model
     public static function modifyScheduleBySTId($data,$where) {
         $result = self::batchUpdateRecord($data,$where);
             return ($result && $result > 0);
+    }
+
+    /**
+     * 学员上课记录
+     * @param $orgId
+     * @param $page
+     * @param $count
+     * @param $params
+     * @return array
+     */
+    public static function attendRecord($orgId, $page, $count, $params)
+    {
+        $s   = ScheduleModel::$table;
+        $cr  = ClassroomModel::$table;
+        $c   = CourseModel::$table;
+        $su  = ScheduleUserModel::$table;
+        $stu = StudentModel::$table;
+        $t   = TeacherModel::$table;
+
+        $userRoleStudent = ScheduleUserModel::USER_ROLE_STUDENT;
+        $userRoleTeacher = ScheduleUserModel::USER_ROLE_TEACHER;
+
+        $where = ' where s.org_id = :org_id ';
+        $map   = [':org_id' => $orgId];
+
+        if(!empty($params['classroom_id'])) {
+            $where .= ' and s.classroom_id = :classroom_id';
+            $map[':classroom_id'] = $params['classroom_id'];
+        }
+        if(!empty($params['course_id'])) {
+            $where .= ' and s.course_id = :course_id';
+            $map[':course_id'] = $params['course_id'];
+        }
+        if(!empty($params['status'])) {
+            $where .= ' and s.status = :status';
+            $map[':status'] = $params['status'];
+        }
+        if(!empty($params['start_time'])) {
+            $where .= ' and s.start_time >= :start_time';
+            $map[':start_time'] = $params['start_time'];
+        }
+        if(!empty($params['end_time'])) {
+            $where .= ' and s.end_time <= :end_time';
+            $map[':end_time'] = $params['end_time'];
+        }
+
+        $limit = Util::limitation($page, $count);
+
+        $db = MysqlDB::getDB();
+
+        $records = $db->queryAll("select s.*,
+               stu.name student_name,
+               stu.id   student_id,
+               t.name   teacher_name,
+               t.id     teacher_id,
+               c.name   course_name,
+               cr.name  class_room_name
+        from {$s} s
+               inner join {$cr} cr on cr.id = s.classroom_id and cr.org_id = s.org_id
+               inner join {$c} c on c.id = s.course_id and c.org_id = s.org_id
+               left join {$su} su on s.id = su.user_id and su.user_role = {$userRoleStudent}
+               left join {$stu} stu on su.user_id = stu.id
+               left join {$su} su2 on s.id = su2.schedule_id and su2.user_role = {$userRoleTeacher}
+               left join {$t} t on t.id = su2.user_id
+        {$where} order by s.create_time desc {$limit}", $map);
+
+        $total = $db->queryAll("select count(*) count from {$s} s {$where} ", $map);
+
+        return [$records, $total[0]['count']];
     }
 
 }
