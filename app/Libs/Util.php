@@ -606,7 +606,7 @@ class Util
         }
         //格式化count 分页数量
         if (empty($params['page_limit']) || !is_numeric($params['page_limit']) || (int)$params['page_limit'] < 1) {
-            $count = 10;
+            $count = 100;
         } else {
             $count = (int)$params['page_limit'];
         }
