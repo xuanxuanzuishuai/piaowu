@@ -28,15 +28,15 @@ class UserPlayServices
             'category_id' => $playData['category_id'],
             'collection_id' => $playData['collection_id'],
             'lesson_id' => $playData['lesson_id'],
+            'schedule_id' => $playData['schedule_id'],
+            'lesson_type' => $playData['lesson_type'],
             'lesson_sub_id' => $playData['lesson_sub_id'],
             'ai_record_id' => $playData['ai_record_id'],
             'created_time' => time(),
             'duration' => $playData['duration'],
             'score' => $playData['score'],
             'midi' => $playData['midi'],
-            'data' => json_encode($playData),
-            'record_type' => $playData['record_type'],
-            'situation_type' => $playData['situation_type'],
+            'data' => json_encode($playData)
         ];
 
         $recordID =  PlayRecordModel::insertRecord($recordData);

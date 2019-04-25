@@ -33,9 +33,9 @@ class Homework extends ControllerBase
     {
         $rules = [
             [
-                'key' => 'lesson_id',
+                'key' => 'task_id',
                 'type' => 'required',
-                'lesson_id_is_required' => 'lesson_id_is_required'
+                'lesson_id_is_required' => 'task_id_is_required'
             ]
         ];
         $params = $request->getParams();
@@ -45,7 +45,7 @@ class Homework extends ControllerBase
         }
 
         $userId = $this->ci['student']['id'];
-        list($homework, $playRecord) = HomeworkService::getStudentHomeworkPractice($userId, $params['lesson_id']);
+        list($homework, $playRecord) = HomeworkService::getStudentHomeworkPractice($userId, $params['task_id']);
         if(empty($homework)){
             $errors = Valid::addAppErrors([], "homework_not_found");
             return $response->withJson($errors, StatusCode::HTTP_OK);
@@ -54,9 +54,9 @@ class Homework extends ControllerBase
         // 组装数据
         $returnData = [
             'homework' => [
-                'id' => $homework[0]['id'],
-                'task_id' => $homework[0]['task_id'],
-                'baseline' => json_decode($homework[0]['baseline'], true)
+                'id' => $homework['id'],
+                'task_id' => $homework['task_id'],
+                'baseline' => json_decode($homework['baseline'], true)
             ],
             'play_record' => [],
         ];

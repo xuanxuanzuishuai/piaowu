@@ -56,9 +56,7 @@ class Play extends ControllerBase
 
         //$userID = $this->ci['student']['id'];
         $userID = 22;
-        // 新增record_type字段区分演奏类型，situation_type区分课上课下
-        $params['data']['record_type'] = PlayRecordModel::TYPE_DYNAMIC;
-        $params['data']['situation_type'] = PlayRecordModel::TYPE_ON_CLASS;
+        $params['data']['lesson_type'] = PlayRecordModel::TYPE_DYNAMIC;
         list($errorCode, $ret) = UserPlayServices::addRecord($userID, $params['data']);
 
         if (!empty($errorCode)) {
@@ -116,8 +114,7 @@ class Play extends ControllerBase
         // 插入练琴纪录表
         // $userId = $this->ci['student']['id'];
         $userId = 22;
-        $param['data']['record_type'] = PlayRecordModel::TYPE_AI;
-        $param['data']['situation_type'] = PlayRecordModel::TYPE_ON_CLASS;
+        $param['data']['lesson_type'] = PlayRecordModel::TYPE_AI;
         list($errCode, $ret) = UserPlayServices::addRecord($userId, $param['data']);
         if (!empty($errCode)) {
             $errors = Valid::addAppErrors([], $errCode);
