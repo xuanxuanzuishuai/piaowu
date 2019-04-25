@@ -259,6 +259,8 @@ $arr = array(
     '/schedule/schedule/list' => array('method'=>array('get'),'call'=>'\App\Controllers\Schedule\Schedule:list','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
     '/schedule/schedule/detail' => array('method'=>array('get'),'call'=>'\App\Controllers\Schedule\Schedule:detail','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
     '/schedule/schedule/modify' => array('method'=>array('post'),'call'=>'\App\Controllers\Schedule\Schedule:modify','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
+    '/schedule/schedule/signIn' => array('method'=>array('post'),'call'=>'\App\Controllers\Schedule\Schedule:signIn','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
+    '/schedule/schedule/takeOff' => array('method'=>array('post'),'call'=>'\App\Controllers\Schedule\Schedule:takeOff','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
 
 
     '/api/qiniu/token' => array('method'=> array('get'),'call'=> '\App\Controllers\API\Qiniu:token','middles' => array()),

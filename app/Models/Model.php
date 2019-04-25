@@ -11,6 +11,7 @@ namespace App\Models;
 
 use App\Libs\MysqlDB;
 use App\Libs\RedisDB;
+use App\Libs\SimpleLogger;
 use App\Libs\Util;
 
 class Model
@@ -197,6 +198,7 @@ class Model
      */
     public static function batchUpdateRecord($data, $where, $isOrg = true)
     {
+        SimpleLogger::error('ssss',[$where,$data]);
         if (empty($data)) {
             return 0;
         }

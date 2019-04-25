@@ -166,7 +166,6 @@ class ScheduleService
                 $sus[] = ['schedule_id'=>$schedule['id'],'user_id'=>$userId,'user_role'=>$userRole,'user_status'=>$userStatus,'status'=>$suStatus,'create_time'=> $now];
             }
         }
-        SimpleLogger::error('mmmm',[$schedules,$userIds,$sus]);
         if (!empty($sus)) {
             $ret = ScheduleUserModel::insertSUs($sus);
             if (is_null($ret))

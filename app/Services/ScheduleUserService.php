@@ -10,6 +10,7 @@ namespace App\Services;
 
 
 use App\Controllers\Schedule\ScheduleTaskUser;
+use App\Libs\SimpleLogger;
 use App\Models\ScheduleTaskUserModel;
 use App\Models\ScheduleUserModel;
 
@@ -69,8 +70,24 @@ class ScheduleUserService
         return ScheduleUserModel::cancelScheduleUsers($users,$st_id,$beginDate);
     }
 
+    /**
+     * @param $suIds
+     * @param $userRole
+     * @return int|null
+     */
     public static function signIn($suIds,$userRole) {
+        SimpleLogger::error('mms',[$suIds]);
         $userStatus = $userRole == ScheduleTaskUserModel::USER_ROLE_S?ScheduleUserModel::STUDENT_STATUS_ATTEND:ScheduleUserModel::TEACHER_STATUS_ATTEND;
-        return ScheduleUserModel::batchUpdateRecord(['user_status'=>$userStatus],['id'=>$suIds]);
+        return ScheduleUserModel::batchUpdateRecord(['user_status'=>$userStatus],['id'=>$suIds],false);
+    }
+
+    /**
+     * @param $suIds
+     * @param $userRole
+     * @return int|null
+     */
+    public static function takeOff($suIds,$userRole) {
+        $userStatus = $userRole == ScheduleTaskUserModel::USER_ROLE_S?ScheduleUserModel::STUDENT_STATUS_LEAVE:ScheduleUserModel::TEACHER_STATUS_LEAVE;
+        return ScheduleUserModel::batchUpdateRecord(['user_status'=>$userStatus],['id'=>$suIds],false);
     }
 }
