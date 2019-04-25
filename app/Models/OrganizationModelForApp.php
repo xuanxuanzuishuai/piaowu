@@ -73,14 +73,17 @@ class OrganizationModelForApp extends Model
     /**
      * 缓存用户token，用于登录信息获取
      * @param $orgId
+     * @param $account
      * @param $token
      * @return bool
      */
-    public static function setOrgToken($orgId, $token)
+    public static function setOrgToken($orgId, $account, $token)
     {
         $redis = RedisDB::getConn();
         $tokenKey = self::getOrgTokenKey($token);
-        $redis->setex($tokenKey, self::$orgTokenExpire, $orgId);
+        $data = ['org_id' => $orgId, 'account' => $account];
+        $value = json_encode($data);
+        $redis->setex($tokenKey, self::$orgTokenExpire, $value);
 
         return true;
     }
@@ -88,15 +91,16 @@ class OrganizationModelForApp extends Model
     /**
      * 获取机构token对应org_id
      * @param $token
-     * @return string
+     * @return array ['org_id' => 1, 'account' => '12345678']
      */
-    public static function getOrgIdByToken($token)
+    public static function getOrgCacheByToken($token)
     {
         $redis = RedisDB::getConn();
         $tokenKey = self::getOrgTokenKey($token);
-        $orgId = $redis->get($tokenKey);
+        $value = $redis->get($tokenKey);
+        $data = json_decode($value, true);
 
-        return $orgId;
+        return $data;
     }
 
     /**
@@ -116,10 +120,10 @@ class OrganizationModelForApp extends Model
         return true;
     }
 
-    public static function setOrgTeacherToken($data, $token)
+    public static function setOrgTeacherToken($data, $orgId, $token)
     {
         $redis = RedisDB::getConn();
-        $tokenKey = self::getOrgTeacherTokenKey($data['org_id'], $token);
+        $tokenKey = self::getOrgTeacherTokenKey($orgId, $token);
         $value = json_encode($data);
         $redis->setex($tokenKey, self::$orgTeacherTokenExpire, $value);
 

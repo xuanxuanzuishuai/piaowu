@@ -31,7 +31,8 @@ class OrgAuthCheckMiddleWareForApp extends MiddlewareBase
                 return $response->withJson($result, StatusCode::HTTP_OK);
             }
         } else {
-            $orgId = OrganizationModelForApp::getOrgIdByToken($token);
+            $cache = OrganizationModelForApp::getOrgCacheByToken($token);
+            $orgId = $cache['org_id'];
         }
 
         if (empty($orgId)) {
@@ -50,6 +51,7 @@ class OrgAuthCheckMiddleWareForApp extends MiddlewareBase
         OrganizationModelForApp::refreshOrgToken($token);
 
         $this->container['org'] = $org;
+        $this->container['org_account'] = $cache['account'] ?? '';
 
         $reviewVersion = AppConfigModel::get(AppConfigModel::REVIEW_VERSION_FOR_TEACHER_APP);
         $isReviewVersion = ($this->container['platform'] == AppVersionService::PLAT_IOS) && ($reviewVersion == $this->container['version']);

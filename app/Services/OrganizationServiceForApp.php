@@ -41,7 +41,7 @@ class OrganizationServiceForApp
         $orgTeachers = self::getTeachers($orgAccount['org_id']);
 
         $token = OrganizationModelForApp::genToken($orgAccount['org_id']);
-        OrganizationModelForApp::setOrgToken($orgAccount['org_id'], $token);
+        OrganizationModelForApp::setOrgToken($orgAccount['org_id'], $account, $token);
 
         $loginData = [
             'org_info' => $orgInfo,
@@ -67,13 +67,14 @@ class OrganizationServiceForApp
             return ['org_account_invalid'];
         }
 
-        $orgId = OrganizationModelForApp::getOrgIdByToken($token);
-        if (empty($orgId)) {
+        $cache = OrganizationModelForApp::getOrgCacheByToken($token);
+        if (empty($cache) || empty($cache['account']) || $cache['account'] != $account) {
             return ['invalid_token'];
         }
 
         $orgInfo = self::getOrgInfo($orgAccount['org_id']);
         $orgInfo['account'] = $account;
+        $orgInfo['license_num'] = $orgAccount['license_num'];
         $orgTeachers = self::getTeachers($orgAccount['org_id']);
 
         $loginData = [
@@ -94,7 +95,7 @@ class OrganizationServiceForApp
         $teacherCacheData = [
             'teacher_id' => $teacherId,
             'student_id' => $studentId,
-            'token' => $teacherToken
+            'token' => $teacherToken,
         ];
 
         $onlineTeachers = OrganizationModelForApp::getOnlineTeacher($orgId);
@@ -125,12 +126,13 @@ class OrganizationServiceForApp
             }
         }
 
-        OrganizationModelForApp::setOrgTeacherToken($teacherCacheData, $teacherToken);
+        OrganizationModelForApp::setOrgTeacherToken($teacherCacheData, $orgId, $teacherToken);
         OrganizationModelForApp::setOnlineTeacher($onlineTeachersNew, $orgId);
         if (!empty($willDelTokens)) {
             OrganizationModelForApp::delOrgTeacherTokens($orgId, $willDelTokens);
         }
         SimpleLogger::debug(__FILE__ . __LINE__ . " >>> org teacher login <<<", [
+            '$onlineTeachers' => $onlineTeachers,
             '$onlineTeachersNew' => $onlineTeachersNew,
             '$willDelTokens' => $willDelTokens,
             'license_num' => $orgAccount['license_num']

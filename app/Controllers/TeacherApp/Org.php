@@ -70,9 +70,10 @@ class Org extends ControllerBase
         }
 
         $orgId = $this->ci['org']['id'];
+        $orgAccount = $this->ci['org_account'];
 
         list($errorCode, $loginData) = OrganizationServiceForApp::teacherLogin($orgId,
-            $params['account'],
+            $orgAccount,
             $params['teacher_id'],
             $params['student_id']
         );
