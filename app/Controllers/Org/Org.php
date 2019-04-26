@@ -11,8 +11,8 @@ namespace App\Controllers\Org;
 use App\Controllers\ControllerBase;
 use App\Libs\MysqlDB;
 use App\Libs\Valid;
+use App\Models\OrgAccountModel;
 use App\Models\OrganizationModel;
-use App\Models\StudentModel;
 use App\Models\StudentOrgModel;
 use App\Models\TeacherOrgModel;
 use App\Models\TeacherStudentModel;
@@ -145,7 +145,12 @@ class Org extends ControllerBase
                 'key'        => 'status',
                 'type'       => 'integer',
                 'error_code' => 'status_must_be_integer'
-            ]
+            ],
+            [
+                'key'        => 'license_num',
+                'type'       => 'integer',
+                'error_code' => 'licence_num_is_integer'
+            ],
         ];
 
         $params = $request->getParams();
@@ -170,12 +175,44 @@ class Org extends ControllerBase
         } else {
             $params['create_time'] = $now;
             $params['status']      = OrganizationModel::STATUS_NORMAL;
+            $licenseNum            = $params['license_num'];
 
+            unset($params['license_num']);
+
+            $db = MysqlDB::getDB();
+            $db->beginTransaction();
+
+            //添加机构
             $lastId = OrganizationService::save($params);
 
             if(empty($lastId)) {
+                $db->rollBack();
                 return $response->withJson(Valid::addErrors([],'org','save_org_fail'));
             }
+
+            //添加机构账号
+            $max = OrgAccountModel::getMaxAccount();
+            if(empty($max)) {
+                $max = 10000000;
+            }
+            $account = $max + 1;
+
+            $data = [
+                'org_id'      => $lastId,
+                'account'     => $account,
+                'password'    => md5($account), // 默认密码是机构账号
+                'create_time' => time(),
+                'status'      => OrgAccountModel::STATUS_NORMAL,
+                'license_num' => $licenseNum,
+            ];
+
+            $affectRows = OrgAccountModel::insertRecord($data, false);
+            if($affectRows == 0) {
+                $db->rollBack();
+                return $response->withJson(Valid::addErrors([], 'org', 'save_org_account_fail'));
+            }
+
+            $db->commit();
 
             return $this->success($response, ['last_id' => $lastId]);
         }

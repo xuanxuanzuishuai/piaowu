@@ -259,4 +259,6 @@ class Constants
 
     //机构状态
     const DICT_TYPE_ORG_STATUS = 'org_status';
+    //机构账号状态
+    const DIST_TYPE_ORG_ACCOUNT_STATUS = 'org_account_status';
 };

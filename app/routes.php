@@ -26,6 +26,7 @@ use App\Controllers\TeacherApp\Schedule as TeacherAppSchedule;
 use App\Controllers\TeacherApp\Play as TeacherAppPlay;
 use App\Controllers\TeacherApp\Org as TeacherAppOrg;
 use App\Controllers\Employee\Employee as Employee;
+use App\Controllers\Org\OrgAccount as OrgAccount;
 use Slim\App;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -422,6 +423,36 @@ $arr = array(
     '/employee/employee/assign_cc' => [
         'method'  => ['post'],
         'call'    => Employee::class . ':assignCC',
+        'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class]
+    ],
+    //内部管理员查看机构账号列表
+    '/org_web/org_account/list' => [
+        'method'  => ['get'],
+        'call'    => OrgAccount::class . ':list',
+        'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class]
+    ],
+    //内部管理员查看机构账号详情
+    '/org_web/org_account/detail' => [
+        'method'  => ['get'],
+        'call'    => OrgAccount::class . ':detail',
+        'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class]
+    ],
+    //内部管理员修改机构账号
+    '/org_web/org_account/modify' => [
+        'method'  => ['post'],
+        'call'    => OrgAccount::class . ':modify',
+        'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class]
+    ],
+    //机构管理员查看本机构下账号
+    '/org_web/org_account/list_for_org' => [
+        'method'  => ['get'],
+        'call'    => OrgAccount::class . ':listForOrg',
+        'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class]
+    ],
+    //机构修改自己的机构密码(password in org_account)
+    '/org_web/org_account/modify_password' => [
+        'method'  => ['post'],
+        'call'    => OrgAccount::class . ':modifyPassword',
         'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class]
     ],
 );

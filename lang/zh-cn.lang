@@ -14,6 +14,8 @@ org_is_disabled='机构账号被禁用'
 have_no_binding_to_student='没有绑定学生'
 role_error='角色不正确'
 only_bind_student_could_distribute='绑定的学生才能分配课管'
+password_must_has_number_and_alphabet='密码必须是数字和字母的组合'
+password_length_between_8_20='密码长度在8~20之间'
 
 sub_verify_error='用户未激活'
 user_register_fail='用户注册失败'
