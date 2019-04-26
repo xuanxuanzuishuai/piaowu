@@ -33,8 +33,7 @@ class OpernCenter
 
     const DEFAULT_PAGE_SIZE = 20;
     const DEFAULT_AUDITING = 0;
-    // todo 这里暂且设置为0，调试我的课程报告用
-    const DEFAULT_PUBLISH = 0;
+    const DEFAULT_PUBLISH = 1;
 
     public $proId; // 曲谱库ProId
     public $proVer; // 曲谱库ProVer
@@ -258,6 +257,8 @@ class OpernCenter
     /**
      * 根据$opernIds获取静态资源
      * @param $opernIds
+     * @param $types
+     * @return array
      */
     public function staticResource($opernIds, $types='png'){
         $result = self::commonAPI(self::OPERN_API_STATIC_RESOURCE, [
