@@ -39,17 +39,17 @@ class StudentAuthCheckMiddleWareForApp extends MiddlewareBase
             $result = Valid::addAppErrors([], 'invalid_token');
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        $user = StudentModelForApp::getStudentInfo($studentId, null);
+        $student = StudentModelForApp::getStudentInfo($studentId, null);
 
         SimpleLogger::info(__FILE__ . ":" . __LINE__, [
             'middleWare' => 'UserAuthCheckMiddleWare',
-            'user' => $user
+            'user' => $student
         ]);
 
         // 延长登录token过期时间
         StudentModelForApp::refreshStudentToken($studentId);
 
-        $this->container['student'] = $user;
+        $this->container['student'] = $student;
 
         $reviewVersion = AppConfigModel::get(AppConfigModel::REVIEW_VERSION);
         $isReviewVersion = ($this->container['platform'] == AppVersionService::PLAT_IOS) && ($reviewVersion == $this->container['version']);
@@ -59,20 +59,14 @@ class StudentAuthCheckMiddleWareForApp extends MiddlewareBase
         $reviewTestUsers = AppConfigModel::get('REVIEW_TESTER');
         if (!empty($reviewTestUsers)) {
             $userMobiles = explode(',', $reviewTestUsers);
-            $isOpnTester = in_array($user['mobile'], $userMobiles);
-            $this->container['opn_is_tester'] = $isOpnTester;
-
-            if ($isOpnTester) {
-                $this->container['opn_auditing'] = 0;
-                $this->container['opn_publish'] = 0;
-            } else {
-                $this->container['opn_auditing'] = $isReviewVersion ? 1 : 0;
-                $this->container['opn_publish'] = 1;
-            }
-
+            $isOpnTester = in_array($student['mobile'], $userMobiles);
         } else {
-            $this->container['opn_is_tester'] = false;
+            $isOpnTester = false;
         }
+        $this->container['opn_is_tester'] = $isOpnTester;
+        $this->container['opn_pro_ver'] = $isOpnTester ? 'tester' : $this->container['version'];
+        $this->container['opn_auditing'] = $isReviewVersion ? 1 : 0;
+        $this->container['opn_publish'] = $isOpnTester ? 0 : 1;
 
         $response = $next($request, $response);
 

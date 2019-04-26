@@ -39,18 +39,10 @@ class Opn extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $version = $this->ci['version'];
-
-        if ($this->ci['opn_is_tester']) {
-            $auditing = 0;
-            $publish = 0;
-        } else {
-            $reviewVersion = AppConfigModel::get(AppConfigModel::REVIEW_VERSION);
-            $auditing = ($reviewVersion == $params['version']) ? 1 : 0;
-            $publish = 1;
-        }
-
-        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, $version, $auditing, $publish);
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER,
+            $this->ci['opn_pro_ver'],
+            $this->ci['opn_auditing'],
+            $this->ci['opn_publish']);
         $collections = $opn->searchCollections($params['key'], 1, 1, 50);
         if (empty($collections) || !empty($collections['errors'])) {
             return $response->withJson($collections, StatusCode::HTTP_OK);
@@ -86,14 +78,11 @@ class Opn extends ControllerBase
         $params = $request->getParams();
 
         list($pageId, $pageLimit) = Util::appPageLimit($params);
-        // TODO 请求erp的参数
-        /**
+
         $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER,
-            $this->ci['version'],
+            $this->ci['opn_pro_ver'],
             $this->ci['opn_auditing'],
             $this->ci['opn_publish']);
-         */
-        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, 2);
         $result = $opn->categories($pageId, $pageLimit);
         if (empty($result) || !empty($result['errors'])) {
             return $response->withJson($result, StatusCode::HTTP_OK);
@@ -138,13 +127,11 @@ class Opn extends ControllerBase
         }
 
         list($pageId, $pageLimit) = Util::appPageLimit($params);
-        /**
+
         $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER,
-            $this->ci['version'],
+            $this->ci['opn_pro_ver'],
             $this->ci['opn_auditing'],
             $this->ci['opn_publish']);
-        */
-        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, 1);
         $result = $opn->collections($params['category_id'], $pageId, $pageLimit);
         if (empty($result) || !empty($result['errors'])) {
             return $response->withJson($result, StatusCode::HTTP_OK);
@@ -188,13 +175,11 @@ class Opn extends ControllerBase
         }
 
         list($pageId, $pageLimit) = Util::appPageLimit($params);
-        /**
-        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT,
-            $this->ci['version'],
+
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER,
+            $this->ci['opn_pro_ver'],
             $this->ci['opn_auditing'],
             $this->ci['opn_publish']);
-         */
-        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, 1);
         $result = $opn->lessons($params['collection_id'], $pageId, $pageLimit);
         if (empty($result) || !empty($result['errors'])) {
             return $response->withJson($result, StatusCode::HTTP_OK);
@@ -236,23 +221,18 @@ class Opn extends ControllerBase
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        /**
-        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT,
-            $this->ci['version'],
+
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER,
+            $this->ci['opn_pro_ver'],
             $this->ci['opn_auditing'],
             $this->ci['opn_publish']);
-         */
-        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, 1);
         $result = $opn->lessonsByIds($params['lesson_id']);
         if (empty($result) || !empty($result['errors'])) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        SimpleLogger::debug("******========--------", [$result]);
-        // TODO 曲谱库这个接口没有data层，应该为和其他接口一样
-        // $data = $result['data'];
-        $data = $result;
-        $list = OpernService::appFormatLessonByIds($data['data'])[0] ?? [];
+        $data = $result['data'];
+        $list = OpernService::appFormatLessonByIds($data)[0] ?? [];
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => $list

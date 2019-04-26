@@ -36,18 +36,10 @@ class Opn extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $version = $this->ci['version'];
-
-        if ($this->ci['opn_is_tester']) {
-            $auditing = 0;
-            $publish = 0;
-        } else {
-            $reviewVersion = AppConfigModel::get(AppConfigModel::REVIEW_VERSION);
-            $auditing = ($reviewVersion == $params['version']) ? 1 : 0;
-            $publish = 1;
-        }
-
-        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, $version, $auditing, $publish);
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT,
+            $this->ci['opn_pro_ver'],
+            $this->ci['opn_auditing'],
+            $this->ci['opn_publish']);
         $collections = $opn->searchCollections($params['key'], 1, 1, 50);
         if (empty($collections) || !empty($collections['errors'])) {
             return $response->withJson($collections, StatusCode::HTTP_OK);
@@ -79,7 +71,7 @@ class Opn extends ControllerBase
         list($pageId, $pageLimit) = Util::appPageLimit($params);
 
         $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT,
-            $this->ci['version'],
+            $this->ci['opn_pro_ver'],
             $this->ci['opn_auditing'],
             $this->ci['opn_publish']);
         $result = $opn->categories($pageId, $pageLimit);
@@ -122,7 +114,7 @@ class Opn extends ControllerBase
         list($pageId, $pageLimit) = Util::appPageLimit($params);
 
         $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT,
-            $this->ci['version'],
+            $this->ci['opn_pro_ver'],
             $this->ci['opn_auditing'],
             $this->ci['opn_publish']);
         $result = $opn->collections($params['category_id'], $pageId, $pageLimit);
@@ -164,7 +156,7 @@ class Opn extends ControllerBase
         list($pageId, $pageLimit) = Util::appPageLimit($params);
 
         $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT,
-            $this->ci['version'],
+            $this->ci['opn_pro_ver'],
             $this->ci['opn_auditing'],
             $this->ci['opn_publish']);
         $result = $opn->lessons($params['collection_id'], $pageId, $pageLimit);
@@ -204,7 +196,7 @@ class Opn extends ControllerBase
         }
 
         $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT,
-            $this->ci['version'],
+            $this->ci['opn_pro_ver'],
             $this->ci['opn_auditing'],
             $this->ci['opn_publish']);
         $result = $opn->lessonsByIds($params['lesson_id']);

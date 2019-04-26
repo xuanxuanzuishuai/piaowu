@@ -77,19 +77,13 @@ class OrgTeacherAuthMiddleWareForApp extends MiddlewareBase
         if (!empty($reviewTestUsers)) {
             $userMobiles = explode(',', $reviewTestUsers);
             $isOpnTester = in_array($teacher['mobile'], $userMobiles);
-            $this->container['opn_is_tester'] = $isOpnTester;
-
-            if ($isOpnTester) {
-                $this->container['opn_auditing'] = 0;
-                $this->container['opn_publish'] = 0;
-            } else {
-                $this->container['opn_auditing'] = $isReviewVersion ? 1 : 0;
-                $this->container['opn_publish'] = 1;
-            }
-
         } else {
-            $this->container['opn_is_tester'] = false;
+            $isOpnTester = false;
         }
+        $this->container['opn_is_tester'] = $isOpnTester;
+        $this->container['opn_pro_ver'] = $isOpnTester ? 'tester' : $this->container['version'];
+        $this->container['opn_auditing'] = $isReviewVersion ? 1 : 0;
+        $this->container['opn_publish'] = $isOpnTester ? 0 : 1;
 
         $response = $next($request, $response);
 
