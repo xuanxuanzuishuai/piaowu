@@ -363,7 +363,7 @@ class Opn extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         if (!empty($result)){
-            $ret = ['knowledge'=>$result['list']];
+            $ret = ['knowledge'=>$result['data']];
         }else{
             $ret = ['knowledge'=>[]];
         }

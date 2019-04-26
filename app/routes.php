@@ -276,7 +276,7 @@ $arr = array(
             OrgAuthCheckMiddleWareForApp::class, AppApi::class]
     ],
 
-    '/teacher_app/version/version' => [
+    '/teacher_app/app/version' => [
         'method' => ['get'],
         'call' => TeacherAppVersion::class . ':version',
         'middles' => [OrgTeacherAuthMiddleWareForApp::class,
