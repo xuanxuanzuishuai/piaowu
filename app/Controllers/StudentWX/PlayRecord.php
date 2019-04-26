@@ -9,6 +9,7 @@
 namespace App\Controllers\StudentWX;
 
 use App\Controllers\ControllerBase;
+use App\Libs\AIPLCenter;
 use App\Libs\Valid;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -83,7 +84,7 @@ class PlayRecord extends ControllerBase
         ], StatusCode::HTTP_OK);
     }
 
-    /** 精彩片段
+    /** 精彩回放
      * @param Request $request
      * @param Response $response
      * @return Response
@@ -102,11 +103,15 @@ class PlayRecord extends ControllerBase
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-
-        // todo 返回真正的数据
+        $data = AIPLCenter::userAudio($params["ai_record_id"]);
+        if (empty($data) or $data["meta"]["code"] != 0){
+            $ret = [];
+        } else {
+            $ret = ["url" => $data["data"]["audio_url"]];
+        }
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
-            'data' => ["url" => "http://ai-backend.oss-cn-beijing.aliyuncs.com/dev/3/eval_record/4298/4298.mp3"]
+            'data' => $ret
         ], StatusCode::HTTP_OK);
     }
 }
