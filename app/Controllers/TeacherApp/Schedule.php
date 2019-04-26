@@ -10,6 +10,7 @@ namespace App\Controllers\TeacherApp;
 
 use App\Controllers\ControllerBase;
 use App\Libs\MysqlDB;
+use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Libs\Valid;
 use App\Services\HomeworkService;
@@ -33,7 +34,7 @@ class Schedule extends ControllerBase
             ]
         ];
         $param = $request->getParams();
-        $result = Valid::validate($param, $rules);
+        $result = Valid::appValidate($param, $rules);;
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
@@ -87,15 +88,19 @@ class Schedule extends ControllerBase
             WeChatService::USER_TYPE_STUDENT
             );
         if (!empty($studentWeChatInfo)){
+            try {
+                WeChatService::notifyUserWeixinTemplateInfo(
+                    UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
+                    WeChatService::USER_TYPE_STUDENT,
+                    $studentWeChatInfo["open_id"],
+                    $_ENV["WECHAT_DAILY_RECORD_REPORT"],
+                    $data,
+                    $_ENV["WECHAT_FRONT_DOMAIN"] . "/student/report?schedule_id=" . $scheduleId
+                );
+            } catch (\Exception $e){
+                SimpleLogger::error(__FILE__ . ':' . __LINE__, [print_r($e->getMessage(), true)]);
+            }
 
-            WeChatService::notifyUserWeixinTemplateInfo(
-                UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
-                WeChatService::USER_TYPE_STUDENT,
-                $studentWeChatInfo["open_id"],
-                $_ENV["WECHAT_DAILY_RECORD_REPORT"],
-                $data,
-                $_ENV["WECHAT_FRONT_DOMAIN"] . "/student/report?schedule_id=" . $scheduleId
-            );
         }
 
         return $response->withJson(['code'=>0], StatusCode::HTTP_OK);

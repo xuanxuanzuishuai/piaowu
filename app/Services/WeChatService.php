@@ -25,6 +25,8 @@ class WeChatService
     const USER_TYPE_STUDENT = 1;
     const USER_TYPE_TEACHER = 2;
 
+    const CONTENT_TYPE_TEXT = 'text';
+
     const weixinAPIURL = 'https://api.weixin.qq.com/cgi-bin/';
 
 
@@ -308,6 +310,19 @@ class WeChatService
         $body['data'] = $content;
         //发送数据
         $res = self::commonWeixinAPI($app_id, $userType, 'POST', 'message/template/send', $body);
+        //返回数据
+        return $res;
+    }
+
+    public static function notifyUserWeixinTextInfo($app_id, $userType, $openid, $content){
+        //发送数据
+        $res = self::commonWeixinAPI($app_id, $userType, 'POST', 'message/custom/send',
+            json_encode(['touser' => $openid,
+            'msgtype' => self::CONTENT_TYPE_TEXT,
+            'text' => [
+                'content' => $content
+            ]
+        ], JSON_UNESCAPED_UNICODE));
         //返回数据
         return $res;
     }
