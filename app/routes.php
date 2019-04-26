@@ -252,6 +252,12 @@ $arr = array(
         'middles' => [OrgTeacherAuthMiddleWareForApp::class,
             OrgAuthCheckMiddleWareForApp::class, AppApi::class]
     ],
+    '/teacher_app/opn/knowledge' => [
+        'method' => ['get'],
+        'call' => TeacherAppOpn::class . ':getKnowledge',
+        'middles' => [OrgTeacherAuthMiddleWareForApp::class,
+            OrgAuthCheckMiddleWareForApp::class, AppApi::class]
+    ],
     '/teacher_app/schedule/end' => [
         'method' => ['post'],
         'call' => TeacherAppSchedule::class . ':end',

@@ -248,10 +248,12 @@ class Opn extends ControllerBase
     public function recentCollections(Request $request, Response $response){
         $params = $request->getParams();
         list($pageId, $pageLimit) = Util::formatPageCount($params);
-        // $userId = $this->ci['teacher']['id'];
-        $userId = 460;
+        $userId = $this->ci['teacher']['id'];
         $collectionIds = HomeworkTaskModel::getRecentCollectionIds($userId, $pageId, $pageLimit);
-        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, 1);
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER,
+            $this->ci['opn_pro_ver'],
+            $this->ci['opn_auditing'],
+            $this->ci['opn_publish']);
         $result = $opn->collectionsByIds($collectionIds);
         if (empty($result) || !empty($result['errors'])) {
             return $response->withJson($result, StatusCode::HTTP_OK);
@@ -273,11 +275,13 @@ class Opn extends ControllerBase
     public function recentLessons(Request $request, Response $response){
         $params = $request->getParams();
         list($pageId, $pageLimit) = Util::formatPageCount($params);
-        // $userId = $this->ci['teacher']['id'];
-        $userId = 460;
+        $userId = $this->ci['teacher']['id'];
         $lessonIds = HomeworkTaskModel::getRecentLessonIds($userId, $pageId, $pageLimit);
 
-        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, 1);
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER,
+            $this->ci['opn_pro_ver'],
+            $this->ci['opn_auditing'],
+            $this->ci['opn_publish']);
         $result = $opn->lessonsByIds($lessonIds);
         if (empty($result) || !empty($result['errors'])) {
             return $response->withJson($result, StatusCode::HTTP_OK);
@@ -313,7 +317,7 @@ class Opn extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         $lessonId = $param['lesson_id'];
-        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER, 1);
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER, $this->ci['opn_pro_ver']);
         $result = $opn->staticResource($lessonId, 'png');
         if (empty($result) || !empty($result['errors'])) {
             return $response->withJson($result, StatusCode::HTTP_OK);
@@ -330,5 +334,39 @@ class Opn extends ControllerBase
             'code' => Valid::CODE_SUCCESS,
             'data' => $list
         ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getKnowledge(Request $request, Response $response){
+        // 验证请求参数
+        $rules = [
+            [
+                'key' => 'lesson_id',
+                'type' => 'required',
+                'lesson_id_is_required' => 'lesson_id_is_required'
+            ]
+        ];
+        $param = $request->getParams();
+        $result = Valid::validate($param, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $lessonId = $param['lesson_id'];
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER, $this->ci['opn_pro_ver']);
+        $result = $opn->getKnowledge($lessonId);
+        if (empty($result) || !empty($result['errors'])) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        if (!empty($result)){
+            $ret = ['knowledge'=>$result['list']];
+        }else{
+            $ret = ['knowledge'=>[]];
+        }
+        return $response->withJson(['code'=>0, 'data'=>$ret], StatusCode::HTTP_OK);
     }
 }
