@@ -126,7 +126,7 @@ class ScheduleTask extends ControllerBase
             }
         }
         if (!empty($params['teachers'])) {
-            $result = ScheduleTaskService::checkTeacher($params['teachers'], $params['start_time'], $params['end_time'], $params['weekday'], $params['expire_start_date']);
+            $result = ScheduleTaskService::checkTeacher($params['teachers'], $params['start_time'], $params['end_time'], $params['weekday'], $params['expire_start_date'],1);
             if ($result !== true) {
                 return $response->withJson($result, StatusCode::HTTP_OK);
             }
