@@ -40,7 +40,7 @@ class WeChatOpenIdCheckMiddleware extends MiddlewareBase
             $user_type = 1;
             $app_id = UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT;
         }
-        $checkResult = $this::checkNeedWeChatCode($request, $user_type);
+        $checkResult = $this::checkNeedWeChatCode($request, $app_id, $user_type);
         // 是否要跳转到微信端获取用户code
         $needWeChatCode = $checkResult["needWeChatCode"];
         $openId = $checkResult["openId"];
