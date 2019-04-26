@@ -15,6 +15,7 @@ use Slim\Http\StatusCode;
 
 class OpernCenter
 {
+    const version = "1.4";
     // 曲谱资源的appId
     const PRO_ID_AI_STUDENT = 1; // 爱学琴
     const PRO_ID_MUSIC_CENTER = 2; // 直营
@@ -30,7 +31,8 @@ class OpernCenter
 
     const DEFAULT_PAGE_SIZE = 20;
     const DEFAULT_AUDITING = 0;
-    const DEFAULT_PUBLISH = 1;
+    // todo 这里暂且设置为0，调试我的课程报告用
+    const DEFAULT_PUBLISH = 0;
 
     public $proId; // 曲谱库ProId
     public $proVer; // 曲谱库ProVer

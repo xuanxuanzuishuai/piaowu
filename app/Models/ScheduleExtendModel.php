@@ -7,6 +7,7 @@
  */
 
 namespace App\Models;
+use App\Libs\MysqlDB;
 
 
 class ScheduleExtendModel extends Model
@@ -22,5 +23,37 @@ class ScheduleExtendModel extends Model
     public static function insertReport($data, $isOrg=false)
     {
         return self::insertRecord($data, $isOrg);
+    }
+
+    public static function getUserScheduleExtendDetail($schedule_id, $student_id=null) {
+
+        $sql = "select 
+                  se.schedule_id as schedule_id, 
+                  se.opn_lessons as opn_lessons,
+                  se.detail_score as detail_score,
+                  se.class_score as class_score,
+                  se.remark as remark,
+                  tsu.user_id as teacher_id,
+                  ssu.user_id as student_id,
+                  s.start_time as start_time,
+                  t.name as teacher_name
+                from " . self::$table . " se " . " inner join " . ScheduleModel::$table .
+            " s on se.schedule_id = s.id inner join " . ScheduleUserModel::$table .
+            " tsu on tsu.schedule_id = s.id and tsu.user_role = " . ScheduleUserModel::USER_ROLE_TEACHER .
+            " and tsu.user_status=" .ScheduleUserModel::TEACHER_STATUS_ATTEND . " inner join " . ScheduleUserModel::$table .
+            " ssu on ssu.schedule_id=s.id and ssu.user_role = ". ScheduleUserModel::USER_ROLE_STUDENT .
+            " and ssu.user_status=" . ScheduleUserModel::STUDENT_STATUS_ATTEND . " inner join " . TeacherModelForApp::$table .
+            " t on t.id = tsu.user_id " .
+            " where se.schedule_id = :schedule_id";
+
+        $map = [":schedule_id" => $schedule_id];
+        if (!empty($student_id)){
+            $sql = $sql . " and ssu.user_id=:student_id ";
+            $map[":student_id"] = $student_id;
+        }
+
+        $db = MysqlDB::getDB();
+        $result = $db->queryAll($sql, $map);
+        return $result;
     }
 }

@@ -11,14 +11,23 @@ namespace App\Services;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use GuzzleHttp\Client;
+use App\Libs\Request;
+use App\Libs\UserCenter;
+use App\Models\UserWeixinModel;
 
 
 class WeChatService
 {
     const cacheKeyTokenPri = "wechat_token_";
 
+    const KEY_TOKEN = "access_token";
+    const KEY_TICKET = "jsapi_ticket";
+
     const USER_TYPE_STUDENT = 1;
     const USER_TYPE_TEACHER = 2;
+
+    const weixinAPIURL = 'https://api.weixin.qq.com/cgi-bin/';
+
 
     /**
      * 微信网页授权相关API URL
@@ -27,7 +36,29 @@ class WeChatService
 
     public static $redisExpire = 2592000; // 30 days
 
+    public static $WeChatInfoMap = [
+        UserCenter::AUTH_APP_ID_AIPEILIAN_TEACHER . "_" . UserWeixinModel::USER_TYPE_TEACHER => [
+            "app_id" => "TEACHER_WEIXIN_APP_ID",
+            "secret" => "TEACHER_WEIXIN_APP_SECRET"
+        ],
+        UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT . "_" . UserWeixinModel::USER_TYPE_STUDENT => [
+            "app_id" => "STUDENT_WEIXIN_APP_ID",
+            "secret" => "STUDENT_WEIXIN_APP_SECRET"
+        ]
+    ];
+
     protected static $redisDB;
+
+    public static function getWeCHatAppIdSecret($app_id, $userType) {
+        $info =  self::$WeChatInfoMap[$app_id . "_" . $userType];
+        if (!empty($info)){
+            return [
+                "app_id" => $_ENV[$info["app_id"]],
+                "secret" => $_ENV[$info["secret"]]
+            ];
+        }
+        return null;
+    }
 
     /** 获取token key
      * @param $token
@@ -91,17 +122,22 @@ class WeChatService
      * 根据用户授权获得的code换取用户open id 和access id
      * 参考: 微信网页授权"snsapi_base" 通过redirect回传给当前server指定的url并附带code参数
      */
-    public static function getWeixnUserOpenIDAndAccessTokenByCode($code)
+    public static function getWeixnUserOpenIDAndAccessTokenByCode($code, $app_id, $user_type)
     {
 
         $client = new Client(['base_uri' => self::$weixinHTML5APIURL]);
+
+        $app_info = self::getWeCHatAppIdSecret($app_id, $user_type);
+        if (empty($app_info)) {
+            return false;
+        }
 
         $response = $client->request('GET', 'oauth2/access_token', [
                 'query' => [
                     'code' => $code,
                     'grant_type' => 'authorization_code',
-                    'appid' => $_ENV['TEACHER_WEIXIN_APP_ID'],
-                    'secret' => $_ENV['TEACHER_WEIXIN_APP_SECRET']
+                    'appid' => $app_info["app_id"],
+                    'secret' => $app_info["secret"]
                 ]
             ]
         );
@@ -116,4 +152,236 @@ class WeChatService
 
         return false;
     }
+
+    /**
+     * @param $requestType
+     * @param $method
+     * @param $body
+     * @param string $forApp
+     * @return array|bool|mixed
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     * 调用微信常规接口发送数据
+     */
+    public static function commonWeixinAPI($app_id, $userType, $requestType, $method, $body)
+    {
+
+        $at = self::getAccessToken($app_id, $userType);
+        if (!$at) {
+            return false;
+        }
+
+        $client = new Client(['base_uri' => self::$weixinAPIURL]);
+
+        $data = [
+            'body' => is_string($body) ? $body : json_encode($body)
+        ];
+
+        $subURL = "{$method}?access_token={$at}";
+        if ($requestType == 'GET') {
+            $subURL = $method;
+            $body['access_token'] = $at;
+            $data = [
+                'query' => $body
+            ];
+        }
+
+        SimpleLogger::info('request weixin api: ' . $method . '[' . $requestType . ']', []);
+
+        $response = $client->request($requestType, $subURL, $data);
+
+        if (200 == $response->getStatusCode()) {
+            $body = $response->getBody();
+            SimpleLogger::info('weixin api response: ' . $body, []);
+            $data = json_decode($body, 1);
+            if (!empty($data)) {
+
+                return $data;
+            }
+        }
+        return false;
+    }
+
+    public static function generateAccessToken($appInfo)
+    {
+        $requestParams = [
+            'grant_type' => 'client_credential',
+            'appid' => $appInfo['app_id'],
+            'secret' => $appInfo['secret'],
+        ];
+        list($status, $body) = array_values(Request::get([
+            'url' => 'https://api.weixin.qq.com/cgi-bin/token?' . http_build_query($requestParams),
+            'timeout' => 5
+        ]));
+
+        if ($status !== 200 || !$body || isset($body['errcode'])){
+            throw new \Exception("PROXY_LOGIN_FAILED: " . json_encode($body));
+        }
+        return $body;
+    }
+
+    /**
+     * @param $app_id
+     * @param $userType
+     * @return bool|string
+     * @throws \Exception
+     */
+    public static function getAccessToken($app_id, $userType)
+    {
+        $redis = RedisDB::getConn();
+        $appInfo = self::getWeCHatAppIdSecret($app_id, $userType);
+        SimpleLogger::debug("getWeCHatAppIdSecret", ["data" => $appInfo]);
+        if (empty($appInfo)) {
+            return false;
+        }
+
+        $key = $appInfo['app_id'] . "_" . self::KEY_TOKEN;
+        $accessToken = $redis->get($key);
+        SimpleLogger::info("mini pro access token = $accessToken with $key", []);
+        $count = 0;
+        if (empty($accessToken)) {
+            SimpleLogger::info("start getting the access toke with plock", []);
+            $keyLock = $key . "_LOCK";
+            $lock = $redis->setnx($keyLock, "1");
+            SimpleLogger::info("writing plock is $lock", []);
+            if ($lock) {
+                $redis->expire($keyLock, 2);
+                $data = self::generateAccessToken($appInfo);
+                if ($data) {
+                    SimpleLogger::info("access token data", []);
+                    SimpleLogger::info(print_r($data, true), []);
+                    $redis->setex($key, $data['expires_in'] - 120, $data['access_token']);
+                    $accessToken = $data['access_token'];
+                    SimpleLogger::info("access token = " . $accessToken, []);
+                }
+                $redis->del($keyLock);
+            } else {
+                $count++;
+                SimpleLogger::info("The waited plock time is $count", []);
+                if ($count > 3) {
+                    return false;
+                } else {
+                    sleep(2);
+                }
+                $accessToken = self::getAccessToken($app_id, $userType);
+            }
+        }
+        return $accessToken;
+    }
+
+    /**
+     * @param $app_id int, 在UserCenter中定义
+     * @param $userType int, WeChatService中定义
+     * @param $openid
+     * @param $templateId
+     * @param $content
+     * @param string $url
+     * @param string $miniprogram
+     * @param $forApp
+     * @return array|bool|mixed
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public static function notifyUserWeixinTemplateInfo($app_id, $userType, $openid, $templateId, $content, $url = '')
+    {
+        //组织数据
+        $body = [
+            'touser' => $openid,
+            'template_id' => $templateId,
+        ];
+        if (!empty($url)) {
+            $body['url'] = $url;
+        }
+        $body['data'] = $content;
+        //发送数据
+        $res = self::commonWeixinAPI($app_id, $userType, 'POST', 'message/template/send', $body);
+        //返回数据
+        return $res;
+    }
+
+    /**
+     * 获取微信 js api ticket
+     * @return string
+     * @internal param object $db 调用此服务的业务必须提交数据库事务
+     */
+    public static function getJSAPITicket($app_id, $user_type)
+    {
+        $app_info = self::getWeCHatAppIdSecret($app_id, $user_type);
+        if (empty($app_info)) {
+            return false;
+        }
+        $redis = RedisDB::getConn(self::$redisDB);
+        $key = $app_info["app_id"] . "_" . self::KEY_TICKET;
+        $ticket = $redis->get($key);
+        SimpleLogger::info("js ticket = $ticket with $key", []);
+        $count = 0;
+        if (empty($ticket)) {
+            SimpleLogger::info("start getting the jsapi ticket with plock", []);
+            $keyLock = $key . "_LOCK";
+            $lock = $redis->setnx($keyLock, "1");
+            SimpleLogger::info("writing jsplock is $lock", []);
+            if ($lock) {
+                $redis->expire($keyLock, 2);
+                $data = self::generateJSAPITicket();
+                if ($data) {
+                    SimpleLogger::info("jsapi ticket data", []);
+                    SimpleLogger::info(print_r($data, true), []);
+                    $redis->setex($key, $data['expires_in'] - 120, $data['ticket']);
+                    $ticket = $data['ticket'];
+                }
+                $redis->del($keyLock);
+
+            } else {
+                $count++;
+                SimpleLogger::info("The waited plock time is $count");
+                if ($count > 3) {
+                    return false;
+                } else {
+                    sleep(2);
+                }
+                $ticket = self::getJSAPITicket();
+            }
+        }
+        return $ticket;
+    }
+
+    public static function generateJSAPITicket($app_id, $user_type)
+    {
+        // 获取 微信access token
+        $at = self::getAccessToken($app_id, $user_type);
+        if (!$at) {
+            return false;
+        }
+
+        $client = new Client(['base_uri' => self::weixinAPIURL]);
+        $response = $client->request('GET', 'ticket/getticket', [
+            'query' => [
+                'access_token' => $at,
+                'type' => 'jsapi'
+            ]
+        ]);
+
+        if (200 == $response->getStatusCode()) {
+            $body = $response->getBody();
+            $data = json_decode($body, 1);
+
+            if (!empty($data)) {
+                return $data;
+            }
+        }
+        return false;
+    }
+
+    public static function getJSSignature($app_id, $user_type, $noncestr, $timestamp, $url)
+    {
+
+        $ticket = self::getJSAPITicket($app_id, $user_type);
+
+        if (!empty($ticket)) {
+            $s = 'jsapi_ticket=' . $ticket . '&noncestr=' . $noncestr . '&timestamp=' . $timestamp . '&url=' . $url;
+            SimpleLogger::info('==js signature string: ==', []);
+            SimpleLogger::info($s, []);
+            return sha1($s);
+        }
+        return false;
+    }
+
 }

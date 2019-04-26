@@ -9,6 +9,7 @@
 namespace App\Middleware;
 
 use App\Libs\SimpleLogger;
+use App\Libs\UserCenter;
 use Slim\Http\Request;
 use App\Libs\Valid;
 use Slim\Http\StatusCode;
@@ -31,11 +32,19 @@ class WeChatOpenIdCheckMiddleware extends MiddlewareBase
     {
         $currentUrl = $request->getUri()->getPath();
         SimpleLogger::info('--WeChatAuthCheckMiddleware--', []);
-
-        $checkResult = $this::checkNeedWeChatCode($request);
+        $needle = "/student_wx";
+        $length = strlen($needle);
+        $app_id = UserCenter::AUTH_APP_ID_AIPEILIAN_TEACHER;
+        $user_type = 2;
+        if (substr($currentUrl, 0, $length) === $needle){
+            $user_type = 1;
+            $app_id = UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT;
+        }
+        $checkResult = $this::checkNeedWeChatCode($request, $user_type);
         // 是否要跳转到微信端获取用户code
         $needWeChatCode = $checkResult["needWeChatCode"];
         $openId = $checkResult["openId"];
+        SimpleLogger::info("checkWeChatCode", ["open_id" => $openId, "need" => $needWeChatCode, "user_type" => $user_type]);
 
         // 本地环境方便调试
         if ($_ENV['DEBUG_WEIXIN_SKIP_MIDDLEWARE'] == "1" and !empty($request->getParam("test_open_id"))) {
@@ -54,14 +63,14 @@ class WeChatOpenIdCheckMiddleware extends MiddlewareBase
         return $response;
     }
     
-    public function checkNeedWeChatCode(Request $request) {
+    public function checkNeedWeChatCode(Request $request, $app_id, $user_type) {
         $openId = null;
         $needWeChatCode = false;
         $code = $request->getParam('wx_code');
         // 已经获取微信的用户code，通过微信API获取openid
         if (!empty($code)) {
-            $data = WeChatService::getWeixnUserOpenIDAndAccessTokenByCode($code);
-
+            $data = WeChatService::getWeixnUserOpenIDAndAccessTokenByCode($code, $app_id, $user_type);
+            SimpleLogger::info("getWeixnUserOpenIDAndAccessTokenByCode", ["data" => $data]);
             if (!empty($data)) {
                 if (!empty($data['openid'])) {
                     $openId = $data['openid'];

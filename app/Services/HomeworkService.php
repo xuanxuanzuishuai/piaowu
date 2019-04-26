@@ -81,6 +81,13 @@ class HomeworkService
         return HomeworkModel::getHomeworkList($where);
     }
 
+    public static function getScheduleHomeWorkList($schedule_id){
+        $where = [
+            HomeworkModel::$table . ".schedule_id" => $schedule_id,
+        ];
+        return HomeworkModel::getHomeworkList($where);
+    }
+
     /**
      * 私有方法，检查作业
      * @param array $playInfo

@@ -119,7 +119,7 @@ class PlayRecordService
         $lesson_info = [];
         foreach ($lesson_list as $value){
             $lesson_info[$value["lesson_id"]] = [
-                "lesson_name" => $value["lesson_name"],
+                "lesson_name" => $value["opern_name"],
                 "collection_name" => $value["collection_name"]
             ];
         }
@@ -137,7 +137,7 @@ class PlayRecordService
                 $max_duration_index = $i;
             }
 
-            $statistics[$i]["lesson_name"] = $lesson_info[$cur_lesson_id]["opern_name"];
+            $statistics[$i]["lesson_name"] = $lesson_info[$cur_lesson_id]["lesson_name"];
             $statistics[$i]["collection_name"] = $lesson_info[$cur_lesson_id]["collection_name"];
             $ai_record_info = PlayRecordModel::getWonderfulAIRecordId($cur_lesson_id, $student_id, $start_time, $end_time);
             if (!empty($ai_record_info and $ai_record_info["score"] >= 90)){
