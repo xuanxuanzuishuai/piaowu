@@ -54,8 +54,7 @@ class Play extends ControllerBase
         $db = MysqlDB::getDB();
         $db->beginTransaction();
 
-        //$userID = $this->ci['student']['id'];
-        $userID = 22;
+        $userID = $this->ci['student']['id'];
         $params['data']['lesson_type'] = PlayRecordModel::TYPE_DYNAMIC;
         list($errorCode, $ret) = UserPlayServices::addRecord($userID, $params['data']);
 
@@ -112,8 +111,7 @@ class Play extends ControllerBase
         $db->beginTransaction();
 
         // 插入练琴纪录表
-        // $userId = $this->ci['student']['id'];
-        $userId = 22;
+        $userId = $this->ci['student']['id'];
         $param['data']['lesson_type'] = PlayRecordModel::TYPE_AI;
         list($errCode, $ret) = UserPlayServices::addRecord($userId, $param['data']);
         if (!empty($errCode)) {
