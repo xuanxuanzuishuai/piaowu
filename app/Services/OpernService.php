@@ -105,6 +105,8 @@ class OpernService
             $opern['score_id'] = $lesson['opern_id'];
             $opern['res'] = !empty($lesson['resources']) ? $lesson['resources'][0]['url'] : '';
             $opern['is_free'] = $lesson['freeflag'] ? '1' : '0';
+            $opern['collection_id'] = $lesson['collection_id'] ? $lesson['collection_id'] : '';
+            $opern['collection_name'] = $lesson['collection_name'] ? $lesson['collection_name'] : '';
             $result[] = $opern;
         }
         return $result;

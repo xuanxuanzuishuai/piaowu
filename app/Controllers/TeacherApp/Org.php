@@ -88,7 +88,7 @@ class Org extends ControllerBase
         foreach ($tasks as $task){
 
             $taskBase = [
-                'lesson_id' => $task['lesson_id'],
+                'id' => $task['lesson_id'],
                 'name' => $task['lesson_name'],
                 'complete' => $task['complete']
             ];
