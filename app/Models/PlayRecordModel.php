@@ -28,7 +28,10 @@ class PlayRecordModel extends Model
                                                    $createdTime=null,
                                                    $endTime=null){
         $db = MysqlDB::getDB();
-        $where = ['lesson_id' => $lessonId, 'student_id' => $studentId];
+        $where = ['lesson_id' => $lessonId,
+                  'student_id' => $studentId,
+                  'ORDER' => ['created_time' => 'DESC']
+        ];
         if (!empty($recordType)){
             $where['lesson_type'] = $recordType;
         }

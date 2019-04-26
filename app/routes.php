@@ -13,6 +13,7 @@ use App\Middleware\AppApi;
 use App\Middleware\EmployeeAuthCheckMiddleWare;
 use App\Middleware\EmployeePrivilegeMiddleWare;
 use App\Middleware\OrgAuthCheckMiddleWareForApp;
+use App\Middleware\OrgTeacherAuthMiddleWareForApp;
 use App\Middleware\StudentAuthCheckMiddleWareForApp;
 use App\Controllers\StudentApp\App as StudentAppApp;
 use App\Controllers\StudentApp\Auth as StudentAppAuth;
@@ -214,52 +215,60 @@ $arr = array(
     '/teacher_app/opn/categories' => [
         'method' => ['get'],
         'call' => TeacherAppOpn::class . ':categories',
-        'middles' => []
+        'middles' => [OrgTeacherAuthMiddleWareForApp::class,
+            OrgAuthCheckMiddleWareForApp::class, AppApi::class]
     ],
     '/teacher_app/opn/collections' => [
         'method' => ['get'],
         'call' => TeacherAppOpn::class . ':collections',
-        'middles' => []
+        'middles' => [OrgTeacherAuthMiddleWareForApp::class,
+            OrgAuthCheckMiddleWareForApp::class, AppApi::class]
     ],
     '/teacher_app/opn/lessons' => [
         'method' => ['get'],
         'call' => TeacherAppOpn::class . ':lessons',
-        'middles' => []
+        'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApi::class]
     ],
     '/teacher_app/opn/lesson' => [
         'method' => ['get'],
         'call' => TeacherAppOpn::class . ':lesson',
-        'middles' => []
+        'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApi::class]
     ],
     '/teacher_app/opn/recent_collections' => [
         'method' => ['get'],
         'call' => TeacherAppOpn::class . ':recentCollections',
-        'middles' => []
+        'middles' => [OrgTeacherAuthMiddleWareForApp::class,
+            OrgAuthCheckMiddleWareForApp::class, AppApi::class]
     ],
     '/teacher_app/opn/recent_lessons' => [
         'method' => ['get'],
         'call' => TeacherAppOpn::class . ':recentLessons',
-        'middles' => []
+        'middles' => [OrgTeacherAuthMiddleWareForApp::class,
+            OrgAuthCheckMiddleWareForApp::class, AppApi::class]
     ],
     '/teacher_app/opn/lesson_resource' => [
         'method' => ['get'],
         'call' => TeacherAppOpn::class . ':getLessonResource',
-        'middles' => []
+        'middles' => [OrgTeacherAuthMiddleWareForApp::class,
+            OrgAuthCheckMiddleWareForApp::class, AppApi::class]
     ],
     '/teacher_app/schedule/end' => [
         'method' => ['post'],
         'call' => TeacherAppSchedule::class . ':end',
-        'middles' => []
+        'middles' => [OrgTeacherAuthMiddleWareForApp::class,
+            OrgAuthCheckMiddleWareForApp::class, AppApi::class]
     ],
     '/teacher_app/play/end' => [
         'method' => ['post'],
         'call' => TeacherAppPlay::class . ':end',
-        'middles' => []
+        'middles' => [OrgTeacherAuthMiddleWareForApp::class,
+            OrgAuthCheckMiddleWareForApp::class, AppApi::class]
     ],
     '/teacher_app/play/ai_end' => [
         'method' => ['post'],
         'call' => TeacherAppPlay::class . ':aiEnd',
-        'middles' => []
+        'middles' => [OrgTeacherAuthMiddleWareForApp::class,
+            OrgAuthCheckMiddleWareForApp::class, AppApi::class]
     ],
 
     '/goods/course/list' => array('method'=> array('get'),'call'=> '\App\Controllers\Course\Course:list','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
