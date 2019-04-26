@@ -240,10 +240,8 @@ class Teacher extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        // 新增一个老师时，设为在职状态
-        if (empty($params['status'])) {
-            $params['status'] = TeacherModel::ENTRY_ON;
-        }
+        $params['status'] = TeacherModel::STATUS_NORMAL;
+        $params['recruit_status'] = TeacherModel::ENTRY_ON;
 
         $orgId = $this->getEmployeeOrgId();
 
