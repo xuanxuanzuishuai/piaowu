@@ -549,9 +549,13 @@ class StudentModel extends Model
     public static function selectStudentByOrg($orgId, $page, $count, $params)
     {
         $db = MysqlDB::getDB();
-        $s = StudentModel::$table;
+
+        $s  = StudentModel::$table;
         $so = StudentOrgModel::$table;
-        $t = TeacherStudentModel::$table;
+        $t  = TeacherStudentModel::$table;
+        $te = TeacherModel::$table;
+        $e  = EmployeeModel::$table;
+
         $status = TeacherStudentModel::STATUS_NORMAL;
 
         //按姓名或手机号模糊查询,查询出结果后直接返回
@@ -576,25 +580,31 @@ class StudentModel extends Model
             $where .= " and s.mobile like :mobile ";
             $map[':mobile'] = "{$params['mobile']}%";
         }
+        if(!empty($params['is_bind'])) {
+            $where .= " and so.status = :is_bind ";
+            $map[':is_bind'] = "{$params['is_bind']}";
+        }
 
         if ($orgId > 0) {
-            $sql = "select s.*,t.teacher_id,te.name teacher_name,t.status ts_status,so.status bind_status
+            $sql = "select s.*,e.name cc_name, t.teacher_id, te.name teacher_name, t.status ts_status, so.status bind_status
                 from {$s} s inner join {$so} so
                 on s.id = so.student_id
                 and so.org_id = {$orgId} left join {$t} t on s.id = t.student_id and t.status = {$status}
                 and t.org_id = {$orgId}
-                left join teacher te on te.id = t.teacher_id
+                left join {$te} te on te.id = t.teacher_id
+                left join {$e} e on e.id = s.cc_id
                 {$where}
                 order by s.create_time desc {$limit}";
 
             $countSql = "select count(*) count from {$s} s inner join {$so} so on s.id = so.student_id
                     and so.org_id = {$orgId} {$where}";
         } else {
-            $sql = "select s.*,t.teacher_id,te.name teacher_name,t.status ts_status,so.status bind_status
+            $sql = "select s.*,e.name cc_name, t.teacher_id, te.name teacher_name, t.status ts_status, so.status bind_status
                 from {$s} s inner join {$so} so
                 on s.id = so.student_id
                 left join {$t} t on s.id = t.student_id and t.status = {$status}
-                left join teacher te on te.id = t.teacher_id
+                left join {$te} te on te.id = t.teacher_id
+                left join {$e} e on e.id = s.cc_id
                 {$where}
                 order by s.create_time desc {$limit}";
 
@@ -659,5 +669,45 @@ class StudentModel extends Model
         $records = $db->queryAll($sql);
 
         return $records;
+    }
+
+    /**
+     * 查询在指定id数组内的学生
+     * @param $orgId
+     * @param $studentIds
+     * @return array
+     */
+    public static function selectOrgStudentsIn($orgId, $studentIds)
+    {
+        $db = MysqlDB::getDB();
+        $records = $db->select(self::$table . '(s)', [
+            '[><]' . StudentOrgModel::$table . '(so)' => ['s.id' => 'student_id']
+        ], [
+            's.id',
+        ],
+        [
+            'so.org_id' => $orgId,
+            's.id'      => $studentIds,
+        ]);
+
+        return $records;
+    }
+
+    /**
+     * 批量更新学生的课管
+     * @param $studentIds
+     * @param $employeeId
+     * @return int|null
+     */
+    public static function updateStudentCC($studentIds, $employeeId)
+    {
+        $db = MysqlDB::getDB();
+        $affectRows = $db->updateGetCount(self::$table, [
+            'cc_id'       => $employeeId,
+            'update_time' => time(),
+        ], [
+            'id' => $studentIds
+        ]);
+        return $affectRows;
     }
 }

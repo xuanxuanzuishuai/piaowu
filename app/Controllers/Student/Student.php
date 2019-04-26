@@ -91,6 +91,11 @@ class Student extends ControllerBase
                 'key'        => 'count',
                 'type'       => 'integer',
                 'error_code' => 'count_is_integer',
+            ],
+            [
+                'key'        => 'is_bind',
+                'type'       => 'integer',
+                'error_code' => 'is_bind_is_integer',
             ]
         ];
         $result = Valid::validate($params, $rules);

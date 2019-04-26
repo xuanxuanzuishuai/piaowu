@@ -25,6 +25,7 @@ use App\Controllers\TeacherApp\Opn as TeacherAppOpn;
 use App\Controllers\TeacherApp\Schedule as TeacherAppSchedule;
 use App\Controllers\TeacherApp\Play as TeacherAppPlay;
 use App\Controllers\TeacherApp\Org as TeacherAppOrg;
+use App\Controllers\Employee\Employee as Employee;
 use Slim\App;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -414,6 +415,12 @@ $arr = array(
     '/boss/gift_code/abandon' => [
         'method' => ['post'],
         'call' => GiftCode::class . ':abandon',
+        'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class]
+    ],
+    //机构批量分配课管(course consultant)
+    '/employee/employee/assign_cc' => [
+        'method'  => ['post'],
+        'call'    => Employee::class . ':assignCC',
         'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class]
     ],
 );

@@ -14,9 +14,11 @@ use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\EmployeeModel;
 use App\Models\RoleModel;
+use App\Models\StudentModel;
 use App\Services\DictService;
 use App\Services\EmployeePrivilegeService;
 use App\Services\EmployeeService;
+use App\Services\StudentService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -399,5 +401,83 @@ class Employee extends ControllerBase
             'code'=>0,
             'data'=>$data
         ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * 批量给学生分配课管
+     * @param Request $request
+     * @param Response $response
+     * @param $args
+     * @return Response
+     */
+    public function assignCC(Request $request, Response $response, $args)
+    {
+        $rules = [
+            [
+                'key'        => 'student_ids',
+                'type'       => 'required',
+                'error_code' => 'student_ids_is_required'
+            ],
+            [
+                'key'        => 'student_ids',
+                'type'       => 'array',
+                'error_code' => 'student_ids_must_be_array'
+            ],
+            [
+                'key'        => 'employee_id',
+                'type'       => 'required',
+                'error_code' => 'employee_id_is_required'
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $studentIds = $params['student_ids'];
+        $employeeId = $params['employee_id'];
+
+        if(count($studentIds) == 0) {
+            return $response->withJson(Valid::addErrors([], 'employee', 'students_can_not_be_empty'));
+        }
+
+        $roleId = DictService::getKeyValue(Constants::DICT_TYPE_ROLE_ID, Constants::DICT_KEY_CODE_CA_ROLE_ID_CODE);
+        if(empty($roleId)) {
+            return $response->withJson(Valid::addErrors([], 'employee', 'cc_role_not_exist'));
+        }
+
+        global $orgId;
+
+        $employee = EmployeeModel::getRecord([
+            'id'      => $employeeId,
+            'org_id'  => $orgId,
+            'role_id' => $roleId,
+        ]);
+
+        if(empty($employee)) {
+            return $response->withJson(Valid::addErrors([], 'employee', 'employee_not_exist'));
+        }
+
+        $records = StudentModel::selectOrgStudentsIn($orgId, $studentIds);
+        $ids = array_column($records, 'id');
+
+        //检查学生是否存在，并且已经绑定机构
+        foreach($studentIds as $id) {
+            if(!in_array($id, $ids)) {
+                return $response->withJson(Valid::addErrors([$id], 'employee', 'only_bind_student_could_distribute'));
+            }
+        }
+
+        $affectRows = StudentService::assignCC($studentIds, $employeeId);
+
+        if($affectRows != count($studentIds)) {
+            return $response->withJson(Valid::addErrors([], 'employee', 'update_student_cc_fail'));
+        }
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => ['affect_rows' => $affectRows]
+        ]);
     }
 }

@@ -545,4 +545,15 @@ class StudentService
     {
         return StudentOrgModel::getRecords(['student_id'=>$sIds,'status'=>StudentOrgModel::STATUS_NORMAL]);
     }
+
+    /**
+     * 批量给学生分配课管
+     * @param $studentIds
+     * @param $employeeId
+     * @return int|null
+     */
+    public static function assignCC($studentIds, $employeeId)
+    {
+        return StudentModel::updateStudentCC($studentIds, $employeeId);
+    }
 }
