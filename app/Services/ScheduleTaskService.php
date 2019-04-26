@@ -11,6 +11,7 @@ namespace App\Services;
 use App\Libs\Constants;
 use App\Libs\Dict;
 use App\Libs\SimpleLogger;
+use App\Libs\Valid;
 use App\Models\ScheduleModel;
 use App\Models\ScheduleTaskModel;
 use App\Models\ScheduleTaskUserModel;
@@ -19,19 +20,19 @@ class ScheduleTaskService
 {
     /**
      * @param $st
-     * @param array $studentIds
-     * @param array $teacherIds
+     * @param array $students
+     * @param array $teachers
      * @return array|bool
      */
-    public static function addST($st, $studentIds = array(), $teacherIds = array())
+    public static function addST($st, $students = array(), $teachers = array())
     {
         $stus = [];
         $stId = ScheduleTaskModel::addST($st);
         if (is_null($stId)) {
             return false;
         }
-        $stus[ScheduleTaskUserModel::USER_ROLE_S] = $studentIds;
-        $stus[ScheduleTaskUserModel::USER_ROLE_T] = $teacherIds;
+        $stus[ScheduleTaskUserModel::USER_ROLE_S] = $students;
+        $stus[ScheduleTaskUserModel::USER_ROLE_T] = $teachers;
 
         if (!empty($stus)) {
             $res = ScheduleTaskUserService::bindSTUs([$stId], $stus);
@@ -135,33 +136,61 @@ class ScheduleTaskService
     }
 
     /**
-     * @param $sIds
+     * @param $students
      * @param $start_time
      * @param $end_time
      * @param $weekday
      * @param $expireStartDate
+     * @param $maxNum
      * @param null $orgSTId
      * @return array|bool
      */
-    public static function checkStudent($sIds, $start_time, $end_time, $weekday, $expireStartDate,$orgSTId = null)
+    public static function checkStudent($students, $start_time, $end_time, $weekday, $expireStartDate,$maxNum,$orgSTId = null)
     {
-        $sts = ScheduleTaskModel::getSTListByUser($sIds, ScheduleTaskUserModel::USER_ROLE_S, $start_time, $end_time, $weekday, $expireStartDate,$orgSTId);
-        return empty($sts) ? true : $sts;
+        $studentIds = array_keys($students);
+        $result = true;
+        if (count($students) > $maxNum) {
+            $result = Valid::addErrors([], 'schedule_task_student', 'schedule_task_student_num_more_than_max');
+        }
+        $eStudents = StudentService::getStudentByIds($studentIds);
+        if (count($students) != count($eStudents))
+        {
+            $result = Valid::addErrors([], 'schedule_task_student', 'schedule_task_student_is_not_match');
+        }
+        $sts = ScheduleTaskModel::getSTListByUser($studentIds, ScheduleTaskUserModel::USER_ROLE_S, $start_time, $end_time, $weekday, $expireStartDate,$orgSTId);
+        if(!empty($sts)) {
+            $result = Valid::addErrors(['data' => ['result' => $sts]], 'schedule_task_student', 'schedule_task_student_time_error');
+        }
+        return $result;
     }
 
     /**
-     * @param $tIds
+     * @param $teachers
      * @param $start_time
      * @param $end_time
      * @param $weekday
      * @param $expireStartDate
+     * @param $maxNum
      * @param null $orgSTId
      * @return array|bool
      */
-    public static function checkTeacher($tIds, $start_time, $end_time, $weekday, $expireStartDate,$orgSTId = null)
+    public static function checkTeacher($teachers, $start_time, $end_time, $weekday, $expireStartDate, $maxNum,$orgSTId = null)
     {
-        $sts = ScheduleTaskModel::getSTListByUser($tIds, ScheduleTaskUserModel::USER_ROLE_T, $start_time, $end_time, $weekday, $expireStartDate,$orgSTId);
-        return empty($sts) ? true : $sts;
+        $result = true;
+        $teacherIds = array_keys($teachers);
+        if (count($teachers) > $maxNum) {
+            $result = Valid::addErrors([], 'schedule_task_teacher', 'schedule_task_teacher_num_more_than_max');
+        }
+        $eTeachers = TeacherService::getTeacherByIds($teacherIds);
+        if (count($teachers) != count($eTeachers))
+        {
+            $result = Valid::addErrors([], 'schedule_task_teacher', 'schedule_task_teacher_is_not_match');
+        }
+        $sts = ScheduleTaskModel::getSTListByUser($teacherIds, ScheduleTaskUserModel::USER_ROLE_T, $start_time, $end_time, $weekday, $expireStartDate,$orgSTId);
+        if(!empty($sts)){
+            $result = Valid::addErrors(['data' => ['result' => $sts]], 'schedule_task_teacher', 'schedule_task_teacher_time_error');
+        }
+        return $result;
     }
 
     /**

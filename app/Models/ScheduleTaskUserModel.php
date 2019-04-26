@@ -41,7 +41,7 @@ class ScheduleTaskUserModel extends Model
     public static function getSTUBySTIds($stIds, $status = array(self::STATUS_NORMAL,self::STATUS_BACKUP))
     {
 
-        $sql = "select stu.user_id,stu.user_role,stu.id,stu.st_id,stu.create_time,stu.status,t.name as teacher_name,s.name as student_name from ".self::$table ." as stu "
+        $sql = "select stu.user_id,stu.price,stu.user_role,stu.id,stu.st_id,stu.create_time,stu.status,t.name as teacher_name,s.name as student_name from ".self::$table ." as stu "
             ." left join ".StudentModel::$table." as s on stu.user_id = s.id and stu.user_role = ".self::USER_ROLE_S
             ." left join ".TeacherModel::$table." as t on stu.user_id = t.id and stu.user_role = ".self::USER_ROLE_T
             ." where stu.st_id in (".implode(',',$stIds).") and stu.status in (".implode(",",$status).")";

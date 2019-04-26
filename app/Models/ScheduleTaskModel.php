@@ -10,6 +10,7 @@ namespace App\Models;
 
 
 use App\Libs\MysqlDB;
+use Medoo\Medoo;
 
 class ScheduleTaskModel extends Model
 {
@@ -46,8 +47,25 @@ class ScheduleTaskModel extends Model
         if (is_numeric($params['status'])) {
             $where['st.status'] = $params['status'];
         }
+
         if (is_numeric($params['weekday'])) {
             $where['st.weekday'] = $params['weekday'];
+        }
+        $sstuIds = $tstuIds = [];
+        if(!empty($params['student_ids'])) {
+            $sstuIds = $db->query('select distinct st_id from '.ScheduleTaskUserModel::$table." as stu where stu.user_id in (".implode(",",$params['student_ids']).") and stu.user_role =".ScheduleTaskUserModel::USER_ROLE_S)->fetchAll(\PDO::FETCH_COLUMN);
+        }
+        if(!empty($params['teacher_ids'])) {
+            $tstuIds = $db->query('select distinct st_id from '.ScheduleTaskUserModel::$table." as stu where stu.user_id in (".implode(",",$params['teacher_ids']).") and stu.user_role =".ScheduleTaskUserModel::USER_ROLE_T)->fetchAll(\PDO::FETCH_COLUMN);
+
+        }
+        if(!empty($sstuIds) && !empty($tstuIds)) {
+            $where['st.id'] = array_intersect($sstuIds,$tstuIds);
+        }
+        else if(!empty($sstuIds)) {
+            $where['st.id'] = $sstuIds;
+        } else if(!empty($tstuIds)) {
+            $where['st.id'] = $tstuIds;
         }
         if ($isOrg == true) {
             global $orgId;
@@ -56,6 +74,7 @@ class ScheduleTaskModel extends Model
         }
         $totalCount = 0;
         if ($page != -1) {
+
             // 获取总数
             $totalCount = $db->count(self::$table . " (st)", "*", $where);
             // 分页设置

@@ -9,7 +9,6 @@
 namespace App\Services;
 
 use App\Libs\Constants;
-use App\Libs\SimpleLogger;
 use App\Models\ScheduleTaskUserModel;
 
 class ScheduleTaskUserService
@@ -24,8 +23,8 @@ class ScheduleTaskUserService
         $now = time();
         foreach ($stIds as $stId) {
             foreach ($STUs as $role => $userIds) {
-                foreach ($userIds as $userId) {
-                    $stus[] = ['status' => ScheduleTaskUserModel::STATUS_NORMAL, 'st_id' => $stId, 'user_id' => $userId, 'user_role' => $role, 'create_time' => $now];
+                foreach ($userIds as $userId => $price) {
+                    $stus[] = ['status' => ScheduleTaskUserModel::STATUS_NORMAL, 'st_id' => $stId, 'user_id' => $userId, 'price'=>$price*100,'user_role' => $role, 'create_time' => $now];
                 }
             }
         }

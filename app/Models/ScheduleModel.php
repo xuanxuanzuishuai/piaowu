@@ -86,7 +86,7 @@ class ScheduleModel extends Model
         if (!empty($params['course_id'])) {
             $where['s.course_id'] = $params['course_id'];
         }
-        if (isset($params['status'])) {
+        if (isset($params['status']) && is_numeric($params['status'])) {
             $where['s.status'] = $params['status'];
         }
         if (!empty($params['s_time_start'])) {
@@ -98,6 +98,7 @@ class ScheduleModel extends Model
         if (!empty($params['st_id'])) {
             $where['s.st_id'] = $params['st_id'];
         }
+
         if ($isOrg == true) {
             global $orgId;
             if ($orgId > 0)
