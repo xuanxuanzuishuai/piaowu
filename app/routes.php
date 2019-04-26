@@ -216,14 +216,12 @@ $arr = array(
     '/teacher_app/opn/categories' => [
         'method' => ['get'],
         'call' => TeacherAppOpn::class . ':categories',
-        'middles' => [OrgTeacherAuthMiddleWareForApp::class,
-            OrgAuthCheckMiddleWareForApp::class, AppApi::class]
+        'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApi::class]
     ],
     '/teacher_app/opn/collections' => [
         'method' => ['get'],
         'call' => TeacherAppOpn::class . ':collections',
-        'middles' => [OrgTeacherAuthMiddleWareForApp::class,
-            OrgAuthCheckMiddleWareForApp::class, AppApi::class]
+        'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApi::class]
     ],
     '/teacher_app/opn/lessons' => [
         'method' => ['get'],
