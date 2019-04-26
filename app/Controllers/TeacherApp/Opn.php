@@ -333,14 +333,21 @@ class Opn extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         $lessonIds = $param['lesson_ids'];
-        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, 1);
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER, 1);
         $result = $opn->lessonsByIds($lessonIds, 'png');
+        SimpleLogger::debug("*******************", $result);
         if (empty($result) || !empty($result['errors'])) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
         $data = $result;
-        $list = OpernService::appFormatLessonByIds($data['data']);
+        $list = [];
+        foreach ($data['data'] as $lesson) {
+            $opern =[];
+            $opern['lesson_id'] = $lesson['lesson_id'];
+            $opern['res'] = $lesson['resources'];
+            $list[] = $opern;
+        }
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => $list

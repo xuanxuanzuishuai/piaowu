@@ -10,6 +10,7 @@ namespace App\Controllers\TeacherApp;
 
 
 use App\Libs\Valid;
+use App\Services\HomeworkService;
 use App\Services\OrganizationServiceForApp;
 use App\Controllers\ControllerBase;
 use Slim\Http\Request;
@@ -77,6 +78,26 @@ class Org extends ControllerBase
             $params['teacher_id'],
             $params['student_id']
         );
+
+        // 回课数据
+        list($tasks, $statistics, $books) = HomeworkService::scheduleFollowUp($params['teacher_id'], $params['student_id']);
+        $homework = [];
+        foreach ($tasks as $task){
+            $taskBase = [
+                'lesson_id' => $task['lesson_id'],
+                'lesson_name' => $task['lesson_name'],
+                'complete' => $task['complete'],
+                'book_name' => $task['book_name'],
+                'res' => $task['res'],
+                'cover' => $task['cover'],
+                'score_id' => $task['score_id'],
+            ];
+            $play = $statistics[$task['lesson_id']];
+            $book = $books[$task['lesson_id']];
+            $homework[] = array_merge($taskBase, $play, $book);
+        }
+        $loginData['homework'] = $homework;
+
 
         if (!empty($errorCode)) {
             $result = Valid::addAppErrors([], $errorCode);

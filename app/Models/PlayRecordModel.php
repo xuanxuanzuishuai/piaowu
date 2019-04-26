@@ -23,11 +23,19 @@ class PlayRecordModel extends Model
     const TYPE_OFF_CLASS = 1;      // 课下练琴
 
 
-    public static function getPlayRecordByLessonId($lessonId, $studentId, $recordType=null){
+    public static function getPlayRecordByLessonId($lessonId, $studentId,
+                                                   $recordType=null,
+                                                   $createdTime=null,
+                                                   $endTime=null){
         $db = MysqlDB::getDB();
         $where = ['lesson_id' => $lessonId, 'student_id' => $studentId];
         if (!empty($recordType)){
             $where['lesson_type'] = $recordType;
+        }
+        if (!empty($createdTime) && !empty($endTime)){
+            $where['created_time[>=]'] = $createdTime;
+            $where['end_time[<=]'] = $endTime;
+
         }
         $result = $db->select(PlayRecordModel::$table, '*', $where);
         return $result;

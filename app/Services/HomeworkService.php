@@ -13,6 +13,7 @@ use App\Models\HomeworkModel;
 use App\Models\HomeworkTaskModel;
 use App\Libs\SimpleLogger;
 use App\Models\PlayRecordModel;
+use App\Libs\OpernCenter;
 
 
 
@@ -206,6 +207,82 @@ class HomeworkService
             }
         }
         return $container;
+    }
+
+    /**
+     * 爱学琴老师端回课
+     * @param int $teacherId
+     * @param int $studentId
+     * @return array
+     */
+    public static function scheduleFollowUp($teacherId, $studentId){
+        // 获取师徒二人最近的一次作业
+        $where = [
+            HomeworkModel::$table . ".student_id" => $studentId,
+            HomeworkModel::$table . ".teacher_id" => $teacherId,
+            HomeworkModel::$table . ".schedule_id[!]" => null,
+            "ORDER" => ['created_time' => 'DESC'],
+            "LIMIT" => 1
+        ];
+        $homework = HomeworkModel::getHomeworkList($where);
+        if(empty($homework)){
+            return [null, null, null];
+        }
+
+        // 作业的练习统计
+        $lessonIds = array_column($homework, 'lesson_id');
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, 1);
+        $bookInfo = $opn->lessonsByIds($lessonIds, 'png');
+        $books = [];
+        foreach ($bookInfo['data'] as $book){
+            $books['lesson_id'] = [
+                'book_name' => $book['collection_name'],
+                'res' => $book['resource'],
+                'cover' => $book['cover'],
+                'score_id' => $book['opern_id'],
+                'is_free' => $book['freeflag'] ? '1' : '0'
+            ];
+        }
+
+        list($start, $end) = [$homework[0]['created_time'], $homework[0]['end_time']];
+        $allPlays = PlayRecordModel::getPlayRecordByLessonId(
+            $lessonIds, $studentId, $createdTime=$start, $endTime=$end
+        );
+
+        // 统计
+        $statistics = [];
+        foreach ($allPlays as $play){
+            $lessonId = $play['lesson_id'];
+            if (!isset($statistics[$lessonId])){
+                $statistics[$lessonId] = [
+                    'practice_time' => 0,
+                    'step_times' => 0,
+                    'whole_times' => 0,
+                    'whole_best' => 0,
+                    'ai_times' => 0,
+                    'ai_best' => 0
+                ];
+            }
+            $statistics[$lessonId]['practice_time'] += $play['duration'];
+            if ($play['lesson_type'] == PlayRecordModel::TYPE_AI){
+                $statistics[$lessonId]['ai_times'] += 1;
+                if ($play['score'] > $statistics[$lessonId]['ai_best']){
+                    $statistics[$lessonId]['ai_best'] = $play['score'];
+                }
+            } else {
+                if(!empty($play['lesson_sub_id'])){
+                    $statistics[$lessonId]['step_times'] += 1;
+                }else{
+                    $statistics[$lessonId]['whole_times'] += 1;
+                    if ($play['score'] > $statistics[$lessonId]['whole_best']){
+                        $statistics[$lessonId]['whole_best'] = $play['score'];
+                    }
+                }
+            }
+        }
+
+        return [$homework, $statistics, $books];
+
     }
 
 }
