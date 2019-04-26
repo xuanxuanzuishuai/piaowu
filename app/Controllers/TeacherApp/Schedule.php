@@ -61,6 +61,8 @@ class Schedule extends ControllerBase
             );
         }
         $db->commit();
+
+
         $date_str = date("Y年m月d日", time());
         $data = [
             'first' => [
@@ -95,6 +97,7 @@ class Schedule extends ControllerBase
                 $_ENV["WECHAT_FRONT_DOMAIN"] . "/student/report?schedule_id=" . $scheduleId
             );
         }
+
         return $response->withJson(['code'=>0], StatusCode::HTTP_OK);
     }
 }

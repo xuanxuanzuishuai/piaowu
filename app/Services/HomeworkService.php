@@ -245,7 +245,7 @@ class HomeworkService
         foreach ($bookInfo['data'] as $book){
             $books[$book['lesson_id']] = [
                 'book_name' => $book['collection_name'],
-                'res' => $book['resources'],
+                'res' => $book['resources'] ? $book['resources']:'',
                 'cover' => $bookDetails[$book['collection_id']] ? $bookDetails[$book['collection_id']]['cover'] : '',
                 'score_id' => $book['opern_id'],
                 'is_free' => $book['freeflag'] ? '1' : '0'
