@@ -322,9 +322,9 @@ class Opn extends ControllerBase
         // 验证请求参数
         $rules = [
             [
-                'key' => 'lesson_ids',
+                'key' => 'lesson_id',
                 'type' => 'required',
-                'lesson_ids_is_required' => 'lesson_ids_is_required'
+                'lesson_id_is_required' => 'lesson_id_is_required'
             ]
         ];
         $param = $request->getParams();
@@ -332,21 +332,19 @@ class Opn extends ControllerBase
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        $lessonIds = $param['lesson_ids'];
+        $lessonId = $param['lesson_id'];
         $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER, 1);
-        $result = $opn->lessonsByIds($lessonIds, 'png');
-        SimpleLogger::debug("*******************", $result);
+        $result = $opn->staticResource($lessonId, 'png');
         if (empty($result) || !empty($result['errors'])) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $data = $result;
-        $list = [];
-        foreach ($data['data'] as $lesson) {
-            $opern =[];
-            $opern['lesson_id'] = $lesson['lesson_id'];
-            $opern['res'] = $lesson['resources'];
-            $list[] = $opern;
+        $list = [
+            'lesson_id' => $lessonId,
+            'res' => []
+        ];
+        foreach ($result['data'] as $r) {
+            array_push($list['res'], $r['url']);
         }
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,

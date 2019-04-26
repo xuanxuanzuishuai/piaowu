@@ -28,6 +28,7 @@ class OpernCenter
     const OPERN_API_LESSONS_BY_ID = '/api/opern/lessonsbyid';
     const OPERN_API_SEARCH_COLLECTIONS = '/api/opern/search_collection';
     const OPERN_API_SEARCH_LESSONS = '/api/opern/search_opern';
+    const OPERN_API_STATIC_RESOURCE = '/api/opern/opernres';
 
     const DEFAULT_PAGE_SIZE = 20;
     const DEFAULT_AUDITING = 0;
@@ -252,4 +253,19 @@ class OpernCenter
 
         return empty($result) ? [] : $result;
     }
+
+    /**
+     * 根据$opernIds获取静态资源
+     * @param $opernIds
+     */
+    public function staticResource($opernIds, $types='png'){
+        $result = self::commonAPI(self::OPERN_API_STATIC_RESOURCE, [
+            'pro_id' => $this->proId,
+            'pro_ver' => $this->proVer,
+            'opern_id' => $opernIds,
+            'types' => $types
+        ]);
+        return empty($result) ? [] : $result;
+    }
+
 }

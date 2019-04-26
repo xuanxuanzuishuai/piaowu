@@ -89,12 +89,8 @@ class Org extends ControllerBase
 
             $taskBase = [
                 'lesson_id' => $task['lesson_id'],
-                'lesson_name' => $task['lesson_name'],
-                'complete' => $task['complete'],
-                'book_name' => $task['book_name'],
-                'res' => $task['res'],
-                'cover' => $task['cover'],
-                'score_id' => $task['score_id'],
+                'name' => $task['lesson_name'],
+                'complete' => $task['complete']
             ];
             $play = $statistics[$task['lesson_id']];
             $book = $books[$task['lesson_id']];
