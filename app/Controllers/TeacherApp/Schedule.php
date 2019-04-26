@@ -10,12 +10,16 @@ namespace App\Controllers\TeacherApp;
 
 use App\Controllers\ControllerBase;
 use App\Libs\MysqlDB;
+use App\Libs\UserCenter;
 use App\Libs\Valid;
 use App\Services\HomeworkService;
 use App\Services\ScheduleServiceForApp;
+use App\Services\WeChatService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
+use App\Models\UserWeixinModel;
+
 
 class Schedule extends ControllerBase
 {
@@ -57,7 +61,40 @@ class Schedule extends ControllerBase
             );
         }
         $db->commit();
+        $date_str = date("Y年m月d日", time());
+        $data = [
+            'first' => [
+                'value' => "您的课后报告已经生成，点击查看。",
+                'color' => "#323d83"
+            ],
+            'keyword1' => [
+                'value' => "课后报告",
+                'color' => "#323d83"
+            ],
+            'keyword2' => [
+                'value' => $date_str,
+                'color' => "#323d83"
+            ],
+            'remark' => [
+                'value' => "点击【详情】查看",
+                'color' => "#323d83"
+            ]
+        ];
+        $studentWeChatInfo = UserWeixinModel::getBoundInfoByUserId($param['student_id'],
+            UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
+            WeChatService::USER_TYPE_STUDENT
+            );
+        if (!empty($studentWeChatInfo)){
+
+            WeChatService::notifyUserWeixinTemplateInfo(
+                UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
+                WeChatService::USER_TYPE_STUDENT,
+                $studentWeChatInfo["open_id"],
+                $_ENV["WECHAT_DAILY_RECORD_REPORT"],
+                $data,
+                $_ENV["WECHAT_FRONT_DOMAIN"] . "/student/report?schedule_id=" . $scheduleId
+            );
+        }
         return $response->withJson(['code'=>0], StatusCode::HTTP_OK);
     }
-
 }

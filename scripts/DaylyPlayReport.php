@@ -22,7 +22,6 @@ use App\Libs\SimpleLogger;
 use App\Models\PlayRecordModel;
 use App\Models\UserWeixinModel;
 use App\Libs\UserCenter;
-use App\Services\PushStudentWeixinMessageService;
 use App\Services\WeChatService;
 use Dotenv\Dotenv;
 

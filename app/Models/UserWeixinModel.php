@@ -37,6 +37,21 @@ class UserWeixinModel extends Model
         return $result;
     }
 
+    public static function getBoundInfoByUserId($user_id, $app_id, $user_type){
+        $where = [
+            self::$table .".user_id" => $user_id,
+            self::$table .".status" => self::STATUS_NORMAL,
+            self::$table .".app_id" => $app_id,
+            self::$table .".user_type" => $user_type,
+            "ORDER" => ["id" => "DESC"], "LIMIT" => [0, 1]];
+
+        $result = MysqlDB::getDB()->select(self::$table, "*", $where);
+        if (!empty($result)) {
+            return $result[0];
+        }
+        return $result;
+    }
+
     public static function boundUser($open_id, $user_id, $app_id, $user_type, $busi_type){
         $db = MysqlDB::getDB();
         // 首先删除该open_id的绑定关系
