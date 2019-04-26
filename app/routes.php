@@ -26,6 +26,7 @@ use App\Controllers\TeacherApp\Opn as TeacherAppOpn;
 use App\Controllers\TeacherApp\Schedule as TeacherAppSchedule;
 use App\Controllers\TeacherApp\Play as TeacherAppPlay;
 use App\Controllers\TeacherApp\Org as TeacherAppOrg;
+use App\Controllers\TeacherApp\Version as TeacherAppVersion;
 use App\Controllers\Employee\Employee as Employee;
 use App\Controllers\Org\OrgAccount as OrgAccount;
 use Slim\App;
@@ -273,6 +274,20 @@ $arr = array(
     '/teacher_app/play/ai_end' => [
         'method' => ['post'],
         'call' => TeacherAppPlay::class . ':aiEnd',
+        'middles' => [OrgTeacherAuthMiddleWareForApp::class,
+            OrgAuthCheckMiddleWareForApp::class, AppApi::class]
+    ],
+
+    '/teacher_app/version/version' => [
+        'method' => ['get'],
+        'call' => TeacherAppVersion::class . ':version',
+        'middles' => [OrgTeacherAuthMiddleWareForApp::class,
+            OrgAuthCheckMiddleWareForApp::class, AppApi::class]
+    ],
+
+    '/teacher_app/version/hot_fix' => [
+        'method' => ['get'],
+        'call' => TeacherAppVersion::class . ':hotFix',
         'middles' => [OrgTeacherAuthMiddleWareForApp::class,
             OrgAuthCheckMiddleWareForApp::class, AppApi::class]
     ],
