@@ -140,12 +140,16 @@ class OrganizationServiceForApp
 
         $collectionIds = HomeworkTaskModel::getRecentCollectionIds($teacherId, 1, 3, $studentId);
 
-        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, 1);
-        $result = $opn->collectionsByIds($collectionIds);
-        if (empty($result) || !empty($result['errors'])) {
-            $recentCollections = [];
+        if (!empty($collectionIds)) {
+            $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, 1);
+            $result = $opn->collectionsByIds($collectionIds);
+            if (empty($result) || !empty($result['errors'])) {
+                $recentCollections = [];
+            } else {
+                $recentCollections = OpernService::appFormatCollections($result['data']);
+            }
         } else {
-            $recentCollections = OpernService::appFormatCollections($result['data']);
+            $recentCollections = [];
         }
 
         $homework = HomeworkService::getStudentHomeWorkList($studentId, $teacherId);
