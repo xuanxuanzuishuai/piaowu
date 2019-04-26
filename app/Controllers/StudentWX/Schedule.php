@@ -43,7 +43,6 @@ class Schedule extends ControllerBase
         }
 
         $user_id = $this->ci['user_info']['user_id'];
-//        $user_id = 22;
         // 本节课信息
         $schedule_extend = ScheduleExtendModel::getUserScheduleExtendDetail($params["schedule_id"], $user_id);
         if (empty($schedule_extend)) {
@@ -55,6 +54,7 @@ class Schedule extends ControllerBase
             $remark = $schedule_info["remark"];
             $start_time = $schedule_info["start_time"];
             $teacher_name = $schedule_info["teacher_name"];
+            $student_name = $schedule_info["student_name"];
 
             if (!empty($lesson_ids)){
                 $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, OpernCenter::version);
@@ -94,8 +94,11 @@ class Schedule extends ControllerBase
             $data["remark"] = $remark;
             $data["date"] = date("Y年m月d日", $start_time);
             $data["class_score"] = $class_score;
-            $data["homework_end_date"] = date("Y年m月d日", $finish_time);
+            $data["homework_end_date"] = date("Y年m月d日", $finish_time) ?? "";
             $data["teacher_name"] = $teacher_name;
+            $data["homework_remark"] = "非常优秀";
+            $data["performance_remark"] = "秀";
+            $data["student_name"] = $student_name;
         }
 
         return $response->withJson([

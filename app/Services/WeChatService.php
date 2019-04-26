@@ -11,7 +11,6 @@ namespace App\Services;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use GuzzleHttp\Client;
-use App\Libs\Request;
 use App\Libs\UserCenter;
 use App\Models\UserWeixinModel;
 
@@ -118,9 +117,12 @@ class WeChatService
         $redis->expire($key, 0);
     }
 
-    /**
-     * 根据用户授权获得的code换取用户open id 和access id
-     * 参考: 微信网页授权"snsapi_base" 通过redirect回传给当前server指定的url并附带code参数
+    /** 根据用户授权获得的code换取用户open id 和access id
+     * @param $code
+     * @param $app_id
+     * @param $user_type
+     * @return bool|mixed
+     * @throws \GuzzleHttp\Exception\GuzzleException
      */
     public static function getWeixnUserOpenIDAndAccessTokenByCode($code, $app_id, $user_type)
     {
@@ -153,14 +155,14 @@ class WeChatService
         return false;
     }
 
-    /**
+    /** 调用微信常规接口发送数据
+     * @param $app_id
+     * @param $userType
      * @param $requestType
      * @param $method
      * @param $body
-     * @param string $forApp
      * @return array|bool|mixed
      * @throws \GuzzleHttp\Exception\GuzzleException
-     * 调用微信常规接口发送数据
      */
     public static function commonWeixinAPI($app_id, $userType, $requestType, $method, $body)
     {
@@ -170,7 +172,7 @@ class WeChatService
             return false;
         }
 
-        $client = new Client(['base_uri' => self::$weixinAPIURL]);
+        $client = new Client(['base_uri' => self::weixinAPIURL]);
 
         $data = [
             'body' => is_string($body) ? $body : json_encode($body)
@@ -201,29 +203,44 @@ class WeChatService
         return false;
     }
 
-    public static function generateAccessToken($appInfo)
+    /** 请求微信接口获取公众号accessToken，外部禁止调用本方法, 请调用getAccessToken方法
+     * @param $appInfo
+     * @return mixed|string
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public static function _generateAccessToken($appInfo)
     {
         $requestParams = [
             'grant_type' => 'client_credential',
             'appid' => $appInfo['app_id'],
             'secret' => $appInfo['secret'],
         ];
-        list($status, $body) = array_values(Request::get([
-            'url' => 'https://api.weixin.qq.com/cgi-bin/token?' . http_build_query($requestParams),
-            'timeout' => 5
-        ]));
-
-        if ($status !== 200 || !$body || isset($body['errcode'])){
+        $client = new Client([
+            'debug' => false
+        ]);
+        $data = ["query" => $requestParams];
+        $url = "https://api.weixin.qq.com/cgi-bin/token";
+        SimpleLogger::info(__FILE__ . ':' . __LINE__, ['api' => $url, 'data' => $data]);
+        $response = $client->request("GET", $url, $data);
+        $body = $response->getBody()->getContents();
+        $status = $response->getStatusCode();
+        SimpleLogger::info(__FILE__ . ':' . __LINE__, ["status" => $status, "body" => $body]);
+        if ($status !== 200 || !$body){
             throw new \Exception("PROXY_LOGIN_FAILED: " . json_encode($body));
+        } else {
+            $body = json_decode($body, true);
+            if (isset($body["errcode"])) {
+                throw new \Exception("PROXY_LOGIN_FAILED: " . json_encode($body));
+            }
         }
         return $body;
     }
 
-    /**
+    /** 获取公众号accessToken
      * @param $app_id
      * @param $userType
      * @return bool|string
-     * @throws \Exception
+     * @throws \GuzzleHttp\Exception\GuzzleException
      */
     public static function getAccessToken($app_id, $userType)
     {
@@ -245,7 +262,7 @@ class WeChatService
             SimpleLogger::info("writing plock is $lock", []);
             if ($lock) {
                 $redis->expire($keyLock, 2);
-                $data = self::generateAccessToken($appInfo);
+                $data = self::_generateAccessToken($appInfo);
                 if ($data) {
                     SimpleLogger::info("access token data", []);
                     SimpleLogger::info(print_r($data, true), []);
@@ -275,8 +292,6 @@ class WeChatService
      * @param $templateId
      * @param $content
      * @param string $url
-     * @param string $miniprogram
-     * @param $forApp
      * @return array|bool|mixed
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
@@ -297,10 +312,10 @@ class WeChatService
         return $res;
     }
 
-    /**
-     * 获取微信 js api ticket
-     * @return string
-     * @internal param object $db 调用此服务的业务必须提交数据库事务
+    /** 获取微信 js api ticket
+     * @param $app_id
+     * @param $user_type
+     * @return bool|string
      */
     public static function getJSAPITicket($app_id, $user_type)
     {
@@ -320,7 +335,7 @@ class WeChatService
             SimpleLogger::info("writing jsplock is $lock", []);
             if ($lock) {
                 $redis->expire($keyLock, 2);
-                $data = self::generateJSAPITicket();
+                $data = self::generateJSAPITicket($app_id, $user_type);
                 if ($data) {
                     SimpleLogger::info("jsapi ticket data", []);
                     SimpleLogger::info(print_r($data, true), []);
@@ -331,13 +346,12 @@ class WeChatService
 
             } else {
                 $count++;
-                SimpleLogger::info("The waited plock time is $count");
                 if ($count > 3) {
                     return false;
                 } else {
                     sleep(2);
                 }
-                $ticket = self::getJSAPITicket();
+                $ticket = self::getJSAPITicket($app_id, $user_type);
             }
         }
         return $ticket;

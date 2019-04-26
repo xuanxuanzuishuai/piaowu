@@ -36,14 +36,15 @@ class ScheduleExtendModel extends Model
                   tsu.user_id as teacher_id,
                   ssu.user_id as student_id,
                   s.start_time as start_time,
-                  t.name as teacher_name
+                  t.name as teacher_name,
+                  stu.name as student_name
                 from " . self::$table . " se " . " inner join " . ScheduleModel::$table .
             " s on se.schedule_id = s.id inner join " . ScheduleUserModel::$table .
             " tsu on tsu.schedule_id = s.id and tsu.user_role = " . ScheduleUserModel::USER_ROLE_TEACHER .
             " and tsu.user_status=" .ScheduleUserModel::TEACHER_STATUS_ATTEND . " inner join " . ScheduleUserModel::$table .
             " ssu on ssu.schedule_id=s.id and ssu.user_role = ". ScheduleUserModel::USER_ROLE_STUDENT .
             " and ssu.user_status=" . ScheduleUserModel::STUDENT_STATUS_ATTEND . " inner join " . TeacherModelForApp::$table .
-            " t on t.id = tsu.user_id " .
+            " t on t.id = tsu.user_id " . " inner join " . StudentModelForApp::$table . " stu on stu.id = ssu.user_id " .
             " where se.schedule_id = :schedule_id";
 
         $map = [":schedule_id" => $schedule_id];

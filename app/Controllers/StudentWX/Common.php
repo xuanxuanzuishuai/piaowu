@@ -18,7 +18,6 @@ use App\Libs\Util;
 use Slim\Http\StatusCode;
 
 
-
 class Common extends ControllerBase
 {
 
@@ -46,7 +45,7 @@ class Common extends ControllerBase
         }
         $app_id = UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT;
         $user_type = WeChatService::USER_TYPE_STUDENT;
-        $signature = WeChatService::getJSSignature ($app_id, $user_type, $noncestr, $t, $params["url"]);
+        $signature = WeChatService::getJSSignature($app_id, $user_type, $noncestr, $t, $params["url"]);
         $app_info = WeChatService::getWeCHatAppIdSecret($app_id, $user_type);
         $wxJSConfig = [
             'appId'     => $app_info["app_id"],

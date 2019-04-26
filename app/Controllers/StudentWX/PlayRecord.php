@@ -82,4 +82,31 @@ class PlayRecord extends ControllerBase
             'data' => $result
         ], StatusCode::HTTP_OK);
     }
+
+    /** 精彩片段
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getWonderfulMomentUrl(Request $request, Response $response){
+        $rules = [
+            [
+                'key' => 'ai_record_id',
+                'type' => 'required',
+                'error_code' => 'ai_record_id_is_required'
+            ]
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        // todo 返回真正的数据
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => ["url" => "http://ai-backend.oss-cn-beijing.aliyuncs.com/dev/3/eval_record/4298/4298.mp3"]
+        ], StatusCode::HTTP_OK);
+    }
 }
