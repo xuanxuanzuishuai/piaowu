@@ -9,6 +9,7 @@
 namespace App\Controllers\TeacherApp;
 
 
+use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Services\HomeworkService;
 use App\Services\OrganizationServiceForApp;
@@ -72,7 +73,8 @@ class Org extends ControllerBase
 
         $orgId = $this->ci['org']['id'];
         $orgAccount = $this->ci['org_account'];
-
+        //$orgId = 2;
+        //$orgAccount = 10000001;
         list($errorCode, $loginData) = OrganizationServiceForApp::teacherLogin($orgId,
             $orgAccount,
             $params['teacher_id'],
@@ -81,8 +83,10 @@ class Org extends ControllerBase
 
         // 回课数据
         list($tasks, $statistics, $books) = HomeworkService::scheduleFollowUp($params['teacher_id'], $params['student_id']);
+        SimpleLogger::debug("FOLLOW UP CLASS>>>>>>>>>>>>>>>>>>>>>>>>>>>", [$tasks, $statistics, $books]);
         $homework = [];
         foreach ($tasks as $task){
+
             $taskBase = [
                 'lesson_id' => $task['lesson_id'],
                 'lesson_name' => $task['lesson_name'],
@@ -97,7 +101,6 @@ class Org extends ControllerBase
             $homework[] = array_merge($taskBase, $play, $book);
         }
         $loginData['homework'] = $homework;
-
 
         if (!empty($errorCode)) {
             $result = Valid::addAppErrors([], $errorCode);

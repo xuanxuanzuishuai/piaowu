@@ -235,7 +235,7 @@ class HomeworkService
         $bookInfo = $opn->lessonsByIds($lessonIds, 'png');
         $books = [];
         foreach ($bookInfo['data'] as $book){
-            $books['lesson_id'] = [
+            $books[$book['lesson_id']] = [
                 'book_name' => $book['collection_name'],
                 'res' => $book['resource'],
                 'cover' => $book['cover'],
@@ -246,7 +246,7 @@ class HomeworkService
 
         list($start, $end) = [$homework[0]['created_time'], $homework[0]['end_time']];
         $allPlays = PlayRecordModel::getPlayRecordByLessonId(
-            $lessonIds, $studentId, $createdTime=$start, $endTime=$end
+            $lessonIds, $studentId, null, $start, $end
         );
 
         // 统计

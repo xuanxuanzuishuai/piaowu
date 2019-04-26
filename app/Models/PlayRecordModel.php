@@ -34,7 +34,7 @@ class PlayRecordModel extends Model
         }
         if (!empty($createdTime) && !empty($endTime)){
             $where['created_time[>=]'] = $createdTime;
-            $where['end_time[<=]'] = $endTime;
+            $where['created_time[<=]'] = $endTime;
 
         }
         $result = $db->select(PlayRecordModel::$table, '*', $where);
