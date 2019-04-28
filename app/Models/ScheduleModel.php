@@ -183,7 +183,7 @@ class ScheduleModel extends Model
         return ($result && $result > 0);
     }
 
-    public static function modifyScheduleBySTId($data,$where) {
+    public static function modifyScheduleByClassId($data,$where) {
         $result = self::batchUpdateRecord($data,$where);
             return ($result && $result > 0);
     }

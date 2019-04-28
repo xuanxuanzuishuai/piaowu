@@ -9,9 +9,9 @@
 namespace App\Services;
 
 
-use App\Controllers\Schedule\ScheduleTaskUser;
+use App\Controllers\Schedule\ClassUser;
 use App\Libs\SimpleLogger;
-use App\Models\ScheduleTaskUserModel;
+use App\Models\ClassUserModel;
 use App\Models\ScheduleUserModel;
 
 class ScheduleUserService
@@ -26,7 +26,7 @@ class ScheduleUserService
         foreach ($scheduleIds as $scheduleId) {
             foreach ($SUs as $role => $userIds) {
                 foreach ($userIds as $userId) {
-                    $userStatus = $role == ScheduleTaskUserModel::USER_ROLE_S ? ScheduleUserModel::STUDENT_STATUS_BOOK: ScheduleUserModel::TEACHER_STATUS_SET;
+                    $userStatus = $role == ClassUserModel::USER_ROLE_S ? ScheduleUserModel::STUDENT_STATUS_BOOK: ScheduleUserModel::TEACHER_STATUS_SET;
                     $sus[] = ['status' => ScheduleUserModel::STATUS_NORMAL, 'schedule_id' => $scheduleId, 'user_id' => $userId, 'user_role' => $role, 'create_time' => $now,'user_status'=>$userStatus];
                 }
             }
@@ -77,7 +77,7 @@ class ScheduleUserService
      */
     public static function signIn($suIds,$userRole) {
         SimpleLogger::error('mms',[$suIds]);
-        $userStatus = $userRole == ScheduleTaskUserModel::USER_ROLE_S?ScheduleUserModel::STUDENT_STATUS_ATTEND:ScheduleUserModel::TEACHER_STATUS_ATTEND;
+        $userStatus = $userRole == ClassUserModel::USER_ROLE_S?ScheduleUserModel::STUDENT_STATUS_ATTEND:ScheduleUserModel::TEACHER_STATUS_ATTEND;
         return ScheduleUserModel::batchUpdateRecord(['user_status'=>$userStatus],['id'=>$suIds],false);
     }
 
@@ -87,7 +87,7 @@ class ScheduleUserService
      * @return int|null
      */
     public static function takeOff($suIds,$userRole) {
-        $userStatus = $userRole == ScheduleTaskUserModel::USER_ROLE_S?ScheduleUserModel::STUDENT_STATUS_LEAVE:ScheduleUserModel::TEACHER_STATUS_LEAVE;
+        $userStatus = $userRole == ClassUserModel::USER_ROLE_S?ScheduleUserModel::STUDENT_STATUS_LEAVE:ScheduleUserModel::TEACHER_STATUS_LEAVE;
         return ScheduleUserModel::batchUpdateRecord(['user_status'=>$userStatus],['id'=>$suIds],false);
     }
 }

@@ -47,8 +47,8 @@ class ScheduleUserModel extends Model
      */
     public static function getSUBySIds($sIds,$status = array(self::STATUS_NORMAL)) {
         $sql = "select su.user_id,su.user_role,su.id,su.schedule_id,su.create_time,su.status,t.name as teacher_name,s.name as student_name,su.user_status from ".self::$table ." as su "
-            ." left join ".StudentModel::$table." as s on su.user_id = s.id and su.user_role = ".ScheduleTaskUserModel::USER_ROLE_S
-            ." left join ".TeacherModel::$table." as t on su.user_id = t.id and su.user_role = ".ScheduleTaskUserModel::USER_ROLE_T
+            ." left join ".StudentModel::$table." as s on su.user_id = s.id and su.user_role = ".ClassUserModel::USER_ROLE_S
+            ." left join ".TeacherModel::$table." as t on su.user_id = t.id and su.user_role = ".ClassUserModel::USER_ROLE_T
             ." where su.schedule_id in (".implode(',',$sIds).") and su.status in (".implode(",",$status).")";
 
         return MysqlDB::getDB()->queryAll($sql,\PDO::FETCH_COLUMN);
@@ -111,21 +111,21 @@ class ScheduleUserModel extends Model
 
     /**
      * @param $userIds
-     * @param $st_id
+     * @param $class_id
      * @param $beginTime
      * @return int|null
      */
-    public static function cancelScheduleUsers($userIds,$st_id,$beginTime) {
+    public static function cancelScheduleUsers($userIds,$class_id,$beginTime) {
         $where = [];
-        if(!empty($userIds[ScheduleTaskUserModel::USER_ROLE_S])){
-            $where[] = "(su.user_role = ".ScheduleTaskUserModel::USER_ROLE_S." and su.user_id in (".implode(',',$userIds[ScheduleTaskUserModel::USER_ROLE_S])."))";
+        if(!empty($userIds[ClassUserModel::USER_ROLE_S])){
+            $where[] = "(su.user_role = ".ClassUserModel::USER_ROLE_S." and su.user_id in (".implode(',',$userIds[ClassUserModel::USER_ROLE_S])."))";
         }
-        if(!empty($userIds[ScheduleTaskUserModel::USER_ROLE_T])){
-            $where[] = "(su.user_role = ".ScheduleTaskUserModel::USER_ROLE_T." and su.user_id in (".implode(',',$userIds[ScheduleTaskUserModel::USER_ROLE_T])."))";
+        if(!empty($userIds[ClassUserModel::USER_ROLE_T])){
+            $where[] = "(su.user_role = ".ClassUserModel::USER_ROLE_T." and su.user_id in (".implode(',',$userIds[ClassUserModel::USER_ROLE_T])."))";
         }
         $sql = "update ".self::$table." as su inner join ".ScheduleModel::$table." as s on s.id = su.schedule_id
           set su.status = ".self::STATUS_CANCEL." where s.start_time >= $beginTime 
-          and s.st_id = $st_id and su.status = ".self::STATUS_NORMAL;
+          and s.class_id = $class_id and su.status = ".self::STATUS_NORMAL;
         if(!empty($where)) {
             $sql .= " and (".implode(" or ",$where).")";
         }

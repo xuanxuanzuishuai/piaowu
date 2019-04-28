@@ -10,52 +10,66 @@ namespace App\Services;
 
 use App\Libs\Constants;
 use App\Models\ScheduleModel;
-use App\Models\ScheduleTaskUserModel;
+use App\Models\ClassUserModel;
 use App\Models\ScheduleUserModel;
 
 class ScheduleService
 {
 
     /**
-     * @param $st
-     * @param $params
-     * @param $beginTime
+     * @param $class
      * @return bool
      */
-    public static function beginSchedule($st,$params,$beginTime) {
+    public static function beginSchedule($class) {
         $now = time();
-        for($i=0;$i<$params['period'];$i++) {
-            $schedule = [
-                'classroom_id'=>$st['classroom_id'],
-                'course_id'=>$st['course_id'],
-                'duration'=>$st['duration'],
-                'start_time'=>$beginTime,
-                'end_time' => $beginTime + $st['duration'],
-                'create_time' => $now,
-                'status' => ScheduleModel::STATUS_BOOK,
-                'org_id' => $st['org_id'],
-                'st_id' => $st['id'],
-            ];
-            $sId = ScheduleModel::insertSchedule($schedule);
-            if(empty($sId)) {
-                return false;
+        foreach($class['class_tasks'] as $ct) {
+            $beginDate = $ct['expire_start_date'];
+            $endDate = $ct['expire_end_date'];
+            $weekday = date("w");
+            if ($weekday <= $ct['weekday']) {
+                $beginTime = strtotime($beginDate . " " . $ct['start_time']) + 86400 * ($ct['weekday'] - $weekday);
+            } else {
+                $beginTime = strtotime($beginDate . " " . $ct['start_time']) + 86400 * (7 - ($weekday - $ct['weekday']));
             }
-            $users = [];
-            foreach($st['students']  as $student) {
-                if($student['status'] == ScheduleUserModel::STATUS_NORMAL) {
-                    $users[] = ['price'=>$student['price'],'schedule_id' => $sId, 'user_id' => $student['user_id'], 'user_role' => $student['user_role'], 'status' => ScheduleModel::STATUS_BOOK, 'create_time' => $now, 'user_status' => ScheduleUserModel::STUDENT_STATUS_BOOK];
+            for($i=0;$i<$ct['period'];$i++) {
+                $schedule = [
+                    'classroom_id'=>$ct['classroom_id'],
+                    'course_id'=>$ct['course_id'],
+                    'duration'=>$ct['duration'],
+                    'start_time'=>$beginTime,
+                    'end_time' => $beginTime + $ct['duration'],
+                    'create_time' => $now,
+                    'status' => ScheduleModel::STATUS_BOOK,
+                    'org_id' => $class['org_id'],
+                    'class_id' => $class['id'],
+                ];
+                $sId = ScheduleModel::insertSchedule($schedule);
+                if(empty($sId)) {
+                    return false;
+                }
+                $users = [];
+                foreach($class['students']  as $student) {
+                    if($student['status'] == ScheduleUserModel::STATUS_NORMAL) {
+                        $users[] = ['price'=>$student['price'],'schedule_id' => $sId, 'user_id' => $student['user_id'], 'user_role' => $student['user_role'], 'status' => ScheduleModel::STATUS_BOOK, 'create_time' => $now, 'user_status' => ScheduleUserModel::STUDENT_STATUS_BOOK];
+                    }
+                }
+                foreach($class['teachers']  as $teacher) {
+                    if($teacher['status'] == ScheduleUserModel::STATUS_NORMAL) {
+                        $users[] = ['price'=>$teacher['price'],'schedule_id' => $sId, 'user_id' => $teacher['user_id'], 'user_role' => $teacher['user_role'], 'status' => ScheduleModel::STATUS_BOOK, 'create_time' => $now, 'user_status' => ScheduleUserModel::TEACHER_STATUS_SET];
+                    }
+                }
+                $flag = ScheduleUserModel::insertSUs($users);
+                if($flag == false)
+                    return false;
+                $beginTime += 7*86400;
+                if($endDate <= date("Y-m-d",$beginTime))
+                {
+                    break;
                 }
             }
-            foreach($st['teachers']  as $teacher) {
-                if($teacher['status'] == ScheduleUserModel::STATUS_NORMAL) {
-                    $users[] = ['price'=>$teacher['price'],'schedule_id' => $sId, 'user_id' => $teacher['user_id'], 'user_role' => $teacher['user_role'], 'status' => ScheduleModel::STATUS_BOOK, 'create_time' => $now, 'user_status' => ScheduleUserModel::TEACHER_STATUS_SET];
-                }
-            }
-            $flag = ScheduleUserModel::insertSUs($users);
-            if($flag == false)
-                return false;
-            $beginTime += 7*86400;
         }
+
+
         return true;
     }
 
@@ -77,7 +91,7 @@ class ScheduleService
             $sus = ScheduleUserModel::getSUBySIds($sIds);
             foreach ($sus as $su) {
                 $su = self::formatScheduleUser($su);
-                if ($su['user_role'] == ScheduleTaskUserModel::USER_ROLE_S) {
+                if ($su['user_role'] == ClassUserModel::USER_ROLE_S) {
                     $result[$su['schedule_id']]['students']++;
                 } else
                     $result[$su['schedule_id']]['teachers']++;
@@ -99,7 +113,7 @@ class ScheduleService
         $sus = ScheduleUserModel::getSUBySIds([$schedule['id']]);
         foreach ($sus as $su) {
             $su = self::formatScheduleUser($su);
-            if ($su['user_role'] == ScheduleTaskUserModel::USER_ROLE_S) {
+            if ($su['user_role'] == ClassUserModel::USER_ROLE_S) {
                 $schedule['students'][] = $su;
             } else
                 $schedule['teachers'][] = $su;
@@ -122,12 +136,12 @@ class ScheduleService
      * @return mixed
      */
     public static function formatScheduleUser($su) {
-        $su['su_user_role'] = DictService::getKeyValue(Constants::DICT_TYPE_SCHEDULE_USER_ROLE,$su['user_role']);
+        $su['su_user_role'] = DictService::getKeyValue(Constants::DICT_TYPE_CLASS_USER_ROLE,$su['user_role']);
         $su['su_status'] = DictService::getKeyValue(Constants::DICT_TYPE_SCHEDULE_USER_STATUS,$su['status']);
-        if($su['user_role'] == ScheduleTaskUserModel::USER_ROLE_S) {
+        if($su['user_role'] == ClassUserModel::USER_ROLE_S) {
             $su['student_status'] = DictService::getKeyValue(Constants::DICT_TYPE_SCHEDULE_STUDENT_STATUS, $su['user_status']);
         }
-        if($su['user_role'] == ScheduleTaskUserModel::USER_ROLE_T) {
+        if($su['user_role'] == ClassUserModel::USER_ROLE_T) {
             $su['teacher_status'] = DictService::getKeyValue(Constants::DICT_TYPE_SCHEDULE_TEACHER_STATUS, $su['user_status']);
         }
         $su['price'] = floatval($su['price']/100);
@@ -155,8 +169,8 @@ class ScheduleService
      * @param $stId
      * @return bool
      */
-    public static function cancelScheduleBySTId($stId) {
-        return ScheduleModel::modifyScheduleBySTId(['status'=>ScheduleModel::STATUS_CANCEL,'update_time'=>time()],['st_id'=>$stId,'status'=>ScheduleModel::STATUS_BOOK]);
+    public static function cancelScheduleByClassId($stId) {
+        return ScheduleModel::modifyScheduleByClassId(['status'=>ScheduleModel::STATUS_CANCEL,'update_time'=>time()],['class_id'=>$stId,'status'=>ScheduleModel::STATUS_BOOK]);
     }
 
     /**
@@ -168,11 +182,19 @@ class ScheduleService
     public static function bindSUs($stId,$users,$userRole) {
         $sus = [];
         $now = time();
-        list($count,$schedules) = self::getList(['st_id'=>$stId,'status'=>ScheduleModel::STATUS_BOOK]);
+        list($count,$schedules) = self::getList(['class_id'=>$stId,'status'=>ScheduleModel::STATUS_BOOK]);
         foreach($schedules as $schedule) {
-            foreach($users as $userId => $price){
+            foreach($users as $userId => $value){
+                if($userRole == ClassUserModel::USER_ROLE_S) {
+                    $price = $value * 100;
+                    $userRole = $userRole;
+                }
+                else {
+                    $price = 0;
+                    $userRole = $value;
+                }
                 $suStatus = $schedule['status'] != ScheduleModel::STATUS_BOOK?ScheduleUserModel::STATUS_CANCEL:ScheduleUserModel::STATUS_NORMAL;
-                $userStatus = $userRole == ScheduleTaskUserModel::USER_ROLE_S ? ScheduleUserModel::STUDENT_STATUS_BOOK: ScheduleUserModel::TEACHER_STATUS_SET;
+                $userStatus = $userRole == ClassUserModel::USER_ROLE_S ? ScheduleUserModel::STUDENT_STATUS_BOOK: ScheduleUserModel::TEACHER_STATUS_SET;
                 $sus[] = ['price'=>$price,'schedule_id'=>$schedule['id'],'user_id'=>$userId,'user_role'=>$userRole,'user_status'=>$userStatus,'status'=>$suStatus,'create_time'=> $now];
             }
         }

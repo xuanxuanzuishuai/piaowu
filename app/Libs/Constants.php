@@ -18,12 +18,14 @@ class Constants
     //时间单位
     const DICT_TIME_UNIT_MIN = 'TIME_UNIT_MIN'; //分钟
 
-    // 排课状态
-    const DICT_TYPE_SCHEDULE_TASK_STATUS = 'schedule_task_status';
-    // 排课用户状态
-    const DICT_TYPE_SCHEDULE_TASK_USER_STATUS = 'schedule_task_user_status';
-    // 课程用户角色
-    const DICT_TYPE_SCHEDULE_USER_ROLE = 'schedule_user_role';
+    // 班课状态
+    const DICT_TYPE_CLASS_STATUS = 'class_status';
+    // 班课用户状态
+    const DICT_TYPE_CLASS_USER_STATUS = 'class_user_status';
+    // 班课教程状态
+    const DICT_TYPE_CLASS_TASK_STATUS = 'class_task_status';
+    // 班课用户角色
+    const DICT_TYPE_CLASS_USER_ROLE = 'class_user_role';
     // 课程状态
     const DICT_TYPE_SCHEDULE_STATUS = 'schedule_status';
     // 课程用户状态

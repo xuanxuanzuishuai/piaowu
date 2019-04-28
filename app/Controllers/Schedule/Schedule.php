@@ -14,8 +14,8 @@ use App\Libs\MysqlDB;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\ScheduleModel;
-use App\Models\ScheduleTaskModel;
-use App\Models\ScheduleTaskUserModel;
+use App\Models\ClassTaskModel;
+use App\Models\ClassUserModel;
 use App\Models\ScheduleUserModel;
 use App\Services\ScheduleService;
 use App\Services\ScheduleTaskService;
@@ -146,7 +146,7 @@ class Schedule extends ControllerBase
             }
         }
         if (!empty($params['studentIds'])) {
-            $result = ScheduleUserService::checkScheduleUser($params['studentIds'], ScheduleTaskUserModel::USER_ROLE_S, $newSchedule['start_time'], $newSchedule['end_time'], $newSchedule['id']);
+            $result = ScheduleUserService::checkScheduleUser($params['studentIds'], ClassUserModel::USER_ROLE_S, $newSchedule['start_time'], $newSchedule['end_time'], $newSchedule['id']);
             if ($result != true) {
                 return $response->withJson(Valid::addErrors(['data' => ['result' => $result]], 'schedule_classroom', 'schedule_classroom_'));
             }
@@ -159,7 +159,7 @@ class Schedule extends ControllerBase
             }
         }
         if (!empty($params['teacherIds'])) {
-            $result = ScheduleUserService::checkScheduleUser($params['teacherIds'], ScheduleTaskUserModel::USER_ROLE_T, $newSchedule['start_time'], $newSchedule['end_time'], $newSchedule['id']);
+            $result = ScheduleUserService::checkScheduleUser($params['teacherIds'], ClassUserModel::USER_ROLE_T, $newSchedule['start_time'], $newSchedule['end_time'], $newSchedule['id']);
             if ($result != true) {
                 return $response->withJson(Valid::addErrors(['data' => ['result' => $result]], 'schedule_classroom', 'schedule_classroom_'));
             }
@@ -176,13 +176,13 @@ class Schedule extends ControllerBase
                 if (!empty($ssuIds)) {
                     ScheduleUserService::unBindUser($ssuIds);
                 }
-                ScheduleUserService::bindSUs([$newSchedule['id']], [ScheduleTaskUserModel::USER_ROLE_S => $params['studentIds']]);
+                ScheduleUserService::bindSUs([$newSchedule['id']], [ClassUserModel::USER_ROLE_S => $params['studentIds']]);
             }
             if ($params['teacherIds'] != $teacherIds) {
                 if (!empty($stuIds)) {
                     ScheduleUserService::unBindUser($stuIds);
                 }
-                ScheduleUserService::bindSUs([$newSchedule['id']], [ScheduleTaskUserModel::USER_ROLE_T => $params['teacherIds']]);
+                ScheduleUserService::bindSUs([$newSchedule['id']], [ClassUserModel::USER_ROLE_T => $params['teacherIds']]);
             }
         }
         $st = [
@@ -195,7 +195,7 @@ class Schedule extends ControllerBase
             'expire_end_date' => date("Y-m-d", strtotime($params['start_time']) + 86400),
             'create_time' => time(),
             'real_schedule_id' => $schedule['id'],
-            'status' => ScheduleTaskModel::STATUS_TEMP,
+            'status' => ClassTaskModel::STATUS_TEMP,
         ];
         ScheduleTaskService::addST($st, $params['studentIds'], $params['teacherIds']);
         $db->commit();
@@ -245,24 +245,24 @@ class Schedule extends ControllerBase
 
         $ssuIds = $stuIds = [];
         //学员请假
-        if ($params['user_role'] == ScheduleTaskUserModel::USER_ROLE_S) {
+        if ($params['user_role'] == ClassUserModel::USER_ROLE_S) {
             foreach ($schedule['students'] as $su) {
                 if (in_array($su['id'], $params['su_ids']) && $su['user_status'] == ScheduleUserModel::STUDENT_STATUS_BOOK) {
                     $ssuIds[] = $su['id'];
                 }
             }
             if (!empty($ssuIds)) {
-                ScheduleUserService::takeOff($ssuIds, ScheduleTaskUserModel::USER_ROLE_S);
+                ScheduleUserService::takeOff($ssuIds, ClassUserModel::USER_ROLE_S);
             }
         } //老师请假
-        else if ($params['user_role'] == ScheduleTaskUserModel::USER_ROLE_T) {
+        else if ($params['user_role'] == ClassUserModel::USER_ROLE_T) {
             foreach ($schedule['teachers'] as $su) {
                 if (in_array($su['id'], $params['su_ids']) && $su['user_status'] == ScheduleUserModel::TEACHER_STATUS_SET) {
                     $stuIds[] = $su['id'];
                 }
             }
             if (!empty($stuIds)) {
-                ScheduleUserService::takeOff($stuIds, ScheduleTaskUserModel::USER_ROLE_T);
+                ScheduleUserService::takeOff($stuIds, ClassUserModel::USER_ROLE_T);
             }
         }
         $schedule = ScheduleService::getDetail($params['schedule_id']);
@@ -309,24 +309,24 @@ class Schedule extends ControllerBase
 
         $ssuIds = $stuIds = [];
         //学员签到
-        if ($params['user_role'] == ScheduleTaskUserModel::USER_ROLE_S) {
+        if ($params['user_role'] == ClassUserModel::USER_ROLE_S) {
             foreach ($schedule['students'] as $su) {
                 if (in_array($su['id'], $params['su_ids'])) {
                     $ssuIds[] = $su['id'];
                 }
             }
             if (!empty($ssuIds)) {
-                ScheduleUserService::signIn($ssuIds, ScheduleTaskUserModel::USER_ROLE_S);
+                ScheduleUserService::signIn($ssuIds, ClassUserModel::USER_ROLE_S);
             }
         } //老师签到
-        else if ($params['user_role'] == ScheduleTaskUserModel::USER_ROLE_T) {
+        else if ($params['user_role'] == ClassUserModel::USER_ROLE_T) {
             foreach ($schedule['teachers'] as $su) {
                 if (in_array($su['id'], $params['su_ids'])) {
                     $stuIds[] = $su['id'];
                 }
             }
             if (!empty($stuIds)) {
-                ScheduleUserService::signIn($stuIds, ScheduleTaskUserModel::USER_ROLE_T);
+                ScheduleUserService::signIn($stuIds, ClassUserModel::USER_ROLE_T);
             }
         }
         $schedule = ScheduleService::getDetail($params['schedule_id']);
