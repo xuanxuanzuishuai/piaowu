@@ -180,7 +180,7 @@ class Opn extends ControllerBase
             $this->ci['opn_pro_ver'],
             $this->ci['opn_auditing'],
             $this->ci['opn_publish']);
-        $result = $opn->lessons($params['collection_id'], $pageId, $pageLimit);
+        $result = $opn->lessons($params['collection_id'], $pageId, $pageLimit, 0);
         if (empty($result) || !empty($result['errors'])) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }

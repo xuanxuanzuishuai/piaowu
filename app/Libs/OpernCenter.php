@@ -165,9 +165,11 @@ class OpernCenter
      * @param $collectionId
      * @param $page
      * @param $pageSize
+     * @param $withResources
+     * @param $resourceTypes
      * @return array|bool|mixed
      */
-    public function lessons($collectionId, $page, $pageSize = self::DEFAULT_PAGE_SIZE, $resourceType='dynamic')
+    public function lessons($collectionId, $page, $pageSize = self::DEFAULT_PAGE_SIZE, $withResources=1, $resourceTypes='dynamic')
     {
         $result = self::commonAPI(self::OPERN_API_LESSONS, [
             'pro_id' => $this->proId,
@@ -177,7 +179,8 @@ class OpernCenter
             'collection_id' => $collectionId,
             'page' => $page,
             'page_size' => $pageSize,
-            'resource_types' => $resourceType
+            'withresources' => $withResources,
+            'resource_types' => $resourceTypes
         ]);
         return empty($result) ? [] : $result;
     }
@@ -185,9 +188,11 @@ class OpernCenter
     /**
      * 根据ids获取曲谱列表
      * @param int|array $lessonIds id或id数组
+     * @param $withResources
+     * @param $resourceTypes
      * @return array|bool|mixed
      */
-    public function lessonsByIds($lessonIds, $resourceTypes='dynamic')
+    public function lessonsByIds($lessonIds, $withResources=1, $resourceTypes='dynamic')
     {
         if (is_array($lessonIds)) {
             $lessonIds = implode(",", $lessonIds);
@@ -198,6 +203,7 @@ class OpernCenter
             'auditing' => $this->auditing,
             'publish' => $this->publish,
             'lesson_ids' => $lessonIds,
+            'withresources' => $withResources,
             'resource_types' => $resourceTypes
         ]);
 
@@ -235,9 +241,11 @@ class OpernCenter
      * @param $withCollection
      * @param $page
      * @param $pageSize
+     * @param $withResources
+     * @param $resourceTypes
      * @return array|bool|mixed
      */
-    public function searchLessons($keyword, $searchAuthor, $withCollection, $page, $pageSize = self::DEFAULT_PAGE_SIZE)
+    public function searchLessons($keyword, $searchAuthor, $withCollection, $page, $pageSize = self::DEFAULT_PAGE_SIZE, $withResources=1, $resourceTypes='dynamic')
     {
         $result = self::commonAPI(self::OPERN_API_SEARCH_LESSONS, [
             'pro_id' => $this->proId,
@@ -249,6 +257,8 @@ class OpernCenter
             'withcollection' => $withCollection,
             'page' => $page,
             'page_size' => $pageSize,
+            'withresources' => $withResources,
+            'resource_types' => $resourceTypes
         ]);
 
         return empty($result) ? [] : $result;
@@ -260,7 +270,8 @@ class OpernCenter
      * @param $types
      * @return array
      */
-    public function staticResource($opernIds, $types='png'){
+    public function staticResource($opernIds, $types='png')
+    {
         $result = self::commonAPI(self::OPERN_API_STATIC_RESOURCE, [
             'pro_id' => $this->proId,
             'pro_ver' => $this->proVer,
@@ -271,7 +282,8 @@ class OpernCenter
     }
 
 
-    public function getKnowledge($lessonId){
+    public function getKnowledge($lessonId)
+    {
         $result = self::commonAPI(self::OPERN_API_GET_KNOWLEDGE, [
             'pro_id' => $this->proId,
             'pro_ver' => $this->proVer,
