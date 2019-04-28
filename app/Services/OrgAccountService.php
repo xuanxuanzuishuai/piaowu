@@ -21,7 +21,7 @@ class OrgAccountService
         list($records, $total) = OrgAccountModel::selectByPage($page, $count, $params);
 
         foreach($records as &$r) {
-            $r['status'] = DictService::getKeyValue(Constants::DIST_TYPE_ORG_ACCOUNT_STATUS, $r['status']);
+            $r['status'] = DictService::getKeyValue(Constants::DICT_TYPE_ORG_ACCOUNT_STATUS, $r['status']);
         }
 
         return [$records, $total];

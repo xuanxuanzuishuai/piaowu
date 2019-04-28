@@ -262,5 +262,7 @@ class Constants
     //机构状态
     const DICT_TYPE_ORG_STATUS = 'org_status';
     //机构账号状态
-    const DIST_TYPE_ORG_ACCOUNT_STATUS = 'org_account_status';
+    const DICT_TYPE_ORG_ACCOUNT_STATUS = 'org_account_status';
+    //练习记录曲谱类型
+    const DICT_TYPE_PLAY_RECORD_LESSON_TYPE = 'play_record_lesson_type';
 };

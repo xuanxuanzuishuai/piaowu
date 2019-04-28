@@ -9,6 +9,7 @@
 namespace App\Services;
 
 
+use App\Libs\Constants;
 use App\Libs\SimpleLogger;
 use App\Models\PlayRecordModel;
 use App\Libs\OpernCenter;
@@ -175,5 +176,28 @@ class PlayRecordService
         $result["date"] = date("Y年m月d日", $start_time);
         $result["jwt"] = $token;
         return $result;
+    }
+
+    /**
+     * 查询指定机构日报
+     * 指定学生id时查询指定学生日报
+     * 否则查询所有学生日报
+     * @param $orgId
+     * @param $studentId
+     * @param $startTime
+     * @param $endTime
+     * @param $page
+     * @param $count
+     * @param $params
+     * @return array
+     */
+    public static function selectReport($orgId, $studentId, $startTime, $endTime, $page, $count, $params)
+    {
+        list($records, $total) = PlayRecordModel::selectReport($orgId, $studentId, $startTime, $endTime, $page, $count,$params);
+        foreach($records as &$r) {
+            $r['max_score'] = max($r['max_dmc'], $r['max_ai']);
+            $r['lesson_type'] = DictService::getKeyValue(Constants::DICT_TYPE_PLAY_RECORD_LESSON_TYPE, $r['lesson_type']);
+        }
+        return [$records, $total];
     }
 }

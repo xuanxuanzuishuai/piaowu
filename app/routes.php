@@ -6,6 +6,7 @@ use App\Controllers\Boss\GiftCode;
 use App\Controllers\Org\Org;
 use App\Controllers\Schedule\ScheduleRecord;
 use App\Controllers\Student\Student;
+use App\Controllers\StudentWX\PlayRecord;
 use App\Controllers\Teacher\Teacher;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
@@ -481,6 +482,12 @@ $arr = array(
     '/org_web/org_account/modify_password' => [
         'method'  => ['post'],
         'call'    => OrgAccount::class . ':modifyPassword',
+        'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class]
+    ],
+    //机构后台查询学生练习日报
+    '/org_web/org/report_for_org' => [
+        'method'  => ['get'],
+        'call'    => PlayRecord::class . ':reportForOrg',
         'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class]
     ],
 );

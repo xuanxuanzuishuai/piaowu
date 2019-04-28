@@ -9,6 +9,7 @@
 namespace App\Models;
 
 use App\Libs\MysqlDB;
+use App\Libs\Util;
 
 class PlayRecordModel extends Model
 {
@@ -95,4 +96,130 @@ class PlayRecordModel extends Model
         return $result;
     }
 
+    /**
+     * 查询指定机构日报
+     * 指定学生id时查询指定学生日报
+     * 否则查询所有学生日报
+     * @param $orgId
+     * @param $studentId
+     * @param $startTime
+     * @param $endTime
+     * @param $page
+     * @param $count
+     * @param $params
+     * @return array
+     */
+    public static function selectReport($orgId, $studentId, $startTime, $endTime, $page, $count, $params)
+    {
+        $p   = PlayRecordModel::$table;
+        $s   = StudentModel::$table;
+        $so  = StudentOrgModel::$table;
+        $sch = ScheduleModel::$table;
+        $su  = ScheduleUserModel::$table;
+        $t   = TeacherModel::$table;
+        $e   = EmployeeModel::$table;
+
+        $ltd = PlayRecordModel::TYPE_DYNAMIC;
+        $lta = PlayRecordModel::TYPE_AI;
+        $urt = ScheduleUserModel::USER_ROLE_TEACHER;
+
+        $limit = Util::limitation($page, $count);
+
+        $map = [
+            ':start_time' => $startTime,
+            ':end_time'   => $endTime,
+            ':org_id'     => $orgId
+        ];
+
+        $where = '';
+
+        //lesson_type=0也是一种状态，所以这里使用isset
+        if(isset($params['lesson_type'])) {
+            $where .= ' and p.lesson_type = :lesson_type ';
+            $map[':lesson_type'] = $params['lesson_type'];
+        }
+
+        if(!empty($studentId)) {
+            $sql = "select p.lesson_id,
+                   p.lesson_type,
+                   p.student_id,
+                   p.schedule_id,
+                   count(p.lesson_sub_id)                                             as sub_count,
+                   sum(p.duration)                                                    as duration,
+                   sum(if(p.lesson_type={$ltd} and p.lesson_sub_id is null, 1, 0))       as dmc,
+                   sum(if(p.lesson_type={$lta} and p.lesson_sub_id is null, 1, 0))       as ai,
+                   max(if(p.lesson_type={$ltd} and p.lesson_sub_id is null, p.score, 0)) as max_dmc,
+                   max(if(p.lesson_type={$lta} and p.lesson_sub_id is null, p.score, 0)) as max_ai,
+                   s.name                                                             as student_name,
+                   t.name                                                             as teacher_name,
+                   e.name                                                             as cc_name
+            from {$p} p
+                        inner join {$s} s on p.student_id = s.id
+                        inner join {$so} so on so.student_id = s.id and so.org_id = :org_id
+                        left join {$sch} sch on sch.id = p.schedule_id
+                        left join {$su} su on su.schedule_id = sch.id and su.user_role = {$urt}
+                        left join {$t} t on t.id = su.user_id
+                        left join {$e} e on s.cc_id = e.id
+            where p.student_id = :student_id
+              and p.created_time >= :start_time
+              and p.created_time <= :end_time
+              {$where}
+            group by p.lesson_id, p.lesson_type {$limit}";
+
+            $totalSql = "select count(*) count from (select p.id
+            from {$p} p
+                        inner join {$s} s on p.student_id = s.id
+                        inner join {$so} so on so.student_id = s.id and so.org_id = :org_id
+            where p.student_id = :student_id
+              and p.created_time >= :start_time
+              and p.created_time <= :end_time
+              {$where}
+            group by p.lesson_id, p.lesson_type) s2";
+
+            $map[':student_id'] = $studentId;
+        } else {
+            $sql = "select p.lesson_id,
+                   p.lesson_type,
+                   p.student_id,
+                   p.schedule_id,
+                   so.org_id,
+                   count(p.lesson_sub_id)                                             as sub_count,
+                   sum(p.duration)                                                    as duration,
+                   sum(if(p.lesson_type={$ltd} and p.lesson_sub_id is null, 1, 0))       as dmc,
+                   sum(if(p.lesson_type={$lta} and p.lesson_sub_id is null, 1, 0))       as ai,
+                   max(if(p.lesson_type={$ltd} and p.lesson_sub_id is null, p.score, 0)) as max_dmc,
+                   max(if(p.lesson_type={$lta} and p.lesson_sub_id is null, p.score, 0)) as max_ai,
+                   s.name                                                             as student_name,
+                   t.name                                                             as teacher_name,
+                   e.name                                                             as cc_name
+            from {$p} p
+                   inner join {$s} s on p.student_id = s.id
+                   inner join {$so} so on so.student_id = s.id and so.org_id = :org_id
+                   left join {$sch} sch on sch.id = p.schedule_id
+                   left join {$su} su on su.schedule_id = sch.id and su.user_role = {$urt}
+                   left join {$t} t on t.id = su.user_id
+                   left join {$e} e on s.cc_id = e.id
+                   where p.created_time >= :start_time
+                     and p.created_time <= :end_time
+                     {$where}
+            group by p.student_id {$limit}";
+
+            $totalSql = "select count(*) count from (select p.id
+            from {$p} p
+                        inner join {$s} s on p.student_id = s.id
+                        inner join {$so} so on so.student_id = s.id and so.org_id = :org_id
+            where p.created_time >= :start_time
+              and p.created_time <= :end_time
+              {$where}
+            group by p.student_id) s2";
+        }
+
+        $db = MysqlDB::getDB();
+
+        $records = $db->queryAll($sql, $map);
+
+        $total = $db->queryAll($totalSql, $map);
+
+        return [$records, $total[0]['count']];
+    }
 }
