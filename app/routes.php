@@ -509,14 +509,13 @@ $app->add(function (Request $request, Response $response, $next) use ($app, $arr
         //$r->add(new AfterMiddleware($app->getContainer()));
     }
 
+    /** @var Response $response */
     $response = $next($request, $response);
-    $body = $response->getBody();
-    // 只输出JSON数据
-    if (preg_match('/^\{([\s\S].*)\}$/', $body)) {
-        SimpleLogger::debug(__FILE__ . ':' . __LINE__, [
-            '== RESPONSE ==' => json_decode($body, true)
-        ]);
-    }
+
+    $body = $response->getBody()->getContents();
+    SimpleLogger::debug(__FILE__ . ':' . __LINE__, [
+        '== RESPONSE ==' => json_decode($body, true)
+    ]);
 
     $endTime = Util::microtime_float();
     $t = $endTime - $startTime;
