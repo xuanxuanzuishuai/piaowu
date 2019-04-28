@@ -11,6 +11,9 @@ namespace App\Libs;
 
 
 use DateTime;
+use App\Services\DictService;
+use OSS\Core\OssException;
+use OSS\OssClient;
 
 class AliOSS
 {
@@ -101,7 +104,6 @@ class AliOSS
         // 获取回调body
         $body = file_get_contents('php://input');
         // 拼接待签名字符串
-        $authStr = '';
         $path = $requestUrl;
         $pos = strpos($path, '?');
         if ($pos === false){
@@ -111,11 +113,126 @@ class AliOSS
         }
         SimpleLogger::info("ALIOSS AUTHSTR", [$authStr]);
         // 验证签名
-        $ok = openssl_verify($authStr, $authorization, $pubKey, OPENSSL_ALGO_MD5);
-        if ($ok == 1){
-            return true;
-        }else{
-            return false;
+//        $ok = openssl_verify($authStr, $authorization, $pubKey, OPENSSL_ALGO_MD5);
+//        if ($ok == 1){
+//            return true;
+//        }else{
+//            return false;
+//        }
+        // 默认不验证签名
+        return true;
+    }
+
+    /**
+     * @param        $urlNeedSign
+     * @param string $columnName
+     * @param string $newColumn
+     * @return array|string
+     */
+    public static function signUrls($urlNeedSign, $columnName = "", $newColumn = ""){
+        if (empty($urlNeedSign)){
+            return $urlNeedSign;
+        }
+        $result = $urlNeedSign;
+        list($accessKeyId, $accessKeySecret, $bucket, $endpoint) = DictService::getKeyValuesByArray(Constants::DICT_TYPE_ALIOSS_CONFIG,array(
+            Constants::DICT_KEY_ALIOSS_ACCESS_KEY_ID,
+            Constants::DICT_KEY_ALIOSS_ACCESS_KEY_SECRET,
+            Constants::DICT_KEY_ALIOSS_BUCKET,
+            Constants::DICT_KEY_ALIOSS_ENDPOINT
+        ));
+        try {
+            $timeout = 3600 * 8;
+            $ossClient = new OssClient($accessKeyId, $accessKeySecret, $endpoint);
+            if (is_array($urlNeedSign) && !empty($columnName)){
+                $result = array_map(function($v) use ($ossClient, $bucket, $timeout, $columnName, $newColumn){
+                    $url = $v[$columnName];
+                    if (!empty($url) && !Util::isUrl($url)){
+                        $url = preg_replace("/^\//","", $url);
+                        $v[empty($newColumn) ? $columnName : $newColumn] = $ossClient->signUrl($bucket, $url, $timeout);
+                    }
+                    return $v;
+                }, $urlNeedSign);
+            }else{
+                if (!Util::isUrl($urlNeedSign)){
+                    $urlNeedSign = preg_replace("/^\//","", $urlNeedSign);
+                    $result = $ossClient->signUrl($bucket, $urlNeedSign, $timeout);
+                }
+            }
+            return $result;
+
+        } catch (OssException $e){
+            SimpleLogger::warning("OSSClient error", [$e]);
+        }
+        return $result;
+    }
+
+    public function getMeta($objectName, $md5)
+    {
+        list($accessKeyId, $accessKeySecret, $bucket, $endpoint) = DictService::getKeyValuesByArray(Constants::DICT_TYPE_ALIOSS_CONFIG,array(
+            Constants::DICT_KEY_ALIOSS_ACCESS_KEY_ID,
+            Constants::DICT_KEY_ALIOSS_ACCESS_KEY_SECRET,
+            Constants::DICT_KEY_ALIOSS_BUCKET,
+            Constants::DICT_KEY_ALIOSS_ENDPOINT
+        ));
+
+        try {
+            $ossClient = new OssClient($accessKeyId, $accessKeySecret, $endpoint);
+            $result = $ossClient->getObjectMeta($bucket, $objectName);
+            SimpleLogger::debug("META", $result);
+            $hybrid = $this->md5base64_hybrid($md5);
+            $r  = $result['content-md5'];
+
+            return $hybrid == $r;
+
+        } catch (OssException $e){
+            SimpleLogger::warning("OSSClient error", [$e->getMessage()]);
+        }
+
+        return false;
+
+    }
+
+    private function md5base64_hybrid($md5){
+        if (strlen($md5) != 32){
+            return '';
+        }
+        $arr = str_split($md5, 1);
+        $bbbArr = [];
+        foreach ($arr as $item){
+            $bb = base_convert($item, 16, 2);
+            $bbbArr[] = sprintf("%04d", $bb);
+        }
+        $binStr =  join("", $bbbArr);
+
+        $base64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+        $binArr = str_split($binStr, 6);
+        $result = '';
+        foreach ($binArr as $b){
+            $i = base_convert($b, 2,10 );
+            $result .= substr($base64Chars, $i, 1);
+        }
+        $result .= '==';
+        return $result;
+    }
+
+    /**
+     * 上传内容保存为文件
+     * @param $filename
+     * @param $contents
+     */
+    public static function uploadFile($filename, $contents){
+        list($accessKeyId, $accessKeySecret, $bucket, $endpoint) = DictService::getKeyValuesByArray(Constants::DICT_TYPE_ALIOSS_CONFIG,array(
+            Constants::DICT_KEY_ALIOSS_ACCESS_KEY_ID,
+            Constants::DICT_KEY_ALIOSS_ACCESS_KEY_SECRET,
+            Constants::DICT_KEY_ALIOSS_BUCKET,
+            Constants::DICT_KEY_ALIOSS_ENDPOINT));
+
+        try {
+            $ossClient = new OssClient($accessKeyId, $accessKeySecret, $endpoint);
+            $ossClient->putObject($bucket,$filename, $contents);
+        }catch (OssException $e){
+            SimpleLogger::error($e->getMessage(), []);
+            return;
         }
     }
 

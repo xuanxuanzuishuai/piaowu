@@ -627,4 +627,13 @@ class Util
     {
         return '宝贝' . substr($mobile, -4, 4);
     }
+
+    /**
+     * 判断是否网址
+     * @param $url
+     * @return int
+     */
+    public static function isUrl($url){
+        return preg_match("/^http[s]?:\/\/.+$/", $url);
+    }
 }
