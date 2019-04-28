@@ -13,6 +13,7 @@ use App\Controllers\ControllerBase;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\AppConfigModel;
+use App\Models\AppVersionModel;
 use App\Models\FeedbackModel;
 use App\Services\AppVersionService;
 use Slim\Http\Request;
@@ -26,17 +27,14 @@ class App extends ControllerBase
         Util::unusedParam($request);
 
         $platformId = AppVersionService::getPlatformId($this->ci['platform']);
-        $lastVersion = AppVersionService::getLastVersion($platformId, $this->ci['version']);
-        $hotfix = AppVersionService::getHotfixConfig($platformId, $this->ci['version']);
+        $lastVersion = AppVersionService::getLastVersion(AppVersionModel::APP_TYPE_STUDENT, $platformId, $this->ci['version']);
+        $hotfix = AppVersionService::getHotfixConfig(AppVersionModel::APP_TYPE_STUDENT, $this->ci['version']);
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => [
                 'version' => $lastVersion,
                 'hotfix' => $hotfix,
-            ],
-            'meta' => [
-                'code' => 0,
             ]
         ], StatusCode::HTTP_OK);
     }
@@ -108,7 +106,7 @@ class App extends ControllerBase
         }
 
         $platformId = AppVersionService::getPlatformId($params['platform']);
-        $lastVersion = AppVersionService::getLastVersion($platformId, '');
+        $lastVersion = AppVersionService::getLastVersion(AppVersionModel::APP_TYPE_STUDENT, $platformId, '');
 
         return $response->withJson([
             'code'=> Valid::CODE_SUCCESS,

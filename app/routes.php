@@ -22,12 +22,12 @@ use App\Controllers\StudentApp\Opn as StudentAppOpn;
 use App\Controllers\StudentApp\Play as StudentAppPlay;
 use App\Controllers\StudentApp\Homework as StudentAppHomework;
 use App\Controllers\StudentApp\Subscription as StudentAppSubscription;
+use App\Controllers\TeacherApp\App as TeacherAppApp;
 use App\Controllers\TeacherApp\Auth as TeacherAppAuth;
 use App\Controllers\TeacherApp\Opn as TeacherAppOpn;
 use App\Controllers\TeacherApp\Schedule as TeacherAppSchedule;
 use App\Controllers\TeacherApp\Play as TeacherAppPlay;
 use App\Controllers\TeacherApp\Org as TeacherAppOrg;
-use App\Controllers\TeacherApp\Version as TeacherAppVersion;
 use App\Controllers\Employee\Employee as Employee;
 use App\Controllers\Org\OrgAccount as OrgAccount;
 use Slim\App;
@@ -277,13 +277,7 @@ $arr = array(
 
     '/teacher_app/app/version' => [
         'method' => ['get'],
-        'call' => TeacherAppVersion::class . ':version',
-        'middles' => [AppApi::class]
-    ],
-
-    '/teacher_app/version/hot_fix' => [
-        'method' => ['get'],
-        'call' => TeacherAppVersion::class . ':hotFix',
+        'call' => TeacherAppApp::class . ':version',
         'middles' => [AppApi::class]
     ],
 

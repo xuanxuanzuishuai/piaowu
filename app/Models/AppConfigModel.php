@@ -37,6 +37,8 @@ class AppConfigModel
 
     const RESOURCE_OSS_URL = 'RESOURCE_OSS_URL';
 
+    const UC_APP_URL_KEY = 'UC_APP_URL';
+
     public static function get($key)
     {
         if (empty($key)) {

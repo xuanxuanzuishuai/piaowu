@@ -9,6 +9,7 @@
 namespace App\Services;
 
 
+use App\Libs\AliOSS;
 use App\Models\AppConfigModel;
 use App\Models\AppVersionModel;
 
@@ -24,17 +25,18 @@ class AppVersionService
 
     /**
      * 获取最后一个已发布版本
+     * @param $appType
      * @param $platformId
      * @param $version
      * @return array
      */
-    public static function getLastVersion($platformId, $version)
+    public static function getLastVersion($appType, $platformId, $version)
     {
         if ($version == AppConfigModel::get('REVIEW_VERSION')) {
             return self::defaultLastVersion($version);
         }
 
-        $v = AppVersionModel::lastVersion($platformId);
+        $v = AppVersionModel::getLastVersion($appType, $platformId);
         if (empty($v)) {
             return self::defaultLastVersion($version);
         }
@@ -59,26 +61,25 @@ class AppVersionService
         ];
     }
 
-    public static function getHotfixConfig($platformId, $version)
+    public static function getHotfixConfig($appType, $version)
     {
         if ($version == AppConfigModel::get('REVIEW_VERSION')) {
             return self::defaultHotfixConfig($version);
         }
 
-        $host = AppConfigModel::get('HOTFIX_HOST');
+//        $host = AppConfigModel::get('HOTFIX_HOST');
         $verString = 'default';
 
-        $meta = self::getHotfixMeta($verString);
+        $meta = self::getHotfixMeta($appType, $verString);
         if (empty($meta)) {
             return self::defaultHotfixConfig($version);
         }
 
-        foreach ($meta['files'] as $file => $info) {
-            $meta['files'][$file]['url'] = "{$host}/{$verString}/{$info['file']}?{$info['md5']}";
-        }
+        AliOSS::signUrls($meta['files'], 'url');
 
-        $meta['hosts'] = [];
-        $meta['update_url'] = self::getUpdateUrl($platformId);
+//        foreach ($meta['files'] as $file => $info) {
+//            $meta['files'][$file]['url'] = "{$host}/{$verString}/{$info['file']}?{$info['md5']}";
+//        }
 
         return $meta;
     }
@@ -90,10 +91,10 @@ class AppVersionService
         ];
     }
 
-    public static function getHotfixMeta($version = 'default')
+    public static function getHotfixMeta($appType, $version = 'default')
     {
-        $hotfixPath = PROJECT_ROOT . '/www';
-        $metaFile = realpath("$hotfixPath/$version/meta.json");
+        $staticPath = PROJECT_ROOT . '/www';
+        $metaFile = realpath("{$staticPath}/hotfix/{$appType}/{$version}/meta.json");
         if (!file_exists($metaFile)) {
             return null;
         }
