@@ -45,7 +45,7 @@ class OrganizationModel extends Model
         $db = MysqlDB::getDB();
 
         $records = $db->queryAll("select o.*,e.name operator_name,o2.name parent_name
-        ,(select count(*) from {$s} s,{$so} so where s.id = so.org_id and so.status = {$studentOrgStatus} and 
+        ,(select count(*) from {$s} s,{$so} so where s.id = so.student_id and so.status = {$studentOrgStatus} and 
         s.status = {$studentStatus} and o.id = so.org_id) student_amount
         ,(select count(*) from {$t} t,{$too} too where t.id = too.teacher_id 
         and too.status = {$teacherOrgStatus} and t.status = {$teacherStatus} and o.id = too.org_id) teacher_amount
