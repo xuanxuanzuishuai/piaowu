@@ -112,6 +112,7 @@ class EmployeeModel extends Model
     public static function getEmployees($page = 0, $count = 0, $where, $isOrg = true)
     {
         $db = MysqlDB::getDB();
+
         if ($page > 0 && $count > 0) {
             $where['LIMIT'] = [($page - 1) * $count, $count];
         }

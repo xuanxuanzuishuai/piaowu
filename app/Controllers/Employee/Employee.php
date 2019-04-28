@@ -104,6 +104,10 @@ class Employee extends ControllerBase
     {
         $params = $request->getParams();
         list($page, $count) = Util::formatPageCount($params);
+        //为下拉框用途，不能分页
+        if($params['page'] == -1) {
+            $page = -1;
+        }
 
         list($users, $totalCount) = EmployeeService::getEmployeeService($page, $count, $params);
         $roles = RoleModel::selectOrgRoles();
