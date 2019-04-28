@@ -40,7 +40,8 @@ class OrgAccountModel extends Model
         if(!empty($params['account'])) {
             $where['oa.account'] = $params['account'];
         }
-        if(!empty($params['license_num'])) {
+        //license_num=0也是一种状态，所以用isset
+        if(isset($params['license_num'])) {
             $where['oa.license_num'] = $params['license_num'];
         }
         if(!empty($params['org_id'])) {
@@ -61,7 +62,9 @@ class OrgAccountModel extends Model
             'oa.last_login_time',
         ], $where);
 
-        $total = $db->count(self::$table . '(oa)', '*', $where);
+        $total = $db->count(self::$table . '(oa)', [
+            '[><]' . OrganizationModel::$table . '(o)' => ['oa.org_id' => 'id']
+        ], ['oa.id'] ,$where);
 
         return [$records, $total];
     }

@@ -39,8 +39,9 @@ class OrgAccount extends ControllerBase
             ],
             [
                 'key'        => 'account',
-                'type'       => 'integer',
-                'error_code' => 'account_is_integer'
+                'type'       => 'length',
+                'value'      => 8,
+                'error_code' => 'account_length_is_8'
             ],
             [
                 'key'        => 'license_num',
@@ -80,8 +81,9 @@ class OrgAccount extends ControllerBase
             ],
             [
                 'key'        => 'account',
-                'type'       => 'integer',
-                'error_code' => 'account_is_integer'
+                'type'       => 'length',
+                'value'      => 8,
+                'error_code' => 'account_length_is_8'
             ],
             [
                 'key'        => 'license_num',
