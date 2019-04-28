@@ -67,7 +67,6 @@ class AppVersionService
             return self::defaultHotfixConfig($version);
         }
 
-//        $host = AppConfigModel::get('HOTFIX_HOST');
         $verString = 'default';
 
         $meta = self::getHotfixMeta($appType, $verString);
@@ -75,11 +74,7 @@ class AppVersionService
             return self::defaultHotfixConfig($version);
         }
 
-        AliOSS::signUrls($meta['files'], 'url');
-
-//        foreach ($meta['files'] as $file => $info) {
-//            $meta['files'][$file]['url'] = "{$host}/{$verString}/{$info['file']}?{$info['md5']}";
-//        }
+        $meta['files'] = AliOSS::signUrls($meta['files'], 'file');
 
         return $meta;
     }
