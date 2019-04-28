@@ -11,6 +11,13 @@ namespace App\Models;
 
 use App\Libs\MysqlDB;
 
+/**
+ * 机构账号
+ * 密码保存账号和明文密码拼接后的md5
+ *
+ * Class OrgAccountModel
+ * @package App\Models
+ */
 class OrgAccountModel extends Model
 {
     static $table = 'org_account';

@@ -200,7 +200,7 @@ class Org extends ControllerBase
             $data = [
                 'org_id'      => $lastId,
                 'account'     => $account,
-                'password'    => md5($account), // 默认密码是机构账号
+                'password'    => md5($account.$account), // 默认密码是机构账号
                 'create_time' => time(),
                 'status'      => OrgAccountModel::STATUS_NORMAL,
                 'license_num' => $licenseNum,
