@@ -30,6 +30,7 @@ use App\Controllers\TeacherApp\Play as TeacherAppPlay;
 use App\Controllers\TeacherApp\Org as TeacherAppOrg;
 use App\Controllers\Employee\Employee as Employee;
 use App\Controllers\Org\OrgAccount as OrgAccount;
+use App\Controllers\Student\PlayRecord as BackendPlayRecord;
 use Slim\App;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -477,7 +478,13 @@ $arr = array(
     //机构后台查询学生练习日报
     '/org_web/org/report_for_org' => [
         'method'  => ['get'],
-        'call'    => PlayRecord::class . ':reportForOrg',
+        'call'    => BackendPlayRecord::class . ':reportForOrg',
+        'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class]
+    ],
+    //机构后台cc角色查看其负责的学生列表
+    '/student/student/list_for_cc' => [
+        'method'  => ['get'],
+        'call'    => Student::class . ':list',
         'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class]
     ],
 );

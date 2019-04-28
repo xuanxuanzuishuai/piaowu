@@ -68,7 +68,13 @@ class ControllerBase
         return $this->ci['employee']['id'];
     }
 
-    public function getEmployeeOrgId() {
+    public function getEmployeeOrgId()
+    {
         return $this->ci['employee']['org_id'];
+    }
+
+    public function isOrgCC($roleId)
+    {
+        return $this->ci['employee']['role_id'] == $roleId;
     }
 }

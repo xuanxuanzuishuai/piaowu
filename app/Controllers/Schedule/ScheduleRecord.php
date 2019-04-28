@@ -9,6 +9,7 @@
 namespace App\Controllers\Schedule;
 
 use App\Controllers\ControllerBase;
+use App\Libs\Dict;
 use App\Libs\Valid;
 use App\Services\ScheduleService;
 use Slim\Http\Request;
@@ -73,6 +74,14 @@ class ScheduleRecord extends ControllerBase
         $result = Valid::validate($params, $rules);
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $roleId = Dict::getOrgCCRoleId();
+        if(empty($roleId)) {
+            return $response->withJson([],'play_record', 'org_cc_role_is_empty_in_session');
+        }
+        if($this->isOrgCC($roleId)) {
+            $params['role_id'] = $roleId;
         }
 
         global $orgId;

@@ -204,6 +204,7 @@ class ScheduleModel extends Model
         $su  = ScheduleUserModel::$table;
         $stu = StudentModel::$table;
         $t   = TeacherModel::$table;
+        $e   = EmployeeModel::$table;
 
         $userRoleStudent = ScheduleUserModel::USER_ROLE_STUDENT;
         $userRoleTeacher = ScheduleUserModel::USER_ROLE_TEACHER;
@@ -231,6 +232,10 @@ class ScheduleModel extends Model
             $where .= ' and s.end_time <= :end_time';
             $map[':end_time'] = $params['end_time'];
         }
+        if(!empty($params['role_id'])) {
+            $where .= ' and e.role_id = :role_id';
+            $map[':role_id'] = $params['role_id'];
+        }
 
         $limit = Util::limitation($page, $count);
 
@@ -250,9 +255,17 @@ class ScheduleModel extends Model
                left join {$stu} stu on su.user_id = stu.id
                left join {$su} su2 on s.id = su2.schedule_id and su2.user_role = {$userRoleTeacher}
                left join {$t} t on t.id = su2.user_id
+               left join {$e} e on stu.cc_id = e.id
         {$where} order by s.create_time desc {$limit}", $map);
 
-        $total = $db->queryAll("select count(*) count from {$s} s {$where} ", $map);
+        $total = $db->queryAll("select count(*) count
+        from {$s} s
+               inner join {$cr} cr on cr.id = s.classroom_id and cr.org_id = s.org_id
+               inner join {$c} c on c.id = s.course_id and c.org_id = s.org_id
+               left join {$su} su on s.id = su.user_id and su.user_role = {$userRoleStudent}
+               left join {$stu} stu on su.user_id = stu.id
+               left join {$e} e on stu.cc_id = e.id
+        {$where} order by s.create_time desc {$limit}", $map);
 
         return [$records, $total[0]['count']];
     }

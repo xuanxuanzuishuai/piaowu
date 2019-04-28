@@ -287,4 +287,9 @@ class Dict
   {
     return DictService::getKeyValue(Constants::DICT_CODE_TIME_UNITS, $unit);
   }
+
+  public static function getOrgCCRoleId()
+  {
+      return DictService::getKeyValue(Constants::DICT_TYPE_ROLE_ID, Constants::DICT_KEY_CODE_CC_ROLE_ID_CODE_ORG);
+  }
 }

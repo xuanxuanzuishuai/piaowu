@@ -12,6 +12,7 @@ namespace App\Controllers\Student;
 
 use App\Controllers\ControllerBase;
 use App\Libs\Constants;
+use App\Libs\Dict;
 use App\Libs\MysqlDB;
 use App\Libs\ResponseError;
 use App\Libs\Valid;
@@ -32,7 +33,7 @@ class Student extends ControllerBase
 {
 
     /**
-     * 获取学员列表
+     * 获取学员列表(机构用)
      * @param Request $request
      * @param Response $response
      * @param $argv
@@ -58,9 +59,17 @@ class Student extends ControllerBase
             return $response->withJson($result, 200);
         }
 
-        $orgId = $this->getEmployeeOrgId();
+        $roleId = Dict::getOrgCCRoleId();
+        if(empty($roleId)) {
+            return $response->withJson([],'play_record', 'org_cc_role_is_empty_in_session');
+        }
+        if($this->isOrgCC($roleId)) {
+            $params['role_id'] = $roleId;
+        }
 
-        list($data, $total) = StudentService::selectStudentByOrg($orgId,$params['page'], $params['count'], $params);
+        global $orgId;
+
+        list($data, $total) = StudentService::selectStudentByOrg($orgId, $params['page'], $params['count'], $params);
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
@@ -72,7 +81,7 @@ class Student extends ControllerBase
     }
 
     /**
-     * 机构下的学生列表
+     * 学生列表，内部用，可将org_id作为筛选条件
      * @param Request $request
      * @param Response $response
      * @param $argv
@@ -384,10 +393,18 @@ class Student extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
+        $roleId = Dict::getOrgCCRoleId();
+        if(empty($roleId)) {
+            return $response->withJson([],'play_record', 'org_cc_role_is_empty_in_session');
+        }
+        if(!$this->isOrgCC($roleId)) {
+            $roleId = null;
+        }
+
         $key = $params['key'];
         global $orgId;
 
-        $records = StudentModel::fuzzySearch($orgId, $key);
+        $records = StudentModel::fuzzySearch($orgId, $key, $roleId);
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,

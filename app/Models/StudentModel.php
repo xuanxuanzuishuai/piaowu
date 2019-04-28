@@ -556,8 +556,6 @@ class StudentModel extends Model
         $te = TeacherModel::$table;
         $e  = EmployeeModel::$table;
 
-        $status = TeacherStudentModel::STATUS_NORMAL;
-
         //按姓名或手机号模糊查询,查询出结果后直接返回
         if(!empty($params['key'])) {
             $key = $params['key'];
@@ -582,33 +580,53 @@ class StudentModel extends Model
         }
         if(!empty($params['is_bind'])) {
             $where .= " and so.status = :is_bind ";
-            $map[':is_bind'] = "{$params['is_bind']}";
+            $map[':is_bind'] = $params['is_bind'];
+        }
+        if(!empty($params['role_id']) && $orgId > 0) {
+            $where .= " and e.role_id = :role_id ";
+            $map[':role_id'] = $params['role_id'];
+        }
+        if(!empty($orgId)) {
+            $where .= " and so.org_id = :org_id ";
+            $map[':org_id'] = $orgId;
         }
 
         if ($orgId > 0) {
-            $sql = "select s.*,e.name cc_name, t.teacher_id, te.name teacher_name, t.status ts_status, so.status bind_status
+            $sql = "select s.*,e.name cc_name, t.teacher_id, te.name teacher_name, 
+                t.status ts_status, so.status bind_status
                 from {$s} s inner join {$so} so
                 on s.id = so.student_id
-                and so.org_id = {$orgId} left join {$t} t on s.id = t.student_id and t.status = {$status}
-                and t.org_id = {$orgId}
-                left join {$te} te on te.id = t.teacher_id
+                left join {$t} t on s.id = t.student_id and t.org_id = so.org_id
+                left join {$te} te on te.id = t.teacher_id 
                 left join {$e} e on e.id = s.cc_id
                 {$where}
                 order by s.create_time desc {$limit}";
 
-            $countSql = "select count(*) count from {$s} s inner join {$so} so on s.id = so.student_id
-                    and so.org_id = {$orgId} {$where}";
+            $countSql = "select count(*) count
+                from {$s} s inner join {$so} so
+                on s.id = so.student_id
+                left join {$t} t on s.id = t.student_id and t.org_id = so.org_id
+                left join {$te} te on te.id = t.teacher_id
+                left join {$e} e on e.id = s.cc_id 
+                {$where}";
         } else {
-            $sql = "select s.*,e.name cc_name, t.teacher_id, te.name teacher_name, t.status ts_status, so.status bind_status
-                from {$s} s inner join {$so} so
+            $sql = "select s.*,e.name cc_name, t.teacher_id, te.name teacher_name, 
+                t.status ts_status, so.status bind_status
+                from {$s} s left join {$so} so
                 on s.id = so.student_id
-                left join {$t} t on s.id = t.student_id and t.status = {$status}
-                left join {$te} te on te.id = t.teacher_id
+                left join {$t} t on s.id = t.student_id and t.org_id = so.org_id
+                left join {$te} te on te.id = t.teacher_id 
                 left join {$e} e on e.id = s.cc_id
                 {$where}
                 order by s.create_time desc {$limit}";
 
-            $countSql = "select count(*) count from {$s} s inner join {$so} so on s.id = so.student_id {$where}";
+            $countSql = "select count(*) count
+                from {$s} s left join {$so} so
+                on s.id = so.student_id
+                left join {$t} t on s.id = t.student_id and t.org_id = so.org_id
+                left join {$te} te on te.id = t.teacher_id 
+                left join {$e} e on e.id = s.cc_id
+                {$where}";
         }
 
         $records = $db->queryAll($sql, $map);
@@ -649,21 +667,36 @@ class StudentModel extends Model
      * 姓名模糊匹配，手机号等于匹配
      * @param $orgId
      * @param $key
+     * @param $roleId
      * @return array|null
      */
-    public static function fuzzySearch($orgId, $key)
+    public static function fuzzySearch($orgId, $key, $roleId = null)
     {
         $db = MysqlDB::getDB();
-        $s = StudentModel::$table;
+
+        $s  = StudentModel::$table;
         $so = StudentOrgModel::$table;
         $st = StudentOrgModel::STATUS_NORMAL;
+        $e  = EmployeeModel::$table;
 
         if(!empty(preg_match('/^1\d{10}$/', $key))) {
-            $sql = "select s.id,s.name,s.mobile,so.org_id from {$s} s,{$so} so where s.id = so.student_id
-        and so.status = {$st} and so.org_id = {$orgId} and s.mobile = {$key}";
+            if(empty($roleId)) {
+                $sql = "select s.id,s.name,s.mobile,so.org_id from {$s} s,{$so} so where s.id = so.student_id
+                        and so.status = {$st} and so.org_id = {$orgId} and s.mobile = {$key}";
+            } else {
+                $sql = "select s.id,s.name,s.mobile,so.org_id from {$s} s,{$so} so, {$e} e where s.id = so.student_id
+                        and so.status = {$st} and so.org_id = {$orgId} and s.mobile = {$key} and e.id = s.cc_id 
+                        and e.role_id = {$roleId}";
+            }
         } else {
-            $sql = "select s.id,s.name,s.mobile,so.org_id from {$s} s,{$so} so where s.id = so.student_id
-        and so.status = {$st} and so.org_id = {$orgId} and s.name like '%{$key}%'";
+            if(empty($roleId)) {
+                $sql = "select s.id,s.name,s.mobile,so.org_id from {$s} s,{$so} so where s.id = so.student_id
+                    and so.status = {$st} and so.org_id = {$orgId} and s.name like '%{$key}%'";
+            } else {
+                $sql = "select s.id,s.name,s.mobile,so.org_id from {$s} s,{$so} so, {$e} e where s.id = so.student_id
+                    and so.status = {$st} and so.org_id = {$orgId} and e.id = s.cc_id and e.role_id = {$orgId} 
+                    and s.name like '%{$key}%'";
+            }
         }
 
         $records = $db->queryAll($sql);
