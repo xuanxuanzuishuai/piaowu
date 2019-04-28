@@ -234,19 +234,12 @@ class HomeworkService
         $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, 1);
         $bookInfo = $opn->lessonsByIds($lessonIds);
 
-        // 获取书（合集）更详细的信息
-        $bookIds = array_column($bookInfo['data'], 'collection_id');
-        $bookDetailsRaw = $opn->collectionsByIds($bookIds);
-        $bookDetails = [];
-        foreach ($bookDetailsRaw['data'] as $bookDetail){
-            $bookDetails[$bookDetail['id']] = $bookDetail;
-        }
         $books = [];
         foreach ($bookInfo['data'] as $book){
             $books[$book['lesson_id']] = [
                 'book_name' => $book['collection_name'],
                 'res' => $book['resources'] ? $book['resources']:'',
-                'cover' => $bookDetails[$book['collection_id']] ? $bookDetails[$book['collection_id']]['cover'] : '',
+                'cover' => $book['collection_cover'],
                 'score_id' => $book['opern_id'],
                 'is_free' => $book['freeflag'] ? '1' : '0'
             ];
@@ -290,7 +283,6 @@ class HomeworkService
         }
 
         return [$homework, $statistics, $books];
-
     }
 
 }

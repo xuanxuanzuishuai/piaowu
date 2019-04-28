@@ -140,7 +140,7 @@ class Play extends ControllerBase
             [
                 'key' => 'data',
                 'type' => 'required',
-                'play_data_is_required' => 'play_data_is_required'
+                'error_code' => 'play_data_is_required'
             ]
         ];
         $param = $request->getParams();

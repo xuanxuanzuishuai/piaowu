@@ -308,7 +308,7 @@ class Opn extends ControllerBase
             [
                 'key' => 'lesson_id',
                 'type' => 'required',
-                'lesson_id_is_required' => 'lesson_id_is_required'
+                'error_code' => 'lesson_id_is_required'
             ]
         ];
         $param = $request->getParams();
@@ -347,7 +347,7 @@ class Opn extends ControllerBase
             [
                 'key' => 'lesson_id',
                 'type' => 'required',
-                'lesson_id_is_required' => 'lesson_id_is_required'
+                'error_code' => 'lesson_id_is_required'
             ]
         ];
         $param = $request->getParams();

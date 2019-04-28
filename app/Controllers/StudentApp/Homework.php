@@ -35,7 +35,7 @@ class Homework extends ControllerBase
             [
                 'key' => 'task_id',
                 'type' => 'required',
-                'lesson_id_is_required' => 'task_id_is_required'
+                'error_code' => 'task_id_is_required'
             ]
         ];
         $params = $request->getParams();

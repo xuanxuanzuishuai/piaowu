@@ -107,6 +107,7 @@ class OpernService
             $opern['is_free'] = $lesson['freeflag'] ? '1' : '0';
             $opern['collection_id'] = $lesson['collection_id'] ? $lesson['collection_id'] : '';
             $opern['collection_name'] = $lesson['collection_name'] ? $lesson['collection_name'] : '';
+            $opern['collection_cover'] = $lesson['collection_cover']
             $result[] = $opern;
         }
         return $result;
@@ -157,5 +158,21 @@ class OpernService
         $defaultCollections = self::appFormatCollections($defaultCollections);
 
         return $defaultCollections;
+    }
+
+
+    /**
+     * 获取教材的详情
+     * @param $bookIds
+     * @return array
+     */
+    public static function getBookDetails($bookIds){
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, 1);
+        $bookDetailsRaw = $opn->collectionsByIds($bookIds);
+        $bookDetails = [];
+        foreach ($bookDetailsRaw['data'] as $bookDetail){
+            $bookDetails[$bookDetail['id']] = $bookDetail;
+        }
+        return $bookDetails;
     }
 }
