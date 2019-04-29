@@ -61,7 +61,7 @@ class Student extends ControllerBase
 
         $roleId = Dict::getOrgCCRoleId();
         if(empty($roleId)) {
-            return $response->withJson([],'play_record', 'org_cc_role_is_empty_in_session');
+            return $response->withJson(Valid::addErrors([],'play_record', 'org_cc_role_is_empty_in_session'));
         }
         if($this->isOrgCC($roleId)) {
             $params['role_id'] = $roleId;

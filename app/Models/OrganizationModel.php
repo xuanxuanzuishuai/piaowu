@@ -36,15 +36,25 @@ class OrganizationModel extends Model
         $too = TeacherOrgModel::$table;
         $e   = EmployeeModel::$table;
         $o   = OrganizationModel::$table;
+        $ro  = RoleModel::$table;
 
         $studentStatus    = StudentModel::STATUS_NORMAL;
         $teacherStatus    = TeacherModel::STATUS_NORMAL;
         $studentOrgStatus = StudentOrgModel::STATUS_NORMAL;
         $teacherOrgStatus = TeacherOrgModel::STATUS_NORMAL;
 
+        $where = ' where 1=1 ';
+        $map   = [];
+
+        if(!empty($params['role_id'])) {
+            $where .= ' and ro.id = :role_id ';
+            $map[':role_id'] = $params['role_id'];
+        }
+
         $db = MysqlDB::getDB();
 
-        $records = $db->queryAll("select o.*,e.name operator_name,o2.name parent_name
+        $records = $db->queryAll("select e2.name principal_name,e2.mobile principal_mobile,
+        o.*,e.name operator_name,o2.name parent_name
         ,(select count(*) from {$s} s,{$so} so where s.id = so.student_id and so.status = {$studentOrgStatus} and 
         s.status = {$studentStatus} and o.id = so.org_id) student_amount
         ,(select count(*) from {$t} t,{$too} too where t.id = too.teacher_id 
@@ -52,11 +62,20 @@ class OrganizationModel extends Model
         ,(select count(*) from {$e} e where e.org_id = o.id) employee_amount 
         from {$o} o
         left join {$e} e on o.operator_id = e.id
-        left join {$o} o2 on o.parent_id = o2.id {$limit}");
+        left join {$o} o2 on o.parent_id = o2.id
+        left join {$e} e2 on e2.org_id = o.id
+        left join {$ro} ro on ro.id = e2.role_id and ro.id = :role_id
+        {$where}
+        {$limit}", $map);
 
-        $total = $db->count(self::$table);
+        $total = $db->queryAll("select count(*) count
+        from {$o} o
+        left join {$e} e2 on e2.org_id = o.id
+        left join {$ro} ro on ro.id = e2.role_id and ro.id = :role_id
+        {$where}
+        {$limit}", $map);
 
-        return [$records, $total];
+        return [$records, $total[0]['count']];
     }
 
     /**

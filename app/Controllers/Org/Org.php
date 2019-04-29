@@ -9,6 +9,8 @@
 namespace App\Controllers\Org;
 
 use App\Controllers\ControllerBase;
+use App\Libs\Constants;
+use App\Libs\Dict;
 use App\Libs\MysqlDB;
 use App\Libs\Valid;
 use App\Models\OrgAccountModel;
@@ -16,6 +18,7 @@ use App\Models\OrganizationModel;
 use App\Models\StudentOrgModel;
 use App\Models\TeacherOrgModel;
 use App\Models\TeacherStudentModel;
+use App\Services\EmployeeService;
 use App\Services\OrganizationService;
 use App\Services\StudentService;
 use App\Services\TeacherService;
@@ -159,6 +162,34 @@ class Org extends ControllerBase
         ];
 
         $params = $request->getParams();
+
+        //添加机构时候，自动添加一个角色是校长的employee,需要检查校长的手机号登录名等信息
+        if(empty($params['id'])) {
+            $rules = array_merge($rules, [
+                [
+                    'key'        => 'login_name',
+                    'type'       => 'required',
+                    'error_code' => 'login_name_is_required'
+                ],
+                [
+                    'key'        => 'principal_name',
+                    'type'       => 'required',
+                    'error_code' => 'principal_name_is_required'
+                ],
+                [
+                    'key'        => 'mobile',
+                    'type'       => 'required',
+                    'error_code' => 'mobile_is_required'
+                ],
+                [
+                    'key'        => 'mobile',
+                    'type'       => 'regex',
+                    'value'      => Constants::MOBILE_REGEX,
+                    'error_code' => 'mobile_format_error'
+                ],
+            ]);
+        }
+
         $result = Valid::validate($params, $rules);
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
@@ -170,25 +201,58 @@ class Org extends ControllerBase
 
         if(isset($params['id']) && !empty($params['id'])) {
             $id = $params['id'];
-            unset($params['id']);
-            $affectRows = OrganizationService::updateById($id, $params);
+
+            $data = [
+                'name'             => $params['name'],
+                'remark'           => $params['remark'],
+                'province_code'    => $params['province_code'],
+                'city_code'        => $params['city_code'],
+                'district_code'    => $params['district_code'],
+                'address'          => $params['address'],
+                'zip_code'         => $params['zip_code'],
+                'register_channel' => $params['register_channel'],
+                'parent_id'        => $params['parent_id'],
+                'start_time'       => $params['start_time'],
+                'end_time'         => $params['end_time'],
+                'status'           => $params['status'],
+                'update_time'      => $now,
+            ];
+
+            $affectRows = OrganizationService::updateById($id, $data);
+
             if($affectRows == 0) {
                 return $this->fail($response, 'org','update_fail');
             }
 
             return $this->success($response, ['last_id' => $id]);
         } else {
-            $params['create_time'] = $now;
-            $params['status']      = OrganizationModel::STATUS_NORMAL;
-            $licenseNum            = $params['license_num'];
+            $principalRoleId = Dict::getPrincipalRoleId();
+            if(empty($principalRoleId)) {
+                return $response->withJson(Valid::addErrors([], 'org', 'principal_role_id_is_empty'));
+            }
 
-            unset($params['license_num']);
+            $now = time();
 
             $db = MysqlDB::getDB();
             $db->beginTransaction();
 
+            $orgData = [
+                'name'             => $params['name'],
+                'remark'           => $params['remark'],
+                'province_code'    => $params['province_code'],
+                'city_code'        => $params['city_code'],
+                'district_code'    => $params['district_code'],
+                'address'          => $params['address'],
+                'zip_code'         => $params['zip_code'],
+                'register_channel' => $params['register_channel'],
+                'parent_id'        => $params['parent_id'],
+                'start_time'       => $params['start_time'],
+                'end_time'         => $params['end_time'],
+                'status'           => OrganizationModel::STATUS_NORMAL,
+                'create_time'      => $now,
+            ];
             //添加机构
-            $lastId = OrganizationService::save($params);
+            $lastId = OrganizationService::save($orgData);
 
             if(empty($lastId)) {
                 $db->rollBack();
@@ -202,19 +266,36 @@ class Org extends ControllerBase
             }
             $account = $max + 1;
 
-            $data = [
+            $accountData = [
                 'org_id'      => $lastId,
                 'account'     => $account,
                 'password'    => md5($account.$account), // 默认密码是机构账号
-                'create_time' => time(),
+                'create_time' => $now,
                 'status'      => OrgAccountModel::STATUS_NORMAL,
-                'license_num' => $licenseNum,
+                'license_num' => $params['license_num'],
             ];
 
-            $affectRows = OrgAccountModel::insertRecord($data, false);
+            $affectRows = OrgAccountModel::insertRecord($accountData, false);
             if($affectRows == 0) {
                 $db->rollBack();
                 return $response->withJson(Valid::addErrors([], 'org', 'save_org_account_fail'));
+            }
+
+            //添加employee
+            $employeeData = [
+                'role_id'    => $principalRoleId,
+                'login_name' => $params['login_name'],
+                'name'       => $params['principal_name'],
+                'mobile'     => $params['mobile'],
+                'org_id'     => $lastId,
+                'pwd'        => $params['mobile'], //校长默认密码是手机号
+            ];
+
+            $employeeId = EmployeeService::insertOrUpdateEmployee($employeeData);
+
+            if (empty($employeeId)) {
+                $db->rollBack();
+                return $response->withJson(Valid::addErrors([], 'org', 'save_employee_fail'));
             }
 
             $db->commit();
@@ -250,6 +331,9 @@ class Org extends ControllerBase
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
+
+        //获取校长role_id
+        $params['role_id'] = Dict::getPrincipalRoleId();
 
         list($records, $total) = OrganizationService::selectOrgList($params['page'], $params['count'], $params);
 

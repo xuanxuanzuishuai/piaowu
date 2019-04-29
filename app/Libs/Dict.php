@@ -292,4 +292,9 @@ class Dict
   {
       return DictService::getKeyValue(Constants::DICT_TYPE_ROLE_ID, Constants::DICT_KEY_CODE_CC_ROLE_ID_CODE_ORG);
   }
+
+  public static function getPrincipalRoleId()
+  {
+      return DictService::getKeyValue(Constants::DICT_TYPE_ROLE_ID, Constants::DICT_KEY_CODE_PRINCIPAL_ROLE_ID_CODE);
+  }
 }

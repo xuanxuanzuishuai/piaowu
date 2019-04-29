@@ -211,6 +211,7 @@ class Constants
     const DICT_KEY_CODE_CA_ROLE_ID_CODE = 'CA_ROLE_ID';
     const DICT_KEY_CODE_TA_ROLE_ID_CODE = 'TA_ROLE_ID';
     const DICT_KEY_CODE_CC_ROLE_ID_CODE_ORG = 'CC_ROLE_ID_ORG'; //机构cc使用
+    const DICT_KEY_CODE_PRINCIPAL_ROLE_ID_CODE = 'PRINCIPAL_ROLE_ID'; //机构校长角色
 
     // 声网录制地址
     const AGORA_RECORDER_URL = 'AGORA_RECORDER_URL';
