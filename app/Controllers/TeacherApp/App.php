@@ -12,6 +12,7 @@ use App\Controllers\ControllerBase;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\AppVersionModel;
+use App\Models\FeedbackModel;
 use App\Services\AppVersionService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -33,6 +34,39 @@ class App extends ControllerBase
                 'version' => $lastVersion,
                 'hotfix' => $hotfix,
             ]
+        ], StatusCode::HTTP_OK);
+    }
+
+
+    public function feedback(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'content',
+                'type' => 'required',
+                'error_code' => 'opinion_content_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $userId = $this->ci['teacher']['id'];
+        $data = [
+            'user_type' => FeedbackModel::TYPE_TEACHER,
+            'user_id' => $userId,
+            'content' => $params['content'],
+            'platform' => $this->ci['platform'],
+            'version' => $this->ci['version'],
+            'create_time' => time()
+        ];
+        FeedbackModel::insertRecord($data);
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => []
         ], StatusCode::HTTP_OK);
     }
 }
