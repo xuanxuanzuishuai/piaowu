@@ -37,8 +37,8 @@ class OrgTeacherAuthMiddleWareForApp extends MiddlewareBase
             if(isset($_ENV['ENV_NAME']) && $_ENV['ENV_NAME'] == 'dev') {
                 $cache = ['student_id' => $_ENV['DEV_ORG_STUDENT_ID'], 'teacher_id' => $_ENV['DEV_ORG_TEACHER_ID']];
             } else {
-                SimpleLogger::error(__FILE__ . __LINE__, ['empty teacher token']);
-                $result = Valid::addAppErrors([], 'empty teacher token');
+                SimpleLogger::error(__FILE__ . __LINE__, ['empty_teacher_token']);
+                $result = Valid::addAppErrors([], 'empty_teacher_token');
                 return $response->withJson($result, StatusCode::HTTP_OK);
             }
         } else {
