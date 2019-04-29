@@ -74,7 +74,7 @@ class AppVersionService
             return self::defaultHotfixConfig($version);
         }
 
-        $meta['files'] = AliOSS::signUrls($meta['files'], 'file');
+        $meta['files'] = AliOSS::signUrls($meta['files'], 'url');
 
         return $meta;
     }
