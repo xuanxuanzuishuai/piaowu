@@ -14,6 +14,7 @@ use App\Middleware\AppApi;
 use App\Middleware\EmployeeAuthCheckMiddleWare;
 use App\Middleware\EmployeePrivilegeMiddleWare;
 use App\Middleware\OrgAuthCheckMiddleWareForApp;
+use App\Middleware\OrgResPrivilegeCheckMiddleWareForApp;
 use App\Middleware\OrgTeacherAuthMiddleWareForApp;
 use App\Middleware\StudentAuthCheckMiddleWareForApp;
 use App\Controllers\StudentApp\App as StudentAppApp;
@@ -233,7 +234,7 @@ $arr = array(
     '/teacher_app/opn/lesson' => [
         'method' => ['get'],
         'call' => TeacherAppOpn::class . ':lesson',
-        'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApi::class]
+        'middles' => [OrgResPrivilegeCheckMiddleWareForApp::class, OrgAuthCheckMiddleWareForApp::class, AppApi::class]
     ],
     '/teacher_app/opn/recent_collections' => [
         'method' => ['get'],
