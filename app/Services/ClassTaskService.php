@@ -9,6 +9,7 @@
 namespace App\Services;
 
 use App\Libs\Constants;
+use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Models\ClassTaskModel;
 use App\Models\ClassUserModel;
@@ -127,6 +128,7 @@ class ClassTaskService
 
     /**
      * @param $pcts
+     * @param null $classId
      * @return array
      */
     public static function checkCTs($pcts,$classId = null)
@@ -153,7 +155,7 @@ class ClassTaskService
             if (empty($pct['start_time'])) {
                 return Valid::addErrors([], 'class_start_time', 'class_start_time_not_exist');
             }
-            if (empty($pct['weekday'])) {
+            if (!isset($pct['weekday'])) {
                 return Valid::addErrors([], 'class_weekday', 'class_weekday_not_exist');
             }
             if (!in_array($pct['weekday'], [0, 1, 2, 3, 4, 5, 6])) {
@@ -162,14 +164,16 @@ class ClassTaskService
             if (empty($pct['expire_start_date'])) {
                 return Valid::addErrors([], 'class_start_time', 'class_expire_start_date_not_exist');
             }
+
             if (empty($pct['period'])) {
                 return Valid::addErrors([], 'class_period', 'class_period_not_exist');
             }
-            $pct['expire_end_date'] = empty($pct['expire_end_date']) ? $pct['expire_start_date'] + (7 * ($pct['period'] - 1) + 1) * 86400 : $pct['expire_end_date'];
+            $pct['expire_end_date'] = empty($pct['expire_end_date']) ? date("Y-m-d",strtotime($pct['expire_start_date']) + (7 * ($pct['period'] - 1) + 1) * 86400) : $pct['expire_end_date'];
             if($pct['expire_end_date'] <= $pct['expire_start_date']) {
                 return Valid::addErrors([], 'class_start_time', 'class_expire_end_date_is_invalid');
             }
             $endTime = date("H:i", strtotime($pct['start_time']) + $course['duration']);
+            SimpleLogger::error('sssss',$pct);
             $ct = [
                 'classroom_id' => $pct['classroom_id'],
                 'start_time' => $pct['start_time'],
@@ -187,9 +191,11 @@ class ClassTaskService
             if(!empty($classId)){
                 $ct['class_id'] = $classId;
             }
+            SimpleLogger::error('lksjdfkdhf',$ct);
             $res = self::checkCT($ct);
             if ($res !== true) {
-                return Valid::addErrors(['data' => ['result' => $res]], 'class_task_classroom', 'class_task_classroom_error');
+
+                return Valid::addErrors(['data' => ['result' => $res],'code'=>1], 'class_task_classroom', 'class_task_classroom_error');
             }
             $startTimes[$pct['start_time']] = [$pct['start_time'], $endTime];
             $cts[] = $ct;

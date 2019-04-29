@@ -17,6 +17,7 @@ use App\Models\ScheduleModel;
 use App\Models\ClassTaskModel;
 use App\Models\ClassUserModel;
 use App\Models\ScheduleUserModel;
+use App\Services\ClassTaskService;
 use App\Services\ScheduleService;
 use App\Services\ScheduleTaskService;
 use App\Services\ScheduleUserService;
@@ -197,7 +198,7 @@ class Schedule extends ControllerBase
             'real_schedule_id' => $schedule['id'],
             'status' => ClassTaskModel::STATUS_TEMP,
         ];
-        ScheduleTaskService::addST($st, $params['studentIds'], $params['teacherIds']);
+        ClassTaskService::addCTs($st, $params['studentIds'], $params['teacherIds']);
         $db->commit();
 
         $schedule = ScheduleService::getDetail($newSchedule['id']);

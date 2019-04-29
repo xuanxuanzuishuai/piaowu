@@ -10,6 +10,7 @@ namespace App\Services;
 
 
 use App\Libs\Constants;
+use App\Libs\SimpleLogger;
 use App\Models\ClassTaskModel;
 use App\Models\ClassUserModel;
 use App\Models\STClassModel;
@@ -50,10 +51,10 @@ class STClassService
                 }
                 $stc['class_tasks'] = $cts;
             }
-            $cus = ClassUserModel::getCUListByClassId(['class_id' => $stc['id'], 'status' => ClassUserModel::STATUS_NORMAL]);
+            $cus = ClassUserModel::getCUListByClassId($stc['id']);
             if (!empty($cus)) {
                 foreach ($cus as $key => $cu) {
-                    $cus[$key] = ClassUserService::formatCU($cu);
+                    $cu = ClassUserService::formatCU($cu);
                     if ($cu['user_role'] == ClassUserModel::USER_ROLE_S) {
                         $stc['students'][] = $cu;
                     } else {
@@ -86,23 +87,24 @@ class STClassService
     {
 
         $stcId = STClassModel::addSTClass($stc);
-
-        $res = ClassTaskService::addCTs($stcId, $cts);
-        if ($res == false) {
-            return $res;
-        }
-        $cus = [];
-        if (!empty($students)) {
-            $cus[ClassUserModel::USER_ROLE_S] = $students;
-        }
-        if (!empty($teachers)) {
-            $cus[ClassUserModel::USER_ROLE_T] = $teachers;
-        }
-
-        if (!empty($cus)) {
-            $res = ClassUserService::bindCUs($stcId, $cus);
+        if(!empty($stcId)) {
+            $res = ClassTaskService::addCTs($stcId, $cts);
             if ($res == false) {
                 return $res;
+            }
+            $cus = [];
+            if (!empty($students)) {
+                $cus[ClassUserModel::USER_ROLE_S] = $students;
+            }
+            if (!empty($teachers)) {
+                $cus[ClassUserModel::USER_ROLE_T] = $teachers;
+            }
+
+            if (!empty($cus)) {
+                $res = ClassUserService::bindCUs($stcId, $cus);
+                if ($res == false) {
+                    return $res;
+                }
             }
         }
         return $stcId;

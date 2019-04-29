@@ -198,7 +198,6 @@ class Model
      */
     public static function batchUpdateRecord($data, $where, $isOrg = true)
     {
-        SimpleLogger::error('ssss',[$where,$data]);
         if (empty($data)) {
             return 0;
         }

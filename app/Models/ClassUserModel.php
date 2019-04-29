@@ -78,11 +78,10 @@ class ClassUserModel extends Model
      * @param null $status
      * @return array|null
      */
-    public static function getCUListByClassId($classId,$status = null) {
-        $status = is_null($status) ? self::STATUS_NORMAL : $status;
+    public static function getCUListByClassId($classId,$status = [ClassUserModel::STATUS_NORMAL]) {
         $sql = "select cu.user_id,cu.price,cu.user_role,cu.id,cu.class_id,cu.create_time,cu.status,t.name as teacher_name,s.name as student_name from ".self::$table ." as cu "
-            ." inner join ".StudentModel::$table." as s on cu.user_id = s.id and cu.user_role = ".self::USER_ROLE_S
-            ." inner join ".TeacherModel::$table." as t on cu.user_id = t.id and cu.user_role in( ".self::USER_ROLE_T.",".self::USER_ROLE_HT.")"
+            ." left join ".StudentModel::$table." as s on cu.user_id = s.id and cu.user_role = ".self::USER_ROLE_S
+            ." left join ".TeacherModel::$table." as t on cu.user_id = t.id and cu.user_role in( ".self::USER_ROLE_T.",".self::USER_ROLE_HT.")"
             ." where cu.class_id = $classId and cu.status in (".implode(",",$status).")";
 
         return MysqlDB::getDB()->queryAll($sql,\PDO::FETCH_COLUMN);

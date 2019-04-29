@@ -11,6 +11,7 @@ namespace App\Controllers\Schedule;
 
 use App\Controllers\ControllerBase;
 use App\Libs\MysqlDB;
+use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\ClassTaskModel;
@@ -38,7 +39,7 @@ class STClass extends ControllerBase
             [
                 'key' => 'cts',
                 'type' => 'required',
-                'error_code' => 'sts_is_required',
+                'error_code' => 'cts_is_required',
             ],
             [
                 'key' => 'name',
@@ -69,17 +70,17 @@ class STClass extends ControllerBase
 
         $cts = ClassTaskService::checkCTs($params['cts']);
         if (!empty($cts['code']) && $cts['code'] == Valid::CODE_PARAMS_ERROR) {
-            return $response->withJson($result, StatusCode::HTTP_OK);
+            return $response->withJson($cts, StatusCode::HTTP_OK);
         }
 
         if (!empty($params['students'])) {
-            $result = ClassUserService::checkStudent($params['students'], $cts, $params['class_lowest'], $params['class_highest']);
+            $result = ClassUserService::checkStudent($params['students'], $cts, $params['class_highest']);
             if ($result !== true) {
                 return $response->withJson($result, StatusCode::HTTP_OK);
             }
         }
         if (!empty($params['teachers'])) {
-            $result = ClassUserService::checkTeacher($params['teachers'], $cts, 2, 2);
+            $result = ClassUserService::checkTeacher($params['teachers'], $cts, 2);
             if ($result !== true) {
                 return $response->withJson($result, StatusCode::HTTP_OK);
             }
@@ -172,9 +173,10 @@ class STClass extends ControllerBase
         $newStc['finish_num'] = 0;
 
 
-        $cts = ClassTaskService::checkCTs($params['cts']);
+        $cts = ClassTaskService::checkCTs($params['cts'],$newStc['id']);
+
         if (!empty($cts['code']) && $cts['code'] == Valid::CODE_PARAMS_ERROR) {
-            return $response->withJson($result, StatusCode::HTTP_OK);
+            return $response->withJson($cts, StatusCode::HTTP_OK);
         }
         $newStc['lesson_num'] = $cts['lesson_num'];
 
@@ -186,7 +188,7 @@ class STClass extends ControllerBase
             }
         }
         if (!empty($params['students'])) {
-            $result = ClassUserService::checkStudent($params['students'], $cts, $params['class_lowest'], $params['class_highest']);
+            $result = ClassUserService::checkStudent($params['students'], $cts, $params['class_highest']);
             if ($result !== true) {
                 return $response->withJson($result, StatusCode::HTTP_OK);
             }
@@ -200,7 +202,7 @@ class STClass extends ControllerBase
             }
         }
         if (!empty($params['teachers'])) {
-            $result = ClassUserService::checkTeacher($params['teachers'], $cts, 2, 2);
+            $result = ClassUserService::checkTeacher($params['teachers'], $cts, 2);
             if ($result !== true) {
                 return $response->withJson($result, StatusCode::HTTP_OK);
             }

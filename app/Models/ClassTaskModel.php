@@ -10,6 +10,7 @@ namespace App\Models;
 
 
 use App\Libs\MysqlDB;
+use App\Libs\SimpleLogger;
 
 class ClassTaskModel extends Model
 {
@@ -224,8 +225,9 @@ class ClassTaskModel extends Model
             'ct.expire_start_date[<=]' => $ct['expire_end_date'],
             'ct.expire_end_date[>=]' => $ct['expire_start_date'],
         ];
-        if (!empty($ct['id'])) {
-            $where['ct.id[!]'] = $ct['id'];
+        SimpleLogger::error('slkdjf',$ct);
+        if (!empty($ct['class_id'])) {
+            $where['ct.class_id[!]'] = $ct['class_id'];
         }
         if ($isOrg == true) {
             global $orgId;
@@ -238,6 +240,7 @@ class ClassTaskModel extends Model
         ];
         $result = $db->select(self::$table . " (ct)", $join, [
             'ct.id',
+            'ct.class_id',
             'ct.course_id',
             'ct.start_time',
             'ct.end_time',
@@ -281,8 +284,8 @@ class ClassTaskModel extends Model
         $where = [
             'cu.user_id' => $userIds,
             'cu.user_role' => $userRole,
-            'stc.expire_start_date[>=]' => $expireStartDate,
-            'stc.expire_end_date[<=]' => $expireEndDate,
+            'ct.expire_start_date[>=]' => $expireStartDate,
+            'ct.expire_end_date[<=]' => $expireEndDate,
             'stc.status' => array(STClassModel::STATUS_NORMAL, STClassModel::STATUS_BEGIN),
             'ct.weekday' => $weekday,
             'ct.start_time[<]' => $end_time,
@@ -306,8 +309,8 @@ class ClassTaskModel extends Model
         ];
 
         $join = [
-            '[><]' . STClassModel::$table . ' (stc)' => ['stc.id' => 'class_id'],
-            '[><]' . ClassUserModel::$table . ' (cu)' => ['stc.id' => 'cu.class_id'],
+            '[><]' . STClassModel::$table . ' (stc)' => ['ct.class_id' => 'id'],
+            '[><]' . ClassUserModel::$table . ' (cu)' => ['stc.id' => 'class_id'],
         ];
 
         return MysqlDB::getDB()->select(self::$table . ' (ct)', $join, $columns, $where);

@@ -55,7 +55,7 @@ class ScheduleService
                 }
                 foreach($class['teachers']  as $teacher) {
                     if($teacher['status'] == ScheduleUserModel::STATUS_NORMAL) {
-                        $users[] = ['price'=>$teacher['price'],'schedule_id' => $sId, 'user_id' => $teacher['user_id'], 'user_role' => $teacher['user_role'], 'status' => ScheduleModel::STATUS_BOOK, 'create_time' => $now, 'user_status' => ScheduleUserModel::TEACHER_STATUS_SET];
+                        $users[] = ['price'=> 0 ,'schedule_id' => $sId, 'user_id' => $teacher['user_id'], 'user_role' => $teacher['user_role'], 'status' => ScheduleModel::STATUS_BOOK, 'create_time' => $now, 'user_status' => ScheduleUserModel::TEACHER_STATUS_SET];
                     }
                 }
                 $flag = ScheduleUserModel::insertSUs($users);
