@@ -114,4 +114,35 @@ class PlayRecord extends ControllerBase
             'data' => $ret
         ], StatusCode::HTTP_OK);
     }
+
+    /** 获取练琴记录
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getPlayRecordList(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'date',
+                'type' => 'required',
+                'error_code' => 'date_is_required'
+            ]
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $user_id = $this->ci['user_info']['user_id'];
+//        $user_id = 22;
+        $result = PlayRecordService::getDayRecordReport($user_id, $params["date"]);
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $result
+        ], StatusCode::HTTP_OK);
+    }
 }

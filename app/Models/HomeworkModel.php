@@ -39,49 +39,6 @@ class HomeworkModel extends Model
         ]);
     }
 
-    /** 获取老师最近的作业的book_id数组
-     * @param int $teacher_id
-     * @param int $page 从1开始
-     * @param int $limit
-     * @param bool $isOrg
-     * @return array
-     */
-    public static function getRecentBookIds($teacher_id, $page, $limit,$isOrg = true)
-    {
-        $where = "";
-        if($isOrg == true) {
-            global $orgId;
-            if($orgId > 0 )
-                $where = " and org_id = ".$orgId;
-        }
-        $start = ($page - 1) * $limit;
-        $query = "select distinct collection_id from " . HomeworkModel::$table .
-            " where teacher_id=" . $teacher_id . $where ." order by create_time desc limit " . $start . ", " . $limit;
-        $bookIdList = MysqlDB::getDB()->queryAll($query);
-        return $bookIdList;
-    }
-
-    /** 获取老师最近的作业的opern_id数组
-     * @param int $teacher_id
-     * @param int $page
-     * @param int $limit
-     * @param bool $isOrg
-     * @return array
-     */
-    public static function getRecentOpernIds($teacher_id, $page, $limit,$isOrg = true)
-    {
-        $where = "";
-        if($isOrg == true) {
-            global $orgId;
-            if($orgId > 0 )
-                $where = " and org_id = ".$orgId;
-        }
-        $start = ($page - 1) * $limit;
-        $query = "select distinct opern_id from " . HomeworkModel::$table .
-            " where teacher_id=" . $teacher_id . $where. " order by create_time desc limit " . $start . ", " . $limit;
-        $opernIdList = MysqlDB::getDB()->queryAll($query);
-        return $opernIdList;
-    }
 
     /**
      * 查询作业

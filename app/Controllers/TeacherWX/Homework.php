@@ -14,6 +14,7 @@ use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Models\AppConfigModel;
+use App\Models\PlayRecordModel;
 use App\Services\HomeworkService;
 use App\Libs\OpernCenter;
 use App\Models\HomeworkTaskModel;
@@ -377,6 +378,110 @@ class HomeWork extends ControllerBase
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => json_decode($result)
+        ], StatusCode::HTTP_OK);
+    }
+
+
+    /** 作业练习记录
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getHomeworkPlayRecordList(Request $request, Response $response){
+        $rules = [
+            [
+                'key' => 'student_id',
+                'type' => 'required',
+                'error_code' => 'student_id_is_required'
+            ],
+            [
+                'key' => 'student_id',
+                'type' => 'integer',
+                'error_code' => 'student_id_must_be_integer'
+            ],
+            [
+                'key' => 'page',
+                'type' => 'integer',
+                'error_code' => 'page_must_be_integer'
+            ],
+            [
+                'key' => 'limit',
+                'type' => 'integer',
+                'error_code' => 'limit_must_be_integer'
+            ]
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $user_id = $this->ci['user_info']['user_id'];
+//        $user_id = null;
+        if(empty($params["page"])){
+            $params["page"] = 1;
+        }
+        if (empty($params["limit"])){
+            $params["limit"] = 10;
+        }
+
+        $data = HomeworkService::getStudentHomeWorkList($params["student_id"],
+            $user_id, $params["page"], $params["limit"]);
+        $temp = [];
+        $current_time = time();
+        foreach ($data as $homework){
+            $baseline = json_decode($homework['baseline'], true);
+
+            // 以homework为单位聚合task
+            $homeworkId = $homework['id'];
+            $task = [
+                'task_id' => $homework['task_id'],
+                'lesson_id' => $homework['lesson_id'],
+                'complete' => $homework['complete'],
+                'lesson_name' => $homework['lesson_name'],
+                'score_detail' => [
+                    'pitch' => ['high' => 0, 'baseline' => $baseline['pitch']],
+                    'rhythm' => ['high' => 0, 'baseline' => $baseline['rhythm']]
+                ],
+                'duration' => 0,
+                'play_count' => 0,
+                'max_score' => 0,
+            ];
+
+            $playRecordStatistic = PlayRecordModel::getPlayRecordListByHomework($homeworkId, $homework['task_id'], $homework['lesson_id'],
+                $homework['created_time'], $homework['end_time'], true);
+
+            $task["duration"] = $playRecordStatistic["duration"];
+            $task["play_count"] = $playRecordStatistic["play_count"];
+            $task["max_score"] = $playRecordStatistic["max_score"];
+
+
+            if(array_key_exists($homeworkId, $temp)){
+                array_push($temp[$homeworkId]['tasks'], $task);
+            }else{
+                $temp[$homeworkId] = [
+                    'teacher_name' => $homework['teacher_name'],
+                    'start_time' => $homework['created_time'],
+                    'start_date' => date("Y-m-d", $homework['created_time']),
+                    'end_time' => $homework['end_time'],
+                    'end_date' => date("Y-m-d", $homework['end_time']),
+                    'homework_id' => $homework['id'],
+                    'tasks' => [$task],
+                    'out_of_date' => true ? $homework["end_time"] <= $current_time : false
+                ];
+            }
+        }
+
+        $returnData = [];
+        foreach ($temp as $k=>$v){
+            if(!empty($v)){
+                array_push($returnData, $v);
+            }
+        }
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $returnData
         ], StatusCode::HTTP_OK);
     }
 }

@@ -226,4 +226,40 @@ class PlayRecordModel extends Model
 
         return [$records, $total[0]['count']];
     }
+
+    public static function getPlayRecordListByHomework($homeworkId, $taskId, $lessonId,
+                                                       $startTime, $endTime, $statistic=false, $page=null, $limit=null){
+        $db = MysqlDB::getDB();
+
+        if ($statistic){
+            $fields = "count(1) as play_count, max(pr.score) as max_score, " .
+                "sum(pr.duration) as duration ";
+        } else{
+            $fields = "pr.duration, pr.score, pr.created_time ";
+        }
+
+        $map = [
+            "start_time" => $startTime,
+            "end_time" => $endTime,
+            "lesson_id" => $lessonId,
+            "task_id" => $taskId,
+            "homework_id" => $homeworkId
+        ];
+        $sql = "select " . $fields . " from " . self::$table . " as pr left join " . HomeworkCompleteModel::$table .
+            " as hc on hc.play_record_id = pr.id left join " . HomeworkTaskModel::$table .
+            " as ht on ht.id=hc.task_id " . "left join " . HomeworkModel::$table . " as h on h.id = ht.homework_id 
+            where pr.created_time>=:start_time and pr.created_time <= :end_time 
+            and pr.lesson_id=:lesson_id and hc.task_id=:task_id and hc.homework_id=:homework_id ";
+
+        if (!$statistic){
+            $sql = $sql . " order by h.created_time desc ";
+            if (!empty($page) and !empty($limit)){
+                $sql = $sql . " limit :limit offset :offset";
+                $map["limit"] = $limit;
+                $map["offset"] = ($page - 1) * $limit;
+            }
+        }
+        $result = $db->queryAll($sql, $map);
+        return $result;
+    }
 }

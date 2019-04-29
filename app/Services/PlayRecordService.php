@@ -200,4 +200,8 @@ class PlayRecordService
         }
         return [$records, $total];
     }
+
+    public static function getPlayRecordListByHomework($homeworkId, $taskId){
+
+    }
 }

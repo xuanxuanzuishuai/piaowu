@@ -60,6 +60,10 @@ class Teacher extends ControllerBase
         }
 
         $app_id = UserCenter::AUTH_APP_ID_AIPEILIAN_TEACHER;
+        $old_token = $this->ci["token"];
+        if (!empty($old_token)){
+            WeChatService::deleteToken($old_token);
+        }
         $openId = $this->ci["open_id"];
         // todo 验证sms_code
 
@@ -110,6 +114,11 @@ class Teacher extends ControllerBase
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
+        $old_token = $this->ci["token"];
+        if (!empty($old_token)){
+            WeChatService::deleteToken($old_token);
+        }
+
         $app_id = UserCenter::AUTH_APP_ID_AIPEILIAN_TEACHER;
         $openId = $this->ci["open_id"];
         if (empty($openId)) {

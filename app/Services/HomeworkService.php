@@ -60,15 +60,18 @@ class HomeworkService
         return HomeworkModel::getHomeworkList($where);
     }
 
-    /**
-     * 获取学生作业列表
-     * @param int $studentId 学生ID
-     * @param int $teacherId 老师ID
-     * @param int $pageId 页码
-     * @param int $pageLimit 每页条数
+    /** 获取学生作业列表
+     * @param $studentId
+     * @param null $teacherId
+     * @param int $pageId
+     * @param int $pageLimit
+     * @param int $startTime
+     * @param $endTime
      * @return array
      */
-    public static function getStudentHomeWorkList($studentId, $teacherId=null, $pageId=-1, $pageLimit=0){
+    public static function getStudentHomeWorkList($studentId, $teacherId=null, $pageId=-1,
+                                                  $pageLimit=0, $startTime=null, $endTime=null)
+    {
         $where = [
             HomeworkModel::$table . ".student_id" => $studentId,
             'ORDER' => ['created_time' => 'DESC']
@@ -78,6 +81,12 @@ class HomeworkService
         }
         if ($pageId > 0 && $pageLimit > 0) {
             $where['LIMIT'] = [($pageId - 1) * $pageLimit, $pageLimit];
+        }
+        if (!empty($startTime)){
+            $where[HomeworkModel::$table . ".created_time" >= $startTime];
+        }
+        if (!empty($endTime)){
+            $where[HomeworkModel::$table . ".created_time" <= $endTime];
         }
         return HomeworkModel::getHomeworkList($where);
     }
