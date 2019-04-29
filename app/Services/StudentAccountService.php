@@ -9,6 +9,7 @@
 namespace App\Services;
 
 
+use App\Libs\Valid;
 use App\Models\StudentAccountLogModel;
 use App\Models\StudentAccountModel;
 
@@ -105,7 +106,7 @@ class StudentAccountService
             if ($res > 0) {
                 $log[] = ['operator_id' => $operatorId, 'remark' => $remark, 'create_time' => $now, 's_a_id' => $vcash['id'], 'balance' => $amount - $cashAmount, 'old_balance' => $vcash['balance'], 'new_balance' => $vcash['balance'] - ($amount - $cashAmount), 'type' => StudentAccountLogModel::TYPE_REDUCE];
             } else {
-                return false;
+                    return false;
             }
 
         } else {
@@ -115,5 +116,55 @@ class StudentAccountService
             $res = StudentAccountLogModel::batchInsert($log, false);
         }
         return true;
+    }
+
+    public static function abolishSA($studentId, $amount, $vamount,$operatorId, $remark,$force = true) {
+
+        $now = time();
+        $sas = StudentAccountModel::getSADetailBySId($studentId);
+        if (empty($sas)) {
+            return false;
+        }
+
+        $cash = $vcash = 0;
+        //先消耗现金 后消耗虚拟币
+        foreach ($sas as $sa) {
+            if ($sa['type'] == StudentAccountModel::TYPE_CASH) {
+                $cash = $sa;
+            } elseif ($sa['type'] == StudentAccountModel::TYPE_VIRTUAL) {
+                $vcash = $sa;
+            }
+        }
+        if($amount > 0 ) {
+            if (empty($cash) || ($force == false && $cash['balance'] < $amount)) {
+                return Valid::addErrors([], 'student_account', 'student_account_cash_is_not_enough');
+            }
+            $data = ['update_time' => $now, 'balance[-]' => $amount , 'ver[+]' => 1];
+            if($force == true) {
+                $data['status'] = StudentAccountModel::STATUS_CANCEL;
+            }
+            $res = StudentAccountModel::updateSA($data, ['id' => $cash['id'], 'ver' => $cash['ver']]);
+            if ($res > 0) {
+                $log[] = ['operator_id' => $operatorId, 'remark' => $remark, 'create_time' => $now, 's_a_id' => $cash['id'], 'balance' => $amount, 'old_balance' => $cash['balance'], 'new_balance' => $cash['balance'] - $amount, 'type' => StudentAccountLogModel::TYPE_REDUCE];
+            } else {
+                return false;
+            }
+        }
+
+        if($vamount > 0 ) {
+            if (empty($vcash) || ($force == false && $vcash['balance'] < $vamount)) {
+                return Valid::addErrors([], 'student_account', 'student_account_vcash_is_not_enough');
+            }
+            $data = ['update_time' => $now, 'balance[-]' => $vamount , 'ver[+]' => 1];
+            if($force == true) {
+                $data['status'] = StudentAccountModel::STATUS_CANCEL;
+            }
+            $res = StudentAccountModel::updateSA($data, ['id' => $vcash['id'], 'ver' => $vcash['ver']]);
+            if ($res > 0) {
+                $log[] = ['operator_id' => $operatorId, 'remark' => $remark, 'create_time' => $now, 's_a_id' => $vcash['id'], 'balance' => $vamount, 'old_balance' => $vcash['balance'], 'new_balance' => $vcash['balance'] - $vamount, 'type' => StudentAccountLogModel::TYPE_REDUCE];
+            } else {
+                return false;
+            }
+        }
     }
 }

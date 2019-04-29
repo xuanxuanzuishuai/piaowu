@@ -26,8 +26,12 @@ class StudentAccountModel extends Model
         return self::batchUpdateRecord($data,$where);
     }
 
-    public static function getSADetailBySId($studentId) {
-        return self::getRecords(['student_id'=>$studentId,'status'=>self::STATUS_NORMAL]);
+    public static function getSADetailBySId($studentId,$type = null) {
+        $where = ['student_id'=>$studentId,'status'=>self::STATUS_NORMAL];
+        if(!empty($type)){
+            $where['type'] = $type;
+        }
+        return self::getRecords($where);
     }
 
 }
