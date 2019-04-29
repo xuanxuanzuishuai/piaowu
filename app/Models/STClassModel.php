@@ -53,7 +53,7 @@ class STClassModel extends Model
         if (!empty($params['start_date'])) {
             $where .= " and ct.expire_start_date >=" . $params['start_date'];
         }
-        if (isset($params['status'])) {
+        if (is_numeric($params['status'])) {
             $where .= " and c.status = " . $params['status'];
         }
         if (!empty($params['student_id'])) {

@@ -75,11 +75,14 @@ class ClassUserModel extends Model
 
     /**
      * @param $classId
-     * @param null $status
+     * @param array $status
      * @return array|null
      */
     public static function getCUListByClassId($classId,$status = [ClassUserModel::STATUS_NORMAL]) {
-        $sql = "select cu.user_id,cu.price,cu.user_role,cu.id,cu.class_id,cu.create_time,cu.status,t.name as teacher_name,s.name as student_name from ".self::$table ." as cu "
+        $sql = "select cu.user_id,cu.price,cu.user_role,cu.id,cu.class_id,cu.create_time,cu.status,t.name as teacher_name,s.name as student_name,
+                (select sum(balance) from ".StudentAccountModel::$table." where student_id = cu.user_id and type = ".StudentAccountModel::TYPE_CASH.") as cs_balance,
+                (select sum(balance) from ".StudentAccountModel::$table." where student_id = cu.user_id and type = ".StudentAccountModel::TYPE_VIRTUAL.") as vs_balance
+               from ".self::$table ." as cu "
             ." left join ".StudentModel::$table." as s on cu.user_id = s.id and cu.user_role = ".self::USER_ROLE_S
             ." left join ".TeacherModel::$table." as t on cu.user_id = t.id and cu.user_role in( ".self::USER_ROLE_T.",".self::USER_ROLE_HT.")"
             ." where cu.class_id = $classId and cu.status in (".implode(",",$status).")";
