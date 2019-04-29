@@ -69,4 +69,13 @@ class App extends ControllerBase
             'data' => []
         ], StatusCode::HTTP_OK);
     }
+
+    public function heartBeat(Request $request, Response $response)
+    {
+        Util::unusedParam($request);
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS
+        ], StatusCode::HTTP_OK);
+    }
 }
