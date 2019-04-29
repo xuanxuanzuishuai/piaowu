@@ -32,6 +32,10 @@ class OrganizationServiceForApp
             return ['org_account_invalid'];
         }
 
+        if ($orgAccount['status'] != OrgAccountModel::STATUS_NORMAL) {
+            return ['org_account_invalid'];
+        }
+
         if ($password != $orgAccount['password']) {
             return ['org_account_password_error'];
         }
@@ -67,9 +71,13 @@ class OrganizationServiceForApp
             return ['org_account_invalid'];
         }
 
+        if ($orgAccount['status'] != OrgAccountModel::STATUS_NORMAL) {
+            return ['org_account_invalid'];
+        }
+
         $cache = OrganizationModelForApp::getOrgCacheByToken($token);
         if (empty($cache) || empty($cache['account']) || $cache['account'] != $account) {
-            return ['invalid_token'];
+            return ['invalid_org_token'];
         }
 
         $orgInfo = self::getOrgInfo($orgAccount['org_id']);

@@ -27,3 +27,6 @@ validate_code_error='验证码不正确'
 gift_code_error='激活码输入有误，请重新输入'
 gift_code_has_been_redeemed='激活码已使用，请重新输入'
 gift_code_is_invalid='激活码已作废'
+
+org_account_invalid='账号未激活'
+org_account_password_error='密码错误'
