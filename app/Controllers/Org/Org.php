@@ -151,6 +151,11 @@ class Org extends ControllerBase
                 'type'       => 'integer',
                 'error_code' => 'licence_num_is_integer'
             ],
+            [
+                'key'        => 'license_num',
+                'type'       => 'required',
+                'error_code' => 'licence_num_is_required'
+            ],
         ];
 
         $params = $request->getParams();

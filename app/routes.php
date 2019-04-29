@@ -6,7 +6,6 @@ use App\Controllers\Boss\GiftCode;
 use App\Controllers\Org\Org;
 use App\Controllers\Schedule\ScheduleRecord;
 use App\Controllers\Student\Student;
-use App\Controllers\StudentWX\PlayRecord;
 use App\Controllers\Teacher\Teacher;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
@@ -32,6 +31,7 @@ use App\Controllers\TeacherApp\Org as TeacherAppOrg;
 use App\Controllers\Employee\Employee as Employee;
 use App\Controllers\Org\OrgAccount as OrgAccount;
 use App\Controllers\Student\PlayRecord as BackendPlayRecord;
+use App\Controllers\Bill\Bill;
 use Slim\App;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -501,6 +501,36 @@ $arr = array(
     '/student/student/list_for_cc' => [
         'method'  => ['get'],
         'call'    => Student::class . ':list',
+        'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class]
+    ],
+    //内部用订单列表
+    '/bill/bill/list' => [
+        'method'  => ['get'],
+        'call'    => Bill::class . ':list',
+        'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class]
+    ],
+    //机构用订单列表
+    '/bill/bill/list_for_org' => [
+        'method'  => ['get'],
+        'call'    => Bill::class . ':listForOrg',
+        'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class]
+    ],
+    //机构添加订单
+    '/bill/bill/add' => [
+        'method'  => ['post'],
+        'call'    => Bill::class . ':add',
+        'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class]
+    ],
+    //机构查看订单详情
+    '/bill/bill/detail' => [
+        'method'  => ['get'],
+        'call'    => Bill::class . ':detail',
+        'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class]
+    ],
+    //机构修改订单
+    '/bill/bill/modify' => [
+        'method'  => ['post'],
+        'call'    => Bill::class . ':modify',
         'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class]
     ],
 );

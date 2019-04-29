@@ -22,7 +22,7 @@ class OrganizationService
      */
     public static function save($data)
     {
-        return OrganizationModel::insertRecord($data);
+        return OrganizationModel::insertRecord($data, false);
     }
 
     /**
