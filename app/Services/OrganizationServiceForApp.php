@@ -15,9 +15,14 @@ use App\Models\HomeworkTaskModel;
 use App\Models\OrgAccountModel;
 use App\Models\OrganizationModelForApp;
 use App\Models\TeacherModelForApp;
+use App\Libs\QRcode;
+use Intervention\Image\ImageManagerStatic as Image;
+use App\Libs\RC4;
+
 
 class OrganizationServiceForApp
 {
+    const ORG_SECURITY_KEY = "dkUwIxVLchlXB9Unvr68dJoT";
 
     /**
      * 机构登录
@@ -210,5 +215,44 @@ class OrganizationServiceForApp
             return [];
         }
         return $students;
+    }
+
+    public static function generateQrCode($org_id, $user_type, $referee_id=null, $referee_type=null){
+        if ($user_type == WeChatService::USER_TYPE_STUDENT){
+            $url = "/Bind/bind/add";
+        } else {
+            $url = "/Bind/student/add";
+        }
+
+        $org_qr_str = RC4::encrypt(self::ORG_SECURITY_KEY, $org_id);
+
+        $whole_url = $_ENV["WECHAT_FRONT_DOMAIN"] . $url . "?org_id=" . $org_qr_str;
+        if (!empty($referee_id)){
+            $whole_url = $whole_url . "&referee_id=" . $referee_id;
+        }
+
+        if (!empty($referee_type)){
+            $whole_url = $whole_url . "&referee_type=" . $referee_type;
+        }
+
+        QRcode::png($whole_url, '/tmp/qr/' . $org_qr_str . ".png");
+
+        $tmp_file_name = '/tmp/qr/' . $org_qr_str . time() . ".png";
+        $qrImage = Image::make($tmp_file_name);
+        $width = $posterInfo['qrImageWidth'] ?? 230;
+        $height = $posterInfo['qrImageHeight'] ?? 230;
+        $qrImage->resize($width, $height);
+        $subDir = $user_type . '_' . $org_id;
+        $newFilename = substr(md5($user_type . $org_id), 8, 16) . '.png';
+
+        // 获取存储的文件夹路径
+//        list($subPath, $hashDir, $fullDir) = File::createDir($subDir, $newFilename);
+
+        // 保存文件
+//        $qrImage->save("{$fullDir}/{$newFilename}", 100);
+//        chmod("{$fullDir}/{$newFilename}", 0755);
+        //$path = $_ENV['QINIU_FOLDER'] . "/{$subPath}/{$newFilename}";
+        //Qiniu::upload("{$fullDir}/{$newFilename}", $path);
+        unlink($tmp_file_name);
     }
 }

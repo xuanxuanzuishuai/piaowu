@@ -32,6 +32,11 @@ class WeChatOpenIdCheckMiddleware extends MiddlewareBase
     {
         $currentUrl = $request->getUri()->getPath();
         SimpleLogger::info('--WeChatAuthCheckMiddleware--', []);
+
+        $tokenHeader = $request->getHeader('token');
+        $token = $tokenHeader[0] ?? null;
+        $this->container["token"] = $token;
+
         $needle = "/student_wx";
         $length = strlen($needle);
         $app_id = UserCenter::AUTH_APP_ID_AIPEILIAN_TEACHER;
