@@ -9,6 +9,7 @@
 namespace App\Services;
 
 use App\Libs\Constants;
+use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Models\ClassTaskModel;
 use App\Models\ClassUserModel;
@@ -25,15 +26,14 @@ class ClassUserService
         $now = time();
         $cus = [];
         foreach ($CUs as $role => $users) {
-
             foreach ($users as $userId => $value) {
                 if($role == ClassUserModel::USER_ROLE_S) {
                     $value = $value * 100;
                     $realRole = $role ;
                 }
                 else {
-                    $value = 0;
                     $realRole = $value;
+                    $value = 0;
                 }
                 $cus[] = ['status' => ClassUserModel::STATUS_NORMAL, 'class_id' => $classId, 'user_id' => $userId, 'price' => $value, 'user_role' => $realRole, 'create_time' => $now];
             }

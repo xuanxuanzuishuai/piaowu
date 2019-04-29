@@ -9,6 +9,7 @@
 namespace App\Services;
 
 use App\Libs\Constants;
+use App\Libs\SimpleLogger;
 use App\Models\ScheduleModel;
 use App\Models\ClassUserModel;
 use App\Models\ScheduleUserModel;
@@ -25,7 +26,7 @@ class ScheduleService
         foreach($class['class_tasks'] as $ct) {
             $beginDate = $ct['expire_start_date'];
             $endDate = $ct['expire_end_date'];
-            $weekday = date("w");
+            $weekday = date("w",strtotime($beginDate));
             if ($weekday <= $ct['weekday']) {
                 $beginTime = strtotime($beginDate . " " . $ct['start_time']) + 86400 * ($ct['weekday'] - $weekday);
             } else {
@@ -42,6 +43,7 @@ class ScheduleService
                     'status' => ScheduleModel::STATUS_BOOK,
                     'org_id' => $class['org_id'],
                     'class_id' => $class['id'],
+                    'classroom_id' => $ct['classroom_id'],
                 ];
                 $sId = ScheduleModel::insertSchedule($schedule);
                 if(empty($sId)) {
@@ -62,10 +64,6 @@ class ScheduleService
                 if($flag == false)
                     return false;
                 $beginTime += 7*86400;
-                if($endDate <= date("Y-m-d",$beginTime))
-                {
-                    break;
-                }
             }
         }
 

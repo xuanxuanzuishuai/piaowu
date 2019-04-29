@@ -173,7 +173,6 @@ class ClassTaskService
                 return Valid::addErrors([], 'class_start_time', 'class_expire_end_date_is_invalid');
             }
             $endTime = date("H:i", strtotime($pct['start_time']) + $course['duration']);
-            SimpleLogger::error('sssss',$pct);
             $ct = [
                 'classroom_id' => $pct['classroom_id'],
                 'start_time' => $pct['start_time'],
@@ -191,7 +190,6 @@ class ClassTaskService
             if(!empty($classId)){
                 $ct['class_id'] = $classId;
             }
-            SimpleLogger::error('lksjdfkdhf',$ct);
             $res = self::checkCT($ct);
             if ($res !== true) {
 

@@ -59,7 +59,7 @@ class ScheduleModel extends Model
             's.classroom_id',
             's.create_time',
             's.status',
-            's.st_id',
+            's.class_id',
             's.org_id',
             'c.name (course_name)',
             'c.type (course_type)',
@@ -95,8 +95,8 @@ class ScheduleModel extends Model
         if (!empty($params['s_time_end'])) {
             $where['s.start_time[<]'] = strtotime($params['s_time_end']);
         }
-        if (!empty($params['st_id'])) {
-            $where['s.st_id'] = $params['st_id'];
+        if (!empty($params['class_id'])) {
+            $where['s.class_id'] = $params['class_id'];
         }
 
         if ($isOrg == true) {
@@ -128,7 +128,7 @@ class ScheduleModel extends Model
             's.create_time',
             's.status',
             's.org_id',
-            's.st_id',
+            's.class_id',
             'c.type (course_type)',
             'c.name (course_name)',
             'cr.campus_id',

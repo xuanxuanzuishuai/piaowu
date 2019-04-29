@@ -224,7 +224,7 @@ class STClass extends ControllerBase
                 if (!empty($stuIds)) {
                     ClassUserService::unBindUser($stuIds, $class['id']);
                 }
-                ClassUserService::bindSTUs($class['id'], [ClassUserModel::USER_ROLE_T => $params['teachers']]);
+                ClassUserService::bindCUs($class['id'], [ClassUserModel::USER_ROLE_T => $params['teachers']]);
             }
             ClassTaskService::updateCTStatus(['class_id'=>$class['id']],ClassTaskModel::STATUS_CANCEL);
             ClassTaskService::addCTs($class['id'], $cts);

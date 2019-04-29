@@ -171,6 +171,8 @@ class ClassTaskModel extends Model
             'ct.start_time',
             'ct.end_time',
             'ct.classroom_id',
+            'ct.expire_start_date',
+            'ct.expire_end_date',
             'ct.create_time',
             'ct.status',
             'ct.weekday',

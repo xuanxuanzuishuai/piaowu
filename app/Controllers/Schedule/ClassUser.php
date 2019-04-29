@@ -41,7 +41,7 @@ class ClassUser extends ControllerBase
             [
                 'key' => 'students',
                 'type' => 'required',
-                'error_code' => 'studentIds_is_required',
+                'error_code' => 'students_is_required',
             ],
 
         ];
@@ -70,7 +70,7 @@ class ClassUser extends ControllerBase
             $db->rollBack();
             return $response->withJson(Valid::addErrors([], 'class_bind_student', 'class_bind_student_error'), StatusCode::HTTP_OK);
         }
-        $res = ClassUserService::bindCUs([$class['id']], [ClassUserModel::USER_ROLE_S => $params['students']]);
+        $res = ClassUserService::bindCUs($class['id'], [ClassUserModel::USER_ROLE_S => $params['students']]);
         if ($res == false) {
             $db->rollBack();
             return $response->withJson(Valid::addErrors([], 'class_bind_student', 'class_bind_student_error'), StatusCode::HTTP_OK);
