@@ -10,6 +10,7 @@ namespace App\Services;
 
 
 use App\Libs\OpernCenter;
+use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Models\AppConfigModel;
 
@@ -162,17 +163,21 @@ class OpernService
 
 
     /**
-     * 获取教材的详情
-     * @param $bookIds
+     * @param $lessonIds
+     * @param $prod
+     * @param $v
+     * @param $publish
+     * @param $auit
      * @return array
      */
-    public static function getBookDetails($bookIds){
-        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, 1);
-        $bookDetailsRaw = $opn->collectionsByIds($bookIds);
-        $bookDetails = [];
-        foreach ($bookDetailsRaw['data'] as $bookDetail){
-            $bookDetails[$bookDetail['id']] = $bookDetail;
+    public static function getLessonForJoin($lessonIds, $prod, $v, $audit, $publish){
+        $opn = new OpernCenter($prod, $v, $audit, $publish);
+        $lessonRaw = $opn->lessonsByIds($lessonIds);
+        $lessons = [];
+        foreach ($lessonRaw['data'] as $lesson){
+            $lessons[$lesson['lesson_id']] = $lesson;
         }
-        return $bookDetails;
+        return $lessons;
     }
+
 }

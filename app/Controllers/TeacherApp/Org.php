@@ -82,11 +82,11 @@ class Org extends ControllerBase
         );
 
         // 回课数据
-        list($tasks, $statistics, $books) = HomeworkService::scheduleFollowUp($params['teacher_id'], $params['student_id']);
-        SimpleLogger::debug("FOLLOW UP CLASS>>>>>>>>>>>>>>>>>>>>>>>>>>>", [$tasks, $statistics, $books]);
+        list($tasks, $statistics, $books) = HomeworkService::scheduleFollowUp(
+            $params['teacher_id'], $params['student_id']
+        );
         $homework = [];
         foreach ($tasks as $task){
-
             $taskBase = [
                 'id' => $task['lesson_id'],
                 'name' => $task['lesson_name'],

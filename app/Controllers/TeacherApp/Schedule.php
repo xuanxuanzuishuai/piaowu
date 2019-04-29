@@ -50,17 +50,17 @@ class Schedule extends ControllerBase
         }
 
         // 写入课后作业
-        foreach ($param['homework'] as $homework){
-            HomeworkService::createHomework(
-                $scheduleId,
-                $param['org_id'],
-                $param['teacher_id'],
-                $param['student_id'],
-                $homework['limited_days'],
-                $homework['remark'],
-                $homework['tasks']
-            );
-        }
+        $homework =$param['homework'];
+        HomeworkService::createHomework(
+            $scheduleId,
+            $param['org_id'],
+            $param['teacher_id'],
+            $param['student_id'],
+            $homework['limited_days'],
+            $homework['remark'],
+            $homework['tasks']
+        );
+
         $db->commit();
 
 

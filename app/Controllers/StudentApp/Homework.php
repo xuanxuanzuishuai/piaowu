@@ -8,12 +8,13 @@
  */
 
 namespace App\Controllers\StudentApp;
-
+use App\Libs\OpernCenter;
 use App\Libs\SimpleLogger;
 use App\Controllers\ControllerBase;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Services\HomeworkService;
+use App\Services\OpernService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -51,12 +52,22 @@ class Homework extends ControllerBase
             return $response->withJson($errors, StatusCode::HTTP_OK);
         }
 
+        $extra = OpernService::getLessonForJoin($homework['lesson_id'],
+            OpernCenter::PRO_ID_AI_STUDENT,
+            $this->ci['opn_pro_ver'],
+            $this->ci['opn_auditing'],
+            $this->ci['opn_publish']
+        );
+
         // 组装数据
         $returnData = [
             'homework' => [
                 'id' => $homework['id'],
                 'task_id' => $homework['task_id'],
-                'baseline' => json_decode($homework['baseline'], true)
+                'baseline' => json_decode($homework['baseline'], true),
+                // 打点字段
+                'scoreName' => $extra['opern_id'],
+                'scoreId' => $extra['opern_name']
             ],
             'play_record' => [],
         ];
@@ -82,6 +93,13 @@ class Homework extends ControllerBase
     public function list(Request $request, Response $response){
         $userId = $this->ci['student']['id'];
         $data = HomeworkService::getStudentHomeWorkList($userId);
+        $lessonIds = array_column($data, 'lesson_id');
+        $extra = OpernService::getLessonForJoin($lessonIds,
+            OpernCenter::PRO_ID_AI_STUDENT,
+            $this->ci['opn_pro_ver'],
+            $this->ci['opn_auditing'],
+            $this->ci['opn_publish']
+        );
 
         // 组装数据
         $temp = [];
@@ -94,7 +112,8 @@ class Homework extends ControllerBase
                 'task_id' => $homework['task_id'],
                 'lesson_id' => $homework['lesson_id'],
                 'complete' => $homework['complete'],
-                'lesson_name' => $homework['lesson_name'],
+                'score_id' => $extra[$homework['lesson_id']]['opern_id'],
+                'lesson_name' => $extra[$homework['lesson_id']]['opern_name'],
                 'score_detail' => [
                     'pitch' => ['high' => 0, 'baseline' => $baseline['pitch']],
                     'rhythm' => ['high' => 0, 'baseline' => $baseline['rhythm']]
