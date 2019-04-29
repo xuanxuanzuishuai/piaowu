@@ -166,5 +166,9 @@ class StudentAccountService
                 return false;
             }
         }
+        if (!empty($log)) {
+            $res = StudentAccountLogModel::batchInsert($log, false);
+        }
+        return true;
     }
 }
