@@ -22,6 +22,7 @@ mobile_has_exist='手机号已存在'
 parent_org_not_exist='上级机构不存在'
 update_student_account_fail='更新学生账户失败'
 cc_not_exist='cc不存在'
+employee_not_exist='雇员不存在'
 
 sub_verify_error='用户未激活'
 user_register_fail='用户注册失败'

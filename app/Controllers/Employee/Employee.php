@@ -10,6 +10,7 @@ namespace App\Controllers\Employee;
 
 use App\Controllers\ControllerBase;
 use App\Libs\Constants;
+use App\Libs\Dict;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\EmployeeModel;
@@ -205,14 +206,36 @@ class Employee extends ControllerBase
         global $orgId;
 
         if ($orgId > 0) {
-            //机构管理员不能创建内部角色
+            //机构管理员添加雇员
+            //不能创建内部角色
             if($role['is_internal'] == RoleModel::IS_INTERNAL) {
                 return $response->withJson(Valid::addErrors([], 'employee', 'role_error'));
             }
             //机构管理员添加雇员时，不能指定雇员所属机构，必须与添加者同属一个机构
             $params['org_id'] = $orgId;
+
+            //编辑员工时，要检查要修改的employee是否和当前登录用户在同一org下
+            if(!empty($params['id'])) {
+                $principalRoleId = Dict::getPrincipalRoleId();
+                $ccRoleId = Dict::getOrgCCRoleId();
+
+                if(empty($principalRoleId) || empty($ccRoleId)) {
+                    return $response->withJson(Valid::addErrors([], 'employee', 'principle_or_cc_role_id_is_empty'));
+                }
+
+                //校长只能修改角色是校长或cc的employee
+                $employee = EmployeeModel::getRecord([
+                    'id'      => $params['id'],
+                    'org_id'  => $orgId,
+                    'role_id' => [$principalRoleId, $ccRoleId],
+                ]);
+                if(empty($employee)) {
+                    return $response->withJson(Valid::addErrors([], 'employee', 'employee_not_exist'));
+                }
+            }
         } else {
-            //内部管理员添加雇员时，角色是内部角色时，传入的org_id不能为空
+            //内部管理员添加雇员
+            //角色是内部角色时，传入的org_id不能为空
             if($role['is_internal'] == RoleModel::NOT_INTERNAL && empty($params['org_id'])) {
                 return $response->withJson(Valid::addErrors([],'employee','org_can_not_be_empty'));
             }

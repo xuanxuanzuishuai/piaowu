@@ -303,6 +303,7 @@ class Org extends ControllerBase
                 'mobile'     => $params['mobile'],
                 'org_id'     => $lastId,
                 'pwd'        => $params['mobile'], //校长默认密码是手机号
+                'status'     => EmployeeModel::STATUS_NORMAL,
             ];
 
             $employeeIdOrErr = EmployeeService::insertOrUpdateEmployee($employeeData);
