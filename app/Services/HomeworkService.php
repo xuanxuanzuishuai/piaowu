@@ -224,7 +224,7 @@ class HomeworkService
      * @param int $studentId
      * @return array
      */
-    public static function scheduleFollowUp($teacherId, $studentId){
+    public static function scheduleFollowUp($teacherId, $studentId, $proVer=1){
         // 获取师徒二人最近的一次作业
         $where = [
             HomeworkModel::$table . ".student_id" => $studentId,
@@ -233,16 +233,17 @@ class HomeworkService
             "ORDER" => ['created_time' => 'DESC'],
             "LIMIT" => 1
         ];
-        $homework = HomeworkModel::getHomeworkList($where);
-        if(empty($homework)){
+        $homeworkId = HomeworkModel::getRecord($where, 'id', false);
+        if(empty($homeworkId)){
             return [[], [], []];
         }
+        $homeworkWhere = [HomeworkModel::$table . ".id" => $homeworkId];
+        $homework = HomeworkModel::getHomeworkList($homeworkWhere);
 
         // 作业的练习统计
         $lessonIds = array_column($homework, 'lesson_id');
-        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, 1);
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER, $proVer);
         $bookInfo = $opn->lessonsByIds($lessonIds);
-
         $books = [];
         foreach ($bookInfo['data'] as $book){
             $books[$book['lesson_id']] = [
@@ -250,7 +251,8 @@ class HomeworkService
                 'res' => $book['resources'][0]['url'] ? $book['resources']:'',
                 'cover' => $book['collection_cover'],
                 'score_id' => $book['opern_id'],
-                'is_free' => $book['freeflag'] ? '1' : '0'
+                'is_free' => $book['freeflag'] ? '1' : '0',
+                'lesson_name' => $book['lesson_name']
             ];
         }
 

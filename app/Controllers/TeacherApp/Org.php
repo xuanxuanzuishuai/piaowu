@@ -73,8 +73,9 @@ class Org extends ControllerBase
 
         $orgId = $this->ci['org']['id'];
         $orgAccount = $this->ci['org_account'];
-        //$orgId = 2;
-        //$orgAccount = 10000001;
+        //Leave below for debugging & deleting them at the end.
+        //$orgId = 101;
+        //$orgAccount = 10000019;
         list($errorCode, $loginData) = OrganizationServiceForApp::teacherLogin($orgId,
             $orgAccount,
             $params['teacher_id'],
@@ -83,13 +84,13 @@ class Org extends ControllerBase
 
         // 回课数据
         list($tasks, $statistics, $books) = HomeworkService::scheduleFollowUp(
-            $params['teacher_id'], $params['student_id']
+            $params['teacher_id'], $params['student_id'], $this->ci['opn_pro_ver']
         );
         $homework = [];
         foreach ($tasks as $task){
             $taskBase = [
                 'id' => $task['lesson_id'],
-                'name' => $task['lesson_name'],
+                'name' => $books[$task['lesson_id']] ? $books[$task['lesson_id']]['lesson_name']:'',
                 'complete' => $task['complete']
             ];
             $play = $statistics[$task['lesson_id']];
