@@ -180,18 +180,28 @@ class Opn extends ControllerBase
             $this->ci['opn_pro_ver'],
             $this->ci['opn_auditing'],
             $this->ci['opn_publish']);
-        $result = $opn->lessons($params['collection_id'], $pageId, $pageLimit, 0);
-        if (empty($result) || !empty($result['errors'])) {
-            return $response->withJson($result, StatusCode::HTTP_OK);
+        $lessons = $opn->lessons($params['collection_id'], $pageId, $pageLimit, 0);
+        if (empty($lessons) || !empty($lessons['errors'])) {
+            return $response->withJson($lessons, StatusCode::HTTP_OK);
         }
 
-        $data = $result['data'];
-        $list = OpernService::appFormatLessons($data['list']);
+        $lessonIds = array_column($lessons['data']['list'], 'id');
+        if(empty($lessonIds)){
+            return $response->withJson([
+                'code' => Valid::CODE_SUCCESS,
+                'data' => [
+                    'lessons' => [],
+                    'lesson_count' => 0
+                ]
+            ], StatusCode::HTTP_OK);
+        }
+        $result = $opn->lessonsByIds($lessonIds);
+        $list = OpernService::appFormatLessonByIds($result['data']);
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => [
                 'lessons' => $list,
-                'lesson_count' => $data['total_count']
+                'lesson_count' => $lessons['data']['total_count']
             ]
         ], StatusCode::HTTP_OK);
     }
@@ -255,6 +265,12 @@ class Opn extends ControllerBase
         list($pageId, $pageLimit) = Util::formatPageCount($params);
         $userId = $this->ci['teacher']['id'];
         $collectionIds = HomeworkTaskModel::getRecentCollectionIds($userId, $pageId, $pageLimit);
+        if(empty($collectionIds)){
+            return $response->withJson(
+                ['code'=>Valid::CODE_SUCCESS, 'data'=>[]],
+                StatusCode::HTTP_OK
+            );
+        }
         $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER,
             $this->ci['opn_pro_ver'],
             $this->ci['opn_auditing'],
@@ -282,7 +298,12 @@ class Opn extends ControllerBase
         list($pageId, $pageLimit) = Util::formatPageCount($params);
         $userId = $this->ci['teacher']['id'];
         $lessonIds = HomeworkTaskModel::getRecentLessonIds($userId, $pageId, $pageLimit);
-
+        if(empty($lessonIds)){
+            return $response->withJson(
+                ['code'=>Valid::CODE_SUCCESS, 'data'=>[]],
+                StatusCode::HTTP_OK
+            );
+        }
         $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER,
             $this->ci['opn_pro_ver'],
             $this->ci['opn_auditing'],
