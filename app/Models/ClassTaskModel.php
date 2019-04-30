@@ -178,7 +178,6 @@ class ClassTaskModel extends Model
             'ct.weekday',
             'ct.org_id',
             'ct.period',
-            'ct.real_schedule_id',
             'c.name (course_name)',
             'c.duration',
             'c.type (course_type)',
@@ -227,7 +226,6 @@ class ClassTaskModel extends Model
             'ct.expire_start_date[<=]' => $ct['expire_end_date'],
             'ct.expire_end_date[>=]' => $ct['expire_start_date'],
         ];
-        SimpleLogger::error('slkdjf',$ct);
         if (!empty($ct['class_id'])) {
             $where['ct.class_id[!]'] = $ct['class_id'];
         }
@@ -295,8 +293,7 @@ class ClassTaskModel extends Model
             'cu.status' => array(ClassUserModel::STATUS_NORMAL, ClassUserModel::STATUS_BACKUP),
         ];
         if (!empty($orgClassId)) {
-            $where['ct.class_id[!]'] = $orgClassId;
-            $where['cu.class_id[!]'] = $orgClassId;
+            $where['stc.id[!]'] = $orgClassId;
         }
         if ($isOrg == true) {
             global $orgId;

@@ -168,10 +168,16 @@ class ClassTaskService
             if (empty($pct['period'])) {
                 return Valid::addErrors([], 'class_period', 'class_period_not_exist');
             }
-            $pct['expire_end_date'] = empty($pct['expire_end_date']) ? date("Y-m-d",strtotime($pct['expire_start_date']) + (7 * ($pct['period'] - 1) + 1) * 86400) : $pct['expire_end_date'];
-            if($pct['expire_end_date'] <= $pct['expire_start_date']) {
-                return Valid::addErrors([], 'class_start_time', 'class_expire_end_date_is_invalid');
+
+            $beginDate = $pct['expire_start_date'];
+            $weekday = date("w",strtotime($beginDate));
+            if ($weekday <= $pct['weekday']) {
+                $beginTime = strtotime($beginDate) + 86400 * ($pct['weekday'] - $weekday);
+            } else {
+                $beginTime = strtotime($beginDate) + 86400 * (7 - ($weekday - $pct['weekday']));
             }
+            $pct['expire_start_date'] = date("Y-m-d",$beginTime);
+            $pct['expire_end_date'] = empty($pct['expire_end_date']) ? date("Y-m-d",$beginTime + (7 * ($pct['period'] - 1) + 1) * 86400) : $pct['expire_end_date'];
             $endTime = date("H:i", strtotime($pct['start_time']) + $course['duration']);
             $ct = [
                 'classroom_id' => $pct['classroom_id'],
@@ -192,7 +198,6 @@ class ClassTaskService
             }
             $res = self::checkCT($ct);
             if ($res !== true) {
-
                 return Valid::addErrors(['data' => ['result' => $res],'code'=>1], 'class_task_classroom', 'class_task_classroom_error');
             }
             $startTimes[$pct['start_time']] = [$pct['start_time'], $endTime];
@@ -205,8 +210,7 @@ class ClassTaskService
                 return Valid::addErrors([], 'class_start_time', 'class_start_time_conflict');
             }
         }
-        $cts['lesson_num'] = $lessonNum;
-        return $cts;
+        return [$cts,$lessonNum];
     }
 
 
@@ -229,19 +233,4 @@ class ClassTaskService
         $ct['course_type'] = DictService::getKeyValue(Constants::DICT_COURSE_TYPE, $ct['course_type']);
         return $ct;
     }
-
-    /**
-     * @param $cts
-     * @return array
-     */
-    public static function getStartEndDate($cts) {
-        $min = $max = '';
-        foreach($cts as $key => $ct) {
-            $ct['expire_end_date'] = empty($ct['expire_end_date']) ? $ct['expire_start_date'] + (7 * ($ct['period'] - 1) + 1) * 86400 : $ct['expire_end_date'];
-            $min = $min > $ct['expire_start_date']?$ct['expire_start_date']:$min;
-            $max = $max < $ct['expire_end_date'] ? $ct['expire_end_date'] : $max;
-        }
-        return [$min,$max];
-    }
-
 }

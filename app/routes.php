@@ -324,6 +324,7 @@ $arr = array(
 
 
     '/schedule/task/add' => array('method'=>array('post'),'call'=>'\App\Controllers\Schedule\STClass:add','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
+    '/schedule/task/copy' => array('method'=>array('post'),'call'=>'\App\Controllers\Schedule\STClass:copySTClass','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
     '/schedule/task/modify' => array('method'=>array('post'),'call'=>'\App\Controllers\Schedule\STClass:modify','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
     '/schedule/task/list' => array('method'=>array('get'),'call'=>'\App\Controllers\Schedule\STClass:list','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
     '/schedule/task/detail' => array('method'=>array('get'),'call'=>'\App\Controllers\Schedule\STClass:detail','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
