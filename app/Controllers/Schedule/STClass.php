@@ -211,6 +211,7 @@ class STClass extends ControllerBase
         $db = MysqlDB::getDB();
         $db->beginTransaction();
         STCLassService::modifyClass($newStc);
+        SimpleLogger::error('mmm222',[$newStc]);
         if ($newStc['status'] == ClassTaskModel::STATUS_CANCEL) {
             ClassUserService::updateCUStatus(['class_id' => $class['id']], ClassUserModel::STATUS_CANCEL);
             ClassTaskService::updateCTStatus(['class_id' => $class['id']], ClassTaskModel::STATUS_CANCEL);
@@ -231,8 +232,11 @@ class STClass extends ControllerBase
                     ClassUserService::bindCUs($class['id'], [ClassUserModel::USER_ROLE_T => $params['teachers']]);
                 }
             }
-            ClassTaskService::updateCTStatus(['class_id' => $class['id']], ClassTaskModel::STATUS_CANCEL);
-            ClassTaskService::addCTs($class['id'], $cts);
+            $res = ClassTaskService::updateCTStatus(['class_id' => $class['id']], ClassTaskModel::STATUS_CANCEL);
+            SimpleLogger::error('mmm',[$res]);
+            $ret = ClassTaskService::addCTs($class['id'], $cts);
+            SimpleLogger::error('mmm1111',[$ret]);
+
         }
         $db->commit();
         $stc = STClassService::getSTClassDetail($newStc['id']);
