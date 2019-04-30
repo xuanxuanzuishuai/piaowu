@@ -16,11 +16,13 @@ use App\Libs\Valid;
 use App\Models\EmployeeModel;
 use App\Models\OrgAccountModel;
 use App\Models\OrganizationModel;
+use App\Models\QRCodeModel;
 use App\Models\StudentOrgModel;
 use App\Models\TeacherOrgModel;
 use App\Models\TeacherStudentModel;
 use App\Services\EmployeeService;
 use App\Services\OrganizationService;
+use App\Services\QRCodeService;
 use App\Services\StudentService;
 use App\Services\TeacherService;
 use Slim\Http\Request;
@@ -581,6 +583,37 @@ class Org extends ControllerBase
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => [],
+        ]);
+    }
+
+    public function qrcode(Request $request, Response $response, $args)
+    {
+        global $orgId;
+
+        $teacher = QRCodeService::getOrgTeacherBindQR($orgId);
+        $student = QRCodeService::getOrgStudentBindQR($orgId);
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => [
+                'teacher' => $teacher['qr_image'],
+                'student' => $student['qr_image'],
+            ]
+        ]);
+    }
+
+    public function refereeQrcode(Request $request, Response $response, $args)
+    {
+        global $orgId;
+        $employeeId = $this->ci['employee']['id'];
+
+        $referee = QRCodeService::getOrgStudentBindRefereeQR($orgId, QRCodeModel::REFEREE_TYPE_EMPLOYEE, $employeeId);
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => [
+                'referee' => $referee['qr_image'],
+            ]
         ]);
     }
 }

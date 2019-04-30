@@ -537,7 +537,19 @@ $arr = array(
         'method'  => ['post'],
         'call'    => Bill::class . ':disable',
         'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class]
-    ]
+    ],
+    //老师学生二维码
+    '/org_web/org/qrcode' => [
+        'method'  => ['get'],
+        'call'    => Org::class . ':qrcode',
+        'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class]
+    ],
+    //转介绍二维码
+    '/org_web/org/referee_qrcode' => [
+        'method'  => ['get'],
+        'call'    => Org::class . ':refereeQrcode',
+        'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class]
+    ],
 );
 
 /** @var App $app */
