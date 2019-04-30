@@ -63,8 +63,9 @@ class Student extends ControllerBase
         if(empty($roleId)) {
             return $response->withJson(Valid::addErrors([],'play_record', 'org_cc_role_is_empty_in_session'));
         }
+
         if($this->isOrgCC($roleId)) {
-            $params['role_id'] = $roleId;
+            $params['cc_id'] = $this->ci['employee']['id'];
         }
 
         global $orgId;

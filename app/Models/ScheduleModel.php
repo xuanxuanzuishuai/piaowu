@@ -232,9 +232,9 @@ class ScheduleModel extends Model
             $where .= ' and s.end_time <= :end_time';
             $map[':end_time'] = $params['end_time'];
         }
-        if(!empty($params['role_id'])) {
-            $where .= ' and e.role_id = :role_id';
-            $map[':role_id'] = $params['role_id'];
+        if(!empty($params['cc_id'])) {
+            $where .= ' and stu.cc_id = :cc_id';
+            $map[':cc_id'] = $params['cc_id'];
         }
 
         $limit = Util::limitation($page, $count);

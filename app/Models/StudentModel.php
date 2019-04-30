@@ -582,9 +582,9 @@ class StudentModel extends Model
             $where .= " and so.status = :is_bind ";
             $map[':is_bind'] = $params['is_bind'];
         }
-        if(!empty($params['role_id']) && $orgId > 0) {
-            $where .= " and e.role_id = :role_id ";
-            $map[':role_id'] = $params['role_id'];
+        if(!empty($params['cc_id']) && $orgId > 0) {
+            $where .= " and s.cc_id = :cc_id ";
+            $map[':cc_id'] = $params['cc_id'];
         }
         if(!empty($orgId)) {
             $where .= " and so.org_id = :org_id ";

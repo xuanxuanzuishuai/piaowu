@@ -138,9 +138,9 @@ class PlayRecordModel extends Model
             $where .= ' and p.lesson_type = :lesson_type ';
             $map[':lesson_type'] = $params['lesson_type'];
         }
-        if(isset($params['role_id'])) {
-            $where .= ' and s.cc_id = :role_id ';
-            $map[':role_id'] = $params['role_id'];
+        if(isset($params['cc_id'])) {
+            $where .= ' and s.cc_id = :cc_id ';
+            $map[':cc_id'] = $params['cc_id'];
         }
 
         if(!empty($studentId)) {

@@ -81,7 +81,7 @@ class ScheduleRecord extends ControllerBase
             return $response->withJson([],'play_record', 'org_cc_role_is_empty_in_session');
         }
         if($this->isOrgCC($roleId)) {
-            $params['role_id'] = $roleId;
+            $params['cc_id'] = $this->ci['employee']['id'];
         }
 
         global $orgId;
