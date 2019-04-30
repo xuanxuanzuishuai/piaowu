@@ -217,10 +217,11 @@ class AliOSS
 
     /**
      * 上传内容保存为文件
-     * @param $filename
-     * @param $contents
+     * @param $objName
+     * @param $file
      */
-    public static function uploadFile($filename, $contents){
+    public static function uploadFile($objName, $file)
+    {
         list($accessKeyId, $accessKeySecret, $bucket, $endpoint) = DictService::getKeyValuesByArray(Constants::DICT_TYPE_ALIOSS_CONFIG,array(
             Constants::DICT_KEY_ALIOSS_ACCESS_KEY_ID,
             Constants::DICT_KEY_ALIOSS_ACCESS_KEY_SECRET,
@@ -229,7 +230,7 @@ class AliOSS
 
         try {
             $ossClient = new OssClient($accessKeyId, $accessKeySecret, $endpoint);
-            $ossClient->putObject($bucket,$filename, $contents);
+            $ossClient->uploadFile($bucket,$objName, $file);
         }catch (OssException $e){
             SimpleLogger::error($e->getMessage(), []);
             return;
