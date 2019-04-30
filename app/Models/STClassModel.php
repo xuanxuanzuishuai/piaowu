@@ -25,6 +25,7 @@ class STClassModel extends Model
     const STATUS_NORMAL = 1;//正常排课
     const STATUS_BEGIN = 2;//开课
     const STATUS_END = 3;//结课
+    const STATUS_CHANGE = 4; // 临时调课
 
     public static function addSTClass($stc)
     {

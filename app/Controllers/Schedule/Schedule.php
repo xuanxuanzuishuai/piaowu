@@ -14,12 +14,9 @@ use App\Libs\MysqlDB;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\ScheduleModel;
-use App\Models\ClassTaskModel;
-use App\Models\ClassUserModel;
-use App\Models\ScheduleUserModel;
-use App\Services\ClassTaskService;
+use App\Services\ClassroomService;
+use App\Services\CourseService;
 use App\Services\ScheduleService;
-use App\Services\ScheduleTaskService;
 use App\Services\ScheduleUserService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -67,7 +64,7 @@ class Schedule extends ControllerBase
         $params = $request->getParams();
         $result = Valid::validate($params, $rules);
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
-            return $response->withJson($result, 200);
+            return $response->withJson($result, StatusCode::HTTP_OK);
         }
         $schedule = ScheduleService::getDetail($params['schedule_id']);
         return $response->withJson([
@@ -78,6 +75,7 @@ class Schedule extends ControllerBase
     }
 
     /**
+     * 调课
      * @param Request $request
      * @param Response $response
      * @param $args
@@ -97,11 +95,6 @@ class Schedule extends ControllerBase
                 'error_code' => 'start_time_is_required',
             ],
             [
-                'key' => 'end_time',
-                'type' => 'required',
-                'error_code' => 'end_time_is_required',
-            ],
-            [
                 'key' => 'classroom_id',
                 'type' => 'required',
                 'error_code' => 'classroom_id_is_required',
@@ -112,100 +105,60 @@ class Schedule extends ControllerBase
                 'error_code' => 'course_id_is_required',
             ],
             [
-                'key' => 'status',
+                'key' => 'class_highest',
                 'type' => 'required',
-                'error_code' => 'status_is_required',
+                'error_code' => 'course_class_highest_is_required',
+            ],
+            [
+                'key' => 'class_highest',
+                'type' => 'integer',
+                'error_code' => 'course_class_highest_must_be_integer',
             ],
         ];
         $params = $request->getParams();
         $result = Valid::validate($params, $rules);
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
-            return $response->withJson($result, 200);
+            return $response->withJson($result, StatusCode::HTTP_OK);
         }
         $schedule = ScheduleService::getDetail($params['schedule_id']);
         if (empty($schedule) || $schedule['status'] != ScheduleModel::STATUS_BOOK) {
-            return $response->withJson(Valid::addErrors([], 'schedule', 'schedule_not_exist'));
+            return $response->withJson(Valid::addErrors([], 'schedule', 'schedule_not_exist'), StatusCode::HTTP_OK);
         }
+
+        $classroom = ClassroomService::getById($params['classroom_id']);
+        $course = CourseService::getCourseById($params['course_id']);
+        $params['start_time'] = strtotime($params['start_time']);
+        $now = time();
 
         $newSchedule['id'] = $schedule['id'];
-        $newSchedule['start_time'] = strtotime($params['start_time']);
-        $newSchedule['end_time'] = strtotime($params['end_time']);
-        $newSchedule['status'] = $params['status'];
+        $newSchedule['start_time'] = $params['start_time'];
+        $newSchedule['end_time'] = $params['start_time'] + $course['duration'];
         $newSchedule['classroom_id'] = $params['classroom_id'];
         $newSchedule['course_id'] = $params['course_id'];
-        $newSchedule['update_time'] = time();
+        $newSchedule['duration'] = $course['duration'];
+        $newSchedule['update_time'] = $now;
+        $newSchedule['org_id'] = $classroom['org_id'];
+        $newSchedule['class_id'] = $schedule['class_id'];
 
-        $result = ScheduleService::checkSchedule($newSchedule);
-        if ($result != true) {
-            return $response->withJson(Valid::addErrors(['data' => ['result' => $result]], 'schedule_classroom', 'schedule_classroom_'));
+        $classTasks = ScheduleService::checkScheduleAndClassTask($params, $newSchedule, $now, $schedule['class_id']);
+        if (!empty($classTasks) && $classTasks['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($classTasks, StatusCode::HTTP_OK);
         }
-        $studentIds = $ssuIds = $stuIds = [];
-        if (!empty($schedule['students'])) {
-            foreach ($schedule['students'] as $student) {
-                $studentIds[] = $student['user_id'];
-                $ssuIds[] = $student['id'];
-            }
-        }
-        if (!empty($params['studentIds'])) {
-            $result = ScheduleUserService::checkScheduleUser($params['studentIds'], ClassUserModel::USER_ROLE_S, $newSchedule['start_time'], $newSchedule['end_time'], $newSchedule['id']);
-            if ($result != true) {
-                return $response->withJson(Valid::addErrors(['data' => ['result' => $result]], 'schedule_classroom', 'schedule_classroom_'));
-            }
-        }
-        $teacherIds = [];
-        if (!empty($schedule['teachers'])) {
-            foreach ($schedule['teachers'] as $teacher) {
-                $teacherIds[] = $teacher['user_id'];
-                $stuIds[] = $teacher['id'];
-            }
-        }
-        if (!empty($params['teacherIds'])) {
-            $result = ScheduleUserService::checkScheduleUser($params['teacherIds'], ClassUserModel::USER_ROLE_T, $newSchedule['start_time'], $newSchedule['end_time'], $newSchedule['id']);
-            if ($result != true) {
-                return $response->withJson(Valid::addErrors(['data' => ['result' => $result]], 'schedule_classroom', 'schedule_classroom_'));
-            }
-        }
-
 
         $db = MysqlDB::getDB();
         $db->beginTransaction();
-        ScheduleService::modifySchedule($newSchedule);
-        if ($newSchedule['status'] == ScheduleModel::STATUS_CANCEL) {
-            ScheduleUserService::unBindUser(array_merge($ssuIds, $stuIds));
-        } else {
-            if ($params['studentIds'] != $studentIds) {
-                if (!empty($ssuIds)) {
-                    ScheduleUserService::unBindUser($ssuIds);
-                }
-                ScheduleUserService::bindSUs([$newSchedule['id']], [ClassUserModel::USER_ROLE_S => $params['studentIds']]);
-            }
-            if ($params['teacherIds'] != $teacherIds) {
-                if (!empty($stuIds)) {
-                    ScheduleUserService::unBindUser($stuIds);
-                }
-                ScheduleUserService::bindSUs([$newSchedule['id']], [ClassUserModel::USER_ROLE_T => $params['teacherIds']]);
-            }
+        $result = ScheduleService::modifySchedule($newSchedule, $classTasks, $params, $now);
+        if (!empty($result)) {
+            $db->rollBack();
+            return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        $st = [
-            'classroom_id' => $params['classroom_id'],
-            'start_time' => date('H:i', strtotime($params['start_time'])),
-            'end_time' => date('H:i', strtotime($params['end_time'])),
-            'course_id' => $params['course_id'],
-            'weekday' => date('w', strtotime($params['start_time'])),
-            'expire_start_date' => date("Y-m-d", strtotime($params['start_time'])),
-            'expire_end_date' => date("Y-m-d", strtotime($params['start_time']) + 86400),
-            'create_time' => time(),
-            'real_schedule_id' => $schedule['id'],
-            'status' => ClassTaskModel::STATUS_TEMP,
-        ];
-        ClassTaskService::addCTs($st, $params['studentIds'], $params['teacherIds']);
         $db->commit();
 
-        $schedule = ScheduleService::getDetail($newSchedule['id']);
+        $schedule = ScheduleService::getDetail($params['schedule_id']);
         return $response->withJson([
             'code' => 0,
             'data' => ['schedule' => $schedule]
-        ]);
+        ], StatusCode::HTTP_OK);
     }
 
     /**
@@ -227,53 +180,32 @@ class Schedule extends ControllerBase
                 'key' => 'su_ids',
                 'type' => 'required',
                 'error_code' => 'user_id_is_required',
-            ],
-            [
-                'key' => 'user_role',
-                'type' => 'required',
-                'error_code' => 'user_role_is_required',
             ]
         ];
         $params = $request->getParams();
         $result = Valid::validate($params, $rules);
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
-            return $response->withJson($result, 200);
+            return $response->withJson($result, StatusCode::HTTP_OK);
         }
         $schedule = ScheduleService::getDetail($params['schedule_id']);
         if (empty($schedule) || $schedule['status'] != ScheduleModel::STATUS_BOOK) {
-            return $response->withJson(Valid::addErrors([], 'schedule', 'schedule_not_exist'));
+            return $response->withJson(Valid::addErrors([], 'schedule', 'schedule_not_exist'), StatusCode::HTTP_OK);
+        }
+        if (!is_array($params['su_ids'])) {
+            return $response->withJson(Valid::addErrors([], 'su_ids', 'su_id_is_required'), StatusCode::HTTP_OK);
         }
 
-        $ssuIds = $stuIds = [];
-        //学员请假
-        if ($params['user_role'] == ClassUserModel::USER_ROLE_S) {
-            foreach ($schedule['students'] as $su) {
-                if (in_array($su['id'], $params['su_ids']) && $su['user_status'] == ScheduleUserModel::STUDENT_STATUS_BOOK) {
-                    $ssuIds[] = $su['id'];
-                }
-            }
-            if (!empty($ssuIds)) {
-                ScheduleUserService::takeOff($ssuIds, ClassUserModel::USER_ROLE_S);
-            }
-        } //老师请假
-        else if ($params['user_role'] == ClassUserModel::USER_ROLE_T) {
-            foreach ($schedule['teachers'] as $su) {
-                if (in_array($su['id'], $params['su_ids']) && $su['user_status'] == ScheduleUserModel::TEACHER_STATUS_SET) {
-                    $stuIds[] = $su['id'];
-                }
-            }
-            if (!empty($stuIds)) {
-                ScheduleUserService::takeOff($stuIds, ClassUserModel::USER_ROLE_T);
-            }
-        }
+        ScheduleUserService::takeOff($params['schedule_id'], $params['su_ids']);
+
         $schedule = ScheduleService::getDetail($params['schedule_id']);
         return $response->withJson([
             'code' => 0,
             'data' => ['schedule' => $schedule]
-        ]);
+        ], StatusCode::HTTP_OK);
     }
 
     /**
+     * 签到
      * @param Request $request
      * @param Response $response
      * @param $args
@@ -291,52 +223,40 @@ class Schedule extends ControllerBase
                 'key' => 'su_ids',
                 'type' => 'required',
                 'error_code' => 'su_id_is_required',
-            ],
-            [
-                'key' => 'user_role',
-                'type' => 'required',
-                'error_code' => 'user_role_is_required',
             ]
         ];
         $params = $request->getParams();
         $result = Valid::validate($params, $rules);
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
-            return $response->withJson($result, 200);
+            return $response->withJson($result, StatusCode::HTTP_OK);
         }
         $schedule = ScheduleService::getDetail($params['schedule_id']);
         if (empty($schedule) || $schedule['status'] != ScheduleModel::STATUS_BOOK) {
-            return $response->withJson(Valid::addErrors([], 'schedule', 'schedule_not_exist'));
+            return $response->withJson(Valid::addErrors([], 'schedule', 'schedule_not_exist'), StatusCode::HTTP_OK);
+        }
+        if (!is_array($params['su_ids'])) {
+            return $response->withJson(Valid::addErrors([], 'su_ids', 'su_id_is_required'), StatusCode::HTTP_OK);
         }
 
-        $ssuIds = $stuIds = [];
-        //学员签到
-        if ($params['user_role'] == ClassUserModel::USER_ROLE_S) {
-            foreach ($schedule['students'] as $su) {
-                if (in_array($su['id'], $params['su_ids'])) {
-                    $ssuIds[] = $su['id'];
-                }
-            }
-            if (!empty($ssuIds)) {
-                ScheduleUserService::signIn($ssuIds, ClassUserModel::USER_ROLE_S);
-            }
-        } //老师签到
-        else if ($params['user_role'] == ClassUserModel::USER_ROLE_T) {
-            foreach ($schedule['teachers'] as $su) {
-                if (in_array($su['id'], $params['su_ids'])) {
-                    $stuIds[] = $su['id'];
-                }
-            }
-            if (!empty($stuIds)) {
-                ScheduleUserService::signIn($stuIds, ClassUserModel::USER_ROLE_T);
-            }
-        }
+        $employeeId = $this->getEmployeeId();
+        $db = MysqlDB::getDB();
+        $db->beginTransaction();
+        ScheduleUserService::signIn($params['schedule_id'], $params['su_ids'], $schedule['students'], $employeeId);
+        $db->commit();
         $schedule = ScheduleService::getDetail($params['schedule_id']);
         return $response->withJson([
             'code' => 0,
             'data' => ['schedule' => $schedule]
-        ]);
+        ], StatusCode::HTTP_OK);
     }
 
+    /**
+     * 下课
+     * @param Request $request
+     * @param Response $response
+     * @param $args
+     * @return Response
+     */
     public function finish(Request $request, Response $response, $args)
     {
         $rules = [
@@ -349,20 +269,135 @@ class Schedule extends ControllerBase
         $params = $request->getParams();
         $result = Valid::validate($params, $rules);
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
-            return $response->withJson($result, 200);
+            return $response->withJson($result, StatusCode::HTTP_OK);
         }
         $schedule = ScheduleService::getDetail($params['schedule_id']);
         if (empty($schedule) || $schedule['status'] != ScheduleModel::STATUS_BOOK) {
-            return $response->withJson(Valid::addErrors([], 'schedule', 'schedule_not_exist'));
+            return $response->withJson(Valid::addErrors([], 'schedule', 'schedule_not_exist'), StatusCode::HTTP_OK);
         }
 
-        ScheduleService::finish($schedule['id']);
+        $db = MysqlDB::getDB();
+        $db->beginTransaction();
+        ScheduleService::finish($schedule);
+        $db->commit();
         $schedule = ScheduleService::getDetail($params['schedule_id']);
         return $response->withJson([
             'code' => 0,
             'data' => ['schedule' => $schedule]
-        ]);
+        ], StatusCode::HTTP_OK);
+    }
 
+    /**
+     * 添加课程
+     * @param Request $request
+     * @param Response $response
+     * @param $args
+     * @return Response
+     */
+    public function add(Request $request, Response $response, $args)
+    {
+        $rules = [
+            [
+                'key' => 'start_time',
+                'type' => 'required',
+                'error_code' => 'start_time_is_required',
+            ],
+            [
+                'key' => 'classroom_id',
+                'type' => 'required',
+                'error_code' => 'classroom_id_is_required',
+            ],
+            [
+                'key' => 'course_id',
+                'type' => 'required',
+                'error_code' => 'course_id_is_required',
+            ],
+            [
+                'key' => 'class_highest',
+                'type' => 'required',
+                'error_code' => 'course_class_highest_is_required',
+            ],
+            [
+                'key' => 'class_highest',
+                'type' => 'integer',
+                'error_code' => 'course_class_highest_must_be_integer',
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $classroom = ClassroomService::getById($params['classroom_id']);
+        $course = CourseService::getCourseById($params['course_id']);
+        $params['start_time'] = strtotime($params['start_time']);
+        $now = time();
+
+        $schedule['start_time'] = $params['start_time'];
+        $schedule['end_time'] = $params['start_time'] + $course['duration'];
+        $schedule['status'] = ScheduleModel::STATUS_BOOK;
+        $schedule['classroom_id'] = $params['classroom_id'];
+        $schedule['course_id'] = $params['course_id'];
+        $schedule['create_time'] = $now;
+        $schedule['org_id'] = $classroom['org_id'];
+        $schedule['duration'] = $course['duration'];
+
+        $classTasks = ScheduleService::checkScheduleAndClassTask($params, $schedule, $now);
+        if (!empty($classTasks['code'])) {
+            return $response->withJson($classTasks, StatusCode::HTTP_OK);
+        }
+
+        $db = MysqlDB::getDB();
+        $db->beginTransaction();
+        $scheduleId = ScheduleService::addSchedule($classTasks, $schedule, $now, $params);
+
+        if (!empty($scheduleId['code'])) {
+            $db->rollBack();
+            return $response->withJson($scheduleId, StatusCode::HTTP_OK);
+        }
+        $db->commit();
+
+        $schedule = ScheduleService::getDetail($scheduleId);
+        return $response->withJson([
+            'code' => 0,
+            'data' => ['schedule' => $schedule]
+        ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * 取消课次
+     * @param Request $request
+     * @param Response $response
+     * @param $args
+     * @return Response
+     */
+    public function cancel(Request $request, Response $response, $args)
+    {
+        $rules = [
+            [
+                'key' => 'schedule_id',
+                'type' => 'required',
+                'error_code' => 'schedule_id_is_required',
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $schedule = ScheduleService::getDetail($params['schedule_id']);
+        if (empty($schedule) || $schedule['status'] != ScheduleModel::STATUS_BOOK) {
+            return $response->withJson(Valid::addErrors([], 'schedule', 'schedule_not_exist'), StatusCode::HTTP_OK);
+        }
+
+        ScheduleService::cancelSchedule($schedule);
+        $schedule = ScheduleService::getDetail($params['schedule_id']);
+        return $response->withJson([
+            'code' => 0,
+            'data' => ['schedule' => $schedule]
+        ], StatusCode::HTTP_OK);
     }
 
 }

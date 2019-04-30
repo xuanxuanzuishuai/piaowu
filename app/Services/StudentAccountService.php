@@ -51,7 +51,6 @@ class StudentAccountService
             }
         } else {
             foreach ($data as $type => $balance) {
-                $saId = 0;
                 $saId = StudentAccountLogModel::insertRecord(['create_time' => $now, 'student_id' => $studentId, 'balance' => $balance, 'type' => $type]);
                 if ($saId > 0) {
                     $log[] = ['operator_id' => $operatorId, 'remark' => $remark, 'create_time' => $now, 's_a_id' => $saId, 'balance' => $balance, 'old_balance' => 0, 'new_balance' => $balance, 'type' => StudentAccountLogModel::TYPE_ADD];
@@ -106,7 +105,7 @@ class StudentAccountService
             if ($res > 0) {
                 $log[] = ['operator_id' => $operatorId, 'remark' => $remark, 'create_time' => $now, 's_a_id' => $vcash['id'], 'balance' => $amount - $cashAmount, 'old_balance' => $vcash['balance'], 'new_balance' => $vcash['balance'] - ($amount - $cashAmount), 'type' => StudentAccountLogModel::TYPE_REDUCE];
             } else {
-                    return false;
+                return false;
             }
 
         } else {

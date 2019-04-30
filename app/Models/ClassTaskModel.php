@@ -216,7 +216,6 @@ class ClassTaskModel extends Model
     {
         $db = MysqlDB::getDB();
         $where = [
-
             'ct.classroom_id' => $ct['classroom_id'],
             'ct.weekday' => $ct['weekday'],
             'ct.status' => array(ClassTaskModel::STATUS_NORMAL, ClassTaskModel::STATUS_TEMP),

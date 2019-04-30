@@ -10,7 +10,6 @@ namespace App\Services;
 
 
 use App\Libs\Constants;
-use App\Libs\SimpleLogger;
 use App\Models\ClassTaskModel;
 use App\Models\ClassUserModel;
 use App\Models\STClassModel;
@@ -137,6 +136,16 @@ class STClassService
         if (!empty($insert))
             ClassUserModel::batchInsert($insert);
         return true;
+    }
+
+    /**
+     * 获取class信息
+     * @param $classId
+     * @return mixed|null
+     */
+    public static function getById($classId)
+    {
+        return STClassModel::getById($classId);
     }
 
 }

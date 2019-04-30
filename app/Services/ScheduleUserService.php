@@ -17,47 +17,26 @@ use App\Models\ScheduleUserModel;
 class ScheduleUserService
 {
     /**
-     * @param $scheduleIds
-     * @param $SUs
-     * @return bool
-     */
-    public static function bindSUs($scheduleIds,$SUs) {
-        $now = time();
-        foreach ($scheduleIds as $scheduleId) {
-            foreach ($SUs as $role => $userIds) {
-                foreach ($userIds as $userId) {
-                    $userStatus = $role == ClassUserModel::USER_ROLE_S ? ScheduleUserModel::STUDENT_STATUS_BOOK: ScheduleUserModel::TEACHER_STATUS_SET;
-                    $sus[] = ['status' => ScheduleUserModel::STATUS_NORMAL, 'schedule_id' => $scheduleId, 'user_id' => $userId, 'user_role' => $role, 'create_time' => $now,'user_status'=>$userStatus];
-                }
-            }
-        }
-        if (!empty($sus)) {
-            $ret = ScheduleUserModel::insertSUs($sus);
-            if (is_null($ret))
-                return false;
-        }
-        return true;
-    }
-
-    /**
-     * @param $suIds
+     * @param $scheduleId
+     * @param $time
      * @return int|null
      */
-    public static function unBindUser($suIds) {
-        return ScheduleUserModel::updateSUStatus($suIds,ScheduleUserModel::STATUS_CANCEL);
+    public static function unBindUser($scheduleId, $time) {
+        return ScheduleUserModel::unbindUser($scheduleId, $time);
     }
 
     /**
      * @param $userIds
-     * @param $userRols
+     * @param $userRoles
      * @param $startTime
      * @param $endTime
      * @param $orgId
      * @return array|bool
      */
-    public static function checkScheduleUser($userIds,$userRols,$startTime,$endTime,$orgId) {
-        $sus = ScheduleUserModel::checkScheduleUser($userIds,$userRols,$startTime,$endTime,$orgId);
-        return empty($sus) ? true :$sus;
+    public static function checkScheduleUser($userIds, $userRoles, $startTime, $endTime, $orgId)
+    {
+        $sus = ScheduleUserModel::checkScheduleUser($userIds, $userRoles, $startTime, $endTime, $orgId);
+        return empty($sus) ? true : $sus;
     }
 
     /**
@@ -71,23 +50,81 @@ class ScheduleUserService
     }
 
     /**
+     * 学生、老师签到
+     * @param $scheduleId
      * @param $suIds
-     * @param $userRole
-     * @return int|null
+     * @param $students
+     * @param $operatorId
      */
-    public static function signIn($suIds,$userRole) {
-        SimpleLogger::error('mms',[$suIds]);
-        $userStatus = $userRole == ClassUserModel::USER_ROLE_S?ScheduleUserModel::STUDENT_STATUS_ATTEND:ScheduleUserModel::TEACHER_STATUS_ATTEND;
-        return ScheduleUserModel::batchUpdateRecord(['user_status'=>$userStatus],['id'=>$suIds],false);
+    public static function signIn($scheduleId, $suIds, $students, $operatorId)
+    {
+        SimpleLogger::info('student and teacher sign in ', $suIds);
+        $now = time();
+
+        // student sign
+        ScheduleUserModel::updateStudentStatus($scheduleId, $suIds, ScheduleUserModel::STUDENT_STATUS_ATTEND, $now);
+
+        foreach ($students as $student) {
+            if (in_array($student['id'], $suIds) && $student['user_status'] == ScheduleUserModel::STUDENT_STATUS_BOOK) {
+                // student account
+                StudentAccountService::reduceSA($student['user_id'], $student['price'] * 100, $operatorId, '下课');
+            }
+        }
+
+        // teacher sign
+        ScheduleUserModel::updateTeacherStatus($scheduleId, $suIds, ScheduleUserModel::TEACHER_STATUS_ATTEND, $now);
     }
 
     /**
+     * 学生、老师请假
+     * @param $scheduleId
      * @param $suIds
-     * @param $userRole
-     * @return int|null
      */
-    public static function takeOff($suIds,$userRole) {
-        $userStatus = $userRole == ClassUserModel::USER_ROLE_S?ScheduleUserModel::STUDENT_STATUS_LEAVE:ScheduleUserModel::TEACHER_STATUS_LEAVE;
-        return ScheduleUserModel::batchUpdateRecord(['user_status'=>$userStatus],['id'=>$suIds],false);
+    public static function takeOff($scheduleId, $suIds)
+    {
+        SimpleLogger::info('student and teacher take off ', $suIds);
+        $now = time();
+
+        // student take off
+        ScheduleUserModel::updateStudentStatus($scheduleId, $suIds, ScheduleUserModel::STUDENT_STATUS_LEAVE, $now);
+
+        // teacher takeoff
+        ScheduleUserModel::updateTeacherStatus($scheduleId, $suIds, ScheduleUserModel::TEACHER_STATUS_LEAVE, $now);
+    }
+
+    /**
+     * 添加课程学生、老师
+     * @param $students
+     * @param $teachers
+     * @param $scheduleId
+     * @param $time
+     * @return bool
+     */
+    public static function addScheduleUser($students, $teachers, $scheduleId, $time)
+    {
+        $users = [];
+        foreach($students as $key => $value) {
+            $users[] = [
+                'price' => $value * 100,
+                'schedule_id' => $scheduleId,
+                'user_id' => $key,
+                'user_role' => ScheduleUserModel::USER_ROLE_STUDENT,
+                'status' => ScheduleUserModel::STATUS_NORMAL,
+                'create_time' => $time,
+                'user_status' => ScheduleUserModel::STUDENT_STATUS_BOOK
+            ];
+        }
+        foreach($teachers as $key => $value) {
+            $users[] = [
+                'price' => 0,
+                'schedule_id' => $scheduleId,
+                'user_id' => $key,
+                'user_role' => $value,
+                'status' => ScheduleUserModel::STATUS_NORMAL,
+                'create_time' => $time,
+                'user_status' => ScheduleUserModel::TEACHER_STATUS_SET
+            ];
+        }
+        return ScheduleUserModel::insertSUs($users);
     }
 }

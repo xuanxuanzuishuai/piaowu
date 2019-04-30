@@ -9,10 +9,13 @@
 namespace App\Services;
 
 use App\Libs\Constants;
-use App\Libs\SimpleLogger;
+use App\Libs\Util;
+use App\Libs\Valid;
+use App\Models\ClassTaskModel;
 use App\Models\ScheduleModel;
 use App\Models\ClassUserModel;
 use App\Models\ScheduleUserModel;
+use App\Models\STClassModel;
 
 class ScheduleService
 {
@@ -156,11 +159,47 @@ class ScheduleService
     }
 
     /**
+     * 修改课程
      * @param $newSchedule
-     * @return bool
+     * @param $classTasks
+     * @param $params
+     * @param $time
+     * @return array | int
      */
-    public static function modifySchedule($newSchedule) {
-        return ScheduleModel::modifySchedule($newSchedule);
+    public static function modifySchedule($newSchedule, $classTasks, $params, $time)
+    {
+        // 修改schedule
+        $result = ScheduleModel::modifySchedule($newSchedule);
+        if (!$result) {
+            return Valid::addErrors([], 'schedule_failure', 'schedule_change_failure');
+        }
+
+        $classroom = ClassroomService::getById($params['classroom_id']);
+        $originClass = STClassService::getById($newSchedule['class_id']);
+        $class['lesson_num'] = 1;
+        $class['name'] = $originClass['name'];
+        $class['campus_id'] = $classroom['campus_id'];
+        $class['org_id'] = $classroom['org_id'];
+        $class['class_lowest'] = $originClass['class_lowest'];
+        $class['class_highest'] = $originClass['class_highest'];
+        $class['create_time'] = $time;
+        $class['status'] = STClassModel::STATUS_CHANGE;
+        $class['student_num'] = count($params['students']);
+        $class['real_schedule_id'] = $newSchedule['id'];
+
+        // 创建class, class_task, class_user
+        $classId = STClassService::addSTClass($class, $classTasks, $params['students'], $params['teachers']);
+        if (empty($classId)) {
+            return Valid::addErrors([], 'class_failure', 'class_add_failure');
+        }
+
+        // 修改schedule_user
+        ScheduleUserService::unBindUser($newSchedule['id'], $time);
+        $flag = ScheduleUserService::addScheduleUser($params['students'], $params['teachers'], $newSchedule['id'], $time);
+        if (is_null($flag)) {
+            return Valid::addErrors([], 'schedule_user_failure', 'schedule_add_user_failure');;
+        }
+        return 0;
     }
 
     /**
@@ -185,9 +224,7 @@ class ScheduleService
             foreach($users as $userId => $value){
                 if($userRole == ClassUserModel::USER_ROLE_S) {
                     $price = $value * 100;
-                    $userRole = $userRole;
-                }
-                else {
+                } else {
                     $price = 0;
                     $userRole = $value;
                 }
@@ -205,11 +242,17 @@ class ScheduleService
     }
 
     /**
-     * @param $scheduleId
-     * @return int|null
+     * 下课
+     * @param $schedule
      */
-    public static function finish($scheduleId) {
-        return ScheduleModel::updateRecord($scheduleId,['status'=>ScheduleModel::STATUS_FINISH,'update_time'=>time()]);
+    public static function finish($schedule)
+    {
+        $now = time();
+        // change schedule status
+        ScheduleModel::updateRecord($schedule['id'], ['status' => ScheduleModel::STATUS_FINISH, 'update_time' => $now]);
+
+        // class finish_num
+        STClassService::modifyClass(['id' => $schedule['class_id'], 'finish_num[+]' => 1, 'update_time' => $now]);
     }
 
     /** 学员上课记录
@@ -229,5 +272,134 @@ class ScheduleService
         }
 
         return [$records, $total];
+    }
+
+    /**
+     * 新增课程
+     * @param $classTasks
+     * @param $schedule
+     * @param $time
+     * @param $params
+     * @return int|mixed|null|string
+     */
+    public static function addSchedule($classTasks, $schedule, $time, $params)
+    {
+        $classroom = ClassroomService::getById($params['classroom_id']);
+        $class['lesson_num'] = 1;
+        $class['name'] = '临时班课';
+        $class['campus_id'] = $classroom['campus_id'];
+        $class['org_id'] = $classroom['org_id'];
+        $class['class_lowest'] = 1;
+        $class['class_highest'] = $params['class_highest'];
+        $class['create_time'] = $time;
+        $class['status'] = STClassModel::STATUS_NORMAL;
+        $class['student_num'] = count($params['students']);
+
+        // 创建class, class_task, class_user
+        $classId = STClassService::addSTClass($class, $classTasks, $params['students'], $params['teachers']);
+        if (empty($classId)) {
+            return Valid::addErrors([], 'class_failure', 'class_add_failure');
+        }
+
+        $schedule['class_id'] = $classId;
+        $sId = ScheduleModel::insertSchedule($schedule);
+        if (empty($sId)) {
+            return Valid::addErrors([], 'schedule', 'add_schedule_failure');
+        }
+
+        $flag = ScheduleUserService::addScheduleUser($params['students'], $params['teachers'], $sId, $time);
+        if ($flag == false) {
+            return Valid::addErrors([], 'schedule', 'add_schedule_failure');
+        }
+        return $sId;
+    }
+
+    /**
+     * check before添加课程、调整课程
+     * 1. check schedule
+     * 2. check schedule_user
+     * 3. check class_task
+     * 4. check class_user
+     * @param $params
+     * @param $schedule
+     * @param $time
+     * @param null $classId
+     * @return array|bool
+     */
+    public static function checkScheduleAndClassTask($params, $schedule, $time, $classId = null)
+    {
+        if (empty($params['students']) || !is_array($params['students'])) {
+            return Valid::addErrors([], 'students', 'students_is_required');
+        }
+        if (empty($params['teachers']) || !is_array($params['teachers'])) {
+            return Valid::addErrors([], 'teachers', 'teacher_is_required');
+        }
+
+        $classroom = ClassroomService::getById($params['classroom_id']);
+        $course = CourseService::getCourseById($params['course_id']);
+
+        // check schedule, check schedule_user
+        $checkSchedule = self::checkSchedule($schedule);
+        if ($checkSchedule != true) {
+            return Valid::addErrors([], 'class_task_classroom', 'class_task_classroom_error');
+        }
+
+        $originScheduleId = $params['schedule_id'] ?? 0;
+        $checkStudent = ScheduleUserService::checkScheduleUser(array_keys($params['students']),
+            ScheduleUserModel::USER_ROLE_STUDENT, $schedule['start_time'],
+            $schedule['end_time'], $originScheduleId);
+        if ($checkStudent !== true) {
+            return $checkStudent;
+        }
+
+        $checkTeacher = ScheduleUserService::checkScheduleUser(array_keys($params['teachers']),
+            [ScheduleUserModel::USER_ROLE_TEACHER, ScheduleUserModel::USER_ROLE_CLASS_TEACHER],
+            $schedule['start_time'], $schedule['end_time'], $originScheduleId);
+        if ($checkTeacher !== true) {
+            return $checkStudent;
+        }
+
+        // check class_task, class_user
+        $classTask = [
+            'classroom_id' => $params['classroom_id'],
+            'start_time' => date("H:i", $params['start_time']),
+            'end_time' => date("H:i", $params['start_time'] + $course['duration']),
+            'course_id' => $params['course_id'],
+            'weekday' => date('N', $params['start_time']),
+            'status' => ClassTaskModel::STATUS_NORMAL,
+            'create_time' => $time,
+            'org_id' => $classroom['org_id'],
+            'expire_start_date' => date('Y-m-d', $params['start_time']),
+            'expire_end_date' => date('Y-m-d', $params['start_time'] + Util::TIMESTAMP_ONEDAY),
+            'period' => 1,
+        ];
+        if (!empty($classId)) {
+            $classTask['class_id'] = $classId;
+        }
+        $checkRes = ClassTaskService::checkCT($classTask);
+        if ($checkRes !== true) {
+            return Valid::addErrors(['data' => ['result' => $classTask]], 'class_task_classroom', 'class_task_classroom_error');
+        }
+
+        $classTasks[] = $classTask;
+        $checkStudent = ClassUserService::checkStudent($params['students'], $classTasks, $params['class_highest']);
+        if ($checkStudent !== true) {
+            return $checkStudent;
+        }
+        $checkTeacher = ClassUserService::checkTeacher($params['teachers'], $classTasks, 2);
+        if ($checkTeacher !== true) {
+            return $checkTeacher;
+        }
+
+        return $classTasks;
+    }
+
+    /**
+     * 取消课程
+     * @param $schedule
+     */
+    public static function cancelSchedule($schedule)
+    {
+        ScheduleModel::updateRecord($schedule['id'], ['status' => ScheduleModel::STATUS_CANCEL, 'update_time' => time()]);
     }
 }

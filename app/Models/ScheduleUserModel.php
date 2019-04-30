@@ -19,10 +19,11 @@ class ScheduleUserModel extends Model
 
     const USER_ROLE_STUDENT = 1; //学生
     const USER_ROLE_TEACHER = 2; //老师
+    const USER_ROLE_CLASS_TEACHER = 3; // 班主任
 
     // 学生子状态
     const STUDENT_STATUS_BOOK = 1;         // 已预约
-    const STUDENT_STATUS_CANCEL = 2;       // 已取消 只有体验课有已取消状态
+    const STUDENT_STATUS_CANCEL = 2;       // 已取消
     const STUDENT_STATUS_LEAVE = 3;        // 已请假
     const STUDENT_STATUS_ATTEND = 4;       // 已出席
     const STUDENT_STATUS_NOT_ATTEND = 5;   // 未出席
@@ -46,15 +47,17 @@ class ScheduleUserModel extends Model
      * @return array|null
      */
     public static function getSUBySIds($sIds,$status = array(self::STATUS_NORMAL)) {
-        $sql = "select su.user_id,su.user_role,su.id,su.schedule_id,su.create_time,su.status,t.name as teacher_name,s.name as student_name,su.user_status from ".self::$table ." as su "
-            ." left join ".StudentModel::$table." as s on su.user_id = s.id and su.user_role = ".ClassUserModel::USER_ROLE_S
-            ." left join ".TeacherModel::$table." as t on su.user_id = t.id and su.user_role = ".ClassUserModel::USER_ROLE_T
-            ." where su.schedule_id in (".implode(',',$sIds).") and su.status in (".implode(",",$status).")";
+        $sql = "select su.user_id, su.user_role, su.id, su.schedule_id, su.create_time, su.status, t.name as teacher_name, s.name as student_name, su.user_status, su.price from "
+            . self::$table . " as su "
+            . " left join " . StudentModel::$table." as s on su.user_id = s.id and su.user_role = " . ClassUserModel::USER_ROLE_S
+            . " left join " . TeacherModel::$table." as t on su.user_id = t.id and su.user_role = " . ClassUserModel::USER_ROLE_T
+            . " where su.schedule_id in (" . implode(',',$sIds) . ") and su.status in (" . implode(",",$status) . ")";
 
-        return MysqlDB::getDB()->queryAll($sql,\PDO::FETCH_COLUMN);
+        return MysqlDB::getDB()->queryAll($sql);
     }
 
     /**
+     * 检查学生、老师时间是否冲突
      * @param $userIds
      * @param $userRole
      * @param $startTime
@@ -63,7 +66,8 @@ class ScheduleUserModel extends Model
      * @param bool $isOrg
      * @return array
      */
-    public static function checkScheduleUser($userIds,$userRole,$startTime,$endTime,$orgSId,$isOrg = true) {
+    public static function checkScheduleUser($userIds, $userRole, $startTime, $endTime, $orgSId, $isOrg = true)
+    {
         $where = [
             'su.user_id' => $userIds,
             'su.user_role' => $userRole,
@@ -88,25 +92,30 @@ class ScheduleUserModel extends Model
         ];
 
         $join = [
-            '[><]' . ScheduleUserModel::$table . ' (su)' => ['s.id' => 'schedule_id'],
+            '[><]' . self::$table . ' (su)' => ['s.id' => 'schedule_id'],
         ];
 
-        return MysqlDB::getDB()->select(self::$table . ' (s)', $join, $columns, $where);
+        return MysqlDB::getDB()->select(ScheduleModel::$table . ' (s)', $join, $columns, $where);
 
     }
 
     /**
-     * @param $ids
-     * @param $status
+     * 解绑课程的用户
+     * @param $scheduleId
      * @param null $now
      * @return int|null
      */
-    public static function updateSUStatus($ids, $status, $now = null)
+    public static function unbindUser($scheduleId, $now = null)
     {
         if (empty($now)) {
             $now = time();
         }
-        return MysqlDB::getDB()->updateGetCount(self::$table, ['status' => $status, 'update_time'=>$now], ['id' => $ids]);
+        return MysqlDB::getDB()->updateGetCount(self::$table, [
+            'status' => self::STATUS_CANCEL,
+            'update_time' => $now
+        ], [
+            'schedule_id' => $scheduleId
+        ]);
     }
 
     /**
@@ -134,5 +143,47 @@ class ScheduleUserModel extends Model
             return $statement->rowCount();
         }
         return null;
+    }
+
+    /**
+     * 修改学生状态为出席或请假
+     * @param $scheduleId
+     * @param $suIds
+     * @param $userStatus
+     * @param $time
+     */
+    public static function updateStudentStatus($scheduleId, $suIds, $userStatus, $time)
+    {
+        self::batchUpdateRecord([
+            'user_status' => $userStatus,
+            'update_time' => $time
+        ], [
+            'id' => $suIds,
+            'schedule_id' => $scheduleId,
+            'user_role' => ScheduleUserModel::USER_ROLE_STUDENT,
+            'user_status' => ScheduleUserModel::STUDENT_STATUS_BOOK,
+            'status' => ScheduleUserModel::STATUS_NORMAL
+        ], false);
+    }
+
+    /**
+     * 修改老师状态为出席或请假
+     * @param $scheduleId
+     * @param $suIds
+     * @param $userStatus
+     * @param $time
+     */
+    public static function updateTeacherStatus($scheduleId, $suIds, $userStatus, $time)
+    {
+        self::batchUpdateRecord([
+            'user_status' => $userStatus,
+            'update_time' => $time
+        ], [
+            'id' => $suIds,
+            'schedule_id' => $scheduleId,
+            'user_role' => [ScheduleUserModel::USER_ROLE_TEACHER, ScheduleUserModel::USER_ROLE_CLASS_TEACHER],
+            'user_status' => ScheduleUserModel::TEACHER_STATUS_SET,
+            'status' => ScheduleUserModel::STATUS_NORMAL
+        ], false);
     }
 }

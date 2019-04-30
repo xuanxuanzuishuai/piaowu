@@ -340,6 +340,8 @@ $arr = array(
     '/schedule/schedule/signIn' => array('method'=>array('post'),'call'=>'\App\Controllers\Schedule\Schedule:signIn','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
     '/schedule/schedule/takeOff' => array('method'=>array('post'),'call'=>'\App\Controllers\Schedule\Schedule:takeOff','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
     '/schedule/schedule/finish' => array('method'=>array('post'),'call'=>'\App\Controllers\Schedule\Schedule:finish','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
+    '/schedule/schedule/add' => array('method'=>array('post'),'call'=>'\App\Controllers\Schedule\Schedule:add','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
+    '/schedule/schedule/cancel' => array('method'=>array('post'),'call'=>'\App\Controllers\Schedule\Schedule:cancel','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
 
     //学员上课记录
     '/schedule/schedule/attend_record' => [ // for org manager
