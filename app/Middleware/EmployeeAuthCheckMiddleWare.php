@@ -28,10 +28,7 @@ class EmployeeAuthCheckMiddleWare extends MiddlewareBase
 
         if (empty($token) || empty($token[0])) {
             // token为空时检查是否是开发环境，如果是，设置一个默认的登录用户
-            if(isset($_ENV['ENV_NAME']) && $_ENV['ENV_NAME'] == 'dev') {
-                if(empty($_ENV['DEV_EMPLOYEE_ID'])) {
-                    return $response->withJson(Valid::addErrors([],'error','lack_DEV_EMPLOYEE_ID_in_dev_environment'));
-                }
+            if(isset($_ENV['ENV_NAME']) && $_ENV['ENV_NAME'] == 'dev' && !empty($_ENV['DEV_EMPLOYEE_ID'])) {
                 $cacheEmployeeId = $_ENV['DEV_EMPLOYEE_ID'];
             }else{
                 SimpleLogger::error(__FILE__ . __LINE__, ['code' => 'JWT is empty', 'errs' => []]);
