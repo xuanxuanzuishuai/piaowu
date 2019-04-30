@@ -23,12 +23,14 @@ class ClassTaskService
      */
     public static function addCTs($classId, $cts)
     {
-        SimpleLogger::error('ssss',[$classId,$cts]);
         if (!empty($cts)) {
             foreach ($cts as $key => $ct) {
                 $ct['class_id'] = $classId;
                 $cts[$key] = $ct;
             }
+        }
+        if(!empty($cts['lesson_num'])) {
+            unset($cts['lesson_num']);
         }
         return ClassTaskModel::batchInsert($cts);
     }
@@ -135,7 +137,6 @@ class ClassTaskService
         $now = time();
         $cts = [];
         $lessonNum = 0;
-        SimpleLogger::error('mmm444',[$pcts,$classId]);
         foreach ($pcts as $pct) {
             if (empty($pct['course_id'])) {
                 return Valid::addErrors([], 'class_course', 'class_course_not_exist');
@@ -209,8 +210,8 @@ class ClassTaskService
                 return Valid::addErrors([], 'class_start_time', 'class_start_time_conflict');
             }
         }
-        SimpleLogger::error('mmm444',[$cts,$lessonNum]);
-        return [$cts,$lessonNum];
+        $cts['lesson_num'] = $lessonNum;
+        return $cts;
     }
 
 

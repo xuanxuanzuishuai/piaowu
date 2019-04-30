@@ -69,7 +69,7 @@ class STClass extends ControllerBase
             return $response->withJson($result, 200);
         }
 
-        list($cts, $lessonNum) = ClassTaskService::checkCTs($params['cts']);
+        $cts = ClassTaskService::checkCTs($params['cts']);
         if (!empty($cts['code']) && $cts['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($cts, StatusCode::HTTP_OK);
         }
@@ -86,7 +86,7 @@ class STClass extends ControllerBase
                 return $response->withJson($result, StatusCode::HTTP_OK);
             }
         }
-        $stc['lesson_num'] = $lessonNum;
+        $stc['lesson_num'] = $cts['lesson_num'];
         $stc['name'] = $params['name'];
         $stc['campus_id'] = $params['campus_id'];
         $stc['class_lowest'] = $params['class_lowest'];
@@ -174,12 +174,12 @@ class STClass extends ControllerBase
         $newStc['finish_num'] = 0;
 
 
-        list($cts, $lessonNum) = ClassTaskService::checkCTs($params['cts'], $newStc['id']);
+        $cts = ClassTaskService::checkCTs($params['cts'], $newStc['id']);
 
         if (!empty($cts['code']) && $cts['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($cts, StatusCode::HTTP_OK);
         }
-        $newStc['lesson_num'] = $lessonNum;
+        $newStc['lesson_num'] = $cts['lesson_num'];
 
         $studentIds = $ssuIds = $stuIds = [];
         if (!empty($class['students'])) {
@@ -211,7 +211,6 @@ class STClass extends ControllerBase
         $db = MysqlDB::getDB();
         $db->beginTransaction();
         STCLassService::modifyClass($newStc);
-        SimpleLogger::error('mmm222',[$newStc]);
         if ($newStc['status'] == ClassTaskModel::STATUS_CANCEL) {
             ClassUserService::updateCUStatus(['class_id' => $class['id']], ClassUserModel::STATUS_CANCEL);
             ClassTaskService::updateCTStatus(['class_id' => $class['id']], ClassTaskModel::STATUS_CANCEL);
@@ -232,11 +231,8 @@ class STClass extends ControllerBase
                     ClassUserService::bindCUs($class['id'], [ClassUserModel::USER_ROLE_T => $params['teachers']]);
                 }
             }
-            $res = ClassTaskService::updateCTStatus(['class_id' => $class['id']], ClassTaskModel::STATUS_CANCEL);
-            SimpleLogger::error('mmm',[$res]);
-            $ret = ClassTaskService::addCTs($class['id'], $cts);
-            SimpleLogger::error('mmm1111',[$ret]);
-
+            ClassTaskService::updateCTStatus(['class_id' => $class['id']], ClassTaskModel::STATUS_CANCEL);
+            ClassTaskService::addCTs($class['id'], $cts);
         }
         $db->commit();
         $stc = STClassService::getSTClassDetail($newStc['id']);
@@ -485,8 +481,7 @@ class STClass extends ControllerBase
                 }
 
                 for ($i = 0; $i < $params['num']; $i++) {
-                    SimpleLogger::error('errr', [$i, $newCts]);
-                    list($cts, $lessonNum) = ClassTaskService::checkCTs($newCts);
+                    $cts = ClassTaskService::checkCTs($newCts);
                     if (!empty($cts['code']) && $cts['code'] == Valid::CODE_PARAMS_ERROR) {
                         $db->rollBack();
                         return $response->withJson($cts, StatusCode::HTTP_OK);
@@ -496,6 +491,7 @@ class STClass extends ControllerBase
                         $db->rollBack();
                         return $response->withJson(Valid::addErrors(['data' => ['result' => $class], 'code' => 1], 'class', 'class_copy_failure'), StatusCode::HTTP_OK);
                     }
+                    unset($cts['lesson_num']);
                     $newCts = $cts;
                     foreach ($newCts as $key => $newCt) {
                         $newCt['expire_start_date'] = $newCt['expire_end_date'];
