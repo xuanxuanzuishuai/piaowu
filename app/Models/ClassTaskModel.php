@@ -138,7 +138,6 @@ class ClassTaskModel extends Model
             'ct.status',
             'ct.weekday',
             'ct.org_id',
-            'ct.real_schedule_id',
             'c.name (course_name)',
             'c.duration',
             'c.type (course_type)',
@@ -251,7 +250,6 @@ class ClassTaskModel extends Model
             'ct.org_id',
             'ct.expire_start_date',
             'ct.expire_end_date',
-            'ct.real_schedule_id',
             'c.name (course_name)',
             'cr.name (classroom_name)'
 
