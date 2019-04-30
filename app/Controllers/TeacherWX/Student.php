@@ -33,6 +33,7 @@ class Student extends ControllerBase
         }
 
         $user_id = $this->ci['user_info']['user_id'];
+//        $user_id = 13150;
         $result = TeacherStudentModel::getStudents($user_id);
 
         $data = [];

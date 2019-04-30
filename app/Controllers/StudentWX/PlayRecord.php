@@ -20,7 +20,8 @@ use App\Services\PlayRecordService;
 class PlayRecord extends ControllerBase
 {
 
-    /** 获取练琴日报
+    /**
+     * 获取练琴日报
      * @param Request $request
      * @param Response $response
      * @return Response
@@ -42,7 +43,6 @@ class PlayRecord extends ControllerBase
         }
 
         $user_id = $this->ci['user_info']['user_id'];
-//        $user_id = 22;
         $result = PlayRecordService::getDayRecordReport($user_id, $params["date"]);
 
         return $response->withJson([
@@ -51,7 +51,8 @@ class PlayRecord extends ControllerBase
         ], StatusCode::HTTP_OK);
     }
 
-    /** 分享报告页面
+    /**
+     * 分享报告页面
      * @param Request $request
      * @param Response $response
      * @return Response
@@ -84,7 +85,8 @@ class PlayRecord extends ControllerBase
         ], StatusCode::HTTP_OK);
     }
 
-    /** 精彩回放
+    /**
+     * 精彩回放
      * @param Request $request
      * @param Response $response
      * @return Response
@@ -115,7 +117,8 @@ class PlayRecord extends ControllerBase
         ], StatusCode::HTTP_OK);
     }
 
-    /** 获取练琴记录
+    /**
+     * 获取练琴记录
      * @param Request $request
      * @param Response $response
      * @return Response
@@ -137,12 +140,13 @@ class PlayRecord extends ControllerBase
         }
 
         $user_id = $this->ci['user_info']['user_id'];
-//        $user_id = 22;
-        $result = PlayRecordService::getDayRecordReport($user_id, $params["date"]);
+//        $user_id = 111;
+        $result = PlayRecordService::getDayPlayRecordStatistic($user_id, $params["date"]);
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => $result
         ], StatusCode::HTTP_OK);
     }
+
 }

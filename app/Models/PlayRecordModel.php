@@ -45,7 +45,8 @@ class PlayRecordModel extends Model
         return $result;
     }
 
-    /** 获取学生课程报告
+    /**
+     * 获取学生课程报告
      * @param $student_id
      * @param $start_time
      * @param $end_time
@@ -69,6 +70,29 @@ class PlayRecordModel extends Model
             group by 
               lesson_id, lesson_type";
         $map = [":student_id" => $student_id, ":start_time" => $start_time, ":end_time" => $end_time];
+        $db = MysqlDB::getDB();
+        $result = $db->queryAll($sql, $map);
+        return $result;
+    }
+
+    /**
+     *
+     * @param $student_id
+     * @param $start_time
+     * @param $end_time
+     * @return array|null
+     */
+    public static function getHomeworkByPlayRecord($student_id, $start_time, $end_time){
+        $sql = "select hc.task_id as task_id, ht.lesson_id as lesson_id from " .
+            self::$table . " as pr left join " . HomeworkCompleteModel::$table .
+            " as hc on pr.id = hc.play_record_id left join " . HomeworkTaskModel::$table .
+            " as ht on hc.task_id = ht.id where pr.student_id=:student_id and pr.created_time>=:start_time 
+            and pr.created_time <= :end_time and pr.lesson_type = " . self::TYPE_AI . " order by ht.id asc" ;
+        $map = [
+            ":student_id" => $student_id,
+            ":start_time" => $start_time,
+            ":end_time" => $end_time
+        ];
         $db = MysqlDB::getDB();
         $result = $db->queryAll($sql, $map);
         return $result;
@@ -235,7 +259,21 @@ class PlayRecordModel extends Model
             $fields = "count(1) as play_count, max(pr.score) as max_score, " .
                 "sum(pr.duration) as duration ";
         } else{
-            $fields = "pr.duration, pr.score, pr.created_time ";
+            $fields = "
+            pr.duration as duration, 
+            pr.score as score, 
+            pr.created_time as created_time, 
+            pr.lesson_id as lesson_id, 
+            pr.collection_id as collection_id, 
+            pr.student_id as student_id,
+            pr.schedule_id as schedule_id,
+            pr.category_id as category_id,
+            pr.lesson_type as lesson_type,
+            pr.lesson_sub_id as lesson_sub_id,
+            pr.data as data,
+            pr.midi as midi,
+            pr.ai_record_id as ai_record_id,
+            if(hc.id is null, 0, 1) as complete ";
         }
 
         $map = [
@@ -246,13 +284,12 @@ class PlayRecordModel extends Model
             "homework_id" => $homeworkId
         ];
         $sql = "select " . $fields . " from " . self::$table . " as pr left join " . HomeworkCompleteModel::$table .
-            " as hc on hc.play_record_id = pr.id left join " . HomeworkTaskModel::$table .
-            " as ht on ht.id=hc.task_id " . "left join " . HomeworkModel::$table . " as h on h.id = ht.homework_id 
-            where pr.created_time>=:start_time and pr.created_time <= :end_time 
-            and pr.lesson_id=:lesson_id and hc.task_id=:task_id and hc.homework_id=:homework_id ";
+            " as hc on hc.play_record_id = pr.id 
+            where pr.created_time>=:start_time and pr.created_time <= :end_time and pr.lesson_type=" .self::TYPE_AI .
+            " and pr.lesson_id=:lesson_id and hc.task_id=:task_id and hc.homework_id=:homework_id ";
 
         if (!$statistic){
-            $sql = $sql . " order by h.created_time desc ";
+            $sql = $sql . " order by pr.created_time desc ";
             if (!empty($page) and !empty($limit)){
                 $sql = $sql . " limit :limit offset :offset";
                 $map["limit"] = $limit;

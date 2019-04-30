@@ -16,6 +16,7 @@ use App\Libs\OpernCenter;
 use Lcobucci\JWT\Signer\Hmac\Sha256;
 use Lcobucci\JWT\Builder;
 use Lcobucci\JWT\Parser;
+use App\Libs\Valid;
 use App\Models\StudentModelForApp;
 
 
@@ -33,7 +34,8 @@ class PlayRecordService
         return (string)$token;
     }
 
-    /** 解析jwt获取信息
+    /**
+     * 解析jwt获取信息
      * @param $token
      * @return array
      */
@@ -48,13 +50,15 @@ class PlayRecordService
         return ["student_id" => $student_id, "date" => $date, "code" => 0];
     }
 
-    /** 学生练琴报告
+    /**
+     * 学生练琴报告
      * @param $student_id
      * @param $start_time
      * @param $end_time
+     * @param $ai_record_id
      * @return array
      */
-    public static function getRecordReport($student_id, $start_time, $end_time) {
+    public static function getRecordReport($student_id, $start_time, $end_time, $ai_record_id=true) {
         $records = PlayRecordModel::getPlayRecordReport($student_id, $start_time, $end_time);
         $student_info = StudentModelForApp::getStudentInfo($student_id, "");
         $result = [
@@ -100,7 +104,6 @@ class PlayRecordService
         foreach ($statistics as $key => $row) {
             $score[$key] = $row['max_score'];
         }
-
         array_multisort($score, SORT_DESC, $statistics);
         $result["max_score"] = $statistics[0]["max_score"];
 
@@ -140,9 +143,11 @@ class PlayRecordService
 
             $statistics[$i]["lesson_name"] = $lesson_info[$cur_lesson_id]["lesson_name"];
             $statistics[$i]["collection_name"] = $lesson_info[$cur_lesson_id]["collection_name"];
-            $ai_record_info = PlayRecordModel::getWonderfulAIRecordId($cur_lesson_id, $student_id, $start_time, $end_time);
-            if (!empty($ai_record_info and $ai_record_info["score"] >= 90)){
-                $statistics[$i]["ai_record_id"] = $ai_record_info["ai_record_id"];
+            if ($ai_record_id){
+                $ai_record_info = PlayRecordModel::getWonderfulAIRecordId($cur_lesson_id, $student_id, $start_time, $end_time);
+                if (!empty($ai_record_info and $ai_record_info["score"] >= 90)){
+                    $statistics[$i]["ai_record_id"] = $ai_record_info["ai_record_id"];
+                }
             }
         }
 
@@ -160,7 +165,46 @@ class PlayRecordService
 
     }
 
-    /** 学生练琴日报
+    public static function getPlayRecordStatistic($student_id, $start_time, $end_time){
+        $report = self::getRecordReport($student_id, $start_time, $end_time, false);
+        $statistics = $report["report_list"];
+        $task_lessons = PlayRecordModel::getHomeworkByPlayRecord($student_id, $start_time, $end_time);
+
+        // 保存lesson_id和task_id的映射关系
+        $lesson_2_task_map = [];
+        foreach ($task_lessons as $value){
+            $lesson_2_task_map[$value["lesson_id"]] = $value["task_id"];
+        }
+
+        $homework_play_list = [];
+        $no_homework_play_list = [];
+        foreach ($statistics as $value){
+            $lesson_id = $value["lesson_id"];
+            if (array_key_exists($lesson_id, $lesson_2_task_map)){
+                $value["task_id"] = $lesson_2_task_map[$lesson_id];
+                array_push($homework_play_list, $value);
+            } else {
+                array_push($no_homework_play_list, $value);
+            }
+        }
+
+        $report["report_list"] = $homework_play_list + $no_homework_play_list;
+        return $report;
+    }
+
+    public static function getDayPlayRecordStatistic($student_id, $date=null){
+        if (empty($date)){
+            $date = "today";
+        }
+        $start_time = strtotime($date);
+        $end_time = $start_time + 86399;
+        $result = self::getPlayRecordStatistic($student_id, $start_time, $end_time);
+        $result["date"] = date("Y年m月d日", $start_time);
+        return $result;
+    }
+
+    /**
+     * 学生练琴日报
      * @param $student_id
      * @param null $date
      * @return array

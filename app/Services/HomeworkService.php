@@ -156,41 +156,32 @@ class HomeworkService
     /**
      * 某条作业的练习纪录
      * @param int $studentId 学生ID
-     * @param int $lessonId  课程ID(曲谱ID)
+     * @param int $taskId
+     * @param int $teacherId
      * @return mixed
      */
-    public static function getStudentHomeworkPractice($studentId, $taskId){
+    public static function getStudentHomeworkPractice($studentId, $taskId, $teacherId=null){
+
         // 获取作业
         $where = [
-            HomeworkModel::$table . ".student_id" => $studentId,
             HomeworkTaskModel::$table . ".id" => $taskId
         ];
+
+        if (!empty($studentId)){
+            $where[HomeworkModel::$table . ".student_id"] = $studentId;
+        }
+        if (!empty($teacherId)){
+            $where[HomeworkModel::$table . ".teacher_id"] = $teacherId;
+        }
         $homework = HomeworkModel::getHomeworkList($where);
         if(empty($homework)){
             return [null, null];
         }
         $homework = $homework[0];
-        // 获取达成作业子任务的练琴记录
-        $playRecordMeetRequiremnet = HomeworkCompleteModel::getPlayRecordIdByTaskId($taskId);
-        $playRecordMeetRequiremnetIds = array_column($playRecordMeetRequiremnet, 'play_record_id');
 
-        // 全部练习纪录
-        $playRecords = PlayRecordModel::getPlayRecordByLessonId($homework['lesson_id'],
-            $studentId, PlayRecordModel::TYPE_AI);
-        $plays = [];
-        list($start, $end) = [$homework['created_time'], $homework['end_time']];
-        foreach ($playRecords as $play){
-            $play_time = $play['created_time'];
-            if ( $play_time < $start || $play_time > $end){
-                continue;
-            }
-            if(in_array($play['id'] , $playRecordMeetRequiremnetIds)){
-                $play['complete'] = 1;
-            }else{
-                $play['complete'] = 0;
-            }
-            array_push($plays, $play);
-        }
+        $plays = PlayRecordModel::getPlayRecordListByHomework($homework['id'], $taskId, $homework["lesson_id"],
+            $homework['created_time'], $homework['end_time']);
+
         return [$homework, $plays];
     }
 

@@ -11,6 +11,7 @@ namespace App\Controllers\StudentWX;
 use App\Controllers\ControllerBase;
 use App\Libs\OpernCenter;
 use App\Libs\Valid;
+use App\Models\ScheduleModelForApp;
 use App\Services\HomeworkService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -101,6 +102,51 @@ class Schedule extends ControllerBase
             $data["student_name"] = $student_name;
         }
 
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $data
+        ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * 获取上课记录
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function scheduleList(Request $request, Response $response){
+        $rules = [
+            [
+                'key' => 'page',
+                'type' => 'integer',
+                'error_code' => 'page_must_be_integer'
+            ],
+            [
+                'key' => 'limit',
+                'type' => 'integer',
+                'error_code' => 'limit_must_be_integer'
+            ]
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        if (empty($params["page"])){
+            $params["page"] = 1;
+        }
+
+        if (empty($params["limit"])){
+            $params["limit"] = 10;
+        }
+        $user_id = $this->ci['user_info']['user_id'];
+//        $user_id = 80;
+
+        $data = ScheduleExtendModel::getList([
+            "student_id" => $user_id,
+            "schedule_status" => ScheduleModelForApp::STATUS_FINISH
+        ], $params["page"], $params["limit"]);
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => $data

@@ -14,11 +14,14 @@ use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Models\AppConfigModel;
+use App\Models\HomeworkModel;
 use App\Models\PlayRecordModel;
 use App\Services\HomeworkService;
 use App\Libs\OpernCenter;
 use App\Models\HomeworkTaskModel;
+use Predis\Command\Redis\SINTER;
 use Slim\Http\Request;
+use App\Services\OpernService;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
 
@@ -82,7 +85,8 @@ class HomeWork extends ControllerBase
 
     }
 
-    /** 获取最近的教程
+    /**
+     * 获取最近的教程
      * @param Request $request
      * @param Response $response
      * @return Response
@@ -135,7 +139,8 @@ class HomeWork extends ControllerBase
         ], StatusCode::HTTP_OK);
     }
 
-    /** 获取最近的课程
+    /**
+     * 获取最近的课程
      * @param Request $request
      * @param Response $response
      * @return Response
@@ -187,7 +192,8 @@ class HomeWork extends ControllerBase
         ], StatusCode::HTTP_OK);
     }
 
-    /** 模糊查询合集
+    /**
+     * 模糊查询合集
      * @param Request $request
      * @param Response $response
      * @return Response
@@ -248,7 +254,8 @@ class HomeWork extends ControllerBase
         ], StatusCode::HTTP_OK);
     }
 
-    /** 模糊查询课程
+    /**
+     * 模糊查询课程
      * @param Request $request
      * @param Response $response
      * @return Response
@@ -381,8 +388,8 @@ class HomeWork extends ControllerBase
         ], StatusCode::HTTP_OK);
     }
 
-
-    /** 作业练习记录
+    /**
+     * 作业练习记录
      * @param Request $request
      * @param Response $response
      * @return Response
@@ -431,8 +438,6 @@ class HomeWork extends ControllerBase
         $temp = [];
         $current_time = time();
         foreach ($data as $homework){
-            $baseline = json_decode($homework['baseline'], true);
-
             // 以homework为单位聚合task
             $homeworkId = $homework['id'];
             $task = [
@@ -440,10 +445,6 @@ class HomeWork extends ControllerBase
                 'lesson_id' => $homework['lesson_id'],
                 'complete' => $homework['complete'],
                 'lesson_name' => $homework['lesson_name'],
-                'score_detail' => [
-                    'pitch' => ['high' => 0, 'baseline' => $baseline['pitch']],
-                    'rhythm' => ['high' => 0, 'baseline' => $baseline['rhythm']]
-                ],
                 'duration' => 0,
                 'play_count' => 0,
                 'max_score' => 0,
@@ -451,20 +452,15 @@ class HomeWork extends ControllerBase
 
             $playRecordStatistic = PlayRecordModel::getPlayRecordListByHomework($homeworkId, $homework['task_id'], $homework['lesson_id'],
                 $homework['created_time'], $homework['end_time'], true);
-
             $task["duration"] = $playRecordStatistic["duration"];
             $task["play_count"] = $playRecordStatistic["play_count"];
             $task["max_score"] = $playRecordStatistic["max_score"];
-
 
             if(array_key_exists($homeworkId, $temp)){
                 array_push($temp[$homeworkId]['tasks'], $task);
             }else{
                 $temp[$homeworkId] = [
-                    'teacher_name' => $homework['teacher_name'],
-                    'start_time' => $homework['created_time'],
                     'start_date' => date("Y-m-d", $homework['created_time']),
-                    'end_time' => $homework['end_time'],
                     'end_date' => date("Y-m-d", $homework['end_time']),
                     'homework_id' => $homework['id'],
                     'tasks' => [$task],
@@ -483,5 +479,80 @@ class HomeWork extends ControllerBase
             'code' => Valid::CODE_SUCCESS,
             'data' => $returnData
         ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * 测评成绩单
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getTaskDetail(Request $request, Response $response){
+        $rules = [
+            [
+                'key' => 'task_id',
+                'type' => 'required',
+                'error_code' => 'task_id_is_required'
+            ],
+            [
+                'key' => 'task_id',
+                'type' => 'integer',
+                'error_code' => 'task_id_must_be_integer'
+            ]
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $user_id = $this->ci['user_info']['user_id'];
+//        $user_id = null;
+
+        list($homework, $play_record) = HomeworkService::getStudentHomeworkPractice(null, $params['task_id'], $user_id);
+        if(empty($homework)){
+            $errors = Valid::addAppErrors([], "homework_not_found");
+            return $response->withJson($errors, StatusCode::HTTP_OK);
+        }
+        $ret = [
+            "lesson_name" => $homework["lesson_name"],
+            "baseline" => $homework["baseline"],
+        ];
+        $format_record = [];
+        $max_score_index_map = [];
+        foreach ($play_record as $item) {
+            $create_date = date("Y-m-d", $item["created_time"]);
+
+            if ($item["complete"]){
+                $item["tags"] = ["达成要求"];
+            } else{
+                $item["tags"] = [];
+            }
+
+            $item["created_time"] = date("Y-m-d H:i", $item["created_time"]);
+
+            if(array_key_exists($create_date, $format_record)){
+                // 更新最大得分index
+                if ($item["score"] > $format_record[$create_date]["max_score"]){
+                    $max_score_index_map[$create_date] = sizeof($format_record[$create_date]['records']);
+                }
+                array_push($format_record[$create_date]['records'], $item);
+            }else{
+                $format_record[$create_date] = [
+                    'create_date' => $create_date,
+                    'records' => [$item],
+                    'max_score' => $item["score"]
+                ];
+                $max_score_index_map[$create_date] = 0;
+            }
+        }
+
+        foreach ($max_score_index_map as $date => $index){
+            array_push($format_record[$date]["records"][$index]["tags"], "当日最高");
+        }
+        $ret["records"] = array_values($format_record);
+
+        return $response->withJson(['code'=>0, 'data'=>$ret], StatusCode::HTTP_OK);
     }
 }
