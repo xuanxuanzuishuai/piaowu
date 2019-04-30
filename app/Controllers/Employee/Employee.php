@@ -446,7 +446,7 @@ class Employee extends ControllerBase
             return $response->withJson(Valid::addErrors([], 'employee', 'students_can_not_be_empty'));
         }
 
-        $roleId = DictService::getKeyValue(Constants::DICT_TYPE_ROLE_ID, Constants::DICT_KEY_CODE_CA_ROLE_ID_CODE);
+        $roleId = DictService::getKeyValue(Constants::DICT_TYPE_ROLE_ID, Constants::DICT_KEY_CODE_CC_ROLE_ID_CODE_ORG);
         if(empty($roleId)) {
             return $response->withJson(Valid::addErrors([], 'employee', 'cc_role_not_exist'));
         }
@@ -460,7 +460,7 @@ class Employee extends ControllerBase
         ]);
 
         if(empty($employee)) {
-            return $response->withJson(Valid::addErrors([], 'employee', 'employee_not_exist'));
+            return $response->withJson(Valid::addErrors([], 'employee', 'cc_not_exist'));
         }
 
         $records = StudentModel::selectOrgStudentsIn($orgId, $studentIds);
