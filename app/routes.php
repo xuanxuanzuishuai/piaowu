@@ -522,18 +522,12 @@ $arr = array(
         'call'    => Bill::class . ':add',
         'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class]
     ],
-    //机构查看订单详情
-    '/bill/bill/detail' => [
-        'method'  => ['get'],
-        'call'    => Bill::class . ':detail',
-        'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class]
-    ],
-    //机构修改订单
-    '/bill/bill/modify' => [
+    //机构废除订单
+    '/bill/bill/disable' => [
         'method'  => ['post'],
-        'call'    => Bill::class . ':modify',
+        'call'    => Bill::class . ':disable',
         'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class]
-    ],
+    ]
 );
 
 /** @var App $app */

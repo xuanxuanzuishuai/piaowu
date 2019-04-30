@@ -13,6 +13,12 @@ use App\Libs\MysqlDB;
 
 class BillModel extends Model
 {
+    const NOT_DISABLED = 0; //废除
+    const IS_DISABLED = 1; //正常
+
+    const PAY_STATUS_UNPAID = 1; //未支付
+    const PAY_STATUS_PAID = 2; //已支付
+
     public static $table = 'bill';
 
     public static function updateBill($id, $orgId, $data)
@@ -53,7 +59,7 @@ class BillModel extends Model
 
         $limitWhere = array_merge($where, [
             'LIMIT' => [($page-1) * $count, $count],
-            'ORDER' => ['b.create_time' => 'DESC'],
+            'ORDER' => ['b.is_disabled' => 'ASC','b.create_time' => 'DESC'],
         ]);
 
         $db = MysqlDB::getDB();
@@ -62,10 +68,12 @@ class BillModel extends Model
             [
                 '[>]' . EmployeeModel::$table . '(e)' => ['b.operator_id' => 'id'],
                 '[>]' . StudentModel::$table . '(s)' => ['b.student_id' => 'id'],
+                '[><]'. OrganizationModel::$table . '(o)' => ['b.org_id' => 'id']
             ],
             [
             'e.name(employee_name)',
             's.name(student_name)',
+            'o.name(org_name)',
             'b.id',
             'b.org_id',
             'b.student_id',
@@ -79,6 +87,7 @@ class BillModel extends Model
             'b.end_time',
             'b.update_time',
             'b.create_time',
+            'b.is_disabled',
         ], $limitWhere);
 
         $total = $db->count(self::$table . '(b)' , $where);
@@ -107,6 +116,7 @@ class BillModel extends Model
                 'b.end_time',
                 'b.update_time',
                 'b.create_time',
+                'b.is_disabled',
             ],
             [
                 'b.id'     => $id,

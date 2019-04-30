@@ -225,7 +225,10 @@ class EmployeeService
             return $userId;
         }
 
-        EmployeeModel::updateEmployee($userId, $update);
+        $success = EmployeeModel::updateEmployee($userId, $update);
+        if(!$success) {
+            return false;
+        }
 
         return $userId;
     }

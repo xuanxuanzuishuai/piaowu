@@ -13,6 +13,7 @@ use App\Libs\Constants;
 use App\Libs\Dict;
 use App\Libs\MysqlDB;
 use App\Libs\Valid;
+use App\Models\EmployeeModel;
 use App\Models\OrgAccountModel;
 use App\Models\OrganizationModel;
 use App\Models\StudentOrgModel;
@@ -195,6 +196,13 @@ class Org extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
+        if(!empty($params['parent_id'])) {
+            $parent = OrganizationModel::getById($params['parent_id']);
+            if(empty($parent)) {
+                return $response->withJson(Valid::addErrors([], 'org', 'parent_org_not_exist'));
+            }
+        }
+
         $now = time();
         $params['update_time'] = $now;
         $params['operator_id'] = $this->getEmployeeId();
@@ -229,6 +237,12 @@ class Org extends ControllerBase
             $principalRoleId = Dict::getPrincipalRoleId();
             if(empty($principalRoleId)) {
                 return $response->withJson(Valid::addErrors([], 'org', 'principal_role_id_is_empty'));
+            }
+
+            //判断手机号是否存在
+            $employee = EmployeeModel::getRecord(['mobile' => $params['mobile']], [], false);
+            if(!empty($employee)) {
+                return $response->withJson(Valid::addErrors([], 'org', 'mobile_has_exist'));
             }
 
             $now = time();
@@ -291,9 +305,13 @@ class Org extends ControllerBase
                 'pwd'        => $params['mobile'], //校长默认密码是手机号
             ];
 
-            $employeeId = EmployeeService::insertOrUpdateEmployee($employeeData);
+            $employeeIdOrErr = EmployeeService::insertOrUpdateEmployee($employeeData);
 
-            if (empty($employeeId)) {
+            if (is_array($employeeIdOrErr)) {
+                $db->rollBack();
+                return $response->withJson($employeeIdOrErr);
+            }
+            if (empty($employeeIdOrErr)) {
                 $db->rollBack();
                 return $response->withJson(Valid::addErrors([], 'org', 'save_employee_fail'));
             }

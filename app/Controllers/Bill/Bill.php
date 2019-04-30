@@ -10,8 +10,11 @@ namespace App\Controllers\Bill;
 
 
 use App\Controllers\ControllerBase;
+use App\Libs\MysqlDB;
 use App\Models\BillModel;
+use App\Models\StudentAccountModel;
 use App\Services\BillService;
+use App\Services\StudentAccountService;
 use App\Services\StudentService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -24,6 +27,68 @@ use App\Libs\Valid;
  */
 class Bill extends ControllerBase
 {
+    public function disable(Request $request, Response $response, $args)
+    {
+        $rules = [
+            [
+                'key'        => 'id',
+                'type'       => 'required',
+                'error_code' => 'id_is_required',
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $id = $params['id'];
+        global $orgId;
+
+        $record = BillModel::getBillByOrgAndId($orgId, $id);
+        if(empty($record)) {
+            return $response->withJson(Valid::addErrors([], 'bill', 'bill_not_exist'));
+        }
+
+        //已经废除的订单，直接返回
+        if($record['is_disabled'] == BillModel::IS_DISABLED) {
+            return $response->withJson([
+                'code' => Valid::CODE_SUCCESS,
+                'data' => ['affect_rows' => 1]
+            ]);
+        }
+
+        $db = MysqlDB::getDB();
+        $db->beginTransaction();
+
+        $affectRows = BillModel::updateRecord($id, [
+            'is_disabled' => BillModel::IS_DISABLED,
+            'update_time' => time()
+        ],false);
+
+        if($affectRows == 0) {
+            $db->rollBack();
+            return $response->withJson(Valid::addErrors([],'bill', 'update_disabled_fail'));
+        }
+
+        if($record['pay_status'] == BillModel::PAY_STATUS_PAID) {
+            $success = StudentAccountService::abolishSA(
+                $record['student_id'], $record['amount'], 0, $record['operator_id'], $record['remark'], true
+            );
+            if(!$success) {
+                $db->rollBack();
+                return $response->withJson(Valid::addErrors([], 'bill', 'abolish_sa_fail'));
+            }
+        }
+
+        $db->commit();
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => ['affect_rows' => $affectRows],
+        ]);
+    }
+
     public function list(Request $request, Response $response, $args)
     {
         $rules = [
@@ -157,35 +222,6 @@ class Bill extends ControllerBase
         ]);
     }
 
-    public function detail(Request $request, Response $response, $args)
-    {
-        $rules = [
-            [
-                'key'        => 'id',
-                'type'       => 'required',
-                'error_code' => 'id_is_required',
-            ]
-        ];
-        $params = $request->getParams();
-        $result = Valid::validate($params, $rules);
-        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
-            return $response->withJson($result, StatusCode::HTTP_OK);
-        }
-
-        $id = $params['id'];
-        global $orgId;
-
-        $record = BillModel::getBillByOrgAndId($orgId, $id);
-        if(!empty($record)) {
-            $record['amount'] /= 100;
-        }
-
-        return $response->withJson([
-            'code' => Valid::CODE_SUCCESS,
-            'data' => $record,
-        ]);
-    }
-
     public function add(Request $request, Response $response, $args)
     {
         $rules = [
@@ -273,113 +309,33 @@ class Bill extends ControllerBase
             $data[$key] = $params[$key];
         }
 
+        $db = MysqlDB::getDB();
+        $db->beginTransaction();
+
         $lastId = BillModel::insertRecord($data, false);
         if(is_null($lastId)) {
+            $db->rollBack();
             return $response->withJson(Valid::addErrors([], 'bill', 'save_bill_fail'));
         }
+
+        if($params['pay_status'] == BillModel::PAY_STATUS_PAID) {
+            $success = StudentAccountService::addSA(
+                $data['student_id'],
+                [StudentAccountModel::TYPE_CASH => $data['amount']],
+                $this->getEmployeeId(),
+                $data['remark']
+            );
+            if(!$success) {
+                $db->rollBack();
+                return $response->withJson(Valid::addErrors([], 'bill', 'update_student_account_fail'));
+            }
+        }
+
+        $db->commit();
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => ['last_id' => $lastId],
-        ]);
-    }
-
-    public function modify(Request $request, Response $response, $args)
-    {
-        $rules = [
-            [
-                'key'        => 'id',
-                'type'       => 'required',
-                'error_code' => 'id_is_required',
-            ],
-            [
-                'key'        => 'student_id',
-                'type'       => 'required',
-                'error_code' => 'student_id_is_required',
-            ],
-            [
-                'key'        => 'pay_status',
-                'type'       => 'required',
-                'error_code' => 'pay_status_is_required',
-            ],
-            [
-                'key'        => 'amount',
-                'type'       => 'required',
-                'error_code' => 'amount_is_required',
-            ],
-            [
-                'key'        => 'amount',
-                'type'       => 'min',
-                'value'      => 0,
-                'error_code' => 'amount_is_egt_0',
-            ],
-            [
-                'key'        => 'pay_channel',
-                'type'       => 'required',
-                'error_code' => 'pay_channel_is_required',
-            ],
-            [
-                'key'        => 'source',
-                'type'       => 'required',
-                'error_code' => 'source_is_required',
-            ],
-            [
-                'key'        => 'source',
-                'type'       => 'in',
-                'value'      => [1, 2],
-                'error_code' => 'source_must_in_1_2',
-            ],
-            [
-                'key'        => 'remark',
-                'type'       => 'lengthMax',
-                'value'      => 1024,
-                'error_code' => 'remark_must_elt_1024',
-            ],
-            [
-                'key'        => 'trade_no',
-                'type'       => 'lengthMax',
-                'value'      => 50,
-                'error_code' => 'trade_no_must_elt_50',
-            ],
-        ];
-        $params = $request->getParams();
-        $result = Valid::validate($params, $rules);
-        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
-            return $response->withJson($result, StatusCode::HTTP_OK);
-        }
-
-        global $orgId;
-
-        $studentId = $params['student_id'];
-
-        $student = StudentService::getOrgStudent($orgId, $studentId);
-        if(empty($student)) {
-            return $response->withJson(Valid::addErrors([], 'bill', 'student_not_exist'));
-        }
-
-        $columns = [
-            'student_id', 'pay_status', 'remark',
-            'trade_no', 'pay_channel', 'source',
-        ];
-        $data = [
-            'update_time' => time(),
-            'operator_id' => $this->getEmployeeId(),
-            'amount'      => $params['amount'] * 100,
-        ];
-        foreach($columns as $key) {
-            $data[$key] = $params[$key];
-        }
-
-        $id = $params['id'];
-
-        $affectRows = BillModel::updateBill($id, $orgId, $data);
-        if($affectRows == 0) {
-            return $response->withJson(Valid::addErrors([], 'bill', 'update_bill_fail'));
-        }
-
-        return $response->withJson([
-            'code' => Valid::CODE_SUCCESS,
-            'data' => ['affect_rows' => $affectRows],
         ]);
     }
 }

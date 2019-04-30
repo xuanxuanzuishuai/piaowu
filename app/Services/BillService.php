@@ -24,7 +24,8 @@ class BillService
             $r['pay_status']  = DictService::getKeyValue(Constants::DICT_TYPE_BILL_PAY_STATUS, $r['pay_status']);
             $r['pay_channel'] = DictService::getKeyValue(Constants::DICT_TYPE_BILL_PAY_CHANNEL, $r['pay_channel']);
             $r['source']      = DictService::getKeyValue(Constants::DICT_TYPE_BILL_SOURCE, $r['source']);
-            $r['amount'] /= 100;
+            $r['is_disabled'] = DictService::getKeyValue(Constants::DICT_TYPE_BILL_DISABLED, $r['is_disabled']);
+            $r['amount']      /= 100;
         }
         return [$records, $total];
     }

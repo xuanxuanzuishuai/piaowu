@@ -128,6 +128,9 @@ class Constants
      */
     const DICT_TYPE_BILL_SOURCE = "bill_source";
 
+    //订单状态
+    const DICT_TYPE_BILL_DISABLED = "bill_disabled";
+
     //DICT 乐器 type
     const DICT_TYPE_INSTRUMENT = "instrument";
     //DICT 学生等级 type
