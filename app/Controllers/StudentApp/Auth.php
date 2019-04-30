@@ -11,6 +11,7 @@ namespace App\Controllers\StudentApp;
 use App\Controllers\ControllerBase;
 use App\Libs\Valid;
 use App\Models\AppConfigModel;
+use App\Services\CommonServiceForApp;
 use App\Services\StudentServiceForApp;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -145,7 +146,8 @@ class Auth extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $errorCode = StudentServiceForApp::sendValidateCode($params['mobile']);
+        $errorCode = CommonServiceForApp::sendValidateCode($params['mobile'],
+            CommonServiceForApp::SIGN_STUDENT_APP);
         if (!empty($errorCode)) {
             $result = Valid::addAppErrors([], $errorCode);
             return $response->withJson($result, StatusCode::HTTP_OK);

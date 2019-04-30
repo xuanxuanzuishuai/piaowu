@@ -62,4 +62,22 @@ class NewSMS
 
         return self::sendSMS($data);
     }
+
+
+    /**
+     * @param $targetMobile
+     * @param $validateCode
+     * @param string $sign
+     * @return bool
+     */
+
+    public function newSendValidateCode($targetMobile, $msg, $sign)
+    {
+        $data = [
+            'sign_name' => $sign,
+            'phone_number' => $targetMobile,
+            'content' => $msg,
+        ];
+        return self::sendSMS($data);
+    }
 }

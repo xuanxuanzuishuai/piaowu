@@ -1,0 +1,105 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: dahua
+ * Date: 2019/4/29
+ * Time: 16:50
+ */
+
+
+namespace App\Services;
+
+
+use App\Libs\NewSMS;
+use App\Libs\RedisDB;
+use App\Libs\SimpleLogger;
+use App\Models\AppConfigModel;
+
+class CommonServiceForApp
+{
+    const VALIDATE_CODE_CACHE_KEY_PRI = 'v_code_';
+    const VALIDATE_CODE_TIME_CACHE_KEY_PRI = 'v_code_time_';
+    const VALIDATE_CODE_EX = 300;
+    const VALIDATE_CODE_WAIT_TIME = 60;
+
+    const SIGN_TEACHER_APP = '小叶子爱学琴';
+    const SIGN_STUDENT_APP = '小叶子爱练琴';
+    const SIGN_WX_TEACHER_APP = '小叶子爱练琴微信';
+    const SIGN_WX_STUDENT_APP = '小叶子爱学琴微信';
+
+    /**
+     * 发送短信验证码
+     * 有效期5分钟
+     * 重复发送间隔1分钟
+     *
+     * @param string $mobile 手机号
+     * @return null|string
+     */
+    public static function sendValidateCode($mobile, $sign)
+    {
+        $redis = RedisDB::getConn();
+        $sendTimeCacheKey = self::VALIDATE_CODE_TIME_CACHE_KEY_PRI . $mobile;
+        $lastSendTime = $redis->get($sendTimeCacheKey);
+
+        $now = time();
+        if (!empty($lastSendTime) && $now - $lastSendTime <= self::VALIDATE_CODE_WAIT_TIME) {
+            return 'send_validate_code_in_wait_time';
+        }
+
+        $code = (string)rand(1000, 9999);
+        $msg = "您好，本次验证码为：".$code."，有效期为五分钟，可以在60秒后重新获取";
+
+        $sms = new NewSMS(AppConfigModel::get(AppConfigModel::SMS_URL_CACHE_KEY),
+            AppConfigModel::get(AppConfigModel::SMS_API_CACHE_KEY));
+        $success = $sms->newSendValidateCode($mobile, $msg, $sign);
+        if (!$success) {
+            return 'send_validate_code_failure';
+        }
+
+        $redis = RedisDB::getConn();
+        $cacheKey = self::VALIDATE_CODE_CACHE_KEY_PRI . $mobile;
+        $redis->setex($cacheKey, self::VALIDATE_CODE_EX, $code);
+        $redis->setex($sendTimeCacheKey, self::VALIDATE_CODE_WAIT_TIME, $now);
+
+        return null;
+    }
+
+    /**
+     * 检查手机验证码
+     *
+     * @param string $mobile 手机号
+     * @param int $code 验证码
+     * @return bool
+     */
+    public static function checkValidateCode($mobile, $code)
+    {
+        if (empty($mobile) || empty($code)) {
+            return false;
+        }
+
+        // 超级验证码，可以直接在redis里设置或清空
+        $redis = RedisDB::getConn();
+        $superCodeCache = $redis->get('SUPER_VALIDATE_CODE');
+        if ($superCodeCache == $code) {
+            return true;
+        }
+
+        // 审核专用账号和验证码
+        $reviewStudentMobile = AppConfigModel::get('REVIEW_USER_MOBILE');
+        $reviewValidateCode = AppConfigModel::get('REVIEW_VALIDATE_CODE');
+        if ($mobile == $reviewStudentMobile && $code == $reviewValidateCode) {
+            return true;
+        }
+
+        $cacheKey = self::VALIDATE_CODE_CACHE_KEY_PRI . $mobile;
+        $codeCache = $redis->get($cacheKey);
+
+        if ($codeCache != $code) {
+            return false;
+        }
+
+        $redis->del($cacheKey);
+        return true;
+    }
+
+}

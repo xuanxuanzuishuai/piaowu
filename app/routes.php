@@ -204,6 +204,11 @@ $arr = array(
         'call' => TeacherAppAuth::class . ':tokenLogin',
         'middles' => [AppApi::class]
     ],
+    '/teacher_app/auth/send_verify_code' => [
+        'method' => ['post'],
+        'call' => TeacherAppAuth::class . ':validateCode',
+        'middles' => [AppApi::class]
+    ],
     '/teacher_app/org/get_students' => [
         'method' => ['get'],
         'call' => TeacherAppOrg::class . ':getStudents',
