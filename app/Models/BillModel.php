@@ -38,10 +38,10 @@ class BillModel extends Model
         if(!empty($params['student_id'])) {
             $where['b.student_id'] = $params['student_id'];
         }
-        if(!empty($params['pya_status'])) {
+        if(!empty($params['pay_status'])) {
             $where['b.pay_status'] = $params['pay_status'];
         }
-        if(!empty($params['pya_channel'])) {
+        if(!empty($params['pay_channel'])) {
             $where['b.pay_channel'] = $params['pay_channel'];
         }
         if(!empty($params['source'])) {
