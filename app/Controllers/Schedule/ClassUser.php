@@ -59,7 +59,7 @@ class ClassUser extends ControllerBase
             return $response->withJson(Valid::addErrors([], 'class', 'class_status_invalid'), StatusCode::HTTP_OK);
         }
         foreach($class['students'] as $student) {
-            if(key_exists($student['user_id'],array_keys($params['students']))){
+            if(key_exists($student['user_id'],$params['students'])){
                 unset($params['students'][$student['user_id']]);
             }
         }
