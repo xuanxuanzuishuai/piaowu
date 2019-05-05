@@ -57,7 +57,7 @@ class Classroom extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $classroom = ClassroomService::getById($param["id"]);
+        $classroom = ClassroomService::getClassroomDetail($param["id"]);
         return $response->withJson([
             "code" => Valid::CODE_SUCCESS,
             "data" => [

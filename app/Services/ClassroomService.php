@@ -29,8 +29,8 @@ class ClassroomService
         return $cRId;
     }
 
-    public static function getById($cRId) {
-        return ClassroomModel::getById($cRId);
+    public static function getClassroomDetail($cRId) {
+        return ClassroomModel::getClassroomDetail($cRId);
     }
 
     public static function getClassrooms($params = null) {

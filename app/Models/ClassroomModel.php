@@ -57,4 +57,32 @@ class ClassroomModel extends Model
             'c.name (campus_name)'
         ],$where);
     }
+
+    /**
+     * @param $classroomId
+     * @return array
+     */
+    public static function getClassroomDetail($classroomId) {
+        $where= ['cr.id'=>$classroomId];
+        global $orgId;
+        if($orgId > 0) {
+            $where['cr.org_id'] = $orgId;
+        }
+
+        $db = MysqlDB::getDB();
+        $join = [
+            '[><]'.CampusModel::$table." (c)" => ['cr.campus_id'=>'id']
+        ];
+
+        return $db->get(self::$table." (cr)",$join,[
+            'cr.id',
+            'cr.name',
+            'cr.desc',
+            'cr.pic_url',
+            'cr.campus_id',
+            'c.name (campus_name)'
+        ],$where);
+    }
+
+
 }
