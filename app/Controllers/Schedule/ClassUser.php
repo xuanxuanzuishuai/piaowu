@@ -58,27 +58,33 @@ class ClassUser extends ControllerBase
         if ($class['status'] != STClassModel::STATUS_BEGIN) {
             return $response->withJson(Valid::addErrors([], 'class', 'class_status_invalid'), StatusCode::HTTP_OK);
         }
-        SimpleLogger::error('ssss',[$class['class_tasks']]);
-        $result = ClassUserService::checkStudent($params['students'], $class['class_tasks'],$class['class_highest'] - count($class['students']));
-        if ($result !== true) {
-            return $response->withJson($result, StatusCode::HTTP_OK);
+        foreach($class['students'] as $student) {
+            if(key_exists($student['user_id'],array_keys($params['students']))){
+                unset($params['students'][$student['user_id']]);
+            }
         }
-        $db = MysqlDB::getDB();
-        $db->beginTransaction();
+        if(!empty($params['students'])) {
+            $result = ClassUserService::checkStudent($params['students'], $class['class_tasks'], $class['class_highest'] - count($class['students']));
+            if ($result !== true) {
+                return $response->withJson($result, StatusCode::HTTP_OK);
+            }
+            $db = MysqlDB::getDB();
+            $db->beginTransaction();
 
-        $res = ScheduleService::bindSUs($class['id'], $params['students'], ClassUserModel::USER_ROLE_S);
-        if ($res == false) {
-            $db->rollBack();
-            return $response->withJson(Valid::addErrors([], 'class_bind_student', 'class_bind_student_error'), StatusCode::HTTP_OK);
-        }
-        $res = ClassUserService::bindCUs($class['id'], [ClassUserModel::USER_ROLE_S => $params['students']]);
-        if ($res == false) {
-            $db->rollBack();
-            return $response->withJson(Valid::addErrors([], 'class_bind_student', 'class_bind_student_error'), StatusCode::HTTP_OK);
-        }
+            $res = ScheduleService::bindSUs($class['id'], $params['students'], ClassUserModel::USER_ROLE_S);
+            if ($res == false) {
+                $db->rollBack();
+                return $response->withJson(Valid::addErrors([], 'class_bind_student', 'class_bind_student_error'), StatusCode::HTTP_OK);
+            }
+            $res = ClassUserService::bindCUs($class['id'], [ClassUserModel::USER_ROLE_S => $params['students']]);
+            if ($res == false) {
+                $db->rollBack();
+                return $response->withJson(Valid::addErrors([], 'class_bind_student', 'class_bind_student_error'), StatusCode::HTTP_OK);
+            }
 
-        STClassService::modifyClass(['id'=>$class['id'],'student_num[+]'=>count($params['students'])]);
-        $db->commit();
+            STClassService::modifyClass(['id' => $class['id'], 'student_num[+]' => count($params['students'])]);
+            $db->commit();
+        }
         $st = STClassService::getSTClassDetail($class['id']);
         return $response->withJson([
             'code' => 0,
