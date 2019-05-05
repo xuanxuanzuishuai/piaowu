@@ -6,6 +6,8 @@
 
 namespace App\Models;
 
+use App\Libs\MysqlDB;
+
 class ClassroomModel extends Model
 {
     public static $table = "classroom";
@@ -33,10 +35,26 @@ class ClassroomModel extends Model
      * @return array
      */
     public static function getClassrooms($params = null) {
-        $where = [];
-        if(!empty($params['campus_id'])) {
-            $where['campus_id'] = $params['campus_id'];
+        $where= [];
+        global $orgId;
+        if($orgId > 0) {
+            $where['cr.org_id'] = $orgId;
         }
-        return self::getRecords($where);
+        if(!empty($params['campus_id'])) {
+            $where['cr.campus_id'] = $params['campus_id'];
+        }
+        $db = MysqlDB::getDB();
+        $join = [
+            '[><]'.CampusModel::$table." (c)" => ['cr.campus_id'=>'id']
+        ];
+
+        return $db->select(self::$table." (cr)",$join,[
+            'cr.id',
+            'cr.name',
+            'cr.desc',
+            'cr.pic_url',
+            'cr.campus_id',
+            'c.name (campus_name)'
+        ],$where);
     }
 }
