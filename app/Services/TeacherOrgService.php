@@ -36,15 +36,15 @@ class TeacherOrgService
     /**
      * @param $org_id
      * @param $teacher_id
-     * @return int|null|void
+     * @return array
      */
     public static function boundTeacher($org_id, $teacher_id){
         $orgObj = OrganizationModel::getById($org_id);
         if (empty($orgObj)) {
-            return;
+            return ["code" => 1, "error" => "organization_do_not_exist"];
         }
         if ($orgObj["status"] != OrganizationModel::STATUS_NORMAL) {
-            return;
+            return ["code" => 1, "error" => "organization_do_not_exist"];
         }
         $boundInfo = TeacherOrgModel::getBoundInfo($org_id, $teacher_id);
         if (empty($boundInfo)){
@@ -52,5 +52,6 @@ class TeacherOrgService
         } else {
             TeacherOrgModel::updateStatus($org_id, $teacher_id, TeacherOrgModel::STATUS_NORMAL);
         }
+        return ["code" => 0];
     }
 }

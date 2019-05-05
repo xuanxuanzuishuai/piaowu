@@ -18,11 +18,12 @@ class TeacherOrgModel extends Model
     /** 创建绑定关系
      * @param $org_id
      * @param $teacher_id
+     * @return int
      */
     public static function createBoundInfo($org_id, $teacher_id)
     {
         $create_time = time();
-        MysqlDB::getDB()->insertGetID(self::$table, [
+        return MysqlDB::getDB()->insertGetID(self::$table, [
             "org_id"      => $org_id,
             "teacher_id"  => $teacher_id,
             "status"      => 1,

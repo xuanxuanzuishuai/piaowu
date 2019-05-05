@@ -80,6 +80,9 @@ class Teacher extends ControllerBase
             }
 
             $teacher_info = TeacherModelForApp::getTeacherInfo("", $params['mobile']);
+        }else{
+            // 更新名字
+            TeacherModelForApp::updateRecord($teacher_info["id"], ["name" => $params["name"]]);
         }
 
         if (!empty($openId)) {
@@ -88,8 +91,9 @@ class Teacher extends ControllerBase
         }
 
         if (!empty($params["org_id"])) {
-            // 绑定机构
+            // 绑定机构,如果机构作废则不会绑定了
             TeacherOrgService::boundTeacher($params["org_id"], $teacher_info["id"]);
+
         }
         $db->commit();
 

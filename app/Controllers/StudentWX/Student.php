@@ -88,6 +88,8 @@ class Student extends ControllerBase
             }
 
             $student_info = StudentModelForApp::getStudentInfo("", $params['mobile']);
+        } else {
+            StudentModelForApp::updateRecord($student_info["id"], ["name" => $params["name"]]);
         }
 
         // 绑定该用户与微信
