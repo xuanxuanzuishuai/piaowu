@@ -11,6 +11,7 @@ namespace App\Services;
 use App\Libs\APIValid;
 use App\Libs\Constants;
 use App\Libs\Dict;
+use App\Libs\DictConstants;
 use App\Libs\FTP;
 use App\Libs\Qiniu;
 use App\Libs\RedisDB;
@@ -61,7 +62,8 @@ class TeacherService
         $update['teach_style']          = $params['teach_style'] ?? null;
         $update['status']               = empty($params['status']) ? TeacherModel::ENTRY_REGISTER : $params['status'];
 
-        $userCenter = new UserCenter();
+        list($appId, $appSecret) = DictConstants::get(DictConstants::USER_CENTER, ['app_id_dss', 'app_secret_dss']);
+        $userCenter = new UserCenter($appId, $appSecret);
         $auth = true;
 
         $authResult = $userCenter->teacherAuthorization($update['mobile'], $update['name'], '',
@@ -145,7 +147,8 @@ class TeacherService
         $update['teach_style']          = $params['teach_style'] ?? null;
         $update['status']               = empty($params['status']) ? TeacherModel::ENTRY_REGISTER : $params['status'];
 
-        $userCenter = new UserCenter();
+        list($appId, $appSecret) = DictConstants::get(DictConstants::USER_CENTER, ['app_id_dss', 'app_secret_dss']);
+        $userCenter = new UserCenter($appId, $appSecret);
 
         $teacher = TeacherModel::getById($teacherId);
         if (empty($teacher)) {
@@ -984,83 +987,6 @@ class TeacherService
     public static function getTeacherById($teacherId)
     {
         return TeacherModel::getById($teacherId);
-    }
-
-    /**
-     * app 老师注册
-     * @param $params
-     * @return array
-     */
-    public static function register($params)
-    {
-        $app_id = $params['app_id'];
-        unset($params['app_id']);
-        unset($params['referee_id']);
-
-        $params['mobile'] = !empty($params['mobile']) ? trim($params['mobile']) : '';
-        //验证手机号是否已存在，如果已存在，验证app_id是否存在
-        $teacher_info = TeacherModel::getRecordByMobile($params['mobile']);
-        if (!empty($teacher_info["id"])) {
-            $teacherId = $teacher_info['id'];
-            if (TeacherAppExtendService::isTeacherAppIDExist($teacherId, $app_id)) {
-                $result = APIValid::addErrors([], 'teacher_mobile_is_exist');
-                $result['teacher_id'] = $teacherId;
-                return $result;
-            } else {
-                $data = [
-                    'teacher_id' => $teacherId,
-                    'app_id' => $app_id,
-                    'status' => TeacherAppExtendModel::STATUS_NORMAL
-                ];
-                $app_extend = TeacherAppExtendModel::insertRecord($data);
-                if (!$app_extend) {
-                    $result = APIValid::addErrors([], 'teacher_app_extend_add_error');
-                    return $result;
-                }
-            }
-            return [
-                'teacher_id' => $teacherId,
-                'uuid' => $teacher_info['uuid']
-            ];
-        } else {
-            // 用户中心处理
-            $userCenter = new UserCenter();
-            $params['birthday'] = $params['birthday'] ?? '';
-            $params['gender'] = $params['gender'] ?? TeacherModel::GENDER_UNKNOWN;
-            $params['thumb'] = $params['thumb'] ?? '';
-            $authResult = $userCenter->teacherAuthorization($params['mobile'], $params['name'], "", $params['birthday'], $params['gender'], $params['thumb'], false);
-            if (empty($authResult["uuid"])) {
-                return Valid::addErrors([], "user_center", "uc_user_add_failed");
-            }
-            $params['uuid'] = $authResult['uuid'];
-            $params['create_time'] = time();
-
-            $teacher_id = TeacherModel::insertRecord($params);
-            if ($teacher_id == false) {
-                $result = APIValid::addErrors([], 'teacher_add_error');
-                return $result;
-            }
-            //提交所属课程的数据
-            if (!empty($app_id)) {
-                $teacher_product_extend = [
-                    [
-                        'teacher_id' => $teacher_id,
-                        'app_id' => $app_id
-                    ]
-                ];
-                // 注册时不操作时间片，故operator设置为空
-                $app_extend = TeacherAppExtendService::insertOrUpdate($teacher_id,$teacher_product_extend, []);
-                if (!$app_extend) {
-                    $result = APIValid::addErrors([], 'teacher_app_extend_add_error');
-                    return $result;
-                }
-            }
-
-            return [
-                'teacher_id' => $teacher_id,
-                'uuid' => $params['uuid']
-            ];
-        }
     }
 
     /**

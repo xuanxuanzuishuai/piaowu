@@ -42,13 +42,12 @@ class UserCenter
 
     private $hostBaseUrl, $appId, $appSecret;
 
-    public function __construct($appId = "", $appSecret = "")
+    public function __construct($appId, $appSecret)
     {
-        list($hostBaseUrl, $ucAppId, $ucAppSecret) = DictService::getKeyValuesByArray(Constants::DICT_TYPE_SYSTEM_ENV,
-            [Constants::DICT_KEY_UC_HOST_URL, Constants::DICT_KEY_UC_APP_ID, Constants::DICT_KEY_UC_APP_SECRET]);
+        $hostBaseUrl = DictConstants::get(DictConstants::USER_CENTER, "host");
         $this->hostBaseUrl = $hostBaseUrl . '/api';
-        $this->appId = empty($appId) ? $ucAppId : $appId;
-        $this->appSecret = empty($appSecret) ? $ucAppSecret : $appSecret;
+        $this->appId = $appId;
+        $this->appSecret = $appSecret;
     }
 
     private function commonAPI($api,  $data = [], $method = 'POST')

@@ -11,6 +11,7 @@
 namespace App\Services;
 
 use App\Libs\Constants;
+use App\Libs\DictConstants;
 use App\Libs\ResponseError;
 use App\Libs\UserCenter;
 use App\Libs\Util;
@@ -193,7 +194,8 @@ class StudentService
 
         $gender = empty($params['gender']) ? '1' : strval($params['gender']);
 
-        $userCenter = new UserCenter();
+        list($appId, $appSecret) = DictConstants::get(DictConstants::USER_CENTER, ['app_id_dss', 'app_secret_dss']);
+        $userCenter = new UserCenter($appId, $appSecret);
         $updResult = $userCenter->modifyStudent($student['uuid'], $params['name'], $params['birthday'], $gender);
         if (!empty($updResult) && $updResult['code'] != 0){
             return $updResult;
@@ -274,7 +276,8 @@ class StudentService
             $channelLevel = $channel['level'];
         }
         // 用户中心授权
-        $userCenter = new UserCenter();
+        list($appId, $appSecret) = DictConstants::get(DictConstants::USER_CENTER, ['app_id_dss', 'app_secret_dss']);
+        $userCenter = new UserCenter($appId, $appSecret);
         $authResult = $userCenter->studentAuthorization($authAppId, $mobile, $name, $uuid, $birthday, $gender);
         if (empty($authResult["uuid"])) {
             return Valid::addErrors([], "user_center", "uc_user_add_failed");
@@ -415,7 +418,8 @@ class StudentService
         $birthday   = $params['birthday'] ?? '';
         $gender     = $params['gender'] ?? StudentModel::GENDER_UNKNOWN;
 
-        $userCenter = new UserCenter();
+        list($appId, $appSecret) = DictConstants::get(DictConstants::USER_CENTER, ['app_id_dss', 'app_secret_dss']);
+        $userCenter = new UserCenter($appId, $appSecret);
 
         $authResult = $userCenter->studentAuthorization(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
             $params['mobile'], $params['name'], '',$birthday, strval($gender));

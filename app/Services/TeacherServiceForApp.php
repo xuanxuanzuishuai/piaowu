@@ -9,6 +9,7 @@
 namespace App\Services;
 
 
+use App\Libs\DictConstants;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Models\TeacherModelForApp;
@@ -19,7 +20,9 @@ class TeacherServiceForApp
 
     public static function registerTeacherInUserCenter($name, $mobile, $uuid = '', $birthday = '', $gender = '')
     {
-        $userCenter = new UserCenter(UserCenter::AUTH_APP_ID_AIPEILIAN_TEACHER, 'b56a214222a8420e');
+        list($appId, $appSecret) = DictConstants::get(DictConstants::USER_CENTER,
+            ['app_id_teacher', 'app_secret_teacher']);
+        $userCenter = new UserCenter($appId, $appSecret);
         $authResult = $userCenter->teacherAuthorization($mobile, $name, $uuid, $birthday, $gender);
         return $authResult;
     }

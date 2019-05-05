@@ -10,8 +10,8 @@ namespace App\Services;
 
 use App\Libs\Constants;
 use App\Libs\Dict;
+use App\Libs\DictConstants;
 use App\Libs\JWTUtils;
-use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Libs\Util;
@@ -29,7 +29,8 @@ class EmployeeService
     public static function checkUcToken($token){
 
         // 用户中心验证Token及权限
-        $uc = new UserCenter();
+        list($appId, $appSecret) = DictConstants::get(DictConstants::USER_CENTER, ['app_id_dss', 'app_secret_dss']);
+        $uc = new UserCenter($appId, $appSecret);
         $ucData = $uc->CheckToken($token);
         if (empty($ucData['user'])){
             return Valid::addErrors([], 'xyz_token', 'no_privilege');
@@ -98,7 +99,8 @@ class EmployeeService
      */
     public static function changePassword($userId, $newPassword, $oldPassword = ""){
         $employee = EmployeeModel::getById($userId);
-        $userCenter = new UserCenter();
+        list($appId, $appSecret) = DictConstants::get(DictConstants::USER_CENTER, ['app_id_dss', 'app_secret_dss']);
+        $userCenter = new UserCenter($appId, $appSecret);
         $authResult = $userCenter->changePassword($employee['uuid'], $newPassword, $oldPassword);
         if (empty($authResult['code'])){
             EmployeeModel::updateUserPassWord($userId, $newPassword);
@@ -195,7 +197,8 @@ class EmployeeService
             $uuid = $params['uuid'];
         }
 
-        $userCenter = new UserCenter();
+        list($appId, $appSecret) = DictConstants::get(DictConstants::USER_CENTER, ['app_id_dss', 'app_secret_dss']);
+        $userCenter = new UserCenter($appId, $appSecret);
 
         if(empty($uuid)){
             //添加一个employee时，为了防止user center返回冲突的错误，先将login name置为空，拿手机号获取一个uuid
@@ -317,37 +320,6 @@ class EmployeeService
         return $caMap;
     }
 
-
-    /**
-     * 获取员工对应的老师
-     * @param $mobile
-     * @param $name
-     * @param $employeeId
-     * @param $appId
-     * @return mixed
-     */
-    public static function getEmployeeTeacher($mobile, $name, $employeeId, $appId)
-    {
-        $employee = EmployeeModel::getById($employeeId);
-        if (!empty($employee['teacher_id'])) {
-            return $employee['teacher_id'];
-        }
-
-        $data = [
-            'app_id' => $appId,
-            'mobile' => $mobile,
-            'name' => $name
-        ];
-//        // 创建老师
-//        $result = TeacherService::register($data);
-//        if (empty($result['teacher_id'])) {
-//            return null;
-//        }
-//        EmployeeModel::updateEmployee($employeeId, ['teacher_id' => $result['teacher_id']]);
-//        return $result['teacher_id'];
-        return 0;
-    }
-
     /**
      * @param $uuid
      * @return mixed
@@ -359,26 +331,5 @@ class EmployeeService
     public static function getById($employeeId)
     {
         return EmployeeModel::getById($employeeId);
-    }
-
-    /**
-     * 员工认证监课系统
-     * @param $employeeUuid
-     */
-    public static function employeeLiebaoAuthorization($employeeId)
-    {
-        $employee = EmployeeModel::getById($employeeId);
-
-        $redis = RedisDB::getConn(intval($_ENV['REDIS_DB']));
-        $cacheKey = 'App_employee_uuid_' . $employee['uuid'];
-
-        $res = $redis->get($cacheKey);
-        if (empty($res)) {
-            $userCenter = new UserCenter;
-            $authResult = $userCenter->liebaoAuthorization($employee['uuid']);
-            if (empty($authResult['code'])) {
-                $redis->set($cacheKey, json_encode($authResult));
-            }
-        }
     }
 }
