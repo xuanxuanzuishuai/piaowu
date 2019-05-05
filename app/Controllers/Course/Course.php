@@ -33,21 +33,6 @@ class Course extends ControllerBase
         $params = $request->getParams();
         $rules = [
             [
-                'key' => 'level',
-                'type' => 'required',
-                'error_code' => 'level_is_required',
-            ],
-//            [
-//                'key' => 'product_line',
-//                'type' => 'required',
-//                'error_code' => 'product_line_is_required',
-//            ],
-//            [
-//                'key' => 'product_line',
-//                'type' => 'integer',
-//                'error_code' => 'product_line_must_be_integer',
-//            ],
-            [
                 'key' => 'course_type',
                 'type' => 'required',
                 'error_code' => 'course_type_is_required',
@@ -67,16 +52,15 @@ class Course extends ControllerBase
                 'type' => 'required',
                 'error_code' => 'course_oprice_is_required',
             ],
-
             [
                 'key' => 'oprice',
-                'type' => 'numeric',
-                'error_code' => 'course_oprice_must_be_numeric',
+                'type' => 'integer',
+                'error_code' => 'course_oprice_must_be_integer',
             ],
             [
                 'key' => 'oprice',
                 'type' => 'min',
-                'value' => 0.01,
+                'value' => 0,
                 'error_code' => 'oprice_must_be_gt_0',
             ],
             [
@@ -132,7 +116,6 @@ class Course extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-
         $params['operator_id'] = $this->ci['employee']['id'];
 
         // 班型最低人数必须小于等于班型最高人数
@@ -140,6 +123,12 @@ class Course extends ControllerBase
             $errorInfo = Valid::addErrors([], 'class_lowest', 'course_class_lowest_must_be_lt_class_highest');
             return $response->withJson($errorInfo, StatusCode::HTTP_OK);
         }
+
+        //默认就是发布状态
+        $params['status'] = CourseModel::COURSE_STATUS_NORMAL;
+
+        global $orgId;
+        $params['org_id'] = $orgId;
 
         $result = CourseService::addOrEditCourse($params);
         if (!is_numeric($result)) {
@@ -165,19 +154,9 @@ class Course extends ControllerBase
         $params = $request->getParams();
         $rules = [
             [
-                'key' => 'product_line',
-                'type' => 'integer',
-                'error_code' => 'product_line_must_be_integer',
-            ],
-            [
                 'key' => 'instrument',
                 'type' => 'integer',
                 'error_code' => 'instrument_must_be_integer',
-            ],
-            [
-                'key' => 'level',
-                'type' => 'integer',
-                'error_code' => 'course_level_must_be_integer',
             ],
             [
                 'key' => 'duration',
@@ -197,6 +176,7 @@ class Course extends ControllerBase
             $page = -1;
             $count = 20;
         }
+
         list($totalCount, $courseData) = CourseService::getCourseUnitList($page, $count, $params);
 
         return $response->withJson([
@@ -272,21 +252,6 @@ class Course extends ControllerBase
                 'error_code' => 'course_id_must_be_integer',
             ],
             [
-                'key' => 'level',
-                'type' => 'required',
-                'error_code' => 'level_is_required',
-            ],
-            [
-                'key' => 'product_line',
-                'type' => 'required',
-                'error_code' => 'product_line_is_required',
-            ],
-            [
-                'key' => 'product_line',
-                'type' => 'integer',
-                'error_code' => 'product_line_must_be_integer',
-            ],
-            [
                 'key' => 'course_type',
                 'type' => 'required',
                 'error_code' => 'course_type_is_required',
@@ -308,13 +273,13 @@ class Course extends ControllerBase
             ],
             [
                 'key' => 'oprice',
-                'type' => 'numeric',
-                'error_code' => 'course_oprice_must_be_numeric',
+                'type' => 'integer',
+                'error_code' => 'course_oprice_must_be_integer',
             ],
             [
                 'key' => 'oprice',
                 'type' => 'min',
-                'value' => 0.01,
+                'value' => 0,
                 'error_code' => 'oprice_must_be_gt_0',
             ],
             [
@@ -369,29 +334,22 @@ class Course extends ControllerBase
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
+        // 班型最低人数必须小于等于班型最高人数
+        if ($params['class_lowest'] > $params['class_highest']) {
+            $errorInfo = Valid::addErrors([], 'class_lowest', 'course_class_lowest_must_be_lt_class_highest');
+            return $response->withJson($errorInfo, StatusCode::HTTP_OK);
+        }
 
         // 判断是否存在
         $courseDerail = CourseService::getCourseDetailById($params['course_id']);
         if (empty($courseDerail)) {
             return $response->withJson(Valid::addErrors([], 'course_id', 'course_id_not_exist'));
         }
-        // 判断是否未发布
-        $courseStatus = $courseDerail['status'];
-        if ($courseStatus != CourseModel::COURSE_STATUS_WAIT) {
-            return $response->withJson(Valid::addErrors([], 'course_id', 'course_status_must_be_wait'));
-        }
 
         $params['operator_id'] = $this->ci['employee']['id'];
+        global $orgId;
+        $params['org_id'] = $orgId;
 
-        $result = Valid::validate($params, $rules);
-        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
-            return $response->withJson($result, StatusCode::HTTP_OK);
-        }
-        // 班型最低人数必须小于等于班型最高人数
-        if ($params['class_lowest'] > $params['class_highest']) {
-            $errorInfo = Valid::addErrors([], 'class_lowest', 'course_class_lowest_must_be_lt_class_highest');
-            return $response->withJson($errorInfo, StatusCode::HTTP_OK);
-        }
         $result = CourseService::addOrEditCourse($params, $params['course_id']);
         if (!is_numeric($result)) {
             return $response->withJson($result, StatusCode::HTTP_OK);

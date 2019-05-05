@@ -27,11 +27,6 @@ class CourseService
      */
     public static function addOrEditCourse($params, $courseId = null)
     {
-        $appInfo = AppModel::getSingleRecord($params['product_line']);
-        if (empty($appInfo)) {
-            return Valid::addErrors([], 'product_line', 'product_line_not_exists');
-        }
-
         $cTime = time();
         // 课程时长
         $cDuration = (int)DictModel::getKeyValue(Constants::COURSE_DURATION, $params['duration']);
@@ -40,15 +35,14 @@ class CourseService
             'name'          => $params['name'],
             'desc'          => $params['desc'],
             'thumb'         => $params['thumb'],
-            'app_id'        => $params['product_line'],
             'duration'      => $cDuration * 60,
             'type'          => $params['course_type'],
-            'level'         => $params['level'],
             'oprice'        => $params['oprice'] * 100,
             'class_lowest'  => $params['class_lowest'],
             'class_highest' => $params['class_highest'],
             'operator_id'   => $params['operator_id'],
             'num'           => $params['num'],
+            'org_id'        => $params['org_id'],
         ];
         if ($courseId != null) {
             $courseData['update_time'] = $cTime;
@@ -57,9 +51,9 @@ class CourseService
         } else {
             $courseData['create_time'] = $cTime;
             $courseData['update_time'] = $cTime;
-            $courseData['status'] = CourseModel::COURSE_STATUS_WAIT;
+            $courseData['status']      = $params['status'];
             // 添加课程
-            $result = CourseModel::insertRecord($courseData);
+            $result = CourseModel::insertRecord($courseData, false);
         }
         // 错误处理
         if($result == null) {

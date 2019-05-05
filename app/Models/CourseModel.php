@@ -74,7 +74,6 @@ class CourseModel extends Model
             "c.name",
             "c.type(course_type)",
             "c.duration",
-            "c.level",
             "c.oprice",
             "c.class_lowest",
             "c.class_highest",
@@ -148,11 +147,8 @@ class CourseModel extends Model
      * @return array
      */
     public static function courseDataToHumanReadable($params, $isTranslate = true) {
-//        $isTranslate && $params['product_line'] = AppModel::getAppName($params['product_line']);
-//        $isTranslate && $params['instrument'] = DictModel::getKeyValue(Constants::DICT_TYPE_INSTRUMENT, $params['instrument']);
         $isTranslate && $params['course_type'] = DictModel::getKeyValue(Constants::DICT_COURSE_TYPE, $params['course_type']);
         $isTranslate && $params['status'] = DictModel::getKeyValue(Constants::DICT_COURSE_STATUS, $params['status']);
-        $isTranslate && $params['level'] = DictModel::getKeyValue(Constants::DICT_COURSE_LEVEL, $params['level']);
         $params['duration'] = ($params['duration'] / 60).'min';
         $params['class_type'] = $params['class_lowest'].'-'.$params['class_highest'];
         $params['oprice'] = number_format($params['oprice'] / 100, 2);
