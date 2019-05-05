@@ -27,75 +27,76 @@ class AppVersionModel
     const APP_TYPE_TEACHER = 'aiappteacher';
 
     const UC_APP_API_GET_VERSION = '/ajax/app_mgr/api/v1/app_version/version';
-    const APP_VERSION_CACHE_KEY = 'app_version_%s_%s';
-    const APP_VERSION_CACHE_EXPIRE = 3600;
+    const APP_PUBLISH_VERSION_CACHE_KEY = 'app_publish_version_%s_%s';
+    const APP_REVIEW_VERSION_CACHE_KEY = 'app_review_version_%s_%s';
+    const APP_VERSION_CACHE_EXPIRE = 1800;
 
-    public static function getVersionCacheKey($appType, $platformId)
-    {
-        return sprintf(self::APP_VERSION_CACHE_KEY, $appType, $platformId);
-    }
-
-    public static function getVersionApi($appType, $platformId)
-    {
-        return sprintf(self::UC_APP_API_GET_VERSION, $appType, $platformId);
-    }
 
     /**
-     * 获取最新发布版本
+     * 获取App版本数据
+     * @param $cacheKey
      * @param $appType
      * @param $platformId
      * @return array|null
      */
-    public static function getLastVersion($appType, $platformId)
+    public static function getVersionCache($cacheKey, $appType, $platformId)
     {
-        $versionCacheKey = self::getVersionCacheKey($appType, $platformId);
         $redis = RedisDB::getConn();
-        $value = $redis->get($versionCacheKey);
+        $value = $redis->get($cacheKey);
+
         if(empty($value)) {
-            $versionData = self::requestVersionData($appType, $platformId);
-            if (empty($versionData)) {
+            self::fetchVersionData($appType, $platformId);
+            $value = $redis->get($cacheKey);
+
+            if (empty($value)) {
                 return null;
             }
-
-            usort($versionData,function ($va, $vb) {
-                $vaCode = explode('.', $va['version']);
-                $vbCode = explode('.', $vb['version']);
-
-                if ($vaCode[0] ==  $vbCode[0]) {
-                    if ($vaCode[1] == $vbCode[1]) {
-                        if ($vaCode[2] == $vbCode[2]) { return 0;
-                        } else { return $vaCode[2] < $vbCode[2] ? 1 : -1; }
-                    } else { return $vaCode[1] < $vbCode[1] ? 1 : -1; }
-                } else { return $vaCode[0] < $vbCode[0] ? 1 : -1; }
-            });
-
-            $lastVersion = $versionData[0];
-
-            SimpleLogger::info(__FILE__ . __LINE__ . ' [set version cache]', [
-                'key ' => $versionCacheKey,
-                'cache' => $lastVersion,
-            ]);
-            $redis->setex($versionCacheKey, self::APP_VERSION_CACHE_EXPIRE, json_encode($lastVersion));
-        } else {
-            $lastVersion = json_decode($value, true);
         }
-        return $lastVersion;
+
+        $version = json_decode($value, true);
+        return $version;
     }
 
     /**
-     * 从app管理后台获取版本信息
+     * 审核版本
      * @param $appType
      * @param $platformId
-     * @return array
+     * @return array|null
      */
-    public static function requestVersionData($appType, $platformId)
+    public static function getReviewVersion($appType, $platformId)
+    {
+        $cacheKey = sprintf(self::APP_REVIEW_VERSION_CACHE_KEY, $appType, $platformId);
+        return self::getVersionCache($cacheKey, $appType, $platformId);
+    }
+
+    /**
+     * 最新发布版本
+     * @param $appType
+     * @param $platformId
+     * @return array|null
+     */
+    public static function getPublishVersion($appType, $platformId)
+    {
+        $cacheKey = sprintf(self::APP_PUBLISH_VERSION_CACHE_KEY, $appType, $platformId);
+        return self::getVersionCache($cacheKey, $appType, $platformId);
+    }
+
+    /**
+     * 从app管理后台获取版本信息，设置缓存
+     * app_publish_version_aiappstudent_1 AI练琴 android
+     * app_publish_version_aiappstudent_2 AI练琴 ios
+     * app_publish_version_aiappteacher_1 AI学琴 android
+     * app_publish_version_aiappteacher_2 AI学琴 ios
+     * @param $appType
+     * @param $platformId
+     */
+    public static function fetchVersionData($appType, $platformId)
     {
         $client = new Client(['debug' => false]);
         $host = AppConfigModel::get(AppConfigModel::UC_APP_URL_KEY);
         $url = $host . self::UC_APP_API_GET_VERSION;
         $requestData = [
             'query' => ['apptype' => $appType, 'platform' => $platformId],
-//            'headers' => ['Content-Type' => 'application/json']
         ];
 
         $response = $client->request('GET', $url, $requestData);
@@ -114,9 +115,63 @@ class AppVersionModel
             SimpleLogger::info(__FILE__ . ':' . __LINE__ . '[get app version error]', [
                 'errors' => $res['errors'] ?? []
             ]);
-            return [];
+            return ;
         }
 
-        return $res['data']['versions'] ?? [];
+        $versions = $res['data']['versions'];
+
+        if (empty($versions)) {
+            return ;
+        }
+
+        function verCmp($va, $vb) {
+            $vaCode = explode('.', $va['version']);
+            $vbCode = explode('.', $vb['version']);
+
+            if ($vaCode[0] ==  $vbCode[0]) {
+                if ($vaCode[1] == $vbCode[1]) {
+                    if ($vaCode[2] == $vbCode[2]) { return 0;
+                    } else { return $vaCode[2] < $vbCode[2] ? 1 : -1; }
+                } else { return $vaCode[1] < $vbCode[1] ? 1 : -1; }
+            } else { return $vaCode[0] < $vbCode[0] ? 1 : -1; }
+        }
+
+        $publishVerIdx = -1;
+        $reviewVerIdx = -1;
+        foreach ($versions as $idx => $data) {
+            // 查找审核版本(review_status=1)，审核版本只有一个
+            if ($reviewVerIdx < 0 && $data['review_status']) {
+                $reviewVerIdx = $idx;
+            }
+
+            // 在发布版本(status=1)里查找最大版本
+            if ($data['status']) {
+                if ($publishVerIdx < 0) {
+                    $publishVerIdx = $idx;
+                } else {
+                    if (verCmp($data[$publishVerIdx], $data[$idx])) {
+                        $publishVerIdx = $idx;
+                    }
+                }
+            }
+        }
+
+        $redis = RedisDB::getConn();
+        if ($publishVerIdx >= 0) {
+            $publishVer = $versions[$publishVerIdx];
+            $cacheKey = sprintf(self::APP_PUBLISH_VERSION_CACHE_KEY, $appType, $platformId);
+            $redis->setex($cacheKey, self::APP_VERSION_CACHE_EXPIRE, json_encode($publishVer));
+        }
+        if ($reviewVerIdx >= 0) {
+            $reviewVer = $versions[$reviewVerIdx];
+            $cacheKey = sprintf(self::APP_REVIEW_VERSION_CACHE_KEY, $appType, $platformId);
+            $redis->setex($cacheKey, self::APP_VERSION_CACHE_EXPIRE, json_encode($reviewVer));
+        }
+
+
+        SimpleLogger::info(__FILE__ . __LINE__ . ' [set version cache]', [
+            'publish ' => $publishVer ?? [],
+            'review' => $reviewVer ?? [],
+        ]);
     }
 }

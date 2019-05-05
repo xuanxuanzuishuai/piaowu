@@ -28,7 +28,7 @@ class App extends ControllerBase
 
         $platformId = AppVersionService::getPlatformId($this->ci['platform']);
         $lastVersion = AppVersionService::getLastVersion(AppVersionModel::APP_TYPE_STUDENT, $platformId, $this->ci['version']);
-        $hotfix = AppVersionService::getHotfixConfig(AppVersionModel::APP_TYPE_STUDENT, $this->ci['version']);
+        $hotfix = AppVersionService::getHotfixConfig(AppVersionModel::APP_TYPE_STUDENT, $platformId, $this->ci['version']);
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
@@ -43,8 +43,7 @@ class App extends ControllerBase
     {
         Util::unusedParam($request);
 
-        $version = $this->ci['version'];
-        if ($version == AppConfigModel::get('REVIEW_VERSION')) {
+        if ($this->ci['is_review_version']) {
             $url = AppConfigModel::get('REVIEW_GUIDE_URL');
         } else {
             $url = AppConfigModel::get('GUIDE_URL');
@@ -87,32 +86,6 @@ class App extends ControllerBase
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => []
-        ], StatusCode::HTTP_OK);
-    }
-
-    public function oldVersion(Request $request, Response $response)
-    {
-        $params = $request->getParams();
-        $rules = [
-            [
-                'key' => 'platform',
-                'type' => 'required',
-                'error_code' => 'platform_is_required'
-            ],
-        ];
-        $result = Valid::validate($params, $rules);
-        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
-            return $response->withJson($result, StatusCode::HTTP_OK);
-        }
-
-        $platformId = AppVersionService::getPlatformId($params['platform']);
-        $lastVersion = AppVersionService::getLastVersion(AppVersionModel::APP_TYPE_STUDENT, $platformId, '');
-
-        return $response->withJson([
-            'code'=> Valid::CODE_SUCCESS,
-            'data'=> [
-                'version' => $lastVersion
-            ],
         ], StatusCode::HTTP_OK);
     }
 }

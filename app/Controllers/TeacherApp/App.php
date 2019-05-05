@@ -26,7 +26,7 @@ class App extends ControllerBase
 
         $platformId = AppVersionService::getPlatformId($this->ci['platform']);
         $lastVersion = AppVersionService::getLastVersion(AppVersionModel::APP_TYPE_TEACHER, $platformId, $this->ci['version']);
-        $hotfix = AppVersionService::getHotfixConfig(AppVersionModel::APP_TYPE_TEACHER, $this->ci['version']);
+        $hotfix = AppVersionService::getHotfixConfig(AppVersionModel::APP_TYPE_TEACHER, $platformId, $this->ci['version']);
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,

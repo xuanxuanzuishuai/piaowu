@@ -24,6 +24,18 @@ class AppVersionService
     const PLAT_ID_IOS = 2;
 
     /**
+     * 获取审核版本号
+     * @param $appType
+     * @param $platformId
+     * @return string|null
+     */
+    public static function getReviewVersionCode($appType, $platformId)
+    {
+        $v = AppVersionModel::getReviewVersion($appType, $platformId);
+        return $v['version'] ?? null;
+    }
+
+    /**
      * 获取最后一个已发布版本
      * @param $appType
      * @param $platformId
@@ -32,11 +44,12 @@ class AppVersionService
      */
     public static function getLastVersion($appType, $platformId, $version)
     {
-        if ($version == AppConfigModel::get('REVIEW_VERSION')) {
+        $reviewVersion = AppVersionModel::getReviewVersion($appType, $platformId);
+        if ($version == $reviewVersion['version']) {
             return self::defaultLastVersion($version);
         }
 
-        $v = AppVersionModel::getLastVersion($appType, $platformId);
+        $v = AppVersionModel::getPublishVersion($appType, $platformId);
         if (empty($v)) {
             return self::defaultLastVersion($version);
         }
@@ -61,9 +74,10 @@ class AppVersionService
         ];
     }
 
-    public static function getHotfixConfig($appType, $version)
+    public static function getHotfixConfig($appType, $platformId, $version)
     {
-        if ($version == AppConfigModel::get('REVIEW_VERSION')) {
+        $reviewVersion = AppVersionModel::getReviewVersion($appType, $platformId);
+        if ($version == $reviewVersion['version']) {
             return self::defaultHotfixConfig($version);
         }
 

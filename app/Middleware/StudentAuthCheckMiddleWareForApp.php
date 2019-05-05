@@ -11,6 +11,7 @@ namespace App\Middleware;
 use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Models\AppConfigModel;
+use App\Models\AppVersionModel;
 use App\Models\StudentModelForApp;
 use App\Services\AppVersionService;
 use Slim\Http\Request;
@@ -51,8 +52,14 @@ class StudentAuthCheckMiddleWareForApp extends MiddlewareBase
 
         $this->container['student'] = $student;
 
-        $reviewVersion = AppConfigModel::get(AppConfigModel::REVIEW_VERSION);
-        $isReviewVersion = ($this->container['platform'] == AppVersionService::PLAT_IOS) && ($reviewVersion == $this->container['version']);
+        if ($this->container['platform'] == AppVersionService::PLAT_IOS) {
+            $reviewVersion = AppVersionService::getReviewVersionCode(AppVersionModel::APP_TYPE_STUDENT,
+                AppVersionService::getPlatformId(AppVersionService::PLAT_IOS));
+            $isReviewVersion = ($reviewVersion == $this->container['version']);
+        } else {
+            $isReviewVersion = false;
+        }
+
         $this->container['is_review_version'] = $isReviewVersion;
 
         // 内部审核账号，使用审核版本app也可看到所有资源

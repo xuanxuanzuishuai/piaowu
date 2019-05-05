@@ -11,6 +11,7 @@ namespace App\Middleware;
 use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Models\AppConfigModel;
+use App\Models\AppVersionModel;
 use App\Models\OrganizationModelForApp;
 use App\Services\AppVersionService;
 use Slim\Http\Request;
@@ -53,13 +54,18 @@ class OrgAuthCheckMiddleWareForApp extends MiddlewareBase
         $this->container['org'] = $org;
         $this->container['org_account'] = $cache['account'] ?? '';
 
-        $reviewVersion = AppConfigModel::get(AppConfigModel::REVIEW_VERSION_FOR_TEACHER_APP);
-        $isReviewVersion = ($this->container['platform'] == AppVersionService::PLAT_IOS) && ($reviewVersion == $this->container['version']);
+        if ($this->container['platform'] == AppVersionService::PLAT_IOS) {
+            $reviewVersion = AppVersionService::getReviewVersionCode(AppVersionModel::APP_TYPE_TEACHER,
+                AppVersionService::getPlatformId(AppVersionService::PLAT_IOS));
+            $isReviewVersion = ($reviewVersion == $this->container['version']);
+        } else {
+            $isReviewVersion = false;
+        }
         $this->container['is_review_version'] = $isReviewVersion;
 
-        $this->container['opn_pro_ver'] = $this->container['version'];
-        $this->container['opn_is_tester'] = false;
         $this->container['opn_auditing'] = $isReviewVersion ? 1 : 0;
+        $this->container['opn_is_tester'] = false;
+        $this->container['opn_pro_ver'] = $this->container['version'];
         $this->container['opn_publish'] = 1;
 
         $response = $next($request, $response);

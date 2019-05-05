@@ -12,6 +12,7 @@ namespace App\Middleware;
 use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Models\AppConfigModel;
+use App\Models\AppVersionModel;
 use App\Models\OrganizationModelForApp;
 use App\Models\StudentModel;
 use App\Models\StudentModelForApp;
@@ -67,10 +68,6 @@ class OrgTeacherAuthMiddleWareForApp extends MiddlewareBase
         $this->container['teacher'] = $teacher;
         $this->container['student'] = $student;
 
-        $reviewVersion = AppConfigModel::get(AppConfigModel::REVIEW_VERSION);
-        $isReviewVersion = ($this->container['platform'] == AppVersionService::PLAT_IOS) && ($reviewVersion == $this->container['version']);
-        $this->container['is_review_version'] = $isReviewVersion;
-
         // 内部审核账号，使用审核版本app也可看到所有资源
         $reviewTestUsers = AppConfigModel::get('REVIEW_TESTER');
         if (!empty($reviewTestUsers)) {
@@ -81,7 +78,6 @@ class OrgTeacherAuthMiddleWareForApp extends MiddlewareBase
         }
         $this->container['opn_is_tester'] = $isOpnTester;
         $this->container['opn_pro_ver'] = $isOpnTester ? 'tester' : $this->container['version'];
-        $this->container['opn_auditing'] = $isReviewVersion ? 1 : 0;
         $this->container['opn_publish'] = $isOpnTester ? 0 : 1;
 
         $response = $next($request, $response);

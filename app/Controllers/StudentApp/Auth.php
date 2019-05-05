@@ -11,6 +11,8 @@ namespace App\Controllers\StudentApp;
 use App\Controllers\ControllerBase;
 use App\Libs\Valid;
 use App\Models\AppConfigModel;
+use App\Models\AppVersionModel;
+use App\Services\AppVersionService;
 use App\Services\CommonServiceForApp;
 use App\Services\StudentServiceForApp;
 use Slim\Http\Request;
@@ -19,7 +21,7 @@ use Slim\Http\StatusCode;
 
 class Auth extends ControllerBase
 {
-    public static function login(Request $request, Response $response)
+    public function login(Request $request, Response $response)
     {
         $params = $request->getParams();
         $rules = [
@@ -58,7 +60,7 @@ class Auth extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        if ($params['version'] == AppConfigModel::get('REVIEW_VERSION')) {
+        if ($this->ci['is_review_version']) {
             $loginData['sub_end_date'] = '20250101';
         }
 
@@ -68,7 +70,7 @@ class Auth extends ControllerBase
         ], StatusCode::HTTP_OK);
     }
 
-    public static function tokenLogin(Request $request, Response $response)
+    public function tokenLogin(Request $request, Response $response)
     {
         $params = $request->getParams();
         $rules = [
@@ -101,7 +103,7 @@ class Auth extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        if ($params['version'] == AppConfigModel::get('REVIEW_VERSION')) {
+        if ($this->ci['is_review_version']) {
             $loginData['sub_end_date'] = '20250101';
         }
 

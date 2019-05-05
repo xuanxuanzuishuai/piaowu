@@ -24,9 +24,6 @@ class AppConfigModel
 
     const AI_HOMEWORK_DEMAND_KEY = 'AI_HOMEWORK_DEMAND';
 
-    const REVIEW_VERSION = 'REVIEW_VERSION';
-    const REVIEW_VERSION_FOR_TEACHER_APP = 'REVIEW_VERSION_FOR_TEACHER_APP';
-
     const UC_APP_URL_KEY = 'UC_APP_URL';
 
     public static function get($key)
