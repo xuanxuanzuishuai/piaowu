@@ -177,6 +177,7 @@ class ClassTaskModel extends Model
             'ct.weekday',
             'ct.org_id',
             'ct.period',
+            'ct.class_id',
             'c.name (course_name)',
             'c.duration',
             'c.type (course_type)',

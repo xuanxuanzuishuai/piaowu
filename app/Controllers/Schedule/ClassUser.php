@@ -11,6 +11,7 @@ namespace App\Controllers\Schedule;
 
 use App\Controllers\ControllerBase;
 use App\Libs\MysqlDB;
+use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Models\ClassUserModel;
 use App\Models\STClassModel;
@@ -57,7 +58,7 @@ class ClassUser extends ControllerBase
         if ($class['status'] != STClassModel::STATUS_BEGIN) {
             return $response->withJson(Valid::addErrors([], 'class', 'class_status_invalid'), StatusCode::HTTP_OK);
         }
-
+        SimpleLogger::error('ssss',[$class['class_tasks']]);
         $result = ClassUserService::checkStudent($params['students'], $class['class_tasks'],$class['class_highest'] - count($class['students']));
         if ($result !== true) {
             return $response->withJson($result, StatusCode::HTTP_OK);
