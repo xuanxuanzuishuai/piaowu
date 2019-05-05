@@ -306,7 +306,7 @@ class Org extends ControllerBase
                 'name'       => $params['principal_name'],
                 'mobile'     => $params['mobile'],
                 'org_id'     => $lastId,
-                'pwd'        => $params['mobile'], //校长默认密码是手机号
+                'pwd'        => "Org{$lastId}_{$params['login_name']}", //校长默认密码是Org+ID+下划线+登录名
                 'status'     => EmployeeModel::STATUS_NORMAL,
             ];
 

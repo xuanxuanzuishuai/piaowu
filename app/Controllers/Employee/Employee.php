@@ -184,10 +184,29 @@ class Employee extends ControllerBase
                 'key'        => 'org_id',
                 'type'       => 'integer',
                 'error_code' => 'org_id_must_be_integer'
-            ]
+            ],
+            [
+                'key'        => 'pwd',
+                'type'       => 'regex',
+                'value'      => '/^(?![0-9]+$)(?![a-z]+$)(?![A-Z]+$){8,20}/',
+                'error_code' => 'uc_password_strength'
+            ],
+            [
+                'key'        => 'status',
+                'type'       => 'required',
+                'error_code' => 'status_is_required'
+            ],
         ];
 
         $params = $request->getParams();
+        if(empty($params['id'])) {
+            $rules[] = [
+                'key'        => 'pwd',
+                'type'       => 'required',
+                'error_code' => 'pwd_is_required'
+            ];
+        }
+
         $result = Valid::validate($params, $rules);
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
@@ -242,6 +261,7 @@ class Employee extends ControllerBase
             }
         }
 
+        //前端传递的status与insertOrUpdateEmployee所需的参数一致，$params已经包含了status
         $userId = EmployeeService::insertOrUpdateEmployee($params);
         if (!empty($userId) && !is_numeric($userId)) {
             return $response->withJson($userId, StatusCode::HTTP_OK);

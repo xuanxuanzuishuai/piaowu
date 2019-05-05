@@ -203,21 +203,34 @@ class EmployeeService
         if(empty($uuid)){
             //添加一个employee时，为了防止user center返回冲突的错误，先将login name置为空，拿手机号获取一个uuid
             //然后再次调用接口，传入uuid和用户名，修改信息
-            $authResult = $userCenter->employeeAuthorization('', $pwd,$update['name'], $update['mobile'],
+
+            //获取uuid
+            $authResult = $userCenter->employeeAuthorization('', '', $update['name'], $update['mobile'],
                 $params['status'] == EmployeeModel::STATUS_NORMAL,'');
             if (empty($authResult["uuid"])) {
                 return Valid::addErrors([], "login_name", "uc_add_employee_error");
             }
-            $authResult = $userCenter->employeeAuthorization($update['login_name'], '', $update['name'], $update['mobile'],
+
+            //修改登录名
+            $authResult = $userCenter->employeeAuthorization($update['login_name'], $pwd, $update['name'], $update['mobile'],
                 $params['status'] == EmployeeModel::STATUS_NORMAL, $authResult['uuid']);
+            if (empty($authResult["uuid"])) {
+                return Valid::addErrors([], "login_name", "uc_add_employee_error");
+            }
+
+            //修改密码
+            $changeResult = $userCenter->changePassword($authResult['uuid'], $pwd, null);
+            if($changeResult['code'] != UserCenter::RSP_CODE_SUCCESS) {
+                return $changeResult;
+            }
         }else{
             $authResult = $userCenter->employeeAuthorization($update['login_name'], '', $update['name'], $update['mobile'],
                 $params['status'] == EmployeeModel::STATUS_NORMAL, $uuid);
+            if (empty($authResult["uuid"])) {
+                return Valid::addErrors([], "login_name", "uc_add_employee_error");
+            }
         }
 
-        if (empty($authResult["uuid"])) {
-            return Valid::addErrors([], "login_name", "uc_add_employee_error");
-        }
         $update['uuid'] = $authResult['uuid'];
 
         if (empty($userId)) {
