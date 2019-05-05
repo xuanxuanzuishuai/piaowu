@@ -376,61 +376,6 @@ class TeacherService
     }
 
     /**
-<<<<<<< HEAD
-     * 注册老师列表
-     * @param $params
-     * @param $page
-     * @param $count
-     * @return array
-     */
-    public static function teacherRegisterList($params, $page, $count)
-    {
-        list($teachers, $totalCount) = TeacherModel::getRegisterTeacher($params, $page, $count);
-        foreach ($teachers as $key => $teacher) {
-            $teachers[$key]['music_level_name'] = DictService::getKeyValue(Constants::DICT_TYPE_TEACHER_MUSIC_LEVEL, $teacher['music_level']);
-            $teachers[$key]['mobile'] = Util::hideUserMobile($teacher['mobile']);
-            if ($teacher['channel_id']) {
-                $channel_info = TeacherChannelModel::getById($teacher['channel_id']);
-                $teachers[$key]['channel_name'] = $channel_info['name'];
-            } else {
-                $teachers[$key]['channel_name'] = '';
-            }
-            //计算是否导出
-            $teachers[$key]['is_export'] = $teacher['is_export'] == 0 ? "否" : "是";
-            //取出详细地址
-            $country = !empty($teacher['country_code']) ? AreaService::getByCode($teacher['country_code'])['name'] : '';
-            $province = !empty($teacher['province_code']) ? AreaService::getByCode($teacher['province_code'])['name'] : '';
-            $city = !empty($teacher['city_code']) ? AreaService::getByCode($teacher['city_code'])['name'] : '';
-            $district = !empty($teacher['district_code']) ? AreaService::getByCode($teacher['district_code'])['name'] : '';
-            $teachers[$key]['address'] = $country . $province . $city . $district . $teacher['address'];
-            //计算是否毕业
-            if (!empty($teacher['graduation_date'])) {
-                $teachers[$key]['is_graduate'] = (date('Ym') - $teacher['graduation_date']) > 0 ? "是" : "否";
-            } else {
-                $teachers[$key]['is_graduate'] = '';
-            }
-            //计算琴龄
-            if (!empty($teacher['learn_start_year'])) {
-                $teachers[$key]['learn_year'] = date("Y") - $teacher['learn_start_year'];
-            } else {
-                $teachers[$key]['learn_year'] = '';
-            }
-            //介绍人
-            if (!empty($teacher['referee_id'])) {
-                $referee_info = TeacherModel::getById($teacher['referee_id']);
-                $teachers[$key]['referee_name'] = $referee_info['name'];
-                $teachers[$key]['referee_mobile'] = $referee_info['mobile'];
-            } else {
-                $teachers[$key]['referee_name'] = '';
-                $teachers[$key]['referee_mobile'] = '';
-            }
-        }
-        return [$teachers, $totalCount];
-    }
-
-    /**
-=======
->>>>>>> DSSCRM-130: [feature] add lang
      * 模糊搜索老师信息
      * @param $keyword
      * @return array

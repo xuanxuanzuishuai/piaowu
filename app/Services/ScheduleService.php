@@ -348,14 +348,14 @@ class ScheduleService
         $checkStudent = ScheduleUserService::checkScheduleUser(array_keys($params['students']),
             ScheduleUserModel::USER_ROLE_STUDENT, $schedule['start_time'],
             $schedule['end_time'], $originScheduleId);
-        if ($checkStudent == true) {
+        if ($checkStudent !== true) {
             return Valid::addErrors([], 'class_task_classroom', 'class_student_time_error');
         }
 
         $checkTeacher = ScheduleUserService::checkScheduleUser(array_keys($params['teachers']),
             [ScheduleUserModel::USER_ROLE_TEACHER, ScheduleUserModel::USER_ROLE_CLASS_TEACHER],
             $schedule['start_time'], $schedule['end_time'], $originScheduleId);
-        if ($checkTeacher == true) {
+        if ($checkTeacher !== true) {
             return Valid::addErrors([], 'class_task_classroom', 'class_teacher_time_error');
         }
 
