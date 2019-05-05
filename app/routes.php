@@ -421,10 +421,12 @@ $arr = array(
     '/teacher_wx/teacher/login' => array('method'=>array('get'),'call'=>'\App\Controllers\TeacherWX\Teacher:login', 'middles' => array('\App\Middleware\WeChatOpenIdCheckMiddleware')),
     '/teacher_wx/homework/play_record_list' => array('method'=>array('get'),'call'=>'\App\Controllers\TeacherWX\Homework:getHomeworkPlayRecordList', 'middles' => array('\App\Middleware\WeChatAuthCheckMiddleware')),
     '/teacher_wx/homework/homework_record_detail' => array('method'=>array('get'),'call'=>'\App\Controllers\TeacherWX\Homework:getTaskDetail', 'middles' => array('\App\Middleware\WeChatAuthCheckMiddleware')),
+    '/teacher_wx/teacher/send_sms_code' => array('method'=>array('get'),'call'=>'\App\Controllers\TeacherWX\Teacher:sendSmsCode', 'middles' => array()),
 
 
     '/student_wx/student/register' => array('method'=>array('post'),'call'=>'\App\Controllers\StudentWX\Student:register', 'middles' => array('\App\Middleware\WeChatOpenIdCheckMiddleware')),
     '/student_wx/student/login' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\Student:login', 'middles' => array('\App\Middleware\WeChatOpenIdCheckMiddleware')),
+    '/student_wx/student/send_sms_code' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\Student:sendSmsCode', 'middles' => array()),
     '/student_wx/student/day_report' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\PlayRecord:recordReport', 'middles' => array('\App\Middleware\WeChatAuthCheckMiddleware')),
     '/student_wx/student/shared_report' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\PlayRecord:shareReport', 'middles' => array()),
     '/student_wx/schedule/schedule_report' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\Schedule:scheduleReport', 'middles' => array('\App\Middleware\WeChatAuthCheckMiddleware')),

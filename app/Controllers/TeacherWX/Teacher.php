@@ -9,7 +9,9 @@
 namespace App\Controllers\TeacherWX;
 
 use App\Controllers\ControllerBase;
+use App\Controllers\StudentWX\Common;
 use App\Libs\Valid;
+use App\Services\CommonServiceForApp;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -140,6 +142,47 @@ class Teacher extends ControllerBase
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => ["token" => $token]
+        ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * 发送注册验证码
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function sendSmsCode(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'mobile',
+                'type' => 'required',
+                'error_code' => 'mobile_is_required'
+            ],
+            [
+                'key' => 'mobile',
+                'type' => 'regex',
+                'value' => '/^[0-9]{11}$/',
+                'error_code' => 'user_mobile_format_error'
+            ]
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $errorCode = CommonServiceForApp::sendValidateCode($params['mobile'],
+            CommonServiceForApp::SIGN_WX_TEACHER_APP);
+        if (!empty($errorCode)) {
+            $result = Valid::addAppErrors([], $errorCode);
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => []
         ], StatusCode::HTTP_OK);
     }
 }
