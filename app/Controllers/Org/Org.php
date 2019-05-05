@@ -264,6 +264,7 @@ class Org extends ControllerBase
                 'parent_id'        => $params['parent_id'],
                 'start_time'       => $params['start_time'],
                 'end_time'         => $params['end_time'],
+                'operator_id'      => $this->getEmployeeId(),
                 'status'           => OrganizationModel::STATUS_NORMAL,
                 'create_time'      => $now,
             ];
