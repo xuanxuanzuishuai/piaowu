@@ -320,7 +320,7 @@ class Employee extends ControllerBase
             [
                 'key' => 'pwd',
                 'type' => 'regex',
-                'value' => '/^(?![0-9]+$)(?![a-z]+$)(?![A-Z]+$){6,16}/',
+                'value' => '/^(?![0-9]+$)(?![a-z]+$)(?![A-Z]+$){8,20}/',
                 'error_code' => 'uc_password_strength'
             ],
         ];
@@ -330,7 +330,7 @@ class Employee extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $userId = $this->employee['id'];
+        $userId = $this->ci['employee']['id'];
         $user = EmployeeModel::getById($userId);
         if ($user['pwd'] == md5($params['pwd'])) {
             return $response->withJson(Valid::addErrors([], 'pwd', 'employee_pwd_can_not_same'), StatusCode::HTTP_OK);
