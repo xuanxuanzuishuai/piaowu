@@ -19,6 +19,7 @@ use App\Models\PlayRecordModel;
 use App\Services\HomeworkService;
 use App\Libs\OpernCenter;
 use App\Models\HomeworkTaskModel;
+use App\Services\PlayRecordService;
 use Predis\Command\Redis\SINTER;
 use Slim\Http\Request;
 use App\Services\OpernService;
@@ -450,7 +451,7 @@ class HomeWork extends ControllerBase
                 'max_score' => 0,
             ];
 
-            $playRecordStatistic = PlayRecordModel::getPlayRecordListByHomework($homeworkId, $homework['task_id'], $homework['lesson_id'],
+            $playRecordStatistic = PlayRecordModel::getPlayRecordList($homeworkId, $homework['task_id'], $homework['lesson_id'],
                 $homework['created_time'], $homework['end_time'], true);
             $task["duration"] = $playRecordStatistic["duration"];
             $task["play_count"] = $playRecordStatistic["play_count"];
@@ -508,7 +509,6 @@ class HomeWork extends ControllerBase
         }
 
         $user_id = $this->ci['user_info']['user_id'];
-//        $user_id = null;
 
         list($homework, $play_record) = HomeworkService::getStudentHomeworkPractice(null, $params['task_id'], $user_id);
         if(empty($homework)){
@@ -519,39 +519,8 @@ class HomeWork extends ControllerBase
             "lesson_name" => $homework["lesson_name"],
             "baseline" => $homework["baseline"],
         ];
-        $format_record = [];
-        $max_score_index_map = [];
-        foreach ($play_record as $item) {
-            $create_date = date("Y-m-d", $item["created_time"]);
 
-            if ($item["complete"]){
-                $item["tags"] = ["达成要求"];
-            } else{
-                $item["tags"] = [];
-            }
-
-            $item["created_time"] = date("Y-m-d H:i", $item["created_time"]);
-
-            if(array_key_exists($create_date, $format_record)){
-                // 更新最大得分index
-                if ($item["score"] > $format_record[$create_date]["max_score"]){
-                    $max_score_index_map[$create_date] = sizeof($format_record[$create_date]['records']);
-                }
-                array_push($format_record[$create_date]['records'], $item);
-            }else{
-                $format_record[$create_date] = [
-                    'create_date' => $create_date,
-                    'records' => [$item],
-                    'max_score' => $item["score"]
-                ];
-                $max_score_index_map[$create_date] = 0;
-            }
-        }
-
-        foreach ($max_score_index_map as $date => $index){
-            array_push($format_record[$date]["records"][$index]["tags"], "当日最高");
-        }
-        $ret["records"] = array_values($format_record);
+        $ret["records"] = PlayRecordService::formatLessonTestStatistics($play_record);
 
         return $response->withJson(['code'=>0, 'data'=>$ret], StatusCode::HTTP_OK);
     }

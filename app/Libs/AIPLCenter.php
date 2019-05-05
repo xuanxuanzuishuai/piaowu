@@ -16,6 +16,8 @@ use Slim\Http\StatusCode;
 class AIPLCenter
 {
     const USER_AUDIO_URL = "/api/1.0/eval/user_audio/";
+    const RECORD_RUL = "/api/1.0/eval/record/";
+
 
     public static function commonAPI($api,  $data = [], $method = 'GET')
     {
@@ -69,6 +71,13 @@ class AIPLCenter
     public static function userAudio($ai_record_id)
     {
         $result = self::commonAPI(self::USER_AUDIO_URL . $ai_record_id);
+
+        return empty($result) ? [] : $result;
+    }
+
+    public static function recordGrade($ai_record_id)
+    {
+        $result = self::commonAPI(self::RECORD_RUL . $ai_record_id);
 
         return empty($result) ? [] : $result;
     }

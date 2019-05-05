@@ -176,6 +176,7 @@ class PlayRecordService
             $lesson_2_task_map[$value["lesson_id"]] = $value["task_id"];
         }
 
+        // 有作业的优先排序
         $homework_play_list = [];
         $no_homework_play_list = [];
         foreach ($statistics as $value){
@@ -192,6 +193,12 @@ class PlayRecordService
         return $report;
     }
 
+    /**
+     * 每日练琴记录
+     * @param $student_id
+     * @param null $date
+     * @return array
+     */
     public static function getDayPlayRecordStatistic($student_id, $date=null){
         if (empty($date)){
             $date = "today";
@@ -245,7 +252,44 @@ class PlayRecordService
         return [$records, $total];
     }
 
-    public static function getPlayRecordListByHomework($homeworkId, $taskId){
+    /**
+     * 格式化练习记录
+     * @param $play_record
+     * @return array
+     */
+    public static function formatLessonTestStatistics($play_record){
+        $format_record = [];
+        $max_score_index_map = [];
+        foreach ($play_record as $item) {
+            $create_date = date("Y-m-d", $item["created_time"]);
 
+            if ($item["complete"]){
+                $item["tags"] = ["达成要求"];
+            } else{
+                $item["tags"] = [];
+            }
+
+            $item["created_time"] = date("Y-m-d H:i", $item["created_time"]);
+
+            if(array_key_exists($create_date, $format_record)){
+                // 更新最大得分index
+                if ($item["score"] > $format_record[$create_date]["max_score"]){
+                    $max_score_index_map[$create_date] = sizeof($format_record[$create_date]['records']);
+                }
+                array_push($format_record[$create_date]['records'], $item);
+            }else{
+                $format_record[$create_date] = [
+                    'create_date' => $create_date,
+                    'records' => [$item],
+                    'max_score' => $item["score"]
+                ];
+                $max_score_index_map[$create_date] = 0;
+            }
+        }
+        foreach ($max_score_index_map as $date => $index){
+            array_push($format_record[$date]["records"][$index]["tags"], "当日最高");
+        }
+        return array_values($format_record);
     }
+
 }

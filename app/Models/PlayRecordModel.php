@@ -9,6 +9,7 @@
 namespace App\Models;
 
 use App\Libs\MysqlDB;
+use App\Libs\SimpleLogger;
 use App\Libs\Util;
 
 class PlayRecordModel extends Model
@@ -251,9 +252,16 @@ class PlayRecordModel extends Model
         return [$records, $total[0]['count']];
     }
 
-    public static function getPlayRecordListByHomework($homeworkId, $taskId, $lessonId,
-                                                       $startTime, $endTime, $statistic=false, $page=null, $limit=null){
+    public static function getPlayRecordList($homeworkId, $taskId, $lessonId,
+                                             $startTime, $endTime, $statistic=false, $page=null,
+                                             $limit=null, $studentId=null){
         $db = MysqlDB::getDB();
+
+        // 根据是否有homeworkId和taskId来确定是否join homework_complete 表
+        $join_hc = false;
+        if (!empty($homeworkId) and !empty($taskId)){
+            $join_hc = true;
+        }
 
         if ($statistic){
             $fields = "count(1) as play_count, max(pr.score) as max_score, " .
@@ -273,20 +281,38 @@ class PlayRecordModel extends Model
             pr.data as data,
             pr.midi as midi,
             pr.ai_record_id as ai_record_id,
-            if(hc.id is null, 0, 1) as complete ";
+            ";
+
+            if ($join_hc){
+                $fields = $fields . "if(hc.id is null, 0, 1) as complete ";
+            } else{
+                $fields = $fields . "0 as complete ";
+            }
         }
 
         $map = [
             "start_time" => $startTime,
             "end_time" => $endTime,
             "lesson_id" => $lessonId,
-            "task_id" => $taskId,
-            "homework_id" => $homeworkId
         ];
-        $sql = "select " . $fields . " from " . self::$table . " as pr left join " . HomeworkCompleteModel::$table .
-            " as hc on hc.play_record_id = pr.id 
-            where pr.created_time>=:start_time and pr.created_time <= :end_time and pr.lesson_type=" .self::TYPE_AI .
-            " and pr.lesson_id=:lesson_id and hc.task_id=:task_id and hc.homework_id=:homework_id ";
+        $selectTable = "select " . $fields . " from " . self::$table . " as pr ";
+        $where = " where pr.created_time>=:start_time and pr.created_time <= :end_time and pr.lesson_type=" .self::TYPE_AI .
+            " and pr.lesson_id=:lesson_id ";
+        if (!empty($studentId)){
+            $map["student_id"] = $studentId;
+            $where = $where . " pr.student_id=:student_id";
+        }
+        if ($join_hc){
+            $map["task_id"] = $taskId;
+            $map["homework_id"] = $homeworkId;
+
+            $selectTable = $selectTable . "left join " . HomeworkCompleteModel::$table .
+                " as hc on hc.play_record_id = pr.id ";
+            $where = $where . " and hc.task_id=:task_id and hc.homework_id=:homework_id ";
+
+        }
+
+        $sql = $selectTable . $where;
 
         if (!$statistic){
             $sql = $sql . " order by pr.created_time desc ";

@@ -10,7 +10,10 @@ namespace App\Controllers\StudentWX;
 
 use App\Controllers\ControllerBase;
 use App\Libs\AIPLCenter;
+use App\Libs\OpernCenter;
+use App\Libs\SimpleLogger;
 use App\Libs\Valid;
+use App\Services\HomeworkService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -140,7 +143,6 @@ class PlayRecord extends ControllerBase
         }
 
         $user_id = $this->ci['user_info']['user_id'];
-//        $user_id = 111;
         $result = PlayRecordService::getDayPlayRecordStatistic($user_id, $params["date"]);
 
         return $response->withJson([
@@ -149,4 +151,120 @@ class PlayRecord extends ControllerBase
         ], StatusCode::HTTP_OK);
     }
 
+
+    /**
+     * 学生端获取测评成绩单
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getLessonTestStatistics(Request $request, Response $response){
+        $rules = [
+            [
+                'key' => 'date',
+                'type' => 'required',
+                'error_code' => 'date_is_required'
+            ],
+            [
+                'key' => 'lesson_id',
+                'type' => 'required',
+                'error_code' => 'lesson_id_is_required'
+            ],
+            [
+                'key' => 'lesson_id',
+                'type' => 'integer',
+                'error_code' => 'lesson_id_must_be_integer'
+            ],
+            [
+                'key' => 'task_id',
+                'type' => 'integer',
+                'error_code' => 'task_id_must_be_integer'
+            ]
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $user_id = $this->ci['user_info']['user_id'];
+//        $user_id = 87;
+
+        $lesson_name = "";
+        $baseline = null;
+
+        // 优先使用task_id
+        if (!empty($params["task_id"])){
+            list($homework, $play_record) = HomeworkService::getStudentDayHomeworkPractice(null,
+                $params['task_id'], $user_id, $params["date"]);
+            if(empty($homework)){
+                $errors = Valid::addAppErrors([], "homework_not_found");
+                return $response->withJson($errors, StatusCode::HTTP_OK);
+            }
+            $lesson_name = $homework["lesson_name"];
+            $baseline = $homework["baseline"];
+
+            $records = PlayRecordService::formatLessonTestStatistics($play_record);
+        } else {
+            // 如果没有传task_id则按照lesson_id为准
+            $play_record = HomeworkService::getStudentDayLessonPractice($user_id, $params["lesson_id"], $params["date"]);
+            $records = PlayRecordService::formatLessonTestStatistics($play_record);
+            $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER, OpernCenter::version);
+            $bookInfo = $opn->lessonsByIds([$params["lesson_id"]]);
+            if (!empty($bookInfo) and $bookInfo["code"] == 0){
+                $lesson_name = $bookInfo["data"][0]["lesson_name"];
+            }
+        }
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => [
+                "lesson_name" => $lesson_name,
+                "baseline" => $baseline,
+                "records" => $records
+            ]
+        ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * 获取测评评分
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getAIRecordGrade(Request $request, Response $response){
+        $rules = [
+            [
+                'key' => 'ai_record_id',
+                'type' => 'required',
+                'error_code' => 'ai_record_id_is_required'
+            ]
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+
+        $data = AIPLCenter::recordGrade($params["ai_record_id"]);
+        if (empty($data) or $data["meta"]["code"] != 0){
+            $ret = [];
+        } else {
+            $score = $data["data"]["score"];
+            $ret = [
+                "simple_complete" => $score["simple_complete"],
+                "simple_final" => $score["simple_final"],
+                "simple_pitch" => $score["simple_pitch"],
+                "simple_rhythm" => $score["simple_rhythm"],
+                "simple_speed_average" => $score["simple_speed_average"],
+            ];
+        }
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $ret
+        ], StatusCode::HTTP_OK);
+    }
 }

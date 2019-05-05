@@ -158,9 +158,11 @@ class HomeworkService
      * @param int $studentId 学生ID
      * @param int $taskId
      * @param int $teacherId
+     * @param int $startTime
+     * @param int $endTime
      * @return mixed
      */
-    public static function getStudentHomeworkPractice($studentId, $taskId, $teacherId=null){
+    public static function getStudentHomeworkPractice($studentId, $taskId, $teacherId=null, $startTime=null, $endTime=null){
 
         // 获取作业
         $where = [
@@ -179,10 +181,53 @@ class HomeworkService
         }
         $homework = $homework[0];
 
-        $plays = PlayRecordModel::getPlayRecordListByHomework($homework['id'], $taskId, $homework["lesson_id"],
-            $homework['created_time'], $homework['end_time']);
+        if ($startTime < $homework['created_time'] or empty($startTime)){
+            $startTime = $homework['created_time'];
+        }
+        if ($endTime > $homework['end_time'] or empty($endTime)){
+            $endTime = $homework['end_time'];
+        }
+
+        $plays = PlayRecordModel::getPlayRecordList($homework['id'], $taskId, $homework["lesson_id"],
+            $startTime, $endTime);
 
         return [$homework, $plays];
+    }
+
+    /**
+     * 获取某条作业的某天的练习记录
+     * @param $studentId
+     * @param $taskId
+     * @param null $teacherId
+     * @param null $date
+     * @return mixed
+     */
+    public static function getStudentDayHomeworkPractice($studentId, $taskId, $teacherId=null, $date=null){
+        $startTime = strtotime($date);
+        $endTime = $startTime + 86399;
+        return self::getStudentHomeworkPractice($studentId, $taskId, $teacherId, $startTime, $endTime);
+    }
+
+    /**
+     * 获取某个课程的练习记录
+     * @param $studentId
+     * @param $lessonId
+     * @param $startTime
+     * @param $endTime
+     * @return array|null
+     */
+    public static function getStudentLessonPractice($studentId, $lessonId, $startTime, $endTime){
+        $plays = PlayRecordModel::getPlayRecordList(null, null, $lessonId,
+            $startTime, $endTime, false, $studentId);
+        return $plays;
+    }
+
+    public static function getStudentDayLessonPractice($studentId, $lessonId, $date){
+        $startTime = strtotime($date);
+        $endTime = $startTime + 86399;
+        $plays = self::getStudentLessonPractice($studentId, $lessonId,
+            $startTime, $endTime);
+        return $plays;
     }
 
     /**
