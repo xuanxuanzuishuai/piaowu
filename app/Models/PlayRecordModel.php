@@ -325,4 +325,24 @@ class PlayRecordModel extends Model
         $result = $db->queryAll($sql, $map);
         return $result;
     }
+
+    public static function getDistinctLessonIdCount($studentId){
+        $db = MysqlDB::getDB();
+        $sql = "select count(distinct pr.lesson_id) as num from " . self::$table . " as pr where student_id=:student_id";
+        $map = [
+          "student_id" => $studentId
+        ];
+        $result = $db->queryAll($sql, $map);
+        return $result[0]["num"];
+    }
+
+    public static function getSumPlayRecordDuration($studentId){
+        $db = MysqlDB::getDB();
+        $sql = "select sum(duration) as duration from " . self::$table . " as pr where student_id=:student_id";
+        $map = [
+            "student_id" => $studentId
+        ];
+        $result = $db->queryAll($sql, $map);
+        return $result[0]["duration"];
+    }
 }

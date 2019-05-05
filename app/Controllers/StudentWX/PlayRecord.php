@@ -151,7 +151,6 @@ class PlayRecord extends ControllerBase
         ], StatusCode::HTTP_OK);
     }
 
-
     /**
      * 学生端获取测评成绩单
      * @param Request $request
@@ -260,6 +259,7 @@ class PlayRecord extends ControllerBase
                 "simple_pitch" => $score["simple_pitch"],
                 "simple_rhythm" => $score["simple_rhythm"],
                 "simple_speed_average" => $score["simple_speed_average"],
+                "simple_speed" => $score["simple_speed"]
             ];
         }
         return $response->withJson([

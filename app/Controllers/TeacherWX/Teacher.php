@@ -67,7 +67,9 @@ class Teacher extends ControllerBase
             WeChatService::deleteToken($old_token);
         }
         $openId = $this->ci["open_id"];
-        // todo 验证sms_code
+        if (!CommonServiceForApp::checkValidateCode($params["mobile"], $params["sms_code"])) {
+            return $response->withJson(Valid::addAppErrors([], 'validate_code_error'), StatusCode::HTTP_OK);
+        }
 
         //验证手机号是否已存在
         $teacher_info = TeacherModelForApp::getTeacherInfo("", $params['mobile']);

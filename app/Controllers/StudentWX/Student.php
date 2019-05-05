@@ -10,6 +10,7 @@ namespace App\Controllers\StudentWX;
 
 use App\Controllers\ControllerBase;
 use App\Libs\Valid;
+use App\Models\PlayRecordModel;
 use App\Services\CommonServiceForApp;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -70,7 +71,10 @@ class Student extends ControllerBase
         }
         $app_id = UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT;
         $openId = $this->ci["open_id"];
-        // todo 验证sms_code
+        // 检查验证码
+        if (!CommonServiceForApp::checkValidateCode($params["mobile"], $params["sms_code"])) {
+            return $response->withJson(Valid::addAppErrors([], 'validate_code_error'), StatusCode::HTTP_OK);
+        }
 
         //验证手机号是否已存在
         $student_info = StudentModelForApp::getStudentInfo("", $params['mobile']);
@@ -189,5 +193,84 @@ class Student extends ControllerBase
             'code' => Valid::CODE_SUCCESS,
             'data' => []
         ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * 我的账户
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function accountDetail(Request $request, Response $response)
+    {
+        $user_id = $this->ci['user_info']['user_id'];
+        $student_info = StudentModelForApp::getStudentInfo($user_id, null);
+        if (empty($student_info)){
+            return $response->withJson(Valid::addAppErrors([], 'need_bound'), StatusCode::HTTP_OK);
+        }
+        $lesson_num = PlayRecordModel::getDistinctLessonIdCount($user_id);
+        $duration = PlayRecordModel::getSumPlayRecordDuration($user_id);
+        $account_info = [
+            "mobile" => substr($student_info["mobile"], 0, 3) . "****" .
+                substr($student_info["mobile"], 7, 4),
+            "name" => $student_info["name"],
+            "thumb" => $student_info["thumb"],
+            "lesson_num" => $lesson_num,
+            "duration" => $duration,
+            "expired_date" => "2099-01-01"
+        ];
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $account_info
+        ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * 编辑账户信息
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function editAccountInfo(Request $request, Response $response){
+        $rules = [
+            [
+                'key' => 'name',
+                'type' => 'required',
+                'error_code' => 'name_is_required'
+            ],
+            [
+                'key' => 'thumb',
+                'type' => 'required',
+                'error_code' => 'thumb_is_required'
+            ]
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $update_info = [];
+        if (!empty($params["thumb"])){
+            $update_info["thumb"] = $params["thumb"];
+        }
+        if (!empty($params["name"])){
+            $update_info["name"] = $params["name"];
+        }
+
+        if (!empty($update_info)){
+            $user_id = $this->ci['user_info']['user_id'];
+            $db = MysqlDB::getDB();
+            $db->beginTransaction();
+            StudentModelForApp::updateRecord($user_id, $update_info);
+            $db->commit();
+        }
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => []
+        ], StatusCode::HTTP_OK);
+
     }
 }
