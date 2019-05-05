@@ -265,6 +265,8 @@ class Constants
     const DICT_KEY_ALIOSS_CALLBACK_URL = "callback_url";
     const DICT_KEY_ALIOSS_EXPIRE = "expire";
     const DICT_KEY_ALIOSS_MAX_FILE_SIZE = "max_file_size";
+    const DICT_KEY_ALIOSS_REGION_ID = "region_id";
+    const DICT_KEY_ALIOSS_RECORD_FILE_ARN = "record_file_arn";
 
     //机构状态
     const DICT_TYPE_ORG_STATUS = 'org_status';

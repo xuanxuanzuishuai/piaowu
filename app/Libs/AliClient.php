@@ -12,7 +12,7 @@ namespace App\Libs;
 use AlibabaCloud\Client\AlibabaCloud;
 use AlibabaCloud\Client\Exception\ClientException;
 use AlibabaCloud\Client\Exception\ServerException;
-use App\Models\AppConfigModel;
+use App\Services\DictService;
 
 // Download：https://github.com/aliyun/openapi-sdk-php-client
 // Usage：https://github.com/aliyun/openapi-sdk-php-client/blob/master/README-CN.md
@@ -24,13 +24,25 @@ class AliClient {
 
     public static function init()
     {
-        $accessKeyId = AppConfigModel::get('ALI_ACCESS_KEY_ID');
-        $accessKeySecret = AppConfigModel::get('ALI_ACCESS_KEY_SECRET');
-        $reginId = AppConfigModel::get('ALI_REGION_ID');
+        list($accessKeyId, $accessKeySecret, $regionId) = DictService::getKeyValuesByArray(
+            Constants::DICT_TYPE_ALIOSS_CONFIG,
+            [
+                Constants::DICT_KEY_ALIOSS_ACCESS_KEY_ID,
+                Constants::DICT_KEY_ALIOSS_ACCESS_KEY_SECRET,
+                Constants::DICT_KEY_ALIOSS_REGION_ID
+            ]
+        );
+
         if (empty(self::$client)) {
-            self::$client = AlibabaCloud::accessKeyClient($accessKeyId, $accessKeySecret)
-                ->regionId($reginId)
-                ->asGlobalClient();
+
+            try {
+
+                self::$client = AlibabaCloud::accessKeyClient($accessKeyId, $accessKeySecret)
+                    ->regionId($regionId)
+                    ->asDefaultClient();
+            } catch (ClientException $e) {
+
+            }
         }
 
         return self::$client;
@@ -66,7 +78,7 @@ result:
         }
 
         try {
-            $result = AlibabaCloud::rpcRequest()
+            $result = AlibabaCloud::rpc()
                 ->product('Sts')
                 ->scheme('https') // https | http
                 ->version('2015-04-01')

@@ -10,8 +10,8 @@ namespace App\Services;
 
 
 use App\Libs\AliClient;
+use App\Libs\Constants;
 use App\Libs\SimpleLogger;
-use App\Models\AppConfigModel;
 use App\Models\PlayRecordModel;
 
 class StorageService
@@ -35,7 +35,8 @@ class StorageService
         $bucket = self::ALI_OSS_BUCKET;
         $path = "${_ENV['ENV_NAME']}/record_${recordID}*";
 
-        $roleArn = AppConfigModel::get('ALI_ARN_RECORD_FILE');
+        $roleArn = DictService::getKeyValue(Constants::DICT_TYPE_ALIOSS_CONFIG,
+            Constants::DICT_KEY_ALIOSS_RECORD_FILE_ARN);
         $sessionName = 'ai_peilian_' . $studentID;
         $policy = [
             'Version' => '1',
@@ -64,7 +65,8 @@ class StorageService
 
         $result['bucket'] = $bucket;
         $result['path'] = $path;
-        $result['end_point'] = AppConfigModel::get('ALI_END_POINT');
+        $result['end_point'] = DictService::getKeyValue(Constants::DICT_TYPE_ALIOSS_CONFIG,
+            Constants::DICT_KEY_ALIOSS_ENDPOINT);
 
         return [null, $result];
     }
