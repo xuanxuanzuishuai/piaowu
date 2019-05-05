@@ -11,7 +11,6 @@ namespace App\Controllers\Schedule;
 
 use App\Controllers\ControllerBase;
 use App\Libs\MysqlDB;
-use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\ClassTaskModel;
@@ -215,22 +214,22 @@ class STClass extends ControllerBase
             ClassUserService::updateCUStatus(['class_id' => $class['id']], ClassUserModel::STATUS_CANCEL);
             ClassTaskService::updateCTStatus(['class_id' => $class['id']], ClassTaskModel::STATUS_CANCEL);
         } else {
-            if ($studentIds != array_keys($params['students'])) {
-                if (!empty($ssuIds)) {
-                    ClassUserService::unBindUser($ssuIds, $class['id']);
-                }
-                if (!empty($params['students'])) {
-                    ClassUserService::bindCUs($class['id'], [ClassUserModel::USER_ROLE_S => $params['students']]);
-                }
+
+            if (!empty($ssuIds)) {
+                ClassUserService::unBindUser($ssuIds, $class['id']);
             }
-            if ($teacherIds != array_keys($params['teachers'])) {
-                if (!empty($stuIds)) {
-                    ClassUserService::unBindUser($stuIds, $class['id']);
-                }
-                if (!empty($params['teachers'])) {
-                    ClassUserService::bindCUs($class['id'], [ClassUserModel::USER_ROLE_T => $params['teachers']]);
-                }
+            if (!empty($params['students'])) {
+                ClassUserService::bindCUs($class['id'], [ClassUserModel::USER_ROLE_S => $params['students']]);
             }
+
+
+            if (!empty($stuIds)) {
+                ClassUserService::unBindUser($stuIds, $class['id']);
+            }
+            if (!empty($params['teachers'])) {
+                ClassUserService::bindCUs($class['id'], [ClassUserModel::USER_ROLE_T => $params['teachers']]);
+            }
+
             ClassTaskService::updateCTStatus(['class_id' => $class['id']], ClassTaskModel::STATUS_CANCEL);
             ClassTaskService::addCTs($class['id'], $cts);
         }
