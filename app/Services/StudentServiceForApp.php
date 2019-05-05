@@ -10,12 +10,9 @@ namespace App\Services;
 
 
 use App\Libs\DictConstants;
-use App\Libs\NewSMS;
-use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Libs\Util;
-use App\Models\AppConfigModel;
 use App\Models\StudentModelForApp;
 use App\Models\GiftCodeModel;
 
@@ -36,7 +33,7 @@ class StudentServiceForApp
     public static function login($mobile, $code)
     {
         // 检查验证码
-        if (!self::checkValidateCode($mobile, $code)) {
+        if (!CommonServiceForApp::checkValidateCode($mobile, $code)) {
             return ['validate_code_error'];
         }
 
@@ -177,79 +174,6 @@ class StudentServiceForApp
         $id = StudentModelForApp::insertRecord($user);
 
         return $id == 0 ? null : $id;
-    }
-
-    /**
-     * 发送短信验证码
-     * 有效期5分钟
-     * 重复发送间隔1分钟
-     *
-     * @param string $mobile 手机号
-     * @return null|string
-     */
-    public static function sendValidateCode($mobile)
-    {
-        $redis = RedisDB::getConn();
-        $sendTimeCacheKey = self::VALIDATE_CODE_TIME_CACHE_KEY_PRI . $mobile;
-        $lastSendTime = $redis->get($sendTimeCacheKey);
-
-        $now = time();
-        if (!empty($lastSendTime) && $now - $lastSendTime <= self::VALIDATE_CODE_WAIT_TIME) {
-            return 'send_validate_code_in_wait_time';
-        }
-
-        $code = rand(1000, 9999);
-        $sms = new NewSMS(AppConfigModel::get(AppConfigModel::SMS_URL_CACHE_KEY),
-            AppConfigModel::get(AppConfigModel::SMS_API_CACHE_KEY));
-        $success = $sms->sendValidateCode($mobile, $code);
-        if (!$success) {
-            return 'send_validate_code_failure';
-        }
-
-        $redis = RedisDB::getConn();
-        $cacheKey = self::VALIDATE_CODE_CACHE_KEY_PRI . $mobile;
-        $redis->setex($cacheKey, self::VALIDATE_CODE_EX, $code);
-        $redis->setex($sendTimeCacheKey, self::VALIDATE_CODE_WAIT_TIME, $now);
-
-        return null;
-    }
-
-    /**
-     * 检查手机验证码
-     *
-     * @param string $mobile 手机号
-     * @param int $code 验证码
-     * @return bool
-     */
-    public static function checkValidateCode($mobile, $code)
-    {
-        if (empty($mobile) || empty($code)) {
-            return false;
-        }
-
-        // 超级验证码，可以直接在redis里设置或清空
-        $redis = RedisDB::getConn();
-        $superCodeCache = $redis->get('SUPER_VALIDATE_CODE');
-        if ($superCodeCache == $code) {
-            return true;
-        }
-
-        // 审核专用账号和验证码
-        $reviewStudentMobile = AppConfigModel::get('REVIEW_USER_MOBILE');
-        $reviewValidateCode = AppConfigModel::get('REVIEW_VALIDATE_CODE');
-        if ($mobile == $reviewStudentMobile && $code == $reviewValidateCode) {
-            return true;
-        }
-
-        $cacheKey = self::VALIDATE_CODE_CACHE_KEY_PRI . $mobile;
-        $codeCache = $redis->get($cacheKey);
-
-        if ($codeCache != $code) {
-            return false;
-        }
-
-        $redis->del($cacheKey);
-        return true;
     }
 
     /**

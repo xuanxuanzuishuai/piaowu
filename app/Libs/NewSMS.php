@@ -11,20 +11,20 @@ use GuzzleHttp\Client;
 
 class NewSMS
 {
-    private $url;
-    private $api;
+    const API_SEND = '/api/qxt/send';
 
-    public function __construct($url, $api)
+    private $url;
+
+    public function __construct($url)
     {
         $this->url = $url;
-        $this->api = $api;
     }
 
     private function sendSMS($data)
     {
         $client = new Client();
 
-        $response = $client->request('POST', $this->url . $this->api, [
+        $response = $client->request('POST', $this->url . self::API_SEND, [
             'body' => json_encode($data),
             'debug' => false,
             'headers' => [
@@ -46,32 +46,16 @@ class NewSMS
         }
     }
 
-    /**
-     * 首通失败提醒
-     * @param $targetMobile int 学生手机号
-     * @param $validateCode int 验证码
-     * @return bool
-     */
-    public function sendValidateCode($targetMobile, $validateCode)
-    {
-        $data = [
-            'sign_name' => '小叶子爱练琴',
-            'phone_number' => $targetMobile,
-            'content' => "您好，本次验证码为：${validateCode}，有效期为五分钟，可以在60秒后重新获取",
-        ];
-
-        return self::sendSMS($data);
-    }
-
 
     /**
+     * 发送短信验证码
      * @param $targetMobile
-     * @param $validateCode
+     * @param $msg
      * @param string $sign
      * @return bool
      */
 
-    public function newSendValidateCode($targetMobile, $msg, $sign)
+    public function sendValidateCode($targetMobile, $msg, $sign)
     {
         $data = [
             'sign_name' => $sign,

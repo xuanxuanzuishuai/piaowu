@@ -26,6 +26,13 @@ class DictConstants {
         ]
     ];
 
+    const SMS_CENTER = [
+        'type' => 'SMS_CENTER_CONFIG',
+        'keys' => [
+            'host'
+        ]
+    ];
+
     public static function get($type, $key)
     {
         if (empty($type) || empty($key)) {

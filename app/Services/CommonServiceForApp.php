@@ -10,9 +10,9 @@
 namespace App\Services;
 
 
+use App\Libs\DictConstants;
 use App\Libs\NewSMS;
 use App\Libs\RedisDB;
-use App\Libs\SimpleLogger;
 use App\Models\AppConfigModel;
 
 class CommonServiceForApp
@@ -33,6 +33,7 @@ class CommonServiceForApp
      * 重复发送间隔1分钟
      *
      * @param string $mobile 手机号
+     * @param string $sign 短信签名
      * @return null|string
      */
     public static function sendValidateCode($mobile, $sign)
@@ -49,9 +50,8 @@ class CommonServiceForApp
         $code = (string)rand(1000, 9999);
         $msg = "您好，本次验证码为：".$code."，有效期为五分钟，可以在60秒后重新获取";
 
-        $sms = new NewSMS(AppConfigModel::get(AppConfigModel::SMS_URL_CACHE_KEY),
-            AppConfigModel::get(AppConfigModel::SMS_API_CACHE_KEY));
-        $success = $sms->newSendValidateCode($mobile, $msg, $sign);
+        $sms = new NewSMS(DictConstants::get(DictConstants::SMS_CENTER, 'host'));
+        $success = $sms->sendValidateCode($mobile, $msg, $sign);
         if (!$success) {
             return 'send_validate_code_failure';
         }
