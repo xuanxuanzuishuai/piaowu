@@ -141,7 +141,7 @@ class ScheduleService
         if($su['user_role'] == ClassUserModel::USER_ROLE_S) {
             $su['student_status'] = DictService::getKeyValue(Constants::DICT_TYPE_SCHEDULE_STUDENT_STATUS, $su['user_status']);
         }
-        if($su['user_role'] == ClassUserModel::USER_ROLE_T) {
+        if(in_array($su['user_role'],  [ClassUserModel::USER_ROLE_T,ClassUserModel::USER_ROLE_HT])) {
             $su['teacher_status'] = DictService::getKeyValue(Constants::DICT_TYPE_SCHEDULE_TEACHER_STATUS, $su['user_status']);
         }
         $su['price'] = floatval($su['price']/100);
