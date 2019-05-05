@@ -9,6 +9,7 @@
 namespace App\Services;
 
 
+use App\Libs\DictConstants;
 use App\Libs\NewSMS;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
@@ -116,7 +117,8 @@ class StudentServiceForApp
 
     public static function registerStudentInUserCenter($name, $mobile, $uuid = '', $birthday = '', $gender = '')
     {
-        $userCenter = new UserCenter(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT, 'e5ded0be7bbaf0e2');
+        list($appId, $appSecret) = DictConstants::get(DictConstants::USER_CENTER, ['app_id_student', 'app_secret_student']);
+        $userCenter = new UserCenter($appId, $appSecret);
         $authResult = $userCenter->studentAuthorization(8, $mobile, $name, $uuid, $birthday, $gender);
         return $authResult;
     }
