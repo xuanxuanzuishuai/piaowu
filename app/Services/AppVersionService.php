@@ -98,16 +98,6 @@ class AppVersionService
         return $meta ? $meta : null;
     }
 
-    public static function getUpdateUrl($platformId)
-    {
-        if ($platformId == self::PLAT_ID_IOS) {
-            return AppConfigModel::get('UPDATE_URL_IOS');
-        } elseif ($platformId == self::PLAT_ID_ANDROID) {
-            return AppConfigModel::get('UPDATE_URL_ANDROID');
-        }
-        return '';
-    }
-
     public static function getPlatformId($platform)
     {
         if ($platform == self::PLAT_ANDROID) {
