@@ -42,6 +42,7 @@ class UserPlayServices
         $recordID =  PlayRecordModel::insertRecord($recordData);
 
         list($saveID, $playResult) = self::updateSave($userID, $playData);
+
         if (empty($saveID)) {
             return ['play_save_failure'];
         }
@@ -103,14 +104,24 @@ class UserPlayServices
     public static function updateSave($userID, $playData)
     {
         $lessonID = $playData['lesson_id'];
-        $save = PlaySaveModel::getByLesson($userID, $lessonID);
-
-        if (empty($save)) {
-            list($newSave, $playResult) = self::createNewSave($userID, $playData);
-            $saveID = PlaySaveModel::insertRecord($newSave);
-        } else {
-            list($saveUpdate, $playResult) = self::getSaveUpdate($save, $playData);
-            $saveID = PlaySaveModel::updateRecord($save['id'], $saveUpdate);
+        if($playData['lesson_type'] == PlayRecordModel::TYPE_AI){
+            $save = PlaySaveModel::getByLesson($userID, $lessonID, PlayRecordModel::TYPE_AI);
+            if (empty($save)) {
+                list($newSave, $playResult) = self::createNewAISave($userID, $playData);
+                $saveID = PlaySaveModel::insertRecord($newSave);
+            } else {
+                list($saveUpdate, $playResult) = self::getSaveAIUpdate($save, $playData);
+                $saveID = PlaySaveModel::updateRecord($save['id'], $saveUpdate);
+            }
+        }else{
+            $save = PlaySaveModel::getByLesson($userID, $lessonID, PlayRecordModel::TYPE_DYNAMIC);
+            if (empty($save)) {
+                list($newSave, $playResult) = self::createNewSave($userID, $playData);
+                $saveID = PlaySaveModel::insertRecord($newSave);
+            } else {
+                list($saveUpdate, $playResult) = self::getSaveUpdate($save, $playData);
+                $saveID = PlaySaveModel::updateRecord($save['id'], $saveUpdate);
+            }
         }
 
         return [$saveID, $playResult];
@@ -137,6 +148,7 @@ class UserPlayServices
             'lesson_id' => $playData['lesson_id'],
             'last_play_time' => time(),
             'total_duration' => $playData['duration'],
+            'save_type' => PlayRecordModel::TYPE_DYNAMIC
         ];
 
         // 创建json数据，保存步骤的演奏完成情况
@@ -162,14 +174,52 @@ class UserPlayServices
         return [$save, $playResult];
     }
 
+
     /**
-     * 更新一个存档
+     * 创建一个AI练琴新存档
      * 存档以(userID, opernID)为唯一标识
      *
-     * @param array $save 旧存档
+     * @param $userID
      * @param array $playData 演奏数据
-     * @return array [0]存档更新数据 [1]演奏结果
+     * @return array [0]存档数据 [1]演奏结果
      */
+    public static function createNewAISave($userID, $playData)
+    {
+        $playResult = [
+            'is_new_high_score' => true,
+            'ai_high_score' => 0,
+            'ai_current_score' => $playData['score']
+        ];
+
+        $save = [
+            'student_id' => $userID,
+            'lesson_id' => $playData['lesson_id'],
+            'last_play_time' => time(),
+            'total_duration' => $playData['duration'],
+            'save_type' => PlayRecordModel::TYPE_AI,
+            'score_detail' => json_decode($playData['score_detail']),
+        ];
+
+        // 创建json数据，保存步骤的演奏完成情况
+        $jsonData = [
+            'lesson_sub_complete' => []
+        ];
+
+        $save['high_score'] = $playData['score'];
+        $playResult['high_score'] = $playData['score'];
+        $save['data'] = json_encode($jsonData);
+
+        return [$save, $playResult];
+    }
+
+    /**
+ * 更新一个存档
+ * 存档以(userID, opernID)为唯一标识
+ *
+ * @param array $save 旧存档
+ * @param array $playData 演奏数据
+ * @return array [0]存档更新数据 [1]演奏结果
+ */
     public static function getSaveUpdate($save, $playData)
     {
         $playResult = [
@@ -220,6 +270,37 @@ class UserPlayServices
             }
         }
 
+        return [$saveUpdate, $playResult];
+    }
+
+    /**
+     * 更新一个AI存档
+     * 存档以(userID, opernID)为唯一标识
+     *
+     * @param array $save 旧存档
+     * @param array $playData 演奏数据
+     * @return array [0]存档更新数据 [1]演奏结果
+     */
+    public static function getSaveAIUpdate($save, $playData)
+    {
+        $playResult = [
+            'is_new_high_score' => false,
+            'current_score' => $playData['score']
+        ];
+
+        $saveUpdate = [
+            'last_play_time' => time(),
+            'total_duration[+]' => $playData['duration'],
+        ];
+
+        if ($playData['score'] > $save['high_score']) {
+            $saveUpdate['high_score'] = $playData['score'];
+
+            $playResult['high_score'] = $playData['score'];
+            $playResult['is_new_high_score'] = true;
+        } else {
+            $playResult['high_score'] = $save['high_score'];
+        }
         return [$saveUpdate, $playResult];
     }
 }
