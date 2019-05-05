@@ -12,6 +12,7 @@ use App\Controllers\ControllerBase;
 use App\Libs\Constants;
 use App\Libs\Dict;
 use App\Libs\MysqlDB;
+use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\EmployeeModel;
 use App\Models\OrgAccountModel;
@@ -301,7 +302,7 @@ class Org extends ControllerBase
             //添加employee
             $employeeData = [
                 'role_id'    => $principalRoleId,
-                'login_name' => $params['login_name'],
+                'login_name' => Util::makeOrgLoginName($lastId, $params['login_name']),
                 'name'       => $params['principal_name'],
                 'mobile'     => $params['mobile'],
                 'org_id'     => $lastId,
@@ -313,7 +314,7 @@ class Org extends ControllerBase
 
             if (is_array($employeeIdOrErr)) {
                 $db->rollBack();
-                return $response->withJson($employeeIdOrErr);
+                return $response->withJson(Valid::addErrors([], 'org', 'login_name_conflict'));
             }
             if (empty($employeeIdOrErr)) {
                 $db->rollBack();

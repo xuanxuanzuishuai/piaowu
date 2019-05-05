@@ -636,4 +636,9 @@ class Util
     public static function isUrl($url){
         return preg_match("/^http[s]?:\/\/.+$/", $url);
     }
+
+    public static function makeOrgLoginName($orgId, $loginName)
+    {
+        return "org{$orgId}_$loginName";
+    }
 }

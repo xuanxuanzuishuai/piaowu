@@ -196,9 +196,17 @@ class EmployeeService
         }
 
         $userCenter = new UserCenter();
+
         if(empty($uuid)){
-            $authResult = $userCenter->employeeAuthorization($update['login_name'], $pwd,$update['name'], $update['mobile'],
+            //添加一个employee时，为了防止user center返回冲突的错误，先将login name置为空，拿手机号获取一个uuid
+            //然后再次调用接口，传入uuid和用户名，修改信息
+            $authResult = $userCenter->employeeAuthorization('', $pwd,$update['name'], $update['mobile'],
                 $params['status'] == EmployeeModel::STATUS_NORMAL,'');
+            if (empty($authResult["uuid"])) {
+                return Valid::addErrors([], "login_name", "uc_add_employee_error");
+            }
+            $authResult = $userCenter->employeeAuthorization($update['login_name'], '', $update['name'], $update['mobile'],
+                $params['status'] == EmployeeModel::STATUS_NORMAL, $authResult['uuid']);
         }else{
             $authResult = $userCenter->employeeAuthorization($update['login_name'], '', $update['name'], $update['mobile'],
                 $params['status'] == EmployeeModel::STATUS_NORMAL, $uuid);

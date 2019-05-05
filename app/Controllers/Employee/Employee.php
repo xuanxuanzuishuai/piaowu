@@ -206,6 +206,7 @@ class Employee extends ControllerBase
         global $orgId;
 
         if ($orgId > 0) {
+            $params['login_name'] = Util::makeOrgLoginName($orgId, $params['login_name']);
             //机构管理员添加雇员
             //不能创建内部角色
             if($role['is_internal'] == RoleModel::IS_INTERNAL) {
