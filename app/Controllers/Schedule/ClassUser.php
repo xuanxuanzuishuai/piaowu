@@ -188,8 +188,8 @@ class ClassUser extends ControllerBase
                 }
             }
         }
-        if (!empty($st['teachers'])) {
-            foreach ($st['teachers'] as $user) {
+        if (!empty($class['teachers'])) {
+            foreach ($class['teachers'] as $user) {
                 if (in_array($user['id'], $params['stu_ids'])) {
                     $users[ClassUserModel::USER_ROLE_T][] = $user['user_id'];
                     $cuIds[] = $user['id'];
@@ -200,10 +200,10 @@ class ClassUser extends ControllerBase
         $db = MysqlDB::getDB();
         $db->beginTransaction();
         if (!empty($users)) {
-            ScheduleUserService::cancelScheduleUsers($users, $st['id'], $beginDate);
+            ScheduleUserService::cancelScheduleUsers($users, $class['id'], $beginDate);
         }
         if (!empty($cuIds)) {
-            ClassUserService::unBindUser($cuIds, $st['id']);
+            ClassUserService::unBindUser($cuIds, $class['id']);
         }
         STClassService::modifyClass(['id'=>$class['id'],'student_num[-]'=>count($users[ClassUserModel::USER_ROLE_S])]);
         $db->commit();
