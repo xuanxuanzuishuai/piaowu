@@ -109,4 +109,19 @@ class Org extends ControllerBase
             'data'=> $loginData,
         ], StatusCode::HTTP_OK);
     }
+
+    /**
+     * 获取机构老师列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function teacherList(Request $request, Response $response){
+        $orgId = $this->ci['org']['id'];
+        $orgTeachers = OrganizationServiceForApp::getTeachers($orgId);
+        return $response->withJson([
+            'code'=> Valid::CODE_SUCCESS,
+            'data'=> $orgTeachers,
+        ], StatusCode::HTTP_OK);
+    }
 }

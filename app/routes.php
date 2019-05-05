@@ -216,6 +216,11 @@ $arr = array(
         'call' => TeacherAppOrg::class . ':selectStudent',
         'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApi::class]
     ],
+    '/teacher_app/org/teacher_list' => [
+        'method' => ['post'],
+        'call' => TeacherAppOrg::class . ':teacherList',
+        'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApi::class]
+    ],
 
     // 爱学琴老师端
     '/teacher_app/opn/categories' => [
