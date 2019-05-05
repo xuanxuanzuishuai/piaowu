@@ -87,8 +87,6 @@ $arr = array(
     '/student/student/modify' => array('method'=> array('post'),'call'=> '\App\Controllers\Student\Student:modify','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
     '/student/student/add' => array('method'=> array('post'),'call'=> '\App\Controllers\Student\Student:add','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
     '/student/student/fuzzy_search' => array('method'=> array('get'),'call'=> '\App\Controllers\Student\Student:fuzzySearch','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
-//    '/student/student/get_channels' => array('method'=> array('get'),'call'=> '\App\Controllers\Student\Student:getSChannels','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
-//    '/student/student/batch_assign_cc' => array('method'=> array('post'),'call'=> '\App\Controllers\Student\Student:batchAssignCC','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
 
     // /student_app/auth
     '/student_app/auth/login' => [
@@ -106,7 +104,6 @@ $arr = array(
         'call' => StudentAppAuth::class . ':validateCode',
         'middles' => [AppApi::class]
     ],
-//    '/student_app/auth/get_user_id' => [
     '/user/auth/get_user_id' => [ // musvg访问
         'method' => ['get'],
         'call' => StudentAppAuth::class . ':getUserId',
@@ -309,15 +306,12 @@ $arr = array(
     //机构管理后台使用，不希望看见课程列表菜单，但需要访问接口，所以新加一个接口
     '/goods/course/list_for_option' => array('method'=> array('get'),'call'=> '\App\Controllers\Course\Course:list','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
 
-//    '/teacher/teacher/detail' => array('method'=>array('get'),'call'=>'\App\Controllers\Teacher\Teacher:detail','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
-
     //list, updateEntry are for internal employee
     '/teacher/teacher/list' => array('method'=>array('get'),'call'=>'\App\Controllers\Teacher\Teacher:list','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
     '/teacher/teacher/updateEntry' => array('method'=>array('post'),'call'=>'\App\Controllers\Teacher\Teacher:modify','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
     //add,fuzzy_search is for org employee
     '/teacher/teacher/add' => array('method'=>array('post'),'call'=>'\App\Controllers\Teacher\Teacher:add','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
     '/teacher/teacher/fuzzy_search' => array('method'=>array('get'),'call'=>'\App\Controllers\Teacher\Teacher:fuzzySearch','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
-//    '/teacher/teacherTags/tag_list' => array('method'=>array('get'),'call'=>'\App\Controllers\Teacher\TeacherTag:list','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
 
     '/area/area/getByParentCode' => array('method'=>array('get'),'call'=>'\App\Controllers\Area\Area:getByParentCode','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
     '/area/area/getByCode' => array('method'=>array('get'),'call'=>'\App\Controllers\Area\Area:getByCode','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),

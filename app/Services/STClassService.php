@@ -35,6 +35,7 @@ class STClassService
 
 
     /**
+     * 获取班课详情
      * @param $id
      * @return mixed|void
      */

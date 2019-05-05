@@ -41,4 +41,9 @@ class ClassroomService
         }
         return $res;
     }
+
+    public static function getById($cRId)
+    {
+        return ClassroomModel::getById($cRId);
+    }
 }

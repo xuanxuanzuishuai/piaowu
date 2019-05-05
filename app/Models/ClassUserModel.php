@@ -71,7 +71,7 @@ class ClassUserModel extends Model
             ." left join ".TeacherModel::$table." as t on cu.user_id = t.id and cu.user_role in( ".self::USER_ROLE_T.",".self::USER_ROLE_HT.")"
             ." where cu.class_id = $classId and cu.status in (".implode(",",$status).")";
 
-        return MysqlDB::getDB()->queryAll($sql,\PDO::FETCH_COLUMN);
+        return MysqlDB::getDB()->queryAll($sql);
     }
 
 

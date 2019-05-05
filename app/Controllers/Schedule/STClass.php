@@ -80,7 +80,7 @@ class STClass extends ControllerBase
             }
         }
         if (!empty($params['teachers'])) {
-            $result = ClassUserService::checkTeacher($params['teachers'], $cts, 2);
+            $result = ClassUserService::checkTeacher($params['teachers'], $cts);
             if ($result !== true) {
                 return $response->withJson($result, StatusCode::HTTP_OK);
             }
@@ -202,7 +202,7 @@ class STClass extends ControllerBase
             }
         }
         if (!empty($params['teachers'])) {
-            $result = ClassUserService::checkTeacher($params['teachers'], $cts, 2);
+            $result = ClassUserService::checkTeacher($params['teachers'], $cts);
             if ($result !== true) {
                 return $response->withJson($result, StatusCode::HTTP_OK);
             }
@@ -319,7 +319,7 @@ class STClass extends ControllerBase
             return $response->withJson(Valid::addErrors([], 'class', 'class_is_not_exist'), StatusCode::HTTP_OK);
         }
         if (empty($class['class_tasks'])) {
-            return $response->withJson(Valid::addErrors([], 'class', 'class_task_is not_exist'), StatusCode::HTTP_OK);
+            return $response->withJson(Valid::addErrors([], 'class', 'class_task_is_not_exist'), StatusCode::HTTP_OK);
         }
         if ($class['status'] != STClassModel::STATUS_NORMAL) {
             return $response->withJson(Valid::addErrors([], 'class', 'class_status_invalid'), StatusCode::HTTP_OK);
@@ -350,8 +350,7 @@ class STClass extends ControllerBase
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
-            'data' => [
-            ]
+            'data' => []
         ], StatusCode::HTTP_OK);
 
     }
@@ -381,13 +380,13 @@ class STClass extends ControllerBase
             return $response->withJson(Valid::addErrors([], 'class', 'class_is_not_exist'), StatusCode::HTTP_OK);
         }
         if ($class['status'] != STClassModel::STATUS_BEGIN) {
-            return $response->withJson(Valid::addErrors([], 'class', 'class_status_is_invalid'), StatusCode::HTTP_OK);
+            return $response->withJson(Valid::addErrors([], 'class', 'class_status_invalid'), StatusCode::HTTP_OK);
         }
         if (!empty($class['students'])) {
-            return $response->withJson(Valid::addErrors([], 'class', 'class_students_is_not_empty'), StatusCode::HTTP_OK);
+            return $response->withJson(Valid::addErrors([], 'class', 'class_students_is_empty'), StatusCode::HTTP_OK);
         }
         if (!empty($class['teachers'])) {
-            return $response->withJson(Valid::addErrors([], 'class', 'class_teachers_is_not_empty'), StatusCode::HTTP_OK);
+            return $response->withJson(Valid::addErrors([], 'class', 'class_teachers_is_empty'), StatusCode::HTTP_OK);
         }
 
         $db = MysqlDB::getDB();
@@ -407,10 +406,8 @@ class STClass extends ControllerBase
         $db->commit();
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
-            'data' => [
-            ]
+            'data' => []
         ], StatusCode::HTTP_OK);
-
     }
 
     /**
@@ -443,6 +440,7 @@ class STClass extends ControllerBase
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
+
         $classes = [];
         foreach ($params['class_ids'] as $classId) {
             $class = STClassService::getSTClassDetail($classId);
@@ -450,63 +448,61 @@ class STClass extends ControllerBase
                 return $response->withJson(Valid::addErrors([], 'class', 'class_is_not_exist'), StatusCode::HTTP_OK);
             }
             if (empty($class['class_tasks'])) {
-                return $response->withJson(Valid::addErrors([], 'class', 'class_task_is not_exist'), StatusCode::HTTP_OK);
+                return $response->withJson(Valid::addErrors([], 'class', 'class_task_is_not_exist'), StatusCode::HTTP_OK);
             }
             if (!in_array($class['status'], [STClassModel::STATUS_BEGIN, STClassModel::STATUS_NORMAL])) {
                 return $response->withJson(Valid::addErrors([], 'class', 'class_status_invalid'), StatusCode::HTTP_OK);
             }
             $classes[] = $class;
         }
-        $now = time();
-        if (!empty($classes)) {
-            $db = MysqlDB::getDB();
-            $db->beginTransaction();
-            foreach ($classes as $class) {
-                $newCts = $newStc = [];
 
-                $newStc['name'] = $class['name'];
-                $newStc['status'] = STClassModel::STATUS_NORMAL;
-                $newStc['campus_id'] = $class['campus_id'];
-                $newStc['class_lowest'] = $class['class_lowest'];
-                $newStc['class_highest'] = $class['class_highest'];
-                $newStc['finish_num'] = 0;
-                $newStc['lesson_num'] = $class['lesson_num'];
-                $newStc['create_time'] = $now;
-                foreach ($class['class_tasks'] as $key => $ct) {
-                    $newCt = $ct;
-                    $newCt['expire_start_date'] = $params['start_date'];
+        $now = time();
+        $db = MysqlDB::getDB();
+        $db->beginTransaction();
+        foreach ($classes as $class) {
+            $newCts = $newStc = [];
+
+            $newStc['name'] = $class['name'];
+            $newStc['status'] = STClassModel::STATUS_NORMAL;
+            $newStc['campus_id'] = $class['campus_id'];
+            $newStc['class_lowest'] = $class['class_lowest'];
+            $newStc['class_highest'] = $class['class_highest'];
+            $newStc['finish_num'] = 0;
+            $newStc['lesson_num'] = $class['lesson_num'];
+            $newStc['create_time'] = $now;
+            foreach ($class['class_tasks'] as $key => $ct) {
+                $newCt = $ct;
+                $newCt['expire_start_date'] = $params['start_date'];
+                unset($newCt['expire_end_date']);
+                $newCts[$key] = $newCt;
+            }
+
+            for ($i = 0; $i < $params['num']; $i++) {
+                $cts = ClassTaskService::checkCTs($newCts);
+                if (!empty($cts['code']) && $cts['code'] == Valid::CODE_PARAMS_ERROR) {
+                    $db->rollBack();
+                    return $response->withJson($cts, StatusCode::HTTP_OK);
+                }
+                $stcId = STClassService::addSTClass($newStc, $cts);
+                if (empty($stcId)) {
+                    $db->rollBack();
+                    return $response->withJson(Valid::addErrors(['data' => ['result' => $class], 'code' => 1], 'class', 'class_copy_failure'), StatusCode::HTTP_OK);
+                }
+                unset($cts['lesson_num']);
+                $newCts = $cts;
+                foreach ($newCts as $key => $newCt) {
+                    $newCt['expire_start_date'] = $newCt['expire_end_date'];
                     unset($newCt['expire_end_date']);
                     $newCts[$key] = $newCt;
                 }
-
-                for ($i = 0; $i < $params['num']; $i++) {
-                    $cts = ClassTaskService::checkCTs($newCts);
-                    if (!empty($cts['code']) && $cts['code'] == Valid::CODE_PARAMS_ERROR) {
-                        $db->rollBack();
-                        return $response->withJson($cts, StatusCode::HTTP_OK);
-                    }
-                    $stcId = STClassService::addSTClass($newStc, $cts);
-                    if (empty($stcId)) {
-                        $db->rollBack();
-                        return $response->withJson(Valid::addErrors(['data' => ['result' => $class], 'code' => 1], 'class', 'class_copy_failure'), StatusCode::HTTP_OK);
-                    }
-                    unset($cts['lesson_num']);
-                    $newCts = $cts;
-                    foreach ($newCts as $key => $newCt) {
-                        $newCt['expire_start_date'] = $newCt['expire_end_date'];
-                        unset($newCt['expire_end_date']);
-                        $newCts[$key] = $newCt;
-                    }
-                }
-
             }
-            $db->commit();
+
         }
+        $db->commit();
+
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
-            'data' => [
-            ]
+            'data' => []
         ], StatusCode::HTTP_OK);
-
     }
 }

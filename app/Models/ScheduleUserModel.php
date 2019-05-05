@@ -76,9 +76,10 @@ class ScheduleUserModel extends Model
             's.end_time[>]' => $startTime,
             'su.status' => array(self::STATUS_NORMAL),
         ];
-        if (!empty($orgSTId)) {
+        if (!empty($orgSId)) {
             $where['s.id[!]'] = $orgSId;
         }
+
         if ($isOrg == true) {
             global $orgId;
             if ($orgId > 0)

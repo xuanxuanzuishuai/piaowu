@@ -101,13 +101,14 @@ class ClassUserService
     /**
      * @param $teachers
      * @param $cts
-     * @param $maxNum
+     * @param $classTeachers array
      * @return array|bool
      */
-    public static function checkTeacher($teachers, $cts, $maxNum)
+    public static function checkTeacher($teachers, $cts, $classTeachers = [])
     {
         $result = true;
         $teacherIds = array_keys($teachers);
+        $maxNum = 2 - count($classTeachers);
         if (count($teachers) > $maxNum) {
             $result = Valid::addErrors([], 'class_teacher', 'class_teacher_num_more_than_max');
         }
@@ -115,6 +116,14 @@ class ClassUserService
         if (count($teachers) != count($eTeachers)) {
             $result = Valid::addErrors([], 'class_teacher', 'class_teacher_is_not_match');
         }
+
+        // 角色限制：1个老师，1个班主任
+        $userRoles = !empty($classTeachers) ? array_column($classTeachers, 'user_role') : [];
+        $roles = array_values($teachers);
+        if (count($roles) != count($teachers) || !empty(array_intersect($userRoles, $roles))) {
+            $result = Valid::addErrors([], 'class_teacher', 'class_teacher_role_not_allow');
+        }
+
         foreach ($cts as $ct) {
             $orgClassId = empty($ct['class_id']) ? null : $ct['class_id'];
             $sts = ClassTaskModel::checkUserTime($teacherIds, array(ClassUserModel::USER_ROLE_T,ClassUserModel::USER_ROLE_HT), $ct['start_time'], $ct['end_time'], $ct['weekday'], $ct['expire_start_date'], $ct['expire_end_date'], $orgClassId);

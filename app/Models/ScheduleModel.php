@@ -49,6 +49,7 @@ class ScheduleModel extends Model
         $join = [
             '[><]' . CourseModel::$table . " (c)" => ['s.course_id' => 'id'],
             '[><]' . ClassroomModel::$table . " (cr)" => ['s.classroom_id' => 'id'],
+            '[><]' . STClassModel::$table . "(class)" => ['s.class_id' => 'id']
         ];
 
         return MysqlDB::getDB()->get(self::$table . " (s)", $join, [
@@ -65,7 +66,8 @@ class ScheduleModel extends Model
             'c.type (course_type)',
             'c.duration',
             'cr.name (classroom_name)',
-            'cr.campus_id'
+            'cr.campus_id',
+            'class.class_highest'
         ], $where);
     }
 

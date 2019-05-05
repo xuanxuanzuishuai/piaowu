@@ -49,7 +49,7 @@ class ClassUser extends ControllerBase
         $params = $request->getParams();
         $result = Valid::validate($params, $rules);
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
-            return $response->withJson($result, 200);
+            return $response->withJson($result, StatusCode::HTTP_OK);
         }
         $class = STClassService::getSTClassDetail($params['class_id']);
         if (empty($class)) {
@@ -117,7 +117,7 @@ class ClassUser extends ControllerBase
         $params = $request->getParams();
         $result = Valid::validate($params, $rules);
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
-            return $response->withJson($result, 200);
+            return $response->withJson($result, StatusCode::HTTP_OK);
         }
         $class = STClassService::getSTClassDetail($params['class_id']);
         if (empty($class)) {
@@ -127,7 +127,16 @@ class ClassUser extends ControllerBase
             return $response->withJson(Valid::addErrors([], 'class', 'class_status_invalid'), StatusCode::HTTP_OK);
         }
 
-        $result = ClassUserService::checkTeacher($params['teachers'], $class['class_tasks'],2-count($class['teachers']));
+        foreach($class['teachers'] as $teacher) {
+            if(key_exists($teacher['user_id'], $params['teachers'])){
+                unset($params['teachers'][$teacher['user_id']]);
+            }
+        }
+        if (empty($params['teachers'])) {
+            return $response->withJson(['code' => 0, 'data' => ['stc' => $class]], StatusCode::HTTP_OK);
+        }
+
+        $result = ClassUserService::checkTeacher($params['teachers'], $class['class_tasks'], $class['teachers']);
         if ($result !== true) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
