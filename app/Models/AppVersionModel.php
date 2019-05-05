@@ -124,18 +124,6 @@ class AppVersionModel
             return ;
         }
 
-        function verCmp($va, $vb) {
-            $vaCode = explode('.', $va['version']);
-            $vbCode = explode('.', $vb['version']);
-
-            if ($vaCode[0] ==  $vbCode[0]) {
-                if ($vaCode[1] == $vbCode[1]) {
-                    if ($vaCode[2] == $vbCode[2]) { return 0;
-                    } else { return $vaCode[2] < $vbCode[2] ? 1 : -1; }
-                } else { return $vaCode[1] < $vbCode[1] ? 1 : -1; }
-            } else { return $vaCode[0] < $vbCode[0] ? 1 : -1; }
-        }
-
         $publishVerIdx = -1;
         $reviewVerIdx = -1;
         foreach ($versions as $idx => $data) {
@@ -149,7 +137,7 @@ class AppVersionModel
                 if ($publishVerIdx < 0) {
                     $publishVerIdx = $idx;
                 } else {
-                    if (verCmp($data[$publishVerIdx], $data[$idx])) {
+                    if (self::verCmp($data[$publishVerIdx]['version'], $data[$idx]['version'])) {
                         $publishVerIdx = $idx;
                     }
                 }
@@ -173,5 +161,24 @@ class AppVersionModel
             'publish ' => $publishVer ?? [],
             'review' => $reviewVer ?? [],
         ]);
+    }
+
+    /**
+     * 版本号比较
+     * 版本号格式为3段点号分割: 1.2.0 , 1.4.13 , 2.0.0
+     * @param $va string x.y.z
+     * @param $vb string x.y.z
+     * @return int
+     */
+    public static function verCmp($va, $vb) {
+        $vaCode = explode('.', $va);
+        $vbCode = explode('.', $vb);
+
+        if ($vaCode[0] ==  $vbCode[0]) {
+            if ($vaCode[1] == $vbCode[1]) {
+                if ($vaCode[2] == $vbCode[2]) { return 0;
+                } else { return $vaCode[2] < $vbCode[2] ? 1 : -1; }
+            } else { return $vaCode[1] < $vbCode[1] ? 1 : -1; }
+        } else { return $vaCode[0] < $vbCode[0] ? 1 : -1; }
     }
 }
