@@ -60,8 +60,13 @@ class Auth extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        if ($this->ci['is_review_version']) {
-            $loginData['sub_end_date'] = '20250101';
+        // 审核版本自动激活
+        if ($this->ci['platform'] == AppVersionService::PLAT_IOS) {
+            $reviewVersion = AppVersionService::getReviewVersionCode(AppVersionModel::APP_TYPE_STUDENT,
+                AppVersionService::getPlatformId(AppVersionService::PLAT_IOS));
+            if ($reviewVersion == $this->ci['version']) {
+                $loginData['sub_end_date'] = '20250101';
+            }
         }
 
         return $response->withJson([
@@ -103,8 +108,13 @@ class Auth extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        if ($this->ci['is_review_version']) {
-            $loginData['sub_end_date'] = '20250101';
+        // 审核版本自动激活
+        if ($this->ci['platform'] == AppVersionService::PLAT_IOS) {
+            $reviewVersion = AppVersionService::getReviewVersionCode(AppVersionModel::APP_TYPE_STUDENT,
+                AppVersionService::getPlatformId(AppVersionService::PLAT_IOS));
+            if ($reviewVersion == $this->ci['version']) {
+                $loginData['sub_end_date'] = '20250101';
+            }
         }
 
         return $response->withJson([
