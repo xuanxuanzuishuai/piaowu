@@ -66,6 +66,7 @@ class OrganizationModel extends Model
         left join {$e} e2 on e2.org_id = o.id
         left join {$ro} ro on ro.id = e2.role_id and ro.id = :role_id
         {$where}
+        order by o.create_time desc
         {$limit}", $map);
 
         $total = $db->queryAll("select count(*) count
