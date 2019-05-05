@@ -408,7 +408,7 @@ $arr = array(
         'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class],
     ],
 
-    '/teacher_wx/student/list' => array('method'=>array('get'),'call'=>'\App\Controllers\TeacherWX\Student:get', 'middles' => array( )),
+    '/teacher_wx/student/list' => array('method'=>array('get'),'call'=>'\App\Controllers\TeacherWX\Student:get', 'middles' => array( '\App\Middleware\WeChatAuthCheckMiddleware')),
     '/teacher_wx/homework/collection_list' => array('method'=>array('get'),'call'=>'\App\Controllers\TeacherWX\Homework:getRecentCollections', 'middles' => array( '\App\Middleware\WeChatAuthCheckMiddleware')),
     '/teacher_wx/homework/lesson_list' => array('method'=>array('get'),'call'=>'\App\Controllers\TeacherWX\Homework:getRecentLessons', 'middles' => array( '\App\Middleware\WeChatAuthCheckMiddleware')),
     '/teacher_wx/homework/search_collections' => array('method'=>array('get'),'call'=>'\App\Controllers\TeacherWX\Homework:searchCollections', 'middles' => array( '\App\Middleware\WeChatAuthCheckMiddleware')),
