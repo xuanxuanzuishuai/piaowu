@@ -46,7 +46,7 @@ class Classroom extends ControllerBase
             [
                 "key" => "id",
                 "type" => "required",
-                "error_code" => "classroom id is required"
+                "error_code" => "classroom_id_is_required"
             ]
         ];
 
@@ -78,12 +78,12 @@ class Classroom extends ControllerBase
             [
                 "key" => "name",
                 "type" => "required",
-                "error_code" => "classroom name is required"
+                "error_code" => "classroom_name_is_required"
             ],
             [
                 "key" => "campus_id",
                 "type" => "required",
-                "error_code" => "classroom campus_id is required"
+                "error_code" => "classroom_campus_id_is_required"
             ]
         ];
 
@@ -113,12 +113,12 @@ class Classroom extends ControllerBase
             [
                 "key" => "name",
                 "type" => "required",
-                "error_code" => "classroom name is required"
+                "error_code" => "classroom_name_is_required"
             ],
             [
                 "key" => "campus_id",
                 "type" => "required",
-                "error_code" => "classroom campus_id is required"
+                "error_code" => "classroom_campus_id_is_required"
             ]
         ];
 

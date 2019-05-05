@@ -45,7 +45,7 @@ class Campus extends ControllerBase
             [
                 "key" => "id",
                 "type" => "required",
-                "error_code" => "campus id is required"
+                "error_code" => "campus_id_is_required"
             ]
         ];
         $param = $request->getParams();
@@ -75,7 +75,7 @@ class Campus extends ControllerBase
             [
                 "key" => "name",
                 "type" => "required",
-                "error_code" => "campus name is required"
+                "error_code" => "campus_name_is_required"
             ]
         ];
 
@@ -100,7 +100,7 @@ class Campus extends ControllerBase
             [
                 "key" => "name",
                 "type" => "required",
-                "error_code" => "campus name is required"
+                "error_code" => "campus_name_is_required"
             ]
         ];
 
