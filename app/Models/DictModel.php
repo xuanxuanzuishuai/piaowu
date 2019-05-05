@@ -12,6 +12,7 @@ namespace App\Models;
 
 use App\Libs\MysqlDB;
 use App\Libs\RedisDB;
+use App\Libs\SimpleLogger;
 
 class DictModel extends Model
 {
@@ -111,6 +112,12 @@ class DictModel extends Model
             $item = json_decode($item, true);
             $keyValue = $item['key_value'];
         }
+
+        SimpleLogger::debug("[cache] Dict::getKeyValue", [
+            'type' => $type,
+            'key' => $keyCode,
+            'value' => $keyValue
+        ]);
 
         return empty($keyValue) ? "" : $keyValue;
     }
