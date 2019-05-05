@@ -63,6 +63,7 @@ class ClassUserService
      */
     public static function formatCU($cu)
     {
+        $cu['price'] = empty($cu['price'])?"0.00":floatval($cu['price']/100);
         $cu['cu_user_role'] = DictService::getKeyValue(Constants::DICT_TYPE_CLASS_USER_ROLE, $cu['user_role']);
         $cu['cu_status'] = DictService::getKeyValue(Constants::DICT_TYPE_CLASS_USER_STATUS, $cu['status']);
         return $cu;
