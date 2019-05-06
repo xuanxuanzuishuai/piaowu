@@ -117,6 +117,6 @@ class DictConstants {
 
     public static function getSet($type)
     {
-        return DictService::getTypeMap($type);
+        return DictService::getTypeMap($type['type']);
     }
 }
