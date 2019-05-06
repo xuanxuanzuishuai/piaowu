@@ -32,6 +32,7 @@ use App\Controllers\Employee\Employee as Employee;
 use App\Controllers\Org\OrgAccount as OrgAccount;
 use App\Controllers\Student\PlayRecord as BackendPlayRecord;
 use App\Controllers\Bill\Bill;
+use App\Middleware\StudentResPrivilegeCheckMiddleWareForApp;
 use Slim\App;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -153,7 +154,7 @@ $arr = array(
     '/student_app/opn/lesson' => [
         'method' => ['get'],
         'call' => StudentAppOpn::class . ':lesson',
-        'middles' => [OrgResPrivilegeCheckMiddleWareForApp::class, StudentAuthCheckMiddleWareForApp::class, AppApi::class]
+        'middles' => [StudentResPrivilegeCheckMiddleWareForApp::class, StudentAuthCheckMiddleWareForApp::class, AppApi::class]
     ],
     '/student_app/opn/search' => [
         'method' => ['get'],
