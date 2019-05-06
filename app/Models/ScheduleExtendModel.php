@@ -8,12 +8,22 @@
 
 namespace App\Models;
 use App\Libs\MysqlDB;
-use phpDocumentor\Reflection\Types\Integer;
 
 
 class ScheduleExtendModel extends Model
 {
     public static $table = "schedule_extend";
+
+    public static $homework_score_map = [
+        3 => "非常优秀",
+        2 => "较好",
+        1 => "还要多练习"
+    ];
+    public static $performance_score_map = [
+        3 => "非常优秀",
+        2 => "较好",
+        1 => "注意力不集中"
+    ];
 
     /**
      * 写入一条报告

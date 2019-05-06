@@ -57,6 +57,9 @@ class Schedule extends ControllerBase
             $start_time = $schedule_info["start_time"];
             $teacher_name = $schedule_info["teacher_name"];
             $student_name = $schedule_info["student_name"];
+            $detail_score = json_decode($schedule_info["detail_score"], true);
+            $homework_rank = $detail_score["homework_rank"];
+            $performance_rank = $detail_score["performance_rank"];
 
             if (!empty($lesson_ids)){
                 $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, OpernCenter::version);
@@ -98,8 +101,8 @@ class Schedule extends ControllerBase
             $data["class_score"] = $class_score;
             $data["homework_end_date"] = date("Y年m月d日", $finish_time) ?? "";
             $data["teacher_name"] = $teacher_name;
-            $data["homework_remark"] = "非常优秀";
-            $data["performance_remark"] = "秀";
+            $data["homework_remark"] = ScheduleExtendModel::$homework_score_map[$homework_rank];
+            $data["performance_remark"] = ScheduleExtendModel::$performance_score_map[$performance_rank];
             $data["student_name"] = $student_name;
         }
 
