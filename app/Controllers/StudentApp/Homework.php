@@ -80,7 +80,7 @@ class Homework extends ControllerBase
             $temp = [
                 'time' => $item['created_time'],
                 'score' => $item['score'],
-                'complete' => $item['complete'],
+                'complete' => (int)$item['complete'],
                 'record_id' => $item['ai_record_id']
             ];
             array_push($returnData['play_record'], $temp);
