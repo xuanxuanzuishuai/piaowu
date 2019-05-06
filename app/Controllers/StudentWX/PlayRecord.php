@@ -238,6 +238,11 @@ class PlayRecord extends ControllerBase
                 'key' => 'ai_record_id',
                 'type' => 'required',
                 'error_code' => 'ai_record_id_is_required'
+            ],
+            [
+                'key' => 'lesson_id',
+                'type' => 'required',
+                'error_code' => 'lesson_id_is_required'
             ]
         ];
 
@@ -247,13 +252,13 @@ class PlayRecord extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-
         $data = AIPLCenter::recordGrade($params["ai_record_id"]);
+
         if (empty($data) or $data["meta"]["code"] != 0){
-            $ret = [];
+            $score_ret = [];
         } else {
             $score = $data["data"]["score"];
-            $ret = [
+            $score_ret = [
                 "simple_complete" => $score["simple_complete"],
                 "simple_final" => $score["simple_final"],
                 "simple_pitch" => $score["simple_pitch"],
@@ -262,9 +267,34 @@ class PlayRecord extends ControllerBase
                 "simple_speed" => $score["simple_speed"]
             ];
         }
+        $data = AIPLCenter::userAudio($params["ai_record_id"]);
+        if (empty($data) or $data["meta"]["code"] != 0){
+            $wonderful_url = "";
+        } else {
+            $wonderful_url = $data["data"]["audio_url"];
+        }
+
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, OpernCenter::version);
+        $res = $opn->lessonsByIds([$params["lesson_id"]]);
+        if (!empty($res['code']) && $res['code'] !== Valid::CODE_SUCCESS) {
+            $opern_list = [];
+        } else {
+            $opern_id = $res["data"][0]["opern_id"];
+            $result = $opn->staticResource($opern_id, 'png');
+            if (!empty($result['code']) && $result['code'] !== Valid::CODE_SUCCESS){
+                $opern_list = [];
+            } else {
+                $opern_list = $result["data"];
+            }
+        }
+
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
-            'data' => $ret
+            'data' => [
+                "score" => $score_ret,
+                "wonderful_url" => $wonderful_url,
+                "opern_list" => $opern_list
+            ]
         ], StatusCode::HTTP_OK);
     }
 }

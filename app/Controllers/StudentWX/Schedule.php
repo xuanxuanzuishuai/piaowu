@@ -22,7 +22,8 @@ use App\Models\ScheduleExtendModel;
 class Schedule extends ControllerBase
 {
 
-    /** 上课报告
+    /**
+     * 上课报告
      * @param Request $request
      * @param Response $response
      * @return Response
