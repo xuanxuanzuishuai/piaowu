@@ -584,9 +584,9 @@ $app->add(function (Request $request, Response $response, $next) use ($app, $arr
     /** @var Response $response */
     $response = $next($request, $response);
 
-    $body = $response->getBody()->getContents();
+    $body = (string)$response->getBody();
     SimpleLogger::debug(__FILE__ . ':' . __LINE__, [
-        '== RESPONSE ==' => json_decode($body, true)
+        '== RESPONSE ==' => $body,
     ]);
 
     $endTime = Util::microtime_float();
