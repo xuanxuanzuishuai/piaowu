@@ -10,6 +10,7 @@ namespace App\Controllers\Employee;
 
 use App\Controllers\ControllerBase;
 use App\Libs\Constants;
+use App\Libs\DictConstants;
 use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Models\EmployeeModel;
@@ -32,8 +33,7 @@ class Auth extends ControllerBase
      */
     public function usercenterurl(Request $request, Response $response, $args)
     {
-        list($ucHost,$ucAppId) = DictService::getKeyValuesByArray(Constants::DICT_TYPE_SYSTEM_ENV,
-            array(Constants::DICT_KEY_UC_HOST_URL, Constants::DICT_KEY_UC_APP_ID));
+        list($ucHost,$ucAppId) = DictConstants::get(DictConstants::USER_CENTER, ['host', 'app_id_dss']);
         return $response->withJson(array(
             'code' => 0,
             'data' => [

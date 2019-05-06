@@ -95,16 +95,10 @@ class Constants
 
     // 服务器地址
     /** https://erp.xiongmaopeilian.com 末尾没有/,拼url时需要加!!! */
-    const DICT_KEY_STATIC_FILE_URL = 'STATIC_FILE_URL';
-    const DICT_KEY_QINIU_DOMAIN_1 = 'QINIU_DOMAIN_10';
-    const DICT_KEY_QINIU_FOLDER_1 = 'QINIU_FOLDER_10';
     // 阿里云曲谱库曲谱地址
     const DICT_KEY_MEGATRON_RESOLUTION = 'MEGATRON_RESOLUTION';
     // 网络监控地址
     const DICT_KEY_SCHEDULE_STAT_URL = 'SCHEDULE_STAT_URL';
-    // 课后报告地址
-    const DICT_KEY_TEST_SCHEDULE_REPORT_URL = 'TEST_SCHEDULE_REPORT_URL';
-    const DICT_KEY_NORMAL_SCHEDULE_REPORT_URL = 'NORMAL_SCHEDULE_REPORT_URL';
 
     // DICT  性别 type
     const DICT_TYPE_GENDER = 'gender';
@@ -156,9 +150,6 @@ class Constants
      */
     const DICT_GOODS_STATUS = "goods_status";
     // 用户中心主机地址
-    const DICT_KEY_UC_HOST_URL = 'UC_HOST_URL';
-    const DICT_KEY_UC_APP_ID = 'UC_APP_ID';
-    const DICT_KEY_UC_APP_SECRET = 'UC_APP_SECRET';
 
     /**
      * 消息队列设置

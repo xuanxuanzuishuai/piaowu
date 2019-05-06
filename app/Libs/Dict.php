@@ -139,31 +139,6 @@ class Dict
     }
 
     /**
-     * 课后报告地址
-     * @param $scheduleId
-     * @param $type
-     * @return mixed
-     */
-    public static function getScheduleReportUrl($scheduleId, $type)
-    {
-        list($issuer, $audience, $expire, $signerKey, $tokenTypeUser) = DictService::getKeyValuesByArray(Constants::DICT_TYPE_SYSTEM_ENV,
-            [
-                Constants::DICT_KEY_JWT_ISSUER,
-                Constants::DICT_KEY_JWT_AUDIENCE,
-                Constants::DICT_KEY_JWT_EXPIRE,
-                Constants::DICT_KEY_JWT_SIGNER_KEY,
-                Constants::DICT_KEY_TOKEN_TYPE_USER
-            ]);
-        $jwtUtils = new JWTUtils($issuer, $audience, $expire, $signerKey);
-        $sign = $jwtUtils->getToken(0, $scheduleId, null);
-
-        if ($type == CourseModel::TYPE_NORMAL) {
-            return DictService::getKeyValue(Constants::DICT_TYPE_SYSTEM_ENV, Constants::DICT_KEY_NORMAL_SCHEDULE_REPORT_URL) . $sign;
-        }
-        return DictService::getKeyValue(Constants::DICT_TYPE_SYSTEM_ENV, Constants::DICT_KEY_TEST_SCHEDULE_REPORT_URL) . $sign;
-    }
-
-    /**
      * 获取学生等级
      * @param $level
      * @return mixed
