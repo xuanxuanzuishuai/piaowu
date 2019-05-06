@@ -108,16 +108,10 @@ class DictModel extends Model
                 self::delCache($type, self::$cacheKeyListPri);
                 self::getList($type);
             }
-        }else{
+        } else {
             $item = json_decode($item, true);
             $keyValue = $item['key_value'];
         }
-
-        SimpleLogger::debug("[cache] Dict::getKeyValue", [
-            'type' => $type,
-            'key' => $keyCode,
-            'value' => $keyValue
-        ]);
 
         return empty($keyValue) ? "" : $keyValue;
     }
