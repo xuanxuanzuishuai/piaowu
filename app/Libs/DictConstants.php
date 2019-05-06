@@ -26,13 +26,6 @@ class DictConstants {
         ]
     ];
 
-    const SMS_CENTER = [
-        'type' => 'SMS_CENTER_CONFIG',
-        'keys' => [
-            'host'
-        ]
-    ];
-
     const SERVICE = [
         'type' => 'SERVICE_CONFIG',
         'keys' => [
