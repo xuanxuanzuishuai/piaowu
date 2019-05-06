@@ -74,7 +74,7 @@ class QRCodeService
             'landing_type' => QRCodeModel::LANDING_TYPE_WX,
             'org_id' => $orgId,
             'referee_type' => $refereeType,
-            '$refereeId' => $refereeId
+            'referee_id' => $refereeId
         ];
         return self::getQR($qrParams);
     }
