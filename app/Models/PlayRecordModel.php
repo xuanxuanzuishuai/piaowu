@@ -360,4 +360,28 @@ class PlayRecordModel extends Model
         $result = $db->queryAll($sql, $map);
         return $result[0]["duration"];
     }
+
+    /**
+     * 某用户某月哪天练习过曲谱
+     * @param $year
+     * @param $month
+     * @param $student_id
+     * @return array|null
+     */
+    public static function getMonthPlayRecordStatistics($year, $month, $student_id){
+
+        $start_time = strtotime($year . "-" . $month);
+        $end_time = strtotime(date('Y-m-t', $start_time) . "23:59:59");
+        $sql = "select distinct FROM_UNIXTIME(pr.created_time, '%Y-%m-%d') as play_date from " .
+            self::$table . " as pr where pr.created_time >= :start_time and pr.created_time <= :end_time 
+            and pr.student_id=:student_id order by pr.id "; // id排序应该就等同于created_time排序了，个人并不确定created_time是否含有index
+        $map = [
+            ":start_time" => $start_time,
+            ":end_time" => $end_time,
+            ":student_id" => $student_id
+        ];
+        $db = MysqlDB::getDB();
+        $result = $db->queryAll($sql, $map);
+        return $result;
+    }
 }

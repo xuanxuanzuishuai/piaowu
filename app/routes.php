@@ -441,6 +441,8 @@ $arr = array(
     '/student_wx/schedule/schedule_list' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\Schedule:scheduleList', 'middles' => array('\App\Middleware\WeChatAuthCheckMiddleware')),
     '/student_wx/play_record/test_statistics' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\PlayRecord:getLessonTestStatistics', 'middles' => array('\App\Middleware\WeChatAuthCheckMiddleware')),
     '/student_wx/play_record/ai_record_grade' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\PlayRecord:getAIRecordGrade', 'middles' => array('\App\Middleware\WeChatAuthCheckMiddleware')),
+    '/student_wx/play_record/month_statistic' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\PlayRecord:getMonthStatistics', 'middles' => array('\App\Middleware\WeChatAuthCheckMiddleware')),
+    '/student_wx/play_record/month_day_statistic' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\PlayRecord:getMonthDayStatistics', 'middles' => array('\App\Middleware\WeChatAuthCheckMiddleware')),
 
     '/org_web/org/bind_unbind_student' => [
         'method'  => ['post'],
