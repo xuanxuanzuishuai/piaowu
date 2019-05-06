@@ -11,7 +11,11 @@ namespace App\Controllers\TeacherWX;
 use App\Controllers\ControllerBase;
 use App\Controllers\StudentWX\Common;
 use App\Libs\Valid;
+use App\Models\OrganizationModel;
+use App\Models\QRCodeModel;
+use App\Models\TeacherOrgModel;
 use App\Services\CommonServiceForApp;
+use App\Services\QRCodeService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -185,6 +189,53 @@ class Teacher extends ControllerBase
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => []
+        ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * 获取邀请二维码
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getInviteQrCode(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'org_id',
+                'type' => 'required',
+                'error_code' => 'org_id_is_required'
+            ]
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $user_id = $this->ci['user_info']['user_id'];
+        $ret = QRCodeService::getOrgStudentBindRefereeQR($params["org_id"],
+            QRCodeModel::REFEREE_TYPE_TEACHER, $user_id);
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $ret
+        ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * 获取老师绑定结构列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getBindOrgList(Request $request, Response $response)
+    {
+
+        $user_id = $this->ci['user_info']['user_id'];
+        $records = TeacherOrgModel::getBoundList($user_id);
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $records
         ], StatusCode::HTTP_OK);
     }
 }

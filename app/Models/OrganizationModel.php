@@ -79,13 +79,6 @@ class OrganizationModel extends Model
         return [$records, $total[0]['count']];
     }
 
-    /**
-     *
-     */
-    public static function generateQrCode(){
-
-    }
-
     /** 根据ID查询一条机构记录
      * @param $orgId
      * @return array|null

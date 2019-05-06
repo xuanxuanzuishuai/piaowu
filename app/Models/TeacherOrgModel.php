@@ -66,4 +66,12 @@ class TeacherOrgModel extends Model
 
         return $affectRows;
     }
+
+    public static function getBoundList($teacherId){
+        $db = MysqlDB::getDB();
+        $sql = "select * from " . self::$table . " where teacher_id=:teacher_id";
+        $map = ["teacher_id" => $teacherId];
+        $records = $db->queryAll($sql, $map);
+        return $records;
+    }
 }

@@ -61,7 +61,8 @@ class WeChatService
         return null;
     }
 
-    /** 获取token key
+    /**
+     * 获取token key
      * @param $token
      * @return string
      */
@@ -69,7 +70,8 @@ class WeChatService
         return self::cacheKeyTokenPri . $token;
     }
 
-    /** 生成token
+    /**
+     * 生成token
      * @param $user_id
      * @param $user_type
      * @param $app_id
@@ -90,7 +92,8 @@ class WeChatService
         return $token;
     }
 
-    /** 刷新token过期时间
+    /**
+     * 刷新token过期时间
      * @param $token
      */
     public static function refreshToken($token) {
@@ -119,7 +122,8 @@ class WeChatService
         $redis->expire($key, 0);
     }
 
-    /** 根据用户授权获得的code换取用户open id 和access id
+    /**
+     * 根据用户授权获得的code换取用户open id 和access id
      * @param $code
      * @param $app_id
      * @param $user_type
@@ -157,7 +161,8 @@ class WeChatService
         return false;
     }
 
-    /** 调用微信常规接口发送数据
+    /**
+     * 调用微信常规接口发送数据
      * @param $app_id
      * @param $userType
      * @param $requestType
@@ -205,7 +210,8 @@ class WeChatService
         return false;
     }
 
-    /** 请求微信接口获取公众号accessToken，外部禁止调用本方法, 请调用getAccessToken方法
+    /**
+     * 请求微信接口获取公众号accessToken，外部禁止调用本方法, 请调用getAccessToken方法
      * @param $appInfo
      * @return mixed|string
      * @throws \GuzzleHttp\Exception\GuzzleException
@@ -238,7 +244,8 @@ class WeChatService
         return $body;
     }
 
-    /** 获取公众号accessToken
+    /**
+     * 获取公众号accessToken
      * @param $app_id
      * @param $userType
      * @return bool|string
@@ -314,6 +321,15 @@ class WeChatService
         return $res;
     }
 
+    /**
+     * 微信通知文本消息
+     * @param $app_id
+     * @param $userType
+     * @param $openid
+     * @param $content
+     * @return array|bool|mixed
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
     public static function notifyUserWeixinTextInfo($app_id, $userType, $openid, $content){
         //发送数据
         $res = self::commonWeixinAPI($app_id, $userType, 'POST', 'message/custom/send',
@@ -327,7 +343,16 @@ class WeChatService
         return $res;
     }
 
-    /** 获取微信 js api ticket
+    public function toNotifyUserWeixinCustomerInfoForImage($app_id, $userType, $openid, $mediaId)
+    {
+        $body =  ['touser' => $openid, 'msgtype' => 'image', 'image' => ['media_id' => $mediaId]];
+        $res = self::commonWeixinAPI($app_id, $userType, 'POST', 'message/custom/send', $body);
+        //返回数据
+        return $res;
+    }
+
+    /**
+     * 获取微信 js api ticket
      * @param $app_id
      * @param $user_type
      * @return bool|string
@@ -412,5 +437,4 @@ class WeChatService
         }
         return false;
     }
-
 }
