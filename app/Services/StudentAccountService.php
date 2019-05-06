@@ -73,7 +73,7 @@ class StudentAccountService
         $now = time();
         $sas = StudentAccountModel::getSADetailBySId($studentId);
         if (empty($sas)) {
-            return false;
+            return Valid::addErrors([], 'student', 'student_account_not_enough');
         }
         //先消耗现金 后消耗虚拟币
         foreach ($sas as $sa) {
@@ -88,7 +88,7 @@ class StudentAccountService
             if ($res > 0) {
                 $log[] = ['operator_id' => $operatorId, 'remark' => $remark, 'create_time' => $now, 's_a_id' => $cash['id'], 'balance' => $amount, 'old_balance' => $cash['balance'], 'new_balance' => $cash['balance'] - $amount, 'type' => StudentAccountLogModel::TYPE_REDUCE];
             } else {
-                return false;
+                return Valid::addErrors([], 'student', 'update_student_account_error');
             }
         } else if ($cash['balance'] + $vcash['balance'] >= $amount) {
             $cashAmount = 0;
@@ -98,21 +98,21 @@ class StudentAccountService
                 if ($res > 0) {
                     $log[] = ['operator_id' => $operatorId, 'remark' => $remark, 'create_time' => $now, 's_a_id' => $cash['id'], 'balance' => $cashAmount, 'old_balance' => $cash['balance'], 'new_balance' => 0, 'type' => StudentAccountLogModel::TYPE_REDUCE];
                 } else {
-                    return false;
+                    return Valid::addErrors([], 'student', 'update_student_account_error');
                 }
             }
             $res = StudentAccountModel::updateSA(['update_time' => $now, 'balance[-]' => $amount - $cashAmount, 'ver[+]' => 1], ['id' => $vcash['id'], 'ver' => $vcash['ver']]);
             if ($res > 0) {
                 $log[] = ['operator_id' => $operatorId, 'remark' => $remark, 'create_time' => $now, 's_a_id' => $vcash['id'], 'balance' => $amount - $cashAmount, 'old_balance' => $vcash['balance'], 'new_balance' => $vcash['balance'] - ($amount - $cashAmount), 'type' => StudentAccountLogModel::TYPE_REDUCE];
             } else {
-                return false;
+                return Valid::addErrors([], 'student', 'update_student_account_error');
             }
 
         } else {
-            return false;
+            return Valid::addErrors([], 'student', 'student_account_not_enough');
         }
         if (!empty($log)) {
-            $res = StudentAccountLogModel::batchInsert($log, false);
+            StudentAccountLogModel::batchInsert($log, false);
         }
         return true;
     }

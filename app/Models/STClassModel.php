@@ -72,6 +72,7 @@ class STClassModel extends Model
         if (!empty($params['course_id'])) {
             $where .= " and ct.course_id = " . $params['course_id'];
         }
+        $where .= " and c.status != " . self::STATUS_CHANGE . " and c.status != " . self::STATUS_CANCEL_AFTER_BEGIN;
         $select = " select distinct c.*,t.name as teacher_name, t1.name as h_teacher_name, cm.name as campus_name";
         $sql = "
             from " . self::$table . " as c 
@@ -83,15 +84,15 @@ class STClassModel extends Model
             left join " . TeacherModel::$table . " as t on tcu.user_id = t.id
             left join " . TeacherModel::$table . " as t1 on tcu1.user_id = t1.id
             ";
-        $sql .= $where ;
+        $sql .= $where;
         $num = 0;
         if ($page != -1) {
-            $num  = $db->query("select count(distinct c.id) as num ".$sql)->fetch(\PDO::FETCH_COLUMN);
+            $num  = $db->query("select count(distinct c.id) as num " . $sql)->fetch(\PDO::FETCH_COLUMN);
             $page = empty($page) ? $page = 1 : $page;
             $sql .= " order by id desc limit " . ($page - 1) * $count . "," . $count;
         }
-        $res = $db->query($select .$sql)->fetchAll(\PDO::FETCH_ASSOC);
-        return [$num,$res];
+        $res = $db->query($select . $sql)->fetchAll(\PDO::FETCH_ASSOC);
+        return [$num, $res];
     }
 
     /**

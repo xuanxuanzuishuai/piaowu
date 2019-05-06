@@ -341,7 +341,7 @@ class ScheduleService
         // check schedule, check schedule_user
         $checkSchedule = self::checkSchedule($schedule);
         if ($checkSchedule != true) {
-            return Valid::addErrors([], 'class_task_classroom', 'class_task_classroom_error');
+            return Valid::addErrors([], 'schedule', 'check_schedule_error');
         }
 
         $originScheduleId = $params['schedule_id'] ?? 0;
@@ -379,7 +379,7 @@ class ScheduleService
 
         $checkRes = ClassTaskService::checkCT($classTask);
         if ($checkRes !== true) {
-            return Valid::addErrors(['data' => ['result' => $classTask]], 'class_task_classroom', 'class_task_classroom_error');
+            return Valid::addErrors([], 'class_task_classroom', 'class_task_classroom_error');
         }
 
         $classTasks[] = $classTask;

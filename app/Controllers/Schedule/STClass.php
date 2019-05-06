@@ -101,7 +101,7 @@ class STClass extends ControllerBase
         return $response->withJson([
             'code' => 0,
             'data' => ['stc' => $stc]
-        ], 200);
+        ], StatusCode::HTTP_OK);
     }
 
     /**
@@ -142,17 +142,12 @@ class STClass extends ControllerBase
                 'key' => 'campus_id',
                 'type' => 'required',
                 'error_code' => 'campus_id_is_required',
-            ],
-            [
-                'key' => 'status',
-                'type' => 'required',
-                'error_code' => 'status_is_required',
-            ],
+            ]
         ];
         $params = $request->getParams();
         $result = Valid::validate($params, $rules);
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
-            return $response->withJson($result, 200);
+            return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
         $class = STClassService::getSTClassDetail($params['class_id']);
@@ -165,16 +160,13 @@ class STClass extends ControllerBase
 
         $newStc['id'] = $class['id'];
         $newStc['name'] = $params['name'];
-        $newStc['status'] = $params['status'];
         $newStc['campus_id'] = $params['campus_id'];
         $newStc['class_lowest'] = $params['class_lowest'];
         $newStc['class_highest'] = $params['class_highest'];
         $newStc['update_time'] = time();
         $newStc['finish_num'] = 0;
 
-
         $cts = ClassTaskService::checkCTs($params['cts'], $newStc['id']);
-
         if (!empty($cts['code']) && $cts['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($cts, StatusCode::HTTP_OK);
         }
@@ -210,36 +202,29 @@ class STClass extends ControllerBase
         $db = MysqlDB::getDB();
         $db->beginTransaction();
         STCLassService::modifyClass($newStc);
-        if ($newStc['status'] == ClassTaskModel::STATUS_CANCEL) {
-            ClassUserService::updateCUStatus(['class_id' => $class['id']], ClassUserModel::STATUS_CANCEL);
-            ClassTaskService::updateCTStatus(['class_id' => $class['id']], ClassTaskModel::STATUS_CANCEL);
-        } else {
-
-            if (!empty($ssuIds)) {
-                ClassUserService::unBindUser($ssuIds, $class['id']);
-            }
-            if (!empty($params['students'])) {
-                ClassUserService::bindCUs($class['id'], [ClassUserModel::USER_ROLE_S => $params['students']]);
-            }
-
-
-            if (!empty($stuIds)) {
-                ClassUserService::unBindUser($stuIds, $class['id']);
-            }
-            if (!empty($params['teachers'])) {
-                ClassUserService::bindCUs($class['id'], [ClassUserModel::USER_ROLE_T => $params['teachers']]);
-            }
-
-            ClassTaskService::updateCTStatus(['class_id' => $class['id']], ClassTaskModel::STATUS_CANCEL);
-            ClassTaskService::addCTs($class['id'], $cts);
+        if (!empty($ssuIds)) {
+            ClassUserService::unBindUser($ssuIds, $class['id']);
         }
+        if (!empty($params['students'])) {
+            ClassUserService::bindCUs($class['id'], [ClassUserModel::USER_ROLE_S => $params['students']]);
+        }
+
+        if (!empty($stuIds)) {
+            ClassUserService::unBindUser($stuIds, $class['id']);
+        }
+        if (!empty($params['teachers'])) {
+            ClassUserService::bindCUs($class['id'], [ClassUserModel::USER_ROLE_T => $params['teachers']]);
+        }
+
+        ClassTaskService::updateCTStatus(['class_id' => $class['id']], ClassTaskModel::STATUS_CANCEL);
+        ClassTaskService::addCTs($class['id'], $cts);
+
         $db->commit();
         $stc = STClassService::getSTClassDetail($newStc['id']);
         return $response->withJson([
             'code' => 0,
             'data' => ['stc' => $stc]
         ]);
-
     }
 
     /**
@@ -352,10 +337,10 @@ class STClass extends ControllerBase
             'code' => Valid::CODE_SUCCESS,
             'data' => []
         ], StatusCode::HTTP_OK);
-
     }
 
     /**
+     * 取消排课
      * @param Request $request
      * @param Response $response
      * @param $args
@@ -379,31 +364,55 @@ class STClass extends ControllerBase
         if (empty($class)) {
             return $response->withJson(Valid::addErrors([], 'class', 'class_is_not_exist'), StatusCode::HTTP_OK);
         }
-        if ($class['status'] != STClassModel::STATUS_BEGIN) {
+
+        if ($class['status'] == STClassModel::STATUS_BEGIN) {
+            // 开课后取消课程计划
+            if (!empty($class['students'])) {
+                return $response->withJson(Valid::addErrors([], 'class', 'class_students_is_not_empty'), StatusCode::HTTP_OK);
+            }
+            if (!empty($class['teachers'])) {
+                return $response->withJson(Valid::addErrors([], 'class', 'class_teachers_is_not_empty'), StatusCode::HTTP_OK);
+            }
+
+            $db = MysqlDB::getDB();
+            $db->beginTransaction();
+            $res = ScheduleService::cancelScheduleByClassId($class['id']);
+            if ($res == false) {
+                $db->rollBack();
+            }
+            $res = ClassTaskService::updateCTStatus(['class_id' => $class['id']], ClassTaskModel::STATUS_CANCEL_AFTER_BEGIN);
+            if ($res == false) {
+                $db->rollBack();
+            }
+            $res = STClassService::modifyClass(['id' => $class['id'], 'status' => STClassModel::STATUS_CANCEL_AFTER_BEGIN, 'update_time' => time()]);
+            if ($res == false) {
+                $db->rollBack();
+            }
+            $db->commit();
+        } elseif ($class['status'] == STClassModel::STATUS_NORMAL) {
+            // 开课之前取消课程计划
+            $db = MysqlDB::getDB();
+            $db->beginTransaction();
+            $res = STCLassService::modifyClass(['id' => $class['id'], 'status' => STClassModel::STATUS_CANCEL, 'update_time' => time()]);
+            if ($res == false) {
+                $db->rollBack();
+            }
+            $res = ClassTaskService::updateCTStatus(['class_id' => $class['id']], ClassTaskModel::STATUS_CANCEL);
+            if ($res == false) {
+                $db->rollBack();
+            }
+
+            if (!empty($class['teachers']) || !empty($class['students'])) {
+                $res = ClassUserService::updateCUStatus(['class_id' => $class['id']], ClassUserModel::STATUS_CANCEL);
+                if ($res == false) {
+                    $db->rollBack();
+                }
+            }
+            $db->commit();
+        } else {
             return $response->withJson(Valid::addErrors([], 'class', 'class_status_invalid'), StatusCode::HTTP_OK);
         }
-        if (!empty($class['students'])) {
-            return $response->withJson(Valid::addErrors([], 'class', 'class_students_is_empty'), StatusCode::HTTP_OK);
-        }
-        if (!empty($class['teachers'])) {
-            return $response->withJson(Valid::addErrors([], 'class', 'class_teachers_is_empty'), StatusCode::HTTP_OK);
-        }
 
-        $db = MysqlDB::getDB();
-        $db->beginTransaction();
-        $res = ScheduleService::cancelScheduleByClassId($class['id']);
-        if ($res == false) {
-            $db->rollBack();
-        }
-        $res = ClassTaskService::updateCTStatus(['class_id' => $class['id']], ClassTaskModel::STATUS_CANCEL);
-        if ($res == false) {
-            $db->rollBack();
-        }
-        $res = STClassService::modifyClass(['id' => $class['id'], 'status' => ClassTaskModel::STATUS_CANCEL, 'update_time' => time()]);
-        if ($res == false) {
-            $db->rollBack();
-        }
-        $db->commit();
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => []
@@ -497,6 +506,53 @@ class STClass extends ControllerBase
                 }
             }
 
+        }
+        $db->commit();
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => []
+        ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * 结课
+     * @param Request $request
+     * @param Response $response
+     * @param $args
+     * @return Response
+     */
+    public function endST(Request $request, Response $response, $args)
+    {
+        $rules = [
+            [
+                'key' => 'class_id',
+                'type' => 'required',
+                'error_code' => 'class_id_is_required'
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $class = STClassService::getSTClassDetail($params['class_id']);
+        if (empty($class)) {
+            return $response->withJson(Valid::addErrors([], 'class', 'class_is_not_exist'), StatusCode::HTTP_OK);
+        }
+        if ($class['status'] != STClassModel::STATUS_BEGIN) {
+            return $response->withJson(Valid::addErrors([], 'class', 'class_status_invalid'), StatusCode::HTTP_OK);
+        }
+
+        $db = MysqlDB::getDB();
+        $db->beginTransaction();
+        $res = ClassTaskService::updateCTStatus(['class_id' => $class['id']], ClassTaskModel::STATUS_END);
+        if ($res == false) {
+            $db->rollBack();
+        }
+        $res = STClassService::modifyClass(['id' => $class['id'], 'status' => STClassModel::STATUS_END, 'update_time' => time()]);
+        if ($res == false) {
+            $db->rollBack();
         }
         $db->commit();
 

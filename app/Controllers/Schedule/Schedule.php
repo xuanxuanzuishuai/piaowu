@@ -241,7 +241,11 @@ class Schedule extends ControllerBase
         $employeeId = $this->getEmployeeId();
         $db = MysqlDB::getDB();
         $db->beginTransaction();
-        ScheduleUserService::signIn($params['schedule_id'], $params['su_ids'], $schedule['students'], $employeeId);
+        $res = ScheduleUserService::signIn($params['schedule_id'], $params['su_ids'], $schedule['students'], $employeeId);
+        if ($res !== true) {
+            $db->rollBack();
+            return $response->withJson($res, StatusCode::HTTP_OK);
+        }
         $db->commit();
         $schedule = ScheduleService::getDetail($params['schedule_id']);
         return $response->withJson([
@@ -274,6 +278,9 @@ class Schedule extends ControllerBase
         $schedule = ScheduleService::getDetail($params['schedule_id']);
         if (empty($schedule) || $schedule['status'] != ScheduleModel::STATUS_BOOK) {
             return $response->withJson(Valid::addErrors([], 'schedule', 'schedule_not_exist'), StatusCode::HTTP_OK);
+        }
+        if ($schedule['end_time'] >= time()) {
+            return $response->withJson(Valid::addErrors([], 'schedule', 'schedule_not_end'), StatusCode::HTTP_OK);
         }
 
         $db = MysqlDB::getDB();

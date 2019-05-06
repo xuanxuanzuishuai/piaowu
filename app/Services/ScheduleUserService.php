@@ -9,9 +9,7 @@
 namespace App\Services;
 
 
-use App\Controllers\Schedule\ClassUser;
 use App\Libs\SimpleLogger;
-use App\Models\ClassUserModel;
 use App\Models\ScheduleUserModel;
 
 class ScheduleUserService
@@ -55,24 +53,28 @@ class ScheduleUserService
      * @param $suIds
      * @param $students
      * @param $operatorId
+     * @return array|bool
      */
     public static function signIn($scheduleId, $suIds, $students, $operatorId)
     {
         SimpleLogger::info('student and teacher sign in ', $suIds);
-        $now = time();
-
-        // student sign
-        ScheduleUserModel::updateStudentStatus($scheduleId, $suIds, ScheduleUserModel::STUDENT_STATUS_ATTEND, $now);
 
         foreach ($students as $student) {
             if (in_array($student['id'], $suIds) && $student['user_status'] == ScheduleUserModel::STUDENT_STATUS_BOOK) {
                 // student account
-                StudentAccountService::reduceSA($student['user_id'], $student['price'] * 100, $operatorId, '下课');
+                $result = StudentAccountService::reduceSA($student['user_id'], $student['price'] * 100, $operatorId, '下课');
+                if ($result !== true) {
+                    return $result;
+                }
             }
         }
 
+        $now = time();
+        // student sign
+        ScheduleUserModel::updateStudentStatus($scheduleId, $suIds, ScheduleUserModel::STUDENT_STATUS_ATTEND, $now);
         // teacher sign
         ScheduleUserModel::updateTeacherStatus($scheduleId, $suIds, ScheduleUserModel::TEACHER_STATUS_ATTEND, $now);
+        return true;
     }
 
     /**
