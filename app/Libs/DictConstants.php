@@ -33,6 +33,20 @@ class DictConstants {
         ]
     ];
 
+    const APP_CONFIG_STUDENT = [
+        'type' => 'APP_CONFIG_STUDENT',
+        'keys' => [
+            'ai_host'
+        ]
+    ];
+
+    const APP_CONFIG_TEACHER = [
+        'type' => 'APP_CONFIG_TEACHER',
+        'keys' => [
+            'ai_host'
+        ]
+    ];
+
     public static function get($type, $key)
     {
         if (empty($type) || empty($key)) {
@@ -66,5 +80,10 @@ class DictConstants {
         }
 
         return DictService::getKeyValuesByArray($type['type'], $keys);
+    }
+
+    public static function getSet($type)
+    {
+        return DictService::getTypeMap($type);
     }
 }

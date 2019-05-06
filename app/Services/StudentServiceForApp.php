@@ -68,7 +68,7 @@ class StudentServiceForApp
             'sub_status' => $student['sub_status'],
             'sub_start_date' => $student['sub_start_date'],
             'sub_end_date' => $student['sub_end_date'],
-            'config' => '{}',
+            'config' => DictConstants::getSet(DictConstants::APP_CONFIG_STUDENT),
             'token' => $token,
             'teachers' => $teachers
         ];
@@ -104,7 +104,7 @@ class StudentServiceForApp
             'sub_status' => $student['sub_status'],
             'sub_start_date' => $student['sub_start_date'],
             'sub_end_date' => $student['sub_end_date'],
-            'config' => '{}',
+            'config' => DictConstants::getSet(DictConstants::APP_CONFIG_STUDENT),
             'token' => $token,
             'teachers' => $teachers
         ];
