@@ -9,6 +9,7 @@
 namespace App\Services;
 
 
+use App\Libs\DictConstants;
 use App\Libs\OpernCenter;
 use App\Libs\SimpleLogger;
 use App\Models\HomeworkTaskModel;
@@ -55,7 +56,7 @@ class OrganizationServiceForApp
         $loginData = [
             'org_info' => $orgInfo,
             'teachers' => $orgTeachers,
-            'app_settings' => [],
+            'config' => DictConstants::getSet(DictConstants::APP_CONFIG_TEACHER),
             'org_token' => $token
         ];
 
@@ -93,7 +94,7 @@ class OrganizationServiceForApp
         $loginData = [
             'org_info' => $orgInfo,
             'teachers' => $orgTeachers,
-            'app_settings' => [],
+            'config' => DictConstants::getSet(DictConstants::APP_CONFIG_TEACHER),
             'org_token' => $token
         ];
 
