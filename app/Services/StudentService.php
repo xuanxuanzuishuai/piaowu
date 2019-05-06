@@ -182,26 +182,23 @@ class StudentService
 
     /**
      * 更新学生详细信息
+     * @param $studentId
      * @param $params
      * @return array|int
      */
-    public static function updateStudentDetail($params)
+    public static function updateStudentDetail($studentId, $params)
     {
-        $student = StudentModel::getById($params['student_id']);
-        if (empty($student)){
-            return Valid::addErrors([], 'student_id', 'student_not_exist');
-        }
-
-        $gender = empty($params['gender']) ? '1' : strval($params['gender']);
+        $student = StudentModel::getById($studentId);
 
         list($appId, $appSecret) = DictConstants::get(DictConstants::USER_CENTER, ['app_id_dss', 'app_secret_dss']);
+
         $userCenter = new UserCenter($appId, $appSecret);
-        $updResult = $userCenter->modifyStudent($student['uuid'], $params['name'], $params['birthday'], $gender);
+        $updResult = $userCenter->modifyStudent($student['uuid'], $params['name'], $params['birthday'], strval($params['gender']));
         if (!empty($updResult) && $updResult['code'] != 0){
             return $updResult;
         }
 
-        $affectRow = StudentModel::updateStudent($params['student_id'], $params);
+        $affectRow = StudentModel::updateStudent($studentId, $params);
 
         return $affectRow;
     }

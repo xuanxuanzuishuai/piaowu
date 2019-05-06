@@ -25,6 +25,11 @@ class StudentModel extends Model
     const STATUS_NORMAL = 1;
     const STATUS_STOP = 0;
 
+    //添加渠道
+    const CHANNEL_BACKEND_ADD = 1; //机构后台添加
+    const CHANNEL_WE_CHAT_SCAN = 2; //微信扫码注册
+    const CHANNEL_APP_REGISTER = 3; //爱学琴APP注册
+
     /**
      * 获取客户数据
      * @param $page
@@ -366,20 +371,9 @@ class StudentModel extends Model
      */
     public static function updateStudent($studentId, $data)
     {
-        $params = [
-            'update_time' => time()
-        ];
+        $data['update_time'] = time();
 
-        if(isset($data['name'])){
-            $params['name'] = $data['name'];
-        }
-        if(isset($data['gender'])){
-            $params['gender'] = $data['gender'];
-        }
-        if(isset($data['birthday'])){
-            $params['birthday'] = $data['birthday'];
-        }
-        return self::updateRecord($studentId, $params,false);
+        return self::updateRecord($studentId, $data,false);
     }
 
     /**
@@ -437,7 +431,7 @@ class StudentModel extends Model
      * @param $operatorId
      * @return int|mixed|null|string
      */
-    public static function saveStudent($params, $uuid,$operatorId = 0 )
+    public static function saveStudent($params, $uuid, $operatorId = 0 )
     {
         $data = ['operator_id' => $operatorId];
 
@@ -451,6 +445,9 @@ class StudentModel extends Model
         }
         if(!empty($params['birthday'])){
             $data['birthday'] = $params['birthday'];
+        }
+        if(!empty($params['channel_id'])){
+            $data['channel_id'] = $params['channel_id'];
         }
 
         return MysqlDB::getDB()->insertGetID(self::$table, $data);
@@ -555,6 +552,7 @@ class StudentModel extends Model
         $t  = TeacherStudentModel::$table;
         $te = TeacherModel::$table;
         $e  = EmployeeModel::$table;
+        $ch = ChannelModel::$table;
 
         //按姓名或手机号模糊查询,查询出结果后直接返回
         if(!empty($params['key'])) {
@@ -593,12 +591,13 @@ class StudentModel extends Model
 
         if ($orgId > 0) {
             $sql = "select s.*,e.name cc_name, t.teacher_id, te.name teacher_name, 
-                t.status ts_status, so.status bind_status
+                t.status ts_status, so.status bind_status, ch.name channel_name
                 from {$s} s inner join {$so} so
                 on s.id = so.student_id
                 left join {$t} t on s.id = t.student_id and t.org_id = so.org_id
                 left join {$te} te on te.id = t.teacher_id 
                 left join {$e} e on e.id = s.cc_id
+                left join {$ch} ch on ch.id = s.channel_id
                 {$where}
                 order by s.create_time desc {$limit}";
 
@@ -611,12 +610,13 @@ class StudentModel extends Model
                 {$where}";
         } else {
             $sql = "select s.*,e.name cc_name, t.teacher_id, te.name teacher_name, 
-                t.status ts_status, so.status bind_status
+                t.status ts_status, so.status bind_status, ch.name channel_name
                 from {$s} s left join {$so} so
                 on s.id = so.student_id
                 left join {$t} t on s.id = t.student_id and t.org_id = so.org_id
                 left join {$te} te on te.id = t.teacher_id 
                 left join {$e} e on e.id = s.cc_id
+                left join {$ch} ch on ch.id = s.channel_id
                 {$where}
                 order by s.create_time desc {$limit}";
 

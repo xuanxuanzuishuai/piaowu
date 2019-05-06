@@ -260,11 +260,8 @@ class Student extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        //不能修改手机号，防止被hack
-        unset($params['mobile']);
-
         $studentId = $params['student_id'];
-        $orgId = $this->getEmployeeOrgId();
+        global $orgId;
 
         $entry = StudentOrgModel::getRecord([
             'org_id'     => $orgId,
@@ -275,10 +272,20 @@ class Student extends ControllerBase
             return $response->withJson(Valid::addErrors([],'student','student_not_exist'));
         }
 
+        $data = [
+            'name'        => $params['name'],
+            'gender'      => $params['gender'],
+            'operator_id' => $this->getEmployeeId(),
+        ];
+
+        if(!empty($params['birthday'])) {
+            $data['birthday'] = $params['birthday'];
+        }
+
         $db = MysqlDB::getDB();
         $db->beginTransaction();
 
-        $errOrAffectRows = StudentService::updateStudentDetail($params);
+        $errOrAffectRows = StudentService::updateStudentDetail($studentId, $data);
         if(is_array($errOrAffectRows)) {
             $db->rollBack();
             return $response->withJson($errOrAffectRows);
@@ -328,11 +335,6 @@ class Student extends ControllerBase
                 'error_code' => 'mobile_format_is_error'
             ],
             [
-                'key'        => 'channel_id',
-                'type'       => 'numeric',
-                'error_code' => 'channel_id_must_be_numeric',
-            ],
-            [
                 'key'        => 'gender',
                 'type'       => 'required',
                 'error_code' => 'gender_is_required',
@@ -343,12 +345,27 @@ class Student extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $orgId = $this->getEmployeeOrgId();
+        global $orgId;
+
+        $data = [
+            'name'        => $params['name'],
+            'mobile'      => $params['mobile'],
+            'gender'      => $params['gender'],
+            'channel_id'  => StudentModel::CHANNEL_BACKEND_ADD,
+            'org_id'      => $orgId,
+            'create_time' => time(),
+        ];
+
+        if(!empty($params['birthday'])) {
+            $data['birthday'] = $params['birthday'];
+        }
+
+        $operatorId = $this->getEmployeeId();
 
         $db = MysqlDB::getDB();
         $db->beginTransaction();
 
-        $res = StudentService::studentRegister($params, $orgId);
+        $res = StudentService::studentRegister($data, $operatorId);
         if ($res['code'] == Valid::CODE_PARAMS_ERROR) {
             $db->rollBack();
             return $response->withJson($res, StatusCode::HTTP_OK);
