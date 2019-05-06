@@ -162,7 +162,8 @@ class HomeworkService
      * @param int $endTime
      * @return mixed
      */
-    public static function getStudentHomeworkPractice($studentId, $taskId, $teacherId=null, $startTime=null, $endTime=null){
+    public static function getStudentHomeworkPractice($studentId, $taskId, $teacherId=null, $startTime=null,
+                                                      $endTime=null, $flunked=false){
 
         // 获取作业
         $where = [
@@ -189,7 +190,7 @@ class HomeworkService
         }
 
         $plays = PlayRecordModel::getPlayRecordList($homework['id'], $taskId, $homework["lesson_id"],
-            $startTime, $endTime);
+            $startTime, $endTime, $flunk=$flunked);
 
         return [$homework, $plays];
     }

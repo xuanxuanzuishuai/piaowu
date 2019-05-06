@@ -252,9 +252,22 @@ class PlayRecordModel extends Model
         return [$records, $total[0]['count']];
     }
 
+    /**
+     * @param $homeworkId
+     * @param $taskId
+     * @param $lessonId
+     * @param $startTime
+     * @param $endTime
+     * @param bool $statistic
+     * @param null $page
+     * @param null $limit
+     * @param null $studentId
+     * @param bool $flunked 是否获取不及格记录，默认不要
+     * @return array|null
+     */
     public static function getPlayRecordList($homeworkId, $taskId, $lessonId,
                                              $startTime, $endTime, $statistic=false, $page=null,
-                                             $limit=null, $studentId=null){
+                                             $limit=null, $studentId=null, $flunk=false){
         $db = MysqlDB::getDB();
 
         // 根据是否有homeworkId和taskId来确定是否join homework_complete 表
@@ -284,7 +297,10 @@ class PlayRecordModel extends Model
             ";
 
             if ($join_hc){
-                $fields = $fields . "if(hc.id is null, 0, 1) as complete ";
+                $fields = $fields . " hc.id as complete_id,
+                                      hc.task_id as task_id,
+                                      if(hc.id is null, 0, 1) as complete
+                                    ";
             } else{
                 $fields = $fields . "0 as complete ";
             }
@@ -303,13 +319,13 @@ class PlayRecordModel extends Model
             $where = $where . " pr.student_id=:student_id";
         }
         if ($join_hc){
-            $map["task_id"] = $taskId;
-            $map["homework_id"] = $homeworkId;
-
             $selectTable = $selectTable . "left join " . HomeworkCompleteModel::$table .
-                " as hc on hc.play_record_id = pr.id ";
-            $where = $where . " and hc.task_id=:task_id and hc.homework_id=:homework_id ";
-
+                " as hc on pr.id = hc.play_record_id";
+            if(!$flunk){
+                $map["task_id"] = $taskId;
+                $map["homework_id"] = $homeworkId;
+                $where = $where . " and hc.task_id=:task_id and hc.homework_id=:homework_id ";
+            }
         }
 
         $sql = $selectTable . $where;

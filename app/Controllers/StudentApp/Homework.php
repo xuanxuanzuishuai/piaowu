@@ -46,7 +46,8 @@ class Homework extends ControllerBase
         }
 
         $userId = $this->ci['student']['id'];
-        list($homework, $playRecord) = HomeworkService::getStudentHomeworkPractice($userId, $params['task_id']);
+        list($homework, $playRecord) = HomeworkService::getStudentHomeworkPractice($userId,
+            $params['task_id'], $flunked=true);
         if(empty($homework)){
             $errors = Valid::addAppErrors([], "homework_not_found");
             return $response->withJson($errors, StatusCode::HTTP_OK);
@@ -72,6 +73,9 @@ class Homework extends ControllerBase
             'play_record' => [],
         ];
         foreach ($playRecord as $item) {
+            if ($item['complete_id'] != null && $item['task_id'] != $params['task_id']){
+                continue;
+            }
             $temp = [
                 'time' => $item['created_time'],
                 'score' => $item['score'],
