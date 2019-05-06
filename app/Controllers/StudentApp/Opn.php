@@ -205,10 +205,15 @@ class Opn extends ControllerBase
         }
 
         $data = $result['data'];
-        $list = OpernService::appFormatLessonByIds($data)[0] ?? [];
+        $lesson = OpernService::appFormatLessonByIds($data)[0] ?? [];
+
+        if (!$lesson['is_free']) {
+            $this->ci['need_res_privilege'] = true;
+        }
+
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
-            'data' => $list
+            'data' => $lesson
         ], StatusCode::HTTP_OK);
     }
 }

@@ -153,7 +153,7 @@ $arr = array(
     '/student_app/opn/lesson' => [
         'method' => ['get'],
         'call' => StudentAppOpn::class . ':lesson',
-        'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApi::class]
+        'middles' => [OrgResPrivilegeCheckMiddleWareForApp::class, StudentAuthCheckMiddleWareForApp::class, AppApi::class]
     ],
     '/student_app/opn/search' => [
         'method' => ['get'],
