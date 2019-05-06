@@ -3,6 +3,7 @@
 namespace App;
 
 use App\Controllers\Boss\GiftCode;
+use App\Controllers\Employee\Employee;
 use App\Controllers\Org\Org;
 use App\Controllers\Schedule\ScheduleRecord;
 use App\Controllers\Student\Student;
@@ -28,7 +29,6 @@ use App\Controllers\TeacherApp\Opn as TeacherAppOpn;
 use App\Controllers\TeacherApp\Schedule as TeacherAppSchedule;
 use App\Controllers\TeacherApp\Play as TeacherAppPlay;
 use App\Controllers\TeacherApp\Org as TeacherAppOrg;
-use App\Controllers\Employee\Employee as Employee;
 use App\Controllers\Org\OrgAccount as OrgAccount;
 use App\Controllers\Student\PlayRecord as BackendPlayRecord;
 use App\Controllers\Bill\Bill;
@@ -557,6 +557,12 @@ $arr = array(
     '/org_web/org/referee_qrcode' => [
         'method'  => ['get'],
         'call'    => Org::class . ':refereeQrcode',
+        'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class]
+    ],
+    //请求机构cc列表，分配cc用
+    '/employee/employee/cc_list' => [
+        'method'  => ['get'],
+        'call'    => Employee::class . ':CCList',
         'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class]
     ],
 );

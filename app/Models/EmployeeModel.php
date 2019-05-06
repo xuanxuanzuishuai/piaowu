@@ -307,4 +307,29 @@ class EmployeeModel extends Model
         ]);
         return $user;
     }
+
+    public static function selectByRole($orgId, $roleId, $page, $count)
+    {
+        $where = [
+            'org_id'  => $orgId,
+            'status'  => self::STATUS_NORMAL,
+            'role_id' => $roleId,
+        ];
+
+        $richWhere = $where;
+
+        $richWhere['ORDER']  = ['id' => 'DESC'];
+
+        if($page != -1) {
+            $richWhere['LIMIT'] = [($page-1) * $count, $count];
+        }
+
+        $db = MysqlDB::getDB();
+
+        $records = $db->select(self::$table, ['id', 'name'], $richWhere);
+
+        $total = $db->count(self::$table, $where);
+
+        return [$records, $total];
+    }
 }

@@ -545,4 +545,52 @@ class Employee extends ControllerBase
             'data' => ['affect_rows' => $affectRows]
         ]);
     }
+
+    public function CCList(Request $request, Response $response, $args)
+    {
+        $rules = [
+            [
+                'key'        => 'page',
+                'type'       => 'integer',
+                'error_code' => 'page_is_integer'
+            ],
+            [
+                'key'        => 'count',
+                'type'       => 'integer',
+                'error_code' => 'count_is_integer'
+            ],
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $ccRoleId = Dict::getOrgCCRoleId();
+        if(empty($ccRoleId)) {
+            return $response->withJson(Valid::addErrors([], 'cc', 'cc_role_id_not_exist'));
+        }
+
+        list($page, $count) = Util::formatPageCount([
+            'page'  => $params['page'],
+            'count' => $params['count']
+        ]);
+
+        if($params['page'] == -1) {
+            $page = -1;
+        }
+
+        global $orgId;
+
+        list($records, $total) = EmployeeModel::selectByRole($orgId, $ccRoleId, $page, $count);
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => [
+                'records'     => $records,
+                'total_count' => $total,
+            ]
+        ]);
+    }
 }
