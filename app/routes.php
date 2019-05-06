@@ -218,7 +218,7 @@ $arr = array(
         'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApi::class]
     ],
     '/teacher_app/org/teacher_list' => [
-        'method' => ['post'],
+        'method' => ['get'],
         'call' => TeacherAppOrg::class . ':teacherList',
         'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApi::class]
     ],

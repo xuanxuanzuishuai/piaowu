@@ -47,13 +47,14 @@ class Homework extends ControllerBase
 
         $userId = $this->ci['student']['id'];
         list($homework, $playRecord) = HomeworkService::getStudentHomeworkPractice($userId,
-            $params['task_id'], $flunked=true);
+            $params['task_id'], null, null, null, true);
         if(empty($homework)){
             $errors = Valid::addAppErrors([], "homework_not_found");
             return $response->withJson($errors, StatusCode::HTTP_OK);
         }
 
-        $extra = OpernService::getLessonForJoin($homework['lesson_id'],
+        $extra = OpernService::getLessonForJoin(
+            $homework['lesson_id'],
             OpernCenter::PRO_ID_AI_STUDENT,
             $this->ci['opn_pro_ver'],
             $this->ci['opn_auditing'],

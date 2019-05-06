@@ -108,7 +108,7 @@ class Model
      * @param bool $isOrg
      * @return mixed
      */
-    public static function getRecord($where,$fields = [], $isOrg = true)
+    public static function getRecord($where, $fields = [], $isOrg = true)
     {
         if (empty($fields)) {
             $fields = '*';

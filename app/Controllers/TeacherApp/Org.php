@@ -94,6 +94,16 @@ class Org extends ControllerBase
                 'complete' => $task['complete']
             ];
             $play = $statistics[$task['lesson_id']];
+            if(empty($play)){
+                $play = [
+                    'practice_time' => 0,
+                    'step_times' => 0,
+                    'whole_times' => 0,
+                    'whole_best' => 0,
+                    'ai_times' => 0,
+                    'ai_best' => 0
+                ];
+            }
             $book = $books[$task['lesson_id']];
             $homework[] = array_merge($taskBase, $play, $book);
         }

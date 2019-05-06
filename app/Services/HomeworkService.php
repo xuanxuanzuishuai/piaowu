@@ -190,7 +190,7 @@ class HomeworkService
         }
 
         $plays = PlayRecordModel::getPlayRecordList($homework['id'], $taskId, $homework["lesson_id"],
-            $startTime, $endTime, $flunk=$flunked);
+            $startTime, $endTime, false, null,null,null, $flunked);
 
         return [$homework, $plays];
     }

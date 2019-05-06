@@ -267,9 +267,8 @@ class PlayRecordModel extends Model
      */
     public static function getPlayRecordList($homeworkId, $taskId, $lessonId,
                                              $startTime, $endTime, $statistic=false, $page=null,
-                                             $limit=null, $studentId=null, $flunk=false){
+                                             $limit=null, $studentId=null, $flunked=false){
         $db = MysqlDB::getDB();
-
         // 根据是否有homeworkId和taskId来确定是否join homework_complete 表
         $join_hc = false;
         if (!empty($homeworkId) and !empty($taskId)){
@@ -321,7 +320,7 @@ class PlayRecordModel extends Model
         if ($join_hc){
             $selectTable = $selectTable . "left join " . HomeworkCompleteModel::$table .
                 " as hc on pr.id = hc.play_record_id";
-            if(!$flunk){
+            if(!$flunked){
                 $map["task_id"] = $taskId;
                 $map["homework_id"] = $homeworkId;
                 $where = $where . " and hc.task_id=:task_id and hc.homework_id=:homework_id ";
