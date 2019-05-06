@@ -51,7 +51,7 @@ class StudentAccountService
             }
         } else {
             foreach ($data as $type => $balance) {
-                $saId = StudentAccountLogModel::insertRecord(['create_time' => $now, 'student_id' => $studentId, 'balance' => $balance, 'type' => $type]);
+                $saId = StudentAccountModel::insertRecord(['create_time' => $now, 'student_id' => $studentId, 'balance' => $balance, 'type' => $type]);
                 if ($saId > 0) {
                     $log[] = ['operator_id' => $operatorId, 'remark' => $remark, 'create_time' => $now, 's_a_id' => $saId, 'balance' => $balance, 'old_balance' => 0, 'new_balance' => $balance, 'type' => StudentAccountLogModel::TYPE_ADD];
                 } else {
