@@ -124,7 +124,7 @@ class Course extends ControllerBase
             return $response->withJson($errorInfo, StatusCode::HTTP_OK);
         }
 
-        //默认就是发布状态
+        //默认是发布状态
         $params['status'] = CourseModel::COURSE_STATUS_NORMAL;
 
         global $orgId;
@@ -327,6 +327,11 @@ class Course extends ControllerBase
                 'key' => 'num',
                 'type' => 'required',
                 'error_code' => 'num_is_required',
+            ],
+            [
+                'key' => 'status',
+                'type' => 'required',
+                'error_code' => 'status_is_required',
             ],
         ];
 

@@ -25,10 +25,8 @@ class CourseModel extends Model
     const TYPE_EXAMINE = 33;     // 老师考核，种子用户考核课
     const TYPE_TRAINING = 34;    // 老师培训课，老师使用学生端
 
-    // 课程状态 -1 待发布 0 停用（不可用） 1 正常
-    const COURSE_STATUS_WAIT   = -1;
-    const COURSE_STATUS_STOP   = 0;
-    const COURSE_STATUS_NORMAL = 1;
+    const COURSE_STATUS_STOP = 0; //废除
+    const COURSE_STATUS_NORMAL = 1; //正常
 
     // 课程时长
     const DURATION_50MINUTES = 3000; // 50分钟

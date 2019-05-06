@@ -43,6 +43,7 @@ class CourseService
             'operator_id'   => $params['operator_id'],
             'num'           => $params['num'],
             'org_id'        => $params['org_id'],
+            'status'        => $params['status'],
         ];
         if ($courseId != null) {
             $courseData['update_time'] = $cTime;
@@ -51,7 +52,6 @@ class CourseService
         } else {
             $courseData['create_time'] = $cTime;
             $courseData['update_time'] = $cTime;
-            $courseData['status']      = $params['status'];
             // 添加课程
             $result = CourseModel::insertRecord($courseData, false);
         }
