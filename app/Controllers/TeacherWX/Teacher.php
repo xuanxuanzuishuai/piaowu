@@ -232,7 +232,8 @@ class Teacher extends ControllerBase
     {
 
         $user_id = $this->ci['user_info']['user_id'];
-        $records = TeacherOrgModel::getBoundList($user_id);
+//        $user_id = 13150;
+        $records = TeacherOrgModel::getBoundList($user_id, TeacherOrgModel::STATUS_NORMAL);
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => $records

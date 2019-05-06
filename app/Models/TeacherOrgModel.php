@@ -67,10 +67,23 @@ class TeacherOrgModel extends Model
         return $affectRows;
     }
 
-    public static function getBoundList($teacherId){
+    /**
+     * 获取老师绑定机构列表
+     * @param $teacherId
+     * @param null $status
+     * @return array|null
+     */
+    public static function getBoundList($teacherId, $status=null){
         $db = MysqlDB::getDB();
-        $sql = "select * from " . self::$table . " where teacher_id=:teacher_id";
+        $where = " where t_o.teacher_id=:teacher_id and o.status=" . OrganizationModel::STATUS_NORMAL;
         $map = ["teacher_id" => $teacherId];
+        if ($status != null){
+            $where = $where . " and t_o.status=:status";
+            $map["status"] = $status;
+        }
+        $sql = "select t_o.org_id as org_id, o.name from " . self::$table . " as t_o inner join " . OrganizationModel::$table .
+            " as o on o.id=t_o.org_id" . $where;
+
         $records = $db->queryAll($sql, $map);
         return $records;
     }
