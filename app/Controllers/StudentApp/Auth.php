@@ -127,7 +127,7 @@ class Auth extends ControllerBase
     {
         if (empty($request)) { NULL; /* unused arg */ }
 
-        $userID = $this->ci['student']['id'];
+        $userID = $this->ci['student']['uuid'];
 
         return $response->withJson([
             'code'=> Valid::CODE_SUCCESS,
