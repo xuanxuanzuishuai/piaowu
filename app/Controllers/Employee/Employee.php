@@ -227,9 +227,6 @@ class Employee extends ControllerBase
 
         global $orgId;
 
-        //内部人员登录名前加org0_,机构人员登录名前加org+ID+下划线
-        $params['login_name'] = Util::makeOrgLoginName($orgId, $params['login_name']);
-
         if ($orgId > 0) {
             //机构管理员添加雇员
             //不能创建内部角色
@@ -265,6 +262,21 @@ class Employee extends ControllerBase
                 return $response->withJson(Valid::addErrors([],'employee','org_can_not_be_empty'));
             }
         }
+
+        //编辑用户时，不能修改org_id
+        if(!empty($params['id'])) {
+            $employee = EmployeeModel::getById($params['id']);
+            if(empty($employee)) {
+                return $response->withJson(Valid::addErrors([], 'employee', 'employee_not_exist'));
+            }
+            $params['org_id'] = $employee['org_id'];
+        } else {
+            //前端没有传org_id时，置为0
+            $params['org_id'] = empty($params['org_id']) ? 0 : $params['org_id'];
+        }
+
+        //内部人员登录名前加org0_,机构人员登录名前加org+ID+下划线
+        $params['login_name'] = Util::makeOrgLoginName($params['org_id'], $params['login_name']);
 
         //前端传递的status与insertOrUpdateEmployee所需的参数一致，$params已经包含了status
         $userId = EmployeeService::insertOrUpdateEmployee($params);
