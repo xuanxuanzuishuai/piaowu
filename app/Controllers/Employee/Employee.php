@@ -147,9 +147,7 @@ class Employee extends ControllerBase
         list($user, $roles) = EmployeeService::getEmployeeDetail($params['id']);
         //过滤login_name的前缀，比如org2_tom，前端要显示成tom
         $user['login_name'] = preg_replace('/^org\d+_(.*)/i', '${1}', $user['login_name']);
-        if(!empty($user['org_id'])) {
-            $user['prefix'] = Util::makeOrgLoginName($user['org_id'],'');
-        }
+        $user['prefix'] = Util::makeOrgLoginName($user['org_id'],'');
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
@@ -229,8 +227,10 @@ class Employee extends ControllerBase
 
         global $orgId;
 
+        //内部人员登录名前加org0_,机构人员登录名前加org+ID+下划线
+        $params['login_name'] = Util::makeOrgLoginName($orgId, $params['login_name']);
+
         if ($orgId > 0) {
-            $params['login_name'] = Util::makeOrgLoginName($orgId, $params['login_name']);
             //机构管理员添加雇员
             //不能创建内部角色
             if($role['is_internal'] == RoleModel::IS_INTERNAL) {
