@@ -10,7 +10,6 @@ namespace App\Controllers\StudentApp;
 
 use App\Controllers\ControllerBase;
 use App\Libs\Valid;
-use App\Models\AppConfigModel;
 use App\Models\AppVersionModel;
 use App\Services\AppVersionService;
 use App\Services\CommonServiceForApp;

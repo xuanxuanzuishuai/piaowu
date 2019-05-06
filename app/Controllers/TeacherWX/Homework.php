@@ -11,18 +11,14 @@ namespace App\Controllers\TeacherWX;
 
 use App\Controllers\ControllerBase;
 use App\Libs\MysqlDB;
-use App\Libs\SimpleLogger;
+use App\Libs\Util;
 use App\Libs\Valid;
-use App\Models\AppConfigModel;
-use App\Models\HomeworkModel;
 use App\Models\PlayRecordModel;
 use App\Services\HomeworkService;
 use App\Libs\OpernCenter;
 use App\Models\HomeworkTaskModel;
 use App\Services\PlayRecordService;
-use Predis\Command\Redis\SINTER;
 use Slim\Http\Request;
-use App\Services\OpernService;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
 
@@ -381,11 +377,32 @@ class HomeWork extends ControllerBase
      */
     public function getHomeworkDemand(Request $request, Response $response)
     {
-        $result = AppConfigModel::get(AppConfigModel::AI_HOMEWORK_DEMAND_KEY);
+        Util::unusedParam($request);
+
+        $result = [
+            [
+                'name' => '音准',
+                'value' => 'pitch',
+                'children' => [
+                    ['name' => '基本识谱', 'value' => 60],
+                    ['name' => '较少错音', 'value' => 80],
+                    ['name' => '熟练演奏', 'value' => 95],
+                ],
+            ],
+            [
+                'name' => '节奏',
+                'value' => 'rhythm',
+                'children' => [
+                    ['name' => '认识节奏', 'value' => 60],
+                    ['name' => '较少错拍', 'value' => 80],
+                    ['name' => '熟练演奏', 'value' => 95],
+                ],
+            ],
+        ];
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
-            'data' => json_decode($result)
+            'data' => $result
         ], StatusCode::HTTP_OK);
     }
 

@@ -8,9 +8,9 @@
 
 namespace App\Middleware;
 
+use App\Libs\DictConstants;
 use App\Libs\SimpleLogger;
 use App\Libs\Valid;
-use App\Models\AppConfigModel;
 use App\Models\AppVersionModel;
 use App\Models\StudentModelForApp;
 use App\Services\AppVersionService;
@@ -63,7 +63,7 @@ class StudentAuthCheckMiddleWareForApp extends MiddlewareBase
         $this->container['is_review_version'] = $isReviewVersion;
 
         // 内部审核账号，使用审核版本app也可看到所有资源
-        $reviewTestUsers = AppConfigModel::get('REVIEW_TESTER');
+        $reviewTestUsers = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'res_test_mobiles');
         if (!empty($reviewTestUsers)) {
             $userMobiles = explode(',', $reviewTestUsers);
             $isOpnTester = in_array($student['mobile'], $userMobiles);

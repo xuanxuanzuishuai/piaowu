@@ -10,9 +10,9 @@ namespace App\Controllers\StudentApp;
 
 
 use App\Controllers\ControllerBase;
+use App\Libs\DictConstants;
 use App\Libs\Util;
 use App\Libs\Valid;
-use App\Models\AppConfigModel;
 use App\Models\AppVersionModel;
 use App\Models\FeedbackModel;
 use App\Services\AppVersionService;
@@ -44,9 +44,9 @@ class App extends ControllerBase
         Util::unusedParam($request);
 
         if ($this->ci['is_review_version']) {
-            $url = AppConfigModel::get('REVIEW_GUIDE_URL');
+            $url = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'review_guide_url');
         } else {
-            $url = AppConfigModel::get('GUIDE_URL');
+            $url = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'guide_url');
         }
 
         return $response->withJson([

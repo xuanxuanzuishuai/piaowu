@@ -12,10 +12,8 @@ namespace App\Controllers\TeacherApp;
 
 use App\Controllers\ControllerBase;
 use App\Libs\OpernCenter;
-use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Libs\Valid;
-use App\Models\AppConfigModel;
 use App\Models\HomeworkTaskModel;
 use App\Services\OpernService;
 use Slim\Http\Request;

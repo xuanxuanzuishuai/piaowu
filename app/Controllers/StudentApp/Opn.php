@@ -13,7 +13,6 @@ use App\Controllers\ControllerBase;
 use App\Libs\OpernCenter;
 use App\Libs\Util;
 use App\Libs\Valid;
-use App\Models\AppConfigModel;
 use App\Services\OpernService;
 use Slim\Http\Request;
 use Slim\Http\Response;

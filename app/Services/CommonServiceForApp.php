@@ -13,7 +13,6 @@ namespace App\Services;
 use App\Libs\DictConstants;
 use App\Libs\NewSMS;
 use App\Libs\RedisDB;
-use App\Models\AppConfigModel;
 
 class CommonServiceForApp
 {
@@ -50,7 +49,7 @@ class CommonServiceForApp
         $code = (string)rand(1000, 9999);
         $msg = "您好，本次验证码为：".$code."，有效期为五分钟，可以在60秒后重新获取";
 
-        $sms = new NewSMS(DictConstants::get(DictConstants::SMS_CENTER, 'host'));
+        $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
         $success = $sms->sendValidateCode($mobile, $msg, $sign);
         if (!$success) {
             return 'send_validate_code_failure';
@@ -85,8 +84,8 @@ class CommonServiceForApp
         }
 
         // 审核专用账号和验证码
-        $reviewStudentMobile = AppConfigModel::get('REVIEW_USER_MOBILE');
-        $reviewValidateCode = AppConfigModel::get('REVIEW_VALIDATE_CODE');
+        list($reviewStudentMobile, $reviewValidateCode) = DictConstants::get(DictConstants::APP_CONFIG_STUDENT,
+            ['review_mobile', 'review_validate_code']);
         if ($mobile == $reviewStudentMobile && $code == $reviewValidateCode) {
             return true;
         }

@@ -33,6 +33,16 @@ class DictConstants {
         ]
     ];
 
+    const SERVICE = [
+        'type' => 'SERVICE_CONFIG',
+        'keys' => [
+            'sms_host',
+            'opern_host',
+            'ai_backend_host',
+            'uc_app_host'
+        ]
+    ];
+
     const APP_CONFIG_STUDENT = [
         'type' => 'APP_CONFIG_STUDENT',
         'keys' => [
@@ -44,6 +54,29 @@ class DictConstants {
         'type' => 'APP_CONFIG_TEACHER',
         'keys' => [
             'ai_host'
+        ]
+    ];
+
+    const APP_BACKEND_CONFIG_STUDENT = [
+        'type' => 'APP_BACKEND_CONFIG_STUDENT',
+        'keys' => [
+            'review_mobile',
+            'review_validate_code',
+            'super_validate_code',
+            'res_test_mobiles',
+            'guide_url',
+            'review_guide_url',
+        ]
+    ];
+
+    const APP_BACKEND_CONFIG_TEACHER = [
+        'type' => 'APP_BACKEND_CONFIG_TEACHER',
+        'keys' => [
+            'review_mobile',
+            'review_validate_code',
+            'super_validate_code',
+            'res_test_mobiles',
+            'default_collections',
         ]
     ];
 

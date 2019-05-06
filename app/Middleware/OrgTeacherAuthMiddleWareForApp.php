@@ -9,15 +9,13 @@
 namespace App\Middleware;
 
 
+use App\Libs\DictConstants;
 use App\Libs\SimpleLogger;
 use App\Libs\Valid;
-use App\Models\AppConfigModel;
-use App\Models\AppVersionModel;
 use App\Models\OrganizationModelForApp;
 use App\Models\StudentModel;
 use App\Models\StudentModelForApp;
 use App\Models\TeacherModel;
-use App\Services\AppVersionService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -69,7 +67,7 @@ class OrgTeacherAuthMiddleWareForApp extends MiddlewareBase
         $this->container['student'] = $student;
 
         // 内部审核账号，使用审核版本app也可看到所有资源
-        $reviewTestUsers = AppConfigModel::get('REVIEW_TESTER');
+        $reviewTestUsers = DictConstants::get(DictConstants::APP_CONFIG_TEACHER, 'res_test_mobiles');
         if (!empty($reviewTestUsers)) {
             $userMobiles = explode(',', $reviewTestUsers);
             $isOpnTester = in_array($teacher['mobile'], $userMobiles);

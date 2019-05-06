@@ -9,7 +9,6 @@
 namespace App\Libs;
 
 
-use App\Models\AppConfigModel;
 use GuzzleHttp\Client;
 use Slim\Http\StatusCode;
 
@@ -61,8 +60,8 @@ class OpernCenter
                 'debug' => false
             ]);
 
-            $erpUrl = AppConfigModel::get(AppConfigModel::OPERN_URL_KEY);
-            $fullUrl = $erpUrl . $api;
+            $opnUrl = DictConstants::get(DictConstants::SERVICE, 'opern_host');
+            $fullUrl = $opnUrl . $api;
 
             if ($method == 'GET') {
                 $data = ['query' => $data];

@@ -9,10 +9,9 @@
 namespace App\Services;
 
 
+use App\Libs\DictConstants;
 use App\Libs\OpernCenter;
-use App\Libs\SimpleLogger;
 use App\Libs\Valid;
-use App\Models\AppConfigModel;
 
 class OpernService
 {
@@ -145,7 +144,7 @@ class OpernService
      */
     public static function getDefaultCollections($proVer)
     {
-        $defaultCollectionIds = AppConfigModel::get('DEFAULT_COLLECTION_IDS_FOR_TEACHER_APP');
+        $defaultCollectionIds = DictConstants::get(DictConstants::APP_CONFIG_TEACHER, 'default_collections');
         if (empty($defaultCollectionIds)) {
             return [];
         }
@@ -168,7 +167,7 @@ class OpernService
      * @param $prod
      * @param $v
      * @param $publish
-     * @param $auit
+     * @param $audit
      * @return array
      */
     public static function getLessonForJoin($lessonIds, $prod, $v, $audit, $publish){

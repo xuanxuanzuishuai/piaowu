@@ -9,7 +9,6 @@
 namespace App\Libs;
 
 
-use App\Models\AppConfigModel;
 use GuzzleHttp\Client;
 use Slim\Http\StatusCode;
 
@@ -26,8 +25,8 @@ class AIPLCenter
                 'debug' => false
             ]);
 
-            $erpUrl = AppConfigModel::get(AppConfigModel::AIPL_URL_KEY);
-            $fullUrl = $erpUrl . $api;
+            $aiUrl = DictConstants::get(DictConstants::SERVICE, 'ai_backend_host');
+            $fullUrl = $aiUrl . $api;
 
             if ($method == 'GET') {
                 $data = ['query' => $data];

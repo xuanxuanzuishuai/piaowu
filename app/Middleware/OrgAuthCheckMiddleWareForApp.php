@@ -10,7 +10,6 @@ namespace App\Middleware;
 
 use App\Libs\SimpleLogger;
 use App\Libs\Valid;
-use App\Models\AppConfigModel;
 use App\Models\AppVersionModel;
 use App\Models\OrganizationModelForApp;
 use App\Services\AppVersionService;

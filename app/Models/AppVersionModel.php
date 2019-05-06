@@ -8,6 +8,7 @@
 
 namespace App\Models;
 
+use App\Libs\DictConstants;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Valid;
@@ -93,7 +94,7 @@ class AppVersionModel
     public static function fetchVersionData($appType, $platformId)
     {
         $client = new Client(['debug' => false]);
-        $host = AppConfigModel::get(AppConfigModel::UC_APP_URL_KEY);
+        $host = DictConstants::get(DictConstants::SERVICE, 'uc_app_host');
         $url = $host . self::UC_APP_API_GET_VERSION;
         $requestData = [
             'query' => ['apptype' => $appType, 'platform' => $platformId],

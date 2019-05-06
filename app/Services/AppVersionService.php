@@ -10,7 +10,6 @@ namespace App\Services;
 
 
 use App\Libs\AliOSS;
-use App\Models\AppConfigModel;
 use App\Models\AppVersionModel;
 
 class AppVersionService
