@@ -52,6 +52,7 @@ class DictConstants {
         'keys' => [
             'guide_url',
             'review_guide_url',
+            'policy_url',
         ]
     ];
 
