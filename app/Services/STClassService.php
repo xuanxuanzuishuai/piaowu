@@ -24,7 +24,7 @@ class STClassService
      */
     public static function getSTClassList($params, $page = -1, $count = 20)
     {
-        list($num,$stcs) = STClassModel::getList($params, $page, $count);
+        list($num, $stcs) = STClassModel::getList($params, $page, $count);
         if (!empty($stcs)) {
             foreach ($stcs as $key => $stc) {
                 $stcs[$key] = self::formatSTClass($stc);

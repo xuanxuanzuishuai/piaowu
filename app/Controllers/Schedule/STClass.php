@@ -155,7 +155,7 @@ class STClass extends ControllerBase
             return $response->withJson(Valid::addErrors([], 'class', 'class_not_exist'), StatusCode::HTTP_OK);
         }
         if ($class['status'] != STClassModel::STATUS_NORMAL) {
-            return $response->withJson(Valid::addErrors([], 'class', 'class_status_is_invalid'), StatusCode::HTTP_OK);
+            return $response->withJson(Valid::addErrors([], 'class', 'class_status_invalid'), StatusCode::HTTP_OK);
         }
 
         $newStc['id'] = $class['id'];
@@ -241,12 +241,12 @@ class STClass extends ControllerBase
         } else {
             $params['page'] = -1;
         }
+
         list($num, $stcs) = STClassService::getSTClassList($params, $params['page'], $params['count']);
         return $response->withJson([
             'code' => 0,
             'data' => ['count' => $num, 'stcs' => $stcs]
         ], StatusCode::HTTP_OK);
-
     }
 
     /**
