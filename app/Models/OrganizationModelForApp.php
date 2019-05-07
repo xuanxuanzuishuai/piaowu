@@ -196,8 +196,8 @@ class OrganizationModelForApp extends Model
             [
                 'ts.org_id' => $orgId,
                 'ts.teacher_id' => $teacherId,
-                'ts.status' => StudentOrgModel::STATUS_NORMAL,
-                's.status' => '1'
+                'ts.status' => TeacherStudentModel::STATUS_NORMAL,
+                's.status' => StudentModel::STATUS_NORMAL
             ]);
     }
 }

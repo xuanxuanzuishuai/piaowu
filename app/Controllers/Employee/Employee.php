@@ -17,7 +17,6 @@ use App\Models\EmployeeModel;
 use App\Models\RoleModel;
 use App\Models\StudentModel;
 use App\Services\DictService;
-use App\Services\EmployeePrivilegeService;
 use App\Services\EmployeeService;
 use App\Services\RoleService;
 use App\Services\StudentService;
@@ -388,66 +387,6 @@ class Employee extends ControllerBase
      * @param $args
      * @return Response
      */
-    public function setExcludePrivilege(Request $request, Response $response, $args)
-    {
-        $rules = [
-            [
-                'key' => 'id',
-                'type' => 'required',
-                'error_code' => 'user_id_is_required'
-            ],
-        ];
-        $params = $request->getParams();
-        $result = Valid::validate($params, $rules);
-        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
-            return $response->withJson($result, StatusCode::HTTP_OK);
-        }
-
-        $userId = $params['id'];
-        $privilegeIds = $params['privilegeIds'];
-        EmployeePrivilegeService::updateEmployeePrivileges($userId, $privilegeIds, EmployeePrivilegeModel::TYPE_EXCLUDE);
-        return $response->withJson([
-            'code' => Valid::CODE_SUCCESS,
-            'data' => []
-        ], StatusCode::HTTP_OK);
-    }
-
-    /**
-     * @param Request $request
-     * @param Response $response
-     * @param $args
-     * @return Response
-     */
-    public function setExtendPrivilege(Request $request, Response $response, $args)
-    {
-        $rules = [
-            [
-                'key' => 'id',
-                'type' => 'required',
-                'error_code' => 'user_id_is_required'
-            ]
-        ];
-        $params = $request->getParams();
-        $result = Valid::validate($params, $rules);
-        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
-            return $response->withJson($result, StatusCode::HTTP_OK);
-        }
-
-        $userId = $params['id'];
-        $privilegeIds = $params['privilegeIds'];
-        EmployeePrivilegeService::updateEmployeePrivileges($userId, $privilegeIds, EmployeePrivilegeModel::TYPE_INCLUDE);
-        return $response->withJson([
-            'code' => Valid::CODE_SUCCESS,
-            'data' => []
-        ], StatusCode::HTTP_OK);
-    }
-
-    /**
-     * @param Request $request
-     * @param Response $response
-     * @param $args
-     * @return Response
-     */
     public function getEmployeeListWithRole(Request $request, Response $response, $args){
         $rules = [
             [
@@ -508,7 +447,7 @@ class Employee extends ControllerBase
         $employeeId = $params['employee_id'];
 
         if(count($studentIds) == 0) {
-            return $response->withJson(Valid::addErrors([], 'employee', 'students_can_not_be_empty'));
+            return $response->withJson(Valid::addErrors([], 'employee', 'student_ids_is_required'));
         }
 
         $roleId = DictService::getKeyValue(Constants::DICT_TYPE_ROLE_ID, Constants::DICT_KEY_CODE_CC_ROLE_ID_CODE_ORG);
@@ -538,15 +477,14 @@ class Employee extends ControllerBase
             }
         }
 
-        $affectRows = StudentService::assignCC($studentIds, $employeeId);
-
-        if($affectRows != count($studentIds)) {
+        $successIds = StudentService::assignCC($studentIds, $orgId, $employeeId);
+        if(count($successIds) != count($studentIds)) {
             return $response->withJson(Valid::addErrors([], 'employee', 'update_student_cc_fail'));
         }
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
-            'data' => ['affect_rows' => $affectRows]
+            'data' => ['affect_rows' => count($successIds)]
         ]);
     }
 

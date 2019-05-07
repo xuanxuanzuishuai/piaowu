@@ -36,4 +36,23 @@ class StudentOrgModel extends Model
         ]);
         return $affectRows;
     }
+
+    /**
+     * 更新学员的CC
+     * @param $studentId
+     * @param $orgId
+     * @param $ccId
+     * @return int|null
+     */
+    public static function assignCC($studentId, $orgId, $ccId)
+    {
+        return MysqlDB::getDB()->updateGetCount(self::$table, [
+            'cc_id' => $ccId,
+            'update_time' => time()
+        ], [
+            'org_id'     => $orgId,
+            'student_id' => $studentId
+        ]);
+    }
+
 }

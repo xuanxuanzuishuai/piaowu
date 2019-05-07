@@ -16,11 +16,9 @@ use App\Libs\Dict;
 use App\Libs\MysqlDB;
 use App\Libs\ResponseError;
 use App\Libs\Valid;
-use App\Models\StudentAppModel;
 use App\Models\StudentModel;
 use App\Models\StudentOrgModel;
 use App\Services\ChannelService;
-use App\Services\StudentAppService;
 use App\Services\StudentService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -56,7 +54,7 @@ class Student extends ControllerBase
         ];
         $result = Valid::validate($params, $rules);
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
-            return $response->withJson($result, 200);
+            return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
         $roleId = Dict::getOrgCCRoleId();
@@ -110,12 +108,12 @@ class Student extends ControllerBase
         ];
         $result = Valid::validate($params, $rules);
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
-            return $response->withJson($result, 200);
+            return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
         $orgId = $params['org_id'] ?? null;
 
-        list($data, $total) = StudentService::selectStudentByOrg($orgId,$params['page'], $params['count'], $params);
+        list($data, $total) = StudentService::selectStudentByOrg($orgId, $params['page'], $params['count'], $params);
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
@@ -142,40 +140,6 @@ class Student extends ControllerBase
             'code' => 0,
             'data' => $channels
         ]);
-    }
-
-    /**
-     * 获取学生详情
-     * @param Request $request
-     * @param Response $response
-     * @param $argv
-     * @return Response
-     */
-    public function detail(Request $request, Response $response, $argv)
-    {
-        $params = $request->getParams();
-        $rules = [
-            [
-                'key'        => 'student_id',
-                'type'       => 'required',
-                'error_code' => 'student_id_is_required',
-            ],
-            [
-                'key'        => 'student_id',
-                'type'       => 'integer',
-                'error_code' => 'student_id_must_be_integer'
-            ]
-        ];
-        $result = Valid::validate($params, $rules);
-        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
-            return $response->withJson($result, 200);
-        }
-
-        $data = StudentService::fetchStudentDetail($params['student_id'], false);
-        return $response->withJson([
-            'code' => 0,
-            'data' => $data
-        ], 200);
     }
 
     /**
