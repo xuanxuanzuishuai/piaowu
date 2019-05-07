@@ -56,7 +56,7 @@ class AppVersionService
         $versionData = [
             'code' => $v['version'],
             'desc' => $v['ver_desc'],
-            'force_update' => $v['force_update'],
+            'force_update' => (int)$v['force_update'],
             'download_url' => $v['download_url']
         ];
 
@@ -68,7 +68,7 @@ class AppVersionService
         return [
             'code' => $version,
             'desc' => '',
-            'force_update' => '0',
+            'force_update' => 0,
             'download_url' => ''
         ];
     }
