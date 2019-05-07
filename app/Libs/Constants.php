@@ -254,4 +254,6 @@ class Constants
     const DICT_TYPE_PLAY_RECORD_LESSON_TYPE = 'play_record_lesson_type';
     //学生状态(table student column status)
     const DICT_TYPE_STUDENT_STATUS = 'student_status';
+    //直营角色包含的org_id
+    const DICT_TYPE_DIRECT_ORG_IDS = 'direct_org_ids';
 };

@@ -8,6 +8,7 @@
 
 namespace App\Services;
 
+use App\Libs\Constants;
 use App\Models\OrganizationModel;
 use App\Models\RoleModel;
 
@@ -45,10 +46,14 @@ class RoleService
     {
         if($orgId == OrganizationModel::ORG_ID_INTERNAL) {
             return RoleModel::ORG_TYPE_INTERNAL;
-        } else if ($orgId == OrganizationModel::ORG_ID_DIRECT) {
-            return RoleModel::ORG_TYPE_DIRECT;
         } else {
-            return RoleModel::ORG_TYPE_EXTERNAL;
+            $ids = DictService::getKeyValue(Constants::DICT_TYPE_DIRECT_ORG_IDS, 1);
+            $list = explode(',', $ids);
+            if(in_array($orgId, $list)) {
+                return RoleModel::ORG_TYPE_DIRECT;
+            } else {
+                return RoleModel::ORG_TYPE_EXTERNAL;
+            }
         }
     }
 }
