@@ -78,7 +78,7 @@ class CommonServiceForApp
 
         // 超级验证码，可以直接在redis里设置或清空
         $redis = RedisDB::getConn();
-        $superCodeCache = $redis->get('SUPER_VALIDATE_CODE');
+        $superCodeCache = DictConstants::get(DictConstants::APP_CONFIG_COMMON, 'super_validate_code');
         if ($superCodeCache == $code) {
             return true;
         }
