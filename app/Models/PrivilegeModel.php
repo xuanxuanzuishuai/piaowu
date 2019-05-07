@@ -148,7 +148,7 @@ class PrivilegeModel extends Model
     {
         $db = MysqlDB::getDB();
         $privileges = $db->select(self::$table, [
-            'id', 'name', 'unique_en_name', 'parent_id'
+            'id', 'name', 'unique_en_name', 'parent_id', 'menu_name'
         ], [
             'is_menu' => self::IS_MENU,
             'id' => $privilegeIds
