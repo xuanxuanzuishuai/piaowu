@@ -10,7 +10,8 @@ use App\Controllers\Student\Student;
 use App\Controllers\Teacher\Teacher;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
-use App\Middleware\AppApi;
+use App\Middleware\AppApiForStudent;
+use App\Middleware\AppApiForTeacher;
 use App\Middleware\EmployeeAuthCheckMiddleWare;
 use App\Middleware\EmployeePrivilegeMiddleWare;
 use App\Middleware\OrgAuthCheckMiddleWareForApp;
@@ -93,216 +94,216 @@ $arr = array(
     '/student_app/auth/login' => [
         'method' => ['post'],
         'call' => StudentAppAuth::class . ':login',
-        'middles' => [AppApi::class]
+        'middles' => [AppApiForStudent::class]
     ],
     '/student_app/auth/token_login' => [
         'method' => ['post'],
         'call' => StudentAppAuth::class . ':tokenLogin',
-        'middles' => [AppApi::class]
+        'middles' => [AppApiForStudent::class]
     ],
     '/student_app/auth/validate_code' => [
         'method' => ['get'],
         'call' => StudentAppAuth::class . ':validateCode',
-        'middles' => [AppApi::class]
+        'middles' => [AppApiForStudent::class]
     ],
     '/user/auth/get_user_id' => [ // musvg访问
         'method' => ['get'],
         'call' => StudentAppAuth::class . ':getUserId',
-        'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApi::class]
+        'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
     ],
 
     // /student_app/app
     '/student_app/app/version' => [
         'method' => ['get'],
         'call' => StudentAppApp::class . ':version',
-        'middles' => [AppApi::class]
+        'middles' => [AppApiForStudent::class]
     ],
     '/student_app/app/guide' => [
         'method' => ['get'],
         'call' => StudentAppApp::class . ':guide',
-        'middles' => [AppApi::class]
+        'middles' => [AppApiForStudent::class]
     ],
     '/student_app/app/feedback' => [
         'method' => ['post'],
         'call' => StudentAppApp::class . ':feedback',
-        'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApi::class]
+        'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
     ],
 
     // /student_app/sub
     '/student_app/subscription/redeem_gift_code' => [
         'method' => ['post'],
         'call' => StudentAppSubscription::class . ':redeemGiftCode',
-        'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApi::class]
+        'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
     ],
 
     // /student_app/opn
     '/student_app/opn/categories' => [
         'method' => ['get'],
         'call' => StudentAppOpn::class . ':categories',
-        'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApi::class]
+        'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
     ],
     '/student_app/opn/collections' => [
         'method' => ['get'],
         'call' => StudentAppOpn::class . ':collections',
-        'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApi::class]
+        'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
     ],
     '/student_app/opn/lessons' => [
         'method' => ['get'],
         'call' => StudentAppOpn::class . ':lessons',
-        'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApi::class]
+        'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
     ],
     '/student_app/opn/lesson' => [
         'method' => ['get'],
         'call' => StudentAppOpn::class . ':lesson',
-        'middles' => [StudentResPrivilegeCheckMiddleWareForApp::class, StudentAuthCheckMiddleWareForApp::class, AppApi::class]
+        'middles' => [StudentResPrivilegeCheckMiddleWareForApp::class, StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
     ],
     '/student_app/opn/search' => [
         'method' => ['get'],
         'call' => StudentAppOpn::class . ':search',
-        'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApi::class]
+        'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
     ],
 
     // /student_app/play
     '/student_app/play/save' => [
         'method' => ['get'],
         'call' => StudentAppPlay::class . ':save',
-        'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApi::class]
+        'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
     ],
     '/student_app/play/end' => [
         'method' => ['post'],
         'call' => StudentAppPlay::class . ':end',
-        'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApi::class]
+        'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
     ],
     '/student_app/play/ai_end' => [
         'method' => ['post'],
         'call' => StudentAppPlay::class . ':aiEnd',
-        'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApi::class]
+        'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
     ],
 
     // /student_app/homework
     '/student_app/homework/record' => [
         'method' => ['get'],
         'call' => StudentAppHomework::class . ':practiceRecord',
-        'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApi::class]
+        'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
     ],
     '/student_app/homework/list' => [
         'method' => ['get'],
         'call' => StudentAppHomework::class . ':list',
-        'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApi::class]
+        'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
     ],
 
     // /teacher_app/auth/login
     '/teacher_app/auth/login' => [
         'method' => ['post'],
         'call' => TeacherAppAuth::class . ':login',
-        'middles' => [AppApi::class]
+        'middles' => [AppApiForTeacher::class]
     ],
     '/teacher_app/auth/token_login' => [
         'method' => ['post'],
         'call' => TeacherAppAuth::class . ':tokenLogin',
-        'middles' => [AppApi::class]
+        'middles' => [AppApiForTeacher::class]
     ],
     '/teacher_app/auth/send_verify_code' => [
         'method' => ['post'],
         'call' => TeacherAppAuth::class . ':validateCode',
-        'middles' => [AppApi::class]
+        'middles' => [AppApiForTeacher::class]
     ],
     '/teacher_app/org/get_students' => [
         'method' => ['get'],
         'call' => TeacherAppOrg::class . ':getStudents',
-        'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApi::class]
+        'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
     ],
     '/teacher_app/org/select_student' => [
         'method' => ['post'],
         'call' => TeacherAppOrg::class . ':selectStudent',
-        'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApi::class]
+        'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
     ],
     '/teacher_app/org/teacher_list' => [
         'method' => ['get'],
         'call' => TeacherAppOrg::class . ':teacherList',
-        'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApi::class]
+        'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
     ],
 
     // 爱学琴老师端
     '/teacher_app/opn/categories' => [
         'method' => ['get'],
         'call' => TeacherAppOpn::class . ':categories',
-        'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApi::class]
+        'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
     ],
     '/teacher_app/opn/collections' => [
         'method' => ['get'],
         'call' => TeacherAppOpn::class . ':collections',
-        'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApi::class]
+        'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
     ],
     '/teacher_app/opn/lessons' => [
         'method' => ['get'],
         'call' => TeacherAppOpn::class . ':lessons',
-        'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApi::class]
+        'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
     ],
     '/teacher_app/opn/lesson' => [
         'method' => ['get'],
         'call' => TeacherAppOpn::class . ':lesson',
-        'middles' => [OrgResPrivilegeCheckMiddleWareForApp::class, OrgAuthCheckMiddleWareForApp::class, AppApi::class]
+        'middles' => [OrgResPrivilegeCheckMiddleWareForApp::class, OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
     ],
     '/teacher_app/opn/recent_collections' => [
         'method' => ['get'],
         'call' => TeacherAppOpn::class . ':recentCollections',
         'middles' => [OrgTeacherAuthMiddleWareForApp::class,
-            OrgAuthCheckMiddleWareForApp::class, AppApi::class]
+            OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
     ],
     '/teacher_app/opn/recent_lessons' => [
         'method' => ['get'],
         'call' => TeacherAppOpn::class . ':recentLessons',
         'middles' => [OrgTeacherAuthMiddleWareForApp::class,
-            OrgAuthCheckMiddleWareForApp::class, AppApi::class]
+            OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
     ],
     '/teacher_app/opn/lesson_resource' => [
         'method' => ['get'],
         'call' => TeacherAppOpn::class . ':getLessonResource',
-        'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApi::class]
+        'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
     ],
     '/teacher_app/opn/knowledge' => [
         'method' => ['get'],
         'call' => TeacherAppOpn::class . ':getKnowledge',
-        'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApi::class]
+        'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
     ],
     '/teacher_app/schedule/end' => [
         'method' => ['post'],
         'call' => TeacherAppSchedule::class . ':end',
         'middles' => [OrgTeacherAuthMiddleWareForApp::class,
-            OrgAuthCheckMiddleWareForApp::class, AppApi::class]
+            OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
     ],
     '/teacher_app/play/end' => [
         'method' => ['post'],
         'call' => TeacherAppPlay::class . ':end',
         'middles' => [OrgTeacherAuthMiddleWareForApp::class,
-            OrgAuthCheckMiddleWareForApp::class, AppApi::class]
+            OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
     ],
     '/teacher_app/play/ai_end' => [
         'method' => ['post'],
         'call' => TeacherAppPlay::class . ':aiEnd',
         'middles' => [OrgTeacherAuthMiddleWareForApp::class,
-            OrgAuthCheckMiddleWareForApp::class, AppApi::class]
+            OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
     ],
 
     '/teacher_app/app/version' => [
         'method' => ['get'],
         'call' => TeacherAppApp::class . ':version',
-        'middles' => [AppApi::class]
+        'middles' => [AppApiForStudent::class]
     ],
 
     '/teacher_app/app/feedback' => [
         'method' => ['get'],
         'call' => TeacherAppApp::class . ':feedback',
         'middles' => [OrgTeacherAuthMiddleWareForApp::class,
-            OrgAuthCheckMiddleWareForApp::class, AppApi::class]
+            OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
     ],
 
     '/teacher_app/app/heart_beat' => [
         'method' => ['get'],
         'call' => TeacherAppApp::class . ':heartBeat',
         'middles' => [OrgTeacherAuthMiddleWareForApp::class,
-            OrgAuthCheckMiddleWareForApp::class, AppApi::class]
+            OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
     ],
 
     '/goods/course/list' => array('method'=> array('get'),'call'=> '\App\Controllers\Course\Course:list','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),

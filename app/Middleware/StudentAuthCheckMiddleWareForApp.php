@@ -52,16 +52,6 @@ class StudentAuthCheckMiddleWareForApp extends MiddlewareBase
 
         $this->container['student'] = $student;
 
-        if ($this->container['platform'] == AppVersionService::PLAT_IOS) {
-            $reviewVersion = AppVersionService::getReviewVersionCode(AppVersionModel::APP_TYPE_STUDENT,
-                AppVersionService::getPlatformId(AppVersionService::PLAT_IOS));
-            $isReviewVersion = ($reviewVersion == $this->container['version']);
-        } else {
-            $isReviewVersion = false;
-        }
-
-        $this->container['is_review_version'] = $isReviewVersion;
-
         // 内部审核账号，使用审核版本app也可看到所有资源
         $reviewTestUsers = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'res_test_mobiles');
         if (!empty($reviewTestUsers)) {
@@ -72,7 +62,7 @@ class StudentAuthCheckMiddleWareForApp extends MiddlewareBase
         }
         $this->container['opn_is_tester'] = $isOpnTester;
         $this->container['opn_pro_ver'] = $isOpnTester ? 'tester' : $this->container['version'];
-        $this->container['opn_auditing'] = $isReviewVersion ? 1 : 0;
+        $this->container['opn_auditing'] = $this->container['is_review_version'] ? 1 : 0;
         $this->container['opn_publish'] = $isOpnTester ? 0 : 1;
 
         $response = $next($request, $response);

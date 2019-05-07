@@ -9,10 +9,12 @@
 namespace App\Middleware;
 
 use App\Libs\SimpleLogger;
+use App\Models\AppVersionModel;
+use App\Services\AppVersionService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 
-class AppApi extends MiddlewareBase
+class AppApiForStudent extends MiddlewareBase
 {
     public function __invoke(Request $request, Response $response, $next)
     {
@@ -26,18 +28,20 @@ class AppApi extends MiddlewareBase
         $token = $request->getHeaderLine('token');
         $this->container['token'] = empty($token) ? NULL : $token;
 
-        $orgToken = $request->getHeaderLine('org-token');
-        $this->container['org_token'] = empty($orgToken) ? NULL : $orgToken;
+        if ($this->container['platform'] == AppVersionService::PLAT_IOS) {
+            $reviewVersion = AppVersionService::getReviewVersionCode(AppVersionModel::APP_TYPE_STUDENT,
+                AppVersionService::getPlatformId(AppVersionService::PLAT_IOS));
+            $isReviewVersion = ($reviewVersion == $this->container['version']);
+        } else {
+            $isReviewVersion = false;
+        }
+        $this->container['is_review_version'] = $isReviewVersion;
 
-        $orgTeacherToken = $request->getHeaderLine('org-teacher-token');
-        $this->container['org_teacher_token'] = empty($orgTeacherToken) ? NULL : $orgTeacherToken;
-
-        SimpleLogger::info(__FILE__ . ":" . __LINE__ . " App api middleware", [
+        SimpleLogger::info(__FILE__ . ":" . __LINE__ . " AppApiForStudent", [
             'platform' => $this->container['platform'] ?? NULL,
             'version' => $this->container['version'] ?? NULL,
+            'is_review_version' => $this->container['is_review_version'] ?? NULL,
             'token' => $this->container['token'] ?? NULL,
-            'org_token' => $this->container['org_token'] ?? NULL,
-            'org_teacher_token' => $this->container['org_teacher_token'] ?? NULL,
         ]);
 
         return $next($request, $response);

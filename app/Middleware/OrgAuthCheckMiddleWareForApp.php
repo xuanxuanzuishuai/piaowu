@@ -53,16 +53,7 @@ class OrgAuthCheckMiddleWareForApp extends MiddlewareBase
         $this->container['org'] = $org;
         $this->container['org_account'] = $cache['account'] ?? '';
 
-        if ($this->container['platform'] == AppVersionService::PLAT_IOS) {
-            $reviewVersion = AppVersionService::getReviewVersionCode(AppVersionModel::APP_TYPE_TEACHER,
-                AppVersionService::getPlatformId(AppVersionService::PLAT_IOS));
-            $isReviewVersion = ($reviewVersion == $this->container['version']);
-        } else {
-            $isReviewVersion = false;
-        }
-        $this->container['is_review_version'] = $isReviewVersion;
-
-        $this->container['opn_auditing'] = $isReviewVersion ? 1 : 0;
+        $this->container['opn_auditing'] = $this->container['is_review_version'] ? 1 : 0;
         $this->container['opn_is_tester'] = false;
         $this->container['opn_pro_ver'] = $this->container['version'];
         $this->container['opn_publish'] = 1;
