@@ -36,39 +36,28 @@ class DictConstants {
         ]
     ];
 
+    const APP_CONFIG_COMMON = [
+        'type' => 'APP_CONFIG_COMMON',
+        'keys' => [
+            'ai_host',
+            'review_mobile',
+            'review_validate_code',
+            'super_validate_code',
+            'res_test_mobiles',
+        ]
+    ];
+
     const APP_CONFIG_STUDENT = [
         'type' => 'APP_CONFIG_STUDENT',
         'keys' => [
-            'ai_host'
+            'guide_url',
+            'review_guide_url',
         ]
     ];
 
     const APP_CONFIG_TEACHER = [
         'type' => 'APP_CONFIG_TEACHER',
         'keys' => [
-            'ai_host'
-        ]
-    ];
-
-    const APP_BACKEND_CONFIG_STUDENT = [
-        'type' => 'APP_BACKEND_CONFIG_STUDENT',
-        'keys' => [
-            'review_mobile',
-            'review_validate_code',
-            'super_validate_code',
-            'res_test_mobiles',
-            'guide_url',
-            'review_guide_url',
-        ]
-    ];
-
-    const APP_BACKEND_CONFIG_TEACHER = [
-        'type' => 'APP_BACKEND_CONFIG_TEACHER',
-        'keys' => [
-            'review_mobile',
-            'review_validate_code',
-            'super_validate_code',
-            'res_test_mobiles',
             'default_collections',
         ]
     ];
@@ -84,6 +73,10 @@ class DictConstants {
         }
 
         if (!in_array($key, $type['keys'])) {
+            SimpleLogger::error(__FILE__ . __LINE__ . ' DictConstants::get [invalid key]', [
+                'type' => $type,
+                'key' => $key
+            ]);
             return null;
         }
 

@@ -39,21 +39,23 @@ class App extends ControllerBase
         ], StatusCode::HTTP_OK);
     }
 
-    public function guide(Request $request, Response $response)
+    public function config(Request $request, Response $response)
     {
         Util::unusedParam($request);
 
+        $config = [];
+        $config['ai_host'] = DictConstants::get(DictConstants::APP_CONFIG_COMMON, 'ai_host');
+        $config['policy_url'] = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'policy_url');
+
         if ($this->ci['is_review_version']) {
-            $url = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'review_guide_url');
+            $config['guide_url'] = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'review_guide_url');
         } else {
-            $url = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'guide_url');
+            $config['guide_url'] = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'guide_url');
         }
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
-            'data' => [
-                'url' => $url
-            ]
+            'data' => $config
         ], StatusCode::HTTP_OK);
     }
 

@@ -118,9 +118,9 @@ $arr = array(
         'call' => StudentAppApp::class . ':version',
         'middles' => [AppApiForStudent::class]
     ],
-    '/student_app/app/guide' => [
+    '/student_app/app/config' => [
         'method' => ['get'],
-        'call' => StudentAppApp::class . ':guide',
+        'call' => StudentAppApp::class . ':config',
         'middles' => [AppApiForStudent::class]
     ],
     '/student_app/app/feedback' => [

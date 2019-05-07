@@ -56,7 +56,6 @@ class OrganizationServiceForApp
         $loginData = [
             'org_info' => $orgInfo,
             'teachers' => $orgTeachers,
-            'config' => DictConstants::getSet(DictConstants::APP_CONFIG_TEACHER),
             'org_token' => $token
         ];
 
@@ -94,7 +93,6 @@ class OrganizationServiceForApp
         $loginData = [
             'org_info' => $orgInfo,
             'teachers' => $orgTeachers,
-            'config' => DictConstants::getSet(DictConstants::APP_CONFIG_TEACHER),
             'org_token' => $token
         ];
 
