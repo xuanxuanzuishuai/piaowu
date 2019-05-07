@@ -208,6 +208,7 @@ class ScheduleModel extends Model
         $t   = TeacherModel::$table;
         $e   = EmployeeModel::$table;
         $se  = ScheduleExtendModel::$table;
+        $so  = StudentOrgModel::$table;
 
         $userRoleStudent = ScheduleUserModel::USER_ROLE_STUDENT;
         $userRoleTeacher = ScheduleUserModel::USER_ROLE_TEACHER;
@@ -236,7 +237,7 @@ class ScheduleModel extends Model
             $map[':end_time'] = $params['end_time'];
         }
         if(!empty($params['cc_id'])) {
-            $where .= ' and stu.cc_id = :cc_id';
+            $where .= ' and so.cc_id = :cc_id';
             $map[':cc_id'] = $params['cc_id'];
         }
 
@@ -258,11 +259,12 @@ class ScheduleModel extends Model
         from {$s} s
                left join {$cr} cr on cr.id = s.classroom_id 
                inner join {$c} c on c.id = s.course_id and c.org_id = s.org_id
-               left join {$su} su on s.id = su.user_id and su.user_role = {$userRoleStudent}
+               left join {$su} su on s.id = su.schedule_id and su.user_role = {$userRoleStudent}
                left join {$stu} stu on su.user_id = stu.id
                left join {$su} su2 on s.id = su2.schedule_id and su2.user_role = {$userRoleTeacher}
                left join {$t} t on t.id = su2.user_id
-               left join {$e} e on stu.cc_id = e.id
+               left join {$so} so on so.student_id = stu.id and so.org_id = s.org_id
+               left join {$e} e on e.id = so.cc_id
                left join {$se} se on se.schedule_id = s.id
         {$where} order by s.create_time desc {$limit}", $map);
 
@@ -270,10 +272,10 @@ class ScheduleModel extends Model
         from {$s} s
                left join {$cr} cr on cr.id = s.classroom_id
                inner join {$c} c on c.id = s.course_id and c.org_id = s.org_id
-               left join {$su} su on s.id = su.user_id and su.user_role = {$userRoleStudent}
+               left join {$su} su on s.id = su.schedule_id and su.user_role = {$userRoleStudent}
                left join {$stu} stu on su.user_id = stu.id
                left join {$e} e on stu.cc_id = e.id
-        {$where} order by s.create_time desc {$limit}", $map);
+        {$where} order by s.create_time desc", $map);
 
         return [$records, $total[0]['count']];
     }

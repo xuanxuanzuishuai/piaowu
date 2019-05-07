@@ -136,27 +136,23 @@ class PlayRecordModel extends Model
      */
     public static function selectReport($orgId, $studentId, $startTime, $endTime, $page, $count, $params)
     {
-        $p   = PlayRecordModel::$table;
-        $s   = StudentModel::$table;
-        $so  = StudentOrgModel::$table;
-        $sch = ScheduleModel::$table;
-        $su  = ScheduleUserModel::$table;
-        $t   = TeacherModel::$table;
-        $e   = EmployeeModel::$table;
+        $p  = PlayRecordModel::$table;
+        $s  = StudentModel::$table;
+        $so = StudentOrgModel::$table;
+        $e  = EmployeeModel::$table;
 
         $ltd = PlayRecordModel::TYPE_DYNAMIC;
         $lta = PlayRecordModel::TYPE_AI;
-        $urt = ScheduleUserModel::USER_ROLE_TEACHER;
 
         $limit = Util::limitation($page, $count);
 
         $map = [
             ':start_time' => $startTime,
             ':end_time'   => $endTime,
-            ':org_id'     => $orgId
+            ':org_id'     => $orgId,
         ];
 
-        $where = '';
+        $where = ' and p.schedule_id is null ';
 
         //lesson_type=0也是一种状态，所以这里使用isset
         if(isset($params['lesson_type'])) {
@@ -164,12 +160,13 @@ class PlayRecordModel extends Model
             $map[':lesson_type'] = $params['lesson_type'];
         }
         if(isset($params['cc_id'])) {
-            $where .= ' and s.cc_id = :cc_id ';
+            $where .= ' and so.cc_id = :cc_id ';
             $map[':cc_id'] = $params['cc_id'];
         }
 
         if(!empty($studentId)) {
             $sql = "select p.lesson_id,
+                   e.name cc_name,
                    p.lesson_type,
                    p.student_id,
                    p.schedule_id,
@@ -179,16 +176,11 @@ class PlayRecordModel extends Model
                    sum(if(p.lesson_type={$lta} and p.lesson_sub_id is null, 1, 0))       as ai,
                    max(if(p.lesson_type={$ltd} and p.lesson_sub_id is null, p.score, 0)) as max_dmc,
                    max(if(p.lesson_type={$lta} and p.lesson_sub_id is null, p.score, 0)) as max_ai,
-                   s.name                                                             as student_name,
-                   t.name                                                             as teacher_name,
-                   e.name                                                             as cc_name
+                   s.name                                                             as student_name
             from {$p} p
                         inner join {$s} s on p.student_id = s.id
                         inner join {$so} so on so.student_id = s.id and so.org_id = :org_id
-                        left join {$sch} sch on sch.id = p.schedule_id
-                        left join {$su} su on su.schedule_id = sch.id and su.user_role = {$urt}
-                        left join {$t} t on t.id = su.user_id
-                        left join {$e} e on s.cc_id = e.id
+                        left join {$e} e on e.id = so.cc_id
             where p.student_id = :student_id
               and p.created_time >= :start_time
               and p.created_time <= :end_time
@@ -208,6 +200,7 @@ class PlayRecordModel extends Model
             $map[':student_id'] = $studentId;
         } else {
             $sql = "select p.lesson_id,
+                   e.name cc_name,
                    p.lesson_type,
                    p.student_id,
                    p.schedule_id,
@@ -218,16 +211,11 @@ class PlayRecordModel extends Model
                    sum(if(p.lesson_type={$lta} and p.lesson_sub_id is null, 1, 0))       as ai,
                    max(if(p.lesson_type={$ltd} and p.lesson_sub_id is null, p.score, 0)) as max_dmc,
                    max(if(p.lesson_type={$lta} and p.lesson_sub_id is null, p.score, 0)) as max_ai,
-                   s.name                                                             as student_name,
-                   t.name                                                             as teacher_name,
-                   e.name                                                             as cc_name
+                   s.name                                                             as student_name
             from {$p} p
                    inner join {$s} s on p.student_id = s.id
                    inner join {$so} so on so.student_id = s.id and so.org_id = :org_id
-                   left join {$sch} sch on sch.id = p.schedule_id
-                   left join {$su} su on su.schedule_id = sch.id and su.user_role = {$urt}
-                   left join {$t} t on t.id = su.user_id
-                   left join {$e} e on s.cc_id = e.id
+                   left join {$e} e on e.id = so.cc_id
                    where p.created_time >= :start_time
                      and p.created_time <= :end_time
                      {$where}
