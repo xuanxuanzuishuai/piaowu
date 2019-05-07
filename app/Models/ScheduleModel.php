@@ -207,6 +207,7 @@ class ScheduleModel extends Model
         $stu = StudentModel::$table;
         $t   = TeacherModel::$table;
         $e   = EmployeeModel::$table;
+        $se  = ScheduleExtendModel::$table;
 
         $userRoleStudent = ScheduleUserModel::USER_ROLE_STUDENT;
         $userRoleTeacher = ScheduleUserModel::USER_ROLE_TEACHER;
@@ -249,20 +250,25 @@ class ScheduleModel extends Model
                t.name   teacher_name,
                t.id     teacher_id,
                c.name   course_name,
-               cr.name  class_room_name
+               cr.name  class_room_name,
+               se.opn_lessons,
+               se.detail_score,
+               se.class_score,
+               se.remark
         from {$s} s
-               inner join {$cr} cr on cr.id = s.classroom_id and cr.org_id = s.org_id
+               left join {$cr} cr on cr.id = s.classroom_id 
                inner join {$c} c on c.id = s.course_id and c.org_id = s.org_id
                left join {$su} su on s.id = su.user_id and su.user_role = {$userRoleStudent}
                left join {$stu} stu on su.user_id = stu.id
                left join {$su} su2 on s.id = su2.schedule_id and su2.user_role = {$userRoleTeacher}
                left join {$t} t on t.id = su2.user_id
                left join {$e} e on stu.cc_id = e.id
+               left join {$se} se on se.schedule_id = s.id
         {$where} order by s.create_time desc {$limit}", $map);
 
         $total = $db->queryAll("select count(*) count
         from {$s} s
-               inner join {$cr} cr on cr.id = s.classroom_id and cr.org_id = s.org_id
+               left join {$cr} cr on cr.id = s.classroom_id
                inner join {$c} c on c.id = s.course_id and c.org_id = s.org_id
                left join {$su} su on s.id = su.user_id and su.user_role = {$userRoleStudent}
                left join {$stu} stu on su.user_id = stu.id

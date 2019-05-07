@@ -86,6 +86,10 @@ class ScheduleRecord extends ControllerBase
 
         global $orgId;
 
+        $courseId = 212;
+
+        $params['course_id'] = $courseId;
+
         list($records, $total) = ScheduleService::attendRecord($orgId, $params['page'], $params['count'], $params);
 
         return $response->withJson([
