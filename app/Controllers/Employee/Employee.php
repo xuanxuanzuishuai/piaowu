@@ -112,7 +112,10 @@ class Employee extends ControllerBase
         }
 
         list($users, $totalCount) = EmployeeService::getEmployeeService($page, $count, $params);
-        $roles = RoleModel::selectOrgRoles();
+        global $orgId;
+        $orgType = RoleService::getOrgTypeByOrgId($orgId);
+
+        $roles = RoleModel::selectByOrgType($orgType);
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,

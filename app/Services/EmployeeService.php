@@ -156,11 +156,9 @@ class EmployeeService
         $user = EmployeeModel::getEmployeeById($userId);
         global $orgId;
         //根据当前登录用户查询不同的角色
-        if($orgId > 0) {
-            $roles = RoleModel::selectOrgRoles();
-        } else {
-            $roles = RoleModel::getRoles();
-        }
+        $orgType = RoleService::getOrgTypeByOrgId($orgId);
+        $roles = RoleModel::selectByOrgType($orgType);
+
         return [$user, $roles];
     }
 
