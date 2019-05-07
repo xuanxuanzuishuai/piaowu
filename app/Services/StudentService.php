@@ -119,6 +119,10 @@ class StudentService
         foreach($records as &$r) {
             $r['student_level'] = DictService::getKeyValue(Constants::DICT_TYPE_STUDENT_LEVEL, $r['student_level']);
             $r['gender']        = DictService::getKeyValue(Constants::DICT_TYPE_GENDER, $r['gender']);
+            //ai陪练到期日
+            if($r['status'] == StudentModel::STATUS_STOP) {
+                $r['sub_end_date'] = DictService::getKeyValue(Constants::DICT_TYPE_STUDENT_STATUS, $r['status']);
+            }
         }
 
         return [$records, $total];

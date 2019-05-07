@@ -265,4 +265,6 @@ class Constants
     const DICT_TYPE_ORG_ACCOUNT_STATUS = 'org_account_status';
     //练习记录曲谱类型
     const DICT_TYPE_PLAY_RECORD_LESSON_TYPE = 'play_record_lesson_type';
+    //学生状态(table student column status)
+    const DICT_TYPE_STUDENT_STATUS = 'student_status';
 };

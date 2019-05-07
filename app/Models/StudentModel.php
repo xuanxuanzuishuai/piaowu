@@ -22,8 +22,8 @@ class StudentModel extends Model
     const GENDER_MALE = 1; //男
     const GENDER_FEMALE = 2; //女
 
-    const STATUS_NORMAL = 1;
-    const STATUS_STOP = 0;
+    const STATUS_NORMAL = 1; //正常
+    const STATUS_STOP = 2; //禁用
 
     //添加渠道
     const CHANNEL_BACKEND_ADD = 1; //机构后台添加
