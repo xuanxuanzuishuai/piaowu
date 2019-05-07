@@ -53,6 +53,8 @@ class OrganizationServiceForApp
         $token = OrganizationModelForApp::genToken($orgAccount['org_id']);
         OrganizationModelForApp::setOrgToken($orgAccount['org_id'], $account, $token);
 
+        OrgAccountModel::updateRecord($orgAccount['id'], ['last_login_time' => time()], false);
+
         $loginData = [
             'org_info' => $orgInfo,
             'teachers' => $orgTeachers,
