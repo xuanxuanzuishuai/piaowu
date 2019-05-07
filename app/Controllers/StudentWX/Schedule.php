@@ -145,7 +145,6 @@ class Schedule extends ControllerBase
             $params["limit"] = 10;
         }
         $user_id = $this->ci['user_info']['user_id'];
-//        $user_id = 80;
 
         $data = ScheduleExtendModel::getList([
             "student_id" => $user_id,

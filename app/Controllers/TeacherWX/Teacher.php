@@ -89,8 +89,10 @@ class Teacher extends ControllerBase
 
             $teacher_info = TeacherModelForApp::getTeacherInfo("", $params['mobile']);
         }else{
-            // 更新名字
-            TeacherModelForApp::updateRecord($teacher_info["id"], ["name" => $params["name"]]);
+            if (!empty($params["name"])){
+                // 更新名字
+                TeacherModelForApp::updateRecord($teacher_info["id"], ["name" => $params["name"]]);
+            }
         }
 
         if (!empty($openId)) {

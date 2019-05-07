@@ -83,6 +83,11 @@ class ScheduleExtendModel extends Model
             $map[":student_id"] = $params["student_id"];
         }
 
+        if (!empty($params["teacher_id"])){
+            array_push($where, "tsu.user_id = :teacher_id");
+            $map[":teacher_id"] = $params["teacher_id"];
+        }
+
         $limit_sql = "";
         if (!empty($page) and !empty($limit)){
             $limit_sql = " limit :offset, :limit ";

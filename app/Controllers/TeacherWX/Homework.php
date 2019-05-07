@@ -11,6 +11,7 @@ namespace App\Controllers\TeacherWX;
 
 use App\Controllers\ControllerBase;
 use App\Libs\MysqlDB;
+use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\PlayRecordModel;
@@ -443,7 +444,6 @@ class HomeWork extends ControllerBase
         }
 
         $user_id = $this->ci['user_info']['user_id'];
-//        $user_id = null;
         if(empty($params["page"])){
             $params["page"] = 1;
         }
@@ -455,13 +455,15 @@ class HomeWork extends ControllerBase
             $user_id, $params["page"], $params["limit"]);
         $temp = [];
         $current_time = time();
+        $lesson_ids = [];
         foreach ($data as $homework){
             // 以homework为单位聚合task
             $homeworkId = $homework['id'];
+            array_push($lesson_ids, $homework['lesson_id']);
             $task = [
                 'task_id' => $homework['task_id'],
                 'lesson_id' => $homework['lesson_id'],
-                'complete' => $homework['complete'],
+                'complete' => (int)$homework['complete'],
                 'lesson_name' => $homework['lesson_name'],
                 'duration' => 0,
                 'play_count' => 0,
@@ -469,11 +471,12 @@ class HomeWork extends ControllerBase
             ];
 
             $playRecordStatistic = PlayRecordModel::getPlayRecordList($homeworkId, $homework['task_id'], $homework['lesson_id'],
-                $homework['created_time'], $homework['end_time'], true);
+                (int)$homework['created_time'], (int)$homework['end_time'], true, null,
+                null, null, true);
+            $playRecordStatistic = $playRecordStatistic[0];
             $task["duration"] = $playRecordStatistic["duration"];
             $task["play_count"] = $playRecordStatistic["play_count"];
             $task["max_score"] = $playRecordStatistic["max_score"];
-
             if(array_key_exists($homeworkId, $temp)){
                 array_push($temp[$homeworkId]['tasks'], $task);
             }else{
@@ -487,9 +490,28 @@ class HomeWork extends ControllerBase
             }
         }
 
+        $lesson_map = [];
+        if (!empty($lesson_ids)) {
+            $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, self::version);
+            $res = $opn->lessonsByIds($lesson_ids);
+            if (!empty($res['code']) && $res['code'] !== Valid::CODE_SUCCESS) {
+                $lesson_map = [];
+            } else {
+                $lesson_list = $res["data"];
+                $lesson_map = [];
+                foreach ($lesson_list as $lesson){
+                    $lesson_map[$lesson["lesson_id"]] = $lesson["opern_name"];
+                }
+            }
+        }
+
         $returnData = [];
         foreach ($temp as $k=>$v){
             if(!empty($v)){
+                $length = sizeof($v["tasks"]);
+                for ($i=0; $i<$length; $i++){
+                    $v["tasks"][$i]["lesson_name"] = $lesson_map[$v["tasks"][$i]["lesson_id"]];
+                }
                 array_push($returnData, $v);
             }
         }

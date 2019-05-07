@@ -306,23 +306,23 @@ class PlayRecordModel extends Model
         }
 
         $map = [
-            "start_time" => $startTime,
-            "end_time" => $endTime,
-            "lesson_id" => $lessonId,
+            ":start_time" => $startTime,
+            ":end_time" => $endTime,
+            ":lesson_id" => $lessonId,
         ];
         $selectTable = "select " . $fields . " from " . self::$table . " as pr ";
         $where = " where pr.created_time>=:start_time and pr.created_time <= :end_time and pr.lesson_type=" .self::TYPE_AI .
             " and pr.lesson_id=:lesson_id ";
         if (!empty($studentId)){
-            $map["student_id"] = $studentId;
+            $map[":student_id"] = $studentId;
             $where = $where . " pr.student_id=:student_id";
         }
         if ($join_hc){
             $selectTable = $selectTable . "left join " . HomeworkCompleteModel::$table .
                 " as hc on pr.id = hc.play_record_id";
             if(!$flunked){
-                $map["task_id"] = $taskId;
-                $map["homework_id"] = $homeworkId;
+                $map[":task_id"] = $taskId;
+                $map[":homework_id"] = $homeworkId;
                 $where = $where . " and hc.task_id=:task_id and hc.homework_id=:homework_id ";
             }
         }
@@ -333,8 +333,8 @@ class PlayRecordModel extends Model
             $sql = $sql . " order by pr.created_time desc ";
             if (!empty($page) and !empty($limit)){
                 $sql = $sql . " limit :limit offset :offset";
-                $map["limit"] = $limit;
-                $map["offset"] = ($page - 1) * $limit;
+                $map[":limit"] = $limit;
+                $map[":offset"] = ($page - 1) * $limit;
             }
         }
         $result = $db->queryAll($sql, $map);

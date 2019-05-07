@@ -426,6 +426,7 @@ $arr = array(
     '/teacher_wx/teacher/send_sms_code' => array('method'=>array('get'),'call'=>'\App\Controllers\TeacherWX\Teacher:sendSmsCode', 'middles' => array()),
     '/teacher_wx/teacher/teacher_org_list' => array('method'=>array('get'),'call'=>'\App\Controllers\TeacherWX\Teacher:getBindOrgList', 'middles' => array('\App\Middleware\WeChatAuthCheckMiddleware')),
     '/teacher_wx/teacher/generate_invite_qr_code' => array('method'=>array('get'),'call'=>'\App\Controllers\TeacherWX\Teacher:getInviteQrCode', 'middles' => array('\App\Middleware\WeChatAuthCheckMiddleware')),
+    '/teacher_wx/schedule/student_schedule_list' => array('method'=>array('get'),'call'=>'\App\Controllers\TeacherWX\Schedule:scheduleList', 'middles' => array('\App\Middleware\WeChatAuthCheckMiddleware')),
 
     '/student_wx/student/register' => array('method'=>array('post'),'call'=>'\App\Controllers\StudentWX\Student:register', 'middles' => array('\App\Middleware\WeChatOpenIdCheckMiddleware')),
     '/student_wx/student/login' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\Student:login', 'middles' => array('\App\Middleware\WeChatOpenIdCheckMiddleware')),
@@ -435,7 +436,7 @@ $arr = array(
     '/student_wx/student/day_report' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\PlayRecord:recordReport', 'middles' => array('\App\Middleware\WeChatAuthCheckMiddleware')),
     '/student_wx/student/shared_report' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\PlayRecord:shareReport', 'middles' => array()),
     '/student_wx/schedule/schedule_report' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\Schedule:scheduleReport', 'middles' => array('\App\Middleware\WeChatAuthCheckMiddleware')),
-    '/student_wx/common/js_config' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\Common:getJsConfig', 'middles' => array('\App\Middleware\WeChatAuthCheckMiddleware')),
+    '/student_wx/common/js_config' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\Common:getJsConfig', 'middles' => array()),
     '/student_wx/play_record/wonderful_moment' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\PlayRecord:getWonderfulMomentUrl', 'middles' => array()),
     '/student_wx/play_record/play_record_list' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\PlayRecord:getPlayRecordList', 'middles' => array('\App\Middleware\WeChatAuthCheckMiddleware')),
     '/student_wx/schedule/schedule_list' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\Schedule:scheduleList', 'middles' => array('\App\Middleware\WeChatAuthCheckMiddleware')),
