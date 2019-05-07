@@ -18,8 +18,10 @@ class RoleModel extends Model
     public static $redisDB;
     public static $superAdmin = -1;//超级管理员roleid
 
-    const IS_INTERNAL = 1; //内部角色
-    const NOT_INTERNAL = 0; //非内部角色(机构角色)
+    //column org_type
+    const ORG_TYPE_INTERNAL = 0; //内部
+    const ORG_TYPE_DIRECT = 1; //直营
+    const ORG_TYPE_EXTERNAL = 2; //外部
 
     public static function getRoles()
     {
@@ -39,10 +41,16 @@ class RoleModel extends Model
 
     /**
      * 查询机构角色
+     * @param $orgType
      * @return array
      */
-    public static function selectOrgRoles() {
+    public static function selectByOrgType($orgType) {
+        $where = ['ORDER' => ['created_time' => 'DESC']];
+        if(!empty($orgType)) {
+            $where['org_type'] = $orgType;
+        }
+
         $db = MysqlDB::getDB();
-        return $db->select(self::$table,'*',['is_internal' => self::NOT_INTERNAL, 'ORDER' => ['created_time' => 'DESC']]);
+        return $db->select(self::$table,'*', $where);
     }
 }

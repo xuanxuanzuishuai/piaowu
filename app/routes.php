@@ -569,6 +569,12 @@ $arr = array(
         'call'    => Employee::class . ':CCList',
         'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class]
     ],
+    //外部机构的学生列表接口
+    '/student/student/list_for_external' => [
+        'method'  => ['get'],
+        'call'    => Student::class . ':list',
+        'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class]
+    ]
 );
 
 /** @var App $app */

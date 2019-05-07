@@ -8,6 +8,7 @@
 
 namespace App\Services;
 
+use App\Models\OrganizationModel;
 use App\Models\RoleModel;
 
 class RoleService
@@ -38,5 +39,16 @@ class RoleService
 
     public static function getById($id) {
         return RoleModel::getById($id);
+    }
+
+    public static function getOrgTypeByOrgId($orgId)
+    {
+        if($orgId == OrganizationModel::ORG_ID_INTERNAL) {
+            return RoleModel::ORG_TYPE_INTERNAL;
+        } else if ($orgId == OrganizationModel::ORG_ID_DIRECT) {
+            return RoleModel::ORG_TYPE_DIRECT;
+        } else {
+            return RoleModel::ORG_TYPE_EXTERNAL;
+        }
     }
 }

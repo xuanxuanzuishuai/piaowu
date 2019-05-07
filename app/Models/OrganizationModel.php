@@ -19,6 +19,9 @@ class OrganizationModel extends Model
     const STATUS_NORMAL = 1; //正常
     const STATUS_STOP = 0; //停用
 
+    const ORG_ID_INTERNAL = 0; //内部角色固定org_id
+    const ORG_ID_DIRECT = 1; //直营角色固定org_id
+
     /**
      * 查询机构列表
      * @param $page

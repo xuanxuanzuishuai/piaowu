@@ -19,6 +19,7 @@ use App\Models\StudentModel;
 use App\Services\DictService;
 use App\Services\EmployeePrivilegeService;
 use App\Services\EmployeeService;
+use App\Services\RoleService;
 use App\Services\StudentService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -226,12 +227,12 @@ class Employee extends ControllerBase
         }
 
         global $orgId;
+        $roleType = RoleService::getOrgTypeByOrgId($orgId);
 
         if ($orgId > 0) {
-            //机构管理员添加雇员
-            //不能创建内部角色
-            if($role['is_internal'] == RoleModel::IS_INTERNAL) {
-                return $response->withJson(Valid::addErrors([], 'employee', 'role_error'));
+            //对于直营和外部，新创建的人员角色必须与当前登录用户角色org_type一致
+            if($role['org_type'] != $roleType) {
+                return $response->withJson(Valid::addErrors([], 'employee', 'role_type_error'));
             }
             //机构管理员添加雇员时，不能指定雇员所属机构，必须与添加者同属一个机构
             $params['org_id'] = $orgId;
@@ -257,8 +258,8 @@ class Employee extends ControllerBase
             }
         } else {
             //内部管理员添加雇员
-            //角色是内部角色时，传入的org_id不能为空
-            if($role['is_internal'] == RoleModel::NOT_INTERNAL && empty($params['org_id'])) {
+            //角色是非内部角色时，传入的org_id不能为空
+            if($role['org_type'] != RoleModel::ORG_TYPE_INTERNAL && empty($params['org_id'])) {
                 return $response->withJson(Valid::addErrors([],'employee','org_can_not_be_empty'));
             }
         }

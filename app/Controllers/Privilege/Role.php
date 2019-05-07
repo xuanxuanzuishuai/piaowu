@@ -11,6 +11,7 @@ namespace App\Controllers\Privilege;
 use App\Controllers\ControllerBase;
 use App\Libs\Valid;
 use App\Models\GroupModel;
+use App\Models\OrganizationModel;
 use App\Models\RoleModel;
 use App\Services\RoleService;
 use Slim\Http\Request;
@@ -45,7 +46,15 @@ class Role extends ControllerBase
      */
     public function listForOrg(Request $request, Response $response, $args)
     {
-        $records = RoleModel::selectOrgRoles();
+        global $orgId;
+
+        //根据orgId确定要查询角色的org_type
+        //内部管理人员可以查询到所有角色
+        //直营只能查询到直营角色
+        //外部只能查询到外部角色
+        $orgType = RoleService::getOrgTypeByOrgId($orgId);
+
+        $records = RoleModel::selectByOrgType($orgType);
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => [
