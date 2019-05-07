@@ -352,7 +352,6 @@ class Student extends ControllerBase
             'mobile'      => $params['mobile'],
             'gender'      => $params['gender'],
             'channel_id'  => StudentModel::CHANNEL_BACKEND_ADD,
-            'org_id'      => $orgId,
             'create_time' => time(),
         ];
 
