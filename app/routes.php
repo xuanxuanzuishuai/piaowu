@@ -2,6 +2,7 @@
 
 namespace App;
 
+use App\Controllers\API\OSS;
 use App\Controllers\Boss\GiftCode;
 use App\Controllers\Employee\Employee;
 use App\Controllers\Org\Org;
@@ -39,6 +40,17 @@ use Slim\Http\Request;
 use Slim\Http\Response;
 
 $arr = array(
+
+
+    '/api/qiniu/token' => array('method'=> array('get'),'call'=> '\App\Controllers\API\Qiniu:token','middles' => array()),
+    '/api/qiniu/callback' => array('method'=> array('get'),'call'=> '\App\Controllers\API\Qiniu:callback','middles' => array()),
+    '/api/uictl/dropdown' =>array('method'=> array('get'),'call'=> '\App\Controllers\API\UICtl:dropdown','middles' => array()),
+
+    '/api/oss/signature' => [
+        'method' => ['get'],
+        'call' => OSS::class . ':signature',
+        'middles' => []
+    ],
 
     '/employee/auth/tokenlogin' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Auth:tokenlogin', 'middles' => array()),
     '/employee/auth/signout' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Auth:signout', 'middles' => array('\App\Middleware\EmployeeAuthCheckMiddleWare')),
@@ -350,10 +362,6 @@ $arr = array(
         'call'    => ScheduleRecord::class . ':attendRecord',
         'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class],
     ],
-
-    '/api/qiniu/token' => array('method'=> array('get'),'call'=> '\App\Controllers\API\Qiniu:token','middles' => array()),
-    '/api/qiniu/callback' => array('method'=> array('get'),'call'=> '\App\Controllers\API\Qiniu:callback','middles' => array()),
-    '/api/uictl/dropdown' =>array('method'=> array('get'),'call'=> '\App\Controllers\API\UICtl:dropdown','middles' => array()),
 
     // 机构相关接口
 

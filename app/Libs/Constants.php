@@ -246,19 +246,6 @@ class Constants
     // 书籍权限
     const DICT_TYPE_BOOK_APP = 'book_app';
 
-    // 阿里OSS配置
-    const DICT_TYPE_ALIOSS_CONFIG = 'ALI_OSS_CONFIG';
-    const DICT_KEY_ALIOSS_ACCESS_KEY_ID = "access_key_id";
-    const DICT_KEY_ALIOSS_ACCESS_KEY_SECRET = "access_key_secret";
-    const DICT_KEY_ALIOSS_BUCKET = "bucket";
-    const DICT_KEY_ALIOSS_ENDPOINT = "endpoint";
-    const DICT_KEY_ALIOSS_HOST = "host";
-    const DICT_KEY_ALIOSS_CALLBACK_URL = "callback_url";
-    const DICT_KEY_ALIOSS_EXPIRE = "expire";
-    const DICT_KEY_ALIOSS_MAX_FILE_SIZE = "max_file_size";
-    const DICT_KEY_ALIOSS_REGION_ID = "region_id";
-    const DICT_KEY_ALIOSS_RECORD_FILE_ARN = "record_file_arn";
-
     //机构状态
     const DICT_TYPE_ORG_STATUS = 'org_status';
     //机构账号状态

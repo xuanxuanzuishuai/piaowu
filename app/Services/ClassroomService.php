@@ -6,7 +6,7 @@
 
 namespace App\Services;
 
-use App\Libs\Util;
+use App\Libs\AliOSS;
 use App\Models\ClassroomModel;
 
 
@@ -37,7 +37,7 @@ class ClassroomService
         $res =  ClassroomModel::getClassrooms($params);
         foreach($res as $key => $value) {
             if(!empty($value['pic_url']))
-                $res[$key]['pic_url'] = Util::getQiNiuFullImgUrl($value['pic_url']);
+                $res[$key]['pic_url'] = AliOSS::signUrls($value['pic_url']);
         }
         return $res;
     }

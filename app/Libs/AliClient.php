@@ -12,7 +12,6 @@ namespace App\Libs;
 use AlibabaCloud\Client\AlibabaCloud;
 use AlibabaCloud\Client\Exception\ClientException;
 use AlibabaCloud\Client\Exception\ServerException;
-use App\Services\DictService;
 
 // Download：https://github.com/aliyun/openapi-sdk-php-client
 // Usage：https://github.com/aliyun/openapi-sdk-php-client/blob/master/README-CN.md
@@ -24,12 +23,12 @@ class AliClient {
 
     public static function init()
     {
-        list($accessKeyId, $accessKeySecret, $regionId) = DictService::getKeyValuesByArray(
-            Constants::DICT_TYPE_ALIOSS_CONFIG,
+        list($accessKeyId, $accessKeySecret, $regionId) = DictConstants::get(
+            DictConstants::ALI_OSS_CONFIG,
             [
-                Constants::DICT_KEY_ALIOSS_ACCESS_KEY_ID,
-                Constants::DICT_KEY_ALIOSS_ACCESS_KEY_SECRET,
-                Constants::DICT_KEY_ALIOSS_REGION_ID
+                'access_key_id',
+                'access_key_secret',
+                'region_id'
             ]
         );
 

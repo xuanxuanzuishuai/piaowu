@@ -7,9 +7,9 @@
  */
 
 namespace App\Models;
+use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\MysqlDB;
-use App\Libs\Util;
 
 
 class CourseModel extends Model
@@ -150,7 +150,8 @@ class CourseModel extends Model
         $params['duration'] = ($params['duration'] / 60).'min';
         $params['class_type'] = $params['class_lowest'].'-'.$params['class_highest'];
         $params['oprice'] = number_format($params['oprice'] / 100, 2);
-        $isTranslate && !empty($params['thumb']) && $params['thumb'] = Util::getQiNiuFullImgUrl($params['thumb']);
+        $isTranslate && !empty($params['thumb']) && $params['thumb'] = AliOSS::signUrls($params['thumb']);
+
         return $params ?? [];
     }
 

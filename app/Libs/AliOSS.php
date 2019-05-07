@@ -11,7 +11,6 @@ namespace App\Libs;
 
 
 use DateTime;
-use App\Services\DictService;
 use OSS\Core\OssException;
 use OSS\OssClient;
 
@@ -134,12 +133,17 @@ class AliOSS
             return $urlNeedSign;
         }
         $result = $urlNeedSign;
-        list($accessKeyId, $accessKeySecret, $bucket, $endpoint) = DictService::getKeyValuesByArray(Constants::DICT_TYPE_ALIOSS_CONFIG,array(
-            Constants::DICT_KEY_ALIOSS_ACCESS_KEY_ID,
-            Constants::DICT_KEY_ALIOSS_ACCESS_KEY_SECRET,
-            Constants::DICT_KEY_ALIOSS_BUCKET,
-            Constants::DICT_KEY_ALIOSS_ENDPOINT
-        ));
+
+        list($accessKeyId, $accessKeySecret, $bucket, $endpoint) = DictConstants::get(
+            DictConstants::ALI_OSS_CONFIG,
+            [
+                'access_key_id',
+                'access_key_secret',
+                'bucket',
+                'endpoint'
+            ]
+        );
+
         try {
             $timeout = 3600 * 8;
             $ossClient = new OssClient($accessKeyId, $accessKeySecret, $endpoint);
@@ -168,12 +172,16 @@ class AliOSS
 
     public function getMeta($objectName, $md5)
     {
-        list($accessKeyId, $accessKeySecret, $bucket, $endpoint) = DictService::getKeyValuesByArray(Constants::DICT_TYPE_ALIOSS_CONFIG,array(
-            Constants::DICT_KEY_ALIOSS_ACCESS_KEY_ID,
-            Constants::DICT_KEY_ALIOSS_ACCESS_KEY_SECRET,
-            Constants::DICT_KEY_ALIOSS_BUCKET,
-            Constants::DICT_KEY_ALIOSS_ENDPOINT
-        ));
+        list($accessKeyId, $accessKeySecret, $bucket, $endpoint) = DictConstants::get(
+            DictConstants::ALI_OSS_CONFIG,
+            [
+                'access_key_id',
+                'access_key_secret',
+                'bucket',
+                'endpoint'
+            ]
+        );
+
 
         try {
             $ossClient = new OssClient($accessKeyId, $accessKeySecret, $endpoint);
@@ -222,11 +230,15 @@ class AliOSS
      */
     public static function uploadFile($objName, $file)
     {
-        list($accessKeyId, $accessKeySecret, $bucket, $endpoint) = DictService::getKeyValuesByArray(Constants::DICT_TYPE_ALIOSS_CONFIG,array(
-            Constants::DICT_KEY_ALIOSS_ACCESS_KEY_ID,
-            Constants::DICT_KEY_ALIOSS_ACCESS_KEY_SECRET,
-            Constants::DICT_KEY_ALIOSS_BUCKET,
-            Constants::DICT_KEY_ALIOSS_ENDPOINT));
+        list($accessKeyId, $accessKeySecret, $bucket, $endpoint) = DictConstants::get(
+            DictConstants::ALI_OSS_CONFIG,
+            [
+                'access_key_id',
+                'access_key_secret',
+                'bucket',
+                'endpoint'
+            ]
+        );
 
         try {
             $ossClient = new OssClient($accessKeyId, $accessKeySecret, $endpoint);

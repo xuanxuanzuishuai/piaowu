@@ -12,6 +12,24 @@ use App\Services\DictService;
 
 class DictConstants {
 
+    // 阿里云config
+    const ALI_OSS_CONFIG = [
+        'type' => 'ALI_OSS_CONFIG',
+        'keys' => [
+            'access_key_id',
+            'access_key_secret',
+            'bucket',
+            'endpoint',
+            'host',
+            'callback_url',
+            'expire',
+            'max_file_size',
+            'region_id',
+            'record_file_arn',
+            'img_dir',
+        ]
+    ];
+
     // 用户中心
     const USER_CENTER = [
         'type' => 'USER_CENTER_CONFIG',
