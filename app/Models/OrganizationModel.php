@@ -22,6 +22,9 @@ class OrganizationModel extends Model
     const ORG_ID_INTERNAL = 0; //内部角色固定org_id
     const ORG_ID_DIRECT = 1; //直营角色固定org_id
 
+    const PRINCIPAL_NORMAL = 21;
+    const PRINCIPAL_SPECIAL = 17;
+
     /**
      * 查询机构列表
      * @param $page
@@ -49,11 +52,6 @@ class OrganizationModel extends Model
         $where = ' where 1=1 ';
         $map   = [];
 
-        if(!empty($params['role_id'])) {
-            $where .= ' and ro.id = :role_id ';
-            $map[':role_id'] = $params['role_id'];
-        }
-
         $db = MysqlDB::getDB();
 
         $records = $db->queryAll("select e2.name principal_name,e2.mobile principal_mobile,e2.login_name principal_login_name,
@@ -67,7 +65,7 @@ class OrganizationModel extends Model
         left join {$e} e on o.operator_id = e.id
         left join {$o} o2 on o.parent_id = o2.id
         left join {$e} e2 on e2.org_id = o.id
-        left join {$ro} ro on ro.id = e2.role_id and ro.id = :role_id
+        left join {$ro} ro on ro.id = e2.role_id and ro.id in (".self::PRINCIPAL_SPECIAL.",".self::PRINCIPAL_NORMAL.")
         {$where}
         order by o.create_time desc
         {$limit}", $map);
