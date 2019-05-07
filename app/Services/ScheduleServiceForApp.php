@@ -27,7 +27,7 @@ class ScheduleServiceForApp
             'course_id' => 212, //TODO
             'start_time' => $schedule['start_time'],
             'end_time' => $now,
-            'duration' => $schedule['start_time'] - $now,
+            'duration' => $now - $schedule['start_time'],
             'status' => -1,
             'org_id' => $schedule['org_id'],
             'create_time' => $now,
