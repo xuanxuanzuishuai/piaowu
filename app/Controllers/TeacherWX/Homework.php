@@ -14,6 +14,7 @@ use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Libs\Valid;
+use App\Models\HomeworkModel;
 use App\Models\PlayRecordModel;
 use App\Services\HomeworkService;
 use App\Libs\OpernCenter;
@@ -408,7 +409,7 @@ class HomeWork extends ControllerBase
     }
 
     /**
-     * 作业练习记录
+     * 查看作业
      * @param Request $request
      * @param Response $response
      * @return Response
@@ -451,8 +452,28 @@ class HomeWork extends ControllerBase
             $params["limit"] = 10;
         }
 
+        // 这里以homework分页，不是以task分页
+        $homework_list = HomeworkModel::getRecords([
+            "student_id" => $params["student_id"],
+            "teacher_id" => $user_id,
+            "LIMIT" => [($params["page"] - 1) * $params["limit"], $params["limit"]],
+            "ORDER" => [
+                "created_time" => "DESC"
+            ]
+        ]);
+        if (empty($homework_list)){
+            $response->withJson([
+                'code' => Valid::CODE_SUCCESS,
+                'data' => []
+            ], StatusCode::HTTP_OK);
+        }
+        $homework_ids = [];
+        foreach ($homework_list as $value){
+            array_push($homework_ids, $value["id"]);
+        }
+
         $data = HomeworkService::getStudentHomeWorkList($params["student_id"],
-            $user_id, $params["page"], $params["limit"]);
+            $user_id, null, null, null, null, $homework_ids);
         $temp = [];
         $current_time = time();
         $lesson_ids = [];

@@ -67,10 +67,11 @@ class HomeworkService
      * @param int $pageLimit
      * @param int $startTime
      * @param $endTime
+     * @param $homework_ids
      * @return array
      */
     public static function getStudentHomeWorkList($studentId, $teacherId=null, $pageId=-1,
-                                                  $pageLimit=0, $startTime=null, $endTime=null)
+                                                  $pageLimit=0, $startTime=null, $endTime=null, $homework_ids=null)
     {
         $where = [
             HomeworkModel::$table . ".student_id" => $studentId,
@@ -88,6 +89,11 @@ class HomeworkService
         if (!empty($endTime)){
             $where[HomeworkModel::$table . ".created_time" <= $endTime];
         }
+
+        if ($homework_ids != null){
+            $where[HomeworkTaskModel::$table . ".homework_id"] = $homework_ids;
+        }
+
         return HomeworkModel::getHomeworkList($where);
     }
 
