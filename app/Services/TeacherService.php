@@ -145,7 +145,6 @@ class TeacherService
         $update['prize']                = $params['prize'] ?? '';
         $update['teach_results']        = $params['teach_results'] ?? null;
         $update['teach_style']          = $params['teach_style'] ?? null;
-        $update['status']               = empty($params['status']) ? TeacherModel::ENTRY_REGISTER : $params['status'];
 
         list($appId, $appSecret) = DictConstants::get(DictConstants::USER_CENTER, ['app_id_dss', 'app_secret_dss']);
         $userCenter = new UserCenter($appId, $appSecret);

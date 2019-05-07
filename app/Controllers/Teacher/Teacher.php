@@ -162,10 +162,6 @@ class Teacher extends ControllerBase
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        //编辑老师，状态缺省时，设为在职
-        if (empty($params['status'])) {
-            $params['status'] = TeacherModel::ENTRY_ON;
-        }
 
         $teacherId = $params['id'];
         unset($params['id']);
