@@ -161,7 +161,6 @@ class OpernService
         return $defaultCollections;
     }
 
-
     /**
      * @param $lessonIds
      * @param $prod
@@ -178,6 +177,42 @@ class OpernService
             $lessons[$lesson['lesson_id']] = $lesson;
         }
         return $lessons;
+    }
+
+    /**
+     * 为数组中的每个对象添加lesson_name和collection_name字段
+     * @param $record_list, 其中必须包含lesson_id
+     * @return mixed
+     */
+    public static function formatLessonAndCollectionName($record_list){
+        $lesson_id_list = [];
+        // 获取lesson_id
+        foreach ($record_list as $value){
+            array_push($lesson_id_list, $value["lesson_id"]);
+        }
+
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, OpernCenter::version);
+        $res = $opn->lessonsByIds($lesson_id_list);
+        if (!empty($res['code']) && $res['code'] !== Valid::CODE_SUCCESS) {
+            $lesson_list = [];
+        } else {
+            $lesson_list = $res["data"];
+        }
+        // 存储lesson_id与lesson_name和collection_name的映射关系
+        $lesson_map = [];
+        foreach ($lesson_list as $lesson) {
+            $lesson_map[$lesson["lesson_id"]] = [
+                "lesson_name" => $lesson["opern_name"],
+                "collection_name" => $lesson["collection_name"]
+            ];
+        }
+        $length = sizeof($record_list);
+        for ($i=0; $i < $length; $i++){
+            $lesson_id = $record_list[$i]["lesson_id"];
+            $record_list[$i]["lesson_name"] = $lesson_map[$lesson_id]["lesson_name"];
+            $record_list[$i]["collection_name"] = $lesson_map[$lesson_id]["collection_name"];
+        }
+        return $record_list;
     }
 
 }

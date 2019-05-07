@@ -10,9 +10,11 @@ namespace App\Controllers\StudentWX;
 
 use App\Controllers\ControllerBase;
 use App\Libs\OpernCenter;
+use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Models\ScheduleModelForApp;
 use App\Services\HomeworkService;
+use App\Services\OpernService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -84,16 +86,15 @@ class Schedule extends ControllerBase
             $home_work_lesson_info = [];
             $homework_list = HomeworkService::getScheduleHomeWorkList($params["schedule_id"]);
             $finish_time = null;
+
             foreach ($homework_list as $homework){
                 array_push($home_work_lesson_info, [
                     "lesson_id"=> $homework["lesson_id"],
-                    "lesson_name" => $homework["lesson_name"],
                     "collection_id" => $homework["collection_id"],
-                    "collection_name" => $homework["collection_name"]
                 ]);
-
                 $finish_time = $homework["end_time"];
             }
+            $home_work_lesson_info = OpernService::formatLessonAndCollectionName($home_work_lesson_info);
 
             $data["homework"] = $home_work_lesson_info;
             $data["remark"] = $remark;
