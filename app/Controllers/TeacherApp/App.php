@@ -9,6 +9,7 @@
 namespace App\Controllers\TeacherApp;
 
 use App\Controllers\ControllerBase;
+use App\Libs\DictConstants;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\AppVersionModel;
@@ -37,6 +38,19 @@ class App extends ControllerBase
         ], StatusCode::HTTP_OK);
     }
 
+    public function config(Request $request, Response $response)
+    {
+        Util::unusedParam($request);
+
+        $config = [];
+        $config['ai_host'] = DictConstants::get(DictConstants::APP_CONFIG_COMMON, 'ai_host');
+        $config['policy_url'] = DictConstants::get(DictConstants::APP_CONFIG_TEACHER, 'policy_url');
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $config
+        ], StatusCode::HTTP_OK);
+    }
 
     public function feedback(Request $request, Response $response)
     {

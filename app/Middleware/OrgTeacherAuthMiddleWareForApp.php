@@ -67,7 +67,7 @@ class OrgTeacherAuthMiddleWareForApp extends MiddlewareBase
         $this->container['student'] = $student;
 
         // 内部审核账号，使用审核版本app也可看到所有资源
-        $reviewTestUsers = DictConstants::get(DictConstants::APP_CONFIG_TEACHER, 'res_test_mobiles');
+        $reviewTestUsers = DictConstants::get(DictConstants::APP_CONFIG_COMMON, 'res_test_mobiles');
         if (!empty($reviewTestUsers)) {
             $userMobiles = explode(',', $reviewTestUsers);
             $isOpnTester = in_array($teacher['mobile'], $userMobiles);

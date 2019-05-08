@@ -298,7 +298,13 @@ $arr = array(
     '/teacher_app/app/version' => [
         'method' => ['get'],
         'call' => TeacherAppApp::class . ':version',
-        'middles' => [AppApiForStudent::class]
+        'middles' => [AppApiForTeacher::class]
+    ],
+
+    '/teacher_app/app/config' => [
+        'method' => ['get'],
+        'call' => TeacherAppApp::class . ':config',
+        'middles' => [AppApiForTeacher::class]
     ],
 
     '/teacher_app/app/feedback' => [

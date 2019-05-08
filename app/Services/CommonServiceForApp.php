@@ -84,7 +84,7 @@ class CommonServiceForApp
         }
 
         // 审核专用账号和验证码
-        list($reviewStudentMobile, $reviewValidateCode) = DictConstants::get(DictConstants::APP_CONFIG_STUDENT,
+        list($reviewStudentMobile, $reviewValidateCode) = DictConstants::get(DictConstants::APP_CONFIG_COMMON,
             ['review_mobile', 'review_validate_code']);
         if ($mobile == $reviewStudentMobile && $code == $reviewValidateCode) {
             return true;
