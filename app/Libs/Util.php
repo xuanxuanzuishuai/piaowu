@@ -641,4 +641,16 @@ class Util
     {
         return "org{$orgId}_$loginName";
     }
+
+    /**
+     * 判断一个浮点数是否是整数 e.g floatIsInt(1.0) => true; floatIsInt(1.1) => false;
+     * @param $f
+     * @return bool
+     */
+    public static function floatIsInt($f){
+        if(!is_numeric($f)){
+            return false;
+        }
+        return  (int)$f == $f ? true : false;
+    }
 }

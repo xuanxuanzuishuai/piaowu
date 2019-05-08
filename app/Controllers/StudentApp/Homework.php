@@ -79,7 +79,7 @@ class Homework extends ControllerBase
             }
             $temp = [
                 'time' => $item['created_time'],
-                'score' => $item['score'],
+                'score' => Util::floatIsInt($item['score']) ? (int)$item['score'] : $item['score'],
                 'complete' => (int)$item['complete'],
                 'record_id' => $item['ai_record_id']
             ];
