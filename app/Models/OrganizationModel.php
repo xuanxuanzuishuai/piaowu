@@ -22,8 +22,8 @@ class OrganizationModel extends Model
     const ORG_ID_INTERNAL = 0; //内部角色固定org_id
     const ORG_ID_DIRECT = 1; //直营角色固定org_id
 
-    const PRINCIPAL_NORMAL = 21;
-    const PRINCIPAL_SPECIAL = 17;
+    const PRINCIPAL_NORMAL = 21; // role_id机构校长
+    const PRINCIPAL_SPECIAL = 17; // role_id升级版机构校长
 
     /**
      * 查询机构列表
@@ -42,7 +42,6 @@ class OrganizationModel extends Model
         $too = TeacherOrgModel::$table;
         $e   = EmployeeModel::$table;
         $o   = OrganizationModel::$table;
-        $ro  = RoleModel::$table;
 
         $studentStatus    = StudentModel::STATUS_NORMAL;
         $teacherStatus    = TeacherModel::STATUS_NORMAL;
@@ -64,8 +63,7 @@ class OrganizationModel extends Model
         from {$o} o
         left join {$e} e on o.operator_id = e.id
         left join {$o} o2 on o.parent_id = o2.id
-        left join {$e} e2 on e2.org_id = o.id
-        left join {$ro} ro on ro.id = e2.role_id and ro.id in (".self::PRINCIPAL_SPECIAL.",".self::PRINCIPAL_NORMAL.")
+        left join {$e} e2 on e2.org_id = o.id and e2.role_id in (".self::PRINCIPAL_SPECIAL.",".self::PRINCIPAL_NORMAL.")
         {$where}
         order by o.create_time desc
         {$limit}", $map);
