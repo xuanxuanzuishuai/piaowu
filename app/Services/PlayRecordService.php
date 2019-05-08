@@ -283,6 +283,7 @@ class PlayRecordService
                 // 更新最大得分index
                 if ($item["score"] > $format_record[$create_date]["max_score"]){
                     $max_score_index_map[$create_date] = sizeof($format_record[$create_date]['records']);
+                    $format_record[$create_date]["max_score"] = $item["score"];
                 }
                 array_push($format_record[$create_date]['records'], $item);
             }else{

@@ -493,7 +493,7 @@ class HomeWork extends ControllerBase
 
             $playRecordStatistic = PlayRecordModel::getPlayRecordList($homeworkId, $homework['task_id'], $homework['lesson_id'],
                 (int)$homework['created_time'], (int)$homework['end_time'], true, null,
-                null, null, true);
+                null, $params["student_id"]);
             $playRecordStatistic = $playRecordStatistic[0];
             $task["duration"] = $playRecordStatistic["duration"];
             $task["play_count"] = $playRecordStatistic["play_count"];

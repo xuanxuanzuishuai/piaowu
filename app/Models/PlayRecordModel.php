@@ -302,16 +302,14 @@ class PlayRecordModel extends Model
             " and pr.lesson_id=:lesson_id ";
         if (!empty($studentId)){
             $map[":student_id"] = $studentId;
-            $where = $where . " pr.student_id=:student_id";
+            $where = $where . " and pr.student_id=:student_id ";
         }
         if ($join_hc){
             $selectTable = $selectTable . "left join " . HomeworkCompleteModel::$table .
-                " as hc on pr.id = hc.play_record_id";
-            if(!$flunked){
-                $map[":task_id"] = $taskId;
-                $map[":homework_id"] = $homeworkId;
-                $where = $where . " and hc.task_id=:task_id and hc.homework_id=:homework_id ";
-            }
+                " as hc on pr.id = hc.play_record_id and hc.task_id=:task_id and hc.homework_id=:homework_id ";
+            $map[":task_id"] = $taskId;
+            $map[":homework_id"] = $homeworkId;
+
         }
 
         $sql = $selectTable . $where;
