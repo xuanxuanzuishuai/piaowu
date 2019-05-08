@@ -28,7 +28,7 @@ class OSS extends ControllerBase
         $ret = $alioss->getSignature($ossConfig['access_key_id'],
             $ossConfig['access_key_secret'],
             $ossConfig['host'],
-            $ossConfig['callback_url'],
+            null,
             $ossConfig['img_dir'],
             $ossConfig['expire'],
             $ossConfig['max_file_size']);
