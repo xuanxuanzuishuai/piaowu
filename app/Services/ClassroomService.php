@@ -30,20 +30,24 @@ class ClassroomService
     }
 
     public static function getClassroomDetail($cRId) {
-        return ClassroomModel::getClassroomDetail($cRId);
+        $classroom = ClassroomModel::getClassroomDetail($cRId);
+        if(!empty($classroom['pic_url'])) {
+            $classroom['signed_pic_url'] = AliOSS::signUrls($classroom['pic_url']);
+        }
     }
 
     public static function getClassrooms($params = null) {
         $res =  ClassroomModel::getClassrooms($params);
-        foreach($res as $key => $value) {
-            if(!empty($value['pic_url']))
-                $res[$key]['pic_url'] = AliOSS::signUrls($value['pic_url']);
-        }
+        $res = AliOSS::signUrls($res, 'pic_url', 'signed_pic_url');
         return $res;
     }
 
     public static function getById($cRId)
     {
-        return ClassroomModel::getById($cRId);
+        $classroom = ClassroomModel::getById($cRId);
+        if(!empty($classroom['pic_url'])) {
+            $classroom['signed_pic_url'] = AliOSS::signUrls($classroom['pic_url']);
+        }
+        return $classroom;
     }
 }

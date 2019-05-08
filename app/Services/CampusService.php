@@ -32,15 +32,16 @@ class CampusService
     }
 
     public static function getById($campusId) {
-        return CampusModel::getById($campusId);
+        $campus = CampusModel::getById($campusId);
+        if(!empty($campus['pic_url'])) {
+            $campus['signed_pic_url'] = AliOSS::signUrls($campus['pic_url']);
+        }
+        return $campus;
     }
 
     public static function getCampus() {
         $res =  CampusModel::getCampus();
-        foreach($res as $key => $value) {
-            if(!empty($value['pic_url']))
-            $res[$key]['pic_url'] = AliOSS::signUrls($value['pic_url']);
-        }
+        $res = AliOSS::signUrls($res, 'pic_url', 'signed_pic_url');
         return $res;
     }
 }
