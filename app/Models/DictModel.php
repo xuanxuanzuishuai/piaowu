@@ -88,7 +88,7 @@ class DictModel extends Model
      * @return mixed
      */
     public static function getKeyValue($type, $keyCode){
-        if (empty($type) || $keyCode === null || $keyCode == ""){
+        if (empty($type) || $keyCode === null || $keyCode === ''){
             return "";
         }
         // 从缓存获取

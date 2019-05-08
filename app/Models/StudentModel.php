@@ -25,6 +25,11 @@ class StudentModel extends Model
     const STATUS_NORMAL = 1; //正常
     const STATUS_STOP = 2; //禁用
 
+    const SUB_STATUS_STOP = 0; //禁用
+    const SUB_STATUS_NORMAL = 1; //正常
+
+    const NOT_ACTIVE_TEXT = '未激活';
+
     //添加渠道
     const CHANNEL_BACKEND_ADD = 1; //机构后台添加
     const CHANNEL_WE_CHAT_SCAN = 2; //微信扫码注册

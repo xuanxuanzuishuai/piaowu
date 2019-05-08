@@ -256,4 +256,6 @@ class Constants
     const DICT_TYPE_STUDENT_STATUS = 'student_status';
     //直营角色包含的org_id
     const DICT_TYPE_DIRECT_ORG_IDS = 'direct_org_ids';
+    //学生订阅服务状态
+    const DICT_TYPE_STUDENT_SUB_STATUS = 'student_sub_status';
 };
