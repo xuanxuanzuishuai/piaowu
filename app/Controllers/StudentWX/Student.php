@@ -11,6 +11,7 @@ namespace App\Controllers\StudentWX;
 use App\Controllers\ControllerBase;
 use App\Libs\Valid;
 use App\Models\PlayRecordModel;
+use App\Models\StudentModel;
 use App\Services\CommonServiceForApp;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -82,7 +83,8 @@ class Student extends ControllerBase
         $db = MysqlDB::getDB();
         $db->beginTransaction();
         if (empty($student_info["id"])) {
-            $student_id = StudentServiceForApp::studentRegister($params["mobile"], $params["name"]);
+            $student_id = StudentServiceForApp::studentRegister($params["mobile"],
+                StudentModel::CHANNEL_WE_CHAT_SCAN, $params["name"]);
             if (empty($student_id)) {
                 return $response->withJson(Valid::addAppErrors([], 'register_failed'), StatusCode::HTTP_OK);
             }

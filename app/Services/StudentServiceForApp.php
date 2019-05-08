@@ -13,6 +13,7 @@ use App\Libs\DictConstants;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Libs\Util;
+use App\Models\StudentModel;
 use App\Models\StudentModelForApp;
 use App\Models\GiftCodeModel;
 
@@ -41,7 +42,7 @@ class StudentServiceForApp
 
         // 新用户自动注册
         if (empty($student)) {
-            $newStudent = self::studentRegister($mobile);
+            $newStudent = self::studentRegister($mobile, StudentModel::CHANNEL_APP_REGISTER);
 
             if (empty($newStudent)) {
                 return ['student_register_fail'];
@@ -125,7 +126,7 @@ class StudentServiceForApp
      * @param $name
      * @return null|array 失败返回null 成功返回['student_id' => x, 'uuid' => x, 'is_new' => x]
      */
-    public static function studentRegister($mobile, $name=null)
+    public static function studentRegister($mobile, $channel, $name=null)
     {
         if (empty($name)) {
             $name = Util::defaultStudentName($mobile);
@@ -137,7 +138,7 @@ class StudentServiceForApp
         }
 
         $uuid = $result['uuid'];
-        $lastId = self::addStudent($mobile, $name, $uuid);
+        $lastId = self::addStudent($mobile, $name, $uuid, $channel);
 
         if (empty($lastId)) {
             SimpleLogger::info(__FILE__ . __LINE__, [
@@ -157,7 +158,7 @@ class StudentServiceForApp
      * @param string $uuid
      * @return array|null 用户数据
      */
-    public static function addStudent($mobile, $name, $uuid)
+    public static function addStudent($mobile, $name, $uuid, $channel)
     {
         $user = [
             'uuid' => $uuid,
@@ -167,6 +168,7 @@ class StudentServiceForApp
             'sub_status' => StudentModelForApp::SUB_STATUS_ON,
             'sub_start_date' => 0,
             'sub_end_date' => 0,
+            'channel_id' => $channel
         ];
 
         $id = StudentModelForApp::insertRecord($user);
