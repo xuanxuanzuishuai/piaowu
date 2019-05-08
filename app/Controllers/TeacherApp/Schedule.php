@@ -13,6 +13,7 @@ use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Libs\Valid;
+use App\Models\OrganizationModelForApp;
 use App\Services\HomeworkService;
 use App\Services\ScheduleServiceForApp;
 use App\Services\WeChatService;
@@ -20,6 +21,7 @@ use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
 use App\Models\UserWeixinModel;
+use GuzzleHttp\Exception\GuzzleException;
 
 
 class Schedule extends ControllerBase
@@ -65,6 +67,8 @@ class Schedule extends ControllerBase
 
         $db->commit();
 
+        OrganizationModelForApp::delOrgTeacherTokens($this->ci['org']['id'],
+            $this->ci['org_teacher_token']);
 
         $date_str = date("Y年m月d日", time());
         $data = [
@@ -99,7 +103,7 @@ class Schedule extends ControllerBase
                     $data,
                     $_ENV["WECHAT_FRONT_DOMAIN"] . "/student/report?schedule_id=" . $scheduleId
                 );
-            } catch (\Exception $e){
+            } catch (GuzzleException $e){
                 SimpleLogger::error(__FILE__ . ':' . __LINE__, [print_r($e->getMessage(), true)]);
             }
 
