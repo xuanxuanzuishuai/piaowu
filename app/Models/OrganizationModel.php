@@ -70,12 +70,7 @@ class OrganizationModel extends Model
         order by o.create_time desc
         {$limit}", $map);
 
-        $total = $db->queryAll("select count(*) count
-        from {$o} o
-        left join {$e} e2 on e2.org_id = o.id
-        left join {$ro} ro on ro.id = e2.role_id and ro.id = :role_id
-        {$where}
-        {$limit}", $map);
+        $total = $db->queryAll("select count(*) count from {$o} o", $map);
 
         return [$records, $total[0]['count']];
     }

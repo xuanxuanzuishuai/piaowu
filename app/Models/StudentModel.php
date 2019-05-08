@@ -119,6 +119,8 @@ class StudentModel extends Model
         $e  = EmployeeModel::$table;
         $ch = ChannelModel::$table;
 
+        $tsBindStatus = TeacherStudentModel::STATUS_NORMAL;
+
         //按姓名或手机号模糊查询,查询出结果后直接返回
         if(!empty($params['key'])) {
             $key = $params['key'];
@@ -160,7 +162,7 @@ class StudentModel extends Model
                 t.status ts_status, so.status bind_status, so.cc_id, e.name cc_name, ch.name channel_name
                 from {$s} s
                 inner join {$so} so on s.id = so.student_id
-                left join {$t} t on s.id = t.student_id and t.org_id = so.org_id
+                left join {$t} t on s.id = t.student_id and t.org_id = so.org_id and t.status = {$tsBindStatus}
                 left join {$te} te on te.id = t.teacher_id 
                 left join {$e} e on e.id = so.cc_id
                 left join {$ch} ch on ch.id = s.channel_id
@@ -170,7 +172,7 @@ class StudentModel extends Model
             $countSql = "select count(*) count
                 from {$s} s
                 inner join {$so} so on s.id = so.student_id
-                left join {$t} t on s.id = t.student_id and t.org_id = so.org_id
+                left join {$t} t on s.id = t.student_id and t.org_id = so.org_id and t.status = {$tsBindStatus}
                 left join {$te} te on te.id = t.teacher_id
                 left join {$e} e on e.id = so.cc_id
                 {$where}";
@@ -185,11 +187,13 @@ class StudentModel extends Model
         }
 
         $total = $db->queryAll($countSql, $map);
+
         if (empty($total) || $total[0]['count'] == 0) {
             return [[], 0];
         }
 
         $records = $db->queryAll($sql, $map);
+
         return [$records, $total[0]['count']];
     }
 
