@@ -8,6 +8,7 @@
 namespace App\Services;
 
 
+use App\Libs\Util;
 use App\Models\HomeworkCompleteModel;
 use App\Models\HomeworkModel;
 use App\Models\HomeworkTaskModel;
@@ -319,18 +320,19 @@ class HomeworkService
                 ];
             }
             $statistics[$lessonId]['practice_time'] += $play['duration'];
+            $score = Util::floatIsInt($play['score']) ? (int)$play['score'] : $play['score'];
             if ($play['lesson_type'] == PlayRecordModel::TYPE_AI){
                 $statistics[$lessonId]['ai_times'] += 1;
-                if ($play['score'] > $statistics[$lessonId]['ai_best']){
-                    $statistics[$lessonId]['ai_best'] = $play['score'];
+                if ($score > $statistics[$lessonId]['ai_best']){
+                    $statistics[$lessonId]['ai_best'] = $score;
                 }
             } else {
                 if(!empty($play['lesson_sub_id'])){
                     $statistics[$lessonId]['step_times'] += 1;
                 }else{
                     $statistics[$lessonId]['whole_times'] += 1;
-                    if ($play['score'] > $statistics[$lessonId]['whole_best']){
-                        $statistics[$lessonId]['whole_best'] = $play['score'];
+                    if ($score > $statistics[$lessonId]['whole_best']){
+                        $statistics[$lessonId]['whole_best'] = $score;
                     }
                 }
             }
