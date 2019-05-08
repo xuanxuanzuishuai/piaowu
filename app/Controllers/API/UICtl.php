@@ -10,7 +10,6 @@ namespace App\Controllers\API;
 
 use App\Controllers\ControllerBase;
 use App\Libs\Valid;
-use App\Services\AppService;
 use App\Services\DictService;
 use Slim\App;
 use Slim\Http\Request;

@@ -61,21 +61,6 @@ class EmployeePrivilegeService
     }
 
     /**
-     * @param $employeeId
-     * @param $privilegeIds
-     * @param $type
-     */
-    public static function updateEmployeePrivileges($employeeId, $privilegeIds, $type)
-    {
-        EmployeePrivilegeModel::deleteUserPrivilege($employeeId, $type);
-        $update = [];
-        foreach ($privilegeIds as $privilegeId) {
-            $update[] = ['employee_id' => $employeeId, 'privilege_id' => $privilegeId, 'type' => $type];
-        }
-        EmployeePrivilegeModel::insertUserPrivileges($update);
-    }
-
-    /**
      * 是否超级管理员
      * @param $employee
      * @return bool

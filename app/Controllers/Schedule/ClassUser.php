@@ -11,7 +11,6 @@ namespace App\Controllers\Schedule;
 
 use App\Controllers\ControllerBase;
 use App\Libs\MysqlDB;
-use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Models\ClassUserModel;
 use App\Models\STClassModel;

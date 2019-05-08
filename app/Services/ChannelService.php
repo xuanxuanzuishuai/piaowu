@@ -32,40 +32,4 @@ class ChannelService
     {
         return ChannelModel::getById($id);
     }
-
-    /**
-     * 获取渠道map
-     * @param $chanelIdArray
-     * @return array
-     */
-    public static function getChannelMap($chanelIdArray)
-    {
-        $records = ChannelModel::getRecordsByIds($chanelIdArray);
-        $data = [];
-        foreach($records as $record){
-            $data[$record['id']] = $record['name'];
-        }
-        return $data;
-    }
-
-    /**
-     * crm 同步channel数据
-     * @param $id
-     * @param $name
-     * @param $createTime
-     * @param $status
-     * @param $parentId
-     * @param $channelLevel
-     * @param $appId
-     * @return bool|int|mixed|null|string
-     */
-    public static function crmSyncRecord($id ,$name ,$createTime, $status, $parentId, $channelLevel, $appId)
-    {
-        $channel = ChannelModel::getById($id);
-        if(empty($channel)){
-            return ChannelModel::insertChannel($id ,$name ,$createTime, $status, $parentId, $channelLevel, $appId);
-        }else{
-            return ChannelModel::updateChannel($id ,$name ,$createTime, $status, $parentId, $channelLevel, $appId);
-        }
-    }
 }

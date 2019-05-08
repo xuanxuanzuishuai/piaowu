@@ -101,25 +101,6 @@ class CourseService
     }
 
     /**
-     * 获取课程
-     * @param $courseId
-     * @return array
-     */
-    public static function selectCourseByCourseId($courseId) {
-        $course = CourseModel::getLiteInfo($courseId);
-        if ($course) {
-            //查询结果已经包含course_id这个key
-            $course['num']         = 1;
-            $course['free_num']    = 0;
-            $course['sprice']      = $course['oprice'];
-            $course['course_name'] = $course['name'];
-            unset($course['oprice'], $course['name']);
-            return [$course];
-        }
-        return [];
-    }
-
-    /**
      * 根据courseId, 获取数据
      * @param $courseId
      * @return mixed|null
@@ -127,83 +108,5 @@ class CourseService
     public static function getCourseById($courseId)
     {
         return CourseModel::getById($courseId);
-    }
-
-    /**
-     * 获取体验课course_id
-     * @param $appId
-     * @return bool|mixed
-     */
-    public static function getTestCourseId($appId)
-    {
-        switch($appId) {
-            case AppModel::APP_PANDA:
-                $keyCode = Constants::DICT_KEY_PANDA_NORMAL_REGISTER;
-                break;
-            case AppModel::APP_SQUIRREL:
-                $keyCode = Constants::DICT_KEY_SQUIRREL_NORMAL_REGISTER;
-                break;
-            default:
-                $keyCode = '';
-        }
-        if (empty($keyCode)) {
-            return false;
-        }
-        return Dict::getCourseId($keyCode);
-    }
-
-    /**
-     * 获取设备课course_id
-     * @param $appId
-     * @return mixed
-     */
-    public static function getDeviceCourseId($appId)
-    {
-        switch($appId) {
-            case AppModel::APP_PANDA:
-                $keyCode = Constants::DICT_KEY_PANDA_DEVICE_COURSE_ID;
-                break;
-            case AppModel::APP_SQUIRREL:
-                $keyCode = Constants::DICT_KEY_SQUIRREL_DEVICE_COURSE_ID;
-                break;
-            default:
-                $keyCode = '';
-        }
-        if (empty($keyCode)) {
-            return false;
-        }
-        return Dict::getCourseId($keyCode);
-    }
-
-    /**
-     * 磨课、种子用户考核课
-     * @return array
-     */
-    public static function getSpecialCourse()
-    {
-        $types = [
-            CourseModel::TYPE_INTERVIEW,
-            CourseModel::TYPE_EXAMINE
-        ];
-        return CourseModel::getCoursesByType($types);
-    }
-
-    /**
-     * 保存一个course
-     * @param $data
-     * @return int|mixed|null|string
-     */
-    public static function saveCourse($data){
-        return CourseModel::insertRecord($data);
-    }
-
-    /**
-     * 更新指定id的course
-     * @param $courseId
-     * @param $data
-     * @return int|null
-     */
-    public static function updateCourseRecordById($courseId,$data){
-        return CourseModel::updateCourseRecordById($courseId,$data);
     }
 }

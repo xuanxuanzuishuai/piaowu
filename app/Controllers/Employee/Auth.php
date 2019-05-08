@@ -9,13 +9,10 @@
 namespace App\Controllers\Employee;
 
 use App\Controllers\ControllerBase;
-use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\SimpleLogger;
 use App\Libs\Valid;
-use App\Models\EmployeeModel;
 use App\Models\OrganizationModel;
-use App\Services\DictService;
 use App\Services\EmployeeService;
 use Slim\Http\Request;
 use Slim\Http\Response;

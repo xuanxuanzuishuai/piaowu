@@ -11,7 +11,6 @@ namespace App\Controllers\Privilege;
 use App\Controllers\ControllerBase;
 use App\Libs\Valid;
 use App\Models\GroupModel;
-use App\Models\OrganizationModel;
 use App\Models\RoleModel;
 use App\Services\RoleService;
 use Slim\Http\Request;

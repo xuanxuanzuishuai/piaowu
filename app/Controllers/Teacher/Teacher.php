@@ -30,45 +30,6 @@ use Slim\Http\StatusCode;
 class Teacher extends ControllerBase
 {
     /**
-     * @param Request $request
-     * @param Response $response
-     * @param $args
-     * @return Response
-     */
-    public function detail(Request $request, Response $response, $args)
-    {
-        $rules = [
-            [
-                'key'        => 'id',
-                'type'       => 'required',
-                'error_code' => 'teacher_id_is_required'
-            ],
-            [
-                'key'        => 'id',
-                'type'       => 'integer',
-                'error_code' => 'teacher_id_must_be_integer'
-            ]
-        ];
-        $params = $request->getParams();
-        $result = Valid::validate($params, $rules);
-        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
-            return $response->withJson($result, StatusCode::HTTP_OK);
-        }
-
-        //获取老师详细信息
-        $teacher_info = TeacherService::getTeacherInfoByID($params['id']);
-        if (isset($teacher_info['code']) && $teacher_info['code'] != Valid::CODE_SUCCESS) {
-            return $response->withJson($teacher_info, StatusCode::HTTP_OK);
-        }
-        return $response->withJson([
-            'code' => Valid::CODE_SUCCESS,
-            'data' => [
-                'teacher_info' => $teacher_info
-            ]
-        ], StatusCode::HTTP_OK);
-    }
-
-    /**
      * 查看机构下老师详情
      * @param Request $request
      * @param Response $response

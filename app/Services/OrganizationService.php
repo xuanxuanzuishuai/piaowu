@@ -74,9 +74,4 @@ class OrganizationService
     {
         return OrganizationModel::getInfo($id);
     }
-
-    public static function generateOrganization($orgId) {
-        $baseUrl = $_ENV["TEACHER_WECHAT_VUE_URL"] . "/" . "?org_id=" . $orgId;
-        return OrganizationModel::getInfo($id);
-    }
 }

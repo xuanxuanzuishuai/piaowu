@@ -256,55 +256,6 @@ class EmployeeService
     }
 
     /**
-     * 获取管理员名
-     * @param $id
-     * @return array|string
-     */
-    public static function getOperatorName($id)
-    {
-
-        if ($id == EmployeeModel::SYSTEM_EMPLOYEE_ID) {
-            return EmployeeModel::SYSTEM_EMPLOYEE_NAME;
-        } else {
-            $operator = EmployeeModel::getById($id);
-            if (!empty($operator)) {
-                return $operator['name'];
-            } else {
-                return 'employee_not_found';
-            }
-        }
-
-    }
-
-    /**
-     * 验证密码更新有没有超过一个月
-     * @param $lastUpdateTime
-     * @return float|int
-     */
-    public static function validUsAppassword($lastUpdateTime)
-    {
-        //获取开始日期时间戳
-        $dateFirst = strtotime(date('Ymd', $lastUpdateTime)) + self::ONE_MONTH_TIMESTAMP;
-        //获取结束日期时间戳
-        $dateSec = strtotime(date('Ymd', time()));
-        $res = ($dateFirst - $dateSec) / 86400;
-        //返回结果
-        return $res;
-    }
-
-    /**
-     * 获取密码已经X天未修改的用户
-     * @return array
-     */
-    public static function getPwdExpireUsers()
-    {
-        // 判断用户密码一个月之内没有修改，提示去修改密码，禁止登陆
-        $roleIds = DictService::getKeyValue(Constants::DICT_TYPE_SYSTEM_ENV, Constants::PWD_NEVER_EXPIRES_ROLE_ID);
-        $pwdNeverExpiresRoleId = explode(',', $roleIds);
-        return EmployeeModel::selectEmployeePwdExpire($pwdNeverExpiresRoleId);
-    }
-
-    /**
      * 获取雇员列表数据
      * @param $roleId
      * @return array
@@ -315,29 +266,6 @@ class EmployeeService
         return $employees;
     }
 
-    /**
-     * 获取学生客管Map
-     * @param $studentCaIdArray
-     * @return array
-     */
-    public static function getStudentCaMap($studentCaIdArray)
-    {
-        $caData = EmployeeModel::getEmployeeWithIds($studentCaIdArray);
-        $caMap = [];
-        foreach ($caData as $ca){
-            $caMap[$ca['id']] = $ca['name'];
-        }
-
-        return $caMap;
-    }
-
-    /**
-     * @param $uuid
-     * @return mixed
-     */
-    public static function getByUUID($uuid) {
-        return EmployeeModel::getByUuid($uuid);
-    }
 
     public static function getById($employeeId)
     {
