@@ -34,6 +34,7 @@ class ClassroomService
         if(!empty($classroom['pic_url'])) {
             $classroom['signed_pic_url'] = AliOSS::signUrls($classroom['pic_url']);
         }
+        return $classroom;
     }
 
     public static function getClassrooms($params = null) {
