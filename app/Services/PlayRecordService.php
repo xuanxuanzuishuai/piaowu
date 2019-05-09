@@ -256,6 +256,8 @@ class PlayRecordService
         foreach($records as &$r) {
             $r['max_score'] = max($r['max_dmc'], $r['max_ai']);
             $r['lesson_type'] = DictService::getKeyValue(Constants::DICT_TYPE_PLAY_RECORD_LESSON_TYPE, $r['lesson_type']);
+            //alias
+            $r['create_time'] = $r['created_time'];
         }
         return [$records, $total];
     }

@@ -10,8 +10,6 @@ namespace App\Models;
 
 use App\Libs\MysqlDB;
 use App\Libs\Util;
-use App\Services\ChannelService;
-use Medoo\Medoo;
 
 class StudentModel extends Model
 {

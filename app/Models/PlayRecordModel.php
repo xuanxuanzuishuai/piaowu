@@ -165,6 +165,7 @@ class PlayRecordModel extends Model
 
         if(!empty($studentId)) {
             $sql = "select p.lesson_id,
+                   p.created_time,
                    e.name cc_name,
                    p.lesson_type,
                    p.student_id,
@@ -199,6 +200,7 @@ class PlayRecordModel extends Model
             $map[':student_id'] = $studentId;
         } else {
             $sql = "select p.lesson_id,
+                   p.created_time,
                    e.name cc_name,
                    p.lesson_type,
                    p.student_id,

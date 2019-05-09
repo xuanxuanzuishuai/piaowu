@@ -76,62 +76,6 @@ class StudentService
     }
 
     /**
-     * 获取学生通讯列表
-     * @param $studentId
-     * @param $hideMobile
-     * @return array
-     */
-    public static function getStudentMobiles($studentId, $hideMobile = true)
-    {
-        $student = StudentModel::getById($studentId);
-        if (empty($student)) {
-            return [];
-        }
-        $row = [];
-        //用户注册手机号，relation_id = 0
-        $row['relation_id'] = 0;
-        $row['title'] = $student['name'];
-        $row['mobile'] = ($hideMobile ? Util::hideUserMobile($student['mobile']) : $student['mobile']);
-        $data[] = $row;
-        $relations = StudentRelationService::getRelationList($studentId);
-        $data = array_merge($data, $relations);
-        return $data;
-    }
-
-    /**
-     * 添加学生
-     * @param int $authAppId 鉴权的App
-     * @param $name
-     * @param $mobile
-     * @param $channelId
-     * @param $uuid
-     * @param $countryCode
-     * @param $birthday
-     * @param $gender
-     * @return int|mixed|null|string
-     */
-    public static function addStudent($authAppId, $name, $mobile, $channelId, $uuid = '', $countryCode = null, $birthday = '', $gender = 0)
-    {
-        $channelLevel = null;
-        if (!empty($channelId)) {
-            $channel = ChannelService::getChannelById($channelId);
-            $channelLevel = $channel['level'];
-        }
-        // 用户中心授权
-        list($appId, $appSecret) = DictConstants::get(DictConstants::USER_CENTER, ['app_id_dss', 'app_secret_dss']);
-        $userCenter = new UserCenter($appId, $appSecret);
-        $authResult = $userCenter->studentAuthorization($authAppId, $mobile, $name, $uuid, $birthday, $gender);
-        if (empty($authResult["uuid"])) {
-            return Valid::addErrors([], "user_center", "uc_user_add_failed");
-        }
-        $studentId = StudentModel::insertStudent($name, $mobile, $authResult["uuid"], $channelId, $channelLevel, $countryCode, $birthday, $gender);
-        if (empty($studentId)) {
-            return Valid::addErrors([], 'student_id', 'add_student_failed');
-        }
-        return ['code' => Valid::CODE_SUCCESS, 'data' => ['studentId'=>$studentId]];
-    }
-
-    /**
      * 学生注册
      * @param $params
      * @param $operatorId
