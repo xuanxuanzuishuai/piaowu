@@ -13,6 +13,7 @@ use App\Libs\OpernCenter;
 use App\Libs\SimpleLogger;
 use App\Models\HomeworkTaskModel;
 use App\Models\OrgAccountModel;
+use App\Models\OrganizationModel;
 use App\Models\OrganizationModelForApp;
 use App\Models\TeacherModelForApp;
 
@@ -43,6 +44,11 @@ class OrganizationServiceForApp
         }
 
         $orgInfo = self::getOrgInfo($orgAccount['org_id']);
+
+        if ($orgInfo['status'] == OrganizationModel::STATUS_STOP) {
+            return ['org_account_invalid'];
+        }
+
         $orgInfo['account'] = $account;
         $orgInfo['license_num'] = (int)$orgAccount['license_num'];
         $orgTeachers = self::getTeachers($orgAccount['org_id']);
@@ -187,6 +193,7 @@ class OrganizationServiceForApp
             "name" => $org['name'],
             "start_time" => $org['start_time'],
             "end_time" => $org['end_time'],
+            "status" => $org['status']
         ];
 
         return $orgInfo;
