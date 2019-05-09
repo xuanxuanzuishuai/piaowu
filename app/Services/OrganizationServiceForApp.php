@@ -44,6 +44,7 @@ class OrganizationServiceForApp
 
         $orgInfo = self::getOrgInfo($orgAccount['org_id']);
         $orgInfo['account'] = $account;
+        $orgInfo['license_num'] = $orgAccount['license_num'];
         $orgTeachers = self::getTeachers($orgAccount['org_id']);
 
         $token = OrganizationModelForApp::genToken($orgAccount['org_id']);
