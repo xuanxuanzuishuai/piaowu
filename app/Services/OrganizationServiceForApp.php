@@ -15,9 +15,6 @@ use App\Models\HomeworkTaskModel;
 use App\Models\OrgAccountModel;
 use App\Models\OrganizationModelForApp;
 use App\Models\TeacherModelForApp;
-use App\Libs\QRcode;
-use Intervention\Image\ImageManagerStatic as Image;
-use App\Libs\RC4;
 
 
 class OrganizationServiceForApp
@@ -202,7 +199,7 @@ class OrganizationServiceForApp
         foreach ($onlineTeachers as $data) {
             $cache = OrganizationModelForApp::getOrgTeacherCacheByToken($orgId, $data['token']);
             if (!empty($cache)) {
-                $onlineTeacherIds[] = $cache['id'];
+                $onlineTeacherIds[] = $cache['teacher_id'];
             }
         }
 
