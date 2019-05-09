@@ -150,7 +150,9 @@ class CourseModel extends Model
         $params['duration'] = ($params['duration'] / 60).'min';
         $params['class_type'] = $params['class_lowest'].'-'.$params['class_highest'];
         $params['oprice'] = number_format($params['oprice'] / 100, 2);
-        $isTranslate && !empty($params['thumb']) && $params['thumb'] = AliOSS::signUrls($params['thumb']);
+        if (!empty($params['thumb'])) {
+            $params['signed_thumb'] = AliOSS::signUrls($params['thumb']);
+        }
 
         return $params ?? [];
     }
