@@ -241,24 +241,24 @@ class Student extends ControllerBase
      * @return Response
      */
     public function editAccountInfo(Request $request, Response $response){
-        $rules = [
-            [
-                'key' => 'name',
-                'type' => 'required',
-                'error_code' => 'name_is_required'
-            ],
-            [
-                'key' => 'thumb',
-                'type' => 'required',
-                'error_code' => 'thumb_is_required'
-            ]
-        ];
-
+//        $rules = [
+//            [
+//                'key' => 'name',
+//                'type' => 'required',
+//                'error_code' => 'name_is_required'
+//            ],
+//            [
+//                'key' => 'thumb',
+//                'type' => 'required',
+//                'error_code' => 'thumb_is_required'
+//            ]
+//        ];
+//
         $params = $request->getParams();
-        $result = Valid::appValidate($params, $rules);
-        if ($result['code'] != Valid::CODE_SUCCESS) {
-            return $response->withJson($result, StatusCode::HTTP_OK);
-        }
+//        $result = Valid::appValidate($params, $rules);
+//        if ($result['code'] != Valid::CODE_SUCCESS) {
+//            return $response->withJson($result, StatusCode::HTTP_OK);
+//        }
 
         $update_info = [];
         if (!empty($params["thumb"])){
