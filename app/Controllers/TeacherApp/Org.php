@@ -109,7 +109,7 @@ class Org extends ControllerBase
             $book = $books[$task['lesson_id']];
             $homework[] = array_merge($taskBase, $play, $book);
         }
-        $loginData['homework'] = $homework;
+        $loginData['homework'] = !empty($homework) ? $homework : [];
 
         if (!empty($errorCode)) {
             $result = Valid::addAppErrors([], $errorCode);

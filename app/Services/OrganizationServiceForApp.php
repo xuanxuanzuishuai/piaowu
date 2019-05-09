@@ -187,7 +187,6 @@ class OrganizationServiceForApp
         if (empty($org)) {
             return [];
         }
-
         $orgInfo = [
             "id" => $org['id'],
             "name" => $org['name'],

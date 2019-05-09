@@ -75,4 +75,10 @@ class OrgAccountModel extends Model
 
         return [$records, $total];
     }
+
+    public static function getByOrgId($orgId)
+    {
+        $db = MysqlDB::getDB();
+        return $db->get(self::$table, '*', ['org_id' => $orgId]);
+    }
 }

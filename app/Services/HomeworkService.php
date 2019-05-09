@@ -15,7 +15,7 @@ use App\Models\HomeworkTaskModel;
 use App\Libs\SimpleLogger;
 use App\Models\PlayRecordModel;
 use App\Libs\OpernCenter;
-
+use App\Models\ScheduleUserModelForApp;
 
 
 class HomeworkService
@@ -269,11 +269,21 @@ class HomeworkService
      * @return array
      */
     public static function scheduleFollowUp($teacherId, $studentId, $proVer=1){
+        // 获取师徒二人上节课
+        $scheduleWhere = [
+            "ORDER" => ['create_time' => 'DESC'],
+            "LIMIT" => 1
+        ];
+        $schedule = ScheduleUserModelForApp::getUserSchedule($studentId, $teacherId, $scheduleWhere);
+        if(empty($schedule)){
+            return [[], [], []];
+        }
+
         // 获取师徒二人最近的一次作业
         $where = [
             HomeworkModel::$table . ".student_id" => $studentId,
             HomeworkModel::$table . ".teacher_id" => $teacherId,
-            HomeworkModel::$table . ".schedule_id[!]" => null,
+            HomeworkModel::$table . ".schedule_id" => $schedule['id'],
             "ORDER" => ['created_time' => 'DESC'],
             "LIMIT" => 1
         ];
