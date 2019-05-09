@@ -21,11 +21,13 @@ class BillService
 
         list($records, $total) = BillModel::selectByPage($orgId, $page, $count, $params);
         foreach($records as &$r) {
-            $r['pay_status']  = DictService::getKeyValue(Constants::DICT_TYPE_BILL_PAY_STATUS, $r['pay_status']);
-            $r['pay_channel'] = DictService::getKeyValue(Constants::DICT_TYPE_BILL_PAY_CHANNEL, $r['pay_channel']);
-            $r['source']      = DictService::getKeyValue(Constants::DICT_TYPE_BILL_SOURCE, $r['source']);
-            $r['is_disabled'] = DictService::getKeyValue(Constants::DICT_TYPE_BILL_DISABLED, $r['is_disabled']);
-            $r['amount']      /= 100;
+            $r['pay_status']       = DictService::getKeyValue(Constants::DICT_TYPE_BILL_PAY_STATUS, $r['pay_status']);
+            $r['pay_channel']      = DictService::getKeyValue(Constants::DICT_TYPE_BILL_PAY_CHANNEL, $r['pay_channel']);
+            $r['source']           = DictService::getKeyValue(Constants::DICT_TYPE_BILL_SOURCE, $r['source']);
+            $r['is_disabled']      = DictService::getKeyValue(Constants::DICT_TYPE_BILL_DISABLED, $r['is_disabled']);
+            $r['is_enter_account'] = DictService::getKeyValue(Constants::DICT_TYPE_BILL_IS_ENTER_ACCOUNT, $r['is_enter_account']);
+            $r['amount']           /= 100;
+            $r['sprice']           /= 100;
         }
         return [$records, $total];
     }

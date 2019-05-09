@@ -136,4 +136,6 @@ class Constants
     const DICT_TYPE_DIRECT_ORG_IDS = 'direct_org_ids';
     //学生订阅服务状态
     const DICT_TYPE_STUDENT_SUB_STATUS = 'student_sub_status';
+    //订单是否进入学生账户
+    const DICT_TYPE_BILL_IS_ENTER_ACCOUNT = 'bill_is_enter_account';
 };

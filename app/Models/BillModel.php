@@ -19,6 +19,9 @@ class BillModel extends Model
     const PAY_STATUS_UNPAID = 1; //未支付
     const PAY_STATUS_PAID = 2; //已支付
 
+    const NOT_ENTER_ACCOUNT = 0; //不进入学生账户
+    const IS_ENTER_ACCOUNT = 1; //进入学生账户
+
     public static $table = 'bill';
 
     public static function updateBill($id, $orgId, $data)
@@ -88,6 +91,8 @@ class BillModel extends Model
             'b.update_time',
             'b.create_time',
             'b.is_disabled',
+            'b.is_enter_account',
+            'b.sprice',
         ], $limitWhere);
 
         $total = $db->count(self::$table . '(b)' , $where);
@@ -117,6 +122,8 @@ class BillModel extends Model
                 'b.update_time',
                 'b.create_time',
                 'b.is_disabled',
+                'b.is_enter_account',
+                'b.sprice',
             ],
             [
                 'b.id'     => $id,

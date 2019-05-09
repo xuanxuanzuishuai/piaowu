@@ -71,7 +71,9 @@ class Bill extends ControllerBase
             return $response->withJson(Valid::addErrors([],'bill', 'update_disabled_fail'));
         }
 
-        if($record['pay_status'] == BillModel::PAY_STATUS_PAID) {
+        if($record['pay_status'] == BillModel::PAY_STATUS_PAID &&
+            $record['is_enter_account'] == BillModel::IS_ENTER_ACCOUNT)
+        {
             $success = StudentAccountService::abolishSA(
                 $record['student_id'], $record['amount'], 0, $record['operator_id'], $record['remark'], true
             );
@@ -274,6 +276,28 @@ class Bill extends ControllerBase
                 'value'      => 50,
                 'error_code' => 'trade_no_must_elt_50',
             ],
+            [
+                'key'        => 'sprice',
+                'type'       => 'required',
+                'error_code' => 'sprice_is_required',
+            ],
+            [
+                'key'        => 'sprice',
+                'type'       => 'min',
+                'value'      => 0,
+                'error_code' => 'sprice_is_egt_0',
+            ],
+            [
+                'key'        => 'is_enter_account',
+                'type'       => 'required',
+                'error_code' => 'is_enter_account_is_required',
+            ],
+            [
+                'key'        => 'is_enter_account',
+                'type'       => 'in',
+                'value'      => [0, 1],
+                'error_code' => 'is_enter_account_must_be_in_0_1',
+            ],
         ];
         $params = $request->getParams();
         $result = Valid::validate($params, $rules);
@@ -294,7 +318,7 @@ class Bill extends ControllerBase
 
         $columns = [
             'student_id', 'pay_status', 'trade_no',
-            'pay_channel', 'source','remark',
+            'pay_channel', 'source','remark', 'is_enter_account'
         ];
 
         $data = [
@@ -303,6 +327,7 @@ class Bill extends ControllerBase
             'operator_id' => $this->getEmployeeId(),
             'org_id'      => $orgId,
             'amount'      => $params['amount'] * 100,
+            'sprice'      => $params['sprice'] * 100,
         ];
 
         foreach($columns as $key) {
@@ -318,7 +343,9 @@ class Bill extends ControllerBase
             return $response->withJson(Valid::addErrors([], 'bill', 'save_bill_fail'));
         }
 
-        if($params['pay_status'] == BillModel::PAY_STATUS_PAID) {
+        if($params['pay_status'] == BillModel::PAY_STATUS_PAID &&
+            $params['is_enter_account'] == BillModel::IS_ENTER_ACCOUNT)
+        {
             $success = StudentAccountService::addSA(
                 $data['student_id'],
                 [StudentAccountModel::TYPE_CASH => $data['amount']],
