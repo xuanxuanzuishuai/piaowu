@@ -198,7 +198,13 @@ class OrganizationServiceForApp
     {
         $teachers = TeacherModelForApp::getTeacherNameByOrg($orgId);
         $onlineTeachers = OrganizationModelForApp::getOnlineTeacher($orgId);
-        $onlineTeacherIds = array_column($onlineTeachers, 'teacher_id');
+        $onlineTeacherIds = [];
+        foreach ($onlineTeachers as $data) {
+            $cache = OrganizationModelForApp::getOrgTeacherCacheByToken($orgId, $data['token']);
+            if (!empty($cache)) {
+                $onlineTeacherIds[] = $cache['id'];
+            }
+        }
 
         foreach ($teachers as $idx => $teacher) {
             $teachers[$idx]['id'] = intval($teachers[$idx]['id']);
