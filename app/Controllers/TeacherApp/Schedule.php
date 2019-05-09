@@ -13,7 +13,9 @@ use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Libs\Valid;
+use App\Models\OrganizationModel;
 use App\Models\OrganizationModelForApp;
+use App\Models\TeacherModelForApp;
 use App\Services\HomeworkService;
 use App\Services\ScheduleServiceForApp;
 use App\Services\WeChatService;
@@ -70,6 +72,9 @@ class Schedule extends ControllerBase
         OrganizationModelForApp::delOrgTeacherTokens($this->ci['org']['id'],
             $this->ci['org_teacher_token']);
 
+        $teacherInfo = TeacherModelForApp::getById($param['teacher_id']);
+        $orgInfo = OrganizationModel::getById($param['org_id']);
+
         $date_str = date("Y年m月d日", time());
         $data = [
             'first' => [
@@ -77,12 +82,14 @@ class Schedule extends ControllerBase
                 'color' => "#323d83"
             ],
             'keyword1' => [
-                'value' => "课后报告",
+                'value' => $date_str,
                 'color' => "#323d83"
             ],
             'keyword2' => [
-                'value' => $date_str,
-                'color' => "#323d83"
+                'value' => $teacherInfo["name"]
+            ],
+            'keyword3' => [
+                'value' => $orgInfo["name"] . "钢琴课"
             ],
             'remark' => [
                 'value' => "点击【详情】查看",

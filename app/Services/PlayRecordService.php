@@ -197,7 +197,7 @@ class PlayRecordService
             }
         }
 
-        $report["report_list"] = $homework_play_list + $no_homework_play_list;
+        $report["report_list"] = array_merge($homework_play_list, $no_homework_play_list);
         return $report;
     }
 
