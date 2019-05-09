@@ -261,8 +261,9 @@ class Opn extends ControllerBase
     public function recentCollections(Request $request, Response $response){
         $params = $request->getParams();
         list($pageId, $pageLimit) = Util::formatPageCount($params);
-        $userId = $this->ci['teacher']['id'];
-        $collectionIds = HomeworkTaskModel::getRecentCollectionIds($userId, $pageId, $pageLimit);
+        $teacherId = $this->ci['teacher']['id'];
+        $studentId = $this->ci['student']['id'];
+        $collectionIds = HomeworkTaskModel::getRecentCollectionIds($teacherId, $pageId, $pageLimit, $studentId);
         if(empty($collectionIds)){
             return $response->withJson(
                 ['code'=>Valid::CODE_SUCCESS, 'data'=>[]],
@@ -294,8 +295,9 @@ class Opn extends ControllerBase
     public function recentLessons(Request $request, Response $response){
         $params = $request->getParams();
         list($pageId, $pageLimit) = Util::formatPageCount($params);
-        $userId = $this->ci['teacher']['id'];
-        $lessonIds = HomeworkTaskModel::getRecentLessonIds($userId, $pageId, $pageLimit);
+        $teacherId = $this->ci['teacher']['id'];
+        $studentId = $this->ci['student']['id'];
+        $lessonIds = HomeworkTaskModel::getRecentLessonIds($teacherId, $pageId, $pageLimit, $studentId);
         if(empty($lessonIds)){
             return $response->withJson(
                 ['code'=>Valid::CODE_SUCCESS, 'data'=>[]],
