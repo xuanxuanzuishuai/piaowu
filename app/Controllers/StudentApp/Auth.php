@@ -33,7 +33,7 @@ class Auth extends ControllerBase
                 'key' => 'mobile',
                 'type' => 'regex',
                 'value' => '/^[0-9]{11}$/',
-                'error_code' => 'user_mobile_format_error'
+                'error_code' => 'mobile_format_error'
             ],
             [
                 'key' => 'code',
@@ -87,7 +87,7 @@ class Auth extends ControllerBase
                 'key' => 'mobile',
                 'type' => 'regex',
                 'value' => '/^[0-9]{11}$/',
-                'error_code' => 'user_mobile_format_error'
+                'error_code' => 'mobile_format_error'
             ],
             [
                 'key' => 'token',
@@ -146,7 +146,7 @@ class Auth extends ControllerBase
                 'key' => 'mobile',
                 'type' => 'regex',
                 'value' => '/^[0-9]{11}$/',
-                'error_code' => 'user_mobile_format_error'
+                'error_code' => 'mobile_format_error'
             ]
         ];
 
