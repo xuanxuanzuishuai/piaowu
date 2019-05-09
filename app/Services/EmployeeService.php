@@ -157,7 +157,12 @@ class EmployeeService
         global $orgId;
         //根据当前登录用户查询不同的角色
         $orgType = RoleService::getOrgTypeByOrgId($orgId);
-        $roles = RoleModel::selectByOrgType($orgType);
+
+        if($orgType == RoleModel::ORG_TYPE_DIRECT) {
+            $roles = RoleModel::selectByOrgType([RoleModel::ORG_TYPE_DIRECT, RoleModel::ORG_TYPE_EXTERNAL]);
+        } else {
+            $roles = RoleModel::selectByOrgType($orgType);
+        }
 
         return [$user, $roles];
     }

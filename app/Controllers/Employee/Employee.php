@@ -167,6 +167,10 @@ class Employee extends ControllerBase
      * @param Response $response
      * @param $args
      * @return Response
+     *
+     * 内部员工可以创建任意角色的员工
+     * 直营可以创建角色属于直营和外部的员工，但是不能创建校长，只能校长修改校长，不能将非校长更新成校长
+     * 外部只能添加属于外部的角色，但是不能创建校长，只能校长修改校长，不能将非校长更新成校长
      */
     public function modify(Request $request, Response $response, $args)
     {
@@ -229,33 +233,59 @@ class Employee extends ControllerBase
         }
 
         global $orgId;
-        $roleType = RoleService::getOrgTypeByOrgId($orgId);
+
+        //检查非内部人员编辑的员工是否和自己在同一机构下
+        if($orgId > 0 && !empty($params['id'])) {
+            $employee = EmployeeModel::getById($params['id']);
+            if(empty($employee)) {
+                return $response->withJson(Valid::addErrors([], 'employee', 'employee_not_exist'));
+            }
+            if($employee['org_id'] != $orgId) {
+                return $response->withJson(Valid::addErrors([], 'employee', 'can_not_edit_other_org_employee'));
+            }
+        }
+
+        //直营校长
+        $directPrincipalRoleId = DictService::getKeyValue(Constants::DICT_TYPE_ROLE_ID, Constants::DICT_KEY_CODE_DIRECT_PRINCIPAL_ROLE_ID_CODE);
+        //机构校长
+        $externalPrincipalRoleId = DictService::getKeyValue(Constants::DICT_TYPE_ROLE_ID, Constants::DICT_KEY_CODE_PRINCIPAL_ROLE_ID_CODE);
+        if(empty($directPrincipalRoleId)) {
+            return $response->withJson(Valid::addErrors([], 'employee', 'direct_principal_role_not_exist'));
+        }
+        if(empty($externalPrincipalRoleId)) {
+            return $response->withJson(Valid::addErrors([], 'employee', 'external_principal_role_exist'));
+        }
+        //当前登录用户的roleId
+        $currentRoleId = $this->ci['employee']['role_id'];
+        //校长数组
+        $principalRoleIds = [$directPrincipalRoleId, $externalPrincipalRoleId];
 
         if ($orgId > 0) {
-            //对于直营和外部，新创建的人员角色必须与当前登录用户角色org_type一致
-            if($role['org_type'] != $roleType) {
+            $roleType = RoleService::getOrgTypeByOrgId($orgId);
+            //当前角色是直营，创建的角色必须是直营或外部
+            if($roleType == RoleModel::ORG_TYPE_DIRECT &&
+                $role['org_type'] != RoleModel::ORG_TYPE_DIRECT &&
+                $role['org_type'] != RoleModel::ORG_TYPE_EXTERNAL) {
                 return $response->withJson(Valid::addErrors([], 'employee', 'role_type_error'));
             }
+            //当前角色是外部，创建的角色必须是外部
+            if($roleType == RoleModel::ORG_TYPE_EXTERNAL && $role['org_type'] != $roleType) {
+                return $response->withJson(Valid::addErrors([], 'employee', 'role_type_error2'));
+            }
+
             //机构管理员添加雇员时，不能指定雇员所属机构，必须与添加者同属一个机构
             $params['org_id'] = $orgId;
 
-            //编辑员工时，要检查要修改的employee是否和当前登录用户在同一org下
             if(!empty($params['id'])) {
-                $principalRoleId = Dict::getPrincipalRoleId();
-                $ccRoleId = Dict::getOrgCCRoleId();
-
-                if(empty($principalRoleId) || empty($ccRoleId)) {
-                    return $response->withJson(Valid::addErrors([], 'employee', 'principle_or_cc_role_id_is_empty'));
+                //检查有没有不是校长角色却编辑校长的情况, 要修改的角色不能是校长，更新后的角色也不能是校长
+                if(!in_array($currentRoleId, $principalRoleIds) &&
+                    (in_array($params['role_id'], $principalRoleIds) || in_array($employee['role_id'], $principalRoleIds))) {
+                    return $response->withJson(Valid::addErrors([], 'employee', 'has_no_privilege_edit_this_role'));
                 }
-
-                //校长只能修改角色是校长或cc的employee
-                $employee = EmployeeModel::getRecord([
-                    'id'      => $params['id'],
-                    'org_id'  => $orgId,
-                    'role_id' => [$principalRoleId, $ccRoleId],
-                ]);
-                if(empty($employee)) {
-                    return $response->withJson(Valid::addErrors([], 'employee', 'employee_not_exist'));
+            } else {
+                //添加员工时，要检查非内部人员都想添加校长角色的情况
+                if(in_array($params['role_id'], $principalRoleIds)) {
+                    return $response->withJson(Valid::addErrors([], 'employee', 'has_no_privilege_edit_this_role'));
                 }
             }
         } else {
