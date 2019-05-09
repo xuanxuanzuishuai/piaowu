@@ -10,7 +10,9 @@ namespace App\Controllers\TeacherApp;
 
 
 use App\Libs\SimpleLogger;
+use App\Libs\Util;
 use App\Libs\Valid;
+use App\Models\OrganizationModelForApp;
 use App\Services\HomeworkService;
 use App\Services\OrganizationServiceForApp;
 use App\Controllers\ControllerBase;
@@ -121,12 +123,30 @@ class Org extends ControllerBase
     }
 
     /**
+     * 老师退出上课状态
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function teacherLogout(Request $request, Response $response)
+    {
+        Util::unusedParam($request);
+        OrganizationModelForApp::delOrgTeacherTokens($this->ci['org']['id'],
+            $this->ci['org_teacher_token']);
+        return $response->withJson([
+            'code'=> Valid::CODE_SUCCESS,
+        ], StatusCode::HTTP_OK);
+    }
+
+    /**
      * 获取机构老师列表
      * @param Request $request
      * @param Response $response
      * @return Response
      */
-    public function teacherList(Request $request, Response $response){
+    public function teacherList(Request $request, Response $response)
+    {
+        Util::unusedParam($request);
         $orgId = $this->ci['org']['id'];
         $orgTeachers = OrganizationServiceForApp::getTeachers($orgId);
         return $response->withJson([

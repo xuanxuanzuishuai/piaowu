@@ -227,6 +227,11 @@ $arr = array(
         'call' => TeacherAppOrg::class . ':selectStudent',
         'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
     ],
+    '/teacher_app/org/teacher_logout' => [
+        'method' => ['post'],
+        'call' => TeacherAppOrg::class . ':teacherLogout',
+        'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
+    ],
     '/teacher_app/org/teacher_list' => [
         'method' => ['get'],
         'call' => TeacherAppOrg::class . ':teacherList',
