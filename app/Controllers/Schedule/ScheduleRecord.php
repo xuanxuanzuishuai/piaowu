@@ -10,6 +10,7 @@ namespace App\Controllers\Schedule;
 
 use App\Controllers\ControllerBase;
 use App\Libs\Dict;
+use App\Libs\DictConstants;
 use App\Libs\Valid;
 use App\Services\ScheduleService;
 use Slim\Http\Request;
@@ -86,8 +87,7 @@ class ScheduleRecord extends ControllerBase
 
         global $orgId;
 
-        $courseId = 212;
-
+        $courseId = DictConstants::get(DictConstants::APP_CONFIG_TEACHER, 'course_id');
         $params['course_id'] = $courseId;
 
         list($records, $total) = ScheduleService::attendRecord($orgId, $params['page'], $params['count'], $params);

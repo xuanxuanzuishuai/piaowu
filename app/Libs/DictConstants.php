@@ -79,6 +79,7 @@ class DictConstants {
         'keys' => [
             'default_collections',
             'policy_url',
+            'course_id',
         ]
     ];
 

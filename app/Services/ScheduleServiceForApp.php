@@ -8,7 +8,7 @@
 
 namespace App\Services;
 
-use App\Libs\SimpleLogger;
+use App\Libs\DictConstants;
 use App\Models\ScheduleExtendModel;
 use App\Models\ScheduleModelForApp;
 use App\Models\ScheduleUserModel;
@@ -23,8 +23,10 @@ class ScheduleServiceForApp
     public static function endSchedule($schedule){
         // 插入schedule
         $now = time();
+        $courseId = DictConstants::get(DictConstants::APP_CONFIG_TEACHER, 'course_id');
+
         $_schedule = [
-            'course_id' => 212, //TODO
+            'course_id' => $courseId,
             'start_time' => $schedule['start_time'],
             'end_time' => $now,
             'duration' => $now - $schedule['start_time'],
@@ -63,7 +65,7 @@ class ScheduleServiceForApp
         // 处理课后单
         $report = [];
         $report['schedule_id'] = $scheduleId;
-        $report['course_id'] = 212;
+        $report['course_id'] = $courseId;
         $report['opn_lessons'] = implode(",", $schedule['lessons']);
         $report['remark'] = $schedule['report']['remark'];
         $report['class_score'] = $schedule['report']['class_score'];
