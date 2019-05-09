@@ -268,7 +268,7 @@ class ScheduleService
 
         foreach ($records as &$r) {
             $r['status']   = DictService::getKeyValue(Constants::DICT_TYPE_SCHEDULE_STATUS, $r['status']);
-            $r['duration'] /= 60;
+            $r['duration'] = Util::formatExerciseTime($r['duration']);
         }
 
         return [$records, $total];

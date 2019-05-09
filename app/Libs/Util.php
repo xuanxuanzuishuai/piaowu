@@ -653,4 +653,28 @@ class Util
         }
         return  (int)$f == $f ? true : false;
     }
+
+    /**
+     * 格式化练琴时间，将秒转为x分x秒
+     * @param $seconds
+     * @return string
+     */
+    public static function formatExerciseTime($seconds)
+    {
+        $minute = floor($seconds / 60);
+        $second = $seconds % 60;
+
+        $str = '';
+        if($minute > 0) {
+            $str .= $minute . '分钟';
+        }
+        if($second > 0) {
+            $str .= $second . '秒';
+        }
+        if(empty($str)) {
+            $str = '0秒';
+        }
+
+        return $str;
+    }
 }
