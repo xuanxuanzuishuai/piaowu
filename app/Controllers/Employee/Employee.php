@@ -282,6 +282,12 @@ class Employee extends ControllerBase
                     (in_array($params['role_id'], $principalRoleIds) || in_array($employee['role_id'], $principalRoleIds))) {
                     return $response->withJson(Valid::addErrors([], 'employee', 'has_no_privilege_edit_this_role'));
                 }
+                //检查校长把一个普通员工更新成校长的情况
+                if(in_array($currentRoleId, $principalRoleIds) &&
+                    !in_array($employee['role_id'], $principalRoleIds) &&
+                    in_array($params['role_id'], $principalRoleIds)) {
+                    return $response->withJson(Valid::addErrors([], 'employee', 'has_no_privilege_edit_this_role'));
+                }
             } else {
                 //添加员工时，要检查非内部人员都想添加校长角色的情况
                 if(in_array($params['role_id'], $principalRoleIds)) {
