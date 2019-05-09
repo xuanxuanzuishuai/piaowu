@@ -154,11 +154,6 @@ class Course extends ControllerBase
         $params = $request->getParams();
         $rules = [
             [
-                'key' => 'instrument',
-                'type' => 'integer',
-                'error_code' => 'instrument_must_be_integer',
-            ],
-            [
                 'key' => 'duration',
                 'type' => 'integer',
                 'error_code' => 'course_duration_must_be_integer',

@@ -384,22 +384,6 @@ class Util
     }
 
     /**
-     * 获取体验课正式课的名称
-     * @param $ts_course_type @数组[0,1]
-     * @return mixed
-     */
-    public static function tsCourseTypeName($ts_course_type){
-        $result = ['',''];
-        if ($ts_course_type[0] == 1){
-            $result[0] = TeacherModel::COURSE_EXPERIENCE_NAME;
-        }
-        if ($ts_course_type[1] == 1){
-            $result[1] = TeacherModel::COURSE_FORMAL_NAME;
-        }
-        return $result;
-    }
-
-    /**
      * 判断参数是否为整数
      * @param $num
      * @return bool
