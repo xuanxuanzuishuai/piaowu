@@ -154,7 +154,7 @@ class HomeworkService
         $allHomeworks = self::getStudentUnexpiredWork($studentId, $lessonId);
         // 理论上一定有作业
         if(empty($allHomeworks)){
-            return ['homework_not_found', [], []];
+            return [null, [], []];
         }
         $finishedHomework = self::_checkHomework($playInfo, $allHomeworks);
         return [null, $allHomeworks, $finishedHomework];
