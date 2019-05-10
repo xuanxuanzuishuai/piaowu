@@ -108,6 +108,7 @@ class GiftCodeModel extends Model
         $gift_code = self::$table;
         $organization = OrganizationModel::$table;
         $student = StudentModel::$table;
+        $employee = EmployeeModel::$table;
 
         $where = ' where 1 = 1 ';
         if (!empty($params['code'])) {
@@ -139,6 +140,7 @@ class GiftCodeModel extends Model
         $db = MysqlDB::getDB();
 
         $join = "
+LEFT JOIN {$employee} ON {$employee}.id = {$gift_code}.operate_user
 LEFT JOIN {$organization} ON {$gift_code}.buyer = {$organization}.id AND {$gift_code}.generate_channel = '1'
 LEFT JOIN {$student} ON {$gift_code}.buyer = {$student}.id AND {$gift_code}.generate_channel = '2'
 LEFT JOIN {$student} apply_user ON {$gift_code}.apply_user = apply_user.id ";
@@ -160,7 +162,7 @@ SELECT
     {$gift_code}.valid_num,
     {$gift_code}.valid_units,
     {$gift_code}.be_active_time,
-    {$gift_code}.operate_user,
+    {$employee}.name operate_user,
     {$gift_code}.operate_time,
     {$student}.name,
     {$student}.mobile,
@@ -197,6 +199,7 @@ LIMIT $offset, $count
         }
 
         $count = $db->queryAll($query);
+
         return $count[0]['count'];
     }
 
