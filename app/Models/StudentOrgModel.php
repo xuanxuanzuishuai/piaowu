@@ -47,7 +47,7 @@ class StudentOrgModel extends Model
     public static function assignCC($studentId, $orgId, $ccId)
     {
         return MysqlDB::getDB()->updateGetCount(self::$table, [
-            'cc_id' => $ccId,
+            'cc_id'       => $ccId,
             'update_time' => time()
         ], [
             'org_id'     => $orgId,

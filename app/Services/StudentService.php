@@ -215,18 +215,10 @@ class StudentService
      * @param $studentIds
      * @param $orgId
      * @param $ccId
-     * @return array
+     * @return int
      */
     public static function assignCC($studentIds, $orgId, $ccId)
     {
-        $successIds = [];
-        foreach ($studentIds as $studentId) {
-            $result = StudentOrgModel::assignCC($studentIds, $orgId, $ccId);
-            if (!empty($result)) {
-                $successIds[] = $studentId;
-            }
-        }
-
-        return $successIds;
+        return StudentOrgModel::assignCC($studentIds, $orgId, $ccId);
     }
 }

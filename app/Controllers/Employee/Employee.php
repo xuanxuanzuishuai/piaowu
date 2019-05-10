@@ -11,6 +11,7 @@ namespace App\Controllers\Employee;
 use App\Controllers\ControllerBase;
 use App\Libs\Constants;
 use App\Libs\Dict;
+use App\Libs\MysqlDB;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\EmployeeModel;
@@ -513,14 +514,20 @@ class Employee extends ControllerBase
             }
         }
 
-        $successIds = StudentService::assignCC($studentIds, $orgId, $employeeId);
-        if(count($successIds) != count($studentIds)) {
+        $db = MysqlDB::getDB();
+        $db->beginTransaction();
+
+        $affectRows = StudentService::assignCC($studentIds, $orgId, $employeeId);
+        if($affectRows != count($studentIds)) {
+            $db->rollBack();
             return $response->withJson(Valid::addErrors([], 'employee', 'update_student_cc_fail'));
         }
 
+        $db->commit();
+
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
-            'data' => ['affect_rows' => count($successIds)]
+            'data' => ['affect_rows' => $affectRows]
         ]);
     }
 
