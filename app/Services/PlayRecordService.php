@@ -9,6 +9,7 @@
 namespace App\Services;
 
 
+use App\Libs\AIPLCenter;
 use App\Libs\Constants;
 use App\Models\PlayRecordModel;
 use App\Libs\OpernCenter;
@@ -302,5 +303,83 @@ class PlayRecordService
         }
         return array_values($format_record);
     }
+
+    /**
+     * 获取某个ai_record_id对应的陪练数据
+     * @param $student_id
+     * @param $ai_record_id
+     * @return array|bool|mixed
+     */
+    public static function getAiAudio($student_id, $ai_record_id){
+        if (empty($ai_record_id)){
+            return [];
+        }
+        $playInfo = PlayRecordModel::getRecord(["student_id" => $student_id, "ai_record_id" => $ai_record_id]);
+        if (empty($playInfo)){
+            return [];
+        }
+        $data = AIPLCenter::userAudio($ai_record_id);
+        return $data;
+    }
+
+    /**
+     * 获取测评得分详情
+     * @param $student_id
+     * @param $ai_record_id
+     * @return array
+     */
+    public static function getAIRecordGrade($student_id, $ai_record_id){
+        if (empty($ai_record_id)){
+            return [];
+        }
+        $playInfo = PlayRecordModel::getRecord(["student_id" => $student_id, "ai_record_id" => $ai_record_id]);
+        if (empty($playInfo)){
+            return [];
+        }
+
+        $lesson_id = $playInfo["lesson_id"];
+        $data = AIPLCenter::recordGrade($ai_record_id);
+
+        if (empty($data) or $data["meta"]["code"] != 0){
+            $score_ret = [];
+        } else {
+            $score = $data["data"]["score"];
+            $score_ret = [
+                "simple_complete" => $score["simple_complete"],
+                "simple_final" => $score["simple_final"],
+                "simple_pitch" => $score["simple_pitch"],
+                "simple_rhythm" => $score["simple_rhythm"],
+                "simple_speed_average" => $score["simple_speed_average"],
+                "simple_speed" => $score["simple_speed"]
+            ];
+        }
+        $data = AIPLCenter::userAudio($ai_record_id);
+        if (empty($data) or $data["meta"]["code"] != 0){
+            $wonderful_url = "";
+        } else {
+            $wonderful_url = $data["data"]["audio_url"];
+        }
+
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, OpernCenter::version);
+        $res = $opn->lessonsByIds([$lesson_id]);
+        if (!empty($res['code']) && $res['code'] !== Valid::CODE_SUCCESS) {
+            $opern_list = [];
+        } else {
+            $opern_id = $res["data"][0]["opern_id"];
+            $result = $opn->staticResource($opern_id, 'png');
+            if (!empty($result['code']) && $result['code'] !== Valid::CODE_SUCCESS){
+                $opern_list = [];
+            } else {
+                $opern_list = $result["data"];
+            }
+        }
+        return [
+            "score" => $score_ret,
+            "wonderful_url" => $wonderful_url,
+            "opern_list" => $opern_list
+        ];
+    }
+
+
 
 }
