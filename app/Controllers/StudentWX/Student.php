@@ -225,7 +225,7 @@ class Student extends ControllerBase
             "lesson_num" => $lesson_num,
             "duration" => $duration,
             "expired_date" => $expire_date,
-            "sub_status" => (int)$student_info["name"],
+            "sub_status" => (int)$student_info["sub_status"],
         ];
 
         return $response->withJson([
