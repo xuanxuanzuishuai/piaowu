@@ -54,6 +54,9 @@ class OrgAccountModel extends Model
         if(!empty($params['org_id'])) {
             $where['o.id'] = $params['org_id'];
         }
+        if(!empty($params['org_name'])) {
+            $where['o.name[~]'] = $params['org_name'];
+        }
 
         $db = MysqlDB::getDB();
 

@@ -48,7 +48,12 @@ class OrgAccount extends ControllerBase
                 'type'       => 'integer',
                 'error_code' => 'license_num_is_integer'
             ],
-        ];
+            [
+                'key'        => 'org_id',
+                'type'       => 'integer',
+                'error_code' => 'org_id_is_integer'
+            ],
+        ];//may include org_name
         $params = $request->getParams();
         $result = Valid::validate($params, $rules);
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
