@@ -9,6 +9,7 @@
 namespace App\Services;
 
 
+use App\Libs\Constants;
 use App\Libs\Valid;
 use App\Models\StudentAccountLogModel;
 use App\Models\StudentAccountModel;
@@ -16,6 +17,7 @@ use App\Models\StudentAccountModel;
 class StudentAccountService
 {
     /**
+     * 添加账户金额数据
      * @param $studentId
      * @param $data
      * @param $operatorId
@@ -65,6 +67,14 @@ class StudentAccountService
         return true;
     }
 
+    /**
+     * 扣减学生金额或虚拟币
+     * @param $studentId
+     * @param $amount
+     * @param $operatorId
+     * @param $remark
+     * @return array|bool
+     */
     public static function reduceSA($studentId, $amount, $operatorId, $remark)
     {
         $log = [];
@@ -117,6 +127,16 @@ class StudentAccountService
         return true;
     }
 
+    /**
+     * 废弃学生金额账户
+     * @param $studentId
+     * @param $amount
+     * @param $vamount
+     * @param $operatorId
+     * @param $remark
+     * @param bool $force
+     * @return bool|array
+     */
     public static function abolishSA($studentId, $amount, $vamount,$operatorId, $remark,$force = true) {
 
         $now = time();
@@ -169,5 +189,39 @@ class StudentAccountService
             $res = StudentAccountLogModel::batchInsert($log, false);
         }
         return true;
+    }
+
+    /**
+     * 获取学生账户余额
+     * @param $studentId
+     * @return array
+     */
+    public static function getStudentAccount($studentId)
+    {
+        $accounts = StudentAccountModel::getRecords([
+            'student_id' => $studentId,
+            'type' => [StudentAccountModel::TYPE_CASH, StudentAccountModel::TYPE_VIRTUAL],
+            'status' => StudentAccountModel::STATUS_NORMAL
+        ]);
+        foreach ($accounts as &$account) {
+            $account['account_type'] = DictService::getKeyValue(Constants::DICT_TYPE_STUDENT_ACCOUNT_TYPE, $account['type']);
+        }
+        return $accounts;
+    }
+
+    /**
+     * 获取学生账户操作记录
+     * @param $studentId
+     * @param $page
+     * @param $count
+     * @return array
+     */
+    public static function getLogs($studentId, $page, $count)
+    {
+        list($logs, $totalCount) = StudentAccountLogModel::getSALs($studentId, $page, $count);
+        foreach ($logs as &$account) {
+            $account['account_type'] = DictService::getKeyValue(Constants::DICT_TYPE_STUDENT_ACCOUNT_OPERATE_TYPE, $account['type']);
+        }
+        return [$logs, $totalCount];
     }
 }

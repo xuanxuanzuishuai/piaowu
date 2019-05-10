@@ -14,7 +14,6 @@ use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\ResponseError;
 use App\Libs\UserCenter;
-use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\StudentModel;
 use App\Models\StudentOrgModel;

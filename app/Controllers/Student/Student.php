@@ -15,10 +15,12 @@ use App\Libs\Constants;
 use App\Libs\Dict;
 use App\Libs\MysqlDB;
 use App\Libs\ResponseError;
+use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\StudentModel;
 use App\Models\StudentOrgModel;
 use App\Services\ChannelService;
+use App\Services\StudentAccountService;
 use App\Services\StudentService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -166,13 +168,14 @@ class Student extends ControllerBase
         ];
         $result = Valid::validate($params, $rules);
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
-            return $response->withJson($result, 200);
+            return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
         global $orgId;
         $studentId = $params['student_id'];
 
         $data = StudentService::getOrgStudent($orgId, $studentId);
+        $data['account'] = StudentAccountService::getStudentAccount($studentId);
 
         return $response->withJson([
             'code' => 0,
@@ -390,6 +393,44 @@ class Student extends ControllerBase
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => $records
+        ]);
+    }
+
+    /**
+     * 学生账户日志
+     * @param Request $request
+     * @param Response $response
+     * @param $argv
+     * @return Response
+     */
+    public static function accountLog(Request $request, Response $response, $argv)
+    {
+        $params = $request->getParams();
+        $rules = [
+            [
+                'key'        => 'student_id',
+                'type'       => 'required',
+                'error_code' => 'student_id_is_required',
+            ],
+            [
+                'key'        => 'student_id',
+                'type'       => 'integer',
+                'error_code' => 'student_id_must_be_integer'
+            ]
+        ];
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        list($page, $count) = Util::formatPageCount($params);
+        list($logs, $totalCount)  = StudentAccountService::getLogs($params['student_id'], $page, $count);
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => [
+                'logs' => $logs,
+                'total_count' => $totalCount
+            ]
         ]);
     }
 }

@@ -302,45 +302,6 @@ class Util
     }
 
     /**
-     * 驼峰转下划线
-     */
-    public static function humpToUnderline($str){
-        $str = preg_replace_callback('/([A-Z]{1})/',function($matches){
-            return '_'.strtolower($matches[0]);
-        },$str);
-        return $str;
-    }
-    // TODO: 共通检查（电话号码、姓名等）
-
-    /**
-     * 返回当前页，对当前页参数作检查，然后返回
-     * @param $page
-     * @param $default
-     * @return int
-     */
-    public static function getCurrentPage($page,$default = 1) {
-        if(empty($page) || $page < 1) {
-            return empty($default) ? 1 : $default;
-        }else {
-            return $page;
-        }
-    }
-
-    /**
-     * 返回每页最多显示条数，对参数作检查，然后返回
-     * @param $limit
-     * @param $default
-     * @return mixed
-     */
-    public static function getLimit($limit,$default = 20) {
-        if(empty($limit) || $limit < 1) {
-            return empty($limit) ? DictService::getKeyValue(Constants::DICT_TYPE_SYSTEM_ENV,Constants::DEFAULT_PAGE_LIMIT) : $default;
-        }else{
-            return $limit;
-        }
-    }
-
-    /**
      * 格式化分页参数
      * @param $params
      * @return array
