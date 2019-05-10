@@ -9,6 +9,7 @@
 namespace App\Controllers\StudentWX;
 
 use App\Controllers\ControllerBase;
+use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\PlayRecordModel;
 use App\Models\StudentModel;
@@ -221,7 +222,7 @@ class Student extends ControllerBase
             "mobile" => substr($student_info["mobile"], 0, 3) . "****" .
                 substr($student_info["mobile"], 7, 4),
             "name" => $student_info["name"],
-            "thumb" => $student_info["thumb"],
+            "thumb" => Util::getQiNiuFullImgUrl($student_info["thumb"]),
             "lesson_num" => $lesson_num,
             "duration" => $duration,
             "expired_date" => $expire_date,
