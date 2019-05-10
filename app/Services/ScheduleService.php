@@ -54,7 +54,7 @@ class ScheduleService
                 $users = [];
                 foreach ($class['students'] as $student) {
                     if ($student['status'] == ScheduleUserModel::STATUS_NORMAL) {
-                        $users[] = ['price' => $student['price'], 'schedule_id' => $sId, 'user_id' => $student['user_id'], 'user_role' => $student['user_role'], 'status' => ScheduleModel::STATUS_BOOK, 'create_time' => $now, 'user_status' => ScheduleUserModel::STUDENT_STATUS_BOOK];
+                        $users[] = ['price' => $student['price'] * 100, 'schedule_id' => $sId, 'user_id' => $student['user_id'], 'user_role' => $student['user_role'], 'status' => ScheduleModel::STATUS_BOOK, 'create_time' => $now, 'user_status' => ScheduleUserModel::STUDENT_STATUS_BOOK];
                     }
                 }
                 foreach ($class['teachers'] as $teacher) {

@@ -282,8 +282,8 @@ class ClassTaskModel extends Model
         $where = [
             'cu.user_id' => $userIds,
             'cu.user_role' => $userRole,
-            'ct.expire_start_date[>=]' => $expireStartDate,
-            'ct.expire_end_date[<=]' => $expireEndDate,
+            'ct.expire_start_date[<]' => $expireEndDate,
+            'ct.expire_end_date[>]' => $expireStartDate,
             'stc.status' => array(STClassModel::STATUS_NORMAL, STClassModel::STATUS_BEGIN),
             'ct.weekday' => $weekday,
             'ct.start_time[<]' => $end_time,
