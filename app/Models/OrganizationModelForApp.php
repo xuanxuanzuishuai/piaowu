@@ -15,6 +15,7 @@ use App\Libs\RedisDB;
 class OrganizationModelForApp extends Model
 {
     public static $table = "organization";
+    public static $redisPri = "organization";
 
     public static $orgTokenPri = "org_token_";
     public static $orgTokenExpire = 2592000; // 30 days

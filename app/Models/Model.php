@@ -19,13 +19,17 @@ class Model
     protected static $table = "";
     protected static $redisDB;
     protected static $redisExpire = 0;
+    protected static $redisPri;
     const ORG_ID_STR = "org_id";
 
     private static function getDefaultCacheKeyPri()
     {
+        if (!empty(static::$redisPri)) {
+            return 'dss' . static::$redisPri;
+        }
         $className = get_called_class();
         $className = substr($className, strrpos($className, '\\') + 1);
-        return 'erp' . Util::humpToUnderline(preg_replace('/Model$/i', '', $className)) . '_';
+        return 'dss' . Util::humpToUnderline(preg_replace('/Model$/i', '', $className)) . '_';
     }
 
     public static function createCacheKey($key, $pri = null)
