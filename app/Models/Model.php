@@ -25,7 +25,7 @@ class Model
     private static function getDefaultCacheKeyPri()
     {
         $pri = empty(static::$redisPri) ? static::$table : static::$redisPri;
-        return "dss_{$pri}_" . $pri;
+        return "dss_{$pri}_";
     }
 
     public static function createCacheKey($key, $pri = null)
