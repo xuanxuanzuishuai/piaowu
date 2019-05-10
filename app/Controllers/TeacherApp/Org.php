@@ -76,45 +76,23 @@ class Org extends ControllerBase
         $orgId = $this->ci['org']['id'];
         $orgAccount = $this->ci['org_account'];
         //Leave below for debugging & deleting them at the end.
-        //$orgId = 101;
+        //$orgId = 39;
         //$orgAccount = 10000019;
+
         list($errorCode, $loginData) = OrganizationServiceForApp::teacherLogin($orgId,
             $orgAccount,
             $params['teacher_id'],
             $params['student_id']
         );
-
-        // 回课数据
-        list($tasks, $statistics, $books) = HomeworkService::scheduleFollowUp(
-            $params['teacher_id'], $params['student_id'], $this->ci['opn_pro_ver']
-        );
-        $homework = [];
-        foreach ($tasks as $task){
-            $taskBase = [
-                'id' => $task['lesson_id'],
-                'name' => $books[$task['lesson_id']] ? $books[$task['lesson_id']]['lesson_name']:'',
-                'complete' => $task['complete']
-            ];
-            $play = $statistics[$task['lesson_id']];
-            if(empty($play)){
-                $play = [
-                    'practice_time' => 0,
-                    'step_times' => 0,
-                    'whole_times' => 0,
-                    'whole_best' => 0,
-                    'ai_times' => 0,
-                    'ai_best' => 0
-                ];
-            }
-            $book = $books[$task['lesson_id']];
-            $homework[] = array_merge($taskBase, $play, $book);
-        }
-        $loginData['homework'] = !empty($homework) ? $homework : [];
-
         if (!empty($errorCode)) {
             $result = Valid::addAppErrors([], $errorCode);
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
+        list($homework, $recentCollections) = HomeworkService::makeFollowUp(
+            $params['teacher_id'], $params['student_id'], $this->ci['opn_pro_ver']
+        );
+        $loginData['homework'] = !empty($homework) ? $homework : [];
+        $loginData['recent_collections'] = !empty($recentCollections) ? $recentCollections : [];
 
         return $response->withJson([
             'code'=> Valid::CODE_SUCCESS,

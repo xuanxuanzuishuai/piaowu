@@ -263,7 +263,7 @@ class HomeworkService
     }
 
     /**
-     * 爱学琴老师端回课
+     * 爱学琴老师端回课数据
      * @param int $teacherId
      * @param int $studentId
      * @return array
@@ -276,20 +276,20 @@ class HomeworkService
         ];
         $schedule = ScheduleUserModelForApp::getUserSchedule($studentId, $teacherId, $scheduleWhere);
         if(empty($schedule)){
-            return [[], [], []];
+            return [[], [], [], []];
         }
 
         // 获取师徒二人最近的一次作业
         $where = [
             HomeworkModel::$table . ".student_id" => $studentId,
             HomeworkModel::$table . ".teacher_id" => $teacherId,
-            HomeworkModel::$table . ".schedule_id" => $schedule['id'],
+            HomeworkModel::$table . ".schedule_id" => $schedule[0]['id'],
             "ORDER" => ['created_time' => 'DESC'],
             "LIMIT" => 1
         ];
         $homeworkId = HomeworkModel::getRecord($where, 'id', false);
         if(empty($homeworkId)){
-            return [[], [], []];
+            return [[], [], [], []];
         }
         $homeworkWhere = [HomeworkModel::$table . ".id" => $homeworkId];
         $homework = HomeworkModel::getHomeworkList($homeworkWhere);
@@ -299,15 +299,18 @@ class HomeworkService
         $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER, $proVer);
         $bookInfo = $opn->lessonsByIds($lessonIds);
         $books = [];
+        $collectionIds = [];
         foreach ($bookInfo['data'] as $book){
             $books[$book['lesson_id']] = [
-                'book_name' => $book['collection_name'],
+                'collection_name' => $book['collection_name'],
                 'res' => $book['resources'] && $book['resources'][0]['url'] ? $book['resources'][0]['url']:'',
-                'cover' => $book['collection_cover'],
+                'collection_cover' => $book['collection_cover'],
+                'collection_id' => $book['collection_id'],
                 'score_id' => $book['opern_id'],
                 'is_free' => $book['freeflag'] ? '1' : '0',
                 'lesson_name' => $book['lesson_name']
             ];
+            array_push($collectionIds, $book['collection_id']);
         }
 
         list($start, $end) = [$homework[0]['created_time'], $homework[0]['end_time']];
@@ -348,7 +351,52 @@ class HomeworkService
             }
         }
 
-        return [$homework, $statistics, $books];
+        return [$homework, $statistics, $books, $collectionIds];
+    }
+
+
+    public static function makeFollowUp($teacherId, $studentId, $proVer=1){
+        // 获取回课数据
+        list($tasks, $statistics, $books, $collectionIds) = HomeworkService::scheduleFollowUp(
+            $teacherId, $studentId, $proVer
+        );
+
+        // 组装数据
+        $homework = [];
+        foreach ($tasks as $task) {
+            $taskBase = [
+                'id' => $task['lesson_id'],
+                'name' => $books[$task['lesson_id']] ? $books[$task['lesson_id']]['lesson_name'] : '',
+                'complete' => $task['complete']
+            ];
+            $play = $statistics[$task['lesson_id']];
+            if (empty($play)) {
+                $play = [
+                    'practice_time' => 0,
+                    'step_times' => 0,
+                    'whole_times' => 0,
+                    'whole_best' => 0,
+                    'ai_times' => 0,
+                    'ai_best' => 0
+                ];
+            }
+            $book = $books[$task['lesson_id']];
+            $homework[] = array_merge($taskBase, $play, $book);
+        }
+
+        // 最近教材
+        if (!empty($collectionIds)) {
+            $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, 1);
+            $result = $opn->collectionsByIds($collectionIds);
+            if (empty($result) || !empty($result['errors'])) {
+                $recentCollections = [];
+            } else {
+                $recentCollections = OpernService::appFormatCollections($result['data']);
+            }
+        } else {
+            $recentCollections = [];
+        }
+        return [$homework, $recentCollections];
     }
 
 }

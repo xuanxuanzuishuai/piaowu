@@ -155,25 +155,7 @@ class OrganizationServiceForApp
             'license_num' => $orgAccount['license_num']
         ]);
 
-        $collectionIds = HomeworkTaskModel::getRecentCollectionIds($teacherId, 1, 3, $studentId);
-
-        if (!empty($collectionIds)) {
-            $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, 1);
-            $result = $opn->collectionsByIds($collectionIds);
-            if (empty($result) || !empty($result['errors'])) {
-                $recentCollections = [];
-            } else {
-                $recentCollections = OpernService::appFormatCollections($result['data']);
-            }
-        } else {
-            $recentCollections = [];
-        }
-
-        $homework = HomeworkService::getStudentHomeWorkList($studentId, $teacherId);
-
         $loginData = [
-            'recent_collections' => $recentCollections,
-            'homework' => $homework,
             'org_teacher_token' => $teacherToken,
         ];
 
