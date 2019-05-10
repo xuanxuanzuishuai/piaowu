@@ -24,12 +24,8 @@ class Model
 
     private static function getDefaultCacheKeyPri()
     {
-        if (!empty(static::$redisPri)) {
-            return 'dss' . static::$redisPri;
-        }
-        $className = get_called_class();
-        $className = substr($className, strrpos($className, '\\') + 1);
-        return 'dss' . Util::humpToUnderline(preg_replace('/Model$/i', '', $className)) . '_';
+        $pri = empty(static::$redisPri) ? static::$table : static::$redisPri;
+        return "dss_{$pri}_" . $pri;
     }
 
     public static function createCacheKey($key, $pri = null)
