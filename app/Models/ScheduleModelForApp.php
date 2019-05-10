@@ -15,6 +15,8 @@ use App\Libs\MysqlDB;
 class ScheduleModelForApp extends Model
 {
     public static $table = "schedule";
+    public static $redisPri = "schedule";
+
     /** 课程状态 */
     const STATUS_BOOK = 1;            //预约成功
     const STATUS_IN_CLASS = 2;        //上课中

@@ -24,6 +24,7 @@ class StudentModelForApp extends Model
     const SUB_STATUS_OFF = 0;
 
     public static $table = 'student';
+    public static $redisPri = "student";
     public static $cacheKeyTokenPri = "token_";
     public static $cacheKeyUidPri = "uid_";
     public static $redisExpire = 2592000; // 30 days

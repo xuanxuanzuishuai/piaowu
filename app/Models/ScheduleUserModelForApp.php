@@ -15,6 +15,7 @@ use App\Libs\DictConstants;
 class ScheduleUserModelForApp extends Model
 {
     public static $table = "schedule_user";
+    public static $redisPri = "schedule_user";
 
     const STATUS_CANCEL = 0; //废除
     const STATUS_NORMAL = 1; //正常

@@ -28,6 +28,7 @@ class TeacherModelForApp extends Model
     const ENTRY_NO = 7;
 
     public static $table = 'teacher';
+    public static $redisPri = "teacher";
 
     public static function getTeacherInfo($teacherID, $mobile)
     {
