@@ -50,7 +50,7 @@ class ClassTaskService
      * @param null $classId
      * @return array
      */
-    public static function checkCTs($pcts,$classId = null)
+    public static function checkCTs($pcts, $classId = null)
     {
         global $orgId;
         $now = time();
@@ -115,19 +115,22 @@ class ClassTaskService
             if(!empty($classId)){
                 $ct['class_id'] = $classId;
             }
+
+            foreach ($cts as $ct1) {
+                if ($ct['classroom_id'] == $ct1['classroom_id'] && $ct['weekday'] == $ct1['weekday']) {
+                    $time = $ct['start_time'] < $ct1['end_time'] && $ct['end_time'] > $ct1['start_time'];
+                    $date = $ct['expire_start_date'] < $ct1['expire_end_date'] && $ct['expire_end_date'] > $ct1['expire_start_date'];
+                    if ($time && $date) {
+                        return Valid::addErrors([], 'class_start_time', 'class_start_time_conflict');
+                    }
+                }
+            }
+
             $res = self::checkCT($ct);
             if ($res !== true) {
                 return Valid::addErrors(['data' => ['result' => $res], 'code' => 1], 'class_task_classroom', 'class_task_classroom_error');
             }
-            $startTimes[$pct['start_time']] = [$pct['start_time'], $endTime];
             $cts[] = $ct;
-        }
-        ksort($startTimes);
-        foreach ($startTimes as $key => $time) {
-            $next = next($startTimes);
-            if (!empty($next) && $next[0] < $time[1] && $next[1] > $time[0]) {
-                return Valid::addErrors([], 'class_start_time', 'class_start_time_conflict');
-            }
         }
         $cts['lesson_num'] = $lessonNum;
         return $cts;

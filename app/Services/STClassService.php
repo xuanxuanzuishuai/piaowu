@@ -37,7 +37,7 @@ class STClassService
     /**
      * 获取班课详情
      * @param $id
-     * @return mixed|void
+     * @return array
      */
     public static function getSTClassDetail($id)
     {
@@ -149,4 +149,13 @@ class STClassService
         return STClassModel::getById($classId);
     }
 
+    /**
+     * 获取调课之后的classId
+     * @param $scheduleId
+     * @return mixed
+     */
+    public static function getClassByScheduleId($scheduleId)
+    {
+        return STClassModel::getRecord(['real_schedule_id' => $scheduleId, 'status' => STClassModel::STATUS_CHANGE], 'id');
+    }
 }

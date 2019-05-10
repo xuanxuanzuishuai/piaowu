@@ -65,7 +65,7 @@ class STClass extends ControllerBase
         $params = $request->getParams();
         $result = Valid::validate($params, $rules);
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
-            return $response->withJson($result, 200);
+            return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
         $cts = ClassTaskService::checkCTs($params['cts']);
