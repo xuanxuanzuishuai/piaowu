@@ -174,7 +174,7 @@ class PlayRecordService
     }
 
     public static function getPlayRecordStatistic($student_id, $start_time, $end_time){
-        $report = self::getRecordReport($student_id, $start_time, $end_time, false);
+        $report = self::getRecordReport($student_id, $start_time, $end_time, true);
         $statistics = $report["report_list"];
         $task_lessons = PlayRecordModel::getHomeworkByPlayRecord($student_id, $start_time, $end_time);
 

@@ -22,8 +22,9 @@ class WeChatService
     const KEY_TOKEN = "access_token";
     const KEY_TICKET = "jsapi_ticket";
 
-    const USER_TYPE_STUDENT = 1;
-    const USER_TYPE_TEACHER = 2;
+    const USER_TYPE_STUDENT = UserWeixinModel::USER_TYPE_STUDENT;
+    const USER_TYPE_TEACHER = UserWeixinModel::USER_TYPE_TEACHER;
+    const USER_TYPE_STUDENT_ORG = UserWeixinModel::USER_TYPE_STUDENT_ORG;
 
     const CONTENT_TYPE_TEXT = 'text';
 
@@ -45,6 +46,10 @@ class WeChatService
         UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT . "_" . UserWeixinModel::USER_TYPE_STUDENT => [
             "app_id" => "STUDENT_WEIXIN_APP_ID",
             "secret" => "STUDENT_WEIXIN_APP_SECRET"
+        ],
+        UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT . "_" . UserWeixinModel::USER_TYPE_STUDENT_ORG => [
+            "app_id" => "STUDENT_WEIXIN_ORG_APP_ID",
+            "secret" => "STUDENT_WEIXIN_ORG_APP_SECRET"
         ]
     ];
 
@@ -437,4 +442,5 @@ class WeChatService
         }
         return false;
     }
+
 }

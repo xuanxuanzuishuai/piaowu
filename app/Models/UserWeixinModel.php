@@ -18,6 +18,7 @@ class UserWeixinModel extends Model
 
     const USER_TYPE_STUDENT = 1; // 学生
     const USER_TYPE_TEACHER = 2;  // 老师
+    const USER_TYPE_STUDENT_ORG = 3; // 学生机构号
 
     const BUSI_TYPE_STUDENT_SERVER = 1; // 学生服务号
     const BUSI_TYPE_TEACHER_SERVER = 2; // 老师服务号
