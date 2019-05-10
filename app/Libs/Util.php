@@ -639,6 +639,18 @@ class Util
     }
 
     /**
+     * 判断一个浮点数是否是整数，如果是转换为整数
+     * @param $f
+     * @return int
+     */
+    public static function convertToIntIfCan($f){
+        if(self::floatIsInt($f)){
+            return (int)$f;
+        }
+        return $f;
+    }
+
+    /**
      * 格式化练琴时间，将秒转为x分x秒
      * @param $seconds
      * @return string

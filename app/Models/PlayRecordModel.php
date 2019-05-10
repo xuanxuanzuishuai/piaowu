@@ -10,6 +10,7 @@ namespace App\Models;
 
 use App\Libs\MysqlDB;
 use App\Libs\Util;
+use Symfony\Component\Yaml\Tests\YamlTest;
 
 class PlayRecordModel extends Model
 {
@@ -72,7 +73,20 @@ class PlayRecordModel extends Model
         $map = [":student_id" => $student_id, ":start_time" => $start_time, ":end_time" => $end_time];
         $db = MysqlDB::getDB();
         $result = $db->queryAll($sql, $map);
-        return $result;
+        $format_ret = [];
+        foreach ($result as $value){
+            array_push($format_ret, [
+                "lesson_id" => $value["lesson_id"],
+                "lesson_type" => $value["lesson_type"],
+                "sub_count" => $value["sub_count"],
+                "duration" => $value["duration"],
+                "dmc" => Util::convertToIntIfCan($value["dmc"]),
+                "ai" => Util::convertToIntIfCan($value["ai"]),
+                "max_dmc" => Util::convertToIntIfCan($value["max_dmc"]),
+                "max_ai" => Util::convertToIntIfCan($value["max_ai"])
+            ]);
+        }
+        return $format_ret;
     }
 
     /**
