@@ -212,11 +212,15 @@ class Student extends ControllerBase
         $lesson_num = PlayRecordModel::getDistinctLessonIdCount($user_id);
         $duration = PlayRecordModel::getSumPlayRecordDuration($user_id);
         $expire_date = $student_info["sub_end_date"];
-        if (empty($expire_date)){
+        $sub_status = 0;
+        if (empty($expire_date) or (int)$student_info["sub_status"] == 0){
             $expire_date = "";
         } else {
             $expire_date = substr($expire_date, 0, 4) . "-" .
                 substr($expire_date, 4, 2) . "-" . substr($expire_date, 6, 2);
+            if (strtotime($expire_date) > time()){
+                $sub_status = 1;
+            }
         }
         $account_info = [
             "mobile" => substr($student_info["mobile"], 0, 3) . "****" .
@@ -226,7 +230,7 @@ class Student extends ControllerBase
             "lesson_num" => $lesson_num,
             "duration" => $duration,
             "expired_date" => $expire_date,
-            "sub_status" => (int)$student_info["sub_status"],
+            "sub_status" => $sub_status,
         ];
 
         return $response->withJson([
