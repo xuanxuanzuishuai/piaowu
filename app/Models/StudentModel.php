@@ -204,7 +204,7 @@ class StudentModel extends Model
      * 查询一条指定机构和学生id的记录
      * @param $orgId
      * @param $studentId
-     * @param $status null表示不限制状态
+     * @param $status null 表示不限制状态
      * @return array|null
      */
     public static function getOrgStudent($orgId, $studentId, $status = null)
@@ -212,13 +212,14 @@ class StudentModel extends Model
         $db = MysqlDB::getDB();
         $s = StudentModel::$table;
         $so = StudentOrgModel::$table;
-        $st = StudentOrgModel::STATUS_NORMAL;
 
-        $sql = "select s.* from {$s} s,{$so} so where s.id = so.student_id
-        and so.status = {$st} and so.org_id = {$orgId} and s.id = {$studentId} ";
+        $sql = "select s.* from {$s} s, {$so} so where s.id = so.student_id and s.id = {$studentId} ";
 
         if(!is_null($status)) {
             $sql .= " and so.status = {$status} ";
+        }
+        if (!empty($orgId)) {
+            $sql .= " and so.org_id = {$orgId} ";
         }
 
         $records = $db->queryAll($sql);

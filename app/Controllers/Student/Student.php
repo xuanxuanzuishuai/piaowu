@@ -175,6 +175,9 @@ class Student extends ControllerBase
         $studentId = $params['student_id'];
 
         $data = StudentService::getOrgStudent($orgId, $studentId);
+        if(empty($data)) {
+            return $response->withJson(Valid::addErrors([], 'student_id', 'student_not_exist'));
+        }
         $data['account'] = StudentAccountService::getStudentAccount($studentId);
 
         return $response->withJson([

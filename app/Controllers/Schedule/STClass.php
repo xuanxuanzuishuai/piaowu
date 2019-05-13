@@ -330,6 +330,7 @@ class STClass extends ControllerBase
             return $response->withJson(Valid::addErrors([], 'class_schedule', 'class_create_schedule_failure'), StatusCode::HTTP_OK);
         } else {
             STClassService::modifyClass(['id' => $class['id'], 'status' => STClassModel::STATUS_BEGIN, 'update_time' => time()]);
+            ClassTaskService::updateCTStatus(['class_id' => $class['id']], ClassTaskModel::STATUS_BEGIN);
         }
         $db->commit();
 
