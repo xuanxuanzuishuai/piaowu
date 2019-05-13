@@ -161,7 +161,16 @@ class OpernService
         }
         $defaultCollections = self::appFormatCollections($defaultCollections);
 
-        return $defaultCollections;
+        // 按照[20, 8, 79]排序
+        $order = [20, 8, 79];
+        list($_, $ret) = [[], []];
+        foreach ($defaultCollections as $c){
+            $_[$c['id']] = $c;
+        }
+        foreach($order as $o){
+            array_push($ret, $_[$o]);
+        }
+        return $ret;
     }
 
     /**
