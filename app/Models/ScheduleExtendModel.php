@@ -95,6 +95,7 @@ class ScheduleExtendModel extends Model
             $map[":limit"] = (int)$limit;
         }
         $where_sql = join(" and ", $where);
+        $where_sql = $where_sql . " order by s.start_time desc ";
 
         $sql = "select
                   se.detail_score, 
