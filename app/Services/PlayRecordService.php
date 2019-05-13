@@ -332,7 +332,11 @@ class PlayRecordService
         if (empty($ai_record_id)){
             return [];
         }
-        $playInfo = PlayRecordModel::getRecord(["student_id" => $student_id, "ai_record_id" => $ai_record_id]);
+        $search_sql = ["ai_record_id" => $ai_record_id];
+        if (!empty($student_id)){
+            $search_sql["student_id"] = $student_id;
+        }
+        $playInfo = PlayRecordModel::getRecord($search_sql);
         if (empty($playInfo)){
             return [];
         }

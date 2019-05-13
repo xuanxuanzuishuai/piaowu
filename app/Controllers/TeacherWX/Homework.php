@@ -584,4 +584,34 @@ class HomeWork extends ControllerBase
 
         return $response->withJson(['code'=>0, 'data'=>$ret], StatusCode::HTTP_OK);
     }
+
+    /**
+     * 获取测评评分
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getAIRecordGrade(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'ai_record_id',
+                'type' => 'required',
+                'error_code' => 'ai_record_id_is_required'
+            ]
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $data = PlayRecordService::getAIRecordGrade(null, $params["ai_record_id"]);
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $data
+        ], StatusCode::HTTP_OK);
+    }
 }
