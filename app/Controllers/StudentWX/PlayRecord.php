@@ -314,7 +314,7 @@ class PlayRecord extends ControllerBase
             [
                 'key' => 'jwt',
                 'type' => 'required',
-                'error_code' => 'date_is_required'
+                'error_code' => 'jwt_is_required'
             ],
             [
                 'key' => 'lesson_id',
@@ -330,7 +330,12 @@ class PlayRecord extends ControllerBase
                 'key' => 'task_id',
                 'type' => 'integer',
                 'error_code' => 'task_id_must_be_integer'
-            ]
+            ],
+            [
+                'key' => 'date',
+                'type' => 'required',
+                'error_code' => 'date_is_required'
+            ],
         ];
 
         $params = $request->getParams();
@@ -344,7 +349,7 @@ class PlayRecord extends ControllerBase
             $response->withJson(Valid::addAppErrors([], 'jwt_invalid'), StatusCode::HTTP_OK);
         }
         $user_id = $data["student_id"];
-        $date = $data["date"];
+        $date = $params["date"];
 
         $lesson_name = "";
         $baseline = null;
