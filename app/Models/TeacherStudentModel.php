@@ -22,7 +22,10 @@ class TeacherStudentModel extends Model
      * @return array
      */
     public static function getStudents($teacher_id) {
-        $where = [self::$table .".teacher_id" => $teacher_id, self::$table .".status" => self::STATUS_NORMAL, "ORDER" => "org_id"];
+        $where = [self::$table .".teacher_id" => $teacher_id, self::$table .".status" => self::STATUS_NORMAL, "ORDER" => [
+            self::$table . ".org_id",
+            self::$table . ".create_time"
+        ]];
 
         return MysqlDB::getDB()->select(self::$table, [
             '[><]' . StudentModel::$table => ["student_id" => "id"],
