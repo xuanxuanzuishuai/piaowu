@@ -2,6 +2,7 @@
 
 namespace App;
 
+use App\Controllers\API\MUSVG;
 use App\Controllers\API\OSS;
 use App\Controllers\Boss\GiftCode;
 use App\Controllers\Employee\Employee;
@@ -41,6 +42,11 @@ use Slim\Http\Response;
 
 $arr = array(
 
+    '/user/auth/get_user_id' => [ // musvg访问
+        'method' => ['get'],
+        'call' => MUSVG::class . ':getUserId',
+        'middles' => []
+    ],
 
     '/api/qiniu/token' => array('method'=> array('get'),'call'=> '\App\Controllers\API\Qiniu:token','middles' => array()),
     '/api/qiniu/callback' => array('method'=> array('get'),'call'=> '\App\Controllers\API\Qiniu:callback','middles' => array()),
@@ -115,11 +121,6 @@ $arr = array(
         'method' => ['get'],
         'call' => StudentAppAuth::class . ':validateCode',
         'middles' => [AppApiForStudent::class]
-    ],
-    '/user/auth/get_user_id' => [ // musvg访问
-        'method' => ['get'],
-        'call' => StudentAppAuth::class . ':getUserId',
-        'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
     ],
 
     // /student_app/app

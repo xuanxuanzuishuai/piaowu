@@ -122,18 +122,6 @@ class Auth extends ControllerBase
         ], StatusCode::HTTP_OK);
     }
 
-    public function getUserId(Request $request, Response $response)
-    {
-        if (empty($request)) { NULL; /* unused arg */ }
-
-        $userID = $this->ci['student']['uuid'];
-
-        return $response->withJson([
-            'code'=> Valid::CODE_SUCCESS,
-            'user_id' => $userID,
-        ], StatusCode::HTTP_OK);
-    }
-
     public function validateCode(Request $request, Response $response)
     {
         $rules = [

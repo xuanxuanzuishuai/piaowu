@@ -141,6 +141,28 @@ class OrganizationModelForApp extends Model
         return $data;
     }
 
+    /**
+     * 查找一个不知道org_id的teacherToken
+     * @param $token
+     * @return array|null
+     */
+    public static function searchOrgTeacherByToken($token)
+    {
+        $redis = RedisDB::getConn();
+        $tokenKey = self::getOrgTeacherTokenKey('*', $token);
+        $validKeys = $redis->keys($tokenKey);
+
+        // 未找到或匹配多个时，都认为失败
+        if (empty($validKeys) || count($validKeys) > 1) {
+            return null;
+        }
+
+        $value = $redis->get($validKeys[0]);
+        $data = json_decode($value, true);
+
+        return $data;
+    }
+
     public static function refreshOrgTeacherToken($orgId, $token)
     {
         $redis = RedisDB::getConn();
