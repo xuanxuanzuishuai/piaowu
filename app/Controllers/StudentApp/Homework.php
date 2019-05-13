@@ -109,6 +109,9 @@ class Homework extends ControllerBase
         // 组装数据
         $temp = [];
         foreach ($data as $homework){
+            if ($homework['end_time'] < time()){
+                continue;
+            }
             $baseline = json_decode($homework['baseline'], true);
 
             // 以homework为单位聚合task

@@ -72,7 +72,8 @@ class HomeworkService
      * @return array
      */
     public static function getStudentHomeWorkList($studentId, $teacherId=null, $pageId=-1,
-                                                  $pageLimit=0, $startTime=null, $endTime=null, $homework_ids=null)
+                                                  $pageLimit=0, $startTime=null, $endTime=null,
+                                                  $homework_ids=null)
     {
         $where = [
             HomeworkModel::$table . ".student_id" => $studentId,
