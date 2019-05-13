@@ -274,7 +274,8 @@ class ScheduleModel extends Model
                inner join {$c} c on c.id = s.course_id and c.org_id = s.org_id
                left join {$su} su on s.id = su.schedule_id and su.user_role = {$userRoleStudent}
                left join {$stu} stu on su.user_id = stu.id
-               left join {$e} e on stu.cc_id = e.id
+               left join {$so} so on so.student_id = stu.id and so.org_id = s.org_id
+               left join {$e} e on so.cc_id = e.id
         {$where} order by s.create_time desc", $map);
 
         return [$records, $total[0]['count']];
