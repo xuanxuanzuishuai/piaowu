@@ -327,6 +327,12 @@ $arr = array(
             OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
     ],
 
+    '/teacher_app/app/get_signature' => [
+        'method' => ['get'],
+        'call' => TeacherAppApp::class . ':getSignature',
+        'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
+    ],
+
     '/goods/course/list' => array('method'=> array('get'),'call'=> '\App\Controllers\Course\Course:list','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
     '/goods/course/detail' => array('method'=> array('get'),'call'=> '\App\Controllers\Course\Course:detail','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
     '/goods/course/edit' => array('method'=> array('post'),'call'=> '\App\Controllers\Course\Course:modify','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),

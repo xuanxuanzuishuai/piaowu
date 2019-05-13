@@ -9,6 +9,7 @@
 namespace App\Controllers\TeacherApp;
 
 use App\Controllers\ControllerBase;
+use App\Libs\AliOSS;
 use App\Libs\DictConstants;
 use App\Libs\Util;
 use App\Libs\Valid;
@@ -91,5 +92,55 @@ class App extends ControllerBase
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS
         ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * 获取OSS上传签名
+     *
+     * 完整上传路径分3段
+     * env_name/type_name/custom_name
+     *
+     * env_name: dev|test|pre|prod
+     * type_name: img(机构后台自主上传的图片)|teacher_note(老师端保存笔记)|dynamic_midi(学生端动态演奏midi)
+     * custom_name: 客户端自己定义的名字，可以添加自定义的目录层级方便管理
+     *
+     * dev/img/course_cover/abc123.jpg
+     *
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getSignature(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'type',
+                'type' => 'required',
+                'error_code' => 'oss_sign_type_invalid'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $ossConfig = DictConstants::getSet(DictConstants::ALI_OSS_CONFIG);
+        $dir = AliOSS::getDirByType($params['type']);
+        if (empty($dir)) {
+            $result = Valid::addAppErrors([], 'oss_sign_type_invalid');
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $alioss = new AliOSS();
+        $ret = $alioss->getSignature($ossConfig['access_key_id'],
+            $ossConfig['access_key_secret'],
+            $ossConfig['host'],
+            null,
+            $dir,
+            $ossConfig['expire'],
+            $ossConfig['max_file_size']);
+
+        return $response->withJson($ret, StatusCode::HTTP_OK);
     }
 }

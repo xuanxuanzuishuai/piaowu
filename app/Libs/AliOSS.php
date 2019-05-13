@@ -16,6 +16,10 @@ use OSS\OssClient;
 
 class AliOSS
 {
+    const DIR_IMG = 'img';
+    const DIR_TEACHER_NOTE = 'teacher_note';
+    const DIR_DYNAMIC_MIDI = 'dynamic_midi';
+
     private function gmt_iso8601($time) {
         $dtStr = date("c", $time);
         $mydatetime = new DateTime($dtStr);
@@ -250,6 +254,25 @@ class AliOSS
             SimpleLogger::error($e->getMessage(), []);
             return;
         }
+    }
+
+    /**
+     * 按类型获取文件上传路径
+     * @param $dirType
+     * @return string|null
+     */
+    public static function getDirByType($dirType)
+    {
+        $typeConstants = [
+            self::DIR_IMG,
+            self::DIR_TEACHER_NOTE,
+            self::DIR_DYNAMIC_MIDI
+        ];
+        if (!in_array($dirType, $typeConstants)) {
+            return null;
+        }
+
+        return "{$_ENV['ENV_NAME']}/{$dirType}/";
     }
 
 }
