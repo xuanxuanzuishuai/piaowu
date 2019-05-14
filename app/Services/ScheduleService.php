@@ -113,6 +113,9 @@ class ScheduleService
         $sus = ScheduleUserModel::getSUBySIds([$schedule['id']]);
         foreach ($sus as $su) {
             $su = self::formatScheduleUser($su);
+            if(!empty($su['balance'])) {
+                $su['balance'] /= 100;
+            }
             if ($su['user_role'] == ClassUserModel::USER_ROLE_S) {
                 $schedule['students'][] = $su;
             } else
