@@ -373,7 +373,13 @@ $arr = array(
     '/schedule/schedule/add' => array('method'=>array('post'),'call'=>'\App\Controllers\Schedule\Schedule:add','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
     '/schedule/schedule/cancel' => array('method'=>array('post'),'call'=>'\App\Controllers\Schedule\Schedule:cancel','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
 
-    //学员上课记录
+    //学员上课记录 1对1
+    '/schedule/schedule/ai_attend_record' => [ // for org manager
+        'method'  => ['get'],
+        'call'    => ScheduleRecord::class . ':AIAttendRecord',
+        'middles' => [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class],
+    ],
+    //非1对1上课记录
     '/schedule/schedule/attend_record' => [ // for org manager
         'method'  => ['get'],
         'call'    => ScheduleRecord::class . ':attendRecord',

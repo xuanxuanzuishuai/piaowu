@@ -258,13 +258,25 @@ class ScheduleService
         STClassService::modifyClass(['id' => $schedule['class_id'], 'finish_num[+]' => 1, 'update_time' => $now]);
     }
 
-    /** 学员上课记录
+    /** 学员上课记录 1对1
     * @param $orgId
     * @param $page
     * @param $count
     * @param $params
     * @return array
     */
+    public static function AIAttendRecord($orgId, $page, $count, $params)
+    {
+        list($records, $total) = ScheduleModel::AIAttendRecord($orgId, $page, $count, $params);
+
+        foreach ($records as &$r) {
+            $r['status']   = DictService::getKeyValue(Constants::DICT_TYPE_SCHEDULE_STATUS, $r['status']);
+            $r['duration'] = Util::formatExerciseTime($r['duration']);
+        }
+
+        return [$records, $total];
+    }
+
     public static function attendRecord($orgId, $page, $count, $params)
     {
         list($records, $total) = ScheduleModel::attendRecord($orgId, $page, $count, $params);

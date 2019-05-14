@@ -191,14 +191,14 @@ class ScheduleModel extends Model
     }
 
     /**
-     * 学员上课记录
+     * 学员上课记录 1对1
      * @param $orgId
      * @param $page
      * @param $count
      * @param $params
      * @return array
      */
-    public static function attendRecord($orgId, $page, $count, $params)
+    public static function AIAttendRecord($orgId, $page, $count, $params)
     {
         $s   = ScheduleModel::$table;
         $cr  = ClassroomModel::$table;
@@ -208,6 +208,88 @@ class ScheduleModel extends Model
         $t   = TeacherModel::$table;
         $e   = EmployeeModel::$table;
         $se  = ScheduleExtendModel::$table;
+        $so  = StudentOrgModel::$table;
+
+        $userRoleStudent = ScheduleUserModel::USER_ROLE_STUDENT;
+        $userRoleTeacher = ScheduleUserModel::USER_ROLE_TEACHER;
+
+        $where = ' where s.org_id = :org_id ';
+        $map   = [':org_id' => $orgId];
+
+        if(!empty($params['classroom_id'])) {
+            $where .= ' and s.classroom_id = :classroom_id';
+            $map[':classroom_id'] = $params['classroom_id'];
+        }
+        if(!empty($params['course_id'])) {
+            $where .= ' and s.course_id != :course_id';
+            $map[':course_id'] = $params['course_id'];
+        }
+        if(!empty($params['status'])) {
+            $where .= ' and s.status = :status';
+            $map[':status'] = $params['status'];
+        }
+        if(!empty($params['start_time'])) {
+            $where .= ' and s.start_time >= :start_time';
+            $map[':start_time'] = $params['start_time'];
+        }
+        if(!empty($params['end_time'])) {
+            $where .= ' and s.end_time <= :end_time';
+            $map[':end_time'] = $params['end_time'];
+        }
+        if(!empty($params['cc_id'])) {
+            $where .= ' and so.cc_id = :cc_id';
+            $map[':cc_id'] = $params['cc_id'];
+        }
+
+        $limit = Util::limitation($page, $count);
+
+        $db = MysqlDB::getDB();
+
+        $records = $db->queryAll("select s.*,
+               stu.name student_name,
+               stu.id   student_id,
+               t.name   teacher_name,
+               t.id     teacher_id,
+               c.name   course_name,
+               cr.name  class_room_name,
+               se.opn_lessons,
+               se.detail_score,
+               se.class_score,
+               se.remark
+        from {$s} s
+               left join {$cr} cr on cr.id = s.classroom_id 
+               inner join {$c} c on c.id = s.course_id
+               left join {$su} su on s.id = su.schedule_id and su.user_role = {$userRoleStudent}
+               left join {$stu} stu on su.user_id = stu.id
+               left join {$su} su2 on s.id = su2.schedule_id and su2.user_role = {$userRoleTeacher}
+               left join {$t} t on t.id = su2.user_id
+               left join {$so} so on so.student_id = stu.id and so.org_id = s.org_id
+               left join {$e} e on e.id = so.cc_id
+               left join {$se} se on se.schedule_id = s.id
+        {$where} order by s.create_time desc {$limit}", $map);
+
+        $total = $db->queryAll("select count(*) count
+        from {$s} s
+               left join {$cr} cr on cr.id = s.classroom_id
+               inner join {$c} c on c.id = s.course_id
+               left join {$su} su on s.id = su.schedule_id and su.user_role = {$userRoleStudent}
+               left join {$stu} stu on su.user_id = stu.id
+               left join {$so} so on so.student_id = stu.id and so.org_id = s.org_id
+               left join {$e} e on so.cc_id = e.id
+        {$where} order by s.create_time desc", $map);
+
+        return [$records, $total[0]['count']];
+    }
+
+    public static function attendRecord($orgId, $page, $count, $params)
+    {
+        $s   = ScheduleModel::$table;
+        $cr  = ClassroomModel::$table;
+        $c   = CourseModel::$table;
+        $su  = ScheduleUserModel::$table;
+        $stu = StudentModel::$table;
+        $t   = TeacherModel::$table;
+        $e   = EmployeeModel::$table;
         $so  = StudentOrgModel::$table;
 
         $userRoleStudent = ScheduleUserModel::USER_ROLE_STUDENT;
@@ -251,11 +333,7 @@ class ScheduleModel extends Model
                t.name   teacher_name,
                t.id     teacher_id,
                c.name   course_name,
-               cr.name  class_room_name,
-               se.opn_lessons,
-               se.detail_score,
-               se.class_score,
-               se.remark
+               cr.name  class_room_name
         from {$s} s
                left join {$cr} cr on cr.id = s.classroom_id 
                inner join {$c} c on c.id = s.course_id and c.org_id = s.org_id
@@ -265,7 +343,6 @@ class ScheduleModel extends Model
                left join {$t} t on t.id = su2.user_id
                left join {$so} so on so.student_id = stu.id and so.org_id = s.org_id
                left join {$e} e on e.id = so.cc_id
-               left join {$se} se on se.schedule_id = s.id
         {$where} order by s.create_time desc {$limit}", $map);
 
         $total = $db->queryAll("select count(*) count
@@ -280,5 +357,4 @@ class ScheduleModel extends Model
 
         return [$records, $total[0]['count']];
     }
-
 }
