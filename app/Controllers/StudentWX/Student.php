@@ -218,7 +218,8 @@ class Student extends ControllerBase
         } else {
             $expire_date = substr($expire_date, 0, 4) . "-" .
                 substr($expire_date, 4, 2) . "-" . substr($expire_date, 6, 2);
-            if (strtotime($expire_date) > time()){
+            $expire_time = $expire_date . " 23:59:59";
+            if (strtotime($expire_time) > time()){
                 $sub_status = 1;
             }
         }

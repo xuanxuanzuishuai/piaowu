@@ -272,13 +272,17 @@ class PlayRecord extends ControllerBase
 
         // 优先使用task_id
         if (!empty($params["task_id"])){
-            list($homework, $play_record) = HomeworkService::getStudentDayHomeworkPractice(null,
-                $params['task_id'], $user_id, $params["date"]);
+            list($homework, $play_record) = HomeworkService::getStudentDayHomeworkPractice($user_id,
+                $params['task_id'], null, $params["date"]);
             if(empty($homework)){
                 $errors = Valid::addAppErrors([], "homework_not_found");
                 return $response->withJson($errors, StatusCode::HTTP_OK);
             }
-            $lesson_name = $homework["lesson_name"];
+            $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER, OpernCenter::version);
+            $bookInfo = $opn->lessonsByIds([$params["lesson_id"]]);
+            if (!empty($bookInfo) and $bookInfo["code"] == 0){
+                $lesson_name = $bookInfo["data"][0]["lesson_name"];
+            }
             $baseline = $homework["baseline"];
 
             $records = PlayRecordService::formatLessonTestStatistics($play_record);
@@ -356,13 +360,17 @@ class PlayRecord extends ControllerBase
 
         // 优先使用task_id
         if (!empty($params["task_id"])){
-            list($homework, $play_record) = HomeworkService::getStudentDayHomeworkPractice(null,
-                $params['task_id'], $user_id, $date);
+            list($homework, $play_record) = HomeworkService::getStudentDayHomeworkPractice($user_id,
+                $params['task_id'], null, $date);
             if(empty($homework)){
                 $errors = Valid::addAppErrors([], "homework_not_found");
                 return $response->withJson($errors, StatusCode::HTTP_OK);
             }
-            $lesson_name = $homework["lesson_name"];
+            $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER, OpernCenter::version);
+            $bookInfo = $opn->lessonsByIds([$params["lesson_id"]]);
+            if (!empty($bookInfo) and $bookInfo["code"] == 0){
+                $lesson_name = $bookInfo["data"][0]["lesson_name"];
+            }
             $baseline = $homework["baseline"];
 
             $records = PlayRecordService::formatLessonTestStatistics($play_record);
