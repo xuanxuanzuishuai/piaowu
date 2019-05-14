@@ -9,9 +9,11 @@
 namespace App\Controllers\Privilege;
 
 use App\Controllers\ControllerBase;
+use App\Libs\Constants;
 use App\Libs\Valid;
 use App\Models\GroupModel;
 use App\Models\RoleModel;
+use App\Services\DictService;
 use App\Services\RoleService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -27,7 +29,7 @@ class Role extends ControllerBase
      */
     public function list(Request $request, Response $response, $args)
     {
-        $roles = RoleModel::getRoles();
+        $roles = RoleService::selectRoleByOrg();
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => [
@@ -46,18 +48,18 @@ class Role extends ControllerBase
     public function listForOrg(Request $request, Response $response, $args)
     {
         global $orgId;
-
-        //根据orgId确定要查询角色的org_type
-        //内部管理人员可以查询到所有角色
-        //直营只能查询到直营角色和外部角色
-        //外部只能查询到外部角色
-        $orgType = RoleService::getOrgTypeByOrgId($orgId);
-
-        if($orgType == RoleModel::ORG_TYPE_DIRECT) {
-            $records = RoleModel::selectByOrgType([RoleModel::ORG_TYPE_DIRECT, RoleModel::ORG_TYPE_EXTERNAL]);
-        } else {
-            $records = RoleModel::selectByOrgType($orgType);
+        //直营校长
+        $directPrincipalRoleId = DictService::getKeyValue(Constants::DICT_TYPE_ROLE_ID, Constants::DICT_KEY_CODE_DIRECT_PRINCIPAL_ROLE_ID_CODE);
+        //机构校长
+        $externalPrincipalRoleId = DictService::getKeyValue(Constants::DICT_TYPE_ROLE_ID, Constants::DICT_KEY_CODE_PRINCIPAL_ROLE_ID_CODE);
+        if(empty($directPrincipalRoleId)) {
+            return $response->withJson(Valid::addErrors([], 'role', 'direct_principal_role_id_is_empty'));
         }
+        if(empty($externalPrincipalRoleId)) {
+            return $response->withJson(Valid::addErrors([], 'role', 'external_principal_role_id_is_empty'));
+        }
+
+        $records = RoleService::selectRoleByOrg($orgId, [$directPrincipalRoleId, $externalPrincipalRoleId]);
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
