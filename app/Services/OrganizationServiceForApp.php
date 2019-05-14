@@ -46,7 +46,11 @@ class OrganizationServiceForApp
         $orgInfo = self::getOrgInfo($orgAccount['org_id']);
 
         if ($orgInfo['status'] == OrganizationModel::STATUS_STOP) {
-            return ['org_account_invalid'];
+            return ['org_is_disabled'];
+        }
+
+        if ($orgInfo['end_time'] < time()) {
+            return ['org_is_expired'];
         }
 
         $orgInfo['account'] = $account;
@@ -76,6 +80,11 @@ class OrganizationServiceForApp
      */
     public static function loginWithToken($account, $token)
     {
+        $cache = OrganizationModelForApp::getOrgCacheByToken($token);
+        if (empty($cache) || empty($cache['account']) || $cache['account'] != $account) {
+            return ['invalid_org_token'];
+        }
+
         $orgAccount = OrgAccountModel::getByAccount($account);
         if (empty($orgAccount)) {
             return ['org_account_invalid'];
@@ -85,12 +94,15 @@ class OrganizationServiceForApp
             return ['org_account_invalid'];
         }
 
-        $cache = OrganizationModelForApp::getOrgCacheByToken($token);
-        if (empty($cache) || empty($cache['account']) || $cache['account'] != $account) {
-            return ['invalid_org_token'];
+        $orgInfo = self::getOrgInfo($orgAccount['org_id']);
+        if ($orgInfo['status'] == OrganizationModel::STATUS_STOP) {
+            return ['org_is_disabled'];
         }
 
-        $orgInfo = self::getOrgInfo($orgAccount['org_id']);
+        if ($orgInfo['end_time'] < time()) {
+            return ['org_is_expired'];
+        }
+
         $orgInfo['account'] = $account;
         $orgInfo['license_num'] = (int)$orgAccount['license_num'];
         $orgTeachers = self::getTeachers($orgAccount['org_id']);
