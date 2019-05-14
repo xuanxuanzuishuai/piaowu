@@ -81,17 +81,18 @@ class STClassService
      * @param $cts
      * @param array $students
      * @param array $teachers
-     * @return bool
+     * @return object|false
      */
     public static function addSTClass($stc, $cts, $students = [], $teachers = [])
     {
 
         $stcId = STClassModel::addSTClass($stc);
         if(!empty($stcId)) {
-            $res = ClassTaskService::addCTs($stcId, $cts);
-            if ($res == false) {
-                return $res;
+            $ctIds = ClassTaskService::addCTs($stcId, $cts);
+            if ($ctIds == false) {
+                return false;
             }
+
             $cus = [];
             if (!empty($students)) {
                 $cus[ClassUserModel::USER_ROLE_S] = $students;
@@ -101,9 +102,10 @@ class STClassService
             }
 
             if (!empty($cus)) {
-                $res = ClassUserService::bindCUs($stcId, $cus);
+                $ctIds = ClassTaskService::getCTIds($stcId);
+                $res = ClassUserService::bindCUs($stcId, $cus, $ctIds);
                 if ($res == false) {
-                    return $res;
+                    return false;
                 }
             }
         }
@@ -112,31 +114,6 @@ class STClassService
 
     public static function modifyClass($stc) {
         return STClassModel::updateSTClass($stc['id'],$stc);
-    }
-
-    /**
-     * @param $classId
-     * @param $userId
-     * @param $userRole
-     * @return bool
-     */
-    public static function bindUser($classId, $userId, $userRole)
-    {
-        $now = time();
-        $insert = [];
-
-        $insert[] = ['class_id' => $classId, 'user_id' => $userId, 'user_role' => $userRole, 'status' => ClassUserModel::STATUS_NORMAL, 'create_time' => $now];
-
-        $cus = ClassUserModel::getCUListByClassId($classId);
-        foreach ($cus as $cu) {
-            if ($cu['user_id'] == $userId && $cu['user_role'] == $userRole && $cu['status'] == ClassUserModel::STATUS_NORMAL)
-                $delIds[] = $cu['id'];
-        }
-        if (!empty($delIds))
-            ClassUserService::unBindUser($delIds,$classId);
-        if (!empty($insert))
-            ClassUserModel::batchInsert($insert);
-        return true;
     }
 
     /**

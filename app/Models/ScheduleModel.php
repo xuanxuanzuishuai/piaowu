@@ -134,7 +134,8 @@ class ScheduleModel extends Model
             'c.type (course_type)',
             'c.name (course_name)',
             'cr.campus_id',
-            'cr.name (classroom_name)'
+            'cr.name (classroom_name)',
+            's.c_t_id'
 
         ], $where);
         return array($totalCount, $result);

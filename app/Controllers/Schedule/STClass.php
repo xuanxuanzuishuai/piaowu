@@ -93,10 +93,15 @@ class STClass extends ControllerBase
         $stc['create_time'] = time();
         $stc['status'] = STClassModel::STATUS_NORMAL;
         $stc['student_num'] = count($params['students']);
+
+        $db = MysqlDB::getDB();
+        $db->beginTransaction();
         $stcId = STClassService::addSTClass($stc, $cts, $params['students'], $params['teachers']);
         if (empty($stcId)) {
+            $db->rollBack();
             return $response->withJson(Valid::addErrors([], 'class_failure', 'class_add_failure'), StatusCode::HTTP_OK);
         }
+        $db->commit();
         $stc = STClassService::getSTClassDetail($stcId);
         return $response->withJson([
             'code' => 0,
@@ -201,12 +206,21 @@ class STClass extends ControllerBase
         }
         $db = MysqlDB::getDB();
         $db->beginTransaction();
+
         STCLassService::modifyClass($newStc);
+        ClassTaskService::updateCTStatus(['class_id' => $class['id']], ClassTaskModel::STATUS_CANCEL);
+        $addTaskRes = ClassTaskService::addCTs($class['id'], $cts);
+        if ($addTaskRes == false) {
+            return $response->withJson(Valid::addErrors([], 'class_id', 'modify_class_error'), StatusCode::HTTP_OK);
+        }
+
         if (!empty($ssuIds)) {
+            ClassUserService::updateStudentPrice($class['id']);
             ClassUserService::unBindUser($ssuIds, $class['id']);
         }
         if (!empty($params['students'])) {
-            ClassUserService::bindCUs($class['id'], [ClassUserModel::USER_ROLE_S => $params['students']]);
+            $ctIds = ClassTaskService::getCTIds($class['id']);
+            ClassUserService::bindCUs($class['id'], [ClassUserModel::USER_ROLE_S => $params['students']], $ctIds);
         }
 
         if (!empty($stuIds)) {
@@ -215,9 +229,6 @@ class STClass extends ControllerBase
         if (!empty($params['teachers'])) {
             ClassUserService::bindCUs($class['id'], [ClassUserModel::USER_ROLE_T => $params['teachers']]);
         }
-
-        ClassTaskService::updateCTStatus(['class_id' => $class['id']], ClassTaskModel::STATUS_CANCEL);
-        ClassTaskService::addCTs($class['id'], $cts);
 
         $db->commit();
         $stc = STClassService::getSTClassDetail($newStc['id']);
@@ -330,7 +341,6 @@ class STClass extends ControllerBase
             return $response->withJson(Valid::addErrors([], 'class_schedule', 'class_create_schedule_failure'), StatusCode::HTTP_OK);
         } else {
             STClassService::modifyClass(['id' => $class['id'], 'status' => STClassModel::STATUS_BEGIN, 'update_time' => time()]);
-            ClassTaskService::updateCTStatus(['class_id' => $class['id']], ClassTaskModel::STATUS_BEGIN);
         }
         $db->commit();
 
@@ -381,10 +391,6 @@ class STClass extends ControllerBase
             if ($res == false) {
                 $db->rollBack();
             }
-            $res = ClassTaskService::updateCTStatus(['class_id' => $class['id']], ClassTaskModel::STATUS_CANCEL_AFTER_BEGIN);
-            if ($res == false) {
-                $db->rollBack();
-            }
             $res = STClassService::modifyClass(['id' => $class['id'], 'status' => STClassModel::STATUS_CANCEL_AFTER_BEGIN, 'update_time' => time()]);
             if ($res == false) {
                 $db->rollBack();
@@ -395,10 +401,6 @@ class STClass extends ControllerBase
             $db = MysqlDB::getDB();
             $db->beginTransaction();
             $res = STCLassService::modifyClass(['id' => $class['id'], 'status' => STClassModel::STATUS_CANCEL, 'update_time' => time()]);
-            if ($res == false) {
-                $db->rollBack();
-            }
-            $res = ClassTaskService::updateCTStatus(['class_id' => $class['id']], ClassTaskModel::STATUS_CANCEL);
             if ($res == false) {
                 $db->rollBack();
             }
@@ -547,10 +549,6 @@ class STClass extends ControllerBase
 
         $db = MysqlDB::getDB();
         $db->beginTransaction();
-        $res = ClassTaskService::updateCTStatus(['class_id' => $class['id']], ClassTaskModel::STATUS_END);
-        if ($res == false) {
-            $db->rollBack();
-        }
         $res = STClassService::modifyClass(['id' => $class['id'], 'status' => STClassModel::STATUS_END, 'update_time' => time()]);
         if ($res == false) {
             $db->rollBack();

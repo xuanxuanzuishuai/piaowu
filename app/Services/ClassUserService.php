@@ -12,6 +12,7 @@ use App\Libs\Constants;
 use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Models\ClassTaskModel;
+use App\Models\ClassTaskPriceModel;
 use App\Models\ClassUserModel;
 
 class ClassUserService
@@ -19,23 +20,43 @@ class ClassUserService
     /**
      * @param $classId
      * @param $CUs
+     * @param $ctIds null
      * @return bool
      */
-    public static function bindCUs($classId, $CUs)
+    public static function bindCUs($classId, $CUs, $ctIds = null)
     {
         $now = time();
         $cus = [];
+        $ctPrices = [];
+
         foreach ($CUs as $role => $users) {
             foreach ($users as $userId => $value) {
                 if($role == ClassUserModel::USER_ROLE_S) {
-                    $value = $value * 100;
-                    $realRole = $role ;
-                }
-                else {
+                    if (count($ctIds) == 0 || count($value) != count($ctIds)) {
+                        return false;
+                    }
+
+                    foreach ($value as $key => $price) {
+                        $ctPrices[] = [
+                            'class_id' => $classId,
+                            'c_t_id' => $ctIds[$key],
+                            'student_id' => $userId,
+                            'price' => $price * 100,
+                            'status' => ClassUserModel::STATUS_NORMAL,
+                            'create_time' => $now
+                        ];
+                    }
+                    $realRole = $role;
+                } else {
                     $realRole = $value;
-                    $value = 0;
                 }
-                $cus[] = ['status' => ClassUserModel::STATUS_NORMAL, 'class_id' => $classId, 'user_id' => $userId, 'price' => $value, 'user_role' => $realRole, 'create_time' => $now];
+                $cus[] = [
+                    'status' => ClassUserModel::STATUS_NORMAL,
+                    'class_id' => $classId,
+                    'user_id' => $userId,
+                    'user_role' => $realRole,
+                    'create_time' => $now
+                ];
             }
         }
 
@@ -44,10 +65,17 @@ class ClassUserService
             if (is_null($ret))
                 return false;
         }
+
+        if (!empty($ctPrices)) {
+            $ret = ClassTaskPriceModel::batchInsert($ctPrices, false);
+            if ($ret == false)
+                return false;
+        }
         return true;
     }
 
     /**
+     * 解绑用户
      * @param $cuIds
      * @param $classId
      * @return int|null
@@ -58,12 +86,32 @@ class ClassUserService
     }
 
     /**
+     * 更新学生价格
+     * @param $classId
+     * @param $studentIds
+     * @return int|null
+     */
+    public static function updateStudentPrice($classId, $studentIds = null)
+    {
+        $data['class_id'] = $classId;
+        if (!empty($studentIds)) {
+            $data['student_id'] = $studentIds;
+        }
+        return ClassTaskPriceModel::batchUpdateRecord(['status' => ClassUserModel::STATUS_CANCEL, 'update_time' => time()], $data, false);
+    }
+
+    /**
+     * 格式化班级学生信息
      * @param $cu
      * @return mixed
      */
     public static function formatCU($cu)
     {
-        $cu['price'] = empty($cu['price'])?"0.00":floatval($cu['price']/100);
+        if (!empty($cu['price'])) {
+            $cu['price'] = array_map(function ($price) {return floatval($price / 100);}, explode(',', $cu['price']));
+        } else {
+            $cu['price'] = 0;
+        }
         $cu['cu_user_role'] = DictService::getKeyValue(Constants::DICT_TYPE_CLASS_USER_ROLE, $cu['user_role']);
         $cu['cu_status'] = DictService::getKeyValue(Constants::DICT_TYPE_CLASS_USER_STATUS, $cu['status']);
         return $cu;

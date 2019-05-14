@@ -18,14 +18,8 @@ class ClassTaskModel extends Model
     public static $redisExpire = 0;
     public static $redisDB;
 
-    const STATUS_CANCEL_AFTER_BEGIN = -1;//开课后取消
     const STATUS_CANCEL = 0;//取消排课
     const STATUS_NORMAL = 1;//正常排课
-    const STATUS_BEGIN = 2;//开课
-    const STATUS_END = 3;//结课
-    const STATUS_TEMP = 4;//临时调课
-    const STATUS_UNFULL = 5; // 未满员
-    const STATUS_FULL = 6; // 已满员
 
     /**
      * @param $params
@@ -212,13 +206,13 @@ class ClassTaskModel extends Model
      * @param bool $isOrg
      * @return array
      */
-    public static function checkCT($ct,$isOrg = true)
+    public static function checkCT($ct, $isOrg = true)
     {
         $db = MysqlDB::getDB();
         $where = [
             'ct.classroom_id' => $ct['classroom_id'],
             'ct.weekday' => $ct['weekday'],
-            'ct.status' => array(ClassTaskModel::STATUS_NORMAL, ClassTaskModel::STATUS_TEMP),
+            'ct.status' => array(ClassTaskModel::STATUS_NORMAL),
             'ct.start_time[<]' => $ct['end_time'],
             'ct.end_time[>]' => $ct['start_time'],
             'ct.org_id' => $ct['org_id'],

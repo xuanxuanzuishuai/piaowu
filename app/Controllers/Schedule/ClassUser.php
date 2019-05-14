@@ -58,7 +58,7 @@ class ClassUser extends ControllerBase
             return $response->withJson(Valid::addErrors([], 'class', 'class_status_invalid'), StatusCode::HTTP_OK);
         }
         foreach($class['students'] as $student) {
-            if(key_exists($student['user_id'],$params['students'])){
+            if(key_exists($student['user_id'], $params['students'])){
                 unset($params['students'][$student['user_id']]);
             }
         }
@@ -70,12 +70,14 @@ class ClassUser extends ControllerBase
             $db = MysqlDB::getDB();
             $db->beginTransaction();
 
-            $res = ScheduleService::bindSUs($class['id'], $params['students'], ClassUserModel::USER_ROLE_S);
+            $ctIds = array_column($class['class_tasks'], 'id');
+            $res = ClassUserService::bindCUs($class['id'], [ClassUserModel::USER_ROLE_S => $params['students']], $ctIds);
             if ($res == false) {
                 $db->rollBack();
                 return $response->withJson(Valid::addErrors([], 'class_bind_student', 'class_bind_student_error'), StatusCode::HTTP_OK);
             }
-            $res = ClassUserService::bindCUs($class['id'], [ClassUserModel::USER_ROLE_S => $params['students']]);
+
+            $res = ScheduleService::bindSUs($class['id'], $params['students'], ClassUserModel::USER_ROLE_S, $ctIds);
             if ($res == false) {
                 $db->rollBack();
                 return $response->withJson(Valid::addErrors([], 'class_bind_student', 'class_bind_student_error'), StatusCode::HTTP_OK);
@@ -185,7 +187,7 @@ class ClassUser extends ControllerBase
         $params = $request->getParams();
         $result = Valid::validate($params, $rules);
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
-            return $response->withJson($result, 200);
+            return $response->withJson($result, StatusCode::HTTP_OK);
         }
         $class = STClassService::getSTClassDetail($params['class_id']);
         if (empty($class)) {
@@ -218,9 +220,10 @@ class ClassUser extends ControllerBase
             ScheduleUserService::cancelScheduleUsers($users, $class['id'], $beginDate);
         }
         if (!empty($cuIds)) {
+            ClassUserService::updateStudentPrice($class['id'], $users[ClassUserModel::USER_ROLE_S]);
             ClassUserService::unBindUser($cuIds, $class['id']);
         }
-        STClassService::modifyClass(['id'=>$class['id'],'student_num[-]'=>count($users[ClassUserModel::USER_ROLE_S])]);
+        STClassService::modifyClass(['id' => $class['id'], 'student_num[-]' => count($users[ClassUserModel::USER_ROLE_S])]);
         $db->commit();
 
         $stc = STClassService::getSTClassDetail($class['id']);

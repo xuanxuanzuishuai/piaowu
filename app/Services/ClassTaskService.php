@@ -22,13 +22,14 @@ class ClassTaskService
     public static function addCTs($classId, $cts)
     {
         if (!empty($cts)) {
+            if(!empty($cts['lesson_num'])) {
+                unset($cts['lesson_num']);
+            }
+
             foreach ($cts as $key => $ct) {
                 $ct['class_id'] = $classId;
                 $cts[$key] = $ct;
             }
-        }
-        if(!empty($cts['lesson_num'])) {
-            unset($cts['lesson_num']);
         }
         return ClassTaskModel::batchInsert($cts);
     }
@@ -155,5 +156,14 @@ class ClassTaskService
     {
         $ct['course_type'] = DictService::getKeyValue(Constants::DICT_COURSE_TYPE, $ct['course_type']);
         return $ct;
+    }
+
+    /**
+     * @param $classId
+     * @return array
+     */
+    public static function getCTIds($classId)
+    {
+        return ClassTaskModel::getRecords(['class_id' => $classId, 'status' => ClassTaskModel::STATUS_NORMAL], 'id');
     }
 }

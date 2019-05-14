@@ -27,7 +27,7 @@ class ScheduleService
     public static function beginSchedule($class)
     {
         $now = time();
-        foreach ($class['class_tasks'] as $ct) {
+        foreach ($class['class_tasks'] as $key => $ct) {
             $beginDate = $ct['expire_start_date'];
             $weekday = date("w", strtotime($beginDate));
             if ($weekday <= $ct['weekday']) {
@@ -35,7 +35,7 @@ class ScheduleService
             } else {
                 $beginTime = strtotime($beginDate . " " . $ct['start_time']) + 86400 * (7 - ($weekday - $ct['weekday']));
             }
-            for ($i = 0; $i < $ct['period']; $i++) {
+            for ($i = 0; $i < $ct['period']; $i ++) {
                 $schedule = [
                     'classroom_id' => $ct['classroom_id'],
                     'course_id' => $ct['course_id'],
@@ -46,6 +46,7 @@ class ScheduleService
                     'status' => ScheduleModel::STATUS_BOOK,
                     'org_id' => $class['org_id'],
                     'class_id' => $class['id'],
+                    'c_t_id' => $ct['id']
                 ];
                 $sId = ScheduleModel::insertSchedule($schedule);
                 if (empty($sId)) {
@@ -54,7 +55,8 @@ class ScheduleService
                 $users = [];
                 foreach ($class['students'] as $student) {
                     if ($student['status'] == ScheduleUserModel::STATUS_NORMAL) {
-                        $users[] = ['price' => $student['price'] * 100, 'schedule_id' => $sId, 'user_id' => $student['user_id'], 'user_role' => $student['user_role'], 'status' => ScheduleModel::STATUS_BOOK, 'create_time' => $now, 'user_status' => ScheduleUserModel::STUDENT_STATUS_BOOK];
+                        $price = $student['price'][$key] * 100;
+                        $users[] = ['price' => $price, 'schedule_id' => $sId, 'user_id' => $student['user_id'], 'user_role' => $student['user_role'], 'status' => ScheduleModel::STATUS_BOOK, 'create_time' => $now, 'user_status' => ScheduleUserModel::STUDENT_STATUS_BOOK];
                     }
                 }
                 foreach ($class['teachers'] as $teacher) {
@@ -79,7 +81,7 @@ class ScheduleService
      * @param int $count
      * @return array
      */
-    public static function getList($params,$page = -1,$count = 20) {
+    public static function getList($params, $page = -1, $count = 20) {
         $sIds = $result = [];
         list($count, $schedules) = ScheduleModel::getList($params, $page, $count);
         foreach ($schedules as $schedule) {
@@ -92,9 +94,9 @@ class ScheduleService
             foreach ($sus as $su) {
                 $su = self::formatScheduleUser($su);
                 if ($su['user_role'] == ClassUserModel::USER_ROLE_S) {
-                    $result[$su['schedule_id']]['students']++;
+                    $result[$su['schedule_id']]['students'] ++;
                 } else
-                    $result[$su['schedule_id']]['teachers']++;
+                    $result[$su['schedule_id']]['teachers'] ++;
             }
         }
         return [$count, $result];
@@ -216,9 +218,10 @@ class ScheduleService
      * @param $stId
      * @param $users
      * @param $userRole
+     * @param $ctIds
      * @return bool
      */
-    public static function bindSUs($stId,$users,$userRole)
+    public static function bindSUs($stId, $users, $userRole, $ctIds = null)
     {
         $sus = [];
         $now = time();
@@ -226,7 +229,8 @@ class ScheduleService
         foreach ($schedules as $schedule) {
             foreach ($users as $userId => $value) {
                 if ($userRole == ClassUserModel::USER_ROLE_S) {
-                    $price = $value * 100;
+                    $key = array_search($schedule['c_t_id'], $ctIds);
+                    $price = $value[$key] * 100;
                 } else {
                     $price = 0;
                     $userRole = $value;
@@ -316,6 +320,8 @@ class ScheduleService
             return Valid::addErrors([], 'class_failure', 'class_add_failure');
         }
 
+        $ctId = ClassTaskService::getCTIds($classId);
+        $schedule['c_t_id'] = $ctId[0];
         $schedule['class_id'] = $classId;
         $sId = ScheduleModel::insertSchedule($schedule);
         if (empty($sId)) {

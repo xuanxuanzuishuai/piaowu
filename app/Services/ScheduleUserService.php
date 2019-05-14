@@ -107,7 +107,7 @@ class ScheduleUserService
         $users = [];
         foreach($students as $key => $value) {
             $users[] = [
-                'price' => $value * 100,
+                'price' => $value[0] * 100,
                 'schedule_id' => $scheduleId,
                 'user_id' => $key,
                 'user_role' => ScheduleUserModel::USER_ROLE_STUDENT,

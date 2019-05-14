@@ -35,15 +35,6 @@ class ClassUserModel extends Model
     }
 
     /**
-     * @param $id
-     * @return mixed
-     */
-    public static function getSTUDetail($id)
-    {
-        return MysqlDB::getDB()->get(self::$table, '*', ['id' => $id]);
-    }
-
-    /**
      * @param $where
      * @param $status
      * @param null $now
@@ -62,14 +53,16 @@ class ClassUserModel extends Model
      * @param array $status
      * @return array|null
      */
-    public static function getCUListByClassId($classId,$status = [ClassUserModel::STATUS_NORMAL]) {
-        $sql = "select cu.user_id,cu.price,cu.user_role,cu.id,cu.class_id,cu.create_time,cu.status,t.name as teacher_name,s.name as student_name,
-                (select sum(balance) from ".StudentAccountModel::$table." where student_id = cu.user_id and type = ".StudentAccountModel::TYPE_CASH.") as cs_balance,
-                (select sum(balance) from ".StudentAccountModel::$table." where student_id = cu.user_id and type = ".StudentAccountModel::TYPE_VIRTUAL.") as vs_balance
-               from ".self::$table ." as cu "
-            ." left join ".StudentModel::$table." as s on cu.user_id = s.id and cu.user_role = ".self::USER_ROLE_S
-            ." left join ".TeacherModel::$table." as t on cu.user_id = t.id and cu.user_role in( ".self::USER_ROLE_T.",".self::USER_ROLE_HT.")"
-            ." where cu.class_id = $classId and cu.status in (".implode(",",$status).")";
+    public static function getCUListByClassId($classId, $status = [ClassUserModel::STATUS_NORMAL])
+    {
+        $sql = "select cu.user_id, cu.user_role, cu.id, cu.class_id, cu.create_time, cu.status, t.name as teacher_name, s.name as student_name, group_concat(ctp.price order by ctp.id) price,
+                (select sum(balance) from " . StudentAccountModel::$table . " where student_id = cu.user_id and type = ".StudentAccountModel::TYPE_CASH . ") as cs_balance,
+                (select sum(balance) from " . StudentAccountModel::$table . " where student_id = cu.user_id and type = ".StudentAccountModel::TYPE_VIRTUAL . ") as vs_balance
+               from " . self::$table . " as cu "
+            . " left join " . StudentModel::$table . " as s on cu.user_id = s.id and cu.user_role = " . self::USER_ROLE_S
+            . " left join " . TeacherModel::$table . " as t on cu.user_id = t.id and cu.user_role in ( " . self::USER_ROLE_T . "," . self::USER_ROLE_HT . ")"
+            . " left join " . ClassTaskPriceModel::$table . " as ctp on cu.user_id = ctp.student_id and cu.class_id = ctp.class_id and cu.user_role = " . self::USER_ROLE_S . " and ctp.status = " . ClassUserModel::STATUS_NORMAL
+            . " where cu.class_id = $classId and cu.status in (" . implode(",", $status) . ") group by cu.user_id";
 
         return MysqlDB::getDB()->queryAll($sql);
     }
