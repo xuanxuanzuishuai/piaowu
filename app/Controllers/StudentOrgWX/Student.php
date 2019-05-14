@@ -24,7 +24,7 @@ use App\Models\UserRefereeModel;
 use App\Models\UserWeixinModel;
 use App\Libs\UserCenter;
 
-class StudentOrg extends ControllerBase
+class Student extends ControllerBase
 {
     public const ORG_ID = 1;
 
@@ -95,7 +95,7 @@ class StudentOrg extends ControllerBase
 
         // 绑定该用户与微信
         if (!empty($openId)) {
-            UserWeixinModel::boundUser($openId, $student_info["id"], $app_id, WeChatService::USER_TYPE_STUDENT, 1);
+            UserWeixinModel::boundUser($openId, $student_info["id"], $app_id, WeChatService::USER_TYPE_STUDENT_ORG, 1);
         }
 
         // todo 现在绑定机构写死为1了

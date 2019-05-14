@@ -30,20 +30,27 @@ class WeChatOpenIdCheckMiddleware extends MiddlewareBase
 
     public function __invoke(Request $request, Response $response, $next)
     {
-        $currentUrl = $request->getUri()->getPath();
         SimpleLogger::info('--WeChatAuthCheckMiddleware--', []);
 
         $tokenHeader = $request->getHeader('token');
         $token = $tokenHeader[0] ?? null;
         $this->container["token"] = $token;
 
-        $needle = "/student_wx";
-        $length = strlen($needle);
-        $app_id = UserCenter::AUTH_APP_ID_AIPEILIAN_TEACHER;
-        $user_type = 2;
-        if (substr($currentUrl, 0, $length) === $needle){
-            $user_type = 1;
+        // 学生微信公众号
+        $student_needle = "/student_wx";
+        $student_length = strlen($student_needle);
+        // 老师微信公众号
+        $teacher_needle = "/teacher_wx";
+        $teacher_length = strlen($teacher_needle);
+        $user_type = WeChatService::USER_TYPE_STUDENT_ORG;
+        $app_id = UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT;
+        $currentUrl = $request->getUri()->getPath();
+        if (substr($currentUrl, 0, $student_length) === $student_needle){
+            $user_type = WeChatService::USER_TYPE_STUDENT;
             $app_id = UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT;
+        } elseif (substr($currentUrl, 0, $teacher_length) === $teacher_needle){
+            $user_type = WeChatService::USER_TYPE_TEACHER;
+            $app_id = UserCenter::AUTH_APP_ID_AIPEILIAN_TEACHER;
         }
         $checkResult = $this::checkNeedWeChatCode($request, $app_id, $user_type);
         // 是否要跳转到微信端获取用户code
