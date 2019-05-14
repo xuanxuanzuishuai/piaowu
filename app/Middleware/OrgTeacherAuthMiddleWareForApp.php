@@ -54,12 +54,6 @@ class OrgTeacherAuthMiddleWareForApp extends MiddlewareBase
         $studentId = $cache['student_id'];
         $student = StudentModel::getById($studentId);
 
-        SimpleLogger::info(__FILE__ . ":" . __LINE__, [
-            'middleWare' => 'OrgTeacherAuthMiddleWareForApp',
-            'teacher' => $teacher,
-            'student' => $student
-        ]);
-
         // 延长登录token过期时间
         StudentModelForApp::refreshStudentToken($studentId);
 
@@ -77,6 +71,15 @@ class OrgTeacherAuthMiddleWareForApp extends MiddlewareBase
         $this->container['opn_is_tester'] = $isOpnTester;
         $this->container['opn_pro_ver'] = $isOpnTester ? 'tester' : $this->container['version'];
         $this->container['opn_publish'] = $isOpnTester ? 0 : 1;
+
+        SimpleLogger::info(__FILE__ . ":" . __LINE__, [
+            'middleWare' => 'OrgTeacherAuthMiddleWareForApp',
+            'teacher' => $teacher,
+            'student' => $student,
+            'opn_is_tester' => $this->container['opn_is_tester'],
+            'opn_pro_ver' => $this->container['opn_pro_ver'],
+            'opn_publish' => $this->container['opn_publish'],
+        ]);
 
         $response = $next($request, $response);
 

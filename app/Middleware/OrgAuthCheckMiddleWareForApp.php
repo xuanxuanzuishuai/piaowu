@@ -42,11 +42,6 @@ class OrgAuthCheckMiddleWareForApp extends MiddlewareBase
         }
         $org = OrganizationModelForApp::getById($orgId);
 
-        SimpleLogger::info(__FILE__ . ":" . __LINE__, [
-            'middleWare' => 'OrgAuthCheckMiddleWareForApp',
-            'org' => $org
-        ]);
-
         // 延长登录token过期时间
         OrganizationModelForApp::refreshOrgToken($token);
 
@@ -57,6 +52,16 @@ class OrgAuthCheckMiddleWareForApp extends MiddlewareBase
         $this->container['opn_is_tester'] = false;
         $this->container['opn_pro_ver'] = $this->container['version'];
         $this->container['opn_publish'] = 1;
+
+        SimpleLogger::info(__FILE__ . ":" . __LINE__, [
+            'middleWare' => 'OrgAuthCheckMiddleWareForApp',
+            'org' => $this->container['org'],
+            'org_account' => $this->container['org_account'],
+            'opn_auditing' => $this->container['opn_auditing'],
+            'opn_is_tester' => $this->container['opn_is_tester'],
+            'opn_pro_ver' => $this->container['opn_pro_ver'],
+            'opn_publish' => $this->container['opn_publish'],
+        ]);
 
         $response = $next($request, $response);
 

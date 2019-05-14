@@ -42,11 +42,6 @@ class StudentAuthCheckMiddleWareForApp extends MiddlewareBase
         }
         $student = StudentModelForApp::getStudentInfo($studentId, null);
 
-        SimpleLogger::info(__FILE__ . ":" . __LINE__, [
-            'middleWare' => 'UserAuthCheckMiddleWare',
-            'user' => $student
-        ]);
-
         // 延长登录token过期时间
         StudentModelForApp::refreshStudentToken($studentId);
 
@@ -64,6 +59,15 @@ class StudentAuthCheckMiddleWareForApp extends MiddlewareBase
         $this->container['opn_pro_ver'] = $isOpnTester ? 'tester' : $this->container['version'];
         $this->container['opn_auditing'] = $this->container['is_review_version'] ? 1 : 0;
         $this->container['opn_publish'] = $isOpnTester ? 0 : 1;
+
+        SimpleLogger::info(__FILE__ . ":" . __LINE__, [
+            'middleWare' => 'StudentAuthCheckMiddleWareForApp',
+            'student' => $student,
+            'opn_is_tester' => $this->container['opn_is_tester'],
+            'opn_pro_ver' => $this->container['opn_pro_ver'],
+            'opn_auditing' => $this->container['opn_auditing'],
+            'opn_publish' => $this->container['opn_publish'],
+        ]);
 
         $response = $next($request, $response);
 
