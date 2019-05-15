@@ -12,6 +12,7 @@ use App\Libs\Constants;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\ClassTaskModel;
+use App\Models\ScheduleExtendModel;
 use App\Models\ScheduleModel;
 use App\Models\ClassUserModel;
 use App\Models\ScheduleUserModel;
@@ -276,6 +277,11 @@ class ScheduleService
         foreach ($records as &$r) {
             $r['status']   = DictService::getKeyValue(Constants::DICT_TYPE_SCHEDULE_STATUS, $r['status']);
             $r['duration'] = Util::formatExerciseTime($r['duration']);
+            if(!empty($r['detail_score'])) {
+                $detail = json_decode($r['detail_score'], true);
+                $r['homework_rank'] = ScheduleExtendModel::$homework_score_map[$detail['homework_rank']]; //作业评价
+                $r['performance_rank'] = ScheduleExtendModel::$performance_score_map[$detail['performance_rank']]; //课堂评价
+            }
         }
 
         return [$records, $total];

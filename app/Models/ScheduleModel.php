@@ -222,7 +222,7 @@ class ScheduleModel extends Model
             $map[':classroom_id'] = $params['classroom_id'];
         }
         if(!empty($params['course_id'])) {
-            $where .= ' and s.course_id != :course_id';
+            $where .= ' and s.course_id = :course_id';
             $map[':course_id'] = $params['course_id'];
         }
         if(!empty($params['status'])) {
@@ -304,7 +304,7 @@ class ScheduleModel extends Model
             $map[':classroom_id'] = $params['classroom_id'];
         }
         if(!empty($params['course_id'])) {
-            $where .= ' and s.course_id = :course_id';
+            $where .= ' and s.course_id != :course_id';
             $map[':course_id'] = $params['course_id'];
         }
         if(!empty($params['status'])) {
