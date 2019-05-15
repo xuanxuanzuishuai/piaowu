@@ -141,11 +141,7 @@ class Schedule extends ControllerBase
         $newSchedule['org_id'] = $classroom['org_id'];
         $newSchedule['class_id'] = $schedule['class_id'];
 
-        // 调课之后的class_id
-        $classId = STClassService::getClassByScheduleId($schedule['id']);
-        $classId = !empty($classId) ? $classId : $schedule['class_id'];
-
-        $classTasks = ScheduleService::checkScheduleAndClassTask($params, $newSchedule, $now, $classId);
+        $classTasks = ScheduleService::checkScheduleAndClassTask($params, $newSchedule, $now);
         if (!empty($classTasks) && $classTasks['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($classTasks, StatusCode::HTTP_OK);
         }

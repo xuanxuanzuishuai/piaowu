@@ -106,10 +106,12 @@ class ScheduleUserModel extends Model
     /**
      * 解绑课程的用户
      * @param $scheduleId
+     * @param $userIds
+     * @param $userRole
      * @param null $now
      * @return int|null
      */
-    public static function unbindUser($scheduleId, $now = null)
+    public static function unbindUser($scheduleId, $userIds, $userRole, $now = null)
     {
         if (empty($now)) {
             $now = time();
@@ -118,7 +120,10 @@ class ScheduleUserModel extends Model
             'status' => self::STATUS_CANCEL,
             'update_time' => $now
         ], [
-            'schedule_id' => $scheduleId
+            'schedule_id' => $scheduleId,
+            'user_id' => $userIds,
+            'user_role' => $userRole,
+            'status' => self::STATUS_NORMAL
         ]);
     }
 
@@ -164,9 +169,9 @@ class ScheduleUserModel extends Model
         ], [
             'id' => $suIds,
             'schedule_id' => $scheduleId,
-            'user_role' => ScheduleUserModel::USER_ROLE_STUDENT,
-            'user_status' => ScheduleUserModel::STUDENT_STATUS_BOOK,
-            'status' => ScheduleUserModel::STATUS_NORMAL
+            'user_role' => self::USER_ROLE_STUDENT,
+            'user_status' => self::STUDENT_STATUS_BOOK,
+            'status' => self::STATUS_NORMAL
         ], false);
     }
 
@@ -185,9 +190,44 @@ class ScheduleUserModel extends Model
         ], [
             'id' => $suIds,
             'schedule_id' => $scheduleId,
-            'user_role' => [ScheduleUserModel::USER_ROLE_TEACHER, ScheduleUserModel::USER_ROLE_CLASS_TEACHER],
-            'user_status' => ScheduleUserModel::TEACHER_STATUS_SET,
-            'status' => ScheduleUserModel::STATUS_NORMAL
+            'user_role' => [self::USER_ROLE_TEACHER, self::USER_ROLE_CLASS_TEACHER],
+            'user_status' => self::TEACHER_STATUS_SET,
+            'status' => self::STATUS_NORMAL
         ], false);
+    }
+
+    /**
+     * 获取学生或老师的user_id
+     * @param $scheduleId
+     * @param $role
+     * @return array
+     */
+    public static function getUserIds($scheduleId, $role)
+    {
+        return ScheduleUserModel::getRecords([
+            'schedule_id' =>  $scheduleId,
+            'status' => self::STATUS_NORMAL,
+            'user_role' => $role
+        ], 'user_id');
+    }
+
+    /**
+     * 更新学生费用
+     * @param $scheduleId
+     * @param $studentId
+     * @param $price
+     * @param $time
+     */
+    public static function updateUserPrice($scheduleId, $studentId, $price, $time)
+    {
+        MysqlDB::getDB()->updateGetCount(self::$table, [
+            'price' => $price,
+            'update_time' => $time
+        ], [
+            'schedule_id' => $scheduleId,
+            'status' => self::STATUS_NORMAL,
+            'user_id' => $studentId,
+            'user_role' => self::USER_ROLE_STUDENT
+        ]);
     }
 }

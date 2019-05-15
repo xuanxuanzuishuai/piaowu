@@ -11,6 +11,7 @@ namespace App\Services;
 use App\Libs\Constants;
 use App\Libs\Valid;
 use App\Models\ClassTaskModel;
+use App\Models\STClassModel;
 
 class ClassTaskService
 {
@@ -35,14 +36,14 @@ class ClassTaskService
     }
 
 
-
     /**
      * @param $ct
+     * @param $classStatus
      * @return array|bool
      */
-    public static function checkCT($ct)
+    public static function checkCT($ct, $classStatus)
     {
-        $res = ClassTaskModel::checkCT($ct);
+        $res = ClassTaskModel::checkCT($ct, $classStatus);
         return empty($res) ? true : $res;
     }
 
@@ -127,7 +128,7 @@ class ClassTaskService
                 }
             }
 
-            $res = self::checkCT($ct);
+            $res = self::checkCT($ct, [STClassModel::STATUS_NORMAL, STClassModel::STATUS_BEGIN, STClassModel::STATUS_CHANGE]);
             if ($res !== true) {
                 return Valid::addErrors(['data' => ['result' => $res], 'code' => 1], 'class_task_classroom', 'class_task_classroom_error');
             }

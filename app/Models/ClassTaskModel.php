@@ -199,17 +199,17 @@ class ClassTaskModel extends Model
     }
 
 
-
-
     /**
      * @param $ct
+     * @param $classStatus
      * @param bool $isOrg
      * @return array
      */
-    public static function checkCT($ct, $isOrg = true)
+    public static function checkCT($ct, $classStatus, $isOrg = true)
     {
         $db = MysqlDB::getDB();
         $where = [
+            'stc.status' => $classStatus,
             'ct.classroom_id' => $ct['classroom_id'],
             'ct.weekday' => $ct['weekday'],
             'ct.status' => array(ClassTaskModel::STATUS_NORMAL),
@@ -228,6 +228,7 @@ class ClassTaskModel extends Model
                 $where['ct.org_id'] = $orgId;
         }
         $join = [
+            '[><]' . STClassModel::$table . " (stc)" => ['ct.class_id' => 'id'],
             '[><]' . CourseModel::$table . " (c)" => ['ct.course_id' => 'id'],
             '[><]' . ClassroomModel::$table . " (cr)" => ['ct.classroom_id' => 'id'],
         ];

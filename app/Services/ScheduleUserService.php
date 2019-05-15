@@ -16,11 +16,14 @@ class ScheduleUserService
 {
     /**
      * @param $scheduleId
+     * @param $userIds
+     * @param $userRole
      * @param $time
      * @return int|null
      */
-    public static function unBindUser($scheduleId, $time) {
-        return ScheduleUserModel::unbindUser($scheduleId, $time);
+    public static function unBindUser($scheduleId, $userIds, $userRole, $time)
+    {
+        return ScheduleUserModel::unbindUser($scheduleId, $userIds, $userRole, $time);
     }
 
     /**
@@ -128,5 +131,17 @@ class ScheduleUserService
             ];
         }
         return ScheduleUserModel::insertSUs($users);
+    }
+
+    /**
+     * 更新学生price
+     * @param $scheduleId
+     * @param $studentId
+     * @param $price
+     * @param $time
+     */
+    public static function updateSchedulePrice($scheduleId, $studentId, $price, $time)
+    {
+        ScheduleUserModel::updateUserPrice($scheduleId, $studentId, $price, $time);
     }
 }

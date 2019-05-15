@@ -198,8 +198,29 @@ class ScheduleService
             return Valid::addErrors([], 'class_failure', 'class_add_failure');
         }
 
-        // 修改schedule_user
-        ScheduleUserService::unBindUser($newSchedule['id'], $time);
+        $studentRole = ScheduleUserModel::USER_ROLE_STUDENT;
+        $teacherRole = [ScheduleUserModel::USER_ROLE_TEACHER, ScheduleUserModel::USER_ROLE_CLASS_TEACHER];
+        $studentIds = ScheduleUserModel::getUserIds($newSchedule['id'], $studentRole);
+        $teacherIds = ScheduleUserModel::getUserIds($newSchedule['id'], $teacherRole);
+
+        // unbind schedule_user
+        ScheduleUserService::unBindUser($newSchedule['id'], array_diff($studentIds, array_keys($params['students'])), $studentRole, $time);
+        ScheduleUserService::unBindUser($newSchedule['id'], array_diff($teacherIds, array_keys($params['teachers'])), $teacherRole, $time);
+
+        foreach ($params['students'] as $key => $value) {
+            if (in_array($key, $studentIds)) {
+                // update schedule_user price
+                ScheduleUserService::updateSchedulePrice($newSchedule['id'], $key, $value[0] * 100, $time);
+                unset($params['students'][$key]);
+            }
+        }
+        foreach ($params['teachers'] as $key => $value) {
+            if (in_array($key, $teacherIds)) {
+                unset($params['teachers'][$key]);
+            }
+        }
+
+        // add schedule_user
         $flag = ScheduleUserService::addScheduleUser($params['students'], $params['teachers'], $newSchedule['id'], $time);
         if (is_null($flag)) {
             return Valid::addErrors([], 'schedule_user_failure', 'schedule_add_user_failure');
@@ -350,10 +371,9 @@ class ScheduleService
      * @param $params
      * @param $schedule
      * @param $time
-     * @param null $classId
      * @return array|bool
      */
-    public static function checkScheduleAndClassTask($params, $schedule, $time, $classId = null)
+    public static function checkScheduleAndClassTask($params, $schedule, $time)
     {
         if (empty($params['students']) || !is_array($params['students'])) {
             return Valid::addErrors([], 'students', 'students_is_required');
@@ -400,11 +420,8 @@ class ScheduleService
             'expire_end_date' => date('Y-m-d', $params['start_time'] + Util::TIMESTAMP_ONEDAY),
             'period' => 1,
         ];
-        if (!empty($classId)) {
-            $classTask['class_id'] = $classId;
-        }
 
-        $checkRes = ClassTaskService::checkCT($classTask);
+        $checkRes = ClassTaskService::checkCT($classTask, STClassModel::STATUS_NORMAL);
         if ($checkRes !== true) {
             return Valid::addErrors([], 'class_task_classroom', 'class_task_classroom_error');
         }
