@@ -75,7 +75,7 @@ class Bill extends ControllerBase
             $record['is_enter_account'] == BillModel::IS_ENTER_ACCOUNT)
         {
             $success = StudentAccountService::abolishSA(
-                $record['student_id'], $record['amount'], 0, $record['operator_id'], $record['remark'], true
+                $record['student_id'], $record['amount'], 0, $record['operator_id'], $record['remark'], false
             );
             if(!$success) {
                 $db->rollBack();
