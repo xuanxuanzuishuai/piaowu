@@ -146,21 +146,18 @@ class AppVersionModel
         }
 
         $redis = RedisDB::getConn();
-        if ($publishVerIdx >= 0) {
-            $publishVer = $versions[$publishVerIdx];
-            $cacheKey = sprintf(self::APP_PUBLISH_VERSION_CACHE_KEY, $appType, $platformId);
-            $redis->setex($cacheKey, self::APP_VERSION_CACHE_EXPIRE, json_encode($publishVer));
-        }
-        if ($reviewVerIdx >= 0) {
-            $reviewVer = $versions[$reviewVerIdx];
-            $cacheKey = sprintf(self::APP_REVIEW_VERSION_CACHE_KEY, $appType, $platformId);
-            $redis->setex($cacheKey, self::APP_VERSION_CACHE_EXPIRE, json_encode($reviewVer));
-        }
+        $publishVer = ($publishVerIdx >= 0) ? $versions[$publishVerIdx] : [];
+        $cacheKey = sprintf(self::APP_PUBLISH_VERSION_CACHE_KEY, $appType, $platformId);
+        $redis->setex($cacheKey, self::APP_VERSION_CACHE_EXPIRE, json_encode($publishVer));
+
+        $reviewVer = ($reviewVerIdx >= 0) ? $versions[$reviewVerIdx] : [];
+        $cacheKey = sprintf(self::APP_REVIEW_VERSION_CACHE_KEY, $appType, $platformId);
+        $redis->setex($cacheKey, self::APP_VERSION_CACHE_EXPIRE, json_encode($reviewVer));
 
 
         SimpleLogger::info(__FILE__ . __LINE__ . ' [set version cache]', [
-            'publish ' => $publishVer ?? [],
-            'review' => $reviewVer ?? [],
+            'publish ' => $publishVer,
+            'review' => $reviewVer,
         ]);
     }
 
