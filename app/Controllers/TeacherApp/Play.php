@@ -122,7 +122,7 @@ class Play extends ControllerBase
         $userId = $this->ci['student']['id'];
         $param['data']['lesson_type'] = PlayRecordModel::TYPE_AI;
         // 同end接口
-        $params['data']['schedule_id'] = 0;
+        $param['data']['schedule_id'] = 0;
         list($errCode, $ret) = UserPlayServices::addRecord($userId, $param['data']);
         if (!empty($errCode)) {
             $errors = Valid::addAppErrors([], $errCode);
