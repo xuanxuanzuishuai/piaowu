@@ -293,7 +293,7 @@ class HomeworkService
         ];
         $homeworkId = HomeworkModel::getRecord($where, 'id', false);
         if(empty($homeworkId)){
-            return [[], [], [], []];
+            return [[], [], [], $schedule];
         }
         $homeworkWhere = [HomeworkModel::$table . ".id" => $homeworkId];
         $homework = HomeworkModel::getHomeworkList($homeworkWhere);
