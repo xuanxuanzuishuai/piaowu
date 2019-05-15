@@ -30,51 +30,40 @@ class MUSVGMiddleWare extends MiddlewareBase
 
         $auth = false;
 
-        // 收到 "org_token,org_teacher_token" 格式的token时，只取org_teacher_token
         if (strpos($token, ',') !== false) {
+            // 收到 "org_token,org_teacher_token" 格式
+            // org_teacher_token 可能为空
             $tokens = explode(',', $token);
-            $token = $tokens[1];
+            $orgToken = $tokens[0];
+            $teacherToken = $tokens[1];
 
-            $orgCache = OrganizationModelForApp::getOrgCacheByToken($tokens[0]);
+            $orgCache = OrganizationModelForApp::getOrgCacheByToken($orgToken);
             if (!empty($orgCache)) {
-                $teacherCache = OrganizationModelForApp::getOrgTeacherCacheByToken($orgCache['org_id'], $token);
-                if (!empty($teacherCache)) {
-                    $teacher = TeacherModelForApp::getById($teacherCache['teacher_id']);
-                    $this->container['teacher'] = $teacher;
-                    $student = StudentModelForApp::getById($teacherCache['student_id']);
-                    $this->container['student'] = $student;
-                    $this->container['ai_uid'] = $student['uuid'];
+                if (!empty($teacherToken)) { //org_teacher_token 不为空时获取老师学生信息
+                    $teacherCache = OrganizationModelForApp::getOrgTeacherCacheByToken($orgCache['org_id'], $teacherToken);
+                    if (!empty($teacherCache)) {
+                        $teacher = TeacherModelForApp::getById($teacherCache['teacher_id']);
+                        $this->container['teacher'] = $teacher;
+                        $student = StudentModelForApp::getById($teacherCache['student_id']);
+                        $this->container['student'] = $student;
+                        $this->container['ai_uid'] = $student['uuid'];
+                        $auth = true;
+                    }
+
+                } else { //org_teacher_token 为空时只获取机构信息
+                    $org = OrganizationModelForApp::getById($orgCache['org_id']);
+                    $this->container['org'] = $org;
+                    $this->container['ai_uid'] = $org['id'];
                     $auth = true;
                 }
             }
-        }
-
-        if (!$auth) {
+        } else {
+            // 收到 "student_token" 格式 获取学生信息
             $studentId = StudentModelForApp::getStudentUid($token);
             if (!empty($studentId)) {
                 $student = StudentModelForApp::getById($studentId);
                 $this->container['student'] = $student;
                 $this->container['ai_uid'] = $student['uuid'];
-                $auth = true;
-            }
-        }
-
-        if (!$auth) {
-            $orgCache = OrganizationModelForApp::getOrgCacheByToken($token);
-            if (!empty($orgCache)) {
-                $org = OrganizationModelForApp::getById($orgCache['org_id']);
-                $this->container['org'] = $org;
-                $this->container['ai_uid'] = $org['id'];
-                $auth = true;
-            }
-        }
-
-        if (!$auth) {
-            $teacherCache = OrganizationModelForApp::searchOrgTeacherByToken($token);
-            if (!empty($teacherCache)) {
-                $teacher = TeacherModelForApp::getById($teacherCache['teacher_id']);
-                $this->container['teacher'] = $teacher;
-                $this->container['ai_uid'] = $teacher['uuid'];
                 $auth = true;
             }
         }
