@@ -14,7 +14,6 @@ use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Models\OrganizationModelForApp;
 use App\Models\StudentModel;
-use App\Models\StudentModelForApp;
 use App\Models\TeacherModel;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -53,9 +52,6 @@ class OrgTeacherAuthMiddleWareForApp extends MiddlewareBase
         $teacher = TeacherModel::getById($teacherId);
         $studentId = $cache['student_id'];
         $student = StudentModel::getById($studentId);
-
-        // 延长登录token过期时间
-        StudentModelForApp::refreshStudentToken($studentId);
 
         $this->container['teacher'] = $teacher;
         $this->container['student'] = $student;
