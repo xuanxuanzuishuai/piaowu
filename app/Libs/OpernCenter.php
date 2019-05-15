@@ -28,7 +28,7 @@ class OpernCenter
     const OPERN_API_SEARCH_COLLECTIONS = '/api/opern/search_collection';
     const OPERN_API_SEARCH_LESSONS = '/api/opern/search_opern';
     const OPERN_API_STATIC_RESOURCE = '/api/opern/opernres';
-    const  OPERN_API_GET_KNOWLEDGE = '/api/knowledge/bylesson';
+    const OPERN_API_GET_KNOWLEDGE = '/api/knowledge/bylesson';
 
     const DEFAULT_PAGE_SIZE = 20;
     const DEFAULT_AUDITING = 0;
