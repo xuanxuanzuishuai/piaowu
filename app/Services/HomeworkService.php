@@ -168,10 +168,12 @@ class HomeworkService
      * @param int $teacherId
      * @param int $startTime
      * @param int $endTime
+     * @param bool $flunked
+     * @param bool $no_schedule
      * @return mixed
      */
     public static function getStudentHomeworkPractice($studentId, $taskId, $teacherId=null, $startTime=null,
-                                                      $endTime=null, $flunked=false){
+                                                      $endTime=null, $flunked=false, $no_schedule=false){
 
         // 获取作业
         $where = [
@@ -198,7 +200,7 @@ class HomeworkService
         }
 
         $plays = PlayRecordModel::getPlayRecordList($homework['id'], $taskId, $homework["lesson_id"],
-            $startTime, $endTime, false, null,null, $homework["student_id"], $flunked);
+            $startTime, $endTime, false, null,null, $homework["student_id"], $flunked, $no_schedule);
 
         return [$homework, $plays];
     }
@@ -214,7 +216,8 @@ class HomeworkService
     public static function getStudentDayHomeworkPractice($studentId, $taskId, $teacherId=null, $date=null){
         $startTime = strtotime($date);
         $endTime = $startTime + 86399;
-        return self::getStudentHomeworkPractice($studentId, $taskId, $teacherId, $startTime, $endTime);
+        return self::getStudentHomeworkPractice($studentId, $taskId, $teacherId, $startTime, $endTime,
+            false, true);
     }
 
     /**
@@ -227,7 +230,7 @@ class HomeworkService
      */
     public static function getStudentLessonPractice($studentId, $lessonId, $startTime, $endTime){
         $plays = PlayRecordModel::getPlayRecordList(null, null, $lessonId,
-            $startTime, $endTime, false, $studentId);
+            $startTime, $endTime, false, $studentId, null, null, false, true);
         return $plays;
     }
 

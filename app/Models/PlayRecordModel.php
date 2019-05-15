@@ -67,7 +67,8 @@ class PlayRecordModel extends Model
             where 
                 student_id = :student_id and 
                 created_time >= :start_time and 
-                created_time <= :end_time
+                created_time <= :end_time and 
+                schedule_id is NULL
             group by 
               lesson_id, lesson_type";
         $map = [":student_id" => $student_id, ":start_time" => $start_time, ":end_time" => $end_time];
@@ -100,7 +101,7 @@ class PlayRecordModel extends Model
         $sql = "select hc.task_id as task_id, ht.lesson_id as lesson_id from " .
             self::$table . " as pr left join " . HomeworkCompleteModel::$table .
             " as hc on pr.id = hc.play_record_id left join " . HomeworkTaskModel::$table .
-            " as ht on hc.task_id = ht.id where pr.student_id=:student_id and pr.created_time>=:start_time 
+            " as ht on hc.task_id = ht.id where pr.schedule_id is null and pr.student_id=:student_id and pr.created_time>=:start_time 
             and pr.created_time <= :end_time and pr.lesson_type = " . self::TYPE_AI . " order by ht.id asc" ;
         $map = [
             ":student_id" => $student_id,
@@ -266,11 +267,12 @@ class PlayRecordModel extends Model
      * @param null $limit
      * @param null $studentId
      * @param bool $flunked 是否获取不及格记录，默认不要
+     * @param bool $no_schedule
      * @return array|null
      */
     public static function getPlayRecordList($homeworkId, $taskId, $lessonId,
                                              $startTime, $endTime, $statistic=false, $page=null,
-                                             $limit=null, $studentId=null, $flunked=false){
+                                             $limit=null, $studentId=null, $flunked=false, $no_schedule=false){
         $db = MysqlDB::getDB();
         // 根据是否有homeworkId和taskId来确定是否join homework_complete 表
         $join_hc = false;
@@ -319,6 +321,9 @@ class PlayRecordModel extends Model
         if (!empty($studentId)){
             $map[":student_id"] = $studentId;
             $where = $where . " and pr.student_id=:student_id ";
+        }
+        if ($no_schedule){
+            $where = $where . " and pr.schedule_id is null ";
         }
         if ($join_hc){
             $selectTable = $selectTable . "left join " . HomeworkCompleteModel::$table .
@@ -374,7 +379,7 @@ class PlayRecordModel extends Model
         $start_time = strtotime($year . "-" . $month);
         $end_time = strtotime(date('Y-m-t', $start_time) . "23:59:59");
         $sql = "select distinct FROM_UNIXTIME(pr.created_time, '%Y-%m-%d') as play_date from " .
-            self::$table . " as pr where pr.created_time >= :start_time and pr.created_time <= :end_time 
+            self::$table . " as pr where pr.created_time >= :start_time and pr.created_time <= :end_time and pr.schedule_id is null
             and pr.student_id=:student_id order by pr.id "; // id排序应该就等同于created_time排序了，个人并不确定created_time是否含有index
         $map = [
             ":start_time" => $start_time,
