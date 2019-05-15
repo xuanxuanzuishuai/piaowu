@@ -259,8 +259,8 @@ class Opn extends ControllerBase
      * @return mixed
      */
     public function recentCollections(Request $request, Response $response){
-        $params = $request->getParams();
-        list($pageId, $pageLimit) = Util::formatPageCount($params);
+        // 产品要求只展示10个
+        list($pageId, $pageLimit) = [1, 10];
         $teacherId = $this->ci['teacher']['id'];
         $studentId = $this->ci['student']['id'];
         $collectionIds = HomeworkTaskModel::getRecentCollectionIds($teacherId, $pageId, $pageLimit, $studentId);
@@ -293,8 +293,8 @@ class Opn extends ControllerBase
      * @return mixed
      */
     public function recentLessons(Request $request, Response $response){
-        $params = $request->getParams();
-        list($pageId, $pageLimit) = Util::formatPageCount($params);
+        // 产品要求只展示20个
+        list($pageId, $pageLimit) = [1, 20];
         $teacherId = $this->ci['teacher']['id'];
         $studentId = $this->ci['student']['id'];
         $lessonIds = HomeworkTaskModel::getRecentLessonIds($teacherId, $pageId, $pageLimit, $studentId);
