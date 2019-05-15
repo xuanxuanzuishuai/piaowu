@@ -107,11 +107,14 @@ class ClassUserService
      */
     public static function formatCU($cu)
     {
+        $prices = 0;
         if (!empty($cu['price'])) {
-            $cu['price'] = array_map(function ($price) {return floatval($price / 100);}, explode(',', $cu['price']));
-        } else {
-            $cu['price'] = 0;
+            $prices = explode(',', $cu['price']);
+            if (is_array($prices)) {
+                $prices = array_map(function ($price) {return floatval($price / 100);}, $prices);
+            }
         }
+        $cu['price'] = $prices;
         $cu['cu_user_role'] = DictService::getKeyValue(Constants::DICT_TYPE_CLASS_USER_ROLE, $cu['user_role']);
         $cu['cu_status'] = DictService::getKeyValue(Constants::DICT_TYPE_CLASS_USER_STATUS, $cu['status']);
         return $cu;
