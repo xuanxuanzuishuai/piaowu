@@ -42,6 +42,7 @@ class OrganizationModel extends Model
         $too = TeacherOrgModel::$table;
         $e   = EmployeeModel::$table;
         $o   = OrganizationModel::$table;
+        $oa  = OrgAccountModel::$table;
 
         $studentStatus    = StudentModel::STATUS_NORMAL;
         $teacherStatus    = TeacherModel::STATUS_NORMAL;
@@ -55,6 +56,7 @@ class OrganizationModel extends Model
 
         $records = $db->queryAll("select e2.name principal_name,e2.mobile principal_mobile,e2.login_name principal_login_name,
         o.*,e.name operator_name,o2.name parent_name
+        ,(select oa.account from {$oa} oa where oa.org_id = o.id limit 1) account
         ,(select count(*) from {$s} s,{$so} so where s.id = so.student_id and so.status = {$studentOrgStatus} and 
         s.status = {$studentStatus} and o.id = so.org_id) student_amount
         ,(select count(*) from {$t} t,{$too} too where t.id = too.teacher_id 
