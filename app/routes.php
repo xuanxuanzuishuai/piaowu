@@ -16,6 +16,7 @@ use App\Middleware\AppApiForStudent;
 use App\Middleware\AppApiForTeacher;
 use App\Middleware\EmployeeAuthCheckMiddleWare;
 use App\Middleware\EmployeePrivilegeMiddleWare;
+use App\Middleware\MUSVGMiddleWare;
 use App\Middleware\OrgAuthCheckMiddleWareForApp;
 use App\Middleware\OrgResPrivilegeCheckMiddleWareForApp;
 use App\Middleware\OrgTeacherAuthMiddleWareForApp;
@@ -45,7 +46,7 @@ $arr = array(
     '/user/auth/get_user_id' => [ // musvg访问
         'method' => ['get'],
         'call' => MUSVG::class . ':getUserId',
-        'middles' => []
+        'middles' => [MUSVGMiddleWare::class]
     ],
 
     '/api/qiniu/token' => array('method'=> array('get'),'call'=> '\App\Controllers\API\Qiniu:token','middles' => array()),
@@ -188,7 +189,7 @@ $arr = array(
     '/student_app/play/ai_end' => [
         'method' => ['post'],
         'call' => StudentAppPlay::class . ':aiEnd',
-        'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        'middles' => [MUSVGMiddleWare::class]
     ],
 
     // /student_app/homework
@@ -298,8 +299,7 @@ $arr = array(
     '/teacher_app/play/ai_end' => [
         'method' => ['post'],
         'call' => TeacherAppPlay::class . ':aiEnd',
-        'middles' => [OrgTeacherAuthMiddleWareForApp::class,
-            OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
+        'middles' => [MUSVGMiddleWare::class]
     ],
 
     '/teacher_app/app/version' => [

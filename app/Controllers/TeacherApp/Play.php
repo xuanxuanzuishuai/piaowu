@@ -107,6 +107,11 @@ class Play extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
+        // 没有学生信息时返回空
+        if (empty($this->ci['student'])) {
+            return $response->withJson(['code' => 0], StatusCode::HTTP_OK);
+        }
+
         $db = MysqlDB::getDB();
         $db->beginTransaction();
 
