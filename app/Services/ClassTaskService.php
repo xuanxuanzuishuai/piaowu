@@ -119,7 +119,7 @@ class ClassTaskService
             }
 
             foreach ($cts as $ct1) {
-                if ($ct['classroom_id'] == $ct1['classroom_id'] && $ct['weekday'] == $ct1['weekday']) {
+                if ($ct['weekday'] == $ct1['weekday']) {
                     $time = $ct['start_time'] < $ct1['end_time'] && $ct['end_time'] > $ct1['start_time'];
                     $date = $ct['expire_start_date'] < $ct1['expire_end_date'] && $ct['expire_end_date'] > $ct1['expire_start_date'];
                     if ($time && $date) {
