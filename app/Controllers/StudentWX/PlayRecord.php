@@ -12,6 +12,7 @@ use App\Controllers\ControllerBase;
 use App\Libs\AIPLCenter;
 use App\Libs\OpernCenter;
 use App\Libs\SimpleLogger;
+use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\PlayRecordModel;
 use App\Models\StudentModelForApp;
@@ -551,6 +552,43 @@ class PlayRecord extends ControllerBase
 
         }
         $result["lesson_numbers"] = sizeof($lesson_ids);
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $result
+        ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * 获取作业标准
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getHomeworkDemand(Request $request, Response $response)
+    {
+        Util::unusedParam($request);
+
+        $result = [
+            [
+                'name' => '音准',
+                'value' => 'pitch',
+                'children' => [
+                    ['name' => '基本识谱', 'value' => 60],
+                    ['name' => '较少错音', 'value' => 80],
+                    ['name' => '熟练演奏', 'value' => 95],
+                ],
+            ],
+            [
+                'name' => '节奏',
+                'value' => 'rhythm',
+                'children' => [
+                    ['name' => '认识节奏', 'value' => 60],
+                    ['name' => '较少错拍', 'value' => 80],
+                    ['name' => '熟练演奏', 'value' => 95],
+                ],
+            ],
+        ];
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
