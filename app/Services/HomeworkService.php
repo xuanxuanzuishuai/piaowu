@@ -303,7 +303,6 @@ class HomeworkService
         $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER, $proVer);
         $bookInfo = $opn->lessonsByIds($lessonIds);
         $books = [];
-        $collectionIds = [];
         foreach ($bookInfo['data'] as $book){
             $books[$book['lesson_id']] = [
                 'collection_name' => $book['collection_name'],
@@ -314,7 +313,6 @@ class HomeworkService
                 'is_free' => $book['freeflag'] ? '1' : '0',
                 'lesson_name' => $book['lesson_name']
             ];
-            array_push($collectionIds, $book['collection_id']);
         }
 
         list($start, $end) = [$homework[0]['created_time'], $homework[0]['end_time']];
@@ -355,13 +353,13 @@ class HomeworkService
             }
         }
 
-        return [$homework, $statistics, $books, $collectionIds];
+        return [$homework, $statistics, $books, $schedule];
     }
 
 
     public static function makeFollowUp($teacherId, $studentId, $proVer=1){
         // 获取回课数据
-        list($tasks, $statistics, $books, $collectionIds) = HomeworkService::scheduleFollowUp(
+        list($tasks, $statistics, $books, $schedule) = HomeworkService::scheduleFollowUp(
             $teacherId, $studentId, $proVer
         );
 
@@ -389,8 +387,11 @@ class HomeworkService
         }
 
         // 最近教材
-        if (!empty($collectionIds)) {
+        $lessonIds = $schedule[0]['opn_lessons'];
+        if (!empty($lessonIds)) {
             $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, 1);
+            $lessons = $opn->lessonsByIds($lessonIds);
+            $collectionIds = array_column($lessons['data'], 'collection_id');
             $result = $opn->collectionsByIds($collectionIds);
             if (empty($result) || !empty($result['errors'])) {
                 $recentCollections = [];
@@ -402,5 +403,4 @@ class HomeworkService
         }
         return [$homework, $recentCollections];
     }
-
 }
