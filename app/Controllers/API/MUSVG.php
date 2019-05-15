@@ -41,6 +41,12 @@ class MUSVG extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
+        // 收到 "org_token,org_teacher_token" 格式的token时，只取org_teacher_token
+        if (strpos($token, ',') !== false) {
+            $tokens = explode(',', $token);
+            $token = $tokens[1];
+        }
+
         $uid = null;
 
         if (empty($uid)) {

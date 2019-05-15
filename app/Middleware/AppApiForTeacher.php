@@ -25,11 +25,18 @@ class AppApiForTeacher extends MiddlewareBase
         $version = $request->getHeaderLine('version');
         $this->container['version'] = empty($version) ? NULL : $version;
 
-        $orgToken = $request->getHeaderLine('org-token');
+        $token = $request->getHeaderLine('token');
+        if (!empty($token) && strpos($token, ',') !== false) {
+            $tokens = explode(',', $token);
+            $orgToken = $tokens[0];
+            $orgTeacherToken = $tokens[1];
+        } else {
+            $orgToken = $request->getHeaderLine('org-token');
+            $orgTeacherToken = $request->getHeaderLine('org-teacher-token');
+        }
         $this->container['org_token'] = empty($orgToken) ? NULL : $orgToken;
-
-        $orgTeacherToken = $request->getHeaderLine('org-teacher-token');
         $this->container['org_teacher_token'] = empty($orgTeacherToken) ? NULL : $orgTeacherToken;
+
 
         if ($this->container['platform'] == AppVersionService::PLAT_IOS) {
             $reviewVersion = AppVersionService::getReviewVersionCode(AppVersionModel::APP_TYPE_TEACHER,
@@ -41,6 +48,7 @@ class AppApiForTeacher extends MiddlewareBase
         $this->container['is_review_version'] = $isReviewVersion;
 
         SimpleLogger::info(__FILE__ . ":" . __LINE__ . " AppApiForTeacher", [
+            'token' => $token ?? NULL,
             'platform' => $this->container['platform'] ?? NULL,
             'version' => $this->container['version'] ?? NULL,
             'is_review_version' => $this->container['is_review_version'] ?? NULL,
