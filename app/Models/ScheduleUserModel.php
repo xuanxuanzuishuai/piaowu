@@ -208,7 +208,7 @@ class ScheduleUserModel extends Model
             'schedule_id' =>  $scheduleId,
             'status' => self::STATUS_NORMAL,
             'user_role' => $role
-        ], 'user_id');
+        ], 'user_id', false);
     }
 
     /**

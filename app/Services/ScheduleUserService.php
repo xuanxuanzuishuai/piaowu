@@ -23,6 +23,9 @@ class ScheduleUserService
      */
     public static function unBindUser($scheduleId, $userIds, $userRole, $time)
     {
+        if (empty($userIds)) {
+            return null;
+        }
         return ScheduleUserModel::unbindUser($scheduleId, $userIds, $userRole, $time);
     }
 
