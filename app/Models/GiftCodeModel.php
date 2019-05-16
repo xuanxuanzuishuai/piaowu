@@ -129,7 +129,10 @@ class GiftCodeModel extends Model
             $where .= " and {$gift_code}.generate_way = " . $params['generate_way'];
         }
 
-        if (!empty($params['code_status'])) {
+        if (in_array($params['code_status'], [
+            self::CODE_STATUS_NOT_REDEEMED,
+            self::CODE_STATUS_HAS_REDEEMED,
+            self::CODE_STATUS_INVALID])) {
             $where .= " and {$gift_code}.code_status = " . $params['code_status'];
         }
 
