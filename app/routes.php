@@ -621,15 +621,13 @@ $arr = array(
 
 /** @var App $app */
 $app->add(function (Request $request, Response $response, $next) use ($app, $arr) {
-    $uri = $request->getUri()->getPath();
     $startTime = Util::microtime_float();
-
+    $uri = $request->getUri()->getPath();
     $method = $request->getMethod();
-    SimpleLogger::debug(__FILE__ . ":" . __LINE__, ["== method: $method, path: $uri START =="]);
-
     $params = $request->getParams();
     $headers = $request->getHeaders();
-    SimpleLogger::debug(__FILE__ . ":" . __LINE__, ['headers' => $headers, 'params' => $params]);
+    SimpleLogger::debug(__FILE__ . ":" . __LINE__ . " == REQUEST [$method] path: $uri START ==",
+        ['headers' => $headers, 'params' => $params]);
 
     if (!empty($arr[$uri])) {
         $r = $app->map($arr[$uri]['method'], $uri, $arr[$uri]['call']);
@@ -643,14 +641,10 @@ $app->add(function (Request $request, Response $response, $next) use ($app, $arr
     /** @var Response $response */
     $response = $next($request, $response);
 
-    $body = (string)$response->getBody();
-    SimpleLogger::debug(__FILE__ . ':' . __LINE__, [
-        '== RESPONSE ==' => $body,
-    ]);
-
     $endTime = Util::microtime_float();
-    $t = $endTime - $startTime;
-    SimpleLogger::debug(__FILE__ . ":" . __LINE__, ["== path: $uri END ({$t}) =="]);
+    $body = (string)$response->getBody();
+    SimpleLogger::debug(__FILE__ . ":" . __LINE__ . " == RESPONSE path: $uri END ==",
+        ['duration' => $endTime - $startTime, 'body' => $body]);
 
     return $response;
 });
