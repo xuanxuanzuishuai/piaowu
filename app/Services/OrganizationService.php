@@ -49,6 +49,12 @@ class OrganizationService
         foreach($records as &$r) {
             $r['status'] = DictService::getKeyValue(Constants::DICT_TYPE_ORG_STATUS, $r['status']);
             $r['amount'] /= 100;
+            if(!empty($r['principal'])) {
+                $list = explode(',', $r['principal']);
+                $r['principal_name'] = $list[0];
+                $r['principal_mobile'] = $list[1];
+                $r['principal_login_name'] = $list[2];
+            }
         }
         return [$records, $total];
     }

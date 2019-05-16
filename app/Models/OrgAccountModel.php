@@ -39,10 +39,7 @@ class OrgAccountModel extends Model
 
     public static function selectByPage($page, $count, $params)
     {
-        $where = [
-            'LIMIT' => [($page-1) * $count, $count],
-            'ORDER' => ['oa.create_time' => 'DESC'],
-        ];
+        $where = [];
 
         if(!empty($params['account'])) {
             $where['oa.account'] = $params['account'];
@@ -58,6 +55,11 @@ class OrgAccountModel extends Model
             $where['o.name[~]'] = $params['org_name'];
         }
 
+        $richWhere = array_merge($where, [
+            'LIMIT' => [($page-1) * $count, $count],
+            'ORDER' => ['oa.create_time' => 'DESC'],
+        ]);
+
         $db = MysqlDB::getDB();
 
         $records = $db->select(self::$table . '(oa)',[
@@ -70,7 +72,7 @@ class OrgAccountModel extends Model
             'oa.status',
             'oa.license_num',
             'oa.last_login_time',
-        ], $where);
+        ], $richWhere);
 
         $total = $db->count(self::$table . '(oa)', [
             '[><]' . OrganizationModel::$table . '(o)' => ['oa.org_id' => 'id']

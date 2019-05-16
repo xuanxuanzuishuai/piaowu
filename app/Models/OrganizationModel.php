@@ -54,7 +54,7 @@ class OrganizationModel extends Model
 
         $db = MysqlDB::getDB();
 
-        $records = $db->queryAll("select e2.name principal_name,e2.mobile principal_mobile,e2.login_name principal_login_name,
+        $records = $db->queryAll("select 
         o.*,e.name operator_name,o2.name parent_name
         ,(select oa.account from {$oa} oa where oa.org_id = o.id limit 1) account
         ,(select count(*) from {$s} s,{$so} so where s.id = so.student_id and so.status = {$studentOrgStatus} and 
@@ -62,10 +62,11 @@ class OrganizationModel extends Model
         ,(select count(*) from {$t} t,{$too} too where t.id = too.teacher_id 
         and too.status = {$teacherOrgStatus} and t.status = {$teacherStatus} and o.id = too.org_id) teacher_amount
         ,(select count(*) from {$e} e where e.org_id = o.id) employee_amount 
+        ,(select concat_ws(',',name,mobile,login_name) from {$e} where role_id
+        in(".self::PRINCIPAL_SPECIAL.",".self::PRINCIPAL_NORMAL.") and org_id = o.id order by e.id desc limit 1) principal
         from {$o} o
         left join {$e} e on o.operator_id = e.id
         left join {$o} o2 on o.parent_id = o2.id
-        left join {$e} e2 on e2.org_id = o.id and e2.role_id in (".self::PRINCIPAL_SPECIAL.",".self::PRINCIPAL_NORMAL.")
         {$where}
         order by o.create_time desc
         {$limit}", $map);
