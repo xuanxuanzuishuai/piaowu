@@ -267,23 +267,24 @@ class ClassTaskModel extends Model
      * @param $weekday
      * @param $expireStartDate
      * @param $expireEndDate
+     * @param $classStatus
      * @param null $orgClassId
-     * @param null $time
      * @param bool $isOrg
      * @return array
      */
-    public static function checkUserTime($userIds, $userRole, $start_time, $end_time, $weekday, $expireStartDate, $expireEndDate, $orgClassId = null, $time = null, $isOrg = true)
+    public static function checkUserTime($userIds, $userRole, $start_time, $end_time, $weekday, $expireStartDate, $expireEndDate, $classStatus, $orgClassId = null, $isOrg = true)
     {
         $where = [
             'cu.user_id' => $userIds,
             'cu.user_role' => $userRole,
+            'cu.status' => array(ClassUserModel::STATUS_NORMAL, ClassUserModel::STATUS_BACKUP),
             'ct.expire_start_date[<]' => $expireEndDate,
             'ct.expire_end_date[>]' => $expireStartDate,
-            'stc.status' => array(STClassModel::STATUS_NORMAL, STClassModel::STATUS_BEGIN),
             'ct.weekday' => $weekday,
             'ct.start_time[<]' => $end_time,
             'ct.end_time[>]' => $start_time,
-            'cu.status' => array(ClassUserModel::STATUS_NORMAL, ClassUserModel::STATUS_BACKUP),
+            'ct.status' => ClassTaskModel::STATUS_NORMAL,
+            'stc.status' => $classStatus
         ];
         if (!empty($orgClassId)) {
             $where['stc.id[!]'] = $orgClassId;

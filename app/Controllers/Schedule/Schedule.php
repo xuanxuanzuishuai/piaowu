@@ -18,7 +18,6 @@ use App\Services\ClassroomService;
 use App\Services\CourseService;
 use App\Services\ScheduleService;
 use App\Services\ScheduleUserService;
-use App\Services\STClassService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;

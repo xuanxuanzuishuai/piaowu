@@ -14,6 +14,7 @@ use App\Libs\Valid;
 use App\Models\ClassTaskModel;
 use App\Models\ClassTaskPriceModel;
 use App\Models\ClassUserModel;
+use App\Models\STClassModel;
 
 class ClassUserService
 {
@@ -124,9 +125,10 @@ class ClassUserService
      * @param $students
      * @param $cts
      * @param $maxNum
+     * @param null $classStatus
      * @return array|bool
      */
-    public static function checkStudent($students, $cts, $maxNum)
+    public static function checkStudent($students, $cts, $maxNum, $classStatus = null)
     {
         $studentIds = array_keys($students);
         $result = true;
@@ -138,11 +140,14 @@ class ClassUserService
             $result = Valid::addErrors([], 'class_student', 'class_student_is_not_match');
         }
 
+        if (empty($classStatus)) {
+            $classStatus = [STClassModel::STATUS_NORMAL, STClassModel::STATUS_BEGIN, STClassModel::STATUS_CHANGE];
+        }
         foreach ($cts as $ct) {
             $orgClassId = empty($ct['class_id']) ? null : $ct['class_id'];
-            $sts = ClassTaskModel::checkUserTime($studentIds, ClassUserModel::USER_ROLE_S, $ct['start_time'], $ct['end_time'], $ct['weekday'], $ct['expire_start_date'], $ct['expire_end_date'], $orgClassId);
+            $sts = ClassTaskModel::checkUserTime($studentIds, ClassUserModel::USER_ROLE_S, $ct['start_time'], $ct['end_time'], $ct['weekday'], $ct['expire_start_date'], $ct['expire_end_date'], $classStatus, $orgClassId);
             if (!empty($sts)) {
-                $result = Valid::addErrors(['data' => ['result' => $sts]], 'class_student', 'class_student_time_error');
+                $result = Valid::addErrors([], 'class_student', 'class_student_time_error');
             }
             return $result;
         }
@@ -153,9 +158,10 @@ class ClassUserService
      * @param $teachers
      * @param $cts
      * @param $classTeachers array
+     * @param $classStatus
      * @return array|bool
      */
-    public static function checkTeacher($teachers, $cts, $classTeachers = [])
+    public static function checkTeacher($teachers, $cts, $classTeachers = [], $classStatus = null)
     {
         $result = true;
         $teacherIds = array_keys($teachers);
@@ -175,9 +181,12 @@ class ClassUserService
             $result = Valid::addErrors([], 'class_teacher', 'class_teacher_role_not_allow');
         }
 
+        if (empty($classStatus)) {
+            $classStatus = [STClassModel::STATUS_NORMAL, STClassModel::STATUS_BEGIN, STClassModel::STATUS_CHANGE];
+        }
         foreach ($cts as $ct) {
             $orgClassId = empty($ct['class_id']) ? null : $ct['class_id'];
-            $sts = ClassTaskModel::checkUserTime($teacherIds, array(ClassUserModel::USER_ROLE_T,ClassUserModel::USER_ROLE_HT), $ct['start_time'], $ct['end_time'], $ct['weekday'], $ct['expire_start_date'], $ct['expire_end_date'], $orgClassId);
+            $sts = ClassTaskModel::checkUserTime($teacherIds, array(ClassUserModel::USER_ROLE_T, ClassUserModel::USER_ROLE_HT), $ct['start_time'], $ct['end_time'], $ct['weekday'], $ct['expire_start_date'], $ct['expire_end_date'], $classStatus, $orgClassId);
             if (!empty($sts)) {
                 $result = Valid::addErrors(['data' => ['result' => $sts]], 'class_teacher', 'class_teacher_time_error');
             }

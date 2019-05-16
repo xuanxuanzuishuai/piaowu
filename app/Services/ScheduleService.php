@@ -421,17 +421,18 @@ class ScheduleService
             'period' => 1,
         ];
 
-        $checkRes = ClassTaskService::checkCT($classTask, STClassModel::STATUS_NORMAL);
+        $classStatus = STClassModel::STATUS_NORMAL;
+        $checkRes = ClassTaskService::checkCT($classTask, $classStatus);
         if ($checkRes !== true) {
             return Valid::addErrors([], 'class_task_classroom', 'class_task_classroom_error');
         }
 
         $classTasks[] = $classTask;
-        $checkStudent = ClassUserService::checkStudent($params['students'], $classTasks, $params['class_highest']);
+        $checkStudent = ClassUserService::checkStudent($params['students'], $classTasks, $params['class_highest'], $classStatus);
         if ($checkStudent !== true) {
             return $checkStudent;
         }
-        $checkTeacher = ClassUserService::checkTeacher($params['teachers'], $classTasks);
+        $checkTeacher = ClassUserService::checkTeacher($params['teachers'], $classTasks, [], $classStatus);
         if ($checkTeacher !== true) {
             return $checkTeacher;
         }
