@@ -1,7 +1,7 @@
 /vendor/
 /logs/*
 /.idea/*
-.env
+.env*
 composer.lock
 .local
 www/act/.DS_Store

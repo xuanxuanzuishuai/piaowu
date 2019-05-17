@@ -201,15 +201,10 @@ class TeacherAppRouter extends RouterBase
             'middles' => [OrgTeacherAuthMiddleWareForApp::class,
                 OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
         ],
-        '/teacher_app/note/lesson_note' => [
-            'method' => ['post'],
-            'call' => Note::class . ':note',
-            'middles' => [OrgTeacherAuthMiddleWareForApp::class,
-                OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
-        ],
+
         '/teacher_app/note/list' => [
             'method' => ['post'],
-            'call' => Note::class . 'listNote',
+            'call' => Note::class . ':listNote',
             'middles' => [OrgTeacherAuthMiddleWareForApp::class,
                 OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
         ],
