@@ -37,6 +37,7 @@ use App\Controllers\Org\OrgAccount as OrgAccount;
 use App\Controllers\Student\PlayRecord as BackendPlayRecord;
 use App\Controllers\Bill\Bill;
 use App\Middleware\StudentResPrivilegeCheckMiddleWareForApp;
+use App\Middleware\TeacherCheckMiddleWareForApp;
 use Slim\App;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -220,6 +221,11 @@ $arr = array(
         'call' => TeacherAppAuth::class . ':validateCode',
         'middles' => [AppApiForTeacher::class]
     ],
+    '/teacher_app/org/teacher_list' => [
+        'method' => ['get'],
+        'call' => TeacherAppOrg::class . ':teacherList',
+        'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
+    ],
     '/teacher_app/org/get_students' => [
         'method' => ['get'],
         'call' => TeacherAppOrg::class . ':getStudents',
@@ -233,46 +239,57 @@ $arr = array(
     '/teacher_app/org/teacher_logout' => [
         'method' => ['post'],
         'call' => TeacherAppOrg::class . ':teacherLogout',
-        'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
-    ],
-    '/teacher_app/org/teacher_list' => [
-        'method' => ['get'],
-        'call' => TeacherAppOrg::class . ':teacherList',
-        'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
+        'middles' => [TeacherCheckMiddleWareForApp::class,
+            OrgTeacherAuthMiddleWareForApp::class,
+            OrgAuthCheckMiddleWareForApp::class,
+            AppApiForTeacher::class]
     ],
 
     // 爱学琴老师端
     '/teacher_app/opn/categories' => [
         'method' => ['get'],
         'call' => TeacherAppOpn::class . ':categories',
-        'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
+        'middles' => [OrgTeacherAuthMiddleWareForApp::class,
+            OrgAuthCheckMiddleWareForApp::class,
+            AppApiForTeacher::class]
     ],
     '/teacher_app/opn/collections' => [
         'method' => ['get'],
         'call' => TeacherAppOpn::class . ':collections',
-        'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
+        'middles' => [OrgTeacherAuthMiddleWareForApp::class,
+            OrgAuthCheckMiddleWareForApp::class,
+            AppApiForTeacher::class]
     ],
     '/teacher_app/opn/lessons' => [
         'method' => ['get'],
         'call' => TeacherAppOpn::class . ':lessons',
-        'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
+        'middles' => [OrgTeacherAuthMiddleWareForApp::class,
+            OrgAuthCheckMiddleWareForApp::class,
+            AppApiForTeacher::class]
     ],
     '/teacher_app/opn/lesson' => [
         'method' => ['get'],
         'call' => TeacherAppOpn::class . ':lesson',
-        'middles' => [OrgResPrivilegeCheckMiddleWareForApp::class, OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
+        'middles' => [OrgResPrivilegeCheckMiddleWareForApp::class,
+            OrgTeacherAuthMiddleWareForApp::class,
+            OrgAuthCheckMiddleWareForApp::class,
+            AppApiForTeacher::class]
     ],
     '/teacher_app/opn/recent_collections' => [
         'method' => ['get'],
         'call' => TeacherAppOpn::class . ':recentCollections',
-        'middles' => [OrgTeacherAuthMiddleWareForApp::class,
-            OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
+        'middles' => [TeacherCheckMiddleWareForApp::class,
+            OrgTeacherAuthMiddleWareForApp::class,
+            OrgAuthCheckMiddleWareForApp::class,
+            AppApiForTeacher::class]
     ],
     '/teacher_app/opn/recent_lessons' => [
         'method' => ['get'],
         'call' => TeacherAppOpn::class . ':recentLessons',
-        'middles' => [OrgTeacherAuthMiddleWareForApp::class,
-            OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
+        'middles' => [TeacherCheckMiddleWareForApp::class,
+            OrgTeacherAuthMiddleWareForApp::class,
+            OrgAuthCheckMiddleWareForApp::class,
+            AppApiForTeacher::class]
     ],
     '/teacher_app/opn/lesson_resource' => [
         'method' => ['get'],
@@ -287,14 +304,18 @@ $arr = array(
     '/teacher_app/schedule/end' => [
         'method' => ['post'],
         'call' => TeacherAppSchedule::class . ':end',
-        'middles' => [OrgTeacherAuthMiddleWareForApp::class,
-            OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
+        'middles' => [TeacherCheckMiddleWareForApp::class,
+            OrgTeacherAuthMiddleWareForApp::class,
+            OrgAuthCheckMiddleWareForApp::class,
+            AppApiForTeacher::class]
     ],
     '/teacher_app/play/end' => [
         'method' => ['post'],
         'call' => TeacherAppPlay::class . ':end',
-        'middles' => [OrgTeacherAuthMiddleWareForApp::class,
-            OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
+        'middles' => [TeacherCheckMiddleWareForApp::class,
+            OrgTeacherAuthMiddleWareForApp::class,
+            OrgAuthCheckMiddleWareForApp::class,
+            AppApiForTeacher::class]
     ],
     '/teacher_app/play/ai_end' => [
         'method' => ['post'],
@@ -317,15 +338,19 @@ $arr = array(
     '/teacher_app/app/feedback' => [
         'method' => ['get'],
         'call' => TeacherAppApp::class . ':feedback',
-        'middles' => [OrgTeacherAuthMiddleWareForApp::class,
-            OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
+        'middles' => [TeacherCheckMiddleWareForApp::class,
+            OrgTeacherAuthMiddleWareForApp::class,
+            OrgAuthCheckMiddleWareForApp::class,
+            AppApiForTeacher::class]
     ],
 
     '/teacher_app/app/heart_beat' => [
         'method' => ['get'],
         'call' => TeacherAppApp::class . ':heartBeat',
-        'middles' => [OrgTeacherAuthMiddleWareForApp::class,
-            OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
+        'middles' => [TeacherCheckMiddleWareForApp::class,
+            OrgTeacherAuthMiddleWareForApp::class,
+            OrgAuthCheckMiddleWareForApp::class,
+            AppApiForTeacher::class]
     ],
 
     '/teacher_app/app/get_signature' => [
