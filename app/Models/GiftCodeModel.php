@@ -129,7 +129,7 @@ class GiftCodeModel extends Model
             $where .= " and {$gift_code}.generate_way = " . $params['generate_way'];
         }
 
-        if (in_array($params['code_status'], [
+        if (isset($params['code_status']) && in_array($params['code_status'], [
             self::CODE_STATUS_NOT_REDEEMED,
             self::CODE_STATUS_HAS_REDEEMED,
             self::CODE_STATUS_INVALID])) {
@@ -148,6 +148,7 @@ LEFT JOIN {$organization} ON {$gift_code}.buyer = {$organization}.id AND {$gift_
 LEFT JOIN {$student} ON {$gift_code}.buyer = {$student}.id AND {$gift_code}.generate_channel = '2'
 LEFT JOIN {$student} apply_user ON {$gift_code}.apply_user = apply_user.id ";
         $totalCount = self::getCodeCount($join, $where);
+
         //格式化分页参数
         list($page, $count) = Util::formatPageCount($params);
         $offset = ($page - 1) * $count;
