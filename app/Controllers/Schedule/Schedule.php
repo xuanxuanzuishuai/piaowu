@@ -14,10 +14,13 @@ use App\Libs\MysqlDB;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\ScheduleModel;
+use App\Models\ScheduleUserModel;
 use App\Services\ClassroomService;
 use App\Services\CourseService;
 use App\Services\ScheduleService;
 use App\Services\ScheduleUserService;
+use App\Services\STClassService;
+use App\Services\StudentAccountService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -140,6 +143,10 @@ class Schedule extends ControllerBase
         $newSchedule['org_id'] = $classroom['org_id'];
         $newSchedule['class_id'] = $schedule['class_id'];
 
+        // 调课之后的class_id
+        $classIds = STClassService::getClassByScheduleId($schedule['id']);
+        $classIds[] = $schedule['class_id'];
+
         $classTasks = ScheduleService::checkScheduleAndClassTask($params, $newSchedule, $now);
         if (!empty($classTasks) && $classTasks['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($classTasks, StatusCode::HTTP_OK);
@@ -187,12 +194,13 @@ class Schedule extends ControllerBase
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
+        if (!is_array($params['su_ids'])) {
+            return $response->withJson(Valid::addErrors([], 'su_ids', 'su_id_is_required'), StatusCode::HTTP_OK);
+        }
+
         $schedule = ScheduleService::getDetail($params['schedule_id']);
         if (empty($schedule) || $schedule['status'] != ScheduleModel::STATUS_BOOK) {
             return $response->withJson(Valid::addErrors([], 'schedule', 'schedule_not_exist'), StatusCode::HTTP_OK);
-        }
-        if (!is_array($params['su_ids'])) {
-            return $response->withJson(Valid::addErrors([], 'su_ids', 'su_id_is_required'), StatusCode::HTTP_OK);
         }
 
         ScheduleUserService::takeOff($params['schedule_id'], $params['su_ids']);
@@ -230,18 +238,18 @@ class Schedule extends ControllerBase
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        $schedule = ScheduleService::getDetail($params['schedule_id']);
-        if (empty($schedule) || $schedule['status'] != ScheduleModel::STATUS_BOOK) {
-            return $response->withJson(Valid::addErrors([], 'schedule', 'schedule_not_exist'), StatusCode::HTTP_OK);
-        }
         if (!is_array($params['su_ids'])) {
             return $response->withJson(Valid::addErrors([], 'su_ids', 'su_id_is_required'), StatusCode::HTTP_OK);
         }
 
-        $employeeId = $this->getEmployeeId();
+        $schedule = ScheduleService::getDetail($params['schedule_id']);
+        if (empty($schedule) || $schedule['status'] != ScheduleModel::STATUS_BOOK) {
+            return $response->withJson(Valid::addErrors([], 'schedule', 'schedule_not_exist'), StatusCode::HTTP_OK);
+        }
+
         $db = MysqlDB::getDB();
         $db->beginTransaction();
-        $res = ScheduleUserService::signIn($params['schedule_id'], $params['su_ids'], $schedule['students'], $employeeId);
+        $res = ScheduleUserService::signIn($params['schedule_id'], $params['su_ids']);
         if ($res !== true) {
             $db->rollBack();
             return $response->withJson($res, StatusCode::HTTP_OK);
@@ -249,7 +257,7 @@ class Schedule extends ControllerBase
         $db->commit();
         $schedule = ScheduleService::getDetail($params['schedule_id']);
         return $response->withJson([
-            'code' => 0,
+            'code' => Valid::CODE_SUCCESS,
             'data' => ['schedule' => $schedule]
         ], StatusCode::HTTP_OK);
     }
@@ -399,12 +407,131 @@ class Schedule extends ControllerBase
             return $response->withJson(Valid::addErrors([], 'schedule', 'schedule_not_exist'), StatusCode::HTTP_OK);
         }
 
+        foreach ($schedule['students'] as $student) {
+            if ($student['user_role'] == ScheduleUserModel::USER_ROLE_STUDENT && $student['is_deduct'] == ScheduleUserModel::DEDUCT_STATUS) {
+                // 学员已扣费，不能取消课次
+                return $response->withJson(Valid::addErrors([], 'schedule', 'already_deduct_account_can_not_operate'));
+            }
+        }
+
         ScheduleService::cancelSchedule($schedule);
         $schedule = ScheduleService::getDetail($params['schedule_id']);
+
         return $response->withJson([
             'code' => 0,
             'data' => ['schedule' => $schedule]
         ], StatusCode::HTTP_OK);
     }
 
+    /**
+     * 学生扣费确认框
+     * @param Request $request
+     * @param Response $response
+     * @param $args
+     * @return Response
+     */
+    public function deduct(Request $request, Response $response, $args)
+    {
+        $rules = [
+            [
+                'key' => 'schedule_id',
+                'type' => 'required',
+                'error_code' => 'schedule_id_is_required',
+            ],
+            [
+                'key' => 'su_ids',
+                'type' => 'required',
+                'error_code' => 'su_id_is_required',
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        if (!is_array($params['su_ids'])) {
+            return $response->withJson(Valid::addErrors([], 'su_ids', 'su_id_is_required'), StatusCode::HTTP_OK);
+        }
+
+        $schedule = ScheduleService::getDetail($params['schedule_id']);
+        if (empty($schedule) || $schedule['status'] != ScheduleModel::STATUS_BOOK) {
+            return $response->withJson(Valid::addErrors([], 'schedule', 'schedule_not_exist'), StatusCode::HTTP_OK);
+        }
+
+        $students = [];
+        foreach ($schedule['students'] as $student) {
+            if (in_array($student['id'], $params['su_ids'])) {
+                if ($student['is_deduct'] == ScheduleUserModel::DEDUCT_STATUS) {
+                    $students['已扣费'][] = $student['student_name'];
+                } else {
+                    $students[$student['student_status']][] = $student['student_name'];
+                }
+            }
+        }
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => ['students' => $students]
+        ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * 学生扣费
+     * @param Request $request
+     * @param Response $response
+     * @param $args
+     * @return Response
+     */
+    public function deductAmount(Request $request, Response $response, $args)
+    {
+        $rules = [
+            [
+                'key' => 'schedule_id',
+                'type' => 'required',
+                'error_code' => 'schedule_id_is_required',
+            ],
+            [
+                'key' => 'su_ids',
+                'type' => 'required',
+                'error_code' => 'su_id_is_required',
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        if (!is_array($params['su_ids'])) {
+            return $response->withJson(Valid::addErrors([], 'su_ids', 'su_id_is_required'), StatusCode::HTTP_OK);
+        }
+
+        $schedule = ScheduleService::getDetail($params['schedule_id']);
+        if (empty($schedule) || $schedule['status'] != ScheduleModel::STATUS_BOOK) {
+            return $response->withJson(Valid::addErrors([], 'schedule', 'schedule_not_exist'), StatusCode::HTTP_OK);
+        }
+
+        $employeeId = $this->getEmployeeId();
+        $db = MysqlDB::getDB();
+        $db->beginTransaction();
+
+        foreach ($schedule['students'] as $student) {
+            if (in_array($student['id'], $params['su_ids']) && $student['is_deduct'] != ScheduleUserModel::DEDUCT_STATUS) {
+                // student account
+                $result = StudentAccountService::reduceSA($student['user_id'], $student['price'] * 100, $employeeId, $params['schedule_id']);
+                if ($result !== true) {
+                    $db->rollBack();
+                    return $response->withJson($result, StatusCode::HTTP_OK);
+                }
+                // update student status paid
+                ScheduleUserService::deduct($student['id']);
+            }
+        }
+
+        $db->commit();
+        $schedule = ScheduleService::getDetail($params['schedule_id']);
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => ['schedule' => $schedule]
+        ], StatusCode::HTTP_OK);
+    }
 }

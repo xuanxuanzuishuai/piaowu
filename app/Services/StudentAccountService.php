@@ -72,10 +72,10 @@ class StudentAccountService
      * @param $studentId
      * @param $amount
      * @param $operatorId
-     * @param $remark
+     * @param $scheduleId
      * @return array|bool
      */
-    public static function reduceSA($studentId, $amount, $operatorId, $remark)
+    public static function reduceSA($studentId, $amount, $operatorId, $scheduleId = 0)
     {
         $log = [];
         $cash = null;
@@ -93,29 +93,33 @@ class StudentAccountService
                 $vcash = $sa;
             }
         }
+
+        $remark = '课次结束，扣费';
+        $type = StudentAccountLogModel::TYPE_REDUCE;
+        $deductError = Valid::addErrors([], 'student', 'update_student_account_error');
         if ($cash['balance'] >= $amount) {
             $res = StudentAccountModel::updateSA(['update_time' => $now, 'balance[-]' => $amount, 'ver[+]' => 1], ['id' => $cash['id'], 'ver' => $cash['ver']]);
             if ($res > 0) {
-                $log[] = ['operator_id' => $operatorId, 'remark' => $remark, 'create_time' => $now, 's_a_id' => $cash['id'], 'balance' => $amount, 'old_balance' => $cash['balance'], 'new_balance' => $cash['balance'] - $amount, 'type' => StudentAccountLogModel::TYPE_REDUCE];
+                $log[] = ['operator_id' => $operatorId, 'remark' => $remark, 'create_time' => $now, 's_a_id' => $cash['id'], 'balance' => $amount, 'old_balance' => $cash['balance'], 'new_balance' => $cash['balance'] - $amount, 'type' => $type, 'schedule_id' => $scheduleId];
             } else {
-                return Valid::addErrors([], 'student', 'update_student_account_error');
+                return $deductError;
             }
         } else if ($cash['balance'] + $vcash['balance'] >= $amount) {
-            $cashAmount = 0;
             if ($cash['balance'] > 0) {
-                $cashAmount = $amount - $cash['balance'];
                 $res = StudentAccountModel::updateSA(['update_time' => $now, 'balance' => 0, 'ver[+]' => 1], ['id' => $cash['id'], 'ver' => $cash['ver']]);
                 if ($res > 0) {
-                    $log[] = ['operator_id' => $operatorId, 'remark' => $remark, 'create_time' => $now, 's_a_id' => $cash['id'], 'balance' => $cashAmount, 'old_balance' => $cash['balance'], 'new_balance' => 0, 'type' => StudentAccountLogModel::TYPE_REDUCE];
+                    $log[] = ['operator_id' => $operatorId, 'remark' => $remark, 'create_time' => $now, 's_a_id' => $cash['id'], 'balance' => $cash['balance'], 'old_balance' => $cash['balance'], 'new_balance' => 0, 'type' => $type, 'schedule_id' => $scheduleId];
                 } else {
-                    return Valid::addErrors([], 'student', 'update_student_account_error');
+                    return $deductError;
                 }
             }
-            $res = StudentAccountModel::updateSA(['update_time' => $now, 'balance[-]' => $amount - $cashAmount, 'ver[+]' => 1], ['id' => $vcash['id'], 'ver' => $vcash['ver']]);
+
+            $vCashAmount = $amount - $cash['balance'];
+            $res = StudentAccountModel::updateSA(['update_time' => $now, 'balance[-]' => $vCashAmount, 'ver[+]' => 1], ['id' => $vcash['id'], 'ver' => $vcash['ver']]);
             if ($res > 0) {
-                $log[] = ['operator_id' => $operatorId, 'remark' => $remark, 'create_time' => $now, 's_a_id' => $vcash['id'], 'balance' => $amount - $cashAmount, 'old_balance' => $vcash['balance'], 'new_balance' => $vcash['balance'] - ($amount - $cashAmount), 'type' => StudentAccountLogModel::TYPE_REDUCE];
+                $log[] = ['operator_id' => $operatorId, 'remark' => $remark, 'create_time' => $now, 's_a_id' => $vcash['id'], 'balance' => $vCashAmount, 'old_balance' => $vcash['balance'], 'new_balance' => $vcash['balance'] - $vCashAmount, 'type' => $type, 'schedule_id' => $scheduleId];
             } else {
-                return Valid::addErrors([], 'student', 'update_student_account_error');
+                return $deductError;
             }
 
         } else {
@@ -137,7 +141,7 @@ class StudentAccountService
      * @param bool $force
      * @return bool|array
      */
-    public static function abolishSA($studentId, $amount, $vamount,$operatorId, $remark,$force = true) {
+    public static function abolishSA($studentId, $amount, $vamount, $operatorId, $remark, $force = true) {
 
         $now = time();
         $sas = StudentAccountModel::getSADetailBySId($studentId);
@@ -154,7 +158,8 @@ class StudentAccountService
                 $vcash = $sa;
             }
         }
-        if($amount > 0 ) {
+
+        if ($amount > 0) {
             if (empty($cash) || ($force == false && $cash['balance'] < $amount)) {
                 return Valid::addErrors([], 'student_account', 'student_account_cash_is_not_enough');
             }
@@ -223,5 +228,34 @@ class StudentAccountService
             $account['account_type'] = DictService::getKeyValue(Constants::DICT_TYPE_STUDENT_ACCOUNT_OPERATE_TYPE, $account['type']);
         }
         return [$logs, $totalCount];
+    }
+
+    /**
+     * 检查账户余额是否充足
+     * @param $students
+     * @return array|bool
+     */
+    public static function checkBalance($students)
+    {
+        $studentIds = array_keys($students);
+        $accounts = StudentAccountModel::getSADetailBySId($studentIds);
+        $balances = [];
+        foreach ($accounts as $account) {
+            $balances[$account['student_id']] += $account['balance'];
+        }
+
+        $prices = [];
+        $studentPrices = ClassTaskService::getStudentNotFinishAccount($studentIds);
+        foreach ($studentPrices as $studentPrice) {
+            $prices[$studentPrice['user_id']] += $studentPrice['price'];
+        }
+
+        foreach ($students as $key => $price) {
+            $price = array_sum($price);
+            if ($balances[$key] - $prices[$key] < $price) {
+                return Valid::addErrors([], 'students', 'student_account_is_not_enough');
+            }
+        }
+        return true;
     }
 }

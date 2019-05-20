@@ -125,4 +125,18 @@ class STClassService
     {
         return STClassModel::getById($classId);
     }
+
+    /**
+    * 获取调课之后的classId
+    * @param $scheduleId
+    * @return mixed
+    */
+    public static function getClassByScheduleId($scheduleId)
+    {
+        $classIds =  STClassModel::getRecords(['real_schedule_id' => $scheduleId, 'status' => STClassModel::STATUS_CHANGE], 'id');
+        if (empty($classIds)) {
+            return [];
+        }
+        return $classIds;
+    }
 }

@@ -17,7 +17,6 @@ class ScheduleModel extends Model
     public static $table = "schedule";
     /** 课程状态 */
     const STATUS_BOOK = 1;            //预约成功
-    const STATUS_IN_CLASS = 2;        //上课中
     const STATUS_FINISH = -1;         //下课
     const STATUS_CANCEL = -2;         //课程取消
 
@@ -150,7 +149,7 @@ class ScheduleModel extends Model
         $db = MysqlDB::getDB();
         $where = [
             's.classroom_id' => $schedule['classroom_id'],
-            's.status' => array(self::STATUS_BOOK, self::STATUS_IN_CLASS),
+            's.status' => self::STATUS_BOOK,
             's.start_time[<]' => $schedule['end_time'],
             's.end_time[>]' => $schedule['start_time'],
             's.org_id' => $schedule['org_id'],

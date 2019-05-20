@@ -133,7 +133,7 @@ class ClassUserService
         $studentIds = array_keys($students);
         $result = true;
         if (count($students) > $maxNum) {
-            $result = Valid::addErrors([], 'class_student', 'class_student_num_more_than_max');
+            $result = Valid::addErrors([], 'class_student', 'class_students_is_more_than_max');
         }
         $eStudents = StudentService::getStudentByIds($studentIds);
         if (count($students) != count($eStudents)) {
@@ -188,7 +188,7 @@ class ClassUserService
             $orgClassId = empty($ct['class_id']) ? null : $ct['class_id'];
             $sts = ClassTaskModel::checkUserTime($teacherIds, array(ClassUserModel::USER_ROLE_T, ClassUserModel::USER_ROLE_HT), $ct['start_time'], $ct['end_time'], $ct['weekday'], $ct['expire_start_date'], $ct['expire_end_date'], $classStatus, $orgClassId);
             if (!empty($sts)) {
-                $result = Valid::addErrors(['data' => ['result' => $sts]], 'class_teacher', 'class_teacher_time_error');
+                $result = Valid::addErrors([], 'class_teacher', 'class_teacher_time_error');
             }
             return $result;
         }
@@ -200,7 +200,8 @@ class ClassUserService
      * @param $status
      * @return int|null
      */
-    public static function updateCUStatus($where,$status){
+    public static function updateCUStatus($where,$status)
+    {
         return ClassUserModel::updateCUStatus($where,$status);
     }
 }

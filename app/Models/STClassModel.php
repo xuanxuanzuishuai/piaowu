@@ -120,5 +120,4 @@ class STClassModel extends Model
         ], ['stc.id' => $id]);
 
     }
-
 }

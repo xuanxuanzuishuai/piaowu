@@ -20,6 +20,7 @@ use App\Services\ClassTaskService;
 use App\Services\ClassUserService;
 use App\Services\ScheduleService;
 use App\Services\STClassService;
+use App\Services\StudentAccountService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -77,6 +78,10 @@ class STClass extends ControllerBase
             $result = ClassUserService::checkStudent($params['students'], $cts, $params['class_highest']);
             if ($result !== true) {
                 return $response->withJson($result, StatusCode::HTTP_OK);
+            }
+            $balances = StudentAccountService::checkBalance($params['students']);
+            if ($balances != true) {
+                return $response->withJson($balances, StatusCode::HTTP_OK);
             }
         }
         if (!empty($params['teachers'])) {
@@ -183,22 +188,23 @@ class STClass extends ControllerBase
                 $studentIds[] = $student['user_id'];
                 $ssuIds[] = $student['id'];
             }
-        }
-        if (!empty($params['students'])) {
             $result = ClassUserService::checkStudent($params['students'], $cts, $params['class_highest']);
             if ($result !== true) {
                 return $response->withJson($result, StatusCode::HTTP_OK);
             }
+            $balances = StudentAccountService::checkBalance($params['students']);
+            if ($balances != true) {
+                return $response->withJson($balances, StatusCode::HTTP_OK);
+            }
         }
         $newStc['student_num'] = count($params['students']);
+
         $teacherIds = [];
         if (!empty($class['teachers'])) {
             foreach ($class['teachers'] as $teacher) {
                 $teacherIds[] = $teacher['user_id'];
                 $stuIds[] = $teacher['id'];
             }
-        }
-        if (!empty($params['teachers'])) {
             $result = ClassUserService::checkTeacher($params['teachers'], $cts);
             if ($result !== true) {
                 return $response->withJson($result, StatusCode::HTTP_OK);
@@ -423,6 +429,7 @@ class STClass extends ControllerBase
     }
 
     /**
+     * 复制学员课程
      * @param Request $request
      * @param Response $response
      * @param $args
@@ -452,9 +459,13 @@ class STClass extends ControllerBase
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
+        $classIds = $params['class_ids'];
+        if (!is_array($classIds)) {
+            return $response->withJson(Valid::addErrors([], 'class', 'class_ids_is_array'), StatusCode::HTTP_OK);
+        }
 
         $classes = [];
-        foreach ($params['class_ids'] as $classId) {
+        foreach ($classIds as $classId) {
             $class = STClassService::getSTClassDetail($classId);
             if (empty($class)) {
                 return $response->withJson(Valid::addErrors([], 'class', 'class_is_not_exist'), StatusCode::HTTP_OK);

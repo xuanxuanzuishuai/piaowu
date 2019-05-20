@@ -308,4 +308,41 @@ class ClassTaskModel extends Model
 
         return MysqlDB::getDB()->select(self::$table . ' (ct)', $join, $columns, $where);
     }
+
+
+    /**
+     * 获取学生未结束班课金额
+     * @param $studentIds
+     * @return array
+     */
+    public static function getStudentNotFinishAccount($studentIds)
+    {
+        $where = [
+            'cu.user_id' => $studentIds,
+            'cu.user_role' => ClassUserModel::USER_ROLE_S,
+            'cu.status' => array(ClassUserModel::STATUS_NORMAL, ClassUserModel::STATUS_BACKUP),
+            'ct.status' => ClassTaskModel::STATUS_NORMAL,
+            'stc.status' => [STClassModel::STATUS_NORMAL, STClassModel::STATUS_BEGIN, STClassModel::STATUS_END],
+            'ctp.status' => ClassUserModel::STATUS_NORMAL
+        ];
+        if (!empty($orgClassId)) {
+            $where['stc.id[!]'] = $orgClassId;
+        }
+
+        global $orgId;
+        if ($orgId > 0)
+            $where['ct.org_id'] = $orgId;
+
+        $columns = [
+            'cu.user_id',
+            'ctp.price',
+        ];
+        $join = [
+            '[><]' . STClassModel::$table . ' (stc)' => ['ct.class_id' => 'id'],
+            '[><]' . ClassUserModel::$table . ' (cu)' => ['stc.id' => 'class_id'],
+            '[><]' . ClassTaskPriceModel::$table . ' (ctp)' => ['ct.id' => 'c_t_id', 'cu.user_id' => 'student_id']
+        ];
+
+        return MysqlDB::getDB()->select(self::$table . ' (ct)', $join, $columns, $where);
+    }
 }

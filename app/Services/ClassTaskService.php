@@ -167,4 +167,14 @@ class ClassTaskService
     {
         return ClassTaskModel::getRecords(['class_id' => $classId, 'status' => ClassTaskModel::STATUS_NORMAL], 'id');
     }
+
+    /**
+     * 获取学生未完结班课的金额
+     * @param $studentIds
+     * @return array
+     */
+    public static function getStudentNotFinishAccount($studentIds)
+    {
+        return ClassTaskModel::getStudentNotFinishAccount($studentIds);
+    }
 }

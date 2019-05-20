@@ -57,23 +57,11 @@ class ScheduleUserService
      * 学生、老师签到
      * @param $scheduleId
      * @param $suIds
-     * @param $students
-     * @param $operatorId
      * @return array|bool
      */
-    public static function signIn($scheduleId, $suIds, $students, $operatorId)
+    public static function signIn($scheduleId, $suIds)
     {
         SimpleLogger::info('student and teacher sign in ', $suIds);
-
-        foreach ($students as $student) {
-            if (in_array($student['id'], $suIds) && $student['user_status'] == ScheduleUserModel::STUDENT_STATUS_BOOK) {
-                // student account
-                $result = StudentAccountService::reduceSA($student['user_id'], $student['price'] * 100, $operatorId, '下课');
-                if ($result !== true) {
-                    return $result;
-                }
-            }
-        }
 
         $now = time();
         // student sign
@@ -98,6 +86,15 @@ class ScheduleUserService
 
         // teacher takeoff
         ScheduleUserModel::updateTeacherStatus($scheduleId, $suIds, ScheduleUserModel::TEACHER_STATUS_LEAVE, $now);
+    }
+
+    /**
+     * 更新学生状态已付费
+     * @param $id
+     */
+    public static function deduct($id)
+    {
+        ScheduleUserModel::updateRecord($id, ['is_deduct' => ScheduleUserModel::DEDUCT_STATUS, 'update_time' => time()], false);
     }
 
     /**

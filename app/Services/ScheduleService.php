@@ -203,6 +203,7 @@ class ScheduleService
         $studentIds = ScheduleUserModel::getUserIds($newSchedule['id'], $studentRole);
         $teacherIds = ScheduleUserModel::getUserIds($newSchedule['id'], $teacherRole);
 
+        // 学员已付费，不能解绑
         // unbind schedule_user
         ScheduleUserService::unBindUser($newSchedule['id'], array_diff($studentIds, array_keys($params['students'])), $studentRole, $time);
         ScheduleUserService::unBindUser($newSchedule['id'], array_diff($teacherIds, array_keys($params['teachers'])), $teacherRole, $time);
@@ -397,6 +398,10 @@ class ScheduleService
             $schedule['end_time'], $originScheduleId);
         if ($checkStudent !== true) {
             return Valid::addErrors([], 'class_task_classroom', 'class_student_time_error');
+        }
+        $balances = StudentAccountService::checkBalance($params['students']);
+        if ($balances != true) {
+            return $balances;
         }
 
         $checkTeacher = ScheduleUserService::checkScheduleUser(array_keys($params['teachers']),

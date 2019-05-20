@@ -23,15 +23,14 @@ class ScheduleUserModel extends Model
 
     // 学生子状态
     const STUDENT_STATUS_BOOK = 1;         // 已预约
-    const STUDENT_STATUS_CANCEL = 2;       // 已取消
     const STUDENT_STATUS_LEAVE = 3;        // 已请假
     const STUDENT_STATUS_ATTEND = 4;       // 已出席
-    const STUDENT_STATUS_NOT_ATTEND = 5;   // 未出席
     // 老师子状态
     const TEACHER_STATUS_SET = 1;          // 已分配
     const TEACHER_STATUS_LEAVE = 2;        // 已请假
     const TEACHER_STATUS_ATTEND = 3;       // 已出席
-    const TEACHER_STATUS_NOT_ATTEND = 4;   // 未出席
+
+    const DEDUCT_STATUS = 1; // 已扣费
 
     /**
      * @param $inserts
@@ -46,11 +45,12 @@ class ScheduleUserModel extends Model
      * @param array $status
      * @return array|null
      */
-    public static function getSUBySIds($sIds,$status = array(self::STATUS_NORMAL)) {
+    public static function getSUBySIds($sIds, $status = array(self::STATUS_NORMAL))
+    {
         $sql = "select su.user_id, su.user_role, su.id, su.schedule_id, su.create_time, su.status, t.name as teacher_name, 
                 case when su.user_role=" . ClassUserModel::USER_ROLE_S . " then (select sum(balance) from " . StudentAccountModel::$table .
                 " where student_id=su.user_id) else null end as balance,
-                s.name as student_name, su.user_status, su.price from "
+                s.name as student_name, su.user_status, su.price, su.is_deduct from "
             . self::$table . " as su "
             . " left join " . StudentModel::$table." as s on su.user_id = s.id and su.user_role = " . ClassUserModel::USER_ROLE_S
             . " left join " . TeacherModel::$table." as t on su.user_id = t.id and su.user_role in( " . ClassUserModel::USER_ROLE_T."," .ClassUserModel::USER_ROLE_HT.")"
@@ -74,7 +74,7 @@ class ScheduleUserModel extends Model
         $where = [
             'su.user_id' => $userIds,
             'su.user_role' => $userRole,
-            's.status' => array(ScheduleModel::STATUS_BOOK,ScheduleModel::STATUS_IN_CLASS),
+            's.status' => ScheduleModel::STATUS_BOOK,
             's.start_time[<]' => $endTime,
             's.end_time[>]' => $startTime,
             'su.status' => array(self::STATUS_NORMAL),
@@ -171,7 +171,8 @@ class ScheduleUserModel extends Model
             'schedule_id' => $scheduleId,
             'user_role' => self::USER_ROLE_STUDENT,
             'user_status' => self::STUDENT_STATUS_BOOK,
-            'status' => self::STATUS_NORMAL
+            'status' => self::STATUS_NORMAL,
+            'is_deduct[!]' => self::DEDUCT_STATUS
         ], false);
     }
 
@@ -204,11 +205,15 @@ class ScheduleUserModel extends Model
      */
     public static function getUserIds($scheduleId, $role)
     {
-        return ScheduleUserModel::getRecords([
+        $where = [
             'schedule_id' =>  $scheduleId,
             'status' => self::STATUS_NORMAL,
             'user_role' => $role
-        ], 'user_id', false);
+        ];
+        if ($role == self::USER_ROLE_STUDENT) {
+            $where['is_deduct[!]'] = self::DEDUCT_STATUS;
+        }
+        return ScheduleUserModel::getRecords($where, 'user_id', false);
     }
 
     /**
