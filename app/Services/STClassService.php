@@ -139,4 +139,13 @@ class STClassService
         }
         return $classIds;
     }
+
+    /**
+     * @param $name
+     * @return array
+     */
+    public static function searchClassName($name)
+    {
+        return STClassModel::getClass($name);
+    }
 }

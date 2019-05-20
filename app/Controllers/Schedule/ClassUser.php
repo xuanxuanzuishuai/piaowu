@@ -64,8 +64,8 @@ class ClassUser extends ControllerBase
                 unset($params['students'][$student['user_id']]);
             }
         }
-        if (!empty($params['students'])) {
-            return $response->withJson(['code' => Valid::CODE_SUCCESS, 'data' => ['st' => $class],], StatusCode::HTTP_OK);
+        if (empty($params['students'])) {
+            return $response->withJson(['code' => Valid::CODE_SUCCESS, 'data' => ['st' => $class]], StatusCode::HTTP_OK);
         }
 
         $result = ClassUserService::checkStudent($params['students'], $class['class_tasks'], $class['class_highest'] - count($class['students']));

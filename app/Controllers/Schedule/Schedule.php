@@ -74,7 +74,6 @@ class Schedule extends ControllerBase
             'code' => 0,
             'data' => ['schedule' => $schedule]
         ], StatusCode::HTTP_OK);
-
     }
 
     /**

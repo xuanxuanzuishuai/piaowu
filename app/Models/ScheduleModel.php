@@ -66,7 +66,8 @@ class ScheduleModel extends Model
             'c.duration',
             'cr.name (classroom_name)',
             'cr.campus_id',
-            'class.class_highest'
+            'class.class_highest',
+            'class.name (class_name)'
         ], $where);
     }
 
@@ -113,12 +114,11 @@ class ScheduleModel extends Model
             $where['LIMIT'] = [($page - 1) * $count, $count];
         }
         // 排序设置
-        $where['ORDER'] = [
-            'start_time' => 'DESC'
-        ];
+        $where['ORDER'] = ['start_time' => 'DESC'];
         $join = [
             '[><]' . CourseModel::$table . " (c)" => ['s.course_id' => 'id'],
             '[><]' . ClassroomModel::$table . " (cr)" => ['s.classroom_id' => 'id'],
+            '[><]' . STClassModel::$table . " (cl)" => ['s.class_id' => 'id']
         ];
         $result = $db->select(self::$table . " (s)", $join, [
             's.id',
@@ -134,8 +134,8 @@ class ScheduleModel extends Model
             'c.name (course_name)',
             'cr.campus_id',
             'cr.name (classroom_name)',
-            's.c_t_id'
-
+            's.c_t_id',
+            'cl.name (class_name)'
         ], $where);
         return array($totalCount, $result);
     }

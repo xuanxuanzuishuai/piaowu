@@ -388,6 +388,7 @@ $arr = array(
     '/schedule/task/cancelST' => array('method'=>array('post'),'call'=>'\App\Controllers\Schedule\STClass:cancelST','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
     '/schedule/task/beginST' => array('method'=>array('post'),'call'=>'\App\Controllers\Schedule\STClass:beginST','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
     '/schedule/task/endST' => array('method'=>array('post'),'call'=>'\App\Controllers\Schedule\STClass:endST','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
+    '/schedule/task/searchName' => array('method'=>array('get'),'call'=>'\App\Controllers\Schedule\STClass:searchName','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
 
     '/schedule/schedule/list' => array('method'=>array('get'),'call'=>'\App\Controllers\Schedule\Schedule:list','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),
     '/schedule/schedule/detail' => array('method'=>array('get'),'call'=>'\App\Controllers\Schedule\Schedule:detail','middles' => array('\App\Middleware\EmployeePrivilegeMiddleWare', '\App\Middleware\EmployeeAuthCheckMiddleWare')),

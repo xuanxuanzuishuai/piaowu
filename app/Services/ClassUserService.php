@@ -176,7 +176,7 @@ class ClassUserService
 
         // 角色限制：1个老师，1个班主任
         $userRoles = !empty($classTeachers) ? array_column($classTeachers, 'user_role') : [];
-        $roles = array_values($teachers);
+        $roles = array_unique(array_values($teachers));
         if (count($roles) != count($teachers) || !empty(array_intersect($userRoles, $roles))) {
             $result = Valid::addErrors([], 'class_teacher', 'class_teacher_role_not_allow');
         }

@@ -342,9 +342,9 @@ class STClass extends ControllerBase
         $db = MysqlDB::getDB();
         $db->beginTransaction();
         $result = ScheduleService::beginSchedule($class);
-        if ($result === false) {
+        if ($result != true) {
             $db->rollBack();
-            return $response->withJson(Valid::addErrors([], 'class_schedule', 'class_create_schedule_failure'), StatusCode::HTTP_OK);
+            return $response->withJson($result, StatusCode::HTTP_OK);
         } else {
             STClassService::modifyClass(['id' => $class['id'], 'status' => STClassModel::STATUS_BEGIN, 'update_time' => time()]);
         }
@@ -409,13 +409,6 @@ class STClass extends ControllerBase
             $res = STCLassService::modifyClass(['id' => $class['id'], 'status' => STClassModel::STATUS_CANCEL, 'update_time' => time()]);
             if ($res == false) {
                 $db->rollBack();
-            }
-
-            if (!empty($class['teachers']) || !empty($class['students'])) {
-                $res = ClassUserService::updateCUStatus(['class_id' => $class['id']], ClassUserModel::STATUS_CANCEL);
-                if ($res == false) {
-                    $db->rollBack();
-                }
             }
             $db->commit();
         } else {
@@ -569,6 +562,37 @@ class STClass extends ControllerBase
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => []
+        ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @param $args
+     * @return Response
+     */
+    public function searchName(Request $request, Response $response, $args)
+    {
+        $rules = [
+            [
+                'key' => 'name',
+                'type' => 'required',
+                'error_code' => 'class_name_is_required'
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        if (strlen($params['name']) < 2) {
+            return $response->withJson(['code' => Valid::CODE_SUCCESS, 'data' => ['class' => []]], StatusCode::HTTP_OK);
+        }
+
+        $classes = STClassService::searchClassName($params['name']);
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => ['class' => $classes]
         ], StatusCode::HTTP_OK);
     }
 }

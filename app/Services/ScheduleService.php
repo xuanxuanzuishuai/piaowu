@@ -22,8 +22,9 @@ class ScheduleService
 {
 
     /**
+     * 班级开课
      * @param $class
-     * @return bool
+     * @return array|bool
      */
     public static function beginSchedule($class)
     {
@@ -36,6 +37,10 @@ class ScheduleService
             } else {
                 $beginTime = strtotime($beginDate . " " . $ct['start_time']) + 86400 * (7 - ($weekday - $ct['weekday']));
             }
+            if ($beginTime < $now) {
+                return Valid::addErrors([], 'start_time', 'schedule_start_time_is_error');
+            }
+
             for ($i = 0; $i < $ct['period']; $i ++) {
                 $schedule = [
                     'classroom_id' => $ct['classroom_id'],
@@ -67,7 +72,7 @@ class ScheduleService
                 }
                 $flag = ScheduleUserModel::insertSUs($users);
                 if ($flag == false)
-                    return false;
+                    return Valid::addErrors([], 'class_schedule', 'class_create_schedule_failure');
                 $beginTime += 7 * 86400;
             }
         }
@@ -82,7 +87,8 @@ class ScheduleService
      * @param int $count
      * @return array
      */
-    public static function getList($params, $page = -1, $count = 20) {
+    public static function getList($params, $page = -1, $count = 20)
+    {
         $sIds = $result = [];
         list($count, $schedules) = ScheduleModel::getList($params, $page, $count);
         foreach ($schedules as $schedule) {
@@ -90,6 +96,7 @@ class ScheduleService
             $sIds[] = $schedule['id'];
             $result[$schedule['id']] = $schedule;
         }
+
         if(!empty($sIds)) {
             $sus = ScheduleUserModel::getSUBySIds($sIds);
             foreach ($sus as $su) {
@@ -100,7 +107,12 @@ class ScheduleService
                     $result[$su['schedule_id']]['teachers'] ++;
             }
         }
-        return [$count, $result];
+        // order
+        $schedules = [];
+        foreach ($sIds as $sId) {
+            $schedules[] = $result[$sId];
+        }
+        return [$count, $schedules];
     }
 
     /**

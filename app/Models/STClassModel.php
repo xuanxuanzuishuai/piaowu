@@ -97,7 +97,7 @@ class STClassModel extends Model
 
     /**
      * @param $id
-     * @return mixed|void
+     * @return mixed
      */
     public static function getDetail($id)
     {
@@ -119,5 +119,15 @@ class STClassModel extends Model
             'cm.name (campus_name)',
         ], ['stc.id' => $id]);
 
+    }
+
+    /**
+     * 根据班级名称获取班级列表
+     * @param $name
+     * @return array
+     */
+    public static function getClass($name)
+    {
+        return MysqlDB::getDB()->select(self::$table, ['id', 'name'], ['name[~]' => $name]);
     }
 }

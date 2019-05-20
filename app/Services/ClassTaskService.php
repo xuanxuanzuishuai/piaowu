@@ -100,6 +100,12 @@ class ClassTaskService
             $pct['expire_start_date'] = date("Y-m-d", $beginTime);
             $pct['expire_end_date'] = empty($pct['expire_end_date']) ? date("Y-m-d",$beginTime + (7 * ($pct['period'] - 1) + 1) * 86400) : $pct['expire_end_date'];
             $endTime = date("H:i", strtotime($pct['start_time']) + $course['duration']);
+
+            $sTime = strtotime($pct['expire_start_date'] . ' ' . $pct['start_time']);
+            if ($sTime <= $now) {
+                return Valid::addErrors([], 'class_start_time', 'class_start_time_is_error');
+            }
+
             $ct = [
                 'classroom_id' => $pct['classroom_id'],
                 'start_time' => $pct['start_time'],
