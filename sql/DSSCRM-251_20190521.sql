@@ -1,0 +1,2 @@
+update organization set zip_code = floor(zip_code/pow(10,length(zip_code)-6)) where length(zip_code) > 6;-- 切除邮编大于6位的部分
+alter table organization modify zip_code varchar(6) not null default ''; -- 修改邮编列为varchar,因为存在0开头的邮编

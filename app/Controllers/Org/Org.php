@@ -97,8 +97,9 @@ class Org extends ControllerBase
             ],
             [
                 'key'        => 'zip_code',
-                'type'       => 'integer',
-                'error_code' => 'zip_code_must_be_integer'
+                'type'       => 'length',
+                'value'      => 6,
+                'error_code' => 'zip_code_length_is_6'
             ],
             [
                 'key'        => 'register_channel',
