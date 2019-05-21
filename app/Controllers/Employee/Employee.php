@@ -314,6 +314,12 @@ class Employee extends ControllerBase
         } else {
             //前端没有传org_id时，置为0
             $params['org_id'] = empty($params['org_id']) ? 0 : $params['org_id'];
+
+            //添加一个新员工时，检查手机号是否已经被占用
+            $em = EmployeeModel::getRecord(['mobile' => $params['mobile']], [], false);
+            if(!empty($em)) {
+                return $response->withJson(Valid::addErrors([], 'employee', 'mobile_has_exist'));
+            }
         }
 
         //内部人员登录名前加org0_,机构人员登录名前加org+ID+下划线
