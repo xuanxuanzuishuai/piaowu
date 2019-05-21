@@ -22,7 +22,9 @@ class OrgResPrivilegeCheckMiddleWareForApp extends MiddlewareBase
         /** @var Response $response */
         $response = $next($request, $response);
 
-        if ($this->container['need_res_privilege'] && empty($this->container['teacher'])) {
+        $needPrivilege = $this->container['need_res_privilege'] ?? false;
+
+        if ($needPrivilege && empty($this->container['teacher'])) {
             SimpleLogger::error(__FILE__ . ":" . __LINE__, ['no res privilege']);
             $result = Valid::addAppErrors([], 'no_res_privilege');
             return $response->withJson($result, StatusCode::HTTP_OK);
