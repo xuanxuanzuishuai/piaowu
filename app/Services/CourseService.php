@@ -28,14 +28,12 @@ class CourseService
     public static function addOrEditCourse($params, $courseId = null)
     {
         $cTime = time();
-        // 课程时长
-        $cDuration = (int)DictModel::getKeyValue(Constants::COURSE_DURATION, $params['duration']);
         // 课程数据
         $courseData = [
             'name'          => $params['name'],
             'desc'          => $params['desc'],
             'thumb'         => $params['thumb'],
-            'duration'      => $cDuration * 60,
+            'duration'      => $params['duration'] * 60,
             'type'          => $params['course_type'],
             'oprice'        => $params['oprice'] * 100,
             'class_lowest'  => $params['class_lowest'],

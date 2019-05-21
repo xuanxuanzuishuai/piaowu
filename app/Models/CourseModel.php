@@ -56,8 +56,7 @@ class CourseModel extends Model
             $where['AND']['c.level'] = $params['level'];
         }
         if (!empty($params['duration'])) {
-            $cDuration = (int)DictModel::getKeyValue(Constants::COURSE_DURATION, $params['duration']);
-            $where['AND']['c.duration'] = $cDuration * 60;
+            $where['AND']['c.duration'] = $params['duration'] * 60;
         }
         if (isset($params['status']) && $params['status'] !== '') {
             $where['AND']['c.status'] = $params['status'];

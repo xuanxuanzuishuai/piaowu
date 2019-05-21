@@ -100,9 +100,6 @@ class Constants
 
     const MOBILE_REGEX = "/^[0-9]{1,14}$/";
 
-    // 课程时长
-    const COURSE_DURATION = "course_duration";
-
     //role id 设置
     const DICT_TYPE_ROLE_ID = 'ROLE_ID';
     const DICT_KEY_CODE_CC_ROLE_ID_CODE_ORG = 'CC_ROLE_ID_ORG'; //机构cc使用
