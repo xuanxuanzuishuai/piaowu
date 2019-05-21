@@ -9,6 +9,7 @@
 namespace App\Models;
 
 use App\Libs\MysqlDB;
+use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use Symfony\Component\Yaml\Tests\YamlTest;
 
@@ -23,6 +24,8 @@ class PlayRecordModel extends Model
     /** 课上课下 */
     const TYPE_ON_CLASS = 0;       // 课上练琴
     const TYPE_OFF_CLASS = 1;      // 课下练琴
+
+    const RANK_LIMIT = 10;          //排行榜取前RANK_LIMIT名
 
 
     public static function getPlayRecordByLessonId($lessonId, $studentId,
@@ -388,6 +391,45 @@ class PlayRecordModel extends Model
         ];
         $db = MysqlDB::getDB();
         $result = $db->queryAll($sql, $map);
+        return $result;
+    }
+
+    public static function getRank($lessonId, $students=[]){
+        $limit = self::RANK_LIMIT;
+        if(empty($students)){
+            $sql = "SELECT MAX(play_record.score) AS score,
+                       play_record.id AS play_id,
+                       play_record.lesson_id,
+                       play_record.student_id,
+                       student.name
+                FROM play_record
+                LEFT JOIN student ON play_record.student_id = student.id
+                WHERE play_record.lesson_id = {$lessonId}
+                GROUP BY play_record.student_id
+                ORDER BY score
+                DESC
+                LIMIT {$limit}
+          ";
+        }else{
+            $students = implode(',', $students);
+            $students = '(' . $students . ')';
+            $sql = "SELECT MAX(play_record.score) AS score,
+                       play_record.id AS play_id,
+                       play_record.lesson_id,
+                       play_record.student_id,
+                       student.name
+                FROM play_record
+                LEFT JOIN student ON play_record.student_id = student.id
+                WHERE play_record.lesson_id = {$lessonId}
+                  AND play_record.student_id IN {$students}
+                GROUP BY play_record.student_id
+                ORDER BY score
+                DESC
+                LIMIT {$limit}
+          ";
+        }
+        $db = MysqlDB::getDB();
+        $result = $db->queryAll($sql);
         return $result;
     }
 }

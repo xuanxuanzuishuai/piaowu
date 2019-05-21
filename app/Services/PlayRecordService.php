@@ -9,10 +9,13 @@
 namespace App\Services;
 
 
+use App\Controllers\Student\PlayRecord;
 use App\Libs\AIPLCenter;
 use App\Libs\Constants;
 use App\Models\PlayRecordModel;
 use App\Libs\OpernCenter;
+use App\Models\StudentModel;
+use App\Models\StudentOrgModel;
 use Lcobucci\JWT\Signer\Hmac\Sha256;
 use Lcobucci\JWT\Builder;
 use Lcobucci\JWT\Parser;
@@ -384,6 +387,23 @@ class PlayRecordService
         ];
     }
 
-
+    public static function getRanks($studentId, $lessonId, $isOrg){
+        if(!empty($isOrg)){
+            $students = StudentOrgModel::getRecords(['org_id'=>$isOrg], 'student_id');
+        }else{
+            $students = [];
+        }
+        $ranks = PlayRecordModel::getRank($lessonId, $students);
+        $ret = [];
+        $myself = [];
+        foreach ($ranks as $k => $v){
+            $v['order'] = $k + 1;
+            array_push($ret, $v);
+            if($v['student_id'] == $studentId){
+                $myself = $v;
+            }
+        }
+        return ['ranks' => $ret, 'myself' => $myself ];
+    }
 
 }

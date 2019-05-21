@@ -14,6 +14,7 @@ use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Models\PlayRecordModel;
+use App\Services\PlayRecordService;
 use App\Services\UserPlayServices;
 use App\Services\StorageService;
 use App\Services\HomeworkService;
@@ -201,6 +202,36 @@ class Play extends ControllerBase
         }
         $data['homework'] = $homeworkInfo;
         return $response->withJson(['code'=>0, 'data'=>$data], StatusCode::HTTP_OK);
+    }
+
+    public function rank(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'lesson_id',
+                'type' => 'required',
+                'error_code' => 'lesson_id_is_required'
+            ],
+            [
+                'key' => 'org',
+                'type' => 'required',
+                'error_code' => 'org_is_required'
+            ]
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $studentId = $this->ci['student']['id'];
+        //$studentId = 89;
+        $lessonId = $params['lesson_id'];
+        # TODO
+        $isOrg = $params['org'] == 0 ? 0 : $this->ci['org']['id'];
+        $ranks = PlayRecordService::getRanks($studentId, $lessonId, $isOrg);
+        return $response->withJson(['code'=>0, 'data'=>$ranks], StatusCode::HTTP_OK);
     }
 
 }

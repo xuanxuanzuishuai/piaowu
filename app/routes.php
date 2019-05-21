@@ -7,9 +7,7 @@ use Slim\App;
 use Slim\Http\Request;
 use Slim\Http\Response;
 
-$arr = array(
-
-);
+$arr = array();
 
 /** @var App $app */
 $app->add(function (Request $request, Response $response, $next) use ($app, $arr) {
