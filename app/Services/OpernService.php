@@ -174,6 +174,44 @@ class OpernService
     }
 
     /**
+     * 体验课id
+     * @return array
+     */
+    public static function getTrialLessonId()
+    {
+        $trialLessonIds = DictConstants::get(DictConstants::APP_CONFIG_TEACHER, 'trial_lessons');
+        if (empty($trialLessonIds)) {
+            return [];
+        }
+
+        return explode(',', $trialLessonIds);
+    }
+
+    /**
+     * 体验课
+     * @param $proVer
+     * @return array
+     */
+    public static function getTrialLessons($proVer)
+    {
+        $trialLessonIds = DictConstants::get(DictConstants::APP_CONFIG_TEACHER, 'trial_lessons');
+        if (empty($trialLessonIds)) {
+            return [];
+        }
+
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER, $proVer);
+        $res = $opn->lessonsByIds($trialLessonIds);
+        if (!empty($res['code']) && $res['code'] !== Valid::CODE_SUCCESS) {
+            $trialLessons = [];
+        } else {
+            $trialLessons = $res["data"];
+        }
+        $trialLessons = self::appFormatLessonByIds($trialLessons);
+
+        return $trialLessons;
+    }
+
+    /**
      * @param $lessonIds
      * @param $prod
      * @param $v

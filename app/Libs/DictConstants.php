@@ -78,6 +78,7 @@ class DictConstants {
         'type' => 'APP_CONFIG_TEACHER',
         'keys' => [
             'default_collections',
+            'trial_lessons',
             'policy_url',
             'course_id',
         ]

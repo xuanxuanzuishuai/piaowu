@@ -56,6 +56,9 @@ class Auth extends ControllerBase
         $defaultCollections = OpernService::getDefaultCollections($this->ci['version']);
         $loginData['default_collections'] = $defaultCollections;
 
+        $trialLessons = OpernService::getTrialLessonId();
+        $loginData['trial_lessons'] = $trialLessons;
+
         return $response->withJson([
             'code'=> Valid::CODE_SUCCESS,
             'data'=> $loginData,
@@ -97,6 +100,9 @@ class Auth extends ControllerBase
 
         $defaultCollections = OpernService::getDefaultCollections($this->ci['version']);
         $loginData['default_collections'] = $defaultCollections;
+
+        $trialLessons = OpernService::getTrialLessonId();
+        $loginData['trial_lessons'] = $trialLessons;
 
         return $response->withJson([
             'code'=> Valid::CODE_SUCCESS,
