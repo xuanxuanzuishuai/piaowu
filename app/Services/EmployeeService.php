@@ -204,19 +204,9 @@ class EmployeeService
         $userCenter = new UserCenter($appId, $appSecret);
 
         if(empty($uuid)){
-            //添加一个employee时，为了防止user center返回冲突的错误，先将login name置为空，拿手机号获取一个uuid
-            //然后再次调用接口，传入uuid和用户名，修改信息
-
             //获取uuid
-            $authResult = $userCenter->employeeAuthorization('', '', $update['name'], $update['mobile'],
+            $authResult = $userCenter->employeeAuthorization($update['login_name'], '', $update['name'], $update['mobile'],
                 $params['status'] == EmployeeModel::STATUS_NORMAL,'');
-            if (empty($authResult["uuid"])) {
-                return Valid::addErrors([], "login_name", "uc_add_employee_error");
-            }
-
-            //修改登录名
-            $authResult = $userCenter->employeeAuthorization($update['login_name'], $pwd, $update['name'], $update['mobile'],
-                $params['status'] == EmployeeModel::STATUS_NORMAL, $authResult['uuid']);
             if (empty($authResult["uuid"])) {
                 return Valid::addErrors([], "login_name", "uc_add_employee_error");
             }
@@ -252,9 +242,9 @@ class EmployeeService
             return $userId;
         }
 
-        $success = EmployeeModel::updateEmployee($userId, $update);
-        if(!$success) {
-            return false;
+        $success = EmployeeModel::updateRecord($userId, $update, false);
+        if(!is_numeric($success)) {
+            return Valid::addErrors([], 'update', 'update_fail');
         }
 
         return $userId;

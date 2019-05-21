@@ -310,6 +310,7 @@ class Employee extends ControllerBase
                 return $response->withJson(Valid::addErrors([], 'employee', 'employee_not_exist'));
             }
             $params['org_id'] = $employee['org_id'];
+            $params['mobile'] = $employee['mobile']; //手机号不能修改，不信任前端传递的手机号
         } else {
             //前端没有传org_id时，置为0
             $params['org_id'] = empty($params['org_id']) ? 0 : $params['org_id'];
@@ -320,8 +321,13 @@ class Employee extends ControllerBase
 
         //前端传递的status与insertOrUpdateEmployee所需的参数一致，$params已经包含了status
         $userId = EmployeeService::insertOrUpdateEmployee($params);
-        if (!empty($userId) && !is_numeric($userId)) {
-            return $response->withJson($userId, StatusCode::HTTP_OK);
+
+        if(isset($userId['data']['errors']['login_name'])) {
+            return $response->withJson(Valid::addErrors([], 'employee', 'mobile_has_exist'));
+        }
+
+        if (is_array($userId)) {
+            return $response->withJson($userId);
         }
 
         return $response->withJson([

@@ -313,6 +313,10 @@ class Org extends ControllerBase
 
             $employeeIdOrErr = EmployeeService::insertOrUpdateEmployee($employeeData);
 
+            if(isset($employeeIdOrErr['data']['errors']['login_name'])) {
+                $db->rollBack();
+                return $response->withJson(Valid::addErrors([], 'org', 'mobile_has_exist'));
+            }
             if (is_array($employeeIdOrErr)) {
                 $db->rollBack();
                 return $response->withJson(Valid::addErrors([], 'org', 'login_name_conflict'));
