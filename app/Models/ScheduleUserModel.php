@@ -133,21 +133,22 @@ class ScheduleUserModel extends Model
      * @param $beginTime
      * @return int|null
      */
-    public static function cancelScheduleUsers($userIds,$class_id,$beginTime) {
+    public static function cancelScheduleUsers($userIds, $class_id, $beginTime)
+    {
         $where = [];
-        if(!empty($userIds[ClassUserModel::USER_ROLE_S])){
-            $where[] = "(su.user_role = ".ClassUserModel::USER_ROLE_S." and su.user_id in (".implode(',',$userIds[ClassUserModel::USER_ROLE_S])."))";
+        if (!empty($userIds[ClassUserModel::USER_ROLE_S])) {
+            $where[] = "(su.user_role = " . ClassUserModel::USER_ROLE_S . " and su.user_id in (" . implode(',', $userIds[ClassUserModel::USER_ROLE_S]) . "))";
         }
-        if(!empty($userIds[ClassUserModel::USER_ROLE_T])){
-            $where[] = "(su.user_role = ".ClassUserModel::USER_ROLE_T." and su.user_id in (".implode(',',$userIds[ClassUserModel::USER_ROLE_T])."))";
+        if (!empty($userIds[ClassUserModel::USER_ROLE_T])) {
+            $where[] = "(su.user_role in (" . ClassUserModel::USER_ROLE_T . ", " . ClassUserModel::USER_ROLE_HT . ") and su.user_id in (" . implode(',', $userIds[ClassUserModel::USER_ROLE_T]) . "))";
         }
-        $sql = "update ".self::$table." as su inner join ".ScheduleModel::$table." as s on s.id = su.schedule_id
-          set su.status = ".self::STATUS_CANCEL." where s.start_time >= $beginTime 
-          and s.class_id = $class_id and su.status = ".self::STATUS_NORMAL;
-        if(!empty($where)) {
-            $sql .= " and (".implode(" or ",$where).")";
+        $sql = "update " . self::$table . " as su inner join " . ScheduleModel::$table . " as s on s.id = su.schedule_id
+          set su.status = " . self::STATUS_CANCEL . " where s.start_time >= $beginTime
+          and s.class_id = $class_id and su.status = " . self::STATUS_NORMAL;
+        if (!empty($where)) {
+            $sql .= " and (" . implode(" or ", $where) . ")";
         }
-        $statement =  MysqlDB::getDB()->query($sql);
+        $statement = MysqlDB::getDB()->query($sql);
         if ($statement && $statement->errorCode() == MysqlDB::ERROR_CODE_NO_ERROR) {
             return $statement->rowCount();
         }
