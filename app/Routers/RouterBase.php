@@ -49,6 +49,7 @@ class RouterBase
                     foreach ($config['middles'] as $middle)
                         $r->add(new $middle($app->getContainer()));
                 }
+                //$r->add(new AfterMiddleware($app->getContainer()));
             }
 
             /** @var Response $response */

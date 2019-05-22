@@ -25,7 +25,6 @@ $app = new \Slim\App(['settings' => ['displayErrorDetails' => true]]);
 require APP_ROOT.'/dependencies.php';
 
 // Register routes
-//require APP_ROOT.'/routes.php';
 \App\Routers\RouterFactory::loadRouter($_SERVER['REQUEST_URI'], $app);
 header('Access-Control-Allow-Headers: X-Requested-With,X_Requested_With');
 
