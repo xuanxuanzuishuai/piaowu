@@ -401,10 +401,12 @@ class PlayRecordModel extends Model
                        play_record.id AS play_id,
                        play_record.lesson_id,
                        play_record.student_id,
+                       play_record.ai_record_id,
                        student.name
                 FROM play_record
                 LEFT JOIN student ON play_record.student_id = student.id
                 WHERE play_record.lesson_id = {$lessonId}
+                  AND play_record.lesson_type = 1
                 GROUP BY play_record.student_id
                 ORDER BY score
                 DESC
@@ -417,10 +419,12 @@ class PlayRecordModel extends Model
                        play_record.id AS play_id,
                        play_record.lesson_id,
                        play_record.student_id,
+                       play_record.ai_record_id,
                        student.name
                 FROM play_record
                 LEFT JOIN student ON play_record.student_id = student.id
                 WHERE play_record.lesson_id = {$lessonId}
+                  AND play_record.lesson_type = 1
                   AND play_record.student_id IN {$students}
                 GROUP BY play_record.student_id
                 ORDER BY score
