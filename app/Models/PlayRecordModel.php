@@ -25,7 +25,7 @@ class PlayRecordModel extends Model
     const TYPE_ON_CLASS = 0;       // 课上练琴
     const TYPE_OFF_CLASS = 1;      // 课下练琴
 
-    const RANK_LIMIT = 10;          //排行榜取前RANK_LIMIT名
+    const RANK_LIMIT = 100;          //排行榜取前RANK_LIMIT名
 
 
     public static function getPlayRecordByLessonId($lessonId, $studentId,
@@ -436,4 +436,5 @@ class PlayRecordModel extends Model
         $result = $db->queryAll($sql);
         return $result;
     }
+
 }

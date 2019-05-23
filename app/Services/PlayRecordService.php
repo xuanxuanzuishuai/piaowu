@@ -388,8 +388,9 @@ class PlayRecordService
     }
 
     public static function getRanks($studentId, $lessonId, $isOrg){
-        if(!empty($isOrg)){
-            $org = StudentOrgModel::getRecords(['student_id'=>$studentId], 'org_id');
+
+        $org = StudentOrgModel::getRecords(['student_id'=>$studentId], 'org_id');
+        if(!empty($isOrg) and !empty($org)){
             $students = StudentOrgModel::getRecords(['org_id'=>$org], 'student_id');
         }else{
             $students = [];
@@ -404,7 +405,20 @@ class PlayRecordService
                 $myself = $v;
             }
         }
-        return ['ranks' => $ret, 'myself' => $myself ];
+        if(empty($myself)){
+            $studentBestPlay = PlayRecordModel::getRank($lessonId, [$studentId]);
+            if(!empty($studentBestPlay)){
+                // 未上榜
+                $myself = $studentBestPlay[0];
+                $myself['order'] = 0;
+            }else{
+                // 未演奏
+                $student = StudentModel::getById($studentId);
+                $myself['name']  = $student['name'];
+                $myself['order'] = -1;
+            }
+        }
+        return ['ranks' => $ret, 'myself' => $myself, 'hasOrg' => count($org) > 0];
     }
 
 }
