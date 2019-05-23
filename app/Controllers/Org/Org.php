@@ -204,6 +204,12 @@ class Org extends ControllerBase
         if(isset($params['id']) && !empty($params['id'])) {
             $id = $params['id'];
 
+            //检查机构名是否已存在
+            $exist = OrganizationModel::getRecord(['name' => $params['name'], 'id[!]' => $id]);
+            if(!empty($exist)) {
+                return $response->withJson(Valid::addErrors([], 'org', 'org_has_exist'));
+            }
+
             $data = [
                 'name'             => $params['name'],
                 'remark'           => $params['remark'] ?? '',
@@ -228,6 +234,12 @@ class Org extends ControllerBase
 
             return $this->success($response, ['last_id' => $id]);
         } else {
+            //检查机构名是否已存在
+            $exist = OrganizationModel::getRecord(['name' => $params['name']], [], false);
+            if(!empty($exist)) {
+                return $response->withJson(Valid::addErrors([], 'org', 'org_has_exist'));
+            }
+
             $principalRoleId = Dict::getPrincipalRoleId();
             if(empty($principalRoleId)) {
                 return $response->withJson(Valid::addErrors([], 'org', 'principal_role_id_is_empty'));
