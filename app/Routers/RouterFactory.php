@@ -55,7 +55,7 @@ class RouterFactory
      */
     public static function getClientType($uriPath)
     {
-        if (in_array($uriPath, self::URI_CLIENT_TYPES)) {
+        if (!empty(self::URI_CLIENT_TYPES[$uriPath])) {
             return self::URI_CLIENT_TYPES[$uriPath];
         }
 
