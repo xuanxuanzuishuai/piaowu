@@ -11,7 +11,8 @@ namespace App\Routers;
 
 class RouterFactory
 {
-    /*
+    /**
+     * client_type
      * 根据请求地址区分客户端类型
      * /student_app/...
      * /teacher_app/...
@@ -27,15 +28,22 @@ class RouterFactory
     const CLIENT_TEACHER_WX = 'teacher_wx'; // 老师微信
     const CLIENT_ORG_WEB = 'org_web'; // 机构后台
 
+    /**
+     * client_type 对应的 Router class
+     */
     const ROUTER_CLASSES = [
-        self::CLIENT_STUDENT_APP => StudentAppRouter::class,
-        self::CLIENT_TEACHER_APP => TeacherAppRouter::class,
-        self::CLIENT_STUDENT_WX => StudentWXRouter::class,
-        self::CLIENT_STUDENT_ORG_WX => StudentWXRouter::class,
-        self::CLIENT_TEACHER_WX => TeacherWXRouter::class,
-        self::CLIENT_ORG_WEB => OrgWebRouter::class,
+        self::CLIENT_STUDENT_APP => StudentAppRouter::class, // AI练琴APP
+        self::CLIENT_TEACHER_APP => TeacherAppRouter::class, // 智能琴房APP
+        self::CLIENT_STUDENT_WX => StudentWXRouter::class, // 家长微信
+        self::CLIENT_STUDENT_ORG_WX => StudentWXRouter::class, // 直营机构微信，和家长微信共用一个class
+        self::CLIENT_TEACHER_WX => TeacherWXRouter::class, // 老师微信
+        self::CLIENT_ORG_WEB => OrgWebRouter::class, // 机构后台
     ];
 
+    /**
+     * 指定接口的 client_type
+     * 特殊的接口不能按照 /client_type/... 格式命名时，在这里指定对应的 client_type
+     */
     const URI_CLIENT_TYPES = [
         '/user/auth/get_user_id' => self::CLIENT_STUDENT_APP
     ];
