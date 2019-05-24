@@ -399,42 +399,40 @@ class PlayRecordModel extends Model
         $lessonType = PlayRecordModel::TYPE_AI;
         $lowestScore = 60;
         if(empty($students)){
-            $sql = "SELECT MAX(play_record.score) AS score,
-                       play_record.id AS play_id,
-                       play_record.lesson_id,
-                       play_record.student_id,
-                       play_record.ai_record_id,
-                       student.name
-                FROM play_record
-                LEFT JOIN student ON play_record.student_id = student.id
-                WHERE play_record.lesson_id = {$lessonId}
-                  AND play_record.lesson_type = {$lessonType}
-                  AND play_record.score >= {$lowestScore}
-                GROUP BY play_record.student_id
-                ORDER BY score
-                DESC
-                LIMIT {$limit}
-          ";
+            $sql = "SELECT * FROM
+                      (SELECT play_record.id AS play_id,
+                              play_record.score,
+                              play_record.lesson_id,
+                              play_record.student_id,
+                              play_record.ai_record_id,
+                              student.name
+                      FROM play_record
+                      LEFT JOIN student ON play_record.student_id = student.id
+                      WHERE play_record.lesson_id = {$lessonId}
+                        AND play_record.lesson_type = {$lessonType}
+                        AND play_record.score >= {$lowestScore}
+                      ORDER BY score DESC) t
+                  GROUP BY t.student_id
+                  LIMIT {$limit}";
         }else{
             $students = implode(',', $students);
             $students = '(' . $students . ')';
-            $sql = "SELECT MAX(play_record.score) AS score,
-                       play_record.id AS play_id,
-                       play_record.lesson_id,
-                       play_record.student_id,
-                       play_record.ai_record_id,
-                       student.name
-                FROM play_record
-                LEFT JOIN student ON play_record.student_id = student.id
-                WHERE play_record.lesson_id = {$lessonId}
-                  AND play_record.lesson_type = {$lessonType}
-                  AND play_record.student_id IN {$students}
-                  AND play_record.score >= {$lowestScore}
-                GROUP BY play_record.student_id
-                ORDER BY score
-                DESC
-                LIMIT {$limit}
-          ";
+            $sql = "SELECT * FROM
+                      (SELECT play_record.id AS play_id,
+                              play_record.score,
+                              play_record.lesson_id,
+                              play_record.student_id,
+                              play_record.ai_record_id,
+                              student.name
+                      FROM play_record
+                      LEFT JOIN student ON play_record.student_id = student.id
+                      WHERE play_record.lesson_id = {$lessonId}
+                        AND play_record.lesson_type = {$lessonType}
+                        AND play_record.score >= {$lowestScore}
+                        AND play_record.student_id IN {$students}
+                      ORDER BY score DESC) t
+                  GROUP BY t.student_id
+                  LIMIT {$limit}";
         }
         $db = MysqlDB::getDB();
         $result = $db->queryAll($sql);
