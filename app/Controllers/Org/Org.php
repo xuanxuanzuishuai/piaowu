@@ -114,11 +114,6 @@ class Org extends ControllerBase
             ],
             [
                 'key'        => 'start_time',
-                'type'       => 'required',
-                'error_code' => 'start_time_is_required'
-            ],
-            [
-                'key'        => 'start_time',
                 'type'       => 'integer',
                 'error_code' => 'start_time_must_be_integer'
             ],
@@ -127,11 +122,6 @@ class Org extends ControllerBase
                 'type'       => 'lengthMax',
                 'value'      => 10,
                 'error_code' => 'start_time_length_is_10'
-            ],
-            [
-                'key'        => 'end_time',
-                'type'       => 'required',
-                'error_code' => 'end_time_is_required'
             ],
             [
                 'key'        => 'end_time',
@@ -191,7 +181,7 @@ class Org extends ControllerBase
                     'type'       => 'regex',
                     'value'      => Constants::MOBILE_REGEX,
                     'error_code' => 'mobile_format_error'
-                ],
+                ]
             ]);
         }
 
@@ -216,16 +206,16 @@ class Org extends ControllerBase
 
             $data = [
                 'name'             => $params['name'],
-                'remark'           => $params['remark'],
+                'remark'           => $params['remark'] ?? '',
                 'province_code'    => $params['province_code'],
                 'city_code'        => $params['city_code'],
                 'district_code'    => $params['district_code'],
                 'address'          => $params['address'],
-                'zip_code'         => $params['zip_code'],
+                'zip_code'         => $params['zip_code'] ?? '',
                 'register_channel' => $params['register_channel'],
                 'parent_id'        => $params['parent_id'],
-                'start_time'       => $params['start_time'],
-                'end_time'         => $params['end_time'],
+                'start_time'       => $params['start_time'] ?? 0,
+                'end_time'         => $params['end_time'] ?? 0,
                 'status'           => $params['status'],
                 'update_time'      => $now,
             ];
@@ -256,16 +246,16 @@ class Org extends ControllerBase
 
             $orgData = [
                 'name'             => $params['name'],
-                'remark'           => $params['remark'],
+                'remark'           => $params['remark'] ?? '',
                 'province_code'    => $params['province_code'],
                 'city_code'        => $params['city_code'],
                 'district_code'    => $params['district_code'],
                 'address'          => $params['address'],
-                'zip_code'         => $params['zip_code'],
+                'zip_code'         => $params['zip_code'] ?? '',
                 'register_channel' => $params['register_channel'],
                 'parent_id'        => $params['parent_id'],
-                'start_time'       => $params['start_time'],
-                'end_time'         => $params['end_time'],
+                'start_time'       => $params['start_time'] ?? 0,
+                'end_time'         => $params['end_time'] ?? 0,
                 'operator_id'      => $this->getEmployeeId(),
                 'status'           => OrganizationModel::STATUS_NORMAL,
                 'create_time'      => $now,

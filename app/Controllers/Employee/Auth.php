@@ -62,6 +62,15 @@ class Auth extends ControllerBase
             if($org['status'] == OrganizationModel::STATUS_STOP) {
                 return $response->withJson(Valid::addErrors([],'auth','org_is_disabled'));
             }
+            //判断激活时间是否为空，为空则更新
+            if(empty($org['start_time'])) {
+                $today = strtotime('today');
+                $end = strtotime('today +1 year');
+                $affectRows = OrganizationModel::updateRecord($org['id'], ['start_time' => $today, 'end_time' => $end], false);
+                if($affectRows != 1) {
+                    return $response->withJson(Valid::addErrors([],'auth','update_org_active_time_fail'));
+                }
+            }
         }
 
         return $response->withJson([
