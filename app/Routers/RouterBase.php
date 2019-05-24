@@ -11,6 +11,7 @@ namespace App\Routers;
 
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
+use App\Middleware\AfterMiddleware;
 use Slim\App;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -18,7 +19,7 @@ use Slim\Http\Response;
 class RouterBase
 {
     protected $logFilename;
-
+    protected $middleWares = [];
     protected $uriConfig = [];
 
     public function load($uri, $app)
@@ -33,9 +34,10 @@ class RouterBase
         }
 
         $config = $this->uriConfig[$uri] ?? [];
+        $middles = $this->getMiddleWares($uri);
 
         /** @var App $app */
-        $app->add(function (Request $request, Response $response, $next) use ($app, $uri, $config) {
+        $app->add(function (Request $request, Response $response, $next) use ($app, $uri, $config,$middles) {
             $startTime = Util::microtime_float();
             $method = $request->getMethod();
             $params = $request->getParams();
@@ -45,11 +47,13 @@ class RouterBase
 
             if (!empty($config)) {
                 $r = $app->map($config['method'], $uri, $config['call']);
-                if (!empty($config['middles']) && is_array($config['middles'])) {
-                    foreach ($config['middles'] as $middle)
+                $middles = isset($config['middles']) ? $config['middles'] : $middles;
+
+                if (!empty($middles)) {
+                    foreach ($middles as $middle)
                         $r->add(new $middle($app->getContainer()));
                 }
-                //$r->add(new AfterMiddleware($app->getContainer()));
+                $r->add(new AfterMiddleware($app->getContainer()));
             }
 
             /** @var Response $response */
@@ -62,5 +66,10 @@ class RouterBase
 
             return $response;
         });
+    }
+
+    public function getMiddleWares($uri)
+    {
+        return $this->middleWares;
     }
 }

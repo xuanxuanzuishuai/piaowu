@@ -26,7 +26,7 @@ use App\Middleware\TeacherCheckMiddleWareForApp;
 class TeacherAppRouter extends RouterBase
 {
     protected $logFilename = 'dss_teacher.log';
-
+    public $middleWares = [AppApiForTeacher::class];
     protected $uriConfig = [
         '/teacher_app/auth/login' => [
             'method' => ['post'],

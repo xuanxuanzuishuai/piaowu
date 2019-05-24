@@ -26,8 +26,10 @@ class AfterMiddleware extends MiddlewareBase
         $next($request, $response);
         if ($request->getContentType() == 'application/json'
             || preg_match('/.*application\/json.*/', $request->getHeaderLine("Accept"))) {
-            $result = $this->container->get('result');
-            return $response->withJson($result, 200);
+            if(!empty($this->container['result'])) {
+                $result = $this->container['result'];
+            }
+            return $response;
         } else {
             return $response;
         }
