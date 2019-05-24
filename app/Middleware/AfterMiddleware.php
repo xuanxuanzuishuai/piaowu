@@ -23,7 +23,7 @@ class AfterMiddleware extends MiddlewareBase
      */
     public function __invoke(Request $request, Response $response, $next)
     {
-        $next($request, $response);
+        $response = $next($request, $response);
         if ($request->getContentType() == 'application/json'
             || preg_match('/.*application\/json.*/', $request->getHeaderLine("Accept"))) {
             if(!empty($this->container['result'])) {
