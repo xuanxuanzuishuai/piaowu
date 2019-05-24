@@ -68,9 +68,15 @@ class App extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $userId = $this->ci['teacher']['id'];
+        if (!empty($this->ci['teacher'])) {
+            $userId = $this->ci['teacher']['id'];
+            $userType = FeedbackModel::TYPE_TEACHER;
+        } else {
+            $userId = $this->ci['org']['id'];
+            $userType = FeedbackModel::TYPE_ORG;
+        }
         $data = [
-            'user_type' => FeedbackModel::TYPE_TEACHER,
+            'user_type' => $userType,
             'user_id' => $userId,
             'content' => $params['content'],
             'platform' => $this->ci['platform'],

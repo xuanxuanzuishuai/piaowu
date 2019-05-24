@@ -164,8 +164,7 @@ class TeacherAppRouter extends RouterBase
         '/teacher_app/app/feedback' => [
             'method' => ['post'],
             'call' => TeacherAppApp::class . ':feedback',
-            'middles' => [TeacherCheckMiddleWareForApp::class,
-                OrgTeacherAuthMiddleWareForApp::class,
+            'middles' => [OrgTeacherAuthMiddleWareForApp::class,
                 OrgAuthCheckMiddleWareForApp::class,
                 AppApiForTeacher::class]
         ],

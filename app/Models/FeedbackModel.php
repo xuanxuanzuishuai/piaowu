@@ -16,6 +16,7 @@ class FeedbackModel extends Model
     const TYPE_STUDENT = 1;
     const TYPE_TEACHER = 2;
     const TYPE_EMPLOYEE = 3;
+    const TYPE_ORG = 4;
 
     const PLATFORM_ANDROID = 1;
     const PLATFORM_IOS = 2;
