@@ -9,6 +9,7 @@
 namespace App\Middleware;
 
 use App\Libs\SimpleLogger;
+use App\Models\OrganizationModel;
 use Slim\Http\Request;
 use App\Libs\Valid;
 use Slim\Http\StatusCode;
@@ -61,7 +62,6 @@ class WeChatAuthCheckMiddleware extends MiddlewareBase
         WeChatService::refreshToken($token);
         $this->container['user_info'] = $userInfo;
         $this->container["open_id"] = $userInfo["open_id"];
-
         $response = $next($request, $response);
         return $response;
     }

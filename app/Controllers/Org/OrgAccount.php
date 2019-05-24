@@ -237,7 +237,6 @@ class OrgAccount extends ControllerBase
 
         $orgAccountId = $params['org_account_id'];
         global $orgId;
-
         $record = OrgAccountModel::getRecord([
             'id'     => $orgAccountId,
             'org_id' => $orgId,

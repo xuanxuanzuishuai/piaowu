@@ -28,13 +28,9 @@ class UserWeixinModel extends Model
      * @return array
      */
     public static function getBoundInfoByOpenId($open_id) {
-        $where = [self::$table .".open_id" => $open_id, self::$table .".status" => self::STATUS_NORMAL,
-            "ORDER" => ["id" => "DESC"], "LIMIT" => [0, 1]];
+        $where = [self::$table .".open_id" => $open_id, self::$table .".status" => self::STATUS_NORMAL];
 
-        $result = MysqlDB::getDB()->select(self::$table, "*", $where);
-        if (!empty($result)) {
-            return $result[0];
-        }
+        $result = MysqlDB::getDB()->get(self::$table, "*", $where);
         return $result;
     }
 
@@ -44,12 +40,9 @@ class UserWeixinModel extends Model
             self::$table .".status" => self::STATUS_NORMAL,
             self::$table .".app_id" => $app_id,
             self::$table .".user_type" => $user_type,
-            "ORDER" => ["id" => "DESC"], "LIMIT" => [0, 1]];
+            "ORDER" => ["id" => "DESC"]];
 
-        $result = MysqlDB::getDB()->select(self::$table, "*", $where);
-        if (!empty($result)) {
-            return $result[0];
-        }
+        $result = MysqlDB::getDB()->get(self::$table, "*", $where);
         return $result;
     }
 

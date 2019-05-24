@@ -16,17 +16,20 @@ class UserRefereeModel extends Model
 
     /**
      * @param $referee_id
-     * @param $referee_type
      * @param $user_id
      * @return int|mixed|null|string
      */
-    public static function insertReferee($referee_id, $referee_type, $user_id) {
+    public static function insertReferee($referee_id, $user_id) {
         $db = MysqlDB::getDB();
-        return $db->insertGetID(self::$table, [
-            "referee_id" => $referee_id,
-            "user_id" => $user_id,
-            "referee_type" => $referee_type,
-            "create_time" => time()
-        ]);
+        //得到referee_id解密后的user_id
+        $refereeInfo = UserQrTicketModel::getRecord(['qr_ticket' => $referee_id], ['user_id','type'], false);
+        if (!empty($refereeInfo)) {
+            return $db->insertGetID(self::$table, [
+                "referee_id" => $refereeInfo['user_id'],
+                "user_id" => $user_id,
+                "referee_type" => $refereeInfo['type'],
+                "create_time" => time()
+            ]);
+        }
     }
 }

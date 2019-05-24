@@ -67,5 +67,25 @@ class ClassUserModel extends Model
         return MysqlDB::getDB()->queryAll($sql);
     }
 
+    /**
+     * @param $where
+     * @return int|null
+     */
+    public static function getUserClassInfo($where)
+    {
+        $where['user_role'] = self::USER_ROLE_S;
+        return MysqlDB::getDB()->get(self::$table,
+            [
+                '[><]' . ClassTaskModel::$table => ['class_id' => 'class_id'],
+                '[><]' . CourseModel::$table => [ClassTaskModel::$table . '.course_id' => 'id']
+            ],
+            [
+                ClassTaskModel::$table . '.start_time',
+                ClassTaskModel::$table . '.end_time',
+                ClassTaskModel::$table . '.weekday',
+                CourseModel::$table . '.name'
+            ], $where);
+    }
+
 
 }

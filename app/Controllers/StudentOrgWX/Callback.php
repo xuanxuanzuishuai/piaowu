@@ -8,13 +8,13 @@
 
 namespace App\Controllers\StudentOrgWX;
 
-use App\Controllers\ControllerBase;
+use App\Controllers\ControllerBaseForOrg;
 use App\Libs\SimpleLogger;
 use Slim\Http\Request;
 use Slim\Http\Response;
 
 
-class Callback extends ControllerBase
+class Callback extends ControllerBaseForOrg
 {
 
     /**
@@ -67,6 +67,10 @@ class Callback extends ControllerBase
                 case 'subscribe':
                     // 关注公众号
                     WeChatMsgHandler::subscribe($xml);
+                    break;
+                case 'CLICK':
+                    // 点击自定义菜单事件
+                    WeChatMsgHandler::menuClickEventHandler($xml);
                     break;
                 default:
                     break;

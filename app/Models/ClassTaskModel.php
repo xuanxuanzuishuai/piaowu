@@ -345,4 +345,35 @@ class ClassTaskModel extends Model
 
         return MysqlDB::getDB()->select(self::$table . ' (ct)', $join, $columns, $where);
     }
+
+    /**
+     * @param $campusId
+     * @param $courseId
+     * @return array
+     * 当前机构的某个校区对于某个课程未开课的时间安排
+     */
+    public static function getOrgCampusArrange($campusId, $courseId)
+    {
+        $where['class.campus_id'] = $campusId;
+        $where['ct.course_id'] = $courseId;
+        $where['ct.status'] = self::STATUS_NORMAL;
+        $where['ct.expire_end_date[>=]'] = date('Y-m-d');
+        $where['ct.expire_start_date[<]'] = date('Y-m-d', strtotime('+1 month', time()));
+        global $orgId;
+        if ($orgId > 0)
+            $where['ct.org_id'] = $orgId;
+
+        $join = [
+            '[><]' . STClassModel::$table . " (class)" => ['ct.class_id' => 'id'],
+        ];
+        return MysqlDB::getDB()->select(self::$table . " (ct)", $join, [
+            'ct.start_time',
+            'ct.end_time',
+            'ct.expire_start_date',
+            'ct.expire_end_date',
+            'ct.weekday',
+            'ct.period',
+            'class.id(class_id)'
+        ], $where);
+    }
 }

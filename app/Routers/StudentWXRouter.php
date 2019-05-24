@@ -40,7 +40,11 @@ class StudentWXRouter extends RouterBase
         '/student_org_wx/student/login' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentOrgWX\Student:login', 'middles' => array('\App\Middleware\WeChatOpenIdCheckMiddleware')),
         '/student_org_wx/student/send_sms_code' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentOrgWX\Student:sendSmsCode', 'middles' => array()),
         '/student_org_wx/callback/check' => array('method'=>array('get', 'post'),'call'=>'\App\Controllers\StudentOrgWX\Callback:weChatCallback', 'middles' => array()),
-
+        '/student_org_wx/course/get_test_course' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentOrgWX\Course:getTestCourse'),
+        '/student_org_wx/org_campus/get_org_campus' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentOrgWX\OrgCampus:getOrgCampusList'),
+        '/student_org_wx/org_campus/get_org_campus_arrange' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentOrgWX\OrgCampus:getOrgCampusArrange'),
+        '/student_org_wx/student_class/order_class' => array('method'=>array('post'),'call'=>'\App\Controllers\StudentOrgWX\StudentClass:OrderClass'),
+        '/student_org_wx/student_class/get_order_class' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentOrgWX\StudentClass:getOrderClass'),
     ];
 
 }

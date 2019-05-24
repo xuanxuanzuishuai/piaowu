@@ -4,3 +4,4 @@
 .env
 composer.lock
 .local
+www/act/.DS_Store

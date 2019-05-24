@@ -443,4 +443,31 @@ class WeChatService
         return false;
     }
 
+    public static function uploadImg($imgUrl)
+    {
+        $file = self::weixinAPIURL . "media/upload?access_token=" . self::getAccessToken(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT, UserWeixinModel::USER_TYPE_STUDENT_ORG) . "&type=image";
+        $data = array('media' => new \CURLFile($imgUrl));
+        //创建一个新cURL资源
+        $curl = curl_init();
+        //设置URL和相应的选项
+        curl_setopt($curl, CURLOPT_URL, $file);
+        curl_setopt($curl, CURLOPT_SAFE_UPLOAD, true);
+        curl_setopt($curl, CURLOPT_POST, 1);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
+
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+        //执行curl，抓取URL并把它传递给浏览器
+        $output = curl_exec($curl);
+        SimpleLogger::error(print_r($output, true));
+        $errno = curl_errno($curl);
+        SimpleLogger::error(print_r($errno, true));
+        $error = curl_error($curl);
+        SimpleLogger::error(print_r($error, true));
+        curl_close($curl);
+        if (empty($errno)) {
+            return json_decode($output, true);
+        }
+        return false;
+    }
+
 }

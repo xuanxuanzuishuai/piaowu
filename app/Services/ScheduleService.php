@@ -465,4 +465,21 @@ class ScheduleService
     {
         ScheduleModel::updateRecord($schedule['id'], ['status' => ScheduleModel::STATUS_CANCEL, 'update_time' => time()]);
     }
+
+    /**
+     * @param $campusId
+     * @param $courseId
+     * @return array
+     * 当前机构校区的所有教室对于当前课程的排课时间安排
+     */
+    public static function getOrgCampusArrage($campusId, $courseId)
+    {
+        $result = ClassTaskModel::getOrgCampusArrange($campusId, $courseId);
+        $classInfo = NULL;
+        //满足此课程的排课在未来一个月内的可上课时间安排
+        if (!empty($result)) {
+            $classInfo = array_column($result, NULL,'class_id');
+        }
+        return $classInfo;
+    }
 }

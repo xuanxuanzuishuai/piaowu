@@ -8,7 +8,7 @@
 
 namespace App\Controllers\StudentOrgWX;
 
-use App\Controllers\ControllerBase;
+use App\Controllers\ControllerBaseForOrg;
 use App\Libs\Valid;
 use App\Models\StudentModel;
 use App\Services\CommonServiceForApp;
@@ -24,10 +24,8 @@ use App\Models\UserRefereeModel;
 use App\Models\UserWeixinModel;
 use App\Libs\UserCenter;
 
-class Student extends ControllerBase
+class Student extends ControllerBaseForOrg
 {
-    public const ORG_ID = 1;
-
     /** 注册并绑定
      * @param Request $request
      * @param Response $response
@@ -45,10 +43,6 @@ class Student extends ControllerBase
                 'key' => 'sms_code',
                 'type' => 'required',
                 'error_code' => 'sms_code_is_required'
-            ],
-            [
-                'key' => 'referee_type',
-                'type' => 'integer'
             ],
             [
                 'key' => 'referee_id',
@@ -86,8 +80,8 @@ class Student extends ControllerBase
             }
 
             // 转介绍
-            if (!empty($params["referee_id"]) and !empty($params["referee_type"])) {
-                UserRefereeModel::insertReferee($params["referee_id"], $params["referee_type"], $student_id);
+            if (!empty($params["referee_id"])) {
+                UserRefereeModel::insertReferee($params["referee_id"], $student_id);
             }
 
             $student_info = StudentModelForApp::getStudentInfo("", $params['mobile']);
@@ -99,7 +93,8 @@ class Student extends ControllerBase
         }
 
         // todo 现在绑定机构写死为1了
-        StudentService::bindOrg(self::ORG_ID, $student_info["id"]);
+        global $orgId;
+        StudentService::bindOrg($orgId, $student_info["id"]);
 
         $db->commit();
 

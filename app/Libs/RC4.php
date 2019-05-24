@@ -112,10 +112,10 @@ class RC4
     }
 
     /**
-     * encrypt the String
-     * @param string $key
-     * @param string $text
-     * @param return string base64 text
+     * @param $key
+     * @param $text
+     * @return string|string[]|null
+     * @throws KeyErrorRC4Exception
      */
     public static function encrypt($key, $text){
         self::keyCheck($key);
@@ -128,10 +128,10 @@ class RC4
     }
 
     /**
-     * decrypt the String
-     * @param string $key
-     * @param string $data base64 string
-     * @return string
+     * @param $key
+     * @param $data
+     * @return string|string[]|null
+     * @throws KeyErrorRC4Exception
      */
     public static function decrypt($key, $data){
         self::keyCheck($key);

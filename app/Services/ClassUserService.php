@@ -204,4 +204,15 @@ class ClassUserService
     {
         return ClassUserModel::updateCUStatus($where,$status);
     }
+
+    /**
+     * @param $where
+     * @param $status
+     * @return int|null
+     */
+    public static function getUserClassInfo($where,$status)
+    {
+        $scheduleInfo =  ClassUserModel::getUserClassInfo($where,$status);
+        return $scheduleInfo;
+    }
 }
