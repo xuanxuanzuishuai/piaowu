@@ -398,8 +398,21 @@ class PlayRecordService
         $ranks = PlayRecordModel::getRank($lessonId, $students);
         $ret = [];
         $myself = [];
-        foreach ($ranks as $k => $v){
-            $v['order'] = $k + 1;
+
+        // 处理排名，相同分数具有并列名次
+        $prevStudent = null;
+        foreach ($ranks as $v){
+            if(empty($prevStudent)){
+                $v['order'] = 1;
+                $prevStudent = $v;
+            }else{
+                if($v['score'] == $prevStudent['score']){
+                    $v['order'] = $prevStudent['order'];
+                }else{
+                    $v['order'] = $prevStudent['order'] + 1;
+                    $prevStudent = $v;
+                }
+            }
             array_push($ret, $v);
             if($v['student_id'] == $studentId){
                 $myself = $v;
