@@ -203,7 +203,7 @@ class TeacherAppRouter extends RouterBase
         ],
 
         '/teacher_app/note/list' => [
-            'method' => ['post'],
+            'method' => ['get'],
             'call' => Note::class . ':listNote',
             'middles' => [OrgTeacherAuthMiddleWareForApp::class,
                 OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
