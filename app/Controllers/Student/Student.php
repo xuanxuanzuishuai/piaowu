@@ -113,6 +113,9 @@ class Student extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
+        //过滤条件
+        //id, org_id, channel_id, start_create_time, end_create_time,
+        //sub_status, sub_start_date, sub_end_date, gender
         $orgId = $params['org_id'] ?? null;
 
         list($data, $total) = StudentService::selectStudentByOrg($orgId, $params['page'], $params['count'], $params);

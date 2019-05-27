@@ -176,6 +176,11 @@ class TeacherModel extends Model
             $map[':name_id'] = "%".$params['name_id']."%";
         }
 
+        //老师状态
+        if(!empty($params['recruit_status'])) {
+            $where .= ' and t.recruit_status = :recruit_status ';
+            $map[':recruit_status'] = $params['recruit_status'];
+        }
         //性别
         if (isset($params['gender'])) {
             $where .= " AND t.gender = :gender ";
@@ -224,7 +229,7 @@ class TeacherModel extends Model
         }
         // 创建时间结束
         if (!empty($params['create_time_end'])) {
-            $where .= " AND t.create_time < :create_time_end ";
+            $where .= " AND t.create_time <= :create_time_end ";
             $map[':create_time_end'] = strtotime($params['create_time_end']);
         }
         // 首次入职时间开始

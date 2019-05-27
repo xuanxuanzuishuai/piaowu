@@ -328,6 +328,11 @@ class OrgWebRouter extends RouterBase
             'method' => ['get'],
             'call' => Student::class . ':list',
 
-        ]
+        ],
+        //学生渠道列表
+        '/org_web/org/channel_list' => [
+            'method' => ['get'],
+            'call'   => Org::class . ':channelList',
+        ],
     ];
 }

@@ -146,6 +146,38 @@ class StudentModel extends Model
             $where .= " and s.mobile like :mobile ";
             $map[':mobile'] = "{$params['mobile']}%";
         }
+        if(!empty($params['channel_id'])) {
+            $where .= ' and s.channel_id = :channel_id ';
+            $map[':channel_id'] = $params['channel_id'];
+        }
+        if(isset($params['sub_status'])) {
+            $where .= ' and s.sub_status = :sub_status ';
+            $map[':sub_status'] = $params['sub_status'];
+        }
+        if(!empty($params['start_create_time'])) {
+            $where .= ' and s.create_time >= :start_create_time ';
+            $map[':start_create_time'] = $params['start_create_time'];
+        }
+        if(!empty($params['end_create_time'])) {
+            $where .= ' and s.create_time <= :end_create_time';
+            $map[':end_create_time'] = $params['end_create_time'];
+        }
+        if(!empty($params['sub_status']) && !empty($params['sub_start_date'])) {
+            $where .= ' and unix_timestamp(s.sub_start_date) >= :sub_start_date';
+            $map[':sub_start_date'] = $params['sub_start_date'];
+        }
+        if(!empty($params['sub_status']) && !empty($params['sub_end_date'])) {
+            $where .= ' and unix_timestamp(s.sub_end_date) <= :sub_end_date';
+            $map[':sub_end_date'] = $params['sub_end_date'];
+        }
+        if(isset($params['gender'])) {
+            $where .= ' and s.gender = :gender';
+            $map[':gender'] = $params['gender'];
+        }
+        if(!empty($params['id'])) {
+            $where .= ' and s.id = :id ';
+            $map[':id'] = $params['id'];
+        }
 
         if ($orgId > 0) {
             if(!empty($params['is_bind'])) {

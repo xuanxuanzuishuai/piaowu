@@ -14,6 +14,7 @@ use App\Libs\Dict;
 use App\Libs\MysqlDB;
 use App\Libs\Util;
 use App\Libs\Valid;
+use App\Models\ChannelModel;
 use App\Models\EmployeeModel;
 use App\Models\OrgAccountModel;
 use App\Models\OrganizationModel;
@@ -623,6 +624,15 @@ class Org extends ControllerBase
             'data' => [
                 'referee' => $referee['qr_image'],
             ]
+        ]);
+    }
+
+    public function channelList(Request $request, Response $response, $args)
+    {
+        $list = ChannelModel::getRecords(['status' => ChannelModel::STATUS_NORMAL], [], false);
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $list,
         ]);
     }
 }
