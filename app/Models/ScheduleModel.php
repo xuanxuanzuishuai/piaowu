@@ -106,20 +106,23 @@ class ScheduleModel extends Model
             if ($orgId > 0)
                 $where['s.org_id'] = $orgId;
         }
-        $totalCount = 0;
-        if ($page != -1) {
-            // 获取总数
-            $totalCount = $db->count(self::$table . " (s)", "*", $where);
-            // 分页设置
-            $where['LIMIT'] = [($page - 1) * $count, $count];
-        }
-        // 排序设置
-        $where['ORDER'] = ['start_time' => 'DESC'];
+
         $join = [
             '[><]' . CourseModel::$table . " (c)" => ['s.course_id' => 'id'],
             '[><]' . ClassroomModel::$table . " (cr)" => ['s.classroom_id' => 'id'],
             '[><]' . STClassModel::$table . " (cl)" => ['s.class_id' => 'id']
         ];
+
+        // 获取总数
+        $totalCount = 0;
+        if ($page != -1) {
+            $totalCount = $db->count(self::$table . " (s)", $join,'s.id', $where);
+            // 分页设置
+            $where['LIMIT'] = [($page - 1) * $count, $count];
+        }
+
+        // 排序设置
+        $where['ORDER'] = ['start_time' => 'DESC'];
         $result = $db->select(self::$table . " (s)", $join, [
             's.id',
             's.course_id',
@@ -212,6 +215,7 @@ class ScheduleModel extends Model
 
         $userRoleStudent = ScheduleUserModel::USER_ROLE_STUDENT;
         $userRoleTeacher = ScheduleUserModel::USER_ROLE_TEACHER;
+        $userStatus = ScheduleUserModel::STATUS_NORMAL;
 
         $where = ' where s.org_id = :org_id ';
         $map   = [':org_id' => $orgId];
@@ -257,11 +261,11 @@ class ScheduleModel extends Model
                se.class_score,
                se.remark
         from {$s} s
-               left join {$cr} cr on cr.id = s.classroom_id 
+               left join {$cr} cr on cr.id = s.classroom_id
                inner join {$c} c on c.id = s.course_id
-               left join {$su} su on s.id = su.schedule_id and su.user_role = {$userRoleStudent}
+               left join {$su} su on s.id = su.schedule_id and su.user_role = {$userRoleStudent} and su.status = {$userStatus}
                left join {$stu} stu on su.user_id = stu.id
-               left join {$su} su2 on s.id = su2.schedule_id and su2.user_role = {$userRoleTeacher}
+               left join {$su} su2 on s.id = su2.schedule_id and su2.user_role = {$userRoleTeacher} and su2.status = {$userStatus}
                left join {$t} t on t.id = su2.user_id
                left join {$so} so on so.student_id = stu.id and so.org_id = s.org_id
                left join {$e} e on e.id = so.cc_id
@@ -272,7 +276,7 @@ class ScheduleModel extends Model
         from {$s} s
                left join {$cr} cr on cr.id = s.classroom_id
                inner join {$c} c on c.id = s.course_id
-               left join {$su} su on s.id = su.schedule_id and su.user_role = {$userRoleStudent}
+               left join {$su} su on s.id = su.schedule_id and su.user_role = {$userRoleStudent} and su.status = {$userStatus}
                left join {$stu} stu on su.user_id = stu.id
                left join {$so} so on so.student_id = stu.id and so.org_id = s.org_id
                left join {$e} e on so.cc_id = e.id
@@ -294,6 +298,7 @@ class ScheduleModel extends Model
 
         $userRoleStudent = ScheduleUserModel::USER_ROLE_STUDENT;
         $userRoleTeacher = ScheduleUserModel::USER_ROLE_TEACHER;
+        $userStatus = ScheduleUserModel::STATUS_NORMAL;
 
         $where = ' where s.org_id = :org_id ';
         $map   = [':org_id' => $orgId];
@@ -335,11 +340,11 @@ class ScheduleModel extends Model
                c.name   course_name,
                cr.name  class_room_name
         from {$s} s
-               left join {$cr} cr on cr.id = s.classroom_id 
+               inner join {$cr} cr on cr.id = s.classroom_id
                inner join {$c} c on c.id = s.course_id and c.org_id = s.org_id
-               left join {$su} su on s.id = su.schedule_id and su.user_role = {$userRoleStudent}
-               left join {$stu} stu on su.user_id = stu.id
-               left join {$su} su2 on s.id = su2.schedule_id and su2.user_role = {$userRoleTeacher}
+               inner join {$su} su on s.id = su.schedule_id and su.user_role = {$userRoleStudent} and su.status = {$userStatus}
+               inner join {$stu} stu on su.user_id = stu.id
+               left join {$su} su2 on s.id = su2.schedule_id and su2.user_role = {$userRoleTeacher} and su2.status = {$userStatus}
                left join {$t} t on t.id = su2.user_id
                left join {$so} so on so.student_id = stu.id and so.org_id = s.org_id
                left join {$e} e on e.id = so.cc_id
@@ -347,10 +352,10 @@ class ScheduleModel extends Model
 
         $total = $db->queryAll("select count(*) count
         from {$s} s
-               left join {$cr} cr on cr.id = s.classroom_id
+               inner join {$cr} cr on cr.id = s.classroom_id
                inner join {$c} c on c.id = s.course_id and c.org_id = s.org_id
-               left join {$su} su on s.id = su.schedule_id and su.user_role = {$userRoleStudent}
-               left join {$stu} stu on su.user_id = stu.id
+               inner join {$su} su on s.id = su.schedule_id and su.user_role = {$userRoleStudent} and su.status = {$userStatus}
+               inner join {$stu} stu on su.user_id = stu.id
                left join {$so} so on so.student_id = stu.id and so.org_id = s.org_id
                left join {$e} e on so.cc_id = e.id
         {$where} order by s.create_time desc", $map);
