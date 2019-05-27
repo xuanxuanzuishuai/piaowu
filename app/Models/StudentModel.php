@@ -213,13 +213,13 @@ class StudentModel extends Model
         $s = StudentModel::$table;
         $so = StudentOrgModel::$table;
 
-        $sql = "select s.* from {$s} s, {$so} so where s.id = so.student_id and s.id = {$studentId} ";
-
-        if(!is_null($status)) {
-            $sql .= " and so.status = {$status} ";
-        }
-        if (!empty($orgId)) {
-            $sql .= " and so.org_id = {$orgId} ";
+        if(empty($orgId)) {
+            $sql = "select s.* from {$s} s where s.id = {$studentId} ";
+        } else {
+            $sql = "select s.* from {$s} s, {$so} so where s.id = so.student_id and s.id = {$studentId} and so.org_id = {$orgId} ";
+            if(!is_null($status)) {
+                $sql .= " and so.status = {$status} ";
+            }
         }
 
         $records = $db->queryAll($sql);
