@@ -13,6 +13,7 @@ use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\OrganizationModelForApp;
+use App\Services\AppLogServices;
 use App\Services\HomeworkService;
 use App\Services\OrganizationServiceForApp;
 use App\Controllers\ControllerBase;
@@ -93,6 +94,13 @@ class Org extends ControllerBase
         );
         $loginData['homework'] = !empty($homework) ? $homework : [];
         $loginData['recent_collections'] = !empty($recentCollections) ? $recentCollections : [];
+
+        AppLogServices::locationLog($orgId, $orgAccount, [
+            'location' => $params['location'] ?? '',
+            'province' => $params['province'] ?? '',
+            'city' => $params['city'] ?? '',
+            'district' => $params['district'] ?? '',
+        ]);
 
         return $response->withJson([
             'code'=> Valid::CODE_SUCCESS,
