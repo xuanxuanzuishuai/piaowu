@@ -25,7 +25,7 @@ class PlayRecordModel extends Model
     const TYPE_ON_CLASS = 0;       // 课上练琴
     const TYPE_OFF_CLASS = 1;      // 课下练琴
 
-    const RANK_LIMIT = 100;          //排行榜取前RANK_LIMIT名
+    const RANK_LIMIT = 150;          //排行榜取前RANK_LIMIT名
 
 
     public static function getPlayRecordByLessonId($lessonId, $studentId,
@@ -413,6 +413,7 @@ class PlayRecordModel extends Model
                         AND play_record.score >= {$lowestScore}
                       ORDER BY score DESC) t
                   GROUP BY t.student_id
+                  ORDER BY score DESC
                   LIMIT {$limit}";
         }else{
             $students = implode(',', $students);
@@ -432,6 +433,7 @@ class PlayRecordModel extends Model
                         AND play_record.student_id IN {$students}
                       ORDER BY score DESC) t
                   GROUP BY t.student_id
+                  ORDER BY score DESC
                   LIMIT {$limit}";
         }
         $db = MysqlDB::getDB();
