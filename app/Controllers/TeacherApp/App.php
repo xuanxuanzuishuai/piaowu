@@ -141,7 +141,8 @@ class App extends ControllerBase
         $alioss = new AliOSS();
         $ret = $alioss->getSignature($ossConfig['access_key_id'],
             $ossConfig['access_key_secret'],
-            $ossConfig['host'],
+            $ossConfig['bucket'],
+            $ossConfig['endpoint'],
             null,
             $dir,
             $ossConfig['expire'],

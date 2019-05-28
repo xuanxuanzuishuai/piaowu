@@ -33,14 +33,16 @@ class AliOSS
      * 获取客户端上传签名
      * @param string $accessKeyId 阿里OSSAccessKeyId
      * @param string $accessKeySecret 阿里OSSAccessKeySecret
-     * @param string $host Bucket.endpoint
+     * @param string $bucket
+     * @param string $endpoint
      * @param string $callbackUrl 应用服务器回调地址
      * @param string $dir 上传前缀
      * @param int    $expire policy过期时间（秒）
      * @param int    $maxFileSize 最大文件大小(默认1G)
      * @return array
      */
-    public function getSignature($accessKeyId, $accessKeySecret, $host, $callbackUrl, $dir = '', $expire = 30, $maxFileSize=1048576000) {
+    public function getSignature($accessKeyId, $accessKeySecret, $bucket, $endpoint, $callbackUrl, $dir = '', $expire = 30, $maxFileSize=1048576000)
+    {
 
         // 目前没有需要上传回调的逻辑
         Util::unusedParam($callbackUrl);
@@ -71,7 +73,9 @@ class AliOSS
 
         return array(
             'accessid' => $accessKeyId,
-            'host' => $host,
+            'bucket' => $bucket,
+            'endpoint' => $endpoint,
+            'host' => $bucket . $endpoint,
             'policy' => $base64_policy,
             'signature' => $signature,
             'expire' => $end,
