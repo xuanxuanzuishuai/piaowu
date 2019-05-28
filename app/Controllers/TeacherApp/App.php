@@ -150,4 +150,46 @@ class App extends ControllerBase
 
         return $response->withJson(['data' => $ret, 'code' => 0], StatusCode::HTTP_OK);
     }
+
+    public function uploadSign(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'type',
+                'type' => 'required',
+                'error_code' => 'oss_sign_type_invalid'
+            ],
+            [
+                'key' => 'content',
+                'type' => 'required',
+                'error_code' => 'content_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $ossConfig = DictConstants::getSet(DictConstants::ALI_OSS_CONFIG);
+        $dir = AliOSS::getDirByType($params['type']);
+        if (empty($dir)) {
+            $result = Valid::addAppErrors([], 'oss_sign_type_invalid');
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $alioss = new AliOSS();
+        $signature = $alioss->uploadSignContent($params['content'], $ossConfig['access_key_secret']);
+
+        return $response->withJson([
+            'code' => 0,
+            'data' => [
+                'accessid' => $ossConfig['access_key_id'],
+                'bucket' => $ossConfig['bucket'],
+                'endpoint' => $ossConfig['endpoint'],
+                'signature' => $signature,
+                'dir' => $dir
+            ],
+        ], StatusCode::HTTP_OK);
+    }
 }

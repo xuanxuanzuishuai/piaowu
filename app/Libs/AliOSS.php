@@ -29,6 +29,12 @@ class AliOSS
         return $expiration."Z";
     }
 
+    public function uploadSignContent($content, $secret)
+    {
+        $signature = base64_encode(hash_hmac('sha1', $content, $secret, true));
+        return $signature;
+    }
+
     /**
      * 获取客户端上传签名
      * @param string $accessKeyId 阿里OSSAccessKeyId

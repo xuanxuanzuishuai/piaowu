@@ -183,6 +183,11 @@ class TeacherAppRouter extends RouterBase
             'call' => TeacherAppApp::class . ':getSignature',
             'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
         ],
+        '/teacher_app/app/upload_sign' => [
+            'method' => ['get'],
+            'call' => TeacherAppApp::class . ':uploadSign',
+            'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
+        ],
         '/teacher_app/note/create' => [
             'method' => ['post'],
             'call' => Note::class . ':createNote',
