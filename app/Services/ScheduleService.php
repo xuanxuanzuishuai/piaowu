@@ -56,7 +56,7 @@ class ScheduleService
                 ];
                 $sId = ScheduleModel::insertSchedule($schedule);
                 if (empty($sId)) {
-                    return false;
+                    return Valid::addErrors([], 'class_schedule', 'class_create_schedule_failure');
                 }
                 $users = [];
                 foreach ($class['students'] as $student) {
@@ -400,7 +400,7 @@ class ScheduleService
 
         // check schedule, check schedule_user
         $checkSchedule = self::checkSchedule($schedule);
-        if ($checkSchedule != true) {
+        if ($checkSchedule !== true) {
             return Valid::addErrors([], 'schedule', 'check_schedule_error');
         }
 
@@ -412,7 +412,7 @@ class ScheduleService
             return Valid::addErrors([], 'class_task_classroom', 'class_student_time_error');
         }
         $balances = StudentAccountService::checkBalance($params['students']);
-        if ($balances != true) {
+        if ($balances !== true) {
             return $balances;
         }
 

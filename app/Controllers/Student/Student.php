@@ -181,7 +181,7 @@ class Student extends ControllerBase
         if(empty($data)) {
             return $response->withJson(Valid::addErrors([], 'student_id', 'student_not_exist'));
         }
-        $data['account'] = StudentAccountService::getStudentAccount($studentId);
+        $data['account'] = StudentAccountService::getStudentAccounts($studentId, $orgId);
 
         return $response->withJson([
             'code' => 0,
@@ -422,6 +422,16 @@ class Student extends ControllerBase
                 'key'        => 'student_id',
                 'type'       => 'integer',
                 'error_code' => 'student_id_must_be_integer'
+            ],
+            [
+                'key'        => 'org_id',
+                'type'       => 'required',
+                'error_code' => 'org_id_is_required'
+            ],
+            [
+                'key'        => 'org_id',
+                'type'       => 'integer',
+                'error_code' => 'org_id_is_integer'
             ]
         ];
         $result = Valid::validate($params, $rules);
@@ -430,7 +440,7 @@ class Student extends ControllerBase
         }
 
         list($page, $count) = Util::formatPageCount($params);
-        list($logs, $totalCount)  = StudentAccountService::getLogs($params['student_id'], $page, $count);
+        list($logs, $totalCount)  = StudentAccountService::getLogs($params['student_id'], $params['org_id'], $page, $count);
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => [

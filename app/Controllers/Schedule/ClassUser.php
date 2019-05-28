@@ -73,7 +73,7 @@ class ClassUser extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         $balances = StudentAccountService::checkBalance($params['students']);
-        if ($balances != true) {
+        if ($balances !== true) {
             return $response->withJson($balances, StatusCode::HTTP_OK);
         }
 

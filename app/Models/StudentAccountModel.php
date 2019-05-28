@@ -9,6 +9,8 @@
 namespace App\Models;
 
 
+use App\Libs\MysqlDB;
+
 class StudentAccountModel extends Model
 {
     public static $table = "student_account";
@@ -33,6 +35,30 @@ class StudentAccountModel extends Model
             $where['type'] = $type;
         }
         return self::getRecords($where);
+    }
+
+    /**
+     *
+     * 获取学生账户列表
+     * @param $studentId
+     * @param $orgId
+     * @return array
+     */
+    public static function getStudentAccounts($studentId, $orgId)
+    {
+        $where = [self::$table . '.student_id' => $studentId];
+        if (!empty($orgId)) {
+            $where[self::$table . '.org_id'] = $orgId;
+        }
+        return MysqlDB::getDB()->select(self::$table, [
+            '[><]' . OrganizationModel::$table => ['org_id' => 'id']
+        ], [
+            OrganizationModel::$table . '.name(org_name)',
+            self::$table . '.type',
+            self::$table . '.balance',
+            self::$table . '.org_id',
+            self::$table . '.status'
+        ], $where);
     }
 
 

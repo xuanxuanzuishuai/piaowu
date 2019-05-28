@@ -80,7 +80,7 @@ class STClass extends ControllerBase
                 return $response->withJson($result, StatusCode::HTTP_OK);
             }
             $balances = StudentAccountService::checkBalance($params['students']);
-            if ($balances != true) {
+            if ($balances !== true) {
                 return $response->withJson($balances, StatusCode::HTTP_OK);
             }
         }
@@ -193,7 +193,7 @@ class STClass extends ControllerBase
                 return $response->withJson($result, StatusCode::HTTP_OK);
             }
             $balances = StudentAccountService::checkBalance($params['students']);
-            if ($balances != true) {
+            if ($balances !== true) {
                 return $response->withJson($balances, StatusCode::HTTP_OK);
             }
         }
@@ -342,7 +342,7 @@ class STClass extends ControllerBase
         $db = MysqlDB::getDB();
         $db->beginTransaction();
         $result = ScheduleService::beginSchedule($class);
-        if ($result != true) {
+        if ($result !== true) {
             $db->rollBack();
             return $response->withJson($result, StatusCode::HTTP_OK);
         } else {

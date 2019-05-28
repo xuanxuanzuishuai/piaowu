@@ -26,11 +26,12 @@ class StudentAccountLogModel extends Model
     /**
      * 获取账户操作记录
      * @param $studentId
+     * @param $orgId
      * @param int $page
      * @param int $count
      * @return array
      */
-    public static function getSALs($studentId, $page = -1, $count = 20)
+    public static function getSALs($studentId, $orgId, $page = -1, $count = 20)
     {
 
         $totalCount = MysqlDB::getDB()->count(self::$table, [
@@ -38,7 +39,8 @@ class StudentAccountLogModel extends Model
         ], [
             self::$table . '.id'
         ], [
-            StudentAccountModel::$table . '.student_id' => $studentId
+            StudentAccountModel::$table . '.student_id' => $studentId,
+            StudentAccountModel::$table . '.org_id' => $orgId
         ]);
         if ($totalCount == 0) {
             return [[], 0];
@@ -57,6 +59,7 @@ class StudentAccountLogModel extends Model
             EmployeeModel::$table . '.name(operator_name)'
         ], [
             StudentAccountModel::$table . '.student_id' => $studentId,
+            StudentAccountModel::$table . '.org_id' => $orgId,
             'ORDER' => [self::$table . '.create_time' => 'DESC'],
             'LIMIT' => [($page - 1) * $count, $count]
         ]);

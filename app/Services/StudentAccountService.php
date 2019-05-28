@@ -199,15 +199,12 @@ class StudentAccountService
     /**
      * 获取学生账户余额
      * @param $studentId
+     * @param $orgId
      * @return array
      */
-    public static function getStudentAccount($studentId)
+    public static function getStudentAccounts($studentId, $orgId)
     {
-        $accounts = StudentAccountModel::getRecords([
-            'student_id' => $studentId,
-            'type' => [StudentAccountModel::TYPE_CASH, StudentAccountModel::TYPE_VIRTUAL],
-            'status' => StudentAccountModel::STATUS_NORMAL
-        ]);
+        $accounts = StudentAccountModel::getStudentAccounts($studentId, $orgId);
         foreach ($accounts as &$account) {
             $account['account_type'] = DictService::getKeyValue(Constants::DICT_TYPE_STUDENT_ACCOUNT_TYPE, $account['type']);
         }
@@ -217,13 +214,14 @@ class StudentAccountService
     /**
      * 获取学生账户操作记录
      * @param $studentId
+     * @param $orgId
      * @param $page
      * @param $count
      * @return array
      */
-    public static function getLogs($studentId, $page, $count)
+    public static function getLogs($studentId, $orgId, $page, $count)
     {
-        list($logs, $totalCount) = StudentAccountLogModel::getSALs($studentId, $page, $count);
+        list($logs, $totalCount) = StudentAccountLogModel::getSALs($studentId, $orgId, $page, $count);
         foreach ($logs as &$account) {
             $account['account_type'] = DictService::getKeyValue(Constants::DICT_TYPE_STUDENT_ACCOUNT_OPERATE_TYPE, $account['type']);
         }
@@ -252,6 +250,10 @@ class StudentAccountService
 
         foreach ($students as $key => $price) {
             $price = array_sum($price);
+            if (empty($balances[$key])) {
+                return Valid::addErrors([], 'students', 'student_account_is_not_enough');
+            }
+            $prices[$key] = $prices[$key] ?? 0;
             if ($balances[$key] - $prices[$key] < $price) {
                 return Valid::addErrors([], 'students', 'student_account_is_not_enough');
             }
