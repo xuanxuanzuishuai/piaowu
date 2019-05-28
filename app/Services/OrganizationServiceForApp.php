@@ -9,9 +9,7 @@
 namespace App\Services;
 
 
-use App\Libs\OpernCenter;
 use App\Libs\SimpleLogger;
-use App\Models\HomeworkTaskModel;
 use App\Models\OrgAccountModel;
 use App\Models\OrganizationModel;
 use App\Models\OrganizationModelForApp;
@@ -43,7 +41,8 @@ class OrganizationServiceForApp
             return ['org_account_password_error'];
         }
 
-        $orgInfo = self::getOrgInfo($orgAccount['org_id']);
+        $orgId = $orgAccount['org_id'];
+        $orgInfo = self::getOrgInfo($orgId);
 
         if ($orgInfo['status'] == OrganizationModel::STATUS_STOP) {
             return ['org_is_disabled'];
@@ -54,11 +53,11 @@ class OrganizationServiceForApp
         }
 
         $orgInfo['account'] = $account;
-        $orgInfo['license_num'] = (int)$orgAccount['license_num'];
-        $orgTeachers = self::getTeachers($orgAccount['org_id']);
+        $orgInfo['license_num'] = OrgLicenseService::getLicenseNum($orgId);
+        $orgTeachers = self::getTeachers($orgId);
 
-        $token = OrganizationModelForApp::genToken($orgAccount['org_id']);
-        OrganizationModelForApp::setOrgToken($orgAccount['org_id'], $account, $token);
+        $token = OrganizationModelForApp::genToken($orgId);
+        OrganizationModelForApp::setOrgToken($orgId, $account, $token);
 
         OrgAccountModel::updateRecord($orgAccount['id'], ['last_login_time' => time()], false);
 
@@ -94,7 +93,9 @@ class OrganizationServiceForApp
             return ['org_account_invalid'];
         }
 
-        $orgInfo = self::getOrgInfo($orgAccount['org_id']);
+        $orgId = $orgAccount['org_id'];
+        $orgInfo = self::getOrgInfo($orgId);
+
         if ($orgInfo['status'] == OrganizationModel::STATUS_STOP) {
             return ['org_is_disabled'];
         }
@@ -104,8 +105,8 @@ class OrganizationServiceForApp
         }
 
         $orgInfo['account'] = $account;
-        $orgInfo['license_num'] = (int)$orgAccount['license_num'];
-        $orgTeachers = self::getTeachers($orgAccount['org_id']);
+        $orgInfo['license_num'] = OrgLicenseService::getLicenseNum($orgId);
+        $orgTeachers = self::getTeachers($orgId);
 
         $loginData = [
             'org_info' => $orgInfo,
@@ -127,9 +128,10 @@ class OrganizationServiceForApp
             'token' => $teacherToken,
         ];
 
+        $licenseNum = OrgLicenseService::getLicenseNum($orgId);
         $onlineTeachers = OrganizationModelForApp::getOnlineTeacher($orgId);
         $onlineTeachersNew = [$teacherCacheData];
-        $licenseRemain = $orgAccount['license_num'] - 1;
+        $licenseRemain = $licenseNum - 1;
         $willDelTokens = [];
 
         foreach ($onlineTeachers as $data) {
@@ -164,7 +166,7 @@ class OrganizationServiceForApp
             '$onlineTeachers' => $onlineTeachers,
             '$onlineTeachersNew' => $onlineTeachersNew,
             '$willDelTokens' => $willDelTokens,
-            'license_num' => $orgAccount['license_num']
+            'license_num' => $licenseNum
         ]);
 
         $loginData = [
