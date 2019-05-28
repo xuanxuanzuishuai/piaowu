@@ -110,6 +110,7 @@ class OrgLicenseService
      */
     public static function getLicenseNum($orgId)
     {
-        return OrgLicenseModel::getValidNum($orgId);
+        $num = OrgLicenseModel::getValidNum($orgId);
+        return $num ?? 0;
     }
 }
