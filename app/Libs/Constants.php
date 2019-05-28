@@ -12,6 +12,13 @@ namespace App\Libs;
 
 class Constants
 {
+    const STATUS_FALSE = 0;
+    const STATUS_TRUE = 1;
+
+    const UNIT_DAY = 'day';
+    const UNIT_MONTH = 'month';
+    const UNIT_YEAR = 'year';
+
     // 系统设置
     const DICT_TYPE_SYSTEM_ENV = 'system_env';
 
