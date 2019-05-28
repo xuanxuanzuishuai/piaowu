@@ -168,6 +168,12 @@ class Org extends ControllerBase
                     'error_code' => 'login_name_is_required'
                 ],
                 [
+                    'key'        => 'login_name',
+                    'type'       => 'regex',
+                    'value'      => '/^[a-z_0-9]+$/',
+                    'error_code' => 'login_name_format_error'
+                ],
+                [
                     'key'        => 'principal_name',
                     'type'       => 'required',
                     'error_code' => 'principal_name_is_required'
