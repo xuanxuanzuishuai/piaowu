@@ -75,7 +75,7 @@ class AliOSS
             'accessid' => $accessKeyId,
             'bucket' => $bucket,
             'endpoint' => $endpoint,
-            'host' => $bucket . $endpoint,
+            'host' => $bucket . '.' . $endpoint,
             'policy' => $base64_policy,
             'signature' => $signature,
             'expire' => $end,
