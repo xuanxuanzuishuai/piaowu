@@ -14,6 +14,7 @@ use App\Controllers\Boss\GiftCode;
 use App\Controllers\Employee\Employee;
 use App\Controllers\Org\Org;
 use App\Controllers\Org\OrgAccount as OrgAccount;
+use App\Controllers\Org\OrgLicense;
 use App\Controllers\Schedule\ScheduleRecord;
 use App\Controllers\Student\PlayRecord as BackendPlayRecord;
 use App\Controllers\Student\Student;
@@ -333,6 +334,26 @@ class OrgWebRouter extends RouterBase
         '/org_web/org/channel_list' => [
             'method' => ['get'],
             'call'   => Org::class . ':channelList',
+        ],
+        //机构许可证，创建
+        '/org_web/org_license/create' => [
+            'method' => ['post'],
+            'call'   => OrgLicense::class . ':create',
+        ],
+        //机构许可证，废除
+        '/org_web/org_license/disable' => [
+            'method' => ['post'],
+            'call'   => OrgLicense::class . ':disable',
+        ],
+        //机构许可证，激活
+        '/org_web/org_license/active' => [
+            'method' => ['post'],
+            'call'   => OrgLicense::class . ':active',
+        ],
+        //机构许可证，列表
+        '/org_web/org_license/list' => [
+            'method' => ['get'],
+            'call'   => OrgLicense::class . ':list',
         ],
     ];
 }

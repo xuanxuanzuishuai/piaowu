@@ -147,4 +147,9 @@ class Constants
     // 学生账户类型
     const DICT_TYPE_STUDENT_ACCOUNT_TYPE = 'student_account_type';
     const DICT_TYPE_STUDENT_ACCOUNT_OPERATE_TYPE = 'student_account_operate_type';
+
+    //机构许可证，时间单位
+    const DICT_TYPE_ORG_LICENSE_DURATION_UNIT = 'org_license_duration_unit';
+    //机构许可证，状态
+    const DICT_TYPE_ORG_LICENSE_STATUS = 'org_license_status';
 };

@@ -113,4 +113,14 @@ class OrgLicenseService
         $num = OrgLicenseModel::getValidNum($orgId);
         return $num ?? 0;
     }
+
+    public static function selectList($params)
+    {
+        list($records, $total) = OrgLicenseModel::selectList($params);
+        foreach($records as &$r) {
+            $r['duration'] .= DictService::getKeyValue(Constants::DICT_TYPE_ORG_LICENSE_DURATION_UNIT, $r['duration_unit']);
+            $r['status']   = DictService::getKeyValue(Constants::DICT_TYPE_ORG_LICENSE_STATUS, $r['status']);
+        }
+        return [$records, $total];
+    }
 }

@@ -13,6 +13,7 @@ use App\Controllers\ControllerBase;
 use App\Libs\Valid;
 use App\Models\OrgAccountModel;
 use App\Services\OrgAccountService;
+use App\Services\OrgLicenseService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -73,45 +74,34 @@ class OrgAccount extends ControllerBase
 
     public function listForOrg(Request $request, Response $response, $args)
     {
-        $rules = [
-            [
-                'key'        => 'page',
-                'type'       => 'integer',
-                'error_code' => 'page_is_integer'
-            ],
-            [
-                'key'        => 'count',
-                'type'       => 'integer',
-                'error_code' => 'count_is_integer'
-            ],
-            [
-                'key'        => 'account',
-                'type'       => 'length',
-                'value'      => 8,
-                'error_code' => 'account_length_is_8'
-            ],
-            [
-                'key'        => 'license_num',
-                'type'       => 'integer',
-                'error_code' => 'license_num_is_integer'
-            ],
-        ];
+        //过滤条件
+        //page, count, org_id, s_create_time, e_create_time, status
+        //s_active_time, e_active_time, s_expire_time, e_expire_time
+        //duration, duration_unit
+
         $params = $request->getParams();
-        $result = Valid::validate($params, $rules);
-        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
-            return $response->withJson($result, StatusCode::HTTP_OK);
-        }
 
         global $orgId;
         $params['org_id'] = $orgId;
 
-        list($records, $total) = OrgAccountService::selectByPage($params['page'], $params['count'], $params);
+        list($accounts) = OrgAccountService::selectByPage($params['page'], $params['count'], $params);
+        $licenseNum = OrgLicenseService::getLicenseNum($orgId);
+        foreach($accounts as &$a) {
+            $a['license_num'] = $licenseNum;
+        }
+
+        list($licenses, $total) = OrgLicenseService::selectList($params);
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => [
-                'records'     => $records,
-                'total_count' => $total
+                'account' => [
+                    'records' => $accounts,
+                ],
+                'license' => [
+                    'records'     => $licenses,
+                    'total_count' => $total,
+                ],
             ],
         ]);
     }

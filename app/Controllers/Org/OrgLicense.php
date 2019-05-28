@@ -120,4 +120,25 @@ class OrgLicense extends ControllerBase
             'data' => [],
         ]);
     }
+
+    public function list(Request $request, Response $response)
+    {
+        //过滤条件
+        //page, count, org_id, s_create_time, e_create_time, status
+        //s_active_time, e_active_time, s_expire_time, e_expire_time
+        //duration, duration_unit
+
+        $params = $request->getParams();
+        $params['org_id'] = $this->getEmployeeOrgId() > 0 ? $this->getEmployeeOrgId() : $params['org_id'];
+
+        list($records, $total) = OrgLicenseService::selectList($params);
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => [
+                'records'     => $records,
+                'total_count' => $total,
+            ],
+        ]);
+    }
 }
