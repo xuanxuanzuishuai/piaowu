@@ -11,6 +11,7 @@ namespace App\Models;
 
 class UserQrTicketModel extends Model
 {
+    public static $table = "user_qr_ticket";
     const STUDENT_TYPE = 1;
     const TEACHER_TYPE = 2;
 }

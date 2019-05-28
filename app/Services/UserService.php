@@ -35,8 +35,8 @@ class UserService
         $d2 = substr($newFilename, 2, 2);
         if (!file_exists($_ENV['STATIC_FILE_SAVE_PATH'] . "/{$subDir}/{$d1}/{$d2}/{$newFilename}")) {
             // 海报的宽、高
-            $imageWidth = 1075;
-            $imageHeight = 1920;
+            $imageWidth = 750;
+            $imageHeight = 1050;
 
             // 生成的海报图片
             $newImage = Image::canvas($imageWidth, $imageHeight);
@@ -48,7 +48,7 @@ class UserService
             $newImage->insert($imgPoster);
             $qrImage = Image::make($_ENV['STATIC_FILE_SAVE_PATH'] . "/" . $userQR['qr_url']);
             // 插入二维码
-            $newImage->insert($qrImage, 'bottom-left', 112, 97);
+            $newImage->insert($qrImage, 'bottom-left', 550, 30);
 
             // 获取存储的文件夹路径
             list($subPath, $hashDir, $fullDir) = File::createDir($subDir, $newFilename);
@@ -72,17 +72,17 @@ class UserService
      */
     public static function getUserQR($userId, $type = 1, $from = "user", $source = null, $posterInfo = null)
     {
-        $res = UserQrTicketModel::getRecord(['AND' => ['user_id' => $userId, 'type' => $type]]);
+        $res = UserQrTicketModel::getRecord(['AND' => ['user_id' => $userId, 'type' => $type]], [], false);
         if (!empty($res['qr_url']))
             return $res;
         $userQrStr = RC4::encrypt($_ENV['COOKIE_SECURITY_KEY'], $type . "_" . $userId);
         if (!is_dir('/tmp/qr')) {
             mkdir('/tmp/qr', 0777, true);
         }
-        QRcode::png($_ENV["WECHAT_FRONT_DOMAIN"] . "/bind/org/add" . "&referee_id=" . $userQrStr, '/tmp/qr/' . $userQrStr . ".png");
+        QRcode::png($_ENV["WECHAT_FRONT_DOMAIN"] . "/bind/org/add" . "?referee_id=" . $userQrStr, '/tmp/qr/' . $userQrStr . ".png");
         $path = '/tmp/qr/' . $userQrStr . ".png";
         $qrImage = Image::make($path);
-        $qrImage->resize(207, 207);
+        $qrImage->resize(170, 170);
 
         $subDir = $from . "_" . $type . 'QR';
         $newFilename = substr(md5($type . $userId), 8, 16) . '.png';
@@ -101,7 +101,7 @@ class UserService
             'type' => $type,
         ];
         unlink($path);
-        UserQrTicketModel::insertRecord($data);
+        UserQrTicketModel::insertRecord($data, false);
         return $data;
     }
 }

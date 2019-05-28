@@ -458,11 +458,11 @@ class WeChatService
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
         //执行curl，抓取URL并把它传递给浏览器
         $output = curl_exec($curl);
-        SimpleLogger::error(print_r($output, true));
+        SimpleLogger::info('output: ' . $output, []);
         $errno = curl_errno($curl);
-        SimpleLogger::error(print_r($errno, true));
+        SimpleLogger::info('errno: ' . $errno, []);
         $error = curl_error($curl);
-        SimpleLogger::error(print_r($error, true));
+        SimpleLogger::info('error: ' . $error, []);
         curl_close($curl);
         if (empty($errno)) {
             return json_decode($output, true);

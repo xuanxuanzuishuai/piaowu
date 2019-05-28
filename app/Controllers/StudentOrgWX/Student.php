@@ -43,10 +43,6 @@ class Student extends ControllerBaseForOrg
                 'key' => 'sms_code',
                 'type' => 'required',
                 'error_code' => 'sms_code_is_required'
-            ],
-            [
-                'key' => 'referee_id',
-                'type' => 'integer'
             ]
         ];
 
