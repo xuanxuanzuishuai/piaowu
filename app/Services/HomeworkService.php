@@ -37,8 +37,10 @@ class HomeworkService
         $homework_id = HomeworkModel::createHomework($schedule_id, $org_id, $teacher_id, $student_id, $created_time,
             $end_time, $remark);
         foreach ($content as $task) {
-            HomeworkTaskModel::createHomeworkTask($homework_id, $task["lesson_id"], $task["lesson_name"], $task["collection_id"],
-                $task["collection_name"], json_encode($task["baseline"]));
+            $nodeIds = !empty($task['note_ids']) ? implode(',', $task['note_ids']) : '';
+            HomeworkTaskModel::createHomeworkTask($homework_id, $task["lesson_id"],
+                $task["lesson_name"], $task["collection_id"], $task["collection_name"],
+                json_encode($task["baseline"]), $nodeIds);
         }
         return $homework_id;
     }

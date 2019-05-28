@@ -22,9 +22,9 @@ class Note extends ControllerBase{
         // 验证请求参数
         $rules = [
             [
-                'key' => 'data',
+                'key' => 'content',
                 'type' => 'required',
-                'error_code' => 'note_data_is_required'
+                'error_code' => 'note_content_is_required'
             ],
             [
                 'key' => 'lesson_id',
@@ -39,7 +39,7 @@ class Note extends ControllerBase{
         }
         $teacherId = $this->ci['teacher']['id'];
         $orgId = $this->ci['org']['id'];
-        TeacherNoteService::createNote($teacherId, $params['lesson_id'], $params['data'], $orgId);
+        TeacherNoteService::createNote($teacherId, $params['lesson_id'], $params['content'], $orgId);
         return $response->withJson(['code' => 0], StatusCode::HTTP_OK);
     }
 
