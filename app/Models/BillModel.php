@@ -132,4 +132,31 @@ class BillModel extends Model
 
         return $record;
     }
+
+    public static function getDetail($billId, $orgId = null)
+    {
+        $where = ' b.id = :id ';
+        $map[':id'] = $billId;
+        if(!empty($orgId)) {
+            $where .= ' and b.org_id = :org_id ';
+            $map[':org_id'] = $orgId;
+        }
+
+        $e = EmployeeModel::$table;
+        $s = StudentModel::$table;
+        $o = OrganizationModel::$table;
+        $b = BillModel::$table;
+        $d = BillExtendModel::$table;
+        $n = BillExtendModel::STATUS_NORMAL;
+
+        $db = MysqlDB::getDB();
+
+        $records = $db->queryAll("select b.*, e.name employee_name, s.name student_name, o.name org_name,
+        (select group_concat(d.credentials_url) from {$d} d where d.bill_id = b.id and d.status = {$n}) credentials_url  
+        from 
+        {$b} b left join {$e} e on e.id = b.operator_id left join {$s} s on s.id = b.student_id inner join {$o} o
+        on b.org_id = o.id where {$where}", $map);
+
+        return !empty($records) ? $records[0] : [];
+    }
 }

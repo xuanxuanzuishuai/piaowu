@@ -288,6 +288,12 @@ class OrgWebRouter extends RouterBase
             'call' => Bill::class . ':list',
 
         ],
+        //订单详情
+        '/bill/bill/detail' => [
+            'method' => ['get'],
+            'call' => Bill::class . ':detail',
+
+        ],
         //机构用订单列表
         '/bill/bill/list_for_org' => [
             'method' => ['get'],

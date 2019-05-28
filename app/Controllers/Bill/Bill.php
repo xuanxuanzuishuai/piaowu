@@ -11,6 +11,7 @@ namespace App\Controllers\Bill;
 
 use App\Controllers\ControllerBase;
 use App\Libs\MysqlDB;
+use App\Models\BillExtendModel;
 use App\Models\BillModel;
 use App\Models\StudentAccountModel;
 use App\Services\BillService;
@@ -298,6 +299,12 @@ class Bill extends ControllerBase
                 'value'      => [0, 1],
                 'error_code' => 'is_enter_account_must_be_in_0_1',
             ],
+            [
+                'key'        => 'credentials_url',
+                'type'       => 'lengthMax',
+                'value'      => 256,
+                'error_code' => 'credentials_url_length_elt_256',
+            ],
         ];
         $params = $request->getParams();
         $result = Valid::validate($params, $rules);
@@ -358,11 +365,51 @@ class Bill extends ControllerBase
             }
         }
 
+        //付款凭证图片链接
+        if(!empty($params['credentials_url'])) {
+            $extend = [
+                'bill_id'         => $lastId,
+                'credentials_url' => $params['credentials_url'],
+                'status'          => BillExtendModel::STATUS_NORMAL,
+                'create_time'     => $now,
+            ];
+            $affectRows = BillExtendModel::insertRecord($extend, false);
+            if(empty($affectRows)) {
+                $db->rollBack();
+                return $response->withJson(Valid::addErrors([], 'bill', 'save_bill_extend_fail'));
+            }
+        }
+
         $db->commit();
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => ['last_id' => $lastId],
+        ]);
+    }
+
+    public function detail(Request $request, Response $response, $args)
+    {
+        $rules = [
+            [
+                'key'        => 'bill_id',
+                'type'       => 'required',
+                'error_code' => 'bill_id_is_required',
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $billId = $params['bill_id'];
+
+        $record = BillService::getDetail($billId, $this->getEmployeeOrgId());
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $record,
         ]);
     }
 }
