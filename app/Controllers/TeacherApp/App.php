@@ -147,6 +147,6 @@ class App extends ControllerBase
             $ossConfig['expire'],
             $ossConfig['max_file_size']);
 
-        return $response->withJson($ret, StatusCode::HTTP_OK);
+        return $response->withJson(['data' => $ret, 'code' => 0], StatusCode::HTTP_OK);
     }
 }
