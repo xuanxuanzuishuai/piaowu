@@ -40,10 +40,10 @@ class STClassModel extends Model
     public static function getList($params, $page = -1, $count = 20)
     {
         $db = MysqlDB::getDB();
-        $where = "";
+        $where = " where c.status != " . self::STATUS_CHANGE . " and c.status != " . self::STATUS_CANCEL_AFTER_BEGIN;
         global $orgId;
         if ($orgId > 0) {
-            $where = " where c.org_id = " . $orgId;
+            $where = " and c.org_id = " . $orgId;
         }
         if (!empty($params['campus_id'])) {
             $where .= " and c.campus_id = " . $params['campus_id'];
@@ -72,7 +72,6 @@ class STClassModel extends Model
         if (!empty($params['course_id'])) {
             $where .= " and ct.course_id = " . $params['course_id'];
         }
-        $where .= " and c.status != " . self::STATUS_CHANGE . " and c.status != " . self::STATUS_CANCEL_AFTER_BEGIN;
         $select = " select distinct c.*,t.name as teacher_name, t1.name as h_teacher_name, cm.name as campus_name";
         $sql = "
             from " . self::$table . " as c 
