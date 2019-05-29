@@ -21,6 +21,7 @@ use App\Services\ClassUserService;
 use App\Services\ScheduleService;
 use App\Services\STClassService;
 use App\Services\StudentAccountService;
+use App\Services\StudentService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -75,6 +76,7 @@ class STClass extends ControllerBase
         }
 
         if (!empty($params['students'])) {
+            $params['students'] = StudentService::arrayPlus($params['students']);
             $result = ClassUserService::checkStudent($params['students'], $cts, $params['class_highest']);
             if ($result !== true) {
                 return $response->withJson($result, StatusCode::HTTP_OK);
@@ -183,6 +185,7 @@ class STClass extends ControllerBase
         $newStc['lesson_num'] = $cts['lesson_num'];
 
         $studentIds = $ssuIds = $stuIds = [];
+        $params['students'] = StudentService::arrayPlus($params['students']);
         if (!empty($class['students'])) {
             foreach ($class['students'] as $student) {
                 $studentIds[] = $student['user_id'];

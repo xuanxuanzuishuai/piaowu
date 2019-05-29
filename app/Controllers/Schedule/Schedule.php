@@ -21,6 +21,7 @@ use App\Services\ScheduleService;
 use App\Services\ScheduleUserService;
 use App\Services\STClassService;
 use App\Services\StudentAccountService;
+use App\Services\StudentService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -146,6 +147,7 @@ class Schedule extends ControllerBase
         $classIds = STClassService::getClassByScheduleId($schedule['id']);
         $classIds[] = $schedule['class_id'];
 
+        $params['students'] = StudentService::arrayPlus($params['students']);
         $classTasks = ScheduleService::checkScheduleAndClassTask($params, $newSchedule, $now);
         if (!empty($classTasks) && $classTasks['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($classTasks, StatusCode::HTTP_OK);
@@ -357,6 +359,7 @@ class Schedule extends ControllerBase
         $schedule['org_id'] = $classroom['org_id'];
         $schedule['duration'] = $course['duration'];
 
+        $params['students'] = StudentService::arrayPlus($params['students']);
         $classTasks = ScheduleService::checkScheduleAndClassTask($params, $schedule, $now);
         if (!empty($classTasks['code'])) {
             return $response->withJson($classTasks, StatusCode::HTTP_OK);

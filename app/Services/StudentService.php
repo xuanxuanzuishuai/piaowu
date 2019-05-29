@@ -220,4 +220,24 @@ class StudentService
     {
         return StudentOrgModel::assignCC($studentIds, $orgId, $ccId);
     }
+
+    /**
+     * 改变数组的格式
+     * "students":[{"411":["30.00","280.00"]},{"410":["30.00","280.00"]}]
+     * "students":{"411":["30.00","280.00"],"410":["30.00","280.00"]}
+     * @param $students
+     * @return array
+     */
+    public static function arrayPlus($students)
+    {
+        if (empty($students)) {
+            return [];
+        }
+
+        $s = [];
+        foreach ($students as $student) {
+            $s += $student;
+        }
+        return $s;
+    }
 }

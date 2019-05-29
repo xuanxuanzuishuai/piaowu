@@ -19,6 +19,7 @@ use App\Services\ScheduleService;
 use App\Services\ScheduleUserService;
 use App\Services\STClassService;
 use App\Services\StudentAccountService;
+use App\Services\StudentService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -59,6 +60,7 @@ class ClassUser extends ControllerBase
             return $response->withJson(Valid::addErrors([], 'class', 'class_status_invalid'), StatusCode::HTTP_OK);
         }
 
+        $params['students'] = StudentService::arrayPlus($params['students']);
         foreach($class['students'] as $student) {
             if(key_exists($student['user_id'], $params['students'])){
                 unset($params['students'][$student['user_id']]);
