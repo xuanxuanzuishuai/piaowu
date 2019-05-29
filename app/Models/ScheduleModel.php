@@ -158,6 +158,9 @@ class ScheduleModel extends Model
             's.org_id' => $schedule['org_id'],
         ];
 
+        if (!empty($schedule['id'])) {
+            $where['s.id[!]'] = $schedule['id'];
+        }
         $join = [
             '[><]' . CourseModel::$table . " (c)" => ['s.course_id' => 'id'],
             '[><]' . ClassroomModel::$table . " (cr)" => ['s.classroom_id' => 'id'],
