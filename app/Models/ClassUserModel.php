@@ -62,7 +62,7 @@ class ClassUserModel extends Model
             . " left join " . StudentModel::$table . " as s on cu.user_id = s.id and cu.user_role = " . self::USER_ROLE_S
             . " left join " . TeacherModel::$table . " as t on cu.user_id = t.id and cu.user_role in ( " . self::USER_ROLE_T . "," . self::USER_ROLE_HT . ")"
             . " left join " . ClassTaskPriceModel::$table . " as ctp on cu.user_id = ctp.student_id and cu.class_id = ctp.class_id and cu.user_role = " . self::USER_ROLE_S . " and ctp.status = " . ClassUserModel::STATUS_NORMAL
-            . " where cu.class_id = $classId and cu.status in (" . implode(",", $status) . ") group by cu.user_id";
+            . " where cu.class_id = $classId and cu.status in (" . implode(",", $status) . ") group by cu.user_id order by cu.id";
 
         return MysqlDB::getDB()->queryAll($sql);
     }
