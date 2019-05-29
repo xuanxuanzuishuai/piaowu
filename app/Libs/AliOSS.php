@@ -29,10 +29,48 @@ class AliOSS
         return $expiration."Z";
     }
 
-    public function uploadSignContent($content, $secret)
+    /**
+     * 获取OSS访问凭据
+     *
+     * @param $bucket
+     * @param $endpoint
+     * @param $roleArn
+     * @param $path
+     * @param $sessionName
+     * @return array
+     */
+    public static function getAccessCredential($bucket, $endpoint, $roleArn, $path, $sessionName = '')
     {
-        $signature = base64_encode(hash_hmac('sha1', $content, $secret, true));
-        return $signature;
+        $policy = [
+            'Version' => '1',
+            'Statement' => [
+                [
+                    'Effect' => 'Allow',
+                    'Action' => ['oss:GetObject', 'oss:PutObject'],
+                    'Resource' => "acs:oss:*:*:{$bucket}/{$path}*"
+                ]
+            ]
+        ];
+
+        list($errorMessage, $result) = AliClient::assumeRole($roleArn, $sessionName, $policy);
+
+        if (!empty($errorMessage)) {
+            SimpleLogger::error(__FILE__ . __LINE__, [
+                'action' => 'getAccessCredentials',
+                'message' => $errorMessage,
+                'roleArn' => $roleArn,
+                'sessionName' => $sessionName,
+                'policy' => $policy,
+                'result' => $result
+            ]);
+            return ['get_access_token_error'];
+        }
+
+        $result['bucket'] = $bucket;
+        $result['end_point'] = $endpoint;
+        $result['path'] = $path;
+
+        return [null, $result];
     }
 
     /**
