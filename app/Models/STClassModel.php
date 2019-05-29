@@ -43,7 +43,7 @@ class STClassModel extends Model
         $where = " where c.status != " . self::STATUS_CHANGE . " and c.status != " . self::STATUS_CANCEL_AFTER_BEGIN;
         global $orgId;
         if ($orgId > 0) {
-            $where = " and c.org_id = " . $orgId;
+            $where .= " and c.org_id = " . $orgId;
         }
         if (!empty($params['campus_id'])) {
             $where .= " and c.campus_id = " . $params['campus_id'];
