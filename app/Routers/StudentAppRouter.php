@@ -123,7 +123,7 @@ class StudentAppRouter extends RouterBase
 
         '/student_app/homework/record' => [
             'method' => ['get'],
-            'call' => Homework::class . ':practiceRecord',
+            'call' => Homework::class . ':record',
             'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
         ],
         '/student_app/homework/list' => [

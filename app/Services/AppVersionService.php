@@ -35,6 +35,18 @@ class AppVersionService
     }
 
     /**
+     * 获取最新版本号
+     * @param $appType
+     * @param $platformId
+     * @return string|null
+     */
+    public static function getPublishVersionCode($appType, $platformId)
+    {
+        $v = AppVersionModel::getPublishVersion($appType, $platformId);
+        return $v['version'] ?? null;
+    }
+
+    /**
      * 获取最后一个已发布版本
      * @param $appType
      * @param $platformId

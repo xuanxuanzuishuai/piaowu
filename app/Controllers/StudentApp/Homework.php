@@ -15,6 +15,7 @@ use App\Libs\Util;
 use App\Libs\Valid;
 use App\Services\HomeworkService;
 use App\Services\OpernService;
+use App\Services\AppVersionService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -30,7 +31,7 @@ class Homework extends ControllerBase
      * @param Response $response
      * @return mixed
      */
-    public function practiceRecord(Request $request, Response $response)
+    public function record(Request $request, Response $response)
     {
         $rules = [
             [
@@ -53,10 +54,12 @@ class Homework extends ControllerBase
             return $response->withJson($errors, StatusCode::HTTP_OK);
         }
 
+        $appVersion = AppVersionService::getPublishVersionCode(
+            OpernCenter::PRO_ID_AI_STUDENT, AppVersionService::PLAT_ID_IOS);
         $extra = OpernService::getLessonForJoin(
             $homework['lesson_id'],
             OpernCenter::PRO_ID_AI_STUDENT,
-            $this->ci['opn_pro_ver'],
+            $appVersion,
             $this->ci['opn_auditing'],
             $this->ci['opn_publish']
         );
