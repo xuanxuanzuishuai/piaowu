@@ -389,9 +389,9 @@ class PlayRecordService
 
     public static function getRanks($studentId, $lessonId, $isOrg){
 
-        $org = StudentOrgModel::getRecords(['student_id'=>$studentId], 'org_id');
+        $org = StudentOrgModel::getRecords(['student_id'=>$studentId, 'status'=>1], 'org_id');
         if(!empty($isOrg) and !empty($org)){
-            $students = StudentOrgModel::getRecords(['org_id'=>$org], 'student_id');
+            $students = StudentOrgModel::getRecords(['org_id'=>$org, 'status'=>1], 'student_id');
         }else{
             $students = [];
         }
