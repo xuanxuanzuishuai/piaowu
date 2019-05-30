@@ -123,28 +123,6 @@ class Model
     }
 
     /**
-     * 获取指定字段
-     * @param $fields
-     * @param $where
-     * @param bool $isOrg
-     * @return array
-     */
-    protected static function getOneFields($fields, $where, $isOrg = true)
-    {
-        if (empty($fields)) {
-            $fields = '*';
-        }
-        if ($isOrg == true) {
-            global $orgId;
-            if ($orgId > 0 &&  empty($where[self::ORG_ID_STR]))
-                $where[self::ORG_ID_STR] = $orgId;
-        }
-        $db = MysqlDB::getDB();
-        return $db->get(static::$table, $fields, $where);
-
-    }
-
-    /**
      * 获取记录列表
      * @param       $where
      * @param array $fields

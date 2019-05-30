@@ -183,4 +183,13 @@ class ClassTaskService
     {
         return ClassTaskModel::getStudentNotFinishAccount($studentIds);
     }
+
+    /**
+     * @param $classId
+     * @return array
+     */
+    public static function getClassTaskInfo($classId)
+    {
+        return ClassTaskModel::getRecord(['class_id' => $classId, 'status' => ClassTaskModel::STATUS_NORMAL], ['course_id', 'id']);
+    }
 }

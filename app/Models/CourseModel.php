@@ -216,4 +216,14 @@ class CourseModel extends Model
         ]);
     }
 
+    /**
+     * @param $courseId
+     * @return array
+     * 获取课程单价
+     */
+    public static function getCourseOprice($courseId)
+    {
+        return self::getRecord(['id' => $courseId], 'oprice');
+    }
+
 }

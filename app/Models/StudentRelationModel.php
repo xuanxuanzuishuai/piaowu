@@ -89,9 +89,9 @@ class StudentRelationModel extends Model
      */
     public static function getStudentIdByMobile($mobile)
     {
-        return self::getOneFields(['student_id'], [
+        return self::getRecord([
             'tel' => $mobile,
             'status' => self::STATUS_NORMAL
-        ]);
+        ],['student_id']);
     }
 }

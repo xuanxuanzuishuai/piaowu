@@ -69,11 +69,13 @@ class ClassUserModel extends Model
 
     /**
      * @param $where
-     * @return int|null
+     * @param $status
+     * @return mixed
      */
-    public static function getUserClassInfo($where)
+    public static function getUserClassInfo($where, $status)
     {
         $where['user_role'] = self::USER_ROLE_S;
+        $where[ClassTaskModel::$table . '.status'] = $status;
         return MysqlDB::getDB()->get(self::$table,
             [
                 '[><]' . ClassTaskModel::$table => ['class_id' => 'class_id'],
