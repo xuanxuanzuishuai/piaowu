@@ -148,7 +148,7 @@ class CourseModel extends Model
         $isTranslate && $params['status'] = DictModel::getKeyValue(Constants::DICT_COURSE_STATUS, $params['status']);
         $params['duration'] = ($params['duration'] / 60).'min';
         $params['class_type'] = $params['class_lowest'].'-'.$params['class_highest'];
-        $params['oprice'] = number_format($params['oprice'] / 100, 2);
+        $params['oprice'] = $params['oprice'] / 100;
         if (!empty($params['thumb'])) {
             $params['signed_thumb'] = AliOSS::signUrls($params['thumb']);
         }
