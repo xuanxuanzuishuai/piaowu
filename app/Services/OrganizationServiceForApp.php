@@ -117,10 +117,8 @@ class OrganizationServiceForApp
         return [null, $loginData];
     }
 
-    public static function teacherLogin($orgId, $account, $teacherId, $studentId)
+    public static function teacherLogin($orgId, $teacherId, $studentId)
     {
-        $orgAccount = OrgAccountModel::getByAccount($account);
-
         $teacherToken = OrganizationModelForApp::genToken($teacherId);
         $teacherCacheData = [
             'teacher_id' => $teacherId,
@@ -129,6 +127,10 @@ class OrganizationServiceForApp
         ];
 
         $licenseNum = OrgLicenseService::getLicenseNum($orgId);
+        if ($licenseNum < 1) {
+            return ['no_license_num'];
+        }
+
         $onlineTeachers = OrganizationModelForApp::getOnlineTeacher($orgId);
         $onlineTeachersNew = [$teacherCacheData];
         $licenseRemain = $licenseNum - 1;

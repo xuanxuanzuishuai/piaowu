@@ -13,11 +13,10 @@ use App\Models\AppLogModel;
 
 class AppLogServices
 {
-    public static function locationLog($orgId, $account, $location)
+    public static function locationLog($orgId, $location)
     {
         $data = [
             'org_id' => $orgId,
-            'account' => $account,
             'create_time' => time(),
             'location' => $location['location'] ?? '',
             'province' => $location['province'] ?? '',

@@ -75,13 +75,8 @@ class Org extends ControllerBase
         }
 
         $orgId = $this->ci['org']['id'];
-        $orgAccount = $this->ci['org_account'];
-        //Leave below for debugging & deleting them at the end.
-        //$orgId = 39;
-        //$orgAccount = 10000019;
 
         list($errorCode, $loginData) = OrganizationServiceForApp::teacherLogin($orgId,
-            $orgAccount,
             $params['teacher_id'],
             $params['student_id']
         );
@@ -95,7 +90,7 @@ class Org extends ControllerBase
         $loginData['homework'] = !empty($homework) ? $homework : [];
         $loginData['recent_collections'] = !empty($recentCollections) ? $recentCollections : [];
 
-        AppLogServices::locationLog($orgId, $orgAccount, [
+        AppLogServices::locationLog($orgId, [
             'location' => $params['location'] ?? '',
             'province' => $params['province'] ?? '',
             'city' => $params['city'] ?? '',
