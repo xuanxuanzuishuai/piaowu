@@ -156,3 +156,7 @@ license_id_is_required='许可id不正确'
 license_create_failure='许可创建失败'
 license_disable_failure='许可作废失败'
 license_active_failure='许可激活失败'
+no_license_num='APP许可数不足'
+relate_bill_not_exist="关联订单不存在"
+relate_bill_not_create_relate_bill="关联订单不能再创建关联订单"
+relate_bill_student_id_is_invalid="关联订单用户必须与原订单用户一致"

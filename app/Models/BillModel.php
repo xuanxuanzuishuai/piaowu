@@ -59,7 +59,9 @@ class BillModel extends Model
         if(!empty($params['end_create_time'])) {
             $where['b.create_time[<=]'] = $params['end_create_time'];
         }
-
+        if(!empty($params['r_bill_id'])) {
+            $where['r_bill_id'] = $params['r_bill_id'];
+        }
         $limitWhere = array_merge($where, [
             'LIMIT' => [($page-1) * $count, $count],
             'ORDER' => ['b.is_disabled' => 'ASC','b.create_time' => 'DESC'],

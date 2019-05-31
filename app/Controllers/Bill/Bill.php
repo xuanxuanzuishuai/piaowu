@@ -313,7 +313,21 @@ class Bill extends ControllerBase
         }
 
         global $orgId;
-
+        if(!empty($params['r_bill_id'])) {
+            $rBiil = BillService::getDetail($params['r_bill_id'],$orgId);
+            if(empty($rBiil)) {
+                return $response->withJson(Valid::addErrors([], 'bill', 'relate_bill_not_exist'));
+            }
+            if(!empty($rBill['r_bill_id']) ) {
+                return $response->withJson(Valid::addErrors([], 'bill', 'relate_bill_not_create_relate_bill'));
+            }
+            if($rBill['student_id']!=  $params['student_id'] ) {
+                return $response->withJson(Valid::addErrors([], 'bill', 'relate_bill_student_id_is_invalid'));
+            }
+        }
+        else {
+            $params['r_bill_id'] = 0;
+        }
         $studentId = $params['student_id'];
 
         $student = StudentService::getOrgStudent($orgId, $studentId);
@@ -335,6 +349,7 @@ class Bill extends ControllerBase
             'org_id'      => $orgId,
             'amount'      => $params['amount'] * 100,
             'sprice'      => $params['sprice'] * 100,
+            'r_bill_id'   => $params['r_bill_id'],
         ];
 
         foreach($columns as $key) {
@@ -406,10 +421,16 @@ class Bill extends ControllerBase
         $billId = $params['bill_id'];
 
         $record = BillService::getDetail($billId, $this->getEmployeeOrgId());
-
+        $rBills = ['total_count'=> 0,'r_bills'=> []];
+        if(!empty($record['r_bill_id'])) {
+            list($rBills['r_bills'],$rBills['total_count']) = BillService::selectByPage($record['org_id'], $params['page'], $params['count'], $record['r_bill_id']);
+        }
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
-            'data' => $record,
+            'data' => [
+                'detail' => $record,
+                'r_bills' => $rBills
+            ]
         ]);
     }
 }
