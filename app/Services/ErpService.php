@@ -68,4 +68,11 @@ class ErpService
 
         return $giftCodes;
     }
+
+    public static function exchangeSMSData($giftCode)
+    {
+        $sign = CommonServiceForApp::SIGN_STUDENT_APP;
+        $content = "AI陪练激活码：{$giftCode}";
+        return [$sign, $content];
+    }
 }

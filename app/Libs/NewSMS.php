@@ -46,6 +46,16 @@ class NewSMS
         }
     }
 
+    public function send($sign, $mobile, $content)
+    {
+        $data = [
+            'sign_name' => $sign,
+            'phone_number' => $mobile,
+            'content' => $content,
+        ];
+        return self::sendSMS($data);
+    }
+
 
     /**
      * 发送短信验证码

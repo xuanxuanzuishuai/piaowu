@@ -10,6 +10,8 @@ namespace App\Controllers\OrgWeb;
 
 use App\Controllers\Boss\GiftCode;
 use App\Controllers\ControllerBase;
+use App\Libs\DictConstants;
+use App\Libs\NewSMS;
 use App\Libs\Valid;
 use App\Models\EmployeeModel;
 use App\Models\GiftCodeModel;
@@ -71,6 +73,13 @@ class Erp extends ControllerBase
 
         if ($ret['code'] == Valid::CODE_PARAMS_ERROR) {
             return $ret;
+        }
+
+        list($sign, $content) = ErpService::exchangeSMSData(implode(',', $ret));
+        $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
+        $success = $sms->send($sign, $params['mobile'], $content);
+        if (!$success) {
+            return 'send_validate_code_failure';
         }
 
         return $response->withJson([
