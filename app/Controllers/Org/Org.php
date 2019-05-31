@@ -146,16 +146,6 @@ class Org extends ControllerBase
                 'type'       => 'integer',
                 'error_code' => 'status_must_be_integer'
             ],
-            [
-                'key'        => 'license_num',
-                'type'       => 'integer',
-                'error_code' => 'licence_num_is_integer'
-            ],
-            [
-                'key'        => 'license_num',
-                'type'       => 'required',
-                'error_code' => 'licence_num_is_required'
-            ],
         ];
 
         $params = $request->getParams();
@@ -301,7 +291,6 @@ class Org extends ControllerBase
                 'password'    => md5($account.$account), // 默认密码是机构账号
                 'create_time' => $now,
                 'status'      => OrgAccountModel::STATUS_NORMAL,
-                'license_num' => $params['license_num'],
             ];
 
             $affectRows = OrgAccountModel::insertRecord($accountData, false);

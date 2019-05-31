@@ -85,10 +85,6 @@ class OrgAccount extends ControllerBase
         $params['org_id'] = $orgId;
 
         list($accounts) = OrgAccountService::selectByPage($params['page'], $params['count'], $params);
-        $licenseNum = OrgLicenseService::getLicenseNum($orgId);
-        foreach($accounts as &$a) {
-            $a['license_num'] = $licenseNum;
-        }
 
         list($licenses, $total) = OrgLicenseService::selectList($params);
 
@@ -145,17 +141,7 @@ class OrgAccount extends ControllerBase
                 'error_code' => 'status_is_required'
             ],
             [
-                'key'        => 'license_num',
-                'type'       => 'required',
-                'error_code' => 'id_is_required'
-            ],
-            [
                 'key'        => 'status',
-                'type'       => 'integer',
-                'error_code' => 'integer_is_required'
-            ],
-            [
-                'key'        => 'license_num',
                 'type'       => 'integer',
                 'error_code' => 'integer_is_required'
             ],
@@ -168,7 +154,6 @@ class OrgAccount extends ControllerBase
 
         $data = [
             'status'      => $params['status'],
-            'license_num' => $params['license_num'],
             'update_time' => time(),
         ];
 

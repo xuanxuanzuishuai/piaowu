@@ -9,7 +9,9 @@
 namespace App\Models;
 
 
+use App\Libs\Constants;
 use App\Libs\MysqlDB;
+use App\Libs\Util;
 
 /**
  * 机构账号
@@ -39,45 +41,48 @@ class OrgAccountModel extends Model
 
     public static function selectByPage($page, $count, $params)
     {
-        $where = [];
+        $where = ' 1=1 ';
+        $map = [
+            ':status' => Constants::STATUS_TRUE,
+            ':now'    => time(),
+        ];
 
         if(!empty($params['account'])) {
-            $where['oa.account'] = $params['account'];
+            $where .= ' and oa.account = :account ';
+            $map[':account'] = $params['account'];
+        }
+        if(!empty($params['org_id'])) {
+            $where .= ' and o.id = :org_id ';
+            $map[':org_id'] = $params['org_id'];
+        }
+        if(!empty($params['org_name'])) {
+            $where .= ' and o.name like :org_name ';
+            $map[':org_name'] = "%{$params['org_name']}%";
         }
         //license_num=0也是一种状态，所以用isset
         if(isset($params['license_num'])) {
-            $where['oa.license_num'] = $params['license_num'];
-        }
-        if(!empty($params['org_id'])) {
-            $where['o.id'] = $params['org_id'];
-        }
-        if(!empty($params['org_name'])) {
-            $where['o.name[~]'] = $params['org_name'];
+            $where .= ' having license_num = :license_num ';
+            $map[':license_num'] = $params['license_num'];
         }
 
-        $richWhere = array_merge($where, [
-            'LIMIT' => [($page-1) * $count, $count],
-            'ORDER' => ['oa.create_time' => 'DESC'],
-        ]);
+        $oa = OrgAccountModel::$table;
+        $o  = OrganizationModel::$table;
+        $l  = OrgLicenseModel::$table;
+
+        $limit = Util::limitation($page, $count);
 
         $db = MysqlDB::getDB();
 
-        $records = $db->select(self::$table . '(oa)',[
-            '[><]' . OrganizationModel::$table . '(o)' => ['oa.org_id' => 'id']
-        ],[
-            'oa.org_id',
-            'oa.id',
-            'o.name(org_name)',
-            'oa.account',
-            'oa.status',
-            'oa.license_num',
-            'oa.last_login_time',
-        ], $richWhere);
+        $records = $db->queryAll("select oa.org_id, oa.id, o.name org_name, oa.account, oa.status, oa.last_login_time, 
+        ifnull((select sum(license_num) from {$l} l where l.org_id = o.id and l.status = :status and l.active_time < :now 
+        and l.expire_time > :now), 0) license_num from {$oa} oa left join {$o} o on o.id = oa.org_id 
+        where {$where} order by oa.create_time desc {$limit} ", $map);
 
-        $total = $db->count(self::$table . '(oa)', [
-            '[><]' . OrganizationModel::$table . '(o)' => ['oa.org_id' => 'id']
-        ], ['oa.id'] ,$where);
+        $total = $db->queryAll("select count(*) count from (select oa.id, 
+        ifnull((select sum(license_num) from {$l} l where l.org_id = o.id and l.status = :status and l.active_time < :now 
+        and l.expire_time > :now), 0) license_num from {$oa} oa left join {$o} o on o.id = oa.org_id 
+        where {$where}) ss", $map);
 
-        return [$records, $total];
+        return [$records, $total[0]['count']];
     }
 }

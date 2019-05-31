@@ -92,6 +92,7 @@ class OrgLicenseModel extends Model
         $db = MysqlDB::getDB();
         $records = $db->queryAll("select l.*, o.name org_name from {$l} l, {$o} o where l.org_id = o.id 
                     and {$where} order by l.create_time desc {$limit}", $map);
+
         $total = $db->queryAll("select count(*) count from {$l} l where {$where}", $map);
 
         return [$records, $total[0]['count']];
