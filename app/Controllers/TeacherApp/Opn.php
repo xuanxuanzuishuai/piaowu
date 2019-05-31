@@ -48,7 +48,7 @@ class Opn extends ControllerBase
         $collections = OpernService::appFormatCollections($collections['data']['list']);
 
         list($pageId, $pageLimit) = Util::appPageLimit($params);
-        $result = $opn->searchLessons($params['key'], 1, 0, $pageId, $pageLimit);
+        $result = $opn->searchLessons($params['key'], 1, 1, $pageId, $pageLimit);
         if (empty($result) || !empty($result['errors'])) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
