@@ -634,4 +634,20 @@ class Util
 
         return $str;
     }
+
+    /**
+     * @param $text
+     * @return string|string[]|null
+     * 过滤掉emoji表情
+     */
+    public static function filterEmoji($text)
+    {
+        $clean_text = preg_replace_callback(
+            '/./u',
+            function (array $match) {
+                return strlen($match[0]) >= 4 ? '' : $match[0];
+            },
+            $text);
+        return $clean_text;
+    }
 }

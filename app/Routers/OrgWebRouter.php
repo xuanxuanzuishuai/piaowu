@@ -78,6 +78,8 @@ class OrgWebRouter extends RouterBase
         '/boss/classroom/list_for_option' => array('method' => array('get'), 'call' => '\App\Controllers\Boss\Classroom:list'),
         //list,detail are for internal employee
         '/student/student/list' => array('method' => array('get'), 'call' => '\App\Controllers\Student\Student:list'),
+        '/student/student/add_follow_remark' => array('method' => array('post'), 'call' => '\App\Controllers\Student\FollowRemark:add'),
+        '/student/student/get_follow_remark' => array('method' => array('get'), 'call' => '\App\Controllers\Student\FollowRemark:lookOver'),
         //add,student,info,fuzzy_search are for org employee
         '/student/student/info' => array('method' => array('get'), 'call' => '\App\Controllers\Student\Student:info'),
         '/student/student/modify' => array('method' => array('post'), 'call' => '\App\Controllers\Student\Student:modify'),
