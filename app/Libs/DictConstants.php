@@ -84,6 +84,15 @@ class DictConstants {
         ]
     ];
 
+    // ip白名单
+    const IP_WHITE_LIST = [
+        'type' => 'IP_WHITE_LIST',
+        'keys' => [
+            'erp',
+            'org_web',
+        ]
+    ];
+
     public static function get($type, $key)
     {
         if (empty($type) || empty($key)) {

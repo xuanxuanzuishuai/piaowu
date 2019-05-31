@@ -9,8 +9,11 @@
 namespace App\Routers;
 
 use App\Controllers\API\OSS;
+use App\Controllers\API\Qiniu;
+use App\Controllers\API\UICtl;
 use App\Controllers\Bill\Bill;
 use App\Controllers\Boss\GiftCode;
+use App\Controllers\Employee\Auth;
 use App\Controllers\Employee\Employee;
 use App\Controllers\Org\Org;
 use App\Controllers\Org\OrgAccount as OrgAccount;
@@ -22,26 +25,52 @@ use App\Controllers\Student\Student;
 use App\Controllers\Teacher\Teacher;
 use App\Middleware\EmployeeAuthCheckMiddleWare;
 use App\Middleware\EmployeePrivilegeMiddleWare;
+use App\Middleware\ErpMiddleware;
+use App\Middleware\OrgWebMiddleware;
 
 class OrgWebRouter extends RouterBase
 {
-    public $middleWares = [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class];
+    public $middleWares = [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class, OrgWebMiddleware::class];
     protected $logFilename = 'dss_org_web.log';
     protected $uriConfig = [
 
-        '/api/qiniu/token' => array('method' => array('get'), 'call' => '\App\Controllers\API\Qiniu:token', 'middles' => array()),
-        '/api/qiniu/callback' => array('method' => array('get'), 'call' => '\App\Controllers\API\Qiniu:callback', 'middles' => array()),
-        '/api/uictl/dropdown' => array('method' => array('get'), 'call' => '\App\Controllers\API\UICtl:dropdown', 'middles' => array()),
+        '/api/qiniu/token' => [
+            'method' => ['get'],
+            'call' => Qiniu::class . ':token',
+            'middles' => [OrgWebMiddleware::class]
+        ],
+        '/api/qiniu/callback' => [
+            'method' => ['get'],
+            'call' => Qiniu::class . ':callback',
+            'middles' => [OrgWebMiddleware::class]
+        ],
+        '/api/uictl/dropdown' => [
+            'method' => ['get'],
+            'call' => UICtl::class . ':dropdown',
+            'middles' => [OrgWebMiddleware::class]
+        ],
 
         '/api/oss/signature' => [
             'method' => ['get'],
             'call' => OSS::class . ':signature',
-            'middles' => []
+            'middles' => [OrgWebMiddleware::class]
         ],
 
-        '/employee/auth/tokenlogin' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Auth:tokenlogin', 'middles' => array()),
-        '/employee/auth/signout' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Auth:signout', 'middles' => array('\App\Middleware\EmployeeAuthCheckMiddleWare')),
-        '/employee/auth/usercenterurl' => array('method' => array('get'), 'call' => '\App\Controllers\Employee\Auth:usercenterurl', 'middles' => array()),
+        '/employee/auth/tokenlogin' => [
+            'method' => ['post'],
+            'call' => Auth::class . ':tokenlogin',
+            'middles' => [OrgWebMiddleware::class]
+        ],
+        '/employee/auth/signout' => [
+            'method' => ['post'],
+            'call' => Auth::class . ':signout',
+            'middles' => [EmployeeAuthCheckMiddleWare::class, OrgWebMiddleware::class]
+        ],
+        '/employee/auth/usercenterurl' => [
+            'method' => ['get'],
+            'call' => Auth::class . ':usercenterurl',
+            'middles' => [OrgWebMiddleware::class]
+        ],
 
         '/employee/employee/list' => array('method' => array('get'), 'call' => '\App\Controllers\Employee\Employee:list'),
         //list for org
@@ -366,7 +395,7 @@ class OrgWebRouter extends RouterBase
         '/org_web/erp/exchange_gift_code' => [
             'method' => ['post'],
             'call' => Erp::class . ':exchangeGiftCode',
-            'middles' => []
+            'middles' => [ErpMiddleware::class]
         ],
     ];
 }

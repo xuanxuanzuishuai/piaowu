@@ -163,3 +163,4 @@ relate_bill_not_create_relate_bill="关联订单不能再创建关联订单"
 relate_bill_student_id_is_invalid="关联订单用户必须与原订单用户一致"
 exchange_type_invalid='兑换方式不正确'
 gift_code_user_invalid='激活码不属于该用户'
+ip_invalid='禁止访问'
