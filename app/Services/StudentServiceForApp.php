@@ -198,6 +198,13 @@ class StudentServiceForApp
                 return ['gift_code_is_invalid'];
         }
 
+        if (in_array($gift['generate_channel'], [
+            GiftCodeModel::BUYER_TYPE_ERP_EXCHANGE,
+            GiftCodeModel::BUYER_TYPE_ERP_ORDER
+        ]) && $gift['buyer'] != $studentID) {
+            return ['gift_code_user_invalid'];
+        }
+
         // 添加时间
 
         $student = StudentModelForApp::getStudentInfo($studentID, null);
