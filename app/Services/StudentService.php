@@ -15,6 +15,7 @@ use App\Libs\DictConstants;
 use App\Libs\ResponseError;
 use App\Libs\UserCenter;
 use App\Libs\Valid;
+use App\Models\GiftCodeModel;
 use App\Models\StudentModel;
 use App\Models\StudentOrgModel;
 
@@ -259,5 +260,46 @@ class StudentService
     public static function getByUuid($uuid)
     {
         return StudentModel::getRecord(['uuid' => $uuid], '*', false);
+    }
+
+    /**
+     * 扣除学生服务时长
+     * @param $studentId
+     * @param $num
+     * @param $unit
+     */
+    public static function reduceSubDuration($studentId, $num, $unit)
+    {
+        $student = StudentModel::getById($studentId);
+
+        if (empty($student['sub_end_date'])) {
+            return ;
+        }
+
+        $subEndDate = $student['sub_end_date'];
+        $subEndTime = strtotime($subEndDate);
+
+        $timeStr = '-' . $num . ' ';
+        switch ($unit) {
+            case GiftCodeModel::CODE_TIME_DAY:
+                $timeStr .= 'day';
+                break;
+            case GiftCodeModel::CODE_TIME_MONTH:
+                $timeStr .= 'month';
+                break;
+            case GiftCodeModel::CODE_TIME_YEAR:
+                $timeStr .= 'year';
+                break;
+            default:
+                $timeStr .= 'day';
+        }
+        $newSubEndDate = date('Ymd', strtotime($timeStr, $subEndTime));
+
+        $studentUpdate = [
+            'sub_end_date' => $newSubEndDate,
+            'update_time'  => time(),
+        ];
+
+        StudentModel::updateRecord($studentId, $studentUpdate);
     }
 }

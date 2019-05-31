@@ -397,5 +397,10 @@ class OrgWebRouter extends RouterBase
             'call' => Erp::class . ':exchangeGiftCode',
             'middles' => [ErpMiddleware::class]
         ],
+        '/org_web/erp/abandon_gift_code' => [
+            'method' => ['post'],
+            'call' => Erp::class . ':abandonGiftCode',
+            'middles' => [ErpMiddleware::class]
+        ],
     ];
 }

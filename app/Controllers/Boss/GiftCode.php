@@ -127,7 +127,8 @@ class GiftCode extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         //作废激活码
-        $updatedCount = GiftCodeService::abandonCode($params);
+        $ids = explode(',', $params['ids']);
+        $updatedCount = GiftCodeService::abandonCode($ids);
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,

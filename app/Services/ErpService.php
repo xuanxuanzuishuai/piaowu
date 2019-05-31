@@ -54,7 +54,7 @@ class ErpService
             $giftCodeUnit,
             $exchangeType,
             $student['id'],
-            GiftCodeModel::CREATE_BY_MANUAL,
+            GiftCodeModel::CREATE_BY_SYSTEM,
             NULL,
             EmployeeModel::SYSTEM_EMPLOYEE_ID,
             time(),
@@ -69,5 +69,42 @@ class ErpService
         $sign = CommonServiceForApp::SIGN_STUDENT_APP;
         $content = "激活码：{$giftCode}";
         return [$sign, $content];
+    }
+
+    /**
+     * @param $billId
+     * @param $uuid
+     * @return null|string $errorCode
+     */
+    public static function abandonGiftCode($billId, $uuid)
+    {
+        $code = GiftCodeModel::getByBillId($billId);
+        if (($code['generate_channel'] != GiftCodeModel::BUYER_TYPE_ERP_EXCHANGE) ||
+            ($code['generate_channel'] != GiftCodeModel::BUYER_TYPE_ERP_ORDER)) {
+            return 'code_generate_channel_invalid';
+        }
+
+        $student = StudentService::getByUuid($uuid);
+        if ($code['buyer'] != $student['id']) {
+            return 'buyer_invalid';
+        }
+
+        if ($code['code_status'] == GiftCodeModel::CODE_STATUS_INVALID) {
+            return 'code_status_invalid';
+
+        }
+
+        if ($code['code_status'] == GiftCodeModel::CODE_STATUS_NOT_REDEEMED) {
+            // 未激活的激活码直接禁用
+            GiftCodeService::abandonCode($code['id']);
+            return null;
+
+        } elseif ($code['code_status'] == GiftCodeModel::CODE_STATUS_HAS_REDEEMED) {
+
+            // 已激活的扣除响应时间
+            StudentService::reduceSubDuration($code['apply_user'], $code['valid_num'], $code['valid_units']);
+            return null;
+        }
+
     }
 }

@@ -223,4 +223,15 @@ LIMIT $offset, $count
         $db = MysqlDB::getDB();
         return $db->get(self::$table, '*', ['code' => $code]);
     }
+
+    /**
+     * 获取激活码信息
+     * @param $billId
+     * @return mixed
+     */
+    public static function getByBillId($billId)
+    {
+        $db = MysqlDB::getDB();
+        return $db->get(self::$table, '*', ['bill_id' => $billId]);
+    }
 }
