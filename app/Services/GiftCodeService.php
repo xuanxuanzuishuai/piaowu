@@ -25,10 +25,20 @@ class GiftCodeService
      * @param null $remarks
      * @param null $employeeId
      * @param null $buyTime
+     * @param int $billAmount
      * @return array
      * 批量生成激活码
      */
-    public static function batchCreateCode($num, $validNum, $validUnits, $generateChannel, $buyer, $generateWay, $remarks = NULL, $employeeId = NULL, $buyTime = NULL)
+    public static function batchCreateCode($num,
+                                           $validNum,
+                                           $validUnits,
+                                           $generateChannel,
+                                           $buyer,
+                                           $generateWay,
+                                           $remarks = NULL,
+                                           $employeeId = NULL,
+                                           $buyTime = NULL,
+                                           $billAmount = 0)
     {
         $ret = false;
         $i = 0;
@@ -57,6 +67,7 @@ class GiftCodeService
         $params['create_time'] = $t;
         $params['operate_time'] = $t;
         $params['remarks'] = $remarks;
+        $params['bill_amount'] = $billAmount;
         if (!empty($data['code'])) {
             foreach ($data['code'] as $value) {
                 $params['code'] = $value;

@@ -29,9 +29,12 @@ class StudentModel extends Model
     const NOT_ACTIVE_TEXT = '未激活';
 
     //添加渠道
+    const CHANNEL_UNKNOWN = 0;
     const CHANNEL_BACKEND_ADD = 1; //机构后台添加
     const CHANNEL_WE_CHAT_SCAN = 2; //微信扫码注册
     const CHANNEL_APP_REGISTER = 3; //爱学琴APP注册
+    const CHANNEL_ERP_EXCHANGE = 4; //ERP兑换激活码
+    const CHANNEL_ERP_ORDER = 5; //ERP购买订单
 
     /**
      * 更新学生信息
@@ -96,9 +99,7 @@ class StudentModel extends Model
         if(!empty($params['birthday'])){
             $data['birthday'] = $params['birthday'];
         }
-        if(!empty($params['channel_id'])){
-            $data['channel_id'] = $params['channel_id'];
-        }
+        $data['channel_id'] = $params['channel_id'] ?? 0;
 
         return MysqlDB::getDB()->insertGetID(self::$table, $data);
     }

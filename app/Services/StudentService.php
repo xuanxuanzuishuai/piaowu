@@ -80,7 +80,6 @@ class StudentService
      * @param $params
      * @param $operatorId
      * @return int|mixed|null|string
-     * @throws \Exception
      */
     public static function studentRegister($params, $operatorId = 0)
     {
@@ -255,5 +254,10 @@ class StudentService
         if ($studentInfo['is_first_pay'] != StudentOrgModel::HAS_PAID) {
             StudentOrgModel::updateRecord($studentInfo['id'], ['is_first_pay' => StudentOrgModel::HAS_PAID, 'first_pay_time' => time()]);
         }
+    }
+
+    public static function getByUuid($uuid)
+    {
+        return StudentModel::getRecord(['uuid' => $uuid], '*', false);
     }
 }

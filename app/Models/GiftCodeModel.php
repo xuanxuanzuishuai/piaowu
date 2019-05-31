@@ -24,11 +24,17 @@ class GiftCodeModel extends Model
 
     /**
      * 生成渠道
-     * 1机构，2个人，3其他
+     * 1 机构
+     * 2 个人
+     * 3 其他(停用)
+     * 4 erp兑换
+     * 5 erp购买订单
      */
     const BUYER_TYPE_ORG = 1;
     const BUYER_TYPE_STUDENT = 2;
     const BUYER_TYPE_OTHER = 3;
+    const BUYER_TYPE_ERP_EXCHANGE = 4;
+    const BUYER_TYPE_ERP_ORDER = 5;
 
     /**
      * 兑换码状态

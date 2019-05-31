@@ -15,6 +15,7 @@ use App\Controllers\Employee\Employee;
 use App\Controllers\Org\Org;
 use App\Controllers\Org\OrgAccount as OrgAccount;
 use App\Controllers\Org\OrgLicense;
+use App\Controllers\OrgWeb\Erp;
 use App\Controllers\Schedule\ScheduleRecord;
 use App\Controllers\Student\PlayRecord as BackendPlayRecord;
 use App\Controllers\Student\Student;
@@ -360,6 +361,12 @@ class OrgWebRouter extends RouterBase
         '/org_web/org_license/list' => [
             'method' => ['get'],
             'call'   => OrgLicense::class . ':list',
+        ],
+
+        '/org_web/erp/exchange_gift_code' => [
+            'method' => ['post'],
+            'call' => Erp::class . ':exchangeGiftCode',
+            'middles' => []
         ],
     ];
 }
