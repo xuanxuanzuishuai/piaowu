@@ -11,6 +11,7 @@ namespace App\Controllers\Bill;
 
 use App\Controllers\ControllerBase;
 use App\Libs\MysqlDB;
+use App\Libs\SimpleLogger;
 use App\Models\BillExtendModel;
 use App\Models\BillModel;
 use App\Models\StudentAccountModel;
@@ -314,14 +315,14 @@ class Bill extends ControllerBase
 
         global $orgId;
         if(!empty($params['r_bill_id'])) {
-            $rBiil = BillService::getDetail($params['r_bill_id'],$orgId);
-            if(empty($rBiil)) {
+            $rBill = BillService::getDetail($params['r_bill_id'],$orgId);
+            if(empty($rBill)) {
                 return $response->withJson(Valid::addErrors([], 'bill', 'relate_bill_not_exist'));
             }
             if(!empty($rBill['r_bill_id']) ) {
                 return $response->withJson(Valid::addErrors([], 'bill', 'relate_bill_not_create_relate_bill'));
             }
-            if($rBill['student_id']!=  $params['student_id'] ) {
+            if($rBill['student_id'] != $params['student_id'] ) {
                 return $response->withJson(Valid::addErrors([], 'bill', 'relate_bill_student_id_is_invalid'));
             }
         }
