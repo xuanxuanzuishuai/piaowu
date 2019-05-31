@@ -424,7 +424,7 @@ class Bill extends ControllerBase
         $record = BillService::getDetail($billId, $this->getEmployeeOrgId());
         $rBills = ['total_count'=> 0,'r_bills'=> []];
         if(!empty($record['r_bill_id'])) {
-            list($rBills['r_bills'],$rBills['total_count']) = BillService::selectByPage($record['org_id'], $params['page'], $params['count'], $record['id']);
+            list($rBills['r_bills'],$rBills['total_count']) = BillService::selectByPage($record['org_id'], $params['page'], $params['count'], ['r_bill_id'=>$record['id']]);
         }
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
