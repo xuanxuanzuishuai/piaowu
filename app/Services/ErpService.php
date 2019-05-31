@@ -48,10 +48,6 @@ class ErpService
             return Valid::addErrors([], 'student_id', 'user_register_fail');
         }
 
-        $remark = json_encode([
-            'erp_bill_id' => $erpBillId,
-        ]);
-
         $giftCodes = GiftCodeService::batchCreateCode(
             1,
             $giftCodeNum,
@@ -59,12 +55,11 @@ class ErpService
             $exchangeType,
             $student['id'],
             GiftCodeModel::CREATE_BY_MANUAL,
-            $remark,
+            NULL,
             EmployeeModel::SYSTEM_EMPLOYEE_ID,
             time(),
+            $erpBillId,
             $erpBillAmount);
-
-        // TODO: send sms
 
         return $giftCodes;
     }
@@ -72,7 +67,7 @@ class ErpService
     public static function exchangeSMSData($giftCode)
     {
         $sign = CommonServiceForApp::SIGN_STUDENT_APP;
-        $content = "AI陪练激活码：{$giftCode}";
+        $content = "激活码：{$giftCode}";
         return [$sign, $content];
     }
 }

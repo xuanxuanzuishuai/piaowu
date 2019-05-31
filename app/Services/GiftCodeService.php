@@ -25,6 +25,7 @@ class GiftCodeService
      * @param null $remarks
      * @param null $employeeId
      * @param null $buyTime
+     * @param null|int $billId
      * @param int $billAmount
      * @return array
      * 批量生成激活码
@@ -38,6 +39,7 @@ class GiftCodeService
                                            $remarks = NULL,
                                            $employeeId = NULL,
                                            $buyTime = NULL,
+                                           $billId = NULL,
                                            $billAmount = 0)
     {
         $ret = false;
@@ -67,6 +69,7 @@ class GiftCodeService
         $params['create_time'] = $t;
         $params['operate_time'] = $t;
         $params['remarks'] = $remarks;
+        $params['bill_id'] = $billId;
         $params['bill_amount'] = $billAmount;
         if (!empty($data['code'])) {
             foreach ($data['code'] as $value) {
