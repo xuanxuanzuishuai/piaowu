@@ -24,6 +24,7 @@ use App\Models\TeacherOrgModel;
 use App\Models\TeacherStudentModel;
 use App\Services\EmployeeService;
 use App\Services\OrganizationService;
+use App\Services\OrgLicenseService;
 use App\Services\QRCodeService;
 use App\Services\StudentService;
 use App\Services\TeacherService;
@@ -333,6 +334,13 @@ class Org extends ControllerBase
             if (empty($employeeIdOrErr)) {
                 $db->rollBack();
                 return $response->withJson(Valid::addErrors([], 'org', 'save_employee_fail'));
+            }
+
+            //添加1个为期1年的许可证
+            $licenseLastId = OrgLicenseService::create($lastId, 1, 1, Constants::UNIT_YEAR, $this->getEmployeeId());
+            if(empty($licenseLastId)) {
+                $db->rollBack();
+                return $response->withJson(Valid::addErrors([], 'org', 'create_license_fail'));
             }
 
             $db->commit();
