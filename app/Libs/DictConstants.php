@@ -93,6 +93,18 @@ class DictConstants {
         ]
     ];
 
+    // 特殊机构对应id
+    const SPECIAL_ORG_ID = [
+        'type' => 'SPECIAL_ORG_ID',
+        'keys' => [
+            'internal', // 内部 0
+            'direct', // 直营 1
+            'panda', // 线上熊猫
+            'ec', // 电商
+            'classroom', // 老教室
+        ]
+    ];
+
     public static function get($type, $key)
     {
         if (empty($type) || empty($key)) {

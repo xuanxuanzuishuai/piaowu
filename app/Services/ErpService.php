@@ -9,6 +9,7 @@
 namespace App\Services;
 
 
+use App\Libs\DictConstants;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\EmployeeModel;
@@ -47,6 +48,9 @@ class ErpService
         if (empty($student)) {
             return Valid::addErrors([], 'student_id', 'user_register_fail');
         }
+
+        $orgId = DictConstants::get(DictConstants::SPECIAL_ORG_ID, 'panda');
+        StudentService::bindOrg($orgId, $student['id']);
 
         $giftCodes = GiftCodeService::batchCreateCode(
             1,
@@ -97,14 +101,13 @@ class ErpService
         if ($code['code_status'] == GiftCodeModel::CODE_STATUS_NOT_REDEEMED) {
             // 未激活的激活码直接禁用
             GiftCodeService::abandonCode($code['id']);
-            return null;
 
         } elseif ($code['code_status'] == GiftCodeModel::CODE_STATUS_HAS_REDEEMED) {
 
             // 已激活的扣除响应时间
             StudentService::reduceSubDuration($code['apply_user'], $code['valid_num'], $code['valid_units']);
-            return null;
         }
 
+        return null;
     }
 }
