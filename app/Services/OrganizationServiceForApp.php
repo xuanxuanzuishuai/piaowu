@@ -48,10 +48,6 @@ class OrganizationServiceForApp
             return ['org_is_disabled'];
         }
 
-        if ($orgInfo['end_time'] < time()) {
-            return ['org_is_expired'];
-        }
-
         $orgInfo['account'] = $account;
         $orgInfo['license_num'] = OrgLicenseService::getLicenseNum($orgId);
         $orgTeachers = self::getTeachers($orgId);
@@ -98,10 +94,6 @@ class OrganizationServiceForApp
 
         if ($orgInfo['status'] == OrganizationModel::STATUS_STOP) {
             return ['org_is_disabled'];
-        }
-
-        if ($orgInfo['end_time'] < time()) {
-            return ['org_is_expired'];
         }
 
         $orgInfo['account'] = $account;
