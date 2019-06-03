@@ -43,6 +43,7 @@ class OrganizationModel extends Model
         $e   = EmployeeModel::$table;
         $o   = OrganizationModel::$table;
         $oa  = OrgAccountModel::$table;
+        $a   = AreaModel::$table;
 
         $studentStatus    = StudentModel::STATUS_NORMAL;
         $teacherStatus    = TeacherModel::STATUS_NORMAL;
@@ -55,6 +56,7 @@ class OrganizationModel extends Model
         $db = MysqlDB::getDB();
 
         $records = $db->queryAll("select 
+        a.name province_name, a2.name city_name, a3.name district_name, 
         o.*,e.name operator_name,o2.name parent_name
         ,(select oa.account from {$oa} oa where oa.org_id = o.id limit 1) account
         ,(select count(*) from {$s} s,{$so} so where s.id = so.student_id and so.status = {$studentOrgStatus} and 
@@ -67,6 +69,9 @@ class OrganizationModel extends Model
         from {$o} o
         left join {$e} e on o.operator_id = e.id
         left join {$o} o2 on o.parent_id = o2.id
+        left join {$a} a on a.code = o.province_code
+        left join {$a} a2 on a2.code = o.city_code
+        left join {$a} a3 on a3.code = o.district_code
         {$where}
         order by o.create_time desc
         {$limit}", $map);
