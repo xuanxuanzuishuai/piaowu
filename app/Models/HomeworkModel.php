@@ -68,6 +68,7 @@ class HomeworkModel extends Model
                     HomeworkTaskModel::$table.'.collection_name',
                     HomeworkTaskModel::$table.'.baseline',
                     HomeworkTaskModel::$table.'.is_complete(complete)',
+                    HomeworkTaskModel::$table.'.note_ids',
                     TeacherModel::$table.'.name(teacher_name)'
                 ],
                 $where

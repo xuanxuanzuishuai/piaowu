@@ -62,4 +62,12 @@ class TeacherNoteModel extends Model{
         $db = MysqlDB::getDB();
         $db->update(self::$table, $newValues, ['id' => $noteId]);
     }
+
+    public static function getNotesByIds($ids){
+        $db = MysqlDB::getDB();
+        $ret = $db->select(self::$table, "*", [
+            "id" => $ids,
+        ]);
+        return $ret;
+    }
 }
