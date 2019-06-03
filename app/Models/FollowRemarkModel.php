@@ -37,7 +37,7 @@ class FollowRemarkModel extends Model
         if ($isOrg == true) {
             global $orgId;
             if ($orgId > 0 &&  empty($where[self::ORG_ID_STR]))
-                $where[self::ORG_ID_STR] = $orgId;
+                $where[self::$table . '.' . self::ORG_ID_STR] = $orgId;
         }
         return MysqlDB::getDB()->select(self::$table,
             [
