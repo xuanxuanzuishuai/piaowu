@@ -12,6 +12,7 @@ namespace App\Services;
 use App\Controllers\Student\PlayRecord;
 use App\Libs\AIPLCenter;
 use App\Libs\Constants;
+use App\Libs\Util;
 use App\Models\PlayRecordModel;
 use App\Libs\OpernCenter;
 use App\Models\StudentModel;
@@ -262,6 +263,7 @@ class PlayRecordService
             $r['lesson_type'] = DictService::getKeyValue(Constants::DICT_TYPE_PLAY_RECORD_LESSON_TYPE, $r['lesson_type']);
             //alias
             $r['create_time'] = $r['created_time'];
+            $r['duration'] = Util::formatExerciseTime($r['duration']);
         }
         return [$records, $total];
     }
