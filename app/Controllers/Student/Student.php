@@ -324,8 +324,7 @@ class Student extends ControllerBase
             'name'        => $params['name'],
             'mobile'      => $params['mobile'],
             'gender'      => $params['gender'],
-            'channel_id'  => StudentModel::CHANNEL_BACKEND_ADD,
-            'create_time' => time(),
+            'channel_id'  => StudentModel::CHANNEL_BACKEND_ADD
         ];
 
         if(!empty($params['birthday'])) {

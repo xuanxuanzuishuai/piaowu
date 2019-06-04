@@ -127,14 +127,16 @@ class StudentService
             'uuid' => $uuid,
         ],[],false);
 
+        $time = time();
         if(empty($student)) {
+            $params['create_time'] = $time;
             $studentId = StudentModel::saveStudent($params, $authResult["uuid"], $operatorId);
             if(empty($studentId)) {
                 return Valid::addErrors([], 'student', 'save_student_fail');
             }
         } else {
             $studentId = $student['id'];
-            $params['update_time'] = time();
+            $params['update_time'] = $time;
             $affectRows = StudentModel::updateRecord($studentId, $params, false);
             if($affectRows == 0) {
                 return Valid::addErrors([], 'student', 'update_student_fail');
