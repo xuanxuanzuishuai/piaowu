@@ -46,6 +46,7 @@ class StudentService
             } else {
                 $r['sub_end_date'] = DictService::getKeyValue(Constants::DICT_TYPE_STUDENT_SUB_STATUS, $r['sub_status']);
             }
+            $r['is_first_pay'] = DictService::getKeyValue(Constants::DICT_TYPE_FIRST_PAY, $r['is_first_pay']);
         }
 
         return [$records, $total];
@@ -239,5 +240,18 @@ class StudentService
             $s += $student;
         }
         return $s;
+    }
+
+    /**
+     * @param $studentId
+     * 更新用户的付费状态
+     */
+    public static function updateUserPaidStatus($studentId)
+    {
+        //当前用户是否已经付费
+        $studentInfo = StudentOrgModel::getRecord(['student_id' => $studentId], ['id','is_first_pay']);
+        if ($studentInfo['is_first_pay'] != StudentOrgModel::HAS_PAID) {
+            StudentOrgModel::updateRecord($studentInfo['id'], ['is_first_pay' => StudentOrgModel::HAS_PAID, 'first_pay_time' => time()]);
+        }
     }
 }

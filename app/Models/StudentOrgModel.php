@@ -15,6 +15,8 @@ class StudentOrgModel extends Model
 {
     const STATUS_STOP = 0; //解绑
     const STATUS_NORMAL = 1; //绑定
+    const NOT_PAID = 0; //没有首次付费
+    const HAS_PAID = 1; //已经首次付费
     public static $table = 'student_org';
 
     /**

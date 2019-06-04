@@ -394,6 +394,8 @@ class Bill extends ControllerBase
                 $db->rollBack();
                 return $response->withJson(Valid::addErrors([], 'bill', 'save_bill_extend_fail'));
             }
+            //更新用户首付付费
+            StudentService::updateUserPaidStatus($studentId);
         }
 
         $db->commit();

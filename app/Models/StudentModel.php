@@ -194,7 +194,7 @@ class StudentModel extends Model
             }
 
             $sql = "select s.*, t.teacher_id, te.name teacher_name,
-                t.status ts_status, so.status bind_status, so.cc_id, e.name cc_name, ch.name channel_name
+                t.status ts_status, so.status bind_status, so.cc_id, so.is_first_pay, e.name cc_name, ch.name channel_name
                 from {$s} s
                 inner join {$so} so on s.id = so.student_id
                 left join {$t} t on s.id = t.student_id and t.org_id = so.org_id and t.status = {$tsBindStatus}

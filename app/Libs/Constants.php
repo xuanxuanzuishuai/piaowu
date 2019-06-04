@@ -152,4 +152,6 @@ class Constants
     const DICT_TYPE_ORG_LICENSE_DURATION_UNIT = 'org_license_duration_unit';
     //机构许可证，状态
     const DICT_TYPE_ORG_LICENSE_STATUS = 'org_license_status';
+    // DICT  付费状态 first_pay
+    const DICT_TYPE_FIRST_PAY = 'first_pay_status';
 };
