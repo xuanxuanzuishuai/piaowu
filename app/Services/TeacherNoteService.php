@@ -42,7 +42,8 @@ class TeacherNoteService{
     }
 
     public static function queryNote($teacherId, $orgId, $lessonId){
-        $notes = TeacherNoteModel::queryNote($teacherId, $orgId, $lessonId);
+        $where = ['ORDER' => ['create_time' => 'DESC']];
+        $notes = TeacherNoteModel::queryNote($teacherId, $orgId, $lessonId, $where);
         $ali = new AliOSS();
         $func = function ($item) use ($ali) {
             $item['content'] = json_decode($item['content'], true);
