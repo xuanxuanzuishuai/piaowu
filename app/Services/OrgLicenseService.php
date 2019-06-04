@@ -123,4 +123,25 @@ class OrgLicenseService
         }
         return [$records, $total];
     }
+
+    /**
+     * 机构许可信息
+     * [
+     *   'valid_num' => x,
+     *   'min_active_time' => y,
+     *   'max_expire_time' => z
+     * ]
+     *
+     * @param $orgId
+     * @return mixed
+     */
+    public static function getLicenseInfo($orgId)
+    {
+        $info = OrgLicenseModel::getInfo($orgId);
+        return [
+            'valid_num' => (int)$info['valid_num'],
+            'min_active_time' => (int)$info['min_active_time'],
+            'max_expire_time' => (int)$info['max_expire_time'],
+        ];
+    }
 }

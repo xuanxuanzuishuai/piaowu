@@ -12,6 +12,7 @@ namespace App\Models;
 use App\Libs\Constants;
 use App\Libs\MysqlDB;
 use App\Libs\Util;
+use Medoo\Medoo;
 
 class OrgLicenseModel extends Model
 {
@@ -36,6 +37,25 @@ class OrgLicenseModel extends Model
         ]);
 
         return $num;
+    }
+
+    public static function getInfo($orgId)
+    {
+        $db = MysqlDB::getDB();
+
+        $now = time();
+        $info = $db->get(self::$table, [
+            'valid_num' => Medoo::raw('SUM(<license_num>)'),
+            'min_active_time' => Medoo::raw('MIN(<active_time>)'),
+            'max_expire_time' => Medoo::raw('MAX(<expire_time>)'),
+        ], [
+            'org_id' => $orgId,
+            'status' => Constants::STATUS_TRUE,
+            'active_time[<]' => $now,
+            'expire_time[>]' => $now,
+        ]);
+
+        return $info;
     }
 
     public static function selectList($params)

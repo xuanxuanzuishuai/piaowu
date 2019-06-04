@@ -49,7 +49,10 @@ class OrganizationServiceForApp
         }
 
         $orgInfo['account'] = $account;
-        $orgInfo['license_num'] = OrgLicenseService::getLicenseNum($orgId);
+        $licenseInfo = OrgLicenseService::getLicenseInfo($orgId);
+        $orgInfo['license_num'] = $licenseInfo['valid_num'];
+        $orgInfo['start_time'] = (string)$licenseInfo['min_active_time'];
+        $orgInfo['end_time'] = (string)$licenseInfo['max_expire_time'];
         $orgTeachers = self::getTeachers($orgId);
 
         $token = OrganizationModelForApp::genToken($orgId);
@@ -97,7 +100,10 @@ class OrganizationServiceForApp
         }
 
         $orgInfo['account'] = $account;
-        $orgInfo['license_num'] = OrgLicenseService::getLicenseNum($orgId);
+        $licenseInfo = OrgLicenseService::getLicenseInfo($orgId);
+        $orgInfo['license_num'] = $licenseInfo['valid_num'];
+        $orgInfo['start_time'] = (string)$licenseInfo['min_active_time'];
+        $orgInfo['end_time'] = (string)$licenseInfo['max_expire_time'];
         $orgTeachers = self::getTeachers($orgId);
 
         $loginData = [
