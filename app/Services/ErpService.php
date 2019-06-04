@@ -83,7 +83,7 @@ class ErpService
     public static function abandonGiftCode($billId, $uuid)
     {
         $code = GiftCodeModel::getByBillId($billId);
-        if (($code['generate_channel'] != GiftCodeModel::BUYER_TYPE_ERP_EXCHANGE) ||
+        if (($code['generate_channel'] != GiftCodeModel::BUYER_TYPE_ERP_EXCHANGE) &&
             ($code['generate_channel'] != GiftCodeModel::BUYER_TYPE_ERP_ORDER)) {
             return 'code_generate_channel_invalid';
         }
