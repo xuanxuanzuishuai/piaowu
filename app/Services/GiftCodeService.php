@@ -59,22 +59,25 @@ class GiftCodeService
         } while ($ret);
         //插入数据
         $t = time();
-        $params['generate_channel'] = $generateChannel;
-        $params['buyer'] = $buyer;
-        $params['buy_time'] = $buyTime;
-        $params['valid_num'] = $validNum;
-        $params['valid_units'] = $validUnits;
-        $params['generate_way'] = $generateWay;
-        $params['operate_user'] = $employeeId;
-        $params['create_time'] = $t;
-        $params['operate_time'] = $t;
-        $params['remarks'] = $remarks;
-        $params['bill_id'] = $billId;
-        $params['bill_amount'] = $billAmount;
+        $params = [
+            'generate_channel' => $generateChannel,
+            'buyer' => $buyer,
+            'buy_time' => $buyTime,
+            'valid_num' => $validNum,
+            'valid_units' => $validUnits,
+            'generate_way' => $generateWay,
+            'operate_user' => $employeeId,
+            'create_time' => $t,
+            'operate_time' => $t,
+            'remarks' => $remarks,
+            'bill_id' => $billId,
+            'bill_amount' => $billAmount,
+        ];
+
         if (!empty($data['code'])) {
             foreach ($data['code'] as $value) {
                 $params['code'] = $value;
-                GiftCodeModel::InsertCodeInfo($params);
+                GiftCodeModel::insertRecord($params, false);
             }
         }
         return $data['code'];
