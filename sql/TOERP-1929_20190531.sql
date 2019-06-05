@@ -1,4 +1,4 @@
-ALTER TABLE `gift_code` ADD COLUMN `bill_amount` INT NULL COMMENT '订单金额' AFTER `remarks`;
+ALTER TABLE `gift_code` ADD COLUMN `bill_amount` VARCHAR(30) NULL COMMENT '订单金额' AFTER `remarks`;
 ALTER TABLE `gift_code` ADD COLUMN `bill_id` INT NULL COMMENT '订单id' AFTER `remarks`;
 
 
