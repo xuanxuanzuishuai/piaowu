@@ -127,6 +127,11 @@ class STClassModel extends Model
      */
     public static function getClass($name)
     {
-        return MysqlDB::getDB()->select(self::$table, ['id', 'name'], ['name[~]' => $name]);
+        $where['name[~]'] = $name;
+        global $orgId;
+        if (!empty($orgId)) {
+            $where['org_id'] = $orgId;
+        }
+        return MysqlDB::getDB()->select(self::$table, ['id', 'name'], $where);
     }
 }
