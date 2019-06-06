@@ -389,7 +389,7 @@ class HomeworkService
         // 最近教材
         $lessonIds = $schedule[0]['opn_lessons'];
         if (!empty($lessonIds)) {
-            $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, 1);
+            $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER, $proVer);
             $lessons = $opn->lessonsByIds($lessonIds);
             $collectionIds = array_column($lessons['data'], 'collection_id');
             $result = $opn->collectionsByIds($collectionIds);
