@@ -19,6 +19,9 @@ class TeacherNoteModel extends Model{
     const TRUE = 1;
     const FALSE = 0;
 
+    // 笔记最大长度(单位: byte)
+    const NOTE_CONTENT_LEN = 512000;
+
     public static function newNote($note){
         self::insertRecord($note);
     }

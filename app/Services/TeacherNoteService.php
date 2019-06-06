@@ -17,18 +17,23 @@ class TeacherNoteService{
 
     public static function createNote($teacherId, $lessonId, $data, $orgId=null){
 
+        $content = json_encode($data);
+        if(strlen($content) > TeacherNoteModel::NOTE_CONTENT_LEN){
+            return 'note_content_invalid';
+        }
 
         $temp = [];
         $temp['teacher_id'] = $teacherId;
         $temp['lesson_id'] = $lessonId;
         $temp['org_id'] = $orgId;
         $temp['note_type'] = $data['note_type'];
-        $temp['content'] = json_encode($data);
+        $temp['content'] = $content;
         $temp['deleted'] = TeacherNoteModel::FALSE;
         $temp['create_time'] = time();
         $temp['update_time'] = time();
 
         TeacherNoteModel::insertRecord($temp);
+        return null;
     }
 
     public static function updateNote($teacherId, $noteId, $data, $orgId){

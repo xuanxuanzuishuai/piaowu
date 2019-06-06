@@ -39,7 +39,11 @@ class Note extends ControllerBase{
         }
         $teacherId = $this->ci['teacher']['id'];
         $orgId = $this->ci['org']['id'];
-        TeacherNoteService::createNote($teacherId, $params['lesson_id'], $params['content'], $orgId);
+        $errorCode = TeacherNoteService::createNote($teacherId, $params['lesson_id'], $params['content'], $orgId);
+        if(!empty($errorCode)){
+            $result = Valid::addAppErrors([], $errorCode);
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
         return $response->withJson(['code' => 0], StatusCode::HTTP_OK);
     }
 
