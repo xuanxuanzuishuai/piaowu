@@ -49,6 +49,8 @@ class TeacherNoteService{
             $item['content'] = json_decode($item['content'], true);
             $item['content']['signed_board'] = $ali->signUrls($item['content']['board']);
             $item['content']['signed_cover_file'] = $ali->signUrls($item['content']['coverFile']);
+            $item['content']['signed_cover_thumb'] = $ali->signUrls($item['content']['coverFile'],
+                "", "", AliOSS::PROCESS_STYLE_NOTE_THUMB);
             return $item;
         };
         return array_map($func, $notes);

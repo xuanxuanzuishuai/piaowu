@@ -20,6 +20,8 @@ class AliOSS
     const DIR_TEACHER_NOTE = 'teacher_note';
     const DIR_DYNAMIC_MIDI = 'dynamic_midi';
 
+    const PROCESS_STYLE_NOTE_THUMB = 'note_thumb'; // 老师笔记缩略图 image/auto-orient,1/resize,p_25/quality,q_70
+
     private function gmt_iso8601($time) {
         $dtStr = date("c", $time);
         $mydatetime = new DateTime($dtStr);
@@ -178,12 +180,13 @@ class AliOSS
     }
 
     /**
-     * @param        $urlNeedSign
+     * @param string $urlNeedSign
      * @param string $columnName
      * @param string $newColumn
+     * @param string $style 图片处理方式，在OSS后台配置
      * @return array|string
      */
-    public static function signUrls($urlNeedSign, $columnName = "", $newColumn = ""){
+    public static function signUrls($urlNeedSign, $columnName = "", $newColumn = "", $style=""){
         if (empty($urlNeedSign)){
             return $urlNeedSign;
         }
@@ -199,22 +202,41 @@ class AliOSS
             ]
         );
 
+        $options = [];
+        if (!empty($style)) {
+            $options['x-oss-process'] = 'style/' . $style;
+        }
+
         try {
             $timeout = 3600 * 8;
             $ossClient = new OssClient($accessKeyId, $accessKeySecret, $endpoint);
             if (is_array($urlNeedSign) && !empty($columnName)){
-                $result = array_map(function($v) use ($ossClient, $bucket, $timeout, $columnName, $newColumn){
+                $result = array_map(function($v) use ($ossClient,
+                    $bucket,
+                    $timeout,
+                    $columnName,
+                    $newColumn,
+                    $options
+                ){
                     $url = $v[$columnName];
                     if (!empty($url) && !Util::isUrl($url)){
                         $url = preg_replace("/^\//","", $url);
-                        $v[empty($newColumn) ? $columnName : $newColumn] = $ossClient->signUrl($bucket, $url, $timeout);
+                        $v[empty($newColumn) ? $columnName : $newColumn] = $ossClient->signUrl($bucket,
+                            $url,
+                            $timeout,
+                            OssClient::OSS_HTTP_GET,
+                            $options);
                     }
                     return $v;
                 }, $urlNeedSign);
             }else{
                 if (!Util::isUrl($urlNeedSign)){
                     $urlNeedSign = preg_replace("/^\//","", $urlNeedSign);
-                    $result = $ossClient->signUrl($bucket, $urlNeedSign, $timeout);
+                    $result = $ossClient->signUrl($bucket,
+                        $urlNeedSign,
+                        $timeout,
+                        OssClient::OSS_HTTP_GET,
+                        $options);
                 }
             }
             return $result;
