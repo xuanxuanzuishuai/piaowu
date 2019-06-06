@@ -186,26 +186,30 @@ class TeacherAppRouter extends RouterBase
         '/teacher_app/note/create' => [
             'method' => ['post'],
             'call' => Note::class . ':createNote',
-            'middles' => [OrgTeacherAuthMiddleWareForApp::class,
+            'middles' => [TeacherCheckMiddleWareForApp::class,
+                OrgTeacherAuthMiddleWareForApp::class,
                 OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
         ],
         '/teacher_app/note/update' => [
             'method' => ['post'],
             'call' => Note::class . ':updateNote',
-            'middles' => [OrgTeacherAuthMiddleWareForApp::class,
+            'middles' => [TeacherCheckMiddleWareForApp::class,
+                OrgTeacherAuthMiddleWareForApp::class,
                 OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
         ],
         '/teacher_app/note/delete' => [
             'method' => ['post'],
             'call' => Note::class . ':deleteNote',
-            'middles' => [OrgTeacherAuthMiddleWareForApp::class,
+            'middles' => [TeacherCheckMiddleWareForApp::class,
+                OrgTeacherAuthMiddleWareForApp::class,
                 OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
         ],
 
         '/teacher_app/note/list' => [
             'method' => ['get'],
             'call' => Note::class . ':listNote',
-            'middles' => [OrgTeacherAuthMiddleWareForApp::class,
+            'middles' => [TeacherCheckMiddleWareForApp::class,
+                OrgTeacherAuthMiddleWareForApp::class,
                 OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
         ],
 
