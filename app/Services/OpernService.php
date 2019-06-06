@@ -30,7 +30,7 @@ class OpernService
         foreach ($data as $category) {
             $series['id'] = $category['id'];
             $series['name'] = $category['name'];
-            $series['cover'] = $category['cover'];
+            $series['cover'] = $category['cover'] ? $category['cover'] : '';
             $series['have_res'] = $category['dynamic'] ? '1' : '0';
             $series['book_cnt'] = $category['collection_count'];
             $series['opern_cnt'] = $category['lesson_count'];
@@ -55,7 +55,7 @@ class OpernService
         foreach ($data as $collection) {
             $book['id'] = $collection['id'];
             $book['name'] = $collection['name'];
-            $book['cover'] = $collection['cover'];
+            $book['cover'] = $collection['cover'] ? $collection['cover'] : '';
             $book['have_res'] = $collection['dynamic'] ? '1' : '0';
             $book['opern_cnt'] = $collection['lesson_count'];
             $book['is_free'] = $collection['freeflag'] ? '1' : '0';
