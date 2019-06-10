@@ -11,7 +11,9 @@ namespace App\Controllers\StudentApp;
 
 use App\Controllers\ControllerBase;
 use App\Libs\Valid;
+use App\Models\PlayRecordModel;
 use App\Models\StudentModelForApp;
+use App\Services\UserPlayServices;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -49,4 +51,48 @@ class Panda extends ControllerBase
         ], StatusCode::HTTP_OK);
     }
 
+    /**
+     * 动态演奏结束
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function aiEnd(Request $request, Response $response){
+        // 验证请求参数
+        $rules = [
+            [
+                'key' => 'data',
+                'type' => 'required',
+                'error_code' => 'play_data_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $data = $params['data'];
+        $uuid = $data['uuid'];
+        $student = StudentModelForApp::getStudentInfo(null, null, $uuid);
+
+        if (empty($student)) {
+            $result = Valid::addAppErrors([], 'unknown_student');
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        // 插入练琴纪录表
+        $params['data']['lesson_type'] = PlayRecordModel::TYPE_AI;
+        $params['data']['client_type'] = PlayRecordModel::CLIENT_PANDA_MINI;
+        list($errCode, $ret) = UserPlayServices::addRecord($student['id'], $params['data']);
+        if (!empty($errCode)) {
+            $errors = Valid::addAppErrors([], $errCode);
+            return $response->withJson($errors, StatusCode::HTTP_OK);
+        }
+
+        return $response->withJson([
+            'code' => 0,
+            'data' => $ret
+        ], StatusCode::HTTP_OK);
+    }
 }

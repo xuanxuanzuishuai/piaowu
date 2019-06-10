@@ -151,7 +151,7 @@ class StudentAppRouter extends RouterBase
         ],
         '/student_app/panda/ai_end' => [
             'method' => ['post'],
-            'call' => ':aiEnd',
+            'call' => Panda::class . ':aiEnd',
             'middles' => []
         ],
     ];
