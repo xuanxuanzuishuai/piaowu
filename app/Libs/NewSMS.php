@@ -36,8 +36,10 @@ class NewSMS
 
         $body = $response->getBody()->getContents();
         $status = $response->getStatusCode();
-        SimpleLogger::info(__FILE__. ":" .__LINE__,['code'=>'send sms body','data'=>$body]);
-        SimpleLogger::info(__FILE__. ":" .__LINE__,['code'=>'send sms status','data'=>$status]);
+        SimpleLogger::info(__FILE__. ":" .__LINE__ . " sendSMS ",[
+            'data' => $data,
+            'response' => $body
+        ]);
         if (200 == $status) {
             return true;
         } else {
