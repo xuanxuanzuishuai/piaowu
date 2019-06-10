@@ -11,6 +11,7 @@ use App\Controllers\API\MUSVG;
 use App\Controllers\StudentApp\App;
 use App\Controllers\StudentApp\Auth;
 use App\Controllers\StudentApp\Opn;
+use App\Controllers\StudentApp\Panda;
 use App\Controllers\StudentApp\Play;
 use App\Controllers\StudentApp\Homework;
 use App\Controllers\StudentApp\Subscription;
@@ -130,6 +131,28 @@ class StudentAppRouter extends RouterBase
             'method' => ['get'],
             'call' => Homework::class . ':list',
             'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
+
+        // 熊猫接口
+        '/student_app/panda/get_student' => [
+            'method' => ['get'],
+            'call' => Panda::class . ':getStudent',
+            'middles' => []
+        ],
+        '/student_app/panda/recent_played' => [
+            'method' => ['get'],
+            'call' => ':recentPlayed',
+            'middles' => []
+        ],
+        '/student_app/panda/recent_detail' => [
+            'method' => ['get'],
+            'call' => ':recentDetail',
+            'middles' => []
+        ],
+        '/student_app/panda/ai_end' => [
+            'method' => ['post'],
+            'call' => ':aiEnd',
+            'middles' => []
         ],
     ];
 }

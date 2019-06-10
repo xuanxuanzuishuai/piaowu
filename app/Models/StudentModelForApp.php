@@ -29,9 +29,9 @@ class StudentModelForApp extends Model
     public static $cacheKeyUidPri = "uid_";
     public static $redisExpire = 2592000; // 30 days
 
-    public static function getStudentInfo($studentID, $mobile)
+    public static function getStudentInfo($studentID, $mobile, $uuid = null)
     {
-        if (empty($studentID) && empty($mobile)) {
+        if (empty($studentID) && empty($mobile) && empty($uuid)) {
             return null;
         }
 
@@ -41,6 +41,9 @@ class StudentModelForApp extends Model
         }
         if (!empty($mobile)) {
             $where[self::$table . '.mobile'] = $mobile;
+        }
+        if (!empty($uuid)) {
+            $where[self::$table . '.uuid'] = $uuid;
         }
 
         $db = MysqlDB::getDB();
