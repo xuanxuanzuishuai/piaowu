@@ -13,6 +13,7 @@ use App\Libs\Valid;
 use App\Models\OrganizationModelForApp;
 use App\Models\StudentModelForApp;
 use App\Models\TeacherModelForApp;
+use App\Services\AIBackendService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -60,6 +61,17 @@ class MUSVGMiddleWare extends MiddlewareBase
         } else {
             // 收到 "student_token" 格式 获取学生信息
             $studentId = StudentModelForApp::getStudentUid($token);
+            if (!empty($studentId)) {
+                $student = StudentModelForApp::getById($studentId);
+                $this->container['student'] = $student;
+                $this->container['ai_uid'] = $student['uuid'];
+                $auth = true;
+            }
+        }
+
+        if (strpos($token, AIBackendService::TOKEN_PRI) === 0) {
+            // 收到 "student_token" 格式 获取学生信息
+            $studentId = AIBackendService::validateStudentToken($token);
             if (!empty($studentId)) {
                 $student = StudentModelForApp::getById($studentId);
                 $this->container['student'] = $student;
