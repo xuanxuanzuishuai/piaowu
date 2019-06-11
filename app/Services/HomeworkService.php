@@ -334,6 +334,10 @@ class HomeworkService
                     'ai_best' => 0
                 ];
             }
+            // 只统计课下练琴
+            if($play['client_type'] != PlayRecordModel::CLIENT_STUDENT){
+                continue;
+            }
             $statistics[$lessonId]['practice_time'] += $play['duration'];
             $score = Util::floatIsInt($play['score']) ? (int)$play['score'] : $play['score'];
             if ($play['lesson_type'] == PlayRecordModel::TYPE_AI){

@@ -30,6 +30,7 @@ class UserPlayServices
             'lesson_id' => $playData['lesson_id'],
             'schedule_id' => $playData['schedule_id'],
             'lesson_type' => $playData['lesson_type'],
+            'client_type' => $playData['client_type'],
             'lesson_sub_id' => $playData['lesson_sub_id'],
             'ai_record_id' => $playData['ai_record_id'],
             'created_time' => time(),

@@ -9,9 +9,7 @@
 namespace App\Models;
 
 use App\Libs\MysqlDB;
-use App\Libs\SimpleLogger;
 use App\Libs\Util;
-use Symfony\Component\Yaml\Tests\YamlTest;
 
 class PlayRecordModel extends Model
 {
@@ -21,9 +19,10 @@ class PlayRecordModel extends Model
     const TYPE_DYNAMIC = 0;         // 动态曲谱
     const TYPE_AI = 1;              // ai曲谱
 
-    /** 课上课下 */
-    const TYPE_ON_CLASS = 0;       // 课上练琴
-    const TYPE_OFF_CLASS = 1;      // 课下练琴
+    /** 练琴来源 */
+    const CLIENT_STUDENT = 1;       // ai陪练
+    const CLIENT_TEACHER = 2;      // 智能琴房
+    const CLIENT_PANDA_MINI = 3;      // 熊猫小程序
 
     const RANK_LIMIT = 150;          //排行榜取前RANK_LIMIT名
 
