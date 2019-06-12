@@ -10,6 +10,8 @@
 
 namespace App\Services;
 
+use App\Libs\Constants;
+use App\Models\EmployeeModel;
 use App\Models\GiftCodeModel;
 use App\Libs\Dict;
 
@@ -128,12 +130,11 @@ class GiftCodeService
                     case GiftCodeModel::BUYER_TYPE_ORG:
                         $data[$key]['buyer_name'] = $value['name'];
                         break;
-                    case GiftCodeModel::BUYER_TYPE_STUDENT:
+                    default: //不是机构，就人为是个人(学生)
                         $data[$key]['buyer_name'] = $value['name'] . '(' . $value['mobile'] . ')';
-                        break;
-                    case GiftCodeModel::BUYER_TYPE_OTHER:
-                        $data[$key]['buyer_name'] = Dict::getCodeOtherChannelBuyer($value['buyer']);
-                        break;
+                }
+                if($value['raw_operate_user'] == EmployeeModel::SYSTEM_EMPLOYEE_ID) {
+                    $data[$key]['operate_user'] = EmployeeModel::SYSTEM_EMPLOYEE_NAME;
                 }
             }
         }

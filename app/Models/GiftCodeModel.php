@@ -115,6 +115,7 @@ class GiftCodeModel extends Model
         $organization = OrganizationModel::$table;
         $student = StudentModel::$table;
         $employee = EmployeeModel::$table;
+        $orgBuyer = GiftCodeModel::BUYER_TYPE_ORG;
 
         $where = ' where 1 = 1 ';
         if (!empty($params['code'])) {
@@ -150,8 +151,8 @@ class GiftCodeModel extends Model
 
         $join = "
 LEFT JOIN {$employee} ON {$employee}.id = {$gift_code}.operate_user
-LEFT JOIN {$organization} ON {$gift_code}.buyer = {$organization}.id AND {$gift_code}.generate_channel = '1'
-LEFT JOIN {$student} ON {$gift_code}.buyer = {$student}.id AND {$gift_code}.generate_channel = '2'
+LEFT JOIN {$organization} ON {$gift_code}.buyer = {$organization}.id AND {$gift_code}.generate_channel = {$orgBuyer}
+LEFT JOIN {$student} ON {$gift_code}.buyer = {$student}.id AND {$gift_code}.generate_channel != {$orgBuyer}
 LEFT JOIN {$student} apply_user ON {$gift_code}.apply_user = apply_user.id ";
         $totalCount = self::getCodeCount($join, $where);
 
@@ -173,6 +174,7 @@ SELECT
     {$gift_code}.valid_units,
     {$gift_code}.be_active_time,
     {$employee}.name operate_user,
+    {$gift_code}.operate_user raw_operate_user,
     {$gift_code}.operate_time,
     {$student}.name,
     {$student}.mobile,
