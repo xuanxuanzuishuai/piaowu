@@ -10,6 +10,7 @@ namespace App\Services;
 
 
 use App\Libs\DictConstants;
+use App\Libs\ResponseError;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Libs\Util;
@@ -258,6 +259,14 @@ class StudentServiceForApp
         ]);
         if($affectRows == 0) {
             return ['update_gift_code_fail'];
+        }
+
+        // 机构激活码使用时自动绑定用户
+        if ($gift['generate_channel'] == GiftCodeModel::BUYER_TYPE_ORG) {
+            $errOrLastId = StudentService::bindOrg($gift['buyer'], $studentId);
+            if($errOrLastId instanceof ResponseError) {
+                return [$errOrLastId->getErrorMsg()];
+            }
         }
 
         $result = [
