@@ -650,4 +650,16 @@ class Util
             $text);
         return $clean_text;
     }
+
+    /**
+     * 获取过去n天的起止时间
+     * @param int $days. 天数
+     * @return array
+     */
+    public static function nDaysBeforeNow($days=7)
+    {
+        $now = time();
+        $nDaysBefore = (int)$days * 24 * 60 * 40;
+        return [$now - $nDaysBefore, $now];
+    }
 }

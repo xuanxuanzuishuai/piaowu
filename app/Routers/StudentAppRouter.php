@@ -141,12 +141,12 @@ class StudentAppRouter extends RouterBase
         ],
         '/student_app/panda/recent_played' => [
             'method' => ['get'],
-            'call' => ':recentPlayed',
+            'call' => Panda::class . ':recentPlayed',
             'middles' => []
         ],
         '/student_app/panda/recent_detail' => [
             'method' => ['get'],
-            'call' => ':recentDetail',
+            'call' => Panda::class . ':recentDetail',
             'middles' => []
         ],
         '/student_app/panda/ai_end' => [

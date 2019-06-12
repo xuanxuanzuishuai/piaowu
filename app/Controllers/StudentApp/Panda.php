@@ -11,8 +11,10 @@ namespace App\Controllers\StudentApp;
 
 use App\Controllers\ControllerBase;
 use App\Libs\Valid;
+use App\Libs\OpernCenter;
 use App\Models\PlayRecordModel;
 use App\Models\StudentModelForApp;
+use App\Services\AppVersionService;
 use App\Services\UserPlayServices;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -95,4 +97,59 @@ class Panda extends ControllerBase
             'data' => $ret
         ], StatusCode::HTTP_OK);
     }
+
+    public static function recentDetail(Request $request, Response $response)
+    {
+        // 验证请求参数
+        $rules = [
+            [
+                'key' => 'uuid',
+                'type' => 'required',
+                'error_code' => 'uuid_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $uuid = $params['uuid'];
+        $student = StudentModelForApp::getStudentInfo(null, null, $uuid);
+        if (empty($student)) {
+            $result = Valid::addAppErrors([], 'unknown_student');
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $appVersion = AppVersionService::getPublishVersionCode(
+            OpernCenter::PRO_ID_AI_STUDENT, AppVersionService::PLAT_ID_IOS);
+        $ret = UserPlayServices::pandaPlayDetail($student['id'], $appVersion);
+        return $response->withJson(['code' => 0, 'data'=>$ret], StatusCode::HTTP_OK);
+    }
+
+
+    public static function recentPlayed(Request $request, Response $response)
+    {
+        // 验证请求参数
+        $rules = [
+            [
+                'key' => 'uuid',
+                'type' => 'required',
+                'error_code' => 'uuid_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $uuid = $params['uuid'];
+        $student = StudentModelForApp::getStudentInfo(null, null, $uuid);
+        if (empty($student)) {
+            $result = Valid::addAppErrors([], 'unknown_student');
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $ret = UserPlayServices::pandaPlayBrief($student['id']);
+        $ret['is_ai_student'] = is_numeric($student['sub_start_date']) and (int)$student['sub_start_date']>0;
+        return $response->withJson(['code' => 0, 'data'=>$ret], StatusCode::HTTP_OK);
+    }
+
 }

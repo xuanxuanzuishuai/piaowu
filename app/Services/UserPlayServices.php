@@ -12,6 +12,9 @@ namespace App\Services;
 
 use App\Models\PlayRecordModel;
 use App\Models\PlaySaveModel;
+use App\Libs\OpernCenter;
+use App\Libs\Util;
+use App\Libs\MaxHeap;
 
 class UserPlayServices
 {
@@ -303,5 +306,112 @@ class UserPlayServices
             $playResult['high_score'] = $save['high_score'];
         }
         return [$saveUpdate, $playResult];
+    }
+
+    public static function pandaPlayBrief($studentId, $days=7)
+    {
+        // 取最近7天的演奏记录
+        list($start, $end) = Util::nDaysBeforeNow($days);
+        $where = [
+            'created_time[>]' => $start,
+            'created_time[<]' => $end,
+            'student_id' => (int)$studentId,
+            'client_type' => PlayRecordModel::CLIENT_STUDENT
+        ];
+        $plays = PlayRecordModel::getRecords($where);
+        $daysFilter = [];
+        $lessonFilter = [];
+        foreach ($plays as $play) {
+            $day = date("Y-m-d", $play['created_time']);
+            if(!isset($daysFilter[$day])){
+                $daysFilter[$day] = 1;
+            }
+
+            if(!isset($lessonFilter[$play['lesson_id']])){
+                $lessonFilter[$play['lesson_id']] = 1;
+            }
+        }
+        return ['lesson_count' =>count($lessonFilter), 'days' => count($daysFilter)];
+    }
+
+    public static function pandaPlayDetail($studentId, $appVersion, $days=7)
+    {
+        // 取最近7天的演奏记录
+        list($start, $end) = Util::nDaysBeforeNow($days);
+        $where = [
+            'created_time[>]' => $start,
+            'created_time[<]' => $end,
+            'student_id' => (int)$studentId,
+            'client_type' => PlayRecordModel::CLIENT_STUDENT
+        ];
+        $plays = PlayRecordModel::getRecords($where);
+
+        // 统计练琴演奏记录
+        $details = [];
+        $daysFilter = [];
+        foreach ($plays as $play) {
+            // 按天聚合
+            $day = date("Y-m-d", $play['created_time']);
+            if(!isset($daysFilter[$day])){
+                $daysFilter[$day] = 1;
+            }
+
+            $lessonId = $play['lesson_id'];
+            if (!isset($details[$lessonId])){
+                $details[$lessonId] = [
+                    'practice_time' => 0,
+                    'step_times' => 0,
+                    'whole_times' => 0,
+                    'whole_best' => 0,
+                    'ai_times' => 0,
+                    'ai_best' => 0,
+                    'plays' => new MaxHeap('score'),
+                ];
+            }
+
+            $details[$lessonId]['practice_time'] += $play['duration'];
+            $score = Util::floatIsInt($play['score']) ? (int)$play['score'] : $play['score'];
+            if ($play['lesson_type'] == PlayRecordModel::TYPE_AI){
+                $details[$lessonId]['ai_times'] += 1;
+                if ($score > $details[$lessonId]['ai_best']){
+                    $details[$lessonId]['ai_best'] = $score;
+                }
+            } else {
+                if(!empty($play['lesson_sub_id'])){
+                    $details[$lessonId]['step_times'] += 1;
+                }else{
+                    $details[$lessonId]['whole_times'] += 1;
+                    if ($score > $details[$lessonId]['whole_best']){
+                        $statistics[$lessonId]['whole_best'] = $score;
+                    }
+                }
+            }
+            if(! is_numeric($play['lesson_sub_id'])){
+                $temp = [];
+                $temp['id'] = $play['id'];
+                $temp['score'] = $play['score'];
+                $temp['score_detail'] = json_decode($play['data'], true);
+                $details[$lessonId]['plays']->insert($temp);
+            }
+        }
+
+        // 插入课程名称信息
+        $ret = [];
+        $lessonIds = array_keys($details);
+        $lessons = OpernService::getLessonForJoin($lessonIds,
+            OpernCenter::PRO_ID_AI_STUDENT, $appVersion, 0, 0);
+        foreach ($details as $lessonId => $detail){
+            $lesson = $lessons['$lessonId'];
+            $detail['lesson_id'] = $lessonId;
+            $detail['lesson_name'] = empty($lesson) ? $lesson['lesson_name'] : '';
+            $detail['plays'] = MaxHeap::nLargest($detail['plays']);
+            array_push($ret, $detail);
+        }
+
+        return ['lessons' => $ret,
+                'lesson_count' =>count($details),
+                'days' => count($daysFilter),
+                'token' => ''
+        ];
     }
 }
