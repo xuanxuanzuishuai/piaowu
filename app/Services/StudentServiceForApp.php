@@ -156,6 +156,7 @@ class StudentServiceForApp
      * @param string $mobile 手机号
      * @param string $name 昵称
      * @param string $uuid
+     * @param int $channel
      * @return array|null 用户数据
      */
     public static function addStudent($mobile, $name, $uuid, $channel)
@@ -171,7 +172,7 @@ class StudentServiceForApp
             'channel_id' => $channel
         ];
 
-        $id = StudentModelForApp::insertRecord($user);
+        $id = StudentModelForApp::insertRecord($user, false);
 
         return $id == 0 ? null : $id;
     }
