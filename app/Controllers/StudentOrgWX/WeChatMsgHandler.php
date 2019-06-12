@@ -22,7 +22,7 @@ class WeChatMsgHandler
      */
     public static function subscribe($xml){
         $userOpenId = (string)$xml->FromUserName;
-        $boundInfo = UserWeixinModel::getRecord(["open_id" => $userOpenId]);
+        $boundInfo = UserWeixinModel::getRecord(["open_id" => $userOpenId], '*', false);
         if (!empty($boundInfo)){
             $result = "您已经绑定成功！";
         } else {
