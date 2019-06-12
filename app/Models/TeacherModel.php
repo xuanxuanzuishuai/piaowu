@@ -116,7 +116,8 @@ class TeacherModel extends Model
 
         if(empty($orgId)) {
             $sql_list = "select t.* from {$t} t ";
-            $sql_count = "select count(t.id) as totalCount from {$t} t";
+            $sql_count = "select count(t.id) as totalCount from {$t} t ";
+            $params['is_bind'] = 0;
         } else {
             $sql_list = "select t.*,tr.status bind_status from {$t} t inner join {$to} tr on 
                     tr.teacher_id = t.id and tr.org_id = {$orgId} ";
