@@ -50,6 +50,12 @@ class EmployeeAuthCheckMiddleWare extends MiddlewareBase
         $this->container['employee'] = $employee;
         global $orgId;
         $orgId = $employee['org_id'];
+
+        SimpleLogger::info(__FILE__ . ":" . __LINE__, [
+            'middleWare' => 'EmployeeAuthCheckMiddleWare',
+            'employee' => $employee
+        ]);
+
         $response = $next($request, $response);
 
         return $response;
