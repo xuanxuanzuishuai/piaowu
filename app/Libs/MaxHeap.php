@@ -37,8 +37,11 @@ class MaxHeap extends SplHeap
 
     public static function nLargest($heap, $n=3)
     {
-        $heap->top();
         $ret = [];
+        if($heap->isEmpty()){
+            return $ret = [];
+        }
+        $heap->top();
         while ($heap->valid() and $n) {
             $item = $heap->current();
             $heap->next();

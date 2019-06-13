@@ -390,6 +390,8 @@ class UserPlayServices
                 $temp = [];
                 $temp['id'] = $play['id'];
                 $temp['score'] = $play['score'];
+                $temp['ai_record_id'] = $play['ai_record_id'];
+                $temp['play_midi'] = $play['client_type'] == PlayRecordModel::CLIENT_PANDA_MINI ? 0 : 1;
                 $temp['score_detail'] = json_decode($play['data'], true);
                 $details[$lessonId]['plays']->insert($temp);
             }
