@@ -69,25 +69,27 @@ $data = [
 //    ];
 //}
 $url = $_ENV["WECHAT_FRONT_DOMAIN"] . "/student/daily?date=" . $date;
-//foreach ($userInfo as $value) {
-//    SimpleLogger::info("----", $value);
-//    // 发送学生练习日报
-//    WeChatService::notifyUserWeixinTemplateInfo(
-//        UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
-//        WeChatService::USER_TYPE_STUDENT,
-//        $value["open_id"],
-//        $_ENV["WECHAT_DAILY_RECORD_REPORT"],
-//        $data,
-//        $url
-//        );
-//}
 foreach ($userInfo as $value) {
     SimpleLogger::info("----", $value);
     // 发送学生练习日报
-    WeChatService::notifyUserWeixinTextInfo(
+    $ret = WeChatService::notifyUserWeixinTemplateInfo(
         UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
         WeChatService::USER_TYPE_STUDENT,
         $value["open_id"],
-        '您的练琴日报已经生成，点击<a href="' . $url . '"> 日报 </a>查看。'
-    );
+        $_ENV["WECHAT_DAILY_RECORD_REPORT"],
+        $data,
+        $url
+        );
+    SimpleLogger::info("result:", $ret);
 }
+//foreach ($userInfo as $value) {
+//    SimpleLogger::info("----", $value);
+//    // 发送学生练习日报
+//    $ret = WeChatService::notifyUserWeixinTextInfo(
+//        UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
+//        WeChatService::USER_TYPE_STUDENT,
+//        $value["open_id"],
+//        '您的练琴日报已经生成，点击<a href="' . $url . '"> 日报 </a>查看。'
+//    );
+//    SimpleLogger::info("result:", $ret);
+//}
