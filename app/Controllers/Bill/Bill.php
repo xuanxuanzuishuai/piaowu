@@ -306,6 +306,11 @@ class Bill extends ControllerBase
                 'value'      => 256,
                 'error_code' => 'credentials_url_length_elt_256',
             ],
+            [
+                'key'        => 'object_id',
+                'type'       => 'required',
+                'error_code' => 'object_id_is_required',
+            ],
         ];
         $params = $request->getParams();
         $result = Valid::validate($params, $rules);
@@ -340,7 +345,7 @@ class Bill extends ControllerBase
 
         $columns = [
             'student_id', 'pay_status', 'trade_no',
-            'pay_channel', 'source','remark', 'is_enter_account'
+            'pay_channel', 'source','remark', 'is_enter_account', 'object_id'
         ];
 
         $data = [

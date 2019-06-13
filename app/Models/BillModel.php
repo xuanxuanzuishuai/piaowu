@@ -38,6 +38,9 @@ class BillModel extends Model
     {
         $where = [];
 
+        if(!empty($params['bill_id'])) {
+            $where['b.id'] = $params['bill_id'];
+        }
         if(!empty($params['student_id'])) {
             $where['b.student_id'] = $params['student_id'];
         }
@@ -69,13 +72,12 @@ class BillModel extends Model
 
         $db = MysqlDB::getDB();
 
-        $records = $db->select(self::$table . '(b)',
-            [
-                '[>]' . EmployeeModel::$table . '(e)' => ['b.operator_id' => 'id'],
-                '[>]' . StudentModel::$table . '(s)' => ['b.student_id' => 'id'],
-                '[><]'. OrganizationModel::$table . '(o)' => ['b.org_id' => 'id']
-            ],
-            [
+        $records = $db->select(self::$table . '(b)', [
+            '[>]' . EmployeeModel::$table . '(e)' => ['b.operator_id' => 'id'],
+            '[>]' . StudentModel::$table . '(s)' => ['b.student_id' => 'id'],
+            '[><]'. OrganizationModel::$table . '(o)' => ['b.org_id' => 'id'],
+            '[>]' . CourseModel::$table . '(c)' => ['b.object_id' => 'id']
+        ], [
             'e.name(employee_name)',
             's.name(student_name)',
             'o.name(org_name)',
@@ -95,6 +97,8 @@ class BillModel extends Model
             'b.is_disabled',
             'b.is_enter_account',
             'b.sprice',
+            'b.object_id',
+            'c.name(object_name)'
         ], $limitWhere);
 
         $total = $db->count(self::$table . '(b)' , $where);
