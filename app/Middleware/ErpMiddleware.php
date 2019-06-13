@@ -8,6 +8,7 @@
 
 namespace App\Middleware;
 
+use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Services\IPService;
 use Slim\Http\Request;
@@ -17,9 +18,13 @@ class ErpMiddleware extends MiddlewareBase
 {
     public function __invoke(Request $request, Response $response, $next)
     {
-        $clientIp = $request->getAttribute('ip_address');
+        $clientIp = $_SERVER['HTTP_X_REAL_IP'];
         if (!IPService::validate($clientIp, 'erp')) {
             $errs = Valid::addErrors([], 'ip', 'ip_invalid');
+            SimpleLogger::debug(__FILE__ . __LINE__ . " ip_invalid", [
+                'ip' => $clientIp,
+                'real' => $_SERVER['HTTP_X_REAL_IP'],
+            ]);
             return $response->withJson($errs, 200);
         }
 
