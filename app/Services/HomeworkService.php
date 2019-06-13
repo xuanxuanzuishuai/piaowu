@@ -393,7 +393,14 @@ class HomeworkService
         }
 
         // 最近教材
-        $lessonIds = $schedule[0]['opn_lessons'];
+        $_lessonIds = explode(',', $schedule[0]['opn_lessons']);
+        $trialLessonIds = OpernService::getTrialLessonId();
+        $lessonIds = [];
+        foreach ($_lessonIds as $k => $lessonId){
+            if(!in_array($lessonId, $trialLessonIds)){
+                array_push($lessonIds, $lessonId);
+            }
+        }
         if (!empty($lessonIds)) {
             $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER, $proVer);
             $lessons = $opn->lessonsByIds($lessonIds);
