@@ -64,7 +64,7 @@ class Schedule extends ControllerBase
             $performance_rank = $detail_score["performance_rank"];
 
             if (!empty($lesson_ids)){
-                $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, OpernCenter::version);
+                $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER, OpernCenter::version);
                 $res = $opn->lessonsByIds($lesson_ids);
                 if (!empty($res['code']) && $res['code'] !== Valid::CODE_SUCCESS) {
                     $lesson_list = [];
