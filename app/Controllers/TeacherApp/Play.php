@@ -129,40 +129,9 @@ class Play extends ControllerBase
             return $response->withJson($errors, StatusCode::HTTP_OK);
         }
 
-        // 检查作业
-        $param['data']['record_id'] = $ret['record_id'];
-        list($homeworkErrCode, $allHomeworks, $finished) = HomeworkService::checkHomework($userId, $param['data']);
-        if (!empty($homeworkErrCode)) {
-            $errors = Valid::addAppErrors([], $homeworkErrCode);
-            return $response->withJson($errors, StatusCode::HTTP_OK);
-        }
+        // 琴房的演奏不检查作业
         $db->commit();
-
-        // 处理返回数据
-        SimpleLogger::debug("*********check homework******", ['all' => $allHomeworks, 'finished' => $finished]);
-        $data = ['record_id' => $ret['record_id']];
-        if (!empty($finished)) {
-            // 优先返回达成的作业
-            $homework = $finished[0];
-            $homeworkInfo = [
-                'id' => $homework['id'],
-                'task_id' => $homework['task_id'],
-                'baseline' => json_decode($homework['baseline'], true),
-                'complete' => 1
-            ];
-        } elseif (!empty($allHomeworks)) {
-            // 如果未达成，返回未达成的作业
-            $homework = $allHomeworks[0];
-            $homeworkInfo = [
-                'id' => $homework['id'],
-                'task_id' => $homework['task_id'],
-                'baseline' => json_decode($homework['baseline'], true),
-                'complete' => 0
-            ];
-        } else {
-            $homeworkInfo = [];
-        }
-        $data['homework'] = $homeworkInfo;
+        $data = ['record_id' => $ret['record_id'], 'homework' => []];
         return $response->withJson(['code' => 0, 'data' => $data], StatusCode::HTTP_OK);
     }
 }
