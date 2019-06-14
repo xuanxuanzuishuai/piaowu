@@ -154,14 +154,19 @@ class BillModel extends Model
         $b = BillModel::$table;
         $d = BillExtendModel::$table;
         $n = BillExtendModel::STATUS_NORMAL;
+        $c = CourseModel::$table;
 
         $db = MysqlDB::getDB();
 
-        $records = $db->queryAll("select b.*, e.name employee_name, s.name student_name, o.name org_name,
-        (select group_concat(d.credentials_url) from {$d} d where d.bill_id = b.id and d.status = {$n}) credentials_url  
-        from 
-        {$b} b left join {$e} e on e.id = b.operator_id left join {$s} s on s.id = b.student_id inner join {$o} o
-        on b.org_id = o.id where {$where}", $map);
+        $records = $db->queryAll("
+        select b.*, e.name employee_name, s.name student_name, o.name org_name, c.name object_name,
+        (select group_concat(d.credentials_url) from {$d} d where d.bill_id = b.id and d.status = {$n}) credentials_url
+        from {$b} b
+        left join {$e} e on e.id = b.operator_id
+        left join {$s} s on s.id = b.student_id
+        inner join {$o} o on b.org_id = o.id
+        left join {$c} c on c.id = b.object_id
+        where {$where}", $map);
 
         return !empty($records) ? $records[0] : [];
     }
