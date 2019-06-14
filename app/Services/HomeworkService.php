@@ -245,30 +245,6 @@ class HomeworkService
     }
 
     /**
-     * 根据课程ID获取最优弹奏记录
-     * @param $lessonIds
-     * @return array
-     */
-    public static function getBestPlayRecordByLessonId($lessonIds, $studentId){
-        $playRecords = PlayRecordModel::getPlayRecordByLessonId($lessonIds, $studentId, PlayRecordModel::TYPE_AI);
-        $container = array();
-        foreach($playRecords as $record){
-            $lesson_id = $record['lesson_id'];
-            $score_info = json_decode($record['data'], true);
-            $new_score = $score_info['score'];
-            if(array_key_exists($lesson_id, $container)){
-                $current_score = $container[$lesson_id];
-                if($current_score < $new_score){
-                    $container[$lesson_id] = $score_info;
-                }
-            }else{
-                $container[$lesson_id] = $score_info;
-            }
-        }
-        return $container;
-    }
-
-    /**
      * 爱学琴老师端回课数据
      * @param int $teacherId
      * @param int $studentId
