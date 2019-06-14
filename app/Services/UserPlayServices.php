@@ -386,7 +386,7 @@ class UserPlayServices
                     }
                 }
             }
-            if(! is_numeric($play['lesson_sub_id'])){
+            if($play['lesson_type'] == PlayRecordModel::TYPE_AI){
                 $temp = [];
                 $temp['id'] = $play['id'];
                 $temp['score'] = $play['score'];
@@ -413,7 +413,7 @@ class UserPlayServices
         return ['lessons' => $ret,
                 'lesson_count' =>count($details),
                 'days' => count($daysFilter),
-                'token' => ''
+                'token' => AIBackendService::genStudentToken($studentId)
         ];
     }
 }
