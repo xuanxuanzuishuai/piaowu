@@ -147,6 +147,25 @@ class GiftCodeModel extends Model
             $where .= " and {$organization}.name like '%{$params['name']}%'";
         }
 
+        if(!empty($params['buyer_mobile'])) { //购买人手机号
+            $where .= " and {$student}.mobile = {$params['buyer_mobile']} ";
+        }
+        if(!empty($params['apply_user_mobile'])) { //使用人手机号
+            $where .= " and apply_user.mobile = {$params['apply_user_mobile']} ";
+        }
+        if(!empty($params['s_buy_time'])) {
+            $where .= " and {$gift_code}.buy_time >= {$params['s_buy_time']}";
+        }
+        if(!empty($params['e_buy_time'])) {
+            $where .= " and {$gift_code}.buy_time <= {$params['e_buy_time']}";
+        }
+        if(!empty($params['s_be_active_time'])) {
+            $where .= " and {$gift_code}.be_active_time >= {$params['s_be_active_time']}";
+        }
+        if(!empty($params['e_be_active_time'])) {
+            $where .= " and {$gift_code}.be_active_time <= {$params['e_be_active_time']}";
+        }
+
         $db = MysqlDB::getDB();
 
         $join = "
@@ -154,6 +173,7 @@ LEFT JOIN {$employee} ON {$employee}.id = {$gift_code}.operate_user
 LEFT JOIN {$organization} ON {$gift_code}.buyer = {$organization}.id AND {$gift_code}.generate_channel = {$orgBuyer}
 LEFT JOIN {$student} ON {$gift_code}.buyer = {$student}.id AND {$gift_code}.generate_channel != {$orgBuyer}
 LEFT JOIN {$student} apply_user ON {$gift_code}.apply_user = apply_user.id ";
+
         $totalCount = self::getCodeCount($join, $where);
 
         //格式化分页参数
