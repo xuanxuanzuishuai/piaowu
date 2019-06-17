@@ -61,16 +61,24 @@ class Erp extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $ret = ErpService::exchangeGiftCode([
-            'uuid' => $params['uuid'],
-            'mobile' => $params['mobile'],
-            'name' => $params['name'],
-            'gender' => $params['gender'],
-            'birthday' => $params['birthday']
-        ],
+        // 默认订单和换购激活码时长1年
+        $giftCodeNum = 1;
+        $giftCodeUnit = GiftCodeModel::CODE_TIME_YEAR;
+
+        $ret = ErpService::exchangeGiftCode(
+            [
+                'uuid' => $params['uuid'],
+                'mobile' => $params['mobile'],
+                'name' => $params['name'],
+                'gender' => $params['gender'],
+                'birthday' => $params['birthday']
+            ],
             $params['type'],
             (int)$params['bill_id'],
-            (int)$params['bill_amount']);
+            (int)$params['bill_amount'],
+            $giftCodeNum,
+            $giftCodeUnit
+        );
 
         if ($ret['code'] == Valid::CODE_PARAMS_ERROR) {
             return $ret;
