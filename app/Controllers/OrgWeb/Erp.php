@@ -77,18 +77,7 @@ class Erp extends ControllerBase
         }
 
         // 换购上线前已经提前发送激活码的用户
-        $preSellUserMobiles = [
-            '15034197693', // 35ee02rohxyc
-            '18646251090', // 38w1djdqsm68
-            '15958918464', // 3cdoqzzt3aqs
-            '13054520890', // 3fvc4glvdzc4
-            '15262307708', // 3jczhx7xonwg
-            '13666632131', // 3ttxmb24kpc0
-            '13995491260', // 1zilijepc98k
-            '15779880088', // 1w0y52sfg2as
-
-            '18511327550', // 线上测试账号
-        ];
+        $preSellUserMobiles = [];
         if (!in_array($params['mobile'], $preSellUserMobiles)) {
             list($sign, $content) = ErpService::exchangeSMSData(implode(',', $ret));
             $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
