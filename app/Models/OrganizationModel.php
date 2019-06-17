@@ -53,6 +53,14 @@ class OrganizationModel extends Model
         $where = ' where 1=1 ';
         $map   = [];
 
+        if(!empty($params['name'])) {
+            $where .= " and o.name like '%{$params['name']}%' ";
+        }
+        if(isset($params['status'])) {
+            $where .= ' and o.status = :status ';
+            $map[':status'] = $params['status'];
+        }
+
         $db = MysqlDB::getDB();
 
         $records = $db->queryAll("select 
@@ -76,7 +84,7 @@ class OrganizationModel extends Model
         order by o.create_time desc
         {$limit}", $map);
 
-        $total = $db->queryAll("select count(*) count from {$o} o", $map);
+        $total = $db->queryAll("select count(*) count from {$o} o {$where} ", $map);
 
         return [$records, $total[0]['count']];
     }
