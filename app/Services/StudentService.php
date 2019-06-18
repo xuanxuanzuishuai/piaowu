@@ -245,16 +245,18 @@ class StudentService
     }
 
     /**
-     * @param $studentId
      * 更新用户的付费状态
+     * @param $studentId
+     * @return int|null
      */
     public static function updateUserPaidStatus($studentId)
     {
         //当前用户是否已经付费
         $studentInfo = StudentOrgModel::getRecord(['student_id' => $studentId], ['id','is_first_pay']);
         if ($studentInfo['is_first_pay'] != StudentOrgModel::HAS_PAID) {
-            StudentOrgModel::updateRecord($studentInfo['id'], ['is_first_pay' => StudentOrgModel::HAS_PAID, 'first_pay_time' => time()]);
+            return StudentOrgModel::updateRecord($studentInfo['id'], ['is_first_pay' => StudentOrgModel::HAS_PAID, 'first_pay_time' => time()]);
         }
+        return null;
     }
 
     public static function getByUuid($uuid)

@@ -13,6 +13,7 @@ use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\Util;
 use App\Models\BillModel;
+use App\Models\StudentAccountModel;
 
 class BillService
 {
@@ -59,5 +60,87 @@ class BillService
         }
 
         return $record;
+    }
+
+    public static function onApproved($billId)
+    {
+        $bill = BillModel::getRecord(['id' => $billId]);
+        if(empty($bill)) {
+            return 'bill_is_empty';
+        }
+        if($bill['status'] != BillModel::STATUS_APPROVING) {
+            return 'bill_incorrect_status';
+        }
+        $affectedRows = BillModel::updateRecord($billId, [
+            'update_time' => time(),
+            'status'      => BillModel::STATUS_APPROVED,
+        ], false);
+        if($affectedRows != 1) {
+            return 'update_bill_status_fail';
+        }
+
+        if($bill['pay_status'] == BillModel::PAY_STATUS_PAID &&
+        $bill['is_enter_account'] == BillModel::IS_ENTER_ACCOUNT) {
+            $success = StudentAccountService::addSA(
+                $bill['student_id'],
+                [StudentAccountModel::TYPE_CASH => $bill['amount']],
+                $bill['operator_id'],
+                $bill['remark']
+            );
+            if(!$success) {
+                return 'increase_student_account_fail';
+            }
+        }
+
+        $rows = StudentService::updateUserPaidStatus($bill['student_id']);
+        if(!is_null($rows) && empty($rows)) {
+            return 'update_first_pay_fail';
+        }
+
+        return null;
+    }
+
+    public static function onRejected($billId)
+    {
+        $bill = BillModel::getRecord(['id' => $billId]);
+        if(empty($bill)) {
+            return 'bill_is_empty';
+        }
+        if($bill['status'] != BillModel::STATUS_APPROVING) {
+            return 'bill_incorrect_status';
+        }
+
+        $affectedRows = BillModel::updateRecord($billId, [
+            'update_time' => time(),
+            'status'      => BillModel::STATUS_REJECTED,
+            'is_disabled' => BillModel::IS_DISABLED,
+        ], false);
+        if($affectedRows != 1) {
+            return 'update_bill_status_fail';
+        }
+
+        return null;
+    }
+
+    public static function onRevoked($billId)
+    {
+        $bill = BillModel::getRecord(['id' => $billId]);
+        if(empty($bill)) {
+            return 'bill_is_empty';
+        }
+        if($bill['status'] != BillModel::STATUS_APPROVING) {
+            return 'bill_incorrect_status';
+        }
+
+        $affectedRows = BillModel::updateRecord($billId, [
+            'update_time' => time(),
+            'status'      => BillModel::STATUS_REVOKED,
+            'is_disabled' => BillModel::IS_DISABLED,
+        ], false);
+        if($affectedRows != 1) {
+            return 'update_bill_status_fail';
+        }
+
+        return null;
     }
 }

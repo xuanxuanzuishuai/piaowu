@@ -22,6 +22,12 @@ class BillModel extends Model
     const NOT_ENTER_ACCOUNT = 0; //不进入学生账户
     const IS_ENTER_ACCOUNT = 1; //进入学生账户
 
+    const STATUS_NOT_NEED = 1; //不需要审核
+    const STATUS_APPROVING = 2; //审核中
+    const STATUS_APPROVED = 3; //审核通过
+    const STATUS_REJECTED = 4; //拒绝
+    const STATUS_REVOKED = 5; //撤销
+
     public static $table = 'bill';
 
     public static function updateBill($id, $orgId, $data)
@@ -130,6 +136,7 @@ class BillModel extends Model
                 'b.is_disabled',
                 'b.is_enter_account',
                 'b.sprice',
+                'b.status',
             ],
             [
                 'b.id'     => $id,

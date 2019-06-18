@@ -11,10 +11,10 @@ namespace App\Controllers\Bill;
 
 use App\Controllers\ControllerBase;
 use App\Libs\MysqlDB;
-use App\Libs\SimpleLogger;
 use App\Models\BillExtendModel;
 use App\Models\BillModel;
 use App\Models\StudentAccountModel;
+use App\Services\ApprovalService;
 use App\Services\BillService;
 use App\Services\StudentAccountService;
 use App\Services\StudentService;
@@ -50,6 +50,10 @@ class Bill extends ControllerBase
         $record = BillModel::getBillByOrgAndId($orgId, $id);
         if(empty($record)) {
             return $response->withJson(Valid::addErrors([], 'bill', 'bill_not_exist'));
+        }
+
+        if(!in_array($record['status'], [BillModel::STATUS_NOT_NEED, BillModel::STATUS_APPROVED])) {
+            return $response->withJson(Valid::addErrors([], 'bill', 'only_approved_bill_can_be_disabled'));
         }
 
         //已经废除的订单，直接返回
@@ -341,6 +345,11 @@ class Bill extends ControllerBase
             return $response->withJson(Valid::addErrors([], 'bill', 'student_not_exist'));
         }
 
+        $status = BillModel::STATUS_NOT_NEED;
+        if(ApprovalService::needApprove()) {
+           $status = BillModel::STATUS_APPROVING;
+        }
+
         $now = time();
 
         $columns = [
@@ -356,6 +365,7 @@ class Bill extends ControllerBase
             'amount'      => $params['amount'] * 100,
             'sprice'      => $params['sprice'] * 100,
             'r_bill_id'   => $params['r_bill_id'],
+            'status'      => $status,
         ];
 
         foreach($columns as $key) {
@@ -372,7 +382,8 @@ class Bill extends ControllerBase
         }
 
         if($params['pay_status'] == BillModel::PAY_STATUS_PAID &&
-            $params['is_enter_account'] == BillModel::IS_ENTER_ACCOUNT)
+            $params['is_enter_account'] == BillModel::IS_ENTER_ACCOUNT &&
+            $status == BillModel::STATUS_NOT_NEED)
         {
             $success = StudentAccountService::addSA(
                 $data['student_id'],
@@ -399,8 +410,16 @@ class Bill extends ControllerBase
                 $db->rollBack();
                 return $response->withJson(Valid::addErrors([], 'bill', 'save_bill_extend_fail'));
             }
+        }
+
+        if($params['pay_status'] == BillModel::PAY_STATUS_PAID &&
+            $status == BillModel::STATUS_NOT_NEED) {
             //更新用户首付付费
-            StudentService::updateUserPaidStatus($studentId);
+            $rows = StudentService::updateUserPaidStatus($studentId);
+            if(!is_null($rows) && empty($rows)) {
+                $db->rollBack();
+                return $response->withJson(Valid::addErrors([], 'bill', 'update_first_pay_fail'));
+            }
         }
 
         $db->commit();

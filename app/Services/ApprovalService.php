@@ -70,7 +70,10 @@ class ApprovalService
             return 'closed_approval';
         }
 
-        // TODO: discard bill
+        $result = BillService::onRevoked($approval['bill_id']);
+        if(!is_null($result)) {
+            return $result;
+        }
 
         $count = ApprovalModel::updateRecord($id, [
             'status' => ApprovalModel::STATUS_REVOKED
@@ -144,7 +147,7 @@ class ApprovalService
                     return 'update_failure';
                 }
 
-                $finishErrorCode = self::finish(true);
+                $finishErrorCode = self::finish($approval['bill_id'], true);
             }
         }
 
@@ -164,13 +167,12 @@ class ApprovalService
         return null;
     }
 
-    private static function finish($isApproved)
+    private static function finish($billId, $isApproved)
     {
         if ($isApproved) {
-            // BillService::onApproved();
+             return BillService::onApproved($billId);
         } else {
-            // BillService::onRejected();
+             return BillService::onRejected($billId);
         }
-        return true;
     }
 }
