@@ -18,6 +18,7 @@ use App\Controllers\Employee\Employee;
 use App\Controllers\Org\Org;
 use App\Controllers\Org\OrgAccount as OrgAccount;
 use App\Controllers\Org\OrgLicense;
+use App\Controllers\OrgWeb\Approval;
 use App\Controllers\OrgWeb\Erp;
 use App\Controllers\Schedule\ScheduleRecord;
 use App\Controllers\Student\PlayRecord as BackendPlayRecord;
@@ -412,6 +413,23 @@ class OrgWebRouter extends RouterBase
             'method' => ['get'],
             'call' => Erp::class . ':recentDetail',
             'middles' => [ErpMiddleware::class]
+        ],
+
+        '/org_web/approval/add_config' => [
+            'method' => ['post'],
+            'call' => Approval::class . ':addConfig',
+        ],
+        '/org_web/approval/discard_config' => [
+            'method' => ['post'],
+            'call' => Approval::class . ':discardConfig',
+        ],
+        '/org_web/approval/revoke' => [
+            'method' => ['post'],
+            'call' => Approval::class . ':revoke',
+        ],
+        '/org_web/approval/approve' => [
+            'method' => ['post'],
+            'call' => Approval::class . ':approve',
         ]
     ];
 }
