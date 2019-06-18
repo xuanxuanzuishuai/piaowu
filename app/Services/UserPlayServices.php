@@ -10,6 +10,7 @@
 
 namespace App\Services;
 
+use App\Libs\SimpleLogger;
 use App\Models\PlayRecordModel;
 use App\Models\PlaySaveModel;
 use App\Libs\OpernCenter;
@@ -316,7 +317,7 @@ class UserPlayServices
             'created_time[>]' => $start,
             'created_time[<]' => $end,
             'student_id' => (int)$studentId,
-            'client_type' => PlayRecordModel::CLIENT_STUDENT
+            'client_type' => [PlayRecordModel::CLIENT_STUDENT, PlayRecordModel::CLIENT_PANDA_MINI]
         ];
         $plays = PlayRecordModel::getRecords($where);
         $daysFilter = [];
@@ -342,7 +343,7 @@ class UserPlayServices
             'created_time[>]' => $start,
             'created_time[<]' => $end,
             'student_id' => (int)$studentId,
-            'client_type' => PlayRecordModel::CLIENT_STUDENT
+            'client_type' => [PlayRecordModel::CLIENT_STUDENT, PlayRecordModel::CLIENT_PANDA_MINI]
         ];
         $plays = PlayRecordModel::getRecords($where);
 
@@ -408,6 +409,8 @@ class UserPlayServices
             $detail['lesson_id'] = $lessonId;
             $detail['lesson_name'] = empty($lesson) ? $lesson['lesson_name'] : '';
             $detail['plays'] = MaxHeap::nLargest($detail['plays']);
+            $dates = array_column($detail['plays'],'created_time');
+            array_multisort($dates,SORT_DESC, $detail['plays']);
             array_push($ret, $detail);
         }
 

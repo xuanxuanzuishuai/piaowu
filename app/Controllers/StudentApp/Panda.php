@@ -144,8 +144,8 @@ class Panda extends ControllerBase
         $uuid = $params['uuid'];
         $student = StudentModelForApp::getStudentInfo(null, null, $uuid);
         if (empty($student)) {
-            $result = Valid::addAppErrors([], 'unknown_student');
-            return $response->withJson($result, StatusCode::HTTP_OK);
+            $ret = ['is_ai_student' => false, 'days' => 0, 'lesson_count' => 0];
+            return $response->withJson(['code' => 0, 'data'=>$ret], StatusCode::HTTP_OK);
         }
         $ret = UserPlayServices::pandaPlayBrief($student['id']);
         $ret['is_ai_student'] = is_numeric($student['sub_start_date']) and (int)$student['sub_start_date']>0;
