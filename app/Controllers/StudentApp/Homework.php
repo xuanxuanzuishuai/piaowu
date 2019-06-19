@@ -13,6 +13,7 @@ use App\Libs\SimpleLogger;
 use App\Controllers\ControllerBase;
 use App\Libs\Util;
 use App\Libs\Valid;
+use App\Models\AppVersionModel;
 use App\Services\HomeworkService;
 use App\Services\OpernService;
 use App\Services\AppVersionService;
@@ -55,7 +56,7 @@ class Homework extends ControllerBase
         }
 
         $appVersion = AppVersionService::getPublishVersionCode(
-            OpernCenter::PRO_ID_AI_STUDENT, AppVersionService::PLAT_ID_IOS);
+            AppVersionModel::APP_TYPE_STUDENT, AppVersionService::PLAT_ID_IOS);
         $extra = OpernService::getLessonForJoin(
             $homework['lesson_id'],
             OpernCenter::PRO_ID_AI_STUDENT,
