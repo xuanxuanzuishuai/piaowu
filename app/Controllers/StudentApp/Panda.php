@@ -10,13 +10,13 @@ namespace App\Controllers\StudentApp;
 
 
 use App\Controllers\ControllerBase;
-use App\Libs\SimpleLogger;
 use App\Libs\Valid;
-use App\Libs\OpernCenter;
 use App\Models\PlayRecordModel;
+use App\Models\StudentModel;
 use App\Models\StudentModelForApp;
 use App\Models\AppVersionModel;
 use App\Services\AppVersionService;
+use App\Services\StudentServiceForApp;
 use App\Services\UserPlayServices;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -77,12 +77,21 @@ class Panda extends ControllerBase
         }
 
         $data = $params['data'];
-        $uuid = $data['uuid'];
-        $student = StudentModelForApp::getStudentInfo(null, null, $uuid);
+        $mobile = $data['mobile'];
+        $student = StudentModelForApp::getStudentInfo(null, $mobile, null);
 
         if (empty($student)) {
-            $result = Valid::addAppErrors([], 'unknown_student');
-            return $response->withJson($result, StatusCode::HTTP_OK);
+            $studentId = StudentServiceForApp::studentRegister($mobile, StudentModel::CHANNEL_APP_REGISTER);
+            if (empty($studentId)) {
+                $result = Valid::addAppErrors([], 'student_register_fail');
+                return $response->withJson($result, StatusCode::HTTP_OK);
+            }
+            $student = StudentModelForApp::getById($studentId);
+
+            if (empty($student)) {
+                $result = Valid::addAppErrors([], 'unknown_student');
+                return $response->withJson($result, StatusCode::HTTP_OK);
+            }
         }
 
         // 插入练琴纪录表
