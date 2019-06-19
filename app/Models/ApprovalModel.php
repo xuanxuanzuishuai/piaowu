@@ -13,10 +13,13 @@ class ApprovalModel extends Model
 {
     public static $table = "approval";
 
-    const STATUS_WAITING = 0;
-    const STATUS_APPROVED = 1;
-    const STATUS_REJECTED = 2;
-    const STATUS_REVOKED = 3;
+    const TYPE_BILL_ADD = 1;
+    const TYPE_BILL_DISABLE = 2;
+
+    const STATUS_WAITING = 1;
+    const STATUS_APPROVED = 2;
+    const STATUS_REJECTED = 3;
+    const STATUS_REVOKED = 4;
 
     const MAX_LEVELS = 3;
 }

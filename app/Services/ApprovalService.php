@@ -15,18 +15,19 @@ use App\Models\ApprovalConfigModel;
 use App\Models\ApprovalLogModel;
 use App\Models\ApprovalModel;
 use App\Models\EmployeeModel;
+use App\Models\RoleModel;
 
 class ApprovalService
 {
-    public static function needApprove()
+    public static function needApprove($type)
     {
-        $config = ApprovalConfigService::getValidConfig();
+        $config = ApprovalConfigService::getValidConfig($type);
         return !empty($config);
     }
 
-    public static function submit($billId, $operator)
+    public static function submit($billId, $type, $operator)
     {
-        $config = ApprovalConfigService::getValidConfig();
+        $config = ApprovalConfigService::getValidConfig($type);
 
         if (empty($config)) {
             return ['invalid_approval_config'];
@@ -40,6 +41,7 @@ class ApprovalService
 
         $id = ApprovalModel::insertRecord([
             'config_id' => $config['id'],
+            'type' => $type,
             'bill_id' => $billId,
             'create_time' => time(),
             'operator' => $operator,
@@ -70,7 +72,7 @@ class ApprovalService
             return 'closed_approval';
         }
 
-        $result = BillService::onRevoked($approval['bill_id']);
+        $result = BillService::onRevoked($approval['bill_id'], $approval['type']);
         if(!is_null($result)) {
             return $result;
         }
@@ -99,7 +101,7 @@ class ApprovalService
         }
 
         $employee = EmployeeModel::getById($operator);
-        if ($employee['role'] != $approval['current_role']) {
+        if ($employee['role_id'] != $approval['current_role']) {
             return 'invalid_role';
         }
 
@@ -118,7 +120,7 @@ class ApprovalService
                 return 'update_failure';
             }
 
-            $finishErrorCode = self::finish(false);
+            $finishErrorCode = self::finish($approval['bill_id'], $approval['type'], false);
 
         } elseif ($opType == ApprovalLogModel::OP_APPROVE) {
 
@@ -147,7 +149,7 @@ class ApprovalService
                     return 'update_failure';
                 }
 
-                $finishErrorCode = self::finish($approval['bill_id'], true);
+                $finishErrorCode = self::finish($approval['bill_id'], $approval['type'], true);
             }
         }
 
@@ -156,8 +158,9 @@ class ApprovalService
             return $finishErrorCode;
         }
 
-        AppLogModel::insertRecord([
+        ApprovalLogModel::insertRecord([
             'approval_id' => $id,
+            'level' => $approval['current_level'],
             'op_type' => $opType,
             'operator' => $operator,
             'create_time' => time(),
@@ -167,12 +170,82 @@ class ApprovalService
         return null;
     }
 
-    private static function finish($billId, $isApproved)
+    private static function finish($billId, $type, $isApproved)
     {
         if ($isApproved) {
-             return BillService::onApproved($billId);
+             return BillService::onApproved($billId, $type);
         } else {
-             return BillService::onRejected($billId);
+             return BillService::onRejected($billId, $type);
         }
+    }
+
+    public static function getInfo($billId, $employeeId)
+    {
+        $approvals = ApprovalModel::getRecords([
+            'bill_id' => $billId,
+            'ORDER' => 'id'
+        ], '*', true);
+
+        if (empty($approvals)) {
+            return [];
+        }
+
+        $employee = EmployeeModel::getById($employeeId);
+
+        $configs = [];
+        $roles = [];
+
+        $approvalIdx = [];
+        foreach ($approvals as $i => $approval) {
+            $configId = $approval['config_id'];
+
+            if (empty($configs[$configId])) {
+                $config = ApprovalConfigModel::getById($approval['config_id']);
+                if ($config['status'] == Constants::STATUS_FALSE) {
+                    continue;
+                }
+                $configs[$configId] = $config;
+            }
+
+            $roleIds = explode(',', $configs[$configId]['roles']);
+
+            $levelData = [];
+            foreach ($roleIds as $level => $roleId) {
+
+                if (empty($roles[$roleId])) {
+                    $role = RoleModel::getById($roleId);
+                    $roles[$roleId] = $role;
+                }
+
+                $levelData[$level] = [
+                    'role_id' => $roleId,
+                    'role_name' => $roles[$roleId]['name'],
+                ];
+
+                if ($roleId == $employee['role_id'] && $level >= $approval['current_level']) {
+                    $levelData[$level]['can_approve'] = true;
+                }
+            }
+
+            $approvals[$i]['level_data'] = $levelData;
+            $operator = EmployeeModel::getById($approval['operator']);
+            $approval['operator_name'] = $operator['name'];
+
+            $approvalIdx[$approval['id']] = $i;
+        }
+
+        $logs = ApprovalLogModel::getRecords(['approval_id' => array_keys($approvalIdx)], '*', false);
+        foreach ($logs as $log) {
+            if (!empty($approvals[$approvalIdx[$log['approval_id']]]['level_data'][$log['level']])) {
+                $approvals[$approvalIdx[$log['approval_id']]]['level_data'][$log['level']]['op_type'] = $log['op_type'];
+                $approvals[$approvalIdx[$log['approval_id']]]['level_data'][$log['level']]['op_time'] = $log['create_time'];;
+                $approvals[$approvalIdx[$log['approval_id']]]['level_data'][$log['level']]['remark'] = $log['remark'];
+                $approvals[$approvalIdx[$log['approval_id']]]['level_data'][$log['level']]['operator'] = $log['operator'];
+                $operator = EmployeeModel::getById($log['operator']);
+                $approvals[$approvalIdx[$log['approval_id']]]['level_data'][$log['level']]['operator_name'] = $operator['name'];
+            }
+        }
+
+        return $approvals;
     }
 }

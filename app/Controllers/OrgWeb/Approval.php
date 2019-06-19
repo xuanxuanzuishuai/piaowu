@@ -26,6 +26,17 @@ class Approval extends ControllerBase
     {
         $rules = [
             [
+                'key' => 'type',
+                'type' => 'required',
+                'error_code' => 'approval_type_is_required'
+            ],
+            [
+                'key' => 'type',
+                'type' => 'in',
+                'value' => [ApprovalModel::TYPE_BILL_ADD, ApprovalModel::TYPE_BILL_DISABLE],
+                'error_code' => 'approval_type_invalid'
+            ],
+            [
                 'key' => 'levels',
                 'type' => 'required',
                 'error_code' => 'levels_is_required'
@@ -47,8 +58,8 @@ class Approval extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        list($errorCode, $id) = ApprovalConfigService::addConfig($params['levels'],
-            $params['roles'],
+        list($errorCode, $id) = ApprovalConfigService::addConfig($params['type'], $params['levels'],
+            explode(',', $params['roles']),
             $this->getEmployeeId());
 
         if (!empty($errorCode)) {
@@ -135,9 +146,14 @@ class Approval extends ControllerBase
             ],
             [
                 'key' => 'op_type',
+                'type' => 'required',
+                'error_code' => 'op_type_is_required'
+            ],
+            [
+                'key' => 'op_type',
                 'type' => 'in',
                 'value' => [ApprovalLogModel::OP_APPROVE, ApprovalLogModel::OP_REJECT],
-                'error_code' => 'op_type_is_required'
+                'error_code' => 'op_type_invalid'
             ],
         ];
         $params = $request->getParams();

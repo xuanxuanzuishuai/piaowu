@@ -14,9 +14,9 @@ use App\Models\RoleModel;
 
 class ApprovalConfigService
 {
-    public static function addConfig($levels, $roles, $operator)
+    public static function addConfig($type, $levels, $roles, $operator)
     {
-        $currentConfig = self::getValidConfig();
+        $currentConfig = self::getValidConfig($type);
         if (!empty($currentConfig)) {
             return ['has_valid_config'];
         }
@@ -37,6 +37,7 @@ class ApprovalConfigService
         }
 
         $id = ApprovalConfigModel::insertRecord([
+            'type' => $type,
             'levels' => $levels,
             'roles' => implode(',', $roles),
             'create_time' => time(),
@@ -73,9 +74,10 @@ class ApprovalConfigService
         return null;
     }
 
-    public static function getValidConfig()
+    public static function getValidConfig($type)
     {
         $validConfig = ApprovalConfigModel::getRecord([
+            'type' => $type,
             'status' => Constants::STATUS_TRUE
         ], '*', true);
 
