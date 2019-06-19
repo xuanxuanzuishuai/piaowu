@@ -15,6 +15,7 @@ use App\Libs\Valid;
 use App\Libs\OpernCenter;
 use App\Models\PlayRecordModel;
 use App\Models\StudentModelForApp;
+use App\Models\AppVersionModel;
 use App\Services\AppVersionService;
 use App\Services\UserPlayServices;
 use Slim\Http\Request;
@@ -121,7 +122,7 @@ class Panda extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         $appVersion = AppVersionService::getPublishVersionCode(
-            OpernCenter::PRO_ID_AI_STUDENT, AppVersionService::PLAT_ID_IOS);
+            AppVersionModel::APP_TYPE_STUDENT, AppVersionService::PLAT_ID_IOS);
         $ret = UserPlayServices::pandaPlayDetail($student['id'], $appVersion);
         return $response->withJson(['code' => 0, 'data'=>$ret], StatusCode::HTTP_OK);
     }

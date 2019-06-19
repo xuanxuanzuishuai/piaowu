@@ -376,7 +376,7 @@ class UserPlayServices
             }
             // 分类计算指标
             $details[$lessonId]['practice_time'] += $play['duration'];
-            $score = Util::floatIsInt($play['score']) ? (int)$play['score'] : $play['score'];
+            $score = Util::floatIsInt($play['score']) ? (int)$play['score'] : (float)$play['score'];
             if ($play['lesson_type'] == PlayRecordModel::TYPE_AI){
                 $details[$lessonId]['ai_times'] += 1;
                 if ($score > $details[$lessonId]['ai_best']){
@@ -388,7 +388,7 @@ class UserPlayServices
                 }else{
                     $details[$lessonId]['whole_times'] += 1;
                     if ($score > $details[$lessonId]['whole_best']){
-                        $statistics[$lessonId]['whole_best'] = $score;
+                        $details[$lessonId]['whole_best'] = $score;
                     }
                 }
             }
@@ -411,9 +411,9 @@ class UserPlayServices
         $lessons = OpernService::getLessonForJoin($lessonIds,
             OpernCenter::PRO_ID_AI_STUDENT, $appVersion, 0, 1);
         foreach ($details as $lessonId => $detail){
-            $lesson = $lessons['$lessonId'];
+            $lesson = $lessons[$lessonId];
             $detail['lesson_id'] = $lessonId;
-            $detail['lesson_name'] = empty($lesson) ? $lesson['lesson_name'] : '';
+            $detail['lesson_name'] = !empty($lesson) ? $lesson['lesson_name'] : '';
             // 取3个最高分的爱练琴记录，按照时间排序
             $detail['plays'] = MaxHeap::nLargest($detail['plays']);
             $dates = array_column($detail['plays'],'created_time');
