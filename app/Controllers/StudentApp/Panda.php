@@ -127,8 +127,8 @@ class Panda extends ControllerBase
         $uuid = $params['uuid'];
         $student = StudentModelForApp::getStudentInfo(null, null, $uuid);
         if (empty($student)) {
-            $result = Valid::addAppErrors([], 'unknown_student');
-            return $response->withJson($result, StatusCode::HTTP_OK);
+            $ret = ['lessons' => [], 'days' => 0, 'lesson_count' => 0, 'token' => ''];
+            return $response->withJson(['code' => 0, 'data'=>$ret], StatusCode::HTTP_OK);
         }
         $appVersion = AppVersionService::getPublishVersionCode(
             AppVersionModel::APP_TYPE_STUDENT, AppVersionService::PLAT_ID_IOS);
