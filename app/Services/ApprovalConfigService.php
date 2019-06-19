@@ -83,4 +83,29 @@ class ApprovalConfigService
 
         return $validConfig;
     }
+
+    public static function selectByPage($page, $count, $params)
+    {
+        list($records, $total) = ApprovalConfigModel::selectByPage($page, $count, $params);
+
+        foreach($records as &$r) {
+            $r['type_zh'] = DictService::getKeyValue(Constants::DICT_TYPE_APPROVAL_TYPE, $r['type']);
+            $r['status_zh'] = DictService::getKeyValue(Constants::DICT_TYPE_NORMAL_STATUS, $r['status']);
+
+            if(!empty($r['roles'])) {
+                $roles = [];
+                foreach(explode(',', $r['roles']) as $roleId) {
+                    $role = RoleModel::getById($roleId);
+                    if(!empty($role)) {
+                        $roles[] = $role['name'];
+                    }
+                }
+                $r['roles_zh'] = implode(',', $roles);
+            } else {
+                $r['roles_zh'] = '';
+            }
+        }
+
+        return [$records, $total];
+    }
 }

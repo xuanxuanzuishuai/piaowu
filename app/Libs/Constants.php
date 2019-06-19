@@ -19,6 +19,9 @@ class Constants
     const UNIT_MONTH = 'month';
     const UNIT_YEAR = 'year';
 
+    //通用的状态
+    const DICT_TYPE_NORMAL_STATUS = 'normal_status';// 0废弃 1正常
+
     // 系统设置
     const DICT_TYPE_SYSTEM_ENV = 'system_env';
 
@@ -158,4 +161,9 @@ class Constants
     const DICT_TYPE_BILL_ADD_STATUS = 'bill_add_status';
     // 订单废除状态
     const DICT_TYPE_BILL_DISABLED_STATUS = 'bill_disabled_status';
+    // 审批类型
+    const DICT_TYPE_APPROVAL_TYPE = 'approval_type';
+    // 审批状态
+    const DICT_TYPE_APPROVAL_STATUS = 'approval_status';
+
 };

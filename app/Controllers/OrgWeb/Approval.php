@@ -11,6 +11,7 @@ namespace App\Controllers\OrgWeb;
 
 use App\Controllers\ControllerBase;
 use App\Libs\MysqlDB;
+use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\ApprovalLogModel;
 use App\Models\ApprovalModel;
@@ -181,5 +182,97 @@ class Approval extends ControllerBase
             'code' => Valid::CODE_SUCCESS,
             'data' => [],
         ], StatusCode::HTTP_OK);
+    }
+
+    //待审核列表
+    public function list(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key'        => 'page',
+                'type'       => 'integer',
+                'error_code' => 'page_must_be_integer'
+            ],
+            [
+                'key'        => 'count',
+                'type'       => 'integer',
+                'error_code' => 'count_must_be_integer'
+            ],
+            [
+                'key'        => 'type',
+                'type'       => 'integer',
+                'error_code' => 'type_must_be_integer'
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        global $orgId;
+
+        $data = $params;
+        $data['current_role'] = $this->ci['employee']['role_id'];
+        $data['status'] = ApprovalModel::STATUS_WAITING;
+        $data['org_id'] = $orgId;
+        list($page, $count) = Util::formatPageCount($data);
+
+        list($records, $total) = ApprovalService::selectByPage($page, $count, $data);
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => [
+                'records'     => $records,
+                'total_count' => $total,
+            ],
+        ]);
+    }
+
+    public function configList(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key'        => 'page',
+                'type'       => 'integer',
+                'error_code' => 'page_must_be_integer'
+            ],
+            [
+                'key'        => 'count',
+                'type'       => 'integer',
+                'error_code' => 'count_must_be_integer'
+            ],
+            [
+                'key'        => 'type',
+                'type'       => 'integer',
+                'error_code' => 'type_must_be_integer'
+            ],
+            [
+                'key'        => 'status',
+                'type'       => 'integer',
+                'error_code' => 'status_must_be_integer'
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        global $orgId;
+
+        $data = $params;
+        $data['org_id'] = $orgId;
+        list($page, $count) = Util::formatPageCount($data);
+
+        list($records, $total) = ApprovalConfigService::selectByPage($page, $count, $data);
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => [
+                'records'     => $records,
+                'total_count' => $total,
+            ],
+        ]);
     }
 }

@@ -248,4 +248,14 @@ class ApprovalService
 
         return $approvals;
     }
+
+    public static function selectByPage($page, $count, $params)
+    {
+        list($records, $total) = ApprovalModel::selectByPage($page, $count, $params);
+        foreach($records as &$r) {
+            $r['status_zh'] = DictService::getKeyValue(Constants::DICT_TYPE_APPROVAL_STATUS, $r['status']);
+            $r['type_zh']   = DictService::getKeyValue(Constants::DICT_TYPE_APPROVAL_TYPE, $r['type']);
+        }
+        return [$records, $total];
+    }
 }

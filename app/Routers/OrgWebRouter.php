@@ -430,6 +430,16 @@ class OrgWebRouter extends RouterBase
         '/org_web/approval/approve' => [
             'method' => ['post'],
             'call' => Approval::class . ':approve',
-        ]
+        ],
+        //待审核列表
+        '/org_web/approval/list' => [
+            'method' => ['get'],
+            'call' => Approval::class . ':list',
+        ],
+        //审批配置列表
+        '/org_web/approval/config_list' => [
+            'method' => ['get'],
+            'call' => Approval::class . ':configList',
+        ],
     ];
 }
