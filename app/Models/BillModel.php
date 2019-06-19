@@ -22,11 +22,17 @@ class BillModel extends Model
     const NOT_ENTER_ACCOUNT = 0; //不进入学生账户
     const IS_ENTER_ACCOUNT = 1; //进入学生账户
 
-    const STATUS_NOT_NEED = 1; //不需要审核
-    const STATUS_APPROVING = 2; //审核中
-    const STATUS_APPROVED = 3; //审核通过
-    const STATUS_REJECTED = 4; //拒绝
-    const STATUS_REVOKED = 5; //撤销
+    //添加订单状态
+    const ADD_STATUS_APPROVING = 1; //审核中
+    const ADD_STATUS_APPROVED = 2; //审核通过
+    const ADD_STATUS_REJECTED = 3; //拒绝
+    const ADD_STATUS_REVOKED = 4; //撤销
+
+    //废除订单状态
+    const DISABLED_STATUS_APPROVING = 1; //审核中
+    const DISABLED_STATUS_APPROVED = 2; //审核通过
+    const DISABLED_STATUS_REJECTED = 3; //拒绝
+    const DISABLED_STATUS_REVOKED = 4; //撤销
 
     public static $table = 'bill';
 
@@ -69,8 +75,15 @@ class BillModel extends Model
             $where['b.create_time[<=]'] = $params['end_create_time'];
         }
         if(!empty($params['r_bill_id'])) {
-            $where['r_bill_id'] = $params['r_bill_id'];
+            $where['b.r_bill_id'] = $params['r_bill_id'];
         }
+        if(!empty($params['add_status'])) {
+            $where['b.add_status'] = $params['add_status'];
+        }
+        if(!empty($params['disabled_status'])) {
+            $where['b.disabled_status'] = $params['disabled_status'];
+        }
+
         $limitWhere = array_merge($where, [
             'LIMIT' => [($page-1) * $count, $count],
             'ORDER' => ['b.is_disabled' => 'ASC','b.create_time' => 'DESC'],
@@ -104,7 +117,9 @@ class BillModel extends Model
             'b.is_enter_account',
             'b.sprice',
             'b.object_id',
-            'c.name(object_name)'
+            'c.name(object_name)',
+            'b.add_status',
+            'b.disabled_status',
         ], $limitWhere);
 
         $total = $db->count(self::$table . '(b)' , $where);
@@ -136,7 +151,8 @@ class BillModel extends Model
                 'b.is_disabled',
                 'b.is_enter_account',
                 'b.sprice',
-                'b.status',
+                'b.add_status',
+                'b.disabled_status',
             ],
             [
                 'b.id'     => $id,

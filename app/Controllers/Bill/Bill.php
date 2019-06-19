@@ -11,6 +11,7 @@ namespace App\Controllers\Bill;
 
 use App\Controllers\ControllerBase;
 use App\Libs\MysqlDB;
+use App\Models\ApprovalModel;
 use App\Models\BillExtendModel;
 use App\Models\BillModel;
 use App\Models\StudentAccountModel;
@@ -46,13 +47,13 @@ class Bill extends ControllerBase
 
         $id = $params['id'];
         global $orgId;
-
         $record = BillModel::getBillByOrgAndId($orgId, $id);
         if(empty($record)) {
             return $response->withJson(Valid::addErrors([], 'bill', 'bill_not_exist'));
         }
 
-        if(!in_array($record['status'], [BillModel::STATUS_NOT_NEED, BillModel::STATUS_APPROVED])) {
+        //添加订单审核通过的才能废除
+        if($record['add_status'] != BillModel::ADD_STATUS_APPROVED || !empty($record['disabled_status'])) {
             return $response->withJson(Valid::addErrors([], 'bill', 'only_approved_bill_can_be_disabled'));
         }
 
@@ -60,40 +61,54 @@ class Bill extends ControllerBase
         if($record['is_disabled'] == BillModel::IS_DISABLED) {
             return $response->withJson([
                 'code' => Valid::CODE_SUCCESS,
-                'data' => ['affect_rows' => 1]
+                'data' => []
             ]);
         }
 
-        $db = MysqlDB::getDB();
-        $db->beginTransaction();
-
-        $affectRows = BillModel::updateRecord($id, [
-            'is_disabled' => BillModel::IS_DISABLED,
-            'update_time' => time()
-        ],false);
-
-        if($affectRows == 0) {
-            $db->rollBack();
-            return $response->withJson(Valid::addErrors([],'bill', 'update_disabled_fail'));
+        if(ApprovalService::needApprove(ApprovalModel::TYPE_BILL_DISABLE)) {
+            $status = BillModel::DISABLED_STATUS_APPROVING;
+        } else {
+            $status = BillModel::DISABLED_STATUS_APPROVED;
         }
 
-        if($record['pay_status'] == BillModel::PAY_STATUS_PAID &&
-            $record['is_enter_account'] == BillModel::IS_ENTER_ACCOUNT)
-        {
-            $success = StudentAccountService::abolishSA(
-                $record['student_id'], $record['amount'], 0, $record['operator_id'], $record['remark'], false
-            );
-            if(!$success) {
+        if($status == BillModel::DISABLED_STATUS_APPROVED) {
+            $db = MysqlDB::getDB();
+            $db->beginTransaction();
+
+            $affectRows = BillModel::updateRecord($id, [
+                'is_disabled'     => BillModel::IS_DISABLED,
+                'disabled_status' => $status,
+                'update_time'     => time()
+            ],false);
+
+            if($affectRows == 0) {
                 $db->rollBack();
-                return $response->withJson(Valid::addErrors([], 'bill', 'abolish_sa_fail'));
+                return $response->withJson(Valid::addErrors([],'bill', 'update_disabled_fail'));
+            }
+
+            if($record['pay_status'] == BillModel::PAY_STATUS_PAID &&
+                $record['is_enter_account'] == BillModel::IS_ENTER_ACCOUNT)
+            {
+                $success = StudentAccountService::abolishSA(
+                    $record['student_id'], $record['amount'], 0, $record['operator_id'], $record['remark'], false
+                );
+                if(!$success) {
+                    $db->rollBack();
+                    return $response->withJson(Valid::addErrors([], 'bill', 'abolish_sa_fail'));
+                }
+            }
+
+            $db->commit();
+        } else {
+            list($errorCode) = ApprovalService::submit($id, ApprovalModel::TYPE_BILL_DISABLE, $record['operator_id']);
+            if(!is_null($errorCode)) {
+                return $response->withJson(Valid::addErrors([], 'bill', $errorCode));
             }
         }
 
-        $db->commit();
-
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
-            'data' => ['affect_rows' => $affectRows],
+            'data' => [],
         ]);
     }
 
@@ -345,9 +360,10 @@ class Bill extends ControllerBase
             return $response->withJson(Valid::addErrors([], 'bill', 'student_not_exist'));
         }
 
-        $status = BillModel::STATUS_NOT_NEED;
-        if(ApprovalService::needApprove()) {
-           $status = BillModel::STATUS_APPROVING;
+        if(ApprovalService::needApprove(ApprovalModel::TYPE_BILL_ADD)) {
+            $status = BillModel::ADD_STATUS_APPROVING;
+        } else {
+            $status = BillModel::ADD_STATUS_APPROVED;
         }
 
         $now = time();
@@ -365,7 +381,7 @@ class Bill extends ControllerBase
             'amount'      => $params['amount'] * 100,
             'sprice'      => $params['sprice'] * 100,
             'r_bill_id'   => $params['r_bill_id'],
-            'status'      => $status,
+            'add_status'  => $status,
         ];
 
         foreach($columns as $key) {
@@ -383,7 +399,7 @@ class Bill extends ControllerBase
 
         if($params['pay_status'] == BillModel::PAY_STATUS_PAID &&
             $params['is_enter_account'] == BillModel::IS_ENTER_ACCOUNT &&
-            $status == BillModel::STATUS_NOT_NEED)
+            $status == BillModel::ADD_STATUS_APPROVED)
         {
             $success = StudentAccountService::addSA(
                 $data['student_id'],
@@ -413,12 +429,21 @@ class Bill extends ControllerBase
         }
 
         if($params['pay_status'] == BillModel::PAY_STATUS_PAID &&
-            $status == BillModel::STATUS_NOT_NEED) {
+            $status == BillModel::ADD_STATUS_APPROVED) {
             //更新用户首付付费
             $rows = StudentService::updateUserPaidStatus($studentId);
             if(!is_null($rows) && empty($rows)) {
                 $db->rollBack();
                 return $response->withJson(Valid::addErrors([], 'bill', 'update_first_pay_fail'));
+            }
+        }
+
+        //提交审核
+        if($status == BillModel::ADD_STATUS_APPROVING) {
+            list($errorCode) = ApprovalService::submit($lastId, ApprovalModel::TYPE_BILL_ADD, $this->getEmployeeId());
+            if(!is_null($errorCode)) {
+                $db->rollBack();
+                return $response->withJson(Valid::addErrors([], 'bill', $errorCode));
             }
         }
 

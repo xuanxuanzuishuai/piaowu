@@ -154,4 +154,8 @@ class Constants
     const DICT_TYPE_ORG_LICENSE_STATUS = 'org_license_status';
     // DICT  付费状态 first_pay
     const DICT_TYPE_FIRST_PAY = 'first_pay_status';
+    // 订单添加状态
+    const DICT_TYPE_BILL_ADD_STATUS = 'bill_add_status';
+    // 订单废除状态
+    const DICT_TYPE_BILL_DISABLED_STATUS = 'bill_disabled_status';
 };
