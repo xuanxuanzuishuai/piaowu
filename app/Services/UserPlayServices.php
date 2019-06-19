@@ -351,7 +351,7 @@ class UserPlayServices
         $details = [];
         $daysFilter = [];
         foreach ($plays as $play) {
-            // 按天聚合
+            // 按天聚合,计算练琴天数
             $day = date("Y-m-d", $play['created_time']);
             if(!isset($daysFilter[$day])){
                 $daysFilter[$day] = 1;
@@ -366,10 +366,15 @@ class UserPlayServices
                     'whole_best' => 0,
                     'ai_times' => 0,
                     'ai_best' => 0,
+                    'created_time' => 0,
                     'plays' => new MaxHeap('score'),
                 ];
             }
-
+            // 以lesson为单位，查出该lesson的最近练琴时间
+            if($play['created_time'] > $details[$lessonId]['created_time']){
+                $details[$lessonId]['created_time'] = $play['created_time'];
+            }
+            // 分类计算指标
             $details[$lessonId]['practice_time'] += $play['duration'];
             $score = Util::floatIsInt($play['score']) ? (int)$play['score'] : $play['score'];
             if ($play['lesson_type'] == PlayRecordModel::TYPE_AI){
@@ -387,6 +392,7 @@ class UserPlayServices
                     }
                 }
             }
+            // ai练琴记录的3个最高分，用于五维图展示
             if($play['lesson_type'] == PlayRecordModel::TYPE_AI){
                 $temp = [];
                 $temp['id'] = $play['id'];
@@ -403,16 +409,21 @@ class UserPlayServices
         $ret = [];
         $lessonIds = array_keys($details);
         $lessons = OpernService::getLessonForJoin($lessonIds,
-            OpernCenter::PRO_ID_AI_STUDENT, $appVersion, 0, 0);
+            OpernCenter::PRO_ID_AI_STUDENT, $appVersion, 0, 1);
         foreach ($details as $lessonId => $detail){
             $lesson = $lessons['$lessonId'];
             $detail['lesson_id'] = $lessonId;
             $detail['lesson_name'] = empty($lesson) ? $lesson['lesson_name'] : '';
+            // 取3个最高分的爱练琴记录，按照时间排序
             $detail['plays'] = MaxHeap::nLargest($detail['plays']);
             $dates = array_column($detail['plays'],'created_time');
             array_multisort($dates,SORT_DESC, $detail['plays']);
             array_push($ret, $detail);
         }
+
+        // 将统计完数据整体按照最后练习时间排序
+        $_dates = array_column($ret,'created_time');
+        array_multisort($_dates,SORT_DESC, $ret);
 
         return ['lessons' => $ret,
                 'lesson_count' =>count($details),
