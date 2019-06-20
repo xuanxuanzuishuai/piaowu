@@ -165,5 +165,7 @@ class Constants
     const DICT_TYPE_APPROVAL_TYPE = 'approval_type';
     // 审批状态
     const DICT_TYPE_APPROVAL_STATUS = 'approval_status';
+    // 审批操作
+    const DICT_TYPE_APPROVAL_OP_TYPE = 'approval_op_type';
 
 };

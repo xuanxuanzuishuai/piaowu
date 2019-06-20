@@ -10,7 +10,6 @@ namespace App\Services;
 
 use App\Libs\Constants;
 use App\Libs\SimpleLogger;
-use App\Models\AppLogModel;
 use App\Models\ApprovalConfigModel;
 use App\Models\ApprovalLogModel;
 use App\Models\ApprovalModel;
@@ -201,11 +200,9 @@ class ApprovalService
 
             if (empty($configs[$configId])) {
                 $config = ApprovalConfigModel::getById($approval['config_id']);
-                if ($config['status'] == Constants::STATUS_FALSE) {
-                    continue;
-                }
                 $configs[$configId] = $config;
             }
+            $configIsEnable = ($configs[$configId]['status'] == Constants::STATUS_TRUE);
 
             $roleIds = explode(',', $configs[$configId]['roles']);
 
@@ -222,27 +219,40 @@ class ApprovalService
                     'role_name' => $roles[$roleId]['name'],
                 ];
 
-                if ($roleId == $employee['role_id'] && $level >= $approval['current_level']) {
+                if ($roleId == $employee['role_id']
+                    && $level >= $approval['current_level']
+                    && $configIsEnable
+                ) {
                     $levelData[$level]['can_approve'] = true;
                 }
             }
 
             $approvals[$i]['level_data'] = $levelData;
             $operator = EmployeeModel::getById($approval['operator']);
-            $approval['operator_name'] = $operator['name'];
+            $approvals[$i]['operator_name'] = $operator['name'];
+            $approvals[$i]['config_enable'] = $configIsEnable;
+            $approvals[$i]['type_zh'] = DictService::getKeyValue(Constants::DICT_TYPE_APPROVAL_TYPE, $approvals[$i]['type']);
+            $approvals[$i]['status_zh'] = DictService::getKeyValue(Constants::DICT_TYPE_APPROVAL_STATUS, $approvals[$i]['status']);
 
             $approvalIdx[$approval['id']] = $i;
         }
 
         $logs = ApprovalLogModel::getRecords(['approval_id' => array_keys($approvalIdx)], '*', false);
         foreach ($logs as $log) {
-            if (!empty($approvals[$approvalIdx[$log['approval_id']]]['level_data'][$log['level']])) {
-                $approvals[$approvalIdx[$log['approval_id']]]['level_data'][$log['level']]['op_type'] = $log['op_type'];
-                $approvals[$approvalIdx[$log['approval_id']]]['level_data'][$log['level']]['op_time'] = $log['create_time'];;
-                $approvals[$approvalIdx[$log['approval_id']]]['level_data'][$log['level']]['remark'] = $log['remark'];
-                $approvals[$approvalIdx[$log['approval_id']]]['level_data'][$log['level']]['operator'] = $log['operator'];
+            $levelDetail = $approvals[$approvalIdx[$log['approval_id']]]['level_data'][$log['level']] ?? null;
+
+            if (!empty($levelDetail)) {
+                $levelDetail['op_time'] = $log['create_time'];;
+                $levelDetail['remark'] = $log['remark'];
+
+                $levelDetail['operator'] = $log['operator'];
                 $operator = EmployeeModel::getById($log['operator']);
-                $approvals[$approvalIdx[$log['approval_id']]]['level_data'][$log['level']]['operator_name'] = $operator['name'];
+                $levelDetail['operator_name'] = $operator['name'];
+
+                $levelDetail['op_type'] = $log['op_type'];
+                $levelDetail['op_type_zh'] = DictService::getKeyValue(Constants::DICT_TYPE_APPROVAL_OP_TYPE, $log['op_type']);
+
+                $approvals[$approvalIdx[$log['approval_id']]]['level_data'][$log['level']] = $levelDetail;
             }
         }
 
