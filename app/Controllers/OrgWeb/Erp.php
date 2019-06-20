@@ -16,7 +16,11 @@ use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Models\EmployeeModel;
 use App\Models\GiftCodeModel;
+use App\Models\StudentModelForApp;
 use App\Services\ErpService;
+use App\Services\UserPlayServices;
+use App\Services\AppVersionService;
+use App\Models\AppVersionModel;
 use App\Services\GiftCodeService;
 use App\Services\StudentService;
 use Slim\Http\Request;
@@ -143,5 +147,71 @@ class Erp extends ControllerBase
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS
         ], StatusCode::HTTP_OK);
+    }
+
+    public static function recentDetail(Request $request, Response $response)
+    {
+        // 验证请求参数
+        $rules = [
+            [
+                'key' => 'uuid',
+                'type' => 'required',
+                'error_code' => 'uuid_is_required'
+            ],
+            [
+                'key' => 'time',
+                'type' => 'required',
+                'error_code' => 'time_is_required'
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $uuid = $params['uuid'];
+        $time = $params['time'];
+        $student = StudentModelForApp::getStudentInfo(null, null, $uuid);
+        if (empty($student)) {
+            $ret = ['lessons' => [], 'days' => 0, 'lesson_count' => 0, 'token' => ''];
+            return $response->withJson(['code' => 0, 'data'=>$ret], StatusCode::HTTP_OK);
+        }
+        $appVersion = AppVersionService::getPublishVersionCode(
+            AppVersionModel::APP_TYPE_STUDENT, AppVersionService::PLAT_ID_IOS);
+        $ret = UserPlayServices::pandaPlayDetail($student['id'], $appVersion, 7, $time);
+        return $response->withJson(['code' => 0, 'data'=>$ret], StatusCode::HTTP_OK);
+    }
+
+
+    public static function recentPlayed(Request $request, Response $response)
+    {
+        // 验证请求参数
+        $rules = [
+            [
+                'key' => 'uuid',
+                'type' => 'required',
+                'error_code' => 'uuid_is_required'
+            ],
+            [
+                'key' => 'time',
+                'type' => 'required',
+                'error_code' => 'time_is_required'
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $uuid = $params['uuid'];
+        $time = $params['time'];
+        $student = StudentModelForApp::getStudentInfo(null, null, $uuid);
+        if (empty($student)) {
+            $ret = ['is_ai_student' => false, 'days' => 0, 'lesson_count' => 0];
+            return $response->withJson(['code' => 0, 'data'=>$ret], StatusCode::HTTP_OK);
+        }
+        $ret = UserPlayServices::pandaPlayBrief($student['id'], 7, $time);
+        $ret['is_ai_student'] = $student['sub_start_date'] > 0;
+        return $response->withJson(['code' => 0, 'data'=>$ret], StatusCode::HTTP_OK);
     }
 }

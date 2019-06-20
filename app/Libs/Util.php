@@ -656,9 +656,11 @@ class Util
      * @param int $days. 天数
      * @return array
      */
-    public static function nDaysBeforeNow($days=7)
+    public static function nDaysBeforeNow($now=null, $days=7)
     {
-        $now = time();
+        if(empty($now)){
+            $now = time();
+        }
         $nDaysBefore = (int)$days * 24 * 60 * 40;
         return [$now - $nDaysBefore, $now];
     }

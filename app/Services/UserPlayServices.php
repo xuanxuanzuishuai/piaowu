@@ -309,10 +309,10 @@ class UserPlayServices
         return [$saveUpdate, $playResult];
     }
 
-    public static function pandaPlayBrief($studentId, $days=7)
+    public static function pandaPlayBrief($studentId, $days=7, $endTime=null)
     {
         // 取最近7天的演奏记录
-        list($start, $end) = Util::nDaysBeforeNow($days);
+        list($start, $end) = Util::nDaysBeforeNow($endTime, $days);
         $where = [
             'created_time[>]' => $start,
             'created_time[<]' => $end,
@@ -335,10 +335,10 @@ class UserPlayServices
         return ['lesson_count' =>count($lessonFilter), 'days' => count($daysFilter)];
     }
 
-    public static function pandaPlayDetail($studentId, $appVersion, $days=7)
+    public static function pandaPlayDetail($studentId, $appVersion, $days=7, $endTime=null)
     {
         // 取最近7天的演奏记录
-        list($start, $end) = Util::nDaysBeforeNow($days);
+        list($start, $end) = Util::nDaysBeforeNow($endTime, $days);
         $where = [
             'created_time[>]' => $start,
             'created_time[<]' => $end,
