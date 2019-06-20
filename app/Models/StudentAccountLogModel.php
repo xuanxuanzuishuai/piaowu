@@ -17,6 +17,7 @@ class StudentAccountLogModel extends Model
 
     const TYPE_ADD = 1; // 入账
     const TYPE_REDUCE = 2; // 消费
+    const TYPE_DISCARD = 3; // 作废
 
     public static function insertSAL($studentAccountLogs)
     {
