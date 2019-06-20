@@ -67,6 +67,9 @@ class TeacherNoteModel extends Model{
     }
 
     public static function getNotesByIds($ids){
+        if(empty($ids)){
+            return [];
+        }
         $db = MysqlDB::getDB();
         $ret = $db->select(self::$table, "*", [
             "id" => $ids,

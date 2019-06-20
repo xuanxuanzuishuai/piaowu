@@ -37,6 +37,12 @@ class HomeworkService
         $homework_id = HomeworkModel::createHomework($schedule_id, $org_id, $teacher_id, $student_id, $created_time,
             $end_time, $remark);
         foreach ($content as $task) {
+            if(empty($task["lesson_id"])){
+                // ISSUE http://sentry.xiaoyezi.com/sentry/dss_crm_prod/issues/53325/
+                // $task["lesson_id"] can never be null
+                SimpleLogger::error("TASK_ID_IS_NULL", $task);
+                continue;
+            }
             $nodeIds = !empty($task['note_ids']) ? implode(',', $task['note_ids']) : '';
             HomeworkTaskModel::createHomeworkTask($homework_id, $task["lesson_id"],
                 $task["lesson_name"], $task["collection_id"], $task["collection_name"],
