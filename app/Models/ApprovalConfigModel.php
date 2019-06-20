@@ -27,7 +27,7 @@ class ApprovalConfigModel extends Model
             $where .= ' and c.type = :type ';
             $map[':type'] = $params['type'];
         }
-        if(!empty($params['status'])) {
+        if(isset($params['status'])) {
             $where .= ' and c.status = :status ';
             $map[':status'] = $params['status'];
         }
