@@ -375,7 +375,6 @@ class Bill extends ControllerBase
 
         $data = [
             'create_time' => $now,
-            'end_time'    => $now,
             'operator_id' => $this->getEmployeeId(),
             'org_id'      => $orgId,
             'amount'      => $params['amount'] * 100,
@@ -383,6 +382,10 @@ class Bill extends ControllerBase
             'r_bill_id'   => $params['r_bill_id'],
             'add_status'  => $status,
         ];
+
+        if($params['pay_status'] == BillModel::PAY_STATUS_PAID) {
+            $data['end_time'] = $now;
+        }
 
         foreach($columns as $key) {
             $data[$key] = $params[$key];
