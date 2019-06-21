@@ -9,6 +9,7 @@
 namespace App\Models;
 
 
+use App\Libs\Constants;
 use App\Libs\MysqlDB;
 use App\Libs\Util;
 
@@ -28,10 +29,11 @@ class ApprovalModel extends Model
 
     public static function selectByPage($page, $count, $params)
     {
-        $a = self::$table;
-        $e = EmployeeModel::$table;
-        $where = '';
-        $map = [];
+        $a  = self::$table;
+        $e  = EmployeeModel::$table;
+        $ac = ApprovalConfigModel::$table;
+        $where = ' and ac.status = :ac_status ';
+        $map = [':ac_status' => Constants::STATUS_TRUE];
 
         if(!empty($params['current_role'])) {
             $where .= ' and a.current_role = :current_role';
@@ -63,11 +65,13 @@ class ApprovalModel extends Model
                a.current_role,
                a.current_level
         from {$a} a,
-             {$e} e
+             {$e} e,
+             {$ac} ac
         where a.operator = e.id
+          and a.config_id = ac.id 
           {$where} order by a.create_time desc {$limit}", $map);
 
-        $total = $db->queryAll("select count(*) count from {$a} a where 1=1 {$where}", $map);
+        $total = $db->queryAll("select count(*) count from {$a} a, {$ac} ac where 1=1 and a.config_id = ac.id {$where}", $map);
 
         return [$records, $total[0]['count']];
     }
