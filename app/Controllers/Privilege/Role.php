@@ -49,20 +49,22 @@ class Role extends ControllerBase
     {
         global $orgId;
 
-        if($request->getParam("all") == 1) { //查询所有角色，包括校长
-            $records = RoleService::selectRoleByOrg($orgId);
-        } else {
-            //直营校长
-            $directPrincipalRoleId = DictService::getKeyValue(Constants::DICT_TYPE_ROLE_ID, Constants::DICT_KEY_CODE_DIRECT_PRINCIPAL_ROLE_ID_CODE);
-            //机构校长
-            $externalPrincipalRoleId = DictService::getKeyValue(Constants::DICT_TYPE_ROLE_ID, Constants::DICT_KEY_CODE_PRINCIPAL_ROLE_ID_CODE);
-            if(empty($directPrincipalRoleId)) {
-                return $response->withJson(Valid::addErrors([], 'role', 'direct_principal_role_id_is_empty'));
-            }
-            if(empty($externalPrincipalRoleId)) {
-                return $response->withJson(Valid::addErrors([], 'role', 'external_principal_role_id_is_empty'));
-            }
+        //直营校长
+        $directPrincipalRoleId = DictService::getKeyValue(Constants::DICT_TYPE_ROLE_ID, Constants::DICT_KEY_CODE_DIRECT_PRINCIPAL_ROLE_ID_CODE);
+        //机构校长
+        $externalPrincipalRoleId = DictService::getKeyValue(Constants::DICT_TYPE_ROLE_ID, Constants::DICT_KEY_CODE_PRINCIPAL_ROLE_ID_CODE);
+        if(empty($directPrincipalRoleId)) {
+            return $response->withJson(Valid::addErrors([], 'role', 'direct_principal_role_id_is_empty'));
+        }
+        if(empty($externalPrincipalRoleId)) {
+            return $response->withJson(Valid::addErrors([], 'role', 'external_principal_role_id_is_empty'));
+        }
 
+        if($request->getParam("all") == 1) {
+            //排除外部校长
+            $records = RoleService::selectRoleByOrg($orgId, [$externalPrincipalRoleId]);
+        } else {
+            //排除直营和外部校长
             $records = RoleService::selectRoleByOrg($orgId, [$directPrincipalRoleId, $externalPrincipalRoleId]);
         }
 
