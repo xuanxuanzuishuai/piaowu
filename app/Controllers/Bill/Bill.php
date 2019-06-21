@@ -71,10 +71,10 @@ class Bill extends ControllerBase
             $status = BillModel::DISABLED_STATUS_APPROVED;
         }
 
-        if($status == BillModel::DISABLED_STATUS_APPROVED) {
-            $db = MysqlDB::getDB();
-            $db->beginTransaction();
+        $db = MysqlDB::getDB();
+        $db->beginTransaction();
 
+        if($status == BillModel::DISABLED_STATUS_APPROVED) {
             $affectRows = BillModel::updateRecord($id, [
                 'is_disabled'     => BillModel::IS_DISABLED,
                 'disabled_status' => $status,
@@ -100,10 +100,22 @@ class Bill extends ControllerBase
 
             $db->commit();
         } else {
+            $affectRows = BillModel::updateRecord($id, [
+                'disabled_status' => $status,
+                'update_time'     => time()
+            ],false);
+            if($affectRows == 0) {
+                $db->rollBack();
+                return $response->withJson(Valid::addErrors([],'bill', 'update_disabled_fail'));
+            }
+
             list($errorCode) = ApprovalService::submit($id, ApprovalModel::TYPE_BILL_DISABLE, $record['operator_id']);
             if(!is_null($errorCode)) {
+                $db->rollBack();
                 return $response->withJson(Valid::addErrors([], 'bill', $errorCode));
             }
+
+            $db->commit();
         }
 
         return $response->withJson([
