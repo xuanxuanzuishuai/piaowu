@@ -99,14 +99,18 @@ class ApprovalService
             return 'closed_approval';
         }
 
-        $employee = EmployeeModel::getById($operator);
-        if ($employee['role_id'] != $approval['current_role']) {
-            return 'invalid_role';
-        }
-
         $config = ApprovalConfigModel::getById($approval['config_id']);
         if (empty($config) || $config['status'] == Constants::STATUS_FALSE) {
             return 'invalid_approval_config';
+        }
+
+        $roles = explode(',', $config['roles']);
+
+        $employee = EmployeeModel::getById($operator);
+        // 搜索操作人角色所在层级，反向搜索是为了角色在多个层级时以高级为准
+        $opLevel = array_search($employee['role_id'], array_reverse($roles, true));
+        if ($opLevel === false || $opLevel < $approval['current_level']) {
+            return 'invalid_role';
         }
 
         if ($opType == ApprovalLogModel::OP_REJECT) {
@@ -123,11 +127,10 @@ class ApprovalService
 
         } elseif ($opType == ApprovalLogModel::OP_APPROVE) {
 
-            $nextLevel = $approval['current_level'] + 1;
+            $nextLevel = $opLevel + 1;
 
             if ($nextLevel < $config['levels']) {
                 // 进入下一级审批
-                $roles = explode(',', $config['roles']);
                 $nextRole = $roles[$nextLevel];
                 $count = ApprovalModel::updateRecord($id, [
                     'current_level' => $nextLevel,
@@ -159,7 +162,7 @@ class ApprovalService
 
         ApprovalLogModel::insertRecord([
             'approval_id' => $id,
-            'level' => $approval['current_level'],
+            'level' => $opLevel,
             'op_type' => $opType,
             'operator' => $operator,
             'create_time' => time(),
