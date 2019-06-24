@@ -365,4 +365,63 @@ class ScheduleModel extends Model
 
         return [$records, $total[0]['count']];
     }
+
+    /**
+     * 获取课消数据
+     * @param $startTime
+     * @param $endTime
+     * @return array|null
+     */
+    public static function selectFinishedSchedules($startTime, $endTime)
+    {
+        // '订单编号', '签约人', '学员', '套餐名称', '签约日期', '课时单价',
+        // '上课日期', '上课时间', '上课校区', '上课节数', '消课金额', '操作人', '消课日期', '已消课金额', '剩余课时金额'
+
+        $e = EmployeeModel::$table;
+        $db = MysqlDB::getDB();
+
+        $records = $db->queryAll("
+SELECT
+    s.id schedule_id, s.start_time, s.end_time, c.name course_name, cp.name campus_name,
+    su.price, stu.name student_name,
+    log.create_time reduce_time, log.balance reduce_num, log.old_balance, log.new_balance, e.name operator_name,
+    GROUP_CONCAT(b.id) bill_ids, b.end_time bill_time, be.name bill_operator
+FROM
+    " . ScheduleModel::$table . " s
+        INNER JOIN
+    " . CourseModel::$table . " c ON c.id = s.course_id
+        INNER JOIN
+    " . ClassroomModel::$table . " cr ON cr.id = s.classroom_id
+        INNER JOIN
+    " . CampusModel::$table . " cp ON cp.id = cr.campus_id
+        INNER JOIN
+    " . ScheduleUserModel::$table . " su ON su.schedule_id = s.id
+        AND su.user_role = " . ScheduleUserModel::USER_ROLE_STUDENT . "
+        AND su.status = " . ScheduleUserModel::STATUS_NORMAL . "
+        AND su.is_deduct = " . ScheduleUserModel::DEDUCT_STATUS . "
+        INNER JOIN
+    " . StudentModel::$table . " stu ON stu.id = su.user_id
+        LEFT JOIN
+    " . StudentAccountLogModel::$table . " log ON log.schedule_id = s.id AND log.type = " . StudentAccountLogModel::TYPE_REDUCE . "
+        LEFT JOIN
+    {$e} e ON e.id = log.operator_id
+        INNER JOIN
+    " . StudentAccountModel::$table . " sa ON sa.id = log.s_a_id AND sa.student_id = stu.id
+        LEFT JOIN
+    " . BillModel::$table . " b ON b.student_id = stu.id
+        AND b.org_id = s.org_id
+        AND b.pay_status = " . BillModel::PAY_STATUS_PAID . "
+        AND b.is_disabled = " . BillModel::NOT_DISABLED . "
+        AND b.is_enter_account = " . BillModel::IS_ENTER_ACCOUNT . "
+        AND b.add_status = " . BillModel::ADD_STATUS_APPROVED . "
+         LEFT JOIN
+    {$e} be ON be.id = b.operator_id
+WHERE
+    s.status = " . ScheduleModel::STATUS_FINISH . "
+    AND s.start_time >= " . strtotime($startTime) . "
+    AND s.end_time < " . strtotime($endTime) . "
+GROUP BY s.id, su.user_id", []);
+
+        return !empty($records) ? $records : [];
+    }
 }

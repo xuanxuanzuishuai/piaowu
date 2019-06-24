@@ -482,4 +482,50 @@ class ScheduleService
         }
         return $classInfo;
     }
+
+    /**
+     * 导出课消数据
+     * @param $startTime
+     * @param $endTime
+     * @return mixed
+     */
+    public static function selectFinishedSchedules($startTime, $endTime)
+    {
+        $schedules = ScheduleModel::selectFinishedSchedules($startTime, $endTime);
+        $data[0] = [
+            '订单编号', '签约人', '学员', '套餐名称', '签约日期', '课时单价',
+            '上课日期', '上课时间', '上课校区', '上课节数', '消课金额', '操作人', '消课日期', '已消课金额', '剩余课时金额'
+        ];
+        $data[0] = array_map(function ($val) {
+            return iconv("utf-8","GB18030//IGNORE", $val);
+        }, $data[0]);
+
+        $i = 1;
+        foreach ($schedules as $key => $schedule) {
+            // 订单编号, 签约人, 学员姓名
+            $data[$i][0] = iconv("utf-8","GB18030//IGNORE", "\t" . $schedule['bill_ids']);
+            $data[$i][1] = iconv("utf-8","GB18030//IGNORE", $schedule['bill_operator']);
+            $data[$i][2] = iconv("utf-8","GB18030//IGNORE", $schedule['student_name']);
+
+            // 套餐名称, 签约日期
+            $data[$i][3] = iconv("utf-8","GB18030//IGNORE", $schedule['course_name']);
+            $data[$i][4] = iconv("utf-8","GB18030//IGNORE", "\t" . date('Y-m-d H:i:s', $schedule['bill_time']));
+
+            // 课时单价, 上课日期, 上课时间, 上课校区
+            $data[$i][5] = iconv("utf-8","GB18030//IGNORE", "\t" . $schedule['price'] / 100);
+            $data[$i][6] = iconv("utf-8","GB18030//IGNORE", "\t" . date('Y-m-d', $schedule['start_time']));
+            $data[$i][7] = iconv("utf-8","GB18030//IGNORE", "\t" . date('H:i', $schedule['start_time']) . ' - ' . date('H:i', $schedule['end_time']));
+            $data[$i][8] = iconv("utf-8","GB18030//IGNORE", $schedule['campus_name']);
+            // 上课节数, 消课金额, 操作人, 消课日期, 已消课金额, 剩余课时金额
+            $data[$i][9] = iconv("utf-8","GB18030//IGNORE", 1);
+            $data[$i][10] = iconv("utf-8","GB18030//IGNORE", "\t" . $schedule['reduce_num'] / 100);
+            $data[$i][11] = iconv("utf-8","GB18030//IGNORE", $schedule['operator_name']);
+            $data[$i][12] = iconv("utf-8","GB18030//IGNORE", "\t" . date('Y-m-d H:i:s', $schedule['reduce_time']));
+            $data[$i][13] = iconv("utf-8","GB18030//IGNORE", "\t" . $schedule['old_balance'] / 100);
+            $data[$i][14] = iconv("utf-8","GB18030//IGNORE", "\t" . $schedule['new_balance'] / 100);
+
+            $i ++;
+        }
+        return $data;
+    }
 }

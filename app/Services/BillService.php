@@ -90,10 +90,7 @@ class BillService
             if($bill['pay_status'] == BillModel::PAY_STATUS_PAID &&
                 $bill['is_enter_account'] == BillModel::IS_ENTER_ACCOUNT) {
                 $success = StudentAccountService::addSA(
-                    $bill['student_id'],
-                    [StudentAccountModel::TYPE_CASH => $bill['amount']],
-                    $bill['operator_id'],
-                    $bill['remark']
+                    $bill['student_id'], [StudentAccountModel::TYPE_CASH => $bill['amount']], $billId, $bill['operator_id'], $bill['remark']
                 );
                 if(!$success) {
                     return 'increase_student_account_fail';
@@ -124,7 +121,7 @@ class BillService
                 $bill['is_enter_account'] == BillModel::IS_ENTER_ACCOUNT)
             {
                 $success = StudentAccountService::abolishSA(
-                    $bill['student_id'], $bill['amount'], 0, $bill['operator_id'], $bill['remark'], false
+                    $bill['student_id'], $bill['amount'], 0, $bill['operator_id'], $bill['remark'], false, $billId
                 );
                 if(!$success) {
                     return 'update_student_account_fail';
@@ -212,4 +209,45 @@ class BillService
 
         return null;
     }
+
+    public static function selectApprovedBill($startTime, $endTime)
+    {
+        $bills = BillModel::selectApprovedBills($startTime, $endTime);
+        $data[0] = [
+            '订单编号', '签约人', '学员姓名', '套餐名称', '合同应收金额', '收款日期',
+            '本次支付金额', '支付方式', '支付状态', '收款流水号', '审批状态', '校区审批人', '财务审批人', '描述'
+        ];
+        $data[0] = array_map(function ($val) {
+            return iconv("utf-8","GB18030//IGNORE", $val);
+        }, $data[0]);
+
+        $i = 1;
+        foreach ($bills as $key => $bill) {
+            $payStatus = DictService::getKeyValue(Constants::DICT_TYPE_BILL_PAY_STATUS, $bill['pay_status']);
+            $payChannel = DictService::getKeyValue(Constants::DICT_TYPE_BILL_PAY_CHANNEL, $bill['pay_channel']);
+            $addStatus = DictService::getKeyValue(Constants::DICT_TYPE_BILL_ADD_STATUS, $bill['add_status']);
+
+            // 订单编号, 签约人, 学员姓名
+            $data[$i][0] = iconv("utf-8","GB18030//IGNORE", "\t" . $bill['id']);
+            $data[$i][1] = iconv("utf-8","GB18030//IGNORE", $bill['cc_name']);
+            $data[$i][2] = iconv("utf-8","GB18030//IGNORE", $bill['student_name']);
+            // 套餐名称
+            $data[$i][3] = iconv("utf-8","GB18030//IGNORE", $bill['object_name']);
+            // 合同应收金额, 收款日期, 本次支付金额, 支付方式, 支付状态
+            $data[$i][4] = iconv("utf-8","GB18030//IGNORE", "\t" . $bill['sprice'] / 100);
+            $data[$i][5] = iconv("utf-8","GB18030//IGNORE", "\t" . date('Y-m-d H:i:s', $bill['end_time']));
+            $data[$i][6] = iconv("utf-8","GB18030//IGNORE", "\t" . $bill['amount'] / 100);
+            $data[$i][7] = iconv("utf-8","GB18030//IGNORE", $payChannel);
+            $data[$i][8] = iconv("utf-8","GB18030//IGNORE", $payStatus);
+            // 收款流水号, 审批状态, 校区审批人, 财务审批人, 描述
+            $data[$i][9] = iconv("utf-8","GB18030//IGNORE", "\t" . $bill['trade_no']);
+            $data[$i][10] = iconv("utf-8","GB18030//IGNORE", $addStatus);
+            $data[$i][11] = iconv("utf-8","GB18030//IGNORE", $bill['campus_op']);
+            $data[$i][12] = iconv("utf-8","GB18030//IGNORE", $bill['finance_op']);
+            $data[$i][13] = iconv("utf-8","GB18030//IGNORE", $bill['remark']);
+            $i ++;
+        }
+        return $data;
+    }
+
 }

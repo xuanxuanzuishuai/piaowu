@@ -20,11 +20,12 @@ class StudentAccountService
      * 添加账户金额数据
      * @param $studentId
      * @param $data
+     * @param $billId
      * @param $operatorId
      * @param $remark
      * @return bool
      */
-    public static function addSA($studentId, $data, $operatorId, $remark)
+    public static function addSA($studentId, $data, $billId, $operatorId, $remark)
     {
         $log = [];
         $now = time();
@@ -38,7 +39,7 @@ class StudentAccountService
                         $res = StudentAccountModel::updateSA(['update_time' => $now, 'balance[+]' => $balance, 'ver[+]' => 1], ['id' => $sa['id'], 'ver' => $sa['ver']]);
                         if ($res > 0) {
                             $insert = false;
-                            $log[] = ['operator_id' => $operatorId, 'remark' => $remark, 'create_time' => $now, 's_a_id' => $sa['id'], 'balance' => $balance, 'old_balance' => $sa['balance'], 'new_balance' => $balance + $sa['balance'], 'type' => StudentAccountLogModel::TYPE_ADD];
+                            $log[] = ['operator_id' => $operatorId, 'remark' => $remark, 'create_time' => $now, 's_a_id' => $sa['id'], 'balance' => $balance, 'old_balance' => $sa['balance'], 'new_balance' => $balance + $sa['balance'], 'type' => StudentAccountLogModel::TYPE_ADD, 'bill_id' => $billId];
                         } else {
                             return false;
                         }
@@ -47,7 +48,7 @@ class StudentAccountService
                 if ($insert == true) {
                     $saId = StudentAccountModel::insertRecord(['status' => StudentAccountModel::STATUS_NORMAL, 'create_time' => $now, 'student_id' => $studentId, 'balance' => $balance, 'type' => $type]);
                     if (!empty($saId)) {
-                        $log[] = ['operator_id' => $operatorId, 'remark' => $remark, 'create_time' => $now, 's_a_id' => $saId, 'balance' => $balance, 'old_balance' => 0, 'new_balance' => $balance, 'type' => StudentAccountLogModel::TYPE_ADD];
+                        $log[] = ['operator_id' => $operatorId, 'remark' => $remark, 'create_time' => $now, 's_a_id' => $saId, 'balance' => $balance, 'old_balance' => 0, 'new_balance' => $balance, 'type' => StudentAccountLogModel::TYPE_ADD, 'bill_id' => $billId];
                     }
                 }
             }
@@ -55,7 +56,7 @@ class StudentAccountService
             foreach ($data as $type => $balance) {
                 $saId = StudentAccountModel::insertRecord(['create_time' => $now, 'student_id' => $studentId, 'balance' => $balance, 'type' => $type]);
                 if ($saId > 0) {
-                    $log[] = ['operator_id' => $operatorId, 'remark' => $remark, 'create_time' => $now, 's_a_id' => $saId, 'balance' => $balance, 'old_balance' => 0, 'new_balance' => $balance, 'type' => StudentAccountLogModel::TYPE_ADD];
+                    $log[] = ['operator_id' => $operatorId, 'remark' => $remark, 'create_time' => $now, 's_a_id' => $saId, 'balance' => $balance, 'old_balance' => 0, 'new_balance' => $balance, 'type' => StudentAccountLogModel::TYPE_ADD, 'bill_id' => $billId];
                 } else {
                     return false;
                 }
@@ -139,9 +140,10 @@ class StudentAccountService
      * @param $operatorId
      * @param $remark
      * @param bool $force
+     * @param int $billId
      * @return bool|array
      */
-    public static function abolishSA($studentId, $amount, $vamount, $operatorId, $remark, $force = true) {
+    public static function abolishSA($studentId, $amount, $vamount, $operatorId, $remark, $force = true, $billId = 0) {
 
         $now = time();
         $sas = StudentAccountModel::getSADetailBySId($studentId);
@@ -169,7 +171,7 @@ class StudentAccountService
             }
             $res = StudentAccountModel::updateSA($data, ['id' => $cash['id'], 'ver' => $cash['ver']]);
             if ($res > 0) {
-                $log[] = ['operator_id' => $operatorId, 'remark' => $remark, 'create_time' => $now, 's_a_id' => $cash['id'], 'balance' => $amount, 'old_balance' => $cash['balance'], 'new_balance' => $cash['balance'] - $amount, 'type' => StudentAccountLogModel::TYPE_DISCARD];
+                $log[] = ['operator_id' => $operatorId, 'remark' => $remark, 'create_time' => $now, 's_a_id' => $cash['id'], 'balance' => $amount, 'old_balance' => $cash['balance'], 'new_balance' => $cash['balance'] - $amount, 'type' => StudentAccountLogModel::TYPE_DISCARD, 'bill_id' => $billId];
             } else {
                 return false;
             }
@@ -185,7 +187,7 @@ class StudentAccountService
             }
             $res = StudentAccountModel::updateSA($data, ['id' => $vcash['id'], 'ver' => $vcash['ver']]);
             if ($res > 0) {
-                $log[] = ['operator_id' => $operatorId, 'remark' => $remark, 'create_time' => $now, 's_a_id' => $vcash['id'], 'balance' => $vamount, 'old_balance' => $vcash['balance'], 'new_balance' => $vcash['balance'] - $vamount, 'type' => StudentAccountLogModel::TYPE_DISCARD];
+                $log[] = ['operator_id' => $operatorId, 'remark' => $remark, 'create_time' => $now, 's_a_id' => $vcash['id'], 'balance' => $vamount, 'old_balance' => $vcash['balance'], 'new_balance' => $vcash['balance'] - $vamount, 'type' => StudentAccountLogModel::TYPE_DISCARD, 'bill_id' => $billId];
             } else {
                 return false;
             }

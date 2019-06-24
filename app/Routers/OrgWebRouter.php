@@ -343,6 +343,16 @@ class OrgWebRouter extends RouterBase
             'call' => Bill::class . ':disable',
 
         ],
+        // 已审核订单导出
+        '/bill/bill/exportBill' => [
+            'method' => ['get'],
+            'call' => Bill::class . ':exportBill',
+        ],
+        // 课消数据导出
+        '/bill/bill/exportReduce' => [
+            'method' => ['get'],
+            'call' => Bill::class . ':exportReduce',
+        ],
         //老师学生二维码
         '/org_web/org/qrcode' => [
             'method' => ['get'],

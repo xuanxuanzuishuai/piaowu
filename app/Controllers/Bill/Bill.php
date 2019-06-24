@@ -10,6 +10,7 @@ namespace App\Controllers\Bill;
 
 
 use App\Controllers\ControllerBase;
+use App\Libs\File;
 use App\Libs\MysqlDB;
 use App\Models\ApprovalModel;
 use App\Models\BillExtendModel;
@@ -17,6 +18,7 @@ use App\Models\BillModel;
 use App\Models\StudentAccountModel;
 use App\Services\ApprovalService;
 use App\Services\BillService;
+use App\Services\ScheduleService;
 use App\Services\StudentAccountService;
 use App\Services\StudentService;
 use Slim\Http\Request;
@@ -90,7 +92,7 @@ class Bill extends ControllerBase
                 $record['is_enter_account'] == BillModel::IS_ENTER_ACCOUNT)
             {
                 $success = StudentAccountService::abolishSA(
-                    $record['student_id'], $record['amount'], 0, $record['operator_id'], $record['remark'], false
+                    $record['student_id'], $record['amount'], 0, $record['operator_id'], $record['remark'], false, $id
                 );
                 if(!$success) {
                     $db->rollBack();
@@ -417,10 +419,7 @@ class Bill extends ControllerBase
             $status == BillModel::ADD_STATUS_APPROVED)
         {
             $success = StudentAccountService::addSA(
-                $data['student_id'],
-                [StudentAccountModel::TYPE_CASH => $data['amount']],
-                $this->getEmployeeId(),
-                $data['remark']
+                $data['student_id'], [StudentAccountModel::TYPE_CASH => $data['amount']], $lastId, $this->getEmployeeId(), $data['remark']
             );
             if(!$success) {
                 $db->rollBack();
@@ -501,5 +500,55 @@ class Bill extends ControllerBase
                 'r_bills' => $rBills
             ]
         ]);
+    }
+
+    public static function exportBill(Request $request, Response $response, $args)
+    {
+        $rules = [
+            [
+                'key'        => 'start_time',
+                'type'       => 'required',
+                'error_code' => 'start_time_is_required',
+            ],
+            [
+                'key'        => 'end_time',
+                'type'       => 'required',
+                'error_code' => 'end_time_is_required',
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $fileName = '订单_' . date('YmdHis') . '.csv';
+        $data = BillService::selectApprovedBill($params['start_time'], $params['end_time']);
+        File::exportFile($fileName, $data);
+    }
+
+    public static function exportReduce(Request $request, Response $response, $args)
+    {
+        $rules = [
+            [
+                'key'        => 'start_time',
+                'type'       => 'required',
+                'error_code' => 'start_time_is_required',
+            ],
+            [
+                'key'        => 'end_time',
+                'type'       => 'required',
+                'error_code' => 'end_time_is_required',
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $fileName = '课消_' . date('YmdHis') . '.csv';
+        $data = ScheduleService::selectFinishedSchedules($params['start_time'], $params['end_time']);
+        File::exportFile($fileName, $data);
     }
 }

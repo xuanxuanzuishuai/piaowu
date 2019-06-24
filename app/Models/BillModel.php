@@ -13,8 +13,8 @@ use App\Libs\MysqlDB;
 
 class BillModel extends Model
 {
-    const NOT_DISABLED = 0; //废除
-    const IS_DISABLED = 1; //正常
+    const NOT_DISABLED = 0; //正常
+    const IS_DISABLED = 1; //废除
 
     const PAY_STATUS_UNPAID = 1; //未支付
     const PAY_STATUS_PAID = 2; //已支付
@@ -192,5 +192,53 @@ class BillModel extends Model
         where {$where}", $map);
 
         return !empty($records) ? $records[0] : [];
+    }
+
+    public static function selectApprovedBills($startTime, $endTime)
+    {
+        //'订单编号', '签约人', '学员姓名', '套餐名称', '合同应收金额', '收款日期',
+        // '本次支付金额', '支付方式', '支付状态', '收款流水号', '审批状态', '校区审批人', '财务审批人', '描述'
+
+        $e = EmployeeModel::$table;
+        $log = ApprovalLogModel::$table;
+        $approvalType = ApprovalLogModel::OP_APPROVE;
+
+        $db = MysqlDB::getDB();
+
+        $records = $db->queryAll("SELECT
+    b.id, e.name cc_name, s.name student_name, c.name object_name,
+    b.sprice, b.end_time, b.amount, b.pay_channel, b.pay_status, b.trade_no, b.add_status, b.remark,
+    e1.name campus_op, e2.name finance_op
+FROM
+    " . BillModel::$table . " b
+        INNER JOIN
+    " . ApprovalModel::$table . " a ON a.bill_id = b.id
+        INNER JOIN
+    " . StudentModel::$table . " s ON s.id = b.student_id
+        INNER JOIN
+    " . CourseModel::$table . " c ON c.id = b.object_id
+        INNER JOIN
+    {$e} e ON e.id = b.operator_id
+        LEFT JOIN
+    {$log} log ON log.approval_id = a.id
+        AND log.op_type = {$approvalType}
+        AND log.level = 0
+        LEFT JOIN
+    {$log} log1 ON log1.approval_id = a.id
+        AND log1.op_type = {$approvalType}
+        AND log1.level = 1
+        LEFT JOIN
+    {$e} e1 ON e1.id = log.operator
+        LEFT JOIN
+    {$e} e2 ON e2.id = log1.operator
+WHERE
+    a.type = " . ApprovalModel::TYPE_BILL_ADD . " AND a.status = " . ApprovalModel::STATUS_APPROVED . "
+        AND b.pay_status = " . BillModel::PAY_STATUS_PAID . "
+        AND b.is_disabled = " . BillModel::NOT_DISABLED . "
+        AND add_status = " . BillModel::ADD_STATUS_APPROVED . "
+        AND b.end_time >= " . strtotime($startTime) . "
+        AND b.end_time < " . strtotime($endTime), []);
+
+        return !empty($records) ? $records : [];
     }
 }
