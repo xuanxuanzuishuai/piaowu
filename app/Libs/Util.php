@@ -661,7 +661,7 @@ class Util
         if(empty($now)){
             $now = time();
         }
-        $nDaysBefore = (int)$days * 24 * 60 * 40;
+        $nDaysBefore = (int)$days * 24 * 60 * 60;
         return [$now - $nDaysBefore, $now];
     }
 }
