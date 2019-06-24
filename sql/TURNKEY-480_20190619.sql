@@ -13,4 +13,12 @@ values ('bill_add_status', '添加订单状态', 1, '审核中'),
        ('bill_disabled_status', '废除订单状态', 3, '拒绝'),
        ('bill_disabled_status', '废除订单状态', 4, '撤销'),
        ('approval_op_type', '审批操作类型', '1', '通过'),
-       ('approval_op_type', '审批操作类型', '2', '拒绝');
+       ('approval_op_type', '审批操作类型', '2', '拒绝'),
+       ('approval_type', '审批类型', 1, '添加订单'),
+       ('approval_type', '审批类型', 2, '废除订单'),
+       ('approval_status', '审批状态', 1, '待审批'),
+       ('approval_status', '审批状态', 2, '通过'),
+       ('approval_status', '审批状态', 3, '拒绝'),
+       ('approval_status', '审批状态', 4, '撤销'),
+       ('normal_status', '通用状态', 0, '废弃'),
+       ('normal_status', '通用状态', 1, '正常');
