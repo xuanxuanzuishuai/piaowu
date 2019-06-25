@@ -57,6 +57,7 @@ class PlayRecord extends ControllerBase
             ],
         ];
 
+        //可能包含的筛选条件,teacher_name(fuzzy), start_time(timestamp), end_time(timestamp)
         $params = $request->getParams();
         $result = Valid::appValidate($params, $rules);
         if ($result['code'] != Valid::CODE_SUCCESS) {
@@ -64,15 +65,21 @@ class PlayRecord extends ControllerBase
         }
 
         $startTime = $params['start_time'];
+        $endTime = $params['end_time'];
         if(empty($startTime)) {
             $startTime = strtotime('today');
         }
-        $endTime = $startTime + 86400 - 1; //当天起止时间
+        if(empty($endTime)) {
+            $endTime = $startTime + 86400 - 1; //默认当天起止时间
+        }
+        if($startTime > $endTime) {
+            list($startTime, $endTime) = [$endTime, $startTime];
+        }
 
         //机构下的cc只能看见自己名下的学生,如果当前登录的角色是cc，要把role_id作为查询条件
         $roleId = Dict::getOrgCCRoleId();
         if(empty($roleId)) {
-            return $response->withJson([],'play_record', 'org_cc_role_is_empty_in_session');
+            return $response->withJson(Valid::addErrors([],'play_record', 'org_cc_role_is_empty_in_session'));
         }
         if($this->isOrgCC($roleId)) {
             $params['cc_id'] = $this->ci['employee']['id'];

@@ -156,104 +156,73 @@ class PlayRecordModel extends Model
         $s  = StudentModel::$table;
         $so = StudentOrgModel::$table;
         $e  = EmployeeModel::$table;
+        $t  = TeacherModel::$table;
+        $ts = TeacherStudentModel::$table;
 
         $ltd = PlayRecordModel::TYPE_DYNAMIC;
         $lta = PlayRecordModel::TYPE_AI;
 
         $limit = Util::limitation($page, $count);
 
-        $map = [
-            ':start_time' => $startTime,
-            ':end_time'   => $endTime,
-            ':org_id'     => $orgId,
-        ];
-
-        $where = ' and p.schedule_id is null ';
+        $where = '';
+        $map = [];
 
         //lesson_type=0也是一种状态，所以这里使用isset
         if(isset($params['lesson_type'])) {
             $where .= ' and p.lesson_type = :lesson_type ';
             $map[':lesson_type'] = $params['lesson_type'];
         }
-        if(isset($params['cc_id'])) {
+        if(!empty($params['cc_id'])) {
             $where .= ' and so.cc_id = :cc_id ';
             $map[':cc_id'] = $params['cc_id'];
         }
-
-        if(!empty($studentId)) {
-            $sql = "select p.lesson_id,
-                   p.created_time,
-                   e.name cc_name,
-                   p.lesson_type,
-                   p.student_id,
-                   p.schedule_id,
-                   count(p.lesson_sub_id)                                             as sub_count,
-                   sum(p.duration)                                                    as duration,
-                   sum(if(p.lesson_type={$ltd} and p.lesson_sub_id is null, 1, 0))       as dmc,
-                   sum(if(p.lesson_type={$lta} and p.lesson_sub_id is null, 1, 0))       as ai,
-                   max(if(p.lesson_type={$ltd} and p.lesson_sub_id is null, p.score, 0)) as max_dmc,
-                   max(if(p.lesson_type={$lta} and p.lesson_sub_id is null, p.score, 0)) as max_ai,
-                   s.name                                                             as student_name
-            from {$p} p
-                        inner join {$s} s on p.student_id = s.id
-                        inner join {$so} so on so.student_id = s.id and so.org_id = :org_id
-                        left join {$e} e on e.id = so.cc_id
-            where p.student_id = :student_id
-              and p.created_time >= :start_time
-              and p.created_time <= :end_time
-              {$where}
-            group by p.lesson_id, p.lesson_type {$limit}";
-
-            $totalSql = "select count(*) count from (select p.id
-            from {$p} p
-                        inner join {$s} s on p.student_id = s.id
-                        inner join {$so} so on so.student_id = s.id and so.org_id = :org_id
-            where p.student_id = :student_id
-              and p.created_time >= :start_time
-              and p.created_time <= :end_time
-              {$where}
-            group by p.lesson_id, p.lesson_type) s2";
-
+        if(!empty($params['student_id'])) {
+            $where .= ' and p.student_id = :student_id ';
             $map[':student_id'] = $studentId;
-        } else {
-            $sql = "select p.lesson_id,
-                   p.created_time,
-                   e.name cc_name,
-                   p.lesson_type,
-                   p.student_id,
-                   p.schedule_id,
-                   so.org_id,
-                   count(p.lesson_sub_id)                                             as sub_count,
-                   sum(p.duration)                                                    as duration,
-                   sum(if(p.lesson_type={$ltd} and p.lesson_sub_id is null, 1, 0))       as dmc,
-                   sum(if(p.lesson_type={$lta} and p.lesson_sub_id is null, 1, 0))       as ai,
-                   max(if(p.lesson_type={$ltd} and p.lesson_sub_id is null, p.score, 0)) as max_dmc,
-                   max(if(p.lesson_type={$lta} and p.lesson_sub_id is null, p.score, 0)) as max_ai,
-                   s.name                                                             as student_name
-            from {$p} p
-                   inner join {$s} s on p.student_id = s.id
-                   inner join {$so} so on so.student_id = s.id and so.org_id = :org_id
-                   left join {$e} e on e.id = so.cc_id
-                   where p.created_time >= :start_time
-                     and p.created_time <= :end_time
-                     {$where}
-            group by p.student_id {$limit}";
-
-            $totalSql = "select count(*) count from (select p.id
-            from {$p} p
-                        inner join {$s} s on p.student_id = s.id
-                        inner join {$so} so on so.student_id = s.id and so.org_id = :org_id
-            where p.created_time >= :start_time
-              and p.created_time <= :end_time
-              {$where}
-            group by p.student_id) s2";
         }
+        if(!empty($params['teacher_name'])) {
+            $where .= ' and t.name like :teacher_name ';
+            $map[':teacher_name'] = "%{$params['teacher_name']}%";
+        }
+
+        $sql = "select p.lesson_id,
+               p.created_time,
+               e.name                                                                cc_name,
+               p.lesson_type,
+               p.student_id,
+               p.schedule_id,
+               count(p.lesson_sub_id)                                             as sub_count,
+               sum(p.duration)                                                    as duration,
+               sum(if(p.lesson_type = {$ltd} and p.lesson_sub_id is null, 1, 0))       as dmc,
+               sum(if(p.lesson_type = {$lta} and p.lesson_sub_id is null, 1, 0))       as ai,
+               max(if(p.lesson_type = {$ltd} and p.lesson_sub_id is null, p.score, 0)) as max_dmc,
+               max(if(p.lesson_type = $lta and p.lesson_sub_id is null, p.score, 0)) as max_ai,
+               s.name                                                             as student_name,
+               t.name teacher_name
+        from (select from_unixtime(created_time, '%Y-%m-%d') created_time,
+                     lesson_id,
+                     lesson_type,
+                     student_id,
+                     lesson_sub_id,
+                     duration,
+                     score,
+                     schedule_id
+              from {$p}
+              where created_time between {$startTime} and {$endTime}) p
+               inner join {$s} s on p.student_id = s.id
+               inner join {$so} so on so.student_id = s.id and so.org_id = {$orgId}
+               left join {$e} e on e.id = so.cc_id
+               left join {$ts} ts on ts.student_id = p.student_id and ts.org_id = so.org_id
+               left join {$t} t on t.id = ts.teacher_id
+        where p.schedule_id is null
+          {$where}
+        group by p.created_time, p.lesson_type, p.lesson_id";
 
         $db = MysqlDB::getDB();
 
-        $records = $db->queryAll($sql, $map);
+        $records = $db->queryAll("{$sql} {$limit}", $map);
 
-        $total = $db->queryAll($totalSql, $map);
+        $total = $db->queryAll("select count(*) count from ({$sql}) b", $map);
 
         return [$records, $total[0]['count']];
     }
