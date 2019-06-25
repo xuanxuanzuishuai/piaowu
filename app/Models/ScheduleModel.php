@@ -420,7 +420,8 @@ WHERE
     s.status = " . ScheduleModel::STATUS_FINISH . "
     AND s.start_time >= " . strtotime($startTime) . "
     AND s.end_time < " . strtotime($endTime) . "
-GROUP BY s.id, su.user_id", []);
+GROUP BY s.id, su.user_id
+ORDER BY s.start_time, s.id", []);
 
         return !empty($records) ? $records : [];
     }

@@ -197,7 +197,7 @@ class BillModel extends Model
     public static function selectApprovedBills($startTime, $endTime)
     {
         //'订单编号', '签约人', '学员姓名', '套餐名称', '合同应收金额', '收款日期',
-        // '本次支付金额', '支付方式', '支付状态', '收款流水号', '审批状态', '校区审批人', '财务审批人', '描述'
+        // '本次支付金额', '支付方式', '支付状态', '收款流水号', '审批状态', '校区审批人', '财务审批人', '描述', '是否进入账户'
 
         $e = EmployeeModel::$table;
         $log = ApprovalLogModel::$table;
@@ -207,7 +207,7 @@ class BillModel extends Model
 
         $records = $db->queryAll("SELECT
     b.id, e.name cc_name, s.name student_name, c.name object_name,
-    b.sprice, b.end_time, b.amount, b.pay_channel, b.pay_status, b.trade_no, b.add_status, b.remark,
+    b.sprice, b.end_time, b.amount, b.pay_channel, b.pay_status, b.trade_no, b.add_status, b.remark, b.is_enter_account,
     e1.name campus_op, e2.name finance_op
 FROM
     " . BillModel::$table . " b
@@ -237,7 +237,8 @@ WHERE
         AND b.is_disabled = " . BillModel::NOT_DISABLED . "
         AND add_status = " . BillModel::ADD_STATUS_APPROVED . "
         AND b.end_time >= " . strtotime($startTime) . "
-        AND b.end_time < " . strtotime($endTime), []);
+        AND b.end_time < " . strtotime($endTime) . "
+ORDER BY b.end_time ASC", []);
 
         return !empty($records) ? $records : [];
     }

@@ -215,7 +215,7 @@ class BillService
         $bills = BillModel::selectApprovedBills($startTime, $endTime);
         $data[0] = [
             '订单编号', '签约人', '学员姓名', '套餐名称', '合同应收金额', '收款日期',
-            '本次支付金额', '支付方式', '支付状态', '收款流水号', '审批状态', '校区审批人', '财务审批人', '描述'
+            '本次支付金额', '支付方式', '支付状态', '收款流水号', '审批状态', '校区审批人', '财务审批人', '描述', '是否进入账户'
         ];
         $data[0] = array_map(function ($val) {
             return iconv("utf-8","GB18030//IGNORE", $val);
@@ -226,6 +226,7 @@ class BillService
             $payStatus = DictService::getKeyValue(Constants::DICT_TYPE_BILL_PAY_STATUS, $bill['pay_status']);
             $payChannel = DictService::getKeyValue(Constants::DICT_TYPE_BILL_PAY_CHANNEL, $bill['pay_channel']);
             $addStatus = DictService::getKeyValue(Constants::DICT_TYPE_BILL_ADD_STATUS, $bill['add_status']);
+            $isEnter = DictService::getKeyValue(Constants::DICT_TYPE_BILL_IS_ENTER_ACCOUNT, $bill['is_enter_account']);
 
             // 订单编号, 签约人, 学员姓名
             $data[$i][0] = iconv("utf-8","GB18030//IGNORE", "\t" . $bill['id']);
@@ -239,12 +240,13 @@ class BillService
             $data[$i][6] = iconv("utf-8","GB18030//IGNORE", "\t" . $bill['amount'] / 100);
             $data[$i][7] = iconv("utf-8","GB18030//IGNORE", $payChannel);
             $data[$i][8] = iconv("utf-8","GB18030//IGNORE", $payStatus);
-            // 收款流水号, 审批状态, 校区审批人, 财务审批人, 描述
+            // 收款流水号, 审批状态, 校区审批人, 财务审批人, 描述, 是否进入账户
             $data[$i][9] = iconv("utf-8","GB18030//IGNORE", "\t" . $bill['trade_no']);
             $data[$i][10] = iconv("utf-8","GB18030//IGNORE", $addStatus);
             $data[$i][11] = iconv("utf-8","GB18030//IGNORE", $bill['campus_op']);
             $data[$i][12] = iconv("utf-8","GB18030//IGNORE", $bill['finance_op']);
             $data[$i][13] = iconv("utf-8","GB18030//IGNORE", $bill['remark']);
+            $data[$i][14] = iconv("utf-8","GB18030//IGNORE", $isEnter);
             $i ++;
         }
         return $data;
