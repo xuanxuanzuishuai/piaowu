@@ -247,6 +247,22 @@ class ScheduleModel extends Model
             $where .= ' and so.cc_id = :cc_id';
             $map[':cc_id'] = $params['cc_id'];
         }
+        if(!empty($params['teacher_name'])) {
+            $where .= ' and t.name like :teacher_name ';
+            $map[':teacher_name'] = "%{$params['teacher_name']}%";
+        }
+        if(!empty($params['student_name'])) {
+            $where .= ' and stu.name like :student_name ';
+            $map[':student_name'] = "%{$params['student_name']}%";
+        }
+        if(!empty($params['teacher_mobile'])) {
+            $where .= ' and t.mobile like :teacher_mobile ';
+            $map[':teacher_mobile'] = $params['teacher_mobile'];
+        }
+        if(!empty($params['student_mobile'])) {
+            $where .= ' and stu.mobile like :student_mobile ';
+            $map[':student_mobile'] = $params['student_mobile'];
+        }
 
         $limit = Util::limitation($page, $count);
 
@@ -254,9 +270,11 @@ class ScheduleModel extends Model
 
         $records = $db->queryAll("select s.*,
                stu.name student_name,
+               stu.mobile student_mobile,
                stu.id   student_id,
                t.name   teacher_name,
                t.id     teacher_id,
+               t.mobile teacher_mobile,
                c.name   course_name,
                cr.name  class_room_name,
                se.opn_lessons,
@@ -283,6 +301,8 @@ class ScheduleModel extends Model
                left join {$stu} stu on su.user_id = stu.id
                left join {$so} so on so.student_id = stu.id and so.org_id = s.org_id
                left join {$e} e on so.cc_id = e.id
+               left join {$su} su2 on s.id = su2.schedule_id and su2.user_role = {$userRoleTeacher} and su2.status = {$userStatus}
+               left join {$t} t on t.id = su2.user_id
         {$where} order by s.create_time desc", $map);
 
         return [$records, $total[0]['count']];

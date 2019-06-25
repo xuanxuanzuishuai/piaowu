@@ -71,6 +71,8 @@ class ScheduleRecord extends ControllerBase
             ]
         ];
 
+        //可能的筛选条件有:teacher_name(fuzzy), teacher_mobile
+        //student_name(fuzzy), student_mobile
         $params = $request->getParams();
         $result = Valid::validate($params, $rules);
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
@@ -79,7 +81,7 @@ class ScheduleRecord extends ControllerBase
 
         $roleId = Dict::getOrgCCRoleId();
         if(empty($roleId)) {
-            return $response->withJson([],'play_record', 'org_cc_role_is_empty_in_session');
+            return $response->withJson(Valid::addErrors([],'play_record', 'org_cc_role_is_empty_in_session'));
         }
         if($this->isOrgCC($roleId)) {
             $params['cc_id'] = $this->ci['employee']['id'];

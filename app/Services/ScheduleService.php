@@ -9,6 +9,7 @@
 namespace App\Services;
 
 use App\Libs\Constants;
+use App\Libs\OpernCenter;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\ClassTaskModel;
@@ -297,15 +298,18 @@ class ScheduleService
         STClassService::modifyClass(['id' => $schedule['class_id'], 'finish_num[+]' => 1, 'update_time' => $now]);
     }
 
-    /** 学员上课记录 1对1
-    * @param $orgId
-    * @param $page
-    * @param $count
-    * @param $params
-    * @return array
-    */
+    /**
+     * 学员上课记录 1对1
+     * @param $orgId
+     * @param $page
+     * @param $count
+     * @param $params
+     * @return array|string
+     */
     public static function AIAttendRecord($orgId, $page, $count, $params)
     {
+        $whole = [];
+
         list($records, $total) = ScheduleModel::AIAttendRecord($orgId, $page, $count, $params);
 
         foreach ($records as &$r) {
@@ -315,6 +319,36 @@ class ScheduleService
                 $detail = json_decode($r['detail_score'], true);
                 $r['homework_rank'] = ScheduleExtendModel::$homework_score_map[$detail['homework_rank']]; //作业评价
                 $r['performance_rank'] = ScheduleExtendModel::$performance_score_map[$detail['performance_rank']]; //课堂评价
+            }
+            if(!empty($r['opn_lessons'])) {
+                $opnLessonArray = explode(',', $r['opn_lessons']);
+                $whole = array_merge($whole, $opnLessonArray);
+            }
+            $r['opn_lessons_info'] = '';
+        }
+        //将所有曲谱id去重后发起一次网络请求
+        if(count($whole) > 0) {
+            $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER, 1);
+            $result = $opn->lessonsByIds(array_unique($whole));
+            if(empty($result) || $result['code'] != Valid::CODE_SUCCESS) {
+                return [$records, $total];
+            }
+            $opnMap = [];
+            foreach($result['data'] as $one) {
+                $opnMap[$one['id']] = $one;
+            }
+            //每条记录按需要提取曲谱信息
+            foreach($records as &$r) {
+                $opnArray = explode(',', $r['opn_lessons']);
+                if(count($opnArray) > 0) {
+                    $info = [];
+                    foreach($opnArray as $id) {
+                        if(isset($opnMap[$id])) {
+                            $info[] = $opnMap[$id]['name'];
+                        }
+                    }
+                    $r['opn_lessons_info'] = implode(',', $info);
+                }
             }
         }
 
