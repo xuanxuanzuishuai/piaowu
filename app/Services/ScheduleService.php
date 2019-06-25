@@ -324,6 +324,8 @@ class ScheduleService
                 $opnLessonArray = explode(',', $r['opn_lessons']);
                 $whole = array_merge($whole, $opnLessonArray);
             }
+            $r['teacher_name'] = $r['teacher_name'] . '(' . $r['teacher_mobile'] . ')';
+            $r['student_name'] = $r['student_name'] . '(' . $r['student_mobile'] . ')';
             $r['opn_lessons_info'] = '';
         }
         //将所有曲谱id去重后发起一次网络请求
