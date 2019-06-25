@@ -536,9 +536,12 @@ class ScheduleService
 
         $i = 1;
         foreach ($schedules as $key => $schedule) {
+            $billOperator = !empty($schedule['bill_operator']) ? explode(',', $schedule['bill_operator']) : [];
+            $billOperator = !empty($billOperator) ? $billOperator[0] : '';
+
             // 订单编号, 签约人, 学员姓名
             $data[$i][0] = iconv("utf-8","GB18030//IGNORE", "\t" . $schedule['bill_ids']);
-            $data[$i][1] = iconv("utf-8","GB18030//IGNORE", $schedule['bill_operator']);
+            $data[$i][1] = iconv("utf-8","GB18030//IGNORE", $billOperator);
             $data[$i][2] = iconv("utf-8","GB18030//IGNORE", $schedule['student_name']);
 
             // 套餐名称, 签约日期
@@ -555,7 +558,7 @@ class ScheduleService
             $data[$i][10] = iconv("utf-8","GB18030//IGNORE", "\t" . $schedule['reduce_num'] / 100);
             $data[$i][11] = iconv("utf-8","GB18030//IGNORE", $schedule['operator_name']);
             $data[$i][12] = iconv("utf-8","GB18030//IGNORE", "\t" . date('Y-m-d H:i:s', $schedule['reduce_time']));
-            $data[$i][13] = iconv("utf-8","GB18030//IGNORE", "\t" . $schedule['old_balance'] / 100);
+            $data[$i][13] = iconv("utf-8","GB18030//IGNORE", "\t" . ($schedule['total_amount'] - $schedule['new_balance']) / 100);
             $data[$i][14] = iconv("utf-8","GB18030//IGNORE", "\t" . $schedule['new_balance'] / 100);
 
             $i ++;

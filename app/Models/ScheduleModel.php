@@ -404,8 +404,9 @@ class ScheduleModel extends Model
 SELECT
     s.id schedule_id, s.start_time, s.end_time, c.name course_name, cp.name campus_name,
     su.price, stu.name student_name,
-    log.create_time reduce_time, log.balance reduce_num, log.old_balance, log.new_balance, e.name operator_name,
-    GROUP_CONCAT(b.id) bill_ids, b.end_time bill_time, be.name bill_operator
+    log.create_time reduce_time, log.balance reduce_num, log.new_balance, e.name operator_name,
+    GROUP_CONCAT(b.id ORDER BY b.end_time) bill_ids, SUM(b.amount) total_amount, MIN(b.end_time) bill_time,
+    GROUP_CONCAT(be.name ORDER BY b.end_time) bill_operator
 FROM
     " . ScheduleModel::$table . " s
         INNER JOIN
