@@ -21,8 +21,13 @@ class PlayRecordModel extends Model
 
     /** 练琴来源 */
     const CLIENT_STUDENT = 1;       // ai陪练
-    const CLIENT_TEACHER = 2;      // 智能琴房
-    const CLIENT_PANDA_MINI = 3;      // 熊猫小程序
+    const CLIENT_TEACHER = 2;       // 智能琴房
+    const CLIENT_PANDA_MINI = 3;    // 熊猫小程序
+
+    /** AI测评类型 */
+    const AI_EVALUATE_PLAY = 1;      //演奏
+    const AI_EVALUATE_AUDIO = 2;     //音频识别
+
 
     const RANK_LIMIT = 150;          //排行榜取前RANK_LIMIT名
 

@@ -97,6 +97,7 @@ class Panda extends ControllerBase
         // 插入练琴纪录表
         $params['data']['lesson_type'] = PlayRecordModel::TYPE_AI;
         $params['data']['client_type'] = PlayRecordModel::CLIENT_PANDA_MINI;
+        $param['data']['ai_type'] = PlayRecordModel::AI_EVALUATE_AUDIO;
         list($errCode, $ret) = UserPlayServices::addRecord($student['id'], $params['data']);
         if (!empty($errCode)) {
             $errors = Valid::addAppErrors([], $errCode);

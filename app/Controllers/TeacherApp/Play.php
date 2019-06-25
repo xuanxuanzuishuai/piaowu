@@ -57,6 +57,7 @@ class Play extends ControllerBase
         $userID = $this->ci['student']['id'];
         $params['data']['lesson_type'] = PlayRecordModel::TYPE_DYNAMIC;
         $params['data']['client_type'] = PlayRecordModel::CLIENT_TEACHER;
+        $param['data']['ai_type'] = PlayRecordModel::AI_EVALUATE_PLAY;
         // 老师端练琴以schedule_id识别,此时schedule_id可能尚未生成。因此统一用0标记schedule_id
         // 统计数据时schedule_id为0时，表示老师端课上练琴
         $params['data']['schedule_id'] = 0;
@@ -123,6 +124,8 @@ class Play extends ControllerBase
         $userId = $this->ci['student']['id'];
         $param['data']['lesson_type'] = PlayRecordModel::TYPE_AI;
         $param['data']['client_type'] = PlayRecordModel::CLIENT_TEACHER;
+        $param['data']['ai_type'] = PlayRecordModel::AI_EVALUATE_PLAY;
+
         // 同end接口
         $param['data']['schedule_id'] = 0;
         list($errCode, $ret) = UserPlayServices::addRecord($userId, $param['data']);

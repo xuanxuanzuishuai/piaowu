@@ -41,6 +41,7 @@ class UserPlayServices
             'duration' => $playData['duration'],
             'score' => $playData['score'],
             'midi' => $playData['midi'],
+            'ai_type' => $playData['ai_type'],
             'data' => json_encode($playData)
         ];
 
@@ -398,7 +399,7 @@ class UserPlayServices
                 $temp['id'] = $play['id'];
                 $temp['score'] = $play['score'];
                 $temp['ai_record_id'] = $play['ai_record_id'];
-                $temp['play_midi'] = $play['client_type'] == PlayRecordModel::CLIENT_PANDA_MINI ? 0 : 1;
+                $temp['play_midi'] = $play['ai_type'] == PlayRecordModel::AI_EVALUATE_PLAY ? 1 : 0;
                 $temp['score_detail'] = json_decode($play['data'], true);
                 $temp['created_time'] = $play['created_time'];
                 $details[$lessonId]['plays']->insert($temp);
