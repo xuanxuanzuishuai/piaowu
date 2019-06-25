@@ -288,7 +288,7 @@ class Org extends ControllerBase
             $accountData = [
                 'org_id'      => $lastId,
                 'account'     => $account,
-                'password'    => md5($account.$account), // 默认密码是机构账号
+                'password'    => md5(time() . rand(1, time())), // 默认密码是随机的
                 'create_time' => $now,
                 'status'      => OrgAccountModel::STATUS_NORMAL,
             ];
