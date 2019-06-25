@@ -37,6 +37,10 @@ class AppApiForStudent extends MiddlewareBase
         }
         $this->container['is_review_version'] = $isReviewVersion;
 
+        if ($isReviewVersion) {
+            $response = $response->withHeader('app-review', 1);
+        }
+
         SimpleLogger::info(__FILE__ . ":" . __LINE__ . " AppApiForStudent", [
             'platform' => $this->container['platform'] ?? NULL,
             'version' => $this->container['version'] ?? NULL,
