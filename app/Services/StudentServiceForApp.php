@@ -25,6 +25,9 @@ class StudentServiceForApp
     const VALIDATE_CODE_EX = 300;
     const VALIDATE_CODE_WAIT_TIME = 60;
 
+    // 体验时长(天)
+    const TRIAL_DAYS = 7;
+
     /**
      * 手机验证码登录
      *
@@ -70,6 +73,8 @@ class StudentServiceForApp
             'sub_status' => $student['sub_status'],
             'sub_start_date' => $student['sub_start_date'],
             'sub_end_date' => $student['sub_end_date'],
+            'trial_start_date' => $student['trial_start_date'],
+            'trial_end_date' => $student['trial_end_date'],
             'token' => $token,
             'teachers' => $teachers
         ];
@@ -105,6 +110,8 @@ class StudentServiceForApp
             'sub_status' => $student['sub_status'],
             'sub_start_date' => $student['sub_start_date'],
             'sub_end_date' => $student['sub_end_date'],
+            'trial_start_date' => $student['trial_start_date'],
+            'trial_end_date' => $student['trial_end_date'],
             'token' => $token,
             'teachers' => $teachers
         ];
@@ -124,6 +131,7 @@ class StudentServiceForApp
      * 注册新用户
      *
      * @param $mobile
+     * @param $channel
      * @param $name
      * @return null|array 失败返回null 成功返回['student_id' => x, 'uuid' => x, 'is_new' => x]
      */
@@ -294,5 +302,40 @@ class StudentServiceForApp
 
         $endTime = strtotime($student['sub_end_date']) + 86400;
         return $endTime > time();
+    }
+
+    public static function trial($studentID)
+    {
+        $student = StudentModelForApp::getStudentInfo($studentID, null);
+        if (empty($student)) {
+            return ['unknown_student'];
+        }
+
+        // 付费或体验过的用户无法领取体验资格
+        if ($student['trial_end_date'] > 0 || $student['sub_end_date'] > 0) {
+            return ['cant_trial'];
+        }
+
+        $today = date('Ymd');
+        $endDate = date('Ymd', strtotime('+' . self::TRIAL_DAYS . ' day'));
+
+        $affectRows = StudentModelForApp::updateRecord($studentID, [
+            'trial_start_date' => $today,
+            'trial_end_date' => $endDate,
+            'sub_start_date' => $today,
+            'sub_end_date' => $endDate,
+            'update_time'  => time(),
+        ]);
+        if($affectRows == 0) {
+            return ['update_student_fail'];
+        }
+
+        $result = [
+            'trial_start_date' => $today,
+            'trial_end_date' => $endDate,
+        ];
+
+        return [null, $result];
+
     }
 }

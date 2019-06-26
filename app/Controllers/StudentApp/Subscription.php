@@ -10,6 +10,7 @@ namespace App\Controllers\StudentApp;
 
 use App\Controllers\ControllerBase;
 use App\Libs\MysqlDB;
+use App\Libs\Util;
 use App\Libs\Valid;
 use App\Services\StudentServiceForApp;
 use Slim\Http\Request;
@@ -46,6 +47,25 @@ class Subscription extends ControllerBase
         }
 
         $db->commit();
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => [
+                'result' => $ret
+            ]
+        ], StatusCode::HTTP_OK);
+    }
+
+    public function trial(Request $request, Response $response)
+    {
+        Util::unusedParam($request);
+
+        list($errorCode, $ret) = StudentServiceForApp::trial($this->ci['student']['id']);
+
+        if (!empty($errorCode)) {
+            $result = Valid::addAppErrors([], $errorCode);
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
