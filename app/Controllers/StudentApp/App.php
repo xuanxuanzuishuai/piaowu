@@ -16,6 +16,7 @@ use App\Libs\Valid;
 use App\Models\AppVersionModel;
 use App\Models\FeedbackModel;
 use App\Services\AppVersionService;
+use App\Services\StudentServiceForApp;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -46,6 +47,7 @@ class App extends ControllerBase
         $config = [];
         $config['ai_host'] = DictConstants::get(DictConstants::APP_CONFIG_COMMON, 'ai_host');
         $config['policy_url'] = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'policy_url');
+        $config['sub_info_count'] = (int)DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'sub_info_count');
 
         if ($this->ci['is_review_version']) {
             $config['guide_url'] = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'review_guide_url');
@@ -89,5 +91,42 @@ class App extends ControllerBase
             'code' => Valid::CODE_SUCCESS,
             'data' => []
         ], StatusCode::HTTP_OK);
+    }
+
+    public function action(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'type',
+                'type' => 'required',
+                'error_code' => 'type_is_required'
+            ],
+            [
+                'key' => 'type',
+                'type' => 'in',
+                'value' => [StudentServiceForApp::ACTION_READ_SUB_INFO],
+                'error_code' => 'type_is_invalid'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        list($errorCode, $ret) = StudentServiceForApp::action($this->ci['student']['id'], $params['type']);
+
+        if (!empty($errorCode)) {
+            $result = Valid::addAppErrors([], $errorCode);
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => [
+                $params['type'] => $ret,
+            ]
+        ], StatusCode::HTTP_OK);
+
     }
 }

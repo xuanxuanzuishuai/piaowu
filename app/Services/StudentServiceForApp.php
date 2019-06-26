@@ -28,6 +28,9 @@ class StudentServiceForApp
     // 体验时长(天)
     const TRIAL_DAYS = 7;
 
+    // 用户操作类型 观看付费服务介绍
+    const ACTION_READ_SUB_INFO = 'act_sub_info';
+
     /**
      * 手机验证码登录
      *
@@ -75,6 +78,7 @@ class StudentServiceForApp
             'sub_end_date' => $student['sub_end_date'],
             'trial_start_date' => $student['trial_start_date'],
             'trial_end_date' => $student['trial_end_date'],
+            'act_sub_info' => (int)$student['act_sub_info'],
             'token' => $token,
             'teachers' => $teachers
         ];
@@ -112,6 +116,7 @@ class StudentServiceForApp
             'sub_end_date' => $student['sub_end_date'],
             'trial_start_date' => $student['trial_start_date'],
             'trial_end_date' => $student['trial_end_date'],
+            'act_sub_info' => (int)$student['act_sub_info'],
             'token' => $token,
             'teachers' => $teachers
         ];
@@ -337,5 +342,20 @@ class StudentServiceForApp
 
         return [null, $result];
 
+    }
+
+    public static function action($studentID, $type) {
+
+        $affectRows = StudentModelForApp::updateRecord($studentID, [
+            $type . '[+]' => 1,
+        ]);
+
+        if($affectRows == 0) {
+            return ['update_student_fail'];
+        }
+
+        $student = StudentModelForApp::getById($studentID);
+
+        return [null, (int)$student[$type]];
     }
 }

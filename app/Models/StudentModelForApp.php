@@ -58,6 +58,7 @@ class StudentModelForApp extends Model
             self::$table . '.sub_end_date',
             self::$table . '.trial_start_date',
             self::$table . '.trial_end_date',
+            self::$table . '.act_sub_info',
             self::$table . '.name',
             self::$table . '.thumb',
         ], $where);
