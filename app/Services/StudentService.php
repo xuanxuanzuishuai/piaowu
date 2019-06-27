@@ -11,6 +11,7 @@
 namespace App\Services;
 
 use App\Libs\Constants;
+use App\Libs\Dict;
 use App\Libs\DictConstants;
 use App\Libs\ResponseError;
 use App\Libs\UserCenter;
@@ -303,5 +304,50 @@ class StudentService
         ];
 
         StudentModel::updateRecord($studentId, $studentUpdate);
+    }
+
+    /**
+     * 和自己关联的激活码
+     * 包括购买的和使用的
+     * @param $studentId
+     * @return array
+     */
+    public static function selfGiftCode($studentId)
+    {
+        $codes = GiftCodeModel::getRecords([
+            'OR' => [
+                'apply_user' => $studentId,
+                'AND' => ['buyer' => $studentId, 'generate_channel' => [
+                    GiftCodeModel::BUYER_TYPE_STUDENT,
+                    GiftCodeModel::BUYER_TYPE_ERP_EXCHANGE,
+                    GiftCodeModel::BUYER_TYPE_ERP_ORDER
+                ]]
+            ]
+        ], '*', false);
+
+        $result = [];
+        foreach ($codes as $code) {
+            switch ($code['code_status']) {
+                case GiftCodeModel::CODE_STATUS_INVALID:
+                    $statusStr = '已作废'; break;
+                case GiftCodeModel::CODE_STATUS_NOT_REDEEMED:
+                    $statusStr = '未使用'; break;
+                case GiftCodeModel::CODE_STATUS_HAS_REDEEMED:
+                    $statusStr = ($code['apply_user'] == $studentId ? '已使用' : '被他人使用'); break;
+                default:
+                    $statusStr = '';
+            }
+
+            $info = [
+                'code' => $code['code'],
+                'status' => $code['code_status'],
+                'status_zh' => $statusStr,
+                'duration' => $code['valid_num'] . Dict::getCodeTimeUnit($code['valid_units']),
+            ];
+
+            $result[] = $info;
+        }
+
+        return $result;
     }
 }

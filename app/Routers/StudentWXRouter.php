@@ -9,6 +9,7 @@
 namespace App\Routers;
 
 
+use App\Controllers\StudentWX\Student;
 use App\Middleware\WeChatAuthCheckMiddleware;
 
 class StudentWXRouter extends RouterBase
@@ -37,6 +38,11 @@ class StudentWXRouter extends RouterBase
         '/student_wx/play_record/share_ai_record_grade' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\PlayRecord:shareAIRecordGrade', 'middles' => array()),
         '/student_wx/play_record/month_statistic' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\PlayRecord:getMonthStatistics'),
         '/student_wx/play_record/month_day_statistic' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\PlayRecord:getMonthDayStatistics'),
+
+        '/student_wx/student/gift_code' => [
+            'method' => ['get'],
+            'call' => Student::class . ':giftCode',
+        ],
 
         '/student_org_wx/student/register' => array('method'=>array('post'),'call'=>'\App\Controllers\StudentOrgWX\Student:register', 'middles' => array('\App\Middleware\WeChatOpenIdCheckMiddleware')),
         '/student_org_wx/student/login' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentOrgWX\Student:login', 'middles' => array('\App\Middleware\WeChatOpenIdCheckMiddleware')),

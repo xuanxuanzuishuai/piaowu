@@ -287,4 +287,19 @@ class Student extends ControllerBase
         ], StatusCode::HTTP_OK);
 
     }
+
+    public function giftCode(Request $request, Response $response)
+    {
+        Util::unusedParam($request);
+
+        $studentId = $this->ci['user_info']['user_id'];
+        $ret = StudentService::selfGiftCode($studentId);
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => [
+                'gift_codes' => $ret
+            ]
+        ], StatusCode::HTTP_OK);
+    }
 }
