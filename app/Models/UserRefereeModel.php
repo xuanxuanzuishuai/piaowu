@@ -31,5 +31,7 @@ class UserRefereeModel extends Model
                 "create_time" => time()
             ]);
         }
+
+        return null;
     }
 }

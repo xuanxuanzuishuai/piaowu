@@ -92,7 +92,7 @@ class Student extends ControllerBase
 
             // 转介绍
             if (!empty($params["referee_id"]) and !empty($params["referee_type"])) {
-                UserRefereeModel::insertReferee($params["referee_id"], $params["referee_type"], $student_id);
+                UserRefereeModel::insertReferee($params["referee_id"], $student_id);
             }
 
             $student_info = StudentModelForApp::getStudentInfo("", $params['mobile']);
