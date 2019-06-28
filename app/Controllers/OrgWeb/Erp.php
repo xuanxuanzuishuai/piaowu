@@ -214,4 +214,37 @@ class Erp extends ControllerBase
         $ret['is_ai_student'] = $student['sub_start_date'] > 0;
         return $response->withJson(['code' => 0, 'data'=>$ret], StatusCode::HTTP_OK);
     }
+
+    public function studentGiftCode(Request $request, Response $response)
+    {
+        // 验证请求参数
+        $rules = [
+            [
+                'key' => 'uuid',
+                'type' => 'required',
+                'error_code' => 'uuid_is_required'
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $uuid = $params['uuid'];
+        $student = StudentModelForApp::getStudentInfo(null, null, $uuid);
+        if (empty($student)) {
+            $result = Valid::addErrors([],'uuid','unknown_user');
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $ret = StudentService::selfGiftCode($student['id']);
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => [
+                'gift_codes' => $ret
+            ]
+        ], StatusCode::HTTP_OK);
+    }
 }
