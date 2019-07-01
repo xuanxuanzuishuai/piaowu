@@ -131,4 +131,38 @@ class App extends ControllerBase
         ], StatusCode::HTTP_OK);
 
     }
+
+    public function setNickname(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'nickname',
+                'type' => 'required',
+                'error_code' => 'nickname_is_required'
+            ],
+            [
+                'key' => 'nickname',
+                'type' => 'regex',
+                'value' => "/^[\x{4e00}-\x{9fa5}A-Za-z0-9_]{1,10}$/u",
+                'error_code' => 'nickname_is_invalid'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $errorCode = StudentServiceForApp::setNickname($this->ci['student']['id'], $params['nickname']);
+
+        if ($errorCode) {
+            $result = Valid::addAppErrors([], $errorCode);
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => []
+        ], StatusCode::HTTP_OK);
+    }
 }

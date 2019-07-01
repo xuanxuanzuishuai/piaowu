@@ -358,4 +358,16 @@ class StudentServiceForApp
 
         return [null, (int)$student[$type]];
     }
+
+    public static function setNickname($studentID, $nickname) {
+        $affectRows = StudentModelForApp::updateRecord($studentID, [
+            'name' => $nickname,
+        ]);
+
+        if($affectRows == 0) {
+            return 'update_student_fail';
+        }
+
+        return null;
+    }
 }
