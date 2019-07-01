@@ -216,7 +216,7 @@ class PlayRecordModel extends Model
                left join {$t} t on t.id = ts.teacher_id
         where p.schedule_id is null
           {$where}
-        group by p.created_time, p.lesson_type, p.lesson_id";
+        group by p.created_time, p.lesson_type, p.student_id";
 
         $db = MysqlDB::getDB();
 
