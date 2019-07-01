@@ -48,6 +48,8 @@ class App extends ControllerBase
         $config['ai_host'] = DictConstants::get(DictConstants::APP_CONFIG_COMMON, 'ai_host');
         $config['policy_url'] = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'policy_url');
         $config['sub_info_count'] = (int)DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'sub_info_count');
+        $config['tmall_2680'] = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'tmall_2680');
+        $config['tmall_599'] = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'tmall_599');
 
         if ($this->ci['is_review_version']) {
             $config['guide_url'] = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'review_guide_url');

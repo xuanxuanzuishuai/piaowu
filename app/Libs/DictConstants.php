@@ -72,6 +72,8 @@ class DictConstants {
             'review_guide_url',
             'policy_url',
             'sub_info_count',
+            'tmall_2680',
+            'tmall_599',
         ]
     ];
 

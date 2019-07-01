@@ -1,0 +1,2 @@
+INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`) VALUES ('APP_CONFIG_STUDENT', 'AI练琴后端设置', 'tmall_2680', 'https://detail.tmall.com/item.htm?spm=a220o.1000855.w5003-14432643143.1.c9fc10bbWgbkGq&id=574195386913&scene=taobao_shop&skuId=4138568044447');
+INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`) VALUES ('APP_CONFIG_STUDENT', 'AI练琴后端设置', 'tmall_599', 'https://detail.tmall.com/item.htm?spm=a1z10.3-b-s.w4011-14432643152.101.52f129e82CLEmd&id=593059145567&rn=15df1604e6f29ca4dfe070dcc35e120f&abbucket=5');
