@@ -200,6 +200,7 @@ class StudentServiceForApp
         }
 
         if (in_array($gift['generate_channel'], [
+            GiftCodeModel::BUYER_TYPE_STUDENT,
             GiftCodeModel::BUYER_TYPE_ERP_EXCHANGE,
             GiftCodeModel::BUYER_TYPE_ERP_ORDER
         ]) && $gift['buyer'] != $studentID) {

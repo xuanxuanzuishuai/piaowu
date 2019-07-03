@@ -177,3 +177,5 @@ has_valid_config='同类型只能有一个审批配置，添加前请禁用当�
 approval_config_not_found='未找到审批配置'
 invalid_approval_config='审批配置不正确'
 closed_approval='审批无法操作'
+remark_is_required='必须填写备注'
+unknown_student_mobile='未找到对应学员:%s'

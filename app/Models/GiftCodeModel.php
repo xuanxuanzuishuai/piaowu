@@ -62,24 +62,20 @@ class GiftCodeModel extends Model
 
 
     /**
-     * @param $params
-     * @return array
+     * @param array|string $codes
+     * @return bool
      * 获取是否已存在激活码
      */
-    public static function getCodeInfo($params)
+    public static function codeExists($codes)
     {
-        $where = [];
-        if (!empty($params['code'])) {
-            $where = [
-                'code' => $params['code']
-            ];
+        if (empty($codes)) {
+            return false;
         }
+
         $db = MysqlDB::getDB();
-        $result = $db->select(self::$table, [
-            "id",
-            "code",
-        ], $where);
-        return $result;
+
+        $result = $db->count(self::$table, ['code' => $codes]);
+        return $result > 0;
     }
 
     /**

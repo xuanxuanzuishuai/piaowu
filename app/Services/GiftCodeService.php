@@ -11,9 +11,11 @@
 namespace App\Services;
 
 use App\Libs\Constants;
+use App\Libs\SimpleLogger;
 use App\Models\EmployeeModel;
 use App\Models\GiftCodeModel;
 use App\Libs\Dict;
+use App\Models\StudentModel;
 
 class GiftCodeService
 {
@@ -22,14 +24,14 @@ class GiftCodeService
      * @param $validNum
      * @param $validUnits
      * @param $generateChannel
-     * @param $buyer
+     * @param string|array $buyer id|[['id' => 1, 'mobile' => 138...], ...]
      * @param $generateWay
      * @param null $remarks
      * @param null $employeeId
      * @param null $buyTime
      * @param null|int $billId
      * @param int $billAmount
-     * @return array
+     * @return array [['id' => 1, 'mobile' => 138..., 'code' => 'abc123'], ...]
      * 批量生成激活码
      */
     public static function batchCreateCode($num,
@@ -44,26 +46,39 @@ class GiftCodeService
                                            $billId = NULL,
                                            $billAmount = 0)
     {
-        $ret = false;
+        // 如果是给个人生成，每人只能生成一个
+        $multipleBuyer = ($generateChannel == GiftCodeModel::BUYER_TYPE_STUDENT);
+        if ($multipleBuyer) {
+            $num = count($buyer);
+        }
+
         $i = 0;
         //随机生成码
         do {
-            $data['code'] = self::randCodeCreate($num, $generateChannel, $buyer);
+            $codes = self::randCodeCreate($num, $generateChannel, $buyer);
             //是否有重合
-            $hasExist = GiftCodeModel::getCodeInfo($data);
-            $hasExist && $ret = true;
-            //避免死循环
-            if ($i >= 10) {
-                $data['code'] = NULL;
+            $hasExist = GiftCodeModel::codeExists($codes);
+
+            if (!$hasExist) {
                 break;
             }
+
+            if ($i >= 10) {
+                $codes = NULL;
+                break;
+            }
+
             $i++;
-        } while ($ret);
+        } while (true);
+
+        if (empty($codes)) {
+            return [];
+        }
+
         //插入数据
         $t = time();
         $params = [
             'generate_channel' => $generateChannel,
-            'buyer' => $buyer,
             'buy_time' => $buyTime,
             'valid_num' => $validNum,
             'valid_units' => $validUnits,
@@ -76,13 +91,23 @@ class GiftCodeService
             'bill_amount' => $billAmount,
         ];
 
-        if (!empty($data['code'])) {
-            foreach ($data['code'] as $value) {
-                $params['code'] = $value;
-                GiftCodeModel::insertRecord($params, false);
+        if (!$multipleBuyer) {
+            $params['buyer'] = $buyer;
+        }
+
+        foreach ($codes as $i => $value) {
+            $params['code'] = $value;
+            $params['buyer'] = $multipleBuyer ? $buyer[$i]['id'] : $buyer;
+
+            GiftCodeModel::insertRecord($params, false);
+
+            if ($multipleBuyer) {
+                $codes[$i] = $buyer[$i];
+                $codes[$i]['code'] = $value;
             }
         }
-        return $data['code'];
+
+        return $codes;
     }
 
     /**

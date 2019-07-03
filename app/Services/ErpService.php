@@ -18,6 +18,15 @@ use App\Models\StudentModel;
 
 class ErpService
 {
+    /**
+     * @param $studentData
+     * @param $exchangeType
+     * @param $erpBillId
+     * @param $erpBillAmount
+     * @param int $giftCodeNum
+     * @param int $giftCodeUnit
+     * @return array [string errorCode, array giftCodes]
+     */
     public static function exchangeGiftCode($studentData,
                                             $exchangeType,
                                             $erpBillId,
@@ -39,14 +48,15 @@ class ErpService
             $ret = StudentService::studentRegister($studentData, EmployeeModel::SYSTEM_EMPLOYEE_ID);
 
             if ($ret['code'] == Valid::CODE_PARAMS_ERROR) {
-                return $ret;
+                $errorCode = array_values($ret['errors'])[0]['err_no'];
+                return [$errorCode, null];
             } else {
                 $student = StudentModel::getById($ret['student_id']);
             }
         }
 
         if (empty($student)) {
-            return Valid::addErrors([], 'student_id', 'user_register_fail');
+            return ['user_register_fail', null];
         }
 
         $orgId = DictConstants::get(DictConstants::SPECIAL_ORG_ID, 'panda');
@@ -65,7 +75,11 @@ class ErpService
             $erpBillId,
             $erpBillAmount);
 
-        return $giftCodes;
+        if (empty($giftCodes)) {
+            return ['create_gift_code_fail', null];
+        }
+
+        return [null, $giftCodes];
     }
 
     public static function exchangeSMSData($giftCode)

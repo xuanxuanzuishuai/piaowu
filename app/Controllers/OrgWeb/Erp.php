@@ -76,7 +76,7 @@ class Erp extends ControllerBase
             $giftCodeUnit = GiftCodeModel::CODE_TIME_MONTH;
         }
 
-        $ret = ErpService::exchangeGiftCode(
+        list($errorCode, $giftCodes) = ErpService::exchangeGiftCode(
             [
                 'uuid' => $params['uuid'],
                 'mobile' => $params['mobile'],
@@ -91,29 +91,29 @@ class Erp extends ControllerBase
             $giftCodeUnit
         );
 
-        if ($ret['code'] == Valid::CODE_PARAMS_ERROR) {
-            return $ret;
+        if (!empty($errorCode)) {
+            $result = Valid::addErrors([], 'uuid', $errorCode);
+            return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
         // 换购上线前已经提前发送激活码的用户
         $preSellUserMobiles = [];
         if (!in_array($params['mobile'], $preSellUserMobiles)) {
-            list($sign, $content) = ErpService::exchangeSMSData(implode(',', $ret));
+            list($sign, $content) = ErpService::exchangeSMSData(implode(',', $giftCodes));
             $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
             $sms->send($sign, $params['mobile'], $content);
         } else {
             SimpleLogger::debug(__FILE__ . ':' . __LINE__ . ' preSellUser', [
                 'uuid' => $params['uuid'],
                 'mobile' => $params['mobile'],
-                'gift_codes' => $ret
+                'gift_codes' => $giftCodes
             ]);
         }
-
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => [
-                'gift_codes' => $ret
+                'gift_codes' => $giftCodes
             ]
         ], StatusCode::HTTP_OK);
     }

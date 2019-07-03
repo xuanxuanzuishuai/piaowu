@@ -174,7 +174,7 @@ class Valid
 
         array_push($result['data']['errors'][$key], [
             'err_no' => $errorCode,
-            'err_msg' => sprintf(Lang::getWord($errorCode), ...$args)
+            'err_msg' => sprintf(Lang::getWord($errorCode), ...$args) ?: $errorCode
         ]);
 
         return $result;

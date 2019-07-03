@@ -9,8 +9,13 @@
 namespace App\Controllers\Boss;
 
 use App\Controllers\ControllerBase;
+use App\Libs\DictConstants;
+use App\Libs\NewSMS;
 use App\Libs\Valid;
 use App\Models\GiftCodeModel;
+use App\Models\StudentModel;
+use App\Models\StudentModelForApp;
+use App\Services\ErpService;
 use App\Services\GiftCodeService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -44,10 +49,21 @@ class GiftCode extends ControllerBase
                 'error_code' => 'generate_channel_is_required'
             ],
             [
+                'key' => 'generate_channel',
+                'type' => 'in',
+                'value' => [GiftCodeModel::BUYER_TYPE_ORG, GiftCodeModel::BUYER_TYPE_STUDENT],
+                'error_code' => 'generate_channel_is_invalid'
+            ],
+            [
                 'key' => 'buyer',
                 'type' => 'required',
                 'error_code' => 'buyer_is_required'
-            ]
+            ],
+            [
+                'key' => 'remarks',
+                'type' => 'required',
+                'error_code' => 'remark_is_required'
+            ],
         ];
         $result = Valid::validate($params, $rules);
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
@@ -57,21 +73,50 @@ class GiftCode extends ControllerBase
         //当前操作人
         $employeeId = $this->ci['employee']['id'];
 
+        if ($params['generate_channel'] == GiftCodeModel::BUYER_TYPE_STUDENT) {
+            $buyer = [];
+            $buyers = explode(',', $params['buyer']);
+            foreach ($buyers as $mobile) {
+                $student = StudentModelForApp::getStudentInfo(null, $mobile, null);
+                if (empty($student)) {
+                    $result = Valid::addErrors([], 'buyer', 'unknown_student_mobile', $mobile);
+                    return $response->withJson($result, StatusCode::HTTP_OK);
+                }
+                $buyer[] = ['id' => $student['id'], 'mobile' => $mobile];
+            }
+        } else {
+            $buyer = $params['buyer'];
+        }
+
         //批量生成激活码
         $codeData = GiftCodeService::batchCreateCode(
             $params['num'],
             $params['valid_num'],
             $params['valid_units'],
             $params['generate_channel'],
-            $params['buyer'],
+            $buyer,
             GiftCodeModel::CREATE_BY_MANUAL,
             $params['remarks'],
             $employeeId,
             time());
 
+        if ($params['generate_channel'] == GiftCodeModel::BUYER_TYPE_STUDENT) {
+            $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
+            $result = [];
+            foreach ($codeData as $data) {
+                // 发送短信
+                list($sign, $content) = ErpService::exchangeSMSData($data['code']);
+                $sms->send($sign, $data['mobile'], $content);
+
+                $result[] = "{$data['mobile']}(id {$data['id']}) :{$data['code']}";
+            }
+        } else {
+            $result = $codeData;
+        }
+
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
-            'data' => $codeData
+            'data' => $result,
         ], StatusCode::HTTP_OK);
     }
 
