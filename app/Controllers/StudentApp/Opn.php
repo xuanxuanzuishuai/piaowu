@@ -215,4 +215,47 @@ class Opn extends ControllerBase
             'data' => $lesson
         ], StatusCode::HTTP_OK);
     }
+
+    public function lessonResources(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'lesson_id',
+                'type' => 'required',
+                'error_code' => 'lesson_id_is_required'
+            ],
+            [
+                'key' => 'lesson_id',
+                'type' => 'numeric',
+                'error_code' => 'lesson_id_must_be_numeric'
+            ],
+            [
+                'key' => 'type',
+                'type' => 'required',
+                'error_code' => 'type_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT,
+            $this->ci['opn_pro_ver'],
+            $this->ci['opn_auditing'],
+            $this->ci['opn_publish']);
+        $result = $opn->lessonsByIds($params['lesson_id'], 1, $params['type']);
+        if (empty($result) || !empty($result['errors'])) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $data = $result['data'];
+        $lesson = OpernService::appFormatLessonByIds($data)[0] ?? [];
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $lesson
+        ], StatusCode::HTTP_OK);
+    }
 }
