@@ -124,7 +124,6 @@ class Play extends ControllerBase
         $userId = $this->ci['student']['id'];
         $param['data']['lesson_type'] = PlayRecordModel::TYPE_AI;
         $param['data']['client_type'] = PlayRecordModel::CLIENT_TEACHER;
-        $param['data']['ai_type'] = PlayRecordModel::AI_EVALUATE_PLAY;
 
         // 同end接口
         $param['data']['schedule_id'] = 0;

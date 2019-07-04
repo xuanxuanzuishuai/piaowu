@@ -164,7 +164,6 @@ class Play extends ControllerBase
         $userId = $this->ci['student']['id'];
         $param['data']['lesson_type'] = PlayRecordModel::TYPE_AI;
         $param['data']['client_type'] = PlayRecordModel::CLIENT_STUDENT;
-        $param['data']['ai_type'] = PlayRecordModel::AI_EVALUATE_PLAY;
         list($errCode, $ret) = UserPlayServices::addRecord($userId, $param['data']);
         if (!empty($errCode)) {
             $errors = Valid::addAppErrors([], $errCode);
