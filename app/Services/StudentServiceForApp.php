@@ -316,12 +316,18 @@ class StudentServiceForApp
             return ['unknown_student'];
         }
 
-        // 付费或体验过的用户无法领取体验资格
-        if ($student['trial_end_date'] > 0 || $student['sub_end_date'] > 0) {
+        // 体验过的用户无法领取体验资格
+        if ($student['trial_end_date'] > 0) {
             return ['cant_trial'];
         }
 
         $today = date('Ymd');
+
+        // 在服务期内无法领取体验资格
+        if ($student['sub_end_date'] > $today) {
+            return ['cant_trial'];
+        }
+
         $endDate = date('Ymd', strtotime('+' . self::TRIAL_DAYS . ' day'));
 
         $affectRows = StudentModelForApp::updateRecord($studentID, [
