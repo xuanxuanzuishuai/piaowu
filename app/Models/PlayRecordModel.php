@@ -274,6 +274,7 @@ class PlayRecordModel extends Model
             pr.data as data,
             pr.midi as midi,
             pr.ai_record_id as ai_record_id,
+            pr.ai_type as ai_type,
             ";
 
             if ($join_hc){

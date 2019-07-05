@@ -85,7 +85,8 @@ class Homework extends ControllerBase
                 'time' => $item['created_time'],
                 'score' => Util::floatIsInt($item['score']) ? (int)$item['score'] : $item['score'],
                 'complete' => (int)$item['complete'],
-                'record_id' => $item['ai_record_id']
+                'record_id' => $item['ai_record_id'],
+                'ai_type' => $item['ai_type']
             ];
             array_push($returnData['play_record'], $temp);
         }
