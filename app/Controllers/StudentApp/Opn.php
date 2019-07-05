@@ -250,12 +250,9 @@ class Opn extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $data = $result['data'];
-        $lesson = OpernService::appFormatLessonByIds($data)[0] ?? [];
-
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
-            'data' => $lesson
+            'data' => $result
         ], StatusCode::HTTP_OK);
     }
 }
