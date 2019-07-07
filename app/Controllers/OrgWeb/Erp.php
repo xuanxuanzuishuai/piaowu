@@ -69,11 +69,11 @@ class Erp extends ControllerBase
         $giftCodeNum = 1;
         $giftCodeUnit = GiftCodeModel::CODE_TIME_YEAR;
 
-        // 6月18日活动：7月31日前换购时间增加至1.5年(18个月)
+        // 7月19日前购买时间增加至2年
         $date = date('Ymd');
-        if ($date >= '20190618' && $date <= '20190731' && $params['type'] == GiftCodeModel::BUYER_TYPE_ERP_ORDER) {
-            $giftCodeNum = 18;
-            $giftCodeUnit = GiftCodeModel::CODE_TIME_MONTH;
+        if ($date >= '20190705' && $date <= '20190719' && $params['type'] == GiftCodeModel::BUYER_TYPE_ERP_ORDER) {
+            $giftCodeNum = 2;
+            $giftCodeUnit = GiftCodeModel::CODE_TIME_YEAR;
         }
 
         list($errorCode, $giftCodes) = ErpService::exchangeGiftCode(
