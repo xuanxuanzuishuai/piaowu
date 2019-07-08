@@ -76,4 +76,28 @@ class NewSMS
         ];
         return self::sendSMS($data);
     }
+
+    public function sendExchangeGiftCode($targetMobile, $code, $sign)
+    {
+        $msg = "感谢家长选择小叶子陪练！您购买的AI产品，激活码为：{$code}。智能灯条会立即安排发货，请耐心等待！";
+
+        $data = [
+            'sign_name' => $sign,
+            'phone_number' => $targetMobile,
+            'content' => $msg,
+        ];
+        return self::sendSMS($data);
+    }
+
+    public function sendFreeGiftCode($targetMobile, $code, $sign)
+    {
+        $msg = "感谢家长选择小叶子陪练！本次活动的赠送激活码为：{$code}。可在微信【小叶子陪练】公众号中输入“激活码”查询，祝您生活愉快！";
+
+        $data = [
+            'sign_name' => $sign,
+            'phone_number' => $targetMobile,
+            'content' => $msg,
+        ];
+        return self::sendSMS($data);
+    }
 }

@@ -13,9 +13,8 @@ use App\Libs\DictConstants;
 use App\Libs\NewSMS;
 use App\Libs\Valid;
 use App\Models\GiftCodeModel;
-use App\Models\StudentModel;
 use App\Models\StudentModelForApp;
-use App\Services\ErpService;
+use App\Services\CommonServiceForApp;
 use App\Services\GiftCodeService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -105,8 +104,9 @@ class GiftCode extends ControllerBase
             $result = [];
             foreach ($codeData as $data) {
                 // 发送短信
-                list($sign, $content) = ErpService::exchangeSMSData($data['code']);
-                $sms->send($sign, $data['mobile'], $content);
+                $sms->sendFreeGiftCode($data['mobile'],
+                    $data['code'],
+                    CommonServiceForApp::SIGN_STUDENT_APP);
 
                 $result[] = "{$data['mobile']}(id {$data['id']}) :{$data['code']}";
             }

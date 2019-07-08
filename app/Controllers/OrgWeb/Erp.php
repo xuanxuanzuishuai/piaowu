@@ -8,20 +8,18 @@
 
 namespace App\Controllers\OrgWeb;
 
-use App\Controllers\Boss\GiftCode;
 use App\Controllers\ControllerBase;
 use App\Libs\DictConstants;
 use App\Libs\NewSMS;
 use App\Libs\SimpleLogger;
 use App\Libs\Valid;
-use App\Models\EmployeeModel;
 use App\Models\GiftCodeModel;
 use App\Models\StudentModelForApp;
+use App\Services\CommonServiceForApp;
 use App\Services\ErpService;
 use App\Services\UserPlayServices;
 use App\Services\AppVersionService;
 use App\Models\AppVersionModel;
-use App\Services\GiftCodeService;
 use App\Services\StudentService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -99,9 +97,10 @@ class Erp extends ControllerBase
         // 换购上线前已经提前发送激活码的用户
         $preSellUserMobiles = [];
         if (!in_array($params['mobile'], $preSellUserMobiles)) {
-            list($sign, $content) = ErpService::exchangeSMSData(implode(',', $giftCodes));
             $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
-            $sms->send($sign, $params['mobile'], $content);
+            $sms->sendExchangeGiftCode($params['mobile'],
+                implode(',', $giftCodes),
+                CommonServiceForApp::SIGN_STUDENT_APP);
         } else {
             SimpleLogger::debug(__FILE__ . ':' . __LINE__ . ' preSellUser', [
                 'uuid' => $params['uuid'],
