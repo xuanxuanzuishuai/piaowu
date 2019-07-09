@@ -311,11 +311,11 @@ class ClassTaskModel extends Model
 
 
     /**
-     * 获取学生未结束班课金额
+     * 获取学生占课总金额
      * @param $studentIds
      * @return array
      */
-    public static function getStudentNotFinishAccount($studentIds)
+    public static function getTakeUpBalances($studentIds)
     {
         $where = [
             'cu.user_id' => $studentIds,
@@ -336,6 +336,7 @@ class ClassTaskModel extends Model
         $columns = [
             'cu.user_id',
             'ctp.price',
+            'ct.period'
         ];
         $join = [
             '[><]' . STClassModel::$table . ' (stc)' => ['ct.class_id' => 'id'],

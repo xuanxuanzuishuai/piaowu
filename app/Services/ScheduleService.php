@@ -433,33 +433,6 @@ class ScheduleService
 
         $classroom = ClassroomService::getById($params['classroom_id']);
         $course = CourseService::getCourseById($params['course_id']);
-
-        // check schedule, check schedule_user
-        $checkSchedule = self::checkSchedule($schedule);
-        if ($checkSchedule !== true) {
-            return Valid::addErrors([], 'schedule', 'check_schedule_error');
-        }
-
-        $originScheduleId = $params['schedule_id'] ?? 0;
-        $checkStudent = ScheduleUserService::checkScheduleUser(array_keys($params['students']),
-            ScheduleUserModel::USER_ROLE_STUDENT, $schedule['start_time'],
-            $schedule['end_time'], $originScheduleId);
-        if ($checkStudent !== true) {
-            return Valid::addErrors([], 'class_task_classroom', 'class_student_time_error');
-        }
-        $balances = StudentAccountService::checkBalance($params['students']);
-        if ($balances !== true) {
-            return $balances;
-        }
-
-        $checkTeacher = ScheduleUserService::checkScheduleUser(array_keys($params['teachers']),
-            [ScheduleUserModel::USER_ROLE_TEACHER, ScheduleUserModel::USER_ROLE_CLASS_TEACHER],
-            $schedule['start_time'], $schedule['end_time'], $originScheduleId);
-        if ($checkTeacher !== true) {
-            return Valid::addErrors([], 'class_task_classroom', 'class_teacher_time_error');
-        }
-
-        // check class_task, class_user
         $classTask = [
             'classroom_id' => $params['classroom_id'],
             'start_time' => date("H:i", $params['start_time']),
@@ -474,6 +447,32 @@ class ScheduleService
             'period' => 1,
         ];
 
+        // check schedule, check schedule_user
+        $checkSchedule = self::checkSchedule($schedule);
+        if ($checkSchedule !== true) {
+            return Valid::addErrors([], 'schedule', 'check_schedule_error');
+        }
+
+        $originScheduleId = $params['schedule_id'] ?? 0;
+        $checkStudent = ScheduleUserService::checkScheduleUser(array_keys($params['students']),
+            ScheduleUserModel::USER_ROLE_STUDENT, $schedule['start_time'],
+            $schedule['end_time'], $originScheduleId);
+        if ($checkStudent !== true) {
+            return Valid::addErrors([], 'class_task_classroom', 'class_student_time_error');
+        }
+        $balances = StudentAccountService::checkBalance($params['students'], [$classTask]);
+        if ($balances !== true) {
+            return $balances;
+        }
+
+        $checkTeacher = ScheduleUserService::checkScheduleUser(array_keys($params['teachers']),
+            [ScheduleUserModel::USER_ROLE_TEACHER, ScheduleUserModel::USER_ROLE_CLASS_TEACHER],
+            $schedule['start_time'], $schedule['end_time'], $originScheduleId);
+        if ($checkTeacher !== true) {
+            return Valid::addErrors([], 'class_task_classroom', 'class_teacher_time_error');
+        }
+
+        // check class_task, class_user
         $classStatus = STClassModel::STATUS_NORMAL;
         $checkRes = ClassTaskService::checkCT($classTask, $classStatus);
         if ($checkRes !== true) {

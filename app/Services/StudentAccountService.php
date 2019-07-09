@@ -233,30 +233,39 @@ class StudentAccountService
     /**
      * 检查账户余额是否充足
      * @param $students
+     * @param $cts
      * @return array|bool
      */
-    public static function checkBalance($students)
+    public static function checkBalance($students, $cts)
     {
         $studentIds = array_keys($students);
-        $accounts = StudentAccountModel::getSADetailBySId($studentIds);
+        global $orgId;
+
+        // 学生购买的账户总金额
+        $accounts = StudentAccountLogModel::getAddSALog($studentIds, $orgId);
         $balances = [];
         foreach ($accounts as $account) {
             $balances[$account['student_id']] += $account['balance'];
         }
 
         $prices = [];
-        $studentPrices = ClassTaskService::getStudentNotFinishAccount($studentIds);
+        $studentPrices = ClassTaskService::getTakeUpBalances($studentIds);
         foreach ($studentPrices as $studentPrice) {
-            $prices[$studentPrice['user_id']] += $studentPrice['price'];
+            $prices[$studentPrice['user_id']] += $studentPrice['price'] * $studentPrice['period'];
         }
 
         foreach ($students as $key => $price) {
-            $price = array_sum($price);
             if (empty($balances[$key])) {
                 return Valid::addErrors([], 'students', 'student_account_is_not_enough');
             }
+
+            $needPrices = 0;
+            foreach ($price as $key1 => $value) {
+                $needPrices = $value * $cts[$key1]['period'];
+            }
+
             $prices[$key] = $prices[$key] ?? 0;
-            if ($balances[$key] - $prices[$key] < $price) {
+            if ($balances[$key] - $prices[$key] < $needPrices) {
                 return Valid::addErrors([], 'students', 'student_account_is_not_enough');
             }
         }

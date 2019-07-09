@@ -175,13 +175,13 @@ class ClassTaskService
     }
 
     /**
-     * 获取学生未完结班课的金额
+     * 获取学生占课总金额
      * @param $studentIds
      * @return array
      */
-    public static function getStudentNotFinishAccount($studentIds)
+    public static function getTakeUpBalances($studentIds)
     {
-        return ClassTaskModel::getStudentNotFinishAccount($studentIds);
+        return ClassTaskModel::getTakeUpBalances($studentIds);
     }
 
     /**

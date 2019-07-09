@@ -47,9 +47,14 @@ class ScheduleUserModel extends Model
      */
     public static function getSUBySIds($sIds, $status = array(self::STATUS_NORMAL))
     {
+        global $orgId;
+        $orgSql = "";
+        if (empty($orgId)) {
+            $orgSql = " and org_id = " . $orgId;
+        }
         $sql = "select su.user_id, su.user_role, su.id, su.schedule_id, su.create_time, su.status, t.name as teacher_name, 
                 case when su.user_role=" . ClassUserModel::USER_ROLE_S . " then (select sum(balance) from " . StudentAccountModel::$table .
-                " where student_id=su.user_id) else null end as balance,
+                " where student_id=su.user_id " . $orgSql . ") else null end as balance,
                 s.name as student_name, su.user_status, su.price, su.is_deduct from "
             . self::$table . " as su "
             . " left join " . StudentModel::$table." as s on su.user_id = s.id and su.user_role = " . ClassUserModel::USER_ROLE_S

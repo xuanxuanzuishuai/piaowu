@@ -81,7 +81,7 @@ class STClass extends ControllerBase
             if ($result !== true) {
                 return $response->withJson($result, StatusCode::HTTP_OK);
             }
-            $balances = StudentAccountService::checkBalance($params['students']);
+            $balances = StudentAccountService::checkBalance($params['students'], $cts);
             if ($balances !== true) {
                 return $response->withJson($balances, StatusCode::HTTP_OK);
             }
@@ -195,7 +195,7 @@ class STClass extends ControllerBase
             if ($result !== true) {
                 return $response->withJson($result, StatusCode::HTTP_OK);
             }
-            $balances = StudentAccountService::checkBalance($params['students']);
+            $balances = StudentAccountService::checkBalance($params['students'], $cts);
             if ($balances !== true) {
                 return $response->withJson($balances, StatusCode::HTTP_OK);
             }
