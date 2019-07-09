@@ -78,22 +78,9 @@ class Erp extends ControllerBase
             // 默认订单和换购激活码时长1年
             $giftCodeNum = 1;
             $giftCodeUnit = GiftCodeModel::CODE_TIME_YEAR;
-
-            // 7月19日前购买时间增加至2年
-            $date = date('Ymd');
-            if ($date >= '20190705' && $date <= '20190719' && $params['type'] == GiftCodeModel::BUYER_TYPE_ERP_ORDER) {
-                $giftCodeNum = 2;
-                $giftCodeUnit = GiftCodeModel::CODE_TIME_YEAR;
-            }
         } else {
             $giftCodeNum = $params['duration_num'];
             $giftCodeUnit = $params['duration_unit'];
-
-            // 7月19日前购买时间增加1年(366天，默认单位天)
-            $date = date('Ymd');
-            if ($date >= '20190705' && $date <= '20190719' && $params['type'] == GiftCodeModel::BUYER_TYPE_ERP_ORDER) {
-                $giftCodeNum += 366;
-            }
         }
 
         list($errorCode, $giftCodes) = ErpService::exchangeGiftCode(
