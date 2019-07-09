@@ -245,7 +245,11 @@ class StudentAccountService
         $accounts = StudentAccountLogModel::getAddSALog($studentIds, $orgId);
         $balances = [];
         foreach ($accounts as $account) {
-            $balances[$account['student_id']] += $account['balance'];
+            if ($account['type'] == StudentAccountLogModel::TYPE_ADD) {
+                $balances[$account['student_id']] += $account['balance'];
+            } elseif ($account['type'] == StudentAccountLogModel::TYPE_DISCARD) {
+                $balances[$account['student_id']] -= $account['balance'];
+            }
         }
 
         $prices = [];

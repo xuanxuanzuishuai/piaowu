@@ -77,14 +77,14 @@ class StudentAccountLogModel extends Model
     public static function getAddSALog($studentId, $orgId)
     {
         $sql = "SELECT
-    SUM(l.balance) balance, sa.student_id
+    SUM(l.balance) balance, sa.student_id, sa.type
 FROM
     " . self::$table . " l
         INNER JOIN
     " . StudentAccountModel::$table . " sa ON sa.id = l.s_a_id
 WHERE
     sa.student_id IN (" . implode(',', $studentId) .  ") AND org_id = {$orgId}
-        AND l.type = " . self::TYPE_ADD;
+        AND l.type IN (" . self::TYPE_ADD . ", " . self::TYPE_DISCARD . ")";
 
         $balances = MysqlDB::getDB()->queryAll($sql);
         return !empty($balances) ? $balances : [];
