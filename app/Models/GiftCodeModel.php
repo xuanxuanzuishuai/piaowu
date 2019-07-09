@@ -192,9 +192,9 @@ SELECT
     {$employee}.name operate_user,
     {$gift_code}.operate_user raw_operate_user,
     {$gift_code}.operate_time,
-    {$student}.name,
-    {$student}.mobile,
-    {$organization}.name,
+    {$student}.name student_buyer_name,
+    {$student}.mobile student_buyer_mobile,
+    {$organization}.name org_buyer_name,
     apply_user.name apply_name,
     apply_user.mobile apply_mobile
 FROM

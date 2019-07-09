@@ -153,10 +153,10 @@ class GiftCodeService
                 //购买人（根据购买渠道区分）
                 switch ($value['generate_channel']) {
                     case GiftCodeModel::BUYER_TYPE_ORG:
-                        $data[$key]['buyer_name'] = $value['name'];
+                        $data[$key]['buyer_name'] = $value['org_buyer_name'];
                         break;
                     default: //不是机构，就人为是个人(学生)
-                        $data[$key]['buyer_name'] = $value['name'] . '(' . $value['mobile'] . ')';
+                        $data[$key]['buyer_name'] = "{$value['student_buyer_name']}({$value['student_buyer_mobile']})";
                 }
                 if($value['raw_operate_user'] == EmployeeModel::SYSTEM_EMPLOYEE_ID) {
                     $data[$key]['operate_user'] = EmployeeModel::SYSTEM_EMPLOYEE_NAME;
