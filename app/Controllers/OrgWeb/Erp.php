@@ -56,6 +56,17 @@ class Erp extends ControllerBase
                 'type' => 'required',
                 'error_code' => 'bill_amount_is_required'
             ],
+            [
+                'key' => 'duration_num',
+                'type' => 'numeric',
+                'error_code' => 'bill_amount_is_required'
+            ],
+            [
+                'key' => 'duration_unit',
+                'type' => 'in',
+                'value' => [GiftCodeModel::CODE_TIME_DAY, GiftCodeModel::CODE_TIME_MONTH, GiftCodeModel::CODE_TIME_YEAR],
+                'error_code' => 'bill_amount_is_required'
+            ],
         ];
         $params = $request->getParams();
         $result = Valid::validate($params, $rules);
@@ -63,15 +74,20 @@ class Erp extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        // 默认订单和换购激活码时长1年
-        $giftCodeNum = 1;
-        $giftCodeUnit = GiftCodeModel::CODE_TIME_YEAR;
-
-        // 7月19日前购买时间增加至2年
-        $date = date('Ymd');
-        if ($date >= '20190705' && $date <= '20190719' && $params['type'] == GiftCodeModel::BUYER_TYPE_ERP_ORDER) {
-            $giftCodeNum = 2;
+        if (empty($params['duration_num']) || empty($params['duration_unit'])) {
+            // 默认订单和换购激活码时长1年
+            $giftCodeNum = 1;
             $giftCodeUnit = GiftCodeModel::CODE_TIME_YEAR;
+
+            // 7月19日前购买时间增加至2年
+            $date = date('Ymd');
+            if ($date >= '20190705' && $date <= '20190719' && $params['type'] == GiftCodeModel::BUYER_TYPE_ERP_ORDER) {
+                $giftCodeNum = 2;
+                $giftCodeUnit = GiftCodeModel::CODE_TIME_YEAR;
+            }
+        } else {
+            $giftCodeNum = $params['duration_num'];
+            $giftCodeUnit = $params['duration_unit'];
         }
 
         list($errorCode, $giftCodes) = ErpService::exchangeGiftCode(
