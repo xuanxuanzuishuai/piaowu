@@ -181,21 +181,41 @@ class StudentModel extends Model
         }
 
         if ($orgId > 0) {
+            $where .= " and so.org_id = :org_id ";
+            $map[':org_id'] = $orgId;
+
             if(!empty($params['is_bind'])) {
                 $where .= " and so.status = :is_bind ";
                 $map[':is_bind'] = $params['is_bind'];
             }
-            if(!empty($params['cc_id']) && $orgId > 0) {
+            // 绑定销售筛选
+            if (isset($params['cc_id'])) {
                 $where .= " and so.cc_id = :cc_id ";
                 $map[':cc_id'] = $params['cc_id'];
             }
-            if(!empty($orgId)) {
-                $where .= " and so.org_id = :org_id ";
-                $map[':org_id'] = $orgId;
+
+            // 是否付费
+            if (isset($params['pay_status'])) {
+                if ($params['pay_status'] == 1) {
+                    $where .= " and so.first_pay_time > 0 ";
+                } elseif ($params['pay_status'] == 0) {
+                    $where .= " and so.first_pay_time is null ";
+                }
             }
 
+            // 绑定老师筛选
+            if (isset($params['teacher_id'])) {
+                if ($params['teacher_id'] == 0) {
+                    $where .= " and te.id is null ";
+                } elseif ($params['teacher_id'] > 0) {
+                    $where .= " and te.id = :teacher_id ";
+                    $map[':teacher_id'] = $params['teacher_id'];
+                }
+            }
+
+
             $sql = "select s.*, t.teacher_id, te.name teacher_name,
-                t.status ts_status, so.status bind_status, so.cc_id, so.is_first_pay, e.name cc_name, ch.name channel_name
+                t.status ts_status, so.status bind_status, so.cc_id, so.first_pay_time, e.name cc_name, ch.name channel_name
                 from {$s} s
                 inner join {$so} so on s.id = so.student_id
                 left join {$t} t on s.id = t.student_id and t.org_id = so.org_id and t.status = {$tsBindStatus}
