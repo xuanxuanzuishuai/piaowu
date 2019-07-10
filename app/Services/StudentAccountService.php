@@ -265,7 +265,7 @@ class StudentAccountService
 
             $needPrices = 0;
             foreach ($price as $key1 => $value) {
-                $needPrices = $value * $cts[$key1]['period'];
+                $needPrices += $value * 100 * $cts[$key1]['period'];
             }
 
             $prices[$key] = $prices[$key] ?? 0;

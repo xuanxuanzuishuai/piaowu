@@ -49,7 +49,7 @@ class ScheduleUserModel extends Model
     {
         global $orgId;
         $orgSql = "";
-        if (empty($orgId)) {
+        if (!empty($orgId)) {
             $orgSql = " and org_id = " . $orgId;
         }
         $sql = "select su.user_id, su.user_role, su.id, su.schedule_id, su.create_time, su.status, t.name as teacher_name, 

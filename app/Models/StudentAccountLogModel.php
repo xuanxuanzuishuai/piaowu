@@ -83,8 +83,10 @@ FROM
         INNER JOIN
     " . StudentAccountModel::$table . " sa ON sa.id = l.s_a_id
 WHERE
-    sa.student_id IN (" . implode(',', $studentId) .  ") AND org_id = {$orgId}
-        AND l.type IN (" . self::TYPE_ADD . ", " . self::TYPE_DISCARD . ")";
+    sa.student_id IN (" . implode(',', $studentId) .  ")
+    AND org_id = {$orgId}
+    AND l.type IN (" . self::TYPE_ADD . ", " . self::TYPE_DISCARD . ")
+GROUP BY sa.student_id, sa.type";
 
         $balances = MysqlDB::getDB()->queryAll($sql);
         return !empty($balances) ? $balances : [];
