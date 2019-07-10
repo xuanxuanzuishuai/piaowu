@@ -379,6 +379,7 @@ class PlayRecordModel extends Model
                               play_record.lesson_id,
                               play_record.student_id,
                               play_record.ai_record_id,
+                              play_record.ai_type,
                               student.name
                       FROM play_record
                       LEFT JOIN student ON play_record.student_id = student.id
@@ -398,6 +399,7 @@ class PlayRecordModel extends Model
                               play_record.lesson_id,
                               play_record.student_id,
                               play_record.ai_record_id,
+                              play_record.ai_type,
                               student.name
                       FROM play_record
                       LEFT JOIN student ON play_record.student_id = student.id
