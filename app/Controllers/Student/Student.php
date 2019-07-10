@@ -20,6 +20,7 @@ use App\Libs\Valid;
 use App\Models\StudentModel;
 use App\Models\StudentOrgModel;
 use App\Services\ChannelService;
+use App\Services\EmployeeService;
 use App\Services\StudentAccountService;
 use App\Services\StudentService;
 use Slim\Http\Request;
@@ -343,11 +344,21 @@ class Student extends ControllerBase
         }
 
         $studentId = $res['student_id'];
+        // 绑定机构
         $errOrLastId = StudentService::bindOrg($orgId, $studentId);
 
         if($errOrLastId instanceof ResponseError) {
             $db->rollBack();
             return $response->withJson(Valid::addErrors([],'student',$errOrLastId->getErrorMsg()));
+        }
+
+        // 将该学生分配给CC
+        $roleId = Dict::getOrgCCRoleId();
+        if (empty($roleId)) {
+            return $response->withJson(Valid::addErrors([],'cc_id', 'org_cc_role_is_empty_in_session'));
+        }
+        if($this->isOrgCC($roleId)) {
+            StudentService::assignCC($studentId, $orgId, $operatorId);
         }
 
         $db->commit();
