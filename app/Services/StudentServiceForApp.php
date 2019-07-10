@@ -344,6 +344,8 @@ class StudentServiceForApp
         $result = [
             'trial_start_date' => $today,
             'trial_end_date' => $endDate,
+            'sub_start_date' => $today,
+            'sub_end_date' => $endDate,
         ];
 
         return [null, $result];
