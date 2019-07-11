@@ -181,4 +181,37 @@ class GiftCodeService
         }
         return 0;
     }
+
+    /**
+     * 机构自主作废激活码
+     * 只能作废机构内部的激活码
+     * @param $orgId
+     * @param $codeId
+     * @return null|string
+     */
+    public static function abandonCodeForOrg($orgId, $codeId)
+    {
+        $code = GiftCodeModel::getById($codeId);
+        if (($code['generate_channel'] != GiftCodeModel::BUYER_TYPE_ORG) ||
+            ($code['buyer'] != $orgId)) {
+            return 'code_generate_channel_invalid';
+        }
+
+        if ($code['code_status'] == GiftCodeModel::CODE_STATUS_INVALID) {
+            return 'code_status_invalid';
+
+        }
+
+        if ($code['code_status'] == GiftCodeModel::CODE_STATUS_NOT_REDEEMED) {
+            // 未激活的激活码直接禁用
+            GiftCodeService::abandonCode($code['id']);
+
+        } elseif ($code['code_status'] == GiftCodeModel::CODE_STATUS_HAS_REDEEMED) {
+
+            // 已激活的扣除响应时间
+            StudentService::reduceSubDuration($code['apply_user'], $code['valid_num'], $code['valid_units']);
+        }
+
+        return null;
+    }
 }

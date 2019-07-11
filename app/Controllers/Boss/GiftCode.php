@@ -180,4 +180,33 @@ class GiftCode extends ControllerBase
             'count' => $updatedCount,
         ], StatusCode::HTTP_OK);
     }
+
+    // 机构作废激活码
+    public function abandonForOrg(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        $rules = [
+            [
+                'key' => 'id',
+                'type' => 'required',
+                'error_code' => 'ids_is_required'
+            ]
+        ];
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        global $orgId;
+        $errorCode = GiftCodeService::abandonCodeForOrg($orgId, $params['id']);
+        if (!empty($errorCode)) {
+            $result = Valid::addErrors([],'id',$errorCode);
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => []
+        ], StatusCode::HTTP_OK);
+    }
 }

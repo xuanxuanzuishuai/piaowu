@@ -265,6 +265,11 @@ class OrgWebRouter extends RouterBase
             'call' => GiftCode::class . ':abandon',
 
         ],
+        '/boss/gift_code/abandon_for_org' => [
+            'method' => ['post'],
+            'call' => GiftCode::class . ':abandonForOrg',
+
+        ],
         //机构批量分配课管(course consultant)
         '/employee/employee/assign_cc' => [
             'method' => ['post'],
