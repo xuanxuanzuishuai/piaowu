@@ -10,6 +10,7 @@ namespace App\Services;
 
 
 use App\Libs\DictConstants;
+use App\Libs\PandaCRM;
 use App\Libs\ResponseError;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
@@ -25,8 +26,13 @@ class StudentServiceForApp
     const VALIDATE_CODE_EX = 300;
     const VALIDATE_CODE_WAIT_TIME = 60;
 
+    // 体验类型
+    const TRIAL_TYPE_NORMAL = 1; // 普通用户
+    const TRIAL_TYPE_LEADS = 2; // 熊猫leads
+
     // 体验时长(天)
-    const TRIAL_DAYS = 7;
+    const TRIAL_DAYS_NORMAL = 7;
+    const TRIAL_DAYS_LEADS = 21;
 
     // 用户操作类型 观看付费服务介绍
     const ACTION_READ_SUB_INFO = 'act_sub_info';
@@ -328,7 +334,17 @@ class StudentServiceForApp
             return ['cant_trial'];
         }
 
-        $endDate = date('Ymd', strtotime('+' . self::TRIAL_DAYS . ' day'));
+        $crm = new PandaCRM();
+        $isLeads = $crm->leadsCheck($student['mobile']);
+        if ($isLeads) {
+            $type = self::TRIAL_TYPE_LEADS;
+            $duration = self::TRIAL_DAYS_LEADS;
+        } else {
+            $type = self::TRIAL_TYPE_NORMAL;
+            $duration = self::TRIAL_DAYS_NORMAL;
+        }
+
+        $endDate = date('Ymd', strtotime("+{$duration} day"));
 
         $affectRows = StudentModelForApp::updateRecord($studentID, [
             'trial_start_date' => $today,
@@ -346,6 +362,7 @@ class StudentServiceForApp
             'trial_end_date' => $endDate,
             'sub_start_date' => $today,
             'sub_end_date' => $endDate,
+            'type' => $type
         ];
 
         return [null, $result];
