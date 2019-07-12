@@ -270,13 +270,14 @@ class StudentService
      * @param $studentId
      * @param $num
      * @param $unit
+     * @return int
      */
     public static function reduceSubDuration($studentId, $num, $unit)
     {
         $student = StudentModel::getById($studentId);
 
         if (empty($student['sub_end_date'])) {
-            return ;
+            return 0;
         }
 
         $subEndDate = $student['sub_end_date'];
@@ -303,7 +304,7 @@ class StudentService
             'update_time'  => time(),
         ];
 
-        StudentModel::updateRecord($studentId, $studentUpdate);
+        return StudentModel::updateRecord($studentId, $studentUpdate, false);
     }
 
     /**

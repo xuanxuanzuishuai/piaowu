@@ -10,6 +10,7 @@ namespace App\Controllers\OrgWeb;
 
 use App\Controllers\ControllerBase;
 use App\Libs\DictConstants;
+use App\Libs\MysqlDB;
 use App\Libs\NewSMS;
 use App\Libs\SimpleLogger;
 use App\Libs\Valid;
@@ -146,11 +147,18 @@ class Erp extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
+
+        $db = MysqlDB::getDB();
+        $db->beginTransaction();
+
         $errorCode = ErpService::abandonGiftCode($params['bill_id'], $params['uuid']);
         if (!empty($errorCode)) {
+            $db->rollBack();
             $result = Valid::addErrors([],'bill_id',$errorCode);
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
+
+        $db->commit();
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS

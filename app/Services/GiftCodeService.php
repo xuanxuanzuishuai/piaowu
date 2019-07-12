@@ -169,14 +169,23 @@ class GiftCodeService
     /**
      * 作废激活码
      * @param int|array $ids
+     * @param bool $force 强制删除使用过的激活码
      * @return int 修改的数量
      */
-    public static function abandonCode($ids)
+    public static function abandonCode($ids, $force = false)
     {
+        $where = ['id' => $ids];
+        if (!$force) {
+            $where['code_status'] = GiftCodeModel::CODE_STATUS_NOT_REDEEMED;
+        } else {
+            $where['code_status'] = [GiftCodeModel::CODE_STATUS_NOT_REDEEMED, GiftCodeModel::CODE_STATUS_HAS_REDEEMED];
+        }
+
+
         if (!empty($ids)) {
             return GiftCodeModel::batchUpdateRecord(
                 ['code_status' => GiftCodeModel::CODE_STATUS_INVALID],
-                ['id' => $ids, 'code_status' => GiftCodeModel::CODE_STATUS_NOT_REDEEMED],
+                $where,
                 false);
         }
         return 0;
@@ -187,7 +196,7 @@ class GiftCodeService
      * 只能作废机构内部的激活码
      * @param $orgId
      * @param $codeId
-     * @return null|string
+     * @return null|string errorCode
      */
     public static function abandonCodeForOrg($orgId, $codeId)
     {
@@ -202,15 +211,14 @@ class GiftCodeService
 
         }
 
-        if ($code['code_status'] == GiftCodeModel::CODE_STATUS_NOT_REDEEMED) {
-            // 未激活的激活码直接禁用
-            GiftCodeService::abandonCode($code['id']);
-
-        } elseif ($code['code_status'] == GiftCodeModel::CODE_STATUS_HAS_REDEEMED) {
-
+        if ($code['code_status'] == GiftCodeModel::CODE_STATUS_HAS_REDEEMED) {
             // 已激活的扣除响应时间
-            StudentService::reduceSubDuration($code['apply_user'], $code['valid_num'], $code['valid_units']);
+            $cnt = StudentService::reduceSubDuration($code['apply_user'], $code['valid_num'], $code['valid_units']);
+            if (empty($cnt)) { return 'data_error'; }
         }
+
+        $cnt = GiftCodeService::abandonCode($code['id'], true);
+        if (empty($cnt)) { return 'data_error'; }
 
         return null;
     }

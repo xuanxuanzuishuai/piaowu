@@ -10,6 +10,7 @@ namespace App\Controllers\Boss;
 
 use App\Controllers\ControllerBase;
 use App\Libs\DictConstants;
+use App\Libs\MysqlDB;
 use App\Libs\NewSMS;
 use App\Libs\Valid;
 use App\Models\GiftCodeModel;
@@ -197,12 +198,19 @@ class GiftCode extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        global $orgId;
+        $orgId = $this->ci['employee']['org_id'];
+
+        $db = MysqlDB::getDB();
+        $db->beginTransaction();
+
         $errorCode = GiftCodeService::abandonCodeForOrg($orgId, $params['id']);
         if (!empty($errorCode)) {
+            $db->rollBack();
             $result = Valid::addErrors([],'id',$errorCode);
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
+
+        $db->commit();
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,

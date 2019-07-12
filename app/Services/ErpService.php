@@ -109,18 +109,16 @@ class ErpService
 
         if ($code['code_status'] == GiftCodeModel::CODE_STATUS_INVALID) {
             return 'code_status_invalid';
-
         }
 
-        if ($code['code_status'] == GiftCodeModel::CODE_STATUS_NOT_REDEEMED) {
-            // 未激活的激活码直接禁用
-            GiftCodeService::abandonCode($code['id']);
-
-        } elseif ($code['code_status'] == GiftCodeModel::CODE_STATUS_HAS_REDEEMED) {
-
+        if ($code['code_status'] == GiftCodeModel::CODE_STATUS_HAS_REDEEMED) {
             // 已激活的扣除响应时间
-            StudentService::reduceSubDuration($code['apply_user'], $code['valid_num'], $code['valid_units']);
+            $cnt = StudentService::reduceSubDuration($code['apply_user'], $code['valid_num'], $code['valid_units']);
+            if (empty($cnt)) { return 'data_error'; }
         }
+
+        $cnt = GiftCodeService::abandonCode($code['id'], true);
+        if (empty($cnt)) { return 'data_error'; }
 
         return null;
     }
