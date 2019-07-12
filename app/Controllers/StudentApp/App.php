@@ -11,6 +11,7 @@ namespace App\Controllers\StudentApp;
 
 use App\Controllers\ControllerBase;
 use App\Libs\DictConstants;
+use App\Libs\PandaCRM;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\AppVersionModel;
@@ -163,6 +164,21 @@ class App extends ControllerBase
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => []
+        ], StatusCode::HTTP_OK);
+    }
+
+    public function leadsCheck(Request $request, Response $response)
+    {
+        Util::unusedParam($request);
+
+        $crm = new PandaCRM();
+        $isLeads = $crm->leadsCheck($this->ci['student']['mobile']);
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => [
+                'is_leads' => $isLeads ? 1 : 0
+            ]
         ], StatusCode::HTTP_OK);
     }
 }
