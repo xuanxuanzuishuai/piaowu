@@ -238,7 +238,7 @@ class HomeworkService
      */
     public static function getStudentLessonPractice($studentId, $lessonId, $startTime, $endTime){
         $plays = PlayRecordModel::getPlayRecordList(null, null, $lessonId,
-            $startTime, $endTime, false, $studentId, null, null, false, true);
+            $startTime, $endTime, false, null, null, $studentId, false, true);
         return $plays;
     }
 
