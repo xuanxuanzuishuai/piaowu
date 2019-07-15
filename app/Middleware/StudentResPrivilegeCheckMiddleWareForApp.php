@@ -23,7 +23,7 @@ class StudentResPrivilegeCheckMiddleWareForApp extends MiddlewareBase
         /** @var Response $response */
         $response = $next($request, $response);
 
-        if (empty($this->container['need_res_privilege'])) {
+        if (empty($this->container['need_res_privilege']) || $this->container['is_review_version']) {
             return $response;
         }
 
