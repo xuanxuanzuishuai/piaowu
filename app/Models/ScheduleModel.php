@@ -446,4 +446,32 @@ ORDER BY s.start_time, s.id", []);
 
         return !empty($records) ? $records : [];
     }
+
+    /**
+     * 获取学生课程金额，状态预约成功，且没有扣费
+     * @param $studentIds
+     * @return array|null
+     */
+    public static function getTakeUpStudentBalances($studentIds)
+    {
+        $db = MysqlDB::getDB();
+
+        $records = $db->queryAll("
+SELECT
+    su.user_id, sum(su.price) price
+FROM
+    schedule s
+        INNER JOIN
+    schedule_user su ON su.schedule_id = s.id
+        AND su.user_role = " . ScheduleUserModel::USER_ROLE_STUDENT . "
+        AND su.user_status != " . ScheduleUserModel::STUDENT_STATUS_LEAVE . "
+        AND su.status = " . ScheduleUserModel::STATUS_NORMAL . "
+        AND su.is_deduct != " . ScheduleUserModel::DEDUCT_STATUS . "
+WHERE
+    s.status = " . ScheduleModel::STATUS_BOOK . "
+        AND su.user_id IN (" . implode(',', $studentIds) .  ")
+GROUP BY su.user_id", []);
+
+        return !empty($records) ? $records : [];
+    }
 }

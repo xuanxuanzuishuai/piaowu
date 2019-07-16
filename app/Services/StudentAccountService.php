@@ -13,6 +13,8 @@ use App\Libs\Constants;
 use App\Libs\Valid;
 use App\Models\StudentAccountLogModel;
 use App\Models\StudentAccountModel;
+use App\Models\StudentModel;
+use I18N\Lang;
 
 class StudentAccountService
 {
@@ -239,40 +241,63 @@ class StudentAccountService
     public static function checkBalance($students, $cts)
     {
         $studentIds = array_keys($students);
-        global $orgId;
 
-        // 学生购买的账户总金额
-        $accounts = StudentAccountLogModel::getAddSALog($studentIds, $orgId);
+        // 学生购买的账户余额
+        $accounts = StudentAccountModel::getSADetailBySId($studentIds);
         $balances = [];
         foreach ($accounts as $account) {
-            if ($account['type'] == StudentAccountLogModel::TYPE_ADD) {
-                $balances[$account['student_id']] += $account['balance'];
-            } elseif ($account['type'] == StudentAccountLogModel::TYPE_DISCARD) {
-                $balances[$account['student_id']] -= $account['balance'];
-            }
+            $balances[$account['student_id']] += $account['balance'];
         }
 
         $prices = [];
-        $studentPrices = ClassTaskService::getTakeUpBalances($studentIds);
-        foreach ($studentPrices as $studentPrice) {
-            $prices[$studentPrice['user_id']] += $studentPrice['price'] * $studentPrice['period'];
+        // 未开课的班级总金额
+        $classPrices = ClassTaskService::getUnBeginBalances($studentIds);
+        foreach ($classPrices as $cPrice) {
+            $prices[$cPrice['user_id']] += $cPrice['price'] * $cPrice['period'];
+        }
+        // 预约成功、未扣费的课次金额
+        $schedulePrices = ScheduleService::getTakeUpScheduleBalances($studentIds);
+        foreach ($schedulePrices as $sPrice) {
+            $prices[$sPrice['user_id']] += $sPrice['price'];
         }
 
+        $studentNames = [];
         foreach ($students as $key => $price) {
-            if (empty($balances[$key])) {
-                return Valid::addErrors([], 'students', 'student_account_is_not_enough');
-            }
-
             $needPrices = 0;
             foreach ($price as $key1 => $value) {
                 $needPrices += $value * 100 * $cts[$key1]['period'];
             }
 
+            // 当课程价格为0时，不做检查
+            if ($needPrices == 0) {
+                continue;
+            }
+
+            $student = StudentModel::getById($key);
+            if (empty($balances[$key])) {
+                $studentNames[] = $student['name'];
+                continue;
+            }
+
             $prices[$key] = $prices[$key] ?? 0;
             if ($balances[$key] - $prices[$key] < $needPrices) {
-                return Valid::addErrors([], 'students', 'student_account_is_not_enough');
+                $studentNames[] = $student['name'];
+                continue;
             }
         }
+
+        if (!empty($studentNames)) {
+            return [
+                'code' => Valid::CODE_SUCCESS,
+                'data' => [
+                    'errors' => [
+                        'err_no' => 'students',
+                        'err_msg' => sprintf(implode(',', $studentNames) . " " . Lang::getWord('student_account_is_not_enough'))
+                    ]
+                ]
+            ];
+        }
+
         return true;
     }
 }

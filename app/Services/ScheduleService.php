@@ -381,13 +381,13 @@ class ScheduleService
     {
         $classroom = ClassroomService::getById($params['classroom_id']);
         $class['lesson_num'] = 1;
-        $class['name'] = '临时班课';
+        $class['name'] = $params['class_name'];
         $class['campus_id'] = $classroom['campus_id'];
         $class['org_id'] = $classroom['org_id'];
         $class['class_lowest'] = 1;
         $class['class_highest'] = $params['class_highest'];
         $class['create_time'] = $time;
-        $class['status'] = STClassModel::STATUS_NORMAL;
+        $class['status'] = STClassModel::STATUS_BEGIN;
         $class['student_num'] = count($params['students']);
 
         // 创建class, class_task, class_user
@@ -565,5 +565,15 @@ class ScheduleService
             $i ++;
         }
         return $data;
+    }
+
+    /**
+     * 获取学生课程金额，状态预约成功，且没有扣费
+     * @param $studentIds
+     * @return array
+     */
+    public static function getTakeUpScheduleBalances($studentIds)
+    {
+        return ScheduleModel::getTakeUpStudentBalances($studentIds);
     }
 }

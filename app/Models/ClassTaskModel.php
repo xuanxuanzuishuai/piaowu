@@ -311,18 +311,18 @@ class ClassTaskModel extends Model
 
 
     /**
-     * 获取学生占课总金额
+     * 获取学生未开课总金额
      * @param $studentIds
      * @return array
      */
-    public static function getTakeUpBalances($studentIds)
+    public static function getUnBeginBalances($studentIds)
     {
         $where = [
             'cu.user_id' => $studentIds,
             'cu.user_role' => ClassUserModel::USER_ROLE_S,
             'cu.status' => array(ClassUserModel::STATUS_NORMAL, ClassUserModel::STATUS_BACKUP),
             'ct.status' => ClassTaskModel::STATUS_NORMAL,
-            'stc.status' => [STClassModel::STATUS_NORMAL, STClassModel::STATUS_BEGIN, STClassModel::STATUS_END],
+            'stc.status' => STClassModel::STATUS_NORMAL,
             'ctp.status' => ClassUserModel::STATUS_NORMAL
         ];
         if (!empty($orgClassId)) {

@@ -175,13 +175,13 @@ class ClassTaskService
     }
 
     /**
-     * 获取学生占课总金额
+     * 获取学生未开课总金额
      * @param $studentIds
      * @return array
      */
-    public static function getTakeUpBalances($studentIds)
+    public static function getUnBeginBalances($studentIds)
     {
-        return ClassTaskModel::getTakeUpBalances($studentIds);
+        return ClassTaskModel::getUnBeginBalances($studentIds);
     }
 
     /**
