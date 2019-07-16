@@ -308,6 +308,14 @@ class ScheduleModel extends Model
         return [$records, $total[0]['count']];
     }
 
+    /**
+     * 学员上课记录，班级课次
+     * @param $orgId
+     * @param $page
+     * @param $count
+     * @param $params
+     * @return array
+     */
     public static function attendRecord($orgId, $page, $count, $params)
     {
         $s   = ScheduleModel::$table;
@@ -349,6 +357,15 @@ class ScheduleModel extends Model
         if(!empty($params['cc_id'])) {
             $where .= ' and so.cc_id = :cc_id';
             $map[':cc_id'] = $params['cc_id'];
+        }
+
+        if(!empty($params['student_name'])) {
+            $where .= ' and stu.name like :student_name ';
+            $map[':student_name'] = "%{$params['student_name']}%";
+        }
+        if(!empty($params['student_mobile'])) {
+            $where .= ' and stu.mobile like :student_mobile ';
+            $map[':student_mobile'] = $params['student_mobile'];
         }
 
         $limit = Util::limitation($page, $count);

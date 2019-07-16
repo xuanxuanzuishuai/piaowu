@@ -357,6 +357,14 @@ class ScheduleService
         return [$records, $total];
     }
 
+    /**
+     * 学员上课记录，班级课次
+     * @param $orgId]
+     * @param $page
+     * @param $count
+     * @param $params
+     * @return array
+     */
     public static function attendRecord($orgId, $page, $count, $params)
     {
         list($records, $total) = ScheduleModel::attendRecord($orgId, $page, $count, $params);

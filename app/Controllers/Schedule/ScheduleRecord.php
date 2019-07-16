@@ -160,9 +160,6 @@ class ScheduleRecord extends ControllerBase
 
         global $orgId;
 
-        $courseId = DictConstants::get(DictConstants::APP_CONFIG_TEACHER, 'course_id');
-        $params['course_id'] = $courseId;
-
         list($records, $total) = ScheduleService::attendRecord($orgId, $params['page'], $params['count'], $params);
 
         return $response->withJson([

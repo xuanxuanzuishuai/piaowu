@@ -288,7 +288,7 @@ class StudentAccountService
 
         if (!empty($studentNames)) {
             return [
-                'code' => Valid::CODE_SUCCESS,
+                'code' => Valid::CODE_PARAMS_ERROR,
                 'data' => [
                     'errors' => [
                         'err_no' => 'students',
