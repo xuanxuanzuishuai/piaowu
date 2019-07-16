@@ -287,14 +287,13 @@ class StudentAccountService
         }
 
         if (!empty($studentNames)) {
+            $errors[] = [
+                'err_no' => 'student_account_is_not_enough',
+                'err_msg' => sprintf(implode(',', $studentNames) . " " . Lang::getWord('student_account_is_not_enough'))
+            ];
             return [
                 'code' => Valid::CODE_PARAMS_ERROR,
-                'data' => [
-                    'errors' => [
-                        'err_no' => 'students',
-                        'err_msg' => sprintf(implode(',', $studentNames) . " " . Lang::getWord('student_account_is_not_enough'))
-                    ]
-                ]
+                'data' => ['errors' => ['students' => $errors]]
             ];
         }
 
