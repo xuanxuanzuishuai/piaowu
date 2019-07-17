@@ -204,22 +204,33 @@ class ScheduleUserModel extends Model
     }
 
     /**
-     * 获取学生或老师的user_id
+     * 获取课次老师的user_id
      * @param $scheduleId
-     * @param $role
      * @return array
      */
-    public static function getUserIds($scheduleId, $role)
+    public static function getTUserIds($scheduleId)
     {
         $where = [
             'schedule_id' =>  $scheduleId,
             'status' => self::STATUS_NORMAL,
-            'user_role' => $role
+            'user_role' => [ScheduleUserModel::USER_ROLE_TEACHER, ScheduleUserModel::USER_ROLE_CLASS_TEACHER]
         ];
-        if ($role == self::USER_ROLE_STUDENT) {
-            $where['is_deduct[!]'] = self::DEDUCT_STATUS;
-        }
         return ScheduleUserModel::getRecords($where, 'user_id', false);
+    }
+
+    /**
+     * 获取课次学生的user_id
+     * @param $scheduleId
+     * @return array
+     */
+    public static function getSUserIds($scheduleId)
+    {
+        $where = [
+            'schedule_id' =>  $scheduleId,
+            'status' => self::STATUS_NORMAL,
+            'user_role' => ScheduleUserModel::USER_ROLE_STUDENT
+        ];
+        return ScheduleUserModel::getRecords($where, ['user_id', 'is_deduct'], false);
     }
 
     /**

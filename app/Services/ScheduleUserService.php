@@ -107,6 +107,10 @@ class ScheduleUserService
      */
     public static function addScheduleUser($students, $teachers, $scheduleId, $time)
     {
+        if (empty($students) && empty($teachers)) {
+            return true;
+        }
+
         $users = [];
         foreach($students as $key => $value) {
             $users[] = [

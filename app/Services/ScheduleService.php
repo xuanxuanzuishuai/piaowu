@@ -211,23 +211,41 @@ class ScheduleService
             return Valid::addErrors([], 'class_failure', 'class_add_failure');
         }
 
-        $studentRole = ScheduleUserModel::USER_ROLE_STUDENT;
-        $teacherRole = [ScheduleUserModel::USER_ROLE_TEACHER, ScheduleUserModel::USER_ROLE_CLASS_TEACHER];
-        $studentIds = ScheduleUserModel::getUserIds($newSchedule['id'], $studentRole);
-        $teacherIds = ScheduleUserModel::getUserIds($newSchedule['id'], $teacherRole);
+        // 未修改之前的学生和老师
+        $students = ScheduleUserModel::getSUserIds($newSchedule['id']);
+        $teacherIds = ScheduleUserModel::getTUserIds($newSchedule['id']);
 
-        // 学员已付费，不能解绑
-        // unbind schedule_user
-        ScheduleUserService::unBindUser($newSchedule['id'], array_diff($studentIds, array_keys($params['students'])), $studentRole, $time);
-        ScheduleUserService::unBindUser($newSchedule['id'], array_diff($teacherIds, array_keys($params['teachers'])), $teacherRole, $time);
-
-        foreach ($params['students'] as $key => $value) {
-            if (in_array($key, $studentIds)) {
-                // update schedule_user price
-                ScheduleUserService::updateSchedulePrice($newSchedule['id'], $key, $value[0] * 100, $time);
-                unset($params['students'][$key]);
+        $unDeductSIds = [];
+        $unBindSIds = [];
+        $newSIds = array_keys($params['students']);
+        foreach ($students as $s) {
+            if ($s['is_deduct'] != ScheduleUserModel::DEDUCT_STATUS) {
+                // 未扣费学生
+                $unDeductSIds[] = $s['user_id'];
+            }
+            if (!in_array($s['user_id'], $newSIds)) {
+                $unBindSIds[] = $s['user_id'];
             }
         }
+
+        // unbind schedule_user student
+        ScheduleUserService::unBindUser($newSchedule['id'], $unBindSIds, ScheduleUserModel::USER_ROLE_STUDENT, $time);
+        // unbind schedule_user teacher
+        ScheduleUserService::unBindUser($newSchedule['id'], array_diff($teacherIds, array_keys($params['teachers'])),
+            [ScheduleUserModel::USER_ROLE_TEACHER, ScheduleUserModel::USER_ROLE_CLASS_TEACHER], $time);
+
+        // 已有用户不再重复添加
+        $studentIds = array_column($students, 'user_id');
+        foreach ($params['students'] as $key => $value) {
+            if (in_array($key, $studentIds)) {
+                unset($params['students'][$key]);
+                if (in_array($key, $unDeductSIds)) {
+                    // 未扣费学生 update schedule_user price
+                    ScheduleUserService::updateSchedulePrice($newSchedule['id'], $key, $value[0] * 100, $time);
+                }
+            }
+        }
+
         foreach ($params['teachers'] as $key => $value) {
             if (in_array($key, $teacherIds)) {
                 unset($params['teachers'][$key]);
