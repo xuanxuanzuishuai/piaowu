@@ -375,6 +375,7 @@ class ScheduleModel extends Model
         $records = $db->queryAll("select s.*,
                stu.name student_name,
                stu.id   student_id,
+               stu.mobile student_mobile,
                t.name   teacher_name,
                t.id     teacher_id,
                c.name   course_name,
