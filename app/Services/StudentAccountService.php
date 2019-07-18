@@ -80,14 +80,21 @@ class StudentAccountService
      */
     public static function reduceSA($studentId, $amount, $operatorId, $scheduleId = 0)
     {
+        $sas = StudentAccountModel::getSADetailBySId($studentId);
+        $student = StudentModel::getById($studentId);
+        $accountError = self::studentAccountErrors([$student['name']], 'student_account_is_not_enough');
+        if (empty($sas)) {
+            // 扣减数量为0元时，直接返回扣减成功
+            if ($amount == 0) {
+                return true;
+            }
+            return $accountError;
+        }
+
         $log = [];
         $cash = null;
         $vcash = null;
         $now = time();
-        $sas = StudentAccountModel::getSADetailBySId($studentId);
-        if (empty($sas)) {
-            return Valid::addErrors([], 'student', 'student_account_not_enough');
-        }
         //先消耗现金 后消耗虚拟币
         foreach ($sas as $sa) {
             if ($sa['type'] == StudentAccountModel::TYPE_CASH) {
@@ -126,7 +133,7 @@ class StudentAccountService
             }
 
         } else {
-            return Valid::addErrors([], 'student', 'student_account_not_enough');
+            return $accountError;
         }
         if (!empty($log)) {
             StudentAccountLogModel::batchInsert($log, false);
@@ -287,16 +294,27 @@ class StudentAccountService
         }
 
         if (!empty($studentNames)) {
-            $errors[] = [
-                'err_no' => 'student_account_is_not_enough',
-                'err_msg' => sprintf(implode(',', $studentNames) . " " . Lang::getWord('student_account_is_not_enough'))
-            ];
-            return [
-                'code' => Valid::CODE_PARAMS_ERROR,
-                'data' => ['errors' => ['students' => $errors]]
-            ];
+            return self::studentAccountErrors($studentNames, 'student_account_is_not_enough');
         }
 
         return true;
+    }
+
+    /**
+     * 学生账户错误
+     * @param $studentNames
+     * @param $errorCode
+     * @return array
+     */
+    public static function studentAccountErrors($studentNames, $errorCode)
+    {
+        $errors[] = [
+            'err_no' => $errorCode,
+            'err_msg' => sprintf(implode(',', $studentNames) . " " . Lang::getWord($errorCode))
+        ];
+        return [
+            'code' => Valid::CODE_PARAMS_ERROR,
+            'data' => ['errors' => ['students' => $errors]]
+        ];
     }
 }
