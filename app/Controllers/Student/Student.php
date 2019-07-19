@@ -344,6 +344,14 @@ class Student extends ControllerBase
         }
 
         $studentId = $res['student_id'];
+
+        // 学生和机构已经绑定，并且已有CC
+        $studentOrg = StudentOrgModel::getRecord(['org_id' => $orgId, 'student_id' => $studentId, 'status' => StudentOrgModel::STATUS_NORMAL]);
+        if (!empty($studentOrg['cc_id'])) {
+            $db->commit();
+            return $response->withJson(['code' => Valid::CODE_SUCCESS, 'data' => ['last_id' => $studentId]]);
+        }
+
         // 绑定机构
         $errOrLastId = StudentService::bindOrg($orgId, $studentId);
 
