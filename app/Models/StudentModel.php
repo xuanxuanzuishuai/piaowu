@@ -35,6 +35,7 @@ class StudentModel extends Model
     const CHANNEL_APP_REGISTER = 3; //爱学琴APP注册
     const CHANNEL_ERP_EXCHANGE = 4; //ERP兑换激活码
     const CHANNEL_ERP_ORDER = 5; //ERP购买订单
+    const CHANNEL_ERP_TRANSFER = 6; //ERP转单
 
     /**
      * 更新学生信息

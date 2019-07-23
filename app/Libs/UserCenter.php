@@ -27,6 +27,7 @@ class UserCenter
 
     const API_TOKEN_VERIFY = '/rapi/v1/auth/tokencheck';
     const API_AUTHORIZATION = '/rapi/v1/authorization';
+    const API_AUTHORIZATION_BY_UUID = '/rapi/v1/authorization/%s';
     const API_BATCH_AUTHORIZATION = '/rapi/v1/batch_authorization';
     const API_AUTH_UNAUTH = '/rapi/v1/authorization/';
     const API_UPDATEUSER = '/rapi/v1/user/';
@@ -146,6 +147,37 @@ class UserCenter
             return Valid::addErrors([], 'uc_conflict_user', 'uc_conflict_user');
         }
         return $result['data'];
+    }
+
+    /**
+     * 用uuid授权已注册用户
+     * @param $authAppID
+     * @param $uuid
+     * @param bool $auth
+     * @return array
+     */
+    function studentAuthorizationByUuid($authAppID, $uuid, $auth = true)
+    {
+        if (empty($authAppID)) {
+            $authAppID = self::AUTH_APP_ID_AIPEILIAN_TEACHER;
+        }
+
+        $api = sprintf(self::API_AUTHORIZATION_BY_UUID, $uuid);
+        $result = $this->commonAPI($api, [
+            'headers' => [
+                'Content-Type' => 'application/json'
+            ],
+            'json' => [
+                'auth' => $auth,
+                'auth_app_id' => intval($authAppID),
+            ]
+        ]);
+
+        if (!$result){
+            return Valid::addErrors([], 'uc_update_error', 'uc_update_failed');
+        }
+        return $result['data'];
+
     }
 
     /**

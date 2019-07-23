@@ -263,4 +263,43 @@ class Erp extends ControllerBase
             ]
         ], StatusCode::HTTP_OK);
     }
+
+    public function giftCodeTransfer(Request $request, Response $response)
+    {
+        // 验证请求参数
+        $rules = [
+            [
+                'key' => 'src_uuid',
+                'type' => 'required',
+                'error_code' => 'uuid_is_required'
+            ],
+            [
+                'key' => 'dst_uuid',
+                'type' => 'required',
+                'error_code' => 'uuid_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $db = MysqlDB::getDB();
+        $db->beginTransaction();
+
+        $errorCode = ErpService::giftCodeTransfer($params['src_uuid'], $params['dst_uuid']);
+
+        if (!empty($errorCode)) {
+            $db->rollBack();
+            $result = Valid::addErrors([],'bill_id',$errorCode);
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $db->commit();
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS
+        ], StatusCode::HTTP_OK);
+    }
 }

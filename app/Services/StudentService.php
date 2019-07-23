@@ -15,7 +15,9 @@ use App\Libs\Dict;
 use App\Libs\DictConstants;
 use App\Libs\ResponseError;
 use App\Libs\UserCenter;
+use App\Libs\Util;
 use App\Libs\Valid;
+use App\Models\EmployeeModel;
 use App\Models\GiftCodeModel;
 use App\Models\StudentModel;
 use App\Models\StudentOrgModel;
@@ -92,6 +94,55 @@ class StudentService
         }
 
         $studentId = $res['data']['studentId'];
+
+        return [
+            'code'       => 0,
+            'student_id' => $studentId,
+        ];
+    }
+
+    /**
+     * 用现有uuid注册
+     * @param $uuid
+     * @param $channelId
+     * @param int $operatorId
+     * @return array
+     */
+    public static function studentRegisterByUuid($uuid, $channelId, $operatorId = EmployeeModel::SYSTEM_EMPLOYEE_ID)
+    {
+        $student = StudentModel::getRecord([
+            'uuid' => $uuid,
+        ],[],false);
+
+        if(!empty($student)) {
+            return [
+                'code'       => 0,
+                'student_id' => $student['id'],
+            ];
+        }
+
+        list($appId, $appSecret) = DictConstants::get(DictConstants::USER_CENTER, ['app_id_dss', 'app_secret_dss']);
+        $userCenter = new UserCenter($appId, $appSecret);
+
+        $authResult = $userCenter->studentAuthorizationByUuid(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT, $uuid, true);
+
+        if (empty($authResult["uuid"])) {
+            return Valid::addErrors([], "user_center", "uc_user_add_failed");
+        }
+
+        $name = $authResult['name'] ?? Util::defaultStudentName($authResult['mobile']);
+        $params['create_time'] = time();
+        $studentId = StudentModel::saveStudent([
+            'name' => $name,
+            'mobile' => $authResult['mobile'],
+            'gender' => $authResult['gender'],
+            'birthday' => $authResult['birthday'],
+            'channel_id' => $channelId,
+        ], $authResult["uuid"], $operatorId);
+
+        if(empty($studentId)) {
+            return Valid::addErrors([], 'student', 'save_student_fail');
+        }
 
         return [
             'code'       => 0,

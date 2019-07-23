@@ -122,4 +122,61 @@ class ErpService
 
         return null;
     }
+
+    /**
+     * 将一个用户名下的服务时长和激活码信息转移到另一个用户
+     * @param $srcUuid
+     * @param $dstUuid
+     * @return null|string
+     */
+    public static function giftCodeTransfer($srcUuid, $dstUuid)
+    {
+        $srcStudent = StudentService::getByUuid($srcUuid);
+        if (empty($srcStudent)) {
+            return 'buyer_invalid';
+        }
+
+        $dstStudent = StudentService::getByUuid($dstUuid);
+        if (empty($dstStudent)) {
+            $ret = StudentService::studentRegisterByUuid($dstUuid,
+                StudentModel::CHANNEL_ERP_ORDER,
+                EmployeeModel::SYSTEM_EMPLOYEE_ID);
+
+            if ($ret['code'] == Valid::CODE_PARAMS_ERROR) {
+                $errorCode = array_values($ret['errors'])[0]['err_no'];
+                return $errorCode;
+            } else {
+                $dstStudent = StudentModel::getById($ret['student_id']);
+            }
+        }
+
+        if (empty($dstStudent)) {
+            return 'user_register_fail';
+        }
+
+        $now = time();
+
+        $dstStudentUpdate = [
+            'sub_start_date' => $srcStudent['sub_start_date'],
+            'sub_end_date' => $srcStudent['sub_end_date'],
+            'trial_start_date' => $srcStudent['trial_start_date'],
+            'trial_end_date' => $srcStudent['trial_end_date'],
+            'update_time'  => $now,
+        ];
+        $cnt = StudentModel::updateRecord($dstStudent['id'], $dstStudentUpdate, false);
+        if (empty($cnt)) { return 'data_error'; }
+
+        $srcStudentUpdate = [
+            'sub_start_date' => 0,
+            'sub_end_date' => 0,
+            'update_time'  => $now,
+        ];
+        $cnt = StudentModel::updateRecord($srcStudent['id'], $srcStudentUpdate, false);
+        if (empty($cnt)) { return 'data_error'; }
+
+        GiftCodeModel::batchUpdateRecord(['apply_user' => $dstStudent['id']], ['apply_user' => $srcStudent['id']], false);
+        GiftCodeModel::batchUpdateRecord(['buyer' => $dstStudent['id']], ['buyer' => $srcStudent['id']], false);
+
+        return null;
+    }
 }
