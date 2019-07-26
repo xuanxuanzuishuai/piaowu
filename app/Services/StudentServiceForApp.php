@@ -10,7 +10,6 @@ namespace App\Services;
 
 
 use App\Libs\DictConstants;
-use App\Libs\PandaCRM;
 use App\Libs\ResponseError;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
@@ -334,16 +333,8 @@ class StudentServiceForApp
             return ['cant_trial'];
         }
 
-        $crm = new PandaCRM();
-        $isLeads = $crm->leadsCheck($student['mobile']);
-        if ($isLeads) {
-            $type = self::TRIAL_TYPE_LEADS;
-            $duration = self::TRIAL_DAYS_LEADS;
-        } else {
-            $type = self::TRIAL_TYPE_NORMAL;
-            $duration = self::TRIAL_DAYS_NORMAL;
-        }
-
+        $type = self::TRIAL_TYPE_NORMAL;
+        $duration = self::TRIAL_DAYS_NORMAL;
         $endDate = date('Ymd', strtotime("+{$duration} day"));
 
         $affectRows = StudentModelForApp::updateRecord($studentID, [
