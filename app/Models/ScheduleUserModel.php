@@ -140,19 +140,39 @@ class ScheduleUserModel extends Model
      */
     public static function cancelScheduleUsers($userIds, $class_id, $beginTime)
     {
+        // 已开课的班级
+        // schedule已预约，并且schedule_user未付费才能解绑，否则不能解绑
         $where = [];
+        // 学生
         if (!empty($userIds[ClassUserModel::USER_ROLE_S])) {
-            $where[] = "(su.user_role = " . ClassUserModel::USER_ROLE_S . " and su.user_id in (" . implode(',', $userIds[ClassUserModel::USER_ROLE_S]) . "))";
+            $sIds = implode(',', $userIds[ClassUserModel::USER_ROLE_S]);
+            $where[] = "(su.user_role = " . ClassUserModel::USER_ROLE_S . " and su.user_id in (" . $sIds . ") and su.is_deduct != " . ScheduleUserModel::DEDUCT_STATUS . ")";
         }
+
+        // 老师
         if (!empty($userIds[ClassUserModel::USER_ROLE_T])) {
-            $where[] = "(su.user_role in (" . ClassUserModel::USER_ROLE_T . ", " . ClassUserModel::USER_ROLE_HT . ") and su.user_id in (" . implode(',', $userIds[ClassUserModel::USER_ROLE_T]) . "))";
+            $tIds = implode(',', $userIds[ClassUserModel::USER_ROLE_T]);
+            $sql1 = "su.user_role in (" . ClassUserModel::USER_ROLE_T . ", " . ClassUserModel::USER_ROLE_HT . ") and su.user_id in (" . $tIds . ")";
+
+            $deductSIds = ScheduleModel::getDeductBookedSchedule($class_id);
+
+            if (!empty($deductSIds)) {
+                $sql1 .= " and s.id not in (" . implode(',', $deductSIds) . ")" ;
+            }
+            $where[] = "($sql1)";
         }
-        $sql = "update " . self::$table . " as su inner join " . ScheduleModel::$table . " as s on s.id = su.schedule_id
-          set su.status = " . self::STATUS_CANCEL . " where s.start_time >= $beginTime
-          and s.class_id = $class_id and su.status = " . self::STATUS_NORMAL;
+
+        $sql = "update " . self::$table . " as su
+         inner join " . ScheduleModel::$table . " as s on s.id = su.schedule_id
+         set su.status = " . self::STATUS_CANCEL . "
+         where s.start_time >= $beginTime
+           and s.class_id = $class_id
+           and s.status = " . ScheduleModel::STATUS_BOOK . "
+           and su.status = " . self::STATUS_NORMAL;
         if (!empty($where)) {
             $sql .= " and (" . implode(" or ", $where) . ")";
         }
+
         $statement = MysqlDB::getDB()->query($sql);
         if ($statement && $statement->errorCode() == MysqlDB::ERROR_CODE_NO_ERROR) {
             return $statement->rowCount();

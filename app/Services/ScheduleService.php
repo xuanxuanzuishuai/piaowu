@@ -261,11 +261,22 @@ class ScheduleService
     }
 
     /**
+     * 取消课次计划
      * @param $stId
      * @return bool
      */
-    public static function cancelScheduleByClassId($stId) {
-        return ScheduleModel::modifyScheduleByClassId(['status'=>ScheduleModel::STATUS_CANCEL,'update_time'=>time()],['class_id'=>$stId,'status'=>ScheduleModel::STATUS_BOOK]);
+    public static function cancelScheduleByClassId($stId)
+    {
+        $deductSIds = ScheduleModel::getDeductBookedSchedule($stId);
+
+        return ScheduleModel::modifyScheduleByClassId([
+            'status' => ScheduleModel::STATUS_CANCEL,
+            'update_time' => time()
+        ], [
+            '.id[!]' => $deductSIds,
+            'class_id' => $stId,
+            'status' => ScheduleModel::STATUS_BOOK
+        ]);
     }
 
     /**

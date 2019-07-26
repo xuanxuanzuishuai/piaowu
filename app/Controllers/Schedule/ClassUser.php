@@ -228,12 +228,15 @@ class ClassUser extends ControllerBase
         $db = MysqlDB::getDB();
         $db->beginTransaction();
         if (!empty($users)) {
+            // 课程计划、解绑学生或老师
             ScheduleUserService::cancelScheduleUsers($users, $class['id'], $beginDate);
         }
         if (!empty($cuIds)) {
+            // 班课解绑用户
             ClassUserService::unBindUser($cuIds, $class['id']);
         }
         if (!empty($users[ClassUserModel::USER_ROLE_S])) {
+            // 班课学生价格表解绑关联关系
             ClassUserService::updateStudentPrice($class['id'], $users[ClassUserModel::USER_ROLE_S]);
         }
         STClassService::modifyClass(['id' => $class['id'], 'student_num[-]' => count($users[ClassUserModel::USER_ROLE_S])]);

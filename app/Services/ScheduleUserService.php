@@ -44,13 +44,15 @@ class ScheduleUserService
     }
 
     /**
+     * 解绑课次用户
      * @param $users
      * @param $st_id
      * @param $beginDate
      * @return int|null
      */
-    public static function cancelScheduleUsers($users,$st_id,$beginDate) {
-        return ScheduleUserModel::cancelScheduleUsers($users,$st_id,$beginDate);
+    public static function cancelScheduleUsers($users, $st_id, $beginDate)
+    {
+        return ScheduleUserModel::cancelScheduleUsers($users, $st_id, $beginDate);
     }
 
     /**

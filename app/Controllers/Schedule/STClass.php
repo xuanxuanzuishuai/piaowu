@@ -385,6 +385,7 @@ class STClass extends ControllerBase
             return $response->withJson(Valid::addErrors([], 'class', 'class_is_not_exist'), StatusCode::HTTP_OK);
         }
 
+        $errorRes = $response->withJson(Valid::addErrors([], 'class', 'update_class_status_fail'), StatusCode::HTTP_OK);
         if ($class['status'] == STClassModel::STATUS_BEGIN) {
             // 开课后取消课程计划
             if (!empty($class['students'])) {
@@ -396,13 +397,17 @@ class STClass extends ControllerBase
 
             $db = MysqlDB::getDB();
             $db->beginTransaction();
+            //  取消课次计划
             $res = ScheduleService::cancelScheduleByClassId($class['id']);
             if ($res == false) {
                 $db->rollBack();
+                return $errorRes;
             }
+            // 修改班课为已取消
             $res = STClassService::modifyClass(['id' => $class['id'], 'status' => STClassModel::STATUS_CANCEL_AFTER_BEGIN, 'update_time' => time()]);
             if ($res == false) {
                 $db->rollBack();
+                return $errorRes;
             }
             $db->commit();
         } elseif ($class['status'] == STClassModel::STATUS_NORMAL) {
@@ -412,6 +417,7 @@ class STClass extends ControllerBase
             $res = STCLassService::modifyClass(['id' => $class['id'], 'status' => STClassModel::STATUS_CANCEL, 'update_time' => time()]);
             if ($res == false) {
                 $db->rollBack();
+                return $errorRes;
             }
             $db->commit();
         } else {

@@ -492,4 +492,25 @@ GROUP BY su.user_id", []);
 
         return !empty($records) ? $records : [];
     }
+
+    /**
+     * 已预约的课程，查询学员已扣费的schedule_id
+     * @param $classId
+     * @return array
+     */
+    public static function getDeductBookedSchedule($classId)
+    {
+        return MysqlDB::getDB()->select(self::$table, [
+            '[><]' . ScheduleUserModel::$table => ['id' => 'schedule_id']
+        ],
+            self::$table . '.id'
+        , [
+            self::$table . '.status' => self::STATUS_BOOK,
+            self::$table . '.class_id' => $classId,
+            ScheduleUserModel::$table . '.user_role' => ScheduleUserModel::USER_ROLE_STUDENT,
+            ScheduleUserModel::$table . '.status' => ScheduleUserModel::STATUS_NORMAL,
+            ScheduleUserModel::$table . '.is_deduct' => ScheduleUserModel::DEDUCT_STATUS,
+            'GROUP' => [self::$table . '.id']
+        ]);
+    }
 }
