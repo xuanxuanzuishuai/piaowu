@@ -349,7 +349,7 @@ class Student extends ControllerBase
         $studentOrg = StudentOrgModel::getRecord(['org_id' => $orgId, 'student_id' => $studentId, 'status' => StudentOrgModel::STATUS_NORMAL]);
         if (!empty($studentOrg['cc_id'])) {
             $db->commit();
-            return $response->withJson(['code' => Valid::CODE_SUCCESS, 'data' => ['last_id' => $studentId]]);
+            return $response->withJson(Valid::addErrors([], 'student_id', 'student_has_bind_other_cc'));
         }
 
         // 绑定机构

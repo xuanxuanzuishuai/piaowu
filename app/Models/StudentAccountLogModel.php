@@ -57,6 +57,7 @@ class StudentAccountLogModel extends Model
             self::$table . '.type',
             self::$table . '.operator_id',
             self::$table . '.remark',
+            self::$table . '.schedule_id',
             EmployeeModel::$table . '.name(operator_name)'
         ], [
             StudentAccountModel::$table . '.student_id' => $studentId,
