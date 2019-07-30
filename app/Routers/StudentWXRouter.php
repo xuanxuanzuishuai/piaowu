@@ -9,10 +9,10 @@
 namespace App\Routers;
 
 
-use App\Controllers\StudentWX\PlayRecord;
+use App\Controllers\StudentWX\PlayRecordForPanda;
 use App\Controllers\StudentWX\Student;
 use App\Middleware\WeChatAuthCheckMiddleware;
-use app\Middleware\WeChatPandaAuthCheckMiddleware;
+use App\Middleware\WeChatPandaAuthCheckMiddleware;
 
 class StudentWXRouter extends RouterBase
 {
@@ -57,9 +57,14 @@ class StudentWXRouter extends RouterBase
         '/student_org_wx/student_class/get_order_class' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentOrgWX\StudentClass:getOrderClass'),
 
         // 小叶子(熊猫)陪练微信 数据接口
-        '/student_panda_wx/play_record/play_record_list' => [
+        '/student_panda_wx/play_record/month_statistic' => [
             'method' => ['get'],
-            'call' => PlayRecord::class . ':getPlayRecordList',
+            'call' => PlayRecordForPanda::class . ':getMonthStatistics',
+            'middles' => [WeChatPandaAuthCheckMiddleware::class]
+        ],
+        '/student_panda_wx/play_record/month_day_statistic' => [
+            'method' => ['get'],
+            'call' => PlayRecordForPanda::class . ':getMonthDayStatistics',
             'middles' => [WeChatPandaAuthCheckMiddleware::class]
         ],
     ];

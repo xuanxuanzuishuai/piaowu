@@ -6,7 +6,7 @@
  * Time: 4:05 PM
  */
 
-namespace app\Middleware;
+namespace App\Middleware;
 
 use App\Services\StudentService;
 use App\Libs\SimpleLogger;
@@ -29,6 +29,10 @@ class WeChatPandaAuthCheckMiddleware extends MiddlewareBase
         }
 
         $this->container['student'] = $student;
+        $this->container['user_info'] = [
+            'user_id' => $student['id']
+        ];
+
         SimpleLogger::info('UserInfo: ', ["student" => $student]);
 
         $response = $next($request, $response);
