@@ -12,6 +12,7 @@ use App\Controllers\StudentApp\App;
 use App\Controllers\StudentApp\Auth;
 use App\Controllers\StudentApp\Opn;
 use App\Controllers\StudentApp\Panda;
+use App\Controllers\StudentApp\Pay;
 use App\Controllers\StudentApp\Play;
 use App\Controllers\StudentApp\Homework;
 use App\Controllers\StudentApp\Subscription;
@@ -182,5 +183,18 @@ class StudentAppRouter extends RouterBase
             'call' => Panda::class . ':aiEnd',
             'middles' => []
         ],
+
+        // 支付
+        '/student_app/pay/create_bill' => [
+            'method' => ['post'],
+            'call' => Pay::class . ':createBill',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
+        '/student_app/pay/package_list' => [
+            'method' => ['get'],
+            'call' => Pay::class . ':packageList',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
+
     ];
 }
