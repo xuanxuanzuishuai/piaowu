@@ -262,21 +262,22 @@ class ScheduleService
 
     /**
      * 取消课次计划
-     * @param $stId
-     * @return bool
+     * @param $stId int classId
      */
     public static function cancelScheduleByClassId($stId)
     {
         $deductSIds = ScheduleModel::getDeductBookedSchedule($stId);
-
-        return ScheduleModel::modifyScheduleByClassId([
-            'status' => ScheduleModel::STATUS_CANCEL,
-            'update_time' => time()
-        ], [
-            '.id[!]' => $deductSIds,
+        $where = [
             'class_id' => $stId,
             'status' => ScheduleModel::STATUS_BOOK
-        ]);
+        ];
+        if (!empty($deductSIds)) {
+            $where['id[!]'] = $deductSIds;
+        }
+        ScheduleModel::modifyScheduleByClassId([
+            'status' => ScheduleModel::STATUS_CANCEL,
+            'update_time' => time()
+        ], $where);
     }
 
     /**

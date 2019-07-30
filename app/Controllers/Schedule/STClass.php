@@ -398,11 +398,8 @@ class STClass extends ControllerBase
             $db = MysqlDB::getDB();
             $db->beginTransaction();
             //  取消课次计划
-            $res = ScheduleService::cancelScheduleByClassId($class['id']);
-            if ($res == false) {
-                $db->rollBack();
-                return $errorRes;
-            }
+            ScheduleService::cancelScheduleByClassId($class['id']);
+
             // 修改班课为已取消
             $res = STClassService::modifyClass(['id' => $class['id'], 'status' => STClassModel::STATUS_CANCEL_AFTER_BEGIN, 'update_time' => time()]);
             if ($res == false) {
