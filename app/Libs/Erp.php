@@ -63,11 +63,32 @@ class Erp
 
     /**
      * 创建订单
-     * @param $data
+     * @param $uuid
+     * @param $packageId
+     * @param $payChannel
      * @return array
      */
-    public function createBill($data)
+    public function createBill($uuid, $packageId, $payChannel)
     {
+        $data = [
+            'type' => 3, // 购买课程
+            'num' => 1, // 数量
+            'app_id' => 8, // 熊猫陪练
+            'user_id' => $uuid, // uuid 到erp会转为对应
+            'user_type' => 1, // 订单拥有者类型  1 学员 2 老师
+            'object_id' => $packageId, // 对应物品id 如商品包id，商品id，课程单元id
+            'object_type' => 1, // 物品类型 1 商品包id 2 商品id  3 课程id
+            'fee_type' => 'cny', // 账户类型  usd: 美元, cny: 人民币
+            'amount' => 1, // 实际支付金额，单位是分
+            'oprice' => 1, // 应付金额，单位是分
+            'pay_type' => 1, // 1ping++ 2原生微信支付 3 原生支付宝支付 现阶段都是1
+            'pay_channel' => $payChannel, // 1支付宝手机网页支付 2微信H5支付；
+            'msg' => "购买产品包({$packageId})", // 描述
+            'student_address_id' => null, // 地址
+
+            'success_url' => 'http://aipiano-pre.xiaoyezi.com/ai_piano_app/#/paySuccess', // 支付成功跳转链接
+
+        ];
         $result = self::commonAPI(self::API_CREATE_BILL, $data, 'POST');
         return $result;
     }
