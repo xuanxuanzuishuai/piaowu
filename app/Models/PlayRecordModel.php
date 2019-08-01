@@ -423,4 +423,20 @@ class PlayRecordModel extends Model
         return $result;
     }
 
+    /**
+     * 获取某天练琴的学生uuid
+     * @param $date
+     * @return array
+     */
+    public static function getDayPlayedStudents($date)
+    {
+        return MysqlDB::getDB()->select(self::$table, [
+            '[><]' . StudentModel::$table => ['student_id' => 'id']
+        ], StudentModel::$table . '.uuid', [
+            self::$table . '.created_time[>]' => $date,
+            self::$table . '.created_time[<]' => $date + 86400,
+            'GROUP' => self::$table . '.student_id'
+        ]);
+    }
+
 }

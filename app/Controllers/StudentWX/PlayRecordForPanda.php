@@ -262,4 +262,28 @@ class PlayRecordForPanda extends ControllerBase
             'data' => $result
         ], StatusCode::HTTP_OK);
     }
+
+    public static function getDayPlayedStudents(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'date',
+                'type' => 'required',
+                'error_code' => 'date_is_required'
+            ]
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $result = PlayRecordService::getDayPlayedStudents($params["date"]);
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $result
+        ], StatusCode::HTTP_OK);
+    }
 }

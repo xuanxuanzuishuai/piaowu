@@ -567,4 +567,15 @@ class PlayRecordService
         $result["duration"] = $sum_duration;
         return $result;
     }
+
+    /**
+     * 获取某天练琴的学生uuid
+     * @param $date
+     * @return array
+     */
+    public static function getDayPlayedStudents($date)
+    {
+        $date = strtotime($date);
+        return PlayRecordModel::getDayPlayedStudents($date);
+    }
 }
