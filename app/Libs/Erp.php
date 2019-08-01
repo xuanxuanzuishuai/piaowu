@@ -95,11 +95,32 @@ class Erp
 
     /**
      * 查询商品列表
+     *
+    {
+        "code": 0,
+        "data": {
+            "packages": {
+                "total": "1",
+                "data": [{
+                    "package_id": "10162",
+                    "package_name": "AI陪练APP内购买（7天）",
+                    "start_time": "1564329600",
+                    "end_time": "1596105351",
+                    "oprice": 2500, // 原价
+                    "sprice": 2400, // 现价
+                    "dprice": 100, // 减价
+                    "num": "1464",
+                    "duration": "0min"
+                }]
+            }
+        }
+    }
      * @return array
      */
-    public function packageList()
+    public function getPackages()
     {
         $result = self::commonAPI(self::API_PACKAGE_LIST, [], 'GET');
-        return $result;
+
+        return $result['data']['packages'] ?? null;
     }
 }

@@ -12,6 +12,7 @@ use App\Controllers\ControllerBase;
 use App\Libs\Erp;
 use App\Libs\Util;
 use App\Libs\Valid;
+use App\Services\ErpService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -56,13 +57,13 @@ class Pay extends ControllerBase
     {
         Util::unusedParam($request);
 
-        $erp = new Erp();
-        $ret = $erp->packageList();
+        $packages = ErpService::getPackages();
 
-        if (empty($ret)) {
-            $ret = Valid::addAppErrors([], 'sys_unknown_errors');
-        }
-
-        return $response->withJson($ret, StatusCode::HTTP_OK);
+        return $response->withJson([
+            'code' => 0,
+            'data' => [
+                'packages' => $packages
+            ]
+        ], StatusCode::HTTP_OK);
     }
 }
