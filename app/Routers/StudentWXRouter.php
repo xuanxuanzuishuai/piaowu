@@ -67,5 +67,21 @@ class StudentWXRouter extends RouterBase
             'call' => PlayRecordForPanda::class . ':getMonthDayStatistics',
             'middles' => [WeChatPandaAuthCheckMiddleware::class]
         ],
+        '/student_panda_wx/play_record/shared_report' => [
+            'method' => ['get'],
+            'call' => PlayRecordForPanda::class . ':shareReport',
+            'middles' => []
+        ],
+        '/student_panda_wx/play_record/test_statistics' => [
+            'method' => ['get'],
+            'call' => PlayRecordForPanda::class . ':getLessonTestStatistics',
+            'middles' => [WeChatPandaAuthCheckMiddleware::class]
+        ],
+        '/student_panda_wx/play_record/day_report' => [
+            'method' => ['get'],
+            'call' => PlayRecordForPanda::class . ':recordReport',
+            'middles' => [WeChatPandaAuthCheckMiddleware::class]
+        ]
+
     ];
 }

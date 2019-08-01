@@ -58,9 +58,11 @@ class PlayRecordModel extends Model
      * @param $student_id
      * @param $start_time
      * @param $end_time
+     * @param bool $order
      * @return array|null
      */
-    public static function getPlayRecordReport($student_id, $start_time, $end_time){
+    public static function getPlayRecordReport($student_id, $start_time, $end_time, $order = false)
+    {
         $sql = "select 
                     lesson_id, 
                     lesson_type, 
@@ -78,6 +80,10 @@ class PlayRecordModel extends Model
                 schedule_id is NULL
             group by 
               lesson_id, lesson_type";
+
+        if ($order) {
+            $sql .= " order by created_time";
+        }
         $map = [":student_id" => $student_id, ":start_time" => $start_time, ":end_time" => $end_time];
         $db = MysqlDB::getDB();
         $result = $db->queryAll($sql, $map);
