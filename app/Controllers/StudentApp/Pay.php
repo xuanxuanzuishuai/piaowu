@@ -12,7 +12,7 @@ use App\Controllers\ControllerBase;
 use App\Libs\Erp;
 use App\Libs\Util;
 use App\Libs\Valid;
-use App\Services\ErpService;
+use App\Services\PayServices;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -43,7 +43,8 @@ class Pay extends ControllerBase
         $ret = $erp->createBill(
             $this->ci['student']['uuid'],
             $params['package_id'],
-            $params['pay_channel']
+            $params['pay_channel'],
+            $_SERVER['HTTP_X_REAL_IP']
         );
 
         if (empty($ret)) {
@@ -57,12 +58,12 @@ class Pay extends ControllerBase
     {
         Util::unusedParam($request);
 
-        $packages = ErpService::getPackages();
+        $packages = PayServices::getPackages();
 
         return $response->withJson([
             'code' => 0,
             'data' => [
-                'packages' => $packages
+                'packages' => $packages,
             ]
         ], StatusCode::HTTP_OK);
     }

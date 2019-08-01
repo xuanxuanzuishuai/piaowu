@@ -66,9 +66,10 @@ class Erp
      * @param $uuid
      * @param $packageId
      * @param $payChannel
+     * @param $clientIp
      * @return array
      */
-    public function createBill($uuid, $packageId, $payChannel)
+    public function createBill($uuid, $packageId, $payChannel, $clientIp)
     {
         $data = [
             'type' => 3, // 购买课程
@@ -88,6 +89,7 @@ class Erp
 
             'success_url' => 'http://aipiano-pre.xiaoyezi.com/ai_piano_app/#/paySuccess', // 支付成功跳转链接
 
+            'ip' => $clientIp, // 微信H5支付需要客户端ip
         ];
         $result = self::commonAPI(self::API_CREATE_BILL, $data, 'POST');
         return $result;
