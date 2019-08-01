@@ -79,6 +79,8 @@ class ErpService
             return ['create_gift_code_fail', null];
         }
 
+        StudentServiceForApp::redeemGiftCode($giftCodes[0], $student['id']);
+
         return [null, $giftCodes];
     }
 

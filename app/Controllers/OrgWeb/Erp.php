@@ -75,6 +75,9 @@ class Erp extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
+        $db = MysqlDB::getDB();
+        $db->beginTransaction();
+
         if (empty($params['duration_num']) || empty($params['duration_unit'])) {
             // 默认订单和换购激活码时长1年
             $giftCodeNum = 1;
@@ -104,20 +107,13 @@ class Erp extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
+        $db->commit();
+
         // 换购上线前已经提前发送激活码的用户
-        $preSellUserMobiles = [];
-        if (!in_array($params['mobile'], $preSellUserMobiles)) {
-            $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
-            $sms->sendExchangeGiftCode($params['mobile'],
-                implode(',', $giftCodes),
-                CommonServiceForApp::SIGN_STUDENT_APP);
-        } else {
-            SimpleLogger::debug(__FILE__ . ':' . __LINE__ . ' preSellUser', [
-                'uuid' => $params['uuid'],
-                'mobile' => $params['mobile'],
-                'gift_codes' => $giftCodes
-            ]);
-        }
+        $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
+        $sms->sendExchangeGiftCode($params['mobile'],
+            implode(',', $giftCodes),
+            CommonServiceForApp::SIGN_STUDENT_APP);
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
