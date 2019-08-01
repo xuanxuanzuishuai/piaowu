@@ -9,7 +9,6 @@
 namespace App\Controllers\StudentApp;
 
 use App\Controllers\ControllerBase;
-use App\Libs\Erp;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Services\PayServices;
@@ -39,8 +38,7 @@ class Pay extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $erp = new Erp();
-        $ret = $erp->createBill(
+        $ret = PayServices::createBill(
             $this->ci['student']['uuid'],
             $params['package_id'],
             $params['pay_channel'],

@@ -67,9 +67,12 @@ class Erp
      * @param $packageId
      * @param $payChannel
      * @param $clientIp
+     * @param $amount
+     * @param $oprice
+     * @param $callbacks
      * @return array
      */
-    public function createBill($uuid, $packageId, $payChannel, $clientIp)
+    public function createBill($uuid, $packageId, $payChannel, $clientIp, $amount, $oprice, $callbacks)
     {
         $data = [
             'type' => 3, // 购买课程
@@ -80,14 +83,16 @@ class Erp
             'object_id' => $packageId, // 对应物品id 如商品包id，商品id，课程单元id
             'object_type' => 1, // 物品类型 1 商品包id 2 商品id  3 课程id
             'fee_type' => 'cny', // 账户类型  usd: 美元, cny: 人民币
-            'amount' => 1, // 实际支付金额，单位是分
-            'oprice' => 1, // 应付金额，单位是分
+            'amount' => $amount, // 实际支付金额，单位是分
+            'oprice' => $oprice, // 应付金额，单位是分
             'pay_type' => 1, // 1ping++ 2原生微信支付 3 原生支付宝支付 现阶段都是1
             'pay_channel' => $payChannel, // 1支付宝手机网页支付 2微信H5支付；
             'msg' => "购买产品包({$packageId})", // 描述
             'student_address_id' => null, // 地址
 
-            'success_url' => 'http://aipiano-pre.xiaoyezi.com/ai_piano_app/#/paySuccess', // 支付成功跳转链接
+            'success_url' => $callbacks['success_url'] ?? null, // 支付宝web 支付成功跳转链接
+            'cancel_url' => $callbacks['cancel_url'] ?? null, // 支付宝web 支付失败跳转链接
+            'result_url' => $callbacks['result_url'] ?? null, // 微信H5 支付结果跳转链接
 
             'ip' => $clientIp, // 微信H5支付需要客户端ip
         ];

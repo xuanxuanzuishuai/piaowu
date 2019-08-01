@@ -76,6 +76,11 @@ class DictConstants {
             'sub_info_count',
             'tmall_2680',
             'tmall_599',
+            'free_package',
+            'pay_test_students',
+            'success_url',
+            'cancel_url',
+            'result_url',
         ]
     ];
 

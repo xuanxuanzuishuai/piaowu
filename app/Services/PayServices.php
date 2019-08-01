@@ -8,23 +8,16 @@
 
 namespace App\Services;
 
-
+use App\Libs\DictConstants;
 use App\Libs\Erp;
 
 class PayServices
 {
     public static function getPackages()
     {
-        $freePackage = [
-            'package_id' => 0,
-            'package_name' => '7天无限体验卡',
-            'price' => '免费领取',
-            'origin_price' => null,
-            'start_time' => null,
-            'end_time' => null,
-        ];
+        $freePackage = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'free_package');
 
-        $packages[] = $freePackage;
+        $packages[] = json_decode($freePackage, true);
 
         $erp = new Erp();
         $ret = $erp->getPackages();
@@ -49,5 +42,59 @@ class PayServices
         }
 
         return $packages;
+    }
+
+    public static function createBill($uuid, $packageId, $payChannel, $clientIp)
+    {
+        $erp = new Erp();
+
+        $erpPackages = $erp->getPackages();
+        if (empty($erpPackages['data'])) {
+            return false;
+        }
+
+        // 检查package并获取价格
+        $packages = $erpPackages['data'];
+        $price = null;
+        $originPrice = null;
+        foreach ($packages as $pkg) {
+            if ($pkg['package_id'] == $packageId) {
+                // erp的packages返回的是元为单位，需转为分
+                $price = $pkg['sprice'] * 100;
+                $originPrice = $pkg['oprice'] * 100;
+                break;
+            }
+        }
+
+        if ($price === null) {
+            return false;
+        }
+
+        list($testStudents, $successUrl, $cancelUrl, $resultUrl) = DictConstants::get(
+            DictConstants::APP_CONFIG_STUDENT,
+            ['pay_test_students', 'success_url', 'cancel_url', 'result_url']
+        );
+
+        // 测试支付用户
+        $testStudentUuids = explode(',', $testStudents);
+        if (in_array($uuid, $testStudentUuids)) {
+            $price = 1;
+        }
+
+        $ret = $erp->createBill(
+            $uuid,
+            $packageId,
+            $payChannel,
+            $clientIp,
+            $price,
+            $originPrice,
+            [
+                'success_url' => $successUrl,
+                'cancel_url' => $cancelUrl,
+                'result_url' => $resultUrl,
+            ]
+        );
+
+        return $ret;
     }
 }
