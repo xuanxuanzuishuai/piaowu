@@ -81,6 +81,7 @@ class DictConstants {
             'success_url',
             'cancel_url',
             'result_url',
+            'pay_url',
         ]
     ];
 

@@ -51,6 +51,7 @@ class App extends ControllerBase
         $config['sub_info_count'] = (int)DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'sub_info_count');
         $config['tmall_2680'] = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'tmall_2680');
         $config['tmall_599'] = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'tmall_599');
+        $config['pay_url'] = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'pay_url');
 
         if ($this->ci['is_review_version']) {
             $config['guide_url'] = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'review_guide_url');
