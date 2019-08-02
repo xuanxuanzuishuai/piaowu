@@ -97,4 +97,16 @@ class PayServices
 
         return $ret;
     }
+
+    public static function getBillStatus($billId)
+    {
+        $erp = new Erp();
+
+        $bill = $erp->getBill($billId);
+        if (empty($bill)) {
+            return null;
+        }
+
+        return $bill['pay_status'];
+    }
 }

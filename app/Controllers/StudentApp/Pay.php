@@ -65,4 +65,35 @@ class Pay extends ControllerBase
             ]
         ], StatusCode::HTTP_OK);
     }
+
+    public function billStatus(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key'        => 'bill_id',
+                'type'       => 'required',
+                'error_code' => 'bill_id_is_required',
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $status = PayServices::getBillStatus($params['bill_id']);
+
+        // $status 可能为 '0', 要用全等
+        if ($status === null) {
+            $result = Valid::addAppErrors([], 'bill_not_exist');
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        return $response->withJson([
+            'code' => 0,
+            'data' => [
+                'bill_status' => $status,
+            ]
+        ], StatusCode::HTTP_OK);
+    }
 }

@@ -16,6 +16,7 @@ class Erp
     const RSP_CODE_SUCCESS = 0;
 
     const API_CREATE_BILL = '/ai_dss/bill/create_bill';
+    const API_BILL_DETAIL = '/ai_dss/bill/detail';
     const API_PACKAGE_LIST = '/ai_dss/package/package_list';
 
     private $host;
@@ -129,5 +130,17 @@ class Erp
         $result = self::commonAPI(self::API_PACKAGE_LIST, [], 'GET');
 
         return $result['data']['packages'] ?? null;
+    }
+
+    /**
+     * 获取订单详情
+     * @param $billId
+     * @return array
+     */
+    public function getBill($billId)
+    {
+        $result = self::commonAPI(self::API_BILL_DETAIL, ['bill_id' => $billId], 'GET');
+
+        return $result['data']['bill'] ?? null;
     }
 }

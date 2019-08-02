@@ -195,5 +195,10 @@ class StudentAppRouter extends RouterBase
             'call' => Pay::class . ':packages',
             'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
         ],
+        '/student_app/pay/bill_status' => [
+            'method' => ['get'],
+            'call' => Pay::class . ':billStatus',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
     ];
 }
