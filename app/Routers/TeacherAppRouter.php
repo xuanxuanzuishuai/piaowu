@@ -13,10 +13,8 @@ use App\Controllers\TeacherApp\Auth;
 use App\Controllers\TeacherApp\Note;
 use App\Controllers\TeacherApp\Opn;
 use App\Controllers\TeacherApp\Org;
-use App\Controllers\TeacherApp\Play;
 use App\Controllers\TeacherApp\Schedule;
 use App\Middleware\AppApiForTeacher;
-use App\Middleware\MUSVGMiddleWare;
 use App\Middleware\OrgAuthCheckMiddleWareForApp;
 use App\Middleware\OrgResPrivilegeCheckMiddleWareForApp;
 use App\Middleware\OrgTeacherAuthMiddleWareForApp;
@@ -101,6 +99,8 @@ class TeacherAppRouter extends RouterBase
                 OrgAuthCheckMiddleWareForApp::class,
                 AppApiForTeacher::class]
         ],
+
+        /* 最近曲集和曲谱，改为app本地存储
         '/teacher_app/opn/recent_collections' => [
             'method' => ['get'],
             'call' => Opn::class . ':recentCollections',
@@ -117,6 +117,8 @@ class TeacherAppRouter extends RouterBase
                 OrgAuthCheckMiddleWareForApp::class,
                 AppApiForTeacher::class]
         ],
+        */
+
         '/teacher_app/opn/lesson_resource' => [
             'method' => ['get'],
             'call' => Opn::class . ':getLessonResource',
@@ -135,6 +137,8 @@ class TeacherAppRouter extends RouterBase
                 OrgAuthCheckMiddleWareForApp::class,
                 AppApiForTeacher::class]
         ],
+
+        /* 上课学生改为多个，演奏结束改为前端直接显示结果，不保存
         '/teacher_app/play/end' => [
             'method' => ['post'],
             'call' => Play::class . ':end',
@@ -148,6 +152,7 @@ class TeacherAppRouter extends RouterBase
             'call' => Play::class . ':aiEnd',
             'middles' => [MUSVGMiddleWare::class]
         ],
+        */
 
         '/teacher_app/app/version' => [
             'method' => ['get'],

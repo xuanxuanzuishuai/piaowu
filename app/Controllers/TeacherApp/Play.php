@@ -30,6 +30,8 @@ class Play extends ControllerBase
 
     /**
      * 静态演奏结束，上传练琴记录
+     * TODO: $this->ci['student'] 已经改为数组，这个接口已经停用，暂不修改
+     *
      * @param Request $request
      * @param Response $response
      * @return Response
@@ -92,6 +94,8 @@ class Play extends ControllerBase
 
     /**
      * 动态演奏结束
+     * TODO: $this->ci['student'] 已经改为数组，这个接口已经停用，暂不修改
+     *
      * @param Request $request
      * @param Response $response
      * @return Response

@@ -254,6 +254,8 @@ class Opn extends ControllerBase
 
     /**
      * 获取老师最近使用书籍
+     * TODO: $this->ci['student'] 已经改为数组，这个接口已经停用，暂不修改
+     *
      * @param Request $request
      * @param Response $response
      * @return mixed
@@ -288,6 +290,8 @@ class Opn extends ControllerBase
 
     /**
      * 获取老师最近课程
+     * TODO: $this->ci['student'] 已经改为数组，这个接口已经停用，暂不修改
+     *
      * @param Request $request
      * @param Response $response
      * @return mixed
