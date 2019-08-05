@@ -18,6 +18,14 @@ use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
 
+/**
+ * 为app内H5页提供的验证middleware
+ * TODO: h5页面已经添加相应header(token,version,platform),可以统一使用app的中间件验证,这个中间件不再使用
+ *
+ * Class MUSVGMiddleWare
+ * @package App\Middleware
+ * @deprecated
+ */
 class MUSVGMiddleWare extends MiddlewareBase
 {
     public function __invoke(Request $request, Response $response, $next)
