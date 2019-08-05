@@ -115,12 +115,12 @@ class OrganizationServiceForApp
         return [null, $loginData];
     }
 
-    public static function teacherLogin($orgId, $teacherId, $studentId)
+    public static function teacherLogin($orgId, $teacherId, $studentIds)
     {
         $teacherToken = OrganizationModelForApp::genToken($teacherId);
         $teacherCacheData = [
             'teacher_id' => $teacherId,
-            'student_id' => $studentId,
+            'student_id' => $studentIds,
             'token' => $teacherToken,
         ];
 
@@ -139,10 +139,6 @@ class OrganizationServiceForApp
 
             if (empty($cache)) {
                 // 检测并删除超时失效的token
-                $willDelTokens[] = $data['token'];
-
-            } elseif ($data['teacher_id'] == $teacherId) {
-                // 删除当前登录老师重复的token
                 $willDelTokens[] = $data['token'];
 
             } else {

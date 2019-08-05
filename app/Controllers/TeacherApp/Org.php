@@ -9,12 +9,10 @@
 namespace App\Controllers\TeacherApp;
 
 
-use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\OrganizationModelForApp;
 use App\Services\AppLogServices;
-use App\Services\HomeworkService;
 use App\Services\OrganizationServiceForApp;
 use App\Controllers\ControllerBase;
 use Slim\Http\Request;
@@ -66,7 +64,7 @@ class Org extends ControllerBase
             [
                 'key' => 'student_id',
                 'type' => 'required',
-                'error_code' => 'teacher_id_is_required'
+                'error_code' => 'student_id_is_required'
             ]
         ];
         $result = Valid::appValidate($params, $rules);
@@ -76,19 +74,15 @@ class Org extends ControllerBase
 
         $orgId = $this->ci['org']['id'];
 
+        $studentIds = explode(',', $params['student_id']);
         list($errorCode, $loginData) = OrganizationServiceForApp::teacherLogin($orgId,
             $params['teacher_id'],
-            $params['student_id']
+            $studentIds
         );
         if (!empty($errorCode)) {
             $result = Valid::addAppErrors([], $errorCode);
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        list($homework, $recentCollections) = HomeworkService::makeFollowUp(
-            $params['teacher_id'], $params['student_id'], $this->ci['opn_pro_ver']
-        );
-        $loginData['homework'] = !empty($homework) ? $homework : [];
-        $loginData['recent_collections'] = !empty($recentCollections) ? $recentCollections : [];
 
         AppLogServices::locationLog($orgId, [
             'location' => $params['location'] ?? '',

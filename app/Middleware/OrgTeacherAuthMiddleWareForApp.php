@@ -43,11 +43,10 @@ class OrgTeacherAuthMiddleWareForApp extends MiddlewareBase
             }
             $teacherId = $cache['teacher_id'];
             $teacher = TeacherModel::getById($teacherId);
-            $studentId = $cache['student_id'];
-            $student = StudentModel::getById($studentId);
+            $studentIds = $cache['student_id'];
 
             $this->container['teacher'] = $teacher;
-            $this->container['student'] = $student;
+            $this->container['student_ids'] = $studentIds;
 
             // 内部审核账号，使用审核版本app也可看到所有资源
             $reviewTestUsers = DictConstants::get(DictConstants::APP_CONFIG_COMMON, 'res_test_mobiles');
