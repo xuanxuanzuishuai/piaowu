@@ -27,6 +27,7 @@ class PlayRecordModel extends Model
     /** AI测评类型 */
     const AI_EVALUATE_PLAY = 1;      //演奏
     const AI_EVALUATE_AUDIO = 2;     //音频识别
+    const AI_EVALUATE_FRAGMENT = 3;  //分段分手演奏
 
 
     const RANK_LIMIT = 150;          //排行榜取前RANK_LIMIT名
