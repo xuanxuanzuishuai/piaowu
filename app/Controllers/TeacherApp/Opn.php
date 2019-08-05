@@ -367,6 +367,7 @@ class Opn extends ControllerBase
     }
 
     /**
+     * 根据课程获取知识
      * @param Request $request
      * @param Response $response
      * @return Response
@@ -394,6 +395,94 @@ class Opn extends ControllerBase
         }
         if (!empty($result)){
             $ret = ['knowledge'=>$result['data']['list']];
+        }else{
+            $ret = ['knowledge'=>[]];
+        }
+        return $response->withJson(['code'=>0, 'data'=>$ret], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * 获取知识库目录页
+     * @param Request $request
+     * @param Response $response
+     */
+    public function getKnowledgeCategory(Request $request, Response $response){
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER, $this->ci['opn_pro_ver']);
+        $category = $opn->getKnowledgeCategory();
+        if (empty($category) || !empty($category['errors'])) {
+            return $response->withJson(OpernCenter::OPERN_CENTER_ERROR, StatusCode::HTTP_OK);
+        }
+        return $response->withJson(['code'=>0, 'data'=>$category['data']], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * 根据知识库目录id获取知识卡片
+     * @param Request $request
+     * @param Response $response
+     */
+    public function getKnowledgeByCategory(Request $request, Response $response){
+        // 验证请求参数
+        $rules = [
+            [
+                'key' => 'category_id',
+                'type' => 'required',
+                'error_code' => 'category_id_is_required'
+            ]
+        ];
+        $param = $request->getParams();
+        $result = Valid::validate($param, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        list($pageId, $pageLimit) = Util::appPageLimit($param);
+        $categoryId = $param['category_id'];
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER, $this->ci['opn_pro_ver']);
+        $result = $opn->getKnowledgeByCategory($categoryId, $pageId, $pageLimit);
+        if (empty($result) || !empty($result['errors'])) {
+            return $response->withJson(OpernCenter::OPERN_CENTER_ERROR, StatusCode::HTTP_OK);
+        }
+        if (!empty($result)){
+            $ret = ['knowledge'=>$result['data']];
+        }else{
+            $ret = ['knowledge'=>[]];
+        }
+        return $response->withJson(['code'=>0, 'data'=>$ret], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * 搜索知识库
+     * @param Request $request
+     * @param Response $response
+     */
+    public function searchKnowledge(Request $request, Response $response){
+        // 验证请求参数
+        $rules = [
+            [
+                'key' => 'keyword',
+                'type' => 'required',
+                'error_code' => 'keyword_is_required'
+            ],
+            [
+                'key' => 'type',
+                'type' => 'required',
+                'error_code' => 'type_is_required'
+            ],
+        ];
+        $param = $request->getParams();
+        $result = Valid::validate($param, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        list($pageId, $pageLimit) = Util::appPageLimit($param);
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER, $this->ci['opn_pro_ver']);
+        $result = $opn->searchKnowledge($param['keyword'], $param['type'], $pageId, $pageLimit);
+        if (empty($result) || !empty($result['errors'])) {
+            return $response->withJson(OpernCenter::OPERN_CENTER_ERROR, StatusCode::HTTP_OK);
+        }
+        if (!empty($result)){
+            $ret = ['knowledge'=>$result['data']];
         }else{
             $ret = ['knowledge'=>[]];
         }
