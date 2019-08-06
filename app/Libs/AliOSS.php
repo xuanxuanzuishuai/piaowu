@@ -19,6 +19,8 @@ class AliOSS
     const DIR_IMG = 'img';
     const DIR_TEACHER_NOTE = 'teacher_note';
     const DIR_DYNAMIC_MIDI = 'dynamic_midi';
+    const DIR_AUDIO_COMMENT = 'audio_comment'; // 老师课堂点评语音
+    const DIR_HOMEWORK_AUDIO_COMMENT = 'homework_audio_comment'; // 课后作业点评语音
 
     const PROCESS_STYLE_NOTE_THUMB = 'note_thumb'; // 老师笔记缩略图 image/auto-orient,1/resize,p_25/quality,q_70
 
@@ -336,7 +338,9 @@ class AliOSS
         $typeConstants = [
             self::DIR_IMG,
             self::DIR_TEACHER_NOTE,
-            self::DIR_DYNAMIC_MIDI
+            self::DIR_DYNAMIC_MIDI,
+            self::DIR_AUDIO_COMMENT,
+            self::DIR_HOMEWORK_AUDIO_COMMENT,
         ];
         if (!in_array($dirType, $typeConstants)) {
             return null;
