@@ -53,7 +53,7 @@ class HomeworkTaskModel extends Model
      * @return int|mixed|null|string
      */
     public static function createHomeworkTask($homework_id, $lesson_id, $lesson_name, $collection_id,
-                                              $collection_name, $baseline, $noteIds) {
+                                              $collection_name, $baseline, $noteIds, $audioUrl) {
         return MysqlDB::getDB()->insertGetID(self::$table, [
             'homework_id' => $homework_id,
             'lesson_id' => $lesson_id,
@@ -61,7 +61,8 @@ class HomeworkTaskModel extends Model
             'collection_id' => $collection_id,
             'collection_name' => $collection_name,
             'baseline' => $baseline,
-            'note_ids' => $noteIds
+            'note_ids' => $noteIds,
+            'homework_audio' => $audioUrl
         ]);
     }
 

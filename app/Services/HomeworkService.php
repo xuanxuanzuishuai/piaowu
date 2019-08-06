@@ -46,7 +46,7 @@ class HomeworkService
             $nodeIds = !empty($task['note_ids']) ? implode(',', $task['note_ids']) : '';
             HomeworkTaskModel::createHomeworkTask($homework_id, $task["lesson_id"],
                 $task["lesson_name"], $task["collection_id"], $task["collection_name"],
-                json_encode($task["baseline"]), $nodeIds);
+                json_encode($task["baseline"]), $nodeIds, $task["homework_audio"]);
         }
         return $homework_id;
     }

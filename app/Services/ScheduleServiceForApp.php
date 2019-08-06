@@ -68,6 +68,7 @@ class ScheduleServiceForApp
         $report['course_id'] = $courseId;
         $report['opn_lessons'] = implode(",", $schedule['lessons']);
         $report['remark'] = $schedule['report']['remark'];
+        $report['audio_comment'] = $schedule['report']['audio_comment'];
         $report['class_score'] = $schedule['report']['class_score'];
         $report['detail_score'] = json_encode([
             'homework_rank' => $schedule['report']['homework_rank'],
@@ -77,7 +78,6 @@ class ScheduleServiceForApp
         if(!$reportOk){
             return ['insert_report_fail', null];
         }
-
         return [null, $scheduleId];
     }
 }
