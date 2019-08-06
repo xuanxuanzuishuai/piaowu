@@ -462,12 +462,7 @@ class Opn extends ControllerBase
                 'key' => 'keyword',
                 'type' => 'required',
                 'error_code' => 'keyword_is_required'
-            ],
-            [
-                'key' => 'type',
-                'type' => 'required',
-                'error_code' => 'type_is_required'
-            ],
+            ]
         ];
         $param = $request->getParams();
         $result = Valid::validate($param, $rules);
@@ -477,14 +472,17 @@ class Opn extends ControllerBase
 
         list($pageId, $pageLimit) = Util::appPageLimit($param);
         $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER, $this->ci['opn_pro_ver']);
-        $result = $opn->searchKnowledge($param['keyword'], $param['type'], $pageId, $pageLimit);
-        if (empty($result) || !empty($result['errors'])) {
+        $resultByName = $opn->searchKnowledge($param['keyword'], 1, $pageId, $pageLimit);
+        $resultByTag = $opn->searchKnowledge($param['keyword'], 2, $pageId, $pageLimit);
+        if (empty($resultByName) || !empty($resultByName['errors'])) {
             return $response->withJson(OpernCenter::OPERN_CENTER_ERROR, StatusCode::HTTP_OK);
         }
-        if (!empty($result)){
-            $ret = ['knowledge'=>$result['data']];
+        if (!empty($resultByName)){
+            $ret = ['knowledge_by_name'=>$resultByName['data'],
+                    'knowledge_by_tag'=> !empty($resultByTag['data']) ? $resultByTag['data'] : []
+                ];
         }else{
-            $ret = ['knowledge'=>[]];
+            $ret = ['knowledge_by_name'=>[], 'knowledge_by_tag'=>[]];
         }
         return $response->withJson(['code'=>0, 'data'=>$ret], StatusCode::HTTP_OK);
     }
