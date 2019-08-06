@@ -450,9 +450,9 @@ class PlayRecordService
         $start_time = strtotime($date);
         $end_time = $start_time + 86399;
         $result = self::getRecordReportPanda($student_id, $start_time, $end_time);
-        $token = self::getShareReportToken($student_id, $date);
+        $result["jwt"] = self::getShareReportToken($student_id, $date);
+        $result['token'] = AIBackendService::genStudentToken($student_id);
         $result["date"] = date("Y年m月d日", $start_time);
-        $result["jwt"] = $token;
         return $result;
     }
 
@@ -535,7 +535,7 @@ class PlayRecordService
 
         $max_score_records = [];
         $max_duration_records = [];
-        for ($i = 0; $i < count($statistics); $i++) {
+        for ($i = 0; $i < count($lesson_ids); $i++) {
             $result["lesson_count"] += 1;
             $cur_lesson_id = $statistics[$i]["lesson_id"];
 
@@ -548,6 +548,9 @@ class PlayRecordService
 
             if ($statistics[$i]["max_score"] == $max_score) {
                 array_push($statistics[$i]["tags"], "得分最高");
+                if ($statistics[$i]["duration"] == $max_duration) {
+                    array_push($statistics[$i]["tags"], "时间最长");
+                }
                 $max_score_records[] = $statistics[$i];
                 unset($statistics[$i]);
             }
