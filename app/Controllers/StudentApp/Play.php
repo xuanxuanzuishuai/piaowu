@@ -207,6 +207,12 @@ class Play extends ControllerBase
         return $response->withJson(['code'=>0, 'data'=>$data], StatusCode::HTTP_OK);
     }
 
+    /**
+     * 演奏排行榜接口，只排ai测评的
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
     public function rank(Request $request, Response $response)
     {
         $rules = [
@@ -229,11 +235,9 @@ class Play extends ControllerBase
         }
 
         $studentId = $this->ci['student']['id'];
-        //$studentId = 29;
         $lessonId = $params['lesson_id'];
         $isOrg = $params['org'] == 1;
         $ranks = PlayRecordService::getRanks($studentId, $lessonId, $isOrg);
         return $response->withJson(['code'=>0, 'data'=>$ranks], StatusCode::HTTP_OK);
     }
-
 }
