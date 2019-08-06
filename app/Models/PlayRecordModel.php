@@ -300,7 +300,7 @@ class PlayRecordModel extends Model
         ];
         $selectTable = "select " . $fields . " from " . self::$table . " as pr ";
         $where = " where pr.created_time>=:start_time and pr.created_time <= :end_time and pr.lesson_type=" .self::TYPE_AI .
-            " and pr.lesson_id=:lesson_id and pr.client_type=" . self::CLIENT_STUDENT;
+            " and pr.lesson_id=:lesson_id and pr.client_type in (" . self::CLIENT_STUDENT . ", " . self::CLIENT_PANDA_MINI . ")";
         if (!empty($studentId)){
             $map[":student_id"] = $studentId;
             $where = $where . " and pr.student_id=:student_id ";
