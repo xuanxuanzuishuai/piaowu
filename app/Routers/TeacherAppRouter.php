@@ -132,22 +132,22 @@ class TeacherAppRouter extends RouterBase
         '/teacher_app/opn/knowledge/get_by_lesson' => [
             'method' => ['get'],
             'call' => Opn::class . ':getKnowledge',
-            'middles' => []
+            'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
         ],
         '/teacher_app/opn/knowledge/category' => [
             'method' => ['get'],
             'call' => Opn::class . ':getKnowledgeCategory',
-            'middles' => []
+            'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
         ],
         '/teacher_app/opn/knowledge/get_by_category' => [
             'method' => ['get'],
             'call' => Opn::class . ':getKnowledgeByCategory',
-            'middles' => []
+            'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
         ],
         '/teacher_app/opn/knowledge/search' => [
             'method' => ['get'],
             'call' => Opn::class . ':searchKnowledge',
-            'middles' => []
+            'middles' => [OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
         ],
         '/teacher_app/schedule/end' => [
             'method' => ['post'],
