@@ -118,4 +118,39 @@ class Schedule extends ControllerBase
 
         return $response->withJson(['code'=>0], StatusCode::HTTP_OK);
     }
+
+    /**
+     * 回课接口
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function followUp(Request $request, Response $response)
+    {
+
+        $params = $request->getParams();
+        $rules = [
+            [
+                'key' => 'student_id',
+                'type' => 'required',
+                'error_code' => 'student_id_is_required'
+            ]
+        ];
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $teacherId = $this->ci['teacher']['id'];
+        list($homework, $recentCollections) = HomeworkService::makeFollowUp(
+            $teacherId, $params['student_id'], '1.0'
+        );
+        $data = [];
+        $data['homework'] = !empty($homework) ? $homework : [];
+        $data['recent_collections'] = !empty($recentCollections) ? $recentCollections : [];
+
+        return $response->withJson([
+            'code'=> Valid::CODE_SUCCESS,
+            'data'=> $data,
+        ], StatusCode::HTTP_OK);
+    }
 }

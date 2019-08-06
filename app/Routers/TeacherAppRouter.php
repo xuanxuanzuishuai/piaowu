@@ -157,6 +157,13 @@ class TeacherAppRouter extends RouterBase
                 OrgAuthCheckMiddleWareForApp::class,
                 AppApiForTeacher::class]
         ],
+        '/teacher_app/org/student_recent' => [
+            'method' => ['get'],
+            'call' => Schedule::class . ':followUp',
+            'middles' => [OrgTeacherAuthMiddleWareForApp::class,
+                OrgAuthCheckMiddleWareForApp::class,
+                AppApiForTeacher::class]
+        ],
 
         /* 上课学生改为多个，演奏结束改为前端直接显示结果，不保存
         '/teacher_app/play/end' => [
@@ -229,7 +236,6 @@ class TeacherAppRouter extends RouterBase
                 OrgTeacherAuthMiddleWareForApp::class,
                 OrgAuthCheckMiddleWareForApp::class, AppApiForTeacher::class]
         ],
-
         '/teacher_app/note/list' => [
             'method' => ['get'],
             'call' => Note::class . ':listNote',
