@@ -8,13 +8,11 @@
 
 namespace App\Services;
 
-
 use App\Libs\SimpleLogger;
 use App\Models\OrgAccountModel;
 use App\Models\OrganizationModel;
 use App\Models\OrganizationModelForApp;
 use App\Models\TeacherModelForApp;
-
 
 class OrganizationServiceForApp
 {
@@ -115,6 +113,19 @@ class OrganizationServiceForApp
         return [null, $loginData];
     }
 
+    /**
+     * 选择老师学生
+     * 生成teacherToken，占用一个license并开始上课
+     *
+     * cache结构
+     * TeacherCache:[teacher_id => 1, student_id => [1, 2, 3], token => 'abc']
+     * OnlineTeachers:Array(TeacherCache)
+     *
+     * @param $orgId
+     * @param $teacherId
+     * @param $studentIds
+     * @return array
+     */
     public static function teacherLogin($orgId, $teacherId, $studentIds)
     {
         $teacherToken = OrganizationModelForApp::genToken($teacherId);
@@ -137,20 +148,30 @@ class OrganizationServiceForApp
         foreach ($onlineTeachers as $data) {
             $cache = OrganizationModelForApp::getOrgTeacherCacheByToken($orgId, $data['token']);
 
-            if (empty($cache)) {
-                // 检测并删除超时失效的token
+            if (empty($cache)) { // 检测并删除超时失效的token
                 $willDelTokens[] = $data['token'];
-
-            } else {
-                if($licenseRemain <= 0) {
-                    // 删除超出许可数量的token
-                    $willDelTokens[] = $data['token'];
-
-                } else {
-                    $onlineTeachersNew[] = $data;
-                    $licenseRemain--;
-                }
+                continue;
             }
+
+            // 从之前已经上课的学生里踢出本次新登录的学生
+            $onlineStudentIds = array_values(array_diff($data['student_id'], $studentIds));
+            $onlineCount = count($onlineStudentIds);
+
+            if ($onlineCount < 1) { // 所有学生都被踢出课堂,直接下课,删除token
+                $willDelTokens[] = $data['token'];
+                continue;
+            } elseif (count($onlineStudentIds) != count($data['student_id'])) { // 删除被踢出的学生
+                $data['student_id'] = $onlineStudentIds;
+                OrganizationModelForApp::setOrgTeacherToken($data, $orgId, $data['token']);
+            }
+
+            if ($licenseRemain <= 0) { // 删除超出许可数量的token
+                $willDelTokens[] = $data['token'];
+                continue;
+            }
+
+            $onlineTeachersNew[] = $data;
+            $licenseRemain--;
         }
 
         OrganizationModelForApp::setOrgTeacherToken($teacherCacheData, $orgId, $teacherToken);
@@ -170,7 +191,6 @@ class OrganizationServiceForApp
         ];
 
         return [null, $loginData];
-
     }
 
     public static function getOrgInfo($orgId)
@@ -216,6 +236,22 @@ class OrganizationServiceForApp
         if (empty($students)) {
             return [];
         }
+
+        $onlineStudentIds = [];
+        $onlineTeachers = OrganizationModelForApp::getOnlineTeacher($orgId);
+        foreach ($onlineTeachers as $data) {
+            if ($data['teacher_id'] == $teacherId) {
+                $cache = OrganizationModelForApp::getOrgTeacherCacheByToken($orgId, $data['token']);
+                if (!empty($cache)) {
+                    $onlineStudentIds = array_merge($onlineStudentIds, $cache['student_id']);
+                }
+            }
+        }
+
+        foreach ($students as $i => $student) {
+            $students[$i]['online'] = in_array($student['id'], $onlineStudentIds) ? 1 : 0;
+        }
+
         return $students;
     }
 }

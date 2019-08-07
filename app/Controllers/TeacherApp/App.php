@@ -96,7 +96,11 @@ class App extends ControllerBase
         Util::unusedParam($request);
 
         return $response->withJson([
-            'code' => Valid::CODE_SUCCESS
+            'code' => Valid::CODE_SUCCESS,
+            'data' => [
+                'teacher_id' => $this->ci['teacher']['id'],
+                'student_ids' => $this->ci['student_ids'],
+            ],
         ], StatusCode::HTTP_OK);
     }
 
