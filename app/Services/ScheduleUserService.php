@@ -34,12 +34,12 @@ class ScheduleUserService
      * @param $userRoles
      * @param $startTime
      * @param $endTime
-     * @param $orgId
+     * @param int $orgSId
      * @return array|bool
      */
-    public static function checkScheduleUser($userIds, $userRoles, $startTime, $endTime, $orgId)
+    public static function checkScheduleUser($userIds, $userRoles, $startTime, $endTime, $orgSId)
     {
-        $sus = ScheduleUserModel::checkScheduleUser($userIds, $userRoles, $startTime, $endTime, $orgId);
+        $sus = ScheduleUserModel::checkScheduleUser($userIds, $userRoles, $startTime, $endTime, $orgSId);
         return empty($sus) ? true : $sus;
     }
 

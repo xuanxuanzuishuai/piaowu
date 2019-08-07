@@ -38,12 +38,11 @@ class ClassTaskService
 
     /**
      * @param $ct
-     * @param $classStatus
      * @return array|bool
      */
-    public static function checkCT($ct, $classStatus)
+    public static function checkCT($ct)
     {
-        $res = ClassTaskModel::checkCT($ct, $classStatus);
+        $res = ClassTaskModel::checkCT($ct);
         return empty($res) ? true : $res;
     }
 
@@ -134,7 +133,13 @@ class ClassTaskService
                 }
             }
 
-            $res = self::checkCT($ct, [STClassModel::STATUS_NORMAL, STClassModel::STATUS_BEGIN, STClassModel::STATUS_CHANGE]);
+            // 检查ClassTask
+            $res = self::checkCT($ct);
+            if ($res !== true) {
+                return Valid::addErrors(['data' => ['result' => $res], 'code' => 1], 'class_task_classroom', 'class_task_classroom_error');
+            }
+            // 检查schedule
+            $res = ScheduleService::checkScheduleByCT($ct);
             if ($res !== true) {
                 return Valid::addErrors(['data' => ['result' => $res], 'code' => 1], 'class_task_classroom', 'class_task_classroom_error');
             }

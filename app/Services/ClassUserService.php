@@ -14,7 +14,7 @@ use App\Libs\Valid;
 use App\Models\ClassTaskModel;
 use App\Models\ClassTaskPriceModel;
 use App\Models\ClassUserModel;
-use App\Models\STClassModel;
+use App\Models\ScheduleUserModel;
 
 class ClassUserService
 {
@@ -125,31 +125,34 @@ class ClassUserService
      * @param $students
      * @param $cts
      * @param $maxNum
-     * @param null $classStatus
+     * @param int $originSId
      * @return array|bool
      */
-    public static function checkStudent($students, $cts, $maxNum, $classStatus = null)
+    public static function checkStudent($students, $cts, $maxNum, $originSId = 0)
     {
         $studentIds = array_keys($students);
-        $result = true;
         if (count($students) > $maxNum) {
-            $result = Valid::addErrors([], 'class_student', 'class_students_is_more_than_max');
+            return Valid::addErrors([], 'class_student', 'class_students_is_more_than_max');
         }
         $eStudents = StudentService::getStudentByIds($studentIds);
         if (count($students) != count($eStudents)) {
-            $result = Valid::addErrors([], 'class_student', 'class_student_is_not_match');
+            return Valid::addErrors([], 'class_student', 'class_student_is_not_match');
         }
 
-        if (empty($classStatus)) {
-            $classStatus = [STClassModel::STATUS_NORMAL, STClassModel::STATUS_BEGIN, STClassModel::STATUS_CHANGE];
-        }
         foreach ($cts as $ct) {
             $orgClassId = empty($ct['class_id']) ? null : $ct['class_id'];
-            $sts = ClassTaskModel::checkUserTime($studentIds, ClassUserModel::USER_ROLE_S, $ct['start_time'], $ct['end_time'], $ct['weekday'], $ct['expire_start_date'], $ct['expire_end_date'], $classStatus, $orgClassId);
+            // check class user
+            $sts = ClassTaskModel::checkUserTime($studentIds, ClassUserModel::USER_ROLE_S, $ct['start_time'], $ct['end_time'], $ct['weekday'], $ct['expire_start_date'], $ct['expire_end_date'], $orgClassId);
             if (!empty($sts)) {
-                $result = Valid::addErrors([], 'class_student', 'class_student_time_error');
+                return Valid::addErrors([], 'class_student', 'class_student_time_error');
             }
-            return $result;
+
+            // check schedule user
+            list($startTime, $endTime) = ScheduleService::formatClassTaskTime($ct);
+            $checkStudent = ScheduleUserService::checkScheduleUser($studentIds, ScheduleUserModel::USER_ROLE_STUDENT, $startTime, $endTime, $originSId);
+            if ($checkStudent !== true) {
+                return Valid::addErrors([], 'class_student', 'class_student_time_error');
+            }
         }
         return true;
     }
@@ -158,39 +161,42 @@ class ClassUserService
      * @param $teachers
      * @param $cts
      * @param $classTeachers array
-     * @param $classStatus
+     * @param int $originSId
      * @return array|bool
      */
-    public static function checkTeacher($teachers, $cts, $classTeachers = [], $classStatus = null)
+    public static function checkTeacher($teachers, $cts, $classTeachers = [], $originSId = 0)
     {
-        $result = true;
         $teacherIds = array_keys($teachers);
         $maxNum = 2 - count($classTeachers);
         if (count($teachers) > $maxNum) {
-            $result = Valid::addErrors([], 'class_teacher', 'class_teacher_num_more_than_max');
+            return Valid::addErrors([], 'class_teacher', 'class_teacher_num_more_than_max');
         }
         $eTeachers = TeacherService::getTeacherByIds($teacherIds);
         if (count($teachers) != count($eTeachers)) {
-            $result = Valid::addErrors([], 'class_teacher', 'class_teacher_is_not_match');
+            return Valid::addErrors([], 'class_teacher', 'class_teacher_is_not_match');
         }
 
         // 角色限制：1个老师，1个班主任
         $userRoles = !empty($classTeachers) ? array_column($classTeachers, 'user_role') : [];
         $roles = array_unique(array_values($teachers));
         if (count($roles) != count($teachers) || !empty(array_intersect($userRoles, $roles))) {
-            $result = Valid::addErrors([], 'class_teacher', 'class_teacher_role_not_allow');
+            return Valid::addErrors([], 'class_teacher', 'class_teacher_role_not_allow');
         }
 
-        if (empty($classStatus)) {
-            $classStatus = [STClassModel::STATUS_NORMAL, STClassModel::STATUS_BEGIN, STClassModel::STATUS_CHANGE];
-        }
         foreach ($cts as $ct) {
             $orgClassId = empty($ct['class_id']) ? null : $ct['class_id'];
-            $sts = ClassTaskModel::checkUserTime($teacherIds, array(ClassUserModel::USER_ROLE_T, ClassUserModel::USER_ROLE_HT), $ct['start_time'], $ct['end_time'], $ct['weekday'], $ct['expire_start_date'], $ct['expire_end_date'], $classStatus, $orgClassId);
+            // check class user
+            $sts = ClassTaskModel::checkUserTime($teacherIds, array(ClassUserModel::USER_ROLE_T, ClassUserModel::USER_ROLE_HT), $ct['start_time'], $ct['end_time'], $ct['weekday'], $ct['expire_start_date'], $ct['expire_end_date'], $orgClassId);
             if (!empty($sts)) {
-                $result = Valid::addErrors([], 'class_teacher', 'class_teacher_time_error');
+                return Valid::addErrors([], 'class_teacher', 'class_teacher_time_error');
             }
-            return $result;
+
+            // check schedule user
+            list($startTime, $endTime) = ScheduleService::formatClassTaskTime($ct);
+            $checkTeacher = ScheduleUserService::checkScheduleUser($teacherIds, [ScheduleUserModel::USER_ROLE_TEACHER, ScheduleUserModel::USER_ROLE_CLASS_TEACHER], $startTime, $endTime, $originSId);
+            if ($checkTeacher !== true) {
+                return Valid::addErrors([], 'class_teacher', 'class_teacher_time_error');
+            }
         }
         return true;
     }

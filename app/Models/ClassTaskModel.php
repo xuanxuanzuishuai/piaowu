@@ -201,18 +201,17 @@ class ClassTaskModel extends Model
 
     /**
      * @param $ct
-     * @param $classStatus
      * @param bool $isOrg
      * @return array
      */
-    public static function checkCT($ct, $classStatus, $isOrg = true)
+    public static function checkCT($ct, $isOrg = true)
     {
         $db = MysqlDB::getDB();
         $where = [
-            'stc.status' => $classStatus,
+            'stc.status' => STClassModel::STATUS_NORMAL,
             'ct.classroom_id' => $ct['classroom_id'],
             'ct.weekday' => $ct['weekday'],
-            'ct.status' => array(ClassTaskModel::STATUS_NORMAL),
+            'ct.status' => ClassTaskModel::STATUS_NORMAL,
             'ct.start_time[<]' => $ct['end_time'],
             'ct.end_time[>]' => $ct['start_time'],
             'ct.org_id' => $ct['org_id'],
@@ -267,12 +266,10 @@ class ClassTaskModel extends Model
      * @param $weekday
      * @param $expireStartDate
      * @param $expireEndDate
-     * @param $classStatus
      * @param null $orgClassId
-     * @param bool $isOrg
      * @return array
      */
-    public static function checkUserTime($userIds, $userRole, $start_time, $end_time, $weekday, $expireStartDate, $expireEndDate, $classStatus, $orgClassId = null, $isOrg = true)
+    public static function checkUserTime($userIds, $userRole, $start_time, $end_time, $weekday, $expireStartDate, $expireEndDate, $orgClassId = null)
     {
         $where = [
             'cu.user_id' => $userIds,
@@ -284,16 +281,16 @@ class ClassTaskModel extends Model
             'ct.start_time[<]' => $end_time,
             'ct.end_time[>]' => $start_time,
             'ct.status' => ClassTaskModel::STATUS_NORMAL,
-            'stc.status' => $classStatus
+            'stc.status' => STClassModel::STATUS_NORMAL
         ];
         if (!empty($orgClassId)) {
             $where['stc.id[!]'] = $orgClassId;
         }
-        if ($isOrg == true) {
-            global $orgId;
-            if ($orgId > 0)
-                $where['ct.org_id'] = $orgId;
-        }
+
+        global $orgId;
+        if ($orgId > 0)
+            $where['ct.org_id'] = $orgId;
+
         $columns = [
             'stc.id',
             'cu.user_id',

@@ -168,11 +168,13 @@ class ScheduleService
     }
 
     /**
+     * check schedule classroom
      * @param $schedule
      * @return array|bool
      */
-    public static function checkSchedule($schedule){
-        $schedules = ScheduleModel::checkSchedule($schedule);
+    public static function checkSchedule($schedule)
+    {
+        $schedules = ScheduleModel::checkSchedule($schedule['start_time'], $schedule['end_time'], $schedule['classroom_id'], $schedule['org_id'], $schedule['id']);
         return empty($schedules) ? true : $schedules;
     }
 
@@ -485,44 +487,32 @@ class ScheduleService
             'period' => 1,
         ];
 
-        // check schedule, check schedule_user
+        // check schedule
         $checkSchedule = self::checkSchedule($schedule);
         if ($checkSchedule !== true) {
             return Valid::addErrors([], 'schedule', 'check_schedule_error');
         }
 
-        $originScheduleId = $params['schedule_id'] ?? 0;
-        $checkStudent = ScheduleUserService::checkScheduleUser(array_keys($params['students']),
-            ScheduleUserModel::USER_ROLE_STUDENT, $schedule['start_time'],
-            $schedule['end_time'], $originScheduleId);
-        if ($checkStudent !== true) {
-            return Valid::addErrors([], 'class_task_classroom', 'class_student_time_error');
-        }
-        $balances = StudentAccountService::checkBalance($params['students'], [$classTask]);
-        if ($balances !== true) {
-            return $balances;
-        }
-
-        $checkTeacher = ScheduleUserService::checkScheduleUser(array_keys($params['teachers']),
-            [ScheduleUserModel::USER_ROLE_TEACHER, ScheduleUserModel::USER_ROLE_CLASS_TEACHER],
-            $schedule['start_time'], $schedule['end_time'], $originScheduleId);
-        if ($checkTeacher !== true) {
-            return Valid::addErrors([], 'class_task_classroom', 'class_teacher_time_error');
-        }
-
-        // check class_task, class_user
-        $classStatus = STClassModel::STATUS_NORMAL;
-        $checkRes = ClassTaskService::checkCT($classTask, $classStatus);
+        // check class_task
+        $checkRes = ClassTaskService::checkCT($classTask);
         if ($checkRes !== true) {
             return Valid::addErrors([], 'class_task_classroom', 'class_task_classroom_error');
         }
 
+        $originScheduleId = $params['schedule_id'] ?? 0;
         $classTasks[] = $classTask;
-        $checkStudent = ClassUserService::checkStudent($params['students'], $classTasks, $params['class_highest'], $classStatus);
+        // check student
+        $checkStudent = ClassUserService::checkStudent($params['students'], $classTasks, $params['class_highest'], $originScheduleId);
         if ($checkStudent !== true) {
             return $checkStudent;
         }
-        $checkTeacher = ClassUserService::checkTeacher($params['teachers'], $classTasks, [], $classStatus);
+        // check student balance
+        $balances = StudentAccountService::checkBalance($params['students'], $classTasks);
+        if ($balances !== true) {
+            return $balances;
+        }
+        // check teacher
+        $checkTeacher = ClassUserService::checkTeacher($params['teachers'], $classTasks, [], $originScheduleId);
         if ($checkTeacher !== true) {
             return $checkTeacher;
         }
@@ -613,5 +603,42 @@ class ScheduleService
     public static function getTakeUpScheduleBalances($studentIds)
     {
         return ScheduleModel::getTakeUpStudentBalances($studentIds);
+    }
+
+    /**
+     * 添加、修改班级时检查教室是否被占用
+     * @param $ct
+     * @return bool
+     */
+    public static function checkScheduleByCT($ct)
+    {
+        list($beginTime, $endTime) = self::formatClassTaskTime($ct);
+        for ($i = 0; $i < $ct['period']; $i ++) {
+            $schedules = ScheduleModel::checkSchedule($beginTime, $endTime, $ct['classroom_id'], $ct['org_id']);
+            if (!empty($schedules)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * 格式化CT的时间
+     * @param $ct
+     * @return array
+     */
+    public static function formatClassTaskTime($ct)
+    {
+        $beginDate = $ct['expire_start_date'];
+        $weekday = date("w", strtotime($beginDate));
+        if ($weekday <= $ct['weekday']) {
+            $beginTime = strtotime($beginDate . " " . $ct['start_time']) + 86400 * ($ct['weekday'] - $weekday);
+        } else {
+            $beginTime = strtotime($beginDate . " " . $ct['start_time']) + 86400 * (7 - ($weekday - $ct['weekday']));
+        }
+
+        $endTime = $beginTime + (strtotime($ct['end_time']) - strtotime($ct['start_time']));
+
+        return [$beginTime, $endTime];
     }
 }

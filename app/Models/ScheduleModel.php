@@ -144,23 +144,28 @@ class ScheduleModel extends Model
     }
 
     /**
-     * @param $schedule
+     * @param $startTime
+     * @param $endTime
+     * @param $classroomId
+     * @param $orgId
+     * @param int $originSId
      * @return array
      */
-    public static function checkSchedule($schedule)
+    public static function checkSchedule($startTime, $endTime, $classroomId, $orgId, $originSId = 0)
     {
         $db = MysqlDB::getDB();
         $where = [
-            's.classroom_id' => $schedule['classroom_id'],
+            's.classroom_id' => $classroomId,
             's.status' => self::STATUS_BOOK,
-            's.start_time[<]' => $schedule['end_time'],
-            's.end_time[>]' => $schedule['start_time'],
-            's.org_id' => $schedule['org_id'],
+            's.start_time[<]' => $endTime,
+            's.end_time[>]' => $startTime,
+            's.org_id' => $orgId,
         ];
 
-        if (!empty($schedule['id'])) {
-            $where['s.id[!]'] = $schedule['id'];
+        if (!empty($originSId)) {
+            $where['s.id[!]'] = $originSId;
         }
+
         $join = [
             '[><]' . CourseModel::$table . " (c)" => ['s.course_id' => 'id'],
             '[><]' . ClassroomModel::$table . " (cr)" => ['s.classroom_id' => 'id'],
