@@ -254,9 +254,11 @@ class HomeworkService
      * 爱学琴老师端回课数据
      * @param int $teacherId
      * @param int $studentId
+     * @param string $proVer
      * @return array
      */
-    public static function scheduleFollowUp($teacherId, $studentId, $proVer=1){
+    public static function scheduleFollowUp($teacherId, $studentId, $proVer)
+    {
         // 获取师徒二人上节课
         $scheduleWhere = [
             "ORDER" => ['create_time' => 'DESC'],
@@ -283,20 +285,24 @@ class HomeworkService
         $homework = HomeworkModel::getHomeworkList($homeworkWhere);
 
         // 作业的练习统计
-        $lessonIds = array_column($homework, 'lesson_id');
-        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER, $proVer);
-        $bookInfo = $opn->lessonsByIds($lessonIds);
         $books = [];
-        foreach ($bookInfo['data'] as $book){
-            $books[$book['lesson_id']] = [
-                'collection_name' => $book['collection_name'],
-                'res' => $book['resources'] && $book['resources'][0]['url'] ? $book['resources'][0]['url']:'',
-                'collection_cover' => $book['collection_cover'],
-                'collection_id' => $book['collection_id'],
-                'score_id' => $book['opern_id'],
-                'is_free' => $book['freeflag'] ? '1' : '0',
-                'lesson_name' => $book['lesson_name']
-            ];
+        $lessonIds = array_column($homework, 'lesson_id');
+        if (!empty($lessonIds)) {
+            $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER, $proVer);
+            $bookInfo = $opn->lessonsByIds($lessonIds);
+            if (!empty($bookInfo['data'])) {
+                foreach ($bookInfo['data'] as $book){
+                    $books[$book['lesson_id']] = [
+                        'collection_name' => $book['collection_name'],
+                        'res' => $book['resources'] && $book['resources'][0]['url'] ? $book['resources'][0]['url']:'',
+                        'collection_cover' => $book['collection_cover'],
+                        'collection_id' => $book['collection_id'],
+                        'score_id' => $book['opern_id'],
+                        'is_free' => $book['freeflag'] ? '1' : '0',
+                        'lesson_name' => $book['lesson_name']
+                    ];
+                }
+            }
         }
 
         list($start, $end) = [$homework[0]['created_time'], $homework[0]['end_time']];
@@ -344,8 +350,50 @@ class HomeworkService
         return [$homework, $statistics, $books, $schedule];
     }
 
+    /**
+     * 获取回课数据
+     *
+     * @param $teacherId
+     * @param $studentIds
+     * @param $proVer
+     * @return array
+     */
+    public static function getFollowUp($teacherId, $studentIds, $proVer)
+    {
+        $followUpHomework = [];
 
-    public static function makeFollowUp($teacherId, $studentId, $proVer=1){
+        // 所有学生的最后一次上课的曲谱id
+        $recentLessonIds = [];
+        foreach ($studentIds as $studentId) {
+            list($homework, $studentRecentLessonIds) = self::makeFollowUp($teacherId, $studentId, $proVer);
+            $followUpHomework[$studentId] = $homework;
+            $recentLessonIds = array_merge($recentLessonIds, $studentRecentLessonIds);
+        }
+
+        // 排除不需要回课的lesson
+        $followUpLessonIds = [];
+        $trialLessonIds = OpernService::getTrialLessonId();
+        foreach ($recentLessonIds as $lessonId){
+            if(!in_array($lessonId, $trialLessonIds)){
+                array_push($followUpLessonIds, $lessonId);
+            }
+        }
+
+        $followUpCollections = OpernService::getCollectionsByLessonId($followUpLessonIds, $proVer);
+
+        return [$followUpHomework, $followUpCollections];
+    }
+
+    /**
+     * 回课数据
+     *
+     * @param $teacherId
+     * @param $studentId
+     * @param int $proVer
+     * @return array [作业数据, 最近一次上课的]
+     */
+    public static function makeFollowUp($teacherId, $studentId, $proVer)
+    {
         // 获取回课数据
         list($tasks, $statistics, $books, $schedule) = HomeworkService::scheduleFollowUp(
             $teacherId, $studentId, $proVer
@@ -370,32 +418,14 @@ class HomeworkService
                     'ai_best' => 0
                 ];
             }
-            $book = $books[$task['lesson_id']];
+            $book = $books[$task['lesson_id']] ?? [];
+
             $homework[] = array_merge($taskBase, $play, $book);
         }
 
-        // 最近教材
-        $_lessonIds = explode(',', $schedule[0]['opn_lessons']);
-        $trialLessonIds = OpernService::getTrialLessonId();
-        $lessonIds = [];
-        foreach ($_lessonIds as $k => $lessonId){
-            if(!in_array($lessonId, $trialLessonIds)){
-                array_push($lessonIds, $lessonId);
-            }
-        }
-        if (!empty($lessonIds)) {
-            $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER, $proVer);
-            $lessons = $opn->lessonsByIds($lessonIds);
-            $collectionIds = array_column($lessons['data'], 'collection_id');
-            $result = $opn->collectionsByIds($collectionIds);
-            if (empty($result) || !empty($result['errors'])) {
-                $recentCollections = [];
-            } else {
-                $recentCollections = OpernService::appFormatCollections($result['data']);
-            }
-        } else {
-            $recentCollections = [];
-        }
-        return [$homework, $recentCollections];
+        // 最近上课的曲谱id
+        $recentLessonIds = explode(',', $schedule[0]['opn_lessons']);
+
+        return [$homework, $recentLessonIds];
     }
 }

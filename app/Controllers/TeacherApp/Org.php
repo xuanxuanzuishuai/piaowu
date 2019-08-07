@@ -13,6 +13,7 @@ use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\OrganizationModelForApp;
 use App\Services\AppLogServices;
+use App\Services\HomeworkService;
 use App\Services\OrganizationServiceForApp;
 use App\Controllers\ControllerBase;
 use Slim\Http\Request;
@@ -83,6 +84,12 @@ class Org extends ControllerBase
             $result = Valid::addAppErrors([], $errorCode);
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
+
+        list($homework, $recentCollections) = HomeworkService::getFollowUp(
+            $params['teacher_id'], $studentIds, $this->ci['opn_pro_ver']
+        );
+        $loginData['homework'] = !empty($homework) ? $homework : [];
+        $loginData['recent_collections'] = !empty($recentCollections) ? $recentCollections : [];
 
         AppLogServices::locationLog($orgId, [
             'location' => $params['location'] ?? '',

@@ -177,6 +177,31 @@ class OpernService
     }
 
     /**
+     * 根据课程获取曲集
+     *
+     * @param int|array $lessonId
+     * @param $proVer
+     * @return array
+     */
+    public static function getCollectionsByLessonId($lessonId, $proVer)
+    {
+        if (empty($lessonId)) {
+            return [];
+        }
+
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER, $proVer);
+        $lessons = $opn->lessonsByIds($lessonId);
+        $collectionIds = array_column($lessons['data'], 'collection_id');
+        $result = $opn->collectionsByIds($collectionIds);
+
+        if (empty($result) || !empty($result['errors'])) {
+            return [];
+        }
+
+        return OpernService::appFormatCollections($result['data']);
+    }
+
+    /**
      * 体验课id
      * @return array
      */
