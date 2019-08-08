@@ -11,6 +11,8 @@ namespace App\Controllers\StudentApp;
 use App\Controllers\ControllerBase;
 use App\Libs\Util;
 use App\Libs\Valid;
+use App\Models\GiftCodeModel;
+use App\Services\GiftCodeService;
 use App\Services\PayServices;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -82,6 +84,11 @@ class Pay extends ControllerBase
         }
 
         $status = PayServices::getBillStatus($params['bill_id']);
+        if ($status == PayServices::BILL_STATUS_SUCCESS) {
+            $giftCode = GiftCodeModel::getByBillId($params['bill_id']);
+        } else {
+            $giftCode = [];
+        }
 
         // $status 可能为 '0', 要用全等
         if ($status === null) {
@@ -93,6 +100,7 @@ class Pay extends ControllerBase
             'code' => 0,
             'data' => [
                 'bill_status' => $status,
+                'gift_code' => $giftCode,
             ]
         ], StatusCode::HTTP_OK);
     }

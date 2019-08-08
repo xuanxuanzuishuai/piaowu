@@ -13,6 +13,11 @@ use App\Libs\Erp;
 
 class PayServices
 {
+    // 订单支付状态
+    const BILL_STATUS_SUCCESS = '1';
+    const BILL_STATUS_PROCESSING = '0';
+    const BILL_STATUS_FAILED = '-1';
+
     public static function getPackages()
     {
         $freePackage = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'free_package');
