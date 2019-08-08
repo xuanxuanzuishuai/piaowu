@@ -369,6 +369,7 @@ class UserPlayServices
                     'ai_best' => 0,
                     'created_time' => 0,
                     'plays' => new MaxHeap('score'),
+                    'ai_fragment_times' => 0 // ai测评分手分段练习次数
                 ];
             }
             // 以lesson为单位，查出该lesson的最近练琴时间
@@ -379,9 +380,15 @@ class UserPlayServices
             $details[$lessonId]['practice_time'] += $play['duration'];
             $score = Util::floatIsInt($play['score']) ? (int)$play['score'] : (float)$play['score'];
             if ($play['lesson_type'] == PlayRecordModel::TYPE_AI){
-                $details[$lessonId]['ai_times'] += 1;
-                if ($score > $details[$lessonId]['ai_best']){
-                    $details[$lessonId]['ai_best'] = $score;
+                // ai测评与语音识别归为一类，ai的分手分段单独归为一类
+                if( $play['lesson_type'] == PlayRecordModel::AI_EVALUATE_PLAY or
+                    $play['lesson_type'] == PlayRecordModel::AI_EVALUATE_AUDIO){
+                    $details[$lessonId]['ai_times'] += 1;
+                    if ($score > $details[$lessonId]['ai_best']){
+                        $details[$lessonId]['ai_best'] = $score;
+                    }
+                }elseif ($play['lesson_type'] == PlayRecordModel::AI_EVALUATE_FRAGMENT){
+                    $details[$lessonId]['ai_fragment_times'] += 1;
                 }
             } else {
                 if(!empty($play['lesson_sub_id'])){
@@ -394,7 +401,9 @@ class UserPlayServices
                 }
             }
             // ai练琴记录的3个最高分，用于五维图展示
-            if($play['lesson_type'] == PlayRecordModel::TYPE_AI){
+            if($play['lesson_type'] == PlayRecordModel::TYPE_AI and (
+                    $play['lesson_type'] == PlayRecordModel::AI_EVALUATE_PLAY or
+                    $play['lesson_type'] == PlayRecordModel::AI_EVALUATE_AUDIO)){
                 $temp = [];
                 $temp['id'] = $play['id'];
                 $temp['score'] = $play['score'];
