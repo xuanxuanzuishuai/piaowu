@@ -114,6 +114,8 @@ class GiftCodeModel extends Model
         $orgBuyer = GiftCodeModel::BUYER_TYPE_ORG;
 
         $where = ' where 1 = 1 ';
+        $map = [];
+
         if (!empty($params['code'])) {
             $where .= " and {$gift_code}.code like '%{$params['code']}%'";
         }
@@ -121,22 +123,26 @@ class GiftCodeModel extends Model
         //如果机构不为空，则查询指定机构下的激活码
         if(!empty($params['org_id'])) {
             $where .= " and {$gift_code}.generate_channel = " . self::BUYER_TYPE_ORG;
-            $where .= " and {$gift_code}.buyer = " . $params['org_id'];
+            $where .= " and {$gift_code}.buyer = :org_id ";
+            $map[':org_id'] = $params['org_id'];
         } else {
             if (!empty($params['generate_channel'])) {
-                $where .= " and {$gift_code}.generate_channel = " . $params['generate_channel'];
+                $where .= " and {$gift_code}.generate_channel = :generate_channel";
+                $map[':generate_channel'] = $params['generate_channel'];
             }
         }
 
         if (!empty($params['generate_way'])) {
-            $where .= " and {$gift_code}.generate_way = " . $params['generate_way'];
+            $where .= " and {$gift_code}.generate_way = :generate_way";
+            $map[':generate_way'] = $params['generate_way'];
         }
 
         if (isset($params['code_status']) && in_array($params['code_status'], [
             self::CODE_STATUS_NOT_REDEEMED,
             self::CODE_STATUS_HAS_REDEEMED,
             self::CODE_STATUS_INVALID])) {
-            $where .= " and {$gift_code}.code_status = " . $params['code_status'];
+            $where .= " and {$gift_code}.code_status = :code_status";
+            $map[':code_status'] = $params['code_status'];
         }
 
         if (!empty($params['name'])) {
@@ -144,67 +150,74 @@ class GiftCodeModel extends Model
         }
 
         if(!empty($params['buyer_mobile'])) { //购买人手机号
-            $where .= " and {$student}.mobile = {$params['buyer_mobile']} ";
+            $where .= " and {$student}.mobile = :buyer_mobile ";
+            $map[':buyer_mobile'] = $params['buyer_mobile'];
         }
         if(!empty($params['apply_user_mobile'])) { //使用人手机号
-            $where .= " and apply_user.mobile = {$params['apply_user_mobile']} ";
+            $where .= " and apply_user.mobile = :apply_user_mobile ";
+            $map[':apply_user_mobile'] = $params['apply_user_mobile'];
         }
         if(!empty($params['s_buy_time'])) {
-            $where .= " and {$gift_code}.buy_time >= {$params['s_buy_time']}";
+            $where .= " and {$gift_code}.buy_time >= :s_buy_time ";
+            $map[':s_buy_time'] = $params['s_buy_time'];
         }
         if(!empty($params['e_buy_time'])) {
-            $where .= " and {$gift_code}.buy_time <= {$params['e_buy_time']}";
+            $where .= " and {$gift_code}.buy_time <= :e_buy_time ";
+            $map[':e_buy_time'] = $params['e_buy_time'];
         }
         if(!empty($params['s_be_active_time'])) {
-            $where .= " and {$gift_code}.be_active_time >= {$params['s_be_active_time']}";
+            $where .= " and {$gift_code}.be_active_time >= :s_be_active_time ";
+            $map[':s_be_active_time'] = $params['s_be_active_time'];
         }
         if(!empty($params['e_be_active_time'])) {
-            $where .= " and {$gift_code}.be_active_time <= {$params['e_be_active_time']}";
+            $where .= " and {$gift_code}.be_active_time <= :e_be_active_time ";
+            $map[':e_be_active_time'] = $params['e_be_active_time'];
         }
 
         $db = MysqlDB::getDB();
 
         $join = "
-LEFT JOIN {$employee} ON {$employee}.id = {$gift_code}.operate_user
-LEFT JOIN {$organization} ON {$gift_code}.buyer = {$organization}.id AND {$gift_code}.generate_channel = {$orgBuyer}
-LEFT JOIN {$student} ON {$gift_code}.buyer = {$student}.id AND {$gift_code}.generate_channel != {$orgBuyer}
-LEFT JOIN {$student} apply_user ON {$gift_code}.apply_user = apply_user.id ";
+            LEFT JOIN {$employee} ON {$employee}.id = {$gift_code}.operate_user
+            LEFT JOIN {$organization} ON {$gift_code}.buyer = {$organization}.id AND {$gift_code}.generate_channel = {$orgBuyer}
+            LEFT JOIN {$student} ON {$gift_code}.buyer = {$student}.id AND {$gift_code}.generate_channel != {$orgBuyer}
+            LEFT JOIN {$student} apply_user ON {$gift_code}.apply_user = apply_user.id ";
 
-        $totalCount = self::getCodeCount($join, $where);
+        $totalCount = self::getCodeCount($join, $where, $map);
 
         //格式化分页参数
         list($page, $count) = Util::formatPageCount($params);
         $offset = ($page - 1) * $count;
 
         $sql = "
-SELECT 
-    {$gift_code}.id,
-    {$gift_code}.code,
-    {$gift_code}.generate_channel,
-    {$gift_code}.generate_way,
-    {$gift_code}.code_status,
-    {$gift_code}.buyer,
-    {$gift_code}.buy_time,
-    {$gift_code}.apply_user,
-    {$gift_code}.valid_num,
-    {$gift_code}.valid_units,
-    {$gift_code}.be_active_time,
-    {$employee}.name operate_user,
-    {$gift_code}.operate_user raw_operate_user,
-    {$gift_code}.operate_time,
-    {$student}.name student_buyer_name,
-    {$student}.mobile student_buyer_mobile,
-    {$organization}.name org_buyer_name,
-    apply_user.name apply_name,
-    apply_user.mobile apply_mobile
-FROM
-    {$gift_code}
-    {$join}
-    {$where}
-ORDER BY {$gift_code}.id DESC
-LIMIT $offset, $count
-";
-        $records = $db->queryAll($sql);
+            SELECT 
+                {$gift_code}.id,
+                {$gift_code}.code,
+                {$gift_code}.generate_channel,
+                {$gift_code}.generate_way,
+                {$gift_code}.code_status,
+                {$gift_code}.buyer,
+                {$gift_code}.buy_time,
+                {$gift_code}.apply_user,
+                {$gift_code}.valid_num,
+                {$gift_code}.valid_units,
+                {$gift_code}.be_active_time,
+                {$employee}.name operate_user,
+                {$gift_code}.operate_user raw_operate_user,
+                {$gift_code}.operate_time,
+                {$student}.name student_buyer_name,
+                {$student}.mobile student_buyer_mobile,
+                {$organization}.name org_buyer_name,
+                apply_user.name apply_name,
+                apply_user.mobile apply_mobile
+            FROM
+                {$gift_code}
+                {$join}
+                {$where}
+            ORDER BY {$gift_code}.id DESC
+            LIMIT $offset, $count
+            ";
+
+        $records = $db->queryAll($sql, $map);
 
         return [$totalCount, $records];
     }
@@ -213,10 +226,11 @@ LIMIT $offset, $count
     /**
      * @param $join
      * @param $where
+     * @param $map
      * @return mixed
      * 求所需总数
      */
-    public static function getCodeCount($join, $where)
+    public static function getCodeCount($join, $where, $map)
     {
         $code = self::$table;
         $db = MysqlDB::getDB();
@@ -226,7 +240,7 @@ LIMIT $offset, $count
             $query = "SELECT count(*) AS count FROM {$code} {$join} {$where}";
         }
 
-        $count = $db->queryAll($query);
+        $count = $db->queryAll($query, $map);
 
         return $count[0]['count'];
     }
