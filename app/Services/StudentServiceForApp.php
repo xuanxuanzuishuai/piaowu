@@ -314,6 +314,32 @@ class StudentServiceForApp
         return $endTime > time();
     }
 
+    /**
+     * 是否可以领取体验时长
+     * @param $student
+     * @return bool
+     */
+    public static function canTrial($student)
+    {
+        // 体验过的用户无法领取体验资格
+        if ($student['trial_end_date'] > 0) {
+            return false;
+        }
+
+        $today = date('Ymd');
+
+        // 在服务期内无法领取体验资格
+        if ($student['sub_end_date'] > $today) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 领取体验时长
+     * @param $studentID
+     * @return array
+     */
     public static function trial($studentID)
     {
         $student = StudentModelForApp::getStudentInfo($studentID, null);
@@ -321,20 +347,13 @@ class StudentServiceForApp
             return ['unknown_student'];
         }
 
-        // 体验过的用户无法领取体验资格
-        if ($student['trial_end_date'] > 0) {
-            return ['cant_trial'];
-        }
-
-        $today = date('Ymd');
-
-        // 在服务期内无法领取体验资格
-        if ($student['sub_end_date'] > $today) {
+        if (!self::canTrial($student)) {
             return ['cant_trial'];
         }
 
         $type = self::TRIAL_TYPE_NORMAL;
         $duration = self::TRIAL_DAYS_NORMAL;
+        $today = date('Ymd');
         $endDate = date('Ymd', strtotime("+{$duration} day"));
 
         $affectRows = StudentModelForApp::updateRecord($studentID, [

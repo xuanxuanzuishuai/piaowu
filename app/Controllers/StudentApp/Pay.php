@@ -14,6 +14,7 @@ use App\Libs\Valid;
 use App\Models\GiftCodeModel;
 use App\Services\GiftCodeService;
 use App\Services\PayServices;
+use App\Services\StudentServiceForApp;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -59,7 +60,7 @@ class Pay extends ControllerBase
         Util::unusedParam($request);
 
         $student = $this->ci['student'];
-        $withFreePackage = $student['trial_end_date'] == 0;
+        $withFreePackage = StudentServiceForApp::canTrial($student);
         $packages = PayServices::getPackages($withFreePackage);
 
         return $response->withJson([
