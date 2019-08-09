@@ -25,7 +25,7 @@ class WeChatPandaAuthCheckMiddleware extends MiddlewareBase
         $uuid = $request->getParam('uuid');
         $student = StudentService::getByUuid($uuid);
         if (empty($student)) {
-            return $response->withJson(Valid::addAppErrors([], 'unknown_user'), StatusCode::HTTP_OK);
+            return $response->withJson(['code' => Valid::CODE_SUCCESS, 'data' => []], StatusCode::HTTP_OK);
         }
 
         $this->container['student'] = $student;
