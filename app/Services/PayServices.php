@@ -37,9 +37,9 @@ class PayServices
 
         usort($erpPackages, function ($a, $b) {
             if ($a['oprice'] == $b['oprice']) {
-                return $a['package_id'] < $b['package_id'];
+                return $a['package_id'] > $b['package_id'];
             }
-            return $a['oprice'] < $b['oprice'];
+            return $a['oprice'] > $b['oprice'];
         });
 
         foreach ($erpPackages as $pkg) {
