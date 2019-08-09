@@ -58,7 +58,9 @@ class Pay extends ControllerBase
     {
         Util::unusedParam($request);
 
-        $packages = PayServices::getPackages();
+        $student = $this->ci['student'];
+        $withFreePackage = $student['trial_end_date'] == 0;
+        $packages = PayServices::getPackages($withFreePackage);
 
         return $response->withJson([
             'code' => 0,

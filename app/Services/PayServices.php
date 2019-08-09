@@ -18,11 +18,18 @@ class PayServices
     const BILL_STATUS_PROCESSING = '0';
     const BILL_STATUS_FAILED = '-1';
 
-    public static function getPackages()
+    /**
+     * 获取产品包
+     * @param bool $withFreePackage
+     * @return array
+     */
+    public static function getPackages($withFreePackage = true)
     {
-        $freePackage = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'free_package');
-
-        $packages[] = json_decode($freePackage, true);
+        $packages = [];
+        if ($withFreePackage) {
+            $freePackage = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'free_package');
+            $packages[] = json_decode($freePackage, true);
+        }
 
         $erp = new Erp();
         $ret = $erp->getPackages();
