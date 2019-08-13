@@ -18,6 +18,8 @@ use App\Models\StudentModel;
 
 class ErpService
 {
+    const APP_ID_AI = 8;
+
     /**
      * @param $studentData
      * @param $exchangeType

@@ -109,11 +109,13 @@ class Erp extends ControllerBase
 
         $db->commit();
 
-        // 换购上线前已经提前发送激活码的用户
-        $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
-        $sms->sendExchangeGiftCode($params['mobile'],
-            implode(',', $giftCodes),
-            CommonServiceForApp::SIGN_STUDENT_APP);
+        if ($params['app_id'] != ErpService::APP_ID_AI) {
+            // 换购上线前已经提前发送激活码的用户
+            $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
+            $sms->sendExchangeGiftCode($params['mobile'],
+                implode(',', $giftCodes),
+                CommonServiceForApp::SIGN_STUDENT_APP);
+        }
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
