@@ -542,7 +542,7 @@ class PlayRecordService
             $statistics[$i]["lesson_name"] = $lesson_info[$cur_lesson_id]["lesson_name"];
             $statistics[$i]["collection_name"] = $lesson_info[$cur_lesson_id]["collection_name"];
             $ai_record_info = PlayRecordModel::getWonderfulAIRecordId($cur_lesson_id, $student_id, $start_time, $end_time);
-            if (!empty($ai_record_info and $ai_record_info["score"] >= 90)) {
+            if (!empty($ai_record_info)) {
                 $statistics[$i]["ai_record_id"] = $ai_record_info["ai_record_id"];
             }
 
