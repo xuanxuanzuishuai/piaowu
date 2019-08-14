@@ -5,3 +5,4 @@
 composer.lock
 .local
 www/act/.DS_Store
+.php_cs.*
