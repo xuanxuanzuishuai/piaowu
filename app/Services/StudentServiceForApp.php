@@ -329,7 +329,7 @@ class StudentServiceForApp
         $today = date('Ymd');
 
         // 在服务期内无法领取体验资格
-        if ($student['sub_end_date'] > $today) {
+        if ($student['sub_end_date'] >= $today) {
             return false;
         }
         return true;
