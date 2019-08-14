@@ -612,12 +612,14 @@ class ScheduleService
      */
     public static function checkScheduleByCT($ct)
     {
-        list($beginTime, $endTime) = self::formatClassTaskTime($ct);
+        list($beginTime, $duration) = self::formatClassTaskTime($ct);
         for ($i = 0; $i < $ct['period']; $i ++) {
+            $endTime = $beginTime + $duration;
             $schedules = ScheduleModel::checkSchedule($beginTime, $endTime, $ct['classroom_id'], $ct['org_id']);
             if (!empty($schedules)) {
                 return false;
             }
+            $beginTime += Util::TIMESTAMP_ONEWEEK;
         }
         return true;
     }
@@ -637,8 +639,7 @@ class ScheduleService
             $beginTime = strtotime($beginDate . " " . $ct['start_time']) + 86400 * (7 - ($weekday - $ct['weekday']));
         }
 
-        $endTime = $beginTime + (strtotime($ct['end_time']) - strtotime($ct['start_time']));
-
-        return [$beginTime, $endTime];
+        $duration = strtotime($ct['end_time']) - strtotime($ct['start_time']);
+        return [$beginTime, $duration];
     }
 }

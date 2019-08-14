@@ -10,6 +10,7 @@ namespace App\Services;
 
 use App\Libs\Constants;
 use App\Libs\SimpleLogger;
+use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\ClassTaskModel;
 use App\Models\ClassTaskPriceModel;
@@ -148,11 +149,17 @@ class ClassUserService
             }
 
             // check schedule user
-            list($startTime, $endTime) = ScheduleService::formatClassTaskTime($ct);
-            $checkStudent = ScheduleUserService::checkScheduleUser($studentIds, ScheduleUserModel::USER_ROLE_STUDENT, $startTime, $endTime, $originSId);
-            if ($checkStudent !== true) {
-                return Valid::addErrors([], 'class_student', 'class_student_time_error');
+            list($startTime, $duration) = ScheduleService::formatClassTaskTime($ct);
+            for ($i = 0; $i < $ct['period']; $i ++) {
+                $endTime = $startTime + $duration;
+                $checkStudent = ScheduleUserService::checkScheduleUser($studentIds, ScheduleUserModel::USER_ROLE_STUDENT, $startTime, $endTime, $originSId);
+                if ($checkStudent !== true) {
+                    return Valid::addErrors([], 'class_student', 'class_student_time_error');
+                }
+
+                $startTime += Util::TIMESTAMP_ONEWEEK;
             }
+
         }
         return true;
     }
@@ -192,10 +199,15 @@ class ClassUserService
             }
 
             // check schedule user
-            list($startTime, $endTime) = ScheduleService::formatClassTaskTime($ct);
-            $checkTeacher = ScheduleUserService::checkScheduleUser($teacherIds, [ScheduleUserModel::USER_ROLE_TEACHER, ScheduleUserModel::USER_ROLE_CLASS_TEACHER], $startTime, $endTime, $originSId);
-            if ($checkTeacher !== true) {
-                return Valid::addErrors([], 'class_teacher', 'class_teacher_time_error');
+            list($startTime, $duration) = ScheduleService::formatClassTaskTime($ct);
+            for ($i = 0; $i < $ct['period']; $i ++) {
+                $endTime = $startTime + $duration;
+                $checkTeacher = ScheduleUserService::checkScheduleUser($teacherIds, [ScheduleUserModel::USER_ROLE_TEACHER, ScheduleUserModel::USER_ROLE_CLASS_TEACHER], $startTime, $endTime, $originSId);
+                if ($checkTeacher !== true) {
+                    return Valid::addErrors([], 'class_teacher', 'class_teacher_time_error');
+                }
+
+                $startTime += Util::TIMESTAMP_ONEWEEK;
             }
         }
         return true;
