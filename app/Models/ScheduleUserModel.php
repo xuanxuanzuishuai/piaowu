@@ -71,10 +71,10 @@ class ScheduleUserModel extends Model
      * @param $startTime
      * @param $endTime
      * @param $orgSId
-     * @param bool $isOrg
+     * @param bool $orgClassId
      * @return array
      */
-    public static function checkScheduleUser($userIds, $userRole, $startTime, $endTime, $orgSId, $isOrg = true)
+    public static function checkScheduleUser($userIds, $userRole, $startTime, $endTime, $orgSId, $orgClassId)
     {
         $where = [
             'su.user_id' => $userIds,
@@ -87,12 +87,14 @@ class ScheduleUserModel extends Model
         if (!empty($orgSId)) {
             $where['s.id[!]'] = $orgSId;
         }
-
-        if ($isOrg == true) {
-            global $orgId;
-            if ($orgId > 0)
-                $where['s.org_id'] = $orgId;
+        if (!empty($orgClassId)) {
+            $where['s.class_id[!]'] = $orgClassId;
         }
+
+        global $orgId;
+        if ($orgId > 0)
+            $where['s.org_id'] = $orgId;
+
         $columns = [
             's.id',
             'su.user_id',

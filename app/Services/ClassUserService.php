@@ -152,7 +152,8 @@ class ClassUserService
             list($startTime, $duration) = ScheduleService::formatClassTaskTime($ct);
             for ($i = 0; $i < $ct['period']; $i ++) {
                 $endTime = $startTime + $duration;
-                $checkStudent = ScheduleUserService::checkScheduleUser($studentIds, ScheduleUserModel::USER_ROLE_STUDENT, $startTime, $endTime, $originSId);
+                $checkStudent = ScheduleUserService::checkScheduleUser($studentIds,
+                    ScheduleUserModel::USER_ROLE_STUDENT, $startTime, $endTime, $originSId, $orgClassId);
                 if ($checkStudent !== true) {
                     return Valid::addErrors([], 'class_student', 'class_student_time_error');
                 }
@@ -202,7 +203,9 @@ class ClassUserService
             list($startTime, $duration) = ScheduleService::formatClassTaskTime($ct);
             for ($i = 0; $i < $ct['period']; $i ++) {
                 $endTime = $startTime + $duration;
-                $checkTeacher = ScheduleUserService::checkScheduleUser($teacherIds, [ScheduleUserModel::USER_ROLE_TEACHER, ScheduleUserModel::USER_ROLE_CLASS_TEACHER], $startTime, $endTime, $originSId);
+                $checkTeacher = ScheduleUserService::checkScheduleUser($teacherIds,
+                    [ScheduleUserModel::USER_ROLE_TEACHER, ScheduleUserModel::USER_ROLE_CLASS_TEACHER],
+                    $startTime, $endTime, $originSId, $orgClassId);
                 if ($checkTeacher !== true) {
                     return Valid::addErrors([], 'class_teacher', 'class_teacher_time_error');
                 }
