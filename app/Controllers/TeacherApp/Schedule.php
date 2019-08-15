@@ -43,6 +43,9 @@ class Schedule extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         $param = $param['data'];
+        if (empty($param['student_id'])) {
+            return $response->withJson(Valid::addAppErrors([], 'student_id_is_required'), StatusCode::HTTP_OK);
+        }
 
         $db = MysqlDB::getDB();
         $db->beginTransaction();
@@ -54,8 +57,8 @@ class Schedule extends ControllerBase
         }
 
         // 写入课后作业
-        $homework =$param['homework'];
-        if(!empty($homework['tasks'])) {
+        $homework = $param['homework'];
+        if (!empty($homework['tasks'])) {
             HomeworkService::createHomework(
                 $scheduleId,
                 $param['org_id'],

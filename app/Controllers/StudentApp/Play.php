@@ -156,6 +156,10 @@ class Play extends ControllerBase
         if (empty($this->ci['student'])) {
             return $response->withJson(['code' => 0], StatusCode::HTTP_OK);
         }
+        if (empty($param['data']['lesson_id'])) {
+            $result = Valid::addAppErrors([], 'lesson_id_is_required');
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
 
         $db = MysqlDB::getDB();
         $db->beginTransaction();

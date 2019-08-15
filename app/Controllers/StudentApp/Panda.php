@@ -77,6 +77,11 @@ class Panda extends ControllerBase
         }
 
         $data = $params['data'];
+        if (empty($data['lesson_id'])) {
+            $result = Valid::addAppErrors([], 'lesson_id_is_required');
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
         $mobile = $data['mobile'];
         $student = StudentModelForApp::getStudentInfo(null, $mobile, null);
 
