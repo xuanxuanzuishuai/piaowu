@@ -17,7 +17,6 @@ define('TEMP_ROOT', APP_ROOT . '/Templates');
 define('LANG_ROOT', PROJECT_ROOT . '/lang');
 
 require_once PROJECT_ROOT . '/vendor/autoload.php';
-session_start();
 
 $app = new \Slim\App(['settings' => ['displayErrorDetails' => true]]);
 

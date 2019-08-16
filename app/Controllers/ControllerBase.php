@@ -11,7 +11,9 @@ namespace App\Controllers;
 
 use App\Libs\Valid;
 use Psr\Container\ContainerInterface;
+use Psr\Http\Message\ResponseInterface;
 use Slim\Http\Response;
+use Slim\Views\PhpRenderer;
 
 class ControllerBase
 {
@@ -44,10 +46,19 @@ class ControllerBase
      * @param Response $response
      * @param string $template
      * @param array $data
+     * @return ResponseInterface
      */
-    public function setView(Response $response, $template = '', $data = [])
+    public function render(Response $response, $template = '', $data = [])
     {
-        $this->ci->view->render($response, $template, $data);
+        return $this->getView()->render($response, $template, $data);
+    }
+
+    /**
+     * @return PhpRenderer
+     */
+    public function getView()
+    {
+        return $this->ci['view'];
     }
 
     public function success(Response $response, $data = [])

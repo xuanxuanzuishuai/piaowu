@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+  <script src="https://cdn.bootcss.com/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+  <title>Admin</title>
+</head>
+<body>
+<h1>Admin</h1>
+<div>后台系统配置菜单</div>
+
+<div id="auth">
+  <p>管理员token</p>
+  <p>
+    <textarea id="token_text" name="token" oninput="onTokenTextChange()" placeholder="admin token"></textarea>
+  </p>
+  <p id="auth_hint"></p>
+  <p>
+    <input type="button" onclick="updateToken()" value="Update">
+    <input type="button" onclick="resetTokenText()" value="Reset">
+  </p>
+</div>
+
+<div id="menu">
+<?php if (isset($menu)) : ?>
+<ol>
+<?php foreach ($menu as $item): ?>
+  <li> <a href="<?= $item['uri']; ?>"><?= $item['title']; ?></a></li>
+<?php endforeach; ?>
+</ol>
+<?php endif; ?>
+</div>
+
+<script type="text/javascript">
+  function updateMenu() {
+    const menu = $('#menu');
+    const token = $.cookie('admin_token');
+    if (token.length > 0) {
+      menu.show();
+    } else {
+      menu.hide();
+    }
+  }
+
+  function updateToken() {
+    const tokenText = $('#token_text');
+    const token = tokenText.val();
+    console.log('set token:' + token);
+    $.cookie('admin_token', token);
+    setHint('');
+    // updateMenu();
+  }
+
+  function resetTokenText() {
+    const tokenText = $('#token_text');
+    tokenText.val($.cookie('admin_token'));
+    setHint('');
+  }
+
+  function onTokenTextChange() {
+    const tokenText = $('#token_text');
+    const token = $.cookie('admin_token');
+    const changed = token !== tokenText.val();
+    const hint = changed ? 'token已修改,点击Update更新,或点击Reset撤销' : '';
+    setHint(hint);
+  }
+
+  function setHint(str) {
+    const authHint = $('#auth_hint');
+    const token = $.cookie('admin_token');
+    if (str.length === 0 && token.length === 0) {
+      authHint.text('填入超级管理员的ERP后台登录token')
+    } else {
+      authHint.text(str);
+    }
+  }
+
+  function init() {
+    resetTokenText();
+    // updateMenu();
+  }
+
+  init();
+
+</script>
+
+</body>
+</html>

@@ -24,12 +24,16 @@ use GuzzleHttp\Client;
 
 class AppVersionModel
 {
+    const VER_TYPE_PUBLISH = 'publish';
+    const VER_TYPE_REVIEW = 'review';
+
     const APP_TYPE_STUDENT = 'aiappstudent';
     const APP_TYPE_TEACHER = 'aiappteacher';
 
     const UC_APP_API_GET_VERSION = '/ajax/app_mgr/api/v1/app_version/version';
     const APP_PUBLISH_VERSION_CACHE_KEY = 'app_publish_version_%s_%s';
     const APP_REVIEW_VERSION_CACHE_KEY = 'app_review_version_%s_%s';
+    const APP_VERSION_CACHE_KEY = 'app_%s_version_%s_%s';
     const APP_VERSION_CACHE_EXPIRE = 1800;
 
 
@@ -56,6 +60,11 @@ class AppVersionModel
 
         $version = json_decode($value, true);
         return $version;
+    }
+
+    public static function getCacheKey($verType, $appType, $platformId)
+    {
+        return sprintf(self::APP_VERSION_CACHE_KEY, $verType, $appType, $platformId);
     }
 
     /**

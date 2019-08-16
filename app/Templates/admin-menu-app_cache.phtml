@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin/App Cache</title>
+</head>
+<body>
+<h3><a href="/admin/menu/main">返回</a></h3>
+<h2>APP版本缓存</h2>
+
+<?php
+$post = $post ?? '';
+
+foreach (['student', 'teacher'] as $appType) {
+    $appTypeData = $$appType;
+    echo "<h1>{$appType}</h1>";
+
+    foreach(['publish', 'review'] as $verType) {
+        echo "<h2>{$verType}</h2>";
+
+        foreach (['ios', 'android'] as $platform) {
+            echo "<h3>{$platform}</h3>";
+
+            if (isset($appTypeData[$verType][$platform])) {
+                $data = nl2br(print_r($appTypeData[$verType][$platform]['value'], true));
+                echo "
+<form method=\"post\" action=\"{$post}\">
+  <p><span>key:<input type=\"text\" size=\"40\" name=\"cache_key\" value=\"{$appTypeData[$verType][$platform]['key']}\" readonly></span></p>
+  <input type=\"submit\" value=\"Clear\">
+</form>
+<p>{$data}</p>
+<hr/>";
+            }
+        }
+    }
+}
+?>
+
+</body>
+</html>
