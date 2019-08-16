@@ -294,20 +294,46 @@ class ScheduleService
         $sus = [];
         $now = time();
         list($count, $schedules) = self::getList(['class_id' => $stId, 'status' => ScheduleModel::STATUS_BOOK]);
+
         foreach ($schedules as $schedule) {
-            foreach ($users as $userId => $value) {
-                if ($userRole == ClassUserModel::USER_ROLE_S) {
-                    $key = array_search($schedule['c_t_id'], $ctIds);
-                    $price = $value[$key] * 100;
-                } else {
-                    $price = 0;
-                    $userRole = $value;
+            $scheduleId = $schedule['id'];
+            $suStatus = $schedule['status'] != ScheduleModel::STATUS_BOOK ? ScheduleUserModel::STATUS_CANCEL : ScheduleUserModel::STATUS_NORMAL;
+            if ($userRole == ClassUserModel::USER_ROLE_S) {
+                $students = ScheduleUserModel::getSUserIds($scheduleId);
+                $studentIds = array_column($students, 'user_id');
+                foreach ($users as $userId => $value) {
+                    if (!in_array($userId, $studentIds)) {
+                        $key = array_search($schedule['c_t_id'], $ctIds);
+                        $price = $value[$key] * 100;
+                        $sus[] = [
+                            'price' => $price,
+                            'schedule_id' => $scheduleId,
+                            'user_id' => $userId,
+                            'user_role' => $userRole,
+                            'user_status' => ScheduleUserModel::STUDENT_STATUS_BOOK,
+                            'status' => $suStatus,
+                            'create_time' => $now
+                        ];
+                    }
                 }
-                $suStatus = $schedule['status'] != ScheduleModel::STATUS_BOOK ? ScheduleUserModel::STATUS_CANCEL : ScheduleUserModel::STATUS_NORMAL;
-                $userStatus = $userRole == ClassUserModel::USER_ROLE_S ? ScheduleUserModel::STUDENT_STATUS_BOOK : ScheduleUserModel::TEACHER_STATUS_SET;
-                $sus[] = ['price' => $price, 'schedule_id' => $schedule['id'], 'user_id' => $userId, 'user_role' => $userRole, 'user_status' => $userStatus, 'status' => $suStatus, 'create_time' => $now];
+            } else {
+                $teacherIds = ScheduleUserModel::getTUserIds($scheduleId);
+                foreach ($users as $userId => $value) {
+                    if (!in_array($userId, $teacherIds)) {
+                        $sus[] = [
+                            'price' => 0,
+                            'schedule_id' => $scheduleId,
+                            'user_id' => $userId,
+                            'user_role' => $value,
+                            'user_status' => ScheduleUserModel::TEACHER_STATUS_SET,
+                            'status' => $suStatus,
+                            'create_time' => $now
+                        ];
+                    }
+                }
             }
         }
+
         if (!empty($sus)) {
             $ret = ScheduleUserModel::insertSUs($sus);
             if (is_null($ret))
