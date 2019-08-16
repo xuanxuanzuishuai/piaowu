@@ -14,9 +14,9 @@ use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Libs\Valid;
 use App\Models\OrganizationModel;
-use App\Models\OrganizationModelForApp;
 use App\Models\TeacherModelForApp;
 use App\Services\HomeworkService;
+use App\Services\OrganizationServiceForApp;
 use App\Services\ScheduleServiceForApp;
 use App\Services\WeChatService;
 use Slim\Http\Request;
@@ -47,6 +47,13 @@ class Schedule extends ControllerBase
             return $response->withJson(Valid::addAppErrors([], 'student_id_is_required'), StatusCode::HTTP_OK);
         }
 
+        $inSchedule = OrganizationServiceForApp::isStudentInSchedule($this->ci['org']['id'],
+            $this->ci['org_teacher_token'], $param['student_id']);
+
+        if (!$inSchedule) {
+            return $response->withJson(Valid::addAppErrors([], 'invalid_status'), StatusCode::HTTP_OK);
+        }
+
         $db = MysqlDB::getDB();
         $db->beginTransaction();
         // 结束上课
@@ -72,8 +79,8 @@ class Schedule extends ControllerBase
 
         $db->commit();
 
-        OrganizationModelForApp::delOrgTeacherTokens($this->ci['org']['id'],
-            $this->ci['org_teacher_token']);
+        OrganizationServiceForApp::studentEndSchedule($this->ci['org']['id'],
+            $this->ci['org_teacher_token'], $param['student_id']);
 
         $teacherInfo = TeacherModelForApp::getById($param['teacher_id']);
         $orgInfo = OrganizationModel::getById($param['org_id']);

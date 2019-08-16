@@ -257,4 +257,85 @@ class OrganizationServiceForApp
 
         return $students;
     }
+
+    /**
+     * 学生下课退出课堂
+     *
+     * @param $orgId
+     * @param $teacherToken
+     * @param $studentId
+     * @return bool
+     */
+    public static function studentEndSchedule($orgId, $teacherToken, $studentId)
+    {
+        $onlineTeachers = OrganizationModelForApp::getOnlineTeacher($orgId);
+        $teacherTokenIdx = null;
+        foreach ($onlineTeachers as $tokenIdx => $data) {
+            if ($data['token'] == $teacherToken) {
+                $teacherTokenIdx = $tokenIdx;
+                break;
+            }
+        }
+
+        if ($teacherTokenIdx === null) {
+            return false;
+        }
+
+        $cache = $onlineTeachers[$teacherTokenIdx];
+        if (($studentIdx = array_search($studentId, $cache['student_id'])) === false) {
+            return false;
+        }
+
+        unset($cache['student_id'][$studentIdx]);
+        if (empty($cache['student_id'])) { // 所有学生都已下课 删除 teacherToken
+            OrganizationModelForApp::delOrgTeacherTokens($orgId, $teacherToken);
+            return true;
+        }
+
+        $cache['student_id'] = array_values($cache['student_id']);
+        $onlineTeachers[$teacherTokenIdx] = $cache;
+
+        OrganizationModelForApp::setOrgTeacherToken($cache, $orgId, $teacherToken);
+        OrganizationModelForApp::setOnlineTeacher($onlineTeachers, $orgId);
+
+        SimpleLogger::info("studentEndSchedule success", [
+            '$orgId' => $orgId,
+            '$teacherToken' => $teacherToken,
+            '$studentId' => $studentId,
+            '$onlineTeachers' => $onlineTeachers,
+        ]);
+
+        return true;
+    }
+
+    /**
+     * 检查学生是否在课堂中
+     *
+     * @param $orgId
+     * @param $teacherToken
+     * @param $studentId
+     * @return bool
+     */
+    public static function isStudentInSchedule($orgId, $teacherToken, $studentId)
+    {
+        $onlineTeachers = OrganizationModelForApp::getOnlineTeacher($orgId);
+        $teacherTokenIdx = null;
+        foreach ($onlineTeachers as $tokenIdx => $data) {
+            if ($data['token'] == $teacherToken) {
+                $teacherTokenIdx = $tokenIdx;
+                break;
+            }
+        }
+
+        if ($teacherTokenIdx === null) {
+            return false;
+        }
+
+        $cache = $onlineTeachers[$teacherTokenIdx];
+        if (($studentIdx = array_search($studentId, $cache['student_id'])) === false) {
+            return false;
+        }
+
+        return true;
+    }
 }
