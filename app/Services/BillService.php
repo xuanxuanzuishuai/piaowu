@@ -123,7 +123,7 @@ class BillService
                 $success = StudentAccountService::abolishSA(
                     $bill['student_id'], $bill['amount'], 0, $bill['operator_id'], $bill['remark'], false, $billId
                 );
-                if(!$success) {
+                if ($success !== true) {
                     return 'update_student_account_fail';
                 }
             }

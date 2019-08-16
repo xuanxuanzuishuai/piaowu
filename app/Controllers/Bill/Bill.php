@@ -94,7 +94,7 @@ class Bill extends ControllerBase
                 $success = StudentAccountService::abolishSA(
                     $record['student_id'], $record['amount'], 0, $record['operator_id'], $record['remark'], false, $id
                 );
-                if(!$success) {
+                if($success !== true) {
                     $db->rollBack();
                     return $response->withJson(Valid::addErrors([], 'bill', 'abolish_sa_fail'));
                 }

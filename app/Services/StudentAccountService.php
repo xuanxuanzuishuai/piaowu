@@ -152,12 +152,13 @@ class StudentAccountService
      * @param int $billId
      * @return bool|array
      */
-    public static function abolishSA($studentId, $amount, $vamount, $operatorId, $remark, $force = true, $billId = 0) {
+    public static function abolishSA($studentId, $amount, $vamount, $operatorId, $remark, $force = true, $billId = 0)
+    {
 
         $now = time();
         $sas = StudentAccountModel::getSADetailBySId($studentId);
         if (empty($sas)) {
-            return false;
+            return Valid::addErrors([], 'student_account', 'student_account_is_not_enough');
         }
 
         $cash = $vcash = 0;
@@ -182,11 +183,11 @@ class StudentAccountService
             if ($res > 0) {
                 $log[] = ['operator_id' => $operatorId, 'remark' => $remark, 'create_time' => $now, 's_a_id' => $cash['id'], 'balance' => $amount, 'old_balance' => $cash['balance'], 'new_balance' => $cash['balance'] - $amount, 'type' => StudentAccountLogModel::TYPE_DISCARD, 'bill_id' => $billId];
             } else {
-                return false;
+                return Valid::addErrors([], 'student', 'update_student_account_error');
             }
         }
 
-        if($vamount > 0 ) {
+        if ($vamount > 0 ) {
             if (empty($vcash) || ($force == false && $vcash['balance'] < $vamount)) {
                 return Valid::addErrors([], 'student_account', 'student_account_vcash_is_not_enough');
             }
@@ -198,7 +199,7 @@ class StudentAccountService
             if ($res > 0) {
                 $log[] = ['operator_id' => $operatorId, 'remark' => $remark, 'create_time' => $now, 's_a_id' => $vcash['id'], 'balance' => $vamount, 'old_balance' => $vcash['balance'], 'new_balance' => $vcash['balance'] - $vamount, 'type' => StudentAccountLogModel::TYPE_DISCARD, 'bill_id' => $billId];
             } else {
-                return false;
+                return Valid::addErrors([], 'student', 'update_student_account_error');
             }
         }
         if (!empty($log)) {
