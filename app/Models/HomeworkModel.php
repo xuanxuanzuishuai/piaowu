@@ -45,34 +45,32 @@ class HomeworkModel extends Model
      * @param array $where
      * @return array
      */
-    public static function getHomeworkList($where=[]){
-        $result = MysqlDB::getDB()->select(
-                HomeworkModel::$table,
-                [
-                    '[>]'.HomeworkTaskModel::$table => ['id' => 'homework_id'],
-                    '[>]'.TeacherModel::$table => [self::$table.'.teacher_id' => 'id']
-                ],
-                [
-                    HomeworkModel::$table.'.id',
-                    HomeworkModel::$table.'.student_id',
-                    HomeworkModel::$table.'.teacher_id',
-                    HomeworkModel::$table.'.org_id',
-                    HomeworkModel::$table.'.schedule_id',
-                    HomeworkModel::$table.'.created_time',
-                    HomeworkModel::$table.'.end_time',
-                    HomeworkModel::$table.'.remark',
-                    HomeworkTaskModel::$table.'.id(task_id)',
-                    HomeworkTaskModel::$table.'.lesson_id',
-                    HomeworkTaskModel::$table.'.lesson_name',
-                    HomeworkTaskModel::$table.'.collection_id',
-                    HomeworkTaskModel::$table.'.collection_name',
-                    HomeworkTaskModel::$table.'.baseline',
-                    HomeworkTaskModel::$table.'.is_complete(complete)',
-                    HomeworkTaskModel::$table.'.note_ids',
-                    TeacherModel::$table.'.name(teacher_name)'
-                ],
-                $where
-            );
+    public static function getHomeworkList($where = [])
+    {
+        $result = MysqlDB::getDB()->select(HomeworkModel::$table, [
+            '[>]' . HomeworkTaskModel::$table => ['id' => 'homework_id'],
+            '[>]' . TeacherModel::$table => [self::$table . '.teacher_id' => 'id']
+        ], [
+            HomeworkModel::$table . '.id',
+            HomeworkModel::$table . '.student_id',
+            HomeworkModel::$table . '.teacher_id',
+            HomeworkModel::$table . '.org_id',
+            HomeworkModel::$table . '.schedule_id',
+            HomeworkModel::$table . '.created_time',
+            HomeworkModel::$table . '.end_time',
+            HomeworkModel::$table . '.remark',
+            HomeworkTaskModel::$table . '.id(task_id)',
+            HomeworkTaskModel::$table . '.lesson_id',
+            HomeworkTaskModel::$table . '.lesson_name',
+            HomeworkTaskModel::$table . '.collection_id',
+            HomeworkTaskModel::$table . '.collection_name',
+            HomeworkTaskModel::$table . '.baseline',
+            HomeworkTaskModel::$table . '.is_complete(complete)',
+            HomeworkTaskModel::$table . '.note_ids',
+            HomeworkTaskModel::$table . '.homework_audio',
+            HomeworkTaskModel::$table . '.audio_duration',
+            TeacherModel::$table . '.name(teacher_name)'
+        ], $where);
         return $result;
     }
 }

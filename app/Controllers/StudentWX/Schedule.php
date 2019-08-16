@@ -56,11 +56,6 @@ class Schedule extends ControllerBase
         } else {
             $schedule_info = $schedule_extend[0];
             $lesson_ids = $schedule_info["opn_lessons"];
-            $class_score = $schedule_info["class_score"];
-            $remark = $schedule_info["remark"];
-            $start_time = $schedule_info["start_time"];
-            $teacher_name = $schedule_info["teacher_name"];
-            $student_name = $schedule_info["student_name"];
             $detail_score = json_decode($schedule_info["detail_score"], true);
             $homework_rank = $detail_score["homework_rank"];
             $performance_rank = $detail_score["performance_rank"];
@@ -91,17 +86,21 @@ class Schedule extends ControllerBase
 
             $note_id_list = [];
             $lesson_2_notes = [];
+            $ali = new AliOSS();
             foreach ($homework_list as $homework){
+                $homework_audio = $ali->signUrls($homework['homework_audio']);
                 array_push($home_work_lesson_info, [
                     "lesson_id"=> $homework["lesson_id"],
                     "collection_id" => $homework["collection_id"],
-                    "note_list" => []
+                    "note_list" => [],
+                    'homework_audio' => $homework_audio,
+                    'audio_duration' => $homework['audio_duration']
                 ]);
                 $finish_time = $homework["end_time"];
                 $note_ids = explode(",", $homework["note_ids"]);
                 if (!empty($homework["note_ids"])){
                     $note_id_list = array_merge($note_id_list, $note_ids);
-                    $lesson_2_notes[ $homework["lesson_id"]] = $note_ids;
+                    $lesson_2_notes[$homework["lesson_id"]] = $note_ids;
                 }
             }
 
@@ -112,7 +111,6 @@ class Schedule extends ControllerBase
                 $note_dic[$note["id"]] = $note;
             }
 
-            $ali = new AliOSS();
             $length = sizeof($home_work_lesson_info);
             for($i=0; $i < $length; $i++){
                 $lesson_info = $home_work_lesson_info[$i];
@@ -132,14 +130,18 @@ class Schedule extends ControllerBase
             $home_work_lesson_info = OpernService::formatLessonAndCollectionName($home_work_lesson_info);
 
             $data["homework"] = $home_work_lesson_info;
-            $data["remark"] = $remark;
-            $data["date"] = date("Y年m月d日", $start_time);
-            $data["class_score"] = $class_score;
+            $data["remark"] = $schedule_info["remark"];
+            $data["date"] = date("Y年m月d日", $schedule_info["start_time"]);
+            $data["class_score"] = $schedule_info["class_score"];
             $data["homework_end_date"] = date("Y年m月d日", $finish_time) ?? "";
-            $data["teacher_name"] = $teacher_name;
+            $data["teacher_name"] = $schedule_info["teacher_name"];
             $data["homework_remark"] = ScheduleExtendModel::$homework_score_map[$homework_rank];
             $data["performance_remark"] = ScheduleExtendModel::$performance_score_map[$performance_rank];
-            $data["student_name"] = $student_name;
+            $data["student_name"] = $schedule_info["student_name"];
+            $audio_url = $ali->signUrls($schedule_info['audio_comment']);
+            $data['audio_comment'] = $audio_url;
+            $data['audio_duration'] = $schedule_info['audio_duration'];
+            $data['org_name'] = $schedule_info['org_name'];
         }
 
         return $response->withJson([

@@ -36,7 +36,8 @@ class ScheduleExtendModel extends Model
         return self::insertRecord($data, $isOrg);
     }
 
-    public static function getUserScheduleExtendDetail($schedule_id, $student_id=null) {
+    public static function getUserScheduleExtendDetail($schedule_id, $student_id=null)
+    {
 
         $sql = "select 
                   se.schedule_id as schedule_id, 
@@ -44,19 +45,26 @@ class ScheduleExtendModel extends Model
                   se.detail_score as detail_score,
                   se.class_score as class_score,
                   se.remark as remark,
+                  se.audio_comment,
+                  se.audio_duration,
                   tsu.user_id as teacher_id,
                   ssu.user_id as student_id,
                   s.start_time as start_time,
+                  org.name org_name,
                   t.name as teacher_name,
                   stu.name as student_name
-                from " . self::$table . " se " . " inner join " . ScheduleModel::$table .
-            " s on se.schedule_id = s.id inner join " . ScheduleUserModel::$table .
-            " tsu on tsu.schedule_id = s.id and tsu.user_role = " . ScheduleUserModel::USER_ROLE_TEACHER .
-            " and tsu.user_status=" .ScheduleUserModel::TEACHER_STATUS_ATTEND . " inner join " . ScheduleUserModel::$table .
-            " ssu on ssu.schedule_id=s.id and ssu.user_role = ". ScheduleUserModel::USER_ROLE_STUDENT .
-            " and ssu.user_status=" . ScheduleUserModel::STUDENT_STATUS_ATTEND . " inner join " . TeacherModelForApp::$table .
-            " t on t.id = tsu.user_id " . " inner join " . StudentModelForApp::$table . " stu on stu.id = ssu.user_id " .
-            " where se.schedule_id = :schedule_id";
+                from " . self::$table . " se " . "
+                inner join " . ScheduleModel::$table . " s on se.schedule_id = s.id
+                inner join " . OrganizationModel::$table . " org on s.org_id = org.id
+                inner join " . ScheduleUserModel::$table . " tsu on tsu.schedule_id = s.id
+                 and tsu.user_role = " . ScheduleUserModel::USER_ROLE_TEACHER . "
+                 and tsu.user_status=" .ScheduleUserModel::TEACHER_STATUS_ATTEND . "
+                inner join " . ScheduleUserModel::$table . " ssu on ssu.schedule_id=s.id
+                 and ssu.user_role = ". ScheduleUserModel::USER_ROLE_STUDENT . "
+                 and ssu.user_status=" . ScheduleUserModel::STUDENT_STATUS_ATTEND . "
+                inner join " . TeacherModelForApp::$table . " t on t.id = tsu.user_id " . "
+                inner join " . StudentModelForApp::$table . " stu on stu.id = ssu.user_id " .
+              " where se.schedule_id = :schedule_id";
 
         $map = [":schedule_id" => $schedule_id];
         if (!empty($student_id)){
