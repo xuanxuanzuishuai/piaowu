@@ -19,6 +19,7 @@ require_once PROJECT_ROOT . '/vendor/autoload.php';
 
 use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
+use App\Libs\Util;
 use App\Models\PlayRecordModel;
 use App\Models\UserWeixinModel;
 use App\Libs\UserCenter;
@@ -61,7 +62,7 @@ foreach ($userInfo as $value) {
             'color' => "#323d83"
         ],
         'keyword2' => [
-            'value' => "练琴" . $value['sum_duration'] / 60 . "分钟" . $value['sum_duration'] % 60 . "秒",
+            'value' => "练琴" . Util::formatExerciseTime($value['sum_duration']),
             'color' => "#323d83"
         ],
         'keyword3' => [
