@@ -32,64 +32,54 @@ $db = MysqlDB::getDB();
 $start_time = strtotime('today');
 $end_time = $start_time + 86399;
 $date = date("Y-m-d", $start_time);
-$date_str = date("Y年m月d日", $start_time);
 
-$sql = "select open_id, student_id from (select distinct student_id from " . PlayRecordModel::$table .
-    " where created_time >= " . $start_time .
-    " and " . PlayRecordModel::$table . ".created_time < " . $end_time . ") as stu_ids inner join " .
-    UserWeixinModel::$table . " on stu_ids.student_id = " . UserWeixinModel::$table . ".user_id and " .
-    UserWeixinModel::$table . ".app_id = " . UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT . " and " .
-    UserWeixinModel::$table . ".user_type = 1";
+$sql = "select open_id, student_id, sum_duration, max_score, lesson_count
+        from (select student_id,
+                SUM(duration) sum_duration,
+                MAX(score) max_score,
+                COUNT(DISTINCT lesson_id) lesson_count
+            from " . PlayRecordModel::$table . "
+            where created_time >= " . $start_time . "
+                and created_time < " . $end_time . "
+            group by student_id) as plays
+        inner join " . UserWeixinModel::$table . " uw
+            on plays.student_id = uw.user_id
+            and uw.app_id = " . UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT . "
+            and uw.user_type = 1";
 
 $userInfo = $db->queryAll($sql, []);
-$data = [
-    'first' => [
-        'value' => "您的练琴日报已经生成，点击查看。",
-        'color' => "#323d83"
-    ],
-    'keyword1' => [
-        'value' => "练琴日报",
-        'color' => "#323d83"
-    ],
-    'keyword2' => [
-        'value' => $date_str,
-        'color' => "#323d83"
-    ],
-    'remark' => [
-        'value' => "点击【详情】查看",
-        'color' => "#323d83"
-    ]
-];
-
-//if (empty($userInfo)) {
-//    $userInfo = [
-//        [
-//            "open_id" => "ordh90riaoetIHBnVC1s_UOMxbHk"
-//        ]
-//    ];
-//}
 $url = $_ENV["WECHAT_FRONT_DOMAIN"] . "/student/daily?date=" . $date;
 foreach ($userInfo as $value) {
     SimpleLogger::info("----", $value);
+    $data = [
+        'first' => [
+            'value' => "宝贝今天的练琴日报已生成，宝贝很棒哦！继续加油！",
+            'color' => "#323d83"
+        ],
+        'keyword1' => [
+            'value' => $value['lesson_count'] . "首",
+            'color' => "#323d83"
+        ],
+        'keyword2' => [
+            'value' => "练琴" . $value['sum_duration'] / 60 . "分钟" . $value['sum_duration'] % 60 . "秒",
+            'color' => "#323d83"
+        ],
+        'keyword3' => [
+            'value' => "最高" . $value["max_score"] . "分"
+        ],
+        'remark' => [
+            'value' => "点击【详情】查看",
+            'color' => "#323d83"
+        ]
+    ];
     // 发送学生练习日报
     $ret = WeChatService::notifyUserWeixinTemplateInfo(
         UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
         WeChatService::USER_TYPE_STUDENT,
         $value["open_id"],
-        $_ENV["WECHAT_DAILY_RECORD_REPORT"],
+        $_ENV["WECHAT_DAY_PLAY_REPORT"],
         $data,
         $url
-        );
+    );
     SimpleLogger::info("result:", $ret);
 }
-//foreach ($userInfo as $value) {
-//    SimpleLogger::info("----", $value);
-//    // 发送学生练习日报
-//    $ret = WeChatService::notifyUserWeixinTextInfo(
-//        UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
-//        WeChatService::USER_TYPE_STUDENT,
-//        $value["open_id"],
-//        '您的练琴日报已经生成，点击<a href="' . $url . '"> 日报 </a>查看。'
-//    );
-//    SimpleLogger::info("result:", $ret);
-//}
