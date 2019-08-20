@@ -472,18 +472,27 @@ class Opn extends ControllerBase
 
         list($pageId, $pageLimit) = Util::appPageLimit($param);
         $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER, $this->ci['opn_pro_ver']);
+        // 按知识点名称搜索
         $resultByName = $opn->searchKnowledge($param['keyword'], 1, $pageId, $pageLimit);
+        // 按知识点标签搜索
         $resultByTag = $opn->searchKnowledge($param['keyword'], 2, $pageId, $pageLimit);
-        if (empty($resultByName) || !empty($resultByName['errors'])) {
+        if ((empty($resultByName) || !empty($resultByName['errors']))
+             and (empty($resultByTag) || !empty($resultByTag['errors']))) {
             return $response->withJson(OpernCenter::OPERN_CENTER_ERROR, StatusCode::HTTP_OK);
         }
-        if (!empty($resultByName)){
-            $ret = ['knowledge_by_name'=>$resultByName['data'],
-                    'knowledge_by_tag'=> !empty($resultByTag['data']) ? $resultByTag['data'] : []
-                ];
-        }else{
-            $ret = ['knowledge_by_name'=>[], 'knowledge_by_tag'=>[]];
+
+        // 去重搜索结果
+        $resultByNameKnowledge = !empty($resultByName['data']) ? $resultByName['data'] : [];
+        $resultByTagKnowledge = !empty($resultByTag['data']) ? $resultByTag['data'] : [];
+        $resultByTagKnowledgeRet = [];
+        $resultByNameIds = array_column($resultByNameKnowledge, 'kn_id');
+        foreach ($resultByTagKnowledge as $k){
+            if(!in_array($k['kn_id'], $resultByNameIds)){
+                array_push($resultByTagKnowledgeRet, $k);
+            }
         }
+
+        $ret = ['knowledge_by_name'=>$resultByNameKnowledge, 'knowledge_by_tag'=>$resultByTagKnowledgeRet];
         return $response->withJson(['code'=>0, 'data'=>$ret], StatusCode::HTTP_OK);
     }
 }
