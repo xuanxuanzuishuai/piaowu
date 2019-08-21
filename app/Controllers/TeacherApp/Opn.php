@@ -436,6 +436,7 @@ class Opn extends ControllerBase
         }
 
         list($pageId, $pageLimit) = Util::appPageLimit($param);
+        $pageLimit = 10000;
         $categoryId = $param['category_id'];
         $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER, $this->ci['opn_pro_ver']);
         $result = $opn->getKnowledgeByCategory($categoryId, $pageId, $pageLimit);
@@ -471,6 +472,7 @@ class Opn extends ControllerBase
         }
 
         list($pageId, $pageLimit) = Util::appPageLimit($param);
+        $pageLimit = 10000;
         $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER, $this->ci['opn_pro_ver']);
         // 按知识点名称搜索
         $resultByName = $opn->searchKnowledge($param['keyword'], 1, $pageId, $pageLimit);

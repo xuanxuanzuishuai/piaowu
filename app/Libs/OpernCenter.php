@@ -313,7 +313,7 @@ class OpernCenter
             'pro_ver' => $this->proVer,
             'category_id' => $categoryId,
             'page' => $page,
-            '$pageSize' => $pageSize
+            'page_size' => $pageSize
         ]);
         return empty($result) ? [] : $result;
     }
@@ -326,7 +326,7 @@ class OpernCenter
             'keyword' => $keyword,
             'type' => $type,
             'page' => $page,
-            '$pageSize' => $pageSize
+            'page_size' => $pageSize
         ]);
         return empty($result) ? [] : $result;
     }
