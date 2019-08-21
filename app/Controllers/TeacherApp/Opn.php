@@ -487,14 +487,16 @@ class Opn extends ControllerBase
         $resultByNameKnowledge = !empty($resultByName['data']) ? $resultByName['data'] : [];
         $resultByTagKnowledge = !empty($resultByTag['data']) ? $resultByTag['data'] : [];
         $resultByTagKnowledgeRet = [];
-        $resultByNameIds = array_column($resultByNameKnowledge, 'kn_id');
-        foreach ($resultByTagKnowledge as $k){
+        $resultByNameIds = array_column($resultByNameKnowledge['list'], 'kn_id');
+        foreach ($resultByTagKnowledge['list'] as $k){
             if(!in_array($k['kn_id'], $resultByNameIds)){
                 array_push($resultByTagKnowledgeRet, $k);
             }
         }
 
-        $ret = ['knowledge_by_name'=>$resultByNameKnowledge, 'knowledge_by_tag'=>$resultByTagKnowledgeRet];
+        $ret = ['knowledge_by_name'=>$resultByNameKnowledge,
+                'knowledge_by_tag'=>['total_count'=>count($resultByTagKnowledgeRet),
+                                     'list'=>$resultByTagKnowledgeRet]];
         return $response->withJson(['code'=>0, 'data'=>$ret], StatusCode::HTTP_OK);
     }
 }
