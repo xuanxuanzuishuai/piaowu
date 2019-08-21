@@ -9,6 +9,8 @@
 namespace App\Controllers\StudentApp;
 
 use App\Controllers\ControllerBase;
+use App\Libs\Exceptions\RunTimeException;
+use App\Libs\HttpHelper;
 use App\Libs\MysqlDB;
 use App\Libs\Util;
 use App\Libs\Valid;
@@ -60,18 +62,17 @@ class Subscription extends ControllerBase
     {
         Util::unusedParam($request);
 
-        list($errorCode, $ret) = StudentServiceForApp::trial($this->ci['student']['id']);
+        $db = MysqlDB::getDB();
+        try {
+            $db->beginTransaction();
+            $ret = StudentServiceForApp::trial($this->ci['student']['id']);
+            $db->commit();
 
-        if (!empty($errorCode)) {
-            $result = Valid::addAppErrors([], $errorCode);
-            return $response->withJson($result, StatusCode::HTTP_OK);
+        } catch (RunTimeException $e) {
+            $db->rollBack();
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
 
-        return $response->withJson([
-            'code' => Valid::CODE_SUCCESS,
-            'data' => [
-                'result' => $ret
-            ]
-        ], StatusCode::HTTP_OK);
+        return HttpHelper::buildResponse($response, $ret);
     }
 }

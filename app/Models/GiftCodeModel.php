@@ -35,6 +35,7 @@ class GiftCodeModel extends Model
     const BUYER_TYPE_OTHER = 3;
     const BUYER_TYPE_ERP_EXCHANGE = 4;
     const BUYER_TYPE_ERP_ORDER = 5;
+    const BUYER_TYPE_REFERRAL = 6;
 
     /**
      * 兑换码状态
@@ -55,6 +56,11 @@ class GiftCodeModel extends Model
     const CODE_TIME_DAY = 1;
     const CODE_TIME_MONTH = 2;
     const CODE_TIME_YEAR = 3;
+    const CODE_TIME_UNITS = [
+        self::CODE_TIME_DAY => 'day',
+        self::CODE_TIME_MONTH => 'month',
+        self::CODE_TIME_YEAR => 'year',
+    ];
 
     const DEFAULT_DEADLINE_UNIT = 2; //默认激活码有效期单位 月
     const DEFAULT_DEADLINE_NUMBER = 12; //默认激活时间 12

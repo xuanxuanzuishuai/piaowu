@@ -13,7 +13,9 @@ namespace App\Services;
 use App\Libs\Constants;
 use App\Libs\Dict;
 use App\Libs\DictConstants;
+use App\Libs\Exceptions\RunTimeException;
 use App\Libs\ResponseError;
+use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Libs\Util;
 use App\Libs\Valid;
@@ -401,5 +403,61 @@ class StudentService
         }
 
         return $result;
+    }
+
+    /**
+     * 给用户添加时长
+     * @param $studentID
+     * @param $num
+     * @param $units
+     * @return array
+     * @throws RunTimeException
+     */
+    public static function addSubDuration($studentID, $num, $units)
+    {
+        $student = StudentModel::getById($studentID);
+        if (empty($student)) {
+            $e = new RunTimeException(['student_not_found']);
+            $e->sendCaptureMessage(['$studentID' => $studentID]);
+            throw $e;
+        }
+
+        $today = date('Ymd');
+        if (empty($student['sub_end_date']) || $student['sub_end_date'] < $today) {
+            $subEndDate = $today;
+        } else {
+            $subEndDate = $student['sub_end_date'];
+        }
+        $subEndTime = strtotime($subEndDate);
+
+        $unitsStr = GiftCodeModel::CODE_TIME_UNITS[$units];
+        if (empty($unitsStr)) {
+            $e = new RunTimeException(['invalid_gift_code_units']);
+            $e->sendCaptureMessage(['$units' => $units]);
+            throw $e;
+        }
+
+        $timeStr = '+' . $num . ' ' . $unitsStr;
+        $newSubEndDate = date('Ymd', strtotime($timeStr, $subEndTime));
+
+        $studentUpdate = [
+            'sub_end_date' => $newSubEndDate,
+            'update_time'  => time(),
+        ];
+        if (empty($student['sub_start_date'])) {
+            $studentUpdate['sub_start_date'] = $today;
+        }
+
+        $affectRows = StudentModel::updateRecord($studentID, $studentUpdate);
+        if($affectRows == 0) {
+            $e = new RunTimeException(['update_student_fail']);
+            $e->sendCaptureMessage(['$studentID' => $studentID, '$studentUpdate' => $studentUpdate]);
+            throw $e;
+        }
+
+        return [
+            'sub_start_date' => $student['sub_start_date'] ?: $studentUpdate['sub_start_date'],
+            'sub_end_date' => $studentUpdate['sub_end_date'],
+        ];
     }
 }

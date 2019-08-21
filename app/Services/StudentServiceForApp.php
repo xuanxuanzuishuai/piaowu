@@ -10,10 +10,12 @@ namespace App\Services;
 
 
 use App\Libs\DictConstants;
+use App\Libs\Exceptions\RunTimeException;
 use App\Libs\ResponseError;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Libs\Util;
+use App\Models\ReferralModel;
 use App\Models\StudentModel;
 use App\Models\StudentModelForApp;
 use App\Models\GiftCodeModel;
@@ -339,16 +341,17 @@ class StudentServiceForApp
      * 领取体验时长
      * @param $studentID
      * @return array
+     * @throws RunTimeException
      */
     public static function trial($studentID)
     {
         $student = StudentModelForApp::getStudentInfo($studentID, null);
         if (empty($student)) {
-            return ['unknown_student'];
+            throw new RunTimeException(['unknown_student']);
         }
 
         if (!self::canTrial($student)) {
-            return ['cant_trial'];
+            throw new RunTimeException(['cant_trial']);
         }
 
         $type = self::TRIAL_TYPE_NORMAL;
@@ -364,8 +367,11 @@ class StudentServiceForApp
             'update_time'  => time(),
         ]);
         if($affectRows == 0) {
-            return ['update_student_fail'];
+            throw new RunTimeException(['update_student_fail']);
         }
+
+        // 达成微信分享转介绍条件, 检查发送推荐人奖励
+        ReferralService::checkReferralRewards($studentID, ReferralModel::REFERRAL_TYPE_WX_SHARE);
 
         $result = [
             'trial_start_date' => $today,
@@ -375,8 +381,7 @@ class StudentServiceForApp
             'type' => $type
         ];
 
-        return [null, $result];
-
+        return $result;
     }
 
     public static function action($studentID, $type) {

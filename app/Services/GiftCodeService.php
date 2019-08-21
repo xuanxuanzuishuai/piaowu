@@ -11,6 +11,7 @@
 namespace App\Services;
 
 use App\Libs\Constants;
+use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
 use App\Models\EmployeeModel;
 use App\Models\GiftCodeModel;
@@ -127,6 +128,81 @@ class GiftCodeService
             $data[] = substr(base_convert(str_replace('.', '', $i . $buyer . microtime() . mt_rand(10000, 99999) . $generateChannel), 10, 36), 0, 12);
         }
         return $data;
+    }
+
+    /**
+     * 给学生生成激活码
+     *
+     * @param $validNum
+     * @param $validUnits
+     * @param $generateChannel
+     * @param $buyer
+     * @param $generateWay
+     * @param $operateId
+     * @param bool $apply 是否直接充值
+     * @param null $remarks
+     * @param null $buyTime
+     * @param null $billId
+     * @param int $billAmount
+     * @throws RunTimeException
+     */
+    public static function createByStudent($validNum,
+                                           $validUnits,
+                                           $generateChannel,
+                                           $buyer,
+                                           $generateWay,
+                                           $operateId,
+                                           $apply = false,
+                                           $remarks = NULL,
+                                           $buyTime = NULL,
+                                           $billId = NULL,
+                                           $billAmount = 0)
+    {
+        for($i = 0; $i < 10; $i++) {
+            $codes = self::randCodeCreate(1, $generateChannel, $buyer);
+            //是否有重合
+            $hasExist = GiftCodeModel::codeExists($codes);
+
+            if (!$hasExist) {
+                break;
+            } else {
+                $codes = null;
+            }
+        }
+
+        if (empty($codes)) {
+            throw new RunTimeException(['gift_code_create_error']);
+        }
+
+        if ($apply) {
+            StudentService::addSubDuration($buyer, $validNum, $validUnits);
+        }
+
+        //插入数据
+        $now = time();
+        $params = [
+            'code' => $codes[0],
+            'generate_channel' => $generateChannel,
+            'buyer' => $buyer,
+            'buy_time' => $buyTime,
+            'apply_user' => $buyer,
+            'valid_num' => $validNum,
+            'valid_units' => $validUnits,
+            'be_active_time' => $now,
+            'generate_way' => $generateWay,
+            'code_status' => GiftCodeModel::CODE_STATUS_HAS_REDEEMED,
+            'operate_user' => $operateId,
+            'create_time' => $now,
+            'operate_time' => $now,
+            'remarks' => $remarks,
+            'bill_id' => $billId,
+            'bill_amount' => $billAmount,
+        ];
+
+        $result = GiftCodeModel::insertRecord($params, false);
+        if (empty($result)) {
+            throw new RunTimeException(['gift_code_create_error']);
+        }
     }
 
     /**
