@@ -500,7 +500,7 @@ class PlayRecordService
                 $ret[$lesson_id]['max_ai_score'] = max($value['max_ai'], $ret[$lesson_id]['max_ai_score']);
             }
 
-            $sum_duration += $ret[$lesson_id]['duration'];
+            $sum_duration += $value['duration'];
 
             if ($ret[$lesson_id]['max_score'] > $max_score) {
                 $max_score = $ret[$lesson_id]['max_score'];
