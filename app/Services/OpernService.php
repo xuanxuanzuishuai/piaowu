@@ -35,6 +35,8 @@ class OpernService
             $series['book_cnt'] = $category['collection_count'];
             $series['opern_cnt'] = $category['lesson_count'];
             $series['is_free'] = $category['freeflag'] ? '1' : '0';
+            $series['mmusic'] = $category['mmusic'];
+            $series['mmusicconfig'] = $category['mmusicconfig'];
             $result[] = $series;
         }
         return $result;
@@ -59,6 +61,8 @@ class OpernService
             $book['have_res'] = $collection['dynamic'] ? '1' : '0';
             $book['opern_cnt'] = $collection['lesson_count'];
             $book['is_free'] = $collection['freeflag'] ? '1' : '0';
+            $book['mmusic'] = $collection['mmusic'];
+            $book['mmusicconfig'] = $collection['mmusicconfig'];
             $result[] = $book;
         }
         return $result;
@@ -83,6 +87,8 @@ class OpernService
             $opern['res'] = !empty($lesson['resources']) ? $lesson['resources'][0]['resource_url'] : '';
             $opern['is_free'] = $lesson['freeflag'] ? '1' : '0';
             $opern['knowledge'] = $lesson['knowledge'] ? 1 : 0;
+            $opern['mmusic'] = $lesson['mmusic'];
+            $opern['mmusicconfig'] = $lesson['mmusicconfig'];
             $result[] = $opern;
         }
         return $result;
@@ -111,6 +117,8 @@ class OpernService
             $opern['collection_id'] = $lesson['collection_id'] ? $lesson['collection_id'] : '';
             $opern['collection_name'] = $lesson['collection_name'] ? $lesson['collection_name'] : '';
             $opern['collection_cover'] = $lesson['collection_cover'] ? $lesson['collection_cover'] : '';
+            $opern['mmusic'] = $lesson['mmusic'];
+            $opern['mmusicconfig'] = $lesson['mmusicconfig'];
             $result[] = $opern;
         }
         return $result;
@@ -138,6 +146,8 @@ class OpernService
             $opern['collection_id'] = $lesson['collection_id'] ? $lesson['collection_id'] : '';
             $opern['collection_name'] = $lesson['collection_name'] ? $lesson['collection_name'] : '';
             $opern['collection_cover'] = $lesson['collection_cover'] ? $lesson['collection_cover'] : '';
+            $opern['mmusic'] = $lesson['mmusic'];
+            $opern['mmusicconfig'] = $lesson['mmusicconfig'];
             $result[] = $opern;
         }
         return $result;
