@@ -36,6 +36,7 @@ class StudentModel extends Model
     const CHANNEL_ERP_EXCHANGE = 4; //ERP兑换激活码
     const CHANNEL_ERP_ORDER = 5; //ERP购买订单
     const CHANNEL_ERP_TRANSFER = 6; //ERP转单
+    const CHANNEL_WEB_REGISTER = 7; //web注册页
 
     /**
      * 更新学生信息

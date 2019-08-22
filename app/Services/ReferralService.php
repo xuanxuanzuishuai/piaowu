@@ -22,9 +22,9 @@ class ReferralService
 
     /**
      * 添加转介绍记录
-     * @param $referrerId
-     * @param $refereeId
-     * @param $type
+     * @param int $referrerId 介绍人id
+     * @param int $refereeId 被介绍人id
+     * @param int $type 转介绍类型
      * @throws RunTimeException
      */
     public static function addReferral($referrerId, $refereeId, $type)

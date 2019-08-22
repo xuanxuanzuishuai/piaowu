@@ -27,6 +27,7 @@ class RouterFactory
     const CLIENT_STUDENT_WX = 'student_wx'; // 家长微信
     const CLIENT_STUDENT_ORG_WX = 'student_org_wx'; // 机构微信
     const CLIENT_STUDENT_PANDA_WX = 'student_panda_wx'; // 机构微信
+    const CLIENT_STUDENT_WEB = 'student_web'; // AI练琴Web页面
     const CLIENT_TEACHER_WX = 'teacher_wx'; // 老师微信
     const CLIENT_ORG_WEB = 'org_web'; // 机构后台
     const CLIENT_ADMIN = 'admin'; // 系统管理后台
@@ -40,6 +41,7 @@ class RouterFactory
         self::CLIENT_STUDENT_WX => StudentWXRouter::class, // 家长微信
         self::CLIENT_STUDENT_ORG_WX => StudentWXRouter::class, // 直营机构微信，和家长微信共用一个class
         self::CLIENT_STUDENT_PANDA_WX => StudentWXRouter::class, // 小叶子(熊猫)陪练微信，和家长微信共用一个class
+        self::CLIENT_STUDENT_WEB => StudentWebRouter::class,
         self::CLIENT_TEACHER_WX => TeacherWXRouter::class, // 老师微信
         self::CLIENT_ORG_WEB => OrgWebRouter::class, // 机构后台
         self::CLIENT_ADMIN => AdminRouter::class, // 系统管理后台
