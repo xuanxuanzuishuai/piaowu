@@ -25,7 +25,7 @@ require APP_ROOT.'/dependencies.php';
 
 // Register routes
 \App\Routers\RouterFactory::loadRouter($_SERVER['REQUEST_URI'], $app);
-header('Access-Control-Allow-Headers: X-Requested-With,X_Requested_With');
+//header('Access-Control-Allow-Headers: X-Requested-With,X_Requested_With');
 
 // Run app
 $app->run();
