@@ -87,6 +87,7 @@ class Erp extends ControllerBase
             $giftCodeUnit = $params['duration_unit'];
         }
 
+        $autoApply = ($params['app_id'] == ErpService::APP_ID_AI);
         list($errorCode, $giftCodes) = ErpService::exchangeGiftCode(
             [
                 'uuid' => $params['uuid'],
@@ -99,7 +100,8 @@ class Erp extends ControllerBase
             (int)$params['bill_id'],
             (int)$params['bill_amount'],
             $giftCodeNum,
-            $giftCodeUnit
+            $giftCodeUnit,
+            $autoApply
         );
 
         if (!empty($errorCode)) {
@@ -109,7 +111,7 @@ class Erp extends ControllerBase
 
         $db->commit();
 
-        if ($params['app_id'] != ErpService::APP_ID_AI) {
+        if (!$autoApply) {
             // 换购上线前已经提前发送激活码的用户
             $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
             $sms->sendExchangeGiftCode($params['mobile'],

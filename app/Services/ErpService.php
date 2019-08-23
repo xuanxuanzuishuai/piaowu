@@ -27,6 +27,7 @@ class ErpService
      * @param $erpBillAmount
      * @param int $giftCodeNum
      * @param int $giftCodeUnit
+     * @param bool $autoApply
      * @return array [string errorCode, array giftCodes]
      */
     public static function exchangeGiftCode($studentData,
@@ -34,7 +35,8 @@ class ErpService
                                             $erpBillId,
                                             $erpBillAmount,
                                             $giftCodeNum = 1,
-                                            $giftCodeUnit = GiftCodeModel::CODE_TIME_YEAR)
+                                            $giftCodeUnit = GiftCodeModel::CODE_TIME_YEAR,
+                                            $autoApply = false)
     {
         $student = StudentService::getByUuid($studentData['uuid']);
 
@@ -81,7 +83,9 @@ class ErpService
             return ['create_gift_code_fail', null];
         }
 
-        StudentServiceForApp::redeemGiftCode($giftCodes[0], $student['id']);
+        if ($autoApply) {
+            StudentServiceForApp::redeemGiftCode($giftCodes[0], $student['id']);
+        }
 
         return [null, $giftCodes];
     }
