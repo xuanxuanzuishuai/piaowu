@@ -31,6 +31,7 @@ class GiftCodeService
      * @param null $buyTime
      * @param null|int $billId
      * @param int $billAmount
+     * @param int $billAppId
      * @return array [['id' => 1, 'mobile' => 138..., 'code' => 'abc123'], ...]
      * 批量生成激活码
      */
@@ -44,7 +45,8 @@ class GiftCodeService
                                            $employeeId = NULL,
                                            $buyTime = NULL,
                                            $billId = NULL,
-                                           $billAmount = 0)
+                                           $billAmount = 0,
+                                           $billAppId = 0)
     {
         // 如果是给个人生成，每人只能生成一个
         $multipleBuyer = ($generateChannel == GiftCodeModel::BUYER_TYPE_STUDENT);
@@ -89,6 +91,7 @@ class GiftCodeService
             'remarks' => $remarks,
             'bill_id' => $billId,
             'bill_amount' => $billAmount,
+            'bill_app_id' => $billAppId,
         ];
 
         if (!$multipleBuyer) {

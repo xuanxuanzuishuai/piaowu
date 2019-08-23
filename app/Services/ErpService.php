@@ -25,6 +25,7 @@ class ErpService
      * @param $exchangeType
      * @param $erpBillId
      * @param $erpBillAmount
+     * @param $erpBillAppId
      * @param int $giftCodeNum
      * @param int $giftCodeUnit
      * @param bool $autoApply
@@ -34,6 +35,7 @@ class ErpService
                                             $exchangeType,
                                             $erpBillId,
                                             $erpBillAmount,
+                                            $erpBillAppId,
                                             $giftCodeNum = 1,
                                             $giftCodeUnit = GiftCodeModel::CODE_TIME_YEAR,
                                             $autoApply = false)
@@ -77,7 +79,8 @@ class ErpService
             EmployeeModel::SYSTEM_EMPLOYEE_ID,
             time(),
             $erpBillId,
-            $erpBillAmount);
+            $erpBillAmount,
+            $erpBillAppId);
 
         if (empty($giftCodes)) {
             return ['create_gift_code_fail', null];
