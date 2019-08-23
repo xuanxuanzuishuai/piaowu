@@ -378,7 +378,7 @@ class PlayRecordModel extends Model
     public static function getRank($lessonId, $students=[]){
         $limit = self::RANK_LIMIT;
         $lessonType = PlayRecordModel::TYPE_AI;
-        $aiType = PlayRecordModel::AI_EVALUATE_PLAY;
+        $aiTypeFragement = PlayRecordModel::AI_EVALUATE_FRAGMENT;
         $lowestScore = 60;
         if(empty($students)){
             $sql = "SELECT * FROM
@@ -394,7 +394,7 @@ class PlayRecordModel extends Model
                       WHERE play_record.lesson_id = {$lessonId}
                         AND play_record.lesson_type = {$lessonType}
                         AND play_record.score >= {$lowestScore}
-                        AND play_record.ai_type = {$aiType}
+                        AND play_record.ai_type != {$aiTypeFragement}
                       ORDER BY score DESC) t
                   GROUP BY t.student_id
                   ORDER BY score DESC
@@ -416,7 +416,7 @@ class PlayRecordModel extends Model
                         AND play_record.lesson_type = {$lessonType}
                         AND play_record.score >= {$lowestScore}
                         AND play_record.student_id IN {$students}
-                        AND play_record.ai_type = {$aiType}
+                        AND play_record.ai_type!= {$aiTypeFragement}
                       ORDER BY score DESC) t
                   GROUP BY t.student_id
                   ORDER BY score DESC
