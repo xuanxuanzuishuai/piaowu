@@ -85,4 +85,28 @@ class StudentServiceForWeb
 
         return $studentData;
     }
+
+    /**
+     * 获取介绍人信息
+     * @param $mobile
+     * @return array
+     * @throws RunTimeException
+     */
+    public static function referrerInfo($mobile)
+    {
+        $student = StudentModelForApp::getStudentInfo(null, $mobile);
+        if (empty($student)) {
+            throw new RunTimeException(['unknown_student']);
+        }
+
+        $referrer = [
+            'id' => $student['id'],
+            'uuid' => $student['uuid'],
+            'student_name' => $student['name'],
+            'avatar' => Util::getQiNiuFullImgUrl($student['thumb']),
+            'mobile' => $student['mobile'],
+        ];
+
+        return $referrer;
+    }
 }

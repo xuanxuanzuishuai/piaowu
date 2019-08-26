@@ -9,3 +9,5 @@ CREATE TABLE `referral` (
   PRIMARY KEY (`id`),
   UNIQUE INDEX `referee_id_type_uniq` (`referee_id` ASC, `type` ASC),
   INDEX `referrer_id_idx` (`referrer_id` ASC));
+
+INSERT INTO `dss_dev`.`dict` (`type`, `key_name`, `key_code`, `key_value`) VALUES ('generate_channel', '生成渠道', '6', '微信分享转介绍奖励');

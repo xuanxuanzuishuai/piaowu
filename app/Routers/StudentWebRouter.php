@@ -9,6 +9,7 @@
 namespace App\Routers;
 
 use App\Controllers\StudentWeb\Auth;
+use App\Controllers\StudentWeb\Referral;
 
 class StudentWebRouter extends RouterBase
 {
@@ -24,6 +25,12 @@ class StudentWebRouter extends RouterBase
         '/student_web/auth/validate_code' => [
             'method' => ['get'],
             'call' => Auth::class . ':validateCode',
+            'middles' => []
+        ],
+
+        '/student_web/referral/referrer_info' => [
+            'method' => ['get'],
+            'call' => Referral::class . ':referrerInfo',
             'middles' => []
         ],
     ];
