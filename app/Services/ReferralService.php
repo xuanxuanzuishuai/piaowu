@@ -13,6 +13,7 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Models\EmployeeModel;
 use App\Models\GiftCodeModel;
 use App\Models\ReferralModel;
+use App\Models\StudentModel;
 
 class ReferralService
 {
@@ -98,5 +99,31 @@ class ReferralService
             'referral_gift',
             time()
         );
+    }
+
+    /**
+     * 获取推荐列表
+     * @param int $referrerId 推荐人id
+     * @return array
+     */
+    public static function ReferralList($referrerId)
+    {
+        $list = ReferralModel::getListByReferrerId($referrerId, ReferralModel::REFERRAL_TYPE_WX_SHARE);
+        if(empty($list)) {
+            return [];
+        }
+
+        $data = [];
+        foreach ($list as $r) {
+            $student = StudentModel::getById($r['referee_id']);
+            $data[] = [
+                'name' => $student['name'],
+                'mobile' => $student['mobile'],
+                'reg_time' => $r['create_time'],
+                'given_rewards' => $r['given_rewards'] ? 1 : 0,
+            ];
+        }
+
+        return $data;
     }
 }

@@ -15,6 +15,7 @@ use App\Controllers\StudentApp\Panda;
 use App\Controllers\StudentApp\Pay;
 use App\Controllers\StudentApp\Play;
 use App\Controllers\StudentApp\Homework;
+use App\Controllers\StudentApp\Referral;
 use App\Controllers\StudentApp\Subscription;
 use App\Middleware\AppApiForStudent;
 use App\Middleware\MUSVGMiddleWare;
@@ -200,5 +201,12 @@ class StudentAppRouter extends RouterBase
             'call' => Pay::class . ':billStatus',
             'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
         ],
+
+        '/student_app/referral/list' => [
+            'method' => ['get'],
+            'call' => Referral::class . ':list',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
+
     ];
 }
