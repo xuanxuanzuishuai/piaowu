@@ -167,16 +167,28 @@ class ErpService
 
         $now = time();
 
-        $dstStudentUpdate = [
-            'sub_start_date' => $srcStudent['sub_start_date'],
-            'sub_end_date' => $srcStudent['sub_end_date'],
-            'trial_start_date' => $srcStudent['trial_start_date'],
-            'trial_end_date' => $srcStudent['trial_end_date'],
-            'update_time'  => $now,
-        ];
-        $cnt = StudentModel::updateRecord($dstStudent['id'], $dstStudentUpdate, false);
-        if (empty($cnt)) { return 'data_error'; }
+        // 新账号增加时长
+        $endTime = strtotime($srcStudent['sub_end_date']);
+        $today = strtotime('today');
+        // 增加的天数
+        $days = intval(($endTime - $today) / 86400);
+        if ($days > 0) {
+            // 新账号的时间
+            $dstStudentUpdate = ['update_time'  => $now];
+            if (empty($dstStudent['sub_end_date'])) {
+                $dstEndTime = $today;
+                $dstStudentUpdate['sub_start_date'] = date('Ymd', $today);
+            } else {
+                $dstEndTime = strtotime($dstStudent['sub_end_date']);
+            }
+            $dstNewEndTime = strtotime("+{$days} day", $dstEndTime);
+            $dstStudentUpdate['sub_end_date'] = date('Ymd', $dstNewEndTime);
 
+            $cnt = StudentModel::updateRecord($dstStudent['id'], $dstStudentUpdate, false);
+            if (empty($cnt)) { return 'data_error'; }
+        }
+
+        // 就账号删除时长
         $srcStudentUpdate = [
             'sub_start_date' => 0,
             'sub_end_date' => 0,
@@ -185,7 +197,10 @@ class ErpService
         $cnt = StudentModel::updateRecord($srcStudent['id'], $srcStudentUpdate, false);
         if (empty($cnt)) { return 'data_error'; }
 
+        // 所有使用人为原账号的订单，更新购买人为新账号
         GiftCodeModel::batchUpdateRecord(['apply_user' => $dstStudent['id']], ['apply_user' => $srcStudent['id']], false);
+
+        // 所有购买人为原账号的订单，更新购买人为新账号
         GiftCodeModel::batchUpdateRecord(['buyer' => $dstStudent['id']], ['buyer' => $srcStudent['id']], false);
 
         return null;
