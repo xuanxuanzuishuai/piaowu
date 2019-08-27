@@ -10,4 +10,7 @@ CREATE TABLE `referral` (
   UNIQUE INDEX `referee_id_type_uniq` (`referee_id` ASC, `type` ASC),
   INDEX `referrer_id_idx` (`referrer_id` ASC));
 
-INSERT INTO `dss_dev`.`dict` (`type`, `key_name`, `key_code`, `key_value`) VALUES ('generate_channel', '生成渠道', '6', '微信分享转介绍奖励');
+INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`) VALUES
+  ('generate_channel', '生成渠道', '6', '微信分享转介绍奖励');
+INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES
+  ('APP_CONFIG_STUDENT', 'AI练琴后端设置', 'share_url', 'https://aipiano.xiaoyezi.com/ai_piano_app/#/share/register?ref=', '微信分享链接，需要拼接手机号');
