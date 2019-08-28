@@ -42,11 +42,27 @@ class ReferralModel extends Model
     public static function getListByReferrerId($referrerId, $type)
     {
         $db = MysqlDB::getDB();
-        return $db->select(self::$table, '*', [
-            'referrer_id' => $referrerId,
-            'type' => $type,
-            'ORDER' => ['create_time' => 'DESC'],
-            'LIMIT' => self::REFERRER_DEFAULT_LIMIT,
-        ]);
+
+        $stu = StudentModel::$table;
+
+        return $db->select(self::$table . '(ref)',
+            ["[>]{$stu}(referee)" => ['ref.referee_id' => 'id']],
+            [
+                'ref.id',
+                'ref.referrer_id',
+                'ref.referee_id',
+                'ref.type',
+                'ref.create_time',
+                'ref.given_rewards',
+                'ref.given_rewards_time',
+                'referee.name(referee_name)',
+                'referee.mobile(referee_mobile)'
+            ], [
+                'ref.referrer_id' => $referrerId,
+                'ref.type' => $type,
+                'ORDER' => ['create_time' => 'DESC'],
+                'LIMIT' => self::REFERRER_DEFAULT_LIMIT
+            ]
+        );
     }
 }

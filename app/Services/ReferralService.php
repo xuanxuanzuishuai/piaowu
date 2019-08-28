@@ -10,10 +10,10 @@ namespace App\Services;
 
 use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\Util;
 use App\Models\EmployeeModel;
 use App\Models\GiftCodeModel;
 use App\Models\ReferralModel;
-use App\Models\StudentModel;
 
 class ReferralService
 {
@@ -56,13 +56,12 @@ class ReferralService
         if (empty($referral)) {
             return false;
         }
+        if ($referral['given_rewards'] == Constants::STATUS_TRUE) {
+            return false;
+        }
 
         // 发送奖励失败不影响正常流程, 发送错误记录到sentry
         try {
-            if ($referral['given_rewards'] == Constants::STATUS_TRUE) {
-                throw new RunTimeException(['referral_rewards_has_been_given']);
-            }
-
             switch ($type) {
                 case ReferralModel::REFERRAL_TYPE_WX_SHARE:
                     self::getRewordsSubDuration($referral['referrer_id']);
@@ -70,7 +69,14 @@ class ReferralService
                 default:
                     throw new RunTimeException(['referral_type_is_invalid']);
             }
+
+            ReferralModel::updateRecord($referral['id'], [
+                'given_rewards' => Constants::STATUS_TRUE,
+                'given_rewards_time' => time()
+            ], false);
+
         } catch (RunTimeException $e) {
+            // 发送奖励时记录错误，不影响正常流程
             $e->sendCaptureMessage([
                 '$referral' => $referral,
             ]);
@@ -108,22 +114,21 @@ class ReferralService
      */
     public static function ReferralList($referrerId)
     {
-        $list = ReferralModel::getListByReferrerId($referrerId, ReferralModel::REFERRAL_TYPE_WX_SHARE);
-        if(empty($list)) {
+        $referrals = ReferralModel::getListByReferrerId($referrerId, ReferralModel::REFERRAL_TYPE_WX_SHARE);
+        if(empty($referrals)) {
             return [];
         }
 
-        $data = [];
-        foreach ($list as $r) {
-            $student = StudentModel::getById($r['referee_id']);
-            $data[] = [
-                'name' => $student['name'],
-                'mobile' => $student['mobile'],
+        $list = [];
+        foreach ($referrals as $r) {
+            $list[] = [
+                'name' => $r['referee_name'],
+                'mobile' => Util::hideUserMobile($r['referee_mobile']),
                 'reg_time' => $r['create_time'],
                 'given_rewards' => $r['given_rewards'] ? 1 : 0,
             ];
         }
 
-        return $data;
+        return ['list' => $list];
     }
 }
