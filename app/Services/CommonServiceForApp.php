@@ -91,13 +91,27 @@ class CommonServiceForApp
         }
 
         $cacheKey = self::VALIDATE_CODE_CACHE_KEY_PRI . $mobile;
-        $codeCache = $redis->get($cacheKey);
+        $countKey = $cacheKey . '_count';
 
-        if ($codeCache != $code) {
+        $codeCache = $redis->get($cacheKey);
+        if (empty($codeCache)) {
             return false;
         }
 
-        $redis->del($cacheKey);
+        if ($codeCache != $code) {
+            // 错误大于5次删除验证码
+            $count = $redis->get($countKey);
+            if ($count >= 5) {
+                $redis->del([$countKey, $cacheKey]);
+            } else {
+                $redis->incr($countKey);
+                $redis->expire($countKey, self::VALIDATE_CODE_EX);
+            }
+
+            return false;
+        }
+
+        $redis->del([$countKey, $cacheKey]);
         return true;
     }
 
