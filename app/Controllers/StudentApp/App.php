@@ -72,7 +72,13 @@ class App extends ControllerBase
             [
                 'key' => 'content',
                 'type' => 'required',
-                'error_code' => 'opinion_content_is_required'
+                'error_code' => 'content_is_required'
+            ],
+            [
+                'key' => 'content_type',
+                'type' => 'in',
+                'value' => [FeedbackModel::CONTENT_SCORE_ERROR],
+                'error_code' => 'content_type_invalid'
             ]
         ];
         $params = $request->getParams();
@@ -85,6 +91,7 @@ class App extends ControllerBase
         $data = [
             'user_type' => FeedbackModel::TYPE_STUDENT,
             'user_id' => $userId,
+            'content_type' => $params['content_type'],
             'content' => $params['content'],
             'platform' => $this->ci['platform'],
             'version' => $this->ci['version'],

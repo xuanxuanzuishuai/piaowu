@@ -18,6 +18,9 @@ class FeedbackModel extends Model
     const TYPE_EMPLOYEE = 3;
     const TYPE_ORG = 4;
 
+    /** 内容类型，为空时为默认的纯文字 */
+    const CONTENT_SCORE_ERROR = 1; // 曲谱错误
+
     const PLATFORM_ANDROID = 1;
     const PLATFORM_IOS = 2;
 }
