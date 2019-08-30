@@ -75,7 +75,7 @@ class Auth extends ControllerBase
 
         } catch (RunTimeException $e) {
             $db->rollBack();
-            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
         return HttpHelper::buildResponse($response, $data);
     }

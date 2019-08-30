@@ -50,8 +50,8 @@ class RunTimeException extends \Exception
                 $errorMessage = sprintf($errorFormat, ...$msgArgs);
             }
             $errorData[$errorField] = [
-                'error_no' => $errorCode,
-                'error_msg' => $errorMessage,
+                'err_no' => $errorCode,
+                'err_msg' => $errorMessage,
             ];
         }
         return $errorData;
@@ -70,8 +70,8 @@ class RunTimeException extends \Exception
                 $errorMessage = sprintf($errorFormat, ...$msgArgs);
             }
             $errorData[] = [
-                'error_no' => $errorCode,
-                'error_msg' => $errorMessage,
+                'err_no' => $errorCode,
+                'err_msg' => $errorMessage,
             ];
         }
         return $errorData;
