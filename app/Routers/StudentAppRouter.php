@@ -130,6 +130,11 @@ class StudentAppRouter extends RouterBase
             'call' => Opn::class . ':search',
             'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
         ],
+        '/student_app/opn/engine' => [
+            'method' => ['get'],
+            'call' => Opn::class . ':engine',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
 
         '/student_app/play/save' => [
             'method' => ['get'],

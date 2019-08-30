@@ -255,4 +255,23 @@ class Opn extends ControllerBase
             'data' => $result
         ], StatusCode::HTTP_OK);
     }
+
+    public function engine(Request $request, Response $response)
+    {
+        Util::unusedParam($request);
+
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT,
+            $this->ci['opn_pro_ver'],
+            $this->ci['opn_auditing'],
+            $this->ci['opn_publish']);
+        $result = $opn->engine();
+        if (empty($result) || !empty($result['errors'])) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $result
+        ], StatusCode::HTTP_OK);
+    }
 }

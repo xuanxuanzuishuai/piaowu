@@ -34,6 +34,8 @@ class OpernCenter
     const OPERN_API_KNOWLEDGE_BY_CATEGORY = '/api/knowledge/bycategory';
     const OPERN_API_KNOWLEDGE_SEARCH = '/api/knowledge/search';
 
+    const OPERN_API_ENGINE = '/api/opern/engine';
+
     const DEFAULT_PAGE_SIZE = 20;
     const DEFAULT_AUDITING = 0;
     const DEFAULT_PUBLISH = 1;
@@ -331,4 +333,12 @@ class OpernCenter
         return empty($result) ? [] : $result;
     }
 
+    public function engine()
+    {
+        $result = self::commonAPI(self::OPERN_API_ENGINE, [
+            'pro_id' => $this->proId,
+            'pro_ver' => $this->proVer
+        ]);
+        return empty($result) ? [] : $result;
+    }
 }
