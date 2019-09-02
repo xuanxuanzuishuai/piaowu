@@ -217,16 +217,18 @@ class ScheduleService
         $students = ScheduleUserModel::getSUserIds($newSchedule['id']);
         $teacherIds = ScheduleUserModel::getTUserIds($newSchedule['id']);
 
+        // 未扣费学生ID数组
         $unDeductSIds = [];
+        // 需解绑学生ID数组
         $unBindSIds = [];
         $newSIds = array_keys($params['students']);
         foreach ($students as $s) {
             if ($s['is_deduct'] != ScheduleUserModel::DEDUCT_STATUS) {
                 // 未扣费学生
                 $unDeductSIds[] = $s['user_id'];
-            }
-            if (!in_array($s['user_id'], $newSIds)) {
-                $unBindSIds[] = $s['user_id'];
+                if (!in_array($s['user_id'], $newSIds)) {
+                    $unBindSIds[] = $s['user_id'];
+                }
             }
         }
 
