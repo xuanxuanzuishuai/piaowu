@@ -68,6 +68,7 @@ class ErpService
         $orgId = DictConstants::get(DictConstants::SPECIAL_ORG_ID, 'panda');
         StudentService::bindOrg($orgId, $student['id']);
 
+        $now = time();
         $giftCodes = GiftCodeService::batchCreateCode(
             1,
             $giftCodeNum,
@@ -77,7 +78,7 @@ class ErpService
             GiftCodeModel::CREATE_BY_SYSTEM,
             NULL,
             EmployeeModel::SYSTEM_EMPLOYEE_ID,
-            time(),
+            $now,
             $erpBillId,
             $erpBillAmount,
             $erpBillAppId);
@@ -88,6 +89,10 @@ class ErpService
 
         if ($autoApply) {
             StudentServiceForApp::redeemGiftCode($giftCodes[0], $student['id']);
+        }
+
+        if (empty($student['first_pay_time'])) {
+            StudentModel::updateStudent($student['id'], ['first_pay_time' => $now]);
         }
 
         return [null, $giftCodes];

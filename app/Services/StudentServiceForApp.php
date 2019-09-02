@@ -86,6 +86,7 @@ class StudentServiceForApp
             'trial_start_date' => $student['trial_start_date'],
             'trial_end_date' => $student['trial_end_date'],
             'act_sub_info' => (int)$student['act_sub_info'],
+            'first_pay_time' => (int)$student['first_pay_time'],
             'token' => $token,
             'teachers' => $teachers
         ];
@@ -124,6 +125,7 @@ class StudentServiceForApp
             'trial_start_date' => $student['trial_start_date'],
             'trial_end_date' => $student['trial_end_date'],
             'act_sub_info' => (int)$student['act_sub_info'],
+            'first_pay_time' => (int)$student['first_pay_time'],
             'token' => $token,
             'teachers' => $teachers
         ];
