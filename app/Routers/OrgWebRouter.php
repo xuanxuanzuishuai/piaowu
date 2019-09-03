@@ -20,6 +20,7 @@ use App\Controllers\Org\OrgAccount as OrgAccount;
 use App\Controllers\Org\OrgLicense;
 use App\Controllers\OrgWeb\Approval;
 use App\Controllers\OrgWeb\Erp;
+use App\Controllers\OrgWeb\Flags;
 use App\Controllers\Schedule\ScheduleRecord;
 use App\Controllers\Student\PlayRecord as BackendPlayRecord;
 use App\Controllers\Student\Student;
@@ -465,6 +466,20 @@ class OrgWebRouter extends RouterBase
         '/org_web/approval/config_list' => [
             'method' => ['get'],
             'call' => Approval::class . ':configList',
+        ],
+
+        // 标签
+        '/org_web/flags/list' => [
+            'method' => ['get'],
+            'call' => Flags::class . ':list',
+        ],
+        '/org_web/flags/add' => [
+            'method' => ['post'],
+            'call' => Flags::class . ':add',
+        ],
+        '/org_web/flags/modify' => [
+            'method' => ['post'],
+            'call' => Flags::class . ':modify',
         ],
     ];
 }
