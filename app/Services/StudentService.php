@@ -370,8 +370,8 @@ class StudentService
     {
         $codes = GiftCodeModel::getRecords([
             'OR' => [
-                'apply_user' => $studentId,
-                'AND' => ['buyer' => $studentId, 'generate_channel' => [
+                'AND #1' => ['buyer[!]' => $studentId, 'apply_user' => $studentId],
+                'AND #2' => ['buyer' => $studentId, 'generate_channel' => [
                     GiftCodeModel::BUYER_TYPE_STUDENT,
                     GiftCodeModel::BUYER_TYPE_ERP_EXCHANGE,
                     GiftCodeModel::BUYER_TYPE_ERP_ORDER
