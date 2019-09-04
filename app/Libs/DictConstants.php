@@ -118,6 +118,14 @@ class DictConstants {
         ]
     ];
 
+    // 用户标签
+    const FLAG_ID = [
+        'type' => 'FLAG_ID',
+        'keys' => [
+            'new_score'
+        ]
+    ];
+
     public static function get($type, $key)
     {
         if (empty($type) || empty($key)) {

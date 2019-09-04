@@ -11,10 +11,12 @@ namespace App\Services;
 
 use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\SimpleLogger;
 use App\Models\EmployeeModel;
+use App\Models\FilterModel;
 use App\Models\FlagsModel;
 
-class FlagsServices
+class FlagsService
 {
     /**
      * 获取标签列表
@@ -113,5 +115,46 @@ class FlagsServices
         }
 
         return FlagsModel::getById($id);
+    }
+
+    /**
+     * 检查是否有指定标签
+     * @param $object
+     * @param $flagId
+     * @return bool
+     */
+    public static function hasFlag($object, $flagId)
+    {
+        $flagBit = self::getFlagBit($flagId);
+        $flags = $object['flags'];
+        if ($flags & $flagBit == $flagBit) {
+            return true;
+        }
+
+        $hasAutoFlag = FilterService::checkFlagFilters($object, $flagId);
+        if ($hasAutoFlag) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * 获取标签的bit
+     * flagId -> bit
+     * 1 -> 1(...0001)
+     * 2 -> 2(...0010)
+     * 3 -> 4(...0100)
+     * 4 -> 8(...1000)
+     * ...
+     * 63 -> 4611...(0100...)
+     * 64 -> -922...(1000...)
+     * 最大64位
+     * @param $flagId
+     * @return int
+     */
+    public static function getFlagBit($flagId)
+    {
+        return 1<<($flagId-1);
     }
 }
