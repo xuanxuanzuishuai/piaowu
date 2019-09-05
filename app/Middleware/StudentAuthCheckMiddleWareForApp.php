@@ -45,6 +45,8 @@ class StudentAuthCheckMiddleWareForApp extends MiddlewareBase
         // 延长登录token过期时间
         StudentModelForApp::refreshStudentToken($studentId);
 
+        $student['version'] = $this->container['version'];
+        $student['platform'] = $this->container['platform'];
         $this->container['student'] = $student;
 
         // 内部审核账号，使用审核版本app也可看到所有资源

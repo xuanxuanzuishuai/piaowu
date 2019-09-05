@@ -18,9 +18,10 @@ class OpernService
     /**
      * 格式化分类列表
      * @param $data
+     * @param bool $enableMMusic
      * @return array
      */
-    public static function formatCategories($data)
+    public static function formatCategories($data, $enableMMusic = false)
     {
         if (empty($data)) {
             return [];
@@ -35,7 +36,7 @@ class OpernService
             $series['book_cnt'] = $category['collection_count'];
             $series['opern_cnt'] = $category['lesson_count'];
             $series['is_free'] = $category['freeflag'] ? '1' : '0';
-            $series['mmusic'] = $category['mmusic'] ? '1' : '0';
+            $series['mmusic'] = $enableMMusic ? ($category['mmusic'] ? '1' : '0') : '0';
             $series['mmusicconfig'] = $category['mmusicconfig'] ? '1' : '0';
             $series['dynamic'] = $category['dynamic'] ? '1' : '0';
             $result[] = $series;
@@ -46,9 +47,10 @@ class OpernService
     /**
      * 格式化合集列表
      * @param $data
+     * @param bool $enableMMusic
      * @return array
      */
-    public static function appFormatCollections($data)
+    public static function appFormatCollections($data, $enableMMusic = false)
     {
         if (empty($data)) {
             return [];
@@ -62,7 +64,7 @@ class OpernService
             $book['have_res'] = $collection['dynamic'] ? '1' : '0';
             $book['opern_cnt'] = $collection['lesson_count'];
             $book['is_free'] = $collection['freeflag'] ? '1' : '0';
-            $book['mmusic'] = $collection['mmusic'] ? '1' : '0';
+            $book['mmusic'] = $enableMMusic ? ($collection['mmusic'] ? '1' : '0') : '0';
             $book['mmusicconfig'] = $collection['mmusicconfig'] ? '1' : '0';
             $book['dynamic'] = $collection['dynamic'] ? '1' : '0';
             $result[] = $book;
@@ -73,9 +75,10 @@ class OpernService
     /**
      * 格式化曲谱列表
      * @param $data
+     * @param bool $enableMMusic
      * @return array
      */
-    public static function appFormatLessons($data)
+    public static function appFormatLessons($data, $enableMMusic = false)
     {
         if (empty($data)) {
             return [];
@@ -89,7 +92,7 @@ class OpernService
             $opern['res'] = !empty($lesson['resources']) ? $lesson['resources'][0]['resource_url'] : '';
             $opern['is_free'] = $lesson['freeflag'] ? '1' : '0';
             $opern['knowledge'] = $lesson['knowledge'] ? 1 : 0;
-            $opern['mmusic'] = $lesson['mmusic'] ? '1' : '0';
+            $opern['mmusic'] = $enableMMusic ? ($lesson['mmusic'] ? '1' : '0') : '0';
             $opern['mmusicconfig'] = $lesson['mmusicconfig'] ? '1' : '0';
             $opern['dynamic'] = $lesson['dynamic'] ? '1' : '0';
             $result[] = $opern;
@@ -100,9 +103,10 @@ class OpernService
     /**
      * 格式化曲谱列表
      * @param $data
+     * @param bool $enableMMusic
      * @return array
      */
-    public static function appFormatLessonByIds($data)
+    public static function appFormatLessonByIds($data, $enableMMusic = false)
     {
         if (empty($data)) {
             return [];
@@ -120,7 +124,7 @@ class OpernService
             $opern['collection_id'] = $lesson['collection_id'] ? $lesson['collection_id'] : '';
             $opern['collection_name'] = $lesson['collection_name'] ? $lesson['collection_name'] : '';
             $opern['collection_cover'] = $lesson['collection_cover'] ? $lesson['collection_cover'] : '';
-            $opern['mmusic'] = $lesson['mmusic'] ? '1' : '0';
+            $opern['mmusic'] = $enableMMusic ? ($lesson['mmusic'] ? '1' : '0') : '0';
             $opern['mmusicconfig'] = $lesson['mmusicconfig'] ? '1' : '0';
             $opern['dynamic'] = $lesson['dynamic'] ? '1' : '0';
             $opern['resources'] = $lesson['resources'];
@@ -133,9 +137,10 @@ class OpernService
     /**
      * 格式化搜索结果
      * @param $data
+     * @param bool $enableMMusic
      * @return array
      */
-    public static function appSearchLessons($data)
+    public static function appSearchLessons($data, $enableMMusic = false)
     {
         if (empty($data)) {
             return [];
@@ -152,7 +157,7 @@ class OpernService
             $opern['collection_id'] = $lesson['collection_id'] ? $lesson['collection_id'] : '';
             $opern['collection_name'] = $lesson['collection_name'] ? $lesson['collection_name'] : '';
             $opern['collection_cover'] = $lesson['collection_cover'] ? $lesson['collection_cover'] : '';
-            $opern['mmusic'] = $lesson['mmusic'] ? '1' : '0';
+            $opern['mmusic'] = $enableMMusic ? ($lesson['mmusic'] ? '1' : '0') : '0';
             $opern['mmusicconfig'] = $lesson['mmusicconfig'] ? '1' : '0';
             $opern['dynamic'] = $lesson['dynamic'] ? '1' : '0';
             $result[] = $opern;
