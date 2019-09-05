@@ -11,10 +11,9 @@ namespace App\Services;
 
 use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
-use App\Libs\SimpleLogger;
 use App\Models\EmployeeModel;
-use App\Models\FilterModel;
 use App\Models\FlagsModel;
+use App\Models\StudentModel;
 
 class FlagsService
 {
@@ -118,6 +117,38 @@ class FlagsService
     }
 
     /**
+     * 修改学生标签
+     * @param $id
+     * @param $flagsArray
+     * @return array
+     * @throws RunTimeException
+     */
+    public static function modifyStudent($id, $flagsArray)
+    {
+        $student = StudentModel::getById($id);
+        if (empty($student)) {
+            throw new RunTimeException(['unknown_student']);
+        }
+
+        $flags = self::arrayToFlags($flagsArray);
+
+        if ($flags == $student['flags']) {
+            throw new RunTimeException(['nothing_change']);
+        }
+
+        $update = [
+            'update_time' => time(),
+            'flags' => $flags
+        ];
+        $cnt = StudentModel::updateRecord($id, $update, false);
+        if (empty($cnt)) {
+            throw new RunTimeException(['update_failure']);
+        }
+
+        return [];
+    }
+
+    /**
      * 检查是否有指定标签
      * @param $object
      * @param $flagId
@@ -156,5 +187,49 @@ class FlagsService
     public static function getFlagBit($flagId)
     {
         return 1<<($flagId-1);
+    }
+
+    /**
+     * 将 flags 转为数组
+     * 2(10) => [2]
+     * 9(1001) => [1, 8]
+     * 38(100110) => [2, 4, 32]
+     * @param $flags
+     * @return array
+     */
+    public static function flagsToArray($flags)
+    {
+        $flags = decbin($flags);
+        $len = strlen($flags);
+        $flagArray = [];
+        for($i = 1; $i <= $len; $i++) {
+            if ($flags[$len-$i]) {
+                $flagArray[] = $i;
+            }
+        }
+        return $flagArray;
+    }
+
+    /**
+     * 将数组转为 flags
+     * @param $flagsArray
+     * @return int
+     */
+    public static function arrayToFlags($flagsArray)
+    {
+        $flags = 0;
+        foreach ($flagsArray as $bit) {
+            $flags |= (1<<(intval($bit)-1));
+        }
+        return $flags;
+    }
+
+    /**
+     * 获取当前可用标签
+     */
+    public static function getValidFlags()
+    {
+        $flagHash = FlagsModel::getHash();
+        return ['valid_flags' => $flagHash];
     }
 }

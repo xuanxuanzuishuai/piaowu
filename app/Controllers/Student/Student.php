@@ -20,7 +20,7 @@ use App\Libs\Valid;
 use App\Models\StudentModel;
 use App\Models\StudentOrgModel;
 use App\Services\ChannelService;
-use App\Services\EmployeeService;
+use App\Services\FlagsService;
 use App\Services\StudentAccountService;
 use App\Services\StudentService;
 use Slim\Http\Request;
@@ -179,6 +179,12 @@ class Student extends ControllerBase
         $studentId = $params['student_id'];
 
         $data = StudentService::getOrgStudent($orgId, $studentId);
+        if (empty($orgId)) {
+            $data['flags'] = FlagsService::flagsToArray($data['flags']);
+        } else {
+            unset($data['flags']);
+        }
+
         if(empty($data)) {
             return $response->withJson(Valid::addErrors([], 'student_id', 'student_not_exist'));
         }
@@ -186,7 +192,7 @@ class Student extends ControllerBase
 
         return $response->withJson([
             'code' => 0,
-            'data' => $data
+            'data' => $data,
         ]);
     }
 

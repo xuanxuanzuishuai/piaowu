@@ -13,6 +13,7 @@ use App\Controllers\ControllerBase;
 use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
+use App\Libs\Util;
 use App\Libs\Valid;
 use App\Services\FilterService;
 use App\Services\FlagsService;
@@ -198,6 +199,45 @@ class Flags extends ControllerBase
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
 
+        return HttpHelper::buildResponse($response, $data);
+    }
+
+    public function studentFlagsModify(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'id',
+                'type' => 'required',
+                'error_code' => 'id_is_required'
+            ],
+            [
+                'key' => 'flags',
+                'type' => 'required',
+                'error_code' => 'flags_is_required'
+            ],
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $flagsArray = explode(',', $params['flags']);
+        try {
+            $data = FlagsService::modifyStudent($params['id'], $flagsArray);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+
+        return HttpHelper::buildResponse($response, $data);
+    }
+
+    public function validFlags(Request $request, Response $response)
+    {
+        Util::unusedParam($request);
+        $data = FlagsService::getValidFlags();
         return HttpHelper::buildResponse($response, $data);
     }
 }

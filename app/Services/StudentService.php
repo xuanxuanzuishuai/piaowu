@@ -53,6 +53,7 @@ class StudentService
                 $r['sub_end_date'] = DictService::getKeyValue(Constants::DICT_TYPE_STUDENT_SUB_STATUS, $r['sub_status']);
             }
             $r['is_first_pay'] = empty($r['first_pay_time']) ? '未付费' : '已付费';
+            $r['flags'] = FlagsService::flagsToArray($r['flags']);
         }
 
         return [$records, $total];

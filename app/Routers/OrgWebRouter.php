@@ -481,6 +481,14 @@ class OrgWebRouter extends RouterBase
             'method' => ['post'],
             'call' => Flags::class . ':modify',
         ],
+        '/org_web/flags/student_flags_modify' => [
+            'method' => ['post'],
+            'call' => Flags::class . ':studentFlagsModify',
+        ],
+        '/org_web/flags/valid_flags' => [
+            'method' => ['get'],
+            'call' => Flags::class . ':validFlags',
+        ],
 
         // 过滤器
         '/org_web/flags/filter_list' => [
