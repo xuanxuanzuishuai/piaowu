@@ -21,7 +21,7 @@ class FilterService
     const CONDITION_KEYS = [
         'id', 'uuid', 'mobile', 'gender', 'create_time', 'channel_id',
         'sub_start_date', 'sub_end_date', 'trial_start_date', 'trial_end_date',
-        'first_pay_time',
+        'first_pay_time', 'platform', 'version'
     ];
 
     /**
@@ -36,11 +36,11 @@ class FilterService
             $where['name[~]'] = $params['name'];
         }
 
-        if (isset($params['status'])) {
+        if (isset($params['status']) && $params['status'] !== '') {
             $where['status'] = $params['status'];
         }
 
-        if (isset($params['flag_id'])) {
+        if (!empty($params['flag_id'])) {
             $where['flag_id'] = $params['flag_id'];
         }
 
@@ -166,6 +166,10 @@ class FilterService
     public static function checkFlagFilters($object, $flagId)
     {
         $filters = self::getFilterByFlag($flagId);
+        if (empty($filters)) {
+            return false;
+        }
+
         foreach ($filters as $filter) {
             $conditions = json_decode($filter['conditions'], true);
 

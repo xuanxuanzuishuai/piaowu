@@ -29,7 +29,7 @@ class FlagsService
             $where['name[~]'] = $params['name'];
         }
 
-        if (isset($params['status'])) {
+        if (isset($params['status']) && $params['status'] !== '') {
             $where['status'] = $params['status'];
         }
 
@@ -158,7 +158,7 @@ class FlagsService
     {
         $flagBit = self::getFlagBit($flagId);
         $flags = $object['flags'];
-        if ($flags & $flagBit == $flagBit) {
+        if (($flags & $flagBit) == $flagBit) {
             return true;
         }
 

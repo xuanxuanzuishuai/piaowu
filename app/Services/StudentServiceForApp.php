@@ -88,7 +88,8 @@ class StudentServiceForApp
             'act_sub_info' => (int)$student['act_sub_info'],
             'first_pay_time' => (int)$student['first_pay_time'],
             'token' => $token,
-            'teachers' => $teachers
+            'teachers' => $teachers,
+            'flags' => FlagsService::flagsToArray($student['flags'])
         ];
 
         return [null, $loginData];
@@ -127,7 +128,8 @@ class StudentServiceForApp
             'act_sub_info' => (int)$student['act_sub_info'],
             'first_pay_time' => (int)$student['first_pay_time'],
             'token' => $token,
-            'teachers' => $teachers
+            'teachers' => $teachers,
+            'flags' => FlagsService::flagsToArray($student['flags'])
         ];
 
         return [null, $loginData];

@@ -10,9 +10,11 @@ namespace App\Controllers\StudentApp;
 
 
 use App\Controllers\ControllerBase;
+use App\Libs\DictConstants;
 use App\Libs\OpernCenter;
 use App\Libs\Util;
 use App\Libs\Valid;
+use App\Services\FlagsService;
 use App\Services\OpernService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -198,6 +200,15 @@ class Opn extends ControllerBase
             $this->ci['opn_pro_ver'],
             $this->ci['opn_auditing'],
             $this->ci['opn_publish']);
+
+        $object = $this->ci['student'];
+        $object['version'] = $this->ci['version'];
+        $object['platform'] = $this->ci['platform'];
+        $newScoreFlagId = DictConstants::get(DictConstants::FLAG_ID, 'new_score');
+        if (!FlagsService::hasFlag($object, $newScoreFlagId)) {
+            $params['resource_types'] = 'dynamic';
+        }
+
         $result = $opn->lessonsByIds($params['lesson_id'], 1, $params['resource_types']);
         if (empty($result) || !empty($result['errors'])) {
             return $response->withJson($result, StatusCode::HTTP_OK);
@@ -208,6 +219,11 @@ class Opn extends ControllerBase
 
         if (!$lesson['is_free']) {
             $this->ci['need_res_privilege'] = true;
+        }
+
+        $resTestFlagId = DictConstants::get(DictConstants::FLAG_ID, 'res_free');
+        if (FlagsService::hasFlag($object, $resTestFlagId)) {
+            $this->ci['need_res_privilege'] = false;
         }
 
         return $response->withJson([

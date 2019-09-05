@@ -122,7 +122,8 @@ class DictConstants {
     const FLAG_ID = [
         'type' => 'FLAG_ID',
         'keys' => [
-            'new_score'
+            'new_score', // 新曲谱测试
+            'res_free', // 资源免费
         ]
     ];
 

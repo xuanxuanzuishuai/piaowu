@@ -62,6 +62,7 @@ class StudentModelForApp extends Model
             self::$table . '.first_pay_time',
             self::$table . '.name',
             self::$table . '.thumb',
+            self::$table . '.flags',
         ], $where);
     }
 
