@@ -217,7 +217,7 @@ class FilterService
                 return $object[$key] != $condition['value'];
                 break;
             case 'in':
-                return in_array($object[$key], $condition['value']);
+                return in_array($object[$key], explode(',', $condition['value']));
                 break;
             default:
                 return false;
@@ -252,7 +252,7 @@ class FilterService
             if (!in_array($c['type'], self::CONDITION_TYPES)) {
                 return false;
             }
-            if ($c['type'] == 'in' && !is_array($c['value'])) {
+            if ($c['type'] == 'in' && empty($c['value'])) {
                 return false;
             }
         }
