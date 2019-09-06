@@ -209,12 +209,7 @@ class Flags extends ControllerBase
                 'key' => 'id',
                 'type' => 'required',
                 'error_code' => 'id_is_required'
-            ],
-            [
-                'key' => 'flags',
-                'type' => 'required',
-                'error_code' => 'flags_is_required'
-            ],
+            ]
         ];
 
         $params = $request->getParams();
@@ -224,7 +219,11 @@ class Flags extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $flagsArray = explode(',', $params['flags']);
+        if (empty($params['flags'])) {
+            $flagsArray = [];
+        } else {
+            $flagsArray = explode(',', $params['flags']);
+        }
         try {
             $data = FlagsService::modifyStudent($params['id'], $flagsArray);
         } catch (RunTimeException $e) {
