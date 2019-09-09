@@ -43,9 +43,11 @@ class StudentServiceForApp
      *
      * @param string $mobile 手机号
      * @param int $code 短信验证码
+     * @param $platform
+     * @param $version
      * @return array [0]errorCode [1]登录数据
      */
-    public static function login($mobile, $code)
+    public static function login($mobile, $code, $platform, $version)
     {
         // 检查验证码
         if (!CommonServiceForApp::checkValidateCode($mobile, $code)) {
@@ -74,6 +76,20 @@ class StudentServiceForApp
 
         $teachers = StudentModelForApp::getTeacherIds($student['id']);
 
+        $flags = FlagsService::flagsToArray($student['flags']);
+
+        // 新曲谱灰测标记
+        $newScoreFlagId = DictConstants::get(DictConstants::FLAG_ID, 'new_score');
+        if (!in_array($newScoreFlagId, $flags)) {
+            $object = $student;
+            $object['platform'] = $platform;
+            $object['version'] = $version;
+            $useNewScore = FlagsService::hasFlag($object, $newScoreFlagId);
+            if ($useNewScore) {
+                $flags[] = $newScoreFlagId;
+            }
+        }
+
         $loginData = [
             'id' => $student['id'],
             'uuid' => $student['uuid'],
@@ -89,7 +105,7 @@ class StudentServiceForApp
             'first_pay_time' => (int)$student['first_pay_time'],
             'token' => $token,
             'teachers' => $teachers,
-            'flags' => FlagsService::flagsToArray($student['flags'])
+            'flags' => $flags
         ];
 
         return [null, $loginData];
@@ -101,9 +117,11 @@ class StudentServiceForApp
      *
      * @param string $mobile 手机号
      * @param string $token 登录返回的token
+     * @param $platform
+     * @param $version
      * @return array [0]errorCode [1]登录数据
      */
-    public static function loginWithToken($mobile, $token)
+    public static function loginWithToken($mobile, $token, $platform, $version)
     {
         $student = StudentModelForApp::getStudentInfo(null, $mobile);
         $cacheToken = StudentModelForApp::getStudentToken($student['id']);
@@ -113,6 +131,20 @@ class StudentServiceForApp
         }
 
         $teachers = StudentModelForApp::getTeacherIds($student['id']);
+
+        $flags = FlagsService::flagsToArray($student['flags']);
+
+        // 新曲谱灰测标记
+        $newScoreFlagId = DictConstants::get(DictConstants::FLAG_ID, 'new_score');
+        if (!in_array($newScoreFlagId, $flags)) {
+            $object = $student;
+            $object['platform'] = $platform;
+            $object['version'] = $version;
+            $useNewScore = FlagsService::hasFlag($object, $newScoreFlagId);
+            if ($useNewScore) {
+                $flags[] = $newScoreFlagId;
+            }
+        }
 
         $loginData = [
             'id' => $student['id'],
@@ -129,7 +161,7 @@ class StudentServiceForApp
             'first_pay_time' => (int)$student['first_pay_time'],
             'token' => $token,
             'teachers' => $teachers,
-            'flags' => FlagsService::flagsToArray($student['flags'])
+            'flags' => $flags
         ];
 
         return [null, $loginData];

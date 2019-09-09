@@ -52,7 +52,12 @@ class Auth extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        list($errorCode, $loginData) = StudentServiceForApp::login($params['mobile'], $params['code']);
+        list($errorCode, $loginData) = StudentServiceForApp::login(
+            $params['mobile'],
+            $params['code'],
+            $this->ci['platform'],
+            $this->ci['version']
+        );
 
         if (!empty($errorCode)) {
             $result = Valid::addAppErrors([], $errorCode);
@@ -100,7 +105,12 @@ class Auth extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        list($errorCode, $loginData) = StudentServiceForApp::loginWithToken($params['mobile'], $params['token']);
+        list($errorCode, $loginData) = StudentServiceForApp::loginWithToken(
+            $params['mobile'],
+            $params['token'],
+            $this->ci['platform'],
+            $this->ci['version']
+        );
 
         if (!empty($errorCode)) {
             $result = Valid::addAppErrors([], $errorCode);
