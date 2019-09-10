@@ -59,6 +59,7 @@ class App extends ControllerBase
         } else {
             $config['guide_url'] = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'guide_url');
         }
+        $config['share'] = (int)DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'share');
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
