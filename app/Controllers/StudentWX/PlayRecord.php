@@ -18,7 +18,7 @@ use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
 use App\Services\PlayRecordService;
-
+use App\Libs\Util;
 
 class PlayRecord extends ControllerBase
 {
@@ -122,13 +122,29 @@ class PlayRecord extends ControllerBase
         $user_id = $this->ci['user_info']['user_id'];
         $lesson_name = "";
         $baseline = null;
+        if (!empty($params["task_id"])) {
+            list($homework, $play_record) = HomeworkService::getStudentDayHomeworkPractice($user_id,
+                $params['task_id'], null, $params["date"]);
+            if(empty($homework)){
+                $errors = Valid::addAppErrors([], "homework_not_found");
+                return $response->withJson($errors, StatusCode::HTTP_OK);
+            }
+            $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER, OpernCenter::version);
+            $bookInfo = $opn->lessonsByIds([$params["lesson_id"]]);
+            if (!empty($bookInfo) and $bookInfo["code"] == 0){
+                $lesson_name = $bookInfo["data"][0]["lesson_name"];
+            }
+            $baseline = $homework["baseline"];
 
-        $play_record = HomeworkService::getStudentDayLessonPractice($user_id, $params["lesson_id"], $params["date"]);
-        $records = PlayRecordService::formatLessonTestStatistics($play_record);
-        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER, OpernCenter::version);
-        $bookInfo = $opn->lessonsByIds([$params["lesson_id"]]);
-        if (!empty($bookInfo) and $bookInfo["code"] == 0){
-            $lesson_name = $bookInfo["data"][0]["lesson_name"];
+            $records = PlayRecordService::formatLessonTestStatistics($play_record);
+        } else {
+            $play_record = HomeworkService::getStudentDayLessonPractice($user_id, $params["lesson_id"], $params["date"]);
+            $records = PlayRecordService::formatLessonTestStatistics($play_record);
+            $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER, OpernCenter::version);
+            $bookInfo = $opn->lessonsByIds([$params["lesson_id"]]);
+            if (!empty($bookInfo) and $bookInfo["code"] == 0) {
+                $lesson_name = $bookInfo["data"][0]["lesson_name"];
+            }
         }
 
         return $response->withJson([
@@ -184,17 +200,34 @@ class PlayRecord extends ControllerBase
         }
         $user_id = $data["student_id"];
         $date = $params["date"];
+
         $lesson_name = "";
         $baseline = null;
+        // 优先使用task_id
+        if (!empty($params["task_id"])) {
+            list($homework, $play_record) = HomeworkService::getStudentDayHomeworkPractice($user_id,
+                $params['task_id'], null, $params["date"]);
+            if(empty($homework)){
+                $errors = Valid::addAppErrors([], "homework_not_found");
+                return $response->withJson($errors, StatusCode::HTTP_OK);
+            }
+            $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER, OpernCenter::version);
+            $bookInfo = $opn->lessonsByIds([$params["lesson_id"]]);
+            if (!empty($bookInfo) and $bookInfo["code"] == 0){
+                $lesson_name = $bookInfo["data"][0]["lesson_name"];
+            }
+            $baseline = $homework["baseline"];
 
-        $play_record = HomeworkService::getStudentDayLessonPractice($user_id, $params["lesson_id"], $date);
-        $records = PlayRecordService::formatLessonTestStatistics($play_record);
-        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER, OpernCenter::version);
-        $bookInfo = $opn->lessonsByIds([$params["lesson_id"]]);
-        if (!empty($bookInfo) and $bookInfo["code"] == 0) {
-            $lesson_name = $bookInfo["data"][0]["lesson_name"];
+            $records = PlayRecordService::formatLessonTestStatistics($play_record);
+        } else {
+            $play_record = HomeworkService::getStudentDayLessonPractice($user_id, $params["lesson_id"], $date);
+            $records = PlayRecordService::formatLessonTestStatistics($play_record);
+            $opn = new OpernCenter(OpernCenter::PRO_ID_AI_TEACHER, OpernCenter::version);
+            $bookInfo = $opn->lessonsByIds([$params["lesson_id"]]);
+            if (!empty($bookInfo) and $bookInfo["code"] == 0) {
+                $lesson_name = $bookInfo["data"][0]["lesson_name"];
+            }
         }
-
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => [
@@ -299,4 +332,36 @@ class PlayRecord extends ControllerBase
             'data' => $result
         ], StatusCode::HTTP_OK);
     }
+
+    /**
+     * 获取作业标准
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+     public function getHomeworkDemand(Request $request, Response $response)
+     {
+         Util::unusedParam($request);
+         $result = [
+             [
+                 'name' => '音准', 'value' => 'pitch',
+                 'children' => [
+                     ['name' => '基本识谱', 'value' => 60],
+                     ['name' => '较少错音', 'value' => 80],
+                     ['name' => '熟练演奏', 'value' => 95],
+                 ],
+             ], [
+                 'name' => '节奏', 'value' => 'rhythm',
+                 'children' => [
+                     ['name' => '认识节奏', 'value' => 60],
+                     ['name' => '较少错拍', 'value' => 80],
+                     ['name' => '熟练演奏', 'value' => 95],
+                 ]
+             ]
+         ];
+         return $response->withJson([
+             'code' => Valid::CODE_SUCCESS,
+             'data' => $result
+         ], StatusCode::HTTP_OK);
+     }
 }
