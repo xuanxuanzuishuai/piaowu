@@ -136,11 +136,25 @@ class PlayRecordService
             ];
         }
 
+        // 作业数据
+        $task_lessons = PlayRecordModel::getHomeworkByPlayRecord($student_id, $start_time, $end_time);
+        // 保存lesson_id和task_id的映射关系
+        $lesson_2_task_map = [];
+        foreach ($task_lessons as $value) {
+            $lesson_2_task_map[$value["lesson_id"]] = $value["task_id"];
+        }
+
         $max_score_records = [];
         $max_duration_records = [];
         for ($i = 0; $i < count($lesson_ids); $i++) {
             $result['lesson_count'] += 1;
             $cur_lesson_id = $statistics[$i]['lesson_id'];
+
+            // 作业数据
+            $statistics[$i]['task_id'] = null;
+            if (array_key_exists($cur_lesson_id, $lesson_2_task_map)) {
+                $statistics[$i]['task_id'] = $lesson_2_task_map[$cur_lesson_id];
+            }
 
             $statistics[$i]['lesson_name'] = $lesson_info[$cur_lesson_id]['lesson_name'];
             $statistics[$i]['collection_name'] = $lesson_info[$cur_lesson_id]['collection_name'];
