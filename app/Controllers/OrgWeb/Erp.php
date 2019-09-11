@@ -87,7 +87,7 @@ class Erp extends ControllerBase
             $giftCodeUnit = $params['duration_unit'];
         }
 
-        $autoApply = ($params['app_id'] == ErpService::APP_ID_AI);
+        $autoApply = ($params['auto_apply']) || ($params['app_id'] == ErpService::APP_ID_AI);
         list($errorCode, $giftCodes) = ErpService::exchangeGiftCode(
             [
                 'uuid' => $params['uuid'],
