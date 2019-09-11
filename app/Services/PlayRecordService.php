@@ -9,7 +9,6 @@
 namespace App\Services;
 
 
-use App\Controllers\Student\PlayRecord;
 use App\Libs\AIPLCenter;
 use App\Libs\Constants;
 use App\Libs\Util;
@@ -59,167 +58,119 @@ class PlayRecordService
      * @param $student_id
      * @param $start_time
      * @param $end_time
-     * @param $ai_record_id
-     * @param $need_cut
      * @return array
      */
-    public static function getRecordReport($student_id, $start_time, $end_time, $ai_record_id=true, $need_cut=false) {
-        $records = PlayRecordModel::getPlayRecordReport($student_id, $start_time, $end_time);
-        $student_info = StudentModelForApp::getStudentInfo($student_id, "");
+    public static function getRecordReport($student_id, $start_time, $end_time)
+    {
+        $records = PlayRecordModel::getPlayRecordReport($student_id, $start_time, $end_time, true);
+        $student_info = StudentModelForApp::getStudentInfo($student_id, '');
         $result = [
-            "name" => $student_info["name"],
-            "duration" => 0,
-            "lesson_count" => 0,
-            "max_score" => 0,
-            "report_list" => []
+            'name' => $student_info['name'],
+            'duration' => 0,
+            'lesson_count' => 0,
+            'max_score' => 0,
+            'report_list' => []
         ];
-        $ret = [];
         if (empty($records)) {
             return $result;
         }
+
+        $ret = [];
+        $max_duration = 0;
+        $max_score = 0;
+        $sum_duration = 0;
         foreach ($records as $value) {
-            $lesson_id = $value["lesson_id"];
+            $lesson_id = $value['lesson_id'];
             if (!isset($ret[$lesson_id])) {
                 $ret[$lesson_id] = [
-                    "max_score" => max($value["max_dmc"], $value["max_ai"]),
-                    "duration" => $value["duration"],
-                    "sub_count" => $value["sub_count"],
-                    "dmc_count" => $value["dmc"],
-                    "ai_count" => $value["ai"],
-                    "max_dmc_score" => $value["max_dmc"],
-                    "max_ai_score" => $value["max_ai"],
-                    "lesson_id" => $lesson_id,
-                    "ai_record_id" => null,
-                    "tags" => [],
+                    'max_score' => max($value['max_dmc'], $value['max_ai']),
+                    'duration' => $value['duration'],
+                    'sub_count' => $value['sub_count'],
+                    'dmc_count' => $value['dmc'],
+                    'ai_count' => $value['ai'],
+                    'max_dmc_score' => $value['max_dmc'],
+                    'max_ai_score' => $value['max_ai'],
+                    'lesson_id' => $lesson_id,
+                    'ai_record_id' => null,
+                    'tags' => [],
                 ];
             } else {
-                $ret[$lesson_id]["max_score"] = max($value["max_dmc"], $value["max_ai"], $ret[$lesson_id]["max_score"]);
-                $ret[$lesson_id]["duration"] += $value["duration"];
-                $ret[$lesson_id]["sub_count"] += $value["sub_count"];
-                $ret[$lesson_id]["dmc_count"] += $value["dmc"];
-                $ret[$lesson_id]["ai_count"] += $value["ai"];
-                $ret[$lesson_id]["max_dmc_score"] = max($value["max_dmc"], $ret[$lesson_id]["max_dmc_score"]);
-                $ret[$lesson_id]["max_ai_score"] = max($value["max_ai"], $ret[$lesson_id]["max_ai_score"]);
+                $ret[$lesson_id]['max_score'] = max($value['max_dmc'], $value['max_ai'], $ret[$lesson_id]['max_score']);
+                $ret[$lesson_id]['duration'] += $value['duration'];
+                $ret[$lesson_id]['sub_count'] += $value['sub_count'];
+                $ret[$lesson_id]['dmc_count'] += $value['dmc'];
+                $ret[$lesson_id]['ai_count'] += $value['ai'];
+                $ret[$lesson_id]['max_dmc_score'] = max($value['max_dmc'], $ret[$lesson_id]['max_dmc_score']);
+                $ret[$lesson_id]['max_ai_score'] = max($value['max_ai'], $ret[$lesson_id]['max_ai_score']);
+            }
+
+            $sum_duration += $value['duration'];
+
+            if ($ret[$lesson_id]['max_score'] > $max_score) {
+                $max_score = $ret[$lesson_id]['max_score'];
+            }
+
+            if ($ret[$lesson_id]['duration'] > $max_duration) {
+                $max_duration = $ret[$lesson_id]['duration'];
             }
         }
         $lesson_ids = array_keys($ret);
         $statistics = array_values($ret);
 
-        // 根据分数由高到低排序，相同分数以练琴时长由高到低排序
-        foreach ($statistics as $key => $row) {
-            $score[$key] = $row['max_score'] * ($end_time - $start_time) + $row["duration"];
-        }
-        array_multisort($score, SORT_DESC, $statistics);
-        $result["max_score"] = $statistics[0]["max_score"];
-
         $lesson_list = [];
         // 获取lesson的信息
         if (!empty($lesson_ids)) {
-            $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, "1.4");
+            $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, '1.4');
             $res = $opn->lessonsByIds($lesson_ids);
             if (!empty($res['code']) && $res['code'] !== Valid::CODE_SUCCESS) {
                 $lesson_list = [];
             } else {
-                $lesson_list = $res["data"];
+                $lesson_list = $res['data'];
             }
-
         }
         $lesson_info = [];
-        foreach ($lesson_list as $value){
-            $lesson_info[$value["lesson_id"]] = [
-                "lesson_name" => $value["opern_name"],
-                "collection_name" => $value["collection_name"]
+        foreach ($lesson_list as $value) {
+            $lesson_info[$value['lesson_id']] = [
+                'lesson_name' => $value['opern_name'],
+                'collection_name' => $value['collection_name']
             ];
         }
 
-        $sum_duration = 0;
-        $max_duration = 0;
-        $max_duration_index = null;
-        $max_score_index = null;
-        for ($i = 0; $i < count($statistics); $i++) {
-            $result["lesson_count"] += 1;
-            $cur_duration = $statistics[$i]["duration"];
-            $sum_duration += $cur_duration;
-            $cur_lesson_id = $statistics[$i]["lesson_id"];
-            if ($cur_duration > $max_duration) {
-                $max_duration = $cur_duration;
-                $max_duration_index = $i;
+        $max_score_records = [];
+        $max_duration_records = [];
+        for ($i = 0; $i < count($lesson_ids); $i++) {
+            $result['lesson_count'] += 1;
+            $cur_lesson_id = $statistics[$i]['lesson_id'];
+
+            $statistics[$i]['lesson_name'] = $lesson_info[$cur_lesson_id]['lesson_name'];
+            $statistics[$i]['collection_name'] = $lesson_info[$cur_lesson_id]['collection_name'];
+            $ai_record_info = PlayRecordModel::getWonderfulAIRecordId($cur_lesson_id, $student_id, $start_time, $end_time);
+            if (!empty($ai_record_info)) {
+                $statistics[$i]['ai_record_id'] = $ai_record_info['ai_record_id'];
             }
 
-            if ($statistics[$i]["max_score"] == $result["max_score"]){
-                array_push($statistics[$i]["tags"], "得分最高");
-                $max_score_index = $i;
-            }
-
-            $statistics[$i]["lesson_name"] = $lesson_info[$cur_lesson_id]["lesson_name"];
-            $statistics[$i]["collection_name"] = $lesson_info[$cur_lesson_id]["collection_name"];
-            if ($ai_record_id){
-                $ai_record_info = PlayRecordModel::getWonderfulAIRecordId($cur_lesson_id, $student_id, $start_time, $end_time);
-                if (!empty($ai_record_info and $ai_record_info["score"] >= 90)){
-                    $statistics[$i]["ai_record_id"] = $ai_record_info["ai_record_id"];
+            if ($statistics[$i]['max_score'] == $max_score) {
+                array_push($statistics[$i]['tags'], '得分最高');
+                if ($statistics[$i]['duration'] == $max_duration) {
+                    array_push($statistics[$i]['tags'], '时间最长');
                 }
+                $max_score_records[] = $statistics[$i];
+                unset($statistics[$i]);
+            }
+
+            if (!empty($statistics[$i]) && $statistics[$i]['duration'] == $max_duration) {
+                array_push($statistics[$i]['tags'], '时间最长');
+                $max_duration_records[] = $statistics[$i];
+                unset($statistics[$i]);
             }
         }
 
-        array_push($statistics[$max_duration_index]["tags"], "时间最长");
+        // 排序: 1.得分最高，2.时间最长， 3.练习顺序
+        $playRecords = array_merge($max_score_records, $max_duration_records, $statistics);
 
-        if ($need_cut){
-            if ($max_duration_index > $max_score_index){
-                $max_duration_statistics = $statistics[$max_duration_index];
-                $statistics = array_slice($statistics,0,$max_score_index+1);
-                array_push($statistics, $max_duration_statistics);
-            } else {
-                $statistics = array_slice($statistics,0,$max_score_index+1);
-            }
-        }
-
-        $result["report_list"] = $statistics;
-        $result["duration"] = $sum_duration;
-        return $result;
-    }
-
-    public static function getPlayRecordStatistic($student_id, $start_time, $end_time){
-        $report = self::getRecordReport($student_id, $start_time, $end_time, true);
-        $statistics = $report["report_list"];
-        $task_lessons = PlayRecordModel::getHomeworkByPlayRecord($student_id, $start_time, $end_time);
-
-        // 保存lesson_id和task_id的映射关系
-        $lesson_2_task_map = [];
-        foreach ($task_lessons as $value){
-            $lesson_2_task_map[$value["lesson_id"]] = $value["task_id"];
-        }
-
-        // 有作业的优先排序
-        $homework_play_list = [];
-        $no_homework_play_list = [];
-        foreach ($statistics as $value){
-            $lesson_id = $value["lesson_id"];
-            if (array_key_exists($lesson_id, $lesson_2_task_map)){
-                $value["task_id"] = $lesson_2_task_map[$lesson_id];
-                array_push($homework_play_list, $value);
-            } else {
-                array_push($no_homework_play_list, $value);
-            }
-        }
-
-        $report["report_list"] = array_merge($homework_play_list, $no_homework_play_list);
-        return $report;
-    }
-
-    /**
-     * 每日练琴记录
-     * @param $student_id
-     * @param null $date
-     * @return array
-     */
-    public static function getDayPlayRecordStatistic($student_id, $date=null){
-        if (empty($date)){
-            $date = "today";
-        }
-        $start_time = strtotime($date);
-        $end_time = $start_time + 86399;
-        $result = self::getPlayRecordStatistic($student_id, $start_time, $end_time);
-        $result["date"] = date("Y年m月d日", $start_time);
+        $result['max_score'] = $max_score;
+        $result['report_list'] = $playRecords;
+        $result['duration'] = $sum_duration;
         return $result;
     }
 
@@ -229,16 +180,17 @@ class PlayRecordService
      * @param null $date
      * @return array
      */
-    public static function getDayRecordReport($student_id, $date=null){
-        if (empty($date)){
+    public static function getDayRecordReport($student_id, $date = null)
+    {
+        if (empty($date)) {
             $date = "today";
         }
         $start_time = strtotime($date);
         $end_time = $start_time + 86399;
-        $result = self::getRecordReport($student_id, $start_time, $end_time, true, true);
-        $token = self::getShareReportToken($student_id, $date);
+        $result = self::getRecordReport($student_id, $start_time, $end_time);
+        $result["jwt"] = self::getShareReportToken($student_id, $date);
+        $result['token'] = AIBackendService::genStudentToken($student_id);
         $result["date"] = date("Y年m月d日", $start_time);
-        $result["jwt"] = $token;
         return $result;
     }
 
@@ -440,23 +392,24 @@ class PlayRecordService
      * 学生练琴日报(小叶子陪练)
      * @param $student_id
      * @param null $date
+     * @param bool $is_cut
      * @return array
      */
-    public static function getDayRecordReportPanda($student_id, $date = null)
+    public static function getDayRecordReportPanda($student_id, $date = null, $is_cut = false)
     {
         if (empty($date)) {
             $date = "today";
         }
         $start_time = strtotime($date);
         $end_time = $start_time + 86399;
-        $result = self::getRecordReportPanda($student_id, $start_time, $end_time);
+        $result = self::getRecordReportPanda($student_id, $start_time, $end_time, $is_cut);
         $result["jwt"] = self::getShareReportToken($student_id, $date);
         $result['token'] = AIBackendService::genStudentToken($student_id);
         $result["date"] = date("Y年m月d日", $start_time);
         return $result;
     }
 
-    public static function getRecordReportPanda($student_id, $start_time, $end_time)
+    public static function getRecordReportPanda($student_id, $start_time, $end_time, $is_cut)
     {
         $records = PlayRecordModel::getPlayRecordReport($student_id, $start_time, $end_time, true);
         $student_info = StudentModelForApp::getStudentInfo($student_id, '');
@@ -564,6 +517,10 @@ class PlayRecordService
 
         // 排序: 1.得分最高，2.时间最长， 3.练习顺序
         $playRecords = array_merge($max_score_records, $max_duration_records, $statistics);
+        if ($is_cut) {
+            // 只展示得分最高和时间最长
+            $playRecords = array_merge($max_score_records, $max_duration_records);
+        }
 
         $result["max_score"] = $max_score;
         $result["report_list"] = $playRecords;

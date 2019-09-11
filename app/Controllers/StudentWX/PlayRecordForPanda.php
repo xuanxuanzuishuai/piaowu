@@ -13,7 +13,6 @@ use App\Libs\OpernCenter;
 use App\Libs\Valid;
 use App\Models\PlayRecordModel;
 use App\Models\StudentModelForApp;
-use App\Services\AIBackendService;
 use App\Services\HomeworkService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -144,8 +143,7 @@ class PlayRecordForPanda extends ControllerBase
         if ($data["code" != 0]) {
             $response->withJson(Valid::addAppErrors([], 'jwt_invalid'), StatusCode::HTTP_OK);
         }
-        $result = PlayRecordService::getDayRecordReport($data["student_id"], $data["date"]);
-        $result['token'] = AIBackendService::genStudentToken($data['student_id']);
+        $result = PlayRecordService::getDayRecordReportPanda($data["student_id"], $data["date"], true);
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
