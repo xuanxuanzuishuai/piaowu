@@ -12,6 +12,7 @@ namespace App\Services;
 use App\Libs\AIPLCenter;
 use App\Libs\Constants;
 use App\Libs\Util;
+use App\Models\HomeworkTaskModel;
 use App\Models\PlayRecordModel;
 use App\Libs\OpernCenter;
 use App\Models\StudentModel;
@@ -137,11 +138,11 @@ class PlayRecordService
         }
 
         // 作业数据
-        $task_lessons = PlayRecordModel::getHomeworkByPlayRecord($student_id, $start_time, $end_time);
+        $tasks = HomeworkTaskModel::getTasks($student_id, $lesson_ids, $start_time, $end_time);
         // 保存lesson_id和task_id的映射关系
         $lesson_2_task_map = [];
-        foreach ($task_lessons as $value) {
-            $lesson_2_task_map[$value["lesson_id"]] = $value["task_id"];
+        foreach ($tasks as $value) {
+            $lesson_2_task_map[$value["lesson_id"]] = $value["id"];
         }
 
         $max_score_records = [];

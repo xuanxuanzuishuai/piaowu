@@ -11,6 +11,7 @@ namespace App\Controllers\StudentWX;
 use App\Controllers\ControllerBase;
 use App\Libs\OpernCenter;
 use App\Libs\Valid;
+use App\Models\HomeworkTaskModel;
 use App\Models\PlayRecordModel;
 use App\Models\StudentModelForApp;
 use App\Services\HomeworkService;
@@ -134,7 +135,11 @@ class PlayRecord extends ControllerBase
             if (!empty($bookInfo) and $bookInfo["code"] == 0){
                 $lesson_name = $bookInfo["data"][0]["lesson_name"];
             }
-            $baseline = $homework["baseline"];
+
+            $task = HomeworkTaskModel::getById($params["task_id"]);
+            if (!empty($task)) {
+                $baseline = $homework["baseline"];
+            }
 
             $records = PlayRecordService::formatLessonTestStatistics($play_record);
         } else {

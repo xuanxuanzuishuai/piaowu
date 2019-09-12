@@ -104,4 +104,15 @@ class HomeworkTaskModel extends Model
         return $result;
     }
 
+    public static function getTasks($studentId, $lessonId, $startTime, $endTime)
+    {
+        $db = MysqlDB::getDB();
+        $result = $db->select(self::$table . '(ht)',
+            ['[>]' . HomeworkModel::$table . '(h)' => ['ht.homework_id' => 'id']],
+        ['ht.id', 'ht.lesson_id'],
+        ['h.student_id' => $studentId, 'h.created_time[<]' => $startTime, 'h.end_time[>]' => $endTime, 'ht.lesson_id' => $lessonId]
+        );
+
+        return empty($result) ? [] : $result;
+    }
 }
