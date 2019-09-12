@@ -253,7 +253,7 @@ class PlayRecordService
             }
 
             $item["created_time"] = date("Y-m-d H:i", $item["created_time"]);
-
+            $item['score'] = Util::convertToIntIfCan($item['score']);
             if(array_key_exists($create_date, $format_record)){
                 // 更新最大得分index
                 if ($item["score"] > $format_record[$create_date]["max_score"]){
