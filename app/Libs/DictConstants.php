@@ -124,6 +124,7 @@ class DictConstants {
         'keys' => [
             'new_score', // 新曲谱测试
             'res_free', // 资源免费
+            'app_review', // AppStore审核
         ]
     ];
 

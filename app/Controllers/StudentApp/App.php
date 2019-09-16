@@ -54,7 +54,8 @@ class App extends ControllerBase
         $config['pay_url'] = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'pay_url');
         $config['share_url'] = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'share_url');
 
-        if ($this->ci['is_review_version']) {
+        $reviewFlagId = DictConstants::get(DictConstants::FLAG_ID, 'app_review');
+        if ($this->ci['flags'][$reviewFlagId]) {
             $config['guide_url'] = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'review_guide_url');
         } else {
             $config['guide_url'] = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'guide_url');
@@ -62,6 +63,7 @@ class App extends ControllerBase
         $config['share'] = (int)DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'share');
 
         return $response->withJson([
+            'review' => $this->ci['flags'],
             'code' => Valid::CODE_SUCCESS,
             'data' => $config
         ], StatusCode::HTTP_OK);

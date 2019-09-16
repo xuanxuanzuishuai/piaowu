@@ -9,6 +9,7 @@
 namespace App\Middleware;
 
 
+use App\Libs\DictConstants;
 use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Services\StudentServiceForApp;
@@ -23,7 +24,9 @@ class StudentResPrivilegeCheckMiddleWareForApp extends MiddlewareBase
         /** @var Response $response */
         $response = $next($request, $response);
 
-        if (empty($this->container['need_res_privilege']) || $this->container['is_review_version']) {
+        $reviewFlagId = DictConstants::get(DictConstants::FLAG_ID, 'app_review');
+        $reviewFlag = $this->container['flags'][$reviewFlagId];
+        if (empty($this->container['need_res_privilege']) || $reviewFlag) {
             return $response;
         }
 

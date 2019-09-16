@@ -11,9 +11,8 @@ namespace App\Middleware;
 use App\Libs\DictConstants;
 use App\Libs\SimpleLogger;
 use App\Libs\Valid;
-use App\Models\AppVersionModel;
 use App\Models\StudentModelForApp;
-use App\Services\AppVersionService;
+use App\Services\FlagsService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -45,27 +44,30 @@ class StudentAuthCheckMiddleWareForApp extends MiddlewareBase
         // 延长登录token过期时间
         StudentModelForApp::refreshStudentToken($studentId);
 
+        $this->container['student'] = $student;
         $student['version'] = $this->container['version'];
         $student['platform'] = $this->container['platform'];
-        $this->container['student'] = $student;
 
-        // 内部审核账号，使用审核版本app也可看到所有资源
-        $reviewTestUsers = DictConstants::get(DictConstants::APP_CONFIG_COMMON, 'res_test_mobiles');
-        if (!empty($reviewTestUsers)) {
-            $userMobiles = explode(',', $reviewTestUsers);
-            $isOpnTester = in_array($student['mobile'], $userMobiles);
-        } else {
-            $isOpnTester = false;
+        $reviewFlagId = DictConstants::get(DictConstants::FLAG_ID, 'app_review');
+        $reviewFlag = $this->container['flags'][$reviewFlagId];
+        if (!$reviewFlag) {
+            // 如果没有审核版本标记，在验证用户身份后再次检查用户是否有审核标签
+            $reviewFlag = FlagsService::hasFlag($student, $reviewFlagId);
+            $this->container['flags'][$reviewFlagId] = $reviewFlag;
         }
-        $this->container['opn_is_tester'] = $isOpnTester;
-        $this->container['opn_pro_ver'] = $isOpnTester ? 'tester' : $this->container['version'];
-        $this->container['opn_auditing'] = $this->container['is_review_version'] ? 1 : 0;
-        $this->container['opn_publish'] = $isOpnTester ? 0 : 1;
+
+        // 内部资源测试账号，可看到所有资源，包括未发布的
+        $resFreeFlagId = DictConstants::get(DictConstants::FLAG_ID, 'res_free');
+        $resFreeFlag = FlagsService::hasFlag($student, $resFreeFlagId);
+        $this->container['flags'][$reviewFlagId] = $resFreeFlag;
+
+        $this->container['opn_pro_ver'] = $resFreeFlag ? 'tester' : $this->container['version'];
+        $this->container['opn_auditing'] = $this->container['flags'][$reviewFlagId] ? 1 : 0;
+        $this->container['opn_publish'] = $resFreeFlag ? 0 : 1;
 
         SimpleLogger::info(__FILE__ . ":" . __LINE__, [
             'middleWare' => 'StudentAuthCheckMiddleWareForApp',
             'student' => $student,
-            'opn_is_tester' => $this->container['opn_is_tester'],
             'opn_pro_ver' => $this->container['opn_pro_ver'],
             'opn_auditing' => $this->container['opn_auditing'],
             'opn_publish' => $this->container['opn_publish'],

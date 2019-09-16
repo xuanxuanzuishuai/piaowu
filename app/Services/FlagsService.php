@@ -156,6 +156,11 @@ class FlagsService
      */
     public static function hasFlag($object, $flagId)
     {
+        $flagInfo = FlagsModel::getById($flagId);
+        if ($flagInfo['status'] != Constants::STATUS_TRUE) {
+            return false;
+        }
+
         $flagBit = self::getFlagBit($flagId);
         $flags = $object['flags'];
         if (($flags & $flagBit) == $flagBit) {

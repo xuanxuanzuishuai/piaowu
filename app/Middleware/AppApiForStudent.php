@@ -8,9 +8,9 @@
 
 namespace App\Middleware;
 
+use App\Libs\DictConstants;
 use App\Libs\SimpleLogger;
-use App\Models\AppVersionModel;
-use App\Services\AppVersionService;
+use App\Services\FlagsService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 
@@ -28,23 +28,25 @@ class AppApiForStudent extends MiddlewareBase
         $token = $request->getHeaderLine('token');
         $this->container['token'] = empty($token) ? NULL : $token;
 
-        if ($this->container['platform'] == AppVersionService::PLAT_IOS) {
-            $reviewVersion = AppVersionService::getReviewVersionCode(AppVersionModel::APP_TYPE_STUDENT,
-                AppVersionService::getPlatformId(AppVersionService::PLAT_IOS));
-            $isReviewVersion = ($reviewVersion == $this->container['version']);
-        } else {
-            $isReviewVersion = false;
-        }
-        $this->container['is_review_version'] = $isReviewVersion;
-
-        if ($isReviewVersion) {
+        // 在用户身份验证前，通过平台版本信息检查是否是审核版本
+        $object = [
+            'platform' => $this->container['platform'],
+            'version' => $this->container['version'],
+        ];
+        $reviewFlagId = DictConstants::get(DictConstants::FLAG_ID, 'app_review');
+        $reviewFlag = FlagsService::hasFlag($object, $reviewFlagId);
+        if ($reviewFlag) {
             $response = $response->withHeader('app-review', 1);
         }
+
+        $this->container['flags'] = [
+            $reviewFlagId => $reviewFlag
+        ];
 
         SimpleLogger::info(__FILE__ . ":" . __LINE__ . " AppApiForStudent", [
             'platform' => $this->container['platform'] ?? NULL,
             'version' => $this->container['version'] ?? NULL,
-            'is_review_version' => $this->container['is_review_version'] ?? NULL,
+            'reviewFlag' => $reviewFlag,
             'token' => $this->container['token'] ?? NULL,
         ]);
 
