@@ -37,7 +37,7 @@ $date = date("Y-m-d", $start_time);
 $sql = "select open_id, student_id, sum_duration, max_score, lesson_count
         from (select student_id,
                 SUM(duration) sum_duration,
-                MAX(score) max_score,
+                MAX(if(lesson_sub_id is null, score, 0)) max_score,
                 COUNT(DISTINCT lesson_id) lesson_count
             from " . PlayRecordModel::$table . "
             where created_time >= " . $start_time . "
