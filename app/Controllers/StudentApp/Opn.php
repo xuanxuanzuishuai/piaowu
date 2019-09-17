@@ -37,9 +37,6 @@ class Opn extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $newScoreFlagId = DictConstants::get(DictConstants::FLAG_ID, 'new_score');
-        $useNewScore = FlagsService::hasFlag($this->ci['student'], $newScoreFlagId);
-
         $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT,
             $this->ci['opn_pro_ver'],
             $this->ci['opn_auditing'],
@@ -48,7 +45,7 @@ class Opn extends ControllerBase
         if (empty($collections) || !empty($collections['errors'])) {
             return $response->withJson($collections, StatusCode::HTTP_OK);
         }
-        $collections = OpernService::appFormatCollections($collections['data']['list'], $useNewScore);
+        $collections = OpernService::appFormatCollections($collections['data']['list']);
 
         list($pageId, $pageLimit) = Util::appPageLimit($params);
         $result = $opn->searchLessons($params['key'], 1, 1, $pageId, $pageLimit);
@@ -56,7 +53,7 @@ class Opn extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $lessons = OpernService::appSearchLessons($result['data']['list'], $useNewScore);
+        $lessons = OpernService::appSearchLessons($result['data']['list']);
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
@@ -74,9 +71,6 @@ class Opn extends ControllerBase
 
         list($pageId, $pageLimit) = Util::appPageLimit($params);
 
-        $newScoreFlagId = DictConstants::get(DictConstants::FLAG_ID, 'new_score');
-        $useNewScore = FlagsService::hasFlag($this->ci['student'], $newScoreFlagId);
-
         $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT,
             $this->ci['opn_pro_ver'],
             $this->ci['opn_auditing'],
@@ -87,7 +81,7 @@ class Opn extends ControllerBase
         }
 
         $data = $result['data'];
-        $list = OpernService::formatCategories($data['list'], $useNewScore);
+        $list = OpernService::formatCategories($data['list']);
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
@@ -120,9 +114,6 @@ class Opn extends ControllerBase
 
         list($pageId, $pageLimit) = Util::appPageLimit($params);
 
-        $newScoreFlagId = DictConstants::get(DictConstants::FLAG_ID, 'new_score');
-        $useNewScore = FlagsService::hasFlag($this->ci['student'], $newScoreFlagId);
-
         $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT,
             $this->ci['opn_pro_ver'],
             $this->ci['opn_auditing'],
@@ -133,7 +124,7 @@ class Opn extends ControllerBase
         }
 
         $data = $result['data'];
-        $list = OpernService::appFormatCollections($data['list'], $useNewScore);
+        $list = OpernService::appFormatCollections($data['list']);
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => [
@@ -165,9 +156,6 @@ class Opn extends ControllerBase
 
         list($pageId, $pageLimit) = Util::appPageLimit($params);
 
-        $newScoreFlagId = DictConstants::get(DictConstants::FLAG_ID, 'new_score');
-        $useNewScore = FlagsService::hasFlag($this->ci['student'], $newScoreFlagId);
-
         $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT,
             $this->ci['opn_pro_ver'],
             $this->ci['opn_auditing'],
@@ -178,7 +166,7 @@ class Opn extends ControllerBase
         }
 
         $data = $result['data'];
-        $list = OpernService::appFormatLessons($data['list'], $useNewScore);
+        $list = OpernService::appFormatLessons($data['list']);
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => [
@@ -225,7 +213,7 @@ class Opn extends ControllerBase
         }
 
         $data = $result['data'];
-        $lesson = OpernService::appFormatLessonByIds($data, $useNewScore)[0] ?? [];
+        $lesson = OpernService::appFormatLessonByIds($data)[0] ?? [];
 
         if (!$lesson['is_free']) {
             $this->ci['need_res_privilege'] = true;
