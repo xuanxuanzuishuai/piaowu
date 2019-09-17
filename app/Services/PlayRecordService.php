@@ -89,6 +89,7 @@ class PlayRecordService
                     'sub_count' => $value['sub_count'],
                     'dmc_count' => $value['dmc'],
                     'ai_count' => $value['ai'],
+                    'part_count' => $value['part'],
                     'max_dmc_score' => $value['max_dmc'],
                     'max_ai_score' => $value['max_ai'],
                     'lesson_id' => $lesson_id,
@@ -101,6 +102,7 @@ class PlayRecordService
                 $ret[$lesson_id]['sub_count'] += $value['sub_count'];
                 $ret[$lesson_id]['dmc_count'] += $value['dmc'];
                 $ret[$lesson_id]['ai_count'] += $value['ai'];
+                $ret[$lesson_id]['part_count'] += $value['part'];
                 $ret[$lesson_id]['max_dmc_score'] = max($value['max_dmc'], $ret[$lesson_id]['max_dmc_score']);
                 $ret[$lesson_id]['max_ai_score'] = max($value['max_ai'], $ret[$lesson_id]['max_ai_score']);
             }
@@ -452,6 +454,7 @@ class PlayRecordService
                     'sub_count' => $value['sub_count'],
                     'dmc_count' => $value['dmc'],
                     'ai_count' => $value['ai'],
+                    'part_count' => $value['part'],
                     'max_dmc_score' => $value['max_dmc'],
                     'max_ai_score' => $value['max_ai'],
                     'lesson_id' => $lesson_id,
@@ -464,6 +467,7 @@ class PlayRecordService
                 $ret[$lesson_id]['sub_count'] += $value['sub_count'];
                 $ret[$lesson_id]['dmc_count'] += $value['dmc'];
                 $ret[$lesson_id]['ai_count'] += $value['ai'];
+                $ret[$lesson_id]['part_count'] += $value['part'];
                 $ret[$lesson_id]['max_dmc_score'] = max($value['max_dmc'], $ret[$lesson_id]['max_dmc_score']);
                 $ret[$lesson_id]['max_ai_score'] = max($value['max_ai'], $ret[$lesson_id]['max_ai_score']);
             }

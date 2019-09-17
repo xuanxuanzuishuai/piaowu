@@ -70,7 +70,8 @@ class PlayRecordModel extends Model
                     count(lesson_sub_id) as sub_count,
                     sum(duration) as duration ,
                     sum(if(lesson_type=0 and lesson_sub_id is null, 1, 0)) as dmc,
-                    sum(if(lesson_type=1 and lesson_sub_id is null, 1, 0)) as ai, 
+                    sum(if(lesson_type=1 and lesson_sub_id is null and ai_type != 3 , 1, 0)) as ai,
+                    sum(if(lesson_type=1 and lesson_sub_id is null and ai_type = 3 , 1, 0)) as part,
                     max(if(lesson_type=0 and lesson_sub_id is null, score, 0)) as max_dmc, 
                     max(if(lesson_type=1 and lesson_sub_id is null, score, 0)) as max_ai
             from play_record 
@@ -97,6 +98,7 @@ class PlayRecordModel extends Model
                 "duration" => $value["duration"],
                 "dmc" => Util::convertToIntIfCan($value["dmc"]),
                 "ai" => Util::convertToIntIfCan($value["ai"]),
+                "part" => Util::convertToIntIfCan($value["part"]),
                 "max_dmc" => Util::convertToIntIfCan($value["max_dmc"]),
                 "max_ai" => Util::convertToIntIfCan($value["max_ai"])
             ]);
