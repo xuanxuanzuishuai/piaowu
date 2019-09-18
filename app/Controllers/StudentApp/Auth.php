@@ -10,8 +10,6 @@ namespace App\Controllers\StudentApp;
 
 use App\Controllers\ControllerBase;
 use App\Libs\Valid;
-use App\Models\AppVersionModel;
-use App\Services\AppVersionService;
 use App\Services\CommonServiceForApp;
 use App\Services\StudentServiceForApp;
 use Slim\Http\Request;
@@ -64,15 +62,6 @@ class Auth extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        // 审核版本自动激活
-        if ($this->ci['platform'] == AppVersionService::PLAT_IOS) {
-            $reviewVersion = AppVersionService::getReviewVersionCode(AppVersionModel::APP_TYPE_STUDENT,
-                AppVersionService::getPlatformId(AppVersionService::PLAT_IOS));
-            if ($reviewVersion == $this->ci['version']) {
-                $loginData['sub_end_date'] = '20250101';
-            }
-        }
-
         return $response->withJson([
             'code'=> Valid::CODE_SUCCESS,
             'data'=> $loginData,
@@ -115,15 +104,6 @@ class Auth extends ControllerBase
         if (!empty($errorCode)) {
             $result = Valid::addAppErrors([], $errorCode);
             return $response->withJson($result, StatusCode::HTTP_OK);
-        }
-
-        // 审核版本自动激活
-        if ($this->ci['platform'] == AppVersionService::PLAT_IOS) {
-            $reviewVersion = AppVersionService::getReviewVersionCode(AppVersionModel::APP_TYPE_STUDENT,
-                AppVersionService::getPlatformId(AppVersionService::PLAT_IOS));
-            if ($reviewVersion == $this->ci['version']) {
-                $loginData['sub_end_date'] = '20250101';
-            }
         }
 
         return $response->withJson([

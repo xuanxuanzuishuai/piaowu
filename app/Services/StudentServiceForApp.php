@@ -78,6 +78,7 @@ class StudentServiceForApp
 
         $flags = FlagsService::flagsToArray($student['flags']);
 
+
         // 新曲谱灰测标记
         $newScoreFlagId = DictConstants::get(DictConstants::FLAG_ID, 'new_score');
         if (!in_array($newScoreFlagId, $flags)) {
@@ -87,6 +88,20 @@ class StudentServiceForApp
             $useNewScore = FlagsService::hasFlag($object, $newScoreFlagId);
             if ($useNewScore) {
                 $flags[] = $newScoreFlagId;
+            }
+        }
+
+        // app审核标记
+        $reviewFlagId = DictConstants::get(DictConstants::FLAG_ID, 'app_review');
+        if (!in_array($reviewFlagId, $flags)) {
+            $object = $student;
+            $object['platform'] = $platform;
+            $object['version'] = $version;
+            $isReviewVersion = FlagsService::hasFlag($object, $reviewFlagId);
+            if ($isReviewVersion) {
+                $flags[] = $reviewFlagId;
+                // 审核版本自动激活
+                $student['sub_end_date'] = '20250101';
             }
         }
 
@@ -143,6 +158,20 @@ class StudentServiceForApp
             $useNewScore = FlagsService::hasFlag($object, $newScoreFlagId);
             if ($useNewScore) {
                 $flags[] = $newScoreFlagId;
+            }
+        }
+
+        // app审核标记
+        $reviewFlagId = DictConstants::get(DictConstants::FLAG_ID, 'app_review');
+        if (!in_array($reviewFlagId, $flags)) {
+            $object = $student;
+            $object['platform'] = $platform;
+            $object['version'] = $version;
+            $isReviewVersion = FlagsService::hasFlag($object, $reviewFlagId);
+            if ($isReviewVersion) {
+                $flags[] = $reviewFlagId;
+                // 审核版本自动激活
+                $student['sub_end_date'] = '20250101';
             }
         }
 
