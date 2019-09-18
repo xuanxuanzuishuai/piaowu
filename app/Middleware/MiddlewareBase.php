@@ -18,4 +18,17 @@ class MiddlewareBase
     public function __construct(ContainerInterface $ci) {
         $this->container = $ci;
     }
+
+    /**
+     * 添加用户标签
+     * container内的数组不能直接修改，需要覆盖整个数组
+     * @param $flagId
+     * @param $value
+     */
+    public function addFlag($flagId, $value)
+    {
+        $flags = $this->container['flags'];
+        $flags[$flagId] = $value;
+        $this->container['flags'] = $flags;
+    }
 }

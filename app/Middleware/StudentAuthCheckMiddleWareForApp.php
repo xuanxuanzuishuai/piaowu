@@ -53,13 +53,13 @@ class StudentAuthCheckMiddleWareForApp extends MiddlewareBase
         if (!$reviewFlag) {
             // 如果没有审核版本标记，在验证用户身份后再次检查用户是否有审核标签
             $reviewFlag = FlagsService::hasFlag($student, $reviewFlagId);
-            $this->container['flags'][$reviewFlagId] = $reviewFlag;
+            $this->addFlag($reviewFlagId, $reviewFlag);
         }
 
         // 内部资源测试账号，可看到所有资源，包括未发布的
         $resFreeFlagId = DictConstants::get(DictConstants::FLAG_ID, 'res_free');
         $resFreeFlag = FlagsService::hasFlag($student, $resFreeFlagId);
-        $this->container['flags'][$reviewFlagId] = $resFreeFlag;
+        $this->addFlag($resFreeFlagId, $resFreeFlag);
 
         $this->container['opn_pro_ver'] = $resFreeFlag ? 'tester' : $this->container['version'];
         $this->container['opn_auditing'] = $this->container['flags'][$reviewFlagId] ? 1 : 0;
@@ -68,6 +68,7 @@ class StudentAuthCheckMiddleWareForApp extends MiddlewareBase
         SimpleLogger::info(__FILE__ . ":" . __LINE__, [
             'middleWare' => 'StudentAuthCheckMiddleWareForApp',
             'student' => $student,
+            'flags' => $this->container['flags'],
             'opn_pro_ver' => $this->container['opn_pro_ver'],
             'opn_auditing' => $this->container['opn_auditing'],
             'opn_publish' => $this->container['opn_publish'],
