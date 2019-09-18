@@ -73,7 +73,7 @@ class PlayRecordModel extends Model
                     sum(if(lesson_type=1 and lesson_sub_id is null and ai_type != 3 , 1, 0)) as ai,
                     sum(if(lesson_type=1 and lesson_sub_id is null and ai_type = 3 , 1, 0)) as part,
                     max(if(lesson_type=0 and lesson_sub_id is null, score, 0)) as max_dmc, 
-                    max(if(lesson_type=1 and lesson_sub_id is null, score, 0)) as max_ai
+                    max(if(lesson_type=1 and lesson_sub_id is null and ai_type != 3 , score, 0)) as max_ai
             from play_record 
             where 
                 student_id = :student_id and 
@@ -144,6 +144,7 @@ class PlayRecordModel extends Model
             "created_time[>=]" => $start_time,
             "created_time[<]" => $end_time,
             "lesson_type" => self::TYPE_AI,
+            "ai_type[!]" => self::AI_EVALUATE_FRAGMENT,
             "ORDER" => [
                 "score" => "DESC"
             ]
@@ -303,6 +304,7 @@ class PlayRecordModel extends Model
         ];
         $selectTable = "select " . $fields . " from " . self::$table . " as pr ";
         $where = " where pr.created_time>=:start_time and pr.created_time <= :end_time and pr.lesson_type=" .self::TYPE_AI .
+            " and pr.ai_type!=" . self::AI_EVALUATE_FRAGMENT .
             " and pr.lesson_id=:lesson_id and pr.client_type in (" . self::CLIENT_STUDENT . ", " . self::CLIENT_PANDA_MINI . ")";
         if (!empty($studentId)){
             $map[":student_id"] = $studentId;
