@@ -18,6 +18,7 @@ use App\Controllers\Employee\Employee;
 use App\Controllers\Org\Org;
 use App\Controllers\Org\OrgAccount as OrgAccount;
 use App\Controllers\Org\OrgLicense;
+use App\Controllers\OrgWeb\Admin;
 use App\Controllers\OrgWeb\Approval;
 use App\Controllers\OrgWeb\Erp;
 use App\Controllers\OrgWeb\Flags;
@@ -503,5 +504,12 @@ class OrgWebRouter extends RouterBase
             'method' => ['post'],
             'call' => Flags::class . ':filterModify',
         ],
+
+        // 后台管理
+        '/org_web/admin/fake_sms_code' => [
+            'method' => ['post'],
+            'call' => Admin::class . ':fakeSMSCode',
+        ],
+
     ];
 }
