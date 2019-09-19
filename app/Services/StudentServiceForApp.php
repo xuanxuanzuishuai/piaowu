@@ -87,7 +87,7 @@ class StudentServiceForApp
             $object['version'] = $version;
             $useNewScore = FlagsService::hasFlag($object, $newScoreFlagId);
             if ($useNewScore) {
-                $flags[] = $newScoreFlagId;
+                $flags[] = (int)$newScoreFlagId;
             }
         }
 
@@ -99,10 +99,15 @@ class StudentServiceForApp
             $object['version'] = $version;
             $isReviewVersion = FlagsService::hasFlag($object, $reviewFlagId);
             if ($isReviewVersion) {
-                $flags[] = $reviewFlagId;
-                // 审核版本自动激活
-                $student['sub_end_date'] = '20250101';
+                $flags[] = (int)$reviewFlagId;
             }
+        } else {
+            $isReviewVersion = true;
+        }
+
+        if ($isReviewVersion) {
+            // 审核版本自动激活
+            $student['sub_end_date'] = '20250101';
         }
 
         $loginData = [
@@ -157,7 +162,7 @@ class StudentServiceForApp
             $object['version'] = $version;
             $useNewScore = FlagsService::hasFlag($object, $newScoreFlagId);
             if ($useNewScore) {
-                $flags[] = $newScoreFlagId;
+                $flags[] = (int)$newScoreFlagId;
             }
         }
 
@@ -169,10 +174,15 @@ class StudentServiceForApp
             $object['version'] = $version;
             $isReviewVersion = FlagsService::hasFlag($object, $reviewFlagId);
             if ($isReviewVersion) {
-                $flags[] = $reviewFlagId;
-                // 审核版本自动激活
-                $student['sub_end_date'] = '20250101';
+                $flags[] = (int)$reviewFlagId;
             }
+        } else {
+            $isReviewVersion = true;
+        }
+
+        if ($isReviewVersion) {
+            // 审核版本自动激活
+            $student['sub_end_date'] = '20250101';
         }
 
         $loginData = [

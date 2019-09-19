@@ -9,6 +9,7 @@
 namespace App\Controllers\StudentApp;
 
 use App\Controllers\ControllerBase;
+use App\Libs\DictConstants;
 use App\Libs\Valid;
 use App\Services\CommonServiceForApp;
 use App\Services\StudentServiceForApp;
@@ -62,6 +63,11 @@ class Auth extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
+        $reviewFlagId = DictConstants::get(DictConstants::FLAG_ID, 'app_review');
+        if (in_array($reviewFlagId, $loginData['flags'])) {
+            $response = $response->withHeader('app-review', 1);
+        }
+
         return $response->withJson([
             'code'=> Valid::CODE_SUCCESS,
             'data'=> $loginData,
@@ -104,6 +110,11 @@ class Auth extends ControllerBase
         if (!empty($errorCode)) {
             $result = Valid::addAppErrors([], $errorCode);
             return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $reviewFlagId = DictConstants::get(DictConstants::FLAG_ID, 'app_review');
+        if (in_array($reviewFlagId, $loginData['flags'])) {
+            $response = $response->withHeader('app-review', 1);
         }
 
         return $response->withJson([
