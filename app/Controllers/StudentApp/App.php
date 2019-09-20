@@ -54,13 +54,15 @@ class App extends ControllerBase
         $config['pay_url'] = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'pay_url');
         $config['share_url'] = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'share_url');
 
+        $config['share'] = (int)DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'share');
+
         $reviewFlagId = DictConstants::get(DictConstants::FLAG_ID, 'app_review');
         if ($this->ci['flags'][$reviewFlagId]) {
             $config['guide_url'] = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'review_guide_url');
+            $config['share'] = 0;
         } else {
             $config['guide_url'] = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'guide_url');
         }
-        $config['share'] = (int)DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'share');
 
         return $response->withJson([
             'review' => $this->ci['flags'],
