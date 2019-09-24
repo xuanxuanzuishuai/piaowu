@@ -90,4 +90,35 @@ class HttpHelper
 
         return $res;
     }
+
+    public static function buildClassroomResponse(Response $response, $data)
+    {
+        $result = [
+            'request_result' => [
+                'code' => self::STATUS_SUCCESS,
+                'message' => 'OK',
+                'display_message' => '',
+                'request_time' => time(),
+            ],
+            'data' => $data ?? [],
+        ];
+
+        return $response->withJson($result, StatusCode::HTTP_OK);
+    }
+
+    public static function buildClassroomErrorResponse(Response $response, $errors)
+    {
+        $error = $errors[0] ?? ['err_no' => 'sys_unknown_errors', 'err_msg' => '未知错误'];
+
+        $result = [
+            'request_result' => [
+                'code' => self::STATUS_SUCCESS,
+                'message' => $error['err_no'],
+                'display_message' => $error['err_msg'],
+                'request_time' => time(),
+            ],
+            'data' => [],
+        ];
+        return $response->withJson($result, StatusCode::HTTP_OK);
+    }
 }
