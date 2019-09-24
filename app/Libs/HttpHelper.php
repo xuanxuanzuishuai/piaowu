@@ -50,6 +50,7 @@ class HttpHelper
     }
 
     /**
+<<<<<<< HEAD
      * @param $api
      * @param array $params
      * @param string $method
@@ -91,6 +92,11 @@ class HttpHelper
         return $res;
     }
 
+    /**
+     * @param Response $response
+     * @param $data
+     * @return Response
+     */
     public static function buildClassroomResponse(Response $response, $data)
     {
         $result = [
@@ -106,6 +112,11 @@ class HttpHelper
         return $response->withJson($result, StatusCode::HTTP_OK);
     }
 
+    /**
+     * @param Response $response
+     * @param $errors
+     * @return Response
+     */
     public static function buildClassroomErrorResponse(Response $response, $errors)
     {
         $error = $errors[0] ?? ['err_no' => 'sys_unknown_errors', 'err_msg' => '未知错误'];

@@ -18,6 +18,7 @@ use App\Models\ChannelModel;
 use App\Models\EmployeeModel;
 use App\Models\OrgAccountModel;
 use App\Models\OrganizationModel;
+use App\Models\OrgLicenseModel;
 use App\Models\QRCodeModel;
 use App\Models\StudentOrgModel;
 use App\Models\TeacherOrgModel;
@@ -326,7 +327,7 @@ class Org extends ControllerBase
             }
 
             //添加1个为期1年的许可证
-            $licenseLastId = OrgLicenseService::create($lastId, 1, 1, Constants::UNIT_YEAR, $this->getEmployeeId());
+            $licenseLastId = OrgLicenseService::create($lastId, OrgLicenseModel::TYPE_APP, 1, 1, Constants::UNIT_YEAR, $this->getEmployeeId());
             if(empty($licenseLastId)) {
                 $db->rollBack();
                 return $response->withJson(Valid::addErrors([], 'org', 'create_license_fail'));

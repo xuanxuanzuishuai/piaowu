@@ -12,6 +12,7 @@ use App\Libs\SimpleLogger;
 use App\Models\OrgAccountModel;
 use App\Models\OrganizationModel;
 use App\Models\OrganizationModelForApp;
+use App\Models\OrgLicenseModel;
 use App\Models\TeacherModelForApp;
 
 class OrganizationServiceForApp
@@ -47,7 +48,7 @@ class OrganizationServiceForApp
         }
 
         $orgInfo['account'] = $account;
-        $licenseInfo = OrgLicenseService::getLicenseInfo($orgId);
+        $licenseInfo = OrgLicenseService::getLicenseInfo($orgId, OrgLicenseModel::TYPE_APP);
         $orgInfo['license_num'] = $licenseInfo['valid_num'];
         $orgInfo['start_time'] = (string)$licenseInfo['min_active_time'];
         $orgInfo['end_time'] = (string)$licenseInfo['max_expire_time'];
@@ -98,7 +99,7 @@ class OrganizationServiceForApp
         }
 
         $orgInfo['account'] = $account;
-        $licenseInfo = OrgLicenseService::getLicenseInfo($orgId);
+        $licenseInfo = OrgLicenseService::getLicenseInfo($orgId, OrgLicenseModel::TYPE_APP);
         $orgInfo['license_num'] = $licenseInfo['valid_num'];
         $orgInfo['start_time'] = (string)$licenseInfo['min_active_time'];
         $orgInfo['end_time'] = (string)$licenseInfo['max_expire_time'];
@@ -135,7 +136,7 @@ class OrganizationServiceForApp
             'token' => $teacherToken,
         ];
 
-        $licenseNum = OrgLicenseService::getLicenseNum($orgId);
+        $licenseNum = OrgLicenseService::getLicenseNum($orgId, OrgLicenseModel::TYPE_APP);
         if ($licenseNum < 1) {
             return ['no_license_num'];
         }

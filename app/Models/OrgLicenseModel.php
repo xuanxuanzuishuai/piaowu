@@ -18,19 +18,24 @@ class OrgLicenseModel extends Model
 {
     public static $table = "org_license";
 
+    const TYPE_APP = 1;
+    const TYPE_CLASSROOM = 2;
+
     /**
      * 获取可用license数量
      * TODO 数量不用及时更新，可以缓存
      * @param $orgId
+     * @param $type
      * @return number
      */
-    public static function getValidNum($orgId)
+    public static function getValidNum($orgId, $type)
     {
         $db = MysqlDB::getDB();
 
         $now = time();
         $num = $db->sum(self::$table, 'license_num', [
             'org_id' => $orgId,
+            'type' => $type,
             'status' => Constants::STATUS_TRUE,
             'active_time[<]' => $now,
             'expire_time[>]' => $now,
@@ -39,7 +44,7 @@ class OrgLicenseModel extends Model
         return $num;
     }
 
-    public static function getInfo($orgId)
+    public static function getInfo($orgId, $type)
     {
         $db = MysqlDB::getDB();
 
@@ -50,6 +55,7 @@ class OrgLicenseModel extends Model
             'max_expire_time' => Medoo::raw('MAX(<expire_time>)'),
         ], [
             'org_id' => $orgId,
+            'type' => $type,
             'status' => Constants::STATUS_TRUE,
             'active_time[<]' => $now,
             'expire_time[>]' => $now,

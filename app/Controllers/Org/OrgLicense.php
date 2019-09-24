@@ -11,6 +11,7 @@ namespace App\Controllers\Org;
 use App\Controllers\ControllerBase;
 use App\Libs\Constants;
 use App\Libs\Valid;
+use App\Models\OrgLicenseModel;
 use App\Services\OrgLicenseService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -25,6 +26,17 @@ class OrgLicense extends ControllerBase
                 'key'        => 'org_id',
                 'type'       => 'required',
                 'error_code' => 'org_id_is_required'
+            ],
+            [
+                'key'        => 'type',
+                'type'       => 'required',
+                'error_code' => 'type_is_required'
+            ],
+            [
+                'key'        => 'type',
+                'type'       => 'in',
+                'value'      => [OrgLicenseModel::TYPE_APP, OrgLicenseModel::TYPE_CLASSROOM],
+                'error_code' => 'type_is_required'
             ],
             [
                 'key'        => 'num',
@@ -50,10 +62,11 @@ class OrgLicense extends ControllerBase
         }
 
         $orgId = $params['org_id'];
+        $type = $params['type'];
         $num = $params['num'] ?? 1;
         $duration = $params['duration'] ?? 1;
         $unit = $params['unit'] ?? Constants::UNIT_YEAR;
-        $ret = OrgLicenseService::create($orgId, $num, $duration, $unit, $this->getEmployeeId());
+        $ret = OrgLicenseService::create($orgId, $type, $num, $duration, $unit, $this->getEmployeeId());
 
         if (empty($ret)) {
             $result = Valid::addErrors([], 'org_id', 'license_create_failure');

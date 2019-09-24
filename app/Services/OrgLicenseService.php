@@ -18,16 +18,18 @@ class OrgLicenseService
      * 创建机构智能琴房APP许可信息
      *
      * @param int $orgId 机构id
+     * @param int $type 类型 1智能琴房 2钢琴教室
      * @param int $num 同时登录数量
      * @param int $duration 时长
      * @param string $durationUnit 时长单位(日月年)
      * @param int $operator 操作人（TheONE内部人员）
      * @return int|null 许可id
      */
-    public static function create($orgId, $num, $duration, $durationUnit, $operator)
+    public static function create($orgId, $type, $num, $duration, $durationUnit, $operator)
     {
         return OrgLicenseModel::insertRecord([
             'org_id' => $orgId,
+            'type' => $type,
             'license_num' => $num,
             'create_time' => time(),
             'create_operator' => $operator,
@@ -106,11 +108,12 @@ class OrgLicenseService
      * 获取机构当前可用许可数量
      *
      * @param $orgId
+     * @param $type
      * @return number
      */
-    public static function getLicenseNum($orgId)
+    public static function getLicenseNum($orgId, $type)
     {
-        $num = OrgLicenseModel::getValidNum($orgId);
+        $num = OrgLicenseModel::getValidNum($orgId, $type);
         return $num ?? 0;
     }
 
@@ -133,11 +136,12 @@ class OrgLicenseService
      * ]
      *
      * @param $orgId
+     * @param $type
      * @return mixed
      */
-    public static function getLicenseInfo($orgId)
+    public static function getLicenseInfo($orgId, $type)
     {
-        $info = OrgLicenseModel::getInfo($orgId);
+        $info = OrgLicenseModel::getInfo($orgId, $type);
         return [
             'valid_num' => (int)$info['valid_num'],
             'min_active_time' => (int)$info['min_active_time'],
