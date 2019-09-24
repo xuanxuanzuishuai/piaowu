@@ -29,8 +29,15 @@ class App extends ControllerBase
         Util::unusedParam($request);
 
         $platformId = AppVersionService::getPlatformId($this->ci['platform']);
-        $lastVersion = AppVersionService::getLastVersion(AppVersionModel::APP_TYPE_STUDENT, $platformId, $this->ci['version']);
-        $hotfix = AppVersionService::getHotfixConfig(AppVersionModel::APP_TYPE_STUDENT, $platformId, $this->ci['version']);
+        $reviewFlagId = DictConstants::get(DictConstants::FLAG_ID, 'app_review');
+
+        if ($this->ci['flags'][$reviewFlagId]) {
+            $lastVersion = AppVersionService::defaultLastVersion($this->ci['version']);
+            $hotfix = AppVersionService::defaultHotfixConfig($this->ci['version']);
+        } else {
+            $lastVersion = AppVersionService::getLastVersion(AppVersionModel::APP_TYPE_STUDENT, $platformId, $this->ci['version']);
+            $hotfix = AppVersionService::getHotfixConfig(AppVersionModel::APP_TYPE_STUDENT, $platformId, $this->ci['version']);
+        }
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
