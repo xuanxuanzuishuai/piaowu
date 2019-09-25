@@ -430,7 +430,7 @@ class StudentServiceForApp
         }
 
         $type = self::TRIAL_TYPE_NORMAL;
-        $duration = self::TRIAL_DAYS_NORMAL;
+        $duration = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'trial_duration');
         $today = date('Ymd');
         $endDate = date('Ymd', strtotime("+{$duration} day"));
 

@@ -52,23 +52,25 @@ class App extends ControllerBase
     {
         Util::unusedParam($request);
 
+        $studentAppConfigs = DictConstants::getSet(DictConstants::APP_CONFIG_STUDENT);
+
         $config = [];
         $config['ai_host'] = DictConstants::get(DictConstants::APP_CONFIG_COMMON, 'ai_host');
-        $config['policy_url'] = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'policy_url');
-        $config['sub_info_count'] = (int)DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'sub_info_count');
-        $config['tmall_2680'] = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'tmall_2680');
-        $config['tmall_599'] = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'tmall_599');
-        $config['pay_url'] = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'pay_url');
-        $config['share_url'] = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'share_url');
-
-        $config['share'] = (int)DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'share');
+        $config['policy_url'] = $studentAppConfigs['policy_url'];
+        $config['sub_info_count'] = (int)$studentAppConfigs['sub_info_count'];
+        $config['tmall_2680'] = $studentAppConfigs['tmall_2680'];
+        $config['tmall_599'] = $studentAppConfigs['tmall_599'];
+        $config['pay_url'] = $studentAppConfigs['pay_url'];
+        $config['share_url'] = $studentAppConfigs['share_url'];
+        $config['trial_duration'] = (int)$studentAppConfigs['trial_duration'];
 
         $reviewFlagId = DictConstants::get(DictConstants::FLAG_ID, 'app_review');
         if ($this->ci['flags'][$reviewFlagId]) {
-            $config['guide_url'] = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'review_guide_url');
+            $config['guide_url'] = $studentAppConfigs['review_guide_url'];
             $config['share'] = 0;
         } else {
-            $config['guide_url'] = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'guide_url');
+            $config['guide_url'] = $studentAppConfigs['guide_url'];
+            $config['share'] = (int)$studentAppConfigs['share'];
         }
 
         return $response->withJson([

@@ -84,6 +84,7 @@ class DictConstants {
             'pay_url',
             'share_url',
             'share',
+            'trial_duration',
         ]
     ];
 
