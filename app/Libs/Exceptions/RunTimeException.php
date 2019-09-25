@@ -49,7 +49,7 @@ class RunTimeException extends \Exception
                 $msgArgs = $error[3] ?? [];
                 $errorMessage = sprintf($errorFormat, ...$msgArgs);
             }
-            $errorData[$errorField] = [
+            $errorData[$errorField][] = [
                 'err_no' => $errorCode,
                 'err_msg' => $errorMessage,
             ];
