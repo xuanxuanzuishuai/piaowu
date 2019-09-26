@@ -28,6 +28,9 @@ class AppApiForStudent extends MiddlewareBase
         $token = $request->getHeaderLine('token');
         $this->container['token'] = empty($token) ? NULL : $token;
 
+        $deviceHash = $request->getHeaderLine('dh');
+        $this->container['device_hash'] = empty($deviceHash) ? NULL : $deviceHash;
+
         // 在用户身份验证前，通过平台版本信息检查是否是审核版本
         $object = [
             'platform' => $this->container['platform'],

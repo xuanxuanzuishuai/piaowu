@@ -30,6 +30,12 @@ class StudentResPrivilegeCheckMiddleWareForApp extends MiddlewareBase
             return $response;
         }
 
+        // TheONE设备免费
+        $isXyzDevice = md5('THEONE' . $this->container['token'] . date('Ymd') . '_1');
+        if ($this->container['device_hash'] == $isXyzDevice) {
+            return $response;
+        }
+
         $student = $this->container['student'];
 
         if (!StudentServiceForApp::getSubStatus($student['id'])) {
