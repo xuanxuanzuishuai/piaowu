@@ -31,6 +31,7 @@ class RouterFactory
     const CLIENT_TEACHER_WX = 'teacher_wx'; // 老师微信
     const CLIENT_ORG_WEB = 'org_web'; // 机构后台
     const CLIENT_ADMIN = 'admin'; // 系统管理后台
+    const CLIENT_API = 'api'; // 外部api调用
 
     /**
      * client_type 对应的 Router class
@@ -45,6 +46,7 @@ class RouterFactory
         self::CLIENT_TEACHER_WX => TeacherWXRouter::class, // 老师微信
         self::CLIENT_ORG_WEB => OrgWebRouter::class, // 机构后台
         self::CLIENT_ADMIN => AdminRouter::class, // 系统管理后台
+        self::CLIENT_API => APIRouter::class, // 外部api调用
     ];
 
     /**
@@ -52,7 +54,11 @@ class RouterFactory
      * 特殊的接口不能按照 /client_type/... 格式命名时，在这里指定对应的 client_type
      */
     const URI_CLIENT_TYPES = [
-        '/user/auth/get_user_id' => self::CLIENT_STUDENT_APP
+        '/user/auth/get_user_id' => self::CLIENT_STUDENT_APP,
+        '/api/qiniu/token' => self::CLIENT_ORG_WEB,
+        '/api/qiniu/callback' => self::CLIENT_ORG_WEB,
+        '/api/uictl/dropdown' => self::CLIENT_ORG_WEB,
+        '/api/oss/signature' => self::CLIENT_ORG_WEB,
     ];
 
     /**
