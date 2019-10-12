@@ -202,7 +202,10 @@ class Opn extends ControllerBase
             $this->ci['opn_publish']);
 
         $newScoreFlagId = DictConstants::get(DictConstants::FLAG_ID, 'new_score');
-        $useNewScore = FlagsService::hasFlag($this->ci['student'], $newScoreFlagId);
+        $student = $this->ci['student'];
+        $student['version'] = $this->ci['version'];
+        $student['platform'] = $this->ci['platform'];
+        $useNewScore = FlagsService::hasFlag($student, $newScoreFlagId);
         if (!$useNewScore) {
             $params['resource_types'] = 'dynamic';
         }
