@@ -9,7 +9,7 @@
 namespace App\Routers;
 
 use App\Controllers\Admin\Menu;
-use App\Controllers\API\OceanEngine;
+use App\Controllers\API\Track;
 use App\Middleware\AdminMiddleware;
 
 class APIRouter extends RouterBase
@@ -17,9 +17,14 @@ class APIRouter extends RouterBase
     protected $logFilename = 'dss_api.log';
 
     protected $uriConfig = [
-        '/api/ocean_engine/track' => [
+        '/api/track/ad_event/ocean_engine' => [
             'method' => ['get'],
-            'call' => OceanEngine::class . ':track',
+            'call' => Track::class . ':adEventOceanEngine',
+            'middles' => [],
+        ],
+        '/api/track/ad_event/gdt' => [
+            'method' => ['get'],
+            'call' => Track::class . ':adEventGdt',
             'middles' => [],
         ],
     ];
