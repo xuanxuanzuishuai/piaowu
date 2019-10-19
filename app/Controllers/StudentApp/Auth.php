@@ -13,6 +13,7 @@ use App\Libs\DictConstants;
 use App\Libs\Valid;
 use App\Services\CommonServiceForApp;
 use App\Services\StudentServiceForApp;
+use App\Services\TrackService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -61,6 +62,16 @@ class Auth extends ControllerBase
         if (!empty($errorCode)) {
             $result = Valid::addAppErrors([], $errorCode);
             return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $loginData['is_reg'] = 0;
+        $trackParams = TrackService::getTrackParams($this->ci['platform'], $params);
+        if (!empty($trackParams)) {
+            $trackData = TrackService::trackEvent($this->ci['platform'], TrackService::TRACK_EVENT_REGISTER, $params);
+            $loginData['track_complete'] = $trackData['complete'] ? 1 : 0;
+            if ($loginData['track_complete']) {
+                $loginData['track_data'] = ['ad_channel' => $trackData['ad_channel'], 'ad_id' => $trackData['ad_id']];
+            }
         }
 
         $reviewFlagId = DictConstants::get(DictConstants::FLAG_ID, 'app_review');

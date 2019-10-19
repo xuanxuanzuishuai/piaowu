@@ -18,6 +18,7 @@ use App\Models\AppVersionModel;
 use App\Models\FeedbackModel;
 use App\Services\AppVersionService;
 use App\Services\StudentServiceForApp;
+use App\Services\TrackService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -50,7 +51,7 @@ class App extends ControllerBase
 
     public function config(Request $request, Response $response)
     {
-        Util::unusedParam($request);
+        $params = $request->getParams();
 
         $studentAppConfigs = DictConstants::getSet(DictConstants::APP_CONFIG_STUDENT);
 
@@ -73,8 +74,13 @@ class App extends ControllerBase
             $config['share'] = (int)$studentAppConfigs['share'];
         }
 
+        $trackParams = TrackService::getTrackParams($this->ci['platform'], $params);
+        if (!empty($trackParams)) {
+            $trackData = TrackService::trackEvent($this->ci['platform'], TrackService::TRACK_EVENT_ACTIVE, $params);
+            $config['ad_active'] = $trackData['complete'] ? 1 : 0;
+        }
+
         return $response->withJson([
-            'review' => $this->ci['flags'],
             'code' => Valid::CODE_SUCCESS,
             'data' => $config
         ], StatusCode::HTTP_OK);
