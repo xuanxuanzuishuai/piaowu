@@ -8,9 +8,7 @@
 
 namespace App\Routers;
 
-use App\Controllers\Admin\Menu;
 use App\Controllers\API\Track;
-use App\Middleware\AdminMiddleware;
 
 class APIRouter extends RouterBase
 {

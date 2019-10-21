@@ -64,7 +64,6 @@ class Auth extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $loginData['is_reg'] = 0;
         $trackParams = TrackService::getTrackParams($this->ci['platform'], $params);
         if (!empty($trackParams)) {
             $trackData = TrackService::trackEvent($this->ci['platform'], TrackService::TRACK_EVENT_REGISTER, $params);
