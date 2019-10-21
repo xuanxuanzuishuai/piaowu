@@ -64,9 +64,13 @@ class Auth extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $trackParams = TrackService::getTrackParams($this->ci['platform'], $params);
+        $platformId = TrackService::getPlatformId($this->ci['platform']);
+        $trackParams = TrackService::getPlatformParams($platformId, $params);
         if (!empty($trackParams)) {
-            $trackData = TrackService::trackEvent($this->ci['platform'], TrackService::TRACK_EVENT_REGISTER, $params);
+            $trackParams['platform'] = $platformId;
+            $trackData = TrackService::trackEvent(TrackService::TRACK_EVENT_REGISTER,
+                $trackParams,
+                $loginData['id']);
             $loginData['track_complete'] = $trackData['complete'] ? 1 : 0;
             if ($loginData['track_complete']) {
                 $loginData['track_data'] = ['ad_channel' => $trackData['ad_channel'], 'ad_id' => $trackData['ad_id']];

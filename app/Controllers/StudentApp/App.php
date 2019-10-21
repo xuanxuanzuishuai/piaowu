@@ -74,9 +74,11 @@ class App extends ControllerBase
             $config['share'] = (int)$studentAppConfigs['share'];
         }
 
-        $trackParams = TrackService::getTrackParams($this->ci['platform'], $params);
+        $platformId = TrackService::getPlatformId($this->ci['platform']);
+        $trackParams = TrackService::getPlatformParams($platformId, $params);
         if (!empty($trackParams)) {
-            $trackData = TrackService::trackEvent($this->ci['platform'], TrackService::TRACK_EVENT_ACTIVE, $params);
+            $trackParams['platform'] = $platformId;
+            $trackData = TrackService::trackEvent(TrackService::TRACK_EVENT_ACTIVE, $trackParams);
             $config['ad_active'] = $trackData['complete'] ? 1 : 0;
         }
 

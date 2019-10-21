@@ -9,7 +9,6 @@
 namespace App\Controllers\API;
 
 use App\Controllers\ControllerBase;
-use App\Libs\HttpHelper;
 use App\Libs\SimpleLogger;
 use App\Services\TrackService;
 use Slim\Http\Request;
@@ -40,12 +39,12 @@ class Track extends ControllerBase
         $info['ad_channel'] = TrackService::CHANNEL_OCEAN;
         $info['ad_id'] = $params['ad_id'];
         $info['mac_hash'] = $params['mac'];
-        $info['create_time'] = $params['create_time'];
+        $info['create_time'] = intval($params['create_time'] / 1000);
         $info['callback'] = $params['callback'];
 
-        $success = TrackService::addInfo($info);
+        $trackData = TrackService::trackEvent(TrackService::TRACK_EVENT_INIT, $info);
 
-        $ret = ['status' => $success ? 0 : 1];
+        $ret = ['status' => $trackData['complete'] ? 0 : 1];
         return $response->withJson($ret, StatusCode::HTTP_OK);
     }
 
