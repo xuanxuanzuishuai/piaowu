@@ -25,5 +25,10 @@ class APIRouter extends RouterBase
             'call' => Track::class . ':adEventGdt',
             'middles' => [],
         ],
+        '/api/track/ad_event/wx' => [
+            'method' => ['get'],
+            'call' => Track::class . ':adEventWx',
+            'middles' => [],
+        ],
     ];
 }

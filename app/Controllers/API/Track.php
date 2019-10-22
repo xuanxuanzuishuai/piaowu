@@ -56,4 +56,13 @@ class Track extends ControllerBase
         $ret = ['ret' => 0, 'msg' => 'OK'];
         return $response->withJson($ret, StatusCode::HTTP_OK);
     }
+
+    public function adEventWx(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        SimpleLogger::debug("OceanEngine::track", [$params]);
+
+        $ret = ['ret' => 0, 'msg' => 'OK'];
+        return $response->withJson($ret, StatusCode::HTTP_OK);
+    }
 }
