@@ -64,6 +64,7 @@ class App extends ControllerBase
         $config['pay_url'] = $studentAppConfigs['pay_url'];
         $config['share_url'] = $studentAppConfigs['share_url'];
         $config['trial_duration'] = (int)$studentAppConfigs['trial_duration'];
+        $config['ai_adjust_db'] = (int)$studentAppConfigs['ai_adjust_db'];
 
         $reviewFlagId = DictConstants::get(DictConstants::FLAG_ID, 'app_review');
         if ($this->ci['flags'][$reviewFlagId]) {
