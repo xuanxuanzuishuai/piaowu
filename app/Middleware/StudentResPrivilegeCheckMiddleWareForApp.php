@@ -31,9 +31,12 @@ class StudentResPrivilegeCheckMiddleWareForApp extends MiddlewareBase
         }
 
         // TheONE设备免费
-        $isXyzDevice = md5('THEONE' . $this->container['token'] . date('Ymd') . '_1');
-        if ($this->container['device_hash'] == $isXyzDevice) {
-            return $response;
+        $deviceCheck = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'device_check');
+        if ($deviceCheck) {
+            $isXyzDevice = md5('THEONE' . $this->container['token'] . date('Ymd') . '_1');
+            if ($this->container['device_hash'] == $isXyzDevice) {
+                return $response;
+            }
         }
 
         $student = $this->container['student'];

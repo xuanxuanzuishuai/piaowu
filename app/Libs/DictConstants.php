@@ -86,6 +86,7 @@ class DictConstants {
             'share',
             'trial_duration',
             'ai_adjust_db',
+            'device_check',
         ]
     ];
 
