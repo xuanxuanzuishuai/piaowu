@@ -9,6 +9,7 @@
 namespace App\Routers;
 
 
+use App\Controllers\StudentWX\PlayRecord;
 use App\Controllers\StudentWX\PlayRecordForPanda;
 use App\Controllers\StudentWX\Student;
 use App\Middleware\WeChatAuthCheckMiddleware;
@@ -44,6 +45,12 @@ class StudentWXRouter extends RouterBase
         '/student_wx/student/gift_code' => [
             'method' => ['get'],
             'call' => Student::class . ':giftCode',
+        ],
+
+        '/student_wx/play_record/get_shared_report' => [
+            'method' => ['get'],
+            'call' => PlayRecord::class . ':getShareReport',
+            'middles' => []
         ],
 
         '/student_org_wx/student/register' => array('method'=>array('post'),'call'=>'\App\Controllers\StudentOrgWX\Student:register', 'middles' => array('\App\Middleware\WeChatOpenIdCheckMiddleware')),

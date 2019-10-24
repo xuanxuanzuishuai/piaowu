@@ -90,6 +90,44 @@ class PlayRecord extends ControllerBase
     }
 
     /**
+     * 查看指定学生单日测评
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getShareReport(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 's',
+                'type' => 'required',
+                'error_code' => 's_is_required'
+            ],
+            [
+                'key' => 'd',
+                'type' => 'required',
+                'error_code' => 'd_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $student = StudentModelForApp::getStudentInfo(null, $params['s']);
+        if (empty($student)) {
+            return $response->withJson(Valid::addAppErrors([], 's error!'), StatusCode::HTTP_OK);
+        }
+        $result = PlayRecordService::getDayRecordReport($student['id'], $params['d']);
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $result,
+        ], StatusCode::HTTP_OK);
+    }
+
+    /**
      * 学生端获取测评成绩单
      * @param Request $request
      * @param Response $response
