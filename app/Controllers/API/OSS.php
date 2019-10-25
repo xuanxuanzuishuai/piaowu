@@ -24,13 +24,15 @@ class OSS extends ControllerBase
 
         $ossConfig = DictConstants::getSet(DictConstants::ALI_OSS_CONFIG);
 
+        $dir = AliOSS::getDirByType($request->getParam('type'));
+
         $alioss = new AliOSS();
         $ret = $alioss->getSignature($ossConfig['access_key_id'],
             $ossConfig['access_key_secret'],
             $ossConfig['bucket'],
             $ossConfig['endpoint'],
             null,
-            $ossConfig['img_dir'],
+            $dir,
             $ossConfig['expire'],
             $ossConfig['max_file_size']);
 

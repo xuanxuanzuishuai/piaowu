@@ -9,6 +9,7 @@
 namespace App\Routers;
 
 use App\Controllers\API\Track;
+use App\Controllers\API\BAIDU;
 
 class APIRouter extends RouterBase
 {
@@ -28,6 +29,12 @@ class APIRouter extends RouterBase
         '/api/track/ad_event/wx' => [
             'method' => ['get'],
             'call' => Track::class . ':adEventWx',
+            'middles' => [],
+        ],
+        //百度文字转语音
+        '/api/baidu/audio_token' => [
+            'method'  => ['get'],
+            'call'    => BAIDU::class . ':audioToken',
             'middles' => [],
         ],
     ];

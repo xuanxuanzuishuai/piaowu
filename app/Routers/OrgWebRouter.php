@@ -22,6 +22,8 @@ use App\Controllers\OrgWeb\Admin;
 use App\Controllers\OrgWeb\Approval;
 use App\Controllers\OrgWeb\Erp;
 use App\Controllers\OrgWeb\Flags;
+use App\Controllers\OrgWeb\Question;
+use App\Controllers\OrgWeb\QuestionTag;
 use App\Controllers\Schedule\ScheduleRecord;
 use App\Controllers\Student\PlayRecord as BackendPlayRecord;
 use App\Controllers\Student\Student;
@@ -506,10 +508,15 @@ class OrgWebRouter extends RouterBase
         ],
 
         // 后台管理
-        '/org_web/admin/fake_sms_code' => [
-            'method' => ['post'],
-            'call' => Admin::class . ':fakeSMSCode',
-        ],
+        '/org_web/admin/fake_sms_code' => ['method' => ['post'], 'call' => Admin::class . ':fakeSMSCode'],
 
+        // 考级模拟题
+        '/org_web/question/add_edit'     => ['method' => ['post'], 'call' => Question::class . ':addEdit'],
+        '/org_web/question/detail'       => ['method' => ['get'], 'call' => Question::class . ':detail'],
+        '/org_web/question/list'         => ['method' => ['get'], 'call' => Question::class . ':list'],
+        '/org_web/question/status'       => ['method' => ['post'], 'call' => Question::class . ':status'],
+        '/org_web/question/catalog'      => ['method' => ['get'], 'call' => Question::class . ':catalog'],
+        '/org_web/question_tag/add_edit' => ['method' => ['post'], 'call' => QuestionTag::class . ':addEdit'],
+        '/org_web/question_tag/tags'     => ['method' => ['get'], 'call' => QuestionTag::class . ':tags'], //所有状态正常的标签
     ];
 }

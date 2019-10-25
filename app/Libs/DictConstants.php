@@ -133,6 +133,18 @@ class DictConstants {
         ]
     ];
 
+    //题目状态
+    const QUESTION_STATUS = [
+        'type' => 'question_status',
+        'keys' => [1, 2, 3]
+    ];
+
+    //题目类型
+    const QUESTION_TEMPLATE = [
+        'type' => 'question_template',
+        'keys' => [1, 2, 3, 4]
+    ];
+
     public static function get($type, $key)
     {
         if (empty($type) || empty($key)) {
