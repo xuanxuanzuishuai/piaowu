@@ -101,7 +101,7 @@ class Play extends ControllerBase
         $userID = $this->ci['student']['id'];
         $params['data']['lesson_type'] = PlayRecordModel::TYPE_DYNAMIC;
         $params['data']['client_type'] = PlayRecordModel::CLIENT_STUDENT;
-        $param['data']['ai_type'] = PlayRecordModel::AI_EVALUATE_PLAY;
+        $params['data']['ai_type'] = PlayRecordModel::AI_EVALUATE_PLAY;
         list($errorCode, $ret) = UserPlayServices::addRecord($userID, $params['data']);
 
         if (!empty($errorCode)) {
