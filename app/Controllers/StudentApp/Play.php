@@ -14,6 +14,7 @@ use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Models\PlayRecordModel;
+use App\Models\StudentModelForApp;
 use App\Services\PlayRecordService;
 use App\Services\UserPlayServices;
 use App\Services\StorageService;
@@ -102,7 +103,13 @@ class Play extends ControllerBase
         $params['data']['lesson_type'] = PlayRecordModel::TYPE_DYNAMIC;
         $params['data']['client_type'] = PlayRecordModel::CLIENT_STUDENT;
         $params['data']['ai_type'] = PlayRecordModel::AI_EVALUATE_PLAY;
-        list($errorCode, $ret) = UserPlayServices::addRecord($userID, $params['data']);
+
+        $isAnonymous = StudentModelForApp::isAnonymousStudentId($userID);
+        if ($isAnonymous) {
+            list($errorCode, $ret) = UserPlayServices::emptyRecord($params['data']);
+        } else {
+            list($errorCode, $ret) = UserPlayServices::addRecord($userID, $params['data']);
+        }
 
         if (!empty($errorCode)) {
             $result = Valid::addAppErrors([], $errorCode);

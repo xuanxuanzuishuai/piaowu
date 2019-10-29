@@ -20,6 +20,21 @@ use App\Libs\MaxHeap;
 class UserPlayServices
 {
     /**
+     * 匿名登录返回统一记录数据
+     * @param $playData
+     * @return array
+     */
+    public static function emptyRecord($playData)
+    {
+        $playResult = [
+            'is_new_high_score' => true,
+            'high_score' => 0,
+            'current_score' => $playData['score']
+        ];
+        return [null, ['record_id' => 0, 'play_result' => $playResult]];
+    }
+
+        /**
      * 添加一次演奏记录
      * @param $userID
      * @param array $playData 演奏数据

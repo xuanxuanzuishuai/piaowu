@@ -38,6 +38,78 @@ class StudentServiceForApp
     // 用户操作类型 观看付费服务介绍
     const ACTION_READ_SUB_INFO = 'act_sub_info';
 
+    public static function anonymousLogin($token, $platform, $version)
+    {
+        if (!empty($token)) {
+            if (!StudentModelForApp::isAnonymousStudentToken($token)) {
+                return ['invalid_token'];
+            }
+            $anonymousId = StudentModelForApp::getStudentUid($token);
+        }
+
+        if (empty($anonymousId)) {
+            $anonymousId = StudentModelForApp::genAnonymousStudentId();
+            $token = StudentModelForApp::genAnonymousStudentToken($anonymousId);
+            StudentModelForApp::setStudentToken($anonymousId, $token);
+        }
+
+        $student = StudentModelForApp::getAnonymousStudentInfo($anonymousId);
+
+        $flags = FlagsService::flagsToArray($student['flags']);
+
+        // 新曲谱灰测标记
+        $newScoreFlagId = DictConstants::get(DictConstants::FLAG_ID, 'new_score');
+        if (!in_array($newScoreFlagId, $flags)) {
+            $object = $student;
+            $object['platform'] = $platform;
+            $object['version'] = $version;
+            $useNewScore = FlagsService::hasFlag($object, $newScoreFlagId);
+            if ($useNewScore) {
+                $flags[] = (int)$newScoreFlagId;
+            }
+        }
+
+        // app审核标记
+        $reviewFlagId = DictConstants::get(DictConstants::FLAG_ID, 'app_review');
+        if (!in_array($reviewFlagId, $flags)) {
+            $object = $student;
+            $object['platform'] = $platform;
+            $object['version'] = $version;
+            $isReviewVersion = FlagsService::hasFlag($object, $reviewFlagId);
+            if ($isReviewVersion) {
+                $flags[] = (int)$reviewFlagId;
+            }
+        } else {
+            $isReviewVersion = true;
+        }
+
+        if ($isReviewVersion) {
+            // 审核版本自动激活
+            $student['sub_end_date'] = '20250101';
+        }
+
+        $loginData = [
+            'id' => $student['id'],
+            'uuid' => $student['uuid'],
+            'student_name' => $student['name'],
+            'avatar' => '',
+            'mobile' => $student['mobile'],
+            'sub_status' => $student['sub_status'],
+            'sub_start_date' => $student['sub_start_date'],
+            'sub_end_date' => $student['sub_end_date'],
+            'trial_start_date' => $student['trial_start_date'],
+            'trial_end_date' => $student['trial_end_date'],
+            'act_sub_info' => (int)$student['act_sub_info'],
+            'first_pay_time' => (int)$student['first_pay_time'],
+            'token' => $token,
+            'teachers' => [],
+            'flags' => $flags,
+            'is_anonymous' => 1,
+        ];
+
+        return [null, $loginData];
+    }
+
     /**
      * 手机验证码登录
      *
@@ -125,7 +197,8 @@ class StudentServiceForApp
             'first_pay_time' => (int)$student['first_pay_time'],
             'token' => $token,
             'teachers' => $teachers,
-            'flags' => $flags
+            'flags' => $flags,
+            'is_anonymous' => 0,
         ];
 
         return [null, $loginData];
@@ -200,7 +273,8 @@ class StudentServiceForApp
             'first_pay_time' => (int)$student['first_pay_time'],
             'token' => $token,
             'teachers' => $teachers,
-            'flags' => $flags
+            'flags' => $flags,
+            'is_anonymous' => 0,
         ];
 
         return [null, $loginData];

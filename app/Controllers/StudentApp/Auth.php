@@ -11,6 +11,7 @@ namespace App\Controllers\StudentApp;
 use App\Controllers\ControllerBase;
 use App\Libs\DictConstants;
 use App\Libs\Valid;
+use App\Models\StudentModelForApp;
 use App\Services\CommonServiceForApp;
 use App\Services\StudentServiceForApp;
 use App\Services\TrackService;
@@ -26,19 +27,9 @@ class Auth extends ControllerBase
         $rules = [
             [
                 'key' => 'mobile',
-                'type' => 'required',
-                'error_code' => 'user_mobile_is_required'
-            ],
-            [
-                'key' => 'mobile',
                 'type' => 'regex',
                 'value' => '/^[0-9]{11}$/',
                 'error_code' => 'mobile_format_error'
-            ],
-            [
-                'key' => 'code',
-                'type' => 'required',
-                'error_code' => 'validate_code_is_required'
             ],
             [
                 'key' => 'code',
@@ -52,12 +43,34 @@ class Auth extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        list($errorCode, $loginData) = StudentServiceForApp::login(
-            $params['mobile'],
-            $params['code'],
-            $this->ci['platform'],
-            $this->ci['version']
-        );
+        if (empty($params['mobile']) && empty($params['code'])) {
+            list($errorCode, $loginData) = StudentServiceForApp::anonymousLogin(
+                null,
+                $this->ci['platform'],
+                $this->ci['version']
+            );
+
+        } else {
+            if (empty($params['mobile'])) {
+                $errorCode = 'user_mobile_is_required';
+            }
+            if (empty($params['code'])) {
+                $errorCode = 'validate_code_is_required';
+            }
+            if (!empty($errorCode)) {
+                $result = Valid::addAppErrors([], $errorCode);
+                return $response->withJson($result, StatusCode::HTTP_OK);
+            }
+
+            list($errorCode, $loginData) = StudentServiceForApp::login(
+                $params['mobile'],
+                $params['code'],
+                $this->ci['platform'],
+                $this->ci['version']
+            );
+        }
+
+
 
         if (!empty($errorCode)) {
             $result = Valid::addAppErrors([], $errorCode);
@@ -94,11 +107,6 @@ class Auth extends ControllerBase
         $rules = [
             [
                 'key' => 'mobile',
-                'type' => 'required',
-                'error_code' => 'user_mobile_is_required'
-            ],
-            [
-                'key' => 'mobile',
                 'type' => 'regex',
                 'value' => '/^[0-9]{11}$/',
                 'error_code' => 'mobile_format_error'
@@ -114,12 +122,26 @@ class Auth extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        list($errorCode, $loginData) = StudentServiceForApp::loginWithToken(
-            $params['mobile'],
-            $params['token'],
-            $this->ci['platform'],
-            $this->ci['version']
-        );
+        if (empty($params['mobile'])) {
+            if (!StudentModelForApp::isAnonymousStudentToken($params['token'])) {
+                $result = Valid::addAppErrors([], 'invalid_anonymous_token');
+                return $response->withJson($result, StatusCode::HTTP_OK);
+            }
+
+            list($errorCode, $loginData) = StudentServiceForApp::anonymousLogin(
+                $params['token'],
+                $this->ci['platform'],
+                $this->ci['version']
+            );
+
+        } else {
+            list($errorCode, $loginData) = StudentServiceForApp::loginWithToken(
+                $params['mobile'],
+                $params['token'],
+                $this->ci['platform'],
+                $this->ci['version']
+            );
+        }
 
         if (!empty($errorCode)) {
             $result = Valid::addAppErrors([], $errorCode);

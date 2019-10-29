@@ -13,6 +13,7 @@ use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Models\StudentModelForApp;
 use App\Services\FlagsService;
+use App\Services\StudentServiceForApp;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -34,12 +35,17 @@ class StudentAuthCheckMiddleWareForApp extends MiddlewareBase
             $studentId = StudentModelForApp::getStudentUid($token);
         }
 
-        if (empty($studentId)) {
-            SimpleLogger::error(__FILE__ . ":" . __LINE__, ['invalid token']);
-            $result = Valid::addAppErrors([], 'invalid_token');
-            return $response->withJson($result, StatusCode::HTTP_OK);
+        if (StudentModelForApp::isAnonymousStudentId($studentId)) {
+            $student = StudentModelForApp::getAnonymousStudentInfo($studentId);
+
+        } else {
+            if (empty($studentId)) {
+                SimpleLogger::error(__FILE__ . ":" . __LINE__, ['invalid token']);
+                $result = Valid::addAppErrors([], 'invalid_token');
+                return $response->withJson($result, StatusCode::HTTP_OK);
+            }
+            $student = StudentModelForApp::getStudentInfo($studentId, null);
         }
-        $student = StudentModelForApp::getStudentInfo($studentId, null);
 
         // 延长登录token过期时间
         StudentModelForApp::refreshStudentToken($studentId);

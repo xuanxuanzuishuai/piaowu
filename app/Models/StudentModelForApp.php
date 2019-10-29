@@ -27,7 +27,44 @@ class StudentModelForApp extends Model
     public static $redisPri = "student";
     public static $cacheKeyTokenPri = "token_";
     public static $cacheKeyUidPri = "uid_";
+    public static $cacheKeyAnonymousPri = 'anonymous_';
     public static $redisExpire = 2592000; // 30 days
+
+    /**
+     * 生成匿名用户id: 小于0的随机数字
+     * @return int
+     */
+    public static function genAnonymousStudentId()
+    {
+        return rand(-1, PHP_INT_MIN);
+    }
+
+    public static function isAnonymousStudentId($id)
+    {
+        return $id < 0;
+    }
+
+    public static function getAnonymousStudentInfo($anonymousId)
+    {
+        return [
+            'id' => $anonymousId,
+            'uuid' => $anonymousId,
+            'mobile' => '0',
+            'create_time' => '0',
+            'channel_id' => '0',
+            'status' => '1',
+            'sub_status' => '1',
+            'sub_start_date' => '0',
+            'sub_end_date' => '0',
+            'trial_start_date' => '0',
+            'trial_end_date' => '0',
+            'act_sub_info' => '0',
+            'first_pay_time' => '0',
+            'name' => '游客',
+            'thumb' => '',
+            'flags' => '0'
+        ];
+    }
 
     public static function getStudentInfo($studentID, $mobile, $uuid = null)
     {
@@ -86,6 +123,17 @@ class StudentModelForApp extends Model
         $rand = mt_rand(1, 9999);
         $token = md5(uniqid($studentID . $rand, true));
         return $token;
+    }
+
+    public static function isAnonymousStudentToken($token)
+    {
+        $len = strlen(self::$cacheKeyAnonymousPri);
+        return strncmp(self::$cacheKeyAnonymousPri, $token, $len) === 0;
+    }
+
+    public static function genAnonymousStudentToken($anonymousID)
+    {
+        return self::$cacheKeyAnonymousPri . self::genStudentToken($anonymousID);
     }
 
     /**
