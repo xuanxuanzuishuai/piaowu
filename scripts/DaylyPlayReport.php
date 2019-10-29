@@ -67,7 +67,7 @@ foreach ($userInfo as $value) {
             'color' => "#323d83"
         ],
         'keyword3' => [
-            'value' => "最高" . $value["max_score"] . "分"
+            'value' => $value["max_score"] == 0 ? '-' : "最高" . $value["max_score"] . "分"
         ],
         'remark' => [
             'value' => "点击【详情】查看",
