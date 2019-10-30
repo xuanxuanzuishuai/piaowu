@@ -12,6 +12,7 @@ namespace App\Middleware;
 use App\Libs\DictConstants;
 use App\Libs\SimpleLogger;
 use App\Libs\Valid;
+use App\Models\StudentModelForApp;
 use App\Services\StudentServiceForApp;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -41,9 +42,18 @@ class StudentResPrivilegeCheckMiddleWareForApp extends MiddlewareBase
 
         $student = $this->container['student'];
 
+        if (StudentModelForApp::isAnonymousStudentId($student['id'])) {
+            SimpleLogger::error(__FILE__ . ":" . __LINE__, ['anonymous_no_res_privilege' => $student]);
+            $errorCode = 'anonymous_no_res_privilege';
+        }
+
         if (!StudentServiceForApp::getSubStatus($student['id'])) {
             SimpleLogger::error(__FILE__ . ":" . __LINE__, ['no_res_privilege' => $student]);
-            $result = Valid::addAppErrors([], 'no_res_privilege');
+            $errorCode = 'no_res_privilege';
+        }
+
+        if (!empty($errorCode)) {
+            $result = Valid::addAppErrors([], $errorCode);
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
