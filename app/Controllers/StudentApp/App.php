@@ -66,6 +66,8 @@ class App extends ControllerBase
         $config['trial_duration'] = (int)$studentAppConfigs['trial_duration'];
         $config['ai_adjust_db'] = (int)$studentAppConfigs['ai_adjust_db'];
         $config['device_check'] = (int)$studentAppConfigs['device_check'];
+        $config['exam_enable'] = (int)$studentAppConfigs['exam_enable'];
+        $config['exam_url'] = $studentAppConfigs['exam_url'];
 
         $reviewFlagId = DictConstants::get(DictConstants::FLAG_ID, 'app_review');
         if ($this->ci['flags'][$reviewFlagId]) {

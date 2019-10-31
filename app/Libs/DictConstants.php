@@ -87,6 +87,8 @@ class DictConstants {
             'trial_duration',
             'ai_adjust_db',
             'device_check',
+            'exam_enable',
+            'exam_url',
         ]
     ];
 
