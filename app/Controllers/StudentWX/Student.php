@@ -232,6 +232,7 @@ class Student extends ControllerBase
             "duration" => $duration,
             "expired_date" => $expire_date,
             "sub_status" => $sub_status,
+            "open_id" => $this->ci['open_id'],
         ];
 
         return $response->withJson([
