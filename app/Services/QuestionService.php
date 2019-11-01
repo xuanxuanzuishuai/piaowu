@@ -28,17 +28,14 @@ class QuestionService
             throw new RunTimeException(['question_content_error']);
         }
 
-        //音频播放设置
+        //音频播放和答题限制设置
         $audioSetObj = $params['audio_set'] ?? [];
-        $audioSet = [];
-        if(!empty($params['content_audio'])) {
-            $audioSet = [
-                'loop'          => intval($audioSetObj['loop'] ?? 1), // 播放遍数
-                'has_timer'     => boolval($audioSetObj['has_timer'] ?? true), // 是否有倒计时
-                'timer_type'    => intval($audioSetObj['timer_type'] ?? 1), // 倒计时类型
-                'timer_seconds' => intval($audioSetObj['timer_seconds'] ?? 60), // 倒计时秒数
-            ];
-        }
+        $audioSet = [
+            'loop'          => intval($audioSetObj['loop'] ?? 1), // 播放遍数
+            'has_timer'     => boolval($audioSetObj['has_timer'] ?? true), // 是否有倒计时
+            'timer_type'    => intval($audioSetObj['timer_type'] ?? 1), // 倒计时类型
+            'timer_seconds' => intval($audioSetObj['timer_seconds'] ?? 60), // 倒计时秒数
+        ];
 
         //答案选项
         $optionsObj = $params['options'] ?? [];
@@ -136,6 +133,8 @@ class QuestionService
             }
         }
 
+        QuestionModel::delCacheQuestions();
+
         return $id;
     }
 
@@ -229,6 +228,55 @@ class QuestionService
         if(empty($affectedRows)) {
             throw new RunTimeException(['update_fail']);
         }
+
+        QuestionModel::delCacheQuestions();
+
         return $affectedRows;
+    }
+
+    public static function questions()
+    {
+        return QuestionModel::questions();
+    }
+
+    //与getById不同的是，getByIdForApp是为小程序和app设计的，返回的数据的时候，需要把数字表示的列转为中文
+    public static function getByIdForApp($id)
+    {
+        $record = QuestionModel::getByQuestionId($id);
+        $catalogs = QuestionCatalogService::selectAll();
+        $catalog = [];
+        foreach($catalogs as $c) {
+            $catalog[$c['id']] = $c['catalog'];
+        }
+
+        $record['audio_set']      = json_decode($record['audio_set'], 1);
+        $record['options']        = json_decode($record['options'], 1);
+        $record['answer_explain'] = json_decode($record['answer_explain'], 1);
+        $record['question_tag']   = empty($record['question_tag']) ? [] : explode(',', $record['question_tag']);
+        $record['exam_org_zh']    = $catalog[$record['exam_org']];
+        $record['level_zh']       = $catalog[$record['level']];
+        $record['catalog_zh']     = $catalog[$record['catalog']];
+        $record['sub_catalog_zh'] = $catalog[$record['sub_catalog']];
+
+        foreach($record['options'] as $k => $v) {
+            if(!empty($v['img'])) {
+                $v['img'] = AliOSS::signUrls($v['img']);
+            }
+            $record['options'][$k] = $v;
+        }
+        if(!empty($record['answer_explain']['img'])) {
+            $record['answer_explain']['img'] = AliOSS::signUrls($record['answer_explain']['img']);
+        }
+        if(!empty($record['content_img'])) {
+            $record['content_img'] = AliOSS::signUrls($record['content_img']);
+        }
+        if(!empty($record['content_audio'])) {
+            $record['content_audio'] = AliOSS::signUrls($record['content_audio']);
+        }
+        if(!empty($record['content_text_audio'])) {
+            $record['content_text_audio'] = AliOSS::signUrls($record['content_text_audio']);
+        }
+
+        return $record;
     }
 }

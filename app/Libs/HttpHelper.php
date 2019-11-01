@@ -49,7 +49,7 @@ class HttpHelper
             $client = new Client(['debug' => false]);
 
             if ($method == 'GET') {
-                $data = ['query' => $params];
+                $data = empty($params) ? [] : ['query' => $params];
             } elseif ($method == 'POST') {
                 $data = ['json' => $params];
                 $data['headers'] = ['Content-Type' => 'application/json'];

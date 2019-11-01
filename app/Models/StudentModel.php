@@ -37,6 +37,7 @@ class StudentModel extends Model
     const CHANNEL_ERP_ORDER = 5; //ERP购买订单
     const CHANNEL_ERP_TRANSFER = 6; //ERP转单
     const CHANNEL_WEB_REGISTER = 7; //web注册页
+    const CHANNEL_EXAM_MINAPP_REGISTER = 8; //音基小程序注册
 
     /**
      * 更新学生信息

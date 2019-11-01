@@ -10,11 +10,14 @@ namespace App\Models;
 
 use App\Libs\Constants;
 use App\Libs\MysqlDB;
+use App\Libs\RedisDB;
 use App\Libs\Util;
+use App\Libs\AliOSS;
 
 class QuestionModel extends Model
 {
     public static $table = 'question';
+    private static $cacheQuestionsKey = 'dss.question.all_questions';
 
     public static function selectByPage($page, $count, $params)
     {
@@ -115,5 +118,126 @@ group by q.id order by q.create_time desc, q.status asc";
         left join {$tr} tr on q.id = tr.question_id and tr.status = {$s} where q.id = :id", [':id' => $id]);
 
         return empty($records) ? [] : $records[0];
+    }
+
+    private static function put(&$array, $index, $obj)
+    {
+        $indices = explode('.', $index);
+        $array = &$array[array_shift($indices)];
+        foreach($indices as $index) {
+            $array = &$array['children'][$index];
+        }
+        $array['children'][] = $obj;
+        return count($array['children']) - 1;
+    }
+
+    private static function catalogsAndQuestions()
+    {
+        $catalogs = QuestionCatalogModel::getRecords(
+            ['status' => Constants::STATUS_TRUE, 'mini_show' => Constants::STATUS_TRUE, 'ORDER' => ['type' => 'ASC', 'id' => 'ASC']],
+            ['id', 'catalog', 'parent_id', 'type'], false
+        );
+
+        $records = self::getRecords(['status' => Constants::STATUS_TRUE], [], false);
+
+        $catalog = [];
+        foreach($catalogs as $c) {
+            $catalog[$c['id']] = $c['catalog'];
+        }
+
+        foreach($records as $k => $record) {
+            $record['audio_set']      = json_decode($record['audio_set'], 1);
+            $record['options']        = json_decode($record['options'], 1);
+            $record['answer_explain'] = json_decode($record['answer_explain'], 1);
+
+            foreach($record['options'] as $kk => $v) {
+                if(!empty($v['img'])) {
+                    $v['img'] = AliOSS::signUrls($v['img']);
+                }
+                $record['options'][$kk] = $v;
+            }
+            if(!empty($record['answer_explain']['img'])) {
+                $record['answer_explain']['img'] = AliOSS::signUrls($record['answer_explain']['img']);
+            }
+            if(!empty($record['content_img'])) {
+                $record['content_img'] = AliOSS::signUrls($record['content_img']);
+            }
+            if(!empty($record['content_audio'])) {
+                $record['content_audio'] = AliOSS::signUrls($record['content_audio']);
+            }
+            if(!empty($record['content_text_audio'])) {
+                $record['content_text_audio'] = AliOSS::signUrls($record['content_text_audio']);
+            }
+
+            $records[$k] = $record;
+        }
+
+        return [$catalogs, $records];
+    }
+
+    private static function increaseQuestionCount(&$tree, $index, $count)
+    {
+        $levels = explode('.', $index);
+        $first = array_shift($levels);
+        $tree[$first]['question_count'] += $count;
+        $t = &$tree[$first]['children'];
+        foreach($levels as $l) {
+            $t[$l]['question_count'] += $count;
+            $t = &$t[$l]['children'];
+        }
+    }
+
+    //构造一个树形的菜单，exam_org -> level -> catalog -> sub_catalog -> questions
+    //并统计各级的题目数量
+    public static function questions()
+    {
+        $conn = RedisDB::getConn();
+        $records = $conn->get(self::$cacheQuestionsKey);
+        if(!empty($records)) {
+            return json_decode($records, 1);
+        }
+
+        list($catalogs, $questions) = self::catalogsAndQuestions();
+
+        $map = [];
+        foreach($questions as $q) {
+            $map[$q['sub_catalog']][] = $q;
+        }
+
+        $tree = [];
+        $where = [];
+
+        foreach($catalogs as $c) {
+            if($c['type'] == 1) {
+                $where[$c['id']] = count($tree);
+                $tree[] = $c;
+            } else {
+                $index = $where[$c['parent_id']];
+                if(is_null($index)) {
+                    continue;
+                }
+                if($c['type'] == 3) {
+                    $j = substr($index, 0, strpos($index, '.'));
+                    $tree[$j]['catalog_count'] ++;
+                } else if ($c['type'] == 4) {
+                    $c['questions'] = $map[$c['id']] ?? [];
+                    $c['question_count'] = count($c['questions']);
+                    self::increaseQuestionCount($tree, $index, $c['question_count']);
+                }
+                $i = self::put($tree, $index, $c);
+                $where[$c['id']] = "{$index}.{$i}";
+            }
+        }
+
+        $conn->set(self::$cacheQuestionsKey, json_encode($tree, 1));
+        $conn->expire(self::$cacheQuestionsKey, 7 * 86400); // one week
+
+        return $tree;
+    }
+
+    public static function delCacheQuestions()
+    {
+        $conn = RedisDB::getConn();
+        return $conn->del(self::$cacheQuestionsKey);
     }
 }

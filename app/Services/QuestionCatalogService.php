@@ -7,6 +7,7 @@
  */
 
 namespace App\Services;
+use App\Libs\Constants;
 use App\Libs\RedisDB;
 use App\Models\QuestionCatalogModel;
 
@@ -22,7 +23,7 @@ class QuestionCatalogService
             return json_decode($catalog, 1);
         }
 
-        $records = QuestionCatalogModel::getRecords(['id[>]' => 0], ['id', 'catalog', 'parent_id', 'type'], false);
+        $records = QuestionCatalogModel::getRecords(['status' => Constants::STATUS_TRUE], ['id', 'catalog', 'parent_id', 'type'], false);
 
         $conn->set(self::$cacheQuestionCatalogKey, json_encode($records, 1));
         $conn->expire(self::$cacheQuestionCatalogKey, 7 * 86400);

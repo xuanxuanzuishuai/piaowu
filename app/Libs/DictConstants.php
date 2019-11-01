@@ -145,6 +145,16 @@ class DictConstants {
         'keys' => [1, 2, 3, 4]
     ];
 
+    const EXAM_BANNER = [
+        'type' => 'exam_banner',
+        'keys' => [1, 2],
+    ];
+
+    const EXAM_POP = [
+        'type' => 'exam_pop',
+        'keys' => [1],
+    ];
+
     public static function get($type, $key)
     {
         if (empty($type) || empty($key)) {

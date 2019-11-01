@@ -22,7 +22,8 @@ class AliOSS
     const DIR_AUDIO_COMMENT = 'audio_comment'; // 老师课堂点评语音
     const DIR_HOMEWORK_AUDIO_COMMENT = 'homework_audio_comment'; // 课后作业点评语音
     const DIR_APP_LOG = 'app_log'; // app日志
-    //语音目录
+    //音基小程序目录
+    const DIR_EXAM_IMG = 'exam_img'; // 音基小程序图片
     const DIR_CONVERSE_AUDIO = 'converse_audio'; // 百度转换语音
     const DIR_MADE_AUDIO = 'made_audio'; // 自制音频
 
@@ -351,6 +352,7 @@ class AliOSS
             self::DIR_APP_LOG,
             self::DIR_CONVERSE_AUDIO,
             self::DIR_MADE_AUDIO,
+            self::DIR_EXAM_IMG,
         ];
         if (!in_array($dirType, $typeConstants)) {
             return null;
