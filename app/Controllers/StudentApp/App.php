@@ -268,6 +268,9 @@ class App extends ControllerBase
             $dir,
             $sessionName);
 
+        $ret['credentials'] = $ret['Credentials'];
+        unset($ret['Credentials']);
+
         if (!empty($errorCode)) {
             $result = Valid::addAppErrors([], $errorCode);
             return $response->withJson($result, StatusCode::HTTP_OK);
