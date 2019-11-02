@@ -77,6 +77,11 @@ class StudentAppRouter extends RouterBase
             'call' => App::class . ':setNickname',
             'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
         ],
+        '/student_app/app/get_signature' => [
+            'method' => ['get'],
+            'call' => App::class . ':getSignature',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
 
         '/student_app/app/leads_check' => [
             'method' => ['get'],
