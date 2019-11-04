@@ -50,7 +50,7 @@ class StudentModelForApp extends Model
             'id' => $anonymousId,
             'uuid' => $anonymousId,
             'mobile' => '0',
-            'create_time' => '0',
+            'create_time' => time(),
             'channel_id' => '0',
             'status' => '1',
             'sub_status' => '1',
