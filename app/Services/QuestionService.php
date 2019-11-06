@@ -234,9 +234,42 @@ class QuestionService
         return $affectedRows;
     }
 
+    private static function sign(&$array)
+    {
+        foreach($array as &$a) {
+            if(isset($a['questions'])) {
+                foreach($a['questions'] as $k => $record) {
+                    foreach($record['options'] as $kk => $v) {
+                        if(!empty($v['img'])) {
+                            $v['img'] = AliOSS::signUrls($v['img']);
+                        }
+                        $record['options'][$kk] = $v;
+                    }
+                    if(!empty($record['answer_explain']['img'])) {
+                        $record['answer_explain']['img'] = AliOSS::signUrls($record['answer_explain']['img']);
+                    }
+                    if(!empty($record['content_img'])) {
+                        $record['content_img'] = AliOSS::signUrls($record['content_img']);
+                    }
+                    if(!empty($record['content_audio'])) {
+                        $record['content_audio'] = AliOSS::signUrls($record['content_audio']);
+                    }
+                    if(!empty($record['content_text_audio'])) {
+                        $record['content_text_audio'] = AliOSS::signUrls($record['content_text_audio']);
+                    }
+                    $a['questions'][$k] = $record;
+                }
+            } else {
+                self::sign($a['children']);
+            }
+        }
+    }
+
     public static function questions()
     {
-        return QuestionModel::questions();
+        $records = QuestionModel::questions();
+        self::sign($records);
+        return $records;
     }
 
     //与getById不同的是，getByIdForApp是为小程序和app设计的，返回的数据的时候，需要把数字表示的列转为中文

@@ -21,6 +21,7 @@ use App\Middleware\AppApiForStudent;
 use App\Middleware\MUSVGMiddleWare;
 use App\Middleware\StudentAuthCheckMiddleWareForApp;
 use App\Middleware\StudentResPrivilegeCheckMiddleWareForApp;
+use App\Controllers\StudentApp\Question;
 
 
 class StudentAppRouter extends RouterBase
@@ -213,5 +214,11 @@ class StudentAppRouter extends RouterBase
             'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
         ],
 
+        //APP内嵌音基接口
+        '/student_app/exam/question_list' => [
+            'method'  => ['get'],
+            'call'    => Question::class . ':list',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
     ];
 }

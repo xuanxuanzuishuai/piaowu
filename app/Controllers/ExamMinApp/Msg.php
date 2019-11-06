@@ -50,7 +50,7 @@ class Msg extends ControllerBase
                     Helper::sendMsg([
                         'touser'  => (string)$ele->FromUserName,
                         'msgtype' => 'text',
-                        'text'    => ['content' => '快去解锁最全音基题库！https://dwz.cn/mY4uAjAG'],
+                        'text'    => ['content' => '海量音基题库随心做，助力音基考级通关！https://dwz.cn/mY4uAjAG'],
                     ]);
                     return $response->getBody()->write("success");
             }

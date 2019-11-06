@@ -149,26 +149,6 @@ group by q.id order by q.create_time desc, q.status asc";
             $record['audio_set']      = json_decode($record['audio_set'], 1);
             $record['options']        = json_decode($record['options'], 1);
             $record['answer_explain'] = json_decode($record['answer_explain'], 1);
-
-            foreach($record['options'] as $kk => $v) {
-                if(!empty($v['img'])) {
-                    $v['img'] = AliOSS::signUrls($v['img']);
-                }
-                $record['options'][$kk] = $v;
-            }
-            if(!empty($record['answer_explain']['img'])) {
-                $record['answer_explain']['img'] = AliOSS::signUrls($record['answer_explain']['img']);
-            }
-            if(!empty($record['content_img'])) {
-                $record['content_img'] = AliOSS::signUrls($record['content_img']);
-            }
-            if(!empty($record['content_audio'])) {
-                $record['content_audio'] = AliOSS::signUrls($record['content_audio']);
-            }
-            if(!empty($record['content_text_audio'])) {
-                $record['content_text_audio'] = AliOSS::signUrls($record['content_text_audio']);
-            }
-
             $records[$k] = $record;
         }
 
