@@ -69,7 +69,9 @@ class AppVersionService
             'code' => $v['version'],
             'desc' => $v['ver_desc'],
             'force_update' => (int)$v['force_update'],
-            'download_url' => $v['download_url']
+            'download_url' => $v['download_url'],
+            'engine_url' => $v['engine_url'] ?? '',
+            'engine_crc' => $v['engine_crc'] ?? ''
         ];
 
         return $versionData;
@@ -81,7 +83,9 @@ class AppVersionService
             'code' => $version,
             'desc' => '',
             'force_update' => 0,
-            'download_url' => ''
+            'download_url' => '',
+            'engine_url' => '',
+            'engine_crc' => ''
         ];
     }
 
