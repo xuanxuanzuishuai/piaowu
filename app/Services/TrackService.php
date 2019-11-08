@@ -9,16 +9,17 @@
 namespace App\Services;
 
 
+use App\Libs\HttpHelper;
 use App\Libs\SimpleLogger;
 use App\Models\TrackModel;
-use GuzzleHttp\Client;
-use Slim\Http\StatusCode;
 
 class TrackService
 {
-    const TRACK_EVENT_INIT = 0;
+    // 追踪事件
+    const TRACK_EVENT_INIT = 0; // 用户信息初始化，不用回调
     const TRACK_EVENT_ACTIVE = 1;
     const TRACK_EVENT_REGISTER = 2;
+    const TRACK_EVENT_FORM_COMPLETE = 3;
 
     const PLAT_UNKNOWN = 'unknown_plat';
     const PLAT_ANDROID = 'android';
@@ -31,10 +32,12 @@ class TrackService
     const PARAMS_IOS = ['idfa', 'idfa_hash'];
     const PARAMS_ANDROID = ['imei', 'imei_hash', 'android_id', 'android_id_hash'];
 
+    // 广告渠道，相同厂商的不同转化流程使用不同的渠道
     const CHANNEL_OTHER = 0;
-    const CHANNEL_OCEAN = 1;
+    const CHANNEL_OCEAN = 1; // 头条，app转化追踪
     const CHANNEL_GDT = 2;
     const CHANNEL_WX = 3;
+    const CHANNEL_OCEAN_LEADS = 4; // 头条，线索转化追踪
 
     public static function addInfo($info, $eventType = NULL)
     {
@@ -49,7 +52,7 @@ class TrackService
         $trackData['android_id'] = $info['android_id'] ?? '';
         $trackData['android_id_hash'] = $info['android_id_hash'] ?? '';
         $trackData['mac_hash'] = $info['mac_hash'] ?? '';
-        $trackData['track_state'] = $eventType ?? 0;
+        $trackData['track_state'] = ($eventType > 0) ? 1 << ($eventType-1) : 0;
         $trackData['callback'] = $info['callback'] ?? '';
         $trackData['create_time'] = $info['create_time'] ?? time();
         $trackData['user_id'] = $info['user_id'] ?? NULL;
@@ -68,6 +71,11 @@ class TrackService
             $completeParams['user_id'] = $userId;
             $success = self::addInfo($completeParams, $eventType);
 
+            // 如果新用户触发的不是init事件，还需要走对渠道商应事件回调
+            if ($success && $eventType != self::TRACK_EVENT_INIT) {
+                $success = self::trackCallback($eventType, $completeParams);
+            }
+
             return [
                 'complete' => $success,
                 'ad_channel' => 0,
@@ -83,9 +91,22 @@ class TrackService
 
         // 过滤重复事件
         if ((int)$trackData['track_state'] & $eventType) {
-
+            SimpleLogger::debug("[trackEvent] event has been updated", []);
             return [
                 'complete' => true,
+                'ad_channel' => $trackData['ad_channel'],
+                'ad_id' => $trackData['ad_id'],
+            ];
+        }
+
+        // 过滤不同广告渠道商的事件，只接受第一个广告渠道的后续事件
+        if (!empty($trackParams['ad_channel']) && $trackParams['ad_channel'] != $trackData['ad_channel']) {
+            SimpleLogger::debug("[trackEvent] different ad_channel", [
+                'current_event_ad_channel' => $trackParams['ad_channel'],
+                'user_track_ad_channel' => $trackData['ad_channel']
+            ]);
+            return [
+                'complete' => false,
                 'ad_channel' => $trackData['ad_channel'],
                 'ad_id' => $trackData['ad_id'],
             ];
@@ -179,6 +200,7 @@ class TrackService
 
     public static function trackCallback($eventType, $trackData)
     {
+        SimpleLogger::debug("[trackEvent] callback", ['as_channel' => $trackData['ad_channel']]);
         switch ($trackData['ad_channel']) {
             case self::CHANNEL_OTHER:
                 return true;
@@ -188,6 +210,8 @@ class TrackService
                 return true;
             case self::CHANNEL_WX:
                 return true;
+            case self::CHANNEL_OCEAN_LEADS:
+                return self::trackCallbackOceanEngineLeads($eventType, $trackData);
             default:
                 return false;
         }
@@ -226,42 +250,33 @@ class TrackService
             return false;
         }
 
-        $response = self::callback($api, $data, 'GET');
+        $response = HttpHelper::requestJson($api, $data, 'GET');
         $success = (!empty($response) && $response['ret'] == 0);
 
         return $success;
     }
 
-    private static function callback($api,  $data = [], $method = 'GET')
+    public static function trackCallbackOceanEngineLeads($eventType, $trackData)
     {
-        try {
-            $client = new Client(['debug' => false]);
-
-            if ($method == 'GET') {
-                $data = ['query' => $data];
-            } elseif ($method == 'POST') {
-                $data = ['json' => $data];
-                $data['headers'] = ['Content-Type' => 'application/json'];
-            }
-            SimpleLogger::info(__FILE__ . ':' . __LINE__, ['api' => $api, 'data' => $data]);
-            $response = $client->request($method, $api, $data);
-            $body = $response->getBody()->getContents();
-            $status = $response->getStatusCode();
-            SimpleLogger::info(__FILE__ . ':' . __LINE__, ['api' => $api, 'body' => $body, 'status' => $status]);
-
-
-            $res = json_decode($body, true);
-            SimpleLogger::info(__FILE__ . ':' . __LINE__, [print_r($res, true)]);
-
-            if (($status != StatusCode::HTTP_OK)) {
+        $api = 'http://ad.toutiao.com/track/activate/';
+        switch ($eventType) {
+            case self::TRACK_EVENT_FORM_COMPLETE: // 初始化操作不用回调接口
+                $type = 3;
+                break;
+            default:
                 return false;
-            }
-            return $res;
-
-        } catch (\Exception $e) {
-            SimpleLogger::error(__FILE__ . ':' . __LINE__, [print_r($e->getMessage(), true)]);
         }
 
-        return false;
+        $data = [
+            'event_type' => $type,
+            'link' => $trackData['callback'],
+            'conv_time' => time(),
+            'source' => $trackData['ad_id']
+        ];
+
+        $response = HttpHelper::requestJson($api, $data, 'GET');
+        $success = (!empty($response) && $response['ret'] == 0);
+
+        return $success;
     }
 }
