@@ -101,7 +101,12 @@ class MinAppAuthCheckMiddleware extends MiddlewareBase
                 $hasMobile = StudentForMinAppService::hasMobile($content['openid']);
 
                 //返回token和过期时间，过期时间单位是毫秒，同时返回是否已经获取了手机号，供前端判断是否需要弹窗
-                return HttpHelper::buildResponse($response, ['token' => $token, 'expire' => (time() + $expire) * 1000, 'has_mobile' => $hasMobile]);
+                return HttpHelper::buildResponse($response, [
+                    'token'      => $token,
+                    'expire'     => (time() + $expire) * 1000,
+                    'has_mobile' => $hasMobile,
+                    'open_id'    => $content['openid'],
+                ]);
             } else {
                 return $response->withJson(Valid::addAppErrors([], StatusCode::HTTP_UNAUTHORIZED)); // 401
             }

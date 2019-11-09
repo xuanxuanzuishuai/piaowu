@@ -22,7 +22,7 @@ class StudentForMinAppService
     {
         $jsonMobile = self::decodeMobile($iv, $encryptedData, $sessionKey);
         if(empty($jsonMobile)) {
-            return 0;
+            return [0, null];
         }
         $mobile = $jsonMobile['purePhoneNumber'];
 
@@ -31,7 +31,7 @@ class StudentForMinAppService
             $lastId = StudentServiceForApp::studentRegister($mobile, StudentModel::CHANNEL_EXAM_MINAPP_REGISTER);
             if(empty($lastId)) {
                 SimpleLogger::error('register fail from exam', ['mobile' => $mobile]);
-                return $lastId;
+                return [$lastId, null];
             }
         } else {
             $lastId = $stu['id'];
@@ -52,7 +52,7 @@ class StudentForMinAppService
             ], false);
         }
 
-        return $lastId;
+        return [$lastId, $mobile];
     }
 
     //解密后的数据结构：

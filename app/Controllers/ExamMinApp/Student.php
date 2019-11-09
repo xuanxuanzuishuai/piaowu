@@ -39,10 +39,10 @@ class Student extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $lastId = StudentForMinAppService::register(
+        list($lastId, $mobile) = StudentForMinAppService::register(
             $this->ci['exam_openid'], $params['iv'], $params['encrypted_data'], $this->ci['exam_session_key']
         );
 
-        return HttpHelper::buildResponse($response, ['last_id' => $lastId]);
+        return HttpHelper::buildResponse($response, ['last_id' => $lastId, 'mobile' => $mobile]);
     }
 }
