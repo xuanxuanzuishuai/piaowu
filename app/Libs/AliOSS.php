@@ -191,9 +191,11 @@ class AliOSS
      * @param string $columnName
      * @param string $newColumn
      * @param string $style 图片处理方式，在OSS后台配置
+     * @param bool $useSSL
      * @return array|string
      */
-    public static function signUrls($urlNeedSign, $columnName = "", $newColumn = "", $style=""){
+    public static function signUrls($urlNeedSign, $columnName = "", $newColumn = "", $style="", $useSSL = false)
+    {
         if (empty($urlNeedSign)){
             return $urlNeedSign;
         }
@@ -217,6 +219,10 @@ class AliOSS
         try {
             $timeout = 3600 * 8;
             $ossClient = new OssClient($accessKeyId, $accessKeySecret, $endpoint);
+            if ($useSSL) {
+                $ossClient->setUseSSL(true);
+            }
+
             if (is_array($urlNeedSign) && !empty($columnName)){
                 $result = array_map(function($v) use ($ossClient,
                     $bucket,

@@ -163,21 +163,21 @@ class QuestionService
 
             foreach($record['options'] as $kk => $v) {
                 if(!empty($v['img'])) {
-                    $v['whole_img'] = AliOSS::signUrls($v['img']);
+                    $v['whole_img'] = self::signUrls($v['img']);
                 }
                 $record['options'][$kk] = $v;
             }
             if(!empty($record['answer_explain']['img'])) {
-                $record['answer_explain']['whole_img'] = AliOSS::signUrls($record['answer_explain']['img']);
+                $record['answer_explain']['whole_img'] = self::signUrls($record['answer_explain']['img']);
             }
             if(!empty($record['content_img'])) {
-                $record['whole_content_img'] = AliOSS::signUrls($record['content_img']);
+                $record['whole_content_img'] = self::signUrls($record['content_img']);
             }
             if(!empty($record['content_audio'])) {
-                $record['whole_content_audio'] = AliOSS::signUrls($record['content_audio']);
+                $record['whole_content_audio'] = self::signUrls($record['content_audio']);
             }
             if(!empty($record['content_text_audio'])) {
-                $record['whole_content_text_audio'] = AliOSS::signUrls($record['content_text_audio']);
+                $record['whole_content_text_audio'] = self::signUrls($record['content_text_audio']);
             }
 
             $records[$k] = $record;
@@ -197,21 +197,21 @@ class QuestionService
 
             foreach($record['options'] as $k => $v) {
                 if(!empty($v['img'])) {
-                    $v['whole_img'] = AliOSS::signUrls($v['img']);
+                    $v['whole_img'] = self::signUrls($v['img']);
                 }
                 $record['options'][$k] = $v;
             }
             if(!empty($record['answer_explain']['img'])) {
-                $record['answer_explain']['whole_img'] = AliOSS::signUrls($record['answer_explain']['img']);
+                $record['answer_explain']['whole_img'] = self::signUrls($record['answer_explain']['img']);
             }
             if(!empty($record['content_img'])) {
-                $record['whole_content_img'] = AliOSS::signUrls($record['content_img']);
+                $record['whole_content_img'] = self::signUrls($record['content_img']);
             }
             if(!empty($record['content_audio'])) {
-                $record['whole_content_audio'] = AliOSS::signUrls($record['content_audio']);
+                $record['whole_content_audio'] = self::signUrls($record['content_audio']);
             }
             if(!empty($record['content_text_audio'])) {
-                $record['whole_content_text_audio'] = AliOSS::signUrls($record['content_text_audio']);
+                $record['whole_content_text_audio'] = self::signUrls($record['content_text_audio']);
             }
         }
 
@@ -241,21 +241,21 @@ class QuestionService
                 foreach($a['questions'] as $k => $record) {
                     foreach($record['options'] as $kk => $v) {
                         if(!empty($v['img'])) {
-                            $v['img'] = AliOSS::signUrls($v['img']);
+                            $v['img'] = self::signUrls($v['img']);
                         }
                         $record['options'][$kk] = $v;
                     }
                     if(!empty($record['answer_explain']['img'])) {
-                        $record['answer_explain']['img'] = AliOSS::signUrls($record['answer_explain']['img']);
+                        $record['answer_explain']['img'] = self::signUrls($record['answer_explain']['img']);
                     }
                     if(!empty($record['content_img'])) {
-                        $record['content_img'] = AliOSS::signUrls($record['content_img']);
+                        $record['content_img'] = self::signUrls($record['content_img']);
                     }
                     if(!empty($record['content_audio'])) {
-                        $record['content_audio'] = AliOSS::signUrls($record['content_audio']);
+                        $record['content_audio'] = self::signUrls($record['content_audio']);
                     }
                     if(!empty($record['content_text_audio'])) {
-                        $record['content_text_audio'] = AliOSS::signUrls($record['content_text_audio']);
+                        $record['content_text_audio'] = self::signUrls($record['content_text_audio']);
                     }
                     $a['questions'][$k] = $record;
                 }
@@ -293,23 +293,33 @@ class QuestionService
 
         foreach($record['options'] as $k => $v) {
             if(!empty($v['img'])) {
-                $v['img'] = AliOSS::signUrls($v['img']);
+                $v['img'] = self::signUrls($v['img']);
             }
             $record['options'][$k] = $v;
         }
         if(!empty($record['answer_explain']['img'])) {
-            $record['answer_explain']['img'] = AliOSS::signUrls($record['answer_explain']['img']);
+            $record['answer_explain']['img'] = self::signUrls($record['answer_explain']['img']);
         }
         if(!empty($record['content_img'])) {
-            $record['content_img'] = AliOSS::signUrls($record['content_img']);
+            $record['content_img'] = self::signUrls($record['content_img']);
         }
         if(!empty($record['content_audio'])) {
-            $record['content_audio'] = AliOSS::signUrls($record['content_audio']);
+            $record['content_audio'] = self::signUrls($record['content_audio']);
         }
         if(!empty($record['content_text_audio'])) {
-            $record['content_text_audio'] = AliOSS::signUrls($record['content_text_audio']);
+            $record['content_text_audio'] = self::signUrls($record['content_text_audio']);
         }
 
         return $record;
+    }
+
+    /**
+     * 单个资源签名
+     * @param $resUrl string
+     * @return string
+     */
+    public static function signUrls($resUrl)
+    {
+        return AliOSS::signUrls($resUrl, "", "", "", true);
     }
 }
