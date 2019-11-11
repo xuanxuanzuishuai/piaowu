@@ -112,4 +112,56 @@ class Auth extends ControllerBase
 
         return HttpHelper::buildResponse($response, []);
     }
+
+    public function login(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        $rules = [
+            [
+                'key' => 'mobile',
+                'type' => 'required',
+                'error_code' => 'user_mobile_is_required'
+            ],
+            [
+                'key' => 'mobile',
+                'type' => 'regex',
+                'value' => '/^[0-9]{11}$/',
+                'error_code' => 'mobile_format_error'
+            ],
+            [
+                'key' => 'code',
+                'type' => 'required',
+                'error_code' => 'validate_code_is_required'
+            ],
+            [
+                'key' => 'code',
+                'type' => 'regex',
+                'value' => '/[0-9]{4}/',
+                'error_code' => 'validate_code_error'
+            ]
+        ];
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $db = MysqlDB::getDB();
+
+        $channelId = $params['channel_id'] ?? 0;
+        $adId = $params['ad_id'] ?? '';
+        $callback = $params['callback'] ?? '';
+        try {
+            $db->beginTransaction();
+            $data = StudentServiceForWeb::mobileLogin($params['mobile'], $params['code'], $channelId, $adId, $callback);
+            $db->commit();
+
+        } catch (RunTimeException $e) {
+            $db->rollBack();
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
+        return HttpHelper::buildResponse($response, [
+            'id' => $data['id'],
+            'uuid' => $data['uuid']
+        ]);
+    }
 }

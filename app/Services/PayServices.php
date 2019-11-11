@@ -121,4 +121,37 @@ class PayServices
 
         return $bill['pay_status'];
     }
+
+    /**
+     * landing页21天点评课购买
+     * @param $uuid
+     * @param $payChannel
+     * @param $clientIp
+     * @return array
+     */
+    public static function webCreateBill($uuid, $payChannel, $clientIp)
+    {
+        $erp = new Erp();
+
+        list($successUrl, $cancelUrl, $resultUrl, $packageId) = DictConstants::get(
+            DictConstants::WEB_STUDENT_CONFIG,
+            ['success_url', 'cancel_url', 'result_url', 'package_id']
+        );
+
+        $ret = $erp->createBill(
+            $uuid,
+            $packageId,
+            $payChannel,
+            $clientIp,
+            1,
+            1,
+            [
+                'success_url' => $successUrl,
+                'cancel_url' => $cancelUrl,
+                'result_url' => $resultUrl,
+            ]
+        );
+
+        return $ret;
+    }
 }

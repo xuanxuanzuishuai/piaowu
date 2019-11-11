@@ -109,4 +109,47 @@ class StudentServiceForWeb
 
         return $referrer;
     }
+
+    /**
+     * 用户登录
+     * @param $mobile
+     * @param $code
+     * @param $channelId
+     * @return array
+     * @throws RunTimeException
+     */
+    public static function mobileLogin($mobile, $code, $channelId, $adId, $callback)
+    {
+        // 检查验证码
+        if (!CommonServiceForApp::checkValidateCode($mobile, $code)) {
+            throw new RunTimeException(['validate_code_error']);
+        }
+
+        $student = StudentModelForApp::getStudentInfo(null, $mobile);
+        if (!empty($student)) {
+            return $student;
+        }
+
+        $newStudent = StudentServiceForApp::studentRegister($mobile, $channelId);
+        if (empty($newStudent)) {
+            throw new RunTimeException(['student_register_fail']);
+        }
+
+        $student = StudentModelForApp::getStudentInfo(null, $mobile);
+        if (empty($student)) {
+            throw new RunTimeException(['unknown_student']);
+        }
+
+        // 注册成功，回调第三方
+        $info = [
+            'user_id' => $student['id'],
+            'platform' => TrackService::PLAT_ID_UNKNOWN,
+            'ad_channel' => TrackService::CHANNEL_OCEAN_LEADS,
+            'ad_id' => $adId,
+            'callback' => $callback
+        ];
+        TrackService::trackEvent(TrackService::TRACK_EVENT_FORM_COMPLETE, $info, $student['id']);
+
+        return $student;
+    }
 }

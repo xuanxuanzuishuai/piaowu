@@ -67,7 +67,7 @@ class Erp extends ControllerBase
                 'type' => 'in',
                 'value' => [GiftCodeModel::CODE_TIME_DAY, GiftCodeModel::CODE_TIME_MONTH, GiftCodeModel::CODE_TIME_YEAR],
                 'error_code' => 'bill_amount_is_required'
-            ],
+            ]
         ];
         $params = $request->getParams();
         $result = Valid::validate($params, $rules);
@@ -112,12 +112,18 @@ class Erp extends ControllerBase
 
         $db->commit();
 
+        $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
         if (!$autoApply) {
             // 换购上线前已经提前发送激活码的用户
-            $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
             $sms->sendExchangeGiftCode($params['mobile'],
                 implode(',', $giftCodes),
                 CommonServiceForApp::SIGN_STUDENT_APP);
+        }
+
+        // 21天点评课支付成功，发送点评课短信
+        $packageId = DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'package_id');
+        if (isset($params['package_id']) && $params['package_id'] == $packageId) {
+            $sms->sendEvaluationMessage($params['mobile'], CommonServiceForApp::SIGN_STUDENT_APP);
         }
 
         return $response->withJson([

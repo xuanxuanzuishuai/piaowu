@@ -92,6 +92,16 @@ class DictConstants {
         ]
     ];
 
+    const WEB_STUDENT_CONFIG = [
+        'type' => 'WEB_STUDENT_CONFIG',
+        'keys' => [
+            'success_url',
+            'cancel_url',
+            'result_url',
+            'package_id'
+        ]
+    ];
+
     const APP_CONFIG_TEACHER = [
         'type' => 'APP_CONFIG_TEACHER',
         'keys' => [
