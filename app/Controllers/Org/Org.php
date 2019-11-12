@@ -18,14 +18,12 @@ use App\Models\ChannelModel;
 use App\Models\EmployeeModel;
 use App\Models\OrgAccountModel;
 use App\Models\OrganizationModel;
-use App\Models\OrgLicenseModel;
 use App\Models\QRCodeModel;
 use App\Models\StudentOrgModel;
 use App\Models\TeacherOrgModel;
 use App\Models\TeacherStudentModel;
 use App\Services\EmployeeService;
 use App\Services\OrganizationService;
-use App\Services\OrgLicenseService;
 use App\Services\QRCodeService;
 use App\Services\StudentService;
 use App\Services\TeacherService;
@@ -279,23 +277,25 @@ class Org extends ControllerBase
                 return $response->withJson(Valid::addErrors([],'org','save_org_fail'));
             }
 
-            //添加机构账号
+            //添加1v1账号和集体课账号
             $max = OrgAccountModel::getMaxAccount();
             if(empty($max)) {
                 $max = 10000000;
             }
-            $account = $max + 1;
+            $accountData = [];
+            foreach([OrgAccountModel::TYPE_1V1, OrgAccountModel::TYPE_GROUP] as $type) {
+                $accountData[] = [
+                    'org_id'      => $lastId,
+                    'type'        => $type,
+                    'account'     => ++$max,
+                    'password'    => md5(time() . rand(1, time())), // 默认密码是随机的
+                    'create_time' => $now,
+                    'status'      => OrgAccountModel::STATUS_NORMAL,
+                ];
+            }
 
-            $accountData = [
-                'org_id'      => $lastId,
-                'account'     => $account,
-                'password'    => md5(time() . rand(1, time())), // 默认密码是随机的
-                'create_time' => $now,
-                'status'      => OrgAccountModel::STATUS_NORMAL,
-            ];
-
-            $affectRows = OrgAccountModel::insertRecord($accountData, false);
-            if($affectRows == 0) {
+            $success = OrgAccountModel::batchInsert($accountData, false);
+            if(!$success) {
                 $db->rollBack();
                 return $response->withJson(Valid::addErrors([], 'org', 'save_org_account_fail'));
             }
@@ -324,13 +324,6 @@ class Org extends ControllerBase
             if (empty($employeeIdOrErr)) {
                 $db->rollBack();
                 return $response->withJson(Valid::addErrors([], 'org', 'save_employee_fail'));
-            }
-
-            //添加1个为期1年的许可证
-            $licenseLastId = OrgLicenseService::create($lastId, OrgLicenseModel::TYPE_APP, 1, 1, Constants::UNIT_YEAR, $this->getEmployeeId());
-            if(empty($licenseLastId)) {
-                $db->rollBack();
-                return $response->withJson(Valid::addErrors([], 'org', 'create_license_fail'));
             }
 
             $db->commit();

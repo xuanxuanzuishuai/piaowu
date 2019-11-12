@@ -9,6 +9,7 @@
 namespace App\Services;
 
 use App\Libs\Constants;
+use App\Libs\DictConstants;
 use App\Libs\Util;
 use App\Models\OrgAccountModel;
 
@@ -22,6 +23,7 @@ class OrgAccountService
 
         foreach($records as &$r) {
             $r['status'] = DictService::getKeyValue(Constants::DICT_TYPE_ORG_ACCOUNT_STATUS, $r['status']);
+            $r['type'] = DictConstants::get(DictConstants::ACCOUNT_TYPE, $r['type']);
         }
 
         return [$records, $total];

@@ -10,6 +10,7 @@ namespace App\Services;
 
 
 use App\Libs\Constants;
+use App\Libs\DictConstants;
 use App\Models\OrgLicenseModel;
 
 class OrgLicenseService
@@ -123,6 +124,7 @@ class OrgLicenseService
         foreach($records as &$r) {
             $r['duration']  .= DictService::getKeyValue(Constants::DICT_TYPE_ORG_LICENSE_DURATION_UNIT, $r['duration_unit']);
             $r['status_zh'] = DictService::getKeyValue(Constants::DICT_TYPE_ORG_LICENSE_STATUS, $r['status']);
+            $r['type'] = DictConstants::get(DictConstants::LICENSE_TYPE, $r['type']);
         }
         return [$records, $total];
     }

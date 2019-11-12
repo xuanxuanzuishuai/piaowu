@@ -53,7 +53,12 @@ class OrgLicense extends ControllerBase
                 'type'       => 'in',
                 'value'      => [Constants::UNIT_DAY, Constants::UNIT_MONTH, Constants::UNIT_YEAR],
                 'error_code' => 'invalid_license_duration_unit'
-            ]
+            ],
+            [
+                'key'        => 'type',
+                'type'       => 'required',
+                'error_code' => 'type_is_required'
+            ],
         ];
         $params = $request->getParams();
         $result = Valid::validate($params, $rules);
@@ -139,7 +144,7 @@ class OrgLicense extends ControllerBase
         //过滤条件
         //page, count, org_id, s_create_time, e_create_time, status
         //s_active_time, e_active_time, s_expire_time, e_expire_time
-        //duration, duration_unit
+        //duration, duration_unit, license_type
 
         $params = $request->getParams();
         $params['org_id'] = $this->getEmployeeOrgId() > 0 ? $this->getEmployeeOrgId() : $params['org_id'];

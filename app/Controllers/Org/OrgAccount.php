@@ -54,7 +54,7 @@ class OrgAccount extends ControllerBase
                 'type'       => 'integer',
                 'error_code' => 'org_id_is_integer'
             ],
-        ];//may include org_name
+        ];//may include org_name account_type
         $params = $request->getParams();
         $result = Valid::validate($params, $rules);
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
@@ -77,7 +77,7 @@ class OrgAccount extends ControllerBase
         //过滤条件
         //page, count, org_id, s_create_time, e_create_time, status
         //s_active_time, e_active_time, s_expire_time, e_expire_time
-        //duration, duration_unit
+        //duration, duration_unit, account_type, license_type
 
         $params = $request->getParams();
 

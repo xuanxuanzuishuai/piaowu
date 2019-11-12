@@ -20,6 +20,9 @@ class OrgLicenseModel extends Model
 
     const TYPE_APP = 1;
     const TYPE_CLASSROOM = 2;
+    const TYPE_1V1 = 1; //1V1
+    const TYPE_GROUP_FEE = 2; //集体课服务费
+    const TYPE_GROUP_NUM = 3; //集体课学生数量
 
     /**
      * 获取可用license数量
@@ -108,6 +111,10 @@ class OrgLicenseModel extends Model
         if(!empty($params['duration_unit'])) {
             $where .= ' and l.duration_unit = :duration_unit ';
             $map[':duration_unit'] = $params['duration_unit'];
+        }
+        if(!empty($params['license_type'])) {
+            $where .= ' and l.type = :license_type ';
+            $map[':license_type'] = $params['license_type'];
         }
 
         $limit = Util::limitation($params['page'], $params['count']);

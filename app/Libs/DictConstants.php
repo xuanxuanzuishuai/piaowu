@@ -167,6 +167,16 @@ class DictConstants {
         'keys' => [1],
     ];
 
+    const ACCOUNT_TYPE = [
+        'type' => 'account_type',
+        'keys' => [1, 2],
+    ];
+
+    const LICENSE_TYPE = [
+        'type' => 'license_type',
+        'keys' => [1, 2, 3],
+    ];
+
     public static function get($type, $key)
     {
         if (empty($type) || empty($key)) {

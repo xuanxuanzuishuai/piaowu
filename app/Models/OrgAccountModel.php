@@ -27,6 +27,9 @@ class OrgAccountModel extends Model
     const STATUS_STOP = 0; //停用
     const STATUS_NORMAL = 1; //正常
 
+    const TYPE_1V1 = 1; //1V1
+    const TYPE_GROUP = 2;//集体课
+
     public static function getByAccount($account)
     {
         $db = MysqlDB::getDB();
@@ -59,6 +62,10 @@ class OrgAccountModel extends Model
             $where .= ' and o.name like :org_name ';
             $map[':org_name'] = "%{$params['org_name']}%";
         }
+        if(!empty($params['account_type'])) {
+            $where .= ' and oa.type = :account_type ';
+            $map[':account_type'] = $params['account_type'];
+        }
         //license_num=0也是一种状态，所以用isset
         if(isset($params['license_num'])) {
             $where .= ' having license_num = :license_num ';
@@ -73,7 +80,7 @@ class OrgAccountModel extends Model
 
         $db = MysqlDB::getDB();
 
-        $records = $db->queryAll("select oa.org_id, oa.id, o.name org_name, oa.account, oa.status, oa.last_login_time, 
+        $records = $db->queryAll("select oa.org_id, oa.id, o.name org_name, oa.account, oa.status, oa.last_login_time, oa.type, 
         ifnull((select sum(license_num) from {$l} l where l.org_id = o.id and l.status = :status and l.active_time < :now 
         and l.expire_time > :now), 0) license_num from {$oa} oa left join {$o} o on o.id = oa.org_id 
         where {$where} order by oa.create_time desc {$limit} ", $map);
