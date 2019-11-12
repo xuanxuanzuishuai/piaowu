@@ -10,7 +10,6 @@ namespace App\Controllers\StudentWeb;
 
 use App\Controllers\ControllerBase;
 use App\Libs\Valid;
-use App\Models\GiftCodeModel;
 use App\Services\PayServices;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -33,7 +32,7 @@ class Pay extends ControllerBase
             ]
         ];
         $params = $request->getParams();
-        $result = Valid::validate($params, $rules);
+        $result = Valid::appValidate($params, $rules);
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
@@ -62,7 +61,7 @@ class Pay extends ControllerBase
             ],
         ];
         $params = $request->getParams();
-        $result = Valid::validate($params, $rules);
+        $result = Valid::appValidate($params, $rules);
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
