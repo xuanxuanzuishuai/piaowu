@@ -148,6 +148,9 @@ class StudentServiceForWeb
             'ad_id' => $adId,
             'callback' => $callback
         ];
+        if (empty($adId) || empty($callback)) {
+            $info['ad_channel'] = TrackService::CHANNEL_OTHER;
+        }
         TrackService::trackEvent(TrackService::TRACK_EVENT_FORM_COMPLETE, $info, $student['id']);
 
         return $student;

@@ -148,7 +148,7 @@ class Auth extends ControllerBase
         $db = MysqlDB::getDB();
 
         $channelId = $params['channel_id'] ?? 0;
-        $adId = $params['ad_id'] ?? '';
+        $adId = $params['ad_id'] ?? 0;
         $callback = $params['callback'] ?? '';
         try {
             $db->beginTransaction();
