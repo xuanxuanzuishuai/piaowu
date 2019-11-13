@@ -13,6 +13,7 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\MysqlDB;
 use App\Libs\Valid;
+use App\Models\StudentModel;
 use App\Services\CommonServiceForApp;
 use App\Services\StudentServiceForWeb;
 use Slim\Http\Request;
@@ -147,7 +148,7 @@ class Auth extends ControllerBase
 
         $db = MysqlDB::getDB();
 
-        $channelId = $params['channel_id'] ?? 0;
+        $channelId = $params['channel_id'] ?? StudentModel::CHANNEL_SPACKAGE_LANDING;
         $adId = $params['ad_id'] ?? 0;
         $callback = $params['callback'] ?? '';
         try {
