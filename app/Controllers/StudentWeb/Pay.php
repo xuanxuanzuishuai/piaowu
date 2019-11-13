@@ -45,7 +45,7 @@ class Pay extends ControllerBase
         );
 
         if (empty($ret)) {
-            $ret = Valid::addAppErrors([], 'sys_unknown_errors');
+            $ret = Valid::addAppErrors([], 'web_create_bill_error');
         }
 
         return $response->withJson($ret, StatusCode::HTTP_OK);
