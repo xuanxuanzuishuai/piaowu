@@ -116,11 +116,11 @@ class NewSMS
         $add = $w > 0 ? 8 - $w : 1;
         $start = strtotime("$time + " . $add . ' days');
         $week_start = date('Y-m-d', $start);
-        $day = date('d', $start);
 
-        $msg = "你已成功购买小叶子爱练琴两周点评课，将于{$week_start} 周一开始点评，请在{$day}日周一之前开始练琴哦。
-【1】请添加你的练琴小助手微信(微信号: zaixianpeilian )，老师会全程个性化辅导宝贝的练琴。
-【2】请点击 http://t.cn/AiBPajzr 下载“小叶子爱练琴” App，可以直接使用购买的手机号登录 App 进行练琴哦。如有其他问题，请联系添加的练琴小助手哦。";
+        $msg = "你已成功购买小叶子智能陪练课，将于{$week_start}（周一）开课。
+《1》请添加你的小助手(微信号:zaixianpeilian)，老师会提供指点和规划。
+《2》请点击 http://t.cn/AiBPajzr 下载“小叶子爱练琴”App开始练琴。
+如有其他问题，请联系微信小助手。";
 
         $data = [
             'sign_name' => $sign,
