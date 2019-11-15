@@ -33,6 +33,7 @@ class RouterFactory
     const CLIENT_ADMIN = 'admin'; // 系统管理后台
     const CLIENT_API = 'api'; // 外部api调用
     const CLIENT_EXAM_MINAPP = 'exam'; //音基小程序
+    const CLIENT_CLASSROOM_APP = 'classroom_app'; //集体课
 
     /**
      * client_type 对应的 Router class
@@ -49,6 +50,7 @@ class RouterFactory
         self::CLIENT_ADMIN => AdminRouter::class, // 系统管理后台
         self::CLIENT_API => APIRouter::class, // 外部api调用
         self::CLIENT_EXAM_MINAPP => ExamMinAppRouter::class, //音基小程序
+        self::CLIENT_CLASSROOM_APP => ClassroomAppRouter::class, //集体课
     ];
 
     /**

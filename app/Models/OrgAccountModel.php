@@ -28,7 +28,7 @@ class OrgAccountModel extends Model
     const STATUS_NORMAL = 1; //正常
 
     const TYPE_1V1 = 1; //1V1
-    const TYPE_GROUP = 2;//集体课
+    const TYPE_CLASSROOM = 2;//集体课
 
     public static function getByAccount($account)
     {

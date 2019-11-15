@@ -8,68 +8,28 @@
 
 namespace app\Middleware;
 
-use App\Libs\DictConstants;
-use App\Libs\SimpleLogger;
-use App\Libs\Valid;
-use App\Models\OrganizationModelForApp;
-use App\Models\TeacherModel;
+use App\Models\ClassroomAppModel;
 use Slim\Http\Request;
 use Slim\Http\Response;
-use Slim\Http\StatusCode;
+use App\Libs\HttpHelper;
+use App\Libs\Exceptions\RunTimeException;
 
 class ClassroomScheduleMiddleware extends MiddlewareBase
 {
     public function __invoke(Request $request, Response $response, $next)
     {
-        $orgId = $this->container['org']['id'];
-        if (empty($orgId)) {
-            SimpleLogger::error(__FILE__ . __LINE__, ['empty_org']);
-            $result = Valid::addAppErrors([], 'empty_org');
-            return $response->withJson($result, StatusCode::HTTP_OK);
+        $headers = $request->getHeader('schedule_token');
+        if(empty($headers)) {
+            return HttpHelper::buildClassroomErrorResponse($response, RunTimeException::makeAppErrorData('less_schedule_token'));
         }
 
-        $isOpnTester = false;
-
-        $token = $this->container['org_teacher_token'] ?? NULL;
-        if (!empty($token)) {
-            $cache = OrganizationModelForApp::getOrgTeacherCacheByToken($orgId, $token);
-
-            if (empty($cache)) {
-                SimpleLogger::error(__FILE__ . ":" . __LINE__, ['invalid teacher token']);
-                $result = Valid::addAppErrors([], 'invalid_teacher_token');
-                return $response->withJson($result, StatusCode::HTTP_OK);
-            }
-            $teacherId = $cache['teacher_id'];
-            $teacher = TeacherModel::getById($teacherId);
-            $studentIds = $cache['student_id'];
-
-            $this->container['teacher'] = $teacher;
-            $this->container['student_ids'] = $studentIds;
-
-            // 内部审核账号，使用审核版本app也可看到所有资源
-            $reviewTestUsers = DictConstants::get(DictConstants::APP_CONFIG_COMMON, 'res_test_mobiles');
-            if (!empty($reviewTestUsers)) {
-                $userMobiles = explode(',', $reviewTestUsers);
-                $isOpnTester = in_array($teacher['mobile'], $userMobiles);
-            }
+        $value = ClassroomAppModel::getSchedule($headers[0]);
+        if(empty($value)) {
+            return HttpHelper::buildClassroomErrorResponse($response, RunTimeException::makeAppErrorData('expire_schedule_token'));
         }
 
-        $this->container['opn_is_tester'] = $isOpnTester;
-        $this->container['opn_pro_ver'] = $isOpnTester ? 'tester' : $this->container['version'];
-        $this->container['opn_publish'] = $isOpnTester ? 0 : 1;
+        $this->container['schedule'] = json_decode($value, 1);
 
-        SimpleLogger::info(__FILE__ . ":" . __LINE__, [
-            'middleWare' => 'OrgTeacherAuthMiddleWareForApp',
-            'teacher' => $teacher ?? NULL,
-            'student' => $student ?? NULL,
-            'opn_is_tester' => $this->container['opn_is_tester'],
-            'opn_pro_ver' => $this->container['opn_pro_ver'],
-            'opn_publish' => $this->container['opn_publish'],
-        ]);
-
-        $response = $next($request, $response);
-
-        return $response;
-
+        return $next($request,$response);
     }
 }

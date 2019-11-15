@@ -283,7 +283,7 @@ class Org extends ControllerBase
                 $max = 10000000;
             }
             $accountData = [];
-            foreach([OrgAccountModel::TYPE_1V1, OrgAccountModel::TYPE_GROUP] as $type) {
+            foreach([OrgAccountModel::TYPE_1V1, OrgAccountModel::TYPE_CLASSROOM] as $type) {
                 $accountData[] = [
                     'org_id'      => $lastId,
                     'type'        => $type,

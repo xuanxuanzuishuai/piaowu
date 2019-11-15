@@ -9,6 +9,7 @@
 namespace App\Models;
 
 
+use App\Libs\Constants;
 use App\Libs\MysqlDB;
 
 class ClassV1Model extends Model
@@ -97,5 +98,38 @@ class ClassV1Model extends Model
         $list = $db->queryAll($select . $query, $map);
 
         return [$num, $list];
+    }
+
+    public static function selectClasses($orgId)
+    {
+        $u = ClassV1UserModel::$table;
+        $c = ClassV1Model::$table;
+        $s = StudentModel::$table;
+        $t = TeacherModel::$table;
+
+        $map = [
+            ':oi' => $orgId,
+            ':cs' => Constants::STATUS_TRUE,
+            ':us' => Constants::STATUS_TRUE,
+            ':ur' => ClassV1UserModel::ROLE_STUDENT,
+        ];
+
+        $db = MysqlDB::getDB();
+        $records = $db->queryAll("select c.id,
+       c.name,
+       c.`desc`,
+       c.finish_num,
+       u.user_id,
+       case
+         when u.user_role = :ur then (select name from {$s} where id = u.user_id)
+         else (select name from {$t} where id = u.user_id) end as user_name,
+       u.user_role                                                   role,
+       u.position
+
+from {$c} c
+       inner join {$u} u on c.id = u.class_id
+where c.org_id = :oi and c.status = :cs and u.status = :us", $map);
+
+        return $records;
     }
 }

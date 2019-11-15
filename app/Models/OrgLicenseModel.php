@@ -21,8 +21,8 @@ class OrgLicenseModel extends Model
     const TYPE_APP = 1;
     const TYPE_CLASSROOM = 2;
     const TYPE_1V1 = 1; //1V1
-    const TYPE_GROUP_FEE = 2; //集体课服务费
-    const TYPE_GROUP_NUM = 3; //集体课学生数量
+    const TYPE_CLASSROOM_FEE = 2; //集体课服务费
+    const TYPE_CLASSROOM_NUM = 3; //集体课学生数量
 
     /**
      * 获取可用license数量
@@ -129,5 +129,26 @@ class OrgLicenseModel extends Model
         $total = $db->queryAll("select count(*) count from {$l} l where {$where}", $map);
 
         return [$records, $total[0]['count']];
+    }
+
+    public static function getExpireByOrg($orgId)
+    {
+        $map = [
+            ':org_id' => $orgId,
+            ':status' => Constants::STATUS_TRUE,
+        ];
+
+        $db = MysqlDB::getDB();
+        $records = $db->queryAll("select *
+from org_license
+where expire_time = (select max(expire_time)
+                     from org_license
+                     where org_id = :org_id
+                       and status = :status)
+  and org_id = :org_id
+  and status = :status
+order by create_time desc", $map);
+
+        return empty($records) ? [] : $records[0];
     }
 }

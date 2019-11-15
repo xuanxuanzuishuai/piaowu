@@ -664,4 +664,21 @@ class Util
         $nDaysBefore = (int)$days * 24 * 60 * 60;
         return [$now - $nDaysBefore, $now];
     }
+
+    public static function computeExpire($baseTime, $duration, $durationUnit)
+    {
+        $unit = 0;
+        switch ($durationUnit) {
+            case 'year':
+                $unit = 365 * 86400;
+                break;
+            case 'month':
+                $unit = 30 * 86400;
+                break;
+            case 'day':
+                $unit = 86400;
+                break;
+        }
+        return $baseTime + $unit * $duration;
+    }
 }
