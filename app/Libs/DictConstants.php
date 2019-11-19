@@ -98,7 +98,8 @@ class DictConstants {
             'success_url',
             'cancel_url',
             'result_url',
-            'package_id'
+            'package_id',
+            'plus_package_id',
         ]
     ];
 

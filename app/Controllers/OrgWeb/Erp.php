@@ -12,7 +12,6 @@ use App\Controllers\ControllerBase;
 use App\Libs\DictConstants;
 use App\Libs\MysqlDB;
 use App\Libs\NewSMS;
-use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Models\GiftCodeModel;
 use App\Models\StudentModelForApp;
@@ -122,7 +121,8 @@ class Erp extends ControllerBase
 
         // 21天点评课支付成功，发送点评课短信
         $packageId = DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'package_id');
-        if (isset($params['package_id']) && $params['package_id'] == $packageId) {
+        $plusPackageId = DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'plus_package_id');
+        if (isset($params['package_id']) && ($params['package_id'] == $packageId || $params['package_id'] == $plusPackageId)) {
             $sms->sendEvaluationMessage($params['mobile'], CommonServiceForApp::SIGN_STUDENT_APP);
         }
 
