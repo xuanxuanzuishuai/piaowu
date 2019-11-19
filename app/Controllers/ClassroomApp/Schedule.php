@@ -65,7 +65,12 @@ class Schedule extends ControllerBase
     //下课
     public function end(Request $request, Response $response)
     {
-        ClassroomScheduleService::end($this->ci['org_id'], $this->ci['schedule']);
+        try {
+            ClassroomScheduleService::end($this->ci['org_id'], $this->ci['schedule']);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildClassroomErrorResponse($response, $e->getAppErrorData());
+        }
+
         return HttpHelper::buildClassroomResponse($response, []);
     }
 }

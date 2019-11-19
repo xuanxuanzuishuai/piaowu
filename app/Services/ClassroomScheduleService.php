@@ -11,6 +11,7 @@ namespace App\Services;
 use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Models\ClassroomAppModel;
+use App\Models\ClassRecordModel;
 use App\Models\ClassV1Model;
 use App\Models\OrgLicenseModel;
 
@@ -70,11 +71,34 @@ class ClassroomScheduleService
             throw new RunTimeException(['update_finish_num_fail']);
         }
 
+        //插入一条上课记录
+        $lastId = ClassRecordModel::insertRecord([
+            'org_id'     => $orgId,
+            'class_id'   => $classId,
+            'students'   => json_encode($students, 1),
+            'token'      => $token,
+            'start_time' => time(),
+        ], false);
+        if(empty($lastId)) {
+            throw new RunTimeException(['save_class_record_fail']);
+        }
+
         return ['schedule_token' => $token];
     }
 
     public static function end($orgId, $schedule)
     {
+        //更新下课时间
+        $affectedRows = ClassRecordModel::batchUpdateRecord(['end_time' => time()], [
+            'org_id'   => $orgId,
+            'class_id' => $schedule['class_id'],
+            'token'    => $schedule['token'],
+        ], false);
+
+        if(empty($affectedRows)) {
+            throw new RunTimeException(['update_class_record_fail']);
+        }
+
         ClassroomAppModel::delScheduleToken($schedule['token']);
         ClassroomAppModel::removeScheduleSetMember($orgId, $schedule['token']);
     }
