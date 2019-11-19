@@ -28,7 +28,7 @@ class ClassroomDeviceService
             'org_id'          => $orgId,
             'create_time'     => time(),
         ];
-        $success = ClassroomDeviceModel::batchInsert($data, false);
+        $success = ClassroomDeviceModel::insertRecord($data, false);
         if(!$success) {
             throw new RunTimeException(['save_fail']);
         }

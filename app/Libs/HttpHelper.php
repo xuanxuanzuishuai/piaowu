@@ -123,7 +123,7 @@ class HttpHelper
 
         $result = [
             'request_result' => [
-                'code' => self::STATUS_SUCCESS,
+                'code' => self::STATUS_ERROR,
                 'message' => $error['err_no'],
                 'display_message' => $error['err_msg'],
                 'request_time' => time(),

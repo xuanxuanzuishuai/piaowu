@@ -29,7 +29,7 @@ class ClassroomAppRouter extends RouterBase
             'middles' => [ClassroomAppMiddleware::class],
         ],
         '/classroom_app/app/version_check' => [
-            'method'  => ['post'],
+            'method'  => ['get'],
             'call'    => App::class . ':versionCheck',
             'middles' => [ClassroomAppMiddleware::class],
         ],
