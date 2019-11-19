@@ -10,6 +10,7 @@ namespace App\Services;
 
 use App\Libs\DictConstants;
 use App\Libs\Erp;
+use App\Models\StudentModelForApp;
 
 class PayServices
 {
@@ -20,19 +21,23 @@ class PayServices
 
     /**
      * 获取产品包
-     * @param bool $withFreePackage
+     * @param int $studentId
      * @return array
      */
-    public static function getPackages($withFreePackage = true)
+    public static function getPackages($studentId)
     {
         $packages = [];
+
+        $student = StudentModelForApp::getById($studentId);
+        $withFreePackage = StudentServiceForApp::canTrial($student);
         if ($withFreePackage) {
             $freePackage = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'free_package');
             $packages[] = json_decode($freePackage, true);
         }
 
+
         $erp = new Erp();
-        $ret = $erp->getPackages();
+        $ret = $erp->getPackages($student['uuid']);
         $erpPackages = $ret['data'] ?? [];
 
         usort($erpPackages, function ($a, $b) {
@@ -60,7 +65,7 @@ class PayServices
     {
         $erp = new Erp();
 
-        $erpPackages = $erp->getPackages();
+        $erpPackages = $erp->getPackages($uuid);
         if (empty($erpPackages['data'])) {
             return false;
         }

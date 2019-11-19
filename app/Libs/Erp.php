@@ -123,11 +123,12 @@ class Erp
             }
         }
     }
+     * @param string uuid
      * @return array
      */
-    public function getPackages()
+    public function getPackages($uuid)
     {
-        $result = self::commonAPI(self::API_PACKAGE_LIST, [], 'GET');
+        $result = self::commonAPI(self::API_PACKAGE_LIST, ['uuid' => $uuid], 'GET');
 
         return $result['data']['packages'] ?? null;
     }

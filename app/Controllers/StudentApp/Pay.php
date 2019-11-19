@@ -12,9 +12,7 @@ use App\Controllers\ControllerBase;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\GiftCodeModel;
-use App\Services\GiftCodeService;
 use App\Services\PayServices;
-use App\Services\StudentServiceForApp;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -59,9 +57,7 @@ class Pay extends ControllerBase
     {
         Util::unusedParam($request);
 
-        $student = $this->ci['student'];
-        $withFreePackage = StudentServiceForApp::canTrial($student);
-        $packages = PayServices::getPackages($withFreePackage);
+        $packages = PayServices::getPackages( $this->ci['student']['id']);
 
         return $response->withJson([
             'code' => 0,
