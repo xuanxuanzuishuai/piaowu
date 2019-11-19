@@ -56,7 +56,7 @@ class Schedule extends ControllerBase
                 $this->ci['org_id'], $this->ci['account'], $params['class_id'], $params['students']
             );
         } catch (RunTimeException $e) {
-            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+            return HttpHelper::buildClassroomErrorResponse($response, $e->getAppErrorData());
         }
 
         return HttpHelper::buildClassroomResponse($response, $data);

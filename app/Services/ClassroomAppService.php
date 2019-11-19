@@ -75,8 +75,8 @@ class ClassroomAppService
             'forbidden'        => 0,
             'offlineForbidden' => 0,
             'satan'            => 0,
-            'notification'     => [],
-            'alter_message'    => '',
+            'notifications'    => [],
+            'alert_message'    => '',
             'classroom_token'  => $token,
             'org_info' => [
                 'account'     => strval($account['account']),
