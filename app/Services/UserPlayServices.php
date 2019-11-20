@@ -10,6 +10,7 @@
 
 namespace App\Services;
 
+use App\Libs\Constants;
 use App\Libs\SimpleLogger;
 use App\Models\PlayRecordModel;
 use App\Models\PlaySaveModel;
@@ -42,6 +43,16 @@ class UserPlayServices
      */
     public static function addRecord($userID, $playData)
     {
+        if ($playData['ai_type'] == PlayRecordModel::AI_EVALUATE_FRAGMENT) {
+            $playData['ai_type'] = PlayRecordModel::AI_EVALUATE_PLAY;
+            $playData['if_frag'] = Constants::STATUS_TRUE;
+        }
+
+        // 兼容旧逻辑,没有lesson_sub_id的为全曲演奏
+        if (empty($playData['is_frag']) && empty($playData['lesson_sub_id'])) {
+            $playData['if_frag'] = Constants::STATUS_FALSE;
+        }
+
         $recordData = [
             'student_id' => $userID,
             'category_id' => $playData['category_id'],
@@ -57,7 +68,13 @@ class UserPlayServices
             'score' => $playData['score'],
             'midi' => $playData['midi'],
             'ai_type' => $playData['ai_type'],
-            'data' => json_encode($playData)
+            'data' => json_encode($playData),
+
+            'opern_id' => $playData['opern_id'] ?? 0,
+            'is_frag' => $playData['is_frag'] ?? 0,
+            'frag_key' => $playData['frag_key'] ?? '-',
+            'cfg_hand' => $playData['cfg_hand'] ?? 1,
+            'cfg_mode' => $playData['cfg_mode'] ?? 1,
         ];
 
         $recordID =  PlayRecordModel::insertRecord($recordData);
