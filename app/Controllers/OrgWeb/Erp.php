@@ -99,6 +99,7 @@ class Erp extends ControllerBase
             (int)$params['bill_id'],
             (int)$params['bill_amount'],
             (int)$params['app_id'],
+            (int)$params['package_id'],
             $giftCodeNum,
             $giftCodeUnit,
             $autoApply
