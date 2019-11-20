@@ -461,4 +461,17 @@ class StudentService
             'sub_end_date' => $studentUpdate['sub_end_date'],
         ];
     }
+
+    public static function updateReviewCourseFlag($studentID, $hasReviewCourse)
+    {
+        $affectRows = StudentModel::updateRecord($studentID, [
+            'has_review_course' => $hasReviewCourse,
+        ], false);
+
+        if($affectRows == 0) {
+            return 'update_student_fail';
+        }
+
+        return null;
+    }
 }
