@@ -9,6 +9,7 @@
 namespace App\Controllers\OrgWeb;
 
 use App\Controllers\ControllerBase;
+use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\MysqlDB;
 use App\Libs\NewSMS;
@@ -125,6 +126,10 @@ class Erp extends ControllerBase
         $plusPackageId = DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'plus_package_id');
         if (isset($params['package_id']) && ($params['package_id'] == $packageId || $params['package_id'] == $plusPackageId)) {
             $sms->sendEvaluationMessage($params['mobile'], CommonServiceForApp::SIGN_STUDENT_APP);
+
+            // 更新点评课标记
+            $student = StudentService::getByUuid($params['uuid']);
+            StudentService::updateReviewCourseFlag($student['id'], Constants::STATUS_TRUE);
         }
 
         return $response->withJson([
