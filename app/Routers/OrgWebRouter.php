@@ -24,6 +24,7 @@ use App\Controllers\OrgWeb\Erp;
 use App\Controllers\OrgWeb\Flags;
 use App\Controllers\OrgWeb\Question;
 use App\Controllers\OrgWeb\QuestionTag;
+use App\Controllers\OrgWeb\ReviewCourse;
 use App\Controllers\Schedule\ScheduleRecord;
 use App\Controllers\Student\PlayRecord as BackendPlayRecord;
 use App\Controllers\Student\Student;
@@ -518,5 +519,8 @@ class OrgWebRouter extends RouterBase
         '/org_web/question/catalog'      => ['method' => ['get'], 'call' => Question::class . ':catalog'],
         '/org_web/question_tag/add_edit' => ['method' => ['post'], 'call' => QuestionTag::class . ':addEdit'],
         '/org_web/question_tag/tags'     => ['method' => ['get'], 'call' => QuestionTag::class . ':tags'], //所有状态正常的标签
+
+        // 点评课
+        '/org_web/review_course/students' => ['method' => ['get'], 'call' => ReviewCourse::class . ':students'],
     ];
 }

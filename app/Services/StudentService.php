@@ -15,7 +15,6 @@ use App\Libs\Dict;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\ResponseError;
-use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Libs\Util;
 use App\Libs\Valid;
@@ -460,52 +459,5 @@ class StudentService
             'sub_start_date' => $student['sub_start_date'] ?: $studentUpdate['sub_start_date'],
             'sub_end_date' => $studentUpdate['sub_end_date'],
         ];
-    }
-
-    /**
-     * 更新点评课标记
-     * has_review_course = 0没有|1课包49|2课包1980
-     * 只能从低级更新到高级
-     *
-     * @param $studentID
-     * @param $reviewCourseType
-     * @return null|string errorCode
-     */
-    public static function updateReviewCourseFlag($studentID, $reviewCourseType)
-    {
-        $student = StudentModel::getById($studentID);
-        if ($student['has_review_course'] >= $reviewCourseType) {
-            return null;
-        }
-
-        $affectRows = StudentModel::updateRecord($studentID, [
-            'has_review_course' => $reviewCourseType,
-        ], false);
-
-        if($affectRows == 0) {
-            return 'update_student_fail';
-        }
-
-        return null;
-    }
-
-    /**
-     * 根据订单的 packageId 获取点评课标记
-     * @param $packageId
-     * @return int
-     */
-    public static function getBillReviewCourseType($packageId)
-    {
-        $package49 = DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'package_id');
-        if ($packageId == $package49) {
-            return StudentModel::REVIEW_COURSE_49;
-        }
-
-        $package1980 = DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'plus_package_id');
-        if ($packageId == $package1980) {
-            return StudentModel::REVIEW_COURSE_1980;
-        }
-
-        return StudentModel::REVIEW_COURSE_NO;
     }
 }

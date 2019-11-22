@@ -14,10 +14,11 @@ use App\Libs\MysqlDB;
 use App\Libs\NewSMS;
 use App\Libs\Valid;
 use App\Models\GiftCodeModel;
-use App\Models\StudentModel;
+use App\Models\ReviewCourseModel;
 use App\Models\StudentModelForApp;
 use App\Services\CommonServiceForApp;
 use App\Services\ErpService;
+use App\Services\ReviewCourseService;
 use App\Services\UserPlayServices;
 use App\Services\AppVersionService;
 use App\Models\AppVersionModel;
@@ -122,13 +123,13 @@ class Erp extends ControllerBase
         }
 
         // 点评课支付成功，发送点评课短信
-        $reviewCourseType = StudentService::getBillReviewCourseType($params['package_id']);
-        if ($reviewCourseType != StudentModel::REVIEW_COURSE_NO) {
+        $reviewCourseType = ReviewCourseService::getBillReviewCourseType($params['package_id']);
+        if ($reviewCourseType != ReviewCourseModel::REVIEW_COURSE_NO) {
             $sms->sendEvaluationMessage($params['mobile'], CommonServiceForApp::SIGN_STUDENT_APP);
 
             // 更新点评课标记
             $student = StudentService::getByUuid($params['uuid']);
-            StudentService::updateReviewCourseFlag($student['id'], $reviewCourseType);
+            ReviewCourseService::updateReviewCourseFlag($student['id'], $reviewCourseType);
         }
 
         return $response->withJson([
