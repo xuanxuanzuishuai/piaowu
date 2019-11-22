@@ -82,4 +82,44 @@ class ReviewCourse extends ControllerBase
             'report_detail' => $reports
         ]);
     }
+
+    /**
+     * 点评课学生日报详情动态演奏
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function studentReportDetailDynamic(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+
+        try {
+            $filter = ReviewCourseService::reportDetailFilter($params);
+            $detailDynamic = ReviewCourseService::reportDetailDynamic($filter);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+
+        return HttpHelper::buildResponse($response, ['detail_dynamic' => $detailDynamic]);
+    }
+
+    /**
+     * 点评课学生日报详情AI测评
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function studentReportDetailAI(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+
+        try {
+            $filter = ReviewCourseService::reportDetailFilter($params);
+            $detailAI = ReviewCourseService::reportDetailAI($filter);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+
+        return HttpHelper::buildResponse($response, ['detail_ai' => $detailAI]);
+    }
 }

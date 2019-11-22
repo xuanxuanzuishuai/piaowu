@@ -12,6 +12,7 @@ namespace App\Services;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\Util;
+use App\Models\PlayRecordModel;
 use App\Models\ReviewCourseModel;
 use App\Models\StudentModel;
 
@@ -215,15 +216,23 @@ class ReviewCourseService
      * 日报详情过滤条件
      * @param array $filterParams
      * @return array
+     * @throws RunTimeException
      */
     public static function reportDetailFilter($filterParams)
     {
         $filter = [];
 
+        $dayTime = strtotime($filterParams['play_date']);
+        if (empty($dayTime)) {
+            throw new RunTimeException(['invalid_date']);
+        }
+        $filter['created_time[<>]'] = [$dayTime, $dayTime + 86399];
+
         $filter['student_id'] = $filterParams['student_id'];
 
-        $dayTime = strtotime($filterParams['play_date']);
-        $filter['created_time[<>]'] = [$dayTime, $dayTime + 86399];
+        if (isset($filterParams['lesson_id'])) {
+            $filter['lesson_id'] = $filterParams['lesson_id'];
+        }
 
         return $filter;
     }
@@ -253,5 +262,83 @@ class ReviewCourseService
         }, $lessons);
 
         return $lessons;
+    }
+
+    /**
+     * 日报详情动态演奏
+     * @param array $filter
+     * @return array
+     */
+    public static function reportDetailDynamic($filter)
+    {
+        $items = ReviewCourseModel::reportDetailDynamic($filter);
+        $items = array_map(function ($item) {
+
+            switch ($item['cfg_hand']) {
+                case PlayRecordModel::CFG_HAND_LEFT:
+                    $cfgHand = '左手';
+                    break;
+                case PlayRecordModel::CFG_HAND_RIGHT:
+                    $cfgHand = '右手';
+                    break;
+                default:
+                    $cfgHand = '双手';
+            }
+
+            switch ($item['cfg_hand']) {
+                case PlayRecordModel::CFG_MODE_STEP:
+                    $cfgMode = '识谱';
+                    break;
+                case PlayRecordModel::CFG_MODE_SLOW:
+                    $cfgMode = '慢练';
+                    break;
+                default:
+                    $cfgMode = 'PK';
+            }
+
+            return [
+                'frag_key' => $item['frag_key'],
+                'cfg_hand_lang' => $cfgHand,
+                'cfg_mode_lang' => $cfgMode,
+                'count' => (int)$item['count'],
+                'max_score' => $item['max_score'],
+            ];
+        }, $items);
+
+        return $items;
+    }
+
+    /**
+     * 日报详情AI测评
+     * @param array $filter
+     * @return array
+     */
+    public static function reportDetailAI($filter)
+    {
+        $items = ReviewCourseModel::reportDetailAI($filter);
+
+        $maxScore = -1;
+        $maxScoreItemIdx = -1;
+
+        $records = [];
+        foreach ($items as $i => $item) {
+            if ($item['score'] > $maxScore) {
+                $maxScore = $item['score'];
+                $maxScoreItemIdx = $i;
+            }
+
+            $records[$i] = [
+                'created_time' => $item['created_time'],
+                'score' => $item['score'],
+                'is_frag_lang' => $item['is_frag'] ? '是' : '-',
+                'is_max_score_lang' => '-'
+            ];
+        }
+
+        if ($maxScoreItemIdx >= 0) {
+            $records[$maxScoreItemIdx]['is_max_score_lang'] = '是';
+        }
+
+        return $records;
     }
 }

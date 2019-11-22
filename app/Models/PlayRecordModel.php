@@ -29,6 +29,16 @@ class PlayRecordModel extends Model
     const AI_EVALUATE_AUDIO = 2;     //音频识别
     const AI_EVALUATE_FRAGMENT = 3;  //分段分手演奏
 
+    /** 分手 */
+    const CFG_HAND_BOTH = 1; // 双手
+    const CFG_HAND_LEFT = 2; // 左手
+    const CFG_HAND_RIGHT = 3; // 右手
+
+    /** 模式 */
+    const CFG_MODE_NORMAL = 1; // 正常(PK)
+    const CFG_MODE_STEP = 2; // 跟弹(识谱)
+    const CFG_MODE_SLOW = 3; // 慢练
+
 
     const RANK_LIMIT = 150;          //排行榜取前RANK_LIMIT名
 

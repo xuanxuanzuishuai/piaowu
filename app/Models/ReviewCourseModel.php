@@ -103,4 +103,54 @@ class ReviewCourseModel extends Model
 
         return $lessons;
     }
+
+    /**
+     * 日报动态演奏数据
+     * @param array $where
+     * @return array
+     */
+    public static function reportDetailDynamic($where)
+    {
+        $db = MysqlDB::getDB();
+
+        $where['lesson_type'] = PlayRecordModel::TYPE_DYNAMIC;
+        $where['GROUP'] = ['frag_key'];
+
+        $lessons = $db->select(PlayRecordModel::$table . '(pr)',
+            [
+                'frag_key',
+                'cfg_hand',
+                'cfg_mode',
+                'count' => Medoo::raw('COUNT(id)'),
+                'max_score' => Medoo::raw('MAX(score)'),
+            ],
+            $where
+        );
+
+        return $lessons;
+    }
+
+    /**
+     * 日报AI测评数据
+     * @param array $where
+     * @return array
+     */
+    public static function reportDetailAI($where)
+    {
+        $db = MysqlDB::getDB();
+
+        $where['lesson_type'] = PlayRecordModel::TYPE_AI;
+
+        $lessons = $db->select(PlayRecordModel::$table . '(pr)',
+            [
+                'ai_record_id',
+                'created_time',
+                'score',
+                'is_frag',
+            ],
+            $where
+        );
+
+        return $lessons;
+    }
 }
