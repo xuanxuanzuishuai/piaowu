@@ -75,31 +75,31 @@ class ReviewCourseService
 
         if (isset($filterParams['course_status'])) {
             $op = $filterParams['course_status'] == 1 ? '[>=]' : '[<]';
-            $filter['sub_end_date'] = $op . date('Ymd');
+            $filter['sub_end_date' . $op] = date('Ymd');
         }
 
         if (isset($filterParams['last_play_after'])) {
-            $filter['last_play_time'] = '[>=]' . $filterParams['last_play_after'];
+            $filter['last_play_time[>=]'] = $filterParams['last_play_after'];
         }
 
         if (isset($filterParams['last_play_before'])) {
-            $filter['last_play_time'] = '[<]' . $filterParams['last_play_before'];
+            $filter['last_play_time[<]'] = $filterParams['last_play_before'];
         }
 
         if (isset($filterParams['sub_start_after'])) {
-            $filter['sub_start_time'] = '[>=]' . $filterParams['sub_start_after'];
+            $filter['sub_start_time[>=]'] = $filterParams['sub_start_after'];
         }
 
         if (isset($filterParams['sub_start_before'])) {
-            $filter['sub_start_time'] = '[<]' . $filterParams['sub_start_before'];
+            $filter['sub_start_time[<]'] = $filterParams['sub_start_before'];
         }
 
         if (isset($filterParams['sub_end_after'])) {
-            $filter['sub_end_time'] = '[>=]' . $filterParams['sub_end_after'];
+            $filter['sub_end_time[>=]'] = $filterParams['sub_end_after'];
         }
 
         if (isset($filterParams['sub_end_before'])) {
-            $filter['sub_end_time'] = '[<]' . $filterParams['sub_end_before'];
+            $filter['sub_end_time[<]'] = $filterParams['sub_end_before'];
         }
 
         list($page, $count) = Util::formatPageCount($filterParams);
