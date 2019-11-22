@@ -117,6 +117,18 @@ class ReviewCourseService
         $students = ReviewCourseModel::students($filter);
 
         $students = array_map(function ($student) {
+
+            switch ($student['has_review_course']) {
+                case ReviewCourseModel::REVIEW_COURSE_1980:
+                    $reviewCourseType = '1980';
+                    break;
+                case ReviewCourseModel::REVIEW_COURSE_49:
+                    $reviewCourseType = '49';
+                    break;
+                default:
+                    $reviewCourseType = '无';
+            }
+
             return [
                 'id' => (int)$student['id'],
                 'name' => $student['name'],
@@ -124,7 +136,8 @@ class ReviewCourseService
                 'course_status' => ($student['sub_end_date'] >= date('Ymd')) ? '已完课' : '未完课',
                 'last_play_time' => $student['last_play_time'],
                 'last_review_time' => $student['last_review_time'],
-                'wx_bind' => empty($student['open_id']) ? '否' : '是'
+                'wx_bind' => empty($student['open_id']) ? '否' : '是',
+                'review_course' => $reviewCourseType,
             ];
         }, $students);
 
