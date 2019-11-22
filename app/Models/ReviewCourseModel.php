@@ -10,6 +10,7 @@ namespace App\Models;
 
 
 use App\Libs\MysqlDB;
+use Medoo\Medoo;
 
 class ReviewCourseModel extends Model
 {
@@ -54,5 +55,27 @@ class ReviewCourseModel extends Model
         );
 
         return $students;
+    }
+
+    /**
+     * 点评课日报列表
+     * @param array $where
+     * @return array
+     */
+    public static function reports($where)
+    {
+        $db = MysqlDB::getDB();
+
+        $where['ORDER'] = ['pr.id' => 'DESC'];
+        $where['GROUP'] = Medoo::raw('FROM_UNIXTIME(pr.created_time, :date_format)', [':date_format' => "%Y-%m-%d"]);
+
+        $reports = $db->select(PlayRecordModel::$table . '(pr)',
+            [
+                'date' => Medoo::raw('FROM_UNIXTIME(pr.created_time, :date_format)', [':date_format' => "%Y-%m-%d"])
+            ],
+            $where
+        );
+
+        return $reports;
     }
 }

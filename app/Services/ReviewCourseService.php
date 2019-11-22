@@ -10,6 +10,7 @@ namespace App\Services;
 
 
 use App\Libs\DictConstants;
+use App\Libs\Exceptions\RunTimeException;
 use App\Libs\Util;
 use App\Models\ReviewCourseModel;
 use App\Models\StudentModel;
@@ -142,5 +143,71 @@ class ReviewCourseService
         }, $students);
 
         return $students;
+    }
+
+    /**
+     * 点评课学生信息
+     * @param int $studentId
+     * @return array
+     * @throws RunTimeException
+     */
+    public static function studentInfo($studentId)
+    {
+        $student = StudentModel::getById($studentId);
+        if (empty($student)) {
+            throw new RunTimeException(['unknown_user']);
+        }
+
+        return [
+            'id' => $student['id'],
+            'name' => $student['name'],
+            'mobile' => $student['mobile'],
+        ];
+    }
+
+    /**
+     * 日报列表过滤条件
+     * @param array $filterParams
+     * @return array
+     */
+    public static function reportsFilter($filterParams)
+    {
+        $filter = [];
+
+        if (isset($filterParams['play_after'])) {
+            $filter['created_time[>=]'] = $filterParams['play_after'];
+        }
+
+        if (isset($filterParams['play_before'])) {
+            $filter['created_time[<]'] = $filterParams['play_before'];
+        }
+
+        if (isset($filterParams['student_id'])) {
+            $filter['student_id'] = $filterParams['student_id'];
+        }
+
+        list($page, $count) = Util::formatPageCount($filterParams);
+        $filter['LIMIT'] = [($page - 1) * $count, $count];
+
+        return $filter;
+    }
+
+    /**
+     * 日报列表
+     * @param array $filter
+     * @return array
+     */
+    public static function reports($filter)
+    {
+        $reports = ReviewCourseModel::reports($filter);
+        $reports = array_map(function ($report) {
+            return [
+                'date' => $report['date'],
+                'review_time' => 0,
+                'review_teacher' => '无',
+            ];
+        }, $reports);
+
+        return $reports;
     }
 }

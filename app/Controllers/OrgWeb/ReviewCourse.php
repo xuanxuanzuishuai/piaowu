@@ -11,12 +11,9 @@ namespace App\Controllers\OrgWeb;
 use App\Controllers\ControllerBase;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
-use App\Libs\Valid;
-use App\Services\QuestionTagService;
 use App\Services\ReviewCourseService;
 use Slim\Http\Request;
 use Slim\Http\Response;
-use Slim\Http\StatusCode;
 
 class ReviewCourse extends ControllerBase
 {
@@ -36,9 +33,29 @@ class ReviewCourse extends ControllerBase
         return HttpHelper::buildResponse($response, ['students' => $students]);
     }
 
+    /**
+     * 点评课学生日报列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
     public function studentReports(Request $request, Response $response)
     {
+        $params = $request->getParams();
 
+        try {
+            $studentInfo = ReviewCourseService::studentInfo($params['student_id']);
+
+            $filter = ReviewCourseService::reportsFilter($params);
+            $reports = ReviewCourseService::reports($filter);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+
+        return HttpHelper::buildResponse($response, [
+            'student' => $studentInfo,
+            'reports' => $reports
+        ]);
     }
 
     public function studentReportsDetail(Request $request, Response $response)

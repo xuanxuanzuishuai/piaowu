@@ -522,5 +522,6 @@ class OrgWebRouter extends RouterBase
 
         // 点评课
         '/org_web/review_course/students' => ['method' => ['get'], 'call' => ReviewCourse::class . ':students'],
+        '/org_web/review_course/student_reports' => ['method' => ['get'], 'call' => ReviewCourse::class . ':studentReports'],
     ];
 }
