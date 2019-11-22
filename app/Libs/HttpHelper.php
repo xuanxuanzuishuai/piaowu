@@ -17,6 +17,12 @@ class HttpHelper
     const STATUS_SUCCESS = 0;
     const STATUS_ERROR = 1;
 
+    /**
+     * 正常请求结果
+     * @param Response $response
+     * @param $data
+     * @return Response
+     */
     public static function buildResponse(Response $response, $data)
     {
         $result = [
@@ -27,6 +33,12 @@ class HttpHelper
         return $response->withJson($result, StatusCode::HTTP_OK);
     }
 
+    /**
+     * 错误请求结果
+     * @param Response $response
+     * @param $errors
+     * @return Response
+     */
     public static function buildErrorResponse(Response $response, $errors)
     {
         $result = [
