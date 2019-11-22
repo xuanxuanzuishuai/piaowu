@@ -40,6 +40,11 @@ class StudentModel extends Model
     const CHANNEL_EXAM_MINAPP_REGISTER = 8; //音基小程序注册
     const CHANNEL_SPACKAGE_LANDING = 9; //小课包推广页
 
+    // 点评课学生标记
+    const REVIEW_COURSE_NO = 0; // 非点评课学生
+    const REVIEW_COURSE_49 = 1; // 21天49元小课包
+    const REVIEW_COURSE_1980 = 2; // 1年1980元大课包
+
     /**
      * 更新学生信息
      * @param $studentId

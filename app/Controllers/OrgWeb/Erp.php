@@ -9,12 +9,12 @@
 namespace App\Controllers\OrgWeb;
 
 use App\Controllers\ControllerBase;
-use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\MysqlDB;
 use App\Libs\NewSMS;
 use App\Libs\Valid;
 use App\Models\GiftCodeModel;
+use App\Models\StudentModel;
 use App\Models\StudentModelForApp;
 use App\Services\CommonServiceForApp;
 use App\Services\ErpService;
@@ -121,15 +121,14 @@ class Erp extends ControllerBase
                 CommonServiceForApp::SIGN_STUDENT_APP);
         }
 
-        // 21天点评课支付成功，发送点评课短信
-        $packageId = DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'package_id');
-        $plusPackageId = DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'plus_package_id');
-        if (isset($params['package_id']) && ($params['package_id'] == $packageId || $params['package_id'] == $plusPackageId)) {
+        // 点评课支付成功，发送点评课短信
+        $reviewCourseType = StudentService::getBillReviewCourseType($params['package_id']);
+        if ($reviewCourseType != StudentModel::REVIEW_COURSE_NO) {
             $sms->sendEvaluationMessage($params['mobile'], CommonServiceForApp::SIGN_STUDENT_APP);
 
             // 更新点评课标记
             $student = StudentService::getByUuid($params['uuid']);
-            StudentService::updateReviewCourseFlag($student['id'], Constants::STATUS_TRUE);
+            StudentService::updateReviewCourseFlag($student['id'], $reviewCourseType);
         }
 
         return $response->withJson([
