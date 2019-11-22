@@ -210,4 +210,48 @@ class ReviewCourseService
 
         return $reports;
     }
+
+    /**
+     * 日报详情过滤条件
+     * @param array $filterParams
+     * @return array
+     */
+    public static function reportDetailFilter($filterParams)
+    {
+        $filter = [];
+
+        $filter['student_id'] = $filterParams['student_id'];
+
+        $dayTime = strtotime($filterParams['play_date']);
+        $filter['created_time[<>]'] = [$dayTime, $dayTime + 86399];
+
+        return $filter;
+    }
+
+    /**
+     * 日报详情
+     * 内容按曲目id汇总
+     * @param $filter
+     * @return array
+     */
+    public static function reportDetail($filter)
+    {
+        $lessons = ReviewCourseModel::reportDetail($filter);
+        $lessons = array_map(function ($lesson) {
+            return [
+                'lesson_id' => (int)$lesson['lesson_id'],
+                'lesson_name' => '-',
+                'collection_id' => 0,
+                'collection_name' => '-',
+                'total_time' => (int)$lesson['total_time'],
+                'total_count' => (int)$lesson['total_count'],
+                'ai_count' => (int)$lesson['ai_count'],
+                'ai_max_score' => $lesson['ai_max_score'],
+                'dynamic_count' => $lesson['total_count'] - $lesson['ai_count']
+
+            ];
+        }, $lessons);
+
+        return $lessons;
+    }
 }

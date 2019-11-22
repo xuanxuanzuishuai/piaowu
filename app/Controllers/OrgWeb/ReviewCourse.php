@@ -58,8 +58,28 @@ class ReviewCourse extends ControllerBase
         ]);
     }
 
-    public function studentReportsDetail(Request $request, Response $response)
+    /**
+     * 点评课学生日报详情
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function studentReportDetail(Request $request, Response $response)
     {
+        $params = $request->getParams();
 
+        try {
+            $studentInfo = ReviewCourseService::studentInfo($params['student_id']);
+
+            $filter = ReviewCourseService::reportDetailFilter($params);
+            $reports = ReviewCourseService::reportDetail($filter);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+
+        return HttpHelper::buildResponse($response, [
+            'student' => $studentInfo,
+            'report_detail' => $reports
+        ]);
     }
 }

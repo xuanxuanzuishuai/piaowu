@@ -78,4 +78,29 @@ class ReviewCourseModel extends Model
 
         return $reports;
     }
+
+    /**
+     * 点评课日报，曲目汇总表
+     * @param array $where
+     * @return array
+     */
+    public static function reportDetail($where)
+    {
+        $db = MysqlDB::getDB();
+
+        $where['GROUP'] = ['lesson_id'];
+
+        $lessons = $db->select(PlayRecordModel::$table . '(pr)',
+            [
+                'lesson_id',
+                'ai_count' => Medoo::raw('SUM(lesson_type)'),
+                'total_count' => Medoo::raw('COUNT(lesson_type)'),
+                'total_time' => Medoo::raw('SUM(duration)'),
+                'ai_max_score' => Medoo::raw('MAX(IF(lesson_type=1, score, 0))')
+            ],
+            $where
+        );
+
+        return $lessons;
+    }
 }
