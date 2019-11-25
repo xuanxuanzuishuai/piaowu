@@ -118,7 +118,7 @@ class NewSMS
         $week_start = date('Y-m-d', $start);
 
         $msg = "你已成功购买小叶子智能陪练课，将于{$week_start}（周一）开课。
-《1》请添加你的小助手(微信号:zaixianpeilian)，老师会提供指点和规划。
+《1》请添加你的小助手(微信号:xmlaoshi002)，老师会提供指点和规划。
 《2》请点击 http://t.cn/AiBPajzr 下载“小叶子爱练琴”App开始练琴。
 如有其他问题，请联系微信小助手。";
 
