@@ -11,6 +11,7 @@ namespace App\Services;
 
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\OpernCenter;
 use App\Libs\Util;
 use App\Models\PlayRecordModel;
 use App\Models\ReviewCourseModel;
@@ -246,12 +247,24 @@ class ReviewCourseService
     public static function reportDetail($filter)
     {
         $lessons = ReviewCourseModel::reportDetail($filter);
-        $lessons = array_map(function ($lesson) {
+
+        $lessonIds = array_column($lessons, 'lesson_id');
+        if (!empty($lessonIds)) {
+            $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, 'test', 0, 1);
+            $resp = $opn->lessonsByIds($lessonIds, 0, []);
+            if ($resp['code'] == 0) {
+                $lessonsInfo = $resp['data'];
+                $lessonsInfo = array_combine(array_column($lessonsInfo, 'id'), $lessonsInfo);
+            }
+        }
+
+        if (empty($lessonsInfo)) { $lessonsInfo = []; }
+        $lessons = array_map(function ($lesson) use ($lessonsInfo) {
             return [
                 'lesson_id' => (int)$lesson['lesson_id'],
-                'lesson_name' => '-',
-                'collection_id' => 0,
-                'collection_name' => '-',
+                'lesson_name' => $lessonsInfo[$lesson['lesson_id']]['lesson_name'] ?? '-',
+                'collection_id' => $lessonsInfo[$lesson['lesson_id']]['collection_id'] ?? 0,
+                'collection_name' => $lessonsInfo[$lesson['lesson_id']]['collection_name'] ?? '-',
                 'total_time' => (int)$lesson['total_time'],
                 'total_count' => (int)$lesson['total_count'],
                 'ai_count' => (int)$lesson['ai_count'],
