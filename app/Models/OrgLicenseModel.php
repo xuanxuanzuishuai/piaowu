@@ -18,10 +18,8 @@ class OrgLicenseModel extends Model
 {
     public static $table = "org_license";
 
-    const TYPE_APP = 1;
-    const TYPE_CLASSROOM = 2;
-    const TYPE_1V1 = 1; //1V1
-    const TYPE_CLASSROOM_FEE = 2; //集体课服务费
+    const TYPE_APP = 1; //1V1
+    const TYPE_CLASSROOM = 2; //集体课服务费
     const TYPE_CLASSROOM_NUM = 3; //集体课学生数量
 
     /**

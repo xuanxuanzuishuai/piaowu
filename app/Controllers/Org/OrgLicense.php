@@ -35,7 +35,7 @@ class OrgLicense extends ControllerBase
             [
                 'key'        => 'type',
                 'type'       => 'in',
-                'value'      => [OrgLicenseModel::TYPE_APP, OrgLicenseModel::TYPE_CLASSROOM],
+                'value'      => [OrgLicenseModel::TYPE_APP, OrgLicenseModel::TYPE_CLASSROOM, OrgLicenseModel::TYPE_CLASSROOM_NUM],
                 'error_code' => 'type_is_required'
             ],
             [
@@ -53,12 +53,7 @@ class OrgLicense extends ControllerBase
                 'type'       => 'in',
                 'value'      => [Constants::UNIT_DAY, Constants::UNIT_MONTH, Constants::UNIT_YEAR],
                 'error_code' => 'invalid_license_duration_unit'
-            ],
-            [
-                'key'        => 'type',
-                'type'       => 'required',
-                'error_code' => 'type_is_required'
-            ],
+            ]
         ];
         $params = $request->getParams();
         $result = Valid::validate($params, $rules);
