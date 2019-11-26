@@ -34,8 +34,8 @@ class ReviewCourseModel extends Model
             $where['has_review_course'] = [self::REVIEW_COURSE_49, self::REVIEW_COURSE_1980];
         }
 
-        $where['uwx.user_type'] = UserWeixinModel::USER_TYPE_STUDENT;
-        $where['uwx.busi_type'] = UserWeixinModel::BUSI_TYPE_STUDENT_SERVER;
+//        $where['uwx.user_type'] = [UserWeixinModel::USER_TYPE_STUDENT, null];
+//        $where['uwx.busi_type'] = [UserWeixinModel::BUSI_TYPE_STUDENT_SERVER, null];
 
         $students = $db->select(self::$table . '(s)',
             [
