@@ -54,6 +54,12 @@ class ClassroomScheduleService
             throw new RunTimeException(['license_exhausted']);
         }
 
+        //检查是否有服务费
+        $lastActive = OrgLicenseModel::getLastActiveLicense($orgId);
+        if(empty($lastActive)) {
+            throw new RunTimeException(['license_expired']);
+        }
+
         $token = md5(sprintf('%s%s%s', $account, $classId, microtime()));
         $value = [
             'class_id' => $classId,

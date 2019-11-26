@@ -149,4 +149,19 @@ order by create_time desc", $map);
 
         return empty($records) ? [] : $records[0];
     }
+
+    public static function getLastActiveLicense($orgId)
+    {
+        $record = self::getRecord([
+            'org_id'         => $orgId,
+            'active_time[!]' => null,
+            'type'           => OrgLicenseModel::TYPE_CLASSROOM,
+            'active_time[<]' => time(),
+            'expire_time[>]' => time(),
+            'status'         => Constants::STATUS_TRUE,
+            'ORDER'          => ['active_time' => 'DESC'],
+        ], [], false);
+
+        return $record;
+    }
 }
