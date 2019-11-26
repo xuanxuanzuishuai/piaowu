@@ -17,6 +17,7 @@ use App\Models\PlaySaveModel;
 use App\Libs\OpernCenter;
 use App\Libs\Util;
 use App\Libs\MaxHeap;
+use App\Models\StudentModel;
 
 class UserPlayServices
 {
@@ -43,6 +44,8 @@ class UserPlayServices
      */
     public static function addRecord($userID, $playData)
     {
+        $now = time();
+
         if ($playData['ai_type'] == PlayRecordModel::AI_EVALUATE_FRAGMENT) {
             $playData['ai_type'] = PlayRecordModel::AI_EVALUATE_PLAY;
             $playData['if_frag'] = Constants::STATUS_TRUE;
@@ -63,7 +66,7 @@ class UserPlayServices
             'client_type' => $playData['client_type'],
             'lesson_sub_id' => $playData['lesson_sub_id'],
             'ai_record_id' => $playData['ai_record_id'],
-            'created_time' => time(),
+            'created_time' => $now,
             'duration' => $playData['duration'],
             'score' => $playData['score'],
             'midi' => $playData['midi'],
@@ -84,6 +87,9 @@ class UserPlayServices
         if (empty($saveID)) {
             return ['play_save_failure'];
         }
+
+        StudentModel::updateRecord($userID, ['last_play_time' => $now], false);
+
         return [null, ['record_id' => $recordID, 'play_result' => $playResult]];
     }
 
