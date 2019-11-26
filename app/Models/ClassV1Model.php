@@ -53,6 +53,13 @@ class ClassV1Model extends Model
     {
         $where = " WHERE 1=1 ";
         $map = [];
+
+        global $orgId;
+        if ($orgId > 0) {
+            $where .= " AND c.org_id = :org_id ";
+            $map[':org_id'] = $orgId;
+        }
+
         if (!empty($params['name'])) {
             $where .= " AND c.name like :name ";
             $map[':name'] = "%{$params['name']}%";
