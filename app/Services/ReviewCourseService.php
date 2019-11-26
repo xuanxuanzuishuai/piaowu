@@ -298,7 +298,7 @@ class ReviewCourseService
                     $cfgHand = '双手';
             }
 
-            switch ($item['cfg_hand']) {
+            switch ($item['cfg_mode']) {
                 case PlayRecordModel::CFG_MODE_STEP:
                     $cfgMode = '识谱';
                     break;

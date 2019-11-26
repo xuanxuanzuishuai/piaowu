@@ -34,9 +34,6 @@ class ReviewCourseModel extends Model
             $where['has_review_course'] = [self::REVIEW_COURSE_49, self::REVIEW_COURSE_1980];
         }
 
-//        $where['uwx.user_type'] = [UserWeixinModel::USER_TYPE_STUDENT, null];
-//        $where['uwx.busi_type'] = [UserWeixinModel::BUSI_TYPE_STUDENT_SERVER, null];
-
         $students = $db->select(self::$table . '(s)',
             [
                 '[>]' . UserWeixinModel::$table . '(uwx)' => ['s.id' => 'user_id']
@@ -114,7 +111,7 @@ class ReviewCourseModel extends Model
         $db = MysqlDB::getDB();
 
         $where['lesson_type'] = PlayRecordModel::TYPE_DYNAMIC;
-        $where['GROUP'] = ['frag_key'];
+        $where['GROUP'] = ['frag_key', 'cfg_hand', 'cfg_mode'];
 
         $lessons = $db->select(PlayRecordModel::$table . '(pr)',
             [
