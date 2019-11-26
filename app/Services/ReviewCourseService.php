@@ -341,6 +341,7 @@ class ReviewCourseService
             }
 
             $records[$i] = [
+                'ai_record_id' => $item['ai_record_id'],
                 'created_time' => $item['created_time'],
                 'score' => $item['score'],
                 'is_frag_lang' => $item['is_frag'] ? '是' : '-',

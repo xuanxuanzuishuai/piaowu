@@ -11,6 +11,7 @@ namespace App\Controllers\OrgWeb;
 use App\Controllers\ControllerBase;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
+use App\Services\AIBackendService;
 use App\Services\ReviewCourseService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -116,10 +117,14 @@ class ReviewCourse extends ControllerBase
         try {
             $filter = ReviewCourseService::reportDetailFilter($params);
             $detailAI = ReviewCourseService::reportDetailAI($filter);
+
+            if (isset($params['student_id'])) {
+                $token = AIBackendService::genStudentToken($params['student_id']);
+            }
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
 
-        return HttpHelper::buildResponse($response, ['detail_ai' => $detailAI]);
+        return HttpHelper::buildResponse($response, ['detail_ai' => $detailAI, 'token' => $token ?? '']);
     }
 }
