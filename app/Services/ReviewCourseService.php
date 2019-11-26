@@ -81,27 +81,27 @@ class ReviewCourseService
             $filter['sub_end_date' . $op] = date('Ymd');
         }
 
-        if (isset($filterParams['last_play_after'])) {
+        if (!empty($filterParams['last_play_after'])) {
             $filter['last_play_time[>=]'] = $filterParams['last_play_after'];
         }
 
-        if (isset($filterParams['last_play_before'])) {
+        if (!empty($filterParams['last_play_before'])) {
             $filter['last_play_time[<]'] = $filterParams['last_play_before'];
         }
 
-        if (isset($filterParams['sub_start_after'])) {
+        if (!empty($filterParams['sub_start_after'])) {
             $filter['sub_start_time[>=]'] = $filterParams['sub_start_after'];
         }
 
-        if (isset($filterParams['sub_start_before'])) {
+        if (!empty($filterParams['sub_start_before'])) {
             $filter['sub_start_time[<]'] = $filterParams['sub_start_before'];
         }
 
-        if (isset($filterParams['sub_end_after'])) {
+        if (!empty($filterParams['sub_end_after'])) {
             $filter['sub_end_time[>=]'] = $filterParams['sub_end_after'];
         }
 
-        if (isset($filterParams['sub_end_before'])) {
+        if (!empty($filterParams['sub_end_before'])) {
             $filter['sub_end_time[<]'] = $filterParams['sub_end_before'];
         }
 
@@ -137,7 +137,7 @@ class ReviewCourseService
                 'id' => (int)$student['id'],
                 'name' => $student['name'],
                 'mobile' => $student['mobile'],
-                'course_status' => ($student['sub_end_date'] >= date('Ymd')) ? '已完课' : '未完课',
+                'course_status' => ($student['sub_end_date'] >= date('Ymd')) ? '未完课' : '已完课',
                 'last_play_time' => $student['last_play_time'],
                 'last_review_time' => $student['last_review_time'],
                 'review_course' => $reviewCourseType,
@@ -183,11 +183,11 @@ class ReviewCourseService
     {
         $filter = [];
 
-        if (isset($filterParams['play_after'])) {
+        if (!empty($filterParams['play_after'])) {
             $filter['created_time[>=]'] = $filterParams['play_after'];
         }
 
-        if (isset($filterParams['play_before'])) {
+        if (!empty($filterParams['play_before'])) {
             $filter['created_time[<]'] = $filterParams['play_before'];
         }
 
