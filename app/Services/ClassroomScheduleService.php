@@ -13,6 +13,7 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Models\ClassroomAppModel;
 use App\Models\ClassRecordModel;
 use App\Models\ClassV1Model;
+use App\Models\ClassV1UserModel;
 use App\Models\OrgLicenseModel;
 
 class ClassroomScheduleService
@@ -58,6 +59,11 @@ class ClassroomScheduleService
         $lastActive = OrgLicenseModel::getLastActiveLicense($orgId);
         if(empty($lastActive)) {
             throw new RunTimeException(['license_expired']);
+        }
+
+        //更新学生座位
+        foreach($students as $student) {
+            ClassV1UserModel::updatePosition($student['id'], ClassV1UserModel::ROLE_STUDENT, $classId, $student['position']);
         }
 
         $token = md5(sprintf('%s%s%s', $account, $classId, microtime()));

@@ -66,4 +66,18 @@ class ClassV1UserModel extends Model
             ], false);
         }
     }
+
+    public static function updatePosition($userId, $userRole, $classId, $position)
+    {
+        $db = MysqlDB::getDB();
+        $count = $db->updateGetCount(self::$table, [
+            'position'    => $position,
+            'update_time' => time(),
+        ], [
+            'user_id'   => $userId,
+            'class_id'  => $classId,
+            'user_role' => $userRole,
+        ]);
+        return $count;
+    }
 }
