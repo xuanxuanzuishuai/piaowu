@@ -70,14 +70,14 @@ class UserPlayServices
             'duration' => $playData['duration'],
             'score' => $playData['score'],
             'midi' => $playData['midi'],
-            'ai_type' => $playData['ai_type'],
+            'ai_type' => $playData['ai_type'] ?? PlayRecordModel::TYPE_DYNAMIC,
             'data' => json_encode($playData),
 
             'opern_id' => $playData['opern_id'] ?? 0,
             'is_frag' => $playData['is_frag'] ?? 0,
             'frag_key' => $playData['frag_key'] ?? '-',
-            'cfg_hand' => $playData['cfg_hand'] ?? 1,
-            'cfg_mode' => $playData['cfg_mode'] ?? 1,
+            'cfg_hand' => $playData['cfg_hand'] ?? PlayRecordModel::CFG_HAND_BOTH,
+            'cfg_mode' => $playData['cfg_mode'] ?? PlayRecordModel::CFG_MODE_NORMAL,
         ];
 
         $recordID =  PlayRecordModel::insertRecord($recordData);
