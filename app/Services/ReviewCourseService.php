@@ -16,6 +16,7 @@ use App\Libs\Util;
 use App\Models\PlayRecordModel;
 use App\Models\ReviewCourseModel;
 use App\Models\StudentModel;
+use App\Models\UserWeixinModel;
 
 class ReviewCourseService
 {
@@ -139,7 +140,6 @@ class ReviewCourseService
                 'course_status' => ($student['sub_end_date'] >= date('Ymd')) ? '已完课' : '未完课',
                 'last_play_time' => $student['last_play_time'],
                 'last_review_time' => $student['last_review_time'],
-                'wx_bind' => empty($student['open_id']) ? '否' : '是',
                 'review_course' => $reviewCourseType,
             ];
         }, $students);
@@ -160,10 +160,17 @@ class ReviewCourseService
             throw new RunTimeException(['unknown_user']);
         }
 
+        $wxBind = UserWeixinModel::getRecord([
+            'user_id' => $studentId,
+            'busi_type' => UserWeixinModel::BUSI_TYPE_STUDENT_SERVER,
+            'user_type' => UserWeixinModel::USER_TYPE_STUDENT,
+        ], ['id'], false);
+
         return [
             'id' => $student['id'],
             'name' => $student['name'],
             'mobile' => $student['mobile'],
+            'wx_bind' => empty($wxBind) ? '否' : '是',
         ];
     }
 
@@ -340,11 +347,14 @@ class ReviewCourseService
                 $maxScoreItemIdx = $i;
             }
 
+            // AI数据分段或分手都算分段
+            $isFrag = $item['is_frag'] || ($item['cfg_hand'] != PlayRecordModel::CFG_HAND_BOTH);
+
             $records[$i] = [
                 'ai_record_id' => $item['ai_record_id'],
                 'created_time' => $item['created_time'],
                 'score' => $item['score'],
-                'is_frag_lang' => $item['is_frag'] ? '是' : '-',
+                'is_frag_lang' => $isFrag ? '是' : '-',
                 'is_max_score_lang' => '-'
             ];
         }

@@ -36,9 +36,6 @@ class ReviewCourseModel extends Model
 
         $students = $db->select(self::$table . '(s)',
             [
-                '[>]' . UserWeixinModel::$table . '(uwx)' => ['s.id' => 'user_id']
-            ],
-            [
                 's.id',
                 's.name',
                 's.mobile',
@@ -46,7 +43,6 @@ class ReviewCourseModel extends Model
                 's.has_review_course',
                 's.last_play_time',
                 's.last_review_time',
-                'uwx.open_id'
             ],
             $where
         );
@@ -144,6 +140,8 @@ class ReviewCourseModel extends Model
                 'created_time',
                 'score',
                 'is_frag',
+                'cfg_hand',
+                'cfg_mode',
             ],
             $where
         );
