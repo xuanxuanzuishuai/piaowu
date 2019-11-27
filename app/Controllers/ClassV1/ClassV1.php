@@ -112,7 +112,7 @@ Class ClassV1 extends ControllerBase
         $db = MysqlDB::getDB();
         $db->beginTransaction();
         $result = ClassV1Service::modifyClass($params['class_id'], $params['name'], $employeeId,
-            $params['student_ids'] ?? null, $params['teachers'] ?? null,
+            $params['student_ids'] ?? [], $params['teachers'] ?? null,
             $params['campus_id'] ?? 0, $params['desc'] ?? null);
         if (!empty($result['code'])) {
             $db->rollBack();

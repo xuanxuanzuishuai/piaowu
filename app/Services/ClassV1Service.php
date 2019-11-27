@@ -113,7 +113,7 @@ class ClassV1Service
      */
     public static function modifyClass($classId, $name, $employeeId, $studentIds, $teachers, $campusId, $desc)
     {
-        if (!empty($students)) {
+        if (!empty($studentIds)) {
             $students = StudentService::getStudentByIds($studentIds);
             if (count($students) != count($studentIds)) {
                 return Valid::addErrors([], 'class_student', 'class_student_is_not_match');
