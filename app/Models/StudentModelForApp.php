@@ -60,9 +60,11 @@ class StudentModelForApp extends Model
             'trial_end_date' => '0',
             'act_sub_info' => '0',
             'first_pay_time' => '0',
+            'has_review_course' => '0',
             'name' => '游客',
             'thumb' => '',
-            'flags' => '0'
+            'flags' => '0',
+            'last_play_time' => '0',
         ];
     }
 
@@ -101,6 +103,7 @@ class StudentModelForApp extends Model
             self::$table . '.name',
             self::$table . '.thumb',
             self::$table . '.flags',
+            self::$table . '.last_play_time',
         ], $where);
     }
 
