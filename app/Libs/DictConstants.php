@@ -177,6 +177,11 @@ class DictConstants {
         'keys' => [1, 2, 3],
     ];
 
+    const CLASSROOM_APP_CONFIG = [
+        'type' => 'classroom_app_config',
+        'keys' => ['used_offline']
+    ];
+
     public static function get($type, $key)
     {
         if (empty($type) || empty($key)) {

@@ -30,3 +30,6 @@ CREATE TABLE `classroom_device` (
   PRIMARY KEY (`id`)
 )
   COMMENT = '集体课教室设备列表';
+
+insert into dict (type, key_name, key_code, key_value, `desc`)
+values ('classroom_app_config', '最大离线登录次数', 'used_offline', 3, '最大离线登录次数');

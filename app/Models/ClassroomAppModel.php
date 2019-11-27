@@ -16,6 +16,7 @@ class ClassroomAppModel
     private static $classroomTokenPrefix   = 'dss.classroom_app.classroom_token.';
     private static $scheduleTokenPrefix    = 'dss.classroom_app.schedule_token.';
     private static $scheduleTokenSetPrefix = 'dss.classroom_app.schedule_set.';
+    private static $usedOfflinePrefix      = 'dss.classroom_app.offline.';
 
     private static $conn;
 
@@ -75,5 +76,20 @@ class ClassroomAppModel
     {
         $conn = self::getConn();
         return $conn->del(self::$scheduleTokenPrefix . $token);
+    }
+
+    public static function increaseUsedOffline($orgId)
+    {
+        $conn = self::getConn();
+        $key = self::$usedOfflinePrefix . $orgId;
+        if(!empty($conn->exists($key))) {
+            return $conn->incr($key);
+        } else {
+            $start = date('Y-m-01');
+            $end = strtotime("{$start} +1 month");
+            $expire = $end - 1 - time(); //从现在开始到当月最后一天23:59:59的秒数
+            $conn->setex($key, $expire, 1);
+            return 1;
+        }
     }
 }

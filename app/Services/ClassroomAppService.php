@@ -10,6 +10,7 @@ namespace App\Services;
 
 
 use App\Libs\Constants;
+use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\Util;
 use App\Models\ClassroomAppModel;
@@ -70,10 +71,19 @@ class ClassroomAppService
         $startTime = $expire['active_time'] ?? 0;
         $endTime = empty($expire['active_time']) ? 0 : Util::computeExpire($startTime, $expire['duration'], $expire['duration_unit']);
 
+        //如果登录时知道曾用离线模式登录，需要在缓存中记录
+        $offlineForbidden = 0;
+        if(!empty($params['used_offline'])) {
+            $max = DictConstants::get(DictConstants::CLASSROOM_APP_CONFIG, 'used_offline');
+            if(ClassroomAppModel::increaseUsedOffline($orgId) >= $max) {
+                $offlineForbidden = 1;
+            }
+        }
+
         $data = [
             'devices'          => $devices,
             'forbidden'        => 0,
-            'offlineForbidden' => 0,
+            'offlineForbidden' => $offlineForbidden,
             'satan'            => 0,
             'notifications'    => [],
             'alert_message'    => '',
