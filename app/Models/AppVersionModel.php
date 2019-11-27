@@ -165,13 +165,14 @@ class AppVersionModel
                         $publishVerIdx = $idx;
                     }
                 }
-            }
 
-            if (!empty($data['engine_url']) && !empty($data['engine_crc'])) {
-                $versionEngines[$data['version']] = [
-                    'url' => $data['engine_url'],
-                    'crc' => $data['engine_crc']
-                ];
+                // 保存对应版本曲谱引擎数据
+                if (!empty($data['engine_url']) && !empty($data['engine_crc'])) {
+                    $versionEngines[$data['version']] = [
+                        'url' => $data['engine_url'],
+                        'crc' => $data['engine_crc']
+                    ];
+                }
             }
         }
 
