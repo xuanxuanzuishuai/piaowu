@@ -118,7 +118,7 @@ class ReviewCourseService
      */
     public static function students($filter)
     {
-        $students = ReviewCourseModel::students($filter);
+        list($count, $students) = ReviewCourseModel::students($filter);
 
         $students = array_map(function ($student) {
 
@@ -144,7 +144,7 @@ class ReviewCourseService
             ];
         }, $students);
 
-        return $students;
+        return [$count, $students];
     }
 
     /**
@@ -208,7 +208,7 @@ class ReviewCourseService
      */
     public static function reports($filter)
     {
-        $reports = ReviewCourseModel::reports($filter);
+        list($count, $reports) = ReviewCourseModel::reports($filter);
         $reports = array_map(function ($report) {
             return [
                 'date' => $report['date'],
@@ -217,7 +217,7 @@ class ReviewCourseService
             ];
         }, $reports);
 
-        return $reports;
+        return [$count, $reports];
     }
 
     /**

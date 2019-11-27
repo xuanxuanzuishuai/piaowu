@@ -34,6 +34,13 @@ class ReviewCourseModel extends Model
             $where['has_review_course'] = [self::REVIEW_COURSE_49, self::REVIEW_COURSE_1980];
         }
 
+        $countWhere = $where;
+        unset($countWhere['LIMIT']);
+        $count = $db->count(self::$table . '(s)', '*', $countWhere);
+        if ($count <= 0) {
+            return [0, []];
+        }
+
         $students = $db->select(self::$table . '(s)',
             [
                 's.id',
@@ -47,7 +54,7 @@ class ReviewCourseModel extends Model
             $where
         );
 
-        return $students;
+        return [$count, $students];
     }
 
     /**
@@ -59,6 +66,12 @@ class ReviewCourseModel extends Model
     {
         $db = MysqlDB::getDB();
 
+        $countCol = Medoo::raw('COUNT(DISTINCT FROM_UNIXTIME(pr.created_time, :date_format))', [':date_format' => "%Y-%m-%d"]);
+        $countResult = $db->get(PlayRecordModel::$table . '(pr)', ['count' => $countCol], $where);
+        if (empty($countResult['count'])) {
+            return [0, []];
+        }
+
         $where['ORDER'] = ['pr.id' => 'DESC'];
         $where['GROUP'] = Medoo::raw('FROM_UNIXTIME(pr.created_time, :date_format)', [':date_format' => "%Y-%m-%d"]);
 
@@ -69,7 +82,7 @@ class ReviewCourseModel extends Model
             $where
         );
 
-        return $reports;
+        return [$countResult['count'], $reports];
     }
 
     /**

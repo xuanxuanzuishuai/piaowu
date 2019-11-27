@@ -29,9 +29,12 @@ class ReviewCourse extends ControllerBase
         $params = $request->getParams();
 
         $filter = ReviewCourseService::studentsFilter($params);
-        $students = ReviewCourseService::students($filter);
+        list($count, $students) = ReviewCourseService::students($filter);
 
-        return HttpHelper::buildResponse($response, ['students' => $students]);
+        return HttpHelper::buildResponse($response, [
+            'total_count' => $count,
+            'students' => $students
+        ]);
     }
 
     /**
@@ -48,13 +51,14 @@ class ReviewCourse extends ControllerBase
             $studentInfo = ReviewCourseService::studentInfo($params['student_id']);
 
             $filter = ReviewCourseService::reportsFilter($params);
-            $reports = ReviewCourseService::reports($filter);
+            list($count, $reports) = ReviewCourseService::reports($filter);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
 
         return HttpHelper::buildResponse($response, [
             'student' => $studentInfo,
+            'total_count' => $count,
             'reports' => $reports
         ]);
     }
