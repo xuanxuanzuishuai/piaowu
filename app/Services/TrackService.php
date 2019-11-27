@@ -279,4 +279,13 @@ class TrackService
 
         return $success;
     }
+
+    public static function getAdChannel($userId)
+    {
+        $adChannel = TrackModel::getRecord(['user_id' => $userId], ['ad_channel', 'ad_id'], false);
+        return [
+            'ad_channel' => (int)$adChannel['ad_channel'],
+            'ad_id' => (int)$adChannel['ad_id'],
+        ];
+    }
 }

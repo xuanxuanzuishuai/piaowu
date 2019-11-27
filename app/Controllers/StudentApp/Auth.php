@@ -86,8 +86,12 @@ class Auth extends ControllerBase
                 $loginData['id']);
             $loginData['track_complete'] = $trackData['complete'] ? 1 : 0;
             if ($loginData['track_complete']) {
-                $loginData['track_data'] = ['ad_channel' => $trackData['ad_channel'], 'ad_id' => $trackData['ad_id']];
+                $loginData['track_data'] = ['ad_channel' => (int)$trackData['ad_channel'], 'ad_id' => (int)$trackData['ad_id']];
             }
+        }
+
+        if (empty($loginData['track_data'])) {
+            $loginData['track_data'] = TrackService::getAdChannel($loginData['id']);
         }
 
         $reviewFlagId = DictConstants::get(DictConstants::FLAG_ID, 'app_review');
