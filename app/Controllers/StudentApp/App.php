@@ -12,6 +12,7 @@ namespace App\Controllers\StudentApp;
 use App\Controllers\ControllerBase;
 use App\Libs\AliOSS;
 use App\Libs\DictConstants;
+use App\Libs\HttpHelper;
 use App\Libs\PandaCRM;
 use App\Libs\Util;
 use App\Libs\Valid;
@@ -280,5 +281,21 @@ class App extends ControllerBase
             'code' => Valid::CODE_SUCCESS,
             'data' => $ret
         ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * 获取曲谱引擎
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function engine(Request $request, Response $response)
+    {
+        Util::unusedParam($request);
+
+        $platformId = AppVersionService::getPlatformId($this->ci['platform']);
+        $engine = AppVersionService::getEngine(AppVersionModel::APP_TYPE_STUDENT, $platformId, $this->ci['version']);
+
+        return HttpHelper::buildResponse($response, ['engine' => $engine]);
     }
 }

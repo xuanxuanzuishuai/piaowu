@@ -47,6 +47,22 @@ class AppVersionService
     }
 
     /**
+     * 获取指定app版本的曲谱引擎
+     * @param $appType
+     * @param $platformId
+     * @param $version
+     * @return array
+     */
+    public static function getEngine($appType, $platformId, $version)
+    {
+        $engines = AppVersionModel::getEngines($appType, $platformId);
+        $engine = $engines[$version] ?? ['url' => '', 'crc' => ''];
+        $engine['version'] = $version;
+
+        return $engine;
+    }
+
+    /**
      * 获取最后一个已发布版本
      * @param $appType
      * @param $platformId

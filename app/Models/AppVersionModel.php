@@ -34,6 +34,7 @@ class AppVersionModel
     const APP_PUBLISH_VERSION_CACHE_KEY = 'app_publish_version_%s_%s';
     const APP_REVIEW_VERSION_CACHE_KEY = 'app_review_version_%s_%s';
     const APP_VERSION_CACHE_KEY = 'app_%s_version_%s_%s';
+    const APP_ENGINES_CACHE_KEY = 'app_version_engines_%s_%s';
     const APP_VERSION_CACHE_EXPIRE = 1800;
 
 
@@ -92,6 +93,18 @@ class AppVersionModel
     }
 
     /**
+     * 曲谱引擎列表
+     * @param $appType
+     * @param $platformId
+     * @return array|null
+     */
+    public static function getEngines($appType, $platformId)
+    {
+        $cacheKey = sprintf(self::APP_ENGINES_CACHE_KEY, $appType, $platformId);
+        return self::getVersionCache($cacheKey, $appType, $platformId);
+    }
+
+    /**
      * 从app管理后台获取版本信息，设置缓存
      * app_publish_version_aiappstudent_1 AI练琴 android
      * app_publish_version_aiappstudent_2 AI练琴 ios
@@ -136,6 +149,7 @@ class AppVersionModel
 
         $publishVerIdx = -1;
         $reviewVerIdx = -1;
+        $versionEngines = [];
         foreach ($versions as $idx => $data) {
             // 查找审核版本(review_status=1)，审核版本只有一个
             if ($reviewVerIdx < 0 && $data['review_status']) {
@@ -147,10 +161,17 @@ class AppVersionModel
                 if ($publishVerIdx < 0) {
                     $publishVerIdx = $idx;
                 } else {
-                    if (self::verCmp($data[$publishVerIdx]['version'], $data[$idx]['version'])) {
+                    if (self::verCmp($versions[$publishVerIdx]['version'], $data['version']) > 0) {
                         $publishVerIdx = $idx;
                     }
                 }
+            }
+
+            if (!empty($data['engine_url']) && !empty($data['engine_crc'])) {
+                $versionEngines[$data['version']] = [
+                    'url' => $data['engine_url'],
+                    'crc' => $data['engine_crc']
+                ];
             }
         }
 
@@ -168,9 +189,14 @@ class AppVersionModel
         $cacheKey = sprintf(self::APP_REVIEW_VERSION_CACHE_KEY, $appType, $platformId);
         $redis->setex($cacheKey, $cacheExpireTime, json_encode($reviewVer));
 
+        // 版本曲谱引擎列表缓存
+        $cacheKey = sprintf(self::APP_ENGINES_CACHE_KEY, $appType, $platformId);
+        $redis->setex($cacheKey, $cacheExpireTime, json_encode($versionEngines));
+
         SimpleLogger::info(__FILE__ . __LINE__ . ' [set version cache]', [
             'publish ' => $publishVer,
             'review' => $reviewVer,
+            'engine' => $versionEngines
         ]);
     }
 
@@ -181,7 +207,8 @@ class AppVersionModel
      * @param $vb string x.y.z
      * @return int
      */
-    public static function verCmp($va, $vb) {
+    public static function verCmp($va, $vb)
+    {
         $vaCode = explode('.', $va);
         $vbCode = explode('.', $vb);
 

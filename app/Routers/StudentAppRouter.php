@@ -57,6 +57,11 @@ class StudentAppRouter extends RouterBase
             'call' => App::class . ':version',
             'middles' => [AppApiForStudent::class]
         ],
+        '/student_app/app/engine' => [
+            'method' => ['get'],
+            'call' => App::class . ':engine',
+            'middles' => [AppApiForStudent::class]
+        ],
         '/student_app/app/config' => [
             'method' => ['get'],
             'call' => App::class . ':config',
