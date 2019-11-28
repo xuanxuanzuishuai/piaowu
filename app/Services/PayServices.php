@@ -10,6 +10,7 @@ namespace App\Services;
 
 use App\Libs\DictConstants;
 use App\Libs\Erp;
+use App\Models\ReviewCourseModel;
 use App\Models\StudentModelForApp;
 
 class PayServices
@@ -47,7 +48,14 @@ class PayServices
             return $a['oprice'] > $b['oprice'];
         });
 
+        $package49 = DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'package_id');
+
         foreach ($erpPackages as $pkg) {
+            // 购买过点评课的学生不能够买点评课体验包(49)
+            if ($pkg['package_id'] == $package49 && $student['has_review_course'] != ReviewCourseModel::REVIEW_COURSE_NO) {
+                continue;
+            }
+
             $packages[] = [
                 'package_id' => $pkg['package_id'],
                 'package_name' => $pkg['package_name'],
