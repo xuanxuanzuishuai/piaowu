@@ -74,10 +74,13 @@ class ClassroomAppService
         //如果登录时知道曾用离线模式登录，需要在缓存中记录
         $offlineForbidden = 0;
         if(!empty($params['used_offline'])) {
-            $max = DictConstants::get(DictConstants::CLASSROOM_APP_CONFIG, 'used_offline');
-            if(ClassroomAppModel::increaseUsedOffline($orgId) >= $max) {
-                $offlineForbidden = 1;
-            }
+            ClassroomAppModel::increaseUsedOffline($orgId);
+        }
+
+        //每次登录都要检查离线模式使用次数是否达到限制
+        $max = DictConstants::get(DictConstants::CLASSROOM_APP_CONFIG, 'used_offline');
+        if(ClassroomAppModel::getUsedOffline($orgId) >= $max) {
+            $offlineForbidden = 1;
         }
 
         $data = [

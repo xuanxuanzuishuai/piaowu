@@ -92,4 +92,11 @@ class ClassroomAppModel
             return 1;
         }
     }
+
+    public static function getUsedOffline($orgId)
+    {
+        $conn = self::getConn();
+        $key = self::$usedOfflinePrefix . $orgId;
+        return $conn->get($key);
+    }
 }
