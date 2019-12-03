@@ -58,7 +58,6 @@ class App extends ControllerBase
         $studentAppConfigs = DictConstants::getSet(DictConstants::APP_CONFIG_STUDENT);
 
         $config = [];
-        $config['ai_host'] = DictConstants::get(DictConstants::APP_CONFIG_COMMON, 'ai_host');
         $config['policy_url'] = $studentAppConfigs['policy_url'];
         $config['sub_info_count'] = (int)$studentAppConfigs['sub_info_count'];
         $config['tmall_2680'] = $studentAppConfigs['tmall_2680'];
@@ -70,6 +69,8 @@ class App extends ControllerBase
         $config['device_check'] = (int)$studentAppConfigs['device_check'];
         $config['exam_enable'] = (int)$studentAppConfigs['exam_enable'];
         $config['exam_url'] = $studentAppConfigs['exam_url'];
+        $config['ai_host'] = DictConstants::get(DictConstants::APP_CONFIG_COMMON, 'ai_host');
+        $config['new_ai_host'] = DictConstants::get(DictConstants::APP_CONFIG_COMMON, 'new_ai_host');
 
         $reviewFlagId = DictConstants::get(DictConstants::FLAG_ID, 'app_review');
         if ($this->ci['flags'][$reviewFlagId]) {

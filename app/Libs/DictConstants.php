@@ -60,6 +60,7 @@ class DictConstants {
         'type' => 'APP_CONFIG_COMMON',
         'keys' => [
             'ai_host',
+            'new_ai_host',
             'review_mobile',
             'review_validate_code',
             'super_validate_code',
