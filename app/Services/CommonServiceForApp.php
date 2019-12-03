@@ -21,10 +21,10 @@ class CommonServiceForApp
     const VALIDATE_CODE_EX = 300;
     const VALIDATE_CODE_WAIT_TIME = 60;
 
-    const SIGN_TEACHER_APP = '小叶子爱练琴';
-    const SIGN_STUDENT_APP = '小叶子爱练琴';
-    const SIGN_WX_TEACHER_APP = '小叶子爱练琴';
-    const SIGN_WX_STUDENT_APP = '小叶子爱练琴';
+    const SIGN_TEACHER_APP = '小叶子';
+    const SIGN_STUDENT_APP = '小叶子';
+    const SIGN_WX_TEACHER_APP = '小叶子';
+    const SIGN_WX_STUDENT_APP = '小叶子';
 
     /**
      * 发送短信验证码
