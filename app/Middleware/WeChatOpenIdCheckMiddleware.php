@@ -25,7 +25,8 @@ class WeChatOpenIdCheckMiddleware extends MiddlewareBase
     // 在此数组中的url，如果带了code就检查，没有也不会报错
     public static $ignoreCheckCodeUrlList = [
         "/teacher_wx/teacher/register",
-        "/student_wx/student/register"
+        "/student_wx/student/register",
+        "/classroom_teacher_wx/teacher/register",
     ];
 
     public function __invoke(Request $request, Response $response, $next)
@@ -36,22 +37,26 @@ class WeChatOpenIdCheckMiddleware extends MiddlewareBase
         $token = $tokenHeader[0] ?? null;
         $this->container["token"] = $token;
 
-        // 学生微信公众号
-        $student_needle = "/student_wx";
-        $student_length = strlen($student_needle);
-        // 老师微信公众号
-        $teacher_needle = "/teacher_wx";
-        $teacher_length = strlen($teacher_needle);
-        $user_type = WeChatService::USER_TYPE_STUDENT_ORG;
-        $app_id = UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT;
         $currentUrl = $request->getUri()->getPath();
-        if (substr($currentUrl, 0, $student_length) === $student_needle){
-            $user_type = WeChatService::USER_TYPE_STUDENT;
-            $app_id = UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT;
-        } elseif (substr($currentUrl, 0, $teacher_length) === $teacher_needle){
-            $user_type = WeChatService::USER_TYPE_TEACHER;
-            $app_id = UserCenter::AUTH_APP_ID_AIPEILIAN_TEACHER;
+
+        switch ($this->getURLPrefix($currentUrl)) {
+            case '/student_wx': // 学生微信公众号
+                $user_type = WeChatService::USER_TYPE_STUDENT;
+                $app_id = UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT;
+                break;
+            case '/teacher_wx': // 老师微信公众号
+                $user_type = WeChatService::USER_TYPE_TEACHER;
+                $app_id = UserCenter::AUTH_APP_ID_AIPEILIAN_TEACHER;
+                break;
+            case '/classroom_teacher_wx': // TheONE国际钢琴课老师端
+                $user_type = WeChatService::USER_TYPE_TEACHER;
+                $app_id = 0;
+                break;
+            default: // org
+                $user_type = WeChatService::USER_TYPE_STUDENT_ORG;
+                $app_id = UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT;
         }
+
         $checkResult = $this::checkNeedWeChatCode($request, $app_id, $user_type);
         // 是否要跳转到微信端获取用户code
         $needWeChatCode = $checkResult["needWeChatCode"];

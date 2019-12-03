@@ -50,7 +50,11 @@ class WeChatService
         UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT . "_" . UserWeixinModel::USER_TYPE_STUDENT_ORG => [
             "app_id" => "STUDENT_WEIXIN_ORG_APP_ID",
             "secret" => "STUDENT_WEIXIN_ORG_APP_SECRET"
-        ]
+        ],
+        "0_" . UserWeixinModel::USER_TYPE_TEACHER => [ //TheONE国际钢琴课
+            "app_id" => "CLASSROOM_TEACHER_WEIXIN_APP_ID",
+            "secret" => "CLASSROOM_TEACHER_WEIXIN_APP_SECRET"
+        ],
     ];
 
     protected static $redisDB;

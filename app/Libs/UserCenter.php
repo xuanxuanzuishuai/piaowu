@@ -40,6 +40,8 @@ class UserCenter
     const AUTH_APP_ID_AIPEILIAN_STUDENT = 8; //AI陪练学生
     const AUTH_APP_ID_AIPEILIAN_TEACHER = 13; //AI陪练老师
     const AUTH_APP_ID_DSS = 10; //机构员工
+    //TheONE国际钢琴课公众号，与"AI陪练老师"共用一个APP_ID，以下APP_ID仅为了区分不同的app_id和secret，不能用作其他用途
+    const AUTH_APP_ID_AIPEILIAN_CLASSROOM_TEACHER = 0;
 
     private $hostBaseUrl, $appId, $appSecret;
 

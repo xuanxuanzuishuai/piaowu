@@ -34,6 +34,7 @@ class RouterFactory
     const CLIENT_API = 'api'; // 外部api调用
     const CLIENT_EXAM_MINAPP = 'exam'; //音基小程序
     const CLIENT_CLASSROOM_APP = 'classroom_app'; //集体课
+    const CLIENT_CLASSROOM_TEACHER_WX = 'classroom_teacher_wx'; //TheONE国际钢琴课公众号老师端
 
     /**
      * client_type 对应的 Router class
@@ -51,6 +52,7 @@ class RouterFactory
         self::CLIENT_API => APIRouter::class, // 外部api调用
         self::CLIENT_EXAM_MINAPP => ExamMinAppRouter::class, //音基小程序
         self::CLIENT_CLASSROOM_APP => ClassroomAppRouter::class, //集体课
+        self::CLIENT_CLASSROOM_TEACHER_WX => ClassroomTeacherWXRouter::class, //TheONE国际钢琴课公众号老师端
     ];
 
     /**

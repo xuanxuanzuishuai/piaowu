@@ -8,7 +8,9 @@
 namespace App\Services;
 
 
+use App\Libs\Exceptions\RunTimeException;
 use App\Libs\Util;
+use App\Models\ClassV1UserModel;
 use App\Models\HomeworkCompleteModel;
 use App\Models\HomeworkModel;
 use App\Models\HomeworkTaskModel;
@@ -54,6 +56,61 @@ class HomeworkService
         return $homework_id;
     }
 
+    public static function createHomeworkForClass($classId, $scheduleId, $orgId, $teacherId, $daysLimit, $remark, array $content)
+    {
+        $students = ClassV1UserModel::getRecords([
+            'class_id'  => $classId,
+            'user_role' => ClassV1UserModel::ROLE_STUDENT,
+            'status'    => ClassV1UserModel::STATUS_NORMAL
+        ], 'user_id', false);
+        $createdTime = time();
+        $endTime = strtotime('today') + $daysLimit * 86400 + 86399;
+        $students[] = 0; //student_id为0的记录表示班级作业
+
+        $tasks = [];
+
+        foreach($students as $studentId) {
+            $homeworkId = HomeworkModel::createHomework($scheduleId, $orgId, $teacherId, $studentId, $createdTime,
+                $endTime, $remark, $classId);
+            if(empty($homeworkId)) {
+                throw new RunTimeException(['create_homework_fail']);
+            }
+            foreach ($content as $task) {
+                if (empty($task["lesson_id"])) {
+                    // ISSUE http://sentry.xiaoyezi.com/sentry/dss_crm_prod/issues/53325/
+                    // $task["lesson_id"] can never be null
+                    SimpleLogger::error("TASK_ID_IS_NULL", $task);
+                    continue;
+                }
+
+                $noteIds = !empty($task['note_ids']) ? implode(',', $task['note_ids']) : '';
+                $audio = $task['homework_audio'] ?? null;
+                $audioDuration = $task['audio_duration'] ?? 0;
+
+                $tasks[] = [
+                    'homework_id'     => $homeworkId,
+                    'lesson_id'       => $task["lesson_id"],
+                    'lesson_name'     => $task["lesson_name"],
+                    'collection_id'   => $task["collection_id"],
+                    'collection_name' => $task["collection_name"],
+                    'baseline'        => json_encode($task["baseline"], 1),
+                    'note_ids'        => $noteIds,
+                    'homework_audio'  => $audio,
+                    'audio_duration'  => $audioDuration
+                ];
+            }
+        }
+
+        if(count($tasks) > 0) {
+            $success = HomeworkTaskModel::batchInsert($tasks, false);
+            if(!$success) {
+                throw new RunTimeException(['save_homework_task_fail']);
+            }
+        }
+
+        return count($students);
+    }
+
     /**
      * 获取学生当前未过期的作业
      * @param int $studentId 学生ID
@@ -80,16 +137,23 @@ class HomeworkService
      * @param int $startTime
      * @param $endTime
      * @param $homework_ids
+     * @param $classId
      * @return array
      */
     public static function getStudentHomeWorkList($studentId, $teacherId=null, $pageId=-1,
                                                   $pageLimit=0, $startTime=null, $endTime=null,
-                                                  $homework_ids=null)
+                                                  $homework_ids=null, $classId = 0)
     {
         $where = [
-            HomeworkModel::$table . ".student_id" => $studentId,
-            'ORDER' => ['created_time' => 'DESC']
+            'ORDER' => ['created_time' => 'DESC'],
         ];
+
+        if(!empty($studentId)) {
+            $where[HomeworkModel::$table . ".student_id"] = $studentId;
+        }
+        if(!empty($classId)) {
+            $where[HomeworkModel::$table . ".class_id"] = $classId;
+        }
         if (!empty($teacherId)) {
             $where[HomeworkModel::$table . ".teacher_id"] = $teacherId;
         }

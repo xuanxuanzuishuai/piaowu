@@ -50,7 +50,6 @@ class HttpHelper
     }
 
     /**
-<<<<<<< HEAD
      * @param $api
      * @param array $params
      * @param string $method

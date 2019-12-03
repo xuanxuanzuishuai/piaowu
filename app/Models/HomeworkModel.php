@@ -21,12 +21,13 @@ class HomeworkModel extends Model
      * @param $org_id
      * @param $teacher_id
      * @param $student_id
+     * @param $class_id
      * @param $created_time
      * @param $end_time
      * @param $remark
      * @return int|mixed|null|string
      */
-    public static function createHomework($schedule_id, $org_id, $teacher_id, $student_id, $created_time, $end_time, $remark)
+    public static function createHomework($schedule_id, $org_id, $teacher_id, $student_id, $created_time, $end_time, $remark, $class_id = 0)
     {
         return MysqlDB::getDB()->insertGetID(self::$table, [
             'schedule_id' => $schedule_id,
@@ -34,6 +35,7 @@ class HomeworkModel extends Model
             'created_time' => $created_time,
             'teacher_id' => $teacher_id,
             'student_id' => $student_id,
+            'class_id' => $class_id,
             'end_time' => $end_time,
             'remark' => $remark
         ]);

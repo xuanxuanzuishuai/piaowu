@@ -10,8 +10,9 @@ namespace App\Controllers\TeacherWX;
 
 
 use App\Controllers\ControllerBase;
+use App\Libs\Exceptions\RunTimeException;
+use App\Libs\HttpHelper;
 use App\Libs\MysqlDB;
-use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\HomeworkModel;
@@ -36,11 +37,6 @@ class HomeWork extends ControllerBase
     {
 
         $rules = [
-            [
-                'key' => 'student_id',
-                'type' => 'required',
-                'error_code' => 'student_id_is_required'
-            ],
             [
                 'key' => 'org_id',
                 'type' => 'required',
@@ -69,11 +65,27 @@ class HomeWork extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
+        if((empty($params['class_id']) && empty($params['student_id'])) ||
+            (!empty($params['class_id']) && !empty($params['student_id']))) {
+            return $response->withJson(Valid::addAppErrors([], 'class_id_student_id_only_one_not_empty'));
+        }
+
         $user_id = $this->ci['user_info']['user_id'];
         $db = MysqlDB::getDB();
         $db->beginTransaction();
-        $homework_id = HomeworkService::createHomework($params["schedule_id"], $params["org_id"], $user_id, $params["student_id"],
-            $params["days_limit"], $params["remark"] ?? "", $params["content"]);
+
+        if(!empty($params['class_id'])) {
+            try {
+                $homework_id = HomeworkService::createHomeworkForClass($params['class_id'], $params["schedule_id"], $params["org_id"], $user_id,
+                    $params["days_limit"], $params["remark"] ?? "", $params["content"]);
+            } catch (RunTimeException $e) {
+                $db->rollBack();
+                return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+            }
+        } else {
+            $homework_id = HomeworkService::createHomework($params["schedule_id"], $params["org_id"], $user_id, $params["student_id"],
+                $params["days_limit"], $params["remark"] ?? "", $params["content"]);
+        }
 
         $db->commit();
 
@@ -417,16 +429,6 @@ class HomeWork extends ControllerBase
     public function getHomeworkPlayRecordList(Request $request, Response $response){
         $rules = [
             [
-                'key' => 'student_id',
-                'type' => 'required',
-                'error_code' => 'student_id_is_required'
-            ],
-            [
-                'key' => 'student_id',
-                'type' => 'integer',
-                'error_code' => 'student_id_must_be_integer'
-            ],
-            [
                 'key' => 'page',
                 'type' => 'integer',
                 'error_code' => 'page_must_be_integer'
@@ -444,6 +446,14 @@ class HomeWork extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
+        if((empty($params['student_id']) && empty($params['class_id'])) ||
+            (!empty($params['student_id']) && !empty($params['class_id']))) {
+            return HttpHelper::buildErrorResponse($response, RunTimeException::makeAppErrorData('class_id_student_id_only_one_not_empty'));
+        }
+
+        $student_id = $params['student_id'] ?? 0;
+        $class_id = $params['class_id'] ?? 0;
+
         $user_id = $this->ci['user_info']['user_id'];
         if(empty($params["page"])){
             $params["page"] = 1;
@@ -453,14 +463,23 @@ class HomeWork extends ControllerBase
         }
 
         // 这里以homework分页，不是以task分页
-        $homework_list = HomeworkModel::getRecords([
-            "student_id" => $params["student_id"],
+        $where = [
             "teacher_id" => $user_id,
             "LIMIT" => [($params["page"] - 1) * $params["limit"], $params["limit"]],
             "ORDER" => [
                 "created_time" => "DESC"
             ]
-        ]);
+        ];
+        if(!empty($class_id)) {
+            $where['class_id'] = $class_id;
+            $where['student_id'] = 0;
+        }
+        if(!empty($student_id)) {
+            $where['student_id'] = $student_id;
+        }
+
+        $homework_list = HomeworkModel::getRecords($where);
+
         if (empty($homework_list)){
             $response->withJson([
                 'code' => Valid::CODE_SUCCESS,
@@ -472,8 +491,8 @@ class HomeWork extends ControllerBase
             array_push($homework_ids, $value["id"]);
         }
 
-        $data = HomeworkService::getStudentHomeWorkList($params["student_id"],
-            $user_id, null, null, null, null, $homework_ids);
+        $data = HomeworkService::getStudentHomeWorkList($student_id,
+            $user_id, null, null, null, null, $homework_ids, $class_id);
         $temp = [];
         $current_time = time();
         $lesson_ids = [];
@@ -493,7 +512,7 @@ class HomeWork extends ControllerBase
 
             $playRecordStatistic = PlayRecordModel::getPlayRecordList($homeworkId, $homework['task_id'], $homework['lesson_id'],
                 (int)$homework['created_time'], (int)$homework['end_time'], true, null,
-                null, $params["student_id"]);
+                null, $student_id);
             $playRecordStatistic = $playRecordStatistic[0];
             $task["duration"] = $playRecordStatistic["duration"];
             $task["play_count"] = $playRecordStatistic["play_count"];

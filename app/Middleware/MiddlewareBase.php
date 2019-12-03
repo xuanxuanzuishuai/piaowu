@@ -31,4 +31,15 @@ class MiddlewareBase
         $flags[$flagId] = $value;
         $this->container['flags'] = $flags;
     }
+
+    //getURLPrefix return '/a' of '/a/b/c'
+    protected function getURLPrefix($path)
+    {
+        for($i = 1; $i < strlen($path); $i++) {
+            if($path[$i] == '/') {
+                return substr($path, 0, $i);
+            }
+        }
+        return $path;
+    }
 }

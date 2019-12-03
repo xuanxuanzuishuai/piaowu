@@ -9,7 +9,6 @@
 namespace App\Middleware;
 
 use App\Libs\SimpleLogger;
-use App\Models\OrganizationModel;
 use Slim\Http\Request;
 use App\Libs\Valid;
 use Slim\Http\StatusCode;
@@ -41,19 +40,22 @@ class WeChatAuthCheckMiddleware extends MiddlewareBase
             return $response->withJson(Valid::addAppErrors([], 'token_expired'), StatusCode::HTTP_OK);
         }
 
-        // 学生微信公众号
-        $student_needle = "/student_wx";
-        $student_length = strlen($student_needle);
-        // 老师微信公众号
-        $teacher_needle = "/teacher_wx";
-        $teacher_length = strlen($teacher_needle);
-        $user_type = WeChatService::USER_TYPE_STUDENT_ORG;
         $currentUrl = $request->getUri()->getPath();
-        if (substr($currentUrl, 0, $student_length) === $student_needle){
-            $user_type = WeChatService::USER_TYPE_STUDENT;
-        } elseif (substr($currentUrl, 0, $teacher_length) === $teacher_needle){
-            $user_type = WeChatService::USER_TYPE_TEACHER;
+
+        switch ($this->getURLPrefix($currentUrl)) {
+            case '/student_wx': // 学生微信公众号
+                $user_type = WeChatService::USER_TYPE_STUDENT;
+                break;
+            case '/teacher_wx': // 老师微信公众号
+                $user_type = WeChatService::USER_TYPE_TEACHER;
+                break;
+            case '/classroom_teacher_wx': // TheONE国际钢琴课老师端
+                $user_type = WeChatService::USER_TYPE_TEACHER;
+                break;
+            default:
+                $user_type = WeChatService::USER_TYPE_STUDENT_ORG;
         }
+
         // 根据url确认哪种类型的用户，并检查当前token中保存的信息是否是该用户
         if ($user_type != (int)$userInfo["user_type"]){
             SimpleLogger::info("Invalid Token Access", [$user_type, (int)$userInfo["user_type"]]);
