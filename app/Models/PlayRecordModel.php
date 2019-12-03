@@ -392,6 +392,8 @@ class PlayRecordModel extends Model
     public static function getRank($lessonId, $students=[]){
         $limit = self::RANK_LIMIT;
         $lessonType = PlayRecordModel::TYPE_AI;
+        $cfgHandBoth = PlayRecordModel::CFG_HAND_BOTH;
+        $cfgModeNormal = PlayRecordModel::CFG_MODE_NORMAL;
         $aiTypeFragement = PlayRecordModel::AI_EVALUATE_FRAGMENT;
         $lowestScore = 60;
         if(empty($students)){
@@ -407,6 +409,9 @@ class PlayRecordModel extends Model
                       LEFT JOIN student ON play_record.student_id = student.id
                       WHERE play_record.lesson_id = {$lessonId}
                         AND play_record.lesson_type = {$lessonType}
+                        AND play_record.is_frag = 0
+                        AND play_record.cfg_hand = {$cfgHandBoth}
+                        AND play_record.cfg_mode = {$cfgModeNormal}
                         AND play_record.score >= {$lowestScore}
                         AND play_record.ai_type != {$aiTypeFragement}
                       ORDER BY score DESC) t
@@ -428,6 +433,9 @@ class PlayRecordModel extends Model
                       LEFT JOIN student ON play_record.student_id = student.id
                       WHERE play_record.lesson_id = {$lessonId}
                         AND play_record.lesson_type = {$lessonType}
+                        AND play_record.is_frag = 0
+                        AND play_record.cfg_hand = {$cfgHandBoth}
+                        AND play_record.cfg_mode = {$cfgModeNormal}
                         AND play_record.score >= {$lowestScore}
                         AND play_record.student_id IN {$students}
                         AND play_record.ai_type!= {$aiTypeFragement}
