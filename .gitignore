@@ -2,7 +2,7 @@
 /logs/*
 /.idea/*
 .env*
-composer.lock
+composer.json
 .local
 www/act/.DS_Store
 .php_cs.*
