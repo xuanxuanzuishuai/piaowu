@@ -391,12 +391,25 @@ class StudentService
                 default:
                     $statusStr = '';
             }
+            //如果激活码使用时间超过10年，在激活码后面的有效期显示为【长期有效】，不显示具体的年限
+            if ($code['valid_units'] == GiftCodeModel::CODE_TIME_YEAR) {
+                $validityTime = $code['valid_num'] * 12;
+            } elseif ($code['valid_units'] == GiftCodeModel::CODE_TIME_DAY) {
+                $validityTime = round($code['valid_num'] / 31);
+            } else {
+                $validityTime = $code['valid_num'];
+            }
+            $duration = $code['valid_num'] . Dict::getCodeTimeUnit($code['valid_units']);
+            //判断条件为月的数量：10年120个月
+            if ($validityTime > 120) {
+                $duration = "长期有效";
+            }
 
             $info = [
                 'code' => $code['code'],
                 'status' => $code['code_status'],
                 'status_zh' => $statusStr,
-                'duration' => $code['valid_num'] . Dict::getCodeTimeUnit($code['valid_units']),
+                'duration' => $duration,
             ];
 
             $result[] = $info;
