@@ -63,7 +63,7 @@ class ClassroomAppModel
     public static function setScheduleToken($token, $value)
     {
         $conn = self::getConn();
-        return $conn->setex(self::$scheduleTokenPrefix . $token, 2 * 3600, json_encode($value, 1)); // 通常一节课不会超过2个小时
+        return $conn->setex(self::$scheduleTokenPrefix . $token, 24 * 3600, json_encode($value, 1)); // 24小时后自动下课
     }
 
     public static function addScheduleSet($orgId, array $token)
