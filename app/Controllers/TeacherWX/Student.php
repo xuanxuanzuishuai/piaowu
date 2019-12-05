@@ -11,6 +11,7 @@ namespace App\Controllers\TeacherWX;
 
 use App\Controllers\ControllerBase;
 use App\Libs\Valid;
+use App\Models\ClassV1UserModel;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -34,8 +35,10 @@ class Student extends ControllerBase
 
         $user_id = $this->ci['user_info']['user_id'];
         $result = TeacherStudentModel::getStudents($user_id);
+        $classes = ClassV1UserModel::selectClassesByTeacher($user_id);
 
         $data = [];
+        //学生列表
         foreach ($result as $value) {
             $org_id = $value["org_id"];
             if (array_key_exists($value["org_id"], $data))
@@ -44,6 +47,13 @@ class Student extends ControllerBase
             } else {
                 $data[$org_id] = ["student_list" => [$value], "org_id" => $org_id, "org_name" => $value["org_name"]];
             }
+        }
+
+        //教室列表
+        foreach ($classes as $value) {
+            $data[$value['org_id']]['class_list'][] = $value;
+            $data[$value['org_id']]['org_id'] = $value['org_id'];
+            $data[$value['org_id']]['org_name'] = $value['org_name'];
         }
 
         return $response->withJson([

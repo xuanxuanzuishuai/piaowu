@@ -116,4 +116,24 @@ from class_user_v1 c
 
         return $records;
     }
+
+    public static function selectClassesByTeacher($teacherId)
+    {
+        $u = ClassV1UserModel::$table;
+        $c = ClassV1Model::$table;
+        $o = OrganizationModel::$table;
+
+        $map = [
+            ':user_id'   => $teacherId,
+            ':user_role' => ClassV1UserModel::ROLE_TEACHER,
+            ':sc'        => ClassV1Model::STATUS_CREATE,
+            ':su'        => ClassV1UserModel::STATUS_NORMAL,
+        ];
+
+        $db = MysqlDB::getDB();
+        $records = $db->queryAll("select c.org_id, o.name org_name, u.class_id, c.name class_name from {$u} u inner join {$c} c on u.class_id = c.id inner join {$o} o
+on o.id = c.org_id and u.user_id = :user_id and u.user_role = :user_role and c.status = :sc and u.status = :su group by u.class_id", $map);
+
+        return $records;
+    }
 }
