@@ -161,18 +161,20 @@ class FlagsService
             return false;
         }
 
+        /** is_opposite 表示反转条件判断 */
+
         $flagBit = self::getFlagBit($flagId);
         $flags = $object['flags'];
         if (($flags & $flagBit) == $flagBit) {
-            return true;
+            return $flagInfo['is_opposite'] ? false : true;
         }
 
         $hasAutoFlag = FilterService::checkFlagFilters($object, $flagId);
         if ($hasAutoFlag) {
-            return true;
+            return $flagInfo['is_opposite'] ? false : true;
         }
 
-        return false;
+        return $flagInfo['is_opposite'] ? true : false;
     }
 
     /**
