@@ -78,7 +78,8 @@ class HomeworkTaskModel extends Model
             . HomeworkModel::$table . " on " . self::$table . ".homework_id = " . HomeworkModel::$table . ".id" .
             " where " . HomeworkModel::$table . ".teacher_id=" . $teacher_id;
 
-        if (!empty($student_id)){
+        //也接受student_id是0，'0'
+        if (!is_null($student_id)){
             $query = $query . " and " . HomeworkModel::$table .".student_id=" . $student_id;
         }
         $query = $query . " order by " . HomeworkModel::$table .
