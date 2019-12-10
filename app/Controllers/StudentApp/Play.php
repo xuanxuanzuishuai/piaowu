@@ -181,9 +181,11 @@ class Play extends ControllerBase
             return $response->withJson($errors, StatusCode::HTTP_OK);
         }
 
-        if ($param['data']['is_frag'] == 0 &&
-            $param['data']['cfg_hand'] == PlayRecordModel::CFG_HAND_BOTH &&
-            $param['data']['cfg_mode'] == PlayRecordModel::CFG_MODE_NORMAL
+        if ($param['data']['is_frag'] != 1 &&
+            $param['data']['cfg_hand'] != PlayRecordModel::CFG_HAND_LEFT &&
+            $param['data']['cfg_hand'] != PlayRecordModel::CFG_HAND_RIGHT &&
+            $param['data']['cfg_mode'] != PlayRecordModel::CFG_MODE_SLOW &&
+            $param['data']['cfg_mode'] != PlayRecordModel::CFG_MODE_STEP
         ) {
             // 检查作业
             $param['data']['record_id'] = $ret['record_id'];
