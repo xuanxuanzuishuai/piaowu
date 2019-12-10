@@ -75,14 +75,19 @@ class OrgAccountModel extends Model
         $oa = OrgAccountModel::$table;
         $o  = OrganizationModel::$table;
         $l  = OrgLicenseModel::$table;
+        $v  = OrgAccountModel::TYPE_1V1;
+        $c  = OrgAccountModel::TYPE_CLASSROOM;
+        $lv = OrgLicenseModel::TYPE_APP;
+        $lc = OrgLicenseModel::TYPE_CLASSROOM_NUM;
 
         $limit = Util::limitation($page, $count);
 
         $db = MysqlDB::getDB();
 
         $records = $db->queryAll("select oa.org_id, oa.id, o.name org_name, oa.account, oa.status, oa.last_login_time, oa.type, 
-        ifnull((select sum(license_num) from {$l} l where l.org_id = o.id and l.status = :status and l.active_time < :now 
-        and l.expire_time > :now), 0) license_num from {$oa} oa left join {$o} o on o.id = oa.org_id 
+        ifnull((case oa.type when {$v} then (select sum(license_num) from {$l} l where l.org_id = o.id and l.status = :status and l.active_time < :now 
+        and l.expire_time > :now and l.type = {$lv}) when {$c} then (select sum(license_num) from {$l} l where l.org_id = o.id and l.status = :status and l.active_time < :now 
+        and l.expire_time > :now and l.type = {$lc}) else 0 end), 0) as license_num from {$oa} oa left join {$o} o on o.id = oa.org_id 
         where {$where} order by oa.create_time desc {$limit} ", $map);
 
         $total = $db->queryAll("select count(*) count from (select oa.id, 
