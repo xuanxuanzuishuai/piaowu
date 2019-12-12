@@ -71,6 +71,13 @@ class ClassroomAppService
         $startTime = $expire['active_time'] ?? 0;
         $endTime = empty($expire['active_time']) ? 0 : Util::computeExpire($startTime, $expire['duration'], $expire['duration_unit']);
 
+        //检查服务费是否激活或过期
+        if($startTime == 0) {
+            throw new RunTimeException(['please_active_license_first']);
+        } else if(time() >= $endTime) {
+            throw new RunTimeException(['license_expired']);
+        }
+
         //如果登录时知道曾用离线模式登录，需要在缓存中记录
         $offlineForbidden = 0;
         if(!empty($params['used_offline'])) {

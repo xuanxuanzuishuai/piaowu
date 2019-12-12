@@ -134,6 +134,7 @@ class OrgLicenseModel extends Model
         $map = [
             ':org_id' => $orgId,
             ':status' => Constants::STATUS_TRUE,
+            ':type'   => OrgLicenseModel::TYPE_CLASSROOM,
         ];
 
         $db = MysqlDB::getDB();
@@ -142,9 +143,11 @@ from org_license
 where expire_time = (select max(expire_time)
                      from org_license
                      where org_id = :org_id
+                       and type = :type
                        and status = :status)
   and org_id = :org_id
   and status = :status
+  and type = :type
 order by create_time desc", $map);
 
         return empty($records) ? [] : $records[0];
