@@ -33,3 +33,5 @@ CREATE TABLE `classroom_device` (
 
 insert into dict (type, key_name, key_code, key_value, `desc`)
 values ('classroom_app_config', '最大离线登录次数', 'used_offline', 3, '最大离线登录次数');
+
+alter table homework add column (class_id int not null default '0' comment '班级ID');
