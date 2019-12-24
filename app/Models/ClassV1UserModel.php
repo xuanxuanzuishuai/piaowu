@@ -9,6 +9,7 @@
 namespace App\Models;
 
 
+use App\Libs\Constants;
 use App\Libs\MysqlDB;
 
 class ClassV1UserModel extends Model
@@ -135,5 +136,35 @@ from class_user_v1 c
 on o.id = c.org_id and u.user_id = :user_id and u.user_role = :user_role and c.status = :sc and u.status = :su group by u.class_id", $map);
 
         return $records;
+    }
+
+    /**
+     * 查询指定学生所在教室里所有老师id
+     * @param $studentId
+     * @return array
+     */
+    public static function selectClassTeacherByStudent($studentId)
+    {
+        $c = ClassV1UserModel::$table;
+        $r1 = ClassV1UserModel::ROLE_STUDENT;
+        $r2 = ClassV1UserModel::ROLE_TEACHER;
+        $s = Constants::STATUS_TRUE;
+
+        $map = [
+            ':student_id' => $studentId
+        ];
+
+        $db = MysqlDB::getDB();
+
+        $records = $db->queryAll("select distinct (c2.user_id) teacher_id
+from {$c} c1
+       left join {$c} c2 on c1.class_id = c2.class_id
+where c1.user_role = {$r1}
+  and c2.user_role = {$r2}
+  and c1.status = {$s}
+  and c2.status = {$s}
+  and c1.user_id = :student_id", $map);
+
+        return empty($records) ? [] : array_column($records, 'teacher_id');
     }
 }
