@@ -232,6 +232,9 @@ class StudentServiceForApp
         }
 
         $teachers = StudentModelForApp::getTeacherIds($student['id']);
+        //学生所在教室对应的所有老师ID
+        $classTeachers = ClassV1UserModel::selectClassTeacherByStudent($student['id']);
+        $teachers = array_unique(array_merge($teachers, $classTeachers));
 
         $flags = FlagsService::flagsToArray($student['flags']);
 
