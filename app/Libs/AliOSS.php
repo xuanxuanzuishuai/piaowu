@@ -26,6 +26,8 @@ class AliOSS
     const DIR_EXAM_IMG = 'exam_img'; // 音基小程序图片
     const DIR_CONVERSE_AUDIO = 'converse_audio'; // 百度转换语音
     const DIR_MADE_AUDIO = 'made_audio'; // 自制音频
+    //点评课
+    const DIR_REVIEW_COURSE_AUDIO = 'review_course_audio'; // 点评课语音
 
     const PROCESS_STYLE_NOTE_THUMB = 'note_thumb'; // 老师笔记缩略图 image/auto-orient,1/resize,p_25/quality,q_70
 
@@ -359,6 +361,7 @@ class AliOSS
             self::DIR_CONVERSE_AUDIO,
             self::DIR_MADE_AUDIO,
             self::DIR_EXAM_IMG,
+            self::DIR_REVIEW_COURSE_AUDIO
         ];
         if (!in_array($dirType, $typeConstants)) {
             return null;
