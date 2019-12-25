@@ -294,6 +294,7 @@ class OrgWebRouter extends RouterBase
         '/org_web/review_course/student_report_detail' => ['method' => ['get'], 'call' => ReviewCourse::class . ':studentReportDetail'],
         '/org_web/review_course/student_report_detail_dynamic' => ['method' => ['get'], 'call' => ReviewCourse::class . ':studentReportDetailDynamic'],
         '/org_web/review_course/student_report_detail_ai' => ['method' => ['get'], 'call' => ReviewCourse::class . ':studentReportDetailAI'],
+        '/org_web/review_course/simple_review' => ['method' => ['post'], 'call' => ReviewCourse::class . ':simpleReview'],
 
         // 班级添加
         '/classv1/class/add' => ['method' => ['post'], 'call' => ClassV1::class . ':add'],

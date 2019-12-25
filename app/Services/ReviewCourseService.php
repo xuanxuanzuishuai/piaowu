@@ -8,10 +8,14 @@
 
 namespace App\Services;
 
-
+use App\Libs\SimpleLogger;
+use App\Models\EmployeeModel;
+use App\Models\ReviewCourseLogModel;
+use GuzzleHttp\Exception\GuzzleException;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\OpernCenter;
+use App\Libs\UserCenter;
 use App\Libs\Util;
 use App\Models\PlayRecordModel;
 use App\Models\ReviewCourseModel;
@@ -364,5 +368,89 @@ class ReviewCourseService
         }
 
         return $records;
+    }
+
+    /**
+     * 发送点评
+     * 从学生详情直接发送
+     * @param int $studentId
+     * @param int $reviewerId
+     * @param int $date 20191201
+     * @param string $audio
+     * @return bool
+     * @throws RunTimeException
+     */
+    public static function simpleReview($studentId, $reviewerId, $date, $audio)
+    {
+        $studentWeChatInfo = UserWeixinModel::getBoundInfoByUserId($studentId,
+            UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
+            WeChatService::USER_TYPE_STUDENT
+        );
+        if (empty($studentWeChatInfo)) {
+            throw new RunTimeException(['review_student_need_bind_wx']);
+        }
+
+        $reviewer = EmployeeModel::getById($reviewerId);
+        if (empty($reviewer)) {
+            throw new RunTimeException(['review_reviewer_not_exist']);
+        }
+
+        // 日期格式化为 20120101
+        $dayTime = strtotime($date);
+        if (empty($dayTime)) {
+            throw new RunTimeException(['invalid_date']);
+        }
+        $date = date('Ymd', $dayTime);
+
+        $now = time();
+        $retId = ReviewCourseLogModel::insertRecord([
+            'student_id' => $studentId,
+            'reviewer_id' => $reviewerId,
+            'date' => $date,
+            'create_time' => $now,
+            'audio' => $audio,
+            'send_time' => $now,
+        ], false);
+
+        if (empty($retId)) {
+            throw new RunTimeException(['insert_failure']);
+        }
+
+        $data = [
+            'first' => [
+                'value' => "老师点评通知",
+            ],
+            'keyword1' => [
+                'value' => '小叶子智能陪练课'
+            ],
+            'keyword2' => [
+                'value' => '智能陪练课后点评'
+            ],
+            'keyword3' => [
+                'value' => $reviewer['name'] ?? ''
+            ],
+            'keyword4' => [
+                'value' => '点击查看老师的点评信息吧！'
+            ],
+            'remark' => [
+                'value' => ''
+            ]
+        ];
+
+        try {
+            WeChatService::notifyUserWeixinTemplateInfo(
+                UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
+                WeChatService::USER_TYPE_STUDENT,
+                $studentWeChatInfo["open_id"],
+                $_ENV["WECHAT_TEMPLATE_REVIEW_COURSE"],
+                $data,
+                $_ENV["WECHAT_FRONT_DOMAIN"] . "/student/review?date=" . $date
+            );
+        } catch (GuzzleException $e) {
+            SimpleLogger::error(__FILE__ . ':' . __LINE__, [print_r($e->getMessage(), true)]);
+            return false;
+        }
+
+        return true;
     }
 }

@@ -202,3 +202,5 @@ nickname_is_invalid='昵称不合法，只允许输入10位以内中文、字母
 data_error='数据错误'
 mobile_has_been_registered='用户已经注册'
 web_create_bill_error='下单失败，不能重复购买哦'
+review_student_need_bind_wx='学生未绑定公众号'
+review_reviewer_not_exist='点评老师不存在'

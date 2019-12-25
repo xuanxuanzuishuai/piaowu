@@ -131,4 +131,27 @@ class ReviewCourse extends ControllerBase
 
         return HttpHelper::buildResponse($response, ['detail_ai' => $detailAI, 'token' => $token ?? '']);
     }
+
+    /**
+     * 发送点评
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function simpleReview(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+
+        try {
+            ReviewCourseService::simpleReview($params['student_id'],
+                $params['reviewer_id'],
+                $params['date'],
+                $params['audio']);
+
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+
+        return HttpHelper::buildResponse($response, []);
+    }
 }
