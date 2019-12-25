@@ -10,7 +10,9 @@ namespace App\Controllers\StudentWeb;
 
 use App\Controllers\ControllerBase;
 use App\Libs\Valid;
+use App\Models\StudentWeChatModel;
 use App\Services\PayServices;
+use App\Services\WeChatService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -37,11 +39,27 @@ class Pay extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        // pay_channel 1 支付宝 2 微信
+        $extendedParams = [];
+
+        //公众号支付，open_id是必填参数
+        if($params['pay_channel'] == PayServices::PAY_CHANNEL_PUB) {
+            if(empty($params['wx_code'])) {
+                return $response->withJson(Valid::addAppErrors([], 'wx_code_can_not_be_empty'));
+            }
+            $data = WeChatService::getWeixnUserOpenIDAndAccessTokenByCode($params['wx_code'], WeChatService::USER_TYPE_STUDENT, UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT);
+            if(!empty($data)) {
+                $extendedParams['open_id'] = $data['openid'];
+            } else {
+                return $response->withJson(Valid::addAppErrors([], 'can_not_obtain_open_id'));
+            }
+        }
+
+        // pay_channel 1 支付宝 2 微信H5 21 微信公众号
         $ret = PayServices::webCreateBill(
             $params['uuid'],
             $params['pay_channel'],
-            $_SERVER['HTTP_X_REAL_IP']
+            $_SERVER['HTTP_X_REAL_IP'],
+            $extendedParams
         );
 
         if (empty($ret)) {

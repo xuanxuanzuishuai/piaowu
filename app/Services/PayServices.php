@@ -20,6 +20,8 @@ class PayServices
     const BILL_STATUS_PROCESSING = '0';
     const BILL_STATUS_FAILED = '-1';
 
+    const PAY_CHANNEL_PUB = 21; //微信公众号内支付
+
     /**
      * 获取产品包
      * @param int $studentId
@@ -140,9 +142,10 @@ class PayServices
      * @param $uuid
      * @param $payChannel
      * @param $clientIp
+     * @param $params
      * @return array
      */
-    public static function webCreateBill($uuid, $payChannel, $clientIp)
+    public static function webCreateBill($uuid, $payChannel, $clientIp, $params = [])
     {
         $erp = new Erp();
 
@@ -162,7 +165,8 @@ class PayServices
                 'success_url' => $successUrl,
                 'cancel_url' => $cancelUrl,
                 'result_url' => $resultUrl,
-            ]
+            ],
+            $params
         );
 
         return $ret;

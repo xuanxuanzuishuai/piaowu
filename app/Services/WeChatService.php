@@ -165,6 +165,8 @@ class WeChatService
             if (!empty($data)) {
                 return $data;
             }
+        } else {
+            SimpleLogger::error('obtain_openid_access_token_error', ['error' => $response->getBody()->getContents()]);
         }
 
         return false;

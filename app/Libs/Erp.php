@@ -71,9 +71,10 @@ class Erp
      * @param $amount
      * @param $oprice
      * @param $callbacks
+     * @param $params
      * @return array
      */
-    public function createBill($uuid, $packageId, $payChannel, $clientIp, $amount, $oprice, $callbacks)
+    public function createBill($uuid, $packageId, $payChannel, $clientIp, $amount, $oprice, $callbacks, $params = [])
     {
         $data = [
             'type' => 3, // 购买课程
@@ -97,6 +98,14 @@ class Erp
 
             'ip' => $clientIp, // 微信H5支付需要客户端ip
         ];
+
+        //把扩展参数合并进data，注意这里不会覆盖原有的key
+        foreach($params as $key => $value) {
+            if(!isset($data[$key])) {
+                $data[$key] = $value;
+            }
+        }
+
         $result = self::commonAPI(self::API_CREATE_BILL, $data, 'POST');
         return $result;
     }
