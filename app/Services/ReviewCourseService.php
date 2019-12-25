@@ -8,6 +8,7 @@
 
 namespace App\Services;
 
+use App\Libs\AliOSS;
 use App\Libs\SimpleLogger;
 use App\Models\EmployeeModel;
 use App\Models\ReviewCourseLogModel;
@@ -452,5 +453,34 @@ class ReviewCourseService
         }
 
         return true;
+    }
+
+    /**
+     * 获取点评详情
+     * @param $studentId
+     * @param $date
+     * @return array
+     * @throws RunTimeException
+     */
+    public static function getReview($studentId, $date)
+    {
+        // 日期格式化为 20120101
+        $dayTime = strtotime($date);
+        if (empty($dayTime)) {
+            throw new RunTimeException(['invalid_date']);
+        }
+        $date = date('Ymd', $dayTime);
+
+        $data = ReviewCourseLogModel::getRecord(['student_id' => $studentId, 'date' => $date], '*', false);
+        if (empty($data)) {
+            return [];
+        }
+
+        $review = [
+            'id' => $data['id'],
+            'audio' => AliOSS::signUrls($data['audio']),
+        ];
+
+        return $review;
     }
 }

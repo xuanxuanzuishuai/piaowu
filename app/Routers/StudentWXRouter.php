@@ -9,6 +9,7 @@
 namespace App\Routers;
 
 
+use App\Controllers\StudentWX\ReviewCourse;
 use App\Controllers\StudentWX\PlayRecord;
 use App\Controllers\StudentWX\PlayRecordForPanda;
 use App\Controllers\StudentWX\Student;
@@ -53,6 +54,11 @@ class StudentWXRouter extends RouterBase
             'middles' => []
         ],
 
+        '/student_wx/review_course/get_review' => [
+            'method' => ['get'],
+            'call' => ReviewCourse::class . ':getReview',
+        ],
+
         '/student_org_wx/student/register' => array('method'=>array('post'),'call'=>'\App\Controllers\StudentOrgWX\Student:register', 'middles' => array('\App\Middleware\WeChatOpenIdCheckMiddleware')),
         '/student_org_wx/student/login' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentOrgWX\Student:login', 'middles' => array('\App\Middleware\WeChatOpenIdCheckMiddleware')),
         '/student_org_wx/student/send_sms_code' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentOrgWX\Student:sendSmsCode', 'middles' => array()),
@@ -94,6 +100,5 @@ class StudentWXRouter extends RouterBase
             'call' => PlayRecordForPanda::class . ':getDayPlayedStudents',
             'middles' => []
         ],
-
     ];
 }
