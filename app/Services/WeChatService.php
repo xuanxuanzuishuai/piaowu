@@ -55,6 +55,10 @@ class WeChatService
             "app_id" => "CLASSROOM_TEACHER_WEIXIN_APP_ID",
             "secret" => "CLASSROOM_TEACHER_WEIXIN_APP_SECRET"
         ],
+        '1_' . UserWeixinModel::USER_TYPE_STUDENT => [ //landing页公众号内支付
+            "app_id" => "STUDENT_PUB_PAY_APP_ID",
+            "secret" => "STUDENT_PUB_PAY_APP_SECRET"
+        ]
     ];
 
     protected static $redisDB;

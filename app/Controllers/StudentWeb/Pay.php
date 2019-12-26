@@ -10,12 +10,12 @@ namespace App\Controllers\StudentWeb;
 
 use App\Controllers\ControllerBase;
 use App\Libs\Valid;
-use App\Models\StudentWeChatModel;
 use App\Services\PayServices;
 use App\Services\WeChatService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
+use App\Models\UserWeixinModel;
 
 class Pay extends ControllerBase
 {
@@ -46,7 +46,7 @@ class Pay extends ControllerBase
             if(empty($params['wx_code'])) {
                 return $response->withJson(Valid::addAppErrors([], 'wx_code_can_not_be_empty'));
             }
-            $data = WeChatService::getWeixnUserOpenIDAndAccessTokenByCode($params['wx_code'], WeChatService::USER_TYPE_STUDENT, UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT);
+            $data = WeChatService::getWeixnUserOpenIDAndAccessTokenByCode($params['wx_code'], 1, UserWeixinModel::USER_TYPE_STUDENT);
             if(!empty($data)) {
                 $extendedParams['open_id'] = $data['openid'];
             } else {
