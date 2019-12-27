@@ -22,7 +22,7 @@ class RouterBase
     protected $middleWares = [];
     protected $uriConfig = [];
 
-    public function load($uri, $app)
+    public function load($uri, $app, $alias = null)
     {
         if (!empty($this->logFilename)) {
             // 将log文件重命名
@@ -33,11 +33,12 @@ class RouterBase
                 $logFilePath);
         }
 
-        $config = $this->uriConfig[$uri] ?? [];
-        $middles = $this->getMiddleWares($uri);
+        $configKey = $alias ?? $uri;
+        $config = $this->uriConfig[$configKey] ?? [];
+        $middles = $this->getMiddleWares();
 
         /** @var App $app */
-        $app->add(function (Request $request, Response $response, $next) use ($app, $uri, $config,$middles) {
+        $app->add(function (Request $request, Response $response, $next) use ($app, $uri, $config, $middles) {
             $startTime = Util::microtime_float();
             $method = $request->getMethod();
             $params = $request->getParams();
@@ -68,7 +69,7 @@ class RouterBase
         });
     }
 
-    public function getMiddleWares($uri)
+    public function getMiddleWares()
     {
         return $this->middleWares;
     }

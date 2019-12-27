@@ -100,9 +100,14 @@ class RouterFactory
 
         $clientType = self::getClientType($uriPath);
 
+        // 处理 consumer api 的 env 前缀
+        if ($clientType == self::CLIENT_API && substr($uriPath, 0, 14) == '/api/consumer/') {
+            $alias = preg_replace('/dev_|test_|pre_|prod_/i', '', $uriPath);
+        }
+
         /** @var RouterBase $router */
         $class = self::ROUTER_CLASSES[$clientType];
         $router = new $class();
-        $router->load($uriPath, $app);
+        $router->load($uriPath, $app, $alias ?? null);
     }
 }

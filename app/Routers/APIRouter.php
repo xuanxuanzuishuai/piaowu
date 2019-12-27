@@ -8,6 +8,7 @@
 
 namespace App\Routers;
 
+use App\Controllers\API\Consumer;
 use App\Controllers\API\Track;
 use App\Controllers\API\BAIDU;
 
@@ -36,6 +37,11 @@ class APIRouter extends RouterBase
             'method'  => ['get'],
             'call'    => BAIDU::class . ':audioToken',
             'middles' => [],
+        ],
+
+        '/api/consumer/channel_status' => [
+            'method' => ['post'],
+            'call' => Consumer::class . ':channelStatus',
         ],
     ];
 }
