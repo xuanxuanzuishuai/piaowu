@@ -36,12 +36,13 @@ class UserWeixinModel extends Model
         return $result;
     }
 
-    public static function getBoundInfoByUserId($user_id, $app_id, $user_type){
+    public static function getBoundInfoByUserId($user_id, $app_id, $user_type, $busi_type){
         $where = [
             self::$table .".user_id" => $user_id,
             self::$table .".status" => self::STATUS_NORMAL,
             self::$table .".app_id" => $app_id,
             self::$table .".user_type" => $user_type,
+            self::$table .".busi_type" => $busi_type,
             "ORDER" => ["id" => "DESC"]];
 
         $result = MysqlDB::getDB()->get(self::$table, "*", $where);

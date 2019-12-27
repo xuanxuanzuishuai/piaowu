@@ -385,7 +385,8 @@ class ReviewCourseService
     {
         $studentWeChatInfo = UserWeixinModel::getBoundInfoByUserId($studentId,
             UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
-            WeChatService::USER_TYPE_STUDENT
+            WeChatService::USER_TYPE_STUDENT,
+            UserWeixinModel::BUSI_TYPE_STUDENT_SERVER
         );
         if (empty($studentWeChatInfo)) {
             throw new RunTimeException(['review_student_need_bind_wx']);

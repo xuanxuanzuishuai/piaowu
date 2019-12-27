@@ -108,8 +108,8 @@ class Schedule extends ControllerBase
         ];
         $studentWeChatInfo = UserWeixinModel::getBoundInfoByUserId($param['student_id'],
             UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
-            WeChatService::USER_TYPE_STUDENT
-            );
+            WeChatService::USER_TYPE_STUDENT,
+            UserWeixinModel::BUSI_TYPE_STUDENT_SERVER);
         if (!empty($studentWeChatInfo)){
             try {
                 WeChatService::notifyUserWeixinTemplateInfo(
