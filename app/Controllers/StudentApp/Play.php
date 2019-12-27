@@ -10,11 +10,14 @@
 namespace App\Controllers\StudentApp;
 
 use App\Controllers\ControllerBase;
+use App\Libs\Exceptions\RunTimeException;
+use App\Libs\HttpHelper;
 use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Models\PlayRecordModel;
 use App\Models\StudentModelForApp;
+use App\Services\PlayClassRecordService;
 use App\Services\PlayRecordService;
 use App\Services\UserPlayServices;
 use App\Services\StorageService;
@@ -144,7 +147,8 @@ class Play extends ControllerBase
      * @param Response $response
      * @return Response
      */
-    public function aiEnd(Request $request, Response $response){
+    public function aiEnd(Request $request, Response $response)
+    {
         // 验证请求参数
         $rules = [
             [
@@ -223,6 +227,50 @@ class Play extends ControllerBase
         }
         $data['homework'] = $homeworkInfo;
         return $response->withJson(['code'=>0, 'data'=>$data], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * 上课模式结束
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function classEnd(Request $request, Response $response)
+    {
+        // 验证请求参数
+        $rules = [
+            [
+                'key' => 'data',
+                'type' => 'required',
+                'error_code' => 'play_data_is_required'
+            ]
+        ];
+        $param = $request->getParams();
+        $result = Valid::appValidate($param, $rules);
+        if($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        // 没有学生信息时返回空
+        if (empty($this->ci['student'])) {
+            return $response->withJson(['code' => 0], StatusCode::HTTP_OK);
+        }
+        if (empty($param['data']['lesson_id'])) {
+            $result = Valid::addAppErrors([], 'lesson_id_is_required');
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        // 插入练琴纪录表
+        $userId = $this->ci['student']['id'];
+
+        try {
+            $recordId = PlayClassRecordService::addRecord($userId, $param['data']);
+
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
+
+        return HttpHelper::buildResponse($response, ['record_id' => $recordId]);
     }
 
     /**

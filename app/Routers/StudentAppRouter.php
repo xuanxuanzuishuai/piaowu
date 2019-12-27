@@ -167,6 +167,11 @@ class StudentAppRouter extends RouterBase
             'call' => Play::class . ':rank',
             'middles' => [MUSVGMiddleWare::class]
         ],
+        '/student_app/play/class_end' => [
+            'method' => ['post'],
+            'call' => Play::class . ':classEnd',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
 
         '/student_app/homework/record' => [
             'method' => ['get'],
