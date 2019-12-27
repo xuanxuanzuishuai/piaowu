@@ -203,7 +203,7 @@ class WeChatService
             ];
         }
 
-        SimpleLogger::info('request weixin api: ' . $method . '[' . $requestType . ']', []);
+        SimpleLogger::info('request weixin api: ' . $method . '[' . $requestType . ']', [$body]);
 
         $response = $client->request($requestType, $subURL, $data);
 
