@@ -153,7 +153,14 @@ class Auth extends ControllerBase
         $callback = $params['callback'] ?? '';
         try {
             $db->beginTransaction();
-            $data = StudentServiceForWeb::mobileLogin($params['mobile'], $params['code'], $channelId, $adId, $callback);
+            $data = StudentServiceForWeb::mobileLogin($params['mobile'],
+                $params['code'],
+                $channelId,
+                $adId,
+                $callback,
+                $_SERVER['HTTP_REFERRER'],
+                $params['wx_code'],
+                $params['click_id']);
             $db->commit();
 
         } catch (RunTimeException $e) {

@@ -9,11 +9,14 @@
 namespace App\Services;
 
 
+use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\Util;
 use App\Models\ReferralModel;
+use App\Models\StudentLandingModel;
 use App\Models\StudentModel;
 use App\Models\StudentModelForApp;
+use App\Models\UserWeixinModel;
 
 class StudentServiceForWeb
 {
@@ -112,10 +115,15 @@ class StudentServiceForWeb
      * @param $mobile
      * @param $code
      * @param $channelId
+     * @param $adId
+     * @param $callback
+     * @param $referrerURL
+     * @param $wxCode
+     * @param $clickId
      * @return array
      * @throws RunTimeException
      */
-    public static function mobileLogin($mobile, $code, $channelId, $adId, $callback)
+    public static function mobileLogin($mobile, $code, $channelId, $adId, $callback, $referrerURL = null, $wxCode = null, $clickId = null)
     {
         // 检查验证码
         if (!CommonServiceForApp::checkValidateCode($mobile, $code)) {
@@ -149,6 +157,33 @@ class StudentServiceForWeb
             $info['ad_channel'] = TrackService::CHANNEL_OTHER;
         }
         TrackService::trackEvent(TrackService::TRACK_EVENT_FORM_COMPLETE, $info, $student['id']);
+
+        $uuid = $student['uuid'];
+
+        //获取openid, 只关注微信投放渠道
+        if(!empty($wxCode) && !empty($channel) && $channel == DictConstants::get(DictConstants::LANDING_CONFIG, 'channel_weixin')) {
+            $data = WeChatService::getWeixnUserOpenIDAndAccessTokenByCode($wxCode, 1, UserWeixinModel::USER_TYPE_STUDENT);
+            if(!empty($data) && !empty($data['openid'])) {
+                //保存openid支付时使用
+                StudentLandingModel::setOpenId($uuid, $data['openid']);
+                //注册成功后，反馈给微信广告平台
+                $userActionSetId = DictConstants::get(DictConstants::LANDING_CONFIG, 'user_action_set_id');
+                $accessToken = WeChatService::getAccessToken(1, UserWeixinModel::USER_TYPE_STUDENT);
+                if(!empty($clickId)) {
+                    WeChatService::feedback($accessToken, [
+                        'user_action_set_id' => $userActionSetId,
+                        'action_time'        => time(),
+                        'action_type'        => 'RESERVATION',
+                        'url'                => $referrerURL,
+                        'trace'              => [
+                            'click_id' => $clickId,
+                        ]
+                    ]);
+                }
+            } else {
+                throw new RunTimeException(['can_not_obtain_open_id']);
+            }
+        }
 
         return $student;
     }

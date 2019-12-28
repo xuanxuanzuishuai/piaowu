@@ -10,12 +10,11 @@ namespace App\Controllers\StudentWeb;
 
 use App\Controllers\ControllerBase;
 use App\Libs\Valid;
+use App\Models\StudentLandingModel;
 use App\Services\PayServices;
-use App\Services\WeChatService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
-use App\Models\UserWeixinModel;
 
 class Pay extends ControllerBase
 {
@@ -41,14 +40,11 @@ class Pay extends ControllerBase
 
         $extendedParams = [];
 
-        //公众号支付，open_id是必填参数
+        //公众号支付，open_id是必填参数, 注册时应该已经获取到了open_id, 这里去缓存里取值就可以了
         if($params['pay_channel'] == PayServices::PAY_CHANNEL_PUB) {
-            if(empty($params['wx_code'])) {
-                return $response->withJson(Valid::addAppErrors([], 'wx_code_can_not_be_empty'));
-            }
-            $data = WeChatService::getWeixnUserOpenIDAndAccessTokenByCode($params['wx_code'], 1, UserWeixinModel::USER_TYPE_STUDENT);
-            if(!empty($data)) {
-                $extendedParams['open_id'] = $data['openid'];
+            $openId = StudentLandingModel::getOpenId($params['uuid']);
+            if(!empty($openId)) {
+                $extendedParams['open_id'] = $openId;
             } else {
                 return $response->withJson(Valid::addAppErrors([], 'can_not_obtain_open_id'));
             }

@@ -13,6 +13,7 @@ use App\Libs\SimpleLogger;
 use GuzzleHttp\Client;
 use App\Libs\UserCenter;
 use App\Models\UserWeixinModel;
+use Slim\Http\StatusCode;
 
 
 class WeChatService
@@ -30,6 +31,8 @@ class WeChatService
 
     const weixinAPIURL = 'https://api.weixin.qq.com/cgi-bin/';
 
+    //微信广告平台
+    const marketingURL = 'https://api.weixin.qq.com/marketing/';
 
     /**
      * 微信网页授权相关API URL
@@ -480,4 +483,31 @@ class WeChatService
         return false;
     }
 
+    //点击反馈给微信广告平台
+    public static function feedback($accessToken, array $params)
+    {
+        $client = new Client(['base_uri' => self::marketingURL]);
+        $response = $client->request('POST', "user_actions/add?version=v1.0&access_token={$accessToken}", [
+            'form_params' => $params
+        ]);
+
+        $content = '';
+        $code = $response->getStatusCode();
+        $success = false;
+
+        if ($code == StatusCode::HTTP_OK) {
+            $content = $response->getBody()->getContents();
+            $data = json_decode($content, 1);
+            $success = !empty($data) && empty($data['errmsg']);
+        }
+
+        SimpleLogger::info('request_tencent_marketing_feedback', [
+            'access_token' => $accessToken,
+            'params'       => $params,
+            'result'       => $content,
+            'status_code'  => $code,
+        ]);
+
+        return $success;
+    }
 }

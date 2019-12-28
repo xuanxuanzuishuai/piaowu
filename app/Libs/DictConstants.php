@@ -182,6 +182,11 @@ class DictConstants {
         'keys' => ['used_offline']
     ];
 
+    const LANDING_CONFIG = [
+        'type' => 'landing_config',
+        'keys' => ['channel_weixin', 'user_action_set_id'],
+    ];
+
     public static function get($type, $key)
     {
         if (empty($type) || empty($key)) {
