@@ -161,7 +161,7 @@ class StudentServiceForWeb
         $uuid = $student['uuid'];
 
         //获取openid, 只关注微信投放渠道
-        if(!empty($wxCode) && !empty($channel) && $channel == DictConstants::get(DictConstants::LANDING_CONFIG, 'channel_weixin')) {
+        if(!empty($wxCode) && !empty($channelId) && $channelId == DictConstants::get(DictConstants::LANDING_CONFIG, 'channel_weixin')) {
             $data = WeChatService::getWeixnUserOpenIDAndAccessTokenByCode($wxCode, 1, UserWeixinModel::USER_TYPE_STUDENT);
             if(!empty($data) && !empty($data['openid'])) {
                 //保存openid支付时使用
