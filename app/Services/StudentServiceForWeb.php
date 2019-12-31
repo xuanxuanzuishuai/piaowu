@@ -132,6 +132,15 @@ class StudentServiceForWeb
 
         $student = StudentModelForApp::getStudentInfo(null, $mobile);
         if (!empty($student)) {
+            if(!empty($wxCode) && !empty($channelId) && $channelId == DictConstants::get(DictConstants::LANDING_CONFIG, 'channel_weixin')) {
+                $data = WeChatService::getWeixnUserOpenIDAndAccessTokenByCode($wxCode, 1, UserWeixinModel::USER_TYPE_STUDENT);
+                if(!empty($data) && !empty($data['openid'])) {
+                    //保存openid支付时使用
+                    StudentLandingModel::setOpenId($student['uuid'], $data['openid']);
+                } else {
+                    throw new RunTimeException(['can_not_obtain_open_id']);
+                }
+            }
             return $student;
         }
 
