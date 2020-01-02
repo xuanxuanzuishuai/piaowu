@@ -11,6 +11,7 @@ namespace App\Routers;
 use App\Controllers\StudentWeb\Auth;
 use App\Controllers\StudentWeb\Pay;
 use App\Controllers\StudentWeb\Referral;
+use App\Controllers\WeChatCS\WeChatCS;
 
 class StudentWebRouter extends RouterBase
 {
@@ -44,6 +45,13 @@ class StudentWebRouter extends RouterBase
         '/student_web/pay/bill_status' => [
             'method' => ['get'],
             'call' => Pay::class . ':billStatus',
+            'middles' => []
+        ],
+
+        // 获取微信客服
+        '/student_web/pay/wechatcs' => [
+            'method' => ['get'],
+            'call' => WeChatCS::class.':getWeChatCS',
             'middles' => []
         ],
 

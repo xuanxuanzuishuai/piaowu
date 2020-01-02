@@ -30,6 +30,7 @@ use App\Controllers\Schedule\ScheduleRecord;
 use App\Controllers\Student\PlayRecord as BackendPlayRecord;
 use App\Controllers\Student\Student;
 use App\Controllers\Teacher\Teacher;
+use App\Controllers\WeChatCS\WeChatCS;
 use App\Middleware\EmployeeAuthCheckMiddleWare;
 use App\Middleware\EmployeePrivilegeMiddleWare;
 use App\Middleware\ErpMiddleware;
@@ -295,11 +296,17 @@ class OrgWebRouter extends RouterBase
         '/org_web/review_course/student_report_detail_dynamic' => ['method' => ['get'], 'call' => ReviewCourse::class . ':studentReportDetailDynamic'],
         '/org_web/review_course/student_report_detail_ai' => ['method' => ['get'], 'call' => ReviewCourse::class . ':studentReportDetailAI'],
         '/org_web/review_course/simple_review' => ['method' => ['post'], 'call' => ReviewCourse::class . ':simpleReview'],
+        // 微信客服
+        '/org_web/review_course/get_wechatcs_list' => ['method' => ['get'], 'call' => WeChatCS::class . ':getWeChatCSList'],
+        '/org_web/review_course/add_wechatcs' => ['method' => ['post'], 'call' => WeChatCS::class . ':addWeChatCS'],
+        '/org_web/review_course/set_wechatcs' => ['method' => ['post'], 'call' => WeChatCS::class . ':setWeChatCS'],
 
         // 班级添加
         '/classv1/class/add' => ['method' => ['post'], 'call' => ClassV1::class . ':add'],
         '/classv1/class/list' => ['method' => ['get'], 'call' => ClassV1::class . ':list'],
         '/classv1/class/detail' => ['method'=> ['get'], 'call' => ClassV1::class . ':detail'],
         '/classv1/class/modify' => ['method'=> ['post'], 'call' => ClassV1::class . ':modify'],
+
+
     ];
 }
