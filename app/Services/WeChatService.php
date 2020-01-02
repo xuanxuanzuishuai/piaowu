@@ -220,6 +220,11 @@ class WeChatService
             $body = $response->getBody();
             SimpleLogger::info('weixin api response: ' . $body, []);
             $data = json_decode($body, 1);
+
+            if ($data['errcode'] == 40001) {
+                self::clearAccessToken($app_id, $userType);
+            }
+
             if (!empty($data)) {
 
                 return $data;
@@ -310,6 +315,26 @@ class WeChatService
             }
         }
         return $accessToken;
+    }
+
+    /**
+     * 清除 access_token
+     * @param $app_id
+     * @param $userType
+     * @return bool
+     */
+    public static function clearAccessToken($app_id, $userType)
+    {
+        $redis = RedisDB::getConn();
+        $appInfo = self::getWeCHatAppIdSecret($app_id, $userType);
+        SimpleLogger::debug("getWeCHatAppIdSecret", ["data" => $appInfo]);
+        if (empty($appInfo)) {
+            return false;
+        }
+
+        $key = $appInfo['app_id'] . "_" . self::KEY_TOKEN;
+        $redis->del($key);
+        return true;
     }
 
     /**
