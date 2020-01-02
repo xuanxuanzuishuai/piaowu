@@ -149,7 +149,7 @@ class ReviewCourse extends ControllerBase
                 $params['audio']);
 
         } catch (RunTimeException $e) {
-            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+            return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData());
         }
 
         return HttpHelper::buildResponse($response, []);

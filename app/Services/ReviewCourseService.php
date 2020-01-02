@@ -440,7 +440,7 @@ class ReviewCourseService
         ];
 
         try {
-            WeChatService::notifyUserWeixinTemplateInfo(
+            $result = WeChatService::notifyUserWeixinTemplateInfo(
                 UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
                 WeChatService::USER_TYPE_STUDENT,
                 $studentWeChatInfo["open_id"],
@@ -448,6 +448,10 @@ class ReviewCourseService
                 $data,
                 $_ENV["WECHAT_FRONT_DOMAIN"] . "/student/review?date=" . $date
             );
+
+            if (empty($result) || !empty($result['errcode'])) {
+                throw new RunTimeException(['wx_send_fail']);
+            }
         } catch (GuzzleException $e) {
             SimpleLogger::error(__FILE__ . ':' . __LINE__, [print_r($e->getMessage(), true)]);
             return false;
@@ -472,7 +476,7 @@ class ReviewCourseService
         }
         $date = date('Ymd', $dayTime);
 
-        $data = ReviewCourseLogModel::getRecord(['student_id' => $studentId, 'date' => $date], '*', false);
+        $data = ReviewCourseLogModel::getRecord(['student_id' => $studentId, 'date' => $date, 'ORDER' => ['id' => 'DESC']], '*', false);
         if (empty($data)) {
             return [];
         }

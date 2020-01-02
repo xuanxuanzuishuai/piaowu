@@ -49,6 +49,22 @@ class HttpHelper
         return $response->withJson($result, StatusCode::HTTP_OK);
     }
 
+
+    /**
+     * 错误请求结果(后台)
+     * @param Response $response
+     * @param $errors
+     * @return Response
+     */
+    public static function buildOrgWebErrorResponse(Response $response, $errors)
+    {
+        $result = [
+            'code' => self::STATUS_ERROR,
+            'data' => ['errors' => $errors],
+        ];
+        return $response->withJson($result, StatusCode::HTTP_OK);
+    }
+
     /**
      * @param $api
      * @param array $params
