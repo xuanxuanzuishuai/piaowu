@@ -154,6 +154,16 @@ class PayServices
             ['success_url', 'cancel_url', 'result_url', 'package_id']
         );
 
+        /*
+         * TODO: 域名替换
+         * 新域名 referral.xiaoyezi.com 和 老域名 smartpeilian.xiaoyezi.com 同时存在
+         * 回调地址目前配置的还是老域名
+         * 如果从新域名进入，需要把回调地址的老域名替换成新域名
+         * smartpeilian -> referral
+         */
+        $origin = $_SERVER['HTTP_ORIGIN'];
+        $transUrl = (strpos($origin, 'referral') !== false);
+
         $ret = $erp->createBill(
             $uuid,
             $packageId,
@@ -162,9 +172,9 @@ class PayServices
             1,
             1,
             [
-                'success_url' => $successUrl,
-                'cancel_url' => $cancelUrl,
-                'result_url' => $resultUrl,
+                'success_url' => $transUrl ? str_replace('smartpeilian', 'referral', $successUrl) : $successUrl,
+                'cancel_url' => $transUrl ? str_replace('smartpeilian', 'referral', $cancelUrl) : $cancelUrl,
+                'result_url' => $transUrl ? str_replace('smartpeilian', 'referral', $resultUrl) : $resultUrl,
             ],
             $params
         );
