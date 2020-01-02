@@ -46,4 +46,30 @@ class PlayClassRecordService
 
         return $recordId;
     }
+
+    /**
+     * 处理更新记录队列消息
+     * @param $message
+     * @return bool
+     */
+    public static function handleClassUpdate($message)
+    {
+        $sessionId = $message['session_id'];
+        $data = [
+            'best_record_id' => $message['best_record_id'],
+        ];
+        return self::updateRecord($sessionId, $data);
+    }
+
+    /**
+     * 更新记录
+     * @param $classSessionId
+     * @param $data
+     * @return bool
+     */
+    public static function updateRecord($classSessionId, $data)
+    {
+        $cnt = PlayClassRecordModel::batchUpdateRecord($data, ['class_session_id' => $classSessionId], false);
+        return $cnt > 0;
+    }
 }

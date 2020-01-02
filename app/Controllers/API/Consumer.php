@@ -13,6 +13,7 @@ use App\Libs\HttpHelper;
 use App\Libs\Valid;
 use App\Services\ChannelService;
 use App\Controllers\ControllerBase;
+use App\Services\PlayClassRecordService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -60,5 +61,48 @@ class Consumer extends ControllerBase
         }
 
         return HttpHelper::buildResponse($response, ['res' => $res]);
+    }
+
+    public function userPlay(Request $request, Response $response)
+    {
+        // 参数校验
+        $params = $request->getParams();
+        $rules = [
+            [
+                'key' => 'topic_name',
+                'type' => 'required',
+                'error_code' => 'topic_name_is_required',
+            ],
+            [
+                'key' => 'source_app_id',
+                'type' => 'required',
+                'error_code' => 'source_app_id_is_required',
+            ],
+            [
+                'key' => 'event_type',
+                'type' => 'required',
+                'error_code' => 'event_type_is_required',
+            ],
+            [
+                'key' => 'msg_body',
+                'type' => 'required',
+                'error_code' => 'msg_body_is_required',
+            ],
+        ];
+
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        switch ($params['event_type']) {
+            case 'class_update':
+                $ret = PlayClassRecordService::handleClassUpdate($params['msg_body']);
+                break;
+            default:
+                $ret = null;
+        }
+
+        return HttpHelper::buildResponse($response, ['ret' => $ret]);
     }
 }

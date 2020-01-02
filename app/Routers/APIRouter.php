@@ -43,5 +43,9 @@ class APIRouter extends RouterBase
             'method' => ['post'],
             'call' => Consumer::class . ':channelStatus',
         ],
+        '/api/consumer/user_play' => [
+            'method' => ['post'],
+            'call' => Consumer::class . ':userPlay',
+        ],
     ];
 }
