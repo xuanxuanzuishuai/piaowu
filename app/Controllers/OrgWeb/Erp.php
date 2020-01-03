@@ -23,6 +23,7 @@ use App\Services\UserPlayServices;
 use App\Services\AppVersionService;
 use App\Models\AppVersionModel;
 use App\Services\StudentService;
+use App\Services\WeChatCSService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -125,7 +126,8 @@ class Erp extends ControllerBase
         // 点评课支付成功，发送点评课短信
         $reviewCourseType = ReviewCourseService::getBillReviewCourseType($params['package_id']);
         if ($reviewCourseType != ReviewCourseModel::REVIEW_COURSE_NO) {
-            $sms->sendEvaluationMessage($params['mobile'], CommonServiceForApp::SIGN_STUDENT_APP);
+            $wechatcs = WeChatCSService::getWeChatCS();
+            $sms->sendEvaluationMessage($params['mobile'], CommonServiceForApp::SIGN_STUDENT_APP, $wechatcs['name']);
 
             // 更新点评课标记
             $student = StudentService::getByUuid($params['uuid']);
@@ -167,7 +169,7 @@ class Erp extends ControllerBase
         $errorCode = ErpService::abandonGiftCode($params['bill_id'], $params['uuid']);
         if (!empty($errorCode)) {
             $db->rollBack();
-            $result = Valid::addErrors([],'bill_id',$errorCode);
+            $result = Valid::addErrors([], 'bill_id', $errorCode);
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
@@ -195,7 +197,7 @@ class Erp extends ControllerBase
         ];
         $params = $request->getParams();
         $result = Valid::validate($params, $rules);
-        if($result['code'] != Valid::CODE_SUCCESS) {
+        if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         $uuid = $params['uuid'];
@@ -203,12 +205,12 @@ class Erp extends ControllerBase
         $student = StudentModelForApp::getStudentInfo(null, null, $uuid);
         if (empty($student)) {
             $ret = ['lessons' => [], 'days' => 0, 'lesson_count' => 0, 'token' => ''];
-            return $response->withJson(['code' => 0, 'data'=>$ret], StatusCode::HTTP_OK);
+            return $response->withJson(['code' => 0, 'data' => $ret], StatusCode::HTTP_OK);
         }
         $appVersion = AppVersionService::getPublishVersionCode(
             AppVersionModel::APP_TYPE_STUDENT, AppVersionService::PLAT_ID_IOS);
         $ret = UserPlayServices::pandaPlayDetail($student['id'], $appVersion, 7, $time);
-        return $response->withJson(['code' => 0, 'data'=>$ret], StatusCode::HTTP_OK);
+        return $response->withJson(['code' => 0, 'data' => $ret], StatusCode::HTTP_OK);
     }
 
 
@@ -229,7 +231,7 @@ class Erp extends ControllerBase
         ];
         $params = $request->getParams();
         $result = Valid::validate($params, $rules);
-        if($result['code'] != Valid::CODE_SUCCESS) {
+        if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         $uuid = $params['uuid'];
@@ -237,11 +239,11 @@ class Erp extends ControllerBase
         $student = StudentModelForApp::getStudentInfo(null, null, $uuid);
         if (empty($student)) {
             $ret = ['is_ai_student' => false, 'days' => 0, 'lesson_count' => 0];
-            return $response->withJson(['code' => 0, 'data'=>$ret], StatusCode::HTTP_OK);
+            return $response->withJson(['code' => 0, 'data' => $ret], StatusCode::HTTP_OK);
         }
         $ret = UserPlayServices::pandaPlayBrief($student['id'], 7, $time);
         $ret['is_ai_student'] = $student['sub_start_date'] > 0;
-        return $response->withJson(['code' => 0, 'data'=>$ret], StatusCode::HTTP_OK);
+        return $response->withJson(['code' => 0, 'data' => $ret], StatusCode::HTTP_OK);
     }
 
     public function studentGiftCode(Request $request, Response $response)
@@ -256,14 +258,14 @@ class Erp extends ControllerBase
         ];
         $params = $request->getParams();
         $result = Valid::validate($params, $rules);
-        if($result['code'] != Valid::CODE_SUCCESS) {
+        if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
         $uuid = $params['uuid'];
         $student = StudentModelForApp::getStudentInfo(null, null, $uuid);
         if (empty($student)) {
-            $result = Valid::addErrors([],'uuid','unknown_user');
+            $result = Valid::addErrors([], 'uuid', 'unknown_user');
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
@@ -294,7 +296,7 @@ class Erp extends ControllerBase
         ];
         $params = $request->getParams();
         $result = Valid::validate($params, $rules);
-        if($result['code'] != Valid::CODE_SUCCESS) {
+        if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
@@ -305,7 +307,7 @@ class Erp extends ControllerBase
 
         if (!empty($errorCode)) {
             $db->rollBack();
-            $result = Valid::addErrors([],'bill_id',$errorCode);
+            $result = Valid::addErrors([], 'bill_id', $errorCode);
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 

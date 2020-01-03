@@ -7,6 +7,7 @@
 
 namespace App\Libs;
 
+use App\Services\WeChatCSService;
 use GuzzleHttp\Client;
 
 class NewSMS
@@ -36,14 +37,14 @@ class NewSMS
 
         $body = $response->getBody()->getContents();
         $status = $response->getStatusCode();
-        SimpleLogger::info(__FILE__. ":" .__LINE__ . " sendSMS ",[
+        SimpleLogger::info(__FILE__ . ":" . __LINE__ . " sendSMS ", [
             'data' => $data,
             'response' => $body
         ]);
         if (200 == $status) {
             return true;
         } else {
-            SimpleLogger::error(__FILE__. ":" .__LINE__,['code'=>'send sms failure','data'=>$data]);
+            SimpleLogger::error(__FILE__ . ":" . __LINE__, ['code' => 'send sms failure', 'data' => $data]);
             return false;
         }
     }
@@ -105,9 +106,10 @@ class NewSMS
      * 发送点评短信
      * @param $targetMobile
      * @param $sign
+     * @param $wechatcs
      * @return bool
      */
-    public function sendEvaluationMessage($targetMobile, $sign)
+    public function sendEvaluationMessage($targetMobile, $sign, $wechatcs)
     {
         $time = date("Y-m-d", time());
         // 获取当前周的第几天 周日是 0 周一到周六是 1 - 6
@@ -117,10 +119,10 @@ class NewSMS
         $start = strtotime("$time + " . $add . ' days');
         $week_start = date('Y-m-d', $start);
 
-        $msg = "你已成功购买小叶子智能陪练课，将于{$week_start}（周一）开课。
-《1》请添加你的小助手(微信号:zaixianpeilian)，老师会提供指点和规划。
-《2》请点击 http://t.cn/AiBPajzr 下载“小叶子爱练琴”App开始练琴。
-如有其他问题，请联系微信小助手。";
+        $msg = "您已成功购买小叶子智能陪练课，将于{$week_start}（周一）开课，时长两周。
+《1》在哪体验智能陪练？点击链接，下载【小叶子智能陪练】App：http://t.cn/AiBPajzr
+《2》在哪收老师点评？关注微信公众号【小叶子智能陪练】并绑定购买手机号！
+《3》遇到问题怎么办？1V1助教老师微信：{$wechatcs}";
 
         $data = [
             'sign_name' => $sign,
