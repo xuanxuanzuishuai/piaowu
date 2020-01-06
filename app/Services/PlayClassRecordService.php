@@ -56,6 +56,7 @@ class PlayClassRecordService
     {
         $sessionId = $message['session_id'];
         $data = [
+            'update_time' => time(),
             'best_record_id' => $message['eval_id'],
         ];
         return self::updateRecord($sessionId, $data);
