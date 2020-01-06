@@ -129,6 +129,13 @@ class StudentAppRouter extends RouterBase
                 StudentAuthCheckMiddleWareForApp::class,
                 AppApiForStudent::class]
         ],
+        '/student_app/opn/lesson_limit' => [
+            'method' => ['get'],
+            'call' => Opn::class . ':lessonLimit',
+            'middles' => [StudentResPrivilegeCheckMiddleWareForApp::class,
+                StudentAuthCheckMiddleWareForApp::class,
+                AppApiForStudent::class]
+        ],
         '/student_app/opn/lesson_resources' => [
             'method' => ['get'],
             'call' => Opn::class . ':lessonResources',

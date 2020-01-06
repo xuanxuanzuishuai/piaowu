@@ -100,9 +100,10 @@ class OpernService
     /**
      * 格式化曲谱列表
      * @param $data
+     * @param null $limit
      * @return array
      */
-    public static function appFormatLessonByIds($data)
+    public static function appFormatLessonByIds($data,$limit = 0)
     {
         if (empty($data)) {
             return [];
@@ -110,6 +111,7 @@ class OpernService
 
         $result = [];
         foreach ($data as $lesson) {
+
             $opern['id'] = $lesson['lesson_id'];
             $opern['lesson_name'] = $lesson['lesson_name'];
             $opern['name'] = $lesson['opern_name'];
@@ -123,7 +125,7 @@ class OpernService
             $opern['mmusic'] = $lesson['mmusic'] ? '1' : '0';
             $opern['mmusicconfig'] = $lesson['mmusicconfig'] ? '1' : '0';
             $opern['dynamic'] = $lesson['dynamic'] ? '1' : '0';
-            $opern['resources'] = $lesson['resources'];
+            $opern['resources'] = empty($limit) ? $lesson['resources'] : array_slice($lesson['resources'], 0, $limit);
 
             $result[] = $opern;
         }

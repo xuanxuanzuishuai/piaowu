@@ -176,6 +176,68 @@ class Opn extends ControllerBase
         ], StatusCode::HTTP_OK);
     }
 
+    public function lessonLimit(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'lesson_id',
+                'type' => 'required',
+                'error_code' => 'lesson_id_is_required'
+            ],
+            [
+                'key' => 'lesson_id',
+                'type' => 'numeric',
+                'error_code' => 'lesson_id_must_be_numeric'
+            ],
+            [
+                'key' => 'resource_type',
+                'type' => 'required',
+                'error_code' => 'resource_type_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT,
+            $this->ci['opn_pro_ver'],
+            $this->ci['opn_auditing'],
+            $this->ci['opn_publish']);
+
+        $newScoreFlagId = DictConstants::get(DictConstants::FLAG_ID, 'new_score');
+        $student = $this->ci['student'];
+        $student['version'] = $this->ci['version'];
+        $student['platform'] = $this->ci['platform'];
+        $useNewScore = FlagsService::hasFlag($student, $newScoreFlagId);
+
+
+        $result = $opn->lessonsByIds($params['lesson_id'], 1, $params['resource_type']);
+        if (empty($result) || !empty($result['errors'])) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $data = $result['data'];
+        $limit = empty($params['limit']) ? 1 : $params;
+
+        $lesson = OpernService::appFormatLessonByIds($data, $limit)[0] ?? [];
+
+        if (!$lesson['is_free']) {
+            $this->ci['need_res_privilege'] = true;
+        }
+
+        $resTestFlagId = DictConstants::get(DictConstants::FLAG_ID, 'res_free');
+        if (FlagsService::hasFlag($this->ci['student'], $resTestFlagId)) {
+            $this->ci['need_res_privilege'] = false;
+        }
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $lesson
+        ], StatusCode::HTTP_OK);
+    }
+
     public function lesson(Request $request, Response $response)
     {
         $rules = [
