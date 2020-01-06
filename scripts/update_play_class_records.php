@@ -49,7 +49,7 @@ for ($page = 0; $page < $maxPage; $page++) {
     $rows = PlayClassRecordMessageModel::getRecords($where, '*', false);
 
     foreach ($rows as $row) {
-        $message = json_decode($row['body']);
+        $message = json_decode($row['body'], true);
         $result = PlayClassRecordService::handleClassUpdate($message['msg_body']);
         if ($result) {
             PlayClassRecordMessageModel::delete($row['id']);
