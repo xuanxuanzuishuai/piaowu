@@ -13,7 +13,7 @@ use App\Libs\HttpHelper;
 use App\Libs\Valid;
 use App\Services\ChannelService;
 use App\Controllers\ControllerBase;
-use App\Services\PlayClassRecordService;
+use App\Services\PlayClassRecordMessageService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -97,7 +97,7 @@ class Consumer extends ControllerBase
 
         switch ($params['event_type']) {
             case 'class_update':
-                $ret = PlayClassRecordService::handleClassUpdate($params['msg_body']);
+                $ret = PlayClassRecordMessageService::save($params);
                 break;
             default:
                 $ret = null;
