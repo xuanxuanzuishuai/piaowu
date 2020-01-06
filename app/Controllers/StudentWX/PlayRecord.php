@@ -362,6 +362,7 @@ class PlayRecord extends ControllerBase
         foreach ($ret as $value){
             $current_max_score = max($value["max_dmc"], $value["max_ai"]);
             $result["duration"] += $value["duration"];
+            $result["duration"] += $value["class_duration"];
             $lesson_ids[$value["lesson_id"]] = 1;
             $r = ($current_max_score > $result["max_score"]);
             $max_score = $r ? $current_max_score : $result["max_score"];

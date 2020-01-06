@@ -86,6 +86,7 @@ class PlayRecordService
                 $ret[$lesson_id] = [
                     'max_score' => max($value['max_dmc'], $value['max_ai']),
                     'duration' => $value['duration'],
+                    'class_duration' => $value['class_duration'],
                     'sub_count' => $value['sub_count'],
                     'dmc_count' => $value['dmc'],
                     'ai_count' => $value['ai'],
@@ -99,6 +100,7 @@ class PlayRecordService
             } else {
                 $ret[$lesson_id]['max_score'] = max($value['max_dmc'], $value['max_ai'], $ret[$lesson_id]['max_score']);
                 $ret[$lesson_id]['duration'] += $value['duration'];
+                $ret[$lesson_id]['class_duration'] += $value['class_duration'];
                 $ret[$lesson_id]['sub_count'] += $value['sub_count'];
                 $ret[$lesson_id]['dmc_count'] += $value['dmc'];
                 $ret[$lesson_id]['ai_count'] += $value['ai'];
@@ -108,6 +110,7 @@ class PlayRecordService
             }
 
             $sum_duration += $value['duration'];
+            $sum_duration += $value['class_duration'];
 
             if ($ret[$lesson_id]['max_score'] > $max_score) {
                 $max_score = $ret[$lesson_id]['max_score'];
@@ -148,7 +151,6 @@ class PlayRecordService
         }
 
         $max_score_records = [];
-        $max_duration_records = [];
         for ($i = 0; $i < count($lesson_ids); $i++) {
             $result['lesson_count'] += 1;
             $cur_lesson_id = $statistics[$i]['lesson_id'];
@@ -167,23 +169,26 @@ class PlayRecordService
             }
 
             if ($statistics[$i]['max_score'] == $max_score) {
-                array_push($statistics[$i]['tags'], '得分最高');
-                if ($statistics[$i]['duration'] == $max_duration) {
-                    array_push($statistics[$i]['tags'], '时间最长');
-                }
                 $max_score_records[] = $statistics[$i];
-                unset($statistics[$i]);
-            }
-
-            if (!empty($statistics[$i]) && $statistics[$i]['duration'] == $max_duration) {
-                array_push($statistics[$i]['tags'], '时间最长');
-                $max_duration_records[] = $statistics[$i];
                 unset($statistics[$i]);
             }
         }
 
-        // 排序: 1.得分最高，2.时间最长， 3.练习顺序
-        $playRecords = array_merge($max_score_records, $max_duration_records, $statistics);
+        // 按 上课时长，练习时长 排序
+        usort($statistics, function ($a, $b) {
+            if ($a['class_duration'] == $b['class_duration']) {
+                if ($a['duration'] == $b['duration']) {
+                    return 0;
+                } else {
+                    return ($a['duration'] < $b['duration']) ? 1 : -1;
+                }
+            } else {
+                return ($a['class_duration'] < $b['class_duration']) ? 1 : -1;
+            }
+        });
+
+        // 排序: 1.得分最高，2.上课、练习间长顺序
+        $playRecords = array_merge($max_score_records, $statistics);
 
         $result['max_score'] = $max_score;
         $result['report_list'] = $playRecords;
@@ -451,6 +456,7 @@ class PlayRecordService
                 $ret[$lesson_id] = [
                     'max_score' => max($value['max_dmc'], $value['max_ai']),
                     'duration' => $value['duration'],
+                    'class_duration' => $value['class_duration'],
                     'sub_count' => $value['sub_count'],
                     'dmc_count' => $value['dmc'],
                     'ai_count' => $value['ai'],
@@ -464,6 +470,7 @@ class PlayRecordService
             } else {
                 $ret[$lesson_id]['max_score'] = max($value['max_dmc'], $value['max_ai'], $ret[$lesson_id]['max_score']);
                 $ret[$lesson_id]['duration'] += $value['duration'];
+                $ret[$lesson_id]['class_duration'] += $value['class_duration'];
                 $ret[$lesson_id]['sub_count'] += $value['sub_count'];
                 $ret[$lesson_id]['dmc_count'] += $value['dmc'];
                 $ret[$lesson_id]['ai_count'] += $value['ai'];
@@ -473,6 +480,7 @@ class PlayRecordService
             }
 
             $sum_duration += $value['duration'];
+            $sum_duration += $value['class_duration'];
 
             if ($ret[$lesson_id]['max_score'] > $max_score) {
                 $max_score = $ret[$lesson_id]['max_score'];
@@ -506,7 +514,6 @@ class PlayRecordService
         }
 
         $max_score_records = [];
-        $max_duration_records = [];
         for ($i = 0; $i < count($lesson_ids); $i++) {
             $result["lesson_count"] += 1;
             $cur_lesson_id = $statistics[$i]["lesson_id"];
@@ -519,26 +526,31 @@ class PlayRecordService
             }
 
             if ($statistics[$i]["max_score"] == $max_score) {
-                array_push($statistics[$i]["tags"], "得分最高");
-                if ($statistics[$i]["duration"] == $max_duration) {
-                    array_push($statistics[$i]["tags"], "时间最长");
-                }
                 $max_score_records[] = $statistics[$i];
-                unset($statistics[$i]);
-            }
-
-            if (!empty($statistics[$i]) && $statistics[$i]["duration"] == $max_duration) {
-                array_push($statistics[$i]["tags"], "时间最长");
-                $max_duration_records[] = $statistics[$i];
                 unset($statistics[$i]);
             }
         }
 
-        // 排序: 1.得分最高，2.时间最长， 3.练习顺序
-        $playRecords = array_merge($max_score_records, $max_duration_records, $statistics);
+        // 按 上课时长，练习时长 排序
+        usort($statistics, function ($a, $b) {
+            if ($a['class_duration'] == $b['class_duration']) {
+                if ($a['duration'] == $b['duration']) {
+                    return 0;
+                } else {
+                    return ($a['duration'] < $b['duration']) ? 1 : -1;
+                }
+            } else {
+                return ($a['class_duration'] < $b['class_duration']) ? 1 : -1;
+            }
+        });
+
         if ($is_cut) {
             // 只展示得分最高和时间最长
-            $playRecords = array_merge($max_score_records, $max_duration_records);
+            $maxDurationLesson = $statistics[0] ?? [];
+            $playRecords = array_merge($max_score_records, [$maxDurationLesson]);
+        } else {
+            // 排序: 1.得分最高，2.上课、练习间长顺序
+            $playRecords = array_merge($max_score_records, $statistics);
         }
 
         $result["max_score"] = $max_score;

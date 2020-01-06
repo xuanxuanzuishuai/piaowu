@@ -74,24 +74,25 @@ class PlayRecordModel extends Model
      */
     public static function getPlayRecordReport($student_id, $start_time, $end_time, $order = false)
     {
-        $sql = "select 
-                    lesson_id, 
-                    lesson_type, 
-                    count(lesson_sub_id) as sub_count,
-                    sum(duration) as duration ,
-                    sum(if(lesson_type=0 and lesson_sub_id is null, 1, 0)) as dmc,
-                    sum(if(lesson_type=1 and lesson_sub_id is null and ai_type != 3 , 1, 0)) as ai,
-                    sum(if(lesson_type=1 and lesson_sub_id is null and ai_type = 3 , 1, 0)) as part,
-                    max(if(lesson_type=0 and lesson_sub_id is null, score, 0)) as max_dmc, 
-                    max(if(lesson_type=1 and lesson_sub_id is null and ai_type != 3 , score, 0)) as max_ai
-            from play_record 
-            where 
-                student_id = :student_id and 
-                created_time >= :start_time and 
-                created_time <= :end_time and 
-                schedule_id is NULL
-            group by 
-              lesson_id, lesson_type";
+        // 普通演奏数据（趣味练习、AI测评）
+        $sql = "SELECT
+    lesson_id,
+    lesson_type,
+    count(lesson_sub_id) AS sub_count,
+    sum(duration) AS duration,
+    sum(if(lesson_type=0 AND lesson_sub_id IS NULL, 1, 0)) AS dmc,
+    sum(if(lesson_type=1 AND lesson_sub_id IS NULL AND ai_type != 3 , 1, 0)) AS ai,
+    sum(if(lesson_type=1 AND lesson_sub_id IS NULL AND ai_type = 3 , 1, 0)) AS part,
+    max(if(lesson_type=0 AND lesson_sub_id IS NULL, score, 0)) AS max_dmc,
+    max(if(lesson_type=1 AND lesson_sub_id IS NULL AND ai_type != 3 , score, 0)) AS max_ai
+FROM play_record
+WHERE
+    student_id = :student_id AND
+    created_time >= :start_time AND
+    created_time <= :end_time AND
+    schedule_id IS NULL
+GROUP BY
+  lesson_id, lesson_type";
 
         if ($order) {
             $sql .= " order by created_time";
@@ -99,21 +100,53 @@ class PlayRecordModel extends Model
         $map = [":student_id" => $student_id, ":start_time" => $start_time, ":end_time" => $end_time];
         $db = MysqlDB::getDB();
         $result = $db->queryAll($sql, $map);
-        $format_ret = [];
-        foreach ($result as $value){
-            array_push($format_ret, [
+
+        $formatRet = [];
+
+        foreach ($result as $value) {
+            array_push($formatRet, [
                 "lesson_id" => $value["lesson_id"],
                 "lesson_type" => $value["lesson_type"],
                 "sub_count" => $value["sub_count"],
                 "duration" => $value["duration"],
+                "class_duration" => 0,
                 "dmc" => Util::convertToIntIfCan($value["dmc"]),
                 "ai" => Util::convertToIntIfCan($value["ai"]),
                 "part" => Util::convertToIntIfCan($value["part"]),
                 "max_dmc" => Util::convertToIntIfCan($value["max_dmc"]),
-                "max_ai" => Util::convertToIntIfCan($value["max_ai"])
+                "max_ai" => Util::convertToIntIfCan($value["max_ai"]),
             ]);
         }
-        return $format_ret;
+
+        // 上课模式数据
+        $classSql = "SELECT
+    lesson_id, SUM(duration) AS sum_duration
+FROM
+    play_class_record
+WHERE
+    student_id = :student_id
+        AND create_time >= :start_time
+        AND create_time <= :end_time
+GROUP BY lesson_id;";
+        $classMap = [":student_id" => $student_id, ":start_time" => $start_time, ":end_time" => $end_time];
+        $classResult = $db->queryAll($classSql, $classMap);
+
+        foreach ($classResult as $value) {
+            array_push($formatRet, [
+                "lesson_id" => $value["lesson_id"],
+                "lesson_type" => 0,
+                "sub_count" =>0,
+                "duration" => 0,
+                "class_duration" => $value["sum_duration"],
+                "dmc" => 0,
+                "ai" => 0,
+                "part" => 0,
+                "max_dmc" => 0,
+                "max_ai" => 0,
+            ]);
+        }
+
+        return $formatRet;
     }
 
     /**
