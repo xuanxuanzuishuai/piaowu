@@ -69,7 +69,6 @@ $userInfo = $db->queryAll($sql, $map);
 $url = $_ENV["WECHAT_FRONT_DOMAIN"] . "/student/daily?date=" . $date;
 foreach ($userInfo as $value) {
     SimpleLogger::info("----", $value);
-    $value['max_score'] = Util::convertToIntIfCan($value['max_score']);
     $data = [
         'first' => [
             'value' => "宝贝今天的练琴日报已生成，宝贝很棒哦！继续加油！",
