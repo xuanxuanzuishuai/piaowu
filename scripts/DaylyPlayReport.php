@@ -34,21 +34,38 @@ $start_time = strtotime('today');
 $end_time = $start_time + 86399;
 $date = date("Y-m-d", $start_time);
 
-$sql = "select open_id, student_id, sum_duration, max_score, lesson_count
-        from (select student_id,
-                SUM(duration) sum_duration,
-                MAX(if(lesson_sub_id is null, score, 0)) max_score,
-                COUNT(DISTINCT lesson_id) lesson_count
-            from " . PlayRecordModel::$table . "
-            where created_time >= " . $start_time . "
-                and created_time < " . $end_time . "
-            group by student_id) as plays
-        inner join " . UserWeixinModel::$table . " uw
-            on plays.student_id = uw.user_id
-            and uw.app_id = " . UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT . "
-            and uw.user_type = 1";
+$sql = "SELECT
+    records.student_id,
+    uw.open_id,
+    COUNT(DISTINCT lesson_id) AS lesson_count,
+    SUM(duration) AS sum_duration
+FROM
+    ((SELECT
+        student_id, lesson_id, duration
+    FROM
+        play_record
+    WHERE
+        created_time >= :start_time
+            AND created_time < :end_time) UNION ALL (SELECT
+        student_id, lesson_id, duration
+    FROM
+        play_class_record
+    WHERE
+        create_time >= :start_time
+            AND create_time < :end_time)) records
+        INNER JOIN
+    user_weixin AS uw ON records.student_id = uw.user_id
+        AND uw.app_id = 8
+        AND uw.user_type = 1
+GROUP BY records.student_id
+;";
+$map = [
+    ':start_time' => $start_time,
+    ':end_time' => $end_time,
+];
 
-$userInfo = $db->queryAll($sql, []);
+$userInfo = $db->queryAll($sql, $map);
+
 $url = $_ENV["WECHAT_FRONT_DOMAIN"] . "/student/daily?date=" . $date;
 foreach ($userInfo as $value) {
     SimpleLogger::info("----", $value);
@@ -59,15 +76,16 @@ foreach ($userInfo as $value) {
             'color' => "#323d83"
         ],
         'keyword1' => [
-            'value' => $value['lesson_count'] . "首",
+            'value' => $date,
             'color' => "#323d83"
         ],
         'keyword2' => [
-            'value' => "练琴" . Util::formatExerciseTime($value['sum_duration']),
+            'value' => $value['lesson_count'] . "首",
             'color' => "#323d83"
         ],
         'keyword3' => [
-            'value' => $value["max_score"] == 0 ? '-' : "最高" . $value["max_score"] . "分"
+            'value' => "练琴" . Util::formatExerciseTime($value['sum_duration']),
+            'color' => "#323d83"
         ],
         'remark' => [
             'value' => "点击【详情】查看",
