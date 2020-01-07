@@ -11,6 +11,7 @@ namespace App\Services;
 
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\UserCenter;
 use App\Libs\Util;
 use App\Models\ReferralModel;
 use App\Models\StudentLandingModel;
@@ -177,15 +178,17 @@ class StudentServiceForWeb
                 StudentLandingModel::setOpenId($uuid, $data['openid']);
                 //注册成功后，反馈给微信广告平台
                 $userActionSetId = DictConstants::get(DictConstants::LANDING_CONFIG, 'user_action_set_id');
-                $accessToken = WeChatService::getAccessToken(1, UserWeixinModel::USER_TYPE_STUDENT);
+                $accessToken = WeChatService::getAccessToken(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT, UserWeixinModel::USER_TYPE_STUDENT);
                 if(!empty($clickId)) {
                     WeChatService::feedback($accessToken, [
-                        'user_action_set_id' => $userActionSetId,
-                        'action_time'        => time(),
-                        'action_type'        => 'RESERVATION',
-                        'url'                => $referrerURL,
-                        'trace'              => [
-                            'click_id' => $clickId,
+                        'actions' => [
+                            [
+                                'user_action_set_id' => $userActionSetId,
+                                'action_time'        => time(),
+                                'action_type'        => 'RESERVATION',
+                                'url'                => $referrerURL,
+                                'trace'              => ['click_id' => $clickId]
+                            ]
                         ]
                     ]);
                 }

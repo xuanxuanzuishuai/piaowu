@@ -158,7 +158,7 @@ class Auth extends ControllerBase
                 $channelId,
                 $adId,
                 $callback,
-                $_SERVER['HTTP_REFERRER'],
+                'http://www.xiaoyezi.com/index.html',
                 $params['wx_code'],
                 $params['click_id']);
             $db->commit();
