@@ -35,7 +35,7 @@ class RouterBase
 
         $configKey = $alias ?? $uri;
         $config = $this->uriConfig[$configKey] ?? [];
-        $middles = $this->getMiddleWares();
+        $middles = $this->getMiddleWares($uri);
 
         /** @var App $app */
         $app->add(function (Request $request, Response $response, $next) use ($app, $uri, $config, $middles) {
@@ -69,7 +69,7 @@ class RouterBase
         });
     }
 
-    public function getMiddleWares()
+    public function getMiddleWares($uri)
     {
         return $this->middleWares;
     }
