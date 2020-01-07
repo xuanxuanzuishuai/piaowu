@@ -187,6 +187,11 @@ class DictConstants {
         'keys' => ['channel_weixin', 'user_action_set_id'],
     ];
 
+    const REVIEW_COURSE_CONFIG = [
+        'type' => 'REVIEW_COURSE_CONFIG',
+        'keys' => ['reviewer_ids'],
+    ];
+
     public static function get($type, $key)
     {
         if (empty($type) || empty($key)) {
