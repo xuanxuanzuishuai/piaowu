@@ -13,6 +13,7 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Services\AIBackendService;
 use App\Services\ReviewCourseService;
+use App\Services\ReviewCourseTaskService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 
@@ -153,5 +154,22 @@ class ReviewCourse extends ControllerBase
         }
 
         return HttpHelper::buildResponse($response, []);
+    }
+
+
+
+    /**
+     * 点评任务列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function tasks(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+
+        list($total, $tasks) = ReviewCourseTaskService::getTasks($params);
+
+        return HttpHelper::buildResponse($response, ['total_count' => $total, 'tasks' => $tasks]);
     }
 }

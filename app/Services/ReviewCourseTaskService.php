@@ -12,7 +12,9 @@ namespace App\Services;
 use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\SimpleLogger;
+use App\Libs\Util;
 use App\Models\PlayClassRecordModel;
+use App\Models\ReviewCourseModel;
 use App\Models\ReviewCourseTaskModel;
 
 class ReviewCourseTaskService
@@ -91,5 +93,62 @@ class ReviewCourseTaskService
         $reviewerSetting = DictConstants::get(DictConstants::REVIEW_COURSE_CONFIG, 'reviewer_ids');
         $reviewerIds = explode(',', $reviewerSetting);
         return $reviewerIds;
+    }
+
+    /**
+     * task 列表
+     * @param $params
+     * @return array
+     */
+    public static function getTasks($params)
+    {
+        $where = [];
+
+        if (!empty($params['reviewer_id'])) {
+            $where['e.id'] = $params['reviewer_id'];
+        }
+
+        if (!empty($params['review_after'])) {
+            $where['review_date[>=]'] = $params['review_after'];
+        }
+        if (!empty($params['review_before'])) {
+            $where['review_date[<=]'] = $params['review_before'];
+        }
+
+        if (!empty($params['play_after'])) {
+            $where['play_date[>=]'] = $params['play_after'];
+        }
+        if (!empty($params['play_before'])) {
+            $where['play_date[<=]'] = $params['play_before'];
+        }
+
+        if (!empty($params['student_id'])) {
+            $where['s.id'] = $params['student_id'];
+        }
+
+        if (!empty($params['student_mobile'])) {
+            $where['s.mobile'] = $params['student_mobile'];
+        }
+
+        if (!empty($params['student_name'])) {
+            $where['s.name[~]'] = Util::sqlLike($params['student_name']);
+        }
+
+        if (!empty($params['student_course_type'])) {
+            $where['s.has_review_course'] = $params['student_course_type'];
+        } else {
+            $where['s.has_review_course'] = [ReviewCourseModel::REVIEW_COURSE_49, ReviewCourseModel::REVIEW_COURSE_1980];
+        }
+
+        if (isset($params['status'])) {
+            $where['status'] = $params['status'];
+        }
+
+        list($page, $count) = Util::formatPageCount($params);
+        $where['LIMIT'] = [($page - 1) * $count, $count];
+
+        $result = ReviewCourseTaskModel::getTasks($where);
+
+        return $result;
     }
 }
