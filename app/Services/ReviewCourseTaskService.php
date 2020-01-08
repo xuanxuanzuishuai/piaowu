@@ -142,7 +142,7 @@ class ReviewCourseTaskService
         }
 
         if (isset($params['status'])) {
-            $where['status'] = $params['status'];
+            $where['rct.status'] = $params['status'];
         }
 
         list($page, $count) = Util::formatPageCount($params);
