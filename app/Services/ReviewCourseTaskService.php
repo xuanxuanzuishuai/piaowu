@@ -9,14 +9,21 @@
 namespace App\Services;
 
 
+use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\DictConstants;
+use App\Libs\Exceptions\RunTimeException;
+use App\Libs\OpernCenter;
 use App\Libs\SimpleLogger;
+use App\Libs\UserCenter;
 use App\Libs\Util;
 use App\Models\EmployeeModel;
 use App\Models\PlayClassRecordModel;
+use App\Models\PlayRecordModel;
 use App\Models\ReviewCourseModel;
 use App\Models\ReviewCourseTaskModel;
+use App\Models\StudentModel;
+use App\Models\UserWeixinModel;
 
 class ReviewCourseTaskService
 {
@@ -171,6 +178,87 @@ class ReviewCourseTaskService
         return [
             'student_course_types' => $courseTypes,
             'reviewers' => $reviewers,
+        ];
+    }
+
+    /**
+     * 获取点评任务对应的演奏详情
+     * @param $taskId
+     * @return array
+     * @throws RunTimeException
+     */
+    public static function getPlayDetailByReviewTask($taskId)
+    {
+        $review = ReviewCourseTaskModel::getById($taskId);
+        if (empty($review)) {
+            throw new RunTimeException(['record_not_found']);
+        }
+
+        $reviewData = [
+            'id' => $review['id'],
+            'play_date' => $review['play_date'],
+            'review_date' => $review['review_date'],
+            'review_status' => $review['status'] ? '是' : '否',
+            'review_audio' => $review['review_audio'] ? AliOSS::signUrls($review['review_audio']) : '',
+            'reviewer_id' => $review['reviewer_id'],
+        ];
+
+        $student = StudentModel::getById($review['student_id']);
+        if (empty($student)) {
+            throw new RunTimeException(['student_not_found']);
+        }
+
+        $studentWeChatInfo = UserWeixinModel::getBoundInfoByUserId($student['id'],
+            UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
+            WeChatService::USER_TYPE_STUDENT,
+            UserWeixinModel::BUSI_TYPE_STUDENT_SERVER);
+
+        $studentData = [
+            'id' => $student['id'],
+            'name' => $student['name'],
+            'mobile' => $student['mobile'],
+            'wx_bind' => empty($studentWeChatInfo) ? 0 : 1,
+        ];
+
+        $startTime = strtotime($review['play_date']);
+        $endTime = $startTime + 86399;
+
+        $detail = [];
+        $recordSum = PlayRecordModel::getStudentPlaySum($student['id'], $startTime, $endTime);
+        $detail['lesson_count'] = $recordSum['lesson_count'];
+        $detail['total_duration'] = $recordSum['sum_duration'];
+
+        $classRecordSum = PlayClassRecordModel::getStudentPlaySumByLesson($student['id'], $startTime, $endTime);
+        if (!empty($classRecordSum)) {
+            $detail['class_lesson_count'] = count($classRecordSum);
+            $detail['class_total_duration'] = array_sum(array_column($classRecordSum, 'sum_duration'));
+
+
+            $lessonIds = array_column($classRecordSum, 'lesson_id');
+
+            $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, 'test', 0, 1);
+            $resp = $opn->lessonsByIds($lessonIds, 0, []);
+            if ($resp['code'] == 0) {
+                $lessonsInfo = $resp['data'];
+                $lessonsInfo = array_combine(array_column($lessonsInfo, 'id'), $lessonsInfo);
+            }
+
+            if (empty($lessonsInfo)) { $lessonsInfo = []; }
+            foreach ($classRecordSum as $i => $lessonSum) {
+                $info = $lessonsInfo[$lessonSum['lesson_id']] ?? null;
+                if (!empty($info)) {
+                    $classRecordSum[$i]['lesson_name'] = $info['lesson_name'] ?? '-';
+                    $classRecordSum[$i]['collection_name'] = $info['collection_name'] ?? '-';
+                }
+            }
+
+            $detail['class_lesson'] = $classRecordSum;
+        }
+
+        return [
+            'student' => $studentData,
+            'review' => $reviewData,
+            'detail' => $detail,
         ];
     }
 }

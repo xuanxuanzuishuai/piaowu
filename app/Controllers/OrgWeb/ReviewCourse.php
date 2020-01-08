@@ -183,4 +183,24 @@ class ReviewCourse extends ControllerBase
 
         return HttpHelper::buildResponse($response, ['config' => $config]);
     }
+
+    /**
+     * 演奏详情
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function playDetail(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+
+        try {
+            $detail = ReviewCourseTaskService::getPlayDetailByReviewTask($params['task_id']);
+
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData());
+        }
+
+        return HttpHelper::buildResponse($response, $detail);
+    }
 }

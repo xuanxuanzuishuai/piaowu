@@ -10,6 +10,7 @@ namespace App\Models;
 
 use App\Libs\MysqlDB;
 use App\Libs\Util;
+use Medoo\Medoo;
 
 class PlayRecordModel extends Model
 {
@@ -498,4 +499,30 @@ GROUP BY lesson_id;";
         ]);
     }
 
+    /**
+     * 演奏数据汇总
+     * @param $studentId
+     * @param $startTime
+     * @param $endTime
+     * @return mixed
+     */
+    public static function getStudentPlaySum($studentId, $startTime, $endTime)
+    {
+        $db = MysqlDB::getDB();
+        $result = $db->get(self::$table, [
+            'lesson_count' => Medoo::raw('COUNT(DISTINCT(lesson_id))'),
+            'sum_duration' => Medoo::raw('SUM(duration)'),
+        ], [
+            'student_id' => $studentId,
+            'created_time[<>]' => [$startTime, $endTime]
+        ]);
+
+        if (empty($result)) {
+            return ['lesson_count' => 0, 'sum_duration' => 0];
+        }
+
+        $result['sum_duration'] = $result['sum_duration'] ?? 0;
+
+        return $result;
+    }
 }
