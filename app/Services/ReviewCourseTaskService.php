@@ -13,6 +13,7 @@ use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
+use App\Models\EmployeeModel;
 use App\Models\PlayClassRecordModel;
 use App\Models\ReviewCourseModel;
 use App\Models\ReviewCourseTaskModel;
@@ -150,5 +151,26 @@ class ReviewCourseTaskService
         $result = ReviewCourseTaskModel::getTasks($where);
 
         return $result;
+    }
+
+    /**
+     * 获取点评课相关配置
+     * @return array
+     */
+    public static function getConfig()
+    {
+        $courseTypes = [
+            ReviewCourseModel::REVIEW_COURSE_49 => '49课包',
+            ReviewCourseModel::REVIEW_COURSE_1980 => '1980课包'
+        ];
+
+        $reviewerIds = self::getReviewers();
+        $reviewers = EmployeeModel::getRecords(['id' => $reviewerIds], ['id', 'name'], false);
+        $reviewers = array_column($reviewers, 'name', 'id');
+
+        return [
+            'student_course_types' => $courseTypes,
+            'reviewers' => $reviewers,
+        ];
     }
 }

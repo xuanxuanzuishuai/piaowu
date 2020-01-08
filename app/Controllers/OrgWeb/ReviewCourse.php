@@ -156,8 +156,6 @@ class ReviewCourse extends ControllerBase
         return HttpHelper::buildResponse($response, []);
     }
 
-
-
     /**
      * 点评任务列表
      * @param Request $request
@@ -171,5 +169,18 @@ class ReviewCourse extends ControllerBase
         list($total, $tasks) = ReviewCourseTaskService::getTasks($params);
 
         return HttpHelper::buildResponse($response, ['total_count' => $total, 'tasks' => $tasks]);
+    }
+
+    /**
+     * 点评课配置
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function config(/** @noinspection PhpUnusedParameterInspection */ Request $request, Response $response)
+    {
+        $config = ReviewCourseTaskService::getConfig();
+
+        return HttpHelper::buildResponse($response, ['config' => $config]);
     }
 }
