@@ -11,6 +11,8 @@ CREATE TABLE `review_course_task` (
   PRIMARY KEY (`id`))
   COMMENT = '点评课任务';
 
+ALTER TABLE `review_course_task`
+  ADD COLUMN `sum_duration` INT NOT NULL COMMENT '上课时间' AFTER `play_date`;
 
 INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
   VALUES ('REVIEW_COURSE_CONFIG', '点评老师id', 'reviewer_ids', '1', '点评老师id列表');

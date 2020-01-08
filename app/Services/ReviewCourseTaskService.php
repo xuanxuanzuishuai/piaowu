@@ -67,6 +67,7 @@ class ReviewCourseTaskService
                 'student_id' => $data['student_id'],
                 'review_date' => $reviewDate,
                 'play_date' => $data['play_date'],
+                'sum_duration' => $data['sum_duration'],
                 'reviewer_id' => $reviewerIds[($last + 1) % $reviewerCount],
                 'create_time' => $now,
                 'status' => Constants::STATUS_FALSE,
