@@ -223,4 +223,24 @@ class ReviewCourse extends ControllerBase
 
         return HttpHelper::buildResponse($response, []);
     }
+
+    /**
+     * 发送点评
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function sendReview(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+
+        try {
+            $success = ReviewCourseService::sendTaskReview($params['task_id']);
+
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData());
+        }
+
+        return HttpHelper::buildResponse($response, ['ret' => $success]);
+    }
 }

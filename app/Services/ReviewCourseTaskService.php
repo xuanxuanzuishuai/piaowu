@@ -273,13 +273,17 @@ class ReviewCourseTaskService
      */
     public static function uploadReviewAudio($taskId, $file)
     {
+        if (empty($taskId) || empty($file)) {
+            throw new RunTimeException(['update_failure']);
+        }
+
         $ret = ReviewCourseTaskModel::updateRecord($taskId, [
             'review_audio' => $file,
             'review_audio_update_time' => time()
         ]);
 
         if ($ret < 1) {
-            throw new RunTimeException(['insert_failure']);
+            throw new RunTimeException(['update_failure']);
         }
     }
 }

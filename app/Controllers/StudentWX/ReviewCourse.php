@@ -36,4 +36,24 @@ class ReviewCourse extends ControllerBase
 
         return HttpHelper::buildResponse($response, ['review' => $review]);
     }
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return mixed
+     */
+    public function getTaskReview(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        $studentId = $this->ci['user_info']['user_id'];
+
+        try {
+            $review = ReviewCourseService::getTaskReview($studentId, $params['task_id']);
+
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+
+        return HttpHelper::buildResponse($response, ['review' => $review]);
+    }
 }

@@ -9,9 +9,11 @@
 namespace App\Services;
 
 use App\Libs\AliOSS;
+use App\Libs\Constants;
 use App\Libs\SimpleLogger;
 use App\Models\EmployeeModel;
 use App\Models\ReviewCourseLogModel;
+use App\Models\ReviewCourseTaskModel;
 use GuzzleHttp\Exception\GuzzleException;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
@@ -489,6 +491,107 @@ class ReviewCourseService
         $review = [
             'id' => $data['id'],
             'audio' => AliOSS::signUrls($data['audio']),
+        ];
+
+        return $review;
+    }
+
+    /**
+     * 发送点评
+     * @param $taskId
+     * @return bool
+     * @throws RunTimeException
+     */
+    public static function sendTaskReview($taskId)
+    {
+        $task = ReviewCourseTaskModel::getById($taskId);
+        if (empty($task)) {
+            throw new RunTimeException(['record_not_found']);
+        }
+
+        if (empty($task['review_audio'])) {
+            throw new RunTimeException(['record_not_found']);
+        }
+
+        if ($task['status'] != Constants::STATUS_FALSE) {
+            throw new RunTimeException(['review_task_has_been_send']);
+        }
+
+        $studentWeChatInfo = UserWeixinModel::getBoundInfoByUserId($task['student_id'],
+            UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
+            WeChatService::USER_TYPE_STUDENT,
+            UserWeixinModel::BUSI_TYPE_STUDENT_SERVER
+        );
+        if (empty($studentWeChatInfo)) {
+            throw new RunTimeException(['review_student_need_bind_wx']);
+        }
+
+        $dateStr = date('Y年m月d日', strtotime($task['play_date']));
+
+        $data = [
+            'first' => [
+                'value' => "老师点评通知",
+            ],
+            'keyword1' => [
+                'value' => '小叶子智能陪练课'
+            ],
+            'keyword2' => [
+                'value' => $dateStr . '智能陪练课后点评'
+            ],
+            'keyword3' => [
+                'value' => $reviewer['name'] ?? ''
+            ],
+            'keyword4' => [
+                'value' => '点击查看老师的点评信息吧！'
+            ],
+            'remark' => [
+                'value' => ''
+            ]
+        ];
+
+        try {
+            $result = WeChatService::notifyUserWeixinTemplateInfo(
+                UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
+                WeChatService::USER_TYPE_STUDENT,
+                $studentWeChatInfo["open_id"],
+                $_ENV["WECHAT_TEMPLATE_REVIEW_COURSE"],
+                $data,
+                $_ENV["WECHAT_FRONT_DOMAIN"] . "/student/task_review?task_id=" . $task['id']
+            );
+
+            if (empty($result) || !empty($result['errcode'])) {
+                throw new RunTimeException(['wx_send_fail']);
+            }
+        } catch (GuzzleException $e) {
+            SimpleLogger::error(__FILE__ . ':' . __LINE__, [print_r($e->getMessage(), true)]);
+            throw new RunTimeException(['wx_send_fail']);
+        }
+
+        ReviewCourseTaskModel::updateRecord($taskId, [
+            'status' => Constants::STATUS_TRUE,
+            'update_time' => time()
+        ]);
+
+        return true;
+    }
+
+    /**
+     * 获取task对应的review
+     * @param $studentId
+     * @param $taskId
+     * @return array
+     * @throws RunTimeException
+     */
+    public static function getTaskReview($studentId, $taskId)
+    {
+        $task = ReviewCourseTaskModel::getById($taskId);
+        if (empty($task) || $studentId != $task['student_id']) {
+            throw new RunTimeException(['record_not_found']);
+        }
+
+        $review = [
+            'id' => $task['id'],
+            'audio' => AliOSS::signUrls($task['review_audio']),
         ];
 
         return $review;

@@ -59,6 +59,11 @@ class StudentWXRouter extends RouterBase
             'call' => ReviewCourse::class . ':getReview',
         ],
 
+        '/student_wx/review_course/get_task_review' => [
+            'method' => ['get'],
+            'call' => ReviewCourse::class . ':getTaskReview',
+        ],
+
         '/student_org_wx/student/register' => array('method'=>array('post'),'call'=>'\App\Controllers\StudentOrgWX\Student:register', 'middles' => array('\App\Middleware\WeChatOpenIdCheckMiddleware')),
         '/student_org_wx/student/login' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentOrgWX\Student:login', 'middles' => array('\App\Middleware\WeChatOpenIdCheckMiddleware')),
         '/student_org_wx/student/send_sms_code' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentOrgWX\Student:sendSmsCode', 'middles' => array()),
