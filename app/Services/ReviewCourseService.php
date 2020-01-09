@@ -591,6 +591,7 @@ class ReviewCourseService
 
         $review = [
             'id' => $task['id'],
+            'play_date' => $task['play_date'],
             'audio' => AliOSS::signUrls($task['review_audio']),
         ];
 
