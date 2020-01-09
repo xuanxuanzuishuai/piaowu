@@ -203,4 +203,24 @@ class ReviewCourse extends ControllerBase
 
         return HttpHelper::buildResponse($response, $detail);
     }
+
+    /**
+     * 上传点评语音
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function uploadReviewAudio(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+
+        try {
+            ReviewCourseTaskService::uploadReviewAudio($params['task_id'], $params['audio']);
+
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData());
+        }
+
+        return HttpHelper::buildResponse($response, []);
+    }
 }

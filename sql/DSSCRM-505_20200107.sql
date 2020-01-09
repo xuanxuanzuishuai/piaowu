@@ -14,5 +14,9 @@ CREATE TABLE `review_course_task` (
 ALTER TABLE `review_course_task`
   ADD COLUMN `sum_duration` INT NOT NULL COMMENT '上课时间' AFTER `play_date`;
 
+ALTER TABLE `review_course_task`
+  CHANGE COLUMN `review_audio` `review_audio` VARCHAR(150) NOT NULL COMMENT '点评音频' ,
+  ADD COLUMN `review_audio_update_time` INT NOT NULL COMMENT '点评音频上传时间' AFTER `review_audio`;
+
 INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
   VALUES ('REVIEW_COURSE_CONFIG', '点评老师id', 'reviewer_ids', '1', '点评老师id列表');

@@ -83,6 +83,7 @@ class ReviewCourseTaskService
                 'status' => Constants::STATUS_FALSE,
                 'update_time' => 0,
                 'review_audio' => '',
+                'review_audio_update_time' => 0,
             ];
 
             $last++;
@@ -200,6 +201,7 @@ class ReviewCourseTaskService
             'review_date' => $review['review_date'],
             'review_status' => $review['status'] ? '是' : '否',
             'review_audio' => $review['review_audio'] ? AliOSS::signUrls($review['review_audio']) : '',
+            'review_audio_update_time' => $review['review_audio_update_time'],
             'reviewer_id' => $review['reviewer_id'],
         ];
 
@@ -260,5 +262,24 @@ class ReviewCourseTaskService
             'review' => $reviewData,
             'detail' => $detail,
         ];
+    }
+
+    /**
+     * 上传点评语音
+     * @param $taskId
+     * @param $file
+     * @return void
+     * @throws RunTimeException
+     */
+    public static function uploadReviewAudio($taskId, $file)
+    {
+        $ret = ReviewCourseTaskModel::updateRecord($taskId, [
+            'review_audio' => $file,
+            'review_audio_update_time' => time()
+        ]);
+
+        if ($ret < 1) {
+            throw new RunTimeException(['insert_failure']);
+        }
     }
 }

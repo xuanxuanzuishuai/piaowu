@@ -299,7 +299,9 @@ class OrgWebRouter extends RouterBase
         '/org_web/review_course/tasks' => ['method' => ['get'], 'call' => ReviewCourse::class . ':tasks'],
         '/org_web/review_course/config' => ['method' => ['get'], 'call' => ReviewCourse::class . ':config'],
         '/org_web/review_course/play_detail' => ['method' => ['get'], 'call' => ReviewCourse::class . ':playDetail'],
-        // 微信客服
+        '/org_web/review_course/upload_review_audio' => ['method' => ['post'], 'call' => ReviewCourse::class . ':uploadReviewAudio'],
+
+        // 点评课推广页微信客服
         '/org_web/review_course/get_wechatcs_list' => ['method' => ['get'], 'call' => WeChatCS::class . ':getWeChatCSList'],
         '/org_web/review_course/add_wechatcs' => ['method' => ['post'], 'call' => WeChatCS::class . ':addWeChatCS'],
         '/org_web/review_course/set_wechatcs' => ['method' => ['post'], 'call' => WeChatCS::class . ':setWeChatCS'],
