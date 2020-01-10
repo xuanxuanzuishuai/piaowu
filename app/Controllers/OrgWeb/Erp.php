@@ -131,7 +131,8 @@ class Erp extends ControllerBase
 
             // 更新点评课标记
             $student = StudentService::getByUuid($params['uuid']);
-            ReviewCourseService::updateReviewCourseFlag($student['id'], $reviewCourseType);
+            $wechatcsId = empty($student['wechatcs_id']) ? $wechatcs['id'] : null;
+            ReviewCourseService::updateReviewCourseFlag($student['id'], $reviewCourseType, $wechatcsId);
         }
 
         return $response->withJson([

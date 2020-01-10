@@ -32,18 +32,23 @@ class ReviewCourseService
      *
      * @param $studentID
      * @param $reviewCourseType
+     * @param null|int $wechatcsId
      * @return null|string errorCode
      */
-    public static function updateReviewCourseFlag($studentID, $reviewCourseType)
+    public static function updateReviewCourseFlag($studentID, $reviewCourseType, $wechatcsId = null)
     {
         $student = StudentModel::getById($studentID);
         if ($student['has_review_course'] >= $reviewCourseType) {
             return null;
         }
 
-        $affectRows = StudentModel::updateRecord($studentID, [
+        $update = [
             'has_review_course' => $reviewCourseType,
-        ], false);
+        ];
+        if (!empty($wechatcsId)) {
+            $update['wechatcs_id'] = $wechatcsId;
+        }
+        $affectRows = StudentModel::updateRecord($studentID, $update, false);
 
         if($affectRows == 0) {
             return 'update_student_fail';
