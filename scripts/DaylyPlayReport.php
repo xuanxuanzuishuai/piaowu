@@ -57,6 +57,7 @@ FROM
     user_weixin AS uw ON records.student_id = uw.user_id
         AND uw.app_id = 8
         AND uw.user_type = 1
+        AND uw.busi_type = 1
 GROUP BY records.student_id
 ;";
 $map = [
