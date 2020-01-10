@@ -379,6 +379,27 @@ class ReviewCourseService
     }
 
     /**
+     * 日报详情上课模式测评
+     * @param array $filter
+     * @return array
+     */
+    public static function reportDetailClass($filter)
+    {
+        $items = ReviewCourseModel::reportDetailClass($filter);
+
+        $records = [];
+        foreach ($items as $i => $item) {
+            $records[$i] = [
+                'best_record_id' => $item['best_record_id'],
+                'create_time' => $item['create_time'],
+                'duration' => $item['duration'],
+            ];
+        }
+
+        return $records;
+    }
+
+    /**
      * 发送点评
      * 从学生详情直接发送
      * @param int $studentId

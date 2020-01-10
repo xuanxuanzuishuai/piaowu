@@ -134,6 +134,30 @@ class ReviewCourse extends ControllerBase
     }
 
     /**
+     * 点评课学生日报详情上课模式
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function studentReportDetailClass(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+
+        try {
+            $filter = ReviewCourseService::reportDetailFilter($params);
+            $detailClass = ReviewCourseService::reportDetailClass($filter);
+
+            if (isset($params['student_id'])) {
+                $token = AIBackendService::genStudentToken($params['student_id']);
+            }
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+
+        return HttpHelper::buildResponse($response, ['detail_class' => $detailClass, 'token' => $token ?? '']);
+    }
+
+    /**
      * 发送点评
      * @param Request $request
      * @param Response $response

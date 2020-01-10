@@ -161,4 +161,30 @@ class ReviewCourseModel extends Model
 
         return $lessons;
     }
+
+    /**
+     * 日报上课模式测评数据
+     * @param array $where
+     * @return array
+     */
+    public static function reportDetailClass($where)
+    {
+        $db = MysqlDB::getDB();
+
+        if (!empty($where['created_time[<>]'])) {
+            $where['create_time[<>]'] = $where['created_time[<>]'];
+            unset($where['created_time[<>]']);
+        }
+
+        $lessons = $db->select(PlayClassRecordModel::$table . '(pcr)',
+            [
+                'best_record_id',
+                'create_time',
+                'duration'
+            ],
+            $where
+        );
+
+        return $lessons;
+    }
 }

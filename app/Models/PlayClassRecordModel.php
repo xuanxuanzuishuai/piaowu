@@ -14,7 +14,7 @@ use Medoo\Medoo;
 
 class PlayClassRecordModel extends Model
 {
-    protected static $table = 'play_class_record';
+    public static $table = 'play_class_record';
 
     /**
      * 获取用户日期演奏时长汇总
