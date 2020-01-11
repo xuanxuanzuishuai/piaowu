@@ -46,7 +46,8 @@ $success = 0;
 for ($page = 0; $page < $maxPage; $page++) {
     $where = [
         'create_time[<>]' => [$startTime, $endTime],
-        "LIMIT" => [$page * $pageSize, $pageSize],
+        'status' => PlayClassRecordMessageModel::STATUS_INIT,
+        "LIMIT" => [$page * $pageSize, $pageSize]
     ];
     $rows = PlayClassRecordMessageModel::getRecords($where, '*', false);
 
