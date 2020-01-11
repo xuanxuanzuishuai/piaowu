@@ -54,6 +54,7 @@ class PlayClassRecordService
      */
     public static function handleClassUpdate($message)
     {
+        // TODO: bug update_time 一定会更新, updateRecord 总返回 true
         $sessionId = $message['session_id'];
         $data = [
             'update_time' => time(),

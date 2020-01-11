@@ -15,6 +15,10 @@ class PlayClassRecordMessageModel extends Model
 {
     public static $table = 'play_class_record_message';
 
+    const STATUS_INIT = 0;
+    const STATUS_SUCCESS = 1;
+    const STATUS_FAILURE = 2;
+
     /**
      * @param $startTime
      * @param $endTime
@@ -23,7 +27,10 @@ class PlayClassRecordMessageModel extends Model
     public static function getCount($startTime, $endTime)
     {
         $db = MysqlDB::getDB();
-        return $count = $db->count(self::$table, ['create_time[<>]' => [$startTime, $endTime]]);
+        return $count = $db->count(self::$table, [
+            'create_time[<>]' => [$startTime, $endTime],
+            'status' => self::STATUS_INIT
+        ]);
     }
 
     /**

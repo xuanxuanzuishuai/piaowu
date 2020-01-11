@@ -17,6 +17,7 @@ define('LANG_ROOT', PROJECT_ROOT . '/lang');
 // require composer autoload
 require_once PROJECT_ROOT . '/vendor/autoload.php';
 
+use App\Libs\SimpleLogger;
 use App\Models\PlayClassRecordMessageModel;
 use App\Services\PlayClassRecordService;
 use Dotenv\Dotenv;
@@ -41,6 +42,7 @@ $maxPage = ceil($count / $pageSize);
 echo "count: $count\n";
 echo "max page: $maxPage\n";
 
+$success = 0;
 for ($page = 0; $page < $maxPage; $page++) {
     $where = [
         'create_time[<>]' => [$startTime, $endTime],
@@ -51,10 +53,20 @@ for ($page = 0; $page < $maxPage; $page++) {
     foreach ($rows as $row) {
         $message = json_decode($row['body'], true);
         $result = PlayClassRecordService::handleClassUpdate($message['msg_body']);
-        if ($result) {
-            PlayClassRecordMessageModel::delete($row['id']);
-        }
+        PlayClassRecordMessageModel::updateRecord($row['id'], [
+            'status' => $result ? PlayClassRecordMessageModel::STATUS_SUCCESS : PlayClassRecordMessageModel::STATUS_FAILURE
+        ]);
+        if ($result) { $success++; }
     }
 }
 
+echo "success: $success\n";
+
 echo "update play class records [END]\n";
+
+SimpleLogger::info("[update play class records] >>> ", [
+    '$startTime' => $startTime,
+    '$endTime' => $endTime,
+    '$count' => $count,
+    '$success' => $success
+]);
