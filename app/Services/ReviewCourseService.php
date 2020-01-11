@@ -560,7 +560,7 @@ class ReviewCourseService
                 'value' => $dateStr . '智能陪练课后点评'
             ],
             'keyword3' => [
-                'value' => $reviewer['name'] ?? ''
+                'value' => '小叶子'
             ],
             'keyword4' => [
                 'value' => '点击查看老师的点评信息吧！'
