@@ -111,7 +111,8 @@ class NewSMS
      */
     public function sendEvaluationMessage($targetMobile, $sign, $wechatcs)
     {
-        $time = date("Y-m-d", time());
+        $now = time();
+        $time = date("Y-m-d", $now);
         // 获取当前周的第几天 周日是 0 周一到周六是 1 - 6
         $w = date('w', strtotime($time));
         // 1. $w = 0，周日+1； 2. $w > 0, 8 - $w
@@ -123,6 +124,11 @@ class NewSMS
 《1》在哪体验智能陪练？点击链接，下载【小叶子智能陪练】App：http://t.cn/AiBPajzr
 《2》在哪收老师点评？关注微信公众号【小叶子智能陪练】并绑定购买手机号！
 《3》遇到问题怎么办？1V1助教老师微信：{$wechatcs}";
+
+        if ($now > strtotime('2020-01-13') && $now < strtotime('2020-01-27')) {
+            $msg = "您已成功购买小叶子智能陪练课。由于受春节放假影响，课程将延期至2020-2-3统一开课，时长两周。为表歉意，在此期间您可以正常使用APP，开课前助教老师会统一延长 App 课程的使用期限。
+※请立即添加助教老师微信：{$wechatcs}，并发送购课手机号。";
+        }
 
         $data = [
             'sign_name' => $sign,
