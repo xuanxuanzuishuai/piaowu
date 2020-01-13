@@ -116,7 +116,7 @@ class Erp extends ControllerBase
         $db->commit();
 
         $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
-        if (!$autoApply) {
+        if (!$autoApply && !empty($giftCodes)) {
             // 换购上线前已经提前发送激活码的用户
             $sms->sendExchangeGiftCode($params['mobile'],
                 implode(',', $giftCodes),
@@ -125,7 +125,7 @@ class Erp extends ControllerBase
 
         // 点评课支付成功，发送点评课短信
         $reviewCourseType = ReviewCourseService::getBillReviewCourseType($params['package_id']);
-        if ($reviewCourseType != ReviewCourseModel::REVIEW_COURSE_NO) {
+        if ($reviewCourseType != ReviewCourseModel::REVIEW_COURSE_NO && !empty($giftCodes)) {
             $wechatcs = WeChatCSService::getWeChatCS();
             $sms->sendEvaluationMessage($params['mobile'], CommonServiceForApp::SIGN_STUDENT_APP, $wechatcs['name']);
 
