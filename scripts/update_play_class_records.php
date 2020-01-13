@@ -26,30 +26,47 @@ $dotenv = new Dotenv(PROJECT_ROOT,'.env');
 $dotenv->load();
 $dotenv->overload();
 
-echo "update play class records [START]\n";
-echo "处理24小时内的上课模式数据更新消息\n";
+function logEcho($text, $data = null) {
+    if (empty($text)) {
+        return ;
+    }
+    echo $text . PHP_EOL;
+    if (!empty($data)) {
+        print_r($data);
+    }
+
+    SimpleLogger::info($text, $data ?? []);
+}
+
+logEcho("update play class records [START]");
+logEcho("处理24小时内的上课模式数据更新消息");
 
 $endTime = time();
 $startTime = $endTime - 86400;
 
-echo date('Y-m-d H:i', $startTime) . ' - ' . date('Y-m-d H:i', $endTime) . "\n";
+$startStr = date('Y-m-d H:i', $startTime);
+$endStr = date('Y-m-d H:i', $endTime);
+logEcho("$startStr - $endStr");
 
 $count = PlayClassRecordMessageModel::getCount($startTime, $endTime);
 
 $pageSize = 100;
 $maxPage = ceil($count / $pageSize);
 
-echo "count: $count\n";
-echo "max page: $maxPage\n";
+logEcho("count: $count");
+logEcho("max page: $maxPage");
 
 $success = 0;
 for ($page = 0; $page < $maxPage; $page++) {
     $where = [
         'create_time[<>]' => [$startTime, $endTime],
         'status' => PlayClassRecordMessageModel::STATUS_INIT,
-        "LIMIT" => [$page * $pageSize, $pageSize]
+        "LIMIT" => $pageSize
     ];
     $rows = PlayClassRecordMessageModel::getRecords($where, '*', false);
+
+    $pc = count($rows);
+    logEcho(">> page: $page, count: $pc");
 
     foreach ($rows as $row) {
         $message = json_decode($row['body'], true);
@@ -61,11 +78,11 @@ for ($page = 0; $page < $maxPage; $page++) {
     }
 }
 
-echo "success: $success\n";
+logEcho("success: $success");
 
-echo "update play class records [END]\n";
+logEcho("update play class records [END]");
 
-SimpleLogger::info("[update play class records] >>> ", [
+logEcho("[update play class records] >>> ", [
     '$startTime' => $startTime,
     '$endTime' => $endTime,
     '$count' => $count,
