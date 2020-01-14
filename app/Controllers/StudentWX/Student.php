@@ -209,8 +209,9 @@ class Student extends ControllerBase
         if (empty($student_info)){
             return $response->withJson(Valid::addAppErrors([], 'need_bound'), StatusCode::HTTP_OK);
         }
-        $lesson_num = PlayRecordModel::getDistinctLessonIdCount($user_id);
-        $duration = PlayRecordModel::getSumPlayRecordDuration($user_id);
+
+        $playSum = PlayRecordModel::studentTotalPlaySum($user_id);
+
         $expire_date = $student_info["sub_end_date"];
         $sub_status = 0;
         if (empty($expire_date) or (int)$student_info["sub_status"] == 0){
@@ -228,8 +229,8 @@ class Student extends ControllerBase
                 substr($student_info["mobile"], 7, 4),
             "name" => $student_info["name"],
             "thumb" => Util::getQiNiuFullImgUrl($student_info["thumb"]),
-            "lesson_num" => $lesson_num,
-            "duration" => $duration,
+            "lesson_num" => $playSum['lesson_count'],
+            "duration" => $playSum['sum_duration'],
             "expired_date" => $expire_date,
             "sub_status" => $sub_status,
             "open_id" => $this->ci['open_id'],

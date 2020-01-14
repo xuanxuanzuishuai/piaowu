@@ -379,26 +379,6 @@ GROUP BY lesson_id;";
         return $result;
     }
 
-    public static function getDistinctLessonIdCount($studentId){
-        $db = MysqlDB::getDB();
-        $sql = "select count(distinct pr.lesson_id) as num from " . self::$table . " as pr where student_id=:student_id";
-        $map = [
-          "student_id" => $studentId
-        ];
-        $result = $db->queryAll($sql, $map);
-        return $result[0]["num"];
-    }
-
-    public static function getSumPlayRecordDuration($studentId){
-        $db = MysqlDB::getDB();
-        $sql = "select sum(duration) as duration from " . self::$table . " as pr where student_id=:student_id";
-        $map = [
-            "student_id" => $studentId
-        ];
-        $result = $db->queryAll($sql, $map);
-        return $result[0]["duration"];
-    }
-
     /**
      * 某用户某月哪天练习过曲谱
      * @param $year
@@ -524,5 +504,40 @@ GROUP BY lesson_id;";
         $result['sum_duration'] = $result['sum_duration'] ?? 0;
 
         return $result;
+    }
+
+    /**
+     * 个人练琴时长汇总
+     * 包含练习模式和上课模式
+     * @param $studentId
+     * @return array
+     */
+    public static function studentTotalPlaySum($studentId)
+    {
+        $db = MysqlDB::getDB();
+
+        $sql = "SELECT
+    COUNT(DISTINCT lesson_id) AS lesson_count,
+    SUM(duration) AS sum_duration
+FROM
+    ((SELECT
+        student_id, lesson_id, duration
+    FROM
+        play_record
+    WHERE student_id = :student_id) UNION ALL (SELECT
+        student_id, lesson_id, duration
+    FROM
+        play_class_record
+    WHERE student_id = :student_id)) records
+;";
+        $result = $db->queryAll($sql, [':student_id' => $studentId]);
+        if (empty($result[0])) {
+            return ['lesson_count' => 0, 'sum_duration' => 0];
+        }
+
+        return [
+            'lesson_count' => $result[0]['lesson_count'],
+            'sum_duration' => $result[0]['sum_duration'],
+        ];
     }
 }
