@@ -9,6 +9,7 @@
 namespace App\Services;
 
 
+use App\Libs\AIPLClass;
 use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\DictConstants;
@@ -195,6 +196,11 @@ class ReviewCourseTaskService
             throw new RunTimeException(['record_not_found']);
         }
 
+        $student = StudentModel::getById($review['student_id']);
+        if (empty($student)) {
+            throw new RunTimeException(['student_not_found']);
+        }
+
         $reviewData = [
             'id' => $review['id'],
             'play_date' => $review['play_date'],
@@ -205,10 +211,7 @@ class ReviewCourseTaskService
             'reviewer_id' => $review['reviewer_id'],
         ];
 
-        $student = StudentModel::getById($review['student_id']);
-        if (empty($student)) {
-            throw new RunTimeException(['student_not_found']);
-        }
+        $reviewData['review_text'] = self::getReviewText($review['student_id'], $review['play_date']);
 
         $studentWeChatInfo = UserWeixinModel::getBoundInfoByUserId($student['id'],
             UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
@@ -285,5 +288,34 @@ class ReviewCourseTaskService
         if ($ret < 1) {
             throw new RunTimeException(['update_failure']);
         }
+    }
+
+    /**
+     * 获取点评话术
+     * @param $studentId
+     * @param $playDate
+     * @return string
+     */
+    public static function getReviewText($studentId, $playDate)
+    {
+        $student = StudentModel::getById($studentId);
+        $time = strtotime($playDate);
+        if (empty($student) || empty($time)) {
+            SimpleLogger::error("[getReviewText] invalid params", [
+                '$studentId' => $studentId,
+                '$student' => $student,
+                '$playDate' => $playDate,
+                '$time' => $time
+            ]);
+            return "获取点评话术失败";
+        }
+
+        $text = AIPLClass::getReviewText($student['uuid'], $time);
+
+        if (empty($text)) {
+            return "点评话术未生成";
+        }
+
+        return $text;
     }
 }

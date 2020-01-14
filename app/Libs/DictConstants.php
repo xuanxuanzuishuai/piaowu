@@ -53,6 +53,7 @@ class DictConstants {
             'uc_app_host',
             'panda_crm_host',
             'erp_host',
+            'ai_class_host',
         ]
     ];
 
