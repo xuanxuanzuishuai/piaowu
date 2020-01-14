@@ -10,14 +10,12 @@
 namespace App\Controllers\StudentApp;
 
 use App\Controllers\ControllerBase;
-use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Models\PlayRecordModel;
 use App\Models\StudentModelForApp;
-use App\Services\PlayClassRecordService;
 use App\Services\PlayRecordService;
 use App\Services\UserPlayServices;
 use App\Services\StorageService;
@@ -260,6 +258,7 @@ class Play extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
+        /* TODO 这个接口准备作废，转为靠消息队列上报数据
         // 插入练琴纪录表
         $userId = $this->ci['student']['id'];
 
@@ -271,6 +270,9 @@ class Play extends ControllerBase
         }
 
         return HttpHelper::buildResponse($response, ['record_id' => $recordId]);
+        */
+
+        return HttpHelper::buildResponse($response, []);
     }
 
     /**

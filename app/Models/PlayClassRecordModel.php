@@ -96,4 +96,15 @@ GROUP BY pcr.student_id, FROM_UNIXTIME(pcr.create_time, '%Y%m%d');";
 
         return $result;
     }
+
+    /**
+     * 根据上课session获取记录
+     * @param $sessionId
+     * @return mixed
+     */
+    public static function getBySessionId($sessionId)
+    {
+        $db = MysqlDB::getDB();
+        return $db->get(self::$table, '*', ['class_session_id' => $sessionId]);
+    }
 }

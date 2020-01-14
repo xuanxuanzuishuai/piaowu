@@ -74,4 +74,88 @@ class PlayClassRecordService
         $cnt = PlayClassRecordModel::batchUpdateRecord($data, ['class_session_id' => $classSessionId], false);
         return $cnt > 0;
     }
+
+    /**
+     * 开始上课
+     * @param $sessionId
+     * @param $studentId
+     * @param $lessonId
+     * @param $startTime
+     * @return int
+     */
+    public static function classStart($sessionId, $studentId, $lessonId, $startTime)
+    {
+        $now = time();
+
+        $recordData = [
+            'student_id' => $studentId,
+            'lesson_id' => $lessonId,
+            'start_time' => $startTime,
+            'duration' => 0, // 异步更新
+            'create_time' => $now,
+            'class_session_id' => $sessionId,
+            'update_time' => 0, // 异步更新
+            'best_record_id' => 0, // 异步更新
+        ];
+
+        $recordId =  PlayClassRecordModel::insertRecord($recordData);
+
+        if (empty($recordId)) {
+            return 0;
+        }
+
+        StudentModel::updateRecord($studentId, ['last_play_time' => $now], false);
+
+        return $recordId;
+    }
+
+
+    /**
+     * 更新上课进度
+     * @param $sessionId
+     * @param $duration
+     * @return bool
+     */
+    public static function classProgress($sessionId, $duration)
+    {
+        $record = PlayClassRecordModel::getBySessionId($sessionId);
+        if (empty($record)) {
+            return 0;
+        }
+
+        if ($duration <= $record['duration']) {
+            return 0;
+        }
+
+        $cnt = PlayClassRecordModel::updateRecord($record['id'], [
+            'duration' => $duration
+        ], false);
+
+        return $cnt > 0 ? 1 : 0;
+    }
+
+    /**
+     * 上课结束
+     * @param $sessionId
+     * @param $bestRecordId
+     * @param $duration
+     * @return bool
+     */
+    public static function classEnd($sessionId, $bestRecordId, $duration)
+    {
+        $record = PlayClassRecordModel::getBySessionId($sessionId);
+        if (empty($record)) {
+            return 0;
+        }
+
+        $update = [
+            'best_record_id' => $bestRecordId ?? 0
+        ];
+        if (!empty($duration)) {
+            $update['duration'] = $duration;
+        }
+        $cnt = PlayClassRecordModel::updateRecord($record['id'], $update, false);
+
+        return $cnt > 0 ? 1 : 0;
+    }
 }
