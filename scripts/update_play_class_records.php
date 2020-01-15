@@ -41,6 +41,9 @@ function logEcho($text, $data = null) {
 logEcho("update play class records [START]");
 logEcho("处理24小时内的上课模式数据更新消息");
 
+logEcho("Deprecated");
+exit();
+
 $endTime = time();
 $startTime = $endTime - 86400;
 
