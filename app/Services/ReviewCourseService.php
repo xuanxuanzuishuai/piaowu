@@ -9,7 +9,6 @@
 namespace App\Services;
 
 use App\Libs\AliOSS;
-use App\Libs\Constants;
 use App\Libs\SimpleLogger;
 use App\Models\EmployeeModel;
 use App\Models\ReviewCourseLogModel;
@@ -520,7 +519,7 @@ class ReviewCourseService
     /**
      * 发送点评
      * @param $taskId
-     * @return bool
+     * @return string
      * @throws RunTimeException
      */
     public static function sendTaskReview($taskId)
@@ -534,7 +533,7 @@ class ReviewCourseService
             throw new RunTimeException(['record_not_found']);
         }
 
-        if ($task['status'] != Constants::STATUS_FALSE) {
+        if ($task['status'] != ReviewCourseTaskModel::STATUS_INIT) {
             throw new RunTimeException(['review_task_has_been_send']);
         }
 
@@ -581,19 +580,30 @@ class ReviewCourseService
             );
 
             if (empty($result) || !empty($result['errcode'])) {
-                throw new RunTimeException(['wx_send_fail']);
+
+                ReviewCourseTaskModel::updateRecord($taskId, [
+                    'status' => ReviewCourseTaskModel::STATUS_SEND_FAILURE,
+                    'update_time' => time()
+                ]);
+
+                $code = $result['errcode'] ?? 0;
+                $msg = $result['errmsg'] ?? '';
+
+                return "发送失败: [$code] $msg";
             }
+
         } catch (GuzzleException $e) {
             SimpleLogger::error(__FILE__ . ':' . __LINE__, [print_r($e->getMessage(), true)]);
+
             throw new RunTimeException(['wx_send_fail']);
         }
 
         ReviewCourseTaskModel::updateRecord($taskId, [
-            'status' => Constants::STATUS_TRUE,
+            'status' => ReviewCourseTaskModel::STATUS_SEND_SUCCESS,
             'update_time' => time()
         ]);
 
-        return true;
+        return '';
     }
 
     /**

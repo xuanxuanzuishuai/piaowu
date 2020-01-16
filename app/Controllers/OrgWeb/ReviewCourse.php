@@ -259,12 +259,12 @@ class ReviewCourse extends ControllerBase
         $params = $request->getParams();
 
         try {
-            $success = ReviewCourseService::sendTaskReview($params['task_id']);
+            $result = ReviewCourseService::sendTaskReview($params['task_id']);
 
         } catch (RunTimeException $e) {
             return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData());
         }
 
-        return HttpHelper::buildResponse($response, ['ret' => $success]);
+        return HttpHelper::buildResponse($response, ['ret' => $result]);
     }
 }

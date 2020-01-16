@@ -11,7 +11,6 @@ namespace App\Services;
 
 use App\Libs\AIPLClass;
 use App\Libs\AliOSS;
-use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\OpernCenter;
@@ -81,7 +80,7 @@ class ReviewCourseTaskService
                 'sum_duration' => $data['sum_duration'],
                 'reviewer_id' => $reviewerIds[($last + 1) % $reviewerCount],
                 'create_time' => $now,
-                'status' => Constants::STATUS_FALSE,
+                'status' => ReviewCourseTaskModel::STATUS_INIT,
                 'update_time' => 0,
                 'review_audio' => '',
                 'review_audio_update_time' => 0,
@@ -173,6 +172,12 @@ class ReviewCourseTaskService
             ReviewCourseModel::REVIEW_COURSE_1980 => '1980课包'
         ];
 
+        $statusDesc = [
+            '0' => '未发送',
+            '1' => '发送成功',
+            '2' => '发送失败'
+        ];
+
         $reviewerIds = self::getReviewers();
         $reviewers = EmployeeModel::getRecords(['id' => $reviewerIds], ['id', 'name'], false);
         $reviewers = array_column($reviewers, 'name', 'id');
@@ -180,6 +185,7 @@ class ReviewCourseTaskService
         return [
             'student_course_types' => $courseTypes,
             'reviewers' => $reviewers,
+            'status_desc' => $statusDesc
         ];
     }
 
@@ -205,7 +211,7 @@ class ReviewCourseTaskService
             'id' => $review['id'],
             'play_date' => $review['play_date'],
             'review_date' => $review['review_date'],
-            'review_status' => $review['status'] ? '是' : '否',
+            'review_status' => $review['status'],
             'review_audio' => $review['review_audio'] ? AliOSS::signUrls($review['review_audio']) : '',
             'review_audio_update_time' => $review['review_audio_update_time'],
             'reviewer_id' => $review['reviewer_id'],

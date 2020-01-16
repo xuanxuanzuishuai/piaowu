@@ -15,6 +15,10 @@ class ReviewCourseTaskModel extends Model
 {
     public static $table = 'review_course_task';
 
+    const STATUS_INIT = 0; // 未发送
+    const STATUS_SEND_SUCCESS = 1; // 发送成功
+    const STATUS_SEND_FAILURE = 2; // 发送失败
+
     /**
      * 检测指定日期是否已生成过点评任务
      * @param $reviewDate
