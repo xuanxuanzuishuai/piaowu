@@ -18,6 +18,7 @@ class PlayClassRecordModel extends Model
 
     /**
      * 获取用户日期演奏时长汇总
+     * 只统计点评课用户
      * [
      *   ['student_id' => 1, 'play_date' => 20200107', 'sum_duration' => 10],
      *   ...
@@ -39,6 +40,9 @@ class PlayClassRecordModel extends Model
     SUM(pcr.duration) AS sum_duration
 FROM
     {$play_class_record} AS pcr
+        INNER JOIN
+    student AS s ON s.id = pcr.student_id
+        AND s.`has_review_course` IN (1 , 2)
 WHERE
     pcr.create_time BETWEEN :start_time AND :end_time
 GROUP BY pcr.student_id, FROM_UNIXTIME(pcr.create_time, '%Y%m%d');";
