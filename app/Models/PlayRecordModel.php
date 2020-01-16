@@ -540,4 +540,47 @@ FROM
             'sum_duration' => $result[0]['sum_duration'],
         ];
     }
+
+    /**
+     * 学生练琴汇总(按天)
+     * @param $studentId
+     * @param $startTime
+     * @param $endTime
+     * @return array
+     */
+    public static function getStudentSumByDate($studentId, $startTime, $endTime)
+    {
+        $db = MysqlDB::getDB();
+
+        $sql = "SELECT
+    FROM_UNIXTIME(create_time, '%Y%m%d') AS play_date,
+    COUNT(DISTINCT lesson_id) AS lesson_count,
+    SUM(duration) AS sum_duration
+FROM
+    ((SELECT 
+        lesson_id, duration, created_time AS create_time
+    FROM
+        play_record
+    WHERE
+        created_time >= :start_time
+            AND created_time < :end_time
+            AND student_id = :student_id) UNION ALL (SELECT 
+        lesson_id, duration, create_time
+    FROM
+        play_class_record
+    WHERE
+        create_time >= :start_time
+            AND create_time < :end_time
+            AND student_id = :student_id)) records
+GROUP BY FROM_UNIXTIME(create_time, '%Y%m%d');";
+
+        $map = [
+            ':start_time' => $startTime,
+            ':end_time' => $endTime,
+            ':student_id' => $studentId,
+        ];
+
+        $result = $db->queryAll($sql, $map);
+        return $result;
+    }
 }

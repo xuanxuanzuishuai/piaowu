@@ -40,8 +40,16 @@ class StudentWXRouter extends RouterBase
         '/student_wx/play_record/share_test_statistics' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\PlayRecord:shareLessonTestStatistics', 'middles' => array()),
         '/student_wx/play_record/ai_record_grade' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\PlayRecord:getAIRecordGrade'),
         '/student_wx/play_record/share_ai_record_grade' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\PlayRecord:shareAIRecordGrade', 'middles' => array()),
+
+        // TODO 删除练琴月历旧接口
         '/student_wx/play_record/month_statistic' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\PlayRecord:getMonthStatistics'),
         '/student_wx/play_record/month_day_statistic' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\PlayRecord:getMonthDayStatistics'),
+
+        // 练琴月历
+        '/student_wx/play_record/play_calendar' => [
+            'method' => ['get'],
+            'call' => PlayRecord::class . ':playCalendar',
+        ],
 
         '/student_wx/student/gift_code' => [
             'method' => ['get'],
