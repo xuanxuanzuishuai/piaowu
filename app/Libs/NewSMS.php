@@ -7,6 +7,7 @@
 
 namespace App\Libs;
 
+use App\Services\CommonServiceForApp;
 use App\Services\WeChatCSService;
 use GuzzleHttp\Client;
 
@@ -136,5 +137,16 @@ class NewSMS
             'content' => $msg,
         ];
         return self::sendSMS($data);
+    }
+
+    /**
+     * 点评完成通知
+     * @param $targetMobile
+     * @return bool
+     */
+    public function sendReviewCompleteNotify($targetMobile)
+    {
+        $content = "亲爱的小叶子家长您好！您今天的智能陪练课的点评已经生成，快在公众号里查看吧！未关注公众号的用户关注【小叶子智能陪练】公众号并绑定手机号，明天就能收到点评啦~";
+        return self::send(CommonServiceForApp::SIGN_STUDENT_APP, $targetMobile, $content);
     }
 }

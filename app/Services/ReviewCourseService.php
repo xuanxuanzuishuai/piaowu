@@ -9,6 +9,7 @@
 namespace App\Services;
 
 use App\Libs\AliOSS;
+use App\Libs\NewSMS;
 use App\Libs\SimpleLogger;
 use App\Models\EmployeeModel;
 use App\Models\ReviewCourseLogModel;
@@ -537,13 +538,25 @@ class ReviewCourseService
             throw new RunTimeException(['review_task_has_been_send']);
         }
 
+        $student = StudentModel::getById($task['student_id']);
+        if (empty($student)) {
+            throw new RunTimeException(['student_not_exist']);
+        }
+
+        $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
+        $sms->sendReviewCompleteNotify($student['mobile']);
+
         $studentWeChatInfo = UserWeixinModel::getBoundInfoByUserId($task['student_id'],
             UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
             WeChatService::USER_TYPE_STUDENT,
             UserWeixinModel::BUSI_TYPE_STUDENT_SERVER
         );
         if (empty($studentWeChatInfo)) {
-            throw new RunTimeException(['review_student_need_bind_wx']);
+            ReviewCourseTaskModel::updateRecord($taskId, [
+                'status' => ReviewCourseTaskModel::STATUS_SEND_FAILURE,
+                'update_time' => time()
+            ]);
+            return "发送成功 微信推送失败: [0] 学生未绑定公众号";
         }
 
         $dateStr = date('Y年m月d日', strtotime($task['play_date']));
@@ -589,7 +602,7 @@ class ReviewCourseService
                 $code = $result['errcode'] ?? 0;
                 $msg = $result['errmsg'] ?? '';
 
-                return "发送失败: [$code] $msg";
+                return "发送成功 微信推送失败: [$code] $msg";
             }
 
         } catch (GuzzleException $e) {
@@ -603,7 +616,7 @@ class ReviewCourseService
             'update_time' => time()
         ]);
 
-        return '';
+        return '发送成功';
     }
 
     /**
