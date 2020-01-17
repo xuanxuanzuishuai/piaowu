@@ -8,7 +8,6 @@
 namespace App\Libs;
 
 use App\Services\CommonServiceForApp;
-use App\Services\WeChatCSService;
 use GuzzleHttp\Client;
 
 class NewSMS
