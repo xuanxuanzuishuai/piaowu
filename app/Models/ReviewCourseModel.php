@@ -178,6 +178,7 @@ class ReviewCourseModel extends Model
 
         $lessons = $db->select(PlayClassRecordModel::$table . '(pcr)',
             [
+                'id',
                 'best_record_id',
                 'create_time',
                 'duration'

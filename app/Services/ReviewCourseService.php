@@ -390,6 +390,7 @@ class ReviewCourseService
         $records = [];
         foreach ($items as $i => $item) {
             $records[$i] = [
+                'id' => $item['id'],
                 'best_record_id' => $item['best_record_id'],
                 'create_time' => $item['create_time'],
                 'duration' => $item['duration'],
