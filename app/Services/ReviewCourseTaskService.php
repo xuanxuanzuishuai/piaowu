@@ -212,7 +212,7 @@ class ReviewCourseTaskService
             'play_date' => $review['play_date'],
             'review_date' => $review['review_date'],
             'review_status' => $review['status'],
-            'review_audio' => $review['review_audio'] ? AliOSS::signUrls($review['review_audio']) : '',
+            'review_audio' => $review['review_audio'] ? AliOSS::signUrls($review['review_audio'], "", "", "", true) : '',
             'review_audio_update_time' => $review['review_audio_update_time'],
             'reviewer_id' => $review['reviewer_id'],
         ];
