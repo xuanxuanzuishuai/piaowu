@@ -46,13 +46,15 @@ FROM
         play_record
     WHERE
         created_time >= :start_time
-            AND created_time < :end_time) UNION ALL (SELECT
+            AND created_time < :end_time
+            AND duration > 0) UNION ALL (SELECT
         student_id, lesson_id, duration
     FROM
         play_class_record
     WHERE
         create_time >= :start_time
-            AND create_time < :end_time)) records
+            AND create_time < :end_time
+            AND duration > 0)) records
         INNER JOIN
     user_weixin AS uw ON records.student_id = uw.user_id
         AND uw.app_id = 8
