@@ -8,10 +8,13 @@
 
 namespace App\Routers;
 
+use App\Controllers\StudentApp\Opn;
 use App\Controllers\StudentWeb\Auth;
 use App\Controllers\StudentWeb\Pay;
 use App\Controllers\StudentWeb\Referral;
 use App\Controllers\WeChatCS\WeChatCS;
+use App\Middleware\AppApiForStudent;
+use App\Middleware\OpnResMiddlewareForWeb;
 
 class StudentWebRouter extends RouterBase
 {
@@ -59,6 +62,13 @@ class StudentWebRouter extends RouterBase
             'method' => ['get'],
             'call' => Referral::class . ':referrerInfo',
             'middles' => []
+        ],
+
+        '/student_web/opn/lesson_resources' => [
+            'method' => ['get'],
+            'call' => Opn::class . ':lessonResources',
+            'middles' => [OpnResMiddlewareForWeb::class,
+                AppApiForStudent::class]
         ],
     ];
 }
