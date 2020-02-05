@@ -102,12 +102,6 @@ class App extends ControllerBase
                 'key' => 'content',
                 'type' => 'required',
                 'error_code' => 'content_is_required'
-            ],
-            [
-                'key' => 'content_type',
-                'type' => 'in',
-                'value' => [FeedbackModel::CONTENT_SCORE_ERROR],
-                'error_code' => 'content_type_invalid'
             ]
         ];
         $params = $request->getParams();
@@ -121,6 +115,9 @@ class App extends ControllerBase
             'user_type' => FeedbackModel::TYPE_STUDENT,
             'user_id' => $userId,
             'content_type' => $params['content_type'],
+            'lesson_id' => $params['lesson_id'],
+            'client_info' => $params['client_info'],
+            'tags' => Util::arrayToBitmap(explode(',', $params['tags'])),
             'content' => $params['content'],
             'platform' => $this->ci['platform'],
             'version' => $this->ci['version'],

@@ -681,4 +681,46 @@ class Util
         }
         return $baseTime + $unit * $duration;
     }
+
+    /**
+     * 将数组转为bitmap
+     * [1, 4, 5] -> 25(11001)
+     * @param array $array
+     * @return int
+     */
+    public static function arrayToBitmap($array)
+    {
+        if (!is_array($array) || empty($array)) {
+            return 0;
+        }
+        $bitmap = 0;
+        foreach($array as $bitPos) {
+            $pos = (int)$bitPos - 1;
+            if ($pos < 0) { return 0; }
+            $bitmap |= (1 << $pos);
+        };
+        return $bitmap;
+    }
+
+    /**
+     * 将bitmap转为数组
+     * 25(11001) -> [5, 4, 1]
+     * @param int $bitmap
+     * @return array
+     */
+    public static function bitmapToArray($bitmap)
+    {
+        if (!is_numeric($bitmap) || empty($bitmap)) {
+            return [];
+        }
+        $array = [];
+        $bin = str_split(base_convert($bitmap, 10, 2));
+        $size = count($bin);
+        foreach ($bin as $i => $bit) {
+            if ($bit) {
+                $array[] = $size - $i;
+            }
+        }
+        return $array;
+    }
 }
