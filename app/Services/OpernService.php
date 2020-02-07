@@ -65,13 +65,7 @@ class OpernService
             $book['mmusic'] = $collection['mmusic'] ? '1' : '0';
             $book['mmusicconfig'] = $collection['mmusicconfig'] ? '1' : '0';
             $book['dynamic'] = $collection['dynamic'] ? '1' : '0';
-
-            if (!empty($collection['img_list'])) {
-                $book['images'] = $collection['img_list'];
-            } else {
-                // TODO: remove mock image
-                $book['images'] = $collection['cover'] ? [$collection['cover'], $collection['cover']] : '';
-            }
+            $book['images'] = $collection['img_list'] ?? [];
             $result[] = $book;
         }
         return $result;
