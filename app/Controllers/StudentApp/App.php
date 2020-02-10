@@ -293,6 +293,9 @@ class App extends ControllerBase
 
         $platformId = AppVersionService::getPlatformId($this->ci['platform']);
         $engine = AppVersionService::getEngine(AppVersionModel::APP_TYPE_STUDENT, $platformId, $this->ci['version']);
+        if (!empty($engine['url'])) {
+            $engine['url'] = AliOSS::replaceCdnDomain($engine['url']);
+        }
 
         return HttpHelper::buildResponse($response, ['engine' => $engine]);
     }

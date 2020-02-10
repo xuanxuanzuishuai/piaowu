@@ -27,6 +27,7 @@ class DictConstants {
             'region_id',
             'record_file_arn',
             'img_dir',
+            'cdn_domain',
         ]
     ];
 

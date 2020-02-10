@@ -10,6 +10,7 @@
 namespace App\Libs;
 
 
+use App\Services\DictService;
 use DateTime;
 use OSS\Core\OssException;
 use OSS\OssClient;
@@ -370,4 +371,16 @@ class AliOSS
         return "{$_ENV['ENV_NAME']}/{$dirType}/";
     }
 
+    /**
+     * 替换cdn域名
+     * @param string $url
+     * @return string
+     */
+    public static function replaceCdnDomain($url)
+    {
+        $cdnDomain = DictConstants::get(DictConstants::ALI_OSS_CONFIG, 'cdn_domain');
+        $reg = '/(http|https):\/\/([^\/]+)/i';
+        $newUrl = preg_replace($reg, $cdnDomain, $url);
+        return $newUrl ?? $url;
+    }
 }
