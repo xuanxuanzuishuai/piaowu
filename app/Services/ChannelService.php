@@ -32,4 +32,35 @@ class ChannelService
     {
         return ChannelModel::getById($id);
     }
+
+    /**
+     * 同步channel数据
+     * @param $msg
+     * @return bool
+     */
+    public static function sync($msg)
+    {
+        if (empty($msg)) {
+            return false;
+        }
+
+        $channel = ChannelModel::getById($msg['id']);
+        if(empty($channel)) {
+            return ChannelModel::insertChannel($msg['id'] ,
+                $msg['name'] ,
+                $msg['create_time'],
+                $msg['status'],
+                $msg['parent_id'],
+                $msg['level'],
+                $msg['app_id']);
+        } else {
+            return ChannelModel::updateChannel($msg['id'] ,
+                $msg['name'] ,
+                $msg['create_time'],
+                $msg['status'],
+                $msg['parent_id'],
+                $msg['level'],
+                $msg['app_id']);
+        }
+    }
 }

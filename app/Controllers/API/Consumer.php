@@ -11,6 +11,7 @@ namespace App\Controllers\API;
 use App\Libs\HttpHelper;
 use App\Libs\Valid;
 use App\Controllers\ControllerBase;
+use App\Services\ChannelService;
 use App\Services\PlayClassRecordMessageService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -59,5 +60,52 @@ class Consumer extends ControllerBase
         $ret = PlayClassRecordMessageService::handleMessage($params);
 
         return HttpHelper::buildResponse($response, ['ret' => $ret]);
+    }
+
+
+    /**
+     * 渠道数据
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function channelStatus(Request $request, Response $response)
+    {
+        // 参数校验
+        $params = $request->getParams();
+        $rules = [
+            [
+                'key' => 'topic_name',
+                'type' => 'required',
+                'error_code' => 'topic_name_is_required',
+            ],
+            [
+                'key' => 'source_app_id',
+                'type' => 'required',
+                'error_code' => 'source_app_id_is_required',
+            ],
+            [
+                'key' => 'event_type',
+                'type' => 'required',
+                'error_code' => 'event_type_is_required',
+            ],
+            [
+                'key' => 'msg_body',
+                'type' => 'required',
+                'error_code' => 'msg_body_is_required',
+            ],
+        ];
+
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        switch ($params['event_type']) {
+            case 'channel_sync':
+                ChannelService::sync($params['msg_body']);
+        }
+
+        return HttpHelper::buildResponse($response, []);
     }
 }
