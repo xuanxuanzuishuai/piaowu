@@ -54,7 +54,12 @@ class PlayClassRecordMessageService
 
     public static function progress($message)
     {
-        return PlayClassRecordService::classProgress($message['session_id'], $message['duration']);
+        return PlayClassRecordService::classProgress(
+            $message['session_id'],
+            $message['duration'],
+            $message['eval_id'],
+            $message['eval_duration']
+        );
     }
 
     public static function end($message)

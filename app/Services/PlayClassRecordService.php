@@ -10,6 +10,7 @@ namespace App\Services;
 
 
 use App\Libs\Exceptions\RunTimeException;
+use App\Models\PlayClassPartModel;
 use App\Models\PlayClassRecordModel;
 use App\Models\StudentModel;
 
@@ -114,14 +115,23 @@ class PlayClassRecordService
      * 更新上课进度
      * @param $sessionId
      * @param $duration
+     * @param $recordId
+     * @param $recordDuration
      * @return bool
      */
-    public static function classProgress($sessionId, $duration)
+    public static function classProgress($sessionId, $duration, $recordId, $recordDuration)
     {
         $record = PlayClassRecordModel::getBySessionId($sessionId);
         if (empty($record)) {
             return 0;
         }
+
+        PlayClassPartModel::insertRecord([
+            'class_session_id' => $sessionId,
+            'record_id' => $recordId,
+            'duration' => $recordDuration,
+            'create_time' => time()
+        ], false);
 
         if ($duration <= $record['duration']) {
             return 0;
