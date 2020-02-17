@@ -195,11 +195,12 @@ class OpernCenter
     /**
      * 根据ids获取曲谱列表
      * @param int|array $lessonIds id或id数组
-     * @param $withResources
-     * @param $resourceTypes
+     * @param int $withResources
+     * @param string $resourceTypes
+     * @param bool $noCdn
      * @return array|bool|mixed
      */
-    public function lessonsByIds($lessonIds, $withResources=1, $resourceTypes='dynamic')
+    public function lessonsByIds($lessonIds, $withResources=1, $resourceTypes='dynamic', $noCdn = false)
     {
         if (is_array($lessonIds)) {
             $lessonIds = implode(",", $lessonIds);
@@ -211,7 +212,8 @@ class OpernCenter
             'publish' => $this->publish,
             'lesson_ids' => $lessonIds,
             'withresources' => $withResources,
-            'resource_types' => $resourceTypes
+            'resource_types' => $resourceTypes,
+            'no_cdn' => $noCdn
         ]);
 
         return empty($result) ? [] : $result;

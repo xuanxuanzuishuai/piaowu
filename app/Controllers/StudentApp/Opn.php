@@ -324,7 +324,7 @@ class Opn extends ControllerBase
             $this->ci['opn_pro_ver'],
             $this->ci['opn_auditing'],
             $this->ci['opn_publish']);
-        $result = $opn->lessonsByIds($params['lesson_id'], 1, $params['type']);
+        $result = $opn->lessonsByIds($params['lesson_id'], 1, $params['type'], $params['no_cdn']);
         if (empty($result) || !empty($result['errors'])) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
