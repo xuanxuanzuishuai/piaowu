@@ -9,6 +9,7 @@
 namespace App\Services;
 
 use App\Libs\RedisDB;
+use App\Libs\SentryClient;
 use App\Libs\SimpleLogger;
 use GuzzleHttp\Client;
 use App\Libs\UserCenter;
@@ -144,27 +145,36 @@ class WeChatService
      * @param $app_id
      * @param $user_type
      * @return bool|mixed
-     * @throws \GuzzleHttp\Exception\GuzzleException
      */
     public static function getWeixnUserOpenIDAndAccessTokenByCode($code, $app_id, $user_type)
     {
-
-        $client = new Client(['base_uri' => self::$weixinHTML5APIURL]);
 
         $app_info = self::getWeCHatAppIdSecret($app_id, $user_type);
         if (empty($app_info)) {
             return false;
         }
 
-        $response = $client->request('GET', 'oauth2/access_token', [
-                'query' => [
-                    'code' => $code,
-                    'grant_type' => 'authorization_code',
-                    'appid' => $app_info["app_id"],
-                    'secret' => $app_info["secret"]
+        try {
+            $client = new Client(['base_uri' => self::$weixinHTML5APIURL]);
+            $response = $client->request('GET', 'oauth2/access_token', [
+                    'query' => [
+                        'code' => $code,
+                        'grant_type' => 'authorization_code',
+                        'appid' => $app_info["app_id"],
+                        'secret' => $app_info["secret"]
+                    ]
                 ]
-            ]
-        );
+            );
+        } catch (\Exception $e) {
+            SimpleLogger::error('obtain_openid_access_token_exception', [print_r($e->getMessage(), true)]);
+            SentryClient::captureException($e, [
+                'method' => 'WeChatService::getWeixnUserOpenIDAndAccessTokenByCode',
+                '$code' => $code,
+                '$app_id' => $app_id,
+                '$user_type' => $user_type,
+            ]);
+            return false;
+        }
 
         if (200 == $response->getStatusCode()) {
             $body = $response->getBody();
@@ -187,7 +197,6 @@ class WeChatService
      * @param $method
      * @param $body
      * @return array|bool|mixed
-     * @throws \GuzzleHttp\Exception\GuzzleException
      */
     public static function commonWeixinAPI($app_id, $userType, $requestType, $method, $body)
     {
@@ -199,22 +208,37 @@ class WeChatService
 
         $client = new Client(['base_uri' => self::weixinAPIURL]);
 
-        $data = [
-            'body' => is_string($body) ? $body : json_encode($body)
-        ];
-
-        $subURL = "{$method}?access_token={$at}";
         if ($requestType == 'GET') {
             $subURL = $method;
+            if (empty($body)) { $body = []; }
             $body['access_token'] = $at;
             $data = [
                 'query' => $body
+            ];
+
+        } else {
+            $subURL = "{$method}?access_token={$at}";
+            $data = [
+                'body' => is_string($body) ? $body : json_encode($body)
             ];
         }
 
         SimpleLogger::info('request weixin api: ' . $method . '[' . $requestType . ']', [$body]);
 
-        $response = $client->request($requestType, $subURL, $data);
+        try {
+            $response = $client->request($requestType, $subURL, $data);
+        } catch (\Exception $e) {
+            SimpleLogger::error('WeChatService::commonWeixinAPI Exception', [print_r($e->getMessage(), true)]);
+            SentryClient::captureException($e, [
+                'method' => 'WeChatService::commonWeixinAPI',
+                '$app_id' => $app_id,
+                '$userType' => $userType,
+                '$requestType' => $requestType,
+                '$method' => $method,
+                '$body' => $body,
+            ]);
+            return false;
+        }
 
         if (200 == $response->getStatusCode()) {
             $body = $response->getBody();
@@ -237,7 +261,6 @@ class WeChatService
      * 请求微信接口获取公众号accessToken，外部禁止调用本方法, 请调用getAccessToken方法
      * @param $appInfo
      * @return mixed|string
-     * @throws \GuzzleHttp\Exception\GuzzleException
      */
     public static function _generateAccessToken($appInfo)
     {
@@ -252,18 +275,33 @@ class WeChatService
         $data = ["query" => $requestParams];
         $url = "https://api.weixin.qq.com/cgi-bin/token";
         SimpleLogger::info(__FILE__ . ':' . __LINE__, ['api' => $url, 'data' => $data]);
-        $response = $client->request("GET", $url, $data);
+
+        try {
+            $response = $client->request("GET", $url, $data);
+        } catch (\Exception $e) {
+            SimpleLogger::error("WeChatService::_generateAccessToken request error",
+                [[print_r($e->getMessage(), true)]]);
+            SentryClient::captureException($e, [
+                'method' => 'WeChatService::_generateAccessToken',
+                '$requestParams' => $requestParams,
+            ]);
+            return false;
+        }
         $body = $response->getBody()->getContents();
         $status = $response->getStatusCode();
         SimpleLogger::info(__FILE__ . ':' . __LINE__, ["status" => $status, "body" => $body]);
-        if ($status !== 200 || !$body){
-            throw new \Exception("PROXY_LOGIN_FAILED: " . json_encode($body));
-        } else {
-            $body = json_decode($body, true);
-            if (isset($body["errcode"])) {
-                throw new \Exception("PROXY_LOGIN_FAILED: " . json_encode($body));
-            }
+
+        if ($status !== 200 || !$body) {
+            SimpleLogger::error("WeChatService::_generateAccessToken request error", []);
+            return false;
         }
+
+        $body = json_decode($body, true);
+        if (isset($body["errcode"])) {
+            SimpleLogger::error("WeChatService::_generateAccessToken response error", []);
+            return false;
+        }
+
         return $body;
     }
 
@@ -272,7 +310,6 @@ class WeChatService
      * @param $app_id
      * @param $userType
      * @return bool|string
-     * @throws \GuzzleHttp\Exception\GuzzleException
      */
     public static function getAccessToken($app_id, $userType)
     {
