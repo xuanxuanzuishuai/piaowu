@@ -13,11 +13,14 @@ use Slim\Http\StatusCode;
 
 class Erp
 {
+    const SELF_APP_ID = 8;
+
     const RSP_CODE_SUCCESS = 0;
 
     const API_CREATE_BILL = '/ai_dss/bill/create_bill';
     const API_BILL_DETAIL = '/ai_dss/bill/detail';
     const API_PACKAGE_LIST = '/ai_dss/package/package_list';
+    const API_STUDENT_REGISTER = '/api/dss/student_register';
 
     private $host;
 
@@ -152,5 +155,27 @@ class Erp
         $result = self::commonAPI(self::API_BILL_DETAIL, ['bill_id' => $billId], 'GET');
 
         return $result['data']['bill'] ?? null;
+    }
+
+    /**
+     * 学生注册
+     * @param $channelId
+     * @param $mobile
+     * @param $name
+     * @param null $refType
+     * @param null $refUuid
+     * @return array|bool
+     */
+    public function studentRegister($channelId, $mobile, $name, $refType = null, $refUuid = null)
+    {
+        $response = HttpHelper::requestJson($this->host . self::API_STUDENT_REGISTER, [
+            'app_id' => self::SELF_APP_ID,
+            'mobile' => $mobile,
+            'name' => $name,
+            'channel_id' => $channelId,
+            'referrer_type' => $refType,
+            'referrer_uuid' => $refUuid,
+        ], 'POST');
+        return $response;
     }
 }

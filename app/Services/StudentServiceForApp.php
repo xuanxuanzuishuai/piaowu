@@ -10,6 +10,7 @@ namespace App\Services;
 
 
 use App\Libs\DictConstants;
+use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\ResponseError;
 use App\Libs\SimpleLogger;
@@ -309,22 +310,33 @@ class StudentServiceForApp
      * @param $name
      * @return null|array 失败返回null 成功返回['student_id' => x, 'uuid' => x, 'is_new' => x]
      */
-    public static function studentRegister($mobile, $channel, $name=null)
+    public static function studentRegister($mobile, $channel, $name = null)
     {
-        if (empty($name)) {
-            $name = Util::defaultStudentName($mobile);
-        }
-        $result = self::registerStudentInUserCenter($name, $mobile);
-        if (empty($result['uuid'])) {
-            SimpleLogger::info(__FILE__ . __LINE__, $result);
+        if (empty($mobile) || empty($channel)) {
             return null;
         }
 
-        $uuid = $result['uuid'];
+        if (empty($name)) {
+            $name = Util::defaultStudentName($mobile);
+        }
+
+        $erp = new Erp();
+        $response = $erp->studentRegister($channel, $mobile, $name, null, null);
+        if (empty($response) || $response['code'] != 0) {
+            SimpleLogger::error("studentRegister error", [
+                '$mobile' => $mobile,
+                '$channel' => $channel,
+                '$name' => $name,
+                '$response' => $response,
+            ]);
+            return null;
+        }
+
+        $uuid = $response['data']['uuid'];
         $lastId = self::addStudent($mobile, $name, $uuid, $channel);
 
         if (empty($lastId)) {
-            SimpleLogger::info(__FILE__ . __LINE__, [
+            SimpleLogger::error(__FILE__ . __LINE__, [
                 'msg' => 'user reg error, add new user error.',
             ]);
             return null;
