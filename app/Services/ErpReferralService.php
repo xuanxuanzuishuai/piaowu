@@ -72,7 +72,7 @@ class ErpReferralService
             if (empty($maxEventTaskId)) {
                 $maxEventTaskId = $task['event_task_id'];
             } else {
-                if (self::refEventTaskCmp($maxEventTaskId, $task['event_task_id']) > 0) {
+                if (self::refEventTaskCmp($task['event_task_id'], $maxEventTaskId)) {
                     $maxEventTaskId = $task['event_task_id'];
                 }
             }
