@@ -15,13 +15,15 @@ class File
      * @param string $filename 文件名, 注：文件名通常为hash过的字符串
      * @return array [文件存储的子路径, 哈希后的文件夹路径, 本地存储的完整文件夹路径]
      */
-    public static function createDir ($subDir, $filename)
+    public static function createDir ($subDir, $filename='')
     {
-        // 文件夹 hash
-        $d1 = substr($filename, 0, 2);
-        $d2 = substr($filename, 2, 2);
-
-        $hashPath = "{$d1}/{$d2}";
+        $hashPath = '';
+        if($filename){
+            // 文件夹 hash
+            $d1 = substr($filename, 0, 2);
+            $d2 = substr($filename, 2, 2);
+            $hashPath = "{$d1}/{$d2}";
+        }
         $subPath = "{$subDir}/{$hashPath}";
         $fullPath = $_ENV['STATIC_FILE_SAVE_PATH'] . "/{$subPath}";
 
@@ -90,5 +92,32 @@ class File
         }
         fclose($files);
         return $data;
+    }
+
+    /**
+     * 删除目录文件
+     * @param $filePath
+     */
+    public static function delDirFile($filePath)
+    {
+        if(is_dir($filePath)){
+            if ($handle = opendir($filePath)) {
+                while (false !== ($item = readdir($handle))) {
+                    if ($item != "." && $item != "..") {
+                        if (is_dir("$filePath/$item")) {
+                            //递归调用删除目录文件
+                            self::delDirFile("$filePath/$item");
+                        } else {
+                            //删除文件
+                            unlink("$filePath/$item");
+                        }
+                    }
+                }
+                //关闭文件句柄
+                closedir($handle);
+                //删除目录
+                rmdir($filePath);
+            }
+        }
     }
 }

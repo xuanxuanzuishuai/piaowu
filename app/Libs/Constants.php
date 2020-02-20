@@ -167,5 +167,11 @@ class Constants
     const DICT_TYPE_APPROVAL_STATUS = 'approval_status';
     // 审批操作
     const DICT_TYPE_APPROVAL_OP_TYPE = 'approval_op_type';
+    // 微信公众号类型
+    const WECHAT_TYPE = 'wechat_type';
+    // 发布状态
+    const PUBLISH_STATUS = 'publish_status';
+    // 海报类型
+    const POSTER_TYPE = 'poster_type';
 
 };

@@ -44,6 +44,8 @@ class StudentWXRouter extends RouterBase
         // TODO 删除练琴月历旧接口
         '/student_wx/play_record/month_statistic' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\PlayRecord:getMonthStatistics'),
         '/student_wx/play_record/month_day_statistic' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\PlayRecord:getMonthDayStatistics'),
+        // 小叶子智能陪练微信公众号微信服务器回调地址
+        '/student_wx/callback/check' => array('method'=>array('get', 'post'),'call'=>'\App\Controllers\StudentWX\Callback:weChatCallback', 'middles' => array()),
 
         // 练琴月历
         '/student_wx/play_record/play_calendar' => [

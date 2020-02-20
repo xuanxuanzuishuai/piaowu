@@ -423,7 +423,15 @@ class WeChatService
         return $res;
     }
 
-    public function toNotifyUserWeixinCustomerInfoForImage($app_id, $userType, $openid, $mediaId)
+    /**
+     * @param $app_id
+     * @param $userType
+     * @param $openid
+     * @param $mediaId
+     * @return array|bool|mixed
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public static function toNotifyUserWeixinCustomerInfoForImage($app_id, $userType, $openid, $mediaId)
     {
         $body =  ['touser' => $openid, 'msgtype' => 'image', 'image' => ['media_id' => $mediaId]];
         $res = self::commonWeixinAPI($app_id, $userType, 'POST', 'message/custom/send', $body);

@@ -36,6 +36,8 @@ use App\Middleware\EmployeeAuthCheckMiddleWare;
 use App\Middleware\EmployeePrivilegeMiddleWare;
 use App\Middleware\ErpMiddleware;
 use App\Middleware\OrgWebMiddleware;
+use App\Controllers\orgWeb\Poster;
+use App\Controllers\orgWeb\WechatConfig;
 
 class OrgWebRouter extends RouterBase
 {
@@ -318,5 +320,16 @@ class OrgWebRouter extends RouterBase
         // 转介绍
         '/org_web/referral/config' => ['method' => ['get'], 'call' => Referral::class . ':config'],
         '/org_web/referral/referred_list' => ['method' => ['get'], 'call' => Referral::class . ':referredList'],
+        //转介绍海报
+        '/org_web/poster/add' => ['method' => ['post'], 'call' => Poster::class . ':add'],
+        '/org_web/poster/list' => ['method' => ['get'], 'call' => Poster::class . ':list'],
+        '/org_web/poster/detail' => ['method'=> ['get'], 'call' => Poster::class . ':detail'],
+        '/org_web/poster/modify' => ['method'=> ['post'], 'call' => Poster::class . ':modify'],
+
+        //学生公众号数据配置
+        '/org_web/wechat_config/set' => ['method' => ['post'], 'call' => WechatConfig::class . ':setWechatOfficeConfig'],
+        '/org_web/wechat_config/detail' => ['method' => ['get'], 'call' => WechatConfig::class . ':detail'],
+        '/org_web/wechat_config/list' => ['method' => ['get'], 'call' => WechatConfig::class . ':list'],
+        '/org_web/wechat_config/send_message' => ['method' => ['post'], 'call' => WechatConfig::class . ':sendSelfMessage'],
     ];
 }

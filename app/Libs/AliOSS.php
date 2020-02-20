@@ -31,7 +31,7 @@ class AliOSS
     const DIR_REVIEW_COURSE_AUDIO = 'review_course_audio'; // 点评课语音
 
     const PROCESS_STYLE_NOTE_THUMB = 'note_thumb'; // 老师笔记缩略图 image/auto-orient,1/resize,p_25/quality,q_70
-
+    const DIR_REFERRAL = 'referral';//转介绍海报和二维码
     private function gmt_iso8601($time) {
         $dtStr = date("c", $time);
         $mydatetime = new DateTime($dtStr);
@@ -195,9 +195,11 @@ class AliOSS
      * @param string $newColumn
      * @param string $style 图片处理方式，在OSS后台配置
      * @param bool $useSSL
+     * @param string $waterMark  水印图片参数设置字符串
+     * @param string $imgSize    主图片参数设置字符串
      * @return array|string
      */
-    public static function signUrls($urlNeedSign, $columnName = "", $newColumn = "", $style="", $useSSL = false)
+    public static function signUrls($urlNeedSign, $columnName = "", $newColumn = "", $style="", $useSSL = false, $waterMark='', $imgSize='')
     {
         if (empty($urlNeedSign)){
             return $urlNeedSign;
@@ -218,7 +220,19 @@ class AliOSS
         if (!empty($style)) {
             $options['x-oss-process'] = 'style/' . $style;
         }
+        $imageOptions = '';
+        //主图设置
+        if(!empty($imgSize)){
+            $imageOptions .= "resize,".$imgSize;
+        }
+        //水印图片设置
+        if(!empty($waterMark)){
+            $imageOptions .= "watermark,".$waterMark;
+        }
+        if($imageOptions){
+            $options['x-oss-process'] .= 'image/'.$imageOptions;
 
+        }
         try {
             $timeout = 3600 * 8;
             $ossClient = new OssClient($accessKeyId, $accessKeySecret, $endpoint);
@@ -362,7 +376,8 @@ class AliOSS
             self::DIR_CONVERSE_AUDIO,
             self::DIR_MADE_AUDIO,
             self::DIR_EXAM_IMG,
-            self::DIR_REVIEW_COURSE_AUDIO
+            self::DIR_REVIEW_COURSE_AUDIO,
+            self::DIR_REFERRAL_QR,
         ];
         if (!in_array($dirType, $typeConstants)) {
             return null;
@@ -382,5 +397,34 @@ class AliOSS
         $reg = '/(http|https):\/\/([^\/]+)/i';
         $newUrl = preg_replace($reg, $cdnDomain, $url);
         return $newUrl ?? $url;
+    }
+
+    /**
+     * 检测文件是否存在
+     * @param $objName
+     * @return bool
+     */
+    public static function doesObjectExist($objName)
+    {
+        //获取oss配置文件
+        list($accessKeyId, $accessKeySecret, $bucket, $endpoint) = DictConstants::get(
+            DictConstants::ALI_OSS_CONFIG,
+            [
+                'access_key_id',
+                'access_key_secret',
+                'bucket',
+                'endpoint'
+            ]
+        );
+        //访问oss接口
+        try {
+            $ossClient = new OssClient($accessKeyId, $accessKeySecret, $endpoint);
+            $result = $ossClient->doesObjectExist($bucket,$objName);
+        }catch (OssException $e){
+            SimpleLogger::error($e->getMessage(), []);
+            return false;
+        }
+        //返回结果
+        return $result;
     }
 }

@@ -723,4 +723,31 @@ class Util
         }
         return $array;
     }
+
+    /**
+     * 转义特殊符号和emoji表情
+     */
+    public static function textEncode($str)
+    {
+        if (!is_string($str)) return $str;
+        if (!$str || $str == 'undefined') return '';
+
+        $text = json_encode($str); //暴露出unicode
+        $text = preg_replace_callback("/(\\\u[ed][0-9a-f]{3})/i", function ($str) {
+            return addslashes($str[0]);
+        }, $text); //将emoji的unicode留下，其他不动
+        return json_decode($text);
+    }
+
+    /**
+     * 解码转义
+     */
+    public static function textDecode($str)
+    {
+        $text = json_encode($str); //暴露出unicode
+        $text = preg_replace_callback('/\\\\\\\\/i', function ($str) {
+            return '\\';
+        }, $text); //将两条斜杠变成一条，其他不动
+        return json_decode($text);
+    }
 }
