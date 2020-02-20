@@ -43,7 +43,8 @@ class ErpReferralService
         $list = [];
         foreach ($response['data']['records'] as $referred) {
             $tasks = $referred['tasks'] ?? [];
-            list($maxEventTaskId, $registerTime) = self::findTaskInfo($tasks);
+            $maxRefTask = self::findMaxRefTask($tasks);
+            $maxRefTaskId = $maxRefTask['event_task_id'] ?? 0;
 
             $item = [
                 'student_uuid' => $referred['student_uuid'],
@@ -52,8 +53,8 @@ class ErpReferralService
                 'referrer_uuid' => $referred['referrer_uuid'],
                 'referrer_name' => $referred['referrer_name'],
                 'referrer_mobile_hidden' => Util::hideUserMobile($referred['referrer_mobile']),
-                'max_event_task_name' => self::REF_EVENT_TASK_INFO[$maxEventTaskId] ?? '-',
-                'register_time' => $registerTime,
+                'max_event_task_name' => self::REF_EVENT_TASK_INFO[$maxRefTaskId] ?? '-',
+                'register_time' => $referred['create_time'],
             ];
             $list[] = $item;
         }
@@ -61,23 +62,17 @@ class ErpReferralService
         return ['list' => $list, 'total_count' => $response['data']['total_count']];
     }
 
-    private static function findTaskInfo($tasks)
+    private static function findMaxRefTask($tasks)
     {
-        $registerTime = 0;
-        $maxEventTaskId = 0;
-        foreach ($tasks as $task) {
-            if ($task['event_task_id'] == self::REF_EVENT_TASK_ID_REGISTER) {
-                $registerTime = $task['create_time'];
-            }
-            if (empty($maxEventTaskId)) {
-                $maxEventTaskId = $task['event_task_id'];
-            } else {
-                if (self::refEventTaskCmp($task['event_task_id'], $maxEventTaskId)) {
-                    $maxEventTaskId = $task['event_task_id'];
-                }
+        $maxTaskIndex = -1;
+        $maxTaskId = 0;
+        foreach ($tasks as $idx => $task) {
+            if (empty($maxTaskId) || self::refEventTaskCmp($task['event_task_id'], $maxTaskId)) {
+                $maxTaskIndex = $idx;
+                $maxTaskId = $task['event_task_id'];
             }
         }
-        return [$maxEventTaskId, $registerTime];
+        return $tasks[$maxTaskIndex];
     }
 
     private static function refEventTaskCmp($a, $b)
