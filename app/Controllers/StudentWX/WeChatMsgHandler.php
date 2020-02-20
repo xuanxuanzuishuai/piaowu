@@ -28,7 +28,7 @@ class WeChatMsgHandler
     {
         $userOpenId = (string)$xml->FromUserName;
         //获取后台设置的关注回复内容数据
-        $contentInfo = WeChatConfigModel::getRecords(["event_type" => (string)$xml->Event, "type" => WeChatConfigModel::WECHAT_TYPE_STUDENT], ['content', 'content_type'], false);
+        $contentInfo = WeChatConfigModel::getRecords(["msg_type" => (string)$xml->MsgType,"event_type" => (string)$xml->Event, "type" => WeChatConfigModel::WECHAT_TYPE_STUDENT], ['content', 'content_type'], false);
         if ($contentInfo) {
             foreach ($contentInfo as $cval) {
                 if ($cval['content_type'] == WeChatConfigModel::CONTENT_TYPE_TEXT) {

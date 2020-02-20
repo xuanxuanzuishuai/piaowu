@@ -12,6 +12,7 @@ use App\Controllers\ControllerBase;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Libs\UserCenter;
+use App\Models\WeChatConfigModel;
 use App\Services\WeChatConfigService;
 use App\Services\WeChatService;
 use Slim\Http\Request;
@@ -70,7 +71,7 @@ class WechatConfig extends ControllerBase
         if ($result['code'] == 1) {
             return $response->withJson($result, 200);
         }
-        //组合图片数据
+        //组合数据
         $time = time();
         $data = [
             'content' => Util::textEncode($params['content']),
@@ -177,6 +178,11 @@ class WechatConfig extends ControllerBase
                 'key' => 'wechat_type',
                 'type' => 'required',
                 'error_code' => 'wechat_type_is_required'
+            ],
+            [
+                'key' => 'content_type',
+                'type' => 'required',
+                'error_code' => 'content_type_is_required'
             ]
         ];
         //验证参数
@@ -185,29 +191,8 @@ class WechatConfig extends ControllerBase
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        //获取用户信息
-        $studentInfo = StudentModelForApp::getStudentInfo("", $params['mobile']);
-        if (empty($studentInfo)) {
-            return $response->withJson(Valid::addErrors([], 'student', 'student_not_exist'));
-        }
-        if($params['wechat_type'] == UserWeixinModel::BUSI_TYPE_STUDENT_SERVER){
-            $appId = UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT;
-            $userType = WeChatService::USER_TYPE_STUDENT;
-        }elseif($params['wechat_type'] == UserWeixinModel::BUSI_TYPE_TEACHER_SERVER){
-            $appId = UserCenter::AUTH_APP_ID_AIPEILIAN_TEACHER;
-            $userType = WeChatService::USER_TYPE_TEACHER;
-        }else{
-            return $response->withJson(Valid::addErrors([], 'wechat', 'wechat_type_is_not_exist'));
-        }
-        $studentWeChatInfo = UserWeixinModel::getBoundInfoByUserId($studentInfo['id'],
-            $appId,
-            $userType,
-            $params['wechat_type']);
-        if (empty($studentWeChatInfo)) {
-            return $response->withJson(Valid::addErrors([], 'student', 'review_student_need_bind_wx'));
-        }
         //发送微信推送消息
-        $res = WeChatService::notifyUserWeixinTextInfo(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT, WeChatService::USER_TYPE_STUDENT, $studentWeChatInfo['open_id'], $params['content']);
+        $res = WeChatService::notifyUserCustomizeMessage($params['mobile'], 0, [], ["type" => $params['wechat_type'], 'content' => $params['content'], 'content_type' => $params['content_type']]);
         //返回结果
         if (empty($res)) {
             return $response->withJson(Valid::addErrors([], 'message', 'wx_send_fail'));

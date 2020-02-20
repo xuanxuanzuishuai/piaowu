@@ -377,7 +377,7 @@ class AliOSS
             self::DIR_MADE_AUDIO,
             self::DIR_EXAM_IMG,
             self::DIR_REVIEW_COURSE_AUDIO,
-            self::DIR_REFERRAL_QR,
+            self::DIR_REFERRAL,
         ];
         if (!in_array($dirType, $typeConstants)) {
             return null;

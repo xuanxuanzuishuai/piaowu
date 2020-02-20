@@ -18,11 +18,12 @@ CREATE TABLE `wechat_poster` (
 
 CREATE TABLE `wechat_config` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `type` tinyint(1) unsigned NOT NULL DEFAULT '1' COMMENT '公众号类型1学生端',
+  `type` tinyint(1) unsigned NOT NULL DEFAULT '1' COMMENT '公众号类型:1学生端 2教师端',
   `content` text NOT NULL COMMENT '数据内容',
-  `msg_type` varchar(10) NOT NULL DEFAULT 'event' COMMENT 'text关键字回复event消息推送事件',
-  `content_type` tinyint(1) unsigned NOT NULL DEFAULT '1' COMMENT '内容类型1文本消息 2图片消息',
-  `event_type` varchar(45) NOT NULL COMMENT '推送事件类型subscribe关注公众号unsubscribe取消关注',
+  `msg_type` varchar(10) NOT NULL DEFAULT 'event' COMMENT '推送消息类型:text微信关键字回复 event微信消息推送事件 custom自定义推送事件',
+  `content_type` tinyint(1) unsigned NOT NULL DEFAULT '1' COMMENT '内容类型:1文本消息 2图片消息 3模版消息',
+  `event_type` varchar(45) NOT NULL COMMENT '推送事件类型:subscribe关注公众号 unsubscribe取消关注 click事件',
+  `event_key` varchar(255) NOT NULL COMMENT '点击事件的key',
   `create_time` int(11) unsigned NOT NULL COMMENT '数据创建时间',
   `update_time` int(11) unsigned NOT NULL COMMENT '数据修改时间',
   `create_uid` int(11) unsigned NOT NULL COMMENT '创建人uid',

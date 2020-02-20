@@ -8,12 +8,17 @@
 
 namespace App\Services;
 
+use App\Libs\Constants;
 use App\Libs\RedisDB;
 use App\Libs\SentryClient;
 use App\Libs\SimpleLogger;
+use App\Libs\Util;
 use GuzzleHttp\Client;
 use App\Libs\UserCenter;
 use App\Models\UserWeixinModel;
+use App\Models\StudentModelForApp;
+use App\Models\TeacherModelForApp;
+use App\Models\WeChatConfigModel;
 use Slim\Http\StatusCode;
 
 
@@ -424,6 +429,7 @@ class WeChatService
     }
 
     /**
+     * 微信图片消息
      * @param $app_id
      * @param $userType
      * @param $openid
@@ -579,5 +585,87 @@ class WeChatService
         ]);
 
         return $success;
+    }
+
+
+    /**
+     * 获取用户微信信息
+     * @param $busiType
+     * @param $mobile
+     * @return array|bool
+     */
+    public static function busiTypeMap($busiType,$mobile){
+        if($busiType == UserWeixinModel::BUSI_TYPE_STUDENT_SERVER){
+            $appId = UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT;
+            $userType = WeChatService::USER_TYPE_STUDENT;
+            $userInfo = StudentModelForApp::getStudentInfo("", $mobile);
+
+        }elseif($busiType == UserWeixinModel::BUSI_TYPE_TEACHER_SERVER){
+            $appId = UserCenter::AUTH_APP_ID_AIPEILIAN_TEACHER;
+            $userType = WeChatService::USER_TYPE_TEACHER;
+            $userInfo = TeacherModelForApp::getTeacherInfo("", $mobile);
+        }else{
+            return [];
+        }
+        //获取用户信息
+        $userWeChatInfo = UserWeixinModel::getBoundInfoByUserId($userInfo['id'], $appId,$userType,$busiType);
+        if (empty($userWeChatInfo)) {
+            return [];
+        }
+        //返回数据
+        return [$appId,$userType,$userWeChatInfo];
+    }
+
+
+    /**
+     * 微信发送自定义消息
+     * @param int $mobile               用户手机号码
+     * @param int $id                   微信配置数据表wechat_config唯一ID
+     * @param array $replaceParams      动态参数
+     * @param array $configData         配置数据
+     * @return array|bool|mixed
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public static function notifyUserCustomizeMessage($mobile, $id = 0, $replaceParams = [], $configData = [])
+    {
+        //判断发送的数据是否存在:$configData为指定的发送数据，如果为空根据ID去数据库查询数据
+        $res = [];
+        if (empty($configData)) {
+            $configData = WeChatConfigModel::getRecord(['id' => $id], [], false);
+            if (empty($configData)) {
+                SimpleLogger::info('wechat config data is not exits', ['id' => $id]);
+                return $res;
+            }
+        }
+        //获取公众号数据
+        list($appId, $userType, $userWeChatInfo) = self::busiTypeMap($configData['type'], $mobile);
+        if (empty($appId) || empty($userType) || empty($userWeChatInfo)) {
+            SimpleLogger::info('wechat config info error', [$configData['type']]);
+            return $res;
+        }
+        //发送数据
+        if ($configData['content_type'] == WeChatConfigModel::CONTENT_TYPE_TEXT) {
+            //文本消息
+            $res = self::notifyUserWeixinTextInfo($appId, $userType, $userWeChatInfo['open_id'], Util::textDecode($configData['content']));
+        } elseif ($configData['content_type'] == WeChatConfigModel::CONTENT_TYPE_IMG) {
+            //图片消息
+            $data = WeChatService::uploadImg($configData['content']);
+            if (!empty($data['media_id'])) {
+                $res = self::toNotifyUserWeixinCustomerInfoForImage($appId, $userType, $userWeChatInfo['open_id'], $data['media_id']);
+            }
+        } elseif ($configData['content_type'] == WeChatConfigModel::CONTENT_TYPE_TEMPLATE) {
+            //模版消息
+            $templateConfig = json_decode($configData['content'], true);
+            //根据关键标志替换模板内容
+            foreach ($templateConfig['vars'] as &$tcv){
+                $tcv['value'] = Util::pregReplaceTargetStr(Util::textDecode($tcv['value']),$replaceParams);
+            }
+            $url = $replaceParams['url'] ?? $templateConfig["url"];
+            $res = self::notifyUserWeixinTemplateInfo($appId, $userType, $userWeChatInfo['open_id'], $templateConfig["template_id"], $templateConfig['vars'], $url);
+        } else {
+            return $res;
+        }
+        //返回数据
+        return $res;
     }
 }

@@ -36,8 +36,8 @@ use App\Middleware\EmployeeAuthCheckMiddleWare;
 use App\Middleware\EmployeePrivilegeMiddleWare;
 use App\Middleware\ErpMiddleware;
 use App\Middleware\OrgWebMiddleware;
-use App\Controllers\orgWeb\Poster;
-use App\Controllers\orgWeb\WechatConfig;
+use App\Controllers\OrgWeb\Poster;
+use App\Controllers\OrgWeb\WechatConfig;
 
 class OrgWebRouter extends RouterBase
 {

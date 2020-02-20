@@ -750,4 +750,34 @@ class Util
         }, $text); //将两条斜杠变成一条，其他不动
         return json_decode($text);
     }
+
+    /**
+     * 替换以关键词开头和结尾
+     * @param string $string            目标字符串
+     * @param string $patternStart      正则匹配规则开始关键字
+     * @param string $patternEnd        正则匹配规则结尾关键字
+     * @param array  $replaceParams     替换参数数组
+     * @return mixed|string|void
+     */
+    public static function pregReplaceTargetStr($string, $replaceParams, $patternStart = '{{', $patternEnd = '}}')
+    {
+        $patterns = $replacements = [];
+        $resultStr = '';
+        //正则匹配数据
+        $patternRule = '/(' . $patternStart . '.*?' . $patternEnd . ')/';
+        preg_match_all($patternRule, $string, $matches);
+        if (empty($matches)) {
+            return $resultStr;
+        }
+        //获取正则替换规则和替换数据
+        foreach ($matches[0] as $mv) {
+            $findStr = str_replace([$patternStart, $patternEnd], ["/", "/"], $mv);
+            $patterns[] = $findStr;
+            $replacements[] = $replaceParams[trim($findStr, "/")];
+        }
+        //替换关键字符
+        $string = str_replace([$patternStart, $patternEnd], [], $string);
+        $resultStr = preg_replace($patterns, $replacements, $string);
+        return $resultStr;
+    }
 }
