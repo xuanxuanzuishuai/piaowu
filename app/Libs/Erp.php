@@ -21,6 +21,7 @@ class Erp
     const API_BILL_DETAIL = '/ai_dss/bill/detail';
     const API_PACKAGE_LIST = '/ai_dss/package/package_list';
     const API_STUDENT_REGISTER = '/api/dss/student_register';
+    const API_REFERRED_LIST = '/api/dss/referred_list';
 
     private $host;
 
@@ -176,6 +177,13 @@ class Erp
             'referrer_type' => $refType,
             'referrer_uuid' => $refUuid,
         ], 'POST');
+        return $response;
+    }
+
+    public function referredList($params)
+    {
+        $params['app_id'] = self::SELF_APP_ID;
+        $response = HttpHelper::requestJson($this->host . self::API_REFERRED_LIST, $params);
         return $response;
     }
 }

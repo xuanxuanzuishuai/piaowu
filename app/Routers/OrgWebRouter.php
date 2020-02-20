@@ -25,6 +25,7 @@ use App\Controllers\OrgWeb\Erp;
 use App\Controllers\OrgWeb\Flags;
 use App\Controllers\OrgWeb\Question;
 use App\Controllers\OrgWeb\QuestionTag;
+use App\Controllers\OrgWeb\Referral;
 use App\Controllers\OrgWeb\ReviewCourse;
 use App\Controllers\Schedule\ScheduleRecord;
 use App\Controllers\Student\PlayRecord as BackendPlayRecord;
@@ -314,6 +315,7 @@ class OrgWebRouter extends RouterBase
         '/classv1/class/detail' => ['method'=> ['get'], 'call' => ClassV1::class . ':detail'],
         '/classv1/class/modify' => ['method'=> ['post'], 'call' => ClassV1::class . ':modify'],
 
-
+        // 转介绍
+        '/org_web/referral/referred_list' => ['method' => ['get'], 'call' => Referral::class . ':referredList'],
     ];
 }
