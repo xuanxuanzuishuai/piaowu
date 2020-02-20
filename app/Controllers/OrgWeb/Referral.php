@@ -19,6 +19,21 @@ use Slim\Http\Response;
 class Referral extends ControllerBase
 {
     /**
+     * 转介绍配置
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function config(/** @noinspection PhpUnusedParameterInspection */ Request $request, Response $response)
+    {
+        $config = [
+            'event_task_name' => ErpReferralService::REF_EVENT_TASK_INFO
+        ];
+
+        return HttpHelper::buildResponse($response, $config);
+    }
+
+    /**
      * 转介绍列表
      * @param Request $request
      * @param Response $response

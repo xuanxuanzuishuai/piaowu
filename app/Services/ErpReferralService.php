@@ -20,7 +20,6 @@ class ErpReferralService
     const REF_EVENT_TASK_ID_PAY = 3;
 
     const REF_EVENT_TASK_INFO = [
-        0 => '-',
         self::REF_EVENT_TASK_ID_REGISTER => '注册',
         self::REF_EVENT_TASK_ID_TRIAL_PAY => '付费体验课',
         self::REF_EVENT_TASK_ID_PAY => '付费正式课',
@@ -53,7 +52,7 @@ class ErpReferralService
                 'referrer_uuid' => $referred['referrer_uuid'],
                 'referrer_name' => $referred['referrer_name'],
                 'referrer_mobile_hidden' => Util::hideUserMobile($referred['referrer_mobile']),
-                'max_event_task_name' => self::REF_EVENT_TASK_INFO[$maxEventTaskId],
+                'max_event_task_name' => self::REF_EVENT_TASK_INFO[$maxEventTaskId] ?? '-',
                 'register_time' => $registerTime,
             ];
             $list[] = $item;

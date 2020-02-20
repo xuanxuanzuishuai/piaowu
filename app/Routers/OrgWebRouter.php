@@ -316,6 +316,7 @@ class OrgWebRouter extends RouterBase
         '/classv1/class/modify' => ['method'=> ['post'], 'call' => ClassV1::class . ':modify'],
 
         // 转介绍
+        '/org_web/referral/config' => ['method' => ['get'], 'call' => Referral::class . ':config'],
         '/org_web/referral/referred_list' => ['method' => ['get'], 'call' => Referral::class . ':referredList'],
     ];
 }
