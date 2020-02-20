@@ -321,7 +321,7 @@ class StudentServiceForApp
         }
 
         $erp = new Erp();
-        $response = $erp->studentRegister($channel, $mobile, $name, null, null);
+        $response = $erp->studentRegister($channel, $mobile, $name);
         if (empty($response) || $response['code'] != 0) {
             SimpleLogger::error("studentRegister error", [
                 '$mobile' => $mobile,
@@ -341,6 +341,10 @@ class StudentServiceForApp
             ]);
             return null;
         }
+
+        $erp->updateTask($uuid,
+            ErpReferralService::REF_EVENT_TASK_ID_REGISTER,
+            ErpReferralService::REF_EVENT_TASK_STATUS_COMPLETE);
 
         return $lastId;
     }

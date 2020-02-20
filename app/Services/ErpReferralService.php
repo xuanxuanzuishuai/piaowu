@@ -25,6 +25,8 @@ class ErpReferralService
         self::REF_EVENT_TASK_ID_PAY => '付费正式课',
     ];
 
+    const REF_EVENT_TASK_STATUS_COMPLETE = 2;
+
     /**
      * 转介绍列表
      * @param $params
