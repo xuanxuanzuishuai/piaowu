@@ -23,13 +23,15 @@ class Erp
     const API_STUDENT_REGISTER = '/api/dss/student_register';
     const API_REFERRED_LIST = '/api/dss/referred_list';
     const API_AWARD_LIST = '/api/dss/awards';
-    const API_COMPLETE_TASK = '/api/dss/add_user_event_task';
+    const API_UPDATE_TASK = '/api/dss/add_user_event_task';
+    const API_UPDATE_AWARD = '/api/dss/award';
 
     private $host;
 
     public function __construct()
     {
         $this->host = DictConstants::get(DictConstants::SERVICE, "erp_host");
+//        $this->host = 'http://10.60.42.181:9002';
     }
 
     private function commonAPI($api,  $data = [], $method = 'GET')
@@ -215,7 +217,6 @@ class Erp
      */
     public function updateTask($uuid, $eventTaskId, $status)
     {
-        $params['app_id'] = self::SELF_APP_ID;
         $params = [
             'app_id' => self::SELF_APP_ID,
             'user_type' => 1,
@@ -223,7 +224,30 @@ class Erp
             'event_task_id' => $eventTaskId,
             'status' => $status
         ];
-        $response = HttpHelper::requestJson($this->host . self::API_COMPLETE_TASK, $params, 'POST');
+        $response = HttpHelper::requestJson($this->host . self::API_UPDATE_TASK, $params, 'POST');
+        return $response;
+    }
+
+    /**
+     * 更新奖励状态
+     * @param $awardId
+     * @param $status
+     * @param $reviewerId
+     * @param string $reason
+     * @return array|bool
+     */
+    public function updateAward($awardId, $status, $reviewerId, $reason = '')
+    {
+        $params['app_id'] = self::SELF_APP_ID;
+        $params = [
+            'app_id' => self::SELF_APP_ID,
+            'user_event_task_award_id' => $awardId,
+            'status' => $status,
+            'reviewer_id' => $reviewerId,
+            'review_time' => time(),
+            'reason' => $reason,
+        ];
+        $response = HttpHelper::requestJson($this->host . self::API_UPDATE_AWARD, $params, 'POST');
         return $response;
     }
 }

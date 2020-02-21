@@ -63,8 +63,34 @@ class Referral extends ControllerBase
     {
         $params = $request->getParams();
 
+        if ($params['award_status'] === ''){
+            unset($params['award_status']);
+        }
+
         try {
             $ret = ErpReferralService::getAwardList($params);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+
+        return HttpHelper::buildResponse($response, $ret);
+    }
+
+    /**
+     * 更新奖励状态
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function updateAward(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+
+        try {
+            $ret = ErpReferralService::updateAward($params['award_id'],
+                $params['status'],
+                $this->getEmployeeId(),
+                $params['reason']);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
