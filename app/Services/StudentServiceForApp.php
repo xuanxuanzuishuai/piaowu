@@ -343,8 +343,8 @@ class StudentServiceForApp
         }
 
         $erp->updateTask($uuid,
-            ErpReferralService::REF_EVENT_TASK_ID_REGISTER,
-            ErpReferralService::REF_EVENT_TASK_STATUS_COMPLETE);
+            ErpReferralService::EVENT_TASK_ID_REGISTER,
+            ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
 
         return $lastId;
     }

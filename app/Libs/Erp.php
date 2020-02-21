@@ -22,6 +22,7 @@ class Erp
     const API_PACKAGE_LIST = '/ai_dss/package/package_list';
     const API_STUDENT_REGISTER = '/api/dss/student_register';
     const API_REFERRED_LIST = '/api/dss/referred_list';
+    const API_AWARD_LIST = '/api/dss/awards';
     const API_COMPLETE_TASK = '/api/dss/add_user_event_task';
 
     private $host;
@@ -181,10 +182,27 @@ class Erp
         return $response;
     }
 
+    /**
+     * 转介绍列表
+     * @param $params
+     * @return array|bool
+     */
     public function referredList($params)
     {
         $params['app_id'] = self::SELF_APP_ID;
         $response = HttpHelper::requestJson($this->host . self::API_REFERRED_LIST, $params);
+        return $response;
+    }
+
+    /**
+     * 转介绍奖励列表
+     * @param $params
+     * @return array|bool
+     */
+    public function awardList($params)
+    {
+        $params['app_id'] = self::SELF_APP_ID;
+        $response = HttpHelper::requestJson($this->host . self::API_AWARD_LIST, $params);
         return $response;
     }
 

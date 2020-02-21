@@ -27,7 +27,8 @@ class Referral extends ControllerBase
     public function config(/** @noinspection PhpUnusedParameterInspection */ Request $request, Response $response)
     {
         $config = [
-            'event_task_name' => ErpReferralService::REF_EVENT_TASK_INFO
+            'event_task_name' => ErpReferralService::EVENT_TASKS,
+            'award_status' => ErpReferralService::AWARD_STATUS,
         ];
 
         return HttpHelper::buildResponse($response, $config);
@@ -45,6 +46,25 @@ class Referral extends ControllerBase
 
         try {
             $ret = ErpReferralService::getReferredList($params);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+
+        return HttpHelper::buildResponse($response, $ret);
+    }
+
+    /**
+     * 转介绍奖励列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function awardList(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+
+        try {
+            $ret = ErpReferralService::getAwardList($params);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }

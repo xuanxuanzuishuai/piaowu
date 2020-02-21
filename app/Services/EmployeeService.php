@@ -276,4 +276,9 @@ class EmployeeService
     {
         return EmployeeModel::getById($employeeId);
     }
+
+    public static function getNameMap($employeeIds)
+    {
+        return EmployeeModel::getRecords(['id' => $employeeIds], ['id', 'name'], false);
+    }
 }
