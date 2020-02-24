@@ -279,6 +279,9 @@ class EmployeeService
 
     public static function getNameMap($employeeIds)
     {
+        if (empty($employeeIds)) {
+            return [];
+        }
         return EmployeeModel::getRecords(['id' => $employeeIds], ['id', 'name'], false);
     }
 }

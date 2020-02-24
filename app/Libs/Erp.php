@@ -31,7 +31,6 @@ class Erp
     public function __construct()
     {
         $this->host = DictConstants::get(DictConstants::SERVICE, "erp_host");
-//        $this->host = 'http://10.60.42.181:9002';
     }
 
     private function commonAPI($api,  $data = [], $method = 'GET')

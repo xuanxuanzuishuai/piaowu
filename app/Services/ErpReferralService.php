@@ -47,6 +47,12 @@ class ErpReferralService
      */
     public static function getReferredList($params)
     {
+        if (!empty($params['event_task_id'])) {
+            list($includeTasks, $excludeTasks) = self::getRefEventTaskIdFilter($params['event_task_id']);
+            $params['event_task_id'] = implode(',', $includeTasks);
+            $params['not_event_task_id'] = implode(',', $excludeTasks);
+        }
+
         $erp = new Erp();
         $response = $erp->referredList($params);
 
@@ -94,6 +100,27 @@ class ErpReferralService
     {
         if ($a == $b) { return 0; }
         return $a > $b;
+    }
+
+    /**
+     * 根据转介绍阶段筛选event_task_id
+     * @param $taskId
+     * @return array
+     */
+    private static function getRefEventTaskIdFilter($taskId)
+    {
+        $include = [$taskId];
+        $exclude = [];
+        switch ($taskId) {
+            case self::EVENT_TASK_ID_REGISTER:
+                $exclude[] = self::EVENT_TASK_ID_TRIAL_PAY;
+                $exclude[] = self::EVENT_TASK_ID_PAY;
+                break;
+            case self::EVENT_TASK_ID_TRIAL_PAY:
+                $exclude[] = self::EVENT_TASK_ID_PAY;
+                break;
+        }
+        return [$include, $exclude];
     }
 
     /**
