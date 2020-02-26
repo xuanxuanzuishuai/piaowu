@@ -9,6 +9,7 @@
 namespace App\Routers;
 
 
+use App\Controllers\StudentWX\Referral;
 use App\Controllers\StudentWX\ReviewCourse;
 use App\Controllers\StudentWX\PlayRecord;
 use App\Controllers\StudentWX\PlayRecordForPanda;
@@ -72,6 +73,11 @@ class StudentWXRouter extends RouterBase
         '/student_wx/review_course/get_task_review' => [
             'method' => ['get'],
             'call' => ReviewCourse::class . ':getTaskReview',
+        ],
+
+        '/student_wx/referral/user_award_list' => [
+            'method' => ['get'],
+            'call' => Referral::class . ':userAwardList',
         ],
 
         '/student_org_wx/student/register' => array('method'=>array('post'),'call'=>'\App\Controllers\StudentOrgWX\Student:register', 'middles' => array('\App\Middleware\WeChatOpenIdCheckMiddleware')),

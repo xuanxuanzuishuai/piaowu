@@ -15,9 +15,10 @@ use App\Libs\Util;
 
 class ErpReferralService
 {
-    const EVENT_TASK_ID_REGISTER = 1;
-    const EVENT_TASK_ID_TRIAL_PAY = 2;
-    const EVENT_TASK_ID_PAY = 3;
+    /** 转介绍阶段任务 */
+    const EVENT_TASK_ID_REGISTER = 1; // 注册
+    const EVENT_TASK_ID_TRIAL_PAY = 2; // 体验支付
+    const EVENT_TASK_ID_PAY = 3; // 支付
 
     const EVENT_TASKS = [
         self::EVENT_TASK_ID_REGISTER => '注册',
@@ -25,8 +26,10 @@ class ErpReferralService
         self::EVENT_TASK_ID_PAY => '付费正式课',
     ];
 
+    /** 任务状态 */
     const EVENT_TASK_STATUS_COMPLETE = 2;
 
+    /** 奖励状态状态 */
     const AWARD_STATUS_REJECTED = 0;
     const AWARD_STATUS_WAITING = 1;
     const AWARD_STATUS_APPROVAL = 2;
@@ -38,6 +41,10 @@ class ErpReferralService
         self:: AWARD_STATUS_APPROVAL => '审核中',
         self:: AWARD_STATUS_GIVEN => '已发放',
     ];
+
+    /** 转介绍奖励类型 */
+    const AWARD_TYPE_CASH = 1; // 现金
+    const AWARD_TYPE_SUBS = 2; // 订阅时长
 
     /**
      * 转介绍列表
@@ -168,6 +175,47 @@ class ErpReferralService
         }
 
         return ['list' => $list, 'total_count' => $response['data']['total_count']];
+    }
+
+    /**
+     * 获取用户获得的奖励列表
+     * @param $uuid
+     * @return array
+     * @throws RunTimeException
+     */
+    public static function getUserAwardList($uuid)
+    {
+        $params = ['referrer_uuid' => $uuid];
+
+        $erp = new Erp();
+        $response = $erp->awardList($params);
+
+        if (empty($response) || $response['code'] != 0) {
+            $errorCode = $response['errors'][0]['err_no'] ?? 'erp_request_error';
+            throw new RunTimeException([$errorCode]);
+        }
+
+        $list = [];
+        foreach ($response['data']['records'] as $award) {
+            $item = [
+                'student_uuid' => $award['student_uuid'],
+                'student_name' => $award['student_name'],
+                'student_mobile_hidden' => Util::hideUserMobile($award['student_mobile']),
+                'event_task_id' => $award['event_task_id'],
+                'event_task_name' => $award['event_task_name'],
+                'user_event_task_award_id' => $award['user_event_task_award_id'],
+                'award_status' => $award['award_status'],
+                'award_status_zh' => $award['award_status_zh'],
+                'award_amount' => $award['award_amount'],
+                'award_type' => $award['award_type'],
+                'create_time' => $award['create_time'],
+            ];
+            $list[] = $item;
+        }
+
+        $sum = $response['data']['sum'][self::AWARD_TYPE_CASH] ?? 0;
+
+        return ['list' => $list, 'total_count' => $response['data']['total_count'], 'sum' => $sum];
     }
 
     /**
