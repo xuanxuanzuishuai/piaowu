@@ -90,6 +90,47 @@ class ErpReferralService
         return ['list' => $list, 'total_count' => $response['data']['total_count']];
     }
 
+    /**
+     * 用户转介绍列表
+     * @param $uuid
+     * @return array
+     * @throws RunTimeException
+     */
+    public static function getUserReferredList($uuid)
+    {
+        $params = ['referrer_uuid' => $uuid];
+
+        $erp = new Erp();
+        $response = $erp->referredList($params);
+
+        if (empty($response) || $response['code'] != 0) {
+            $errorCode = $response['errors'][0]['err_no'] ?? 'erp_request_error';
+            throw new RunTimeException([$errorCode]);
+        }
+
+        $list = [];
+        foreach ($response['data']['records'] as $referred) {
+            $tasks = $referred['tasks'] ?? [];
+            $userTasks = [];
+            foreach ($tasks as $task) {
+                $userTasks[$task['event_task_id']] = [
+                    'create_time' => $task['create_time'],
+                    'event_task_name' => self::EVENT_TASKS[$task['event_task_id']],
+                ];
+            }
+
+            $item = [
+                'student_uuid' => $referred['student_uuid'],
+                'student_name' => $referred['student_name'],
+                'student_mobile_hidden' => Util::hideUserMobile($referred['student_mobile']),
+                'tasks' => $userTasks,
+            ];
+            $list[] = $item;
+        }
+
+        return ['list' => $list, 'total_count' => $response['data']['total_count']];
+    }
+
     private static function findMaxRefTask($tasks)
     {
         $maxTaskIndex = -1;

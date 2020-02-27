@@ -80,6 +80,11 @@ class StudentWXRouter extends RouterBase
             'call' => Referral::class . ':userAwardList',
         ],
 
+        '/student_wx/referral/user_referred_list' => [
+            'method' => ['get'],
+            'call' => Referral::class . ':userReferredList',
+        ],
+
         '/student_org_wx/student/register' => array('method'=>array('post'),'call'=>'\App\Controllers\StudentOrgWX\Student:register', 'middles' => array('\App\Middleware\WeChatOpenIdCheckMiddleware')),
         '/student_org_wx/student/login' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentOrgWX\Student:login', 'middles' => array('\App\Middleware\WeChatOpenIdCheckMiddleware')),
         '/student_org_wx/student/send_sms_code' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentOrgWX\Student:sendSmsCode', 'middles' => array()),
