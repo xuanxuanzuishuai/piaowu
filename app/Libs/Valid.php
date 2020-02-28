@@ -236,4 +236,17 @@ class Valid
 EOS;
         return $html;
     }
+
+    /**
+     * 格式化正确返回结果
+     * @param array $data
+     * @return array
+     */
+    public static function formatSuccess($data = [])
+    {
+        return [
+            'code' => self::CODE_SUCCESS,
+            'data' => $data
+        ];
+    }
 }

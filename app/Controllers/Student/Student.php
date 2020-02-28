@@ -473,4 +473,100 @@ class Student extends ControllerBase
             ]
         ]);
     }
+
+    /**
+     * 根据学生ID获取详情数据
+     * @param Request $request
+     * @param Response $response
+     * @param $argv
+     * @return Response
+     */
+    public static function detail(Request $request, Response $response, $argv)
+    {
+        $params = $request->getParams();
+        $rules = [
+            [
+                'key'        => 'student_id',
+                'type'       => 'required',
+                'error_code' => 'student_id_is_required',
+            ],
+            [
+                'key'        => 'student_id',
+                'type'       => 'integer',
+                'error_code' => 'student_id_must_be_integer'
+            ]
+        ];
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $data = StudentService::getStudentDetail($params['student_id']);
+        if(empty($data)) {
+            return $response->withJson(Valid::addErrors([], 'student_id', 'student_not_exist'));
+        }
+
+        return $response->withJson(Valid::formatSuccess($data));
+    }
+
+    /**
+     * 更新学生添加助教微信状态
+     * @param Request $request
+     * @param Response $response
+     * @param $argv
+     * @return Response
+     */
+    public static function updateAddAssistantStatus(Request $request, Response $response, $argv)
+    {
+        $params = $request->getParams();
+        $rules = [
+            [
+                'key'        => 'student_id',
+                'type'       => 'required',
+                'error_code' => 'student_id_is_required',
+            ],
+            [
+                'key'        => 'student_id',
+                'type'       => 'integer',
+                'error_code' => 'student_id_must_be_integer'
+            ],
+            [
+                'key'        => 'add_assistant_status',
+                'type'       => 'required',
+                'error_code' => 'add_assistant_status_is_required',
+            ]
+        ];
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        StudentService::updateAddAssistantStatus($params['student_id'], $params['add_assistant_status']);
+        return $response->withJson(Valid::formatSuccess());
+    }
+
+    /**
+     * 获取学生列表数据
+     * => 开发中
+     * @param Request $request
+     * @param Response $response
+     * @param $argv
+     * @return Response
+     */
+    public static function searchList(Request $request, Response $response, $argv)
+    {
+        $params = $request->getParams();
+        $rules = [
+            [
+                'key'        => 'student_id',
+                'type'       => 'required',
+                'error_code' => 'student_id_is_required',
+            ]
+        ];
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        StudentService::searchList($params['student_id'], $params['add_assistant_status']);
+        return $response->withJson(Valid::formatSuccess());
+    }
 }

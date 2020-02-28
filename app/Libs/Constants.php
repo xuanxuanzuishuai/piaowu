@@ -180,4 +180,9 @@ class Constants
     const COLLECTION_PROCESS_STATUS = 'collection_process_status';
     // 学生集合指定购买课包id
     const COLLECTION_PACKAGE_ID = 'collection_package_id';
+    // 学生阶段TYPE
+    const DICT_TYPE_REVIEW_COURSE_STATUS = 'review_course_status';
+    // 学生阶段TYPE
+    const DICT_TYPE_ADD_ASSISTANT_WX_STATUS = 'add_assistant_wx_status';
+
 };

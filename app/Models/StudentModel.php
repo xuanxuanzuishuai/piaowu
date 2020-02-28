@@ -40,6 +40,10 @@ class StudentModel extends Model
     const CHANNEL_EXAM_MINAPP_REGISTER = 8; //音基小程序注册
     const CHANNEL_SPACKAGE_LANDING = 9; //小课包推广页
 
+    //是否添加助教微信
+    const ADD_STATUS = 1;
+    const UN_ADD_STATUS = 0;
+
     /**
      * 更新学生信息
      * @param $studentId
@@ -345,5 +349,37 @@ class StudentModel extends Model
         ]);
 
         return $records;
+    }
+
+    /**
+     * 获取学生数据详情
+     * @param $studentId
+     * @return array
+     */
+    public static function getStudentDetail($studentId)
+    {
+        $table = self::$table.'(s)';
+        $join = [
+            '[>]'.CollectionModel::$table.'(c)' => ['s.collection_id' => 'id'],
+            '[>]'.EmployeeModel::$table.'(e)' => ['s.assistant_id' => 'id'],
+        ];
+        $fields = [
+            's.id',
+            's.mobile',
+            's.name',
+            's.collection_id',
+            'c.name(collection_name)',
+            's.first_pay_time',
+            's.channel_id',
+            's.sub_end_date',
+            's.sub_status',
+            's.create_time',
+            's.has_review_course',
+            's.assistant_id',
+            'e.name(assistant_name)',
+            's.is_add_assistant_wx'
+        ];
+        $where = ['s.id' => $studentId];
+        return MysqlDB::getDB()->get($table, $join, $fields, $where);
     }
 }

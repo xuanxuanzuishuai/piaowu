@@ -22,6 +22,7 @@ use App\Models\EmployeeModel;
 use App\Models\GiftCodeModel;
 use App\Models\StudentModel;
 use App\Models\StudentOrgModel;
+use App\Models\UserWeixinModel;
 
 class StudentService
 {
@@ -472,5 +473,127 @@ class StudentService
             'sub_start_date' => $student['sub_start_date'] ?: $studentUpdate['sub_start_date'],
             'sub_end_date' => $studentUpdate['sub_end_date'],
         ];
+    }
+
+    /**
+     * 获取学生详情数据
+     * @param $studentId
+     * @return array
+     */
+    public static function getStudentDetail($studentId)
+    {
+        $student = StudentModel::getStudentDetail($studentId);
+        if(empty($student)){
+            return [];
+        }
+        //获取学生微信信息
+        $studentWeChatInfo = self::getStudentWeChat($studentId);
+        //获取学生转介绍信息
+        $refereeInfo = self::getStudentReferee($studentId);
+        //获取学生注册渠道
+        $channel = self::getStudentChannel($student['channel_id']);
+        return self::formatStudentInfo($student, $studentWeChatInfo, $refereeInfo, $channel);
+    }
+
+    /**
+     * 获取学生渠道数据
+     * @param $channelId
+     * @return array
+     */
+    public static function getStudentChannel($channelId)
+    {
+        if(empty($channelId)){
+            return [];
+        }
+        $channel = ChannelService::getChannelById($channelId);
+        $data['channel'] = $channel['name'];
+        $data['channel_id'] = $channelId;
+        if(!empty($channel['parent_id'])){
+            $parentChannel = ChannelService::getChannelById($channel['parent_id']);
+            $data['parent_channel'] = $parentChannel['name'];
+            $data['parent_channel_id'] = $parentChannel['id'];
+        }
+        return $data;
+    }
+
+    /**
+     * 根式化学生详情页数据
+     * @param $student
+     * @param $studentWeChatInfo
+     * @param $refereeInfo
+     * @param $channel
+     * @return array
+     */
+    public static function formatStudentInfo($student, $studentWeChatInfo, $refereeInfo, $channel)
+    {
+        $data = [];
+        $data['student_id'] = $student['id'];
+        $data['mobile'] = $student['mobile'];
+        $data['student_name'] = $student['name'];
+        $data['collection_id'] = $student['collection_id'];
+        $data['collection_name'] = $student['collection_name'];
+        $data['pay_status'] = empty($student['first_pay_time']) ? '未付费' : '已付费';
+        //计算过期时间戳
+        $expireTime = strtotime($student['sub_end_date'].' 00:00');
+        $data['expire_time'] = date('Y-m-d', $expireTime);
+        $data['effect_status'] = ($expireTime > time() && $student['sub_status']) ?  '未过期' : '已过期';
+        $data['wechat_bind'] = empty($studentWeChatInfo) ? '未绑定' : '已绑定';
+        $data['wechat_name'] = '-';
+        //获取学生阶段MAP
+        $stepMap = DictService::getTypeMap(Constants::DICT_TYPE_REVIEW_COURSE_STATUS);
+        $data['student_step'] = isset($stepMap[$student['has_review_course']]) ? $stepMap[$student['has_review_course']] : '-';
+        $data['referee'] = empty($refereeInfo) ? '-' : $refereeInfo['name'];
+        $data['sign_in_time'] = date('Y-m-d', $student['create_time']);
+        $data['assistant_id'] = $student['assistant_id'];
+        $data['assistant_name'] = $student['assistant_name'];
+        $data['is_add_assistant_wx'] = $student['is_add_assistant_wx'];
+        $data['channel'] = $channel;
+        return $data;
+    }
+
+    /**
+     * 获取学生转介绍数据
+     * => 因转介绍功能未完成，该数据后续完善
+     * @param $studentId
+     * @return array
+     */
+    public static function getStudentReferee($studentId)
+    {
+        return [];
+    }
+
+    /**
+     * 获取学生微信数据
+     * @param $studentId
+     * @return mixed
+     */
+    public static function getStudentWeChat($studentId)
+    {
+        return UserWeixinModel::getBoundInfoByUserId($studentId,
+            UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
+            WeChatService::USER_TYPE_STUDENT,
+            UserWeixinModel::BUSI_TYPE_STUDENT_SERVER);
+    }
+
+    /**
+     * 编辑学生添加助教微信状态
+     * @param $studentId
+     * @param $status
+     * @return int|null
+     */
+    public static function updateAddAssistantStatus($studentId, $status)
+    {
+        $status = empty($status) ? StudentModel::UN_ADD_STATUS : StudentModel::ADD_STATUS;
+        $data = ['is_add_assistant_wx' => $status];
+        return StudentModel::updateStudent($studentId, $data);
+    }
+
+    /**
+     * => 开发中
+     * @return array
+     */
+    public static function searchList()
+    {
+        return [];
     }
 }
