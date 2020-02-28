@@ -84,7 +84,7 @@ class Opn extends ControllerBase
             $this->ci['opn_pro_ver'],
             $this->ci['opn_auditing'],
             $this->ci['opn_publish']);
-        $collections = $opn->searchCollections($params['key'], 1, 1, 50);
+        $collections = $opn->searchCollectionsByEs($params['key'], 1, 1, 50);
         if (empty($collections) || !empty($collections['errors'])) {
             return $response->withJson($collections, StatusCode::HTTP_OK);
         }
@@ -119,7 +119,7 @@ class Opn extends ControllerBase
             $this->ci['opn_publish']);
 
         list($pageId, $pageLimit) = Util::appPageLimit($params);
-        $result = $opn->searchLessons($params['key'], 1, 1, $pageId, $pageLimit);
+        $result = $opn->searchLessonsByEs($params['key'], 1, 1, $pageId, $pageLimit);
         if (empty($result) || !empty($result['errors'])) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
