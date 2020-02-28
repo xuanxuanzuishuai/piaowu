@@ -27,6 +27,8 @@ class OpernCenter
     const OPERN_API_LESSONS_BY_ID = '/api/opern/lessonsbyid';
     const OPERN_API_SEARCH_COLLECTIONS = '/api/opern/search_collection';
     const OPERN_API_SEARCH_LESSONS = '/api/opern/search_opern';
+    const OPERN_API_SEARCH_ES_COLLECTIONS = '/api/es_opern/search_collection';
+    const OPERN_API_SEARCH_ES_LESSONS = '/api/es_opern/search_opern';
     const OPERN_API_STATIC_RESOURCE = '/api/opern/opernres';
 
     const OPERN_API_GET_KNOWLEDGE = '/api/knowledge/bylesson';
@@ -244,6 +246,30 @@ class OpernCenter
     }
 
     /**
+     * 搜索合集列表
+     * @param $keyword
+     * @param $searchAuthor
+     * @param $pageId
+     * @param $pageSize
+     * @return array|bool|mixed
+     */
+    public function searchCollectionsByEs($keyword, $searchAuthor, $pageId, $pageSize = self::DEFAULT_PAGE_SIZE)
+    {
+        $result = self::commonAPI(self::OPERN_API_SEARCH_ES_COLLECTIONS, [
+            'pro_id' => $this->proId,
+            'pro_ver' => $this->proVer,
+            'auditing' => $this->auditing,
+            'publish' => $this->publish,
+            'keyword' => $keyword,
+            'searchauthor' => $searchAuthor,
+            'page' => $pageId,
+            'page_size' => $pageSize
+        ]);
+
+        return empty($result) ? [] : $result;
+    }
+
+    /**
      * 搜索曲谱列表
      * @param $keyword
      * @param $searchAuthor
@@ -257,6 +283,36 @@ class OpernCenter
     public function searchLessons($keyword, $searchAuthor, $withCollection, $page, $pageSize = self::DEFAULT_PAGE_SIZE, $withResources=1, $resourceTypes='dynamic')
     {
         $result = self::commonAPI(self::OPERN_API_SEARCH_LESSONS, [
+            'pro_id' => $this->proId,
+            'pro_ver' => $this->proVer,
+            'auditing' => $this->auditing,
+            'publish' => $this->publish,
+            'keyword' => $keyword,
+            'searchauthor' => $searchAuthor,
+            'withcollection' => $withCollection,
+            'page' => $page,
+            'page_size' => $pageSize,
+            'withresources' => $withResources,
+            'resource_types' => $resourceTypes
+        ]);
+
+        return empty($result) ? [] : $result;
+    }
+
+    /**
+     * 搜索曲谱列表
+     * @param $keyword
+     * @param $searchAuthor
+     * @param $withCollection
+     * @param $page
+     * @param $pageSize
+     * @param $withResources
+     * @param $resourceTypes
+     * @return array|bool|mixed
+     */
+    public function searchLessonsByEs($keyword, $searchAuthor, $withCollection, $page, $pageSize = self::DEFAULT_PAGE_SIZE, $withResources=1, $resourceTypes='dynamic')
+    {
+        $result = self::commonAPI(self::OPERN_API_SEARCH_ES_LESSONS, [
             'pro_id' => $this->proId,
             'pro_ver' => $this->proVer,
             'auditing' => $this->auditing,

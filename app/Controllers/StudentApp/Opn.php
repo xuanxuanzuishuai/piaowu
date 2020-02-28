@@ -65,6 +65,76 @@ class Opn extends ControllerBase
         ], StatusCode::HTTP_OK);
     }
 
+    public function searchCollection(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'key',
+                'type' => 'required',
+                'error_code' => 'keyword_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT,
+            $this->ci['opn_pro_ver'],
+            $this->ci['opn_auditing'],
+            $this->ci['opn_publish']);
+        $collections = $opn->searchCollections($params['key'], 1, 1, 50);
+        if (empty($collections) || !empty($collections['errors'])) {
+            return $response->withJson($collections, StatusCode::HTTP_OK);
+        }
+        $collections = OpernService::appFormatCollections($collections['data']['list']);
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => [
+                'collections' => $collections
+            ]
+        ], StatusCode::HTTP_OK);
+    }
+
+    public function searchLesson(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'key',
+                'type' => 'required',
+                'error_code' => 'keyword_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT,
+            $this->ci['opn_pro_ver'],
+            $this->ci['opn_auditing'],
+            $this->ci['opn_publish']);
+
+        list($pageId, $pageLimit) = Util::appPageLimit($params);
+        $result = $opn->searchLessons($params['key'], 1, 1, $pageId, $pageLimit);
+        if (empty($result) || !empty($result['errors'])) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $lessons = OpernService::appSearchLessons($result['data']['list']);
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => [
+                'lessons' => $lessons,
+                'lesson_count' => $result['data']['total_count']
+            ]
+        ], StatusCode::HTTP_OK);
+    }
+
     public function categories(Request $request, Response $response)
     {
         $params = $request->getParams();
