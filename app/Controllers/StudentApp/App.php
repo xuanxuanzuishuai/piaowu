@@ -19,6 +19,7 @@ use App\Libs\Valid;
 use App\Models\AppVersionModel;
 use App\Models\FeedbackModel;
 use App\Services\AppVersionService;
+use App\Services\BannerService;
 use App\Services\StudentServiceForApp;
 use App\Services\TrackService;
 use Slim\Http\Request;
@@ -298,5 +299,12 @@ class App extends ControllerBase
         }
 
         return HttpHelper::buildResponse($response, ['engine' => $engine]);
+    }
+
+    public function banner(Request $request, Response $response)
+    {
+        $banner = BannerService::getStudentBanner($this->ci['student']['id']);
+
+        return HttpHelper::buildResponse($response, ['banner' => $banner]);
     }
 }

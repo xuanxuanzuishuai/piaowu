@@ -494,6 +494,16 @@ class StudentServiceForApp
         return $endTime > time();
     }
 
+    public static function checkSubStatus($subStatus, $subEndDate)
+    {
+        if ($subStatus != StudentModelForApp::SUB_STATUS_ON) {
+            return false;
+        }
+
+        $endTime = strtotime($subEndDate) + 86400;
+        return $endTime > time();
+    }
+
     /**
      * 是否可以领取体验时长
      * @param $student
