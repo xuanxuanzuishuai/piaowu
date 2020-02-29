@@ -36,11 +36,21 @@ class BannerService
                 'image_main' => empty($b['image_main']) ? '' : AliOSS::signUrls($b['image_main']),
                 'image_list' => empty($b['image_main']) ? '' : AliOSS::signUrls($b['image_list']),
                 'action_type' => $b['action_type'],
-                'action' => json_decode($b['action_detail'], true),
+                'action' => self::prepareAction($b['action_type'], json_decode($b['action_detail'], true)),
             ];
         }
 
         return $bannerList;
+    }
+
+    public static function prepareAction($type, $detail)
+    {
+        switch ($type) {
+            case BannerModel::ACTION_MINI_PRO:
+                $detail['no_wx_image'] = empty($detail['no_wx_image']) ? '' : AliOSS::signUrls($detail['no_wx_image']);
+                break;
+        }
+        return $detail;
     }
 
     public static function userFilter($filter, $studentId)

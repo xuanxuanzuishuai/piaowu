@@ -19,6 +19,9 @@ class BannerModel extends Model
     const CACHE_KEY = 'banner_cache';
     const CACHE_EXPIRE = 14400; // 缓存 4h刷新
 
+    const ACTION_MINI_PRO = 1; // 跳转小程序
+    const ACTION_HREF = 2; // 跳转网页
+
     public static function getBanner()
     {
         $redis = RedisDB::getConn();
