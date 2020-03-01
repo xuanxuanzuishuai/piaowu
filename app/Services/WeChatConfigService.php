@@ -22,7 +22,7 @@ class WeChatConfigService
     public static function addWechatConfig($insertData)
     {
         //写入数据
-        $id = WeChatConfigModel::insertRecord($insertData);
+        $id = WeChatConfigModel::insertRecord($insertData,false);
         //返回结果
         return $id;
     }
@@ -34,7 +34,7 @@ class WeChatConfigService
      */
     public static function updateWechatConfig($id, $updateData)
     {
-        $affectRows = WeChatConfigModel::updateRecord($id, $updateData);
+        $affectRows = WeChatConfigModel::updateRecord($id, $updateData,false);
         //返回结果
         return $affectRows;
     }

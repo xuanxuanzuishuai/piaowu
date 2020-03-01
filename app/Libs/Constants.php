@@ -115,6 +115,7 @@ class Constants
     const DICT_KEY_CODE_CC_ROLE_ID_CODE_ORG = 'CC_ROLE_ID_ORG'; //机构cc使用
     const DICT_KEY_CODE_PRINCIPAL_ROLE_ID_CODE = 'PRINCIPAL_ROLE_ID'; //机构校长角色
     const DICT_KEY_CODE_DIRECT_PRINCIPAL_ROLE_ID_CODE = 'DIRECT_PRINCIPAL_ROLE_ID'; //直营校长角色
+    const DICT_KEY_CODE_ASSISTANT = 'ASSISTANT_ROLE_ID'; //助教角色
 
     // 声网录制地址
     const AGORA_RECORDER_URL = 'AGORA_RECORDER_URL';
@@ -173,5 +174,10 @@ class Constants
     const PUBLISH_STATUS = 'publish_status';
     // 海报类型
     const POSTER_TYPE = 'poster_type';
-
+    // 学生集合发布状态
+    const COLLECTION_PUBLISH_STATUS = 'collection_publish_status';
+    // 学生集合过程状态
+    const COLLECTION_PROCESS_STATUS = 'collection_process_status';
+    // 学生集合指定购买课包id
+    const COLLECTION_PACKAGE_ID = 'collection_package_id';
 };

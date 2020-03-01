@@ -38,6 +38,7 @@ use App\Middleware\ErpMiddleware;
 use App\Middleware\OrgWebMiddleware;
 use App\Controllers\OrgWeb\Poster;
 use App\Controllers\OrgWeb\WechatConfig;
+use App\Controllers\OrgWeb\Collection;
 
 class OrgWebRouter extends RouterBase
 {
@@ -334,5 +335,12 @@ class OrgWebRouter extends RouterBase
         '/org_web/wechat_config/detail' => ['method' => ['get'], 'call' => WechatConfig::class . ':detail'],
         '/org_web/wechat_config/list' => ['method' => ['get'], 'call' => WechatConfig::class . ':list'],
         '/org_web/wechat_config/send_message' => ['method' => ['post'], 'call' => WechatConfig::class . ':sendSelfMessage'],
-    ];
+
+        //学生集合
+        '/org_web/collection/add' => ['method' => ['post'], 'call' => Collection::class . ':add'],
+        '/org_web/collection/detail' => ['method' => ['get'], 'call' => Collection::class . ':detail'],
+        '/org_web/collection/modify' => ['method' => ['post'], 'call' => Collection::class . ':modify'],
+        '/org_web/collection/list' => ['method' => ['get'], 'call' => Collection::class . ':list'],
+        '/org_web/collection/assistant_list' => ['method' => ['get'], 'call' => Collection::class . ':getAssistantList'],
+        ];
 }
