@@ -37,12 +37,24 @@ CREATE TABLE `student_assistant_log` (
 -- 添加学生状态dict
 INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
 VALUES
-('review_course_status', '学生状态', '0', '无', ''),
-('review_course_status', '学生状态', '1', '体验卡40', ''),
-('review_course_status', '学生状态', '2', '年卡1980', '');
+('review_course_status', '学生状态', '0', '已注册', ''),
+('review_course_status', '学生状态', '1', '付费体验课', ''),
+('review_course_status', '学生状态', '2', '付费正式课', '');
 
 -- 添加助教微信状态dict
 INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
 VALUES
 ('add_assistant_wx_status', '添加助教微信状态', '0', '未加', ''),
 ('add_assistant_wx_status', '添加助教微信状态', '1', '已加', '');
+
+-- 添加学员微信绑定状态dict
+INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
+VALUES
+('wx_bind_status', '学员微信绑定状态', '0', '已绑定', ''),
+('wx_bind_status', '学员微信绑定状态', '1', '未绑定', '');
+
+-- 添加学员有效期状态dict
+INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
+VALUES
+('effect_status', '学员有效期状态', '0', '未过期', ''),
+('effect_status', '学员有效期状态', '1', '已过期', '');

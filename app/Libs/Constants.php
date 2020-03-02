@@ -182,7 +182,11 @@ class Constants
     const COLLECTION_PACKAGE_ID = 'collection_package_id';
     // 学生阶段TYPE
     const DICT_TYPE_REVIEW_COURSE_STATUS = 'review_course_status';
-    // 学生阶段TYPE
+    // 学生添加助教微信TYPE
     const DICT_TYPE_ADD_ASSISTANT_WX_STATUS = 'add_assistant_wx_status';
+    // 学生有效期状态TYPE
+    const DICT_TYPE_EFFECT_STATS = 'effect_status';
+    // 学生微信绑定状态TYPE
+    const DICT_TYPE_BIND_WX_STATS = 'wx_bind_status';
 
 };

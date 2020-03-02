@@ -20,6 +20,8 @@ use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\EmployeeModel;
 use App\Models\GiftCodeModel;
+use App\Models\StudentAssistantLogModel;
+use App\Models\StudentCollectionLogModel;
 use App\Models\StudentModel;
 use App\Models\StudentOrgModel;
 use App\Models\UserWeixinModel;
@@ -543,7 +545,7 @@ class StudentService
         $stepMap = DictService::getTypeMap(Constants::DICT_TYPE_REVIEW_COURSE_STATUS);
         $data['student_step'] = isset($stepMap[$student['has_review_course']]) ? $stepMap[$student['has_review_course']] : '-';
         $data['referee'] = empty($refereeInfo) ? '-' : $refereeInfo['name'];
-        $data['sign_in_time'] = date('Y-m-d', $student['create_time']);
+        $data['register_time'] = date('Y-m-d H:i', $student['create_time']);
         $data['assistant_id'] = $student['assistant_id'];
         $data['assistant_name'] = $student['assistant_name'];
         $data['is_add_assistant_wx'] = $student['is_add_assistant_wx'];
@@ -589,11 +591,203 @@ class StudentService
     }
 
     /**
-     * => 开发中
+     * @param $params
+     * @param $page
+     * @param $count
+     * @param $employeeId
      * @return array
      */
-    public static function searchList()
+    public static function searchList($params, $page, $count, $employeeId)
     {
-        return [];
+        list($count, $list) = StudentModel::studentList($params, $page, $count, $employeeId);
+        if($count > 0){
+            $list = self::formatListData($list);
+        }
+        return [$count, $list];
     }
+
+    /**
+     * 格式化列表数据
+     * @param $list
+     * @return array
+     */
+    public static function formatListData($list)
+    {
+        $data = [];
+        $time = time();
+        // 获取学生阶段MAP
+        $stepMap = DictService::getTypeMap(Constants::DICT_TYPE_REVIEW_COURSE_STATUS);
+        // 获取添加助教微信状态map
+        $addAssistantMap = DictService::getTypeMap(Constants::DICT_TYPE_ADD_ASSISTANT_WX_STATUS);
+
+        // 格式化学生数据
+        foreach($list as $item){
+            $row = [];
+            $row['student_id'] = $item['student_id'];
+            $row['name'] = $item['name'];
+            $row['mobile'] = Util::hideUserMobile($item['mobile']);
+            $row['pay_status'] = empty($item['first_pay_time']) ? '未付费' : '已付费';
+            //计算过期时间戳
+            $expireTime = strtotime($item['sub_end_date'].' 00:00');
+            $row['effect_status'] = ($expireTime > $time && $item['sub_status']) ?  '未过期' : '已过期';
+            $row['expire_time'] = date('Y-m-d', $expireTime);
+            $row['student_step'] = isset($stepMap[$item['has_review_course']]) ? $stepMap[$item['has_review_course']] : '-';
+            $row['wechat_bind'] = empty($item['wx_id']) ? '未绑定' : '已绑定';
+            $row['assistant_name'] = $item['assistant_name'];
+            $row['is_add_assistant_wx'] = isset($addAssistantMap[$item['is_add_assistant_wx']]) ? $addAssistantMap[$item['is_add_assistant_wx']] : '-';
+            $row['collection_name'] = $item['collection_name'];
+            $row['channel'] = $item['channel_name'];
+            $row['parent_channel'] = $item['parent_channel_name'];
+            $row['register_time'] = date('Y-m-d H:i', $item['create_time']);
+            $data[] = $row;
+        }
+        return $data;
+    }
+
+    /**
+     * 学生分配集合
+     * @param $studentIds
+     * @param $collectionId
+     * @param $employeeId
+     * @return array
+     */
+    public static function allotCollection($studentIds, $collectionId, $employeeId)
+    {
+        $students = StudentModel::getStudentByIds($studentIds);
+        $studentCount = count($studentIds);
+        if(empty($students) || count($students) != $studentCount){
+            return Valid::addErrors([], 'student_ids_error', 'student_ids_error');
+        }
+        $time = time();
+        $logData = self::formatAllotCollectionLogData($students, $collectionId, $employeeId, $time);
+        $res = self::addAllotCollectionLog($logData);
+        if(!$res){
+            return Valid::addErrors([], 'add_allot_collection_log_failed', 'add_allot_collection_log_failed');
+        }
+        $cnt = self::updateStudentCollection($studentIds, $collectionId, $time);
+        if($cnt != $studentCount){
+            return Valid::addErrors([], 'update_student_data_failed', 'update_student_data_failed');
+        }
+        return Valid::formatSuccess();
+    }
+
+    /**
+     * 格式化日志数据
+     * @param $students
+     * @param $collectionId
+     * @param $employeeId
+     * @param $time
+     * @return array
+     */
+    public static function formatAllotCollectionLogData($students, $collectionId, $employeeId, $time)
+    {
+        $data = [];
+        foreach($students as $student){
+            $row = [];
+            $row['student_id'] = $student['id'];
+            $row['old_collection_id'] = $student['collection_id'];
+            $row['new_collection_id'] = $collectionId;
+            $row['create_time'] = $time;
+            $row['operator_id'] = $employeeId;
+            $row['operate_type'] = StudentCollectionLogModel::OPERATE_TYPE_ALLOT;
+            $data[] = $row;
+        }
+        return $data;
+    }
+
+    /**
+     * 添加分配集合日志
+     * @param $data
+     * @return bool
+     */
+    public static function addAllotCollectionLog($data)
+    {
+        return StudentCollectionLogModel::batchInsert($data);
+    }
+
+    /**
+     * 更新学生集合数据
+     * @param $studentIds
+     * @param $collectionId
+     * @param $time
+     * @return int|null
+     */
+    public static function updateStudentCollection($studentIds, $collectionId, $time)
+    {
+        return StudentModel::updateStudentCollection($studentIds, $collectionId, $time);
+    }
+
+    /**
+     * 学生分配助教
+     * @param $studentIds
+     * @param $assistantId
+     * @param $employeeId
+     * @return array
+     */
+    public static function allotAssistant($studentIds, $assistantId, $employeeId)
+    {
+        $students = StudentModel::getStudentByIds($studentIds);
+        $studentCount = count($studentIds);
+        if(empty($students) || count($students) != $studentCount){
+            return Valid::addErrors([], 'student_ids_error', 'student_ids_error');
+        }
+        $time = time();
+        $logData = self::formatAllotAssistantLogData($students, $assistantId, $employeeId, $time);
+        $res = self::addAllotAssistantLog($logData);
+        if(!$res){
+            return Valid::addErrors([], 'add_allot_assistant_log_failed', 'add_allot_assistant_log_failed');
+        }
+        $cnt = self::updateStudentAssistant($studentIds, $assistantId, $time);
+        if($cnt != $studentCount){
+            return Valid::addErrors([], 'update_student_data_failed', 'update_student_data_failed');
+        }
+        return Valid::formatSuccess();
+    }
+
+    /**
+     * 格式化日志数据
+     * @param $students
+     * @param $assistantId
+     * @param $employeeId
+     * @param $time
+     * @return array
+     */
+    public static function formatAllotAssistantLogData($students, $assistantId, $employeeId, $time)
+    {
+        $data = [];
+        foreach($students as $student){
+            $row = [];
+            $row['student_id'] = $student['id'];
+            $row['old_assistant_id'] = $student['assistant_id'];
+            $row['new_assistant_id'] = $assistantId;
+            $row['create_time'] = $time;
+            $row['operator_id'] = $employeeId;
+            $row['operate_type'] = StudentAssistantLogModel::OPERATE_TYPE_ALLOT;
+            $data[] = $row;
+        }
+        return $data;
+    }
+
+    /**
+     * 更新学生分配助教日志
+     * @param $data
+     * @return bool
+     */
+    public static function addAllotAssistantLog($data)
+    {
+        return StudentAssistantLogModel::batchInsert($data);
+    }
+
+    /**
+     * 更新学生助教信息
+     * @param $studentIds
+     * @param $assistantId
+     * @param $time
+     * @return int|null
+     */
+    public static function updateStudentAssistant($studentIds, $assistantId, $time)
+    {
+        return StudentModel::updateStudentAssistant($studentIds, $assistantId, $time);
+    }
+
 }

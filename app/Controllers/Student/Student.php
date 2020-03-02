@@ -481,7 +481,7 @@ class Student extends ControllerBase
      * @param $argv
      * @return Response
      */
-    public static function detail(Request $request, Response $response, $argv)
+    public function detail(Request $request, Response $response, $argv)
     {
         $params = $request->getParams();
         $rules = [
@@ -515,7 +515,7 @@ class Student extends ControllerBase
      * @param $argv
      * @return Response
      */
-    public static function updateAddAssistantStatus(Request $request, Response $response, $argv)
+    public function updateAddAssistantStatus(Request $request, Response $response, $argv)
     {
         $params = $request->getParams();
         $rules = [
@@ -551,22 +551,108 @@ class Student extends ControllerBase
      * @param $argv
      * @return Response
      */
-    public static function searchList(Request $request, Response $response, $argv)
+    public function searchList(Request $request, Response $response, $argv)
+    {
+        $params = $request->getParams();
+        $employeeId = $this->getEmployeeId();
+        list($page, $count) = Util::formatPageCount($params);
+        $res = StudentService::searchList($params, $page, $count, $employeeId);
+        return $response->withJson(Valid::formatSuccess($res));
+    }
+
+    /**
+     * 学生分配班级
+     * @param Request $request
+     * @param Response $response
+     * @param $argv
+     * @return Response
+     */
+    public function allotCollection(Request $request, Response $response, $argv)
     {
         $params = $request->getParams();
         $rules = [
             [
-                'key'        => 'student_id',
+                'key'        => 'student_ids',
                 'type'       => 'required',
-                'error_code' => 'student_id_is_required',
-            ]
+                'error_code' => 'student_ids_is_required',
+            ],
+            [
+                'key'        => 'student_ids',
+                'type'       => 'array',
+                'error_code' => 'student_id_must_be_array'
+            ],
+            [
+                'key'        => 'collection_id',
+                'type'       => 'required',
+                'error_code' => 'collection_id_is_required',
+            ],
+            [
+                'key'        => 'collection_id',
+                'type'       => 'integer',
+                'error_code' => 'collection_id_must_be_integer'
+            ],
         ];
         $result = Valid::validate($params, $rules);
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        StudentService::searchList($params['student_id'], $params['add_assistant_status']);
-        return $response->withJson(Valid::formatSuccess());
+        $employeeId = $this->getEmployeeId();
+        $db = MysqlDB::getDB();
+        $db->beginTransaction();
+        $res = StudentService::allotCollection($params['student_ids'], $params['collection_id'], $employeeId);
+        if($res['code'] != Valid::CODE_SUCCESS){
+            $db->rollBack();
+        }
+        $db->commit();
+        return $response->withJson($res);
+    }
+
+    /**
+     * 学生分配助教
+     * @param Request $request
+     * @param Response $response
+     * @param $argv
+     * @return Response
+     */
+    public function allotAssistant(Request $request, Response $response, $argv)
+    {
+        $params = $request->getParams();
+        $rules = [
+            [
+                'key'        => 'student_ids',
+                'type'       => 'required',
+                'error_code' => 'student_ids_is_required',
+            ],
+            [
+                'key'        => 'student_ids',
+                'type'       => 'array',
+                'error_code' => 'student_id_must_be_array'
+            ],
+            [
+                'key'        => 'assistant_id',
+                'type'       => 'required',
+                'error_code' => 'assistant_id_is_required',
+            ],
+            [
+                'key'        => 'assistant_id',
+                'type'       => 'integer',
+                'error_code' => 'assistant_id_must_be_integer'
+            ],
+        ];
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $employeeId = $this->getEmployeeId();
+        $db = MysqlDB::getDB();
+        $db->beginTransaction();
+        $res = StudentService::allotAssistant($params['student_ids'], $params['assistant_id'], $employeeId);
+        if($res['code'] != Valid::CODE_SUCCESS){
+            $db->rollBack();
+        }
+        $db->commit();
+        return $response->withJson($res);
     }
 }

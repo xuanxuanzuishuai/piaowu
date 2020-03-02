@@ -9,7 +9,9 @@
 namespace App\Models;
 
 use App\Libs\MysqlDB;
+use App\Libs\UserCenter;
 use App\Libs\Util;
+use App\Services\WeChatService;
 
 class StudentModel extends Model
 {
@@ -43,6 +45,9 @@ class StudentModel extends Model
     //是否添加助教微信
     const ADD_STATUS = 1;
     const UN_ADD_STATUS = 0;
+
+    //默认首次付费时间
+    const DEFAULT_FIRST_PAY_TIME = 0;
 
     /**
      * 更新学生信息
@@ -381,5 +386,251 @@ class StudentModel extends Model
         ];
         $where = ['s.id' => $studentId];
         return MysqlDB::getDB()->get($table, $join, $fields, $where);
+    }
+
+    /**
+     * 获取学生列表数据
+     * @param $params
+     * @param $page
+     * @param $count
+     * @param $employeeId
+     * @return array
+     */
+    public static function studentList($params, $page, $count, $employeeId)
+    {
+        $student = self::$table;
+        $studentWeChat = UserWeixinModel::$table;
+        $collection = CollectionModel::$table;
+        $channel = ChannelModel::$table;
+        $assistant = EmployeeModel::$table;
+
+        $table = " FROM {$student} AS `s` ";
+        $join = " LEFT JOIN {$studentWeChat} AS `sw` ON `s`.`id` = `sw`.`user_id` 
+                        AND `sw`.`app_id` = ".UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT."
+                        AND `sw`.`user_type` = ".WeChatService::USER_TYPE_STUDENT."
+                        AND `sw`.`busi_type` = ".UserWeixinModel::BUSI_TYPE_STUDENT_SERVER."
+                        AND `sw`.status = ".UserWeixinModel::STATUS_NORMAL."
+                LEFT JOIN {$collection} AS `co` ON `s`.`collection_id` = `co`.`id`
+                LEFT JOIN {$assistant} AS `ass` ON `s`.`assistant_id` = `ass`.`id`
+                LEFT JOIN {$channel} AS `ch` ON `s`.`channel_id` = `ch`.`id` 
+                LEFT JOIN {$channel} AS `pch` ON `ch`.`parent_id` = `pch`.`id` ";
+
+        list($where, $map) = self::formatSearchParams($params, $employeeId);
+        //统计数量
+        $num = self::getListCount($table, $join, $where, $map);
+        if(empty($num)){
+            return [0, []];
+        }
+        $data = self::getListData($table, $join, $where, $map, $params, $page, $count);
+        return [$num, $data];
+    }
+
+    /**
+     * 格式化搜索学生条件
+     * @param $params
+     * @param $employeeId
+     * @return array
+     */
+    public static function formatSearchParams($params, $employeeId)
+    {
+        $whereSql = '';
+        $map = [];
+        /**
+         * 权限控制
+         * 用户查看规则：
+         *  1. 学生的助教为当前用户
+         *  2. 学生所在班级助教为当前用户
+         */
+        //$whereSql .= " WHERE (s.assistant_id = {$employeeId} OR co.assistant_id = {$employeeId}) ";
+$whereSql = 'where 1 ';
+
+        //学生姓名
+        if(!empty($params['student_name'])){
+            $whereSql .= " AND s.name like :student_name ";
+            $map[':student_name'] = Util::sqlLike($params['student_name']);
+        }
+        //学生手机号
+        if(!empty($params['mobile'])){
+            $whereSql .= " AND s.mobile like :mobile ";
+            $map[':mobile'] = Util::sqlLike($params['mobile']);
+        }
+        //付费状态
+        if(isset($params['pay_status']) && !Util::emptyExceptZero($params['pay_status'])){
+            if($params['pay_status'] == 0){
+                $whereSql .= " AND s.first_pay_time = ".self::DEFAULT_FIRST_PAY_TIME;
+            }else{
+                $whereSql .= " AND s.first_pay_time != ".self::DEFAULT_FIRST_PAY_TIME;
+            }
+        }
+        //当前阶段
+        if(isset($params['current_step']) && !Util::emptyExceptZero($params['current_step'])){
+            $whereSql .= " AND s.has_review_course = :current_step ";
+            $map[':current_step'] = $params['current_step'];
+        }
+        //微信绑定状态
+        if(isset($params['wx_bind_status']) && !Util::emptyExceptZero($params['wx_bind_status'])){
+            if($params['wx_bind_status'] == 0){
+                $whereSql .= " AND sw.id IS NULL ";
+            }else{
+                $whereSql .= " AND sw.id IS NOT NULL ";
+            }
+        }
+        //有效期状态
+        if(isset($params['effect_status']) && !Util::emptyExceptZero($params['effect_status'])){
+            //获取当前时间年月日格式时间 例：20200202
+            $currentData = date('Ymd');
+            if($params['effect_status'] == 0){
+                $whereSql .= " AND s.sub_end_date >= {$currentData} ";
+            }else{
+                $whereSql .= " AND s.sub_end_date < {$currentData} ";
+            }
+        }
+        //是否添加助教微信
+        if(isset($params['is_add_assistant_wx']) && !Util::emptyExceptZero($params['is_add_assistant_wx'])){
+            $whereSql .= " AND s.is_add_assistant_wx = :is_add_assistant_wx ";
+            $map[':is_add_assistant_wx'] = $params['is_add_assistant_wx'];
+        }
+        //所属班级
+        if(!empty($params['collection_id'])){
+            $whereSql .= " AND s.collection_id = :collection_id ";
+            $map[':collection_id'] = $params['collection_id'];
+        }
+        //所属助教
+        if(!empty($params['assistant_id'])){
+            $whereSql .= " AND s.assistant_id = :assistant_id ";
+            $map[':assistant_id'] = $params['assistant_id'];
+        }
+        //查询渠道
+        if(!empty($params['channel_id'])){
+            $whereSql .= " AND s.channel_id = :channel_id ";
+            $map[':channel_id'] = $params['channel_id'];
+        }
+        //查询有效期开始时间
+        if(!empty($params['effect_start_time'])){
+            $whereSql .= " AND s.sub_end_date >= :effect_start_time ";
+            $map[':effect_start_time'] = date('Ymd', $params['effect_start_time']);
+        }
+        //查询有效期结束时间
+        if(!empty($params['effect_end_time'])){
+            $whereSql .= " AND s.sub_end_date <= :effect_end_time ";
+            $map[':effect_end_time'] = date('Ymd', $params['effect_end_time']);
+        }
+        //查询注册开始时间
+        if(!empty($params['register_start_time'])){
+            $whereSql .= " AND s.create_time >= :register_start_time ";
+            $map[':register_start_time'] = $params['register_start_time'];
+        }
+        //查询注册结束时间
+        if(!empty($params['register_end_time'])){
+            $whereSql .= " AND s.create_time <= :register_end_time ";
+            $map[':register_end_time'] = $params['register_end_time'];
+        }
+
+        return [$whereSql, $map];
+    }
+
+    /**
+     * 获取学生列表count
+     * @param $table
+     * @param $join
+     * @param $where
+     * @param $map
+     * @return mixed
+     */
+    public static function getListCount($table, $join, $where, $map)
+    {
+        $select = " SELECT count(s.id) as count ";
+        $sql = $select . $table .$join . $where;
+        $data = MysqlDB::getDB()->queryAll($sql, $map);
+        return $data[0]['count'];
+    }
+
+    /**
+     * 获取学生列表数据
+     * @param $table
+     * @param $join
+     * @param $where
+     * @param $map
+     * @param $params
+     * @param $page
+     * @param $count
+     * @return array|null
+     */
+    public static function getListData($table, $join, $where, $map, $params, $page, $count)
+    {
+        //查询字段
+        $select  = " SELECT `s`.`id` AS student_id,
+                       `s`.`mobile`,
+                       `s`.`name`,
+                       `s`.`sub_end_date`,
+                       `s`.`sub_status`,
+                       `s`.`first_pay_time`,
+                       `s`.`has_review_course`,
+                       `sw`.`id` AS wx_id,
+                       `ass`.`name` AS assistant_name,
+                       `s`.`is_add_assistant_wx`,
+                       `co`.`name` AS collection_name,
+                       `ch`.`name` AS channel_name,
+                       `pch`.`name` AS parent_channel_name,
+                       `s`.`create_time` ";
+
+        //排序条件
+        if(!empty($params['order_field'])){
+            $where .= " ORDER BY s.id ";
+        }
+        //分页
+        if ($page > 0 && $count > 0) {
+            $where .= " LIMIT " . ($page - 1) * $count . "," . $count;
+        }
+        $sql = $select . $table . $join . $where;
+        return MysqlDB::getDB()->queryAll($sql, $map);
+    }
+
+    /**
+     * 根据ids获取学员信息
+     * @param $ids
+     * @return array
+     */
+    public static function getStudentByIds($ids)
+    {
+        return self::getRecords(['id' => $ids]);
+    }
+
+    /**
+     * 更新学生集合信息
+     * @param $studentIds
+     * @param $collectionId
+     * @param $time
+     * @return int|null
+     */
+    public static function updateStudentCollection($studentIds, $collectionId, $time)
+    {
+        $data = [
+            'collection_id' => $collectionId,
+            'allot_collection_time' => $time
+        ];
+        $where = [
+            'id' => $studentIds
+        ];
+        return StudentModel::batchUpdateRecord($data, $where);
+    }
+
+    /**
+     * 更新学生助教信息
+     * @param $studentIds
+     * @param $assistantId
+     * @param $time
+     * @return int|null
+     */
+    public static function updateStudentAssistant($studentIds, $assistantId, $time)
+    {
+        $data = [
+            'assistant_id' => $assistantId,
+            'allot_assistant_time' => $time
+        ];
+        $where = [
+            'id' => $studentIds
+        ];
+        return StudentModel::batchUpdateRecord($data, $where);
     }
 }

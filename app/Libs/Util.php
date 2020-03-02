@@ -780,4 +780,14 @@ class Util
         $resultStr = preg_replace($patterns, $replacements, $string);
         return $resultStr;
     }
+
+    /**
+     * 判断是否为空，0除外，0返回false
+     * @param $value
+     * @return bool
+     */
+    public static function emptyExceptZero($value)
+    {
+        return empty($value) && $value !== 0 && $value !== '0';
+    }
 }

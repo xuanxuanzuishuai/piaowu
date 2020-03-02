@@ -123,6 +123,8 @@ class OrgWebRouter extends RouterBase
         '/student/student/detail' => array('method' => array('get'), 'call' => '\App\Controllers\Student\Student:detail'),
         '/student/student/updateAddAssistantStatus' => array('method' => array('post'), 'call' => '\App\Controllers\Student\Student:updateAddAssistantStatus'),
         '/student/student/searchList' => array('method' => array('get'), 'call' => '\App\Controllers\Student\Student:searchList'),
+        '/student/student/allotCollection' => array('method' => array('post'), 'call' => '\App\Controllers\Student\Student:allotCollection'),
+        '/student/student/allotAssistant' => array('method' => array('post'), 'call' => '\App\Controllers\Student\Student:allotAssistant'),
 
         '/goods/course/list' => array('method' => array('get'), 'call' => '\App\Controllers\Course\Course:list'),
         '/goods/course/detail' => array('method' => array('get'), 'call' => '\App\Controllers\Course\Course:detail'),
