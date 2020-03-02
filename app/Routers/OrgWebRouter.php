@@ -347,5 +347,6 @@ class OrgWebRouter extends RouterBase
         '/org_web/collection/modify' => ['method' => ['post'], 'call' => Collection::class . ':modify'],
         '/org_web/collection/list' => ['method' => ['get'], 'call' => Collection::class . ':list'],
         '/org_web/collection/assistant_list' => ['method' => ['get'], 'call' => Collection::class . ':getAssistantList'],
+        '/org_web/collection/total_list' => ['method' => ['get'], 'call' => Collection::class . ':totalList'],
         ];
 }

@@ -28,4 +28,6 @@ class CollectionModel extends Model
     //集合类型1普通集合2公共集合
     const COLLECTION_TYPE_NORMAL = 1;
     const COLLECTION_TYPE_PUBLIC = 2;
+    //集合中学员数量上限
+    const COLLECTION_MAX_CAPACITY = 500;
 }

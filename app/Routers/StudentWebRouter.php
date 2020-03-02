@@ -10,6 +10,7 @@ namespace App\Routers;
 
 use App\Controllers\StudentApp\Opn;
 use App\Controllers\StudentWeb\Auth;
+use App\Controllers\StudentWeb\Collection;
 use App\Controllers\StudentWeb\Pay;
 use App\Controllers\StudentWeb\Referral;
 use App\Controllers\StudentWeb\ReviewCourse;
@@ -71,10 +72,15 @@ class StudentWebRouter extends RouterBase
             'middles' => [OpnResMiddlewareForWeb::class,
                 AppApiForStudent::class]
         ],
-
         '/student_web/review_course/get_task_review' => [
             'method' => ['get'],
             'call' => ReviewCourse::class . ':getTaskReview',
+        ],
+        // 获取用户所属集合的微信信息
+        '/student_web/pay/collection_data' => [
+            'method' => ['get'],
+            'call' => Collection::class.':getCollectionData',
+            'middles' => []
         ],
     ];
 }

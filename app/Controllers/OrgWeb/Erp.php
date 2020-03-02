@@ -16,11 +16,13 @@ use App\Libs\Valid;
 use App\Models\GiftCodeModel;
 use App\Models\ReviewCourseModel;
 use App\Models\StudentModelForApp;
+use App\Models\CollectionModel;
 use App\Services\CommonServiceForApp;
 use App\Services\ErpService;
 use App\Services\ReviewCourseService;
 use App\Services\UserPlayServices;
 use App\Services\AppVersionService;
+use App\Services\CollectionService;
 use App\Models\AppVersionModel;
 use App\Services\StudentService;
 use App\Services\WeChatCSService;
@@ -128,11 +130,19 @@ class Erp extends ControllerBase
         if ($reviewCourseType != ReviewCourseModel::REVIEW_COURSE_NO && !empty($giftCodes)) {
             $wechatcs = WeChatCSService::getWeChatCS();
             $sms->sendEvaluationMessage($params['mobile'], CommonServiceForApp::SIGN_STUDENT_APP, $wechatcs['name']);
-
             // 更新点评课标记
             $student = StudentService::getByUuid($params['uuid']);
             $wechatcsId = empty($student['wechatcs_id']) ? $wechatcs['id'] : null;
-            ReviewCourseService::updateReviewCourseFlag($student['id'], $reviewCourseType, $wechatcsId);
+            //获取当前课包可以分配的集合:一个学员只能分配给一个班级
+            $collectionList = [];
+            if(empty($student['collection_id'])){
+                $collectionList = CollectionService::getCollectionByPackageId($params['package_id']);
+            }
+            ReviewCourseService::updateReviewCourseFlag($student['id'], $reviewCourseType, $wechatcsId,$collectionList);
+            //发送班级分配完成短信:公海班级不发送
+            if($collectionList[0]['type'] == CollectionModel::COLLECTION_TYPE_NORMAL){
+                $sms->sendCollectionCompleteNotify($params['mobile'], CommonServiceForApp::SIGN_STUDENT_APP, $collectionList);
+            }
         }
 
         return $response->withJson([

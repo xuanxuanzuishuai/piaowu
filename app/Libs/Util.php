@@ -790,4 +790,16 @@ class Util
     {
         return empty($value) && $value !== 0 && $value !== '0';
     }
+    /**
+     * 计算两个日期之间相差天数
+     * @param string $start    开始日期:2020-03-01
+     * @param string $end      结束日期:2020-03-02
+     * @return mixed|string|void
+     */
+    public static function dateDiff($start,$end){
+        $datetime_start = date_create($start);
+        $datetime_end = date_create($end);
+        $days = date_diff($datetime_start, $datetime_end);
+        return $days->days;
+    }
 }

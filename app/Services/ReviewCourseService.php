@@ -36,9 +36,10 @@ class ReviewCourseService
      * @param $studentID
      * @param $reviewCourseType
      * @param null|int $wechatcsId
+     * @param array $collectionList     可以分配的集合列表
      * @return null|string errorCode
      */
-    public static function updateReviewCourseFlag($studentID, $reviewCourseType, $wechatcsId = null)
+    public static function updateReviewCourseFlag($studentID, $reviewCourseType, $wechatcsId = null, $collectionList=[])
     {
         $student = StudentModel::getById($studentID);
         if ($student['has_review_course'] >= $reviewCourseType) {
@@ -50,6 +51,16 @@ class ReviewCourseService
         ];
         if (!empty($wechatcsId)) {
             $update['wechatcs_id'] = $wechatcsId;
+        }
+        if(!empty($collectionList) && is_array($collectionList)){
+            $time = time();
+            $update['collection_id'] = $collectionList[0]['id'];
+            $update['allot_collection_time'] = $time;
+            if(!empty($collectionList[0]['assistant_id'])){
+                $update['allot_assistant_time'] = $time;
+                $update['assistant_id'] = $collectionList[0]['assistant_id'];
+                $update['allot_course_id'] = $collectionList[0]['course_id'];
+            }
         }
         $affectRows = StudentModel::updateRecord($studentID, $update, false);
 

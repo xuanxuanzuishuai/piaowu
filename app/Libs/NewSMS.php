@@ -148,4 +148,31 @@ class NewSMS
         $content = "亲爱的小叶子家长您好！您今天的智能陪练课的点评已经生成，快在公众号里查看吧！未关注公众号的用户关注【小叶子智能陪练】公众号并绑定手机号，明天就能收到点评啦~";
         return self::send(CommonServiceForApp::SIGN_STUDENT_APP, $targetMobile, $content);
     }
+
+
+    /**
+     * 发送班级分配完成短信
+     * @param $targetMobile
+     * @param $sign
+     * @param $collectionList
+     * @return bool
+     */
+    public function sendCollectionCompleteNotify($targetMobile, $sign, $collectionList)
+    {
+        $teachingStartDate = date("Y-m-d",$collectionList[0]['teaching_start_time']);
+        $teachingEndDate = date("Y-m-d",$collectionList[0]['teaching_end_time']);
+        $wechatNumber = $collectionList[0]['wechat_number'];
+        $week = Util::getShortWeekName($collectionList[0]['teaching_start_time']);
+        $days = Util::dateDiff($teachingStartDate,$teachingEndDate);
+        $msg = "您已成功购买小叶子智能陪练课，将于{$teachingStartDate}（{$week}）开课，时长{$days}天。
+《1》在哪体验智能陪练？点击链接，下载【小叶子智能陪练】App：http://t.cn/AiBPajzr
+《2》在哪收老师点评？关注微信公众号【小叶子智能陪练】并绑定购买手机号！
+《3》遇到问题怎么办？1V1助教老师微信：{$wechatNumber}";
+        $data = [
+            'sign_name' => $sign,
+            'phone_number' => $targetMobile,
+            'content' => $msg,
+        ];
+        return self::sendSMS($data);
+    }
 }

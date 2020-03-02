@@ -21,7 +21,6 @@ use Slim\Http\Response;
 use Slim\Http\StatusCode;
 use App\Models\CourseModel;
 use App\Models\CollectionModel;
-use App\Models\CollectionCourseModel;
 
 /**
  * 学生集合控制器
@@ -45,6 +44,12 @@ class Collection extends ControllerBase
                 'key' => 'name',
                 'type' => 'required',
                 'error_code' => 'collection_name_is_required'
+            ],
+            [
+                'key' => 'name',
+                'type' => 'length',
+                'value' => 50,
+                'error_code' => 'collection_name_length_max'
             ],
             [
                 'key' => 'assistant_id',
@@ -92,6 +97,18 @@ class Collection extends ControllerBase
                 'error_code' => 'collection_capacity_is_required'
             ],
             [
+                'key' => 'capacity',
+                'type' => 'max',
+                'value' => CollectionModel::COLLECTION_MAX_CAPACITY,
+                'error_code' => 'collection_capacity_is_max'
+            ],
+            [
+                'key' => 'capacity',
+                'type' => 'min',
+                'value' => 1,
+                'error_code' => 'collection_capacity_is_not_inter'
+            ],
+            [
                 'key' => 'remark',
                 'type' => 'required',
                 'error_code' => 'remark_is_required'
@@ -124,6 +141,7 @@ class Collection extends ControllerBase
             'wechat_number' => $params['wechat_number'],
             'create_uid' => self::getEmployeeId(),
             'create_time' => $time,
+            'type' => $params['type'] ?? CollectionModel::COLLECTION_TYPE_NORMAL,
         ];
         //写入数据
         $collectionId = CollectionService::addStudentCollection($collectionData, $courseIds);
@@ -212,7 +230,7 @@ class Collection extends ControllerBase
         //接收数据
         $params = $request->getParams();
         list($params['page'], $params['count']) = Util::formatPageCount($params);
-        //助教只可查看归属自己的班级
+        //助教只可查看自己的班级
         $params['assistant_id'] = self::getEmployeeId();
         //获取数据
         list($count, $list) = CollectionService::getStudentCollectionList($params, $params['page'], $params['count']);
@@ -235,11 +253,34 @@ class Collection extends ControllerBase
     public function getAssistantList(Request $request, Response $response, $args)
     {
         //获取助教角色ID
-        $assistantRoleId = DictService::getKeyValue(Constants::DICT_TYPE_ROLE_ID,Constants::DICT_KEY_CODE_ASSISTANT);
-        list($users, $totalCount) = EmployeeService::getEmployeeService("-1", 0, ['role_id'=>$assistantRoleId,'status'=>EmployeeModel::STATUS_NORMAL]);
+        $assistantRoleId = DictService::getKeyValue(Constants::DICT_TYPE_ROLE_ID, Constants::DICT_KEY_CODE_ASSISTANT);
+        list($users, $totalCount) = EmployeeService::getEmployeeService("-1", 0, ['role_id' => $assistantRoleId, 'status' => EmployeeModel::STATUS_NORMAL]);
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => ['list' => $users]
+        ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * 全部集合数据列表
+     * @param Request $request
+     * @param Response $response
+     * @param $args
+     * @return Response
+     */
+    public function totalList(Request $request, Response $response, $args)
+    {
+        //接收数据
+        $params = $request->getParams();
+        list($params['page'], $params['count']) = Util::formatPageCount($params);
+        //获取数据
+        list($count, $list) = CollectionService::getStudentCollectionList($params, $params['page'], $params['count']);
+        return $response->withJson([
+            'code' => 0,
+            'data' => [
+                'count' => $count,
+                'list' => $list
+            ]
         ], StatusCode::HTTP_OK);
     }
 }

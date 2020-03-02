@@ -13,6 +13,7 @@ use App\Libs\MysqlDB;
 use App\Models\CollectionModel;
 use App\Models\CollectionCourseModel;
 use App\Models\CourseModel;
+use App\Models\StudentModel;
 use App\Libs\AliOSS;
 
 class CollectionService
@@ -25,6 +26,13 @@ class CollectionService
      */
     public static function addStudentCollection($insertData, $courseIds)
     {
+        //公海班级只能添加一条
+        if (CollectionModel::COLLECTION_TYPE_PUBLIC == $insertData['type']) {
+            $isExists = CollectionModel::getRecord(["type" => CollectionModel::COLLECTION_TYPE_PUBLIC, "status" => CollectionModel::COLLECTION_STATUS_IS_PUBLISH]);
+            if (!empty($isExists)) {
+                return false;
+            }
+        }
         //开启事务
         $db = MysqlDB::getDB();
         $db->beginTransaction();
@@ -65,27 +73,13 @@ class CollectionService
     {
         //获取数据库对象
         $db = MysqlDB::getDB();
-        $fields = [
-            "a.id",
-            "a.name",
-            "a.assistant_id",
-            "a.capacity",
-            "a.remark",
-            "a.prepare_start_time",
-            "a.prepare_end_time",
-            "a.teaching_start_time",
-            "a.teaching_end_time",
-            "a.wechat_qr",
-            "a.wechat_number",
-            "GROUP_CONCAT(b.course_id)",
-        ];
         $querySql = "SELECT 
                         a.id,a.name,a.assistant_id,a.capacity,a.remark,a.prepare_start_time,
                         a.prepare_end_time,a.teaching_start_time,a.teaching_end_time,a.wechat_qr,
                         a.wechat_number,GROUP_CONCAT(b.course_id) 
-                    FROM ".CollectionModel::$table." as a
-                    LEFT JOIN ".CollectionCourseModel::$table." as b ON a.id = b.collection_id 
-                    WHERE a.id = ".$id." AND b.status= ".CollectionCourseModel::COLLECTION_COURSE_STATUS_IS_PUBLISH." GROUP BY a.id";
+                    FROM " . CollectionModel::$table . " as a
+                    LEFT JOIN " . CollectionCourseModel::$table . " as b ON a.id = b.collection_id 
+                    WHERE a.id = " . $id . " AND b.status= " . CollectionCourseModel::COLLECTION_COURSE_STATUS_IS_PUBLISH . " GROUP BY a.id";
         //获取数据
         $list = $db->queryAll($querySql);
         if ($list) {
@@ -222,7 +216,7 @@ class CollectionService
         $where = "where 1=1";
         $time = time();
         $list = [];
-        $type = $params['type']??CollectionModel::COLLECTION_TYPE_NORMAL;
+        $type = $params['type'] ?? CollectionModel::COLLECTION_TYPE_NORMAL;
         $where .= " and a.type=" . $type;
         if ($params['id']) {
             $where .= " and a.id=" . $params['id'];
@@ -255,7 +249,7 @@ class CollectionService
             $where .= " and a.status=" . $params['publish_status'];
         }
         //学生数量
-        $studentMinCount = $params['student_min_count'] ?? 1;
+        $studentMinCount = $params['student_min_count'] ?? 0;
         $having = " HAVING student_count>=" . $studentMinCount;
         if ($params['student_max_count']) {
             $having .= " and student_count<=" . $params['student_max_count'];
@@ -293,8 +287,9 @@ class CollectionService
                     LEFT JOIN student AS s ON c.id = s.collection_id
                     group by c.id " . $having . $orderBy . $limit;
         $countSql = "SELECT count(*) as datanum, " . $whereSql;
-        $count = $db->queryAll($countSql);
-        if (!empty($count[0]['datanum'])) {
+        $countData = $db->queryAll($countSql);
+        $count = count($countData);
+        if (!empty($count)) {
             $listSql = "SELECT c.*," . $whereSql;
             $list = $db->queryAll($listSql);
             $dictTypeList = DictService::getListsByTypes([Constants::COLLECTION_PUBLISH_STATUS, Constants::COLLECTION_PROCESS_STATUS]);
@@ -314,7 +309,7 @@ class CollectionService
         }
 
         //返回结果
-        return [$count[0]['datanum'], $list];
+        return [$count, $list];
     }
 
     /**
@@ -352,5 +347,74 @@ class CollectionService
         }
         //返回结果
         return $status;
+    }
+
+    /**
+     * 获取课程可以分配的集合列表
+     * @param $packageId
+     * @return array|null
+     */
+    public static function getCollectionByPackageId($packageId)
+    {
+        //数据库对象
+        $db = MysqlDB::getDB();
+        $time = time();
+        $querySql = "SELECT
+                        a.id,
+                        a.capacity,
+                        a.assistant_id,
+                        a.teaching_start_time,
+                        a.teaching_end_time,
+                        a.wechat_number,
+                        b.course_id,
+                        count( s.id ) AS s_count 
+                    FROM
+                        collection as a
+                        INNER JOIN collection_course as b ON a.id = b.collection_id
+                        LEFT JOIN student as s ON a.id = s.collection_id 
+                    WHERE
+                        ( 
+                            a.status = " . CollectionModel::COLLECTION_STATUS_IS_PUBLISH . " AND
+                            a.prepare_start_time <= " . $time . " AND
+                            a.prepare_end_time >= " . $time . " AND
+                            a.type >= " . CollectionModel::COLLECTION_TYPE_NORMAL . " AND
+                            b.course_id = " . $packageId . " AND
+                            b.status = " . CollectionCourseModel::COLLECTION_COURSE_STATUS_IS_PUBLISH . "
+                         )
+                    GROUP BY
+                        a.id 
+                    HAVING
+                        a.capacity > s_count
+                    ORDER BY
+                        a.id ASC
+                    LIMIT 1";
+        $list = $db->queryAll($querySql);
+        //如果没有可加入的班级，则加入“公海班”，推送默认二维码，不分配助教
+        if (empty($list)) {
+            $list = CollectionModel::getRecords(["type" => CollectionModel::COLLECTION_TYPE_PUBLIC, "LIMIT" => 1], ['id', 'assistant_id'], false);
+        }
+        //返回结果
+        return $list;
+    }
+
+    /**
+     * 根据用户uuid获取所属的集合信息
+     * @param $UUID
+     * @param $field
+     * @return array|null
+     */
+    public static function getCollectionByUserUUId($UUID,$field=[])
+    {
+        //获取用户信息
+        $collection = [];
+        $userInfo = StudentModel::getRecord(["uuid" => $UUID],["collection_id"], false);
+        if (empty($userInfo['collection_id'])) {
+            return $collection;
+        }
+        //获取集合信息
+        $collection = CollectionModel::getRecord(["id" => $userInfo["collection_id"]], $field, false);
+        $collection["wechat_qr"] = AliOSS::signUrls($collection["wechat_qr"]);
+        //返回结果
+        return $collection;
     }
 }
