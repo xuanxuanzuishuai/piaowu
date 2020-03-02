@@ -84,7 +84,8 @@ class Opn extends ControllerBase
             $this->ci['opn_pro_ver'],
             $this->ci['opn_auditing'],
             $this->ci['opn_publish']);
-        $collections = $opn->searchCollectionsByEs($params['key'], 1, 1, 50);
+        list($pageId, $pageLimit) = Util::appPageLimit($params);
+        $collections = $opn->searchCollectionsByEs($params['key'], 1, $pageId, $pageLimit);
         if (empty($collections) || !empty($collections['errors'])) {
             return $response->withJson($collections, StatusCode::HTTP_OK);
         }
