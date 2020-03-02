@@ -8,6 +8,7 @@
 
 namespace App\Services;
 
+use App\Libs\AIPLClass;
 use App\Libs\AliOSS;
 use App\Libs\NewSMS;
 use App\Libs\SimpleLogger;
@@ -634,11 +635,19 @@ class ReviewCourseService
             throw new RunTimeException(['record_not_found']);
         }
 
+        $student = StudentModel::getById($studentId);
+
+        $report = AIPLClass::getClassReport($student['uuid'], strtotime($task['play_date']));
+
         $review = [
             'id' => $task['id'],
             'play_date' => $task['play_date'],
             'audio' => AliOSS::signUrls($task['review_audio']),
         ];
+        $review = array_merge($review, $report);
+
+        $resToken = AIBackendService::genStudentToken($studentId);
+        $review['token'] = $resToken;
 
         return $review;
     }

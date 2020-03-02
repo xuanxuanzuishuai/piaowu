@@ -12,6 +12,7 @@ namespace App\Libs;
 class AIPLClass
 {
     const API_REPORT = '/report';
+    const API_CLASS_REPORT = '/class_report';
 
     /**
      * 获取点评话术
@@ -34,5 +35,28 @@ class AIPLClass
         }
 
         return $result['data']['report'] ?? '';
+    }
+
+    /**
+     * 获取课堂报告详情
+     * @param $uuid
+     * @param $dateTime
+     * @return array|bool
+     */
+    public static function getClassReport($uuid, $dateTime)
+    {
+        $host = DictConstants::get(DictConstants::SERVICE, 'ai_class_host');
+
+        $result = HttpHelper::requestJson($host . self::API_CLASS_REPORT, [
+            'date' => $dateTime,
+            'uuid' => $uuid
+        ]);
+
+        if (empty($result) || $result['code'] != 0) {
+            SimpleLogger::error("[AIPLClass getClassReport] error", ['errors' => $result['errs'] ?? null]);
+            return false;
+        }
+
+        return $result['data'] ?? [];
     }
 }
