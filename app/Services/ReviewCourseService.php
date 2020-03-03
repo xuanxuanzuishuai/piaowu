@@ -631,11 +631,15 @@ class ReviewCourseService
     public static function getTaskReview($studentId, $taskId)
     {
         $task = ReviewCourseTaskModel::getById($taskId);
-        if (empty($task) || $studentId != $task['student_id']) {
+        if (empty($task)) {
             throw new RunTimeException(['record_not_found']);
         }
 
-        $student = StudentModel::getById($studentId);
+        if (!empty($studentId) && $studentId != $task['student_id']) {
+            throw new RunTimeException(['record_not_found']);
+        }
+
+        $student = StudentModel::getById($task['student_id']);
 
         $report = AIPLClass::getClassReport($student['uuid'], strtotime($task['play_date']));
 
@@ -646,7 +650,7 @@ class ReviewCourseService
         ];
         $review = array_merge($review, $report);
 
-        $resToken = AIBackendService::genStudentToken($studentId);
+        $resToken = AIBackendService::genStudentToken($student['id']);
         $review['token'] = $resToken;
 
         return $review;

@@ -54,7 +54,7 @@ class AIPLClass
 
         if (empty($result) || $result['code'] != 0) {
             SimpleLogger::error("[AIPLClass getClassReport] error", ['errors' => $result['errs'] ?? null]);
-            return false;
+            return [];
         }
 
         return $result['data'] ?? [];

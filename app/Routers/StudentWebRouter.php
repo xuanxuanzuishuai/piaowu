@@ -12,6 +12,7 @@ use App\Controllers\StudentApp\Opn;
 use App\Controllers\StudentWeb\Auth;
 use App\Controllers\StudentWeb\Pay;
 use App\Controllers\StudentWeb\Referral;
+use App\Controllers\StudentWeb\ReviewCourse;
 use App\Controllers\WeChatCS\WeChatCS;
 use App\Middleware\AppApiForStudent;
 use App\Middleware\OpnResMiddlewareForWeb;
@@ -69,6 +70,11 @@ class StudentWebRouter extends RouterBase
             'call' => Opn::class . ':lessonResources',
             'middles' => [OpnResMiddlewareForWeb::class,
                 AppApiForStudent::class]
+        ],
+
+        '/student_web/review_course/get_task_review' => [
+            'method' => ['get'],
+            'call' => ReviewCourse::class . ':getTaskReview',
         ],
     ];
 }
