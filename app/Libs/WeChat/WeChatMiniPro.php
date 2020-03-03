@@ -16,7 +16,7 @@ use Slim\Http\StatusCode;
 
 class WeChatMiniPro
 {
-    const WX_HOST = 'https://api.weixin.qq.com/';
+    const WX_HOST = 'https://api.weixin.qq.com';
     const API_GET_ACCESS_TOKEN = '/cgi-bin/token';
     const API_SEND = '/cgi-bin/message/custom/send';
 
@@ -117,13 +117,19 @@ class WeChatMiniPro
     private function send($openId, $type, $content)
     {
         $token = $this->getAccessToken();
+        if (empty($token)) {
+            return false;
+        }
+
+        $url = self::WX_HOST . self::API_SEND . '?access_token=' . $token;
+
         $params = [
             'access_token' => $token,
             'touser' => $openId,
             'msgtype' => $type,
             $type => $content
         ];
-        return $res = $this->requestJson(self::WX_HOST . self::API_SEND, $params, 'POST');
+        return $res = $this->requestJson($url, $params, 'POST');
     }
 
     public function sendText($openId, $content)
