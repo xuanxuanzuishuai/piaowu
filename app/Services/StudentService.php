@@ -603,7 +603,7 @@ class StudentService
         if($count > 0){
             $list = self::formatListData($list);
         }
-        return [$count, $list];
+        return ['total_count' => $count, 'list' => $list];
     }
 
     /**
