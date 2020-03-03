@@ -12,7 +12,6 @@ use App\Controllers\API\Consumer;
 use App\Controllers\API\Track;
 use App\Controllers\API\BAIDU;
 use App\Controllers\API\WeChat;
-use App\Middleware\WeChatSignatureCheck;
 
 class APIRouter extends RouterBase
 {
@@ -51,9 +50,9 @@ class APIRouter extends RouterBase
         ],
 
         '/api/we_chat/student_minipro' => [
-            'method' => ['get'],
+            'method' => ['post'],
             'call' => WeChat::class . ':studentMiniPro',
-            'middles' => [WeChatSignatureCheck::class],
+            'middles' => [],
         ],
     ];
 }

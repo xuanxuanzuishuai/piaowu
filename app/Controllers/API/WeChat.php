@@ -9,6 +9,9 @@
 namespace App\Controllers\API;
 
 use App\Controllers\ControllerBase;
+use App\Libs\SimpleLogger;
+use App\Libs\WeChat\WeChatMiniPro;
+use App\Services\WeChat\studentMiniProService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 
@@ -23,6 +26,13 @@ class WeChat extends ControllerBase
     public function studentMiniPro(Request $request, Response $response)
     {
         $params = $request->getParams();
-        return $params['echostr'];
+
+        $ret = studentMiniProService::handler($params);
+        SimpleLogger::info('studentMiniPro handle message', [
+            'message' => $params,
+            'result' => $ret,
+        ]);
+
+        return $response->write("success");
     }
 }
