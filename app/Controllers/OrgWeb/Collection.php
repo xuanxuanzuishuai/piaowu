@@ -47,7 +47,7 @@ class Collection extends ControllerBase
             ],
             [
                 'key' => 'name',
-                'type' => 'length',
+                'type' => 'lengthmax',
                 'value' => 50,
                 'error_code' => 'collection_name_length_max'
             ],

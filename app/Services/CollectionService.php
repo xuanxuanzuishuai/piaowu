@@ -248,10 +248,10 @@ class CollectionService
         if ($params['publish_status']) {
             $where .= " and a.status=" . $params['publish_status'];
         }
-        //学生数量
-        $studentMinCount = $params['student_min_count'] ?? 0;
+        //学生数量:最低值默认0
+        $studentMinCount = empty($params['student_min_count']) ? 0 : (int)$params['student_min_count'];
         $having = " HAVING student_count>=" . $studentMinCount;
-        if ($params['student_max_count']) {
+        if (!empty($params['student_max_count']) && is_numeric($params['student_max_count'])) {
             $having .= " and student_count<=" . $params['student_max_count'];
         }
         //班级状态
@@ -403,11 +403,11 @@ class CollectionService
      * @param $field
      * @return array|null
      */
-    public static function getCollectionByUserUUId($UUID,$field=[])
+    public static function getCollectionByUserUUId($UUID, $field = [])
     {
         //获取用户信息
         $collection = [];
-        $userInfo = StudentModel::getRecord(["uuid" => $UUID],["collection_id"], false);
+        $userInfo = StudentModel::getRecord(["uuid" => $UUID], ["collection_id"], false);
         if (empty($userInfo['collection_id'])) {
             return $collection;
         }
