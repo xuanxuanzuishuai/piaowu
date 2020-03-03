@@ -647,6 +647,7 @@ class ReviewCourseService
             'id' => $task['id'],
             'play_date' => $task['play_date'],
             'audio' => AliOSS::signUrls($task['review_audio']),
+            'student_name' => $student['name'],
         ];
         $review = array_merge($review, $report);
 
