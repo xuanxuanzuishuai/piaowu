@@ -11,6 +11,8 @@ namespace App\Routers;
 use App\Controllers\API\Consumer;
 use App\Controllers\API\Track;
 use App\Controllers\API\BAIDU;
+use App\Controllers\API\WeChat;
+use App\Middleware\WeChatSignatureCheck;
 
 class APIRouter extends RouterBase
 {
@@ -46,6 +48,12 @@ class APIRouter extends RouterBase
         '/api/consumer/user_play' => [
             'method' => ['post'],
             'call' => Consumer::class . ':userPlay',
+        ],
+
+        '/api/we_chat/student_minipro' => [
+            'method' => ['get'],
+            'call' => WeChat::class . ':studentMiniPro',
+            'middles' => [WeChatSignatureCheck::class],
         ],
     ];
 }
