@@ -58,3 +58,20 @@ INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
 VALUES
 ('effect_status', '学员有效期状态', '0', '未过期', ''),
 ('effect_status', '学员有效期状态', '1', '已过期', '');
+
+
+-- 添加权限
+INSERT INTO `privilege` (`id`, `name`, `uri`, `created_time`, `method`, `is_menu`, `menu_name`, `parent_id`, `unique_en_name`)
+VALUES
+  ('464', '基础', '', 1583224153, 'get', 1, '基础', 0, 'basic');
+
+/**
+ * => Notice: 如果上一条数据插入失败，下列数据parent_id 字段应为上一段sql执行后ID。
+ */
+INSERT INTO `privilege` (`name`, `uri`, `method`, `unique_en_name`, `parent_id`, `is_menu`, `menu_name`, `created_time`)
+VALUES
+  ('学员管理', '/student/student/searchList', 'get', 'studentList', '464', '1', '学员管理', 1583224153),
+  ('学员详情接口', '/student/student/detail', 'get', 'student_detail', '464', '0', '', 1583224153),
+  ('学员更新添加助教微信状态', '/student/student/updateAddAssistantStatus', 'post', 'addAssistantStatus', '464', '0', '', 1583224153),
+  ('学员分配班级接口', '/student/student/allotCollection', 'post', 'allotCollection', '464', '0', '', 1583224153),
+  ('学员分配助教接口', '/student/student/allotAssistant', 'post', 'allotAssistant', '464', '0', '', 1583224153);
