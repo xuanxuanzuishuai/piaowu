@@ -41,7 +41,10 @@ class studentMiniProService
             SimpleLogger::error('wx mini pro create fail', ['config' => $config]);
         }
 
-        $wx->sendText($message['FromUserName'], 'hello');
+        $media = $wx->getTempMedia('image', 'AUTO_REPLY_QR.jpg', $_ENV['STUDENT_MINIPRO_AUTO_REPLY_QR']);
+
+        $wx->sendImage($message['FromUserName'], $media['media_id']);
+
         return true;
     }
 }
