@@ -196,7 +196,7 @@ class UserService
         try {
             //生成二维码
             $userQrTicket = RC4::encrypt($_ENV['COOKIE_SECURITY_KEY'], $type . "_" . $userId);
-            $content = $_ENV["WECHAT_FRONT_DOMAIN"] . "/bind/org/add" . "?referee_id=" . $userQrTicket;
+            $content = $_ENV["WECHAT_FRONT_DOMAIN"] . "/html/aipl_referral.html" . "?referee_id=" . $userQrTicket;
             $time = time();
             list($filePath, $fileName) = QRCodeModel::genImage($content, $time);
             chmod($filePath, 0755);

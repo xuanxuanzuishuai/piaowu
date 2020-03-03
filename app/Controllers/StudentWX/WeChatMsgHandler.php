@@ -62,7 +62,7 @@ class WeChatMsgHandler
             $user = UserWeixinModel::getBoundInfoByOpenId($userOpenId);
             if (empty($user)) {
                 //未绑定
-                $url = $_ENV["WECHAT_FRONT_DOMAIN"] . "/bind/org/add";
+                $url = $_ENV["REFERRER_REGISTER_URL"];
                 $result = '您未绑定，请点击<a href="' . $url . '"> 绑定 </a>。';
                 WeChatService::notifyUserWeixinTextInfo(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
                     UserWeixinModel::USER_TYPE_STUDENT, $userOpenId, $result);

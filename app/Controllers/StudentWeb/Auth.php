@@ -15,6 +15,7 @@ use App\Libs\MysqlDB;
 use App\Libs\Valid;
 use App\Models\StudentModel;
 use App\Services\CommonServiceForApp;
+use App\Services\StudentServiceForApp;
 use App\Services\StudentServiceForWeb;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -79,6 +80,57 @@ class Auth extends ControllerBase
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
         return HttpHelper::buildResponse($response, $data);
+    }
+
+    public function AIReferrerRegister(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        $rules  = [
+            [
+                'key'        => 'mobile',
+                'type'       => 'required',
+                'error_code' => 'user_mobile_is_required'
+            ],
+            [
+                'key'        => 'mobile',
+                'type'       => 'regex',
+                'value'      => '/^[0-9]{11}$/',
+                'error_code' => 'mobile_format_error'
+            ],
+            [
+                'key'        => 'code',
+                'type'       => 'required',
+                'error_code' => 'validate_code_is_required'
+            ],
+            [
+                'key'        => 'code',
+                'type'       => 'regex',
+                'value'      => '/[0-9]{4}/',
+                'error_code' => 'validate_code_error'
+            ],
+            [
+                'key'        => 'channel',
+                'type'       => 'required',
+                'error_code' => 'channel_is_required'
+            ],
+        ];
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        if (!CommonServiceForApp::checkValidateCode($params['mobile'], $params['code'])) {
+            return $response->withJson(Valid::addAppErrors([], 'validate_code_error'));
+        }
+
+        $lastId = StudentServiceForApp::studentRegister($params['mobile'], $params['channel'], null, $params['referee_id']);
+        if(empty($lastId)) {
+            return $response->withJson(Valid::addAppErrors([], 'student_register_fail'));
+        }
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS
+        ]);
     }
 
     public function validateCode(Request $request, Response $response)

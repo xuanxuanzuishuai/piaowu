@@ -48,7 +48,8 @@ class Erp extends ControllerBase
             [
                 'key' => 'type',
                 'type' => 'in',
-                'value' => [GiftCodeModel::BUYER_TYPE_ERP_EXCHANGE, GiftCodeModel::BUYER_TYPE_ERP_ORDER],
+                'value' => [GiftCodeModel::BUYER_TYPE_ERP_EXCHANGE,
+                    GiftCodeModel::BUYER_TYPE_ERP_ORDER, GiftCodeModel::BUYER_TYPE_AI_REFERRAL],
                 'error_code' => 'exchange_type_invalid'
             ],
             [

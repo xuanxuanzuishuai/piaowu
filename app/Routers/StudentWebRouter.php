@@ -29,6 +29,11 @@ class StudentWebRouter extends RouterBase
             'call' => Auth::class . ':register',
             'middles' => []
         ],
+        '/student_web/auth/ai_referrer_register' => [ //AI转介绍注册
+            'method' => ['post'],
+            'call' => Auth::class . ':AIReferrerRegister',
+            'middles' => []
+        ],
         '/student_web/auth/validate_code' => [
             'method' => ['get'],
             'call' => Auth::class . ':validateCode',

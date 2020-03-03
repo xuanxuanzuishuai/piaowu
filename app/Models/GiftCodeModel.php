@@ -36,6 +36,7 @@ class GiftCodeModel extends Model
     const BUYER_TYPE_ERP_EXCHANGE = 4;
     const BUYER_TYPE_ERP_ORDER = 5;
     const BUYER_TYPE_REFERRAL = 6;
+    const BUYER_TYPE_AI_REFERRAL = 7; // AI转介绍
 
     /**
      * 兑换码状态

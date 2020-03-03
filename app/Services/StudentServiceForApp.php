@@ -21,6 +21,7 @@ use App\Models\ReferralModel;
 use App\Models\StudentModel;
 use App\Models\StudentModelForApp;
 use App\Models\GiftCodeModel;
+use App\Models\UserQrTicketModel;
 
 class StudentServiceForApp
 {
@@ -308,9 +309,10 @@ class StudentServiceForApp
      * @param $mobile
      * @param $channel
      * @param $name
+     * @param $refereeId
      * @return null|array 失败返回null 成功返回['student_id' => x, 'uuid' => x, 'is_new' => x]
      */
-    public static function studentRegister($mobile, $channel, $name = null)
+    public static function studentRegister($mobile, $channel, $name = null, $refereeId = null)
     {
         if (empty($mobile) || empty($channel)) {
             return null;
@@ -320,8 +322,28 @@ class StudentServiceForApp
             $name = Util::defaultStudentName($mobile);
         }
 
+        //检查$refereeId是否存在
+        $refType = null;
+        $refUuid = null;
+        if(!empty($refereeId)) {
+            $ticket = UserQrTicketModel::getRecord(['qr_ticket' => $refereeId]);
+            if(!empty($ticket)) {
+                if($ticket['type'] == UserQrTicketModel::STUDENT_TYPE) {
+                    $stu = StudentModel::getRecord(['id' => $ticket['user_id']]);
+                    if(!empty($stu)) {
+                        $refType = UserQrTicketModel::STUDENT_TYPE;
+                        $refUuid = $stu['uuid'];
+                    }
+                } else {
+                    SimpleLogger::info('ticket_type_is_not_student', ['ticket' => $ticket]);
+                }
+            } else {
+                SimpleLogger::info('referee_id_not_exist', ['referee_id' => $refereeId]);
+            }
+        }
+
         $erp = new Erp();
-        $response = $erp->studentRegister($channel, $mobile, $name);
+        $response = $erp->studentRegister($channel, $mobile, $name, $refType, $refUuid);
         if (empty($response) || $response['code'] != 0) {
             SimpleLogger::error("studentRegister error", [
                 '$mobile' => $mobile,
