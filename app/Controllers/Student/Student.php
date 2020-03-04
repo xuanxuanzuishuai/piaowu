@@ -603,8 +603,9 @@ class Student extends ControllerBase
         $res = StudentService::allotCollection($params['student_ids'], $params['collection_id'], $employeeId);
         if($res['code'] != Valid::CODE_SUCCESS){
             $db->rollBack();
+        }else{
+            $db->commit();
         }
-        $db->commit();
         return $response->withJson($res);
     }
 
@@ -651,8 +652,9 @@ class Student extends ControllerBase
         $res = StudentService::allotAssistant($params['student_ids'], $params['assistant_id'], $employeeId);
         if($res['code'] != Valid::CODE_SUCCESS){
             $db->rollBack();
+        }else{
+            $db->commit();
         }
-        $db->commit();
         return $response->withJson($res);
     }
 }
