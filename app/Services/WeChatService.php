@@ -8,7 +8,6 @@
 
 namespace App\Services;
 
-use App\Libs\Constants;
 use App\Libs\RedisDB;
 use App\Libs\SentryClient;
 use App\Libs\SimpleLogger;
@@ -387,7 +386,6 @@ class WeChatService
      * @param $content
      * @param string $url
      * @return array|bool|mixed
-     * @throws \GuzzleHttp\Exception\GuzzleException
      */
     public static function notifyUserWeixinTemplateInfo($app_id, $userType, $openid, $templateId, $content, $url = '')
     {
@@ -413,7 +411,6 @@ class WeChatService
      * @param $openid
      * @param $content
      * @return array|bool|mixed
-     * @throws \GuzzleHttp\Exception\GuzzleException
      */
     public static function notifyUserWeixinTextInfo($app_id, $userType, $openid, $content){
         //发送数据
@@ -435,7 +432,6 @@ class WeChatService
      * @param $openid
      * @param $mediaId
      * @return array|bool|mixed
-     * @throws \GuzzleHttp\Exception\GuzzleException
      */
     public static function toNotifyUserWeixinCustomerInfoForImage($app_id, $userType, $openid, $mediaId)
     {
@@ -624,7 +620,6 @@ class WeChatService
      * @param array $replaceParams      动态参数
      * @param array $configData         配置数据
      * @return array|bool|mixed
-     * @throws \GuzzleHttp\Exception\GuzzleException
      */
     public static function notifyUserCustomizeMessage($mobile, $id = 0, $replaceParams = [], $configData = [])
     {

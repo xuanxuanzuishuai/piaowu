@@ -11,15 +11,11 @@ namespace App\Controllers\OrgWeb;
 use App\Controllers\ControllerBase;
 use App\Libs\Util;
 use App\Libs\Valid;
-use App\Libs\UserCenter;
-use App\Models\WeChatConfigModel;
 use App\Services\WeChatConfigService;
 use App\Services\WeChatService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
-use App\Models\StudentModelForApp;
-use App\Models\UserWeixinModel;
 
 /**
  * 微信配置控制器
@@ -32,10 +28,9 @@ class WechatConfig extends ControllerBase
      * 配置公众号事件推送内容
      * @param Request $request
      * @param Response $response
-     * @param $args
      * @return Response
      */
-    public function setWechatOfficeConfig(Request $request, Response $response, $args)
+    public function setWechatOfficeConfig(Request $request, Response $response)
     {
         //接收数据
         $rules = [
@@ -105,10 +100,9 @@ class WechatConfig extends ControllerBase
      * 推送内容详情
      * @param Request $request
      * @param Response $response
-     * @param $args
      * @return Response
      */
-    public function detail(Request $request, Response $response, $args)
+    public function detail(Request $request, Response $response)
     {
         $rules = [
             [
@@ -134,10 +128,9 @@ class WechatConfig extends ControllerBase
      * 数据列表
      * @param Request $request
      * @param Response $response
-     * @param $args
      * @return Response
      */
-    public function list(Request $request, Response $response, $args)
+    public function list(Request $request, Response $response)
     {
         $params = $request->getParams();
         list($params['page'], $params['count']) = Util::formatPageCount($params);
@@ -156,11 +149,9 @@ class WechatConfig extends ControllerBase
      * 发送微信自定义消息
      * @param Request $request
      * @param Response $response
-     * @param $args
      * @return Response
-     * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function sendSelfMessage(Request $request, Response $response, $args)
+    public function sendSelfMessage(Request $request, Response $response)
     {
         //接收参数
         $rules = [

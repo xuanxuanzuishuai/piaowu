@@ -22,7 +22,6 @@ class WeChatMsgHandler
     /**
      * 用户关注公众号
      * @param $xml
-     * @throws \GuzzleHttp\Exception\GuzzleException
      */
     public static function subscribe($xml)
     {
@@ -49,7 +48,6 @@ class WeChatMsgHandler
      * 自定义点击事件
      * @param $xml
      * @return bool
-     * @throws \GuzzleHttp\Exception\GuzzleException
      */
     public static function menuClickEventHandler($xml)
     {
