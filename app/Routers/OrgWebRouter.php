@@ -125,6 +125,7 @@ class OrgWebRouter extends RouterBase
         '/student/student/searchList' => array('method' => array('get'), 'call' => '\App\Controllers\Student\Student:searchList'),
         '/student/student/allotCollection' => array('method' => array('post'), 'call' => '\App\Controllers\Student\Student:allotCollection'),
         '/student/student/allotAssistant' => array('method' => array('post'), 'call' => '\App\Controllers\Student\Student:allotAssistant'),
+        '/org_web/channel/getChannels' => array('method' => array('get'), 'call' => '\App\Controllers\Student\Student:getSChannels'),
 
         '/goods/course/list' => array('method' => array('get'), 'call' => '\App\Controllers\Course\Course:list'),
         '/goods/course/detail' => array('method' => array('get'), 'call' => '\App\Controllers\Course\Course:detail'),
@@ -348,5 +349,6 @@ class OrgWebRouter extends RouterBase
         '/org_web/collection/list' => ['method' => ['get'], 'call' => Collection::class . ':list'],
         '/org_web/collection/assistant_list' => ['method' => ['get'], 'call' => Collection::class . ':getAssistantList'],
         '/org_web/collection/total_list' => ['method' => ['get'], 'call' => Collection::class . ':totalList'],
+        '/org_web/collection/getCollectionDropDownList' => ['method' => ['get'], 'call' => Collection::class . ':getCollectionDropDownList'],
         ];
 }

@@ -50,8 +50,8 @@ VALUES
 -- 添加学员微信绑定状态dict
 INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
 VALUES
-('wx_bind_status', '学员微信绑定状态', '0', '已绑定', ''),
-('wx_bind_status', '学员微信绑定状态', '1', '未绑定', '');
+('wx_bind_status', '学员微信绑定状态', '1', '已绑定', ''),
+('wx_bind_status', '学员微信绑定状态', '0', '未绑定', '');
 
 -- 添加学员有效期状态dict
 INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)

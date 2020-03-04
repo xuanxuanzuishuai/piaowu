@@ -417,4 +417,19 @@ class CollectionService
         //返回结果
         return $collection;
     }
+
+    /**
+     * 获取班级下拉菜单列表数据
+     * @param $name
+     * @return array
+     */
+    public static function getCollectionDropDownList($name)
+    {
+        $where = [];
+        $field = ['id', 'name'];
+        if(!empty($name)){
+            $where['name[~]'] = $name;
+        }
+        return CollectionModel::getRecords($where, $field);
+    }
 }

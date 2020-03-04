@@ -283,4 +283,21 @@ class Collection extends ControllerBase
             ]
         ], StatusCode::HTTP_OK);
     }
+
+    /**
+     * 获取班级下拉菜单列表数据
+     * @param Request $request
+     * @param Response $response
+     * @param $args
+     * @return Response
+     */
+    public function getCollectionDropDownList(Request $request, Response $response, $args)
+    {
+        $name = $request->getParam('name');
+        $collections = CollectionService::getCollectionDropDownList($name);
+        return $response->withJson([
+            'code' => 0,
+            'data' => $collections
+        ], StatusCode::HTTP_OK);
+    }
 }

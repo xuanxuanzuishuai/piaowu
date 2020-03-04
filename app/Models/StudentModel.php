@@ -11,6 +11,7 @@ namespace App\Models;
 use App\Libs\MysqlDB;
 use App\Libs\UserCenter;
 use App\Libs\Util;
+use App\Services\ChannelService;
 use App\Services\WeChatService;
 
 class StudentModel extends Model
@@ -398,12 +399,20 @@ class StudentModel extends Model
      */
     public static function studentList($params, $page, $count, $employeeId)
     {
+        //格式化搜索条件
+        list($where, $map) = self::formatSearchParams($params, $employeeId);
+        if($where == false){
+            return [0, []];
+        }
+
+        //定义表
         $student = self::$table;
         $studentWeChat = UserWeixinModel::$table;
         $collection = CollectionModel::$table;
         $channel = ChannelModel::$table;
         $assistant = EmployeeModel::$table;
 
+        //定义sql语句
         $table = " FROM {$student} AS `s` ";
         $join = " LEFT JOIN {$studentWeChat} AS `sw` ON `s`.`id` = `sw`.`user_id` 
                         AND `sw`.`app_id` = ".UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT."
@@ -415,7 +424,6 @@ class StudentModel extends Model
                 LEFT JOIN {$channel} AS `ch` ON `s`.`channel_id` = `ch`.`id` 
                 LEFT JOIN {$channel} AS `pch` ON `ch`.`parent_id` = `pch`.`id` ";
 
-        list($where, $map) = self::formatSearchParams($params, $employeeId);
         //统计数量
         $num = self::getListCount($table, $join, $where, $map);
         if(empty($num)){
@@ -441,9 +449,7 @@ class StudentModel extends Model
          *  1. 学生的助教为当前用户
          *  2. 学生所在班级助教为当前用户
          */
-        //$whereSql .= " WHERE (s.assistant_id = {$employeeId} OR co.assistant_id = {$employeeId}) ";
-$whereSql = 'where 1 ';
-
+        $whereSql .= " WHERE (s.assistant_id = {$employeeId} OR co.assistant_id = {$employeeId}) ";
         //学生姓名
         if(!empty($params['student_name'])){
             $whereSql .= " AND s.name like :student_name ";
@@ -504,6 +510,14 @@ $whereSql = 'where 1 ';
         if(!empty($params['channel_id'])){
             $whereSql .= " AND s.channel_id = :channel_id ";
             $map[':channel_id'] = $params['channel_id'];
+        }elseif(!empty($params['parent_channel_id'])){
+            $channels = ChannelService::getChannels($params['parent_channel_id']);
+            if(empty($channels)){
+                return [false, false];
+            }else{
+                $ids = implode(',', array_column($channels, 'id'));
+                $whereSql .= " AND s.channel_id in ({$ids}) ";
+            }
         }
         //查询有效期开始时间
         if(!empty($params['effect_start_time'])){
