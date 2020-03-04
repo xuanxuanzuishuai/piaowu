@@ -10,9 +10,11 @@ namespace App\Services;
 
 
 use App\Libs\AliOSS;
+use App\Libs\UserCenter;
 use App\Models\BannerModel;
 use App\Models\ReviewCourseModel;
 use App\Models\StudentModel;
+use App\Models\UserWeixinModel;
 
 class BannerService
 {
@@ -61,23 +63,31 @@ class BannerService
 
     public static function filterNeedSubWx($studentId)
     {
-        /*
         $student = StudentModel::getById($studentId);
 
+        // 检测点评课状态，未开通不推送
         if ($student['has_review_course'] == ReviewCourseModel::REVIEW_COURSE_NO) {
             return false;
         }
 
+        // 检测付费状态，未开启不推送
         $appSubStatus = StudentServiceForApp::checkSubStatus($student['sub_status'], $student['sub_end_date']);
         if (!$appSubStatus) {
             return false;
         }
 
-        $subWx = false;
-        if ($subWx) {
-            return false;
+        // 检测公众号信息，绑定且关注不推送，未绑定无法获取关注状态也推送
+        $studentWeChatInfo = UserWeixinModel::getBoundInfoByUserId($studentId,
+            UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
+            WeChatService::USER_TYPE_STUDENT,
+            UserWeixinModel::BUSI_TYPE_STUDENT_SERVER
+        );
+        if (!empty($studentWeChatInfo['open_id'])) {
+            $wxUserInfo = WeChatService::getUserInfo($studentWeChatInfo['open_id']);
+            if ($wxUserInfo['subscribe'] == 1) {
+                return false;
+            }
         }
-        */
 
         return true;
     }

@@ -8,6 +8,7 @@
 
 namespace App\Services;
 
+use App\Libs\HttpHelper;
 use App\Libs\RedisDB;
 use App\Libs\SentryClient;
 use App\Libs\SimpleLogger;
@@ -661,6 +662,66 @@ class WeChatService
             return $res;
         }
         //返回数据
+        return $res;
+    }
+
+    /**
+     * 获取微信用户信息
+     *
+     * response
+    { // 已关注
+    "subscribe": 1,
+    "openid": "oUuMi1uYOP1mRa16WwC_Vgt4MgoA",
+    "nickname": "托马斯杨",
+    "sex": 1,
+    "language": "zh_CN",
+    "city": "朝阳",
+    "province": "北京",
+    "country": "中国",
+    "headimgurl": "http://thirdwx.qlogo.cn/mmopen/LEURzvo8V2BNibFBBglCG16HZSeXkgY9pdHDEoN9LE4ayalicERHjH3xFD7E8CKhAaCq6Ud60gN8Ck9YQkDnnr85duDAicp3Tur/132",
+    "subscribe_time": 1583305595,
+    "unionid": "oYrz60eEmIZb_9bRQubn0ujbDkhk",
+    "remark": "",
+    "groupid": 0,
+    "tagid_list": [],
+    "subscribe_scene": "ADD_SCENE_SEARCH",
+    "qr_scene": 0,
+    "qr_scene_str": ""
+    }
+
+    { // 未关注
+    "subscribe": 0,
+    "openid": "oUuMi1uYOP1mRa16WwC_Vgt4MgoA",
+    "tagid_list": []
+    }
+
+    { // 错误
+    "errcode": 40003,
+    "errmsg": "invalid openid hint: [JJ0foA03554807]"
+    }
+     * @param $openId
+     * @return array
+     */
+    public static function getUserInfo($openId)
+    {
+        $at = self::getAccessToken(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT, UserWeixinModel::USER_TYPE_STUDENT);
+        if (empty($at)) {
+            SimpleLogger::error('[getUserInfo] getAccessToken fail', []);
+            return [];
+        }
+
+        $url = self::weixinAPIURL . '/user/info';
+        $params = [
+            'access_token' => $at,
+            'openid' => $openId,
+        ];
+        $res = HttpHelper::requestJson($url, $params, 'GET');
+
+        if (!empty($res['errcode']) || empty($res)) {
+            SimpleLogger::error('[getUserInfo] request error', ['error' => $res]);
+            return [];
+        }
+
         return $res;
     }
 }
