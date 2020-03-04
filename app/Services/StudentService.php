@@ -685,7 +685,9 @@ class StudentService
         foreach($students as $student){
             $row = [];
             $row['student_id'] = $student['id'];
-            $row['old_collection_id'] = $student['collection_id'];
+            if(!empty($student['collection_id'])){
+                $row['old_collection_id'] = $student['collection_id'];
+            }
             $row['new_collection_id'] = $collectionId;
             $row['create_time'] = $time;
             $row['operator_id'] = $employeeId;
@@ -758,7 +760,9 @@ class StudentService
         foreach($students as $student){
             $row = [];
             $row['student_id'] = $student['id'];
-            $row['old_assistant_id'] = $student['assistant_id'];
+            if(!empty($student['assistant_id'])){
+                $row['old_assistant_id'] = $student['assistant_id'];
+            }
             $row['new_assistant_id'] = $assistantId;
             $row['create_time'] = $time;
             $row['operator_id'] = $employeeId;
