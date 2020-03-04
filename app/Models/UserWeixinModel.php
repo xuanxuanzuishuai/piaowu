@@ -15,53 +15,83 @@ class UserWeixinModel extends Model
     public static $table = "user_weixin";
 
     const STATUS_NORMAL = 1;
+    const STATUS_DISABLE = 2;
 
     const USER_TYPE_STUDENT = 1; // 学生
-    const USER_TYPE_TEACHER = 2;  // 老师
-    const USER_TYPE_STUDENT_ORG = 3; // 学生机构号
+    const USER_TYPE_TEACHER = 2;  // 老师 (废弃)
+    const USER_TYPE_STUDENT_ORG = 3; // 学生机构号 (废弃)
 
     const BUSI_TYPE_STUDENT_SERVER = 1; // 学生服务号
-    const BUSI_TYPE_TEACHER_SERVER = 2; // 老师服务号
-
+    const BUSI_TYPE_TEACHER_SERVER = 2; // 老师服务号 (废弃)
     const BUSI_TYPE_EXAM_MINAPP = 6; // 音基小程序
+    const BUSI_TYPE_STUDENT_MINAPP = 7; // 学生app推广小程序
 
     /** 获取最近绑定的该open_id的信息
-     * @param $open_id
+     * @param $openId
+     * @param $appId
+     * @param $userType
+     * @param $busiType
      * @return array
      */
-    public static function getBoundInfoByOpenId($open_id) {
-        $where = [self::$table .".open_id" => $open_id, self::$table .".status" => self::STATUS_NORMAL];
-
-        $result = MysqlDB::getDB()->get(self::$table, "*", $where);
-        return $result;
-    }
-
-    public static function getBoundInfoByUserId($user_id, $app_id, $user_type, $busi_type){
+    public static function getBoundInfoByOpenId($openId, $appId, $userType, $busiType)
+    {
         $where = [
-            self::$table .".user_id" => $user_id,
-            self::$table .".status" => self::STATUS_NORMAL,
-            self::$table .".app_id" => $app_id,
-            self::$table .".user_type" => $user_type,
-            self::$table .".busi_type" => $busi_type,
-            "ORDER" => ["id" => "DESC"]];
+            'open_id' => $openId,
+            'status' => self::STATUS_NORMAL,
+            'app_id' => $appId,
+            'user_type' => $userType,
+            'busi_type' => $busiType,
+            "ORDER" => ["id" => "DESC"]
+        ];
 
-        $result = MysqlDB::getDB()->get(self::$table, "*", $where);
-        return $result;
+        return self::getRecords($where, false);
     }
 
-    public static function boundUser($open_id, $user_id, $app_id, $user_type, $busi_type){
-        $db = MysqlDB::getDB();
-        // 首先删除该open_id的绑定关系
-        $db->delete(self::$table, [
-            "open_id" => $open_id
-        ]);
-        return $db->insertGetID(self::$table, [
-            "open_id" => $open_id,
-            "user_id" => $user_id,
-            "app_id" => $app_id,
-            "user_type" => $user_type,
-            "busi_type" => $busi_type,
+    public static function getBoundInfoByUserId($userId, $appId, $userType, $busiType)
+    {
+        $where = [
+            'user_id' => $userId,
+            'status' => self::STATUS_NORMAL,
+            'app_id' => $appId,
+            'user_type' => $userType,
+            'busi_type' => $busiType,
+            "ORDER" => ["id" => "DESC"]
+        ];
+
+        return self::getRecords($where, false);
+    }
+
+    /**
+     * 绑定用户 并清除历史绑定关系
+     * @param $openId
+     * @param $userId
+     * @param $appId
+     * @param $userType
+     * @param $busiType
+     * @return int|null
+     */
+    public static function boundUser($openId, $userId, $appId, $userType, $busiType)
+    {
+        self::batchUpdateRecord(['status' => self::STATUS_DISABLE], [
+            'status' => self::STATUS_NORMAL,
+            'OR' => [
+                'open_id' => $openId,
+                'AND' => [
+                    "user_id" => $userId,
+                    "app_id" => $appId,
+                    "user_type" => $userType,
+                    "busi_type" => $busiType,
+                ]
+            ]
+        ], false);
+
+        return self::insertRecord([
+            "open_id" => $openId,
+            "user_id" => $userId,
+            "app_id" => $appId,
+            "user_type" => $userType,
+            "busi_type" => $busiType,
             "status" => self::STATUS_NORMAL,
-        ]);
+        ], false);
     }
 }

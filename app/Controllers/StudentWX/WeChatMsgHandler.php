@@ -57,7 +57,12 @@ class WeChatMsgHandler
         $userOpenId = (string)$xml->FromUserName;
         if ($keyEvent == "STUDENT_PUSH_MSG_USER_SHARE") {
             //学生转介绍学生
-            $user = UserWeixinModel::getBoundInfoByOpenId($userOpenId);
+            $user = UserWeixinModel::getBoundInfoByOpenId(
+                $userOpenId,
+                UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
+                WeChatService::USER_TYPE_STUDENT,
+                UserWeixinModel::BUSI_TYPE_STUDENT_SERVER
+            );
             if (empty($user)) {
                 //未绑定
                 $url = $_ENV["REFERRER_REGISTER_URL"];

@@ -125,6 +125,7 @@ class Student extends ControllerBaseForOrg
         if (empty($openId)) {
             return $response->withJson(Valid::addAppErrors([], 'need_bound'), StatusCode::HTTP_OK);
         }
+        // TODO: 该文件对应机构微信迁移到aitob 已废弃
         $bound_info = UserWeixinModel::getBoundInfoByOpenId($openId);
         // 没有找到该openid的绑定关系
         if (empty($bound_info)) {

@@ -47,6 +47,7 @@ class WeChatMsgHandler
         // 事件发送者
         $userOpenId = (string)$xml->FromUserName;
         if ($keyEvent == "PUSH_MSG_USER_SHARE") {
+            // TODO: 该文件对应机构微信迁移到aitob 已废弃
             $user = UserWeixinModel::getBoundInfoByOpenId($userOpenId);
             if (empty($user)) {
                 $url = $_ENV["WECHAT_FRONT_DOMAIN"] . "/bind/org/add";

@@ -140,7 +140,14 @@ class Student extends ControllerBase
         if (empty($openId)) {
             return $response->withJson(Valid::addAppErrors([], 'need_bound'), StatusCode::HTTP_OK);
         }
-        $bound_info = UserWeixinModel::getBoundInfoByOpenId($openId);
+
+        $bound_info = UserWeixinModel::getBoundInfoByOpenId(
+            $openId,
+            UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
+            WeChatService::USER_TYPE_STUDENT,
+            UserWeixinModel::BUSI_TYPE_STUDENT_SERVER
+        );
+
         // 没有找到该openid的绑定关系
         if (empty($bound_info)) {
             return $response->withJson(Valid::addAppErrors([], 'need_bound'), StatusCode::HTTP_OK);
