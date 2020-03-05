@@ -44,7 +44,7 @@ class UserWeixinModel extends Model
             "ORDER" => ["id" => "DESC"]
         ];
 
-        return self::getRecords($where, false);
+        return self::getRecord($where, false);
     }
 
     public static function getBoundInfoByUserId($userId, $appId, $userType, $busiType)
@@ -58,7 +58,7 @@ class UserWeixinModel extends Model
             "ORDER" => ["id" => "DESC"]
         ];
 
-        return self::getRecords($where, false);
+        return self::getRecord($where, false);
     }
 
     /**
