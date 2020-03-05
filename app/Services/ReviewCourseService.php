@@ -543,10 +543,6 @@ class ReviewCourseService
             throw new RunTimeException(['record_not_found']);
         }
 
-        if (empty($task['review_audio'])) {
-            throw new RunTimeException(['record_not_found']);
-        }
-
         if ($task['status'] != ReviewCourseTaskModel::STATUS_INIT) {
             throw new RunTimeException(['review_task_has_been_send']);
         }
