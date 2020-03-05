@@ -790,4 +790,8 @@ class StudentService
         return StudentModel::updateStudentAssistant($studentIds, $assistantId, $time);
     }
 
+    public static function getStudentByMobile($mobile)
+    {
+        return StudentModel::getRecord(['mobile' => $mobile]);
+    }
 }

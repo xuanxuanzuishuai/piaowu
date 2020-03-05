@@ -15,6 +15,7 @@ use App\Libs\MysqlDB;
 use App\Libs\Valid;
 use App\Models\StudentModel;
 use App\Services\CommonServiceForApp;
+use App\Services\StudentService;
 use App\Services\StudentServiceForApp;
 use App\Services\StudentServiceForWeb;
 use Slim\Http\Request;
@@ -121,6 +122,13 @@ class Auth extends ControllerBase
 
         if (!CommonServiceForApp::checkValidateCode($params['mobile'], $params['code'])) {
             return $response->withJson(Valid::addAppErrors([], 'validate_code_error'));
+        }
+
+        $stu = StudentService::getStudentByMobile($params['mobile']);
+        if(!empty($stu)) {
+            return $response->withJson([
+                'code' => Valid::CODE_SUCCESS
+            ]);
         }
 
         $lastId = StudentServiceForApp::studentRegister($params['mobile'], $params['channel'], null, $params['referee_id']);
