@@ -8,10 +8,13 @@
 
 namespace App\Models;
 
+use App\Libs\Constants;
 use App\Libs\MysqlDB;
 use App\Libs\UserCenter;
 use App\Libs\Util;
 use App\Services\ChannelService;
+use App\Services\DictService;
+use App\Services\EmployeeService;
 use App\Services\WeChatService;
 
 class StudentModel extends Model
@@ -445,11 +448,24 @@ class StudentModel extends Model
         $map = [];
         /**
          * 权限控制
-         * 用户查看规则：
+         * 助教查看学生规则：
          *  1. 学生的助教为当前用户
          *  2. 学生所在班级助教为当前用户
+         * 其他角色
+         *  1. 其他角色能够查看所有学生数据
          */
-        $whereSql .= " WHERE (s.assistant_id = {$employeeId} OR co.assistant_id = {$employeeId}) ";
+        //获取操作人数据
+        $employee = EmployeeService::getById($employeeId);
+        if(empty($employee)){
+            return [false, false];
+        }
+        //获取助教 ROLE_ID
+        $assistantRoleId = DictService::getKeyValue(Constants::DICT_TYPE_ROLE_ID, Constants::DICT_KEY_CODE_ASSISTANT);
+        if($employee['role_id'] == $assistantRoleId){
+            $whereSql .= " WHERE (s.assistant_id = {$employeeId} OR co.assistant_id = {$employeeId}) ";
+        }else{
+            $whereSql .= " WHERE 1 ";
+        }
         //学生姓名
         if(!empty($params['student_name'])){
             $whereSql .= " AND s.name like :student_name ";
@@ -614,14 +630,17 @@ class StudentModel extends Model
      * 更新学生集合信息
      * @param $studentIds
      * @param $collectionId
+     * @param $assistantId
      * @param $time
      * @return int|null
      */
-    public static function updateStudentCollection($studentIds, $collectionId, $time)
+    public static function updateStudentCollection($studentIds, $collectionId, $assistantId, $time)
     {
         $data = [
             'collection_id' => $collectionId,
-            'allot_collection_time' => $time
+            'allot_collection_time' => $time,
+            'assistant_id' => $assistantId,
+            'allot_assistant_time' => $time
         ];
         $where = [
             'id' => $studentIds
@@ -646,5 +665,16 @@ class StudentModel extends Model
             'id' => $studentIds
         ];
         return StudentModel::batchUpdateRecord($data, $where);
+    }
+
+    /**
+     * 获取班级学生数
+     * @param $collectionId
+     * @return number
+     */
+    public static function getCollectionStudentCount($collectionId)
+    {
+        $where['collection_id'] = $collectionId;
+        return MysqlDB::getDB()->count(self::$table, '*', $where);
     }
 }

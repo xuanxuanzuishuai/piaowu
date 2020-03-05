@@ -18,6 +18,7 @@ use App\Libs\ResponseError;
 use App\Libs\UserCenter;
 use App\Libs\Util;
 use App\Libs\Valid;
+use App\Models\CollectionModel;
 use App\Models\EmployeeModel;
 use App\Models\GiftCodeModel;
 use App\Models\StudentAssistantLogModel;
@@ -658,17 +659,47 @@ class StudentService
         if(empty($students) || count($students) != $studentCount){
             return Valid::addErrors([], 'student_ids_error', 'student_ids_error');
         }
+        $collection = CollectionModel::getById($collectionId);
+        if(empty($collection)){
+            return Valid::addErrors([], 'collection_id_error', 'collection_id_error');
+        }
         $time = time();
+        //只分配未结班的班级, 已经结班则返回错误
+        if($collection['teaching_end_time'] <= $time){
+            return Valid::addErrors([], 'collection_is_over', 'collection_is_over');
+        }
+        //确定班级容量是否超出
+        $collectionStudentCount = self::getCollectionStudentCount($collectionId);
+        if(($collectionStudentCount + $studentCount) > $collection['capacity']){
+            return Valid::addErrors([], 'collection_capacity_is_over', 'collection_capacity_is_over');
+        }
+        //添加班级分配日志
         $logData = self::formatAllotCollectionLogData($students, $collectionId, $employeeId, $time);
         $res = self::addAllotCollectionLog($logData);
         if(!$res){
             return Valid::addErrors([], 'add_allot_collection_log_failed', 'add_allot_collection_log_failed');
         }
-        $cnt = self::updateStudentCollection($studentIds, $collectionId, $time);
+        //添加助教分配日志
+        $logData = self::formatAllotAssistantLogData($students, $collection['assistant_id'], $employeeId, $time);
+        $res = self::addAllotAssistantLog($logData);
+        if(!$res){
+            return Valid::addErrors([], 'add_allot_assistant_log_failed', 'add_allot_assistant_log_failed');
+        }
+        $cnt = self::updateStudentCollection($studentIds, $collectionId, $collection['assistant_id'], $time);
         if($cnt != $studentCount){
             return Valid::addErrors([], 'update_student_data_failed', 'update_student_data_failed');
         }
         return Valid::formatSuccess();
+    }
+
+    /**
+     * 获取班级已分配学生数
+     * @param $collectionId
+     * @return number
+     */
+    public static function getCollectionStudentCount($collectionId)
+    {
+        return StudentModel::getCollectionStudentCount($collectionId);
     }
 
     /**
@@ -709,12 +740,13 @@ class StudentService
      * 更新学生集合数据
      * @param $studentIds
      * @param $collectionId
+     * @param $assistantId
      * @param $time
      * @return int|null
      */
-    public static function updateStudentCollection($studentIds, $collectionId, $time)
+    public static function updateStudentCollection($studentIds, $collectionId, $assistantId, $time)
     {
-        return StudentModel::updateStudentCollection($studentIds, $collectionId, $time);
+        return StudentModel::updateStudentCollection($studentIds, $collectionId, $assistantId, $time);
     }
 
     /**

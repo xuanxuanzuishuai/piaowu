@@ -294,7 +294,8 @@ class Collection extends ControllerBase
     public function getCollectionDropDownList(Request $request, Response $response, $args)
     {
         $name = $request->getParam('name');
-        $collections = CollectionService::getCollectionDropDownList($name);
+        $notOver = $request->getParam('not_over');
+        $collections = CollectionService::getCollectionDropDownList($name, $notOver);
         return $response->withJson([
             'code' => 0,
             'data' => $collections

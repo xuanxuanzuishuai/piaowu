@@ -421,14 +421,19 @@ class CollectionService
     /**
      * 获取班级下拉菜单列表数据
      * @param $name
+     * @param $notOver
      * @return array
      */
-    public static function getCollectionDropDownList($name)
+    public static function getCollectionDropDownList($name, $notOver = false)
     {
         $where = [];
         $field = ['id', 'name'];
         if(!empty($name)){
             $where['name[~]'] = $name;
+        }
+        //是否只取未结课的班级
+        if($notOver){
+            $where['teaching_end_time[>]'] = time();
         }
         return CollectionModel::getRecords($where, $field);
     }
