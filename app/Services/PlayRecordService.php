@@ -396,7 +396,7 @@ class PlayRecordService
                 $myself = $v;
             }
         }
-        if(empty($myself)){
+        if(empty($myself) && (!StudentModelForApp::isAnonymousStudentId($studentId))) {
             $studentBestPlay = PlayRecordModel::getRank($lessonId, [$studentId]);
             if(!empty($studentBestPlay)){
                 // 未上榜
