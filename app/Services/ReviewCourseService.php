@@ -61,6 +61,9 @@ class ReviewCourseService
                 $update['assistant_id'] = $collectionList[0]['assistant_id'];
                 $update['allot_course_id'] = $collectionList[0]['course_id'];
             }
+            //记录分配助教和班级的日志
+            StudentService::allotCollection([$studentID], $collectionList[0]['id'], EmployeeModel::SYSTEM_EMPLOYEE_ID);
+            StudentService::allotAssistant([$studentID], $collectionList[0]['assistant_id'], EmployeeModel::SYSTEM_EMPLOYEE_ID);
         }
         $affectRows = StudentModel::updateRecord($studentID, $update, false);
 

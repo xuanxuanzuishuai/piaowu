@@ -76,7 +76,7 @@ class CollectionService
         $querySql = "SELECT 
                         a.id,a.name,a.assistant_id,a.capacity,a.remark,a.prepare_start_time,
                         a.prepare_end_time,a.teaching_start_time,a.teaching_end_time,a.wechat_qr,
-                        a.wechat_number,GROUP_CONCAT(b.course_id) 
+                        a.wechat_number,GROUP_CONCAT(b.course_id) as course_ids,a.status
                     FROM " . CollectionModel::$table . " as a
                     LEFT JOIN " . CollectionCourseModel::$table . " as b ON a.id = b.collection_id 
                     WHERE a.id = " . $id . " AND b.status= " . CollectionCourseModel::COLLECTION_COURSE_STATUS_IS_PUBLISH . " GROUP BY a.id";
@@ -99,15 +99,12 @@ class CollectionService
      */
     public static function updateStudentCollection($collectionId, $params)
     {
-        //验证课程是否存在
-        $courseIds = [];
-        if ($params['course_ids']) {
-            $courseIds = explode(",", $params['course_ids']);
-            $courseListInfo = CourseModel::getRecords(['id' => $courseIds, 'status' => CourseModel::COURSE_STATUS_NORMAL], ['id'], false);
-            if (empty($courseListInfo) || count($courseIds) != count($courseListInfo)) {
-                return false;
-            }
+        //检验班级集合当前状态允许操作的数据字段
+        $params = self::checkActionIsAllow($collectionId, $params);
+        if (empty($params)) {
+            return false;
         }
+        $courseIds = explode(",", $params['course_ids']);
         if ($params['name']) {
             $collectionData['name'] = $params['name'];
         }
@@ -365,6 +362,7 @@ class CollectionService
                         a.assistant_id,
                         a.teaching_start_time,
                         a.teaching_end_time,
+                        a.type,
                         a.wechat_number,
                         b.course_id,
                         count( s.id ) AS s_count 
@@ -377,7 +375,7 @@ class CollectionService
                             a.status = " . CollectionModel::COLLECTION_STATUS_IS_PUBLISH . " AND
                             a.prepare_start_time <= " . $time . " AND
                             a.prepare_end_time >= " . $time . " AND
-                            a.type >= " . CollectionModel::COLLECTION_TYPE_NORMAL . " AND
+                            a.type = " . CollectionModel::COLLECTION_TYPE_NORMAL . " AND
                             b.course_id = " . $packageId . " AND
                             b.status = " . CollectionCourseModel::COLLECTION_COURSE_STATUS_IS_PUBLISH . "
                          )
@@ -391,7 +389,7 @@ class CollectionService
         $list = $db->queryAll($querySql);
         //如果没有可加入的班级，则加入“公海班”，推送默认二维码，不分配助教
         if (empty($list)) {
-            $list = CollectionModel::getRecords(["type" => CollectionModel::COLLECTION_TYPE_PUBLIC, "LIMIT" => 1], ['id', 'assistant_id'], false);
+            $list = CollectionModel::getRecords(["type" => CollectionModel::COLLECTION_TYPE_PUBLIC, "LIMIT" => 1], ['id', 'assistant_id','type'], false);
         }
         //返回结果
         return $list;
@@ -428,7 +426,7 @@ class CollectionService
     {
         $where = [];
         $field = ['id', 'name'];
-        if(!empty($name)){
+        if (!empty($name)) {
             $where['name[~]'] = $name;
         }
         //是否只取未结课的班级
@@ -436,5 +434,31 @@ class CollectionService
             $where['teaching_end_time[>]'] = time();
         }
         return CollectionModel::getRecords($where, $field);
+    }
+
+    /**
+     * 检测班级集合允许操作的字段
+     * @param $id
+     * @param $params
+     * @return array
+     */
+    public static function checkActionIsAllow($id, $params)
+    {
+        //获取目标班级集合的信息
+        $data = self::getStudentCollectionDetailByID($id);
+        //获取当前集合的班级状态
+        $nowTime = time();
+        $updateParams = [];
+        $processStatus = self::collectionProcessStatusDict($nowTime, $data[0]['prepare_start_time'], $data[0]['prepare_end_time'], $data[0]['teaching_start_time'], $data[0]['teaching_end_time']);
+        if ($processStatus == CollectionModel::COLLECTION_READY_TO_GO_STATUS) {
+            // 组班中:支持【开放】或【关闭】
+            if (!empty($params['status']) && ($params['status'] != $data[0]['status'])) {
+                $updateParams['status'] = $params['status'];
+            }
+        } elseif ($processStatus == CollectionModel::COLLECTION_PREPARE_STATUS) {
+            //待组班:支持任何操作
+            $updateParams = $params;
+        }
+        return $updateParams;
     }
 }

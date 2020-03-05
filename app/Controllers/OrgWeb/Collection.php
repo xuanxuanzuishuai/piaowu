@@ -107,11 +107,6 @@ class Collection extends ControllerBase
                 'type' => 'min',
                 'value' => 1,
                 'error_code' => 'collection_capacity_is_not_inter'
-            ],
-            [
-                'key' => 'remark',
-                'type' => 'required',
-                'error_code' => 'remark_is_required'
             ]
         ];
         //验证合法性
@@ -120,12 +115,8 @@ class Collection extends ControllerBase
         if ($result['code'] == 1) {
             return $response->withJson($result, 200);
         }
-        //验证课程是否存在
+        //课包ID
         $courseIds = explode(",", $params['course_ids']);
-        $courseListInfo = CourseModel::getRecords(['id' => $courseIds, 'status' => CourseModel::COURSE_STATUS_NORMAL], ['id'], false);
-        if (empty($courseListInfo) || count($courseIds) != count($courseListInfo)) {
-            return $response->withJson(Valid::addErrors([], 'collection', 'collection_course_not_exist'));
-        }
         //组合数据
         $time = time();
         $collectionData = [
