@@ -529,9 +529,9 @@ class WeChatService
         return false;
     }
 
-    public static function uploadImg($imgUrl)
+    public static function uploadImg($imgUrl, $appId, $userType)
     {
-        $file = self::weixinAPIURL . "media/upload?access_token=" . self::getAccessToken(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT, UserWeixinModel::USER_TYPE_STUDENT_ORG) . "&type=image";
+        $file = self::weixinAPIURL . "media/upload?access_token=" . self::getAccessToken($appId, $userType) . "&type=image";
         $data = array('media' => new \CURLFile($imgUrl));
         //创建一个新cURL资源
         $curl = curl_init();
@@ -645,7 +645,7 @@ class WeChatService
             $res = self::notifyUserWeixinTextInfo($appId, $userType, $userWeChatInfo['open_id'], Util::textDecode($configData['content']));
         } elseif ($configData['content_type'] == WeChatConfigModel::CONTENT_TYPE_IMG) {
             //图片消息
-            $data = WeChatService::uploadImg($configData['content']);
+            $data = WeChatService::uploadImg($configData['content'], $appId, $userType);
             if (!empty($data['media_id'])) {
                 $res = self::toNotifyUserWeixinCustomerInfoForImage($appId, $userType, $userWeChatInfo['open_id'], $data['media_id']);
             }
