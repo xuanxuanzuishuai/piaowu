@@ -68,10 +68,12 @@ VALUES
 /**
  * => Notice: 如果上一条数据插入失败，下列数据parent_id 字段应为上一段sql执行后ID。
  */
-INSERT INTO `privilege` (`name`, `uri`, `method`, `unique_en_name`, `parent_id`, `is_menu`, `menu_name`, `created_time`)
+INSERT INTO `privilege` (`name`, `uri`, `created_time`, `method`, `is_menu`, `menu_name`, `parent_id`, `unique_en_name`)
 VALUES
-  ('学员管理', '/student/student/searchList', 'get', 'studentList', '464', '1', '学员管理', 1583224153),
-  ('学员详情接口', '/student/student/detail', 'get', 'student_detail', '464', '0', '', 1583224153),
-  ('学员更新添加助教微信状态', '/student/student/updateAddAssistantStatus', 'post', 'addAssistantStatus', '464', '0', '', 1583224153),
-  ('学员分配班级接口', '/student/student/allotCollection', 'post', 'allotCollection', '464', '0', '', 1583224153),
-  ('学员分配助教接口', '/student/student/allotAssistant', 'post', 'allotAssistant', '464', '0', '', 1583224153);
+('获取班级下拉菜单接口', '/org_web/collection/getCollectionDropDownList', 1583224153, 'get', 0, '', 464, 'getCollectionDropDownList'),
+('获取学员渠道接口', '/org_web/channel/getChannels', 1583224153, 'get', 0, '', 464, 'getChannels'),
+('学员分配助教接口', '/student/student/allotAssistant', 1583224153, 'post', 0, '', 464, 'allotAssistant'),
+('学员分配班级接口', '/student/student/allotCollection', 1583224153, 'post', 0, '', 464, 'allotCollection'),
+('学员更新添加助教微信状态', '/student/student/updateAddAssistantStatus', 1583224153, 'post', 0, '', 464, 'addAssistantStatus'),
+('学员详情接口', '/student/student/detail', 1583224153, 'get', 0, '', 464, 'student_detail'),
+('学员管理', '/student/student/searchList', 1583224153, 'get', 1, '学员管理', 464, 'studentList');
