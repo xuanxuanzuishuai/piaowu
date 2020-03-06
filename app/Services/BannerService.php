@@ -41,7 +41,7 @@ class BannerService
                 $showMain = self::userFilter($b['filter'], $studentId);
             }
             $item['image_main'] = $showMain ? AliOSS::signUrls($b['image_main']) : '';
-            $item['image_list'] = $b['show_main'] ? AliOSS::signUrls($b['image_list']) : '';
+            $item['image_list'] = $b['show_list'] ? AliOSS::signUrls($b['image_list']) : '';
 
             $bannerList[] = $item;
         }
