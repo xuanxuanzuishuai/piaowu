@@ -538,7 +538,7 @@ class StudentService
         $data['pay_status'] = empty($student['first_pay_time']) ? '未付费' : '已付费';
         //计算过期时间戳
         $expireTime = strtotime($student['sub_end_date'].' 00:00');
-        $data['expire_time'] = date('Y-m-d', $expireTime);
+        $data['expire_time'] = empty($expireTime) ? '-' : date('Y-m-d', $expireTime);
         $data['effect_status'] = ($expireTime > time() && $student['sub_status']) ?  '未过期' : '已过期';
         $data['wechat_bind'] = empty($studentWeChatInfo) ? '未绑定' : '已绑定';
         $data['wechat_name'] = '-';
@@ -631,7 +631,7 @@ class StudentService
             //计算过期时间戳
             $expireTime = strtotime($item['sub_end_date'].' 00:00');
             $row['effect_status'] = ($expireTime > $time && $item['sub_status']) ?  '未过期' : '已过期';
-            $row['expire_time'] = date('Y-m-d', $expireTime);
+            $row['expire_time'] = empty($expireTime) ? '-' : date('Y-m-d', $expireTime);
             $row['student_step'] = isset($stepMap[$item['has_review_course']]) ? $stepMap[$item['has_review_course']] : '-';
             $row['wechat_bind'] = empty($item['wx_id']) ? '未绑定' : '已绑定';
             $row['assistant_name'] = $item['assistant_name'];
