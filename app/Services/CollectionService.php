@@ -104,7 +104,10 @@ class CollectionService
         if (empty($params)) {
             return false;
         }
-        $courseIds = explode(",", $params['course_ids']);
+        $courseIds = [];
+        if($params['course_ids']){
+            $courseIds = explode(",", $params['course_ids']);
+        }
         if ($params['name']) {
             $collectionData['name'] = $params['name'];
         }
@@ -140,7 +143,6 @@ class CollectionService
         }
         $time = time();
         $collectionData['update_time'] = $time;
-
         //开启事务
         $db = MysqlDB::getDB();
         $db->beginTransaction();
@@ -455,6 +457,7 @@ class CollectionService
             if (!empty($params['status']) && ($params['status'] != $data[0]['status'])) {
                 $updateParams['status'] = $params['status'];
             }
+            $updateParams['uid'] = $params['uid'];
         } elseif ($processStatus == CollectionModel::COLLECTION_PREPARE_STATUS) {
             //待组班:支持任何操作
             $updateParams = $params;
