@@ -30,16 +30,20 @@ class BannerService
         $bannerList = [];
         foreach ($banner as $b)
         {
-            if (!empty($b['filter']) && !self::userFilter($b['filter'], $studentId)) {
-                continue;
-            }
-            $bannerList[] = [
+            $item = [
                 'id' => $b['id'],
-                'image_main' => empty($b['image_main']) ? '' : AliOSS::signUrls($b['image_main']),
-                'image_list' => empty($b['image_main']) ? '' : AliOSS::signUrls($b['image_list']),
                 'action_type' => $b['action_type'],
                 'action' => self::prepareAction($b['action_type'], json_decode($b['action_detail'], true)),
             ];
+
+            $showMain = $b['show_main'];
+            if (!empty($b['filter'])) {
+                $showMain = self::userFilter($b['filter'], $studentId);
+            }
+            $item['image_main'] = $showMain ? AliOSS::signUrls($b['image_main']) : '';
+            $item['image_list'] = $b['show_main'] ? AliOSS::signUrls($b['image_list']) : '';
+
+            $bannerList[] = $item;
         }
 
         return $bannerList;
