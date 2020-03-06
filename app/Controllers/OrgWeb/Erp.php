@@ -16,7 +16,6 @@ use App\Libs\Valid;
 use App\Models\GiftCodeModel;
 use App\Models\ReviewCourseModel;
 use App\Models\StudentModelForApp;
-use App\Models\CollectionModel;
 use App\Services\CommonServiceForApp;
 use App\Services\ErpService;
 use App\Services\ReviewCourseService;
@@ -125,27 +124,21 @@ class Erp extends ControllerBase
                 implode(',', $giftCodes),
                 CommonServiceForApp::SIGN_STUDENT_APP);
         }
-
+        //获取学生信息
+        $student = StudentService::getByUuid($params['uuid']);
         // 点评课支付成功，发送点评课短信
         $reviewCourseType = ReviewCourseService::getBillReviewCourseType($params['package_id']);
         if ($reviewCourseType != ReviewCourseModel::REVIEW_COURSE_NO && !empty($giftCodes)) {
             $wechatcs = WeChatCSService::getWeChatCS();
             $sms->sendEvaluationMessage($params['mobile'], CommonServiceForApp::SIGN_STUDENT_APP, $wechatcs['name']);
             // 更新点评课标记
-            $student = StudentService::getByUuid($params['uuid']);
             $wechatcsId = empty($student['wechatcs_id']) ? $wechatcs['id'] : null;
-            //获取当前课包可以分配的集合:一个学员只能分配给一个班级
-            $collectionList = [];
-            if(empty($student['collection_id'])){
-                $collectionList = CollectionService::getCollectionByPackageId($params['package_id']);
-            }
-            ReviewCourseService::updateReviewCourseFlag($student['id'], $reviewCourseType, $wechatcsId,$collectionList);
-            //发送班级分配完成短信:公海班级不发送
-            if($collectionList[0]['type'] == CollectionModel::COLLECTION_TYPE_NORMAL){
-                $sms->sendCollectionCompleteNotify($params['mobile'], CommonServiceForApp::SIGN_STUDENT_APP, $collectionList);
-            }
+            ReviewCourseService::updateReviewCourseFlag($student['id'], $reviewCourseType, $wechatcsId);
         }
-
+        //更新学生分配班级信息 一个学员只能分配给一个班级
+        if (empty($student['collection_id'])) {
+            ReviewCourseService::updateCollectionData($student, $params['package_id']);
+        }
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => [

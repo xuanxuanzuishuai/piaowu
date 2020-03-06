@@ -25,6 +25,7 @@ use App\Models\PlayRecordModel;
 use App\Models\ReviewCourseModel;
 use App\Models\StudentModel;
 use App\Models\UserWeixinModel;
+use App\Models\CollectionModel;
 
 class ReviewCourseService
 {
@@ -36,10 +37,9 @@ class ReviewCourseService
      * @param $studentID
      * @param $reviewCourseType
      * @param null|int $wechatcsId
-     * @param array $collectionList     可以分配的集合列表
      * @return null|string errorCode
      */
-    public static function updateReviewCourseFlag($studentID, $reviewCourseType, $wechatcsId = null, $collectionList=[])
+    public static function updateReviewCourseFlag($studentID, $reviewCourseType, $wechatcsId = null)
     {
         $student = StudentModel::getById($studentID);
         if ($student['has_review_course'] >= $reviewCourseType) {
@@ -51,19 +51,6 @@ class ReviewCourseService
         ];
         if (!empty($wechatcsId)) {
             $update['wechatcs_id'] = $wechatcsId;
-        }
-        if(!empty($collectionList) && is_array($collectionList)){
-            $time = time();
-            $update['collection_id'] = $collectionList[0]['id'];
-            $update['allot_collection_time'] = $time;
-            if(!empty($collectionList[0]['assistant_id'])){
-                $update['allot_assistant_time'] = $time;
-                $update['assistant_id'] = $collectionList[0]['assistant_id'];
-                $update['allot_course_id'] = $collectionList[0]['course_id'];
-            }
-            //记录分配助教和班级的日志
-            StudentService::allotCollection([$studentID], $collectionList[0]['id'], EmployeeModel::SYSTEM_EMPLOYEE_ID);
-            StudentService::allotAssistant([$studentID], $collectionList[0]['assistant_id'], EmployeeModel::SYSTEM_EMPLOYEE_ID);
         }
         $affectRows = StudentModel::updateRecord($studentID, $update, false);
 
@@ -665,5 +652,38 @@ class ReviewCourseService
         $review['token'] = $resToken;
 
         return $review;
+    }
+
+    /**
+     * 更新学生分配班级信息
+     * @param $studentInfo
+     * @param $packageId
+     * @return null|string errorCode
+     */
+    public static function updateCollectionData($studentInfo, $packageId)
+    {
+        $affectRows = true;
+        //获取当前课包允许分配的班级集合
+        $collectionList = CollectionService::getCollectionByPackageId($packageId);
+        if (!empty($collectionList) && is_array($collectionList)) {
+            $time = time();
+            $update['collection_id'] = $collectionList[0]['id'];
+            $update['allot_collection_time'] = $time;
+            if (!empty($collectionList[0]['assistant_id'])) {
+                $update['allot_assistant_time'] = $time;
+                $update['assistant_id'] = $collectionList[0]['assistant_id'];
+                $update['allot_course_id'] = (int)$collectionList[0]['course_id'];
+            }
+            $affectRows = StudentModel::updateRecord($studentInfo['id'], $update, false);
+            //记录分配助教和班级的日志
+            StudentService::allotCollection([$studentInfo['id']], $collectionList[0]['id'], EmployeeModel::SYSTEM_EMPLOYEE_ID);
+            StudentService::allotAssistant([$studentInfo['id']], $collectionList[0]['assistant_id'], EmployeeModel::SYSTEM_EMPLOYEE_ID);
+            //发送班级分配完成短信:公海班级不发送
+            if ($collectionList[0]['type'] == CollectionModel::COLLECTION_TYPE_NORMAL) {
+                $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
+                $sms->sendCollectionCompleteNotify($studentInfo['mobile'], CommonServiceForApp::SIGN_STUDENT_APP, $collectionList);
+            }
+        }
+        return $affectRows;
     }
 }

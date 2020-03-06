@@ -73,6 +73,7 @@ class CollectionService
     {
         //获取数据库对象
         $db = MysqlDB::getDB();
+        $time = time();
         $querySql = "SELECT 
                         a.id,a.name,a.assistant_id,a.capacity,a.remark,a.prepare_start_time,
                         a.prepare_end_time,a.teaching_start_time,a.teaching_end_time,a.wechat_qr,
@@ -85,6 +86,7 @@ class CollectionService
         if ($list) {
             foreach ($list as &$cv) {
                 $cv['oss_wechat_qr'] = AliOSS::signUrls($cv['wechat_qr']);
+                $cv['process_status'] = self::collectionProcessStatusDict($time, $cv['prepare_start_time'], $cv['prepare_end_time'], $cv['teaching_start_time'], $cv['teaching_end_time']);
             }
         }
         //返回结果
@@ -140,6 +142,9 @@ class CollectionService
         }
         if ($params['status']) {
             $collectionData['status'] = $params['status'];
+        }
+        if ($params['capacity']) {
+            $collectionData['capacity'] = $params['capacity'];
         }
         $time = time();
         $collectionData['update_time'] = $time;
@@ -299,6 +304,7 @@ class CollectionService
                 $lv['oss_wechat_qr'] = AliOSS::signUrls($lv['wechat_qr']);
                 $lv['publish_status_name'] = $collectionPublishStatusDict[$lv['status']]['value'];
                 $lv['process_status_name'] = $collectionProcessStatusDict[self::collectionProcessStatusDict($time, $lv['prepare_start_time'], $lv['prepare_end_time'], $lv['teaching_start_time'], $lv['teaching_end_time'])]['value'];
+                $lv['process_status'] = self::collectionProcessStatusDict($time, $lv['prepare_start_time'], $lv['prepare_end_time'], $lv['teaching_start_time'], $lv['teaching_end_time']);
                 $lv['prepare_start_time'] = date("Y-m-d", $lv['prepare_start_time']);
                 $lv['prepare_end_time'] = date("Y-m-d", $lv['prepare_end_time']);
                 $lv['teaching_start_time'] = date("Y-m-d", $lv['teaching_start_time']);
