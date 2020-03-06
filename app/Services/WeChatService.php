@@ -710,7 +710,7 @@ class WeChatService
             return [];
         }
 
-        $url = self::weixinAPIURL . '/user/info';
+        $url = self::weixinAPIURL . 'user/info';
         $params = [
             'access_token' => $at,
             'openid' => $openId,
