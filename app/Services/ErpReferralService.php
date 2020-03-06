@@ -93,12 +93,18 @@ class ErpReferralService
     /**
      * 用户转介绍列表
      * @param $uuid
+     * @param $page
+     * @param $count
      * @return array
      * @throws RunTimeException
      */
-    public static function getUserReferredList($uuid)
+    public static function getUserReferredList($uuid, $page, $count)
     {
-        $params = ['referrer_uuid' => $uuid];
+        $params = [
+            'page'  => $page,
+            'count' => $count,
+            'referrer_uuid' => $uuid,
+        ];
 
         $erp = new Erp();
         $response = $erp->referredList($params);
@@ -221,12 +227,18 @@ class ErpReferralService
     /**
      * 获取用户获得的奖励列表
      * @param $uuid
+     * @param $page
+     * @param $count
      * @return array
      * @throws RunTimeException
      */
-    public static function getUserAwardList($uuid)
+    public static function getUserAwardList($uuid, $page, $count)
     {
-        $params = ['referrer_uuid' => $uuid];
+        $params = [
+            'page'  => $page,
+            'count' => $count,
+            'referrer_uuid' => $uuid
+        ];
 
         $erp = new Erp();
         $response = $erp->awardList($params);

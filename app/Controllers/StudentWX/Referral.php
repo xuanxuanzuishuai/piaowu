@@ -11,6 +11,7 @@ namespace App\Controllers\StudentWX;
 use App\Controllers\ControllerBase;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
+use App\Libs\Util;
 use App\Models\StudentModel;
 use App\Services\ErpReferralService;
 use Slim\Http\Request;
@@ -35,8 +36,10 @@ class Referral extends ControllerBase
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
 
+        list($page, $count) = Util::formatPageCount($request->getParams());
+
         try {
-            $ret = ErpReferralService::getUserAwardList($student['uuid']);
+            $ret = ErpReferralService::getUserAwardList($student['uuid'], $page, $count);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
@@ -60,8 +63,10 @@ class Referral extends ControllerBase
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
 
+        list($page, $count) = Util::formatPageCount($request->getParams());
+
         try {
-            $ret = ErpReferralService::getUserReferredList($student['uuid']);
+            $ret = ErpReferralService::getUserReferredList($student['uuid'], $page, $count);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
