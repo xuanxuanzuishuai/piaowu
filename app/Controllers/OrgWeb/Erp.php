@@ -130,7 +130,6 @@ class Erp extends ControllerBase
         $reviewCourseType = ReviewCourseService::getBillReviewCourseType($params['package_id']);
         if ($reviewCourseType != ReviewCourseModel::REVIEW_COURSE_NO && !empty($giftCodes)) {
             $wechatcs = WeChatCSService::getWeChatCS();
-            $sms->sendEvaluationMessage($params['mobile'], CommonServiceForApp::SIGN_STUDENT_APP, $wechatcs['name']);
             // 更新点评课标记
             $wechatcsId = empty($student['wechatcs_id']) ? $wechatcs['id'] : null;
             ReviewCourseService::updateReviewCourseFlag($student['id'], $reviewCourseType, $wechatcsId);
