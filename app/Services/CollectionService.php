@@ -107,7 +107,7 @@ class CollectionService
             return false;
         }
         $courseIds = [];
-        if($params['course_ids']){
+        if ($params['course_ids']) {
             $courseIds = explode(",", $params['course_ids']);
         }
         if ($params['name']) {
@@ -222,13 +222,13 @@ class CollectionService
         $list = [];
         $type = $params['type'] ?? CollectionModel::COLLECTION_TYPE_NORMAL;
         $where .= " and a.type=" . $type;
-        if ($params['id']) {
+        if ($params['id'] && is_numeric($params['id'])) {
             $where .= " and a.id=" . $params['id'];
         }
         if ($params['name']) {
             $where .= " and a.name='" . $params['name'] . "'";
         }
-        if ($params['assistant_id']) {
+        if ($params['assistant_id'] && is_numeric($params['assistant_id'])) {
             $where .= " and a.assistant_id=" . $params['assistant_id'];
         }
         if ($params['prepare_start_begin_time']) {
@@ -397,7 +397,7 @@ class CollectionService
         $list = $db->queryAll($querySql);
         //如果没有可加入的班级，则加入“公海班”，推送默认二维码，不分配助教
         if (empty($list)) {
-            $list = CollectionModel::getRecords(["type" => CollectionModel::COLLECTION_TYPE_PUBLIC, "LIMIT" => 1], ['id', 'assistant_id','type'], false);
+            $list = CollectionModel::getRecords(["type" => CollectionModel::COLLECTION_TYPE_PUBLIC, "LIMIT" => 1], ['id', 'assistant_id', 'type'], false);
         }
         //返回结果
         return $list;
@@ -438,7 +438,7 @@ class CollectionService
             $where['name[~]'] = $name;
         }
         //是否只取未结课的班级
-        if($notOver){
+        if ($notOver) {
             $where['teaching_end_time[>]'] = time();
         }
         return CollectionModel::getRecords($where, $field);
@@ -462,11 +462,24 @@ class CollectionService
             // 组班中:支持【开放】或【关闭】
             if (!empty($params['status']) && ($params['status'] != $data[0]['status'])) {
                 $updateParams['status'] = $params['status'];
+                $updateParams['uid'] = $params['uid'];
             }
-            $updateParams['uid'] = $params['uid'];
         } elseif ($processStatus == CollectionModel::COLLECTION_PREPARE_STATUS) {
             //待组班:支持任何操作
-            $updateParams = $params;
+            if (empty($params['capacity']) ||
+                empty($params['teaching_end_time']) ||
+                empty($params['teaching_start_time']) ||
+                empty($params['prepare_end_time']) ||
+                empty($params['prepare_start_time']) ||
+                empty($params['course_ids']) ||
+                empty($params['wechat_qr']) ||
+                empty($params['wechat_number']) ||
+                empty($params['assistant_id']) ||
+                empty($params['name'])) {
+                $updateParams = [];
+            } else {
+                $updateParams = $params;
+            }
         }
         return $updateParams;
     }
