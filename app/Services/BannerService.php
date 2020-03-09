@@ -10,8 +10,11 @@ namespace App\Services;
 
 
 use App\Libs\AliOSS;
+use App\Libs\Constants;
 use App\Libs\UserCenter;
+use App\Libs\Valid;
 use App\Models\BannerModel;
+use App\Models\EmployeeModel;
 use App\Models\ReviewCourseModel;
 use App\Models\StudentModel;
 use App\Models\UserWeixinModel;
@@ -95,4 +98,181 @@ class BannerService
 
         return true;
     }
+
+    /**
+     * 获取列表数据
+     * @param $params
+     * @param $page
+     * @param $count
+     * @return array
+     */
+    public static function getList($params, $page, $count)
+    {
+        $res = BannerModel::getList($params, $page, $count);
+        if(empty($res['count'])){
+            return Valid::formatSuccess($res);
+        }
+        $res['data'] = self::formatListData($res['data']);
+        return Valid::formatSuccess($res);
+    }
+
+    /**
+     * 格式化列表数据
+     * @param $data
+     * @return array
+     */
+    public static function formatListData($data)
+    {
+        //获取触发动作类型MAP
+        $actionTypeMap = DictService::getTypeMap(Constants::DICT_TYPE_ACTION_TYPE);
+
+        $res = [];
+        foreach($data as $value){
+            $row = [];
+            $row['id'] = $value['id'];
+            $row['name'] = $value['name'];
+            $row['create_time'] = date('Y-m-d H:i', $value['create_time']);
+            $row['start_time'] = date('Y-m-d H:i', $value['start_time']);
+            $row['end_time'] = date('Y-m-d H:i', $value['end_time']);
+            $row['status'] = $value['status'];
+            $row['operator_id'] = $value['operator'];
+            $row['operator_name'] = $value['operator_name'];
+            $row['sort'] = $value['sort'];
+            $row['show_main'] = $value['show_main'];
+            $row['image_main'] = $value['image_main'];
+            $row['show_list'] = $value['show_list'];
+            $row['image_list'] = $value['image_list'];
+            $row['action_type'] = isset($actionTypeMap[$value['action_type']]) ? $actionTypeMap[$value['action_type']] : '-';
+            $res[] = $row;
+        }
+        return $res;
+    }
+
+    /**
+     * 获取banner detail
+     * @param $id
+     * @return array
+     */
+    public static function getDetail($id)
+    {
+        $data = BannerModel::getById($id);
+        if(empty($data)){
+            return Valid::addErrors([], 'banner_id_error', 'banner_id_error');
+        }
+        if(!empty($data['operator'])){
+            $employee = EmployeeModel::getById($data['operator']);
+        }
+        $data['operator_name'] = isset($employee['name']) ? $employee['name'] : '-';
+        return Valid::formatSuccess($data);
+    }
+
+    /**
+     * 添加banner
+     * @param $params
+     * @param $employeeId
+     * @return array|int|mixed|string|null
+     */
+    public static function add($params, $employeeId)
+    {
+        $res = self::checkParams($params);
+        if($res['code'] != Valid::CODE_SUCCESS){
+            return $res;
+        }
+        return self::addBanner($params, $employeeId);
+    }
+
+    /**
+     * 添加数据
+     * @param $params
+     * @param $employeeId
+     * @return array
+     */
+    public static function addBanner($params, $employeeId)
+    {
+        $params['operator'] = $employeeId;
+        $params['create_time'] = time();
+        $res = BannerModel::insertRecord($params);
+        if(!$res){
+            return Valid::addErrors([], 'add_banner_failed', 'add_banner_failed');
+        }
+        return Valid::formatSuccess();
+    }
+
+    /**
+     * 验证 添加、编辑 Banner参数
+     * @param $params
+     * @return array
+     */
+    public static function checkParams($params)
+    {
+        //验证需要显示的图片是否为空
+        if($params['show_main']){
+            if(empty($params['image_main'])){
+                return Valid::addErrors([], 'image_main_is_required', 'image_main_is_required');
+            }
+        }
+        if($params['show_list']){
+            if(empty($params['image_list'])){
+                return Valid::addErrors([], 'image_list_is_required', 'image_list_is_required');
+            }
+        }
+        //验证触发动作参数是否正确
+        $actionDetailMap = DictService::getTypeMap(Constants::DICT_TYPE_ACTION_DETAIL);
+        //判断触发动作类型是否正确
+        if(isset($actionDetailMap[$params['action_type']])){
+            //判断当前触发动作类型是否要填写参数
+            if(!empty($actionDetailMap[$params['action_type']])){
+                //触发动作类型要求有参数时，action_detail不能为空
+                if(empty($params['action_detail'])){
+                    return Valid::addErrors([], 'action_detail_is_required', 'action_detail_is_required');
+                }
+                $detailTemplate = json_decode($actionDetailMap[$params['action_type']], true);
+                $detail = json_decode($params['action_detail'], true);
+                if(is_array($detailTemplate) && is_array($detail)){
+                    foreach($detailTemplate as $item){
+                        if(empty($detail[$item])){
+                            return Valid::addErrors([], 'action_detail_error', 'action_detail_error');
+                        }
+                    }
+                }else{
+                    return Valid::addErrors([], 'action_detail_template_error', 'action_detail_template_error');
+                }
+            }
+        }else{
+            return Valid::addErrors([], 'action_type_error', 'action_type_error');
+        }
+        return Valid::formatSuccess();
+    }
+
+    /**
+     * 编辑 banner
+     * @param $params
+     * @return array|int|mixed|string|null
+     */
+    public static function edit($params)
+    {
+        $res = self::checkParams($params);
+        if($res['code'] != Valid::CODE_SUCCESS){
+            return $res;
+        }
+        return self::editBanner($params);
+    }
+
+    /**
+     * 更新数据
+     * @param $params
+     * @return array
+     */
+    public static function editBanner($params)
+    {
+        $id = $params['id'];
+        unset($params['id']);
+        $res = BannerModel::updateRecord($id, $params);
+        if($res){
+            return Valid::formatSuccess();
+        }else{
+            return Valid::addErrors([], 'update_date_failed', 'update_date_failed');
+        }
+    }
+
 }

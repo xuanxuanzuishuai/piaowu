@@ -21,6 +21,7 @@ use App\Controllers\Org\OrgAccount as OrgAccount;
 use App\Controllers\Org\OrgLicense;
 use App\Controllers\OrgWeb\Admin;
 use App\Controllers\OrgWeb\Approval;
+use App\Controllers\OrgWeb\Banner;
 use App\Controllers\OrgWeb\Erp;
 use App\Controllers\OrgWeb\Flags;
 use App\Controllers\OrgWeb\Question;
@@ -356,5 +357,11 @@ class OrgWebRouter extends RouterBase
         //课包管理接口
         '/org_web/package/packageDictDetail' => ['method' => ['get'], 'call' => Package::class . ':packageDictDetail'],
         '/org_web/package/packageDictEdit' => ['method' => ['post'], 'call' => Package::class . ':packageDictEdit'],
+
+        //banner管理接口
+        '/org_web/banner/list' => ['method' => ['get'], 'call' => Banner::class . ':list'],
+        '/org_web/banner/add' => ['method' => ['post'], 'call' => Banner::class . ':add'],
+        '/org_web/banner/detail' => ['method' => ['get'], 'call' => Banner::class . ':detail'],
+        '/org_web/banner/edit' => ['method' => ['post'], 'call' => Banner::class . ':edit'],
     ];
 }

@@ -189,4 +189,8 @@ class Constants
     // 学生微信绑定状态TYPE
     const DICT_TYPE_BIND_WX_STATS = 'wx_bind_status';
 
+    //banner 触发动作type
+    const DICT_TYPE_ACTION_TYPE = 'action_type';
+    const DICT_TYPE_ACTION_DETAIL = 'action_detail';
+
 };

@@ -10,6 +10,7 @@ namespace App\Models;
 
 
 use App\Libs\Constants;
+use App\Libs\MysqlDB;
 use App\Libs\RedisDB;
 
 class BannerModel extends Model
@@ -46,5 +47,93 @@ class BannerModel extends Model
             'ORDER' => ['sort' => 'ASC']
         ], '*', false);
         return $banner ?? [];
+    }
+
+    /**
+     * 获取banner列表数据
+     * @param $params
+     * @param $page
+     * @param $count
+     * @return array
+     */
+    public static function getList($params, $page, $count)
+    {
+        $where = self::formatListParams($params);
+        $table = self::$table . '(b)';
+        $join = [
+            '[>]' . EmployeeModel::$table . '(e)' => ['b.operator' => 'id'],
+        ];
+        $count = self::getListCount($table, $join, $where);
+        if(empty($count)){
+            return ['count' => 0, 'data'=>[]];
+        }
+        $data = self::getListData($table, $join, $where, $page, $count);
+        return ['count' => $count, 'data' => $data];
+    }
+
+    /**
+     * 格式化搜索条件
+     * @param $params
+     * @return array
+     */
+    public static function formatListParams($params)
+    {
+        $where = [];
+        if(!empty($params['name'])){
+            $where['name[~]'] = $params['name'];
+        }
+        if(!empty($params['start_time'])){
+            $where['start_time[<=]'] = $params['start_time'];
+        }
+        if(!empty($params['end_time'])){
+            $where['end_time[>=]'] = $params['end_time'];
+        }
+        return $where;
+    }
+
+    /**
+     * 获取列表count
+     * @param $table
+     * @param $join
+     * @param $where
+     * @return number
+     */
+    public static function getListCount($table, $join, $where)
+    {
+        return MysqlDB::getDB()->count($table, $join, '*', $where);
+    }
+
+    /**
+     * 获取数据
+     * @param $table
+     * @param $join
+     * @param $where
+     * @param $page
+     * @param $count
+     * @return array
+     */
+    public static function getListData($table, $join, $where, $page, $count)
+    {
+        $where['LIMIT'] = [($page - 1) * $count, $count];
+        $field = [
+            'b.id',
+            'b.name',
+            'b.desc',
+            'b.create_time',
+            'b.start_time',
+            'b.end_time',
+            'b.status',
+            'b.operator',
+            'b.sort',
+            'b.show_main',
+            'b.image_main',
+            'b.show_list',
+            'b.image_list',
+            'b.action_type',
+            'b.action_detail',
+            'b.filter',
+            'e.name(operator_name)'
+        ];
+        return MysqlDB::getDB()->select($table, $join, $field, $where);
     }
 }
