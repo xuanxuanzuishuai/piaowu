@@ -18,8 +18,10 @@ use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\AppVersionModel;
 use App\Models\FeedbackModel;
+use App\Models\StudentModelForApp;
 use App\Services\AppVersionService;
 use App\Services\BannerService;
+use App\Services\FlagsService;
 use App\Services\StudentServiceForApp;
 use App\Services\TrackService;
 use Slim\Http\Request;
@@ -301,9 +303,37 @@ class App extends ControllerBase
         return HttpHelper::buildResponse($response, ['engine' => $engine]);
     }
 
-    public function banner(Request $request, Response $response)
+    /**
+     * 获取banner
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function banner(/** @noinspection PhpUnusedParameterInspection */ Request $request, Response $response)
     {
-        $banner = BannerService::getStudentBanner($this->ci['student']['id']);
+        $student = StudentModelForApp::getById($this->ci['student']['id']);
+        $flags = FlagsService::flagsToArray($student['flags']);
+
+        // app审核标记
+        $reviewFlagId = DictConstants::get(DictConstants::FLAG_ID, 'app_review');
+        if (!in_array($reviewFlagId, $flags)) {
+            $object = $student;
+            $object['platform'] = $this->ci['platform'];
+            $object['version'] = $this->ci['version'];
+            $isReviewVersion = FlagsService::hasFlag($object, $reviewFlagId);
+            if ($isReviewVersion) {
+                $flags[] = (int)$reviewFlagId;
+            }
+        } else {
+            $isReviewVersion = true;
+        }
+
+        // 审核版本返回空
+        if ($isReviewVersion) {
+            $banner = [];
+        } else {
+            $banner = BannerService::getStudentBanner($this->ci['student']['id']);
+        }
 
         return HttpHelper::buildResponse($response, ['banner' => $banner]);
     }
