@@ -11,6 +11,7 @@ namespace App\Services;
 use App\Libs\AIPLClass;
 use App\Libs\AliOSS;
 use App\Libs\Constants;
+use App\Libs\Erp;
 use App\Libs\NewSMS;
 use App\Libs\SimpleLogger;
 use App\Models\EmployeeModel;
@@ -54,6 +55,14 @@ class ReviewCourseService
             $update['wechatcs_id'] = $wechatcsId;
         }
         $affectRows = StudentModel::updateRecord($studentID, $update, false);
+
+        // 完成转介绍任务
+        $erp = new Erp();
+        $eventTaskId = ($reviewCourseType == ReviewCourseModel::REVIEW_COURSE_1980) ?
+            ErpReferralService::EVENT_TASK_ID_PAY : ErpReferralService::EVENT_TASK_ID_TRIAL_PAY;
+        $erp->updateTask($student['uuid'],
+            $eventTaskId,
+            ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
 
         if($affectRows == 0) {
             return 'update_student_fail';
