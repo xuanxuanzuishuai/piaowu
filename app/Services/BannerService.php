@@ -17,6 +17,7 @@ use App\Models\BannerModel;
 use App\Models\EmployeeModel;
 use App\Models\ReviewCourseModel;
 use App\Models\StudentModel;
+
 use App\Models\UserWeixinModel;
 
 class BannerService
@@ -206,40 +207,38 @@ class BannerService
     public static function checkParams($params)
     {
         //验证需要显示的图片是否为空
-        if($params['show_main']){
-            if(empty($params['image_main'])){
-                return Valid::addErrors([], 'image_main_is_required', 'image_main_is_required');
-            }
+        if($params['show_main'] && empty($params['image_main'])){
+            return Valid::addErrors([], 'image_main_is_required', 'image_main_is_required');
         }
-        if($params['show_list']){
-            if(empty($params['image_list'])){
-                return Valid::addErrors([], 'image_list_is_required', 'image_list_is_required');
-            }
+        if($params['show_list'] && empty($params['image_list'])){
+            return Valid::addErrors([], 'image_list_is_required', 'image_list_is_required');
         }
         //验证触发动作参数是否正确
         $actionDetailMap = DictService::getTypeMap(Constants::DICT_TYPE_ACTION_DETAIL);
         //判断触发动作类型是否正确
-        if(isset($actionDetailMap[$params['action_type']])){
-            //判断当前触发动作类型是否要填写参数
-            if(!empty($actionDetailMap[$params['action_type']])){
-                //触发动作类型要求有参数时，action_detail不能为空
-                if(empty($params['action_detail'])){
-                    return Valid::addErrors([], 'action_detail_is_required', 'action_detail_is_required');
-                }
-                $detailTemplate = json_decode($actionDetailMap[$params['action_type']], true);
-                $detail = json_decode($params['action_detail'], true);
-                if(is_array($detailTemplate) && is_array($detail)){
-                    foreach($detailTemplate as $item){
-                        if(empty($detail[$item])){
-                            return Valid::addErrors([], 'action_detail_error', 'action_detail_error');
-                        }
-                    }
-                }else{
-                    return Valid::addErrors([], 'action_detail_template_error', 'action_detail_template_error');
-                }
-            }
-        }else{
+        if(!isset($actionDetailMap[$params['action_type']])){
             return Valid::addErrors([], 'action_type_error', 'action_type_error');
+        }
+        //当前触发动作类型不需要填写参数，直接返回
+        if(empty($actionDetailMap[$params['action_type']])){
+            return Valid::formatSuccess();
+        }
+        //触发动作类型要求有参数时，action_detail不能为空
+        if(empty($params['action_detail'])){
+            return Valid::addErrors([], 'action_detail_is_required', 'action_detail_is_required');
+        }
+        //解析参数
+        $detailTemplate = json_decode($actionDetailMap[$params['action_type']], true);
+        $detail = json_decode($params['action_detail'], true);
+        //类型错误，直接返回错误
+        if(!is_array($detailTemplate) || !is_array($detail)){
+            return Valid::addErrors([], 'action_detail_template_error', 'action_detail_template_error');
+        }
+        //判断参数是否符合要求
+        foreach($detailTemplate as $item){
+            if(empty($detail[$item])){
+                return Valid::addErrors([], 'action_detail_error', 'action_detail_error');
+            }
         }
         return Valid::formatSuccess();
     }
