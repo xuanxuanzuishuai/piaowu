@@ -45,6 +45,9 @@ class studentMiniProService
 
         $wx->sendImage($message['FromUserName'], $media['media_id']);
 
+        $textContext = '点击图片，长按识别二维码关注公众号';
+        $wx->sendText($message['FromUserName'], $textContext);
+
         return true;
     }
 }

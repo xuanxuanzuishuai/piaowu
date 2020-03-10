@@ -52,7 +52,8 @@ class WeChatMiniPro
             if ($method == 'GET') {
                 $data = empty($params) ? [] : ['query' => $params];
             } elseif ($method == 'POST') {
-                $data = ['json' => $params];
+                // JSON_UNESCAPED_UNICODE 参数指定不对unicode转码 否则中文会显示为unicode
+                $data = ['body' => json_encode($params, JSON_UNESCAPED_UNICODE)];
                 $data['headers'] = ['Content-Type' => 'application/json'];
             } elseif ($method == 'POST_FORM_DATA') {
                 $method = 'POST';
