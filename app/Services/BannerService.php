@@ -140,9 +140,9 @@ class BannerService
             $row['operator_name'] = $value['operator_name'];
             $row['sort'] = $value['sort'];
             $row['show_main'] = $value['show_main'];
-            $row['image_main'] = $value['image_main'];
+            $row['image_main'] = empty($value['image_main']) ? '' : AliOSS::signUrls($value['image_main']);
             $row['show_list'] = $value['show_list'];
-            $row['image_list'] = $value['image_list'];
+            $row['image_list'] = empty($value['image_list']) ? '' : AliOSS::signUrls($value['image_list']);
             $row['action_type'] = isset($actionTypeMap[$value['action_type']]) ? $actionTypeMap[$value['action_type']] : '-';
             $res[] = $row;
         }
@@ -160,6 +160,8 @@ class BannerService
         if(empty($data)){
             return Valid::addErrors([], 'banner_id_error', 'banner_id_error');
         }
+        $data['image_main'] = empty($data['image_main']) ? '' : AliOSS::signUrls($data['image_main']);
+        $data['image_list'] = empty($data['image_list']) ? '' : AliOSS::signUrls($data['image_list']);
         if(!empty($data['operator'])){
             $employee = EmployeeModel::getById($data['operator']);
         }
