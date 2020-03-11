@@ -80,13 +80,13 @@ class BannerModel extends Model
     {
         $where = [];
         if(!empty($params['name'])){
-            $where['name[~]'] = $params['name'];
+            $where['b.name[~]'] = $params['name'];
         }
         if(!empty($params['start_time'])){
-            $where['start_time[<=]'] = $params['start_time'];
+            $where['b.start_time[<=]'] = $params['start_time'];
         }
         if(!empty($params['end_time'])){
-            $where['end_time[>=]'] = $params['end_time'];
+            $where['b.end_time[>=]'] = $params['end_time'];
         }
         return $where;
     }
