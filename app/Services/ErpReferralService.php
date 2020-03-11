@@ -210,7 +210,7 @@ class ErpReferralService
                 'user_event_task_award_id' => $award['user_event_task_award_id'],
                 'award_status' => $award['award_status'],
                 'award_status_zh' => $award['award_status_zh'],
-                'award_amount' => $award['award_amount'],
+                'award_amount' => ($award['award_amount'] / 100),
                 'award_type' => $award['award_type'],
                 'create_time' => $award['create_time'],
                 'review_time' => $award['review_time'],
@@ -259,7 +259,7 @@ class ErpReferralService
                 'user_event_task_award_id' => $award['user_event_task_award_id'],
                 'award_status' => $award['award_status'],
                 'award_status_zh' => $award['award_status_zh'],
-                'award_amount' => $award['award_amount'],
+                'award_amount' => ($award['award_amount'] / 100),
                 'award_type' => $award['award_type'],
                 'create_time' => $award['create_time'],
             ];
