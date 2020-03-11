@@ -32,6 +32,7 @@ class AliOSS
 
     const PROCESS_STYLE_NOTE_THUMB = 'note_thumb'; // 老师笔记缩略图 image/auto-orient,1/resize,p_25/quality,q_70
     const DIR_REFERRAL = 'referral';//转介绍海报和二维码
+    const DIR_APP_BANNER = 'app_banner';//转介绍海报和二维码
     private function gmt_iso8601($time) {
         $dtStr = date("c", $time);
         $mydatetime = new DateTime($dtStr);
@@ -378,6 +379,7 @@ class AliOSS
             self::DIR_EXAM_IMG,
             self::DIR_REVIEW_COURSE_AUDIO,
             self::DIR_REFERRAL,
+            self::DIR_APP_BANNER,
         ];
         if (!in_array($dirType, $typeConstants)) {
             return null;

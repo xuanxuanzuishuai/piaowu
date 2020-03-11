@@ -160,8 +160,8 @@ class BannerService
         if(empty($data)){
             return Valid::addErrors([], 'banner_id_error', 'banner_id_error');
         }
-        $data['image_main'] = empty($data['image_main']) ? '' : AliOSS::signUrls($data['image_main']);
-        $data['image_list'] = empty($data['image_list']) ? '' : AliOSS::signUrls($data['image_list']);
+        $data['image_main_url'] = empty($data['image_main']) ? '' : AliOSS::signUrls($data['image_main']);
+        $data['image_list_url'] = empty($data['image_list']) ? '' : AliOSS::signUrls($data['image_list']);
         if(!empty($data['operator'])){
             $employee = EmployeeModel::getById($data['operator']);
         }
