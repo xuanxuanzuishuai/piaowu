@@ -12,6 +12,7 @@ use App\Controllers\ControllerBase;
 use App\Libs\Constants;
 use App\Libs\Util;
 use App\Libs\Valid;
+use App\Models\DictModel;
 use App\Models\EmployeeModel;
 use App\Services\DictService;
 use App\Services\CollectionService;
@@ -21,6 +22,7 @@ use Slim\Http\Response;
 use Slim\Http\StatusCode;
 use App\Models\CourseModel;
 use App\Models\CollectionModel;
+use App\Libs\DictConstants;
 
 /**
  * 学生集合控制器
@@ -116,7 +118,7 @@ class Collection extends ControllerBase
             return $response->withJson($result, 200);
         }
         //课包ID
-        $courseIds = explode(",", $params['course_ids']);
+        $courseIds = explode(",", trim($params['course_ids'],','));
         //组合数据
         $time = time();
         $collectionData = [
@@ -290,6 +292,23 @@ class Collection extends ControllerBase
         return $response->withJson([
             'code' => 0,
             'data' => $collections
+        ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * 获取购买产品包下拉框
+     * @param Request $request
+     * @param Response $response
+     * @param $args
+     * @return Response
+     */
+    public function getCollectionPackageList(Request $request, Response $response, $args)
+    {
+        //获取数据
+        $list = DictModel::getRecords(['type'=>DictConstants::WEB_STUDENT_CONFIG['type'],'key_code'=>["plus_package_id","package_id"]],['key_code','key_value','desc'],false);
+        return $response->withJson([
+            'code' => 0,
+            'data' => ['list' => $list]
         ], StatusCode::HTTP_OK);
     }
 }

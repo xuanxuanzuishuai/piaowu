@@ -39,6 +39,7 @@ use App\Middleware\OrgWebMiddleware;
 use App\Controllers\OrgWeb\Poster;
 use App\Controllers\OrgWeb\WechatConfig;
 use App\Controllers\OrgWeb\Collection;
+use App\Controllers\OrgWeb\Package;
 
 class OrgWebRouter extends RouterBase
 {
@@ -350,5 +351,10 @@ class OrgWebRouter extends RouterBase
         '/org_web/collection/assistant_list' => ['method' => ['get'], 'call' => Collection::class . ':getAssistantList'],
         '/org_web/collection/total_list' => ['method' => ['get'], 'call' => Collection::class . ':totalList'],
         '/org_web/collection/getCollectionDropDownList' => ['method' => ['get'], 'call' => Collection::class . ':getCollectionDropDownList'],
-        ];
+        '/org_web/collection/getCollectionPackageList' => ['method' => ['get'], 'call' => Collection::class . ':getCollectionPackageList'],
+
+        //课包管理接口
+        '/org_web/package/packageDictDetail' => ['method' => ['get'], 'call' => Package::class . ':packageDictDetail'],
+        '/org_web/package/packageDictEdit' => ['method' => ['post'], 'call' => Package::class . ':packageDictEdit'],
+    ];
 }

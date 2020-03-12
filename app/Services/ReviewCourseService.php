@@ -78,13 +78,15 @@ class ReviewCourseService
      */
     public static function getBillReviewCourseType($packageId)
     {
-        $package49 = DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'package_id');
-        if ($packageId == $package49) {
+        $packageIdStr = DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'package_id');
+        $packageIdArr = explode(',',$packageIdStr);
+        if (in_array($packageId,$packageIdArr)) {
             return ReviewCourseModel::REVIEW_COURSE_49;
         }
 
-        $package1980 = DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'plus_package_id');
-        if ($packageId == $package1980) {
+        $plusPackageIdStr = DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'plus_package_id');
+        $plusPackageIdArr = explode(',',$plusPackageIdStr);
+        if (in_array($packageId,$plusPackageIdArr)) {
             return ReviewCourseModel::REVIEW_COURSE_1980;
         }
 
