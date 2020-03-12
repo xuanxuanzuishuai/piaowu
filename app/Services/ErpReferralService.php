@@ -210,13 +210,14 @@ class ErpReferralService
                 'user_event_task_award_id' => $award['user_event_task_award_id'],
                 'award_status' => $award['award_status'],
                 'award_status_zh' => $award['award_status_zh'],
-                'award_amount' => ($award['award_amount'] / 100),
+                'award_amount' => $award['award_type'] == self::AWARD_TYPE_CASH ? ($award['award_amount'] / 100) : $award['award_amount'],
                 'award_type' => $award['award_type'],
                 'create_time' => $award['create_time'],
                 'review_time' => $award['review_time'],
                 'reviewer_id' => $award['reviewer_id'],
                 'reviewer_name' => $reviewerNames[$award['reviewer_id']] ?? '',
                 'reason' => $award['reason'],
+                'delay' => $award['delay'],
             ];
             $list[] = $item;
         }
@@ -229,19 +230,23 @@ class ErpReferralService
      * @param $uuid
      * @param $page
      * @param $count
+     * @param $params
      * @return array
      * @throws RunTimeException
      */
-    public static function getUserAwardList($uuid, $page, $count)
+    public static function getUserAwardList($uuid, $page, $count, $params)
     {
-        $params = [
+        $query = [
             'page'  => $page,
             'count' => $count,
             'referrer_uuid' => $uuid
         ];
+        if(!empty($params['award_type'])) {
+            $query['award_type'] = $params['award_type'];
+        }
 
         $erp = new Erp();
-        $response = $erp->awardList($params);
+        $response = $erp->awardList($query);
 
         if (empty($response) || $response['code'] != 0) {
             $errorCode = $response['errors'][0]['err_no'] ?? 'erp_request_error';
@@ -308,6 +313,6 @@ class ErpReferralService
 
     public static function pushWeChatMessage($weChatConfigId, $mobile, $url)
     {
-        return WeChatService::notifyUserCustomizeMessage($mobile, $weChatConfigId, ['mobile' => $mobile, 'url' => $url]);
+        return WeChatService::notifyUserCustomizeMessage($mobile, $weChatConfigId, ['mobile' => Util::hideUserMobile($mobile), 'url' => $url]);
     }
 }

@@ -36,10 +36,16 @@ class Referral extends ControllerBase
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
 
-        list($page, $count) = Util::formatPageCount($request->getParams());
+        $params = $request->getParams();
+
+        list($page, $count) = Util::formatPageCount($params);
+
+        if(empty($params['award_type'])) {
+            $params['award_type'] = ErpReferralService::AWARD_TYPE_CASH;
+        }
 
         try {
-            $ret = ErpReferralService::getUserAwardList($student['uuid'], $page, $count);
+            $ret = ErpReferralService::getUserAwardList($student['uuid'], $page, $count, $params);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
