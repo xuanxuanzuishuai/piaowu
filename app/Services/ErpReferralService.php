@@ -300,19 +300,17 @@ class ErpReferralService
             throw new RunTimeException([$errorCode]);
         }
 
-        if(!empty($response['data']['event_task_id'])
-        && !empty($response['data']['referrer_mobile'])) {
-            self::pushWeChatMessage(
-                $response['data']['event_task_id'],
+        if(!empty($response['data']['event_task_id'])) {
+            WeChatService::notifyUserCustomizeMessage(
                 $response['data']['referrer_mobile'],
-                $_ENV['STUDENT_INVITED_RECORDS_URL']);
+                $response['data']['event_task_id'],
+                [
+                    'mobile' => Util::hideUserMobile($response['data']['student_mobile']),
+                    'url' => $_ENV['STUDENT_INVITED_RECORDS_URL']
+                ]
+            );
         }
 
         return [];
-    }
-
-    public static function pushWeChatMessage($weChatConfigId, $mobile, $url)
-    {
-        return WeChatService::notifyUserCustomizeMessage($mobile, $weChatConfigId, ['mobile' => Util::hideUserMobile($mobile), 'url' => $url]);
     }
 }

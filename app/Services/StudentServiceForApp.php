@@ -325,14 +325,15 @@ class StudentServiceForApp
         //检查$refereeId是否存在
         $refType = null;
         $refUuid = null;
+        $referrer = null;
         if(!empty($refereeId)) {
             $ticket = UserQrTicketModel::getRecord(['qr_ticket' => $refereeId]);
             if(!empty($ticket)) {
                 if($ticket['type'] == UserQrTicketModel::STUDENT_TYPE) {
-                    $stu = StudentModel::getRecord(['id' => $ticket['user_id']]);
-                    if(!empty($stu)) {
+                    $referrer = StudentModel::getRecord(['id' => $ticket['user_id']]);
+                    if(!empty($referrer)) {
                         $refType = UserQrTicketModel::STUDENT_TYPE;
-                        $refUuid = $stu['uuid'];
+                        $refUuid = $referrer['uuid'];
                     }
                 } else {
                     SimpleLogger::info('ticket_type_is_not_student', ['ticket' => $ticket]);
@@ -364,9 +365,25 @@ class StudentServiceForApp
             return null;
         }
 
-        $erp->updateTask($uuid,
+        $updateResult = $erp->updateTask($uuid,
             ErpReferralService::EVENT_TASK_ID_REGISTER,
             ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
+
+        if(!empty($updateResult)
+            && $updateResult['code'] == 0
+            && $updateResult['user_event_task_award_affected_rows'] > 0
+            && $response['data']['is_new'] == true
+            && !empty($referrer)) {
+
+            WeChatService::notifyUserCustomizeMessage(
+                $referrer['mobile'],
+                ErpReferralService::EVENT_TASK_ID_REGISTER,
+                [
+                    'mobile' => Util::hideUserMobile($mobile),
+                    'url' => $_ENV['STUDENT_INVITED_RECORDS_URL'],
+                ]
+            );
+        }
 
         return $lastId;
     }
