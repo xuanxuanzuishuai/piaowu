@@ -371,7 +371,7 @@ class StudentServiceForApp
 
         if(!empty($updateResult)
             && $updateResult['code'] == 0
-            && $updateResult['user_event_task_award_affected_rows'] > 0
+            && $updateResult['data']['user_event_task_award_affected_rows'] > 0
             && $response['data']['is_new'] == true
             && !empty($referrer)) {
 

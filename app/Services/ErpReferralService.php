@@ -272,7 +272,8 @@ class ErpReferralService
             $list[] = $item;
         }
 
-        $sum = $response['data']['sum'][self::AWARD_TYPE_CASH] ?? 0;
+        $cash = $response['data']['sum'][self::AWARD_TYPE_CASH];
+        $sum = empty($cash) ? 0 : $cash / 100;
 
         return ['list' => $list, 'total_count' => $response['data']['total_count'], 'sum' => $sum];
     }
