@@ -22,8 +22,8 @@ class ErpReferralService
 
     const EVENT_TASKS = [
         self::EVENT_TASK_ID_REGISTER => '注册',
-        self::EVENT_TASK_ID_TRIAL_PAY => '付费体验课',
-        self::EVENT_TASK_ID_PAY => '付费正式课',
+        self::EVENT_TASK_ID_TRIAL_PAY => '付费体验卡',
+        self::EVENT_TASK_ID_PAY => '付费年卡',
     ];
 
     /** 任务状态 */
@@ -261,6 +261,7 @@ class ErpReferralService
                 'award_status_zh' => $award['award_status_zh'],
                 'award_amount' => ($award['award_amount'] / 100),
                 'award_type' => $award['award_type'],
+                'delay' => $award['delay'],
                 'create_time' => $award['create_time'],
             ];
             $list[] = $item;
@@ -294,6 +295,19 @@ class ErpReferralService
             throw new RunTimeException([$errorCode]);
         }
 
+        if(!empty($response['data']['event_task_id'])
+        && !empty($response['data']['referrer_mobile'])) {
+            self::pushWeChatMessage(
+                $response['data']['event_task_id'],
+                $response['data']['referrer_mobile'],
+                $_ENV['STUDENT_INVITED_RECORDS_URL']);
+        }
+
         return [];
+    }
+
+    public static function pushWeChatMessage($weChatConfigId, $mobile, $url)
+    {
+        return WeChatService::notifyUserCustomizeMessage($mobile, $weChatConfigId, ['mobile' => $mobile, 'url' => $url]);
     }
 }
