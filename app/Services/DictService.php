@@ -88,4 +88,16 @@ class DictService
     public static function delete($type, $keyCode){
         return DictModel::delete($type, $keyCode);
     }
+
+    /**
+     * 更新字典值
+     * @param $type
+     * @param $keyCode
+     * @param $keyValue
+     * @return int|null
+     */
+    public static function updateValue($type, $keyCode, $keyValue)
+    {
+        return DictModel::updateValue($type, $keyCode, $keyValue);
+    }
 }
