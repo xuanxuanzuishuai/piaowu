@@ -18,8 +18,8 @@ class ReviewCourseModel extends Model
 
     // 点评课学生标记
     const REVIEW_COURSE_NO = 0; // 非点评课学生
-    const REVIEW_COURSE_49 = 1; // 21天49元小课包
-    const REVIEW_COURSE_1980 = 2; // 1年1980元大课包
+    const REVIEW_COURSE_49 = 1; // 体验课课包
+    const REVIEW_COURSE_1980 = 2; // 正式课课包
 
     /**
      * 点评课学生列表

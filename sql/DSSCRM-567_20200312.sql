@@ -4,3 +4,8 @@ INSERT INTO `privilege`(`name`, `uri`, `created_time`, `method`, `is_menu`, `men
 
 update dict set `desc`="体验课产品包" where type='WEB_STUDENT_CONFIG' and key_code='package_id';
 update dict set `desc`="正式课产品包" where type='WEB_STUDENT_CONFIG' and key_code='plus_package_id';
+ALTER TABLE `collection`
+ADD COLUMN `teaching_type` tinyint(1) UNSIGNED NOT NULL DEFAULT 1 COMMENT '授课类型1体验课2正式课3全部课程' AFTER `update_time`;
+
+INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES ('PACKAGE_CONFIG', '智能陪练课包设置', 'plus_package_id', '10325', '正式课产品包');
+INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES ('PACKAGE_CONFIG', '智能陪练课包设置', 'package_id', '10324', '体验课产品包');

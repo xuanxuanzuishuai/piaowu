@@ -124,19 +124,20 @@ class Erp extends ControllerBase
                 implode(',', $giftCodes),
                 CommonServiceForApp::SIGN_STUDENT_APP);
         }
-        //获取学生信息
-        $student = StudentService::getByUuid($params['uuid']);
+
         // 点评课支付成功，发送点评课短信
         $reviewCourseType = ReviewCourseService::getBillReviewCourseType($params['package_id']);
         if ($reviewCourseType != ReviewCourseModel::REVIEW_COURSE_NO && !empty($giftCodes)) {
+            //获取学生信息
+            $student = StudentService::getByUuid($params['uuid']);
             $wechatcs = WeChatCSService::getWeChatCS();
             // 更新点评课标记
             $wechatcsId = empty($student['wechatcs_id']) ? $wechatcs['id'] : null;
             ReviewCourseService::updateReviewCourseFlag($student['id'], $reviewCourseType, $wechatcsId);
-        }
-        //更新学生分配班级信息 一个学员只能分配给一个班级
-        if (empty($student['collection_id'])) {
-            ReviewCourseService::updateCollectionData($student, $params['package_id']);
+            //更新学生分配班级信息 一个学员只能分配给一个班级
+            if (empty($student['collection_id'])) {
+                ReviewCourseService::updateCollectionData($student, $reviewCourseType,$params['package_id']);
+            }
         }
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,

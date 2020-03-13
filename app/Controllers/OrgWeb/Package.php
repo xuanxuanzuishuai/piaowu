@@ -46,8 +46,8 @@ class Package
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         //修改数据
-        $packageIDUpdateRes = DictService::updateValue(DictConstants::WEB_STUDENT_CONFIG['type'],'package_id',trim($params['package_id']));
-        $plusPackageIDUpdateRes = DictService::updateValue(DictConstants::WEB_STUDENT_CONFIG['type'],'plus_package_id',trim($params['plus_package_id']));
+        $packageIDUpdateRes = DictService::updateValue(DictConstants::PACKAGE_CONFIG['type'],'package_id',trim($params['package_id']));
+        $plusPackageIDUpdateRes = DictService::updateValue(DictConstants::PACKAGE_CONFIG['type'],'plus_package_id',trim($params['plus_package_id']));
         if(empty($plusPackageIDUpdateRes) && empty($packageIDUpdateRes)){
             return $response->withJson(Valid::addErrors([], 'package_dict', 'update_package_dict_fail'));
         }
@@ -67,7 +67,7 @@ class Package
     {
         //接收参数
         $params = $request->getParams();
-        $type = isset($params['type']) ? $params['type'] : DictConstants::WEB_STUDENT_CONFIG['type'];
+        $type = isset($params['type']) ? $params['type'] : DictConstants::PACKAGE_CONFIG['type'];
         //获取数据
         $list = DictService::getTypeMap($type);
         return $response->withJson([

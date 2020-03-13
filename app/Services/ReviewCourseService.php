@@ -78,13 +78,13 @@ class ReviewCourseService
      */
     public static function getBillReviewCourseType($packageId)
     {
-        $packageIdStr = DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'package_id');
+        $packageIdStr = DictConstants::get(DictConstants::PACKAGE_CONFIG, 'package_id');
         $packageIdArr = explode(',',$packageIdStr);
         if (in_array($packageId,$packageIdArr)) {
             return ReviewCourseModel::REVIEW_COURSE_49;
         }
 
-        $plusPackageIdStr = DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'plus_package_id');
+        $plusPackageIdStr = DictConstants::get(DictConstants::PACKAGE_CONFIG, 'plus_package_id');
         $plusPackageIdArr = explode(',',$plusPackageIdStr);
         if (in_array($packageId,$plusPackageIdArr)) {
             return ReviewCourseModel::REVIEW_COURSE_1980;
@@ -669,38 +669,35 @@ class ReviewCourseService
     /**
      * 更新学生分配班级信息
      * @param $studentInfo
-     * @param $packageId
+     * @param $reviewCourseType
+     * @param $packageID
      * @return null|string errorCode
      */
-    public static function updateCollectionData($studentInfo, $packageId)
+    public static function updateCollectionData($studentInfo, $reviewCourseType,$packageID)
     {
         $affectRows = true;
-        //查看当前课包是否允许分配班级
-        $dictTypeList = DictService::getList(Constants::COLLECTION_PACKAGE_ID);
-        $packageIdList = array_column($dictTypeList,'key_code');
-        if (in_array($packageId, $packageIdList)) {
-            //获取当前课包允许分配的班级集合
-            $collectionList = CollectionService::getCollectionByPackageId($packageId);
-            if (!empty($collectionList) && is_array($collectionList)) {
-                $time = time();
-                $update['collection_id'] = $collectionList[0]['id'];
-                $update['allot_collection_time'] = $time;
-                if (!empty($collectionList[0]['assistant_id'])) {
-                    $update['allot_assistant_time'] = $time;
-                    $update['assistant_id'] = $collectionList[0]['assistant_id'];
-                    $update['allot_course_id'] = (int)$collectionList[0]['course_id'];
-                }
-                $affectRows = StudentModel::updateRecord($studentInfo['id'], $update, false);
-                //记录分配助教和班级的日志
-                StudentService::allotCollection([$studentInfo['id']], $collectionList[0]['id'], EmployeeModel::SYSTEM_EMPLOYEE_ID);
-                StudentService::allotAssistant([$studentInfo['id']], $collectionList[0]['assistant_id'], EmployeeModel::SYSTEM_EMPLOYEE_ID);
-                //发送班级分配完成短信:公海班级不发送
-                if ($collectionList[0]['type'] == CollectionModel::COLLECTION_TYPE_NORMAL) {
-                    $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
-                    $sms->sendCollectionCompleteNotify($studentInfo['mobile'], CommonServiceForApp::SIGN_STUDENT_APP, $collectionList);
-                }
+        //获取当前课包允许分配的班级集合
+        $collectionList = CollectionService::getCollectionByCourseType($reviewCourseType);
+        if (!empty($collectionList) && is_array($collectionList)) {
+            $time = time();
+            $update['collection_id'] = $collectionList[0]['id'];
+            $update['allot_collection_time'] = $time;
+            $update['allot_course_id'] = $packageID;
+            if (!empty($collectionList[0]['assistant_id'])) {
+                $update['allot_assistant_time'] = $time;
+                $update['assistant_id'] = $collectionList[0]['assistant_id'];
+            }
+            $affectRows = StudentModel::updateRecord($studentInfo['id'], $update, false);
+            //记录分配助教和班级的日志
+            StudentService::allotCollection([$studentInfo['id']], $collectionList[0]['id'], EmployeeModel::SYSTEM_EMPLOYEE_ID);
+            StudentService::allotAssistant([$studentInfo['id']], $collectionList[0]['assistant_id'], EmployeeModel::SYSTEM_EMPLOYEE_ID);
+            //发送班级分配完成短信:公海班级不发送
+            if (($collectionList[0]['type'] == CollectionModel::COLLECTION_TYPE_NORMAL) &&($reviewCourseType == ReviewCourseModel::REVIEW_COURSE_49)) {
+                $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
+                $sms->sendCollectionCompleteNotify($studentInfo['mobile'], CommonServiceForApp::SIGN_STUDENT_APP, $collectionList);
             }
         }
+
         return $affectRows;
     }
 }

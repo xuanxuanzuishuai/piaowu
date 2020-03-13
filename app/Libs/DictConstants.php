@@ -105,6 +105,14 @@ class DictConstants {
             'plus_package_id',
         ]
     ];
+    //课包配置
+    const PACKAGE_CONFIG = [
+        'type' => 'PACKAGE_CONFIG',
+        'keys' => [
+            'package_id',
+            'plus_package_id',
+        ]
+    ];
 
     const APP_CONFIG_TEACHER = [
         'type' => 'APP_CONFIG_TEACHER',

@@ -11,20 +11,19 @@ namespace App\Services;
 use App\Libs\Constants;
 use App\Libs\MysqlDB;
 use App\Models\CollectionModel;
-use App\Models\CollectionCourseModel;
-use App\Models\CourseModel;
 use App\Models\StudentModel;
+use App\Models\DictModel;
 use App\Libs\AliOSS;
+use App\Libs\DictConstants;
 
 class CollectionService
 {
     /**
      * 添加学生集合
      * @param $insertData
-     * @param $courseIds
      * @return int|mixed|null|string
      */
-    public static function addStudentCollection($insertData, $courseIds)
+    public static function addStudentCollection($insertData)
     {
         //公海班级只能添加一条
         if (CollectionModel::COLLECTION_TYPE_PUBLIC == $insertData['type']) {
@@ -33,33 +32,11 @@ class CollectionService
                 return false;
             }
         }
-        //开启事务
-        $db = MysqlDB::getDB();
-        $db->beginTransaction();
         //集合数据
         $collectionId = CollectionModel::insertRecord($insertData, false);
         if (empty($collectionId)) {
-            $db->rollBack();
             return false;
         }
-        //集合关联课程
-        $insertCollectionCourseData = [];
-        foreach ($courseIds as $val) {
-            $insertCollectionCourseData[] = [
-                'course_id' => $val,
-                'collection_id' => $collectionId,
-                'create_uid' => $insertData['create_uid'],
-                'create_time' => $insertData['create_time'],
-            ];
-        }
-        //写入数据
-        $collectionCourseId = CollectionCourseModel::batchInsert($insertCollectionCourseData, false);
-        if (empty($collectionCourseId)) {
-            $db->rollBack();
-            return false;
-        }
-        //提交事务 返回结果
-        $db->commit();
         //返回结果
         return $collectionId;
     }
@@ -77,10 +54,9 @@ class CollectionService
         $querySql = "SELECT 
                         a.id,a.name,a.assistant_id,a.capacity,a.remark,a.prepare_start_time,
                         a.prepare_end_time,a.teaching_start_time,a.teaching_end_time,a.wechat_qr,
-                        a.wechat_number,GROUP_CONCAT(b.course_id) as course_ids,a.status
+                        a.wechat_number,a.status,a.teaching_type
                     FROM " . CollectionModel::$table . " as a
-                    LEFT JOIN " . CollectionCourseModel::$table . " as b ON a.id = b.collection_id 
-                    WHERE a.id = " . $id . " AND b.status= " . CollectionCourseModel::COLLECTION_COURSE_STATUS_IS_PUBLISH . " GROUP BY a.id";
+                    WHERE a.id = " . $id;
         //获取数据
         $list = $db->queryAll($querySql);
         if ($list) {
@@ -105,10 +81,6 @@ class CollectionService
         $params = self::checkActionIsAllow($collectionId, $params);
         if (empty($params)) {
             return false;
-        }
-        $courseIds = [];
-        if ($params['course_ids']) {
-            $courseIds = explode(",", $params['course_ids']);
         }
         if ($params['name']) {
             $collectionData['name'] = $params['name'];
@@ -146,61 +118,15 @@ class CollectionService
         if ($params['capacity']) {
             $collectionData['capacity'] = $params['capacity'];
         }
-        $time = time();
-        $collectionData['update_time'] = $time;
-        //开启事务
-        $db = MysqlDB::getDB();
-        $db->beginTransaction();
-        if ($collectionData) {
-            $collectionAffectRows = CollectionModel::updateRecord($collectionId, $collectionData);
-            if (empty($collectionAffectRows)) {
-                $db->rollBack();
-                return false;
-            }
+        if ($params['teaching_type']) {
+            $collectionData['teaching_type'] = $params['teaching_type'];
         }
-        //修改合集课程关联数据
-        $oldCollectionCourseList = CollectionCourseModel::getRecords(['collection_id' => $collectionId, 'status' => CollectionCourseModel::COLLECTION_COURSE_STATUS_IS_PUBLISH], ['course_id', 'id'], false);
-        if ($courseIds) {
-            //已存在的课程ID
-            $oldCollectionCourseIds = array_column($oldCollectionCourseList, "course_id");
-            $needUpdateCourseIds = array_diff($oldCollectionCourseIds, $courseIds);
-            $needInsertCourseIds = array_diff($courseIds, $oldCollectionCourseIds);
-            if ($needInsertCourseIds) {
-                $insertCollectionCourseData = [];
-                foreach ($needInsertCourseIds as $icid) {
-                    $insertCollectionCourseData[] = [
-                        'course_id' => $icid,
-                        'collection_id' => $collectionId,
-                        'create_uid' => $params['uid'],
-                        'create_time' => $time,
-                    ];
-                }
-                $collectionCourseId = CollectionCourseModel::batchInsert($insertCollectionCourseData, false);
-                if (empty($collectionCourseId)) {
-                    $db->rollBack();
-                    return false;
-                }
-            }
-
-            if ($needUpdateCourseIds) {
-                $updateCollectionCourseData = [
-                    'status' => CollectionCourseModel::COLLECTION_COURSE_STATUS_NOT_PUBLISH,
-                    'update_uid' => $params['uid'],
-                    'update_time' => $time,
-                ];
-                $updateWhere = [
-                    'collection_id' => $collectionId,
-                    'course_id' => $needUpdateCourseIds,
-                ];
-                $collectionCourseAffectRows = CollectionCourseModel::batchUpdateRecord($updateCollectionCourseData, $updateWhere, false);
-                if (empty($collectionCourseAffectRows)) {
-                    $db->rollBack();
-                    return false;
-                }
-            }
+        $collectionData['update_time'] = time();
+        $collectionAffectRows = CollectionModel::updateRecord($collectionId, $collectionData);
+        if (empty($collectionAffectRows)) {
+            return false;
         }
-        //提交事务 返回结果
-        $db->commit();
+        //返回结果
         return $collectionId;
     }
 
@@ -356,10 +282,10 @@ class CollectionService
 
     /**
      * 获取课程可以分配的集合列表
-     * @param $packageId
+     * @param $reviewCourseType
      * @return array|null
      */
-    public static function getCollectionByPackageId($packageId)
+    public static function getCollectionByCourseType($reviewCourseType)
     {
         //数据库对象
         $db = MysqlDB::getDB();
@@ -372,11 +298,9 @@ class CollectionService
                         a.teaching_end_time,
                         a.type,
                         a.wechat_number,
-                        b.course_id,
                         count( s.id ) AS s_count 
                     FROM
                         collection as a
-                        INNER JOIN collection_course as b ON a.id = b.collection_id
                         LEFT JOIN student as s ON a.id = s.collection_id 
                     WHERE
                         ( 
@@ -384,8 +308,7 @@ class CollectionService
                             a.prepare_start_time <= " . $time . " AND
                             a.prepare_end_time >= " . $time . " AND
                             a.type = " . CollectionModel::COLLECTION_TYPE_NORMAL . " AND
-                            b.course_id = " . $packageId . " AND
-                            b.status = " . CollectionCourseModel::COLLECTION_COURSE_STATUS_IS_PUBLISH . "
+                            a.teaching_type = " . $reviewCourseType . "
                          )
                     GROUP BY
                         a.id 
@@ -471,7 +394,7 @@ class CollectionService
                 empty($params['teaching_start_time']) ||
                 empty($params['prepare_end_time']) ||
                 empty($params['prepare_start_time']) ||
-                empty($params['course_ids']) ||
+                empty($params['teaching_type']) ||
                 empty($params['wechat_qr']) ||
                 empty($params['wechat_number']) ||
                 empty($params['assistant_id']) ||
@@ -482,5 +405,28 @@ class CollectionService
             }
         }
         return $updateParams;
+    }
+
+    /**
+     * 获取购买产品包下拉框
+     * @param $keyCode
+     * @return array
+     */
+    public static function getCollectionPackageList($keyCode)
+    {
+        //获取数据
+        $data = [];
+        $dictList = DictModel::getRecords(['type'=>DictConstants::PACKAGE_CONFIG['type'],'key_code'=>[$keyCode]],['key_code','key_value','desc'],false);
+        if(empty($dictList)){
+            return $data;
+        }
+        //转换数据
+        foreach ($dictList as $dv){
+            $data[] = [
+                'teaching_type'=>CollectionModel::$teachingTypeDictMap[$dv['key_code']],
+                'type_name'=>$dv['desc'],
+            ];
+        }
+        return $data;
     }
 }
