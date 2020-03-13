@@ -28,7 +28,7 @@ class StudentForMinAppService
 
         $stu = StudentModelForApp::getStudentInfo(null, $mobile);
         if(empty($stu)) {
-            $lastId = StudentServiceForApp::studentRegister($mobile, StudentModel::CHANNEL_EXAM_MINAPP_REGISTER);
+            list($lastId) = StudentServiceForApp::studentRegister($mobile, StudentModel::CHANNEL_EXAM_MINAPP_REGISTER);
             if(empty($lastId)) {
                 SimpleLogger::error('register fail from exam', ['mobile' => $mobile]);
                 return [$lastId, null];

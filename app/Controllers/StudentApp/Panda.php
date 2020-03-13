@@ -86,7 +86,7 @@ class Panda extends ControllerBase
         $student = StudentModelForApp::getStudentInfo(null, $mobile, null);
 
         if (empty($student)) {
-            $studentId = StudentServiceForApp::studentRegister($mobile, StudentModel::CHANNEL_APP_REGISTER);
+            list($studentId) = StudentServiceForApp::studentRegister($mobile, StudentModel::CHANNEL_APP_REGISTER);
             if (empty($studentId)) {
                 $result = Valid::addAppErrors([], 'student_register_fail');
                 return $response->withJson($result, StatusCode::HTTP_OK);

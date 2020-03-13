@@ -58,7 +58,7 @@ class StudentServiceForWeb
             throw new RunTimeException(['mobile_has_been_registered']);
         }
 
-        $newStudent = StudentServiceForApp::studentRegister($mobile, StudentModel::CHANNEL_WEB_REGISTER);
+        list($newStudent) = StudentServiceForApp::studentRegister($mobile, StudentModel::CHANNEL_WEB_REGISTER);
         if (empty($newStudent)) {
             throw new RunTimeException(['student_register_fail']);
         }
@@ -145,7 +145,7 @@ class StudentServiceForWeb
             return $student;
         }
 
-        $newStudent = StudentServiceForApp::studentRegister($mobile, $channelId);
+        list($newStudent) = StudentServiceForApp::studentRegister($mobile, $channelId);
         if (empty($newStudent)) {
             throw new RunTimeException(['student_register_fail']);
         }

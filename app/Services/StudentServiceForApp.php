@@ -135,7 +135,7 @@ class StudentServiceForApp
 
         // 新用户自动注册
         if (empty($student)) {
-            $newStudent = self::studentRegister($mobile, StudentModel::CHANNEL_APP_REGISTER);
+            list($newStudent) = self::studentRegister($mobile, StudentModel::CHANNEL_APP_REGISTER);
 
             if (empty($newStudent)) {
                 return ['student_register_fail'];
@@ -385,7 +385,7 @@ class StudentServiceForApp
             );
         }
 
-        return $lastId;
+        return [$lastId, $response['data']['is_new']];
     }
 
     /**

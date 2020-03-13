@@ -127,17 +127,19 @@ class Auth extends ControllerBase
         $stu = StudentService::getStudentByMobile($params['mobile']);
         if(!empty($stu)) {
             return $response->withJson([
-                'code' => Valid::CODE_SUCCESS
+                'code' => Valid::CODE_SUCCESS,
+                'data' => ['has_register' => true],
             ]);
         }
 
-        $lastId = StudentServiceForApp::studentRegister($params['mobile'], $params['channel'], null, $params['referee_id']);
+        list($lastId, $isNew) = StudentServiceForApp::studentRegister($params['mobile'], $params['channel'], null, $params['referee_id']);
         if(empty($lastId)) {
             return $response->withJson(Valid::addAppErrors([], 'student_register_fail'));
         }
 
         return $response->withJson([
-            'code' => Valid::CODE_SUCCESS
+            'code' => Valid::CODE_SUCCESS,
+            'data' => ['has_register' => !$isNew]
         ]);
     }
 
