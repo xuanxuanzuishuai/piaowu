@@ -26,8 +26,11 @@ class Referral extends ControllerBase
      */
     public function config(/** @noinspection PhpUnusedParameterInspection */ Request $request, Response $response)
     {
+
+        $names = ErpReferralService::EVENT_TASKS;
+
         $config = [
-            'event_task_name' => ErpReferralService::EVENT_TASKS,
+            'event_task_name' => $names,
             'award_status' => ErpReferralService::AWARD_STATUS,
         ];
 
@@ -65,6 +68,9 @@ class Referral extends ControllerBase
 
         if ($params['award_status'] === ''){
             unset($params['award_status']);
+        }
+        if(empty($params['award_type'])) {
+            $params['award_type'] = ErpReferralService::AWARD_TYPE_CASH;
         }
 
         try {
