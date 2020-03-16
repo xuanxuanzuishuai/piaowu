@@ -15,6 +15,7 @@ use App\Models\StudentModel;
 use App\Models\DictModel;
 use App\Libs\AliOSS;
 use App\Libs\DictConstants;
+use App\Libs\Util;
 
 class CollectionService
 {
@@ -95,13 +96,13 @@ class CollectionService
             $collectionData['prepare_start_time'] = $params['prepare_start_time'];
         }
         if ($params['prepare_end_time']) {
-            $collectionData['prepare_end_time'] = $params['prepare_end_time'];
+            $collectionData['prepare_end_time'] = Util::getStartEndTimestamp($params['prepare_end_time'])[1];
         }
         if ($params['teaching_start_time']) {
             $collectionData['teaching_start_time'] = $params['teaching_start_time'];
         }
         if ($params['teaching_end_time']) {
-            $collectionData['teaching_end_time'] = $params['teaching_end_time'];
+            $collectionData['teaching_end_time'] = Util::getStartEndTimestamp($params['teaching_end_time'])[1];
         }
         if ($params['wechat_qr']) {
             $collectionData['wechat_qr'] = $params['wechat_qr'];
@@ -161,19 +162,19 @@ class CollectionService
             $where .= " and a.prepare_start_time >=" . $params['prepare_start_begin_time'];
         }
         if ($params['prepare_start_end_time']) {
-            $where .= " and a.prepare_start_time <=" . $params['prepare_start_end_time'];
+            $where .= " and a.prepare_start_time <=" . Util::getStartEndTimestamp($params['prepare_start_end_time']);
         }
         if ($params['teaching_start_begin_time']) {
             $where .= " and a.teaching_start_time >=" . $params['teaching_start_begin_time'];
         }
         if ($params['teaching_start_end_time']) {
-            $where .= " and a.teaching_start_time <=" . $params['teaching_start_end_time'];
+            $where .= " and a.teaching_start_time <=" . Util::getStartEndTimestamp($params['teaching_start_end_time']);
         }
         if ($params['create_start_time']) {
             $where .= " and a.create_time>=" . $params['create_start_time'];
         }
         if ($params['create_end_time']) {
-            $where .= " and a.create_time<=" . $params['create_end_time'];
+            $where .= " and a.create_time<=" . Util::getStartEndTimestamp($params['create_time']);
         }
         if ($params['publish_status']) {
             $where .= " and a.status=" . $params['publish_status'];
@@ -389,20 +390,7 @@ class CollectionService
             }
         } elseif ($processStatus == CollectionModel::COLLECTION_PREPARE_STATUS) {
             //待组班:支持任何操作
-            if (empty($params['capacity']) ||
-                empty($params['teaching_end_time']) ||
-                empty($params['teaching_start_time']) ||
-                empty($params['prepare_end_time']) ||
-                empty($params['prepare_start_time']) ||
-                empty($params['teaching_type']) ||
-                empty($params['wechat_qr']) ||
-                empty($params['wechat_number']) ||
-                empty($params['assistant_id']) ||
-                empty($params['name'])) {
-                $updateParams = [];
-            } else {
-                $updateParams = $params;
-            }
+            $updateParams = $params;
         }
         return $updateParams;
     }
@@ -416,15 +404,15 @@ class CollectionService
     {
         //获取数据
         $data = [];
-        $dictList = DictModel::getRecords(['type'=>DictConstants::PACKAGE_CONFIG['type'],'key_code'=>[$keyCode]],['key_code','key_value','desc'],false);
-        if(empty($dictList)){
+        $dictList = DictModel::getRecords(['type' => DictConstants::PACKAGE_CONFIG['type'], 'key_code' => [$keyCode]], ['key_code', 'key_value', 'desc'], false);
+        if (empty($dictList)) {
             return $data;
         }
         //转换数据
-        foreach ($dictList as $dv){
+        foreach ($dictList as $dv) {
             $data[] = [
-                'teaching_type'=>CollectionModel::$teachingTypeDictMap[$dv['key_code']],
-                'type_name'=>$dv['desc'],
+                'teaching_type' => CollectionModel::$teachingTypeDictMap[$dv['key_code']],
+                'type_name' => $dv['desc'],
             ];
         }
         return $data;

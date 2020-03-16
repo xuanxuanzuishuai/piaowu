@@ -802,4 +802,17 @@ class Util
         $days = date_diff($datetime_start, $datetime_end);
         return $days->days;
     }
+
+    /**
+     * 获取某天的开始和结束的时间戳
+     * @param string $dateTimestamp 日期的时间戳
+     * @return array
+     */
+    public static function getStartEndTimestamp($dateTimestamp)
+    {
+        $date = date('Ymd', $dateTimestamp);
+        $beginDay = strtotime($date);
+        $endDay = $beginDay+self::TIMESTAMP_ONEDAY-1;
+        return [$beginDay, $endDay];
+    }
 }
