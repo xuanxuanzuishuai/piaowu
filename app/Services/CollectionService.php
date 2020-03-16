@@ -162,19 +162,19 @@ class CollectionService
             $where .= " and a.prepare_start_time >=" . $params['prepare_start_begin_time'];
         }
         if ($params['prepare_start_end_time']) {
-            $where .= " and a.prepare_start_time <=" . Util::getStartEndTimestamp($params['prepare_start_end_time']);
+            $where .= " and a.prepare_start_time <=" . Util::getStartEndTimestamp($params['prepare_start_end_time'])[1];
         }
         if ($params['teaching_start_begin_time']) {
             $where .= " and a.teaching_start_time >=" . $params['teaching_start_begin_time'];
         }
         if ($params['teaching_start_end_time']) {
-            $where .= " and a.teaching_start_time <=" . Util::getStartEndTimestamp($params['teaching_start_end_time']);
+            $where .= " and a.teaching_start_time <=" . Util::getStartEndTimestamp($params['teaching_start_end_time'])[1];
         }
         if ($params['create_start_time']) {
             $where .= " and a.create_time>=" . $params['create_start_time'];
         }
         if ($params['create_end_time']) {
-            $where .= " and a.create_time<=" . Util::getStartEndTimestamp($params['create_time']);
+            $where .= " and a.create_time<=" . Util::getStartEndTimestamp($params['create_end_time'])[1];
         }
         if ($params['publish_status']) {
             $where .= " and a.status=" . $params['publish_status'];
