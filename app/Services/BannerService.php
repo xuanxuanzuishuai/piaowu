@@ -12,6 +12,7 @@ namespace App\Services;
 use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\UserCenter;
+use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\BannerModel;
 use App\Models\EmployeeModel;
@@ -238,7 +239,7 @@ class BannerService
         }
         //判断参数是否符合要求
         foreach($detailTemplate as $item){
-            if(empty($detail[$item])){
+            if(Util::emptyExceptZero($detail[$item])){
                 return Valid::addErrors([], 'action_detail_error', 'action_detail_error');
             }
         }
