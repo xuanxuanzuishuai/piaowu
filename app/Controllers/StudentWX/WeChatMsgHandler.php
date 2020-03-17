@@ -95,6 +95,10 @@ class WeChatMsgHandler
                     }
                 }
             }
+        } else if ($keyEvent == 'AI_SERVER_TEL'){ //客服电话
+            $tel = $_ENV["AI_SERVER_TEL"];
+            WeChatService::notifyUserWeixinTextInfo(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
+                UserWeixinModel::USER_TYPE_STUDENT, $userOpenId, $tel);
         }
         return false;
     }
