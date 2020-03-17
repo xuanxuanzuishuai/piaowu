@@ -529,8 +529,10 @@ class StudentModel extends Model
         }elseif(!empty($params['parent_channel_id'])){
             $channels = ChannelService::getChannels($params['parent_channel_id']);
             if(empty($channels)){
-                return [false, false];
+                $whereSql .= " AND s.channel_id = :channel_id ";
+                $map[':channel_id'] = $params['parent_channel_id'];
             }else{
+                $channels[] = $params['parent_channel_id'];
                 $ids = implode(',', array_column($channels, 'id'));
                 $whereSql .= " AND s.channel_id in ({$ids}) ";
             }
