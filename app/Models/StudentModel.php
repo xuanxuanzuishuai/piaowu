@@ -36,15 +36,15 @@ class StudentModel extends Model
 
     //添加渠道
     const CHANNEL_UNKNOWN = 0;
-    const CHANNEL_BACKEND_ADD = 1; //机构后台添加
-    const CHANNEL_WE_CHAT_SCAN = 2; //微信扫码注册
-    const CHANNEL_APP_REGISTER = 3; //爱学琴APP注册
-    const CHANNEL_ERP_EXCHANGE = 4; //ERP兑换激活码
-    const CHANNEL_ERP_ORDER = 5; //ERP购买订单
-    const CHANNEL_ERP_TRANSFER = 6; //ERP转单
-    const CHANNEL_WEB_REGISTER = 7; //web注册页
-    const CHANNEL_EXAM_MINAPP_REGISTER = 8; //音基小程序注册
-    const CHANNEL_SPACKAGE_LANDING = 9; //小课包推广页
+    const CHANNEL_BACKEND_ADD = 1225; //机构后台添加
+    const CHANNEL_WE_CHAT_SCAN = 1226; //微信扫码注册
+    const CHANNEL_APP_REGISTER = 1227; //爱学琴APP注册
+    const CHANNEL_ERP_EXCHANGE = 1228; //ERP兑换激活码
+    const CHANNEL_ERP_ORDER = 1229; //ERP购买订单
+    const CHANNEL_ERP_TRANSFER = 1230; //ERP转单
+    const CHANNEL_WEB_REGISTER = 1231; //web注册页
+    const CHANNEL_EXAM_MINAPP_REGISTER = 1232; //音基小程序注册
+    const CHANNEL_SPACKAGE_LANDING = 1233; //小课包推广页
 
     //是否添加助教微信
     const ADD_STATUS = 1;
