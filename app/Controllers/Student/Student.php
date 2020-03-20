@@ -656,4 +656,42 @@ class Student extends ControllerBase
         }
         return $response->withJson($res);
     }
+
+    /**
+     * 更新学生微信账号数据
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function updateAddWeChatAccount(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        $rules = [
+            [
+                'key' => 'student_id',
+                'type' => 'required',
+                'error_code' => 'student_id_is_required',
+            ],
+            [
+                'key' => 'student_id',
+                'type' => 'integer',
+                'error_code' => 'student_id_must_be_integer'
+            ],
+            [
+                'key' => 'wechat_number',
+                'type' => 'required',
+                'error_code' => 'wechat_number_is_required',
+            ]
+        ];
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        //修改数据
+        $affectRow = StudentService::updateAddWeChatAccount($params['student_id'], $params['wechat_number']);
+        if (empty($affectRow)) {
+            return $response->withJson(Valid::addErrors([], 'student', 'update_date_failed'));
+        }
+        return $response->withJson(Valid::formatSuccess());
+    }
 }

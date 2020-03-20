@@ -314,4 +314,22 @@ class ErpReferralService
 
         return [];
     }
+
+
+    /**
+     * 获取用户转介绍数据
+     * @param $params
+     * @return array
+     */
+    public static function getUserReferralInfo($params)
+    {
+        //远程访问erp获取数据
+        $erp = new Erp();
+        $response = $erp->userReferralInfo($params);
+        $data = [];
+        if (empty($response) || $response['code'] != 0) {
+            return $data;
+        }
+        return $response['data']['records'];
+    }
 }

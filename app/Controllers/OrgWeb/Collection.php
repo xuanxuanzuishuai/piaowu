@@ -302,4 +302,46 @@ class Collection extends ControllerBase
             'data' => ['list' => $list]
         ], StatusCode::HTTP_OK);
     }
+
+
+    /**
+     * 班级分配助教
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function reAllotCollectionAssistant(Request $request, Response $response)
+    {
+        //接收数据
+        $rules = [
+            [
+                'key' => 'collection_id',
+                'type' => 'required',
+                'error_code' => 'collection_id_is_required'
+            ],
+            [
+                'key' => 'assistant_id',
+                'type' => 'required',
+                'error_code' => 'assistant_id_is_required'
+            ],
+            [
+                'key' => 'assistant_id',
+                'type' => 'integer',
+                'error_code' => 'assistant_id_must_be_integer'
+            ]
+        ];
+        //验证合法性
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == 1) {
+            return $response->withJson($result, 200);
+        }
+        $collectionIDList = explode(',', $params['collection_id']);
+        //班级分配助教
+        $data = CollectionService::reAllotCollectionAssistant($collectionIDList, $params['assistant_id'], self::getEmployeeId());
+        if (!empty($data)) {
+            return $response->withJson($data);
+        }
+        return $response->withJson(Valid::formatSuccess($data));
+    }
 }

@@ -11,11 +11,14 @@ namespace App\Services;
 use App\Libs\Constants;
 use App\Libs\MysqlDB;
 use App\Models\CollectionModel;
+use App\Models\CollectionAssistantLogModel;
+use App\Models\StudentAssistantLogModel;
 use App\Models\StudentModel;
 use App\Models\DictModel;
 use App\Libs\AliOSS;
 use App\Libs\DictConstants;
 use App\Libs\Util;
+use App\Libs\Valid;
 
 class CollectionService
 {
@@ -416,5 +419,68 @@ class CollectionService
             ];
         }
         return $data;
+    }
+
+
+    /**
+     * 班级分配助教
+     * @param $collectionIDList
+     * @param $assistantId
+     * @param $employeeID
+     * @return array
+     */
+    public static function reAllotCollectionAssistant($collectionIDList, $assistantId, $employeeID)
+    {
+        //获取班级数据
+        $collectionList = CollectionModel::getRecords(['id' => $collectionIDList, 'assistant_id[!]' => $assistantId], ['id', 'assistant_id'], false);
+        if (empty($collectionList)) {
+            return Valid::addErrors([], 'collection', 'collection_assistant_data_no_change');
+        }
+        $result = [];
+        //开启事务
+        $db = MysqlDB::getDB();
+        $db->beginTransaction();
+        $time = time();
+        foreach ($collectionList as $collectionData) {
+            //修改班级助教信息
+            $collectionAffectRow = CollectionModel::UpdateRecord($collectionData['id'], ['assistant_id' => $assistantId, 'update_uid' => $employeeID, 'update_time' => $time], false);
+            if (empty($collectionAffectRow)) {
+                $db->rollBack();
+                return Valid::addErrors([], 'collection', 'update_student_collection_fail');
+            }
+            //记录班级分配助教日志
+            $logData = [
+                'collection_id' => $collectionData['id'],
+                'old_assistant_id' => $collectionData['assistant_id'],
+                'new_assistant_id' => $assistantId,
+                'create_time' => $time,
+                'create_uid' => $employeeID,
+            ];
+            $collectionAssistantLogId = CollectionAssistantLogModel::insertRecord($logData, false);
+            if (empty($collectionAssistantLogId)) {
+                $db->rollBack();
+                return Valid::addErrors([], 'collection', 'insert_collection_assistant_log_fail');
+            }
+            //获取当前属于该班级并且助教是当前助教下的学生数据
+            $studentList = StudentModel::getRecords(['collection_id' => $collectionData['id'], 'assistant_id' => $collectionData['assistant_id']], ['id', 'assistant_id'], false);
+            if (empty($studentList)) {
+                continue;
+            }
+            $studentNewAssistantData = ['assistant_id' => $assistantId, 'allot_assistant_time' => $time];
+            $studentUpdateAssistantAffectRows = StudentModel::batchUpdateRecord($studentNewAssistantData, ['collection_id' => $collectionData['id'], 'assistant_id' => $collectionData['assistant_id']], false);
+            if (empty($studentUpdateAssistantAffectRows)) {
+                $db->rollBack();
+                return Valid::addErrors([], 'collection', 'update_student_data_failed');
+            }
+            //记录学生分配助教日志
+            $studentAllotAssistantLogData = StudentService::formatAllotAssistantLogData($studentList, $assistantId, $employeeID, $time, StudentAssistantLogModel::OPERATE_TYPE_ALLOT_COLLECTION_ASSISTANT, $collectionAssistantLogId);
+            $logRes = StudentService::addAllotAssistantLog($studentAllotAssistantLogData);
+            if (empty($logRes)) {
+                $db->rollBack();
+                return Valid::addErrors([], 'collection', 'add_allot_assistant_log_failed');
+            }
+        }
+        $db->commit();
+        return $result;
     }
 }

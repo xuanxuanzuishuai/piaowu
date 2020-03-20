@@ -492,7 +492,7 @@ class StudentService
         //获取学生微信信息
         $studentWeChatInfo = self::getStudentWeChat($studentId);
         //获取学生转介绍信息
-        $refereeInfo = self::getStudentReferee($studentId);
+        $refereeInfo = self::getStudentReferee($student['uuid'], "referrer_uuid");
         //获取学生注册渠道
         $channel = self::getStudentChannel($student['channel_id']);
         return self::formatStudentInfo($student, $studentWeChatInfo, $refereeInfo, $channel);
@@ -545,24 +545,32 @@ class StudentService
         //获取学生阶段MAP
         $stepMap = DictService::getTypeMap(Constants::DICT_TYPE_REVIEW_COURSE_STATUS);
         $data['student_step'] = isset($stepMap[$student['has_review_course']]) ? $stepMap[$student['has_review_course']] : '-';
-        $data['referee'] = empty($refereeInfo) ? '-' : $refereeInfo['name'];
+        $data['referee'] = empty($refereeInfo) ? '-' : $refereeInfo['name'] . "(" . $refereeInfo['mobile'] . ")";
         $data['register_time'] = date('Y-m-d H:i', $student['create_time']);
         $data['assistant_id'] = $student['assistant_id'];
         $data['assistant_name'] = $student['assistant_name'];
         $data['is_add_assistant_wx'] = $student['is_add_assistant_wx'];
         $data['channel'] = $channel;
+        $data['wechat_account'] = $student['wechat_account'];
         return $data;
     }
 
     /**
      * 获取学生转介绍数据
-     * => 因转介绍功能未完成，该数据后续完善
-     * @param $studentId
+     * @param $studentUuid
+     * @param $field
      * @return array
      */
-    public static function getStudentReferee($studentId)
+    public static function getStudentReferee($studentUuid, $field)
     {
-        return [];
+        $params = [
+            'uuid' => $studentUuid,
+            'field' => $field,
+        ];
+        $data = ErpReferralService::getUserReferralInfo($params);
+        //获取转介绍人信息
+        $referralInfo = StudentModel::getRecord(['uuid' => $data[0]["referrer_uuid"]], ['name', 'mobile'], false);
+        return $referralInfo;
     }
 
     /**
@@ -641,7 +649,8 @@ class StudentService
             $row['parent_channel'] = $item['parent_channel_name'];
             $row['register_time'] = date('Y-m-d H:i', $item['create_time']);
             $remark['latest_remark_status'] = DictService::getKeyValue(Constants::DICT_TYPE_STUDENT_REMARK_STATUS, $item['latest_remark_status']);
-
+            $row['allot_collection_time'] = empty($item['allot_collection_time']) ? '-' : date('Y-m-d H:i', $item['allot_collection_time']);
+            $row['wechat_account'] = $item['wechat_account'];
             $data[] = $row;
         }
         return $data;
@@ -784,9 +793,11 @@ class StudentService
      * @param $assistantId
      * @param $employeeId
      * @param $time
+     * @param $operateType
+     * @param $extraInfo
      * @return array
      */
-    public static function formatAllotAssistantLogData($students, $assistantId, $employeeId, $time)
+    public static function formatAllotAssistantLogData($students, $assistantId, $employeeId, $time, $operateType = StudentAssistantLogModel::OPERATE_TYPE_ALLOT, $extraInfo = '')
     {
         $data = [];
         foreach($students as $student){
@@ -796,7 +807,8 @@ class StudentService
             $row['new_assistant_id'] = $assistantId;
             $row['create_time'] = $time;
             $row['operator_id'] = $employeeId;
-            $row['operate_type'] = StudentAssistantLogModel::OPERATE_TYPE_ALLOT;
+            $row['operate_type'] = $operateType;
+            $row['extra_info'] = $extraInfo;
             $data[] = $row;
         }
         return $data;
@@ -832,5 +844,17 @@ class StudentService
     public static function updateStudentRemark($studentId, $remarkId, $remarkStatus)
     {
         StudentModel::updateStudent($studentId, ['last_remark_id' => $remarkId, 'latest_remark_status' => $remarkStatus]);
+    }
+
+    /**
+     * 编辑学生微信账号数据
+     * @param $studentId
+     * @param $wechatAccount
+     * @return int|null
+     */
+    public static function updateAddWeChatAccount($studentId, $wechatAccount)
+    {
+        $data = ['wechat_account' => $wechatAccount];
+        return StudentModel::updateStudent($studentId, $data);
     }
 }

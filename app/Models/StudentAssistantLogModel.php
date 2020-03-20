@@ -16,7 +16,8 @@ class StudentAssistantLogModel extends Model
     public static $table = 'student_assistant_log';
     public static $redisExpire = 1;
 
-    //操作类型 分配助教
+    //操作类型 1分配助教 2班级分配助教触发的学生分配助教
     const OPERATE_TYPE_ALLOT = 1;
+    const OPERATE_TYPE_ALLOT_COLLECTION_ASSISTANT = 2;
 
 }

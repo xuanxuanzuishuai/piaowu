@@ -386,7 +386,9 @@ class StudentModel extends Model
             's.has_review_course',
             's.assistant_id',
             'e.name(assistant_name)',
-            's.is_add_assistant_wx'
+            's.is_add_assistant_wx',
+            's.wechat_account',
+            's.uuid'
         ];
         $where = ['s.id' => $studentId];
         return MysqlDB::getDB()->get($table, $join, $fields, $where);
@@ -557,12 +559,25 @@ class StudentModel extends Model
             $whereSql .= " AND s.create_time <= :register_end_time ";
             $map[':register_end_time'] = $params['register_end_time'];
         }
-
+        //学员微信号
+        if (!empty($params['wechat_account'])) {
+            $whereSql .= " AND s.wechat_account like :wechat_account ";
+            $map[':wechat_account'] = Util::sqlLike($params['wechat_account']);
+        }
         if (!empty($params['latest_remark_status'])) {
             $whereSql .= " AND s.latest_remark_status = :latest_remark_status ";
             $map[':latest_remark_status'] = $params['latest_remark_status'];
         }
-
+        //查询入班时间开始时间
+        if (!empty($params['allot_collection_start_time'])) {
+            $whereSql .= " AND s.allot_collection_time >= :allot_collection_start_time ";
+            $map[':allot_collection_start_time'] = $params['allot_collection_start_time'];
+        }
+        //查询入班时间结束时间
+        if (!empty($params['allot_collection_end_time'])) {
+            $whereSql .= " AND s.allot_collection_time <= :allot_collection_end_time ";
+            $map[':allot_collection_end_time'] = Util::getStartEndTimestamp($params['allot_collection_end_time'])[1];
+        }
         return [$whereSql, $map];
     }
 
@@ -610,12 +625,21 @@ class StudentModel extends Model
                        `co`.`name` AS collection_name,
                        `ch`.`name` AS channel_name,
                        `pch`.`name` AS parent_channel_name,
-                       `s`.`create_time` ";
+                       `s`.`create_time`,
+                       `s`.`allot_collection_time`,
+                       `s`.`wechat_account`";
 
-        //排序条件
-        if(!empty($params['order_field'])){
-            $where .= " ORDER BY s.id ";
+        //排序条件:默认按照注册时间倒叙
+        $orderSql = 'ORDER BY ';
+        $allotCollectionTimeSortRule = strtolower($params['order_field']['allot_collection_time']);
+        if ($allotCollectionTimeSortRule == 'desc') {
+            $orderSql .= "s.allot_collection_time " . $allotCollectionTimeSortRule . ",";
+        } elseif ($allotCollectionTimeSortRule == 'asc') {
+            $nowTime = time();
+            $select .= ',if(`s`.`allot_collection_time`=0,' . $nowTime . ',`s`.`allot_collection_time`) as actime';
+            $orderSql .= "actime " . $allotCollectionTimeSortRule . ",";
         }
+        $where .= $orderSql . ' s.id desc';
         //分页
         if ($page > 0 && $count > 0) {
             $where .= " LIMIT " . ($page - 1) * $count . "," . $count;

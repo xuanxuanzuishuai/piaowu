@@ -25,6 +25,7 @@ class Erp
     const API_AWARD_LIST = '/api/dss/awards';
     const API_UPDATE_TASK = '/api/dss/add_user_event_task';
     const API_UPDATE_AWARD = '/api/dss/award';
+    const API_USER_REFERRAL_INFO = '/api/dss/get_user_referral_info';
 
     private $host;
 
@@ -247,6 +248,19 @@ class Erp
             'reason' => $reason,
         ];
         $response = HttpHelper::requestJson($this->host . self::API_UPDATE_AWARD, $params, 'POST');
+        return $response;
+    }
+
+
+    /**
+     * 转介绍列表
+     * @param $params
+     * @return array|bool
+     */
+    public function userReferralInfo($params)
+    {
+        $params['app_id'] = self::SELF_APP_ID;
+        $response = HttpHelper::requestJson($this->host . self::API_USER_REFERRAL_INFO, $params);
         return $response;
     }
 }

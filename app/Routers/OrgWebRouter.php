@@ -131,6 +131,7 @@ class OrgWebRouter extends RouterBase
         // 学生跟进记录
         '/student/student_remark/add' => array('method' => array('post'), 'call' => '\App\Controllers\Student\StudentRemark:add'),
         '/student/student_remark/remark_list' => array('method' => array('get'), 'call' => '\App\Controllers\Student\StudentRemark:remarkList'),
+        '/student/student/updateAddWeChatAccount' => array('method' => array('post'), 'call' => '\App\Controllers\Student\Student:updateAddWeChatAccount'),
 
         '/goods/course/list' => array('method' => array('get'), 'call' => '\App\Controllers\Course\Course:list'),
         '/goods/course/detail' => array('method' => array('get'), 'call' => '\App\Controllers\Course\Course:detail'),
@@ -356,6 +357,7 @@ class OrgWebRouter extends RouterBase
         '/org_web/collection/total_list' => ['method' => ['get'], 'call' => Collection::class . ':totalList'],
         '/org_web/collection/getCollectionDropDownList' => ['method' => ['get'], 'call' => Collection::class . ':getCollectionDropDownList'],
         '/org_web/collection/getCollectionPackageList' => ['method' => ['get'], 'call' => Collection::class . ':getCollectionPackageList'],
+        '/org_web/collection/reAllotCollectionAssistant' => ['method' => ['post'], 'call' => Collection::class . ':reAllotCollectionAssistant'],
 
         //课包管理接口
         '/org_web/package/packageDictDetail' => ['method' => ['get'], 'call' => Package::class . ':packageDictDetail'],
