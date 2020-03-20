@@ -134,8 +134,8 @@ class Erp extends ControllerBase
             // 更新点评课标记
             $wechatcsId = empty($student['wechatcs_id']) ? $wechatcs['id'] : null;
             ReviewCourseService::updateReviewCourseFlag($student['id'], $reviewCourseType, $wechatcsId);
-            //更新学生分配班级信息 一个学员只能分配给一个班级
-            if (empty($student['collection_id'])) {
+            //更新学生分配班级信息 一个学员只能分配给一个班级(当前只有体验课课包类型才允许分班)
+            if (empty($student['collection_id']) && ($reviewCourseType == ReviewCourseModel::REVIEW_COURSE_49)) {
                 ReviewCourseService::updateCollectionData($student, $reviewCourseType,$params['package_id']);
             }
         }
