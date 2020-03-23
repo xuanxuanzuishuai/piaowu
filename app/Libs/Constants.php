@@ -147,6 +147,8 @@ class Constants
     //订单是否进入学生账户
     const DICT_TYPE_BILL_IS_ENTER_ACCOUNT = 'bill_is_enter_account';
 
+    // 学生跟进状态
+    const DICT_TYPE_STUDENT_REMARK_STATUS = 'student_remark_status';
 
     // 学生账户类型
     const DICT_TYPE_STUDENT_ACCOUNT_TYPE = 'student_account_type';

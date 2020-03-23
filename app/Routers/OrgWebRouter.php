@@ -128,6 +128,9 @@ class OrgWebRouter extends RouterBase
         '/student/student/allotCollection' => array('method' => array('post'), 'call' => '\App\Controllers\Student\Student:allotCollection'),
         '/student/student/allotAssistant' => array('method' => array('post'), 'call' => '\App\Controllers\Student\Student:allotAssistant'),
         '/org_web/channel/getChannels' => array('method' => array('get'), 'call' => '\App\Controllers\Student\Student:getSChannels'),
+        // 学生跟进记录
+        '/student/student_remark/add' => array('method' => array('post'), 'call' => '\App\Controllers\Student\StudentRemark:add'),
+        '/student/student_remark/remark_list' => array('method' => array('get'), 'call' => '\App\Controllers\Student\StudentRemark:remarkList'),
 
         '/goods/course/list' => array('method' => array('get'), 'call' => '\App\Controllers\Course\Course:list'),
         '/goods/course/detail' => array('method' => array('get'), 'call' => '\App\Controllers\Course\Course:detail'),

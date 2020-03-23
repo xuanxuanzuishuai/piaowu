@@ -640,6 +640,8 @@ class StudentService
             $row['channel'] = $item['channel_name'];
             $row['parent_channel'] = $item['parent_channel_name'];
             $row['register_time'] = date('Y-m-d H:i', $item['create_time']);
+            $remark['latest_remark_status'] = DictService::getKeyValue(Constants::DICT_TYPE_STUDENT_REMARK_STATUS, $item['latest_remark_status']);
+
             $data[] = $row;
         }
         return $data;
@@ -825,5 +827,10 @@ class StudentService
     public static function getStudentByMobile($mobile)
     {
         return StudentModel::getRecord(['mobile' => $mobile]);
+    }
+
+    public static function updateStudentRemark($studentId, $remarkId, $remarkStatus)
+    {
+        StudentModel::updateStudent($studentId, ['last_remark_id' => $remarkId, 'latest_remark_status' => $remarkStatus]);
     }
 }

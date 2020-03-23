@@ -558,6 +558,11 @@ class StudentModel extends Model
             $map[':register_end_time'] = $params['register_end_time'];
         }
 
+        if (!empty($params['latest_remark_status'])) {
+            $whereSql .= " AND s.latest_remark_status = :latest_remark_status ";
+            $map[':latest_remark_status'] = $params['latest_remark_status'];
+        }
+
         return [$whereSql, $map];
     }
 
@@ -598,6 +603,7 @@ class StudentModel extends Model
                        `s`.`sub_status`,
                        `s`.`first_pay_time`,
                        `s`.`has_review_course`,
+                       `s`.`latest_remark_status`,
                        `sw`.`id` AS wx_id,
                        `ass`.`name` AS assistant_name,
                        `s`.`is_add_assistant_wx`,
