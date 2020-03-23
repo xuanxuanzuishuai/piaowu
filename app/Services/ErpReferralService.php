@@ -67,8 +67,10 @@ class ErpReferralService
             $errorCode = $response['errors'][0]['err_no'] ?? 'erp_request_error';
             throw new RunTimeException([$errorCode]);
         }
-
         $list = [];
+        //批量获取学生信息
+        $uuidList = array_merge(array_column($response['data']['records'], 'student_uuid'), array_column($response['data']['records'], 'referrer_uuid'));
+        $studentInfoList = array_column(StudentService::getByUuids($uuidList, ['name', 'id', 'uuid']), null, 'uuid');
         foreach ($response['data']['records'] as $referred) {
             $tasks = $referred['tasks'] ?? [];
             $maxRefTask = self::findMaxRefTask($tasks);
@@ -76,13 +78,15 @@ class ErpReferralService
 
             $item = [
                 'student_uuid' => $referred['student_uuid'],
-                'student_name' => $referred['student_name'],
+                'student_name' => $studentInfoList[$referred['student_uuid']]['name'],
                 'student_mobile_hidden' => Util::hideUserMobile($referred['student_mobile']),
                 'referrer_uuid' => $referred['referrer_uuid'],
-                'referrer_name' => $referred['referrer_name'],
+                'referrer_name' => $studentInfoList[$referred['referrer_uuid']]['name'],
                 'referrer_mobile_hidden' => Util::hideUserMobile($referred['referrer_mobile']),
                 'max_event_task_name' => self::EVENT_TASKS[$maxRefTaskId] ?? '-',
                 'register_time' => $referred['create_time'],
+                'student_id' => $studentInfoList[$referred['student_uuid']]['id'],
+                'referral_student_id' => $studentInfoList[$referred['referrer_uuid']]['id'],
             ];
             $list[] = $item;
         }
@@ -197,13 +201,16 @@ class ErpReferralService
         $reviewerNames = array_column($reviewerNames, 'name', 'id');
 
         $list = [];
+        //批量获取学生信息
+        $uuidList = array_merge(array_column($response['data']['records'], 'student_uuid'), array_column($response['data']['records'], 'referrer_uuid'));
+        $studentInfoList = array_column(StudentService::getByUuids($uuidList, ['name', 'id', 'uuid']), null, 'uuid');
         foreach ($response['data']['records'] as $award) {
             $item = [
                 'student_uuid' => $award['student_uuid'],
-                'student_name' => $award['student_name'],
+                'student_name' => $studentInfoList[$award['student_uuid']]['name'],
                 'student_mobile_hidden' => Util::hideUserMobile($award['student_mobile']),
                 'referrer_uuid' => $award['referrer_uuid'],
-                'referrer_name' => $award['referrer_name'],
+                'referrer_name' => $studentInfoList[$award['referrer_uuid']]['name'],
                 'referrer_mobile_hidden' => Util::hideUserMobile($award['referrer_mobile']),
                 'event_task_id' => $award['event_task_id'],
                 'event_task_name' => $award['event_task_name'],
@@ -218,6 +225,8 @@ class ErpReferralService
                 'reviewer_name' => $reviewerNames[$award['reviewer_id']] ?? '',
                 'reason' => $award['reason'],
                 'delay' => $award['delay'],
+                'student_id' => $studentInfoList[$award['student_uuid']]['id'],
+                'referral_student_id' => $studentInfoList[$award['referrer_uuid']]['id'],
             ];
             $list[] = $item;
         }

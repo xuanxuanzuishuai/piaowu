@@ -857,4 +857,15 @@ class StudentService
         $data = ['wechat_account' => $wechatAccount];
         return StudentModel::updateStudent($studentId, $data);
     }
+
+    /**
+     * 通过uuid获取学生信息
+     * @param $uuidList
+     * @param $field
+     * @return array
+     */
+    public static function getByUuids($uuidList, $field = [])
+    {
+        return StudentModel::getRecords(['uuid' => $uuidList], $field, false);
+    }
 }
