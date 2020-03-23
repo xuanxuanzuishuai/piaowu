@@ -216,12 +216,12 @@ class CollectionService
                         LEFT JOIN employee AS c ON a.assistant_id = c.id 
                         " . $where . ") AS c
                     LEFT JOIN student AS s ON c.id = s.collection_id
-                    group by c.id " . $having . $orderBy . $limit;
+                    group by c.id " . $having;
         $countSql = "SELECT count(*) as datanum, " . $whereSql;
         $countData = $db->queryAll($countSql);
         $count = count($countData);
         if (!empty($count)) {
-            $listSql = "SELECT c.*," . $whereSql;
+            $listSql = "SELECT c.*," . $whereSql . $orderBy . $limit;
             $list = $db->queryAll($listSql);
             $dictTypeList = DictService::getListsByTypes([Constants::COLLECTION_PUBLISH_STATUS, Constants::COLLECTION_PROCESS_STATUS]);
             $collectionProcessStatusDict = array_column($dictTypeList[Constants::COLLECTION_PROCESS_STATUS], null, "code");
