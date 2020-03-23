@@ -211,18 +211,29 @@ class Auth extends ControllerBase
         $db = MysqlDB::getDB();
 
         $channelId = $params['channel_id'] ?? StudentModel::CHANNEL_SPACKAGE_LANDING;
-        $adId = $params['ad_id'] ?? 0;
-        $callback = $params['callback'] ?? '';
+
+
+        $adChannel = $params['ad'];
+        $adParams = [
+            // 抖音参数
+            'ad_id' => $params['ad_id'] ?? 0,
+            'callback' => $params['callback'] ?? '',
+
+            // 广点通参数
+            'qz_gdt' => $params['qz_gdt'] ?? '',
+
+            // 微信参数
+            'gdt_vid' => $params['gdt_vid'] ?? '',
+            'wx_code' => $params['wx_code'] ?? '',
+        ];
+
         try {
             $db->beginTransaction();
             $data = StudentServiceForWeb::mobileLogin($params['mobile'],
                 $params['code'],
                 $channelId,
-                $adId,
-                $callback,
-                'http://www.xiaoyezi.com/index.html',
-                $params['wx_code'],
-                $params['click_id']);
+                $adChannel,
+                $adParams);
             $db->commit();
 
         } catch (RunTimeException $e) {

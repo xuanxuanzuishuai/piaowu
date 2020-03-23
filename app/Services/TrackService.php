@@ -9,9 +9,12 @@
 namespace App\Services;
 
 
+use App\Libs\DictConstants;
 use App\Libs\HttpHelper;
 use App\Libs\SimpleLogger;
+use App\Libs\UserCenter;
 use App\Models\TrackModel;
+use App\Models\UserWeixinModel;
 
 class TrackService
 {
@@ -64,6 +67,8 @@ class TrackService
     public static function trackEvent($eventType, $trackParams, $userId = NULL)
     {
         $completeParams = self::completeHashData($trackParams);
+
+        // 查找是否
         $trackData = self::match($completeParams);
 
         // 未匹配上，插入新用户ad信息
@@ -207,9 +212,9 @@ class TrackService
             case self::CHANNEL_OCEAN:
                 return self::trackCallbackOceanEngine($eventType, $trackData);
             case self::CHANNEL_GDT:
-                return true;
+                return self::trackCallbackGDT($eventType, $trackData);
             case self::CHANNEL_WX:
-                return true;
+                return self::trackCallbackWX($eventType, $trackData);
             case self::CHANNEL_OCEAN_LEADS:
                 return self::trackCallbackOceanEngineLeads($eventType, $trackData);
             default:
@@ -276,6 +281,79 @@ class TrackService
 
         $response = HttpHelper::requestJson($api, $data, 'GET');
         $success = (!empty($response) && $response['ret'] == 0);
+
+        return $success;
+    }
+
+    public static function trackCallbackGDT($eventType, $trackData)
+    {
+        $api = 'https://api.e.qq.com/v1.1/user_actions/add';
+        switch ($eventType) {
+            case self::TRACK_EVENT_FORM_COMPLETE: // 初始化操作不用回调接口
+                $type = 'REGISTER';
+                break;
+            default:
+                return false;
+        }
+
+        $commonParameters = array (
+            'access_token' => $_ENV['GDT_ACCESS_TOKEN'],
+            'timestamp' => time(),
+            'nonce' => md5(uniqid('', true))
+        );
+
+        $parameters = [
+            'account_id' => $_ENV['GDT_ACCOUNT_ID'],
+            'user_action_set_id' => $_ENV['GDT_USER_ACTION_SET_ID'],
+            'actions' => [
+                [
+                    'action_time' => time(),
+                    'user_id' => [
+                        'hash_phone' => md5($trackData['mobile'])
+                    ],
+                    'action_type' => $type,
+                    'trace' => [
+                        'click_id' => $trackData['qz_gdt']
+                    ],
+                ]
+            ]
+        ];
+        $api = $api . '?' . http_build_query($commonParameters);
+
+        $response = HttpHelper::requestJson($api, $parameters, 'POST');
+        $success = (!empty($response) && $response['ret'] == 0);
+
+        return $success;
+    }
+
+    public static function trackCallbackWX($eventType, $trackData)
+    {
+        switch ($eventType) {
+            case self::TRACK_EVENT_FORM_COMPLETE: // 初始化操作不用回调接口
+                $type = 'RESERVATION';
+                break;
+            default:
+                return false;
+        }
+
+        if ($trackData['gdt_vid']) {
+            return false;
+        }
+
+        //注册成功后，反馈给微信广告平台
+        $userActionSetId = DictConstants::get(DictConstants::LANDING_CONFIG, 'user_action_set_id');
+        $accessToken = WeChatService::getAccessToken(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT, UserWeixinModel::USER_TYPE_STUDENT);
+        $success = WeChatService::feedback($accessToken, [
+            'actions' => [
+                [
+                    'user_action_set_id' => $userActionSetId,
+                    'action_time'        => time(),
+                    'action_type'        => $type,
+                    'url'                => 'http://www.xiaoyezi.com/index.html',
+                    'trace'              => ['click_id' => $trackData['gdt_vid']]
+                ]
+            ]
+        ]);
 
         return $success;
     }
