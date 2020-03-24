@@ -26,6 +26,7 @@ use App\Services\StudentService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
+use App\Libs\HttpHelper;
 
 /**
  * 搜索客户
@@ -37,10 +38,9 @@ class Student extends ControllerBase
      * 获取学员列表(机构用)
      * @param Request $request
      * @param Response $response
-     * @param $argv
      * @return Response
      */
-    public function list(Request $request, Response $response, $argv)
+    public function list(Request $request, Response $response)
     {
         $params = $request->getParams();
         $rules = [
@@ -86,10 +86,9 @@ class Student extends ControllerBase
      * 学生列表，内部用，可将org_id作为筛选条件
      * @param Request $request
      * @param Response $response
-     * @param $argv
      * @return Response
      */
-    public function listByOrg(Request $request, Response $response, $argv)
+    public function listByOrg(Request $request, Response $response)
     {
         $params = $request->getParams();
         $rules = [
@@ -134,10 +133,9 @@ class Student extends ControllerBase
      * 获取学生渠道
      * @param Request $request
      * @param Response $response
-     * @param $argv
      * @return Response
      */
-    public function getSChannels(Request $request, Response $response, $argv)
+    public function getSChannels(Request $request, Response $response)
     {
         $parent_id = $request->getParam('parent_id', 0);
 
@@ -152,10 +150,9 @@ class Student extends ControllerBase
      * 根据学生ID查询一条详情
      * @param Request $request
      * @param Response $response
-     * @param $argv
      * @return Response
      */
-    public function info(Request $request, Response $response, $argv)
+    public function info(Request $request, Response $response)
     {
         $params = $request->getParams();
         $rules = [
@@ -200,10 +197,9 @@ class Student extends ControllerBase
      * 修改学生信息
      * @param Request $request
      * @param Response $response
-     * @param $argv
      * @return Response
      */
-    public function modify(Request $request, Response $response, $argv)
+    public function modify(Request $request, Response $response)
     {
         $params = $request->getParams();
         $rules = [
@@ -284,11 +280,9 @@ class Student extends ControllerBase
      * 添加学生
      * @param Request $request
      * @param Response $response
-     * @param $argv
      * @return Response
-     * @throws \Exception
      */
-    public function add(Request $request, Response $response, $argv)
+    public function add(Request $request, Response $response)
     {
         $params = $request->getParams();
         $rules = [
@@ -388,10 +382,9 @@ class Student extends ControllerBase
      * 姓名模糊匹配，手机号等于匹配
      * @param Request $request
      * @param Response $response
-     * @param $argv
      * @return Response
      */
-    public function fuzzySearch(Request $request, Response $response, $argv)
+    public function fuzzySearch(Request $request, Response $response)
     {
         $params = $request->getParams();
         $rules = [
@@ -430,10 +423,9 @@ class Student extends ControllerBase
      * 学生账户日志
      * @param Request $request
      * @param Response $response
-     * @param $argv
      * @return Response
      */
-    public static function accountLog(Request $request, Response $response, $argv)
+    public static function accountLog(Request $request, Response $response)
     {
         $params = $request->getParams();
         $rules = [
@@ -478,10 +470,9 @@ class Student extends ControllerBase
      * 根据学生ID获取详情数据
      * @param Request $request
      * @param Response $response
-     * @param $argv
      * @return Response
      */
-    public function detail(Request $request, Response $response, $argv)
+    public function detail(Request $request, Response $response)
     {
         $params = $request->getParams();
         $rules = [
@@ -501,21 +492,20 @@ class Student extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         $data = StudentService::getStudentDetail($params['student_id']);
-        if(empty($data)) {
-            return $response->withJson(Valid::addErrors([], 'student_id', 'student_not_exist'));
+        if (empty($data)) {
+            $errorResult = Valid::addErrors([], 'student_id', 'student_not_exist');
+            return HttpHelper::buildOrgWebErrorResponse($response, $errorResult['data']['errors']);
         }
-
-        return $response->withJson(Valid::formatSuccess($data));
+        return HttpHelper::buildResponse($response, $data);
     }
 
     /**
      * 更新学生添加助教微信状态
      * @param Request $request
      * @param Response $response
-     * @param $argv
      * @return Response
      */
-    public function updateAddAssistantStatus(Request $request, Response $response, $argv)
+    public function updateAddAssistantStatus(Request $request, Response $response)
     {
         $params = $request->getParams();
         $rules = [
@@ -539,34 +529,36 @@ class Student extends ControllerBase
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        StudentService::updateAddAssistantStatus($params['student_id'], $params['add_assistant_status']);
-        return $response->withJson(Valid::formatSuccess());
+        $res = StudentService::updateAddAssistantStatus($params['student_id'], $params['add_assistant_status']);
+        if (empty($res)) {
+            $errorResult = Valid::addErrors([], 'student', 'update_date_failed');
+            return HttpHelper::buildOrgWebErrorResponse($response, $errorResult['data']['errors']);
+        }
+        return HttpHelper::buildResponse($response, []);
     }
 
     /**
      * 获取学生列表数据
      * @param Request $request
      * @param Response $response
-     * @param $argv
      * @return Response
      */
-    public function searchList(Request $request, Response $response, $argv)
+    public function searchList(Request $request, Response $response)
     {
         $params = $request->getParams();
         $employeeId = $this->getEmployeeId();
         list($page, $count) = Util::formatPageCount($params);
         $res = StudentService::searchList($params, $page, $count, $employeeId);
-        return $response->withJson(Valid::formatSuccess($res));
+        return HttpHelper::buildResponse($response, $res);
     }
 
     /**
      * 学生分配班级
      * @param Request $request
      * @param Response $response
-     * @param $argv
      * @return Response
      */
-    public function allotCollection(Request $request, Response $response, $argv)
+    public function allotCollection(Request $request, Response $response)
     {
         $params = $request->getParams();
         $rules = [
@@ -612,10 +604,9 @@ class Student extends ControllerBase
      * 学生分配助教
      * @param Request $request
      * @param Response $response
-     * @param $argv
      * @return Response
      */
-    public function allotAssistant(Request $request, Response $response, $argv)
+    public function allotAssistant(Request $request, Response $response)
     {
         $params = $request->getParams();
         $rules = [
@@ -690,8 +681,9 @@ class Student extends ControllerBase
         //修改数据
         $affectRow = StudentService::updateAddWeChatAccount($params['student_id'], $params['wechat_number']);
         if (empty($affectRow)) {
-            return $response->withJson(Valid::addErrors([], 'student', 'update_date_failed'));
+            $errorResult = Valid::addErrors([], 'student', 'update_date_failed');
+            return HttpHelper::buildOrgWebErrorResponse($response, $errorResult['data']['errors']);
         }
-        return $response->withJson(Valid::formatSuccess());
+        return HttpHelper::buildResponse($response, []);
     }
 }
