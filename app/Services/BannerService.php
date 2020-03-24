@@ -39,6 +39,7 @@ class BannerService
                 'id' => $b['id'],
                 'action_type' => $b['action_type'],
                 'action' => self::prepareAction($b['action_type'], json_decode($b['action_detail'], true)),
+                'update_time' => $b['update_time'],
             ];
 
             $showMain = $b['show_main'];
@@ -195,6 +196,7 @@ class BannerService
     {
         $params['operator'] = $employeeId;
         $params['create_time'] = time();
+        $params['update_time'] = 0;
         $res = BannerModel::insertRecord($params);
         if(!$res){
             return Valid::addErrors([], 'add_banner_failed', 'add_banner_failed');
@@ -269,6 +271,8 @@ class BannerService
     {
         $id = $params['id'];
         unset($params['id']);
+        $params['update_time'] = time();
+
         $res = BannerModel::updateRecord($id, $params);
         if($res){
             return Valid::formatSuccess();

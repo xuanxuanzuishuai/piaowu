@@ -1,0 +1,2 @@
+ALTER TABLE `banner`
+  ADD COLUMN `update_time` INT NOT NULL DEFAULT 0 COMMENT '更新时间';
