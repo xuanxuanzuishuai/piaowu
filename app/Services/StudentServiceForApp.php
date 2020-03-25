@@ -16,7 +16,6 @@ use App\Libs\ResponseError;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Libs\Util;
-use App\Models\ClassV1UserModel;
 use App\Models\ReferralModel;
 use App\Models\StudentModel;
 use App\Models\StudentModelForApp;
@@ -151,11 +150,6 @@ class StudentServiceForApp
         $token = StudentModelForApp::genStudentToken($student['id']);
         StudentModelForApp::setStudentToken($student['id'], $token);
 
-        $teachers = StudentModelForApp::getTeacherIds($student['id']);
-        //学生所在教室对应的所有老师ID
-        $classTeachers = ClassV1UserModel::selectClassTeacherByStudent($student['id']);
-        $teachers = array_unique(array_merge($teachers, $classTeachers));
-
         $flags = FlagsService::flagsToArray($student['flags']);
 
 
@@ -206,7 +200,7 @@ class StudentServiceForApp
             'first_pay_time' => (int)$student['first_pay_time'],
             'last_play_time' => (int)$student['last_play_time'],
             'token' => $token,
-            'teachers' => $teachers,
+            'teachers' => [],
             'flags' => $flags,
             'is_anonymous' => 0,
         ];
@@ -233,11 +227,6 @@ class StudentServiceForApp
             return ['invalid_token'];
         }
 
-        $teachers = StudentModelForApp::getTeacherIds($student['id']);
-        //学生所在教室对应的所有老师ID
-        $classTeachers = ClassV1UserModel::selectClassTeacherByStudent($student['id']);
-        $teachers = array_unique(array_merge($teachers, $classTeachers));
-
         $flags = FlagsService::flagsToArray($student['flags']);
 
         // 新曲谱灰测标记
@@ -287,7 +276,7 @@ class StudentServiceForApp
             'first_pay_time' => (int)$student['first_pay_time'],
             'last_play_time' => (int)$student['last_play_time'],
             'token' => $token,
-            'teachers' => $teachers,
+            'teachers' => [],
             'flags' => $flags,
             'is_anonymous' => 0,
         ];
