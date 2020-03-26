@@ -648,7 +648,7 @@ class StudentService
             $row['channel'] = $item['channel_name'];
             $row['parent_channel'] = $item['parent_channel_name'];
             $row['register_time'] = date('Y-m-d H:i', $item['create_time']);
-            $remark['latest_remark_status'] = DictService::getKeyValue(Constants::DICT_TYPE_STUDENT_REMARK_STATUS, $item['latest_remark_status']);
+            $row['latest_remark_status'] = DictService::getKeyValue(Constants::DICT_TYPE_STUDENT_REMARK_STATUS, $item['latest_remark_status']);
             $row['allot_collection_time'] = empty($item['allot_collection_time']) ? '-' : date('Y-m-d H:i', $item['allot_collection_time']);
             $row['wechat_account'] = $item['wechat_account'];
             $data[] = $row;
