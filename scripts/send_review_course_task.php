@@ -61,13 +61,6 @@ foreach ($tasks as $task) {
         continue;
     }
 
-    if (in_array('VERY_UNSKILLED', $report['tts_report_code'])
-        || in_array('NO_VALID_PRACTICE', $report['tts_report_code'])) {
-        $result['invalid_practice']['count']++;
-        $result['invalid_practice']['ids'][] = $task['id'];
-        continue;
-    }
-
     try {
         $retMsg = ReviewCourseService::sendTaskReview($task['id']);
         SimpleLogger::info('send review course task ret', [
