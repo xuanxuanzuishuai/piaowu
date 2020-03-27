@@ -23,24 +23,18 @@ class ErpService
     /**
      * @param $studentData
      * @param $exchangeType
-     * @param $erpBillId
-     * @param $erpBillAmount
-     * @param $erpBillAppId
-     * @param $erpBillPackageId
      * @param int $giftCodeNum
      * @param int $giftCodeUnit
      * @param bool $autoApply
+     * @param array $billInfo
      * @return array [string errorCode, array giftCodes]
      */
     public static function exchangeGiftCode($studentData,
                                             $exchangeType,
-                                            $erpBillId,
-                                            $erpBillAmount,
-                                            $erpBillAppId,
-                                            $erpBillPackageId,
                                             $giftCodeNum = 1,
                                             $giftCodeUnit = GiftCodeModel::CODE_TIME_YEAR,
-                                            $autoApply = false)
+                                            $autoApply = false,
+                                            $billInfo = [])
     {
         $student = StudentService::getByUuid($studentData['uuid']);
 
@@ -67,16 +61,6 @@ class ErpService
             return ['user_register_fail', null];
         }
 
-        // 不发货黑名单
-        /*
-        $blackList = [
-        ];
-        if (in_array($student['mobile'], $blackList)) {
-            SimpleLogger::info("user in black list", ['mobile' => $student['mobile']]);
-            return [null, []];
-        }
-        */
-
         $orgId = DictConstants::get(DictConstants::SPECIAL_ORG_ID, 'panda');
         StudentService::bindOrg($orgId, $student['id']);
 
@@ -91,10 +75,8 @@ class ErpService
             NULL,
             EmployeeModel::SYSTEM_EMPLOYEE_ID,
             $now,
-            $erpBillId,
-            $erpBillAmount,
-            $erpBillAppId,
-            $erpBillPackageId);
+            $billInfo
+        );
 
         if (empty($giftCodes)) {
             return ['create_gift_code_fail', null];

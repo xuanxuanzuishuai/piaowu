@@ -57,6 +57,11 @@ class Erp extends ControllerBase
                 'error_code' => 'bill_id_is_required'
             ],
             [
+                'key' => 'parent_bill_id',
+                'type' => 'required',
+                'error_code' => 'bill_id_is_required'
+            ],
+            [
                 'key' => 'bill_amount',
                 'type' => 'required',
                 'error_code' => 'bill_amount_is_required'
@@ -101,13 +106,16 @@ class Erp extends ControllerBase
                 'birthday' => $params['birthday']
             ],
             $params['type'],
-            (int)$params['bill_id'],
-            (int)$params['bill_amount'],
-            (int)$params['app_id'],
-            (int)$params['package_id'],
             $giftCodeNum,
             $giftCodeUnit,
-            $autoApply
+            $autoApply,
+            [
+                'bill_id' => $params['bill_id'],
+                'parent_bill_id' => $params['parent_bill_id'],
+                'bill_amount' => (int)$params['bill_amount'],
+                'app_id' => (int)$params['app_id'],
+                'package_id' => (int)$params['package_id'],
+            ]
         );
 
         if (!empty($errorCode)) {

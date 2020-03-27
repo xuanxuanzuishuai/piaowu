@@ -273,4 +273,15 @@ class GiftCodeModel extends Model
         $db = MysqlDB::getDB();
         return $db->get(self::$table, '*', ['bill_id' => $billId]);
     }
+
+    /**
+     * 获取激活码信息
+     * @param $parentBillId
+     * @return mixed
+     */
+    public static function getByParentBillId($parentBillId)
+    {
+        $db = MysqlDB::getDB();
+        return $db->get(self::$table, '*', ['parent_bill_id' => $parentBillId]);
+    }
 }

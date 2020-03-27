@@ -84,8 +84,10 @@ class Pay extends ControllerBase
 
         $status = PayServices::getBillStatus($params['bill_id']);
         if ($status == PayServices::BILL_STATUS_SUCCESS) {
-            $giftCode = GiftCodeModel::getByBillId($params['bill_id']);
-        } else {
+            $giftCode = GiftCodeModel::getByParentBillId($params['bill_id']);
+        }
+
+        if (empty($giftCode)) {
             $giftCode = [];
         }
 
