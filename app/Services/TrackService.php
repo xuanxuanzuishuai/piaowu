@@ -336,10 +336,6 @@ class TrackService
                 return false;
         }
 
-        if ($trackData['gdt_vid']) {
-            return false;
-        }
-
         //注册成功后，反馈给微信广告平台
         $userActionSetId = DictConstants::get(DictConstants::LANDING_CONFIG, 'user_action_set_id');
         $accessToken = WeChatService::getAccessToken(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT, UserWeixinModel::USER_TYPE_STUDENT);
