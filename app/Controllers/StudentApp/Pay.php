@@ -53,11 +53,25 @@ class Pay extends ControllerBase
         return $response->withJson($ret, StatusCode::HTTP_OK);
     }
 
-    public function packages(Request $request, Response $response)
+    public function appPackages(Request $request, Response $response)
     {
         Util::unusedParam($request);
 
-        $packages = PayServices::getPackages( $this->ci['student']['id']);
+        $packages = PayServices::getPackages( $this->ci['student']['id'],1);
+
+        return $response->withJson([
+            'code' => 0,
+            'data' => [
+                'packages' => $packages,
+            ]
+        ], StatusCode::HTTP_OK);
+    }
+
+    public function wxPackages(Request $request, Response $response)
+    {
+        Util::unusedParam($request);
+
+        $packages = PayServices::getPackages( $this->ci['student']['id'],2);
 
         return $response->withJson([
             'code' => 0,

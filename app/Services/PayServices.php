@@ -25,9 +25,10 @@ class PayServices
     /**
      * 获取产品包
      * @param int $studentId
+     * @param int $channel
      * @return array
      */
-    public static function getPackages($studentId)
+    public static function getPackages($studentId, $channel = 1)
     {
         $packages = [];
 
@@ -40,7 +41,7 @@ class PayServices
 
 
         $erp = new Erp();
-        $ret = $erp->getPackages($student['uuid']);
+        $ret = $erp->getPackages($student['uuid'], $channel);
         $erpPackages = $ret['data'] ?? [];
 
         usort($erpPackages, function ($a, $b) {
