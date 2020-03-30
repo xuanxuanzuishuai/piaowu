@@ -29,6 +29,12 @@ class PlayClassRecordMessageService
             case 'class_update':
                 $ret = self::save($message);
                 break;
+            case 'play_start':
+                $ret = self::playStart($message['msg_body']);
+                break;
+            case 'play_end':
+                $ret = self::playEnd($message['msg_body']);
+                break;
 
             default:
                 SimpleLogger::info("[PlayClassRecordMessageService handleMessage] unknown message", [
@@ -77,5 +83,20 @@ class PlayClassRecordMessageService
         ];
         $id = PlayClassRecordMessageModel::insertRecord($data, false);
         return $id;
+    }
+
+    public static function playStart($message)
+    {
+        $student = StudentService::getByUuid($message['uuid']);
+        if (empty($student)) {
+            return 0;
+        }
+
+        return AIPlayRecordService::start($student['id'], $message);
+    }
+
+    public static function playEnd($message)
+    {
+        return AIPlayRecordService::end($message);
     }
 }

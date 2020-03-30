@@ -18,7 +18,6 @@ use App\Libs\OpernCenter;
 use App\Models\ReviewCourseModel;
 use App\Models\ReviewCourseTaskModel;
 use App\Models\StudentModel;
-use App\Models\StudentOrgModel;
 use Lcobucci\JWT\Signer\Hmac\Sha256;
 use Lcobucci\JWT\Builder;
 use Lcobucci\JWT\Parser;
@@ -303,76 +302,10 @@ class PlayRecordService
         return $data;
     }
 
-    /**
-     * 获取测评得分详情
-     * @param $student_id
-     * @param $ai_record_id
-     * @return array
-     */
-    public static function getAIRecordGrade($student_id, $ai_record_id){
-        if (empty($ai_record_id)){
-            return [];
-        }
-        $search_sql = ["ai_record_id" => $ai_record_id];
-        if (!empty($student_id)){
-            $search_sql["student_id"] = $student_id;
-        }
-        $playInfo = PlayRecordModel::getRecord($search_sql);
-        if (empty($playInfo)){
-            return [];
-        }
+    public static function getRanks($studentId, $lessonId)
+    {
 
-        $lesson_id = $playInfo["lesson_id"];
-        $data = AIPLCenter::recordGrade($ai_record_id);
-
-        if (empty($data) or $data["meta"]["code"] != 0){
-            $score_ret = [];
-        } else {
-            $score = $data["data"]["score"];
-            $score_ret = [
-                "simple_complete" => $score["simple_complete"],
-                "simple_final" => $score["simple_final"],
-                "simple_pitch" => $score["simple_pitch"],
-                "simple_rhythm" => $score["simple_rhythm"],
-                "simple_speed_average" => $score["simple_speed_average"],
-                "simple_speed" => $score["simple_speed"]
-            ];
-        }
-        $data = AIPLCenter::userAudio($ai_record_id);
-        if (empty($data) or $data["meta"]["code"] != 0){
-            $wonderful_url = "";
-        } else {
-            $wonderful_url = $data["data"]["audio_url"];
-        }
-
-        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, OpernCenter::version);
-        $res = $opn->lessonsByIds([$lesson_id]);
-        if (!empty($res['code']) && $res['code'] !== Valid::CODE_SUCCESS) {
-            $opern_list = [];
-        } else {
-            $opern_id = $res["data"][0]["opern_id"];
-            $result = $opn->staticResource($opern_id, 'png');
-            if (!empty($result['code']) && $result['code'] !== Valid::CODE_SUCCESS){
-                $opern_list = [];
-            } else {
-                $opern_list = $result["data"];
-            }
-        }
-        return [
-            "score" => $score_ret,
-            "wonderful_url" => $wonderful_url,
-            "opern_list" => $opern_list
-        ];
-    }
-
-    public static function getRanks($studentId, $lessonId, $isOrg){
-
-        $org = StudentOrgModel::getRecords(['student_id'=>$studentId, 'status'=>1], 'org_id');
-        if(!empty($isOrg) and !empty($org)){
-            $students = StudentOrgModel::getRecords(['org_id'=>$org, 'status'=>1], 'student_id');
-        }else{
-            $students = [];
-        }
+        $students = [];
         $ranks = PlayRecordModel::getRank($lessonId, $students);
         $ret = [];
         $myself = [];
@@ -409,7 +342,7 @@ class PlayRecordService
                 $myself['order'] = -1;
             }
         }
-        return ['ranks' => $ret, 'myself' => $myself, 'hasOrg' => count($org) > 0];
+        return ['ranks' => $ret, 'myself' => $myself, 'hasOrg' => false];
     }
 
     /**

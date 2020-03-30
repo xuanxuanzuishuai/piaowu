@@ -288,11 +288,6 @@ class Play extends ControllerBase
                 'key' => 'lesson_id',
                 'type' => 'required',
                 'error_code' => 'lesson_id_is_required'
-            ],
-            [
-                'key' => 'org',
-                'type' => 'required',
-                'error_code' => 'org_is_required'
             ]
         ];
 
@@ -305,7 +300,7 @@ class Play extends ControllerBase
         $studentId = $this->ci['student']['id'];
         $lessonId = $params['lesson_id'];
         $isOrg = $params['org'] == 1;
-        $ranks = PlayRecordService::getRanks($studentId, $lessonId, $isOrg);
+        $ranks = PlayRecordService::getRanks($studentId, $lessonId);
         return $response->withJson(['code'=>0, 'data'=>$ranks], StatusCode::HTTP_OK);
     }
 }
