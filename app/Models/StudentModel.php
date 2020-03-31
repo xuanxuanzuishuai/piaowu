@@ -630,7 +630,7 @@ class StudentModel extends Model
                        `s`.`wechat_account`";
 
         //排序条件:默认按照注册时间倒叙
-        $orderSql = 'ORDER BY ';
+        $orderSql = ' ORDER BY ';
         $allotCollectionTimeSortRule = strtolower($params['order_field']['allot_collection_time']);
         if ($allotCollectionTimeSortRule == 'desc') {
             $orderSql .= "s.allot_collection_time " . $allotCollectionTimeSortRule . ",";
