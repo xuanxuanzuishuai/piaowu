@@ -815,4 +815,18 @@ class Util
         $endDay = $beginDay+self::TIMESTAMP_ONEDAY-1;
         return [$beginDay, $endDay];
     }
+
+    /**
+     * 计算两个日期之间的天数:包含开始和结束日期
+     * @param string $startDate    开始日期:2020-03-01
+     * @param string $endDate      结束日期:2020-03-31
+     * @return float|int
+     */
+    public static function dateBetweenDays($startDate, $endDate)
+    {
+        $startTimeStamp = strtotime($startDate);
+        $endTimeStamp = strtotime($endDate) + self::TIMESTAMP_ONEDAY;
+        $days = ($endTimeStamp - $startTimeStamp) / self::TIMESTAMP_ONEDAY;
+        return $days;
+    }
 }
