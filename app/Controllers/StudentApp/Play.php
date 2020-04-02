@@ -16,6 +16,8 @@ use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Models\PlayRecordModel;
 use App\Models\StudentModelForApp;
+use App\Services\AIPlayRecordService;
+use App\Services\AIPlayReportService;
 use App\Services\PlayRecordService;
 use App\Services\UserPlayServices;
 use App\Services\StorageService;
@@ -133,6 +135,9 @@ class Play extends ControllerBase
             $data['end_point'] = $tokenRet['end_point'];
         }
 
+        // 插入到新数据表
+        AIPlayRecordService::insertOldPracticeData($userID, $params['data']);
+
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => $data
@@ -183,47 +188,14 @@ class Play extends ControllerBase
             return $response->withJson($errors, StatusCode::HTTP_OK);
         }
 
-        if ($param['data']['is_frag'] != 1 &&
-            $param['data']['cfg_hand'] != PlayRecordModel::CFG_HAND_LEFT &&
-            $param['data']['cfg_hand'] != PlayRecordModel::CFG_HAND_RIGHT &&
-            $param['data']['cfg_mode'] != PlayRecordModel::CFG_MODE_SLOW &&
-            $param['data']['cfg_mode'] != PlayRecordModel::CFG_MODE_STEP
-        ) {
-            // 检查作业
-            $param['data']['record_id'] = $ret['record_id'];
-            list($homeworkErrCode, $allHomeworks, $finished) = HomeworkService::checkHomework($userId, $param['data']);
-            if (!empty($homeworkErrCode)) {
-                $errors = Valid::addAppErrors([], $homeworkErrCode);
-                return $response->withJson($errors, StatusCode::HTTP_OK);
-            }
-            SimpleLogger::debug("*********check homework******", ['all'=>$allHomeworks, 'finished'=>$finished]);
-        }
         $db->commit();
+
+        // 插入到新数据表
+        AIPlayRecordService::insertOldPracticeData($userId, $param['data']);
 
         // 处理返回数据
         $data = ['record_id' => $ret['record_id']];
-        if(!empty($finished)){
-            // 优先返回达成的作业
-            $homework = $finished[0];
-            $homeworkInfo = [
-                'id'=> $homework['id'],
-                'task_id'=> $homework['task_id'],
-                'baseline'=> json_decode($homework['baseline'], true),
-                'complete'=> 1
-            ];
-        }elseif(!empty($allHomeworks)){
-            // 如果未达成，返回未达成的作业
-            $homework = $allHomeworks[0];
-            $homeworkInfo = [
-                'id'=> $homework['id'],
-                'task_id'=> $homework['task_id'],
-                'baseline'=> json_decode($homework['baseline'], true),
-                'complete'=> 0
-            ];
-        }else{
-            $homeworkInfo = [];
-        }
-        $data['homework'] = $homeworkInfo;
+        $data['homework'] = [];
         return $response->withJson(['code'=>0, 'data'=>$data], StatusCode::HTTP_OK);
     }
 

@@ -6,20 +6,40 @@
  * Time: 3:32 PM
  */
 
-namespace app\Services;
+namespace App\Services;
 
 
+use App\Libs\Constants;
+use App\Libs\Exceptions\RunTimeException;
 use App\Libs\OpernCenter;
 use App\Libs\Valid;
 use App\Models\AIPlayRecordModel;
+use App\Models\PlayRecordModel;
 use App\Models\StudentModel;
 
 class AIPlayRecordService
 {
-    const UI_ENTRY_OLD = 1; // 旧版
+    /** app入口 ui_entry */
+    const UI_ENTRY_OLD = 1; // 怀旧模式
     const UI_ENTRY_TEST = 2; // 测评
     const UI_ENTRY_LEARN = 3; // 识谱
     const UI_ENTRY_IMPROVE = 4; // 提升
+    const UI_ENTRY_CLASS = 5; // 上课模式(5.0以前版本)
+    const UI_ENTRY_PRACTICE = 6; // 练习模式(5.0以前版本)
+
+    /** app入口 input_type */
+    const INPUT_MIDI = 1; // midi输入
+    const INPUT_SOUND = 2; // 声音输入
+
+    /** 演奏模式 practice_mode */
+    const PRACTICE_MODE_NORMAL = 1; // 正常
+    const PRACTICE_MODE_STEP = 2; // 识谱
+    const PRACTICE_MODE_SLOW = 3; // 慢练
+
+    /** 分手 hand */
+    const HAND_LEFT = 1; // 左手
+    const HAND_RIGHT = 2; // 右手
+    const HAND_BOTH = 3; // 双手
 
     /**
      * 开始
@@ -66,7 +86,6 @@ class AIPlayRecordService
         return $recordId;
     }
 
-
     /**
      * 上课
      * @param $params
@@ -96,18 +115,26 @@ class AIPlayRecordService
         return $cnt > 0 ? 1 : 0;
     }
 
-
     /**
      * 统计当日练琴数据
      * @param $studentId
      * @param $date
      * @return array
+     * @throws RunTimeException
      */
-    public static function getDailyReportData($studentId, $date)
+    public static function getDayReportData($studentId, $date)
     {
         $student = StudentModel::getById($studentId);
+        if (empty($student)) {
+            throw new RunTimeException(['student_not_exist']);
+        }
 
         $startTime = strtotime($date);
+
+        if (empty($startTime)) {
+            throw new RunTimeException(['invalid_date']);
+        }
+
         $endTime = $startTime + 86399;
 
         $records = AIPlayRecordModel::getRecords([
@@ -117,6 +144,7 @@ class AIPlayRecordService
 
         $result = [
             'name' => $student['name'],
+            'date' => date("Y年m月d日", $startTime),
             'duration' => 0,
             'lesson_count' => 0,
             'high_score' => 0,
@@ -124,6 +152,7 @@ class AIPlayRecordService
 
         $lessonReports = [];
         $topLessonId = null;
+        $useOldTextTemp = false;
 
         foreach ($records as $record) {
             $lessonId = $record['lesson_id'];
@@ -142,7 +171,12 @@ class AIPlayRecordService
                     'part_improve_id_map' => [],
                     'test_count' => 0,
                     'test_high_score' => 0,
-                    'old_mode_duration' => 0,
+                    'old_duration' => 0,
+
+                    'class_duration' => 0,
+                    'practice_duration' => 0,
+                    'part_practice_count' => 0,
+
                     'sort_score' => 0,
                     'best_record_id' => 0,
                 ];
@@ -152,9 +186,24 @@ class AIPlayRecordService
             $lessonReports[$lessonId]['total_duration'] += $record['duration']; // 单课总时长
             $lessonReports[$lessonId]['sort_score'] += $record['duration']; // 时长作为排序索引
 
+            // 旧版上课模式
+            if ($record['ui_entry'] == AIPlayRecordService::UI_ENTRY_CLASS) {
+                $lessonReports[$lessonId]['class_duration'] += $record['duration'];
+                $useOldTextTemp = true;
+            }
+
+            // 旧版练习模式
+            if ($record['ui_entry'] == AIPlayRecordService::UI_ENTRY_PRACTICE) {
+                $lessonReports[$lessonId]['practice_duration'] += $record['duration'];
+                if ($record['is_phrase']) {
+                    $lessonReports[$lessonId]['part_practice_count']++;
+                }
+                $useOldTextTemp = true;
+            }
+
             if ($record['ui_entry'] == AIPlayRecordService::UI_ENTRY_OLD) {
                 // 怀旧模式总时长
-                $lessonReports[$lessonId]['old_mode_duration'] += $record['duration'];
+                $lessonReports[$lessonId]['old_duration'] += $record['duration'];
                 continue;
             }
 
@@ -229,7 +278,12 @@ class AIPlayRecordService
 
         // 生成文本，补充课程名和书名
         foreach ($lessonReports as $idx => $report) {
-            $lessonReports[$idx]['text'] = self::createReportText($report);
+            if ($useOldTextTemp) {
+                $textArray = self::createOldReportText($report);
+            } else {
+                $textArray = self::createReportText($report);
+            }
+            $lessonReports[$idx]['text'] = $textArray;
             $lessonId = $report['lesson_id'];
             if (!empty($lessonInfo[$lessonId])) {
                 $lessonReports[$idx]['lesson_name'] = $lessonInfo[$lessonId]['lesson_name'];
@@ -238,8 +292,10 @@ class AIPlayRecordService
             }
         }
 
+        // 课程详情列表
         $result['lessons'] = $lessonReports;
 
+        // 总时长
         $result['duration'] = self::formatDuration($result['duration']);
 
         return $result;
@@ -254,39 +310,46 @@ class AIPlayRecordService
     {
         $text = [];
 
-        $text[] = sprintf('宝贝共练习了%s', self::formatDuration($report['total_duration']));
+        $text[] = sprintf('宝贝共练习了%s', self::formatDuration($report['total_duration'], true));
 
         if ($report['part_learn_count'] > 0) {
-            $text[] = sprintf('进行了%s个乐句的识谱练习', $report['part_learn_count']);
+            $text[] = sprintf('进行了<span>%s</span>个乐句的识谱练习', $report['part_learn_count']);
         }
 
         if ($report['part_improve_count'] > 0) {
-            $text[] = sprintf('进行了%s个乐句的提升练习', $report['part_improve_count']);
+            $text[] = sprintf('进行了<span>%s</span>个乐句的提升练习', $report['part_improve_count']);
         }
 
         if ($report['test_count'] > 0) {
-            $text[] = sprintf('进行了%s次全曲评测，最高%s分', $report['test_count'], $report['test_high_score']);
+            $text[] = sprintf('进行了<span>%s</span>次全曲评测，最高<span>%s</span>分', $report['test_count'], $report['test_high_score']);
         }
 
         return $text;
     }
 
+    /**
+     * 旧版本日报文本
+     * @param $report
+     * @return array
+     */
     public static function createOldReportText($report)
     {
         $text = [];
 
-        $text[] = sprintf('上课模式共%s', self::formatDuration($report['total_duration']));
-
-        if ($report['part_learn_count'] > 0) {
-            $text[] = sprintf('进行了%s个乐句的识谱练习', $report['part_learn_count']);
+        if ($report['class_duration'] > 0) {
+            $text[] = sprintf('上课共%s', self::formatDuration($report['class_duration'], true));
         }
 
-        if ($report['part_improve_count'] > 0) {
-            $text[] = sprintf('进行了%s个乐句的提升练习', $report['part_improve_count']);
+        if ($report['practice_duration'] > 0) {
+            $text[] = sprintf('练习共%s', self::formatDuration($report['practice_duration'], true));
+        }
+
+        if ($report['part_practice_count'] > 0) {
+            $text[] = sprintf('完成<span>%s</span>次分步练习', $report['part_practice_count']);
         }
 
         if ($report['test_count'] > 0) {
-            $text[] = sprintf('进行了%s次全曲评测，最高%s分', $report['test_count'], $report['test_high_score']);
+            $text[] = sprintf('进行了<span>%s</span>次全曲评测，最高<span>%s</span>分', $report['test_count'], $report['test_high_score']);
         }
 
         return $text;
@@ -295,9 +358,10 @@ class AIPlayRecordService
     /**
      * 格式化练琴时间，将秒转为x小时x分
      * @param $seconds
+     * @param bool $withFormat
      * @return string
      */
-    public static function formatDuration($seconds)
+    public static function formatDuration($seconds, $withFormat = false)
     {
         $hour = intval($seconds / 3600);
         $seconds = $seconds % 3600;
@@ -305,13 +369,86 @@ class AIPlayRecordService
         $minute = ceil($seconds / 60);
 
         $str = '';
+        $tagLeft = '';
+        $tagEnd = '';
+
+        if ($withFormat) {
+            $tagLeft = '<span>';
+            $tagEnd = '</span>';
+        }
+
         if($hour > 0) {
-            $str .= $hour . '小时';
+            $str .= "{$tagLeft}{$hour}{$tagEnd}小时";
         }
         if($minute > 0) {
-            $str .= $minute . '分钟';
+            $str .= "{$tagLeft}{$minute}{$tagEnd}分钟";
         }
 
         return $str;
+    }
+
+    /**
+     * 格式化分数
+     * @param $score
+     * @return float
+     */
+    public static function formatScore($score)
+    {
+        // 两位小数
+        return round($score, 2);
+    }
+
+    /**
+     * 旧版数据接入
+     * 旧版动态练习转为 UI_ENTRY_PRACTICE 类型
+     * 旧版测评转为 UI_ENTRY_TEST 类型(与新版测评相同)
+     * @param $studentId
+     * @param $playData
+     * @return int
+     */
+    public static function insertOldPracticeData($studentId, $playData)
+    {
+        $now = time();
+
+        if ($playData['ai_type'] == PlayRecordModel::AI_EVALUATE_FRAGMENT) {
+            $playData['ai_type'] = PlayRecordModel::AI_EVALUATE_PLAY;
+            $playData['if_frag'] = Constants::STATUS_TRUE;
+        }
+
+        if (empty($playData['is_frag']) && empty($playData['lesson_sub_id'])) {
+            $playData['if_frag'] = Constants::STATUS_FALSE;
+        }
+
+        $score = self::formatScore($playData['duration']);
+
+        $recordData = [
+            'student_id' => $studentId,
+            'lesson_id' => $playData['lesson_id'],
+            'score_id' => $playData['opern_id'] ?? 0,
+            'record_id' => $playData['ai_record_id'] ?? 0,
+
+            'is_phrase' => $playData['is_frag'] ?? Constants::STATUS_FALSE,
+            'phrase_id' => $playData['lesson_sub_id'] ?? 0,
+            'practice_mode' => $playData['cfg_mode'] ?? PlayRecordModel::CFG_MODE_NORMAL,
+            // 旧版  1双手 2左手 3右手 —> 新版 1左手 2右手 3双手
+            'hand' => (((($playData['cfg_hand'] ?? PlayRecordModel::CFG_HAND_BOTH) - 1) + 2) % 3) + 1,
+            'ui_entry' => ($playData['lesson_type'] == 1) ? self::UI_ENTRY_TEST : self::UI_ENTRY_PRACTICE,
+            'input_type' => $playData['ai_type'] ?? self::INPUT_MIDI,
+            'create_time' => $now,
+            'end_time' => $now,
+            'duration' => $playData['duration'],
+            'audio_url' => '',
+
+            'score_final' => $score,
+            'score_complete' => $score,
+            'score_pitch' => $score,
+            'score_rhythm' => $score,
+            'score_speed' => $score,
+            'score_speed_average' => $score,
+        ];
+
+        $recordID = AIPlayRecordModel::insertRecord($recordData);
+
+        return $recordID;
     }
 }

@@ -9,6 +9,7 @@
 namespace App\Routers;
 
 
+use App\Controllers\StudentWX\PlayReport;
 use App\Controllers\StudentWX\Referral;
 use App\Controllers\StudentWX\ReviewCourse;
 use App\Controllers\StudentWX\PlayRecord;
@@ -52,9 +53,20 @@ class StudentWXRouter extends RouterBase
             'call' => PlayRecord::class . ':playCalendar',
         ],
 
-        // 日报
+        // 日报(5.0作废)
         '/student_wx/student/day_report' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\PlayRecord:recordReport'),
         '/student_wx/student/shared_report' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\PlayRecord:shareReport', 'middles' => array()),
+
+        // 日报
+        '/student_wx/play_report/day_report' => [
+            'method' => ['get'],
+            'call' => PlayReport::class . ':dayReport',
+        ],
+        '/student_wx/play_report/shared_day_report' => [
+            'method' => ['get'],
+            'call' => PlayReport::class . ':sharedDayReport',
+            'middles' => []
+        ],
 
         // 单曲目单日演奏记录
         '/student_wx/play_record/test_statistics' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\PlayRecord:getLessonTestStatistics'),
