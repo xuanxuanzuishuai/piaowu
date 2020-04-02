@@ -80,7 +80,7 @@ class NewSMS
 
     public function sendExchangeGiftCode($targetMobile, $code, $sign)
     {
-        $msg = "感谢家长选择小叶子爱练琴！您购买的AI产品，激活码为：{$code}。";
+        $msg = "您的激活码为：{$code}。您也可关注微信公众号【小叶子智能陪练】，在【我的账户】-【我的账户】查询激活码。";
 
         $data = [
             'sign_name' => $sign,
@@ -92,7 +92,8 @@ class NewSMS
 
     public function sendFreeGiftCode($targetMobile, $code, $sign)
     {
-        $msg = "感谢家长选择小叶子爱练琴！本次活动的赠送激活码为：{$code}。可在微信【小叶子陪练】公众号中输入“激活码”查询，祝您生活愉快！";
+
+        $msg = "您的激活码为：{$code}。您也可关注微信公众号【小叶子智能陪练】，在【我的账户】-【我的账户】查询激活码。";
 
         $data = [
             'sign_name' => $sign,

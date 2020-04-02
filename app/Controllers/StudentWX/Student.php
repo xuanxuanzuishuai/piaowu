@@ -9,6 +9,8 @@
 namespace App\Controllers\StudentWX;
 
 use App\Controllers\ControllerBase;
+use App\Libs\Constants;
+use App\Libs\Erp;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\StudentModel;
@@ -310,5 +312,136 @@ class Student extends ControllerBase
                 'gift_codes' => $ret
             ]
         ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * 解除绑定
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function unbind(Request $request, Response $response)
+    {
+        // 删除token
+        $oldToken = $request->getHeader('token');
+        $oldToken = $oldToken[0] ?? null;
+        if (!empty($oldToken)) {
+            WeChatService::deleteToken($oldToken);
+        }
+
+        $appId = UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT;
+        $userType = WeChatService::USER_TYPE_STUDENT;
+        $busiType = UserWeixinModel::BUSI_TYPE_STUDENT_SERVER;
+        $openId = $this->ci["open_id"];
+        $studentId = $this->ci['user_info']['user_id'];
+
+        // 解绑微信
+        $boundInfo = UserWeixinModel::getBoundInfoByOpenId($openId, $appId, $userType, $busiType);
+        if (!empty($boundInfo)) {
+            UserWeixinModel::unboundUser($openId, $studentId, $appId, $userType, $busiType);
+        }
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => []
+        ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * 学生地址列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function addressList(Request $request, Response $response)
+    {
+        $studentId = $this->ci['user_info']['user_id'];
+        $student = StudentModelForApp::getById($studentId);
+
+        $erp = new Erp();
+        $erp->getStudentAddressList($student['uuid']);
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => []
+        ], StatusCode::HTTP_OK);
+
+    }
+
+    /**
+     * 添加、修改地址
+     * @param Request $request
+     * @param Response $response
+     * @return null|Response
+     */
+    public function modifyAddress(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'name',
+                'type' => 'required',
+                'error_code' => 'student_name_is_required',
+            ],
+            [
+                'key' => 'mobile',
+                'type' => 'required',
+                'error_code' => 'mobile_is_required',
+            ],
+            [
+                'key' => 'mobile',
+                'type' => 'regex',
+                'value' => Constants::MOBILE_REGEX,
+                'error_code' => 'student_mobile_format_is_error'
+            ],
+            [
+                'key' => 'country_code',
+                'type' => 'required',
+                'error_code' => 'country_code_is_required',
+            ],
+            [
+                'key' => 'province_code',
+                'type' => 'required',
+                'error_code' => 'province_code_is_required'
+            ],
+            [
+                'key' => 'city_code',
+                'type' => 'required',
+                'error_code' => 'city_code_is_required'
+            ],
+            [
+                'key' => 'district_code',
+                'type' => 'required',
+                'error_code' => 'district_code_is_required'
+            ],
+            [
+                'key' => 'address',
+                'type' => 'required',
+                'error_code' => 'student_address_is_required',
+            ],
+            [
+                'key' => 'default',
+                'type' => 'required',
+                'error_code' => 'address_default_is_required',
+            ]
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $studentId = $this->ci['user_info']['user_id'];
+        $student = StudentModelForApp::getById($studentId);
+        $params['uuid'] = $student['uuid'];
+
+        $erp = new Erp();
+        $erp->modifyStudentAddress($params);
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => []
+        ], StatusCode::HTTP_OK);
+
     }
 }

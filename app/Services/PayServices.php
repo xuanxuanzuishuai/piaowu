@@ -25,10 +25,9 @@ class PayServices
     /**
      * 获取产品包
      * @param int $studentId
-     * @param int $channel
      * @return array
      */
-    public static function getPackages($studentId, $channel = 1)
+    public static function getPackages($studentId)
     {
         $packages = [];
 
@@ -41,7 +40,7 @@ class PayServices
 
 
         $erp = new Erp();
-        $ret = $erp->getPackages($student['uuid'], $channel);
+        $ret = $erp->getPackages($student['uuid'], 1);
         $erpPackages = $ret['data'] ?? [];
 
         usort($erpPackages, function ($a, $b) {
@@ -72,11 +71,55 @@ class PayServices
         return $packages;
     }
 
+    /**
+     * 获取课包详情
+     * @param $packageId
+     * @param $studentId
+     * @return array
+     */
+    public static function getPackageDetail($packageId, $studentId)
+    {
+        $student = StudentModelForApp::getById($studentId);
+        $package49 = DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'package_id');
+        // 购买过点评课的学生不能够买点评课体验包(49)
+        if ($packageId == $package49 && $student['has_review_course'] != ReviewCourseModel::REVIEW_COURSE_NO) {
+            return [];
+        }
+
+        // 报课渠道 1 APP 2 公众号 3 ERP
+        $erp = new Erp();
+        $ret = $erp->getPackages($student['uuid'], 2);
+        $erpPackages = $ret['data'] ?? [];
+
+        usort($erpPackages, function ($a, $b) {
+            if ($a['oprice'] == $b['oprice']) {
+                return $a['package_id'] > $b['package_id'];
+            }
+            return $a['oprice'] > $b['oprice'];
+        });
+
+        $package = [];
+        foreach ($erpPackages as $pkg) {
+            if ($pkg['package_id'] == $packageId) {
+                $package = [
+                    'package_id' => $pkg['package_id'],
+                    'package_name' => $pkg['package_name'],
+                    'price' => $pkg['sprice'] . '元',
+                    'origin_price' => $pkg['oprice'] . '元',
+                    'start_time' => $pkg['start_time'],
+                    'end_time' => $pkg['end_time'],
+                ];
+            }
+        }
+
+        return $package;
+    }
+
     public static function createBill($uuid, $packageId, $payChannel, $clientIp)
     {
         $erp = new Erp();
 
-        $erpPackages = $erp->getPackages($uuid);
+        $erpPackages = $erp->getPackages($uuid, 1);
         if (empty($erpPackages['data'])) {
             return false;
         }
@@ -123,6 +166,14 @@ class PayServices
             ]
         );
 
+        if (empty($ret)) {
+            return false;
+        }
+
+        $bill = $ret['data']['bill'];
+        // 写入ai_bill，自动激活
+        $autoApply = 1;
+        AIBillService::addAiBill($bill['id'], $uuid, $autoApply);
         return $ret;
     }
 
@@ -179,7 +230,92 @@ class PayServices
             ],
             $params
         );
+        if (empty($ret)) {
+            return [];
+        }
 
+        $bill = $ret['data']['bill'];
+        $autoApply = 1;
+        // 写入ai_bill，自动激活
+        AIBillService::addAiBill($bill['id'], $uuid, $autoApply);
+
+        return $ret;
+    }
+
+    /**
+     * 微信创建订单
+     * @param $studentId
+     * @param $packageId
+     * @param $payChannel
+     * @param $clientIp
+     * @param $studentAddressId
+     * @return array|bool
+     */
+    public static function weixinCreateBill($studentId, $packageId, $payChannel, $clientIp, $studentAddressId)
+    {
+        $student = StudentModelForApp::getById($studentId);
+        $uuid = $student['uuid'];
+
+        $erp = new Erp();
+
+        // 报课渠道 1 APP 2 公众号 3 ERP
+        $erpPackages = $erp->getPackages($uuid, 2);
+        if (empty($erpPackages['data'])) {
+            return false;
+        }
+
+        // 检查package并获取价格
+        $packages = $erpPackages['data'];
+        $price = null;
+        $originPrice = null;
+        foreach ($packages as $pkg) {
+            if ($pkg['package_id'] == $packageId) {
+                // erp的packages返回的是元为单位，需转为分
+                $price = $pkg['sprice'] * 100;
+                $originPrice = $pkg['oprice'] * 100;
+                break;
+            }
+        }
+
+        if ($price === null) {
+            return false;
+        }
+
+        list($testStudents, $successUrl, $cancelUrl, $resultUrl) = DictConstants::get(
+            DictConstants::WEIXIN_STUDENT_CONFIG,
+            ['success_url', 'cancel_url', 'result_url']
+        );
+
+        // 测试支付用户
+        $testStudentUuids = explode(',', $testStudents);
+        if (in_array($uuid, $testStudentUuids)) {
+            $price = 1;
+        }
+
+        $ret = $erp->createBill(
+            $uuid,
+            $packageId,
+            $payChannel,
+            $clientIp,
+            $price,
+            $originPrice,
+            [
+                'success_url' => $successUrl,
+                'cancel_url' => $cancelUrl,
+                'result_url' => $resultUrl,
+            ],
+            [
+                'student_address_id' => $studentAddressId
+            ]
+        );
+        if (empty($ret)) {
+            return false;
+        }
+
+        $bill = $ret['data']['bill'];
+        $autoApply = 0;
+        // 写入ai_bill，手动激活
+        AIBillService::addAiBill($bill['id'], $uuid, $autoApply);
         return $ret;
     }
 }

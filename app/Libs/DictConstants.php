@@ -105,6 +105,16 @@ class DictConstants {
             'plus_package_id',
         ]
     ];
+
+    const WEIXIN_STUDENT_CONFIG = [
+        'type' => 'WEIXIN_STUDENT_CONFIG',
+        'keys' => [
+            'success_url',
+            'cancel_url',
+            'result_url'
+        ]
+    ];
+
     //课包配置
     const PACKAGE_CONFIG = [
         'type' => 'PACKAGE_CONFIG',

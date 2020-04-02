@@ -27,6 +27,9 @@ class Erp
     const API_UPDATE_AWARD = '/api/dss/award';
     const API_USER_REFERRAL_INFO = '/api/dss/get_user_referral_info';
 
+    const API_STUDENT_ADDRESS_LIST = '/ai_dss/student/address_list';
+    const API_STUDENT_MODIFY_ADDRESS = '/ai_dss/student/modify_address';
+
     private $host;
 
     public function __construct()
@@ -98,7 +101,7 @@ class Erp
             'pay_type' => 1, // 1ping++ 2原生微信支付 3 原生支付宝支付 现阶段都是1
             'pay_channel' => $payChannel, // 1支付宝手机网页支付 2微信H5支付；
             'msg' => "购买产品包({$packageId})", // 描述
-            'student_address_id' => null, // 地址
+            'student_address_id' => $params['student_address_id'] ?? 0, // 地址
 
             'success_url' => $callbacks['success_url'] ?? null, // 支付宝web 支付成功跳转链接
             'cancel_url' => $callbacks['cancel_url'] ?? null, // 支付宝web 支付失败跳转链接
@@ -146,7 +149,7 @@ class Erp
      */
     public function getPackages($uuid, $channel = 1)
     {
-        $result = self::commonAPI(self::API_PACKAGE_LIST, ['uuid' => $uuid, 'channel' => 1], 'GET');
+        $result = self::commonAPI(self::API_PACKAGE_LIST, ['uuid' => $uuid, 'channel' => $channel], 'GET');
 
         return $result['data']['packages'] ?? null;
     }
@@ -262,6 +265,31 @@ class Erp
     {
         $params['app_id'] = self::SELF_APP_ID;
         $response = HttpHelper::requestJson($this->host . self::API_USER_REFERRAL_INFO, $params);
+        return $response;
+    }
+
+    /**
+     * 学生地址列表
+     * @param $params
+     * @return array|bool
+     */
+    public function getStudentAddressList($uuid)
+    {
+        $params['app_id'] = self::SELF_APP_ID;
+        $params['uuid'] = $uuid;
+        $response = HttpHelper::requestJson($this->host . self::API_STUDENT_ADDRESS_LIST, $params);
+        return $response;
+    }
+
+    /**
+     * 修改学生地址
+     * @param $params
+     * @return array|bool
+     */
+    public function modifyStudentAddress($params)
+    {
+        $params['app_id'] = self::SELF_APP_ID;
+        $response = HttpHelper::requestJson($this->host . self::API_STUDENT_MODIFY_ADDRESS, $params);
         return $response;
     }
 }

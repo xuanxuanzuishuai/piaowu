@@ -10,6 +10,8 @@ namespace App\Routers;
 
 
 use App\Controllers\StudentWX\PlayReport;
+use App\Controllers\StudentWX\Area;
+use App\Controllers\StudentWX\Pay;
 use App\Controllers\StudentWX\Referral;
 use App\Controllers\StudentWX\ReviewCourse;
 use App\Controllers\StudentWX\PlayRecord;
@@ -39,6 +41,19 @@ class StudentWXRouter extends RouterBase
         '/student_wx/student/account_detail' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\Student:accountDetail'),
         '/student_wx/student/edit_account' => array('method'=>array('post'),'call'=>'\App\Controllers\StudentWX\Student:editAccountInfo'),
 
+        '/student_wx/student/unbind' => array('method' => ['post'], 'call' => Student::class . ':unbind'),
+        // 学生地址
+        '/student_wx/student/address_list' => array('method' => ['get'], 'call' => Student::class . ':addressList'),
+        '/student_wx/student/modify_address' => array('method' => ['post'], 'call' => Student::class . ':modifyAddress'),
+
+        '/student_wx/area/get_by_parent_code' => array('method' => ['get'], 'call' => Area::class . ':getByParentCode'),
+        '/student_wx/area/get_by_code' => array('method' => ['get'], 'call' => Area::class . ':getByCode'),
+
+        // 订单
+        '/student_wx/pay/create_bill' => array('method' => ['post'], 'call' => Pay::class . ':createBill'),
+        '/student_wx/pay/bill_status' => array('method' => ['get'], 'call' => Pay::class . ':billStatus'),
+        '/student_wx/pay/get_package_detail' => array('method' => ['get'], 'call' => Pay::class . ':getPackageDetail'),
+
         // 获取激活码信息
         '/student_wx/student/gift_code' => [
             'method' => ['get'],
@@ -54,6 +69,7 @@ class StudentWXRouter extends RouterBase
         ],
 
         // 日报(5.0作废)
+
         '/student_wx/student/day_report' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\PlayRecord:recordReport'),
         '/student_wx/student/shared_report' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\PlayRecord:shareReport', 'middles' => array()),
 

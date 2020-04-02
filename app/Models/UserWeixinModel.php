@@ -94,4 +94,28 @@ class UserWeixinModel extends Model
             "status" => self::STATUS_NORMAL,
         ], false);
     }
+
+    /**
+     * 解绑学生微信
+     * @param $openId
+     * @param $userId
+     * @param $appId
+     * @param $userType
+     * @param $busiType
+     */
+    public static function unboundUser($openId, $userId, $appId, $userType, $busiType)
+    {
+        self::batchUpdateRecord(['status' => self::STATUS_DISABLE], [
+            'status' => self::STATUS_NORMAL,
+            'OR' => [
+                'open_id' => $openId,
+                'AND' => [
+                    "user_id" => $userId,
+                    "app_id" => $appId,
+                    "user_type" => $userType,
+                    "busi_type" => $busiType,
+                ]
+            ]
+        ], false);
+    }
 }

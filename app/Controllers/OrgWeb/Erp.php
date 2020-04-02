@@ -16,6 +16,7 @@ use App\Libs\Valid;
 use App\Models\GiftCodeModel;
 use App\Models\ReviewCourseModel;
 use App\Models\StudentModelForApp;
+use App\Services\AIBillService;
 use App\Services\CommonServiceForApp;
 use App\Services\ErpService;
 use App\Services\ReviewCourseService;
@@ -87,6 +88,10 @@ class Erp extends ControllerBase
         }
 
         $autoApply = ($params['auto_apply']) || ($params['app_id'] == ErpService::APP_ID_AI);
+        if ($autoApply) {
+            $autoApply = AIBillService::autoApply($params['parent_bill_id']);
+        }
+
         list($errorCode, $giftCodes) = ErpService::exchangeGiftCode(
             [
                 'uuid' => $params['uuid'],
