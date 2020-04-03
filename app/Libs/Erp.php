@@ -20,6 +20,7 @@ class Erp
     const API_CREATE_BILL = '/ai_dss/bill/create_bill';
     const API_BILL_DETAIL = '/ai_dss/bill/detail';
     const API_PACKAGE_LIST = '/ai_dss/package/package_list';
+    const API_PACKAGE_DETAIL = '/ai_dss/package/package_detail';
     const API_STUDENT_REGISTER = '/api/dss/student_register';
     const API_REFERRED_LIST = '/api/dss/referred_list';
     const API_AWARD_LIST = '/api/dss/awards';
@@ -152,6 +153,19 @@ class Erp
         $result = self::commonAPI(self::API_PACKAGE_LIST, ['uuid' => $uuid, 'channel' => $channel], 'GET');
 
         return $result['data']['packages'] ?? null;
+    }
+
+    /**
+     * 获取商品包详情
+     * @param $uuid
+     * @param int $channel
+     * @return null
+     */
+    public function getPackageDetail($packageId, $uuid, $channel = 1)
+    {
+        $result = self::commonAPI(self::API_PACKAGE_DETAIL, ['package_id' => $packageId, 'uuid' => $uuid, 'channel' => $channel], 'GET');
+
+        return $result['data'] ?? [];
     }
 
     /**

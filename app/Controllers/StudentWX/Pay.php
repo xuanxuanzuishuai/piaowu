@@ -10,6 +10,7 @@ namespace App\Controllers\StudentWX;
 
 
 use App\Controllers\ControllerBase;
+use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\StudentModelForApp;
 use App\Services\PayServices;
@@ -41,6 +42,7 @@ class Pay extends ControllerBase
         }
         $studentId = $this->ci['user_info']['user_id'];
         $student = StudentModelForApp::getById($studentId);
+        $student['mobile'] = Util::hideUserMobile($student['mobile']);
 
         $package = PayServices::getPackageDetail($params['package_id'], $studentId);
         return $response->withJson([

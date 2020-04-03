@@ -88,30 +88,12 @@ class PayServices
 
         // 报课渠道 1 APP 2 公众号 3 ERP
         $erp = new Erp();
-        $ret = $erp->getPackages($student['uuid'], 2);
-        $erpPackages = $ret['data'] ?? [];
-
-        usort($erpPackages, function ($a, $b) {
-            if ($a['oprice'] == $b['oprice']) {
-                return $a['package_id'] > $b['package_id'];
-            }
-            return $a['oprice'] > $b['oprice'];
-        });
-
-        $package = [];
-        foreach ($erpPackages as $pkg) {
-            if ($pkg['package_id'] == $packageId) {
-                $package = [
-                    'package_id' => $pkg['package_id'],
-                    'package_name' => $pkg['package_name'],
-                    'price' => $pkg['sprice'] . '元',
-                    'origin_price' => $pkg['oprice'] . '元',
-                    'start_time' => $pkg['start_time'],
-                    'end_time' => $pkg['end_time'],
-                ];
-            }
+        $package = $erp->getPackageDetail($packageId, $student['uuid'], 2);
+        if (empty($package)) {
+            return [];
         }
-
+        $package['sprice'] = $package['sprice'] . '元';
+        $package['oprice'] = $package['oprice'] . '元';
         return $package;
     }
 
@@ -119,8 +101,8 @@ class PayServices
     {
         $erp = new Erp();
 
-        $erpPackages = $erp->getPackages($uuid, 1);
-        if (empty($erpPackages['data'])) {
+        $packages = $erp->getPackages($uuid, 1);
+        if (empty($packages)) {
             return false;
         }
 
@@ -257,27 +239,9 @@ class PayServices
         $uuid = $student['uuid'];
 
         $erp = new Erp();
-
         // 报课渠道 1 APP 2 公众号 3 ERP
-        $erpPackages = $erp->getPackages($uuid, 2);
-        if (empty($erpPackages['data'])) {
-            return false;
-        }
-
-        // 检查package并获取价格
-        $packages = $erpPackages['data'];
-        $price = null;
-        $originPrice = null;
-        foreach ($packages as $pkg) {
-            if ($pkg['package_id'] == $packageId) {
-                // erp的packages返回的是元为单位，需转为分
-                $price = $pkg['sprice'] * 100;
-                $originPrice = $pkg['oprice'] * 100;
-                break;
-            }
-        }
-
-        if ($price === null) {
+        $package = $erp->getPackageDetail($packageId, $uuid, 2);
+        if (empty($package)) {
             return false;
         }
 
@@ -286,10 +250,12 @@ class PayServices
             ['success_url', 'cancel_url', 'result_url']
         );
 
+        // erp的packages返回的是元为单位，需转为分
+        $amount = $package['sprice'] * 100;
         // 测试支付用户
         $testStudentUuids = explode(',', $testStudents);
         if (in_array($uuid, $testStudentUuids)) {
-            $price = 1;
+            $amount = 1;
         }
 
         $ret = $erp->createBill(
@@ -297,8 +263,8 @@ class PayServices
             $packageId,
             $payChannel,
             $clientIp,
-            $price,
-            $originPrice,
+            $amount,
+            $package['oprice'] * 100,
             [
                 'success_url' => $successUrl,
                 'cancel_url' => $cancelUrl,
