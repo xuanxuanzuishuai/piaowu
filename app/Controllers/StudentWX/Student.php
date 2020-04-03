@@ -359,11 +359,17 @@ class Student extends ControllerBase
         $student = StudentModelForApp::getById($studentId);
 
         $erp = new Erp();
-        $erp->getStudentAddressList($student['uuid']);
+        $result = $erp->getStudentAddressList($student['uuid']);
+        if (empty($result) || $result['code'] != 0) {
+            $errorCode = $result['errors'][0]['err_no'] ?? 'erp_request_error';
+            return $response->withJson(Valid::addAppErrors([], $errorCode), StatusCode::HTTP_OK);
+        }
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
-            'data' => []
+            'data' => [
+                'address_list' => $result['data']['list']
+            ]
         ], StatusCode::HTTP_OK);
 
     }

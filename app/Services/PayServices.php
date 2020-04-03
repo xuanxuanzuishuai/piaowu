@@ -101,8 +101,8 @@ class PayServices
     {
         $erp = new Erp();
 
-        $packages = $erp->getPackages($uuid, 1);
-        if (empty($packages)) {
+        $erpPackages = $erp->getPackages($uuid, 1);
+        if (empty($erpPackages['data'])) {
             return false;
         }
 
@@ -231,9 +231,10 @@ class PayServices
      * @param $payChannel
      * @param $clientIp
      * @param $studentAddressId
+     * @param $openId
      * @return array|bool
      */
-    public static function weixinCreateBill($studentId, $packageId, $payChannel, $clientIp, $studentAddressId)
+    public static function weixinCreateBill($studentId, $packageId, $payChannel, $clientIp, $studentAddressId, $openId)
     {
         $student = StudentModelForApp::getById($studentId);
         $uuid = $student['uuid'];
@@ -271,7 +272,8 @@ class PayServices
                 'result_url' => $resultUrl,
             ],
             [
-                'student_address_id' => $studentAddressId
+                'student_address_id' => $studentAddressId,
+                'open_id' => $openId
             ]
         );
         if (empty($ret)) {

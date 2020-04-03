@@ -303,7 +303,7 @@ class Erp
     public function modifyStudentAddress($params)
     {
         $params['app_id'] = self::SELF_APP_ID;
-        $response = HttpHelper::requestJson($this->host . self::API_STUDENT_MODIFY_ADDRESS, $params);
+        $response = HttpHelper::requestJson($this->host . self::API_STUDENT_MODIFY_ADDRESS, $params, 'POST');
         return $response;
     }
 }

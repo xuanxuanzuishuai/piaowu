@@ -81,13 +81,14 @@ class Pay extends ControllerBase
         }
 
         $studentId = $this->ci['user_info']['user_id'];
-
+        $openId = $this->ci['open_id'];
+        $studentAddressId = $params['student_address_id'] ?? 0;
         $ret = PayServices::weixinCreateBill(
-            $studentId,
-            $params['package_id'],
+            $studentId, $params['package_id'],
             $params['pay_channel'],
             $_SERVER['HTTP_X_REAL_IP'],
-            $params['student_address_id'] ?? 0
+            $studentAddressId,
+            $openId
         );
 
         if (empty($ret)) {
