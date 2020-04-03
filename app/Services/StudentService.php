@@ -21,11 +21,13 @@ use App\Libs\Valid;
 use App\Models\CollectionModel;
 use App\Models\EmployeeModel;
 use App\Models\GiftCodeModel;
+use App\Models\ReviewCourseModel;
 use App\Models\StudentAssistantLogModel;
 use App\Models\StudentCollectionLogModel;
 use App\Models\StudentModel;
 use App\Models\StudentOrgModel;
 use App\Models\UserWeixinModel;
+use App\Services\Queue\QueueService;
 
 class StudentService
 {
@@ -552,6 +554,7 @@ class StudentService
         $data['is_add_assistant_wx'] = $student['is_add_assistant_wx'];
         $data['channel'] = $channel;
         $data['wechat_account'] = $student['wechat_account'];
+        $data['sync_status'] = $student['sync_status'];
         return $data;
     }
 
@@ -700,6 +703,8 @@ class StudentService
         if($cnt != $studentCount){
             return Valid::addErrors([], 'update_student_data_failed', 'update_student_data_failed');
         }
+        //同步观单数据
+        QueueService::studentSyncWatchList($studentIds);
         return Valid::formatSuccess();
     }
 
@@ -867,5 +872,112 @@ class StudentService
     public static function getByUuids($uuidList, $field = [])
     {
         return StudentModel::getRecords(['uuid' => $uuidList], $field, false);
+    }
+
+
+    /**
+     * 学生观单结束时间
+     * @param $collectionInfo
+     * @return float|int|string
+     */
+    public static function getWatchEndTime($collectionInfo)
+    {
+        //学生观单数据: 1.普通班级：关单期=班级开班期的结束日期+14天 2.公海班级:关单期=入班时间+30天
+        if ($collectionInfo['type'] == CollectionModel::COLLECTION_TYPE_NORMAL) {
+            $watchEndTime = $collectionInfo['teaching_end_time'] + 2 * Util::TIMESTAMP_ONEWEEK;
+        } elseif ($collectionInfo['type'] == CollectionModel::COLLECTION_TYPE_PUBLIC) {
+            $watchEndTime = $collectionInfo['teaching_end_time'] + Util::TIMESTAMP_THIRTY_DAYS;
+        } else {
+            $watchEndTime = 0;
+        }
+        return $watchEndTime;
+    }
+
+    /**
+     * 获取同步到crm的数据
+     * @param $studentIdList
+     * @return array|bool
+     */
+    public static function getStudentSyncData($studentIdList)
+    {
+        //获取学生基础数据
+        $syncData = $normalCourseStudent = $normalCourseFirstPayTime = [];
+        $studentData = StudentModel::getRecords(['id' => $studentIdList], [], false);
+        if (empty($studentData)) {
+            return $syncData;
+        }
+        //学生观单数据
+        $collectionIdList = array_unique(array_column($studentData, 'collection_id'));
+        $watchList = [];
+        if (!empty($collectionIdList)) {
+            $collectionData = CollectionModel::getRecords(['id' => $collectionIdList], ['id', 'teaching_end_time', 'type'], false);
+            foreach ($collectionData as $ck => $cv) {
+                $watchList[$cv['id']] = self::getWatchEndTime($cv);
+            }
+        }
+        //状态信息
+        array_walk($studentData, function (&$value) use (&$normalCourseStudent, $watchList) {
+            //例子当前状态  0 注册、1 付费体验课、2 付费正式课
+            if ($value['has_review_course'] == ReviewCourseModel::REVIEW_COURSE_1980) {
+                $normalCourseStudent[] = $value['id'];
+                $value['dss_status'] = StudentModel::CRM_AI_LEADS_STATUS_BUY_NORMAL_COURSE;
+            } elseif ($value['has_review_course'] == ReviewCourseModel::REVIEW_COURSE_49) {
+                $value['dss_status'] = StudentModel::CRM_AI_LEADS_STATUS_BUY_TEST_COURSE;
+            } else {
+                $value['dss_status'] = StudentModel::CRM_AI_LEADS_STATUS_REGISTER;
+
+            }
+        });
+        //学生首次购买正式课时间
+        if (!empty($normalCourseStudent)) {
+            $plusPackageIdStr = DictConstants::get(DictConstants::PACKAGE_CONFIG, 'plus_package_id');
+            $normalCourseFirstPayTime = array_column(GiftCodeModel::getFirstNormalCourse(implode(',', $normalCourseStudent), $plusPackageIdStr), null, 'buyer');
+        }
+        foreach ($studentData as $sk => $sv) {
+            $syncData[$sv['id']] = [
+                'uuid' => $sv['uuid'],
+                'mobile' => $sv['mobile'],
+                'channel_id' => $sv['channel_id'],
+                'name' => $sv['name'],
+                'dss_register_time' => $sv['create_time'],
+                'birthday' => is_null($sv['birthday']) ? 0 : $sv['birthday'],
+                'gender' => $sv['gender'],
+                'dss_watch_end_time' => is_null($watchList[$sv['collection_id']]) ? 0 : $watchList[$sv['collection_id']],
+                'dss_first_normal_pay_time' => is_null($normalCourseFirstPayTime[$sv['id']]['first_time']) ? 0 : $normalCourseFirstPayTime[$sv['id']]['first_time'],
+                'dss_status' => $sv['dss_status'],
+            ];
+        }
+        return $syncData;
+    }
+
+    /**
+     * dss用户导入真人流转
+     * @param $studentID
+     * @param $syncStatus
+     * @return bool
+     * @throws RunTimeException
+     */
+    public static function syncStudentToCrm($studentID, $syncStatus)
+    {
+        //获取当前同步状态禁止重复导入
+        $studentData = StudentModel::getById($studentID);
+        if ($studentData['sync_status'] == StudentModel::SYNC_TO_CRM_DO) {
+            $e = new RunTimeException(['sync_stop_repeat_action']);
+            throw $e;
+        }
+        //修改数据
+        $updateRes = StudentModel::updateRecord($studentID, ['sync_status' => $syncStatus]);
+        if (empty($updateRes)) {
+            $e = new RunTimeException(['update_date_failed']);
+            throw $e;
+        }
+        //添加到消息队列
+        $syncData = self::getStudentSyncData($studentID);
+        $queueRes = QueueService::studentSyncData($syncData[$studentID]);
+        if (empty($queueRes)) {
+            $e = new RunTimeException(['sync_data_push_queue_error']);
+            throw $e;
+        }
+        return $queueRes;
     }
 }

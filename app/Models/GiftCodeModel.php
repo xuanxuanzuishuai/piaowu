@@ -284,4 +284,25 @@ class GiftCodeModel extends Model
         $db = MysqlDB::getDB();
         return $db->get(self::$table, '*', ['parent_bill_id' => $parentBillId]);
     }
+
+    /**
+     * 获取用户正式课包首单时间
+     * @param $studentIds
+     * @param $packageID
+     * @return array|null
+     */
+    public static function getFirstNormalCourse($studentIds, $packageID)
+    {
+        $db = MysqlDB::getDB();
+        $sql = "SELECT
+                    buyer,MIN(buy_time) as first_time
+                FROM
+                    " . self::$table . "
+                WHERE
+                    buyer in (" . $studentIds . ")
+                AND
+                    bill_package_id IN ( " . $packageID . " )
+                GROUP BY buyer";
+        return $db->queryAll($sql);
+    }
 }

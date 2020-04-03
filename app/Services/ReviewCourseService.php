@@ -17,6 +17,7 @@ use App\Libs\SimpleLogger;
 use App\Models\EmployeeModel;
 use App\Models\ReviewCourseLogModel;
 use App\Models\ReviewCourseTaskModel;
+use App\Services\Queue\QueueService;
 use GuzzleHttp\Exception\GuzzleException;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
@@ -66,6 +67,14 @@ class ReviewCourseService
 
         if($affectRows == 0) {
             return 'update_student_fail';
+        }
+        //同步用户付费状态信息到crm粒子数据中
+        if ($reviewCourseType == ReviewCourseModel::REVIEW_COURSE_1980) {
+            //付费正式课包
+            QueueService::studentFirstPayNormalCourse($studentID);
+        } elseif ($reviewCourseType == ReviewCourseModel::REVIEW_COURSE_49) {
+            //付费体验课包
+            QueueService::studentFirstPayTestCourse($studentID);
         }
 
         return null;
@@ -696,8 +705,9 @@ class ReviewCourseService
                 $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
                 $sms->sendCollectionCompleteNotify($studentInfo['mobile'], CommonServiceForApp::SIGN_STUDENT_APP, $collectionList);
             }
+            //同步观单数据
+            QueueService::studentSyncWatchList($studentInfo['id']);
         }
-
         return $affectRows;
     }
 }

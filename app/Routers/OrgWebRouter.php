@@ -41,6 +41,7 @@ use App\Controllers\OrgWeb\Poster;
 use App\Controllers\OrgWeb\WechatConfig;
 use App\Controllers\OrgWeb\Collection;
 use App\Controllers\OrgWeb\Package;
+use App\Controllers\OrgWeb\Student as OrgWebStudent;
 
 class OrgWebRouter extends RouterBase
 {
@@ -128,6 +129,7 @@ class OrgWebRouter extends RouterBase
         '/student/student/allotCollection' => array('method' => array('post'), 'call' => '\App\Controllers\Student\Student:allotCollection'),
         '/student/student/allotAssistant' => array('method' => array('post'), 'call' => '\App\Controllers\Student\Student:allotAssistant'),
         '/org_web/channel/getChannels' => array('method' => array('get'), 'call' => '\App\Controllers\Student\Student:getSChannels'),
+        '/org_web/student/syncDataToCrm' => ['method' => ['post'], 'call' => OrgWebStudent::class . ':syncDataToCrm'],
         // 学生跟进记录
         '/student/student_remark/add' => array('method' => array('post'), 'call' => '\App\Controllers\Student\StudentRemark:add'),
         '/student/student_remark/remark_list' => array('method' => array('get'), 'call' => '\App\Controllers\Student\StudentRemark:remarkList'),

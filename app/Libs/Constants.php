@@ -195,4 +195,9 @@ class Constants
     const DICT_TYPE_ACTION_TYPE = 'action_type';
     const DICT_TYPE_ACTION_DETAIL = 'action_detail';
 
+    /**
+     * 消息队列设置
+     */
+    const DICT_KEY_NSQ_TOPIC_PREFIX = "NSQ_TOPIC_PREFIX";
+    const DICT_KEY_NSQ_LOOK_UPS = "NSQ_LOOKUPS";
 };

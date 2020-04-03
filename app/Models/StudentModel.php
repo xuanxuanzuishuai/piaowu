@@ -52,6 +52,15 @@ class StudentModel extends Model
 
     //默认首次付费时间
     const DEFAULT_FIRST_PAY_TIME = 0;
+    //是否已操作导入到真人1未操作2已操作
+    const SYNC_TO_CRM_UNDO = 1;
+    const SYNC_TO_CRM_DO = 2;
+
+    //crm数据库中ai_leads表粒子当前状态: 0注册 1付费体验课 2付费正式课
+    const CRM_AI_LEADS_STATUS_REGISTER = 0;
+    const CRM_AI_LEADS_STATUS_BUY_TEST_COURSE = 1;
+    const CRM_AI_LEADS_STATUS_BUY_NORMAL_COURSE = 2;
+
 
     /**
      * 更新学生信息
@@ -388,7 +397,8 @@ class StudentModel extends Model
             'e.name(assistant_name)',
             's.is_add_assistant_wx',
             's.wechat_account',
-            's.uuid'
+            's.uuid',
+            's.sync_status'
         ];
         $where = ['s.id' => $studentId];
         return MysqlDB::getDB()->get($table, $join, $fields, $where);
