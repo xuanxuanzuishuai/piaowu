@@ -103,8 +103,8 @@ class Erp extends ControllerBase
                 'bill_id' => $params['bill_id'] ?? '',
                 'parent_bill_id' => $params['parent_bill_id'] ?? '',
                 'bill_amount' => (int)$params['bill_amount'],
-                'app_id' => (int)$params['app_id'],
-                'package_id' => (int)$params['package_id'],
+                'bill_app_id' => (int)$params['app_id'],
+                'bill_package_id' => (int)$params['package_id'],
             ]
         );
 
