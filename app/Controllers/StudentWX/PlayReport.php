@@ -11,10 +11,12 @@ namespace App\Controllers\StudentWX;
 use App\Controllers\ControllerBase;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
-use App\Services\AIPlayRecordService;
+use App\Libs\Valid;
+use App\Models\StudentModel;
 use App\Services\AIPlayReportService;
 use Slim\Http\Request;
 use Slim\Http\Response;
+use Slim\Http\StatusCode;
 
 class PlayReport extends ControllerBase
 {
@@ -40,7 +42,6 @@ class PlayReport extends ControllerBase
         return HttpHelper::buildResponse($response, $result);
     }
 
-
     /**
      * 练琴日报(分享)
      * @param Request $request
@@ -58,5 +59,44 @@ class PlayReport extends ControllerBase
         }
 
         return HttpHelper::buildResponse($response, $result);
+    }
+
+    /**
+     * 练琴日历
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function playCalendar(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'month',
+                'type' => 'required',
+                'error_code' => 'month_is_required'
+            ],
+            [
+                'key' => 'year',
+                'type' => 'required',
+                'error_code' => 'year_is_required'
+            ]
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $studentId = $this->ci['user_info']['user_id'];
+        $student = StudentModel::getById($studentId);
+
+        if (empty($student)) {
+            HttpHelper::buildResponse($response, []);
+        }
+
+        $calendar = AIPlayReportService::getPlayCalendar($studentId, $params["year"], $params["month"]);
+
+        return HttpHelper::buildResponse($response, ['calendar' => $calendar]);
     }
 }

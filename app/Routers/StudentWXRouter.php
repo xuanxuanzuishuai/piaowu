@@ -47,7 +47,7 @@ class StudentWXRouter extends RouterBase
 
         /** 演奏记录 */
 
-        // 练琴月历
+        // 练琴月历(5.0作废)
         '/student_wx/play_record/play_calendar' => [
             'method' => ['get'],
             'call' => PlayRecord::class . ':playCalendar',
@@ -62,13 +62,27 @@ class StudentWXRouter extends RouterBase
             'method' => ['get'],
             'call' => PlayReport::class . ':dayReport',
         ],
+
+        // 日报(分享)
         '/student_wx/play_report/shared_day_report' => [
             'method' => ['get'],
             'call' => PlayReport::class . ':sharedDayReport',
             'middles' => []
         ],
 
-        // 单曲目单日演奏记录
+        // 曲目单日测评成绩单
+        '/student_wx/play_report/lesson_day_report' => [
+            'method' => ['get'],
+            'call' => PlayRecord::class . ':playCalendar',
+        ],
+
+        // 练琴月历
+        '/student_wx/play_report/play_calendar' => [
+            'method' => ['get'],
+            'call' => PlayRecord::class . ':playCalendar',
+        ],
+
+        // 单曲目单日演奏记录(5.0作废)
         '/student_wx/play_record/test_statistics' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\PlayRecord:getLessonTestStatistics'),
         '/student_wx/play_record/share_test_statistics' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\PlayRecord:shareLessonTestStatistics', 'middles' => array()),
 

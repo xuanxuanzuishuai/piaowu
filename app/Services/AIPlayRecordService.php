@@ -155,6 +155,10 @@ class AIPlayRecordService
         $useOldTextTemp = false;
 
         foreach ($records as $record) {
+            if ($record['duration'] < 1) {
+                continue;
+            }
+
             $lessonId = $record['lesson_id'];
 
             if (empty($lessonReports[$lessonId])) {

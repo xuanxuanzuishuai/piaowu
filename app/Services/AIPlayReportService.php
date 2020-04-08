@@ -9,7 +9,9 @@
 namespace App\Services;
 
 use App\Libs\Exceptions\RunTimeException;
-use App\Models\StudentModel;
+use App\Models\AIPlayRecordModel;
+use App\Models\ReviewCourseModel;
+use App\Models\ReviewCourseTaskModel;
 use Lcobucci\JWT\Signer\Hmac\Sha256;
 use Lcobucci\JWT\Builder;
 use Lcobucci\JWT\Parser;
@@ -81,4 +83,37 @@ class AIPlayReportService
         $report['replay_token'] = AIBackendService::genStudentToken($shareTokenInfo["student_id"]);
         return $report;
     }
+
+    /**
+     * 获取学生练琴日历
+     * @param $studentId
+     * @param $year
+     * @param $month
+     * @return array
+     */
+    public static function getPlayCalendar($studentId, $year, $month)
+    {
+        $startTime = strtotime($year . "-" . $month);
+        $endTime = strtotime('+1 month', $startTime) - 1;
+        $monthSum = AIPlayRecordModel::getStudentSumByDate($studentId, $startTime, $endTime);
+
+        $where = [
+            'play_date[>=]' => date('Ymd', $startTime),
+            'play_date[<=]' => date('Ymd', $endTime),
+            's.id' => $studentId,
+            's.has_review_course' => [ReviewCourseModel::REVIEW_COURSE_49, ReviewCourseModel::REVIEW_COURSE_1980],
+            'rct.status' => [ReviewCourseTaskModel::STATUS_SEND_SUCCESS, ReviewCourseTaskModel::STATUS_SEND_FAILURE],
+        ];
+        list($total, $tasks) = ReviewCourseTaskModel::getTasks($where);
+        if ($total > 0) {
+            $tasks = array_column($tasks, 'id', 'play_date');
+        }
+
+        foreach ($monthSum as $i => $daySum) {
+            $monthSum[$i]['review_task_id'] = $tasks[$daySum['play_date']] ?? 0;
+        }
+
+        return $monthSum;
+    }
+
 }
