@@ -442,8 +442,11 @@ class Student extends ControllerBase
         $params['uuid'] = $student['uuid'];
 
         $erp = new Erp();
-        $erp->modifyStudentAddress($params);
-
+        $result = $erp->modifyStudentAddress($params);
+        if (empty($result) || $result['code'] != 0) {
+            $errorCode = $result['errors'][0]['err_no'] ?? 'erp_request_error';
+            return $response->withJson(Valid::addAppErrors([], $errorCode), StatusCode::HTTP_OK);
+        }
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => []

@@ -246,19 +246,17 @@ class PayServices
             return false;
         }
 
-        list($testStudents, $successUrl, $cancelUrl, $resultUrl) = DictConstants::get(
-            DictConstants::WEIXIN_STUDENT_CONFIG,
-            ['success_url', 'cancel_url', 'result_url']
-        );
-
         // erp的packages返回的是元为单位，需转为分
         $amount = $package['sprice'] * 100;
+
+        $testStudents = DictService::getKeyValue(DictConstants::APP_CONFIG_STUDENT, 'pay_test_students');
         // 测试支付用户
         $testStudentUuids = explode(',', $testStudents);
         if (in_array($uuid, $testStudentUuids)) {
             $amount = 1;
         }
 
+        list($successUrl, $resultUrl) = DictConstants::get(DictConstants::WEIXIN_STUDENT_CONFIG, ['success_url', 'result_url']);
         $ret = $erp->createBill(
             $uuid,
             $packageId,
@@ -268,7 +266,6 @@ class PayServices
             $package['oprice'] * 100,
             [
                 'success_url' => $successUrl,
-                'cancel_url' => $cancelUrl,
                 'result_url' => $resultUrl,
             ],
             [

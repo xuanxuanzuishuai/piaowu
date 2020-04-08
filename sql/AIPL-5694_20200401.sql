@@ -10,6 +10,5 @@ CREATE TABLE `ai_bill` (
 
 INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
 VALUES
-  ('WEIXIN_STUDENT_CONFIG', '智能陪练微信端设置', 'success_url', 'https://dss-weixin.xiongmaopeilian.com/student/#/paySuccess', '支付宝web，支付成功跳转'),
-  ('WEIXIN_STUDENT_CONFIG', '智能陪练微信端设置', 'cancel_url', 'https://dss-weixin.xiongmaopeilian.com/student/#/payFail', '支付宝web，支付失败跳转'),
-  ('WEIXIN_STUDENT_CONFIG', '智能陪练微信端设置', 'result_url', 'https://dss-weixin.xiongmaopeilian.com/student/#/paySuccess', '微信H5，支付成功跳转');
+  ('WEIXIN_STUDENT_CONFIG', '智能陪练微信端设置', 'success_url', 'https://dss-weixin.xiongmaopeilian.com/buy/succeed', '支付宝web，支付成功跳转'),
+  ('WEIXIN_STUDENT_CONFIG', '智能陪练微信端设置', 'result_url', 'https://dss-weixin.xiongmaopeilian.com/buy/succeed', '微信H5，支付成功跳转');
