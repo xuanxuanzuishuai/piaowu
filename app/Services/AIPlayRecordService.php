@@ -531,7 +531,8 @@ class AIPlayRecordService
         ]);
 
         $result = [
-            'lesson_name' => 0,
+            'lesson_id' => $lessonId,
+            'lesson_name' => '',
             'date' => date("Y年m月d日", $startTime),
         ];
 
