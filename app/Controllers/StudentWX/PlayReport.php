@@ -99,4 +99,44 @@ class PlayReport extends ControllerBase
 
         return HttpHelper::buildResponse($response, ['calendar' => $calendar]);
     }
+
+    /**
+     * 单课测评成绩单
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function lessonTestReport(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+
+        $studentId = $this->ci['user_info']['user_id'];
+
+        try {
+            $result = AIPlayReportService::getLessonTestReport($studentId, $params["lesson_id"], $params["date"]);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+
+        return HttpHelper::buildResponse($response, $result);
+    }
+
+    /**
+     * 单课测评成绩单(分享)
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function sharedLessonTestReport(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+
+        try {
+            $result = AIPlayReportService::getSharedLessonTestReport($params["share_token"], $params["lesson_id"]);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+
+        return HttpHelper::buildResponse($response, $result);
+    }
 }

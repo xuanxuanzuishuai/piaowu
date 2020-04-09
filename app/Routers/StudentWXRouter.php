@@ -57,6 +57,16 @@ class StudentWXRouter extends RouterBase
         '/student_wx/student/day_report' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\PlayRecord:recordReport'),
         '/student_wx/student/shared_report' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\PlayRecord:shareReport', 'middles' => array()),
 
+        // 单曲目单日演奏记录(5.0作废)
+        '/student_wx/play_record/test_statistics' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\PlayRecord:getLessonTestStatistics'),
+        '/student_wx/play_record/share_test_statistics' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\PlayRecord:shareLessonTestStatistics', 'middles' => array()),
+
+        // 练琴月历
+        '/student_wx/play_report/play_calendar' => [
+            'method' => ['get'],
+            'call' => PlayReport::class . ':playCalendar',
+        ],
+
         // 日报
         '/student_wx/play_report/day_report' => [
             'method' => ['get'],
@@ -71,20 +81,17 @@ class StudentWXRouter extends RouterBase
         ],
 
         // 曲目单日测评成绩单
-        '/student_wx/play_report/lesson_day_report' => [
+        '/student_wx/play_report/lesson_test_report' => [
             'method' => ['get'],
-            'call' => PlayRecord::class . ':playCalendar',
+            'call' => PlayReport::class . ':lessonTestReport',
         ],
 
-        // 练琴月历
-        '/student_wx/play_report/play_calendar' => [
+        // 曲目单日测评成绩单(分享)
+        '/student_wx/play_report/shared_lesson_test_report' => [
             'method' => ['get'],
-            'call' => PlayRecord::class . ':playCalendar',
+            'call' => PlayReport::class . ':sharedLessonTestReport',
+            'middles' => []
         ],
-
-        // 单曲目单日演奏记录(5.0作废)
-        '/student_wx/play_record/test_statistics' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\PlayRecord:getLessonTestStatistics'),
-        '/student_wx/play_record/share_test_statistics' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\PlayRecord:shareLessonTestStatistics', 'middles' => array()),
 
         // ???
         '/student_wx/play_record/get_shared_report' => [

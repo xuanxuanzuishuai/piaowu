@@ -41,6 +41,8 @@ class AIPlayRecordService
     const HAND_RIGHT = 2; // 右手
     const HAND_BOTH = 3; // 双手
 
+    const DEFAULT_APP_VER = '5.0.0';
+
     /**
      * 开始
      * @param $studentId
@@ -271,13 +273,12 @@ class AIPlayRecordService
         $lessonInfo = [];
         $lessonIds = array_column($lessonReports, 'lesson_id');
         if (!empty($lessonIds)) {
-            $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, '5.0');
+            $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, self::DEFAULT_APP_VER);
             $res = $opn->lessonsByIds($lessonIds);
             if (!empty($res) && $res['code'] == Valid::CODE_SUCCESS) {
                 $data = $res['data'];
                 $lessonInfo = array_combine(array_column($data, 'lesson_id'), $data);
             }
-
         }
 
         // 生成文本，补充课程名和书名
@@ -454,5 +455,82 @@ class AIPlayRecordService
         $recordID = AIPlayRecordModel::insertRecord($recordData);
 
         return $recordID;
+    }
+
+    /**
+     * 单课测评成绩单
+     * @param $studentId
+     * @param $lessonId
+     * @param $date
+     * @return array
+     * @throws RunTimeException
+     */
+    public static function getLessonTestReportData($studentId, $lessonId, $date)
+    {
+        $student = StudentModel::getById($studentId);
+        if (empty($student)) {
+            throw new RunTimeException(['student_not_exist']);
+        }
+
+        $startTime = strtotime($date);
+
+        if (empty($startTime)) {
+            throw new RunTimeException(['invalid_date']);
+        }
+
+        $endTime = $startTime + 86399;
+
+        $records = AIPlayRecordModel::getRecords([
+            'student_id' => $studentId,
+            'end_time[<>]' => [$startTime, $endTime],
+            'lesson_id' => $lessonId,
+            'ui_entry' => self::UI_ENTRY_TEST,
+            'ORDER' => ['end_time' => 'DESC'],
+        ]);
+
+        $result = [
+            'lesson_name' => 0,
+            'date' => date("Y年m月d日", $startTime),
+        ];
+
+        $tests = [];
+        $testIdx = -1;
+        $highScore = 0;
+        $highScoreIdx = -1;
+
+        foreach ($records as $record) {
+            $item = [
+                'end_time' => date('H:i', $record['end_time']),
+                'score' => $record['score_final'] . '分',
+                'record_id' => $record['record_id'],
+                'tags' => [],
+            ];
+            $testIdx++;
+            $tests[] = $item;
+
+            if ($item['score'] > $highScore) {
+                $highScore = $item['score'];
+                $highScoreIdx = $testIdx;
+            }
+        }
+
+        if ($highScoreIdx >= 0) {
+            $tests[$highScoreIdx]['tags'][] = '当日最高';
+        }
+
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, self::DEFAULT_APP_VER);
+        $res = $opn->lessonsByIds($lessonId);
+        if (!empty($res) && $res['code'] == Valid::CODE_SUCCESS) {
+            $data = $res['data'];
+            $lessonInfo = $data[0];
+        }
+
+        $result['tests'] = $tests;
+
+        if (!empty($lessonInfo)) {
+            $result['lesson_name'] = $lessonInfo['lesson_name'];
+        }
+
+        return $result;
     }
 }

@@ -41,7 +41,7 @@ class AIPlayReportService
     {
         $parse = (new Parser())->parse((string)$token);
         $signer = new Sha256();
-        if (!$parse->verify($signer,self::signKey)) {
+        if (!$parse->verify($signer, self::signKey)) {
             throw new RunTimeException(['error_share_token']);
         };
         $studentId = $parse->getClaim("student_id");
@@ -116,4 +116,40 @@ class AIPlayReportService
         return $monthSum;
     }
 
+    /**
+     * 单课成绩单
+     * @param $studentId
+     * @param $lessonId
+     * @param null $date
+     * @return array
+     * @throws RunTimeException
+     */
+    public static function getLessonTestReport($studentId, $lessonId, $date = null)
+    {
+        if (empty($date)) {
+            $date = date('Ymd');
+        }
+
+        $report = AIPlayRecordService::getLessonTestReportData($studentId, $lessonId, $date);
+        $report["share_token"] = self::getShareReportToken($studentId, $date);
+        $report['replay_token'] = AIBackendService::genStudentToken($studentId);
+        return $report;
+    }
+
+    /**
+     * 单课成绩单(分享)
+     * @param $shareToken
+     * @param $lessonId
+     * @return array
+     * @throws RunTimeException
+     */
+    public static function getSharedLessonTestReport($shareToken, $lessonId)
+    {
+        $shareTokenInfo = AIPlayReportService::parseShareReportToken($shareToken);
+
+        $report = AIPlayRecordService::getLessonTestReportData($shareTokenInfo["student_id"], $lessonId, $shareTokenInfo["date"]);
+        $report["share_token"] = $shareToken;
+        $report['replay_token'] = AIBackendService::genStudentToken($shareTokenInfo["student_id"]);
+        return $report;
+    }
 }
