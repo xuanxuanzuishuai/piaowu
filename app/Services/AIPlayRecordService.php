@@ -424,7 +424,7 @@ class AIPlayRecordService
             $playData['if_frag'] = Constants::STATUS_FALSE;
         }
 
-        $score = self::formatScore($playData['duration']);
+        $score = self::formatScore($playData['score']);
 
         $recordData = [
             'student_id' => $studentId,
@@ -441,6 +441,48 @@ class AIPlayRecordService
             'input_type' => $playData['ai_type'] ?? self::INPUT_MIDI,
             'create_time' => $now,
             'end_time' => $now,
+            'duration' => $playData['duration'],
+            'audio_url' => '',
+
+            'score_final' => $score,
+            'score_complete' => $score,
+            'score_pitch' => $score,
+            'score_rhythm' => $score,
+            'score_speed' => $score,
+            'score_speed_average' => $score,
+        ];
+
+        $recordID = AIPlayRecordModel::insertRecord($recordData);
+
+        return $recordID;
+    }
+
+    /**
+     * 旧版上课数据接入
+     * 旧版上课模式转为 UI_ENTRY_CLASS 类型
+     * @param $studentId
+     * @param $playData
+     * @return int
+     */
+    public static function insertOldClassData($studentId, $playData)
+    {
+        $endTime = $playData['start_time'] + $playData['duration'];
+        $score = 0;
+
+        $recordData = [
+            'student_id' => $studentId,
+            'lesson_id' => $playData['lesson_id'],
+            'score_id' => 0,
+            'record_id' => $playData['best_record_id'] ?? 0,
+
+            'is_phrase' => Constants::STATUS_FALSE,
+            'phrase_id' => 0,
+            'practice_mode' => self::PRACTICE_MODE_NORMAL,
+            'hand' => self::HAND_BOTH,
+            'ui_entry' => self::UI_ENTRY_CLASS,
+            'input_type' => self::INPUT_MIDI,
+            'create_time' => $endTime,
+            'end_time' => $endTime,
             'duration' => $playData['duration'],
             'audio_url' => '',
 

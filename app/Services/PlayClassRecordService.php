@@ -166,6 +166,13 @@ class PlayClassRecordService
         }
         $cnt = PlayClassRecordModel::updateRecord($record['id'], $update, false);
 
+        AIPlayRecordService::insertOldClassData($record['student_id'], [
+            'lesson_id' => $record['lesson_id'],
+            'start_time' => $record['start_time'],
+            'duration' => $duration ?? $record['duration'],
+            'best_record_id' => $bestRecordId ?? 0,
+        ]);
+
         return $cnt > 0 ? 1 : 0;
     }
 }
