@@ -10,6 +10,7 @@ namespace App\Models;
 
 
 use App\Libs\MysqlDB;
+use Medoo\Medoo;
 
 class AIPlayRecordModel extends Model
 {
@@ -50,6 +51,27 @@ GROUP BY FROM_UNIXTIME(create_time, '%Y%m%d');";
         ];
 
         $result = $db->queryAll($sql, $map);
+        return $result;
+    }
+
+    /**
+     * 个人练琴时长汇总
+     * 包含练习模式和上课模式
+     * @param $studentId
+     * @return array
+     */
+    public static function getStudentTotalSum($studentId)
+    {
+        $columns = [
+            'lesson_count' => Medoo::raw('COUNT(DISTINCT(lesson_id))'),
+            'sum_duration' => Medoo::raw('SUM(duration)'),
+        ];
+
+        $where = ['student_id' => $studentId];
+
+        $db = MysqlDB::getDB();
+        $result = $db->get(self::$table, $columns, $where);
+
         return $result;
     }
 

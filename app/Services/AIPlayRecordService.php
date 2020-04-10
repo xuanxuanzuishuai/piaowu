@@ -638,4 +638,22 @@ class AIPlayRecordService
         }
         return ['ranks' => $ret, 'myself' => $myself, 'hasOrg' => false];
     }
+
+    /**
+     * 个人练琴
+     * @param $studentId
+     * @return array
+     */
+    public static function getStudentTotalSumData($studentId)
+    {
+        $sum = AIPlayRecordModel::getStudentTotalSum($studentId);
+
+        if (empty($sum)) {
+            return ['lesson_count' => 0, 'sum_duration' => 0];
+        }
+
+        $sum['sum_duration'] = $sum['sum_duration'] ?? 0;
+
+        return $sum;
+    }
 }

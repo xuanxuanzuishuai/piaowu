@@ -11,8 +11,8 @@ namespace App\Controllers\StudentWX;
 use App\Controllers\ControllerBase;
 use App\Libs\Util;
 use App\Libs\Valid;
-use App\Models\PlayRecordModel;
 use App\Models\StudentModel;
+use App\Services\AIPlayRecordService;
 use App\Services\CommonServiceForApp;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -217,7 +217,7 @@ class Student extends ControllerBase
             return $response->withJson(Valid::addAppErrors([], 'need_bound'), StatusCode::HTTP_OK);
         }
 
-        $playSum = PlayRecordModel::studentTotalPlaySum($user_id);
+        $playSum = AIPlayRecordService::getStudentTotalSumData($user_id);
 
         $expire_date = $student_info["sub_end_date"];
         $sub_status = 0;
