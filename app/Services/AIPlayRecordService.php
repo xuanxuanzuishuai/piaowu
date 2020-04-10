@@ -378,10 +378,8 @@ class AIPlayRecordService
      */
     public static function formatDuration($seconds, $withFormat = false)
     {
-        $hour = intval($seconds / 3600);
-        $seconds = $seconds % 3600;
-
-        $minute = ceil($seconds / 60);
+        $minute = intval($seconds / 60);
+        $seconds = $seconds % 60;
 
         $str = '';
         $tagLeft = '';
@@ -392,11 +390,11 @@ class AIPlayRecordService
             $tagEnd = '</span>';
         }
 
-        if($hour > 0) {
-            $str .= "{$tagLeft}{$hour}{$tagEnd}小时";
-        }
         if($minute > 0) {
-            $str .= "{$tagLeft}{$minute}{$tagEnd}分钟";
+            $str .= "{$tagLeft}{$minute}{$tagEnd}分";
+        }
+        if($seconds > 0) {
+            $str .= "{$tagLeft}{$seconds}{$tagEnd}秒";
         }
 
         return $str;
