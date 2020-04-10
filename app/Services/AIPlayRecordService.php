@@ -591,4 +591,53 @@ class AIPlayRecordService
 
         return $result;
     }
+
+    /**
+     * 获取曲目排名
+     * @param $lessonId
+     * @param $studentId
+     * @return array
+     */
+    public static function getLessonRankData($lessonId, $studentId)
+    {
+        $ret = [];
+        $myself = null;
+
+        $ranks = AIPlayRecordModel::getLessonPlayRank($lessonId);
+
+        // 处理排名，相同分数具有并列名次
+        $prevStudent = null;
+        foreach ($ranks as $v){
+            if(empty($prevStudent)){
+                $v['order'] = 1;
+                $prevStudent = $v;
+            }else{
+                if($v['score'] == $prevStudent['score']){
+                    $v['order'] = $prevStudent['order'];
+                }else{
+                    $v['order'] = $prevStudent['order'] + 1;
+                    $prevStudent = $v;
+                }
+            }
+            array_push($ret, $v);
+            if($v['student_id'] == $studentId){
+                $myself = $v;
+            }
+        }
+
+        if(empty($myself)) {
+            $student = StudentModel::getById($studentId);
+
+            $bestRecord = AIPlayRecordModel::getStudentLessonBestRecord($studentId, $lessonId);
+            $order = empty($bestRecord) ? -1 : 0;
+
+            // order 0 表示未上榜 -1 表示未演奏
+            $myself = [
+                'name' => $student['name'],
+                'score' => $bestRecord['score'] ?? 0,
+                'order' => $order,
+            ];
+        }
+        return ['ranks' => $ret, 'myself' => $myself, 'hasOrg' => false];
+    }
 }

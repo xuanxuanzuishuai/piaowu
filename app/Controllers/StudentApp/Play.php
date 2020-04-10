@@ -271,8 +271,7 @@ class Play extends ControllerBase
 
         $studentId = $this->ci['student']['id'];
         $lessonId = $params['lesson_id'];
-        $isOrg = $params['org'] == 1;
-        $ranks = PlayRecordService::getRanks($studentId, $lessonId);
+        $ranks = AIPlayRecordService::getLessonRankData($lessonId, $studentId);
         return $response->withJson(['code'=>0, 'data'=>$ranks], StatusCode::HTTP_OK);
     }
 }
