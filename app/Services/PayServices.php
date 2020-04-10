@@ -249,7 +249,7 @@ class PayServices
         // erp的packages返回的是元为单位，需转为分
         $amount = $package['sprice'] * 100;
 
-        $testStudents = DictService::getKeyValue(DictConstants::APP_CONFIG_STUDENT, 'pay_test_students');
+        $testStudents = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'pay_test_students');
         // 测试支付用户
         $testStudentUuids = explode(',', $testStudents);
         if (in_array($uuid, $testStudentUuids)) {
