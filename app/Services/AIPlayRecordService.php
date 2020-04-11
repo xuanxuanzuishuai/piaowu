@@ -104,12 +104,12 @@ class AIPlayRecordService
             'end_time' => $params['end_time'],
             'duration' => $params['duration'],
             'audio_url' => $params['audio_url'],
-            'score_final' => $params['score_final'],
-            'score_complete' => $params['score_complete'],
-            'score_pitch' => $params['score_pitch'],
-            'score_rhythm' => $params['score_rhythm'],
-            'score_speed' => $params['score_speed'],
-            'score_speed_average' => $params['score_speed_average'],
+            'score_final' => self::formatScore($params['score_final']),
+            'score_complete' => self::formatScore($params['score_complete']),
+            'score_pitch' => self::formatScore($params['score_pitch']),
+            'score_rhythm' => self::formatScore($params['score_rhythm']),
+            'score_speed' => self::formatScore($params['score_speed']),
+            'score_speed_average' => self::formatScore($params['score_speed_average']),
         ];
 
         $cnt = AIPlayRecordModel::updateRecord($record['id'], $update, false);
@@ -336,7 +336,11 @@ class AIPlayRecordService
         }
 
         if ($report['test_count'] > 0) {
-            $text[] = sprintf('进行了<span>%s</span>次全曲评测，最高<span>%s</span>分', $report['test_count'], $report['test_high_score']);
+            $text[] = sprintf(
+                '进行了<span>%s</span>次全曲评测，最高<span>%s</span>分',
+                $report['test_count'],
+                self::formatScore($report['test_high_score'])
+            );
         }
 
         return $text;
@@ -364,7 +368,11 @@ class AIPlayRecordService
         }
 
         if ($report['test_count'] > 0) {
-            $text[] = sprintf('进行了<span>%s</span>次全曲评测，最高<span>%s</span>分', $report['test_count'], $report['test_high_score']);
+            $text[] = sprintf(
+                '进行了<span>%s</span>次全曲评测，最高<span>%s</span>分',
+                $report['test_count'],
+                self::formatScore($report['test_high_score'])
+            );
         }
 
         return $text;
@@ -408,7 +416,7 @@ class AIPlayRecordService
     public static function formatScore($score)
     {
         // 两位小数
-        return round($score, 2);
+        return round($score, 1);
     }
 
     /**
@@ -557,7 +565,7 @@ class AIPlayRecordService
         foreach ($records as $record) {
             $item = [
                 'end_time' => date('H:i', $record['end_time']),
-                'score' => $record['score_final'] . '分',
+                'score' => self::formatScore($record['score_final']) . '分',
                 'record_id' => $record['record_id'],
                 'tags' => [],
             ];
@@ -617,6 +625,7 @@ class AIPlayRecordService
                     $prevStudent = $v;
                 }
             }
+            $v['score'] = self::formatScore($v['score']);
             array_push($ret, $v);
             if($v['student_id'] == $studentId){
                 $myself = $v;
@@ -635,6 +644,7 @@ class AIPlayRecordService
                 'score' => $bestRecord['score'] ?? 0,
                 'order' => $order,
             ];
+            $myself['score'] = self::formatScore($myself['score']);
         }
         return ['ranks' => $ret, 'myself' => $myself, 'hasOrg' => false];
     }
