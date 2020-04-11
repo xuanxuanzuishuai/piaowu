@@ -19,10 +19,8 @@ require_once PROJECT_ROOT . '/vendor/autoload.php';
 
 use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
-use App\Libs\Util;
-use App\Models\PlayRecordModel;
-use App\Models\UserWeixinModel;
 use App\Libs\UserCenter;
+use App\Services\AIPlayRecordService;
 use App\Services\WeChatService;
 use Dotenv\Dotenv;
 
@@ -35,34 +33,23 @@ $end_time = $start_time + 86399;
 $date = date("Y-m-d", $start_time);
 
 $sql = "SELECT
-    records.student_id,
+    apr.student_id,
     uw.open_id,
     COUNT(DISTINCT lesson_id) AS lesson_count,
     SUM(duration) AS sum_duration
 FROM
-    ((SELECT
-        student_id, lesson_id, duration
-    FROM
-        play_record
-    WHERE
-        created_time >= :start_time
-            AND created_time < :end_time
-            AND duration > 0) UNION ALL (SELECT
-        student_id, lesson_id, duration
-    FROM
-        play_class_record
-    WHERE
-        create_time >= :start_time
-            AND create_time < :end_time
-            AND duration > 0)) records
+    ai_play_record AS apr
         INNER JOIN
-    user_weixin AS uw ON records.student_id = uw.user_id
+    user_weixin AS uw ON apr.student_id = uw.user_id
         AND uw.app_id = 8
         AND uw.user_type = 1
         AND uw.busi_type = 1
         AND uw.status = 1
-GROUP BY records.student_id
-;";
+WHERE
+    apr.end_time >= :start_time
+        AND apr.end_time < :end_time
+        AND apr.duration > 0
+GROUP BY apr.student_id;";
 $map = [
     ':start_time' => $start_time,
     ':end_time' => $end_time,
@@ -70,7 +57,7 @@ $map = [
 
 $userInfo = $db->queryAll($sql, $map);
 
-$url = $_ENV["WECHAT_FRONT_DOMAIN"] . "/student/daily?date=" . $date;
+$url = $_ENV["WECHAT_FRONT_DOMAIN"] . "/student/dailyNew?date=" . $date;
 foreach ($userInfo as $value) {
     SimpleLogger::info("----", $value);
     $data = [
@@ -87,7 +74,7 @@ foreach ($userInfo as $value) {
             'color' => "#323d83"
         ],
         'keyword3' => [
-            'value' => "练琴" . Util::formatExerciseTime($value['sum_duration']),
+            'value' => "练琴" . AIPlayRecordService::formatDuration($value['sum_duration'], false),
             'color' => "#323d83"
         ],
         'remark' => [
