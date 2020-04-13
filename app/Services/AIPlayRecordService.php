@@ -207,9 +207,8 @@ class AIPlayRecordService
             // case 练习模式(旧版)
             if ($record['ui_entry'] == AIPlayRecordService::UI_ENTRY_PRACTICE) {
                 $lessonReports[$lessonId]['practice_duration'] += $record['duration'];
-                if ($record['is_phrase']) {
-                    $lessonReports[$lessonId]['part_practice_count']++;
-                }
+                // 旧版趣味练习，非双手全曲的测评，都算作分步练习
+                $lessonReports[$lessonId]['part_practice_count']++;
                 continue;
             }
 
@@ -441,7 +440,9 @@ class AIPlayRecordService
         }
 
         $score = self::formatScore($playData['score']);
-        $uiEntry = ($playData['lesson_type'] == PlayRecordModel::TYPE_AI && $playData['is_frag'] == Constants::STATUS_FALSE)
+        $uiEntry = ($playData['lesson_type'] == PlayRecordModel::TYPE_AI
+            && $playData['is_frag'] == Constants::STATUS_FALSE
+            && $playData['cfg_hand'] == PlayRecordModel::CFG_HAND_BOTH)
             ? self::UI_ENTRY_TEST : self::UI_ENTRY_PRACTICE;
 
         $recordData = [
