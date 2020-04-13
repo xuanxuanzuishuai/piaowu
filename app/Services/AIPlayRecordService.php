@@ -573,8 +573,8 @@ class AIPlayRecordService
             $testIdx++;
             $tests[] = $item;
 
-            if ($item['score'] > $highScore) {
-                $highScore = $item['score'];
+            if ($record['score_final'] > $highScore) {
+                $highScore = $record['score_final'];
                 $highScoreIdx = $testIdx;
             }
         }
