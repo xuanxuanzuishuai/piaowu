@@ -433,15 +433,16 @@ class AIPlayRecordService
 
         if ($playData['ai_type'] == PlayRecordModel::AI_EVALUATE_FRAGMENT) {
             $playData['ai_type'] = PlayRecordModel::AI_EVALUATE_PLAY;
-            $playData['if_frag'] = Constants::STATUS_TRUE;
+            $playData['is_frag'] = Constants::STATUS_TRUE;
         }
 
         if (empty($playData['is_frag']) && empty($playData['lesson_sub_id'])) {
-            $playData['if_frag'] = Constants::STATUS_FALSE;
+            $playData['is_frag'] = Constants::STATUS_FALSE;
         }
 
         $score = self::formatScore($playData['score']);
-        $uiEntry = ($playData['lesson_type'] == 1) ? self::UI_ENTRY_TEST : self::UI_ENTRY_PRACTICE;
+        $uiEntry = ($playData['lesson_type'] == PlayRecordModel::TYPE_AI && $playData['is_frag'] == Constants::STATUS_FALSE)
+            ? self::UI_ENTRY_TEST : self::UI_ENTRY_PRACTICE;
 
         $recordData = [
             'student_id' => $studentId,
