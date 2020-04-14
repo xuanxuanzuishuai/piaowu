@@ -22,14 +22,19 @@ class AIPlayRecordService
     const DEFAULT_APP_VER = '5.0.0';
 
     /**
-     * 开始
+     * 演奏数据
      * @param $studentId
      * @param $params
      * @return int
      */
-    public static function start($studentId, $params)
+    public static function end($studentId, $params)
     {
         $now = time();
+
+        // 处理毫秒时间戳，转为秒
+        if ($params['created_at'] > 2000000000) {
+            $params['created_at'] = intval($params['created_at']/1000);
+        }
 
         $recordData = [
             'lesson_id' => $params['lesson_id'],
@@ -42,8 +47,8 @@ class AIPlayRecordService
             'input_type' => $params['input_type'],
             'create_time' => $now,
 
-            /* 等待异步更新
-            'end_time' => $params['end_time'],
+            // 演奏结束时间，演奏时间跨天时，数据归为结束时间所在天
+            'end_time' => $params['created_at'] + $params['duration'],
             'duration' => $params['duration'],
             'audio_url' => $params['audio_url'],
             'score_final' => $params['score_final'],
@@ -52,7 +57,6 @@ class AIPlayRecordService
             'score_rhythm' => $params['score_rhythm'],
             'score_speed' => $params['score_speed'],
             'score_speed_average' => $params['score_speed_average'],
-            */
         ];
 
         $recordId =  AIPlayRecordModel::insertRecord($recordData);
@@ -64,35 +68,6 @@ class AIPlayRecordService
         StudentModel::updateRecord($studentId, ['last_play_time' => $now], false);
 
         return $recordId;
-    }
-
-    /**
-     * 上课
-     * @param $params
-     * @return bool
-     */
-    public static function end($params)
-    {
-        $record = AIPlayRecordModel::getRecord(['record_id' => $params['record_id']]);
-        if (empty($record)) {
-            return 0;
-        }
-
-        $update = [
-            'end_time' => $params['end_time'],
-            'duration' => $params['duration'],
-            'audio_url' => $params['audio_url'],
-            'score_final' => self::formatScore($params['score_final']),
-            'score_complete' => self::formatScore($params['score_complete']),
-            'score_pitch' => self::formatScore($params['score_pitch']),
-            'score_rhythm' => self::formatScore($params['score_rhythm']),
-            'score_speed' => self::formatScore($params['score_speed']),
-            'score_speed_average' => self::formatScore($params['score_speed_average']),
-        ];
-
-        $cnt = AIPlayRecordModel::updateRecord($record['id'], $update, false);
-
-        return $cnt > 0 ? 1 : 0;
     }
 
     /**
