@@ -37,26 +37,27 @@ class AIPlayRecordService
         }
 
         $recordData = [
-            'lesson_id' => $params['lesson_id'],
-            'score_id' => $params['score_id'],
-            'record_id' => $params['record_id'],
-            'phrase_id' => $params['phrase_id'],
-            'practice_mode' => $params['practice_mode'],
-            'hand' => $params['hand'],
-            'ui_entry' => $params['ui_entry'],
-            'input_type' => $params['input_type'],
+            'student_id' => $studentId,
+            'lesson_id' => $params['lesson_id'] ?? 0,
+            'score_id' => $params['score_id'] ?? 0,
+            'record_id' => $params['record_id'] ?? 0,
+            'phrase_id' => $params['phrase_id'] ?? 0,
+            'practice_mode' => $params['practice_mode'] ?? 0,
+            'hand' => $params['hand'] ?? 0,
+            'ui_entry' => $params['ui_entry'] ?? 0,
+            'input_type' => $params['input_type'] ?? 0,
             'create_time' => $now,
 
             // 演奏结束时间，演奏时间跨天时，数据归为结束时间所在天
             'end_time' => $params['created_at'] + $params['duration'],
             'duration' => $params['duration'],
-            'audio_url' => $params['audio_url'],
-            'score_final' => $params['score_final'],
-            'score_complete' => $params['score_complete'],
-            'score_pitch' => $params['score_pitch'],
-            'score_rhythm' => $params['score_rhythm'],
-            'score_speed' => $params['score_speed'],
-            'score_speed_average' => $params['score_speed_average'],
+            'audio_url' => $params['audio_url'] ?? '',
+            'score_final' => self::formatScore($params['score_final']),
+            'score_complete' => self::formatScore($params['score_complete']),
+            'score_pitch' => self::formatScore($params['score_pitch']),
+            'score_rhythm' => self::formatScore($params['score_rhythm']),
+            'score_speed' => self::formatScore($params['score_speed']),
+            'score_speed_average' => self::formatScore($params['score_speed_average']),
         ];
 
         $recordId =  AIPlayRecordModel::insertRecord($recordData);
@@ -375,6 +376,9 @@ class AIPlayRecordService
      */
     public static function formatScore($score)
     {
+        if (empty($score) || !is_numeric($score)) {
+            return 0;
+        }
         // 两位小数
         return round($score, 1);
     }
