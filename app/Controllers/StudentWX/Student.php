@@ -50,16 +50,17 @@ class Student extends ControllerBase
                 'error_code' => 'sms_code_is_required'
             ],
             [
-                'key' => 'org_id',
-                'type' => 'integer'
-            ],
-            [
                 'key' => 'referee_type',
                 'type' => 'integer'
             ],
             [
                 'key' => 'referee_id',
                 'type' => 'integer'
+            ],
+            [
+                'key' => 'wx_code',
+                'type' => 'required',
+                'error_code' => 'wx_code_is_required'
             ]
         ];
 
@@ -69,12 +70,13 @@ class Student extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $old_token = $this->ci["token"];
-        if (!empty($old_token)){
-            WeChatService::deleteToken($old_token);
+        $oldToken = $request->getHeader('token');
+        $oldToken = $oldToken[0] ?? null;
+        if (!empty($oldToken)) {
+            WeChatService::deleteToken($oldToken);
         }
+
         $app_id = UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT;
-        $openId = $this->ci["open_id"];
         // 检查验证码
         if (!CommonServiceForApp::checkValidateCode($params["mobile"], $params["sms_code"])) {
             return $response->withJson(Valid::addAppErrors([], 'validate_code_error'), StatusCode::HTTP_OK);
@@ -100,15 +102,16 @@ class Student extends ControllerBase
             $student_info = StudentModelForApp::getStudentInfo("", $params['mobile']);
         }
 
-        // 绑定该用户与微信
-        if (!empty($openId)) {
-            UserWeixinModel::boundUser($openId, $student_info["id"], $app_id, WeChatService::USER_TYPE_STUDENT, 1);
+        $userType = UserWeixinModel::USER_TYPE_STUDENT;
+        $data = WeChatService::getWeixnUserOpenIDAndAccessTokenByCode($params['wx_code'], $app_id, $userType);
+        if (empty($data) || empty($data['openid'])) {
+            return $response->withJson(Valid::addAppErrors([], 'can_not_obtain_open_id'));
         }
 
-        // 绑定机构
-        if (!empty($params["org_id"])) {
-            StudentService::bindOrg($params["org_id"], $student_info["id"]);
-        }
+        $openId = $data['openid'];
+        // 绑定该用户与微信
+        UserWeixinModel::boundUser($openId, $student_info["id"], $app_id, $userType, 1);
+
         $db->commit();
 
         return $response->withJson([
