@@ -19,28 +19,6 @@ use App\Models\StudentModel;
 
 class AIPlayRecordService
 {
-    /** app入口 ui_entry */
-    const UI_ENTRY_OLD = 1; // 怀旧模式
-    const UI_ENTRY_TEST = 2; // 测评
-    const UI_ENTRY_LEARN = 3; // 识谱
-    const UI_ENTRY_IMPROVE = 4; // 提升
-    const UI_ENTRY_CLASS = 5; // 上课模式(5.0以前版本)
-    const UI_ENTRY_PRACTICE = 6; // 练习模式(5.0以前版本)
-
-    /** app入口 input_type */
-    const INPUT_MIDI = 1; // midi输入
-    const INPUT_SOUND = 2; // 声音输入
-
-    /** 演奏模式 practice_mode */
-    const PRACTICE_MODE_NORMAL = 1; // 正常
-    const PRACTICE_MODE_STEP = 2; // 识谱
-    const PRACTICE_MODE_SLOW = 3; // 慢练
-
-    /** 分手 hand */
-    const HAND_LEFT = 1; // 左手
-    const HAND_RIGHT = 2; // 右手
-    const HAND_BOTH = 3; // 双手
-
     const DEFAULT_APP_VER = '5.0.0';
 
     /**
@@ -170,20 +148,21 @@ class AIPlayRecordService
                     'lesson_id' => $lessonId,
                     'lesson_name' => '',
                     'collection_name' => '',
-                    'total_duration' => 0,
-                    'part_learn_count' => 0,
-                    'part_learn_id_map' => [],
-                    'part_improve_count' => 0,
-                    'part_improve_id_map' => [],
-                    'test_count' => 0,
-                    'test_high_score' => 0,
-                    'old_duration' => 0,
+                    'total_duration' => 0, // 总时长
+                    'part_learn_count' => 0, // 识谱乐句数(相同乐句记1次)
+                    'part_learn_id_map' => [], // 识谱乐句id集合
+                    'part_improve_count' => 0, // 提高乐句数(相同乐句记1次)
+                    'part_improve_id_map' => [], // 提高乐句id集合
+                    'test_count' => 0, // 全曲测评
+                    'part_test_count' => 0, // 非全曲测评
+                    'test_high_score' => 0, // 全曲测评最高分
+                    'old_duration' => 0, // 怀旧模式时长
 
-                    'class_duration' => 0,
-                    'practice_duration' => 0,
-                    'part_practice_count' => 0,
+                    'class_duration' => 0, // 上课模式时长(旧版)
+                    'practice_duration' => 0, // 分步练习模式时长(旧版)
+                    'part_practice_count' => 0, // 分步练习次数(旧版)
 
-                    'sort_score' => 0,
+                    'sort_score' => 0, // 排序优先级
                     'best_record_id' => 0,
                 ];
             }
@@ -199,13 +178,13 @@ class AIPlayRecordService
             // switch ($record['ui_entry'])
 
             // case 上课模式(旧版)
-            if ($record['ui_entry'] == AIPlayRecordService::UI_ENTRY_CLASS) {
+            if ($record['ui_entry'] == AIPlayRecordModel::UI_ENTRY_CLASS) {
                 $lessonReports[$lessonId]['class_duration'] += $record['duration'];
                 continue;
             }
 
             // case 练习模式(旧版)
-            if ($record['ui_entry'] == AIPlayRecordService::UI_ENTRY_PRACTICE) {
+            if ($record['ui_entry'] == AIPlayRecordModel::UI_ENTRY_PRACTICE) {
                 $lessonReports[$lessonId]['practice_duration'] += $record['duration'];
                 // 旧版趣味练习，非双手全曲的测评，都算作分步练习
                 $lessonReports[$lessonId]['part_practice_count']++;
@@ -213,13 +192,13 @@ class AIPlayRecordService
             }
 
             // case 怀旧模式
-            if ($record['ui_entry'] == AIPlayRecordService::UI_ENTRY_OLD) {
+            if ($record['ui_entry'] == AIPlayRecordModel::UI_ENTRY_OLD) {
                 $lessonReports[$lessonId]['old_duration'] += $record['duration'];
                 continue;
             }
 
             // case 识谱
-            if ($record['ui_entry'] == AIPlayRecordService::UI_ENTRY_LEARN) {
+            if ($record['ui_entry'] == AIPlayRecordModel::UI_ENTRY_LEARN) {
                 // 统计乐句数量，每个乐句只算一次
                 if ($record['is_phrase']
                     && empty($lessonReports[$lessonId]['part_learn_id_map'][$record['phrase_id']])) {
@@ -230,7 +209,7 @@ class AIPlayRecordService
             }
 
             // case 提高
-            if ($record['ui_entry'] == AIPlayRecordService::UI_ENTRY_IMPROVE) {
+            if ($record['ui_entry'] == AIPlayRecordModel::UI_ENTRY_IMPROVE) {
                 // 统计乐句数量，每个乐句只算一次
                 if ($record['is_phrase']
                     && empty($lessonReports[$lessonId]['part_improve_id_map'][$record['phrase_id']])) {
@@ -241,7 +220,14 @@ class AIPlayRecordService
             }
 
             // case 测评 包含旧版测评
-            if ($record['ui_entry'] == AIPlayRecordService::UI_ENTRY_TEST) {
+            if ($record['ui_entry'] == AIPlayRecordModel::UI_ENTRY_TEST) {
+                // 分手分段测评不计入全曲测评次数
+                if ($record['is_phrase'] || ($record['hand'] != AIPlayRecordModel::HAND_BOTH)) {
+                    $countKey = $useOldTextTemp ? 'part_practice_count' : 'part_test_count';
+                    $lessonReports[$lessonId][$countKey]++;
+                    continue;
+                }
+
                 $lessonReports[$lessonId]['test_count']++;
 
                 // 单课最高分
@@ -443,7 +429,7 @@ class AIPlayRecordService
         $uiEntry = ($playData['lesson_type'] == PlayRecordModel::TYPE_AI
             && $playData['is_frag'] == Constants::STATUS_FALSE
             && $playData['cfg_hand'] == PlayRecordModel::CFG_HAND_BOTH)
-            ? self::UI_ENTRY_TEST : self::UI_ENTRY_PRACTICE;
+            ? AIPlayRecordModel::UI_ENTRY_TEST : AIPlayRecordModel::UI_ENTRY_PRACTICE;
 
         $recordData = [
             'student_id' => $studentId,
@@ -457,7 +443,7 @@ class AIPlayRecordService
             // 旧版  1双手 2左手 3右手 —> 新版 1左手 2右手 3双手
             'hand' => (((($playData['cfg_hand'] ?? PlayRecordModel::CFG_HAND_BOTH) - 1) + 2) % 3) + 1,
             'ui_entry' => $uiEntry,
-            'input_type' => $playData['ai_type'] ?? self::INPUT_MIDI,
+            'input_type' => $playData['ai_type'] ?? AIPlayRecordModel::INPUT_MIDI,
             'old_format' => Constants::STATUS_TRUE,
 
             'create_time' => $now,
@@ -498,10 +484,10 @@ class AIPlayRecordService
 
             'is_phrase' => Constants::STATUS_FALSE,
             'phrase_id' => 0,
-            'practice_mode' => self::PRACTICE_MODE_NORMAL,
-            'hand' => self::HAND_BOTH,
-            'ui_entry' => self::UI_ENTRY_CLASS,
-            'input_type' => self::INPUT_MIDI,
+            'practice_mode' => AIPlayRecordModel::PRACTICE_MODE_NORMAL,
+            'hand' => AIPlayRecordModel::HAND_BOTH,
+            'ui_entry' => AIPlayRecordModel::UI_ENTRY_CLASS,
+            'input_type' => AIPlayRecordModel::INPUT_MIDI,
             'old_format' => Constants::STATUS_TRUE,
 
             'create_time' => $endTime,
@@ -549,7 +535,7 @@ class AIPlayRecordService
             'student_id' => $studentId,
             'end_time[<>]' => [$startTime, $endTime],
             'lesson_id' => $lessonId,
-            'ui_entry' => self::UI_ENTRY_TEST,
+            'ui_entry' => AIPlayRecordModel::UI_ENTRY_TEST,
             'ORDER' => ['end_time' => 'DESC'],
         ]);
 

@@ -9,12 +9,35 @@
 namespace App\Models;
 
 
+use App\Libs\Constants;
 use App\Libs\MysqlDB;
 use Medoo\Medoo;
 
 class AIPlayRecordModel extends Model
 {
     static $table = 'ai_play_record';
+
+    /** app入口 ui_entry */
+    const UI_ENTRY_OLD = 1; // 怀旧模式
+    const UI_ENTRY_TEST = 2; // 测评
+    const UI_ENTRY_LEARN = 3; // 识谱
+    const UI_ENTRY_IMPROVE = 4; // 提升
+    const UI_ENTRY_CLASS = 5; // 上课模式(5.0以前版本)
+    const UI_ENTRY_PRACTICE = 6; // 练习模式(5.0以前版本)
+
+    /** app入口 input_type */
+    const INPUT_MIDI = 1; // midi输入
+    const INPUT_SOUND = 2; // 声音输入
+
+    /** 演奏模式 practice_mode */
+    const PRACTICE_MODE_NORMAL = 1; // 正常
+    const PRACTICE_MODE_STEP = 2; // 识谱
+    const PRACTICE_MODE_SLOW = 3; // 慢练
+
+    /** 分手 hand */
+    const HAND_LEFT = 1; // 左手
+    const HAND_RIGHT = 2; // 右手
+    const HAND_BOTH = 3; // 双手
 
     //排行榜
     const RANK_LIMIT = 150; // 取前n条数据排名
@@ -77,6 +100,7 @@ GROUP BY FROM_UNIXTIME(create_time, '%Y%m%d');";
 
     /**
      * 曲目排名数据
+     * 只包含全曲双手测评
      * @param $lessonId
      * @return array
      */
@@ -98,6 +122,8 @@ FROM
     WHERE
         apr.lesson_id = :lesson_id
             AND apr.ui_entry = :ui_entry
+            AND apr.is_phrase = :is_phrase
+            AND apr.hand = :hand
             AND apr.score_final >= :rank_base_score
     ORDER BY apr.score_final DESC) t
 GROUP BY t.student_id
@@ -106,7 +132,9 @@ LIMIT :rank_limit;";
 
         $map = [
             ':lesson_id' => $lessonId,
-            ':ui_entry' => 2,
+            ':ui_entry' => self::UI_ENTRY_TEST,
+            ':is_phrase' => Constants::STATUS_FALSE,
+            ':hand' => self::HAND_BOTH,
             ':rank_base_score' => self::RANK_BASE_SCORE,
             ':rank_limit' => self::RANK_LIMIT,
         ];
@@ -119,6 +147,7 @@ LIMIT :rank_limit;";
     /**
      * 学生曲目最高分
      * 未演奏的返回null
+     * 只包含全曲双手测评
      * @param $studentId
      * @param $lessonId
      * @return array|null
@@ -135,7 +164,9 @@ LIMIT :rank_limit;";
         ], [
             'lesson_id' => $lessonId,
             'student_id' => $studentId,
-            'ui_entry' => 2,
+            'ui_entry' => self::UI_ENTRY_TEST,
+            'is_phrase' => Constants::STATUS_FALSE,
+            'hand' => self::HAND_BOTH,
             'ORDER' => ['score_final' => 'DESC'],
         ]);
 
