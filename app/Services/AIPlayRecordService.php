@@ -527,6 +527,8 @@ class AIPlayRecordService
             'end_time[<>]' => [$startTime, $endTime],
             'lesson_id' => $lessonId,
             'ui_entry' => AIPlayRecordModel::UI_ENTRY_TEST,
+            'is_phrase' => Constants::STATUS_FALSE,
+            'hand' => AIPlayRecordModel::HAND_BOTH,
             'ORDER' => ['end_time' => 'DESC'],
         ]);
 
