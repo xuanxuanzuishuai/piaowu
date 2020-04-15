@@ -10,6 +10,7 @@
 namespace App\Controllers\StudentApp;
 
 use App\Controllers\ControllerBase;
+use App\Libs\Constants;
 use App\Libs\HttpHelper;
 use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
@@ -17,11 +18,8 @@ use App\Libs\Valid;
 use App\Models\PlayRecordModel;
 use App\Models\StudentModelForApp;
 use App\Services\AIPlayRecordService;
-use App\Services\AIPlayReportService;
-use App\Services\PlayRecordService;
 use App\Services\UserPlayServices;
 use App\Services\StorageService;
-use App\Services\HomeworkService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -40,7 +38,8 @@ class Play extends ControllerBase
      * @param Response $response
      * @return mixed
      */
-    public function save(Request $request, Response $response){
+    public function save(Request $request, Response $response)
+    {
         $rules = [
             [
                 'key' => 'lesson_id',
@@ -83,7 +82,8 @@ class Play extends ControllerBase
      * @param Response $response
      * @return Response
      */
-    public function end(Request $request, Response $response){
+    public function end(Request $request, Response $response)
+    {
         $rules = [
             [
                 'key' => 'data',
@@ -136,6 +136,9 @@ class Play extends ControllerBase
         }
 
         // 插入到新数据表
+        // 区分新版app和旧版app的数据
+        $isOldVersion = AIPlayRecordService::isOldVersionApp($this->ci['version']);
+        $params['data']['old_format'] = ($isOldVersion ? Constants::STATUS_TRUE : Constants::STATUS_FALSE);
         AIPlayRecordService::insertOldPracticeData($userID, $params['data']);
 
         return $response->withJson([
@@ -160,8 +163,8 @@ class Play extends ControllerBase
                 'error_code' => 'play_data_is_required'
             ]
         ];
-        $param = $request->getParams();
-        $result = Valid::validate($param, $rules);
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
         if($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
@@ -170,7 +173,7 @@ class Play extends ControllerBase
         if (empty($this->ci['student'])) {
             return $response->withJson(['code' => 0], StatusCode::HTTP_OK);
         }
-        if (empty($param['data']['lesson_id'])) {
+        if (empty($params['data']['lesson_id'])) {
             $result = Valid::addAppErrors([], 'lesson_id_is_required');
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
@@ -180,9 +183,9 @@ class Play extends ControllerBase
 
         // 插入练琴纪录表
         $userId = $this->ci['student']['id'];
-        $param['data']['lesson_type'] = PlayRecordModel::TYPE_AI;
-        $param['data']['client_type'] = PlayRecordModel::CLIENT_STUDENT;
-        list($errCode, $ret) = UserPlayServices::addRecord($userId, $param['data']);
+        $params['data']['lesson_type'] = PlayRecordModel::TYPE_AI;
+        $params['data']['client_type'] = PlayRecordModel::CLIENT_STUDENT;
+        list($errCode, $ret) = UserPlayServices::addRecord($userId, $params['data']);
         if (!empty($errCode)) {
             $errors = Valid::addAppErrors([], $errCode);
             return $response->withJson($errors, StatusCode::HTTP_OK);
@@ -191,7 +194,9 @@ class Play extends ControllerBase
         $db->commit();
 
         // 插入到新数据表
-        AIPlayRecordService::insertOldPracticeData($userId, $param['data']);
+        // ai_end 5.0以后接口不再调用，这里的一定是旧版数据
+        $params['data']['old_format'] = Constants::STATUS_TRUE;
+        AIPlayRecordService::insertOldPracticeData($userId, $params['data']);
 
         // 处理返回数据
         $data = ['record_id' => $ret['record_id']];
@@ -215,8 +220,8 @@ class Play extends ControllerBase
                 'error_code' => 'play_data_is_required'
             ]
         ];
-        $param = $request->getParams();
-        $result = Valid::appValidate($param, $rules);
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
         if($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
@@ -225,7 +230,7 @@ class Play extends ControllerBase
         if (empty($this->ci['student'])) {
             return $response->withJson(['code' => 0], StatusCode::HTTP_OK);
         }
-        if (empty($param['data']['lesson_id'])) {
+        if (empty($params['data']['lesson_id'])) {
             $result = Valid::addAppErrors([], 'lesson_id_is_required');
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
@@ -235,7 +240,7 @@ class Play extends ControllerBase
         $userId = $this->ci['student']['id'];
 
         try {
-            $recordId = PlayClassRecordService::addRecord($userId, $param['data']);
+            $recordId = PlayClassRecordService::addRecord($userId, $params['data']);
 
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());

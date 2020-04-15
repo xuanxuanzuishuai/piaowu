@@ -14,6 +14,7 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Libs\OpernCenter;
 use App\Libs\Valid;
 use App\Models\AIPlayRecordModel;
+use App\Models\AppVersionModel;
 use App\Models\PlayRecordModel;
 use App\Models\StudentModel;
 
@@ -41,6 +42,7 @@ class AIPlayRecordService
             'lesson_id' => $params['lesson_id'] ?? 0,
             'score_id' => $params['score_id'] ?? 0,
             'record_id' => $params['record_id'] ?? 0,
+            'is_phrase' => $params['is_phrase'] ?? 0,
             'phrase_id' => $params['phrase_id'] ?? 0,
             'practice_mode' => $params['practice_mode'] ?? 0,
             'hand' => $params['hand'] ?? 0,
@@ -304,6 +306,10 @@ class AIPlayRecordService
             );
         }
 
+        if ($report['old_duration'] > 0) {
+            $text[] = sprintf('进行了%s怀旧模式练习', self::formatDuration($report['old_duration'], true));
+        }
+
         return $text;
     }
 
@@ -405,10 +411,16 @@ class AIPlayRecordService
         }
 
         $score = self::formatScore($playData['score']);
-        $uiEntry = ($playData['lesson_type'] == PlayRecordModel::TYPE_AI
+
+        if ($playData['lesson_type'] == PlayRecordModel::TYPE_AI
             && $playData['is_frag'] == Constants::STATUS_FALSE
-            && $playData['cfg_hand'] == PlayRecordModel::CFG_HAND_BOTH)
-            ? AIPlayRecordModel::UI_ENTRY_TEST : AIPlayRecordModel::UI_ENTRY_PRACTICE;
+            && $playData['cfg_hand'] == PlayRecordModel::CFG_HAND_BOTH) {
+            $uiEntry = AIPlayRecordModel::UI_ENTRY_TEST;
+        } else {
+            // 新版怀旧模式也用旧版的接口按 old_format 来区分是新版app怀旧模式还是老版app数据
+            $uiEntry = ($playData['old_format'] === Constants::STATUS_FALSE)
+                ? AIPlayRecordModel::UI_ENTRY_OLD : AIPlayRecordModel::UI_ENTRY_PRACTICE;
+        }
 
         $recordData = [
             'student_id' => $studentId,
@@ -423,7 +435,7 @@ class AIPlayRecordService
             'hand' => (((($playData['cfg_hand'] ?? PlayRecordModel::CFG_HAND_BOTH) - 1) + 2) % 3) + 1,
             'ui_entry' => $uiEntry,
             'input_type' => $playData['ai_type'] ?? AIPlayRecordModel::INPUT_MIDI,
-            'old_format' => Constants::STATUS_TRUE,
+            'old_format' => $playData['old_format'] ?? Constants::STATUS_TRUE,
 
             'create_time' => $now,
             'end_time' => $now,
@@ -632,5 +644,22 @@ class AIPlayRecordService
         $sum['sum_duration'] = $sum['sum_duration'] ?? 0;
 
         return $sum;
+    }
+
+    /**
+     * 是否时旧版本app
+     * @param $version
+     * @return bool
+     */
+    public static function isOldVersionApp($version)
+    {
+        // 默认是新版
+        if (empty($version)) {
+            return false;
+        }
+
+        // verCmp $a < $b 时返回1
+        $cmpRet = AppVersionModel::verCmp($version, self::DEFAULT_APP_VER);
+        return $cmpRet > 0;
     }
 }
