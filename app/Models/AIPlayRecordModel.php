@@ -55,17 +55,17 @@ class AIPlayRecordModel extends Model
         $db = MysqlDB::getDB();
 
         $sql = "SELECT 
-    FROM_UNIXTIME(create_time, '%Y%m%d') AS play_date,
+    FROM_UNIXTIME(end_time, '%Y%m%d') AS play_date,
     COUNT(DISTINCT lesson_id) AS lesson_count,
     SUM(duration) AS sum_duration
 FROM
     ai_play_record
 WHERE
     student_id = :student_id
-        AND create_time >= :start_time
-        AND create_time < :end_time
+        AND end_time >= :start_time
+        AND end_time < :end_time
         AND duration > 0
-GROUP BY FROM_UNIXTIME(create_time, '%Y%m%d');";
+GROUP BY FROM_UNIXTIME(end_time, '%Y%m%d');";
 
         $map = [
             ':start_time' => $startTime,
