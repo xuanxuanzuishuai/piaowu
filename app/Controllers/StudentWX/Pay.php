@@ -10,6 +10,7 @@ namespace App\Controllers\StudentWX;
 
 
 use App\Controllers\ControllerBase;
+use App\Libs\Erp;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\StudentModelForApp;
@@ -45,6 +46,19 @@ class Pay extends ControllerBase
         $student['mobile'] = Util::hideUserMobile($student['mobile']);
 
         $package = PayServices::getPackageDetail($params['package_id'], $studentId);
+
+        $erp = new Erp();
+        $studentAddress = $erp->getStudentAddressList($student['uuid']);
+        $defaultAddress = [];
+        if (!empty($studentAddress) && $studentAddress['code'] == 0) {
+            foreach ($studentAddress['data']['list'] as $sa) {
+                if ($sa['default'] == 1) {
+                    $defaultAddress = $sa;
+                }
+            }
+        }
+        $student['default_address'] = $defaultAddress;
+
         return $response->withJson([
             'code' => 0,
             'data' => [
