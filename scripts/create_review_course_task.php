@@ -32,7 +32,7 @@ echo "生成今日的点评任务\n";
 $date = date('Ymd');
 echo "review date: $date\n";
 
-$count = ReviewCourseTaskService::createDailyTasks(date('Ymd'));
+$count = ReviewCourseTaskService::createDailyTasks($date);
 
 if ($count === false) {
     echo "error !!!\n";

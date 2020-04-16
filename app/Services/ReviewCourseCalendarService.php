@@ -49,7 +49,7 @@ class ReviewCourseCalendarService
                 return [null, null];
             }
 
-        } elseif ($dayOfWeek == 6 || $dayOfWeek == 0) {
+        } /* 移除周五六日合并到周一点评的逻辑 elseif ($dayOfWeek == 6 || $dayOfWeek == 0) {
             // 周末休息不点评
             SimpleLogger::debug('getReviewTimeWindow: return null, weekend', []);
             return [null, null];
@@ -58,7 +58,7 @@ class ReviewCourseCalendarService
             // 周一点评开始时间为周五(前三前)0点
             $startTime = $endTime - (86400*3);
 
-        } else {
+        }*/ else {
             // 开始时间默认为点评日期前一天0点
             $startTime = $endTime - 86400;
         }
