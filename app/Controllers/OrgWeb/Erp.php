@@ -89,7 +89,8 @@ class Erp extends ControllerBase
 
         $autoApply = ($params['auto_apply']) || ($params['app_id'] == ErpService::APP_ID_AI);
         if ($autoApply) {
-            $autoApply = AIBillService::autoApply($params['parent_bill_id']);
+            $parentBillId = !empty($params['parent_bill_id']) ? $params['parent_bill_id'] : $params['bill_id'];
+            $autoApply = AIBillService::autoApply($parentBillId);
         }
 
         list($errorCode, $giftCodes) = ErpService::exchangeGiftCode(
