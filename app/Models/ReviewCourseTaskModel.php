@@ -31,6 +31,17 @@ class ReviewCourseTaskModel extends Model
     }
 
     /**
+     * 获取指定日期已生成点评的学生id
+     * @param $reviewDate
+     * @return array
+     */
+    public static function existStudents($reviewDate)
+    {
+        $db = MysqlDB::getDB();
+        return $db->select(self::$table, 'student_id', ['review_date' => $reviewDate]);
+    }
+
+    /**
      * 获取task
      * @param $where
      * @return array

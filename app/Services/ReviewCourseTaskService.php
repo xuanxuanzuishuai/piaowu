@@ -17,6 +17,7 @@ use App\Libs\OpernCenter;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Libs\Util;
+use App\Models\AIPlayRecordModel;
 use App\Models\EmployeeModel;
 use App\Models\PlayClassRecordModel;
 use App\Models\PlayRecordModel;
@@ -34,10 +35,7 @@ class ReviewCourseTaskService
      */
     public static function createDailyTasks($reviewDate)
     {
-        if (ReviewCourseTaskModel::hasTasks($reviewDate)) {
-            SimpleLogger::error("[createDailyTasks] tasks has been created", ['review_date' => $reviewDate]);
-            return null;
-        }
+        $existStudentIds = ReviewCourseTaskModel::existStudents($reviewDate);
 
         list($startTime, $endTime) = ReviewCourseCalendarService::getReviewTimeWindow($reviewDate);
         if (empty($startTime) || empty($endTime)) {
@@ -60,10 +58,16 @@ class ReviewCourseTaskService
             return null;
         }
 
-        $playSum = PlayClassRecordModel::studentDailySum($startTime, $endTime);
+        $playSum = AIPlayRecordModel::studentDailySum($startTime, $endTime);
+
         $newTasks = [];
         $last = -1;
         foreach ($playSum as $data) {
+            // 当日已经生成过的学生不能重复生成
+            if (in_array($data['student_id'], $existStudentIds)) {
+                continue;
+            }
+
             // 同一个人不同日期的数据只取最时间最长的一天
             if ($last >= 0 && $newTasks[$last]['student_id'] == $data['student_id']) {
                 if ($data['sum_duration'] > $newTasks[$last]['sum_duration']) {

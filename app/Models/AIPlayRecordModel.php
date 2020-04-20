@@ -44,6 +44,55 @@ class AIPlayRecordModel extends Model
     const RANK_BASE_SCORE = 60; // 大于x分才计入
 
     /**
+     * 获取用户日期演奏时长汇总
+     * 只统计点评课用户
+     * [
+     *   ['student_id' => 1, 'play_date' => 20200107', 'sum_duration' => 10],
+     *   ...
+     * ]
+     *
+     * @param $startTime
+     * @param $endTime
+     * @return array
+     */
+    public static function studentDailySum($startTime, $endTime)
+    {
+        $db = MysqlDB::getDB();
+
+        $apr = self::$table;
+        $s = StudentModel::$table;
+
+        $sql = "SELECT 
+    apr.student_id,
+    FROM_UNIXTIME(apr.end_time, '%Y%m%d') AS play_date,
+    SUM(apr.duration) AS sum_duration
+FROM
+    {$apr} AS apr
+        INNER JOIN
+    {$s} AS s ON s.id = apr.student_id
+        AND s.`has_review_course` IN (:review_package, :review_plus_package)
+WHERE
+    apr.end_time > :start_time
+        AND apr.end_time <= :end_time
+        AND apr.old_format = 0
+        AND apr.ui_entry IN (:entry_test, :entry_learn, :entry_improve, :entry_class)
+GROUP BY apr.student_id , FROM_UNIXTIME(apr.end_time, '%Y%m%d');";
+
+        $map = [
+            ':start_time' => $startTime,
+            ':end_time' => $endTime,
+            ':review_package' => ReviewCourseModel::REVIEW_COURSE_49,
+            ':review_plus_package' => ReviewCourseModel::REVIEW_COURSE_1980,
+            ':entry_test' => self::UI_ENTRY_TEST,
+            ':entry_learn' => self::UI_ENTRY_LEARN,
+            ':entry_improve' => self::UI_ENTRY_IMPROVE,
+            ':entry_class' => self::UI_ENTRY_CLASS,
+        ];
+
+        return $db->queryAll($sql, $map) ?? [];
+    }
+
+    /**
      * 学生练琴汇总(按天)
      * @param $studentId
      * @param $startTime
