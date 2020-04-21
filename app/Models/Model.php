@@ -276,4 +276,16 @@ class Model
 
         return [$cnt, $data];
     }
+
+    /**
+     * 获取数据行数
+     * @param $where
+     * @return number
+     */
+    public static function getCount($where)
+    {
+        $db = MysqlDB::getDB();
+        $count = $db->count(static::$table, $where);
+        return $count;
+    }
 }

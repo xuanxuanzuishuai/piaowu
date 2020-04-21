@@ -100,4 +100,22 @@ class DictService
     {
         return DictModel::updateValue($type, $keyCode, $keyValue);
     }
+
+    /**
+     * 获取指定多个类型数据map
+     * @param $types
+     * @return array
+     */
+    public static function getTypesMap($types)
+    {
+        $typesMap = DictModel::getListsByTypes($types);
+        $data = [];
+        if (empty($typesMap)) {
+            return $data;
+        }
+        foreach ($typesMap as $type => $record) {
+            $data[$type] = array_column($record, null, 'code');
+        }
+        return $data;
+    }
 }

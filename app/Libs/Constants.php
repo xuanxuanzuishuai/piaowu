@@ -200,4 +200,8 @@ class Constants
      */
     const DICT_KEY_NSQ_TOPIC_PREFIX = "NSQ_TOPIC_PREFIX";
     const DICT_KEY_NSQ_LOOK_UPS = "NSQ_LOOKUPS";
+    //分享海报截图审核原因
+    const DICT_TYPE_SHARE_POSTER_CHECK_REASON = "share_poster_check_reason";
+    //分享截图审核状态
+    const DICT_TYPE_SHARE_POSTER_CHECK_STATUS = "share_poster_check_status";
 };

@@ -61,6 +61,13 @@ class StudentModel extends Model
     const CRM_AI_LEADS_STATUS_BUY_TEST_COURSE = 1;
     const CRM_AI_LEADS_STATUS_BUY_NORMAL_COURSE = 2;
 
+    //学生的状态
+    const STATUS_REGISTER = 0;//注册
+    const STATUS_BUY_TEST_COURSE = 1;//付费体验课
+    const STATUS_BUY_NORMAL_COURSE = 2;//付费正式课
+    const STATUS_UNBIND = 3;//未绑定微信
+    const STATUS_BIND = 4;//已绑定微信
+
 
     /**
      * 更新学生信息

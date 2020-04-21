@@ -980,4 +980,49 @@ class StudentService
         }
         return $queueRes;
     }
+
+    /**
+     * 获取学生当前状态
+     * @param int $studentId
+     * @return array $studentStatus
+     * @throws RunTimeException
+     */
+    public static function studentStatusCheck($studentId)
+    {
+        //获取学生信息
+        $studentInfo = StudentModel::getById($studentId);
+        $data = [];
+        if (empty($studentInfo)) {
+            throw new RunTimeException(['student_not_exist']);
+        }
+        $data['student_info'] = $studentInfo;
+        //查看学生是否绑定账户
+        $userIsBind = UserWeixinModel::getRecord([
+            'user_id' => $studentId,
+            'status' => UserWeixinModel::STATUS_NORMAL,
+            'user_type' => UserWeixinModel::USER_TYPE_STUDENT,
+            'busi_type' => UserWeixinModel::BUSI_TYPE_STUDENT_SERVER,
+        ], ['id'], false);
+        if (empty($userIsBind)) {
+            //未绑定
+            $data['student_status'] = StudentModel::STATUS_UNBIND;
+        } else {
+            switch ($studentInfo['has_review_course']) {
+                case ReviewCourseModel::REVIEW_COURSE_49:
+                    //付费体验课
+                    $data['student_status'] = StudentModel::STATUS_BUY_TEST_COURSE;
+                    break;
+                case ReviewCourseModel::REVIEW_COURSE_1980:
+                    //付费正式课
+                    $data['student_status'] = StudentModel::STATUS_BUY_NORMAL_COURSE;
+                    break;
+                default:
+                    //注册
+                    $data['student_status'] = StudentModel::STATUS_REGISTER;
+                    break;
+            }
+        }
+        //返回数据
+        return $data;
+    }
 }

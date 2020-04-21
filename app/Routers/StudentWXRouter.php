@@ -19,6 +19,7 @@ use App\Controllers\StudentWX\PlayRecordForPanda;
 use App\Controllers\StudentWX\Student;
 use App\Middleware\WeChatAuthCheckMiddleware;
 use App\Middleware\WeChatPandaAuthCheckMiddleware;
+use App\Controllers\StudentWX\ReferralActivity;
 
 class StudentWXRouter extends RouterBase
 {
@@ -171,6 +172,18 @@ class StudentWXRouter extends RouterBase
         '/student_wx/referral/user_referred_list' => [
             'method' => ['get'],
             'call' => Referral::class . ':userReferredList',
+        ],
+        '/student_wx/referral/activity_info' => [
+            'method' => ['get'],
+            'call' => ReferralActivity::class . ':activityInfo',
+        ],
+        '/student_wx/referral/upload_share_poster' => [
+            'method' => ['post'],
+            'call' => ReferralActivity::class . ':uploadSharePoster',
+        ],
+        '/student_wx/referral/join_record_list' => [
+            'method' => ['get'],
+            'call' => ReferralActivity::class . ':joinRecordList',
         ],
     ];
 }

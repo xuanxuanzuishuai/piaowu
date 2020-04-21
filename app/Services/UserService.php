@@ -222,4 +222,62 @@ class UserService
         }
         return $data;
     }
+
+    /**
+     * 图片添加二维码水印（通过ali oss接口）
+     * @param $userId
+     * @param $posterFile
+     * @param int $type
+     * @param $imageWidth
+     * @param $imageHeight
+     * @param $qrWidth
+     * @param $qrHeight
+     * @param $qrX
+     * @param $qrY
+     * @return array|string
+     */
+    public static function addQrWaterMarkAliOss($userId, $posterFile, $type = 1, $imageWidth, $imageHeight, $qrWidth, $qrHeight, $qrX, $qrY)
+    {
+        //海报资源
+        $posterAliOssFileExits = AliOSS::doesObjectExist($posterFile);
+        $resImgFile = '';
+        if (empty($posterAliOssFileExits)) {
+            SimpleLogger::info('poster oss file is not exits', [$posterFile]);
+            return $resImgFile;
+        }
+        //用户二维码
+        $userQrUrl = self::getUserQRAliOss($userId, $type);
+        if (empty($userQrUrl)) {
+            SimpleLogger::info('user qr make fail', [$userId, $type]);
+            return $resImgFile;
+        }
+        $userQrAliOssFileExits = AliOSS::doesObjectExist($userQrUrl['qr_url']);
+        if (empty($userQrAliOssFileExits)) {
+            SimpleLogger::info('user qr oss file is not exits', [$userQrUrl['qr_url']]);
+            return $resImgFile;
+        }
+        //海报添加水印
+        //先将内容编码成Base64结果
+        //将结果中的加号（+）替换成连接号（-）
+        //将结果中的正斜线（/）替换成下划线（_）
+        //将结果中尾部的等号（=）全部保留
+        $waterImgEncode = str_replace(["+", "/"], ["-", "_"], base64_encode($userQrUrl['qr_url'] . "?x-oss-process=image/resize,limit_0,w_" . $qrWidth . ",h_" . $qrHeight));
+        $waterMark = [
+            "image_" . $waterImgEncode,
+            "x_" . $qrX,
+            "y_" . $qrY,
+            "g_sw",//插入的基准位置以左下角作为原点
+        ];
+        $waterMarkStr = implode(",", $waterMark) . '/';
+        $imgSize = [
+            "w_" . $imageWidth,
+            "h_" . $imageHeight,
+            "limit_0",//强制图片缩放
+        ];
+        $imgSizeStr = implode(",", $imgSize) . '/';
+        //通过添加水印生成海报宣传图
+        $resImgFile = AliOSS::signUrls($posterFile, "", "", "", false, $waterMarkStr, $imgSizeStr);
+        //返回数据
+        return $resImgFile;
+    }
 }
