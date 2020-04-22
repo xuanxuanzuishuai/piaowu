@@ -20,7 +20,6 @@ require_once PROJECT_ROOT . '/vendor/autoload.php';
 use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
-use App\Services\AIPlayRecordService;
 use App\Services\WeChatService;
 use Dotenv\Dotenv;
 
@@ -70,17 +69,13 @@ foreach ($userInfo as $value) {
             'color' => "#323d83"
         ],
         'keyword2' => [
-            'value' => $value['lesson_count'] . "首",
+            'value' => "请查看详情",
             'color' => "#323d83"
         ],
         'keyword3' => [
-            'value' => "练琴" . AIPlayRecordService::formatDuration($value['sum_duration'], false),
+            'value' => "请查看详情",
             'color' => "#323d83"
         ],
-        'remark' => [
-            'value' => "点击【详情】查看",
-            'color' => "#323d83"
-        ]
     ];
     // 发送学生练习日报
     $ret = WeChatService::notifyUserWeixinTemplateInfo(
