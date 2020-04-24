@@ -99,4 +99,40 @@ class QueueService
         }
         return true;
     }
+
+    /**
+     * 给微信用户推送活动消息
+     * @param $students
+     * @param $guideWord
+     * @param $shareWord
+     * @param $posterUrl
+     * @param $pushTime
+     * @param $activityId
+     * @param $employeeId
+     * @return bool
+     */
+    public static function pushWX($students, $guideWord, $shareWord, $posterUrl, $pushTime, $activityId, $employeeId)
+    {
+        try {
+            $topic = new PushMessageTopic();
+
+            $msgBody = [
+                'students' => $students,
+                'guide_word' => $guideWord,
+                'share_word' => $shareWord,
+                'poster_url' => $posterUrl,
+                'push_wx_time' => $pushTime,
+                'activity_id' => $activityId,
+                'employee_id' => $employeeId
+            ];
+
+            $topic->pushWX($msgBody)->publish();
+
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), $msgBody ?? []);
+            return false;
+        }
+        return true;
+
+    }
 }

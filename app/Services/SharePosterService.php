@@ -10,8 +10,12 @@ namespace App\Services;
 
 
 use App\Libs\Constants;
+use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\AliOSS;
+use App\Libs\SimpleLogger;
+use App\Libs\UserCenter;
+use App\Libs\Util;
 use App\Models\ReferralActivityModel;
 use App\Models\SharePosterModel;
 use App\Models\StudentModel;
@@ -207,4 +211,172 @@ class SharePosterService
         return $awardListInfo;
     }
 
+    /**
+     * 上传截图列表
+     * @param $params
+     * @return array
+     */
+    public static function sharePosterList($params)
+    {
+
+        list($posters, $totalCount) = SharePosterModel::posterList($params);
+
+        if (!empty($posters)) {
+            $imgSizeH = DictConstants::get(DictConstants::ALI_OSS_CONFIG, 'img_size_h');
+
+            foreach ($posters as &$poster) {
+                $poster['mobile'] = Util::hideUserMobile($poster['mobile']);
+                $poster['img_url'] = AliOSS::signUrls($poster['img_url'], "", "", "", false, "", $imgSizeH);
+                $poster['status_name'] = DictService::getKeyValue(Constants::DICT_TYPE_SHARE_POSTER_CHECK_STATUS, $poster['poster_status']);
+                $poster['create_time'] = date('Y-m-d H:i', $poster['create_time']);
+                $poster['check_time'] = !empty($poster['check_time']) ? date('Y-m-d H:i', $poster['check_time']) : '';
+
+                $reasonStr = [];
+                if (!empty($poster['reason'])) {
+                    $reason = explode(',', $poster['reason']);
+                    foreach ($reason as $reasonId) {
+                       $reasonStr[] = DictService::getKeyValue(Constants::DICT_TYPE_SHARE_POSTER_CHECK_REASON, $reasonId);;
+                    }
+                }
+                if (!empty($poster['remark'])) {
+                    $reasonStr[] = $poster['remark'];
+                }
+                $poster['reason_str'] = implode('/', $reasonStr);
+            }
+        }
+
+        return [$posters, $totalCount];
+    }
+
+    /**
+     * 审核通过、发放奖励
+     * @param $posterIds
+     * @param $employeeId
+     * @return bool
+     * @throws RunTimeException
+     */
+    public static function approval($posterIds, $employeeId)
+    {
+        $erp = new Erp();
+
+        $posters = SharePosterModel::getPostersByIds($posterIds);
+        if (count($posters) != count($posterIds)) {
+            throw new RunTimeException(['get_share_poster_error']);
+        }
+
+        $time = time();
+        $status = SharePosterModel::STATUS_QUALIFIED;
+        foreach ($posters as $poster) {
+
+            // 一次任务，多个奖励
+            $awardIds = explode(',', $poster['award_id']);
+            $response = $erp->updateAward($awardIds, ErpReferralService::AWARD_STATUS_GIVEN, $employeeId);
+            if (empty($response) || $response['code'] != 0) {
+                SimpleLogger::error('update award error', ['award_id' => $awardIds, 'error' => $response['errors']]);
+                $errorCode = $response['errors'][0]['err_no'] ?? 'erp_request_error';
+                throw new RunTimeException([$errorCode]);
+            }
+
+            $eventTaskId = $response['data']['event_task_id'];
+            if ($eventTaskId > 0) {
+                SharePosterModel::updateRecord($poster['id'], [
+                    'status' => $status,
+                    'check_time' => $time,
+                    'update_time' => $time,
+                    'operator_id' => $employeeId,
+                ]);
+
+                // 发送审核通过模版消息
+                self::sendTemplate($poster['open_id'], $poster['activity_name'], $status);
+            }
+        }
+        return true;
+    }
+
+    /**
+     * 审核不通过
+     * @param $posterId
+     * @param $employeeId
+     * @param $reason
+     * @param $remark
+     * @return int|null
+     * @throws RunTimeException
+     */
+    public static function refused($posterId, $employeeId, $reason, $remark)
+    {
+        if (empty($reason) && empty($remark)) {
+            throw new RunTimeException(['please_select_reason']);
+        }
+
+        $posters = SharePosterModel::getPostersByIds([$posterId]);
+        $poster = $posters[0];
+        if (empty($poster)) {
+            throw new RunTimeException(['get_share_poster_error']);
+        }
+
+        $status = SharePosterModel::STATUS_UNQUALIFIED;
+        $time = time();
+        $update = SharePosterModel::updateRecord($poster['id'], [
+            'status' => $status,
+            'check_time' => $time,
+            'update_time' => $time,
+            'operator_id' => $employeeId,
+            'reason' => implode(',', $reason),
+            'remark' => $remark
+        ]);
+
+        // 审核不通过, 发送模版消息
+        if ($update > 0) {
+            self::sendTemplate($poster['open_id'], $poster['activity_name'], $status);
+        }
+
+        return $update > 0 ? true : false;
+    }
+
+    /**
+     * 发送审核结果推送
+     * @param $openId
+     * @param $activityName
+     * @param $status
+     */
+    public static function sendTemplate($openId, $activityName, $status)
+    {
+        $url = $_ENV["WECHAT_FRONT_DOMAIN"] . "/student/referral?tag=2";
+
+        $keyword3 = "已通过。奖励已发放";
+        $remark = "【点此消息】查看更多任务记录";
+        $color = "#868686";
+        if ($status == SharePosterModel::STATUS_UNQUALIFIED) {
+            $keyword3 = "未通过";
+            $remark = "【点此消息】查看更多任务记录，或进入“当前活动”重新上传";
+            $color = "#FF0000";
+        }
+
+
+        $content = [
+            'first' => [
+                'value' => "您上传的截图审核结束，详情如下"
+            ],
+            'keyword1' => [
+                'value' => "上传截图领奖",
+            ],
+            'keyword2' => [
+                'value' => $activityName
+            ],
+            'keyword3' => [
+                'value' => $keyword3,
+                'color' => $color
+            ],
+            'remark' => [
+                'value' => $remark
+            ]
+        ];
+        WeChatService::notifyUserWeixinTemplateInfo(
+            UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
+            WeChatService::USER_TYPE_STUDENT,
+            $openId,
+            $_ENV['WECHAT_TEMPLATE_CHECK_SHARE_POSTER'],
+            $content,
+            $url);
+    }
 }

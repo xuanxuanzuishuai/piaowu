@@ -15,6 +15,10 @@ use App\Libs\Util;
 
 class ErpReferralService
 {
+    /** 转介绍事件 */
+    const EVENT_TYPE_UPLOAD_POSTER = 4; // 上传分享海报
+
+
     /** 转介绍阶段任务 */
     const EVENT_TASK_ID_REGISTER = 1; // 注册
     const EVENT_TASK_ID_TRIAL_PAY = 2; // 体验支付

@@ -28,6 +28,7 @@ class DictConstants {
             'record_file_arn',
             'img_dir',
             'cdn_domain',
+            'img_size_h',
         ]
     ];
 

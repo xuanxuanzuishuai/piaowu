@@ -8,6 +8,7 @@
 
 namespace App\Libs;
 
+use App\Services\ErpReferralService;
 use GuzzleHttp\Client;
 use Slim\Http\StatusCode;
 
@@ -27,6 +28,9 @@ class Erp
     const API_UPDATE_TASK = '/api/dss/add_user_event_task';
     const API_UPDATE_AWARD = '/api/dss/award';
     const API_USER_REFERRAL_INFO = '/api/dss/get_user_referral_info';
+    const API_EVENT_LIST = '/api/dss/events';
+    const API_COPY_TASK = '/api/dss/copy_task';
+    const API_MODIFY_TASK = '/api/dss/modify_task';
 
     const API_STUDENT_ADDRESS_LIST = '/ai_dss/student/address_list';
     const API_STUDENT_MODIFY_ADDRESS = '/ai_dss/student/modify_address';
@@ -211,6 +215,69 @@ class Erp
     {
         $params['app_id'] = self::SELF_APP_ID;
         $response = HttpHelper::requestJson($this->host . self::API_REFERRED_LIST, $params);
+        return $response;
+    }
+
+    /**
+     * 获取事件任务
+     * @param int $eventId
+     * @param int $eventType
+     * @return array|bool
+     */
+    public function eventTaskList($eventId = 0, $eventType = ErpReferralService::EVENT_TYPE_UPLOAD_POSTER)
+    {
+        $params['app_id'] = self::SELF_APP_ID;
+        if (!empty($eventId)) {
+            $params['event_id'] = $eventId;
+        }
+        if (!empty($eventType)) {
+            $params['type'] = $eventType;
+        }
+        $response = HttpHelper::requestJson($this->host . self::API_EVENT_LIST, $params);
+        return $response;
+    }
+
+    /**
+     * 复制任务
+     * @param $taskId
+     * @param $startTime
+     * @param $endTime
+     * @return array|bool
+     */
+    public function copyTask($taskId, $startTime, $endTime, $name)
+    {
+        $response = HttpHelper::requestJson($this->host . self::API_COPY_TASK, [
+            'app_id' => self::SELF_APP_ID,
+            'task_id' => $taskId,
+            'start_time' => $startTime,
+            'end_time' => $endTime,
+            'task_name' => $name
+        ]);
+        return $response;
+    }
+
+    /**
+     * 修改任务
+     * @param $taskId
+     * @param $startTime
+     * @param $endTime
+     * @param $name
+     * @param null $status
+     * @return array|bool
+     */
+    public function modifyTask($taskId, $startTime, $endTime, $name, $status = null)
+    {
+        $data['app_id'] = self::SELF_APP_ID;
+        $data['task_id'] = $taskId;
+
+        $data['start_time'] = !empty($startTime) ? $startTime : 0;
+        $data['end_time'] = !empty($endTime) ? $endTime : 0;
+        $data['name'] = !empty($name) ? $name : '';
+        if (isset($status) && is_numeric($status)) {
+            $data['status'] = $status;
+        }
+
+        $response = HttpHelper::requestJson($this->host . self::API_MODIFY_TASK, $data);
         return $response;
     }
 

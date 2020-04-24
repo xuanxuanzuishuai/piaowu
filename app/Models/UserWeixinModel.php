@@ -118,4 +118,21 @@ class UserWeixinModel extends Model
             ]
         ], false);
     }
+
+    /**
+     * 获取绑定微信的学生id
+     * @param $appId
+     * @return array
+     */
+    public static function getBoundUserIds($userIds, $appId)
+    {
+        $users = UserWeixinModel::getRecords([
+            'user_type' => UserWeixinModel::USER_TYPE_STUDENT,
+            'status' => self::STATUS_NORMAL,
+            'app_id' => $appId,
+            'busi_type' => self::BUSI_TYPE_STUDENT_SERVER,
+            'user_id' => $userIds
+        ], ['user_id', 'open_id'], false);
+        return $users;
+    }
 }

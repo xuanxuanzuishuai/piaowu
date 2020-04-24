@@ -176,4 +176,22 @@ class NewSMS
         ];
         return self::sendSMS($data);
     }
+
+    /**
+     * 发送参加活动的提醒
+     * @param $mobile
+     * @param $sign
+     * @return bool
+     */
+    public function sendAttendActSMS($mobile, $sign, $startTime)
+    {
+        $msg = "您预约的“0元领取3天使用时长”已于{$startTime}开始，请在【小叶子智能陪练】微信号点击【推荐有奖】参加。详情可咨询助教老师";
+
+        $data = [
+            'sign_name' => $sign,
+            'phone_number' => $mobile,
+            'content' => $msg,
+        ];
+        return self::sendSMS($data);
+    }
 }

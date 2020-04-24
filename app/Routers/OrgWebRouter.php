@@ -19,6 +19,7 @@ use App\Controllers\Employee\Employee;
 use App\Controllers\Org\Org;
 use App\Controllers\Org\OrgAccount as OrgAccount;
 use App\Controllers\Org\OrgLicense;
+use App\Controllers\OrgWeb\Activity;
 use App\Controllers\OrgWeb\Admin;
 use App\Controllers\OrgWeb\Approval;
 use App\Controllers\OrgWeb\Banner;
@@ -28,6 +29,7 @@ use App\Controllers\OrgWeb\Question;
 use App\Controllers\OrgWeb\QuestionTag;
 use App\Controllers\OrgWeb\Referral;
 use App\Controllers\OrgWeb\ReviewCourse;
+use App\Controllers\OrgWeb\SharePoster;
 use App\Controllers\Schedule\ScheduleRecord;
 use App\Controllers\Student\PlayRecord as BackendPlayRecord;
 use App\Controllers\Student\Student;
@@ -370,5 +372,19 @@ class OrgWebRouter extends RouterBase
         '/org_web/banner/add' => ['method' => ['post'], 'call' => Banner::class . ':add'],
         '/org_web/banner/detail' => ['method' => ['get'], 'call' => Banner::class . ':detail'],
         '/org_web/banner/edit' => ['method' => ['post'], 'call' => Banner::class . ':edit'],
+
+        // 转介绍活动
+        '/org_web/activity/event' => ['method' => ['get'], 'call' => Activity::class . ':eventTasks'],
+        '/org_web/activity/list' => ['method' => ['get'], 'call' => Activity::class . ':list'],
+        '/org_web/activity/detail' => ['method' => ['get'], 'call' => Activity::class . ':detail'],
+        '/org_web/activity/add' => ['method' => ['post'], 'call' => Activity::class . ':add'],
+        '/org_web/activity/modify' => ['method' => ['post'], 'call' => Activity::class . ':modify'],
+        '/org_web/activity/update_status' => ['method' => ['post'], 'call' => Activity::class . ':updateStatus'],
+        '/org_web/activity/send_msg' => ['method' => ['post'], 'call' => Activity::class . ':sendMsg'],
+        '/org_web/activity/push_weixin_msg' => ['method' => ['post'], 'call' => Activity::class . ':pushWeixinMsg'],
+        '/org_web/share_poster/list' => ['method' => ['get'], 'call' => SharePoster::class . ':list'],
+        '/org_web/share_poster/approved' => ['method' => ['post'], 'call' => SharePoster::class . ':approved'],
+        '/org_web/share_poster/refused' => ['method' => ['post'], 'call' => SharePoster::class . ':refused'],
+
     ];
 }
