@@ -70,7 +70,11 @@ class ErpReferralService
         $list = [];
         //批量获取学生信息
         $uuidList = array_merge(array_column($response['data']['records'], 'student_uuid'), array_column($response['data']['records'], 'referrer_uuid'));
-        $studentInfoList = array_column(StudentService::getByUuids($uuidList, ['name', 'id', 'uuid']), null, 'uuid');
+        if (empty($uuidList)) {
+            $studentInfoList = [];
+        } else {
+            $studentInfoList = array_column(StudentService::getByUuids($uuidList, ['name', 'id', 'uuid']), null, 'uuid');
+        }
         foreach ($response['data']['records'] as $referred) {
             $tasks = $referred['tasks'] ?? [];
             $maxRefTask = self::findMaxRefTask($tasks);
