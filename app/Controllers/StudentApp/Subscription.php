@@ -28,6 +28,11 @@ class Subscription extends ControllerBase
                 'key' => 'code',
                 'type' => 'required',
                 'error_code' => 'active_code_is_required'
+            ],
+            [
+                'key' => 'code',
+                'type' => 'AlphaNum',
+                'error_code' => 'gift_code_error'
             ]
         ];
 
