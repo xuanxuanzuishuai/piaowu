@@ -127,8 +127,10 @@ class AIPlayRecordService
                     'lesson_name' => '',
                     'collection_name' => '',
                     'total_duration' => 0, // 总时长
+                    'learn_count' => 0, // 识谱全曲次数
                     'part_learn_count' => 0, // 识谱乐句数(相同乐句记1次)
                     'part_learn_id_map' => [], // 识谱乐句id集合
+                    'improve_count' => 0, // 提高全曲次数
                     'part_improve_count' => 0, // 提高乐句数(相同乐句记1次)
                     'part_improve_id_map' => [], // 提高乐句id集合
                     'test_count' => 0, // 全曲测评
@@ -177,22 +179,30 @@ class AIPlayRecordService
 
             // case 识谱
             if ($record['ui_entry'] == AIPlayRecordModel::UI_ENTRY_LEARN) {
-                // 统计乐句数量，每个乐句只算一次
-                if ($record['is_phrase']
-                    && empty($lessonReports[$lessonId]['part_learn_id_map'][$record['phrase_id']])) {
-                    $lessonReports[$lessonId]['part_learn_id_map'][$record['phrase_id']] = true;
-                    $lessonReports[$lessonId]['part_learn_count']++;
+                if ($record['is_phrase']) {
+                    // 统计乐句数量，每个乐句只算一次
+                    if (empty($lessonReports[$lessonId]['part_learn_id_map'][$record['phrase_id']])) {
+                        $lessonReports[$lessonId]['part_learn_id_map'][$record['phrase_id']] = true;
+                        $lessonReports[$lessonId]['part_learn_count']++;
+                    }
+                } else {
+                    // 统计全曲数量
+                    $lessonReports[$lessonId]['learn_count']++;
                 }
                 continue;
             }
 
             // case 提高
             if ($record['ui_entry'] == AIPlayRecordModel::UI_ENTRY_IMPROVE) {
-                // 统计乐句数量，每个乐句只算一次
-                if ($record['is_phrase']
-                    && empty($lessonReports[$lessonId]['part_improve_id_map'][$record['phrase_id']])) {
-                    $lessonReports[$lessonId]['part_improve_id_map'][$record['phrase_id']] = true;
-                    $lessonReports[$lessonId]['part_improve_count']++;
+                if ($record['is_phrase']) {
+                    // 统计乐句数量，每个乐句只算一次
+                    if (empty($lessonReports[$lessonId]['part_improve_id_map'][$record['phrase_id']])) {
+                        $lessonReports[$lessonId]['part_improve_id_map'][$record['phrase_id']] = true;
+                        $lessonReports[$lessonId]['part_improve_count']++;
+                    }
+                } else {
+                    // 统计全曲数量
+                    $lessonReports[$lessonId]['improve_count']++;
                 }
                 continue;
             }
@@ -290,11 +300,15 @@ class AIPlayRecordService
 
         $text[] = sprintf('宝贝共练习了%s', self::formatDuration($report['total_duration'], true));
 
-        if ($report['part_learn_count'] > 0) {
+        if ($report['learn_count'] > 0) {
+            $text[] = '进行了全曲识谱练习';
+        } elseif ($report['part_learn_count'] > 0) {
             $text[] = sprintf('进行了<span>%s</span>个乐句的识谱练习', $report['part_learn_count']);
         }
 
-        if ($report['part_improve_count'] > 0) {
+        if ($report['improve_count'] > 0) {
+            $text[] = '进行了全曲提升练习';
+        } elseif ($report['part_improve_count'] > 0) {
             $text[] = sprintf('进行了<span>%s</span>个乐句的提升练习', $report['part_improve_count']);
         }
 
