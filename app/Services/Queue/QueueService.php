@@ -25,7 +25,7 @@ class QueueService
     public static function studentFirstPayNormalCourse($studentID)
     {
         try {
-            $topic = new StudentStatusTopic();
+            $topic = new StudentSyncTopic();
             $syncData = StudentService::getStudentSyncData($studentID);
             if (empty($syncData)) {
                 return false;
@@ -46,7 +46,7 @@ class QueueService
     public static function studentFirstPayTestCourse($studentID)
     {
         try {
-            $topic = new StudentStatusTopic();
+            $topic = new StudentSyncTopic();
             $syncData = StudentService::getStudentSyncData($studentID);
             if (empty($syncData)) {
                 return false;
@@ -68,7 +68,7 @@ class QueueService
     {
         try {
             //获取班级
-            $topic = new StudentStatusTopic();
+            $topic = new StudentSyncTopic();
             $syncData = StudentService::getStudentSyncData($studentIDList);
             if (empty($syncData)) {
                 return false;
@@ -91,7 +91,7 @@ class QueueService
     public static function studentSyncData($syncData)
     {
         try {
-            $topic = new StudentStatusTopic();
+            $topic = new StudentSyncTopic();
             $topic->studentSyncData($syncData)->publish();
         } catch (Exception $e) {
             SimpleLogger::error($e->getMessage(), $syncData);

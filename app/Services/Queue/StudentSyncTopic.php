@@ -8,7 +8,7 @@
 
 namespace App\Services\Queue;
 
-class StudentStatusTopic extends BaseTopic
+class StudentSyncTopic extends BaseTopic
 {
     const TOPIC_NAME = "student_sync";
     // 数据同步
