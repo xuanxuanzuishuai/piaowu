@@ -10,7 +10,6 @@ namespace App\Services;
 
 use App\Libs\AIPLClass;
 use App\Libs\AliOSS;
-use App\Libs\Constants;
 use App\Libs\Erp;
 use App\Libs\NewSMS;
 use App\Libs\SimpleLogger;
@@ -475,7 +474,7 @@ class ReviewCourseService
                 'value' => "老师点评通知",
             ],
             'keyword1' => [
-                'value' => '小叶子智能陪练课'
+                'value' => '小叶子智能陪练'
             ],
             'keyword2' => [
                 'value' => '智能陪练课后点评'
@@ -586,7 +585,7 @@ class ReviewCourseService
                 'value' => "老师点评通知",
             ],
             'keyword1' => [
-                'value' => '小叶子智能陪练课'
+                'value' => '小叶子智能陪练'
             ],
             'keyword2' => [
                 'value' => $dateStr . '智能陪练课后点评'
