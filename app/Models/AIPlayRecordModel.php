@@ -62,6 +62,16 @@ class AIPlayRecordModel extends Model
         $apr = self::$table;
         $s = StudentModel::$table;
 
+        /*
+         * 点评数据包含四种模式的数据
+         * UI_ENTRY_TEST
+         * UI_ENTRY_LEARN
+         * UI_ENTRY_IMPROVE
+         * UI_ENTRY_CLASS
+         *
+         * 其中测评模式 UI_ENTRY_TEST 只记录新版数据(old_format = 0)
+         */
+
         $sql = "SELECT 
     apr.student_id,
     FROM_UNIXTIME(apr.end_time, '%Y%m%d') AS play_date,
@@ -74,8 +84,11 @@ FROM
 WHERE
     apr.end_time > :start_time
         AND apr.end_time <= :end_time
-        AND apr.old_format = 0
-        AND apr.ui_entry IN (:entry_test, :entry_learn, :entry_improve, :entry_class)
+        AND (
+          (apr.ui_entry IN (:entry_learn, :entry_improve, :entry_class))
+          OR
+          (apr.ui_entry = :entry_test AND old_format = 0)
+        )
 GROUP BY apr.student_id , FROM_UNIXTIME(apr.end_time, '%Y%m%d');";
 
         $map = [
