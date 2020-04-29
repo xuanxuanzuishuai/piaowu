@@ -270,10 +270,14 @@ class ReviewCourseTaskService
             $detail['class_lesson'] = $classRecordSum;
         }
 
+        // 后台打开练琴日报页面需要的token
+        $shareToken = AIPlayReportService::getShareReportToken($student['id'], $review['play_date']);
+
         return [
             'student' => $studentData,
             'review' => $reviewData,
             'detail' => $detail,
+            'share_token' => $shareToken,
         ];
     }
 
