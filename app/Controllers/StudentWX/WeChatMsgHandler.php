@@ -8,6 +8,7 @@
 
 namespace App\Controllers\StudentWX;
 
+use App\Libs\RedisDB;
 use App\Models\UserQrTicketModel;
 use App\Services\UserService;
 use App\Services\WeChatService;
@@ -101,5 +102,38 @@ class WeChatMsgHandler
                 UserWeixinModel::USER_TYPE_STUDENT, $userOpenId, $tel);
         }
         return false;
+    }
+
+    //serverOnline计算当前时间是否在指定时间段内；$fragment格式：12:00-21:00,22:01-22:02,...
+    private static function serverOnline($fragment)
+    {
+        $fs = explode(',', $fragment);
+        if(empty($fs)) {
+            return false;
+        }
+        $now = time();
+        foreach($fs as $f) {
+            $s = explode('-', $f);
+            if(count($s) == 2 && $now >= strtotime($s[0]) && $now <= strtotime($s[1])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    //autoReply在客服离线时自动回复客服消息，1小时内只回复1次
+    public static function autoReply($xml)
+    {
+        if(!empty($_ENV['SERVER_AUTO_REPLY']) && !self::serverOnline($_ENV['SERVER_ONLINE_TIME'])) {
+            $client = (string)$xml->FromUserName;
+            $key = "{$client}.last_send_time";
+            $db = RedisDB::getConn();
+            if(empty($db->get($key))) {
+                $reply = "您好，微信平台客服在线服务时间为{$_ENV['SERVER_ONLINE_TIME']}，非在线时间咨询可拨打客服电话 400-029-2609";
+                WeChatService::notifyUserWeixinTextInfo(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
+                    UserWeixinModel::USER_TYPE_STUDENT, $client, $reply);
+                $db->setex($key, 3600, time());
+            }
+        }
     }
 }

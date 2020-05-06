@@ -72,6 +72,8 @@ class Callback extends ControllerBase
                 default:
                     break;
             }
+        } else { //text, image, voice, location ... 等客服消息
+            WeChatMsgHandler::autoReply($xml);
         }
         return $result;
     }
