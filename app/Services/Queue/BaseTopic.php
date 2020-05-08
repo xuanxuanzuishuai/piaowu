@@ -15,6 +15,7 @@ use App\Libs\NsqProducerLib;
 use App\Libs\SimpleLogger;
 use App\Services\DictService;
 use Exception;
+use GuzzleHttp\Exception\GuzzleException;
 
 class BaseTopic
 {
@@ -30,7 +31,8 @@ class BaseTopic
      * BaseTopic constructor.
      * @param $topicName
      * @param null $publishTime
-     * @param $sourceAppId
+     * @param int $sourceAppId
+     * @throws Exception
      */
     protected function __construct($topicName, $publishTime = null, $sourceAppId = QueueService::FROM_DSS)
     {
@@ -54,9 +56,16 @@ class BaseTopic
 
         //创建NSQ链接对象
         $nsqObj = new NsqLookUpdLib($lookUpdAddr);
-        $arrNsqHost = array_map(function ($v) {
-            return $v['broadcast_address'] . ':' . $v['tcp_port'];
-        }, $nsqObj->nodes()['producers']);
+
+        try {
+            $arrNsqHost = array_map(function ($v) {
+                return $v['broadcast_address'] . ':' . $v['tcp_port'];
+            }, $nsqObj->nodes()['producers']);
+
+        } catch (GuzzleException $e) {
+            throw new Exception("LOOKUP_NODES error:" . $e->getMessage());
+        }
+
         SimpleLogger::info('NSQ HOST(s)', $arrNsqHost);
         //创建nsq生产者
         $this->nsqd = new NsqProducerLib($arrNsqHost, $_ENV['LOG_FILE_PATH']);

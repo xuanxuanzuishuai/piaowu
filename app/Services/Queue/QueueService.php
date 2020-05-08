@@ -14,8 +14,8 @@ use App\Libs\SimpleLogger;
 
 class QueueService
 {
-    //操作发起方
-    const FROM_DSS = 5;
+    //操作发起方 uc.uc_app.id
+    const FROM_DSS = 10;
 
     /**
      * 学生第一次购买正式课包
@@ -32,7 +32,7 @@ class QueueService
             }
             $topic->studentFirstPayNormalCourse($syncData[$studentID])->publish();
         } catch (Exception $e) {
-            SimpleLogger::error($e->getMessage(), $syncData[$studentID]);
+            SimpleLogger::error($e->getMessage(), $syncData ?? []);
             return false;
         }
         return true;
@@ -53,7 +53,7 @@ class QueueService
             }
             $topic->studentFirstPayTestCourse($syncData[$studentID])->publish();
         } catch (Exception $e) {
-            SimpleLogger::error($e->getMessage(), $syncData[$studentID]);
+            SimpleLogger::error($e->getMessage(), $syncData ?? []);
             return false;
         }
         return true;
@@ -77,7 +77,7 @@ class QueueService
                 $topic->studentSyncWatchList($sv)->publish();
             }
         } catch (Exception $e) {
-            SimpleLogger::error($e->getMessage(), $syncData);
+            SimpleLogger::error($e->getMessage(), $syncData ?? []);
             return false;
         }
         return true;

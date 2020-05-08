@@ -20,6 +20,11 @@ class StudentSyncTopic extends BaseTopic
     // 学生观单数据同步
     const STUDENT_WATCH_LIST = "student_watch_list";
 
+    /**
+     * StudentSyncTopic constructor.
+     * @param null $publishTime
+     * @throws \Exception
+     */
     public function __construct($publishTime = null)
     {
         parent::__construct(self::TOPIC_NAME, $publishTime);
