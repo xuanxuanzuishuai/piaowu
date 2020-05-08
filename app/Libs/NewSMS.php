@@ -160,15 +160,12 @@ class NewSMS
      */
     public function sendCollectionCompleteNotify($targetMobile, $sign, $collectionList)
     {
-        $teachingStartDate = date("Y-m-d", $collectionList[0]['teaching_start_time']);
-        $teachingEndDate = date("Y-m-d", $collectionList[0]['teaching_end_time']);
-        $wechatNumber = $collectionList[0]['wechat_number'];
-        $week = Util::getShortWeekName($collectionList[0]['teaching_start_time']);
+        $teachingStartDate = date("Y-m-d", $collectionList['teaching_start_time']);
+        $teachingEndDate = date("Y-m-d", $collectionList['teaching_end_time']);
+        $wechatNumber = $collectionList['wechat_number'];
+        $week = Util::getShortWeekName($collectionList['teaching_start_time']);
         $days = Util::dateBetweenDays($teachingStartDate, $teachingEndDate);
-        $msg = "您已成功购买小叶子智能陪练课，将于{$teachingStartDate}（{$week}）开课，时长{$days}天。
-《1》在哪体验智能陪练？点击链接，下载【小叶子智能陪练】App：http://t.cn/AiBPajzr
-《2》在哪收老师点评？关注微信公众号【小叶子智能陪练】并绑定购买手机号！
-《3》遇到问题怎么办？1V1助教老师微信：{$wechatNumber}";
+        $msg = "您已成功购买小叶子智能陪练，微信添加助教老师，完成开课准备：{$wechatNumber}。 课程将于{$teachingStartDate}（{$week}）开始，时长{$days}天。如有任何问题，请拨打客服电话：".$_ENV['AI_SERVER_TEL']."。";
         $data = [
             'sign_name' => $sign,
             'phone_number' => $targetMobile,
