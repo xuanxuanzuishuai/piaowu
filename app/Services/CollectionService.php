@@ -327,7 +327,7 @@ class CollectionService
             $list = CollectionModel::getRecords(["type" => CollectionModel::COLLECTION_TYPE_PUBLIC, "LIMIT" => 1], ['id', 'assistant_id', 'type'], false);
         }
         //返回结果
-        return $list;
+        return $list[0] ?? null;
     }
 
     /**

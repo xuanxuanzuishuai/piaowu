@@ -135,4 +135,32 @@ class QueueService
         return true;
 
     }
+
+    /**
+     * 赠送时长
+     * @param $uuid
+     * @param $courseId
+     * @param $courseNum
+     * @return bool
+     */
+    public static function giftCourses($uuid, $courseId, $courseNum)
+    {
+        try {
+            $topic = new GiftCoursesTopic();
+
+            $msgBody = [
+                'uuid' => $uuid,
+                'course_id' => $courseId,
+                'course_num' => $courseNum,
+            ];
+
+            $topic->activityGift($msgBody)->publish();
+
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), $msgBody ?? []);
+            return false;
+        }
+        return true;
+
+    }
 }

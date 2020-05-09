@@ -213,6 +213,11 @@ class DictConstants {
         'keys' => ['reviewer_ids'],
     ];
 
+    const ACTIVITY_CONFIG = [
+        'type' => 'ACTIVITY_CONFIG',
+        'keys' => ['gift_course_id'],
+    ];
+
     public static function get($type, $key)
     {
         if (empty($type) || empty($key)) {

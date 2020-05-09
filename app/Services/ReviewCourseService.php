@@ -678,35 +678,60 @@ class ReviewCourseService
      * 更新学生分配班级信息
      * @param $studentInfo
      * @param $reviewCourseType
-     * @param $packageID
-     * @return null|string errorCode
+     * @param $packageId
+     * @return null|int success
      */
-    public static function updateCollectionData($studentInfo, $reviewCourseType,$packageID)
+    public static function updateCollectionData($studentInfo, $reviewCourseType, $packageId)
     {
-        $affectRows = true;
         //获取当前课包允许分配的班级集合
-        $collectionList = CollectionService::getCollectionByCourseType($reviewCourseType);
-        if (!empty($collectionList) && is_array($collectionList)) {
-            $time = time();
-            $update['collection_id'] = $collectionList[0]['id'];
-            $update['allot_collection_time'] = $time;
-            $update['allot_course_id'] = $packageID;
-            if (!empty($collectionList[0]['assistant_id'])) {
-                $update['allot_assistant_time'] = $time;
-                $update['assistant_id'] = $collectionList[0]['assistant_id'];
-            }
-            $affectRows = StudentModel::updateRecord($studentInfo['id'], $update, false);
-            //记录分配助教和班级的日志
-            StudentService::allotCollection([$studentInfo['id']], $collectionList[0]['id'], EmployeeModel::SYSTEM_EMPLOYEE_ID);
-            StudentService::allotAssistant([$studentInfo['id']], $collectionList[0]['assistant_id'], EmployeeModel::SYSTEM_EMPLOYEE_ID);
-            //发送班级分配完成短信:公海班级不发送
-            if (($collectionList[0]['type'] == CollectionModel::COLLECTION_TYPE_NORMAL) &&($reviewCourseType == ReviewCourseModel::REVIEW_COURSE_49)) {
-                $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
-                $sms->sendCollectionCompleteNotify($studentInfo['mobile'], CommonServiceForApp::SIGN_STUDENT_APP, $collectionList);
-            }
-            //同步观单数据
-            QueueService::studentSyncWatchList($studentInfo['id']);
+        $collection = CollectionService::getCollectionByCourseType($reviewCourseType);
+
+        if (empty($collection)) {
+            return null;
         }
-        return $affectRows;
+
+        $time = time();
+        $update['collection_id'] = $collection['id'];
+        $update['allot_collection_time'] = $time;
+        $update['allot_course_id'] = $packageId;
+        if (!empty($collection['assistant_id'])) {
+            $update['allot_assistant_time'] = $time;
+            $update['assistant_id'] = $collection['assistant_id'];
+        }
+
+        $cnt = StudentModel::updateRecord($studentInfo['id'], $update, false);
+        if ($cnt <= 0) {
+            SimpleLogger::error('student update error', [
+                'id' => $studentInfo['id'],
+                'update' => $update
+            ]);
+        }
+
+        //记录分配助教和班级的日志
+        StudentService::allotCollection([$studentInfo['id']], $collection['id'], EmployeeModel::SYSTEM_EMPLOYEE_ID);
+        StudentService::allotAssistant([$studentInfo['id']], $collection['assistant_id'], EmployeeModel::SYSTEM_EMPLOYEE_ID);
+
+        //发送班级分配完成短信:公海班级不发送
+        if (($collection['type'] == CollectionModel::COLLECTION_TYPE_NORMAL) &&
+            ($reviewCourseType == ReviewCourseModel::REVIEW_COURSE_49)) {
+            $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
+            $sms->sendCollectionCompleteNotify($studentInfo['mobile'], CommonServiceForApp::SIGN_STUDENT_APP, $collection);
+        }
+
+        //同步观单数据
+        QueueService::studentSyncWatchList($studentInfo['id']);
+
+        // 发送奖励时长，奖励时长=开课日期-购买日期
+        //  购买日 ----------- 开班前一天 --- 开班日 ------------- 结班日
+        //    |                  |           |                   |
+        // [2号周二   (赠送6天)  7号周日]    [8号周一  (购买14天)  21号周日]
+        if (($collection['type'] == CollectionModel::COLLECTION_TYPE_NORMAL) &&
+            ($reviewCourseType == ReviewCourseModel::REVIEW_COURSE_49)) {
+            $giftCourseId = DictConstants::get(DictConstants::ACTIVITY_CONFIG, 'gift_course_id');
+            $giftCourseNum = ceil(($collection['teaching_start_time'] - strtotime('today')) / 86400);
+            QueueService::giftCourses($studentInfo['uuid'], $giftCourseId, $giftCourseNum);
+        }
+
+        return $cnt > 0;
     }
 }

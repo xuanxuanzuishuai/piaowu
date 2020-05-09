@@ -22,7 +22,6 @@ use App\Services\ErpService;
 use App\Services\ReviewCourseService;
 use App\Services\UserPlayServices;
 use App\Services\AppVersionService;
-use App\Services\CollectionService;
 use App\Models\AppVersionModel;
 use App\Services\StudentService;
 use App\Services\WeChatCSService;
