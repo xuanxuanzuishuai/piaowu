@@ -10,9 +10,9 @@ namespace App\Controllers\StudentWeb;
 
 use App\Controllers\ControllerBase;
 use App\Libs\Valid;
-use App\Models\StudentLandingModel;
 use App\Models\UserWeixinModel;
 use App\Services\PayServices;
+use App\Services\StudentService;
 use App\Services\WeChatService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -40,6 +40,12 @@ class Pay extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
+        $student = StudentService::getByUuid($params['uuid']);
+        if (PayServices::hasTrialed($student['id'])) {
+            $ret = Valid::addAppErrors([], 'has_trialed');
+            return $response->withJson($ret, StatusCode::HTTP_OK);
+        }
+
         $extendedParams = [];
 
         // 微信支付，用code换取支付用公众号的open_id
@@ -63,7 +69,7 @@ class Pay extends ControllerBase
         );
 
         if (empty($ret)) {
-            $ret = Valid::addAppErrors([], 'web_create_bill_error');
+            $ret = Valid::addAppErrors([], 'create_bill_error');
         }
 
         return $response->withJson($ret, StatusCode::HTTP_OK);

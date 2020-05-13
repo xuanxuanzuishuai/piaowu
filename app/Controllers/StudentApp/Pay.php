@@ -39,6 +39,12 @@ class Pay extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
+        $studentId = $this->ci['student']['id'];
+        if (PayServices::hasTrialed($studentId)) {
+            $ret = Valid::addAppErrors([], 'has_trialed');
+            return $response->withJson($ret, StatusCode::HTTP_OK);
+        }
+
         $ret = PayServices::createBill(
             $this->ci['student']['uuid'],
             $params['package_id'],
@@ -47,7 +53,7 @@ class Pay extends ControllerBase
         );
 
         if (empty($ret)) {
-            $ret = Valid::addAppErrors([], 'sys_unknown_errors');
+            $ret = Valid::addAppErrors([], 'create_bill_error');
         }
 
         return $response->withJson($ret, StatusCode::HTTP_OK);

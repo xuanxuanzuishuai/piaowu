@@ -95,6 +95,11 @@ class Pay extends ControllerBase
         }
 
         $studentId = $this->ci['user_info']['user_id'];
+        if (PayServices::hasTrialed($studentId)) {
+            $ret = Valid::addAppErrors([], 'has_trialed');
+            return $response->withJson($ret, StatusCode::HTTP_OK);
+        }
+
         $openId = $this->ci['open_id'];
         $studentAddressId = $params['student_address_id'] ?? 0;
         $ret = PayServices::weixinCreateBill(
@@ -106,7 +111,7 @@ class Pay extends ControllerBase
         );
 
         if (empty($ret)) {
-            $ret = Valid::addAppErrors([], 'sys_unknown_errors');
+            $ret = Valid::addAppErrors([], 'create_bill_error');
         }
 
         return $response->withJson($ret, StatusCode::HTTP_OK);

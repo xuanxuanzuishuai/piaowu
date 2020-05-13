@@ -10,6 +10,7 @@ namespace App\Services;
 
 use App\Libs\DictConstants;
 use App\Libs\Erp;
+use App\Models\GiftCodeModel;
 use App\Models\ReviewCourseModel;
 use App\Models\StudentModelForApp;
 
@@ -282,5 +283,42 @@ class PayServices
         // 写入ai_bill，手动激活
         AIBillService::addAiBill($bill['id'], $uuid, $autoApply);
         return $ret;
+    }
+
+    /**
+     * 用户是否购买过体验包
+     * @param $studentId
+     * @return bool
+     */
+    public static function hasTrialed($studentId)
+    {
+        $value = DictConstants::get(DictConstants::PACKAGE_CONFIG, 'package_id');
+        $trialPackageIds = explode(',', $value);
+        if (empty($trialPackageIds)) {
+            return false;
+        }
+
+        $trialCode = GiftCodeModel::getRecords([
+            'buyer' => $studentId,
+            'bill_package_id' => $trialPackageIds
+        ], 'id', false);
+
+        return count($trialCode) > 0;
+    }
+
+    /**
+     * 是否是体验课包
+     * @param $packageId
+     * @return bool
+     */
+    public static function isTrialPackage($packageId)
+    {
+        if (empty($packageId)) {
+            return false;
+        }
+
+        $value = DictConstants::get(DictConstants::PACKAGE_CONFIG, 'package_id');
+        $trialPackageIds = explode(',', $value);
+        return in_array($packageId, $trialPackageIds);
     }
 }
