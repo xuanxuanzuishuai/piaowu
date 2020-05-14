@@ -699,7 +699,8 @@ class StudentService
         if(!$res){
             return Valid::addErrors([], 'add_allot_assistant_log_failed', 'add_allot_assistant_log_failed');
         }
-        $cnt = self::updateStudentCollection($studentIds, $collectionId, $collection['assistant_id'], $time);
+        //修改学生班级和助教数据
+        $cnt = self::updateStudentCollectionAndAssistant($studentIds, $collectionId, $collection['assistant_id'], $time);
         if($cnt != $studentCount){
             return Valid::addErrors([], 'update_student_data_failed', 'update_student_data_failed');
         }
@@ -760,9 +761,9 @@ class StudentService
      * @param $time
      * @return int|null
      */
-    public static function updateStudentCollection($studentIds, $collectionId, $assistantId, $time)
+    public static function updateStudentCollectionAndAssistant($studentIds, $collectionId, $assistantId, $time)
     {
-        return StudentModel::updateStudentCollection($studentIds, $collectionId, $assistantId, $time);
+        return StudentModel::updateStudentCollectionAndAssistant($studentIds, $collectionId, $assistantId, $time);
     }
 
     /**
@@ -1024,5 +1025,51 @@ class StudentService
         }
         //返回数据
         return $data;
+    }
+
+    /**
+     * 学生购买课包分配班级和助教
+     * @param $studentId
+     * @param $collectionInfo
+     * @param $employeeId
+     * @param $packageId
+     * @return bool
+     * @throws RunTimeException
+     */
+    public static function allotCollectionAndAssistant($studentId, $collectionInfo, $employeeId, $packageId)
+    {
+        //获取学生数据
+        $studentInfo = StudentModel::getById($studentId);
+        if (empty($studentInfo)) {
+            throw new RunTimeException(['student_not_exist']);
+        }
+        //班级和助教数据
+        $time = time();
+        $update['collection_id'] = $collectionInfo['id'];
+        $update['allot_collection_time'] = $time;
+        $update['allot_course_id'] = $packageId;
+        if (!empty($collectionInfo['assistant_id'])) {
+            $update['allot_assistant_time'] = $time;
+            $update['assistant_id'] = $collectionInfo['assistant_id'];
+        }
+        $affectRows = StudentModel::updateRecord($studentInfo['id'], $update, false);
+        if (empty($affectRows)) {
+            throw new RunTimeException(['update_student_collection_fail']);
+        }
+        //添加班级分配日志
+        $logData = self::formatAllotCollectionLogData([$studentInfo], $collectionInfo['id'], $employeeId, $time);
+        $res = self::addAllotCollectionLog($logData);
+        if (empty($res)) {
+            throw new RunTimeException(['add_allot_collection_log_failed']);
+        }
+        //添加助教分配日志
+        $logData = self::formatAllotAssistantLogData([$studentInfo], $collectionInfo['assistant_id'], $employeeId, $time);
+        $res = self::addAllotAssistantLog($logData);
+        if (empty($res)) {
+            throw new RunTimeException(['add_allot_assistant_log_failed']);
+        }
+        //同步观单数据
+        QueueService::studentSyncWatchList($studentInfo['id']);
+        return true;
     }
 }

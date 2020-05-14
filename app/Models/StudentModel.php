@@ -676,14 +676,14 @@ class StudentModel extends Model
     }
 
     /**
-     * 更新学生集合信息
+     * 更新学生班级和助教信息
      * @param $studentIds
      * @param $collectionId
      * @param $assistantId
      * @param $time
      * @return int|null
      */
-    public static function updateStudentCollection($studentIds, $collectionId, $assistantId, $time)
+    public static function updateStudentCollectionAndAssistant($studentIds, $collectionId, $assistantId, $time)
     {
         $data = [
             'collection_id' => $collectionId,
