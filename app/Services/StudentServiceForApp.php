@@ -373,6 +373,10 @@ class StudentServiceForApp
                 ]
             );
         }
+        //保存转介绍关系数据
+        if (!empty($referrer) && $response['data']['is_new'] == true) {
+            StudentRefereeService::recordStudentRefereeData($referrer['id'], $lastId, $refType);
+        }
 
         return [$lastId, $response['data']['is_new']];
     }

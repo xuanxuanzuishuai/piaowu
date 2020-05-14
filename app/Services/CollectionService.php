@@ -14,6 +14,7 @@ use App\Models\CollectionModel;
 use App\Models\CollectionAssistantLogModel;
 use App\Models\StudentAssistantLogModel;
 use App\Models\StudentModel;
+use App\Models\StudentRefereeModel;
 use App\Models\DictModel;
 use App\Libs\AliOSS;
 use App\Libs\DictConstants;
@@ -285,6 +286,78 @@ class CollectionService
     }
 
     /**
+     * 获取助教名下的班级列表
+     * @param $assistantId
+     * @param $collectionStatus
+     * @param string $publishStatus
+     * @param int $teachingType
+     * @return array
+     */
+    public static function getAssistantBelongCollectionList($assistantId, $collectionStatus, $publishStatus = '', $teachingType = CollectionModel::COLLECTION_TEACHING_TYPE_EXPERIENCE_CLASS)
+    {
+        //查询条件
+        $where['assistant_id'] = $assistantId;
+        $where['teaching_type'] = $teachingType;
+        //开放状态
+        if ($publishStatus) {
+            $where['status'] = $publishStatus;
+        }
+        //班级状态
+        if ($collectionStatus) {
+            $time = time();
+            switch ($collectionStatus) {
+                case CollectionModel::COLLECTION_PREPARE_STATUS:
+                    //1、待组班
+                    $where['prepare_start_time[>]'] = $time;
+                    break;
+                case CollectionModel::COLLECTION_READY_TO_GO_STATUS:
+                    //2、组班中
+                    $where['prepare_start_time[<=]'] = $time;
+                    $where['prepare_end_time[>=]'] = $time;
+                    break;
+                case CollectionModel::COLLECTION_WAIT_OPEN_STATUS:
+                    //3、待开班
+                    $where['prepare_end_time[<=]'] = $time;
+                    $where['teaching_start_time[>=]'] = $time;
+                    break;
+                case CollectionModel::COLLECTION_OPENING_STATUS:
+                    //4、开班中
+                    $where['teaching_start_time[<=]'] = $time;
+                    $where['teaching_end_time[>=]'] = $time;
+                    break;
+                case CollectionModel::COLLECTION_END_STATUS:
+                    //5、已结班
+                    $where['teaching_end_time[<=]'] = $time;
+                    break;
+            }
+        }
+        $where['ORDER'] = ["id" => "ASC"];
+        //查询数据
+        $collectionList = CollectionModel::getRecords($where, ['id', 'assistant_id', 'teaching_start_time', 'teaching_end_time', 'type', 'wechat_number'], false);
+        return $collectionList;
+    }
+
+    /**
+     * 学生转介绍推荐人的班级助教信息
+     * @param $studentId
+     * @return array|mixed
+     */
+    public static function getCollectionByRefereeId($studentId)
+    {
+        //获取学生转介绍推荐人的班级助教信息
+        $refereeData = StudentRefereeService::studentRefereeUserData($studentId);
+        $data = [];
+        if ($refereeData['assistant_id']) {
+            //获取推荐人所属助教的班级数据
+            $refereeCollectionData = self::getAssistantBelongCollectionList($refereeData['assistant_id'], CollectionModel::COLLECTION_READY_TO_GO_STATUS);
+            if ($refereeCollectionData) {
+                $data = $refereeCollectionData[0];
+            }
+        }
+        return $data;
+    }
+
+    /**
      * 获取课程可以分配的集合列表
      * @param $reviewCourseType
      * @return array|null
@@ -294,33 +367,37 @@ class CollectionService
         //数据库对象
         $db = MysqlDB::getDB();
         $time = time();
+        //当前可用的班级列表
+        $dayStartEndTimestamp = Util::getStartEndTimestamp($time);
         $querySql = "SELECT
-                        a.id,
-                        a.capacity,
-                        a.assistant_id,
-                        a.teaching_start_time,
-                        a.teaching_end_time,
-                        a.type,
-                        a.wechat_number,
-                        count( s.id ) AS s_count 
+                        c.id,
+                        c.capacity,
+                        c.assistant_id,
+                        c.teaching_start_time,
+                        c.teaching_end_time,
+                        c.type,
+                        c.wechat_number,
+                        ( SELECT COUNT( id ) FROM student AS s WHERE s.collection_id = c.id ) AS total_allot,
+                        COUNT( scl.id ) AS today_allot
                     FROM
-                        collection as a
-                        LEFT JOIN student as s ON a.id = s.collection_id 
+                        collection AS c
+                        LEFT JOIN student_collection_log AS scl ON c.id = scl.new_collection_id
+                        AND scl.old_collection_id = 0 AND scl.create_time BETWEEN " . $dayStartEndTimestamp[0] . " AND " . $dayStartEndTimestamp[1] . "
                     WHERE
-                        ( 
-                            a.status = " . CollectionModel::COLLECTION_STATUS_IS_PUBLISH . " AND
-                            a.prepare_start_time <= " . $time . " AND
-                            a.prepare_end_time >= " . $time . " AND
-                            a.type = " . CollectionModel::COLLECTION_TYPE_NORMAL . " AND
-                            a.teaching_type = " . $reviewCourseType . "
-                         )
+                        c.STATUS = " . CollectionModel::COLLECTION_STATUS_IS_PUBLISH . " 
+                        AND c.type = " . CollectionModel::COLLECTION_TYPE_NORMAL . " 
+                        AND c.teaching_type = " . $reviewCourseType . " 
+                        AND c.prepare_start_time <= " . $time . " 
+                        AND c.prepare_end_time  >= " . $time . "
                     GROUP BY
-                        a.id 
+                        c.id
                     HAVING
-                        a.capacity > s_count
+                        c.capacity > total_allot
                     ORDER BY
-                        a.id ASC
+                        today_allot ASC,
+                        c.id ASC
                     LIMIT 1";
+        //查询数据获取可分配班级
         $list = $db->queryAll($querySql);
         //如果没有可加入的班级，则加入“公海班”，推送默认二维码，不分配助教
         if (empty($list)) {
