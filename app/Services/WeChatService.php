@@ -13,6 +13,7 @@ use App\Libs\RedisDB;
 use App\Libs\SentryClient;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
+use App\Models\WeChatOpenIdListModel;
 use GuzzleHttp\Client;
 use App\Libs\UserCenter;
 use App\Models\UserWeixinModel;
@@ -314,10 +315,14 @@ class WeChatService
      * 获取公众号accessToken
      * @param $app_id
      * @param $userType
+     * @param int $count
      * @return bool|string
      */
-    public static function getAccessToken($app_id, $userType)
+    public static function getAccessToken($app_id, $userType, $count = 0)
     {
+        if ($count > 3) {
+            return false;
+        }
         $redis = RedisDB::getConn();
         $appInfo = self::getWeCHatAppIdSecret($app_id, $userType);
         SimpleLogger::debug("getWeCHatAppIdSecret", ["data" => $appInfo]);
@@ -327,8 +332,7 @@ class WeChatService
 
         $key = $appInfo['app_id'] . "_" . self::KEY_TOKEN;
         $accessToken = $redis->get($key);
-        SimpleLogger::info("mini pro access token = $accessToken with $key", []);
-        $count = 0;
+        SimpleLogger::info("wechat access token = $accessToken with $key", []);
         if (empty($accessToken)) {
             SimpleLogger::info("start getting the access toke with plock", []);
             $keyLock = $key . "_LOCK";
@@ -346,14 +350,9 @@ class WeChatService
                 }
                 $redis->del($keyLock);
             } else {
-                $count++;
                 SimpleLogger::info("The waited plock time is $count", []);
-                if ($count > 3) {
-                    return false;
-                } else {
-                    sleep(2);
-                }
-                $accessToken = self::getAccessToken($app_id, $userType);
+                sleep(2);
+                $accessToken = self::getAccessToken($app_id, $userType, $count + 1);
             }
         }
         return $accessToken;
@@ -723,5 +722,57 @@ class WeChatService
         }
 
         return $res;
+    }
+
+    /**
+     * @param $appId
+     * @param $userType
+     * @param string $nexOpenid
+     * @return array|bool
+     * 获取已经关注的openid列表
+     */
+    public static function getSubscribeList($appId, $userType, $nexOpenid = '')
+    {
+        $accessToken = self::getAccessToken($appId, $userType);
+        $url = self::weixinAPIURL . 'user/get';
+        $params = [
+            'access_token' => $accessToken,
+            'next_openid' => $nexOpenid,
+        ];
+        $res = HttpHelper::requestJson($url, $params, 'GET');
+        return $res;
+    }
+
+    /**
+     * @param $openid
+     * @param $status
+     * @param $appId
+     * @param $userType
+     * @param $busiType
+     * 用户关注/取消关注记录
+     */
+    public static function weChatOpenIdSubscribeRelate($openid, $status, $appId, $userType, $busiType)
+    {
+        $record = WeChatOpenIdListModel::getRecord([
+            'openid' => $openid,
+            'appid' => $appId,
+            'user_type' => $userType,
+            'busi_type' => $busiType
+        ]);
+        if (empty($record)) {
+            WeChatOpenIdListModel::insertRecord(
+                [
+                    'openid' => $openid,
+                    'appid' => $appId,
+                    'user_type' => $userType,
+                    'busi_type' => $busiType,
+                    'status' => $status
+                ]
+            );
+        } else {
+            if ($record['status'] != $status) {
+                WeChatOpenIdListModel::updateRecord($record['id'], ['status' => $status]);
+            }
+        }
     }
 }

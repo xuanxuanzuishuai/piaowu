@@ -14,6 +14,7 @@ use App\Models\UserQrTicketModel;
 use App\Libs\Constants;
 use App\Libs\AliOSS;
 use App\Libs\File;
+use App\Models\WeChatOpenIdListModel;
 
 class WechatReferralService
 {

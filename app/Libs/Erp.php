@@ -27,10 +27,12 @@ class Erp
     const API_AWARD_LIST = '/api/dss/awards';
     const API_UPDATE_TASK = '/api/dss/add_user_event_task';
     const API_UPDATE_AWARD = '/api/dss/award';
+    const API_BATCH_UPDATE_AWARD = '/api/dss/batch_award';
     const API_USER_REFERRAL_INFO = '/api/dss/get_user_referral_info';
     const API_EVENT_LIST = '/api/dss/events';
     const API_COPY_TASK = '/api/dss/copy_task';
     const API_MODIFY_TASK = '/api/dss/modify_task';
+    const API_AWARD_BASE_INFO = '/api/dss/task_award_info';
 
     const API_STUDENT_ADDRESS_LIST = '/ai_dss/student/address_list';
     const API_STUDENT_MODIFY_ADDRESS = '/ai_dss/student/modify_address';
@@ -334,6 +336,34 @@ class Erp
         ];
         $response = HttpHelper::requestJson($this->host . self::API_UPDATE_AWARD, $params, 'POST');
         return $response;
+    }
+
+    /**
+     * @param $awardInfo
+     * @return array|bool
+     * 批量更新状态
+     */
+    public function batchUpdateAward($awardInfo)
+    {
+        array_walk($awardInfo, function (&$value) {
+            $value['app_id'] = self::SELF_APP_ID;
+        });
+        $response = HttpHelper::requestJson($this->host . self::API_BATCH_UPDATE_AWARD, ['award_info' => $awardInfo], 'POST');
+        return $response;
+    }
+
+    /**
+     * @param $awardIdStr
+     * @return array|bool
+     * 当前奖励的基础信息
+     */
+    public function getUserAwardInfo($awardIdStr)
+    {
+        $params = [
+            'app_id' => self::SELF_APP_ID,
+            'award_info_id_str' => $awardIdStr
+        ];
+        return HttpHelper::requestJson($this->host . self::API_AWARD_BASE_INFO, $params, 'GET');
     }
 
 

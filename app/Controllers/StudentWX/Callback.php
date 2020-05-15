@@ -69,6 +69,10 @@ class Callback extends ControllerBase
                     // 点击自定义菜单事件
                     WeChatMsgHandler::menuClickEventHandler($xml);
                     break;
+                case 'unsubscribe':
+                    //取消关注公众号
+                    WeChatMsgHandler::unSubscribe($xml);
+                    break;
                 default:
                     break;
             }

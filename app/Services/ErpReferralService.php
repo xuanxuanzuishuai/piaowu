@@ -11,7 +11,13 @@ namespace App\Services;
 
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\SimpleLogger;
+use App\Libs\UserCenter;
 use App\Libs\Util;
+use App\Models\StudentModel;
+use App\Models\UserWeixinModel;
+use App\Models\WeChatAwardCashDealModel;
+use App\Models\WeChatOpenIdListModel;
 
 class ErpReferralService
 {
@@ -34,16 +40,21 @@ class ErpReferralService
     const EVENT_TASK_STATUS_COMPLETE = 2;
 
     /** 奖励状态状态 */
-    const AWARD_STATUS_REJECTED = 0;
-    const AWARD_STATUS_WAITING = 1;
-    const AWARD_STATUS_APPROVAL = 2;
-    const AWARD_STATUS_GIVEN = 3;
+    const AWARD_STATUS_REJECTED = 0; //不发放
+    const AWARD_STATUS_WAITING = 1; //待发放
+    const AWARD_STATUS_APPROVAL = 2; //审核中
+    const AWARD_STATUS_GIVEN = 3; //发放成功
+    const AWARD_STATUS_GIVE_ING = 4; //发放中/已发放待领取
+    const AWARD_STATUS_GIVE_FAIL = 5; //发放失败
+
 
     const AWARD_STATUS = [
-        self:: AWARD_STATUS_REJECTED => '废除',
+        self:: AWARD_STATUS_REJECTED => '不发放',
         self:: AWARD_STATUS_WAITING => '待发放',
         self:: AWARD_STATUS_APPROVAL => '审核中',
         self:: AWARD_STATUS_GIVEN => '已发放',
+        self:: AWARD_STATUS_GIVE_ING => '发放中',
+        self:: AWARD_STATUS_GIVE_FAIL => '发放失败'
     ];
 
     /** 转介绍奖励类型 */
@@ -212,7 +223,17 @@ class ErpReferralService
         //批量获取学生信息
         $uuidList = array_merge(array_column($response['data']['records'], 'student_uuid'), array_column($response['data']['records'], 'referrer_uuid'));
         $studentInfoList = array_column(StudentService::getByUuids($uuidList, ['name', 'id', 'uuid']), null, 'uuid');
+        //当前奖励在微信发放的状态
+        $relateUserEventTaskAwardIdArr = array_column($response['data']['records'], 'user_event_task_award_id');
+        $relateAwardStatusArr = array_column(WeChatAwardCashDealModel::getRecords(['user_event_task_award_id' => $relateUserEventTaskAwardIdArr], ['result_code', 'user_event_task_award_id']), NULL, 'user_event_task_award_id');
+        //列表用户微信关注/绑定情况
+        $refereeUuidArr = array_column($response['data']['records'], 'referrer_uuid');
+        $weChatRelateInfo = array_column(WeChatOpenIdListModel::getUuidOpenIdInfo($refereeUuidArr), NULL, 'uuid');
+
+        //关注公众号相关信息
         foreach ($response['data']['records'] as $award) {
+            $subscribeStatus = $weChatRelateInfo[$award['referrer_uuid']]['subsribe_status'] ?? WeChatOpenIdListModel::UNSUBSCRIBE_WE_CHAT;
+            $bindStatus = $weChatRelateInfo[$award['referrer_uuid']]['bind_status'] ?? UserWeixinModel::STATUS_DISABLE;
             $item = [
                 'student_uuid' => $award['student_uuid'],
                 'student_name' => $studentInfoList[$award['student_uuid']]['name'],
@@ -226,6 +247,7 @@ class ErpReferralService
                 'award_status' => $award['award_status'],
                 'award_status_zh' => $award['award_status_zh'],
                 'award_amount' => $award['award_type'] == self::AWARD_TYPE_CASH ? ($award['award_amount'] / 100) : $award['award_amount'],
+                'fail_reason_zh' => isset($relateAwardStatusArr[$award['user_event_task_award_id']]) ? WeChatAwardCashDealModel::getWeChatErrorMsg($relateAwardStatusArr[$award['user_event_task_award_id']]['result_code']) : '',
                 'award_type' => $award['award_type'],
                 'create_time' => $award['create_time'],
                 'review_time' => $award['review_time'],
@@ -235,6 +257,10 @@ class ErpReferralService
                 'delay' => $award['delay'],
                 'student_id' => $studentInfoList[$award['student_uuid']]['id'],
                 'referral_student_id' => $studentInfoList[$award['referrer_uuid']]['id'],
+                'subscribe_status' => $subscribeStatus,
+                'subscribe_status_zh' => $subscribeStatus == WeChatOpenIdListModel::SUBSCRIBE_WE_CHAT ? '已关注' : '未关注',
+                'bind_status' => $bindStatus,
+                'bind_status_zh' => $bindStatus == UserWeixinModel::STATUS_NORMAL ? '已绑定' : '未绑定',
             ];
             $list[] = $item;
         }
@@ -311,22 +337,60 @@ class ErpReferralService
         }
 
         $erp = new Erp();
-        $response = $erp->updateAward($awardId, $status, $reviewerId, $reason);
+        $time = time();
+        //期望结果数据 批量处理支持
+        $awardIdArr = array_unique(explode(',', $awardId));
+        $needDealAward = [];
+        if (!empty($awardIdArr)) {
+            foreach ($awardIdArr as $value) {
+                $needDealAward[$value] = [
+                    'award_id' => $value,
+                    'status' => $status,
+                    'reviewer_id' => $reviewerId,
+                    'reason' => $reason,
+                    'review_time' => $time
+                ];
+            }
+        }
+
+        //实际发放结果数据 调用微信红包，
+        if ($status == self::AWARD_STATUS_GIVEN) {
+            //当前操作的奖励基础信息
+            $awardBaseInfo = $erp->getUserAwardInfo($awardId);
+            if (!empty($awardBaseInfo['data']['award_info'])) {
+                foreach ($awardBaseInfo['data']['award_info'] as $award) {
+                    //仅现金支持
+                    if ($award['award_type'] == self::AWARD_TYPE_CASH && in_array($award['status'], [self::AWARD_STATUS_WAITING, self::AWARD_STATUS_GIVE_FAIL])) {
+                        list($baseAwardId, $status) = CashGrantService::cashGiveOut($award['uuid'], $award['award_id'], $award['award_amount'], $reviewerId);
+                        $needDealAward[$baseAwardId]['status'] = $status;
+                    } else {
+                        unset($needDealAward[$award['award_id']]);
+                        SimpleLogger::info('award data valid', $award);
+                    }
+                }
+            }
+        }
+
+        $response = $erp->batchUpdateAward($needDealAward);
 
         if (empty($response) || $response['code'] != 0) {
             $errorCode = $response['errors'][0]['err_no'] ?? 'erp_request_error';
             throw new RunTimeException([$errorCode]);
         }
 
-        if(!empty($response['data']['event_task_id'])) {
-            WeChatService::notifyUserCustomizeMessage(
-                $response['data']['referrer_mobile'],
-                $response['data']['event_task_id'],
-                [
-                    'mobile' => Util::hideUserMobile($response['data']['student_mobile']),
-                    'url' => $_ENV['STUDENT_INVITED_RECORDS_URL']
-                ]
-            );
+        if(!empty($response['data'])) {
+            foreach ($response['data'] as $v) {
+                if (!empty($v['event_task_id'])) {
+                    WeChatService::notifyUserCustomizeMessage(
+                        $v['referrer_mobile'],
+                        $v['event_task_id'],
+                        [
+                            'mobile' => Util::hideUserMobile($v['student_mobile']),
+                            'url' => $_ENV['STUDENT_INVITED_RECORDS_URL']
+                        ]
+                    );
+                }
+            }
         }
 
         return [];

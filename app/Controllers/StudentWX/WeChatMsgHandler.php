@@ -10,6 +10,7 @@ namespace App\Controllers\StudentWX;
 
 use App\Libs\RedisDB;
 use App\Models\UserQrTicketModel;
+use App\Models\WeChatOpenIdListModel;
 use App\Services\UserService;
 use App\Services\WeChatService;
 use App\Models\UserWeixinModel;
@@ -43,6 +44,19 @@ class WeChatMsgHandler
                 }
             }
         }
+        //关注记录
+        WeChatService::weChatOpenIdSubscribeRelate($userOpenId, WeChatOpenIdListModel::SUBSCRIBE_WE_CHAT, UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT, UserWeixinModel::USER_TYPE_STUDENT, UserWeixinModel::BUSI_TYPE_STUDENT_SERVER);
+    }
+
+    /**
+     * @param $xml
+     * 用户取消关注公众号
+     */
+    public static function unSubscribe($xml)
+    {
+        $userOpenId = (string)$xml->FromUserName;
+        //取消关注记录
+        WeChatService::weChatOpenIdSubscribeRelate($userOpenId, WeChatOpenIdListModel::UNSUBSCRIBE_WE_CHAT, UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT, UserWeixinModel::USER_TYPE_STUDENT, UserWeixinModel::BUSI_TYPE_STUDENT_SERVER);
     }
 
     /**
