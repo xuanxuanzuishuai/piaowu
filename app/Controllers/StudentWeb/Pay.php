@@ -9,6 +9,8 @@
 namespace App\Controllers\StudentWeb;
 
 use App\Controllers\ControllerBase;
+use App\Libs\DictConstants;
+use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Models\UserWeixinModel;
 use App\Services\PayServices;
@@ -41,7 +43,9 @@ class Pay extends ControllerBase
         }
 
         $student = StudentService::getByUuid($params['uuid']);
-        if (PayServices::hasTrialed($student['id'])) {
+        $packageId = DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'package_id');
+        if (PayServices::isTrialPackage($packageId) && PayServices::hasTrialed($student['id'])) {
+            SimpleLogger::error('has_trialed', ['student_id' => $student['id']]);
             $ret = Valid::addAppErrors([], 'has_trialed');
             return $response->withJson($ret, StatusCode::HTTP_OK);
         }
@@ -62,6 +66,7 @@ class Pay extends ControllerBase
 
         // pay_channel 1 支付宝 2 微信H5 21 微信公众号
         $ret = PayServices::webCreateBill(
+            $packageId,
             $params['uuid'],
             $params['pay_channel'],
             $_SERVER['HTTP_X_REAL_IP'],

@@ -174,19 +174,20 @@ class PayServices
 
     /**
      * landing页21天点评课购买
+     * @param $packageId
      * @param $uuid
      * @param $payChannel
      * @param $clientIp
-     * @param $params
+     * @param array $params
      * @return array
      */
-    public static function webCreateBill($uuid, $payChannel, $clientIp, $params = [])
+    public static function webCreateBill($packageId, $uuid, $payChannel, $clientIp, $params = [])
     {
         $erp = new Erp();
 
-        list($successUrl, $cancelUrl, $resultUrl, $packageId) = DictConstants::get(
+        list($successUrl, $cancelUrl, $resultUrl) = DictConstants::get(
             DictConstants::WEB_STUDENT_CONFIG,
-            ['success_url', 'cancel_url', 'result_url', 'package_id']
+            ['success_url', 'cancel_url', 'result_url']
         );
 
         /*

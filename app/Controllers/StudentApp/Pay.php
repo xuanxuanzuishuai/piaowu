@@ -9,6 +9,7 @@
 namespace App\Controllers\StudentApp;
 
 use App\Controllers\ControllerBase;
+use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\GiftCodeModel;
@@ -40,7 +41,8 @@ class Pay extends ControllerBase
         }
 
         $studentId = $this->ci['student']['id'];
-        if (PayServices::hasTrialed($studentId)) {
+        if (PayServices::isTrialPackage($params['package_id']) && PayServices::hasTrialed($studentId)) {
+            SimpleLogger::error('has_trialed', ['student_id' => $studentId]);
             $ret = Valid::addAppErrors([], 'has_trialed');
             return $response->withJson($ret, StatusCode::HTTP_OK);
         }
