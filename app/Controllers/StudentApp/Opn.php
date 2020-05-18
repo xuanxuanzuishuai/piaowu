@@ -120,6 +120,10 @@ class Opn extends ControllerBase
             $this->ci['opn_publish']);
 
         list($pageId, $pageLimit) = Util::appPageLimit($params);
+
+        // TODO 超过500时数据无法正常返回，正在查原因
+        if ($pageLimit > 500) { $pageLimit = 500; }
+
         $result = $opn->searchLessonsByEs($params['key'], 1, 1, $pageId, $pageLimit);
         if (empty($result) || !empty($result['errors'])) {
             return $response->withJson($result, StatusCode::HTTP_OK);
