@@ -25,6 +25,10 @@ class PrivilegeModel extends Model
     const IS_MENU = 1;
     const NOT_MENU = 0;
 
+    /** 状态 */
+    const STATUS_CANCEL = 0;
+    const STATUS_NORMAL = 1;
+
     /**
      * @param string $uri
      * @param string $method
@@ -151,7 +155,8 @@ class PrivilegeModel extends Model
             'id', 'name', 'unique_en_name', 'parent_id', 'menu_name'
         ], [
             'is_menu' => self::IS_MENU,
-            'id' => $privilegeIds
+            'id' => $privilegeIds,
+            'status' => self::STATUS_NORMAL
         ]);
         return $privileges;
     }
