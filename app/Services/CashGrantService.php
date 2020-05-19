@@ -6,6 +6,7 @@
 
 namespace App\Services;
 
+use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
@@ -24,7 +25,6 @@ class CashGrantService
      * @param $amount
      * @param $reviewerId
      * @return array
-     * @throws \GuzzleHttp\Exception\GuzzleException
      * 给用户发放他获取的奖励红包
      */
     public static function cashGiveOut($uuId, $awardId, $amount, $reviewerId)
@@ -57,10 +57,8 @@ class CashGrantService
                 if (($_ENV['ENV_NAME'] == 'pre' && in_array($studentWeChatInfo['user_id'], explode(',', $_ENV['ALLOW_SEND_RED_PACK_USER']))) || $_ENV['ENV_NAME'] == 'prod') {
                     //已绑定微信推送红包
                     $weChatPackage = new WeChatPackage();
-                    $actName = WeChatAwardCashDealModel::RED_PACK_ACT_NAME;
-                    $sendName = WeChatAwardCashDealModel::RED_PACK_SEND_NAME;
                     $openId = $studentWeChatInfo['open_id'];
-                    $wishing = WeChatAwardCashDealModel::RED_PACK_WISHING;
+                    list($actName, $sendName, $wishing) = self::getRedPackConfigWord();
                     //请求微信发红包
                     $resultData = $weChatPackage->sendPackage($mchBillNo, $actName, $sendName, $openId, $amount, $wishing, 'redPack');
                     $status = trim($resultData['result_code']) == WeChatAwardCashDealModel::RESULT_SUCCESS_CODE ? ErpReferralService::AWARD_STATUS_GIVE_ING : ErpReferralService::AWARD_STATUS_GIVE_FAIL;
@@ -98,6 +96,16 @@ class CashGrantService
             SimpleLogger::error('cash deal data operate fail', $data);
         }
         return [$awardId, $status];
+    }
+
+    /**
+     * @return array
+     * 发送微信红包带的配置语
+     */
+    private static function getRedPackConfigWord()
+    {
+        $configArr = DictConstants::getSet(DictConstants::WE_CHAT_RED_PACK_CONFIG);
+        return [$configArr['ACT_NAME'], $configArr['SEND_NAME'], $configArr['WISHING']];
     }
 
     /**

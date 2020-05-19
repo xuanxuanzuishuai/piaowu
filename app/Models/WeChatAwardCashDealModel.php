@@ -10,9 +10,6 @@ namespace App\Models;
 class WeChatAwardCashDealModel extends Model
 {
     public static $table = "wechat_award_cash_deal";
-    const RED_PACK_ACT_NAME = 'AI陪练转介绍'; //活动名称
-    const RED_PACK_SEND_NAME = '邀请好友奖励红包'; //商户名称
-    const RED_PACK_WISHING = '推荐多多，奖励多多'; //红包祝福语
 
     //发送红包成功与否的标识
     const RESULT_FAIL_CODE = 'FAIL'; //发放红包失败

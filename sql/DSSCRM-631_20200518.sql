@@ -38,3 +38,11 @@ CREATE TABLE `wechat_award_cash_deal` (
                                           UNIQUE KEY `mch_billno` (`mch_billno`) USING HASH,
                                           KEY `user_event_task_award_id` (`user_event_task_award_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- 发送微信红包的配置语
+
+INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`)
+VALUES
+('WE_CHAT_RED_PACK', '微信红包显示语', 'ACT_NAME', 'AI陪练转介绍'),
+('WE_CHAT_RED_PACK', '微信红包显示语', 'SEND_NAME', '邀请好友奖励'),
+('WE_CHAT_RED_PACK', '微信红包显示语', 'WISHING', '推荐多多，奖励多多');

@@ -220,6 +220,11 @@ class DictConstants {
         'keys' => ['gift_course_id'],
     ];
 
+    const WE_CHAT_RED_PACK_CONFIG = [
+        'type' => 'WE_CHAT_RED_PACK',
+        'keys' => ['ACT_NAME', 'SEND_NAME', 'WISHING'],
+    ];
+
     public static function get($type, $key)
     {
         if (empty($type) || empty($key)) {
