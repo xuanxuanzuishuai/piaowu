@@ -12,12 +12,14 @@ use App\Controllers\ControllerBase;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\MysqlDB;
+use App\Libs\UserCenter;
 use App\Libs\Valid;
 use App\Models\StudentModel;
 use App\Services\CommonServiceForApp;
 use App\Services\StudentService;
 use App\Services\StudentServiceForApp;
 use App\Services\StudentServiceForWeb;
+use App\Services\WeChatService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -243,6 +245,17 @@ class Auth extends ControllerBase
         return HttpHelper::buildResponse($response, [
             'id' => $data['id'],
             'uuid' => $data['uuid']
+        ]);
+    }
+
+    public function getWxAppId(Request $request, Response $response)
+    {
+        $appInfo = WeChatService::getWeCHatAppIdSecret(
+            UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
+            WeChatService::USER_TYPE_STUDENT);
+
+        return HttpHelper::buildResponse($response, [
+            'appId' => $appInfo["app_id"]
         ]);
     }
 }

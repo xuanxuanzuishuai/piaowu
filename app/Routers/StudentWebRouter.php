@@ -23,6 +23,11 @@ class StudentWebRouter extends RouterBase
     protected $logFilename = 'dss_student_web.log';
 
     protected $uriConfig = [
+        '/student_web/auth/wx_app_id' => [
+            'method' => ['get'],
+            'call' => Auth::class . ':getWxAppId',
+            'middles' => []
+        ],
 
         '/student_web/auth/register' => [
             'method' => ['post'],
