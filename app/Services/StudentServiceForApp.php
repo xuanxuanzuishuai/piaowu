@@ -195,7 +195,7 @@ class StudentServiceForApp
         $wechatQr = '';
         $wechatNumber = '';
         if ($student['has_review_course'] == StudentModel::CRM_AI_LEADS_STATUS_BUY_TEST_COURSE
-            && $student['sub_end_date'] > time()) {
+            && $student['sub_end_date'] > date('Ymd')) {
             $needAddWx = 1;
             // 获取集合信息
             if (!empty($student['collection_id'])) {
@@ -290,7 +290,7 @@ class StudentServiceForApp
         $wechatQr = '';
         $wechatNumber = '';
         if ($student['has_review_course'] == StudentModel::CRM_AI_LEADS_STATUS_BUY_TEST_COURSE
-            && $student['sub_end_date'] > time()) {
+            && $student['sub_end_date'] > date('Ymd')) {
             $needAddWx = 1;
             // 获取集合信息
             if (!empty($student['collection_id'])) {
