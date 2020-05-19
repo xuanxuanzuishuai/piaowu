@@ -55,6 +55,7 @@ class OrgWebRouter extends RouterBase
         '/api/qiniu/callback' => ['method' => ['get'], 'call' => Qiniu::class . ':callback', 'middles' => [OrgWebMiddleware::class]],
         '/api/uictl/dropdown' => ['method' => ['get'], 'call' => UICtl::class . ':dropdown', 'middles' => [OrgWebMiddleware::class]],
         '/api/oss/signature' => ['method' => ['get'], 'call' => OSS::class . ':signature', 'middles' => [OrgWebMiddleware::class]],
+        '/api/oss/callback' => ['method' => ['post'], 'call' => OSS::class . ':callback', 'middles' => [OrgWebMiddleware::class]],
 
 
         '/employee/auth/tokenlogin' => ['method' => ['post'], 'call' => Auth::class . ':tokenlogin', 'middles' => [OrgWebMiddleware::class]],

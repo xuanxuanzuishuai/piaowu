@@ -102,16 +102,13 @@ class AliOSS
      */
     public function getSignature($accessKeyId, $accessKeySecret, $bucket, $endpoint, $callbackUrl, $dir = '', $expire = 30, $maxFileSize=1048576000)
     {
-
-        // 目前没有需要上传回调的逻辑
-        Util::unusedParam($callbackUrl);
-//        $callback_param = array(
-//            'callbackUrl' => $callbackUrl,
-//            'callbackBody' => 'filename=${object}&size=${size}&mimeType=${mimeType}&height=${imageInfo.height}&width=${imageInfo.width}',
-//            'callbackBodyType' => "application/x-www-form-urlencoded"
-//        );
-//        $callback_string = json_encode($callback_param);
-//        $base64_callback_body = base64_encode($callback_string);
+        $callback_param = array(
+            'callbackUrl' => $callbackUrl,
+            'callbackBody' => 'filename=${object}&size=${size}&mimeType=${mimeType}&height=${imageInfo.height}&width=${imageInfo.width}',
+            'callbackBodyType' => "application/x-www-form-urlencoded"
+        );
+        $callback_string = json_encode($callback_param);
+        $base64_callback_body = base64_encode($callback_string);
 
         $now = time();
         $end = $now + $expire;
@@ -138,7 +135,7 @@ class AliOSS
             'policy' => $base64_policy,
             'signature' => $signature,
             'expire' => $end,
-//            'callback' => $base64_callback_body,
+            'callback' => $base64_callback_body,
             'dir' => $dir
         );
     }

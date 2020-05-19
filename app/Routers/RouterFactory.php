@@ -65,6 +65,7 @@ class RouterFactory
         '/api/qiniu/callback' => self::CLIENT_ORG_WEB,
         '/api/uictl/dropdown' => self::CLIENT_ORG_WEB,
         '/api/oss/signature' => self::CLIENT_ORG_WEB,
+        '/api/oss/callback' => self::CLIENT_ORG_WEB,
     ];
 
     /**

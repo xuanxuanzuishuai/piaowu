@@ -31,7 +31,7 @@ class OSS extends ControllerBase
             $ossConfig['access_key_secret'],
             $ossConfig['bucket'],
             $ossConfig['endpoint'],
-            null,
+            $ossConfig['callback_url'],
             $dir,
             $ossConfig['expire'],
             $ossConfig['max_file_size']);
@@ -39,6 +39,12 @@ class OSS extends ControllerBase
         return $response->withJson($ret, StatusCode::HTTP_OK);
     }
 
+    /**
+     * 阿里云OSS在上传文件完成的时候可以提供回调（Callback）给应用服务器。您只需要在发送给OSS的请求中携带相应的Callback参数，即能实现回调。
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
     public function callback(Request $request, Response $response)
     {
         Util::unusedParam($request);
