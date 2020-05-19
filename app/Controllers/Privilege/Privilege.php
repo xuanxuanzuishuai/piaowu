@@ -27,7 +27,9 @@ class Privilege extends ControllerBase
 
         $params['name'] = $params['name'] ?? null;
         $params['uri'] = $params['uri'] ?? null;
-        list($privileges, $totalCount) = PrivilegeService::getPrivilegesService($page, $count, $params['name'], $params['uri']);
+        $params['status'] = $params['status'] ?? null;
+        list($privileges, $totalCount) = PrivilegeService::getPrivilegesService($page, $count, $params['name'], $params['uri'], $pa
+        ['status']);
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => [

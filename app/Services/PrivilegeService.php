@@ -21,9 +21,10 @@ class PrivilegeService
      * @param int $count
      * @param null $name
      * @param null $uri
+     * @param null $status
      * @return array
      */
-    public static function getPrivilegesService($page = 0, $count = 0, $name = null, $uri = null)
+    public static function getPrivilegesService($page = 0, $count = 0, $name = null, $uri = null, $status = null)
     {
         $where = [];
         if (!empty($name)) {
@@ -31,6 +32,9 @@ class PrivilegeService
         }
         if (!empty($uri)) {
             $where['AND'][PrivilegeModel::$table . '.uri[~]'] = Util::sqlLike($uri);
+        }
+        if (!is_null($status)) {
+            $where['AND'][PrivilegeModel::$table . '.status'] = $status;
         }
 
         $totalCount = PrivilegeModel::getPrivilegeCount($where);

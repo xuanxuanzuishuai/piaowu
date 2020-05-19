@@ -56,6 +56,7 @@ class GroupPrivilegeService
         $update['parent_id'] = $params['parent_id'] ?? 0;
         $update['is_menu'] = $params['is_menu'] ?? PrivilegeModel::NOT_MENU;
         $update['menu_name'] = $params['menu_name'] ?? "";
+        $update['status'] = $params['status'] ?? 1;
 
         if (empty($privilege)) {
             $update['created_time'] = time();

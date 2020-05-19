@@ -84,7 +84,8 @@ class PrivilegeModel extends Model
         $privileges = $db->select(self::$table, ['id', 'name'], [
             'AND' => [
                 'is_menu' => self::IS_MENU,
-                'parent_id' => 0
+                'parent_id' => 0,
+                'status' => self::STATUS_NORMAL
             ]
         ]);
         return $privileges;
