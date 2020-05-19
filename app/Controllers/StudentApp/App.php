@@ -61,6 +61,9 @@ class App extends ControllerBase
         $studentAppConfigs = DictConstants::getSet(DictConstants::APP_CONFIG_STUDENT);
 
         $config = [];
+        // 考级分类ID
+        $config['exam_category_ids'] = $studentAppConfigs['exam_category_ids'];
+        $config['tts_url'] = $studentAppConfigs['tts_url'];
         $config['policy_url'] = $studentAppConfigs['policy_url'];
         $config['sub_info_count'] = (int)$studentAppConfigs['sub_info_count'];
         $config['tmall_2680'] = $studentAppConfigs['tmall_2680'];

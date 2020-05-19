@@ -9,6 +9,7 @@
 namespace App\Services;
 
 
+use App\Libs\AliOSS;
 use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
@@ -16,6 +17,7 @@ use App\Libs\ResponseError;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Libs\Util;
+use App\Models\CollectionModel;
 use App\Models\ReferralModel;
 use App\Models\StudentModel;
 use App\Models\StudentModelForApp;
@@ -105,6 +107,10 @@ class StudentServiceForApp
             'act_sub_info' => (int)$student['act_sub_info'],
             'first_pay_time' => (int)$student['first_pay_time'],
             'last_play_time' => (int)$student['last_play_time'],
+            'has_review_course' => $student['has_review_course'],
+            'need_add_wx' => 0,
+            'wechat_qr' => '',
+            'wechat_number' => '',
             'token' => $token,
             'teachers' => [],
             'flags' => $flags,
@@ -184,6 +190,21 @@ class StudentServiceForApp
             $student['sub_end_date'] = '20250101';
         }
 
+        // 用户已购买49元订单且在有效期内，首页会展示助教二维码和微信号
+        $needAddWx = 0;
+        $wechatQr = '';
+        $wechatNumber = '';
+        if ($student['has_review_course'] == StudentModel::CRM_AI_LEADS_STATUS_BUY_TEST_COURSE
+            && $student['sub_end_date'] > time()) {
+            $needAddWx = 1;
+            // 获取集合信息
+            if (!empty($student['collection_id'])) {
+                $collection = CollectionModel::getRecord(['id' => $student['collection_id']], ["wechat_number", "wechat_qr"], false);
+                $wechatQr = AliOSS::signUrls($collection["wechat_qr"]);
+                $wechatNumber = $collection['wechat_number'];
+            }
+        }
+
         $loginData = [
             'id' => $student['id'],
             'uuid' => $student['uuid'],
@@ -199,6 +220,10 @@ class StudentServiceForApp
             'act_sub_info' => (int)$student['act_sub_info'],
             'first_pay_time' => (int)$student['first_pay_time'],
             'last_play_time' => (int)$student['last_play_time'],
+            'has_review_course' => $student['has_review_course'],
+            'need_add_wx' => $needAddWx,
+            'wechat_qr' => $wechatQr,
+            'wechat_number' => $wechatNumber,
             'token' => $token,
             'teachers' => [],
             'flags' => $flags,
@@ -260,6 +285,21 @@ class StudentServiceForApp
             $student['sub_end_date'] = '20250101';
         }
 
+        // 用户已购买49元订单且在有效期内，首页会展示助教二维码和微信号
+        $needAddWx = 0;
+        $wechatQr = '';
+        $wechatNumber = '';
+        if ($student['has_review_course'] == StudentModel::CRM_AI_LEADS_STATUS_BUY_TEST_COURSE
+            && $student['sub_end_date'] > time()) {
+            $needAddWx = 1;
+            // 获取集合信息
+            if (!empty($student['collection_id'])) {
+                $collection = CollectionModel::getRecord(['id' => $student['collection_id']], ["wechat_number", "wechat_qr"], false);
+                $wechatQr = AliOSS::signUrls($collection["wechat_qr"]);
+                $wechatNumber = $collection['wechat_number'];
+            }
+        }
+
         $loginData = [
             'id' => $student['id'],
             'uuid' => $student['uuid'],
@@ -275,6 +315,10 @@ class StudentServiceForApp
             'act_sub_info' => (int)$student['act_sub_info'],
             'first_pay_time' => (int)$student['first_pay_time'],
             'last_play_time' => (int)$student['last_play_time'],
+            'has_review_course' => $student['has_review_course'],
+            'need_add_wx' => $needAddWx,
+            'wechat_qr' => $wechatQr,
+            'wechat_number' => $wechatNumber,
             'token' => $token,
             'teachers' => [],
             'flags' => $flags,

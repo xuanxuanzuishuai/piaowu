@@ -65,6 +65,7 @@ class StudentModelForApp extends Model
             'thumb' => '',
             'flags' => '0',
             'last_play_time' => '0',
+            'collection_id' => '0',
         ];
     }
 
@@ -104,6 +105,8 @@ class StudentModelForApp extends Model
             self::$table . '.thumb',
             self::$table . '.flags',
             self::$table . '.last_play_time',
+            self::$table . '.has_review_course',
+            self::$table . '.collection_id',
         ], $where);
     }
 

@@ -93,6 +93,8 @@ class DictConstants {
             'device_check',
             'exam_enable',
             'exam_url',
+            'tts_url',
+            'exam_category_ids'
         ]
     ];
 
