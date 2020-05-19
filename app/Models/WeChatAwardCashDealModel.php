@@ -11,8 +11,8 @@ class WeChatAwardCashDealModel extends Model
 {
     public static $table = "wechat_award_cash_deal";
     const RED_PACK_ACT_NAME = 'AI陪练转介绍'; //活动名称
-    const RED_PACK_SEND_NAME = '小叶子智能陪练'; //商户名称
-    const RED_PACK_WISHING = '永远开心'; //红包祝福语
+    const RED_PACK_SEND_NAME = '邀请好友奖励红包'; //商户名称
+    const RED_PACK_WISHING = '推荐多多，奖励多多'; //红包祝福语
 
     //发送红包成功与否的标识
     const RESULT_FAIL_CODE = 'FAIL'; //发放红包失败
@@ -27,6 +27,7 @@ class WeChatAwardCashDealModel extends Model
     const REFUND = 'REFUND'; //已退款
 
     //红包相关微信错误码
+    const NOT_SUBSCRIBE_WE_CHAT = 'NOT_SUBSCRIBE_WE_CHAT';
     const NOT_BIND_WE_CHAT = 'NOT_BIND_WX';
     const NO_AUTH = 'NO_AUTH';
     const SENDNUM_LIMIT = 'SENDNUM_LIMIT';
@@ -53,6 +54,9 @@ class WeChatAwardCashDealModel extends Model
     public static function getWeChatErrorMsg($errCode)
     {
         switch ($errCode) {
+            case self::NOT_SUBSCRIBE_WE_CHAT:
+                return '未关注服务号';
+                break;
             case self::NOT_BIND_WE_CHAT:
                 return '未绑定微信';
                 break;

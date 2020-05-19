@@ -7,11 +7,13 @@
 namespace App\Services;
 
 use App\Libs\Erp;
+use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Libs\WeChatPackage;
 use App\Models\StudentModel;
 use App\Models\UserWeixinModel;
 use App\Models\WeChatAwardCashDealModel;
+use App\Models\WeChatOpenIdListModel;
 
 
 class CashGrantService
@@ -48,21 +50,29 @@ class CashGrantService
             $status = ErpReferralService::AWARD_STATUS_GIVE_FAIL;
             $resultCode = WeChatAwardCashDealModel::NOT_BIND_WE_CHAT;
         } else {
-            //如果pre环境需要特定的user_id才可以接收
-            if (($_ENV['ENV_NAME'] == 'pre' && in_array($studentWeChatInfo['user_id'], explode(',', $_ENV['ALLOW_SEND_RED_PACK_USER']))) || $_ENV['ENV_NAME'] == 'prod') {
-                //已绑定微信推送红包
-                $weChatPackage = new WeChatPackage();
-                $actName = WeChatAwardCashDealModel::RED_PACK_ACT_NAME;
-                $sendName = WeChatAwardCashDealModel::RED_PACK_SEND_NAME;
-                $openId = $studentWeChatInfo['open_id'];
-                $wishing = WeChatAwardCashDealModel::RED_PACK_WISHING;
-                //请求微信发红包
-                $resultData = $weChatPackage->sendPackage($mchBillNo, $actName, $sendName, $openId, $amount, $wishing, 'redPack');
-                $status = trim($resultData['result_code']) == WeChatAwardCashDealModel::RESULT_SUCCESS_CODE ? ErpReferralService::AWARD_STATUS_GIVE_ING : ErpReferralService::AWARD_STATUS_GIVE_FAIL;
-                $resultCode = trim($resultData['err_code']);
+            //绑定微信且关注公众号
+            $hasSubscribeRecord = WeChatOpenIdListModel::getRecord(['openid' => $studentWeChatInfo['open_id'], 'status' => WeChatOpenIdListModel::SUBSCRIBE_WE_CHAT]);
+            if (!empty($hasSubscribeRecord)) {
+                //如果pre环境需要特定的user_id才可以接收
+                if (($_ENV['ENV_NAME'] == 'pre' && in_array($studentWeChatInfo['user_id'], explode(',', $_ENV['ALLOW_SEND_RED_PACK_USER']))) || $_ENV['ENV_NAME'] == 'prod') {
+                    //已绑定微信推送红包
+                    $weChatPackage = new WeChatPackage();
+                    $actName = WeChatAwardCashDealModel::RED_PACK_ACT_NAME;
+                    $sendName = WeChatAwardCashDealModel::RED_PACK_SEND_NAME;
+                    $openId = $studentWeChatInfo['open_id'];
+                    $wishing = WeChatAwardCashDealModel::RED_PACK_WISHING;
+                    //请求微信发红包
+                    $resultData = $weChatPackage->sendPackage($mchBillNo, $actName, $sendName, $openId, $amount, $wishing, 'redPack');
+                    $status = trim($resultData['result_code']) == WeChatAwardCashDealModel::RESULT_SUCCESS_CODE ? ErpReferralService::AWARD_STATUS_GIVE_ING : ErpReferralService::AWARD_STATUS_GIVE_FAIL;
+                    $resultCode = trim($resultData['err_code']);
+                } else {
+                    $status = ErpReferralService::AWARD_STATUS_GIVE_FAIL;
+                    $resultCode = WeChatAwardCashDealModel::RESULT_FAIL_CODE;
+                }
             } else {
+                //未关注服务号
                 $status = ErpReferralService::AWARD_STATUS_GIVE_FAIL;
-                $resultCode = WeChatAwardCashDealModel::RESULT_FAIL_CODE;
+                $resultCode = WeChatAwardCashDealModel::NOT_SUBSCRIBE_WE_CHAT;
             }
 
         }
@@ -70,19 +80,22 @@ class CashGrantService
         $data['result_code'] = $resultCode;
         //处理结果入库
         if (empty($hasRedPackRecord)) {
-            $data['user_type'] = $studentWeChatInfo['user_type'];
-            $data['busi_type'] = $studentWeChatInfo['busi_type'];
-            $data['app_id'] = $studentWeChatInfo['app_id'];
-            $data['open_id'] = $openId;
+            $data['user_type'] = WeChatService::USER_TYPE_STUDENT;
+            $data['busi_type'] = UserWeixinModel::BUSI_TYPE_STUDENT_SERVER;
+            $data['app_id'] = UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT;
+            $data['open_id'] = $openId ?? '';
             $data['award_amount'] = $amount;
             $data['create_time'] = $time;
             $data['update_time'] = $time;
             $data['user_id'] = $studentWeChatInfo['user_id'];
             $data['reviewer_id'] = $reviewerId;
             //记录发送红包
-            WeChatAwardCashDealModel::insertRecord($data);
+           $result = WeChatAwardCashDealModel::insertRecord($data);
         } else {
-            WeChatAwardCashDealModel::updateRecord($hasRedPackRecord['id'], $data);
+           $result = WeChatAwardCashDealModel::updateRecord($hasRedPackRecord['id'], $data);
+        }
+        if (empty($result)) {
+            SimpleLogger::error('cash deal data operate fail', $data);
         }
         return [$awardId, $status];
     }
@@ -106,6 +119,7 @@ class CashGrantService
         if (!empty($needQueryData)) {
             foreach ($needQueryData as $va) {
                 $resultData = $weChatPackage->getRedPackBillInfo($va['mch_billno']);
+                SimpleLogger::info("wx red pack query", ['mch_billno' => $va['mch_billno'], 'data' => $resultData]);
                 $status = $va['status'];
                 $resultCode = $va['result_code'];
 
@@ -141,7 +155,9 @@ class CashGrantService
                 }
             }
         }
-        $erp = new Erp();
-        $erp->batchUpdateAward($needUpdateAward);
+        if (!empty($needUpdateAward)) {
+            $erp = new Erp();
+            $erp->batchUpdateAward($needUpdateAward);
+        }
     }
 }
