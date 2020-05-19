@@ -61,6 +61,7 @@ class PrivilegeModel extends Model
             '[>]' . self::$table . '(p)' => ['parent_id' => 'id']
         ], [
             self::$table . '.id',
+            self::$table . '.status',
             self::$table . '.name',
             self::$table . '.uri',
             self::$table . '.created_time',
