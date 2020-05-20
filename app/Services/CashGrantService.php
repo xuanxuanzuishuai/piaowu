@@ -85,7 +85,7 @@ class CashGrantService
             $data['award_amount'] = $amount;
             $data['create_time'] = $time;
             $data['update_time'] = $time;
-            $data['user_id'] = $studentWeChatInfo['user_id'];
+            $data['user_id'] = $studentInfo['id'];
             $data['reviewer_id'] = $reviewerId;
             //记录发送红包
            $result = WeChatAwardCashDealModel::insertRecord($data);
