@@ -52,6 +52,7 @@ class PrivilegeService
 
         foreach ($privileges as $key => $privilege) {
             $privileges[$key]['menu'] = Dict::isOrNotStr($privilege['is_menu']);
+            $privileges[$key]['pstatus'] = Dict::isOrNotStr($privilege['status']);
         }
         return [$privileges, $totalCount];
     }
