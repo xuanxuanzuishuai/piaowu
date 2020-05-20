@@ -12,9 +12,7 @@ namespace App\Services;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
-use App\Libs\UserCenter;
 use App\Libs\Util;
-use App\Models\StudentModel;
 use App\Models\UserWeixinModel;
 use App\Models\WeChatAwardCashDealModel;
 use App\Models\WeChatOpenIdListModel;
@@ -361,14 +359,23 @@ class ErpReferralService
                 foreach ($awardBaseInfo['data']['award_info'] as $award) {
                     //仅现金支持
                     if ($award['award_type'] == self::AWARD_TYPE_CASH && in_array($award['status'], [self::AWARD_STATUS_WAITING, self::AWARD_STATUS_GIVE_FAIL])) {
-                        list($baseAwardId, $status) = CashGrantService::cashGiveOut($award['uuid'], $award['award_id'], $award['award_amount'], $reviewerId);
-                        $needDealAward[$baseAwardId]['status'] = $status;
+                        list($baseAwardId, $dealStatus) = CashGrantService::cashGiveOut($award['uuid'], $award['award_id'], $award['award_amount'], $reviewerId);
+                        //重试操作无变化，无须更新erp
+                        if ($award['status'] != $dealStatus) {
+                            $needDealAward[$baseAwardId]['status'] = $dealStatus;
+                        } else {
+                            unset($needDealAward[$award['award_id']]);
+                        }
                     } else {
                         unset($needDealAward[$award['award_id']]);
                         SimpleLogger::info('award data valid', $award);
                     }
                 }
             }
+        }
+
+        if (empty($needDealAward)) {
+            return [];
         }
 
         $response = $erp->batchUpdateAward($needDealAward);
