@@ -387,6 +387,7 @@ class StudentModel extends Model
         $join = [
             '[>]'.CollectionModel::$table.'(c)' => ['s.collection_id' => 'id'],
             '[>]'.EmployeeModel::$table.'(e)' => ['s.assistant_id' => 'id'],
+            '[>]'.EmployeeModel::$table.'(em)' => ['s.course_manage_id' => 'id'],
         ];
         $fields = [
             's.id',
@@ -405,7 +406,8 @@ class StudentModel extends Model
             's.is_add_assistant_wx',
             's.wechat_account',
             's.uuid',
-            's.sync_status'
+            's.sync_status',
+            'em.name(course_manage_name)'
         ];
         $where = ['s.id' => $studentId];
         return MysqlDB::getDB()->get($table, $join, $fields, $where);
@@ -443,6 +445,7 @@ class StudentModel extends Model
                         AND `sw`.status = ".UserWeixinModel::STATUS_NORMAL."
                 LEFT JOIN {$collection} AS `co` ON `s`.`collection_id` = `co`.`id`
                 LEFT JOIN {$assistant} AS `ass` ON `s`.`assistant_id` = `ass`.`id`
+                LEFT JOIN {$assistant} AS `em` ON `s`.`course_manage_id` = `em`.`id`
                 LEFT JOIN {$channel} AS `ch` ON `s`.`channel_id` = `ch`.`id` 
                 LEFT JOIN {$channel} AS `pch` ON `ch`.`parent_id` = `pch`.`id` ";
 
@@ -463,8 +466,13 @@ class StudentModel extends Model
      */
     public static function formatSearchParams($params, $employeeId)
     {
-        $whereSql = '';
+        $whereSql = ' WHERE 1 ';
         $map = [];
+        //学生id
+        if (!empty($params['student_id'])) {
+            $whereSql .= " AND s.id = :student_id ";
+            $map[':student_id'] = $params['student_id'];
+        }
         /**
          * 权限控制
          * 助教查看学生规则：
@@ -480,10 +488,17 @@ class StudentModel extends Model
         }
         //获取助教 ROLE_ID
         $assistantRoleId = DictService::getKeyValue(Constants::DICT_TYPE_ROLE_ID, Constants::DICT_KEY_CODE_ASSISTANT);
-        if($employee['role_id'] == $assistantRoleId){
-            $whereSql .= " WHERE (s.assistant_id = {$employeeId} OR co.assistant_id = {$employeeId}) ";
-        }else{
-            $whereSql .= " WHERE 1 ";
+        if ($employee['role_id'] == $assistantRoleId) {
+            $whereSql .= " AND (s.assistant_id = {$employeeId} OR co.assistant_id = {$employeeId}) ";
+        }
+        //获取课管角色id
+        $courseManageRoleId = DictService::getKeyValue(Constants::DICT_TYPE_ROLE_ID, Constants::DICT_KEY_CODE_COURSE_MANAGE_ROLE_ID_CODE);
+        if ($employee['role_id'] == $courseManageRoleId) {
+            $params['course_manage_id'] = $employeeId;
+        }
+        if (!empty($params['course_manage_id'])) {
+            $whereSql .= " AND s.course_manage_id  = :course_manage_id ";
+            $map[':course_manage_id'] = $params['course_manage_id'];
         }
         //学生姓名
         if(!empty($params['student_name'])){
@@ -644,7 +659,8 @@ class StudentModel extends Model
                        `pch`.`name` AS parent_channel_name,
                        `s`.`create_time`,
                        `s`.`allot_collection_time`,
-                       `s`.`wechat_account`";
+                       `s`.`wechat_account`,
+                       `em`.`name` AS course_manage_name";
 
         //排序条件:默认按照注册时间倒叙
         $orderSql = ' ORDER BY ';

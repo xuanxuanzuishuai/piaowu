@@ -27,6 +27,7 @@ use App\Models\StudentCollectionLogModel;
 use App\Models\StudentModel;
 use App\Models\StudentOrgModel;
 use App\Models\UserWeixinModel;
+use App\Models\StudentCourseManageLogModel;
 use App\Services\Queue\QueueService;
 
 class StudentService
@@ -555,6 +556,7 @@ class StudentService
         $data['channel'] = $channel;
         $data['wechat_account'] = $student['wechat_account'];
         $data['sync_status'] = $student['sync_status'];
+        $data['course_manage_name'] = $student['course_manage_name'];
         return $data;
     }
 
@@ -629,8 +631,6 @@ class StudentService
         $time = time();
         // 获取学生阶段MAP
         $stepMap = DictService::getTypeMap(Constants::DICT_TYPE_REVIEW_COURSE_STATUS);
-        // 获取添加助教微信状态map
-        $addAssistantMap = DictService::getTypeMap(Constants::DICT_TYPE_ADD_ASSISTANT_WX_STATUS);
 
         // 格式化学生数据
         foreach($list as $item){
@@ -646,7 +646,7 @@ class StudentService
             $row['student_step'] = isset($stepMap[$item['has_review_course']]) ? $stepMap[$item['has_review_course']] : '-';
             $row['wechat_bind'] = empty($item['wx_id']) ? '未绑定' : '已绑定';
             $row['assistant_name'] = $item['assistant_name'];
-            $row['is_add_assistant_wx'] = isset($addAssistantMap[$item['is_add_assistant_wx']]) ? $addAssistantMap[$item['is_add_assistant_wx']] : '-';
+            $row['is_add_assistant_wx'] = $item['is_add_assistant_wx'];
             $row['collection_name'] = $item['collection_name'];
             $row['channel'] = $item['channel_name'];
             $row['parent_channel'] = $item['parent_channel_name'];
@@ -654,6 +654,7 @@ class StudentService
             $row['latest_remark_status'] = DictService::getKeyValue(Constants::DICT_TYPE_STUDENT_REMARK_STATUS, $item['latest_remark_status']);
             $row['allot_collection_time'] = empty($item['allot_collection_time']) ? '-' : date('Y-m-d H:i', $item['allot_collection_time']);
             $row['wechat_account'] = $item['wechat_account'];
+            $row['course_manage_name'] = $item['course_manage_name'];
             $data[] = $row;
         }
         return $data;
@@ -1070,6 +1071,53 @@ class StudentService
         }
         //同步观单数据
         QueueService::studentSyncWatchList($studentInfo['id']);
+        return true;
+    }
+
+    /**
+     * 分配课管
+     * @param $studentIds
+     * @param $courseManageId
+     * @param $employeeId
+     * @return bool
+     * @throws RunTimeException
+     */
+    public static function allotCourseManage($studentIds, $courseManageId, $employeeId)
+    {
+        //获取学生信息
+        $students = StudentModel::getStudentByIds($studentIds);
+        if (empty($students) || count($students) != count($studentIds)) {
+            throw new RunTimeException(['student_ids_error']);
+        }
+        //检测课管状态是否可用
+        $roleId = DictService::getKeyValue(Constants::DICT_TYPE_ROLE_ID, Constants::DICT_KEY_CODE_COURSE_MANAGE_ROLE_ID_CODE);
+        $courseManageInfo = EmployeeModel::getRecord(['id' => $courseManageId, 'role_id' => $roleId, 'status' => EmployeeModel::STATUS_NORMAL], 'id', false);
+        if (empty($courseManageInfo)) {
+            throw new RunTimeException(['course_manage_status_disable']);
+        }
+        //过滤课管无需修改的数据
+        $courseManageChangeStudents = [];
+        array_map(function ($studentDetail) use ($courseManageId, &$courseManageChangeStudents) {
+            if ($studentDetail['course_manage_id'] != $courseManageId) {
+                $courseManageChangeStudents[] = $studentDetail['id'];
+            }
+        }, $students);
+        if (empty($courseManageChangeStudents)) {
+            throw new RunTimeException(['student_course_manage_no_change']);
+        }
+        //修改数据
+        $affectRows = StudentModel::batchUpdateRecord(['course_manage_id' => $courseManageId], ['id' => $courseManageChangeStudents], false);
+        if (empty($affectRows)) {
+            throw new RunTimeException(['update_student_data_failed']);
+        }
+        //记录日志
+        $time = time();
+        $logData = StudentCourseManageLogModel::formatAllotCourseManageLogData($students, $courseManageId, $employeeId, $time);
+        $insertRes = StudentCourseManageLogModel::batchInsert($logData);
+        if (empty($insertRes)) {
+            throw new RunTimeException(['add_allot_course_manage_log_failed']);
+        }
+        //返回数据
         return true;
     }
 }

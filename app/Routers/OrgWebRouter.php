@@ -133,6 +133,7 @@ class OrgWebRouter extends RouterBase
         '/student/student/allotAssistant' => array('method' => array('post'), 'call' => '\App\Controllers\Student\Student:allotAssistant'),
         '/org_web/channel/getChannels' => array('method' => array('get'), 'call' => '\App\Controllers\Student\Student:getSChannels'),
         '/org_web/student/syncDataToCrm' => ['method' => ['post'], 'call' => OrgWebStudent::class . ':syncDataToCrm'],
+        '/org_web/student/allot_course_manage' => ['method' => ['post'], 'call' => OrgWebStudent::class . ':allotCourseManage'],
         // 学生跟进记录
         '/student/student_remark/add' => array('method' => array('post'), 'call' => '\App\Controllers\Student\StudentRemark:add'),
         '/student/student_remark/remark_list' => array('method' => array('get'), 'call' => '\App\Controllers\Student\StudentRemark:remarkList'),
