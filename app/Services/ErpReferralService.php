@@ -50,7 +50,7 @@ class ErpReferralService
         self:: AWARD_STATUS_REJECTED => '不发放',
         self:: AWARD_STATUS_WAITING => '待发放',
         self:: AWARD_STATUS_APPROVAL => '审核中',
-        self:: AWARD_STATUS_GIVEN => '已发放',
+        self:: AWARD_STATUS_GIVEN => '发放成功',
         self:: AWARD_STATUS_GIVE_ING => '发放中',
         self:: AWARD_STATUS_GIVE_FAIL => '发放失败'
     ];

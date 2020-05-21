@@ -130,7 +130,7 @@ class WeChatAwardCashDealModel extends Model
                 return '发放失败';
                 break;
             case self::RECEIVED:
-                return '已领取';
+                return '';
                 break;
             case self::RFUND_ING:
                 return '退款中';
