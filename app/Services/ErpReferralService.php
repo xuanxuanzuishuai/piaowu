@@ -357,8 +357,8 @@ class ErpReferralService
             $awardBaseInfo = $erp->getUserAwardInfo($awardId);
             if (!empty($awardBaseInfo['data']['award_info'])) {
                 foreach ($awardBaseInfo['data']['award_info'] as $award) {
-                    //仅现金支持
-                    if ($award['award_type'] == self::AWARD_TYPE_CASH && in_array($award['status'], [self::AWARD_STATUS_WAITING, self::AWARD_STATUS_GIVE_FAIL])) {
+                    //仅现金,且未发放/已发放失败,且满足奖励延迟时间限制可调用
+                    if ($award['award_type'] == self::AWARD_TYPE_CASH && in_array($award['status'], [self::AWARD_STATUS_WAITING, self::AWARD_STATUS_GIVE_FAIL]) && $award['create_time'] + $award['delay'] < $time) {
                         list($baseAwardId, $dealStatus) = CashGrantService::cashGiveOut($award['uuid'], $award['award_id'], $award['award_amount'], $reviewerId);
                         //重试操作无变化，无须更新erp
                         if ($award['status'] != $dealStatus) {
