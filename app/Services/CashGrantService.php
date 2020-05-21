@@ -39,8 +39,7 @@ class CashGrantService
 
         //当前奖励是否已经有发放红包记录
         $hasRedPackRecord = WeChatAwardCashDealModel::getRecord(['user_event_task_award_id' => $awardId]);
-        //已经存在记录的，重试发放的时候使用的单号，防止红包发多
-        $mchBillNo = !empty($hasRedPackRecord['mch_billno']) ? $hasRedPackRecord['mch_billno'] :$awardId . $amount . time();
+        $mchBillNo = self::getMchBillNo($awardId, $hasRedPackRecord, $amount);
 
         $data['user_event_task_award_id'] = $awardId;
         $data['mch_billno'] = $mchBillNo;
@@ -96,6 +95,22 @@ class CashGrantService
             SimpleLogger::error('cash deal data operate fail', $data);
         }
         return [$awardId, $status];
+    }
+
+    /**
+     * @param $awardId
+     * @param $hasRedPackRecord
+     * @param $amount
+     * @return mixed|string
+     * 如果已经有微信红包记录，并且错误码为 微信内部/ca错误的 用原有单号重试
+     */
+    private static function getMchBillNo($awardId, $hasRedPackRecord, $amount)
+    {
+        if (!empty($hasRedPackRecord) && in_array($hasRedPackRecord['result_code'], [WeChatAwardCashDealModel::CA_ERROR, WeChatAwardCashDealModel::SYSTEMERROR])) {
+            return $hasRedPackRecord['mch_billno'];
+        } else {
+            return $awardId . $amount . time();
+        }
     }
 
     /**

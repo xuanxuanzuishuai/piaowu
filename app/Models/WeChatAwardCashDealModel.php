@@ -61,7 +61,7 @@ class WeChatAwardCashDealModel extends Model
                 return '发放失败，此请求可能存在风险，已被微信拦截';
                 break;
             case self::SENDNUM_LIMIT:
-                return '该用户今日领取红包个数超过限制';
+                return '超过个人单日领取红包数上限';
                 break;
             case self::ILLEGAL_APPID:
                 return '非法appid，请确认是否为公众号的appid，不能为APP的appid';
@@ -112,10 +112,10 @@ class WeChatAwardCashDealModel extends Model
                 return '参数错误';
                 break;
             case self::SENDAMOUNT_LIMIT:
-                return '您的商户号今日发放金额超过限制，如有需要请登录微信支付商户平台更改API安全配置';
+                return '超过账户单日发放金额上限';
                 break;
             case self::RCVDAMOUNT_LIMIT:
-                return '该用户今日领取金额超过限制，如有需要请登录微信支付商户平台更改API安全配置';
+                return '超过个人单日领取金额上限';
                 break;
             case self::NOT_FOUND:
                 return '指定单号数据不存在';
@@ -127,7 +127,7 @@ class WeChatAwardCashDealModel extends Model
                 return '已发放待领取';
                 break;
             case self::FAILED:
-                return '发放失败';
+                return '微信红包发放失败';
                 break;
             case self::RECEIVED:
                 return '';
@@ -136,7 +136,7 @@ class WeChatAwardCashDealModel extends Model
                 return '退款中';
                 break;
             case self::REFUND:
-                return '已退款';
+                return '微信红包未领取';
                 break;
             default:
                 return '';
