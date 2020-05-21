@@ -113,4 +113,38 @@ class Student extends ControllerBase
         $db->commit();
         return HttpHelper::buildResponse($response, []);
     }
+
+    /**
+     * 查看学生明文手机号码
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getStudentMobile(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        $rules = [
+            [
+                'key' => 'student_ids',
+                'type' => 'required',
+                'error_code' => 'student_ids_is_required',
+            ],
+            [
+                'key' => 'student_ids',
+                'type' => 'array',
+                'error_code' => 'student_id_must_be_array'
+            ]
+        ];
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            $studentInfo = StudentService::getStudentSelfSecret($params['student_ids'], $this->getEmployeeId(), ['id', 'mobile']);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData());
+        }
+        //返回数据
+        return HttpHelper::buildResponse($response, $studentInfo);
+    }
 }

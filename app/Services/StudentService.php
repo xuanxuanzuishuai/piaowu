@@ -28,6 +28,7 @@ use App\Models\StudentModel;
 use App\Models\StudentOrgModel;
 use App\Models\UserWeixinModel;
 use App\Models\StudentCourseManageLogModel;
+use App\Models\StudentAcquiredLogModel;
 use App\Services\Queue\QueueService;
 
 class StudentService
@@ -534,7 +535,7 @@ class StudentService
     {
         $data = [];
         $data['student_id'] = $student['id'];
-        $data['mobile'] = $student['mobile'];
+        $data['mobile'] = Util::hideUserMobile($student['mobile']);
         $data['student_name'] = $student['name'];
         $data['collection_id'] = $student['collection_id'];
         $data['collection_name'] = $student['collection_name'];
@@ -548,7 +549,8 @@ class StudentService
         //获取学生阶段MAP
         $stepMap = DictService::getTypeMap(Constants::DICT_TYPE_REVIEW_COURSE_STATUS);
         $data['student_step'] = isset($stepMap[$student['has_review_course']]) ? $stepMap[$student['has_review_course']] : '-';
-        $data['referee'] = empty($refereeInfo) ? '-' : $refereeInfo['name'] . "(" . $refereeInfo['mobile'] . ")";
+        $data['referee'] = empty($refereeInfo) ? '-' : $refereeInfo['name'] . "(" . Util::hideUserMobile($refereeInfo['mobile']) . ")";
+        $data['referee_id'] = $refereeInfo['id'];
         $data['register_time'] = date('Y-m-d H:i', $student['create_time']);
         $data['assistant_id'] = $student['assistant_id'];
         $data['assistant_name'] = $student['assistant_name'];
@@ -574,7 +576,7 @@ class StudentService
         ];
         $data = ErpReferralService::getUserReferralInfo($params);
         //获取转介绍人信息
-        $referralInfo = StudentModel::getRecord(['uuid' => $data[0]["referrer_uuid"]], ['name', 'mobile'], false);
+        $referralInfo = StudentModel::getRecord(['uuid' => $data[0]["referrer_uuid"]], ['name', 'mobile', 'id'], false);
         return $referralInfo;
     }
 
@@ -1119,5 +1121,31 @@ class StudentService
         }
         //返回数据
         return true;
+    }
+
+    /**
+     * 查看学生隐私信息
+     * @param $studentIds
+     * @param $employeeId
+     * @param $field
+     * @param $operateType
+     * @return mixed
+     * @throws RunTimeException
+     */
+    public static function getStudentSelfSecret($studentIds, $employeeId, $field = [], $operateType = StudentAcquiredLogModel::OPERATE_TYPE_GET_MOBILE)
+    {
+        //获取学生信息
+        $studentInfoList = StudentModel::getRecords(['id' => $studentIds], $field, false);
+        if (empty($studentInfoList)) {
+            throw new RunTimeException(['student_ids_error']);
+        }
+        //记录日志
+        $time = time();
+        $logData = StudentAcquiredLogModel::formatLogData($studentIds, $employeeId, $time, $operateType);
+        $insertRes = StudentAcquiredLogModel::batchInsert($logData, false);
+        if (empty($insertRes)) {
+            throw new RunTimeException(['add_student_acquired_log_failed']);
+        }
+        return $studentInfoList;
     }
 }
