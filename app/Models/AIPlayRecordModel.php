@@ -11,6 +11,7 @@ namespace App\Models;
 
 use App\Libs\Constants;
 use App\Libs\MysqlDB;
+use App\Libs\Util;
 use Medoo\Medoo;
 
 class AIPlayRecordModel extends Model
@@ -233,5 +234,177 @@ LIMIT :rank_limit;";
         ]);
 
         return $record;
+    }
+
+    /**
+     * 学生练琴统计
+     * @param $params
+     * @return array
+     */
+    public static function recordStatistics($params)
+    {
+        $where = " WHERE 1 = 1 ";
+        $joinWhere = " WHERE 1 = 1 ";
+        $having = " HAVING 1 = 1 ";
+        $map = [];
+        $order = " ORDER BY s.create_time DESC ";
+        if (!empty($params['student_id'])) {
+            $where .= " AND s.id = :student_id ";
+            $map[":student_id"] = $params['student_id'];
+        } elseif (!empty($params['student_mobile'])) {
+            $where .= " AND s.mobile = :student_mobile ";
+            $map[":student_mobile"] = $params['student_mobile'];
+        } elseif (!empty($params['student_name'])) {
+            $where .= " AND s.name like :student_name ";
+            $map[":student_name"] = "%" . $params['student_name'] . "%";
+        }
+        if (isset($params['has_review_course']) && is_numeric($params['has_review_course'])) {
+            $where .= " AND s.has_review_course = :has_review_course ";
+            $map[":has_review_course"] = $params['has_review_course'];
+        }
+        // 助教
+        if (!empty($params['assistant_id'])) {
+            $where .= " AND s.assistant_id = :assistant_id ";
+            $map[":assistant_id"] = $params['assistant_id'];
+        }
+        // 课管
+        if (!empty($params['course_manage_id'])) {
+            $where .= " AND s.course_manage_id = :course_manage_id ";
+            $map[":course_manage_id"] = $params['course_manage_id'];
+        }
+        // 班级
+        if (!empty($params['collection_id'])) {
+            $where .= " AND s.collection_id = :collection_id ";
+            $map[":collection_id"] = $params['collection_id'];
+        }
+
+        // 开班日期
+        if (!empty($params['collection_time_start'])) {
+            $where .= " AND c.teaching_start_time >= " . strtotime($params['collection_time_start']);
+        }
+        if (!empty($params['collection_time_end'])) {
+            $where .= " AND c.teaching_start_time <= " . strtotime($params['collection_time_end']);
+        }
+
+        // 统计区间
+        if (!empty($params['play_start_time'])) {
+            $startTime = strtotime($params['play_start_time']);
+            $where .= " AND pr.end_time >= " . $startTime;
+            $joinWhere .= " AND play_date >= " . date("Ymd", $startTime);
+        }
+        if (!empty($params['play_end_time'])) {
+            $endTime = strtotime($params['play_end_time']);
+            $where .= " AND pr.end_time <= " . $endTime;
+            $joinWhere .= " AND play_date <= " . date("Ymd", $endTime);
+        }
+
+        // 总时长
+        if (isset($params['total_duration_min']) && is_numeric($params['total_duration_min'])) {
+            $having .= " AND total_duration >= :total_duration_min ";
+            $map[":total_duration_min"] = $params['total_duration_min'] * 60;
+        }
+        if (isset($params['total_duration_max']) && is_numeric($params['total_duration_max'])) {
+            $having .= " AND total_duration <= :total_duration_max ";
+            $map[":total_duration_max"] = $params['total_duration_max'] * 60;
+        }
+        if (!empty($params['total_duration_sort']) && in_array($params['total_duration_sort'], ['DESC', 'ASC'])) {
+            $order = " ORDER BY total_duration " . $params['total_duration_sort'];
+        }
+
+        // 日均时长
+        if (isset($params['avg_duration_min']) && is_numeric($params['avg_duration_min'])) {
+            $having .= " AND avg_duration >= :avg_duration_min ";
+            $map[":avg_duration_min"] = $params['avg_duration_min'] * 60;
+        }
+        if (isset($params['avg_duration_max']) && is_numeric($params['avg_duration_max'])) {
+            $having .= " AND avg_duration <= :avg_duration_max ";
+            $map[":avg_duration_max"] = $params['avg_duration_max'] * 60;
+        }
+        if (!empty($params['avg_duration_sort']) && in_array($params['avg_duration_sort'], ['DESC', 'ASC'])) {
+            $order = " ORDER BY avg_duration " . $params['avg_duration_sort'];
+        }
+
+        // 日报数
+        if (isset($params['play_days_min']) && is_numeric($params['play_days_min'])) {
+            $having .= " AND play_days >= :play_days_min ";
+            $map[":play_days_min"] = $params['play_days_min'];
+        }
+        if (isset($params['play_days_max']) && is_numeric($params['play_days_max'])) {
+            $having .= " AND play_days <= :play_days_max ";
+            $map[":play_days_max"] = $params['play_days_max'];
+        }
+        if (!empty($params['play_days_sort']) && in_array($params['play_days_sort'], ['DESC', 'ASC'])) {
+            $order = " ORDER BY play_days " . $params['play_days_sort'];
+        }
+
+        // 点评数
+        if (isset($params['review_days_min']) && is_numeric($params['review_days_min'])) {
+            $having .= " AND review_days >= :review_days_min ";
+            $map[":review_days_min"] = $params['review_days_min'];
+        }
+        if (isset($params['review_days_max']) && is_numeric($params['review_days_max'])) {
+            $having .= " AND review_days <= :review_days_max ";
+            $map[":review_days_max"] = $params['review_days_max'];
+        }
+        if (!empty($params['review_days_sort']) && in_array($params['review_days_sort'], ['DESC', 'ASC'])) {
+            $order = " ORDER BY review_days " . $params['review_days_sort'];
+        }
+
+        $select = "
+    SUM(pr.duration) total_duration,
+    COUNT(DISTINCT FROM_UNIXTIME(pr.end_time, '%Y-%m-%d')) play_days,
+    SUM(pr.duration) / COUNT(DISTINCT FROM_UNIXTIME(pr.end_time, '%Y-%m-%d')) avg_duration,
+    rc.review_days";
+
+        $join = "
+        INNER JOIN
+    " . self::$table . "  pr ON s.id = pr.student_id
+        LEFT JOIN
+    " . EmployeeModel::$table . " assist ON assist.id = s.assistant_id
+        LEFT JOIN
+    " . EmployeeModel::$table . " manager ON manager.id = s.course_manage_id
+        LEFT JOIN
+        (SELECT COUNT(DISTINCT play_date) review_days, student_id
+         FROM " . ReviewCourseTaskModel::$table . $joinWhere . "
+         GROUP BY student_id) rc ON rc.student_id = s.id
+        LEFT JOIN
+    " . CollectionModel::$table . " c ON c.id = s.collection_id
+          AND c.status = " . CollectionModel::COLLECTION_STATUS_IS_PUBLISH;
+
+        $group = " GROUP BY s.id ";
+
+        $db = MysqlDB::getDB();
+        $countSql = "
+SELECT COUNT(student_count) count
+FROM (
+    SELECT COUNT(pr.student_id) student_count,
+     " . $select . "
+    FROM ". StudentModel::$table . " s " . $join . $where . $group . $having . " ) stu ";
+        $queryCount = $db->queryAll($countSql, $map);
+        $totalCount = $queryCount[0]['count'];
+        if ($totalCount == 0) {
+            return [[], 0];
+        }
+
+        $sql = "
+SELECT
+    s.id student_id,
+    s.mobile,
+    s.name,
+    s.has_review_course,
+    s.assistant_id,
+    s.collection_id,
+    s.course_manage_id,
+    assist.name assistant_name,
+    manager.name manager_name,
+    c.name collection_name,
+    c.teaching_start_time,
+    " . $select . "
+FROM
+    " . StudentModel::$table . " s ";
+        $limit = Util::limitation($params['page'], $params['count']);
+        $sql = $sql . $join . $where . $group . $having . $order . $limit;
+        $records = $db->queryAll($sql, $map);
+        return [$records, $totalCount];
     }
 }

@@ -12,6 +12,7 @@ namespace App\Services;
 use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\OpernCenter;
+use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\AIPlayRecordModel;
 use App\Models\AppVersionModel;
@@ -677,5 +678,36 @@ class AIPlayRecordService
         // verCmp $a < $b 时返回1
         $cmpRet = AppVersionModel::verCmp($version, self::DEFAULT_APP_VER);
         return $cmpRet > 0;
+    }
+
+
+    /**
+     * 学生练琴数据统计
+     * @param $params
+     * @param $employeeId
+     * @param $roleId
+     * @return array
+     */
+    public static function studentPlayStatistics($params, $employeeId, $roleId)
+    {
+        if (EmployeeService::isAssistantRole($roleId)) {
+            $params['assistant_id'] = $employeeId;
+        }
+        if (EmployeeService::isCourseManagerRole($roleId)) {
+            $params['course_manage_id'] = $employeeId;
+        }
+
+        list($records, $totalCount) = AIPlayRecordModel::recordStatistics($params);
+
+        $reviewStatus = DictService::getTypeMap(Constants::DICT_TYPE_REVIEW_COURSE_STATUS);
+
+        foreach ($records as &$record) {
+            $record['mobile'] = Util::hideUserMobile($record['mobile']);
+            $record['review_course_status'] = $reviewStatus[$record['has_review_course']];
+            $record['teaching_start_time'] = !empty($record['teaching_start_time']) ? date('Y-m-d', $record['teaching_start_time']) : '';
+            $record['total_duration'] = ceil($record['total_duration'] / 60);
+            $record['avg_duration'] = ceil($record['avg_duration'] / 60);
+        }
+        return [$records, $totalCount];
     }
 }

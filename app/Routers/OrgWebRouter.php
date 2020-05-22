@@ -25,6 +25,7 @@ use App\Controllers\OrgWeb\Approval;
 use App\Controllers\OrgWeb\Banner;
 use App\Controllers\OrgWeb\Erp;
 use App\Controllers\OrgWeb\Flags;
+use App\Controllers\OrgWeb\PlayRecord;
 use App\Controllers\OrgWeb\Question;
 use App\Controllers\OrgWeb\QuestionTag;
 use App\Controllers\OrgWeb\Referral;
@@ -388,5 +389,6 @@ class OrgWebRouter extends RouterBase
         '/org_web/share_poster/approved' => ['method' => ['post'], 'call' => SharePoster::class . ':approved'],
         '/org_web/share_poster/refused' => ['method' => ['post'], 'call' => SharePoster::class . ':refused'],
 
+        '/org_web/play_record/statistics' => ['method' => ['get'], 'call' => PlayRecord::class . ':playStatistics'],
     ];
 }

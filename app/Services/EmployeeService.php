@@ -284,4 +284,38 @@ class EmployeeService
         }
         return EmployeeModel::getRecords(['id' => $employeeIds], ['id', 'name'], false);
     }
+
+    /**
+     * 是否助教角色
+     * @param $employeeId
+     * @return bool
+     */
+    public static function isAssistantRole($employeeId)
+    {
+        if (empty($employeeId)) {
+            return false;
+        }
+        $assistantRoleId = DictService::getKeyValue(Constants::DICT_TYPE_ROLE_ID, Constants::DICT_KEY_CODE_ASSISTANT);
+        if ($assistantRoleId == $employeeId) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 是否课管角色
+     * @param $employeeId
+     * @return bool
+     */
+    public static function isCourseManagerRole($employeeId)
+    {
+        if (empty($employeeId)) {
+            return false;
+        }
+        $assistantRoleId = DictService::getKeyValue(Constants::DICT_TYPE_ROLE_ID, Constants::DICT_KEY_CODE_COURSE_MANAGE_ROLE_ID_CODE);
+        if ($assistantRoleId == $employeeId) {
+            return true;
+        }
+        return false;
+    }
 }
