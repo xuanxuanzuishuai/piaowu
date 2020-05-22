@@ -60,6 +60,7 @@ class CashGrantService
                     list($actName, $sendName, $wishing) = self::getRedPackConfigWord();
                     //请求微信发红包
                     $resultData = $weChatPackage->sendPackage($mchBillNo, $actName, $sendName, $openId, $amount, $wishing, 'redPack');
+                    SimpleLogger::info('we chat send red pack result data:', $resultData);
                     $status = trim($resultData['result_code']) == WeChatAwardCashDealModel::RESULT_SUCCESS_CODE ? ErpReferralService::AWARD_STATUS_GIVE_ING : ErpReferralService::AWARD_STATUS_GIVE_FAIL;
                     $resultCode = trim($resultData['err_code']);
                 } else {
@@ -75,17 +76,17 @@ class CashGrantService
         }
         $data['status'] = $status;
         $data['result_code'] = $resultCode;
+        $data['open_id'] = $openId ?? '';
+        $data['update_time'] = $time;
+        $data['reviewer_id'] = $reviewerId;
+        $data['award_amount'] = $amount;
         //处理结果入库
         if (empty($hasRedPackRecord)) {
             $data['user_type'] = WeChatService::USER_TYPE_STUDENT;
             $data['busi_type'] = UserWeixinModel::BUSI_TYPE_STUDENT_SERVER;
             $data['app_id'] = UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT;
-            $data['open_id'] = $openId ?? '';
-            $data['award_amount'] = $amount;
             $data['create_time'] = $time;
-            $data['update_time'] = $time;
             $data['user_id'] = $studentInfo['id'];
-            $data['reviewer_id'] = $reviewerId;
             //记录发送红包
            $result = WeChatAwardCashDealModel::insertRecord($data);
         } else {
