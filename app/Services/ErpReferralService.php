@@ -338,6 +338,10 @@ class ErpReferralService
         $time = time();
         //期望结果数据 批量处理支持
         $awardIdArr = array_unique(explode(',', $awardId));
+        if (count($awardIdArr) > 50) {
+            throw new RunTimeException(['over_max_allow_num']);
+        }
+
         $needDealAward = [];
         if (!empty($awardIdArr)) {
             foreach ($awardIdArr as $value) {
