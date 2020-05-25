@@ -724,8 +724,8 @@ class AIPlayRecordService
             $record['mobile'] = Util::hideUserMobile($record['mobile']);
             $record['review_course_status'] = $reviewStatus[$record['has_review_course']];
             $record['teaching_start_time'] = !empty($record['teaching_start_time']) ? date('Y-m-d', $record['teaching_start_time']) : '';
-            $record['total_duration'] = ceil($record['total_duration'] / 60);
-            $record['avg_duration'] = ceil($record['avg_duration'] / 60);
+            $record['total_duration'] = round($record['total_duration'] / 60, 1);
+            $record['avg_duration'] = round($record['avg_duration'] / 60, 1);
         }
         return [$records, $totalCount];
     }

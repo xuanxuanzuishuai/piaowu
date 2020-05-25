@@ -354,7 +354,7 @@ LIMIT :rank_limit;";
     SUM(pr.duration) total_duration,
     COUNT(DISTINCT FROM_UNIXTIME(pr.end_time, '%Y-%m-%d')) play_days,
     SUM(pr.duration) / COUNT(DISTINCT FROM_UNIXTIME(pr.end_time, '%Y-%m-%d')) avg_duration,
-    rc.review_days";
+    IFNULL(rc.review_days, 0) review_days";
 
         $join = "
         INNER JOIN
