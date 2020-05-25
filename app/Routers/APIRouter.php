@@ -49,14 +49,20 @@ class APIRouter extends RouterBase
             'call' => Consumer::class . ':userPlay',
         ],
 
+        '/api/consumer/push_message' => [
+            'method' => ['post'],
+            'call' => Consumer::class . ':pushMessage'
+        ],
+
+        '/api/consumer/table_sync' => [
+            'method' => ['post'],
+            'call' => Consumer::class . ':tableSync'
+        ],
+
         '/api/we_chat/student_minipro' => [
             'method' => ['post'],
             'call' => WeChat::class . ':studentMiniPro',
             'middles' => [],
         ],
-        '/api/consumer/push_message' => [
-            'method' => ['post'],
-            'call' => Consumer::class . ':pushMessage'
-        ]
     ];
 }
