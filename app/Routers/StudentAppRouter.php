@@ -195,6 +195,11 @@ class StudentAppRouter extends RouterBase
             'call' => Play::class . ':classEnd',
             'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
         ],
+        '/student_app/play/duration' => [
+            'method' => ['get'],
+            'call' => Play::class . ':playDuration',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
 
         '/student_app/homework/record' => [
             'method' => ['get'],

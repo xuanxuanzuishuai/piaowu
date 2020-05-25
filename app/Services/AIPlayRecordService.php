@@ -18,6 +18,7 @@ use App\Models\AIPlayRecordModel;
 use App\Models\AppVersionModel;
 use App\Models\PlayRecordModel;
 use App\Models\StudentModel;
+use Medoo\Medoo;
 
 class AIPlayRecordService
 {
@@ -661,6 +662,24 @@ class AIPlayRecordService
         $sum['sum_duration'] = $sum['sum_duration'] ?? 0;
 
         return $sum;
+    }
+
+    /**
+     * 获取学生今日练琴总时长
+     * @param $studentId
+     * @return int
+     */
+    public static function getStudentSumDuration($studentId)
+    {
+        $startTime = strtotime('today');
+        $duration = AIPlayRecordModel::getRecord([
+            'student_id' => $studentId,
+            'end_time[>=]' => $startTime,
+            'end_time[<]' => $startTime + 86400
+        ], [
+            'sum_duration' => Medoo::raw('SUM(duration)'),
+        ]);
+        return $duration['sum_duration'] ?? 0;
     }
 
     /**

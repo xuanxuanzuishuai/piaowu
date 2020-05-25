@@ -279,4 +279,12 @@ class Play extends ControllerBase
         $ranks = AIPlayRecordService::getLessonRankData($lessonId, $studentId);
         return $response->withJson(['code'=>0, 'data'=>$ranks], StatusCode::HTTP_OK);
     }
+
+    public function playDuration(Request $request, Response $response)
+    {
+        $studentId = $this->ci['student']['id'];
+        $playSum = AIPlayRecordService::getStudentSumDuration($studentId);
+
+        return HttpHelper::buildResponse($response, ['total_duration' => $playSum]);
+    }
 }
