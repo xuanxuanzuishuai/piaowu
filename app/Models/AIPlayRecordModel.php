@@ -379,7 +379,7 @@ SELECT COUNT(student_count) count
 FROM (
     SELECT COUNT(pr.student_id) student_count,
      " . $select . "
-    FROM ". StudentModel::$table . " s " . $join . $where . $group . $having . " ) stu ";
+    FROM ". StudentModel::$table . " s $join $where $group $having ) stu ";
         $queryCount = $db->queryAll($countSql, $map);
         $totalCount = $queryCount[0]['count'];
         if ($totalCount == 0) {
