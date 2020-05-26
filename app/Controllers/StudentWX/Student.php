@@ -11,8 +11,10 @@ namespace App\Controllers\StudentWX;
 use App\Controllers\ControllerBase;
 use App\Libs\Constants;
 use App\Libs\Erp;
+use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Libs\Valid;
+use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\StudentModel;
 use App\Services\AIPlayRecordService;
 use App\Services\CommonServiceForApp;
@@ -27,6 +29,10 @@ use App\Services\StudentService;
 use App\Models\UserRefereeModel;
 use App\Models\UserWeixinModel;
 use App\Libs\UserCenter;
+use App\Models\ReviewCourseModel;
+use App\Models\CollectionModel;
+use App\Libs\AliOSS;
+
 
 class Student extends ControllerBase
 {
@@ -113,6 +119,28 @@ class Student extends ControllerBase
         UserWeixinModel::boundUser($openId, $student_info["id"], $app_id, $userType, 1);
 
         $db->commit();
+
+        // 已付费体验课用戶發送班級二維碼
+        if ($student_info['has_review_course'] == ReviewCourseModel::REVIEW_COURSE_49 && !empty($student_info['collection_id'])) {
+
+            $collection = CollectionModel::getById($student_info['collection_id']);
+            $wechatQr = AliOSS::signUrls($collection["wechat_qr"]);
+
+            $config = [
+                'app_id' => $_ENV['STUDENT_WEIXIN_APP_ID'],
+                'app_secret' => $_ENV['STUDENT_WEIXIN_APP_SECRET'],
+            ];
+            $wx = WeChatMiniPro::factory($config);
+            if (empty($wx)) {
+                SimpleLogger::error('wx mini pro create fail', ['config' => $config]);
+            }
+
+            $textContext = '扫描下方二维码，加专属助教微信';
+            $wx->sendText($openId, $textContext);
+
+            $media = $wx->getTempMedia('image', $collection['id'] . '_collection_qr.jpg', $wechatQr);
+            $wx->sendImage($openId, $media['media_id']);
+        }
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,

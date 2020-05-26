@@ -165,7 +165,7 @@ class NewSMS
         $wechatNumber = $collectionList['wechat_number'];
         $week = Util::getShortWeekName($collectionList['teaching_start_time']);
         $days = Util::dateBetweenDays($teachingStartDate, $teachingEndDate);
-        $msg = "您已成功购买小叶子智能陪练，微信添加助教老师，完成开课准备：{$wechatNumber}。 课程将于{$teachingStartDate}（{$week}）开始，时长{$days}天。如有任何问题，请拨打客服电话：".$_ENV['AI_SERVER_TEL']."。";
+        $msg = "您已成功购买小叶子智能陪练。 课程将于{$teachingStartDate}（{$week}）开始，时长{$days}天。请务必搜索并关注【小叶子智能陪练】服务号，完成开课准备。如有任何问题，请拨打客服电话：".$_ENV['AI_SERVER_TEL']."。";
         $data = [
             'sign_name' => $sign,
             'phone_number' => $targetMobile,

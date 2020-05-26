@@ -21,7 +21,7 @@ class WeChatMiniPro
     const API_SEND = '/cgi-bin/message/custom/send';
     const API_UPLOAD_IMAGE = '/cgi-bin/media/upload';
 
-    const CACHE_KEY = 'wechat_%s_%s';
+    const CACHE_KEY = '%s';
     const ACCESS_TOKEN_REFRESH_BEFORE = 120; // 提前一段时间刷新即将到期的access_token
 
     const TEMP_MEDIA_EXPIRE = 172800; // 临时media文件过期时间 2天
@@ -86,12 +86,13 @@ class WeChatMiniPro
 
     private function accessTokenCacheKey()
     {
-        return sprintf(self::CACHE_KEY, $this->appId, $this->appSecret) . '_token';
+        // 此处的 key 和 WeChatService::getAccessToken() 方法里的保持一致，防止互相冲突刷新token
+        return sprintf(self::CACHE_KEY, $this->appId) . '_access_token';
     }
 
     private function tempMediaCacheKey($key)
     {
-        return sprintf(self::CACHE_KEY, $this->appId, $this->appSecret) . '_temp_media_' . $key;
+        return sprintf(self::CACHE_KEY, $this->appId) . '_temp_media_' . $key;
     }
 
     private function getAccessToken()
@@ -164,7 +165,14 @@ class WeChatMiniPro
             return $media;
         }
 
-        $res = self::uploadMedia($type, $tempKey, file_get_contents($url));
+        $content = file_get_contents($url);
+
+        SimpleLogger::info('download media file', [
+            'url' => $url,
+            'content_len' => strlen($content)
+        ]);
+
+        $res = self::uploadMedia($type, $tempKey, $content);
 
         if (!empty($res['media_id'])) {
             $redis->setex($cacheKey, self::TEMP_MEDIA_EXPIRE, json_encode($res));
