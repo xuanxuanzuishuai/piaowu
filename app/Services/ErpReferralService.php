@@ -220,13 +220,26 @@ class ErpReferralService
         $list = [];
         //批量获取学生信息
         $uuidList = array_merge(array_column($response['data']['records'], 'student_uuid'), array_column($response['data']['records'], 'referrer_uuid'));
-        $studentInfoList = array_column(StudentService::getByUuids($uuidList, ['name', 'id', 'uuid']), null, 'uuid');
+        if (empty($uuidList)) {
+            $studentInfoList = [];
+        } else {
+            $studentInfoList = array_column(StudentService::getByUuids($uuidList, ['name', 'id', 'uuid']), null, 'uuid');
+        }
+
         //当前奖励在微信发放的状态
         $relateUserEventTaskAwardIdArr = array_column($response['data']['records'], 'user_event_task_award_id');
-        $relateAwardStatusArr = array_column(WeChatAwardCashDealModel::getRecords(['user_event_task_award_id' => $relateUserEventTaskAwardIdArr], ['result_code', 'user_event_task_award_id']), NULL, 'user_event_task_award_id');
+        if (empty($relateUserEventTaskAwardIdArr)) {
+            $relateAwardStatusArr = [];
+        } else {
+            $relateAwardStatusArr = array_column(WeChatAwardCashDealModel::getRecords(['user_event_task_award_id' => $relateUserEventTaskAwardIdArr], ['result_code', 'user_event_task_award_id']), NULL, 'user_event_task_award_id');
+        }
         //列表用户微信关注/绑定情况
         $refereeUuidArr = array_column($response['data']['records'], 'referrer_uuid');
-        $weChatRelateInfo = array_column(WeChatOpenIdListModel::getUuidOpenIdInfo($refereeUuidArr), NULL, 'uuid');
+        if (empty($refereeUuidArr)) {
+            $weChatRelateInfo = [];
+        } else {
+            $weChatRelateInfo = array_column(WeChatOpenIdListModel::getUuidOpenIdInfo($refereeUuidArr), NULL, 'uuid');
+        }
 
         //关注公众号相关信息
         foreach ($response['data']['records'] as $award) {
