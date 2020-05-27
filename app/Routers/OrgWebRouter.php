@@ -45,6 +45,7 @@ use App\Controllers\OrgWeb\WechatConfig;
 use App\Controllers\OrgWeb\Collection;
 use App\Controllers\OrgWeb\Package;
 use App\Controllers\OrgWeb\Student as OrgWebStudent;
+use App\Controllers\OrgWeb\Faq;
 
 class OrgWebRouter extends RouterBase
 {
@@ -391,5 +392,11 @@ class OrgWebRouter extends RouterBase
         '/org_web/share_poster/refused' => ['method' => ['post'], 'call' => SharePoster::class . ':refused'],
 
         '/org_web/play_record/statistics' => ['method' => ['get'], 'call' => PlayRecord::class . ':playStatistics'],
+        //话术管理
+        '/org_web/faq/add' => ['method' => ['post'], 'call' => Faq::class . ':add'],
+        '/org_web/faq/modify' => ['method' => ['post'], 'call' => Faq::class . ':modify'],
+        '/org_web/faq/detail' => ['method' => ['get'], 'call' => Faq::class . ':detail'],
+        '/org_web/faq/list' => ['method' => ['get'], 'call' => Faq::class . ':list'],
+        '/org_web/faq/search' => ['method' => ['get'], 'call' => Faq::class . ':search'],
     ];
 }
