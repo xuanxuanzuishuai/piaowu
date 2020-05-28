@@ -150,7 +150,7 @@ class Faq extends ControllerBase
      * @param Response $response
      * @return Response
      */
-    public function searchElkFaq(Request $request, Response $response)
+    public function search(Request $request, Response $response)
     {
         $rules = [
             [
@@ -164,6 +164,9 @@ class Faq extends ControllerBase
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        //todo EsSearch逻辑代码
+
+        $res = FaqService::searchFaqByELK($params['key']);
+        return HttpHelper::buildResponse($response, $res);
+
     }
 }

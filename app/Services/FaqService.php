@@ -10,10 +10,15 @@ namespace App\Services;
 
 use App\Models\FaqModel;
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\ElasticsearchDB;
+use App\Libs\SimpleLogger;
+use App\Libs\Util;
 
 
 class FaqService
 {
+    const SEARCH_PAGE_LIMIT = 1000;
+
     /**
      * 添加话术
      * @param $title
@@ -107,5 +112,56 @@ class FaqService
         $data['count'] = $dataCount;
         $data['list'] = $list;
         return $data;
+    }
+
+
+    public static function searchFaqByELK($key)
+    {
+        $es = ElasticsearchDB::getDB();
+        $fields = ['title^5', 'desc'];
+
+        $params = [
+            'index' => ElasticsearchDB::getIndex(FaqModel::$table),
+            'body' => [
+                'query' => [
+                    'bool' => [
+                        'must' => [0 => [
+                            'multi_match' => [
+                                'query' => $key,
+                                'type' => 'best_fields',
+                                'fields' => $fields,
+                                "analyzer" => "ik_syno_smart"
+                            ]
+                        ]
+                        ]
+                    ],
+                ],
+                'highlight' => ['fields' => ['title' => (object)[],'desc'=>(object)[]]],
+                'size' => self::SEARCH_PAGE_LIMIT
+            ]
+        ];
+
+        try {
+            $ret = $es->search($params);
+
+        } catch (\Exception $e) {
+            SimpleLogger::error("ES Search ERROR", [$e->getMessage(), $params,]);
+            return [];
+        }
+        SimpleLogger::debug('ES search result', $ret);
+        if (!empty($ret['hits']['hits'])) {
+            foreach($ret['hits']['hits'] as $value) {
+                $tmp = $value['_source'];
+                foreach($value['highlight'] as $k => $v) {
+                    $tmp[$k] = $v[0];
+                }
+                $info[] = $tmp;
+            }
+
+        } else {
+            $info = [];
+        }
+
+        return $info;
     }
 }
