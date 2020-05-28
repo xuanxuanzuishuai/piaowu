@@ -153,7 +153,10 @@ class FaqService
             foreach($ret['hits']['hits'] as $value) {
                 $tmp = $value['_source'];
                 foreach($value['highlight'] as $k => $v) {
-                    $tmp[$k] = $v[0];
+                    foreach($v as $vv) {
+                        $rv = str_replace(array("<em>","</em>"), "", $vv);
+                        $tmp[$k] = str_replace($rv,$vv,$tmp[$k]);
+                    }
                 }
                 $info[] = $tmp;
             }

@@ -36,4 +36,4 @@ foreach ($res as $v) {
 }
 $response = $client->bulk($params);
 //$client->indices()->open(['index' => ElasticsearchDB::getIndex(OpnSearcher::INDEX_LESSON)]);
-SimpleLogger::info("faq_es_sync ", [date("Y-m-d H:i:s"),$response]);
+SimpleLogger::info("faq_es_sync ", [date("Y-m-d H:i:s")]);
