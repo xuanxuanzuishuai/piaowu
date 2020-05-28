@@ -158,6 +158,8 @@ class OpernService
 
         $result = [];
         foreach ($data as $lesson) {
+            $opern['mp4'] = '0';
+            $opern['mp8'] = '0';
             $opern['id'] = $lesson['lesson_id'];
             $opern['name'] = $lesson['opern_name'];
             $opern['score_id'] = $lesson['opern_id'];
@@ -171,6 +173,14 @@ class OpernService
             $opern['mmusicconfig'] = $lesson['mmusicconfig'] ? '1' : '0';
             $opern['dynamic'] = $lesson['dynamic'] ? '1' : '0';
             $opern['page'] = $lesson['page'];
+            foreach($lesson['resources'] as $value ) {
+                if($value['type'] == 'mp4') {
+                    $opern['mp4'] = '1';
+                }
+                if($value['type'] == 'mp8') {
+                    $opern['mp8'] = '1';
+                }
+            }
             $result[] = $opern;
         }
         return $result;
