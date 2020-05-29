@@ -18,4 +18,7 @@ class WeChatConfigModel extends Model
     //公众号类型
     const WECHAT_TYPE_STUDENT = UserWeixinModel::BUSI_TYPE_STUDENT_SERVER;//1学生服务号
     const WECHAT_TYPE_TEACHER = UserWeixinModel::BUSI_TYPE_TEACHER_SERVER;//2老师服务号
+    //分享图文信息事件类型
+    const EVENT_TYPE_SHARE_NEWS = 'share_news';
+
 }

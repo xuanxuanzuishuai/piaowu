@@ -34,7 +34,9 @@ class WeChatService
     const USER_TYPE_TEACHER = UserWeixinModel::USER_TYPE_TEACHER;
     const USER_TYPE_STUDENT_ORG = UserWeixinModel::USER_TYPE_STUDENT_ORG;
 
-    const CONTENT_TYPE_TEXT = 'text';
+    //推送消息类型
+    const CONTENT_TYPE_TEXT = 'text';//文本
+    const CONTENT_TYPE_NEWS = 'news';//客服图文消息
 
     const weixinAPIURL = 'https://api.weixin.qq.com/cgi-bin/';
 
@@ -774,5 +776,27 @@ class WeChatService
                 WeChatOpenIdListModel::updateRecord($record['id'], ['status' => $status]);
             }
         }
+    }
+
+    /**
+     * 微信客服图文消息
+     * @param $appId
+     * @param $userType
+     * @param $openid
+     * @param $content
+     * @return array|bool|mixed
+     */
+    public static function notifyUserCustomerServiceMessage($appId, $userType, $openid, $content){
+        //发送数据
+        $res = self::commonWeixinAPI($appId, $userType, 'POST', 'message/custom/send',
+            json_encode([
+                'touser' => $openid,
+                'msgtype' => self::CONTENT_TYPE_NEWS,
+                'news' => [
+                    'articles' => [$content]
+                ]
+            ], JSON_UNESCAPED_UNICODE));
+        //返回数据
+        return $res;
     }
 }

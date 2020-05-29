@@ -62,14 +62,22 @@ class CollectionService
             'create_time' => $time,
             'type' => $params['type'] ?? CollectionModel::COLLECTION_TYPE_NORMAL,
             'teaching_type' => $params['teaching_type'],
-            'trial_type' => $params['trial_type']
+            'trial_type' => $params['trial_type'],
+            'event_id' => $params['event_id'] ?? 0,
+            'task_id' => $params['task_id'] ?? 0,
         ];
-
+        //远程调用erp获取事件任务信息
+        if (!empty($insertData['event_id'])) {
+            $eventTaskInfo = ErpReferralService::getEventTasksList();
+            if (empty(array_column($eventTaskInfo, null, 'id')[$insertData['task_id']])) {
+                throw  new RunTimeException(['event_tasks_disable']);
+            }
+        }
+        //集合数据
         $collectionId = CollectionModel::insertRecord($insertData, false);
         if (empty($collectionId)) {
-            throw new RunTimeException(['insert_failure']);
+            throw  new RunTimeException(['add_student_collection_fail']);
         }
-
         return $collectionId;
     }
 
@@ -225,6 +233,10 @@ class CollectionService
             $where .= " and a.trial_type=" . (int)$params['trial_type'];
         }
 
+        if ($params['task_id']) {
+            $where .= " and a.task_id=" . $params['task_id'];
+        }
+
         //学生数量:最低值默认0
         $studentMinCount = empty($params['student_min_count']) ? 0 : (int)$params['student_min_count'];
         $having = " HAVING student_count>=" . $studentMinCount;
@@ -281,6 +293,14 @@ class CollectionService
         $packageTypeDict = DictConstants::getSet(DictConstants::PACKAGE_TYPE);
         $trialTypeDict = DictConstants::getSet(DictConstants::TRIAL_TYPE);
 
+        //事件任务信息
+        $taskInfo = [];
+        $eventIds = array_unique(array_column($list, 'event_id'));
+        if (!empty($eventIds)) {
+            $eventTask = ErpReferralService::getEventTasksList($eventIds);
+            $taskInfo = array_column($eventTask, null, 'id');
+        }
+
         foreach ($list as &$lv) {
             $lv['oss_wechat_qr'] = AliOSS::signUrls($lv['wechat_qr']);
             $lv['publish_status_name'] = $collectionPublishStatusDict[$lv['status']]['value'];
@@ -293,6 +313,7 @@ class CollectionService
             $lv['create_time'] = date("Y-m-d H:i", $lv['create_time']);
             $lv['teaching_type_name'] = $packageTypeDict[$lv['teaching_type']] ?? '-';
             $lv['trial_type_name'] = $trialTypeDict[$lv['trial_type']] ?? '-';
+            $lv['task_name'] = $taskInfo[$lv['task_id']]['name'] ?? "未参与活动";
         }
 
         return [$count, $list];
@@ -651,5 +672,32 @@ class CollectionService
         }
 
         return [$needAddWx, $wechatQr, $wechatNumber];
+    }
+
+    /**
+     * 获取班级关联的event事件数据
+     * @param $collectionId
+     * @return array
+     */
+    public static function getCollectionJoinEventInfo($collectionId)
+    {
+        //获取班级信息
+        $result = [
+            'info' => [],
+            'task_condition' => []
+        ];
+        $collectionInfo = CollectionModel::getById(['id' => $collectionId]);
+        if (empty($collectionInfo)) {
+            return $result;
+        }
+        $result['info'] = $collectionInfo;
+        if (empty($collectionInfo['event_id']) || empty($collectionInfo['task_id'])) {
+            return $result;
+        }
+        //获取事件任务信息
+        $eventTaskList = ErpReferralService::getEventTasksList($collectionInfo['event_id']);
+        $taskConditionInfo = array_column($eventTaskList, null, 'id')[$collectionInfo['task_id']]['condition'];
+        $result['task_condition'] = $taskConditionInfo;
+        return $result;
     }
 }

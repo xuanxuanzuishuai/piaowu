@@ -11,13 +11,14 @@ namespace App\Controllers\OrgWeb;
 use App\Controllers\ControllerBase;
 use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
-use App\Libs\HttpHelper;
 use App\Libs\Util;
 use App\Libs\Valid;
+use App\Libs\HttpHelper;
 use App\Models\EmployeeModel;
 use App\Services\DictService;
 use App\Services\CollectionService;
 use App\Services\EmployeeService;
+use App\Services\ErpReferralService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -107,6 +108,16 @@ class Collection extends ControllerBase
                 'key' => 'teaching_type',
                 'type' => 'required',
                 'error_code' => 'collection_teaching_type_is_required'
+            ],
+            [
+                'key' => 'event_id',
+                'type' => 'integer',
+                'error_code' => 'event_id_must_be_integer'
+            ],
+            [
+                'key' => 'task_id',
+                'type' => 'integer',
+                'error_code' => 'task_id_must_be_integer'
             ]
         ];
         //验证合法性
@@ -115,7 +126,6 @@ class Collection extends ControllerBase
         if ($result['code'] == 1) {
             return $response->withJson($result, 200);
         }
-
         try {
             $operator = $this->getEmployeeId();
             $collectionId = CollectionService::addStudentCollection($params, $operator);
@@ -329,5 +339,20 @@ class Collection extends ControllerBase
             return $response->withJson($data);
         }
         return $response->withJson(Valid::formatSuccess($data));
+    }
+
+    /**
+     * 获取事件任务
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getEventTasksList(Request $request, Response $response)
+    {
+        $data = ErpReferralService::getEventTasksList();
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $data
+        ], StatusCode::HTTP_OK);
     }
 }

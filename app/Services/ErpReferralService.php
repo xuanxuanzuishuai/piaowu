@@ -15,6 +15,7 @@ use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\EmployeeModel;
 use App\Models\StudentModel;
+use App\Libs\Valid;
 use App\Models\UserWeixinModel;
 use App\Models\WeChatAwardCashDealModel;
 use App\Models\WeChatOpenIdListModel;
@@ -23,6 +24,7 @@ class ErpReferralService
 {
     /** 转介绍事件 */
     const EVENT_TYPE_UPLOAD_POSTER = 4; // 上传分享海报
+    const EVENT_TYPE_UPLOAD_POSTER_RETURN_CASH = 5; // 上传分享海报领取返现
 
 
     /** 转介绍阶段任务 */
@@ -60,6 +62,11 @@ class ErpReferralService
     /** 转介绍奖励类型 */
     const AWARD_TYPE_CASH = 1; // 现金
     const AWARD_TYPE_SUBS = 2; // 订阅时长
+
+    /** 事件任务状态 0 未启用 1 启用 2 禁用 */
+    const ERP_EVENT_TASK_STATUS_NOT_ENABLED = 0;
+    const ERP_EVENT_TASK_STATUS_ENABLED = 1;
+    const ERP_EVENT_TASK_STATUS_DISABLED = 2;
 
     /**
      * 转介绍列表
@@ -525,5 +532,37 @@ class ErpReferralService
             return $data;
         }
         return $response['data']['records'];
+    }
+
+    /**
+     * 获取event事件列表
+     * @param $eventId
+     * @param $eventType
+     * @return array
+     */
+    public static function getEventTasksList($eventId = 0, $eventType = self::EVENT_TYPE_UPLOAD_POSTER_RETURN_CASH)
+    {
+        //远程调用erp获取事件任务信息
+        $erp = new Erp();
+        $eventTaskList = $erp->eventTaskList($eventId, $eventType);
+        $tasksData = $data = [];
+        if (empty($eventTaskList['data']) && $eventTaskList['code'] != Valid::CODE_SUCCESS) {
+            return $data;
+        }
+        //整理事件任务数据
+        array_map(function ($task) use (&$tasksData) {
+            $tasksData = array_merge($tasksData, $task['tasks']);
+        }, $eventTaskList['data']);
+        //过滤状态
+        if (empty($tasksData)) {
+            return $data;
+        }
+        foreach ($tasksData as $ek => &$ev) {
+            if ($ev['status'] == self::ERP_EVENT_TASK_STATUS_ENABLED) {
+                $ev['condition'] = json_decode($ev['condition'], true);
+                $data[] = $tasksData[$ek];
+            }
+        }
+        return $data;
     }
 }

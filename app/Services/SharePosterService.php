@@ -50,7 +50,8 @@ class SharePosterService
             throw new RunTimeException(['activity_is_disable']);
         }
         //未上传/审核不通过允许上传截图
-        $uploadRecord = SharePosterModel::getRecord(['activity_id' => $activityId, 'student_id' => $studentId, 'ORDER' => ['create_time' => 'DESC']], ['status', 'award_id'], false);
+        $type = SharePosterModel::TYPE_UPLOAD_IMG;
+        $uploadRecord = SharePosterModel::getRecord(['activity_id' => $activityId, 'student_id' => $studentId, 'type' => $type, 'ORDER' => ['create_time' => 'DESC']], ['status', 'award_id'], false);
         if (!empty($uploadRecord) && $uploadRecord['status'] != SharePosterModel::STATUS_UNQUALIFIED) {
             throw new RunTimeException(['stop_repeat_upload']);
         }
@@ -474,5 +475,44 @@ class SharePosterService
             $_ENV['WECHAT_TEMPLATE_CHECK_SHARE_POSTER'],
             $content,
             $url);
+    }
+
+    /**
+     * 返现活动截图图片上传
+     * @param $imgUrl
+     * @param $studentId
+     * @return int|mixed|null|string
+     * @throws RunTimeException
+     */
+    public static function uploadReturnCashPoster($imgUrl, $studentId)
+    {
+        //绑定状态
+        $studentStatus = StudentService::studentStatusCheck($studentId);
+        if ($studentStatus['student_status'] == StudentModel::STATUS_UNBIND) {
+            throw new RunTimeException(['review_student_need_bind_wx']);
+        }
+        //资格检测
+        $checkResult = ReferralActivityService::returnCashActivityPlayRecordCheck($studentId);
+        //未上传/审核不通过允许上传截图
+        $type = SharePosterModel::TYPE_RETURN_CASH;
+        $uploadRecord = SharePosterModel::getRecord(['activity_id' => $checkResult['student_info']['collection_id'], 'student_id' => $studentId, 'type' => $type, 'ORDER' => ['create_time' => 'DESC']], ['status'], false);
+        if (!empty($uploadRecord) && $uploadRecord['status'] != SharePosterModel::STATUS_UNQUALIFIED) {
+            throw new RunTimeException(['stop_repeat_upload']);
+        }
+        $time = time();
+        $insertId = SharePosterModel::insertRecord(
+            [
+                'student_id' => $studentId,
+                'activity_id' => $checkResult['student_info']['collection_id'],
+                'img_url' => $imgUrl,
+                'create_time' => $time,
+                'update_time' => $time,
+                'type' => $type,
+            ],
+            false);
+        if (empty($insertId)) {
+            throw new RunTimeException(['share_poster_add_fail']);
+        }
+        return $insertId;
     }
 }

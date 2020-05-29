@@ -369,6 +369,7 @@ class OrgWebRouter extends RouterBase
         '/org_web/collection/getCollectionDropDownList' => ['method' => ['get'], 'call' => Collection::class . ':getCollectionDropDownList'],
         '/org_web/collection/getCollectionPackageList' => ['method' => ['get'], 'call' => Collection::class . ':getCollectionPackageList'],
         '/org_web/collection/reAllotCollectionAssistant' => ['method' => ['post'], 'call' => Collection::class . ':reAllotCollectionAssistant'],
+        '/org_web/collection/event_task_list' => ['method' => ['get'], 'call' => Collection::class . ':getEventTasksList'],
 
         //课包管理接口
         '/org_web/package/packageDictDetail' => ['method' => ['get'], 'call' => Package::class . ':packageDictDetail'],

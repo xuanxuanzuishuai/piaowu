@@ -95,4 +95,52 @@ class ReferralActivity extends ControllerBase
         $data = SharePosterService::joinRecordList($studentId, $page, $count);
         return HttpHelper::buildResponse($response, $data);
     }
+
+    /**
+     * 返现活动信息
+     * @param Response $response
+     * @return Response
+     */
+    public function returnCashActivityInfo(Request $request, Response $response)
+    {
+        //获取数据
+        try {
+            $studentId = $this->ci['user_info']['user_id'];
+            $activityData = ReferralActivityService::returnCashActivityTipInfo($studentId);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        //返回数据
+        return HttpHelper::buildResponse($response, $activityData);
+    }
+
+    /**
+     * 返现活动截图图片上传
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function uploadReturnCashPoster(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'poster_url',
+                'type' => 'required',
+                'error_code' => 'poster_url_is_required'
+            ]
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            $studentId = $this->ci['user_info']['user_id'];
+            SharePosterService::uploadReturnCashPoster($params['poster_url'], $studentId);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, []);
+    }
 }

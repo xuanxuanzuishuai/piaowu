@@ -10,6 +10,7 @@ namespace App\Services;
 
 
 use App\Libs\Valid;
+use App\Models\AIPlayRecordModel;
 use App\Models\ReferralActivityModel;
 use App\Models\UserQrTicketModel;
 use App\Models\StudentModel;
@@ -25,7 +26,9 @@ use App\Models\MessageRecordModel;
 use App\Models\PosterModel;
 use App\Models\SharePosterModel;
 use App\Models\UserWeixinModel;
+use App\Models\WeChatConfigModel;
 use App\Services\Queue\QueueService;
+use App\Libs\SimpleLogger;
 
 class ReferralActivityService
 {
@@ -170,7 +173,7 @@ class ReferralActivityService
         }
         $event = $events['data'][0];
 
-        if ($params['start_time'] < $event['start_time'] ||  $params['end_time'] > $event['end_time']) {
+        if ($params['start_time'] < $event['start_time'] || $params['end_time'] > $event['end_time']) {
             throw new RunTimeException(['time_not_in_erp_event_time']);
         }
 
@@ -238,7 +241,7 @@ class ReferralActivityService
         }
         $event = $events['data'][0];
 
-        if ($params['start_time'] < $event['start_time'] ||  $params['end_time'] > $event['end_time']) {
+        if ($params['start_time'] < $event['start_time'] || $params['end_time'] > $event['end_time']) {
             throw new RunTimeException(['time_not_in_erp_event_time']);
         }
 
@@ -394,7 +397,7 @@ class ReferralActivityService
         $successNum = 0;
 
         foreach ($students as $student) {
-            $i ++;
+            $i++;
             $mobiles[] = $student['mobile'];
 
             if ($i >= 1000) {
@@ -453,7 +456,7 @@ class ReferralActivityService
             $users = [];
             $now = time();
             foreach ($boundUsers as $student) {
-                $i ++;
+                $i++;
                 $users[] = $student;
 
                 if ($i >= 10) {
@@ -595,5 +598,139 @@ class ReferralActivityService
         $activity['event_name'] = $event['name'];
 
         return $activity;
+    }
+
+
+    /**
+     * 返现活动参加资格检测学生练琴时长
+     * @param $studentId
+     * @return mixed
+     * @throws RunTimeException
+     */
+    public static function returnCashActivityPlayRecordCheck($studentId)
+    {
+        //检测学生练琴时长数据
+        $studentInfo = StudentModel::getById($studentId);
+        //查询学生所属班级参与的活动信息
+        if (empty($studentInfo['collection_id'])) {
+            throw new RunTimeException(['student_collection_is_empty']);
+        }
+        $time = time();
+        $collectionInfo = CollectionService::getCollectionJoinEventInfo($studentInfo['collection_id']);
+        if (empty($collectionInfo['info']) || empty($collectionInfo['task_condition']) || ($collectionInfo['info']['teaching_end_time'] > $time)) {
+            throw new RunTimeException(['collection_id_error']);
+        }
+        $studentInfo['collection'] = $collectionInfo;
+        //获取学生开班期内练琴数据，按天分组
+        $playRecord = AIPlayRecordModel::getStudentSumByDate($studentId, $collectionInfo['info']['teaching_start_time'], $collectionInfo['info']['teaching_end_time']);
+        if (empty($playRecord)) {
+            throw new RunTimeException(['student_play_record_un_standard']);
+        }
+        //过滤符合事件活动条件的练琴数据
+        $upToStandardCount = 0;
+        array_map(function ($pv) use ($collectionInfo, &$upToStandardCount) {
+            if ($pv['sum_duration'] >= $collectionInfo['task_condition']['per_day_min_play_time']) {
+                $upToStandardCount++;
+            }
+        }, $playRecord);
+        if ($upToStandardCount < $collectionInfo['task_condition']['total_qualified_day']) {
+            throw new RunTimeException(['student_play_record_un_standard']);
+        }
+        return $studentInfo;
+    }
+
+
+    /**
+     * 获取上传截图领返现活动信息
+     * @param $studentId
+     * @return array
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
+    public static function returnCashActivityTipInfo($studentId)
+    {
+        //结果变量
+        $data = [
+            'activity_info' => [],
+            'student_status' => '',
+        ];
+        //绑定状态
+        $studentStatus = StudentService::studentStatusCheck($studentId);
+        $data['student_status'] = $studentStatus['student_status'];
+        //练琴时长
+        try {
+            $studentInfo = self::returnCashActivityPlayRecordCheck($studentId);
+        } catch (RunTimeException $e) {
+            SimpleLogger::error('return cash activity qualification check error', ['student_id' => $studentId, 'error' => $e->getWebErrorData()]);
+            return $data;
+        }
+        //获取当前活动学生最新上传记录
+        $data['activity_info']['upload_record'] = [];
+        $uploadRecord = SharePosterService::getLastUploadRecord($studentId, $studentInfo['student_info']['collection_id'], ['reason', 'remark', 'status', 'img_url']);
+        if (!empty($uploadRecord)) {
+            $data['activity_info']['upload_record']["status"] = $uploadRecord["status"];
+            $data['activity_info']['upload_record']["status_name"] = $uploadRecord["status_name"];
+            $data['activity_info']['upload_record']["img_oss_url"] = $uploadRecord["img_oss_url"];
+            $data['activity_info']['upload_record']["reason_str"] = $uploadRecord["reason_str"];
+        }
+        //生成带二维码的分享海报
+        $posterInfo = PosterModel::getRecord(
+            [
+                'status' => PosterModel::STATUS_PUBLISH,
+                'poster_type' => PosterModel::POSTER_TYPE_WECHAT_STANDARD,
+                'apply_type' => PosterModel::APPLY_TYPE_STUDENT_WECHAT
+            ],
+            ['content2', 'url'],
+            false
+        );
+        if (empty($posterInfo)) {
+            throw new RunTimeException(['wechat_poster_not_exists']);
+        }
+        $settings = PosterModel::$settingConfig[1];
+        $posterImgFile = UserService::addQrWaterMarkAliOss(
+            $studentId,
+            $posterInfo['url'],
+            UserQrTicketModel::STUDENT_TYPE,
+            $settings['poster_width'],
+            $settings['poster_height'],
+            $settings['qr_width'],
+            $settings['qr_height'],
+            $settings['qr_x'],
+            $settings['qr_y']);
+        $data['activity_info']['poster_oss_url'] = $posterImgFile;
+        $data['activity_info']['share_word'] = Util::textDecode($posterInfo['content2']);
+        $data['activity_info']['valid_end_time'] = $studentInfo['collection']['info']['teaching_end_time'] + $studentInfo['collection']['task_condition']['valid_time_range_day'];
+        //返回数据
+        return $data;
+    }
+
+    /**
+     * 推送返现分享链接微信消息
+     * @param $msgBody
+     * @return bool
+     */
+    public static function pushWXCashShareNewsMsg($msgBody)
+    {
+        $batchInsertData = [];
+        //获取推送信息的配置数据
+        $configData = WeChatConfigModel::getRecord(['event_type' => WeChatConfigModel::EVENT_TYPE_SHARE_NEWS, 'type' => $msgBody['common_data']['user_type']], ['content'], false);
+        if (empty($configData)) {
+            SimpleLogger::error('share news content empty', []);
+            return false;
+        }
+        $content = json_decode($configData['content'], true);
+        $content['picurl'] = AliOSS::signUrls($content['picurl']);
+        $content['url'] = $_ENV['WECHAT_FRONT_DOMAIN'] . $content['url'];
+        foreach ($msgBody['data'] as $user) {
+            $result = WeChatService::notifyUserCustomerServiceMessage($msgBody['common_data']['app_id'], $msgBody['common_data']['user_type'], $user['open_id'], $content);
+            if ($result) {
+                $user['success_num']++;
+            } else {
+                $user['fail_num']++;
+            }
+            unset($user['open_id']);
+            $batchInsertData[] = $user;
+        }
+        //消息发送记录
+        return MessageRecordModel::batchInsert($batchInsertData, false);
     }
 }

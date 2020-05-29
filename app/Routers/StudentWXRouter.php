@@ -185,5 +185,13 @@ class StudentWXRouter extends RouterBase
             'method' => ['get'],
             'call' => ReferralActivity::class . ':joinRecordList',
         ],
+        '/student_wx/referral/cash_activity_info' => [
+            'method' => ['get'],
+            'call' => ReferralActivity::class . ':returnCashActivityInfo',
+        ],
+        '/student_wx/referral/upload_cash_poster' => [
+            'method' => ['post'],
+            'call' => ReferralActivity::class . ':uploadReturnCashPoster',
+        ],
     ];
 }
