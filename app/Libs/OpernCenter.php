@@ -310,7 +310,7 @@ class OpernCenter
      * @param $resourceTypes
      * @return array|bool|mixed
      */
-    public function searchLessonsByEs($keyword, $searchAuthor, $withCollection, $page, $pageSize = self::DEFAULT_PAGE_SIZE, $withResources=1, $resourceTypes='dynamic')
+    public function searchLessonsByEs($keyword, $searchAuthor, $withCollection, $page, $pageSize = self::DEFAULT_PAGE_SIZE, $withResources=1, $resourceTypes='mp4,mp8')
     {
         $result = self::commonAPI(self::OPERN_API_SEARCH_ES_LESSONS, [
             'pro_id' => $this->proId,
