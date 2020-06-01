@@ -247,7 +247,7 @@ LIMIT :rank_limit;";
         $joinWhere = " WHERE 1 = 1 ";
         $having = " HAVING 1 = 1 ";
         $map = [];
-        $order = " ORDER BY s.create_time DESC ";
+        $order = " ORDER BY s.id DESC ";
         if (!empty($params['student_id'])) {
             $where .= " AND s.id = :student_id ";
             $map[":student_id"] = $params['student_id'];
