@@ -195,14 +195,14 @@ class StudentServiceForApp
         $wechatQr = '';
         $wechatNumber = '';
         if ($student['has_review_course'] == StudentModel::CRM_AI_LEADS_STATUS_BUY_TEST_COURSE
-            && $student['sub_end_date'] > date('Ymd')) {
-            $needAddWx = 1;
+            && $student['sub_end_date'] > date('Ymd')
+            && !empty($student['collection_id'])) {
+
             // 获取集合信息
-            if (!empty($student['collection_id'])) {
-                $collection = CollectionModel::getRecord(['id' => $student['collection_id']], ["wechat_number", "wechat_qr"], false);
-                $wechatQr = AliOSS::signUrls($collection["wechat_qr"]);
-                $wechatNumber = $collection['wechat_number'];
-            }
+            $needAddWx = 1;
+            $collection = CollectionModel::getRecord(['id' => $student['collection_id']], ["wechat_number", "wechat_qr"], false);
+            $wechatQr = AliOSS::signUrls($collection["wechat_qr"]);
+            $wechatNumber = $collection['wechat_number'];
         }
 
         $loginData = [
@@ -290,14 +290,14 @@ class StudentServiceForApp
         $wechatQr = '';
         $wechatNumber = '';
         if ($student['has_review_course'] == StudentModel::CRM_AI_LEADS_STATUS_BUY_TEST_COURSE
-            && $student['sub_end_date'] > date('Ymd')) {
-            $needAddWx = 1;
+            && $student['sub_end_date'] > date('Ymd')
+            && !empty($student['collection_id'])) {
+
             // 获取集合信息
-            if (!empty($student['collection_id'])) {
-                $collection = CollectionModel::getRecord(['id' => $student['collection_id']], ["wechat_number", "wechat_qr"], false);
-                $wechatQr = AliOSS::signUrls($collection["wechat_qr"]);
-                $wechatNumber = $collection['wechat_number'];
-            }
+            $needAddWx = 1;
+            $collection = CollectionModel::getRecord(['id' => $student['collection_id']], ["wechat_number", "wechat_qr"], false);
+            $wechatQr = AliOSS::signUrls($collection["wechat_qr"]);
+            $wechatNumber = $collection['wechat_number'];
         }
 
         $loginData = [
