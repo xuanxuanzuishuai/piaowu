@@ -244,7 +244,7 @@ LIMIT :rank_limit;";
     public static function recordStatistics($params)
     {
         $where = " WHERE 1 = 1 ";
-        $joinWhere = " WHERE 1 = 1 ";
+        $joinWhere = " ";
         $having = " HAVING 1 = 1 ";
         $map = [];
         $order = " ORDER BY s.id DESC ";
@@ -354,7 +354,7 @@ LIMIT :rank_limit;";
     SUM(pr.duration) total_duration,
     COUNT(DISTINCT FROM_UNIXTIME(pr.end_time, '%Y-%m-%d')) play_days,
     SUM(pr.duration) / COUNT(DISTINCT FROM_UNIXTIME(pr.end_time, '%Y-%m-%d')) avg_duration,
-    IFNULL(rc.review_days, 0) review_days";
+    COUNT(DISTINCT play_date) review_days";
 
         $join = "
         INNER JOIN
@@ -363,11 +363,8 @@ LIMIT :rank_limit;";
     " . EmployeeModel::$table . " assist ON assist.id = s.assistant_id
         LEFT JOIN
     " . EmployeeModel::$table . " manager ON manager.id = s.course_manage_id
-        LEFT JOIN
-        (SELECT COUNT(DISTINCT play_date) review_days, student_id
-         FROM " . ReviewCourseTaskModel::$table . $joinWhere . "
-         GROUP BY student_id) rc ON rc.student_id = s.id
-        LEFT JOIN
+        LEFT JOIN " . ReviewCourseTaskModel::$table . "  rc ON rc.student_id = s.id " . $joinWhere .
+    "   LEFT JOIN
     " . CollectionModel::$table . " c ON c.id = s.collection_id
           AND c.status = " . CollectionModel::COLLECTION_STATUS_IS_PUBLISH;
 
