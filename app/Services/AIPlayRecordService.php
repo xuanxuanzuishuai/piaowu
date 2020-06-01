@@ -215,6 +215,7 @@ class AIPlayRecordService
                 if ($record['is_phrase'] || ($record['hand'] != AIPlayRecordModel::HAND_BOTH)) {
                     $countKey = $useOldTextTemp ? 'part_practice_count' : 'part_test_count';
                     $lessonReports[$lessonId][$countKey]++;
+                    $lessonReports[$lessonId]['part_test_duration'] += $record['duration'];
                     continue;
                 }
 
@@ -324,6 +325,10 @@ class AIPlayRecordService
 
         if ($report['old_duration'] > 0) {
             $text[] = sprintf('进行了%s怀旧模式练习', self::formatDuration($report['old_duration'], true));
+        }
+
+        if ($report['part_test_duration'] > 0) {
+            $text[] = sprintf('进行了%s分手分段评测', self::formatDuration($report['part_test_duration'], true));
         }
 
         return $text;
