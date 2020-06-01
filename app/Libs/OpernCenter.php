@@ -178,7 +178,7 @@ class OpernCenter
      * @param $resourceTypes
      * @return array|bool|mixed
      */
-    public function lessons($collectionId, $page, $pageSize = self::DEFAULT_PAGE_SIZE, $withResources=1, $resourceTypes='dynamic')
+    public function lessons($collectionId, $page, $pageSize = self::DEFAULT_PAGE_SIZE, $withResources=1, $resourceTypes='mp4,mp8')
     {
         $result = self::commonAPI(self::OPERN_API_LESSONS, [
             'pro_id' => $this->proId,
@@ -280,7 +280,7 @@ class OpernCenter
      * @param $resourceTypes
      * @return array|bool|mixed
      */
-    public function searchLessons($keyword, $searchAuthor, $withCollection, $page, $pageSize = self::DEFAULT_PAGE_SIZE, $withResources=1, $resourceTypes='dynamic')
+    public function searchLessons($keyword, $searchAuthor, $withCollection, $page, $pageSize = self::DEFAULT_PAGE_SIZE, $withResources=1, $resourceTypes='mp4,mp8')
     {
         $result = self::commonAPI(self::OPERN_API_SEARCH_LESSONS, [
             'pro_id' => $this->proId,
