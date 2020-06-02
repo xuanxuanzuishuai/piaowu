@@ -11,5 +11,5 @@ namespace App\Models;
 
 class ErpGoodsPackageRiseModel extends ReadonlyModel
 {
-    protected static $table = 'erp_goods_package_rise';
+    public static $table = 'erp_goods_package_rise';
 }
