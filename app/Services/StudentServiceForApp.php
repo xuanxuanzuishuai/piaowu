@@ -127,9 +127,10 @@ class StudentServiceForApp
      * @param int $code 短信验证码
      * @param $platform
      * @param $version
+     * @param $channelId
      * @return array [0]errorCode [1]登录数据
      */
-    public static function login($mobile, $code, $platform, $version)
+    public static function login($mobile, $code, $platform, $version, $channelId)
     {
         // 检查验证码
         if (!CommonServiceForApp::checkValidateCode($mobile, $code)) {
@@ -140,7 +141,7 @@ class StudentServiceForApp
 
         // 新用户自动注册
         if (empty($student)) {
-            list($newStudent) = self::studentRegister($mobile, StudentModel::CHANNEL_APP_REGISTER);
+            list($newStudent) = self::studentRegister($mobile, $channelId);
 
             if (empty($newStudent)) {
                 return ['student_register_fail'];
@@ -191,19 +192,7 @@ class StudentServiceForApp
         }
 
         // 用户已购买49元订单且在有效期内，首页会展示助教二维码和微信号
-        $needAddWx = 0;
-        $wechatQr = '';
-        $wechatNumber = '';
-        if ($student['has_review_course'] == StudentModel::CRM_AI_LEADS_STATUS_BUY_TEST_COURSE
-            && $student['sub_end_date'] > date('Ymd')
-            && !empty($student['collection_id'])) {
-
-            // 获取集合信息
-            $needAddWx = 1;
-            $collection = CollectionModel::getRecord(['id' => $student['collection_id']], ["wechat_number", "wechat_qr"], false);
-            $wechatQr = AliOSS::signUrls($collection["wechat_qr"]);
-            $wechatNumber = $collection['wechat_number'];
-        }
+        list($needAddWx, $wechatQr, $wechatNumber) = CollectionService::getCollectionWechatInfo($student['collection_id']);
 
         $loginData = [
             'id' => $student['id'],
@@ -286,19 +275,7 @@ class StudentServiceForApp
         }
 
         // 用户已购买49元订单且在有效期内，首页会展示助教二维码和微信号
-        $needAddWx = 0;
-        $wechatQr = '';
-        $wechatNumber = '';
-        if ($student['has_review_course'] == StudentModel::CRM_AI_LEADS_STATUS_BUY_TEST_COURSE
-            && $student['sub_end_date'] > date('Ymd')
-            && !empty($student['collection_id'])) {
-
-            // 获取集合信息
-            $needAddWx = 1;
-            $collection = CollectionModel::getRecord(['id' => $student['collection_id']], ["wechat_number", "wechat_qr"], false);
-            $wechatQr = AliOSS::signUrls($collection["wechat_qr"]);
-            $wechatNumber = $collection['wechat_number'];
-        }
+        list($needAddWx, $wechatQr, $wechatNumber) = CollectionService::getCollectionWechatInfo($student['collection_id']);
 
         $loginData = [
             'id' => $student['id'],

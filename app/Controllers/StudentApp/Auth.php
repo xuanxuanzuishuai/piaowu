@@ -11,6 +11,7 @@ namespace App\Controllers\StudentApp;
 use App\Controllers\ControllerBase;
 use App\Libs\DictConstants;
 use App\Libs\Valid;
+use App\Models\StudentModel;
 use App\Models\StudentModelForApp;
 use App\Services\CommonServiceForApp;
 use App\Services\StudentServiceForApp;
@@ -62,11 +63,9 @@ class Auth extends ControllerBase
                 return $response->withJson($result, StatusCode::HTTP_OK);
             }
 
+            $channelId = $request->getParam('channel_id', StudentModel::CHANNEL_APP_REGISTER);
             list($errorCode, $loginData) = StudentServiceForApp::login(
-                $params['mobile'],
-                $params['code'],
-                $this->ci['platform'],
-                $this->ci['version']
+                $params['mobile'], $params['code'], $this->ci['platform'], $this->ci['version'], $channelId
             );
         }
 

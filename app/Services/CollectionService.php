@@ -560,4 +560,34 @@ class CollectionService
         $db->commit();
         return $result;
     }
+
+
+    /**
+     * 获取班级微信号信息
+     * @param $collectionId
+     * @return array
+     */
+    public static function getCollectionWechatInfo($collectionId)
+    {
+
+        $needAddWx = 0;
+        $wechatQr = '';
+        $wechatNumber = '';
+
+        if (!empty($collectionId)) {
+            // 获取班级信息
+            $collection = CollectionModel::getRecord([
+                'id' => $collectionId
+            ], ['wechat_number', 'wechat_qr', 'teaching_end_time'], false);
+
+            // 班级仍在有效期
+            if ($collection['teaching_end_time'] > time()) {
+                $needAddWx = 1;
+                $wechatQr = AliOSS::signUrls($collection["wechat_qr"]);
+                $wechatNumber = $collection['wechat_number'];
+            }
+        }
+
+        return [$needAddWx, $wechatQr, $wechatNumber];
+    }
 }
