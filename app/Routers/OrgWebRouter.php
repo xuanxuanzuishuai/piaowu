@@ -398,5 +398,9 @@ class OrgWebRouter extends RouterBase
         '/org_web/faq/detail' => ['method' => ['get'], 'call' => Faq::class . ':detail'],
         '/org_web/faq/list' => ['method' => ['get'], 'call' => Faq::class . ':list'],
         '/org_web/faq/search' => ['method' => ['get'], 'call' => Faq::class . ':search','middles'=>[]],
+
+        // 产品包管理
+        '/org_web/package/list' => ['method' => ['get'], 'call' => Package::class . ':list'],
+        '/org_web/package/edit' => ['method' => ['post'], 'call' => Package::class . ':edit'],
     ];
 }

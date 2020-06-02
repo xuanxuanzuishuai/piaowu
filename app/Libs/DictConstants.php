@@ -230,6 +230,31 @@ class DictConstants {
         'keys' => [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     ];
 
+    const PACKAGE_CHANNEL = [
+        'type' => 'PACKAGE_CHANNEL',
+        'keys' => [1, 2, 3]
+    ];
+
+    const PACKAGE_STATUS = [
+        'type' => 'PACKAGE_STATUS',
+        'keys' => [-1, 0, 1]
+    ];
+
+    const PACKAGE_TYPE = [
+        'type' => 'PACKAGE_TYPE',
+        'keys' => [1, 2]
+    ];
+
+    const APPLY_TYPE = [
+        'type' => 'APPLY_TYPE',
+        'keys' => [1, 2]
+    ];
+
+    const TRIAL_TYPE = [
+        'type' => 'TRIAL_TYPE',
+        'keys' => [1, 2]
+    ];
+
     public static function get($type, $key)
     {
         if (empty($type) || empty($key)) {
