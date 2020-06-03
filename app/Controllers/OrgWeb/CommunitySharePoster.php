@@ -1,8 +1,8 @@
 <?php
 /**
  * Created by PhpStorm.
- * User: zhushuangshuang
- * Date: 2020/4/20
+ * User: yuxuan
+ * Date: 2020/6/01
  * Time: 6:31 PM
  */
 
@@ -19,7 +19,7 @@ use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
 
-class SharePoster extends ControllerBase
+class CommunitySharePoster extends ControllerBase
 {
     /**
      * 上传截图列表
@@ -31,7 +31,7 @@ class SharePoster extends ControllerBase
     {
 
         $params = $request->getParams();
-        $params['type'] = SharePosterModel::TYPE_UPLOAD_IMG;
+        $params['type'] = SharePosterModel::TYPE_RETURN_CASH;
         list($posters, $totalCount) = SharePosterService::sharePosterList($params);
 
         return $response->withJson([
@@ -68,7 +68,7 @@ class SharePoster extends ControllerBase
         $employeeId = self::getEmployeeId();
 
         try {
-            $result = SharePosterService::approval($params['poster_ids'], $employeeId);
+            $result = SharePosterService::communityApproval($params['poster_ids'], $employeeId);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
@@ -101,7 +101,7 @@ class SharePoster extends ControllerBase
         $employeeId = self::getEmployeeId();
 
         try {
-            $result = SharePosterService::refused($params['poster_id'], $employeeId, $params['reason'], $params['remark']);
+            $result = SharePosterService::communityRefused($params['poster_id'], $employeeId, $params['reason'], $params['remark']);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }

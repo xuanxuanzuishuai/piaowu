@@ -742,4 +742,22 @@ class StudentModel extends Model
         $where['collection_id'] = $collectionId;
         return MysqlDB::getDB()->count(self::$table, '*', $where);
     }
+
+    /**
+     * @param $uuIdList
+     * @param $needFields
+     * @return array
+     * 学生分配的班级
+     */
+    public static function getStudentCollectionInfo($uuIdList, $needFields)
+    {
+        return  MysqlDB::getDB()->select(self::$table . " (s)",
+            [
+                '[>]' . CollectionModel::$table . "(c)" => ['s.collection_id' => 'id']
+            ],
+            $needFields,
+            [
+                's.uuid' => $uuIdList
+            ]);
+    }
 }

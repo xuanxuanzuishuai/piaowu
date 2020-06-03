@@ -24,10 +24,11 @@ class CashGrantService
      * @param $awardId
      * @param $amount
      * @param $reviewerId
+     * @param $keyCode
      * @return array
      * 给用户发放他获取的奖励红包
      */
-    public static function cashGiveOut($uuId, $awardId, $amount, $reviewerId)
+    public static function cashGiveOut($uuId, $awardId, $amount, $reviewerId, $keyCode)
     {
         $time = time();
         //当前要发放奖励的这个人微信信息
@@ -57,7 +58,7 @@ class CashGrantService
                     //已绑定微信推送红包
                     $weChatPackage = new WeChatPackage();
                     $openId = $studentWeChatInfo['open_id'];
-                    list($actName, $sendName, $wishing) = self::getRedPackConfigWord();
+                    list($actName, $sendName, $wishing) = self::getRedPackConfigWord($keyCode);
                     //请求微信发红包
                     $resultData = $weChatPackage->sendPackage($mchBillNo, $actName, $sendName, $openId, $amount, $wishing, 'redPack');
                     SimpleLogger::info('we chat send red pack result data:', $resultData);
@@ -116,12 +117,13 @@ class CashGrantService
 
     /**
      * @return array
+     * @param $keyCode
      * 发送微信红包带的配置语
      */
-    private static function getRedPackConfigWord()
+    private static function getRedPackConfigWord($keyCode)
     {
-        $configArr = DictConstants::getSet(DictConstants::WE_CHAT_RED_PACK_CONFIG);
-        return [$configArr['ACT_NAME'], $configArr['SEND_NAME'], $configArr['WISHING']];
+        $configArr = json_decode(DictConstants::get(DictConstants::WE_CHAT_RED_PACK_CONFIG, $keyCode), true);
+        return [$configArr['act_name'], $configArr['send_name'], $configArr['wishing']];
     }
 
     /**

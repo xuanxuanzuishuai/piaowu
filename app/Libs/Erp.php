@@ -18,6 +18,10 @@ class Erp
 
     const RSP_CODE_SUCCESS = 0;
 
+    //转介绍奖励和返现奖励的关联表不同
+    const AWARD_RELATE_REFERRAL = 1;
+    const AWARD_RELATE_COMMUNITY = 2;
+
     const API_CREATE_BILL = '/ai_dss/bill/create_bill';
     const API_BILL_DETAIL = '/ai_dss/bill/detail';
     const API_PACKAGE_LIST = '/ai_dss/package/package_list';

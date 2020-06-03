@@ -223,7 +223,7 @@ class DictConstants {
 
     const WE_CHAT_RED_PACK_CONFIG = [
         'type' => 'WE_CHAT_RED_PACK',
-        'keys' => ['ACT_NAME', 'SEND_NAME', 'WISHING'],
+        'keys' => ['ACT_NAME', 'SEND_NAME', 'WISHING', 'NORMAL_PIC_WORD', 'COMMUNITY_PIC_WORD'],
     ];
 
     const REVIEW_TEACHER_THUMB = [
@@ -254,6 +254,11 @@ class DictConstants {
     const TRIAL_TYPE = [
         'type' => 'TRIAL_TYPE',
         'keys' => [1, 2]
+    ];
+
+    const COMMUNITY_CONFIG = [
+        'type' => 'COMMUNITY_CONFIG',
+        'keys' => ['COMMUNITY_UPLOAD_POSTER_URL']
     ];
 
     public static function get($type, $key)

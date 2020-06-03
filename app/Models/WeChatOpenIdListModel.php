@@ -32,7 +32,7 @@ class WeChatOpenIdListModel extends Model
         $wechatOpenidListModel = self::$table;
         $sql = "select st.uuid,
                        uw.`status` bind_status,
-                       wol.status subsribe_status
+                       wol.status subscribe_status
                     from {$studentModel} st
                     inner join {$userWeixinModel} uw
                         on st.uuid in ('" . implode("','", $uuid) . "')

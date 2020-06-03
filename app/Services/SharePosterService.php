@@ -23,6 +23,11 @@ use App\Libs\Erp;
 
 class SharePosterService
 {
+    //社群截图审核成功 微信配置的id
+    const COMMUNITY_POSTER_APPROVE_TEMPLATE_ID = 5;
+    //社群截图审核拒绝 微信配置的id
+    const COMMUNITY_POSTER_REFUSED_TEMPLATE_ID = 6;
+
     /**
      * 上传分享截图
      * @param $activityId
@@ -235,7 +240,7 @@ class SharePosterService
                 if (!empty($poster['reason'])) {
                     $reason = explode(',', $poster['reason']);
                     foreach ($reason as $reasonId) {
-                       $reasonStr[] = DictService::getKeyValue(Constants::DICT_TYPE_SHARE_POSTER_CHECK_REASON, $reasonId);;
+                       $reasonStr[] = DictService::getKeyValue(Constants::DICT_TYPE_SHARE_POSTER_CHECK_REASON, $reasonId);
                     }
                 }
                 if (!empty($poster['remark'])) {
@@ -294,6 +299,53 @@ class SharePosterService
     }
 
     /**
+     * @param $posterIds
+     * @param $employeeId
+     * @return bool
+     * @throws RunTimeException
+     * 社群截图通过，获得返现资格
+     */
+    public static function communityApproval($posterIds, $employeeId)
+    {
+        $erp = new Erp();
+
+        $posters = SharePosterModel::getCommunityPostersByIds($posterIds);
+        if (count($posters) != count($posterIds)) {
+            throw new RunTimeException(['get_share_poster_error']);
+        }
+
+        $time = time();
+        $status = SharePosterModel::STATUS_QUALIFIED;
+        foreach ($posters as $poster) {
+            $awardId = $poster['award_id'];
+            //审核通过在此认为此符合获取截图返现资格
+            if (!empty($poster['task_id']) && empty($poster['award_id'])) {
+                $taskResult = $erp->updateTask($poster['uuid'], $poster['task_id'], ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
+                if (empty($taskResult['data'])) {
+                    throw new RunTimeException(['erp_create_user_event_task_award_fail']);
+                }
+                $awardId = implode(',', $taskResult['data']['user_award_ids']);
+            }
+            SharePosterModel::updateRecord($poster['id'], [
+                'status' => $status,
+                'award_id' => $awardId,
+                'check_time' => $time,
+                'update_time' => $time,
+                'operator_id' => $employeeId,
+            ]);
+            // 发送审核通过模版消息
+            WeChatService::notifyUserCustomizeMessage(
+                $poster['mobile'],
+                self::COMMUNITY_POSTER_APPROVE_TEMPLATE_ID,
+                [
+                    'url' => DictConstants::get(DictConstants::COMMUNITY_CONFIG, 'COMMUNITY_UPLOAD_POSTER_URL')
+                ]
+            );
+        }
+        return true;
+    }
+
+    /**
      * 审核不通过
      * @param $posterId
      * @param $employeeId
@@ -330,7 +382,51 @@ class SharePosterService
             self::sendTemplate($poster['open_id'], $poster['activity_name'], $status);
         }
 
-        return $update > 0 ? true : false;
+        return $update > 0;
+    }
+
+    /**
+     * @param $posterId
+     * @param $employeeId
+     * @param $reason
+     * @param $remark
+     * @return bool
+     * @throws RunTimeException
+     * 社群截图审核不通过
+     */
+    public static function communityRefused($posterId, $employeeId, $reason, $remark)
+    {
+        if (empty($reason) && empty($remark)) {
+            throw new RunTimeException(['please_select_reason']);
+        }
+
+        $posters = SharePosterModel::getCommunityPostersByIds([$posterId]);
+        $poster = reset($posters);
+        if (empty($poster)) {
+            throw new RunTimeException(['get_share_poster_error']);
+        }
+
+        $status = SharePosterModel::STATUS_UNQUALIFIED;
+        $time = time();
+        $update = SharePosterModel::updateRecord($poster['id'], [
+            'status' => $status,
+            'check_time' => $time,
+            'update_time' => $time,
+            'operator_id' => $employeeId,
+            'reason' => implode(',', $reason),
+            'remark' => $remark
+        ]);
+
+        // 审核不通过, 发送模版消息
+        WeChatService::notifyUserCustomizeMessage(
+            $poster['mobile'],
+            self::COMMUNITY_POSTER_REFUSED_TEMPLATE_ID,
+            [
+                'url' => DictConstants::get(DictConstants::COMMUNITY_CONFIG, 'COMMUNITY_UPLOAD_POSTER_URL')
+            ]
+        );
+
+        return $update > 0;
     }
 
     /**

@@ -13,6 +13,7 @@ use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
+use App\Models\StudentModel;
 use App\Models\UserWeixinModel;
 use App\Models\WeChatAwardCashDealModel;
 use App\Models\WeChatOpenIdListModel;
@@ -207,6 +208,7 @@ class ErpReferralService
     public static function getAwardList($params)
     {
         $erp = new Erp();
+        $params['award_relate'] = Erp::AWARD_RELATE_REFERRAL;
         $response = $erp->awardList($params);
 
         if (empty($response) || $response['code'] != 0) {
@@ -243,7 +245,7 @@ class ErpReferralService
 
         //关注公众号相关信息
         foreach ($response['data']['records'] as $award) {
-            $subscribeStatus = $weChatRelateInfo[$award['referrer_uuid']]['subsribe_status'] ?? WeChatOpenIdListModel::UNSUBSCRIBE_WE_CHAT;
+            $subscribeStatus = $weChatRelateInfo[$award['referrer_uuid']]['subscribe_status'] ?? WeChatOpenIdListModel::UNSUBSCRIBE_WE_CHAT;
             $bindStatus = $weChatRelateInfo[$award['referrer_uuid']]['bind_status'] ?? UserWeixinModel::STATUS_DISABLE;
             $item = [
                 'student_uuid' => $award['student_uuid'],
@@ -268,6 +270,85 @@ class ErpReferralService
                 'delay' => $award['delay'],
                 'student_id' => $studentInfoList[$award['student_uuid']]['id'],
                 'referral_student_id' => $studentInfoList[$award['referrer_uuid']]['id'],
+                'subscribe_status' => $subscribeStatus,
+                'subscribe_status_zh' => $subscribeStatus == WeChatOpenIdListModel::SUBSCRIBE_WE_CHAT ? '已关注' : '未关注',
+                'bind_status' => $bindStatus,
+                'bind_status_zh' => $bindStatus == UserWeixinModel::STATUS_NORMAL ? '已绑定' : '未绑定',
+            ];
+            $list[] = $item;
+        }
+
+        return ['list' => $list, 'total_count' => $response['data']['total_count']];
+    }
+
+    /**
+     * @param $params
+     * @return array
+     * @throws RunTimeException
+     * 社群红包奖励列表
+     */
+    public static function getCommunityAwardList($params)
+    {
+        $erp = new Erp();
+        $params['award_relate'] = Erp::AWARD_RELATE_COMMUNITY;
+
+        $response = $erp->awardList($params);
+        if (empty($response) || $response['code'] != 0) {
+            $errorCode = $response['errors'][0]['err_no'] ?? 'erp_request_error';
+            throw new RunTimeException([$errorCode]);
+        }
+
+        $reviewerNames = EmployeeService::getNameMap(array_column($response['data']['records'], 'reviewer_id'));
+        $reviewerNames = array_column($reviewerNames, 'name', 'id');
+
+        $list = [];
+        //批量获取学生信息
+        $uuidList = array_column($response['data']['records'], 'student_uuid');
+        if (empty($uuidList)) {
+            $studentInfoList = [];
+        } else {
+            $studentInfoList = array_column(StudentModel::getStudentCollectionInfo($uuidList, ['s.name', 's.id', 's.uuid', 'c.name (collection_name)']), null, 'uuid');
+        }
+
+        //当前奖励在微信发放的状态
+        $relateUserEventTaskAwardIdArr = array_column($response['data']['records'], 'user_event_task_award_id');
+        if (empty($relateUserEventTaskAwardIdArr)) {
+            $relateAwardStatusArr = [];
+        } else {
+            $relateAwardStatusArr = array_column(WeChatAwardCashDealModel::getRecords(['user_event_task_award_id' => $relateUserEventTaskAwardIdArr], ['result_code', 'user_event_task_award_id']), NULL, 'user_event_task_award_id');
+        }
+        //列表用户微信关注/绑定情况
+        $refereeUuidArr = array_column($response['data']['records'], 'student_uuid');
+        if (empty($refereeUuidArr)) {
+            $weChatRelateInfo = [];
+        } else {
+            $weChatRelateInfo = array_column(WeChatOpenIdListModel::getUuidOpenIdInfo($refereeUuidArr), NULL, 'uuid');
+        }
+
+        //关注公众号相关信息
+        foreach ($response['data']['records'] as $award) {
+            $subscribeStatus = $weChatRelateInfo[$award['student_uuid']]['subscribe_status'] ?? WeChatOpenIdListModel::UNSUBSCRIBE_WE_CHAT;
+            $bindStatus = $weChatRelateInfo[$award['student_uuid']]['bind_status'] ?? UserWeixinModel::STATUS_DISABLE;
+            $item = [
+                'student_uuid' => $award['student_uuid'],
+                'student_name' => $studentInfoList[$award['student_uuid']]['name'],
+                'collection_name' => $studentInfoList[$award['student_uuid']]['collection_name'],
+                'student_mobile_hidden' => Util::hideUserMobile($award['student_mobile']),
+                'event_task_id' => $award['event_task_id'],
+                'event_task_name' => $award['event_task_name'],
+                'user_event_task_award_id' => $award['user_event_task_award_id'],
+                'award_status' => $award['award_status'],
+                'award_status_zh' => $award['award_status_zh'],
+                'award_amount' => $award['award_type'] == self::AWARD_TYPE_CASH ? ($award['award_amount'] / 100) : $award['award_amount'],
+                'fail_reason_zh' => isset($relateAwardStatusArr[$award['user_event_task_award_id']]) ? WeChatAwardCashDealModel::getWeChatErrorMsg($relateAwardStatusArr[$award['user_event_task_award_id']]['result_code']) : '',
+                'award_type' => $award['award_type'],
+                'create_time' => $award['create_time'],
+                'review_time' => $award['review_time'],
+                'reviewer_id' => $award['reviewer_id'],
+                'reviewer_name' => $reviewerNames[$award['reviewer_id']] ?? '',
+                'reason' => $award['reason'],
+                'delay' => $award['delay'],
+                'student_id' => $studentInfoList[$award['student_uuid']]['id'],
                 'subscribe_status' => $subscribeStatus,
                 'subscribe_status_zh' => $subscribeStatus == WeChatOpenIdListModel::SUBSCRIBE_WE_CHAT ? '已关注' : '未关注',
                 'bind_status' => $bindStatus,
@@ -338,10 +419,11 @@ class ErpReferralService
      * @param $status
      * @param $reviewerId
      * @param $reason
+     * @param string $keyCode
      * @return array|bool
      * @throws RunTimeException
      */
-    public static function updateAward($awardId, $status, $reviewerId, $reason)
+    public static function updateAward($awardId, $status, $reviewerId, $reason, $keyCode = 'NORMAL_PIC_WORD')
     {
         if (empty($awardId) || empty($reviewerId)) {
             throw new RunTimeException(['invalid_award_id_or_reviewer_id']);
@@ -376,7 +458,7 @@ class ErpReferralService
                 foreach ($awardBaseInfo['data']['award_info'] as $award) {
                     //仅现金,且未发放/已发放失败,且满足奖励延迟时间限制可调用
                     if ($award['award_type'] == self::AWARD_TYPE_CASH && in_array($award['status'], [self::AWARD_STATUS_WAITING, self::AWARD_STATUS_GIVE_FAIL]) && $award['create_time'] + $award['delay'] < $time) {
-                        list($baseAwardId, $dealStatus) = CashGrantService::cashGiveOut($award['uuid'], $award['award_id'], $award['award_amount'], $reviewerId);
+                        list($baseAwardId, $dealStatus) = CashGrantService::cashGiveOut($award['uuid'], $award['award_id'], $award['award_amount'], $reviewerId, $keyCode);
                         //重试操作无变化，无须更新erp
                         if ($award['status'] != $dealStatus) {
                             $needDealAward[$baseAwardId]['status'] = $dealStatus;
@@ -406,11 +488,12 @@ class ErpReferralService
             foreach ($response['data'] as $v) {
                 if (!empty($v['event_task_id'])) {
                     WeChatService::notifyUserCustomizeMessage(
-                        $v['referrer_mobile'],
+                        $v['referrer_mobile'] ?: $v['receive_mobile'],
                         $v['event_task_id'],
                         [
                             'mobile' => Util::hideUserMobile($v['student_mobile']),
-                            'url' => $_ENV['STUDENT_INVITED_RECORDS_URL']
+                            'url' => $_ENV['STUDENT_INVITED_RECORDS_URL'],
+                            'awardValue' => $v['award_amount'] / 100
                         ]
                     );
                 }

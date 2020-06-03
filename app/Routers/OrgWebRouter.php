@@ -23,6 +23,8 @@ use App\Controllers\OrgWeb\Activity;
 use App\Controllers\OrgWeb\Admin;
 use App\Controllers\OrgWeb\Approval;
 use App\Controllers\OrgWeb\Banner;
+use App\Controllers\OrgWeb\CommunityRedPack;
+use App\Controllers\OrgWeb\CommunitySharePoster;
 use App\Controllers\OrgWeb\Erp;
 use App\Controllers\OrgWeb\Flags;
 use App\Controllers\OrgWeb\PlayRecord;
@@ -392,6 +394,15 @@ class OrgWebRouter extends RouterBase
         '/org_web/share_poster/refused' => ['method' => ['post'], 'call' => SharePoster::class . ':refused'],
 
         '/org_web/play_record/statistics' => ['method' => ['get'], 'call' => PlayRecord::class . ':playStatistics'],
+
+        //社群返现
+        '/org_web/return_money_poster/list' => ['method' => ['get'], 'call' => CommunitySharePoster::class . ':list'],
+        '/org_web/return_money_poster/approved' => ['method' => ['post'], 'call' => CommunitySharePoster::class . ':approved'],
+        '/org_web/return_money_poster/refused' => ['method' => ['post'], 'call' => CommunitySharePoster::class . ':refused'],
+
+        '/org_web/community_red_pack/config' => ['method' => ['get'], 'call' => CommunityRedPack::class . ':config'],
+        '/org_web/community_red_pack/awardList' => ['method' => ['get'], 'call' => CommunityRedPack::class . ':awardList'],
+        '/org_web/community_red_pack/updateAward' => ['method' => ['post'], 'call' => CommunityRedPack::class . ':updateAward'],
         //话术管理
         '/org_web/faq/add' => ['method' => ['post'], 'call' => Faq::class . ':add'],
         '/org_web/faq/modify' => ['method' => ['post'], 'call' => Faq::class . ':modify'],
