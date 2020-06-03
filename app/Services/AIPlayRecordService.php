@@ -158,6 +158,8 @@ class AIPlayRecordService
                 $useOldTextTemp = true;
             }
 
+            $isNormalData = $record['data_type'] == AIPlayRecordModel::DATA_TYPE_NORMAL ? 1 : 0;
+
             // switch ($record['ui_entry'])
 
             // case 上课模式(旧版)
@@ -181,7 +183,7 @@ class AIPlayRecordService
             }
 
             // case 识谱
-            if ($record['ui_entry'] == AIPlayRecordModel::UI_ENTRY_LEARN) {
+            if ($record['ui_entry'] == AIPlayRecordModel::UI_ENTRY_LEARN && $isNormalData) {
                 if ($record['is_phrase']) {
                     // 统计乐句数量，每个乐句只算一次
                     if (empty($lessonReports[$lessonId]['part_learn_id_map'][$record['phrase_id']])) {
@@ -196,7 +198,7 @@ class AIPlayRecordService
             }
 
             // case 提高
-            if ($record['ui_entry'] == AIPlayRecordModel::UI_ENTRY_IMPROVE) {
+            if ($record['ui_entry'] == AIPlayRecordModel::UI_ENTRY_IMPROVE && $isNormalData) {
                 if ($record['is_phrase']) {
                     // 统计乐句数量，每个乐句只算一次
                     if (empty($lessonReports[$lessonId]['part_improve_id_map'][$record['phrase_id']])) {
@@ -214,13 +216,18 @@ class AIPlayRecordService
             if ($record['ui_entry'] == AIPlayRecordModel::UI_ENTRY_TEST) {
                 // 分手分段测评不计入全曲测评次数
                 if ($record['is_phrase'] || ($record['hand'] != AIPlayRecordModel::HAND_BOTH)) {
-                    $countKey = $useOldTextTemp ? 'part_practice_count' : 'part_test_count';
-                    $lessonReports[$lessonId][$countKey]++;
+                    if ($isNormalData) {
+                        $countKey = $useOldTextTemp ? 'part_practice_count' : 'part_test_count';
+                        $lessonReports[$lessonId][$countKey]++;
+                    }
+
                     $lessonReports[$lessonId]['part_test_duration'] += $record['duration'];
                     continue;
                 }
 
-                $lessonReports[$lessonId]['test_count']++;
+                if ($isNormalData) {
+                    $lessonReports[$lessonId]['test_count']++;
+                }
 
                 // 单课最高分
                 $curMaxScore = $lessonReports[$lessonId]['test_high_score'];
