@@ -731,6 +731,8 @@ class AIPlayRecordService
             $record['teaching_start_time'] = !empty($record['teaching_start_time']) ? date('Y-m-d', $record['teaching_start_time']) : '';
             $record['total_duration'] = round($record['total_duration'] / 60, 1);
             $record['avg_duration'] = round($record['avg_duration'] / 60, 1);
+            $record['play_days'] = $record['play_days'] ?? 0;
+            $record['review_days'] = $record['review_days'] ?? 0;
         }
         return [$records, $totalCount];
     }
