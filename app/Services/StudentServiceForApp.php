@@ -114,6 +114,7 @@ class StudentServiceForApp
             'token' => $token,
             'teachers' => [],
             'flags' => $flags,
+            'total_duration' => 0,
             'is_anonymous' => 1,
         ];
 
@@ -194,6 +195,9 @@ class StudentServiceForApp
         // 用户已购买49元订单且在有效期内，首页会展示助教二维码和微信号
         list($needAddWx, $wechatQr, $wechatNumber) = CollectionService::getCollectionWechatInfo($student['collection_id']);
 
+        // 学生今日练琴总时长
+        $totalDuration = AIPlayRecordService::getStudentSumDuration($student['id']);
+
         $loginData = [
             'id' => $student['id'],
             'uuid' => $student['uuid'],
@@ -216,6 +220,7 @@ class StudentServiceForApp
             'token' => $token,
             'teachers' => [],
             'flags' => $flags,
+            'total_duration' => $totalDuration,
             'is_anonymous' => 0,
         ];
 
@@ -277,6 +282,9 @@ class StudentServiceForApp
         // 用户已购买49元订单且在有效期内，首页会展示助教二维码和微信号
         list($needAddWx, $wechatQr, $wechatNumber) = CollectionService::getCollectionWechatInfo($student['collection_id']);
 
+        // 学生今日练琴总时长
+        $totalDuration = AIPlayRecordService::getStudentSumDuration($student['id']);
+
         $loginData = [
             'id' => $student['id'],
             'uuid' => $student['uuid'],
@@ -299,6 +307,7 @@ class StudentServiceForApp
             'token' => $token,
             'teachers' => [],
             'flags' => $flags,
+            'total_duration' => $totalDuration,
             'is_anonymous' => 0,
         ];
 
