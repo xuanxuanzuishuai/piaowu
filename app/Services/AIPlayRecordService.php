@@ -62,6 +62,7 @@ class AIPlayRecordService
             'score_rhythm' => self::formatScore($params['score_rhythm']),
             'score_speed' => self::formatScore($params['score_speed']),
             'score_speed_average' => self::formatScore($params['score_speed_average']),
+            'data_type' => $params['data_type'],
         ];
 
         $recordId =  AIPlayRecordModel::insertRecord($recordData);
@@ -550,6 +551,7 @@ class AIPlayRecordService
             'ui_entry' => AIPlayRecordModel::UI_ENTRY_TEST,
             'is_phrase' => Constants::STATUS_FALSE,
             'hand' => AIPlayRecordModel::HAND_BOTH,
+            'data_type' => AIPlayRecordModel::DATA_TYPE_NORMAL,
             'ORDER' => ['end_time' => 'DESC'],
         ]);
 

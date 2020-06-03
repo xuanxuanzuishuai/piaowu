@@ -44,6 +44,12 @@ class AIPlayRecordModel extends Model
     const RANK_LIMIT = 150; // 取前n条数据排名
     const RANK_BASE_SCORE = 60; // 大于x分才计入
 
+
+    const DATA_TYPE_NORMAL = 1; // 1 正常评测
+    const DATA_TYPE_NOT_EVALUATE = 2; // 2 未进行测评数据 返回或取消
+    const DATA_TYPE_EXIT = 3; // 3 非正常退出数据 断电、断网、崩溃、来电、杀掉进程
+
+
     /**
      * 获取用户日期演奏时长汇总
      * 只统计点评课用户
