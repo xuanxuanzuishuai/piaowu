@@ -38,10 +38,9 @@ class ReviewCourseService
      *
      * @param $studentID
      * @param $reviewCourseType
-     * @param null|int $wechatcsId
      * @return null|string errorCode
      */
-    public static function updateReviewCourseFlag($studentID, $reviewCourseType, $wechatcsId = null)
+    public static function updateReviewCourseFlag($studentID, $reviewCourseType)
     {
         $student = StudentModel::getById($studentID);
         if ($student['has_review_course'] >= $reviewCourseType) {
@@ -51,9 +50,6 @@ class ReviewCourseService
         $update = [
             'has_review_course' => $reviewCourseType,
         ];
-        if (!empty($wechatcsId)) {
-            $update['wechatcs_id'] = $wechatcsId;
-        }
         $affectRows = StudentModel::updateRecord($studentID, $update, false);
 
         // 完成转介绍任务

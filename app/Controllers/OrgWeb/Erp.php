@@ -133,10 +133,8 @@ class Erp extends ControllerBase
         if ($reviewCourseType != ReviewCourseModel::REVIEW_COURSE_NO && !empty($giftCodes)) {
             //获取学生信息
             $student = StudentService::getByUuid($params['uuid']);
-            $wechatcs = WeChatCSService::getWeChatCS();
             // 更新点评课标记
-            $wechatcsId = empty($student['wechatcs_id']) ? $wechatcs['id'] : null;
-            ReviewCourseService::updateReviewCourseFlag($student['id'], $reviewCourseType, $wechatcsId);
+            ReviewCourseService::updateReviewCourseFlag($student['id'], $reviewCourseType);
             //更新学生分配班级信息 一个学员只能分配给一个班级(当前只有体验课课包类型才允许分班)
             if (empty($student['collection_id']) && ($reviewCourseType == ReviewCourseModel::REVIEW_COURSE_49)) {
                 ReviewCourseService::updateCollectionAndAssistantData($student, $reviewCourseType,$params['package_id']);
