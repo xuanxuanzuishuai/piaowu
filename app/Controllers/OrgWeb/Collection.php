@@ -10,6 +10,8 @@ namespace App\Controllers\OrgWeb;
 
 use App\Controllers\ControllerBase;
 use App\Libs\Constants;
+use App\Libs\Exceptions\RunTimeException;
+use App\Libs\HttpHelper;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\EmployeeModel;
@@ -105,6 +107,11 @@ class Collection extends ControllerBase
                 'key' => 'teaching_type',
                 'type' => 'required',
                 'error_code' => 'collection_teaching_type_is_required'
+            ],
+            [
+                'key' => 'trial_type',
+                'type' => 'required',
+                'error_code' => 'collection_trial_type_is_required'
             ]
         ];
         //验证合法性
@@ -113,33 +120,15 @@ class Collection extends ControllerBase
         if ($result['code'] == 1) {
             return $response->withJson($result, 200);
         }
-        //组合数据
-        $time = time();
-        $collectionData = [
-            'name' => $params['name'],
-            'assistant_id' => $params['assistant_id'],
-            'capacity' => $params['capacity'],
-            'remark' => $params['remark'],
-            'prepare_start_time' => $params['prepare_start_time'],
-            'prepare_end_time' => Util::getStartEndTimestamp($params['prepare_end_time'])[1],
-            'teaching_start_time' => $params['teaching_start_time'],
-            'teaching_end_time' => Util::getStartEndTimestamp($params['teaching_end_time'])[1],
-            'wechat_qr' => $params['wechat_qr'],
-            'wechat_number' => $params['wechat_number'],
-            'create_uid' => self::getEmployeeId(),
-            'create_time' => $time,
-            'type' => $params['type'] ?? CollectionModel::COLLECTION_TYPE_NORMAL,
-            'teaching_type' => $params['teaching_type'],
-        ];
-        //写入数据
-        $collectionId = CollectionService::addStudentCollection($collectionData);
-        if (empty($collectionId)) {
-            return $response->withJson(Valid::addErrors([], 'collection', 'add_student_collection_fail'));
+
+        try {
+            $operator = $this->getEmployeeId();
+            $collectionId = CollectionService::addStudentCollection($params, $operator);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
-        return $response->withJson([
-            'code' => 0,
-            'data' => ['id' => $collectionId]
-        ], StatusCode::HTTP_OK);
+
+        return HttpHelper::buildResponse($response, ['id' => $collectionId]);
     }
 
 
@@ -192,16 +181,18 @@ class Collection extends ControllerBase
         if ($result['code'] == 1) {
             return $response->withJson($result, 200);
         }
-        $params['uid'] = self::getEmployeeId();
-        //写入数据
-        $collectionId = CollectionService::updateStudentCollection($params['id'], $params);
-        if (empty($collectionId)) {
-            return $response->withJson(Valid::addErrors([], 'collection', 'update_student_collection_fail'));
+
+        $operator = $this->getEmployeeId();
+        $collectionId = $params['id'];
+        unset($params['id']);
+
+        try {
+            CollectionService::updateStudentCollection($collectionId, $params, $operator);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
-        return $response->withJson([
-            'code' => 0,
-            'data' => ['id' => $collectionId]
-        ], StatusCode::HTTP_OK);
+
+        return HttpHelper::buildResponse($response, ['id' => $collectionId]);
     }
 
     /**

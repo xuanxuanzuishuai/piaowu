@@ -30,10 +30,16 @@ class CollectionModel extends Model
     const COLLECTION_TYPE_PUBLIC = 2;
     //集合中学员数量上限
     const COLLECTION_MAX_CAPACITY = 500;
+
     //班级授课类型 1体验课2正式课3全部课程
     const COLLECTION_TEACHING_TYPE_EXPERIENCE_CLASS = ReviewCourseModel::REVIEW_COURSE_49;
     const COLLECTION_TEACHING_TYPE_FORMAL_CLASS = ReviewCourseModel::REVIEW_COURSE_1980;
     const COLLECTION_TEACHING_TYPE_ALL_CLASS = 3;
+
+    // 班级类型 对应 package_type
+    const TEACHING_TYPE_TRIAL = PackageExtModel::PACKAGE_TYPE_TRIAL;
+    const TEACHING_TYPE_NORMAL = PackageExtModel::PACKAGE_TYPE_NORMAL;
+
     public static $teachingTypeDictMap = [
         'package_id' => self::COLLECTION_TEACHING_TYPE_EXPERIENCE_CLASS,
         'plus_package_id' => self::COLLECTION_TEACHING_TYPE_FORMAL_CLASS,

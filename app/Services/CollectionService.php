@@ -9,12 +9,12 @@
 namespace App\Services;
 
 use App\Libs\Constants;
+use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
 use App\Models\CollectionModel;
 use App\Models\CollectionAssistantLogModel;
 use App\Models\StudentAssistantLogModel;
 use App\Models\StudentModel;
-use App\Models\StudentRefereeModel;
 use App\Models\DictModel;
 use App\Libs\AliOSS;
 use App\Libs\DictConstants;
@@ -25,24 +25,46 @@ class CollectionService
 {
     /**
      * 添加学生集合
-     * @param $insertData
-     * @return int|mixed|null|string
+     * @param $params
+     * @param $operator
+     * @return int
+     * @throws RunTimeException
      */
-    public static function addStudentCollection($insertData)
+    public static function addStudentCollection($params, $operator)
     {
-        //公海班级只能添加一条
-        if (CollectionModel::COLLECTION_TYPE_PUBLIC == $insertData['type']) {
-            $isExists = CollectionModel::getRecord(["type" => CollectionModel::COLLECTION_TYPE_PUBLIC, "status" => CollectionModel::COLLECTION_STATUS_IS_PUBLISH]);
-            if (!empty($isExists)) {
-                return false;
-            }
+        // 不能添加公海班级
+        if ($params['type'] == CollectionModel::COLLECTION_TYPE_PUBLIC) {
+            throw new RunTimeException(['cant_add_public_collection']);
         }
-        //集合数据
+
+        if (!PackageService::validateTrialType($params['teaching_type'], $params['trial_type'])) {
+            throw new RunTimeException(['invalid_trial_type']);
+        }
+
+        $time = time();
+        $insertData = [
+            'name' => $params['name'],
+            'assistant_id' => $params['assistant_id'],
+            'capacity' => $params['capacity'],
+            'remark' => $params['remark'],
+            'prepare_start_time' => $params['prepare_start_time'],
+            'prepare_end_time' => Util::getStartEndTimestamp($params['prepare_end_time'])[1],
+            'teaching_start_time' => $params['teaching_start_time'],
+            'teaching_end_time' => Util::getStartEndTimestamp($params['teaching_end_time'])[1],
+            'wechat_qr' => $params['wechat_qr'],
+            'wechat_number' => $params['wechat_number'],
+            'create_uid' => $operator,
+            'create_time' => $time,
+            'type' => $params['type'] ?? CollectionModel::COLLECTION_TYPE_NORMAL,
+            'teaching_type' => $params['teaching_type'],
+            'trial_type' => $params['trial_type']
+        ];
+
         $collectionId = CollectionModel::insertRecord($insertData, false);
         if (empty($collectionId)) {
-            return false;
+            throw new RunTimeException(['insert_failure']);
         }
-        //返回结果
+
         return $collectionId;
     }
 
@@ -56,6 +78,7 @@ class CollectionService
         //获取数据库对象
         $db = MysqlDB::getDB();
         $time = time();
+        // TODO: 换成 Model 方法
         $querySql = "SELECT 
                         a.id,a.name,a.assistant_id,a.capacity,a.remark,a.prepare_start_time,
                         a.prepare_end_time,a.teaching_start_time,a.teaching_end_time,a.wechat_qr,
@@ -78,15 +101,18 @@ class CollectionService
     /**
      * @param $collectionId
      * @param $params
-     * @return int|mixed|null|string
+     * @param $operator
+     * @throws RunTimeException
      */
-    public static function updateStudentCollection($collectionId, $params)
+    public static function updateStudentCollection($collectionId, $params, $operator)
     {
+
         //检验班级集合当前状态允许操作的数据字段
         $params = self::checkActionIsAllow($collectionId, $params);
         if (empty($params)) {
-            return false;
+            throw new RunTimeException(['invalid params']);
         }
+
         if ($params['name']) {
             $collectionData['name'] = $params['name'];
         }
@@ -114,9 +140,6 @@ class CollectionService
         if ($params['wechat_number']) {
             $collectionData['wechat_number'] = $params['wechat_number'];
         }
-        if ($params['uid']) {
-            $collectionData['update_uid'] = $params['uid'];
-        }
         if ($params['status']) {
             $collectionData['status'] = $params['status'];
         }
@@ -126,13 +149,20 @@ class CollectionService
         if ($params['teaching_type']) {
             $collectionData['teaching_type'] = $params['teaching_type'];
         }
+        if (isset($params['trial_type']) && $params['trial_type'] !== null) {
+            $collectionData['trial_type'] = $params['trial_type'];
+        }
+
+        if (!PackageService::validateTrialType($params['teaching_type'], $params['trial_type'])) {
+            throw new RunTimeException(['invalid_trial_type']);
+        }
+
         $collectionData['update_time'] = time();
+        $collectionData['update_uid'] = $operator;
         $collectionAffectRows = CollectionModel::updateRecord($collectionId, $collectionData);
         if (empty($collectionAffectRows)) {
-            return false;
+            throw new RunTimeException(['update_failure']);
         }
-        //返回结果
-        return $collectionId;
     }
 
 
@@ -230,6 +260,10 @@ class CollectionService
             $dictTypeList = DictService::getListsByTypes([Constants::COLLECTION_PUBLISH_STATUS, Constants::COLLECTION_PROCESS_STATUS]);
             $collectionProcessStatusDict = array_column($dictTypeList[Constants::COLLECTION_PROCESS_STATUS], null, "code");
             $collectionPublishStatusDict = array_column($dictTypeList[Constants::COLLECTION_PUBLISH_STATUS], null, "code");
+
+            $packageTypeDict = DictConstants::getSet(DictConstants::PACKAGE_TYPE);
+            $trialTypeDict = DictConstants::getSet(DictConstants::TRIAL_TYPE);
+
             //转换数据格式
             foreach ($list as &$lv) {
                 $lv['oss_wechat_qr'] = AliOSS::signUrls($lv['wechat_qr']);
@@ -241,6 +275,9 @@ class CollectionService
                 $lv['teaching_start_time'] = date("Y-m-d", $lv['teaching_start_time']);
                 $lv['teaching_end_time'] = date("Y-m-d", $lv['teaching_end_time']);
                 $lv['create_time'] = date("Y-m-d H:i", $lv['create_time']);
+
+                $lv['teaching_type_name'] = $packageTypeDict[$lv['teaching_type']] ?? '-';
+                $lv['trial_type_name'] = $trialTypeDict[$lv['trial_type']] ?? '-';
             }
         }
 
@@ -450,14 +487,15 @@ class CollectionService
 
     /**
      * 检测班级集合允许操作的字段
-     * @param $id
+     * @param $collectionId
      * @param $params
      * @return array
      */
-    public static function checkActionIsAllow($id, $params)
+    public static function checkActionIsAllow($collectionId, $params)
     {
         //获取目标班级集合的信息
-        $data = self::getStudentCollectionDetailByID($id);
+        $data = self::getStudentCollectionDetailByID($collectionId);
+
         //获取当前集合的班级状态
         $nowTime = time();
         $updateParams = [];
@@ -466,7 +504,6 @@ class CollectionService
             // 组班中:支持【开放】或【关闭】
             if (!empty($params['status']) && ($params['status'] != $data[0]['status'])) {
                 $updateParams['status'] = $params['status'];
-                $updateParams['uid'] = $params['uid'];
             }
         } elseif ($processStatus == CollectionModel::COLLECTION_PREPARE_STATUS) {
             //待组班:支持任何操作

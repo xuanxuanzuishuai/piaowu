@@ -126,4 +126,24 @@ class PackageService
         return null;
     }
 
+    /**
+     * 检查体验课类型是否合法
+     * @param $packageType
+     * @param $trialType
+     * @return bool
+     */
+    public static function validateTrialType($packageType, $trialType)
+    {
+        if ($packageType == PackageExtModel::PACKAGE_TYPE_NONE) {
+            return $trialType == PackageExtModel::TRIAL_TYPE_NONE;
+
+        } elseif ($packageType == PackageExtModel::PACKAGE_TYPE_TRIAL) {
+            return $trialType == PackageExtModel::TRIAL_TYPE_49 || $trialType == PackageExtModel::TRIAL_TYPE_9;
+
+        } elseif ($packageType == PackageExtModel::PACKAGE_TYPE_NORMAL) {
+            return $trialType == PackageExtModel::TRIAL_TYPE_NONE;
+        }
+
+        return false;
+    }
 }
