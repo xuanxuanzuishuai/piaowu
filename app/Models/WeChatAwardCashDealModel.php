@@ -11,6 +11,10 @@ class WeChatAwardCashDealModel extends Model
 {
     public static $table = "wechat_award_cash_deal";
 
+    //红包祝福语相关配置
+    const NORMAL_PIC_WORD = 1;
+    const COMMUNITY_PIC_WORD = 2;
+
     //发送红包成功与否的标识
     const RESULT_FAIL_CODE = 'FAIL'; //发放红包失败
     const RESULT_SUCCESS_CODE = 'SUCCESS'; //发送红包成功

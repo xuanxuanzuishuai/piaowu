@@ -122,8 +122,24 @@ class CashGrantService
      */
     private static function getRedPackConfigWord($keyCode)
     {
-        $configArr = json_decode(DictConstants::get(DictConstants::WE_CHAT_RED_PACK_CONFIG, $keyCode), true);
+        $configArr = json_decode(DictConstants::get(DictConstants::WE_CHAT_RED_PACK_CONFIG, self::getKeyCodeRelateKey($keyCode)), true);
         return [$configArr['act_name'], $configArr['send_name'], $configArr['wishing']];
+    }
+
+    /**
+     * @param $keyCode
+     * @return string
+     * 红包祝福语相关
+     */
+    private static function getKeyCodeRelateKey($keyCode)
+    {
+        switch ($keyCode) {
+            case WeChatAwardCashDealModel::COMMUNITY_PIC_WORD:
+                return 'COMMUNITY_PIC_WORD';
+                break;
+            default:
+                return 'NORMAL_PIC_WORD';
+        }
     }
 
     /**

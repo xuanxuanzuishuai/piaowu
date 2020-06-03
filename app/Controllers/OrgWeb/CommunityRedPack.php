@@ -12,6 +12,7 @@ namespace App\Controllers\OrgWeb;
 use App\Controllers\ControllerBase;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
+use App\Models\WeChatAwardCashDealModel;
 use App\Services\ErpReferralService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -74,7 +75,7 @@ class CommunityRedPack extends ControllerBase
                 $params['status'],
                 $this->getEmployeeId(),
                 $params['reason'],
-            'COMMUNITY_PIC_WORD');
+            WeChatAwardCashDealModel::COMMUNITY_PIC_WORD);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }

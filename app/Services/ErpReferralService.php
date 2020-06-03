@@ -423,7 +423,7 @@ class ErpReferralService
      * @return array|bool
      * @throws RunTimeException
      */
-    public static function updateAward($awardId, $status, $reviewerId, $reason, $keyCode = 'NORMAL_PIC_WORD')
+    public static function updateAward($awardId, $status, $reviewerId, $reason, $keyCode)
     {
         if (empty($awardId) || empty($reviewerId)) {
             throw new RunTimeException(['invalid_award_id_or_reviewer_id']);
