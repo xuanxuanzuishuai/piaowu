@@ -225,6 +225,11 @@ class DictConstants {
         'keys' => ['ACT_NAME', 'SEND_NAME', 'WISHING'],
     ];
 
+    const REVIEW_TEACHER_THUMB = [
+        'type' => 'REVIEW_TEACHER_THUMB',
+        'keys' => [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    ];
+
     public static function get($type, $key)
     {
         if (empty($type) || empty($key)) {

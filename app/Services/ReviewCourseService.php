@@ -660,6 +660,10 @@ class ReviewCourseService
 
         $report = AIPLClass::getClassReport($student['uuid'], strtotime($task['play_date']));
 
+        $teacherId = $report['teacher_id'] ?? 0;
+        $thumb = DictConstants::get(DictConstants::REVIEW_TEACHER_THUMB, $teacherId);
+        $report['teacher_thumb'] = AliOSS::signUrls($thumb);
+
         $review = [
             'id' => $task['id'],
             'play_date' => $task['play_date'],
