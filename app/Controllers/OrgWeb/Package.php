@@ -10,6 +10,7 @@ namespace App\Controllers\OrgWeb;
 
 use App\Controllers\ControllerBase;
 use App\Libs\DictConstants;
+use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Services\DictService;
 use App\Libs\Valid;
@@ -119,7 +120,12 @@ class Package extends ControllerBase
         }
 
         $operatorId = $this->getEmployeeId();
-        PackageService::packageEdit($params, $operatorId);
+
+        try {
+            PackageService::packageEdit($params, $operatorId);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
 
         return HttpHelper::buildResponse($response, []);
     }

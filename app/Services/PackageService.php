@@ -10,6 +10,7 @@ namespace App\Services;
 
 
 use App\Libs\DictConstants;
+use App\Libs\Exceptions\RunTimeException;
 use App\Libs\Util;
 use App\Models\ErpPackageModel;
 use App\Models\PackageExtModel;
@@ -28,7 +29,7 @@ class PackageService
         if (!empty($params['package_id'])) {
             $where[ErpPackageModel::$table . '.id'] = $params['package_id'];
         } elseif (!empty($params['package_name'])) {
-            $where[ErpPackageModel::$table . '.name'] = Util::sqlLike($params['package_name']);
+            $where[ErpPackageModel::$table . '.name[~]'] = Util::sqlLike($params['package_name']);
         }
 
         if (isset($params['package_status'])) {
@@ -91,11 +92,16 @@ class PackageService
      * @param $params
      * @param $operator
      * @return null
+     * @throws RunTimeException
      */
     public static function packageEdit($params, $operator)
     {
         if (empty($params['package_id'])) {
             return null;
+        }
+
+        if (!PackageService::validateTrialType($params['package_type'], $params['trial_type'])) {
+            throw new RunTimeException(['invalid_trial_type']);
         }
 
         $update = [
@@ -135,6 +141,10 @@ class PackageService
      */
     public static function validateTrialType($packageType, $trialType)
     {
+        if ($packageType === null || $trialType === null) {
+            return false;
+        }
+
         if ($packageType == PackageExtModel::PACKAGE_TYPE_NONE) {
             return $trialType == PackageExtModel::TRIAL_TYPE_NONE;
 
