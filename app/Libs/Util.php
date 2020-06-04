@@ -831,4 +831,16 @@ class Util
         $days = ($endTimeStamp - $startTimeStamp) / self::TIMESTAMP_ONEDAY;
         return $days;
     }
+
+    /**
+     * 严重错误，需要发送到sentry
+     * @param $message
+     * @param array $data
+     */
+    public static function errorCapture($message, $data = [])
+    {
+        SimpleLogger::error($message, $data);
+        $sentryClient = new \Raven_Client($_ENV['SENTRY_NOTIFY_URL']);
+        $sentryClient->captureMessage($message, $data);
+    }
 }
