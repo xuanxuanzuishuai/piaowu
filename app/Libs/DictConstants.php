@@ -106,6 +106,7 @@ class DictConstants {
             'result_url',
             'package_id',
             'plus_package_id',
+            'mini_package_id',
         ]
     ];
 
