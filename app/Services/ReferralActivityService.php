@@ -665,7 +665,7 @@ class ReferralActivityService
         }
         //获取当前活动学生最新上传记录
         $data['activity_info']['upload_record'] = [];
-        $uploadRecord = SharePosterService::getLastUploadRecord($studentId, $studentInfo['student_info']['collection_id'], ['reason', 'remark', 'status', 'img_url']);
+        $uploadRecord = SharePosterService::getLastUploadRecord($studentId, $studentInfo['collection_id'], ['reason', 'remark', 'status', 'img_url']);
         if (!empty($uploadRecord)) {
             $data['activity_info']['upload_record']["status"] = $uploadRecord["status"];
             $data['activity_info']['upload_record']["status_name"] = $uploadRecord["status_name"];
@@ -698,36 +698,34 @@ class ReferralActivityService
             $settings['qr_y']);
         $data['activity_info']['poster_oss_url'] = $posterImgFile;
         $data['activity_info']['share_word'] = Util::textDecode($posterInfo['content2']);
-        $data['activity_info']['valid_end_time'] = $studentInfo['collection']['info']['teaching_end_time'] + $studentInfo['collection']['task_condition']['valid_time_range_day'];
+        $data['activity_info']['valid_end_time'] = $studentInfo['collection']['info']['teaching_end_time'] + Util::TIMESTAMP_ONEDAY * $studentInfo['collection']['task_condition']['valid_time_range_day'];
         //返回数据
         return $data;
     }
 
     /**
-     * 推送返现分享链接微信消息
+     * 推送返现活动微信模板消息
      * @param $msgBody
      * @return bool
      */
-    public static function pushWXCashShareNewsMsg($msgBody)
+    public static function pushWXCashActivityTemplateMsg($msgBody)
     {
         $batchInsertData = [];
-        //获取推送信息的配置数据
-        $configData = WeChatConfigModel::getRecord(['event_type' => WeChatConfigModel::EVENT_TYPE_SHARE_NEWS, 'type' => $msgBody['common_data']['user_type']], ['content'], false);
-        if (empty($configData)) {
-            SimpleLogger::error('share news content empty', []);
-            return false;
-        }
-        $content = json_decode($configData['content'], true);
-        $content['picurl'] = AliOSS::signUrls($content['picurl']);
-        $content['url'] = $_ENV['WECHAT_FRONT_DOMAIN'] . $content['url'];
         foreach ($msgBody['data'] as $user) {
-            $result = WeChatService::notifyUserCustomerServiceMessage($msgBody['common_data']['app_id'], $msgBody['common_data']['user_type'], $user['open_id'], $content);
+            // 发送模版消息
+            $result = WeChatService::notifyUserCustomizeMessage(
+                $user['mobile'],
+                WeChatConfigModel::RETURN_CASH_ACTIVITY_TEMPLATE_ID,
+                [
+                    'url' => DictConstants::get(DictConstants::COMMUNITY_CONFIG, 'COMMUNITY_UPLOAD_POSTER_URL')
+                ]
+            );
             if ($result) {
                 $user['success_num']++;
             } else {
                 $user['fail_num']++;
             }
-            unset($user['open_id']);
+            unset($user['mobile']);
             $batchInsertData[] = $user;
         }
         //消息发送记录

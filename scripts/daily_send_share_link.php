@@ -62,7 +62,7 @@ $studentList = $db->select(
     [
         StudentModel::$table . ".id",
         StudentModel::$table . ".collection_id",
-        UserWeixinModel::$table . ".open_id",
+        StudentModel::$table . ".mobile",
     ],
     [
         StudentModel::$table . ".collection_id" => $collectionIdList,
@@ -123,7 +123,7 @@ array_walk($studentPlayRecordList, function ($studentPlayValue, $key) use ($task
         $upToStandardStudentList[$studentPlayValue['student_id']]['play_standard_count'] += 1;
         $upToStandardStudentList[$studentPlayValue['student_id']]['task_standard_count'] = $taskCondition[$studentPlayValue['task_id']]['condition']['total_qualified_day'];
         $upToStandardStudentList[$studentPlayValue['student_id']]['collection_id'] = $studentList[$studentPlayValue['student_id']]['collection_id'];
-        $upToStandardStudentList[$studentPlayValue['student_id']]['open_id'] = $studentList[$studentPlayValue['student_id']]['open_id'];
+        $upToStandardStudentList[$studentPlayValue['student_id']]['mobile'] = $studentList[$studentPlayValue['student_id']]['mobile'];
     }
 });
 if (empty($upToStandardStudentList)) {
@@ -139,7 +139,7 @@ try {
             $msgBody["data"][] = [
                 "type" => MessageRecordModel::MSG_TYPE_WEIXIN,
                 "activity_id" => $playValue['collection_id'],
-                'open_id' => $playValue['open_id'],
+                'mobile' => $playValue['mobile'],
                 "success_num" => 0,
                 "fail_num" => 0,
                 "operator_id" => EmployeeModel::SYSTEM_EMPLOYEE_ID,

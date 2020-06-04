@@ -156,8 +156,8 @@ class Consumer extends ControllerBase
                 ReferralActivityService::pushWXMsg($params['msg_body']);
                 break;
             case PushMessageTopic::EVENT_PUSH_WX_CASH_SHARE_MESSAGE:
-                //给微信用户推送文分享信息
-                ReferralActivityService::pushWXCashShareNewsMsg($params['msg_body']);
+                //给微信用户推送返现活动模板消息
+                ReferralActivityService::pushWXCashActivityTemplateMsg($params['msg_body']);
                 break;
         }
 

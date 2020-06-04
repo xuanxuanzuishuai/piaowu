@@ -495,7 +495,7 @@ class SharePosterService
         $checkResult = ReferralActivityService::returnCashActivityPlayRecordCheck($studentId);
         //未上传/审核不通过允许上传截图
         $type = SharePosterModel::TYPE_RETURN_CASH;
-        $uploadRecord = SharePosterModel::getRecord(['activity_id' => $checkResult['student_info']['collection_id'], 'student_id' => $studentId, 'type' => $type, 'ORDER' => ['create_time' => 'DESC']], ['status'], false);
+        $uploadRecord = SharePosterModel::getRecord(['activity_id' => $checkResult['collection_id'], 'student_id' => $studentId, 'type' => $type, 'ORDER' => ['create_time' => 'DESC']], ['status'], false);
         if (!empty($uploadRecord) && $uploadRecord['status'] != SharePosterModel::STATUS_UNQUALIFIED) {
             throw new RunTimeException(['stop_repeat_upload']);
         }
@@ -503,7 +503,7 @@ class SharePosterService
         $insertId = SharePosterModel::insertRecord(
             [
                 'student_id' => $studentId,
-                'activity_id' => $checkResult['student_info']['collection_id'],
+                'activity_id' => $checkResult['collection_id'],
                 'img_url' => $imgUrl,
                 'create_time' => $time,
                 'update_time' => $time,
