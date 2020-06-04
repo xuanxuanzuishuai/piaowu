@@ -12,9 +12,10 @@ use App\Controllers\ControllerBase;
 use App\Libs\DictConstants;
 use App\Libs\MysqlDB;
 use App\Libs\NewSMS;
+use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\GiftCodeModel;
-use App\Models\ReviewCourseModel;
+use App\Models\PackageExtModel;
 use App\Models\StudentModelForApp;
 use App\Services\AIBillService;
 use App\Services\CommonServiceForApp;
@@ -24,7 +25,6 @@ use App\Services\UserPlayServices;
 use App\Services\AppVersionService;
 use App\Models\AppVersionModel;
 use App\Services\StudentService;
-use App\Services\WeChatCSService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -77,6 +77,15 @@ class Erp extends ControllerBase
         $db = MysqlDB::getDB();
         $db->beginTransaction();
 
+        $package = PackageExtModel::getByPackageId($params['package_id']);
+
+        if (empty($package)) {
+            Util::errorCapture('DSS package not found', [
+                '$params' => $params,
+            ]);
+        }
+
+        // TODO: get duration from local package data
         if (empty($params['duration_num']) || empty($params['duration_unit'])) {
             // 默认订单和换购激活码时长1年
             $giftCodeNum = 1;
@@ -86,10 +95,16 @@ class Erp extends ControllerBase
             $giftCodeUnit = $params['duration_unit'];
         }
 
-        $autoApply = ($params['auto_apply']) || ($params['app_id'] == ErpService::APP_ID_AI);
-        if ($autoApply) {
-            $parentBillId = !empty($params['parent_bill_id']) ? $params['parent_bill_id'] : $params['bill_id'];
-            $autoApply = AIBillService::autoApply($parentBillId);
+        $autoApply = true;
+
+        // 非DSS发起的订单，不自动发货
+        $parentBillId = !empty($params['parent_bill_id']) ? $params['parent_bill_id'] : $params['bill_id'];
+        if (!AIBillService::autoApply($parentBillId)) {
+            $autoApply = false;
+        };
+
+        if ($package['apply_type'] == PackageExtModel::APPLY_TYPE_SMS) {
+            $autoApply = false;
         }
 
         list($errorCode, $giftCodes) = ErpService::exchangeGiftCode(
@@ -114,6 +129,12 @@ class Erp extends ControllerBase
         );
 
         if (!empty($errorCode)) {
+            Util::errorCapture('DSS exchangeGiftCode error', [
+                '$params' => $params,
+                '$errorCode' => $errorCode,
+                '$giftCodes' => $giftCodes,
+            ]);
+
             $result = Valid::addErrors([], 'uuid', $errorCode);
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
@@ -121,25 +142,20 @@ class Erp extends ControllerBase
         $db->commit();
 
         $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
-        if (!$autoApply && !empty($giftCodes)) {
+        if (!$autoApply) {
             // 换购上线前已经提前发送激活码的用户
             $sms->sendExchangeGiftCode($params['mobile'],
                 implode(',', $giftCodes),
                 CommonServiceForApp::SIGN_STUDENT_APP);
         }
 
-        // 点评课支付成功，发送点评课短信
-        $reviewCourseType = ReviewCourseService::getBillReviewCourseType($params['package_id']);
-        if ($reviewCourseType != ReviewCourseModel::REVIEW_COURSE_NO && !empty($giftCodes)) {
-            //获取学生信息
-            $student = StudentService::getByUuid($params['uuid']);
-            // 更新点评课标记
-            ReviewCourseService::updateReviewCourseFlag($student['id'], $reviewCourseType);
-            //更新学生分配班级信息 一个学员只能分配给一个班级(当前只有体验课课包类型才允许分班)
-            if (empty($student['collection_id']) && ($reviewCourseType == ReviewCourseModel::REVIEW_COURSE_49)) {
-                ReviewCourseService::updateCollectionAndAssistantData($student, $reviewCourseType,$params['package_id']);
-            }
-        }
+        // 更新用户点评课数据，转介绍任务，付费通知
+        ReviewCourseService::updateStudentReviewCourseStatus($params['uuid'],
+            $package['package_type'],
+            $package['trial_type'],
+            $params['package_id']);
+
+
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => [

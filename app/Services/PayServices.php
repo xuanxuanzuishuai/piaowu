@@ -293,6 +293,7 @@ class PayServices
      */
     public static function hasTrialed($studentId)
     {
+        // TODO: use local package data
         $value = DictConstants::get(DictConstants::PACKAGE_CONFIG, 'package_id');
         $trialPackageIds = explode(',', $value);
         if (empty($trialPackageIds)) {
@@ -314,6 +315,7 @@ class PayServices
      */
     public static function isTrialPackage($packageId)
     {
+        // TODO: use local package data
         if (empty($packageId)) {
             return false;
         }

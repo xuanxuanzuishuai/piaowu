@@ -323,22 +323,29 @@ class CollectionService
     }
 
     /**
-     * 获取助教名下的班级列表
+     * 根据转介绍规则获取待分配班级
      * @param $assistantId
      * @param $collectionStatus
+     * @param int $packageType
+     * @param $trialType
      * @param string $publishStatus
-     * @param int $teachingType
      * @return array
      */
-    public static function getAssistantBelongCollectionList($assistantId, $collectionStatus, $publishStatus = '', $teachingType = CollectionModel::COLLECTION_TEACHING_TYPE_EXPERIENCE_CLASS)
+    public static function getRefCollection($assistantId,
+                                            $collectionStatus,
+                                            $packageType,
+                                            $trialType,
+                                            $publishStatus = null)
     {
-        //查询条件
         $where['assistant_id'] = $assistantId;
-        $where['teaching_type'] = $teachingType;
+        $where['teaching_type'] = $packageType;
+        $where['trial_type'] = $trialType;
+
         //开放状态
-        if ($publishStatus) {
+        if (!empty($publishStatus)) {
             $where['status'] = $publishStatus;
         }
+
         //班级状态
         if ($collectionStatus) {
             $time = time();
@@ -369,37 +376,41 @@ class CollectionService
             }
         }
         $where['ORDER'] = ["id" => "ASC"];
-        //查询数据
-        $collectionList = CollectionModel::getRecords($where, ['id', 'assistant_id', 'teaching_start_time', 'teaching_end_time', 'type', 'wechat_number'], false);
-        return $collectionList;
+
+        $collection = CollectionModel::getRecord($where, '*');
+        return $collection;
     }
 
     /**
      * 学生转介绍推荐人的班级助教信息
      * @param $studentId
+     * @param $packageType
+     * @param $trialType
      * @return array|mixed
      */
-    public static function getCollectionByRefereeId($studentId)
+    public static function getCollectionByRefereeId($studentId, $packageType, $trialType)
     {
         //获取学生转介绍推荐人的班级助教信息
         $refereeData = StudentRefereeService::studentRefereeUserData($studentId);
-        $data = [];
-        if ($refereeData['assistant_id']) {
-            //获取推荐人所属助教的班级数据
-            $refereeCollectionData = self::getAssistantBelongCollectionList($refereeData['assistant_id'], CollectionModel::COLLECTION_READY_TO_GO_STATUS);
-            if ($refereeCollectionData) {
-                $data = $refereeCollectionData[0];
-            }
+        if (empty($refereeData['assistant_id'])) {
+            return [];
         }
-        return $data;
+
+        $refereeCollection = self::getRefCollection($refereeData['assistant_id'],
+            CollectionModel::COLLECTION_READY_TO_GO_STATUS,
+            $packageType,
+            $trialType);
+
+        return $refereeCollection;
     }
 
     /**
      * 获取课程可以分配的集合列表
-     * @param $reviewCourseType
+     * @param $packageType
+     * @param $trialType
      * @return array|null
      */
-    public static function getCollectionByCourseType($reviewCourseType)
+    public static function getCollectionByCourseType($packageType, $trialType)
     {
         //数据库对象
         $db = MysqlDB::getDB();
@@ -423,7 +434,8 @@ class CollectionService
                     WHERE
                         c.STATUS = " . CollectionModel::COLLECTION_STATUS_IS_PUBLISH . " 
                         AND c.type = " . CollectionModel::COLLECTION_TYPE_NORMAL . " 
-                        AND c.teaching_type = " . $reviewCourseType . " 
+                        AND c.teaching_type = " . $packageType . "
+                        AND c.trial_type = " . $trialType . "
                         AND c.prepare_start_time <= " . $time . " 
                         AND c.prepare_end_time  >= " . $time . "
                     GROUP BY

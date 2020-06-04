@@ -14,6 +14,7 @@ use App\Libs\Erp;
 use App\Libs\NewSMS;
 use App\Libs\SimpleLogger;
 use App\Models\EmployeeModel;
+use App\Models\PackageExtModel;
 use App\Models\ReviewCourseLogModel;
 use App\Models\ReviewCourseTaskModel;
 use App\Services\Queue\QueueService;
@@ -31,72 +32,6 @@ use App\Models\CollectionModel;
 
 class ReviewCourseService
 {
-    /**
-     * 更新点评课标记
-     * has_review_course = 0没有|1课包49|2课包1980
-     * 只能从低级更新到高级
-     *
-     * @param $studentID
-     * @param $reviewCourseType
-     * @return null|string errorCode
-     */
-    public static function updateReviewCourseFlag($studentID, $reviewCourseType)
-    {
-        $student = StudentModel::getById($studentID);
-        if ($student['has_review_course'] >= $reviewCourseType) {
-            return null;
-        }
-
-        $update = [
-            'has_review_course' => $reviewCourseType,
-        ];
-        $affectRows = StudentModel::updateRecord($studentID, $update, false);
-
-        // 完成转介绍任务
-        $erp = new Erp();
-        $eventTaskId = ($reviewCourseType == ReviewCourseModel::REVIEW_COURSE_1980) ?
-            ErpReferralService::EVENT_TASK_ID_PAY : ErpReferralService::EVENT_TASK_ID_TRIAL_PAY;
-        $erp->updateTask($student['uuid'],
-            $eventTaskId,
-            ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
-
-        if($affectRows == 0) {
-            return 'update_student_fail';
-        }
-        //同步用户付费状态信息到crm粒子数据中
-        if ($reviewCourseType == ReviewCourseModel::REVIEW_COURSE_1980) {
-            //付费正式课包
-            QueueService::studentFirstPayNormalCourse($studentID);
-        } elseif ($reviewCourseType == ReviewCourseModel::REVIEW_COURSE_49) {
-            //付费体验课包
-            QueueService::studentFirstPayTestCourse($studentID);
-        }
-
-        return null;
-    }
-
-    /**
-     * 根据订单的 packageId 获取点评课标记
-     * @param $packageId
-     * @return int
-     */
-    public static function getBillReviewCourseType($packageId)
-    {
-        $packageIdStr = DictConstants::get(DictConstants::PACKAGE_CONFIG, 'package_id');
-        $packageIdArr = explode(',',$packageIdStr);
-        if (in_array($packageId,$packageIdArr)) {
-            return ReviewCourseModel::REVIEW_COURSE_49;
-        }
-
-        $plusPackageIdStr = DictConstants::get(DictConstants::PACKAGE_CONFIG, 'plus_package_id');
-        $plusPackageIdArr = explode(',',$plusPackageIdStr);
-        if (in_array($packageId,$plusPackageIdArr)) {
-            return ReviewCourseModel::REVIEW_COURSE_1980;
-        }
-
-        return ReviewCourseModel::REVIEW_COURSE_NO;
-    }
-
     /**
      * 点评课学生列表过滤条件
      * @param $filterParams
@@ -675,15 +610,42 @@ class ReviewCourseService
     }
 
     /**
-     * 更新学生分配班级和助教信息
-     * @param $studentInfo
-     * @param $reviewCourseType
+     * 更新点评课状态
+     * @param $uuid
+     * @param $packageType
+     * @param $trialType
      * @param $packageId
-     * @return null|int success
      */
-    public static function updateCollectionAndAssistantData($studentInfo, $reviewCourseType, $packageId)
+    public static function updateStudentReviewCourseStatus($uuid, $packageType, $trialType, $packageId)
     {
+
+        $student = StudentService::getByUuid($uuid);
+        $studentId = $student['id'];
+
+        // 更新点评课标记
+        if ($student['has_review_course'] < $packageType) {
+            $update = [
+                'has_review_course' => $packageType,
+            ];
+            StudentModel::updateRecord($studentId, $update);
+
+            self::completeEventTask($student['uuid'], $packageType, $trialType);
+
+            //同步用户付费状态信息到crm粒子数据中
+            if ($packageType == PackageExtModel::PACKAGE_TYPE_TRIAL) {
+                QueueService::studentFirstPayTestCourse($studentId);
+
+            } elseif ($packageType == PackageExtModel::PACKAGE_TYPE_NORMAL) {
+                QueueService::studentFirstPayNormalCourse($studentId);
+            }
+        }
+
+        if (!empty($student['collection_id'])) {
+            return ;
+        }
+
         /**
+         * 分配体验班级
          * 满足分配条件的班级选择规则
          * 有推荐人:
          *          (1)优先分配给推荐人所属助教的组班中的班级，不管班级启用状态，不管是否超过班容。
@@ -694,37 +656,61 @@ class ReviewCourseService
          *          (1)通过启用状态,组班期时间,班级类型,授课类型,班级当前分配学生总量筛选出班级列表
          *          (2)可分配的班级按照当天进班的学生人数按照由低到高排序,取分配人数最低的班级, 如果人数相同则选择创建时间最早的班级
          */
-        $collection = CollectionService::getCollectionByRefereeId($studentInfo['id']);
+        $collection = CollectionService::getCollectionByRefereeId($studentId, $packageType, $trialType);
         if (empty($collection)) {
-            $collection = CollectionService::getCollectionByCourseType($reviewCourseType);
-            if (empty($collection)) {
-                return null;
-            }
+            $collection = CollectionService::getCollectionByCourseType($packageType, $trialType);
         }
 
-        try {
-            //购买课包分配助教和班级
-            $allotRes = StudentService::allotCollectionAndAssistant($studentInfo['id'], $collection, EmployeeModel::SYSTEM_EMPLOYEE_ID, $packageId);
-        } catch (RunTimeException $e) {
-            $allotRes = false;
-            SimpleLogger::error('student update collection and assistant error', $e->getWebErrorData());
+        if (empty($collection)) {
+            return ;
+        }
+
+        // 分配助教和班级
+        $success = StudentService::allotCollectionAndAssistant($student['id'], $collection, EmployeeModel::SYSTEM_EMPLOYEE_ID, $packageId);
+        if ($success) {
+            SimpleLogger::error('student update collection and assistant error', []);
         }
 
         //发送班级分配完成短信:公海班级不发送
         if (($collection['type'] == CollectionModel::COLLECTION_TYPE_NORMAL) &&
-            ($reviewCourseType == ReviewCourseModel::REVIEW_COURSE_49)) {
+            ($packageType == PackageExtModel::PACKAGE_TYPE_TRIAL)) {
             // 发送奖励时长，奖励时长=开课日期-购买日期
             //  购买日 ----------- 开班前一天 --- 开班日 ------------- 结班日
             //    |                  |           |                   |
             // [2号周二   (赠送6天)  7号周日]    [8号周一  (购买14天)  21号周日]
             $giftCourseId = DictConstants::get(DictConstants::ACTIVITY_CONFIG, 'gift_course_id');
             $giftCourseNum = ceil(($collection['teaching_start_time'] - strtotime('today')) / 86400);
-            QueueService::giftCourses($studentInfo['uuid'], $giftCourseId, $giftCourseNum);
+            QueueService::giftCourses($student['uuid'], $giftCourseId, $giftCourseNum);
             //发送短信
             $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
-            $sms->sendCollectionCompleteNotify($studentInfo['mobile'], CommonServiceForApp::SIGN_STUDENT_APP, $collection);
+            $sms->sendCollectionCompleteNotify($student['mobile'], CommonServiceForApp::SIGN_STUDENT_APP, $collection);
         }
-        //返回结果
-        return $allotRes;
+    }
+
+    /**
+     * 完成转介绍任务
+     *
+     * @param $uuid
+     * @param $packageType
+     * @param $trialType
+     */
+    public static function completeEventTask($uuid, $packageType, $trialType)
+    {
+        $refTaskId = null;
+        if ($packageType == PackageExtModel::PACKAGE_TYPE_TRIAL) {
+            if ($trialType == PackageExtModel::TRIAL_TYPE_49) {
+                // 购买49体验包完成转介绍任务
+                $refTaskId = ErpReferralService::EVENT_TASK_ID_TRIAL_PAY;
+            }
+
+        } elseif ($packageType == PackageExtModel::PACKAGE_TYPE_NORMAL) {
+            // 购买正式包完成转介绍任务
+            $refTaskId = ErpReferralService::EVENT_TASK_ID_PAY;
+        }
+
+        if (!empty($refTaskId)) {
+            $erp = new Erp();
+            $erp->updateTask($uuid, $refTaskId, ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
+        }
     }
 }

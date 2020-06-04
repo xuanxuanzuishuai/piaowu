@@ -15,6 +15,7 @@ use App\Libs\Dict;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\ResponseError;
+use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Libs\Util;
 use App\Libs\Valid;
@@ -934,6 +935,7 @@ class StudentService
         });
         //学生首次购买正式课时间
         if (!empty($normalCourseStudent)) {
+            // TODO: use local package data
             $plusPackageIdStr = DictConstants::get(DictConstants::PACKAGE_CONFIG, 'plus_package_id');
             $normalCourseFirstPayTime = array_column(GiftCodeModel::getFirstNormalCourse(implode(',', $normalCourseStudent), $plusPackageIdStr), null, 'buyer');
         }
@@ -1037,14 +1039,14 @@ class StudentService
      * @param $employeeId
      * @param $packageId
      * @return bool
-     * @throws RunTimeException
      */
     public static function allotCollectionAndAssistant($studentId, $collectionInfo, $employeeId, $packageId)
     {
         //获取学生数据
         $studentInfo = StudentModel::getById($studentId);
         if (empty($studentInfo)) {
-            throw new RunTimeException(['student_not_exist']);
+//            throw new RunTimeException(['student_not_exist']);
+            return false;
         }
         //班级和助教数据
         $time = time();
@@ -1057,19 +1059,32 @@ class StudentService
         }
         $affectRows = StudentModel::updateRecord($studentInfo['id'], $update, false);
         if (empty($affectRows)) {
-            throw new RunTimeException(['update_student_collection_fail']);
+            SimpleLogger::error('update_student_collection_fail', [
+                '$studentId' => $studentId,
+                '$collectionInfo' => $collectionInfo,
+                '$employeeId' => $employeeId,
+                '$packageId' => $packageId,
+                '$update' => $update,
+            ]);
+            return false;
         }
         //添加班级分配日志
         $logData = self::formatAllotCollectionLogData([$studentInfo], $collectionInfo['id'], $employeeId, $time);
         $res = self::addAllotCollectionLog($logData);
         if (empty($res)) {
-            throw new RunTimeException(['add_allot_collection_log_failed']);
+            SimpleLogger::error('add_allot_collection_log_failed', [
+                '$logData' => $logData,
+            ]);
+            return false;
         }
         //添加助教分配日志
         $logData = self::formatAllotAssistantLogData([$studentInfo], $collectionInfo['assistant_id'], $employeeId, $time);
         $res = self::addAllotAssistantLog($logData);
         if (empty($res)) {
-            throw new RunTimeException(['add_allot_assistant_log_failed']);
+            SimpleLogger::error('add_allot_assistant_log_failed', [
+                '$logData' => $logData,
+            ]);
+            return false;
         }
         //同步观单数据
         QueueService::studentSyncWatchList($studentInfo['id']);
