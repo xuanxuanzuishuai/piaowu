@@ -11,6 +11,7 @@ namespace App\Services;
 
 use App\Libs\DictConstants;
 use App\Libs\Util;
+use App\Models\ErpPackageModel;
 use App\Models\PackageExtModel;
 
 class PackageService
@@ -25,9 +26,9 @@ class PackageService
         $where = [];
 
         if (!empty($params['package_id'])) {
-            $where['id'] = $params['package_id'];
+            $where[ErpPackageModel::$table . '.id'] = $params['package_id'];
         } elseif (!empty($params['package_name'])) {
-            $where['name'] = Util::sqlLike($params['package_name']);
+            $where[ErpPackageModel::$table . '.name'] = Util::sqlLike($params['package_name']);
         }
 
         if (isset($params['package_status'])) {

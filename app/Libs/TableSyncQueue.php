@@ -49,9 +49,9 @@ class TableSyncQueue
         $record = $model::getById($message['id']);
 
         if (empty($record)) {
-            $model::insertRecord($message['record']);
+            $ret = $model::insertRecord($message['record']);
         } else {
-            $model::updateRecord($message['id'], $message['record']);
+            $ret = $model::updateRecord($message['id'], $message['record']);
         }
 
         if (empty($ret)) {
