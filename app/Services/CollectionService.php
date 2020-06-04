@@ -578,10 +578,10 @@ class CollectionService
             // 获取班级信息
             $collection = CollectionModel::getRecord([
                 'id' => $collectionId
-            ], ['wechat_number', 'wechat_qr', 'teaching_end_time'], false);
+            ], ['wechat_number', 'wechat_qr', 'teaching_end_time', 'type'], false);
 
-            // 班级仍在有效期
-            if ($collection['teaching_end_time'] > time()) {
+            // 班级仍在有效期, 或公海班级
+            if ($collection['teaching_end_time'] > time() || $collection['type'] == CollectionModel::COLLECTION_TYPE_PUBLIC) {
                 $needAddWx = 1;
                 $wechatQr = AliOSS::signUrls($collection["wechat_qr"]);
                 $wechatNumber = $collection['wechat_number'];
