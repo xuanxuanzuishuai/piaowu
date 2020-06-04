@@ -43,7 +43,13 @@ class Pay extends ControllerBase
         }
 
         $student = StudentService::getByUuid($params['uuid']);
-        $packageId = DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'package_id');
+
+        // pkg=1或者不传 代表49元的课包  pkg=2 代表9.9元的小课包
+        if (!empty('pkg') && $params['pkg'] == 2) {
+            $packageId = DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'mini_package_id');
+        } else {
+            $packageId = DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'package_id');
+        }
         if (PayServices::isTrialPackage($packageId) && PayServices::hasTrialed($student['id'])) {
             SimpleLogger::error('has_trialed', ['student_id' => $student['id']]);
             $ret = Valid::addAppErrors([], 'has_trialed');
