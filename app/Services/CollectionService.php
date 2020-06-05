@@ -183,20 +183,23 @@ class CollectionService
      */
     public static function getStudentCollectionList($params, $page = 1, $limit = 20)
     {
-        //搜索条件
+        $time = time();
+
         $limit = " limit " . ($page - 1) * $limit . "," . $limit;
         $orderBy = " order by c.id desc ";
         $where = "where 1=1";
-        $time = time();
-        $list = [];
+
         $type = $params['type'] ?? CollectionModel::COLLECTION_TYPE_NORMAL;
         $where .= " and a.type=" . $type;
+
         if ($params['id'] && is_numeric($params['id'])) {
             $where .= " and a.id=" . $params['id'];
+
+        } elseif (!empty($params['name'])) {
+            $like = Util::sqlLike($params['package_name']);
+            $where .= " and a.name like {$like} ";
         }
-        if ($params['name']) {
-            $where .= " and a.name='" . $params['name'] . "'";
-        }
+
         if ($params['assistant_id'] && is_numeric($params['assistant_id'])) {
             $where .= " and a.assistant_id=" . $params['assistant_id'];
         }
@@ -221,12 +224,22 @@ class CollectionService
         if ($params['publish_status']) {
             $where .= " and a.status=" . $params['publish_status'];
         }
+
+        if (isset($params['teaching_type'])) {
+            $where .= " and a.teaching_type=" . (int)$params['teaching_type'];
+        }
+
+        if (isset($params['trial_type'])) {
+            $where .= " and a.trial_type=" . (int)$params['trial_type'];
+        }
+
         //学生数量:最低值默认0
         $studentMinCount = empty($params['student_min_count']) ? 0 : (int)$params['student_min_count'];
         $having = " HAVING student_count>=" . $studentMinCount;
         if (!empty($params['student_max_count']) && is_numeric($params['student_max_count'])) {
             $having .= " and student_count<=" . $params['student_max_count'];
         }
+
         //班级状态
         switch ($params['process_status']) {
             case CollectionModel::COLLECTION_PREPARE_STATUS:
@@ -262,34 +275,34 @@ class CollectionService
         $countSql = "SELECT count(*) as datanum, " . $whereSql;
         $countData = $db->queryAll($countSql);
         $count = count($countData);
-        if (!empty($count)) {
-            $listSql = "SELECT c.*," . $whereSql . $orderBy . $limit;
-            $list = $db->queryAll($listSql);
-            $dictTypeList = DictService::getListsByTypes([Constants::COLLECTION_PUBLISH_STATUS, Constants::COLLECTION_PROCESS_STATUS]);
-            $collectionProcessStatusDict = array_column($dictTypeList[Constants::COLLECTION_PROCESS_STATUS], null, "code");
-            $collectionPublishStatusDict = array_column($dictTypeList[Constants::COLLECTION_PUBLISH_STATUS], null, "code");
 
-            $packageTypeDict = DictConstants::getSet(DictConstants::PACKAGE_TYPE);
-            $trialTypeDict = DictConstants::getSet(DictConstants::TRIAL_TYPE);
-
-            //转换数据格式
-            foreach ($list as &$lv) {
-                $lv['oss_wechat_qr'] = AliOSS::signUrls($lv['wechat_qr']);
-                $lv['publish_status_name'] = $collectionPublishStatusDict[$lv['status']]['value'];
-                $lv['process_status_name'] = $collectionProcessStatusDict[self::collectionProcessStatusDict($time, $lv['prepare_start_time'], $lv['prepare_end_time'], $lv['teaching_start_time'], $lv['teaching_end_time'])]['value'];
-                $lv['process_status'] = self::collectionProcessStatusDict($time, $lv['prepare_start_time'], $lv['prepare_end_time'], $lv['teaching_start_time'], $lv['teaching_end_time']);
-                $lv['prepare_start_time'] = date("Y-m-d", $lv['prepare_start_time']);
-                $lv['prepare_end_time'] = date("Y-m-d", $lv['prepare_end_time']);
-                $lv['teaching_start_time'] = date("Y-m-d", $lv['teaching_start_time']);
-                $lv['teaching_end_time'] = date("Y-m-d", $lv['teaching_end_time']);
-                $lv['create_time'] = date("Y-m-d H:i", $lv['create_time']);
-
-                $lv['teaching_type_name'] = $packageTypeDict[$lv['teaching_type']] ?? '-';
-                $lv['trial_type_name'] = $trialTypeDict[$lv['trial_type']] ?? '-';
-            }
+        if (empty($count)) {
+            return [0, []];
         }
 
-        //返回结果
+        $listSql = "SELECT c.*," . $whereSql . $orderBy . $limit;
+        $list = $db->queryAll($listSql);
+
+        $dictTypeList = DictService::getListsByTypes([Constants::COLLECTION_PUBLISH_STATUS, Constants::COLLECTION_PROCESS_STATUS]);
+        $collectionProcessStatusDict = array_column($dictTypeList[Constants::COLLECTION_PROCESS_STATUS], null, "code");
+        $collectionPublishStatusDict = array_column($dictTypeList[Constants::COLLECTION_PUBLISH_STATUS], null, "code");
+        $packageTypeDict = DictConstants::getSet(DictConstants::PACKAGE_TYPE);
+        $trialTypeDict = DictConstants::getSet(DictConstants::TRIAL_TYPE);
+
+        foreach ($list as &$lv) {
+            $lv['oss_wechat_qr'] = AliOSS::signUrls($lv['wechat_qr']);
+            $lv['publish_status_name'] = $collectionPublishStatusDict[$lv['status']]['value'];
+            $lv['process_status_name'] = $collectionProcessStatusDict[self::collectionProcessStatusDict($time, $lv['prepare_start_time'], $lv['prepare_end_time'], $lv['teaching_start_time'], $lv['teaching_end_time'])]['value'];
+            $lv['process_status'] = self::collectionProcessStatusDict($time, $lv['prepare_start_time'], $lv['prepare_end_time'], $lv['teaching_start_time'], $lv['teaching_end_time']);
+            $lv['prepare_start_time'] = date("Y-m-d", $lv['prepare_start_time']);
+            $lv['prepare_end_time'] = date("Y-m-d", $lv['prepare_end_time']);
+            $lv['teaching_start_time'] = date("Y-m-d", $lv['teaching_start_time']);
+            $lv['teaching_end_time'] = date("Y-m-d", $lv['teaching_end_time']);
+            $lv['create_time'] = date("Y-m-d H:i", $lv['create_time']);
+            $lv['teaching_type_name'] = $packageTypeDict[$lv['teaching_type']] ?? '-';
+            $lv['trial_type_name'] = $trialTypeDict[$lv['trial_type']] ?? '-';
+        }
+
         return [$count, $list];
     }
 
