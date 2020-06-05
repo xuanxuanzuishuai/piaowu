@@ -25,12 +25,12 @@ class AIPlayRecordService
     const DEFAULT_APP_VER = '5.0.0';
 
     /**
-     * 演奏数据
+     * 开始演奏
      * @param $studentId
      * @param $params
-     * @return int
+     * @return int|mixed|null|string
      */
-    public static function end($studentId, $params)
+    public static function start($studentId, $params)
     {
         $now = time();
 
@@ -63,16 +63,95 @@ class AIPlayRecordService
             'score_speed' => self::formatScore($params['score_speed']),
             'score_speed_average' => self::formatScore($params['score_speed_average']),
             'data_type' => $params['data_type'],
+            'track_id' => $params['track_id']
         ];
 
-        $recordId =  AIPlayRecordModel::insertRecord($recordData);
-
+        $recordId = AIPlayRecordModel::insertRecord($recordData);
         if (empty($recordId)) {
             return 0;
         }
 
         StudentModel::updateRecord($studentId, ['last_play_time' => $now], false);
 
+        return $recordId;
+    }
+
+    /**
+     * 演奏过程
+     * @param $params
+     * @return int|null
+     */
+    public static function heartBeat($params)
+    {
+        $playRecord = AIPlayRecordModel::getRecord(['track_id' => $params['track_id']]);
+        if (empty($playRecord)) {
+            return 0;
+        }
+
+        $recordId = AIPlayRecordModel::updateRecord($playRecord['id'], ['duration' => $params['duration']]);
+        if (empty($recordId)) {
+            return 0;
+        }
+
+        return $recordId;
+    }
+
+    /**
+     * 演奏数据
+     * @param $studentId
+     * @param $params
+     * @return int
+     */
+    public static function end($studentId, $params)
+    {
+        $now = time();
+
+        // 处理毫秒时间戳，转为秒
+        if ($params['created_at'] > 2000000000) {
+            $params['created_at'] = intval($params['created_at']/1000);
+        }
+
+        $playRecord = [];
+        if (!empty($params['track_id'])) {
+            $playRecord = AIPlayRecordModel::getRecord(['track_id' => $params['track_id']]);
+        }
+
+        $recordData = [
+            'student_id' => $studentId,
+            'lesson_id' => $params['lesson_id'] ?? 0,
+            'score_id' => $params['score_id'] ?? 0,
+            'record_id' => $params['record_id'] ?? 0,
+            'is_phrase' => $params['is_phrase'] ?? 0,
+            'phrase_id' => $params['phrase_id'] ?? 0,
+            'practice_mode' => $params['practice_mode'] ?? 0,
+            'hand' => $params['hand'] ?? 0,
+            'ui_entry' => $params['ui_entry'] ?? 0,
+            'input_type' => $params['input_type'] ?? 0,
+            'create_time' => $now,
+
+            // 演奏结束时间，演奏时间跨天时，数据归为结束时间所在天
+            'end_time' => $params['created_at'] + $params['duration'],
+            'duration' => $params['duration'],
+            'audio_url' => $params['audio_url'] ?? '',
+            'score_final' => self::formatScore($params['score_final']),
+            'score_complete' => self::formatScore($params['score_complete']),
+            'score_pitch' => self::formatScore($params['score_pitch']),
+            'score_rhythm' => self::formatScore($params['score_rhythm']),
+            'score_speed' => self::formatScore($params['score_speed']),
+            'score_speed_average' => self::formatScore($params['score_speed_average']),
+            'data_type' => $params['data_type'],
+        ];
+
+        if (empty($params['track_id']) || empty($playRecord)) {
+            $recordData['track_id'] = 0;
+            $recordId = AIPlayRecordModel::insertRecord($recordData);
+        } else {
+            $recordId = AIPlayRecordModel::updateRecord($playRecord['id'], $recordData);
+        }
+
+        if (empty($recordId)) {
+            return 0;
+        }
         return $recordId;
     }
 

@@ -29,6 +29,12 @@ class PlayClassRecordMessageService
             case 'class_update':
                 $ret = self::save($message);
                 break;
+            case 'play_start':
+                $ret = self::playStart($message['msg_body']);
+                break;
+            case 'play_heart_beat':
+                $ret = self::heartBeat($message['msg_body']);
+                break;
             case 'play_end':
                 $ret = self::playEnd($message['msg_body']);
                 break;
@@ -82,6 +88,32 @@ class PlayClassRecordMessageService
         return $id;
     }
 
+    public static function playStart($message)
+    {
+        $student = StudentService::getByUuid($message['uuid']);
+        if (empty($student)) {
+            return 0;
+        }
+        $result = AIPlayRecordService::start($student['id'], $message);
+        if (empty($result)) {
+            SimpleLogger::error(__FILE__ . ":" . __LINE__ . " play start error ", [
+                'message' => $message
+            ]);
+        }
+        return $result;
+    }
+
+    public static function heartBeat($message)
+    {
+        $result = AIPlayRecordService::heartBeat($message);
+        if (empty($result)) {
+            SimpleLogger::error( __FILE__ . ":" . __LINE__ . " play heart beat error", [
+                'message' => $message
+            ]);
+        }
+        return $result;
+    }
+
     public static function playEnd($message)
     {
         $student = StudentService::getByUuid($message['uuid']);
@@ -89,6 +121,12 @@ class PlayClassRecordMessageService
             return 0;
         }
 
-        return AIPlayRecordService::end($student['id'], $message);
+        $result = AIPlayRecordService::end($student['id'], $message);
+        if (empty($result)) {
+            SimpleLogger::error(__FILE__ . ":" . __LINE__ . " play end error", [
+                'message' => $message
+            ]);
+        }
+        return $result;
     }
 }
