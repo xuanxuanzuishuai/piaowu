@@ -644,6 +644,10 @@ class ReviewCourseService
             return ;
         }
 
+        if ($packageType == PackageExtModel::PACKAGE_TYPE_NORMAL) {
+            return ;
+        }
+
         /**
          * 分配体验班级
          * 满足分配条件的班级选择规则
