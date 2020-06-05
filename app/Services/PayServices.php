@@ -11,6 +11,7 @@ namespace App\Services;
 use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Models\GiftCodeModel;
+use App\Models\PackageExtModel;
 use App\Models\ReviewCourseModel;
 use App\Models\StudentModelForApp;
 
@@ -286,6 +287,7 @@ class PayServices
         return $ret;
     }
 
+
     /**
      * 用户是否购买过体验包
      * @param $studentId
@@ -293,9 +295,8 @@ class PayServices
      */
     public static function hasTrialed($studentId)
     {
-        // TODO: use local package data
-        $value = DictConstants::get(DictConstants::PACKAGE_CONFIG, 'package_id');
-        $trialPackageIds = explode(',', $value);
+        $trailPackages = PackageExtModel::getPackages(['package_type' => PackageExtModel::PACKAGE_TYPE_TRIAL]);
+        $trialPackageIds = array_column($trailPackages, 'package_id');
         if (empty($trialPackageIds)) {
             return false;
         }
@@ -315,13 +316,15 @@ class PayServices
      */
     public static function isTrialPackage($packageId)
     {
-        // TODO: use local package data
         if (empty($packageId)) {
             return false;
         }
 
-        $value = DictConstants::get(DictConstants::PACKAGE_CONFIG, 'package_id');
-        $trialPackageIds = explode(',', $value);
-        return in_array($packageId, $trialPackageIds);
+        $trailPackages = PackageExtModel::getPackages([
+            'package_type' => PackageExtModel::PACKAGE_TYPE_TRIAL,
+            'package_id' => $packageId
+        ]);
+
+        return empty($trailPackages) ? false : true;
     }
 }
