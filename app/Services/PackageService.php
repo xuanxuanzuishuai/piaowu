@@ -100,10 +100,6 @@ class PackageService
             return null;
         }
 
-        if (!PackageService::validateTrialType($params['package_type'], $params['trial_type'])) {
-            throw new RunTimeException(['invalid_trial_type']);
-        }
-
         $update = [
             'update_time' => time(),
             'operator' => $operator,
@@ -113,11 +109,16 @@ class PackageService
             $update['apply_type'] = $params['apply_type'];
         }
 
-        if (isset($params['package_type'])) {
-            $update['package_type'] = $params['package_type'];
-        }
+        if (isset($params['package_type']) || isset($params['trial_type'])) {
+            if ($params['package_type'] == PackageExtModel::PACKAGE_TYPE_NORMAL) {
+                $params['trial_type'] = PackageExtModel::TRIAL_TYPE_NONE;
+            }
 
-        if (isset($params['trial_type'])) {
+            if (!PackageService::validateTrialType($params['package_type'], $params['trial_type'])) {
+                throw new RunTimeException(['invalid_trial_type']);
+            }
+
+            $update['package_type'] = $params['package_type'];
             $update['trial_type'] = $params['trial_type'];
         }
 

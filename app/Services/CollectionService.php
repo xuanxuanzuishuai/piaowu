@@ -13,6 +13,7 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
 use App\Models\CollectionModel;
 use App\Models\CollectionAssistantLogModel;
+use App\Models\PackageExtModel;
 use App\Models\StudentAssistantLogModel;
 use App\Models\StudentModel;
 use App\Models\DictModel;
@@ -35,6 +36,10 @@ class CollectionService
         // 不能添加公海班级
         if ($params['type'] == CollectionModel::COLLECTION_TYPE_PUBLIC) {
             throw new RunTimeException(['cant_add_public_collection']);
+        }
+
+        if ($params['teaching_type'] == PackageExtModel::PACKAGE_TYPE_NORMAL) {
+            $params['trial_type'] = PackageExtModel::TRIAL_TYPE_NONE;
         }
 
         if (!PackageService::validateTrialType($params['teaching_type'], $params['trial_type'])) {
@@ -146,15 +151,18 @@ class CollectionService
         if ($params['capacity']) {
             $collectionData['capacity'] = $params['capacity'];
         }
-        if ($params['teaching_type']) {
-            $collectionData['teaching_type'] = $params['teaching_type'];
-        }
-        if (isset($params['trial_type']) && $params['trial_type'] !== null) {
-            $collectionData['trial_type'] = $params['trial_type'];
-        }
 
-        if (!PackageService::validateTrialType($params['teaching_type'], $params['trial_type'])) {
-            throw new RunTimeException(['invalid_trial_type']);
+        if (isset($params['teaching_type']) || isset($params['trial_type'])) {
+            if ($params['teaching_type'] == PackageExtModel::PACKAGE_TYPE_NORMAL) {
+                $params['trial_type'] = PackageExtModel::TRIAL_TYPE_NONE;
+            }
+
+            if (!PackageService::validateTrialType($params['teaching_type'], $params['trial_type'])) {
+                throw new RunTimeException(['invalid_trial_type']);
+            }
+
+            $collectionData['teaching_type'] = $params['teaching_type'];
+            $collectionData['trial_type'] = $params['trial_type'];
         }
 
         $collectionData['update_time'] = time();

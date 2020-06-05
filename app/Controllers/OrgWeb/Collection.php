@@ -107,11 +107,6 @@ class Collection extends ControllerBase
                 'key' => 'teaching_type',
                 'type' => 'required',
                 'error_code' => 'collection_teaching_type_is_required'
-            ],
-            [
-                'key' => 'trial_type',
-                'type' => 'required',
-                'error_code' => 'collection_trial_type_is_required'
             ]
         ];
         //验证合法性
