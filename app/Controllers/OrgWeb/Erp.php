@@ -77,12 +77,18 @@ class Erp extends ControllerBase
         $db = MysqlDB::getDB();
         $db->beginTransaction();
 
-        $package = PackageExtModel::getByPackageId($params['package_id']);
+        if (empty($params['package_id'])) {
+            // 赠单没有package_id
+            $package = null;
 
-        if (empty($package)) {
-            Util::errorCapture('DSS package not found', [
-                '$params' => $params,
-            ]);
+        } else {
+            $package = PackageExtModel::getByPackageId($params['package_id']);
+
+            if (empty($package)) {
+                Util::errorCapture('DSS package not found', [
+                    '$params' => $params,
+                ]);
+            }
         }
 
         // TODO: get duration from local package data
@@ -103,7 +109,7 @@ class Erp extends ControllerBase
             $autoApply = false;
         };
 
-        if ($package['apply_type'] == PackageExtModel::APPLY_TYPE_SMS) {
+        if (!empty($package) && $package['apply_type'] == PackageExtModel::APPLY_TYPE_SMS) {
             $autoApply = false;
         }
 
@@ -149,11 +155,13 @@ class Erp extends ControllerBase
                 CommonServiceForApp::SIGN_STUDENT_APP);
         }
 
-        // 更新用户点评课数据，转介绍任务，付费通知
-        ReviewCourseService::updateStudentReviewCourseStatus($params['uuid'],
-            $package['package_type'],
-            $package['trial_type'],
-            $params['package_id']);
+        if (!empty($package)) {
+            // 更新用户点评课数据，转介绍任务，付费通知
+            ReviewCourseService::updateStudentReviewCourseStatus($params['uuid'],
+                $package['package_type'],
+                $package['trial_type'],
+                $params['package_id']);
+        }
 
 
         return $response->withJson([
