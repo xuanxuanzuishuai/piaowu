@@ -80,25 +80,17 @@ class CollectionService
      */
     public static function getStudentCollectionDetailByID($id)
     {
-        //获取数据库对象
-        $db = MysqlDB::getDB();
-        $time = time();
-        // TODO: 换成 Model 方法
-        $querySql = "SELECT 
-                        a.id,a.name,a.assistant_id,a.capacity,a.remark,a.prepare_start_time,
-                        a.prepare_end_time,a.teaching_start_time,a.teaching_end_time,a.wechat_qr,
-                        a.wechat_number,a.status,a.teaching_type
-                    FROM " . CollectionModel::$table . " as a
-                    WHERE a.id = " . $id;
-        //获取数据
-        $list = $db->queryAll($querySql);
-        if ($list) {
-            foreach ($list as &$cv) {
-                $cv['oss_wechat_qr'] = AliOSS::signUrls($cv['wechat_qr']);
-                $cv['process_status'] = self::collectionProcessStatusDict($time, $cv['prepare_start_time'], $cv['prepare_end_time'], $cv['teaching_start_time'], $cv['teaching_end_time']);
-            }
+        $list = CollectionModel::getRecords(['id' => $id], '*');
+        if (empty($list)) {
+            return [];
         }
-        //返回结果
+
+        $time = time();
+        foreach ($list as &$cv) {
+            $cv['oss_wechat_qr'] = AliOSS::signUrls($cv['wechat_qr']);
+            $cv['process_status'] = self::collectionProcessStatusDict($time, $cv['prepare_start_time'], $cv['prepare_end_time'], $cv['teaching_start_time'], $cv['teaching_end_time']);
+        }
+
         return $list;
     }
 
