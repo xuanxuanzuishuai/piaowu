@@ -188,8 +188,8 @@ class CollectionService
             $where .= " and a.id=" . $params['id'];
 
         } elseif (!empty($params['name'])) {
-            $like = Util::sqlLike($params['package_name']);
-            $where .= " and a.name like {$like} ";
+            $like = Util::sqlLike($params['name']);
+            $where .= " and a.name like '{$like}' ";
         }
 
         if ($params['assistant_id'] && is_numeric($params['assistant_id'])) {
