@@ -235,7 +235,8 @@ class Auth extends ControllerBase
                 $params['code'],
                 $channelId,
                 $adChannel,
-                $adParams);
+                $adParams,
+                $params['referee_id'] ?? NULL);
             $db->commit();
 
         } catch (RunTimeException $e) {

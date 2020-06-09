@@ -117,16 +117,17 @@ class UserService
      * @param int $qrHeight     二维码图片高度
      * @param int $qrX          二维码图片在海报中的X轴位置
      * @param int $qrY          二维码图片在海报中的Y轴位置
+     * @param int $channelId    二维码包含的渠道id
      * @return array|string
      */
-    public static function generateQRPosterAliOss($userId, $posterFile, $type = 1, $imageWidth, $imageHeight, $qrWidth, $qrHeight, $qrX, $qrY)
+    public static function generateQRPosterAliOss($userId, $posterFile, $type, $imageWidth, $imageHeight, $qrWidth, $qrHeight, $qrX, $qrY, $channelId)
     {
         //合成海报保存目录
         $posterFirstDir = UserQrTicketModel::$posterDir[$type];
         //海报保存二级目录
         $posterSecondDir = md5($posterFile);
         //海报文件名称
-        $posterFileName = $userId.".png";
+        $posterFileName = $userId . "_" . $channelId . ".png";
         //获取宣传海报文件：不存在重新生成
         $posterSaveFullPath = $_ENV['STATIC_FILE_SAVE_PATH'] . "/".$posterFirstDir."/".$posterSecondDir."/".$posterFileName;
         if (!file_exists($posterSaveFullPath)) {
@@ -138,7 +139,7 @@ class UserService
                 return;
             }
             //用户二维码
-            $userQrUrl = self::getUserQRAliOss($userId, $type);
+            $userQrUrl = self::getUserQRAliOss($userId, $type, $channelId);
             if (empty($userQrUrl)) {
                 SimpleLogger::info('user qr make fail', [$userId,$type]);
                 return;
@@ -183,12 +184,13 @@ class UserService
      * 学生端微信分享二维码
      * @param $userId       学生 id或老师id
      * @param int $type 推荐人类型 1 学生 2 老师
+     * @param int $channelId
      * @return array|mixed
      */
-    public static function getUserQRAliOss($userId, $type = 1)
+    public static function getUserQRAliOss($userId, $type, $channelId)
     {
         //获取学生转介绍学生二维码资源数据
-        $res = UserQrTicketModel::getRecord(['AND' => ['user_id' => $userId, 'type' => $type]], [], false);
+        $res = UserQrTicketModel::getRecord(['AND' => ['user_id' => $userId, 'type' => $type, 'channel_id' => $channelId]], [], false);
         if (!empty($res['qr_url'])) {
             return $res;
         }
@@ -196,7 +198,7 @@ class UserService
         try {
             //生成二维码
             $userQrTicket = RC4::encrypt($_ENV['COOKIE_SECURITY_KEY'], $type . "_" . $userId);
-            $content = $_ENV["AI_REFERRER_URL"] . "?referee_id=" . $userQrTicket;
+            $content = $_ENV["AI_REFERRER_URL"] . "?referee_id=" . $userQrTicket . "&channel_id=" . $channelId . "&ad=0";
             $time = time();
             list($filePath, $fileName) = QRCodeModel::genImage($content, $time);
             chmod($filePath, 0755);

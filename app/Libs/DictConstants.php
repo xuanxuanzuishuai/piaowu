@@ -261,6 +261,11 @@ class DictConstants {
         'keys' => ['COMMUNITY_UPLOAD_POSTER_URL']
     ];
 
+    const STUDENT_INVITE_CHANNEL = [
+        'type' => 'STUDENT_INVITE',
+        'keys' => ['NORMAL_STUDENT_INVITE_STUDENT']
+    ];
+
     public static function get($type, $key)
     {
         if (empty($type) || empty($key)) {

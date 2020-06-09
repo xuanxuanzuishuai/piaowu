@@ -8,6 +8,7 @@
 
 namespace App\Controllers\StudentWX;
 
+use App\Libs\DictConstants;
 use App\Libs\RedisDB;
 use App\Models\UserQrTicketModel;
 use App\Models\WeChatOpenIdListModel;
@@ -99,7 +100,7 @@ class WeChatMsgHandler
                     }
                     $settings = json_decode($referralConfig['settings'], true);
                     //生成二维码海报
-                    $posterImgFile = UserService::generateQRPosterAliOss($user['user_id'], $referralConfig['url'], UserQrTicketModel::STUDENT_TYPE, $settings['poster_width'], $settings['poster_height'], $settings['qr_width'], $settings['qr_height'], $settings['qr_x'], $settings['qr_y']);
+                    $posterImgFile = UserService::generateQRPosterAliOss($user['user_id'], $referralConfig['url'], UserQrTicketModel::STUDENT_TYPE, $settings['poster_width'], $settings['poster_height'], $settings['qr_width'], $settings['qr_height'], $settings['qr_x'], $settings['qr_y'], DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'NORMAL_STUDENT_INVITE_STUDENT'));
                     if(!empty($posterImgFile)){
                         //上传到微信服务器
                         $data = WeChatService::uploadImg($posterImgFile,UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,UserWeixinModel::USER_TYPE_STUDENT);
