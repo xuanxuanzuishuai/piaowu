@@ -237,9 +237,10 @@ class UserService
      * @param $qrHeight
      * @param $qrX
      * @param $qrY
+     * @param $channelId
      * @return array|string
      */
-    public static function addQrWaterMarkAliOss($userId, $posterFile, $type = 1, $imageWidth, $imageHeight, $qrWidth, $qrHeight, $qrX, $qrY)
+    public static function addQrWaterMarkAliOss($userId, $posterFile, $type = 1, $imageWidth, $imageHeight, $qrWidth, $qrHeight, $qrX, $qrY, $channelId)
     {
         //海报资源
         $posterAliOssFileExits = AliOSS::doesObjectExist($posterFile);
@@ -249,7 +250,7 @@ class UserService
             return $resImgFile;
         }
         //用户二维码
-        $userQrUrl = self::getUserQRAliOss($userId, $type);
+        $userQrUrl = self::getUserQRAliOss($userId, $type, $channelId);
         if (empty($userQrUrl)) {
             SimpleLogger::info('user qr make fail', [$userId, $type]);
             return $resImgFile;

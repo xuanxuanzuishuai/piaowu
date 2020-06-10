@@ -107,7 +107,8 @@ class ReferralActivityService
             $settings['qr_width'],
             $settings['qr_height'],
             $settings['qr_x'],
-            $settings['qr_y']);
+            $settings['qr_y'],
+            DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'NORMAL_STUDENT_INVITE_STUDENT'));
         if (empty($posterImgFile)) {
             return $data;
         }
@@ -555,7 +556,7 @@ class ReferralActivityService
 
             //生成二维码海报
             $posterImgFile = UserService::generateQRPosterAliOss($userId, $posterUrl, UserQrTicketModel::STUDENT_TYPE,
-                $settings['poster_width'], $settings['poster_height'], $settings['qr_width'], $settings['qr_height'], $settings['qr_x'], $settings['qr_y']);
+                $settings['poster_width'], $settings['poster_height'], $settings['qr_width'], $settings['qr_height'], $settings['qr_x'], $settings['qr_y'], DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'NORMAL_STUDENT_INVITE_STUDENT'));
             if (!empty($posterImgFile)) {
                 //上传到微信服务器
                 $data = WeChatService::uploadImg($posterImgFile, $appId, $userType);
@@ -695,7 +696,8 @@ class ReferralActivityService
             $settings['qr_width'],
             $settings['qr_height'],
             $settings['qr_x'],
-            $settings['qr_y']);
+            $settings['qr_y'],
+            DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'NORMAL_STUDENT_INVITE_STUDENT'));
         $data['activity_info']['poster_oss_url'] = $posterImgFile;
         $data['activity_info']['share_word'] = Util::textDecode($posterInfo['content2']);
         $data['activity_info']['valid_end_time'] = $studentInfo['collection']['info']['teaching_end_time'] + Util::TIMESTAMP_ONEDAY * $studentInfo['collection']['task_condition']['valid_time_range_day'];
