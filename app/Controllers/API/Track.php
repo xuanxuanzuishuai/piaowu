@@ -65,4 +65,52 @@ class Track extends ControllerBase
         $ret = ['ret' => 0, 'msg' => 'OK'];
         return $response->withJson($ret, StatusCode::HTTP_OK);
     }
+
+    /**
+     * 渠道商调用接口
+     * 查询idfa是否存在
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function checkIdfa(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        if (empty($params['idfa'])) {
+            return $response->withJson([], StatusCode::HTTP_OK);
+        }
+
+        $data = TrackService::match($params);
+        if (empty($data)) {
+            return $response->withJson([$params['idfa'] => 0], StatusCode::HTTP_OK);
+        }
+
+        return $response->withJson([$params['idfa'] => 1], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * 推广用户开始任务
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function clickIdfa(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        if (empty($params['idfa']) || empty($params['callback'])) {
+            return $response->withJson(['errno' => 1, 'error' => 'fail'], StatusCode::HTTP_OK);
+        }
+
+        $info['platform'] = TrackService::PLAT_ID_IOS;
+        $info['ad_channel'] = TrackService::CHANNEL_IOS_IDFA;
+        $info['idfa'] = $params['idfa'];
+        $info['callback'] = $params['callback'];
+
+        $trackData = TrackService::trackEvent(TrackService::TRACK_EVENT_INIT, $info);
+        if ($trackData['complete']) {
+            return $response->withJson(['errno' => 0, 'error' => 'success'], StatusCode::HTTP_OK);
+        }
+
+        return $response->withJson(['errno' => 1, 'error' => 'fail'], StatusCode::HTTP_OK);
+    }
 }

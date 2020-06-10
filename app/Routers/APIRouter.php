@@ -33,6 +33,16 @@ class APIRouter extends RouterBase
             'call' => Track::class . ':adEventWx',
             'middles' => [],
         ],
+        '/api/track/idfaQueryApi' => [
+            'method' => ['get'],
+            'call' => Track::class . ':checkIdfa',
+            'middles' => []
+        ],
+        '/api/track/idfaClickApi' => [
+            'method' => ['post'],
+            'call' => Track::class . ':clickIdfa',
+            'middles' => []
+        ],
         //百度文字转语音
         '/api/baidu/audio_token' => [
             'method'  => ['get'],

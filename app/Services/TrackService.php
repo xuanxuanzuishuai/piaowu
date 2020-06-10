@@ -41,6 +41,7 @@ class TrackService
     const CHANNEL_GDT = 2;
     const CHANNEL_WX = 3;
     const CHANNEL_OCEAN_LEADS = 4; // 头条，线索转化追踪
+    const CHANNEL_IOS_IDFA = 5; // iOS 激活推广 idfa
 
     public static function addInfo($info, $eventType = NULL)
     {
@@ -205,7 +206,7 @@ class TrackService
 
     public static function trackCallback($eventType, $trackData)
     {
-        SimpleLogger::debug("[trackEvent] callback", ['as_channel' => $trackData['ad_channel']]);
+        SimpleLogger::debug("[trackEvent] callback", ['ad_channel' => $trackData['ad_channel']]);
         switch ($trackData['ad_channel']) {
             case self::CHANNEL_OTHER:
                 return true;
@@ -217,6 +218,8 @@ class TrackService
                 return self::trackCallbackWX($eventType, $trackData);
             case self::CHANNEL_OCEAN_LEADS:
                 return self::trackCallbackOceanEngineLeads($eventType, $trackData);
+            case self::CHANNEL_IOS_IDFA:
+                return self::trackCallBackIdfa($eventType, $trackData);
             default:
                 return false;
         }
@@ -350,6 +353,18 @@ class TrackService
                 ]
             ]
         ]);
+
+        return $success;
+    }
+
+    public static function trackCallBackIdfa($eventType, $trackData)
+    {
+        if ($eventType != self::TRACK_EVENT_ACTIVE) {
+            return 0;
+        }
+
+        $response = HttpHelper::requestJson($trackData['callback']);
+        $success = (!empty($response) && $response['errno'] == 0);
 
         return $success;
     }
