@@ -15,6 +15,8 @@ class TemplatePosterWordModel extends Model
 {
     //表名称
     public static $table = "template_poster_word";
+    const DISABLE_STATUS = 1; //下线
+    const NORMAL_STATUS = 2; //上线
 
     public static function getList($params)
     {

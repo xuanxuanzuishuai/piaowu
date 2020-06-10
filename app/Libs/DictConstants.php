@@ -263,12 +263,24 @@ class DictConstants {
 
     const STUDENT_INVITE_CHANNEL = [
         'type' => 'STUDENT_INVITE',
-        'keys' => ['NORMAL_STUDENT_INVITE_STUDENT']
+        'keys' => [
+            'NORMAL_STUDENT_INVITE_STUDENT',
+            'POSTER_LANDING_49_STUDENT_INVITE_STUDENT',
+        ]
     ];
-
+    //个性化海报/标准海报配置
     const TEMPLATE_POSTER_CONFIG = [
         'type' => 'template_poster_config',
-        'keys' => [1, 2]
+        'keys' => [
+            1,
+            2,
+            'QR_X',
+            'QR_Y',
+            'QR_WIDTH',
+            'QR_HEIGHT',
+            'POSTER_WIDTH',
+            'POSTER_HEIGHT',
+        ]
     ];
 
     public static function get($type, $key)

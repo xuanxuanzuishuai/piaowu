@@ -20,6 +20,7 @@ use App\Controllers\StudentWX\Student;
 use App\Middleware\WeChatAuthCheckMiddleware;
 use App\Middleware\WeChatPandaAuthCheckMiddleware;
 use App\Controllers\StudentWX\ReferralActivity;
+use App\Controllers\StudentWX\TemplatePoster;
 
 class StudentWXRouter extends RouterBase
 {
@@ -192,6 +193,14 @@ class StudentWXRouter extends RouterBase
         '/student_wx/referral/upload_cash_poster' => [
             'method' => ['post'],
             'call' => ReferralActivity::class . ':uploadReturnCashPoster',
+        ],
+        '/student_wx/template_poster/poster' => [
+            'method' => ['get'],
+            'call' => TemplatePoster::class . ':templatePosterList',
+        ],
+        '/student_wx/template_poster/share_word' => [
+            'method' => ['get'],
+            'call' => TemplatePoster::class . ':posterShareWordList',
         ],
     ];
 }
