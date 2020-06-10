@@ -213,6 +213,7 @@ class UserService
                 'qr_ticket' => $userQrTicket,
                 'qr_url' => $imageUrl,
                 'type' => $type,
+                'channel_id' => $channelId
             ];
             //删除临时二维码文件
             unlink($filePath);
