@@ -151,11 +151,6 @@ class PlayReport extends ControllerBase
     {
         $rules = [
             [
-                'key' => 'share_token',
-                'type' => 'required',
-                'error_code' => 'shareToken_is_required'
-            ],
-            [
                 'key' => 'record_id',
                 'type' => 'required',
                 'error_code' => 'recordId_is_required'
@@ -169,7 +164,7 @@ class PlayReport extends ControllerBase
         }
 
         try {
-            $result = AIPlayReportService::getAssessResult($params["share_token"], $params['record_id']);
+            $result = AIPlayReportService::getAssessResult($params['record_id']);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }

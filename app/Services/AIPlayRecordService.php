@@ -860,48 +860,50 @@ class AIPlayRecordService
      * @param $recordId
      * @return array|mixed
      */
-    public static function getStudentAssessData($studentId, $recordId)
+    public static function getStudentAssessData($recordId)
     {
         $report = AIPlayRecordModel::getRecord(['record_id' => $recordId]);
-        if(!empty($report))
-        {
-            $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, self::DEFAULT_APP_VER);
-            $res = $opn->lessonsByIds($report['lesson_id']);
-            if (!empty($res) && $res['code'] == Valid::CODE_SUCCESS)
-            {
-                $lesson_name = $res['data'][0]['lesson_name'];
-            }else{
-                $lesson_name = '';
-            }
-
-            if($report['input_type'] && $report['input_type'] == 1)
-            {
-               $aiAudio = AIPlayRecordService::getAiAudio($studentId, $recordId);
-               if(!empty($aiAudio))
-               {
-                   $report['audio_url'] = $aiAudio['audio_url'];
-               }
-            }
-            $report['lesson_name'] = $lesson_name;
-            unset($report['lesson_id']);
+        if (empty($report)) {
+            $report = [];
         }
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, self::DEFAULT_APP_VER);
+        $res = $opn->lessonsByIds($report['lesson_id']);
+        if (!empty($res) && $res['code'] == Valid::CODE_SUCCESS) {
+            $lesson_name = $res['data'][0]['lesson_name'];
+        } else {
+            $lesson_name = '';
+        }
+
+        if ($report['input_type'] && $report['input_type'] == 1 && $report['student_id']) {
+           $aiAudio = AIPlayRecordService::getAiAudio($report['student_id'], $recordId);
+           if(!empty($aiAudio)) {
+               $report['audio_url'] = $aiAudio['audio_url'];
+           }
+        }
+
+        if ($report && $report['student_id']) {
+            $report['replay_token'] = AIBackendService::genStudentToken($report["student_id"]);
+        }
+        $report['lesson_name'] = $lesson_name;
+
+
         return empty($report) ? [] : $report;
     }
 
 
     /**
      * 获取某个ai_record_id对应的陪练数据
-     * @param $student_id
-     * @param $ai_record_id
+     * @param $studentId
+     * @param $aiRecordId
      * @return array|bool|mixed
      */
     public static function getAiAudio($studentId, $aiRecordId)
     {
-        if (empty($ai_record_id)){
+        if (empty($ai_record_id)) {
             return [];
         }
         $playInfo = PlayRecordModel::getRecord(["student_id" => $studentId, "ai_record_id" => $aiRecordId]);
-        if (empty($playInfo)){
+        if (empty($playInfo)) {
             return [];
         }
         $data = AIPLCenter::userAudio($aiRecordId);
