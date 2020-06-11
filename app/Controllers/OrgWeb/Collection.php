@@ -123,8 +123,8 @@ class Collection extends ControllerBase
         //验证合法性
         $params = $request->getParams();
         $result = Valid::validate($params, $rules);
-        if ($result['code'] == 1) {
-            return $response->withJson($result, 200);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
         }
         try {
             $operator = $this->getEmployeeId();
@@ -183,8 +183,8 @@ class Collection extends ControllerBase
         //验证合法性
         $params = $request->getParams();
         $result = Valid::validate($params, $rules);
-        if ($result['code'] == 1) {
-            return $response->withJson($result, 200);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
         $operator = $this->getEmployeeId();

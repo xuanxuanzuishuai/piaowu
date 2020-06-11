@@ -28,6 +28,8 @@ use App\Controllers\OrgWeb\CommunitySharePoster;
 use App\Controllers\OrgWeb\Erp;
 use App\Controllers\OrgWeb\Flags;
 use App\Controllers\OrgWeb\PlayRecord;
+use App\Controllers\OrgWeb\PosterTemplate;
+use App\Controllers\OrgWeb\PosterTemplateWord;
 use App\Controllers\OrgWeb\Question;
 use App\Controllers\OrgWeb\QuestionTag;
 use App\Controllers\OrgWeb\Referral;
@@ -395,6 +397,17 @@ class OrgWebRouter extends RouterBase
         '/org_web/share_poster/refused' => ['method' => ['post'], 'call' => SharePoster::class . ':refused'],
 
         '/org_web/play_record/statistics' => ['method' => ['get'], 'call' => PlayRecord::class . ':playStatistics'],
+        '/org_web/poster_template/individualityList' => ['method' => ['get'], 'call' => PosterTemplate::class . ':individualityList'],
+        '/org_web/poster_template/standardList' => ['method' => ['get'], 'call' => PosterTemplate::class . ':standardList'],
+        '/org_web/poster_template/individualityAdd' => ['method' => ['post'], 'call' => PosterTemplate::class . ':individualityAdd'],
+        '/org_web/poster_template/standardAdd' => ['method' => ['post'], 'call' => PosterTemplate::class . ':standardAdd'],
+        '/org_web/poster_template/getPosterInfo' => ['method' => ['get'], 'call' => PosterTemplate::class . ':getPosterInfo'],
+        '/org_web/poster_template/editPosterInfo' => ['method' => ['post'], 'call' => PosterTemplate::class . ':editPosterInfo'],
+        '/org_web/poster_template_word/addWord' => ['method' => ['post'], 'call' => PosterTemplateWord::class . ':addWord'],
+        '/org_web/poster_template_word/wordList' => ['method' => ['get'], 'call' => PosterTemplateWord::class . ':wordList'],
+        '/org_web/poster_template_word/getWordInfo' => ['method' => ['get'], 'call' => PosterTemplateWord::class . ':getWordInfo'],
+        '/org_web/poster_template_word/editWordInfo' => ['method' => ['post'], 'call' => PosterTemplateWord::class . ':editWordInfo'],
+
 
         //社群返现
         '/org_web/return_money_poster/list' => ['method' => ['get'], 'call' => CommunitySharePoster::class . ':list'],

@@ -266,6 +266,11 @@ class DictConstants {
         'keys' => ['NORMAL_STUDENT_INVITE_STUDENT']
     ];
 
+    const TEMPLATE_POSTER_CONFIG = [
+        'type' => 'template_poster_config',
+        'keys' => [1, 2]
+    ];
+
     public static function get($type, $key)
     {
         if (empty($type) || empty($key)) {
