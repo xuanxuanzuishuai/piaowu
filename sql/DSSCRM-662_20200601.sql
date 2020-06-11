@@ -110,7 +110,7 @@ VALUES
 	(
 		6,
 		1,
-		'{\"template_id\":\"G1hleUfvk7_lEi-Y5-2m5YBROuuySpwmQz9JcgmTHtM\",\"vars\":{\"first\":{\"value\":\"\\u60a8\\u4e0a\\u4f20\\u7684\\u622a\\u56fe\\u5ba1\\u6838\\u7ed3\\u675f\\uff0c\\u8be6\\u60c5\\u5982\\u4e0b\\uff1a\"},\"keyword1\":{\"value\":\"\\u4e0a\\u4f20\\u622a\\u56fe\\u9886\\u8fd4\\u73b0\"},\"keyword2\":{\"value\":\"\\u4e0a\\u4f20\\u5206\\u4eab\\u622a\\u56fe\"},\"keyword3\":{\"value\":\"\\u672a\\u901a\\u8fc7\"}},\"remark\":{\"value\":\"\\u70b9\\u6b64\\u6d88\\u606f\\uff0c\\u67e5\\u770b\\u8be6\\u60c5\"}}',
+		'{\"template_id\":\"G1hleUfvk7_lEi-Y5-2m5YBROuuySpwmQz9JcgmTHtM\",\"vars\":{\"first\":{\"value\":\"\\u60a8\\u4e0a\\u4f20\\u7684\\u622a\\u56fe\\u5ba1\\u6838\\u7ed3\\u675f\\uff0c\\u8be6\\u60c5\\u5982\\u4e0b\\uff1a\"},\"keyword1\":{\"value\":\"\\u4e0a\\u4f20\\u622a\\u56fe\\u9886\\u8fd4\\u73b0\"},\"keyword2\":{\"value\":\"\\u4e0a\\u4f20\\u5206\\u4eab\\u622a\\u56fe\"},\"keyword3\":{\"value\":\"\\u672a\\u901a\\u8fc7\",\"color\":\"#FF0000\"}},\"remark\":{\"value\":\"\\u70b9\\u6b64\\u6d88\\u606f\\uff0c\\u67e5\\u770b\\u8be6\\u60c5\"}}',
 		'event',
 		3,
 		'custom',
