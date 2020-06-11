@@ -30,9 +30,7 @@ class PlayReport extends ControllerBase
     public function dayReport(Request $request, Response $response)
     {
         $params = $request->getParams();
-
         $studentId = $this->ci['user_info']['user_id'];
-
         try {
             $result = AIPlayReportService::getDayReport($studentId, $params["date"]);
         } catch (RunTimeException $e) {
@@ -41,6 +39,8 @@ class PlayReport extends ControllerBase
 
         return HttpHelper::buildResponse($response, $result);
     }
+
+
 
     /**
      * 练琴日报(分享)
@@ -139,4 +139,43 @@ class PlayReport extends ControllerBase
 
         return HttpHelper::buildResponse($response, $result);
     }
+
+
+    /**
+     * 测评结果（分享）
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function sharedAssessResult(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'share_token',
+                'type' => 'required',
+                'error_code' => 'shareToken_is_required'
+            ],
+            [
+                'key' => 'record_id',
+                'type' => 'required',
+                'error_code' => 'recordId_is_required'
+            ]
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        try {
+            $result = AIPlayReportService::getAssessResult($params["share_token"], $params['record_id']);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+
+        return HttpHelper::buildResponse($response, $result);
+    }
+
+
 }

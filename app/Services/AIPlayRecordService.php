@@ -9,6 +9,7 @@
 namespace App\Services;
 
 
+use App\Libs\AIPLCenter;
 use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\OpernCenter;
@@ -852,5 +853,58 @@ class AIPlayRecordService
             $record['review_days'] = $record['play_days'] ?? 0;
         }
         return [$records, $totalCount];
+    }
+
+    /**
+     * 获取测评报告（分享）
+     * @param $recordId
+     * @return array|mixed
+     */
+    public static function getStudentAssessData($studentId, $recordId)
+    {
+        $report = AIPlayRecordModel::getRecord(['record_id' => $recordId]);
+        if(!empty($report))
+        {
+            $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, self::DEFAULT_APP_VER);
+            $res = $opn->lessonsByIds($report['lesson_id']);
+            if (!empty($res) && $res['code'] == Valid::CODE_SUCCESS)
+            {
+                $lesson_name = $res['data'][0]['lesson_name'];
+            }else{
+                $lesson_name = '';
+            }
+
+            if($report['input_type'] && $report['input_type'] == 1)
+            {
+               $aiAudio = AIPlayRecordService::getAiAudio($studentId, $recordId);
+               if(!empty($aiAudio))
+               {
+                   $report['audio_url'] = $aiAudio['audio_url'];
+               }
+            }
+            $report['lesson_name'] = $lesson_name;
+            unset($report['lesson_id']);
+        }
+        return empty($report) ? [] : $report;
+    }
+
+
+    /**
+     * 获取某个ai_record_id对应的陪练数据
+     * @param $student_id
+     * @param $ai_record_id
+     * @return array|bool|mixed
+     */
+    public static function getAiAudio($studentId, $aiRecordId)
+    {
+        if (empty($ai_record_id)){
+            return [];
+        }
+        $playInfo = PlayRecordModel::getRecord(["student_id" => $studentId, "ai_record_id" => $aiRecordId]);
+        if (empty($playInfo)){
+            return [];
+        }
+        $data = AIPLCenter::userAudio($aiRecordId);
+        return $data;
     }
 }

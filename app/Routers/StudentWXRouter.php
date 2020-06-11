@@ -98,6 +98,13 @@ class StudentWXRouter extends RouterBase
             'middles' => []
         ],
 
+        //测评结果（分享）
+        '/student_wx/play_report/shared_assess_result' => [
+            'method' => ['get'],
+            'call' => PlayReport::class . ':sharedAssessResult',
+            'middles' => []
+        ],
+
         // 曲目单日测评成绩单
         '/student_wx/play_report/lesson_test_report' => [
             'method' => ['get'],

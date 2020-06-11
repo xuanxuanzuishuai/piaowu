@@ -152,4 +152,19 @@ class AIPlayReportService
         $report['replay_token'] = AIBackendService::genStudentToken($shareTokenInfo["student_id"]);
         return $report;
     }
+
+    /**
+     * 获取学生评测报告（分享）
+     * @param $shareToken
+     * @return array
+     * @throws RunTimeException
+     */
+    public static function getAssessResult($shareToken, $recordId)
+    {
+        $shareTokenInfo = AIPlayReportService::parseShareReportToken($shareToken);
+        $report = AIPlayRecordService::getStudentAssessData($shareTokenInfo["student_id"], $recordId);
+        $report["share_token"] = $shareToken;
+        $report['replay_token'] = AIBackendService::genStudentToken($shareTokenInfo["student_id"]);
+        return $report;
+    }
 }
