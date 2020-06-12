@@ -71,8 +71,6 @@ class AIPlayRecordService
             return 0;
         }
 
-        StudentModel::updateRecord($studentId, ['last_play_time' => $now], false);
-
         return $recordId;
     }
 
@@ -152,6 +150,9 @@ class AIPlayRecordService
         if (empty($recordId)) {
             return 0;
         }
+
+        StudentModel::updateRecord($studentId, ['last_play_time' => $now], false);
+
         return $recordId;
     }
 
