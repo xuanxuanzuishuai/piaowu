@@ -20,6 +20,7 @@ use App\Models\AppVersionModel;
 use App\Models\PlayRecordModel;
 use App\Models\StudentModel;
 use Medoo\Medoo;
+use App\Libs\DictConstants;
 
 class AIPlayRecordService
 {
@@ -52,6 +53,7 @@ class AIPlayRecordService
             'ui_entry' => $params['ui_entry'] ?? 0,
             'input_type' => $params['input_type'] ?? 0,
             'create_time' => $now,
+            'score_rank' => $params['score_rank'] ?? 0,
 
             // 演奏结束时间，演奏时间跨天时，数据归为结束时间所在天
             'end_time' => $params['created_at'] + $params['duration'],
@@ -140,6 +142,7 @@ class AIPlayRecordService
             'score_rhythm' => self::formatScore($params['score_rhythm']),
             'score_speed' => self::formatScore($params['score_speed']),
             'score_speed_average' => self::formatScore($params['score_speed_average']),
+            'score_rank' => number_format($params['score_rank'], 1),
             'data_type' => $params['data_type'],
         ];
 
@@ -175,6 +178,7 @@ class AIPlayRecordService
             if ($newRecord['score_rhythm'] <= $playRecord['score_rhythm']) { unset($newRecord['score_rhythm']); }
             if ($newRecord['score_speed'] <= $playRecord['score_speed']) { unset($newRecord['score_speed']); }
             if ($newRecord['score_speed_average'] <= $playRecord['score_speed_average']) { unset($newRecord['score_speed_average']); }
+            if ($newRecord['score_rank'] <= $playRecord['score_rank']) { unset($newRecord['score_rank']); }
 
             // 1正常 2异常
             if ($newRecord['data_type'] >= $playRecord['data_type']) { unset($newRecord['data_type']); }
@@ -884,7 +888,12 @@ class AIPlayRecordService
         if ($report && $report['student_id']) {
             $report['replay_token'] = AIBackendService::genStudentToken($report["student_id"]);
         }
+        if (!empty($report['score_rank']) && $report['score_rank'] > 0 && $report['score_rank'] < 60) {
+            $report['score_rank'] = "0";
+        }
+        $playShareAssessUrl = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'play_share_assess_url');
         $report['lesson_name'] = $lesson_name;
+        $report['play_share_assess_url'] = $playShareAssessUrl;
 
 
         return empty($report) ? [] : $report;

@@ -117,7 +117,8 @@ class DictConstants {
             'exam_enable',
             'exam_url',
             'tts_url',
-            'exam_category_ids'
+            'exam_category_ids',
+            'play_share_assess_url'
         ]
     ];
 
