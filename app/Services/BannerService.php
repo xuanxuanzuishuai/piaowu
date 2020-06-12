@@ -71,6 +71,12 @@ class BannerService
         return $result;
     }
 
+    /**
+     * 过滤条件
+     * 需要关注公众号的用户
+     * @param $studentId
+     * @return bool
+     */
     public static function filterNeedSubWx($studentId)
     {
         $student = StudentModel::getById($studentId);
@@ -97,6 +103,22 @@ class BannerService
             if ($wxUserInfo['subscribe'] == 1) {
                 return false;
             }
+        }
+
+        return true;
+    }
+
+    /**
+     * 过滤条件
+     * 未付费用户
+     * @param $studentId
+     * @return bool
+     */
+    public static function filterUnpaid($studentId)
+    {
+        $student = StudentModel::getById($studentId);
+        if ($student['sub_end_date'] > 0) {
+            return false;
         }
 
         return true;
