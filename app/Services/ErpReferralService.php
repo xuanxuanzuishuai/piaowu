@@ -13,6 +13,7 @@ use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
+use App\Models\EmployeeModel;
 use App\Models\StudentModel;
 use App\Models\UserWeixinModel;
 use App\Models\WeChatAwardCashDealModel;
@@ -209,6 +210,9 @@ class ErpReferralService
     {
         $erp = new Erp();
         $params['award_relate'] = Erp::AWARD_RELATE_REFERRAL;
+        if (!empty($params['reviewer_name'])) {
+            $params['reviewer_id'] = EmployeeModel::getRecord(['name[~]' => Util::sqlLike($params['reviewer_name'])], 'id');
+        }
         $response = $erp->awardList($params);
 
         if (empty($response) || $response['code'] != 0) {
@@ -291,7 +295,9 @@ class ErpReferralService
     {
         $erp = new Erp();
         $params['award_relate'] = Erp::AWARD_RELATE_COMMUNITY;
-
+        if (!empty($params['reviewer_name'])) {
+            $params['reviewer_id'] = EmployeeModel::getRecord(['name[~]' => Util::sqlLike($params['reviewer_name'])], 'id');
+        }
         $response = $erp->awardList($params);
         if (empty($response) || $response['code'] != 0) {
             $errorCode = $response['errors'][0]['err_no'] ?? 'erp_request_error';
