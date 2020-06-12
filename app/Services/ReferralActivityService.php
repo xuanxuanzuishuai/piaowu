@@ -711,7 +711,7 @@ class ReferralActivityService
     public static function pushWXCashActivityTemplateMsg($msgBody)
     {
         $batchInsertData = [];
-        foreach ($msgBody['data'] as $user) {
+        foreach ($msgBody as $user) {
             // 发送模版消息
             $result = WeChatService::notifyUserCustomizeMessage(
                 $user['mobile'],
@@ -720,10 +720,17 @@ class ReferralActivityService
                     'url' => DictConstants::get(DictConstants::COMMUNITY_CONFIG, 'COMMUNITY_UPLOAD_POSTER_URL')
                 ]
             );
+            $logData = [
+                'mobile' => $user['mobile'],
+                'activity_id' => $user['activity_id'],
+                'activity_type' => $user['activity_type'],
+            ];
             if ($result) {
                 $user['success_num']++;
+                SimpleLogger::info('push wx cash activity template msg success', $logData);
             } else {
                 $user['fail_num']++;
+                SimpleLogger::info('push wx cash activity template msg fail', $logData);
             }
             unset($user['mobile']);
             $batchInsertData[] = $user;

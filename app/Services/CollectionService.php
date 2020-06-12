@@ -151,7 +151,12 @@ class CollectionService
         if ($params['capacity']) {
             $collectionData['capacity'] = $params['capacity'];
         }
-
+        if ($params['event_id']) {
+            $collectionData['event_id'] = $params['event_id'];
+        }
+        if ($params['task_id']) {
+            $collectionData['task_id'] = $params['task_id'];
+        }
         if (isset($params['teaching_type']) || isset($params['trial_type'])) {
             if ($params['teaching_type'] == PackageExtModel::PACKAGE_TYPE_NORMAL) {
                 $params['trial_type'] = PackageExtModel::TRIAL_TYPE_NONE;
@@ -686,7 +691,7 @@ class CollectionService
             'info' => [],
             'task_condition' => []
         ];
-        $collectionInfo = CollectionModel::getById(['id' => $collectionId]);
+        $collectionInfo = CollectionModel::getById($collectionId);
         if (empty($collectionInfo)) {
             return $result;
         }

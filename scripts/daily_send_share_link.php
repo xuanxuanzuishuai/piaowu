@@ -27,16 +27,29 @@ use Exception;
 
 /**
  * 给班级活动达标的学生发送《图片上传领返现》活动链接
- * 每天上午8点执行: * 8 * * *  php -f /data/web/dss_crm_prod/scripts/daily_send_share_link.php
+ * 每天上午8点执行: * 8 * * *  php /data/web/dss_crm_prod/scripts/daily_send_share_link.php
+ * 手动执行2020.06.14号凌晨23:59:59结束的班级(只执行一次）：php daily_send_share_link.php -t=1592150399
  *
  */
 $dotenv = new Dotenv(PROJECT_ROOT, '.env');
 $dotenv->load();
 $dotenv->overload();
 $db = MysqlDB::getDB();
-// 获取前一天参与活动并在23：59：59结束的班级
+
+
+//班级开班期结束时间戳：支持命令行传入 或 自动获取昨天结束时间戳
+$cliParams = getopt('t:');
+if (!empty($cliParams['t'])) {
+    $timeData[1] = $cliParams['t'];
+} else {
+    // 获取前一天参与活动并在23：59：59结束的班级
+    $timeData = Util::getStartEndTimestamp(strtotime("-1 day"));
+}
+if (empty($timeData[1])) {
+    SimpleLogger::error("开班期结束时间戳参数获取失败", []);
+    return false;
+}
 $nowTime = time();
-$timeData = Util::getStartEndTimestamp(strtotime("-1 day"));
 $collectionList = CollectionModel::getRecords(
     [
         'teaching_end_time' => $timeData[1],
@@ -57,7 +70,7 @@ $collectionIdList = array_column($collectionList, "id");
 $studentList = $db->select(
     StudentModel::$table,
     [
-        "[>]" . UserWeixinModel::$table => ["id" => "user_id"],
+        "[><]" . UserWeixinModel::$table => ["id" => "user_id"],
     ],
     [
         StudentModel::$table . ".id",
@@ -133,10 +146,10 @@ if (empty($upToStandardStudentList)) {
 
 //推送消息到消息队列
 try {
-    $pushTextMessageStudents = $msgBody = [];
-    array_walk($upToStandardStudentList, function ($playValue, $studentIdKey) use (&$pushTextMessageStudents, &$msgBody, $nowTime) {
+    $msgBody = [];
+    array_walk($upToStandardStudentList, function ($playValue, $studentIdKey) use (&$msgBody, $nowTime) {
         if ($playValue['play_standard_count'] >= $playValue['task_standard_count']) {
-            $msgBody["data"][] = [
+            $msgBody[] = [
                 "type" => MessageRecordModel::MSG_TYPE_WEIXIN,
                 "activity_id" => $playValue['collection_id'],
                 'mobile' => $playValue['mobile'],
@@ -148,19 +161,17 @@ try {
             ];
         }
     });
-    $msgBody['common_data'] = [
-        'app_id' => UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
-        'user_type' => UserWeixinModel::USER_TYPE_STUDENT,
-    ];
     //批量投递到消息队列,每次50个
-    $dataCount = count($pushTextMessageStudents);
+    $dataCount = count($msgBody);
     $forCount = 50;
-    $topic = new PushMessageTopic();
-    for ($i = 0; $i < ceil($dataCount / $forCount); $i++) {
-        $queueData = array_slice($msgBody, $i * $forCount, $forCount);
-        $topic->pushWX($queueData, $topic::EVENT_PUSH_WX_CASH_SHARE_MESSAGE)->publish();
+    if ($dataCount > 0) {
+        $topic = new PushMessageTopic();
+        for ($i = 0; $i < ceil($dataCount / $forCount); $i++) {
+            $queueData = array_slice($msgBody, $i * $forCount, $forCount);
+            $topic->pushWX($queueData, $topic::EVENT_PUSH_WX_CASH_SHARE_MESSAGE)->publish();
+        }
     }
-    SimpleLogger::info("event tasks up to standard student list ", ["student_ids" => $msgBody]);
+    SimpleLogger::info("event tasks up to standard student list ", ["msg_body" => $msgBody]);
 } catch (Exception $e) {
     SimpleLogger::error($e->getMessage(), $msgBody ?? []);
     return false;
