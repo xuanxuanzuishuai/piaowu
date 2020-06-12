@@ -126,5 +126,5 @@ VALUES
 INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`)
 VALUES
 ('WE_CHAT_RED_PACK', '微信红包显示语', 'NORMAL_PIC_WORD', '{\"act_name\":\"AI\\u966a\\u7ec3\\u8f6c\\u4ecb\\u7ecd\",\"send_name\":\"\\u9080\\u8bf7\\u597d\\u53cb\\u5956\\u52b1\",\"wishing\":\"\\u63a8\\u8350\\u591a\\u591a\\uff0c\\u5956\\u52b1\\u591a\\u591a\"}'),
-('WE_CHAT_RED_PACK', '微信红包显示语', 'COMMUNITY_PIC_WORD', '{\"act_name\":\"\\u793e\\u7fa4\\u8fd4\\u73b0\\u7ea2\\u5305\",\"send_name\":\"\\u7ec3\\u7434\\u5956\\u52b1\\u7ea2\\u5305\",\"wishing\":\"\\u591a\\u591a\\u7ec3\\u7434\\uff0c\\u5feb\\u5feb\\u6210\\u957f\"}'),
+('WE_CHAT_RED_PACK', '微信红包显示语', 'COMMUNITY_PIC_WORD', '{\"act_name\":\"\\u793e\\u7fa4\\u8fd4\\u73b0\\u7ea2\\u5305\",\"send_name\":\"\\u7ec3\\u7434\\u5956\\u52b1\",\"wishing\":\"\\u591a\\u591a\\u7ec3\\u7434\\uff0c\\u5feb\\u5feb\\u6210\\u957f\"}'),
 ('COMMUNITY_CONFIG', '社群返现上传截图地址', 'COMMUNITY_UPLOAD_POSTER_URL', 'https://dss-weixin.xiongmaopeilian.com/student/returnMoney')
