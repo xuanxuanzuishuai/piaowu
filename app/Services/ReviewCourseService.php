@@ -682,9 +682,15 @@ class ReviewCourseService
             //  购买日 ----------- 开班前一天 --- 开班日 ------------- 结班日
             //    |                  |           |                   |
             // [2号周二   (赠送6天)  7号周日]    [8号周一  (购买14天)  21号周日]
-            $giftCourseId = DictConstants::get(DictConstants::ACTIVITY_CONFIG, 'gift_course_id');
             $giftCourseNum = ceil(($collection['teaching_start_time'] - strtotime('today')) / 86400);
-            QueueService::giftCourses($student['uuid'], $giftCourseId, $giftCourseNum);
+
+            // 班课需要减少一天
+            $giftCourseNum -= 1;
+            if ($giftCourseNum > 0) {
+                $giftCourseId = DictConstants::get(DictConstants::ACTIVITY_CONFIG, 'gift_course_id');
+                QueueService::giftCourses($student['uuid'], $giftCourseId, $giftCourseNum);
+            }
+
             //发送短信
             $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
             $sms->sendCollectionCompleteNotify($student['mobile'], CommonServiceForApp::SIGN_STUDENT_APP, $collection);
