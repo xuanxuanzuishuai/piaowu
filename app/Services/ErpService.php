@@ -183,6 +183,9 @@ class ErpService
             }
             $dstNewEndTime = strtotime("+{$days} day", $dstEndTime);
             $dstStudentUpdate['sub_end_date'] = date('Ymd', $dstNewEndTime);
+            if ($srcStudent['has_review_course'] != 0) {
+                $dstStudentUpdate['has_review_course'] = $srcStudent['has_review_course'];
+            }
 
             $cnt = StudentModel::updateRecord($dstStudent['id'], $dstStudentUpdate, false);
             if (empty($cnt)) { return 'data_error'; }
