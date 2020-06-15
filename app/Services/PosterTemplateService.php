@@ -247,10 +247,11 @@ class PosterTemplateService
             'qr_url' => '',
             'poster_config' => [],
             'student_info' => [
-                'play_days' => '',
-                'total_duration' => '',
+                'play_days' => 0,
+                'total_duration' => 0,
                 'nickname' => '',
                 'headimgurl' => '',
+                'uuid' => $studentDetail['student_info']['uuid'] ,
             ],
         ];
         $data['student_status'] = $studentDetail['student_status'];
@@ -313,6 +314,11 @@ class PosterTemplateService
         return $data;
     }
 
+    /**
+     * 获取模版分享语列表
+     * @param $params
+     * @return array
+     */
     public static function templatePosterWordList($params)
     {
         //获取数据
@@ -330,7 +336,7 @@ class PosterTemplateService
             return $list;
         }
         $where['LIMIT'] = [$startCount, $params['count']];
-        $data = TemplatePosterWordModel::getRecords($where, ['content'], false);
+        $data = TemplatePosterWordModel::getRecords($where, ['content', 'id'], false);
         foreach ($data as $k => $value) {
             $row = self::formatWordInfo($value);
             $list['list'][] = $row;
