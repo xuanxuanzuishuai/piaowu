@@ -30,11 +30,7 @@ class PlayClassRecordMessageService
                 $ret = self::save($message);
                 break;
             case 'play_start':
-                $ret = self::playStart($message['msg_body']);
-                break;
             case 'play_heart_beat':
-                $ret = self::heartBeat($message['msg_body']);
-                break;
             case 'play_end':
                 $ret = self::playEnd($message['msg_body']);
                 break;

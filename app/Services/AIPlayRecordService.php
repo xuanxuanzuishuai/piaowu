@@ -114,22 +114,24 @@ class AIPlayRecordService
             $playRecord = AIPlayRecordModel::getRecord(['track_id' => $params['track_id']]);
         }
 
-        $recordData = [
+        $newRecord = [
             'student_id' => $studentId,
+            'create_time' => $now,
+            'track_id' => $params['track_id'] ?? 0,
+
             'lesson_id' => $params['lesson_id'] ?? 0,
             'score_id' => $params['score_id'] ?? 0,
-            'record_id' => $params['record_id'] ?? 0,
             'is_phrase' => $params['is_phrase'] ?? 0,
             'phrase_id' => $params['phrase_id'] ?? 0,
             'practice_mode' => $params['practice_mode'] ?? 0,
             'hand' => $params['hand'] ?? 0,
             'ui_entry' => $params['ui_entry'] ?? 0,
             'input_type' => $params['input_type'] ?? 0,
-            'create_time' => $now,
 
             // 演奏结束时间，演奏时间跨天时，数据归为结束时间所在天
             'end_time' => $params['created_at'] + $params['duration'],
             'duration' => $params['duration'],
+            'record_id' => $params['record_id'] ?? 0,
             'audio_url' => $params['audio_url'] ?? '',
             'score_final' => self::formatScore($params['score_final']),
             'score_complete' => self::formatScore($params['score_complete']),
@@ -140,20 +142,46 @@ class AIPlayRecordService
             'data_type' => $params['data_type'],
         ];
 
-        if (empty($params['track_id']) || empty($playRecord)) {
-            $recordData['track_id'] = 0;
-            $recordId = AIPlayRecordModel::insertRecord($recordData);
+        if (empty($playRecord)) {
+            // insert 新纪录
+            $recordId = AIPlayRecordModel::insertRecord($newRecord);
+
+            StudentModel::updateRecord($studentId, ['last_play_time' => $now]);
+
         } else {
-            $recordId = AIPlayRecordModel::updateRecord($playRecord['id'], $recordData);
+            // update 现在的记录
+            unset($newRecord['student_id']);
+            unset($newRecord['create_time']);
+
+            if (empty($newRecord['lesson_id'])) { unset($newRecord['lesson_id']); }
+            if (empty($newRecord['score_id'])) { unset($newRecord['score_id']); }
+            if (empty($newRecord['is_phrase'])) { unset($newRecord['is_phrase']); }
+            if (empty($newRecord['phrase_id'])) { unset($newRecord['phrase_id']); }
+            if (empty($newRecord['practice_mode'])) { unset($newRecord['practice_mode']); }
+            if (empty($newRecord['hand'])) { unset($newRecord['hand']); }
+            if (empty($newRecord['ui_entry'])) { unset($newRecord['ui_entry']); }
+            if (empty($newRecord['input_type'])) { unset($newRecord['input_type']); }
+
+            if ($newRecord['duration'] <= $playRecord['duration']) {
+                unset($newRecord['end_time']);
+                unset($newRecord['duration']);
+            }
+            if ($newRecord['record_id'] <= $playRecord['record_id']) { unset($newRecord['record_id']); }
+            if (empty($newRecord['audio_url'])) { unset($newRecord['audio_url']); }
+            if ($newRecord['score_final'] <= $playRecord['score_final']) { unset($newRecord['score_final']); }
+            if ($newRecord['score_complete'] <= $playRecord['score_complete']) { unset($newRecord['score_complete']); }
+            if ($newRecord['score_pitch'] <= $playRecord['score_pitch']) { unset($newRecord['score_pitch']); }
+            if ($newRecord['score_rhythm'] <= $playRecord['score_rhythm']) { unset($newRecord['score_rhythm']); }
+            if ($newRecord['score_speed'] <= $playRecord['score_speed']) { unset($newRecord['score_speed']); }
+            if ($newRecord['score_speed_average'] <= $playRecord['score_speed_average']) { unset($newRecord['score_speed_average']); }
+
+            // 1正常 2异常
+            if ($newRecord['data_type'] >= $playRecord['data_type']) { unset($newRecord['data_type']); }
+
+            $recordId = AIPlayRecordModel::updateRecord($playRecord['id'], $newRecord);
         }
 
-        if (empty($recordId)) {
-            return 0;
-        }
-
-        StudentModel::updateRecord($studentId, ['last_play_time' => $now], false);
-
-        return $recordId;
+        return $recordId ?? 0;
     }
 
     /**
