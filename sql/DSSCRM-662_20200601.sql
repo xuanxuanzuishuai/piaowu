@@ -1,4 +1,4 @@
-# 返现添加菜单
+-- 返现添加菜单
 INSERT INTO `privilege` (
 	`name`,
 	`uri`,
@@ -29,7 +29,7 @@ VALUES
 		'post',
 		0,
 		'',
-		513,
+		'0',
 		'return_money_appprove',
 	1
 	),
@@ -40,7 +40,7 @@ VALUES
 		'post',
 		0,
 		'',
-		513,
+		'0',
 		'return_money_refused',
 	1
 	),
@@ -51,7 +51,7 @@ VALUES
 		'get',
 		1,
 		'返现红包审核',
-		513,
+		'0',
 		'community_red_pack_check',
 	1
 	),
@@ -62,7 +62,7 @@ VALUES
 		'get',
 		0,
 		'',
-		513,
+		'0',
 		'community_red_pack_config',
 	1
 	),
@@ -73,12 +73,12 @@ VALUES
 		'post',
 		0,
 		'',
-		513,
+		'0',
 		'community_red_pack_update',
 	1
 	);
 
-# 返现审核通过模板消息推送配置
+-- 返现审核通过模板消息推送配置
 
 INSERT INTO `wechat_config` (
 	`id`,
@@ -120,6 +120,37 @@ VALUES
 		10001,
 	0
 	);
+
+-- 这个id需要和erp相应的event_task_id保持一致
+
+INSERT INTO `wechat_config` (
+	`id`,
+	`type`,
+	`content`,
+	`msg_type`,
+	`content_type`,
+	`event_type`,
+	`event_key`,
+	`create_time`,
+	`update_time`,
+	`create_uid`,
+	`update_uid`
+)
+VALUES
+	(
+		9,
+		1,
+		'{\"template_id\":\"mG1hleUfvk7_lEi-Y5-2m5YBROuuySpwmQz9JcgmTHtM\",\"vars\":{\"first\":{\"value\":\"\\u60a8\\u7684\\u7ec3\\u7434\\u8fd4\\u73b0\\u5956\\u52b1\\u5df2\\u53d1\\u653e\\uff0c\\u8be6\\u60c5\\u5982\\u4e0b\\uff1a\",\"color\":\"#FF8A00\"},\"keyword1\":{\"value\":\"\\u7ec3\\u7434\\u8fd4\\u73b0\",\"color\":\"#FF8A00\"},\"keyword2\":{\"value\":\"\\u5b8c\\u6210\\u7ec3\\u7434\\u4efb\\u52a1\\u4e14\\u4e0a\\u4f20\\u5206\\u4eab\\u622a\\u56fe\",\"color\":\"#FF8A00\"},\"keyword3\":{\"value\":\"\\u5df2\\u5b8c\\u6210\\uff0c\\u8fd4\\u73b0\\u5956\\u52b1{{awardValue}}\\u5143\\u5df2\\u53d1\\u653e\\uff0c\\u8bf7\\u70b9\\u51fb\\u7ea2\\u5305\\u9886\\u53d6\\u3002\",\"color\":\"#FF8A00\"}}}',
+		'3',
+		3,
+		'award',
+		'',
+		1583918495,
+		0,
+		0,
+	0
+	);
+
 
 -- 发送微信红包的配置语
 

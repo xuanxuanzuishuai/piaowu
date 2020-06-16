@@ -111,7 +111,8 @@ class CashGrantService
         if (!empty($hasRedPackRecord) && in_array($hasRedPackRecord['result_code'], [WeChatAwardCashDealModel::CA_ERROR, WeChatAwardCashDealModel::SYSTEMERROR])) {
             return $hasRedPackRecord['mch_billno'];
         } else {
-            return $awardId . $amount . time();
+            $baseNo = $awardId . $amount;
+            return $_ENV['ENV_NAME'] . $baseNo . strrev($baseNo);
         }
     }
 

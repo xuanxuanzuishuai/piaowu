@@ -498,7 +498,7 @@ class ErpReferralService
                         $v['event_task_id'],
                         [
                             'mobile' => Util::hideUserMobile($v['student_mobile']),
-                            'url' => $_ENV['STUDENT_INVITED_RECORDS_URL'],
+                            'url' => $keyCode == WeChatAwardCashDealModel::COMMUNITY_PIC_WORD ? '' : $_ENV['STUDENT_INVITED_RECORDS_URL'],
                             'awardValue' => $v['award_amount'] / 100
                         ]
                     );
