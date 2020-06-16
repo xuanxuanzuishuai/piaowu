@@ -151,10 +151,10 @@ class CollectionService
         if ($params['capacity']) {
             $collectionData['capacity'] = $params['capacity'];
         }
-        if ($params['event_id']) {
+        if (is_numeric($params['event_id'])) {
             $collectionData['event_id'] = $params['event_id'];
         }
-        if ($params['task_id']) {
+        if (is_numeric($params['task_id'])) {
             $collectionData['task_id'] = $params['task_id'];
         }
         if (isset($params['teaching_type']) || isset($params['trial_type'])) {
