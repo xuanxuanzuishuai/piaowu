@@ -56,6 +56,20 @@ class DictConstants {
             'panda_crm_host',
             'erp_host',
             'ai_class_host',
+            'voice_appId',
+            'voice_appKey',
+            'voice_url',
+            'voice_templateId'
+        ]
+    ];
+
+    const VOICE_SMS_CONFIG = [
+        'type' => 'VOICE_SMS_CONFIG',
+        'keys' => [
+            'voice_app_id',
+            'voice_app_key',
+            'voice_host',
+            'voice_purchase_experience_class_template_id'
         ]
     ];
 
