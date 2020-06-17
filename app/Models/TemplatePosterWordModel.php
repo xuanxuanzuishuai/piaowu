@@ -39,6 +39,7 @@ class TemplatePosterWordModel extends Model
             ],
             [
                 'ORDER' => [
+                    'status' => 'DESC',
                     'update_time' => 'DESC'
                 ],
                 'LIMIT' => [($pageId - 1) * $pageLimit, $pageLimit]

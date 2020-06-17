@@ -86,7 +86,8 @@ class PosterTemplateService
             $formatData['poster_name'] = $row['poster_name'];
         }
         if (isset($row['poster_url'])) {
-            $formatData['poster_url'] = AliOSS::signUrls($row['poster_url']);
+            $formatData['poster_url'] = $row['poster_url'];
+            $formatData['full_poster_url'] = AliOSS::signUrls($row['poster_url']);
         }
         if (isset($row['poster_status'])) {
             $formatData['poster_status'] = $row['poster_status'];
