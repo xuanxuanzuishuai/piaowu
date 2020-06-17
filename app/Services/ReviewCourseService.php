@@ -29,6 +29,7 @@ use App\Models\ReviewCourseModel;
 use App\Models\StudentModel;
 use App\Models\UserWeixinModel;
 use App\Models\CollectionModel;
+use App\Libs\VoiceSMS;
 
 class ReviewCourseService
 {
@@ -694,6 +695,9 @@ class ReviewCourseService
             //发送短信
             $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
             $sms->sendCollectionCompleteNotify($student['mobile'], CommonServiceForApp::SIGN_STUDENT_APP, $collection);
+            //发送语音通知
+            $voiceSms = new VoiceSMS(DictConstants::get(DictConstants::VOICE_SMS_CONFIG, 'voice_host'));
+            $voiceSms->sendPurchaseExperienceClassSMS($student['mobile']);
         }
     }
 
