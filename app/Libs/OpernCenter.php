@@ -44,6 +44,16 @@ class OpernCenter
 
     const OPERN_CENTER_ERROR = ['err_no'=>'opern_center_error', 'err_msg'=>'曲谱中心异常'];
 
+    // 新的独立opn服务
+    const NEW_SERVICE_API = [
+        self::OPERN_API_CATEGORIES,
+        self::OPERN_API_COLLECTIONS,
+        self::OPERN_API_LESSONS,
+        self::OPERN_API_LESSONS_BY_ID,
+        self::OPERN_API_SEARCH_ES_COLLECTIONS,
+        self::OPERN_API_SEARCH_ES_LESSONS,
+    ];
+
     public $proId; // 曲谱库ProId
     public $proVer; // 曲谱库ProVer
     public $auditing; // 是否只获取审核可见资源 默认false
@@ -65,13 +75,22 @@ class OpernCenter
      */
     private function commonAPI($api,  $data = [], $method = 'GET')
     {
+
+        $serviceHost = DictConstants::get(DictConstants::SERVICE, 'opern_host');
+
+        if (in_array($api, self::NEW_SERVICE_API)) {
+            $newServiceHost = DictConstants::get(DictConstants::SERVICE, 'new_opern_host');
+            if (!empty($newServiceHost)) {
+                $serviceHost = $newServiceHost;
+            }
+        }
+
+        $fullUrl = $serviceHost . $api;
+
         try {
             $client = new Client([
                 'debug' => false
             ]);
-
-            $opnUrl = DictConstants::get(DictConstants::SERVICE, 'opern_host');
-            $fullUrl = $opnUrl . $api;
 
             if ($method == 'GET') {
                 $data = ['query' => $data];

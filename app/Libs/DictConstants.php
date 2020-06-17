@@ -51,6 +51,7 @@ class DictConstants {
         'keys' => [
             'sms_host',
             'opern_host',
+            'new_opern_host',
             'ai_backend_host',
             'uc_app_host',
             'panda_crm_host',
