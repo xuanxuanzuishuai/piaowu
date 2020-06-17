@@ -102,7 +102,8 @@ class QueueService
 
     /**
      * 给微信用户推送活动消息
-     * @param $students
+     * @param $studentId
+     * @param $openId
      * @param $guideWord
      * @param $shareWord
      * @param $posterUrl
@@ -111,13 +112,14 @@ class QueueService
      * @param $employeeId
      * @return bool
      */
-    public static function pushWX($students, $guideWord, $shareWord, $posterUrl, $pushTime, $activityId, $employeeId)
+    public static function pushWX($studentId, $openId, $guideWord, $shareWord, $posterUrl, $pushTime, $activityId, $employeeId)
     {
         try {
             $topic = new PushMessageTopic();
 
             $msgBody = [
-                'students' => $students,
+                'student_id' => $studentId,
+                'open_id' => $openId,
                 'guide_word' => $guideWord,
                 'share_word' => $shareWord,
                 'poster_url' => $posterUrl,

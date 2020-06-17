@@ -453,25 +453,11 @@ class ReferralActivityService
 
             $boundUsers = UserWeixinModel::getBoundUserIds($studentIds, UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT);
 
-            $i = 0;
-            $users = [];
             $now = time();
             foreach ($boundUsers as $student) {
-                $i++;
-                $users[] = $student;
 
-                if ($i >= 10) {
-                    // 10个一组，放到nsq队列中一起处理
-                    QueueService::pushWX($users, $guideWord, $shareWord, $posterUrl, $now, $activityId, $employeeId);
-
-                    $i = 0;
-                    $users = [];
-                }
-            }
-
-            // 剩余数量小于10个
-            if (!empty($users)) {
-                QueueService::pushWX($users, $guideWord, $shareWord, $posterUrl, $now, $activityId, $employeeId);
+                // 放到nsq队列中一个个处理
+                QueueService::pushWX($student['user_id'], $student['open_id'], $guideWord, $shareWord, $posterUrl, $now, $activityId, $employeeId);
             }
 
             return true;
@@ -486,7 +472,8 @@ class ReferralActivityService
      */
     public static function pushWXMsg($msgBody)
     {
-        $students = $msgBody['students'];
+        $studentId = $msgBody['student_id'];
+        $openId = $msgBody['open_id'];
         $guideWord = $msgBody['guide_word'];
         $shareWord = $msgBody['share_word'];
         $posterUrl = $msgBody['poster_url'];
@@ -495,16 +482,9 @@ class ReferralActivityService
         $pushTime = $msgBody['push_wx_time'];
 
 
-        $successNum = 0;
-        $failNum = 0;
-        foreach ($students as $student) {
-            $result = self::sendWeixinTextAndImage($student['user_id'], $student['open_id'], $guideWord, $shareWord, $posterUrl);
-            if ($result) {
-                $successNum += 1;
-            } else {
-                $failNum += 1;
-            }
-        }
+        $result = self::sendWeixinTextAndImage($studentId, $openId, $guideWord, $shareWord, $posterUrl);
+        $successNum = $result ? 1 : 0;
+        $failNum = $result ? 0 : 1;
 
         // 发微信的记录
         $record = MessageRecordService::getMsgRecord($activityId, $employeeId, $pushTime);
@@ -512,8 +492,8 @@ class ReferralActivityService
             MessageRecordService::add(MessageRecordModel::MSG_TYPE_WEIXIN, $activityId, $successNum, $failNum, $employeeId, $pushTime);
         } else {
             MessageRecordService::updateMsgRecord($record['id'], [
-                'success_num' => $record['success_num'] + $successNum,
-                'fail_num' => $record['fail_num'] + $failNum,
+                'success_num[+]' => $successNum,
+                'fail_num[+]' => $failNum,
                 'update_time' => time()
             ]);
         }
