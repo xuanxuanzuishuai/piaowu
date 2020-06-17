@@ -150,7 +150,6 @@ VALUES
 		'已下线',
 NULL
 	),
-VALUES
 	(
 		'template_poster_config',
 		'海报模板图配置',
@@ -172,3 +171,13 @@ CREATE TABLE `template_poster` (
   `update_time` int(11) NOT NULL COMMENT '更新时间',
   PRIMARY KEY (`id`)
 ) COMMENT='海报模板图信息';
+
+CREATE TABLE `template_poster_word` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `content` text NOT NULL COMMENT '文案内容',
+  `status` tinyint(1) NOT NULL DEFAULT '1' COMMENT '1是下线2是上线',
+  `create_time` int(11) NOT NULL,
+  `update_time` int(11) NOT NULL,
+  `operate_id` int(11) NOT NULL,
+  PRIMARY KEY (`id`)
+) COMMENT='海报模板图文案信息';

@@ -64,7 +64,7 @@ class PosterTemplateService
         if (!empty($res)) {
             foreach ($res as $k => $value) {
                 $row = self::formatPosterInfo($value);
-                $row['display_order_num'] = ($pageId - 1) * $pageLimit + $k + 1;
+                $row['display_order_num'] = $value['order_num'];
                 $data[] = $row;
             }
         }
@@ -97,6 +97,9 @@ class PosterTemplateService
         }
         if (isset($row['operator_name'])) {
             $formatData['operator_name'] = $row['operator_name'] ?? '';
+        }
+        if (isset($row['order_num'])) {
+            $formatData['order_num'] = $row['order_num'];
         }
         return $formatData;
     }
