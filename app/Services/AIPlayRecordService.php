@@ -866,6 +866,8 @@ class AIPlayRecordService
      */
     public static function getStudentAssessData($recordId)
     {
+        $channel_id = StudentModel::CHANNEL_REFERRAL;
+        $TicketData = [];
         $report = AIPlayRecordModel::getRecord(['record_id' => $recordId]);
         if (empty($report)) {
             $report = [];
@@ -887,15 +889,19 @@ class AIPlayRecordService
 
         if ($report && $report['student_id']) {
             $report['replay_token'] = AIBackendService::genStudentToken($report["student_id"]);
+            $TicketData = UserService::getUserQRAliOss($report['student_id'], 1, $channel_id);
         }
         if (!empty($report['score_rank']) && $report['score_rank'] > 0 && $report['score_rank'] < 60) {
             $report['score_rank'] = "0";
         }
         $playShareAssessUrl = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'play_share_assess_url');
         $report['lesson_name'] = $lesson_name;
-        $report['play_share_assess_url'] = $playShareAssessUrl;
+        $data = array(
+            'ad'=>0,
+            'channel_id'=>$channel_id,
+            'referee_id'=>$TicketData['qr_ticket']);
 
-
+        $report['play_share_assess_url'] = $playShareAssessUrl.'?'.http_build_query($data);
         return empty($report) ? [] : $report;
     }
 

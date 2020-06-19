@@ -45,6 +45,7 @@ class StudentModel extends Model
     const CHANNEL_WEB_REGISTER = 1231; //web注册页
     const CHANNEL_EXAM_MINAPP_REGISTER = 1232; //音基小程序注册
     const CHANNEL_SPACKAGE_LANDING = 1233; //小课包推广页
+    const CHANNEL_REFERRAL = 1220; // 转介绍
 
     //是否添加助教微信
     const ADD_STATUS = 1;
