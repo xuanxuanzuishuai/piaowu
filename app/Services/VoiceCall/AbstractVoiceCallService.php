@@ -10,7 +10,6 @@ namespace App\Services\VoiceCall;
 
 
 use App\Models\VoiceCallLogModel;
-use App\Services\VoiceCallIf;
 
 abstract class AbstractVoiceCallService implements VoiceCallIf {
 

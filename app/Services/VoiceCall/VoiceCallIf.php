@@ -6,7 +6,7 @@
  * Time: 下午5:35
  */
 
-namespace App\Services;
+namespace App\Services\VoiceCall;
 
 
 interface VoiceCallIf
