@@ -29,7 +29,8 @@ use App\Models\ReviewCourseModel;
 use App\Models\StudentModel;
 use App\Models\UserWeixinModel;
 use App\Models\CollectionModel;
-use App\Libs\VoiceSMS;
+use App\Services\VoiceCall\VoiceCallTRService;
+use App\Models\VoiceCallLogModel;
 
 class ReviewCourseService
 {
@@ -695,9 +696,25 @@ class ReviewCourseService
             //发送短信
             $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
             $sms->sendCollectionCompleteNotify($student['mobile'], CommonServiceForApp::SIGN_STUDENT_APP, $collection);
-            //发送语音通知
-            $voiceSms = new VoiceSMS(DictConstants::get(DictConstants::VOICE_SMS_CONFIG, 'voice_host'));
-            $voiceSms->sendPurchaseExperienceClassSMS($student['mobile']);
+
+            $now = time();
+            $voiceCall = new VoiceCallTRService(DictConstants::get(DictConstants::VOICE_CALL_CONFIG, 'tianrun_voice_call_host'));
+            $insert = [];
+            $insert['receive_id'] = $studentId;
+            $insert['app_id'] = UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT;
+            $insert['receive_type'] = VoiceCallLogModel::RECEIVE_STUDENT;
+            $insert['relate_schedule_id'] = $studentId;
+            $insert['create_time'] = $now;
+            $insert['customer_number'] = $student['mobile'];
+            $insert['call_type'] = VoiceCallLogModel::VOICE_TYPE_PURCHASE_EXPERIENCE_CLASS;
+
+            $taskId = $voiceCall->createTask($insert);
+            $insert['task_id'] = $taskId;
+            $res = $voiceCall->execTask($insert, VoiceCallTRService::VOICE_TYPE_PURCHASE_EXPERIENCE_CLASS);
+            if( !empty($res) && $res['result'] != 0 && $res['description'] == '超过企业并发限制'){
+                usleep(500);
+                $voiceCall->execTask($insert);
+            }
         }
     }
 
