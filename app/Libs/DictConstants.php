@@ -72,6 +72,15 @@ class DictConstants {
             'voice_purchase_experience_class_template_id'
         ]
     ];
+    const VOICE_CALL_CONFIG = [
+        'type' => 'VOICE_CALL_CONFIG',
+        'keys' => [
+            'tianrun_voice_call_appid',
+            'tianrun_voice_call_host',
+            'tianrun_voice_call_token',
+
+        ]
+    ];
 
     const APP_CONFIG_COMMON = [
         'type' => 'APP_CONFIG_COMMON',

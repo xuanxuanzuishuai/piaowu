@@ -8,6 +8,7 @@
 
 namespace App\Controllers\API;
 
+use App\Libs\DictConstants;
 use App\Libs\HttpHelper;
 use App\Libs\Valid;
 use App\Controllers\ControllerBase;
@@ -17,6 +18,7 @@ use App\Services\Queue\PushMessageTopic;
 use App\Services\Queue\TableSyncTopic;
 use App\Services\ReferralActivityService;
 use App\Libs\TableSyncQueue;
+use App\Services\VoiceCall\VoiceCallTRService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -201,5 +203,41 @@ class Consumer extends ControllerBase
         }
 
         return HttpHelper::buildResponse($response, []);
+    }
+
+    /**
+     * 天润语音回掉
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * @throws \Exception
+     */
+    public function callCenter(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'event_type',
+                'type' => 'required',
+                'error_code' => 'event_type_is_required',
+            ],
+
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+
+        if ($result['code'] == 1) {
+            return $response->withJson($result, 200);
+        }
+
+        switch ($params['event_type']) {
+            case VoiceCallTRService::CALLBACK_VOICECALL_COMPLETE:
+                $voiceCall = new VoiceCallTRService(DictConstants::get(DictConstants::VOICE_CALL_CONFIG, 'tianrun_voice_call_host'));
+                $voiceCall->setCallbackParams($params['data']);
+                $voiceCall->saveCallbackResult();
+
+            default:
+        }
+
+        return $response->withJson(['code' => 0], 200);
     }
 }
