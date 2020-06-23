@@ -341,32 +341,24 @@ LIMIT :rank_limit;";
 
         // 点评数
         if (isset($params['review_days_min']) && is_numeric($params['review_days_min'])) {
-            $where .= " AND IFNULL(review_days, 0) >= :review_days_min ";
+            $where .= " AND IFNULL(play_days, 0) >= :review_days_min ";
             $map[":review_days_min"] = $params['review_days_min'];
         }
         if (isset($params['review_days_max']) && is_numeric($params['review_days_max'])) {
-            $where .= " AND IFNULL(review_days, 0) <= :review_days_max ";
+            $where .= " AND IFNULL(play_days, 0) <= :review_days_max ";
             $map[":review_days_max"] = $params['review_days_max'];
         }
         if (!empty($params['review_days_sort']) && in_array($params['review_days_sort'], ['DESC', 'ASC'])) {
-            $order = " ORDER BY review_days " . $params['review_days_sort'];
+            $order = " ORDER BY play_days " . $params['review_days_sort'];
         }
 
         $join = "
     LEFT JOIN
     (SELECT
         student_id,
-        SUM(duration) total_duration,
-        COUNT(DISTINCT FROM_UNIXTIME(end_time, '%Y-%m-%d')) play_days,
-        SUM(duration) / COUNT(DISTINCT FROM_UNIXTIME(end_time, '%Y-%m-%d')) avg_duration
-    FROM
-        " . self::$table . "
-    WHERE
-        end_time >= " . $startTime . " AND end_time <= " . $endTime . "
-    GROUP BY student_id) pr ON pr.student_id = s.id
-    LEFT JOIN
-    (SELECT
-        COUNT(DISTINCT play_date) review_days, student_id
+        SUM(sum_duration) total_duration,
+        COUNT(DISTINCT play_date) play_days,
+        SUM(sum_duration) / COUNT(DISTINCT play_date) avg_duration
     FROM
         " . ReviewCourseTaskModel::$table . "
     WHERE play_date >= " . $startDate . " AND play_date <= " . $endDate . "
@@ -399,8 +391,7 @@ SELECT
     c.teaching_start_time,
     total_duration,
     play_days,
-    avg_duration,
-    review_days
+    avg_duration
 FROM " . StudentModel::$table . " s
 INNER JOIN " . CollectionModel::$table . " c ON c.id = s.collection_id
 LEFT JOIN
