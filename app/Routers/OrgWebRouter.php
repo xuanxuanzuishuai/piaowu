@@ -22,6 +22,7 @@ use App\Controllers\Org\OrgLicense;
 use App\Controllers\OrgWeb\Activity;
 use App\Controllers\OrgWeb\Admin;
 use App\Controllers\OrgWeb\Approval;
+use App\Controllers\OrgWeb\AutoReply;
 use App\Controllers\OrgWeb\Banner;
 use App\Controllers\OrgWeb\CommunityRedPack;
 use App\Controllers\OrgWeb\CommunitySharePoster;
@@ -444,6 +445,17 @@ class OrgWebRouter extends RouterBase
         // 学生账户
         '/org_web/student/accounts' => ['method' => ['get'], 'call' => Student::class . ':getStudentAccounts'],
         '/org_web/student/account_detail' => ['method' => ['get'], 'call' => Student::class . ':getStudentAccountDetail'],
+
+        //微信自动回复
+        '/org_web/auto_replay/question_edit' => ['method' => ['post'], 'call' => AutoReply::class . ':questionEdit'],
+        '/org_web/auto_replay/question_add' => ['method' => ['post'], 'call' => AutoReply::class . ':questionAdd'],
+        '/org_web/auto_replay/question_one' => ['method' => ['get'], 'call' => AutoReply::class . ':questionOne'],
+
+        '/org_web/auto_replay/answer_add' => ['method' => ['post'], 'call' => AutoReply::class . ':answerAdd'],
+        '/org_web/auto_replay/answer_edit' => ['method' => ['post'], 'call' => AutoReply::class . ':answerEdit'],
+        '/org_web/auto_replay/answer_one' => ['method' => ['get'], 'call' => AutoReply::class . ':answerOne'],
+
+        '/org_web/auto_replay/question_list' => ['method' => ['get'], 'call' => AutoReply::class . ':list'],
 
     ];
 }

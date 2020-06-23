@@ -12,6 +12,7 @@ use App\Libs\DictConstants;
 use App\Libs\RedisDB;
 use App\Models\UserQrTicketModel;
 use App\Models\WeChatOpenIdListModel;
+use App\Services\AutoReplyService;
 use App\Services\UserService;
 use App\Services\WeChatService;
 use App\Models\UserWeixinModel;
@@ -141,14 +142,17 @@ class WeChatMsgHandler
     {
         if(!empty($_ENV['SERVER_AUTO_REPLY']) && !self::serverOnline($_ENV['SERVER_ONLINE_TIME'])) {
             $client = (string)$xml->FromUserName;
-            $key = "{$client}.last_send_time";
-            $db = RedisDB::getConn();
-            if(empty($db->get($key))) {
-                $reply = "您好，微信平台客服在线服务时间为{$_ENV['SERVER_ONLINE_TIME']}，非在线时间咨询可拨打客服电话 400-029-2609";
+            $msgQuestion = (string)$xml->MsgQuestion;
+            $questionRow = AutoReplyService::getQuestionByTitle($msgQuestion);
+            if(empty($questionRow)){
+                return false;
+            }
+            foreach ($questionRow['list'] as $key => $value){
+                $reply = $value['answer'];
                 WeChatService::notifyUserWeixinTextInfo(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
                     UserWeixinModel::USER_TYPE_STUDENT, $client, $reply);
-                $db->setex($key, 3600, time());
             }
+
         }
     }
 }
