@@ -883,7 +883,7 @@ class AIPlayRecordService
         if ($report['input_type'] && $report['input_type'] == 1 && $report['student_id']) {
            $aiAudio = AIPlayRecordService::getAiAudio($report['student_id'], $recordId);
            if(!empty($aiAudio)) {
-               $report['audio_url'] = $aiAudio['audio_url'];
+               $report['audio_url'] = $aiAudio;
            }
         }
 
@@ -891,7 +891,7 @@ class AIPlayRecordService
             $report['replay_token'] = AIBackendService::genStudentToken($report["student_id"]);
             $TicketData = UserService::getUserQRAliOss($report['student_id'], 1, $channel_id);
         }
-        if (!empty($report['score_rank']) && $report['score_rank'] > 0 && $report['score_rank'] < 60) {
+        if (!empty($report['score_rank']) && $report['score_rank'] > 0 && $report['score_rank'] < 60 || $report['is_phrase'] == 1 || $report['hand'] != 3) {
             $report['score_rank'] = "0";
         }
         $playShareAssessUrl = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'play_share_assess_url');
@@ -914,14 +914,14 @@ class AIPlayRecordService
      */
     public static function getAiAudio($studentId, $aiRecordId)
     {
-        if (empty($ai_record_id)) {
+        if (empty($aiRecordId)) {
             return [];
         }
-        $playInfo = PlayRecordModel::getRecord(["student_id" => $studentId, "ai_record_id" => $aiRecordId]);
+        $playInfo = AIPlayRecordModel::getRecord(["student_id" => $studentId, "record_id" => $aiRecordId]);
         if (empty($playInfo)) {
             return [];
         }
         $data = AIPLCenter::userAudio($aiRecordId);
-        return $data;
+        return $data['data']['audio_url'] ?? '';
     }
 }
