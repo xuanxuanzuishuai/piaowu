@@ -236,33 +236,34 @@ class QuestionService
 
     private static function sign(&$array)
     {
-        if (is_array($array)) {
-            foreach($array as &$a) {
-                if(isset($a['questions'])) {
-                    foreach($a['questions'] as $k => $record) {
-                        foreach($record['options'] as $kk => $v) {
-                            if(!empty($v['img'])) {
-                                $v['img'] = self::signUrls($v['img']);
-                            }
-                            $record['options'][$kk] = $v;
+        if (!is_array($array)) {
+            return;
+        }
+        foreach($array as &$a) {
+            if(isset($a['questions'])) {
+                foreach($a['questions'] as $k => $record) {
+                    foreach($record['options'] as $kk => $v) {
+                        if(!empty($v['img'])) {
+                            $v['img'] = self::signUrls($v['img']);
                         }
-                        if(!empty($record['answer_explain']['img'])) {
-                            $record['answer_explain']['img'] = self::signUrls($record['answer_explain']['img']);
-                        }
-                        if(!empty($record['content_img'])) {
-                            $record['content_img'] = self::signUrls($record['content_img']);
-                        }
-                        if(!empty($record['content_audio'])) {
-                            $record['content_audio'] = self::signUrls($record['content_audio']);
-                        }
-                        if(!empty($record['content_text_audio'])) {
-                            $record['content_text_audio'] = self::signUrls($record['content_text_audio']);
-                        }
-                        $a['questions'][$k] = $record;
+                        $record['options'][$kk] = $v;
                     }
-                } else {
-                    self::sign($a['children']);
+                    if(!empty($record['answer_explain']['img'])) {
+                        $record['answer_explain']['img'] = self::signUrls($record['answer_explain']['img']);
+                    }
+                    if(!empty($record['content_img'])) {
+                        $record['content_img'] = self::signUrls($record['content_img']);
+                    }
+                    if(!empty($record['content_audio'])) {
+                        $record['content_audio'] = self::signUrls($record['content_audio']);
+                    }
+                    if(!empty($record['content_text_audio'])) {
+                        $record['content_text_audio'] = self::signUrls($record['content_text_audio']);
+                    }
+                    $a['questions'][$k] = $record;
                 }
+            } else {
+                self::sign($a['children']);
             }
         }
     }
