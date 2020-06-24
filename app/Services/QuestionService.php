@@ -236,33 +236,75 @@ class QuestionService
 
     private static function sign(&$array)
     {
-        foreach($array as &$a) {
-            if(isset($a['questions'])) {
-                foreach($a['questions'] as $k => $record) {
-                    foreach($record['options'] as $kk => $v) {
-                        if(!empty($v['img'])) {
-                            $v['img'] = self::signUrls($v['img']);
+        if (is_array($array)) {
+            foreach($array as &$a) {
+                if(isset($a['questions'])) {
+                    foreach($a['questions'] as $k => $record) {
+                        foreach($record['options'] as $kk => $v) {
+                            if(!empty($v['img'])) {
+                                $v['img'] = self::signUrls($v['img']);
+                            }
+                            $record['options'][$kk] = $v;
                         }
-                        $record['options'][$kk] = $v;
+                        if(!empty($record['answer_explain']['img'])) {
+                            $record['answer_explain']['img'] = self::signUrls($record['answer_explain']['img']);
+                        }
+                        if(!empty($record['content_img'])) {
+                            $record['content_img'] = self::signUrls($record['content_img']);
+                        }
+                        if(!empty($record['content_audio'])) {
+                            $record['content_audio'] = self::signUrls($record['content_audio']);
+                        }
+                        if(!empty($record['content_text_audio'])) {
+                            $record['content_text_audio'] = self::signUrls($record['content_text_audio']);
+                        }
+                        $a['questions'][$k] = $record;
                     }
-                    if(!empty($record['answer_explain']['img'])) {
-                        $record['answer_explain']['img'] = self::signUrls($record['answer_explain']['img']);
-                    }
-                    if(!empty($record['content_img'])) {
-                        $record['content_img'] = self::signUrls($record['content_img']);
-                    }
-                    if(!empty($record['content_audio'])) {
-                        $record['content_audio'] = self::signUrls($record['content_audio']);
-                    }
-                    if(!empty($record['content_text_audio'])) {
-                        $record['content_text_audio'] = self::signUrls($record['content_text_audio']);
-                    }
-                    $a['questions'][$k] = $record;
+                } else {
+                    self::sign($a['children']);
                 }
-            } else {
-                self::sign($a['children']);
             }
         }
+    }
+
+    /**
+     * @return array|mixed
+     * 音基库基础类目信息
+     */
+    public static function baseQuestions()
+    {
+        $records = QuestionModel::getBaseQuestions();
+        self::sign($records);
+        return $records;
+    }
+
+    /**
+     * @param $catLogId
+     * @param $subCatLogId
+     * @param null $needNum
+     * @return array
+     * 某个类目下关联的题
+     */
+    public static function getCatLogRelateQuestions($catLogId, $subCatLogId, $needNum = NULL)
+    {
+        $where = [
+            'AND' => [
+                'catalog' => $catLogId,
+                'sub_catalog' => $subCatLogId,
+                'status' => Constants::STATUS_TRUE
+            ]
+        ];
+        if (!empty($needNum)) {
+            $where['LIMIT'] = [0, $needNum];
+        }
+        $records = QuestionModel::getRecords($where);
+        $needInfo = [];
+        if (!empty($records)) {
+            foreach ($records as $record) {
+                $needInfo[] = self::formatQuestionInfo($record);
+            }
+        }
+        return $needInfo;
     }
 
     public static function questions()
@@ -276,6 +318,11 @@ class QuestionService
     public static function getByIdForApp($id)
     {
         $record = QuestionModel::getByQuestionId($id);
+        return self::formatQuestionInfo($record);
+    }
+
+    private static function formatQuestionInfo($record)
+    {
         $catalogs = QuestionCatalogService::selectAll();
         $catalog = [];
         foreach($catalogs as $c) {
@@ -309,7 +356,6 @@ class QuestionService
         if(!empty($record['content_text_audio'])) {
             $record['content_text_audio'] = self::signUrls($record['content_text_audio']);
         }
-
         return $record;
     }
 

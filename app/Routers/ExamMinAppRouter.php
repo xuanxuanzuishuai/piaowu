@@ -18,6 +18,16 @@ class ExamMinAppRouter extends RouterBase
     protected $logFilename = 'dss_exam_minapp.log';
 
     protected $uriConfig = [
+        '/exam/question/baseList' => [
+            'method'  => ['get'],
+            'call'    => Question::class . ':baseList',
+            'middles' => [MinAppAuthCheckMiddleware::class],
+        ],
+        '/exam/question/categoryRelateQuestions' => [
+            'method'  => ['get'],
+            'call'    => Question::class . ':categoryRelateQuestions',
+            'middles' => [MinAppAuthCheckMiddleware::class],
+        ],
         '/exam/question/list' => [
             'method'  => ['get'],
             'call'    => Question::class . ':list',

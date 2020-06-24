@@ -18,6 +18,7 @@ class QuestionModel extends Model
 {
     public static $table = 'question';
     private static $cacheQuestionsKey = 'dss.question.all_questions';
+    private static $cacheBaseQuestionsKey = 'dss.question.base_questions';
 
     public static function selectByPage($page, $count, $params)
     {
@@ -212,6 +213,50 @@ group by q.id order by q.create_time desc, q.status asc";
         $conn->set(self::$cacheQuestionsKey, json_encode($tree, 1));
         $conn->expire(self::$cacheQuestionsKey, 7 * 86400); // one week
 
+        return $tree;
+    }
+
+    public static function getBaseQuestions()
+    {
+        $conn = RedisDB::getConn();
+        $records = $conn->get(self::$cacheBaseQuestionsKey);
+        if(!empty($records)) {
+            return json_decode($records, 1);
+        }
+
+        $catalogs = QuestionCatalogModel::getRecords(
+            [
+                'AND' => [
+                    'status' => Constants::STATUS_TRUE,
+                    'mini_show' => Constants::STATUS_TRUE
+                ],
+                'ORDER' => ['type' => 'ASC', 'id' => 'ASC']
+            ],
+            ['id', 'catalog', 'parent_id', 'type']
+        );
+
+        $tree = [];
+        $where = [];
+
+        foreach($catalogs as $c) {
+            if($c['type'] == 1) {
+                $where[$c['id']] = count($tree);
+                $tree[] = $c;
+            } else {
+                if(!isset($where[$c['parent_id']])) {
+                    continue;
+                }
+                $index = $where[$c['parent_id']];
+                if($c['type'] == 3) {
+                    $j = substr($index, 0, strpos($index, '.'));
+                    !isset($tree[$j]['catalog_count']) && $tree[$j]['catalog_count'] = 0;
+                    $tree[$j]['catalog_count'] ++;
+                }
+                $i = self::put($tree, $index, $c);
+                $where[$c['id']] = "{$index}.{$i}";
+            }
+        }
+        $conn->setex(self::$cacheBaseQuestionsKey, 604800,json_encode($tree, 1));
         return $tree;
     }
 
