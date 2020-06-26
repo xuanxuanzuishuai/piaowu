@@ -186,6 +186,15 @@ class PayServices
     {
         $erp = new Erp();
 
+        // 报课渠道 1 APP 2 公众号 3 ERP
+        $package = $erp->getPackageDetail($packageId, $uuid, 2);
+        if (empty($package)) {
+            return [];
+        }
+
+        // erp的packages返回的是元为单位，需转为分
+        $amount = $package['sprice'] * 100;
+
         list($successUrl, $cancelUrl, $resultUrl) = DictConstants::get(
             DictConstants::WEB_STUDENT_CONFIG,
             ['success_url', 'cancel_url', 'result_url']
@@ -206,8 +215,8 @@ class PayServices
             $packageId,
             $payChannel,
             $clientIp,
-            1,
-            1,
+            $amount,
+            $package['oprice'] * 100,
             [
                 'success_url' => $transUrl ? str_replace('smartpeilian', 'referral', $successUrl) : $successUrl,
                 'cancel_url' => $transUrl ? str_replace('smartpeilian', 'referral', $cancelUrl) : $cancelUrl,
