@@ -132,6 +132,10 @@ class EmployeeService
         if (isset($params['status'])) {
             $where['AND'][EmployeeModel::$table . '.status'] = $params['status'];
         }
+        // 部门
+        if (isset($params['dept_id'])) {
+            $where['AND'][EmployeeModel::$table . '.dept_id'] = $params['dept_id'];
+        }
 
         $totalCount = EmployeeModel::getEmployeeCount($where);
         if ($totalCount == 0) {
@@ -154,15 +158,7 @@ class EmployeeService
     public static function getEmployeeDetail($userId)
     {
         $user = EmployeeModel::getEmployeeById($userId);
-        global $orgId;
-        //根据当前登录用户查询不同的角色
-        $orgType = RoleService::getOrgTypeByOrgId($orgId);
-
-        if($orgType == RoleModel::ORG_TYPE_DIRECT) {
-            $roles = RoleModel::selectByOrgType([RoleModel::ORG_TYPE_DIRECT, RoleModel::ORG_TYPE_EXTERNAL]);
-        } else {
-            $roles = RoleModel::selectByOrgType($orgType);
-        }
+        $roles = RoleModel::getRoles();
 
         return [$user, $roles];
     }
@@ -185,6 +181,7 @@ class EmployeeService
             'is_leader'  => $params['is_leader'] ?? 0,
             'teacher_id' => $params['teacher_id'] ?? null,
             'org_id'     => $params['org_id'] ?? 0,
+            'dept_id'    => $params['dept_id'] ?? 0,
         ];
 
         /**

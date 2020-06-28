@@ -74,10 +74,9 @@ class Employee extends ControllerBase
     /**
      * @param Request $request
      * @param Response $response
-     * @param $args
      * @return Response
      */
-    public function list(Request $request, Response $response, $args)
+    public function list(Request $request, Response $response)
     {
         $params = $request->getParams();
         list($page, $count) = Util::formatPageCount($params);
@@ -149,9 +148,6 @@ class Employee extends ControllerBase
         }
 
         list($user, $roles) = EmployeeService::getEmployeeDetail($params['id']);
-        //过滤login_name的前缀，比如org2_tom，前端要显示成tom
-        $user['login_name'] = preg_replace('/^org\d+_(.*)/i', '${1}', $user['login_name']);
-        $user['prefix'] = Util::makeOrgLoginName($user['org_id'],'');
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
@@ -233,75 +229,6 @@ class Employee extends ControllerBase
             return $response->withJson(Valid::addErrors([],'employee','role_not_exist'));
         }
 
-        global $orgId;
-
-        //检查非内部人员编辑的员工是否和自己在同一机构下
-        if($orgId > 0 && !empty($params['id'])) {
-            $employee = EmployeeModel::getById($params['id']);
-            if(empty($employee)) {
-                return $response->withJson(Valid::addErrors([], 'employee', 'employee_not_exist'));
-            }
-            if($employee['org_id'] != $orgId) {
-                return $response->withJson(Valid::addErrors([], 'employee', 'can_not_edit_other_org_employee'));
-            }
-        }
-
-        //直营校长
-        $directPrincipalRoleId = DictService::getKeyValue(Constants::DICT_TYPE_ROLE_ID, Constants::DICT_KEY_CODE_DIRECT_PRINCIPAL_ROLE_ID_CODE);
-        //机构校长
-        $externalPrincipalRoleId = DictService::getKeyValue(Constants::DICT_TYPE_ROLE_ID, Constants::DICT_KEY_CODE_PRINCIPAL_ROLE_ID_CODE);
-        if(empty($directPrincipalRoleId)) {
-            return $response->withJson(Valid::addErrors([], 'employee', 'direct_principal_role_not_exist'));
-        }
-        if(empty($externalPrincipalRoleId)) {
-            return $response->withJson(Valid::addErrors([], 'employee', 'external_principal_role_exist'));
-        }
-        //当前登录用户的roleId
-        $currentRoleId = $this->ci['employee']['role_id'];
-        //校长数组
-        $principalRoleIds = [$directPrincipalRoleId, $externalPrincipalRoleId];
-
-        if ($orgId > 0) {
-            $roleType = RoleService::getOrgTypeByOrgId($orgId);
-            //当前角色是直营，创建的角色必须是直营或外部
-            if($roleType == RoleModel::ORG_TYPE_DIRECT &&
-                $role['org_type'] != RoleModel::ORG_TYPE_DIRECT &&
-                $role['org_type'] != RoleModel::ORG_TYPE_EXTERNAL) {
-                return $response->withJson(Valid::addErrors([], 'employee', 'role_type_error'));
-            }
-            //当前角色是外部，创建的角色必须是外部
-            if($roleType == RoleModel::ORG_TYPE_EXTERNAL && $role['org_type'] != $roleType) {
-                return $response->withJson(Valid::addErrors([], 'employee', 'role_type_error2'));
-            }
-
-            //机构管理员添加雇员时，不能指定雇员所属机构，必须与添加者同属一个机构
-            $params['org_id'] = $orgId;
-
-            if(!empty($params['id'])) {
-                //检查有没有不是校长角色却编辑校长的情况, 要修改的角色不能是校长，更新后的角色也不能是校长
-                if(!in_array($currentRoleId, $principalRoleIds) &&
-                    (in_array($params['role_id'], $principalRoleIds) || in_array($employee['role_id'], $principalRoleIds))) {
-                    return $response->withJson(Valid::addErrors([], 'employee', 'has_no_privilege_edit_this_role'));
-                }
-                //检查校长把一个普通员工更新成校长的情况
-                if(in_array($currentRoleId, $principalRoleIds) &&
-                    !in_array($employee['role_id'], $principalRoleIds) &&
-                    in_array($params['role_id'], $principalRoleIds)) {
-                    return $response->withJson(Valid::addErrors([], 'employee', 'has_no_privilege_edit_this_role'));
-                }
-            } else {
-                //添加员工时，要检查非内部人员都想添加校长角色的情况
-                if(in_array($params['role_id'], $principalRoleIds)) {
-                    return $response->withJson(Valid::addErrors([], 'employee', 'has_no_privilege_edit_this_role'));
-                }
-            }
-        } else {
-            //内部管理员添加雇员
-            //角色是非内部角色时，传入的org_id不能为空
-            if($role['org_type'] != RoleModel::ORG_TYPE_INTERNAL && empty($params['org_id'])) {
-                return $response->withJson(Valid::addErrors([],'employee','org_can_not_be_empty'));
-            }
-        }
 
         //编辑用户时，不能修改org_id
         if(!empty($params['id'])) {
@@ -313,17 +240,14 @@ class Employee extends ControllerBase
             $params['mobile'] = $employee['mobile']; //手机号不能修改，不信任前端传递的手机号
         } else {
             //前端没有传org_id时，置为0
-            $params['org_id'] = empty($params['org_id']) ? 0 : $params['org_id'];
+            $params['org_id'] = 0;
 
             //添加一个新员工时，检查手机号是否已经被占用
-            $em = EmployeeModel::getRecord(['mobile' => $params['mobile']], [], false);
+            $em = EmployeeModel::getRecord(['mobile' => $params['mobile']], []);
             if(!empty($em)) {
                 return $response->withJson(Valid::addErrors([], 'employee', 'mobile_has_exist'));
             }
         }
-
-        //内部人员登录名前加org0_,机构人员登录名前加org+ID+下划线
-        $params['login_name'] = Util::makeOrgLoginName($params['org_id'], $params['login_name']);
 
         //前端传递的status与insertOrUpdateEmployee所需的参数一致，$params已经包含了status
         $userId = EmployeeService::insertOrUpdateEmployee($params);

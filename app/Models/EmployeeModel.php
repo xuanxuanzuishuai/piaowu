@@ -106,10 +106,9 @@ class EmployeeModel extends Model
      * @param int $page
      * @param int $count
      * @param $where
-     * @param bool $isOrg
      * @return mixed
      */
-    public static function getEmployees($page = 0, $count = 0, $where, $isOrg = true)
+    public static function getEmployees($page = 0, $count = 0, $where)
     {
         $db = MysqlDB::getDB();
 
@@ -117,16 +116,10 @@ class EmployeeModel extends Model
             $where['LIMIT'] = [($page - 1) * $count, $count];
         }
 
-        if($isOrg) {
-            global $orgId;
-            if($orgId > 0) {
-                $where[self::$table.'.org_id'] = $orgId;
-            }
-        }
-
         $users = $db->select(self::$table, [
             '[>]' . RoleModel::$table => ['role_id' => 'id'],
-            '[>]' . OrganizationModel::$table => ['org_id' => 'id']
+            '[>]' . OrganizationModel::$table => ['org_id' => 'id'],
+            '[>]' . DeptModel::$table => ['dept_id' => 'id']
         ], [
             self::$table . '.id',
             self::$table . '.name',
@@ -139,7 +132,7 @@ class EmployeeModel extends Model
             self::$table . '.last_login_time',
             self::$table . '.org_id',
             RoleModel::$table . '.name(role_name)',
-            OrganizationModel::$table . '.name(org_name)',
+            DeptModel::$table . '.name(dept_name)',
         ], $where);
 
         return $users ?: [];
@@ -149,16 +142,10 @@ class EmployeeModel extends Model
     /**
      * 获取员工总数
      * @param $where
-     * @param bool $isOrg
      * @return number
      */
-    public static function getEmployeeCount($where,$isOrg = true)
+    public static function getEmployeeCount($where)
     {
-        if($isOrg == true) {
-            global $orgId;
-            if($orgId > 0 )
-                $where[self::$table.'.org_id'] = $orgId;
-        }
         return MysqlDB::getDB()->count(self::$table, '*', $where);
     }
 
@@ -257,7 +244,7 @@ class EmployeeModel extends Model
     {
         $user = MysqlDB::getDB()->get(self::$table, [
             '[>]' . RoleModel::$table => ['role_id' => 'id'],
-            '[>]' . OrganizationModel::$table => ['org_id' => 'id']
+            '[>]' . DeptModel::$table => ['dept_id' => 'id']
         ], [
             self::$table . '.id',
             self::$table . '.name',
@@ -269,7 +256,7 @@ class EmployeeModel extends Model
             self::$table . '.is_leader',
             self::$table . '.last_login_time',
             self::$table . '.org_id',
-            OrganizationModel::$table . '.name(org_name)',
+            DeptModel::$table . '.name(dept_name)',
             RoleModel::$table . '.name(role_name)',
         ], [self::$table . '.id' => $id]);
 

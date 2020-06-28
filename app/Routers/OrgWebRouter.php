@@ -25,6 +25,7 @@ use App\Controllers\OrgWeb\Approval;
 use App\Controllers\OrgWeb\Banner;
 use App\Controllers\OrgWeb\CommunityRedPack;
 use App\Controllers\OrgWeb\CommunitySharePoster;
+use App\Controllers\OrgWeb\Dept;
 use App\Controllers\OrgWeb\Erp;
 use App\Controllers\OrgWeb\Flags;
 use App\Controllers\OrgWeb\PlayRecord;
@@ -427,5 +428,12 @@ class OrgWebRouter extends RouterBase
         // 产品包管理
         '/org_web/package/list' => ['method' => ['get'], 'call' => Package::class . ':list'],
         '/org_web/package/edit' => ['method' => ['post'], 'call' => Package::class . ':edit'],
+
+        // 部门
+        '/org_web/dept/tree' => ['method' => ['get'], 'call' => Dept::class . ':tree'],
+        '/org_web/dept/list' => ['method' => ['get'], 'call' => Dept::class . ':list'],
+        '/org_web/dept/modify' => ['method' => ['post'], 'call' => Dept::class . ':modify'],
+        '/org_web/dept/dept_privilege' => ['method' => ['get'], 'call' => Dept::class . ':deptPrivilege'],
+        '/org_web/dept/privilege_modify' => ['method' => ['post'], 'call' => Dept::class . ':privilegeModify'],
     ];
 }

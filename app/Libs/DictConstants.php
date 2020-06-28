@@ -310,6 +310,16 @@ class DictConstants {
         ]
     ];
 
+    const DEPT_DATA_TYPE_NAME = [
+        'type' => 'DEPT_DATA_TYPE_NAME',
+        'keys' => [1]
+    ];
+
+    const DEPT_PRIVILEGE_TYPE_NAME = [
+        'type' => 'DEPT_PRIVILEGE_TYPE_NAME',
+        'keys' => [0, 1, 2, 3, 4]
+    ];
+
     public static function get($type, $key)
     {
         if (empty($type) || empty($key)) {
