@@ -137,22 +137,19 @@ class WeChatMsgHandler
         return false;
     }
 
-    //autoReply在客服离线时自动回复客服消息，1小时内只回复1次
     public static function autoReply($xml)
     {
-        if(!empty($_ENV['SERVER_AUTO_REPLY']) && !self::serverOnline($_ENV['SERVER_ONLINE_TIME'])) {
-            $client = (string)$xml->FromUserName;
-            $msgQuestion = (string)$xml->MsgQuestion;
-            $questionRow = AutoReplyService::getQuestionByTitle($msgQuestion);
-            if(empty($questionRow)){
-                return false;
-            }
-            foreach ($questionRow['list'] as $key => $value){
-                $reply = $value['answer'];
-                WeChatService::notifyUserWeixinTextInfo(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
-                    UserWeixinModel::USER_TYPE_STUDENT, $client, $reply);
-            }
-
+        $client = (string)$xml->FromUserName;
+        $msgQuestion = trim((string)$xml->Content);
+        $questionRow = AutoReplyService::getQuestionByTitle($msgQuestion);
+        if(empty($questionRow)){
+            return false;
         }
+        foreach ($questionRow['list'] as $key => $value){
+            $reply = $value['answer'];
+            WeChatService::notifyUserWeixinTextInfo(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
+                UserWeixinModel::USER_TYPE_STUDENT, $client, $reply);
+        }
+        return true;
     }
 }
