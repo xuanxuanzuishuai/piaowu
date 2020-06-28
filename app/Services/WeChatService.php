@@ -799,4 +799,76 @@ class WeChatService
         //返回数据
         return $res;
     }
+
+    /**
+     * 创建微信用户标签
+     * @param $appId
+     * @param $userType
+     * @param $tagName
+     * @return array|bool|mixed
+     */
+    public static function createTags($appId, $userType, $tagName){
+        //发送数据
+        $res = self::commonWeixinAPI($appId, $userType, 'POST', 'tags/create',
+            json_encode([
+                'tag' => [
+                    'name' => $tagName
+                ]
+            ], JSON_UNESCAPED_UNICODE));
+        //返回数据
+        return $res;
+    }
+
+
+    /**
+     * 修改微信用户标签
+     * @param $appId
+     * @param $userType
+     * @param $tagId
+     * @param $tagName
+     * @return array|bool|mixed
+     */
+    public static function updateTags($appId, $userType, $tagId, $tagName)
+    {
+        $res = self::commonWeixinAPI($appId, $userType, 'POST', 'tags/update',
+            json_encode([
+                'tag' => [
+                    "id" => $tagId,
+                    'name' => $tagName
+                ]
+            ], JSON_UNESCAPED_UNICODE));
+        return $res;
+    }
+
+    /**
+     * 删除微信用户标签
+     * @param $appId
+     * @param $userType
+     * @param $tagId
+     * @return array|bool|mixed
+     */
+    public static function delTags($appId, $userType, $tagId)
+    {
+        $res = self::commonWeixinAPI($appId, $userType, 'POST', 'tags/delete',
+            json_encode([
+                'tag' => [
+                    "id" => $tagId
+                ]
+            ], JSON_UNESCAPED_UNICODE));
+        return $res;
+    }
+
+    /**
+     * 获取标签下的粉丝列表
+     * @param $appId
+     * @param $userType
+     * @param $tagId
+     * @return array|bool|mixed
+     */
+    public static function tagsFansList($appId, $userType, $tagId)
+    {
+        $fans = self::commonWeixinAPI($appId, $userType, 'POST', 'user/tag/get',
+            json_encode(['tagid' => $tagId], JSON_UNESCAPED_UNICODE));
+        return $fans;
+    }
 }

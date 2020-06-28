@@ -57,6 +57,7 @@ use App\Controllers\OrgWeb\Package;
 use App\Controllers\OrgWeb\Student as OrgWebStudent;
 use App\Controllers\OrgWeb\Faq;
 use App\Controllers\OrgWeb\StudentCertificate;
+use App\Controllers\OrgWeb\WxTags;
 
 class OrgWebRouter extends RouterBase
 {
@@ -485,5 +486,11 @@ class OrgWebRouter extends RouterBase
         '/org_web/make_opera/make_start' => ['method' => ['get'], 'call' => MakeOpera::class . ':makeStart'],
         '/org_web/make_opera/make_end' => ['method' => ['post'], 'call' => MakeOpera::class . ':makeEnd'],
         '/org_web/make_opera/opera_use' => ['method' => ['post'], 'call' => MakeOpera::class . ':operaUse'],
+
+        //微信用户标签管理
+        '/org_web/wx_tag/add' => ['method' => ['post'], 'call' => WxTags::class . ':add'],
+        '/org_web/wx_tag/update' => ['method' => ['post'], 'call' => WxTags::class . ':update'],
+        '/org_web/wx_tag/del' => ['method' => ['post'], 'call' => WxTags::class . ':del'],
+        '/org_web/wx_tag/list' => ['method' => ['get'], 'call' => WxTags::class . ':list'],
     ];
 }

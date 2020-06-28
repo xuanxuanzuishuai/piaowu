@@ -848,4 +848,20 @@ class Util
         $sentryClient = new \Raven_Client($_ENV['SENTRY_NOTIFY_URL']);
         $sentryClient->captureMessage($message, $data);
     }
+
+    /**
+     * 检测字符串的字节长度是否满足要求
+     * @param $str
+     * @param $checkLength
+     * @return bool
+     */
+    public static function checkStringLength($str, $checkLength)
+    {
+        $strLength = strlen($str);
+        if ($strLength > $checkLength) {
+            return false;
+        } else {
+            return true;
+        }
+    }
 }
