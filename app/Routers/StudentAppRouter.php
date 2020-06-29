@@ -263,5 +263,15 @@ class StudentAppRouter extends RouterBase
             'call'    => Question::class . ':list',
             'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
         ],
+        '/student_app/exam/question_baseList' => [
+            'method'  => ['get'],
+            'call'    => Question::class . ':baseList',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
+        '/student_app/exam/question_categoryRelateQuestions' => [
+            'method'  => ['get'],
+            'call'    => Question::class . ':categoryRelateQuestions',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
     ];
 }
