@@ -74,7 +74,7 @@ class APIRouter extends RouterBase
             'call' => WeChat::class . ':studentMiniPro',
             'middles' => [],
         ],
-        '/api/consumer/call_center' => [
+        '/api/consumer/callcenter' => [
             'method' => ['post'],
             'call' => Consumer::class . ':callCenter',
             'middles' => [],
