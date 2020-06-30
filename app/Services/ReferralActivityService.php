@@ -453,12 +453,10 @@ class ReferralActivityService
 
             $boundUsers = UserWeixinModel::getBoundUserIds($studentIds, UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT);
 
-            $now = time();
-            foreach ($boundUsers as $student) {
 
-                // 放到nsq队列中一个个处理
-                QueueService::pushWX($student['user_id'], $student['open_id'], $guideWord, $shareWord, $posterUrl, $now, $activityId, $employeeId);
-            }
+            // 放到nsq队列中一个个处理
+            QueueService::pushWX($boundUsers, $guideWord, $shareWord, $posterUrl, $activityId, $employeeId);
+
 
             return true;
         }

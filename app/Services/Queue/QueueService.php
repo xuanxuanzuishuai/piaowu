@@ -102,33 +102,35 @@ class QueueService
 
     /**
      * 给微信用户推送活动消息
-     * @param $studentId
-     * @param $openId
+     * @param $students
      * @param $guideWord
      * @param $shareWord
      * @param $posterUrl
-     * @param $pushTime
      * @param $activityId
      * @param $employeeId
      * @return bool
      */
-    public static function pushWX($studentId, $openId, $guideWord, $shareWord, $posterUrl, $pushTime, $activityId, $employeeId)
+    public static function pushWX($students, $guideWord, $shareWord, $posterUrl, $activityId, $employeeId)
     {
         try {
             $topic = new PushMessageTopic();
+            $pushTime = time();
 
-            $msgBody = [
-                'student_id' => $studentId,
-                'open_id' => $openId,
-                'guide_word' => $guideWord,
-                'share_word' => $shareWord,
-                'poster_url' => $posterUrl,
-                'push_wx_time' => $pushTime,
-                'activity_id' => $activityId,
-                'employee_id' => $employeeId
-            ];
+            foreach ($students as $student) {
 
-            $topic->pushWX($msgBody)->publish();
+                $msgBody = [
+                    'student_id' => $student['user_id'],
+                    'open_id' => $student['open_id'],
+                    'guide_word' => $guideWord,
+                    'share_word' => $shareWord,
+                    'poster_url' => $posterUrl,
+                    'push_wx_time' => $pushTime,
+                    'activity_id' => $activityId,
+                    'employee_id' => $employeeId
+                ];
+
+                $topic->pushWX($msgBody)->publish();
+            }
 
         } catch (Exception $e) {
             SimpleLogger::error($e->getMessage(), $msgBody ?? []);
