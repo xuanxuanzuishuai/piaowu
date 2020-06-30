@@ -137,6 +137,7 @@ class AutoReplyService
             ]
         ];
         $question = AutoReplyQuestionModel::getRecords($questionWhere);
+        $answerWhere['q_id'] = array_column($question, 'id');
         $answer = AutoReplyAnswerModel::getRecords($answerWhere);
         $questionData = array_combine(array_column($question, 'id'), $question);
         foreach ($answer as $key => $value){
