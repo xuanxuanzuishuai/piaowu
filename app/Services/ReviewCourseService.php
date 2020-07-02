@@ -495,9 +495,6 @@ class ReviewCourseService
             throw new RunTimeException(['student_not_exist']);
         }
 
-        $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
-        $sms->sendReviewCompleteNotify($student['mobile']);
-
         $studentWeChatInfo = UserWeixinModel::getBoundInfoByUserId($task['student_id'],
             UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
             WeChatService::USER_TYPE_STUDENT,
@@ -508,6 +505,10 @@ class ReviewCourseService
                 'status' => ReviewCourseTaskModel::STATUS_SEND_FAILURE,
                 'update_time' => time()
             ]);
+
+            $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
+            $sms->sendReviewCompleteNotify($student['mobile']);
+
             return "发送成功 微信推送失败: [0] 学生未绑定公众号";
         }
 
@@ -553,6 +554,9 @@ class ReviewCourseService
 
                 $code = $result['errcode'] ?? 0;
                 $msg = $result['errmsg'] ?? '';
+
+                $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
+                $sms->sendReviewCompleteNotify($student['mobile']);
 
                 return "发送成功 微信推送失败: [$code] $msg";
             }
