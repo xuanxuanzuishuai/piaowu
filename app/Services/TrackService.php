@@ -293,7 +293,7 @@ class TrackService
         $api = 'https://api.e.qq.com/v1.1/user_actions/add';
         switch ($eventType) {
             case self::TRACK_EVENT_FORM_COMPLETE: // 初始化操作不用回调接口
-                $type = 'REGISTER';
+                $type = 'RESERVATION';
                 break;
             default:
                 return false;
