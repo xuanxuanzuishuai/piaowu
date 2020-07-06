@@ -51,13 +51,14 @@ class AutoReplyService
         return $data;
     }
 
-    public static function addAnswer($qId, $answer, $sort)
+    public static function addAnswer($qId, $answer, $sort, $type)
     {
         $insertData = [
             'q_id' => $qId,
             'status' => Constants::STATUS_TRUE,
             'answer' => $answer,
             'sort' => $sort,
+            'type' => $type,
         ];
         $id = AutoReplyAnswerModel::insertRecord($insertData);
         if (empty($id)) {
@@ -66,13 +67,14 @@ class AutoReplyService
         return $id;
     }
 
-    public static function editAnswer($id, $qId, $status, $answer, $sort)
+    public static function editAnswer($id, $qId, $status, $answer, $sort, $type)
     {
         $updateData = [
             'q_id' => $qId,
             'status' => $status,
             'answer' => $answer,
-            'sort' => $sort
+            'sort' => $sort,
+            'type' => $type,
         ];
         $answerRows = AutoReplyAnswerModel::updateRecord($id, $updateData);
         if (empty($answerRows)) {
@@ -106,12 +108,13 @@ class AutoReplyService
                 "sort" => "ASC"
             ]
         ];
-        $question = AutoReplyQuestionModel::getRecords($questionWhere);
-        $answer = AutoReplyAnswerModel::getRecords($answerWhere);
-        $questionData = array_combine(array_column($question, 'id'), $question);
-        foreach ($answer as $key => $value){
-            $questionData[$value['q_id']]['list'][] = $value;
+        $question = AutoReplyQuestionModel::getRecord($questionWhere);
+        if(empty($question)){
+            return [];
         }
+        $answerWhere['q_id'] = $question['id'];
+        $answer = AutoReplyAnswerModel::getRecords($answerWhere);
+        $question['list'] = $answer;
         return $question ?? [];
     }
 

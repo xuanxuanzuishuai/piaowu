@@ -8,6 +8,7 @@
 
 namespace App\Controllers\StudentWX;
 
+use App\Libs\AliOSS;
 use App\Libs\DictConstants;
 use App\Libs\RedisDB;
 use App\Models\UserQrTicketModel;
@@ -139,17 +140,27 @@ class WeChatMsgHandler
 
     public static function autoReply($xml)
     {
+        $result = false;
         $client = (string)$xml->FromUserName;
         $msgQuestion = trim((string)$xml->Content);
+
         $questionRow = AutoReplyService::getQuestionByTitle($msgQuestion);
-        if(empty($questionRow)){
-            return false;
+        if (empty($questionRow) && !empty($_ENV['SERVER_AUTO_REPLY']) && !self::serverOnline($_ENV['SERVER_ONLINE_TIME'])) {
+            $questionRow = AutoReplyService::getQuestionByTitle("微信自动回复");
         }
-        foreach ($questionRow['list'] as $key => $value){
-            $reply = $value['answer'];
+        if (empty($questionRow)) {
+            return $result;
+        }
+        foreach ($questionRow['list'] as $key => $value) {
+            if ($value['type'] != 1) {
+                $reply = empty($value['answer']) ? '' : AliOSS::signUrls($value['answer']);
+            } else {
+                $reply = $value['answer'];
+            }
             WeChatService::notifyUserWeixinTextInfo(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
                 UserWeixinModel::USER_TYPE_STUDENT, $client, $reply);
+            $result = true;
         }
-        return true;
+        return $result;
     }
 }

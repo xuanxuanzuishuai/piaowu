@@ -17,3 +17,10 @@ CREATE TABLE `wx_question` (
   PRIMARY KEY (`id`),
   KEY `title` (`title`)
 ) COMMENT='微信公众号自动回复题目表';
+
+ALTER TABLE `wx_answer`
+ADD COLUMN `type` TINYINT(1) UNSIGNED NOT NULL COMMENT '答案类型 1文字 2图片' AFTER `status`;
+
+INSERT INTO `wx_question` (`id`, `title`, `creator_id`, `create_time`, `status`) VALUES ('1', '自动回复', '11018', '1594034107', '1');
+INSERT INTO `wx_answer` (`id`, `q_id`, `answer`, `sort`, `status`, `type`) VALUES ('1', '1', '您好，微信平台客服在线服务时间为12:00-21:00，非在线时间咨询可拨打客服电话 400-029-260', '1', '1', '1');
+

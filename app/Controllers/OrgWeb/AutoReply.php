@@ -101,6 +101,12 @@ class AutoReply extends ControllerBase
                 'type' => 'required',
                 'error_code' => 'sort_is_required'
             ],
+            [
+                'key' => 'type',
+                'type' => 'required',
+                'error_code' => 'type_is_required'
+            ],
+
         ];
         $params = $request->getParams();
         $result = Valid::validate($params, $rules);
@@ -113,7 +119,7 @@ class AutoReply extends ControllerBase
             if(empty($question)){
                 return HttpHelper::buildOrgWebErrorResponse($response, "q_id_failed");
             }
-            AutoReplyService::addAnswer($params['q_id'], $params['answer'], $params['sort']);
+            AutoReplyService::addAnswer($params['q_id'], $params['answer'], $params['sort'], $params['type']);
         } catch (RunTimeException $e) {
             return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData());
         }
@@ -148,6 +154,11 @@ class AutoReply extends ControllerBase
                 'type' => 'required',
                 'error_code' => 'status_is_required'
             ],
+            [
+                'key' => 'type',
+                'type' => 'required',
+                'error_code' => 'type_is_required'
+            ],
         ];
         $params = $request->getParams();
         $result = Valid::validate($params, $rules);
@@ -156,7 +167,7 @@ class AutoReply extends ControllerBase
         }
 
         try {
-            AutoReplyService::editAnswer($params['id'], $params['q_id'], $params['status'], $params['answer'], $params['sort']);
+            AutoReplyService::editAnswer($params['id'], $params['q_id'], $params['status'], $params['answer'], $params['sort'], $params['type']);
         } catch (RunTimeException $e) {
             return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData());
         }
