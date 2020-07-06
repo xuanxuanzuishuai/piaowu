@@ -42,11 +42,6 @@ class Panda extends ControllerBase
 
         $student = StudentModelForApp::getStudentInfo(null, null, $params['uuid']);
 
-        if (empty($student)) {
-            $result = Valid::addAppErrors([], 'unknown_student');
-            return $response->withJson($result, StatusCode::HTTP_OK);
-        }
-
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => [
