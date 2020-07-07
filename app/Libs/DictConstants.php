@@ -329,6 +329,28 @@ class DictConstants {
         'keys' => [0, 1, 2, 3, 4]
     ];
 
+    //积分活动
+    const CREDIT_ACTIVITY_CONFIG = [
+        'type' => 'credit_activity_config',
+        'keys' => [
+            'every_day_sign_in_event_id', //每日签到
+            'every_day_sign_in_one_day_task_id', //连续签到一天
+            'every_day_sign_in_two_day_task_id', //连续签到两天
+            'every_day_sign_in_three_day_task_id', //连续签到三天
+            'every_day_sign_in_four_day_task_id', //连续签到四天
+            'every_day_sign_in_five_day_task_id', //连续签到五天
+            'every_day_sign_in_six_day_task_id',//连续签到六天
+            'every_day_sign_in_seven_day_task_id', //连续签到七天
+            'every_day_sign_in_than_seven_day_task_id', //连续签到大于七天
+            'every_day_task_event_id', //每日任务
+            'play_piano_thirty_m_task_id', //每日练琴三十分钟
+            'play_piano_forty_m_task_id', //每日练琴四十分钟,
+            'play_piano_sixty_m_task_id', //每日练琴六十分钟
+            'both_hands_evaluate_task_id', //每日完成1次双手全曲评测
+            'share_evaluate_grade_task_id' //每日分享评测成绩奖
+        ]
+    ];
+
     public static function get($type, $key)
     {
         if (empty($type) || empty($key)) {

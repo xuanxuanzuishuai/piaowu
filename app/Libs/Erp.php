@@ -9,6 +9,7 @@
 namespace App\Libs;
 
 use App\Services\ErpReferralService;
+use App\Services\EventService;
 use GuzzleHttp\Client;
 use Slim\Http\StatusCode;
 
@@ -239,8 +240,7 @@ class Erp
         if (!empty($eventType)) {
             $params['type'] = $eventType;
         }
-        $response = HttpHelper::requestJson($this->host . self::API_EVENT_LIST, $params);
-        return $response;
+        return ['code' => Valid::CODE_SUCCESS, 'data' => EventService::wholeEvents($params)];
     }
 
     /**
