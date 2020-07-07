@@ -10,7 +10,8 @@ namespace App\Controllers\StudentWX;
 
 use App\Libs\AliOSS;
 use App\Libs\DictConstants;
-use App\Libs\RedisDB;
+use App\Libs\WeChat\WeChatMiniPro;
+use App\Models\AutoReplyAnswerModel;
 use App\Models\UserQrTicketModel;
 use App\Models\WeChatOpenIdListModel;
 use App\Services\AutoReplyService;
@@ -151,14 +152,28 @@ class WeChatMsgHandler
         if (empty($questionRow)) {
             return $result;
         }
+
+        $config = [
+            'app_id' => $_ENV['STUDENT_WEIXIN_APP_ID'],
+            'app_secret' => $_ENV['STUDENT_WEIXIN_APP_SECRET'],
+        ];
+        $wx = WeChatMiniPro::factory($config);
+        if (empty($wx)) {
+            return $result;
+        }
+
         foreach ($questionRow['list'] as $key => $value) {
-            if ($value['type'] != 1) {
-                $reply = empty($value['answer']) ? '' : AliOSS::signUrls($value['answer']);
+            if ($value['type'] != AutoReplyAnswerModel::AUTO_REPLAY_TYPE_TEXT) {
+                $posterImgFile = empty($value['answer']) ? '' : AliOSS::signUrls($value['answer']);
+                if (empty($posterImgFile)) {
+                    return $result;
+                }
+                $media = $wx->getTempMedia('image', 'wx_auto_replay_'.$value['id'].'.jpg', $posterImgFile);
+                $wx->sendImage($client, $media['media_id']);
             } else {
                 $reply = $value['answer'];
+                $wx->sendText($client, $reply);
             }
-            WeChatService::notifyUserWeixinTextInfo(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
-                UserWeixinModel::USER_TYPE_STUDENT, $client, $reply);
             $result = true;
         }
         return $result;
