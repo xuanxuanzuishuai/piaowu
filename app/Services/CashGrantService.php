@@ -192,7 +192,8 @@ class CashGrantService
 
                 if ($status != $va['status']) {
                     //更新当前记录
-                    WeChatAwardCashDealModel::updateRecord($va['id'], ['status' => $status, 'result_code' => $resultCode, 'update_time' => $time]);
+                    $updateRow = WeChatAwardCashDealModel::updateRecord($va['id'], ['status' => $status, 'result_code' => $resultCode, 'update_time' => $time]);
+                    SimpleLogger::info('we chat award update row', ['affectedRow' => $updateRow]);
                     $needUpdateAward[$va['user_event_task_award_id']] = ['award_id' => $va['user_event_task_award_id'], 'status' => $status, 'review_time' => $time];
                 }
             }

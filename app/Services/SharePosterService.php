@@ -141,7 +141,7 @@ class SharePosterService
     {
         //获取学生已参加活动列表
         $data = ['count' => 0, 'list' => []];
-        $queryWhere = ['student_id' => $studentId];
+        $queryWhere = ['student_id' => $studentId, 'type' => SharePosterModel::TYPE_UPLOAD_IMG];
         $count = SharePosterModel::getCount($queryWhere);
         if (empty($count)) {
             return $data;
