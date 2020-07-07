@@ -48,6 +48,7 @@ class OpernCenter
     const NEW_SERVICE_API = [
         self::OPERN_API_CATEGORIES,
         self::OPERN_API_COLLECTIONS,
+        self::OPERN_API_COLLECTIONS_BY_ID,
         self::OPERN_API_LESSONS,
         self::OPERN_API_LESSONS_BY_ID,
         self::OPERN_API_SEARCH_ES_COLLECTIONS,
