@@ -8,13 +8,10 @@
 
 namespace App\Models;
 
-use App\Libs\Constants;
 use App\Libs\MysqlDB;
 use App\Libs\UserCenter;
 use App\Libs\Util;
 use App\Services\ChannelService;
-use App\Services\DictService;
-use App\Services\EmployeeService;
 use App\Services\WeChatService;
 
 class StudentModel extends Model
@@ -419,13 +416,12 @@ class StudentModel extends Model
      * @param $params
      * @param $page
      * @param $count
-     * @param $employeeId
      * @return array
      */
-    public static function studentList($params, $page, $count, $employeeId)
+    public static function studentList($params, $page, $count)
     {
         //格式化搜索条件
-        list($where, $map) = self::formatSearchParams($params, $employeeId);
+        list($where, $map) = self::formatSearchParams($params);
         if($where == false){
             return [0, []];
         }
@@ -462,10 +458,9 @@ class StudentModel extends Model
     /**
      * 格式化搜索学生条件
      * @param $params
-     * @param $employeeId
      * @return array
      */
-    public static function formatSearchParams($params, $employeeId)
+    public static function formatSearchParams($params)
     {
         $whereSql = ' WHERE 1 ';
         $map = [];
@@ -474,33 +469,48 @@ class StudentModel extends Model
             $whereSql .= " AND s.id = :student_id ";
             $map[':student_id'] = $params['student_id'];
         }
+
         /**
          * 权限控制
          * 助教查看学生规则：
          *  1. 学生的助教为当前用户
          *  2. 学生所在班级助教为当前用户
+         * 课管查看学生规则：
+         *  1. 学生的课管为当前用户
          * 其他角色
          *  1. 其他角色能够查看所有学生数据
          */
-        //获取操作人数据
-        $employee = EmployeeService::getById($employeeId);
-        if(empty($employee)){
-            return [false, false];
+
+        if (!empty($params['assistant_id'])) {
+            if (is_array($params['assistant_id'])) {
+                $assistantIds = implode(', ', $params['assistant_id']);
+                $assistantFilter = "s.assistant_id IN ({$assistantIds}) OR co.assistant_id IN ({$assistantIds})";
+            } elseif (is_numeric($params['assistant_id'])) {
+                $assistantFilter = "s.assistant_id = {$params['assistant_id']} OR co.assistant_id = {$params['assistant_id']}";
+            } else {
+                $assistantFilter = '';
+            }
+
+            if (!empty($assistantFilter)) {
+                $whereSql .= " AND ({$assistantFilter}) ";
+            }
         }
-        //获取助教 ROLE_ID
-        $assistantRoleId = DictService::getKeyValue(Constants::DICT_TYPE_ROLE_ID, Constants::DICT_KEY_CODE_ASSISTANT);
-        if ($employee['role_id'] == $assistantRoleId) {
-            $whereSql .= " AND (s.assistant_id = {$employeeId} OR co.assistant_id = {$employeeId}) ";
-        }
-        //获取课管角色id
-        $courseManageRoleId = DictService::getKeyValue(Constants::DICT_TYPE_ROLE_ID, Constants::DICT_KEY_CODE_COURSE_MANAGE_ROLE_ID_CODE);
-        if ($employee['role_id'] == $courseManageRoleId) {
-            $params['course_manage_id'] = $employeeId;
-        }
+
         if (!empty($params['course_manage_id'])) {
-            $whereSql .= " AND s.course_manage_id  = :course_manage_id ";
-            $map[':course_manage_id'] = $params['course_manage_id'];
+            if (is_array($params['course_manage_id'])) {
+                $courseManageIds = implode(', ', $params['course_manage_id']);
+                $courseManageFilter = "s.course_manage_id IN ({$courseManageIds})";
+            } elseif (is_numeric($params['course_manage_id'])) {
+                $courseManageFilter = "s.course_manage_id = {$params['course_manage_id']}";
+            } else {
+                $courseManageFilter = '';
+            }
+
+            if (!empty($courseManageFilter)) {
+                $whereSql .= " AND {$courseManageFilter} ";
+            }
         }
+
         //学生姓名
         if(!empty($params['student_name'])){
             $whereSql .= " AND s.name like :student_name ";
@@ -547,16 +557,8 @@ class StudentModel extends Model
             $whereSql .= " AND s.is_add_assistant_wx = :is_add_assistant_wx ";
             $map[':is_add_assistant_wx'] = $params['is_add_assistant_wx'];
         }
-        //所属班级
-        if(!empty($params['collection_id'])){
-            $whereSql .= " AND s.collection_id = :collection_id ";
-            $map[':collection_id'] = $params['collection_id'];
-        }
-        //所属助教
-        if(!empty($params['assistant_id'])){
-            $whereSql .= " AND s.assistant_id = :assistant_id ";
-            $map[':assistant_id'] = $params['assistant_id'];
-        }
+
+
         //查询渠道
         if(!empty($params['channel_id'])){
             $whereSql .= " AND s.channel_id = :channel_id ";

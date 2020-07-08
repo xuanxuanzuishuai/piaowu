@@ -14,6 +14,8 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Libs\ListTree;
 use App\Libs\Util;
 use App\Models\DeptModel;
+use App\Models\DeptPrivilegeModel;
+use App\Models\EmployeeModel;
 
 class DeptService
 {
@@ -166,5 +168,83 @@ class DeptService
         }
 
         return $count;
+    }
+
+    /**
+     * 获取部门下属成员
+     *
+     * @param int $deptId 部门ID
+     * @param null $dataType 数据类型，未选择数据类型默认获取本组内成员
+     * @return array
+     */
+    public static function getMembers($deptId, $dataType = null)
+    {
+        if (empty($dataType)) {
+            $privilegeType = DeptPrivilegeModel::PRIVILEGE_SELF;
+        } else {
+            $privilege = DeptPrivilegeModel::getRecord(['dept_id' => $deptId, 'data_type' => $dataType]);
+            $privilegeType = $privilege['privilege_type'] ?? DeptPrivilegeModel::PRIVILEGE_SELF;
+        }
+
+        $depts = DeptModel::getList();
+        $lt = new ListTree($depts);
+
+        if ($privilegeType == DeptPrivilegeModel::PRIVILEGE_ALL) {
+
+            $memberDeptIds = $lt->getChildren(0, true);
+
+        } elseif ($privilegeType == DeptPrivilegeModel::PRIVILEGE_SUBS) {
+
+            $memberDeptIds = $lt->getChildren($deptId, true);
+            if ($deptId > 0) {
+                $memberDeptIds[] = $deptId;
+            }
+
+        } elseif ($privilegeType == DeptPrivilegeModel::PRIVILEGE_SELF) {
+
+            if ($deptId > 0) {
+                $memberDeptIds[] = $deptId;
+            }
+
+        }
+
+        if (empty($memberDeptIds)) {
+            return [];
+        }
+
+        $members = EmployeeModel::getRecords(['dept_id' => $memberDeptIds]);
+        return $members;
+    }
+
+    /**
+     * 检测是否是下属部门
+     *
+     * @param $subDeptId
+     * @param $deptId
+     * @param $dataType
+     * @return bool
+     */
+    public static function isSubDept($subDeptId, $deptId, $dataType)
+    {
+        $privilege = DeptPrivilegeModel::getRecord(['dept_id' => $deptId, 'data_type' => $dataType]);
+        $privilegeType = $privilege['privilege_type'] ?? DeptPrivilegeModel::PRIVILEGE_SELF;
+
+        if ($privilegeType == DeptPrivilegeModel::PRIVILEGE_ALL) {
+            return true;
+        }
+
+        if ($privilegeType == DeptPrivilegeModel::PRIVILEGE_SUBS) {
+            $depts = DeptModel::getList();
+            $lt = new ListTree($depts);
+            $isContains = $lt->contains($subDeptId, $deptId);
+
+            return $isContains;
+        }
+
+        if ($privilegeType == DeptPrivilegeModel::PRIVILEGE_SELF) {
+            return $subDeptId == $deptId;
+        }
+
+        return false;
     }
 }

@@ -10,6 +10,7 @@ namespace App\Controllers\OrgWeb;
 
 use App\Controllers\ControllerBase;
 use App\Libs\Constants;
+use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\Util;
 use App\Libs\Valid;
@@ -19,6 +20,7 @@ use App\Services\DictService;
 use App\Services\CollectionService;
 use App\Services\EmployeeService;
 use App\Services\ErpReferralService;
+use App\Services\StudentService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -249,8 +251,55 @@ class Collection extends ControllerBase
      */
     public function totalList(Request $request, Response $response)
     {
-        //接收数据
         $params = $request->getParams();
+
+        // 按指定员工ID筛选时清空组ID
+        if (!empty($params['assistant_id'])) {
+            unset($params['dept_id']);
+        }
+
+        $assistantRoleId = DictConstants::get(DictConstants::ORG_WEB_CONFIG, 'assistant_role');
+
+        $employee = $this->ci['employee'];
+
+        if ($employee['role_id'] == $assistantRoleId) {
+            $employeeType = 'assistant_id';
+        } else {
+            $employeeType = null;
+        }
+
+        if (!empty($employeeType)) { // 助教或课管查询
+            if ($employee['is_leader']) { // 组长查询
+                $memberIds = StudentService::getLeaderPrivilegeMemberId(
+                    $employee['dept_id'],
+                    $employee['id'],
+                    $params['dept_id'] ?? null,
+                    $params[$employeeType] ?? null
+                );
+
+                if (!empty($memberIds)) {
+                    $privilegeParams[$employeeType] = $memberIds;
+                } else {
+                    $privilegeParams = ['assistant_id' => -1];
+                }
+            } else {
+                $privilegeParams[$employeeType] = [$employee['id']];
+            }
+
+        } else { // 其他角色查询，可见所有
+            if (!empty($params['assistant_id'])) { // 其他角色查询助教名下班级
+                $privilegeParams = ['assistant_id' => $params['assistant_id']];
+
+            } elseif (!empty($params['dept_id'])) { // 其他角色按组查询
+                $privilegeParams = StudentService::getDeptPrivilege($params['dept_id']);
+                if (empty($privilegeParams)) {
+                    $privilegeParams = ['assistant_id' => -1];
+                }
+            }
+        }
+
+        $params['assistant_id'] = $privilegeParams['assistant_id'] ?? null;
+
         list($params['page'], $params['count']) = Util::formatPageCount($params);
         //获取数据
         list($count, $list) = CollectionService::getStudentCollectionList($params, $params['page'], $params['count']);

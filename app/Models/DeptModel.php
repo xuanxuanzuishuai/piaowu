@@ -16,8 +16,8 @@ use App\Libs\RedisDB;
 class DeptModel extends Model
 {
     public static $table = 'dept';
-    public static $treeCacheKey = 'dept_tree';
-    public static $treeCacheExpire = 86400 * 7;
+    public static $listCacheKey = 'dept_list';
+    public static $listCacheExpire = 86400 * 7;
 
     public static function list($where, $page, $count)
     {
@@ -50,41 +50,48 @@ class DeptModel extends Model
 
     public static function getTree()
     {
-        $redis = RedisDB::getConn();
+        $list = self::getList();
+        $lt = new ListTree($list);
 
-        $cacheKey = self::$treeCacheKey;
-        $cache = $redis->get($cacheKey);
-        $treeData = json_decode($cache, true);
-
-        if (empty($treeData)) {
-            $list = self::getRecords(['status' => 1]);
-            $listTree = new ListTree($list, 'id', 'parent_id');
-            $treeData = $listTree->tree['subs'];
-
-            $redis->setex($cacheKey, self::$treeCacheExpire, json_encode($treeData));
-        }
-
-        return $treeData;
+        return $lt->tree['subs'];
     }
 
-    public static function delTreeCache()
+    public static function getList()
     {
         $redis = RedisDB::getConn();
-        $redis->del(self::$treeCacheKey);
+
+        $cache = $redis->get(self::$listCacheKey);
+        $cacheData = json_decode($cache, true);
+
+        if (empty($cacheData)) {
+            $cacheData = self::updateCache();
+        }
+
+        return $cacheData;
+    }
+
+    public static function updateCache()
+    {
+        $redis = RedisDB::getConn();
+
+        $list = self::getRecords(['status' => 1]);
+        $redis->setex(self::$listCacheKey, self::$listCacheExpire, json_encode($list));
+
+        return $list;
+    }
+
+    public static function delCache($id, $pri = null)
+    {
+        parent::delCache($id, $pri);
+
+        $redis = RedisDB::getConn();
+        $redis->del(self::$listCacheKey);
     }
 
     public static function insertRecord($data, $isOrg = true)
     {
         $ret = parent::insertRecord($data);
-        self::delTreeCache();
-
-        return $ret;
-    }
-
-    public static function updateRecord($id, $data, $isOrg = true)
-    {
-        $ret = parent::updateRecord($id, $data);
-        self::delTreeCache();
+        self::delCache(0);
 
         return $ret;
     }

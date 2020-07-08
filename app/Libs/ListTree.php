@@ -32,7 +32,7 @@ class ListTree
      * @param $parentKeyName
      * @param string $subNodeKeyName
      */
-    public function __construct($list, $keyName, $parentKeyName, $subNodeKeyName = 'subs')
+    public function __construct($list, $keyName = 'id', $parentKeyName = 'parent_id', $subNodeKeyName = 'subs')
     {
         $this->list = $list;
         $this->keyName = $keyName;
@@ -135,6 +135,7 @@ class ListTree
     public function getChildren($rootKey = 0, $onlyKey = false)
     {
         $node = $this->hash[$rootKey];
+
         $queue = [$node];
         $children = [];
 

@@ -20,6 +20,7 @@ use App\Libs\UserCenter;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\CollectionModel;
+use App\Models\DeptPrivilegeModel;
 use App\Models\EmployeeModel;
 use App\Models\GiftCodeModel;
 use App\Models\ReviewCourseModel;
@@ -611,16 +612,69 @@ class StudentService
      * @param $params
      * @param $page
      * @param $count
-     * @param $employeeId
      * @return array
      */
-    public static function searchList($params, $page, $count, $employeeId)
+    public static function searchList($params, $page, $count)
     {
-        list($count, $list) = StudentModel::studentList($params, $page, $count, $employeeId);
+        list($count, $list) = StudentModel::studentList($params, $page, $count);
         if($count > 0){
             $list = self::formatListData($list);
         }
         return ['total_count' => $count, 'list' => $list];
+    }
+
+    public static function getLeaderPrivilegeMemberId($employeeDeptId, $employeeId, $targetDeptId = null, $targetId = null)
+    {
+        // 查询自己的数据
+        if ($targetId == $employeeId) {
+            return [$employeeId];
+        }
+
+        // 查询下属员工数据
+        if (!empty($targetId)) {
+            $targetEmployee = EmployeeModel::getById($targetId);
+            $targetDeptId = $targetEmployee['dept_id'];
+
+            $isMember = DeptService::isSubDept($targetDeptId, $employeeDeptId, DeptPrivilegeModel::DATA_TYPE_STUDENT);
+
+            if ($isMember) {
+                return [$targetId];
+            } else {
+                return [];
+            }
+        }
+
+        // 查询下属组
+        if (empty($targetDeptId)) {
+            $targetDeptId = $employeeDeptId;
+        }
+
+        $isMember = DeptService::isSubDept($targetDeptId, $employeeDeptId, DeptPrivilegeModel::DATA_TYPE_STUDENT);
+
+        if ($isMember) {
+            $members = DeptService::getMembers($targetDeptId, DeptPrivilegeModel::DATA_TYPE_STUDENT);
+            return array_column($members, 'id');
+        } else {
+            return [];
+        }
+    }
+
+    public static function getDeptPrivilege($deptId)
+    {
+        $members = DeptService::getMembers($deptId, DeptPrivilegeModel::DATA_TYPE_STUDENT);
+
+        list($assistantRoleId, $courseManageRoleId) = DictConstants::getValues(DictConstants::ORG_WEB_CONFIG,
+            ['assistant_role', 'course_manage_role']);
+
+        $privilegeParams = [];
+        foreach ($members as $m) {
+            if ($m['role_id'] == $assistantRoleId) {
+                $privilegeParams['assistant_id'][] = $m['id'];
+            } elseif ($m['role_id'] == $courseManageRoleId) {
+                $privilegeParams['course_manage_id'][] = $m['id'];
+            }
+        }
+        return $privilegeParams;
     }
 
     /**
@@ -634,6 +688,7 @@ class StudentService
         $time = time();
         // 获取学生阶段MAP
         $stepMap = DictService::getTypeMap(Constants::DICT_TYPE_REVIEW_COURSE_STATUS);
+        $remarkStatusMap = DictService::getTypeMap(Constants::DICT_TYPE_STUDENT_REMARK_STATUS);
 
         // 格式化学生数据
         foreach($list as $item){
@@ -654,7 +709,7 @@ class StudentService
             $row['channel'] = $item['channel_name'];
             $row['parent_channel'] = $item['parent_channel_name'];
             $row['register_time'] = date('Y-m-d H:i', $item['create_time']);
-            $row['latest_remark_status'] = DictService::getKeyValue(Constants::DICT_TYPE_STUDENT_REMARK_STATUS, $item['latest_remark_status']);
+            $row['latest_remark_status'] = $remarkStatusMap[$item['latest_remark_status']] ?? '-';
             $row['allot_collection_time'] = empty($item['allot_collection_time']) ? '-' : date('Y-m-d H:i', $item['allot_collection_time']);
             $row['wechat_account'] = $item['wechat_account'];
             $row['course_manage_name'] = $item['course_manage_name'];

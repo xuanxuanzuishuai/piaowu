@@ -205,9 +205,21 @@ class CollectionService
             $where .= " and a.name like '{$like}' ";
         }
 
-        if ($params['assistant_id'] && is_numeric($params['assistant_id'])) {
-            $where .= " and a.assistant_id=" . $params['assistant_id'];
+        if (!empty($params['assistant_id'])) {
+            if (is_array($params['assistant_id'])) {
+                $assistantIds = implode(', ', $params['assistant_id']);
+                $assistantFilter = "a.assistant_id IN ({$assistantIds})";
+            } elseif (is_numeric($params['assistant_id'])) {
+                $assistantFilter = "a.assistant_id = {$params['assistant_id']}";
+            } else {
+                $assistantFilter = '';
+            }
+
+            if (!empty($assistantFilter)) {
+                $where .= " AND ({$assistantFilter}) ";
+            }
         }
+
         if ($params['prepare_start_begin_time']) {
             $where .= " and a.prepare_start_time >=" . $params['prepare_start_begin_time'];
         }
