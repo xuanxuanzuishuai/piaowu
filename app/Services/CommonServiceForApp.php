@@ -13,6 +13,7 @@ namespace App\Services;
 use App\Libs\DictConstants;
 use App\Libs\NewSMS;
 use App\Libs\RedisDB;
+use App\Models\StudentModelForApp;
 
 class CommonServiceForApp
 {
@@ -113,6 +114,40 @@ class CommonServiceForApp
 
         $redis->del([$countKey, $cacheKey]);
         return true;
+    }
+
+    /**
+     * 检查登陆密码
+     * @param $mobile
+     * @param $password
+     * @return bool
+     */
+    public static function checkPassword($mobile, $password)
+    {
+        if (empty($mobile) || empty($password)) {
+            return false;
+        }
+
+        $student = StudentModelForApp::getStudentInfo(null, $mobile);
+
+        if (empty($student)) {
+            return false;
+        }
+
+        if (self::createPassword($student['uuid'], $password) != $student['password']) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public static function createPassword($uuid, $password)
+    {
+        if (empty($uuid) || empty($password)) {
+            return false;
+        }
+
+        return md5($uuid.$password);
     }
 
 }

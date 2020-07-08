@@ -131,12 +131,17 @@ class StudentServiceForApp
      * @param $channelId
      * @return array [0]errorCode [1]登录数据
      */
-    public static function login($mobile, $code, $platform, $version, $channelId)
+    public static function login($mobile, $code, $password, $platform, $version, $channelId)
     {
-        // 检查验证码
-        if (!CommonServiceForApp::checkValidateCode($mobile, $code)) {
+
+        if (empty($code) && empty($password)) {
+            return ['please_check_the_parameters'];
+        } elseif (!empty($code) && !CommonServiceForApp::checkValidateCode($mobile, $code)) {
             return ['validate_code_error'];
+        } elseif (!empty($password) && !CommonServiceForApp::checkPassword($mobile, $password)) {
+            return ['password_error'];
         }
+
 
         $student = StudentModelForApp::getStudentInfo(null, $mobile);
 
@@ -229,7 +234,44 @@ class StudentServiceForApp
         return [null, $loginData];
     }
 
+    /**
+     * 忘记密码
+     * @param $mobile
+     * @param $code
+     * @param $password
+     * @return array|string[]
+     */
+    public static function updatePwd($mobile, $code, $paramsPwd)
+    {
+        // 检查验证码
+        if (!CommonServiceForApp::checkValidateCode($mobile, $code)) {
+            return ['validate_code_error'];
+        }
 
+        $student = StudentModelForApp::getStudentInfo(null, $mobile);
+
+        if (empty($student)) {
+            return ['unknown_student'];
+        }
+
+        $newPassword = CommonServiceForApp::createPassword($student['uuid'], $paramsPwd);
+
+
+        if (!empty($student['password']) && $student['password'] == $newPassword) {
+            return ['the_old_and_new_pwd_are_the_same'];
+        }
+
+        $data = [
+            'update_time' => time(),
+            'password' => $newPassword,
+        ];
+
+        $result = StudentModelForApp::updateRecord($student['id'], $data);
+        if(empty($result)){
+            return ['update_password_failed'];
+        }
+        return [];
+    }
     /**
      * token登录
      *

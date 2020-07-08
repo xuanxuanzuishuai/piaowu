@@ -340,3 +340,6 @@ dept_invalid_data_type="部门数据类型不正确"
 dept_invalid_privilege_type="部门数据权限类型不正确"
 dept_invalid_parent_id="上级部门ID不正确"
 assistant_id_course_manage_id_conflict='不能同时查询课管与助教'
+the_old_and_new_pwd_are_the_same="新老密码一样"
+update_password_failed="重制密码失败"
+password_error="密码错误"

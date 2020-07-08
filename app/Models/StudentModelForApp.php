@@ -107,6 +107,7 @@ class StudentModelForApp extends Model
             self::$table . '.last_play_time',
             self::$table . '.has_review_course',
             self::$table . '.collection_id',
+            self::$table . '.password',
         ], $where);
     }
 

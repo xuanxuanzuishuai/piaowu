@@ -55,9 +55,6 @@ class Auth extends ControllerBase
             if (empty($params['mobile'])) {
                 $errorCode = 'user_mobile_is_required';
             }
-            if (empty($params['code'])) {
-                $errorCode = 'validate_code_is_required';
-            }
             if (!empty($errorCode)) {
                 $result = Valid::addAppErrors([], $errorCode);
                 return $response->withJson($result, StatusCode::HTTP_OK);
@@ -65,7 +62,7 @@ class Auth extends ControllerBase
 
             $channelId = $request->getParam('channel_id', StudentModel::CHANNEL_APP_REGISTER);
             list($errorCode, $loginData) = StudentServiceForApp::login(
-                $params['mobile'], $params['code'], $this->ci['platform'], $this->ci['version'], $channelId
+                $params['mobile'], $params['code'], $params['password'], $this->ci['platform'], $this->ci['version'], $channelId
             );
         }
 
@@ -195,6 +192,53 @@ class Auth extends ControllerBase
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => []
+        ], StatusCode::HTTP_OK);
+    }
+
+    public function updatePwd(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        $rules = [
+            [
+                'key' => 'mobile',
+                'type' => 'regex',
+                'value' => '/^[0-9]{11}$/',
+                'error_code' => 'mobile_format_error'
+            ],
+            [
+                'key' => 'code',
+                'type' => 'regex',
+                'value' => '/[0-9]{4}/',
+                'error_code' => 'validate_code_error'
+            ],
+        ];
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        if (empty($params['mobile'])) {
+            $errorCode = 'user_mobile_is_required';
+        }
+        if (empty($params['code'])) {
+            $errorCode = 'validate_code_is_required';
+        }
+        if (empty($params['password'])) {
+            $errorCode = 'password_is_required';
+        }
+        if (!empty($errorCode)) {
+            $result = Valid::addAppErrors([], $errorCode);
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $errorCode= StudentServiceForApp::updatePwd($params['mobile'], $params['code'], $params['password']);
+        if (!empty($errorCode)) {
+            $result = Valid::addAppErrors([], $errorCode[0]);
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        return $response->withJson([
+            'code'=> Valid::CODE_SUCCESS,
+            'data'=> [],
         ], StatusCode::HTTP_OK);
     }
 }
