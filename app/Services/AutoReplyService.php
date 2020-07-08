@@ -99,7 +99,7 @@ class AutoReplyService
             ]
         ];
         if(!empty($title)){
-            $questionWhere['title[~]'] = Util::sqlLike($title);
+            $questionWhere['title'] = $title;
         }
         $questionWhere['LIMIT'] = 1;
         $answerWhere = [
