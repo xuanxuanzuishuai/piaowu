@@ -42,6 +42,11 @@ class Erp
     const API_STUDENT_ADDRESS_LIST = '/ai_dss/student/address_list';
     const API_STUDENT_MODIFY_ADDRESS = '/ai_dss/student/modify_address';
 
+
+    // 账户
+    const API_STUDENT_ACCOUNTS = '/ai_dss/account/detail';
+    const API_STUDENT_ACCOUNT_DETAIL = '/ai_dss/account/logs';
+
     private $host;
 
     public function __construct()
@@ -405,6 +410,38 @@ class Erp
     {
         $params['app_id'] = self::SELF_APP_ID;
         $response = HttpHelper::requestJson($this->host . self::API_STUDENT_MODIFY_ADDRESS, $params, 'POST');
+        return $response;
+    }
+
+    /**
+     * 学生账户余额
+     * @param $studentUuid
+     * @return array|bool
+     */
+    public function studentAccount($studentUuid)
+    {
+        $params['student_uuid'] = $studentUuid;
+        $params['app_id'] = self::SELF_APP_ID;
+        $response = HttpHelper::requestJson($this->host . self::API_STUDENT_ACCOUNTS, $params);
+        return $response;
+    }
+
+    /**
+     * 学生账户明细
+     * @param $studentUuid
+     * @param $subType
+     * @param $page
+     * @param $count
+     * @return array|bool
+     */
+    public function studentAccountDetail($studentUuid, $subType, $page, $count)
+    {
+        $params['student_uuid'] = $studentUuid;
+        $params['sub_type'] = $subType;
+        $params['app_id'] = self::SELF_APP_ID;
+        $params['page'] = $page;
+        $params['count'] = $count;
+        $response = HttpHelper::requestJson($this->host . self::API_STUDENT_ACCOUNT_DETAIL, $params);
         return $response;
     }
 }

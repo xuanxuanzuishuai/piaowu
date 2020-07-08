@@ -15,6 +15,7 @@ use App\Libs\Constants;
 use App\Libs\Dict;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\Erp;
 use App\Libs\MysqlDB;
 use App\Libs\ResponseError;
 use App\Libs\Util;
@@ -750,5 +751,78 @@ class Student extends ControllerBase
             return HttpHelper::buildOrgWebErrorResponse($response, $errorResult['data']['errors']);
         }
         return HttpHelper::buildResponse($response, []);
+    }
+
+    public static function getStudentAccounts(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        $rules = [
+            [
+                'key' => 'student_id',
+                'type' => 'required',
+                'error_code' => 'student_id_is_required',
+            ],
+            [
+                'key' => 'student_id',
+                'type' => 'integer',
+                'error_code' => 'student_id_must_be_integer'
+            ]
+        ];
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $student = StudentModel::getById($params['student_id']);
+
+        $erp = new Erp();
+        $result = $erp->studentAccount($student['uuid']);
+        if (empty($result) || $result['code'] != 0) {
+
+            $error = Valid::addErrors([], 'student', 'erp_request_error');
+            return HttpHelper::buildOrgWebErrorResponse($response, $error['data']['errors']);
+        }
+
+        return HttpHelper::buildResponse($response, $result['data']);
+    }
+
+    public static function getStudentAccountDetail(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        $rules = [
+            [
+                'key' => 'student_id',
+                'type' => 'required',
+                'error_code' => 'student_id_is_required',
+            ],
+            [
+                'key' => 'student_id',
+                'type' => 'integer',
+                'error_code' => 'student_id_must_be_integer'
+            ],
+            [
+                'key' => 'sub_type',
+                'type' => 'required',
+                'error_code' => 'sub_type_is_required',
+            ]
+        ];
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $student = StudentModel::getById($params['student_id']);
+
+        list($page, $count) = Util::formatPageCount($params);
+
+        $erp = new Erp();
+        $result = $erp->studentAccountDetail($student['uuid'], $params['sub_type'], $page, $count);
+        if (empty($result) || $result['code'] != 0) {
+
+            $error = Valid::addErrors([], 'student', 'erp_request_error');
+            return HttpHelper::buildOrgWebErrorResponse($response, $error['data']['errors']);
+        }
+
+        return HttpHelper::buildResponse($response, $result['data']);
     }
 }

@@ -440,5 +440,10 @@ class OrgWebRouter extends RouterBase
         '/org_web/dept/modify' => ['method' => ['post'], 'call' => Dept::class . ':modify'],
         '/org_web/dept/dept_privilege' => ['method' => ['get'], 'call' => Dept::class . ':deptPrivilege'],
         '/org_web/dept/privilege_modify' => ['method' => ['post'], 'call' => Dept::class . ':privilegeModify'],
+
+        // 学生账户
+        '/org_web/student/accounts' => ['method' => ['get'], 'call' => Student::class . ':getStudentAccounts'],
+        '/org_web/student/account_detail' => ['method' => ['get'], 'call' => Student::class . ':getStudentAccountDetail'],
+
     ];
 }
