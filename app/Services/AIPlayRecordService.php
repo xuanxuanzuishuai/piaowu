@@ -21,6 +21,7 @@ use App\Models\PlayRecordModel;
 use App\Models\StudentModel;
 use Medoo\Medoo;
 use App\Libs\DictConstants;
+use App\Libs\SimpleLogger;
 
 class AIPlayRecordService
 {
@@ -185,7 +186,8 @@ class AIPlayRecordService
 
             $recordId = AIPlayRecordModel::updateRecord($playRecord['id'], $newRecord);
         }
-
+        //上报练琴时长获取积分
+        self::reportPoint($studentId, $now, $newRecord);
         return $recordId ?? 0;
     }
 
@@ -923,5 +925,38 @@ class AIPlayRecordService
         }
         $data = AIPLCenter::userAudio($aiRecordId);
         return $data['data']['audio_url'] ?? '';
+    }
+
+    /**
+     * 上报练琴时长获取积分
+     * @param $studentId
+     * @param $time
+     * @param $recordData
+     */
+    private static function reportPoint($studentId, $time, $recordData)
+    {
+        //检测每日练琴获取积分活动
+        $reportData = [];
+        $dayStartEndTimestamp = Util::getStartEndTimestamp($time);
+        $playRecord = AIPlayRecordModel::getStudentSumByDate($studentId, $dayStartEndTimestamp[0], $dayStartEndTimestamp[1]);
+        $dayTotalDuration = array_sum(array_column($playRecord, 'sum_duration'));
+        try {
+            PointActivityService::reportRecord(CreditService::PLAY_PIANO_TASKS, $studentId, ['play_duration' => $dayTotalDuration]);
+        } catch (RunTimeException $e) {
+            SimpleLogger::info("point activity play piano tasks report record fail", ['student_id' => $studentId, 'report_data' => $reportData]);
+        }
+        //双手全曲评测
+        if (($recordData['data_type'] == AIPlayRecordModel::DATA_TYPE_NORMAL) &&
+            ($recordData['ui_entry'] == AIPlayRecordModel::UI_ENTRY_TEST) &&
+            ($recordData['hand'] == AIPlayRecordModel::HAND_BOTH) &&
+            ($recordData['is_phrase'] == Constants::STATUS_FALSE) &&
+            ($recordData['score_final'] > 0)) {
+            $activityType = CreditService::BOTH_HAND_EVALUATE;
+            try {
+                PointActivityService::reportRecord($activityType, $studentId);
+            } catch (RunTimeException $e) {
+                SimpleLogger::info("point activity both hand evaluate tasks report record fail", ['student_id' => $studentId, 'report_data' => $reportData]);
+            }
+        }
     }
 }

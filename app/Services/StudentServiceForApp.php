@@ -197,7 +197,8 @@ class StudentServiceForApp
 
         // 学生今日练琴总时长
         $totalDuration = AIPlayRecordService::getStudentSumDuration($student['id']);
-
+        // 获取学生积分
+        $totalPoints = PointActivityService::totalPoints($student['id'], PointActivityService::ACCOUNT_SUB_TYPE_STUDENT_POINTS);
         $loginData = [
             'id' => $student['id'],
             'uuid' => $student['uuid'],
@@ -222,6 +223,7 @@ class StudentServiceForApp
             'flags' => $flags,
             'total_duration' => $totalDuration,
             'is_anonymous' => 0,
+            'total_points' => $totalPoints['total_num'] ?? 0,
         ];
 
         return [null, $loginData];
@@ -284,6 +286,8 @@ class StudentServiceForApp
 
         // 学生今日练琴总时长
         $totalDuration = AIPlayRecordService::getStudentSumDuration($student['id']);
+        // 获取学生积分
+        $totalPoints = PointActivityService::totalPoints($student['id'], PointActivityService::ACCOUNT_SUB_TYPE_STUDENT_POINTS);
 
         $loginData = [
             'id' => $student['id'],
@@ -309,6 +313,7 @@ class StudentServiceForApp
             'flags' => $flags,
             'total_duration' => $totalDuration,
             'is_anonymous' => 0,
+            'total_points' => $totalPoints['total_num'] ?? 0,
         ];
 
         return [null, $loginData];

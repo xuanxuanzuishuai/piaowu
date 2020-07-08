@@ -432,15 +432,17 @@ class Erp
      * @param $subType
      * @param $page
      * @param $count
+     * @param $createTime
      * @return array|bool
      */
-    public function studentAccountDetail($studentUuid, $subType, $page, $count)
+    public function studentAccountDetail($studentUuid, $subType, $page, $count, $createTime = 0)
     {
         $params['student_uuid'] = $studentUuid;
         $params['sub_type'] = $subType;
         $params['app_id'] = self::SELF_APP_ID;
         $params['page'] = $page;
         $params['count'] = $count;
+        $params['create_time'] = $createTime;
         $response = HttpHelper::requestJson($this->host . self::API_STUDENT_ACCOUNT_DETAIL, $params);
         return $response;
     }

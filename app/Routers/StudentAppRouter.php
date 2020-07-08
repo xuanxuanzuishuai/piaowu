@@ -22,6 +22,7 @@ use App\Middleware\MUSVGMiddleWare;
 use App\Middleware\StudentAuthCheckMiddleWareForApp;
 use App\Middleware\StudentResPrivilegeCheckMiddleWareForApp;
 use App\Controllers\StudentApp\Question;
+use App\Controllers\StudentApp\PointActivity;
 
 
 class StudentAppRouter extends RouterBase
@@ -271,6 +272,21 @@ class StudentAppRouter extends RouterBase
         '/student_app/exam/question_categoryRelateQuestions' => [
             'method'  => ['get'],
             'call'    => Question::class . ':categoryRelateQuestions',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
+        '/student_app/points/activity_list' => [
+            'method'  => ['get'],
+            'call'    => PointActivity::class . ':activityList',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
+        '/student_app/points/report' => [
+            'method'  => ['post'],
+            'call'    => PointActivity::class . ':report',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
+        '/student_app/points/points_detail' => [
+            'method'  => ['get'],
+            'call'    => PointActivity::class . ':pointsDetail',
             'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
         ],
     ];
