@@ -37,7 +37,7 @@ class CreditService
     public static function createEveryDayTask($date)
     {
         $redis = RedisDB::getConn();
-        $field = self::EVERY_DAY_ACTIVITY . '_' . $date;
+        $field = self::EVERY_DAY_ACTIVITY;
         $erp = new Erp();
         $relateTasks = $erp->eventTaskList(0, self::CREDIT_TASK)['data'];
         //需要区分签到任务还是练琴任务
@@ -73,13 +73,58 @@ class CreditService
                 }
             }
         }
-        $redis->hset(self::SIGN_IN_TASKS, $field, json_encode($signTaskArr));
-        $redis->hset(self::PLAY_PIANO_TASKS, $field, json_encode($playPianoTaskArr));
-        $redis->hset(self::BOTH_HAND_EVALUATE, $field, json_encode($bothHandEvaluateArr));
-        $redis->hset(self::SHARE_GRADE, $field, json_encode($shareEvaluateGradesArr));
+        list($signTaskKey, $playPianoTaskKey, $bothHandEvaluateKey, $shareEvaluateGradesKey) = self::getActivityTaskRelateKey($date);
+        $redis->hset($signTaskKey, $field, json_encode($signTaskArr));
+        $redis->hset($playPianoTaskKey, $field, json_encode($playPianoTaskArr));
+        $redis->hset($bothHandEvaluateKey, $field, json_encode($bothHandEvaluateArr));
+        $redis->hset($shareEvaluateGradesKey, $field, json_encode($shareEvaluateGradesArr));
         //设置过期
-        $endTime = strtotime($date) + 86410 - time();
-        $redis->setex($field, $endTime, 1);
+        $endTime = strtotime($date) + 172800 - time();
+        $redis->expire($signTaskKey, $endTime);
+        $redis->expire($playPianoTaskKey, $endTime);
+        $redis->expire($bothHandEvaluateKey, $endTime);
+        $redis->expire($shareEvaluateGradesKey, $endTime);
+    }
+
+    /**
+     * @param null $date
+     * @param null $type
+     * @return string|string[]
+     * 活动模板相关key
+     */
+    private static function getActivityTaskRelateKey($date = NULL, $type = NULL)
+    {
+        empty($date) && $date = date('Y-m-d');
+        if (!empty($type)) {
+            return $type . '_' . $date;
+        }
+        return [
+            self::SIGN_IN_TASKS . '_' . $date,
+            self::PLAY_PIANO_TASKS . '_' . $date,
+            self::BOTH_HAND_EVALUATE . '_' . $date,
+            self::SHARE_GRADE . '_' . $date
+        ];
+    }
+
+    /**
+     * @param null $date
+     * @param null $type
+     * @param $studentId
+     * @return string|string[]
+     * 活动完成状态相关key
+     */
+    private static function getActivityTaskFinishRelateKey($studentId, $date = NULL, $type = NULL)
+    {
+        empty($date) && $date = date('Y-m-d');
+        if (!empty($type)) {
+            return $type . '_' . $date . '_' . $studentId;
+        }
+        return [
+            self::SIGN_IN_TASKS . '_' . $date . '_' . $studentId,
+            self::PLAY_PIANO_TASKS . '_' . $date . '_' . $studentId,
+            self::BOTH_HAND_EVALUATE . '_' . $date . '_' . $studentId,
+            self::SHARE_GRADE . '_' . $date . '_' . $studentId
+        ];
     }
 
     /**
@@ -142,19 +187,16 @@ class CreditService
      */
     public static function getActivityTemplate($certainKey = NULL)
     {
-        $field = self::EVERY_DAY_ACTIVITY . '_' . date('Y-m-d');
+        $field = self::EVERY_DAY_ACTIVITY;
         $redis = RedisDB::getConn();
-        //极限情况如果没有在此再生成一次
-        if (empty($redis->get($field))) {
-            self::createEveryDayTask(date('Y-m-d'));
-        }
         if (!empty($certainKey)) {
-            return json_decode($redis->hget($certainKey, $field), true);
+            return json_decode($redis->hget(self::getActivityTaskRelateKey(NULL, $certainKey), $field), true);
         }
-        $activityArr['sign_in_tasks'] = json_decode($redis->hget(self::SIGN_IN_TASKS, $field), true);
-        $activityArr['play_piano_tasks'] = json_decode($redis->hget(self::PLAY_PIANO_TASKS, $field), true);
-        $activityArr['both_hand_evaluate'] = json_decode($redis->hget(self::BOTH_HAND_EVALUATE, $field), true);
-        $activityArr['share_grade'] = json_decode($redis->hget(self::SHARE_GRADE, $field), true);
+        list($signTaskKey, $playPianoTaskKey, $bothHandEvaluateKey, $shareEvaluateGradesKey) = self::getActivityTaskRelateKey();
+        $activityArr['sign_in_tasks'] = json_decode($redis->hget($signTaskKey, $field), true);
+        $activityArr['play_piano_tasks'] = json_decode($redis->hget($playPianoTaskKey, $field), true);
+        $activityArr['both_hand_evaluate'] = json_decode($redis->hget($bothHandEvaluateKey, $field), true);
+        $activityArr['share_grade'] = json_decode($redis->hget($shareEvaluateGradesKey, $field), true);
         return $activityArr;
     }
 
@@ -214,23 +256,25 @@ class CreditService
         //防止需要完成的任务天数大小错乱，引入临时数
         $tmpDay = 0;
         $limitCount = 0;
-        $hasAchieveTaskId = [];
+        $hasAchieveTask = [];
+        $award = NULL;
         foreach ($activityTemplate as $v) {
-            $continueDays = json_decode($v['condition'], true)['continue_days'];
+            $condition = json_decode($v['condition'], true);
+            $continueDays = $condition['continue_days'];
             if ($continueDays >= $tmpDay) {
                 $tmpDay = $continueDays;
             }
             if ($data['continue_days'] >= $continueDays && $continueDays >= $tmpDay) {
                 $shouldGetTaskId = $v['id'];
-                $limitCount = $v['every_day_count'];
+                $limitCount = $condition['every_day_count'];
+                $award = $v['award'];
             }
         }
-        $hasAchieveTaskId[] = $shouldGetTaskId;
-        $erp->updateTask($data['uuid'], $shouldGetTaskId, ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
-
+        $hasAchieveTask[$shouldGetTaskId] = $award;
         //更新用户的完成情况
         self::updateUserCompleteStatus($data['student_id'], self::SIGN_IN_TASKS, $limitCount, $shouldGetTaskId);
-        return $hasAchieveTaskId;
+        $erp->updateTask($data['uuid'], $shouldGetTaskId, ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
+        return $hasAchieveTask;
     }
 
     /**
@@ -244,7 +288,7 @@ class CreditService
         $completeStatus = self::getUserCompleteStatus($data['student_id'], self::PLAY_PIANO_TASKS);
         $erp = new Erp();
         $activityTemplate = self::getActivityTemplate(self::PLAY_PIANO_TASKS);
-        $hasAchieveTaskId = [];
+        $hasAchieveTask = [];
         foreach ($activityTemplate as $v) {
             //多个需要不同完成
             if (!empty($completeStatus[$v['id']]['is_complete'])) {
@@ -252,12 +296,12 @@ class CreditService
             }
             $condition = json_decode($v['condition'], true);
             if ($data['play_duration'] >= $condition['play_duration']) {
+                self::updateUserCompleteStatus($data['student_id'], self::PLAY_PIANO_TASKS, $condition['every_day_count'], $v['id']);
                 $erp->updateTask($data['uuid'], $v['id'], ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
-                self::updateUserCompleteStatus($data['student_id'], self::PLAY_PIANO_TASKS, $v['every_day_count'], $v['id']);
-                $hasAchieveTaskId[] = $v['id'];
+                $hasAchieveTask[$v['id']] = $v['award'];
             }
         }
-        return $hasAchieveTaskId;
+        return $hasAchieveTask;
     }
 
     /**
@@ -280,13 +324,14 @@ class CreditService
         }
         $erp = new Erp();
         $activityTemplate = self::getActivityTemplate(self::BOTH_HAND_EVALUATE);
-        $hasAchieveTaskId = [];
+        $hasAchieveTask = [];
         foreach ($activityTemplate as $v) {
+            $condition = json_decode($v['condition'], true);
+            self::updateUserCompleteStatus($data['student_id'], self::BOTH_HAND_EVALUATE, $condition['every_day_count'], $v['id']);
             $erp->updateTask($data['uuid'], $v['id'], ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
-            self::updateUserCompleteStatus($data['student_id'], self::BOTH_HAND_EVALUATE, $v['every_day_count'], $v['id']);
-            $hasAchieveTaskId[] = $v['id'];
+            $hasAchieveTask[$v['id']] = $v['award'];
         }
-        return $hasAchieveTaskId;
+        return $hasAchieveTask;
     }
 
     /**
@@ -309,13 +354,14 @@ class CreditService
         }
         $erp = new Erp();
         $activityTemplate = self::getActivityTemplate(self::SHARE_GRADE);
-        $hasAchieveTaskId = [];
+        $hasAchieveTask = [];
         foreach ($activityTemplate as $v) {
+            $condition = json_decode($v['condition'], true);
+            self::updateUserCompleteStatus($data['student_id'], self::SHARE_GRADE, $condition['every_day_count'], $v['id']);
             $erp->updateTask($data['uuid'], $v['id'], ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
-            self::updateUserCompleteStatus($data['student_id'], self::SHARE_GRADE, $v['every_day_count'], $v['id']);
-            $hasAchieveTaskId[] = $v['id'];
+            $hasAchieveTask[$v['id']] = $v['award'];
         }
-        return $hasAchieveTaskId;
+        return $hasAchieveTask;
     }
 
     /**
@@ -329,9 +375,9 @@ class CreditService
     {
         $redis = RedisDB::getConn();
         $date = date('Y-m-d');
-        $field = self::EVERY_DAY_ACTIVITY_COMPLETE_STATUS . '_' . $studentId . '_' . $date;
-
-        $data = $redis->hget($type, $field);
+        $field = self::EVERY_DAY_ACTIVITY_COMPLETE_STATUS;
+        $key = self::getActivityTaskFinishRelateKey($studentId, $date, $type);
+        $data = $redis->hget($key, $field);
         if (empty($data)) {
             $isComplete = $limitCount <= 1;
             $completeCount = 1;
@@ -342,10 +388,10 @@ class CreditService
             $dataArr[$taskId]['is_complete'] = $dataArr[$taskId]['complete_count'] >= $limitCount;
             $dataArr[$taskId]['limit_count'] = $limitCount;
         }
-        $redis->hset($type, $field, json_encode($dataArr));
+        $redis->hset($key, $field, json_encode($dataArr));
         //设置过期
-        $endTime = strtotime($date) + 86410 - time();
-        $redis->setex($field, $endTime, 1);
+        $endTime = strtotime($date) + 172800 - time();
+        $redis->expire($key, $endTime);
     }
 
     /**
@@ -357,14 +403,15 @@ class CreditService
     public static function getUserCompleteStatus($studentId, $type = NULL)
     {
         $redis = RedisDB::getConn();
-        $field = self::EVERY_DAY_ACTIVITY_COMPLETE_STATUS . '_' . $studentId . '_' . date('Y-m-d');
+        $field = self::EVERY_DAY_ACTIVITY_COMPLETE_STATUS;
         if (!empty($type)) {
-            return json_decode($redis->hget($type, $field), true);
+            return json_decode($redis->hget(self::getActivityTaskFinishRelateKey($studentId,NULL, $type), $field), true);
         }
-        $activityArr['sign_in_tasks'] = json_decode($redis->hget(self::SIGN_IN_TASKS, $field), true);
-        $activityArr['play_piano_tasks'] = json_decode($redis->hget(self::PLAY_PIANO_TASKS, $field), true);
-        $activityArr['both_hand_evaluate'] = json_decode($redis->hget(self::BOTH_HAND_EVALUATE, $field), true);
-        $activityArr['share_grade'] = json_decode($redis->hget(self::SHARE_GRADE, $field), true);
+        list($signTaskKey, $playPianoTaskKey, $bothHandEvaluateKey, $shareEvaluateGradesKey) = self::getActivityTaskFinishRelateKey($studentId);
+        $activityArr['sign_in_tasks'] = json_decode($redis->hget($signTaskKey, $field), true);
+        $activityArr['play_piano_tasks'] = json_decode($redis->hget($playPianoTaskKey, $field), true);
+        $activityArr['both_hand_evaluate'] = json_decode($redis->hget($bothHandEvaluateKey, $field), true);
+        $activityArr['share_grade'] = json_decode($redis->hget($shareEvaluateGradesKey, $field), true);
         return $activityArr;
     }
 

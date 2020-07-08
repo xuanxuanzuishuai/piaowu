@@ -33,7 +33,7 @@ class EventService
 
         $events = EventModel::getRecords($where);
         if(empty($events)) {
-            return [[], 0];
+            return [];
         }
 
         $tasks = EventTaskModel::getRecords([
