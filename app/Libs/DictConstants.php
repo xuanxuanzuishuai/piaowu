@@ -83,6 +83,15 @@ class DictConstants {
         ]
     ];
 
+    // 后台配置
+    const ORG_WEB_CONFIG = [
+        'type' => 'ORG_WEB_CONFIG',
+        'keys' => [
+            'assistant_role',
+            'course_manage_role',
+        ]
+    ];
+
     const APP_CONFIG_COMMON = [
         'type' => 'APP_CONFIG_COMMON',
         'keys' => [

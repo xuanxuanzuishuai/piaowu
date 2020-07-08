@@ -36,6 +36,7 @@ use App\Controllers\OrgWeb\QuestionTag;
 use App\Controllers\OrgWeb\Referral;
 use App\Controllers\OrgWeb\ReviewCourse;
 use App\Controllers\OrgWeb\SharePoster;
+use App\Controllers\OrgWeb\Employee as OrgWebEmployee;
 use App\Controllers\Schedule\ScheduleRecord;
 use App\Controllers\Student\PlayRecord as BackendPlayRecord;
 use App\Controllers\Student\Student;
@@ -83,6 +84,10 @@ class OrgWebRouter extends RouterBase
         //请求机构cc列表，分配cc用
         '/employee/employee/cc_list' => ['method' => ['get'], 'call' => Employee::class . ':CCList'],
 
+        '/org_web/employee/get_dept_members' => [
+            'method' => ['get'],
+            'call' => OrgWebEmployee::class . ':getDeptMembers',
+        ],
 
         '/privilege/privilege/employee_menu' => array('method' => array('get'), 'call' => '\App\Controllers\Privilege\Privilege:employee_menu'),
         '/privilege/privilege/list' => array('method' => array('get'), 'call' => '\App\Controllers\Privilege\Privilege:list'),
