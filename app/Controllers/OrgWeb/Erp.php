@@ -77,6 +77,23 @@ class Erp extends ControllerBase
         $db = MysqlDB::getDB();
         $db->beginTransaction();
 
+        if (!empty($params['bill_id']) && !empty($params['parent_bill_id'])) {
+            $giftCodeData = GiftCodeModel::getRecord(['bill_id' => $params['bill_id'], 'parent_bill_id' => $params['parent_bill_id']]);
+        } else if (!empty($params['bill_id'])) {
+            $giftCodeData = GiftCodeModel::getRecord(['bill_id' => $params['bill_id']]);
+        } else if (!empty($params['parent_bill_id'])) {
+            $giftCodeData = GiftCodeModel::getRecord(['parent_bill_id' => $params['parent_bill_id']]);
+        }
+
+        if(!empty($giftCodeData)) {
+            return $response->withJson([
+                'code' => Valid::CODE_SUCCESS,
+                'data' => [
+                    'gift_codes' => []
+                ]
+            ], StatusCode::HTTP_OK);
+        }
+
         if (empty($params['package_id'])) {
             // 赠单没有package_id
             $package = null;
