@@ -1,6 +1,7 @@
 <?php
 namespace App\Services;
 
+use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\Util;
@@ -144,6 +145,9 @@ class AutoReplyService
         $answer = AutoReplyAnswerModel::getRecords($answerWhere);
         $questionData = array_combine(array_column($question, 'id'), $question);
         foreach ($answer as $key => $value){
+            if ($value['type'] == AutoReplyAnswerModel::AUTO_REPLAY_TYPE_IMAGE) {
+                $value['answer'] = empty($value['answer']) ? '' : AliOSS::signUrls($value['answer']);
+            }
             $questionData[$value['q_id']]['list'][] = $value;
         }
 
