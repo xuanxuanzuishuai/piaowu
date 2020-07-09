@@ -549,24 +549,31 @@ class ErpReferralService
         //远程调用erp获取事件任务信息
         $erp = new Erp();
         $eventTaskList = $erp->eventTaskList($eventId, $eventType);
-        $tasksData = $data = [];
+
         if (empty($eventTaskList['data']) && $eventTaskList['code'] != Valid::CODE_SUCCESS) {
-            return $data;
+            return [];
         }
+
         //整理事件任务数据
+        $tasksData = [];
         array_map(function ($task) use (&$tasksData) {
-            $tasksData = array_merge($tasksData, $task['tasks']);
+            if (is_array($task['tasks'])) {
+                $tasksData = array_merge($tasksData, $task['tasks']);
+            }
         }, $eventTaskList['data']);
-        //过滤状态
+
         if (empty($tasksData)) {
-            return $data;
+            return [];
         }
+
+        $data = [];
         foreach ($tasksData as $ek => &$ev) {
             if ($ev['status'] == self::ERP_EVENT_TASK_STATUS_ENABLED) {
                 $ev['condition'] = json_decode($ev['condition'], true);
                 $data[] = $tasksData[$ek];
             }
         }
+
         return $data;
     }
 }
