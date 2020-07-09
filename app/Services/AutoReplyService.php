@@ -47,8 +47,19 @@ class AutoReplyService
             return [];
         }
         $answer = AutoReplyAnswerModel::getRecords(['q_id' => $id, 'status' => 1]);
+        if(empty($answer)){
+            $data['question'] = $question;
+            $data['answer'] = [];
+            return $data;
+        }
+        foreach ($answer as $key => $value){
+            if ($value['type'] == AutoReplyAnswerModel::AUTO_REPLAY_TYPE_IMAGE) {
+                $value['answer'] = empty($value['answer']) ? '' : AliOSS::signUrls($value['answer']);
+            }
+            $answers[] = $value;
+        }
         $data['question'] = $question;
-        $data['answer'] = $answer ?? [];
+        $data['answer'] = $answers ?? [];
         return $data;
     }
 
