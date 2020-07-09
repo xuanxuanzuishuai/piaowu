@@ -141,7 +141,8 @@ class DictConstants {
         'keys' => [
             'success_url',
             'cancel_url',
-            'result_url'
+            'result_url',
+            'assess_result_share_channel_id'
         ]
     ];
 

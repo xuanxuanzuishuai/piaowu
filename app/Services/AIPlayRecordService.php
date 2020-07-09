@@ -866,7 +866,7 @@ class AIPlayRecordService
      */
     public static function getStudentAssessData($recordId)
     {
-        $channel_id = StudentModel::CHANNEL_REFERRAL;
+        $channel_id = DictConstants::get(DictConstants::WEIXIN_STUDENT_CONFIG, 'assess_result_share_channel_id');
         $TicketData = [];
         $report = AIPlayRecordModel::getRecord(['record_id' => $recordId]);
         if (empty($report)) {
