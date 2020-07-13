@@ -17,7 +17,7 @@ class AutoReplyService
             throw new RunTimeException(['same_title_not_allowed']);
         }
         $insertData = [
-            'title' => $title,
+            'title' => trim($title),
             'status' => Constants::STATUS_TRUE,
             'create_time' => time(),
             'creator_id' => $creatorId,
@@ -72,7 +72,7 @@ class AutoReplyService
         $insertData = [
             'q_id' => $qId,
             'status' => Constants::STATUS_TRUE,
-            'answer' => $answer,
+            'answer' => trim($answer),
             'sort' => $sort,
             'type' => $type,
         ];
@@ -155,7 +155,10 @@ class AutoReplyService
         ];
         $question = AutoReplyQuestionModel::getRecords($questionWhere);
         if(empty($question)){
-            return [[], $totalCount];
+            return [[], 0];
+        }
+        if (!empty($key)) {
+            $totalCount = count($question);
         }
         $answerWhere['q_id'] = array_column($question, 'id');
         $answer = AutoReplyAnswerModel::getRecords($answerWhere);
@@ -166,7 +169,6 @@ class AutoReplyService
             }
             $questionData[$value['q_id']]['list'][] = $value;
         }
-
         return [$questionData, $totalCount];
     }
 

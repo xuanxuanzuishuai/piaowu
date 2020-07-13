@@ -13,9 +13,6 @@ class AutoReplyQuestionModel extends Model
     public static function getTotalCount()
     {
         $db = MysqlDB::getDB();
-        return $db->count(self::$table,
-            [
-                'status' => 1,
-            ]);
+        return $db->count(self::$table);
     }
 }

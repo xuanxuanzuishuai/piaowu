@@ -147,7 +147,7 @@ class WeChatMsgHandler
 
         $questionRow = AutoReplyService::getQuestionByTitle($msgQuestion);
         if (empty($questionRow) && !empty($_ENV['SERVER_AUTO_REPLY']) && !self::serverOnline($_ENV['SERVER_ONLINE_TIME'])) {
-            $questionRow = AutoReplyService::getQuestionByTitle("微信自动回复");
+            $questionRow = AutoReplyService::getQuestionByTitle("自动回复");
         }
         if (empty($questionRow)) {
             return $result;
