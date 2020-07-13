@@ -10,9 +10,12 @@ namespace App\Services;
 
 use App\Libs\DictConstants;
 use App\Libs\Erp;
+use App\Libs\MysqlDB;
+use App\Libs\Util;
 use App\Models\GiftCodeModel;
 use App\Models\PackageExtModel;
 use App\Models\ReviewCourseModel;
+use App\Models\StudentModel;
 use App\Models\StudentModelForApp;
 
 class PayServices
@@ -316,6 +319,28 @@ class PayServices
         ], 'id', false);
 
         return count($trialCode) > 0;
+    }
+
+    public static function trialedUserByMobile($mobile)
+    {
+        $trailPackages = PackageExtModel::getPackages(['package_type' => PackageExtModel::PACKAGE_TYPE_TRIAL]);
+        $trialPackageIds = array_column($trailPackages, 'package_id');
+        if (empty($trialPackageIds)) {
+            return false;
+        }
+        if(!is_array($mobile)) {
+            $mobile = [$mobile];
+        }
+
+        $in = Util::buildSqlIn($mobile);
+
+        $s = StudentModel::$table;
+        $g = GiftCodeModel::$table;
+
+        $db = MysqlDB::getDB();
+
+        return $db->queryAll("select s.mobile from {$g} g inner join {$s} s on s.id = g.buyer 
+                    where s.mobile in ({$in}) group by s.mobile");
     }
 
     /**

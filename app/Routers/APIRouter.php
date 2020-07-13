@@ -79,5 +79,11 @@ class APIRouter extends RouterBase
             'call' => Consumer::class . ':callCenter',
             'middles' => [],
         ],
+        // 有赞等第三方订单导入DSS
+        '/api/consumer/third_part_bill' => [
+            'method' => ['post'],
+            'call' => Consumer::class . ':thirdPartBill',
+            'middles' => [],
+        ],
     ];
 }

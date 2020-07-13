@@ -351,6 +351,11 @@ class DictConstants {
         ]
     ];
 
+    const THIRD_PART_BILL_STATUS = [
+        'type' => 'third_part_bill_status',
+        'keys' => [1, 2]
+    ];
+
     public static function get($type, $key)
     {
         if (empty($type) || empty($key)) {

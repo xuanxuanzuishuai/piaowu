@@ -47,6 +47,9 @@ class Erp
     const API_STUDENT_ACCOUNTS = '/ai_dss/account/detail';
     const API_STUDENT_ACCOUNT_DETAIL = '/ai_dss/account/logs';
 
+    // 创建订单（可以创建后立即发货）
+    const API_CREATE_DELIVER_BILL = '/api/dss/create_bill';
+
     private $host;
 
     public function __construct()
@@ -54,7 +57,7 @@ class Erp
         $this->host = DictConstants::get(DictConstants::SERVICE, "erp_host");
     }
 
-    private function commonAPI($api,  $data = [], $method = 'GET')
+    private function commonAPI($api,  $data = [], $method = 'GET', &$exportBody = '')
     {
         try {
             $client = new Client([
@@ -75,6 +78,7 @@ class Erp
             $status = $response->getStatusCode();
             SimpleLogger::info(__FILE__ . ':' . __LINE__, ['api' => $api, 'body' => $body, 'status' => $status]);
 
+            $exportBody = $body;
 
             $res = json_decode($body, true);
             SimpleLogger::info(__FILE__ . ':' . __LINE__, [print_r($res, true)]);
@@ -88,6 +92,13 @@ class Erp
             SimpleLogger::error(__FILE__ . ':' . __LINE__, [print_r($e->getMessage(), true)]);
         }
         return false;
+    }
+
+    public function createDeliverBill($params)
+    {
+        $body = '';
+        $result = self::commonAPI(self::API_CREATE_DELIVER_BILL, $params, 'POST', $body);
+        return [$result, $body];
     }
 
     /**

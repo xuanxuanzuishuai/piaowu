@@ -38,6 +38,7 @@ use App\Controllers\OrgWeb\Referral;
 use App\Controllers\OrgWeb\ReviewCourse;
 use App\Controllers\OrgWeb\SharePoster;
 use App\Controllers\OrgWeb\Employee as OrgWebEmployee;
+use App\Controllers\Bill\ThirdPartBill;
 use App\Controllers\Schedule\ScheduleRecord;
 use App\Controllers\Student\PlayRecord as BackendPlayRecord;
 use App\Controllers\Student\Student;
@@ -269,7 +270,10 @@ class OrgWebRouter extends RouterBase
         '/bill/bill/exportBill' => ['method' => ['get'], 'call' => Bill::class . ':exportBill'],
         // 课消数据导出
         '/bill/bill/exportReduce' => ['method' => ['get'], 'call' => Bill::class . ':exportReduce'],
-
+        // 从有赞等第三方渠道导入流水号
+        '/bill/third_part_bill/import' => ['method' => ['post'], 'call' => ThirdPartBill::class . ':import'],
+        '/bill/third_part_bill/list' => ['method' => ['get'], 'call' => ThirdPartBill::class . ':list'],
+        '/bill/third_part_bill/download_template' => ['method' => ['get'], 'call' => ThirdPartBill::class . ':downloadTemplate'],
 
         //机构许可证，创建
         '/org_web/org_license/create' => ['method' => ['post'], 'call' => OrgLicense::class . ':create'],

@@ -22,6 +22,9 @@ class Constants
     //通用的状态
     const DICT_TYPE_NORMAL_STATUS = 'normal_status';// 0废弃 1正常
 
+    //系统外网地址
+    const DICT_KEY_STATIC_FILE_URL = 'STATIC_FILE_URL';
+
     // 系统设置
     const DICT_TYPE_SYSTEM_ENV = 'system_env';
 

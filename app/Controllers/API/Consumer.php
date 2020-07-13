@@ -10,6 +10,7 @@ namespace App\Controllers\API;
 
 use App\Libs\DictConstants;
 use App\Libs\HttpHelper;
+use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Controllers\ControllerBase;
 use App\Services\ChannelService;
@@ -18,6 +19,7 @@ use App\Services\Queue\PushMessageTopic;
 use App\Services\Queue\TableSyncTopic;
 use App\Services\ReferralActivityService;
 use App\Libs\TableSyncQueue;
+use App\Services\ThirdPartBillService;
 use App\Services\VoiceCall\VoiceCallTRService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -239,5 +241,42 @@ class Consumer extends ControllerBase
         }
 
         return $response->withJson(['code' => 0], 200);
+    }
+
+    public function thirdPartBill(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        $rules = [
+            [
+                'key'        => 'topic_name',
+                'type'       => 'required',
+                'error_code' => 'topic_name_is_required',
+            ],
+            [
+                'key'        => 'event_type',
+                'type'       => 'required',
+                'error_code' => 'event_type_is_required',
+            ],
+            [
+                'key'        => 'msg_body',
+                'type'       => 'required',
+                'error_code' => 'msg_body_is_required',
+            ],
+        ];
+
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        switch ($params['event_type']) {
+            case 'import':
+                ThirdPartBillService::handleImport($params['msg_body']);
+                break;
+            default:
+                SimpleLogger::error('consume_third_part_bill', ['unknown_event_type' => $params]);
+        }
+
+        return HttpHelper::buildResponse($response, []);
     }
 }
