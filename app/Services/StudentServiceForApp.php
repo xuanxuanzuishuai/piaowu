@@ -9,7 +9,6 @@
 namespace App\Services;
 
 
-use App\Libs\AliOSS;
 use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
@@ -17,7 +16,6 @@ use App\Libs\ResponseError;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Libs\Util;
-use App\Models\CollectionModel;
 use App\Models\ReferralModel;
 use App\Models\StudentModel;
 use App\Models\StudentModelForApp;
@@ -126,12 +124,14 @@ class StudentServiceForApp
      *
      * @param string $mobile 手机号
      * @param int $code 短信验证码
+     * @param $password
      * @param $platform
      * @param $version
      * @param $channelId
+     * @param $countryCode
      * @return array [0]errorCode [1]登录数据
      */
-    public static function login($mobile, $code, $password, $platform, $version, $channelId)
+    public static function login($mobile, $code, $password, $platform, $version, $channelId, $countryCode)
     {
 
         if (empty($code) && empty($password)) {
@@ -147,7 +147,12 @@ class StudentServiceForApp
 
         // 新用户自动注册
         if (empty($student)) {
-            list($newStudent) = self::studentRegister($mobile, $channelId);
+            list($newStudent) = self::studentRegister(
+                $mobile,
+                $channelId,
+                null,
+                null,
+                $countryCode);
 
             if (empty($newStudent)) {
                 return ['student_register_fail'];
@@ -238,7 +243,7 @@ class StudentServiceForApp
      * 忘记密码
      * @param $mobile
      * @param $code
-     * @param $password
+     * @param $paramsPwd
      * @return array|string[]
      */
     public static function updatePwd($mobile, $code, $paramsPwd)
@@ -376,9 +381,10 @@ class StudentServiceForApp
      * @param $channel
      * @param $name
      * @param $refereeId
+     * @param null $countryCode
      * @return null|array 失败返回null 成功返回['student_id' => x, 'uuid' => x, 'is_new' => x]
      */
-    public static function studentRegister($mobile, $channel, $name = null, $refereeId = null)
+    public static function studentRegister($mobile, $channel, $name = null, $refereeId = null, $countryCode = null)
     {
         if (empty($mobile) || empty($channel)) {
             return null;
@@ -410,7 +416,7 @@ class StudentServiceForApp
         }
 
         $erp = new Erp();
-        $response = $erp->studentRegister($channel, $mobile, $name, $refType, $refUuid);
+        $response = $erp->studentRegister($channel, $mobile, $name, $refType, $refUuid, $countryCode);
         if (empty($response) || $response['code'] != 0) {
             SimpleLogger::error("studentRegister error", [
                 '$mobile' => $mobile,
@@ -422,7 +428,7 @@ class StudentServiceForApp
         }
 
         $uuid = $response['data']['uuid'];
-        $lastId = self::addStudent($mobile, $name, $uuid, $channel);
+        $lastId = self::addStudent($mobile, $name, $uuid, $channel, $countryCode);
 
         if (empty($lastId)) {
             SimpleLogger::error(__FILE__ . __LINE__, [
@@ -465,9 +471,10 @@ class StudentServiceForApp
      * @param string $name 昵称
      * @param string $uuid
      * @param int $channel
+     * @param $countryCode
      * @return array|null 用户数据
      */
-    public static function addStudent($mobile, $name, $uuid, $channel)
+    public static function addStudent($mobile, $name, $uuid, $channel, $countryCode)
     {
         $user = [
             'uuid' => $uuid,
@@ -477,7 +484,8 @@ class StudentServiceForApp
             'sub_status' => StudentModelForApp::SUB_STATUS_ON,
             'sub_start_date' => 0,
             'sub_end_date' => 0,
-            'channel_id' => $channel
+            'channel_id' => $channel,
+            'country_code' => $countryCode,
         ];
 
         $id = StudentModelForApp::insertRecord($user, false);

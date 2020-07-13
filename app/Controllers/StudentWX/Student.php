@@ -93,8 +93,13 @@ class Student extends ControllerBase
         $db = MysqlDB::getDB();
         $db->beginTransaction();
         if (empty($student_info["id"])) {
-            list($student_id) = StudentServiceForApp::studentRegister($params["mobile"],
-                StudentModel::CHANNEL_WE_CHAT_SCAN, $params["name"]);
+            list($student_id) = StudentServiceForApp::studentRegister(
+                $params["mobile"],
+                StudentModel::CHANNEL_WE_CHAT_SCAN,
+                $params["name"],
+                null,
+                $params['country_code']
+            );
             if (empty($student_id)) {
                 return $response->withJson(Valid::addAppErrors([], 'register_failed'), StatusCode::HTTP_OK);
             }

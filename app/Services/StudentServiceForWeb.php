@@ -115,10 +115,11 @@ class StudentServiceForWeb
      * @param $adChannel
      * @param $adParams
      * @param $refereeId
+     * @param $countryCode
      * @return array
      * @throws RunTimeException
      */
-    public static function mobileLogin($mobile, $code, $channelId, $adChannel, $adParams, $refereeId)
+    public static function mobileLogin($mobile, $code, $channelId, $adChannel, $adParams, $refereeId, $countryCode)
     {
         // 检查验证码
         if (!CommonServiceForApp::checkValidateCode($mobile, $code)) {
@@ -130,7 +131,13 @@ class StudentServiceForWeb
             return $student;
         }
 
-        list($newStudent) = StudentServiceForApp::studentRegister($mobile, $channelId, NULL, $refereeId);
+        list($newStudent) = StudentServiceForApp::studentRegister(
+            $mobile,
+            $channelId,
+            NULL,
+            $refereeId,
+            $countryCode
+        );
         if (empty($newStudent)) {
             throw new RunTimeException(['student_register_fail']);
         }

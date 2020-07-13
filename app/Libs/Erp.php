@@ -215,13 +215,15 @@ class Erp
      * @param $name
      * @param null $refType
      * @param null $refUuid
+     * @param null $countryCode
      * @return array|bool
      */
-    public function studentRegister($channelId, $mobile, $name, $refType = null, $refUuid = null)
+    public function studentRegister($channelId, $mobile, $name, $refType = null, $refUuid = null, $countryCode = null)
     {
         $response = HttpHelper::requestJson($this->host . self::API_STUDENT_REGISTER, [
             'app_id' => self::SELF_APP_ID,
             'mobile' => $mobile,
+            'country_code' => $countryCode,
             'name' => $name,
             'channel_id' => $channelId,
             'referrer_type' => $refType,

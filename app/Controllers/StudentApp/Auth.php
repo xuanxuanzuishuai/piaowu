@@ -62,7 +62,13 @@ class Auth extends ControllerBase
 
             $channelId = $request->getParam('channel_id', StudentModel::CHANNEL_APP_REGISTER);
             list($errorCode, $loginData) = StudentServiceForApp::login(
-                $params['mobile'], $params['code'], $params['password'], $this->ci['platform'], $this->ci['version'], $channelId
+                $params['mobile'],
+                $params['code'],
+                $params['password'],
+                $this->ci['platform'],
+                $this->ci['version'],
+                $channelId,
+                $params['country_code']
             );
         }
 

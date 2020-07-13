@@ -134,7 +134,13 @@ class Auth extends ControllerBase
             ]);
         }
 
-        list($lastId, $isNew) = StudentServiceForApp::studentRegister($params['mobile'], $params['channel'], null, $params['referee_id']);
+        list($lastId, $isNew) = StudentServiceForApp::studentRegister(
+            $params['mobile'],
+            $params['channel'],
+            null,
+            $params['referee_id'],
+            $params['country_code']
+        );
         if(empty($lastId)) {
             return $response->withJson(Valid::addAppErrors([], 'student_register_fail'));
         }
@@ -231,12 +237,15 @@ class Auth extends ControllerBase
 
         try {
             $db->beginTransaction();
-            $data = StudentServiceForWeb::mobileLogin($params['mobile'],
+            $data = StudentServiceForWeb::mobileLogin(
+                $params['mobile'],
                 $params['code'],
                 $channelId,
                 $adChannel,
                 $adParams,
-                $params['referee_id'] ?? NULL);
+                $params['referee_id'] ?? NULL,
+                $params['country_code'] ?? NULL
+            );
             $db->commit();
 
         } catch (RunTimeException $e) {
