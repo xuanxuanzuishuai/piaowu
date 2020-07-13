@@ -12,17 +12,21 @@ class AutoReplyService
 {
     public static function addQuestion($title, $creatorId)
     {
-            $insertData = [
-                'title' => $title,
-                'status' => Constants::STATUS_TRUE,
-                'create_time' => time(),
-                'creator_id' => $creatorId,
-            ];
-            $id = AutoReplyQuestionModel::insertRecord($insertData);
-            if (empty($id)) {
-                throw new RunTimeException(['insert_failure']);
-            }
-            return $id;
+        $question = self::getQuestionByTitle($title);
+        if (!empty($question)) {
+            return $question['id'];
+        }
+        $insertData = [
+            'title' => $title,
+            'status' => Constants::STATUS_TRUE,
+            'create_time' => time(),
+            'creator_id' => $creatorId,
+        ];
+        $id = AutoReplyQuestionModel::insertRecord($insertData);
+        if (empty($id)) {
+            throw new RunTimeException(['insert_failure']);
+        }
+        return $id;
     }
 
     public static function editQuestion($id, $title, $status)
