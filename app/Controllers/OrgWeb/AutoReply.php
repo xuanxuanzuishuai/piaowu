@@ -115,7 +115,7 @@ class AutoReply extends ControllerBase
         }
 
         try {
-            $question = AutoReplyQuestionModel::getRecord(['status' => 1, 'id' => $params['q_id']]);
+            $question = AutoReplyQuestionModel::getRecord(['id' => $params['q_id']]);
             if(empty($question)){
                 return HttpHelper::buildOrgWebErrorResponse($response, "q_id_failed");
             }

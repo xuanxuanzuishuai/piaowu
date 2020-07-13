@@ -12,9 +12,9 @@ class AutoReplyService
 {
     public static function addQuestion($title, $creatorId)
     {
-        $question = self::getQuestionByTitle($title);
+        $question = self::getQuestionByTitleOrgWeb($title);
         if (!empty($question)) {
-            return $question['id'];
+            throw new RunTimeException(['same_title_not_allowed']);
         }
         $insertData = [
             'title' => $title,
@@ -46,11 +46,11 @@ class AutoReplyService
     public static function questionOne($id)
     {
         //获取信息
-        $question = AutoReplyQuestionModel::getRecord(['id' => $id, 'status' => 1]);
+        $question = AutoReplyQuestionModel::getRecord(['id' => $id]);
         if(empty($question)){
             return [];
         }
-        $answer = AutoReplyAnswerModel::getRecords(['q_id' => $id, 'status' => 1]);
+        $answer = AutoReplyAnswerModel::getRecords(['q_id' => $id]);
         if(empty($answer)){
             $data['question'] = $question;
             $data['answer'] = [];
@@ -140,7 +140,6 @@ class AutoReplyService
             return [[], 0];
         }
         $questionWhere = [
-            "status" => 1,
             "ORDER" => [
                 "id" => "DESC"
             ]
@@ -150,12 +149,14 @@ class AutoReplyService
         }
         $questionWhere['LIMIT'] = [($page - 1) * $count, $count];
         $answerWhere = [
-            "status" => 1,
             "ORDER" => [
                 "sort" => "DESC"
             ]
         ];
         $question = AutoReplyQuestionModel::getRecords($questionWhere);
+        if(empty($question)){
+            return [[], $totalCount];
+        }
         $answerWhere['q_id'] = array_column($question, 'id');
         $answer = AutoReplyAnswerModel::getRecords($answerWhere);
         $questionData = array_combine(array_column($question, 'id'), $question);
@@ -167,5 +168,20 @@ class AutoReplyService
         }
 
         return [$questionData, $totalCount];
+    }
+
+    public static function getQuestionByTitleOrgWeb($title)
+    {
+        $questionWhere = [
+            "ORDER" => [
+                "id" => "ASC"
+            ]
+        ];
+        if(!empty($title)){
+            $questionWhere['title'] = $title;
+        }
+        $questionWhere['LIMIT'] = 1;
+        $question = AutoReplyQuestionModel::getRecord($questionWhere);
+        return $question ?? [];
     }
 }
