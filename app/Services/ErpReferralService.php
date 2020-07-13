@@ -172,6 +172,10 @@ class ErpReferralService
         $maxTaskIndex = -1;
         $maxTaskId = 0;
         foreach ($tasks as $idx => $task) {
+            //只需要特定的转介绍任务
+            if (!in_array($task['event_task_id'], [self::EVENT_TASK_ID_REGISTER, self::EVENT_TASK_ID_TRIAL_PAY, self::EVENT_TASK_ID_PAY])) {
+                continue;
+            }
             if (empty($maxTaskId) || self::refEventTaskCmp($task['event_task_id'], $maxTaskId)) {
                 $maxTaskIndex = $idx;
                 $maxTaskId = $task['event_task_id'];
