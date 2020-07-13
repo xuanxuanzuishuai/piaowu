@@ -9,8 +9,10 @@
 namespace App\Services;
 
 
+use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\Util;
+use App\Models\EventTaskModel;
 use App\Models\PointActivityRecordModel;
 use App\Models\CheckInRecordModel;
 use App\Libs\MysqlDB;
@@ -22,6 +24,15 @@ class PointActivityService
 {
     //学生账户子类型
     const ACCOUNT_SUB_TYPE_STUDENT_POINTS = 3001;//学生积分余额
+    //学生账户操作日志子类型
+    const SOURCE_TYPE_SIGN = 1001;//每日签到
+    const SOURCE_TYPE_PLAY_DURATION = 1002;//练琴时长
+    const SOURCE_TYPE_EMPLOYEE_RECHARGE = 1003;//系统充值
+    const SOURCE_TYPE_FINISH_TEST = 1004;//完成评测
+    const SOURCE_TYPE_SHARE_TEST = 1005;//分享评测
+    const SOURCE_TYPE_EXCHANGE = 2001;//兑换商品扣减
+    const SOURCE_TYPE_EXPIRE_DEDUCT = 2002;//过期扣减
+    const SOURCE_TYPE_EMPLOYEE_DEDUCT = 2003;//系统扣减
 
     /**
      * 积分活动数据上报
@@ -37,6 +48,9 @@ class PointActivityService
         $date = date("Y-m-d");
         //获取学生信息
         $studentInfo = StudentModelForApp::getById($studentId);
+        if (empty($studentInfo)) {
+            throw new RunTimeException(['student_ids_error']);
+        }
         $reportData['uuid'] = $studentInfo['uuid'];
         $reportData['student_id'] = $studentId;
         $reportRes = [
@@ -63,7 +77,7 @@ class PointActivityService
             return $reportRes;
         }
         //保存数据
-        self::pointActivityRecord($activityType, array_keys($completeRes), $studentId, $date, $time, $params);
+        self::pointActivityRecord($activityType, array_keys($completeRes), $studentId, $date, $time, $reportData);
         array_map(function ($completeVal) use (&$reportRes) {
             $awardInfo = json_decode($completeVal, true);
             $reportRes['amount'] = $awardInfo['awards'][0]['amount'];
@@ -233,12 +247,18 @@ class PointActivityService
             'list' => [],
         ];
         if (empty($studentAccountDetail['code']) && $studentAccountDetail['data']['total_count'] > 0) {
+            //获取dict
+            $dictMap = DictService::getTypeMap(Constants::STUDENT_ACCOUNT_LOG_OP_TYPE);
+            //获取任务task的信息
+            $taskIdList = array_column($studentAccountDetail['data']['logs'], 'event_task_id');
+            $tasksInfo = array_column(EventTaskModel::getRecords(['id' => array_unique($taskIdList)], ['id', 'name'], false), null, 'id');
             $data['total_count'] = $studentAccountDetail['data']['total_count'];
-            $data['list'] = array_map(function ($logVal) {
+            $data['list'] = array_map(function ($logVal) use ($tasksInfo, $dictMap) {
                 $tmp = [
                     'create_time' => date("Y.m.d H:i", strtotime($logVal['create_time'])),
-                    'task_name' => $logVal['remark'],
+                    'task_name' => in_array($logVal['source_type'], [self::SOURCE_TYPE_PLAY_DURATION, self::SOURCE_TYPE_FINISH_TEST, self::SOURCE_TYPE_SHARE_TEST]) ? $tasksInfo[$logVal['event_task_id']]['name'] : $dictMap[$logVal['source_type']],
                     'award_num' => $logVal['num'],
+                    'operate_type' => $logVal['operate_type'],
                 ];
                 return $tmp;
             }, $studentAccountDetail['data']['logs']);

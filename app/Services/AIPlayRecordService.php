@@ -595,7 +595,8 @@ class AIPlayRecordService
         ];
 
         $recordID = AIPlayRecordModel::insertRecord($recordData);
-
+        //上报练琴时长获取积分
+        self::reportPoint($studentId, $now, $recordData);
         return $recordID;
     }
 

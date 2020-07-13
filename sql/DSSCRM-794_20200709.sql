@@ -19,3 +19,12 @@ CREATE TABLE `point_activity_record` (
   PRIMARY KEY (`id`),
   KEY `idx_sid_tid` (`student_id`,`task_id`) USING BTREE COMMENT '学生id和活动id索引'
 ) COMMENT='积分活动参与记录表';
+
+INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES ('student_account_log_op_type', '学生账户操作日志子类型', '1001', '每日签到', NULL);
+INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES ('student_account_log_op_type', '学生账户操作日志子类型', '1002', '练琴时长', NULL);
+INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES ('student_account_log_op_type', '学生账户操作日志子类型', '1003', '系统充值', NULL);
+INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES ('student_account_log_op_type', '学生账户操作日志子类型', '1004', '完成评测', NULL);
+INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES ('student_account_log_op_type', '学生账户操作日志子类型', '1005', '分享评测', NULL);
+INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES ('student_account_log_op_type', '学生账户操作日志子类型', '2001', '兑换商品扣减', NULL);
+INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES ('student_account_log_op_type', '学生账户操作日志子类型', '2002', '过期扣减', NULL);
+INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES ('student_account_log_op_type', '学生账户操作日志子类型', '2003', '系统扣减', NULL);

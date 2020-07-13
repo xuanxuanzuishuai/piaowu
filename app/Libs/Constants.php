@@ -205,4 +205,9 @@ class Constants
     const DICT_TYPE_SHARE_POSTER_CHECK_REASON = "share_poster_check_reason";
     //分享截图审核状态
     const DICT_TYPE_SHARE_POSTER_CHECK_STATUS = "share_poster_check_status";
+
+    //微信用户标签状态
+    const DICT_TYPE_TAG_STATUS = 'tag_status';
+    //学生账户操作日志子类型
+    const STUDENT_ACCOUNT_LOG_OP_TYPE='student_account_log_op_type';
 };
