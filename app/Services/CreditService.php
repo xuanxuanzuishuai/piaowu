@@ -10,8 +10,10 @@ namespace App\Services;
 use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\MysqlDB;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
+use App\Models\PointActivityRecordModel;
 
 class CreditService
 {
@@ -273,7 +275,9 @@ class CreditService
         $hasAchieveTask[$shouldGetTaskId] = $award;
         //更新用户的完成情况
         self::updateUserCompleteStatus($data['student_id'], self::SIGN_IN_TASKS, $limitCount, $shouldGetTaskId);
-        $erp->updateTask($data['uuid'], $shouldGetTaskId, ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
+        if (self::checkSendAwardTask($data['student_id'], $shouldGetTaskId, $limitCount)) {
+            $erp->updateTask($data['uuid'], $shouldGetTaskId, ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
+        }
         return $hasAchieveTask;
     }
 
@@ -297,7 +301,9 @@ class CreditService
             $condition = json_decode($v['condition'], true);
             if ($data['play_duration'] >= $condition['play_duration']) {
                 self::updateUserCompleteStatus($data['student_id'], self::PLAY_PIANO_TASKS, $condition['every_day_count'], $v['id']);
-                $erp->updateTask($data['uuid'], $v['id'], ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
+                if (self::checkSendAwardTask($data['student_id'], $v['id'], $condition['every_day_count'])) {
+                    $erp->updateTask($data['uuid'], $v['id'], ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
+                }
                 $hasAchieveTask[$v['id']] = $v['award'];
             }
         }
@@ -328,7 +334,9 @@ class CreditService
         foreach ($activityTemplate as $v) {
             $condition = json_decode($v['condition'], true);
             self::updateUserCompleteStatus($data['student_id'], self::BOTH_HAND_EVALUATE, $condition['every_day_count'], $v['id']);
-            $erp->updateTask($data['uuid'], $v['id'], ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
+            if (self::checkSendAwardTask($data['student_id'], $v['id'], $condition['every_day_count'])) {
+                $erp->updateTask($data['uuid'], $v['id'], ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
+            }
             $hasAchieveTask[$v['id']] = $v['award'];
         }
         return $hasAchieveTask;
@@ -358,7 +366,9 @@ class CreditService
         foreach ($activityTemplate as $v) {
             $condition = json_decode($v['condition'], true);
             self::updateUserCompleteStatus($data['student_id'], self::SHARE_GRADE, $condition['every_day_count'], $v['id']);
-            $erp->updateTask($data['uuid'], $v['id'], ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
+            if (self::checkSendAwardTask($data['student_id'], $v['id'], $condition['every_day_count'])) {
+                $erp->updateTask($data['uuid'], $v['id'], ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
+            }
             $hasAchieveTask[$v['id']] = $v['award'];
         }
         return $hasAchieveTask;
@@ -413,6 +423,30 @@ class CreditService
         $activityArr['both_hand_evaluate'] = json_decode($redis->hget($bothHandEvaluateKey, $field), true);
         $activityArr['share_grade'] = json_decode($redis->hget($shareEvaluateGradesKey, $field), true);
         return $activityArr;
+    }
+
+    /**
+     * @param $studentId
+     * @param $eventTaskId
+     * @param $limitCount
+     * @return bool
+     * 防止redis丢失再次检测下是否该给奖励
+     */
+    public static function checkSendAwardTask($studentId, $eventTaskId, $limitCount)
+    {
+        //当天对当前任务完成了多少次
+        $db = MysqlDB::getDB();
+        $count = $db->count(PointActivityRecordModel::$table, [
+            'student_id' => $studentId,
+            'task_id' => $eventTaskId,
+            'report_date' => date('Y-m-d')
+        ]);
+        if ($count >= $limitCount) {
+            SimpleLogger::info($eventTaskId . ' has give', ['student_id' => $studentId, 'limit_count' => $limitCount]);
+            return false;
+        } else {
+            return true;
+        }
     }
 
 }
