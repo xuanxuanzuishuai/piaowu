@@ -34,7 +34,8 @@ class AliOSS
     const DIR_REFERRAL = 'referral';//转介绍海报和二维码
     const DIR_APP_BANNER = 'app_banner';//app banner图
     const DIR_REFERRAL_ACTIVITY = 'referral_activity';//转介绍活动截图上传
-    const DIR_WX_AUTO_REPLAY = 'wx_auto_replay'; //微信自动回复
+
+    const DIR_CERTIFICATE = 'certificate';//学生证书
 
     private function gmt_iso8601($time) {
         $dtStr = date("c", $time);
@@ -381,7 +382,7 @@ class AliOSS
             self::DIR_REFERRAL,
             self::DIR_APP_BANNER,
             self::DIR_REFERRAL_ACTIVITY,
-            self::DIR_WX_AUTO_REPLAY,
+            self::DIR_CERTIFICATE,
         ];
         if (!in_array($dirType, $typeConstants)) {
             return null;

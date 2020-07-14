@@ -8,6 +8,7 @@
 
 namespace App\Controllers\OrgWeb;
 
+use App\Libs\Constants;
 use App\Libs\Valid;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -146,5 +147,31 @@ class Student extends ControllerBase
         }
         //返回数据
         return HttpHelper::buildResponse($response, $studentInfo);
+    }
+
+    /**
+     * 学生信息模糊搜索
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function fuzzySearchStudent(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'mobile',
+                'type' => 'regex',
+                'value' => Constants::MOBILE_REGEX,
+                'error_code' => 'mobile_format_error'
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $studentList = StudentService::fuzzySearchStudent($params, ['mobile', 'name']);
+        //返回数据
+        return HttpHelper::buildResponse($response, $studentList);
     }
 }

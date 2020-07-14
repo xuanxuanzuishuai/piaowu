@@ -54,6 +54,7 @@ use App\Controllers\OrgWeb\Collection;
 use App\Controllers\OrgWeb\Package;
 use App\Controllers\OrgWeb\Student as OrgWebStudent;
 use App\Controllers\OrgWeb\Faq;
+use App\Controllers\OrgWeb\StudentCertificate;
 
 class OrgWebRouter extends RouterBase
 {
@@ -149,6 +150,7 @@ class OrgWebRouter extends RouterBase
         '/org_web/student/syncDataToCrm' => ['method' => ['post'], 'call' => OrgWebStudent::class . ':syncDataToCrm'],
         '/org_web/student/allot_course_manage' => ['method' => ['post'], 'call' => OrgWebStudent::class . ':allotCourseManage'],
         '/org_web/student/student_mobile' => ['method' => ['get'], 'call' => OrgWebStudent::class . ':getStudentMobile'],
+        '/org_web/student/fuzzy_search_student' => ['method' => ['get'], 'call' => OrgWebStudent::class . ':fuzzySearchStudent'],
         // 学生跟进记录
         '/student/student_remark/add' => array('method' => array('post'), 'call' => '\App\Controllers\Student\StudentRemark:add'),
         '/student/student_remark/remark_list' => array('method' => array('get'), 'call' => '\App\Controllers\Student\StudentRemark:remarkList'),
@@ -461,5 +463,7 @@ class OrgWebRouter extends RouterBase
 
         '/org_web/auto_replay/question_list' => ['method' => ['get'], 'call' => AutoReply::class . ':list'],
 
+        // 学生证书管理
+        '/org_web/student_certificate/add' => ['method' => ['post'], 'call' => StudentCertificate::class . ':add'],
     ];
 }

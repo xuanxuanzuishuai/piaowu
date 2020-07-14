@@ -1218,4 +1218,28 @@ class StudentService
         }
         return $studentInfoList;
     }
+
+    /**
+     * 学生信息模糊搜索
+     * @param $params
+     * @param $fields
+     * @return mixed
+     */
+    public static function fuzzySearchStudent($params, $fields)
+    {
+        $where = $data = [];
+        if (!empty($params['mobile'])) {
+            $where['mobile[~]'] = $params['mobile'];
+        }
+        if (empty($where)) {
+            return $data;
+        }
+        $data = StudentModel::getRecords($where, $fields, false);
+        if (!empty($data)) {
+            foreach ($data as $k => &$v) {
+                $v['mobile'] = Util::hideUserMobile($v['mobile']);
+            }
+        }
+        return $data;
+    }
 }
