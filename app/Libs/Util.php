@@ -170,6 +170,11 @@ class Util
         return preg_match(Constants::MOBILE_REGEX, $mobile);
     }
 
+    public static function isChineseMobile($mobile)
+    {
+        return preg_match('/^1[345789]\d{9}/', $mobile);
+    }
+
     /**
      * 比率
      * @param $a

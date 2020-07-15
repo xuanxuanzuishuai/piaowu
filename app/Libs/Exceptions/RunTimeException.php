@@ -16,6 +16,8 @@ class RunTimeException extends \Exception
 {
     private $errors;
 
+    private $data; // 在一些情况下，客户端不仅需要获得错误提示，也需要知道是哪些数据出现了错误，成员变量data作为错误的扩展返回给客户端
+
     /**
      * 生成一个异常
      * 异常可能包含多个原因(error code)
@@ -25,8 +27,9 @@ class RunTimeException extends \Exception
      *     errorCode 表示对应的错误,message 在lang文件中定义
      *     errorField(可选) 表示产生错误对应的前端字段
      *     msgArgs(可选) 格式化 errorMessage 需要的参数
+     * @param $data
      */
-    public function __construct($errors)
+    public function __construct($errors, $data = [])
     {
         parent::__construct("runtime_exception");
         if (is_string($errors[0])) { // [errorCode, errorField, msgArgs] 格式
@@ -34,6 +37,7 @@ class RunTimeException extends \Exception
         }
         SimpleLogger::error("[runtime exception]", $errors);
         $this->errors = $errors;
+        $this->data = $data;
     }
 
     public function getWebErrorData()
@@ -81,6 +85,11 @@ class RunTimeException extends \Exception
     {
         $sentryClient = new \Raven_Client($_ENV['SENTRY_NOTIFY_URL']);
         $sentryClient->captureMessage('RUNTIME EXCEPTION: ' . $this->getMessage(), null, $data);
+    }
+
+    public function getData()
+    {
+        return $this->data;
     }
 
     public static function makeAppErrorData(string $error)

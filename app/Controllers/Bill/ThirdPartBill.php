@@ -27,6 +27,11 @@ class ThirdPartBill extends ControllerBase
     {
         $rules = [
             [
+                'key'        => 'parent_channel_id',
+                'type'       => 'required',
+                'error_code' => 'parent_channel_id_is_required'
+            ],
+            [
                 'key'        => 'channel_id',
                 'type'       => 'required',
                 'error_code' => 'channel_id_is_required'
@@ -60,16 +65,16 @@ class ThirdPartBill extends ControllerBase
         $employeeId = $this->ci['employee']['id'];
 
         // 检查是否重复购买，手机号是否重复
-        $hasTrialed = false;
-        $data = ThirdPartBillService::checkDuplicate($filename, $params['channel_id'], $params['package_id'], $employeeId, $hasTrialed);
+        $data = ThirdPartBillService::checkDuplicate($filename, $employeeId);
         if($data instanceof RunTimeException) {
-            return HttpHelper::buildOrgWebErrorResponse($response, $data->getWebErrorData());
+            return HttpHelper::buildOrgWebErrorResponse($response, $data->getWebErrorData(), $data->getData());
         }
 
-        if($hasTrialed) {
-            $err = Valid::addErrors([], 'import', 'has_trialed_records');
-            $err['list'] = $data;
-            return $response->withJson($err);
+        foreach($data as $k => $v) {
+            $v['parent_channel_id'] = $params['parent_channel_id'];
+            $v['channel_id'] = $params['channel_id'];
+            $v['package_id'] = $params['package_id'];
+            $data[$k] = $v;
         }
 
         // 表格内容发送至消息队列

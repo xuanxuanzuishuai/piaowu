@@ -142,8 +142,9 @@ class Student extends ControllerBase
     public function getSChannels(Request $request, Response $response)
     {
         $parent_id = $request->getParam('parent_id', 0);
+        $appId = $request->getParam('app_id', 0);
 
-        $channels = ChannelService::getChannels($parent_id);
+        $channels = ChannelService::getChannels($parent_id, $appId);
         return $response->withJson([
             'code' => 0,
             'data' => $channels

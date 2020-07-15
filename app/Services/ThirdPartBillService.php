@@ -11,6 +11,7 @@ namespace App\Services;
 use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\Util;
 use App\Models\StudentModel;
 use App\Models\ThirdPartBillModel;
 use App\Services\Queue\ThirdPartBillTopic;
@@ -18,7 +19,7 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class ThirdPartBillService
 {
-    public static function checkDuplicate($filename, $channelId, $packageId, $operatorId, &$hasTrialed)
+    public static function checkDuplicate($filename, $operatorId)
     {
         try {
             $fileType = ucfirst(pathinfo($filename)["extension"]);
@@ -32,17 +33,25 @@ class ThirdPartBillService
                     continue;
                 }
                 $A = trim($v['A']);
-                if(is_numeric($A)) {
+                if(trim($v['C']) != ThirdPartBillModel::IGNORE && is_numeric($A)) {
                     $data[] = [
                         'mobile'      => $A,
                         'trade_no'    => trim($v['B']),
-                        'channel_id'  => $channelId,
-                        'package_id'  => $packageId,
                         'operator_id' => $operatorId,
                         'pay_time'    => $now,
                         'create_time' => $now,
                     ];
                 }
+            }
+            // 检查所有的手机号是否合法, 并返回所有错误的记录
+            $invalidMobiles = [];
+            foreach($data as $v) {
+                if(!Util::isChineseMobile($v['mobile'])) {
+                    $invalidMobiles[] = $v;
+                }
+            }
+            if(count($invalidMobiles) > 0) {
+                return new RunTimeException(['invalid_mobile', 'import'], ['list' => $invalidMobiles]);
             }
         } catch (\Exception $e) {
             return new RunTimeException([$e->getMessage()]);
@@ -50,14 +59,13 @@ class ThirdPartBillService
 
         // 学生手机号重复
         if(count($data) != count(array_unique(array_column($data, 'mobile')))) {
-            return new RunTimeException(['mobile_repeat']);
+            return new RunTimeException(['mobile_repeat', 'import']);
         }
 
         // 检查是否已经有发货记录
         $records = PayServices::trialedUserByMobile(array_column($data, 'mobile'));
         if(!empty($records)) {
-            $hasTrialed = true;
-            return $records;
+            return new RunTimeException(['has_trialed_records', 'import'], ['list' => $records]);
         }
 
         return $data;
@@ -66,14 +74,15 @@ class ThirdPartBillService
     public static function handleImport($params)
     {
         $data = [
-            'mobile'      => $params['mobile'],
-            'trade_no'    => $params['trade_no'],
-            'pay_time'    => $params['pay_time'],
-            'package_id'  => $params['package_id'],
-            'channel_id'  => $params['channel_id'],
-            'operator_id' => $params['operator_id'],
-            'is_new'      => ThirdPartBillModel::NOT_NEW,
-            'create_time' => time(),
+            'mobile'            => $params['mobile'],
+            'trade_no'          => $params['trade_no'],
+            'pay_time'          => $params['pay_time'],
+            'package_id'        => $params['package_id'],
+            'parent_channel_id' => $params['parent_channel_id'],
+            'channel_id'        => $params['channel_id'],
+            'operator_id'       => $params['operator_id'],
+            'is_new'            => ThirdPartBillModel::NOT_NEW,
+            'create_time'       => time(),
         ];
 
         $student = StudentModel::getRecord(['mobile' => $params['mobile']]);

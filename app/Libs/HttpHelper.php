@@ -54,14 +54,20 @@ class HttpHelper
      * 错误请求结果(后台)
      * @param Response $response
      * @param $errors
+     * @param $data (通常是错误记录，作为返回数据的补充)
      * @return Response
      */
-    public static function buildOrgWebErrorResponse(Response $response, $errors)
+    public static function buildOrgWebErrorResponse(Response $response, $errors, $data = [])
     {
         $result = [
             'code' => self::STATUS_ERROR,
             'data' => ['errors' => $errors],
         ];
+        if(!empty($data)) {
+            foreach($data as $k => $v) {
+                $result[$k] = $v;
+            }
+        }
         return $response->withJson($result, StatusCode::HTTP_OK);
     }
 

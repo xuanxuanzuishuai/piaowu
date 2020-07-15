@@ -269,14 +269,15 @@ class Consumer extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
+        $lastId = 0;
         switch ($params['event_type']) {
             case 'import':
-                ThirdPartBillService::handleImport($params['msg_body']);
+                $lastId = ThirdPartBillService::handleImport($params['msg_body']);
                 break;
             default:
                 SimpleLogger::error('consume_third_part_bill', ['unknown_event_type' => $params]);
         }
 
-        return HttpHelper::buildResponse($response, []);
+        return HttpHelper::buildResponse($response, ['last_id' => $lastId]);
     }
 }

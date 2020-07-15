@@ -203,6 +203,7 @@ relate_bill_student_id_is_invalid="关联订单用户必须与原订单用户一
 exchange_type_invalid='兑换方式不正确'
 gift_code_user_invalid='激活码不属于该用户'
 ip_invalid='禁止访问'
+invalid_mobile='手机号不合法'
 invalid_status='状态不正确'
 roles_error='角色配置不正确'
 invalid_operator='非指定员工无权操作'

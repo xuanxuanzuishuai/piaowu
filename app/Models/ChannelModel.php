@@ -62,12 +62,17 @@ class ChannelModel extends Model
     /**
      * 获取一级、二级渠道列表
      * @param int $parentId 0 一级渠道 >0 二级渠道
+     * @param $appId
      * @return mixed
      */
-    public static function getChannels($parentId = 0)
+    public static function getChannels($parentId = 0, $appId = 0)
     {
+        $and = ['status' => '1', 'parent_id' => $parentId];
+        if(!empty($appId)) {
+            $and['app_id'] = $appId;
+        }
         return MysqlDB::getDB()->select(self::$table, '*', [
-            'AND' => ['status' => '1', 'parent_id' => $parentId],
+            'AND' => $and,
             'ORDER' => ['name']
         ]);
     }

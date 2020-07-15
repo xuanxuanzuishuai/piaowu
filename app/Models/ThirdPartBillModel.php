@@ -21,6 +21,8 @@ class ThirdPartBillModel extends Model
     const IS_NEW = 1; // 新注册用户
     const NOT_NEW = 2; // 老用户
 
+    const IGNORE = 1; // 导入数据时忽略当前行标记
+
     public static function list($params, $page, $count)
     {
         $where = ' 1=1 ';
@@ -48,7 +50,7 @@ class ThirdPartBillModel extends Model
         }
         if(!empty($params['operator_name'])) {
             $where .= ' and e.name like :operator_name ';
-            $map[':operator_name'] = '%' . $params['operator_name'] . '%';
+            $map[':operator_name'] = "%{$params['operator_name']}%";
         }
         if(!empty($params['channel_id'])) {
             $where .= ' and t.channel_id = :channel_id ';
@@ -66,6 +68,8 @@ class ThirdPartBillModel extends Model
         $t = self::$table;
         $s = StudentModel::$table;
         $e = EmployeeModel::$table;
+        $c = ChannelModel::$table;
+        $p = ErpPackageModel::$table;
 
         $limit = Util::limitation($page, $count);
 
@@ -90,10 +94,14 @@ select t.id,
        t.create_time,
        t.package_id,
        t.channel_id,
-       e.name operator_name
+       e.name operator_name,
+       p.name package_name,
+       c.name channel_name
 from {$t} t
        left join {$s} s on t.student_id = s.id 
        inner join {$e} e on e.id = t.operator_id
+       left join {$c} c on c.id = t.channel_id
+       left join {$p} p on p.id = t.package_id
        where {$where} order by t.id desc {$limit}", $map);
 
         return [$total[0]['count'], $records];

@@ -16,11 +16,12 @@ class ChannelService
     /**
      * 获取用户渠道信息
      * @param $parentId
+     * @param $appId
      * @return array
      */
-    public static function getChannels($parentId)
+    public static function getChannels($parentId, $appId = 0)
     {
-        return ChannelModel::getChannels($parentId);
+        return ChannelModel::getChannels($parentId, $appId);
     }
 
     /**
