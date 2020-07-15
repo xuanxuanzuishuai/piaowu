@@ -3,6 +3,7 @@ namespace App\Models;
 
 
 use App\Libs\MysqlDB;
+use App\Libs\Util;
 
 class AutoReplyQuestionModel extends Model
 {
@@ -10,9 +11,12 @@ class AutoReplyQuestionModel extends Model
     public static $table = "wx_question";
 
 
-    public static function getTotalCount()
+    public static function getTotalCount($key)
     {
         $db = MysqlDB::getDB();
-        return $db->count(self::$table);
+        if (empty($key)) {
+            return $db->count(self::$table);
+        }
+        return $db->count(self::$table,['title[~]' => Util::sqlLike($key)]);
     }
 }

@@ -135,7 +135,7 @@ class AutoReplyService
     }
 
     public static function getQuestionList($key, $page, $count){
-        $totalCount = AutoReplyQuestionModel::getTotalCount();
+        $totalCount = AutoReplyQuestionModel::getTotalCount($key);
         if ($totalCount == 0) {
             return [[], 0];
         }
@@ -148,28 +148,11 @@ class AutoReplyService
             $questionWhere['title[~]'] = Util::sqlLike($key);
         }
         $questionWhere['LIMIT'] = [($page - 1) * $count, $count];
-        $answerWhere = [
-            "ORDER" => [
-                "sort" => "DESC"
-            ]
-        ];
         $question = AutoReplyQuestionModel::getRecords($questionWhere);
         if(empty($question)){
             return [[], 0];
         }
-        if (!empty($key)) {
-            $totalCount = count($question);
-        }
-        $answerWhere['q_id'] = array_column($question, 'id');
-        $answer = AutoReplyAnswerModel::getRecords($answerWhere);
-        $questionData = array_combine(array_column($question, 'id'), $question);
-        foreach ($answer as $key => $value){
-            if ($value['type'] == AutoReplyAnswerModel::AUTO_REPLAY_TYPE_IMAGE) {
-                $value['answer'] = empty($value['answer']) ? '' : AliOSS::signUrls($value['answer']);
-            }
-            $questionData[$value['q_id']]['list'][] = $value;
-        }
-        return [$questionData, $totalCount];
+        return [$question, $totalCount];
     }
 
     public static function getQuestionByTitleOrgWeb($title)
