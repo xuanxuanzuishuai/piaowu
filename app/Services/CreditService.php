@@ -23,6 +23,8 @@ class CreditService
     const EVERY_DAY_ACTIVITY = 'every_day_activity';
     //每日任务完成情况
     const EVERY_DAY_ACTIVITY_COMPLETE_STATUS = 'every_day_activity_complete_status';
+    //每日任务上报情况
+    const EVERY_DAY_ACTIVITY_REPORT_STATUS = 'every_day_activity_report_status';
     //签到活动
     const SIGN_IN_TASKS = 'sign_in_tasks';
     //练琴活动
@@ -31,6 +33,41 @@ class CreditService
     const BOTH_HAND_EVALUATE = 'both_hand_evaluate';
     //分享成绩
     const SHARE_GRADE = 'share_grade';
+    //完成音基题
+    const MUSIC_BASIC_QUESTION = 'music_basic_question';
+    //示范视频
+    const EXAMPLE_VIDEO = 'example_video';
+    //浏览重难点
+    const VIEW_DIFFICULT_SPOT = 'view_difficult_spot';
+    //识谱，提升
+    const KNOW_CHART_PROMOTION = 'know_chart_promotion';
+
+    //所有积分互动和奖励执行方法对应关系
+    const ALL_ACTIVITY_RELATE_CLASS = [
+        self::SIGN_IN_TASKS => 'signInTasks',
+        self::PLAY_PIANO_TASKS => 'playPianoTasks',
+        self::BOTH_HAND_EVALUATE => 'bothHandEvaluate',
+        self::SHARE_GRADE => 'shareGrade',
+        self::MUSIC_BASIC_QUESTION => 'musicBasicQuestion',
+        self::EXAMPLE_VIDEO => 'exampleVideo',
+        self::VIEW_DIFFICULT_SPOT => 'viewDifficultSpot',
+        self::KNOW_CHART_PROMOTION => 'knowChartPromotion'
+    ];
+
+    private static function getAllReportType()
+    {
+        return array_keys(self::ALL_ACTIVITY_RELATE_CLASS);
+    }
+
+    /**
+     * @param $type
+     * @return string
+     * 积分活动和对应的奖励动作的对应关系
+     */
+    private static function getActivityClass($type)
+    {
+        return self::ALL_ACTIVITY_RELATE_CLASS[$type];
+    }
 
     /**
      * @param $date
@@ -44,48 +81,61 @@ class CreditService
         $relateTasks = $erp->eventTaskList(0, self::CREDIT_TASK)['data'];
         //需要区分签到任务还是练琴任务
         //签到相关的task
-        $signTaskArr = [];
         $signInTasks = self::getSignInTask();
         //每日练琴相关的task
-        $playPianoTaskArr = [];
         $playPianoTasks = self::getPlayPianoTask();
         //双手评测相关的task
-        $bothHandEvaluateArr = [];
         $bothHandEvaluate = self::getBothHandTask();
         //分享评测成绩
-        $shareEvaluateGradesArr = [];
         $shareEvaluateGrades = self::getShareGradeTask();
+        //完成音基题
+        $musicBasicQuestion = self::getMusicBasicQuestionTask();
+        //示范视频
+        $exampleVideo = self::getExampleVideoTask();
+        //浏览重难点
+        $viewDifficultSpot = self::getViewDifficultSpotTask();
+        //识谱，提升
+        $knowChartPromotion = self::getKnowChartPromotionTask();
+        $allActivityArr = [];
         if (!empty($relateTasks)) {
             foreach ($relateTasks as $va) {
                 if (!empty($va['tasks'])) {
                     foreach ($va['tasks'] as $v) {
                         if (in_array($v['id'], $signInTasks)) {
-                            $signTaskArr[] = $v;
+                            $allActivityArr[self::SIGN_IN_TASKS][] = $v;
                         }
                         if (in_array($v['id'], $playPianoTasks)) {
-                            $playPianoTaskArr[] = $v;
+                            $allActivityArr[self::PLAY_PIANO_TASKS][] = $v;
                         }
                         if (in_array($v['id'], $bothHandEvaluate)) {
-                            $bothHandEvaluateArr[] = $v;
+                            $allActivityArr[self::BOTH_HAND_EVALUATE][] = $v;
                         }
                         if (in_array($v['id'], $shareEvaluateGrades)) {
-                            $shareEvaluateGradesArr[] = $v;
+                            $allActivityArr[self::SHARE_GRADE][] = $v;
+                        }
+                        if (in_array($v['id'], $musicBasicQuestion)) {
+                            $allActivityArr[self::MUSIC_BASIC_QUESTION][] = $v;
+                        }
+                        if (in_array($v['id'], $exampleVideo)) {
+                            $allActivityArr[self::EXAMPLE_VIDEO][] = $v;
+                        }
+                        if (in_array($v['id'], $viewDifficultSpot)) {
+                            $allActivityArr[self::VIEW_DIFFICULT_SPOT][] = $v;
+                        }
+                        if (in_array($v['id'], $knowChartPromotion)) {
+                            $allActivityArr[self::KNOW_CHART_PROMOTION][] = $v;
                         }
                     }
                 }
             }
         }
-        list($signTaskKey, $playPianoTaskKey, $bothHandEvaluateKey, $shareEvaluateGradesKey) = self::getActivityTaskRelateKey($date);
-        $redis->hset($signTaskKey, $field, json_encode($signTaskArr));
-        $redis->hset($playPianoTaskKey, $field, json_encode($playPianoTaskArr));
-        $redis->hset($bothHandEvaluateKey, $field, json_encode($bothHandEvaluateArr));
-        $redis->hset($shareEvaluateGradesKey, $field, json_encode($shareEvaluateGradesArr));
         //设置过期
         $endTime = strtotime($date) + 172800 - time();
-        $redis->expire($signTaskKey, $endTime);
-        $redis->expire($playPianoTaskKey, $endTime);
-        $redis->expire($bothHandEvaluateKey, $endTime);
-        $redis->expire($shareEvaluateGradesKey, $endTime);
+        array_map(function ($item) use($redis, $field, $date, $allActivityArr, $endTime) {
+            $key = self::getActivityTaskRelateKey($date, $item);
+            $redis->hset($key, $field, json_encode($allActivityArr[$item]));
+            return $redis->expire($key, $endTime);
+        }, self::getAllReportType());
     }
 
     /**
@@ -100,12 +150,9 @@ class CreditService
         if (!empty($type)) {
             return $type . '_' . $date;
         }
-        return [
-            self::SIGN_IN_TASKS . '_' . $date,
-            self::PLAY_PIANO_TASKS . '_' . $date,
-            self::BOTH_HAND_EVALUATE . '_' . $date,
-            self::SHARE_GRADE . '_' . $date
-        ];
+        return array_map(function ($item) use ($date){
+            return $item . '_' . $date;
+        }, self::getAllReportType());
     }
 
     /**
@@ -121,12 +168,9 @@ class CreditService
         if (!empty($type)) {
             return $type . '_' . $date . '_' . $studentId;
         }
-        return [
-            self::SIGN_IN_TASKS . '_' . $date . '_' . $studentId,
-            self::PLAY_PIANO_TASKS . '_' . $date . '_' . $studentId,
-            self::BOTH_HAND_EVALUATE . '_' . $date . '_' . $studentId,
-            self::SHARE_GRADE . '_' . $date . '_' . $studentId
-        ];
+        return array_map(function ($item) use ($date, $studentId){
+            return $item . '_' . $date . '_' . $studentId;
+        }, self::getAllReportType());
     }
 
     /**
@@ -183,6 +227,50 @@ class CreditService
     }
 
     /**
+     * @return array|mixed|null
+     * 音基题相关的task
+     */
+    private static function getMusicBasicQuestionTask()
+    {
+        return DictConstants::get(DictConstants::CREDIT_ACTIVITY_CONFIG, [
+            'music_basic_question'
+        ]);
+    }
+
+    /**
+     * @return array|mixed|null
+     * 示范视频相关的task
+     */
+    private static function getExampleVideoTask()
+    {
+        return DictConstants::get(DictConstants::CREDIT_ACTIVITY_CONFIG, [
+            'example_video'
+        ]);
+    }
+
+    /**
+     * @return array|mixed|null
+     * 浏览重难点相关的task
+     */
+    private static function getViewDifficultSpotTask()
+    {
+        return DictConstants::get(DictConstants::CREDIT_ACTIVITY_CONFIG, [
+            'view_difficult_spot'
+        ]);
+    }
+
+    /**
+     * @return array|mixed|null
+     * 识谱，提升相关的task
+     */
+    private static function getKnowChartPromotionTask()
+    {
+        return DictConstants::get(DictConstants::CREDIT_ACTIVITY_CONFIG, [
+            'know_chart_promotion'
+        ]);
+    }
+
+    /**
      * @param null $certainKey
      * @return mixed
      * 得到当前的活动模板
@@ -194,11 +282,10 @@ class CreditService
         if (!empty($certainKey)) {
             return json_decode($redis->hget(self::getActivityTaskRelateKey(NULL, $certainKey), $field), true);
         }
-        list($signTaskKey, $playPianoTaskKey, $bothHandEvaluateKey, $shareEvaluateGradesKey) = self::getActivityTaskRelateKey();
-        $activityArr['sign_in_tasks'] = json_decode($redis->hget($signTaskKey, $field), true);
-        $activityArr['play_piano_tasks'] = json_decode($redis->hget($playPianoTaskKey, $field), true);
-        $activityArr['both_hand_evaluate'] = json_decode($redis->hget($bothHandEvaluateKey, $field), true);
-        $activityArr['share_grade'] = json_decode($redis->hget($shareEvaluateGradesKey, $field), true);
+        $activityArr = [];
+        array_map(function ($item) use (&$activityArr, $redis, $field){
+            $activityArr[$item] = json_decode($redis->hget(self::getActivityTaskRelateKey(NULL, $item), $field), true);
+        }, self::getAllReportType());
         return $activityArr;
     }
 
@@ -211,25 +298,55 @@ class CreditService
      */
     public static function setUserCompleteTask($type, $activityData)
     {
-        if (!in_array($type, [self::SIGN_IN_TASKS, self::PLAY_PIANO_TASKS, self::BOTH_HAND_EVALUATE, self::SHARE_GRADE])) {
+        if (!in_array($type, self::getAllReportType())) {
             throw new RunTimeException(['not_support_type']);
         }
-        $action = self::getActivityClass($type) . 'Action';
-
-        return self::$action($activityData);
+        //记录上报情况
+        self::recordActivityReport($type, $activityData);
+        //检测是否满足可上报的基础条件(每日完成x次行为，奖励x音符，每天最多奖励x次),检测x次行为是否达到
+        if (self::judgeUserReportData($type, $activityData)) {
+            $action = self::getActivityClass($type) . 'Action';
+            return self::$action($activityData);
+        }
+        SimpleLogger::info(['not reach report basic require'], ['type' => $type, 'activity_data' => $activityData]);
+        return ;
     }
 
-    private static function getActivityClass($type)
+    /**
+     * @param $type
+     * @param $activityData
+     * @return bool
+     * 每日完成x次行为，对用户上报任务的次数对基础x取模处理
+     */
+    public static function judgeUserReportData($type, $activityData)
     {
-        switch ($type) {
-            case self::SIGN_IN_TASKS;
-                return 'signInTasks';
-            case self::PLAY_PIANO_TASKS;
-                return 'playPianoTasks';
-            case self::BOTH_HAND_EVALUATE:
-                return 'bothHandEvaluate';
-            case self::SHARE_GRADE:
-                return 'shareGrade';
+        $field = self::EVERY_DAY_ACTIVITY_REPORT_STATUS;
+        $key = self::getActivityTaskFinishRelateKey($activityData['student_id'], NULL, $type);
+        $redis = RedisDB::getConn();
+        $value = $redis->hget($key, $field);
+        $taskInfoArr = self::getActivityTemplate($type);
+        $condition = json_decode(reset($taskInfoArr)['condition'], true);
+        //基础上报次数
+        $baseReportNum = $condition['base_report_num'] ?? 1;
+        //已经上报的次数
+        return  intval($value) % $baseReportNum == 0;
+    }
+
+    /**
+     * @param $type
+     * @param $activityData
+     * 记录当天上报的数据
+     */
+    private static function recordActivityReport($type, $activityData)
+    {
+        $field = self::EVERY_DAY_ACTIVITY_REPORT_STATUS;
+        $key = self::getActivityTaskFinishRelateKey($activityData['student_id'], NULL, $type);
+        $redis = RedisDB::getConn();
+        $value = $redis->hget($key, $field);
+        if (empty($value)) {
+            $redis->hset($key, $field, 1);
+        } else {
+            $redis->hset($key, $field, intval($value) + 1);
         }
     }
 
@@ -277,8 +394,8 @@ class CreditService
         self::updateUserCompleteStatus($data['student_id'], self::SIGN_IN_TASKS, $limitCount, $shouldGetTaskId);
         if (self::checkSendAwardTask($data['student_id'], $shouldGetTaskId, $limitCount)) {
             $erp->updateTask($data['uuid'], $shouldGetTaskId, ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
+            return $hasAchieveTask;
         }
-        return $hasAchieveTask;
     }
 
     /**
@@ -303,8 +420,8 @@ class CreditService
                 self::updateUserCompleteStatus($data['student_id'], self::PLAY_PIANO_TASKS, $condition['every_day_count'], $v['id']);
                 if (self::checkSendAwardTask($data['student_id'], $v['id'], $condition['every_day_count'])) {
                     $erp->updateTask($data['uuid'], $v['id'], ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
+                    $hasAchieveTask[$v['id']] = $v['award'];
                 }
-                $hasAchieveTask[$v['id']] = $v['award'];
             }
         }
         return $hasAchieveTask;
@@ -317,29 +434,7 @@ class CreditService
      */
     public static function bothHandEvaluateAction($data)
     {
-        //对当前任务的完成状态
-        $completeStatus = self::getUserCompleteStatus($data['student_id'], self::BOTH_HAND_EVALUATE);
-        //只要有一个完成就算完成
-        if (!empty($completeStatus)) {
-            foreach ($completeStatus as $va) {
-                if ($va['is_complete']) {
-                    SimpleLogger::info(self::BOTH_HAND_EVALUATE . ' has complete', ['activity' => $va]);
-                    return;
-                }
-            }
-        }
-        $erp = new Erp();
-        $activityTemplate = self::getActivityTemplate(self::BOTH_HAND_EVALUATE);
-        $hasAchieveTask = [];
-        foreach ($activityTemplate as $v) {
-            $condition = json_decode($v['condition'], true);
-            self::updateUserCompleteStatus($data['student_id'], self::BOTH_HAND_EVALUATE, $condition['every_day_count'], $v['id']);
-            if (self::checkSendAwardTask($data['student_id'], $v['id'], $condition['every_day_count'])) {
-                $erp->updateTask($data['uuid'], $v['id'], ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
-            }
-            $hasAchieveTask[$v['id']] = $v['award'];
-        }
-        return $hasAchieveTask;
+        return self::oneTypeOneTaskCommonDeal(self::BOTH_HAND_EVALUATE, $data);
     }
 
     /**
@@ -349,27 +444,78 @@ class CreditService
      */
     public static function shareGradeAction($data)
     {
+        return self::oneTypeOneTaskCommonDeal(self::SHARE_GRADE, $data);
+    }
+
+    /**
+     * @param $data
+     * @return array|void
+     * 处理音基完成任务
+     */
+    public static function musicBasicQuestionAction($data)
+    {
+        return self::oneTypeOneTaskCommonDeal(self::MUSIC_BASIC_QUESTION, $data);
+    }
+
+    /**
+     * @param $data
+     * @return array|void
+     * 处理示范视频完成任务
+     */
+    public static function exampleVideoAction($data)
+    {
+        return self::oneTypeOneTaskCommonDeal(self::EXAMPLE_VIDEO, $data);
+    }
+
+    /**
+     * @param $data
+     * @return array|void
+     * 浏览重难点完成任务
+     */
+    public static function viewDifficultSpotAction($data)
+    {
+        return self::oneTypeOneTaskCommonDeal(self::VIEW_DIFFICULT_SPOT, $data);
+    }
+
+    /**
+     * @param $data
+     * @return array|void
+     * 识谱提升完成任务
+     */
+    public static function knowChartPromotionAction($data)
+    {
+        return self::oneTypeOneTaskCommonDeal(self::KNOW_CHART_PROMOTION, $data);
+    }
+
+    /**
+     * @param $type
+     * @param $data
+     * @return array|void
+     * 一种上报类型只对应一个task的通用处理方法
+     */
+    private static function oneTypeOneTaskCommonDeal($type, $data)
+    {
         //对当前任务的完成情况
-        $completeStatus = self::getUserCompleteStatus($data['student_id'], self::SHARE_GRADE);
+        $completeStatus = self::getUserCompleteStatus($data['student_id'], $type);
         //只要有一个完成就算完成
         if (!empty($completeStatus)) {
             foreach ($completeStatus as $va) {
                 if ($va['is_complete']) {
-                    SimpleLogger::info(self::SHARE_GRADE . ' has complete', ['activity' => $va]);
+                    SimpleLogger::info($type . ' has complete', ['activity' => $va]);
                     return;
                 }
             }
         }
         $erp = new Erp();
-        $activityTemplate = self::getActivityTemplate(self::SHARE_GRADE);
+        $activityTemplate = self::getActivityTemplate($type);
         $hasAchieveTask = [];
         foreach ($activityTemplate as $v) {
             $condition = json_decode($v['condition'], true);
-            self::updateUserCompleteStatus($data['student_id'], self::SHARE_GRADE, $condition['every_day_count'], $v['id']);
+            self::updateUserCompleteStatus($data['student_id'], $type, $condition['every_day_count'], $v['id']);
             if (self::checkSendAwardTask($data['student_id'], $v['id'], $condition['every_day_count'])) {
                 $erp->updateTask($data['uuid'], $v['id'], ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
+                $hasAchieveTask[$v['id']] = $v['award'];
             }
-            $hasAchieveTask[$v['id']] = $v['award'];
         }
         return $hasAchieveTask;
     }
@@ -417,11 +563,10 @@ class CreditService
         if (!empty($type)) {
             return json_decode($redis->hget(self::getActivityTaskFinishRelateKey($studentId,NULL, $type), $field), true);
         }
-        list($signTaskKey, $playPianoTaskKey, $bothHandEvaluateKey, $shareEvaluateGradesKey) = self::getActivityTaskFinishRelateKey($studentId);
-        $activityArr['sign_in_tasks'] = json_decode($redis->hget($signTaskKey, $field), true);
-        $activityArr['play_piano_tasks'] = json_decode($redis->hget($playPianoTaskKey, $field), true);
-        $activityArr['both_hand_evaluate'] = json_decode($redis->hget($bothHandEvaluateKey, $field), true);
-        $activityArr['share_grade'] = json_decode($redis->hget($shareEvaluateGradesKey, $field), true);
+        $activityArr = [];
+        array_map(function ($item) use(&$activityArr, $redis, $studentId, $field){
+            return $activityArr[$item] = json_decode($redis->hget(self::getActivityTaskFinishRelateKey($studentId, NULL, $item), $field), true);
+        }, self::getAllReportType());
         return $activityArr;
     }
 
