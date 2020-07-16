@@ -557,6 +557,11 @@ class StudentModel extends Model
             $whereSql .= " AND s.is_add_assistant_wx = :is_add_assistant_wx ";
             $map[':is_add_assistant_wx'] = $params['is_add_assistant_wx'];
         }
+        //所属班级
+        if(!empty($params['collection_id'])){
+            $whereSql .= " AND s.collection_id = :collection_id ";
+            $map[':collection_id'] = $params['collection_id'];
+        }
 
 
         //查询渠道
