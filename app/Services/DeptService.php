@@ -182,7 +182,11 @@ class DeptService
         if (empty($dataType)) {
             $privilegeType = DeptPrivilegeModel::PRIVILEGE_SELF;
         } else {
-            $privilege = DeptPrivilegeModel::getRecord(['dept_id' => $deptId, 'data_type' => $dataType]);
+            $privilege = DeptPrivilegeModel::getRecord([
+                'dept_id' => $deptId,
+                'data_type' => $dataType,
+                'status' => Constants::STATUS_TRUE
+            ]);
             $privilegeType = $privilege['privilege_type'] ?? DeptPrivilegeModel::PRIVILEGE_SELF;
         }
 
