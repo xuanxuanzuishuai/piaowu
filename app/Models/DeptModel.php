@@ -85,14 +85,6 @@ class DeptModel extends Model
         parent::delCache($id, $pri);
 
         $redis = RedisDB::getConn();
-        $redis->del(self::$listCacheKey);
-    }
-
-    public static function insertRecord($data, $isOrg = true)
-    {
-        $ret = parent::insertRecord($data);
-        self::delCache(0);
-
-        return $ret;
+        $redis->del([self::$listCacheKey]);
     }
 }

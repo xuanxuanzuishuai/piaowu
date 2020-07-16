@@ -75,7 +75,7 @@ class Model
     {
         /** @var Model $redisDB */
         $redis = RedisDB::getConn(static::$redisDB);
-        return $redis->del(static::createCacheKey($id, $pri));
+        return $redis->del([static::createCacheKey($id, $pri)]);
     }
 
     /**
@@ -163,7 +163,7 @@ class Model
         }
         $db = MysqlDB::getDB();
         $cnt = $db->updateGetCount(static::$table, $data, $where);
-        self::delCache($id);
+        static::delCache($id);
         return $cnt;
     }
 
