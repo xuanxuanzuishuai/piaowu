@@ -11,6 +11,7 @@ namespace App\Models;
 
 use App\Libs\Constants;
 use App\Libs\MysqlDB;
+use App\Libs\RedisDB;
 use App\Libs\Util;
 use Medoo\Medoo;
 
@@ -49,6 +50,8 @@ class AIPlayRecordModel extends Model
     const DATA_TYPE_NOT_EVALUATE = 2; // 2 未进行测评数据 返回或取消
     const DATA_TYPE_EXIT = 3; // 3 非正常退出数据 断电、断网、崩溃、来电、杀掉进程
 
+    //当日学生练琴总时长有序集合缓存key
+    const STUDENT_DAILY_DURATIONS = 'students_daily_durations_';
 
     /**
      * 获取用户日期演奏时长汇总
@@ -405,5 +408,86 @@ LEFT JOIN
 
         $records = $db->queryAll($sql, $map);
         return [$records, $totalCount];
+    }
+
+    /**
+     * 添加数据记录
+     * @param $studentId
+     * @param $recordData
+     * @param $stepDuration
+     * @return int|mixed|null|string
+     */
+    public static function addRecord($studentId, $recordData, $stepDuration)
+    {
+        $recordId = self::insertRecord($recordData, false);
+        if (!empty($recordId) && !empty($stepDuration)) {
+            self::setDailyDurationCache($studentId, $stepDuration);
+        }
+        return $recordId;
+    }
+
+    /**
+     * 修改数据记录
+     * @param $studentId
+     * @param $playRecordId
+     * @param $recordData
+     * @param $stepDuration
+     * @return int|mixed|null|string
+     */
+    public static function modifyRecord($studentId, $playRecordId, $recordData, $stepDuration)
+    {
+        $recordId = AIPlayRecordModel::updateRecord($playRecordId, $recordData);
+        if (!empty($recordId) && !empty($stepDuration)) {
+            self::setDailyDurationCache($studentId, $stepDuration);
+        }
+        return $recordId;
+    }
+
+    /**
+     * 设置学生每日练琴缓存
+     * @param $stepDuration
+     * @param $studentId
+     */
+    private static function setDailyDurationCache($studentId, $stepDuration = 0)
+    {
+        $redis = RedisDB::getConn();
+        $time = time();
+        $date = date("Ymd", $time);
+        $expireTime = 0;
+        $cacheKey = self::STUDENT_DAILY_DURATIONS . $date;
+        if ($redis->zrank($cacheKey, $studentId) === null) {
+            //初始化学生当日练琴数据，避免数据缺失
+            $dayStartEndTimestamp = Util::getStartEndTimestamp($time);
+            $playRecord = self::getStudentSumByDate($studentId, $dayStartEndTimestamp[0], $dayStartEndTimestamp[1]);
+            if (!empty($playRecord)) {
+                $stepDuration = array_sum(array_column($playRecord, 'sum_duration'));
+            } else {
+                $stepDuration = 0;
+            }
+            $expireTime = strtotime("36 hours", $dayStartEndTimestamp[0]) - $time;
+        }
+        //设置分值和有效期
+        $redis->zincrby($cacheKey, $stepDuration, $studentId);
+        if (!empty($expireTime)) {
+            $redis->expire($cacheKey, $expireTime);
+        }
+    }
+
+    /**
+     * 获取学生每日练琴缓存
+     * @param $studentId
+     * @return float|int
+     */
+    public static function getDailyDurationCache($studentId)
+    {
+        $redis = RedisDB::getConn();
+        $date = date("Ymd");
+        $cacheKey = self::STUDENT_DAILY_DURATIONS . $date;
+        if ($redis->zrank($cacheKey, $studentId) === null) {
+            //缓存不存在，查询数据库进行初始化
+            self::setDailyDurationCache($studentId);
+        }
+        $totalDuration = $redis->zscore($cacheKey, $studentId);
+        return $totalDuration;
     }
 }

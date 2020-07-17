@@ -26,78 +26,8 @@ use App\Libs\SimpleLogger;
 class AIPlayRecordService
 {
     const DEFAULT_APP_VER = '5.0.0';
-
-    /**
-     * 开始演奏
-     * @param $studentId
-     * @param $params
-     * @return int|mixed|null|string
-     */
-    public static function start($studentId, $params)
-    {
-        $now = time();
-
-        // 处理毫秒时间戳，转为秒
-        if ($params['created_at'] > 2000000000) {
-            $params['created_at'] = intval($params['created_at']/1000);
-        }
-
-        $recordData = [
-            'student_id' => $studentId,
-            'lesson_id' => $params['lesson_id'] ?? 0,
-            'score_id' => $params['score_id'] ?? 0,
-            'record_id' => $params['record_id'] ?? 0,
-            'is_phrase' => $params['is_phrase'] ?? 0,
-            'phrase_id' => $params['phrase_id'] ?? 0,
-            'practice_mode' => $params['practice_mode'] ?? 0,
-            'hand' => $params['hand'] ?? 0,
-            'ui_entry' => $params['ui_entry'] ?? 0,
-            'input_type' => $params['input_type'] ?? 0,
-            'create_time' => $now,
-            'score_rank' => $params['score_rank'] ?? 0,
-
-            // 演奏结束时间，演奏时间跨天时，数据归为结束时间所在天
-            'end_time' => $params['created_at'] + $params['duration'],
-            'duration' => $params['duration'],
-            'audio_url' => $params['audio_url'] ?? '',
-            'score_final' => self::formatScore($params['score_final']),
-            'score_complete' => self::formatScore($params['score_complete']),
-            'score_pitch' => self::formatScore($params['score_pitch']),
-            'score_rhythm' => self::formatScore($params['score_rhythm']),
-            'score_speed' => self::formatScore($params['score_speed']),
-            'score_speed_average' => self::formatScore($params['score_speed_average']),
-            'data_type' => $params['data_type'],
-            'track_id' => $params['track_id']
-        ];
-
-        $recordId = AIPlayRecordModel::insertRecord($recordData);
-        if (empty($recordId)) {
-            return 0;
-        }
-
-        return $recordId;
-    }
-
-    /**
-     * 演奏过程
-     * @param $params
-     * @return int|null
-     */
-    public static function heartBeat($params)
-    {
-        $playRecord = AIPlayRecordModel::getRecord(['track_id' => $params['track_id']]);
-        if (empty($playRecord)) {
-            return 0;
-        }
-
-        $recordId = AIPlayRecordModel::updateRecord($playRecord['id'], ['duration' => $params['duration']]);
-        if (empty($recordId)) {
-            return 0;
-        }
-
-        return $recordId;
-    }
-
+    //app参与积分活动的最小版本
+    const JOIN_POINT_ACTIVITY_MIN_APP_VER = '5.6.0';
     /**
      * 演奏数据
      * @param $studentId
@@ -107,7 +37,8 @@ class AIPlayRecordService
     public static function end($studentId, $params)
     {
         $now = time();
-
+        //练琴时长步进值
+        $stepDuration = 0;
         // 处理毫秒时间戳，转为秒
         if ($params['created_at'] > 2000000000) {
             $params['created_at'] = intval($params['created_at']/1000);
@@ -149,10 +80,10 @@ class AIPlayRecordService
 
         if (empty($playRecord)) {
             // insert 新纪录
-            $recordId = AIPlayRecordModel::insertRecord($newRecord);
+            $stepDuration = $params['duration'];
+            $recordId = AIPlayRecordModel::addRecord($studentId, $newRecord, $stepDuration);
 
             StudentModel::updateRecord($studentId, ['last_play_time' => $now]);
-
         } else {
             // update 现在的记录
             unset($newRecord['student_id']);
@@ -170,6 +101,8 @@ class AIPlayRecordService
             if ($newRecord['duration'] <= $playRecord['duration']) {
                 unset($newRecord['end_time']);
                 unset($newRecord['duration']);
+            } else {
+                $stepDuration = $newRecord['duration'] - $playRecord['duration'];
             }
             if ($newRecord['record_id'] <= $playRecord['record_id']) { unset($newRecord['record_id']); }
             if (empty($newRecord['audio_url'])) { unset($newRecord['audio_url']); }
@@ -184,10 +117,12 @@ class AIPlayRecordService
             // 1正常 2异常
             if ($newRecord['data_type'] >= $playRecord['data_type']) { unset($newRecord['data_type']); }
 
-            $recordId = AIPlayRecordModel::updateRecord($playRecord['id'], $newRecord);
+            $recordId = AIPlayRecordModel::modifyRecord($studentId, $playRecord['id'], $newRecord, $stepDuration);
         }
-        //上报练琴时长获取积分
-        self::reportPoint($studentId, $now, $newRecord);
+        //上报练琴时长获取积分:app5.6.0版本之前的app不参与积分活动
+        if (!empty($params['version']) && (self::isOldVersionApp($params['version'], self::JOIN_POINT_ACTIVITY_MIN_APP_VER) === false)) {
+            self::reportPoint($studentId, $newRecord);
+        }
         return $recordId ?? 0;
     }
 
@@ -594,9 +529,11 @@ class AIPlayRecordService
             'score_speed_average' => $score,
         ];
 
-        $recordID = AIPlayRecordModel::insertRecord($recordData);
-        //上报练琴时长获取积分
-        self::reportPoint($studentId, $now, $recordData);
+        $recordID = AIPlayRecordModel::addRecord($studentId, $recordData, $playData['duration']);
+        //上报练琴时长获取积分:app5.6版本之前的app不参与积分活动
+        if ($playData['is_join_point'] === false) {
+            self::reportPoint($studentId, $recordData);
+        }
         return $recordID;
     }
 
@@ -639,7 +576,7 @@ class AIPlayRecordService
             'score_speed_average' => $score,
         ];
 
-        $recordID = AIPlayRecordModel::insertRecord($recordData);
+        $recordID = AIPlayRecordModel::addRecord($studentId, $recordData, $playData['duration']);
 
         return $recordID;
     }
@@ -815,9 +752,10 @@ class AIPlayRecordService
     /**
      * 是否时旧版本app
      * @param $version
+     * @param $compareVersion
      * @return bool
      */
-    public static function isOldVersionApp($version)
+    public static function isOldVersionApp($version, $compareVersion = self::DEFAULT_APP_VER)
     {
         // 默认是新版
         if (empty($version)) {
@@ -825,7 +763,7 @@ class AIPlayRecordService
         }
 
         // verCmp $a < $b 时返回1
-        $cmpRet = AppVersionModel::verCmp($version, self::DEFAULT_APP_VER);
+        $cmpRet = AppVersionModel::verCmp($version, $compareVersion);
         return $cmpRet > 0;
     }
 
@@ -931,16 +869,13 @@ class AIPlayRecordService
     /**
      * 上报练琴时长获取积分
      * @param $studentId
-     * @param $time
      * @param $recordData
      */
-    private static function reportPoint($studentId, $time, $recordData)
+    private static function reportPoint($studentId, $recordData)
     {
         //检测每日练琴获取积分活动
         $reportData = [];
-        $dayStartEndTimestamp = Util::getStartEndTimestamp($time);
-        $playRecord = AIPlayRecordModel::getStudentSumByDate($studentId, $dayStartEndTimestamp[0], $dayStartEndTimestamp[1]);
-        $dayTotalDuration = array_sum(array_column($playRecord, 'sum_duration'));
+        $dayTotalDuration = AIPlayRecordModel::getDailyDurationCache($studentId);
         try {
             PointActivityService::reportRecord(CreditService::PLAY_PIANO_TASKS, $studentId, ['play_duration' => $dayTotalDuration]);
         } catch (RunTimeException $e) {
