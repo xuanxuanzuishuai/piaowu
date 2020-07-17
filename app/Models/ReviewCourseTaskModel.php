@@ -18,6 +18,7 @@ class ReviewCourseTaskModel extends Model
     const STATUS_INIT = 0; // 未发送
     const STATUS_SEND_SUCCESS = 1; // 发送成功
     const STATUS_SEND_FAILURE = 2; // 发送失败
+    const EACH_LIMIT = 100; //每次插入100条
 
     /**
      * 检测指定日期是否已生成过点评任务

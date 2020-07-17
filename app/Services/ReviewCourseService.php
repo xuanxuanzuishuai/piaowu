@@ -11,6 +11,7 @@ namespace App\Services;
 use App\Libs\AIPLClass;
 use App\Libs\AliOSS;
 use App\Libs\Erp;
+use App\Libs\HttpHelper;
 use App\Libs\NewSMS;
 use App\Libs\SimpleLogger;
 use App\Libs\WeChat\WeChatMiniPro;
@@ -31,6 +32,7 @@ use App\Models\UserWeixinModel;
 use App\Models\CollectionModel;
 use App\Services\VoiceCall\VoiceCallTRService;
 use App\Models\VoiceCallLogModel;
+use Slim\Http\Response;
 
 class ReviewCourseService
 {
@@ -423,22 +425,17 @@ class ReviewCourseService
             ]
         ];
 
-        try {
-            $result = WeChatService::notifyUserWeixinTemplateInfo(
-                UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
-                WeChatService::USER_TYPE_STUDENT,
-                $studentWeChatInfo["open_id"],
-                $_ENV["WECHAT_TEMPLATE_REVIEW_COURSE"],
-                $data,
-                $_ENV["WECHAT_FRONT_DOMAIN"] . "/student/review?date=" . $date
-            );
+        $result = WeChatService::notifyUserWeixinTemplateInfo(
+            UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
+            WeChatService::USER_TYPE_STUDENT,
+            $studentWeChatInfo["open_id"],
+            $_ENV["WECHAT_TEMPLATE_REVIEW_COURSE"],
+            $data,
+            $_ENV["WECHAT_FRONT_DOMAIN"] . "/student/review?date=" . $date
+        );
 
-            if (empty($result) || !empty($result['errcode'])) {
-                throw new RunTimeException(['wx_send_fail']);
-            }
-        } catch (GuzzleException $e) {
-            SimpleLogger::error(__FILE__ . ':' . __LINE__, [print_r($e->getMessage(), true)]);
-            return false;
+        if (empty($result) || !empty($result['errcode'])) {
+            throw new RunTimeException(['wx_send_fail']);
         }
 
         return true;
@@ -473,6 +470,13 @@ class ReviewCourseService
         return $review;
     }
 
+    public static function QueueSendTaskReview($taskId){
+        try {
+            self::sendTaskReview($taskId);
+        }catch (RunTimeException $e){
+            SimpleLogger::error('send_task_review_message', ['filed' => $e]);
+        }
+    }
     /**
      * 发送点评
      * @param $taskId
@@ -535,36 +539,29 @@ class ReviewCourseService
             ]
         ];
 
-        try {
-            $result = WeChatService::notifyUserWeixinTemplateInfo(
-                UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
-                WeChatService::USER_TYPE_STUDENT,
-                $studentWeChatInfo["open_id"],
-                $_ENV["WECHAT_TEMPLATE_REVIEW_COURSE"],
-                $data,
-                $_ENV["WECHAT_FRONT_DOMAIN"] . "/student/task_review?task_id=" . $task['id']
-            );
+        $result = WeChatService::notifyUserWeixinTemplateInfo(
+            UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
+            WeChatService::USER_TYPE_STUDENT,
+            $studentWeChatInfo["open_id"],
+            $_ENV["WECHAT_TEMPLATE_REVIEW_COURSE"],
+            $data,
+            $_ENV["WECHAT_FRONT_DOMAIN"] . "/student/task_review?task_id=" . $task['id']
+        );
 
-            if (empty($result) || !empty($result['errcode'])) {
+        if (empty($result) || !empty($result['errcode'])) {
 
-                ReviewCourseTaskModel::updateRecord($taskId, [
-                    'status' => ReviewCourseTaskModel::STATUS_SEND_FAILURE,
-                    'update_time' => time()
-                ]);
+            ReviewCourseTaskModel::updateRecord($taskId, [
+                'status' => ReviewCourseTaskModel::STATUS_SEND_FAILURE,
+                'update_time' => time()
+            ]);
 
-                $code = $result['errcode'] ?? 0;
-                $msg = $result['errmsg'] ?? '';
+            $code = $result['errcode'] ?? 0;
+            $msg = $result['errmsg'] ?? '';
 
-                $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
-                $sms->sendReviewCompleteNotify($student['mobile']);
+            $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
+            $sms->sendReviewCompleteNotify($student['mobile']);
 
-                return "发送成功 微信推送失败: [$code] $msg";
-            }
-
-        } catch (GuzzleException $e) {
-            SimpleLogger::error(__FILE__ . ':' . __LINE__, [print_r($e->getMessage(), true)]);
-
-            throw new RunTimeException(['wx_send_fail']);
+            return "发送成功 微信推送失败: [$code] $msg";
         }
 
         ReviewCourseTaskModel::updateRecord($taskId, [

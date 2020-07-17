@@ -24,6 +24,7 @@ use App\Services\VoiceCall\VoiceCallTRService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
+use App\Services\ReviewCourseService;
 
 class Consumer extends ControllerBase
 {
@@ -163,6 +164,11 @@ class Consumer extends ControllerBase
                 //给微信用户推送返现活动模板消息
                 ReferralActivityService::pushWXCashActivityTemplateMsg($params['msg_body']);
                 break;
+            case PushMessageTopic::EVENT_PUSH_SMS_TASK_REVIEW:
+                ReviewCourseService::QueueSendTaskReview($params['msg_body']['task_id']);
+                break;
+            default:
+                SimpleLogger::error('consume_push_message', ['unknown_event_type' => $params['event_type']]);
         }
 
         return HttpHelper::buildResponse($response, []);

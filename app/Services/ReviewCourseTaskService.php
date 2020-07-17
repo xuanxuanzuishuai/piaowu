@@ -93,8 +93,14 @@ class ReviewCourseTaskService
             $last++;
         }
 
-        $success = ReviewCourseTaskModel::batchInsert($newTasks, false);
-        return $success ? count($newTasks) : 0;
+        $num = count($newTasks);
+        $step = ceil( $num/ReviewCourseTaskModel::EACH_LIMIT);
+        $success = true;
+        for ($i = 0; $i <= $step; $i++){
+            $insertData = array_slice($newTasks, $i * ReviewCourseTaskModel::EACH_LIMIT, ReviewCourseTaskModel::EACH_LIMIT);
+            $success = $success && ReviewCourseTaskModel::batchInsert($insertData, false);
+        }
+        return $success;
     }
 
     /**

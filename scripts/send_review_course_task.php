@@ -18,11 +18,11 @@ define('LANG_ROOT', PROJECT_ROOT . '/lang');
 require_once PROJECT_ROOT . '/vendor/autoload.php';
 
 use App\Libs\AIPLClass;
-use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
 use App\Models\ReviewCourseTaskModel;
 use App\Models\StudentModel;
-use App\Services\ReviewCourseService;
+use App\Services\Queue\QueueService;
+use App\Services\ReviewCourseTaskService;
 use Dotenv\Dotenv;
 
 $dotenv = new Dotenv(PROJECT_ROOT,'.env');
@@ -46,8 +46,6 @@ SimpleLogger::info('need send', [
 
 $result = [ // 'type' => [count, ids]
     'success' => ['count' => 0, 'ids' => []],
-    'wx_msg_fail' => ['count' => 0, 'ids' => []],
-    'invalid_practice' => ['count' => 0, 'ids' => []],
     'report_not_found' => ['count' => 0, 'ids' => []],
     'fail' => ['count' => 0, 'ids' => []],
 ];
@@ -61,24 +59,15 @@ foreach ($tasks as $task) {
         continue;
     }
 
-    try {
-        $retMsg = ReviewCourseService::sendTaskReview($task['id']);
-        SimpleLogger::info('send review course task ret', [
-            'task' => $task,
-            'ret' => $retMsg,
-        ]);
-        $resultType = ($retMsg == '发送成功') ? 'success' : 'wx_msg_fail';
-        $result[$resultType]['count']++;
-        $result[$resultType]['ids'][] = $task['id'];
-
-    } catch (RunTimeException $e) {
-        SimpleLogger::error('send review course task error', [
-            'task' => $task,
-            'e' => $e->getWebErrorData(),
-        ]);
+    //添加到消息队列
+    $queueRes = QueueService::pushTaskReview($task['id']);
+    if (!$queueRes) {
         $result['fail']['count']++;
         $result['fail']['ids'][] = $task['id'];
+    } else {
+        $result['success']['count']++;
+        $result['success']['ids'][] = $task['id'];
     }
-}
 
+}
 SimpleLogger::info('send review course task [END]', $result);

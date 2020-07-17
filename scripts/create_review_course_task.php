@@ -17,8 +17,6 @@ define('LANG_ROOT', PROJECT_ROOT . '/lang');
 // require composer autoload
 require_once PROJECT_ROOT . '/vendor/autoload.php';
 
-use App\Models\PlayClassRecordMessageModel;
-use App\Services\PlayClassRecordService;
 use App\Services\ReviewCourseTaskService;
 use Dotenv\Dotenv;
 

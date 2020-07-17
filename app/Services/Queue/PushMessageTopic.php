@@ -16,6 +16,7 @@ class PushMessageTopic extends BaseTopic
     const EVENT_PUSH_WX = 'push_wx';
     //推送返现分享链接微信消息
     const EVENT_PUSH_WX_CASH_SHARE_MESSAGE = 'push_wx_cash_share_message';
+    const EVENT_PUSH_SMS_TASK_REVIEW = 'push_sms_task_review';
 
 
     public function __construct($publishTime = null)
@@ -36,4 +37,16 @@ class PushMessageTopic extends BaseTopic
         return $this;
     }
 
+    /**
+     * 发送短信课程点评
+     * @param $data
+     * @param string $eventType
+     * @return $this
+     */
+    public function pushTaskReview($data, $eventType = self::EVENT_PUSH_SMS_TASK_REVIEW)
+    {
+        $this->setEventType($eventType);
+        $this->setMsgBody($data);
+        return $this;
+    }
 }

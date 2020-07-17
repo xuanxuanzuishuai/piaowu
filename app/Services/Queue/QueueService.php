@@ -141,6 +141,29 @@ class QueueService
     }
 
     /**
+     * 发送点评
+     * @param $taskId
+     * @return bool
+     */
+    public static function pushTaskReview($taskId)
+    {
+        try {
+            $topic = new PushMessageTopic();
+
+            $msgBody = [
+                'task_id' => $taskId,
+            ];
+
+            $topic->pushTaskReview($msgBody)->publish();
+
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), $msgBody ?? []);
+            return false;
+        }
+        return true;
+
+    }
+    /**
      * 赠送时长
      * @param $uuid
      * @param $courseId
