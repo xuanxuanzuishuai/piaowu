@@ -10,6 +10,7 @@ namespace App\Libs;
 
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
 use Slim\Http\StatusCode;
 
 class OpernCenter
@@ -53,6 +54,7 @@ class OpernCenter
         self::OPERN_API_LESSONS_BY_ID,
         self::OPERN_API_SEARCH_ES_COLLECTIONS,
         self::OPERN_API_SEARCH_ES_LESSONS,
+        self::OPERN_API_STATIC_RESOURCE,
     ];
 
     public $proId; // 曲谱库ProId
@@ -118,7 +120,7 @@ class OpernCenter
                 return $res;
             }
 
-        } catch (\Exception $e) {
+        } catch (GuzzleException $e) {
             SimpleLogger::error(__FILE__ . ':' . __LINE__, [print_r($e->getMessage(), true)]);
         }
         return false;
