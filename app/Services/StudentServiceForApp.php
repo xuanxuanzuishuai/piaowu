@@ -137,7 +137,7 @@ class StudentServiceForApp
         if (empty($code) && empty($password)) {
             return ['please_check_the_parameters'];
         } elseif (!empty($code) && !CommonServiceForApp::checkValidateCode($mobile, $code)) {
-            return ['validate_code_error'];
+            return ['incorrect_mobile_phone_number_or_verification_code'];
         } elseif (!empty($password) && !CommonServiceForApp::checkPassword($mobile, $password)) {
             return ['password_error'];
         }
@@ -258,7 +258,7 @@ class StudentServiceForApp
 
 
         if (!empty($student['password']) && $student['password'] == $newPassword) {
-            return ['the_old_and_new_pwd_are_the_same'];
+            return [];
         }
 
         $data = [
