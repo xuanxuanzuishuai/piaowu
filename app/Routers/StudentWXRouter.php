@@ -212,6 +212,7 @@ class StudentWXRouter extends RouterBase
         '/student_wx/student/class_information' => [
             'method' => ['get'],
             'call' => Student::class . ':classInformation',
+            'middles' => []
         ],
     ];
 }
