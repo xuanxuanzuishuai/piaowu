@@ -17,6 +17,7 @@ use App\Libs\Valid;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\StudentModel;
 use App\Services\AIPlayRecordService;
+use App\Services\CollectionService;
 use App\Services\CommonServiceForApp;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -483,5 +484,27 @@ class Student extends ControllerBase
             'data' => []
         ], StatusCode::HTTP_OK);
 
+    }
+
+    public function classInformation(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'class_id',
+                'type' => 'required',
+                'error_code' => 'class_id_is_required',
+            ],
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $collectionData = CollectionService::getStudentCollectionDetailByID($params['class_id']);
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $collectionData
+        ], StatusCode::HTTP_OK);
     }
 }

@@ -209,5 +209,9 @@ class StudentWXRouter extends RouterBase
             'method' => ['get'],
             'call' => TemplatePoster::class . ':posterShareWordList',
         ],
+        '/student_wx/student/class_information' => [
+            'method' => ['get'],
+            'call' => Student::class . ':classInformation',
+        ],
     ];
 }
