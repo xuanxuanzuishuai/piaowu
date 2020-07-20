@@ -136,11 +136,9 @@ class Student extends ControllerBase
                 SimpleLogger::error('wx mini pro create fail', ['config' => $config]);
             }
 
-            $textContext = '扫描下方二维码，加专属助教微信';
+            $url = $_ENV['SMS_FOR_EXPERIENCE_CLASS_REGISTRATION']."?c=".$student_info['collection_id'];
+            $textContext = '欢迎加入小叶子智能陪练！👉<a href="' . $url . '">请点击这里完成开班前准备</a>👈';
             $wx->sendText($openId, $textContext);
-
-            $media = $wx->getTempMedia('image', $collection['id'] . '_collection_qr.jpg', $wechatQr);
-            $wx->sendImage($openId, $media['media_id']);
         }
 
         return $response->withJson([
