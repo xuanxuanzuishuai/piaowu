@@ -170,7 +170,7 @@ class Student extends ControllerBase
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        $studentList = StudentService::fuzzySearchStudent($params, ['mobile', 'name']);
+        $studentList = StudentService::fuzzySearchStudent($params, ['id', 'mobile', 'name']);
         //返回数据
         return HttpHelper::buildResponse($response, $studentList);
     }
