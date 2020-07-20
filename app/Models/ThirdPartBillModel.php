@@ -52,6 +52,10 @@ class ThirdPartBillModel extends Model
             $where .= ' and e.name like :operator_name ';
             $map[':operator_name'] = "%{$params['operator_name']}%";
         }
+        if(!empty($params['parent_channel_id'])) {
+            $where .= ' and t.parent_channel_id = :parent_channel_id ';
+            $map[':parent_channel_id'] = $params['parent_channel_id'];
+        }
         if(!empty($params['channel_id'])) {
             $where .= ' and t.channel_id = :channel_id ';
             $map[':channel_id'] = $params['channel_id'];
@@ -93,6 +97,7 @@ select t.id,
        t.reason,
        t.create_time,
        t.package_id,
+       t.parent_channel_id,
        t.channel_id,
        e.name operator_name,
        p.name package_name,
