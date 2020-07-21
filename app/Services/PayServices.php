@@ -247,9 +247,10 @@ class PayServices
      * @param $clientIp
      * @param $studentAddressId
      * @param $openId
+     * @param $employeeUuid
      * @return array|bool
      */
-    public static function weixinCreateBill($studentId, $packageId, $payChannel, $clientIp, $studentAddressId, $openId)
+    public static function weixinCreateBill($studentId, $packageId, $payChannel, $clientIp, $studentAddressId, $openId, $employeeUuid)
     {
         $student = StudentModelForApp::getById($studentId);
         $uuid = $student['uuid'];
@@ -285,7 +286,8 @@ class PayServices
             ],
             [
                 'student_address_id' => $studentAddressId,
-                'open_id' => $openId
+                'open_id' => $openId,
+                'employee_uuid' => $employeeUuid
             ]
         );
         if (empty($ret)) {

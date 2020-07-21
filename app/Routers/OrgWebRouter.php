@@ -29,6 +29,7 @@ use App\Controllers\OrgWeb\CommunitySharePoster;
 use App\Controllers\OrgWeb\Dept;
 use App\Controllers\OrgWeb\Erp;
 use App\Controllers\OrgWeb\Flags;
+use App\Controllers\OrgWeb\PersonalLink;
 use App\Controllers\OrgWeb\PlayRecord;
 use App\Controllers\OrgWeb\PosterTemplate;
 use App\Controllers\OrgWeb\PosterTemplateWord;
@@ -465,5 +466,8 @@ class OrgWebRouter extends RouterBase
 
         // 学生证书管理
         '/org_web/student_certificate/add' => ['method' => ['post'], 'call' => StudentCertificate::class . ':add'],
+        // 专属售卖链接
+        '/org_web/personal_link/list' => ['method' => ['get'], 'call' => PersonalLink::class . ':list'],
+        '/org_web/personal_link/create' => ['method' => ['post'], 'call' => PersonalLink::class . ':create']
     ];
 }

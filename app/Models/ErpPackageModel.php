@@ -9,7 +9,14 @@
 namespace App\Models;
 
 
+use App\Libs\MysqlDB;
+
 class ErpPackageModel extends Model
 {
     public static $table = 'erp_package';
+
+    public static function getPackAgeList($where)
+    {
+        return MysqlDB::getDB()->select(self::$table, ['id', 'name'], $where);
+    }
 }

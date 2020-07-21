@@ -251,4 +251,33 @@ class DeptService
 
         return false;
     }
+
+    /**
+     * @param $employeeUuid
+     * @return string
+     * 通过末端部门得到所有的上级部门
+     */
+    public static function getSubAllParentDept($employeeUuid)
+    {
+        $deptId = EmployeeModel::getRecord(['uuid' => $employeeUuid], 'dept_id');
+        $arr[] = $deptId;
+        $i = 0;
+        if (!empty($deptId)) {
+            while (true) {
+                //防止死循环
+                if ($i > 50) {
+                    break;
+                }
+                $parentId = DeptModel::getRecord(['id' => $deptId], 'parent_id');
+                if ($parentId != '0') {
+                    $arr[] = $parentId;
+                } else {
+                    break;
+                }
+                $i++;
+                $deptId = $parentId;
+            }
+        }
+        return implode(',', array_reverse($arr));
+    }
 }

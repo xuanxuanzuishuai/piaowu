@@ -357,6 +357,11 @@ class DictConstants {
         'keys' => [1, 2]
     ];
 
+    const PERSONAL_LINK_PACKAGE_ID = [
+        'type' => 'personal_link_package_id',
+        'keys' => ['package_id']
+    ];
+
     public static function get($type, $key)
     {
         if (empty($type) || empty($key)) {

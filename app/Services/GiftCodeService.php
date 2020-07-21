@@ -91,7 +91,9 @@ class GiftCodeService
             'bill_amount' => $billInfo['bill_amount'] ?? 0,
             'bill_app_id' => $billInfo['bill_app_id'] ?? 0,
             'bill_package_id' => $billInfo['bill_package_id'] ?? 0,
+            'employee_uuid' => $billInfo['employee_uuid'] ?? ''
         ];
+        !empty($params['employee_uuid']) && $params['employee_dept_info'] = DeptService::getSubAllParentDept($params['employee_uuid']);
 
         if (!$multipleBuyer) {
             $params['buyer'] = $buyer;

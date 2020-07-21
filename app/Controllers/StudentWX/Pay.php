@@ -11,6 +11,7 @@ namespace App\Controllers\StudentWX;
 
 use App\Controllers\ControllerBase;
 use App\Libs\Erp;
+use App\Libs\RC4;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Libs\Valid;
@@ -104,12 +105,14 @@ class Pay extends ControllerBase
 
         $openId = $this->ci['open_id'];
         $studentAddressId = $params['student_address_id'] ?? 0;
+        $employeeUuid = !empty($params['employee_id']) ? RC4::decrypt($_ENV['COOKIE_SECURITY_KEY'], $params['employee_id']) : NULL;
         $ret = PayServices::weixinCreateBill(
             $studentId, $params['package_id'],
             $params['pay_channel'],
             $_SERVER['HTTP_X_REAL_IP'],
             $studentAddressId,
-            $openId
+            $openId,
+            $employeeUuid
         );
 
         if (empty($ret)) {

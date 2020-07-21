@@ -136,6 +136,7 @@ class Erp
             'result_url' => $callbacks['result_url'] ?? null, // 微信H5 支付结果跳转链接
 
             'ip' => $clientIp, // 微信H5支付需要客户端ip
+            'employee_uuid' => $params['employee_uuid'] ?? NULL //成单人
         ];
 
         //把扩展参数合并进data，注意这里不会覆盖原有的key
