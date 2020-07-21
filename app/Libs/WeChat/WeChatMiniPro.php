@@ -12,6 +12,7 @@ namespace App\Libs\WeChat;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
 use Slim\Http\StatusCode;
 
 class WeChatMiniPro
@@ -20,11 +21,13 @@ class WeChatMiniPro
     const API_GET_ACCESS_TOKEN = '/cgi-bin/token';
     const API_SEND = '/cgi-bin/message/custom/send';
     const API_UPLOAD_IMAGE = '/cgi-bin/media/upload';
+    const API_SHORT_URL = '/cgi-bin/shorturl';
 
     const CACHE_KEY = '%s';
     const ACCESS_TOKEN_REFRESH_BEFORE = 120; // 提前一段时间刷新即将到期的access_token
 
     const TEMP_MEDIA_EXPIRE = 172800; // 临时media文件过期时间 2天
+    const SHORT_URL_EXPIRE = 86400; // 短链接缓存过期时间 1天
 
     private $appId = '';
     private $appSecret = '';
@@ -46,42 +49,55 @@ class WeChatMiniPro
 
     private function requestJson($api, $params = [], $method = 'GET')
     {
+        $client = new Client(['debug' => false]);
+
+        if ($method == 'GET') {
+            $data = empty($params) ? [] : ['query' => $params];
+        } elseif ($method == 'POST') {
+            // JSON_UNESCAPED_UNICODE 参数指定不对unicode转码 否则中文会显示为unicode
+            $data = ['body' => json_encode($params, JSON_UNESCAPED_UNICODE)];
+            $data['headers'] = ['Content-Type' => 'application/json'];
+        } elseif ($method == 'POST_FORM_DATA') {
+            $method = 'POST';
+            $data = $params;
+        } else {
+            return false;
+        }
+
+        SimpleLogger::info("[WeChatMiniPro] send request", ['api' => $api, 'data' => $data]);
+
         try {
-            $client = new Client(['debug' => false]);
-
-            if ($method == 'GET') {
-                $data = empty($params) ? [] : ['query' => $params];
-            } elseif ($method == 'POST') {
-                // JSON_UNESCAPED_UNICODE 参数指定不对unicode转码 否则中文会显示为unicode
-                $data = ['body' => json_encode($params, JSON_UNESCAPED_UNICODE)];
-                $data['headers'] = ['Content-Type' => 'application/json'];
-            } elseif ($method == 'POST_FORM_DATA') {
-                $method = 'POST';
-                $data = $params;
-            } else {
-                return false;
-            }
-
-            SimpleLogger::info("[WeChatMiniPro] send request", ['api' => $api, 'data' => $data]);
             $response = $client->request($method, $api, $data);
-            $body = $response->getBody()->getContents();
-            $status = $response->getStatusCode();
-            SimpleLogger::info("[WeChatMiniPro] send request ok", ['body' => $body, 'status' => $status]);
 
-            if (($status != StatusCode::HTTP_OK)) {
-                return false;
-            }
-
-            $res = json_decode($body, true);
-
-        } catch (\Exception $e) {
+        } catch (GuzzleException $e) {
             SimpleLogger::error("[WeChatMiniPro] send request error", [
                 'error_message' => $e->getMessage()
             ]);
             return false;
         }
 
+        $body = $response->getBody()->getContents();
+        $status = $response->getStatusCode();
+        SimpleLogger::info("[WeChatMiniPro] send request ok", ['body' => $body, 'status' => $status]);
+
+        if (($status != StatusCode::HTTP_OK)) {
+            return false;
+        }
+
+        $res = json_decode($body, true);
+
         return $res;
+    }
+
+    public function apiUrl($api, $withToken = true)
+    {
+        if ($withToken) {
+            $token = $this->getAccessToken();
+            $query = '?' . http_build_query(['access_token' => $token]);
+        } else {
+            $query = '';
+        }
+        return self::WX_HOST . $api . $query;
     }
 
     private function accessTokenCacheKey()
@@ -93,6 +109,12 @@ class WeChatMiniPro
     private function tempMediaCacheKey($key)
     {
         return sprintf(self::CACHE_KEY, $this->appId) . '_temp_media_' . $key;
+    }
+
+    private function shortUrlCacheKey($url)
+    {
+        $key = md5($url);
+        return sprintf(self::CACHE_KEY, $this->appId) . '_short_url_' . $key;
     }
 
     private function getAccessToken()
@@ -114,7 +136,8 @@ class WeChatMiniPro
 
     private function requestAccessToken()
     {
-        $res = $this->requestJson(self::WX_HOST . self::API_GET_ACCESS_TOKEN, [
+        $api = $this->apiUrl(self::API_GET_ACCESS_TOKEN, false);
+        $res = $this->requestJson($api, [
             'appid' => $this->appId,
             'secret' => $this->appSecret,
             'grant_type' => 'client_credential'
@@ -129,19 +152,14 @@ class WeChatMiniPro
 
     private function send($openId, $type, $content)
     {
-        $token = $this->getAccessToken();
-        if (empty($token)) {
-            return false;
-        }
-
-        $url = self::WX_HOST . self::API_SEND . '?access_token=' . $token;
+        $api = $this->apiUrl(self::API_SEND);
 
         $params = [
             'touser' => $openId,
             'msgtype' => $type,
             $type => $content
         ];
-        return $this->requestJson($url, $params, 'POST');
+        return $this->requestJson($api, $params, 'POST');
     }
 
     public function sendText($openId, $content)
@@ -184,12 +202,7 @@ class WeChatMiniPro
 
     public function uploadMedia($type, $fileName, $content)
     {
-        $token = $this->getAccessToken();
-        if (empty($token)) {
-            return false;
-        }
-
-        $url = self::WX_HOST . self::API_UPLOAD_IMAGE . '?access_token=' . $token;
+        $api = $this->apiUrl(self::API_UPLOAD_IMAGE);
 
         $params = [
             'multipart' => [
@@ -204,6 +217,39 @@ class WeChatMiniPro
                 ]
             ],
         ];
-        return $this->requestJson($url, $params, 'POST_FORM_DATA');
+        return $this->requestJson($api, $params, 'POST_FORM_DATA');
+    }
+
+    public function getShortUrl($url)
+    {
+        $redis = RedisDB::getConn();
+        $cacheKey = $this->shortUrlCacheKey($url);
+        $cache = $redis->get($cacheKey);
+
+        if (!empty($cache)) {
+            return $cache;
+        }
+
+        $res = self::createShortUrl($url);
+
+        if (!empty($res['short_url'])) {
+            $redis->setex($cacheKey, self::SHORT_URL_EXPIRE, $res['short_url']);
+            return $res['short_url'];
+        }
+
+        return false;
+
+    }
+
+    public function createShortUrl($url)
+    {
+        $api = $this->apiUrl(self::API_SHORT_URL);
+
+        $params = [
+            'action' => 'long2short',
+            'long_url' => $url,
+        ];
+
+        return $this->requestJson($api, $params, 'POST');
     }
 }
