@@ -102,6 +102,19 @@ class CollectionService
         return $list;
     }
 
+    /**
+     * 更新班级url
+     * @param $collectionId
+     * @throws RunTimeException
+     */
+    public static function updateStudentCollectionUrl($collectionId)
+    {
+        $updateData = ['collection_url' => $_ENV['SMS_FOR_EXPERIENCE_CLASS_REGISTRATION']."?c=".$collectionId];
+        $collectionAffectRows = CollectionModel::updateRecord($collectionId, $updateData);
+        if (empty($collectionAffectRows)) {
+            throw new RunTimeException(['update_failure']);
+        }
+    }
 
     /**
      * @param $collectionId

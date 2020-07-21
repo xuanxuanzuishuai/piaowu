@@ -160,11 +160,12 @@ class NewSMS
      */
     public function sendCollectionCompleteNotify($targetMobile, $sign, $collectionList)
     {
+
         $teachingStartDate = date("Y-m-d", $collectionList['teaching_start_time']);
         $teachingEndDate = date("Y-m-d", $collectionList['teaching_end_time']);
         $week = Util::getShortWeekName($collectionList['teaching_start_time']);
         $days = Util::dateBetweenDays($teachingStartDate, $teachingEndDate);
-        $msg = "恭喜您成功购买小叶子智能陪练，开营前邀请您试用智能陪练！请您尽快关注微信公众号【小叶子智能陪练】绑定账号获得APP下载链接，我们的课程将于{$teachingStartDate}（{$week}）开始，时长{$days}天，请您务必查看开营指引【".$_ENV['SMS_FOR_EXPERIENCE_CLASS_REGISTRATION']."?c=".$collectionList['id']."】。如有疑问，请拨打客服电话：".$_ENV['AI_SERVER_TEL']."。";
+        $msg = "恭喜您成功购买小叶子智能陪练，开营前邀请您试用智能陪练！请您尽快关注微信公众号【小叶子智能陪练】绑定账号获得APP下载链接，我们的课程将于{$teachingStartDate}（{$week}）开始，时长{$days}天，请您务必查看开营指引【".$collectionList['collection_url']."】。如有疑问，请拨打客服电话：".$_ENV['AI_SERVER_TEL']."。";
         $data = [
             'sign_name' => $sign,
             'phone_number' => $targetMobile,

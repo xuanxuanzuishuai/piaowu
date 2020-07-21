@@ -13,12 +13,12 @@ use App\Libs\AliOSS;
 use App\Libs\Erp;
 use App\Libs\NewSMS;
 use App\Libs\SimpleLogger;
+use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\EmployeeModel;
 use App\Models\PackageExtModel;
 use App\Models\ReviewCourseLogModel;
 use App\Models\ReviewCourseTaskModel;
 use App\Services\Queue\QueueService;
-use GuzzleHttp\Exception\GuzzleException;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\OpernCenter;
@@ -679,6 +679,22 @@ class ReviewCourseService
         $success = StudentService::allotCollectionAndAssistant($student['id'], $collection, EmployeeModel::SYSTEM_EMPLOYEE_ID, $packageId);
         if ($success) {
             SimpleLogger::error('student update collection and assistant error', []);
+        }
+
+        $config = [
+            'app_id' => $_ENV['STUDENT_WEIXIN_APP_ID'],
+            'app_secret' => $_ENV['STUDENT_WEIXIN_APP_SECRET'],
+        ];
+        $wx = WeChatMiniPro::factory($config);
+        if (empty($collection['collection_url'])) {
+            $collection['short_url'] = $wx->getShortUrl($_ENV['SMS_FOR_EXPERIENCE_CLASS_REGISTRATION']."?c=".$collection['id']);
+            try {
+                CollectionService::updateStudentCollectionUrl($collection['id']);
+            }catch (RunTimeException $e) {
+                SimpleLogger::error('update_student_collection_url_filed', ['filed' => $e]);
+            }
+        } else {
+            $collection['short_url'] = $wx->getShortUrl($collection['collection_url']);
         }
 
         //发送班级分配完成短信:公海班级不发送
