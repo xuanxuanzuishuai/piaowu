@@ -701,16 +701,12 @@ class ReviewCourseService
         }
 
         // 入班引导页面链接
-        if (empty($collection['collection_url'])) {
-            $config = [
-                'app_id' => $_ENV['STUDENT_WEIXIN_APP_ID'],
-                'app_secret' => $_ENV['STUDENT_WEIXIN_APP_SECRET'],
-            ];
-            $wx = WeChatMiniPro::factory($config);
-            $url = $wx->getShortUrl($_ENV['SMS_FOR_EXPERIENCE_CLASS_REGISTRATION']."?c=".$collection['id']);
-            CollectionService::updateStudentCollectionUrl($collection['id'], $url);
-            $collection['collection_url'] = $url;
-        }
+        $wx = WeChatMiniPro::factory([
+            'app_id' => $_ENV['STUDENT_WEIXIN_APP_ID'],
+            'app_secret' => $_ENV['STUDENT_WEIXIN_APP_SECRET'],
+        ]);
+        $url = $wx->getShortUrl($_ENV['SMS_FOR_EXPERIENCE_CLASS_REGISTRATION']."?c=".$collection['id']);
+        $collection['collection_url'] = $url;
 
         //发送短信
         $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));

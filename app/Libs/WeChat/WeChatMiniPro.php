@@ -27,7 +27,7 @@ class WeChatMiniPro
     const ACCESS_TOKEN_REFRESH_BEFORE = 120; // 提前一段时间刷新即将到期的access_token
 
     const TEMP_MEDIA_EXPIRE = 172800; // 临时media文件过期时间 2天
-    const SHORT_URL_EXPIRE = 86400; // 短链接缓存过期时间 1天
+    const SHORT_URL_EXPIRE = 86400 * 15; // 短链接缓存过期时间 15天
 
     private $appId = '';
     private $appSecret = '';
