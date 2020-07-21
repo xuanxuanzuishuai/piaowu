@@ -28,12 +28,12 @@ class ThirdPartBillService
             $sheetData = $spreadsheet->getActiveSheet()->toArray(null, true, true, true);
             $now = time();
             $data = [];
-            foreach($sheetData as $v) {
-                if(empty($v)) {
+            foreach($sheetData as $k => $v) {
+                if(empty($v['A']) || $k == 1) { // 忽略表头和空白行
                     continue;
                 }
                 $A = trim($v['A']);
-                if(trim($v['C']) != ThirdPartBillModel::IGNORE && is_numeric($A)) {
+                if(trim($v['C']) != ThirdPartBillModel::IGNORE) {
                     $data[] = [
                         'mobile'      => $A,
                         'trade_no'    => trim($v['B']),
