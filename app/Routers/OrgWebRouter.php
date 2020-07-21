@@ -467,7 +467,7 @@ class OrgWebRouter extends RouterBase
         '/org_web/auto_replay/question_list' => ['method' => ['get'], 'call' => AutoReply::class . ':list'],
 
         // 学生证书管理
-        '/org_web/student_certificate/add' => ['method' => ['post'], 'call' => StudentCertificate::class . ':add'],
+        '/org_web/student_certificate/create_certificate' => ['method' => ['post'], 'call' => StudentCertificate::class . ':createCertificate'],
         // 专属售卖链接
         '/org_web/personal_link/list' => ['method' => ['get'], 'call' => PersonalLink::class . ':list'],
         '/org_web/personal_link/create' => ['method' => ['post'], 'call' => PersonalLink::class . ':create'],

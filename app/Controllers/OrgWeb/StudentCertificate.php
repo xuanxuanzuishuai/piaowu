@@ -25,12 +25,12 @@ use Slim\Http\StatusCode;
 class StudentCertificate extends ControllerBase
 {
     /**
-     * 保存证书
+     * 生成毕业证书
      * @param Request $request
      * @param Response $response
      * @return Response
      */
-    public function add(Request $request, Response $response)
+    public function createCertificate(Request $request, Response $response)
     {
         //接收数据
         $rules = [
@@ -45,9 +45,20 @@ class StudentCertificate extends ControllerBase
                 'error_code' => 'student_id_must_be_integer'
             ],
             [
-                'key' => 'save_path',
+                'key' => 'student_name',
                 'type' => 'required',
-                'error_code' => 'save_path_is_required'
+                'error_code' => 'student_name_is_required'
+            ],
+            [
+                'key' => 'student_name',
+                'type' => 'lengthMax',
+                'value' => 10,
+                'error_code' => 'student_name_length_more_then_10'
+            ],
+            [
+                'key' => 'certificate_date',
+                'type' => 'required',
+                'error_code' => 'certificate_date_is_required'
             ]
         ];
         //验证合法性
@@ -57,10 +68,10 @@ class StudentCertificate extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         try {
-            $data = StudentCertificateService::addData($params['student_id'], $params['save_path'], self::getEmployeeId());
+            $certificateData = StudentCertificateService::add($params['student_id'], $params['student_name'], $params['certificate_date'], self::getEmployeeId());
         } catch (RunTimeException $e) {
             return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData());
         }
-        return $response->withJson(Valid::formatSuccess($data));
+        return HttpHelper::buildResponse($response, $certificateData);
     }
 }

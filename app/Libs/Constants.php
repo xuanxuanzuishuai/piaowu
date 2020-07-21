@@ -212,5 +212,7 @@ class Constants
     //微信用户标签状态
     const DICT_TYPE_TAG_STATUS = 'tag_status';
     //学生账户操作日志子类型
-    const STUDENT_ACCOUNT_LOG_OP_TYPE='student_account_log_op_type';
+    const STUDENT_ACCOUNT_LOG_OP_TYPE = 'student_account_log_op_type';
+    //学生证书图片底图
+    const STUDENT_CERTIFICATE_BASE_IMG = 'student_certificate_base_img';
 };

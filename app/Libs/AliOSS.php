@@ -234,7 +234,17 @@ class AliOSS
         }
         //水印图片设置
         if(!empty($waterMark)){
-            $imageOptions .= "watermark,".$waterMark;
+            //多张水印
+            if (is_array($waterMark)) {
+                $waterMarkStr = [];
+                array_map(function ($val) use (&$waterMarkStr) {
+                    $waterMarkStr[] = "watermark," . $val;
+                }, $waterMark);
+                $imageOptions .= implode("/", $waterMarkStr);
+            } else {
+                //单张水印
+                $imageOptions .= "watermark," . $waterMark;
+            }
         }
         if($imageOptions){
             $options['x-oss-process'] .= 'image/'.$imageOptions;
