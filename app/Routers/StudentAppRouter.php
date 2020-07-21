@@ -66,7 +66,7 @@ class StudentAppRouter extends RouterBase
         '/student_app/app/engine' => [
             'method' => ['get'],
             'call' => App::class . ':engine',
-            'middles' => [AppApiForStudent::class]
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
         ],
         '/student_app/app/config' => [
             'method' => ['get'],

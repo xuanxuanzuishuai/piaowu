@@ -170,7 +170,9 @@ class AppVersionModel
                 if (!empty($data['engine_url']) && !empty($data['engine_crc'])) {
                     $versionEngines[$data['version']] = [
                         'url' => $data['engine_url'],
-                        'crc' => $data['engine_crc']
+                        'crc' => $data['engine_crc'],
+                        'gray_url' => $data['gray_engine_url'],
+                        'gray_crc' => $data['gray_engine_crc']
                     ];
                 }
             }

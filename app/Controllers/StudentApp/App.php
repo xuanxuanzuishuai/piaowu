@@ -300,6 +300,14 @@ class App extends ControllerBase
 
         $platformId = AppVersionService::getPlatformId($this->ci['platform']);
         $engine = AppVersionService::getEngine(AppVersionModel::APP_TYPE_STUDENT, $platformId, $this->ci['version']);
+
+        // 灰测引擎
+        $grayEngineFlagId = DictConstants::get(DictConstants::FLAG_ID, 'gray_engine');
+        if ($this->ci['flags'][$grayEngineFlagId]) {
+            $engine['url'] = !empty($engine['gray_url']) ? $engine['gray_url'] : $engine['url'];
+            $engine['crc'] = !empty($engine['gray_crc']) ? $engine['gray_crc'] : $engine['crc'];
+        }
+
         if (!empty($engine['url'])) {
             $engine['url'] = AliOSS::replaceCdnDomain($engine['url']);
         }

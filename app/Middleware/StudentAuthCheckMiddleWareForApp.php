@@ -67,6 +67,11 @@ class StudentAuthCheckMiddleWareForApp extends MiddlewareBase
         $resFreeFlag = FlagsService::hasFlag($student, $resFreeFlagId);
         $this->addFlag($resFreeFlagId, $resFreeFlag);
 
+        // 灰测引擎
+        $grayEngineFlagId = DictConstants::get(DictConstants::FLAG_ID, 'gray_engine');
+        $grayEngineFlag = FlagsService::hasFlag($student, $grayEngineFlagId);
+        $this->addFlag($grayEngineFlagId, $grayEngineFlag);
+
         $this->container['opn_pro_ver'] = $resFreeFlag ? 'tester' : $this->container['version'];
         $this->container['opn_auditing'] = $this->container['flags'][$reviewFlagId] ? 1 : 0;
         $this->container['opn_publish'] = $resFreeFlag ? 0 : 1;
