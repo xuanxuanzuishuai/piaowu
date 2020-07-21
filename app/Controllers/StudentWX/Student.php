@@ -31,8 +31,6 @@ use App\Models\UserRefereeModel;
 use App\Models\UserWeixinModel;
 use App\Libs\UserCenter;
 use App\Models\ReviewCourseModel;
-use App\Models\CollectionModel;
-use App\Libs\AliOSS;
 
 
 class Student extends ControllerBase
@@ -124,9 +122,6 @@ class Student extends ControllerBase
         // 已付费体验课用戶發送班級二維碼
         if ($student_info['has_review_course'] == ReviewCourseModel::REVIEW_COURSE_49 && !empty($student_info['collection_id'])) {
 
-            $collection = CollectionModel::getById($student_info['collection_id']);
-            $wechatQr = AliOSS::signUrls($collection["wechat_qr"]);
-
             $config = [
                 'app_id' => $_ENV['STUDENT_WEIXIN_APP_ID'],
                 'app_secret' => $_ENV['STUDENT_WEIXIN_APP_SECRET'],
@@ -137,7 +132,7 @@ class Student extends ControllerBase
             }
 
             $url = $_ENV['SMS_FOR_EXPERIENCE_CLASS_REGISTRATION']."?c=".$student_info['collection_id'];
-            $textContext = '欢迎加入小叶子智能陪练！👉<a href="' . $url . '">请点击这里完成开班前准备</a>👈';
+            $textContext = '🎹欢迎加入小叶子智能陪练！'. PHP_EOL.'👉<a href="' . $url . '">请点击这里完成开班前准备</a>';
             $wx->sendText($openId, $textContext);
         }
 
