@@ -105,15 +105,14 @@ class CollectionService
     /**
      * 更新班级url
      * @param $collectionId
-     * @throws RunTimeException
+     * @param $url
+     * @return int
      */
-    public static function updateStudentCollectionUrl($collectionId)
+    public static function updateStudentCollectionUrl($collectionId, $url)
     {
-        $updateData = ['collection_url' => $_ENV['SMS_FOR_EXPERIENCE_CLASS_REGISTRATION']."?c=".$collectionId];
+        $updateData = ['collection_url' => $url];
         $collectionAffectRows = CollectionModel::updateRecord($collectionId, $updateData);
-        if (empty($collectionAffectRows)) {
-            throw new RunTimeException(['update_failure']);
-        }
+        return $collectionAffectRows;
     }
 
     /**
