@@ -687,14 +687,14 @@ class ReviewCourseService
         ];
         $wx = WeChatMiniPro::factory($config);
         if (empty($collection['collection_url'])) {
-            $collection['short_url'] = $wx->getShortUrl($_ENV['SMS_FOR_EXPERIENCE_CLASS_REGISTRATION']."?c=".$collection['id']);
+            $collection['collection_url'] = $wx->getShortUrl($_ENV['SMS_FOR_EXPERIENCE_CLASS_REGISTRATION']."?c=".$collection['id']);
             try {
                 CollectionService::updateStudentCollectionUrl($collection['id']);
             }catch (RunTimeException $e) {
                 SimpleLogger::error('update_student_collection_url_filed', ['filed' => $e]);
             }
         } else {
-            $collection['short_url'] = $wx->getShortUrl($collection['collection_url']);
+            $collection['collection_url'] = $wx->getShortUrl($collection['collection_url']);
         }
 
         //发送班级分配完成短信:公海班级不发送
