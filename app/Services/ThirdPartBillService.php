@@ -89,7 +89,7 @@ class ThirdPartBillService
 
         // 手机号不存在时注册新用户
         if(empty($student)) {
-            $result = StudentServiceForApp::studentRegister(strval($params['mobile']), 1);
+            $result = StudentServiceForApp::studentRegister(strval($params['mobile']), $params['channel_id']);
             if(empty($result)) {
                 $data['status'] = ThirdPartBillModel::STATUS_FAIL;
                 $data['reason'] = 'register student failed';
@@ -114,7 +114,7 @@ class ThirdPartBillService
             'source'          => 2, // 手工创建订单
             'package_id'      => $data['package_id'],
             'pay_channel'     => 11, // 第三方支付渠道
-            'description'     => 'create bill from dss',
+            'description'     => 'DSS表格导入订单',
             'supplement_type' => 1, // 新单
             'deliver_now'     => 1, // 立即发货
         ]);

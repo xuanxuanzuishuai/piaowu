@@ -172,7 +172,7 @@ class Util
 
     public static function isChineseMobile($mobile)
     {
-        return preg_match('/^1[345789]\d{9}/', $mobile);
+        return preg_match('/^1[345789]\d{9}$/', $mobile);
     }
 
     /**

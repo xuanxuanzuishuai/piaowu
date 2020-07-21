@@ -27,6 +27,6 @@ insert into dict (type, key_name, key_code, key_value) values ('third_part_bill_
                                                               ('third_part_bill_status', '导入状态', '2', '失败');
 
 insert into privilege (name, uri, created_time, method, is_menu, menu_name, parent_id, unique_en_name) VALUES
-('导入第三方订单', '/bill/third_part_bill/import', unix_timestamp(now()), 'post', 1, '导入第三方订单', 464, 'third_part_bill_import'),
-('第三方订单列表', '/bill/third_part_bill/list', unix_timestamp(now()), 'get', 0, '', 464, 'third_part_bill_list'),
+('导入第三方订单', '/bill/third_part_bill/import', unix_timestamp(now()), 'post', 0, '导入第三方订单', 464, 'third_part_bill_import'),
+('第三方订单列表', '/bill/third_part_bill/list', unix_timestamp(now()), 'get', 1, '', 464, 'third_part_bill_list'),
 ('下载导入订单模板', '/bill/third_part_bill/download_template', unix_timestamp(now()), 'get', 0, '', 464, 'third_part_bill_download_template');
