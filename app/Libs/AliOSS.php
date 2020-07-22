@@ -37,6 +37,11 @@ class AliOSS
 
     const DIR_CERTIFICATE = 'certificate';//学生证书
 
+    //曲谱制作
+    const DIR_MAKE_OPERA = 'make_opera';    //打谱申请曲谱图片上传
+
+
+
     private function gmt_iso8601($time) {
         $dtStr = date("c", $time);
         $mydatetime = new DateTime($dtStr);
@@ -383,6 +388,7 @@ class AliOSS
             self::DIR_APP_BANNER,
             self::DIR_REFERRAL_ACTIVITY,
             self::DIR_CERTIFICATE,
+            self::DIR_MAKE_OPERA,
         ];
         if (!in_array($dirType, $typeConstants)) {
             return null;

@@ -9,6 +9,7 @@
 namespace App\Routers;
 
 
+use App\Controllers\StudentWX\MakeOpera;
 use App\Controllers\StudentWX\PlayReport;
 use App\Controllers\StudentWX\Area;
 use App\Controllers\StudentWX\Pay;
@@ -214,5 +215,12 @@ class StudentWXRouter extends RouterBase
             'call' => Student::class . ':classInformation',
             'middles' => []
         ],
+
+        //曲谱制作
+        '/student_wx/make_opera/schedule_query' => ['method' => ['get'], 'call' => MakeOpera::class . ':scheduleQuery'],
+        '/student_wx/make_opera/opera_apply' => ['method' => ['post'], 'call' => MakeOpera::class . ':operaApply'],
+        '/student_wx/make_opera/cancel' => ['method' => ['get'], 'call' => MakeOpera::class . ':cancel'],
+        '/student_wx/make_opera/history' => ['method' => ['get'], 'call' => MakeOpera::class . ':history'],
+        '/student_wx/make_opera/opera_detail' => ['method' => ['get'], 'call' => MakeOpera::class . ':operaDetail'],
     ];
 }

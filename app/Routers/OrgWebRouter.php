@@ -29,6 +29,7 @@ use App\Controllers\OrgWeb\CommunitySharePoster;
 use App\Controllers\OrgWeb\Dept;
 use App\Controllers\OrgWeb\Erp;
 use App\Controllers\OrgWeb\Flags;
+use App\Controllers\OrgWeb\MakeOpera;
 use App\Controllers\OrgWeb\PersonalLink;
 use App\Controllers\OrgWeb\PlayRecord;
 use App\Controllers\OrgWeb\PosterTemplate;
@@ -468,6 +469,21 @@ class OrgWebRouter extends RouterBase
         '/org_web/student_certificate/add' => ['method' => ['post'], 'call' => StudentCertificate::class . ':add'],
         // 专属售卖链接
         '/org_web/personal_link/list' => ['method' => ['get'], 'call' => PersonalLink::class . ':list'],
-        '/org_web/personal_link/create' => ['method' => ['post'], 'call' => PersonalLink::class . ':create']
+        '/org_web/personal_link/create' => ['method' => ['post'], 'call' => PersonalLink::class . ':create'],
+
+        //曲谱制作
+        '/org_web/make_opera/user_info' => ['method' => ['get'], 'call' => MakeOpera::class . ':userInfo'],
+        '/org_web/make_opera/schedule_query' => ['method' => ['get'], 'call' => MakeOpera::class . ':scheduleQuery'],
+        '/org_web/make_opera/opera_apply' => ['method' => ['post'], 'call' => MakeOpera::class . ':operaApply'],
+        '/org_web/make_opera/history' => ['method' => ['get'], 'call' => MakeOpera::class . ':history'],
+        '/org_web/make_opera/opera_detail' => ['method' => ['get'], 'call' => MakeOpera::class . ':operaDetail'],
+        '/org_web/make_opera/cancel' => ['method' => ['get'], 'call' => MakeOpera::class . ':cancel'],
+        '/org_web/make_opera/swo_list' => ['method' => ['get'], 'call' => MakeOpera::class . ':swoList'],
+        '/org_web/make_opera/get_role_list' => ['method' => ['get'], 'call' => MakeOpera::class . ':getRoleList'],
+        '/org_web/make_opera/distribute_maker_configure' => ['method' => ['post'], 'call' => MakeOpera::class . ':distributeMakerConfigure'],
+        '/org_web/make_opera/swo_approve' => ['method' => ['post'], 'call' => MakeOpera::class . ':swoApprove'],
+        '/org_web/make_opera/make_start' => ['method' => ['get'], 'call' => MakeOpera::class . ':makeStart'],
+        '/org_web/make_opera/make_end' => ['method' => ['post'], 'call' => MakeOpera::class . ':makeEnd'],
+        '/org_web/make_opera/opera_use' => ['method' => ['post'], 'call' => MakeOpera::class . ':operaUse'],
     ];
 }

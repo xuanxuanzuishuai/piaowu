@@ -768,4 +768,44 @@ class StudentModel extends Model
                 's.uuid' => $uuIdList
             ]);
     }
+
+    /**
+     * 根据id获取学生记录和工单信息
+     * @param $studentId
+     * @return array
+     */
+    public static function getStudentAndSwoById($studentId)
+    {
+        $student = self::$table;
+        $studentWorkOrder = StudentWorkOrderModel::$table;
+
+        //定义sql语句
+        $table = " FROM {$student} AS `s` ";
+        $select  = " SELECT `s`.`id` AS user_id,
+                       `s`.`mobile`,
+                       `s`.`sub_end_date`,
+                       `s`.`has_review_course`,
+                       `swo`.`id` AS swo_id,
+                       `swo`.`update_time`,
+                       `swo`.`refuse_msg`,
+                       `swo`.`estimate_day`,
+                       `swo`.`view_guidance`,
+                       `swo`.`status` AS swo_status";
+        $join = " LEFT JOIN {$studentWorkOrder} AS `swo` ON `s`.`id` = `swo`.`student_id`";
+        $where = " where s.status = 1 AND s.id = {$studentId} ORDER BY `swo`.`id` DESC LIMIT 1";
+        $sql = $select . $table . $join . $where;
+        return MysqlDB::getDB()->queryAll($sql);
+    }
+
+    /**
+     * @param $where
+     * @param array $files
+     * @return mixed
+     * 根据条件获取单条用户记录
+     */
+    public static function getSingleStudentInfo($where,$files=[])
+    {
+        return self::getRecord($where,$files);
+    }
+
 }

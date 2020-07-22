@@ -316,4 +316,20 @@ class EmployeeModel extends Model
 
         return [$records, $total];
     }
+
+    /**
+     * @param $roleId
+     * @return array
+     * 获取对应角色的员工信息
+     */
+    public static function getEmployeeByRole($roleId)
+    {
+        return self::getRecords(
+            [
+                'role_id' => $roleId,
+                'status' => self::STATUS_NORMAL
+            ],
+            ['id', 'name','role_id']
+        );
+    }
 }
