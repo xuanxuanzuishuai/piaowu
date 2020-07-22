@@ -334,13 +334,15 @@ class PayServices
 
         $in = Util::buildSqlIn($mobile);
 
+        $pin = Util::buildSqlIn($trialPackageIds);
+
         $s = StudentModel::$table;
         $g = GiftCodeModel::$table;
 
         $db = MysqlDB::getDB();
 
         return $db->queryAll("select s.mobile from {$g} g inner join {$s} s on s.id = g.buyer 
-                    where s.mobile in ({$in}) group by s.mobile");
+                    where s.mobile in ({$in}) and g.bill_package_id in ({$pin}) group by s.mobile");
     }
 
     /**
