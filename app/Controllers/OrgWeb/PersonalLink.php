@@ -11,6 +11,7 @@ namespace App\Controllers\OrgWeb;
 use App\Controllers\ControllerBase;
 use App\Libs\HttpHelper;
 use App\Libs\Valid;
+use App\Libs\WeChat\WeChatMiniPro;
 use App\Services\PersonalLinkService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -56,7 +57,12 @@ class PersonalLink extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         $employeeId = $this->ci['employee']['id'];
-        $link = PersonalLinkService::createPersonalLink($employeeId, $params['package_id']);
+        $url = PersonalLinkService::createPersonalLink($employeeId, $params['package_id']);
+        $link = WeChatMiniPro::factory([
+            'app_id' => $_ENV['STUDENT_WEIXIN_APP_ID'],
+            'app_secret' => $_ENV['STUDENT_WEIXIN_APP_SECRET'],
+        ])->getShortUrl($url);
+        empty($link) && $link = $url;
         return HttpHelper::buildResponse($response, [
             'link' => $link,
         ]);

@@ -21,6 +21,17 @@ VALUES
 		@parentMenuId,
 		'personal_sale_link',
 	1
+	),
+	(
+		'生成售卖包的专属链接',
+		'/org_web/personal_link/create',
+		1595315136,
+		'post',
+		0,
+		'',
+		@parentMenuId,
+		'create_personal_link',
+	1
 	);
 
 INSERT INTO `dict` (
@@ -39,4 +50,4 @@ VALUES
 
 ALTER TABLE `gift_code`
 ADD COLUMN `employee_uuid` varchar(32) NULL COMMENT '员工的uuid' AFTER `bill_package_id`,
-ADD COLUMN `employee_dept_info` varchar(32) NULL COMMENT '员工的部门信息' AFTER `employee_uuid`;
+ADD COLUMN `employee_dept_info` varchar(32) NULL COMMENT '员工的部门信息,例:部门,大区,组' AFTER `employee_uuid`;
