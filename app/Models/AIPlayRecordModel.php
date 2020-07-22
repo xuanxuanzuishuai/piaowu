@@ -178,28 +178,37 @@ GROUP BY FROM_UNIXTIME(end_time, '%Y%m%d');";
      */
     public static function getLessonPlayRank($lessonId)
     {
-        $sql = "SELECT
-    *
+        $sql = "SELECT 
+    apr.id AS play_id,
+    apr.score_final AS score,
+    apr.lesson_id,
+    apr.student_id,
+    apr.record_id AS ai_record_id,
+    s.name
 FROM
-    (SELECT
-        apr.id AS play_id,
-            apr.score_final AS score,
-            apr.lesson_id,
-            apr.student_id,
-            apr.record_id AS ai_record_id,
-            s.name
+    (SELECT 
+        MAX(ta.score_final) AS max_score, ta.student_id AS sid
     FROM
-        ai_play_record AS apr
-    LEFT JOIN student s ON apr.student_id = s.id
+        ai_play_record AS ta
     WHERE
-        apr.lesson_id = :lesson_id
-            AND apr.ui_entry = :ui_entry
-            AND apr.is_phrase = :is_phrase
-            AND apr.hand = :hand
-            AND apr.score_final >= :rank_base_score
-    ORDER BY apr.score_final DESC) t
-GROUP BY t.student_id
-ORDER BY score DESC
+        ta.lesson_id = :lesson_id
+            AND ta.ui_entry = :ui_entry
+            AND ta.is_phrase = :is_phrase
+            AND ta.hand = :hand
+            AND ta.score_final >= :rank_base_score
+    GROUP BY ta.student_id) tmp
+        INNER JOIN
+    ai_play_record AS apr ON apr.score_final = tmp.max_score
+        AND apr.student_id = tmp.sid
+        INNER JOIN
+    student AS s ON s.id = tmp.sid
+WHERE
+    apr.lesson_id = :lesson_id
+        AND apr.ui_entry = :ui_entry
+        AND apr.is_phrase = :is_phrase
+        AND apr.hand = :hand
+        AND apr.score_final >= :rank_base_score
+ORDER BY apr.score_final DESC
 LIMIT :rank_limit;";
 
         $map = [
