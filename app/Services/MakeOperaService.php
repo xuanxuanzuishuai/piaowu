@@ -10,6 +10,7 @@ namespace App\Services;
 
 
 use App\Libs\AliOSS;
+use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
 use App\Libs\UserCenter;
@@ -51,9 +52,6 @@ class MakeOperaService
     const COURSE_MANAGER= 36;
     const MAKER= 37;
     const CONFIG= 38;
-
-    //微信推送模板ID
-    const TemplateId = 'mAOTPhrPgGYgw2eOjBBdDGAadf4FEoqoaRs1VGWTl2Y';
 
     /**
      * @param $studentId
@@ -322,7 +320,7 @@ class MakeOperaService
             'create_time(apply_time)',
             'student_opera_name(open_name)'
         ];
-        $swoList  = StudentWorkOrderModel::getSwoListByStudentId($where,$files)??[];
+        $swoList  = StudentWorkOrderModel::getRecords($where,$files)??[];
         $total = StudentWorkOrderModel::getTotalNum($where)??0;
         return [$swoList,$total];
     }
@@ -818,10 +816,9 @@ class MakeOperaService
                 'color'=>'#FF8A00',
             ]
         ];
-        $url = 'https://dss-weixin-pre.xiongmaopeilian.com/student/makeScore';
-        WeChatService::notifyUserWeixinTemplateInfo(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT, UserWeixinModel::USER_TYPE_STUDENT, $studentWxInfo['open_id'], self::TemplateId, $pushData, $url);
+        $url = DictConstants::get(DictConstants::MAKE_OPERA_TEMPLATE,'status_url');
+        $templateId = DictConstants::get(DictConstants::MAKE_OPERA_TEMPLATE,'template_id');
+        WeChatService::notifyUserWeixinTemplateInfo(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT, UserWeixinModel::USER_TYPE_STUDENT, $studentWxInfo['open_id'], $templateId, $pushData, $url);
         return true;
     }
-
 }
-

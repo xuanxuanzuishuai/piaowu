@@ -46,31 +46,10 @@ class StudentWorkOrderModel extends Model
     }
 
     /**
-     * @param $data
-     * @param $ids
-     * @return int|null
-     * 根据Id批量更新记录信息
-     */
-    public static function UpdateSwoByIds($data,$ids)
-    {
-        $where = [
-            'id'=>$ids
-        ];
-        return self::batchUpdateRecord($data,$where,$isOrg = false);
-    }
-
-
-    /**
-     * @param $where
-     * @param array $files
+     * @param $params
      * @return array
-     * 根据学员ID获取所有历史工单信息
+     * 根据指定条件查询工单信息
      */
-    public static function getSwoListByStudentId($where,$files=[])
-    {
-        return self::getRecords($where,$files);
-    }
-
     public static function getSwoDetailList($params)
     {
         $studentWorkOrder = self::$table;

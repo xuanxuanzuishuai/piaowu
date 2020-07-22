@@ -362,6 +362,15 @@ class DictConstants {
         'keys' => ['package_id']
     ];
 
+    //打谱申请模板和跳转详情页链接
+    const MAKE_OPERA_TEMPLATE= [
+        'type' => 'make_opera_template',
+        'keys' => [
+            'status_url',
+            'template_id',
+        ]
+    ];
+
     public static function get($type, $key)
     {
         if (empty($type) || empty($key)) {

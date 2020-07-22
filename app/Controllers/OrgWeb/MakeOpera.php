@@ -35,7 +35,6 @@ class MakeOpera extends ControllerBase
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        //获取用户信息
         $userInfo = MakeOperaService::getStudentInfo($params);
         return $response->withJson([
             'code' => 0,
@@ -106,13 +105,11 @@ class MakeOpera extends ControllerBase
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        //写入数据
         try {
             $swoId = MakeOperaService::getSwoId($params);
         } catch (RunTimeException $e) {
             return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData());
         }
-        //返回数据
         return HttpHelper::buildResponse($response, ["swo_id"=>$swoId]);
     }
 
@@ -136,14 +133,11 @@ class MakeOpera extends ControllerBase
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-
-        //更新数据
         try {
             $updateSwo = MakeOperaService::cancelSwo($params);
         } catch (RunTimeException $e) {
             return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData());
         }
-        //返回数据
         return HttpHelper::buildResponse($response, $updateSwo);
     }
 
@@ -155,10 +149,8 @@ class MakeOpera extends ControllerBase
      */
     public function history(Request $request, Response $response)
     {
-        //接收数据
         $studentId = $request->getParam('student_id');
         $params = $request->getParams();
-        //获取用户打谱申请记录
         list($list,$totalNum) = MakeOperaService::getHistoryList($studentId, $params['page'], $params['limit']);
         return $response->withJson([
             'code' => 0,
@@ -206,7 +198,6 @@ class MakeOpera extends ControllerBase
     public function swoList(Request $request, Response $response)
     {
         $params = $request->getParams();
-        //获取工单列表
         list($list,$totalNum) = MakeOperaService::getSwoList($params);
         return $response->withJson([
             'code' => 0,
@@ -269,11 +260,8 @@ class MakeOpera extends ControllerBase
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        //分配制作人和配置人
         $ret = MakeOperaService::distributeTask($params);
-        //返回数据
         return HttpHelper::buildResponse($response, ["updateRows"=>$ret]);
-
     }
 
     /**
@@ -302,13 +290,11 @@ class MakeOpera extends ControllerBase
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        //审核操作更新工单状态和节点状态
         try {
             MakeOperaService::swoApprove($params);
         }catch (RunTimeException $e){
             return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData());
         }
-        //返回数据
         return HttpHelper::buildResponse($response,[]);
     }
 
@@ -333,13 +319,11 @@ class MakeOpera extends ControllerBase
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        //开始制作
         try {
             MakeOperaService::start($params);
         }catch (RunTimeException $e){
             return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData());
         }
-        //返回数据
         return HttpHelper::buildResponse($response,[]);
     }
 
@@ -379,15 +363,12 @@ class MakeOpera extends ControllerBase
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        //制作完成
         try {
             MakeOperaService::complete($params);
         }catch (RunTimeException $e){
             return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData());
         }
-        //返回数据
         return HttpHelper::buildResponse($response,[]);
-
     }
 
     /**
@@ -416,13 +397,11 @@ class MakeOpera extends ControllerBase
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        //启用曲谱
         try {
             MakeOperaService::useStart($params);
         }catch (RunTimeException $e){
             return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData());
         }
-        //返回数据
         return HttpHelper::buildResponse($response,[]);
     }
 }
