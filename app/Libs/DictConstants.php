@@ -89,6 +89,8 @@ class DictConstants {
         'keys' => [
             'assistant_role',
             'course_manage_role',
+            'maker_role',
+            'config_role'
         ]
     ];
 
@@ -367,7 +369,7 @@ class DictConstants {
         'type' => 'make_opera_template',
         'keys' => [
             'status_url',
-            'template_id',
+            'template_id'
         ]
     ];
 

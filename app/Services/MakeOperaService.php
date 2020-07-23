@@ -27,8 +27,6 @@ class MakeOperaService
     const USER_STATUS_REGISTER=1;
     const USER_STATUS_TRY_TIME_END=2;
     const USER_STATUS_PAY_TIME_END=3;
-    const USER_STATUS_TRY_COUNT_END=4;
-    const USER_STATUS_PENDING_NEXT_APPLY=5;
 
     //工单状态
     const SWO_STATUS_PENDING_APPROVAL= 1;
@@ -46,12 +44,6 @@ class MakeOperaService
     //工单节点
     const IS_NOT_CUR= 0;
     const IS_CUR= 1;
-
-    //RoleId
-    const ASSISTANT= 33;
-    const COURSE_MANAGER= 36;
-    const MAKER= 37;
-    const CONFIG= 38;
 
     /**
      * @param $studentId
@@ -400,11 +392,16 @@ class MakeOperaService
      */
     public static function getMakerConfigList($employeeId)
     {
+        $assistantRoleId = DictConstants::get(DictConstants::ORG_WEB_CONFIG,'assistant_role');
+        $courseManagerRoleId = DictConstants::get(DictConstants::ORG_WEB_CONFIG,'course_manage_role');
+        $makerRoleId = DictConstants::get(DictConstants::MAKE_OPERA_TEMPLATE,'maker_role');
+        $configRoleId = DictConstants::get(DictConstants::MAKE_OPERA_TEMPLATE,'config_role');
+
         $roleIdList = [
-            self::ASSISTANT,
-            self::COURSE_MANAGER,
-            self::MAKER,
-            self::CONFIG
+            $assistantRoleId,
+            $courseManagerRoleId,
+            $makerRoleId,
+            $configRoleId
         ];
         $makerConfigList = EmployeeModel::getEmployeeByRole($roleIdList);
         if (empty($makerConfigList)){
@@ -412,16 +409,16 @@ class MakeOperaService
         }
         foreach ($makerConfigList as $value){
             switch ($value['role_id']){
-                case self::ASSISTANT:
+                case $assistantRoleId:
                     $data['assistantList'][]=$value;
                     break;
-                case self::COURSE_MANAGER:
+                case $courseManagerRoleId:
                     $data['managerList'][]=$value;
                     break;
-                case self::MAKER:
+                case $makerRoleId:
                     $data['makerList'][]=$value;
                     break;
-                case self::CONFIG:
+                case $configRoleId:
                     $data['configList'][]=$value;
                     break;
             }
@@ -434,9 +431,9 @@ class MakeOperaService
                 'name'=>$employeeInfo[0]['name'],
                 'role_id'=>$employeeInfo[0]['role_id'],
             ];
-            if ($employeeInfo[0]['role_id'] == self::ASSISTANT){
+            if ($employeeInfo[0]['role_id'] == $assistantRoleId){
                 $data['assistantList']= [$loginUser];
-            }elseif ($employeeInfo[0]['role_id'] == self::COURSE_MANAGER){
+            }elseif ($employeeInfo[0]['role_id'] == $courseManagerRoleId){
                 $data['managerList'] = [$loginUser];
             }
         }

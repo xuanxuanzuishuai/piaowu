@@ -50,6 +50,8 @@ INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES
 ('swo_status', '工单状态', '5', '配置中', '配置中'),
 ('swo_status', '工单状态', '6', '已完成', '已完成'),
 ('swo_status', '工单状态', '7', '已撤销', '已撤销'),
+('ORG_WEB_CONFIG', '制作人角色ID', 'maker_role', '41', '制作人角色ID'),
+('ORG_WEB_CONFIG', '配置人角色ID', 'config_role', '42', '制作人角色ID'),
 ('make_opera_template', '微信打谱进度通知模板跳转链接', 'status_url', 'https://dss-weixin.xiongmaopeilian.com/student/makeScore', '微信打谱进度通知模板跳转链接'),
 ('make_opera_template', '微信打谱进度通知模板ID', 'template_id', 'G1hleUfvk7_lEi-Y5-2m5YBROuuySpwmQz9JcgmTHtM', '微信打谱进度通知模板ID');
 
