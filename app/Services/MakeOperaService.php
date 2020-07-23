@@ -27,6 +27,8 @@ class MakeOperaService
     const USER_STATUS_REGISTER=1;
     const USER_STATUS_TRY_TIME_END=2;
     const USER_STATUS_PAY_TIME_END=3;
+    const USER_STATUS_TRY_COUNT_END=4;
+    const USER_STATUS_PENDING_NEXT_APPLY=5;
 
     //工单状态
     const SWO_STATUS_PENDING_APPROVAL= 1;
@@ -86,14 +88,14 @@ class MakeOperaService
                 $ret['user_status'] = self::USER_STATUS_REGISTER;
                 break;
             case 1:
-                if (time()>$studentAndSwoInfo['sub_end_date']){
+                if (!StudentServiceForApp::getSubStatus($studentAndSwoInfo['user_id'])){
                     $ret['user_status'] = self::USER_STATUS_TRY_TIME_END;
                 }else{
                     $ret['apply_permission'] = true;
                 }
                 break;
             case 2:
-                if (time()>$studentAndSwoInfo['sub_end_date']){
+                if (!StudentServiceForApp::getSubStatus($studentAndSwoInfo['user_id'])){
                     $ret['user_status'] = self::USER_STATUS_PAY_TIME_END;
                 }else{
                     $ret['apply_permission'] = true;
@@ -133,7 +135,7 @@ class MakeOperaService
                 break;
             case 2:
                 if ($studentAndSwoInfo['swo_status'] == self::SWO_STATUS_COMPLETE){
-                    if (time()>$studentAndSwoInfo['sub_end_date']){
+                    if (!StudentServiceForApp::getSubStatus($studentAndSwoInfo['user_id'])){
                         $ret['user_status'] = self::USER_STATUS_PAY_TIME_END;
                     }
                     if (time()<= strtotime("$time+7 day")){
@@ -394,8 +396,8 @@ class MakeOperaService
     {
         $assistantRoleId = DictConstants::get(DictConstants::ORG_WEB_CONFIG,'assistant_role');
         $courseManagerRoleId = DictConstants::get(DictConstants::ORG_WEB_CONFIG,'course_manage_role');
-        $makerRoleId = DictConstants::get(DictConstants::MAKE_OPERA_TEMPLATE,'maker_role');
-        $configRoleId = DictConstants::get(DictConstants::MAKE_OPERA_TEMPLATE,'config_role');
+        $makerRoleId = DictConstants::get(DictConstants::ORG_WEB_CONFIG,'maker_role');
+        $configRoleId = DictConstants::get(DictConstants::ORG_WEB_CONFIG,'config_role');
 
         $roleIdList = [
             $assistantRoleId,
