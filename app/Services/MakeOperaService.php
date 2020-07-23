@@ -126,7 +126,7 @@ class MakeOperaService
             "swo_status" =>$studentAndSwoInfo['swo_status'],
             "refuse_msg" =>$studentAndSwoInfo['refuse_msg'],
             "view_guidance" =>$studentAndSwoInfo['view_guidance'],
-            "estimate_day" => date("Y年m月d日",$studentAndSwoInfo['estimate_day']),
+            "estimate_day" => date("Y年m月d日",strtotime($studentAndSwoInfo['estimate_day'])),
             "next_apply_time" => '',
         ];
 
@@ -168,16 +168,6 @@ class MakeOperaService
 
         $studentInfo = StudentModel::getRecord(['id'=>$params['student_id']],['id','assistant_id','course_manage_id'],false);
 
-        //获取图片真实链接
-        foreach ($params['opera_images'] as $key => $value){
-            if (is_array($value)){
-                foreach ($value as $k => $v){
-                    $params['opera_images']['opera_imgs'][$k] = AliOSS::signUrls($v);
-                }
-            }else{
-                $params['opera_images'][$key] = AliOSS::signUrls($value);
-            }
-        }
         $insertData = [
             'student_id' => $params['student_id'],
             'student_opera_name' => $params['opera_name'],
@@ -337,6 +327,16 @@ class MakeOperaService
             return [];
         }
         $operaInfo['opera_images'] = unserialize($operaInfo['opera_images']);
+        //获取图片真实链接
+        foreach ($operaInfo['opera_images'] as $key => $value){
+            if (is_array($value)){
+                foreach ($value as $k => $v){
+                    $operaInfo['opera_images']['opera_imgs'][$k] = AliOSS::signUrls($v);
+                }
+            }else{
+                $operaInfo['opera_images'][$key] = AliOSS::signUrls($value);
+            }
+        }
         return $operaInfo;
     }
 
@@ -773,18 +773,21 @@ class MakeOperaService
     public static function pushMakingSchedule($swoId)
     {
         $swoMap = [
+            1=>'待审核',
             2=>'未通过',
             3=>'已通过',
             4=>'制作中',
+            5=>'配置中',
             6=>'已完成',
+            7=>'已撤销',
         ];
-        $swoInfo = StudentWorkOrderModel::getRecord(['id'=>$swoId],['student_id',['status','student_opera_name']],false);
+        $swoInfo = StudentWorkOrderModel::getRecord(['id'=>$swoId],['student_id','status','student_opera_name'],false);
         if (empty($swoInfo) || !isset($swoMap[$swoInfo['status']])){
             return false;
         }
         //获取用户的openID
         $where=[
-            'user_id'=>$swoId['student_id'],
+            'user_id'=>$swoInfo['student_id'],
             'user_type'=>UserWeixinModel::USER_TYPE_STUDENT,
             'status'=>1,
             'app_id'=>UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT
