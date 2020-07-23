@@ -25,6 +25,8 @@ class CreditService
     const EVERY_DAY_ACTIVITY_COMPLETE_STATUS = 'every_day_activity_complete_status';
     //每日任务上报情况
     const EVERY_DAY_ACTIVITY_REPORT_STATUS = 'every_day_activity_report_status';
+    //并发锁
+    const CONCURRENCY_LOCK_KEY = 'concurrency_lock_key';
     //签到活动
     const SIGN_IN_TASKS = 'sign_in_tasks';
     //练琴活动
@@ -301,15 +303,24 @@ class CreditService
         if (!in_array($type, self::getAllReportType())) {
             throw new RunTimeException(['not_support_type']);
         }
-        //记录上报情况
-        self::recordActivityReport($type, $activityData);
-        //检测是否满足可上报的基础条件(每日完成x次行为，奖励x音符，每天最多奖励x次),检测x次行为是否达到
-        if (self::judgeUserReportData($type, $activityData)) {
-            $action = self::getActivityClass($type) . 'Action';
-            return self::$action($activityData);
+        //并发处理
+        $cacheKey = self::CONCURRENCY_LOCK_KEY . '_' . date('Y-m-d') . '_' . $activityData['student_id'] . '_' . $type;
+        $redis = RedisDB::getConn();
+        $result = NULL;
+        if ($redis->setnx($cacheKey, 1)) {
+            $redis->expire($cacheKey, 5);
+            //记录上报情况 
+            self::recordActivityReport($type, $activityData);
+            //并发处理
+            //检测是否满足可上报的基础条件(每日完成x次行为，奖励x音符，每天最多奖励x次),检测x次行为是否达到
+            if (self::judgeUserReportData($type, $activityData)) {
+                $action = self::getActivityClass($type) . 'Action';
+                $result = self::$action($activityData);
+            }
+            $redis->del($cacheKey);
+            SimpleLogger::info(['not reach report basic require'], ['type' => $type, 'activity_data' => $activityData]);
         }
-        SimpleLogger::info(['not reach report basic require'], ['type' => $type, 'activity_data' => $activityData]);
-        return ;
+        return $result;
     }
 
     /**
