@@ -61,17 +61,13 @@ class Pay extends ControllerBase
         return $response->withJson($ret, StatusCode::HTTP_OK);
     }
 
-    public function appPackages(Request $request, Response $response)
+    public function appPackages(/** @noinspection PhpUnusedParameterInspection */ Request $request, Response $response)
     {
-        Util::unusedParam($request);
-
-        $packages = PayServices::getPackages($this->ci['student']['id']);
+        $data = PayServices::getAppPackageData($this->ci['student']['id']);
 
         return $response->withJson([
             'code' => 0,
-            'data' => [
-                'packages' => $packages,
-            ]
+            'data' => $data
         ], StatusCode::HTTP_OK);
     }
 

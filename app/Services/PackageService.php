@@ -158,4 +158,48 @@ class PackageService
 
         return false;
     }
+
+    /**
+     * 获取App销售的课包列表
+     * @param bool $hasTrial 是否包含体验课包
+     * @return array
+     */
+    public static function getAppPackages($hasTrial)
+    {
+        $erpPackages = ErpPackageModel::getOnSalePackages(ErpPackageModel::CHANNEL_APP);
+
+        usort($erpPackages, function ($a, $b) {
+            if ($a['oprice'] == $b['oprice']) {
+                return $a['package_id'] > $b['package_id'];
+            }
+            return $a['oprice'] > $b['oprice'];
+        });
+
+        $packages = [];
+        foreach ($erpPackages as $pkg) {
+            if ($pkg['package_type'] == PackageExtModel::PACKAGE_TYPE_TRIAL) {
+                if (!$hasTrial) {
+                    continue;
+                }
+
+                $type = 'trial';
+            } elseif ($pkg['package_type'] == PackageExtModel::PACKAGE_TYPE_NORMAL) {
+                $type = 'normal';
+            } else {
+                $type = '';
+            }
+
+            $packages[] = [
+                'package_id' => $pkg['package_id'],
+                'package_name' => $pkg['package_name'],
+                'price' => strval(round($pkg['sprice'] / 100, 2)),
+                'origin_price' => strval(round($pkg['oprice'] / 100, 2)),
+                'start_time' => $pkg['start_time'],
+                'end_time' => $pkg['end_time'],
+                'type' => $type,
+            ];
+        }
+
+        return $packages;
+    }
 }

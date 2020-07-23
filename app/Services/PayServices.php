@@ -32,48 +32,27 @@ class PayServices
      * @param int $studentId
      * @return array
      */
-    public static function getPackages($studentId)
+    public static function getAppPackageData($studentId)
     {
-        $packages = [];
-
         $student = StudentModelForApp::getById($studentId);
+
+        $hasTrialPackage = ($student['has_review_course'] == ReviewCourseModel::REVIEW_COURSE_NO);
+        $packages = PackageService::getAppPackages($hasTrialPackage);
+
+        $freePackage = null;
         $withFreePackage = StudentServiceForApp::canTrial($student);
         if ($withFreePackage) {
-            $freePackage = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'free_package');
-            $packages[] = json_decode($freePackage, true);
+            $freePackageData = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'free_package');
+            $freePackage = json_decode($freePackageData, true);
+            $freePackage['type'] = 'free';
         }
 
+        $data = [
+            'packages' => $packages,
+            'free_package' => $freePackage,
+        ];
 
-        $erp = new Erp();
-        $ret = $erp->getPackages($student['uuid'], 1);
-        $erpPackages = $ret['data'] ?? [];
-
-        usort($erpPackages, function ($a, $b) {
-            if ($a['oprice'] == $b['oprice']) {
-                return $a['package_id'] > $b['package_id'];
-            }
-            return $a['oprice'] > $b['oprice'];
-        });
-
-        $package49 = DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'package_id');
-
-        foreach ($erpPackages as $pkg) {
-            // 购买过点评课的学生不能够买点评课体验包(49)
-            if ($pkg['package_id'] == $package49 && $student['has_review_course'] != ReviewCourseModel::REVIEW_COURSE_NO) {
-                continue;
-            }
-
-            $packages[] = [
-                'package_id' => $pkg['package_id'],
-                'package_name' => $pkg['package_name'],
-                'price' => $pkg['sprice'] . '元',
-                'origin_price' => $pkg['oprice'] . '元',
-                'start_time' => $pkg['start_time'],
-                'end_time' => $pkg['end_time'],
-            ];
-        }
-
-        return $packages;
+        return $data;
     }
 
     /**
