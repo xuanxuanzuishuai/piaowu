@@ -47,6 +47,9 @@ class MakeOperaService
     const IS_NOT_CUR= 0;
     const IS_CUR= 1;
 
+    const STATUS_NORMAL = 1;
+    const STATUS_DEL = 0;
+
     /**
      * @param $studentId
      * @return array|mixed
@@ -391,8 +394,9 @@ class MakeOperaService
      * @param $employeeId
      * @return array
      * 整理助教，课管，制作人和配置人信息
+     * 登录角色为助教或者课管时，只返回对应角色当前登录用户信息
      */
-    public static function getMakerConfigList($employeeId)
+    public static function getMakerConfigList($employee)
     {
         $assistantRoleId = DictConstants::get(DictConstants::ORG_WEB_CONFIG,'assistant_role');
         $courseManagerRoleId = DictConstants::get(DictConstants::ORG_WEB_CONFIG,'course_manage_role');
@@ -405,7 +409,11 @@ class MakeOperaService
             $makerRoleId,
             $configRoleId
         ];
-        $makerConfigList = EmployeeModel::getEmployeeByRole($roleIdList);
+        $where = [
+            'role_id' => $roleIdList,
+            'status' => self::STATUS_NORMAL
+        ];
+        $makerConfigList = EmployeeModel::getRecords($where,['id', 'name','role_id'],false);
         if (empty($makerConfigList)){
             return [];
         }
@@ -424,19 +432,16 @@ class MakeOperaService
                     $data['configList'][]=$value;
                     break;
             }
+            if ($value['id']==$employee['id']){
+                $temRole = $value;
+            }
         }
 
-        $employeeInfo = EmployeeModel::getEmployeeWithIds($employeeId);
-        if (!empty($employeeId)){
-            $loginUser = [
-                'id' => $employeeId,
-                'name'=>$employeeInfo[0]['name'],
-                'role_id'=>$employeeInfo[0]['role_id'],
-            ];
-            if ($employeeInfo[0]['role_id'] == $assistantRoleId){
-                $data['assistantList']= [$loginUser];
-            }elseif ($employeeInfo[0]['role_id'] == $courseManagerRoleId){
-                $data['managerList'] = [$loginUser];
+        if (isset($temRole) && !empty($temRole)){
+            if ($employee['role_id']==$makerRoleId){
+                $data['makerList']=$temRole;
+            }elseif ($employee['role_id']==$configRoleId){
+                $data['configList']=$temRole;
             }
         }
         return $data??[];
@@ -634,7 +639,7 @@ class MakeOperaService
     {
         //工单如果不是已通过状态，直接返回请求
         $swoInfo = StudentWorkOrderModel::getRecord(['id'=>$params['swo_id']],['status','opera_maker_id']);
-        if (empty($swoInfo) || $swoInfo['status']!= 3 || $swoInfo['opera_maker_id']!= $params['user_id']){
+        if (empty($swoInfo) || $swoInfo['status']!= self::SWO_STATUS_APPROVAL_PASS || $swoInfo['opera_maker_id']!= $params['user_id']){
             throw new RunTimeException(['工单状态不允许或用户权限受限!']);
         }
 
@@ -678,7 +683,7 @@ class MakeOperaService
     {
         //工单如果不是制作中状态，直接返回请求
         $swoInfo = StudentWorkOrderModel::getRecord(['id'=>$params['swo_id']],['status','opera_maker_id']);
-        if (empty($swoInfo) || $swoInfo['status']!= 4 || $swoInfo['opera_maker_id']!= $params['user_id']){
+        if (empty($swoInfo) || $swoInfo['status']!= self::SWO_STATUS_MAKING || $swoInfo['opera_maker_id']!= $params['user_id']){
             throw new RunTimeException(['工单状态不允许或用户权限受限!']);
         }
         $updateSwoData = [
@@ -730,8 +735,8 @@ class MakeOperaService
     public static function useStart($params)
     {
         //工单如果配置中状态，直接返回请求
-        $swoInfo = StudentWorkOrderModel::getRecord(['id'=>$params['swo_id']],['status','opera_maker_id']);
-        if (empty($swoInfo) || $swoInfo['status']!= 5 || $swoInfo['opera_config_id']!= $params['user_id']){
+        $swoInfo = StudentWorkOrderModel::getRecord(['id'=>$params['swo_id']],['status','opera_config_id']);
+        if (empty($swoInfo) || $swoInfo['status']!= self::SWO_STATUS_CONFIG || $swoInfo['opera_config_id']!= $params['user_id']){
             throw new RunTimeException(['工单状态不允许或用户权限受限']);
         }
         $updateSwoData = [

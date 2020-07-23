@@ -216,8 +216,9 @@ class MakeOpera extends ControllerBase
      */
     public function getRoleList(Request $request, Response $response)
     {
-        $employeeId = self::getEmployeeId();
-        $makerAndConfigList = MakeOperaService::getMakerConfigList($employeeId);
+        $employee['id'] = self::getEmployeeId();
+        $employee['role_id'] = self::getRoleId();
+        $makerAndConfigList = MakeOperaService::getMakerConfigList($employee);
         return $response->withJson([
             'code' => 0,
             'data' => $makerAndConfigList
