@@ -6,8 +6,6 @@ CREATE TABLE `student_work_order` (
   `opera_num` int(11) NOT NULL COMMENT '曲谱数',
   `attachment` text NOT NULL COMMENT '附件',
   `status` tinyint(4) NOT NULL DEFAULT '1' COMMENT '1:待审核，2:未通过，3:已通过，4:制作中，5:配置中，6:已完成，7:已撤销',
-  `assistant_id` int(11) NOT NULL DEFAULT '-1' COMMENT '助教id',
-  `course_manage_id` int(11) NOT NULL COMMENT '课管id',
   `creator_id` int(11) NOT NULL DEFAULT '-1' COMMENT '创建人id',
   `creator_name` varchar(255) NOT NULL DEFAULT '' COMMENT '创建人姓名',
   `creator_type` tinyint(4) NOT NULL COMMENT '创建人平台来源',

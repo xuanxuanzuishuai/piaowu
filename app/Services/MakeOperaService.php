@@ -27,8 +27,6 @@ class MakeOperaService
     const USER_STATUS_REGISTER=1;
     const USER_STATUS_TRY_TIME_END=2;
     const USER_STATUS_PAY_TIME_END=3;
-    const USER_STATUS_TRY_COUNT_END=4;
-    const USER_STATUS_PENDING_NEXT_APPLY=5;
 
     //工单状态
     const SWO_STATUS_PENDING_APPROVAL= 1;
@@ -46,6 +44,10 @@ class MakeOperaService
     //工单节点
     const IS_NOT_CUR= 0;
     const IS_CUR= 1;
+
+    //申请平台
+    const APPLY_FROM_WEIXIN= 1;
+    const APPLY_FROM_WEB= 2;
 
     const STATUS_NORMAL = 1;
     const STATUS_DEL = 0;
@@ -158,20 +160,24 @@ class MakeOperaService
      * @return array|int|mixed|string
      * @throws RunTimeException
      * 生成工单记录
+     * 微信服务端最多可以传5张照片，后台最多可以传10张
      */
     public static function getSwoId($params)
     {
+        $operaImgNum = count($params['opera_images']['opera_imgs']);
+
+        if ($params['creator_type']==self::APPLY_FROM_WEIXIN && $operaImgNum>5){
+            throw new RunTimeException(['The number of pictures exceeds the limit.']);
+        }else if($params['creator_type']==self::APPLY_FROM_WEB && $operaImgNum>10){
+            throw new RunTimeException(['The number of pictures exceeds the limit.']);
+        }
+
         $creatorName = self::getCreatorName($params)??'';
-
-        $studentInfo = StudentModel::getRecord(['id'=>$params['student_id']],['id','assistant_id','course_manage_id'],false);
-
         $insertData = [
             'student_id' => $params['student_id'],
             'student_opera_name' => $params['opera_name'],
             'attachment' => serialize($params['opera_images']),
-            'opera_num' => count($params['opera_images']['opera_imgs']),
-            'assistant_id' => $studentInfo['assistant_id']??-1,
-            'course_manage_id' => $studentInfo['course_manage_id']??-1,
+            'opera_num' => $operaImgNum,
             'creator_id' => $params['creator_id'],
             'creator_name' => $creatorName,
             'creator_type' => $params['creator_type'],
@@ -381,7 +387,7 @@ class MakeOperaService
         ];
         $params['page'] = $params['page']??1;
         $params['limit'] = $params['limit']??10;
-        $params['apply_time_sort'] = $params['apply_time_sort']??"DESC";
+        $params['apply_time_sort'] = $params['apply_time_sort']?:"DESC";
         list($list,$totalNum)=StudentWorkOrderModel::getSwoDetailList($params);
         foreach ($list as &$value){
             $value['status_value'] = $swoMap[$value['status']];
@@ -815,7 +821,7 @@ class MakeOperaService
                 'color'=>'#FF8A00',
             ],
             'keyword3'=>[
-                'value'=>$swoMap[$swoId['status']],
+                'value'=>$swoMap[$swoInfo['status']],
                 'color'=>'#FF8A00',
             ],
             'remark'=>[

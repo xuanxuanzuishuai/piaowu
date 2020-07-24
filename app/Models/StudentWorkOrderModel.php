@@ -70,14 +70,16 @@ class StudentWorkOrderModel extends Model
                        `s`.`name` as student_name,
                        `s`.`mobile` as student_mobile,
                        `s`.`has_review_course`,
+                       `s`.`assistant_id`,
+                       `s`.`course_manage_id`,
                        `ass`.`name` as assistant_name,
                        `man`.`name` as course_manage_name,
                        `mak`.`name` as opera_maker_name,
                        `con`.`name`as opera_config_name,
                        concat(`swo`.`textbook_name`,'/',`swo`.`opera_name`) as opera_lib";
         $joinStudent = "JOIN {$student} AS `s` ON `swo`.`student_id` = `s`.`id` AND s.status = 1";
-        $joinAssistant = " LEFT JOIN {$employee} AS `ass` ON `swo`.`assistant_id` = `ass`.`id` AND ass.status = 1";
-        $joinManager = " LEFT JOIN {$employee} AS `man` ON `swo`.`course_manage_id` = `man`.`id` AND man.status = 1";
+        $joinAssistant = " LEFT JOIN {$employee} AS `ass` ON `s`.`assistant_id` = `ass`.`id` AND ass.status = 1";
+        $joinManager = " LEFT JOIN {$employee} AS `man` ON `s`.`course_manage_id` = `man`.`id` AND man.status = 1";
         $joinMaker = " LEFT JOIN {$employee} AS `mak` ON `swo`.`opera_maker_id` = `mak`.`id` AND mak.status = 1";
         $joinConfig = " LEFT JOIN {$employee} AS `con` ON `swo`.`opera_config_id` = `con`.`id` AND con.status = 1";
 
@@ -105,13 +107,11 @@ class StudentWorkOrderModel extends Model
         //根据助教进行搜索
         if(!empty($params['assistant_id'])){
             $joinAssistant .= " AND `ass`.`id` = {$params['assistant_id']}";
-            $where .= " AND `swo`.`assistant_id` = {$params['assistant_id']}";
         }
 
         //根据课管进行搜索
         if(!empty($params['course_manage_id'])){
             $joinManager .= " AND `man`.`id` = {$params['course_manage_id']}";
-            $where .= " AND `swo`.`course_manage_id` = {$params['course_manage_id']}";
         }
 
         //根据曲谱制作人进行搜索
