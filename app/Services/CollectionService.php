@@ -342,7 +342,7 @@ class CollectionService
             $lv['create_time'] = date("Y-m-d H:i", $lv['create_time']);
             $lv['teaching_type_name'] = $packageTypeDict[$lv['teaching_type']] ?? '-';
             $lv['trial_type_name'] = $trialTypeDict[$lv['trial_type']] ?? '-';
-            $lv['task_name'] = $taskInfo[$lv['task_id']]['name'] ?? "未参与活动";
+            $lv['task_name'] = $taskInfo[$lv['task_id']]['name'] ?? "无";
         }
 
         return [$count, $list];
