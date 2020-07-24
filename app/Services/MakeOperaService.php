@@ -467,7 +467,7 @@ class MakeOperaService
             $distributeType=[self::SWO_STATUS_PENDING_APPROVAL,self::SWO_STATUS_APPROVAL_PASS];
             $data = ['opera_maker_id'=>$params['target_id']];
         }else{
-            $distributeType=[self::SWO_STATUS_PENDING_APPROVAL,self::SWO_STATUS_APPROVAL_PASS,self::SWO_STATUS_MAKING];
+            $distributeType=[self::SWO_STATUS_PENDING_APPROVAL,self::SWO_STATUS_APPROVAL_PASS,self::SWO_STATUS_MAKING,self::SWO_STATUS_CONFIG];
             $data = ['opera_config_id'=>$params['target_id']];
         }
         $where = [
