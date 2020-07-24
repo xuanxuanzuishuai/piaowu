@@ -262,7 +262,7 @@ class CollectionService
             $where .= " and a.trial_type=" . (int)$params['trial_type'];
         }
 
-        if ($params['task_id']) {
+        if ($params['task_id'] !== "") {
             $where .= " and a.task_id=" . $params['task_id'];
         }
 
