@@ -119,7 +119,7 @@ class MakeOperaService
     public static function scheduleCheck($ret,$studentAndSwoInfo)
     {
         //工单最后更新时间
-        $time = $studentAndSwoInfo['update_time'];
+        $time = date("Y-m-d",strtotime($studentAndSwoInfo['update_time']));
         $ret['swo'] = [
             "swo_id" => $studentAndSwoInfo['swo_id'],
             "swo_status" =>$studentAndSwoInfo['swo_status'],
@@ -143,9 +143,9 @@ class MakeOperaService
                     if (!StudentServiceForApp::getSubStatus($studentAndSwoInfo['user_id'])){
                         $ret['user_status'] = self::USER_STATUS_PAY_TIME_END;
                     }
-                    if (time()<= strtotime("$time+7 day")){
+                    if (time()<= strtotime("$time+8 day")){
                         $ret['user_status'] = self::USER_STATUS_NORMAL;
-                        $ret['swo']['next_apply_time']= date("Y年m月d日",strtotime("$time+7day"));
+                        $ret['swo']['next_apply_time']= date("Y年m月d日",strtotime("$time+8 day"));
                     }else{
                         $ret['apply_permission'] = true;
                     }
@@ -173,6 +173,7 @@ class MakeOperaService
         }
 
         $creatorName = self::getCreatorName($params)??'';
+        $time = date("Y-m-d H:i:s",time());
         $insertData = [
             'student_id' => $params['student_id'],
             'student_opera_name' => $params['opera_name'],
@@ -182,7 +183,8 @@ class MakeOperaService
             'creator_name' => $creatorName,
             'creator_type' => $params['creator_type'],
             'updator_id' => $params['creator_id'],
-            'update_time' => date("Y-m-d H:i:s",time()),
+            'update_time' => $time,
+            'estimate_day' => $time,
         ];
         $db = MysqlDB::getDB();
         $db->beginTransaction();
@@ -198,9 +200,9 @@ class MakeOperaService
                 'status'=>self::SWO_REPLY_STATUS_PENDING,
                 'is_cur'=>self::IS_CUR,
                 'creator_id'=>$params['creator_id'],
-                'create_time'=> date("Y-m-d H:i:s",time()),
+                'create_time'=> $time,
                 'reply_id'=>-1,
-                'reply_time'=>date("Y-m-d H:i:s",time()),
+                'reply_time'=>$time,
             ],
             [
                 'swo_id'=>$swoId,
@@ -208,9 +210,9 @@ class MakeOperaService
                 'status'=>self::SWO_REPLY_STATUS_PENDING,
                 'is_cur'=>self::IS_NOT_CUR,
                 'creator_id'=>$params['creator_id'],
-                'create_time'=> date("Y-m-d H:i:s",time()),
+                'create_time'=> $time,
                 'reply_id'=>-1,
-                'reply_time'=>date("Y-m-d H:i:s",time()),
+                'reply_time'=> $time,
             ],
         ];
         $swoReplyId = StudentWorkOrderReplayModel::insertRecord($insertSwoReplyData,false);
