@@ -131,7 +131,9 @@ class DictConstants {
             'tts_url',
             'exam_category_ids',
             'play_share_assess_url',
-            'self_test_of_piano_sound'
+            'self_test_of_piano_sound',
+            'trial_package_ios',
+            'trial_package_android',
         ]
     ];
 

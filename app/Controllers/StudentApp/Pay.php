@@ -10,7 +10,6 @@ namespace App\Controllers\StudentApp;
 
 use App\Controllers\ControllerBase;
 use App\Libs\SimpleLogger;
-use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\GiftCodeModel;
 use App\Services\PayServices;
@@ -63,7 +62,7 @@ class Pay extends ControllerBase
 
     public function appPackages(/** @noinspection PhpUnusedParameterInspection */ Request $request, Response $response)
     {
-        $data = PayServices::getAppPackageData($this->ci['student']['id']);
+        $data = PayServices::getAppPackageData($this->ci['student']['id'], $this->ci['platform']);
 
         return $response->withJson([
             'code' => 0,

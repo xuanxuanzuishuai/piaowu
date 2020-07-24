@@ -30,14 +30,30 @@ class PayServices
     /**
      * 获取产品包
      * @param int $studentId
+     * @param $platform
      * @return array
      */
-    public static function getAppPackageData($studentId)
+    public static function getAppPackageData($studentId, $platform)
     {
         $student = StudentModelForApp::getById($studentId);
 
-        $hasTrialPackage = ($student['has_review_course'] == ReviewCourseModel::REVIEW_COURSE_NO);
-        $packages = PackageService::getAppPackages($hasTrialPackage);
+        $excludeTypes = [];
+        if ($student['has_review_course'] != ReviewCourseModel::REVIEW_COURSE_NO) {
+            $excludeTypes []= PackageExtModel::PACKAGE_TYPE_TRIAL;
+        }
+
+        // ios android 使用不同的产品包
+        list($trialPackageIos, $trialPackageAndroid) = DictConstants::getValues(
+            DictConstants::APP_CONFIG_STUDENT,
+            ['trial_package_ios', 'trial_package_android']
+        );
+        $excludeIds = [];
+        if ($platform == 'ios') {
+            $excludeIds []= $trialPackageAndroid;
+        } else {
+            $excludeIds []= $trialPackageIos;
+        }
+        $packages = PackageService::getAppPackages($excludeTypes, $excludeIds);
 
         $freePackage = null;
         $withFreePackage = StudentServiceForApp::canTrial($student);

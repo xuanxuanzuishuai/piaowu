@@ -161,10 +161,11 @@ class PackageService
 
     /**
      * 获取App销售的课包列表
-     * @param bool $hasTrial 是否包含体验课包
+     * @param array $excludeTypes
+     * @param array $excludeIds
      * @return array
      */
-    public static function getAppPackages($hasTrial)
+    public static function getAppPackages($excludeTypes = [], $excludeIds = [])
     {
         $erpPackages = ErpPackageModel::getOnSalePackages(ErpPackageModel::CHANNEL_APP);
 
@@ -177,11 +178,14 @@ class PackageService
 
         $packages = [];
         foreach ($erpPackages as $pkg) {
-            if ($pkg['package_type'] == PackageExtModel::PACKAGE_TYPE_TRIAL) {
-                if (!$hasTrial) {
-                    continue;
-                }
+            if (in_array($pkg['package_id'], $excludeIds)) {
+                continue;
+            }
+            if (in_array($pkg['package_type'], $excludeTypes)) {
+                continue;
+            }
 
+            if ($pkg['package_type'] == PackageExtModel::PACKAGE_TYPE_TRIAL) {
                 $type = 'trial';
             } elseif ($pkg['package_type'] == PackageExtModel::PACKAGE_TYPE_NORMAL) {
                 $type = 'normal';
