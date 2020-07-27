@@ -454,10 +454,10 @@ class MakeOperaService
         }
 
         if (isset($temRole) && !empty($temRole)){
-            if ($employee['role_id']==$makerRoleId){
-                $data['makerList']=$temRole;
-            }elseif ($employee['role_id']==$configRoleId){
-                $data['configList']=$temRole;
+            if ($employee['role_id']==$assistantRoleId){
+                $data['assistantList']=$temRole;
+            }elseif ($employee['role_id']==$courseManagerRoleId){
+                $data['managerList']=$temRole;
             }
         }
         return $data??[];
@@ -498,19 +498,19 @@ class MakeOperaService
         //工单如果不是待审核状态，直接返回请求
         $swoInfo = StudentWorkOrderModel::getRecord(['id'=>$params['swo_id']],['status']);
         if (empty($swoInfo) || $swoInfo['status']!= self::SWO_STATUS_PENDING_APPROVAL){
-            return '';
+            throw new RunTimeException(['工单状态已审核！']);
         }
 
         if ($params['type']==1) {
             //审核通过逻辑
-            if (empty($params['estimate_day'])){
-                return '';
+            if (empty($params['estimate_day']) || $params['estimate_day']<1 || !is_integer($params['estimate_day'])){
+                throw new RunTimeException(['预计完成时间填写有误，请检查后重试！']);
             }
             return self::swoApproveSuccess($params);
         }else{
             //审核拒绝逻辑
             if (empty($params['refuse_msg'])){
-                return '';
+                throw new RunTimeException(['请填写审核未通过原因！']);
             }
             return self::swoApproveFail($params);
         }
