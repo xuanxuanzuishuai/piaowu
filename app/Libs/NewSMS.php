@@ -9,10 +9,15 @@ namespace App\Libs;
 
 use App\Services\CommonServiceForApp;
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
 
 class NewSMS
 {
     const API_SEND = '/api/qxt/send';
+    const API_INT_SEND = '/sms/international/send';
+
+    const DEFAULT_COUNTRY_CODE = '86';
+    const COUNTRY_CODE_PREFIX = '00';
 
     private $url;
 
@@ -21,19 +26,26 @@ class NewSMS
         $this->url = $url;
     }
 
-    private function sendSMS($data)
+    private function sendSMS($data, $useIntApi = false)
     {
         $client = new Client();
 
-        $response = $client->request('POST', $this->url . self::API_SEND, [
-            'body' => json_encode($data),
-            'debug' => false,
-            'headers' => [
-                'Postman-Token' => 'a714ad5f-dce5-a759-b883-e92e6220fe98',
-                'Cache-Control' => 'no-cache',
-                'Content-Type' => 'application/json'
-            ]
-        ]);
+        $api = $useIntApi ? self::API_INT_SEND : self::API_SEND;
+
+        try {
+            $response = $client->request('POST', $this->url . $api, [
+                'body' => json_encode($data),
+                'debug' => false,
+                'headers' => [
+                    'Postman-Token' => 'a714ad5f-dce5-a759-b883-e92e6220fe98',
+                    'Cache-Control' => 'no-cache',
+                    'Content-Type' => 'application/json'
+                ]
+            ]);
+        } catch (GuzzleException $e) {
+            SimpleLogger::error($e->getMessage(), ['code' => 'send sms exception', 'data' => $data]);
+            return false;
+        }
 
         $body = $response->getBody()->getContents();
         $status = $response->getStatusCode();
@@ -49,14 +61,21 @@ class NewSMS
         }
     }
 
-    public function send($sign, $mobile, $content)
+    /**
+     * @param string $sign 签名
+     * @param string $mobile 手机
+     * @param string $content 内容
+     * @param string $countryCode 国家代码
+     * @return bool
+     */
+    public function send($sign, $mobile, $content, $countryCode = self::DEFAULT_COUNTRY_CODE)
     {
         $data = [
             'sign_name' => $sign,
-            'phone_number' => $mobile,
+            'phone_number' => self::COUNTRY_CODE_PREFIX . $countryCode . $mobile,
             'content' => $content,
         ];
-        return self::sendSMS($data);
+        return self::sendSMS($data, $countryCode != self::DEFAULT_COUNTRY_CODE);
     }
 
 
@@ -67,7 +86,6 @@ class NewSMS
      * @param string $sign
      * @return bool
      */
-
     public function sendValidateCode($targetMobile, $msg, $sign)
     {
         $data = [
@@ -178,6 +196,7 @@ class NewSMS
      * 发送参加活动的提醒
      * @param $mobile
      * @param $sign
+     * @param $startTime
      * @return bool
      */
     public function sendAttendActSMS($mobile, $sign, $startTime)

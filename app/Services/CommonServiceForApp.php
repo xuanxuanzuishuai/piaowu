@@ -21,6 +21,9 @@ class CommonServiceForApp
     const VALIDATE_CODE_TIME_CACHE_KEY_PRI = 'v_code_time_';
     const VALIDATE_CODE_EX = 300;
     const VALIDATE_CODE_WAIT_TIME = 60;
+    const INT_VALIDATE_CODE_EX = 600;
+    const INT_VALIDATE_CODE_WAIT_TIME = 120;
+    const DEFAULT_COUNTRY_CODE = '86';
 
     const SIGN_TEACHER_APP = '小叶子';
     const SIGN_STUDENT_APP = '小叶子';
@@ -34,12 +37,14 @@ class CommonServiceForApp
      *
      * @param string $mobile 手机号
      * @param string $sign 短信签名
+     * @param string $countryCode
      * @return null|string
      */
-    public static function sendValidateCode($mobile, $sign)
+    public static function sendValidateCode($mobile, $sign, $countryCode = self::DEFAULT_COUNTRY_CODE)
     {
         $redis = RedisDB::getConn();
-        $sendTimeCacheKey = self::VALIDATE_CODE_TIME_CACHE_KEY_PRI . $mobile;
+        $cacheKey = self::VALIDATE_CODE_CACHE_KEY_PRI . $countryCode . $mobile;
+        $sendTimeCacheKey = self::VALIDATE_CODE_TIME_CACHE_KEY_PRI . $countryCode . $mobile;
         $lastSendTime = $redis->get($sendTimeCacheKey);
 
         $now = time();
@@ -56,8 +61,6 @@ class CommonServiceForApp
             return 'send_validate_code_failure';
         }
 
-        $redis = RedisDB::getConn();
-        $cacheKey = self::VALIDATE_CODE_CACHE_KEY_PRI . $mobile;
         $redis->setex($cacheKey, self::VALIDATE_CODE_EX, $code);
         $redis->setex($sendTimeCacheKey, self::VALIDATE_CODE_WAIT_TIME, $now);
 
