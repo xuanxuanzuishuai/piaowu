@@ -134,17 +134,20 @@ class MakeOperaService
                 $ret['user_status'] = self::USER_STATUS_REGISTER;
                 break;
             case 1:
-                if ($studentAndSwoInfo['swo_status'] == self::SWO_STATUS_COMPLETE){
-                    $ret['user_status'] = self::USER_STATUS_NORMAL;
+                if (!StudentServiceForApp::getSubStatus($studentAndSwoInfo['user_id'])){
+                    $ret['user_status'] = self::USER_STATUS_TRY_TIME_END;
+                }else{
+                    if ($studentAndSwoInfo['swo_status'] == self::SWO_STATUS_COMPLETE){
+                        $ret['user_status'] = self::USER_STATUS_NORMAL;
+                    }
                 }
                 break;
             case 2:
+                if (!StudentServiceForApp::getSubStatus($studentAndSwoInfo['user_id'])){
+                    $ret['user_status'] = self::USER_STATUS_PAY_TIME_END;
+                }
                 if ($studentAndSwoInfo['swo_status'] == self::SWO_STATUS_COMPLETE){
-                    if (!StudentServiceForApp::getSubStatus($studentAndSwoInfo['user_id'])){
-                        $ret['user_status'] = self::USER_STATUS_PAY_TIME_END;
-                    }
                     if (time()<= strtotime("$time+8 day")){
-                        $ret['user_status'] = self::USER_STATUS_NORMAL;
                         $ret['swo']['next_apply_time']= date("Y年m月d日",strtotime("$time+8 day"));
                     }else{
                         $ret['apply_permission'] = true;
@@ -316,6 +319,11 @@ class MakeOperaService
             'student_opera_name(open_name)'
         ];
         $swoList  = StudentWorkOrderModel::getRecords($where,$files)??[];
+        if (!empty($swoList)){
+            foreach ($swoList as $key => $value){
+                $swoList[$key]['apply_time'] = date("Y-m-d H:i",strtotime($value['apply_time']));
+            }
+        }
         $total = StudentWorkOrderModel::getTotalNum($where)??0;
         return [$swoList,$total];
     }
@@ -399,7 +407,7 @@ class MakeOperaService
     }
 
     /**
-     * @param $employeeId
+     * @param $employee
      * @return array
      * 整理助教，课管，制作人和配置人信息
      * 登录角色为助教或者课管时，只返回对应角色当前登录用户信息
@@ -464,7 +472,7 @@ class MakeOperaService
     {
         //判断工单制作人或配置人是否可以更新
         if ($params['type']==1){
-            $distributeType=[self::SWO_STATUS_PENDING_APPROVAL,self::SWO_STATUS_APPROVAL_PASS];
+            $distributeType=[self::SWO_STATUS_PENDING_APPROVAL,self::SWO_STATUS_APPROVAL_PASS,self::SWO_STATUS_MAKING];
             $data = ['opera_maker_id'=>$params['target_id']];
         }else{
             $distributeType=[self::SWO_STATUS_PENDING_APPROVAL,self::SWO_STATUS_APPROVAL_PASS,self::SWO_STATUS_MAKING,self::SWO_STATUS_CONFIG];
