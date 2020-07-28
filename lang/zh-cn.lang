@@ -84,6 +84,7 @@ class_id_student_id_only_one_not_empty='班级ID和学生ID必须一个不为空
 create_class_error='创建班级失败'
 cts_is_required='课程计划信息必填'
 district_code_is_required='请选择区县'
+data_can_not_be_empty='数据不能为空'
 employee_not_exist='雇员不存在'
 employee_pwd_can_not_same='新旧密码不能相同'
 employee_has_logout='员工已退出'

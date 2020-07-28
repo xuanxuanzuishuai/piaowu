@@ -57,6 +57,11 @@ class ThirdPartBillService
             return new RunTimeException([$e->getMessage()]);
         }
 
+        // 检查数据是否为空
+        if(count($data) == 0) {
+            return new RunTimeException(['data_can_not_be_empty', 'import']);
+        }
+
         // 学生手机号重复
         if(count($data) != count(array_unique(array_column($data, 'mobile')))) {
             return new RunTimeException(['mobile_repeat', 'import']);
