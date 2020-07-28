@@ -75,7 +75,35 @@ class NewSMS
             'phone_number' => self::COUNTRY_CODE_PREFIX . $countryCode . $mobile,
             'content' => $content,
         ];
-        return self::sendSMS($data, $countryCode != self::DEFAULT_COUNTRY_CODE);
+        return self::sendSMS($data, !empty($countryCode) && $countryCode != self::DEFAULT_COUNTRY_CODE);
+    }
+
+    /**
+     * @param $sign
+     * @param $mobileData array [['mobile'=>'15900000000','country_code'=>'86'],['mobile'=>'15900000000','country_code'=>'86']]
+     * @param $content
+     * @param string $countryCode
+     * @return bool
+     */
+    public function batchSend($sign, $mobileData, $content, $countryCode = '')
+    {
+        $result = true;
+        foreach ($mobileData as $item) {
+            if (empty($item['country_code']) || $item['country_code'] == self::DEFAULT_COUNTRY_CODE) {
+                $phone_number = $item['mobile'];
+            } else {
+                $phone_number = self::COUNTRY_CODE_PREFIX . $item['country_code'] . $item['mobile'];
+            }
+
+            $data = [
+                'sign_name' => $sign,
+                'phone_number' => $phone_number,
+                'content' => $content,
+            ];
+            $result = self::sendSMS($data, $item['country_code'] != self::DEFAULT_COUNTRY_CODE);
+        }
+        return $result;
+
     }
 
 
@@ -84,28 +112,20 @@ class NewSMS
      * @param $targetMobile
      * @param $msg
      * @param string $sign
+     * @param string $countryCode
      * @return bool
      */
-    public function sendValidateCode($targetMobile, $msg, $sign)
+    public function sendValidateCode($targetMobile, $msg, $sign, $countryCode = '')
     {
-        $data = [
-            'sign_name' => $sign,
-            'phone_number' => $targetMobile,
-            'content' => $msg,
-        ];
-        return self::sendSMS($data);
+        return self::send($sign, $targetMobile, $msg, $countryCode);
     }
 
-    public function sendExchangeGiftCode($targetMobile, $code, $sign)
+    public function sendExchangeGiftCode($targetMobile, $code, $sign, $countryCode = '')
     {
         $msg = "您的激活码为：{$code}。您也可关注微信公众号【小叶子智能陪练】，在【我的账户】查询激活码。";
 
-        $data = [
-            'sign_name' => $sign,
-            'phone_number' => $targetMobile,
-            'content' => $msg,
-        ];
-        return self::sendSMS($data);
+        return self::send($sign, $targetMobile, $msg, $countryCode);
+
     }
 
     public function sendFreeGiftCode($targetMobile, $code, $sign)
@@ -126,9 +146,10 @@ class NewSMS
      * @param $targetMobile
      * @param $sign
      * @param $wechatcs
+     * @param string $countryCode
      * @return bool
      */
-    public function sendEvaluationMessage($targetMobile, $sign, $wechatcs)
+    public function sendEvaluationMessage($targetMobile, $sign, $wechatcs, $countryCode = self::DEFAULT_COUNTRY_CODE)
     {
         $now = time();
         $time = date("Y-m-d", $now);
@@ -149,20 +170,16 @@ class NewSMS
 ※请立即添加助教老师微信：{$wechatcs}，并发送购课手机号。";
         }
 
-        $data = [
-            'sign_name' => $sign,
-            'phone_number' => $targetMobile,
-            'content' => $msg,
-        ];
-        return self::sendSMS($data);
+        return self::send(CommonServiceForApp::SIGN_STUDENT_APP, $targetMobile, $msg);
     }
 
     /**
      * 点评完成通知
      * @param $targetMobile
+     * @param string $countryCode
      * @return bool
      */
-    public function sendReviewCompleteNotify($targetMobile)
+    public function sendReviewCompleteNotify($targetMobile, $countryCode = self::DEFAULT_COUNTRY_CODE)
     {
         $content = "亲爱的小叶子家长您好！您今天的智能陪练课的点评已经生成，快在公众号里查看吧！未关注公众号的用户关注【小叶子智能陪练】公众号并绑定手机号，明天就能收到点评啦~";
         return self::send(CommonServiceForApp::SIGN_STUDENT_APP, $targetMobile, $content);
@@ -174,9 +191,10 @@ class NewSMS
      * @param $targetMobile
      * @param $sign
      * @param $collectionList
+     * @param string $countryCode
      * @return bool
      */
-    public function sendCollectionCompleteNotify($targetMobile, $sign, $collectionList)
+    public function sendCollectionCompleteNotify($targetMobile, $sign, $collectionList, $countryCode = '')
     {
 
         $teachingStartDate = date("Y-m-d", $collectionList['teaching_start_time']);
@@ -184,12 +202,7 @@ class NewSMS
         $week = Util::getShortWeekName($collectionList['teaching_start_time']);
         $days = Util::dateBetweenDays($teachingStartDate, $teachingEndDate);
         $msg = "恭喜您成功购买小叶子智能陪练，开营前邀请您试用智能陪练！请您尽快关注微信公众号【小叶子智能陪练】绑定账号获得APP下载链接，我们的课程将于{$teachingStartDate}（{$week}）开始，时长{$days}天，请您务必查看开营指引【".$collectionList['collection_url']."】。如有疑问，请拨打客服电话：".$_ENV['AI_SERVER_TEL']."。";
-        $data = [
-            'sign_name' => $sign,
-            'phone_number' => $targetMobile,
-            'content' => $msg,
-        ];
-        return self::sendSMS($data);
+        return self::send($sign, $targetMobile, $msg, $countryCode);
     }
 
     /**
@@ -197,17 +210,12 @@ class NewSMS
      * @param $mobile
      * @param $sign
      * @param $startTime
+     * @param string $countryCode
      * @return bool
      */
-    public function sendAttendActSMS($mobile, $sign, $startTime)
+    public function sendAttendActSMS($mobile, $sign, $startTime, $countryCode = '')
     {
         $msg = "您预约的“0元领取3天使用时长”已于{$startTime}开始，请在【小叶子智能陪练】微信号点击【推荐有奖】参加。详情可咨询助教老师";
-
-        $data = [
-            'sign_name' => $sign,
-            'phone_number' => $mobile,
-            'content' => $msg,
-        ];
-        return self::sendSMS($data);
+        return self::batchSend($sign, $mobile, $msg, $countryCode);
     }
 }

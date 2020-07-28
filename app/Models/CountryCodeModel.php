@@ -8,20 +8,25 @@
 
 namespace App\Models;
 
-
+use App\Libs\MysqlDB;
 use App\Libs\RedisDB;
 
 class CountryCodeModel extends Model
 {
     const CACHE_KEY = 'country_code_cache';
     const CACHE_EXPIRE = 86400;
+    const SELECT_STATUS = 1;
 
     public static $table = "country_code";
 
     public static function updateCache()
     {
+        $table = self::$table;
+        $status = self::SELECT_STATUS;
+
         $redis = RedisDB::getConn();
-        $records = self::getRecords(['status' => 1]);
+        $db = MysqlDB::getDB();
+        $records = $db->queryAll("select * from {$table} where status = {$status} ORDER BY CONVERT( name USING gbk ) COLLATE gbk_chinese_ci ASC");
         $cache = json_encode($records);
         $redis->setex(self::CACHE_KEY, self::CACHE_EXPIRE, $cache);
         return $records;

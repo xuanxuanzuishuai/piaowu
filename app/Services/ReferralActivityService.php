@@ -361,7 +361,7 @@ class ReferralActivityService
         if (!empty($attendStudentIds)) {
             $where['id[!]'] = array_unique($attendStudentIds);
         }
-        $students = StudentModel::getRecords($where, ['id', 'mobile']);
+        $students = StudentModel::getRecords($where, ['id', 'mobile', 'country_code']);
         if (empty($students)) {
             throw new RunTimeException(['no_students']);
         }
@@ -399,10 +399,12 @@ class ReferralActivityService
 
         foreach ($students as $student) {
             $i++;
-            $mobiles[] = $student['mobile'];
+            if ($student['country_code'] == NewSMS::DEFAULT_COUNTRY_CODE) {
+                $mobiles[] = $student;
+            }
 
             if ($i >= 1000) {
-                $result = $sms->sendAttendActSMS(implode(',', $mobiles), $sign, $startTime);
+                $result = $sms->sendAttendActSMS($mobiles, $sign, $startTime);
                 $i = 0;
                 $mobiles = [];
                 if ($result) {
@@ -413,7 +415,7 @@ class ReferralActivityService
 
         // 剩余数量小于1000
         if (!empty($mobiles)) {
-            $result = $sms->sendAttendActSMS(implode(',', $mobiles), $sign, $startTime);
+            $result = $sms->sendAttendActSMS($mobiles, $sign, $startTime);
             if ($result) {
                 $successNum += count($mobiles);
             }

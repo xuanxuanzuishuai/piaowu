@@ -511,7 +511,7 @@ class ReviewCourseService
             ]);
 
             $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
-            $sms->sendReviewCompleteNotify($student['mobile']);
+            $sms->sendReviewCompleteNotify($student['mobile'], $student['country_code']);
 
             return "发送成功 微信推送失败: [0] 学生未绑定公众号";
         }
@@ -559,7 +559,7 @@ class ReviewCourseService
             $msg = $result['errmsg'] ?? '';
 
             $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
-            $sms->sendReviewCompleteNotify($student['mobile']);
+            $sms->sendReviewCompleteNotify($student['mobile'], $student['country_code']);
 
             return "发送成功 微信推送失败: [$code] $msg";
         }
@@ -707,7 +707,7 @@ class ReviewCourseService
 
         //发送短信
         $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
-        $sms->sendCollectionCompleteNotify($student['mobile'], CommonServiceForApp::SIGN_STUDENT_APP, $collection);
+        $sms->sendCollectionCompleteNotify($student['mobile'], CommonServiceForApp::SIGN_STUDENT_APP, $collection, $student['country_code']);
 
         $now = time();
         $voiceCall = new VoiceCallTRService(DictConstants::get(DictConstants::VOICE_CALL_CONFIG, 'tianrun_voice_call_host'));

@@ -170,7 +170,7 @@ class Erp extends ControllerBase
             // 换购上线前已经提前发送激活码的用户
             $sms->sendExchangeGiftCode($params['mobile'],
                 implode(',', $giftCodes),
-                CommonServiceForApp::SIGN_STUDENT_APP);
+                CommonServiceForApp::SIGN_STUDENT_APP, $params['country_code']);
         }
 
         if (!empty($package)) {
