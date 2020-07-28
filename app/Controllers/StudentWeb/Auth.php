@@ -5,7 +5,6 @@
  * Date: 2019/4/18
  * Time: 7:48 PM
  */
-
 namespace App\Controllers\StudentWeb;
 
 use App\Controllers\ControllerBase;
@@ -75,7 +74,8 @@ class Auth extends ControllerBase
             $db->beginTransaction();
             $data = StudentServiceForWeb::register($params['mobile'],
                 $params['code'],
-                $params['ref_mobile']);
+                $params['ref_mobile'],
+                $params['country_code']);
             $db->commit();
 
         } catch (RunTimeException $e) {
@@ -164,6 +164,11 @@ class Auth extends ControllerBase
                 'type' => 'regex',
                 'value' => '/^[0-9]{11}$/',
                 'error_code' => 'mobile_format_error'
+            ],
+            [
+                'key' => 'country_code',
+                'type' => 'integer',
+                'error_code' => 'country_code_must_be_integer'
             ]
         ];
 
@@ -175,7 +180,7 @@ class Auth extends ControllerBase
         }
 
         $errorCode = CommonServiceForApp::sendValidateCode($params['mobile'],
-            CommonServiceForApp::SIGN_STUDENT_APP);
+            CommonServiceForApp::SIGN_STUDENT_APP, $params['country_code']);
         if (!empty($errorCode)) {
             $result = Valid::addAppErrors([], $errorCode);
             return $response->withJson($result, StatusCode::HTTP_OK);

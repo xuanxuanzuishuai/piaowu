@@ -39,10 +39,11 @@ class StudentServiceForWeb
      * @param string $mobile 手机号
      * @param int $code 短信验证码
      * @param null $referrerMobile 介绍人手机号
+     * @param $countryCode
      * @return array [0]errorCode [1]登录数据
      * @throws RunTimeException
      */
-    public static function register($mobile, $code, $referrerMobile = null)
+    public static function register($mobile, $code, $referrerMobile = null, $countryCode)
     {
         // 检查验证码
         if (!CommonServiceForApp::checkValidateCode($mobile, $code)) {
@@ -54,7 +55,7 @@ class StudentServiceForWeb
             throw new RunTimeException(['mobile_has_been_registered']);
         }
 
-        list($newStudent) = StudentServiceForApp::studentRegister($mobile, StudentModel::CHANNEL_WEB_REGISTER);
+        list($newStudent) = StudentServiceForApp::studentRegister($mobile, StudentModel::CHANNEL_WEB_REGISTER, $countryCode);
         if (empty($newStudent)) {
             throw new RunTimeException(['student_register_fail']);
         }
