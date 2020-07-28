@@ -206,17 +206,7 @@ class MakeOperaService
                 'create_time'=> $time,
                 'reply_id'=>-1,
                 'reply_time'=>$time,
-            ],
-            [
-                'swo_id'=>$swoId,
-                'swo_status'=>self::SWO_STATUS_APPROVAL_PASS,
-                'status'=>self::SWO_REPLY_STATUS_PENDING,
-                'is_cur'=>self::IS_NOT_CUR,
-                'creator_id'=>$params['creator_id'],
-                'create_time'=> $time,
-                'reply_id'=>-1,
-                'reply_time'=> $time,
-            ],
+            ]
         ];
         $swoReplyId = StudentWorkOrderReplayModel::insertRecord($insertSwoReplyData,false);
         if (empty($swoReplyId)){
@@ -257,16 +247,17 @@ class MakeOperaService
     public static function cancelSwo($params)
     {
         $swoInfo  = StudentWorkOrderModel::getSwoById($params['swo_id'],['id','status']);
+        $time = date("Y-m-d H:i:s",time());
 
         $updateSwoReplyWhere = [
-            'swo_status' => self::SWO_STATUS_APPROVAL_PASS,
+            'swo_status' => $swoInfo['status'],
             'swo_id'=>$params['swo_id']
         ];
         $updateSwoReplyData = [
             'status' => self::SWO_REPLY_STATUS_COMPLETE,
             'is_cur' => self::IS_NOT_CUR,
             'reply_id' => $params['user_id'],
-            'reply_time'=>date("Y-m-d H:i:s")
+            'reply_time'=>$time
         ];
         $insertCancelNode = [
             'swo_id'=>$params['swo_id'],
@@ -274,9 +265,9 @@ class MakeOperaService
             'status'=>self::SWO_REPLY_STATUS_COMPLETE,
             'is_cur'=>self::IS_CUR,
             'creator_id'=>$params['user_id'],
-            'create_time'=>date("Y-m-d H:i:s"),
-            'reply_id'=>-1,
-            'reply_time'=>date("Y-m-d H:i:s"),
+            'create_time'=>$time,
+            'reply_id'=>$params['user_id'],
+            'reply_time'=>$time,
         ];
         //订单只有在开始制作之前才可以撤销
         if ($swoInfo['status']==self::SWO_REPLY_STATUS_PENDING || $swoInfo['status']==self::SWO_STATUS_APPROVAL_PASS){
@@ -455,9 +446,9 @@ class MakeOperaService
 
         if (isset($temRole) && !empty($temRole)){
             if ($employee['role_id']==$assistantRoleId){
-                $data['assistantList']=$temRole;
+                $data['assistantList']=[$temRole];
             }elseif ($employee['role_id']==$courseManagerRoleId){
-                $data['managerList']=$temRole;
+                $data['managerList']=[$temRole];
             }
         }
         return $data??[];
@@ -503,7 +494,10 @@ class MakeOperaService
 
         if ($params['type']==1) {
             //审核通过逻辑
-            if (empty($params['estimate_day']) || $params['estimate_day']<1 || !is_integer($params['estimate_day'])){
+            if (strpos($params['estimate_day'],'.')){
+                throw new RunTimeException(['预计完成时间填写有误，只允许为大于1的正整数！']);
+            }
+            if (empty($params['estimate_day']) || $params['estimate_day']<1){
                 throw new RunTimeException(['预计完成时间填写有误，请检查后重试！']);
             }
             return self::swoApproveSuccess($params);
@@ -525,6 +519,7 @@ class MakeOperaService
     public static function swoApproveSuccess($params)
     {
         $estimate_day = $params['estimate_day']+1;
+        $time = date("Y-m-d H:i:s",time());
         $updateSwoData = [
             'updator_id' => $params['user_id'],
             'update_time' => date("Y-m-d H:i:s"),
@@ -539,21 +534,24 @@ class MakeOperaService
             'status' => self::SWO_REPLY_STATUS_COMPLETE,
             'is_cur' => self::IS_NOT_CUR,
             'reply_id' => $params['user_id'],
-            'reply_time'=>date("Y-m-d H:i:s")
+            'reply_time'=> $time,
         ];
-        $updateSwoReplyNextWhere = [
-            'swo_status' => self::SWO_STATUS_APPROVAL_PASS,
-            'swo_id'=>$params['swo_id']
-        ];
-        $updateSwoReplyNextData = [
-            'is_cur' => self::IS_CUR,
+        $insertSwoReplyData = [
+            'swo_id'=>$params['swo_id'],
+            'swo_status'=>self::SWO_STATUS_APPROVAL_PASS,
+            'status'=>self::SWO_REPLY_STATUS_PENDING,
+            'is_cur'=>self::IS_CUR,
+            'creator_id'=>$params['user_id'],
+            'create_time'=> $time,
+            'reply_id'=>-1,
+            'reply_time'=> $time,
         ];
         $db = MysqlDB::getDB();
         try {
             $db->beginTransaction();
             StudentWorkOrderModel::UpdateSwoById($params['swo_id'],$updateSwoData);
             StudentWorkOrderReplayModel::updateData($updateSwoReplyWhere,$updateSwoReplyData);
-            StudentWorkOrderReplayModel::updateData($updateSwoReplyNextWhere,$updateSwoReplyNextData);
+            StudentWorkOrderReplayModel::insertRecord($insertSwoReplyData,false);
             $db->commit();
         }catch (\Exception $e){
             $db->rollBack();
@@ -571,9 +569,10 @@ class MakeOperaService
      */
     public static function swoApproveFail($params)
     {
+        $time = date("Y-m-d H:i:s",time());
         $updateSwoData = [
             'updator_id' => $params['user_id'],
-            'update_time' => date("Y-m-d H:i:s"),
+            'update_time' => $time,
             'refuse_msg'=>$params['refuse_msg'],
             'status' => self::SWO_STATUS_APPROVAL_FAIL
         ];
@@ -585,7 +584,7 @@ class MakeOperaService
             'status' => self::SWO_REPLY_STATUS_COMPLETE,
             'is_cur' => self::IS_NOT_CUR,
             'reply_id' => $params['user_id'],
-            'reply_time'=>date("Y-m-d H:i:s")
+            'reply_time'=>$time
         ];
         $insertFailNode = [
             'swo_id'=>$params['swo_id'],
@@ -593,9 +592,9 @@ class MakeOperaService
             'status'=>self::SWO_REPLY_STATUS_COMPLETE,
             'is_cur'=>self::IS_CUR,
             'creator_id'=>$params['user_id'],
-            'create_time'=>date("Y-m-d H:i:s"),
-            'reply_id'=>-1,
-            'reply_time'=>date("Y-m-d H:i:s"),
+            'create_time'=>$time,
+            'reply_id'=>$params['user_id'],
+            'reply_time'=>$time,
         ];
 
         $db = MysqlDB::getDB();
@@ -620,6 +619,7 @@ class MakeOperaService
      */
     public static function insertProcessNode($params)
     {
+        $time = date("Y-m-d H:i:s",time());
         $insertData = [
             [
                 'swo_id'=>$params['swo_id'],
@@ -627,9 +627,9 @@ class MakeOperaService
                 'status'=>self::SWO_REPLY_STATUS_PENDING,
                 'is_cur'=>self::IS_CUR,
                 'creator_id'=>$params['user_id'],
-                'create_time'=>date("Y-m-d H:i:s"),
+                'create_time'=> $time,
                 'reply_id'=>-1,
-                'reply_time'=>date("Y-m-d H:i:s"),
+                'reply_time'=> $time,
             ],
             [
                 'swo_id'=>$params['swo_id'],
@@ -637,9 +637,9 @@ class MakeOperaService
                 'status'=>self::SWO_REPLY_STATUS_PENDING,
                 'is_cur'=>self::IS_NOT_CUR,
                 'creator_id'=>$params['user_id'],
-                'create_time'=>date("Y-m-d H:i:s"),
+                'create_time'=> $time,
                 'reply_id'=>-1,
-                'reply_time'=>date("Y-m-d H:i:s"),
+                'reply_time'=> $time,
             ]
         ];
         return StudentWorkOrderReplayModel::insertRecord($insertData,false);
