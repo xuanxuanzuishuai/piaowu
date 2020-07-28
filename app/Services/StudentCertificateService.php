@@ -35,9 +35,10 @@ class StudentCertificateService
         }
         $res['mobile'] = Util::hideUserMobile($studentInfo['mobile']);
         //生成毕业证图片
+        $waterMarkConfig = DictService::getKeyValue(Constants::STUDENT_CERTIFICATE_BASE_IMG, 'water_mark_config');
         $savePath = self::createCertificateWaterMarkAliOss($studentId,
             DictService::getKeyValue(Constants::STUDENT_CERTIFICATE_BASE_IMG, 'graduate'),
-            StudentCertificateModel::STUDENT_CERTIFICATE_WATER_POSITION_CONFIG,
+            json_decode($waterMarkConfig, true),
             [
                 'student_name' => $studentName,
                 'certificate_date' => date('Y年m月', $certificateDate),

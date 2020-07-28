@@ -34,3 +34,7 @@ VALUES
 INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`)
 VALUES
   ('student_certificate_base_img', '学生证书图片底图', 'graduate', 'prod/img/remark_img/jyzs.png', NULL);
+
+INSERT INTO `dict` ( `type`, `key_name`, `key_code`, `key_value`, `desc` )
+VALUES
+	( 'student_certificate_base_img', '学生证书图片底图', 'water_mark_config', '{\"student_name\":{\"x\":210,\"y\":350,\"size\":21,\"type\":\"fangzhengkaiti\",\"color\":\"5a5b58\"},\"certificate_date\":{\"x\":180,\"y\":104,\"size\":14,\"type\":\"fangzhengkaiti\",\"color\":\"5a5b58\"},\"img_height\":595,\"img_width\":842}', '学生毕业证书图片底图水印数据配置' );
