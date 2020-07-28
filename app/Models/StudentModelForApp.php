@@ -91,6 +91,7 @@ class StudentModelForApp extends Model
             self::$table . '.id',
             self::$table . '.uuid',
             self::$table . '.mobile',
+            self::$table . '.country_code',
             self::$table . '.create_time',
             self::$table . '.channel_id',
             self::$table . '.status',

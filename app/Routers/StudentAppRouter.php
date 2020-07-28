@@ -56,6 +56,11 @@ class StudentAppRouter extends RouterBase
             'call' => Auth::class . ':updatePwd',
             'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
         ],
+        '/student_app/app/country_code' => [
+            'method' => ['get'],
+            'call' => App::class . ':countryCode',
+            'middles' => [AppApiForStudent::class]
+        ],
 
         // /student_app/app
         '/student_app/app/version' => [

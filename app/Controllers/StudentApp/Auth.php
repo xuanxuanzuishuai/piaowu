@@ -25,24 +25,6 @@ class Auth extends ControllerBase
     public function login(Request $request, Response $response)
     {
         $params = $request->getParams();
-        $rules = [
-            [
-                'key' => 'mobile',
-                'type' => 'regex',
-                'value' => '/^[0-9]{11}$/',
-                'error_code' => 'mobile_format_error'
-            ],
-            [
-                'key' => 'code',
-                'type' => 'regex',
-                'value' => '/[0-9]{4}/',
-                'error_code' => 'validate_code_error'
-            ],
-        ];
-        $result = Valid::appValidate($params, $rules);
-        if ($result['code'] != Valid::CODE_SUCCESS) {
-            return $response->withJson($result, StatusCode::HTTP_OK);
-        }
 
         if (empty($params['mobile']) && empty($params['code'])) {
             list($errorCode, $loginData) = StudentServiceForApp::anonymousLogin(
@@ -172,12 +154,6 @@ class Auth extends ControllerBase
                 'key' => 'mobile',
                 'type' => 'required',
                 'error_code' => 'user_mobile_is_required'
-            ],
-            [
-                'key' => 'mobile',
-                'type' => 'regex',
-                'value' => '/^[0-9]{11}$/',
-                'error_code' => 'mobile_format_error'
             ]
         ];
 
@@ -189,7 +165,7 @@ class Auth extends ControllerBase
         }
 
         $errorCode = CommonServiceForApp::sendValidateCode($params['mobile'],
-            CommonServiceForApp::SIGN_STUDENT_APP);
+            CommonServiceForApp::SIGN_STUDENT_APP, $params['country_code']);
         if (!empty($errorCode)) {
             $result = Valid::addAppErrors([], $errorCode);
             return $response->withJson($result, StatusCode::HTTP_OK);
@@ -224,9 +200,6 @@ class Auth extends ControllerBase
         }
         if (empty($params['mobile'])) {
             $errorCode = 'user_mobile_is_required';
-        }
-        if (empty($params['code'])) {
-            $errorCode = 'validate_code_is_required';
         }
         if (empty($params['password'])) {
             $errorCode = 'password_is_required';

@@ -16,6 +16,7 @@ use App\Libs\ResponseError;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Libs\Util;
+use App\Models\CountryCodeModel;
 use App\Models\ReferralModel;
 use App\Models\StudentModel;
 use App\Models\StudentModelForApp;
@@ -28,6 +29,7 @@ class StudentServiceForApp
     const VALIDATE_CODE_TIME_CACHE_KEY_PRI = 'v_code_time_';
     const VALIDATE_CODE_EX = 300;
     const VALIDATE_CODE_WAIT_TIME = 60;
+    const DEFAULT_COUNTRY_CODE = '86';
 
     // 体验类型
     const TRIAL_TYPE_NORMAL = 1; // 普通用户
@@ -131,12 +133,12 @@ class StudentServiceForApp
      * @param $countryCode
      * @return array [0]errorCode [1]登录数据
      */
-    public static function login($mobile, $code, $password, $platform, $version, $channelId, $countryCode)
+    public static function login($mobile, $code, $password, $platform, $version, $channelId, $countryCode = '')
     {
 
         if (empty($code) && empty($password)) {
             return ['please_check_the_parameters'];
-        } elseif (!empty($code) && !CommonServiceForApp::checkValidateCode($mobile, $code)) {
+        } elseif (!empty($code) && !CommonServiceForApp::checkValidateCode($mobile, $code, $countryCode)) {
             return ['incorrect_mobile_phone_number_or_verification_code'];
         } elseif (!empty($password) && !CommonServiceForApp::checkPassword($mobile, $password)) {
             return ['password_error'];
@@ -249,7 +251,7 @@ class StudentServiceForApp
     public static function updatePwd($mobile, $code, $paramsPwd)
     {
         // 检查验证码
-        if (!CommonServiceForApp::checkValidateCode($mobile, $code)) {
+        if (!empty($code) && !CommonServiceForApp::checkValidateCode($mobile, $code)) {
             return ['validate_code_error'];
         }
 
@@ -381,10 +383,10 @@ class StudentServiceForApp
      * @param $channel
      * @param $name
      * @param $refereeId
-     * @param null $countryCode
+     * @param $countryCode
      * @return null|array 失败返回null 成功返回['student_id' => x, 'uuid' => x, 'is_new' => x]
      */
-    public static function studentRegister($mobile, $channel, $name = null, $refereeId = null, $countryCode = null)
+    public static function studentRegister($mobile, $channel, $name = null, $refereeId = null, $countryCode = self::DEFAULT_COUNTRY_CODE)
     {
         if (empty($mobile) || empty($channel)) {
             return null;

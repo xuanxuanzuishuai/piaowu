@@ -13,6 +13,7 @@ namespace App\Services;
 use App\Libs\DictConstants;
 use App\Libs\NewSMS;
 use App\Libs\RedisDB;
+use App\Models\CountryCodeModel;
 use App\Models\StudentModelForApp;
 
 class CommonServiceForApp
@@ -40,7 +41,7 @@ class CommonServiceForApp
      * @param string $countryCode
      * @return null|string
      */
-    public static function sendValidateCode($mobile, $sign, $countryCode = self::DEFAULT_COUNTRY_CODE)
+    public static function sendValidateCode($mobile, $sign, $countryCode = '')
     {
         $redis = RedisDB::getConn();
         $cacheKey = self::VALIDATE_CODE_CACHE_KEY_PRI . $countryCode . $mobile;
@@ -56,7 +57,7 @@ class CommonServiceForApp
         $msg = "您好，本次验证码为：".$code."，有效期为五分钟，可以在60秒后重新获取";
 
         $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
-        $success = $sms->sendValidateCode($mobile, $msg, $sign);
+        $success = $sms->sendValidateCode($mobile, $msg, $sign, $countryCode);
         if (!$success) {
             return 'send_validate_code_failure';
         }
@@ -72,9 +73,10 @@ class CommonServiceForApp
      *
      * @param string $mobile 手机号
      * @param int $code 验证码
+     * @param $countryCode
      * @return bool
      */
-    public static function checkValidateCode($mobile, $code)
+    public static function checkValidateCode($mobile, $code, $countryCode = '')
     {
         if (empty($mobile) || empty($code)) {
             return false;
@@ -94,7 +96,7 @@ class CommonServiceForApp
             return true;
         }
 
-        $cacheKey = self::VALIDATE_CODE_CACHE_KEY_PRI . $mobile;
+        $cacheKey = self::VALIDATE_CODE_CACHE_KEY_PRI . $countryCode . $mobile;
         $countKey = $cacheKey . '_count';
 
         $codeCache = $redis->get($cacheKey);
@@ -153,4 +155,9 @@ class CommonServiceForApp
         return md5($uuid.$password);
     }
 
+    public static function getCountryCode()
+    {
+        $countryCodeData = CountryCodeModel::getAll();
+        return $countryCodeData ?? [];
+    }
 }

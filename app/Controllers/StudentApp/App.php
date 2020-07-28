@@ -21,6 +21,7 @@ use App\Models\FeedbackModel;
 use App\Models\StudentModelForApp;
 use App\Services\AppVersionService;
 use App\Services\BannerService;
+use App\Services\CommonServiceForApp;
 use App\Services\FlagsService;
 use App\Services\StudentServiceForApp;
 use App\Services\TrackService;
@@ -348,5 +349,14 @@ class App extends ControllerBase
         }
 
         return HttpHelper::buildResponse($response, ['banner' => $banner]);
+    }
+
+    public function countryCode(Request $request, Response $response)
+    {
+        $countryCode = CommonServiceForApp::getCountryCode();
+        return $response->withJson([
+            'code'=> Valid::CODE_SUCCESS,
+            'data'=> $countryCode,
+        ], StatusCode::HTTP_OK);
     }
 }
