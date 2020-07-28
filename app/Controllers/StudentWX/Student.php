@@ -222,8 +222,7 @@ class Student extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $errorCode = CommonServiceForApp::sendValidateCode($params['mobile'],
-            CommonServiceForApp::SIGN_WX_STUDENT_APP);
+        $errorCode = CommonServiceForApp::sendValidateCode($params['mobile'], CommonServiceForApp::SIGN_WX_STUDENT_APP, $params['country_code']);
         if (!empty($errorCode)) {
             $result = Valid::addAppErrors([], $errorCode);
             return $response->withJson($result, StatusCode::HTTP_OK);
