@@ -1228,8 +1228,9 @@ class StudentService
     public static function fuzzySearchStudent($params, $fields)
     {
         $where = $data = [];
+        //手机号采取完全匹配
         if (!empty($params['mobile'])) {
-            $where['mobile[~]'] = $params['mobile'];
+            $where['mobile'] = $params['mobile'];
         }
         if (empty($where)) {
             return $data;

@@ -160,9 +160,9 @@ class Student extends ControllerBase
         $rules = [
             [
                 'key' => 'mobile',
-                'type' => 'regex',
-                'value' => Constants::MOBILE_REGEX,
-                'error_code' => 'mobile_format_error'
+                'type' => 'length',
+                'value' => 11,
+                'error_code' => 'invalid_mobile'
             ],
         ];
         $params = $request->getParams();
