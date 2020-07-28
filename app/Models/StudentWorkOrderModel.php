@@ -111,7 +111,7 @@ class StudentWorkOrderModel extends Model
 
         //根据课管进行搜索
         if(!empty($params['course_manage_id'])){
-            $where .= " AND `s`.`assistant_id` = {$params['course_manage_id']}";
+            $where .= " AND `s`.`course_manage_id` = {$params['course_manage_id']}";
         }
 
         //根据曲谱制作人进行搜索

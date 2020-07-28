@@ -59,7 +59,7 @@ class MakeOperaService
      */
     public static function getStudentAndSwoInfo($studentId)
     {
-        $studentAndSwoInfo = StudentModel::getStudentAndSwoById($studentId)[0];
+        $studentAndSwoInfo = StudentModel::getStudentAndSwoById($studentId)[0]??[];
         if (empty($studentAndSwoInfo)){
             return [];
         }
@@ -167,14 +167,24 @@ class MakeOperaService
      */
     public static function getSwoId($params)
     {
-        $operaImgNum = count($params['opera_images']['opera_imgs']);
+        $swoInfo = StudentModel::getStudentAndSwoById($params['student_id'])[0]??[];
+        $processSwoStatus = [
+            self::SWO_STATUS_PENDING_APPROVAL,
+            self::SWO_STATUS_APPROVAL_PASS,
+            self::SWO_STATUS_MAKING,
+            self::SWO_STATUS_CONFIG
+        ];
+        if (!empty($swoInfo) && in_array($swoInfo['swo_status'],$processSwoStatus)){
+            throw new RunTimeException(['Work order is in progress']);
+        }
 
+
+        $operaImgNum = count($params['opera_images']['opera_imgs']);
         if ($params['creator_type']==self::APPLY_FROM_WEIXIN && $operaImgNum>5){
             throw new RunTimeException(['The number of pictures exceeds the limit.']);
         }else if($params['creator_type']==self::APPLY_FROM_WEB && $operaImgNum>10){
             throw new RunTimeException(['The number of pictures exceeds the limit.']);
         }
-
         $creatorName = self::getCreatorName($params)??'';
         $time = date("Y-m-d H:i:s",time());
         $insertData = [
@@ -601,7 +611,7 @@ class MakeOperaService
         try {
             $db->beginTransaction();
             StudentWorkOrderModel::UpdateSwoById($params['swo_id'],$updateSwoData);
-            StudentWorkOrderReplayModel::updateRecord($updateSwoReplyWhere,$updateSwoReplyData);
+            StudentWorkOrderReplayModel::updateData($updateSwoReplyWhere,$updateSwoReplyData);
             StudentWorkOrderReplayModel::insertRecord($insertFailNode,false);
             $db->commit();
         }catch (\Exception $e){

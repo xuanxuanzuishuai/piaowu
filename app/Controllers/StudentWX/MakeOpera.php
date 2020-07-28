@@ -96,6 +96,7 @@ class MakeOpera extends ControllerBase
             ]
         ];
         $params = $request->getParams();
+        $params['user_id'] = $this->ci['user_info']['user_id'];
         $result = Valid::appValidate($params, $rules);
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
