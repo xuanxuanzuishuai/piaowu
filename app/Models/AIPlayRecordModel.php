@@ -165,7 +165,7 @@ GROUP BY FROM_UNIXTIME(end_time, '%Y%m%d');";
     apr.score_final AS score,
     apr.lesson_id,
     apr.student_id,
-    apr.record_id AS ai_record_id,
+    MAX(apr.record_id) AS ai_record_id,
     s.name
 FROM
     (SELECT 
@@ -190,6 +190,7 @@ WHERE
         AND apr.is_phrase = :is_phrase
         AND apr.hand = :hand
         AND apr.score_final >= :rank_base_score
+GROUP BY apr.student_id 
 ORDER BY apr.score_final DESC
 LIMIT :rank_limit;";
 
