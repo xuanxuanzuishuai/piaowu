@@ -18,33 +18,6 @@ class StudentWorkOrderModel extends Model
 
     public static $table = "student_work_order";
 
-    public static function getTotalNum($where)
-    {
-        return self::getCount($where);
-    }
-
-    /**
-     * @param $swoId
-     * @param array $files
-     * @return mixed
-     * 根据Id获取单条记录信息
-     */
-    public static function getSwoById($swoId,$files=[])
-    {
-        return self::getRecord(['id' => $swoId],$files);
-    }
-
-    /**
-     * @param $swoId
-     * @param array $files
-     * @return int|null
-     * 根据Id更新单条记录信息
-     */
-    public static function UpdateSwoById($swoId,$files=[])
-    {
-        return self::updateRecord(['id' => $swoId],$files);
-    }
-
     /**
      * @param $params
      * @return array

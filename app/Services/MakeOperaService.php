@@ -147,8 +147,8 @@ class MakeOperaService
                     $ret['user_status'] = self::USER_STATUS_PAY_TIME_END;
                 }
                 if ($studentAndSwoInfo['swo_status'] == self::SWO_STATUS_COMPLETE){
-                    if (time()<= strtotime("$time+8 day")){
-                        $ret['swo']['next_apply_time']= date("Y年m月d日",strtotime("$time+8 day"));
+                    if (time()<= strtotime("$time+7 day")){
+                        $ret['swo']['next_apply_time']= date("Y年m月d日",strtotime("$time+7 day"));
                     }else{
                         $ret['apply_permission'] = true;
                     }
@@ -175,15 +175,15 @@ class MakeOperaService
             self::SWO_STATUS_CONFIG
         ];
         if (!empty($swoInfo) && in_array($swoInfo['swo_status'],$processSwoStatus)){
-            throw new RunTimeException(['Work order is in progress']);
+            throw new RunTimeException(['work_order_progress']);
         }
 
 
         $operaImgNum = count($params['opera_images']['opera_imgs']);
         if ($params['creator_type']==self::APPLY_FROM_WEIXIN && $operaImgNum>5){
-            throw new RunTimeException(['The number of pictures exceeds the limit.']);
+            throw new RunTimeException(['pictures_number_exceeds']);
         }else if($params['creator_type']==self::APPLY_FROM_WEB && $operaImgNum>10){
-            throw new RunTimeException(['The number of pictures exceeds the limit.']);
+            throw new RunTimeException(['pictures_number_exceeds']);
         }
         $creatorName = self::getCreatorName($params)??'';
         $time = date("Y-m-d H:i:s",time());
@@ -256,7 +256,7 @@ class MakeOperaService
      */
     public static function cancelSwo($params)
     {
-        $swoInfo  = StudentWorkOrderModel::getSwoById($params['swo_id'],['id','status']);
+        $swoInfo  = StudentWorkOrderModel::getById($params['swo_id']);
         $time = date("Y-m-d H:i:s",time());
 
         $updateSwoReplyWhere = [
@@ -284,7 +284,7 @@ class MakeOperaService
             $db = MysqlDB::getDB();
             try {
                 $db->beginTransaction();
-                $cancelRes  = StudentWorkOrderModel::UpdateSwoById($params['swo_id'],['status'=>self::SWO_STATUS_CANCEL]);
+                $cancelRes  = StudentWorkOrderModel::updateRecord($params['swo_id'],['status'=>self::SWO_STATUS_CANCEL],false);
                 StudentWorkOrderReplayModel::updateData($updateSwoReplyWhere,$updateSwoReplyData);
                 StudentWorkOrderReplayModel::insertRecord($insertCancelNode,false);
                 $db->commit();
@@ -319,13 +319,13 @@ class MakeOperaService
             'create_time(apply_time)',
             'student_opera_name(open_name)'
         ];
-        $swoList  = StudentWorkOrderModel::getRecords($where,$files)??[];
+        $swoList  = StudentWorkOrderModel::getRecords($where,$files,false)??[];
         if (!empty($swoList)){
             foreach ($swoList as $key => $value){
                 $swoList[$key]['apply_time'] = date("Y-m-d H:i",strtotime($value['apply_time']));
             }
         }
-        $total = StudentWorkOrderModel::getTotalNum($where)??0;
+        $total = StudentWorkOrderModel::getCount($where)??0;
         return [$swoList,$total];
     }
 
@@ -336,7 +336,7 @@ class MakeOperaService
      */
     public static function getOperaInfo($swoId)
     {
-        $operaInfo = StudentWorkOrderModel::getSwoById($swoId,['id(swo_id)','student_opera_name(opera_name)','attachment(opera_images)']);
+        $operaInfo = StudentWorkOrderModel::getRecord(['id'=>$swoId],['id(swo_id)','student_opera_name(opera_name)','attachment(opera_images)'],false);
         if (empty($operaInfo)){
             return [];
         }
@@ -497,24 +497,21 @@ class MakeOperaService
     public static function swoApprove($params)
     {
         //工单如果不是待审核状态，直接返回请求
-        $swoInfo = StudentWorkOrderModel::getRecord(['id'=>$params['swo_id']],['status']);
+        $swoInfo = StudentWorkOrderModel::getById($params['swo_id']);
         if (empty($swoInfo) || $swoInfo['status']!= self::SWO_STATUS_PENDING_APPROVAL){
-            throw new RunTimeException(['工单状态已审核！']);
+            throw new RunTimeException(['work_order_approved']);
         }
 
         if ($params['type']==1) {
             //审核通过逻辑
-            if (strpos($params['estimate_day'],'.')){
-                throw new RunTimeException(['预计完成时间填写有误，只允许为大于1的正整数！']);
-            }
-            if (empty($params['estimate_day']) || $params['estimate_day']<1){
-                throw new RunTimeException(['预计完成时间填写有误，请检查后重试！']);
+            if (empty($params['estimate_day']) || $params['estimate_day']<1 || strpos($params['estimate_day'],'.')){
+                throw new RunTimeException(['estimate_time_err']);
             }
             return self::swoApproveSuccess($params);
         }else{
             //审核拒绝逻辑
             if (empty($params['refuse_msg'])){
-                throw new RunTimeException(['请填写审核未通过原因！']);
+                throw new RunTimeException(['fill_refuse_reason']);
             }
             return self::swoApproveFail($params);
         }
@@ -559,7 +556,7 @@ class MakeOperaService
         $db = MysqlDB::getDB();
         try {
             $db->beginTransaction();
-            StudentWorkOrderModel::UpdateSwoById($params['swo_id'],$updateSwoData);
+            StudentWorkOrderModel::updateRecord($params['swo_id'],$updateSwoData,false);
             StudentWorkOrderReplayModel::updateData($updateSwoReplyWhere,$updateSwoReplyData);
             StudentWorkOrderReplayModel::insertRecord($insertSwoReplyData,false);
             $db->commit();
@@ -610,7 +607,7 @@ class MakeOperaService
         $db = MysqlDB::getDB();
         try {
             $db->beginTransaction();
-            StudentWorkOrderModel::UpdateSwoById($params['swo_id'],$updateSwoData);
+            StudentWorkOrderModel::updateRecord($params['swo_id'],$updateSwoData,false);
             StudentWorkOrderReplayModel::updateData($updateSwoReplyWhere,$updateSwoReplyData);
             StudentWorkOrderReplayModel::insertRecord($insertFailNode,false);
             $db->commit();
@@ -664,9 +661,9 @@ class MakeOperaService
     public static function start($params)
     {
         //工单如果不是已通过状态，直接返回请求
-        $swoInfo = StudentWorkOrderModel::getRecord(['id'=>$params['swo_id']],['status','opera_maker_id']);
+        $swoInfo = StudentWorkOrderModel::getById($params['swo_id']);
         if (empty($swoInfo) || $swoInfo['status']!= self::SWO_STATUS_APPROVAL_PASS || $swoInfo['opera_maker_id']!= $params['user_id']){
-            throw new RunTimeException(['工单状态不允许或用户权限受限!']);
+            throw new RunTimeException(['work_order_status_error_or_permission_deny']);
         }
 
         $updateSwoData = [
@@ -687,7 +684,7 @@ class MakeOperaService
         $db = MysqlDB::getDB();
         try {
             $db->beginTransaction();
-            StudentWorkOrderModel::UpdateSwoById($params['swo_id'],$updateSwoData);
+            StudentWorkOrderModel::updateRecord($params['swo_id'],$updateSwoData,false);
             StudentWorkOrderReplayModel::updateData($updateSwoReplyWhere,$updateSwoReplyData);
             self::insertProcessNode($params);
             $db->commit();
@@ -708,10 +705,11 @@ class MakeOperaService
     public static function complete($params)
     {
         //工单如果不是制作中状态，直接返回请求
-        $swoInfo = StudentWorkOrderModel::getRecord(['id'=>$params['swo_id']],['status','opera_maker_id']);
+        $swoInfo = StudentWorkOrderModel::getById($params['swo_id']);
         if (empty($swoInfo) || $swoInfo['status']!= self::SWO_STATUS_MAKING || $swoInfo['opera_maker_id']!= $params['user_id']){
-            throw new RunTimeException(['工单状态不允许或用户权限受限!']);
+            throw new RunTimeException(['work_order_status_error_or_permission_deny']);
         }
+
         $updateSwoData = [
             'updator_id' => $params['user_id'],
             'update_time' => date("Y-m-d H:i:s"),
@@ -741,7 +739,7 @@ class MakeOperaService
         $db = MysqlDB::getDB();
         try {
             $db->beginTransaction();
-            StudentWorkOrderModel::UpdateSwoById($params['swo_id'],$updateSwoData);
+            StudentWorkOrderModel::updateRecord($params['swo_id'],$updateSwoData,false);
             StudentWorkOrderReplayModel::updateData($updateSwoReplyWhere,$updateSwoReplyData);
             StudentWorkOrderReplayModel::updateData($updateSwoReplyNextWhere,$updateSwoReplyNextData);
             $db->commit();
@@ -761,10 +759,11 @@ class MakeOperaService
     public static function useStart($params)
     {
         //工单如果配置中状态，直接返回请求
-        $swoInfo = StudentWorkOrderModel::getRecord(['id'=>$params['swo_id']],['status','opera_config_id']);
+        $swoInfo = StudentWorkOrderModel::getById($params['swo_id']);
         if (empty($swoInfo) || $swoInfo['status']!= self::SWO_STATUS_CONFIG || $swoInfo['opera_config_id']!= $params['user_id']){
-            throw new RunTimeException(['工单状态不允许或用户权限受限']);
+            throw new RunTimeException(['work_order_status_error_or_permission_deny']);
         }
+
         $updateSwoData = [
             'updator_id' => $params['user_id'],
             'update_time' => date("Y-m-d H:i:s"),
@@ -784,12 +783,12 @@ class MakeOperaService
         $db = MysqlDB::getDB();
         try {
             $db->beginTransaction();
-            StudentWorkOrderModel::UpdateSwoById($params['swo_id'],$updateSwoData);
+            StudentWorkOrderModel::updateRecord($params['swo_id'],$updateSwoData,false);
             StudentWorkOrderReplayModel::updateData($updateSwoReplyWhere,$updateSwoReplyData);
             $db->commit();
         }catch (\Exception $e){
             $db->rollBack();
-            throw new RunTimeException(['complete_swo_fail']);
+            throw new RunTimeException(['use_start_swo_fail']);
         }
         self::pushMakingSchedule($params['swo_id']);
         return true;
@@ -811,7 +810,7 @@ class MakeOperaService
             6=>'已完成',
             7=>'已撤销',
         ];
-        $swoInfo = StudentWorkOrderModel::getRecord(['id'=>$swoId],['student_id','status','student_opera_name'],false);
+        $swoInfo = StudentWorkOrderModel::getById($swoId);
         if (empty($swoInfo) || !isset($swoMap[$swoInfo['status']])){
             return false;
         }
