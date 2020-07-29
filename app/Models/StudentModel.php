@@ -470,6 +470,14 @@ class StudentModel extends Model
             $map[':student_id'] = $params['student_id'];
         }
 
+        if ($params['no_assistant']) {
+            $whereSql .= " AND s.assistant_id = 0 ";
+        }
+
+        if ($params['no_course_manage']) {
+            $whereSql .= " AND s.course_manage_id = 0 ";
+        }
+
         /**
          * 权限控制
          * 助教查看学生规则：
