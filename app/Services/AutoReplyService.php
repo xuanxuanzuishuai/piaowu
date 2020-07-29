@@ -31,6 +31,11 @@ class AutoReplyService
 
     public static function editQuestion($id, $title, $status)
     {
+        $question = self::getQuestionByTitleOrgWeb($title);
+        if (!empty($question)) {
+            throw new RunTimeException(['same_title_not_allowed']);
+        }
+
         $updateData = [
             'title' => $title,
             'status' => $status,
