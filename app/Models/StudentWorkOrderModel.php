@@ -50,11 +50,11 @@ class StudentWorkOrderModel extends Model
                        `mak`.`name` as opera_maker_name,
                        `con`.`name`as opera_config_name,
                        concat(`swo`.`textbook_name`,'/',`swo`.`opera_name`) as opera_lib";
-        $joinStudent = "JOIN {$student} AS `s` ON `swo`.`student_id` = `s`.`id` AND s.status = 1";
-        $joinAssistant = " LEFT JOIN {$employee} AS `ass` ON `s`.`assistant_id` = `ass`.`id` AND ass.status = 1";
-        $joinManager = " LEFT JOIN {$employee} AS `man` ON `s`.`course_manage_id` = `man`.`id` AND man.status = 1";
-        $joinMaker = " LEFT JOIN {$employee} AS `mak` ON `swo`.`opera_maker_id` = `mak`.`id` AND mak.status = 1";
-        $joinConfig = " LEFT JOIN {$employee} AS `con` ON `swo`.`opera_config_id` = `con`.`id` AND con.status = 1";
+        $joinStudent = "JOIN {$student} AS `s` ON `swo`.`student_id` = `s`.`id`";
+        $joinAssistant = " LEFT JOIN {$employee} AS `ass` ON `s`.`assistant_id` = `ass`.`id`";
+        $joinManager = " LEFT JOIN {$employee} AS `man` ON `s`.`course_manage_id` = `man`.`id`";
+        $joinMaker = " LEFT JOIN {$employee} AS `mak` ON `swo`.`opera_maker_id` = `mak`.`id`";
+        $joinConfig = " LEFT JOIN {$employee} AS `con` ON `swo`.`opera_config_id` = `con`.`id`";
 
         $where = ' WHERE 1 ';
         //根据学生姓名进行搜索

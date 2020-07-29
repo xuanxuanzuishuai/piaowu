@@ -90,15 +90,16 @@ class MakeOperaService
     {
         switch ($studentAndSwoInfo['has_review_course']){
             case 0:
+            case 1:
                 $ret['user_status'] = self::USER_STATUS_REGISTER;
                 break;
-            case 1:
-                if (!StudentServiceForApp::getSubStatus($studentAndSwoInfo['user_id'])){
-                    $ret['user_status'] = self::USER_STATUS_TRY_TIME_END;
-                }else{
-                    $ret['apply_permission'] = true;
-                }
-                break;
+//            case 1:
+//                if (!StudentServiceForApp::getSubStatus($studentAndSwoInfo['user_id'])){
+//                    $ret['user_status'] = self::USER_STATUS_TRY_TIME_END;
+//                }else{
+//                    $ret['apply_permission'] = true;
+//                }
+//                break;
             case 2:
                 if (!StudentServiceForApp::getSubStatus($studentAndSwoInfo['user_id'])){
                     $ret['user_status'] = self::USER_STATUS_PAY_TIME_END;
@@ -131,24 +132,25 @@ class MakeOperaService
 
         switch ($studentAndSwoInfo['has_review_course']){
             case 0:
+            case 1:
                 $ret['user_status'] = self::USER_STATUS_REGISTER;
                 break;
-            case 1:
-                if (!StudentServiceForApp::getSubStatus($studentAndSwoInfo['user_id'])){
-                    $ret['user_status'] = self::USER_STATUS_TRY_TIME_END;
-                }else{
-                    if ($studentAndSwoInfo['swo_status'] == self::SWO_STATUS_COMPLETE){
-                        $ret['user_status'] = self::USER_STATUS_NORMAL;
-                    }
-                }
-                break;
+//            case 1:
+//                if (!StudentServiceForApp::getSubStatus($studentAndSwoInfo['user_id'])){
+//                    $ret['user_status'] = self::USER_STATUS_TRY_TIME_END;
+//                }else{
+//                    if ($studentAndSwoInfo['swo_status'] == self::SWO_STATUS_COMPLETE){
+//                        $ret['user_status'] = self::USER_STATUS_NORMAL;
+//                    }
+//                }
+//                break;
             case 2:
                 if (!StudentServiceForApp::getSubStatus($studentAndSwoInfo['user_id'])){
                     $ret['user_status'] = self::USER_STATUS_PAY_TIME_END;
                 }
                 if ($studentAndSwoInfo['swo_status'] == self::SWO_STATUS_COMPLETE){
-                    if (time()<= strtotime("$time+7 day")){
-                        $ret['swo']['next_apply_time']= date("Y年m月d日",strtotime("$time+7 day"));
+                    if (time()<= strtotime("$time+8 day")){
+                        $ret['swo']['next_apply_time']= date("Y年m月d日",strtotime("$time+8 day"));
                     }else{
                         $ret['apply_permission'] = true;
                     }
