@@ -351,7 +351,8 @@ class CreditService
     private static function recordActivityReport($type, $activityData)
     {
         $field = self::EVERY_DAY_ACTIVITY_REPORT_STATUS;
-        $key = self::getActivityTaskFinishRelateKey($activityData['student_id'], NULL, $type);
+        $date = date('Y-m-d');
+        $key = self::getActivityTaskFinishRelateKey($activityData['student_id'], $date, $type);
         $redis = RedisDB::getConn();
         $value = $redis->hget($key, $field);
         if (empty($value)) {
@@ -359,6 +360,9 @@ class CreditService
         } else {
             $redis->hset($key, $field, intval($value) + 1);
         }
+        //设置过期
+        $endTime = strtotime($date) + 172800 - time();
+        $redis->expire($key, $endTime);
     }
 
     /**
