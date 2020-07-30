@@ -19,6 +19,8 @@ class CreditService
 {
     //积分活动类型
     const CREDIT_TASK = 6;
+    //活动任务群体是时长有效用户(1所有2时长有效)
+    const SUB_REMAIN_DURATION_VALID = 2;
     //每日任务
     const EVERY_DAY_ACTIVITY = 'every_day_activity';
     //每日任务完成情况
@@ -235,7 +237,7 @@ class CreditService
     private static function getMusicBasicQuestionTask()
     {
         return DictConstants::get(DictConstants::CREDIT_ACTIVITY_CONFIG, [
-            'music_basic_question'
+            'music_basic_question_task_id'
         ]);
     }
 
@@ -246,7 +248,7 @@ class CreditService
     private static function getExampleVideoTask()
     {
         return DictConstants::get(DictConstants::CREDIT_ACTIVITY_CONFIG, [
-            'example_video'
+            'example_video_task_id'
         ]);
     }
 
@@ -257,7 +259,7 @@ class CreditService
     private static function getViewDifficultSpotTask()
     {
         return DictConstants::get(DictConstants::CREDIT_ACTIVITY_CONFIG, [
-            'view_difficult_spot'
+            'view_difficult_spot_task_id'
         ]);
     }
 
@@ -268,7 +270,7 @@ class CreditService
     private static function getKnowChartPromotionTask()
     {
         return DictConstants::get(DictConstants::CREDIT_ACTIVITY_CONFIG, [
-            'know_chart_promotion'
+            'know_chart_promotion_task_id'
         ]);
     }
 
@@ -392,6 +394,7 @@ class CreditService
         $limitCount = 0;
         $hasAchieveTask = [];
         $award = NULL;
+        $awardCondition = [];
         foreach ($activityTemplate as $v) {
             $condition = json_decode($v['condition'], true);
             $continueDays = $condition['continue_days'];
@@ -402,7 +405,11 @@ class CreditService
                 $shouldGetTaskId = $v['id'];
                 $limitCount = $condition['every_day_count'];
                 $award = $v['award'];
+                $awardCondition = $condition;
             }
+        }
+        if (!self::checkTaskQualification($awardCondition, $data)) {
+            return;
         }
         $hasAchieveTask[$shouldGetTaskId] = $award;
         //更新用户的完成情况
@@ -432,6 +439,9 @@ class CreditService
             }
             $condition = json_decode($v['condition'], true);
             if ($data['play_duration'] >= $condition['play_duration']) {
+                if (!self::checkTaskQualification($condition, $data)) {
+                    continue;
+                }
                 self::updateUserCompleteStatus($data['student_id'], self::PLAY_PIANO_TASKS, $condition['every_day_count'], $v['id']);
                 if (self::checkSendAwardTask($data['student_id'], $v['id'], $condition['every_day_count'])) {
                     $erp->updateTask($data['uuid'], $v['id'], ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
@@ -526,6 +536,9 @@ class CreditService
         $hasAchieveTask = [];
         foreach ($activityTemplate as $v) {
             $condition = json_decode($v['condition'], true);
+            if (!self::checkTaskQualification($condition, $data)) {
+                continue;
+            }
             self::updateUserCompleteStatus($data['student_id'], $type, $condition['every_day_count'], $v['id']);
             if (self::checkSendAwardTask($data['student_id'], $v['id'], $condition['every_day_count'])) {
                 $erp->updateTask($data['uuid'], $v['id'], ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
@@ -563,6 +576,41 @@ class CreditService
         //设置过期
         $endTime = strtotime($date) + 172800 - time();
         $redis->expire($key, $endTime);
+    }
+
+    /**
+     * @param $condition
+     * @param $data
+     * @return bool
+     * 上报数据对应的任务 在业务逻辑的其他限制
+     */
+    private static function checkTaskQualification($condition, $data)
+    {
+        if (isset($condition['min_version'])) {
+            $res = false;
+            //需要检测最小版本
+            if (!empty($data['app_version'])) {
+                $res = !AIPlayRecordService::isOldVersionApp($data['app_version'], $condition['min_version']);
+            }
+            if (!$res) {
+                SimpleLogger::info('not satisfy min version', ['condition' => $condition, 'data' => $data]);
+                return false;
+            }
+        }
+
+        if (isset($condition['apply_object'])){
+            //需要检测适用对象
+            $res = true;
+            if ($condition['apply_object'] == self::SUB_REMAIN_DURATION_VALID) {
+                $res = StudentServiceForApp::getSubStatus($data['student_id']);
+
+            }
+            if (!$res) {
+                SimpleLogger::info('not apply object', ['condition' => $condition, 'data' => $data]);
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

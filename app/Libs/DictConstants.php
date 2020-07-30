@@ -353,7 +353,11 @@ class DictConstants {
             'play_piano_forty_m_task_id', //每日练琴四十分钟,
             'play_piano_sixty_m_task_id', //每日练琴六十分钟
             'both_hands_evaluate_task_id', //每日完成1次双手全曲评测
-            'share_evaluate_grade_task_id' //每日分享评测成绩奖
+            'share_evaluate_grade_task_id', //每日分享评测成绩奖
+            'music_basic_question_task_id', //音基题
+            'example_video_task_id', //示范视频
+            'view_difficult_spot_task_id', //浏览重难点
+            'know_chart_promotion_task_id', //识谱，提升
         ]
     ];
 
