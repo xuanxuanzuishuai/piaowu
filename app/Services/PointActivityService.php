@@ -53,6 +53,7 @@ class PointActivityService
         }
         $reportData['uuid'] = $studentInfo['uuid'];
         $reportData['student_id'] = $studentId;
+        $reportData['app_version'] = $params['app_version'];
         $reportRes = [
             'amount' => 0,
         ];
@@ -62,14 +63,6 @@ class PointActivityService
         } elseif ($activityType === CreditService::PLAY_PIANO_TASKS) {
             //练琴活动:
             $reportData['play_duration'] = $params['play_duration'];
-        } elseif ($activityType === CreditService::BOTH_HAND_EVALUATE) {
-            //双手评测:暂无参数传入，占位
-            //todo
-        } elseif ($activityType === CreditService::SHARE_GRADE) {
-            //分享成绩:暂无参数传入，占位
-            //todo
-        } else {
-            throw new RunTimeException(['not_support_type']);
         }
         //创建奖励记录
         $completeRes = CreditService::setUserCompleteTask($activityType, $reportData);
@@ -144,9 +137,10 @@ class PointActivityService
      * 获取积分活动列表
      * @param $studentId
      * @param $activityType
+     * @param $appVersion
      * @return mixed
      */
-    public static function getPointActivityListInfo($activityType, $studentId)
+    public static function getPointActivityListInfo($activityType, $studentId, $appVersion)
     {
         //模拟获取缓存数据
         $formatData = [
@@ -172,25 +166,39 @@ class PointActivityService
         } else {
             $studentActivityRecord = $tmpRecord;
         }
+        //获取用户服务订阅状态
+        $studentSubStatus = StudentServiceForApp::getSubStatus($studentId);
         //格式化模板数据
-        array_walk($cacheData, function ($value, $key) use (&$formatData, $studentActivityRecord, $studentId, &$checkInTodayIsDone, &$checkInDays) {
+        array_walk($cacheData, function ($value, $key) use (&$formatData, $studentActivityRecord, $studentId, &$checkInTodayIsDone, &$checkInDays, $appVersion, $studentSubStatus) {
             if (!empty($value)) {
-                $formatData['activity_list'][$key] = array_map(function ($item) use ($studentActivityRecord, $key, $studentId, &$checkInTodayIsDone, &$checkInDays) {
+                array_map(function ($item) use ($studentActivityRecord, $key, $studentId, &$checkInTodayIsDone, &$checkInDays, $appVersion, &$formatData, $studentSubStatus) {
                     $condition = json_decode($item['condition'], true);
-                    $award = json_decode($item['award'], true);
-                    $tmpInfo = [
-                        'name' => $item['name'],
-                        'every_day_count' => $condition['every_day_count'],
-                        'continue_days' => $condition['continue_days'],
-                        'award_count' => $award['awards'][0]['amount'],
-                        'is_complete' => $studentActivityRecord[$key][$item['id']]['is_complete'] ?? false,
-                    ];
-                    //连续签到需要额外获取连续签到天数和今天用户是否签到
-                    if ($key == CreditService::SIGN_IN_TASKS && $checkInTodayIsDone == false) {
-                        $checkInDays = CheckInRecordModel::studentCheckInDays($studentId);
-                        $checkInTodayIsDone = $tmpInfo['is_complete'];
+                    //检测可以参与活动的app最低版本号
+                    $appVersionCheck = $userSubStatusCheck = true;
+                    if (!empty($condition['min_version']) && (AIPlayRecordService::isOldVersionApp($appVersion, $condition['min_version']) != false)) {
+                        $appVersionCheck = false;
                     }
-                    return $tmpInfo;
+                    //检测可以参与活动的用户有效时长资格
+                    if (($condition['apply_object'] == CreditService::SUB_REMAIN_DURATION_VALID) && ($studentSubStatus === false)) {
+                        $userSubStatusCheck = false;
+                    }
+                    if ($appVersionCheck && $userSubStatusCheck) {
+                        $award = json_decode($item['award'], true);
+                        $tmpInfo = [
+                            'name' => $item['name'],
+                            'every_day_count' => $condition['every_day_count'],
+                            'continue_days' => $condition['continue_days'],
+                            'award_count' => $award['awards'][0]['amount'],
+                            'is_complete' => $studentActivityRecord[$key][$item['id']]['is_complete'] ?? false,
+                            'complete_count' => $studentActivityRecord[$key][$item['id']]['complete_count'] ?? 0,
+                        ];
+                        //连续签到需要额外获取连续签到天数和今天用户是否签到
+                        if ($key == CreditService::SIGN_IN_TASKS && $checkInTodayIsDone == false) {
+                            $checkInDays = CheckInRecordModel::studentCheckInDays($studentId);
+                            $checkInTodayIsDone = $tmpInfo['is_complete'];
+                        }
+                        $formatData['activity_list'][$key][] = $tmpInfo;
+                    }
                 }, $value);
             }
         });
@@ -200,6 +208,7 @@ class PointActivityService
         $formatData['student_point_info']['check_in_continue_days'] = $checkInDays;
         $formatData['student_point_info']['check_in_today_is_done'] = $checkInTodayIsDone;
         $formatData['student_point_info']['today_start_timestamp'] = Util::getStartEndTimestamp(time())[0];
+        $formatData['student_point_info']['sub_status'] = $studentSubStatus;
         return $formatData;
     }
 

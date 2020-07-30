@@ -26,8 +26,6 @@ use App\Libs\SimpleLogger;
 class AIPlayRecordService
 {
     const DEFAULT_APP_VER = '5.0.0';
-    //app参与积分活动的最小版本
-    const JOIN_POINT_ACTIVITY_MIN_APP_VER = '5.6.0';
     /**
      * 演奏数据
      * @param $studentId
@@ -119,10 +117,8 @@ class AIPlayRecordService
 
             $recordId = AIPlayRecordModel::modifyRecord($studentId, $playRecord['id'], $newRecord, $stepDuration);
         }
-        //上报练琴时长获取积分:app5.6.0版本之前的app不参与积分活动
-        if (!empty($params['version']) && (self::isOldVersionApp($params['version'], self::JOIN_POINT_ACTIVITY_MIN_APP_VER) === false)) {
-            self::reportPoint($studentId, $newRecord);
-        }
+        //上报练琴时长获取积分
+        self::reportPoint($studentId, $newRecord, $params['version']);
         return $recordId ?? 0;
     }
 
@@ -474,9 +470,10 @@ class AIPlayRecordService
      * 旧版测评转为 UI_ENTRY_TEST 类型(与新版测评相同)
      * @param $studentId
      * @param $playData
+     * @param $appVersion
      * @return int
      */
-    public static function insertOldPracticeData($studentId, $playData)
+    public static function insertOldPracticeData($studentId, $playData, $appVersion)
     {
         $now = time();
 
@@ -530,10 +527,8 @@ class AIPlayRecordService
         ];
 
         $recordID = AIPlayRecordModel::addRecord($studentId, $recordData, $playData['duration']);
-        //上报练琴时长获取积分:app5.6版本之前的app不参与积分活动
-        if ($playData['is_join_point'] === false) {
-            self::reportPoint($studentId, $recordData);
-        }
+        //上报练琴时长获取积分
+        self::reportPoint($studentId, $recordData, $appVersion);
         return $recordID;
     }
 
@@ -870,14 +865,15 @@ class AIPlayRecordService
      * 上报练琴时长获取积分
      * @param $studentId
      * @param $recordData
+     * @param $appVersion
      */
-    private static function reportPoint($studentId, $recordData)
+    private static function reportPoint($studentId, $recordData, $appVersion)
     {
         //检测每日练琴获取积分活动
         $reportData = [];
         $dayTotalDuration = AIPlayRecordModel::getDailyDurationCache($studentId);
         try {
-            PointActivityService::reportRecord(CreditService::PLAY_PIANO_TASKS, $studentId, ['play_duration' => $dayTotalDuration]);
+            PointActivityService::reportRecord(CreditService::PLAY_PIANO_TASKS, $studentId, ['play_duration' => $dayTotalDuration, 'app_version' => $appVersion]);
         } catch (RunTimeException $e) {
             SimpleLogger::info("point activity play piano tasks report record fail", ['student_id' => $studentId, 'report_data' => $reportData]);
         }
@@ -889,7 +885,7 @@ class AIPlayRecordService
             ($recordData['score_final'] > 0)) {
             $activityType = CreditService::BOTH_HAND_EVALUATE;
             try {
-                PointActivityService::reportRecord($activityType, $studentId);
+                PointActivityService::reportRecord($activityType, $studentId, ['app_version' => $appVersion]);
             } catch (RunTimeException $e) {
                 SimpleLogger::info("point activity both hand evaluate tasks report record fail", ['student_id' => $studentId, 'report_data' => $reportData]);
             }

@@ -29,7 +29,14 @@ class PointActivity extends ControllerBase
     public function activityList(Request $request, Response $response)
     {
         $params = $request->getParams();
-        $records = PointActivityService::getPointActivityListInfo($params['activity_type'], $this->ci['student']['id']);
+        try {
+            if (empty($this->ci['version'])) {
+                throw new RunTimeException(['app_version_is_required']);
+            }
+            $records = PointActivityService::getPointActivityListInfo($params['activity_type'], $this->ci['student']['id'], $this->ci['version']);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
         return HttpHelper::buildResponse($response, $records);
     }
 
@@ -54,7 +61,10 @@ class PointActivity extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         try {
-            $records = PointActivityService::reportRecord($params['activity_type'], $this->ci['student']['id']);
+            if (empty($this->ci['version'])) {
+                throw new RunTimeException(['app_version_is_required']);
+            }
+            $records = PointActivityService::reportRecord($params['activity_type'], $this->ci['student']['id'], ['app_version' => $this->ci['version']]);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }

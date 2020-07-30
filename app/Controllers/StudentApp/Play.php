@@ -139,11 +139,7 @@ class Play extends ControllerBase
         // 区分新版app和旧版app的数据
         $isOldVersion = AIPlayRecordService::isOldVersionApp($this->ci['version']);
         $params['data']['old_format'] = ($isOldVersion ? Constants::STATUS_TRUE : Constants::STATUS_FALSE);
-        // 区分版本是否参与积分活动
-        if (!empty($this->ci['version'])) {
-            $params['data']['is_join_point'] = AIPlayRecordService::isOldVersionApp($this->ci['version'], AIPlayRecordService::JOIN_POINT_ACTIVITY_MIN_APP_VER);
-        }
-        AIPlayRecordService::insertOldPracticeData($userID, $params['data']);
+        AIPlayRecordService::insertOldPracticeData($userID, $params['data'], $this->ci['version']);
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
@@ -200,9 +196,7 @@ class Play extends ControllerBase
         // 插入到新数据表
         // ai_end 5.0以后接口不再调用，这里的一定是旧版数据
         $params['data']['old_format'] = Constants::STATUS_TRUE;
-        // 区分版本是否参与积分活动
-        $params['data']['is_join_point'] = true;
-        AIPlayRecordService::insertOldPracticeData($userId, $params['data']);
+        AIPlayRecordService::insertOldPracticeData($userId, $params['data'], $this->ci['version']);
 
         // 处理返回数据
         $data = ['record_id' => $ret['record_id']];
