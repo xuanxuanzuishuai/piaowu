@@ -313,6 +313,34 @@ class Opn extends ControllerBase
         ], StatusCode::HTTP_OK);
     }
 
+    public function musicScoreSearch(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT,
+            $this->ci['opn_pro_ver'],
+            $this->ci['opn_auditing'],
+            $this->ci['opn_publish']);
+
+        $lessonIds = array_column($params['images'], 'lessonId');
+        $result = $opn->lessonsByIds($lessonIds, 1, OpernCenter::RESOURCE_TYPE);
+        if (empty($result) || !empty($result['errors'])) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $lesson = OpernService::appMusicScoreSearch($result['data'], $params['images']);
+
+        $lessonData['recordId'] = $params['recordId'];
+        $lessonData['images'] = $lesson;
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $lessonData
+        ], StatusCode::HTTP_OK);
+    }
+
+
+
     public function lesson(Request $request, Response $response)
     {
         $rules = [

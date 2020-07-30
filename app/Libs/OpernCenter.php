@@ -43,6 +43,8 @@ class OpernCenter
     const DEFAULT_AUDITING = 0;
     const DEFAULT_PUBLISH = 1;
 
+    const RESOURCE_TYPE = 'png';
+
     const OPERN_CENTER_ERROR = ['err_no'=>'opern_center_error', 'err_msg'=>'曲谱中心异常'];
 
     // 新的独立opn服务

@@ -56,11 +56,6 @@ class StudentAppRouter extends RouterBase
             'call' => Auth::class . ':updatePwd',
             'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
         ],
-        '/student_app/app/country_code' => [
-            'method' => ['get'],
-            'call' => App::class . ':countryCode',
-            'middles' => [AppApiForStudent::class]
-        ],
 
         // /student_app/app
         '/student_app/app/version' => [
@@ -110,6 +105,11 @@ class StudentAppRouter extends RouterBase
             'call' => App::class . ':banner',
             'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
         ],
+        '/student_app/app/country_code' => [
+            'method' => ['get'],
+            'call' => App::class . ':countryCode',
+            'middles' => [AppApiForStudent::class]
+        ],
 
         // /student_app/sub
         '/student_app/subscription/redeem_gift_code' => [
@@ -149,6 +149,13 @@ class StudentAppRouter extends RouterBase
         '/student_app/opn/lesson_limit' => [
             'method' => ['get'],
             'call' => Opn::class . ':lessonLimit',
+            'middles' => [
+                StudentAuthCheckMiddleWareForApp::class,
+                AppApiForStudent::class]
+        ],
+        '/student_app/opn/music_score_search' => [
+            'method' => ['post'],
+            'call' => Opn::class . ':musicScoreSearch',
             'middles' => [
                 StudentAuthCheckMiddleWareForApp::class,
                 AppApiForStudent::class]

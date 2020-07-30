@@ -15,6 +15,8 @@ use App\Libs\Valid;
 
 class OpernService
 {
+
+    const MAXIMUM_LIMIT = 5; //曲谱拍照搜索，最多显示5张曲谱
     /**
      * 格式化分类列表
      * @param $data
@@ -143,6 +145,33 @@ class OpernService
             $result[] = $opern;
         }
         return $result;
+    }
+
+    public static function appMusicScoreSearch($data, $images, $limit = self::MAXIMUM_LIMIT)
+    {
+        $lesson = [];
+        if (empty($data)) {
+            return $lesson;
+        }
+        if (count($data) > $limit){
+            $data = array_slice($data,$limit);
+        }
+        $imagesData = array_column($images, 'pageId', 'lessonId');
+
+        foreach ($data as $item) {
+            $opern['lesson_id'] = $item['lesson_id'];
+            $opern['opern_name'] = $item['opern_name'];
+            $opern['score_id'] = $item['opern_id'];
+            $opern['collection_name'] = $item['collection_name'];
+            $opern['url'] = "";
+            foreach ($item['resources'] as $item2) {
+                if ($item2['sort'] == $imagesData[$item['lesson_id']]) {
+                    $opern['url'] = $item2['resource_url'];
+                }
+            }
+            $lesson[] = $opern;
+        }
+        return $lesson;
     }
 
     /**

@@ -79,6 +79,7 @@ class App extends ControllerBase
         $config['ai_host'] = DictConstants::get(DictConstants::APP_CONFIG_COMMON, 'ai_host');
         $config['new_ai_host'] = DictConstants::get(DictConstants::APP_CONFIG_COMMON, 'new_ai_host');
         $config['self_test_of_piano_sound'] = (int)$studentAppConfigs['self_test_of_piano_sound'];
+        $config['request_ocr_search_service'] = $studentAppConfigs['request_ocr_search_service'];
 
         $reviewFlagId = DictConstants::get(DictConstants::FLAG_ID, 'app_review');
         if ($this->ci['flags'][$reviewFlagId]) {
