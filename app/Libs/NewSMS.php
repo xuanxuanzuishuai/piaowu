@@ -70,9 +70,14 @@ class NewSMS
      */
     public function send($sign, $mobile, $content, $countryCode = self::DEFAULT_COUNTRY_CODE)
     {
+        if (empty($countryCode) || $countryCode == self::DEFAULT_COUNTRY_CODE) {
+            $phone_number = $mobile;
+        } else {
+            $phone_number = self::COUNTRY_CODE_PREFIX . $countryCode . $mobile;
+        }
         $data = [
             'sign_name' => $sign,
-            'phone_number' => self::COUNTRY_CODE_PREFIX . $countryCode . $mobile,
+            'phone_number' => $phone_number,
             'content' => $content,
         ];
         return self::sendSMS($data, !empty($countryCode) && $countryCode != self::DEFAULT_COUNTRY_CODE);
