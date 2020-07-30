@@ -9,6 +9,7 @@
 namespace App\Services;
 
 
+use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
@@ -91,6 +92,11 @@ class StudentServiceForApp
             // 审核版本自动激活
             $student['sub_end_date'] = '20250101';
         }
+        if (empty($student['password'])) {
+            $isPwd = Constants::STATUS_FALSE;
+        } else {
+            $isPwd = Constants::STATUS_TRUE;
+        }
 
         $loginData = [
             'id' => $student['id'],
@@ -116,6 +122,7 @@ class StudentServiceForApp
             'flags' => $flags,
             'total_duration' => 0,
             'is_anonymous' => 1,
+            'student_is_set_pwd' => $isPwd
         ];
 
         return [null, $loginData];
@@ -211,6 +218,12 @@ class StudentServiceForApp
         $totalDuration = AIPlayRecordService::getStudentSumDuration($student['id']);
         // 获取学生积分
         $totalPoints = PointActivityService::totalPoints($student['id'], PointActivityService::ACCOUNT_SUB_TYPE_STUDENT_POINTS);
+
+        if (empty($student['password'])) {
+            $isPwd = Constants::STATUS_FALSE;
+        } else {
+            $isPwd = Constants::STATUS_TRUE;
+        }
         $loginData = [
             'id' => $student['id'],
             'uuid' => $student['uuid'],
@@ -236,6 +249,7 @@ class StudentServiceForApp
             'total_duration' => $totalDuration,
             'is_anonymous' => 0,
             'total_points' => $totalPoints['total_num'] ?? 0,
+            'student_is_set_pwd' => $isPwd
         ];
 
         return [null, $loginData];
@@ -338,6 +352,12 @@ class StudentServiceForApp
         // 获取学生积分
         $totalPoints = PointActivityService::totalPoints($student['id'], PointActivityService::ACCOUNT_SUB_TYPE_STUDENT_POINTS);
 
+        if (empty($student['password'])) {
+            $isPwd = Constants::STATUS_FALSE;
+        } else {
+            $isPwd = Constants::STATUS_TRUE;
+        }
+
         $loginData = [
             'id' => $student['id'],
             'uuid' => $student['uuid'],
@@ -363,6 +383,7 @@ class StudentServiceForApp
             'total_duration' => $totalDuration,
             'is_anonymous' => 0,
             'total_points' => $totalPoints['total_num'] ?? 0,
+            'student_is_set_pwd' => $isPwd
         ];
 
         return [null, $loginData];

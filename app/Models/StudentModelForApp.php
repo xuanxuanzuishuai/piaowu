@@ -8,6 +8,7 @@
 
 namespace App\Models;
 
+use App\Libs\Constants;
 use App\Libs\MysqlDB;
 use App\Libs\RedisDB;
 
@@ -66,6 +67,7 @@ class StudentModelForApp extends Model
             'flags' => '0',
             'last_play_time' => '0',
             'collection_id' => '0',
+            'student_is_set_pwd' => Constants::STATUS_TRUE,
         ];
     }
 
