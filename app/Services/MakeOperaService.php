@@ -179,8 +179,12 @@ class MakeOperaService
         if (!empty($swoInfo) && in_array($swoInfo['swo_status'],$processSwoStatus)){
             throw new RunTimeException(['work_order_progress']);
         }
-
-
+        if (empty($params['opera_images']['cover_image'])){
+            throw new RunTimeException(['pictures_cover_require']);
+        }
+        if (empty($params['opera_images']['content_image'])){
+            throw new RunTimeException(['pictures_content_require']);
+        }
         $operaImgNum = count($params['opera_images']['opera_imgs']);
         if ($params['creator_type']==self::APPLY_FROM_WEIXIN && $operaImgNum>5){
             throw new RunTimeException(['pictures_number_exceeds']);
@@ -509,6 +513,9 @@ class MakeOperaService
             if (empty($params['estimate_day']) || $params['estimate_day']<1 || strpos($params['estimate_day'],'.')){
                 throw new RunTimeException(['estimate_time_err']);
             }
+            if (empty($params['opera_maker_id'])){
+                throw new RunTimeException(['opera_maker_id_require']);
+            }
             return self::swoApproveSuccess($params);
         }else{
             //审核拒绝逻辑
@@ -530,6 +537,7 @@ class MakeOperaService
         $estimate_day = $params['estimate_day']+1;
         $time = date("Y-m-d H:i:s",time());
         $updateSwoData = [
+            'opera_maker_id'=> $params['opera_maker_id'],
             'updator_id' => $params['user_id'],
             'update_time' => date("Y-m-d H:i:s"),
             'estimate_day'=>date("Y-m-d H:i:s",strtotime("+$estimate_day day")),
