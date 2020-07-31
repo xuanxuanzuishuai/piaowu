@@ -50,11 +50,6 @@ class Student extends ControllerBase
                 'error_code' => 'mobile_is_required'
             ],
             [
-                'key' => 'sms_code',
-                'type' => 'required',
-                'error_code' => 'sms_code_is_required'
-            ],
-            [
                 'key' => 'referee_type',
                 'type' => 'integer'
             ],
@@ -82,9 +77,12 @@ class Student extends ControllerBase
         }
 
         $app_id = UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT;
-        // 检查验证码
-        if (!CommonServiceForApp::checkValidateCode($params["mobile"], $params["sms_code"])) {
-            return $response->withJson(Valid::addAppErrors([], 'validate_code_error'), StatusCode::HTTP_OK);
+        if (empty($params['sms_code']) && empty($params['password'])) {
+            return $response->withJson(Valid::addAppErrors([], 'please_check_the_parameters'), StatusCode::HTTP_OK);
+        } elseif (!empty($params['sms_code']) && !CommonServiceForApp::checkValidateCode($params["mobile"], $params["sms_code"], $params['country_code'])) {
+            return $response->withJson(Valid::addAppErrors([], 'incorrect_mobile_phone_number_or_verification_code'), StatusCode::HTTP_OK);
+        } elseif (!empty($params['password']) && !CommonServiceForApp::checkPassword($params['mobile'], $params['password'])) {
+            return $response->withJson(Valid::addAppErrors([], 'password_error'), StatusCode::HTTP_OK);
         }
 
         //验证手机号是否已存在
@@ -208,12 +206,6 @@ class Student extends ControllerBase
                 'type' => 'required',
                 'error_code' => 'mobile_is_required'
             ],
-            [
-                'key' => 'mobile',
-                'type' => 'regex',
-                'value' => '/^[0-9]{11}$/',
-                'error_code' => 'mobile_format_error'
-            ]
         ];
 
         $params = $request->getParams();
