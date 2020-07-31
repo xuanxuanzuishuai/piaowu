@@ -35,12 +35,6 @@ class Auth extends ControllerBase
                 'error_code' => 'user_mobile_is_required'
             ],
             [
-                'key' => 'mobile',
-                'type' => 'regex',
-                'value' => '/^[0-9]{11}$/',
-                'error_code' => 'mobile_format_error'
-            ],
-            [
                 'key' => 'code',
                 'type' => 'required',
                 'error_code' => 'validate_code_is_required'
@@ -55,12 +49,6 @@ class Auth extends ControllerBase
                 'key' => 'ref_mobile',
                 'type' => 'required',
                 'error_code' => 'user_mobile_is_required'
-            ],
-            [
-                'key' => 'ref_mobile',
-                'type' => 'regex',
-                'value' => '/^[0-9]{11}$/',
-                'error_code' => 'mobile_format_error'
             ],
         ];
         $result = Valid::appValidate($params, $rules);
@@ -160,12 +148,6 @@ class Auth extends ControllerBase
                 'error_code' => 'user_mobile_is_required'
             ],
             [
-                'key' => 'mobile',
-                'type' => 'regex',
-                'value' => '/^[0-9]{11}$/',
-                'error_code' => 'mobile_format_error'
-            ],
-            [
                 'key' => 'country_code',
                 'type' => 'integer',
                 'error_code' => 'country_code_must_be_integer'
@@ -197,12 +179,6 @@ class Auth extends ControllerBase
                 'key' => 'mobile',
                 'type' => 'required',
                 'error_code' => 'user_mobile_is_required'
-            ],
-            [
-                'key' => 'mobile',
-                'type' => 'regex',
-                'value' => '/^[0-9]{11}$/',
-                'error_code' => 'mobile_format_error'
             ],
             [
                 'key' => 'code',

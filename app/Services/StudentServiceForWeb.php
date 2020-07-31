@@ -46,7 +46,7 @@ class StudentServiceForWeb
     public static function register($mobile, $code, $referrerMobile = null, $countryCode)
     {
         // 检查验证码
-        if (!CommonServiceForApp::checkValidateCode($mobile, $code)) {
+        if (!CommonServiceForApp::checkValidateCode($mobile, $code, $countryCode)) {
             throw new RunTimeException(['validate_code_error']);
         }
 
@@ -123,7 +123,7 @@ class StudentServiceForWeb
     public static function mobileLogin($mobile, $code, $channelId, $adChannel, $adParams, $refereeId, $countryCode)
     {
         // 检查验证码
-        if (!CommonServiceForApp::checkValidateCode($mobile, $code)) {
+        if (!CommonServiceForApp::checkValidateCode($mobile, $code, $countryCode)) {
             throw new RunTimeException(['validate_code_error']);
         }
 
