@@ -14,6 +14,7 @@ use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
 use App\Libs\UserCenter;
+use App\Libs\Util;
 use App\Models\EmployeeModel;
 use App\Models\StudentModel;
 use App\Models\StudentWorkOrderModel;
@@ -65,7 +66,7 @@ class MakeOperaService
         }
         $ret = [
             'user_id' => $studentId,
-            'user_mobile' => $studentAndSwoInfo['mobile'],
+            'user_mobile' => Util::hideUserMobile($studentAndSwoInfo['mobile']),
             'user_status' => self::USER_STATUS_NORMAL,
             'apply_permission' => false,
             'swo' => [],
@@ -409,6 +410,7 @@ class MakeOperaService
         foreach ($list as &$value){
             $value['status_value'] = $swoMap[$value['status']];
             $value['has_review_course'] = $studentStatusMap[$value['has_review_course']];
+            $value['student_mobile'] = Util::hideUserMobile($value['student_mobile']);
         }
         return [$list,$totalNum];
     }
