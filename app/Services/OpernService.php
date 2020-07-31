@@ -17,6 +17,7 @@ class OpernService
 {
 
     const MAXIMUM_LIMIT = 5; //曲谱拍照搜索，最多显示5张曲谱
+    const PAGE_LIMIT = 1; //拍照搜曲谱算法那边pageId从0开始，pre环境pageId从1开始，所以比对页码时候，默认把算法那边传过来的pageId加1
     /**
      * 格式化分类列表
      * @param $data
@@ -165,11 +166,13 @@ class OpernService
             $opern['collection_name'] = $item['collection_name'];
             $opern['url'] = "";
             foreach ($item['resources'] as $item2) {
-                if ($item2['sort'] == $imagesData[$item['lesson_id']]) {
+                if ($item2['sort'] == ($imagesData[$item['lesson_id']] + self::PAGE_LIMIT)) {
                     $opern['url'] = $item2['resource_url'];
                 }
             }
-            $lesson[] = $opern;
+            if (!empty($opern['url'])) {
+                $lesson[] = $opern;
+            }
         }
         return $lesson;
     }
