@@ -9,9 +9,12 @@
 namespace App\Services;
 
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\SimpleLogger;
+use App\Libs\Util;
 use App\Models\AIPlayRecordModel;
 use App\Models\ReviewCourseModel;
 use App\Models\ReviewCourseTaskModel;
+use App\Services\Queue\PushMessageTopic;
 use Lcobucci\JWT\Signer\Hmac\Sha256;
 use Lcobucci\JWT\Builder;
 use Lcobucci\JWT\Parser;
@@ -162,5 +165,68 @@ class AIPlayReportService
     {
         $report = AIPlayRecordService::getStudentAssessData($recordId);
         return $report;
+    }
+
+    /**
+     * 发送日报
+     * @param $dateTime
+     */
+    public static function sendDailyReport($dateTime)
+    {
+        $startTime = $dateTime;
+        $endTime = $startTime + 86400;
+        $date = date("Y-m-d", $startTime);
+
+        $userInfo = AIPlayRecordModel::getPlayedStudentInfo($startTime, $endTime);
+
+        $url = $_ENV["WECHAT_FRONT_DOMAIN"] . "/student/dailyNew?date=" . $date;
+        $templateId = $_ENV["WECHAT_DAY_PLAY_REPORT"];
+        $data = [
+            'first' => [
+                'value' => "宝贝今天的练琴日报已生成，宝贝很棒哦！继续加油！",
+                'color' => "#323d83"
+            ],
+            'keyword1' => [
+                'value' => $date,
+                'color' => "#323d83"
+            ],
+            'keyword2' => [
+                'value' => "请查看详情",
+                'color' => "#323d83"
+            ],
+            'keyword3' => [
+                'value' => "请查看详情",
+                'color' => "#323d83"
+            ],
+        ];
+        $msgBody = [
+            'wx_push_type' => 'template',
+            'template_id' => $templateId,
+            'data' => $data,
+            'url' => $url,
+            'open_id' => '',
+        ];
+
+        try {
+            $topic = new PushMessageTopic();
+
+        } catch (\Exception $e) {
+            Util::errorCapture('PushMessageTopic init failure', [
+                '$dateTime' => $dateTime,
+            ]);
+            return ;
+        }
+
+        foreach ($userInfo as $info) {
+            $msgBody['open_id'] = $info['open_id'];
+
+            try {
+                $topic->wxPushCommon($msgBody)->publish();
+
+            } catch (\Exception $e) {
+                SimpleLogger::error("sendDailyReport send failure", ['info' => $info]);
+                continue;
+            }
+        }
     }
 }

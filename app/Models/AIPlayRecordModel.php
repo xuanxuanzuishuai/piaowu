@@ -482,4 +482,40 @@ LEFT JOIN
         $totalDuration = $redis->zscore($cacheKey, $studentId);
         return $totalDuration;
     }
+
+    /**
+     * 获取有演奏的学生信息
+     * @param $startTime
+     * @param $endTime
+     * @return array
+     */
+    public static function getPlayedStudentInfo($startTime, $endTime)
+    {
+        $db = MysqlDB::getDB();
+
+        $sql = "SELECT
+    DISTINCT apr.student_id,
+    uw.open_id
+FROM
+    ai_play_record AS apr
+        INNER JOIN
+    user_weixin AS uw ON apr.student_id = uw.user_id
+        AND uw.app_id = 8
+        AND uw.user_type = 1
+        AND uw.busi_type = 1
+        AND uw.status = 1
+WHERE
+    apr.end_time >= :startTime
+        AND apr.end_time < :endTime
+        AND apr.duration > 0;";
+
+        $map = [
+            ':start_time' => $startTime,
+            ':end_time' => $endTime,
+        ];
+
+        $studentInfo = $db->queryAll($sql, $map);
+
+        return $studentInfo ?? [];
+    }
 }
