@@ -20,6 +20,7 @@ class WeChatMiniPro
     const WX_HOST = 'https://api.weixin.qq.com';
     const API_GET_ACCESS_TOKEN = '/cgi-bin/token';
     const API_SEND = '/cgi-bin/message/custom/send';
+    const API_TEMPLATE_SEND = '/cgi-bin/message/template/send';
     const API_UPLOAD_IMAGE = '/cgi-bin/media/upload';
     const API_SHORT_URL = '/cgi-bin/shorturl';
 
@@ -170,6 +171,19 @@ class WeChatMiniPro
     public function sendImage($openId, $mediaId)
     {
         return $this->send($openId, 'image', ['media_id' => $mediaId]);
+    }
+
+    public function templateSend($openId, $templateId, $data, $url = NULL)
+    {
+        $api = $this->apiUrl(self::API_TEMPLATE_SEND);
+
+        $params = [
+            'touser' => $openId,
+            'template_id' => $templateId,
+            'data' => $data,
+            'url' => $url,
+        ];
+        return $this->requestJson($api, $params, 'POST');
     }
 
     public function getTempMedia($type, $tempKey, $url)
