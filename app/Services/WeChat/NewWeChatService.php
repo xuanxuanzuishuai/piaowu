@@ -6,7 +6,7 @@
  * Time: 6:30 PM
  */
 
-namespace App\Services;
+namespace App\Services\WeChat;
 
 
 use App\Libs\SimpleLogger;
@@ -20,8 +20,8 @@ class NewWeChatService
     public static function getWX()
     {
         $config = [
-            'app_id' => $_ENV['STUDENT_MINIPRO_APP_ID'],
-            'app_secret' => $_ENV['STUDENT_MINIPRO_APP_SECRET'],
+            'app_id' => $_ENV['STUDENT_WEIXIN_APP_ID'],
+            'app_secret' => $_ENV['STUDENT_WEIXIN_APP_SECRET'],
         ];
         $wx = WeChatMiniPro::factory($config);
         if (empty($wx)) {

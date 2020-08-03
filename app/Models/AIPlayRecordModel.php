@@ -505,8 +505,8 @@ FROM
         AND uw.busi_type = 1
         AND uw.status = 1
 WHERE
-    apr.end_time >= :startTime
-        AND apr.end_time < :endTime
+    apr.end_time >= :start_time
+        AND apr.end_time < :end_time
         AND apr.duration > 0;";
 
         $map = [

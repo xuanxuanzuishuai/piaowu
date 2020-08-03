@@ -21,7 +21,7 @@ use App\Services\ReferralActivityService;
 use App\Libs\TableSyncQueue;
 use App\Services\ThirdPartBillService;
 use App\Services\VoiceCall\VoiceCallTRService;
-use App\Services\NewWeChatService;
+use App\Services\WeChat\NewWeChatService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
