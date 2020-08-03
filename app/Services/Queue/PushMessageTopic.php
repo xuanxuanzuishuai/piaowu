@@ -18,6 +18,8 @@ class PushMessageTopic extends BaseTopic
     const EVENT_PUSH_WX_CASH_SHARE_MESSAGE = 'push_wx_cash_share_message';
     const EVENT_PUSH_SMS_TASK_REVIEW = 'push_sms_task_review';
 
+    const EVENT_WX_PUSH_COMMON = 'wx_push_common'; // 微信消息推送
+
 
     public function __construct($publishTime = null)
     {
@@ -44,6 +46,19 @@ class PushMessageTopic extends BaseTopic
      * @return $this
      */
     public function pushTaskReview($data, $eventType = self::EVENT_PUSH_SMS_TASK_REVIEW)
+    {
+        $this->setEventType($eventType);
+        $this->setMsgBody($data);
+        return $this;
+    }
+
+    /**
+     * 微信推送公共接口
+     * @param $data
+     * @param string $eventType
+     * @return $this
+     */
+    public function wxPushCommon($data, $eventType = self::EVENT_WX_PUSH_COMMON)
     {
         $this->setEventType($eventType);
         $this->setMsgBody($data);

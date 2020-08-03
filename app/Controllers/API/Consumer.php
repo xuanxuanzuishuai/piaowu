@@ -21,6 +21,7 @@ use App\Services\ReferralActivityService;
 use App\Libs\TableSyncQueue;
 use App\Services\ThirdPartBillService;
 use App\Services\VoiceCall\VoiceCallTRService;
+use App\Services\NewWeChatService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -157,6 +158,9 @@ class Consumer extends ControllerBase
         }
 
         switch ($params['event_type']) {
+            case PushMessageTopic::EVENT_WX_PUSH_COMMON:
+                NewWeChatService::queuePush($params['msg_body']);
+                break;
             case PushMessageTopic::EVENT_PUSH_WX:
                 ReferralActivityService::pushWXMsg($params['msg_body']);
                 break;
