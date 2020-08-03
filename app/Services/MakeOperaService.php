@@ -469,6 +469,10 @@ class MakeOperaService
                 $data['managerList']=[$temRole];
             }
         }
+        $data['assistantList'] = $data['assistantList']??[];
+        $data['managerList'] = $data['managerList']??[];
+        $data['makerList'] = $data['makerList']??[];
+        $data['configList'] = $data['configList']??[];
         return $data??[];
     }
 
