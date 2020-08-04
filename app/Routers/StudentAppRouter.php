@@ -16,6 +16,7 @@ use App\Controllers\StudentApp\Pay;
 use App\Controllers\StudentApp\Play;
 use App\Controllers\StudentApp\Homework;
 use App\Controllers\StudentApp\Referral;
+use App\Controllers\StudentApp\SaleShop;
 use App\Controllers\StudentApp\Subscription;
 use App\Middleware\AppApiForStudent;
 use App\Middleware\MUSVGMiddleWare;
@@ -109,6 +110,18 @@ class StudentAppRouter extends RouterBase
             'method' => ['get'],
             'call' => App::class . ':countryCode',
             'middles' => [AppApiForStudent::class]
+        ],
+
+        '/student_app/app/get_by_parent_code' => [
+            'method' => ['get'],
+            'call' => App::class . ':getByParentCode',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
+
+        '/student_app/app/get_by_code' => [
+            'method' => ['get'],
+            'call' => App::class . ':getByCode',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
         ],
 
         // /student_app/sub
@@ -268,6 +281,56 @@ class StudentAppRouter extends RouterBase
             'call' => Pay::class . ':billStatus',
             'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
         ],
+
+        // 积分商城
+        '/student_app/sale_shop/shop_packages' => [
+            'method' => ['get'],
+            'call' => SaleShop::class . ':saleShopPackages',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
+        '/student_app/sale_shop/shop_package_detail' => [
+            'method' => ['get'],
+            'call' => SaleShop::class . ':saleShopPackageDetail',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
+        '/student_app/sale_shop/address_list' => [
+            'method' => ['get'],
+            'call' => SaleShop::class . ':addressList',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
+        '/student_app/sale_shop/address_modify' => [
+            'method' => ['get'],
+            'call' => SaleShop::class . ':modifyAddress',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
+        '/student_app/sale_shop/address_delete' => [
+            'method' => ['get'],
+            'call' => SaleShop::class . ':deleteAddress',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
+
+        // 积分商城订单
+        '/student_app/sale_shop/create_bill' => [
+            'method' => ['get'],
+            'call' => SaleShop::class . ':createBill',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
+        '/student_app/sale_shop/bill_list' => [
+            'method' => ['get'],
+            'call' => SaleShop::class . ':billList',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
+        '/student_app/sale_shop/bill_detail' => [
+            'method' => ['get'],
+            'call' => SaleShop::class . ':billDetail',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
+        '/student_app/sale_shop/logistics' => [
+            'method' => ['get'],
+            'call' => SaleShop::class . ':billLogistics',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
+
 
         '/student_app/referral/list' => [
             'method' => ['get'],

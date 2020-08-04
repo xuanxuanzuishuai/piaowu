@@ -360,4 +360,39 @@ class PayServices
 
         return empty($trailPackages) ? false : true;
     }
+
+    /**
+     * 积分商城
+     * @param $channel
+     * @param $page
+     * @param $count
+     * @return array|bool
+     */
+    public static function getPackageV1List($channel, $page, $count)
+    {
+        // sale_shop 销售商城分类 1 音符商城 2 金叶子商城
+        // channel 渠道授权 1 Android 2 IOS 4 公众号 8 ERP
+        $params = [
+            'sale_shop' => 1,
+            'channel' => $channel,
+            'page' => $page,
+            'count' => $count
+        ];
+
+        $erp = new Erp();
+        $packages = $erp->packageV1List($params);
+        return $packages;
+    }
+
+    /**
+     * 新产品详情
+     * @param $packageId
+     * @return array|bool
+     */
+    public static function getPackageV1Detail($packageId)
+    {
+        $erp = new Erp();
+        $detail = $erp->packageV1Detail($packageId);
+        return $detail;
+    }
 }

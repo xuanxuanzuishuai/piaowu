@@ -20,6 +20,7 @@ use App\Models\AppVersionModel;
 use App\Models\FeedbackModel;
 use App\Models\StudentModelForApp;
 use App\Services\AppVersionService;
+use App\Services\AreaService;
 use App\Services\BannerService;
 use App\Services\CommonServiceForApp;
 use App\Services\FlagsService;
@@ -356,8 +357,50 @@ class App extends ControllerBase
     {
         $countryCode = CommonServiceForApp::getCountryCode();
         return $response->withJson([
-            'code'=> Valid::CODE_SUCCESS,
-            'data'=> $countryCode,
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $countryCode,
         ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * 根据父级code获取列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getByParentCode(Request $request, Response $response)
+    {
+
+        $params = $request->getParams();
+        $parentCode = $params['parent_code'];
+
+        $result = AreaService::getAreaByParentCode($parentCode);
+
+        return HttpHelper::buildResponse($response, ['area_list' => $result]);
+    }
+
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getByCode(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'code',
+                'type' => 'required',
+                'error_code' => 'area_code_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $result = AreaService::getByCode($params['code']);
+        return HttpHelper::buildResponse($response, ['area_info' => $result]);
     }
 }

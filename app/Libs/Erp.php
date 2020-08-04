@@ -39,9 +39,19 @@ class Erp
     const API_MODIFY_TASK = '/api/dss/modify_task';
     const API_AWARD_BASE_INFO = '/api/dss/task_award_info';
 
+    // 地址管理
     const API_STUDENT_ADDRESS_LIST = '/ai_dss/student/address_list';
     const API_STUDENT_MODIFY_ADDRESS = '/ai_dss/student/modify_address';
+    const API_STUDENT_DELETE_ADDRESS = '/ai_dss/student/delete_address';
 
+    // 新产品包
+    const API_PACKAGE_V1_LIST = '/ai_dss/package/package_v1_list';
+    const API_PACKAGE_V1_DETAIL = '/ai_dss/package/package_v1_detail';
+    // 积分商城
+    const API_CREATE_BILL_V1 = '/ai_dss/billV1/create_bill';
+    const API_BILL_LIST_V1 = '/ai_dss/billV1/bill_list';
+    const API_BILL_DETAIL_V1 = '/ai_dss/billV1/bill_detail';
+    const API_LOGISTICS_V1 = '/ai_dss/billV1/logistics';
 
     // 账户
     const API_STUDENT_ACCOUNTS = '/ai_dss/account/detail';
@@ -428,6 +438,18 @@ class Erp
     }
 
     /**
+     * 删除地址
+     * @param $params
+     * @return array|bool
+     */
+    public function deleteStudentAddress($params)
+    {
+        $params['app_id'] = self::SELF_APP_ID;
+        $response = HttpHelper::requestJson($this->host . self::API_STUDENT_DELETE_ADDRESS, $params, 'POST');
+        return $response;
+    }
+
+    /**
      * 学生账户余额
      * @param $studentUuid
      * @return array|bool
@@ -460,4 +482,82 @@ class Erp
         $response = HttpHelper::requestJson($this->host . self::API_STUDENT_ACCOUNT_DETAIL, $params);
         return $response;
     }
+
+    /**
+     * 新产品包列表
+     * @param $params
+     * @return array|bool
+     */
+    public function packageV1List($params)
+    {
+        $params['app_id'] = self::SELF_APP_ID;
+        $response = HttpHelper::requestJson($this->host . self::API_PACKAGE_V1_LIST, $params);
+        return $response;
+    }
+
+    /**
+     * 新产品包详情
+     * @param $packageId
+     * @return array|bool
+     */
+    public function packageV1Detail($packageId)
+    {
+        $response = HttpHelper::requestJson($this->host . self::API_PACKAGE_V1_DETAIL, [
+            'package_id' => $packageId
+        ]);
+        return $response;
+    }
+
+    /**
+     * 创建订单
+     * @param $params
+     * @return array|bool
+     */
+    public function createBillV1($params)
+    {
+        $params['app_id'] = self::SELF_APP_ID;
+
+        $response = HttpHelper::requestJson($this->host . self::API_CREATE_BILL_V1, $params, 'POST');
+        return $response;
+    }
+
+    /**
+     * 订单列表
+     * @param $params
+     * @return array|bool
+     */
+    public function billListV1($params)
+    {
+        $params['app_id'] = self::SELF_APP_ID;
+
+        $response = HttpHelper::requestJson($this->host . self::API_BILL_LIST_V1, $params);
+        return $response;
+    }
+
+    /**
+     * 订单详情
+     * @param $params
+     * @return array|bool
+     */
+    public function billDetailV1($params)
+    {
+        $params['app_id'] = self::SELF_APP_ID;
+
+        $response = HttpHelper::requestJson($this->host . self::API_BILL_DETAIL_V1, $params);
+        return $response;
+    }
+
+    /**
+     * 物流信息
+     * @param $params
+     * @return array|bool
+     */
+    public function logisticsV1($params)
+    {
+        $params['app_id'] = self::SELF_APP_ID;
+
+        $response = HttpHelper::requestJson($this->host . self::API_LOGISTICS_V1, $params);
+        return $response;
+    }
+
 }
