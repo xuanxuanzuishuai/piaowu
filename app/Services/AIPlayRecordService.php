@@ -46,7 +46,8 @@ class AIPlayRecordService
         if (!empty($params['track_id'])) {
             $playRecord = AIPlayRecordModel::getRecord(['track_id' => $params['track_id']]);
         }
-
+        //时长进行向下取整处理
+        $params['duration'] = floor($params['duration']);
         $newRecord = [
             'student_id' => $studentId,
             'create_time' => $now,
@@ -497,7 +498,8 @@ class AIPlayRecordService
             $uiEntry = ($playData['old_format'] === Constants::STATUS_FALSE)
                 ? AIPlayRecordModel::UI_ENTRY_OLD : AIPlayRecordModel::UI_ENTRY_PRACTICE;
         }
-
+        //时长进行向下取整处理
+        $playData['duration'] = floor($playData['duration']);
         $recordData = [
             'student_id' => $studentId,
             'lesson_id' => $playData['lesson_id'],
