@@ -624,35 +624,24 @@ class ReviewCourseService
 
         $student = StudentService::getByUuid($uuid);
         $studentId = $student['id'];
-
-        // 更新点评课标记
-        if ($student['has_review_course'] < $packageType) {
+        if ($student['has_review_course'] >= $packageType) {
+            SimpleLogger::info('student has review course gt package type', ['has_review_course' => $student['has_review_course'], 'package_type' => $packageType]);
+            return;
+        } else {
+            // 更新点评课标记
             $update = [
                 'has_review_course' => $packageType,
             ];
             StudentModel::updateRecord($studentId, $update);
-
             self::completeEventTask($student['uuid'], $packageType, $trialType);
-
-            //同步用户付费状态信息到crm粒子数据中
-            if ($packageType == PackageExtModel::PACKAGE_TYPE_TRIAL) {
-                QueueService::studentFirstPayTestCourse($studentId);
-
-            } elseif ($packageType == PackageExtModel::PACKAGE_TYPE_NORMAL) {
-                QueueService::studentFirstPayNormalCourse($studentId);
-            }
         }
-
-        if (!empty($student['collection_id'])) {
-            return ;
-        }
-
+        //同步用户付费状态信息到crm粒子数据中
         if ($packageType == PackageExtModel::PACKAGE_TYPE_NORMAL) {
+            QueueService::studentFirstPayNormalCourse($studentId);
             return ;
         }
-
         /**
-         * 分配体验班级
+         * 分配体验班级：已分配班级的学生禁止重复分班
          * 满足分配条件的班级选择规则
          * 有推荐人:
          *          (1)优先分配给推荐人所属助教的组班中的班级，不管班级启用状态，不管是否超过班容。
@@ -663,6 +652,9 @@ class ReviewCourseService
          *          (1)通过启用状态,组班期时间,班级类型,授课类型,班级当前分配学生总量筛选出班级列表
          *          (2)可分配的班级按照当天进班的学生人数按照由低到高排序,取分配人数最低的班级, 如果人数相同则选择创建时间最早的班级
          */
+        if (!empty($student['collection_id'])) {
+            return ;
+        }
         $collection = CollectionService::getCollectionByRefereeId($studentId, $packageType, $trialType);
         if (empty($collection)) {
             $collection = CollectionService::getCollectionByCourseType($packageType, $trialType);
