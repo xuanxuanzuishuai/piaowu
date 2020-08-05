@@ -221,7 +221,7 @@ class AIPlayReportService
             $msgBody['open_id'] = $info['open_id'];
 
             try {
-                $topic->wxPushCommon($msgBody)->publish();
+                $topic->wxPushCommon($msgBody)->publish(rand(0, 1200));
 
             } catch (\Exception $e) {
                 SimpleLogger::error("sendDailyReport send failure", ['info' => $info]);
