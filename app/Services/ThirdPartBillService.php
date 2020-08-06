@@ -122,6 +122,7 @@ class ThirdPartBillService
             'description'     => 'DSS表格导入订单',
             'supplement_type' => 1, // 新单
             'deliver_now'     => 1, // 立即发货
+            'channel_id'      => $params['channel_id'], // 若ERP不存在此用户，注册用
         ]);
 
         // 记录请求结果
