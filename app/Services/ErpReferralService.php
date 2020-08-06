@@ -293,6 +293,14 @@ class ErpReferralService
         if (!empty($params['reviewer_name'])) {
             $params['reviewer_id'] = EmployeeModel::getRecord(['name[~]' => Util::sqlLike($params['reviewer_name'])], 'id');
         }
+
+        if (!empty($params['event_task_id'])) {
+            if ($params['event_task_id'] == self::EXPECT_TRAIL_PAY) {
+                $params['event_task_id'] =  self::EVENT_TASK_ID_TRIAL_PAY;
+            } else if ($params['event_task_id'] == self::EXPECT_YEAR_PAY) {
+                $params['event_task_id'] =  self::EVENT_TASK_ID_PAY;
+            }
+        }
         $response = $erp->awardList($params);
 
         if (empty($response) || $response['code'] != 0) {
@@ -377,6 +385,13 @@ class ErpReferralService
         $params['award_relate'] = Erp::AWARD_RELATE_COMMUNITY;
         if (!empty($params['reviewer_name'])) {
             $params['reviewer_id'] = EmployeeModel::getRecord(['name[~]' => Util::sqlLike($params['reviewer_name'])], 'id');
+        }
+        if (!empty($params['event_task_id'])) {
+            if ($params['event_task_id'] == self::EXPECT_TRAIL_PAY) {
+                $params['event_task_id'] =  self::EVENT_TASK_ID_TRIAL_PAY;
+            } else if ($params['event_task_id'] == self::EXPECT_YEAR_PAY) {
+                $params['event_task_id'] =  self::EVENT_TASK_ID_PAY;
+            }
         }
         $response = $erp->awardList($params);
         if (empty($response) || $response['code'] != 0) {
