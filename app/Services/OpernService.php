@@ -160,17 +160,28 @@ class OpernService
         $imagesData = array_column($images, 'pageId', 'lessonId');
 
         foreach ($data as $item) {
-            $opern['lesson_id'] = $item['lesson_id'];
-            $opern['opern_name'] = $item['opern_name'];
+            $opern['id'] = $item['lesson_id'];
+            $opern['name'] = $item['opern_name'];
             $opern['score_id'] = $item['opern_id'];
-            $opern['collection_name'] = $item['collection_name'];
-            $opern['url'] = "";
-            foreach ($item['resources'] as $item2) {
-                if ($item2['sort'] == ($imagesData[$item['lesson_id']] + self::PAGE_LIMIT)) {
-                    $opern['url'] = $item2['resource_url'];
+            $opern['is_free'] = $item['freeflag'] ? '1' : '0';
+            $opern['knowledge'] = $item['knowledge'] ? 1 : 0;
+            $opern['collection_id'] = $item['collection_id'] ? $item['collection_id'] : '';
+            $opern['collection_name'] = $item['collection_name'] ? $item['collection_name'] : '';
+            $opern['collection_cover'] = $item['collection_cover'] ? $item['collection_cover'] : '';
+            $opern['mmusic'] = $item['mmusic'] ? '1' : '0';
+            $opern['mmusicconfig'] = $item['mmusicconfig'] ? '1' : '0';
+            $opern['dynamic'] = $item['dynamic'] ? '1' : '0';
+            $opern['page'] = $item['page'];
+            $opern['res'] = "";
+            $opern['mp4'] = '0';
+            $opern['mp8'] = '0';
+            foreach ($item['resources'] as $resource) {
+                if ($resource['sort'] == ($imagesData[$item['lesson_id']] + self::PAGE_LIMIT)) {
+                    $opern['res'] = $resource['resource_url'];
+                    break;
                 }
             }
-            if (!empty($opern['url'])) {
+            if (!empty($opern['res'])) {
                 $lesson[] = $opern;
             }
         }
