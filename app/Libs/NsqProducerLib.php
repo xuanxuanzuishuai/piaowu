@@ -69,7 +69,8 @@ class NsqProducerLib
         $phpNsq = new PhpNsq($this->config());
         $message = json_encode($data);
         SimpleLogger::info("QUEUE", array($message));
-        $phpNsq->setTopic($topicName)->publishDefer($message, $deferTime);
+        //
+        $phpNsq->setTopic($topicName)->publishDefer($message, $deferTime*1000);
     }
 
     /**
