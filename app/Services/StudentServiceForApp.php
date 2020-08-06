@@ -461,7 +461,7 @@ class StudentServiceForApp
         }
 
         $updateResult = $erp->updateTask($uuid,
-            ErpReferralService::EVENT_TASK_ID_REGISTER,
+            ErpReferralService::getRegisterTaskId(),
             ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
 
         if(!empty($updateResult)
@@ -472,7 +472,7 @@ class StudentServiceForApp
 
             WeChatService::notifyUserCustomizeMessage(
                 $referrer['mobile'],
-                ErpReferralService::EVENT_TASK_ID_REGISTER,
+                ErpReferralService::getRegisterTaskId(),
                 [
                     'mobile' => Util::hideUserMobile($mobile),
                     'url' => $_ENV['STUDENT_INVITED_RECORDS_URL'],

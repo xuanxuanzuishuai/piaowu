@@ -26,16 +26,25 @@ class ErpReferralService
     const EVENT_TYPE_UPLOAD_POSTER = 4; // 上传分享海报
     const EVENT_TYPE_UPLOAD_POSTER_RETURN_CASH = 5; // 上传分享海报领取返现
 
+    /**
+     * 前端传值的对应关系
+     */
+    const EXPECT_REGISTER = 1; //注册
+    const EXPECT_TRAIL_PAY = 2; //付费体验卡
+    const EXPECT_YEAR_PAY = 3; //付费年卡
 
     /** 转介绍阶段任务 */
-    const EVENT_TASK_ID_REGISTER = 1; // 注册
-    const EVENT_TASK_ID_TRIAL_PAY = 2; // 体验支付
-    const EVENT_TASK_ID_PAY = 3; // 支付
+    const EVENT_TASK_ID_REGISTER = [1]; // 注册
+    const EVENT_TASK_ID_TRIAL_PAY = [52, 2]; // 体验支付
+    const EVENT_TASK_ID_PAY = [53, 3]; // 支付
 
+    /**
+     * 此属性用于和前端交互时的对应
+     */
     const EVENT_TASKS = [
-        self::EVENT_TASK_ID_REGISTER => '注册',
-        self::EVENT_TASK_ID_TRIAL_PAY => '付费体验卡',
-        self::EVENT_TASK_ID_PAY => '付费年卡',
+        self::EXPECT_REGISTER => '注册',
+        self::EXPECT_TRAIL_PAY => '付费体验卡',
+        self::EXPECT_YEAR_PAY => '付费年卡',
     ];
 
     /** 任务状态 */
@@ -69,6 +78,63 @@ class ErpReferralService
     const ERP_EVENT_TASK_STATUS_DISABLED = 2;
 
     /**
+     * @param $taskId
+     * @return string
+     * 转介绍阶段任务的中文对应
+     */
+    public static function getTaskRelateZh($taskId)
+    {
+        if (in_array($taskId, self::EVENT_TASK_ID_REGISTER)) {
+            return '注册';
+        } elseif (in_array($taskId, self::EVENT_TASK_ID_TRIAL_PAY)) {
+            return '付费体验卡';
+        } elseif (in_array($taskId, self::EVENT_TASK_ID_PAY)) {
+            return '付费年卡';
+        } else {
+            return '暂不明确';
+        }
+    }
+
+    /**
+     * @return int
+     * 当前生效的转介绍注册任务
+     */
+    public static function getRegisterTaskId()
+    {
+        $arr = self::EVENT_TASK_ID_REGISTER;
+        return reset($arr);
+    }
+
+    /**
+     * @return int
+     * 当前生效的体验付费任务
+     */
+    public static function getTrailPayTaskId()
+    {
+        $arr = self::EVENT_TASK_ID_TRIAL_PAY;
+        return reset($arr);
+    }
+
+    /**
+     * @return int
+     * 当前生效的年卡付费任务
+     */
+    public static function getYearPayTaskId()
+    {
+        $arr = self::EVENT_TASK_ID_PAY;
+        return reset($arr);
+    }
+
+    /**
+     * @return array
+     * 转介绍相关的任务
+     */
+    public static function getAllReferralTaskId()
+    {
+        return array_merge(self::EVENT_TASK_ID_REGISTER, self::EVENT_TASK_ID_TRIAL_PAY, self::EVENT_TASK_ID_PAY);
+    }
+
+    /**
      * 转介绍列表
      * @param $params
      * @return array
@@ -81,7 +147,6 @@ class ErpReferralService
             $params['event_task_id'] = implode(',', $includeTasks);
             $params['not_event_task_id'] = implode(',', $excludeTasks);
         }
-
         $erp = new Erp();
         $response = $erp->referredList($params);
 
@@ -109,7 +174,7 @@ class ErpReferralService
                 'referrer_uuid' => $referred['referrer_uuid'],
                 'referrer_name' => $studentInfoList[$referred['referrer_uuid']]['name'],
                 'referrer_mobile_hidden' => Util::hideUserMobile($referred['referrer_mobile']),
-                'max_event_task_name' => self::EVENT_TASKS[$maxRefTaskId] ?? '-',
+                'max_event_task_name' => self::getTaskRelateZh($maxRefTaskId) ?? '-',
                 'register_time' => $referred['create_time'],
                 'student_id' => $studentInfoList[$referred['student_uuid']]['id'],
                 'referral_student_id' => $studentInfoList[$referred['referrer_uuid']]['id'],
@@ -151,7 +216,7 @@ class ErpReferralService
             foreach ($tasks as $task) {
                 $userTasks[$task['event_task_id']] = [
                     'create_time' => $task['create_time'],
-                    'event_task_name' => self::EVENT_TASKS[$task['event_task_id']],
+                    'event_task_name' => self::getTaskRelateZh($task['event_task_id']),
                 ];
             }
 
@@ -173,7 +238,7 @@ class ErpReferralService
         $maxTaskId = 0;
         foreach ($tasks as $idx => $task) {
             //只需要特定的转介绍任务
-            if (!in_array($task['event_task_id'], [self::EVENT_TASK_ID_REGISTER, self::EVENT_TASK_ID_TRIAL_PAY, self::EVENT_TASK_ID_PAY])) {
+            if (!in_array($task['event_task_id'], self::getAllReferralTaskId())) {
                 continue;
             }
             if (empty($maxTaskId) || self::refEventTaskCmp($task['event_task_id'], $maxTaskId)) {
@@ -192,20 +257,24 @@ class ErpReferralService
 
     /**
      * 根据转介绍阶段筛选event_task_id
-     * @param $taskId
+     * @param $expectTask
      * @return array
      */
-    private static function getRefEventTaskIdFilter($taskId)
+    private static function getRefEventTaskIdFilter($expectTask)
     {
-        $include = [$taskId];
+        $include = [];
         $exclude = [];
-        switch ($taskId) {
-            case self::EVENT_TASK_ID_REGISTER:
-                $exclude[] = self::EVENT_TASK_ID_TRIAL_PAY;
-                $exclude[] = self::EVENT_TASK_ID_PAY;
+        switch ($expectTask) {
+            case self::EXPECT_REGISTER:
+                $exclude = array_merge( self::EVENT_TASK_ID_TRIAL_PAY, self::EVENT_TASK_ID_PAY);
+                $include = self::EVENT_TASK_ID_REGISTER;
                 break;
-            case self::EVENT_TASK_ID_TRIAL_PAY:
-                $exclude[] = self::EVENT_TASK_ID_PAY;
+            case self::EXPECT_TRAIL_PAY:
+                $exclude = self::EVENT_TASK_ID_PAY;
+                $include = self::EVENT_TASK_ID_TRIAL_PAY;
+                break;
+            case self::EXPECT_YEAR_PAY:
+                $include = self::EVENT_TASK_ID_PAY;
                 break;
         }
         return [$include, $exclude];

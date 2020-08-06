@@ -734,12 +734,12 @@ class ReviewCourseService
         if ($packageType == PackageExtModel::PACKAGE_TYPE_TRIAL) {
             if ($trialType == PackageExtModel::TRIAL_TYPE_49) {
                 // 购买49体验包完成转介绍任务
-                $refTaskId = ErpReferralService::EVENT_TASK_ID_TRIAL_PAY;
+                $refTaskId = ErpReferralService::getTrailPayTaskId();
             }
 
         } elseif ($packageType == PackageExtModel::PACKAGE_TYPE_NORMAL) {
             // 购买正式包完成转介绍任务
-            $refTaskId = ErpReferralService::EVENT_TASK_ID_PAY;
+            $refTaskId = ErpReferralService::getYearPayTaskId();
         }
 
         if (!empty($refTaskId)) {
