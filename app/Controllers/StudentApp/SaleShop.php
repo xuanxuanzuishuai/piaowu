@@ -42,10 +42,15 @@ class SaleShop extends ControllerBase
     {
         $rules = [
             [
-                'key'        => 'package_id',
-                'type'       => 'required',
+                'key'  => 'package_id',
+                'type'  => 'required',
                 'error_code' => 'package_id_is_required',
             ],
+            [
+                'key' => 'package_id',
+                'type' => 'integer',
+                'error_code' => 'package_id_must_be_integer'
+            ]
         ];
         $params = $request->getParams();
         $result = Valid::validate($params, $rules);
@@ -150,14 +155,7 @@ class SaleShop extends ControllerBase
 
         $erp = new Erp();
         $result = $erp->modifyStudentAddress($params);
-        if (empty($result) || $result['code'] != Valid::CODE_SUCCESS) {
-            $errorCode = $result['errors'][0]['err_no'] ?? 'erp_request_error';
-            return $response->withJson(Valid::addAppErrors([], $errorCode), StatusCode::HTTP_OK);
-        }
-        return $response->withJson([
-            'code' => Valid::CODE_SUCCESS,
-            'data' => []
-        ], StatusCode::HTTP_OK);
+        return $response->withJson($result, StatusCode::HTTP_OK);
     }
 
     /**
@@ -185,15 +183,8 @@ class SaleShop extends ControllerBase
 
         $erp = new Erp();
         $result = $erp->deleteStudentAddress($params);
-        if (empty($result) || $result['code'] != Valid::CODE_SUCCESS) {
-            $errorCode = $result['errors'][0]['err_no'] ?? 'erp_request_error';
-            return $response->withJson(Valid::addAppErrors([], $errorCode), StatusCode::HTTP_OK);
-        }
 
-        return $response->withJson([
-            'code' => Valid::CODE_SUCCESS,
-            'data' => []
-        ], StatusCode::HTTP_OK);
+        return $response->withJson($result, StatusCode::HTTP_OK);
     }
 
     /**
@@ -234,14 +225,8 @@ class SaleShop extends ControllerBase
 
         $erp = new Erp();
         $result = $erp->createBillV1($params);
-        if (empty($result) || $result['code'] != Valid::CODE_SUCCESS) {
-            $errorCode = $result['errors'][0]['err_no'] ?? 'erp_request_error';
-            return $response->withJson(Valid::addAppErrors([], $errorCode), StatusCode::HTTP_OK);
-        }
-        return $response->withJson([
-            'code' => Valid::CODE_SUCCESS,
-            'data' => $result['data']
-        ], StatusCode::HTTP_OK);
+
+        return $response->withJson($result, StatusCode::HTTP_OK);
     }
 
     /**

@@ -299,19 +299,19 @@ class StudentAppRouter extends RouterBase
             'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
         ],
         '/student_app/sale_shop/address_modify' => [
-            'method' => ['get'],
+            'method' => ['post'],
             'call' => SaleShop::class . ':modifyAddress',
             'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
         ],
         '/student_app/sale_shop/address_delete' => [
-            'method' => ['get'],
+            'method' => ['post'],
             'call' => SaleShop::class . ':deleteAddress',
             'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
         ],
 
         // 积分商城订单
         '/student_app/sale_shop/create_bill' => [
-            'method' => ['get'],
+            'method' => ['post'],
             'call' => SaleShop::class . ':createBill',
             'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
         ],
