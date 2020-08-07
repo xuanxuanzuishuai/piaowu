@@ -76,7 +76,6 @@ class OrgWebRouter extends RouterBase
         '/employee/auth/signout' => ['method' => ['post'], 'call' => Auth::class . ':signout', 'middles' => [EmployeeAuthCheckMiddleWare::class, OrgWebMiddleware::class]],
         '/employee/auth/usercenterurl' => ['method' => ['get'], 'call' => Auth::class . ':usercenterurl', 'middles' => [OrgWebMiddleware::class]],
 
-
         '/employee/employee/list' => array('method' => array('get'), 'call' => '\App\Controllers\Employee\Employee:list'),
         //list for org
         '/employee/employee/list_for_org' => array('method' => array('get'), 'call' => '\App\Controllers\Employee\Employee:listForOrg'),
@@ -89,6 +88,10 @@ class OrgWebRouter extends RouterBase
         '/employee/employee/assign_cc' => ['method' => ['post'], 'call' => Employee::class . ':assignCC'],
         //请求机构cc列表，分配cc用
         '/employee/employee/cc_list' => ['method' => ['get'], 'call' => Employee::class . ':CCList'],
+        //人员管理->编辑员工对外的信息(只有管理员有权限）
+        '/org_web/employee/external_information' => ['method' => ['post'], 'call' => Employee::class . ':externalInformation'],
+        //个人信息里可以编辑自己的对外信息
+        '/org_web/employee/user_external_information' => ['method' => ['post'], 'call' => Employee::class . ':userExternalInformation'],
 
         '/org_web/employee/get_dept_members' => [
             'method' => ['get'],

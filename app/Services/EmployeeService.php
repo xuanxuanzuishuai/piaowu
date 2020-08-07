@@ -11,6 +11,7 @@ namespace App\Services;
 use App\Libs\Constants;
 use App\Libs\Dict;
 use App\Libs\DictConstants;
+use App\Libs\Exceptions\RunTimeException;
 use App\Libs\JWTUtils;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
@@ -314,5 +315,20 @@ class EmployeeService
             return true;
         }
         return false;
+    }
+
+    public static function externalInformation($params)
+    {
+        $employeeData = EmployeeModel::getRecord(['id' => $params['id']]);
+        if (empty($employeeData)) {
+            throw new RunTimeException(['employee_not_exist']);
+        }
+
+        $updateResult = EmployeeModel::updateEmployee($params['id'], ['wx_nick' => $params['wx_nick'], 'wx_thumb' => $params['wx_thumb'], 'wx_qr' => $params['wx_qr']]);
+
+        if (empty($updateResult)) {
+            throw new RunTimeException(['update_failure']);
+        }
+        return $updateResult;
     }
 }

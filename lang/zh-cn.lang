@@ -387,3 +387,7 @@ app_version_is_required="app版本号缺失"
 package_id_must_be_integer='商品包ID必须是整型'
 order_id_is_required='请选择订单'
 order_id_must_be_integer='订单id必须是整型'
+wx_nick_is_required='微信昵称必传'
+wx_thumb_is_required='微信头像必传'
+wx_qr_is_required='微信二维码必传'
+employee_not_exist='用户不存在'

@@ -11,6 +11,8 @@ namespace App\Controllers\Employee;
 use App\Controllers\ControllerBase;
 use App\Libs\Constants;
 use App\Libs\Dict;
+use App\Libs\Exceptions\RunTimeException;
+use App\Libs\HttpHelper;
 use App\Libs\MysqlDB;
 use App\Libs\Util;
 use App\Libs\Valid;
@@ -513,5 +515,93 @@ class Employee extends ControllerBase
                 'total_count' => $total,
             ]
         ]);
+    }
+
+    /**
+     * 人员管理->编辑员工的信息(只有管理员有权限）
+     * @param Request $request
+     * @param Response $response
+     * @return array|Response
+     */
+    public function externalInformation(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key'        => 'wx_nick',
+                'type'       => 'required',
+                'error_code' => 'wx_nick_is_required'
+            ],
+            [
+                'key'        => 'wx_thumb',
+                'type'       => 'required',
+                'error_code' => 'wx_thumb_is_required'
+            ],
+            [
+                'key'        => 'wx_qr',
+                'type'       => 'required',
+                'error_code' => 'wx_qr_is_required'
+            ],
+            [
+                'key'        => 'id',
+                'type'       => 'required',
+                'error_code' => 'id_is_required'
+            ],
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $employeeId = self::getEmployeeId();
+        $employeeData = EmployeeService::getById($employeeId);
+        if ($employeeData['is_leader'] == Constants::STATUS_FALSE) {
+            return $response->withJson(Valid::addErrors([], 'modify_external_information', 'no_privilege'));
+        }
+        try {
+            EmployeeService::externalInformation($params);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, []);
+    }
+
+    /**
+     * 个人信息里可以编辑自己的对外信息
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function userExternalInformation(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key'        => 'wx_nick',
+                'type'       => 'required',
+                'error_code' => 'wx_nick_is_required'
+            ],
+            [
+                'key'        => 'wx_thumb',
+                'type'       => 'required',
+                'error_code' => 'wx_thumb_is_required'
+            ],
+            [
+                'key'        => 'wx_qr',
+                'type'       => 'required',
+                'error_code' => 'wx_qr_is_required'
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $params['id'] = self::getEmployeeId();
+        try {
+            EmployeeService::externalInformation($params);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, []);
     }
 }
