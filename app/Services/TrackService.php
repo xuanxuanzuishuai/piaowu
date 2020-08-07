@@ -13,6 +13,7 @@ use App\Libs\DictConstants;
 use App\Libs\HttpHelper;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
+use App\Models\StudentModel;
 use App\Models\TrackModel;
 use App\Models\UserWeixinModel;
 
@@ -23,6 +24,7 @@ class TrackService
     const TRACK_EVENT_ACTIVE = 1;
     const TRACK_EVENT_REGISTER = 2;
     const TRACK_EVENT_FORM_COMPLETE = 3;
+    const TRACK_EVENT_PAY = 4;
 
     const PLAT_UNKNOWN = 'unknown_plat';
     const PLAT_ANDROID = 'android';
@@ -268,8 +270,11 @@ class TrackService
     {
         $api = 'http://ad.toutiao.com/track/activate/';
         switch ($eventType) {
-            case self::TRACK_EVENT_FORM_COMPLETE: // 初始化操作不用回调接口
+            case self::TRACK_EVENT_FORM_COMPLETE:
                 $type = 3;
+                break;
+            case self::TRACK_EVENT_PAY:
+                $type = 2;
                 break;
             default:
                 return false;
@@ -292,8 +297,11 @@ class TrackService
     {
         $api = 'https://api.e.qq.com/v1.1/user_actions/add';
         switch ($eventType) {
-            case self::TRACK_EVENT_FORM_COMPLETE: // 初始化操作不用回调接口
+            case self::TRACK_EVENT_FORM_COMPLETE:
                 $type = 'RESERVATION';
+                break;
+            case self::TRACK_EVENT_PAY:
+                $type = 'PURCHASE';
                 break;
             default:
                 return false;
@@ -332,8 +340,11 @@ class TrackService
     public static function trackCallbackWX($eventType, $trackData)
     {
         switch ($eventType) {
-            case self::TRACK_EVENT_FORM_COMPLETE: // 初始化操作不用回调接口
+            case self::TRACK_EVENT_FORM_COMPLETE:
                 $type = 'RESERVATION';
+                break;
+            case self::TRACK_EVENT_PAY:
+                $type = 'PURCHASE';
                 break;
             default:
                 return false;
@@ -376,5 +387,31 @@ class TrackService
             'ad_channel' => (int)$adChannel['ad_channel'],
             'ad_id' => (int)$adChannel['ad_id'],
         ];
+    }
+
+    /**
+     * 学员付费回调广告平台
+     * @param $uuid
+     * @return array|null
+     */
+    public static function studentPaidCallback($uuid)
+    {
+        $student = StudentService::getByUuid($uuid);
+        if (empty($student)) {
+            SimpleLogger::info("student not found", ['uuid' => $uuid]);
+            return null;
+        }
+
+        if ($student['has_review_course'] <= 0) { // 付费标记未变更表示是免费订单不需要回调
+            SimpleLogger::info("invalid state", ['student' => $student]);
+            return null;
+        }
+
+        if (time() - $student['create_time'] > 86400) { // 只回调24小时内的付费数据
+            SimpleLogger::info("paid time out", ['student' => $student]);
+            return null;
+        }
+
+        return self::trackEvent(self::TRACK_EVENT_PAY, ['user_id' => $student['id']]);
     }
 }

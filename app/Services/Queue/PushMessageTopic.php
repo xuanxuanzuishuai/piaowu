@@ -14,11 +14,10 @@ class PushMessageTopic extends BaseTopic
     const TOPIC_NAME = "push_message";
 
     const EVENT_PUSH_WX = 'push_wx';
-    //推送返现分享链接微信消息
-    const EVENT_PUSH_WX_CASH_SHARE_MESSAGE = 'push_wx_cash_share_message';
+    const EVENT_PUSH_WX_CASH_SHARE_MESSAGE = 'push_wx_cash_share_message'; //推送返现分享链接微信消息
     const EVENT_PUSH_SMS_TASK_REVIEW = 'push_sms_task_review';
-
     const EVENT_WX_PUSH_COMMON = 'wx_push_common'; // 微信消息推送
+    const EVENT_STUDENT_PAID = 'student_paid'; // 学生付费事件
 
 
     public function __construct($publishTime = null)
@@ -59,6 +58,13 @@ class PushMessageTopic extends BaseTopic
      * @return $this
      */
     public function wxPushCommon($data, $eventType = self::EVENT_WX_PUSH_COMMON)
+    {
+        $this->setEventType($eventType);
+        $this->setMsgBody($data);
+        return $this;
+    }
+
+    public function studentPaid($data, $eventType = self::EVENT_STUDENT_PAID)
     {
         $this->setEventType($eventType);
         $this->setMsgBody($data);

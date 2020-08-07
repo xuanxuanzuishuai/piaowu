@@ -190,4 +190,27 @@ class QueueService
         return true;
 
     }
+
+    /**
+     * 用户付费
+     * @param $uuid
+     * @return bool
+     */
+    public static function studentPaid($uuid)
+    {
+        try {
+            $topic = new PushMessageTopic();
+
+            $msgBody = [
+                'uuid' => $uuid,
+            ];
+
+            $topic->studentPaid($msgBody)->publish();
+
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), $msgBody ?? []);
+            return false;
+        }
+        return true;
+    }
 }

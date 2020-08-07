@@ -20,6 +20,7 @@ use App\Services\Queue\TableSyncTopic;
 use App\Services\ReferralActivityService;
 use App\Libs\TableSyncQueue;
 use App\Services\ThirdPartBillService;
+use App\Services\TrackService;
 use App\Services\VoiceCall\VoiceCallTRService;
 use App\Services\WeChat\NewWeChatService;
 use Slim\Http\Request;
@@ -170,6 +171,9 @@ class Consumer extends ControllerBase
                 break;
             case PushMessageTopic::EVENT_PUSH_SMS_TASK_REVIEW:
                 ReviewCourseService::QueueSendTaskReview($params['msg_body']['task_id']);
+                break;
+            case PushMessageTopic::EVENT_STUDENT_PAID:
+                TrackService::studentPaidCallback($params['msg_body']['uuid']);
                 break;
             default:
                 SimpleLogger::error('consume_push_message', ['unknown_event_type' => $params['event_type']]);

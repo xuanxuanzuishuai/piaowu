@@ -20,6 +20,7 @@ use App\Models\StudentModelForApp;
 use App\Services\AIBillService;
 use App\Services\CommonServiceForApp;
 use App\Services\ErpService;
+use App\Services\Queue\QueueService;
 use App\Services\ReviewCourseService;
 use App\Services\UserPlayServices;
 use App\Services\AppVersionService;
@@ -181,6 +182,10 @@ class Erp extends ControllerBase
                 $params['package_id']);
         }
 
+        // 异步通知处理付费事件
+        if ($params['type'] == GiftCodeModel::BUYER_TYPE_ERP_ORDER) {
+            QueueService::studentPaid($params['uuid']);
+        }
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
