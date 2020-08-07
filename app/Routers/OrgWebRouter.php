@@ -97,6 +97,8 @@ class OrgWebRouter extends RouterBase
             'method' => ['get'],
             'call' => OrgWebEmployee::class . ':getDeptMembers',
         ],
+        //通过部门id获取本部门以及子部门的助教成员
+        '/org_web/employee/get_dept_assistant' => ['method' => ['get'], 'call' => OrgWebEmployee::class . ':getDeptAssistantMembers'],
 
         '/privilege/privilege/employee_menu' => array('method' => array('get'), 'call' => '\App\Controllers\Privilege\Privilege:employee_menu'),
         '/privilege/privilege/list' => array('method' => array('get'), 'call' => '\App\Controllers\Privilege\Privilege:list'),

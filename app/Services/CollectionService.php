@@ -13,6 +13,7 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
 use App\Models\CollectionModel;
 use App\Models\CollectionAssistantLogModel;
+use App\Models\EmployeeModel;
 use App\Models\PackageExtModel;
 use App\Models\StudentAssistantLogModel;
 use App\Models\StudentModel;
@@ -45,27 +46,29 @@ class CollectionService
         if (!PackageService::validateTrialType($params['teaching_type'], $params['trial_type'])) {
             throw new RunTimeException(['invalid_trial_type']);
         }
-
         $time = time();
-        $insertData = [
-            'name' => $params['name'],
-            'assistant_id' => $params['assistant_id'],
-            'capacity' => $params['capacity'],
-            'remark' => $params['remark'],
-            'prepare_start_time' => $params['prepare_start_time'],
-            'prepare_end_time' => Util::getStartEndTimestamp($params['prepare_end_time'])[1],
-            'teaching_start_time' => $params['teaching_start_time'],
-            'teaching_end_time' => Util::getStartEndTimestamp($params['teaching_end_time'])[1],
-            'wechat_qr' => $params['wechat_qr'],
-            'wechat_number' => $params['wechat_number'],
-            'create_uid' => $operator,
-            'create_time' => $time,
-            'type' => $params['type'] ?? CollectionModel::COLLECTION_TYPE_NORMAL,
-            'teaching_type' => $params['teaching_type'],
-            'trial_type' => $params['trial_type'],
-            'event_id' => $params['event_id'] ?? 0,
-            'task_id' => $params['task_id'] ?? 0,
-        ];
+        $insertData = [];
+        //批量添加班级 检测助教信息
+        $assistantInfoList = EmployeeModel::getRecords(
+            [
+                'id' => $params['assistant_id'],
+                'status' => EmployeeModel::STATUS_NORMAL
+            ],
+            ['id', 'name', 'wx_qr'],
+            false
+        );
+        if (empty($assistantInfoList)) {
+            throw new RunTimeException(['assistant_info_error']);
+        }
+        $missWxInfoAssistantList = [];
+        array_map(function ($info) use (&$missWxInfoAssistantList) {
+            if (empty($info['wx_qr']) || empty($info['wx_thumb'])) {
+                $missWxInfoAssistantList[] = $info['name'];
+            }
+        }, $assistantInfoList);
+        if (!empty($missWxInfoAssistantList)) {
+            throw new RunTimeException(['assistant_info_miss'], ['error_detail' => implode(',', $missWxInfoAssistantList)]);
+        }
         //远程调用erp获取事件任务信息
         if (!empty($insertData['event_id'])) {
             $eventTaskInfo = ErpReferralService::getEventTasksList();
@@ -73,8 +76,27 @@ class CollectionService
                 throw  new RunTimeException(['event_tasks_disable']);
             }
         }
+        foreach ($assistantInfoList as $assistantInfo) {
+            $insertData[] = [
+                'name' => date("Y-m-d", $params['teaching_start_time']) . $assistantInfo['name'],
+                'assistant_id' => $assistantInfo['id'],
+                'capacity' => $params['capacity'],
+                'remark' => $params['remark'],
+                'prepare_start_time' => $params['prepare_start_time'],
+                'prepare_end_time' => Util::getStartEndTimestamp($params['prepare_end_time'])[1],
+                'teaching_start_time' => $params['teaching_start_time'],
+                'teaching_end_time' => Util::getStartEndTimestamp($params['teaching_end_time'])[1],
+                'create_uid' => $operator,
+                'create_time' => $time,
+                'type' => $params['type'] ?? CollectionModel::COLLECTION_TYPE_NORMAL,
+                'teaching_type' => $params['teaching_type'],
+                'trial_type' => $params['trial_type'],
+                'event_id' => $params['event_id'] ?? 0,
+                'task_id' => $params['task_id'] ?? 0,
+            ];
+        }
         //集合数据
-        $collectionId = CollectionModel::insertRecord($insertData, false);
+        $collectionId = CollectionModel::batchInsert($insertData, false);
         if (empty($collectionId)) {
             throw  new RunTimeException(['add_student_collection_fail']);
         }
@@ -88,14 +110,42 @@ class CollectionService
      */
     public static function getStudentCollectionDetailByID($id)
     {
-        $list = CollectionModel::getRecords(['id' => $id], '*');
+        $db = MysqlDB::getDB();
+        $list = $db->select(
+            CollectionModel::$table,
+            [
+                "[>]" . EmployeeModel::$table => ["assistant_id" => "id"],
+            ],
+            [
+                CollectionModel::$table . '.id',
+                CollectionModel::$table . '.assistant_id',
+                CollectionModel::$table . '.name',
+                CollectionModel::$table . '.prepare_start_time',
+                CollectionModel::$table . '.prepare_end_time',
+                CollectionModel::$table . '.teaching_start_time',
+                CollectionModel::$table . '.teaching_end_time',
+                CollectionModel::$table . '.capacity',
+                CollectionModel::$table . '.event_id',
+                CollectionModel::$table . '.remark',
+                CollectionModel::$table . '.status',
+                CollectionModel::$table . '.task_id',
+                CollectionModel::$table . '.teaching_type',
+                CollectionModel::$table . '.trial_type',
+                CollectionModel::$table . '.wechat_qr',
+                EmployeeModel::$table . '.name(assistant_name)',
+                EmployeeModel::$table . '.wx_qr',
+            ],
+            [
+                CollectionModel::$table . '.id' => $id
+            ]
+        );
         if (empty($list)) {
             return [];
         }
 
         $time = time();
         foreach ($list as &$cv) {
-            $cv['oss_wechat_qr'] = AliOSS::signUrls($cv['wechat_qr']);
+            $cv['oss_wechat_qr'] = $cv["wx_qr"] ? AliOSS::signUrls($cv["wx_qr"]) : AliOSS::signUrls($cv["wechat_qr"]);
             $cv['process_status'] = self::collectionProcessStatusDict($time, $cv['prepare_start_time'], $cv['prepare_end_time'], $cv['teaching_start_time'], $cv['teaching_end_time']);
         }
 
@@ -129,10 +179,6 @@ class CollectionService
         if (empty($params)) {
             throw new RunTimeException(['invalid params']);
         }
-
-        if ($params['name']) {
-            $collectionData['name'] = $params['name'];
-        }
         if ($params['assistant_id']) {
             $collectionData['assistant_id'] = $params['assistant_id'];
         }
@@ -150,12 +196,6 @@ class CollectionService
         }
         if ($params['teaching_end_time']) {
             $collectionData['teaching_end_time'] = Util::getStartEndTimestamp($params['teaching_end_time'])[1];
-        }
-        if ($params['wechat_qr']) {
-            $collectionData['wechat_qr'] = $params['wechat_qr'];
-        }
-        if ($params['wechat_number']) {
-            $collectionData['wechat_number'] = $params['wechat_number'];
         }
         if ($params['status']) {
             $collectionData['status'] = $params['status'];
@@ -298,7 +338,8 @@ class CollectionService
         $whereSql = " count( s.id ) AS student_count FROM
                     ( SELECT
                         a.*,
-                        c.NAME AS assistant_name 
+                        c.NAME AS assistant_name,
+                        c.wx_qr
                     FROM
                         collection AS a
                         LEFT JOIN employee AS c ON a.assistant_id = c.id 
@@ -331,7 +372,7 @@ class CollectionService
         }
 
         foreach ($list as &$lv) {
-            $lv['oss_wechat_qr'] = AliOSS::signUrls($lv['wechat_qr']);
+            $lv['oss_wechat_qr'] = $lv['wx_qr'] ? AliOSS::signUrls($lv['wx_qr']) : AliOSS::signUrls($lv["wechat_qr"]);
             $lv['publish_status_name'] = $collectionPublishStatusDict[$lv['status']]['value'];
             $lv['process_status_name'] = $collectionProcessStatusDict[self::collectionProcessStatusDict($time, $lv['prepare_start_time'], $lv['prepare_end_time'], $lv['teaching_start_time'], $lv['teaching_end_time'])]['value'];
             $lv['process_status'] = self::collectionProcessStatusDict($time, $lv['prepare_start_time'], $lv['prepare_end_time'], $lv['teaching_start_time'], $lv['teaching_end_time']);
@@ -522,10 +563,9 @@ class CollectionService
     /**
      * 根据用户uuid获取所属的集合信息
      * @param $UUID
-     * @param $field
      * @return array|null
      */
-    public static function getCollectionByUserUUId($UUID, $field = [])
+    public static function getCollectionByUserUUId($UUID)
     {
         //获取用户信息
         $collection = [];
@@ -534,8 +574,21 @@ class CollectionService
             return $collection;
         }
         //获取集合信息
-        $collection = CollectionModel::getRecord(["id" => $userInfo["collection_id"]], $field, false);
-        $collection["wechat_qr"] = AliOSS::signUrls($collection["wechat_qr"]);
+        $db = MysqlDB::getDB();
+        $collection = $db->get(
+            CollectionModel::$table,
+            [
+                "[>]" . EmployeeModel::$table => ["assistant_id" => "id"],
+            ],
+            [
+                CollectionModel::$table . '.wechat_qr',
+                EmployeeModel::$table . '.wx_qr',
+            ],
+            [
+                CollectionModel::$table . '.id' => $userInfo["collection_id"]
+            ]
+        );
+        $collection["wechat_qr"] = $collection["wx_qr"] ? AliOSS::signUrls($collection["wx_qr"]) : AliOSS::signUrls($collection["wechat_qr"]);
         //返回结果
         return $collection;
     }
@@ -576,14 +629,27 @@ class CollectionService
         $updateParams = [];
         $processStatus = self::collectionProcessStatusDict($nowTime, $data[0]['prepare_start_time'], $data[0]['prepare_end_time'], $data[0]['teaching_start_time'], $data[0]['teaching_end_time']);
         if ($processStatus == CollectionModel::COLLECTION_READY_TO_GO_STATUS) {
-            // 组班中:支持【开放】或【关闭】
-            if (!empty($params['status']) && ($params['status'] != $data[0]['status'])) {
-                $updateParams['status'] = $params['status'];
-            }
+            // 组班中:班级状态、班级名称、组班期、班级容量、参与活动、备注均可以修改
+            $updateFields = [
+                'status',
+                'name',
+                'prepare_start_time',
+                'prepare_end_time',
+                'capacity',
+                'event_id',
+                'task_id',
+                'remark',
+            ];
+            array_map(function ($fv) use ($params, &$updateParams, $data) {
+                if (isset($params[$fv]) && ($params[$fv] != $data[0][$fv])) {
+                    $updateParams[$fv] = $params[$fv];
+                }
+            }, $updateFields);
         } elseif ($processStatus == CollectionModel::COLLECTION_PREPARE_STATUS) {
             //待组班:支持任何操作
             $updateParams = $params;
         }
+
         return $updateParams;
     }
 
@@ -684,23 +750,34 @@ class CollectionService
 
         $needAddWx = 0;
         $wechatQr = '';
-        $wechatNumber = '';
 
         if (!empty($collectionId)) {
             // 获取班级信息
-            $collection = CollectionModel::getRecord([
-                'id' => $collectionId
-            ], ['wechat_number', 'wechat_qr', 'teaching_end_time', 'type'], false);
-
+            $db = MysqlDB::getDB();
+            $collection = $db->get(
+                CollectionModel::$table,
+                [
+                    "[>]" . EmployeeModel::$table => ["assistant_id" => "id"],
+                ],
+                [
+                    CollectionModel::$table . '.type',
+                    CollectionModel::$table . '.teaching_end_time',
+                    CollectionModel::$table . '.wechat_qr',
+                    EmployeeModel::$table . '.wx_qr',
+                ],
+                [
+                    CollectionModel::$table . '.id' => $collectionId
+                ]
+            );
             // 班级仍在有效期, 或公海班级
             if ($collection['teaching_end_time'] > time() || $collection['type'] == CollectionModel::COLLECTION_TYPE_PUBLIC) {
                 $needAddWx = 1;
-                $wechatQr = AliOSS::signUrls($collection["wechat_qr"]);
-                $wechatNumber = $collection['wechat_number'];
+                $wxQr = $collection["wx_qr"] ?? $collection["wechat_qr"];
+                $wechatQr = AliOSS::signUrls($wxQr);
             }
         }
 
-        return [$needAddWx, $wechatQr, $wechatNumber];
+        return [$needAddWx, $wechatQr];
     }
 
     /**

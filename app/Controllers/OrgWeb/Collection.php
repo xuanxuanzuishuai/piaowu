@@ -44,30 +44,9 @@ class Collection extends ControllerBase
         //接收数据
         $rules = [
             [
-                'key' => 'name',
-                'type' => 'required',
-                'error_code' => 'collection_name_is_required'
-            ],
-            [
-                'key' => 'name',
-                'type' => 'lengthmax',
-                'value' => 50,
-                'error_code' => 'collection_name_length_max'
-            ],
-            [
                 'key' => 'assistant_id',
                 'type' => 'required',
                 'error_code' => 'assistant_id_is_required'
-            ],
-            [
-                'key' => 'wechat_number',
-                'type' => 'required',
-                'error_code' => 'wechat_number_is_required'
-            ],
-            [
-                'key' => 'wechat_qr',
-                'type' => 'required',
-                'error_code' => 'wechat_qr_is_required'
             ],
             [
                 'key' => 'prepare_start_time',
@@ -132,7 +111,7 @@ class Collection extends ControllerBase
             $operator = $this->getEmployeeId();
             $collectionId = CollectionService::addStudentCollection($params, $operator);
         } catch (RunTimeException $e) {
-            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+            return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData(), $e->getData());
         }
 
         return HttpHelper::buildResponse($response, ['id' => $collectionId]);

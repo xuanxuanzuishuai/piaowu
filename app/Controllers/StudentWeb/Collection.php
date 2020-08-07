@@ -40,7 +40,7 @@ class Collection extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         //获取分配的集合信息
-        $data = CollectionService::getCollectionByUserUUId($params['uuid'],["wechat_number", "wechat_qr"]);
+        $data = CollectionService::getCollectionByUserUUId($params['uuid']);
         //返回数据
         return $response->withJson([
             'code' => 0,

@@ -211,8 +211,8 @@ class StudentServiceForApp
             $student['sub_end_date'] = '20250101';
         }
 
-        // 用户已购买49元订单且在有效期内，首页会展示助教二维码和微信号
-        list($needAddWx, $wechatQr, $wechatNumber) = CollectionService::getCollectionWechatInfo($student['collection_id']);
+        // 用户已购买49元订单且在有效期内，首页会展示助教微信二维码
+        list($needAddWx, $wechatQr) = CollectionService::getCollectionWechatInfo($student['collection_id']);
 
         // 学生今日练琴总时长
         $totalDuration = AIPlayRecordService::getStudentSumDuration($student['id']);
@@ -242,7 +242,6 @@ class StudentServiceForApp
             'has_review_course' => $student['has_review_course'],
             'need_add_wx' => $needAddWx,
             'wechat_qr' => $wechatQr,
-            'wechat_number' => $wechatNumber,
             'token' => $token,
             'teachers' => [],
             'flags' => $flags,
@@ -344,8 +343,8 @@ class StudentServiceForApp
             $student['sub_end_date'] = '20250101';
         }
 
-        // 用户已购买49元订单且在有效期内，首页会展示助教二维码和微信号
-        list($needAddWx, $wechatQr, $wechatNumber) = CollectionService::getCollectionWechatInfo($student['collection_id']);
+        // 用户已购买49元订单且在有效期内，首页会展示助教微信二维码
+        list($needAddWx, $wechatQr) = CollectionService::getCollectionWechatInfo($student['collection_id']);
 
         // 学生今日练琴总时长
         $totalDuration = AIPlayRecordService::getStudentSumDuration($student['id']);
@@ -376,7 +375,6 @@ class StudentServiceForApp
             'has_review_course' => $student['has_review_course'],
             'need_add_wx' => $needAddWx,
             'wechat_qr' => $wechatQr,
-            'wechat_number' => $wechatNumber,
             'token' => $token,
             'teachers' => [],
             'flags' => $flags,
