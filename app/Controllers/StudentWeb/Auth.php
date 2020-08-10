@@ -216,6 +216,13 @@ class Auth extends ControllerBase
             'wx_code' => $params['wx_code'] ?? '',
         ];
 
+        // 微信或广点通没有callback参数，需要用指定的click_id作为回调参数，所以把click_id保存在callback里
+        if (!empty($adParams['qz_gdt'])) {
+            $adParams['callback'] = $adParams['qz_gdt'];
+        } elseif (!empty($adParams['gdt_vid'])) {
+            $adParams['callback'] = $adParams['gdt_vid'];
+        }
+
         try {
             $db->beginTransaction();
             $data = StudentServiceForWeb::mobileLogin(
@@ -239,7 +246,7 @@ class Auth extends ControllerBase
         ]);
     }
 
-    public function getWxAppId(Request $request, Response $response)
+    public function getWxAppId(/** @noinspection PhpUnusedParameterInspection */ Request $request, Response $response)
     {
         $appInfo = WeChatService::getWeCHatAppIdSecret(
             UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,

@@ -13,7 +13,6 @@ use App\Libs\DictConstants;
 use App\Libs\HttpHelper;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
-use App\Models\StudentModel;
 use App\Models\TrackModel;
 use App\Models\UserWeixinModel;
 
@@ -127,7 +126,7 @@ class TrackService
             $update = ['track_state' => $trackData['track_state'] | $eventType];
 
             // 更新user_id
-            if (!empty($userId) && empty($trackData['user_id'])) {
+            if (!empty($userId) && $userId > 0 && empty($trackData['user_id'])) {
                 $update['user_id'] = $userId;
             }
 
@@ -324,7 +323,7 @@ class TrackService
                     ],
                     'action_type' => $type,
                     'trace' => [
-                        'click_id' => $trackData['qz_gdt']
+                        'click_id' => $trackData['callback']
                     ],
                 ]
             ]
@@ -360,7 +359,7 @@ class TrackService
                     'action_time'        => time(),
                     'action_type'        => $type,
                     'url'                => 'http://www.xiaoyezi.com/index.html',
-                    'trace'              => ['click_id' => $trackData['gdt_vid']]
+                    'trace'              => ['click_id' => $trackData['callback']]
                 ]
             ]
         ]);
