@@ -79,6 +79,25 @@ class ErpReferralService
 
     /**
      * @param $taskId
+     * @return int
+     * 前端展示用户转介绍阶段任务对应关系
+     */
+    public static function getTaskRelateToVue($taskId)
+    {
+        if (in_array($taskId, self::EVENT_TASK_ID_REGISTER)) {
+            return self::EXPECT_REGISTER;
+        } elseif (in_array($taskId, self::EVENT_TASK_ID_TRIAL_PAY)) {
+            return self::EXPECT_TRAIL_PAY;
+        } elseif (in_array($taskId, self::EVENT_TASK_ID_PAY)) {
+            return self::EXPECT_YEAR_PAY;
+        } else {
+            return 0;
+        }
+    }
+
+
+    /**
+     * @param $taskId
      * @return string
      * 转介绍阶段任务的中文对应
      */
@@ -214,6 +233,8 @@ class ErpReferralService
             $tasks = $referred['tasks'] ?? [];
             $userTasks = [];
             foreach ($tasks as $task) {
+                //兼容前端展示
+                $task['event_task_id'] = self::getTaskRelateToVue($task['event_task_id']);
                 $userTasks[$task['event_task_id']] = [
                     'create_time' => $task['create_time'],
                     'event_task_name' => self::getTaskRelateZh($task['event_task_id']),
