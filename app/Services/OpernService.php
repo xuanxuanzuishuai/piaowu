@@ -148,44 +148,57 @@ class OpernService
         return $result;
     }
 
-    public static function appMusicScoreSearch($data, $images, $limit = self::MAXIMUM_LIMIT)
+    /**
+     * erp获取到的lesson数据进行处理
+     * @param $erpLessonInfo
+     * @param $searchParams [['scoreId' => '11310', 'lessonId' => '11440', 'pageId' => '0', 'match' => 8],['scoreId' => '797', 'lessonId' => '455', 'pageId' => '0', 'match' => 6]]
+     * @param int $limit 需求最多返回匹配到的5条曲谱数据
+     * @return array
+     */
+    public static function appMusicScoreSearch($erpLessonInfo, $searchParams, $limit = self::MAXIMUM_LIMIT)
     {
-        $lesson = [];
-        if (empty($data)) {
-            return $lesson;
+        $returnLessonInfo = [];
+        if (empty($erpLessonInfo)) {
+            return [];
         }
-        if (count($data) > $limit){
-            $data = array_slice($data,$limit);
-        }
-        $imagesData = array_column($images, 'pageId', 'lessonId');
 
-        foreach ($data as $item) {
-            $opern['id'] = $item['lesson_id'];
-            $opern['name'] = $item['opern_name'];
-            $opern['score_id'] = $item['opern_id'];
-            $opern['is_free'] = $item['freeflag'] ? '1' : '0';
-            $opern['knowledge'] = $item['knowledge'] ? 1 : 0;
-            $opern['collection_id'] = $item['collection_id'] ? $item['collection_id'] : '';
-            $opern['collection_name'] = $item['collection_name'] ? $item['collection_name'] : '';
-            $opern['collection_cover'] = $item['collection_cover'] ? $item['collection_cover'] : '';
-            $opern['mmusic'] = $item['mmusic'] ? '1' : '0';
-            $opern['mmusicconfig'] = $item['mmusicconfig'] ? '1' : '0';
-            $opern['dynamic'] = $item['dynamic'] ? '1' : '0';
-            $opern['page'] = $item['page'];
-            $opern['res'] = "";
-            $opern['mp4'] = '0';
-            $opern['mp8'] = '0';
-            foreach ($item['resources'] as $resource) {
-                if ($resource['sort'] == ($imagesData[$item['lesson_id']] + self::PAGE_LIMIT)) {
-                    $opern['res'] = $resource['resource_url'];
-                    break;
+        //处理erp查询回来的lessonInfo，用lesson_id当作数组的key
+        $lessonInfoData = array_combine(array_column($erpLessonInfo, 'lesson_id'), $erpLessonInfo);
+        //循环用户搜索的二维数组，拿循环的每个数组内的lessonId和处理后的erp数据内的lesson_id做比对，
+        //如果比对上，并且$returnLessonInfo内的数组小于5条的时候，往新数组内追加
+        foreach ($searchParams as $item) {
+            if ($item['lessonId'] == $lessonInfoData[$item['lessonId']]['lesson_id'] && count($returnLessonInfo) < $limit) {
+                $opern['id'] = $lessonInfoData[$item['lessonId']]['lesson_id'];
+                $opern['name'] = $lessonInfoData[$item['lessonId']]['opern_name'];
+                $opern['score_id'] = $lessonInfoData[$item['lessonId']]['opern_id'];
+                $opern['is_free'] = $lessonInfoData[$item['lessonId']]['freeflag'] ? '1' : '0';
+                $opern['knowledge'] = $lessonInfoData[$item['lessonId']]['knowledge'] ? 1 : 0;
+                $opern['collection_id'] = $lessonInfoData[$item['lessonId']]['collection_id'] ? $lessonInfoData[$item['lessonId']]['collection_id'] : '';
+                $opern['collection_name'] = $lessonInfoData[$item['lessonId']]['collection_name'] ? $lessonInfoData[$item['lessonId']]['collection_name'] : '';
+                $opern['collection_cover'] = $lessonInfoData[$item['lessonId']]['collection_cover'] ? $lessonInfoData[$item['lessonId']]['collection_cover'] : '';
+                $opern['mmusic'] = $lessonInfoData[$item['lessonId']]['mmusic'] ? '1' : '0';
+                $opern['mmusicconfig'] = $lessonInfoData[$item['lessonId']]['mmusicconfig'] ? '1' : '0';
+                $opern['dynamic'] = $lessonInfoData[$item['lessonId']]['dynamic'] ? '1' : '0';
+                $opern['page'] = $lessonInfoData[$item['lessonId']]['page'];
+                $opern['res'] = "";
+                $opern['mp4'] = '0';
+                $opern['mp8'] = '0';
+                //循环匹配到的erp数组内的resources，拿resources内的sort和item内的pageId做比对，
+                //如果比对上则把$resource['resource_url']负值给$opern['res']
+                //如果匹配不到，则说明当前数据就是有问题的$opern['res']默认给空，则不返给前端
+                foreach ($lessonInfoData[$item['lessonId']]['resources'] as $resource) {
+                    if ($resource['sort'] == ($item['pageId'] + self::PAGE_LIMIT)) {
+                        $opern['res'] = $resource['resource_url'];
+                        break;
+                    }
+                }
+
+                if (!empty($opern['res'])) {
+                    $returnLessonInfo[] = $opern;
                 }
             }
-            if (!empty($opern['res'])) {
-                $lesson[] = $opern;
-            }
         }
-        return $lesson;
+        return $returnLessonInfo;
     }
 
     /**

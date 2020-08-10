@@ -313,25 +313,34 @@ class Opn extends ControllerBase
         ], StatusCode::HTTP_OK);
     }
 
+    /**
+     * 根据曲谱图片搜索曲谱数据
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
     public function musicScoreSearch(Request $request, Response $response)
     {
         $params = $request->getParams();
-
+        if (empty($params)) {
+            return $response->withJson(Valid::addErrors([], 'params', 'params_is_required'), StatusCode::HTTP_OK);
+        }
         $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT,
             $this->ci['opn_pro_ver'],
             $this->ci['opn_auditing'],
             $this->ci['opn_publish']);
 
+        //根据lessonIds获取erp的曲谱数据
         $lessonIds = array_column($params['images'], 'lessonId');
         $result = $opn->lessonsByIds($lessonIds, 1, OpernCenter::RESOURCE_TYPE);
         if (empty($result) || !empty($result['errors'])) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $lesson = OpernService::appMusicScoreSearch($result['data'], $params['images']);
-
+        //erp搜索回来的数据进行详细处理
+        $lessonInfo = OpernService::appMusicScoreSearch($result['data'], $params['images']);
         $lessonData['recordId'] = $params['recordId'];
-        $lessonData['images'] = $lesson;
+        $lessonData['images'] = $lessonInfo;
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
