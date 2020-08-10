@@ -350,12 +350,10 @@ class MakeOperaService
         $operaInfo['opera_images'] = unserialize($operaInfo['opera_images']);
         //获取图片真实链接
         foreach ($operaInfo['opera_images'] as $key => $value){
-            if (is_array($value)){
-                foreach ($value as $k => $v){
-                    $operaInfo['opera_images']['opera_imgs'][$k] = AliOSS::signUrls($v);
-                }
-            }else{
-                $operaInfo['opera_images'][$key] = AliOSS::signUrls($value);
+            foreach ($value as $k => $v){
+                $operaInfo['opera_images']['cover_image'][$k] = AliOSS::signUrls($v)??'';
+                $operaInfo['opera_images']['content_image'][$k] = AliOSS::signUrls($v)??'';
+                $operaInfo['opera_images']['opera_imgs'][$k] = AliOSS::signUrls($v)??'';
             }
         }
         return $operaInfo;
