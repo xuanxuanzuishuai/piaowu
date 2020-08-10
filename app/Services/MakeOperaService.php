@@ -186,6 +186,15 @@ class MakeOperaService
         if (empty($params['opera_images']['content_image'])){
             throw new RunTimeException(['pictures_content_require']);
         }
+
+        if (count($params['opera_images']['cover_image'])>20){
+            throw new RunTimeException(['pictures_cover_number_exceeds']);
+        }
+
+        if (count($params['opera_images']['content_image'])>20){
+            throw new RunTimeException(['pictures_content_number_exceeds']);
+        }
+
         $operaImgNum = count($params['opera_images']['opera_imgs']);
         if ($params['creator_type']==self::APPLY_FROM_WEIXIN && $operaImgNum>5){
             throw new RunTimeException(['pictures_number_exceeds']);
@@ -350,10 +359,22 @@ class MakeOperaService
         $operaInfo['opera_images'] = unserialize($operaInfo['opera_images']);
         //获取图片真实链接
         foreach ($operaInfo['opera_images'] as $key => $value){
-            foreach ($value as $k => $v){
-                $operaInfo['opera_images']['cover_image'][$k] = AliOSS::signUrls($v)??'';
-                $operaInfo['opera_images']['content_image'][$k] = AliOSS::signUrls($v)??'';
-                $operaInfo['opera_images']['opera_imgs'][$k] = AliOSS::signUrls($v)??'';
+            switch ($key){
+                case 'cover_image':
+                    foreach ($value as $k => $v){
+                        $operaInfo['opera_images']['cover_image'][$k] = AliOSS::signUrls($v)??'';
+                    }
+                    break;
+                case 'content_image':
+                    foreach ($value as $k => $v){
+                        $operaInfo['opera_images']['content_image'][$k] = AliOSS::signUrls($v)??'';
+                    }
+                    break;
+                case 'opera_imgs':
+                    foreach ($value as $k => $v){
+                        $operaInfo['opera_images']['opera_imgs'][$k] = AliOSS::signUrls($v)??'';
+                    }
+                    break;
             }
         }
         return $operaInfo;
