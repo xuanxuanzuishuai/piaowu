@@ -57,7 +57,7 @@ class TrackService
         $trackData['android_id'] = $info['android_id'] ?? '';
         $trackData['android_id_hash'] = $info['android_id_hash'] ?? '';
         $trackData['mac_hash'] = $info['mac_hash'] ?? '';
-        $trackData['track_state'] = ($eventType > 0) ? 1 << ($eventType-1) : 0;
+        $trackData['track_state'] = ($eventType > 0) ? self::trackStateFlag($eventType) : 0;
         $trackData['callback'] = $info['callback'] ?? '';
         $trackData['create_time'] = $info['create_time'] ?? time();
         $trackData['user_id'] = $info['user_id'] ?? NULL;
@@ -73,8 +73,7 @@ class TrackService
         // 查找是否
         $trackData = self::match($completeParams);
 
-        // 未匹配上，插入新用户ad信息
-        if (empty($trackData)) {
+        if (empty($trackData)) { // 未匹配上，插入新用户ad信息
             $completeParams['user_id'] = $userId;
             $success = self::addInfo($completeParams, $eventType);
 
@@ -88,6 +87,9 @@ class TrackService
                 'ad_channel' => 0,
                 'ad_id' => 0,
             ];
+        } else { // 匹配上，补充额外信息
+            $trackData['mobile'] = $completeParams['mobile'] ?? NULL;
+            unset($completeParams['mobile']);
         }
 
         SimpleLogger::debug("[trackEvent]", [
@@ -97,7 +99,7 @@ class TrackService
         ]);
 
         // 过滤重复事件
-        if ((int)$trackData['track_state'] & $eventType) {
+        if (self::hasStateFlag($trackData['track_state'], $eventType)) {
             SimpleLogger::debug("[trackEvent] event has been updated", []);
             return [
                 'complete' => true,
@@ -123,7 +125,7 @@ class TrackService
         $success = self::trackCallback($eventType, $trackData);
         if ($success) {
             // 更新track_state
-            $update = ['track_state' => $trackData['track_state'] | $eventType];
+            $update = ['track_state' => $trackData['track_state'] | self::trackStateFlag($eventType)];
 
             // 更新user_id
             if (!empty($userId) && $userId > 0 && empty($trackData['user_id'])) {
@@ -143,6 +145,16 @@ class TrackService
             'ad_channel' => $trackData['ad_channel'],
             'ad_id' => $trackData['ad_id'],
         ];
+    }
+
+    public static function trackStateFlag($eventType)
+    {
+        return 1 << ($eventType-1);
+    }
+
+    public static function hasStateFlag($trackState, $eventType)
+    {
+        return $trackState & self::trackStateFlag($eventType);
     }
 
     public static function getPlatformId($platform)
@@ -411,6 +423,6 @@ class TrackService
             return null;
         }
 
-        return self::trackEvent(self::TRACK_EVENT_PAY, ['user_id' => $student['id']]);
+        return self::trackEvent(self::TRACK_EVENT_PAY, ['user_id' => $student['id'], 'mobile' => $student['mobile']]);
     }
 }
