@@ -81,7 +81,7 @@ class Student extends ControllerBase
             return $response->withJson(Valid::addAppErrors([], 'please_check_the_parameters'), StatusCode::HTTP_OK);
         } elseif (!empty($params['sms_code']) && !CommonServiceForApp::checkValidateCode($params["mobile"], $params["sms_code"], $params['country_code'])) {
             return $response->withJson(Valid::addAppErrors([], 'incorrect_mobile_phone_number_or_verification_code'), StatusCode::HTTP_OK);
-        } elseif (!empty($params['password']) && !CommonServiceForApp::checkPassword($params['mobile'], $params['password'])) {
+        } elseif (!empty($params['password']) && !CommonServiceForApp::checkPassword($params['mobile'], $params['password'], $params['country_code'])) {
             return $response->withJson(Valid::addAppErrors([], 'password_error'), StatusCode::HTTP_OK);
         }
 

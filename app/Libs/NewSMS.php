@@ -14,7 +14,7 @@ use GuzzleHttp\Exception\GuzzleException;
 class NewSMS
 {
     const API_SEND = '/api/qxt/send';
-    const API_INT_SEND = '/sms/international/send';
+    const API_INT_SEND = '/api/sms/international/send';
 
     const DEFAULT_COUNTRY_CODE = '86';
     const COUNTRY_CODE_PREFIX = '00';

@@ -147,7 +147,7 @@ class StudentServiceForApp
             return ['please_check_the_parameters'];
         } elseif (!empty($code) && !CommonServiceForApp::checkValidateCode($mobile, $code, $countryCode)) {
             return ['incorrect_mobile_phone_number_or_verification_code'];
-        } elseif (!empty($password) && !CommonServiceForApp::checkPassword($mobile, $password)) {
+        } elseif (!empty($password) && !CommonServiceForApp::checkPassword($mobile, $password, $countryCode)) {
             return ['password_error'];
         }
 

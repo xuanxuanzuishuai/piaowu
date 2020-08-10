@@ -127,9 +127,9 @@ class CommonServiceForApp
      * @param $password
      * @return bool
      */
-    public static function checkPassword($mobile, $password)
+    public static function checkPassword($mobile, $password, $countryCode)
     {
-        if (empty($mobile) || empty($password)) {
+        if (empty($mobile) || empty($password) || empty($countryCode)) {
             return false;
         }
 
@@ -138,8 +138,9 @@ class CommonServiceForApp
         if (empty($student)) {
             return false;
         }
-
-        if (self::createPassword($student['uuid'], $password) != $student['password']) {
+        $countryCodeStatus = $countryCode != $student['country_code'];
+        $passwordStatus = self::createPassword($student['uuid'], $password) != $student['password'];
+        if ($countryCodeStatus || $passwordStatus) {
             return false;
         }
 
