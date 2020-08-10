@@ -94,12 +94,6 @@ class Auth extends ControllerBase
         $params = $request->getParams();
         $rules = [
             [
-                'key' => 'mobile',
-                'type' => 'regex',
-                'value' => '/^[0-9]{11}$/',
-                'error_code' => 'mobile_format_error'
-            ],
-            [
                 'key' => 'token',
                 'type' => 'required',
                 'error_code' => 'user_token_is_required'
@@ -181,12 +175,6 @@ class Auth extends ControllerBase
     {
         $params = $request->getParams();
         $rules = [
-            [
-                'key' => 'mobile',
-                'type' => 'regex',
-                'value' => '/^[0-9]{11}$/',
-                'error_code' => 'mobile_format_error'
-            ],
             [
                 'key' => 'code',
                 'type' => 'regex',
