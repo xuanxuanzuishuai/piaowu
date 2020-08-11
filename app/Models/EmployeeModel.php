@@ -131,6 +131,7 @@ class EmployeeModel extends Model
             self::$table . '.is_leader',
             self::$table . '.last_login_time',
             self::$table . '.org_id',
+            self::$table . '.wx_nick',
             RoleModel::$table . '.name(role_name)',
             DeptModel::$table . '.name(dept_name)',
         ], $where);
