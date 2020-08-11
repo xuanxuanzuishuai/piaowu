@@ -70,7 +70,11 @@ class StudentWXRouter extends RouterBase
             'method' => ['get'],
             'call' => PlayRecord::class . ':playCalendar',
         ],
-
+        //学生获取课管信息
+        '/student_wx/student/course_user_info' => [
+            'method' => ['get'],
+            'call' => Student::class . ':getCourseUserInfo',
+        ],
         // 日报(5.0作废)
 
         '/student_wx/student/day_report' => array('method'=>array('get'),'call'=>'\App\Controllers\StudentWX\PlayRecord:recordReport'),

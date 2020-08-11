@@ -8,8 +8,14 @@
 
 namespace App\Controllers\OrgWeb;
 
-use App\Libs\Constants;
+use App\Libs\SimpleLogger;
+use App\Libs\UserCenter;
+use App\Libs\Util;
 use App\Libs\Valid;
+use App\Models\EmployeeModel;
+use App\Models\StudentModel;
+use App\Models\UserWeixinModel;
+use App\Services\Queue\PushMessageTopic;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -101,6 +107,21 @@ class Student extends ControllerBase
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
+
+        //获取没有分配课管的学生信息,只有第一次分配课管的学生才会微信消息推送
+        $userInfo = StudentModel::getNoCourseStudent($params['student_ids']);
+        if (empty($userInfo)) {
+            $toBePushedStudentInfo = [];
+        } else {
+            //获取没有分配课管的学生openId
+            $userOpenIdInfo = UserWeixinModel::getBoundUserIds(array_column($userInfo, 'id'), UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT);
+            $toBePushedStudentInfo = array_combine(array_column($userInfo, 'id'), $userInfo);
+            foreach ($userOpenIdInfo as $key => $value){
+                $toBePushedStudentInfo[$value['user_id']]['open_id'] = $value['open_id'];
+            }
+        }
+
+
         try {
             //开启事务
             $db = MysqlDB::getDB();
@@ -112,6 +133,59 @@ class Student extends ControllerBase
         }
         //提交事务 返回数据
         $db->commit();
+
+        if (empty($toBePushedStudentInfo)) {
+            return HttpHelper::buildResponse($response, []);
+        }
+        //根据课管ID获取课管信息
+        $courseInfo = EmployeeModel::getRecord(['id' => $params['course_manage_id']]);
+        $url = $_ENV["WECHAT_FRONT_DOMAIN"] . "/student/codePage?id=" . $params['course_manage_id'];
+        $templateId = $_ENV["WECHAT_DISTRIBUTION_MANAGEMENT"];
+        $data = [
+            'first' => [
+                'value' => "已为您分配专属服务教师，详情如下："
+            ],
+            'keyword1' => [
+                'value' => "专属服务教师分配"
+            ],
+            'keyword2' => [
+                'value' => "您的专属服务教师为【".$courseInfo['name']."】"
+            ],
+            'keyword3' => [
+                'value' => "请查看详情"
+            ],
+            "remark" => [
+                "value" => "点此消息，加专属教师微信，为您提供打谱等更多专业的服务"
+            ],
+        ];
+        $msgBody = [
+            'wx_push_type' => 'template',
+            'template_id' => $templateId,
+            'data' => $data,
+            'url' => $url,
+            'open_id' => '',
+        ];
+
+        try {
+            $topic = new PushMessageTopic();
+        } catch (\Exception $e) {
+            Util::errorCapture('PushMessageTopic init failure', [
+                'dateTime' => time(),
+            ]);
+        }
+
+        foreach ($toBePushedStudentInfo as $info) {
+            $msgBody['open_id'] = $info['open_id'];
+
+            try {
+                $topic->wxPushCommon($msgBody)->publish();
+
+            } catch (\Exception $e) {
+                SimpleLogger::error("allotCourseManage send failure", ['info' => $info]);
+                continue;
+            }
+        }
+
         return HttpHelper::buildResponse($response, []);
     }
 

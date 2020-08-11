@@ -15,6 +15,7 @@ use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Libs\WeChat\WeChatMiniPro;
+use App\Models\EmployeeModel;
 use App\Models\StudentModel;
 use App\Services\AIPlayRecordService;
 use App\Services\CollectionService;
@@ -494,6 +495,34 @@ class Student extends ControllerBase
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => $collectionData
+        ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * 获取课管对外信息
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getCourseUserInfo(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'course_id',
+                'type' => 'required',
+                'error_code' => 'course_id_is_required',
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $courseUserInfo = EmployeeModel::getRecord(['id' => $params['course_id']], ['wx_nick', 'wx_thumb', 'wx_qr']);
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $courseUserInfo
         ], StatusCode::HTTP_OK);
     }
 }

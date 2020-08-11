@@ -8,6 +8,7 @@
 
 namespace App\Models;
 
+use App\Libs\Constants;
 use App\Libs\MysqlDB;
 use App\Libs\UserCenter;
 use App\Libs\Util;
@@ -816,4 +817,13 @@ class StudentModel extends Model
         return self::getRecord($where,$files);
     }
 
+    /**
+     * 获取未分配课管的学生信息
+     * @param $studentIds
+     * @return array
+     */
+    public static function getNoCourseStudent($studentIds)
+    {
+        return self::getRecords(['id' => $studentIds, 'course_manage_id' => Constants::STATUS_FALSE]);
+    }
 }
