@@ -9,6 +9,7 @@
 namespace App\Controllers\StudentWX;
 
 use App\Controllers\ControllerBase;
+use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\Erp;
 use App\Libs\SimpleLogger;
@@ -520,6 +521,8 @@ class Student extends ControllerBase
         }
 
         $courseUserInfo = EmployeeModel::getRecord(['id' => $params['course_id']], ['wx_nick', 'wx_thumb', 'wx_qr']);
+        $courseUserInfo['wx_thumb'] = AliOSS::signUrls($courseUserInfo['wx_thumb']);
+        $courseUserInfo['wx_qr'] = AliOSS::signUrls($courseUserInfo['wx_qr']);
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => $courseUserInfo
