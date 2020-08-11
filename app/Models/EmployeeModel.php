@@ -257,6 +257,9 @@ class EmployeeModel extends Model
             self::$table . '.is_leader',
             self::$table . '.last_login_time',
             self::$table . '.org_id',
+            self::$table . '.wx_nick',
+            self::$table . '.wx_thumb',
+            self::$table . '.wx_qr',
             DeptModel::$table . '.name(dept_name)',
             RoleModel::$table . '.name(role_name)',
         ], [self::$table . '.id' => $id]);

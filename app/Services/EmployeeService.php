@@ -8,6 +8,7 @@
 
 namespace App\Services;
 
+use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\Dict;
 use App\Libs\DictConstants;
@@ -159,6 +160,8 @@ class EmployeeService
     public static function getEmployeeDetail($userId)
     {
         $user = EmployeeModel::getEmployeeById($userId);
+        $user['wx_thumb'] = AliOSS::signUrls($user['wx_thumb']);
+        $user['wx_qr'] = AliOSS::signUrls($user['wx_qr']);
         $roles = RoleModel::getRoles();
 
         return [$user, $roles];
