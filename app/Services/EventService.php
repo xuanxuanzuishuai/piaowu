@@ -38,7 +38,8 @@ class EventService
 
         $tasks = EventTaskModel::getRecords([
             'event_id' => array_column($events, 'id'),
-            'status' => [EventTaskModel::STATUS_NORMAL, EventTaskModel::STATUS_DOWN]
+            'status' => [EventTaskModel::STATUS_NORMAL, EventTaskModel::STATUS_DOWN],
+            'ORDER' => ['order_num' => 'ASC']
         ]);
         $map = [];
         foreach($tasks as $task) {
