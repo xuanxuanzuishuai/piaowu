@@ -47,7 +47,7 @@ class TrackService
     public static function addInfo($info, $eventType = NULL)
     {
         $trackData = [];
-        $trackData['platform'] = $info['platform'];
+        $trackData['platform'] = $info['platform'] ?? self::PLAT_ID_UNKNOWN;
         $trackData['ad_channel'] = $info['ad_channel'] ?? self::CHANNEL_OTHER;
         $trackData['ad_id'] = $info['ad_id'] ?? 0;
         $trackData['idfa'] = $info['idfa'] ?? '';
