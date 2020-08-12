@@ -312,7 +312,7 @@ class TrackService
                 $type = 'RESERVATION';
                 break;
             case self::TRACK_EVENT_PAY:
-                $type = 'PURCHASE';
+                $type = 'COMPLETE_ORDER';
                 break;
             default:
                 return false;
@@ -355,7 +355,7 @@ class TrackService
                 $type = 'RESERVATION';
                 break;
             case self::TRACK_EVENT_PAY:
-                $type = 'PURCHASE';
+                $type = 'COMPLETE_ORDER';
                 break;
             default:
                 return false;
