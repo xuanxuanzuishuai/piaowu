@@ -262,10 +262,10 @@ class StudentServiceForApp
      * @param $paramsPwd
      * @return array|string[]
      */
-    public static function updatePwd($mobile, $code, $paramsPwd)
+    public static function updatePwd($mobile, $code, $paramsPwd, $country_code)
     {
         // 检查验证码
-        if (!empty($code) && !CommonServiceForApp::checkValidateCode($mobile, $code)) {
+        if (!empty($code) && !CommonServiceForApp::checkValidateCode($mobile, $code, $country_code)) {
             return ['validate_code_error'];
         }
 

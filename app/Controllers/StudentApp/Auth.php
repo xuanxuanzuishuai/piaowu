@@ -192,12 +192,15 @@ class Auth extends ControllerBase
         if (empty($params['password'])) {
             $errorCode = 'password_is_required';
         }
+        if (empty($params['country_code'])) {
+            $errorCode = 'country_code_is_required';
+        }
         if (!empty($errorCode)) {
             $result = Valid::addAppErrors([], $errorCode);
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $errorCode= StudentServiceForApp::updatePwd($params['mobile'], $params['code'], $params['password']);
+        $errorCode= StudentServiceForApp::updatePwd($params['mobile'], $params['code'], $params['password'], $params['country_code']);
         if (!empty($errorCode)) {
             $result = Valid::addAppErrors([], $errorCode[0]);
             return $response->withJson($result, StatusCode::HTTP_OK);
