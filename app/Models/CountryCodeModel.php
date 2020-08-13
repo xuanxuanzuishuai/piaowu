@@ -26,7 +26,7 @@ class CountryCodeModel extends Model
 
         $redis = RedisDB::getConn();
         $db = MysqlDB::getDB();
-        $records = $db->queryAll("select * from {$table} where status = {$status} ORDER BY CONVERT( name USING gbk ) COLLATE gbk_chinese_ci ASC");
+        $records = $db->queryAll("select * from {$table} where status = {$status} ORDER BY pinyin ASC");
         $cache = json_encode($records);
         $redis->setex(self::CACHE_KEY, self::CACHE_EXPIRE, $cache);
         return $records;
