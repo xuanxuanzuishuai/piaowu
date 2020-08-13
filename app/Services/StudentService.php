@@ -23,6 +23,7 @@ use App\Models\CollectionModel;
 use App\Models\DeptPrivilegeModel;
 use App\Models\EmployeeModel;
 use App\Models\GiftCodeModel;
+use App\Models\PackageExtModel;
 use App\Models\ReviewCourseModel;
 use App\Models\StudentAssistantLogModel;
 use App\Models\StudentCollectionLogModel;
@@ -970,9 +971,10 @@ class StudentService
         $collectionIdList = array_unique(array_column($studentData, 'collection_id'));
         $watchList = [];
         if (!empty($collectionIdList)) {
-            $collectionData = CollectionModel::getRecords(['id' => $collectionIdList], ['id', 'teaching_end_time', 'type'], false);
+            $collectionData = CollectionModel::getRecords(['id' => $collectionIdList], ['id', 'teaching_end_time', 'teaching_start_time', 'type'], false);
             foreach ($collectionData as $ck => $cv) {
-                $watchList[$cv['id']] = self::getWatchEndTime($cv);
+                $watchList[$cv['id']] = $cv;
+                $watchList[$cv['id']]['watch_end_time'] = self::getWatchEndTime($cv);
             }
         }
         //状态信息
@@ -994,6 +996,9 @@ class StudentService
             $plusPackageIdStr = DictConstants::get(DictConstants::PACKAGE_CONFIG, 'plus_package_id');
             $normalCourseFirstPayTime = array_column(GiftCodeModel::getFirstNormalCourse(implode(',', $normalCourseStudent), $plusPackageIdStr), null, 'buyer');
         }
+        //获取学生入班时购买的课包类型
+        $packageIdList = array_unique(array_column($studentData, 'allot_course_id'));
+        $packageInfo = array_column(PackageExtModel::getRecords(['package_id' => $packageIdList], ['package_id', 'package_type', 'trial_type'], false), null, 'package_id');
         foreach ($studentData as $sk => $sv) {
             $syncData[$sv['id']] = [
                 'uuid' => $sv['uuid'],
@@ -1003,9 +1008,13 @@ class StudentService
                 'dss_register_time' => $sv['create_time'],
                 'birthday' => is_null($sv['birthday']) ? 0 : $sv['birthday'],
                 'gender' => $sv['gender'],
-                'dss_watch_end_time' => is_null($watchList[$sv['collection_id']]) ? 0 : $watchList[$sv['collection_id']],
+                'dss_watch_end_time' => is_null($watchList[$sv['collection_id']]) ? 0 : $watchList[$sv['collection_id']]['watch_end_time'],
                 'dss_first_normal_pay_time' => is_null($normalCourseFirstPayTime[$sv['id']]['first_time']) ? 0 : $normalCourseFirstPayTime[$sv['id']]['first_time'],
                 'dss_status' => $sv['dss_status'],
+                'teaching_start_time' => empty($sv['collection_id']) ? 0 : $watchList[$sv['collection_id']]['teaching_start_time'],
+                'teaching_end_time' => empty($sv['collection_id']) ? 0 : $watchList[$sv['collection_id']]['teaching_end_time'],
+                'package_type' => empty($sv['allot_course_id']) ? 0 : $packageInfo[$sv['allot_course_id']]['package_type'],
+                'trial_type' => empty($sv['allot_course_id']) ? 0 : $packageInfo[$sv['allot_course_id']]['trial_type'],
             ];
         }
         return $syncData;
