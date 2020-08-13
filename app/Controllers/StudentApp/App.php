@@ -280,6 +280,10 @@ class App extends ControllerBase
         $ret['credentials'] = $ret['Credentials'];
         unset($ret['Credentials']);
 
+        if (!empty($params['name'])) {
+            $ret['signed_url'] = AliOSS::signUrls($dir . '/' . $params['name']);
+        }
+
         if (!empty($errorCode)) {
             $result = Valid::addAppErrors([], $errorCode);
             return $response->withJson($result, StatusCode::HTTP_OK);

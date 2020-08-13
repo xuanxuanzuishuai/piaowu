@@ -36,6 +36,7 @@ class AliOSS
     const DIR_WX_AUTO_REPLAY = 'wx_auto_replay'; //微信自动回复
     const DIR_CERTIFICATE = 'certificate';//学生证书
     const DIR_MAKE_OPERA = 'make_opera';    //打谱申请曲谱图片上传
+    const DIR_OPN_SEARCH = 'omr'; // 曲谱搜索图源
 
 
     private function gmt_iso8601($time) {
@@ -396,6 +397,7 @@ class AliOSS
             self::DIR_WX_AUTO_REPLAY,
             self::DIR_CERTIFICATE,
             self::DIR_MAKE_OPERA,
+            self::DIR_OPN_SEARCH,
         ];
         if (!in_array($dirType, $typeConstants)) {
             return null;
