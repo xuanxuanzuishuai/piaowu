@@ -553,11 +553,6 @@ class Employee extends ControllerBase
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        $employeeId = self::getEmployeeId();
-        $employeeData = EmployeeService::getById($employeeId);
-        if ($employeeData['is_leader'] == Constants::STATUS_FALSE) {
-            return $response->withJson(Valid::addErrors([], 'modify_external_information', 'no_privilege'));
-        }
         try {
             EmployeeService::externalInformation($params);
         } catch (RunTimeException $e) {
