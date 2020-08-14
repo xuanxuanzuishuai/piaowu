@@ -68,6 +68,7 @@ class StudentModelForApp extends Model
             'last_play_time' => '0',
             'collection_id' => '0',
             'student_is_set_pwd' => Constants::STATUS_TRUE,
+            'is_join_ranking' => Constants::STATUS_FALSE,
         ];
     }
 
@@ -111,6 +112,7 @@ class StudentModelForApp extends Model
             self::$table . '.has_review_course',
             self::$table . '.collection_id',
             self::$table . '.password',
+            self::$table . '.is_join_ranking'
         ], $where);
     }
 

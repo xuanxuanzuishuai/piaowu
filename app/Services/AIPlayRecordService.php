@@ -10,6 +10,7 @@ namespace App\Services;
 
 
 use App\Libs\AIPLCenter;
+use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\OpernCenter;
@@ -19,6 +20,7 @@ use App\Models\AIPlayRecordModel;
 use App\Models\AppVersionModel;
 use App\Models\PlayRecordModel;
 use App\Models\StudentModel;
+use App\Models\StudentModelForApp;
 use Medoo\Medoo;
 use App\Libs\DictConstants;
 use App\Libs\SimpleLogger;
@@ -26,6 +28,12 @@ use App\Libs\SimpleLogger;
 class AIPlayRecordService
 {
     const DEFAULT_APP_VER = '5.0.0';
+
+    const GET_THIS_DAY = 1; //获取当天时间戳
+    const GET_THIS_WEEK = 2; //获取本周时间戳
+    const GET_THIS_MONTH =3; //获取本月时间戳
+    const GET_THIS_QUARTER = 4; //获取本季度时间戳
+    const GET_THIS_YEAR = 5; //获取本年时间戳
     /**
      * 演奏数据
      * @param $studentId
@@ -669,12 +677,16 @@ class AIPlayRecordService
     {
         $ret = [];
         $myself = null;
+        $getLessonRankTime = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'get_lesson_rank_time');
+        $getLessonRankTimeOffSet = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'get_lesson_rank_time_offset');
 
-        $ranks = AIPlayRecordModel::getLessonPlayRank($lessonId);
-
+        $lessonRankTime = self::getRankTimestamp($getLessonRankTime, $getLessonRankTimeOffSet);
+        $ranks = AIPlayRecordModel::getLessonPlayRank($lessonId, $lessonRankTime);
+        $studentInfo = StudentModelForApp::getRecord(['id' => $studentId]);
         // 处理排名，相同分数具有并列名次
         $prevStudent = null;
-        foreach ($ranks as $v){
+        foreach ($ranks as $v) {
+            $v['thumb'] = AliOSS::signUrls($v['thumb']);
             if(empty($prevStudent)){
                 $v['order'] = 1;
                 $prevStudent = $v;
@@ -707,7 +719,7 @@ class AIPlayRecordService
             ];
             $myself['score'] = self::formatScore($myself['score']);
         }
-        return ['ranks' => $ret, 'myself' => $myself, 'hasOrg' => false];
+        return ['ranks' => $ret, 'myself' => $myself, 'hasOrg' => false, 'end_time' => $lessonRankTime['end_time'], 'is_join_ranking' => $studentInfo['is_join_ranking']];
     }
 
     /**
@@ -892,5 +904,56 @@ class AIPlayRecordService
                 SimpleLogger::info("point activity both hand evaluate tasks report record fail", ['student_id' => $studentId, 'report_data' => $reportData]);
             }
         }
+    }
+
+    /**
+     * 获取时间戳
+     * @param $params
+     * @param string $timeOffset
+     * @return array
+     */
+    public static function getRankTimestamp($params, $timeOffset = "")
+    {
+        $start = '';
+        $end = '';
+        //当天开始结束时间戳
+        if ($params == self::GET_THIS_DAY) {
+            $start = strtotime('today');
+            $end = strtotime("+1 day", $start);
+        }
+        //本周开始结束时间戳
+        if ($params == self::GET_THIS_WEEK) {
+            $start = strtotime("this week", strtotime(date('Y-m-d 00:00:00')));
+            $end = strtotime("+1 week", $start);
+        }
+        //本月开始结束时间戳
+        if ($params == self::GET_THIS_MONTH) {
+            $start = strtotime(date('Y-m-01 00:00:00'));
+            $end = strtotime("+1 month", $start);
+        }
+        //本季度开始结束时间戳
+        if ($params == self::GET_THIS_QUARTER) {
+            $month = date('m');
+            if ($month == 1 || $month == 2 || $month == 3) {
+                $start = date('Y-01-01 00:00:00');
+                $end = strtotime("+3 month", $start);
+            } elseif ($month == 4 || $month == 5 || $month == 6) {
+                $start = strtotime(date('Y-04-01 00:00:00'));
+                $end = strtotime("+3 month", $start);
+            } elseif ($month == 7 || $month == 8 || $month == 9) {
+                $start = strtotime(date('Y-07-01 00:00:00'));
+                $end = strtotime("+3 month", $start);
+            } else {
+                $start = strtotime(date('Y-10-01 00:00:00'));
+                $end = strtotime("+3 month", $start);
+            }
+        }
+
+        //本年开始结束时间戳
+        if ($params == self::GET_THIS_YEAR) {
+            $start = strtotime(date('Y-01-01 00:00:00'));
+            $end = strtotime("+1 year", $start);
+        }
+        return ['start_time' => $start + $timeOffset, 'end_time' => $end];
     }
 }

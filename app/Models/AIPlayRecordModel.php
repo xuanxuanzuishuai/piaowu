@@ -158,7 +158,7 @@ GROUP BY FROM_UNIXTIME(end_time, '%Y%m%d');";
      * @param $lessonId
      * @return array
      */
-    public static function getLessonPlayRank($lessonId)
+    public static function getLessonPlayRank($lessonId, $lessonRankTime)
     {
         $sql = "SELECT
     tmp.id AS play_id,
@@ -166,10 +166,11 @@ GROUP BY FROM_UNIXTIME(end_time, '%Y%m%d');";
     tmp.lesson_id,
     tmp.student_id,
     tmp.record_id AS ai_record_id,
-    s.name
+    s.name,
+    s.thumb
 FROM
     (SELECT 
-        id, lesson_id, student_id, record_id, score_final,
+        id, lesson_id, student_id, record_id, score_final, is_join_ranking,
         ROW_NUMBER() OVER(PARTITION BY student_id ORDER BY score_final DESC, id DESC) AS t
     FROM
         ai_play_record AS apr
@@ -178,10 +179,14 @@ FROM
             AND apr.ui_entry = :ui_entry
             AND apr.is_phrase = :is_phrase
             AND apr.hand = :hand
+            AND apr.is_join_ranking = :is_join_ranking
+            AND apr.data_type = :data_type
             AND apr.score_final >= :rank_base_score
+            AND apr.end_time >= :start_time
+            AND apr.end_time < :end_time
     ) tmp
     INNER JOIN
-        student AS s ON tmp.student_id = s.id
+        student AS s ON tmp.student_id = s.id and tmp.is_join_ranking = s.is_join_ranking
 WHERE
     tmp.t = 1
 ORDER BY tmp.score_final DESC , tmp.id
@@ -193,7 +198,11 @@ LIMIT :rank_limit;";
             ':is_phrase' => Constants::STATUS_FALSE,
             ':hand' => self::HAND_BOTH,
             ':rank_base_score' => self::RANK_BASE_SCORE,
+            ':is_join_ranking' => Constants::STATUS_TRUE,
+            ':data_type' => Constants::STATUS_TRUE,
             ':rank_limit' => self::RANK_LIMIT,
+            ':start_time' => $lessonRankTime['start_time'],
+            ':end_time' => $lessonRankTime['end_time']
         ];
 
         $db = MysqlDB::getDB();

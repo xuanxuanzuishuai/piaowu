@@ -134,7 +134,9 @@ class DictConstants {
             'self_test_of_piano_sound',
             'trial_package_ios',
             'trial_package_android',
-            'request_ocr_search_service'
+            'request_ocr_search_service',
+            'get_lesson_rank_time',
+            'get_lesson_rank_time_offset'
         ]
     ];
 

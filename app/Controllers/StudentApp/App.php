@@ -407,4 +407,35 @@ class App extends ControllerBase
         $result = AreaService::getByCode($params['code']);
         return HttpHelper::buildResponse($response, ['area_info' => $result]);
     }
+
+    /**
+     * 是否加入排行榜
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function setJoinRanking(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'is_join_ranking',
+                'type' => 'required',
+                'error_code' => 'is_join_ranking_is_required'
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        if ($this->ci['student']['is_join_ranking'] != $params['is_join_ranking']) {
+            StudentModelForApp::updateRecord($this->ci['student']['id'], ['is_join_ranking' => $params['is_join_ranking']]);
+        }
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => []
+        ], StatusCode::HTTP_OK);
+    }
 }

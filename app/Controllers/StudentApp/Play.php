@@ -15,6 +15,7 @@ use App\Libs\HttpHelper;
 use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Valid;
+use App\Models\AIPlayRecordModel;
 use App\Models\PlayRecordModel;
 use App\Models\StudentModelForApp;
 use App\Services\AIPlayRecordService;
@@ -286,5 +287,36 @@ class Play extends ControllerBase
         $playSum = AIPlayRecordService::getStudentSumDuration($studentId);
 
         return HttpHelper::buildResponse($response, ['total_duration' => $playSum]);
+    }
+
+    public function setJoinRanking(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'is_join_ranking',
+                'type' => 'required',
+                'error_code' => 'is_join_ranking_is_required'
+            ],
+            [
+                'key' => 'id',
+                'type' => 'required',
+                'error_code' => 'id_is_required'
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $playRecordInfo = AIPlayRecordModel::getRecord(['id' => $params['id']]);
+        if ($playRecordInfo['is_join_ranking'] != $params['is_join_ranking']) {
+            AIPlayRecordModel::updateRecord($params['id'], ['is_join_ranking' => $params['is_join_ranking']]);
+        }
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => []
+        ], StatusCode::HTTP_OK);
+
     }
 }

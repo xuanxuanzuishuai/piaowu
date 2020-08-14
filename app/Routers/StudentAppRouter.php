@@ -123,6 +123,11 @@ class StudentAppRouter extends RouterBase
             'call' => App::class . ':getByCode',
             'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
         ],
+        '/student_app/app/set_join_ranking' => [
+            'method' => ['post'],
+            'call' => App::class . ':setJoinRanking',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
 
         // /student_app/sub
         '/student_app/subscription/redeem_gift_code' => [
@@ -229,6 +234,11 @@ class StudentAppRouter extends RouterBase
         '/student_app/play/duration' => [
             'method' => ['get'],
             'call' => Play::class . ':playDuration',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
+        '/student_app/play/set_join_ranking' => [
+            'method' => ['post'],
+            'call' => Play::class . ':setJoinRanking',
             'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
         ],
 
