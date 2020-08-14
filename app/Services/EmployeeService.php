@@ -347,7 +347,7 @@ class EmployeeService
         if (empty($members['assistant_id'])) {
             return $list;
         }
-        $list = EmployeeModel::getRecords(['id' => $members['assistant_id']], ['name', 'id'], false);
+        $list = EmployeeModel::getRecords(['id' => $members['assistant_id'], 'status' => EmployeeModel::STATUS_NORMAL], ['name', 'id'], false);
         return $list;
     }
 

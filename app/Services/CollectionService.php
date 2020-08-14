@@ -54,7 +54,7 @@ class CollectionService
                 'id' => $params['assistant_id'],
                 'status' => EmployeeModel::STATUS_NORMAL
             ],
-            ['id', 'name', 'wx_qr'],
+            ['id', 'name', 'wx_qr', 'wx_thumb'],
             false
         );
         if (empty($assistantInfoList)) {
@@ -178,6 +178,9 @@ class CollectionService
         $params = self::checkActionIsAllow($collectionId, $params);
         if (empty($params)) {
             throw new RunTimeException(['invalid params']);
+        }
+        if ($params['name']) {
+            $collectionData['name'] = $params['name'];
         }
         if ($params['assistant_id']) {
             $collectionData['assistant_id'] = $params['assistant_id'];
