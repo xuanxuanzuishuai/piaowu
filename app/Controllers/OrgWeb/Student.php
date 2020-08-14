@@ -110,7 +110,9 @@ class Student extends ControllerBase
 
         //获取没有分配课管的学生信息,只有第一次分配课管的学生才会微信消息推送
         $userInfo = StudentModel::getNoCourseStudent($params['student_ids']);
-        if (empty($userInfo)) {
+        //根据课管ID获取课管信息
+        $courseInfo = EmployeeModel::getRecord(['id' => $params['course_manage_id']]);
+        if (empty($userInfo) && empty($courseInfo)) {
             $toBePushedStudentInfo = [];
         } else {
             //获取没有分配课管的学生openId
@@ -137,8 +139,7 @@ class Student extends ControllerBase
         if (empty($toBePushedStudentInfo)) {
             return HttpHelper::buildResponse($response, []);
         }
-        //根据课管ID获取课管信息
-        $courseInfo = EmployeeModel::getRecord(['id' => $params['course_manage_id']]);
+
         $url = $_ENV["WECHAT_FRONT_DOMAIN"] . "/student/codePage?id=" . $params['course_manage_id'];
         $templateId = $_ENV["WECHAT_DISTRIBUTION_MANAGEMENT"];
         $data = [
@@ -149,7 +150,7 @@ class Student extends ControllerBase
                 'value' => "专属服务教师分配"
             ],
             'keyword2' => [
-                'value' => "您的专属服务教师为【".$courseInfo['name']."】"
+                'value' => "您的专属服务教师为【".$courseInfo['wx_nick']."】"
             ],
             'keyword3' => [
                 'value' => "请查看详情"

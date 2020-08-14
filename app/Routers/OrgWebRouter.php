@@ -91,7 +91,9 @@ class OrgWebRouter extends RouterBase
         //人员管理->编辑员工对外的信息(只有管理员有权限）
         '/org_web/employee/external_information' => ['method' => ['post'], 'call' => Employee::class . ':externalInformation'],
         //个人信息里可以编辑自己的对外信息
-        '/org_web/employee/user_external_information' => ['method' => ['post'], 'call' => Employee::class . ':userExternalInformation'],
+        '/org_web/employee/user_external_information' => ['method' => ['post'], 'call' => Employee::class . ':userExternalInformation', 'middles' => [EmployeeAuthCheckMiddleWare::class, OrgWebMiddleware::class]],
+        '/org_web/employee/get_external_information' => ['method' => ['get'], 'call' => Employee::class . ':getExternalInformation', 'middles' => [EmployeeAuthCheckMiddleWare::class, OrgWebMiddleware::class]],
+
 
         '/org_web/employee/get_dept_members' => [
             'method' => ['get'],

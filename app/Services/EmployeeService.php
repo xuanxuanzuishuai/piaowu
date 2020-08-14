@@ -350,4 +350,16 @@ class EmployeeService
         $list = EmployeeModel::getRecords(['id' => $members['assistant_id']], ['name', 'id'], false);
         return $list;
     }
+
+
+    /**
+     * 获取用户对外信息
+     * @param $id
+     * @return array|mixed
+     */
+    public static function getExternalInformation($id)
+    {
+        $employeeData = EmployeeModel::getRecord(['id' => $id], ['wx_nick', 'wx_thumb', 'wx_qr']);
+        return $employeeData ?? [];
+    }
 }

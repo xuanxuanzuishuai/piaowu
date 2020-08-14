@@ -599,4 +599,19 @@ class Employee extends ControllerBase
         }
         return HttpHelper::buildResponse($response, []);
     }
+
+    /**
+     * 获取对外信息
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getExternalInformation(Request $request, Response $response)
+    {
+        $id = self::getEmployeeId();
+        $employeeInfo = EmployeeService::getExternalInformation($id);
+        $employeeInfo['wx_thumb'] = empty($employeeInfo['wx_thumb']) ? $employeeInfo['wx_thumb'] :AliOSS::signUrls($employeeInfo['wx_thumb']);
+        $employeeInfo['wx_qr'] = empty($employeeInfo['wx_qr']) ? $employeeInfo['wx_qr'] :AliOSS::signUrls($employeeInfo['wx_qr']);
+        return HttpHelper::buildResponse($response, $employeeInfo);
+    }
 }
