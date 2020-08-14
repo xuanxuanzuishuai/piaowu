@@ -26,6 +26,7 @@ use App\Services\StudentService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
+use App\Libs\AliOSS;
 
 class Employee extends ControllerBase
 {
@@ -610,8 +611,8 @@ class Employee extends ControllerBase
     {
         $id = self::getEmployeeId();
         $employeeInfo = EmployeeService::getExternalInformation($id);
-        $employeeInfo['wx_thumb'] = empty($employeeInfo['wx_thumb']) ? $employeeInfo['wx_thumb'] :AliOSS::signUrls($employeeInfo['wx_thumb']);
-        $employeeInfo['wx_qr'] = empty($employeeInfo['wx_qr']) ? $employeeInfo['wx_qr'] :AliOSS::signUrls($employeeInfo['wx_qr']);
+        $employeeInfo['thumb'] = empty($employeeInfo['wx_thumb']) ? $employeeInfo['wx_thumb'] :AliOSS::signUrls($employeeInfo['wx_thumb']);
+        $employeeInfo['qr'] = empty($employeeInfo['wx_qr']) ? $employeeInfo['wx_qr'] :AliOSS::signUrls($employeeInfo['wx_qr']);
         return HttpHelper::buildResponse($response, $employeeInfo);
     }
 }
