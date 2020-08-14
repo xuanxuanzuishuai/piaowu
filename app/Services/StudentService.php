@@ -32,6 +32,7 @@ use App\Models\StudentOrgModel;
 use App\Models\UserWeixinModel;
 use App\Models\StudentCourseManageLogModel;
 use App\Models\StudentAcquiredLogModel;
+use App\Services\Queue\PushMessageTopic;
 use App\Services\Queue\QueueService;
 
 class StudentService
@@ -1200,6 +1201,62 @@ class StudentService
         }
         //返回数据
         return true;
+    }
+
+    /**
+     * 第一次分配课管的学生，进行消息推送
+     * @param $course_manage_id
+     * @param $courseInfo
+     * @param $toBePushedStudentInfo
+     */
+    public static function allotCoursePushMessage($course_manage_id, $courseInfo, $toBePushedStudentInfo)
+    {
+        $url = $_ENV["WECHAT_FRONT_DOMAIN"] . "/student/codePage?id=" . $course_manage_id;
+        $templateId = $_ENV["WECHAT_DISTRIBUTION_MANAGEMENT"];
+        $data = [
+            'first' => [
+                'value' => "已为您分配专属服务教师，详情如下："
+            ],
+            'keyword1' => [
+                'value' => "专属服务教师分配"
+            ],
+            'keyword2' => [
+                'value' => "您的专属服务教师为【".$courseInfo['wx_nick']."】"
+            ],
+            'keyword3' => [
+                'value' => "请查看详情"
+            ],
+            "remark" => [
+                "value" => "点此消息，加专属教师微信，为您提供打谱等更多专业的服务"
+            ],
+        ];
+        $msgBody = [
+            'wx_push_type' => 'template',
+            'template_id' => $templateId,
+            'data' => $data,
+            'url' => $url,
+            'open_id' => '',
+        ];
+
+        try {
+            $topic = new PushMessageTopic();
+        } catch (\Exception $e) {
+            Util::errorCapture('PushMessageTopic init failure', [
+                'dateTime' => time(),
+            ]);
+        }
+
+        foreach ($toBePushedStudentInfo as $info) {
+            $msgBody['open_id'] = $info['open_id'];
+
+            try {
+                $topic->wxPushCommon($msgBody)->publish();
+
+            } catch (\Exception $e) {
+                SimpleLogger::error("allotCourseManage send failure", ['info' => $info]);
+                continue;
+            }
+        }
     }
 
     /**

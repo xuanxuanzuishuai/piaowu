@@ -555,7 +555,10 @@ class Employee extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         try {
-            EmployeeService::externalInformation($params);
+            $userExternalInformation = EmployeeService::getExternalInformation(['id' => $params['id']]);
+            if ($userExternalInformation['wx_thumb'] != $params['wx_thumb'] || $userExternalInformation['wx_qr'] != $params['wx_qr'] || $userExternalInformation['wx_nick'] != $params['wx_nick']) {
+                EmployeeService::externalInformation($params);
+            }
         } catch (RunTimeException $e) {
             return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData());
         }
@@ -594,7 +597,11 @@ class Employee extends ControllerBase
         }
         $params['id'] = self::getEmployeeId();
         try {
-            EmployeeService::externalInformation($params);
+            $userExternalInformation = EmployeeService::getExternalInformation(['id' => $params['id']]);
+            if ($userExternalInformation['wx_thumb'] != $params['wx_thumb'] || $userExternalInformation['wx_qr'] != $params['wx_qr'] || $userExternalInformation['wx_nick'] != $params['wx_nick']) {
+                EmployeeService::externalInformation($params);
+            }
+
         } catch (RunTimeException $e) {
             return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData());
         }

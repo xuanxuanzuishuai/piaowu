@@ -111,8 +111,9 @@ class Student extends ControllerBase
         //获取没有分配课管的学生信息,只有第一次分配课管的学生才会微信消息推送
         $userInfo = StudentModel::getNoCourseStudent($params['student_ids']);
         //根据课管ID获取课管信息
-        $courseInfo = EmployeeModel::getRecord(['id' => $params['course_manage_id']]);
-        if (empty($userInfo) && empty($courseInfo)) {
+        $courseInfo = EmployeeModel::getRecord(['id' => $params['course_manage_id']], ['wx_nick', 'wx_thumb', 'wx_qr']);
+        $courseInfoResult = empty($courseInfo['wx_nick']) && empty($courseInfo['wx_thumb']) && empty($courseInfo['wx_qr']);
+        if (empty($userInfo) || $courseInfoResult) {
             $toBePushedStudentInfo = [];
         } else {
             //获取没有分配课管的学生openId
@@ -139,54 +140,7 @@ class Student extends ControllerBase
         if (empty($toBePushedStudentInfo)) {
             return HttpHelper::buildResponse($response, []);
         }
-
-        $url = $_ENV["WECHAT_FRONT_DOMAIN"] . "/student/codePage?id=" . $params['course_manage_id'];
-        $templateId = $_ENV["WECHAT_DISTRIBUTION_MANAGEMENT"];
-        $data = [
-            'first' => [
-                'value' => "已为您分配专属服务教师，详情如下："
-            ],
-            'keyword1' => [
-                'value' => "专属服务教师分配"
-            ],
-            'keyword2' => [
-                'value' => "您的专属服务教师为【".$courseInfo['wx_nick']."】"
-            ],
-            'keyword3' => [
-                'value' => "请查看详情"
-            ],
-            "remark" => [
-                "value" => "点此消息，加专属教师微信，为您提供打谱等更多专业的服务"
-            ],
-        ];
-        $msgBody = [
-            'wx_push_type' => 'template',
-            'template_id' => $templateId,
-            'data' => $data,
-            'url' => $url,
-            'open_id' => '',
-        ];
-
-        try {
-            $topic = new PushMessageTopic();
-        } catch (\Exception $e) {
-            Util::errorCapture('PushMessageTopic init failure', [
-                'dateTime' => time(),
-            ]);
-        }
-
-        foreach ($toBePushedStudentInfo as $info) {
-            $msgBody['open_id'] = $info['open_id'];
-
-            try {
-                $topic->wxPushCommon($msgBody)->publish();
-
-            } catch (\Exception $e) {
-                SimpleLogger::error("allotCourseManage send failure", ['info' => $info]);
-                continue;
-            }
-        }
-
+        StudentService::allotCoursePushMessage($params['course_manage_id'], $courseInfo, $toBePushedStudentInfo);
         return HttpHelper::buildResponse($response, []);
     }
 
@@ -249,4 +203,5 @@ class Student extends ControllerBase
         //返回数据
         return HttpHelper::buildResponse($response, $studentList);
     }
+
 }
