@@ -30,6 +30,7 @@ class ReviewCourseTaskService
 {
     /**
      * 生成指定日期的点评任务
+     * 生成点评任务时不区分用户是否付费，在发送时过滤非付费用户
      * @param $reviewDate
      * @return bool|null
      */
@@ -37,70 +38,52 @@ class ReviewCourseTaskService
     {
         $existStudentIds = ReviewCourseTaskModel::existStudents($reviewDate);
 
-        list($startTime, $endTime) = ReviewCourseCalendarService::getReviewTimeWindow($reviewDate);
-        if (empty($startTime) || empty($endTime)) {
-            SimpleLogger::error("[createDailyTasks] invalid time window", [
-                'review_date' => $reviewDate,
-                'start_time' => $startTime,
-                'end_time' => $endTime,
-            ]);
-            return null;
-        }
+        $reviewDateTS = strtotime($reviewDate);
+        $playDateTS = $reviewDateTS - 86400;
+        $playDate = date('Ymd', $playDateTS);
 
         $now = time();
 
-        // 老师人数
-        $reviewerIds = self::getReviewers();
-        $reviewerCount = count($reviewerIds);
-
-        if ($reviewerCount < 1) {
-            SimpleLogger::error("[createDailyTasks] no reviewer", []);
-            return null;
-        }
-
-        $playSum = AIPlayRecordModel::studentDailySum($startTime, $endTime);
+        $playSum = AIPlayRecordModel::studentDailySum($playDateTS, $reviewDateTS - 1);
 
         $newTasks = [];
-        $last = -1;
-        foreach ($playSum as $data) {
+        $partCount = 0;
+        $error = 0;
+        foreach ($playSum as $i => $data) {
             // 当日已经生成过的学生不能重复生成
             if (in_array($data['student_id'], $existStudentIds)) {
-                continue;
-            }
-
-            // 同一个人不同日期的数据只取最时间最长的一天
-            if ($last >= 0 && $newTasks[$last]['student_id'] == $data['student_id']) {
-                if ($data['sum_duration'] > $newTasks[$last]['sum_duration']) {
-                    $newTasks[$last]['sum_duration'] = $data['sum_duration'];
-                    $newTasks[$last]['play_date'] = $data['play_date'];
-                }
                 continue;
             }
 
             $newTasks[] = [
                 'student_id' => $data['student_id'],
                 'review_date' => $reviewDate,
-                'play_date' => $data['play_date'],
+                'play_date' => $playDate,
                 'sum_duration' => $data['sum_duration'],
-                'reviewer_id' => $reviewerIds[($last + 1) % $reviewerCount],
+                'reviewer_id' => 0,
                 'create_time' => $now,
                 'status' => ReviewCourseTaskModel::STATUS_INIT,
                 'update_time' => 0,
                 'review_audio' => '',
                 'review_audio_update_time' => 0,
             ];
+            $partCount++;
+            if ($partCount >= ReviewCourseTaskModel::EACH_LIMIT) {
+                $success = ReviewCourseTaskModel::batchInsert($newTasks);
+                if (!$success) {
+                    SimpleLogger::error("[createDailyTasks] batchInsert error", [
+                        '$partCount' => $partCount,
+                        '$studentId' => array_column($newTasks, 'student_id'),
+                    ]);
+                    $error++;
+                }
 
-            $last++;
+                $newTasks = [];
+                $partCount = 0;
+            }
         }
 
-        $num = count($newTasks);
-        $step = ceil( $num/ReviewCourseTaskModel::EACH_LIMIT);
-        $success = true;
-        for ($i = 0; $i <= $step; $i++){
-            $insertData = array_slice($newTasks, $i * ReviewCourseTaskModel::EACH_LIMIT, ReviewCourseTaskModel::EACH_LIMIT);
-            $success = $success && ReviewCourseTaskModel::batchInsert($insertData, false);
-        }
-        return $success;
+        return $error <= 0;
     }
 
     /**

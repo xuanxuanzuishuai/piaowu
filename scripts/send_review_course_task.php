@@ -19,10 +19,10 @@ require_once PROJECT_ROOT . '/vendor/autoload.php';
 
 use App\Libs\AIPLClass;
 use App\Libs\SimpleLogger;
+use App\Models\ReviewCourseModel;
 use App\Models\ReviewCourseTaskModel;
 use App\Models\StudentModel;
 use App\Services\Queue\QueueService;
-use App\Services\ReviewCourseTaskService;
 use Dotenv\Dotenv;
 
 $dotenv = new Dotenv(PROJECT_ROOT,'.env');
@@ -52,6 +52,10 @@ $result = [ // 'type' => [count, ids]
 
 foreach ($tasks as $task) {
     $student = StudentModel::getById($task['student_id']);
+    if ($student['has_review_course'] == ReviewCourseModel::REVIEW_COURSE_NO) {
+        continue;
+    }
+
     $report = AIPLClass::getClassReport($student['uuid'], strtotime($task['play_date']));
     if (empty($report)) {
         $result['report_not_found']['count']++;

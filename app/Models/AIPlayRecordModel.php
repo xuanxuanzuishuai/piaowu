@@ -70,22 +70,16 @@ class AIPlayRecordModel extends Model
         $db = MysqlDB::getDB();
 
         $apr = self::$table;
-        $s = StudentModel::$table;
 
         $sql = "SELECT 
     apr.student_id,
-    FROM_UNIXTIME(apr.end_time, '%Y%m%d') AS play_date,
     SUM(apr.duration) AS sum_duration
 FROM
     {$apr} AS apr
-        INNER JOIN
-    {$s} AS s ON s.id = apr.student_id
-        AND s.`has_review_course` IN (:review_package, :review_plus_package)
 WHERE
-    apr.end_time > :start_time
+    apr.end_time >= :start_time
         AND apr.end_time <= :end_time
-        AND apr.duration > 0
-GROUP BY apr.student_id , FROM_UNIXTIME(apr.end_time, '%Y%m%d');";
+GROUP BY apr.student_id";
 
         $map = [
             ':start_time' => $startTime,
