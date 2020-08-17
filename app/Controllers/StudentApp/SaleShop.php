@@ -58,7 +58,10 @@ class SaleShop extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $detail = PayServices::getPackageV1Detail($params['package_id']);
+        $uuid = $this->ci['student']['uuid'];
+        $platformId = TrackService::getPlatformId($this->ci['platform']);
+
+        $detail = PayServices::getPackageV1Detail($params['package_id'], $platformId, $uuid);
         return $response->withJson($detail, StatusCode::HTTP_OK);
     }
 

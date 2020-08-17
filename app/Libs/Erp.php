@@ -497,14 +497,14 @@ class Erp
 
     /**
      * 新产品包详情
-     * @param $packageId
+     * @param $params
      * @return array|bool
      */
-    public function packageV1Detail($packageId)
+    public function packageV1Detail($params)
     {
-        $response = HttpHelper::requestJson($this->host . self::API_PACKAGE_V1_DETAIL, [
-            'package_id' => $packageId
-        ]);
+        $params['app_id'] = self::SELF_APP_ID;
+
+        $response = HttpHelper::requestJson($this->host . self::API_PACKAGE_V1_DETAIL, $params);
         return $response;
     }
 

@@ -27,6 +27,10 @@ class PayServices
 
     const PAY_CHANNEL_PUB = 21; //微信公众号内支付
 
+    // 销售商城 1 音符商城 2 金叶子商城
+    const SALE_SHOP_NOTE = 1;
+    const SALE_SHOP_LEAF = 2;
+
     /**
      * 获取产品包
      * @param int $studentId
@@ -373,7 +377,7 @@ class PayServices
         // sale_shop 销售商城分类 1 音符商城 2 金叶子商城
         // channel 渠道授权 1 Android 2 IOS 4 公众号 8 ERP
         $params = [
-            'sale_shop' => 1,
+            'sale_shop' => self::SALE_SHOP_NOTE,
             'channel' => $channel,
             'page' => $page,
             'count' => $count
@@ -387,12 +391,22 @@ class PayServices
     /**
      * 新产品详情
      * @param $packageId
+     * @param $channel
+     * @param $uuid
      * @return array|bool
      */
-    public static function getPackageV1Detail($packageId)
+    public static function getPackageV1Detail($packageId, $channel, $uuid)
     {
+        // sale_shop 销售商城分类 1 音符商城 2 金叶子商城
+        // channel 渠道授权 1 Android 2 IOS 4 公众号 8 ERP
+        $params = [
+            'sale_shop' => self::SALE_SHOP_NOTE,
+            'channel' => $channel,
+            'package_id' => $packageId,
+            'uuid' => $uuid,
+        ];
         $erp = new Erp();
-        $detail = $erp->packageV1Detail($packageId);
+        $detail = $erp->packageV1Detail($params);
         return $detail;
     }
 }
