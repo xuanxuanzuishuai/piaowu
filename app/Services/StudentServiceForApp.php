@@ -122,7 +122,8 @@ class StudentServiceForApp
             'flags' => $flags,
             'total_duration' => 0,
             'is_anonymous' => 1,
-            'student_is_set_pwd' => $isPwd
+            'student_is_set_pwd' => $isPwd,
+            'is_join_ranking' => $student['is_join_ranking']
         ];
 
         return [null, $loginData];
@@ -248,7 +249,8 @@ class StudentServiceForApp
             'total_duration' => $totalDuration,
             'is_anonymous' => 0,
             'total_points' => $totalPoints['total_num'] ?? 0,
-            'student_is_set_pwd' => $isPwd
+            'student_is_set_pwd' => $isPwd,
+            'is_join_ranking' => $student['is_join_ranking']
         ];
 
         return [null, $loginData];
@@ -381,7 +383,8 @@ class StudentServiceForApp
             'total_duration' => $totalDuration,
             'is_anonymous' => 0,
             'total_points' => $totalPoints['total_num'] ?? 0,
-            'student_is_set_pwd' => $isPwd
+            'student_is_set_pwd' => $isPwd,
+            'is_join_ranking' => $student['is_join_ranking']
         ];
 
         return [null, $loginData];
