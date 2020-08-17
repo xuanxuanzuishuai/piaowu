@@ -69,12 +69,8 @@ class ReviewCourseTaskService
             ];
             $partCount++;
             if ($partCount >= ReviewCourseTaskModel::EACH_LIMIT) {
-                $success = ReviewCourseTaskModel::batchInsert($newTasks);
+                $success = self::insertTasks($newTasks);
                 if (!$success) {
-                    SimpleLogger::error("[createDailyTasks] batchInsert error", [
-                        '$partCount' => $partCount,
-                        '$studentId' => array_column($newTasks, 'student_id'),
-                    ]);
                     $error++;
                 }
 
@@ -82,8 +78,27 @@ class ReviewCourseTaskService
                 $partCount = 0;
             }
         }
+        if ($partCount > 0) {
+            $success = self::insertTasks($newTasks);
+            if (!$success) {
+                $error++;
+            }
+        }
 
         return $error <= 0;
+    }
+
+    public static function insertTasks($newTasks)
+    {
+        $success = ReviewCourseTaskModel::batchInsert($newTasks);
+        if (!$success) {
+            SimpleLogger::error("[createDailyTasks] batchInsert error", [
+                '$partCount' => count($newTasks),
+                '$studentId' => array_column($newTasks, 'student_id'),
+            ]);
+            return false;
+        }
+        return true;
     }
 
     /**

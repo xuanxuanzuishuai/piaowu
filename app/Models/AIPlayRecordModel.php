@@ -84,8 +84,6 @@ GROUP BY apr.student_id";
         $map = [
             ':start_time' => $startTime,
             ':end_time' => $endTime,
-            ':review_package' => ReviewCourseModel::REVIEW_COURSE_49,
-            ':review_plus_package' => ReviewCourseModel::REVIEW_COURSE_1980,
         ];
 
         return $db->queryAll($sql, $map) ?? [];

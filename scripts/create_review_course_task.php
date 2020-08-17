@@ -34,8 +34,6 @@ $count = ReviewCourseTaskService::createDailyTasks($date);
 
 if ($count === false) {
     echo "error !!!\n";
-} else {
-    echo "insert count: $count\n";
 }
 
 echo "create review course task [END]\n";
