@@ -179,7 +179,6 @@ class OpernService
                 $opern['mmusic'] = $lessonInfoData[$item['lessonId']]['mmusic'] ? '1' : '0';
                 $opern['mmusicconfig'] = $lessonInfoData[$item['lessonId']]['mmusicconfig'] ? '1' : '0';
                 $opern['dynamic'] = $lessonInfoData[$item['lessonId']]['dynamic'] ? '1' : '0';
-                $opern['page'] = $lessonInfoData[$item['lessonId']]['page'];
                 $opern['res'] = "";
                 $opern['mp4'] = '0';
                 $opern['mp8'] = '0';
@@ -189,6 +188,7 @@ class OpernService
                 foreach ($lessonInfoData[$item['lessonId']]['resources'] as $resource) {
                     if ($resource['sort'] == ($item['pageId'] + self::PAGE_LIMIT)) {
                         $opern['res'] = $resource['resource_url'];
+                        $opern['page'] = $resource['sort'];
                         break;
                     }
                 }
