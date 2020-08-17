@@ -145,12 +145,16 @@ class WeChatMsgHandler
         $client = (string)$xml->FromUserName;
         $msgQuestion = trim((string)$xml->Content);
 
-        $questionRow = AutoReplyService::getQuestionByTitle($msgQuestion);
-        if (empty($questionRow) && !empty($_ENV['SERVER_AUTO_REPLY']) && !self::serverOnline($_ENV['SERVER_ONLINE_TIME'])) {
-            $questionRow = AutoReplyService::getQuestionByTitle("自动回复");
-        }
-        if (empty($questionRow)) {
+        $titleQuestionRow = AutoReplyService::getQuestionByTitle($msgQuestion);
+        $autoReplyQuestionRow = AutoReplyService::getQuestionByTitle("自动回复");
+        if (empty($titleQuestionRow['list']) && empty($autoReplyQuestionRow['list'])) {
             return $result;
+        } elseif (empty($titleQuestionRow['list'])) {
+            $questionRow = $autoReplyQuestionRow['list'];
+        } elseif (empty($autoReplyQuestionRow['list'])) {
+            $questionRow = $titleQuestionRow['list'];
+        } else {
+            $questionRow = array_merge($titleQuestionRow['list'], $autoReplyQuestionRow['list']);
         }
 
         $config = [
@@ -162,7 +166,7 @@ class WeChatMsgHandler
             return $result;
         }
 
-        foreach ($questionRow['list'] as $key => $value) {
+        foreach ($questionRow as $key => $value) {
             if ($value['type'] != AutoReplyAnswerModel::AUTO_REPLAY_TYPE_TEXT) {
                 $posterImgFile = empty($value['answer']) ? '' : AliOSS::signUrls($value['answer']);
                 if (empty($posterImgFile)) {
