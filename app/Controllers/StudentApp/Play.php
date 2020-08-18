@@ -149,63 +149,6 @@ class Play extends ControllerBase
     }
 
     /**
-     * 动态演奏结束
-     * @param Request $request
-     * @param Response $response
-     * @return Response
-     */
-    public function aiEnd(Request $request, Response $response)
-    {
-        // 验证请求参数
-        $rules = [
-            [
-                'key' => 'data',
-                'type' => 'required',
-                'error_code' => 'play_data_is_required'
-            ]
-        ];
-        $params = $request->getParams();
-        $result = Valid::validate($params, $rules);
-        if($result['code'] != Valid::CODE_SUCCESS) {
-            return $response->withJson($result, StatusCode::HTTP_OK);
-        }
-
-        // 没有学生信息时返回空
-        if (empty($this->ci['student'])) {
-            return $response->withJson(['code' => 0], StatusCode::HTTP_OK);
-        }
-        if (empty($params['data']['lesson_id'])) {
-            $result = Valid::addAppErrors([], 'lesson_id_is_required');
-            return $response->withJson($result, StatusCode::HTTP_OK);
-        }
-
-        $db = MysqlDB::getDB();
-        $db->beginTransaction();
-
-        // 插入练琴纪录表
-        $userId = $this->ci['student']['id'];
-        $params['data']['lesson_type'] = PlayRecordModel::TYPE_AI;
-        $params['data']['client_type'] = PlayRecordModel::CLIENT_STUDENT;
-        list($errCode, $ret) = UserPlayServices::addRecord($userId, $params['data']);
-        if (!empty($errCode)) {
-            $errors = Valid::addAppErrors([], $errCode);
-            return $response->withJson($errors, StatusCode::HTTP_OK);
-        }
-
-        $db->commit();
-
-        // 插入到新数据表
-        // ai_end 5.0以后接口不再调用，这里的一定是旧版数据
-        $params['data']['old_format'] = Constants::STATUS_TRUE;
-        AIPlayRecordService::insertOldPracticeData($userId, $params['data'], $this->ci['version']);
-
-        // 处理返回数据
-        $data = ['record_id' => $ret['record_id']];
-        $data['homework'] = [];
-        return $response->withJson(['code'=>0, 'data'=>$data], StatusCode::HTTP_OK);
-    }
-
-    /**
      * 上课模式结束
      * @param Request $request
      * @param Response $response
