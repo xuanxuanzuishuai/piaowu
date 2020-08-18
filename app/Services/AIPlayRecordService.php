@@ -18,6 +18,7 @@ use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\AIPlayRecordModel;
 use App\Models\AppVersionModel;
+use App\Models\HistoryRanksModel;
 use App\Models\PlayRecordModel;
 use App\Models\StudentModel;
 use App\Models\StudentModelForApp;
@@ -671,17 +672,28 @@ class AIPlayRecordService
      * 获取曲目排名
      * @param $lessonId
      * @param $studentId
+     * @param $issueNumber
      * @return array
      */
-    public static function getLessonRankData($lessonId, $studentId)
+    public static function getLessonRankData($lessonId, $studentId, $issueNumber = '')
     {
         $ret = [];
         $myself = null;
-        $getLessonRankTime = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'get_lesson_rank_time');
-        $getLessonRankTimeOffSet = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'get_lesson_rank_time_offset');
+        $time = time();
 
-        $lessonRankTime = self::getRankTimestamp($getLessonRankTime, $getLessonRankTimeOffSet);
-        $ranks = AIPlayRecordModel::getLessonPlayRank($lessonId, $lessonRankTime);
+        $getLessonRankTime = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'get_lesson_rank_time');
+        //确定本季度排行榜统计的起始时间
+        $lessonRankTime = list('start_time' => $currentStartTime, 'end_time' => $currentEndTime) = self::getRankTimestamp($getLessonRankTime, $time);
+        //获取上一个季度排行榜统计的起始时间
+        $lastIssueNumber = Util::getUpAndDownQuarter(Util::getQuarterByMonth($currentStartTime));
+        list('start_time' => $lastStartTime, 'end_time' => $lastEndTime) = self::getRankTimestamp($getLessonRankTime,Util::getQuarterStartEndTime($lastIssueNumber['up_quarter'])['start_time']);
+        //判断是否获取上期数据:为空查看本期数据
+        if (empty($issueNumber)) {
+            $ranks = AIPlayRecordModel::getLessonPlayRank($lessonId, $lessonRankTime);
+        } else {
+            //查看指定期号数据
+            $ranks = HistoryRanksModel::getRankList($issueNumber, $lessonId);
+        }
         $studentInfo = StudentModelForApp::getRecord(['id' => $studentId]);
         // 处理排名，相同分数具有并列名次
         $prevStudent = null;
@@ -719,7 +731,18 @@ class AIPlayRecordService
             ];
             $myself['score'] = self::formatScore($myself['score']);
         }
-        return ['ranks' => $ret, 'myself' => $myself, 'hasOrg' => false, 'end_time' => $lessonRankTime['end_time'], 'is_join_ranking' => $studentInfo['is_join_ranking']];
+        $result = [
+            'myself' => $myself,
+            'hasOrg' => false,
+            'is_join_ranking' => $studentInfo['is_join_ranking'],
+            'current_start_time' => $currentStartTime,
+            'current_end_time' => $currentEndTime,
+            'last_start_time' => $lastStartTime,
+            'last_end_time' => $lastEndTime,
+            'last_issue_number' => $lastIssueNumber['up_quarter'],
+            'ranks' => $ret,
+        ];
+        return $result;
     }
 
     /**
@@ -907,54 +930,67 @@ class AIPlayRecordService
     }
 
     /**
-     * 获取时间戳
-     * @param $params
-     * @param string $timeOffset
+     * 获取某个时间段的起始时间
+     * @param $targetType
+     * @param $timestamp
      * @return array
      */
-    public static function getRankTimestamp($params, $timeOffset = "")
+    public static function getRankTimestamp($targetType, $timestamp)
     {
         $start = '';
         $end = '';
-        //当天开始结束时间戳
-        if ($params == self::GET_THIS_DAY) {
-            $start = strtotime('today');
+        //天开始结束时间戳
+        if ($targetType == self::GET_THIS_DAY) {
+            $start = strtotime('today', $timestamp);
             $end = strtotime("+1 day", $start);
         }
-        //本周开始结束时间戳
-        if ($params == self::GET_THIS_WEEK) {
-            $start = strtotime("this week", strtotime(date('Y-m-d 00:00:00')));
+        //周开始结束时间戳
+        if ($targetType == self::GET_THIS_WEEK) {
+            $start = strtotime("this week", strtotime(date('Y-m-d 00:00:00', $timestamp)));
             $end = strtotime("+1 week", $start);
         }
-        //本月开始结束时间戳
-        if ($params == self::GET_THIS_MONTH) {
-            $start = strtotime(date('Y-m-01 00:00:00'));
+        //月开始结束时间戳
+        if ($targetType == self::GET_THIS_MONTH) {
+            $start = strtotime(date('Y-m-01 00:00:00', $timestamp));
             $end = strtotime("+1 month", $start);
         }
-        //本季度开始结束时间戳
-        if ($params == self::GET_THIS_QUARTER) {
-            $month = date('m');
-            if ($month == 1 || $month == 2 || $month == 3) {
-                $start = date('Y-01-01 00:00:00');
-                $end = strtotime("+3 month", $start);
-            } elseif ($month == 4 || $month == 5 || $month == 6) {
-                $start = strtotime(date('Y-04-01 00:00:00'));
-                $end = strtotime("+3 month", $start);
-            } elseif ($month == 7 || $month == 8 || $month == 9) {
-                $start = strtotime(date('Y-07-01 00:00:00'));
-                $end = strtotime("+3 month", $start);
-            } else {
-                $start = strtotime(date('Y-10-01 00:00:00'));
-                $end = strtotime("+3 month", $start);
-            }
+        //季度开始结束时间戳
+        if ($targetType == self::GET_THIS_QUARTER) {
+            $issueNumber = Util::getQuarterByMonth($timestamp);
+            $quarter = substr($issueNumber, -1);
+            $year = substr($issueNumber, 0, -1);
+            $start = mktime(0, 0, 0, $quarter * 3 - 2, 1, $year);
+            $end = mktime(23, 59, 59, $quarter * 3, date('t', mktime(0, 0, 0, $quarter * 3, 1, $year)), $year);
+            return self::getQuarterOffsetTime($issueNumber,$start,$end);
         }
 
         //本年开始结束时间戳
-        if ($params == self::GET_THIS_YEAR) {
-            $start = strtotime(date('Y-01-01 00:00:00'));
+        if ($targetType == self::GET_THIS_YEAR) {
+            $start = strtotime(date('Y-01-01 00:00:00', $timestamp));
             $end = strtotime("+1 year", $start);
         }
-        return ['start_time' => $start + $timeOffset, 'end_time' => $end];
+        return ['start_time' => $start, 'end_time' => $end];
+    }
+
+    /**
+     * 处理特殊时间段的偏移量
+     * @param $issueNumber
+     * @param $startTime
+     * @param $endTime
+     * @return array
+     */
+    private static function getQuarterOffsetTime($issueNumber, $startTime, $endTime)
+    {
+        if (($issueNumber == "20202") || ($issueNumber == "20203")) {
+            $getLessonRankOffsetTime = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'get_lesson_rank_time_offset_' . $issueNumber);
+            $getLessonRankStandardTime = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'get_lesson_rank_time_standard');
+            $start = ($issueNumber == "20202") ? ($getLessonRankStandardTime - $getLessonRankOffsetTime) : $getLessonRankStandardTime;
+            $end = ($issueNumber == "20202") ? ($getLessonRankStandardTime - 1) : ($getLessonRankStandardTime + $getLessonRankOffsetTime);
+        } else {
+            $start = $startTime;
+            $end = $endTime;
+        }
+        return ['start_time' => $start, 'end_time' => $end];
     }
 
     /**

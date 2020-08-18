@@ -864,4 +864,56 @@ class Util
             return true;
         }
     }
+
+    /**
+     * 获取当前月份所属的季度
+     * @param $timestamp
+     * @return float
+     */
+    public static function getQuarterByMonth($timestamp)
+    {
+        $month = date('m', $timestamp);
+        $year = date('Y', $timestamp);
+        return $year . ceil($month / 3);
+    }
+
+    /**
+     * 获取目标季度的上&下一个季度
+     * @param $quarterNumber 20202
+     * @return array
+     */
+    public static function getUpAndDownQuarter($quarterNumber)
+    {
+        $year = substr($quarterNumber, 0, 4);
+        $quarter = substr($quarterNumber, -1);
+        if ($quarter == 1) {
+            $upQuarter = 4;
+            $upYear = $year - 1;
+        } else {
+            $upQuarter = $quarter - 1;
+            $upYear = $year;
+        }
+        if ($quarter == 4) {
+            $downQuarter = 1;
+            $downYear = $year + 1;
+        } else {
+            $downQuarter = $quarter + 1;
+            $downYear = $year;
+        }
+        return ['up_quarter' => $upYear . $upQuarter, 'down_quarter' => $downYear . $downQuarter];
+    }
+
+    /**
+     * 通过季度号获取季度的开始结束时间
+     * @param $quarterNumber 20202
+     * @return array
+     */
+    public static function getQuarterStartEndTime($quarterNumber)
+    {
+        $year = substr($quarterNumber, 0, 4);
+        $quarter = substr($quarterNumber, -1);
+        $startTime = mktime(0, 0, 0, $quarter * 3 - 2, 1, $year);
+        $endTime = mktime(23, 59, 59, $quarter * 3, date('t', mktime(0, 0, 0, $quarter * 3, 1, $year)), $year);
+        return ['start_time' => $startTime, 'end_time' => $endTime];
+    }
 }

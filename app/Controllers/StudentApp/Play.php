@@ -220,7 +220,8 @@ class Play extends ControllerBase
 
         $studentId = $this->ci['student']['id'];
         $lessonId = $params['lesson_id'];
-        $ranks = AIPlayRecordService::getLessonRankData($lessonId, $studentId);
+        $issueNumber = !empty($params['issue_number']) ? $params['issue_number'] : '';
+        $ranks = AIPlayRecordService::getLessonRankData($lessonId, $studentId, $issueNumber);
         return $response->withJson(['code'=>0, 'data'=>$ranks], StatusCode::HTTP_OK);
     }
 
@@ -261,5 +262,17 @@ class Play extends ControllerBase
             'data' => []
         ], StatusCode::HTTP_OK);
 
+    }
+
+    /**
+     * 获取用户是否加入排行榜
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function joinRankingStatus(/** @noinspection PhpUnusedParameterInspection */ Request $request, Response $response)
+    {
+        $studentInfo = StudentModelForApp::getById($this->ci['student']['id']);
+        return HttpHelper::buildResponse($response, ['join_ranking_status' => $studentInfo['is_join_ranking']]);
     }
 }

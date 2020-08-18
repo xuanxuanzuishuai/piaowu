@@ -136,7 +136,9 @@ class DictConstants {
             'trial_package_android',
             'request_ocr_search_service',
             'get_lesson_rank_time',
-            'get_lesson_rank_time_offset',
+            'get_lesson_rank_time_offset_20202',
+            'get_lesson_rank_time_offset_20203',
+            'get_lesson_rank_time_standard',
             'get_omr_music_score_search_switch',
         ]
     ];

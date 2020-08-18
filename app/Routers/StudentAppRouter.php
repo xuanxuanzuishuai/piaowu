@@ -237,7 +237,11 @@ class StudentAppRouter extends RouterBase
             'call' => Play::class . ':setJoinRanking',
             'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
         ],
-
+        '/student_app/play/join_ranking_status' => [
+            'method' => ['get'],
+            'call' => Play::class . ':joinRankingStatus',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
         '/student_app/homework/record' => [
             'method' => ['get'],
             'call' => Homework::class . ':record',
