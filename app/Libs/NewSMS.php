@@ -90,7 +90,7 @@ class NewSMS
      * @param string $countryCode
      * @return bool
      */
-    public function batchSend($sign, $mobileData, $content, $countryCode = '')
+    public function batchSend($sign, $mobileData, $content, $countryCode = NewSMS::DEFAULT_COUNTRY_CODE)
     {
         $result = true;
         foreach ($mobileData as $item) {
@@ -120,12 +120,12 @@ class NewSMS
      * @param string $countryCode
      * @return bool
      */
-    public function sendValidateCode($targetMobile, $msg, $sign, $countryCode = '')
+    public function sendValidateCode($targetMobile, $msg, $sign, $countryCode = NewSMS::DEFAULT_COUNTRY_CODE)
     {
         return self::send($sign, $targetMobile, $msg, $countryCode);
     }
 
-    public function sendExchangeGiftCode($targetMobile, $code, $sign, $countryCode = '')
+    public function sendExchangeGiftCode($targetMobile, $code, $sign, $countryCode = NewSMS::DEFAULT_COUNTRY_CODE)
     {
         $msg = "您的激活码为：{$code}。您也可关注微信公众号【小叶子智能陪练】，在【我的账户】查询激活码。";
 
@@ -199,7 +199,7 @@ class NewSMS
      * @param string $countryCode
      * @return bool
      */
-    public function sendCollectionCompleteNotify($targetMobile, $sign, $collectionList, $countryCode = '')
+    public function sendCollectionCompleteNotify($targetMobile, $sign, $collectionList, $countryCode = NewSMS::DEFAULT_COUNTRY_CODE)
     {
 
         $teachingStartDate = date("Y-m-d", $collectionList['teaching_start_time']);
@@ -218,7 +218,7 @@ class NewSMS
      * @param string $countryCode
      * @return bool
      */
-    public function sendAttendActSMS($mobile, $sign, $startTime, $countryCode = '')
+    public function sendAttendActSMS($mobile, $sign, $startTime, $countryCode = NewSMS::DEFAULT_COUNTRY_CODE)
     {
         $msg = "您预约的“0元领取3天使用时长”已于{$startTime}开始，请在【小叶子智能陪练】微信号点击【推荐有奖】参加。详情可咨询助教老师";
         return self::batchSend($sign, $mobile, $msg, $countryCode);

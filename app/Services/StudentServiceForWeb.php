@@ -10,6 +10,7 @@ namespace App\Services;
 
 
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\NewSMS;
 use App\Libs\Util;
 use App\Models\ReferralModel;
 use App\Models\StudentModel;
@@ -43,7 +44,7 @@ class StudentServiceForWeb
      * @return array [0]errorCode [1]登录数据
      * @throws RunTimeException
      */
-    public static function register($mobile, $code, $referrerMobile = null, $countryCode)
+    public static function register($mobile, $code, $referrerMobile = null, $countryCode = NewSMS::DEFAULT_COUNTRY_CODE)
     {
         // 检查验证码
         if (!CommonServiceForApp::checkValidateCode($mobile, $code, $countryCode)) {

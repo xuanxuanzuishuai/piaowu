@@ -110,7 +110,7 @@ class Auth extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        if (!CommonServiceForApp::checkValidateCode($params['mobile'], $params['code'])) {
+        if (!CommonServiceForApp::checkValidateCode($params['mobile'], $params['code'], $params['country_code'])) {
             return $response->withJson(Valid::addAppErrors([], 'validate_code_error'));
         }
 

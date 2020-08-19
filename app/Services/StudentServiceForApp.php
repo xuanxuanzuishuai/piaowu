@@ -13,6 +13,7 @@ use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\NewSMS;
 use App\Libs\ResponseError;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
@@ -141,7 +142,7 @@ class StudentServiceForApp
      * @param $countryCode
      * @return array [0]errorCode [1]登录数据
      */
-    public static function login($mobile, $code, $password, $platform, $version, $channelId, $countryCode = '')
+    public static function login($mobile, $code, $password, $platform, $version, $channelId, $countryCode = NewSMS::DEFAULT_COUNTRY_CODE)
     {
 
         if (empty($code) && empty($password)) {
@@ -261,9 +262,10 @@ class StudentServiceForApp
      * @param $mobile
      * @param $code
      * @param $paramsPwd
+     * @param string $country_code
      * @return array|string[]
      */
-    public static function updatePwd($mobile, $code, $paramsPwd, $country_code)
+    public static function updatePwd($mobile, $code, $paramsPwd, $country_code = NewSMS::DEFAULT_COUNTRY_CODE)
     {
         // 检查验证码
         if (!empty($code) && !CommonServiceForApp::checkValidateCode($mobile, $code, $country_code)) {

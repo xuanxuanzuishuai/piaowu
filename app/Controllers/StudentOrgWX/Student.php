@@ -59,7 +59,7 @@ class Student extends ControllerBaseForOrg
         $app_id = UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT;
         $openId = $this->ci["open_id"];
         // 检查验证码
-        if (!CommonServiceForApp::checkValidateCode($params["mobile"], $params["sms_code"])) {
+        if (!CommonServiceForApp::checkValidateCode($params["mobile"], $params["sms_code"], $params["country_code"])) {
             return $response->withJson(Valid::addAppErrors([], 'validate_code_error'), StatusCode::HTTP_OK);
         }
 

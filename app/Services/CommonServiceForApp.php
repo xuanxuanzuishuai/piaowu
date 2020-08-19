@@ -41,8 +41,11 @@ class CommonServiceForApp
      * @param string $countryCode
      * @return null|string
      */
-    public static function sendValidateCode($mobile, $sign, $countryCode = '')
+    public static function sendValidateCode($mobile, $sign, $countryCode = NewSMS::DEFAULT_COUNTRY_CODE)
     {
+        if (empty($countryCode)) {
+            $countryCode = NewSMS::DEFAULT_COUNTRY_CODE;
+        }
         $redis = RedisDB::getConn();
         $cacheKey = self::VALIDATE_CODE_CACHE_KEY_PRI . $countryCode . $mobile;
         $sendTimeCacheKey = self::VALIDATE_CODE_TIME_CACHE_KEY_PRI . $countryCode . $mobile;
@@ -76,8 +79,12 @@ class CommonServiceForApp
      * @param $countryCode
      * @return bool
      */
-    public static function checkValidateCode($mobile, $code, $countryCode = '')
+    public static function checkValidateCode($mobile, $code, $countryCode = NewSMS::DEFAULT_COUNTRY_CODE)
     {
+        if (empty($countryCode)) {
+            $countryCode = NewSMS::DEFAULT_COUNTRY_CODE;
+        }
+
         if (empty($mobile) || empty($code)) {
             return false;
         }
@@ -125,10 +132,15 @@ class CommonServiceForApp
      * 检查登陆密码
      * @param $mobile
      * @param $password
+     * @param $countryCode
      * @return bool
      */
-    public static function checkPassword($mobile, $password, $countryCode)
+    public static function checkPassword($mobile, $password, $countryCode = NewSMS::DEFAULT_COUNTRY_CODE)
     {
+        if (empty($countryCode)) {
+            $countryCode = NewSMS::DEFAULT_COUNTRY_CODE;
+        }
+
         if (empty($mobile) || empty($password) || empty($countryCode)) {
             return false;
         }
