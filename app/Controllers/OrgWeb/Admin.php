@@ -9,6 +9,7 @@
 namespace App\Controllers\OrgWeb;
 
 use App\Libs\HttpHelper;
+use App\Libs\NewSMS;
 use App\Libs\RedisDB;
 use App\Libs\Valid;
 use Slim\Http\Request;
@@ -39,7 +40,8 @@ class Admin
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $cacheKey = 'v_code_' . $params['mobile'];
+        $countryCode = $params['country_code'] ?? NewSMS::DEFAULT_COUNTRY_CODE;
+        $cacheKey = 'v_code_' . $countryCode . $params['mobile'];
         $redis = RedisDB::getConn();
         $redis->setex($cacheKey, 300, $params['code']);
 
