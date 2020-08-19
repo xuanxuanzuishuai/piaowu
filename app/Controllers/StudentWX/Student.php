@@ -9,9 +9,12 @@
 namespace App\Controllers\StudentWX;
 
 use App\Controllers\ControllerBase;
+use App\Libs\AliContentCheck;
 use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\Erp;
+use App\Libs\Exceptions\RunTimeException;
+use App\Libs\HttpHelper;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Libs\Valid;
@@ -260,14 +263,13 @@ class Student extends ControllerBase
             "mobile" => substr($student_info["mobile"], 0, 3) . "****" .
                 substr($student_info["mobile"], 7, 4),
             "name" => $student_info["name"],
-            "thumb" => Util::getQiNiuFullImgUrl($student_info["thumb"]),
+            "thumb" => AliOSS::signUrls($student_info["thumb"]),
             "lesson_num" => $playSum['lesson_count'],
             "duration" => $playSum['sum_duration'],
             "expired_date" => $expire_date,
             "sub_status" => $sub_status,
             "open_id" => $this->ci['open_id'],
         ];
-
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => $account_info
@@ -281,45 +283,28 @@ class Student extends ControllerBase
      * @return Response
      */
     public function editAccountInfo(Request $request, Response $response){
-//        $rules = [
-//            [
-//                'key' => 'name',
-//                'type' => 'required',
-//                'error_code' => 'name_is_required'
-//            ],
-//            [
-//                'key' => 'thumb',
-//                'type' => 'required',
-//                'error_code' => 'thumb_is_required'
-//            ]
-//        ];
-//
         $params = $request->getParams();
-//        $result = Valid::appValidate($params, $rules);
-//        if ($result['code'] != Valid::CODE_SUCCESS) {
-//            return $response->withJson($result, StatusCode::HTTP_OK);
-//        }
-
-        $update_info = [];
-        if (!empty($params["thumb"])){
-            $update_info["thumb"] = $params["thumb"];
-        }
-        if (!empty($params["name"])){
-            $update_info["name"] = $params["name"];
-        }
-
-        if (!empty($update_info)){
+        try {
+            $update_info = [];
+            if (!empty($params["thumb"])){
+                //检测图片是否合规
+                $checkResponse = (new AliContentCheck())->checkImgLegal(AliOSS::signUrls($params['thumb']));
+                if (!empty($checkResponse)) {
+                    if (in_array(AliContentCheck::ILLEGAL_RESULT, array_values($checkResponse))) {
+                        throw new RunTimeException(['illegal_img']);
+                    }
+                }
+                $update_info["thumb"] = $params["thumb"];
+            }
+            if (!empty($params["name"])){
+                $update_info["name"] = $params["name"];
+            }
             $user_id = $this->ci['user_info']['user_id'];
-            $db = MysqlDB::getDB();
-            $db->beginTransaction();
             StudentModelForApp::updateRecord($user_id, $update_info);
-            $db->commit();
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
-        return $response->withJson([
-            'code' => Valid::CODE_SUCCESS,
-            'data' => []
-        ], StatusCode::HTTP_OK);
-
+        return HttpHelper::buildResponse($response, []);
     }
 
     public function giftCode(Request $request, Response $response)

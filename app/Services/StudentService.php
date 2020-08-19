@@ -10,6 +10,7 @@
 
 namespace App\Services;
 
+use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\Dict;
 use App\Libs\DictConstants;
@@ -563,6 +564,7 @@ class StudentService
         $data['wechat_account'] = $student['wechat_account'];
         $data['sync_status'] = $student['sync_status'];
         $data['course_manage_name'] = $student['course_manage_name'];
+        $data['thumb'] = AliOSS::signUrls($student['thumb']);
         return $data;
     }
 

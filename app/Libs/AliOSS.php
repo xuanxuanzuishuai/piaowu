@@ -37,6 +37,7 @@ class AliOSS
     const DIR_CERTIFICATE = 'certificate';//学生证书
     const DIR_MAKE_OPERA = 'make_opera';    //打谱申请曲谱图片上传
     const DIR_OPN_SEARCH = 'omr'; // 曲谱搜索图源
+    const DIR_STUDENT_THUMB = 'thumb'; //头像
 
 
     private function gmt_iso8601($time) {
@@ -398,6 +399,7 @@ class AliOSS
             self::DIR_CERTIFICATE,
             self::DIR_MAKE_OPERA,
             self::DIR_OPN_SEARCH,
+            self::DIR_STUDENT_THUMB
         ];
         if (!in_array($dirType, $typeConstants)) {
             return null;

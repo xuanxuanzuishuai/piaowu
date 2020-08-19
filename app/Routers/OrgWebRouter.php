@@ -152,6 +152,7 @@ class OrgWebRouter extends RouterBase
         '/student/student/list_for_cc' => ['method' => ['get'], 'call' => Student::class . ':list'],
         //新学生管理功能接口，列表、详情等
         '/student/student/detail' => array('method' => array('get'), 'call' => '\App\Controllers\Student\Student:detail'),
+        '/student/student/setDefaultThumb' => array('method' => array('post'), 'call' => '\App\Controllers\Student\Student:setDefaultThumb'),
         '/student/student/updateAddAssistantStatus' => array('method' => array('post'), 'call' => '\App\Controllers\Student\Student:updateAddAssistantStatus'),
         '/student/student/searchList' => array('method' => array('get'), 'call' => '\App\Controllers\Student\Student:searchList'),
         '/student/student/allotCollection' => array('method' => array('post'), 'call' => '\App\Controllers\Student\Student:allotCollection'),

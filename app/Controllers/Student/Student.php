@@ -505,6 +505,35 @@ class Student extends ControllerBase
     }
 
     /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * 用户头像重置为默认头像
+     */
+    public function setDefaultThumb(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        $rules = [
+            [
+                'key'        => 'student_id',
+                'type'       => 'required',
+                'error_code' => 'student_id_is_required',
+            ],
+            [
+                'key'        => 'student_id',
+                'type'       => 'integer',
+                'error_code' => 'student_id_must_be_integer'
+            ]
+        ];
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        StudentModel::updateStudent($params['student_id'], ['thumb' => NULL]);
+        return HttpHelper::buildResponse($response, []);
+    }
+
+    /**
      * 更新学生添加助教微信状态
      * @param Request $request
      * @param Response $response
