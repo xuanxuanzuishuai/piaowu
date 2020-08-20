@@ -420,6 +420,10 @@ class StudentServiceForApp
             $name = Util::defaultStudentName($mobile);
         }
 
+        if (empty($countryCode)) {
+            $countryCode = NewSMS::DEFAULT_COUNTRY_CODE;
+        }
+
         //检查$refereeId是否存在
         $refType = null;
         $refUuid = null;
