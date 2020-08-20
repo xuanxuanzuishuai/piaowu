@@ -11,7 +11,8 @@
 namespace App\Services;
 
 use App\Libs\Constants;
-use App\Libs\SimpleLogger;
+use App\Libs\Valid;
+use App\Models\AIPlayRecordModel;
 use App\Models\PlayRecordModel;
 use App\Models\PlaySaveModel;
 use App\Libs\OpernCenter;
@@ -348,135 +349,279 @@ class UserPlayServices
         return [$saveUpdate, $playResult];
     }
 
-    public static function pandaPlayBrief($studentId, $days=7, $endTime=null)
+    /**
+     * 新版7天数据统计
+     * @param $studentId
+     * @param int $day
+     * @param null $endTime
+     * @return array
+     */
+    public static function pandaPlayRecordBrief($studentId, $day = 7, $endTime = null)
     {
-        // 取最近7天的演奏记录
-        list($start, $end) = Util::nDaysBeforeNow($endTime, $days);
-        $where = [
-            'created_time[>]' => $start,
-            'created_time[<]' => $end,
-            'student_id' => (int)$studentId,
-            'client_type' => [PlayRecordModel::CLIENT_STUDENT, PlayRecordModel::CLIENT_PANDA_MINI]
-        ];
-        $plays = PlayRecordModel::getRecords($where);
-        $daysFilter = [];
-        $lessonFilter = [];
-        foreach ($plays as $play) {
-            $day = date("Y-m-d", $play['created_time']);
-            if(!isset($daysFilter[$day])){
-                $daysFilter[$day] = 1;
+        list($start, $end) = Util::nDaysBeforeNow($endTime, $day);
+
+        $records = AIPlayRecordModel::getRecords(['student_id' => $studentId, 'end_time[<>]' => [$start, $end]]);
+
+        $days = [];
+        $lessons = [];
+        foreach ($records as $play) {
+            $day = date("Y-m-d", $play['end_time']);
+
+            if(!isset($days[$day])){
+                $days[$day] = 1;
             }
 
-            if(!isset($lessonFilter[$play['lesson_id']])){
-                $lessonFilter[$play['lesson_id']] = 1;
+            if(!isset($lessons[$play['lesson_id']])){
+                $lessons[$play['lesson_id']] = 1;
             }
         }
-        return ['lesson_count' =>count($lessonFilter), 'days' => count($daysFilter)];
+        return [
+            'lesson_count' => count($lessons),
+            'days' => count($days)
+        ];
     }
 
-    public static function pandaPlayDetail($studentId, $appVersion, $days=7, $endTime=null)
+    /**
+     * 新版7天练琴曲谱统计
+     * @param $studentId
+     * @param $appVersion
+     * @param int $day
+     * @param null $endTime
+     * @return array
+     */
+    public static function pandaPlayRecord($studentId, $appVersion, $day = 7, $endTime = null)
     {
-        // 取最近7天的演奏记录
-        list($start, $end) = Util::nDaysBeforeNow($endTime, $days);
-        $where = [
-            'created_time[>]' => $start,
-            'created_time[<]' => $end,
-            'student_id' => (int)$studentId,
-            'client_type' => [PlayRecordModel::CLIENT_STUDENT, PlayRecordModel::CLIENT_PANDA_MINI]
-        ];
-        $plays = PlayRecordModel::getRecords($where);
+        list($start, $end) = Util::nDaysBeforeNow($endTime, $day);
 
-        // 统计练琴演奏记录
-        $details = [];
-        $daysFilter = [];
-        foreach ($plays as $play) {
-            // 按天聚合,计算练琴天数
-            $day = date("Y-m-d", $play['created_time']);
-            if(!isset($daysFilter[$day])){
-                $daysFilter[$day] = 1;
+        $records = AIPlayRecordModel::getRecords([
+            'student_id' => $studentId,
+            'end_time[<>]' => [$start, $end]
+        ]);
+
+        $days = [];
+        $lessonReports = [];
+        foreach ($records as $record) {
+            // 时长 < 1 或 5.0之前的老版本
+            if ($record['duration'] < 1 || $record['old_format']) {
+                continue;
             }
 
-            $lessonId = $play['lesson_id'];
-            if (!isset($details[$lessonId])){
-                $details[$lessonId] = [
-                    'practice_time' => 0,
-                    'step_times' => 0,
-                    'whole_times' => 0,
-                    'whole_best' => 0,
-                    'ai_times' => 0,
-                    'ai_best' => 0,
-                    'created_time' => 0,
-                    'plays' => new MaxHeap('score'),
-                    'ai_fragment_times' => 0 // ai测评分手分段练习次数
+            $day = date("Y-m-d", $record['end_time']);
+            if(!isset($days[$day])){
+                $days[$day] = 1;
+            }
+
+            $lessonId = $record['lesson_id'];
+
+            if (empty($lessonReports[$lessonId])) {
+                $lessonReports[$lessonId] = [
+                    'lesson_id' => $lessonId,
+                    'lesson_name' => '',
+                    'total_duration' => 0, // 总时长
+                    'learn_count' => 0, // 识谱全曲次数
+                    'part_learn_count' => 0, // 识谱乐句数(相同乐句记1次)
+                    'part_learn_id_map' => [], // 识谱乐句id集合
+                    'improve_count' => 0, // 提高全曲次数
+                    'part_improve_count' => 0, // 提高乐句数(相同乐句记1次)
+                    'part_improve_id_map' => [], // 提高乐句id集合
+                    'test_count' => 0, // 全曲测评
+                    'part_test_count' => 0, // 非全曲测评
+                    'test_high_score' => 0, // 全曲测评最高分
+                    'old_duration' => 0, // 怀旧模式时长
+                    'end_time' => $record['end_time'],
+                    'plays' => new MaxHeap('score_final')
                 ];
             }
+
+            $lessonReports[$lessonId]['plays']->insert($record);
+
+
             // 以lesson为单位，查出该lesson的最近练琴时间
-            if($play['created_time'] > $details[$lessonId]['created_time']){
-                $details[$lessonId]['created_time'] = $play['created_time'];
+            if($record['end_time'] > $lessonReports[$lessonId]['end_time']){
+                $details[$lessonId]['end_time'] = $record['end_time'];
             }
-            // 分类计算指标
-            $details[$lessonId]['practice_time'] += $play['duration'];
-            $score = Util::floatIsInt($play['score']) ? (int)$play['score'] : (float)$play['score'];
-            if ($play['lesson_type'] == PlayRecordModel::TYPE_AI){
-                // ai测评与语音识别归为一类，ai的分手分段单独归为一类
-                if( $play['ai_type'] == PlayRecordModel::AI_EVALUATE_PLAY or
-                    $play['ai_type'] == PlayRecordModel::AI_EVALUATE_AUDIO){
-                    $details[$lessonId]['ai_times'] += 1;
-                    if ($score > $details[$lessonId]['ai_best']){
-                        $details[$lessonId]['ai_best'] = $score;
-                    }
-                }elseif ($play['ai_type'] == PlayRecordModel::AI_EVALUATE_FRAGMENT){
-                    $details[$lessonId]['ai_fragment_times'] += 1;
-                }
-            } else {
-                if(!empty($play['lesson_sub_id'])){
-                    $details[$lessonId]['step_times'] += 1;
-                }else{
-                    $details[$lessonId]['whole_times'] += 1;
-                    if ($score > $details[$lessonId]['whole_best']){
-                        $details[$lessonId]['whole_best'] = $score;
-                    }
-                }
+
+            $lessonReports[$lessonId]['total_duration'] += $record['duration']; // 单课总时长
+
+            $isNormalData = $record['data_type'] == AIPlayRecordModel::DATA_TYPE_NORMAL ? 1 : 0;
+
+            // case 怀旧模式
+            if ($record['ui_entry'] == AIPlayRecordModel::UI_ENTRY_OLD) {
+                $lessonReports[$lessonId]['old_duration'] += $record['duration'];
+                continue;
             }
-            // ai练琴记录的3个最高分，用于五维图展示
-            if($play['lesson_type'] == PlayRecordModel::TYPE_AI and (
-                    $play['ai_type'] == PlayRecordModel::AI_EVALUATE_PLAY or
-                    $play['ai_type'] == PlayRecordModel::AI_EVALUATE_AUDIO)){
-                $temp = [];
-                $temp['id'] = $play['id'];
-                $temp['score'] = $play['score'];
-                $temp['ai_record_id'] = $play['ai_record_id'];
-                $temp['play_midi'] = $play['ai_type'] == PlayRecordModel::AI_EVALUATE_PLAY ? 1 : 0;
-                $temp['score_detail'] = json_decode($play['data'], true);
-                $temp['created_time'] = $play['created_time'];
-                $details[$lessonId]['plays']->insert($temp);
+
+            // case 识谱
+            if ($record['ui_entry'] == AIPlayRecordModel::UI_ENTRY_LEARN && $isNormalData) {
+                if ($record['is_phrase']) {
+                    // 统计乐句数量，每个乐句只算一次
+                    if (empty($lessonReports[$lessonId]['part_learn_id_map'][$record['phrase_id']])) {
+                        $lessonReports[$lessonId]['part_learn_id_map'][$record['phrase_id']] = true;
+                        $lessonReports[$lessonId]['part_learn_count']++;
+                    }
+                } else {
+                    // 统计全曲数量
+                    $lessonReports[$lessonId]['learn_count']++;
+                }
+                continue;
+            }
+
+            // case 提高
+            if ($record['ui_entry'] == AIPlayRecordModel::UI_ENTRY_IMPROVE && $isNormalData) {
+                if ($record['is_phrase']) {
+                    // 统计乐句数量，每个乐句只算一次
+                    if (empty($lessonReports[$lessonId]['part_improve_id_map'][$record['phrase_id']])) {
+                        $lessonReports[$lessonId]['part_improve_id_map'][$record['phrase_id']] = true;
+                        $lessonReports[$lessonId]['part_improve_count']++;
+                    }
+                } else {
+                    // 统计全曲数量
+                    $lessonReports[$lessonId]['improve_count']++;
+                }
+                continue;
+            }
+
+            // case 测评 包含旧版测评
+            if ($record['ui_entry'] == AIPlayRecordModel::UI_ENTRY_TEST) {
+                // 分手分段测评不计入全曲测评次数
+                if ($record['is_phrase'] || ($record['hand'] != AIPlayRecordModel::HAND_BOTH)) {
+                    if ($isNormalData) {
+                        $countKey = 'part_test_count';
+                        $lessonReports[$lessonId][$countKey]++;
+                    }
+
+                    $lessonReports[$lessonId]['part_test_duration'] += $record['duration'];
+                    continue;
+                }
+
+                if ($isNormalData) {
+                    $lessonReports[$lessonId]['test_count']++;
+                }
+
+                // 单课最高分
+                $curMaxScore = $lessonReports[$lessonId]['test_high_score'];
+                if ($curMaxScore < $record['score_final']) {
+                    $lessonReports[$lessonId]['test_high_score'] = $record['score_final'];
+                }
+                continue;
             }
         }
 
-        // 插入课程名称信息
-        $ret = [];
-        $lessonIds = array_keys($details);
-        $lessons = OpernService::getLessonForJoin($lessonIds,
-            OpernCenter::PRO_ID_AI_STUDENT, $appVersion, 0, 1);
-        foreach ($details as $lessonId => $detail){
-            $lesson = $lessons[$lessonId];
-            $detail['lesson_id'] = $lessonId;
-            $detail['lesson_name'] = !empty($lesson) ? $lesson['lesson_name'] : '';
+        // 按照曲目最后的练习时间，倒序展示曲目
+        usort($lessonReports, function ($a, $b) {
+            return $a['end_time'] < $b['end_time'];
+        });
+
+        // 获取lesson的信息
+        $lessonInfo = [];
+        $lessonIds = array_column($lessonReports, 'lesson_id');
+        if (!empty($lessonIds)) {
+            $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, $appVersion);
+            $res = $opn->lessonsByIds($lessonIds);
+            if (!empty($res) && $res['code'] == Valid::CODE_SUCCESS) {
+                $data = $res['data'];
+                $lessonInfo = array_combine(array_column($data, 'lesson_id'), $data);
+            }
+        }
+
+        $lessonRecords = [];
+        foreach ($lessonReports as $idx => $report) {
             // 取3个最高分的爱练琴记录，按照时间排序
-            $detail['plays'] = MaxHeap::nLargest($detail['plays']);
-            $dates = array_column($detail['plays'],'created_time');
-            array_multisort($dates,SORT_DESC, $detail['plays']);
-            array_push($ret, $detail);
+            $report['plays'] = MaxHeap::nLargest($report['plays']);
+            usort($report['plays'], function ($a, $b) {
+                return $a['end_time'] < $b['end_time'];
+            });
+
+            $lessonRecords[] = [
+                'total_duration' => $report['total_duration'],
+                'lesson_id' => $report['lesson_id'],
+                'lesson_name' => !empty($lessonInfo[$lessonId]) ? $lessonInfo[$lessonId]['lesson_name'] : '', // 曲谱名
+                'text' => self::createReportText($report), // 生成文本
+                'plays' => $report['plays'], // 得分最高的三次的测评
+            ];
         }
 
-        // 将统计完数据整体按照最后练习时间排序
-        $_dates = array_column($ret,'created_time');
-        array_multisort($_dates,SORT_DESC, $ret);
-
-        return ['lessons' => $ret,
-                'lesson_count' =>count($details),
-                'days' => count($daysFilter),
-                'token' => AIBackendService::genStudentToken($studentId)
+        return [
+            'lesson_count' => count($lessonRecords), // 总练习曲目
+            'days' => count($days), // 总练习天数
+            'token' => AIBackendService::genStudentToken($studentId),
+            'lessons' => $lessonRecords
         ];
+    }
+
+    /**
+     * 日报文本
+     * @param $report
+     * @return array
+     */
+    public static function createReportText($report)
+    {
+        $text[] = sprintf('最近7天练琴时长：%s', self::formatDuration($report['total_duration'], true));
+
+        if ($report['learn_count'] > 0) {
+            $text[] = '进行了全曲识谱练习';
+        } elseif ($report['part_learn_count'] > 0) {
+            $text[] = sprintf('进行了%s个乐句的识谱练习', self::formatStyle($report['part_learn_count']));
+        }
+
+        if ($report['improve_count'] > 0) {
+            $text[] = '进行了全曲提升练习';
+        } elseif ($report['part_improve_count'] > 0) {
+            $text[] = sprintf('进行了%s个乐句的提升练习', self::formatStyle($report['part_improve_count']));
+        }
+
+        if ($report['test_count'] > 0) {
+            $text[] = sprintf(
+                '进行了%s次全曲评测，最高%s分',
+                self::formatStyle($report['test_count']),
+                self::formatStyle(AIPlayRecordService::formatScore($report['test_high_score']))
+            );
+        }
+
+        if ($report['old_duration'] > 0) {
+            $text[] = sprintf('进行了%s怀旧模式练习', self::formatDuration($report['old_duration']));
+        }
+
+        if ($report['part_test_duration'] > 0) {
+            $text[] = sprintf('进行了%s分手分段评测', self::formatDuration($report['part_test_duration']));
+        }
+
+        return $text;
+    }
+
+    public static function formatStyle($key)
+    {
+        return "<b>{$key}</b>";
+    }
+
+    /**
+     * 格式化：*时*分*秒
+     * @param $seconds
+     * @param bool $needHour
+     * @return string
+     */
+    public static function formatDuration($seconds, $needHour = false)
+    {
+        if ($needHour && $seconds > 3600) {
+            $hour = intval($seconds / 3600);
+            $minute = intval($seconds % 3600 / 60);
+        } else {
+            $hour = 0;
+            $minute = intval($seconds / 60);
+        }
+        $seconds = $seconds % 60;
+
+        $str = '';
+        if ($hour > 0) {
+            $str .= self::formatStyle($hour) . "时";
+        }
+        if ($minute > 0) {
+            $str .= self::formatStyle($minute) . "分";
+        }
+        if ($seconds > 0) {
+            $str .= self::formatStyle($seconds) . "秒";
+        }
+
+        return $str;
     }
 }

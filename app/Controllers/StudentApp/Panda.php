@@ -125,16 +125,27 @@ class Panda extends ControllerBase
         if($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        $uuid = $params['uuid'];
-        $student = StudentModelForApp::getStudentInfo(null, null, $uuid);
+        $student = StudentModelForApp::getStudentInfo(null, null, $params['uuid']);
         if (empty($student)) {
-            $ret = ['lessons' => [], 'days' => 0, 'lesson_count' => 0, 'token' => ''];
-            return $response->withJson(['code' => 0, 'data'=>$ret], StatusCode::HTTP_OK);
+            return $response->withJson([
+                'code' => Valid::CODE_SUCCESS,
+                'data' => [
+                    'lesson_count' => 0, // 总练习曲目
+                    'days' => 0, // 总练习天数
+                    'token' => '',
+                    'lessons' => []
+                ]
+            ], StatusCode::HTTP_OK);
         }
+
         $appVersion = AppVersionService::getPublishVersionCode(
             AppVersionModel::APP_TYPE_STUDENT, AppVersionService::PLAT_ID_IOS);
-        $ret = UserPlayServices::pandaPlayDetail($student['id'], $appVersion);
-        return $response->withJson(['code' => 0, 'data'=>$ret], StatusCode::HTTP_OK);
+        $ret = UserPlayServices::pandaPlayRecord($student['id'], $appVersion);
+
+        return $response->withJson([
+            'code' => 0,
+            'data' => $ret
+        ], StatusCode::HTTP_OK);
     }
 
 
@@ -153,14 +164,24 @@ class Panda extends ControllerBase
         if($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        $uuid = $params['uuid'];
-        $student = StudentModelForApp::getStudentInfo(null, null, $uuid);
+
+        $student = StudentModelForApp::getStudentInfo(null, null, $params['uuid']);
         if (empty($student)) {
-            $ret = ['is_ai_student' => false, 'days' => 0, 'lesson_count' => 0];
-            return $response->withJson(['code' => 0, 'data'=>$ret], StatusCode::HTTP_OK);
+            return $response->withJson([
+                'code' => Valid::CODE_SUCCESS,
+                'data' => [
+                    'is_ai_student' => false,
+                    'days' => 0,
+                    'lesson_count' => 0
+                ]
+            ], StatusCode::HTTP_OK);
         }
-        $ret = UserPlayServices::pandaPlayBrief($student['id']);
+
+        $ret = UserPlayServices::pandaPlayRecordBrief($student['id']);
         $ret['is_ai_student'] = $student['sub_start_date'] > 0;
-        return $response->withJson(['code' => 0, 'data'=>$ret], StatusCode::HTTP_OK);
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $ret
+        ], StatusCode::HTTP_OK);
     }
 }
