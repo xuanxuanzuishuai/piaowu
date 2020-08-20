@@ -291,6 +291,11 @@ class DictConstants {
         'keys' => [1, 2]
     ];
 
+    const PACKAGE_APP_NAME = [
+        'type' => 'PACKAGE_APP_NAME',
+        'keys' => [1, 8]
+    ];
+
     const APPLY_TYPE = [
         'type' => 'APPLY_TYPE',
         'keys' => [1, 2]

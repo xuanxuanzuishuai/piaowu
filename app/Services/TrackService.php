@@ -402,17 +402,11 @@ class TrackService
 
     /**
      * 学员付费回调广告平台
-     * @param $uuid
+     * @param $student
      * @return array|null
      */
-    public static function studentPaidCallback($uuid)
+    public static function studentPaidCallback($student)
     {
-        $student = StudentService::getByUuid($uuid);
-        if (empty($student)) {
-            SimpleLogger::info("student not found", ['uuid' => $uuid]);
-            return null;
-        }
-
         if ($student['has_review_course'] <= 0) { // 付费标记未变更表示是免费订单不需要回调
             SimpleLogger::info("invalid state", ['student' => $student]);
             return null;

@@ -1425,4 +1425,39 @@ class StudentService
     {
         return StudentModel::getStudentIdsByCollection($collectionIds);
     }
+
+    /**
+     * 学生支付后事件
+     * @param $event
+     */
+    public static function onPaid($event)
+    {
+        $student = StudentService::getByUuid($event['uuid']);
+
+        if (empty($student)) {
+            SimpleLogger::info("student not found", ['uuid' => $event['uuid']]);
+            return ;
+        }
+
+        $packageInfo = PackageService::getDetail($event['package_id']);
+        self::updateOutsideFlag($student, $packageInfo);
+
+        TrackService::studentPaidCallback($student);
+    }
+
+    /**
+     * 更新外部用户标记
+     * @param $student
+     * @param $packageInfo
+     * @return bool
+     */
+    public static function updateOutsideFlag($student, $packageInfo)
+    {
+        if ($student['sell_app_id'] == PackageExtModel::APP_AI
+            && $packageInfo['app_id'] != PackageExtModel::APP_AI) {
+            StudentModel::updateRecord($student['id'], ['sell_app_id' => Constants::STATUS_TRUE]);
+            return true;
+        }
+        return false;
+    }
 }

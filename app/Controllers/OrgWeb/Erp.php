@@ -184,7 +184,11 @@ class Erp extends ControllerBase
 
         // 异步通知处理付费事件
         if ($params['type'] == GiftCodeModel::BUYER_TYPE_ERP_ORDER) {
-            QueueService::studentPaid($params['uuid']);
+            // receiver StudentService::onPaid($msgBody)
+            QueueService::studentPaid([
+                'uuid' => $params['uuid'],
+                'package_id' => $params['package_id'],
+            ]);
         }
 
         return $response->withJson([

@@ -193,18 +193,13 @@ class QueueService
 
     /**
      * 用户付费
-     * @param $uuid
+     * @param $msgBody
      * @return bool
      */
-    public static function studentPaid($uuid)
+    public static function studentPaid($msgBody = [])
     {
         try {
             $topic = new PushMessageTopic();
-
-            $msgBody = [
-                'uuid' => $uuid,
-            ];
-
             $topic->studentPaid($msgBody)->publish();
 
         } catch (Exception $e) {

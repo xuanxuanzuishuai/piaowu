@@ -621,7 +621,6 @@ class ReviewCourseService
      */
     public static function updateStudentReviewCourseStatus($uuid, $packageType, $trialType, $packageId)
     {
-
         $student = StudentService::getByUuid($uuid);
         $studentId = $student['id'];
         if ($student['has_review_course'] >= $packageType) {

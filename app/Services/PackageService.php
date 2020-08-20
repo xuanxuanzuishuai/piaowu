@@ -48,6 +48,10 @@ class PackageService
             $where['apply_type'] = $params['apply_type'];
         }
 
+        if (!empty($params['app_id'])) {
+            $where['app_id'] = $params['app_id'];
+        }
+
         $totalCount = PackageExtModel::getPackagesCount($where);
 
         if ($totalCount <= 0) {
@@ -63,6 +67,7 @@ class PackageService
         $packageTypeDict = DictConstants::getSet(DictConstants::PACKAGE_TYPE);
         $applyTypeDict = DictConstants::getSet(DictConstants::APPLY_TYPE);
         $trialTypeDict = DictConstants::getSet(DictConstants::TRIAL_TYPE);
+        $packageAppDict = DictConstants::getSet(DictConstants::PACKAGE_APP_NAME);
 
         foreach($records as &$r) {
             $r['package_status_zh'] = $packageStatusDict[$r['package_status']] ?? '-';
@@ -81,6 +86,7 @@ class PackageService
             $r['package_type_zh'] = $packageTypeDict[$r['package_type']] ?? '-';
             $r['apply_type_zh'] = $applyTypeDict[$r['apply_type']] ?? '-';
             $r['trial_type_zh'] = $trialTypeDict[$r['trial_type']] ?? '-';
+            $r['app_id_zh'] = $packageAppDict[$r['app_id']] ?? '-';
 
             $r['price'] = sprintf("%.2f", $r['price'] / 100);
         }
@@ -205,5 +211,14 @@ class PackageService
         }
 
         return $packages;
+    }
+
+    /**
+     * @param $packageId
+     * @return mixed
+     */
+    public static function getDetail($packageId)
+    {
+        return PackageExtModel::getByPackageId($packageId);
     }
 }

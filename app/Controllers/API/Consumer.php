@@ -19,6 +19,7 @@ use App\Services\Queue\PushMessageTopic;
 use App\Services\Queue\TableSyncTopic;
 use App\Services\ReferralActivityService;
 use App\Libs\TableSyncQueue;
+use App\Services\StudentService;
 use App\Services\ThirdPartBillService;
 use App\Services\TrackService;
 use App\Services\VoiceCall\VoiceCallTRService;
@@ -173,7 +174,7 @@ class Consumer extends ControllerBase
                 ReviewCourseService::QueueSendTaskReview($params['msg_body']['task_id']);
                 break;
             case PushMessageTopic::EVENT_STUDENT_PAID:
-                TrackService::studentPaidCallback($params['msg_body']['uuid']);
+                StudentService::onPaid($params['msg_body']);
                 break;
             default:
                 SimpleLogger::error('consume_push_message', ['unknown_event_type' => $params['event_type']]);

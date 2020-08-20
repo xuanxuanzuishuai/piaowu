@@ -30,6 +30,10 @@ class PackageExtModel extends Model
     const TRIAL_TYPE_49 = 1; // 49元包
     const TRIAL_TYPE_9 = 2; // 9.9元包
 
+    /** 产品包业务线 */
+    const APP_XYZ = 1; // 真人陪练
+    const APP_AI = 8; // 智能陪练
+
     public static function getPackages($where)
     {
         $ptable = ErpPackageModel::$table;
