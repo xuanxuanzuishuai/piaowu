@@ -1311,4 +1311,118 @@ class StudentService
         }
         return $data;
     }
+
+    /**
+     * 获取学生体验期内练琴天数
+     * @param $date
+     * @return array
+     */
+    public static function getExperiencePlayDayCount($date)
+    {
+        //获取指定时间结班的班级数据
+        $data = CollectionService::getCollectionByEndTime($date);
+        if(empty($data)){
+            return false;
+        }
+        //按开班、结班日期将班级分组
+        $groupData = self::formatCollectionByTime($data);
+        //获取班级学生数据
+        $groupData = self::getGroupStudent($groupData);
+        //获取学生体验期内练琴天数数据
+        $res = self::getGroupStudentPlayCount($groupData);
+        return $res;
+    }
+
+    /**
+     * 获取组内学生练琴天数
+     * @param $data
+     * @return array
+     */
+    public static function getGroupStudentPlayCount($data)
+    {
+        $res = [];
+        foreach($data as $value){
+            if(!empty($value['students'])){
+                $groupData = AIPlayRecordService::getStudentPlayCount($value['students'], $value['startDate'], $value['endDate']);
+                $formatData = self::formatUuidData($value['students'], $groupData);
+                $res = array_merge($res, $formatData);
+            }
+        }
+        return $res;
+    }
+
+    /**
+     * 根据uuid格式化学生练琴数据
+     * @param $students
+     * @param $data
+     * @return array
+     */
+    public static function formatUuidData($students, $data)
+    {
+        $res = [];
+        $studentsMap = self::getStudentMap($students);
+        foreach($data as $value){
+            $item = [];
+            $item['uuid'] = $studentsMap[$value['student_id']];
+            $item['count'] = $value['num'];
+            $res[] = $item;
+        }
+        return $res;
+    }
+
+    /**
+     * 获取学生数据map
+     * @param $students
+     * @return array
+     */
+    public static function getStudentMap($students)
+    {
+        $map = [];
+        foreach($students as $student){
+            $map[$student['id']] = $student['uuid'];
+        }
+        return $map;
+    }
+
+    /**
+     * 按照开班、结班日期分组班级数据
+     * @param $data
+     * @return array
+     */
+    public static function formatCollectionByTime($data)
+    {
+        $res = [];
+        foreach($data as $item){
+            $key = $item['start_date'].'_'.$item['end_date'];
+            if(!isset($res[$key])){
+                $res[$key]['startDate'] = $item['start_date'];
+                $res[$key]['endDate'] = $item['end_date'];
+            }
+            $res[$key]['ids'][] = $item['id'];
+        }
+        return $res;
+    }
+
+    /**
+     * 获取分组学生数据
+     * @param $groupCollection
+     * @return mixed
+     */
+    public static function getGroupStudent($groupCollection)
+    {
+        foreach($groupCollection as $key => $value){
+            $groupCollection[$key]['students'] = self::getStudentsByCollection($value['ids']);
+        }
+        return $groupCollection;
+    }
+
+    /**
+     * 根据班级ID获取全部学生id
+     * @param $collectionIds
+     * @return array
+     */
+    public static function getStudentsByCollection($collectionIds)
+    {
+        return StudentModel::getStudentIdsByCollection($collectionIds);
+    }
 }

@@ -7,6 +7,8 @@
  */
 
 namespace App\Models;
+use App\Libs\MysqlDB;
+
 class CollectionModel extends Model
 {
     //表名称
@@ -44,4 +46,29 @@ class CollectionModel extends Model
         'package_id' => self::COLLECTION_TEACHING_TYPE_EXPERIENCE_CLASS,
         'plus_package_id' => self::COLLECTION_TEACHING_TYPE_FORMAL_CLASS,
     ];
+
+
+    /**
+     * 获取指定日期结班数据
+     * @param $date
+     * @return array
+     */
+    public static function getRecordByEndTime($date)
+    {
+        $sql = "SELECT `id`,
+                  from_unixtime(`teaching_start_time`, '%Y-%m-%d') AS `start_date`,
+                  from_unixtime(`teaching_end_time`, '%Y-%m-%d') AS `end_date` 
+                FROM `collection` 
+                WHERE `teaching_type` = :type 
+                    AND `teaching_end_time` >= :start_time
+                    AND `teaching_end_time` <= :end_time ";
+
+        $map = [
+            ':type' => self::COLLECTION_TEACHING_TYPE_EXPERIENCE_CLASS,
+            ':start_time' => strtotime($date),
+            ':end_time' => strtotime($date." 23:59:59")
+        ];
+
+        return MysqlDB::getDB()->queryAll($sql, $map);
+    }
 }

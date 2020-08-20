@@ -516,4 +516,32 @@ WHERE
 
         return $studentInfo ?? [];
     }
+
+    /**
+     * 根据日期获取学生练琴天数
+     * @param $studentIds
+     * @param $startTime
+     * @param $endTime
+     * @return array|null
+     */
+    public static function getStudentPlayCountByDate($studentIds, $startTime, $endTime)
+    {
+        $sql = "SELECT DISTINCT `student_id`,
+                count(*) OVER (PARTITION BY `student_id`) num
+                FROM
+                  (SELECT `student_id`,
+                          from_unixtime(`end_time`, '%Y-%m-%d') `date`
+                   FROM `ai_play_record`
+                   WHERE `student_id` IN (".implode(',', $studentIds).")
+                     AND `end_time` >= :start_time
+                     AND `end_time` <= :end_time
+                     AND `duration` > 0
+                   GROUP BY `student_id`, `date`) tmp";
+
+        $map = [
+            ":start_time" => $startTime,
+            ":end_time" => $endTime
+        ];
+        return MysqlDB::getDB()->queryAll($sql, $map);
+    }
 }

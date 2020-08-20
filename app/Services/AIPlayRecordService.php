@@ -956,4 +956,29 @@ class AIPlayRecordService
         }
         return ['start_time' => $start + $timeOffset, 'end_time' => $end];
     }
+
+    /**
+     * 根据日期获取学生练琴天数
+     * @param $studentIds
+     * @param $startDate
+     * @param $endDate
+     * @return array|null
+     */
+    public static function getStudentPlayCount($studentIds, $startDate, $endDate)
+    {
+        //单次获取数据，学生数量限制，暂定1000
+        $limit = 1000;
+
+        $startTime = strtotime($startDate);
+        $endTime = strtotime($endDate." 23:59:59");
+        $studentIds = array_column($studentIds, 'id');
+        //根据查询限制，分割学生数据
+        $studentIds = array_chunk($studentIds, $limit);
+        $res = [];
+        foreach($studentIds as $item){
+            $data = AIPlayRecordModel::getStudentPlayCountByDate($item, $startTime, $endTime);
+            $res = array_merge($res, $data);
+        }
+        return $res;
+    }
 }

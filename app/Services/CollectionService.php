@@ -809,4 +809,14 @@ class CollectionService
         $result['task_condition'] = $taskConditionInfo;
         return $result;
     }
+
+    /**
+     * 获取指定日期结班班级数据
+     * @param $date
+     * @return array
+     */
+    public static function getCollectionByEndTime($date)
+    {
+        return CollectionModel::getRecordByEndTime($date);
+    }
 }

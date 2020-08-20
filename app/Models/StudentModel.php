@@ -826,4 +826,17 @@ class StudentModel extends Model
     {
         return self::getRecords(['id' => $studentIds, 'course_manage_id' => Constants::STATUS_FALSE]);
     }
+
+    /**
+     * 根据班级ID获取全部学生id
+     * @param $collectionIds
+     * @return array
+     */
+    public static function getStudentIdsByCollection($collectionIds)
+    {
+        $where = [
+            'collection_id' => $collectionIds,
+        ];
+        return self::getRecords($where, ['id', 'uuid']);
+    }
 }

@@ -17,6 +17,7 @@ class PandaCRM
     const RSP_CODE_SUCCESS = 0;
 
     const API_CHECK_LEADS = '/api/dss/lead_check';
+    const API_SYNC_STUDENT_PLAY_DAYS = '/api/dss/sync_student_play_days';
 
     private $host;
 
@@ -73,5 +74,19 @@ class PandaCRM
         ], 'POST');
 
         return empty($result) ? 0 : $result['data'];
+    }
+
+    /**
+     * 同步学生体验期练琴天数数据
+     * @param $data
+     * @return mixed
+     */
+    public function syncStudentsPlayData($data)
+    {
+        $result = self::commonAPI(self::API_SYNC_STUDENT_PLAY_DAYS, [
+            'data' => $data,
+        ], 'POST');
+
+        return $result;
     }
 }
