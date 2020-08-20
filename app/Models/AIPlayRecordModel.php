@@ -203,14 +203,15 @@ LIMIT :rank_limit;";
     }
 
     /**
-     * 学生曲目最高分
+     * 上榜时间段内获取学生曲目最高分
      * 未演奏的返回null
      * 只包含全曲双手测评
      * @param $studentId
      * @param $lessonId
+     * @param $lessonRankTime
      * @return array|null
      */
-    public static function getStudentLessonBestRecord($studentId, $lessonId)
+    public static function getStudentLessonBestRecord($studentId, $lessonId, $lessonRankTime)
     {
         $db = MysqlDB::getDB();
         $record = $db->get(self::$table, [
@@ -225,6 +226,9 @@ LIMIT :rank_limit;";
             'ui_entry' => self::UI_ENTRY_TEST,
             'is_phrase' => Constants::STATUS_FALSE,
             'hand' => self::HAND_BOTH,
+            'is_join_ranking' => Constants::STATUS_TRUE,
+            'end_time[>=]' => $lessonRankTime['start_time'],
+            'end_time[<]' => $lessonRankTime['end_time'],
             'ORDER' => ['score_final' => 'DESC'],
         ]);
 

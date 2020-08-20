@@ -708,7 +708,7 @@ class AIPlayRecordService
         if(empty($myself)) {
             $student = StudentModel::getById($studentId);
 
-            $bestRecord = AIPlayRecordModel::getStudentLessonBestRecord($studentId, $lessonId);
+            $bestRecord = AIPlayRecordModel::getStudentLessonBestRecord($studentId, $lessonId, $lessonRankTime);
             $order = empty($bestRecord) ? -1 : 0;
 
             // order 0 表示未上榜 -1 表示未演奏
