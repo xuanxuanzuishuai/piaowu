@@ -1226,11 +1226,8 @@ class StudentService
             'keyword2' => [
                 'value' => "您的专属服务教师为【".$courseInfo['wx_nick']."】"
             ],
-            'keyword3' => [
-                'value' => "请查看详情"
-            ],
             "remark" => [
-                "value" => "点此消息，加专属教师微信，为您提供打谱等更多专业的服务"
+                "value" => "点击添加专属年卡老师，给您提供赠品邮寄、年卡激活和打谱等服务"
             ],
         ];
         $msgBody = [
