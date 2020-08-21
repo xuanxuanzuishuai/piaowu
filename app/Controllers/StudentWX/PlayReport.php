@@ -62,6 +62,48 @@ class PlayReport extends ControllerBase
     }
 
     /**
+     * 日报点赞
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function dayReportFabulous(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'wx_code',
+                'type' => 'required',
+                'error_code' => 'wx_code_is_required'
+            ],
+            [
+                'key' => 'share_token',
+                'type' => 'required',
+                'error_code' => 'share_token_is_required'
+            ]
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $openId = $this->ci["open_id"];
+        if (empty($openId)) {
+            return $response->withJson(Valid::addAppErrors([], 'can_not_obtain_open_id'), StatusCode::HTTP_OK);
+        }
+
+        try {
+             AIPlayReportService::dayReportFabulous($params["share_token"], $openId);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+
+        return HttpHelper::buildResponse($response, []);
+
+    }
+
+    /**
      * 练琴日历
      * @param Request $request
      * @param Response $response

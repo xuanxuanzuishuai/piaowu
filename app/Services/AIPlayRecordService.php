@@ -35,6 +35,8 @@ class AIPlayRecordService
     const GET_THIS_MONTH =3; //获取本月时间戳
     const GET_THIS_QUARTER = 4; //获取本季度时间戳
     const GET_THIS_YEAR = 5; //获取本年时间戳
+
+    const GET_DAY_WONDERFUL_DATA_LIMIT = 3; //日报精彩演出，最多返回3条数据
     /**
      * 演奏数据
      * @param $studentId
@@ -165,6 +167,8 @@ class AIPlayRecordService
             'duration' => 0,
             'lesson_count' => 0,
             'high_score' => 0,
+            'accumulate_days' => 0,
+            'accumulate_lesson' => 0
         ];
 
         $lessonReports = [];
@@ -203,6 +207,7 @@ class AIPlayRecordService
 
                     'sort_score' => 0, // 排序优先级
                     'best_record_id' => 0,
+                    'ui_entry' => $record['ui_entry']
                 ];
             }
 
@@ -352,8 +357,46 @@ class AIPlayRecordService
 
         // 总时长
         $result['duration'] = self::formatDuration($result['duration']);
+        //累计练习曲目
+        $accumulateLesson= AIPlayRecordModel::getAccumulateLessonCount($studentId);
+        //累计练习天数
+        $accumulateDays= AIPlayRecordModel::getAccumulateDays($studentId);
+
+        if (empty($lessonReports)) {
+            $dayWonderfulData = [];
+        } else {
+            $dayWonderfulData = self::getDayWonderfulData($lessonReports);
+        }
+        $result['day_wonderful_lesson'] = $dayWonderfulData;
+        $result['accumulate_days'] = $accumulateDays;
+        $result['accumulate_lesson'] = $accumulateLesson;
 
         return $result;
+    }
+
+
+    /**获取当天精彩演奏，每天有过全曲评测的曲目且最高分有超过90的，按照最高分倒序，给出3首曲目的当天最高分演奏
+     * @param $lessonReports
+     * @return array
+     */
+    public static function getDayWonderfulData($lessonReports)
+    {
+        $dayWonderfulData = [];
+        foreach ($lessonReports as $item) {
+            if ($item['test_high_score'] >= 90 && $item['ui_entry'] == AIPlayRecordModel::UI_ENTRY_TEST) {
+                $item['audio_url'] = AIPLCenter::userAudio($item['best_record_id'])['data']['audio_url'] ?? '';
+                $dayWonderfulData[] = $item;
+            }
+        }
+        if (empty($dayWonderfulData)) {
+            return $dayWonderfulData;
+        }
+
+        usort($dayWonderfulData, function ($a, $b) {
+            return $a['test_high_score'] < $b['test_high_score'];
+        });
+
+        return count($dayWonderfulData) > self::GET_DAY_WONDERFUL_DATA_LIMIT ? array_slice($dayWonderfulData, 0, 3) : $dayWonderfulData;
     }
 
     /**

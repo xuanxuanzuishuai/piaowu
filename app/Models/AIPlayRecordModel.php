@@ -544,4 +544,28 @@ WHERE
         ];
         return MysqlDB::getDB()->queryAll($sql, $map);
     }
+
+    /**
+     * 获取累计练习曲目
+     * @param $studentId
+     * @return number
+     */
+    public static function getAccumulateLessonCount($studentId)
+    {
+        $db = MysqlDB::getDB();
+        return $db->count(self::$table, ['student_id' => $studentId, 'GROUP' => 'lesson_id']);
+    }
+
+    /**
+     * 获取累计练琴天数
+     * @param $studentId
+     * @return int
+     */
+    public static function getAccumulateDays($studentId)
+    {
+        $db = MysqlDB::getDB();
+        $countCol = Medoo::raw('COUNT(DISTINCT FROM_UNIXTIME(end_time))');
+        $countResult = $db->get(self::$table, ['count' => $countCol], ['student_id' => $studentId]);
+        return !empty($countResult['count']) ? (INT)$countResult['count'] : 0;
+    }
 }

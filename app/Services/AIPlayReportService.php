@@ -8,15 +8,19 @@
 
 namespace App\Services;
 
+use App\Libs\AliOSS;
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\AIPlayRecordModel;
+use App\Models\DayReportFabulousModel;
 use App\Models\ReviewCourseModel;
 use App\Models\ReviewCourseTaskModel;
 use App\Services\Queue\PushMessageTopic;
 use Lcobucci\JWT\Signer\Hmac\Sha256;
 use Lcobucci\JWT\Builder;
+use App\Libs\DictConstants;
 use Lcobucci\JWT\Parser;
 
 class AIPlayReportService
@@ -66,6 +70,7 @@ class AIPlayReportService
         }
 
         $report = AIPlayRecordService::getDayReportData($studentId, $date);
+        $report["day_report_fabulous"] = self::getDayReportFabulous($studentId, $date);
         $report["share_token"] = self::getShareReportToken($studentId, $date);
         $report['replay_token'] = AIBackendService::genStudentToken($studentId);
         return $report;
@@ -82,9 +87,59 @@ class AIPlayReportService
         $shareTokenInfo = AIPlayReportService::parseShareReportToken($shareToken);
 
         $report = AIPlayRecordService::getDayReportData($shareTokenInfo["student_id"], $shareTokenInfo["date"]);
+
+        $channel_id = DictConstants::get(DictConstants::WEIXIN_STUDENT_CONFIG, 'shared_day_report_channel_id');
+        $TicketData = UserService::getUserQRAliOss($shareTokenInfo["student_id"], 1, $channel_id);
+        $playShareAssessUrl = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'play_share_assess_url');
+        $data = array(
+            'ad' => 0,
+            'channel_id' => $channel_id,
+            'referee_id' => $TicketData['qr_ticket']
+        );
+
+        $report['share_url'] = $playShareAssessUrl . '?' . http_build_query($data);
+        $report['qr_ticket_image'] = empty($TicketData['qr_url']) ? '' : AliOSS::signUrls($TicketData['qr_url']);
         $report["share_token"] = $shareToken;
         $report['replay_token'] = AIBackendService::genStudentToken($shareTokenInfo["student_id"]);
+        $report["day_report_fabulous"] = self::getDayReportFabulous($shareTokenInfo["student_id"], $shareTokenInfo["date"]);
         return $report;
+    }
+
+    /**
+     * 日报点赞
+     * @param $shareToken
+     * @param $openId
+     * @return array|string[]
+     * @throws RunTimeException
+     */
+    public static function dayReportFabulous($shareToken, $openId)
+    {
+        $shareTokenInfo = AIPlayReportService::parseShareReportToken($shareToken);
+
+        $fabulousRew = DayReportFabulousModel::getRecord(['student_id' => $shareTokenInfo['student_id'], 'open_id' => $openId, 'day_report_date' => $shareTokenInfo["date"]], ['id']);
+
+        if (!empty($fabulousRew)) {
+            throw new RunTimeException(['student_is_fabulous']);
+        }
+
+        $id = DayReportFabulousModel::insertRecord(['student_id' => $shareTokenInfo['student_id'], 'open_id' => $openId, 'create_time' => time(), 'day_report_date' => $shareTokenInfo["date"]], false);
+        if (empty($id)) {
+            throw new RunTimeException(['insert_failure']);
+        }
+
+        return $id;
+    }
+
+    /**
+     * 统计日报点赞数
+     * @param $studentId
+     * @param $date
+     * @return int|number
+     */
+    public static function getDayReportFabulous($studentId, $date)
+    {
+        $dayReportFabulous = DayReportFabulousModel::getTotalCount($studentId, $date);
+        return $dayReportFabulous ?? 0;
     }
 
     /**

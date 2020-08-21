@@ -22,6 +22,7 @@ use App\Middleware\WeChatAuthCheckMiddleware;
 use App\Middleware\WeChatPandaAuthCheckMiddleware;
 use App\Controllers\StudentWX\ReferralActivity;
 use App\Controllers\StudentWX\TemplatePoster;
+use App\Middleware\WeChatOpenIdCheckMiddleware;
 
 class StudentWXRouter extends RouterBase
 {
@@ -101,6 +102,12 @@ class StudentWXRouter extends RouterBase
             'method' => ['get'],
             'call' => PlayReport::class . ':sharedDayReport',
             'middles' => []
+        ],
+        // 日报(点赞)
+        '/student_wx/play_report/day_report_fabulous' => [
+            'method' => ['post'],
+            'call' => PlayReport::class . ':dayReportFabulous',
+            'middles' => [WeChatOpenIdCheckMiddleware::class]
         ],
 
         //测评结果（分享）
