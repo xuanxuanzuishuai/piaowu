@@ -717,6 +717,7 @@ class StudentService
             $row['allot_collection_time'] = empty($item['allot_collection_time']) ? '-' : date('Y-m-d H:i', $item['allot_collection_time']);
             $row['wechat_account'] = $item['wechat_account'];
             $row['course_manage_name'] = $item['course_manage_name'];
+            $row['serve_app_id'] = $item['serve_app_id'];
             $data[] = $row;
         }
         return $data;

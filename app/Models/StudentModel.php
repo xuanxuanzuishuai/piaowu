@@ -571,8 +571,6 @@ class StudentModel extends Model
             $whereSql .= " AND s.collection_id = :collection_id ";
             $map[':collection_id'] = $params['collection_id'];
         }
-
-
         //查询渠道
         if(!empty($params['channel_id'])){
             $whereSql .= " AND s.channel_id = :channel_id ";
@@ -627,6 +625,11 @@ class StudentModel extends Model
             $whereSql .= " AND s.allot_collection_time <= :allot_collection_end_time ";
             $map[':allot_collection_end_time'] = Util::getStartEndTimestamp($params['allot_collection_end_time'])[1];
         }
+        // 服务业务线
+        if (!empty($params['serve_app_id'])) {
+            $whereSql .= " AND s.serve_app_id = :serve_app_id ";
+            $map[':serve_app_id'] = $params['serve_app_id'];
+        }
         return [$whereSql, $map];
     }
 
@@ -668,6 +671,7 @@ class StudentModel extends Model
                        `s`.`first_pay_time`,
                        `s`.`has_review_course`,
                        `s`.`latest_remark_status`,
+                       `s`.`serve_app_id`,
                        `sw`.`id` AS wx_id,
                        `ass`.`name` AS assistant_name,
                        `s`.`is_add_assistant_wx`,
