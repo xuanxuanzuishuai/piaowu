@@ -433,8 +433,9 @@ class UserPlayServices
                 ];
             }
 
-            $lessonReports[$lessonId]['plays']->insert($record);
-
+            if ($record['score_final'] > 0) {
+                $lessonReports[$lessonId]['plays']->insert($record);
+            }
 
             // 以lesson为单位，查出该lesson的最近练琴时间
             if($record['end_time'] > $lessonReports[$lessonId]['end_time']){
@@ -532,9 +533,10 @@ class UserPlayServices
                 return $a['end_time'] < $b['end_time'];
             });
 
+            $lessonId = $report['lesson_id'];
             $lessonRecords[] = [
                 'total_duration' => $report['total_duration'],
-                'lesson_id' => $report['lesson_id'],
+                'lesson_id' => $lessonId,
                 'lesson_name' => !empty($lessonInfo[$lessonId]) ? $lessonInfo[$lessonId]['lesson_name'] : '', // 曲谱名
                 'text' => self::createReportText($report), // 生成文本
                 'plays' => $report['plays'], // 得分最高的三次的测评
