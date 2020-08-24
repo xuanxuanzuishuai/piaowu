@@ -43,6 +43,7 @@ class TrackService
     const CHANNEL_WX = 3;
     const CHANNEL_OCEAN_LEADS = 4; // 头条，线索转化追踪
     const CHANNEL_IOS_IDFA = 5; // iOS 激活推广 idfa
+    const CHANNEL_BAIDU = 6; //百度，转化追踪
 
     public static function addInfo($info, $eventType = NULL)
     {
@@ -233,6 +234,8 @@ class TrackService
                 return self::trackCallbackOceanEngineLeads($eventType, $trackData);
             case self::CHANNEL_IOS_IDFA:
                 return self::trackCallBackIdfa($eventType, $trackData);
+            case self::CHANNEL_BAIDU:
+                return self::trackCallBackBaidu($eventType, $trackData);
             default:
                 return false;
         }
@@ -388,6 +391,34 @@ class TrackService
         $response = HttpHelper::requestJson($trackData['callback']);
         $success = (!empty($response) && $response['errno'] == 0);
 
+        return $success;
+    }
+
+    public static function trackCallBackBaidu($eventType, $trackData)
+    {
+        $api = 'https://ocpc.baidu.com/ocpcapi/api/uploadConvertData';
+        switch ($eventType) {
+            case self::TRACK_EVENT_FORM_COMPLETE:
+                return true;
+            case self::TRACK_EVENT_PAY:
+                $type = 10;
+                break;
+            default:
+                return false;
+        }
+
+        $data = [
+            'token' => $_ENV["BAIDU_TOKEN"],
+            'conversionTypes' => [
+                [
+                    "logidUrl"=> unserialize($trackData['callback']),
+                    "newType"=> $type
+                ],
+            ]
+        ];
+
+        $response = HttpHelper::requestJson($api, $data, 'POST');
+        $success = (!empty($response) && $response['header']['status'] == 0);
         return $success;
     }
 

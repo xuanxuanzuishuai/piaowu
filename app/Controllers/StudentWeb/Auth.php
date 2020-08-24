@@ -216,11 +216,22 @@ class Auth extends ControllerBase
             'wx_code' => $params['wx_code'] ?? '',
         ];
 
+        $bdUrl = $request->getHeader("Referer")[0] ?? '';
+        $adParams['bd_vid'] = '';
+        if (!empty($bdUrl)) {
+            $matchRet = preg_match("/bd_vid=/", $bdUrl);
+            if ($matchRet != false) {
+                $adParams['bd_vid'] = $bdUrl;
+            }
+        }
+
         // 微信或广点通没有callback参数，需要用指定的click_id作为回调参数，所以把click_id保存在callback里
         if (!empty($adParams['qz_gdt'])) {
             $adParams['callback'] = $adParams['qz_gdt'];
         } elseif (!empty($adParams['gdt_vid'])) {
             $adParams['callback'] = $adParams['gdt_vid'];
+        } elseif (!empty($adParams['bd_vid'])){
+            $adParams['callback'] = $adParams['bd_vid'];
         }
 
         try {
