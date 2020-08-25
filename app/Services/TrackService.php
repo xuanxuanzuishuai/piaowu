@@ -411,7 +411,7 @@ class TrackService
             'token' => $_ENV["BAIDU_TOKEN"],
             'conversionTypes' => [
                 [
-                    "logidUrl"=> unserialize($trackData['callback']),
+                    "logidUrl"=> $trackData['callback'],
                     "newType"=> $type
                 ],
             ]
