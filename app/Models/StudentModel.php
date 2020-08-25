@@ -66,7 +66,10 @@ class StudentModel extends Model
     const STATUS_BUY_NORMAL_COURSE = 2;//付费正式课
     const STATUS_UNBIND = 3;//未绑定微信
     const STATUS_BIND = 4;//已绑定微信
-
+    //是否加入排行榜 0未启用排行榜 1启用排行榜 2禁用排行榜
+    const STATUS_JOIN_RANKING_DISABLE = 0;
+    const STATUS_JOIN_RANKING_ABLE = 1;
+    const STATUS_JOIN_RANKING_STOP = 2;
 
     /**
      * 更新学生信息
