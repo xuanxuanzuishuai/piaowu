@@ -1451,9 +1451,9 @@ class StudentService
      */
     public static function updateOutsideFlag($student, $packageInfo)
     {
-        if ($student['sell_app_id'] == PackageExtModel::APP_AI
+        if ($student['serve_app_id'] == PackageExtModel::APP_AI
             && $packageInfo['app_id'] != PackageExtModel::APP_AI) {
-            StudentModel::updateRecord($student['id'], ['sell_app_id' => Constants::STATUS_TRUE]);
+            StudentModel::updateRecord($student['id'], ['serve_app_id' => Constants::STATUS_TRUE]);
             return true;
         }
         return false;
