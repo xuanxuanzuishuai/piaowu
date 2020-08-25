@@ -47,4 +47,31 @@ class HistoryRanksModel extends Model
             ]);
         return $ranks;
     }
+
+    /**
+     * 获取学生往期排行
+     * @param $studentId
+     * @param $issueNumber
+     * @param $lessonId
+     * @param int $type
+     * @return array
+     */
+    public static function getStudentRank($studentId, $issueNumber, $lessonId, $type = self::RANK_TYPE_QUARTER)
+    {
+        $ranks = HistoryRanksModel::getRecord(
+            [
+                'type' => $type,
+                'issue_number' => $issueNumber,
+                'lesson_id' => $lessonId,
+                'student_id' => $studentId,
+            ],
+            [
+                'lesson_id',
+                'student_id',
+                'ai_record_id',
+                'score',
+                'play_id',],
+            false);
+        return $ranks;
+    }
 }

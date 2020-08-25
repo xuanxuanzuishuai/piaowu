@@ -694,6 +694,7 @@ class AIPlayRecordService
             //查看指定期号数据
             $ranks = HistoryRanksModel::getRankList($issueNumber, $lessonId);
         }
+        //获取学生信息
         $studentInfo = StudentModelForApp::getRecord(['id' => $studentId]);
         // 处理排名，相同分数具有并列名次
         $prevStudent = null;
@@ -716,16 +717,18 @@ class AIPlayRecordService
                 $myself = $v;
             }
         }
-
-        if(empty($myself)) {
-            $student = StudentModel::getById($studentId);
-
-            $bestRecord = AIPlayRecordModel::getStudentLessonBestRecord($studentId, $lessonId, $lessonRankTime);
-            $order = empty($bestRecord) ? -1 : 0;
-
+        //处理当前账户学生的排行榜信息
+        if (empty($myself)) {
+            //1。当前未入榜查询当期最好成绩 2。上期未入榜查询上期最好成绩
+            if (empty($issueNumber)) {
+                $bestRecord = AIPlayRecordModel::getStudentLessonBestRecord($studentId, $lessonId, $lessonRankTime);
+            } else {
+                $bestRecord = HistoryRanksModel::getStudentRank($studentId, $issueNumber, $lessonId);
+            }
             // order 0 表示未上榜 -1 表示未演奏
+            $order = empty($bestRecord) ? -1 : 0;
             $myself = [
-                'name' => $student['name'],
+                'name' => $studentInfo['name'],
                 'score' => $bestRecord['score'] ?? 0,
                 'order' => $order,
             ];
