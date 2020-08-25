@@ -617,9 +617,10 @@ class ReviewCourseService
      * @param $uuid
      * @param $packageType
      * @param $trialType
+     * @param $appId
      * @param $packageId
      */
-    public static function updateStudentReviewCourseStatus($uuid, $packageType, $trialType, $packageId)
+    public static function updateStudentReviewCourseStatus($uuid, $packageType, $trialType, $appId, $packageId)
     {
         $student = StudentService::getByUuid($uuid);
         $studentId = $student['id'];
@@ -632,7 +633,7 @@ class ReviewCourseService
                 'has_review_course' => $packageType,
             ];
             StudentModel::updateRecord($studentId, $update);
-            self::completeEventTask($student['uuid'], $packageType, $trialType);
+            self::completeEventTask($student['uuid'], $packageType, $trialType, $appId);
         }
         //同步用户付费状态信息到crm粒子数据中
         if ($packageType == PackageExtModel::PACKAGE_TYPE_NORMAL) {
@@ -726,8 +727,9 @@ class ReviewCourseService
      * @param $uuid
      * @param $packageType
      * @param $trialType
+     * @param $appId
      */
-    public static function completeEventTask($uuid, $packageType, $trialType)
+    public static function completeEventTask($uuid, $packageType, $trialType, $appId)
     {
         $refTaskId = null;
         if ($packageType == PackageExtModel::PACKAGE_TYPE_TRIAL) {
@@ -737,8 +739,10 @@ class ReviewCourseService
             }
 
         } elseif ($packageType == PackageExtModel::PACKAGE_TYPE_NORMAL) {
-            // 购买正式包完成转介绍任务
-            $refTaskId = ErpReferralService::getYearPayTaskId();
+            if ($appId == PackageExtModel::APP_AI) {
+                // 购买正式包完成转介绍任务
+                $refTaskId = ErpReferralService::getYearPayTaskId();
+            }
         }
 
         if (!empty($refTaskId)) {

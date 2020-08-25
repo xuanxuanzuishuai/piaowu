@@ -179,6 +179,7 @@ class Erp extends ControllerBase
             ReviewCourseService::updateStudentReviewCourseStatus($params['uuid'],
                 $package['package_type'],
                 $package['trial_type'],
+                $package['app_id'],
                 $params['package_id']);
         }
 
