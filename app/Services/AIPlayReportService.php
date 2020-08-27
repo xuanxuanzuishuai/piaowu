@@ -131,6 +131,30 @@ class AIPlayReportService
     }
 
     /**
+     * 日报自己给自己点赞
+     * @param $openId
+     * @param $studentId
+     * @param $date
+     * @return array|string[]
+     * @throws RunTimeException
+     */
+    public static function dayReportOneSelfFabulous($openId, $studentId, $date)
+    {
+        $fabulousRew = DayReportFabulousModel::getRecord(['student_id' => $studentId, 'open_id' => $openId, 'day_report_date' => $date], ['id']);
+
+        if (!empty($fabulousRew)) {
+            throw new RunTimeException(['student_is_fabulous']);
+        }
+
+        $id = DayReportFabulousModel::insertRecord(['student_id' => $studentId, 'open_id' => $openId, 'create_time' => time(), 'day_report_date' =>$date], false);
+        if (empty($id)) {
+            throw new RunTimeException(['insert_failure']);
+        }
+
+        return $id;
+    }
+
+    /**
      * 统计日报点赞数
      * @param $studentId
      * @param $date

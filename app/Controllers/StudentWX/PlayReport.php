@@ -103,6 +103,37 @@ class PlayReport extends ControllerBase
 
     }
 
+    public function dayReportOneSelfFabulous(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'date',
+                'type' => 'required',
+                'error_code' => 'date_is_required'
+            ],
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $openId = $this->ci["open_id"];
+        if (empty($openId)) {
+            return $response->withJson(Valid::addAppErrors([], 'can_not_obtain_open_id'), StatusCode::HTTP_OK);
+        }
+
+        $studentId = $this->ci['user_info']['user_id'];
+        try {
+            AIPlayReportService::dayReportOneSelfFabulous($openId, $studentId, $params['date']);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+
+        return HttpHelper::buildResponse($response, []);
+
+    }
     /**
      * 练琴日历
      * @param Request $request

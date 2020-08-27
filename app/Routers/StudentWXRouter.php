@@ -109,7 +109,11 @@ class StudentWXRouter extends RouterBase
             'call' => PlayReport::class . ':dayReportFabulous',
             'middles' => [WeChatOpenIdCheckMiddleware::class]
         ],
-
+       // 日报(自己给自己点赞)
+        '/student_wx/play_report/day_report_oneself_fabulous' => [
+            'method' => ['post'],
+            'call' => PlayReport::class . ':dayReportOneSelfFabulous',
+        ],
         //测评结果（分享）
         '/student_wx/play_report/shared_assess_result' => [
             'method' => ['get'],
