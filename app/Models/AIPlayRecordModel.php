@@ -44,7 +44,8 @@ class AIPlayRecordModel extends Model
     //排行榜
     const RANK_LIMIT = 150; // 取前n条数据排名
     const RANK_BASE_SCORE = 60; // 大于x分才计入
-
+    const RANK_SCORE_FINAL = 90; //大于90分才会返回精彩演奏
+    const GET_DAY_WONDERFUL_DATA_LIMIT = 3; //日报精彩演出，最多返回3条数据
 
     const DATA_TYPE_NORMAL = 1; // 1 正常评测
     const DATA_TYPE_NOT_EVALUATE = 2; // 2 未进行测评数据 返回或取消
@@ -548,12 +549,18 @@ WHERE
     /**
      * 获取累计练习曲目
      * @param $studentId
-     * @return number
+     * @return int
      */
     public static function getAccumulateLessonCount($studentId)
     {
-        $db = MysqlDB::getDB();
-        return $db->count(self::$table, ['student_id' => $studentId, 'GROUP' => 'lesson_id']);
+        $sql = 'select count(*) as count from(
+                select *, ROW_NUMBER() OVER(PARTITION BY lesson_id ) n from ai_play_record where student_id = :student_id) ai where n = 1';
+        $map = [
+            ':student_id' => $studentId,
+        ];
+        $accumulateLessonCount = MysqlDB::getDB()->queryAll($sql, $map);
+        return !empty($accumulateLessonCount[0]['count']) ? (INT)$accumulateLessonCount[0]['count'] : 0;
+
     }
 
     /**
@@ -564,8 +571,36 @@ WHERE
     public static function getAccumulateDays($studentId)
     {
         $db = MysqlDB::getDB();
-        $countCol = Medoo::raw('COUNT(DISTINCT FROM_UNIXTIME(end_time))');
+        $countCol = Medoo::raw("COUNT(DISTINCT FROM_UNIXTIME(end_time, '%y-%m-%d'))");
         $countResult = $db->get(self::$table, ['count' => $countCol], ['student_id' => $studentId]);
         return !empty($countResult['count']) ? (INT)$countResult['count'] : 0;
+    }
+
+    /**
+     * 获取当天精彩演奏，每天有过全曲评测的曲目且最高分有超过90的，按照最高分倒序，给出3首曲目的当天最高分演奏
+     * @param $studentId
+     * @param $startTime
+     * @param $endTime
+     * @return array
+     */
+    public static function getDayWonderfulData($studentId, $startTime, $endTime)
+    {
+        $sql = 'select ai.id, ai.student_id, ai.lesson_id, ai.score_id, ai.record_id, ai.phrase_id, ai.hand, ai.ui_entry, ai.duration, ai.audio_url, ai.score_final from
+                (select apr.*, ROW_NUMBER() OVER(PARTITION BY apr.lesson_id ORDER BY apr.score_final DESC) n from ai_play_record apr where apr.student_id = :student_id and apr.ui_entry = :ui_entry and apr.hand = :hand
+                and apr.is_phrase = :is_phrase and apr.score_final >= :score_final and apr.end_time >= :start_time and apr.end_time < :end_time) ai where ai.n = 1 order by ai.score_final desc limit :limit';
+
+        $map = [
+            ':start_time' => $startTime,
+            ':end_time' => $endTime,
+            ':student_id' => $studentId,
+            ':ui_entry' => AIPlayRecordModel::UI_ENTRY_TEST,
+            ':hand' => AIPlayRecordModel::HAND_BOTH,
+            ':is_phrase' => Constants::STATUS_FALSE,
+            ':score_final' => AIPlayRecordModel::RANK_SCORE_FINAL,
+            ':limit' => self::GET_DAY_WONDERFUL_DATA_LIMIT
+        ];
+        $dayWonderfulData = MysqlDB::getDB()->queryAll($sql, $map);
+        return $dayWonderfulData ?? [];
+
     }
 }

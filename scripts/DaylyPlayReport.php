@@ -56,7 +56,7 @@ $map = [
 
 $userInfo = $db->queryAll($sql, $map);
 
-$url = $_ENV["WECHAT_FRONT_DOMAIN"] . "/student/dailyNew?date=" . $date;
+$url = $_ENV["WECHAT_FRONT_DOMAIN"] . "/student/dailyPaper?date=" . $date;
 foreach ($userInfo as $value) {
     SimpleLogger::info("----", $value);
     $data = [

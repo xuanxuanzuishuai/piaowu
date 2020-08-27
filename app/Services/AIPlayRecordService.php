@@ -36,7 +36,6 @@ class AIPlayRecordService
     const GET_THIS_QUARTER = 4; //获取本季度时间戳
     const GET_THIS_YEAR = 5; //获取本年时间戳
 
-    const GET_DAY_WONDERFUL_DATA_LIMIT = 3; //日报精彩演出，最多返回3条数据
     /**
      * 演奏数据
      * @param $studentId
@@ -207,7 +206,6 @@ class AIPlayRecordService
 
                     'sort_score' => 0, // 排序优先级
                     'best_record_id' => 0,
-                    'ui_entry' => $record['ui_entry']
                 ];
             }
 
@@ -361,42 +359,35 @@ class AIPlayRecordService
         $accumulateLesson= AIPlayRecordModel::getAccumulateLessonCount($studentId);
         //累计练习天数
         $accumulateDays= AIPlayRecordModel::getAccumulateDays($studentId);
+        //获取精彩演奏
+        $dayWonderfulResult = [];
+        $dayWonderfulData = AIPlayRecordModel::getDayWonderfulData($studentId, $startTime, $endTime);
+        // 获取lesson的信息
+        $lessonInfo = [];
+        $lessonIds = array_column($dayWonderfulData, 'lesson_id');
 
-        if (empty($lessonReports)) {
-            $dayWonderfulData = [];
-        } else {
-            $dayWonderfulData = self::getDayWonderfulData($lessonReports);
+        if (!empty($lessonIds)) {
+            $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, self::DEFAULT_APP_VER);
+            $res = $opn->lessonsByIds($lessonIds);
+
+            if (!empty($res) && $res['code'] == Valid::CODE_SUCCESS) {
+                $data = $res['data'];
+                $lessonInfo = array_combine(array_column($data, 'lesson_id'), $data);
+            }
         }
-        $result['day_wonderful_lesson'] = $dayWonderfulData;
-        $result['accumulate_days'] = $accumulateDays;
+
+        foreach ($dayWonderfulData as $item) {
+            $item['audio_url'] = AIPLCenter::userAudio($item['record_id'])['data']['audio_url'] ?? '';
+            $item['lesson_name'] = $lessonInfo[$item['lesson_id']]['lesson_name'];
+            $item['collection_name'] = $lessonInfo[$item['lesson_id']]['collection_name'];
+            $dayWonderfulResult[] = $item;
+        }
+
+        $result['day_wonderful_lesson'] = $dayWonderfulResult;
+        $result['accumulate_days'] = (INT)$accumulateDays;
         $result['accumulate_lesson'] = $accumulateLesson;
 
         return $result;
-    }
-
-
-    /**获取当天精彩演奏，每天有过全曲评测的曲目且最高分有超过90的，按照最高分倒序，给出3首曲目的当天最高分演奏
-     * @param $lessonReports
-     * @return array
-     */
-    public static function getDayWonderfulData($lessonReports)
-    {
-        $dayWonderfulData = [];
-        foreach ($lessonReports as $item) {
-            if ($item['test_high_score'] >= 90 && $item['ui_entry'] == AIPlayRecordModel::UI_ENTRY_TEST) {
-                $item['audio_url'] = AIPLCenter::userAudio($item['best_record_id'])['data']['audio_url'] ?? '';
-                $dayWonderfulData[] = $item;
-            }
-        }
-        if (empty($dayWonderfulData)) {
-            return $dayWonderfulData;
-        }
-
-        usort($dayWonderfulData, function ($a, $b) {
-            return $a['test_high_score'] < $b['test_high_score'];
-        });
-
-        return count($dayWonderfulData) > self::GET_DAY_WONDERFUL_DATA_LIMIT ? array_slice($dayWonderfulData, 0, 3) : $dayWonderfulData;
     }
 
     /**

@@ -103,6 +103,12 @@ class PlayReport extends ControllerBase
 
     }
 
+    /**
+     * 日报点赞（自己给自己点赞）
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
     public function dayReportOneSelfFabulous(Request $request, Response $response)
     {
         $rules = [
