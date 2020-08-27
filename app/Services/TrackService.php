@@ -43,7 +43,7 @@ class TrackService
     const CHANNEL_WX = 3;
     const CHANNEL_OCEAN_LEADS = 4; // 头条，线索转化追踪
     const CHANNEL_IOS_IDFA = 5; // iOS 激活推广 idfa
-    const CHANNEL_BAIDU = 6; //百度，转化追踪
+    const CHANNEL_BAIDU = 7; //百度，转化追踪
 
     public static function addInfo($info, $eventType = NULL)
     {
