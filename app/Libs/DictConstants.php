@@ -391,6 +391,11 @@ class DictConstants {
         ]
     ];
 
+    //百度推广账户
+    const BD_ACCOUNT= [
+        'type' => 'bd_account',
+    ];
+
     public static function get($type, $key)
     {
         if (empty($type) || empty($key)) {

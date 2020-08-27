@@ -406,9 +406,16 @@ class TrackService
             default:
                 return false;
         }
+        $bdAccountToken = DictConstants::getSet(DictConstants::BD_ACCOUNT);
+        parse_str(parse_url($trackData['callback'], PHP_URL_QUERY), $urlQuery);
+        if (isset($urlQuery['bd_account']) && isset($bdAccountToken[$urlQuery['bd_account']])) {
+            $token = $bdAccountToken[$urlQuery['bd_account']];
+        } else {
+            $token = $_ENV["BAIDU_TOKEN"];
+        }
 
         $data = [
-            'token' => $_ENV["BAIDU_TOKEN"],
+            'token' => $token,
             'conversionTypes' => [
                 [
                     "logidUrl"=> $trackData['callback'],
