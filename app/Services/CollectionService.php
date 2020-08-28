@@ -819,4 +819,46 @@ class CollectionService
     {
         return CollectionModel::getRecordByEndTime($date);
     }
+
+    /**
+     * 获取班级统计数据按照部门架构区分
+     * @param $params
+     * @return array
+     */
+    public static function getCollectionDeptData($params)
+    {
+        $where = " where c.type=" . CollectionModel::COLLECTION_TYPE_NORMAL;
+        if ($params['prepare_start_begin_time']) {
+            $where .= " and c.prepare_start_time >=" . $params['prepare_start_begin_time'];
+        }
+        if ($params['prepare_start_end_time']) {
+            $where .= " and c.prepare_start_time <=" . Util::getStartEndTimestamp($params['prepare_start_end_time'])[1];
+        }
+        if ($params['teaching_start_begin_time']) {
+            $where .= " and c.teaching_start_time >=" . $params['teaching_start_begin_time'];
+        }
+        if ($params['teaching_start_end_time']) {
+            $where .= " and c.teaching_start_time <=" . Util::getStartEndTimestamp($params['teaching_start_end_time'])[1];
+        }
+        if (isset($params['teaching_type'])) {
+            $where .= " and c.teaching_type=" . (int)$params['teaching_type'];
+        }
+        if (isset($params['trial_type'])) {
+            $where .= " and c.trial_type=" . (int)$params['trial_type'];
+        }
+        if (is_numeric($params['task_id'])) {
+            $where .= " and c.task_id=" . $params['task_id'];
+        }
+        //班级状态
+        if (!empty($params['process_status'])) {
+            $processStatus = CollectionModel::getQueryTimeByProcessStatus($params['process_status']);
+            array_walk($processStatus, function ($psv, $psk) use (&$processStatusWhere) {
+                $processStatusWhere[] = "c." . $psk . $psv;
+            });
+            $where .= " AND " . implode(' AND ', $processStatusWhere);
+        }
+        $data = CollectionModel::staticsCollectionDeptData($params['dept_id'], $where);
+        return $data;
+    }
+
 }

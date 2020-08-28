@@ -399,3 +399,5 @@ dept_id_is_required='部门id缺失'
 illegal_img='图片不可包含黄色、暴力、反动元素'
 student_is_fabulous='用户已经点过赞'
 illegal_content='昵称包含敏感词，请重新输入'
+leads_pool_id_error="线索池子id错误"
+leads_pool_stop_update="线索池子禁止修改"

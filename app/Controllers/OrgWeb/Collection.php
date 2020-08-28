@@ -383,4 +383,21 @@ class Collection extends ControllerBase
             'data' => $data
         ], StatusCode::HTTP_OK);
     }
+
+
+    /**
+     * 获取班级统计数据按照部门架构区分
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getCollectionDeptStatisticsData(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        $data = CollectionService::getCollectionDeptData($params);
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $data
+        ], StatusCode::HTTP_OK);
+    }
 }

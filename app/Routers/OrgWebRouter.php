@@ -29,6 +29,7 @@ use App\Controllers\OrgWeb\CommunitySharePoster;
 use App\Controllers\OrgWeb\Dept;
 use App\Controllers\OrgWeb\Erp;
 use App\Controllers\OrgWeb\Flags;
+use App\Controllers\OrgWeb\LeadsPool;
 use App\Controllers\OrgWeb\MakeOpera;
 use App\Controllers\OrgWeb\PersonalLink;
 use App\Controllers\OrgWeb\PlayRecord;
@@ -396,6 +397,7 @@ class OrgWebRouter extends RouterBase
         '/org_web/collection/getCollectionPackageList' => ['method' => ['get'], 'call' => Collection::class . ':getCollectionPackageList'],
         '/org_web/collection/reAllotCollectionAssistant' => ['method' => ['post'], 'call' => Collection::class . ':reAllotCollectionAssistant'],
         '/org_web/collection/event_task_list' => ['method' => ['get'], 'call' => Collection::class . ':getEventTasksList'],
+        '/org_web/collection/dept_statistics' => ['method' => ['get'], 'call' => Collection::class . ':getCollectionDeptStatisticsData'],
 
         //课包管理接口
         '/org_web/package/packageDictDetail' => ['method' => ['get'], 'call' => Package::class . ':packageDictDetail'],
@@ -500,5 +502,11 @@ class OrgWebRouter extends RouterBase
         '/org_web/wx_tag/update' => ['method' => ['post'], 'call' => WxTags::class . ':update'],
         '/org_web/wx_tag/del' => ['method' => ['post'], 'call' => WxTags::class . ':del'],
         '/org_web/wx_tag/list' => ['method' => ['get'], 'call' => WxTags::class . ':list'],
+        //线索分配池管理
+        '/org_web/leads_pool/add' => ['method' => ['post'], 'call' => LeadsPool::class . ':add'],
+        '/org_web/leads_pool/update' => ['method' => ['post'], 'call' => LeadsPool::class . ':update'],
+        '/org_web/leads_pool/update_pool_status' => ['method' => ['post'], 'call' => LeadsPool::class . ':updatePoolStatus'],
+        '/org_web/leads_pool/detail' => ['method' => ['get'], 'call' => LeadsPool::class . ':detail'],
+        '/org_web/leads_pool/list' => ['method' => ['get'], 'call' => LeadsPool::class . ':getPoolList'],
     ];
 }

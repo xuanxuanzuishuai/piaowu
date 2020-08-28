@@ -94,4 +94,35 @@ class DeptModel extends Model
         self::delCache(0);
         return $ret;
     }
+
+    /**
+     * 通过部门ID获取此部门下的所有子部门
+     * @param $deptId
+     * @return array|null
+     */
+    public static function getSubDeptById($deptId)
+    {
+        $sql = "WITH recursive dept_paths AS (
+                    SELECT
+                        id,
+                        NAME,
+                        parent_id
+                    FROM
+                        dept
+                    WHERE
+                        parent_id = ".$deptId." UNION ALL
+                    SELECT
+                        dept.id,
+                        dept.NAME,
+                        dept.parent_id
+                    FROM
+                        dept
+                        INNER JOIN dept_paths ON dept_paths.id = dept.parent_id
+                    ) SELECT
+                    *
+                FROM
+                    dept_paths";
+        $db = MysqlDB::getDB();
+        return $db->queryAll($sql);
+    }
 }

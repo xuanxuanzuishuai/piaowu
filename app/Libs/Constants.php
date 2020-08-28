@@ -215,4 +215,6 @@ class Constants
     const STUDENT_ACCOUNT_LOG_OP_TYPE = 'student_account_log_op_type';
     //学生证书图片底图
     const STUDENT_CERTIFICATE_BASE_IMG = 'student_certificate_base_img';
+    //线索池分配方式类型
+    const DICT_TYPE_LEADS_POOL_TARGET_TYPE = 'leads_pool_target_type';
 };
