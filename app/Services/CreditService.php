@@ -14,6 +14,7 @@ use App\Libs\MysqlDB;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Models\PointActivityRecordModel;
+use App\Models\ReportDataLogModel;
 
 class CreditService
 {
@@ -45,7 +46,8 @@ class CreditService
     const VIEW_DIFFICULT_SPOT = 'view_difficult_spot';
     //识谱，提升
     const KNOW_CHART_PROMOTION = 'know_chart_promotion';
-
+    //奖励类型
+    const CREDIT_AWARD_TYPE = 3;
     //所有积分互动和奖励执行方法对应关系
     const ALL_ACTIVITY_RELATE_CLASS = [
         self::SIGN_IN_TASKS => 'signInTasks',
@@ -317,10 +319,15 @@ class CreditService
             //检测是否满足可上报的基础条件(每日完成x次行为，奖励x音符，每天最多奖励x次),检测x次行为是否达到
             if (self::judgeUserReportData($type, $activityData)) {
                 $action = self::getActivityClass($type) . 'Action';
-                $result = self::$action($activityData);
+                $creditResult = self::$action($activityData);
+                $medalResult = MedalService::dealMedalGrantRelate($type, $activityData);
+                $result = empty($creditResult) ? $medalResult : $creditResult + $medalResult;
+            } else {
+                SimpleLogger::info('not reach report basic require', ['type' => $type, 'activity_data' => $activityData]);
             }
             $redis->del($cacheKey);
-            SimpleLogger::info(['not reach report basic require'], ['type' => $type, 'activity_data' => $activityData]);
+        } else {
+            SimpleLogger::info('redis nx not release', ['type' => $type, 'activity_data' => $activityData]);
         }
         return $result;
     }
@@ -386,7 +393,6 @@ class CreditService
             }
         }
 
-        $erp = new Erp();
         $activityTemplate = self::getActivityTemplate(self::SIGN_IN_TASKS);
         $shouldGetTaskId = 0;
         //防止需要完成的任务天数大小错乱，引入临时数
@@ -415,7 +421,7 @@ class CreditService
         //更新用户的完成情况
         self::updateUserCompleteStatus($data['student_id'], self::SIGN_IN_TASKS, $limitCount, $shouldGetTaskId);
         if (self::checkSendAwardTask($data['student_id'], $shouldGetTaskId, $limitCount)) {
-            $erp->updateTask($data['uuid'], $shouldGetTaskId, ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
+            self::dealCreditTaskFinish($data['uuid'], $shouldGetTaskId, $data);
             return $hasAchieveTask;
         }
     }
@@ -429,7 +435,6 @@ class CreditService
     {
         //对当前任务的完成状态
         $completeStatus = self::getUserCompleteStatus($data['student_id'], self::PLAY_PIANO_TASKS);
-        $erp = new Erp();
         $activityTemplate = self::getActivityTemplate(self::PLAY_PIANO_TASKS);
         $hasAchieveTask = [];
         foreach ($activityTemplate as $v) {
@@ -444,7 +449,7 @@ class CreditService
                 }
                 self::updateUserCompleteStatus($data['student_id'], self::PLAY_PIANO_TASKS, $condition['every_day_count'], $v['id']);
                 if (self::checkSendAwardTask($data['student_id'], $v['id'], $condition['every_day_count'])) {
-                    $erp->updateTask($data['uuid'], $v['id'], ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
+                    self::dealCreditTaskFinish($data['uuid'], $v['id'], $data);
                     $hasAchieveTask[$v['id']] = $v['award'];
                 }
             }
@@ -531,7 +536,6 @@ class CreditService
                 }
             }
         }
-        $erp = new Erp();
         $activityTemplate = self::getActivityTemplate($type);
         $hasAchieveTask = [];
         foreach ($activityTemplate as $v) {
@@ -541,7 +545,7 @@ class CreditService
             }
             self::updateUserCompleteStatus($data['student_id'], $type, $condition['every_day_count'], $v['id']);
             if (self::checkSendAwardTask($data['student_id'], $v['id'], $condition['every_day_count'])) {
-                $erp->updateTask($data['uuid'], $v['id'], ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
+                self::dealCreditTaskFinish($data['uuid'], $v['id'], $data);
                 $hasAchieveTask[$v['id']] = $v['award'];
             }
         }
@@ -584,10 +588,13 @@ class CreditService
      * @return bool
      * 上报数据对应的任务 在业务逻辑的其他限制
      */
-    private static function checkTaskQualification($condition, $data)
+    public static function checkTaskQualification($condition, $data)
     {
         if (isset($condition['min_version'])) {
             $res = false;
+            if (!empty($data['ignore_version'])) {
+                return true;
+            }
             //需要检测最小版本
             if (!empty($data['app_version'])) {
                 $res = !AIPlayRecordService::isOldVersionApp($data['app_version'], $condition['min_version']);
@@ -654,6 +661,52 @@ class CreditService
             return false;
         } else {
             return true;
+        }
+    }
+
+    /**
+     * @param $uuid
+     * @param $shouldGetTaskId
+     * @param $data
+     * @param int $status
+     * 积分活动任务完成处理
+     */
+    private static function dealCreditTaskFinish($uuid, $shouldGetTaskId, $data, $status = ErpReferralService::EVENT_TASK_STATUS_COMPLETE)
+    {
+        $erp = new Erp();
+        $erp->updateTask($uuid, $shouldGetTaskId, $status);
+        MedalService::recordMedalRelateTaskCount($data);
+    }
+
+    /**
+     * @param $type
+     * @return int
+     * 上报类型对应数据库int值
+     */
+    public static function getReportTypeZhToNum($type)
+    {
+
+        switch ($type) {
+            case self::SIGN_IN_TASKS:
+                return 1;
+            case self::PLAY_PIANO_TASKS:
+                return 2;
+            case self::BOTH_HAND_EVALUATE:
+                return 3;
+            case self::SHARE_GRADE:
+                return 4;
+            case self::MUSIC_BASIC_QUESTION:
+                return 5;
+            case self::EXAMPLE_VIDEO:
+                return 6;
+            case self::VIEW_DIFFICULT_SPOT:
+                return 7;
+            case self::KNOW_CHART_PROMOTION:
+                return 8;
+            case MedalService::FAMOUS_PERSON:
+                return 9;
+            default:
+                return 0;
         }
     }
 

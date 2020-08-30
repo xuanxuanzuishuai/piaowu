@@ -9,6 +9,7 @@
 namespace App\Services;
 
 
+use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Erp;
@@ -18,8 +19,13 @@ use App\Libs\ResponseError;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Libs\Util;
+use App\Models\AIPlayRecordCHModel;
+use App\Models\AIPlayRecordModel;
+use App\Models\CategoryV1Model;
 use App\Models\CountryCodeModel;
 use App\Models\ReferralModel;
+use App\Models\StudentMedalCategoryModel;
+use App\Models\StudentMedalModel;
 use App\Models\StudentModel;
 use App\Models\StudentModelForApp;
 use App\Models\GiftCodeModel;
@@ -124,7 +130,9 @@ class StudentServiceForApp
             'total_duration' => 0,
             'is_anonymous' => 1,
             'student_is_set_pwd' => $isPwd,
-            'is_join_ranking' => $student['is_join_ranking']
+            'is_join_ranking' => $student['is_join_ranking'],
+            'thumb' => AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb')),
+            'medal_thumb' => ''
         ];
 
         return [null, $loginData];
@@ -386,10 +394,23 @@ class StudentServiceForApp
             'is_anonymous' => 0,
             'total_points' => $totalPoints['total_num'] ?? 0,
             'student_is_set_pwd' => $isPwd,
-            'is_join_ranking' => $student['is_join_ranking']
+            'is_join_ranking' => $student['is_join_ranking'],
+            'thumb' => $student['thumb'] ? AliOSS::replaceCdnDomainForDss($student["thumb"]) : AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb')),
+            'medal_thumb' => self::getStudentShowMedal($student['id'])
         ];
 
         return [null, $loginData];
+    }
+
+    /**
+     * @param $studentId
+     * @return string
+     * 用户展示的奖章
+     */
+    public static function getStudentShowMedal($studentId)
+    {
+        $medalInfo = StudentMedalCategoryModel::getDefaultShowMedalId($studentId);
+        return $medalInfo ? MedalService::formatMedalAlertInfo(reset($medalInfo)['medal_id'])['thumbs'] : '';
     }
 
     public static function registerStudentInUserCenter($name, $mobile, $uuid = '', $birthday = '', $gender = '')
@@ -744,5 +765,101 @@ class StudentServiceForApp
         }
 
         return null;
+    }
+
+    /**
+     * 获取学生个人主页信息
+     * @param $studentId
+     * @param null $needStudentId
+     * @return array
+     * 有查看他人主页的功能
+     */
+    public static function getHomePageInfo($studentId, $needStudentId = NULL)
+    {
+        $studentId = $needStudentId ?: $studentId;
+        //获取学生练琴总时长和总曲目
+        $playSum = AIPlayRecordModel::getStudentTotalSum($studentId);
+        //$playSum = AIPlayRecordCHModel::getPlayInfo($studentId); clickHouse用法
+        //获取学生头像和昵称
+        $studentInfo = StudentModel::getById($studentId);
+        //默认奖章
+        $medalThumb = self::getStudentShowMedal($studentId);
+        //获取学生积分
+        $totalPoints = PointActivityService::totalPoints($studentId, PointActivityService::ACCOUNT_SUB_TYPE_STUDENT_POINTS);
+        //整体奖章类别的数量
+        $totalMedalCategoryNum = MedalService::getTotalMedalCategoryNum();
+        //外在展示用户奖章信息
+        $showMedalInfo = array_map(function ($item){
+            $baseInfo = MedalService::formatMedalAlertInfo($item['medal_id']);
+            $baseInfo['create_time'] = date('Y.m.d', $item['create_time']) . '获得';
+            return $baseInfo;
+            },StudentMedalModel::showStudentMedalInfo($studentId));
+        //已经获取奖章类别数量
+        $getMedalCategoryNum = count($showMedalInfo);
+        //已经获取的所有奖章类别
+        $allCategoryArr = array_column($showMedalInfo, 'category_id');
+        //尚未获取的所有奖章类别
+        $notGetCategoryInfo = [];
+        //如果是查看他人主页，不展示这个人未获取
+        if (empty($needStudentId)) {
+            $notGetCategory = CategoryV1Model::getRecords(['id[!]' => $allCategoryArr, 'type' => CategoryV1Model::MEDAL_AWARD_TYPE]);
+            if (!empty($notGetCategory)) {
+                $notGetCategoryInfo = array_map(function ($item) {
+                    return ['medal_category_name' => $item['name'], 'category_id' => $item['id'],'create_time' => '未获得','thumbs' => AliOSS::replaceCdnDomainForDss(json_decode($item['extension'], true)['thumb'])];
+                }, $notGetCategory);
+            }
+        }
+        return [
+            "name" => $studentInfo['name'],
+            "thumb" => $studentInfo['thumb'] ? AliOSS::replaceCdnDomainForDss($studentInfo["thumb"]) : AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb')),
+            'medal_thumb' => $medalThumb,
+            "play_lesson_num" => $playSum['lesson_count'],
+            "play_day_num" => ceil($playSum['sum_duration'] / Util::TIMESTAMP_ONEDAY),
+            'total_points' => $totalPoints['total_num'] ?? 0,
+            'total_medal_category_num' => $totalMedalCategoryNum,
+            'get_medal_category_num' => $getMedalCategoryNum,
+            'show_medal_info' => $showMedalInfo,
+            'not_get_medal_category' => $notGetCategoryInfo
+        ];
+    }
+
+    /**
+     * @param $studentId
+     * @param $uuid
+     * @param $updateInfo
+     * @param $appVersion
+     * @param bool $ignoreVersion
+     * @return array|string[]|void
+     * 更新用户名和头像得到奖章相关
+     */
+    public static function awardRelateService($studentId, $uuid, $updateInfo, $appVersion = NULL, $ignoreVersion = false)
+    {
+        $activityData = [
+            'student_id' => $studentId,
+            'uuid' => $uuid,
+            'ignore_version' => $ignoreVersion,
+            'app_version' => $appVersion
+        ];
+        if (!empty($updateInfo['name'])) {
+            $activityData['change_type'] = 'set_name';
+        } elseif ($updateInfo['thumb']) {
+            $activityData['change_type'] = 'set_thumb';
+        }
+        if (empty($activityData['change_type'])) {
+            return;
+        }
+        $returnInfo = [];
+        $award =  MedalService::dealMedalGrantRelate(MedalService::FAMOUS_PERSON, $activityData);
+        if (!empty($award)) {
+          $returnInfo =  array_map(function ($item) {
+                $awardInfo = json_decode($item, true)['awards'];
+                foreach ($awardInfo as $v) {
+                    if ($v['type'] == CategoryV1Model::MEDAL_AWARD_TYPE) {
+                        return MedalService::getMedalIdInfo($v['course_id']);
+                    }
+                }
+            },$award);
+        }
+        return $returnInfo;
     }
 }

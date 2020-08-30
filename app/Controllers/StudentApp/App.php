@@ -10,8 +10,10 @@ namespace App\Controllers\StudentApp;
 
 
 use App\Controllers\ControllerBase;
+use App\Libs\AliContentCheck;
 use App\Libs\AliOSS;
 use App\Libs\DictConstants;
+use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\PandaCRM;
 use App\Libs\Util;
@@ -24,6 +26,8 @@ use App\Services\AreaService;
 use App\Services\BannerService;
 use App\Services\CommonServiceForApp;
 use App\Services\FlagsService;
+use App\Services\MedalService;
+use App\Services\StudentService;
 use App\Services\StudentServiceForApp;
 use App\Services\TrackService;
 use Slim\Http\Request;
@@ -179,6 +183,7 @@ class App extends ControllerBase
 
     }
 
+    //低版本兼容，之后弃用
     public function setNickname(Request $request, Response $response)
     {
         $rules = [
@@ -199,18 +204,42 @@ class App extends ControllerBase
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-
-        $errorCode = StudentServiceForApp::setNickname($this->ci['student']['id'], $params['nickname']);
-
-        if ($errorCode) {
-            $result = Valid::addAppErrors([], $errorCode);
-            return $response->withJson($result, StatusCode::HTTP_OK);
+        try {
+            StudentService::checkScanText($params['nickname']);
+            $errorCode = StudentServiceForApp::setNickname($this->ci['student']['id'], $params['nickname']);
+            if ($errorCode) {
+                $result = Valid::addAppErrors([], $errorCode);
+                return $response->withJson($result, StatusCode::HTTP_OK);
+            }
+        }  catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
+        return HttpHelper::buildResponse($response, []);
+    }
 
-        return $response->withJson([
-            'code' => Valid::CODE_SUCCESS,
-            'data' => []
-        ], StatusCode::HTTP_OK);
+    public function setUserInfo(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        try {
+            $update_info = [];
+            if (!empty($params["thumb"])){
+                //检测图片是否合规
+                StudentService::checkScanImg(AliOSS::replaceCdnDomainForDss($params['thumb']));
+                $update_info["thumb"] = $params["thumb"];
+            }
+            if (!empty($params["nickname"])){
+                if (!preg_match("/^[\x{4e00}-\x{9fa5}A-Za-z0-9_]{1,10}$/u", $params['nickname'])) {
+                    throw new RunTimeException(['nickname_is_invalid']);
+                }
+                StudentService::checkScanText($params['nickname']);
+                $update_info["name"] = $params["nickname"];
+            }
+            StudentModelForApp::updateRecord($this->ci['student']['id'], $update_info);
+            $data = StudentServiceForApp::awardRelateService($this->ci['student']['id'], $this->ci['student']['uuid'], $update_info, $this->ci['version']);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, ['award' => $data]);
     }
 
     public function leadsCheck(Request $request, Response $response)
@@ -438,5 +467,76 @@ class App extends ControllerBase
             'code' => Valid::CODE_SUCCESS,
             'data' => []
         ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * 个人主页查看
+     */
+    public function homePage(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        $data = StudentServiceForApp::getHomePageInfo($this->ci['student']['id'], $params['need_student_id'] ?? NULL);
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $data
+        ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * 奖章类别对用户细节详情
+     */
+    public function medalDetail(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'category_id',
+                'type' => 'required',
+                'error_code' => 'category_id_is_required'
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $data = MedalService::getUserMedalCategoryGainInfo($this->ci['student']['id'], $params['category_id'], $this->ci['student']['uuid']);
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $data
+        ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * 设置默认头像
+     */
+    public function setDefaultMedal(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'category_id',
+                'type' => 'required',
+                'error_code' => 'category_id_is_required'
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            MedalService::setUserDefaultMedalCategory($this->ci['student']['id'], $params['category_id']);
+        }  catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, []);
     }
 }

@@ -409,7 +409,7 @@ class AliOSS
     }
 
     /**
-     * 替换cdn域名
+     * 替换cdn域名(曲谱用)
      * @param string $url
      * @return string
      */
@@ -418,6 +418,23 @@ class AliOSS
         $cdnDomain = DictConstants::get(DictConstants::ALI_OSS_CONFIG, 'cdn_domain');
         $reg = '/(http|https):\/\/([^\/]+)/i';
         $newUrl = preg_replace($reg, $cdnDomain, $url);
+        return $newUrl ?? $url;
+    }
+
+    /**
+     * @param $url
+     * @return string|string[]
+     */
+    public static function replaceCdnDomainForDss($url)
+    {
+        $cdnDomain = DictConstants::get(DictConstants::ALI_OSS_CONFIG, 'dss_cdn_domain');
+        //外部传输已经处理过的url
+        if (Util::isUrl($url)) {
+            $reg = '/(http[s]):\/\/([^\/]+)/i';
+            $newUrl = preg_replace($reg, $cdnDomain, $url);
+        } else {
+            $newUrl = $cdnDomain . '/' . ($url);
+        }
         return $newUrl ?? $url;
     }
 

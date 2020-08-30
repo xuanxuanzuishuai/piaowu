@@ -10,6 +10,7 @@ namespace App\Controllers\StudentApp;
 
 use App\Libs\Util;
 use App\Libs\Valid;
+use App\Services\MedalService;
 use App\Services\PointActivityService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -82,6 +83,18 @@ class PointActivity extends ControllerBase
         $params = $request->getParams();
         list($page, $count) = Util::formatPageCount($params);
         $data = PointActivityService::pointsDetail($this->ci['student']['id'], $page, $count);
+        return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * 异步获取尚未弹出的奖章
+     */
+    public function needAlert(Request $request, Response $response)
+    {
+        $data = MedalService::getNeedAlertMedal($this->ci['student']['id']);
         return HttpHelper::buildResponse($response, $data);
     }
 }

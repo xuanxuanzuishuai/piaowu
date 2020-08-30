@@ -12,6 +12,7 @@ use App\Controllers\ControllerBase;
 use App\Libs\AliContentCheck;
 use App\Libs\AliOSS;
 use App\Libs\Constants;
+use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
@@ -263,7 +264,7 @@ class Student extends ControllerBase
             "mobile" => substr($student_info["mobile"], 0, 3) . "****" .
                 substr($student_info["mobile"], 7, 4),
             "name" => $student_info["name"],
-            "thumb" => AliOSS::signUrls($student_info["thumb"]),
+            "thumb" => $student_info['thumb'] ? AliOSS::replaceCdnDomainForDss($student_info["thumb"]) : AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb')),
             "lesson_num" => $playSum['lesson_count'],
             "duration" => $playSum['sum_duration'],
             "expired_date" => $expire_date,
@@ -288,19 +289,21 @@ class Student extends ControllerBase
             $update_info = [];
             if (!empty($params["thumb"])){
                 //检测图片是否合规
-                $checkResponse = (new AliContentCheck())->checkImgLegal(AliOSS::signUrls($params['thumb']));
-                if (!empty($checkResponse)) {
-                    if (in_array(AliContentCheck::ILLEGAL_RESULT, array_values($checkResponse))) {
-                        throw new RunTimeException(['illegal_img']);
-                    }
-                }
+                StudentService::checkScanImg(AliOSS::replaceCdnDomainForDss($params['thumb']));
                 $update_info["thumb"] = $params["thumb"];
             }
             if (!empty($params["name"])){
+                if (!preg_match("/^[\x{4e00}-\x{9fa5}A-Za-z0-9_]{1,10}$/u", $params['nickname'])) {
+                    throw new RunTimeException(['nickname_is_invalid']);
+                }
+                //检测文字是否合规
+                StudentService::checkScanText($params['name']);
                 $update_info["name"] = $params["name"];
             }
             $user_id = $this->ci['user_info']['user_id'];
             StudentModelForApp::updateRecord($user_id, $update_info);
+            $student = StudentModel::getById($user_id);
+            StudentServiceForApp::awardRelateService($user_id, $student['uuid'], $update_info, NULL, true);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }

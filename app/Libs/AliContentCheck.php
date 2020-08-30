@@ -9,7 +9,7 @@ class AliContentCheck
     // 代码中以单张图片检测作为示例，如果需要批量检测多张图片，请自行构建多个检测任务。
     // 一次请求中可以同时检测多张图片，每张图片可以同时检测多个风险场景，计费按照单图片单场景检测叠加计算。
     // 例如：检测2张图片，场景传递porn和terrorism，则计费按照2张图片鉴黄和2张图片暴恐检测计算。
-    const ILLEGAL_RESULT = 'block';
+    const LEGAL_RESULT = 'normal';
     public $ossConfig;
 
     public function __construct()
@@ -28,7 +28,7 @@ class AliContentCheck
     public function checkImgLegal($url)
     {
         $task = array(
-            'dataId' => uniqid(),
+            'dataId' => mt_rand(1000, 9999) . uniqid(),
             'url' => $url
         );
         $body = array(
@@ -47,12 +47,12 @@ class AliContentCheck
     public function textScan($content)
     {
         $task = array(
-            'dataId' => uniqid(),
+            'dataId' => mt_rand(10000, 99999) . uniqid(),
             'content' => $content
         );
         $body = array(
             "tasks" => array($task),
-            "scenes" => explode(',', $this->ossConfig['green_check_type'])
+            "scenes" => explode(',', $this->ossConfig['green_text_check_type'])
         );
         $params = array();
         return $this->toRequest('/green/text/scan', $body, $params);
@@ -81,7 +81,8 @@ class AliContentCheck
                 ->request();
             if ($result->isSuccess()) {
                 $resultInfo = $result->toArray();
-                return array_column($resultInfo['data'][0]['results'], 'suggestion', 'scene');
+                SimpleLogger::info('content check response:', ['response' => $resultInfo]);
+                $returnInfo = array_column($resultInfo['data'][0]['results'], 'label', 'scene');
             } else {
                 SimpleLogger::info('request green img fail:', ['return info' => $result->toArray()]);
                 return $result;
@@ -89,7 +90,6 @@ class AliContentCheck
         } catch (\Exception $e) {
             SimpleLogger::info('green img error:', ['exception' => $e]);
         }
-        SimpleLogger::info('img check result info:', ['info' => $returnInfo]);
         return $returnInfo;
     }
 }

@@ -17,6 +17,7 @@ define('LANG_ROOT', PROJECT_ROOT . '/lang');
 require_once PROJECT_ROOT . '/vendor/autoload.php';
 
 use App\Services\CreditService;
+use App\Services\MedalService;
 use Dotenv\Dotenv;
 
 $dotenv = new Dotenv(PROJECT_ROOT,'.env');
@@ -29,3 +30,4 @@ if (!empty($argv[1])) {
     $date = date('Y-m-d', strtotime('+1 day'));
 }
 CreditService::createEveryDayTask($date);
+MedalService::createEveryDayTask($date);

@@ -89,6 +89,11 @@ class StudentAppRouter extends RouterBase
             'call' => App::class . ':setNickname',
             'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
         ],
+        '/student_app/app/set_user_info' => [
+            'method' => ['post'],
+            'call' => App::class . ':setUserInfo',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
         '/student_app/app/get_signature' => [
             'method' => ['get'],
             'call' => App::class . ':getSignature',
@@ -128,7 +133,21 @@ class StudentAppRouter extends RouterBase
             'call' => App::class . ':setJoinRanking',
             'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
         ],
-
+        '/student_app/app/home_page' => [
+            'method' => ['get'],
+            'call' => App::class . ':homePage',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
+        '/student_app/app/medal_detail' => [
+            'method' => ['get'],
+            'call' => App::class . ':medalDetail',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
+        '/student_app/app/set_default_medal' => [
+            'method' => ['post'],
+            'call' => App::class . ':setDefaultMedal',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
         // /student_app/sub
         '/student_app/subscription/redeem_gift_code' => [
             'method' => ['post'],
@@ -379,5 +398,10 @@ class StudentAppRouter extends RouterBase
             'call'    => PointActivity::class . ':pointsDetail',
             'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
         ],
+        '/student_app/alert/need_alert' => [
+            'method'  => ['get'],
+            'call'    => PointActivity::class . ':needAlert',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ]
     ];
 }

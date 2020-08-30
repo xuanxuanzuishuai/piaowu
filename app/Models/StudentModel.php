@@ -404,6 +404,7 @@ class StudentModel extends Model
             's.create_time',
             's.has_review_course',
             's.assistant_id',
+            's.thumb',
             'e.name(assistant_name)',
             's.is_add_assistant_wx',
             's.wechat_account',

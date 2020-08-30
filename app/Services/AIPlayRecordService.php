@@ -742,7 +742,8 @@ class AIPlayRecordService
         // 处理排名，相同分数具有并列名次
         $prevStudent = null;
         foreach ($ranks as $v) {
-            $v['thumb'] = AliOSS::signUrls($v['thumb']);
+            $v['thumb'] = $v['thumb'] ? AliOSS::replaceCdnDomainForDss($v["thumb"]) : AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb'));
+            $v['medal_thumb'] = StudentServiceForApp::getStudentShowMedal($v['student_id']);
             if(empty($prevStudent)){
                 $v['order'] = 1;
                 $prevStudent = $v;
@@ -968,7 +969,7 @@ class AIPlayRecordService
             ($recordData['score_final'] > 0)) {
             $activityType = CreditService::BOTH_HAND_EVALUATE;
             try {
-                PointActivityService::reportRecord($activityType, $studentId, ['app_version' => $appVersion]);
+                PointActivityService::reportRecord($activityType, $studentId, ['app_version' => $appVersion, 'score_final' => $recordData['score_final']]);
             } catch (RunTimeException $e) {
                 SimpleLogger::info("point activity both hand evaluate tasks report record fail", ['student_id' => $studentId, 'report_data' => $reportData]);
             }

@@ -60,6 +60,9 @@ class Erp
     // 创建订单（可以创建后立即发货）
     const API_CREATE_DELIVER_BILL = '/api/dss/create_bill';
 
+    //用户累计获取的音符
+    const API_ADD_UP_CREDIT = '/api/dss/get_user_credit';
+
     private $host;
 
     public function __construct()
@@ -557,6 +560,18 @@ class Erp
         $params['app_id'] = self::SELF_APP_ID;
 
         $response = HttpHelper::requestJson($this->host . self::API_LOGISTICS_V1, $params);
+        return $response;
+    }
+
+    /**
+     * @param $params
+     * @return array|bool
+     * 累计音符
+     */
+    public function getUserAddUpCredit($params)
+    {
+        $params['app_id'] = self::SELF_APP_ID;
+        $response = HttpHelper::requestJson($this->host . self::API_ADD_UP_CREDIT, $params);
         return $response;
     }
 

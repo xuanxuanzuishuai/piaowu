@@ -10,6 +10,7 @@
 
 namespace App\Services;
 
+use App\Libs\AliContentCheck;
 use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\Dict;
@@ -564,7 +565,7 @@ class StudentService
         $data['wechat_account'] = $student['wechat_account'];
         $data['sync_status'] = $student['sync_status'];
         $data['course_manage_name'] = $student['course_manage_name'];
-        $data['thumb'] = AliOSS::signUrls($student['thumb']);
+        $data['thumb'] = $student['thumb'] ? AliOSS::replaceCdnDomainForDss($student["thumb"]) : AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb'));
         return $data;
     }
 
@@ -1457,5 +1458,38 @@ class StudentService
             return true;
         }
         return false;
+    }
+
+    /**
+     * @param $text
+     * 阿里云检测文本合法
+     */
+    public static function checkScanText($text)
+    {
+        //敏感词过滤
+        $checkResponse = (new AliContentCheck())->textScan($text);
+        if (!empty($checkResponse)) {
+            array_map(function ($item) {
+                if ($item != AliContentCheck::LEGAL_RESULT) {
+                    throw new RunTimeException(['illegal_content']);
+                }
+            }, $checkResponse);
+        }
+    }
+
+    /**
+     * @param $url
+     * 检测图片是否合法
+     */
+    public static function checkScanImg($url)
+    {
+        $checkResponse = (new AliContentCheck())->checkImgLegal($url);
+        if (!empty($checkResponse)) {
+            array_map(function ($item) {
+                if ($item != AliContentCheck::LEGAL_RESULT) {
+                    throw new RunTimeException(['illegal_content']);
+                }
+            }, $checkResponse);
+        }
     }
 }

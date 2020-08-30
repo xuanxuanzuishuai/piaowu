@@ -29,6 +29,7 @@ class DictConstants {
             'img_dir',
             'cdn_domain',
             'img_size_h',
+            'dss_cdn_domain'
         ]
     ];
 
@@ -394,6 +395,32 @@ class DictConstants {
     //百度推广账户
     const BD_ACCOUNT= [
         'type' => 'bd_account',
+    ];
+
+    //默认头像
+    const STUDENT_DEFAULT_INFO = [
+        'type' => 'student_info',
+        'keys' => [
+            'default_thumb'
+        ]
+    ];
+
+    //奖章相关
+    const MEDAL_CONFIG = [
+        'type' => 'medal_config',
+        'keys' => [
+            'add_up_var_credit_medal',
+            'both_hand_evaluate_medal',
+            'evaluate_zero_medal',
+            'finish_first_practice_medal',
+            'finish_var_task_count_medal',
+            'play_distinct_lesson_medal',
+            'play_piano_time_medal',
+            'receive_max_sign_award_medal',
+            'share_grade_medal',
+            'sign_in_medal',
+            'change_thumb_and_name_medal'
+        ]
     ];
 
     public static function get($type, $key)

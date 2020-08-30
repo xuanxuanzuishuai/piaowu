@@ -12,6 +12,7 @@ namespace App\Services;
 use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\Util;
+use App\Models\CategoryV1Model;
 use App\Models\EventTaskModel;
 use App\Models\PointActivityRecordModel;
 use App\Models\CheckInRecordModel;
@@ -63,6 +64,11 @@ class PointActivityService
         } elseif ($activityType === CreditService::PLAY_PIANO_TASKS) {
             //练琴活动:
             $reportData['play_duration'] = $params['play_duration'];
+        } elseif ($activityType === CreditService::BOTH_HAND_EVALUATE) {
+            //双手全曲评测
+            $reportData['score_final'] = $params['score_final'];
+        } elseif ($activityType === CreditService::SHARE_GRADE) {
+            $reportData['play_grade_id'] = $params['play_grade_id'];
         }
         //创建奖励记录
         $completeRes = CreditService::setUserCompleteTask($activityType, $reportData);
@@ -71,11 +77,24 @@ class PointActivityService
         }
         //保存数据
         self::pointActivityRecord($activityType, array_keys($completeRes), $studentId, $date, $time, $reportData);
-        array_map(function ($completeVal) use (&$reportRes) {
+        $allAward = [];
+        array_map(function ($completeVal) use (&$reportRes, &$allAward) {
             $awardInfo = json_decode($completeVal, true);
-            $reportRes['amount'] = $awardInfo['awards'][0]['amount'];
-            $reportRes['type'] = $awardInfo['awards'][0]['type'];
+            //app兼容处理
+            if ($awardInfo['awards'][0]['type'] == CreditService::CREDIT_AWARD_TYPE) {
+                $reportRes['amount'] = $awardInfo['awards'][0]['amount'];
+                $reportRes['type'] = $awardInfo['awards'][0]['type'];
+            }
+
+            foreach ($awardInfo['awards'] as $award) {
+                if ($award['type'] == CreditService::CREDIT_AWARD_TYPE) {
+                    $award[] = ['amount' => $award['amount'], 'type' => $award['type']];
+                } elseif ($award['type'] == CategoryV1Model::MEDAL_AWARD_TYPE) {
+                    $allAward[] = MedalService::formatMedalAlertInfo($award['course_id']);
+                }
+            }
         }, $completeRes);
+        $reportRes['all_award'] = $allAward;
         return $reportRes;
     }
 

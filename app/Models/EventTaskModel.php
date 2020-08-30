@@ -14,4 +14,7 @@ class EventTaskModel extends Model
 
     const STATUS_NORMAL = 1; // 启用
     const STATUS_DOWN = 2; // 禁用
+
+    //奖章类型的活动
+    const MEDAL_TYPE = 8;
 }
