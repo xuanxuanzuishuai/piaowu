@@ -1470,7 +1470,7 @@ class StudentService
         $checkResponse = (new AliContentCheck())->textScan($text);
         if (!empty($checkResponse)) {
             array_map(function ($item) {
-                if ($item != AliContentCheck::LEGAL_RESULT) {
+                if ($item == AliContentCheck::ILLEGAL_RESULT) {
                     throw new RunTimeException(['illegal_content']);
                 }
             }, $checkResponse);
@@ -1486,7 +1486,7 @@ class StudentService
         $checkResponse = (new AliContentCheck())->checkImgLegal($url);
         if (!empty($checkResponse)) {
             array_map(function ($item) {
-                if ($item != AliContentCheck::LEGAL_RESULT) {
+                if ($item == AliContentCheck::ILLEGAL_RESULT) {
                     throw new RunTimeException(['illegal_content']);
                 }
             }, $checkResponse);

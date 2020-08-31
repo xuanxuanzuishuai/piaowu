@@ -293,7 +293,7 @@ class Student extends ControllerBase
                 $update_info["thumb"] = $params["thumb"];
             }
             if (!empty($params["name"])){
-                if (!preg_match("/^[\x{4e00}-\x{9fa5}A-Za-z0-9_]{1,10}$/u", $params['nickname'])) {
+                if (!preg_match("/^[\x{4e00}-\x{9fa5}A-Za-z0-9_]{1,10}$/u", $params['name'])) {
                     throw new RunTimeException(['nickname_is_invalid']);
                 }
                 //检测文字是否合规

@@ -9,7 +9,7 @@ class AliContentCheck
     // 代码中以单张图片检测作为示例，如果需要批量检测多张图片，请自行构建多个检测任务。
     // 一次请求中可以同时检测多张图片，每张图片可以同时检测多个风险场景，计费按照单图片单场景检测叠加计算。
     // 例如：检测2张图片，场景传递porn和terrorism，则计费按照2张图片鉴黄和2张图片暴恐检测计算。
-    const LEGAL_RESULT = 'normal';
+    const ILLEGAL_RESULT = 'block';
     public $ossConfig;
 
     public function __construct()
@@ -82,7 +82,7 @@ class AliContentCheck
             if ($result->isSuccess()) {
                 $resultInfo = $result->toArray();
                 SimpleLogger::info('content check response:', ['response' => $resultInfo]);
-                $returnInfo = array_column($resultInfo['data'][0]['results'], 'label', 'scene');
+                $returnInfo = array_column($resultInfo['data'][0]['results'], 'suggestion', 'scene');
             } else {
                 SimpleLogger::info('request green img fail:', ['return info' => $result->toArray()]);
                 return $result;
