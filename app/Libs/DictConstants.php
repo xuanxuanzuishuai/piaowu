@@ -423,6 +423,12 @@ class DictConstants {
         ]
     ];
 
+    //专属海报
+    const PERSONAL_POSTER = [
+        'type' => 'personal_poster',
+        'keys' => ['initial_num']
+    ];
+
     public static function get($type, $key)
     {
         if (empty($type) || empty($key)) {

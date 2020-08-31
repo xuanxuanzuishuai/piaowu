@@ -1,0 +1,1 @@
+INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES ('personal_poster', '专属海报设置', 'initial_num', '309029', '专属海报参加人数');

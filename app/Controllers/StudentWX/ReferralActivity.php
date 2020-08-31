@@ -10,8 +10,11 @@ namespace App\Controllers\StudentWX;
 
 
 use App\Controllers\ControllerBase;
+use App\Libs\DictConstants;
+use App\Libs\RedisDB;
 use App\Libs\Valid;
 use App\Libs\HttpHelper;
+use App\Services\ErpReferralService;
 use App\Services\ReferralActivityService;
 use App\Services\SharePosterService;
 use Slim\Http\Request;
@@ -141,6 +144,30 @@ class ReferralActivity extends ControllerBase
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
-        return HttpHelper::buildResponse($response, []);
+    }
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * 专属海报播报
+     */
+    public function broadList(Request $request, Response $response)
+    {
+        list($broadList, $joinNum) = ErpReferralService::broadDataRelate();
+        return HttpHelper::buildResponse($response, ['broad_list' => $broadList, 'join_num' => $joinNum]);
+    }
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * 随机增加专属海报的参与人数
+     */
+    public function addJoinNum(Request $request, Response $response)
+    {
+        $num = RedisDB::getConn()->get(ErpReferralService::PERSONAL_POSTER_ATTEND_NUM_KEY) ?: DictConstants::get(DictConstants::PERSONAL_POSTER, 'initial_num');
+        RedisDB::getConn()->set(ErpReferralService::PERSONAL_POSTER_ATTEND_NUM_KEY, $num + mt_rand(1, 10));
+        return HttpHelper::buildResponse($response,[]);
     }
 }

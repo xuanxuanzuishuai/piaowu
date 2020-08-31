@@ -9,8 +9,10 @@
 namespace App\Services;
 
 
+use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\EmployeeModel;
@@ -76,6 +78,9 @@ class ErpReferralService
     const ERP_EVENT_TASK_STATUS_NOT_ENABLED = 0;
     const ERP_EVENT_TASK_STATUS_ENABLED = 1;
     const ERP_EVENT_TASK_STATUS_DISABLED = 2;
+
+    //专属海报参加人数
+    const PERSONAL_POSTER_ATTEND_NUM_KEY = 'personal_poster_attend_num_key';
 
     /**
      * @param $taskId
@@ -680,5 +685,42 @@ class ErpReferralService
         }
 
         return $data;
+    }
+
+    /**
+     * @return array
+     * 专属海报播报的数据
+     */
+    public static function broadDataRelate()
+    {
+        $erp = new Erp();
+        $needShowInfo = [
+            ['type' => self::EXPECT_REGISTER, 'page' => 1, 'count' => 25],
+            ['type' => self::EXPECT_TRAIL_PAY, 'page' => 1, 'count' => 25],
+            ['type' => self::EXPECT_YEAR_PAY, 'page' => 1, 'count' => 30]
+        ];
+        $returnInfo = [];
+        foreach ($needShowInfo as $value) {
+            list($includeTasks, $excludeTasks) = self::getRefEventTaskIdFilter($value['type']);
+            $params['event_task_id'] = $includeTasks;
+            $params['page'] = $value['page'];
+            $params['count'] = $value['count'];
+            $response = $erp->awardList($params);
+
+            $returnInfo[$value['type']] = array_map(function ($item) {
+                if (in_array($item['award_type'], [self::AWARD_TYPE_CASH, self::AWARD_TYPE_SUBS])) {
+                    if ($item['award_type'] == self::AWARD_TYPE_CASH) {
+                        $str = $item['award_amount'] / 100 . '元现金';
+                    } else {
+                        $str = $item['award_amount'] . '天时长';
+                    }
+                    return $item['referrer_name'] . '分享海报获得' . $str;
+                }
+            }, $response['data']['records']);
+
+        }
+
+        $joinNum = RedisDB::getConn()->get(self::PERSONAL_POSTER_ATTEND_NUM_KEY) ?: DictConstants::get(DictConstants::PERSONAL_POSTER, 'initial_num');
+        return [$returnInfo, $joinNum];
     }
 }

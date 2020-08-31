@@ -217,6 +217,14 @@ class StudentWXRouter extends RouterBase
             'method' => ['post'],
             'call' => ReferralActivity::class . ':uploadReturnCashPoster',
         ],
+        '/student_wx/referral/broad_list' => [
+            'method' => ['get'],
+            'call' => ReferralActivity::class . ':broadList',
+        ],
+        '/student_wx/referral/add_join_num' => [
+            'method' => ['post'],
+            'call' => ReferralActivity::class . ':addJoinNum',
+        ],
         '/student_wx/template_poster/poster' => [
             'method' => ['get'],
             'call' => TemplatePoster::class . ':templatePosterList',
