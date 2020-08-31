@@ -916,4 +916,13 @@ class Util
         $endTime = mktime(23, 59, 59, $quarter * 3, date('t', mktime(0, 0, 0, $quarter * 3, 1, $year)), $year);
         return ['start_time' => $startTime, 'end_time' => $endTime];
     }
+
+    /**
+     * 生成全局唯一ID
+     * @return string
+     */
+    public static function makeUniqueId()
+    {
+        return md5(uniqid(md5(microtime(true)), true));
+    }
 }

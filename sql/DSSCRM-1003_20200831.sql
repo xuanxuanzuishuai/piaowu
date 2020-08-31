@@ -34,7 +34,9 @@ CREATE TABLE `leads_pool_op_log` (
   `before` int NOT NULL COMMENT '更新前值',
   `after` int NOT NULL COMMENT '更新后值',
   `detail` varchar(256) DEFAULT NULL COMMENT '详情json',
-  PRIMARY KEY (`id`)
+  `track_id` varchar(32) NOT NULL COMMENT '跟踪ID',
+  PRIMARY KEY (`id`),
+  KEY `idx_trackid` (`track_id`) USING BTREE
 ) COMMENT='线索池日志';
 
 
@@ -45,7 +47,7 @@ set @pid = (select id
 
 INSERT INTO `privilege` (`name`, `uri`, `created_time`, `method`, `is_menu`, `menu_name`, `parent_id`, `unique_en_name`, `status`)
 VALUES
-  ('线索管理', '/org_web/collection/dept_statistics', UNIX_TIMESTAMP(), 'get', 1, '线索管理', @pid, 'dept_statistics', 1);
+  ('线索管理', '/org_web/collection/dept_statistics', UNIX_TIMESTAMP(), 'get', 1, '线索管理', @pid, 'clue', 1);
 
 INSERT INTO `privilege` (`name`, `uri`, `created_time`, `method`, `is_menu`, `menu_name`, `parent_id`, `unique_en_name`, `status`)
 VALUES

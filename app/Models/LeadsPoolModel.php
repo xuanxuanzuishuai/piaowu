@@ -10,6 +10,7 @@ namespace App\Models;
 
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
+use App\Libs\Util;
 
 class LeadsPoolModel extends Model
 {
@@ -38,6 +39,7 @@ class LeadsPoolModel extends Model
     {
         $time = time();
         $opLog = [];
+        $trackId = Util::makeUniqueId();
         $db = MysqlDB::getDB();
         $db->beginTransaction();
         //添加线索池子
@@ -50,13 +52,14 @@ class LeadsPoolModel extends Model
             'status' => self::LEADS_POOL_STATUS_ABLE,
             'type' => self::LEADS_POOL_TYPE_SELF_CREATE,
         ];
+        $insertResId = self::insertRecord($poolInsertData, false);
         $opLog[] = [
             'op_type' => LeadsPoolOpLogModel::OP_TYPE_POOL_ADD,
-            'detail' => json_encode($poolInsertData),
+            'detail' => json_encode(array_merge($poolInsertData, ['pool_id' => $insertResId])),
             'create_time' => $time,
             'operator' => $operatorId,
+            'track_id' => $trackId,
         ];
-        $insertResId = self::insertRecord($poolInsertData, false);
         if (empty($insertResId)) {
             $db->rollBack();
             throw  new RunTimeException(['insert_failure']);
@@ -65,7 +68,7 @@ class LeadsPoolModel extends Model
         $poolRulesInsertData = [];
         $rulesInsertRes = false;
         if (is_array($params['alloc_rules']) && !empty($params['alloc_rules'])) {
-            array_map(function ($rv) use (&$poolRulesInsertData, $insertResId, $operatorId, $time, $params, &$opLog) {
+            array_map(function ($rv) use (&$poolRulesInsertData, $insertResId, $operatorId, $time, $params, &$opLog, $trackId) {
                 $tmpRulesInsertData = [
                     'pool_id' => $insertResId,
                     'weight' => $rv['weight'],
@@ -81,6 +84,7 @@ class LeadsPoolModel extends Model
                     'detail' => json_encode($tmpRulesInsertData),
                     'create_time' => $time,
                     'operator' => $operatorId,
+                    'track_id' => $trackId,
                 ];
             }, $params['alloc_rules']);
             $rulesInsertRes = LeadsPoolRuleModel::batchInsert($poolRulesInsertData, false);
@@ -109,9 +113,11 @@ class LeadsPoolModel extends Model
                     lp.`target_type`,
                     lp.`target_set_id`,
                     lp.`status`,
+                    lp.`type`,
                     lpr.`id` AS `rule_id`,
                     lpr.`target_id`,
                     lpr.`status` AS `rule_status`,
+                    lpr.`pool_id`,
                     lpr.`weight`
                 FROM " . self::$table . " as lp
                     LEFT JOIN " . LeadsPoolRuleModel::$table . " AS lpr ON lp.`id` = lpr.`pool_id`
@@ -129,7 +135,8 @@ class LeadsPoolModel extends Model
     public static function formatPoolAndRuleData($data)
     {
         $formatData = $targetInfo = [];
-        array_walk($data, function ($dv, $dk) use (&$formatData, &$targetInfo) {
+        array_walk($data, function ($dv, /** @noinspection PhpUnusedParameterInspection */
+                                    $dk) use (&$formatData, &$targetInfo) {
             if (!isset($formatData[$dv['id']]['detail'])) {
                 $formatData[$dv['id']]['detail'] = [
                     'name' => $dv['name'],
@@ -137,6 +144,7 @@ class LeadsPoolModel extends Model
                     'target_type' => $dv['target_type'],
                     'target_set_id' => $dv['target_set_id'],
                     'status' => $dv['status'],
+                    'type' => $dv['type'],
                 ];
             }
             $formatData[$dv['id']]['rules'] = [];
@@ -151,8 +159,9 @@ class LeadsPoolModel extends Model
                 }
                 $formatData[$dv['id']]['rules'][] = [
                     'rule_id' => $dv['rule_id'],
+                    'pool_id' => $dv['pool_id'],
                     'target_id' => $dv['target_id'],
-                    'rule_status' => $dv['rule_status'],
+                    'status' => $dv['rule_status'],
                     'weight' => $dv['weight'],
                     'target_type' => $dv['target_type'],
                     'pool_source_name' => $dv['name'],
@@ -186,74 +195,47 @@ class LeadsPoolModel extends Model
         return $formatData;
     }
 
+
     /**
      * 修改线索池以及分配规则数据
-     * @param $params
-     * @param $operatorId
-     * @throws RunTimeException
+     * @param $poolId
+     * @param $opLog
+     * @param $poolUpdateData
+     * @param $poolRulesUpdateData
+     * @param $poolRulesAddData
+     * @return bool
      */
-    public static function updateLeadsPoolAndRuleData($params, $operatorId)
+    public static function updateLeadsPoolAndRuleData($poolId, $opLog, $poolUpdateData, $poolRulesUpdateData, $poolRulesAddData)
     {
-        $time = time();
-        $opLog = [];
-        $db = MysqlDB::getDB();
-        $db->beginTransaction();
-        //修改线索池子:总池不可以修改名称和分配方式
-        $updatePoolRes = $updatePoolRuleRes = true;
-        if ($params['target_type'] != self::LEADS_POOL_TARGET_TYPE_TO_POOL) {
-            $poolUpdateData = [
-                'name' => $params['pool_name'],
-                'target_type' => $params['target_type'],
-                'target_set_id' => ($params['target_type'] == self::LEADS_POOL_TARGET_TYPE_TO_PEOPLE) ? $params['dept_id'] : 0,
-                'operator' => $operatorId,
-            ];
-            $opLog[] = [
-                'op_type' => LeadsPoolOpLogModel::OP_TYPE_POOL_UPDATE,
-                'detail' => json_encode($poolUpdateData),
-                'create_time' => $time,
-                'operator' => $operatorId,
-            ];
-            $updatePoolRes = self::updateRecord($params['pool_id'], $poolUpdateData, false);
-        }
-        //修改/新增线索池子分配规则
-        if (is_array($params['alloc_rules']['update']) && !empty($params['alloc_rules']['update'])) {
-            array_map(function ($rv) use ($operatorId, $time, $params, $db) {
-                $poolRulesUpdateData = [
-                    'weight' => $rv['weight'],
-                    'target_type' => $params['target_type'],
-                    'target_id' => $rv['target_id'],
-                    'operator' => $operatorId,
-                    'status' => $rv['status'],
-                ];
-                $rulesUpdateRes = LeadsPoolRuleModel::updateRecord($rv['rule_id'], $poolRulesUpdateData, false);
-                if (empty($rulesUpdateRes)) {
-                    $db->rollBack();
-                    throw  new RunTimeException(['update_failure']);
-                }
-            }, $params['alloc_rules']['update']);
-        }
-        if (is_array($params['alloc_rules']['add']) && !empty($params['alloc_rules']['add'])) {
-            $poolRulesAddData = array_map(function ($rv) use ($operatorId, $time, $params, $db) {
-                return [
-                    'pool_id' => $params['pool_id'],
-                    'weight' => $rv['weight'],
-                    'target_type' => $params['target_type'],
-                    'target_id' => $rv['target_id'],
-                    'operator' => $operatorId,
-                    'create_time' => $time,
-                    'status' => LeadsPoolRuleModel::LEADS_POOL_RULE_STATUS_ABLE,
-                ];
-            }, $params['alloc_rules']['add']);
-            $rulesAddRes = LeadsPoolRuleModel::batchInsert($poolRulesAddData, false);
-            if (empty($rulesAddRes)) {
-                $db->rollBack();
-                throw  new RunTimeException(['add_failure']);
+        //修改线索池子
+        if (!empty($poolUpdateData)) {
+            $updatePoolRes = self::updateRecord($poolId, $poolUpdateData, false);
+            if (empty($updatePoolRes)) {
+                return false;
             }
         }
-        if (empty($updatePoolRes) && empty($updatePoolRuleRes)) {
-            $db->rollBack();
-            throw  new RunTimeException(['update_failure']);
+        //修改/新增线索池子分配规则
+        if (!empty($poolRulesUpdateData)) {
+            foreach ($poolRulesUpdateData as $prk => $prv) {
+                $rulesUpdateRes = LeadsPoolRuleModel::updateRecord($prv['rule_id'], $prv['update_data'], false);
+                if (empty($rulesUpdateRes)) {
+                    return false;
+                }
+            }
         }
-        $db->commit();
+        if (!empty($poolRulesAddData)) {
+            $rulesAddRes = LeadsPoolRuleModel::batchInsert($poolRulesAddData, false);
+            if (empty($rulesAddRes)) {
+                return false;
+            }
+        }
+        //操作日志记录
+        if (!empty($opLog)) {
+            $inertOpLogRes = LeadsPoolOpLogModel::batchInsert($opLog, false);
+            if (empty($inertOpLogRes)) {
+                return false;
+            }
+        }
+        return true;
     }
 }

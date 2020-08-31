@@ -139,7 +139,7 @@ class LeadsPool extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         try {
-            LeadsPoolService::updatePoolStatus($params['pool_id'], $params['pool_status']);
+            LeadsPoolService::updatePoolStatus($params['pool_id'], $params['pool_status'], $this->getEmployeeId());
         } catch (RunTimeException $e) {
             return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData(), $e->getData());
         }

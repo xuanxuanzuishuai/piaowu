@@ -162,19 +162,22 @@ class CollectionModel extends Model
             $collectionData = $db->queryAll(str_replace(':where_str', $where . " and em.dept_id in " . $deptWhere, $sql));
             $item['total_capacities'] = array_sum(array_column($collectionData, 'capacity'));
             $item['total_students'] = array_sum(array_column($collectionData, 'student_count'));
+
+            //部门下的助教列表数据
+            $membersSon = [];
+            array_map(function ($cv) use ($item, &$membersSon) {
+                if ($cv['dept_id'] == $item['id']) {
+                    $membersSon[$cv['assistant_id']]['total_capacities'] += $cv['capacity'];
+                    $membersSon[$cv['assistant_id']]['total_students'] += $cv['student_count'];
+                    $membersSon[$cv['assistant_id']]['assistant_id'] = $cv['assistant_id'];
+                    $membersSon[$cv['assistant_id']]['name'] = $cv['ename'];
+                    $membersSon[$cv['assistant_id']]['id'] = $cv['dept_id'] . $cv['assistant_id'];
+                }
+            }, $collectionData);
+
             if (isset($deptFormatData[$item['parent_id']])) {
                 $deptFormatData[$item['parent_id']]['children'][$item['id']] = &$deptFormatData[$item['id']];
-                //部门下的助教列表数据
-                $membersSon = [];
-                array_map(function ($cv) use ($item, &$membersSon) {
-                    if ($cv['dept_id'] == $item['id']) {
-                        $membersSon[$cv['assistant_id']]['total_capacities'] += $cv['capacity'];
-                        $membersSon[$cv['assistant_id']]['total_students'] += $cv['student_count'];
-                        $membersSon[$cv['assistant_id']]['assistant_id'] = $cv['assistant_id'];
-                        $membersSon[$cv['assistant_id']]['name'] = $cv['ename'];
-                        $membersSon[$cv['assistant_id']]['id'] = $cv['dept_id'] . $cv['assistant_id'];
-                    }
-                }, $collectionData);
+
                 if (!empty($membersSon)) {
                     $deptFormatData[$item['parent_id']]['children'][$item['id']]['children'] = array_values($membersSon);
                 }
@@ -182,6 +185,9 @@ class CollectionModel extends Model
             } else {
                 $totalCapacities += $item['total_capacities'];
                 $totalStudents += $item['total_students'];
+                if (empty($deptFormatData[$item['id']]['children']) && !empty($membersSon)) {
+                    $deptFormatData[$item['id']]['children'] = array_values($membersSon);
+                }
                 $tree[] = &$deptFormatData[$item['id']];
             }
         }
