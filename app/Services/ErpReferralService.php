@@ -16,11 +16,14 @@ use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\EmployeeModel;
+use App\Models\GiftCodeModel;
+use App\Models\PackageExtModel;
 use App\Models\StudentModel;
 use App\Libs\Valid;
 use App\Models\UserWeixinModel;
 use App\Models\WeChatAwardCashDealModel;
 use App\Models\WeChatOpenIdListModel;
+use Medoo\Medoo;
 
 class ErpReferralService
 {
@@ -547,15 +550,15 @@ class ErpReferralService
      * @param $reviewerId
      * @param $reason
      * @param string $keyCode
+     * @param null $eventTaskId
      * @return array|bool
      * @throws RunTimeException
      */
-    public static function updateAward($awardId, $status, $reviewerId, $reason, $keyCode)
+    public static function updateAward($awardId, $status, $reviewerId, $reason, $keyCode, $eventTaskId = NULL)
     {
         if (empty($awardId) || empty($reviewerId)) {
             throw new RunTimeException(['invalid_award_id_or_reviewer_id']);
         }
-
         $erp = new Erp();
         $time = time();
         //期望结果数据 批量处理支持
@@ -563,7 +566,6 @@ class ErpReferralService
         if (count($awardIdArr) > 50) {
             throw new RunTimeException(['over_max_allow_num']);
         }
-
         $needDealAward = [];
         if (!empty($awardIdArr)) {
             foreach ($awardIdArr as $value) {
@@ -576,11 +578,15 @@ class ErpReferralService
                 ];
             }
         }
-
         //实际发放结果数据 调用微信红包，
         if ($status == self::AWARD_STATUS_GIVEN) {
             //当前操作的奖励基础信息
             $awardBaseInfo = $erp->getUserAwardInfo($awardId);
+            //验证被推荐人是否已退费
+            $info = self::verifyStudentStatus($eventTaskId, array_column($awardBaseInfo['data']['award_info'], 'uuid'));
+            if (!empty($info)) {
+                return ['has_refund' => $info];
+            }
             if (!empty($awardBaseInfo['data']['award_info'])) {
                 foreach ($awardBaseInfo['data']['award_info'] as $award) {
                     //仅现金,且未发放/已发放失败,且满足奖励延迟时间限制可调用
@@ -628,6 +634,40 @@ class ErpReferralService
         }
 
         return [];
+    }
+
+    /**
+     * @param $eventTaskId
+     * @param $uuidArr
+     * @return string|null
+     * 验证当前相关奖励的订单是否退费
+     */
+    public static function verifyStudentStatus($eventTaskId, $uuidArr)
+    {
+        if (empty($eventTaskId)) {
+            return NULL;
+        }
+
+        $studentIdArr = StudentModel::getRecords(['uuid' => $uuidArr], 'id');
+
+        if ($eventTaskId == self::EXPECT_TRAIL_PAY) {
+            //所有的体验包id
+            $packageIdArr = array_column(PackageExtModel::getPackages(['package_type' => PackageExtModel::PACKAGE_TYPE_TRIAL]), 'package_id');
+        } else {
+            //所有年包id
+            $packageIdArr = array_column(PackageExtModel::getPackages(['package_type' => PackageExtModel::PACKAGE_TYPE_NORMAL]), 'package_id');
+        }
+
+        $existNormalBillStudentIdArr = array_column(GiftCodeModel::getRecords([
+            'buyer' => $studentIdArr, 'bill_package_id' => $packageIdArr,
+            'code_status' => [GiftCodeModel::CODE_STATUS_NOT_REDEEMED, GiftCodeModel::CODE_STATUS_HAS_REDEEMED]],
+            ['buyer' => Medoo::raw('DISTINCT(buyer)')]), 'buyer');
+
+        $diffArr = array_diff($studentIdArr, $existNormalBillStudentIdArr);
+        if (!empty($diffArr)) {
+            return implode(',', StudentModel::getRecords(['uuid' => $uuidArr], 'mobile'));
+        }
+        return NULL;
     }
 
 

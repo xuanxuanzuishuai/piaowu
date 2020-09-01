@@ -373,6 +373,7 @@ class OrgWebRouter extends RouterBase
         '/org_web/referral/referred_list' => ['method' => ['get'], 'call' => Referral::class . ':referredList'],
         '/org_web/referral/award_list' => ['method' => ['get'], 'call' => Referral::class . ':awardList'],
         '/org_web/referral/update_award' => ['method' => ['post'], 'call' => Referral::class . ':updateAward'],
+        '/org_web/referral/receive_info' => ['method' => ['get'], 'call' => Referral::class . ':receiveInfo'],
 
         //转介绍海报
         '/org_web/poster/add' => ['method' => ['post'], 'call' => Poster::class . ':add'],
