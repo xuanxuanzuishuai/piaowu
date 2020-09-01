@@ -714,7 +714,7 @@ class ErpReferralService
                     } else {
                         $str = $item['award_amount'] . '天时长';
                     }
-                    return $item['referrer_name'] . '分享海报获得' . $str;
+                    return ['referee_name' => $item['referrer_name'], 'award_info' => $str];
                 }
             }, $response['data']['records']);
 
