@@ -142,10 +142,9 @@ class AIPlayReportService
     {
         $startTime = strtotime($date);
         $endTime = $startTime + 86399;
-        $dateFormat = preg_match("/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/", $date);
         $aiPlayRecord = AIPlayRecordModel::getRecord(['student_id' => $studentId, 'end_time[<>]' => [$startTime, $endTime]]);
 
-        if (strtotime($date) > time() || !$dateFormat || empty($aiPlayRecord)) {
+        if (strtotime($date) > time() || empty($aiPlayRecord)) {
             throw new RunTimeException(['Please fill in the correct date']);
         }
 
@@ -267,7 +266,7 @@ class AIPlayReportService
 
         $userInfo = AIPlayRecordModel::getPlayedStudentInfo($startTime, $endTime);
 
-        $url = $_ENV["WECHAT_FRONT_DOMAIN"] . "/student/dailyNew?date=" . $date;
+        $url = $_ENV["WECHAT_FRONT_DOMAIN"] . "/student/dailyPaper?date=" . $date;
         $templateId = $_ENV["WECHAT_DAY_PLAY_REPORT"];
         $data = [
             'first' => [
