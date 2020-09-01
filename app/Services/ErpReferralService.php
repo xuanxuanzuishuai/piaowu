@@ -754,7 +754,7 @@ class ErpReferralService
                     } else {
                         $str = $item['award_amount'] . '天时长';
                     }
-                    return ['referee_name' => $item['referrer_name'], 'award_info' => $str];
+                    return ['referee_name' => $item['referrer_name'], 'award_info' => $str, 'award_id' => $item['user_event_task_award_id']];
                 }
             }, $response['data']['records']);
 
