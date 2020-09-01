@@ -51,4 +51,28 @@ class PlayRecord extends ControllerBase
 
     }
 
+    /**
+     * 练琴统计（今日数据查询）
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function todayPlayStatistics(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'mobile',
+                'type' => 'required',
+                'error_code' => 'mobile_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $records = AIPlayRecordService::todayStudentPlayStatistics($params['mobile']);
+        return HttpHelper::buildResponse($response, $records);
+    }
+
 }

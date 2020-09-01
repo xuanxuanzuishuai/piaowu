@@ -243,8 +243,8 @@ LIMIT :rank_limit;";
      */
     public static function recordStatistics($params)
     {
-        $where = " WHERE 1 = 1 ";
-        $map = [];
+        $where = " WHERE 1 = 1 and (s.has_review_course != :has_review_course or s.collection_id != :collection_id)";
+        $map = [":has_review_course" => ReviewCourseModel::REVIEW_COURSE_NO, ":collection_id" => Constants::STATUS_FALSE];
 
         // 统计区间
         $startTime = strtotime($params['play_start_time']);
@@ -362,7 +362,7 @@ LIMIT :rank_limit;";
         $countSql = "
 SELECT COUNT(s.id) count
 FROM "  . StudentModel::$table . " s
-INNER JOIN " . CollectionModel::$table ." c ON c.id = s.collection_id "
+LEFT JOIN " . CollectionModel::$table ." c ON c.id = s.collection_id "
     . $join . $where;
         $queryCount = $db->queryAll($countSql, $map);
         $totalCount = $queryCount[0]['count'];
@@ -387,7 +387,7 @@ SELECT
     play_days,
     avg_duration
 FROM " . StudentModel::$table . " s
-INNER JOIN " . CollectionModel::$table . " c ON c.id = s.collection_id
+LEFT JOIN " . CollectionModel::$table . " c ON c.id = s.collection_id
 LEFT JOIN
     " . EmployeeModel::$table . " assist ON assist.id = s.assistant_id
 LEFT JOIN
@@ -399,6 +399,60 @@ LEFT JOIN
 
         $records = $db->queryAll($sql, $map);
         return [$records, $totalCount];
+    }
+
+    /**
+     * 练琴统计（今日数据查询）
+     * @param $mobile
+     * @param $startDate
+     * @return array
+     */
+    public static function todayRecordStatistics($mobile, $startDate)
+    {
+        $where = " WHERE s.mobile = :mobile and (s.has_review_course != :has_review_course or s.collection_id != :collection_id)";
+        $map = [":mobile" => $mobile, ":has_review_course" => ReviewCourseModel::REVIEW_COURSE_NO, ":collection_id" => Constants::STATUS_FALSE];
+
+        $join = "
+    LEFT JOIN
+    (SELECT
+        student_id,
+        SUM(sum_duration) total_duration,
+        COUNT(DISTINCT play_date) play_days,
+        SUM(sum_duration) / COUNT(DISTINCT play_date) avg_duration
+    FROM
+        " . ReviewCourseTaskModel::$table . "
+    WHERE play_date = " . $startDate . "
+    GROUP BY student_id) rc ON rc.student_id = s.id ";
+
+        $sql = "
+SELECT
+    s.id student_id,
+    s.mobile,
+    s.name,
+    s.has_review_course,
+    s.assistant_id,
+    s.collection_id,
+    s.course_manage_id,
+    assist.name assistant_name,
+    manager.name manager_name,
+    c.name collection_name,
+    c.teaching_start_time,
+    total_duration,
+    play_days,
+    avg_duration
+FROM " . StudentModel::$table . " s
+LEFT JOIN " . CollectionModel::$table . " c ON c.id = s.collection_id
+LEFT JOIN
+    " . EmployeeModel::$table . " assist ON assist.id = s.assistant_id
+LEFT JOIN
+    " . EmployeeModel::$table . " manager ON manager.id = s.course_manage_id "
+            . $join;
+
+        $limit = " limit 1";
+        $sql = $sql . $where . $limit;
+        $db = MysqlDB::getDB();
+        $records = $db->queryAll($sql, $map);
+        return $records ?? [];
     }
 
     /**

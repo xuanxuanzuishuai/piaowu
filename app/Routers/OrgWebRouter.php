@@ -423,6 +423,7 @@ class OrgWebRouter extends RouterBase
         '/org_web/share_poster/refused' => ['method' => ['post'], 'call' => SharePoster::class . ':refused'],
 
         '/org_web/play_record/statistics' => ['method' => ['get'], 'call' => PlayRecord::class . ':playStatistics'],
+        '/org_web/play_record/today_statistics' => ['method' => ['get'], 'call' => PlayRecord::class . ':todayPlayStatistics'],
         '/org_web/poster_template/individualityList' => ['method' => ['get'], 'call' => PosterTemplate::class . ':individualityList'],
         '/org_web/poster_template/standardList' => ['method' => ['get'], 'call' => PosterTemplate::class . ':standardList'],
         '/org_web/poster_template/individualityAdd' => ['method' => ['post'], 'call' => PosterTemplate::class . ':individualityAdd'],
