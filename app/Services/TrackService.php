@@ -399,9 +399,16 @@ class TrackService
         $api = 'https://ocpc.baidu.com/ocpcapi/api/uploadConvertData';
         switch ($eventType) {
             case self::TRACK_EVENT_FORM_COMPLETE:
-                return true;
+                $conversionTypes[] = [
+                    "logidUrl"=> $trackData['callback'],
+                    "newType"=> 3
+                ];
+                break;
             case self::TRACK_EVENT_PAY:
-                $type = 10;
+                $conversionTypes[] = [
+                    "logidUrl"=> $trackData['callback'],
+                    "newType"=> 10
+                ];
                 break;
             default:
                 return false;
@@ -416,12 +423,7 @@ class TrackService
 
         $data = [
             'token' => $token,
-            'conversionTypes' => [
-                [
-                    "logidUrl"=> $trackData['callback'],
-                    "newType"=> $type
-                ],
-            ]
+            'conversionTypes' => $conversionTypes
         ];
 
         $response = HttpHelper::requestJson($api, $data, 'POST');
