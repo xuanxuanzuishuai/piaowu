@@ -665,7 +665,7 @@ class ErpReferralService
 
         $diffArr = array_diff($studentIdArr, $existNormalBillStudentIdArr);
         if (!empty($diffArr)) {
-            return implode(',', StudentModel::getRecords(['uuid' => $uuidArr], 'mobile'));
+            return implode(',', StudentModel::getRecords(['id' => $diffArr], 'mobile'));
         }
         return NULL;
     }
