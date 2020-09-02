@@ -583,7 +583,7 @@ class ErpReferralService
             //当前操作的奖励基础信息
             $awardBaseInfo = $erp->getUserAwardInfo($awardId);
             //验证被推荐人是否已退费
-            $info = self::verifyStudentStatus($eventTaskId, array_column($awardBaseInfo['data']['award_info'], 'uuid'));
+            $info = self::verifyStudentStatus($eventTaskId, array_column($awardBaseInfo['data']['award_info'], 'res_uuid'));
             if (!empty($info)) {
                 return ['has_refund' => $info];
             }
