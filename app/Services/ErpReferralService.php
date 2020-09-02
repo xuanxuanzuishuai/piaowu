@@ -746,21 +746,37 @@ class ErpReferralService
             $params['page'] = $value['page'];
             $params['count'] = $value['count'];
             $response = $erp->awardList($params);
-
-            $returnInfo[$value['type']] = array_map(function ($item) {
+            $studentInfoList = array_column(StudentModel::getRecords(['uuid' => array_column($response['data']['records'], 'referrer_uuid')], ['name', 'uuid']), null, 'uuid');
+            $returnInfo[$value['type']] = array_map(function ($item) use($studentInfoList) {
                 if (in_array($item['award_type'], [self::AWARD_TYPE_CASH, self::AWARD_TYPE_SUBS])) {
                     if ($item['award_type'] == self::AWARD_TYPE_CASH) {
-                        $str = $item['award_amount'] / 100 . '元现金';
+                        $str = $item['award_amount'] / 100 . '元';
                     } else {
                         $str = $item['award_amount'] . '天时长';
                     }
-                    return ['referee_name' => $item['referrer_name'], 'award_info' => $str, 'award_id' => $item['user_event_task_award_id']];
+                    return ['referee_name' => self::dealShowName($studentInfoList[$item['referrer_uuid']]['name']), 'award_info' => $str, 'award_id' => $item['user_event_task_award_id']];
                 }
             }, $response['data']['records']);
 
         }
-
         $joinNum = RedisDB::getConn()->get(self::PERSONAL_POSTER_ATTEND_NUM_KEY) ?: DictConstants::get(DictConstants::PERSONAL_POSTER, 'initial_num');
         return [$returnInfo, $joinNum];
+    }
+
+    /**
+     * @param $name
+     * @return string
+     * 隐藏展示的用户名
+     */
+    private static function dealShowName($name)
+    {
+        $count = mb_strlen($name);
+        if ($count == 1) {
+            return $name . '*';
+        } elseif ($count == 2) {
+            return mb_substr($name, 0, 1) . '*' . mb_substr($name, -1, 1);
+        } elseif ($count > 2) {
+            return  mb_substr($name, 0, 1) . str_repeat('*', $count - 2) . mb_substr($name, -1, 1) ;
+        }
     }
 }
