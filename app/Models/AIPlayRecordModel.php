@@ -409,23 +409,11 @@ LEFT JOIN
      */
     public static function todayRecordStatistics($mobile, $startDate)
     {
-        $where = " WHERE s.mobile = :mobile and (s.has_review_course != :has_review_course or s.collection_id != :collection_id)";
-        $map = [":mobile" => $mobile, ":has_review_course" => ReviewCourseModel::REVIEW_COURSE_NO, ":collection_id" => Constants::STATUS_FALSE];
+        $where = " WHERE s.mobile = :mobile";
+        $map = [":mobile" => $mobile];
+        $join = " LEFT JOIN (SELECT student_id, SUM(duration) total_duration FROM " . self::$table . " WHERE end_time >= " . $startDate . " GROUP BY student_id) rc ON rc.student_id = s.id ";
 
-        $join = "
-    LEFT JOIN
-    (SELECT
-        student_id,
-        SUM(sum_duration) total_duration,
-        COUNT(DISTINCT play_date) play_days,
-        SUM(sum_duration) / COUNT(DISTINCT play_date) avg_duration
-    FROM
-        " . ReviewCourseTaskModel::$table . "
-    WHERE play_date = " . $startDate . "
-    GROUP BY student_id) rc ON rc.student_id = s.id ";
-
-        $sql = "
-SELECT
+        $sql = "SELECT
     s.id student_id,
     s.mobile,
     s.name,
@@ -437,16 +425,8 @@ SELECT
     manager.name manager_name,
     c.name collection_name,
     c.teaching_start_time,
-    total_duration,
-    play_days,
-    avg_duration
-FROM " . StudentModel::$table . " s
-LEFT JOIN " . CollectionModel::$table . " c ON c.id = s.collection_id
-LEFT JOIN
-    " . EmployeeModel::$table . " assist ON assist.id = s.assistant_id
-LEFT JOIN
-    " . EmployeeModel::$table . " manager ON manager.id = s.course_manage_id "
-            . $join;
+    total_duration
+FROM " . StudentModel::$table . " s LEFT JOIN " . CollectionModel::$table . " c ON c.id = s.collection_id LEFT JOIN " . EmployeeModel::$table . " assist ON assist.id = s.assistant_id LEFT JOIN " . EmployeeModel::$table . " manager ON manager.id = s.course_manage_id " . $join;
 
         $limit = " limit 1";
         $sql = $sql . $where . $limit;

@@ -877,17 +877,14 @@ class AIPlayRecordService
      */
     public static function todayStudentPlayStatistics($mobile)
     {
-        $startDate = date("Ymd");
+        $startDate = strtotime('today');
         $reviewStatus = DictService::getTypeMap(Constants::DICT_TYPE_REVIEW_COURSE_STATUS);
         $records = AIPlayRecordModel::todayRecordStatistics($mobile, $startDate);
         foreach ($records as &$record) {
             $record['mobile'] = Util::hideUserMobile($record['mobile']);
             $record['review_course_status'] = $reviewStatus[$record['has_review_course']];
             $record['teaching_start_time'] = !empty($record['teaching_start_time']) ? date('Y-m-d', $record['teaching_start_time']) : '';
-            $record['total_duration'] = round($record['total_duration'] / 60, 1); //总时长
-            $record['avg_duration'] = round($record['avg_duration'] / 60, 1); //日均时常
-            $record['play_days'] = $record['play_days'] ?? 0; //日报数
-            $record['review_days'] = $record['play_days'] ?? 0; //点评数
+            $record['total_duration'] = !empty($record['total_duration']) ? self::formatDuration($record['total_duration']) : 0; //总时长
         }
         return $records;
     }
