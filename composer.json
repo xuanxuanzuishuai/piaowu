@@ -2,6 +2,7 @@
   "require": {
     "php": "7.1.*",
     "ext-ftp": "*",
+    "ext-json": "*",
     "slim/slim": "3.12.3",
     "pimple/pimple": "3.2.3",
     "akrabat/ip-address-middleware": "^1.0.1",
