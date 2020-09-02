@@ -181,6 +181,13 @@ class Erp extends ControllerBase
                 $package['trial_type'],
                 $package['app_id'],
                 $params['package_id']);
+
+            // 处理新线索
+            // receiver LeadsService::newLeads($msgBody)
+//            QueueService::newLeads([
+//                'uuid' => $params['uuid'],
+//                'package_id' => $params['package_id'],
+//            ]);
         }
 
         // 异步通知处理付费事件

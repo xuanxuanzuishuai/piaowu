@@ -14,6 +14,7 @@ use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Controllers\ControllerBase;
 use App\Services\ChannelService;
+use App\Services\LeadsPool\LeadsService;
 use App\Services\PlayClassRecordMessageService;
 use App\Services\Queue\PushMessageTopic;
 use App\Services\Queue\TableSyncTopic;
@@ -175,6 +176,9 @@ class Consumer extends ControllerBase
                 break;
             case PushMessageTopic::EVENT_STUDENT_PAID:
                 StudentService::onPaid($params['msg_body']);
+                break;
+            case PushMessageTopic::EVENT_NEW_LEADS:
+                LeadsService::newLeads($params['msg_body']);
                 break;
             default:
                 SimpleLogger::error('consume_push_message', ['unknown_event_type' => $params['event_type']]);

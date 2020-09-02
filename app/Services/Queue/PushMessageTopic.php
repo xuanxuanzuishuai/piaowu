@@ -18,6 +18,7 @@ class PushMessageTopic extends BaseTopic
     const EVENT_PUSH_SMS_TASK_REVIEW = 'push_sms_task_review';
     const EVENT_WX_PUSH_COMMON = 'wx_push_common'; // 微信消息推送
     const EVENT_STUDENT_PAID = 'student_paid'; // 学生付费事件
+    const EVENT_NEW_LEADS = 'new_leads'; // 新线索处理
 
 
     public function __construct($publishTime = null)
@@ -65,6 +66,13 @@ class PushMessageTopic extends BaseTopic
     }
 
     public function studentPaid($data, $eventType = self::EVENT_STUDENT_PAID)
+    {
+        $this->setEventType($eventType);
+        $this->setMsgBody($data);
+        return $this;
+    }
+
+    public function newLeads($data, $eventType = self::EVENT_NEW_LEADS)
     {
         $this->setEventType($eventType);
         $this->setMsgBody($data);

@@ -208,4 +208,22 @@ class QueueService
         }
         return true;
     }
+
+    /**
+     * 新leads
+     * @param $msgBody
+     * @return bool
+     */
+    public static function newLeads($msgBody = [])
+    {
+        try {
+            $topic = new PushMessageTopic();
+            $topic->newLeads($msgBody)->publish();
+
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), $msgBody ?? []);
+            return false;
+        }
+        return true;
+    }
 }
