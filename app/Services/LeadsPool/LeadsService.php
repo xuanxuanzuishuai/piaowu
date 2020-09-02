@@ -6,10 +6,12 @@ namespace App\Services\LeadsPool;
 
 use App\Libs\SimpleLogger;
 use App\Models\CollectionModel;
+use App\Models\EmployeeModel;
 use App\Models\LeadsPoolLogModel;
 use App\Models\PackageExtModel;
 use App\Models\StudentModel;
 use App\Services\CollectionService;
+use App\Services\ReviewCourseService;
 use App\Services\StudentRefereeService;
 use App\Services\StudentService;
 
@@ -22,22 +24,32 @@ class LeadsService
      */
     public static function newLeads($event)
     {
+        //获取学生信息
         $student = StudentService::getByUuid($event['uuid']);
-
         if (empty($student)) {
             SimpleLogger::info("student not found", ['uuid' => $event['uuid']]);
             return false;
         }
-
-        $refereeData = StudentRefereeService::studentRefereeUserData($student['id']);
-        if (!empty($refereeData)) {
-            return self::refLeads($student['id'], $refereeData['assistant_id'], $event['package_id']);
+        //获取课包信息
+        $package = PackageExtModel::getByPackageId($event['package_id']);
+        if (empty($package)) {
+            SimpleLogger::info("package not found", ['package_id' => $event['package_id']]);
+            return false;
         }
-
-        if (empty($student['assistant_id'])) {
-            return self::pushLeads($event['uuid'], $student, $event['package_id']);
+        //更新点评课标记
+        $studentPackageType = ReviewCourseService::updateStudentReviewCourseStatus($student, $package);
+        //判断是否要进行分班逻辑
+        if (empty($student['collection_id']) && ($studentPackageType == PackageExtModel::PACKAGE_TYPE_TRIAL) && ($package['package_type'] == PackageExtModel::PACKAGE_TYPE_TRIAL)) {
+            // 检测学生是否存在转介绍人以及转介绍人的班级信息
+            $refereeData = StudentRefereeService::studentRefereeUserData($student['id']);
+            if (!empty($refereeData)) {
+                return self::refLeads($student['id'], $refereeData['assistant_id'], $event['package_id']);
+            }
+            // 正常班级分配
+            if (empty($student['collection_id'])) {
+                return self::pushLeads($event['uuid'], $student, $event['package_id']);
+            }
         }
-
         return true;
     }
 
@@ -109,15 +121,16 @@ class LeadsService
             ]);
             return false;
         }
-
-        /*
+        //分配班级操作
         $success = StudentService::allotCollectionAndAssistant($studentId, $collection, EmployeeModel::SYSTEM_EMPLOYEE_ID, $packageId);
-        if ($success) {
+        if (empty($success)) {
             SimpleLogger::error('student update collection and assistant error', []);
+            return false;
         }
-        */
-
-        $success = true;
+        // 体验班级 赠送时长 发送通知 入班引导页面链接 发送短信
+        if (($collection['type'] == CollectionModel::COLLECTION_TYPE_NORMAL) || ($package['package_type'] == PackageExtModel::PACKAGE_TYPE_TRIAL)) {
+            ReviewCourseService::giftCourseTimeAndSendNotify($studentId, $collection);
+        }
         SimpleLogger::info('leads assign success', [
             '$pid' => $pid,
             '$studentId' => $studentId,

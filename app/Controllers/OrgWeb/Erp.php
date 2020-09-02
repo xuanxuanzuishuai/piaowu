@@ -21,7 +21,6 @@ use App\Services\AIBillService;
 use App\Services\CommonServiceForApp;
 use App\Services\ErpService;
 use App\Services\Queue\QueueService;
-use App\Services\ReviewCourseService;
 use App\Services\UserPlayServices;
 use App\Services\AppVersionService;
 use App\Models\AppVersionModel;
@@ -176,18 +175,10 @@ class Erp extends ControllerBase
 
         if (!empty($package)) {
             // 更新用户点评课数据，转介绍任务，付费通知
-            ReviewCourseService::updateStudentReviewCourseStatus($params['uuid'],
-                $package['package_type'],
-                $package['trial_type'],
-                $package['app_id'],
-                $params['package_id']);
-
-            // 处理新线索
-            // receiver LeadsService::newLeads($msgBody)
-//            QueueService::newLeads([
-//                'uuid' => $params['uuid'],
-//                'package_id' => $params['package_id'],
-//            ]);
+            QueueService::newLeads([
+                'uuid' => $params['uuid'],
+                'package_id' => $params['package_id'],
+            ]);
         }
 
         // 异步通知处理付费事件

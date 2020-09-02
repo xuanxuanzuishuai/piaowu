@@ -14,6 +14,7 @@ use App\Libs\Util;
 use App\Models\LeadsPoolModel;
 use App\Models\LeadsPoolOpLogModel;
 use App\Models\LeadsPoolRuleModel;
+use App\Services\LeadsPool\CacheManager;
 
 class LeadsPoolService
 {
@@ -30,7 +31,45 @@ class LeadsPoolService
         if ($params['target_type'] == LeadsPoolModel::LEADS_POOL_TARGET_TYPE_TO_PEOPLE && empty($params['dept_id'])) {
             throw  new RunTimeException(['dept_id_is_required']);
         }
-        return LeadsPoolModel::addLeadsPoolAndRuleData($params, $operatorId);
+        $time = time();
+        //池子添加数据
+        $poolInsertData = [
+            'name' => $params['pool_name'],
+            'target_type' => $params['target_type'],
+            'target_set_id' => ($params['target_type'] == LeadsPoolModel::LEADS_POOL_TARGET_TYPE_TO_PEOPLE) ? $params['dept_id'] : 0,
+            'operator' => $operatorId,
+            'create_time' => $time,
+            'status' => LeadsPoolModel::LEADS_POOL_STATUS_ABLE,
+            'type' => LeadsPoolModel::LEADS_POOL_TYPE_SELF_CREATE,
+        ];
+        //池子分配规则
+        $poolRulesInsertData = array_map(function ($rv) use ($operatorId, $time, $params) {
+            if (empty($rv['weight']) || empty($rv['target_id'])) {
+                throw  new RunTimeException(['weight_or_target_id_required']);
+            } else {
+                return [
+                    'weight' => $rv['weight'],
+                    'target_type' => $params['target_type'],
+                    'target_id' => $rv['target_id'],
+                    'operator' => $operatorId,
+                    'create_time' => $time,
+                    'status' => LeadsPoolRuleModel::LEADS_POOL_RULE_STATUS_ABLE,
+                ];
+            }
+        }, $params['alloc_rules']);
+        //添加数据
+        $db = MysqlDB::getDB();
+        $db->beginTransaction();
+        $insertResPoolId = LeadsPoolModel::addLeadsPoolAndRuleData($poolInsertData, $poolRulesInsertData, $operatorId);
+        if (empty($insertResPoolId)) {
+            $db->rollBack();
+            throw  new RunTimeException(['insert_failure']);
+        } else {
+            $db->commit();
+        }
+        //更新分配规则缓存信息
+        CacheManager::delPoolRulesCache($insertResPoolId, date("Ymd", $time));
+        return true;
     }
 
     /**
@@ -72,6 +111,8 @@ class LeadsPoolService
                     'operator' => $operatorId,
                     'track_id' => $trackId,
                 ];
+            } else {
+                $poolUpdateData = [];
             };
         }
         //修改线索池子分配规则
@@ -80,6 +121,9 @@ class LeadsPoolService
         if (is_array($params['alloc_rules']['update']) && !empty($params['alloc_rules']['update']) && !empty($oldRules)) {
             //检测数据是否发生变化
             foreach ($params['alloc_rules']['update'] as $rk => $rv) {
+                if (empty($rv['weight']) || empty($rv['target_id']) || empty($rv['status']) || empty($rv['rule_id'])) {
+                    throw  new RunTimeException(['leads_pool_rules_params_required']);
+                }
                 //标记删除的规则ID
                 if ($rv['status'] == LeadsPoolRuleModel::LEADS_POOL_RULE_STATUS_DEL) {
                     unset($ableOldRulesTargetIds[array_search($rv['target_id'], $ableOldRulesTargetIds)]);
@@ -108,6 +152,9 @@ class LeadsPoolService
         //增加线索池子分配规则
         if (is_array($params['alloc_rules']['add']) && !empty($params['alloc_rules']['add'])) {
             $poolRulesAddData = array_map(function ($rv) use ($operatorId, $time, $params, $ableOldRulesTargetIds) {
+                if (empty($rv['weight']) || empty($rv['target_id']) || empty($rv['status'])) {
+                    throw  new RunTimeException(['leads_pool_rules_params_required']);
+                }
                 if (array_search($rv['target_id'], $ableOldRulesTargetIds) !== false) {
                     throw  new RunTimeException(['leads_pool_target_id_repeat']);
                 }
@@ -138,6 +185,8 @@ class LeadsPoolService
         } else {
             $db->commit();
         }
+        //更新分配规则缓存信息
+        CacheManager::delPoolRulesCache($params['pool_id'], date("Ymd", $time));
         return true;
     }
 
@@ -168,6 +217,8 @@ class LeadsPoolService
             'operator' => $operatorId,
             'track_id' => Util::makeUniqueId(),
         ], false);
+        //更新分配规则缓存信息
+        CacheManager::delPoolRulesCache($poolId, date("Ymd"));
         return true;
     }
 

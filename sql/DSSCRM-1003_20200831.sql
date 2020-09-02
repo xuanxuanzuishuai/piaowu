@@ -75,3 +75,6 @@ INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`)
 VALUES ('leads_pool_target_type', '线索池分配方式类型', '1', '池到池');
 INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`)
 VALUES ('leads_pool_target_type', '线索池分配方式类型', '2', '池到人');
+
+-- 创建默认的公有池
+INSERT INTO `leads_pool`(`name`, `target_type`, `target_set_id`, `status`, `create_time`, `operator`, `type`) VALUES ('公共总池', 1, 0, 1, UNIX_TIMESTAMP(), 10001, 1);

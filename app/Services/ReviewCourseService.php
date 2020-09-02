@@ -11,7 +11,6 @@ namespace App\Services;
 use App\Libs\AIPLClass;
 use App\Libs\AliOSS;
 use App\Libs\Erp;
-use App\Libs\HttpHelper;
 use App\Libs\NewSMS;
 use App\Libs\SimpleLogger;
 use App\Libs\WeChat\WeChatMiniPro;
@@ -29,10 +28,8 @@ use App\Models\PlayRecordModel;
 use App\Models\ReviewCourseModel;
 use App\Models\StudentModel;
 use App\Models\UserWeixinModel;
-use App\Models\CollectionModel;
 use App\Services\VoiceCall\VoiceCallTRService;
 use App\Models\VoiceCallLogModel;
-use Slim\Http\Response;
 
 class ReviewCourseService
 {
@@ -614,111 +611,31 @@ class ReviewCourseService
 
     /**
      * 更新点评课状态
-     * @param $uuid
-     * @param $packageType
-     * @param $trialType
-     * @param $appId
-     * @param $packageId
+     * @param $student
+     * @param $package
+     * @return null
      */
-    public static function updateStudentReviewCourseStatus($uuid, $packageType, $trialType, $appId, $packageId)
+    public static function updateStudentReviewCourseStatus($student,$package)
     {
-        $student = StudentService::getByUuid($uuid);
-        $studentId = $student['id'];
-        if ($student['has_review_course'] >= $packageType) {
-            SimpleLogger::info('student has review course gt package type', ['has_review_course' => $student['has_review_course'], 'package_type' => $packageType]);
-            return;
+
+        $studentPackageType = null;
+        if ($student['has_review_course'] >= $package['package_type']) {
+            SimpleLogger::info('student has review course gt package type', ['has_review_course' => $student['has_review_course'], 'package_type' => $package['package_type']]);
+            $studentPackageType = $student['has_review_course'];
         } else {
             // 更新点评课标记
             $update = [
-                'has_review_course' => $packageType,
+                'has_review_course' => $package['package_type'],
             ];
-            StudentModel::updateRecord($studentId, $update);
-            self::completeEventTask($student['uuid'], $packageType, $trialType, $appId);
+            $studentPackageType = $package['package_type'];
+            StudentModel::updateRecord($student['id'], $update);
+            self::completeEventTask($student['uuid'], $package['package_type'], $package['trial_type'], $package['app_id']);
         }
         //同步用户付费状态信息到crm粒子数据中
-        if ($packageType == PackageExtModel::PACKAGE_TYPE_NORMAL) {
-            QueueService::studentFirstPayNormalCourse($studentId);
-            return ;
+        if ($package['package_type'] == PackageExtModel::PACKAGE_TYPE_NORMAL) {
+            QueueService::studentFirstPayNormalCourse($student['id']);
         }
-        /**
-         * 分配体验班级：已分配班级的学生禁止重复分班
-         * 满足分配条件的班级选择规则
-         * 有推荐人:
-         *          (1)优先分配给推荐人所属助教的组班中的班级，不管班级启用状态，不管是否超过班容。
-         *          (2)若推荐人的助教组班中的班级有多个班级，则分配最早创建的班级。
-         *          (3)若推荐人的助教组班中的班级为0，则学员分班逻辑按“用户无推荐人”的分班逻辑进行。
-         *          (4)学员加入推荐人的助教的班级后，占用班级当天的分配额度。
-         * 没有推荐人:
-         *          (1)通过启用状态,组班期时间,班级类型,授课类型,班级当前分配学生总量筛选出班级列表
-         *          (2)可分配的班级按照当天进班的学生人数按照由低到高排序,取分配人数最低的班级, 如果人数相同则选择创建时间最早的班级
-         */
-        if (!empty($student['collection_id'])) {
-            return ;
-        }
-        $collection = CollectionService::getCollectionByRefereeId($studentId, $packageType, $trialType);
-        if (empty($collection)) {
-            $collection = CollectionService::getCollectionByCourseType($packageType, $trialType);
-        }
-
-        if (empty($collection)) {
-            return ;
-        }
-
-        // 分配助教和班级
-        $success = StudentService::allotCollectionAndAssistant($student['id'], $collection, EmployeeModel::SYSTEM_EMPLOYEE_ID, $packageId);
-        if ($success) {
-            SimpleLogger::error('student update collection and assistant error', []);
-        }
-
-        // 体验班级 赠送时长 发送通知
-        if (($collection['type'] != CollectionModel::COLLECTION_TYPE_NORMAL) ||
-            ($packageType != PackageExtModel::PACKAGE_TYPE_TRIAL)) {
-            return ;
-        }
-
-        // 发送奖励时长，奖励时长=开课日期-购买日期
-        //  购买日 ----------- 开班前一天 --- 开班日 ------------- 结班日
-        //    |                  |           |                   |
-        // [2号周二   (赠送6天)  7号周日]    [8号周一  (购买14天)  21号周日]
-        $giftCourseNum = ceil(($collection['teaching_start_time'] - strtotime('today')) / 86400);
-
-        // 班课需要减少一天
-        $giftCourseNum -= 1;
-        if ($giftCourseNum > 0) {
-            $giftCourseId = DictConstants::get(DictConstants::ACTIVITY_CONFIG, 'gift_course_id');
-            QueueService::giftCourses($student['uuid'], $giftCourseId, $giftCourseNum);
-        }
-
-        // 入班引导页面链接
-        $wx = WeChatMiniPro::factory([
-            'app_id' => $_ENV['STUDENT_WEIXIN_APP_ID'],
-            'app_secret' => $_ENV['STUDENT_WEIXIN_APP_SECRET'],
-        ]);
-        $url = $wx->getShortUrl($_ENV['SMS_FOR_EXPERIENCE_CLASS_REGISTRATION']."?c=".$collection['id']);
-        $collection['collection_url'] = $url;
-
-        //发送短信
-        $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
-        $sms->sendCollectionCompleteNotify($student['mobile'], CommonServiceForApp::SIGN_STUDENT_APP, $collection, $student['country_code']);
-
-        $now = time();
-        $voiceCall = new VoiceCallTRService(DictConstants::get(DictConstants::VOICE_CALL_CONFIG, 'tianrun_voice_call_host'));
-        $insert = [];
-        $insert['receive_id'] = $studentId;
-        $insert['app_id'] = UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT;
-        $insert['receive_type'] = VoiceCallLogModel::RECEIVE_STUDENT;
-        $insert['relate_schedule_id'] = $studentId;
-        $insert['create_time'] = $now;
-        $insert['customer_number'] = $student['mobile'];
-        $insert['call_type'] = VoiceCallLogModel::VOICE_TYPE_PURCHASE_EXPERIENCE_CLASS;
-
-        $taskId = $voiceCall->createTask($insert);
-        $insert['task_id'] = $taskId;
-        $res = $voiceCall->execTask($insert, VoiceCallTRService::VOICE_TYPE_PURCHASE_EXPERIENCE_CLASS);
-        if(!empty($res) && $res['result'] != 0 && $res['description'] == '超过企业并发限制') {
-            usleep(200);
-            $voiceCall->execTask($insert);
-        }
+        return $studentPackageType;
     }
 
     /**
@@ -748,6 +665,60 @@ class ReviewCourseService
         if (!empty($refTaskId)) {
             $erp = new Erp();
             $erp->updateTask($uuid, $refTaskId, ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
+        }
+    }
+
+    /**
+     * 赠送时长 发送通知
+     * @param $studentId
+     * @param $collection
+     */
+    public static function giftCourseTimeAndSendNotify($studentId, $collection)
+    {
+        //获取学生信息
+        $student = StudentModel::getById($studentId);
+        // 发送奖励时长，奖励时长=开课日期-购买日期
+        //  购买日 ----------- 开班前一天 --- 开班日 ------------- 结班日
+        //    |                  |           |                   |
+        // [2号周二   (赠送6天)  7号周日]    [8号周一  (购买14天)  21号周日]
+        $giftCourseNum = ceil(($collection['teaching_start_time'] - strtotime('today')) / 86400);
+
+        // 班课需要减少一天
+        $giftCourseNum -= 1;
+        if ($giftCourseNum > 0) {
+            $giftCourseId = DictConstants::get(DictConstants::ACTIVITY_CONFIG, 'gift_course_id');
+            QueueService::giftCourses($student['uuid'], $giftCourseId, $giftCourseNum);
+        }
+
+        // 入班引导页面链接
+        $wx = WeChatMiniPro::factory([
+            'app_id' => $_ENV['STUDENT_WEIXIN_APP_ID'],
+            'app_secret' => $_ENV['STUDENT_WEIXIN_APP_SECRET'],
+        ]);
+        $url = $wx->getShortUrl($_ENV['SMS_FOR_EXPERIENCE_CLASS_REGISTRATION'] . "?c=" . $collection['id']);
+        $collection['collection_url'] = $url;
+
+        //发送短信
+        $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
+        $sms->sendCollectionCompleteNotify($student['mobile'], CommonServiceForApp::SIGN_STUDENT_APP, $collection, $student['country_code']);
+
+        $now = time();
+        $voiceCall = new VoiceCallTRService(DictConstants::get(DictConstants::VOICE_CALL_CONFIG, 'tianrun_voice_call_host'));
+        $insert = [];
+        $insert['receive_id'] = $student['id'];
+        $insert['app_id'] = UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT;
+        $insert['receive_type'] = VoiceCallLogModel::RECEIVE_STUDENT;
+        $insert['relate_schedule_id'] = $student['id'];
+        $insert['create_time'] = $now;
+        $insert['customer_number'] = $student['mobile'];
+        $insert['call_type'] = VoiceCallLogModel::VOICE_TYPE_PURCHASE_EXPERIENCE_CLASS;
+
+        $taskId = $voiceCall->createTask($insert);
+        $insert['task_id'] = $taskId;
+        $res = $voiceCall->execTask($insert, VoiceCallTRService::VOICE_TYPE_PURCHASE_EXPERIENCE_CLASS);
+        if (!empty($res) && $res['result'] != 0 && $res['description'] == '超过企业并发限制') {
+            usleep(200);
+            $voiceCall->execTask($insert);
         }
     }
 }
