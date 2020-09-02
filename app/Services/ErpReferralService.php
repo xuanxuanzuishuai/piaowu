@@ -774,7 +774,7 @@ class ErpReferralService
         if ($count == 1) {
             return $name . '*';
         } elseif ($count == 2) {
-            return mb_substr($name, 0, 1) . '*' . mb_substr($name, -1, 1);
+            return mb_substr($name, 0, 1) . '*';
         } elseif ($count > 2) {
             return  mb_substr($name, 0, 1) . str_repeat('*', $count - 2) . mb_substr($name, -1, 1) ;
         }
