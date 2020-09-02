@@ -54,7 +54,7 @@ limit {rank_limit}";
         $chdb = CHDB::getDB();
         $sql = "SELECT COUNT(DISTINCT(lesson_id)) AS `lesson_count`,
 SUM(duration) AS `sum_duration` FROM " . self::$table . " WHERE `student_id` =:student_id";
-        $info = $chdb->fetchOne($sql, ['student_id' => $studentId]);
+        $info = $chdb->queryAll($sql, ['student_id' => $studentId]);
         return reset($info);
     }
 

@@ -14,7 +14,6 @@ use App\Libs\MysqlDB;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Models\PointActivityRecordModel;
-use App\Models\ReportDataLogModel;
 
 class CreditService
 {
@@ -685,29 +684,18 @@ class CreditService
      */
     public static function getReportTypeZhToNum($type)
     {
-
-        switch ($type) {
-            case self::SIGN_IN_TASKS:
-                return 1;
-            case self::PLAY_PIANO_TASKS:
-                return 2;
-            case self::BOTH_HAND_EVALUATE:
-                return 3;
-            case self::SHARE_GRADE:
-                return 4;
-            case self::MUSIC_BASIC_QUESTION:
-                return 5;
-            case self::EXAMPLE_VIDEO:
-                return 6;
-            case self::VIEW_DIFFICULT_SPOT:
-                return 7;
-            case self::KNOW_CHART_PROMOTION:
-                return 8;
-            case MedalService::FAMOUS_PERSON:
-                return 9;
-            default:
-                return 0;
-        }
+        $arr = [
+            self::SIGN_IN_TASKS => 1,
+            self::PLAY_PIANO_TASKS => 2,
+            self::BOTH_HAND_EVALUATE => 3,
+            self::SHARE_GRADE => 4,
+            self::MUSIC_BASIC_QUESTION => 5,
+            self::EXAMPLE_VIDEO => 6,
+            self::VIEW_DIFFICULT_SPOT => 7,
+            self::KNOW_CHART_PROMOTION => 8,
+            MedalService::FAMOUS_PERSON => 9
+        ];
+        return $arr[$type] ?? 0;
     }
 
 }

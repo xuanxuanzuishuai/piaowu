@@ -212,7 +212,7 @@ class App extends ControllerBase
                 return $response->withJson($result, StatusCode::HTTP_OK);
             }
         }  catch (RunTimeException $e) {
-            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
         return HttpHelper::buildResponse($response, []);
     }
@@ -237,7 +237,7 @@ class App extends ControllerBase
             StudentModelForApp::updateRecord($this->ci['student']['id'], $update_info);
             $data = StudentServiceForApp::awardRelateService($this->ci['student']['id'], $this->ci['student']['uuid'], $update_info, $this->ci['version']);
         } catch (RunTimeException $e) {
-            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
         return HttpHelper::buildResponse($response, ['award' => $data]);
     }
@@ -516,7 +516,7 @@ class App extends ControllerBase
      * @param Request $request
      * @param Response $response
      * @return Response
-     * 设置默认头像
+     * 设置默认奖章
      */
     public function setDefaultMedal(Request $request, Response $response)
     {
@@ -535,7 +535,7 @@ class App extends ControllerBase
         try {
             MedalService::setUserDefaultMedalCategory($this->ci['student']['id'], $params['category_id']);
         }  catch (RunTimeException $e) {
-            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
         return HttpHelper::buildResponse($response, []);
     }

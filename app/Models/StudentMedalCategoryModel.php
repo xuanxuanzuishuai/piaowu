@@ -25,7 +25,7 @@ class StudentMedalCategoryModel extends Model
     public static function getDefaultShowMedalId($studentId)
     {
         $sql = "select * from (
-select ROW_NUMBER()over(partition by g.category_id order by g.extension->>'$.level' desc) row_num,
+select ROW_NUMBER() over(partition by m.medal_category_id order by g.extension->>'$.level' desc) row_num,
 m.medal_id from " . self::$table . " c
 inner join " . StudentMedalModel::$table . " m on c.student_id =:student_id
 and c.is_default = " . self::DEFAULT_SHOW . "

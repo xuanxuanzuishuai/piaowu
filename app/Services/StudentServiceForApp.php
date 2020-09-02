@@ -23,6 +23,7 @@ use App\Models\AIPlayRecordCHModel;
 use App\Models\AIPlayRecordModel;
 use App\Models\CategoryV1Model;
 use App\Models\CountryCodeModel;
+use App\Models\GoodsV1Model;
 use App\Models\ReferralModel;
 use App\Models\StudentMedalCategoryModel;
 use App\Models\StudentMedalModel;
@@ -30,6 +31,7 @@ use App\Models\StudentModel;
 use App\Models\StudentModelForApp;
 use App\Models\GiftCodeModel;
 use App\Models\UserQrTicketModel;
+use Medoo\Medoo;
 
 class StudentServiceForApp
 {
@@ -109,7 +111,7 @@ class StudentServiceForApp
             'id' => $student['id'],
             'uuid' => $student['uuid'],
             'student_name' => $student['name'],
-            'avatar' => '',
+            'avatar' => AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb')),
             'mobile' => $student['mobile'],
             'create_time' => (int)$student['create_time'],
             'sub_status' => $student['sub_status'],
@@ -131,7 +133,6 @@ class StudentServiceForApp
             'is_anonymous' => 1,
             'student_is_set_pwd' => $isPwd,
             'is_join_ranking' => $student['is_join_ranking'],
-            'thumb' => AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb')),
             'medal_thumb' => ''
         ];
 
@@ -238,7 +239,7 @@ class StudentServiceForApp
             'id' => $student['id'],
             'uuid' => $student['uuid'],
             'student_name' => $student['name'],
-            'avatar' => Util::getQiNiuFullImgUrl($student['thumb']),
+            'avatar' => AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb')),
             'mobile' => $student['mobile'],
             'create_time' => (int)$student['create_time'],
             'sub_status' => $student['sub_status'],
@@ -259,7 +260,8 @@ class StudentServiceForApp
             'is_anonymous' => 0,
             'total_points' => $totalPoints['total_num'] ?? 0,
             'student_is_set_pwd' => $isPwd,
-            'is_join_ranking' => $student['is_join_ranking']
+            'is_join_ranking' => $student['is_join_ranking'],
+            'medal_thumb' => self::getStudentShowMedal($student['id'])
         ];
 
         return [null, $loginData];
@@ -373,7 +375,7 @@ class StudentServiceForApp
             'id' => $student['id'],
             'uuid' => $student['uuid'],
             'student_name' => $student['name'],
-            'avatar' => Util::getQiNiuFullImgUrl($student['thumb']),
+            'avatar' => $student['thumb'] ? AliOSS::replaceCdnDomainForDss($student["thumb"]) : AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb')),
             'mobile' => $student['mobile'],
             'create_time' => (int)$student['create_time'],
             'sub_status' => $student['sub_status'],
@@ -395,7 +397,6 @@ class StudentServiceForApp
             'total_points' => $totalPoints['total_num'] ?? 0,
             'student_is_set_pwd' => $isPwd,
             'is_join_ranking' => $student['is_join_ranking'],
-            'thumb' => $student['thumb'] ? AliOSS::replaceCdnDomainForDss($student["thumb"]) : AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb')),
             'medal_thumb' => self::getStudentShowMedal($student['id'])
         ];
 
@@ -778,8 +779,7 @@ class StudentServiceForApp
     {
         $studentId = $needStudentId ?: $studentId;
         //获取学生练琴总时长和总曲目
-        $playSum = AIPlayRecordModel::getStudentTotalSum($studentId);
-        //$playSum = AIPlayRecordCHModel::getPlayInfo($studentId); clickHouse用法
+        $playSum = AIPlayRecordCHModel::getPlayInfo($studentId);
         //获取学生头像和昵称
         $studentInfo = StudentModel::getById($studentId);
         //默认奖章
@@ -802,10 +802,10 @@ class StudentServiceForApp
         $notGetCategoryInfo = [];
         //如果是查看他人主页，不展示这个人未获取
         if (empty($needStudentId)) {
-            $notGetCategory = CategoryV1Model::getRecords(['id[!]' => $allCategoryArr, 'type' => CategoryV1Model::MEDAL_AWARD_TYPE]);
+            $notGetCategory = GoodsV1Model::getNotGetMedalCategory($allCategoryArr);
             if (!empty($notGetCategory)) {
                 $notGetCategoryInfo = array_map(function ($item) {
-                    return ['medal_category_name' => $item['name'], 'category_id' => $item['id'],'create_time' => '未获得','thumbs' => AliOSS::replaceCdnDomainForDss(json_decode($item['extension'], true)['thumb'])];
+                    return ['medal_category_name' => $item['name'], 'category_id' => $item['id'],'create_time' => '未获得','thumbs' => AliOSS::replaceCdnDomainForDss(json_decode($item['thumbs'], true)[0])];
                 }, $notGetCategory);
             }
         }
@@ -855,7 +855,7 @@ class StudentServiceForApp
                 $awardInfo = json_decode($item, true)['awards'];
                 foreach ($awardInfo as $v) {
                     if ($v['type'] == CategoryV1Model::MEDAL_AWARD_TYPE) {
-                        return MedalService::getMedalIdInfo($v['course_id']);
+                        return MedalService::formatMedalAlertInfo($v['course_id']);
                     }
                 }
             },$award);

@@ -17,17 +17,19 @@ CREATE TABLE `report_data_log` (
   `student_id` int(11) NOT NULL COMMENT '用户id',
   `report_data` varchar(255) NOT NULL COMMENT '上报的信息内容',
   `create_time` int(11) NOT NULL COMMENT '上报的时间',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `student_id` (`student_id`)
 ) COMMENT='上报信息记录表';
 
 CREATE TABLE `medal_reach_num` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `student_id` int(11) NOT NULL COMMENT '用户id',
-  `medal_type` tinyint(1) NOT NULL COMMENT '奖章类型(天天成长17勤奋小标兵18宣传小能手19文艺大队长24首次练琴21签到玩家22王者起航23任务达人26音符大户20知名人士27)',
+  `medal_type` tinyint(1) NOT NULL COMMENT '奖章类型(天天成长83勤奋小标兵84宣传小能手85文艺大队长90首次练琴87签到玩家88王者起航89任务达人91音符大户86知名人士92)',
   `valid_num` int(11) NOT NULL DEFAULT '0' COMMENT '每个奖章的不同等级要求的达成数不同，这是每个奖章用户的有效达成数',
   `create_time` int(11) NOT NULL,
   `update_time` int(11) NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `student_id` (`student_id`)
 ) COMMENT='奖章有效计数表,不同计数不同等级奖章';
 
 CREATE TABLE `student_medal` (
@@ -39,7 +41,8 @@ CREATE TABLE `student_medal` (
   `report_log_id` int(11) NOT NULL COMMENT '在上报哪条数据的时候用户得到了奖章',
   `create_time` int(11) NOT NULL,
   `is_show` tinyint(1) unsigned NOT NULL DEFAULT '1' COMMENT '是否已经给用户展示过0没展示1已经展示',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `student_id` (`student_id`)
 ) COMMENT='用户获取的奖章信息';
 
 CREATE TABLE `student_medal_category` (
@@ -49,5 +52,6 @@ CREATE TABLE `student_medal_category` (
   `is_default` tinyint(1) NOT NULL COMMENT '是否是学生设定的默认展示奖章，1为是0为否',
   `create_time` int(11) NOT NULL COMMENT '首次获得此类奖章的时间',
   `update_time` int(11) NOT NULL COMMENT '最新获得此奖章的时间',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `student_id` (`student_id`)
 ) COMMENT='用户获取的奖章类别信息';

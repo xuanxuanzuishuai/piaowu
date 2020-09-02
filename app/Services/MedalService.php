@@ -65,7 +65,7 @@ class MedalService
     const EVERY_DAY_MEDAL_VALID_NUM = 'every_day_medal_valid_num';
 
     //这个类别有效计数存在erp积分账户表
-    const CREDIT_RICH_CATEGORY_ID = 20;
+    const CREDIT_RICH_CATEGORY_ID = 86;
 
     //所有奖章类型
     const ALL_MEDAL_RELATE_CLASS = [
@@ -218,30 +218,20 @@ class MedalService
      */
     public static function getMedalEnToNum($medalType)
     {
-        switch ($medalType) {
-            case self::DAY_DAY_GROW:
-                return 17;
-            case self::DILIGENT_MODEL:
-                return 18;
-            case self::ADVERTISE_EXPERT:
-                return 19;
-            case self::ART_LEADER:
-                return 24;
-            case self::OPERA_SUPERMAN: //此类奖章这次不做
-                return 5;
-            case self::FIRST_PRACTICE_PIANO:
-                return 21;
-            case self::SIGN_IN_PLAYER:
-                return 22;
-            case self::KING_SAIL:
-                return 23;
-            case self::TASK_TALENT:
-                return 26;
-            case self::CREDIT_RICH:
-                return self::CREDIT_RICH_CATEGORY_ID;
-            case self::FAMOUS_PERSON:
-                return 27;
-        }
+        $arr = [
+            self::DAY_DAY_GROW => 83,
+            self::DILIGENT_MODEL => 84,
+            self::ADVERTISE_EXPERT => 85,
+            self::ART_LEADER => 90,
+            self::OPERA_SUPERMAN => 5, //此类奖章这次不做
+            self::FIRST_PRACTICE_PIANO => 87,
+            self::SIGN_IN_PLAYER => 88,
+            self::KING_SAIL => 89,
+            self::TASK_TALENT => 91,
+            self::CREDIT_RICH => self::CREDIT_RICH_CATEGORY_ID,
+            self::FAMOUS_PERSON => 92
+        ];
+        return $arr[$medalType] ?? 0;
     }
 
     /**
