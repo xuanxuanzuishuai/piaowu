@@ -1114,7 +1114,6 @@ class StudentService
         //获取学生数据
         $studentInfo = StudentModel::getById($studentId);
         if (empty($studentInfo)) {
-//            throw new RunTimeException(['student_not_exist']);
             return false;
         }
         //班级和助教数据

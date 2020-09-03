@@ -430,94 +430,17 @@ class CollectionService
     }
 
     /**
-     * 根据转介绍规则获取待分配班级
+     * 根据池子分配规则得到的助教ID获取本助教下组班中的班级
      * @param $assistantId
      * @param $collectionStatus
      * @param int $packageType
      * @param $trialType
-     * @param string $publishStatus
      * @return array
      */
     public static function getRefCollection($assistantId,
                                             $collectionStatus,
                                             $packageType,
-                                            $trialType,
-                                            $publishStatus = null)
-    {
-        $where['assistant_id'] = $assistantId;
-        $where['teaching_type'] = $packageType;
-        $where['trial_type'] = $trialType;
-
-        //开放状态
-        if (!empty($publishStatus)) {
-            $where['status'] = $publishStatus;
-        }
-
-        //班级状态
-        if ($collectionStatus) {
-            $time = time();
-            switch ($collectionStatus) {
-                case CollectionModel::COLLECTION_PREPARE_STATUS:
-                    //1、待组班
-                    $where['prepare_start_time[>]'] = $time;
-                    break;
-                case CollectionModel::COLLECTION_READY_TO_GO_STATUS:
-                    //2、组班中
-                    $where['prepare_start_time[<=]'] = $time;
-                    $where['prepare_end_time[>=]'] = $time;
-                    break;
-                case CollectionModel::COLLECTION_WAIT_OPEN_STATUS:
-                    //3、待开班
-                    $where['prepare_end_time[<=]'] = $time;
-                    $where['teaching_start_time[>=]'] = $time;
-                    break;
-                case CollectionModel::COLLECTION_OPENING_STATUS:
-                    //4、开班中
-                    $where['teaching_start_time[<=]'] = $time;
-                    $where['teaching_end_time[>=]'] = $time;
-                    break;
-                case CollectionModel::COLLECTION_END_STATUS:
-                    //5、已结班
-                    $where['teaching_end_time[<=]'] = $time;
-                    break;
-            }
-        }
-        $where['ORDER'] = ["id" => "ASC"];
-
-        $collection = CollectionModel::getRecord($where, '*');
-        return $collection;
-    }
-
-    /**
-     * 学生转介绍推荐人的班级助教信息
-     * @param $studentId
-     * @param $packageType
-     * @param $trialType
-     * @return array|mixed
-     */
-    public static function getCollectionByRefereeId($studentId, $packageType, $trialType)
-    {
-        //获取学生转介绍推荐人的班级助教信息
-        $refereeData = StudentRefereeService::studentRefereeUserData($studentId);
-        if (empty($refereeData['assistant_id'])) {
-            return [];
-        }
-
-        $refereeCollection = self::getRefCollection($refereeData['assistant_id'],
-            CollectionModel::COLLECTION_READY_TO_GO_STATUS,
-            $packageType,
-            $trialType);
-
-        return $refereeCollection;
-    }
-
-    /**
-     * 获取课程可以分配的集合列表
-     * @param $packageType
-     * @param $trialType
-     * @return array|null
-     */
-    public static function getCollectionByCourseType($packageType, $trialType)
+                                            $trialType)
     {
         //数据库对象
         $db = MysqlDB::getDB();
@@ -539,29 +462,27 @@ class CollectionService
                         LEFT JOIN student_collection_log AS scl ON c.id = scl.new_collection_id
                         AND scl.old_collection_id = 0 AND scl.create_time BETWEEN " . $dayStartEndTimestamp[0] . " AND " . $dayStartEndTimestamp[1] . "
                     WHERE
-                        c.STATUS = " . CollectionModel::COLLECTION_STATUS_IS_PUBLISH . " 
+                        c.status = " . $collectionStatus . "
                         AND c.type = " . CollectionModel::COLLECTION_TYPE_NORMAL . " 
                         AND c.teaching_type = " . $packageType . "
                         AND c.trial_type = " . $trialType . "
                         AND c.prepare_start_time <= " . $time . " 
                         AND c.prepare_end_time  >= " . $time . "
+                        AND c.assistant_id  = " . $assistantId . "
                     GROUP BY
                         c.id
                     HAVING
                         c.capacity > total_allot
                     ORDER BY
-                        today_allot ASC,
+                        prepare_start_time ASC,
                         c.id ASC
                     LIMIT 1";
         //查询数据获取可分配班级
         $list = $db->queryAll($querySql);
-        //如果没有可加入的班级，则加入“公海班”，推送默认二维码，不分配助教
-        if (empty($list)) {
-            $list = CollectionModel::getRecords(["type" => CollectionModel::COLLECTION_TYPE_PUBLIC, "LIMIT" => 1], ['id', 'assistant_id', 'type'], false);
-        }
         //返回结果
         return $list[0] ?? null;
     }
+
 
     /**
      * 根据用户uuid获取所属的集合信息

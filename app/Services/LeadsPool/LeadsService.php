@@ -38,16 +38,32 @@ class LeadsService
         }
         //更新点评课标记
         $studentPackageType = ReviewCourseService::updateStudentReviewCourseStatus($student, $package);
-        //判断是否要进行分班逻辑
-        if (empty($student['collection_id']) && ($studentPackageType == PackageExtModel::PACKAGE_TYPE_TRIAL) && ($package['package_type'] == PackageExtModel::PACKAGE_TYPE_TRIAL)) {
-            // 检测学生是否存在转介绍人以及转介绍人的班级信息
-            $refereeData = StudentRefereeService::studentRefereeUserData($student['id']);
-            if (!empty($refereeData)) {
-                return self::refLeads($student['id'], $refereeData['assistant_id'], $event['package_id']);
-            }
-            // 正常班级分配
-            if (empty($student['collection_id'])) {
-                return self::pushLeads($event['uuid'], $student, $event['package_id']);
+        // 已有班级，不用分班
+        if (!empty($student['collection_id'])) {
+            SimpleLogger::info("student has collection", ['student_uuid' => $event['uuid'], 'collection_id' => $event['collection_id']]);
+            return true;
+        }
+        // 学生不是体验阶段，不用分班
+        if ($studentPackageType != PackageExtModel::PACKAGE_TYPE_TRIAL) {
+            SimpleLogger::info("student has_review_course is not trial,don't need alloc collection", ['student_uuid' => $event['uuid'], 'student_package_type' => $studentPackageType]);
+            return true;
+        }
+        // 非体验课包，不用分班
+        if ($package['package_type'] != PackageExtModel::PACKAGE_TYPE_TRIAL) {
+            SimpleLogger::info("package type is not trial,don't need alloc collection", ['student_uuid' => $event['uuid'], 'package_type' => $package['package_type']]);
+            return true;
+        }
+        // 检测学生是否存在转介绍人以及转介绍人的班级信息
+        $refereeData = StudentRefereeService::studentRefereeUserData($student['id']);
+        if (!empty($refereeData)) {
+            $refCollectionRes = self::refLeads($student['id'], $refereeData['assistant_id'], $event['package_id']);
+            //转介绍分配规则无可分配班级，继续执行正常班级分配
+            if (empty($refCollectionRes)) {
+                $success = self::pushLeads($event['uuid'], $student, $event['package_id']);
+                // 无可分配路径，进入公海班
+                if (!$success) {
+                    self::defaultAssign($student['id'], $event['package_id']);
+                }
             }
         }
         return true;
@@ -89,9 +105,7 @@ class LeadsService
         SimpleLogger::info("push leads", $config);
 
         $pm = PoolManager::getInstance();
-        $pm->addLeads($leads);
-
-        return true;
+        return $pm->addLeads($leads);
     }
 
     /**
@@ -107,6 +121,7 @@ class LeadsService
     public static function assign($pid, $studentId, $assistantId, $packageId, $date, $assignType = LeadsPoolLogModel::TYPE_ASSIGN)
     {
         $package = PackageExtModel::getByPackageId($packageId);
+        //获取当前助教正在组班中的班级信息
         $collection = CollectionService::getRefCollection($assistantId,
             CollectionModel::COLLECTION_READY_TO_GO_STATUS,
             $package['package_type'],
@@ -139,49 +154,7 @@ class LeadsService
             return false;
         }
         //分配班级操作
-        $success = StudentService::allotCollectionAndAssistant($studentId, $collection, EmployeeModel::SYSTEM_EMPLOYEE_ID, $packageId);
-        if (empty($success)) {
-            SimpleLogger::error('student update collection and assistant error', []);
-
-            LeadsPoolLogModel::insertRecord([
-                'pid' => $pid,
-                'type' => LeadsPoolLogModel::TYPE_SET_COLLECTION_ERROR,
-                'pool_id' => $assistantId,
-                'pool_type' => Pool::TYPE_EMPLOYEE,
-                'create_time' => time(),
-                'date' => $date,
-                'leads_student_id' => $studentId,
-                'detail' => json_encode([
-                    'assistant_id' => $assistantId,
-                    'package_id' => $packageId,
-                    'assign_type' => $assignType,
-                    'collection_id' => $collection['id']
-                ]),
-            ]);
-
-            return false;
-        }
-
-        // 体验班级 赠送时长 发送通知 入班引导页面链接 发送短信
-        if (($collection['type'] == CollectionModel::COLLECTION_TYPE_NORMAL) || ($package['package_type'] == PackageExtModel::PACKAGE_TYPE_TRIAL)) {
-            ReviewCourseService::giftCourseTimeAndSendNotify($studentId, $collection);
-        }
-
-        LeadsPoolLogModel::insertRecord([
-            'pid' => $pid,
-            'type' => $assignType,
-            'pool_id' => $assistantId,
-            'pool_type' => Pool::TYPE_EMPLOYEE,
-            'create_time' => time(),
-            'date' => $date,
-            'leads_student_id' => $studentId,
-            'detail' => json_encode([
-                'assistant_id' => $assistantId,
-                'package_id' => $packageId,
-                'collection_id' => $collection['id']
-            ]),
-        ]);
-
+        $success = self::allotCollectionAndAssistant($studentId, $collection, $packageId, $assistantId, $date, $assignType, $pid);
         return boolval($success);
     }
 
@@ -210,4 +183,80 @@ class LeadsService
 
         return true;
     }
+
+    /**
+     * 分配公海班级
+     * @param $studentId
+     * @param $packageId
+     * @return mixed
+     */
+    public static function defaultAssign($studentId, $packageId)
+    {
+        //如果没有可加入的班级，则加入“公海班”，推送默认二维码，不分配助教
+        $collection = CollectionModel::getRecord(["type" => CollectionModel::COLLECTION_TYPE_PUBLIC, "LIMIT" => 1], ['id', 'assistant_id', 'type'], false);
+        $success = self::allotCollectionAndAssistant($studentId, $collection, $packageId, 0, date('Ymd'), LeadsPoolLogModel::TYPE_ASSIGN);
+        return boolval($success);
+    }
+
+    /**
+     * 分配班级操作
+     * @param $studentId
+     * @param $collection
+     * @param $packageId
+     * @param $assistantId
+     * @param $date
+     * @param $assignType
+     * @param string $pid
+     * @return bool
+     */
+    private static function allotCollectionAndAssistant($studentId, $collection, $packageId, $assistantId, $date, $assignType, $pid = '')
+    {
+        //分配班级操作
+        $success = StudentService::allotCollectionAndAssistant($studentId, $collection, EmployeeModel::SYSTEM_EMPLOYEE_ID, $packageId);
+        if (empty($success)) {
+            SimpleLogger::error('student update collection and assistant error', []);
+
+            LeadsPoolLogModel::insertRecord([
+                'pid' => $pid,
+                'type' => LeadsPoolLogModel::TYPE_SET_COLLECTION_ERROR,
+                'pool_id' => $assistantId,
+                'pool_type' => Pool::TYPE_EMPLOYEE,
+                'create_time' => time(),
+                'date' => $date,
+                'leads_student_id' => $studentId,
+                'detail' => json_encode([
+                    'assistant_id' => $assistantId,
+                    'package_id' => $packageId,
+                    'assign_type' => $assignType,
+                    'collection_id' => $collection['id']
+                ]),
+            ]);
+            return false;
+        }
+
+        /**
+         * 体验班级:赠送时长 发送通知 入班引导页面链接 发送短信
+         * 公海班级：无后续操作
+         */
+        if ($collection['type'] == CollectionModel::COLLECTION_TYPE_NORMAL) {
+            ReviewCourseService::giftCourseTimeAndSendNotify($studentId, $collection);
+        }
+        LeadsPoolLogModel::insertRecord([
+            'pid' => $pid,
+            'type' => $assignType,
+            'pool_id' => $assistantId,
+            'pool_type' => Pool::TYPE_EMPLOYEE,
+            'create_time' => time(),
+            'date' => $date,
+            'leads_student_id' => $studentId,
+            'detail' => json_encode([
+                'assistant_id' => $assistantId,
+                'package_id' => $packageId,
+                'collection_id' => $collection['id']
+            ]),
+        ]);
+        return true;
+    }
+
+
 }

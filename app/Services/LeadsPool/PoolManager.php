@@ -60,7 +60,7 @@ class PoolManager
         $leads->setDate($this->date);
 
         $pool = $this->getPool($poolId, $type);
-        $pool->addLeads($leads);
+        return $pool->addLeads($leads);
     }
 
     /**
