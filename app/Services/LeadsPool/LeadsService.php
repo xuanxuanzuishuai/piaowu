@@ -118,25 +118,54 @@ class LeadsService
                 '$studentId' => $studentId,
                 '$assistantId' => $assistantId,
                 '$packageId' => $packageId,
+                '$assignType' => $assignType,
             ]);
+
+            LeadsPoolLogModel::insertRecord([
+                'pid' => $pid,
+                'type' => LeadsPoolLogModel::TYPE_NO_COLLECTION,
+                'pool_id' => $assistantId,
+                'pool_type' => Pool::TYPE_EMPLOYEE,
+                'create_time' => time(),
+                'date' => $date,
+                'leads_student_id' => $studentId,
+                'detail' => json_encode([
+                    'assistant_id' => $assistantId,
+                    'package_id' => $packageId,
+                    'assign_type' => $assignType
+                ]),
+            ]);
+
             return false;
         }
         //分配班级操作
         $success = StudentService::allotCollectionAndAssistant($studentId, $collection, EmployeeModel::SYSTEM_EMPLOYEE_ID, $packageId);
         if (empty($success)) {
             SimpleLogger::error('student update collection and assistant error', []);
+
+            LeadsPoolLogModel::insertRecord([
+                'pid' => $pid,
+                'type' => LeadsPoolLogModel::TYPE_SET_COLLECTION_ERROR,
+                'pool_id' => $assistantId,
+                'pool_type' => Pool::TYPE_EMPLOYEE,
+                'create_time' => time(),
+                'date' => $date,
+                'leads_student_id' => $studentId,
+                'detail' => json_encode([
+                    'assistant_id' => $assistantId,
+                    'package_id' => $packageId,
+                    'assign_type' => $assignType,
+                    'collection_id' => $collection['id']
+                ]),
+            ]);
+
             return false;
         }
+
         // 体验班级 赠送时长 发送通知 入班引导页面链接 发送短信
         if (($collection['type'] == CollectionModel::COLLECTION_TYPE_NORMAL) || ($package['package_type'] == PackageExtModel::PACKAGE_TYPE_TRIAL)) {
             ReviewCourseService::giftCourseTimeAndSendNotify($studentId, $collection);
         }
-        SimpleLogger::info('leads assign success', [
-            '$pid' => $pid,
-            '$studentId' => $studentId,
-            '$assistantId' => $assistantId,
-            '$packageId' => $packageId,
-        ]);
 
         LeadsPoolLogModel::insertRecord([
             'pid' => $pid,
@@ -146,7 +175,7 @@ class LeadsService
             'create_time' => time(),
             'date' => $date,
             'leads_student_id' => $studentId,
-            'detail' => null,
+            'detail' => json_encode(['assistant_id' => $assistantId, 'package_id' => $packageId]),
         ]);
 
         return boolval($success);

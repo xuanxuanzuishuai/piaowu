@@ -30,7 +30,9 @@ class LeadsPoolLogModel extends Model
     /**
      * 错误事件
      */
-    const TYPE_ERROR_NO_RULES = 9001;
+    const TYPE_ERROR_NO_RULES = 9001; // 未配置规则
+    const TYPE_NO_COLLECTION = 9002; // 无可分配班级
+    const TYPE_SET_COLLECTION_ERROR = 9003; // 分班失败
 
     public static $table = 'leads_pool_log';
 
