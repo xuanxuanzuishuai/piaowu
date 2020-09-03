@@ -78,7 +78,9 @@ class PointActivityService
         //保存数据
         self::pointActivityRecord($activityType, array_keys($completeRes), $studentId, $date, $time, $reportData);
         $allAward = [];
-        array_map(function ($completeVal) use (&$reportRes, &$allAward) {
+        //同类奖章奖励同时触发只取等级最大的
+        $medalAward = [];
+        array_map(function ($completeVal) use (&$reportRes, &$allAward, &$medalAward) {
             $awardInfo = json_decode($completeVal, true);
             //app兼容处理
             if ($awardInfo['awards'][0]['type'] == CreditService::CREDIT_AWARD_TYPE) {
@@ -90,10 +92,13 @@ class PointActivityService
                 if ($award['type'] == CreditService::CREDIT_AWARD_TYPE) {
                     $award[] = ['amount' => $award['amount'], 'type' => $award['type']];
                 } elseif ($award['type'] == CategoryV1Model::MEDAL_AWARD_TYPE) {
-                    $allAward[] = MedalService::formatMedalAlertInfo($award['course_id']);
+                    $medalInfo = MedalService::formatMedalAlertInfo($award['course_id']);
+                    $medalAward[$medalInfo['category_id']][$medalInfo['medal_level'] ?: 0] = $medalInfo;
                 }
             }
         }, $completeRes);
+        $medalAward = [];
+        array_map(function ($item)use(&$allAward){$allAward[] = end($item);} ,$medalAward);
         $reportRes['all_award'] = $allAward;
         return $reportRes;
     }

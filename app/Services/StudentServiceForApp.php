@@ -814,7 +814,7 @@ class StudentServiceForApp
             "thumb" => $studentInfo['thumb'] ? AliOSS::replaceCdnDomainForDss($studentInfo["thumb"]) : AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb')),
             'medal_thumb' => $medalThumb,
             "play_lesson_num" => $playSum['lesson_count'],
-            "play_day_num" => ceil($playSum['sum_duration'] / Util::TIMESTAMP_ONEDAY),
+            "play_day_num" => $playSum['play_day'],
             'total_points' => $totalPoints['total_num'] ?? 0,
             'total_medal_category_num' => $totalMedalCategoryNum,
             'get_medal_category_num' => $getMedalCategoryNum,

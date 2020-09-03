@@ -45,7 +45,7 @@ inner join " . self::$table . " p on g.extension->>'$.parent_id' = p.id";
     public static function getNotGetMedalCategory($hasGetMedalCategory)
     {
         $sql = "SELECT * FROM " . self::$table . " WHERE `id` 
-        NOT IN (" . implode(',', $hasGetMedalCategory) . ") AND `category_id` = " . self::FREE_MEDAL_CATEGORY_ID .
+        NOT IN ('" . implode("','", $hasGetMedalCategory) . "') AND `category_id` = " . self::FREE_MEDAL_CATEGORY_ID .
             " AND extension->>'$.parent_id' = 0";
         return MysqlDB::getDB()->queryAll($sql);
     }
