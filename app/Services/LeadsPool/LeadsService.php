@@ -55,15 +55,16 @@ class LeadsService
         }
         // 检测学生是否存在转介绍人以及转介绍人的班级信息
         $refereeData = StudentRefereeService::studentRefereeUserData($student['id']);
+        $refCollectionRes = false;
         if (!empty($refereeData)) {
             $refCollectionRes = self::refLeads($student['id'], $refereeData['assistant_id'], $event['package_id']);
-            //转介绍分配规则无可分配班级，继续执行正常班级分配
-            if (empty($refCollectionRes)) {
-                $success = self::pushLeads($event['uuid'], $student, $event['package_id']);
-                // 无可分配路径，进入公海班
-                if (!$success) {
-                    self::defaultAssign($student['id'], $event['package_id']);
-                }
+        }
+        //转介绍分配规则无可分配班级，继续执行正常班级分配
+        if (empty($refCollectionRes)) {
+            $success = self::pushLeads($event['uuid'], $student, $event['package_id']);
+            // 无可分配路径，进入公海班
+            if (!$success) {
+                self::defaultAssign($student['id'], $event['package_id']);
             }
         }
         return true;
