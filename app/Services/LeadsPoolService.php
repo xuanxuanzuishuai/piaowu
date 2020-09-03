@@ -202,23 +202,57 @@ class LeadsPoolService
     public static function updatePoolStatus($poolId, $poolStatus, $operatorId)
     {
         //检测线索池是否可以修改
-        if (empty(self::checkPoolIsCanUpdate($poolId))) {
+        $poolInfo = self::checkPoolIsCanUpdate($poolId);
+        if (empty($poolInfo)) {
             throw  new RunTimeException(['leads_pool_stop_update']);
         }
+        $time = time();
+        $db = MysqlDB::getDB();
+        $db->beginTransaction();
+        //修改池子的状态
         $updateRes = LeadsPoolModel::updateRecord($poolId, ['status' => $poolStatus], false);
         if (empty($updateRes)) {
+            $db->rollBack();
             throw  new RunTimeException(['update_failure']);
         }
+        //修改分配规则已经指向到本池子的规则状态
+        $upLevelPoolRules = LeadsPoolRuleModel::getRecords(
+            [
+                'target_id' => $poolId,
+                'target_type' => $poolInfo['target_type'],
+                'status[<]' => $poolStatus,
+            ],
+            ['id', 'pool_id'], false);
+        if (!empty($upLevelPoolRules)) {
+            $upLevelPoolRulesIds = array_column($upLevelPoolRules, 'id');
+            foreach ($upLevelPoolRulesIds as $ruk => $ruv) {
+                $updateRuleRes = LeadsPoolRuleModel::updateRecord($ruv, ['status' => $poolStatus], false);
+                if (empty($updateRuleRes)) {
+                    $db->rollBack();
+                    throw  new RunTimeException(['update_failure']);
+                }
+            }
+        }
         //记录操作日志
-        LeadsPoolOpLogModel::insertRecord([
+        $opLogInsertRes = LeadsPoolOpLogModel::insertRecord([
             'op_type' => LeadsPoolOpLogModel::OP_TYPE_POOL_UPDATE,
             'detail' => json_encode(['pool_id' => $poolId, 'status' => $poolStatus]),
-            'create_time' => time(),
+            'create_time' => $time,
             'operator' => $operatorId,
             'track_id' => Util::makeUniqueId(),
         ], false);
+        if (empty($opLogInsertRes)) {
+            $db->rollBack();
+            throw  new RunTimeException(['insert_failure']);
+        }
+        $db->commit();
+
         //更新分配规则缓存信息
-        CacheManager::delPoolRulesCache($poolId, date("Ymd"));
+        $delCachePoolIds = array_column($upLevelPoolRules, 'pool_id');
+        $delCachePoolIds[] = $poolId;
+        array_map(function ($delPoolId) use ($time) {
+            CacheManager::delPoolRulesCache($delPoolId, date("Ymd", $time));
+        }, $delCachePoolIds);
         return true;
     }
 
@@ -278,15 +312,15 @@ class LeadsPoolService
     /**
      * 检测线索池是否可以被修改
      * @param $poolId
-     * @return bool
+     * @return array
      */
     private static function checkPoolIsCanUpdate($poolId)
     {
         //错误的ID和总池禁止修改:false禁止修改 true允许修改
         $poolDetail = LeadsPoolModel::getById($poolId);
         if (empty($poolDetail) || ($poolDetail['type'] == LeadsPoolModel::LEADS_POOL_TYPE_PUBLIC)) {
-            return false;
+            return [];
         }
-        return true;
+        return $poolDetail;
     }
 }
