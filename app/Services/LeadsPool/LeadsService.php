@@ -175,7 +175,11 @@ class LeadsService
             'create_time' => time(),
             'date' => $date,
             'leads_student_id' => $studentId,
-            'detail' => json_encode(['assistant_id' => $assistantId, 'package_id' => $packageId]),
+            'detail' => json_encode([
+                'assistant_id' => $assistantId,
+                'package_id' => $packageId,
+                'collection_id' => $collection['id']
+            ]),
         ]);
 
         return boolval($success);
