@@ -463,6 +463,9 @@ class CreditService
      */
     public static function bothHandEvaluateAction($data)
     {
+        if ($data['score_final'] <= 0) {
+            return ;
+        }
         return self::oneTypeOneTaskCommonDeal(self::BOTH_HAND_EVALUATE, $data);
     }
 

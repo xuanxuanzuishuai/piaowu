@@ -115,7 +115,7 @@ class AIPlayRecordService
             }
             if ($newRecord['record_id'] <= $playRecord['record_id']) { unset($newRecord['record_id']); }
             if (empty($newRecord['audio_url'])) { unset($newRecord['audio_url']); }
-            if ($newRecord['score_final'] <= $playRecord['score_final']) { unset($newRecord['score_final']); }
+            if ($newRecord['score_final'] < $playRecord['score_final']) { unset($newRecord['score_final']); }
             if ($newRecord['score_complete'] <= $playRecord['score_complete']) { unset($newRecord['score_complete']); }
             if ($newRecord['score_pitch'] <= $playRecord['score_pitch']) { unset($newRecord['score_pitch']); }
             if ($newRecord['score_rhythm'] <= $playRecord['score_rhythm']) { unset($newRecord['score_rhythm']); }
@@ -975,8 +975,7 @@ class AIPlayRecordService
         if (($recordData['data_type'] == AIPlayRecordModel::DATA_TYPE_NORMAL) &&
             ($recordData['ui_entry'] == AIPlayRecordModel::UI_ENTRY_TEST) &&
             ($recordData['hand'] == AIPlayRecordModel::HAND_BOTH) &&
-            ($recordData['is_phrase'] == Constants::STATUS_FALSE) &&
-            ($recordData['score_final'] > 0)) {
+            ($recordData['is_phrase'] == Constants::STATUS_FALSE)) {
             $activityType = CreditService::BOTH_HAND_EVALUATE;
             try {
                 PointActivityService::reportRecord($activityType, $studentId, ['app_version' => $appVersion, 'score_final' => $recordData['score_final']]);

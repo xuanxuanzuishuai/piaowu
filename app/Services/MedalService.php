@@ -268,7 +268,7 @@ class MedalService
         $relateMedal = [];
         $baseRelateMedal = [self::TASK_TALENT, self::CREDIT_RICH];
         if ($type == CreditService::SIGN_IN_TASKS) {
-            $relateMedal = [self::DAY_DAY_GROW, self::SIGN_IN_PLAYER];
+            return [self::DAY_DAY_GROW, self::SIGN_IN_PLAYER, self::CREDIT_RICH];
         } elseif ($type == CreditService::PLAY_PIANO_TASKS) {
             $relateMedal = [self::DILIGENT_MODEL];
         } elseif ($type == CreditService::BOTH_HAND_EVALUATE) {
@@ -480,6 +480,10 @@ class MedalService
         if (isset($eventSetting['min_grade_gt'])) {
             //特殊处理首次练琴奖章(对于特定的上报类型不校验分数)
             if (isset($eventSetting['green_light_report_type']) && !in_array($reportType, explode(',', $eventSetting['green_light_report_type']))) {
+                if ($data['score_final'] <= $eventSetting['min_grade_gt']) {
+                    $returnResult = false;
+                }
+            } else {
                 if ($data['score_final'] <= $eventSetting['min_grade_gt']) {
                     $returnResult = false;
                 }

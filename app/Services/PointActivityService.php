@@ -97,7 +97,6 @@ class PointActivityService
                 }
             }
         }, $completeRes);
-        $medalAward = [];
         array_map(function ($item)use(&$allAward){$allAward[] = end($item);} ,$medalAward);
         $reportRes['all_award'] = $allAward;
         return $reportRes;
