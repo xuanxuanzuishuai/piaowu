@@ -53,19 +53,24 @@ class LeadsService
             SimpleLogger::info("package type is not trial,don't need alloc collection", ['student_uuid' => $event['uuid'], 'package_type' => $package['package_type']]);
             return true;
         }
+        //分配结果变量：false代表分配失败 true代表分配成功
+        $allotCollectionRes = false;
         // 检测学生是否存在转介绍人以及转介绍人的班级信息
         $refereeData = StudentRefereeService::studentRefereeUserData($student['id']);
-        $refCollectionRes = false;
         if (!empty($refereeData)) {
-            $refCollectionRes = self::refLeads($student['id'], $refereeData['assistant_id'], $event['package_id']);
+            $allotCollectionRes = self::refLeads($student['id'], $refereeData['assistant_id'], $event['package_id']);
         }
-        //转介绍分配规则无可分配班级，继续执行正常班级分配
-        if (empty($refCollectionRes)) {
-            $success = self::pushLeads($event['uuid'], $student, $event['package_id']);
-            // 无可分配路径，进入公海班
-            if (!$success) {
-                self::defaultAssign($student['id'], $event['package_id']);
-            }
+        //检测当前学生是否存在助教:如存在则直接检测当前助教是否有可分配的组班中的班级
+        if (empty($allotCollectionRes) && !empty($student['assistant_id'])) {
+            $allotCollectionRes = self::assistantAssign($student['id'], $package, $student['assistant_id']);
+        }
+        //正常班级分配
+        if (empty($allotCollectionRes)) {
+            $allotCollectionRes = self::pushLeads($event['uuid'], $student, $event['package_id']);
+        }
+        //无可分配路径，进入公海班
+        if (empty($allotCollectionRes)) {
+            self::defaultAssign($student['id'], $event['package_id']);
         }
         return true;
     }
@@ -196,6 +201,25 @@ class LeadsService
         //如果没有可加入的班级，则加入“公海班”，推送默认二维码，不分配助教
         $collection = CollectionModel::getRecord(["type" => CollectionModel::COLLECTION_TYPE_PUBLIC, "LIMIT" => 1], ['id', 'assistant_id', 'type'], false);
         $success = self::allotCollectionAndAssistant($studentId, $collection, $packageId, 0, date('Ymd'), LeadsPoolLogModel::TYPE_ASSIGN);
+        return boolval($success);
+    }
+
+    /**
+     * 分配学生所属助教下组班中的班级
+     * @param $studentId
+     * @param $packageId
+     * @return mixed
+     */
+    public static function assistantAssign($studentId, $package, $assistantId)
+    {
+        $collection = CollectionService::getRefCollection($assistantId,
+            CollectionModel::COLLECTION_READY_TO_GO_STATUS,
+            $package['package_type'],
+            $package['trial_type']);
+        if (empty($collection)) {
+            return false;
+        }
+        $success = self::allotCollectionAndAssistant($studentId, $collection, $package['package_id'], $assistantId, date('Ymd'), LeadsPoolLogModel::TYPE_ASSIGN);
         return boolval($success);
     }
 
