@@ -43,24 +43,32 @@ class LeadsPoolService
             'type' => LeadsPoolModel::LEADS_POOL_TYPE_SELF_CREATE,
         ];
         //池子分配规则
-        $poolRulesInsertData = array_map(function ($rv) use ($operatorId, $time, $params) {
+        $poolRulesInsertData = [];
+        array_map(function ($rv) use ($operatorId, $time, $params, &$poolRulesInsertData) {
             if (empty($rv['weight']) || empty($rv['target_id'])) {
                 throw  new RunTimeException(['weight_or_target_id_required']);
-            } else {
-                return [
-                    'weight' => $rv['weight'],
-                    'target_type' => $params['target_type'],
-                    'target_id' => $rv['target_id'],
-                    'operator' => $operatorId,
-                    'create_time' => $time,
-                    'status' => LeadsPoolRuleModel::LEADS_POOL_RULE_STATUS_ABLE,
-                ];
             }
+            $weight = (int)$rv['weight'];
+            if (($weight <= 0) || ($weight > 100)) {
+                throw  new RunTimeException(['leads_pool_rules_weight_error']);
+            }
+            if (isset($poolRulesInsertData[$rv['target_id']])) {
+                throw  new RunTimeException(['leads_pool_rules_target_id_repeat']);
+            }
+            $poolRulesInsertData[$rv['target_id']] = [
+                'weight' => $rv['weight'],
+                'target_type' => $params['target_type'],
+                'target_id' => $rv['target_id'],
+                'operator' => $operatorId,
+                'create_time' => $time,
+                'status' => LeadsPoolRuleModel::LEADS_POOL_RULE_STATUS_ABLE,
+            ];
+
         }, $params['alloc_rules']);
         //添加数据
         $db = MysqlDB::getDB();
         $db->beginTransaction();
-        $insertResPoolId = LeadsPoolModel::addLeadsPoolAndRuleData($poolInsertData, $poolRulesInsertData, $operatorId);
+        $insertResPoolId = LeadsPoolModel::addLeadsPoolAndRuleData($poolInsertData, array_values($poolRulesInsertData), $operatorId);
         if (empty($insertResPoolId)) {
             $db->rollBack();
             throw  new RunTimeException(['insert_failure']);
@@ -124,6 +132,10 @@ class LeadsPoolService
                 if (empty($rv['weight']) || empty($rv['target_id']) || empty($rv['status']) || empty($rv['rule_id'])) {
                     throw  new RunTimeException(['leads_pool_rules_params_required']);
                 }
+                $weight = (int)$rv['weight'];
+                if (($weight <= 0) || ($weight > 100)) {
+                    throw  new RunTimeException(['leads_pool_rules_weight_error']);
+                }
                 //标记删除的规则ID
                 if ($rv['status'] == LeadsPoolRuleModel::LEADS_POOL_RULE_STATUS_DEL) {
                     unset($ableOldRulesTargetIds[array_search($rv['target_id'], $ableOldRulesTargetIds)]);
@@ -151,14 +163,21 @@ class LeadsPoolService
         }
         //增加线索池子分配规则
         if (is_array($params['alloc_rules']['add']) && !empty($params['alloc_rules']['add'])) {
-            $poolRulesAddData = array_map(function ($rv) use ($operatorId, $time, $params, $ableOldRulesTargetIds) {
+            array_map(function ($rv) use ($operatorId, $time, $params, $ableOldRulesTargetIds, &$poolRulesAddData) {
                 if (empty($rv['weight']) || empty($rv['target_id']) || empty($rv['status'])) {
                     throw  new RunTimeException(['leads_pool_rules_params_required']);
                 }
                 if (array_search($rv['target_id'], $ableOldRulesTargetIds) !== false) {
                     throw  new RunTimeException(['leads_pool_target_id_repeat']);
                 }
-                return [
+                $weight = (int)$rv['weight'];
+                if (($weight <= 0) || ($weight > 100)) {
+                    throw  new RunTimeException(['leads_pool_rules_weight_error']);
+                }
+                if (isset($poolRulesAddData[$rv['target_id']])) {
+                    throw  new RunTimeException(['leads_pool_rules_target_id_repeat']);
+                }
+                $poolRulesAddData[$rv['target_id']] = [
                     'pool_id' => $params['pool_id'],
                     'weight' => $rv['weight'],
                     'target_type' => $params['target_type'],
@@ -178,7 +197,7 @@ class LeadsPoolService
         }
         $db = MysqlDB::getDB();
         $db->beginTransaction();
-        $updateRes = LeadsPoolModel::updateLeadsPoolAndRuleData($params['pool_id'], $opLog, $poolUpdateData, $poolRulesUpdateData, $poolRulesAddData);
+        $updateRes = LeadsPoolModel::updateLeadsPoolAndRuleData($params['pool_id'], $opLog, $poolUpdateData, $poolRulesUpdateData, array_values($poolRulesAddData));
         if (empty($updateRes)) {
             $db->rollBack();
             throw  new RunTimeException(['update_failure']);

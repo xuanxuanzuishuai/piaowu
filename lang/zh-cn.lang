@@ -410,3 +410,6 @@ pool_status_is_required="线索池子状态缺失"
 weight_or_target_id_required="分配规则分配比例或目标ID缺失"
 leads_pool_target_id_repeat="线索池子目标对象重复"
 leads_pool_rules_params_required="分配规则参数缺失"
+leads_pool_rules_weight_error="分配规则分配比例参数错误"
+leads_pool_rules_target_id_repeat="分配规则线索分配归属对象重复"
+
