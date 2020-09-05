@@ -14,6 +14,7 @@ use App\Libs\Erp;
 use App\Libs\NewSMS;
 use App\Libs\SimpleLogger;
 use App\Libs\WeChat\WeChatMiniPro;
+use App\Models\CollectionModel;
 use App\Models\EmployeeModel;
 use App\Models\PackageExtModel;
 use App\Models\ReviewCourseLogModel;
@@ -720,5 +721,71 @@ class ReviewCourseService
             usleep(200);
             $voiceCall->execTask($insert);
         }
+    }
+
+    /**
+     * 更新点评课状态版本1使用（待新功能稳定，删除此方法）
+     * @param $uuid
+     * @param $packageType
+     * @param $trialType
+     * @param $appId
+     * @param $packageId
+     */
+    public static function updateStudentReviewCourseStatusV1($uuid, $packageType, $trialType, $appId, $packageId)
+    {
+        $student = StudentService::getByUuid($uuid);
+        $studentId = $student['id'];
+        if ($student['has_review_course'] >= $packageType) {
+            SimpleLogger::info('student has review course gt package type', ['has_review_course' => $student['has_review_course'], 'package_type' => $packageType]);
+            return;
+        } else {
+            // 更新点评课标记
+            $update = [
+                'has_review_course' => $packageType,
+            ];
+            StudentModel::updateRecord($studentId, $update);
+            self::completeEventTask($student['uuid'], $packageType, $trialType, $appId);
+        }
+        //同步用户付费状态信息到crm粒子数据中
+        if ($packageType == PackageExtModel::PACKAGE_TYPE_NORMAL) {
+            QueueService::studentFirstPayNormalCourse($studentId);
+            return ;
+        }
+        /**
+         * 分配体验班级：已分配班级的学生禁止重复分班
+         * 满足分配条件的班级选择规则
+         * 有推荐人:
+         *          (1)优先分配给推荐人所属助教的组班中的班级，不管班级启用状态，不管是否超过班容。
+         *          (2)若推荐人的助教组班中的班级有多个班级，则分配最早创建的班级。
+         *          (3)若推荐人的助教组班中的班级为0，则学员分班逻辑按“用户无推荐人”的分班逻辑进行。
+         *          (4)学员加入推荐人的助教的班级后，占用班级当天的分配额度。
+         * 没有推荐人:
+         *          (1)通过启用状态,组班期时间,班级类型,授课类型,班级当前分配学生总量筛选出班级列表
+         *          (2)可分配的班级按照当天进班的学生人数按照由低到高排序,取分配人数最低的班级, 如果人数相同则选择创建时间最早的班级
+         */
+        if (!empty($student['collection_id'])) {
+            return ;
+        }
+        $collection = CollectionService::getCollectionByRefereeIdV1($studentId, $packageType, $trialType);
+        if (empty($collection)) {
+            $collection = CollectionService::getCollectionByCourseTypeV1($packageType, $trialType);
+        }
+
+        if (empty($collection)) {
+            return ;
+        }
+
+        // 分配助教和班级
+        $success = StudentService::allotCollectionAndAssistant($student['id'], $collection, EmployeeModel::SYSTEM_EMPLOYEE_ID, $packageId);
+        if ($success) {
+            SimpleLogger::error('student update collection and assistant error', []);
+        }
+
+        // 体验班级 赠送时长 发送通知
+        if (($collection['type'] != CollectionModel::COLLECTION_TYPE_NORMAL) ||
+            ($packageType != PackageExtModel::PACKAGE_TYPE_TRIAL)) {
+            return ;
+        }
+        self::giftCourseTimeAndSendNotify($student['id'], $collection);
     }
 }

@@ -217,4 +217,6 @@ class Constants
     const STUDENT_CERTIFICATE_BASE_IMG = 'student_certificate_base_img';
     //线索池分配方式类型
     const DICT_TYPE_LEADS_POOL_TARGET_TYPE = 'leads_pool_target_type';
+    //学生班级分配方式
+    const DICT_TYPE_STUDENT_COLLECTION_ALLOT_TYPE = 'student_collection_allot_type';
 };

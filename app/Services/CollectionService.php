@@ -782,4 +782,81 @@ class CollectionService
         return $data;
     }
 
+    /**
+     * 学生转介绍推荐人的班级助教信息（待新功能稳定，删除此方法）
+     * @param $studentId
+     * @param $packageType
+     * @param $trialType
+     * @return array|mixed
+     */
+    public static function getCollectionByRefereeIdV1($studentId, $packageType, $trialType)
+    {
+        //获取学生转介绍推荐人的班级助教信息
+        $refereeData = StudentRefereeService::studentRefereeUserData($studentId);
+        if (empty($refereeData['assistant_id'])) {
+            return [];
+        }
+        $time = time();
+        $where['assistant_id'] = $refereeData['assistant_id'];
+        $where['teaching_type'] = $packageType;
+        $where['trial_type'] = $trialType;
+        //班级状态
+        $where['prepare_start_time[<=]'] = $time;
+        $where['prepare_end_time[>=]'] = $time;
+        $where['ORDER'] = ["id" => "ASC"];
+        $refereeCollection = CollectionModel::getRecord($where, '*');
+        return $refereeCollection;
+    }
+
+    /**
+     * 获取课程可以分配的集合列表（待新功能稳定，删除此方法）
+     * @param $packageType
+     * @param $trialType
+     * @return array|null
+     */
+    public static function getCollectionByCourseTypeV1($packageType, $trialType)
+    {
+        //数据库对象
+        $db = MysqlDB::getDB();
+        $time = time();
+        //当前可用的班级列表
+        $dayStartEndTimestamp = Util::getStartEndTimestamp($time);
+        $querySql = "SELECT
+                        c.id,
+                        c.capacity,
+                        c.assistant_id,
+                        c.teaching_start_time,
+                        c.teaching_end_time,
+                        c.type,
+                        c.wechat_number,
+                        ( SELECT COUNT( id ) FROM student AS s WHERE s.collection_id = c.id ) AS total_allot,
+                        COUNT( scl.id ) AS today_allot
+                    FROM
+                        collection AS c
+                        LEFT JOIN student_collection_log AS scl ON c.id = scl.new_collection_id
+                        AND scl.old_collection_id = 0 AND scl.create_time BETWEEN " . $dayStartEndTimestamp[0] . " AND " . $dayStartEndTimestamp[1] . "
+                    WHERE
+                        c.STATUS = " . CollectionModel::COLLECTION_STATUS_IS_PUBLISH . "
+                        AND c.type = " . CollectionModel::COLLECTION_TYPE_NORMAL . "
+                        AND c.teaching_type = " . $packageType . "
+                        AND c.trial_type = " . $trialType . "
+                        AND c.prepare_start_time <= " . $time . "
+                        AND c.prepare_end_time  >= " . $time . "
+                    GROUP BY
+                        c.id
+                    HAVING
+                        c.capacity > total_allot
+                    ORDER BY
+                        today_allot ASC,
+                        c.id ASC
+                    LIMIT 1";
+        //查询数据获取可分配班级
+        $list = $db->queryAll($querySql);
+        //如果没有可加入的班级，则加入“公海班”，推送默认二维码，不分配助教
+        if (empty($list)) {
+            $list = CollectionModel::getRecords(["type" => CollectionModel::COLLECTION_TYPE_PUBLIC, "LIMIT" => 1], ['id', 'assistant_id', 'type'], false);
+        }
+        //返回结果
+        return $list[0] ?? null;
+    }
 }

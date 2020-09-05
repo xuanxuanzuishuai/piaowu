@@ -9,6 +9,7 @@
 namespace App\Controllers\OrgWeb;
 
 use App\Controllers\ControllerBase;
+use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\MysqlDB;
 use App\Libs\NewSMS;
@@ -19,8 +20,10 @@ use App\Models\PackageExtModel;
 use App\Models\StudentModelForApp;
 use App\Services\AIBillService;
 use App\Services\CommonServiceForApp;
+use App\Services\DictService;
 use App\Services\ErpService;
 use App\Services\Queue\QueueService;
+use App\Services\ReviewCourseService;
 use App\Services\UserPlayServices;
 use App\Services\AppVersionService;
 use App\Models\AppVersionModel;
@@ -174,11 +177,20 @@ class Erp extends ControllerBase
         }
 
         if (!empty($package)) {
-            // 更新用户点评课数据，转介绍任务，付费通知
-            QueueService::newLeads([
-                'uuid' => $params['uuid'],
-                'package_id' => $params['package_id'],
-            ]);
+            // 更新用户点评课数据，转介绍任务，付费通知:增加新旧分配规则切换标志防止新功能上线出现问题（待新功能稳定，删除此判断）
+            $isLeadsPoolAllot = DictService::getKeyValue(Constants::DICT_TYPE_STUDENT_COLLECTION_ALLOT_TYPE,'leads_pool_allot');
+            if (empty($isLeadsPoolAllot)) {
+                ReviewCourseService::updateStudentReviewCourseStatusV1($params['uuid'],
+                    $package['package_type'],
+                    $package['trial_type'],
+                    $package['app_id'],
+                    $params['package_id']);
+            } else {
+                QueueService::newLeads([
+                    'uuid' => $params['uuid'],
+                    'package_id' => $params['package_id'],
+                ]);
+            }
         }
 
         // 异步通知处理付费事件
