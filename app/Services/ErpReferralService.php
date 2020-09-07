@@ -582,12 +582,15 @@ class ErpReferralService
         if ($status == self::AWARD_STATUS_GIVEN) {
             //当前操作的奖励基础信息
             $awardBaseInfo = $erp->getUserAwardInfo($awardId);
-            //验证被推荐人是否已退费
-            $info = self::verifyStudentStatus($eventTaskId, array_column($awardBaseInfo['data']['award_info'], 'res_uuid'));
-            if (!empty($info)) {
-                return ['has_refund' => $info];
-            }
             if (!empty($awardBaseInfo['data']['award_info'])) {
+                $needCheckAward = array_filter($awardBaseInfo['data']['award_info'], function ($award)use($time) {
+                    return ($award['award_type'] == self::AWARD_TYPE_CASH && in_array($award['status'], [self::AWARD_STATUS_WAITING, self::AWARD_STATUS_GIVE_FAIL]) && $award['create_time'] + $award['delay'] < $time);
+                });
+                //验证被推荐人是否已退费
+                $info = self::verifyStudentStatus($eventTaskId, array_column($needCheckAward, 'res_uuid'));
+                if (!empty($info)) {
+                    return ['has_refund' => $info];
+                }
                 foreach ($awardBaseInfo['data']['award_info'] as $award) {
                     //仅现金,且未发放/已发放失败,且满足奖励延迟时间限制可调用
                     if ($award['award_type'] == self::AWARD_TYPE_CASH && in_array($award['status'], [self::AWARD_STATUS_WAITING, self::AWARD_STATUS_GIVE_FAIL]) && $award['create_time'] + $award['delay'] < $time) {
