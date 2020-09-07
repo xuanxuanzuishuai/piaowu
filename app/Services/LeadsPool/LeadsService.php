@@ -11,6 +11,7 @@ use App\Models\LeadsPoolLogModel;
 use App\Models\PackageExtModel;
 use App\Models\StudentModel;
 use App\Services\CollectionService;
+use App\Services\Queue\QueueService;
 use App\Services\ReviewCourseService;
 use App\Services\StudentRefereeService;
 use App\Services\StudentService;
@@ -72,6 +73,12 @@ class LeadsService
         if (empty($allotCollectionRes)) {
             self::defaultAssign($student['id'], $event['package_id']);
         }
+
+        QueueService::studentPaid([
+            'uuid' => $event['uuid'],
+            'package_id' => $event['package_id'],
+        ]);
+
         return true;
     }
 
