@@ -17,4 +17,7 @@ class EventTaskModel extends Model
 
     //奖章类型的活动
     const MEDAL_TYPE = 8;
+
+    //关联奖励的类型
+    const MEDAL_AWARD = 4;
 }

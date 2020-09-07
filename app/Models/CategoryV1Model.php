@@ -41,6 +41,7 @@ inner join
  p.id = g.extension->>'$.parent_id'
  inner join 
  " . EventTaskModel::$table . " t on t.type = " . EventTaskModel::MEDAL_TYPE . "
+ and t.award->>'$.awards[0].type' = " . EventTaskModel::MEDAL_AWARD . "
  and g.id = t.award->>'$.awards[0].course_id' left join " . EventModel::$table . " e on t.event_id = e.id";
         return MysqlDB::getDB()->queryAll($sql, []);
     }

@@ -420,7 +420,7 @@ class CreditService
         //更新用户的完成情况
         self::updateUserCompleteStatus($data['student_id'], self::SIGN_IN_TASKS, $limitCount, $shouldGetTaskId);
         if (self::checkSendAwardTask($data['student_id'], $shouldGetTaskId, $limitCount)) {
-            self::dealCreditTaskFinish($data['uuid'], $shouldGetTaskId, $data);
+            self::dealCreditTaskFinish(self::SIGN_IN_TASKS, $data['uuid'], $shouldGetTaskId, $data);
             return $hasAchieveTask;
         }
     }
@@ -448,7 +448,7 @@ class CreditService
                 }
                 self::updateUserCompleteStatus($data['student_id'], self::PLAY_PIANO_TASKS, $condition['every_day_count'], $v['id']);
                 if (self::checkSendAwardTask($data['student_id'], $v['id'], $condition['every_day_count'])) {
-                    self::dealCreditTaskFinish($data['uuid'], $v['id'], $data);
+                    self::dealCreditTaskFinish(self::PLAY_PIANO_TASKS, $data['uuid'], $v['id'], $data);
                     $hasAchieveTask[$v['id']] = $v['award'];
                 }
             }
@@ -547,7 +547,7 @@ class CreditService
             }
             self::updateUserCompleteStatus($data['student_id'], $type, $condition['every_day_count'], $v['id']);
             if (self::checkSendAwardTask($data['student_id'], $v['id'], $condition['every_day_count'])) {
-                self::dealCreditTaskFinish($data['uuid'], $v['id'], $data);
+                self::dealCreditTaskFinish($type, $data['uuid'], $v['id'], $data);
                 $hasAchieveTask[$v['id']] = $v['award'];
             }
         }
@@ -667,16 +667,21 @@ class CreditService
     }
 
     /**
+     * @param $type
      * @param $uuid
      * @param $shouldGetTaskId
      * @param $data
      * @param int $status
      * 积分活动任务完成处理
      */
-    private static function dealCreditTaskFinish($uuid, $shouldGetTaskId, $data, $status = ErpReferralService::EVENT_TASK_STATUS_COMPLETE)
+    private static function dealCreditTaskFinish($type, $uuid, $shouldGetTaskId, $data, $status = ErpReferralService::EVENT_TASK_STATUS_COMPLETE)
     {
         $erp = new Erp();
         $erp->updateTask($uuid, $shouldGetTaskId, $status);
+        //签到活动完成不产生奖章任务达人增益
+        if ($type == self::SIGN_IN_TASKS) {
+            return;
+        }
         MedalService::recordMedalRelateTaskCount($data);
     }
 

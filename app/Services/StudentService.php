@@ -1486,7 +1486,7 @@ class StudentService
         if (!empty($checkResponse)) {
             array_map(function ($item) {
                 if ($item == AliContentCheck::ILLEGAL_RESULT) {
-                    throw new RunTimeException(['illegal_content']);
+                    throw new RunTimeException(['illegal_img']);
                 }
             }, $checkResponse);
         }

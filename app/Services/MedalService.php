@@ -115,15 +115,16 @@ class MedalService
         //缓存奖章在弹窗的时候需要的信息
         $medalBaseInfo = array_column(GoodsV1Model::getMedalInfo(), NULL,'medal_id');
         //所有奖章的基本信息(用做奖章弹出的信息缓存)
-        array_map(function ($info) use($redis, $medalBaseInfo) {
+        array_map(function ($info) use($redis, $medalBaseInfo, $endTime, $date) {
             $awardInfo = json_decode($info['award'], true)['awards'];
             if (!empty($awardInfo)) {
                 foreach ($awardInfo as $award) {
                   if ($award['type'] == CategoryV1Model::MEDAL_AWARD_TYPE) {
-                      $medalKey = self::getMedalInfoKey($award['course_id']);
+                      $medalKey = self::getMedalInfoKey($award['course_id'], $date);
                       $medalBase = $medalBaseInfo[$award['course_id']];
                       $medalBase['task_desc'] = $info['name'];
                       $redis->hset($medalKey,self::MEDAL_INFO_KEY, json_encode($medalBase));
+                      return $redis->expire($medalKey, $endTime);
                   }
                 }
             }
@@ -136,9 +137,10 @@ class MedalService
                 $allMedalCategoryArr[$medalInfo['category_id']][$medalInfo['medal_level'] ?: 0] = $medalInfo;
             }
         }
-        array_walk($allMedalCategoryArr, function ($value, $k) use($redis) {
-           $key = self::getMedalCategoryKey($k);
+        array_walk($allMedalCategoryArr, function ($value, $k) use($redis, $endTime, $date) {
+           $key = self::getMedalCategoryKey($k, $date);
            $redis->hset($key, self::MEDAL_CATEGORY_KEY, json_encode($value));
+           return $redis->expire($key, $endTime);
         });
     }
 
@@ -808,11 +810,15 @@ class MedalService
     /**
      * @param $studentId
      * @param $categoryId
+     * @return int|null
      * @throws RunTimeException
      * 设置默认奖章
      */
     public static function setUserDefaultMedalCategory($studentId, $categoryId)
     {
+        if (empty($categoryId)) {
+            return StudentMedalCategoryModel::batchUpdateRecord(['is_default' => StudentMedalCategoryModel::NOT_SHOW], ['student_id' => $studentId]);
+        }
         //是否拥有
         $record = StudentMedalCategoryModel::getRecord(['student_id' => $studentId, 'medal_category_id' => $categoryId]);
         if (empty($record)) {

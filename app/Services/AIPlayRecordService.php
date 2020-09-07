@@ -766,6 +766,8 @@ class AIPlayRecordService
                 'name' => $studentInfo['name'],
                 'score' => $bestRecord['score'] ?? 0,
                 'order' => $order,
+                'thumb' => $studentInfo['thumb'] ? AliOSS::replaceCdnDomainForDss($studentInfo["thumb"]) : AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb')),
+                'medal_thumb' => StudentServiceForApp::getStudentShowMedal($studentId)
             ];
             $myself['score'] = self::formatScore($myself['score']);
         }

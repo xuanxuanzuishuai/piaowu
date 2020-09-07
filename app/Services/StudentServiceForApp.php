@@ -239,7 +239,7 @@ class StudentServiceForApp
             'id' => $student['id'],
             'uuid' => $student['uuid'],
             'student_name' => $student['name'],
-            'avatar' => AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb')),
+            'avatar' => $student['thumb'] ? AliOSS::replaceCdnDomainForDss($student["thumb"]) : AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb')),
             'mobile' => $student['mobile'],
             'create_time' => (int)$student['create_time'],
             'sub_status' => $student['sub_status'],
@@ -412,6 +412,12 @@ class StudentServiceForApp
     {
         $medalInfo = StudentMedalCategoryModel::getDefaultShowMedalId($studentId);
         return $medalInfo ? MedalService::formatMedalAlertInfo(reset($medalInfo)['medal_id'])['thumbs'] : '';
+    }
+
+    public static function getStudentShowMedalInfo($studentId)
+    {
+        $medalInfo = StudentMedalCategoryModel::getDefaultShowMedalId($studentId);
+        return $medalInfo ? MedalService::formatMedalAlertInfo(reset($medalInfo)['medal_id']) : '';
     }
 
     public static function registerStudentInUserCenter($name, $mobile, $uuid = '', $birthday = '', $gender = '')
@@ -783,7 +789,9 @@ class StudentServiceForApp
         //获取学生头像和昵称
         $studentInfo = StudentModel::getById($studentId);
         //默认奖章
-        $medalThumb = self::getStudentShowMedal($studentId);
+        $medalThumbInfo = self::getStudentShowMedalInfo($studentId);
+        $medalThumb = $medalThumbInfo['thumbs'] ?? '';
+        $medalThumbCategoryId = $medalThumbInfo['category_id'] ?? '';
         //获取学生积分
         $totalPoints = PointActivityService::totalPoints($studentId, PointActivityService::ACCOUNT_SUB_TYPE_STUDENT_POINTS);
         //整体奖章类别的数量
@@ -813,6 +821,7 @@ class StudentServiceForApp
             "name" => $studentInfo['name'],
             "thumb" => $studentInfo['thumb'] ? AliOSS::replaceCdnDomainForDss($studentInfo["thumb"]) : AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb')),
             'medal_thumb' => $medalThumb,
+            'medal_thumb_category_id' => $medalThumbCategoryId,
             "play_lesson_num" => $playSum['lesson_count'],
             "play_day_num" => $playSum['play_day'],
             'total_points' => $totalPoints['total_num'] ?? 0,

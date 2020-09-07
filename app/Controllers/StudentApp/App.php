@@ -520,18 +520,7 @@ class App extends ControllerBase
      */
     public function setDefaultMedal(Request $request, Response $response)
     {
-        $rules = [
-            [
-                'key' => 'category_id',
-                'type' => 'required',
-                'error_code' => 'category_id_is_required'
-            ],
-        ];
         $params = $request->getParams();
-        $result = Valid::appValidate($params, $rules);
-        if ($result['code'] != Valid::CODE_SUCCESS) {
-            return $response->withJson($result, StatusCode::HTTP_OK);
-        }
         try {
             MedalService::setUserDefaultMedalCategory($this->ci['student']['id'], $params['category_id']);
         }  catch (RunTimeException $e) {
