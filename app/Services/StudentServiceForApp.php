@@ -190,35 +190,14 @@ class StudentServiceForApp
 
         $flags = FlagsService::flagsToArray($student['flags']);
 
+        $flagCheckObject = $student;
+        $flagCheckObject['platform'] = $platform;
+        $flagCheckObject['version'] = $version;
+        $flags = self::checkFlags($flagCheckObject, $flags);
 
-        // 新曲谱灰测标记
-        $newScoreFlagId = DictConstants::get(DictConstants::FLAG_ID, 'new_score');
-        if (!in_array($newScoreFlagId, $flags)) {
-            $object = $student;
-            $object['platform'] = $platform;
-            $object['version'] = $version;
-            $useNewScore = FlagsService::hasFlag($object, $newScoreFlagId);
-            if ($useNewScore) {
-                $flags[] = (int)$newScoreFlagId;
-            }
-        }
-
-        // app审核标记
+        // 审核版本自动激活
         $reviewFlagId = DictConstants::get(DictConstants::FLAG_ID, 'app_review');
-        if (!in_array($reviewFlagId, $flags)) {
-            $object = $student;
-            $object['platform'] = $platform;
-            $object['version'] = $version;
-            $isReviewVersion = FlagsService::hasFlag($object, $reviewFlagId);
-            if ($isReviewVersion) {
-                $flags[] = (int)$reviewFlagId;
-            }
-        } else {
-            $isReviewVersion = true;
-        }
-
-        if ($isReviewVersion) {
-            // 审核版本自动激活
+        if (in_array($reviewFlagId, $flags)) {
             $student['sub_end_date'] = '20250101';
         }
 
@@ -235,6 +214,83 @@ class StudentServiceForApp
         } else {
             $isPwd = Constants::STATUS_TRUE;
         }
+        $loginData = [
+            'id' => $student['id'],
+            'uuid' => $student['uuid'],
+            'student_name' => $student['name'],
+            'avatar' => $student['thumb'] ? AliOSS::replaceCdnDomainForDss($student["thumb"]) : AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb')),
+            'mobile' => $student['mobile'],
+            'create_time' => (int)$student['create_time'],
+            'sub_status' => $student['sub_status'],
+            'sub_start_date' => $student['sub_start_date'],
+            'sub_end_date' => $student['sub_end_date'],
+            'trial_start_date' => $student['trial_start_date'],
+            'trial_end_date' => $student['trial_end_date'],
+            'act_sub_info' => (int)$student['act_sub_info'],
+            'first_pay_time' => (int)$student['first_pay_time'],
+            'last_play_time' => (int)$student['last_play_time'],
+            'has_review_course' => $student['has_review_course'],
+            'need_add_wx' => $needAddWx,
+            'wechat_qr' => $wechatQr,
+            'token' => $token,
+            'teachers' => [],
+            'flags' => $flags,
+            'total_duration' => $totalDuration,
+            'is_anonymous' => 0,
+            'total_points' => $totalPoints['total_num'] ?? 0,
+            'student_is_set_pwd' => $isPwd,
+            'is_join_ranking' => $student['is_join_ranking'],
+            'medal_thumb' => self::getStudentShowMedal($student['id'])
+        ];
+
+        return [null, $loginData];
+    }
+
+    /**
+     * token登录
+     *
+     * @param string $mobile 手机号
+     * @param string $token 登录返回的token
+     * @param $platform
+     * @param $version
+     * @return array [0]errorCode [1]登录数据
+     */
+    public static function loginWithToken($mobile, $token, $platform, $version)
+    {
+        $student = StudentModelForApp::getStudentInfo(null, $mobile);
+        $cacheToken = StudentModelForApp::getStudentToken($student['id']);
+
+        if (empty($cacheToken) || $cacheToken != $token) {
+            return ['invalid_token'];
+        }
+
+        $flags = FlagsService::flagsToArray($student['flags']);
+
+        $flagCheckObject = $student;
+        $flagCheckObject['platform'] = $platform;
+        $flagCheckObject['version'] = $version;
+        $flags = self::checkFlags($flagCheckObject, $flags);
+
+        // 审核版本自动激活
+        $reviewFlagId = DictConstants::get(DictConstants::FLAG_ID, 'app_review');
+        if (in_array($reviewFlagId, $flags)) {
+            $student['sub_end_date'] = '20250101';
+        }
+
+        // 用户已购买49元订单且在有效期内，首页会展示助教微信二维码
+        list($needAddWx, $wechatQr) = CollectionService::getCollectionWechatInfo($student['collection_id']);
+
+        // 学生今日练琴总时长
+        $totalDuration = AIPlayRecordService::getStudentSumDuration($student['id']);
+        // 获取学生积分
+        $totalPoints = PointActivityService::totalPoints($student['id'], PointActivityService::ACCOUNT_SUB_TYPE_STUDENT_POINTS);
+
+        if (empty($student['password'])) {
+            $isPwd = Constants::STATUS_FALSE;
+        } else {
+            $isPwd = Constants::STATUS_TRUE;
+        }
+
         $loginData = [
             'id' => $student['id'],
             'uuid' => $student['uuid'],
@@ -306,34 +362,19 @@ class StudentServiceForApp
         }
         return [];
     }
+
     /**
-     * token登录
-     *
-     * @param string $mobile 手机号
-     * @param string $token 登录返回的token
-     * @param $platform
-     * @param $version
-     * @return array [0]errorCode [1]登录数据
+     * 检查标记
+     * @param $object
+     * @param $flags
+     * @return
      */
-    public static function loginWithToken($mobile, $token, $platform, $version)
+    public static function checkFlags($object, $flags = [])
     {
-        $student = StudentModelForApp::getStudentInfo(null, $mobile);
-        $cacheToken = StudentModelForApp::getStudentToken($student['id']);
-
-        if (empty($cacheToken) || $cacheToken != $token) {
-            return ['invalid_token'];
-        }
-
-        $flags = FlagsService::flagsToArray($student['flags']);
-
         // 新曲谱灰测标记
         $newScoreFlagId = DictConstants::get(DictConstants::FLAG_ID, 'new_score');
         if (!in_array($newScoreFlagId, $flags)) {
-            $object = $student;
-            $object['platform'] = $platform;
-            $object['version'] = $version;
-            $useNewScore = FlagsService::hasFlag($object, $newScoreFlagId);
-            if ($useNewScore) {
+            if (FlagsService::hasFlag($object, $newScoreFlagId)) {
                 $flags[] = (int)$newScoreFlagId;
             }
         }
@@ -341,66 +382,20 @@ class StudentServiceForApp
         // app审核标记
         $reviewFlagId = DictConstants::get(DictConstants::FLAG_ID, 'app_review');
         if (!in_array($reviewFlagId, $flags)) {
-            $object = $student;
-            $object['platform'] = $platform;
-            $object['version'] = $version;
-            $isReviewVersion = FlagsService::hasFlag($object, $reviewFlagId);
-            if ($isReviewVersion) {
+            if (FlagsService::hasFlag($object, $reviewFlagId)) {
                 $flags[] = (int)$reviewFlagId;
             }
-        } else {
-            $isReviewVersion = true;
         }
 
-        if ($isReviewVersion) {
-            // 审核版本自动激活
-            $student['sub_end_date'] = '20250101';
+        // omr搜索功能开关标记
+        $omrFlagId = DictConstants::get(DictConstants::FLAG_ID, 'omr_search');
+        if (!in_array($omrFlagId, $flags)) {
+            if (FlagsService::hasFlag($object, $omrFlagId)) {
+                $flags[] = (int)$omrFlagId;
+            }
         }
 
-        // 用户已购买49元订单且在有效期内，首页会展示助教微信二维码
-        list($needAddWx, $wechatQr) = CollectionService::getCollectionWechatInfo($student['collection_id']);
-
-        // 学生今日练琴总时长
-        $totalDuration = AIPlayRecordService::getStudentSumDuration($student['id']);
-        // 获取学生积分
-        $totalPoints = PointActivityService::totalPoints($student['id'], PointActivityService::ACCOUNT_SUB_TYPE_STUDENT_POINTS);
-
-        if (empty($student['password'])) {
-            $isPwd = Constants::STATUS_FALSE;
-        } else {
-            $isPwd = Constants::STATUS_TRUE;
-        }
-
-        $loginData = [
-            'id' => $student['id'],
-            'uuid' => $student['uuid'],
-            'student_name' => $student['name'],
-            'avatar' => $student['thumb'] ? AliOSS::replaceCdnDomainForDss($student["thumb"]) : AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb')),
-            'mobile' => $student['mobile'],
-            'create_time' => (int)$student['create_time'],
-            'sub_status' => $student['sub_status'],
-            'sub_start_date' => $student['sub_start_date'],
-            'sub_end_date' => $student['sub_end_date'],
-            'trial_start_date' => $student['trial_start_date'],
-            'trial_end_date' => $student['trial_end_date'],
-            'act_sub_info' => (int)$student['act_sub_info'],
-            'first_pay_time' => (int)$student['first_pay_time'],
-            'last_play_time' => (int)$student['last_play_time'],
-            'has_review_course' => $student['has_review_course'],
-            'need_add_wx' => $needAddWx,
-            'wechat_qr' => $wechatQr,
-            'token' => $token,
-            'teachers' => [],
-            'flags' => $flags,
-            'total_duration' => $totalDuration,
-            'is_anonymous' => 0,
-            'total_points' => $totalPoints['total_num'] ?? 0,
-            'student_is_set_pwd' => $isPwd,
-            'is_join_ranking' => $student['is_join_ranking'],
-            'medal_thumb' => self::getStudentShowMedal($student['id'])
-        ];
-
-        return [null, $loginData];
+        return $flags;
     }
 
     /**

@@ -215,6 +215,7 @@ class DictConstants {
             'res_free', // 资源免费
             'app_review', // AppStore审核
             'gray_engine', // 灰度测试引擎
+            'omr_search', // omr曲谱搜索
         ]
     ];
 

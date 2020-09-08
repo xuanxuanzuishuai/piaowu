@@ -21,7 +21,7 @@ class FilterService
     const CONDITION_KEYS = [
         'id', 'uuid', 'mobile', 'gender', 'create_time', 'channel_id',
         'sub_start_date', 'sub_end_date', 'trial_start_date', 'trial_end_date',
-        'first_pay_time', 'platform', 'version'
+        'first_pay_time', 'platform', 'version', 'has_review_course'
     ];
 
     /**
