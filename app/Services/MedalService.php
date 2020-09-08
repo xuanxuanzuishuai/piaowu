@@ -481,9 +481,11 @@ class MedalService
         //最低分数
         if (isset($eventSetting['min_grade_gt'])) {
             //特殊处理首次练琴奖章(对于特定的上报类型不校验分数)
-            if (isset($eventSetting['green_light_report_type']) && !in_array($reportType, explode(',', $eventSetting['green_light_report_type']))) {
-                if ($data['score_final'] <= $eventSetting['min_grade_gt']) {
-                    $returnResult = false;
+            if (isset($eventSetting['green_light_report_type'])) {
+                if (!in_array($reportType, explode(',', $eventSetting['green_light_report_type']))) {
+                    if ($data['score_final'] <= $eventSetting['min_grade_gt']) {
+                        $returnResult = false;
+                    }
                 }
             } else {
                 if ($data['score_final'] <= $eventSetting['min_grade_gt']) {
