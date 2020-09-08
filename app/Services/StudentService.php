@@ -700,7 +700,7 @@ class StudentService
             $row = [];
             $row['student_id'] = $item['student_id'];
             $row['name'] = $item['name'];
-            $row['mobile'] = Util::hideUserMobile($item['mobile']);
+            $row['mobile'] = (($item['country_code'] == StudentModel::DEFAULT_COUNTRY_CODE) ? '' : ($item['country_code'] . '-')) . Util::hideUserMobile($item['mobile']);
             $row['pay_status'] = empty($item['first_pay_time']) ? '未付费' : '已付费';
             //计算过期时间戳
             $expireTime = strtotime($item['sub_end_date'].' 00:00');
@@ -1490,5 +1490,128 @@ class StudentService
                 }
             }, $checkResponse);
         }
+    }
+
+    /**
+     * @param $params
+     * @return array
+     * @throws RunTimeException
+     * 返回推荐人列表
+     */
+    public static function getRefereeStudent($params)
+    {
+        $refereeInfo = StudentModel::getById($params['student_id']);
+        if (!empty($refereeInfo)) {
+            $params['referral_mobile'] = $refereeInfo['mobile'];
+        } else {
+            throw new RunTimeException(['student_not_exist']);
+        }
+
+        $recode = $studentList = [];
+        $ret = ErpReferralService::getReferredList($params);
+        if (!empty($ret)) {
+            $recode = array_column($ret['list'], null, 'student_id');
+            $studentList = array_keys($recode);
+        }
+
+        $studentInfo = StudentModel::getRefereeStudentInfo($studentList);
+        if (!empty($studentInfo)) {
+            foreach ($studentInfo as $key => $value) {
+                $studentInfo[$key]['max_event_task_name'] = $recode[$value['id']]['max_event_task_name'];
+                $studentInfo[$key]['mobile'] = Util::hideUserMobile($value['mobile']);
+            }
+        }
+        return [
+            'list'        => $studentInfo,
+            'total_count' => $ret['total_count'] ?? 0,
+        ];
+    }
+
+    /**
+     * @param $params
+     * @return array
+     * @throws RunTimeException
+     * 获取当前学员的红包列表
+     */
+    public static function getRefereeRedPacket($params)
+    {
+        $refereeInfo = StudentModel::getById($params['student_id']);
+        if (!empty($refereeInfo)) {
+            $params['referrer_mobile'] = $refereeInfo['mobile'];
+        } else {
+            throw new RunTimeException(['student_not_exist']);
+        }
+        if (empty($params['award_type'])) {
+            $params['award_type'] = ErpReferralService::AWARD_TYPE_CASH;
+        }
+        return ErpReferralService::getAwardList($params);
+    }
+
+    /**
+     * @param $params
+     * @return array
+     * @throws RunTimeException
+     * 获取当前学员的激活码列表
+     */
+    public static function getRefereeCode($params)
+    {
+        $refereeInfo = StudentModel::getById($params['student_id']);
+        if (!empty($refereeInfo)) {
+            $params['apply_user_mobile'] = $refereeInfo['mobile'];
+        } else {
+            throw new RunTimeException(['student_not_exist']);
+        }
+
+        return GiftCodeService::batchGetCode($params);
+    }
+
+    /**
+     * @param $params
+     * @return array
+     * 获取订单列表
+     * @throws RunTimeException
+     */
+    public static function getIntellectOrder($params)
+    {
+        if (!empty($params['pay_low_amount']) && $params['pay_low_amount'] <= 0) {
+            throw new RunTimeException(['data_error']);
+        }
+        if (!empty($params['pay_high_amount']) && $params['pay_high_amount'] <= 0) {
+            throw new RunTimeException(['data_error']);
+        }
+
+        $employUuid = $makeOrderList = [];
+        $ret = StudentModel::getIntellectOrder($params);
+        foreach ($ret['list'] as $value) {
+            $employUuid[] = $value['employee_uuid'];
+        }
+        if (!empty($employUuid)) {
+            $makeOrderList = EmployeeModel::getRecords(['uuid' => $employUuid], ['uuid', 'name']);
+        }
+        $makeOrderListKey = array_column($makeOrderList, null, "uuid");
+
+        foreach ($ret['list'] as $k => $v) {
+            $ret['list'][$k]['student_mobile'] = Util::hideUserMobile($v['student_mobile']);
+            $ret['list'][$k]['make_order'] = $makeOrderListKey[$v['uuid']] ?? '';
+            $ret['list'][$k]['code_status'] = $v['code_status'] == StudentModel::CODE_STATUS_DEPRECATED ? "已退费" : "已处理";
+            $ret['list'][$k]['buy_time'] = date('Y-m-d H:i:s', $v['buy_time']);
+            $ret['list'][$k]['create_time'] = date('Y-m-d H:i:s', $v['create_time']);
+            $ret['list'][$k]['bill_amount'] = $v['bill_amount'] / 100;
+            $ret['list'][$k]['pay_status'] = "支付成功";
+        }
+        return [$ret['totalCount'], $ret['list']];
+    }
+
+    /**
+     * @param $params
+     * @return array
+     * 获取员工信息
+     */
+    public static function getEmployee($params)
+    {
+        $where = [
+            'name[~]' => $params['employee_name']
+        ];
+        return EmployeeModel::getRecords($where, ['uuid', 'name'], false);
     }
 }

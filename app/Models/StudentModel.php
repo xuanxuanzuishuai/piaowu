@@ -30,6 +30,9 @@ class StudentModel extends Model
     const SUB_STATUS_STOP = 0; //禁用
     const SUB_STATUS_NORMAL = 1; //正常
 
+    const CODE_STATUS_DEPRECATED = 2;
+    const DEFAULT_COUNTRY_CODE = 86;
+
     const NOT_ACTIVE_TEXT = '未激活';
 
     //添加渠道
@@ -670,6 +673,7 @@ class StudentModel extends Model
         $select  = " SELECT `s`.`id` AS student_id,
                        `s`.`mobile`,
                        `s`.`name`,
+                       `s`.`country_code`,
                        `s`.`sub_end_date`,
                        `s`.`sub_status`,
                        `s`.`first_pay_time`,
@@ -846,5 +850,141 @@ class StudentModel extends Model
             'collection_id' => $collectionIds,
         ];
         return self::getRecords($where, ['id', 'uuid']);
+    }
+
+    /**
+     * @param $ids
+     * @return array
+     * 获取学员班级，助教和课管信息
+     */
+    public static function getRefereeStudentInfo($ids)
+    {
+        $student = self::$table;
+        $assistant = EmployeeModel::$table;
+        $courseManager = EmployeeModel::$table;
+        $collection = CollectionModel::$table;
+
+        return MysqlDB::getDB()->select($student, [
+            "[>]{$assistant}(assistant)"         => ["assistant_id" => "id"],
+            "[>]{$courseManager}(courseManager)" => ["course_manage_id" => "id"],
+            "[>]{$collection}"                   => ["collection_id" => "id"],
+        ], [
+            $student . '.id',
+            $student . '.name',
+            $student . '.mobile',
+            'assistant.name(assistant_name)',
+            'courseManager.name(course_manager_name)',
+            $collection . '.name(collection_name)',
+        ], [
+            $student . '.id' => $ids,
+            "ORDER"          => ["$student.create_time" => "DESC"],
+        ]);
+    }
+
+    /**
+     * @param $params
+     * @return array
+     * 获取订单列表
+     */
+    public static function getIntellectOrder($params)
+    {
+        $student = self::$table;
+        $employeeModel = EmployeeModel::$table;
+        $collection = CollectionModel::$table;
+        $giftCode = GiftCodeModel::$table;
+        $erpPackage = ErpPackageModel::$table;
+
+        list($params['page'], $params['count']) = Util::formatPageCount($params);
+        $where = [
+            "LIMIT" => [($params['page'] - 1) * $params['count'], $params['count']],
+            "ORDER" => ["{$giftCode}.create_time" => "DESC"]
+        ];
+        if (!empty($params['order_id'])) {
+            $where["{$giftCode}.parent_bill_id"] = $params['order_id'];
+        }
+
+        if (!empty($params['student_id'])) {
+            $where["{$student}.id"] = $params['student_id'];
+        }
+
+        if (!empty($params['student_name'])) {
+            $where["{$student}.name[~]"] = $params['student_name'];
+        }
+
+        if (!empty($params['student_mobile'])) {
+            $where["{$student}.mobile"] = $params['student_mobile'];
+        }
+
+        if (!empty($params['pay_start_time'])) {
+            $where["{$giftCode}.buy_time[>]"] = $params['pay_start_time'];
+        }
+
+        if (!empty($params['pay_end_time'])) {
+            $where["{$giftCode}.buy_time[<]"] = $params['pay_end_time'];
+        }
+
+        if (!empty($params['pay_low_amount'])) {
+            $where["{$giftCode}.bill_amount[<=]"] = $params['pay_low_amount'];
+        }
+
+        if (!empty($params['pay_high_amount'])) {
+            $where["{$giftCode}.bill_amount[>=]"] = $params['pay_high_amount'];
+        }
+
+        if (!empty($params['order_status'])) {
+            if ($params['orderStatus'] == self::CODE_STATUS_DEPRECATED) {
+                $where["{$giftCode}.code_status"] = $params['order_status'];
+            } else {
+                $where["{$giftCode}.code_status[!]"] = $params['order_status'];
+            }
+        }
+
+        if (!empty($params['order_type'])) {
+            $where["{$giftCode}.generate_channel"] = $params['order_type'];
+        }
+
+        if (!empty($params['create_start_time'])) {
+            $where["{$giftCode}.create_time[>]"] = $params['create_start_time'];
+        }
+
+        if (!empty($params['create_end_time'])) {
+            $where["{$giftCode}.create_time[<]"] = $params['create_end_time'];
+        }
+
+        //成单人
+        if (!empty($params['employee_uuid'])) {
+            $where["{$giftCode}.employee_uuid"] = $params['employee_uuid'];
+        }
+
+        $join = [
+            "[><]{$giftCode}"                    => ["id" => "buyer"],
+            "[>]{$erpPackage}"                   => ["{$giftCode}.bill_package_id" => "id"],
+            "[>]{$employeeModel}(assistant)"     => ["assistant_id" => "id"],
+            "[>]{$employeeModel}(courseManager)" => ["course_manage_id" => "id"],
+            "[>]{$employeeModel}(create)"        => ["{$giftCode}.operate_user" => "id"],  //创建人
+            "[>]{$collection}"                   => ["collection_id" => "id"],
+        ];
+
+        $list = MysqlDB::getDB()->select($student, $join, [
+            "{$giftCode}.parent_bill_id",
+            "{$erpPackage}.name(package_name)",
+            "{$student}.name(student_name)",
+            "{$student}.mobile(student_mobile)",
+            "{$collection}.name(collection_name)",
+            "assistant.name(assistant_name)",
+            "courseManager.name(course_manager_name)",
+            "{$giftCode}.bill_amount",
+            "{$giftCode}.code_status",
+            "{$giftCode}.buy_time",
+            "{$giftCode}.remarks",
+            "create.name(create_name)",
+            "{$giftCode}.create_time",
+            "{$giftCode}.employee_uuid",
+        ], $where);
+        $totalCount = MysqlDB::getDB()->count($student, $join, ["{$student}.id",], $where);
+        return [
+            'list'       => $list,
+            'totalCount' => $totalCount,
+        ];
     }
 }

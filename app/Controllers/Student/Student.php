@@ -23,7 +23,6 @@ use App\Libs\Valid;
 use App\Models\StudentModel;
 use App\Models\StudentOrgModel;
 use App\Services\ChannelService;
-use App\Services\DictService;
 use App\Services\FlagsService;
 use App\Services\StudentAccountService;
 use App\Services\StudentService;

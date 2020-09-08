@@ -163,6 +163,15 @@ class OrgWebRouter extends RouterBase
         '/org_web/student/allot_course_manage' => ['method' => ['post'], 'call' => OrgWebStudent::class . ':allotCourseManage'],
         '/org_web/student/student_mobile' => ['method' => ['get'], 'call' => OrgWebStudent::class . ':getStudentMobile'],
         '/org_web/student/fuzzy_search_student' => ['method' => ['get'], 'call' => OrgWebStudent::class . ':fuzzySearchStudent'],
+
+        '/org_web/student/referee_student'         => array('method' => array('get'), 'call' => OrgWebStudent::class . ':refereeStudent'),
+        '/org_web/student/referee_red_packet'      => array('method' => array('get'), 'call' => OrgWebStudent::class . ':refereeRedPacket'),
+        '/org_web/student/referee_tasks'           => array('method' => array('get'), 'call' => OrgWebStudent::class . ':refereeTasks'),
+        '/org_web/student/referee_code'            => array('method' => array('get'), 'call' => OrgWebStudent::class . ':refereeCode'),
+        '/org_web/student/referee_intellect_order' => array('method' => array('get'), 'call' => OrgWebStudent::class . ':refereeIntellectOrder'),
+        '/org_web/student/intellect_order'         => array('method' => array('get'), 'call' => OrgWebStudent::class . ':intellectOrder'),
+        '/org_web/student/get_make_order'          => array('method' => array('get'), 'call' => OrgWebStudent::class . ':getMakeOrder'),
+        '/org_web/student/get_share_token'         => array('method' => array('get'), 'call' => OrgWebStudent::class . ':getShareToken'),
         // 学生跟进记录
         '/student/student_remark/add' => array('method' => array('post'), 'call' => '\App\Controllers\Student\StudentRemark:add'),
         '/student/student_remark/remark_list' => array('method' => array('get'), 'call' => '\App\Controllers\Student\StudentRemark:remarkList'),
