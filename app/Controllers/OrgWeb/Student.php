@@ -302,10 +302,9 @@ class Student extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        list($total, $tasks) = ReviewCourseTaskService::getTasks($params);
-        $shareToken = AIPlayReportService::getShareReportToken($params['student_id'], date('Ymd')) ?? '';
+        list($total, $tasks) = StudentService::getRefereeTasks($params);
 
-        return HttpHelper::buildResponse($response, ['total_count' => $total, 'list' => $tasks, 'share_token' => $shareToken]);
+        return HttpHelper::buildResponse($response, ['total_count' => $total, 'list' => $tasks]);
     }
 
     /**

@@ -896,6 +896,7 @@ class StudentModel extends Model
 
         list($params['page'], $params['count']) = Util::formatPageCount($params);
         $where = [
+            "{$giftCode}.generate_channel" => GiftCodeModel::BUYER_TYPE_ERP_ORDER,
             "LIMIT" => [($params['page'] - 1) * $params['count'], $params['count']],
             "ORDER" => ["{$giftCode}.create_time" => "DESC"]
         ];

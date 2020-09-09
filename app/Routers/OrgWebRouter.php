@@ -171,7 +171,6 @@ class OrgWebRouter extends RouterBase
         '/org_web/student/referee_intellect_order' => array('method' => array('get'), 'call' => OrgWebStudent::class . ':refereeIntellectOrder'),
         '/org_web/student/intellect_order'         => array('method' => array('get'), 'call' => OrgWebStudent::class . ':intellectOrder'),
         '/org_web/student/get_make_order'          => array('method' => array('get'), 'call' => OrgWebStudent::class . ':getMakeOrder'),
-        '/org_web/student/get_share_token'         => array('method' => array('get'), 'call' => OrgWebStudent::class . ':getShareToken'),
         // 学生跟进记录
         '/student/student_remark/add' => array('method' => array('post'), 'call' => '\App\Controllers\Student\StudentRemark:add'),
         '/student/student_remark/remark_list' => array('method' => array('get'), 'call' => '\App\Controllers\Student\StudentRemark:remarkList'),

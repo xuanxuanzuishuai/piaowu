@@ -1550,6 +1550,23 @@ class StudentService
     /**
      * @param $params
      * @return array
+     * 练琴记录添加分享token
+     */
+    public static function getRefereeTasks($params)
+    {
+        list($total, $tasks) = ReviewCourseTaskService::getTasks($params);
+        if (!empty($tasks)) {
+            foreach ($tasks as $key => $value) {
+                $tasks[$key]['share_token'] = AIPlayReportService::getShareReportToken($params['student_id'], date('Ymd',strtotime($value['play_date']))) ?? '';
+                $tasks[$key]['student_mobile'] = Util::hideUserMobile($value['student_mobile']);
+            }
+        }
+        return [$total, $tasks];
+    }
+
+    /**
+     * @param $params
+     * @return array
      * @throws RunTimeException
      * 获取当前学员的激活码列表
      */
@@ -1598,6 +1615,7 @@ class StudentService
             $ret['list'][$k]['create_time'] = date('Y-m-d H:i:s', $v['create_time']);
             $ret['list'][$k]['bill_amount'] = $v['bill_amount'] / 100;
             $ret['list'][$k]['pay_status'] = "支付成功";
+            $ret['list'][$k]['order_type'] = "客户购买课程";
         }
         return [$ret['totalCount'], $ret['list']];
     }
