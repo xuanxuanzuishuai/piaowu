@@ -186,6 +186,7 @@ class EmployeeService
             'teacher_id' => $params['teacher_id'] ?? null,
             'org_id'     => $params['org_id'] ?? 0,
             'dept_id'    => $params['dept_id'] ?? 0,
+            'email'      => $params['email'] ?? '',
         ];
 
         /**
