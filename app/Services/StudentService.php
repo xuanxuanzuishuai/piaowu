@@ -1557,8 +1557,12 @@ class StudentService
         list($total, $tasks) = ReviewCourseTaskService::getTasks($params);
         if (!empty($tasks)) {
             foreach ($tasks as $key => $value) {
-                $tasks[$key]['share_token'] = AIPlayReportService::getShareReportToken($params['student_id'], date('Ymd',strtotime($value['play_date']))) ?? '';
                 $tasks[$key]['student_mobile'] = Util::hideUserMobile($value['student_mobile']);
+                $tasks[$key]['play_date'] = date("Y-m-d",strtotime($value['play_date']));
+                $tasks[$key]['sum_duration'] = Util::secondToDate($value['sum_duration']);
+                $tasks[$key]['review_date'] = date("Y-m-d",strtotime($value['review_date']));
+                $tasks[$key]['review_course_report'] = AIPlayReportService::reviewCourseReportUrl($value['id'],$value['play_date'],$params['student_id']);
+                $tasks[$key]['review_daily'] = AIPlayReportService::dailyReportUrl($value['play_date'],$params['student_id']);
             }
         }
         return [$total, $tasks];

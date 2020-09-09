@@ -925,4 +925,21 @@ class Util
     {
         return md5(uniqid(md5(microtime(true)), true));
     }
+
+    /**
+     * @param $seconds
+     * @return string
+     * 将时间段转换为时分秒
+     */
+    public static function secondToDate($seconds)
+    {
+        if ($seconds > 3600){
+            $hours = intval($seconds/3600);
+            $minutes = $seconds % 3600;
+            $time = $hours."时".gmstrftime('%M分%S秒', $minutes);
+        }else{
+            $time = gmstrftime('%M分%S秒', $seconds);
+        }
+        return $time;
+    }
 }

@@ -316,4 +316,39 @@ class AIPlayReportService
             }
         }
     }
+
+    /**
+     * @param $task_id
+     * @param $date
+     * @param $student_id
+     * @return string
+     * 获取点评报告分享链接
+     */
+    public static function reviewCourseReportUrl($task_id, $date, $student_id)
+    {
+        if (empty($task_id) || empty($date) || empty($student_id)) {
+            return '';
+        }
+        $reviewCourseReportHost = DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'review_course_report');
+        $task_id = "?task_id=" . $task_id;
+        $jwt = "&jwt=" . AIPlayReportService::getShareReportToken($student_id, $date) ?? '';
+        return $reviewCourseReportHost . $task_id . $jwt;
+    }
+
+    /**
+     * @param $date
+     * @param $student_id
+     * @return string
+     * 获取日报分享链接
+     */
+    public static function dailyReportUrl($date, $student_id)
+    {
+        if (empty($date) || empty($student_id)) {
+            return '';
+        }
+        $dailyReportHost = DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'review_daily');
+        $formatDate = "?date=" . date("Y-m-d", strtotime($date));
+        $jwt = "&jwt=" . AIPlayReportService::getShareReportToken($student_id, $date) ?? '';
+        return $dailyReportHost . $formatDate . $jwt;
+    }
 }

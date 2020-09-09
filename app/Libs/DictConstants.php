@@ -153,6 +153,8 @@ class DictConstants {
             'package_id',
             'plus_package_id',
             'mini_package_id',
+            'review_course_report',
+            'review_daily',
         ]
     ];
 
