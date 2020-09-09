@@ -69,17 +69,16 @@ count(distinct(formatDateTime(parseDateTimeBestEffort(toString(create_time)), '%
     {
         $chdb = CHDB::getDB();
 
-        $sql = "SELECT
-    formatDateTime(parseDateTimeBestEffort(toString(create_time)), '%Y%m%d') AS play_date,
-    COUNT(DISTINCT lesson_id) AS lesson_count,
-    SUM(duration) AS sum_duration
+        $sql = "SELECT formatDateTime(parseDateTimeBestEffort(toString(create_time)), '%Y%m%d') AS play_date,
+COUNT(DISTINCT lesson_id) AS lesson_count,
+SUM(duration) AS sum_duration
 FROM
-    ai_play_record
+" . self::$table . "
 WHERE
-    student_id =:student_id
-        AND end_time >=:start_time
-        AND end_time <:end_time
-        AND duration > 0
+student_id =:student_id
+AND end_time >=:start_time
+AND end_time <:end_time
+AND duration > 0
 GROUP BY play_date";
         $result = $chdb->queryAll($sql, ['student_id' => $studentId, 'start_time' => $startTime, 'end_time' => $endTime]);
         return $result;
@@ -95,13 +94,12 @@ GROUP BY play_date";
     {
         $chdb = CHDB::getDB();
 
-        $sql = "SELECT
-    count(distinct student_id) play_user_num
+        $sql = "SELECT count(distinct student_id) play_user_num
 FROM
-    ai_play_record
+" . self::$table . "
 WHERE
-        end_time >=:start_time
-        AND end_time <:end_time";
+end_time >=:start_time
+AND end_time <:end_time";
         $result = $chdb->queryAll($sql, ['start_time' => $startTime, 'end_time' => $endTime]);
         return reset($result);
     }

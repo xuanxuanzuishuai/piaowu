@@ -199,7 +199,7 @@ class TermSprintService
                 WeChatService::USER_TYPE_STUDENT,
                 UserWeixinModel::BUSI_TYPE_STUDENT_SERVER);
             if (empty($studentWeChatInfo)) {
-                throw new RunTimeException(['not_bound_we_chat']);
+                return ['not_wexin' => 'not_bound_we_chat'];
             }
         }
         $erp = new Erp();

@@ -132,10 +132,10 @@ class PointActivity extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         try {
-            TermSprintService::drawAward($this->ci['student']['id'], $params['task_id']);
+            $data = TermSprintService::drawAward($this->ci['student']['id'], $params['task_id']);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
-        return HttpHelper::buildResponse($response, []);
+        return HttpHelper::buildResponse($response, [$data]);
     }
 }
