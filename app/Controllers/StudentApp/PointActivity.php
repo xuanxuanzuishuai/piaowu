@@ -12,6 +12,7 @@ use App\Libs\Util;
 use App\Libs\Valid;
 use App\Services\MedalService;
 use App\Services\PointActivityService;
+use App\Services\TermSprintService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use App\Controllers\ControllerBase;
@@ -96,5 +97,45 @@ class PointActivity extends ControllerBase
     {
         $data = MedalService::getNeedAlertMedal($this->ci['student']['id']);
         return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * 学期冲刺主页信息
+     */
+    public function termSprint(Request $request, Response $response)
+    {
+        $data = TermSprintService::getTermSprintRelateTask($this->ci['student']['id']);
+        return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * 发送新学期冲刺奖励
+     */
+    public function drawAward(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'task_id',
+                'type' => 'required',
+                'error_code' => 'event_task_id_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            TermSprintService::drawAward($this->ci['student']['id'], $params['task_id']);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
+        return HttpHelper::buildResponse($response, []);
     }
 }

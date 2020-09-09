@@ -101,8 +101,6 @@ class MedalService
         $relateTasks = $erp->eventTaskList(0, self::MEDAl_TASK)['data'];
         //设置过期
         $endTime = strtotime($date) + 172800 - time();
-        //整体奖章类别的总数
-        $redis->set(self::TOTAL_MEDAL_CATEGORY_NUM, count($relateTasks));
         //事件对应奖章信息
         $allTaskArr = [];
         array_map(function ($item) use($redis, $date, $endTime, &$allTaskArr) {
@@ -137,6 +135,8 @@ class MedalService
                 $allMedalCategoryArr[$medalInfo['category_id']][$medalInfo['medal_level'] ?: 0] = $medalInfo;
             }
         }
+        //整体奖章类别的总数
+        $redis->set(self::TOTAL_MEDAL_CATEGORY_NUM, count($allMedalCategoryArr));
         array_walk($allMedalCategoryArr, function ($value, $k) use($redis, $endTime, $date) {
            $key = self::getMedalCategoryKey($k, $date);
            $redis->hset($key, self::MEDAL_CATEGORY_KEY, json_encode($value));
@@ -184,7 +184,7 @@ class MedalService
      * @return string|string[]
      * 奖章信息相关key
      */
-    private static function getMedalInfoKey($medalId, $date = NULL)
+    public static function getMedalInfoKey($medalId, $date = NULL)
     {
         empty($date) && $date = date('Y-m-d');
         return self::MEDAL_INFO_KEY . '_' . $date . '_' . $medalId;
@@ -473,7 +473,6 @@ class MedalService
                 $returnResult = false;
             }
         }
-
         //上传的连续签到多少天的要求
         if (isset($eventSetting['continue_days']) && $data['continue_days'] < $eventSetting['continue_days']) {
             $returnResult = false;

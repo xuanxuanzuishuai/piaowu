@@ -402,6 +402,16 @@ class StudentAppRouter extends RouterBase
             'method'  => ['get'],
             'call'    => PointActivity::class . ':needAlert',
             'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
+        '/student_app/term/term_sprint' => [
+            'method'  => ['get'],
+            'call'    => PointActivity::class . ':termSprint',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
+        '/student_app/term/draw_award' => [
+            'method'  => ['post'],
+            'call'    => PointActivity::class . ':drawAward',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
         ]
     ];
 }

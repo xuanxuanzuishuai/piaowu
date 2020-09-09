@@ -63,6 +63,11 @@ class Erp
     //用户累计获取的音符
     const API_ADD_UP_CREDIT = '/api/dss/get_user_credit';
 
+    //用户对于特定任务的完成状态
+    const API_USER_RELATE_TASK = '/api/dss/get_user_relate_task';
+    //特定任务的完成用户情况
+    const API_TASK_COMPLETE_INFO = '/api/dss/get_task_complete';
+
     private $host;
 
     public function __construct()
@@ -572,6 +577,30 @@ class Erp
     {
         $params['app_id'] = self::SELF_APP_ID;
         $response = HttpHelper::requestJson($this->host . self::API_ADD_UP_CREDIT, $params);
+        return $response;
+    }
+
+    /**
+     * @param $params
+     * @return array|bool
+     * 用户对于特定的任务的完成情况
+     */
+    public function getUserTaskRelateInfo($params)
+    {
+        $params['app_id'] = self::SELF_APP_ID;
+        $response = HttpHelper::requestJson($this->host . self::API_USER_RELATE_TASK, $params);
+        return $response;
+    }
+
+    /**
+     * @param $params
+     * @return array|bool
+     * 特定任务的用户完成情况
+     */
+    public function getTaskCompleteUser($params)
+    {
+        $params['app_id'] = self::SELF_APP_ID;
+        $response = HttpHelper::requestJson($this->host . self::API_TASK_COMPLETE_INFO, $params);
         return $response;
     }
 

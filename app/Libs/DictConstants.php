@@ -424,6 +424,18 @@ class DictConstants {
         ]
     ];
 
+    //学期冲刺相关
+    const TERM_SPRINT_CONFIG = [
+        'type' => 'term_sprint_config',
+        'keys' => [
+            'term_sprint_event',
+            'init_sprint_num',
+            'cash_award_task_id',
+            'medal_award_task_id',
+            'total_cash_amount'
+        ]
+    ];
+
     //专属海报
     const PERSONAL_POSTER = [
         'type' => 'personal_poster',

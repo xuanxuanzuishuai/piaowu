@@ -1,7 +1,7 @@
 <?php
 /**
  * Created by PhpStorm.
- * User: yuxuan
+ * User: newtype0092
  * Date: 2020/1/7
  * Time: 3:19 PM
  */
@@ -14,22 +14,19 @@ define('APP_ROOT', PROJECT_ROOT . '/app');
 define('TEMP_ROOT', APP_ROOT . '/Templates');
 define('LANG_ROOT', PROJECT_ROOT . '/lang');
 
+// require composer autoload
 require_once PROJECT_ROOT . '/vendor/autoload.php';
 
-use App\Services\CreditService;
-use App\Services\MedalService;
+use App\Libs\DictConstants;
+use App\Models\StudentModel;
+use App\Services\DictService;
 use App\Services\TermSprintService;
 use Dotenv\Dotenv;
+
 
 $dotenv = new Dotenv(PROJECT_ROOT,'.env');
 $dotenv->load();
 $dotenv->overload();
-//创建今天的任务还是明天的任务
-if (!empty($argv[1])) {
-    $date = date('Y-m-d');
-} else {
-    $date = date('Y-m-d', strtotime('+1 day'));
-}
-CreditService::createEveryDayTask($date);
-MedalService::createEveryDayTask($date);
-TermSprintService::createEveryDayTask($date);
+
+TermSprintService::giveUserTermSprintAward();
+

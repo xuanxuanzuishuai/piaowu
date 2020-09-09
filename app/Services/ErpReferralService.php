@@ -76,6 +76,8 @@ class ErpReferralService
     /** 转介绍奖励类型 */
     const AWARD_TYPE_CASH = 1; // 现金
     const AWARD_TYPE_SUBS = 2; // 订阅时长
+    const AWARD_TYPE_POINT = 3; //积分
+    const AWARD_TYPE_MEDAL = 4; //奖章
 
     /** 事件任务状态 0 未启用 1 启用 2 禁用 */
     const ERP_EVENT_TASK_STATUS_NOT_ENABLED = 0;

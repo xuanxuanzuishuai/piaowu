@@ -58,4 +58,52 @@ count(distinct(formatDateTime(parseDateTimeBestEffort(toString(create_time)), '%
         return reset($info);
     }
 
+    /**
+     * 学生练琴汇总(按天)
+     * @param $studentId
+     * @param $startTime
+     * @param $endTime
+     * @return array
+     */
+    public static function getStudentSumByDate($studentId, $startTime, $endTime)
+    {
+        $chdb = CHDB::getDB();
+
+        $sql = "SELECT
+    formatDateTime(parseDateTimeBestEffort(toString(create_time)), '%Y%m%d') AS play_date,
+    COUNT(DISTINCT lesson_id) AS lesson_count,
+    SUM(duration) AS sum_duration
+FROM
+    ai_play_record
+WHERE
+    student_id =:student_id
+        AND end_time >=:start_time
+        AND end_time <:end_time
+        AND duration > 0
+GROUP BY play_date";
+        $result = $chdb->queryAll($sql, ['student_id' => $studentId, 'start_time' => $startTime, 'end_time' => $endTime]);
+        return $result;
+    }
+
+    /**
+     * @param $startTime
+     * @param $endTime
+     * @return array
+     * 时间范围内多少用户练琴
+     */
+    public static function getStudentPlayNum($startTime, $endTime)
+    {
+        $chdb = CHDB::getDB();
+
+        $sql = "SELECT
+    count(distinct student_id) play_user_num
+FROM
+    ai_play_record
+WHERE
+        end_time >=:start_time
+        AND end_time <:end_time";
+        $result = $chdb->queryAll($sql, ['start_time' => $startTime, 'end_time' => $endTime]);
+        return reset($result);
+    }
+
 }
