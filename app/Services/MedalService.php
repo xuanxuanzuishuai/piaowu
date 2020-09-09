@@ -620,6 +620,7 @@ class MedalService
         $numInfo = (new Erp())->getUserAddUpCredit(['uuid' => $activityData['uuid']]);
         if ($numInfo['code'] != Erp::RSP_CODE_SUCCESS) {
             SimpleLogger::info('erp count num error:', ['info' => $numInfo]);
+            return;
         }
         return self::relateVarReachNumGiveMedal($relateMedalEventId, $activityData, intval($numInfo['data']['total_num'] /100), $type);
     }
@@ -643,6 +644,7 @@ class MedalService
         //检测是否通过此奖章硬性限制
         if (!empty($eventSetting['start_time']) && (time() <= strtotime($eventSetting['start_time']))) {
             SimpleLogger::info('not reach require time', ['activity data' => $activityData]);
+            return;
         }
         //每日有效计数上限
         if (!empty($eventSetting['every_day_count'])){
@@ -656,12 +658,14 @@ class MedalService
         //弹奏时长
         if ($activityData['play_duration'] < $eventSetting['play_duration']) {
             SimpleLogger::info('not reach min play duration', ['activity data' => $activityData]);
+            return;
         }
         //针对当前奖章对有效升级的累计有效计数
         $num = self::recordMedalReachNum($activityData['student_id'], $medalType);
         //用户版本在最低版本之上才可以触发发放奖章
         if (!CreditService::checkTaskQualification($eventSetting, $activityData)) {
             SimpleLogger::info('not reach min version', ['activity data' => $activityData, 'medal type' => $medalType]);
+            return;
         }
         return self::relateVarReachNumGiveMedal($relateMedalEventId, $activityData, $num, $type);
     }
