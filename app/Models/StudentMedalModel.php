@@ -31,6 +31,7 @@ m.medal_id,g.category_id
 from " . self::$table . " m
 inner join " . GoodsV1Model::$table . " g on m.medal_id = g.id
 where m.student_id =:student_id and m.is_show = " . self::NOT_ACTIVE_SHOW . "
+and m.create_time >= ". (time() - 4) ."
 ) as t where row_num = 1;";
         $map[':student_id'] = $studentId;
         return MysqlDB::getDB()->queryAll($sql, $map);

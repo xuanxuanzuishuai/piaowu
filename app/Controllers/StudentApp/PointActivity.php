@@ -66,7 +66,7 @@ class PointActivity extends ControllerBase
             if (empty($this->ci['version'])) {
                 throw new RunTimeException(['app_version_is_required']);
             }
-            $records = PointActivityService::reportRecord($params['activity_type'], $this->ci['student']['id'], ['app_version' => $this->ci['version']]);
+            $records = PointActivityService::reportRecord($params['activity_type'], $this->ci['student']['id'], ['app_version' => $this->ci['version'], 'play_grade_id' => $params['play_grade_id'] ?? NULL]);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }

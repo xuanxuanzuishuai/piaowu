@@ -846,7 +846,7 @@ class StudentServiceForApp
         ];
         if (!empty($updateInfo['name'])) {
             $activityData['change_type'] = 'set_name';
-        } elseif ($updateInfo['thumb']) {
+        } elseif (!empty($updateInfo['thumb'])) {
             $activityData['change_type'] = 'set_thumb';
         }
         if (empty($activityData['change_type'])) {
@@ -855,11 +855,11 @@ class StudentServiceForApp
         $returnInfo = [];
         $award =  MedalService::dealMedalGrantRelate(MedalService::FAMOUS_PERSON, $activityData);
         if (!empty($award)) {
-          $returnInfo =  array_map(function ($item) {
-                $awardInfo = json_decode($item, true)['awards'];
+            array_map(function ($item) use(&$returnInfo) {
+               $awardInfo = json_decode($item, true)['awards'];
                 foreach ($awardInfo as $v) {
                     if ($v['type'] == CategoryV1Model::MEDAL_AWARD_TYPE) {
-                        return MedalService::formatMedalAlertInfo($v['course_id']);
+                        $returnInfo[] = MedalService::formatMedalAlertInfo($v['course_id']);
                     }
                 }
             },$award);

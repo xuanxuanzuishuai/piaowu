@@ -663,6 +663,8 @@ class MedalService
         $num = self::recordMedalReachNum($activityData['student_id'], $medalType);
         //用户版本在最低版本之上才可以触发发放奖章
         if (!CreditService::checkTaskQualification($eventSetting, $activityData)) {
+            //用来处理如果有每日计数上限的计数(这个属于特殊处理，只有低版本会走这里计数，和公共计数不冲突)
+            self::recordMedalDailyValidCount($relateMedalEventId, $activityData, $type);
             SimpleLogger::info('not reach min version', ['activity data' => $activityData, 'medal type' => $medalType]);
             return;
         }
@@ -755,7 +757,9 @@ class MedalService
                 return self::formatMedalAlertInfo($item['medal_id']);
             }, $list);
         }
-        StudentMedalModel::batchUpdateRecord(['is_show' => StudentMedalModel::IS_ACTIVE_SHOW], ['student_id' => $studentId, 'medal_category_id' => array_column($returnInfo, 'category_id')]);
+        if (!empty($returnInfo)) {
+            StudentMedalModel::batchUpdateRecord(['is_show' => StudentMedalModel::IS_ACTIVE_SHOW], ['student_id' => $studentId, 'medal_category_id' => array_column($returnInfo, 'category_id'), 'is_show' => StudentMedalModel::NOT_ACTIVE_SHOW]);
+        }
         return $returnInfo;
     }
 
