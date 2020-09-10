@@ -184,11 +184,11 @@ class Erp extends ControllerBase
                     $package['package_type'],
                     $package['trial_type'],
                     $package['app_id'],
-                    $params['package_id']);
+                    $package);
             } else {
                 QueueService::newLeads([
                     'uuid' => $params['uuid'],
-                    'package_id' => $params['package_id'],
+                    'package' => $package
                 ]);
             }
         }

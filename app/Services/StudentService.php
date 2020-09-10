@@ -1172,10 +1172,10 @@ class StudentService
      * @param $studentId
      * @param $collectionInfo
      * @param $employeeId
-     * @param $packageId
+     * @param $package
      * @return bool
      */
-    public static function allotCollectionAndAssistant($studentId, $collectionInfo, $employeeId, $packageId)
+    public static function allotCollectionAndAssistant($studentId, $collectionInfo, $employeeId, $package)
     {
         //获取学生数据
         $studentInfo = StudentModel::getById($studentId);
@@ -1186,7 +1186,7 @@ class StudentService
         $time = time();
         $update['collection_id'] = $collectionInfo['id'];
         $update['allot_collection_time'] = $time;
-        $update['allot_course_id'] = $packageId;
+        $update['allot_course_id'] = $package['package_id'];
         if (!empty($collectionInfo['assistant_id'])) {
             $update['allot_assistant_time'] = $time;
             $update['assistant_id'] = $collectionInfo['assistant_id'];
@@ -1197,7 +1197,7 @@ class StudentService
                 '$studentId' => $studentId,
                 '$collectionInfo' => $collectionInfo,
                 '$employeeId' => $employeeId,
-                '$packageId' => $packageId,
+                '$package' => $package,
                 '$update' => $update,
             ]);
             return false;

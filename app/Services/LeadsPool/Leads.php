@@ -11,7 +11,7 @@ class Leads
     private $id;
     private $student;
     private $studentId;
-    private $packageId;
+    private $package;
 
     private $date; // 分配日期，由进入PoolManager时分配配置的日期决定
 
@@ -20,7 +20,7 @@ class Leads
         $this->id = $config['id'];
         $this->student = $config['student'];
         $this->studentId = $config['student']['id'];
-        $this->packageId = $config['package_id'];
+        $this->package = $config['package'];
     }
 
     /**
@@ -72,7 +72,7 @@ class Leads
         return LeadsService::assign($this->pid,
             $this->studentId,
             $pool->getId(),
-            $this->packageId,
+            $this->package,
             $this->date);
     }
 }

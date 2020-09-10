@@ -729,9 +729,9 @@ class ReviewCourseService
      * @param $packageType
      * @param $trialType
      * @param $appId
-     * @param $packageId
+     * @param $package
      */
-    public static function updateStudentReviewCourseStatusV1($uuid, $packageType, $trialType, $appId, $packageId)
+    public static function updateStudentReviewCourseStatusV1($uuid, $packageType, $trialType, $appId, $package)
     {
         $student = StudentService::getByUuid($uuid);
         $studentId = $student['id'];
@@ -776,7 +776,7 @@ class ReviewCourseService
         }
 
         // 分配助教和班级
-        $success = StudentService::allotCollectionAndAssistant($student['id'], $collection, EmployeeModel::SYSTEM_EMPLOYEE_ID, $packageId);
+        $success = StudentService::allotCollectionAndAssistant($student['id'], $collection, EmployeeModel::SYSTEM_EMPLOYEE_ID, $package);
         if ($success) {
             SimpleLogger::error('student update collection and assistant error', []);
         }

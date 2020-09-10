@@ -25,18 +25,14 @@ class LeadsService
      */
     public static function newLeads($event)
     {
-        //获取学生信息
+        // 获取学生信息
         $student = StudentService::getByUuid($event['uuid']);
         if (empty($student)) {
             SimpleLogger::info("student not found", ['uuid' => $event['uuid']]);
             return false;
         }
-        //获取课包信息
-        $package = PackageExtModel::getByPackageId($event['package_id']);
-        if (empty($package)) {
-            SimpleLogger::info("package not found", ['package_id' => $event['package_id']]);
-            return false;
-        }
+
+        $package = $event['package'];
 
         // 检查、更新用户的serv_app_id
         StudentService::updateOutsideFlag($student, $package);
@@ -45,7 +41,7 @@ class LeadsService
         $studentPackageType = ReviewCourseService::updateStudentReviewCourseStatus($student, $package);
         // 已有班级，不用分班
         if (!empty($student['collection_id'])) {
-            SimpleLogger::info("student has collection", ['student_uuid' => $event['uuid'], 'collection_id' => $event['collection_id']]);
+            SimpleLogger::info("student has collection", ['student_uuid' => $event['uuid'], 'collection_id' => $student['collection_id']]);
             return true;
         }
         // 学生不是体验阶段，不用分班
@@ -63,7 +59,7 @@ class LeadsService
         // 检测学生是否存在转介绍人以及转介绍人的班级信息
         $refereeData = StudentRefereeService::studentRefereeUserData($student['id']);
         if (!empty($refereeData)) {
-            $allotCollectionRes = self::refLeads($student['id'], $refereeData['assistant_id'], $event['package_id']);
+            $allotCollectionRes = self::refLeads($student['id'], $refereeData['assistant_id'], $package);
         }
         //检测当前学生是否存在助教:如存在则直接检测当前助教是否有可分配的组班中的班级
         if (empty($allotCollectionRes) && !empty($student['assistant_id'])) {
@@ -71,11 +67,11 @@ class LeadsService
         }
         //正常班级分配
         if (empty($allotCollectionRes)) {
-            $allotCollectionRes = self::pushLeads($event['uuid'], $student, $event['package_id']);
+            $allotCollectionRes = self::pushLeads($event['uuid'], $student, $package);
         }
         //无可分配路径，进入公海班
         if (empty($allotCollectionRes)) {
-            self::defaultAssign($student['id'], $event['package_id']);
+            self::defaultAssign($student['id'], $package);
         }
 
         QueueService::studentPaid([
@@ -90,15 +86,15 @@ class LeadsService
      * leads 转介绍分配
      * @param $studentId
      * @param $assistantId
-     * @param $packageId
+     * @param $package
      * @return bool
      */
-    public static function refLeads($studentId, $assistantId, $packageId)
+    public static function refLeads($studentId, $assistantId, $package)
     {
         return self::assign('',
             $studentId,
             $assistantId,
-            $packageId,
+            $package,
             date('Ymd'),
             LeadsPoolLogModel::TYPE_REF_ASSIGN);
     }
@@ -107,15 +103,15 @@ class LeadsService
      * leads 自动分配
      * @param $id
      * @param $studentInfo
-     * @param $packageId
+     * @param $package
      * @return bool
      */
-    public static function pushLeads($id, $studentInfo, $packageId)
+    public static function pushLeads($id, $studentInfo, $package)
     {
         $config = [
             'id' => $id,
             'student' => $studentInfo,
-            'package_id' => $packageId
+            'package' => $package
         ];
         $leads = new Leads($config);
 
@@ -130,14 +126,13 @@ class LeadsService
      * @param $pid
      * @param $studentId
      * @param $assistantId
-     * @param $packageId
+     * @param $package
      * @param $date
      * @param int $assignType
      * @return bool
      */
-    public static function assign($pid, $studentId, $assistantId, $packageId, $date, $assignType = LeadsPoolLogModel::TYPE_ASSIGN)
+    public static function assign($pid, $studentId, $assistantId, $package, $date, $assignType = LeadsPoolLogModel::TYPE_ASSIGN)
     {
-        $package = PackageExtModel::getByPackageId($packageId);
         //获取当前助教正在组班中的班级信息
         $collection = CollectionService::getRefCollection($assistantId,
             CollectionModel::COLLECTION_READY_TO_GO_STATUS,
@@ -149,7 +144,7 @@ class LeadsService
                 '$pid' => $pid,
                 '$studentId' => $studentId,
                 '$assistantId' => $assistantId,
-                '$packageId' => $packageId,
+                '$package' => $package,
                 '$assignType' => $assignType,
             ]);
 
@@ -163,7 +158,7 @@ class LeadsService
                 'leads_student_id' => $studentId,
                 'detail' => json_encode([
                     'assistant_id' => $assistantId,
-                    'package_id' => $packageId,
+                    'package' => $package,
                     'assign_type' => $assignType
                 ]),
             ]);
@@ -171,7 +166,7 @@ class LeadsService
             return false;
         }
         //分配班级操作
-        $success = self::allotCollectionAndAssistant($studentId, $collection, $packageId, $assistantId, $date, $assignType, $pid);
+        $success = self::allotCollectionAndAssistant($studentId, $collection, $package, $assistantId, $date, $assignType, $pid);
         return boolval($success);
     }
 
@@ -204,21 +199,22 @@ class LeadsService
     /**
      * 分配公海班级
      * @param $studentId
-     * @param $packageId
+     * @param $package
      * @return mixed
      */
-    public static function defaultAssign($studentId, $packageId)
+    public static function defaultAssign($studentId, $package)
     {
         //如果没有可加入的班级，则加入“公海班”，推送默认二维码，不分配助教
         $collection = CollectionModel::getRecord(["type" => CollectionModel::COLLECTION_TYPE_PUBLIC, "LIMIT" => 1], ['id', 'assistant_id', 'type'], false);
-        $success = self::allotCollectionAndAssistant($studentId, $collection, $packageId, 0, date('Ymd'), LeadsPoolLogModel::TYPE_ASSIGN);
+        $success = self::allotCollectionAndAssistant($studentId, $collection, $package, 0, date('Ymd'), LeadsPoolLogModel::TYPE_ASSIGN);
         return boolval($success);
     }
 
     /**
      * 分配学生所属助教下组班中的班级
      * @param $studentId
-     * @param $packageId
+     * @param $package
+     * @param $assistantId
      * @return mixed
      */
     public static function assistantAssign($studentId, $package, $assistantId)
@@ -230,7 +226,7 @@ class LeadsService
         if (empty($collection)) {
             return false;
         }
-        $success = self::allotCollectionAndAssistant($studentId, $collection, $package['package_id'], $assistantId, date('Ymd'), LeadsPoolLogModel::TYPE_ASSIGN);
+        $success = self::allotCollectionAndAssistant($studentId, $collection, $package, $assistantId, date('Ymd'), LeadsPoolLogModel::TYPE_ASSIGN);
         return boolval($success);
     }
 
@@ -238,17 +234,17 @@ class LeadsService
      * 分配班级操作
      * @param $studentId
      * @param $collection
-     * @param $packageId
+     * @param $package
      * @param $assistantId
      * @param $date
      * @param $assignType
      * @param string $pid
      * @return bool
      */
-    private static function allotCollectionAndAssistant($studentId, $collection, $packageId, $assistantId, $date, $assignType, $pid = '')
+    private static function allotCollectionAndAssistant($studentId, $collection, $package, $assistantId, $date, $assignType, $pid = '')
     {
         //分配班级操作
-        $success = StudentService::allotCollectionAndAssistant($studentId, $collection, EmployeeModel::SYSTEM_EMPLOYEE_ID, $packageId);
+        $success = StudentService::allotCollectionAndAssistant($studentId, $collection, EmployeeModel::SYSTEM_EMPLOYEE_ID, $package);
         if (empty($success)) {
             SimpleLogger::error('student update collection and assistant error', []);
 
@@ -262,7 +258,7 @@ class LeadsService
                 'leads_student_id' => $studentId,
                 'detail' => json_encode([
                     'assistant_id' => $assistantId,
-                    'package_id' => $packageId,
+                    'package' => $package,
                     'assign_type' => $assignType,
                     'collection_id' => $collection['id']
                 ]),
@@ -287,7 +283,7 @@ class LeadsService
             'leads_student_id' => $studentId,
             'detail' => json_encode([
                 'assistant_id' => $assistantId,
-                'package_id' => $packageId,
+                'package' => $package,
                 'collection_id' => $collection['id']
             ]),
         ]);
