@@ -1437,9 +1437,6 @@ class StudentService
             return ;
         }
 
-        $packageInfo = PackageService::getDetail($event['package_id']);
-        self::updateOutsideFlag($student, $packageInfo);
-
         TrackService::studentPaidCallback($student);
     }
 
@@ -1452,8 +1449,9 @@ class StudentService
     public static function updateOutsideFlag($student, $packageInfo)
     {
         if ($student['serve_app_id'] == PackageExtModel::APP_AI
+            && !empty($packageInfo['app_id'])
             && $packageInfo['app_id'] != PackageExtModel::APP_AI) {
-            StudentModel::updateRecord($student['id'], ['serve_app_id' => Constants::STATUS_TRUE]);
+            StudentModel::updateRecord($student['id'], ['serve_app_id' => $packageInfo['app_id']]);
             return true;
         }
         return false;

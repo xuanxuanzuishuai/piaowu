@@ -37,6 +37,10 @@ class LeadsService
             SimpleLogger::info("package not found", ['package_id' => $event['package_id']]);
             return false;
         }
+
+        // 检查、更新用户的serv_app_id
+        StudentService::updateOutsideFlag($student, $package);
+
         //更新点评课标记
         $studentPackageType = ReviewCourseService::updateStudentReviewCourseStatus($student, $package);
         // 已有班级，不用分班
