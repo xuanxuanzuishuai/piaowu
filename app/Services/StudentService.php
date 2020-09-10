@@ -1275,6 +1275,9 @@ class StudentService
         if (empty($studentInfoList)) {
             throw new RunTimeException(['student_ids_error']);
         }
+        foreach ($studentInfoList as $key => $value){
+            $studentInfoList[$key]['mobile'] = (($value['country_code'] == StudentModel::DEFAULT_COUNTRY_CODE) ? '' : ($value['country_code'] . '-')) . $value['mobile'];
+        }
         //记录日志
         $time = time();
         $logData = StudentAcquiredLogModel::formatLogData($studentIds, $employeeId, $time, $operateType);
@@ -1593,15 +1596,19 @@ class StudentService
      */
     public static function getIntellectOrder($params)
     {
-        if (!empty($params['pay_low_amount']) && $params['pay_low_amount'] <= 0) {
+        if (!empty($params['pay_low_amount']) && $params['pay_low_amount'] < 0) {
             throw new RunTimeException(['data_error']);
         }
-        if (!empty($params['pay_high_amount']) && $params['pay_high_amount'] <= 0) {
+        if (!empty($params['pay_high_amount']) && $params['pay_high_amount'] < 0) {
             throw new RunTimeException(['data_error']);
         }
 
         $employUuid = $makeOrderList = [];
         $ret = StudentModel::getIntellectOrder($params);
+        if (empty($ret['list'])) {
+            return $ret;
+        }
+
         foreach ($ret['list'] as $value) {
             $employUuid[] = $value['employee_uuid'];
         }
@@ -1612,7 +1619,7 @@ class StudentService
 
         foreach ($ret['list'] as $k => $v) {
             $ret['list'][$k]['student_mobile'] = Util::hideUserMobile($v['student_mobile']);
-            $ret['list'][$k]['make_order'] = $makeOrderListKey[$v['uuid']] ?? '';
+            $ret['list'][$k]['make_order'] = $makeOrderListKey[$v['employee_uuid']]['name'] ?? '';
             $ret['list'][$k]['code_status'] = $v['code_status'] == StudentModel::CODE_STATUS_DEPRECATED ? "已退费" : "已处理";
             $ret['list'][$k]['buy_time'] = date('Y-m-d H:i:s', $v['buy_time']);
             $ret['list'][$k]['create_time'] = date('Y-m-d H:i:s', $v['create_time']);

@@ -918,12 +918,12 @@ class StudentModel extends Model
             $where["{$giftCode}.buy_time[<]"] = $params['pay_end_time'];
         }
 
-        if (!empty($params['pay_low_amount'])) {
-            $where["{$giftCode}.bill_amount[<=]"] = $params['pay_low_amount'];
+        if (!empty($params['pay_low_amount']) || $params['pay_low_amount'] == 0) {
+            $where["{$giftCode}.bill_amount[>=]"] = $params['pay_low_amount'] * 100;
         }
 
-        if (!empty($params['pay_high_amount'])) {
-            $where["{$giftCode}.bill_amount[>=]"] = $params['pay_high_amount'];
+        if (!empty($params['pay_high_amount']) || $params['pay_low_amount'] == 0) {
+            $where['AND']["{$giftCode}.bill_amount[<=]"] = $params['pay_high_amount'] * 100;
         }
 
         if (!empty($params['order_status'])) {
@@ -943,7 +943,7 @@ class StudentModel extends Model
         }
 
         if (!empty($params['create_end_time'])) {
-            $where["{$giftCode}.create_time[<]"] = $params['create_end_time'];
+            $where['AND']["{$giftCode}.create_time[<]"] = $params['create_end_time'];
         }
 
         //成单人
@@ -956,7 +956,6 @@ class StudentModel extends Model
             "[>]{$erpPackage}"                   => ["{$giftCode}.bill_package_id" => "id"],
             "[>]{$employeeModel}(assistant)"     => ["assistant_id" => "id"],
             "[>]{$employeeModel}(courseManager)" => ["course_manage_id" => "id"],
-            "[>]{$employeeModel}(create)"        => ["{$giftCode}.operate_user" => "id"],  //创建人
             "[>]{$collection}"                   => ["collection_id" => "id"],
         ];
 
@@ -981,8 +980,6 @@ class StudentModel extends Model
             "{$giftCode}.bill_amount",
             "{$giftCode}.code_status",
             "{$giftCode}.buy_time",
-            "{$giftCode}.remarks",
-            "create.name(create_name)",
             "{$giftCode}.create_time",
             "{$giftCode}.employee_uuid",
         ], $where);

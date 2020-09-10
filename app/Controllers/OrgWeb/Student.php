@@ -172,7 +172,7 @@ class Student extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         try {
-            $studentInfo = StudentService::getStudentSelfSecret($params['student_ids'], $this->getEmployeeId(), ['id', 'mobile']);
+            $studentInfo = StudentService::getStudentSelfSecret($params['student_ids'], $this->getEmployeeId(), ['id', 'mobile','country_code']);
         } catch (RunTimeException $e) {
             return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData());
         }
