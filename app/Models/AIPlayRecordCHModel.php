@@ -69,16 +69,10 @@ count(distinct(formatDateTime(parseDateTimeBestEffort(toString(create_time)), '%
     {
         $chdb = CHDB::getDB();
 
-        $sql = "SELECT formatDateTime(parseDateTimeBestEffort(toString(create_time)), '%Y%m%d') AS play_date,
-COUNT(DISTINCT lesson_id) AS lesson_count,
-SUM(duration) AS sum_duration
-FROM
-" . self::$table . "
-WHERE
-student_id =:student_id
-AND end_time >=:start_time
-AND end_time <:end_time
-AND duration > 0
+        $sql = "select formatDateTime(parseDateTimeBestEffort(toString(create_time)), '%Y%m%d') AS play_date,
+COUNT(DISTINCT lesson_id) AS lesson_count,SUM(duration) AS sum_duration from (
+select * from ai_peilian.ai_play_record where student_id =:student_id and duration > 0 and end_time >=:start_time and end_time <:end_time
+order by record_id desc limit 1 by track_id)
 GROUP BY play_date";
         $result = $chdb->queryAll($sql, ['student_id' => $studentId, 'start_time' => $startTime, 'end_time' => $endTime]);
         return $result;

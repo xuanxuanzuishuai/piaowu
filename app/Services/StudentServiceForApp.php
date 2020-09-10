@@ -789,8 +789,6 @@ class StudentServiceForApp
         $medalThumbCategoryId = $medalThumbInfo['category_id'] ?? '';
         //获取学生积分
         $totalPoints = PointActivityService::totalPoints($studentId, PointActivityService::ACCOUNT_SUB_TYPE_STUDENT_POINTS);
-        //整体奖章类别的数量
-        $totalMedalCategoryNum = MedalService::getTotalMedalCategoryNum();
         //外在展示用户奖章信息
         $showMedalInfo = array_map(function ($item){
             $baseInfo = MedalService::formatMedalAlertInfo($item['medal_id']);
@@ -807,11 +805,16 @@ class StudentServiceForApp
         if (empty($needStudentId)) {
             $notGetCategory = GoodsV1Model::getNotGetMedalCategory($allCategoryArr);
             if (!empty($notGetCategory)) {
-                $notGetCategoryInfo = array_map(function ($item) {
-                    return ['medal_category_name' => $item['name'], 'category_id' => $item['id'],'create_time' => '未获得','thumbs' => AliOSS::replaceCdnDomainForDss(json_decode($item['thumbs'], true)[0])];
+                 array_map(function ($item) use(&$notGetCategoryInfo) {
+                    $extension = json_decode($item['extension'], true);
+                    if (empty($extension['not_get_not_show_date']) || time() < $extension['not_get_not_show_date']) {
+                        $notGetCategoryInfo[] = ['medal_category_name' => $item['name'], 'category_id' => $item['id'],'create_time' => '未获得','thumbs' => AliOSS::replaceCdnDomainForDss(json_decode($item['thumbs'], true)[0])];
+                    }
                 }, $notGetCategory);
             }
         }
+        //整体奖章类别的数量
+        $totalMedalCategoryNum = $getMedalCategoryNum + count($notGetCategoryInfo);
         return [
             "name" => $studentInfo['name'],
             "thumb" => $studentInfo['thumb'] ? AliOSS::replaceCdnDomainForDss($studentInfo["thumb"]) : AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb')),

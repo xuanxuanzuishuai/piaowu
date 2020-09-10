@@ -116,7 +116,7 @@ class TermSprintService
         }
         $needInfo = [];
         if (!empty($relateTasks)) {
-            $records = (new Erp())->getUserTaskRelateInfo(['uuid' => $student['uuid'], 'task_id' => implode(',', array_column($relateTasks, 'id'))])['data']['records'];
+            $records = (new Erp())->getUserTaskRelateInfo(['uuid' => $student['uuid'], 'task_id' => implode(',', array_column($relateTasks, 'id'))])['data']['records'] ?? [];
             $relateInfo = array_column($records, 'status', 'event_task_id');
             foreach ($relateTasks as $task) {
                 $award = json_decode($task['award'], true)['awards'][0];
@@ -199,7 +199,7 @@ class TermSprintService
                 WeChatService::USER_TYPE_STUDENT,
                 UserWeixinModel::BUSI_TYPE_STUDENT_SERVER);
             if (empty($studentWeChatInfo)) {
-                return ['not_wexin' => 'not_bound_we_chat'];
+                return ['not_weixin' => 'not_bound_we_chat'];
             }
         }
         $erp = new Erp();
