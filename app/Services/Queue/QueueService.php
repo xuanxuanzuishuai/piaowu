@@ -116,6 +116,15 @@ class QueueService
             $topic = new PushMessageTopic();
             $pushTime = time();
 
+            $count = count($students);
+            if ($count > 5000) { // 超过5000条，半小时内发送完
+                $deferMax = 1800;
+            } elseif ($count > 1000) { // 超过1000条，10分钟内发送完
+                $deferMax = 600;
+            } else { // 默认2分钟内发送完
+                $deferMax = 120;
+            }
+
             foreach ($students as $student) {
 
                 $msgBody = [
@@ -129,7 +138,7 @@ class QueueService
                     'employee_id' => $employeeId
                 ];
 
-                $topic->pushWX($msgBody)->publish();
+                $topic->pushWX($msgBody)->publish(rand(0, $deferMax));
             }
 
         } catch (Exception $e) {
