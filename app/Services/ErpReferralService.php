@@ -326,11 +326,7 @@ class ErpReferralService
         }
 
         if (!empty($params['event_task_id'])) {
-            if ($params['event_task_id'] == self::EXPECT_TRAIL_PAY) {
-                $params['event_task_id'] =  self::EVENT_TASK_ID_TRIAL_PAY;
-            } else if ($params['event_task_id'] == self::EXPECT_YEAR_PAY) {
-                $params['event_task_id'] =  self::EVENT_TASK_ID_PAY;
-            }
+            $params['event_task_id'] = self::expectTaskRelateRealTask($params['event_task_id']);
         }
         $response = $erp->awardList($params);
 
@@ -418,11 +414,7 @@ class ErpReferralService
             $params['reviewer_id'] = EmployeeModel::getRecord(['name[~]' => Util::sqlLike($params['reviewer_name'])], 'id');
         }
         if (!empty($params['event_task_id'])) {
-            if ($params['event_task_id'] == self::EXPECT_TRAIL_PAY) {
-                $params['event_task_id'] =  self::EVENT_TASK_ID_TRIAL_PAY;
-            } else if ($params['event_task_id'] == self::EXPECT_YEAR_PAY) {
-                $params['event_task_id'] =  self::EVENT_TASK_ID_PAY;
-            }
+            $params['event_task_id'] = self::expectTaskRelateRealTask($params['event_task_id']);
         }
         $response = $erp->awardList($params);
         if (empty($response) || $response['code'] != 0) {
@@ -490,6 +482,21 @@ class ErpReferralService
         }
 
         return ['list' => $list, 'total_count' => $response['data']['total_count']];
+    }
+
+    /**
+     * @param $expectTaskId
+     * @return false|int[]|string[]
+     * 前端传期望看到的task和实际对应的task关系
+     */
+    private static function expectTaskRelateRealTask($expectTaskId)
+    {
+        $arr = [
+            self::EXPECT_REGISTER => self::EVENT_TASK_ID_REGISTER,
+            self::EXPECT_TRAIL_PAY => self::EVENT_TASK_ID_TRIAL_PAY,
+            self::EXPECT_YEAR_PAY => self::EVENT_TASK_ID_PAY
+        ];
+        return $arr[$expectTaskId] ?? explode(',', $expectTaskId);
     }
 
     /**
