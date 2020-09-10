@@ -649,7 +649,7 @@ class ErpReferralService
      */
     public static function verifyStudentStatus($eventTaskId, $uuidArr)
     {
-        if (empty($eventTaskId)) {
+        if (empty($eventTaskId) || empty($uuidArr)) {
             return NULL;
         }
 
