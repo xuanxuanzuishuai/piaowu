@@ -161,6 +161,10 @@ class ReviewCourseTaskService
             $where['rct.status'] = $params['status'];
         }
 
+        if (isset($params['play_date_order']) && !empty($params['play_date_order'])) {
+            $where['ORDER'] = ["play_date" => $params['play_date_order']];
+        }
+
         list($page, $count) = Util::formatPageCount($params);
         $where['LIMIT'] = [($page - 1) * $count, $count];
 

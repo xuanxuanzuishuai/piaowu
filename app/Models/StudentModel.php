@@ -894,12 +894,6 @@ class StudentModel extends Model
         $giftCode = GiftCodeModel::$table;
         $erpPackage = ErpPackageModel::$table;
 
-        list($params['page'], $params['count']) = Util::formatPageCount($params);
-        $where = [
-            "{$giftCode}.generate_channel" => GiftCodeModel::BUYER_TYPE_ERP_ORDER,
-            "LIMIT" => [($params['page'] - 1) * $params['count'], $params['count']],
-            "ORDER" => ["{$giftCode}.create_time" => "DESC"]
-        ];
         if (!empty($params['order_id'])) {
             $where["{$giftCode}.parent_bill_id"] = $params['order_id'];
         }
@@ -966,6 +960,16 @@ class StudentModel extends Model
             "[>]{$collection}"                   => ["collection_id" => "id"],
         ];
 
+        $where["{$giftCode}.generate_channel"] = GiftCodeModel::BUYER_TYPE_ERP_ORDER;
+        $totalCount = MysqlDB::getDB()->count($student, $join, ["{$student}.id",], $where);
+        if (empty($totalCount)){
+            return [[],0];
+        }
+
+        list($params['page'], $params['count']) = Util::formatPageCount($params);
+        $where['LIMIT'] = [($params['page'] - 1) * $params['count'], $params['count']];
+        $where['ORDER'] = ["{$giftCode}.create_time" => "DESC"];
+
         $list = MysqlDB::getDB()->select($student, $join, [
             "{$giftCode}.parent_bill_id",
             "{$erpPackage}.name(package_name)",
@@ -982,7 +986,7 @@ class StudentModel extends Model
             "{$giftCode}.create_time",
             "{$giftCode}.employee_uuid",
         ], $where);
-        $totalCount = MysqlDB::getDB()->count($student, $join, ["{$student}.id",], $where);
+
         return [
             'list'       => $list,
             'totalCount' => $totalCount,

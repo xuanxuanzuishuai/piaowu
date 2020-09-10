@@ -1554,6 +1554,7 @@ class StudentService
      */
     public static function getRefereeTasks($params)
     {
+        $params['play_date_order'] = "DESC";
         list($total, $tasks) = ReviewCourseTaskService::getTasks($params);
         if (!empty($tasks)) {
             foreach ($tasks as $key => $value) {
