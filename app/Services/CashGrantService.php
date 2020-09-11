@@ -133,13 +133,12 @@ class CashGrantService
      */
     private static function getKeyCodeRelateKey($keyCode)
     {
-        switch ($keyCode) {
-            case WeChatAwardCashDealModel::COMMUNITY_PIC_WORD:
-                return 'COMMUNITY_PIC_WORD';
-                break;
-            default:
-                return 'NORMAL_PIC_WORD';
-        }
+        $arr = [
+            WeChatAwardCashDealModel::COMMUNITY_PIC_WORD => 'COMMUNITY_PIC_WORD',
+            WeChatAwardCashDealModel::NORMAL_PIC_WORD => 'NORMAL_PIC_WORD',
+            WeChatAwardCashDealModel::TERM_SPRINT_PIC_WORD => 'TERM_SPRINT_PIC_WORD'
+        ];
+        return $arr[$keyCode] ?? NULL;
     }
 
     /**

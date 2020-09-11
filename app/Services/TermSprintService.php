@@ -11,6 +11,7 @@ use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\RedisDB;
+use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Libs\Util;
 use App\Models\AIPlayRecordCHModel;
@@ -76,7 +77,7 @@ class TermSprintService
         },$allTaskArr);
     }
 
-    public static function getTermSprintRelateKey($eventId, $data = NULL)
+    public static function getTermSprintRelateKey($eventId, $date = NULL)
     {
         empty($date) && $date = date('Y-m-d');
         return self::TERM_SPRINT_DAILY_KEY . '_' . $date . '_' . $eventId;
@@ -97,7 +98,7 @@ class TermSprintService
         //总计有效计数
         $totalValidNum = array_sum($validData);
         //每日计数上限
-        $everyDayCount = $eventSetting['every_day_count'];
+        $everyDayCount = $eventSetting['every_day_valid_minutes'];
         //多少宝贝正在冲刺
         $totalBabySprintNum = RedisDB::getConn()->get(self::TERM_SPRINT_NUM) ?: DictConstants::get(DictConstants::TERM_SPRINT_CONFIG, 'init_sprint_num');
         //多少宝贝参与了瓜分助跑金
@@ -108,10 +109,10 @@ class TermSprintService
             if (empty($redisPartitionNum)) {
                 $taskId = DictConstants::get(DictConstants::TERM_SPRINT_CONFIG, 'cash_award_task_id');
                 $num = count((new Erp())->getTaskCompleteUser(['task_id' => $taskId])['data']['records']);
-                $totalBabyPartitionNum = $num * 5 + mt_rand(1,5);
-                RedisDB::getConn()->setex(self::PARTITION_TERM_SPRINT_CASH_NUM, 5, $totalBabySprintNum);
+                $totalBabyPartitionNum = $num * 5;
+                RedisDB::getConn()->setex(self::PARTITION_TERM_SPRINT_CASH_NUM, 5, $totalBabyPartitionNum);
             } else {
-                $totalBabySprintNum = $redisPartitionNum;
+                $totalBabyPartitionNum = $redisPartitionNum;
             }
         }
         $needInfo = [];
@@ -158,7 +159,7 @@ class TermSprintService
         $validData = [];
         array_map(function ($v) use(&$validData, $eventSetting) {
             $minutes = floor($v['sum_duration'] / 60);
-            $validData[$v['play_date']] = $minutes >= $eventSetting['every_day_count'] ? $eventSetting['every_day_count'] : $minutes;
+            $validData[$v['play_date']] = $minutes >= $eventSetting['every_day_valid_minutes'] ? $eventSetting['every_day_valid_minutes'] : $minutes;
         }, $playData);
         return [$eventSetting, $relateTasks, $validData];
     }
@@ -189,7 +190,7 @@ class TermSprintService
         }
         $needNum = json_decode($taskInfo['condition'], true)['valid_num'];
         $award = json_decode($taskInfo['award'], true)['awards'][0];
-        if ($needNum < $totalValidNum) {
+        if ($needNum > $totalValidNum) {
             throw new RunTimeException(['not_reach_valid_num']);
         }
         if ($award['type'] == ErpReferralService::AWARD_TYPE_CASH) {
@@ -229,16 +230,18 @@ class TermSprintService
         $cashTaskId = DictConstants::get(DictConstants::TERM_SPRINT_CONFIG, 'cash_award_task_id');
         $cashInfo = (new Erp())->getTaskCompleteUser(['task_id' => $cashTaskId])['data']['records'];
         $allTaskAwardIdArr = array_column($cashInfo, 'task_award_id');
+        SimpleLogger::info('new term sprint red pack award id', ['task_award_id' => $allTaskAwardIdArr]);
         //已经发放中或者发放成功的不再重试
-        $hasAchieveWeChatDeal = WeChatAwardCashDealModel::getRecords(['user_event_task_award_id' => $allTaskAwardIdArr, 'status' => [ErpReferralService::AWARD_STATUS_GIVEN, ErpReferralService::AWARD_STATUS_GIVE_ING], 'user_event_task_award_id']);
+        $hasAchieveWeChatDeal = WeChatAwardCashDealModel::getRecords(['user_event_task_award_id' => $allTaskAwardIdArr, 'status' => [ErpReferralService::AWARD_STATUS_GIVEN, ErpReferralService::AWARD_STATUS_GIVE_ING]], 'user_event_task_award_id') ?: [];
         $count = count($cashInfo);
         $amount = DictConstants::get(DictConstants::TERM_SPRINT_CONFIG, 'total_cash_amount');
         $getAmount = floor(($amount / $count) * 100);
+        SimpleLogger::info('new term sprint red pack amount', ['amount' => $amount, 'get_amount' => $getAmount]);
         foreach ($cashInfo as $value) {
             if (in_array($value['task_award_id'], $hasAchieveWeChatDeal)) {
                 continue;
             }
-            CashGrantService::cashGiveOut($value['uuid'], $value['task_award_id'], $getAmount, EmployeeModel::SYSTEM_EMPLOYEE_ID, WeChatAwardCashDealModel::NORMAL_PIC_WORD);
+            CashGrantService::cashGiveOut($value['uuid'], $value['task_award_id'], $getAmount, EmployeeModel::SYSTEM_EMPLOYEE_ID, WeChatAwardCashDealModel::TERM_SPRINT_PIC_WORD);
         }
         //奖章
         $medalTaskId = DictConstants::get(DictConstants::TERM_SPRINT_CONFIG, 'medal_award_task_id');
