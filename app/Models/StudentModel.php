@@ -918,19 +918,19 @@ class StudentModel extends Model
             $where["{$giftCode}.buy_time[<]"] = $params['pay_end_time'];
         }
 
-        if (!empty($params['pay_low_amount']) || $params['pay_low_amount'] == 0) {
+        if (!empty($params['pay_low_amount']) || $params['pay_low_amount'] === 0) {
             $where["{$giftCode}.bill_amount[>=]"] = $params['pay_low_amount'] * 100;
         }
 
-        if (!empty($params['pay_high_amount']) || $params['pay_low_amount'] == 0) {
+        if (!empty($params['pay_high_amount']) || $params['pay_high_amount'] === 0) {
             $where['AND']["{$giftCode}.bill_amount[<=]"] = $params['pay_high_amount'] * 100;
         }
 
         if (!empty($params['order_status'])) {
-            if ($params['orderStatus'] == self::CODE_STATUS_DEPRECATED) {
+            if ($params['order_status'] == self::CODE_STATUS_DEPRECATED) {
                 $where["{$giftCode}.code_status"] = $params['order_status'];
             } else {
-                $where["{$giftCode}.code_status[!]"] = $params['order_status'];
+                $where["{$giftCode}.code_status[!]"] = self::CODE_STATUS_DEPRECATED;
             }
         }
 
@@ -970,6 +970,7 @@ class StudentModel extends Model
         $where['ORDER'] = ["{$giftCode}.create_time" => "DESC"];
 
         $list = MysqlDB::getDB()->select($student, $join, [
+            "{$student}.id(student_id)",
             "{$giftCode}.parent_bill_id",
             "{$erpPackage}.name(package_name)",
             "{$student}.name(student_name)",

@@ -1580,7 +1580,7 @@ class StudentService
     {
         $refereeInfo = StudentModel::getById($params['student_id']);
         if (!empty($refereeInfo)) {
-            $params['apply_user_mobile'] = $refereeInfo['mobile'];
+            $params['buyer_mobile'] = $refereeInfo['mobile'];
         } else {
             throw new RunTimeException(['student_not_exist']);
         }
