@@ -95,7 +95,7 @@ class PointActivity extends ControllerBase
      */
     public function needAlert(Request $request, Response $response)
     {
-        $data = MedalService::getNeedAlertMedal($this->ci['student']['id']);
+        $data = MedalService::getNeedAlertMedal($this->ci['student']['id'], $this->ci['version']);
         return HttpHelper::buildResponse($response, $data);
     }
 

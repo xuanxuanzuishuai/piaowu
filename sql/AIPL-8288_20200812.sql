@@ -9,6 +9,7 @@ INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES (
 INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES ('medal_config', '奖章活动', 'finish_var_task_count_medal', '20', NULL);
 INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES ('medal_config', '奖章活动', 'add_up_var_credit_medal', '21', NULL);
 INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES ('medal_config', '奖章活动', 'change_thumb_and_name_medal', '22', NULL);
+INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES ('medal_config', '奖章活动', 'min_app_version', '6.2.0', NULL);
 INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES ('ALI_OSS_CONFIG', '阿里OSS相关配置', 'green_text_check_type', 'antispam', 'green_text_check_type');
 
 CREATE TABLE `report_data_log` (

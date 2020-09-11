@@ -745,11 +745,16 @@ class MedalService
 
     /**
      * @param $studentId
+     * @param $appVersion
      * @return array|string[]
      * 当前学生需要弹出的奖章内容
      */
-    public static function getNeedAlertMedal($studentId)
+    public static function getNeedAlertMedal($studentId, $appVersion)
     {
+        $minVersion = DictConstants::get(DictConstants::MEDAL_CONFIG, 'min_app_version');
+        if (!CreditService::checkTaskQualification(['min_version' => $minVersion], ['app_version' => $appVersion])) {
+            return [];
+        }
         $returnInfo = [];
         $list = StudentMedalModel::getNeedAlertMedalInfo($studentId);
         if (!empty($list)) {

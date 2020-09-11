@@ -422,7 +422,8 @@ class DictConstants {
             'receive_max_sign_award_medal',
             'share_grade_medal',
             'sign_in_medal',
-            'change_thumb_and_name_medal'
+            'change_thumb_and_name_medal',
+            'min_app_version'
         ]
     ];
 
