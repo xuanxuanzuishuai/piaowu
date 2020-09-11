@@ -918,11 +918,11 @@ class StudentModel extends Model
             $where["{$giftCode}.buy_time[<]"] = $params['pay_end_time'];
         }
 
-        if (!empty($params['pay_low_amount']) || $params['pay_low_amount'] === 0) {
+        if (!empty($params['pay_low_amount']) || $params['pay_low_amount'] === "0") {
             $where["{$giftCode}.bill_amount[>=]"] = $params['pay_low_amount'] * 100;
         }
 
-        if (!empty($params['pay_high_amount']) || $params['pay_high_amount'] === 0) {
+        if (!empty($params['pay_high_amount']) || $params['pay_high_amount'] === "0") {
             $where['AND']["{$giftCode}.bill_amount[<=]"] = $params['pay_high_amount'] * 100;
         }
 
