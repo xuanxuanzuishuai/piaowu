@@ -283,26 +283,31 @@ class TrackService
     public static function trackCallbackOceanEngineLeads($eventType, $trackData)
     {
         $api = 'http://ad.toutiao.com/track/activate/';
+        $success = false;
         switch ($eventType) {
             case self::TRACK_EVENT_FORM_COMPLETE:
-                $type = 3;
+                $type = [3, 19];
                 break;
             case self::TRACK_EVENT_PAY:
-                $type = 2;
+                $type = [2];
                 break;
             default:
                 return false;
         }
 
-        $data = [
-            'event_type' => $type,
-            'link' => $trackData['callback'],
-            'conv_time' => time(),
-            'source' => $trackData['ad_id']
-        ];
-
-        $response = HttpHelper::requestJson($api, $data, 'GET');
-        $success = (!empty($response) && $response['ret'] == 0);
+        foreach ($type as $key => $value) {
+            $data = [
+                'event_type' => $value,
+                'link'       => $trackData['callback'],
+                'conv_time'  => time(),
+                'source'     => $trackData['ad_id']
+            ];
+            $response = HttpHelper::requestJson($api, $data, 'GET');
+            $success = (!empty($response) && $response['ret'] == 0);
+            if (!$success) {
+                break;
+            }
+        }
 
         return $success;
     }
