@@ -777,7 +777,7 @@ class MedalService
     {
         $info = self::getMedalIdInfo($medalId);
         $info['thumbs'] = AliOSS::replaceCdnDomainForDss(json_decode($info['thumbs'], true)[0]);
-        $info['medal_desc'] = (is_null($info['medal_level']) || $info['medal_level'] <= 1) ? '获得新奖章！' : '奖章升级！';
+        $info['medal_desc'] = (is_null($info['medal_level']) || $info['medal_level'] <= 1) ? '获得新奖章' : '奖章升级';
         return $info;
     }
 

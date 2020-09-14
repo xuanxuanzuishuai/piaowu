@@ -25,7 +25,7 @@ class StudentMedalModel extends Model
     public static function getNeedAlertMedalInfo($studentId)
     {
         $sql = "select * from (
-select ROW_NUMBER()over(PARTITION by g.category_id 
+select ROW_NUMBER()over(PARTITION by m.medal_category_id
 order by g.extension->>'$.level' desc) as row_num, 
 m.medal_id,g.category_id
 from " . self::$table . " m
