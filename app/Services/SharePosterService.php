@@ -440,7 +440,7 @@ class SharePosterService
     {
         $url = $_ENV["WECHAT_FRONT_DOMAIN"] . "/student/referral?tag=2";
 
-        $keyword3 = "已通过。奖励已发放";
+        $keyword3 = "您上传的截图审核已通过，奖励您的3天年卡延长包已自动生效，请您继续坚持分享！";
         $remark = "【点此消息】查看更多任务记录";
         $color = "#868686";
         if ($status == SharePosterModel::STATUS_UNQUALIFIED) {
