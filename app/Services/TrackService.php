@@ -286,10 +286,10 @@ class TrackService
         $success = false;
         switch ($eventType) {
             case self::TRACK_EVENT_FORM_COMPLETE:
-                $type = [3, 19];
+                $type = [3];
                 break;
             case self::TRACK_EVENT_PAY:
-                $type = [2];
+                $type = [2, 19];
                 break;
             default:
                 return false;
