@@ -518,5 +518,8 @@ class OrgWebRouter extends RouterBase
         '/org_web/leads_pool/update_pool_status' => ['method' => ['post'], 'call' => LeadsPool::class . ':updatePoolStatus'],
         '/org_web/leads_pool/detail' => ['method' => ['get'], 'call' => LeadsPool::class . ':detail'],
         '/org_web/leads_pool/list' => ['method' => ['get'], 'call' => LeadsPool::class . ':getPoolList'],
+
+        //课管服务->学生列表
+        '/org_web/student/search_list' => ['method' => ['get'], 'call' => Student::class . ':courseStudentList'],
     ];
 }

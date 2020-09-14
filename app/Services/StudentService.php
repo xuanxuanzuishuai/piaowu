@@ -27,6 +27,7 @@ use App\Models\EmployeeModel;
 use App\Models\GiftCodeModel;
 use App\Models\PackageExtModel;
 use App\Models\ReviewCourseModel;
+use App\Models\SharePosterModel;
 use App\Models\StudentAssistantLogModel;
 use App\Models\StudentCollectionLogModel;
 use App\Models\StudentModel;
@@ -613,7 +614,7 @@ class StudentService
         return StudentModel::updateStudent($studentId, $data);
     }
 
-    /**
+    /**获取学员管理
      * @param $params
      * @param $page
      * @param $count
@@ -627,6 +628,23 @@ class StudentService
         }
         return ['total_count' => $count, 'list' => $list];
     }
+
+    /**
+     * 获取课管学员管理
+     * @param $params
+     * @param $page
+     * @param $count
+     * @return array
+     */
+    public static function CourseStudentList($params, $page, $count)
+    {
+        list($count, $list) = StudentModel::CourseStudentList($params, $page, $count);
+        if($count > 0){
+            $list = self::formatCourseListData($list);
+        }
+        return ['total_count' => $count, 'list' => $list];
+    }
+
 
     public static function getLeaderPrivilegeMemberId($employeeDeptId, $employeeId, $targetDeptId = null, $targetId = null)
     {
@@ -719,6 +737,54 @@ class StudentService
             $row['wechat_account'] = $item['wechat_account'];
             $row['course_manage_name'] = $item['course_manage_name'];
             $row['serve_app_id'] = $item['serve_app_id'];
+            $data[] = $row;
+        }
+        return $data;
+    }
+
+    /**
+     * 格式化列表数据
+     * @param $list
+     * @return array
+     */
+    public static function formatCourseListData($list)
+    {
+        $data = [];
+        // 格式化学生数据
+        foreach($list as $item){
+            $row = [];
+            $row['name'] = $item['user_name'];
+            $row['mobile'] = Util::hideUserMobile($item['mobile']);
+            if ($item['code_status'] == Constants::STATUS_FALSE) {
+                $row['code_status'] = "未激活";
+            } elseif ($item['code_status'] == Constants::STATUS_TRUE) {
+                $row['code_status'] = '已激活';
+            } else {
+                $row['code_status'] = '已作废';
+            }
+            $row['is_add_course_wx'] = empty($item['is_add_course_wx']) ? 0 : 1;
+            $row['collection_name'] = !empty($item['course_manage_name']) ? $item['course_manage_name'] : '-';
+            $row['assistant_name'] = !empty($item['assistant_name']) ? $item['assistant_name'] : '-';
+            $row['sub_end_date'] = !empty($item['sub_end_date']) ? date('Y-m-d', strtotime($item['sub_end_date'].' 00:00')) : '-';;
+            $row['allot_assistant_time'] = !empty($item['allot_assistant_time']) ? date('Y-m-d', $item['allot_assistant_time']) : '-';
+            $row['total_duration'] = !empty($item['total_duration']) ? round($item['total_duration'] / 60, 1) : 0;
+            $row['avg_duration'] = !empty($item['avg_duration']) ? round($item['avg_duration'] / 60, 1) : 0;
+            $row['play_days'] = !empty($item['play_days']) ? $item['play_days'] : "0";
+            $row['bill_amount'] = !empty($item['bill_amount']) ? $item['bill_amount'] / 100 : 0;
+
+            if (empty($item['share_status'])) {
+                $row['share_status'] = "未提交";
+            } elseif ($item['share_status'] == SharePosterModel::STATUS_WAIT_CHECK) {
+                $row['share_status'] = "待审核";
+            } elseif ($item['share_status'] == SharePosterModel::STATUS_QUALIFIED) {
+                $row['share_status'] = "已通过";
+            } else {
+                $row['share_status'] = "未通过";
+            }
+            $row['remark_time'] = !empty($item['remark_time']) ? date('Y-m-d H:i:s', $item['remark_time']) : '-';
+            $row['student_id'] = $item['id'];
+            $row['serve_app_id'] = $item['serve_app_id'];
+
             $data[] = $row;
         }
         return $data;

@@ -464,6 +464,50 @@ class StudentModel extends Model
     }
 
     /**
+     * 课管学生列表数据
+     * @param $params
+     * @param $page
+     * @param $count
+     * @return array
+     */
+    public static function CourseStudentList($params, $page, $count)
+    {
+        //格式化搜索条件
+        list($where, $map) = self::formatCourseSearchParams($params);
+        if($where == false){
+            return [0, []];
+        }
+        //定义表
+        $student = self::$table;
+        $employee = EmployeeModel::$table;
+        $remark = StudentRemarkModel::$table;
+        $course = ReviewCourseTaskModel::$table;
+        $gift = GiftCodeModel::$table;
+        $poster = SharePosterModel::$table;
+
+        //变量
+        $generateChannel = GiftCodeModel::BUYER_TYPE_ERP_ORDER;
+        $AIPLAppId = UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT;
+        $PRACTICEAppId = UserCenter::APP_ID_PRACTICE;
+        $activityId = $params['activity_id'];
+        $type = SharePosterModel::TYPE_UPLOAD_IMG;
+        $playStartTime = date('Ymd', strtotime($params['play_start_time']));;
+        $playEndTime = date('Ymd', strtotime($params['play_end_time']));
+
+        //定义sql语句
+        $table = " FROM {$student} AS `s` ";
+        $join = " LEFT JOIN {$remark} AS `sr` on s.last_remark_id = sr.id LEFT JOIN {$employee} AS `ea` on s.assistant_id = ea.id LEFT JOIN {$employee} AS `ec` on s.course_manage_id = ec.id LEFT JOIN (SELECT student_id, SUM(sum_duration) total_duration, COUNT(DISTINCT play_date) play_days, SUM(sum_duration) / COUNT(DISTINCT play_date) avg_duration, play_date FROM {$course} AS `rct` where play_date >= " . $playStartTime . " and play_date <= " . $playEndTime . " GROUP BY student_id) rc ON rc.student_id = s.id LEFT JOIN (select buyer, code_status, bill_amount, ROW_NUMBER() OVER(PARTITION BY buyer ORDER BY buy_time DESC) r from {$gift} where generate_channel = " . $generateChannel . " and (bill_app_id = " . $AIPLAppId . " or bill_app_id = " . $PRACTICEAppId . ")) AS `gf` on r = 1 and  gf.buyer = s.id LEFT JOIN (select student_id, activity_id, `status`, ROW_NUMBER() OVER(PARTITION BY student_id ORDER BY create_time DESC) t from {$poster} where activity_id = " . $activityId . "  and `type` = " . $type . ") AS `sp` on t = 1 and sp.student_id = s.id ";
+
+        //统计数量
+        $num = self::getListCount($table, $join, $where, $map);
+        if(empty($num)){
+            return [0, []];
+        }
+        $data = self::getStudentListData($table, $join, $where, $map, $page, $count);
+        return [$num, $data];
+    }
+
+    /**
      * 格式化搜索学生条件
      * @param $params
      * @return array
@@ -640,6 +684,177 @@ class StudentModel extends Model
         return [$whereSql, $map];
     }
 
+
+    /**
+     * 课管学生列表（格式化搜索学生条件）
+     * @param $params
+     * @return array
+     */
+    public static function formatCourseSearchParams($params)
+    {
+        $whereSql = ' WHERE s.has_review_course = :has_review_course ';
+        $map = [':has_review_course' => ReviewCourseModel::REVIEW_COURSE_1980];
+        //学生id
+        if (!empty($params['student_id'])) {
+            $whereSql .= " AND s.id = :student_id ";
+            $map[':student_id'] = $params['student_id'];
+        }
+
+        // 无助教
+        if ($params['no_assistant']) {
+            $whereSql .= " AND s.assistant_id = 0 ";
+        }
+
+        //无课管
+        if ($params['no_course_manage']) {
+            $whereSql .= " AND s.course_manage_id = 0 ";
+        }
+
+        //查看助教、助教组下的用户
+        $assistantFilter = '';
+        if (!empty($params['assistant_id']) && is_array($params['assistant_id'])) {
+            $assistantIds = implode(', ', $params['assistant_id']);
+            $assistantFilter = "s.assistant_id IN ({$assistantIds})";
+        }
+        if (!empty($params['assistant_id']) && is_numeric($params['assistant_id'])) {
+            $assistantFilter = "s.assistant_id = {$params['assistant_id']}";
+        }
+        if (!empty($assistantFilter)) {
+            $whereSql .= " AND ({$assistantFilter}) ";
+        }
+
+        //查看课管、课管组下的用户
+        $courseManageFilter = '';
+        if (!empty($params['course_manage_id']) && is_array($params['course_manage_id'])) {
+            $courseManageIds = implode(', ', $params['course_manage_id']);
+            $courseManageFilter = "s.course_manage_id IN ({$courseManageIds})";
+        }
+        if (!empty($params['course_manage_id']) && is_numeric($params['course_manage_id'])) {
+            $courseManageFilter = "s.course_manage_id = {$params['course_manage_id']}";
+        }
+        if (!empty($courseManageFilter)) {
+            $whereSql .= " AND {$courseManageFilter} ";
+        }
+
+        //学生姓名
+        if (!empty($params['student_name'])) {
+            $whereSql .= " AND s.name like :student_name ";
+            $map[':student_name'] = Util::sqlLike($params['student_name']);
+        }
+        //学生手机号
+        if (!empty($params['mobile'])) {
+            $whereSql .= " AND s.mobile like :mobile ";
+            $map[':mobile'] = Util::sqlLike($params['mobile']);
+        }
+
+        //是否添加课管微信
+        if (isset($params['is_add_course_wx']) && !Util::emptyExceptZero($params['is_add_course_wx'])) {
+            $whereSql .= " AND s.is_add_course_wx = :is_add_course_wx ";
+            $map[':is_add_course_wx'] = $params['is_add_course_wx'];
+        }
+
+        //激活状态
+        if (isset($params['code_status']) && !Util::emptyExceptZero($params['code_status'])) {
+            $whereSql .= " AND gf.code_status = :code_status ";
+            $map[':code_status'] = $params['code_status'];
+        }
+
+        // 服务业务线
+        if (!empty($params['serve_app_id'])) {
+            $whereSql .= " AND s.serve_app_id = :serve_app_id ";
+            $map[':serve_app_id'] = $params['serve_app_id'];
+        }
+
+        //分配日期 开始时间
+        if (!empty($params['allot_assistant_start_time'])) {
+            $whereSql .= ' AND s.allot_assistant_time >= :allot_assistant_start_time ';
+            $map[':allot_assistant_start_time'] = $params['allot_assistant_start_time'];
+        }
+
+        //分配日期 结束时间
+        if (!empty($params['allot_assistant_end_time'])) {
+            $whereSql .= ' AND s.allot_assistant_time <= :allot_assistant_end_time ';
+            $map[':allot_assistant_end_time'] = $params['allot_assistant_end_time'];
+        }
+
+        //查询有效期开始时间
+        if (!empty($params['effect_start_time'])) {
+            $whereSql .= " AND s.sub_end_date >= :effect_start_time ";
+            $map[':effect_start_time'] = date('Ymd', $params['effect_start_time']);
+        }
+        //查询有效期结束时间
+        if (!empty($params['effect_end_time'])) {
+            $whereSql .= " AND s.sub_end_date <= :effect_end_time ";
+            $map[':effect_end_time'] = date('Ymd', $params['effect_end_time']);
+        }
+
+
+        // 总时长最小值
+        if (isset($params['total_duration_min']) && is_numeric($params['total_duration_min'])) {
+            $whereSql .= " AND IFNULL(total_duration, 0) >= :total_duration_min ";
+            $map[":total_duration_min"] = $params['total_duration_min'] * 60;
+        }
+        //总时长最大值
+        if (isset($params['total_duration_max']) && is_numeric($params['total_duration_max'])) {
+            $whereSql .= " AND IFNULL(total_duration, 0) <= :total_duration_max ";
+            $map[":total_duration_max"] = $params['total_duration_max'] * 60;
+        }
+
+        // 日均时长最小值
+        if (isset($params['avg_duration_min']) && is_numeric($params['avg_duration_min'])) {
+            $whereSql .= " AND IFNULL(avg_duration, 0) >= :avg_duration_min ";
+            $map[":avg_duration_min"] = $params['avg_duration_min'] * 60;
+        }
+        // 日均时长最大值
+        if (isset($params['avg_duration_max']) && is_numeric($params['avg_duration_max'])) {
+            $whereSql .= " AND IFNULL(avg_duration, 0) <= :avg_duration_max ";
+            $map[":avg_duration_max"] = $params['avg_duration_max'] * 60;
+        }
+
+        // 日报数最小值
+        if (isset($params['play_days_min']) && is_numeric($params['play_days_min'])) {
+            $whereSql .= " AND IFNULL(play_days, 0) >= :play_days_min ";
+            $map[":play_days_min"] = $params['play_days_min'];
+        }
+        //日报数最大值
+        if (isset($params['play_days_max']) && is_numeric($params['play_days_max'])) {
+            $whereSql .= " AND IFNULL(play_days, 0) <= :play_days_max ";
+            $map[":play_days_max"] = $params['play_days_max'];
+        }
+
+        //上次跟进开始时间
+        if (!empty($params['remark_start_time'])) {
+            $whereSql .= " AND sr.create_time >= :remark_start_time ";
+            $map[':remark_start_time'] = $params['remark_start_time'];
+        }
+        //上次跟进结束时间
+        if (!empty($params['remark_end_time'])) {
+            $whereSql .= " AND sr.create_time <= :remark_end_time ";
+            $map[':remark_end_time'] = $params['remark_end_time'];
+        }
+
+        //购买最小值
+        if (!empty($params['bill_amount_min'])) {
+            $whereSql .= " AND gf.bill_amount >= :bill_amount_min ";
+            $map[':bill_amount_min'] = $params['bill_amount_min'] * 100;
+        }
+        //购买最大值
+        if (!empty($params['bill_amount_max'])) {
+            $whereSql .= " AND gf.bill_amount <= :bill_amount_max ";
+            $map[':bill_amount_max'] = $params['bill_amount_max'] * 100;
+        }
+
+        //朋友圈的分享状态
+        if (isset($params['share_status']) && $params['share_status'] != 0) {
+            $whereSql .= " AND sp.status = :share_status";
+            $map[':share_status'] = $params['share_status'];
+        } elseif (isset($params['share_status']) && $params['share_status'] == 0) {
+            $whereSql .= " AND sp.status is null";
+        }
+
+        return [$whereSql, $map];
+    }
+
     /**
      * 获取学生列表count
      * @param $table
@@ -702,6 +917,20 @@ class StudentModel extends Model
             $orderSql .= "actime " . $allotCollectionTimeSortRule . ",";
         }
         $where .= $orderSql . ' s.id desc';
+        //分页
+        if ($page > 0 && $count > 0) {
+            $where .= " LIMIT " . ($page - 1) * $count . "," . $count;
+        }
+        $sql = $select . $table . $join . $where;
+        return MysqlDB::getDB()->queryAll($sql, $map);
+    }
+
+
+    public static function getStudentListData($table, $join, $where, $map, $page, $count)
+    {
+        //查询字段
+        $select  = " select  s.id, s.name user_name, s.mobile, s.serve_app_id, s.sub_end_date, s.allot_assistant_time, s.is_add_course_wx, sr.create_time remark_time, sr.remark last_remark, ea.name assistant_name, ec.name course_manage_name, rc.total_duration, rc.play_days, rc.avg_duration,rc.play_date, gf.code_status, gf.bill_amount,sp.`status` share_status, sp.activity_id";
+
         //分页
         if ($page > 0 && $count > 0) {
             $where .= " LIMIT " . ($page - 1) * $count . "," . $count;

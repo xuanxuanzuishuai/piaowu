@@ -648,6 +648,100 @@ class Student extends ControllerBase
     }
 
     /**
+     * 课管学生列表数据
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function courseStudentList(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        $rules = [
+            [
+                'key'        => 'activity_id',
+                'type'       => 'required',
+                'error_code' => 'activity_id_is_required',
+            ],
+            [
+                'key' => 'play_start_time',
+                'type' => 'required',
+                'error_code' => 'play_start_time_is_required'
+            ],
+            [
+                'key' => 'play_end_time',
+                'type' => 'required',
+                'error_code' => 'play_end_time_is_required'
+            ]
+        ];
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        // 助教和课管不允许同时筛选
+        if (!empty($params['assistant_id']) && !empty($params['course_manage_id'])) {
+            return HttpHelper::buildErrorResponse($response,
+                RunTimeException::makeAppErrorData('class_id_student_id_only_one_not_empty'));
+        }
+
+        // 按指定员工ID筛选时清空组ID
+        if (!empty($params['assistant_id']) || !empty($params['course_manage_id'])) {
+            unset($params['dept_id']);
+        }
+
+        $courseManageRoleId = DictConstants::get(DictConstants::ORG_WEB_CONFIG,'course_manage_role');
+
+        $employee = $this->ci['employee'];
+
+        $employeeType = null;
+        if ($employee['role_id'] == $courseManageRoleId) {
+            $employeeType = 'course_manage_id';
+        }
+
+        //课管组长查询
+        if (!empty($employeeType) && $employee['is_leader']) {
+            $memberIds = StudentService::getLeaderPrivilegeMemberId($employee['dept_id'], $employee['id'], $params['dept_id'] ?? null, $params[$employeeType] ?? null);
+            if (!empty($memberIds)) {
+                $privilegeParams[$employeeType] = $memberIds;
+            } else {
+                $privilegeParams = ['assistant_id' => -1, 'course_manage_id' => -1];
+            }
+        }
+
+        //课管查询
+        if (!empty($employeeType) && !$employee['is_leader']) {
+            $privilegeParams[$employeeType] = [$employee['id']];
+        }
+
+        // 其他角色查询课管名下学员
+        if (empty($employeeType) && !empty($params['course_manage_id'])) {
+            $privilegeParams = ['course_manage_id' => $params['course_manage_id']];
+        }
+
+        // 其他角色查询助教名下学员
+        if (empty($employeeType) && !empty($params['assistant_id'])) {
+            $privilegeParams = ['assistant_id' => $params['assistant_id']];
+        }
+
+        // 其他角色按组查询
+        if (empty($employeeType) && !empty($params['dept_id'])) {
+            $privilegeParams = StudentService::getDeptPrivilege($params['dept_id']);
+            if (empty($privilegeParams)) {
+                $privilegeParams = ['assistant_id' => -1, 'course_manage_id' => -1];
+            }
+        }
+
+        $params['assistant_id'] = $privilegeParams['assistant_id'] ?? null;
+        $params['course_manage_id'] = $privilegeParams['course_manage_id'] ?? null;
+
+        list($page, $count) = Util::formatPageCount($params);
+
+        $res = StudentService::CourseStudentList($params, $page, $count);
+
+        return HttpHelper::buildResponse($response, $res);
+    }
+
+    /**
      * 学生分配班级
      * @param Request $request
      * @param Response $response
