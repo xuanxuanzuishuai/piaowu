@@ -68,6 +68,11 @@ class GiftCodeModel extends Model
     const DEFAULT_NUM = 1;//默认激活数量
 
 
+    // 1 新产品包 0 旧产品包
+    const PACKAGE_V1 = 1;
+    const PACKAGE_V1_NOT = 0;
+
+
     /**
      * @param array|string $codes
      * @return bool

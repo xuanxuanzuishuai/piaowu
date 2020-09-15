@@ -91,7 +91,8 @@ class GiftCodeService
             'bill_amount' => $billInfo['bill_amount'] ?? 0,
             'bill_app_id' => $billInfo['bill_app_id'] ?? 0,
             'bill_package_id' => $billInfo['bill_package_id'] ?? 0,
-            'employee_uuid' => $billInfo['employee_uuid'] ?? ''
+            'employee_uuid' => $billInfo['employee_uuid'] ?? '',
+            'package_v1' => !empty($billInfo['package_v1']) ? GiftCodeModel::PACKAGE_V1 : GiftCodeModel::PACKAGE_V1_NOT
         ];
         !empty($params['employee_uuid']) && $params['employee_dept_info'] = DeptService::getSubAllParentDept($params['employee_uuid']);
 
@@ -300,5 +301,24 @@ class GiftCodeService
         if (empty($cnt)) { return 'data_error'; }
 
         return null;
+    }
+
+    /**
+     * 订单是否存在
+     * @param $billId
+     * @param $parentBillId
+     * @return bool
+     */
+    public static function getGiftCodeByBill($billId, $parentBillId)
+    {
+        $where = [];
+        if (!empty($parentBillId)) {
+            $where['parent_bill_id'] = $parentBillId;
+        }
+        if (!empty($billId)) {
+            $where['bill_id'] = $billId;
+        }
+        $giftCode = GiftCodeModel::getRecord($where);
+        return !empty($giftCode) ? true : false;
     }
 }

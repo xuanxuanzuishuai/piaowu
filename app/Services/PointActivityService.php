@@ -25,6 +25,7 @@ class PointActivityService
 {
     //学生账户子类型
     const ACCOUNT_SUB_TYPE_STUDENT_POINTS = 3001;//学生积分余额
+    const ACCOUNT_SUB_TYPE_CASH = 1001; // 学生现金账户
     //学生账户操作日志子类型
     const SOURCE_TYPE_SIGN = 1001;//每日签到
     const SOURCE_TYPE_PLAY_DURATION = 1002;//练琴时长
@@ -296,5 +297,22 @@ class PointActivityService
             }, $studentAccountDetail['data']['logs']);
         }
         return $data;
+    }
+
+    /**
+     * 获取学生现金余额
+     * @param $uuid
+     * @return float|int
+     */
+    public static function getStudentCash($uuid)
+    {
+        $erp = new Erp();
+        $accounts = $erp->studentAccount($uuid);
+        if (!isset($accounts['code']) || empty($accounts['data'])) {
+            return 0;
+        }
+        $accounts = array_column($accounts['data'], null, 'sub_type');
+        $cash = $accounts[self::ACCOUNT_SUB_TYPE_CASH];
+        return ($cash['total_num'] * 100 - $cash['out_time_num'] * 100);
     }
 }

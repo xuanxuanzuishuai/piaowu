@@ -9,6 +9,7 @@
 namespace App\Routers;
 
 
+use App\Controllers\StudentWX\Order;
 use App\Controllers\StudentWX\MakeOpera;
 use App\Controllers\StudentWX\PlayReport;
 use App\Controllers\StudentWX\Area;
@@ -57,6 +58,11 @@ class StudentWXRouter extends RouterBase
         '/student_wx/pay/create_bill' => array('method' => ['post'], 'call' => Pay::class . ':createBill'),
         '/student_wx/pay/bill_status' => array('method' => ['get'], 'call' => Pay::class . ':billStatus'),
         '/student_wx/pay/get_package_detail' => array('method' => ['get'], 'call' => Pay::class . ':getPackageDetail'),
+
+        // 新订单中心
+        '/student_wx/order/get_package_detail' => array('method' => ['get'], 'call' => Order::class . ':getPackageDetail'),
+        '/student_wx/order/create_order' => array('method' => ['post'], 'call' => Order::class . ':createOrder'),
+        '/student_wx/order/order_status' => array('method' => ['get'], 'call' => Order::class . ':orderStatus'),
 
         // 获取激活码信息
         '/student_wx/student/gift_code' => [

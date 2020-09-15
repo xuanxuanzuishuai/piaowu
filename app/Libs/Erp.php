@@ -8,6 +8,7 @@
 
 namespace App\Libs;
 
+use App\Models\ModelV1\ErpPackageV1Model;
 use App\Services\ErpReferralService;
 use App\Services\EventService;
 use GuzzleHttp\Client;
@@ -47,11 +48,12 @@ class Erp
     // 新产品包
     const API_PACKAGE_V1_LIST = '/ai_dss/package/package_v1_list';
     const API_PACKAGE_V1_DETAIL = '/ai_dss/package/package_v1_detail';
-    // 积分商城
+    // 新订单中心
     const API_CREATE_BILL_V1 = '/ai_dss/billV1/create_bill';
     const API_BILL_LIST_V1 = '/ai_dss/billV1/bill_list';
     const API_BILL_DETAIL_V1 = '/ai_dss/billV1/bill_detail';
     const API_LOGISTICS_V1 = '/ai_dss/billV1/logistics';
+    const API_BILL_STATUS_V1= '/ai_dss/billV1/bill_status';
 
     // 账户
     const API_STUDENT_ACCOUNTS = '/ai_dss/account/detail';
@@ -524,6 +526,7 @@ class Erp
     public function createBillV1($params)
     {
         $params['app_id'] = self::SELF_APP_ID;
+        $params['sale_shop'] = $params['sale_shop'] ?? ErpPackageV1Model::SALE_SHOP_NOTE;
 
         $response = HttpHelper::requestJson($this->host . self::API_CREATE_BILL_V1, $params, 'POST');
         return $response;
@@ -552,6 +555,19 @@ class Erp
         $params['app_id'] = self::SELF_APP_ID;
 
         $response = HttpHelper::requestJson($this->host . self::API_BILL_DETAIL_V1, $params);
+        return $response;
+    }
+
+    /**
+     * 新订单状态
+     * @param $params
+     * @return array|bool
+     */
+    public function billStatusV1($params)
+    {
+        $params['app_id'] = self::SELF_APP_ID;
+
+        $response = HttpHelper::requestJson($this->host . self::API_BILL_STATUS_V1, $params);
         return $response;
     }
 

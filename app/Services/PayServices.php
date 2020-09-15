@@ -13,10 +13,12 @@ use App\Libs\Erp;
 use App\Libs\MysqlDB;
 use App\Libs\Util;
 use App\Models\GiftCodeModel;
+use App\Models\ModelV1\ErpPackageV1Model;
 use App\Models\PackageExtModel;
 use App\Models\ReviewCourseModel;
 use App\Models\StudentModel;
 use App\Models\StudentModelForApp;
+use App\Services\ErpServiceV1\ErpPackageV1Service;
 
 class PayServices
 {
@@ -26,10 +28,6 @@ class PayServices
     const BILL_STATUS_FAILED = '-1';
 
     const PAY_CHANNEL_PUB = 21; //微信公众号内支付
-
-    // 销售商城 1 音符商城 2 金叶子商城
-    const SALE_SHOP_NOTE = 1;
-    const SALE_SHOP_LEAF = 2;
 
     /**
      * 获取产品包
@@ -314,6 +312,10 @@ class PayServices
             return false;
         }
 
+        // 新产品包---体验时长
+        $newTrailIds = ErpPackageV1Model::getTrailPackageIds();
+        $trialPackageIds = array_merge($trialPackageIds, $newTrailIds);
+
         $trialCode = GiftCodeModel::getRecords([
             'buyer' => $studentId,
             'bill_package_id' => $trialPackageIds
@@ -377,7 +379,7 @@ class PayServices
         // sale_shop 销售商城分类 1 音符商城 2 金叶子商城
         // channel 渠道授权 1 Android 2 IOS 4 公众号 8 ERP
         $params = [
-            'sale_shop' => self::SALE_SHOP_NOTE,
+            'sale_shop' => ErpPackageV1Model::SALE_SHOP_NOTE,
             'channel' => $channel,
             'page' => $page,
             'count' => $count
@@ -393,14 +395,15 @@ class PayServices
      * @param $packageId
      * @param $channel
      * @param $uuid
+     * @param $saleShop
      * @return array|bool
      */
-    public static function getPackageV1Detail($packageId, $channel, $uuid)
+    public static function getPackageV1Detail($packageId, $channel, $uuid, $saleShop = ErpPackageV1Model::SALE_SHOP_NOTE)
     {
         // sale_shop 销售商城分类 1 音符商城 2 金叶子商城
         // channel 渠道授权 1 Android 2 IOS 4 公众号 8 ERP
         $params = [
-            'sale_shop' => self::SALE_SHOP_NOTE,
+            'sale_shop' => $saleShop,
             'channel' => $channel,
             'package_id' => $packageId,
             'uuid' => $uuid,

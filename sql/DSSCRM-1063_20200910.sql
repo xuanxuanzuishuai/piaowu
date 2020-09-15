@@ -1,0 +1,2 @@
+ALTER TABLE `gift_code`
+ADD COLUMN `package_v1` TINYINT(2) NOT NULL DEFAULT '0' COMMENT '是否新产品包';

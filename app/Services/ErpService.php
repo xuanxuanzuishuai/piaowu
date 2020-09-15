@@ -52,17 +52,14 @@ class ErpService
             if ($ret['code'] == Valid::CODE_PARAMS_ERROR) {
                 $errorCode = array_values($ret['errors'])[0]['err_no'];
                 return [$errorCode, null];
-            } else {
-                $student = StudentModel::getById($ret['student_id']);
             }
+
+            $student = StudentModel::getById($ret['student_id']);
         }
 
         if (empty($student)) {
             return ['user_register_fail', null];
         }
-
-        $orgId = DictConstants::get(DictConstants::SPECIAL_ORG_ID, 'panda');
-        StudentService::bindOrg($orgId, $student['id']);
 
         $now = time();
         $giftCodes = GiftCodeService::batchCreateCode(

@@ -49,4 +49,18 @@ inner join " . self::$table . " p on g.extension->>'$.parent_id' = p.id";
             " AND extension->>'$.parent_id' = 0";
         return MysqlDB::getDB()->queryAll($sql);
     }
+
+    public static function getGoods($goodsId)
+    {
+        $goods = GoodsV1Model::getRecord(['id' => $goodsId]);
+        $extension = json_decode($goods['extension'], 1);
+        // 发货方式
+        $goods['apply_type'] = $extension['apply_type'];
+        // 体验课类型
+        $goods['trial_type'] = !empty($extension['trail_type']) ? $extension['trail_type'] : PackageExtModel::TRIAL_TYPE_NONE;
+
+        // 时长总天数
+        $goods['duration_num'] = $goods['num'] + $goods['free_num'];
+        return $goods;
+    }
 }
