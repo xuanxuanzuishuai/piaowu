@@ -571,6 +571,44 @@ class Student extends ControllerBase
     }
 
     /**
+     * 更新学生添加课管微信状态
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function updateAddCourseStatus(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        $rules = [
+            [
+                'key'        => 'student_id',
+                'type'       => 'required',
+                'error_code' => 'student_id_is_required',
+            ],
+            [
+                'key'        => 'student_id',
+                'type'       => 'integer',
+                'error_code' => 'student_id_must_be_integer'
+            ],
+            [
+                'key'        => 'add_course_status',
+                'type'       => 'required',
+                'error_code' => 'add_course_status_is_required',
+            ]
+        ];
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $res = StudentService::updateAddCourseStatus($params['student_id'], $params['add_course_status']);
+        if (empty($res)) {
+            $errorResult = Valid::addErrors([], 'student', 'update_date_failed');
+            return HttpHelper::buildOrgWebErrorResponse($response, $errorResult['data']['errors']);
+        }
+        return HttpHelper::buildResponse($response, []);
+    }
+
+    /**
      * 获取学生列表数据
      * @param Request $request
      * @param Response $response

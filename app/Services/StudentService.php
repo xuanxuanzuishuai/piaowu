@@ -614,6 +614,19 @@ class StudentService
         return StudentModel::updateStudent($studentId, $data);
     }
 
+    /**
+     * 编辑学生添加课管微信状态
+     * @param $studentId
+     * @param $status
+     * @return int|null
+     */
+    public static function updateAddCourseStatus($studentId, $status)
+    {
+        $status = empty($status) ? Constants::STATUS_FALSE : Constants::STATUS_TRUE;
+        $data = ['is_add_course_wx' => $status];
+        return StudentModel::updateStudent($studentId, $data);
+    }
+
     /**获取学员管理
      * @param $params
      * @param $page

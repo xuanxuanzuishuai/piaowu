@@ -524,5 +524,6 @@ class OrgWebRouter extends RouterBase
 
         //课管服务->学生列表
         '/org_web/student/search_list' => ['method' => ['get'], 'call' => Student::class . ':courseStudentList'],
+        '/org_web/student/update_add_course_status' => ['method' => ['post'], 'call' => Student::class . ':updateAddCourseStatus'],
     ];
 }
