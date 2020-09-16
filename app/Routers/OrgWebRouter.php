@@ -263,8 +263,6 @@ class OrgWebRouter extends RouterBase
         '/boss/gift_code/list_for_org' => ['method' => ['get'], 'call' => GiftCode::class . ':listForOrg'],
         '/boss/gift_code/add' => ['method' => ['post'], 'call' => GiftCode::class . ':add'],
         '/boss/gift_code/abandon' => ['method' => ['post'], 'call' => GiftCode::class . ':abandon'],
-        '/boss/gift_code/abandon_for_org' => ['method' => ['post'], 'call' => GiftCode::class . ':abandonForOrg'],
-
 
         //内部管理员查看机构账号列表
         '/org_web/org_account/list' => ['method' => ['get'], 'call' => OrgAccount::class . ':list'],

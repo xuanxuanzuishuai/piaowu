@@ -12,11 +12,11 @@ namespace App\Services;
 
 use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
-use App\Libs\SimpleLogger;
+use App\Libs\MysqlDB;
 use App\Models\EmployeeModel;
 use App\Models\GiftCodeModel;
 use App\Libs\Dict;
-use App\Models\StudentModel;
+use Complex\Exception;
 
 class GiftCodeService
 {
@@ -248,59 +248,39 @@ class GiftCodeService
 
     /**
      * 作废激活码
-     * @param int|array $ids
-     * @param bool $force 强制删除使用过的激活码
+     * @param int $id
      * @return int 修改的数量
+     * @throws RunTimeException
      */
-    public static function abandonCode($ids, $force = false)
+    public static function abandonCode($id)
     {
-        $where = ['id' => $ids];
-        if (!$force) {
-            $where['code_status'] = GiftCodeModel::CODE_STATUS_NOT_REDEEMED;
+        $giftCodeData = GiftCodeModel::getRecord(['id' => $id]);
+        if (empty($giftCodeData)) {
+            throw new RunTimeException(['gift_code_id_error']);
+        }
+        $db = MysqlDB::getDB();
+        $db->beginTransaction();
+        //只可以作废 手动在dss后台手动生成、机构生成 并且是未激活或者已激活 的激活码
+        $channelStatus = ($giftCodeData['generate_channel'] == GiftCodeModel::BUYER_TYPE_STUDENT || $giftCodeData['generate_channel'] == GiftCodeModel::BUYER_TYPE_ORG);
+        $codeStatus = ($giftCodeData['code_status'] == GiftCodeModel::CODE_STATUS_NOT_REDEEMED || $giftCodeData['code_status'] == GiftCodeModel::CODE_STATUS_HAS_REDEEMED);
+        if (!$channelStatus || !$codeStatus) {
+            throw new RunTimeException(['gift_code_id_error']);
+        }
+        //修改激活码状态
+        $updateGiftCodeStatus = GiftCodeModel::updateRecord($giftCodeData['id'], ['code_status' => GiftCodeModel::CODE_STATUS_INVALID]);
+        $updateSubDurationStatus = Constants::STATUS_TRUE;
+
+        // 已激活的扣除相应时间
+        if ($giftCodeData['code_status'] == GiftCodeModel::CODE_STATUS_HAS_REDEEMED) {
+            $updateSubDurationStatus = StudentService::reduceSubDuration($giftCodeData['apply_user'], $giftCodeData['valid_num'], $giftCodeData['valid_units']);
+        }
+        if ($updateGiftCodeStatus && $updateSubDurationStatus) {
+            $db->commit();
+            return $updateGiftCodeStatus;
         } else {
-            $where['code_status'] = [GiftCodeModel::CODE_STATUS_NOT_REDEEMED, GiftCodeModel::CODE_STATUS_HAS_REDEEMED];
+            $db->rollBack();
+            throw new RunTimeException(['gift_code_id_error']);
         }
-
-
-        if (!empty($ids)) {
-            return GiftCodeModel::batchUpdateRecord(
-                ['code_status' => GiftCodeModel::CODE_STATUS_INVALID],
-                $where,
-                false);
-        }
-        return 0;
-    }
-
-    /**
-     * 机构自主作废激活码
-     * 只能作废机构内部的激活码
-     * @param $orgId
-     * @param $codeId
-     * @return null|string errorCode
-     */
-    public static function abandonCodeForOrg($orgId, $codeId)
-    {
-        $code = GiftCodeModel::getById($codeId);
-        if (($code['generate_channel'] != GiftCodeModel::BUYER_TYPE_ORG) ||
-            ($code['buyer'] != $orgId)) {
-            return 'code_generate_channel_invalid';
-        }
-
-        if ($code['code_status'] == GiftCodeModel::CODE_STATUS_INVALID) {
-            return 'code_status_invalid';
-
-        }
-
-        if ($code['code_status'] == GiftCodeModel::CODE_STATUS_HAS_REDEEMED) {
-            // 已激活的扣除响应时间
-            $cnt = StudentService::reduceSubDuration($code['apply_user'], $code['valid_num'], $code['valid_units']);
-            if (empty($cnt)) { return 'data_error'; }
-        }
-
-        $cnt = GiftCodeService::abandonCode($code['id'], true);
-        if (empty($cnt)) { return 'data_error'; }
-
-        return null;
     }
 
     /**

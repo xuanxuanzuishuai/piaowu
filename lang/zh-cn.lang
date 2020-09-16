@@ -418,4 +418,5 @@ not_reach_valid_num="尚未达到当前奖励要求"
 not_relate_task="无相关活动"
 term_sprint_has_end="新学期冲刺已结束"
 term_sprint_not_start="新学期冲洗未开始"
+abandon_gift_code_ids_error="一次只允许作废一个激活码"
 

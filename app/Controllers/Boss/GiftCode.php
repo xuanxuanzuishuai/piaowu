@@ -10,13 +10,15 @@ namespace App\Controllers\Boss;
 
 use App\Controllers\ControllerBase;
 use App\Libs\DictConstants;
-use App\Libs\MysqlDB;
+use App\Libs\Exceptions\RunTimeException;
+use App\Libs\HttpHelper;
 use App\Libs\NewSMS;
 use App\Libs\Valid;
 use App\Models\GiftCodeModel;
 use App\Models\StudentModelForApp;
 use App\Services\CommonServiceForApp;
 use App\Services\GiftCodeService;
+use Complex\Exception;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -172,49 +174,19 @@ class GiftCode extends ControllerBase
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        //作废激活码
-        $ids = explode(',', $params['ids']);
-        $updatedCount = GiftCodeService::abandonCode($ids);
+        //一次只允许作废一个激活码
+        if (strstr($params['ids'], ',')) {
+            return $response->withJson(Valid::addAppErrors([], 'abandon_gift_code_ids_error'), StatusCode::HTTP_OK);
+        }
+        try {
+            $updatedCount = GiftCodeService::abandonCode($params['ids']);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData());
+        }
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'count' => $updatedCount,
-        ], StatusCode::HTTP_OK);
-    }
-
-    // 机构作废激活码
-    public function abandonForOrg(Request $request, Response $response)
-    {
-        $params = $request->getParams();
-        $rules = [
-            [
-                'key' => 'id',
-                'type' => 'required',
-                'error_code' => 'ids_is_required'
-            ]
-        ];
-        $result = Valid::validate($params, $rules);
-        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
-            return $response->withJson($result, StatusCode::HTTP_OK);
-        }
-
-        $orgId = $this->ci['employee']['org_id'];
-
-        $db = MysqlDB::getDB();
-        $db->beginTransaction();
-
-        $errorCode = GiftCodeService::abandonCodeForOrg($orgId, $params['id']);
-        if (!empty($errorCode)) {
-            $db->rollBack();
-            $result = Valid::addErrors([],'id',$errorCode);
-            return $response->withJson($result, StatusCode::HTTP_OK);
-        }
-
-        $db->commit();
-
-        return $response->withJson([
-            'code' => Valid::CODE_SUCCESS,
-            'data' => []
         ], StatusCode::HTTP_OK);
     }
 }
