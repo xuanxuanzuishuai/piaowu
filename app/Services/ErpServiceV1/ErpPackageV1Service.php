@@ -12,6 +12,7 @@ namespace App\Services\ErpServiceV1;
 
 use App\Models\CategoryV1Model;
 use App\Models\ModelV1\ErpPackageGoodsV1Model;
+use App\Models\ModelV1\ErpPackageV1Model;
 
 class ErpPackageV1Service
 {
@@ -30,5 +31,15 @@ class ErpPackageV1Service
             return true;
         }
         return false;
+    }
+
+    /**
+     * 获取新产品包id，name
+     * @param $subType
+     * @return array|null
+     */
+    public static function getPackages($subType)
+    {
+        return ErpPackageV1Model::getPackagesByType($subType);
     }
 }

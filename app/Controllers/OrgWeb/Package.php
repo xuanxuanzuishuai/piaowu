@@ -14,6 +14,7 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Services\DictService;
 use App\Libs\Valid;
+use App\Services\ErpServiceV1\ErpPackageV1Service;
 use App\Services\PackageService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -128,5 +129,30 @@ class Package extends ControllerBase
         }
 
         return HttpHelper::buildResponse($response, []);
+    }
+
+    /**
+     * 获取新产品包信息
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function packageListV1(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'sub_type',
+                'type' => 'required',
+                'error_code' => 'sub_type_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $records = ErpPackageV1Service::getPackages($params['sub_type']);
+
+        return HttpHelper::buildResponse($response, $records);
     }
 }

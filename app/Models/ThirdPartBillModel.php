@@ -10,6 +10,7 @@ namespace App\Models;
 
 use App\Libs\MysqlDB;
 use App\Libs\Util;
+use App\Models\ModelV1\ErpPackageV1Model;
 
 class ThirdPartBillModel extends Model
 {
@@ -22,6 +23,10 @@ class ThirdPartBillModel extends Model
     const NOT_NEW = 2; // 老用户
 
     const IGNORE = 1; // 导入数据时忽略当前行标记
+
+    // 1 新产品包 0 旧产品包
+    const PACKAGE_V1 = 1;
+    const PACKAGE_V1_NOT = 0;
 
     public static function list($params, $page, $count)
     {
@@ -64,6 +69,11 @@ class ThirdPartBillModel extends Model
             $where .= ' and t.package_id = :package_id ';
             $map[':package_id'] = $params['package_id'];
         }
+        if (!empty($params['package_v1'])) {
+            $where .= ' and t.package_v1 = ' . self::PACKAGE_V1;
+        } else {
+            $where .= ' and t.package_v1 = ' . self::PACKAGE_V1_NOT;
+        }
         if(!empty($params['is_new'])) {
             $where .= ' and t.is_new = :is_new ';
             $map[':is_new'] = $params['is_new'];
@@ -74,6 +84,7 @@ class ThirdPartBillModel extends Model
         $e = EmployeeModel::$table;
         $c = ChannelModel::$table;
         $p = ErpPackageModel::$table;
+        $p1 = ErpPackageV1Model::$table;
 
         $limit = Util::limitation($page, $count);
 
@@ -100,13 +111,14 @@ select t.id,
        t.parent_channel_id,
        t.channel_id,
        e.name operator_name,
-       p.name package_name,
+       case when t.package_v1 = " . self::PACKAGE_V1_NOT . " then (select name from {$p} where id = t.package_id)
+            when t.package_v1 = " . self::PACKAGE_V1 . " then (select name from {$p1} where id = t.package_id)
+            end package_name,
        c.name channel_name
 from {$t} t
        left join {$s} s on t.student_id = s.id 
        inner join {$e} e on e.id = t.operator_id
        left join {$c} c on c.id = t.channel_id
-       left join {$p} p on p.id = t.package_id
        where {$where} order by t.id desc {$limit}", $map);
 
         return [$total[0]['count'], $records];

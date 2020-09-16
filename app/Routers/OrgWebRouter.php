@@ -416,6 +416,8 @@ class OrgWebRouter extends RouterBase
         //课包管理接口
         '/org_web/package/packageDictDetail' => ['method' => ['get'], 'call' => Package::class . ':packageDictDetail'],
         '/org_web/package/packageDictEdit' => ['method' => ['post'], 'call' => Package::class . ':packageDictEdit'],
+        // 新产品包列表
+        '/org_web/package/package_list' => ['method' => ['get'], 'call' => Package::class . ':packageListV1'],
 
         //banner管理接口
         '/org_web/banner/list' => ['method' => ['get'], 'call' => Banner::class . ':list'],

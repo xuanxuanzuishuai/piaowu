@@ -53,14 +53,13 @@ class Erp
     const API_BILL_LIST_V1 = '/ai_dss/billV1/bill_list';
     const API_BILL_DETAIL_V1 = '/ai_dss/billV1/bill_detail';
     const API_LOGISTICS_V1 = '/ai_dss/billV1/logistics';
-    const API_BILL_STATUS_V1= '/ai_dss/billV1/bill_status';
+    const API_BILL_STATUS_V1 = '/ai_dss/billV1/bill_status';
+    // 创建订单（可以创建后立即发货）
+    const API_MAN_CREATE_BILL_V1 = '/ai_dss/billV1/man_create';
 
     // 账户
     const API_STUDENT_ACCOUNTS = '/ai_dss/account/detail';
     const API_STUDENT_ACCOUNT_DETAIL = '/ai_dss/account/logs';
-
-    // 创建订单（可以创建后立即发货）
-    const API_CREATE_DELIVER_BILL = '/api/dss/create_bill';
 
     //用户累计获取的音符
     const API_ADD_UP_CREDIT = '/api/dss/get_user_credit';
@@ -112,13 +111,6 @@ class Erp
             SimpleLogger::error(__FILE__ . ':' . __LINE__, [print_r($e->getMessage(), true)]);
         }
         return false;
-    }
-
-    public function createDeliverBill($params)
-    {
-        $body = '';
-        $result = self::commonAPI(self::API_CREATE_DELIVER_BILL, $params, 'POST', $body);
-        return [$result, $body];
     }
 
     /**
@@ -530,6 +522,18 @@ class Erp
 
         $response = HttpHelper::requestJson($this->host . self::API_CREATE_BILL_V1, $params, 'POST');
         return $response;
+    }
+
+    /**
+     * 创建发货订单
+     * @param $params
+     * @return array
+     */
+    public function manCreateDeliverBillV1($params)
+    {
+        $body = '';
+        $result = self::commonAPI(self::API_MAN_CREATE_BILL_V1, $params, 'POST', $body);
+        return [$result, $body];
     }
 
     /**

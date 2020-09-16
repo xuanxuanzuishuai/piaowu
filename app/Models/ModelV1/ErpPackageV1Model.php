@@ -34,6 +34,10 @@ class ErpPackageV1Model extends Model
     const STATUS_WAIT_SALE = 0;
     const STATUS_ON_SALE = 1;
 
+    const PACKAGE_IS_NOT_CUSTOM = 0; // 标准化产品包
+    const PACKAGE_IS_CUSTOM = 1; // 自定义产品包
+
+
     /** 产品包时长类型 */
     const PACKAGE_TYPE = [
         CategoryV1Model::DURATION_TYPE_NORMAL => PackageExtModel::PACKAGE_TYPE_NORMAL,
@@ -48,7 +52,6 @@ class ErpPackageV1Model extends Model
     public static function getTrailPackageIds()
     {
         $db = MysqlDB::getDB();
-
         $records = $db->queryAll("
 select p.id
 from " . self::$table . " p
@@ -57,10 +60,12 @@ inner join " . GoodsV1Model::$table . " g on pg.goods_id = g.id
 inner join " . CategoryV1Model::$table . " c on c.id = g.category_id
 where pg.status = :status
 and c.sub_type = :sub_type
-and p.status != :p_status", [
+and p.status != :p_status
+and p.is_custom = :is_custom", [
     ':status' => ErpPackageGoodsV1Model::SUCCESS_NORMAL,
     ':sub_type' => CategoryV1Model::DURATION_TYPE_TRAIL,
-    ':p_status' => self::STATUS_WAIT_SALE
+    ':p_status' => self::STATUS_WAIT_SALE,
+    ':is_custom' => self::PACKAGE_IS_NOT_CUSTOM
 ]);
 
         return array_column($records, 'id');
@@ -100,5 +105,25 @@ and p.id = :package_id", [
         // 时长总天数
         $package['duration_num'] = $package['num'] + $package['free_num'];
         return $package;
+    }
+
+    public static function getPackagesByType($subType)
+    {
+        $records = MysqlDB::getDB()->queryAll("
+select p.id, p.name
+from " . self::$table . " p
+inner join ". ErpPackageGoodsV1Model::$table . " pg on pg.package_id = p.id
+inner join " . GoodsV1Model::$table . " g on pg.goods_id = g.id
+inner join " . CategoryV1Model::$table . " c on c.id = g.category_id
+where pg.status = :status
+and c.sub_type = :sub_type
+and p.status = :p_status
+and p.is_custom = :is_custom", [
+            ':status' => ErpPackageGoodsV1Model::SUCCESS_NORMAL,
+            ':sub_type' => $subType,
+            ':p_status' => self::STATUS_ON_SALE,
+            ':is_custom' => self::PACKAGE_IS_NOT_CUSTOM
+        ]);
+        return $records;
     }
 }

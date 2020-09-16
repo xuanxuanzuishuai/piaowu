@@ -14,6 +14,7 @@ use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\Util;
+use App\Models\ThirdPartBillModel;
 use App\Services\DictService;
 use App\Services\ThirdPartBillService;
 use Slim\Http\Request;
@@ -74,6 +75,7 @@ class ThirdPartBill extends ControllerBase
             $v['parent_channel_id'] = $params['parent_channel_id'];
             $v['channel_id'] = $params['channel_id'];
             $v['package_id'] = $params['package_id'];
+            $v['package_v1'] = ThirdPartBillModel::PACKAGE_V1;
             $data[$k] = $v;
         }
 

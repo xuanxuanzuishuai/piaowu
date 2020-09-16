@@ -337,6 +337,9 @@ class PayServices
 
         $in = Util::buildSqlIn($mobile);
 
+        // 新产品包---体验时长
+        $newTrailIds = ErpPackageV1Model::getTrailPackageIds();
+        $trialPackageIds = array_merge($trialPackageIds, $newTrailIds);
         $pin = Util::buildSqlIn($trialPackageIds);
 
         $s = StudentModel::$table;

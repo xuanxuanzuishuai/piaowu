@@ -20,6 +20,7 @@ use App\Services\LeadsPool\LeadsService;
 use App\Services\PlayClassRecordMessageService;
 use App\Services\Queue\PushMessageTopic;
 use App\Services\Queue\TableSyncTopic;
+use App\Services\Queue\ThirdPartBillTopic;
 use App\Services\ReferralActivityService;
 use App\Libs\TableSyncQueue;
 use App\Services\StudentService;
@@ -292,7 +293,7 @@ class Consumer extends ControllerBase
 
         $lastId = 0;
         switch ($params['event_type']) {
-            case 'import':
+            case ThirdPartBillTopic::EVENT_TYPE_IMPORT:
                 $lastId = ThirdPartBillService::handleImport($params['msg_body']);
                 break;
             default:

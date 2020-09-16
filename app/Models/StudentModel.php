@@ -12,6 +12,7 @@ use App\Libs\Constants;
 use App\Libs\MysqlDB;
 use App\Libs\UserCenter;
 use App\Libs\Util;
+use App\Models\ModelV1\ErpPackageV1Model;
 use App\Services\ChannelService;
 use App\Services\WeChatService;
 
@@ -1123,6 +1124,7 @@ class StudentModel extends Model
         $collection = CollectionModel::$table;
         $giftCode = GiftCodeModel::$table;
         $erpPackage = ErpPackageModel::$table;
+        $package1 = ErpPackageV1Model::$table;
 
         if (!empty($params['order_id'])) {
             $where["{$giftCode}.parent_bill_id"] = $params['order_id'];
@@ -1184,6 +1186,7 @@ class StudentModel extends Model
         $join = [
             "[><]{$giftCode}"                    => ["id" => "buyer"],
             "[>]{$erpPackage}"                   => ["{$giftCode}.bill_package_id" => "id"],
+            "[>]{$package1}"                     => ["{$giftCode}.bill_package_id" => "id"],
             "[>]{$employeeModel}(assistant)"     => ["assistant_id" => "id"],
             "[>]{$employeeModel}(courseManager)" => ["course_manage_id" => "id"],
             "[>]{$collection}"                   => ["collection_id" => "id"],
@@ -1203,6 +1206,7 @@ class StudentModel extends Model
             "{$student}.id(student_id)",
             "{$giftCode}.parent_bill_id",
             "{$erpPackage}.name(package_name)",
+            "{$package1}.name(package_name_v1)",
             "{$student}.name(student_name)",
             "{$student}.mobile(student_mobile)",
             "{$collection}.name(collection_name)",

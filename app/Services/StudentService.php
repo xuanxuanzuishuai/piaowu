@@ -1706,6 +1706,7 @@ class StudentService
             $ret['list'][$k]['bill_amount'] = $v['bill_amount'] / 100;
             $ret['list'][$k]['pay_status'] = "支付成功";
             $ret['list'][$k]['order_type'] = "客户购买课程";
+            $ret['list'][$k]['package_name'] = !empty($v['package_name_v1']) ? $v['package_name_v1'] : $v['package_name'];
         }
         return [$ret['totalCount'], $ret['list']];
     }

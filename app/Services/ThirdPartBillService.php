@@ -11,6 +11,7 @@ namespace App\Services;
 use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\UserCenter;
 use App\Libs\Util;
 use App\Models\StudentModel;
 use App\Models\ThirdPartBillModel;
@@ -86,6 +87,7 @@ class ThirdPartBillService
             'parent_channel_id' => $params['parent_channel_id'],
             'channel_id'        => $params['channel_id'],
             'operator_id'       => $params['operator_id'],
+            'package_v1'        => $params['package_v1'],
             'is_new'            => ThirdPartBillModel::NOT_NEW,
             'create_time'       => time(),
         ];
@@ -104,25 +106,22 @@ class ThirdPartBillService
                 list($studentId, $isNew) = $result;
                 $data['student_id'] = $studentId;
                 $data['is_new'] = $isNew ? ThirdPartBillModel::IS_NEW : ThirdPartBillModel::NOT_NEW;
+                $student = StudentModel::getById($studentId);
             }
         } else {
             $data['student_id'] = $student['id'];
         }
 
         $erp = new Erp();
-
         // 通知ERP创建订单
-        list($result, $body) = $erp->createDeliverBill([
-            'student_mobile'  => $params['mobile'],
-            'trade_no'        => $params['trade_no'],
-            'end_time'        => $params['pay_time'],
-            'source'          => 2, // 手工创建订单
-            'package_id'      => $data['package_id'],
-            'pay_channel'     => 11, // 第三方支付渠道
-            'description'     => 'DSS表格导入订单',
-            'supplement_type' => 1, // 新单
-            'deliver_now'     => 1, // 立即发货
-            'channel_id'      => $params['channel_id'], // 若ERP不存在此用户，注册用
+        list($result, $body) = $erp->manCreateDeliverBillV1([
+            'uuid' => $student['uuid'],
+            'package_id' => $params['package_id'],
+            'pay_time' => $params['pay_time'],
+            'description' => 'DSS表格导入订单',
+            'trade_no' => $params['trade_no'],
+            'pay_channel' => $params['pay_channel'],
+            'app_id' => UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
         ]);
 
         // 记录请求结果
