@@ -135,6 +135,7 @@ GROUP BY FROM_UNIXTIME(end_time, '%Y%m%d');";
         $columns = [
             'lesson_count' => Medoo::raw('COUNT(DISTINCT(lesson_id))'),
             'sum_duration' => Medoo::raw('SUM(duration)'),
+            'play_day' => Medoo::raw("COUNT(DISTINCT FROM_UNIXTIME(end_time, '%y-%m-%d'))")
         ];
 
         $where = ['student_id' => $studentId];

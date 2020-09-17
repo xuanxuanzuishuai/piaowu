@@ -780,7 +780,7 @@ class StudentServiceForApp
     {
         $studentId = $needStudentId ?: $studentId;
         //获取学生练琴总时长和总曲目
-        $playSum = AIPlayRecordCHModel::getPlayInfo($studentId);
+        $playSum = AIPlayRecordModel::getStudentTotalSum($studentId);
         //获取学生头像和昵称
         $studentInfo = StudentModel::getById($studentId);
         //默认奖章
