@@ -53,8 +53,8 @@ limit {rank_limit}";
     {
         $chdb = CHDB::getDB();
         $sql = "SELECT COUNT(DISTINCT(lesson_id)) AS `lesson_count`,
-count(distinct(formatDateTime(parseDateTimeBestEffort(toString(create_time)), '%Y%m%d'))) as play_day FROM " . self::$table . " WHERE `student_id` =:student_id";
-        $info = $chdb->queryAll($sql, ['student_id' => $studentId]);
+count(distinct(create_date)) as play_day FROM " . self::$table . " WHERE `student_id` =:student_id";
+        $info = $chdb->queryAll($sql, ['student_id' => (int)$studentId]);
         return reset($info);
     }
 
