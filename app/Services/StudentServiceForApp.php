@@ -19,10 +19,8 @@ use App\Libs\ResponseError;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Libs\Util;
-use App\Models\AIPlayRecordCHModel;
 use App\Models\AIPlayRecordModel;
 use App\Models\CategoryV1Model;
-use App\Models\CountryCodeModel;
 use App\Models\GoodsV1Model;
 use App\Models\ReferralModel;
 use App\Models\StudentMedalCategoryModel;
@@ -31,7 +29,6 @@ use App\Models\StudentModel;
 use App\Models\StudentModelForApp;
 use App\Models\GiftCodeModel;
 use App\Models\UserQrTicketModel;
-use Medoo\Medoo;
 
 class StudentServiceForApp
 {

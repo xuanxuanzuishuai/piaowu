@@ -15,6 +15,7 @@ use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Libs\Util;
 use App\Models\AIPlayRecordCHModel;
+use App\Models\AIPlayRecordModel;
 use App\Models\CategoryV1Model;
 use App\Models\EmployeeModel;
 use App\Models\GoodsV1Model;
@@ -154,7 +155,7 @@ class TermSprintService
         $relateMedalEventId = reset($relateMedalEvent);
         $eventSetting = json_decode(RedisDB::getConn()->hget(self::getTermSprintRelateKey($relateMedalEventId), self::TERM_SPRINT_EVENT_SETTING), true);
         $relateTasks = json_decode(RedisDB::getConn()->hget(self::getTermSprintRelateKey($relateMedalEventId), self::TERM_SPRINT_TASK_SETTING), true);
-        $playData = AIPlayRecordCHModel::getStudentSumByDate($studentId, strtotime($eventSetting['start_time']), strtotime($eventSetting['end_time']) + Util::TIMESTAMP_ONEDAY);
+        $playData = AIPlayRecordModel::getStudentSumByDate($studentId, strtotime($eventSetting['start_time']), strtotime($eventSetting['end_time']) + Util::TIMESTAMP_ONEDAY);
         //根据每日统计上限计算用户有效数据
         $validData = [];
         array_map(function ($v) use(&$validData, $eventSetting) {
@@ -167,6 +168,7 @@ class TermSprintService
     /**
      * @param $studentId
      * @param $taskId
+     * @return string[]
      * @throws RunTimeException
      * 发送学期冲刺奖励
      */
@@ -252,14 +254,14 @@ class TermSprintService
                 //用户已经获取的奖章
                 $studentMedalInfo = array_column(StudentMedalModel::getRecords(['student_id' => $student['id']]), 'medal_id');
                 if ($value['award_type'] == CategoryV1Model::MEDAL_AWARD_TYPE && !in_array($value['course_id'], $studentMedalInfo)) {
-                    $medalInfo = MedalService::getMedalIdInfo($value['course_id']);
-                    MedalService::updateStudentMedalCategoryInfo($student['id'], $medalInfo['category_id']);
+                    $medal = MedalService::getMedalIdInfo($value['course_id']);
+                    MedalService::updateStudentMedalCategoryInfo($student['id'], $medal['category_id']);
                     //记录用户所得奖章的详细信息
                     StudentMedalModel::insertRecord(
                         [
                             'student_id' => $student['id'],
                             'medal_id' => $value['course_id'],
-                            'medal_category_id' => $medalInfo['category_id'],
+                            'medal_category_id' => $medal['category_id'],
                             'task_id' => $value['event_task_id'],
                             'create_time' => time(),
                             'report_log_id' => 0,

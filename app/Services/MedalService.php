@@ -156,7 +156,7 @@ class MedalService
 
     /**
      * @param $medalId
-     * @return string
+     * @return mixed
      * 某个奖章的详细信息
      */
     public static function getMedalIdInfo($medalId)
