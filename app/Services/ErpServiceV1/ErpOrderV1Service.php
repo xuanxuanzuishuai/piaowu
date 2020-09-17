@@ -46,7 +46,7 @@ class ErpOrderV1Service
         $studentId = $student['id'];
         if (ErpPackageV1Service::isTrailPackage($packageId) && PayServices::hasTrialed($studentId)) {
             SimpleLogger::error('has_trialed', ['student_id' => $studentId]);
-            throw new RunTimeException(['has_trialed']);
+            return Valid::addAppErrors([], 'has_trialed');
         }
 
         $callbacks = self::callbacks($channel);
@@ -56,7 +56,7 @@ class ErpOrderV1Service
         $result = $erp->createBillV1([
             'uuid' => $student['uuid'],
             'app_id' => UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
-            'student_address_id' => $student['student_address_id'], // 地址
+            'address_id' => $student['address_id'], // 地址
             'open_id' => $student['open_id'],
             'package_id' => $packageId, // 产品包id
             'channel' => $channel,
@@ -68,6 +68,9 @@ class ErpOrderV1Service
             'result_url' => $callbacks['result_url'] ?? null, // 微信H5 支付结果跳转链接
             'employee_uuid' => $employeeUuid, // 成单人
         ]);
+        if (empty($result)) {
+            return Valid::addAppErrors([], 'create_bill_error');
+        }
         return $result;
     }
 

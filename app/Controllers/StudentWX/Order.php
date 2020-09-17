@@ -102,16 +102,6 @@ class Order extends ControllerBase
                 'error_code' => 'package_id_must_be_integer',
             ],
             [
-                'key' => 'address_id',
-                'type' => 'required',
-                'error_code' => 'address_id_is_required',
-            ],
-            [
-                'key' => 'address_id',
-                'type' => 'integer',
-                'error_code' => 'address_id_must_be_integer',
-            ],
-            [
                 'key' => 'pay_channel',
                 'type' => 'integer',
                 'error_code' => 'pay_channel_is_required',
@@ -127,17 +117,13 @@ class Order extends ControllerBase
             'id' => $this->ci['user_info']['user_id'],
             'uuid' => $this->ci['user_info']['uuid'],
             'open_id' => $this->ci['open_id'],
-            'student_address_id' => $params['student_address_id'] ?? 0
+            'address_id' => $params['address_id'] ?? 0
         ];
         $employeeUuid = !empty($params['employee_id']) ? RC4::decrypt($_ENV['COOKIE_SECURITY_KEY'], $params['employee_id']) : NULL;
         $channel = ErpPackageV1Model::CHANNEL_WX;
 
-        try {
-            $ret = ErpOrderV1Service::createOrder($params['package_id'], $student, $params['pay_channel'], $params['pay_type'], $employeeUuid, $channel);
+        $ret = ErpOrderV1Service::createOrder($params['package_id'], $student, $params['pay_channel'], $params['pay_type'], $employeeUuid, $channel);
 
-        } catch (RunTimeException $e) {
-            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
-        }
 
         return $response->withJson($ret, StatusCode::HTTP_OK);
     }
