@@ -9,6 +9,7 @@
 namespace App\Services;
 
 
+use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Models\PlayClassRecordMessageModel;
 
@@ -96,6 +97,13 @@ class PlayClassRecordMessageService
             SimpleLogger::error(__FILE__ . ":" . __LINE__ . " play end error", [
                 'message' => $message
             ]);
+        }
+        if($_ENV['CLICKHOUSE_WRITE'] == true) {
+
+            $key = $_ENV['CHDB_REDDIS_PRE_KEY']. time();
+            $redis = RedisDB::getConn($_ENV['CHDB_REDIS_DB']);
+            $redis->rpush($key, [json_encode($message)]);
+            $redis->expire($key, 5);
         }
         return $result;
     }
