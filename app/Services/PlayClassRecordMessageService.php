@@ -99,9 +99,9 @@ class PlayClassRecordMessageService
             ]);
         }
         if($_ENV['CLICKHOUSE_WRITE'] == true) {
-
+            $message['student_id'] = $student['id'];
             $key = $_ENV['CHDB_REDDIS_PRE_KEY']. time();
-            $redis = RedisDB::getConn($_ENV['CHDB_REDIS_DB']);
+            $redis = RedisDB::getConn();
             $redis->rpush($key, [json_encode($message)]);
             $redis->expire($key, 5);
         }

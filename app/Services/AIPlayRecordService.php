@@ -57,7 +57,7 @@ class AIPlayRecordService
             $playRecord = AIPlayRecordModel::getRecord(['track_id' => $params['track_id']]);
         }
         //时长进行向下取整处理
-        $params['duration'] = floor($params['duration']);
+        $params['duration'] = ceil($params['duration']);
         $newRecord = [
             'student_id' => $studentId,
             'create_time' => $now,
