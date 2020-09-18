@@ -219,4 +219,13 @@ class Constants
     const DICT_TYPE_LEADS_POOL_TARGET_TYPE = 'leads_pool_target_type';
     //学生班级分配方式
     const DICT_TYPE_STUDENT_COLLECTION_ALLOT_TYPE = 'student_collection_allot_type';
+
+    // 天润接口返回值
+    const DICT_TR_ERROR = 'tr_error';
+    // 容联接口返回值
+    const DICT_RL_ERROR = 'rl_error';
+    // 容联外呼 extend_type
+    const DICT_TYPE_RL_EXTEND_TYPE = 'ronglian_extend_type';
+    //app prefix key_code
+    const DICT_KEY_CALL_CENTER_APP_PREFIX = "call_center_app_prefix";
 };

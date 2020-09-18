@@ -13,6 +13,8 @@ use App\Libs\HttpHelper;
 use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Controllers\ControllerBase;
+use App\Services\CallCenterRLLogService;
+use App\Services\CallCenterTRLogService;
 use App\Services\ChannelService;
 use App\Services\LeadsPool\LeadsService;
 use App\Services\PlayClassRecordMessageService;
@@ -298,5 +300,46 @@ class Consumer extends ControllerBase
         }
 
         return HttpHelper::buildResponse($response, ['last_id' => $lastId]);
+    }
+
+    /**
+     * callCenter 回调
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function callCenterSync(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'event_type',
+                'type' => 'required',
+                'error_code' => 'event_type_is_required',
+            ],
+
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+
+        if ($result['code'] == 1) {
+            return $response->withJson($result, 200);
+        }
+
+        switch ($params['event_type']) {
+            case CallCenterTRLogService::CALLBACK_CALLOUT_RINGING:
+                CallCenterTRLogService::outCallRinging($params['data']);
+                break;
+            case CallCenterTRLogService::CALLBACK_CALLOUT_COMPLETE:
+                CallCenterTRLogService::outCallComplete($params['data']);
+                break;
+            case CallCenterRLLogService::CALLBACK_CALLOUT_RINGING:
+                CallCenterRLLogService::outCallRinging($params['data']);
+                break;
+            case CallCenterRLLogService::CALLBACK_CALLOUT_COMPLETE:
+                CallCenterRLLogService::outCallComplete($params['data']);
+                break;
+            default:
+        }
+        return $response->withJson(['code' => 0], 200);
     }
 }

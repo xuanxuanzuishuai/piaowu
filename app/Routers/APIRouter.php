@@ -85,5 +85,11 @@ class APIRouter extends RouterBase
             'call' => Consumer::class . ':thirdPartBill',
             'middles' => [],
         ],
+        // callCenter 回调
+        '/api/consumer/call_center_sync' => [
+            'method' => ['post'],
+            'call' => Consumer::class . ':callCenterSync',
+            'middles' => [],
+        ],
     ];
 }

@@ -421,5 +421,8 @@ term_sprint_not_start="新学期冲洗未开始"
 abandon_gift_code_ids_error="一次只允许作废一个激活码"
 gift_code_empty="未找到要作废的激活码"
 gift_code_type_error="只允许作废dss后台手动、机构生成的已激活、未激活的激活码"
-
+student_mobile_not_exists='学生的手机号码不存在'
+user_seat_not_exists='未设置外呼座席号'
+seat_extend_type_is_required='坐席接通方式不能为空'
+seat_type_not_set='用户未设置当前类型坐席'
 

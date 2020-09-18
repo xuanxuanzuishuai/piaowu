@@ -59,6 +59,7 @@ use App\Controllers\OrgWeb\Student as OrgWebStudent;
 use App\Controllers\OrgWeb\Faq;
 use App\Controllers\OrgWeb\StudentCertificate;
 use App\Controllers\OrgWeb\WxTags;
+use App\Controllers\OrgWeb\Call;
 
 class OrgWebRouter extends RouterBase
 {
@@ -82,6 +83,8 @@ class OrgWebRouter extends RouterBase
         '/employee/employee/list_for_org' => array('method' => array('get'), 'call' => '\App\Controllers\Employee\Employee:listForOrg'),
         '/employee/employee/detail' => array('method' => array('get'), 'call' => '\App\Controllers\Employee\Employee:detail'),
         '/employee/employee/modify' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Employee:modify'),
+        '/employee/employee/setSeat' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Employee:setSeat'),
+        '/employee/employee/delSeat' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Employee:delSeat'),
         '/employee/employee/setPwd' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Employee:setPwd'),
         '/employee/employee/userSetPwd' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Employee:userSetPwd'),
         '/employee/employee/getEmployeeListWithRole' => array('method' => array('get'), 'call' => '\App\Controllers\Employee\Employee:getEmployeeListWithRole'),
@@ -141,6 +144,7 @@ class OrgWebRouter extends RouterBase
         '/student/student/get_follow_remark' => array('method' => array('get'), 'call' => '\App\Controllers\Student\FollowRemark:lookOver'),
         //add,student,info,fuzzy_search are for org employee
         '/student/student/info' => array('method' => array('get'), 'call' => '\App\Controllers\Student\Student:info'),
+        '/student/student/call_list' => array('method' => array('get'), 'call' => '\App\Controllers\Student\Student:callList'),
         '/student/student/modify' => array('method' => array('post'), 'call' => '\App\Controllers\Student\Student:modify'),
         '/student/student/add' => array('method' => array('post'), 'call' => '\App\Controllers\Student\Student:add'),
         '/student/student/fuzzy_search' => array('method' => array('get'), 'call' => '\App\Controllers\Student\Student:fuzzySearch'),
@@ -523,5 +527,10 @@ class OrgWebRouter extends RouterBase
         //课管服务->学生列表
         '/org_web/student/search_list' => ['method' => ['get'], 'call' => Student::class . ':courseStudentList'],
         '/org_web/student/update_add_course_status' => ['method' => ['post'], 'call' => Student::class . ':updateAddCourseStatus'],
+
+        //外呼接口
+        '/org_web/call/dial_out' => ['method' => ['post'], 'call' => Call::class . ':dialOut',      'middles' => []],
+
+
     ];
 }

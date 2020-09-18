@@ -275,7 +275,9 @@ class EmployeeModel extends Model
      */
     public static function getByUuid($uuid)
     {
-        $user = MysqlDB::getDB()->get(self::$table, [
+        $user = MysqlDB::getDB()->get(self::$table,[
+            '[>]' . EmployeeSeatModel::$table => ['id' => 'employee_id']
+        ], [
             self::$table . '.id',
             self::$table . '.name',
             self::$table . '.role_id',
@@ -285,8 +287,8 @@ class EmployeeModel extends Model
             self::$table . '.is_leader',
             self::$table . '.last_update_pwd_time',
             self::$table . '.org_id',
-//            EmployeeSeatModel::$table . '.seat_type',
-//            EmployeeSeatModel::$table . '.seat_id',
+           EmployeeSeatModel::$table . '.seat_type',
+           EmployeeSeatModel::$table . '.seat_id',
 //            DeptModel::$table . '.dept_name',
         ], [
             'AND' => [

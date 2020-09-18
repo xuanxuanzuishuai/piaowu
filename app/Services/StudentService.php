@@ -1722,4 +1722,18 @@ class StudentService
         ];
         return EmployeeModel::getRecords($where, ['uuid', 'name'], false);
     }
+
+    /**
+     * 获取学员手机号
+     * @param $studentId
+     * @return mixed
+     */
+    public static function getStudentMobile($studentId)
+    {
+        $where = [
+            'id' => $studentId
+        ];
+        $res = StudentModel::getRecord($where, ['mobile'], false);
+        return $res['mobile'] ?? '';
+    }
 }

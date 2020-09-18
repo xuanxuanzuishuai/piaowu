@@ -22,6 +22,7 @@ use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\StudentModel;
 use App\Models\StudentOrgModel;
+use App\Services\CallCenterLogService;
 use App\Services\ChannelService;
 use App\Services\FlagsService;
 use App\Services\StudentAccountService;
@@ -985,5 +986,52 @@ class Student extends ControllerBase
         }
 
         return HttpHelper::buildResponse($response, $result['data']);
+    }
+
+    /**
+     * 获取学员列表(机构用)
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function callList(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        $rules = [
+            [
+                'key'        => 'student_id',
+                'type'       => 'required',
+                'error_code' => 'student_id_is_required',
+            ],
+            [
+                'key'        => 'student_id',
+                'type'       => 'integer',
+                'error_code' => 'student_id_must_be_integer'
+            ],
+            [
+                'key'        => 'page',
+                'type'       => 'integer',
+                'error_code' => 'page_is_integer',
+            ],
+            [
+                'key'        => 'count',
+                'type'       => 'integer',
+                'error_code' => 'count_is_integer',
+            ],
+        ];
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        list($data, $total) = CallCenterLogService::getUserCallData($params);
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => [
+                'students'    => $data,
+                'total_count' => $total
+            ],
+        ]);
     }
 }
