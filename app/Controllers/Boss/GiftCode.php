@@ -179,7 +179,7 @@ class GiftCode extends ControllerBase
             return $response->withJson(Valid::addAppErrors([], 'abandon_gift_code_ids_error'), StatusCode::HTTP_OK);
         }
         try {
-            $updatedCount = GiftCodeService::abandonCode($params['ids']);
+            $updatedCount = GiftCodeService::orgWebAbandonCode($params['ids']);
         } catch (RunTimeException $e) {
             return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData());
         }

@@ -248,15 +248,41 @@ class GiftCodeService
 
     /**
      * 作废激活码
+     * @param int|array $ids
+     * @param bool $force 强制删除使用过的激活码
+     * @return int 修改的数量
+     */
+    public static function abandonCode($ids, $force = false)
+    {
+        $where = ['id' => $ids];
+        if (!$force) {
+            $where['code_status'] = GiftCodeModel::CODE_STATUS_NOT_REDEEMED;
+        } else {
+            $where['code_status'] = [GiftCodeModel::CODE_STATUS_NOT_REDEEMED, GiftCodeModel::CODE_STATUS_HAS_REDEEMED];
+        }
+
+
+        if (!empty($ids)) {
+            return GiftCodeModel::batchUpdateRecord(
+                ['code_status' => GiftCodeModel::CODE_STATUS_INVALID],
+                $where,
+                false);
+        }
+        return 0;
+    }
+
+
+    /**
+     * dss后台作废激活码
      * @param int $id
      * @return int 修改的数量
      * @throws RunTimeException
      */
-    public static function abandonCode($id)
+    public static function orgWebAbandonCode($id)
     {
         $giftCodeData = GiftCodeModel::getRecord(['id' => $id]);
         if (empty($giftCodeData)) {
-            throw new RunTimeException(['gift_code_id_error']);
+            throw new RunTimeException(['gift_code_empty']);
         }
         $db = MysqlDB::getDB();
         $db->beginTransaction();
@@ -264,7 +290,7 @@ class GiftCodeService
         $channelStatus = ($giftCodeData['generate_channel'] == GiftCodeModel::BUYER_TYPE_STUDENT || $giftCodeData['generate_channel'] == GiftCodeModel::BUYER_TYPE_ORG);
         $codeStatus = ($giftCodeData['code_status'] == GiftCodeModel::CODE_STATUS_NOT_REDEEMED || $giftCodeData['code_status'] == GiftCodeModel::CODE_STATUS_HAS_REDEEMED);
         if (!$channelStatus || !$codeStatus) {
-            throw new RunTimeException(['gift_code_id_error']);
+            throw new RunTimeException(['gift_code_type_error']);
         }
         //修改激活码状态
         $updateGiftCodeStatus = GiftCodeModel::updateRecord($giftCodeData['id'], ['code_status' => GiftCodeModel::CODE_STATUS_INVALID]);
@@ -279,7 +305,7 @@ class GiftCodeService
             return $updateGiftCodeStatus;
         } else {
             $db->rollBack();
-            throw new RunTimeException(['gift_code_id_error']);
+            throw new RunTimeException(['update_fail']);
         }
     }
 

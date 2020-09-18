@@ -419,4 +419,7 @@ not_relate_task="无相关活动"
 term_sprint_has_end="新学期冲刺已结束"
 term_sprint_not_start="新学期冲洗未开始"
 abandon_gift_code_ids_error="一次只允许作废一个激活码"
+gift_code_empty="未找到要作废的激活码"
+gift_code_type_error="只允许作废dss后台手动、机构生成的已激活、未激活的激活码"
+
 
