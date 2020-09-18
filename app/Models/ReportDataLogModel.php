@@ -30,4 +30,15 @@ class ReportDataLogModel extends Model
         $map[':change_type'] = $changeType;
         return MysqlDB::getDB()->queryAll($sql, $map);
     }
+
+    /**
+     * @param $studentId
+     * @param $reportType
+     * @return mixed
+     * 用户对于某个类型上报的最后一条有效信息
+     */
+    public static function getStudentReportLastInfo($studentId, $reportType)
+    {
+        return ReportDataLogModel::getRecord(['student_id' => $studentId, 'report_type' => $reportType, 'ORDER' => ['id' => 'DESC']]);
+    }
 }

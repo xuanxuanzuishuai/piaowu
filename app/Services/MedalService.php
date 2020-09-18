@@ -645,6 +645,18 @@ class MedalService
             SimpleLogger::info('not reach require time', ['activity data' => $activityData]);
             return;
         }
+
+        //弹奏时长
+        if ($activityData['play_duration'] < $eventSetting['play_duration']) {
+            SimpleLogger::info('not reach min play duration', ['activity data' => $activityData]);
+            return;
+        }
+        //切换版本
+        $medalAward = self::studentChangeVersion($activityData, $eventSetting, $type, $relateMedalEventId, $medalType);
+        if (!empty($medalAward)) {
+            return $medalAward;
+        }
+        //用户正常使用
         //每日有效计数上限
         if (!empty($eventSetting['every_day_count'])){
             $recordKey = self::getMedalStudentRelateKey($relateMedalEventId, $activityData['student_id']);
@@ -654,21 +666,64 @@ class MedalService
                 return;
             }
         }
-        //弹奏时长
-        if ($activityData['play_duration'] < $eventSetting['play_duration']) {
-            SimpleLogger::info('not reach min play duration', ['activity data' => $activityData]);
-            return;
-        }
         //针对当前奖章对有效升级的累计有效计数
         $num = self::recordMedalReachNum($activityData['student_id'], $medalType);
         //用户版本在最低版本之上才可以触发发放奖章
         if (!CreditService::checkTaskQualification($eventSetting, $activityData)) {
             //用来处理如果有每日计数上限的计数(这个属于特殊处理，只有低版本会走这里计数，和公共计数不冲突)
             self::recordMedalDailyValidCount($relateMedalEventId, $activityData, $type);
+            ReportDataLogModel::insertRecord(
+                [
+                    'report_type' => CreditService::getReportTypeZhToNum($type),
+                    'student_id' => $activityData['student_id'],
+                    'report_data' => json_encode($activityData),
+                    'create_time' => time()
+                ]
+            );
             SimpleLogger::info('not reach min version', ['activity data' => $activityData, 'medal type' => $medalType]);
             return;
         }
         return self::relateVarReachNumGiveMedal($relateMedalEventId, $activityData, $num, $type);
+    }
+
+    /**
+     * @param $activityData
+     * @param $eventSetting
+     * @param $type
+     * @param $relateMedalEventId
+     * @param $medalType
+     * @return array|void
+     * 用户切换版本针对弹琴的奖励
+     */
+    private static function studentChangeVersion($activityData, $eventSetting, $type, $relateMedalEventId, $medalType)
+    {
+        $redis = RedisDB::getConn();
+        $log = ReportDataLogModel::getStudentReportLastInfo($activityData['student_id'], CreditService::getReportTypeZhToNum($type));
+        if (empty($log)) {
+            return ;
+        }
+        $lastReportData = json_decode($log['report_data'], true);
+        //版本检查
+        $checkVersion = ((AIPlayRecordService::isOldVersionApp($lastReportData['app_version'], $eventSetting['min_version'])) //上一次有效上报在最低版本之下
+            &&
+            (AIPlayRecordService::isOldVersionApp($lastReportData['app_version'], $activityData['app_version'])) //最新上报高于上一次
+            &&
+            (CreditService::checkTaskQualification($eventSetting, $activityData))); //满足最低版本要求
+        if (!$checkVersion) {
+            return;
+        }
+
+        //当天是否已经有过有效计数
+        $recordKey = self::getMedalStudentRelateKey($relateMedalEventId, $activityData['student_id']);
+        $recordNum = $redis->hget($recordKey, self::EVERY_DAY_MEDAL_VALID_NUM);
+        if (empty($recordNum)) {
+            $num = self::recordMedalReachNum($activityData['student_id'], $medalType);
+        } else {
+            $numInfo = MedalReachNumModel::getRecord(['student_id' => $activityData['student_id'], 'medal_type' => self::getMedalEnToNum($medalType)]);
+            $num = $numInfo['valid_num'] ?: 0;
+        }
+        return self::relateVarReachNumGiveMedal($relateMedalEventId, $activityData, $num, $type);
+
     }
 
     /**
