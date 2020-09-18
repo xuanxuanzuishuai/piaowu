@@ -766,15 +766,15 @@ class StudentModel extends Model
         }
 
         //分配日期 开始时间
-        if (!empty($params['allot_assistant_start_time'])) {
-            $whereSql .= ' AND s.allot_assistant_time >= :allot_assistant_start_time ';
-            $map[':allot_assistant_start_time'] = $params['allot_assistant_start_time'];
+        if (!empty($params['allot_course_start_time'])) {
+            $whereSql .= ' AND s.allot_course_time >= :allot_course_start_time ';
+            $map[':allot_course_start_time'] = $params['allot_course_start_time'];
         }
 
         //分配日期 结束时间
-        if (!empty($params['allot_assistant_end_time'])) {
-            $whereSql .= ' AND s.allot_assistant_time <= :allot_assistant_end_time ';
-            $map[':allot_assistant_end_time'] = $params['allot_assistant_end_time'];
+        if (!empty($params['allot_course_end_time'])) {
+            $whereSql .= ' AND s.allot_course_time <= :allot_course_end_time ';
+            $map[':allot_course_end_time'] = $params['allot_course_end_time'];
         }
 
         //查询有效期开始时间
@@ -852,6 +852,7 @@ class StudentModel extends Model
             $whereSql .= " AND sp.status is null";
         }
 
+        $whereSql .= " order by s.id desc ";
         return [$whereSql, $map];
     }
 
@@ -929,7 +930,7 @@ class StudentModel extends Model
     public static function getStudentListData($table, $join, $where, $map, $page, $count)
     {
         //查询字段
-        $select  = " select  s.id, s.name user_name, s.mobile, s.serve_app_id, s.sub_end_date, s.allot_assistant_time, s.is_add_course_wx, sr.create_time remark_time, sr.remark last_remark, ea.name assistant_name, ec.name course_manage_name, rc.total_duration, rc.play_days, rc.avg_duration,rc.play_date, gf.code_status, gf.bill_amount,sp.`status` share_status, sp.activity_id";
+        $select  = " select  s.id, s.name user_name, s.mobile, s.serve_app_id, s.sub_end_date, s.allot_course_time, s.is_add_course_wx, sr.create_time remark_time, sr.remark last_remark, ea.name assistant_name, ec.name course_manage_name, rc.total_duration, rc.play_days, rc.avg_duration,rc.play_date, gf.code_status, gf.bill_amount,sp.`status` share_status, sp.activity_id";
 
         //分页
         if ($page > 0 && $count > 0) {

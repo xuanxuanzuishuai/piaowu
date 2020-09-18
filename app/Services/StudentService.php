@@ -779,7 +779,7 @@ class StudentService
             $row['collection_name'] = !empty($item['course_manage_name']) ? $item['course_manage_name'] : '-';
             $row['assistant_name'] = !empty($item['assistant_name']) ? $item['assistant_name'] : '-';
             $row['sub_end_date'] = !empty($item['sub_end_date']) ? date('Y-m-d', strtotime($item['sub_end_date'].' 00:00')) : '-';;
-            $row['allot_assistant_time'] = !empty($item['allot_assistant_time']) ? date('Y-m-d', $item['allot_assistant_time']) : '-';
+            $row['allot_course_time'] = !empty($item['allot_course_time']) ? date('Y-m-d', $item['allot_course_time']) : '-';
             $row['total_duration'] = !empty($item['total_duration']) ? round($item['total_duration'] / 60, 1) : 0;
             $row['avg_duration'] = !empty($item['avg_duration']) ? round($item['avg_duration'] / 60, 1) : 0;
             $row['play_days'] = !empty($item['play_days']) ? $item['play_days'] : "0";
@@ -1270,7 +1270,8 @@ class StudentService
             throw new RunTimeException(['student_course_manage_no_change']);
         }
         //修改数据
-        $affectRows = StudentModel::batchUpdateRecord(['course_manage_id' => $courseManageId], ['id' => $courseManageChangeStudents], false);
+        $time = time();
+        $affectRows = StudentModel::batchUpdateRecord(['course_manage_id' => $courseManageId, 'allot_course_time' => $time], ['id' => $courseManageChangeStudents], false);
         if (empty($affectRows)) {
             throw new RunTimeException(['update_student_data_failed']);
         }
