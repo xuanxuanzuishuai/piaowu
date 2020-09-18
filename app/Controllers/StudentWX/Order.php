@@ -113,9 +113,12 @@ class Order extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
+        $studentId = $this->ci['user_info']['user_id'];
+        $student = StudentModelForApp::getById($studentId);
+
         $student = [
-            'id' => $this->ci['user_info']['user_id'],
-            'uuid' => $this->ci['user_info']['uuid'],
+            'id' => $studentId,
+            'uuid' => $student['uuid'],
             'open_id' => $this->ci['open_id'],
             'address_id' => $params['address_id'] ?? 0
         ];

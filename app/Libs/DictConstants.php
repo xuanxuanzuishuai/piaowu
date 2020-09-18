@@ -165,7 +165,9 @@ class DictConstants {
             'cancel_url',
             'result_url',
             'assess_result_share_channel_id',
-            'shared_day_report_channel_id'
+            'shared_day_report_channel_id',
+            'success_url_v1',
+            'result_url_v1',
         ]
     ];
 
