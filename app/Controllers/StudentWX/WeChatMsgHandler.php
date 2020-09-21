@@ -10,6 +10,7 @@ namespace App\Controllers\StudentWX;
 
 use App\Libs\AliOSS;
 use App\Libs\DictConstants;
+use App\Libs\SimpleLogger;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\AutoReplyAnswerModel;
 use App\Models\UserQrTicketModel;
@@ -106,7 +107,16 @@ class WeChatMsgHandler
                     $posterImgFile = UserService::generateQRPosterAliOss($user['user_id'], $referralConfig['url'], UserQrTicketModel::STUDENT_TYPE, $settings['poster_width'], $settings['poster_height'], $settings['qr_width'], $settings['qr_height'], $settings['qr_x'], $settings['qr_y'], DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'NORMAL_STUDENT_INVITE_STUDENT'));
                     if(!empty($posterImgFile)){
                         //上传到微信服务器
-                        $data = WeChatService::uploadImg($posterImgFile,UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,UserWeixinModel::USER_TYPE_STUDENT);
+                        $weChatAppIdSecret = WeChatService::getWeCHatAppIdSecret(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT, UserWeixinModel::USER_TYPE_STUDENT);
+                        $config = [
+                            'app_id' => $weChatAppIdSecret['app_id'],
+                            'app_secret' => $weChatAppIdSecret['secret'],
+                        ];
+                        $wx = WeChatMiniPro::factory($config);
+                        if (empty($wx)) {
+                            SimpleLogger::error('wx create fail', ['config' => $config, 'we_chat_type'=>UserWeixinModel::USER_TYPE_STUDENT]);
+                        }
+                        $data = $wx->getTempMedia('image', $posterImgFile['unique'], $posterImgFile['poster_save_full_path']);
                         //发送海报
                         if (!empty($data['media_id'])) {
                             WeChatService::toNotifyUserWeixinCustomerInfoForImage(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT, UserWeixinModel::USER_TYPE_STUDENT, $userOpenId, $data['media_id']);

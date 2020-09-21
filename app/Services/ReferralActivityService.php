@@ -10,6 +10,7 @@ namespace App\Services;
 
 
 use App\Libs\Valid;
+use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\AIPlayRecordModel;
 use App\Models\ReferralActivityModel;
 use App\Models\UserQrTicketModel;
@@ -539,7 +540,16 @@ class ReferralActivityService
                 $settings['poster_width'], $settings['poster_height'], $settings['qr_width'], $settings['qr_height'], $settings['qr_x'], $settings['qr_y'], DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'NORMAL_STUDENT_INVITE_STUDENT'));
             if (!empty($posterImgFile)) {
                 //上传到微信服务器
-                $data = WeChatService::uploadImg($posterImgFile, $appId, $userType);
+                $weChatAppIdSecret = WeChatService::getWeCHatAppIdSecret($appId, $userType);
+                $config = [
+                    'app_id' => $weChatAppIdSecret['app_id'],
+                    'app_secret' => $weChatAppIdSecret['secret'],
+                ];
+                $wx = WeChatMiniPro::factory($config);
+                if (empty($wx)) {
+                    SimpleLogger::error('wx create fail', ['config' => $config, 'we_chat_type'=>$userType]);
+                }
+                $data = $wx->getTempMedia('image', $posterImgFile['unique'], $posterImgFile['poster_save_full_path']);
                 if (!empty($data['media_id'])) {
                     $res3 = WeChatService::toNotifyUserWeixinCustomerInfoForImage($appId, $userType, $openId, $data['media_id']);
                     $res3 = !empty($res3) && $res3['errcode'] == 0 ? true : false;

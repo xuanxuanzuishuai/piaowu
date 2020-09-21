@@ -130,54 +130,52 @@ class UserService
         $posterFileName = $userId . "_" . $channelId . ".png";
         //获取宣传海报文件：不存在重新生成
         $posterSaveFullPath = $_ENV['STATIC_FILE_SAVE_PATH'] . "/".$posterFirstDir."/".$posterSecondDir."/".$posterFileName;
-        if (!file_exists($posterSaveFullPath)) {
-            //通过oss合成海报并保存
-            //海报资源
-            $posterAliOssFileExits = AliOSS::doesObjectExist($posterFile);
-            if (empty($posterAliOssFileExits)) {
-                SimpleLogger::info('poster oss file is not exits', [$posterFile]);
-                return;
-            }
-            //用户二维码
-            $userQrUrl = self::getUserQRAliOss($userId, $type, $channelId);
-            if (empty($userQrUrl)) {
-                SimpleLogger::info('user qr make fail', [$userId,$type]);
-                return;
-            }
-            $userQrAliOssFileExits = AliOSS::doesObjectExist($userQrUrl['qr_url']);
-            if (empty($userQrAliOssFileExits)) {
-                SimpleLogger::info('user qr oss file is not exits', [$userQrUrl['qr_url']]);
-                return;
-            }
-            //海报添加水印
-            //先将内容编码成Base64结果
-            //将结果中的加号（+）替换成连接号（-）
-            //将结果中的正斜线（/）替换成下划线（_）
-            //将结果中尾部的等号（=）全部保留
-            $waterImgEncode = str_replace(["+", "/"], ["-", "_"], base64_encode($userQrUrl['qr_url'] . "?x-oss-process=image/resize,limit_0,w_" . $qrWidth . ",h_" . $qrHeight));
-            $waterMark = [
-                "image_" . $waterImgEncode,
-                "x_" . $qrX,
-                "y_" . $qrY,
-                "g_sw",//插入的基准位置以左下角作为原点
-            ];
-            $waterMarkStr = implode(",", $waterMark) . '/';
-            $imgSize = [
-                "w_" . $imageWidth,
-                "h_" . $imageHeight,
-                "limit_0",//强制图片缩放
-            ];
-            $imgSizeStr = implode(",", $imgSize) . '/';
-            $resImgFile = AliOSS::signUrls($posterFile, "", "", "", false, $waterMarkStr, $imgSizeStr);
-            //生成宣传海报图
-            list($subPath, $hashDir, $fullDir) = File::createDir($posterFirstDir."/".$posterSecondDir);
-            $posterQrFile=file_get_contents($resImgFile);
-            $posterQrFileTmpPath = $fullDir.$posterFileName;
-            file_put_contents($posterQrFileTmpPath,$posterQrFile);
-            chmod($posterQrFileTmpPath, 0755);
+        //通过oss合成海报并保存
+        //海报资源
+        $posterAliOssFileExits = AliOSS::doesObjectExist($posterFile);
+        if (empty($posterAliOssFileExits)) {
+            SimpleLogger::info('poster oss file is not exits', [$posterFile]);
+            return;
         }
+        //用户二维码
+        $userQrUrl = self::getUserQRAliOss($userId, $type, $channelId);
+        if (empty($userQrUrl)) {
+            SimpleLogger::info('user qr make fail', [$userId,$type]);
+            return;
+        }
+        $userQrAliOssFileExits = AliOSS::doesObjectExist($userQrUrl['qr_url']);
+        if (empty($userQrAliOssFileExits)) {
+            SimpleLogger::info('user qr oss file is not exits', [$userQrUrl['qr_url']]);
+            return;
+        }
+        //海报添加水印
+        //先将内容编码成Base64结果
+        //将结果中的加号（+）替换成连接号（-）
+        //将结果中的正斜线（/）替换成下划线（_）
+        //将结果中尾部的等号（=）全部保留
+        $waterImgEncode = str_replace(["+", "/"], ["-", "_"], base64_encode($userQrUrl['qr_url'] . "?x-oss-process=image/resize,limit_0,w_" . $qrWidth . ",h_" . $qrHeight));
+        $waterMark = [
+            "image_" . $waterImgEncode,
+            "x_" . $qrX,
+            "y_" . $qrY,
+            "g_sw",//插入的基准位置以左下角作为原点
+        ];
+        $waterMarkStr = implode(",", $waterMark) . '/';
+        $imgSize = [
+            "w_" . $imageWidth,
+            "h_" . $imageHeight,
+            "limit_0",//强制图片缩放
+        ];
+        $imgSizeStr = implode(",", $imgSize) . '/';
+        $resImgFile = AliOSS::signUrls($posterFile, "", "", "", false, $waterMarkStr, $imgSizeStr);
+        //生成宣传海报图
+        list($subPath, $hashDir, $fullDir) = File::createDir($posterFirstDir."/".$posterSecondDir);
+        $posterQrFile=file_get_contents($resImgFile);
+        $posterQrFileTmpPath = $fullDir.$posterFileName;
+        file_put_contents($posterQrFileTmpPath,$posterQrFile);
+        chmod($posterQrFileTmpPath, 0755);
         //返回数据
-        return $posterSaveFullPath;
+        return ['poster_save_full_path' => $posterSaveFullPath, 'unique' => md5($userId.$posterFile.$userQrUrl['qr_url'])];
     }
 
     /**

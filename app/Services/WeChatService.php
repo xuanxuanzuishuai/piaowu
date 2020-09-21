@@ -13,6 +13,7 @@ use App\Libs\RedisDB;
 use App\Libs\SentryClient;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
+use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\WeChatOpenIdListModel;
 use GuzzleHttp\Client;
 use App\Libs\UserCenter;
@@ -530,6 +531,13 @@ class WeChatService
         return false;
     }
 
+    /**
+     * 上传图片到微信素材服务器
+     * @param $imgUrl
+     * @param $appId
+     * @param $userType
+     * @return bool|mixed
+     */
     public static function uploadImg($imgUrl, $appId, $userType)
     {
         $file = self::weixinAPIURL . "media/upload?access_token=" . self::getAccessToken($appId, $userType) . "&type=image";
@@ -646,7 +654,16 @@ class WeChatService
             $res = self::notifyUserWeixinTextInfo($appId, $userType, $userWeChatInfo['open_id'], Util::textDecode($configData['content']));
         } elseif ($configData['content_type'] == WeChatConfigModel::CONTENT_TYPE_IMG) {
             //图片消息
-            $data = WeChatService::uploadImg($configData['content'], $appId, $userType);
+            $weChatAppIdSecret = self::getWeCHatAppIdSecret($appId, $userType);
+            $config = [
+                'app_id' => $weChatAppIdSecret['app_id'],
+                'app_secret' => $weChatAppIdSecret['secret'],
+            ];
+            $wx = WeChatMiniPro::factory($config);
+            if (empty($wx)) {
+                SimpleLogger::error('wx create fail', ['config' => $config, 'we_chat_type'=>UserWeixinModel::USER_TYPE_STUDENT]);
+            }
+            $data = $wx->getTempMedia('image', md5($configData['content']), $configData['content']);
             if (!empty($data['media_id'])) {
                 $res = self::toNotifyUserWeixinCustomerInfoForImage($appId, $userType, $userWeChatInfo['open_id'], $data['media_id']);
             }
