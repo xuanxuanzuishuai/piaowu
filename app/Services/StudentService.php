@@ -772,8 +772,10 @@ class StudentService
                 $row['code_status'] = "未激活";
             } elseif ($item['code_status'] == Constants::STATUS_TRUE) {
                 $row['code_status'] = '已激活';
-            } else {
+            } elseif ($item['code_status'] == StudentModel::NOT_GIFT_CODE_VOID) {
                 $row['code_status'] = '已作废';
+            } else {
+                $row['code_status'] = '-'; //默认给成'-'是因有些用户student表是年卡用户标示，但是没有激活码
             }
             $row['is_add_course_wx'] = empty($item['is_add_course_wx']) ? 0 : 1;
             $row['collection_name'] = !empty($item['course_manage_name']) ? $item['course_manage_name'] : '-';
@@ -783,7 +785,7 @@ class StudentService
             $row['total_duration'] = !empty($item['total_duration']) ? round($item['total_duration'] / 60, 1) : 0;
             $row['avg_duration'] = !empty($item['avg_duration']) ? round($item['avg_duration'] / 60, 1) : 0;
             $row['play_days'] = !empty($item['play_days']) ? $item['play_days'] : "0";
-            $row['bill_amount'] = !empty($item['bill_amount']) ? $item['bill_amount'] / 100 : 0;
+            $row['bill_amount'] = isset($item['bill_amount']) ? $item['bill_amount'] / 100 : '-'; //默认给成'-'是因有些用户student表是年卡用户标示，但是没有激活码
 
             if (empty($item['share_status'])) {
                 $row['share_status'] = "未提交";

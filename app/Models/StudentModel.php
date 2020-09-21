@@ -36,6 +36,8 @@ class StudentModel extends Model
 
     const NOT_ACTIVE_TEXT = '未激活';
 
+    const NOT_GIFT_CODE_VOID = 2; //作废激活码
+
     //添加渠道
     const CHANNEL_UNKNOWN = 0;
     const CHANNEL_BACKEND_ADD = 1225; //机构后台添加
@@ -835,12 +837,12 @@ class StudentModel extends Model
         }
 
         //购买最小值
-        if (!empty($params['bill_amount_min'])) {
+        if (isset($params['bill_amount_min']) && is_numeric($params['bill_amount_min'])) {
             $whereSql .= " AND gf.bill_amount >= :bill_amount_min ";
             $map[':bill_amount_min'] = $params['bill_amount_min'] * 100;
         }
         //购买最大值
-        if (!empty($params['bill_amount_max'])) {
+        if (isset($params['bill_amount_max']) && is_numeric($params['bill_amount_max'])) {
             $whereSql .= " AND gf.bill_amount <= :bill_amount_max ";
             $map[':bill_amount_max'] = $params['bill_amount_max'] * 100;
         }
