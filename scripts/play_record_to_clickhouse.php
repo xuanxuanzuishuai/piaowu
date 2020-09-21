@@ -25,9 +25,9 @@ define('LANG_ROOT', PROJECT_ROOT . '/lang');
 require_once PROJECT_ROOT . '/vendor/autoload.php';
 $dotenv = new Dotenv(PROJECT_ROOT, '.env');
 $dotenv->load();
-
+$now = time();
 $redis = RedisDB::getConn();
-$key = $_ENV['CHDB_REDDIS_PRE_KEY'] . (time() - 1);
+$key = $_ENV['CHDB_REDDIS_PRE_KEY'] . ($now - 1);
 $result = $redis->lrange($key, 0, -1);
 $chdb = CHDB::getDB();
 $arr = [];
@@ -52,7 +52,7 @@ if (!empty($result)) {
             'ui_entry' => intval($value['ui_entry']),
             'input_type' => intval($value['input_type']),
             'old_format' => intval($value['old_format']),
-            'create_time' => $create_time,
+            'create_time' => $now - 1,
             'end_time' => $create_time + $duration,
             'duration' => $duration,
             'audio_url' => strval($value['audio_url']),
@@ -69,7 +69,7 @@ if (!empty($result)) {
             'platform' => strval($value['platform']),
             'version' => strval($value['version']),
             'uuid' => strval($value['uuid']),
-            'create_date' => date('Y-m-d',$create_time)
+            'create_date' => date('Y-m-d',$now - 1)
         );
     }
     $res = $chdb->insert(AIPlayRecordCHModel::$table, $arr);
