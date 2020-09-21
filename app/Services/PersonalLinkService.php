@@ -26,14 +26,21 @@ class PersonalLinkService
     }
 
     /**
+     * 生成专属售卖链接
      * @param $employeeId
      * @param $packageId
-     * 生成专属售卖链接
+     * @param $packageV1
+     * @return string
+     * @throws \App\Libs\KeyErrorRC4Exception
      */
-    public static function createPersonalLink($employeeId, $packageId)
+    public static function createPersonalLink($employeeId, $packageId, $packageV1)
     {
         $employeeInfo = EmployeeModel::getById($employeeId);
         $encryptStr = RC4::encrypt($_ENV['COOKIE_SECURITY_KEY'], $employeeInfo['uuid']);
+
+        if (!empty($packageV1)) {
+            return $_ENV['WECHAT_FRONT_DOMAIN'] . '/buy/detailNew?packageId=' . $packageId . '&employeeId=' . $encryptStr;
+        }
         return $_ENV['WECHAT_FRONT_DOMAIN'] . '/buy/detail?packageId=' . $packageId . '&employeeId=' . $encryptStr;
     }
 }

@@ -57,7 +57,8 @@ class PersonalLink extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         $employeeId = $this->ci['employee']['id'];
-        $url = PersonalLinkService::createPersonalLink($employeeId, $params['package_id']);
+        $packageV1 = $params['package_v1'] ?? 0;
+        $url = PersonalLinkService::createPersonalLink($employeeId, $params['package_id'], $packageV1);
         $link = WeChatMiniPro::factory([
             'app_id' => $_ENV['STUDENT_WEIXIN_APP_ID'],
             'app_secret' => $_ENV['STUDENT_WEIXIN_APP_SECRET'],
