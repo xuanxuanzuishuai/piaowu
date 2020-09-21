@@ -29,8 +29,6 @@ use Exception;
  * 上线当天凌晨手动执行历史数据的汇总(计划2020-08-24 00:00:00 之前的数据 只执行一次）：php historical_play_ranking_statistics.php
  *
  */
-ini_set('max_execution_time', 600);
-
 $dotenv = new Dotenv(PROJECT_ROOT, '.env');
 $dotenv->load();
 $dotenv->overload();
