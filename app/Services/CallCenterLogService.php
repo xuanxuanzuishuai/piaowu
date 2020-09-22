@@ -8,7 +8,9 @@
 
 namespace App\Services;
 
+use App\Libs\Constants;
 use App\Libs\MysqlDB;
+use App\Libs\Util;
 use App\Models\CallCenterLogModel;
 use App\Models\EmployeeSeatModel;
 use Medoo\Medoo;
@@ -163,8 +165,36 @@ class CallCenterLogService
 
             $data = CallCenterLogModel::getUserRecord($where);
         }
-
+        //格式化输出结果
+        if(!empty($data)){
+            $data = self::formatData($data);
+        }
         return [$rowTotal, $data];
+    }
+
+    /**
+     * 格式化通话记录
+     * @param $data
+     * @return array
+     */
+    public static function formatData($data)
+    {
+        $callStatusMap = DictService::getTypeMap(Constants::DICT_TYPE_CALL_OUT_STATUS);
+        $result = [];
+        foreach($data as $val){
+            $item = [];
+            $item['student_name'] = $val['student_name'];
+            $item['student_mobile'] = Util::hideUserMobile($val['student_mobile']);
+            $item['show_code'] = $val['show_code'];
+            $item['ring_time'] = !empty($val['ring_time']) ? date("Y-m-d H:i:s", $val['ring_time']) : '/';
+            $item['connect_time'] = !empty($val['connect_time']) ? date("Y-m-d H:i:s", $val['connect_time']) : '/';
+            $item['finish_time'] = !empty($val['finish_time']) ? date("Y-m-d H:i:s", $val['finish_time']) : '/';
+            $item['talk_time'] = $val['talk_time'];
+            $item['call_status'] = $callStatusMap[$val['call_status']] ?? '';
+            $item['record_file'] = self::formatRecordFile($val['seat_type'], $val['cdr_enterprise_id'], $val['record_file']);
+            $result[] = $item;
+        }
+        return $result;
     }
 
     /**
@@ -182,7 +212,6 @@ class CallCenterLogService
 
         $formatRecordFile = "";
         return $formatRecordFile;
-
     }
 
 }

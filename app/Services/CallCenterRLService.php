@@ -12,7 +12,6 @@ namespace App\Services;
 use App\Libs\Constants;
 use App\Libs\SimpleLogger;
 use App\Libs\Valid;
-use App\Models\DictModel;
 use GuzzleHttp\Client;
 
 class CallCenterRLService
@@ -21,8 +20,8 @@ class CallCenterRLService
      * 容联七陌相关配置
      */
     const CALL_API_HOST = "https://apis.7moor.com";
-    const CALL_API_DIAL_VER = "v20160818";
-    const CALL_API_DIAL_URI = "call/dialout";
+    const CALL_API_DIAL_VER = "v20180426";
+    const CALL_API_DIAL_URI = "rlxh/dialout";
     const Call_API_SIGN_IN_OR_OUT_URI = "account/SignInOrOut";
     const CALL_API_ACCOUNT_ID = "N00000050732";
     const CALL_API_SECRET = "9a8a9150-fbbb-11ea-9821-b59e91cbe4d6";
@@ -134,9 +133,9 @@ class CallCenterRLService
 
         //定义外呼参数
         $formParams = [
-            'form_params' => [
-                'FromExten' => $fromSeatId,
-                'Exten' => $toMobile,
+            'json' => [
+                'FromExten' => (string)$fromSeatId,
+                'Exten' => (string)$toMobile,
                 'ExtenType' => $extendType,
                 'DialoutStrVar' => $userField
             ]
@@ -148,7 +147,7 @@ class CallCenterRLService
         if ($result['Succeed']){
             return ['res' => 0, 'userField' => $userField, 'data' => $result];
         }else{
-            $errorMap = DictModel::getTypeMap(Constants::DICT_RL_ERROR);
+            $errorMap = DictService::getTypeMap(Constants::DICT_RL_ERROR);
             $errorCode = explode(' ', $result['Message']);
             $errMsg = isset($errorMap[$errorCode[0]]) ? $errorMap[$errorCode[0]] : '未知错误';
             return ['res' => Valid::CODE_PARAMS_ERROR, 'errMsg' => $errMsg];

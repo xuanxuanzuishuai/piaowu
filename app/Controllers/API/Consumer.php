@@ -14,6 +14,7 @@ use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Controllers\ControllerBase;
 use App\Services\CallCenterRLLogService;
+use App\Services\CallCenterService;
 use App\Services\CallCenterTRLogService;
 use App\Services\ChannelService;
 use App\Services\LeadsPool\LeadsService;
@@ -324,6 +325,12 @@ class Consumer extends ControllerBase
 
         if ($result['code'] == 1) {
             return $response->withJson($result, 200);
+        }
+
+        //非本系统回调，直接退出
+        $res = CallCenterService::judgeCallBack($params);
+        if(!$res){
+            return $response->withJson(['code' => 0], 200);
         }
 
         switch ($params['event_type']) {

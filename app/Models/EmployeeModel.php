@@ -119,7 +119,8 @@ class EmployeeModel extends Model
         $users = $db->select(self::$table, [
             '[>]' . RoleModel::$table => ['role_id' => 'id'],
             '[>]' . OrganizationModel::$table => ['org_id' => 'id'],
-            '[>]' . DeptModel::$table => ['dept_id' => 'id']
+            '[>]' . DeptModel::$table => ['dept_id' => 'id'],
+            '[>]' . EmployeeSeatModel::$table => ['id' => 'employee_id']
         ], [
             self::$table . '.id',
             self::$table . '.name',
@@ -135,6 +136,7 @@ class EmployeeModel extends Model
             self::$table . '.email',
             RoleModel::$table . '.name(role_name)',
             DeptModel::$table . '.name(dept_name)',
+            EmployeeSeatModel::$table . '.seat_id',
         ], $where);
 
         return $users ?: [];

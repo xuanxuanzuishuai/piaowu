@@ -64,9 +64,39 @@ class CallCenterService
         return DictModel::getKeyValue(Constants::DICT_TYPE_SYSTEM_ENV, Constants::DICT_KEY_CALL_CENTER_APP_PREFIX);
     }
 
-
-    public static function judgeCallBack()
+    /**
+     * 判断回调是否属于当前应用
+     * @param $params
+     * @return bool
+     */
+    public static function judgeCallBack($params)
     {
+        $uniqueField = self::getUniqueField($params);
+        if(empty($unique)){
+            return false;
+        }
+        $array = explode('_', $uniqueField);
+        $prefix = self::getAppPrefix();
 
+        return $array[0] == $prefix ;
+    }
+
+    /**
+     * 获取unique_id
+     * @param $params
+     * @return mixed|string|null
+     */
+    public static function getUniqueField($params)
+    {
+        //天润回调获取unique_id
+        if(in_array($params['event_type'], [CallCenterTRLogService::CALLBACK_CALLOUT_RINGING, CallCenterTRLogService::CALLBACK_CALLOUT_COMPLETE])){
+            return CallCenterTRLogService::getUniqueField($params);
+        }
+        //容联回调获取unique_id
+        if(in_array($params['event_type'], [CallCenterRLLogService::CALLBACK_CALLOUT_RINGING, CallCenterRLLogService::CALLBACK_CALLOUT_COMPLETE])){
+            return CallCenterRLLogService::getUniqueField($params);
+        }
+
+        return null;
     }
 }

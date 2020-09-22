@@ -228,4 +228,8 @@ class Constants
     const DICT_TYPE_RL_EXTEND_TYPE = 'ronglian_extend_type';
     //app prefix key_code
     const DICT_KEY_CALL_CENTER_APP_PREFIX = "call_center_app_prefix";
+    // 呼入状态
+    const DICT_TYPE_CALL_IN_STATUS = 'callin_status';
+    // 呼出状态
+    const DICT_TYPE_CALL_OUT_STATUS = 'callout_status';
 };

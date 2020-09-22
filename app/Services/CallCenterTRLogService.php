@@ -11,7 +11,7 @@ namespace App\Services;
 use App\Libs\Constants;
 use App\Models\CallCenterLogModel;
 use App\Models\DictModel;
-use App\Models\UserSeatModel;
+use App\Models\EmployeeModel;
 
 
 class CallCenterTRLogService extends CallCenterLogService
@@ -38,9 +38,9 @@ class CallCenterTRLogService extends CallCenterLogService
     public static function getSeatType()
     {
         return  [
-            UserSeatModel::SEAT_TIANRUN_MANUAL,
-            UserSeatModel::SEAT_TIANRUN_AUTOMATIC,
-            UserSeatModel::SEAT_TIANRUN_CUSTOMER_SERVICE
+            EmployeeModel::SEAT_TIANRUN_MANUAL,
+            EmployeeModel::SEAT_TIANRUN_AUTOMATIC,
+            EmployeeModel::SEAT_TIANRUN_CUSTOMER_SERVICE
         ];
     }
 
@@ -52,7 +52,7 @@ class CallCenterTRLogService extends CallCenterLogService
     public static function getUserId($seatId)
     {
         $seatType = self::getSeatType();
-        return UserSeatModel::getUserId($seatId, $seatType);
+        return EmployeeModel::getUserId($seatId, $seatType);
     }
 
     /**
@@ -366,4 +366,13 @@ class CallCenterTRLogService extends CallCenterLogService
         return self::logCallEndTime();
     }
 
+    /**
+     * 获取unique_id
+     * @param $params
+     * @return mixed
+     */
+    public static function getUniqueField($params)
+    {
+        return $params['data']['cdr_main_unique_id'] ?? '';
+    }
 }

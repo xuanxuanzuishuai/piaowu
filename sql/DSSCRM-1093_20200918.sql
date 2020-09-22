@@ -61,6 +61,19 @@ VALUES
   ('rl_error', '容联接口返回错误值', '409', '调用者指定的接听方式，不可用', ''),
   ('rl_error', '容联接口返回错误值', '500', '服务器错误', '');
 
+-- DICT 增加呼入、呼出状态数据
+INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
+VALUES
+  ('callout_status', '外呼类型', '1', '外呼成功', ''),
+  ('callout_status', '外呼类型', '11', '外呼超时', ''),
+  ('callout_status', '外呼类型', '12', '外呼空号', ''),
+  ('callout_status', '外呼类型', '13', '外呼座席未接听', ''),
+  ('callout_status', '外呼类型', '14', '其他错误', ''),
+  ('callin_status', '呼入类型', '2', '来电接通', ' '),
+  ('callin_status', '呼入类型', '21', '已呼叫座席，座席未接听', ''),
+  ('callin_status', '呼入类型', '22', '系统接通', ' '),
+  ('callin_status', '呼入类型', '23', '系统未接通', ''),
+  ('callin_status', '呼入类型', '24', '其他错误', '');
 
 -- 添加外呼前缀
 INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
@@ -70,7 +83,7 @@ VALUES
 -- 新增权限
 INSERT INTO `privilege` (`name`, `uri`, `created_time`, `method`, `is_menu`, `menu_name`, `parent_id`, `unique_en_name`, `status`)
 VALUES
-  ('设置员工坐席', '/employee/employee/setSeat', 1600446535, 'post', 0, '', 52, 'set_seat', 1),
-  ('解绑员工坐席', '/employee/employee/delSeat', 1600446535, 'post', 0, '', 52, 'del_seat', 1),
+  ('设置员工坐席', '/employee/employee/set_seat', 1600446535, 'post', 0, '', 52, 'set_seat', 1),
+  ('解绑员工坐席', '/employee/employee/del_seat', 1600446535, 'post', 0, '', 52, 'del_seat', 1),
   ('学生外呼记录列表', '/student/student/call_list', 1600446535, 'get', 0, '', 344, 'call_list', 1),
-  ('外呼拨号接口', '/call/call/dialOut', 1600446535, 'post', 0, '', 344, 'dail_out', 1);
+  ('外呼拨号接口', '/call/call/dial_out', 1600446535, 'post', 0, '', 344, 'dail_out', 1);

@@ -185,4 +185,13 @@ class CallCenterRLLogService extends CallCenterLogService
         }
     }
 
+    /**
+     * 获取unique_id
+     * @param $uniqueField
+     * @return string
+     */
+    public static function getUniqueField($uniqueField)
+    {
+        return $uniqueField['data']['CallSheetID'] ?? '';
+    }
 }

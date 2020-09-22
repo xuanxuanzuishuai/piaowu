@@ -83,8 +83,8 @@ class OrgWebRouter extends RouterBase
         '/employee/employee/list_for_org' => array('method' => array('get'), 'call' => '\App\Controllers\Employee\Employee:listForOrg'),
         '/employee/employee/detail' => array('method' => array('get'), 'call' => '\App\Controllers\Employee\Employee:detail'),
         '/employee/employee/modify' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Employee:modify'),
-        '/employee/employee/setSeat' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Employee:setSeat'),
-        '/employee/employee/delSeat' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Employee:delSeat'),
+        '/employee/employee/set_seat' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Employee:setSeat'),
+        '/employee/employee/del_seat' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Employee:delSeat'),
         '/employee/employee/setPwd' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Employee:setPwd'),
         '/employee/employee/userSetPwd' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Employee:userSetPwd'),
         '/employee/employee/getEmployeeListWithRole' => array('method' => array('get'), 'call' => '\App\Controllers\Employee\Employee:getEmployeeListWithRole'),
@@ -531,7 +531,7 @@ class OrgWebRouter extends RouterBase
         '/org_web/student/update_add_course_status' => ['method' => ['post'], 'call' => Student::class . ':updateAddCourseStatus'],
 
         //外呼接口
-        '/org_web/call/dial_out' => ['method' => ['post'], 'call' => Call::class . ':dialOut',      'middles' => []],
+        '/org_web/call/dial_out' => ['method' => ['post'], 'call' => Call::class . ':dialOut'],
 
 
     ];
