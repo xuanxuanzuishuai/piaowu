@@ -56,6 +56,7 @@ class Erp
     const API_BILL_STATUS_V1 = '/ai_dss/billV1/bill_status';
     // 创建订单（可以创建后立即发货）
     const API_MAN_CREATE_BILL_V1 = '/ai_dss/billV1/man_create';
+    const API_REFUND_FREE_BILL = '/ai_dss/billV1/abandon_free';
 
     // 账户
     const API_STUDENT_ACCOUNTS = '/ai_dss/account/detail';
@@ -624,4 +625,14 @@ class Erp
         return $response;
     }
 
+    /**
+     * 退赠单
+     * @param $params
+     * @return bool|mixed
+     */
+    public function abandonFreeBill($params)
+    {
+        $result = self::commonAPI(self::API_REFUND_FREE_BILL, $params, 'POST');
+        return $result;
+    }
 }

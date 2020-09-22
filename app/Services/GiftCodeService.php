@@ -11,12 +11,12 @@
 namespace App\Services;
 
 use App\Libs\Constants;
+use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
 use App\Models\EmployeeModel;
 use App\Models\GiftCodeModel;
 use App\Libs\Dict;
-use Complex\Exception;
 
 class GiftCodeService
 {
@@ -45,12 +45,6 @@ class GiftCodeService
                                            $buyTime = NULL,
                                            $billInfo = [])
     {
-        // 如果是给个人生成，每人只能生成一个
-        $multipleBuyer = ($generateChannel == GiftCodeModel::BUYER_TYPE_STUDENT);
-        if ($multipleBuyer) {
-            $num = count($buyer);
-        }
-
         $i = 0;
         //随机生成码
         do {
@@ -96,16 +90,12 @@ class GiftCodeService
         ];
         !empty($params['employee_uuid']) && $params['employee_dept_info'] = DeptService::getSubAllParentDept($params['employee_uuid']);
 
-        if (!$multipleBuyer) {
-            $params['buyer'] = $buyer;
-        }
+        $params['buyer'] = $buyer;
 
         foreach ($codes as $i => $value) {
             $params['code'] = $value;
-            $params['buyer'] = $multipleBuyer ? $buyer[$i]['id'] : $buyer;
 
             GiftCodeModel::insertRecord($params, false);
-
             if ($multipleBuyer) {
                 $codes[$i] = $buyer[$i];
                 $codes[$i]['code'] = $value;
@@ -284,15 +274,18 @@ class GiftCodeService
         if (empty($giftCodeData)) {
             throw new RunTimeException(['gift_code_empty']);
         }
-        $db = MysqlDB::getDB();
-        $db->beginTransaction();
-        //只可以作废 手动在dss后台手动生成、机构生成 并且是未激活或者已激活 的激活码
+
+        // 只可以作废 手动在dss后台手动生成、机构生成 并且是未激活或者已激活 的激活码
         $channelStatus = ($giftCodeData['generate_channel'] == GiftCodeModel::BUYER_TYPE_STUDENT || $giftCodeData['generate_channel'] == GiftCodeModel::BUYER_TYPE_ORG);
         $codeStatus = ($giftCodeData['code_status'] == GiftCodeModel::CODE_STATUS_NOT_REDEEMED || $giftCodeData['code_status'] == GiftCodeModel::CODE_STATUS_HAS_REDEEMED);
         if (!$channelStatus || !$codeStatus) {
             throw new RunTimeException(['gift_code_type_error']);
         }
-        //修改激活码状态
+
+        $db = MysqlDB::getDB();
+        $db->beginTransaction();
+
+        // 修改激活码状态
         $updateGiftCodeStatus = GiftCodeModel::updateRecord($giftCodeData['id'], ['code_status' => GiftCodeModel::CODE_STATUS_INVALID]);
         $updateSubDurationStatus = Constants::STATUS_TRUE;
 
@@ -300,13 +293,25 @@ class GiftCodeService
         if ($giftCodeData['code_status'] == GiftCodeModel::CODE_STATUS_HAS_REDEEMED) {
             $updateSubDurationStatus = StudentService::reduceSubDuration($giftCodeData['apply_user'], $giftCodeData['valid_num'], $giftCodeData['valid_units']);
         }
-        if ($updateGiftCodeStatus && $updateSubDurationStatus) {
-            $db->commit();
-            return $updateGiftCodeStatus;
-        } else {
+
+        if (!$updateGiftCodeStatus || !$updateSubDurationStatus) {
+            // 更新失败
             $db->rollBack();
             throw new RunTimeException(['update_fail']);
         }
+
+        if (!empty($giftCodeData['package_v1'])) {
+            // 新产品包 赠单-->退单
+            $erp = new Erp();
+            $erp->abandonFreeBill([
+                'free_bill_id' => $giftCodeData['bill_id']
+            ]);
+        }
+
+        $db->commit();
+
+
+        return $updateGiftCodeStatus;
     }
 
     /**

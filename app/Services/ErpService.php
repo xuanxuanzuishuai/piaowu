@@ -62,6 +62,8 @@ class ErpService
         }
 
         $now = time();
+        $operatorId = $billInfo['operator_id'] ?? EmployeeModel::SYSTEM_EMPLOYEE_ID;
+        $remarks = $billInfo['remarks'] ?? null;
         $giftCodes = GiftCodeService::batchCreateCode(
             1,
             $giftCodeNum,
@@ -69,8 +71,8 @@ class ErpService
             $exchangeType,
             $student['id'],
             GiftCodeModel::CREATE_BY_SYSTEM,
-            NULL,
-            EmployeeModel::SYSTEM_EMPLOYEE_ID,
+            $remarks,
+            $operatorId,
             $now,
             $billInfo
         );

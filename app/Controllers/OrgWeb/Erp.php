@@ -433,7 +433,7 @@ class Erp extends ControllerBase
         } elseif (!empty($params['goods_id'])) {
             // 赠送产品
             $goods = GoodsV1Model::getGoods($params['goods_id']);
-            $durationNum = $goods['duration_num'];
+            $durationNum = $params['duration_num'] ?? $goods['duration_num'];
             $autoApply = ($goods['apply_type'] == PackageExtModel::APPLY_TYPE_AUTO) ? true : false;
         } else {
             Util::errorCapture('no package_id and goods_id', ['$params' => $params]);
@@ -463,7 +463,9 @@ class Erp extends ControllerBase
                 'bill_app_id' => (int)$params['app_id'],
                 'bill_package_id' => (int)$params['package_id'],
                 'employee_uuid' => $params['employee_uuid'] ?? '',
-                'package_v1' => GiftCodeModel::PACKAGE_V1
+                'package_v1' => GiftCodeModel::PACKAGE_V1,
+                'operator_id' => $params['operator_id'] ?? 0,
+                'remarks' => $params['msg'] ?? ''
             ]
         );
 
@@ -483,7 +485,7 @@ class Erp extends ControllerBase
 
         $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
         if (!$autoApply) {
-            // 换购上线前已经提前发送激活码的用户
+            // 不立即激活，则发送验证码
             $sms->sendExchangeGiftCode($params['mobile'],
                 implode(',', $giftCodes),
                 CommonServiceForApp::SIGN_STUDENT_APP, $params['country_code']);

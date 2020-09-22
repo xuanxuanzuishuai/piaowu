@@ -16,6 +16,7 @@ use App\Libs\SimpleLogger;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\CollectionModel;
 use App\Models\EmployeeModel;
+use App\Models\GiftCodeModel;
 use App\Models\PackageExtModel;
 use App\Models\ReviewCourseLogModel;
 use App\Models\ReviewCourseTaskModel;
@@ -687,8 +688,9 @@ class ReviewCourseService
         // 班课需要减少一天
         $giftCourseNum -= 1;
         if ($giftCourseNum > 0) {
-            $giftCourseId = DictConstants::get(DictConstants::ACTIVITY_CONFIG, 'gift_course_id');
-            QueueService::giftCourses($student['uuid'], $giftCourseId, $giftCourseNum);
+            $applyType = PackageExtModel::APPLY_TYPE_AUTO;
+            $generateChannel = GiftCodeModel::BUYER_TYPE_AI_REFERRAL;
+            QueueService::giftDuration($student['uuid'], $applyType, $giftCourseNum, $generateChannel);
         }
 
         // 入班引导页面链接

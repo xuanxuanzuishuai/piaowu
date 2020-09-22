@@ -8,6 +8,7 @@
 
 namespace App\Services\Queue;
 
+use App\Models\EmployeeModel;
 use App\Services\StudentService;
 use Exception;
 use App\Libs\SimpleLogger;
@@ -172,25 +173,44 @@ class QueueService
         return true;
 
     }
+
+
     /**
      * 赠送时长
      * @param $uuid
-     * @param $courseId
-     * @param $courseNum
+     * @param $applyType
+     * @param $goodsNum
+     * @param $channel
+     * @param int $operatorId
+     * @param null $msg
      * @return bool
      */
-    public static function giftCourses($uuid, $courseId, $courseNum)
+    public static function giftDuration($uuid, $applyType, $goodsNum, $channel, $operatorId = 0, $msg = null)
     {
         try {
             $topic = new GiftCoursesTopic();
+            if (!is_array($uuid)) {
+                $uuid = [$uuid];
+            }
 
-            $msgBody = [
-                'uuid' => $uuid,
-                'course_id' => $courseId,
-                'course_num' => $courseNum,
-            ];
-
-            $topic->activityGift($msgBody)->publish();
+            if (!empty($operatorId)) {
+                $operatorName = EmployeeModel::getById($operatorId);
+            } else {
+                $operatorId = EmployeeModel::SYSTEM_EMPLOYEE_ID;
+                $operatorName = EmployeeModel::SYSTEM_EMPLOYEE_NAME;
+            }
+            foreach ($uuid as $value) {
+                $msgBody = [
+                    'uuid' => $value,
+                    'apply_type' => $applyType,
+                    'goods_num' => $goodsNum,
+                    'channel' => $channel,
+                    'operator_id' => $operatorId,
+                    'operator_name' => $operatorName,
+                    'msg' => $msg
+                ];
+                $topic->giftDuration($msgBody)->publish();
+            }
 
         } catch (Exception $e) {
             SimpleLogger::error($e->getMessage(), $msgBody ?? []);

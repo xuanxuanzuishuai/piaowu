@@ -26,11 +26,11 @@ class GiftCoursesTopic extends BaseTopic
     }
 
     /**
-     * 学生第一次购买正式课包
+     * 赠送时长
      * @param $data
      * @return $this
      */
-    public function activityGift($data)
+    public function giftDuration($data)
     {
         $this->setEventType(self::EVENT_ACTIVITY_GIFT);
         $this->setMsgBody($data);
