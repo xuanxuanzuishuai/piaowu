@@ -12,6 +12,8 @@ use App\Controllers\API\Consumer;
 use App\Controllers\API\Track;
 use App\Controllers\API\BAIDU;
 use App\Controllers\API\WeChat;
+use App\Controllers\API\Crm;
+use App\Middleware\CrmMiddleware;
 
 class APIRouter extends RouterBase
 {
@@ -90,6 +92,11 @@ class APIRouter extends RouterBase
             'method' => ['post'],
             'call' => Consumer::class . ':callCenterSync',
             'middles' => [],
+        ],
+        '/api/crm/export_referral_user' => [
+            'method' => ['post'],
+            'call' => Crm::class . ':exportAIReferralUser',
+            'middles' => [CrmMiddleware::class],
         ],
     ];
 }

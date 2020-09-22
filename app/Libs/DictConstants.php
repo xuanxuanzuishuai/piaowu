@@ -196,6 +196,7 @@ class DictConstants {
         'keys' => [
             'erp',
             'org_web',
+            'crm',
         ]
     ];
 
