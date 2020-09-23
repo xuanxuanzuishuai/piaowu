@@ -10,7 +10,6 @@ namespace App\Controllers\StudentApp;
 
 
 use App\Controllers\ControllerBase;
-use App\Libs\AliContentCheck;
 use App\Libs\AliOSS;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
@@ -108,6 +107,34 @@ class App extends ControllerBase
             'code' => Valid::CODE_SUCCESS,
             'data' => $config
         ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * 广告渠道追踪
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function adActive(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+
+        $platformId = TrackService::getPlatformId($this->ci['platform']);
+        $trackParams = TrackService::getPlatformParams($platformId, $params);
+
+        if (empty($trackParams)) {
+            return HttpHelper::buildResponse($response, []);
+        }
+
+        $trackParams['platform'] = $platformId;
+        $trackParams['ad_channel'] = $params['ad_channel'] ?? 0;
+        $trackParams['ad_id'] = $params['ad_id'] ?? 0;
+
+        $trackData = TrackService::trackEvent(TrackService::TRACK_EVENT_ACTIVE, $trackParams);
+        $result = [
+            'ad_active' => $trackData['complete'] ? 1 : 0
+        ];
+        return HttpHelper::buildResponse($response, $result);
     }
 
     public function feedback(Request $request, Response $response)
@@ -387,7 +414,13 @@ class App extends ControllerBase
         return HttpHelper::buildResponse($response, ['banner' => $banner]);
     }
 
-    public function countryCode(Request $request, Response $response)
+    /**
+     * 国家代码列表(缓存)
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function countryCode(/** @noinspection PhpUnusedParameterInspection */ Request $request, Response $response)
     {
         $countryCode = CommonServiceForApp::getCountryCode();
         return $response->withJson([

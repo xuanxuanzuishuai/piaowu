@@ -74,6 +74,11 @@ class StudentAppRouter extends RouterBase
             'call' => App::class . ':config',
             'middles' => [AppApiForStudent::class]
         ],
+        '/student_app/app/ad_active' => [
+            'method' => ['post'],
+            'call' => App::class . ':adActive',
+            'middles' => [AppApiForStudent::class]
+        ],
         '/student_app/app/feedback' => [
             'method' => ['post'],
             'call' => App::class . ':feedback',

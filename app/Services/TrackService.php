@@ -37,13 +37,16 @@ class TrackService
     const PARAMS_ANDROID = ['imei', 'imei_hash', 'android_id', 'android_id_hash'];
 
     // 广告渠道，相同厂商的不同转化流程使用不同的渠道
-    const CHANNEL_OTHER = 0;
+    const CHANNEL_OTHER = 0; // 自主流量
     const CHANNEL_OCEAN = 1; // 头条，app转化追踪
-    const CHANNEL_GDT = 2;
-    const CHANNEL_WX = 3;
+    const CHANNEL_GDT = 2; // 广点通
+    const CHANNEL_WX = 3; // 微信
     const CHANNEL_OCEAN_LEADS = 4; // 头条，线索转化追踪
     const CHANNEL_IOS_IDFA = 5; // iOS 激活推广 idfa
-    const CHANNEL_BAIDU = 7; //百度，转化追踪
+    const CHANNEL_KOL = 6; // kol推广，无回调
+    const CHANNEL_BAIDU = 7; // 百度，转化追踪
+    const CHANNEL_HUAWEI = 8; // 华为
+    const CHANNEL_OPPO = 9; // oppo
 
     public static function addInfo($info, $eventType = NULL)
     {
@@ -222,8 +225,6 @@ class TrackService
     {
         SimpleLogger::debug("[trackEvent] callback", ['ad_channel' => $trackData['ad_channel']]);
         switch ($trackData['ad_channel']) {
-            case self::CHANNEL_OTHER:
-                return true;
             case self::CHANNEL_OCEAN:
                 return self::trackCallbackOceanEngine($eventType, $trackData);
             case self::CHANNEL_GDT:
@@ -236,6 +237,11 @@ class TrackService
                 return self::trackCallBackIdfa($eventType, $trackData);
             case self::CHANNEL_BAIDU:
                 return self::trackCallBackBaidu($eventType, $trackData);
+            case self::CHANNEL_OTHER:
+            case self::CHANNEL_KOL:
+            case self::CHANNEL_HUAWEI:
+            case self::CHANNEL_OPPO:
+                return true;
             default:
                 return false;
         }
