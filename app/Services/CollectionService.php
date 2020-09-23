@@ -742,6 +742,17 @@ class CollectionService
     }
 
     /**
+     * 获取指定日期开班班级数据
+     * @param $date
+     * @return array
+     */
+    public static function getCollectionByStartTime($date)
+    {
+        return CollectionModel::getRecordByStartTime($date);
+    }
+
+
+    /**
      * 获取班级统计数据按照部门架构区分
      * @param $params
      * @return array

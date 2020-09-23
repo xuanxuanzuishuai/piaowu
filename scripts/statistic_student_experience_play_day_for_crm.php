@@ -34,19 +34,22 @@ SimpleLogger::info('statistic experience student play day and push to panda-crm 
  */
 if (!empty($argv[1])) {
     $date = $argv[1];
+    $sevenDayDate = $argv[1];
 } else {
     $date = date('Y-m-d', strtotime('-1 day'));
+    $sevenDayDate = date('Y-m-d', strtotime('-7 day'));
 }
 SimpleLogger::info('statistic collection end date :', ['date' => $date]);
 
 // 获取统计数据
 $data = StudentService::getExperiencePlayDayCount($date);
+$sevenDayData = StudentService::getExperience7DayPlayDayCount($sevenDayDate);
 
 //数据不为空，则同步数据到CRM
-if($data){
+if($data || $sevenDayData){
     //post 数据到crm
     $crm = new PandaCRM();
-    $res = $crm->syncStudentsPlayData($data);
+    $res = $crm->syncStudentsPlayData(['finishedData' => $data, 'sevenDayData'=>$sevenDayData]);
     SimpleLogger::info('statistic script post data result :', ['result' => $res]);
 }
 

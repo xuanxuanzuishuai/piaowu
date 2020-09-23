@@ -1417,6 +1417,28 @@ class StudentService
     }
 
     /**
+     * 获取学生体验期7天内练琴天数
+     * @param $date
+     * @return array | boolean
+     */
+    public static function getExperience7DayPlayDayCount($date)
+    {
+        //获取指定时间开班的班级数据
+        $data = CollectionService::getCollectionByStartTime($date);
+        if(empty($data)){
+            return false;
+        }
+        //按开班、结班日期将班级分组
+        $groupData = self::formatCollectionByTime($data);
+
+        //获取班级学生数据
+        $groupData = self::getGroupStudent($groupData);
+
+        //获取学生体验期7天内练琴天数数据
+        return self::getGroupStudentPlayCount($groupData);
+    }
+
+    /**
      * 获取组内学生练琴天数
      * @param $data
      * @return array

@@ -77,6 +77,30 @@ class CollectionModel extends Model
     }
 
     /**
+     * 获取指定日期开班数据
+     * @param $date
+     * @return array
+     */
+    public static function getRecordByStartTime($date)
+    {
+        $sql = "SELECT `id`,
+                  from_unixtime(`teaching_start_time`, '%Y-%m-%d') AS `start_date`,
+                  from_unixtime(`teaching_end_time`, '%Y-%m-%d') AS `end_date` 
+                FROM `collection` 
+                WHERE `teaching_type` = :type 
+                    AND `teaching_start_time` >= :start_time
+                    AND `teaching_start_time` <= :end_time ";
+
+        $map = [
+            ':type' => self::COLLECTION_TEACHING_TYPE_EXPERIENCE_CLASS,
+            ':start_time' => strtotime($date),
+            ':end_time' => strtotime($date . " 23:59:59")
+        ];
+
+        return MysqlDB::getDB()->queryAll($sql, $map);
+    }
+
+    /**
      * 根据班级过程状态获取查询条件
      * @param $processStatus
      * @return array
