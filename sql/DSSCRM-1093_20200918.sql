@@ -16,7 +16,7 @@ CREATE TABLE `callcenter_log` (
     `call_status` tinyint(4) NOT NULL DEFAULT '0' COMMENT '呼叫状态',
     `record_file` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT '录音文件名',
     `show_code` varchar(16) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT '外显号码',
-    `site_type` tinyint(4) NOT NULL DEFAULT '0' COMMENT '后台类型 0 crm 1 erp',
+    `site_type` tinyint(4) NOT NULL DEFAULT '2' COMMENT '后台类型 0 crm 1 erp 2 dss',
     `cdr_enterprise_id` int(11) NOT NULL DEFAULT '0' COMMENT '企业id',
     `user_unique_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '用户自定义唯一id',
     PRIMARY KEY (`id`),

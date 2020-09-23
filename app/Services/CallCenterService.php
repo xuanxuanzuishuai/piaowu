@@ -13,7 +13,6 @@ use App\Libs\Constants;
 use App\Libs\SimpleLogger;
 use App\Models\DictModel;
 use App\Models\EmployeeSeatModel;
-use App\Models\UserSeatModel;
 
 class CallCenterService
 {
@@ -71,30 +70,30 @@ class CallCenterService
      */
     public static function judgeCallBack($params)
     {
-        $uniqueField = self::getUniqueField($params);
-        if(empty($unique)){
+        $userField = self::getUserField($params);
+        if(empty($userField)){
             return false;
         }
-        $array = explode('_', $uniqueField);
+        $array = explode('_', $userField);
         $prefix = self::getAppPrefix();
 
         return $array[0] == $prefix ;
     }
 
     /**
-     * 获取unique_id
+     * 获取user_field
      * @param $params
      * @return mixed|string|null
      */
-    public static function getUniqueField($params)
+    public static function getUserField($params)
     {
-        //天润回调获取unique_id
+        //天润回调获取user_field
         if(in_array($params['event_type'], [CallCenterTRLogService::CALLBACK_CALLOUT_RINGING, CallCenterTRLogService::CALLBACK_CALLOUT_COMPLETE])){
-            return CallCenterTRLogService::getUniqueField($params);
+            return CallCenterTRLogService::getUserField($params);
         }
-        //容联回调获取unique_id
+        //容联回调获取user_field
         if(in_array($params['event_type'], [CallCenterRLLogService::CALLBACK_CALLOUT_RINGING, CallCenterRLLogService::CALLBACK_CALLOUT_COMPLETE])){
-            return CallCenterRLLogService::getUniqueField($params);
+            return CallCenterRLLogService::getUserField($params);
         }
 
         return null;

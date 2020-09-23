@@ -53,8 +53,6 @@ class CallCenterLogModel extends Model
         $data['call_status'] = $params['call_status'];
         $data['record_file'] = $params['record_file'];
         $data['show_code'] = $params['show_code'];
-        $data['site_type'] = $params['site_type'];
-        $data['cdr_enterprise_id'] = $params['cdr_enterprise_id'];
         $data['user_unique_id'] = $params['user_unique_id'];
 
         $res = MysqlDB::getDB()->updateGetCount(self::$table, $data, ['unique_id' => $params['unique_id']]);

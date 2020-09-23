@@ -20,11 +20,11 @@ class CallCenterRLService
      * 容联七陌相关配置
      */
     const CALL_API_HOST = "https://apis.7moor.com";
-    const CALL_API_DIAL_VER = "v20180426";
-    const CALL_API_DIAL_URI = "rlxh/dialout";
-    const Call_API_SIGN_IN_OR_OUT_URI = "account/SignInOrOut";
+    const CALL_API_DIAL_URI = "v20180426/rlxh/dialout";
+    const Call_API_SIGN_IN_OR_OUT_URI = "v20160818/account/SignInOrOut";
     const CALL_API_ACCOUNT_ID = "N00000050732";
     const CALL_API_SECRET = "9a8a9150-fbbb-11ea-9821-b59e91cbe4d6";
+
 
     /**
      * 坐席号签入、签出常量
@@ -51,8 +51,8 @@ class CallCenterRLService
      */
     public static function getUrl($sig, $uri)
     {
-        return  sprintf('%s/%s/%s/%s?sig=%s',
-            self::CALL_API_HOST,self::CALL_API_DIAL_VER, $uri, self::CALL_API_ACCOUNT_ID, $sig);
+        return  sprintf('%s/%s/%s?sig=%s',
+            self::CALL_API_HOST, $uri, self::CALL_API_ACCOUNT_ID, $sig);
     }
 
     /**

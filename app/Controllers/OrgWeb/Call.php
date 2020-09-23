@@ -53,7 +53,7 @@ class Call extends ControllerBase
         }
 
         //获取雇员坐席ID
-        $employeeId = 11056;//$this->getEmployeeId();
+        $employeeId = $this->getEmployeeId();
         $userSeat = EmployeeSeatService::getEmployeeSeatInfo($employeeId);
         if (empty($userSeat)) {
             return $response->withJson(Valid::addErrors([], 'user_seat_id', 'user_seat_not_exists'));

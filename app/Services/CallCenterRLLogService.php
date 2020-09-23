@@ -9,7 +9,8 @@
 namespace App\Services;
 
 use App\Models\CallCenterLogModel;
-use App\Models\UserSeatModel;
+use App\Models\EmployeeModel;
+use App\Models\EmployeeSeatModel;
 
 class CallCenterRLLogService extends CallCenterLogService
 {
@@ -87,7 +88,7 @@ class CallCenterRLLogService extends CallCenterLogService
      */
     public static function getSeatType()
     {
-        return UserSeatModel::SEAT_RONGLIAN;
+        return EmployeeSeatModel::SEAT_RONGLIAN;
     }
 
     /**
@@ -98,7 +99,7 @@ class CallCenterRLLogService extends CallCenterLogService
     public static function getUserId($seatId)
     {
         $seatType = self::getSeatType();
-        return UserSeatModel::getUserId($seatId, $seatType);
+        return EmployeeSeatModel::getUserId($seatId, $seatType);
     }
 
     /**
@@ -119,11 +120,11 @@ class CallCenterRLLogService extends CallCenterLogService
 
         //获取用户(CC)id
         if (!empty($data['seat_id'])) {
-            $data['user_id'] = self::getUserId($data['seat_id']);
+            $data['employee_id'] = self::getUserId($data['seat_id']);
         }
         //获取客户id
         if (!empty($data['customer_number'])) {
-            $data['lead_id'] = self::getLeadId($data['customer_number']);
+            $data['student_id'] = StudentService::getStudentIdByMobile($data['customer_number']);
         }
         self::setRingParams($data);
         return true;
@@ -153,11 +154,11 @@ class CallCenterRLLogService extends CallCenterLogService
 
         //获取用户(CC)id
         if (!empty($data['seat_id'])) {
-            $data['user_id'] = self::getUserId($data['seat_id']);
+            $data['employee_id'] = self::getUserId($data['seat_id']);
         }
         //获取客户id
         if (!empty($data['customer_number'])) {
-            $data['lead_id'] = self::getLeadId($data['customer_number'] , $data['user_unique_id']);
+            $data['student_id'] = StudentService::getStudentIdByMobile($data['customer_number']);
         }
         //双方接通才计算 通话时间
         if (!empty($data['connect_time'])) {
@@ -186,12 +187,12 @@ class CallCenterRLLogService extends CallCenterLogService
     }
 
     /**
-     * 获取unique_id
+     * 获取user_field
      * @param $uniqueField
      * @return string
      */
-    public static function getUniqueField($uniqueField)
+    public static function getUserField($uniqueField)
     {
-        return $uniqueField['data']['CallSheetID'] ?? '';
+        return $uniqueField['data']['DialoutStrVar'] ?? '';
     }
 }

@@ -367,12 +367,12 @@ class CallCenterTRLogService extends CallCenterLogService
     }
 
     /**
-     * 获取unique_id
+     * 获取user_field
      * @param $params
      * @return mixed
      */
-    public static function getUniqueField($params)
+    public static function getUserField($params)
     {
-        return $params['data']['cdr_main_unique_id'] ?? '';
+        return $params['data']['userField'] ?? '';
     }
 }

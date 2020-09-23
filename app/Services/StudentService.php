@@ -1739,4 +1739,15 @@ class StudentService
         $res = StudentModel::getRecord($where, ['mobile'], false);
         return $res['mobile'] ?? '';
     }
+
+    /**
+     * 根据手机号获取学生id
+     * @param $mobile
+     * @return string
+     */
+    public static function getStudentIdByMobile($mobile)
+    {
+        $data = StudentModel::getRecord(['mobile' => $mobile]);
+        return $data['id'] ?? '';
+    }
 }
