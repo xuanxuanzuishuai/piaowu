@@ -114,7 +114,9 @@ class CallCenterRLLogService extends CallCenterLogService
         $data['call_type'] = $params['call_type'];
         $data['seat_type'] = $params['seat_type'];
         $data['seat_id'] = isset($params['Agent']) ? (int)$params['Agent'] : 0;
-        $data['customer_number'] = isset($params['CalledNo']) ? $params['CalledNo'] : '';
+        //小号外呼用RealCalled  坐席外呼用CalledNo
+        // $data['customer_number'] = isset($params['CalledNo']) ? $params['CalledNo'] : '';
+        $data['customer_number'] = isset($params['RealCalled']) ? $params['RealCalled'] : '';
         $data['create_time'] = time();
         $data['ring_time'] = isset($params['RingingDate']) ? strtotime($params['RingingDate']) : 0;
 
@@ -142,7 +144,9 @@ class CallCenterRLLogService extends CallCenterLogService
         $data['call_type'] = $params['call_type'];
         $data['seat_type'] = $params['seat_type'];
         $data['seat_id'] = isset($params['Agent']) ? (int)$params['Agent'] : 0;
-        $data['customer_number'] = isset($params['CalledNo']) ? $params['CalledNo'] : '';
+        //小号外呼用RealCalled  坐席外呼用CalledNo
+        // $data['customer_number'] = isset($params['CalledNo']) ? $params['CalledNo'] : '';
+        $data['customer_number'] = isset($params['RealCalled']) ? $params['RealCalled'] : '';
         $data['create_time'] = time();
         $data['ring_time'] = isset($params['RingingDate']) ? strtotime($params['RingingDate']) : 0;
         $data['connect_time'] = empty($params['Begin']) ? 0 : strtotime($params['Begin']);
