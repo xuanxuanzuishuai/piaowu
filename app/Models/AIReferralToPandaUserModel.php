@@ -37,19 +37,19 @@ class AIReferralToPandaUserModel extends Model
         $db = MysqlDB::getDB();
         $sql = "SELECT 
        u.id,
-       u.student_id,
+       u.uuid,
        uw.open_id,
        s.mobile
     FROM 
          " . self::$table . " as u 
         INNER JOIN "
-            . UserWeixinModel::$table . " as uw ON u.student_id = uw.user_id 
+            . StudentModel::$table . " as s ON s.uuid = u.uuid
+        INNER JOIN "
+            . UserWeixinModel::$table . " as uw ON s.id = uw.user_id 
             AND uw.app_id = 8
             AND uw.user_type = 1
             AND uw.busi_type = 1
             AND uw.status = 1
-        INNER JOIN "
-            . StudentModel::$table . " as s ON s.id = uw.user_id
     WHERE 
         u.is_send=0
         AND u.is_subscribe = 0

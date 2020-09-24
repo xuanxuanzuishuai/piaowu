@@ -12,28 +12,23 @@ use Exception;
 
 class AIReferralToPandaUserService
 {
-    # 用户类型
-    const USER_TYPE_LT4D = 1;
-    const USER_TYPE_LT8D = 2;
-
     /**
      * 批量添加用户
-     * @param $students
+     * @param $uuids
      * @param $userType
      * @return array | int
      */
-    public static function addRecords($students, $userType)
+    public static function addRecords($uuids, $userType)
     {
-        $studentIds = array_column($students, 'id');
-        $existStudents = self::getByStudentIds($studentIds);
-        $existStudentIds = array_column($existStudents, 'student_id');
+        $existRecords = self::getByUuids($uuids);
+        $existUuids = array_column($existRecords, 'uuid');
         $now = time();
 
         $data = [];
-        foreach ($studentIds as $studentId) {
-            if (!in_array($studentId, $existStudentIds)) {
+        foreach ($uuids as $uuid) {
+            if (!in_array($uuid, $existUuids)) {
                 $dataItem = [
-                    'student_id' => $studentId,
+                    'uuid' => $uuid,
                     'create_time' => $now,
                     'update_time' => $now,
                     'user_type' => $userType
@@ -53,16 +48,16 @@ class AIReferralToPandaUserService
     }
 
     /**
-     * 根据学生id查询
-     * @param $studentIds
+     * 根据uuids查询
+     * @param $uuids
      * @return array
      */
-    public static function getByStudentIds($studentIds)
+    public static function getByUuids($uuids)
     {
-        if (empty($studentIds)) {
+        if (empty($uuids)) {
             return [];
         }
-        return AIReferralToPandaUserModel::getRecords(['student_id' => $studentIds], false);
+        return AIReferralToPandaUserModel::getRecords(['uuid' => $uuids], false);
     }
 
     /**
@@ -77,7 +72,7 @@ class AIReferralToPandaUserService
         if (empty($studentInfo)) {
             return [0, 0];
         }
-        $url = $_ENV['PANDA_WECHAT_FRONT_DOMAIN'] .'/#/webSignup?mobile=';
+        $url = $_ENV['PANDA_WECHAT_FRONT_DOMAIN'] . '/#/webSignup?mobile=';
         $templateId = $_ENV["AI_REFERRAL_TO_PANDA_NOTICE_TEMPLATE"];
         $data = [
             'first' => [

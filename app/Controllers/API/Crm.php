@@ -43,8 +43,7 @@ class Crm extends ControllerBase
         }
 
         $studentUuids = explode(',', $params['uuids']);
-        $students = StudentService::getByUuids($studentUuids, ['id']);
-        $result = AIReferralToPandaUserService::addRecords($students, $params['student_type']);
+        $result = AIReferralToPandaUserService::addRecords($studentUuids, $params['student_type']);
         if (isset($result['code']) && $result['code'] === Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
