@@ -194,7 +194,7 @@ class QueueService
             }
 
             if (!empty($operatorId)) {
-                $operatorName = EmployeeModel::getById($operatorId);
+                $operatorName = EmployeeModel::getById($operatorId)['name'];
             } else {
                 $operatorId = EmployeeModel::SYSTEM_EMPLOYEE_ID;
                 $operatorName = EmployeeModel::SYSTEM_EMPLOYEE_NAME;

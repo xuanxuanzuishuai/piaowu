@@ -306,49 +306,55 @@ class PayServices
      */
     public static function hasTrialed($studentId)
     {
-        $trailPackages = PackageExtModel::getPackages(['package_type' => PackageExtModel::PACKAGE_TYPE_TRIAL]);
-        $trialPackageIds = array_column($trailPackages, 'package_id');
-        if (empty($trialPackageIds)) {
-            return false;
-        }
+        // 购买旧体验课记录
+        $oldTrial = GiftCodeModel::getOldPaidTrial($studentId);
+        // 购买新体验时长记录
+        $newTrial = GiftCodeModel::getNewPaidTrial($studentId);
 
-        // 新产品包---体验时长
-        $newTrailIds = ErpPackageV1Model::getTrailPackageIds();
-        $trialPackageIds = array_merge($trialPackageIds, $newTrailIds);
+        $trials = array_merge($oldTrial, $newTrial);
 
-        $trialCode = GiftCodeModel::getRecords([
-            'buyer' => $studentId,
-            'bill_package_id' => $trialPackageIds
-        ], 'id', false);
-
-        return count($trialCode) > 0;
+        return !empty($trials) ? true : false;
     }
 
     public static function trialedUserByMobile($mobile)
     {
-        $trailPackages = PackageExtModel::getPackages(['package_type' => PackageExtModel::PACKAGE_TYPE_TRIAL]);
-        $trialPackageIds = array_column($trailPackages, 'package_id');
-        if (empty($trialPackageIds)) {
-            return false;
-        }
-        if(!is_array($mobile)) {
+        if (!is_array($mobile)) {
             $mobile = [$mobile];
         }
-
-        $in = Util::buildSqlIn($mobile);
-
-        // 新产品包---体验时长
-        $newTrailIds = ErpPackageV1Model::getTrailPackageIds();
-        $trialPackageIds = array_merge($trialPackageIds, $newTrailIds);
-        $pin = Util::buildSqlIn($trialPackageIds);
-
+        $mobiles = Util::buildSqlIn($mobile);
         $s = StudentModel::$table;
         $g = GiftCodeModel::$table;
 
         $db = MysqlDB::getDB();
 
-        return $db->queryAll("select s.mobile from {$g} g inner join {$s} s on s.id = g.buyer 
-                    where s.mobile in ({$in}) and g.bill_package_id in ({$pin}) group by s.mobile");
+        $trailPackages = PackageExtModel::getPackages(['package_type' => PackageExtModel::PACKAGE_TYPE_TRIAL]);
+        $trialPackageIds = array_column($trailPackages, 'package_id');
+        $oldTrials = [];
+        if (!empty($trialPackageIds)) {
+            $oldIds = Util::buildSqlIn($trialPackageIds);
+
+            $oldTrials = $db->queryAll("
+select distinct s.mobile
+from {$g} g
+inner join {$s} s on s.id = g.buyer
+where s.mobile in ({$mobiles}) and g.bill_package_id in ({$oldIds}) and g.package_v1 = " . GiftCodeModel::PACKAGE_V1_NOT);
+        }
+
+        // 新产品包---体验时长
+        $newTrailIds = ErpPackageV1Model::getTrailPackageIds();
+        $newTrials = [];
+        if (!empty($newTrailIds)) {
+            $newIds = Util::buildSqlIn($newTrailIds);
+
+            $newTrials = $db->queryAll("
+select distinct s.mobile
+from {$g} g
+inner join {$s} s on s.id = g.buyer
+where s.mobile in ({$mobiles}) and g.bill_package_id in ({$newIds}) and g.package_v1 = " . GiftCodeModel::PACKAGE_V1);
+
+        }
+
+        return array_merge($oldTrials, $newTrials);
     }
 
     /**

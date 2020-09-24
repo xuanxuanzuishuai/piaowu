@@ -10,6 +10,7 @@ namespace App\Models;
 
 use App\Libs\MysqlDB;
 use App\Libs\Util;
+use App\Models\ModelV1\ErpPackageGoodsV1Model;
 
 class GiftCodeModel extends Model
 {
@@ -291,23 +292,119 @@ class GiftCodeModel extends Model
     }
 
     /**
-     * 获取用户正式课包首单时间
+     * 用户购买正式课的时间--老产品包
      * @param $studentIds
-     * @param $packageID
+     * @param $oldIds
      * @return array|null
      */
-    public static function getFirstNormalCourse($studentIds, $packageID)
+    public static function getOldPaidNormal($studentIds, $oldIds)
     {
+        if (empty($oldIds)) {
+            return [];
+        }
         $db = MysqlDB::getDB();
-        $sql = "SELECT
-                    buyer,MIN(buy_time) as first_time
-                FROM
-                    " . self::$table . "
-                WHERE
-                    buyer in (" . $studentIds . ")
-                AND
-                    bill_package_id IN ( " . $packageID . " )
-                GROUP BY buyer";
+
+        $sql = "
+    SELECT buyer, buy_time
+    FROM " . self::$table . "
+    WHERE buyer in (" . implode(',', $studentIds) . ")
+    AND bill_package_id IN ( " . implode(',', $oldIds) . " )
+    AND package_v1 = " . self::PACKAGE_V1_NOT;
         return $db->queryAll($sql);
     }
+
+    /**
+     * 用户购买正式课的时间--新产品包
+     * @param $studentIds
+     * @param $newIds
+     * @return array|null
+     */
+    public static function getNewPaidNormal($studentIds, $newIds)
+    {
+        if (empty($newIds)) {
+            return [];
+        }
+        $sql = "
+    SELECT buyer, buy_time
+    FROM " . self::$table . "
+    WHERE buyer in (" . implode(',', $studentIds) . ")
+    AND bill_package_id IN ( " . implode(',', $newIds) . " )
+    AND package_v1 = " . self::PACKAGE_V1;
+        $result = MysqlDB::getDB()->queryAll($sql);
+        return $result;
+    }
+
+    /**
+     * 获取学生买过的体验课类型
+     * @param $studentIds
+     * @return array
+     */
+    public static function getPaidTrialPackageType($studentIds)
+    {
+        $studentIds = implode(',', $studentIds);
+
+        // 老产品包购买记录
+        $old = self::getOldPaidTrial($studentIds);
+
+        // 新产品包购买记录
+        $new = self::getNewPaidTrial($studentIds);
+
+
+        return array_column(array_merge($old, $new), 'trial_type', 'buyer');
+    }
+
+
+    /**
+     * 体验课购买记录--旧产品包
+     * @param $studentIds
+     * @return array|null
+     */
+    public static function getOldPaidTrial($studentIds)
+    {
+        $db = MysqlDB::getDB();
+        $oldSql = $db->queryAll("
+SELECT
+    code.buyer, ext.trial_type
+FROM
+    " . self::$table . " code
+INNER JOIN " . PackageExtModel::$table . " ext ON ext.package_id = code.bill_package_id
+WHERE
+    code.buyer in (" . $studentIds . ")
+AND
+    ext.package_type = " . PackageExtModel::PACKAGE_TYPE_TRIAL . "
+AND
+    code.package_v1 = " . self::PACKAGE_V1_NOT);
+
+        return $oldSql;
+    }
+
+    /**
+     * 体验课购买记录--新产品包
+     * @param $studentIds
+     * @return array|null
+     */
+    public static function getNewPaidTrial($studentIds)
+    {
+        $db = MysqlDB::getDB();
+
+        $newSql = $db->queryAll("
+SELECT
+    code.buyer, g.extension->>'$.trail_type' trial_type
+FROM
+    " . self::$table . " code
+INNER JOIN
+    " . ErpPackageGoodsV1Model::$table . " pg ON pg.package_id = code.bill_package_id
+    AND pg.status = " . ErpPackageGoodsV1Model::SUCCESS_NORMAL . "
+INNER JOIN
+    " . GoodsV1Model::$table . " g ON pg.goods_id = g.id
+INNER JOIN
+    " . CategoryV1Model::$table . " c ON c.id = g.category_id
+WHERE
+    code.buyer in (" . $studentIds . ")
+    AND c.sub_type = " . CategoryV1Model::DURATION_TYPE_TRAIL . "
+    AND code.package_v1 = " . self::PACKAGE_V1);
+
+        return $newSql;
+    }
+
 }

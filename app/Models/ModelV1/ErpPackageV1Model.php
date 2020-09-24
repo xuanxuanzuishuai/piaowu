@@ -51,6 +51,26 @@ class ErpPackageV1Model extends Model
      */
     public static function getTrailPackageIds()
     {
+        return self::getPackageIds(CategoryV1Model::DURATION_TYPE_TRAIL);
+    }
+
+    /**
+     * 获取正式课产品包id
+     * @return array
+     */
+    public static function getNormalPackageIds()
+    {
+        return self::getPackageIds(CategoryV1Model::DURATION_TYPE_NORMAL);
+    }
+
+
+    /**
+     * 新产品包ids----已上架、已下架
+     * @param $subType
+     * @return array
+     */
+    public static function getPackageIds($subType)
+    {
         $db = MysqlDB::getDB();
         $records = $db->queryAll("
 select p.id
@@ -62,15 +82,20 @@ where pg.status = :status
 and c.sub_type = :sub_type
 and p.status != :p_status
 and p.is_custom = :is_custom", [
-    ':status' => ErpPackageGoodsV1Model::SUCCESS_NORMAL,
-    ':sub_type' => CategoryV1Model::DURATION_TYPE_TRAIL,
-    ':p_status' => self::STATUS_WAIT_SALE,
-    ':is_custom' => self::PACKAGE_IS_NOT_CUSTOM
-]);
+            ':status' => ErpPackageGoodsV1Model::SUCCESS_NORMAL,
+            ':sub_type' => $subType,
+            ':p_status' => self::STATUS_WAIT_SALE,
+            ':is_custom' => self::PACKAGE_IS_NOT_CUSTOM
+            ]);
 
         return array_column($records, 'id');
     }
 
+    /**
+     * 获取新产品包详情
+     * @param $id
+     * @return array|null
+     */
     public static function getPackage($id)
     {
         $db = MysqlDB::getDB();
@@ -107,6 +132,11 @@ and p.id = :package_id", [
         return $package;
     }
 
+    /**
+     * 新产品包id、name---已上架
+     * @param $subType
+     * @return array|null
+     */
     public static function getPackagesByType($subType)
     {
         $records = MysqlDB::getDB()->queryAll("

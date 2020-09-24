@@ -35,6 +35,7 @@ use App\Models\StudentOrgModel;
 use App\Models\UserWeixinModel;
 use App\Models\StudentCourseManageLogModel;
 use App\Models\StudentAcquiredLogModel;
+use App\Services\ErpServiceV1\ErpPackageV1Service;
 use App\Services\Queue\PushMessageTopic;
 use App\Services\Queue\QueueService;
 
@@ -1048,7 +1049,7 @@ class StudentService
     public static function getStudentSyncData($studentIdList)
     {
         //获取学生基础数据
-        $syncData = $normalCourseStudent = $normalCourseFirstPayTime = [];
+        $syncData = $normalCourseStudent = $normalPayTime = [];
         $studentData = StudentModel::getRecords(['id' => $studentIdList], [], false);
         if (empty($studentData)) {
             return $syncData;
@@ -1073,20 +1074,19 @@ class StudentService
                 $value['dss_status'] = StudentModel::CRM_AI_LEADS_STATUS_BUY_TEST_COURSE;
             } else {
                 $value['dss_status'] = StudentModel::CRM_AI_LEADS_STATUS_REGISTER;
-
             }
         });
-        //学生首次购买正式课时间
+
+        // 学生首次购买正式课时间
         if (!empty($normalCourseStudent)) {
-            // TODO: use local package data
-            $plusPackageIdStr = DictConstants::get(DictConstants::PACKAGE_CONFIG, 'plus_package_id');
-            $normalCourseFirstPayTime = array_column(GiftCodeModel::getFirstNormalCourse(implode(',', $normalCourseStudent), $plusPackageIdStr), null, 'buyer');
+            $normalPayTime = ErpPackageV1Service::getNormalFirstPaidTime($normalCourseStudent);
         }
-        //获取学生入班时购买的课包类型
-        $packageIdList = array_unique(array_column($studentData, 'allot_course_id'));
-        $packageInfo = array_column(PackageExtModel::getRecords(['package_id' => $packageIdList], ['package_id', 'package_type', 'trial_type'], false), null, 'package_id');
+
+        // 获取学生入班时购买的课包类型
+        $packageInfo = GiftCodeModel::getPaidTrialPackageType(array_column($studentData, 'id'));
         foreach ($studentData as $sk => $sv) {
-            $syncData[$sv['id']] = [
+            $studentId = $sv['id'];
+            $syncData[$studentId] = [
                 'uuid' => $sv['uuid'],
                 'mobile' => $sv['mobile'],
                 'channel_id' => $sv['channel_id'],
@@ -1095,12 +1095,12 @@ class StudentService
                 'birthday' => is_null($sv['birthday']) ? 0 : $sv['birthday'],
                 'gender' => $sv['gender'],
                 'dss_watch_end_time' => is_null($watchList[$sv['collection_id']]) ? 0 : $watchList[$sv['collection_id']]['watch_end_time'],
-                'dss_first_normal_pay_time' => is_null($normalCourseFirstPayTime[$sv['id']]['first_time']) ? 0 : $normalCourseFirstPayTime[$sv['id']]['first_time'],
+                'dss_first_normal_pay_time' => is_null($normalPayTime[$studentId]) ? 0 : $normalPayTime[$studentId],
                 'dss_status' => $sv['dss_status'],
                 'teaching_start_time' => empty($sv['collection_id']) ? 0 : $watchList[$sv['collection_id']]['teaching_start_time'],
                 'teaching_end_time' => empty($sv['collection_id']) ? 0 : $watchList[$sv['collection_id']]['teaching_end_time'],
-                'package_type' => empty($sv['allot_course_id']) ? 0 : $packageInfo[$sv['allot_course_id']]['package_type'],
-                'trial_type' => empty($sv['allot_course_id']) ? 0 : $packageInfo[$sv['allot_course_id']]['trial_type'],
+                'package_type' => empty($packageInfo[$studentId]) ? 0 : PackageExtModel::PACKAGE_TYPE_TRIAL,
+                'trial_type' => empty($packageInfo[$studentId]) ? 0 : $packageInfo[$studentId]
             ];
         }
         return $syncData;
