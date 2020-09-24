@@ -53,12 +53,11 @@ class AIReferralToPandaUserModel extends Model
     WHERE 
         u.is_send=0
         AND u.is_subscribe = 0
-        AND u.user_type in ( :user_type )
+        AND u.user_type in (" . $userType .")
         AND u.create_time >= :start_time
         AND u.create_time <= :end_time;";
 
         $map = [
-            ':user_type' => $userType,
             ':start_time' => strtotime($date),
             ':end_time' => strtotime($date . " 23:59:59"),
         ];
