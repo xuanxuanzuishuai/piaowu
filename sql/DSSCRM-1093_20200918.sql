@@ -86,4 +86,4 @@ VALUES
   ('设置员工坐席', '/employee/employee/set_seat', 1600446535, 'post', 0, '', 52, 'set_seat', 1),
   ('解绑员工坐席', '/employee/employee/del_seat', 1600446535, 'post', 0, '', 52, 'del_seat', 1),
   ('学生外呼记录列表', '/student/student/call_list', 1600446535, 'get', 0, '', 344, 'call_list', 1),
-  ('外呼拨号接口', '/call/call/dial_out', 1600446535, 'post', 0, '', 344, 'dail_out', 1);
+  ('外呼拨号接口', '/org_web/call/dial_out', 1600446535, 'post', 0, '', 344, 'dail_out', 1);
