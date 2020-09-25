@@ -38,6 +38,7 @@ class AliOSS
     const DIR_MAKE_OPERA = 'make_opera';    //打谱申请曲谱图片上传
     const DIR_OPN_SEARCH = 'omr'; // 曲谱搜索图源
     const DIR_STUDENT_THUMB = 'thumb'; //头像
+    const DIR_MESSAGE_EXCEL = 'message_excel'; // 推送消息EXCEL
 
 
     private function gmt_iso8601($time) {
@@ -399,7 +400,8 @@ class AliOSS
             self::DIR_CERTIFICATE,
             self::DIR_MAKE_OPERA,
             self::DIR_OPN_SEARCH,
-            self::DIR_STUDENT_THUMB
+            self::DIR_STUDENT_THUMB,
+            self::DIR_MESSAGE_EXCEL
         ];
         if (!in_array($dirType, $typeConstants)) {
             return null;

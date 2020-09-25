@@ -20,6 +20,7 @@ use App\Controllers\Org\Org;
 use App\Controllers\Org\OrgAccount as OrgAccount;
 use App\Controllers\Org\OrgLicense;
 use App\Controllers\OrgWeb\Activity;
+use App\Controllers\OrgWeb\Message;
 use App\Controllers\OrgWeb\Admin;
 use App\Controllers\OrgWeb\Approval;
 use App\Controllers\OrgWeb\AutoReply;
@@ -535,6 +536,15 @@ class OrgWebRouter extends RouterBase
         //外呼接口
         '/org_web/call/dial_out' => ['method' => ['post'], 'call' => Call::class . ':dialOut'],
 
+        // 消息：
+        '/org_web/message/rules_list'         => ['method' => ['get'], 'call' => Message::class . ':rulesList'],
+        '/org_web/message/rule_detail'        => ['method' => ['get'], 'call' => Message::class . ':ruleDetail'],
+        '/org_web/message/rule_update_status' => ['method' => ['post'], 'call' => Message::class . ':ruleUpdateStatus'],
+        '/org_web/message/rule_update'        => ['method' => ['post'], 'call' => Message::class . ':ruleUpdate'],
+
+        // 手动推送：
+        '/org_web/message/manual_last_push' => ['method' => ['get'], 'call' => Message::class . ':manualLastPush'],
+        '/org_web/message/manual_push'      => ['method' => ['post'], 'call' => Message::class . ':manualPush'],
 
     ];
 }

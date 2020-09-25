@@ -51,13 +51,18 @@ class Valid
             }
 
             $value = isset($rule['value']) ? $rule['value'] : null;
+            $strictFlag = isset($rule['flag']) ? $rule['flag'] : null;
 
             $msg = [
                 'err_no' => $rule['error_code'],
                 'err_msg' => $errorMsg
             ];
 
-            $v->rule($rule['type'], $rule['key'], $value)->message(json_encode($msg));
+            if (is_null($strictFlag)) {
+                $v->rule($rule['type'], $rule['key'], $value)->message(json_encode($msg));
+            } else {
+                $v->rule($rule['type'], $rule['key'], $value, $strictFlag)->message(json_encode($msg));
+            }
         }
 
         if ($v->validate()) {
