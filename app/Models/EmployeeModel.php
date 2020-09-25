@@ -263,6 +263,7 @@ class EmployeeModel extends Model
             self::$table . '.wx_nick',
             self::$table . '.wx_thumb',
             self::$table . '.wx_qr',
+            self::$table . '.email',
             DeptModel::$table . '.name(dept_name)',
             RoleModel::$table . '.name(role_name)',
         ], [self::$table . '.id' => $id]);
@@ -289,7 +290,8 @@ class EmployeeModel extends Model
             self::$table . '.is_leader',
             self::$table . '.last_update_pwd_time',
             self::$table . '.org_id',
-           EmployeeSeatModel::$table . '.seat_type',
+            self::$table . '.email',
+            EmployeeSeatModel::$table . '.seat_type',
            EmployeeSeatModel::$table . '.seat_id',
 //            DeptModel::$table . '.dept_name',
         ], [
