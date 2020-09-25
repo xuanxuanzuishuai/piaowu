@@ -1,22 +1,17 @@
 
-DROP TABLE IF EXISTS `message_push_rules`;
-
 CREATE TABLE `message_push_rules` (
   `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT '自增ID',
-  `name` char(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '规则名称',
-  `type` tinyint unsigned NOT NULL COMMENT '推送形式:1客服消息;2模板消息;',
-  `target` tinyint unsigned NOT NULL COMMENT '推送人群:1:全部用户;2:当日开班用户;3:开班第7天用户;4:年卡C级用户;5:体验C级用户;6:注册C级用户;',
-  `is_active` tinyint unsigned NOT NULL COMMENT '是否启用',
-  `time` json NOT NULL COMMENT '推送时间',
+  `name` char(12) NOT NULL DEFAULT '' COMMENT '规则名称',
+  `type` tinyint(1) unsigned NOT NULL DEFAULT 1 COMMENT '推送形式:1客服消息;2模板消息;',
+  `target` tinyint(1) unsigned NOT NULL DEFAULT 1 COMMENT '推送人群:1:全部用户;2:当日开班用户;3:开班第7天用户;4:年卡C级用户;5:体验C级用户;6:注册C级用户;',
+  `is_active` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT '是否启用:0:未启用;1:已启用;',
+  `time` json DEFAULT NULL COMMENT '推送时间',
   `content` json DEFAULT NULL COMMENT '文案内容',
-  `remark` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT '' COMMENT '备注',
-  `create_time` int NOT NULL COMMENT '创建时间',
-  `update_time` int NOT NULL COMMENT '更新时间',
+  `remark` varchar(200) DEFAULT '' COMMENT '备注',
+  `create_time` int(10) NOT NULL COMMENT '创建时间',
+  `update_time` int(10) NOT NULL COMMENT '更新时间',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-LOCK TABLES `message_push_rules` WRITE;
-/*!40000 ALTER TABLE `message_push_rules` DISABLE KEYS */;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'DSS消息推送规则表';
 
 INSERT INTO `message_push_rules` (`id`, `name`, `type`, `target`, `is_active`, `time`, `content`, `remark`, `create_time`, `update_time`)
 VALUES
@@ -28,26 +23,23 @@ VALUES
   (6,'体验C交互后消息推送',1,5,0,'{\"desc\": \"与公众号交互10分钟后\", \"delay_time\": 600}','[]','',1600848505,1600848505),
   (7,'注册C交互后消息推送',1,6,0,'{\"desc\": \"与公众号交互10分钟后\", \"delay_time\": 600}','[]','',1600848505,1600848505);
 
-/*!40000 ALTER TABLE `message_push_rules` ENABLE KEYS */;
-UNLOCK TABLES;
-
-DROP TABLE IF EXISTS `message_manual_push_log`;
-
 CREATE TABLE `message_manual_push_log` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT '自增ID',
-  `type` tinyint(1) NOT NULL COMMENT '推送形式',
-  `file` varchar(256) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '用户EXCEL地址',
-  `data` json NOT NULL COMMENT '发送数据JSON',
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT '自增ID',
+  `type` tinyint(1) NOT NULL DEFAULT 1 COMMENT '推送形式:1客服消息;2模板消息;',
+  `file` varchar(256) NOT NULL DEFAULT '' COMMENT '用户EXCEL地址',
+  `data` json DEFAULT NULL COMMENT '发送数据JSON',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '手动推送历史记录';
 
 INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`) VALUES
         ('message_rule_active_status', '消息推送规则启动状态', '1', '已启用'),
         ('message_rule_active_status', '消息推送规则启动状态', '0', '未启用');
 
+set @parent_id = (select id from privilege where menu_name = '转介绍管理');
+
 INSERT INTO `privilege` (`name`, `uri`, `created_time`, `method`, `is_menu`, `menu_name`, `parent_id`, `unique_en_name`, `status` )
 VALUES 
-('DSS消息推送规则列表', '/org_web/message/rules_list', 1600912629, 'get', 0, '', 0, 'message_rules_list', 1 );
+('DSS消息推送规则列表', '/org_web/message/rules_list', 1600912629, 'get', 1, '自动推送设置', @parent_id, 'message_rules_list', 1 );
 
 INSERT INTO `privilege` (`name`, `uri`, `created_time`, `method`, `is_menu`, `menu_name`, `parent_id`, `unique_en_name`, `status` )
 VALUES
