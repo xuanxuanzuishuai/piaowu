@@ -108,9 +108,10 @@ class TermSprintService
             //做缓存
             $redisPartitionNum = RedisDB::getConn()->get(self::PARTITION_TERM_SPRINT_CASH_NUM);
             if (empty($redisPartitionNum)) {
-                $taskId = DictConstants::get(DictConstants::TERM_SPRINT_CONFIG, 'cash_award_task_id');
-                $num = count((new Erp())->getTaskCompleteUser(['task_id' => $taskId])['data']['records']);
-                $totalBabyPartitionNum = $num * 5;
+               // $taskId = DictConstants::get(DictConstants::TERM_SPRINT_CONFIG, 'cash_award_task_id');
+               // $num = count((new Erp())->getTaskCompleteUser(['task_id' => $taskId])['data']['records']);
+               // $totalBabyPartitionNum = $num * 5;
+                $totalBabyPartitionNum = DictConstants::get(DictConstants::TERM_SPRINT_CONFIG, 'virtual_partition_cash_num');
                 RedisDB::getConn()->setex(self::PARTITION_TERM_SPRINT_CASH_NUM, 5, $totalBabyPartitionNum);
             } else {
                 $totalBabyPartitionNum = $redisPartitionNum;
@@ -235,9 +236,11 @@ class TermSprintService
         SimpleLogger::info('new term sprint red pack award id', ['task_award_id' => $allTaskAwardIdArr]);
         //已经发放中或者发放成功的不再重试
         $hasAchieveWeChatDeal = WeChatAwardCashDealModel::getRecords(['user_event_task_award_id' => $allTaskAwardIdArr, 'status' => [ErpReferralService::AWARD_STATUS_GIVEN, ErpReferralService::AWARD_STATUS_GIVE_ING]], 'user_event_task_award_id') ?: [];
-        $count = count($cashInfo);
+        //$count = count($cashInfo);
         $amount = DictConstants::get(DictConstants::TERM_SPRINT_CONFIG, 'total_cash_amount');
-        $getAmount = floor(($amount / $count) * 100);
+        //$getAmount = floor(($amount / $count) * 100);
+        //防止最后还需要调数，从库里拿
+        $getAmount = DictConstants::get(DictConstants::TERM_SPRINT_CONFIG, 'partition_cash_element');
         SimpleLogger::info('new term sprint red pack amount', ['amount' => $amount, 'get_amount' => $getAmount]);
         foreach ($cashInfo as $value) {
             if (in_array($value['task_award_id'], $hasAchieveWeChatDeal)) {

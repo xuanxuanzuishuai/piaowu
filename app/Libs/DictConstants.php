@@ -438,7 +438,11 @@ class DictConstants {
             'init_sprint_num',
             'cash_award_task_id',
             'medal_award_task_id',
-            'total_cash_amount'
+            'total_cash_amount',
+            'virtual_partition_cash_num',
+            'max_partition_num',
+            'partition_cash_element',
+            'span_add_partition_num'
         ]
     ];
 

@@ -1,0 +1,4 @@
+INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES ('term_sprint_config', '新学期冲刺', 'virtual_partition_cash_num', '1275', '虚拟瓜分冲刺奖金人数');
+INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES ('term_sprint_config', '新学期冲刺', 'partition_cash_element', '50', '每个人可以瓜分的钱单位是分');
+INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES ('term_sprint_config', '新学期冲刺', 'max_partition_num', '63217', '最大可瓜分人数');
+INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES ('term_sprint_config', '新学期冲刺', 'span_add_partition_num', '243', '每十分钟增加的虚拟人数');
