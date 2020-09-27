@@ -183,6 +183,7 @@ class LeadsPool extends ControllerBase
     {
         $params = $request->getParams();
         list($params['page'], $params['count']) = Util::formatPageCount($params);
+        $params['count'] = 100;
         $data = LeadsPoolService::getPoolList($params['page'], $params['count']);
         return HttpHelper::buildResponse($response, $data);
     }
