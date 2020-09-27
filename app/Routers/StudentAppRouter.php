@@ -10,6 +10,7 @@ namespace App\Routers;
 use App\Controllers\API\MUSVG;
 use App\Controllers\StudentApp\App;
 use App\Controllers\StudentApp\Auth;
+use App\Controllers\StudentApp\InteractiveClassroom;
 use App\Controllers\StudentApp\Opn;
 use App\Controllers\StudentApp\Panda;
 use App\Controllers\StudentApp\Pay;
@@ -417,6 +418,21 @@ class StudentAppRouter extends RouterBase
             'method'  => ['post'],
             'call'    => PointActivity::class . ':drawAward',
             'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
-        ]
+        ],
+         '/student_app/interactive_classroom/sign_up_course' => [
+            'method'  => ['get'],
+            'call'    => InteractiveClassroom::class . ':getSignUpCourse',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class,AppApiForStudent::class]
+        ],
+        '/student_app/interactive_classroom/to_be_launched_course' => [
+            'method'  => ['get'],
+            'call'    => InteractiveClassroom::class . ':getToBeLaunchedCourse',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class,AppApiForStudent::class]
+        ],
+        '/student_app/interactive_classroom/in_production_course' => [
+            'method'  => ['get'],
+            'call'    => InteractiveClassroom::class . ':getInProductionCourse',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class,AppApiForStudent::class]
+        ],
     ];
 }
