@@ -315,6 +315,8 @@ class OrgWebRouter extends RouterBase
         '/org_web/erp/gift_code_transfer' => ['method' => ['post'], 'call' => Erp::class . ':giftCodeTransfer', 'middles' => [ErpMiddleware::class]],
         // 新产品包创建激活码
         '/org_web/erp/create_code_v1' => ['method' => ['post'], 'call' => Erp::class . ':createGiftCodeV1', 'middles' => [ErpMiddleware::class]],
+        '/org_web/erp/consume' => ['method' => ['get'], 'call' => Erp::class . ':codeConsumer', 'middles' => [ErpMiddleware::class]],
+        '/org_web/erp/abandon_code_v1' => ['method' => ['post'], 'call' => Erp::class . ':abandonGiftCodeV1', 'middles' => [ErpMiddleware::class]],
 
         '/org_web/erp/ai_play/play_list' => ['method' => ['get'], 'call' => Erp::class . ':recentPlayed', 'middles' => [ErpMiddleware::class]],
         '/org_web/erp/ai_play/play_detail' => ['method' => ['get'], 'call' => Erp::class . ':recentDetail', 'middles' => [ErpMiddleware::class]],

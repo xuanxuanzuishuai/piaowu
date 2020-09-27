@@ -10,6 +10,8 @@
 
 namespace App\Services;
 
+use App\Libs\Code;
+use App\Libs\CodeConsume;
 use App\Libs\Constants;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
@@ -253,10 +255,10 @@ class GiftCodeService
 
 
         if (!empty($ids)) {
-            return GiftCodeModel::batchUpdateRecord(
-                ['code_status' => GiftCodeModel::CODE_STATUS_INVALID],
-                $where,
-                false);
+            return GiftCodeModel::batchUpdateRecord([
+                'code_status' => GiftCodeModel::CODE_STATUS_INVALID,
+                'operate_time' => time()
+            ], $where, false);
         }
         return 0;
     }
@@ -331,5 +333,28 @@ class GiftCodeService
         }
         $giftCode = GiftCodeModel::getRecord($where);
         return !empty($giftCode) ? true : false;
+    }
+
+    /**
+     * 激活码时长消耗
+     * @param $buyer
+     * @param $giftCodeId
+     * @return array|bool
+     */
+    public static function codeConsume($buyer, $giftCodeId)
+    {
+        $codes = GiftCodeModel::getRecords([
+            'buyer' => $buyer,
+            'code_status' => GiftCodeModel::CODE_STATUS_HAS_REDEEMED,
+            'be_active_time[>]' => 0,
+            'ORDER' => ['be_active_time' => ['ASC']]
+        ]);
+
+        $array = [];
+        foreach ($codes as $code) {
+            $array[] = new Code($code['id'], $code['be_active_time'],  $code['valid_num']);
+        }
+        $consume = new CodeConsume($array);
+        return $consume->consume($giftCodeId);
     }
 }

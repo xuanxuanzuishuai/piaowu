@@ -515,4 +515,115 @@ class Erp extends ControllerBase
             ]
         ], StatusCode::HTTP_OK);
     }
+
+    /**
+     * 计算激活码消耗情况
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function codeConsumer(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'bill_id',
+                'type' => 'required',
+                'error_code' => 'bill_id_is_required'
+            ],
+            [
+                'key' => 'parent_bill_id',
+                'type' => 'required',
+                'error_code' => 'parent_bill_id_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $giftCode = GiftCodeModel::getRecord([
+            'parent_bill_id' => $params['parent_bill_id'],
+            'bill_id' => $params['bill_id'],
+            'package_v1' => GiftCodeModel::PACKAGE_V1,
+        ]);
+        if (empty($giftCode)) {
+            return $response->withJson(Valid::addErrors([], 'bill_id', 'bill_not_exist'), StatusCode::HTTP_OK);
+        }
+        if ($giftCode['code_status'] == GiftCodeModel::CODE_STATUS_NOT_REDEEMED) {
+            $response->withJson(['code' => Valid::CODE_SUCCESS, 'data' => ['consume_num' => 0, 'consume_free_num' => 0]], StatusCode::HTTP_OK);
+        }
+
+        list($codeId, $useNum, $remainNum) = GiftCodeService::codeConsume($giftCode['buyer'], $giftCode['id']);
+
+        $package = ErpPackageV1Model::getPackage($giftCode['bill_package_id']);
+        // 售卖量消耗、赠送量消耗
+        if ($package['num'] >= $useNum) {
+            $consumeNum = $useNum;
+            $consumeFreeNum = 0;
+        } else {
+            $consumeNum = $package['num'];
+            $consumeFreeNum = $useNum - $package['num'];
+        }
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => [
+                'consume_num' => $consumeNum,
+                'consume_free_num' => $consumeFreeNum,
+            ]
+        ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * 新激活码废除
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function abandonGiftCodeV1(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'bill_id',
+                'type' => 'required',
+                'error_code' => 'bill_id_is_required'
+            ],
+            [
+                'key' => 'parent_bill_id',
+                'type' => 'required',
+                'error_code' => 'parent_bill_id_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $giftCode = GiftCodeModel::getRecord([
+            'parent_bill_id' => $params['parent_bill_id'],
+            'bill_id' => $params['bill_id'],
+            'package_v1' => GiftCodeModel::PACKAGE_V1
+        ]);
+        if (empty($giftCode)) {
+            return $response->withJson(Valid::addErrors([], 'bill_id', 'bill_not_exist'), StatusCode::HTTP_OK);
+        }
+
+        if ($giftCode['code_status'] == GiftCodeModel::CODE_STATUS_HAS_REDEEMED) {
+            list($codeId, $useNum, $remainNum) = GiftCodeService::codeConsume($giftCode['buyer'], $giftCode['id']);
+
+            // 已激活的扣除剩余时间
+            if ($remainNum > 0) {
+                StudentService::reduceSubDuration($giftCode['apply_user'], $remainNum, GiftCodeModel::CODE_TIME_DAY);
+            }
+        }
+        // 激活码--废除
+        GiftCodeService::abandonCode($giftCode['id'], true);
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => []
+        ], StatusCode::HTTP_OK);
+    }
 }
