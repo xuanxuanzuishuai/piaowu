@@ -551,7 +551,7 @@ class Erp extends ControllerBase
             return $response->withJson(Valid::addErrors([], 'bill_id', 'bill_not_exist'), StatusCode::HTTP_OK);
         }
         if ($giftCode['code_status'] == GiftCodeModel::CODE_STATUS_NOT_REDEEMED) {
-            $response->withJson(['code' => Valid::CODE_SUCCESS, 'data' => ['consume_num' => 0, 'consume_free_num' => 0]], StatusCode::HTTP_OK);
+            return $response->withJson(['code' => Valid::CODE_SUCCESS, 'data' => ['consume_num' => 0, 'consume_free_num' => 0]], StatusCode::HTTP_OK);
         }
 
         list($codeId, $useNum, $remainNum) = GiftCodeService::codeConsume($giftCode['buyer'], $giftCode['id']);

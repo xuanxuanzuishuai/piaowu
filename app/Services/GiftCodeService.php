@@ -352,8 +352,19 @@ class GiftCodeService
 
         $array = [];
         foreach ($codes as $code) {
-            $array[] = new Code($code['id'], $code['be_active_time'],  $code['valid_num']);
+            $units = $code['valid_units'];
+            $num = $code['valid_num'];
+
+            if ($units == GiftCodeModel::CODE_TIME_YEAR) {
+                $duration = $num * 366;
+            } elseif ($units == GiftCodeModel::CODE_TIME_MONTH) {
+                $duration = $num * 31;
+            } else {
+                $duration = $num;
+            }
+            $array[] = new Code($code['id'], $code['be_active_time'],  $duration);
         }
+
         $consume = new CodeConsume($array);
         return $consume->consume($giftCodeId);
     }
