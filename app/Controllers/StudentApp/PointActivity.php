@@ -8,8 +8,10 @@
 
 namespace App\Controllers\StudentApp;
 
+use App\Libs\DictConstants;
 use App\Libs\Util;
 use App\Libs\Valid;
+use App\Services\HalloweenService;
 use App\Services\MedalService;
 use App\Services\PointActivityService;
 use App\Services\TermSprintService;
@@ -137,5 +139,103 @@ class PointActivity extends ControllerBase
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
         return HttpHelper::buildResponse($response, [$data]);
+    }
+
+    /**
+     * 获取学生总积分
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getStudentTotalPoints(/** @noinspection PhpUnusedParameterInspection */Request $request, Response $response)
+    {
+        $data = PointActivityService::totalPoints($this->ci['student']['id'], PointActivityService::ACCOUNT_SUB_TYPE_STUDENT_POINTS);
+        return HttpHelper::buildResponse($response, ['total_points' => $data['total_num']]);
+    }
+
+    /**
+     * 万圣节报名
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function halloweenSignUp(/** @noinspection PhpUnusedParameterInspection */Request $request, Response $response)
+    {
+        try {
+            //获取万圣节配置的活动ID
+            $eventId = DictConstants::get(DictConstants::HALLOWEEN_CONFIG, ['halloween_event']);
+            PointActivityService::activitySignUp($this->ci['student']['id'], $eventId[0]);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
+        return HttpHelper::buildResponse($response, []);
+    }
+
+    /**
+     * 万圣节活动用户参与数据
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function halloweenUserRecord(/** @noinspection PhpUnusedParameterInspection */Request $request, Response $response)
+    {
+        try {
+            $data = HalloweenService::halloweenUserRecord($this->ci['student']['id']);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
+        return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
+     * 万圣节排行榜数据
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function halloweenRank(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'rank_limit',
+                'type' => 'required',
+                'error_code' => 'rank_limit_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $rank = HalloweenService::halloweenRank($this->ci['student']['id'], $params['rank_limit']);
+        return HttpHelper::buildResponse($response, $rank);
+    }
+
+    /**
+     * 万圣节领取奖励
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function halloweenTakeAward(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'task_ids',
+                'type' => 'required',
+                'error_code' => 'event_task_id_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            HalloweenService::halloweenTakeAward($this->ci['student']['id'], explode(',', $params['task_ids']));
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
+        return HttpHelper::buildResponse($response, []);
     }
 }

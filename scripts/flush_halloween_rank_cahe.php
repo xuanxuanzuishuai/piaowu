@@ -16,22 +16,17 @@ define('LANG_ROOT', PROJECT_ROOT . '/lang');
 
 require_once PROJECT_ROOT . '/vendor/autoload.php';
 
-use App\Services\CreditService;
+use App\Libs\SimpleLogger;
 use App\Services\HalloweenService;
-use App\Services\MedalService;
-use App\Services\TermSprintService;
 use Dotenv\Dotenv;
 
-$dotenv = new Dotenv(PROJECT_ROOT,'.env');
+$dotenv = new Dotenv(PROJECT_ROOT, '.env');
 $dotenv->load();
 $dotenv->overload();
-//创建今天的任务还是明天的任务
-if (!empty($argv[1])) {
-    $date = date('Y-m-d');
-} else {
-    $date = date('Y-m-d', strtotime('+1 day'));
-}
-CreditService::createEveryDayTask($date);
-MedalService::createEveryDayTask($date);
-TermSprintService::createEveryDayTask($date);
-HalloweenService::setEventTaskCache($date);
+/**
+ * 设置万圣节里程排行榜数据:定时任务脚本每10分钟更新一次
+ * *\/10 * * * * php flush_halloween_rank_cache.php
+ */
+SimpleLogger::info("start set halloween rank cache",[]);
+HalloweenService::setHalloweenRankCache();
+SimpleLogger::info("end set halloween rank cache",[]);

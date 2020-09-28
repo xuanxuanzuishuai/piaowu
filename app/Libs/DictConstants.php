@@ -468,6 +468,18 @@ class DictConstants {
             'how_long_not_invite',
             'how_long_not_result',
             'assign_template_id'
+            ]
+    ];
+    //万圣节相关配置
+    const HALLOWEEN_CONFIG = [
+        'type' => 'halloween_config',
+        'keys' => [
+            'halloween_event',
+            'rank_limit',
+            'process_task_type',
+            'rank_task_type',
+            'extra_task_type',
+            'take_award_rank_limit',
         ]
     ];
 

@@ -404,6 +404,11 @@ class StudentAppRouter extends RouterBase
             'call'    => PointActivity::class . ':pointsDetail',
             'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
         ],
+        '/student_app/points/total' => [
+            'method'  => ['get'],
+            'call'    => PointActivity::class . ':getStudentTotalPoints',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
         '/student_app/alert/need_alert' => [
             'method'  => ['get'],
             'call'    => PointActivity::class . ':needAlert',
@@ -479,5 +484,26 @@ class StudentAppRouter extends RouterBase
             'call'    => InteractiveClassroom::class . ':studentShareToken',
             'middles' => [StudentAuthCheckMiddleWareForApp::class,AppApiForStudent::class]
         ],
+        //万圣节活动相关路由
+        '/student_app/halloween/sign_up' => [
+            'method'  => ['post'],
+            'call'    => PointActivity::class . ':halloweenSignUp',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
+        '/student_app/halloween/user_record' => [
+            'method'  => ['get'],
+            'call'    => PointActivity::class . ':halloweenUserRecord',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
+        '/student_app/halloween/rank' => [
+            'method'  => ['get'],
+            'call'    => PointActivity::class . ':halloweenRank',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
+        '/student_app/halloween/take_award' => [
+            'method'  => ['post'],
+            'call'    => PointActivity::class . ':halloweenTakeAward',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ]
     ];
 }

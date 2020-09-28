@@ -19,6 +19,7 @@ use App\Models\CheckInRecordModel;
 use App\Libs\MysqlDB;
 use App\Models\StudentModelForApp;
 use App\Libs\Erp;
+use App\Models\ActivitySignUpModel;
 
 
 class PointActivityService
@@ -314,5 +315,30 @@ class PointActivityService
         $accounts = array_column($accounts['data'], null, 'sub_type');
         $cash = $accounts[self::ACCOUNT_SUB_TYPE_CASH];
         return ($cash['total_num'] * 100 - $cash['out_time_num'] * 100);
+    }
+
+    /**
+     * 活动报名
+     * @param $userId
+     * @param $eventId
+     * @throws RunTimeException
+     */
+    public static function activitySignUp($userId, $eventId)
+    {
+        //禁止重复报名
+        $isExists = ActivitySignUpModel::getRecord(['user_id' => $userId, 'event_id' => $eventId]);
+        if (!empty($isExists)) {
+            throw new RunTimeException(['stop_repeat_not_join_halloween']);
+        }
+        $insertData = [
+            'user_id' => $userId,
+            'event_id' => $eventId,
+            'status' => ActivitySignUpModel::STATUS_ABLE,
+            'create_time' => time(),
+        ];
+        $res = ActivitySignUpModel::insertRecord($insertData, false);
+        if (empty($res)) {
+            throw new RunTimeException(['insert_failure']);
+        }
     }
 }
