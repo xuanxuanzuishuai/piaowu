@@ -34,7 +34,7 @@ SimpleLogger::info('statistic experience student play day and push to panda-crm 
  */
 if (!empty($argv[1])) {
     $date = $argv[1];
-    $sevenDayDate = $argv[1];
+    $sevenDayDate = date('Y-m-d', strtotime("{$date} -7 day"));
 } else {
     $date = date('Y-m-d', strtotime('-1 day'));
     $sevenDayDate = date('Y-m-d', strtotime('-7 day'));

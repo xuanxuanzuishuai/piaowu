@@ -1471,6 +1471,13 @@ class StudentService
             $item['uuid'] = $studentsMap[$value['student_id']];
             $item['count'] = $value['num'];
             $res[] = $item;
+            unset($studentsMap[$value['student_id']]);
+        }
+        foreach ($studentsMap as $studentId => $uuid) {
+            $item = [];
+            $item['uuid'] = $uuid;
+            $item['count'] = 0;
+            $res[] = $item;
         }
         return $res;
     }
