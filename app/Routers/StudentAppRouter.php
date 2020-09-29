@@ -434,5 +434,15 @@ class StudentAppRouter extends RouterBase
             'call'    => InteractiveClassroom::class . ':getInProductionCourse',
             'middles' => [StudentAuthCheckMiddleWareForApp::class,AppApiForStudent::class]
         ],
+        '/student_app/interactive_classroom/today_plan' => [
+            'method'  => ['get'],
+            'call'    => InteractiveClassroom::class . ':studentTodayPlan',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class,AppApiForStudent::class]
+        ],
+        '/student_app/interactive_classroom/small_horn_info' => [
+            'method'  => ['get'],
+            'call'    => InteractiveClassroom::class . ':smallHornInfo',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class,AppApiForStudent::class]
+        ],
     ];
 }

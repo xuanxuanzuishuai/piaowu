@@ -12,6 +12,10 @@ class StudentSignUpCourseModel extends Model
 
     const COURSE_NOT_BING_STATUS = 0; //未报名
     const COURSE_BING_STATUS_SUCCESS = 1;//报名成功
+    const IN_CLASS_STATUS = 3; //课包开课中
+    const COURSE_TO_BE_STARTED = 4;//课包待开课
+
+    const DURATION_30MINUTES = 1800; // 30分钟
 
 
     /**

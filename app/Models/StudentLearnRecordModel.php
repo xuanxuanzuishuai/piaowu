@@ -11,6 +11,7 @@ class StudentLearnRecordModel extends Model
     public static $table = "student_learn_record";
 
     const FINISH_LEARNING = 1;//完成上课
+    const GO_TO_THE_CLASS= 4; //去上课
     /**
      * 获取用户已完成上课的节数
      * @param $studentId

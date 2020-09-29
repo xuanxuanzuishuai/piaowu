@@ -13,6 +13,8 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
+use App\Models\EventModel;
+use App\Models\EventTaskModel;
 use App\Models\PointActivityRecordModel;
 
 class CreditService
@@ -704,6 +706,33 @@ class CreditService
             MedalService::FAMOUS_PERSON => 9
         ];
         return $arr[$type] ?? 0;
+    }
+
+    /**
+     * 获取任务总数&当前用户完成任务的情况
+     * @param $studentId
+     * @return array|int
+     */
+    public static function getActivityList($studentId)
+    {
+        $activityInfo = EventModel::getRecords(['type' => self::CREDIT_TASK, 'status' => EventModel::STATUS_NORMAL]);
+        if (empty($activityInfo)) {
+            return [0,0];
+        }
+        $eventId = array_column($activityInfo, 'id');
+        $generalTask = EventTaskModel::getCount(['statue' => EventTaskModel::STATUS_NORMAL, 'event_id' => $eventId]);
+        if (empty($studentId)) {
+            return [$generalTask, 0];
+        }
+
+        $taskId = EventTaskModel::getRecords(['statue' => EventTaskModel::STATUS_NORMAL, 'event_id' => $eventId],'id');
+        $finishTheTask = PointActivityRecordModel::getCount([
+            'student_id' => $studentId,
+            'task_id' => $taskId,
+            'report_date' => date('Y-m-d')
+        ]);
+
+        return [$generalTask, $finishTheTask];
     }
 
 }
