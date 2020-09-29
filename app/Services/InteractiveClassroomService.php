@@ -400,9 +400,10 @@ class InteractiveClassroomService
      * @param $collectionId
      * @param $lessonId
      * @param $learnStatus 1完成上课 2完成补课
+     * @param $createTime //这个时间是，用户上的/补的哪天的课
      * @throws RunTimeException
      */
-    public static function studentLearnRecode($studentId, $collectionId, $lessonId, $learnStatus)
+    public static function studentLearnRecode($studentId, $collectionId, $lessonId, $learnStatus, $createTime)
     {
         $student = StudentModel::getById($studentId);
         if (empty($student)) {
@@ -419,7 +420,7 @@ class InteractiveClassroomService
             'collection_id' => $collectionId,
             'lesson_id' => $lessonId,
             'learn_status' => $learnStatus,
-            'create_time' => $time,
+            'create_time' => strtotime($createTime),
             'update_time' => $time
         ];
         $insertRes = StudentLearnRecordModel::insertRecord($insertData, false);

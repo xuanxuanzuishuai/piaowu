@@ -208,7 +208,12 @@ class InteractiveClassroom extends ControllerBase
                 'key'        => 'learn_status',
                 'type'       => 'required',
                 'error_code' => 'lesson_status_is_required',
-            ]
+            ],
+            [
+                'key'        => 'learn_time',
+                'type'       => 'required',
+                'error_code' => 'learn_time_is_required',
+            ],
         ];
         $params = $request->getParams();
         $result = Valid::validate($params, $rules);
@@ -218,7 +223,7 @@ class InteractiveClassroom extends ControllerBase
         $studentId = $this->ci['student']['id'];
 
         try {
-            InteractiveClassroomService::studentLearnRecode($studentId, $params['collection_id'], $params['lesson_id'], $params['learn_status']);
+            InteractiveClassroomService::studentLearnRecode($studentId, $params['collection_id'], $params['lesson_id'], $params['learn_status'], $params['learn_time']);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
