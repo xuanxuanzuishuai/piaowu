@@ -7,7 +7,9 @@ use App\Libs\Constants;
 use App\Models\StudentLearnRecordModel;
 use App\Models\StudentModel;
 use App\Models\StudentSignUpCourseModel;
-
+use App\Libs\Exceptions\RunTimeException;
+use App\Models\ReviewCourseModel;
+use App\Libs\Util;
 
 class InteractiveClassroomService
 {
@@ -304,6 +306,127 @@ class InteractiveClassroomService
         });
 
         return $platformCoursePlan ?? [];
+    }
+
+    /**
+     * 用户报名课程
+     * @param $studentId
+     * @param $collectionId
+     * @param $lessonCount
+     * @param $startWeek
+     * @param $startTime
+     * @return bool|int|mixed|string
+     * @throws RunTimeException
+     */
+    public static function collectionSignUp($studentId, $collectionId, $lessonCount, $startWeek, $startTime)
+    {
+
+        $student = StudentModel::getById($studentId);
+        if (empty($student)) {
+            throw new RunTimeException(['unknown_user']);
+        }
+
+        //只有年卡用户并且在使用时间范围内，才可报名
+        if ($student['has_review_course'] != ReviewCourseModel::REVIEW_COURSE_1980 || $student['sub_end_date'] < date('Ymd', time())) {
+            throw new RunTimeException(['please_buy_the_annual_card']);
+        }
+
+        $signUpData = StudentSignUpCourseModel::getRecord(['student_id' => $studentId, 'collection_id' => $collectionId]);
+        $time = time();
+        if ($signUpData) {
+            StudentSignUpCourseModel::updateRecord($signUpData['id'], ['bind_status' => StudentSignUpCourseModel::COURSE_BING_STATUS_SUCCESS, 'update_time' => $time]);
+        } else {
+            //获取用户开始上课&结束上课的时间戳
+            list($firstCourseTime, $lastTime) = self::calculationCourseTime($time, $startWeek, $startTime, $lessonCount);
+
+            StudentSignUpCourseModel::insertRecord(['student_id' => $studentId, 'collection_id' => $collectionId, 'bind_status' => StudentSignUpCourseModel::COURSE_BING_STATUS_SUCCESS, 'lesson_count' => $lessonCount, 'start_week' => $startWeek,  'start_time' => strtotime(date('Y-m-d').$startTime), 'create_time' => $time, 'update_time' => $time, 'last_course_time' => $lastTime, 'first_course_time' => $firstCourseTime]);
+        }
+        StudentSignUpCourseModel::delStudentMonthRedis($studentId, $collectionId);
+    }
+
+    /**
+     * 根据用户当前报名的周，和开课的周几做比对，计算出用户上课的开始&结束时间
+     * @param $time
+     * @param $startWeek
+     * @param $startTime
+     * @param $lessonCount
+     * @return array
+     */
+    public static function calculationCourseTime($time, $startWeek, $startTime, $lessonCount)
+    {
+        $nowWeek = date("N", $time);
+        if ($nowWeek == $startWeek) {
+            $firstCourseTime = strtotime(date('Y-m-d').$startTime);
+            $lastTime = $firstCourseTime + Util::TIMESTAMP_ONEDAY * StudentSignUpCourseModel::A_WEEK * ($lessonCount - 1);
+        } elseif ($nowWeek > $startWeek) {
+            $firstCourseTime = strtotime(date("Y-m-d ", strtotime("+" . $nowWeek - $startWeek ."day")) . $startTime);
+            $lastTime = $firstCourseTime + Util::TIMESTAMP_ONEDAY * StudentSignUpCourseModel::A_WEEK * ($lessonCount - 1);
+        } elseif ($nowWeek < $startWeek) {
+            $firstCourseTime = strtotime(date("Y-m-d ", strtotime("+" . StudentSignUpCourseModel::A_WEEK - $nowWeek + $startWeek ."day")) . $startTime);
+            $lastTime = $firstCourseTime + Util::TIMESTAMP_ONEDAY * StudentSignUpCourseModel::A_WEEK * ($lessonCount - 1);
+        } else {
+            $firstCourseTime = Constants::STATUS_FALSE;
+            $lastTime = Constants::STATUS_FALSE;
+        }
+        return [$firstCourseTime, $lastTime];
+    }
+
+
+    /**
+     * 用户取消报名
+     * @param $studentId
+     * @param $collectionId
+     * @return bool|int|mixed|string
+     * @throws RunTimeException
+     */
+    public static function cancelSignUp($studentId, $collectionId)
+    {
+        $student = StudentModel::getById($studentId);
+        if (empty($student)) {
+            throw new RunTimeException(['unknown_user']);
+        }
+
+        $signUpData = StudentSignUpCourseModel::getRecord(['student_id' => $studentId, 'collection_id' => $collectionId]);
+        if (empty($signUpData)) {
+            throw new RunTimeException(['record_not_found']);
+        }
+        StudentSignUpCourseModel::updateRecord($signUpData['id'], ['bind_status' => StudentSignUpCourseModel::CANCEL_COURSE_BING_STATUS, 'update_time' => time()]);
+        StudentSignUpCourseModel::delStudentMonthRedis($studentId, $collectionId);
+    }
+
+    /**
+     * 用户上课记录
+     * @param $studentId
+     * @param $collectionId
+     * @param $lessonId
+     * @param $learnStatus 1完成上课 2完成补课
+     * @throws RunTimeException
+     */
+    public static function studentLearnRecode($studentId, $collectionId, $lessonId, $learnStatus)
+    {
+        $student = StudentModel::getById($studentId);
+        if (empty($student)) {
+            throw new RunTimeException(['record_not_found']);
+        }
+        //不是年卡用户不可以上课
+        if ($student['has_review_course'] != ReviewCourseModel::REVIEW_COURSE_1980 || $student['sub_end_date'] < date('Ymd')) {
+            throw new RunTimeException(['please_buy_the_annual_card']);
+        }
+
+        $time = time();
+        $insertData = [
+            'student_id' => $studentId,
+            'collection_id' => $collectionId,
+            'lesson_id' => $lessonId,
+            'learn_status' => $learnStatus,
+            'create_time' => $time,
+            'update_time' => $time
+        ];
+        $insertRes = StudentLearnRecordModel::insertRecord($insertData, false);
+        if (empty($insertRes)) {
+            throw new RunTimeException(['insert_failure']);
+        }
+        StudentSignUpCourseModel::delStudentMonthRedis($studentId, $collectionId);
     }
 
 }

@@ -444,5 +444,20 @@ class StudentAppRouter extends RouterBase
             'call'    => InteractiveClassroom::class . ':smallHornInfo',
             'middles' => [StudentAuthCheckMiddleWareForApp::class,AppApiForStudent::class]
         ],
+        '/student_app/interactive_classroom/collection_sign_up' => [
+            'method'  => ['post'],
+            'call'    => InteractiveClassroom::class . ':collectionSignUp',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class,AppApiForStudent::class]
+        ],
+        '/student_app/interactive_classroom/cancel_sign_up' => [
+            'method'  => ['post'],
+            'call'    => InteractiveClassroom::class . ':cancelSignUp',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class,AppApiForStudent::class]
+        ],
+        '/student_app/interactive_classroom/update_learn_status' => [
+            'method'  => ['post'],
+            'call'    => InteractiveClassroom::class . ':studentLearnRecord',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class,AppApiForStudent::class]
+        ],
     ];
 }
