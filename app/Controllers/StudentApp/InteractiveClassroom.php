@@ -321,35 +321,10 @@ class InteractiveClassroom extends ControllerBase
      */
     public function getCalendarDetails(Request $request, Response $response)
     {
-        $rules = [
-            [
-                'key' => 'month',
-                'type' => 'required',
-                'error_code' => 'month_is_required'
-            ],
-            [
-                'key' => 'year',
-                'type' => 'required',
-                'error_code' => 'year_is_required'
-            ],
-            [
-                'key' => 'day',
-                'type' => 'required',
-                'error_code' => 'day_is_required'
-            ]
-        ];
 
         $params = $request->getParams();
-        $result = Valid::appValidate($params, $rules);
-        if ($result['code'] != Valid::CODE_SUCCESS) {
-            return $response->withJson($result, StatusCode::HTTP_OK);
-        }
 
         $studentId = $this->ci['student']['id'];
-        $student = StudentModel::getById($studentId);
-        if (empty($student)) {
-            HttpHelper::buildResponse($response, []);
-        }
 
         $calendarDetails = InteractiveClassroomService::getCalendarDetails($studentId, $params["year"], $params["month"], $params['day']);
         return HttpHelper::buildResponse($response, ['calendar_details' => $calendarDetails]);

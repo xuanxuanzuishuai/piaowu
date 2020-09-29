@@ -4,6 +4,7 @@
 namespace App\Services;
 
 use App\Libs\Constants;
+use App\Libs\HttpHelper;
 use App\Models\StudentLearnRecordModel;
 use App\Models\StudentModel;
 use App\Models\StudentSignUpCourseModel;
@@ -443,7 +444,6 @@ class InteractiveClassroomService
 
         $startTime = strtotime($year . "-" . $month);
         $endTime = strtotime('+1 month', $startTime) - 1;
-        $time = time();
 
         //获取学生报名的所有课包
         $studentAllBindCourse = StudentSignUpCourseModel::getStudentBindCourse($studentId, $startTime, $endTime);
@@ -451,16 +451,8 @@ class InteractiveClassroomService
         $formatStudentAllBindCourse = self::formatClassDate($studentAllBindCourse);
         $studentAllBindCourseRes = array_combine(array_column($formatStudentAllBindCourse, 'class_time'), $formatStudentAllBindCourse);
 
-        //获取学生小于当前时间有课的课包 当前时间应该减去30分钟，因为上课以半小时为边界
-        $studentTodayBindCourse = StudentSignUpCourseModel::getStudentBindCourse($studentId, strtotime(date('Y-m-d')) - StudentSignUpCourseModel::DURATION_30MINUTES, $time);
-        if (!empty($studentTodayBindCourse)) {
-            $formatStudentTodayBindCourse = self::formatClassDate($studentTodayBindCourse);
-            $studentTodayBindCourseRes = array_combine(array_column($formatStudentTodayBindCourse, 'class_time'), $formatStudentTodayBindCourse);
-        } else {
-            $studentTodayBindCourseRes = [];
-        }
         //获取学生的上课记录
-        $studentLearnRecord = StudentLearnRecordModel::getStudentLearnCalendar($studentId, $startTime, $time);
+        $studentLearnRecord = StudentLearnRecordModel::getStudentLearnCalendar($studentId, $startTime);
         if (!empty($studentLearnRecord)) {
             $studentLearnRecordData = array_combine(array_column($studentLearnRecord, 'class_record_time'), $studentLearnRecord);
         } else {
@@ -472,7 +464,7 @@ class InteractiveClassroomService
             if (substr($item['class_time'], 4, -2) != $month) {
                 continue;
             }
-            $classStatus = self::calculationClassStatus($item, $time, $studentLearnRecordData, $studentTodayBindCourseRes);
+            $classStatus = self::calculationClassStatus($item, $studentLearnRecordData);
             $item['class_status'] = $classStatus;
             $resultRes[] = $item;
         }
@@ -482,20 +474,20 @@ class InteractiveClassroomService
     /**
      * 处理学生上课状态，是否有缺课
      * @param $item
-     * @param $time
      * @param $studentLearnRecordData
      * @param $studentTodayBindCourseRes
      * @return int
      */
-    public static function calculationClassStatus($item, $time, $studentLearnRecordData, $studentTodayBindCourseRes)
+    public static function calculationClassStatus($item, $studentLearnRecordData)
     {
+        $time = time();
         //处理小于当前时间的上课状态,并且有上课记录，并且上课记录等于当天用户购买的课节数
         if ($item['class_time'] < date('Ymd', $time) && $item['class_time'] == $studentLearnRecordData[$item['class_time']]['class_record_time'] && $item['class_count'] == $studentLearnRecordData[$item['class_time']]['class_record_count']) {
             $classStatus = StudentSignUpCourseModel::COURSE_CLASS_NOT_ABSENTEEISM_STATUS;
         } elseif ($item['class_time'] > date('Ymd', $time)) { //大于当前时间的课包，处于待开课状态
             $classStatus = StudentSignUpCourseModel::COURSE_CLASS_TO_BE_STARTED;
-        } elseif ($item['class_time'] == date('Ymd', $time) && $studentTodayBindCourseRes[$item['class_time']]['class_count'] == $studentLearnRecordData[$item['class_time']]['class_record_count']) { //处理当天的课包状态，获取当前时间戳之前用户今天的上课记录，如果上课记录次数=购买节数说明今天没有缺课
-            $classStatus = StudentSignUpCourseModel::COURSE_CLASS_NOT_ABSENTEEISM_STATUS;
+        } elseif ($item['class_time'] == date('Ymd', $time)) { //当天的状态，后端不做处理,设计实时问题，会在日历详情把当天的课包&上课记录返回给前端
+            $classStatus = Constants::STATUS_FALSE;
         } else {
             $classStatus = StudentSignUpCourseModel::COURSE_CLASS_ABSENTEEISM_STATUS;
         }
@@ -537,11 +529,36 @@ class InteractiveClassroomService
      */
     public static function getCalendarDetails($studentId, $year, $month, $day)
     {
+        $student = StudentModel::getById($studentId);
+        if (empty($student)) {
+            return [];
+        }
+        //判断用户是否年卡用户，年卡是否过期
+        if ($student['has_review_course'] == ReviewCourseModel::REVIEW_COURSE_1980 && $student['sub_end_date'] < date('Ymd', time())) {
+            $result['student_status'] = ReviewCourseModel::REVIEW_COURSE_1980;
+        } elseif ($student['has_review_course'] == ReviewCourseModel::REVIEW_COURSE_1980 && $student['sub_end_date'] > date('Ymd', time())) {
+            $result['student_status'] = ReviewCourseModel::REVIEW_COURSE_BE_OVERDUE;
+        } else {
+            $result['student_status'] = $student['has_review_course'];
+        }
+
+        //没有传时间，默认时间为今天
+        if (empty($year) && empty($month) && empty($day)) {
+            $date = date('Y-m-d', time());
+        } else {
+            $date = $year.'-'.$month.'-'.$day;
+        }
         //练琴时长
-        $startTime = strtotime($year.'-'.$month.'-'.$day);
+        $startTime = strtotime($date);
         $endTime = $startTime + 86400 -1;
         //今日课程
         $todayClass = self::studentCoursePlan($studentId, $startTime);
+        //如果获取的是今日数据，需要把用户今天的练琴记录返回客户端，客户端实时更新课程状态
+        if ($date == date('Y-m-d')) {
+            $todayLearn = StudentLearnRecordModel::getRecords(['student_id' => $studentId, 'create_time[>=]' => $startTime]);
+        } else{
+            $todayLearn = [];
+        }
 
         $result['sum_duration'] = AIPlayRecordService::getStudentDaySumDuration($studentId, $startTime, $endTime);
         //练琴任务
@@ -549,6 +566,8 @@ class InteractiveClassroomService
         $result['finish_the_task'] = (INT)$finishTheTask;   //完成练琴任务次数
         $result['general_task'] = $generalTask;//总任务
         $result['today_class'] = $todayClass;
+        $result['today_learn'] = $todayLearn;
+        $result['date'] = date('Y-m-d', time());
         return $result;
     }
 
