@@ -30,4 +30,24 @@ class StudentLearnRecordModel extends Model
         return $records ?? [];
     }
 
+    /**
+     * 获取用户每天的练琴
+     * @param $studentId
+     * @param $startTime
+     * @param $endTime
+     * @return array
+     */
+    public static function getStudentLearnCalendar($studentId, $startTime, $endTime)
+    {
+        $studentLearnRecord = self::$table;
+        $sql = "SELECT FROM_UNIXTIME(create_time, '%Y%m%d') class_record_time, count(*) class_record_count FROM {$studentLearnRecord} where student_id = :student_id and !(create_time < :start_time) and !(create_time > :end_time) group by FROM_UNIXTIME(create_time, '%Y%m%d')";
+        $map = [
+            ':student_id' => $studentId,
+            ':start_time' => $startTime,
+            ':end_time' => $endTime
+        ];
+        $studentBindCourse = MysqlDB::getDB()->queryAll($sql, $map);
+        return $studentBindCourse ?? [];
+    }
+
 }

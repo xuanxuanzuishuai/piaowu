@@ -170,13 +170,13 @@ class InteractiveClassroomService
         $singUpCourse = self::recommendCourse();
         $singUpCourseData = array_combine(array_column($singUpCourse, 'collection_id'), $singUpCourse);
         //获取用户购买的课包
-        $studentBingCourse = StudentSignUpCourseModel::getRecords(['student_id'=> $studentId, 'bind_status' => StudentSignUpCourseModel::COURSE_BING_STATUS_SUCCESS]);
+        $studentBingCourse = StudentSignUpCourseModel::getRecords(['student_id'=> $studentId, 'bind_status' => StudentSignUpCourseModel::COURSE_BING_SUCCESS]);
         $studentBingCourseData = array_combine(array_column($studentBingCourse, 'collection_id'), $studentBingCourse);
         //统计用户已上课次数
         $StudentLearnCount = StudentLearnRecordModel::getStudentLearnCount($studentId);
 
         foreach ($singUpCourseData as $key => $value){
-            $value['course_bind_status'] = $studentBingCourseData[$value['collection_id']] ? (INT)$studentBingCourseData[$value['collection_id']]['bind_status'] : StudentSignUpCourseModel::COURSE_NOT_BING_STATUS;
+            $value['course_bind_status'] = $studentBingCourseData[$value['collection_id']] ? (INT)$studentBingCourseData[$value['collection_id']]['bind_status'] : StudentSignUpCourseModel::COURSE_BING_ERROR;
             $value['attend_class_count'] = $studentBingCourseData[$value['collection_id']] ? (INT)$StudentLearnCount[$value['collection_id']]['attend_class_count'] : Constants::STATUS_FALSE;
             $result[] = $value;
         }
@@ -237,7 +237,7 @@ class InteractiveClassroomService
         foreach ($recommendCourse as $item) {
             if ($item['collection_start_week'] == date("N", $time)) {
                 //上课状态->去报名
-                $item['course_bind_status'] = StudentSignUpCourseModel::COURSE_NOT_BING_STATUS;
+                $item['course_bind_status'] = StudentSignUpCourseModel::COURSE_BING_ERROR;
                 $todayRecommendCourse[] = $item;
             }
         }
@@ -283,9 +283,9 @@ class InteractiveClassroomService
                 continue;
             }
             if(strtotime(date("Y-m-d"). $item['collection_start_time']) < $time) {
-                $item['course_bind_status'] = StudentSignUpCourseModel::IN_CLASS_STATUS;
+                $item['course_bind_status'] = StudentSignUpCourseModel::COURSE_CLASS_IN;
             } else {
-                $item['course_bind_status'] = StudentSignUpCourseModel::COURSE_TO_BE_STARTED;;
+                $item['course_bind_status'] = StudentSignUpCourseModel::COURSE_CLASS_TO_BE_STARTED;;
             }
             $item['collection_end_time'] = date("H:i", $item['collection_end_time']);
             $smallHornInfo[] = $item;
@@ -302,7 +302,7 @@ class InteractiveClassroomService
         }
         //明天的推荐新增课包开课的状态
         array_walk($platformCoursePlan['tomorrow'], function (&$value) {
-            $value['course_bind_status'] = StudentSignUpCourseModel::COURSE_TO_BE_STARTED;
+            $value['course_bind_status'] = StudentSignUpCourseModel::COURSE_CLASS_TO_BE_STARTED;
         });
 
         return $platformCoursePlan ?? [];
@@ -334,12 +334,12 @@ class InteractiveClassroomService
         $signUpData = StudentSignUpCourseModel::getRecord(['student_id' => $studentId, 'collection_id' => $collectionId]);
         $time = time();
         if ($signUpData) {
-            StudentSignUpCourseModel::updateRecord($signUpData['id'], ['bind_status' => StudentSignUpCourseModel::COURSE_BING_STATUS_SUCCESS, 'update_time' => $time]);
+            StudentSignUpCourseModel::updateRecord($signUpData['id'], ['bind_status' => StudentSignUpCourseModel::COURSE_BING_SUCCESS, 'update_time' => $time]);
         } else {
             //获取用户开始上课&结束上课的时间戳
             list($firstCourseTime, $lastTime) = self::calculationCourseTime($time, $startWeek, $startTime, $lessonCount);
 
-            StudentSignUpCourseModel::insertRecord(['student_id' => $studentId, 'collection_id' => $collectionId, 'bind_status' => StudentSignUpCourseModel::COURSE_BING_STATUS_SUCCESS, 'lesson_count' => $lessonCount, 'start_week' => $startWeek,  'start_time' => strtotime(date('Y-m-d').$startTime), 'create_time' => $time, 'update_time' => $time, 'last_course_time' => $lastTime, 'first_course_time' => $firstCourseTime]);
+            StudentSignUpCourseModel::insertRecord(['student_id' => $studentId, 'collection_id' => $collectionId, 'bind_status' => StudentSignUpCourseModel::COURSE_BING_SUCCESS, 'lesson_count' => $lessonCount, 'start_week' => $startWeek,  'start_time' => strtotime(date('Y-m-d').$startTime), 'create_time' => $time, 'update_time' => $time, 'last_course_time' => $lastTime, 'first_course_time' => $firstCourseTime]);
         }
         StudentSignUpCourseModel::delStudentMonthRedis($studentId, $collectionId);
     }
@@ -390,7 +390,7 @@ class InteractiveClassroomService
         if (empty($signUpData)) {
             throw new RunTimeException(['record_not_found']);
         }
-        StudentSignUpCourseModel::updateRecord($signUpData['id'], ['bind_status' => StudentSignUpCourseModel::CANCEL_COURSE_BING_STATUS, 'update_time' => time()]);
+        StudentSignUpCourseModel::updateRecord($signUpData['id'], ['bind_status' => StudentSignUpCourseModel::COURSE_BING_CANCEL, 'update_time' => time()]);
         StudentSignUpCourseModel::delStudentMonthRedis($studentId, $collectionId);
     }
 
@@ -427,6 +427,128 @@ class InteractiveClassroomService
             throw new RunTimeException(['insert_failure']);
         }
         StudentSignUpCourseModel::delStudentMonthRedis($studentId, $collectionId);
+    }
+
+    /**
+     * 获取学生上课日历
+     * @param $studentId
+     * @param $year
+     * @param $month
+     * @return array
+     */
+
+    public static function getLearnCalendar($studentId, $year, $month)
+    {
+
+        $startTime = strtotime($year . "-" . $month);
+        $endTime = strtotime('+1 month', $startTime) - 1;
+        $time = time();
+
+        //获取学生报名的所有课包
+        $studentAllBindCourse = StudentSignUpCourseModel::getStudentBindCourse($studentId, $startTime, $endTime);
+        if (empty($studentAllBindCourse)) return [];
+        $formatStudentAllBindCourse = self::formatClassDate($studentAllBindCourse);
+        $studentAllBindCourseRes = array_combine(array_column($formatStudentAllBindCourse, 'class_time'), $formatStudentAllBindCourse);
+
+        //获取学生小于当前时间有课的课包 当前时间应该减去30分钟，因为上课以半小时为边界
+        $studentTodayBindCourse = StudentSignUpCourseModel::getStudentBindCourse($studentId, strtotime(date('Y-m-d')) - StudentSignUpCourseModel::DURATION_30MINUTES, $time);
+        if (!empty($studentTodayBindCourse)) {
+            $formatStudentTodayBindCourse = self::formatClassDate($studentTodayBindCourse);
+            $studentTodayBindCourseRes = array_combine(array_column($formatStudentTodayBindCourse, 'class_time'), $formatStudentTodayBindCourse);
+        } else {
+            $studentTodayBindCourseRes = [];
+        }
+        //获取学生的上课记录
+        $studentLearnRecord = StudentLearnRecordModel::getStudentLearnCalendar($studentId, $startTime, $time);
+        if (!empty($studentLearnRecord)) {
+            $studentLearnRecordData = array_combine(array_column($studentLearnRecord, 'class_record_time'), $studentLearnRecord);
+        } else {
+            $studentLearnRecordData = [];
+        }
+
+        //计算本月的所有上课状态，是否缺课
+        foreach ($studentAllBindCourseRes as $item) {
+            if (substr($item['class_time'], 4, -2) != $month) {
+                continue;
+            }
+            $classStatus = self::calculationClassStatus($item, $time, $studentLearnRecordData, $studentTodayBindCourseRes);
+            $item['class_status'] = $classStatus;
+            $resultRes[] = $item;
+        }
+        return $resultRes;
+    }
+
+    /**
+     * 处理学生上课状态，是否有缺课
+     * @param $item
+     * @param $time
+     * @param $studentLearnRecordData
+     * @param $studentTodayBindCourseRes
+     * @return int
+     */
+    public static function calculationClassStatus($item, $time, $studentLearnRecordData, $studentTodayBindCourseRes)
+    {
+        //处理小于当前时间的上课状态,并且有上课记录，并且上课记录等于当天用户购买的课节数
+        if ($item['class_time'] < date('Ymd', $time) && $item['class_time'] == $studentLearnRecordData[$item['class_time']]['class_record_time'] && $item['class_count'] == $studentLearnRecordData[$item['class_time']]['class_record_count']) {
+            $classStatus = StudentSignUpCourseModel::COURSE_CLASS_NOT_ABSENTEEISM_STATUS;
+        } elseif ($item['class_time'] > date('Ymd', $time)) { //大于当前时间的课包，处于待开课状态
+            $classStatus = StudentSignUpCourseModel::COURSE_CLASS_TO_BE_STARTED;
+        } elseif ($item['class_time'] == date('Ymd', $time) && $studentTodayBindCourseRes[$item['class_time']]['class_count'] == $studentLearnRecordData[$item['class_time']]['class_record_count']) { //处理当天的课包状态，获取当前时间戳之前用户今天的上课记录，如果上课记录次数=购买节数说明今天没有缺课
+            $classStatus = StudentSignUpCourseModel::COURSE_CLASS_NOT_ABSENTEEISM_STATUS;
+        } else {
+            $classStatus = StudentSignUpCourseModel::COURSE_CLASS_ABSENTEEISM_STATUS;
+        }
+
+        return $classStatus;
+    }
+
+    /**
+     * 根据用户第一节课开课时间，以及课包总共的节数，推断出用户哪一天有课
+     * @param $studentBindCourse
+     * @return array
+     */
+    public static function formatClassDate($studentBindCourse)
+    {
+        $formatDate = [];
+        foreach ($studentBindCourse as $item) for ($i = 0; $i < $item['lesson_count']; $i++) if ($i == 0) {
+            $formatDate[] = date('Ymd', $item['first_course_time']);
+        } else {
+            $last_time = array_pop($formatDate);
+            array_push($formatDate,$last_time);
+            $formatDate[] = date('Ymd',strtotime($last_time.'+7day'));
+        }
+        $formatDateRes = array_count_values($formatDate);
+        $formatDateResult = [];
+        reset($formatDateRes);
+        while (list($key, $val) = each($formatDateRes)) {
+            $formatDateResult[] = array('class_time'=>$key,'class_count'=>$val);
+        }
+        return $formatDateResult;
+    }
+
+    /**
+     * 获取上课日历详情
+     * @param $studentId
+     * @param $year
+     * @param $month
+     * @param $day
+     * @return mixed
+     */
+    public static function getCalendarDetails($studentId, $year, $month, $day)
+    {
+        //练琴时长
+        $startTime = strtotime($year.'-'.$month.'-'.$day);
+        $endTime = $startTime + 86400 -1;
+        //今日课程
+        $todayClass = self::studentCoursePlan($studentId, $startTime);
+
+        $result['sum_duration'] = AIPlayRecordService::getStudentDaySumDuration($studentId, $startTime, $endTime);
+        //练琴任务
+        list($generalTask,$finishTheTask) = CreditService::getActivityList($studentId);
+        $result['finish_the_task'] = (INT)$finishTheTask;   //完成练琴任务次数
+        $result['general_task'] = $generalTask;//总任务
+        $result['today_class'] = $todayClass;
+        return $result;
     }
 
 }

@@ -11,11 +11,16 @@ class StudentSignUpCourseModel extends Model
 {
     public static $table = "student_sign_up";
 
-    const COURSE_NOT_BING_STATUS = 0; //未报名
-    const COURSE_BING_STATUS_SUCCESS = 1;//报名成功
-    const CANCEL_COURSE_BING_STATUS = 2;//取消报名
-    const IN_CLASS_STATUS = 3; //课包开课中
-    const COURSE_TO_BE_STARTED = 4;//课包待开课
+    //课包报名状态
+    const COURSE_BING_ERROR = 0; //未报名
+    const COURSE_BING_SUCCESS = 1;//报名成功
+    const COURSE_BING_CANCEL = 2;//取消报名
+
+    //课包上课状态
+    const COURSE_CLASS_IN = 3; //课包开课中
+    const COURSE_CLASS_TO_BE_STARTED = 4;//课包待开课
+    const COURSE_CLASS_ABSENTEEISM_STATUS = 5; //缺课
+    const COURSE_CLASS_NOT_ABSENTEEISM_STATUS = 6; //没有缺课状态
 
     const DURATION_30MINUTES = 1800; // 30分钟
     const A_WEEK = 7; //一周
@@ -33,7 +38,7 @@ class StudentSignUpCourseModel extends Model
     {
         $sql = "select * from student_sign_up where bind_status = :bind_status and student_id = :student_id and !(last_course_time < :start_time) and !(first_course_time > :end_time)";
         $map = [
-            ':bind_status' => self::COURSE_BING_STATUS_SUCCESS,
+            ':bind_status' => self::COURSE_BING_SUCCESS,
             ':student_id' => $studentId,
             ':start_time' => $startTime,
             ':end_time' => $endTime

@@ -3,7 +3,9 @@ namespace App\Controllers\StudentApp;
 
 use App\Controllers\ControllerBase;
 use App\Libs\Valid;
+use App\Models\StudentModel;
 use App\Services\AIPlayRecordService;
+use App\Services\AIPlayReportService;
 use App\Services\CreditService;
 use App\Services\InteractiveClassroomService;
 use Slim\Http\Request;
@@ -225,6 +227,127 @@ class InteractiveClassroom extends ControllerBase
             'code' => Valid::CODE_SUCCESS,
             'data' => [],
         ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * 练琴月历
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getPlayCalendar(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'month',
+                'type' => 'required',
+                'error_code' => 'month_is_required'
+            ],
+            [
+                'key' => 'year',
+                'type' => 'required',
+                'error_code' => 'year_is_required'
+            ]
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $studentId = $this->ci['student']['id'];
+        $student = StudentModel::getById($studentId);
+
+        if (empty($student)) {
+            HttpHelper::buildResponse($response, []);
+        }
+
+        $calendar = AIPlayReportService::getPlayCalendar($studentId, $params["year"], $params["month"]);
+
+        return HttpHelper::buildResponse($response, ['calendar' => $calendar]);
+    }
+
+    /**
+     * 上课月历表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getLearnCalendar(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'month',
+                'type' => 'required',
+                'error_code' => 'month_is_required'
+            ],
+            [
+                'key' => 'year',
+                'type' => 'required',
+                'error_code' => 'year_is_required'
+            ]
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $studentId = $this->ci['student']['id'];
+        $student = StudentModel::getById($studentId);
+
+        if (empty($student)) {
+            HttpHelper::buildResponse($response, []);
+        }
+
+        $learnCalendar = InteractiveClassroomService::getLearnCalendar($studentId, $params["year"], $params["month"]);
+
+        return HttpHelper::buildResponse($response, ['learn_calendar' => $learnCalendar]);
+    }
+
+
+    /**
+     * 获取课程详情
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getCalendarDetails(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'month',
+                'type' => 'required',
+                'error_code' => 'month_is_required'
+            ],
+            [
+                'key' => 'year',
+                'type' => 'required',
+                'error_code' => 'year_is_required'
+            ],
+            [
+                'key' => 'day',
+                'type' => 'required',
+                'error_code' => 'day_is_required'
+            ]
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $studentId = $this->ci['student']['id'];
+        $student = StudentModel::getById($studentId);
+        if (empty($student)) {
+            HttpHelper::buildResponse($response, []);
+        }
+
+        $calendarDetails = InteractiveClassroomService::getCalendarDetails($studentId, $params["year"], $params["month"], $params['day']);
+        return HttpHelper::buildResponse($response, ['calendar_details' => $calendarDetails]);
     }
 
 }

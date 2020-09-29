@@ -1075,4 +1075,23 @@ class AIPlayRecordService
         }
         return $res;
     }
+
+    /**
+     * 获取学生某一天练琴总时长
+     * @param $studentId
+     * @param $startTime
+     * @param $endTime
+     * @return int
+     */
+    public static function getStudentDaySumDuration($studentId, $startTime, $endTime)
+    {
+        $duration = AIPlayRecordModel::getRecord([
+            'student_id' => $studentId,
+            'end_time[>=]' => $startTime,
+            'end_time[<]' => $startTime
+        ], [
+            'sum_duration' => Medoo::raw('SUM(duration)'),
+        ]);
+        return $duration['sum_duration'] ?? 0;
+    }
 }
