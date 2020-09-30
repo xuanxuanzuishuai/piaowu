@@ -46,33 +46,27 @@ class InteractiveClassroomService
     const TAG_OUTER_ENABLE = 1;                 //tag对外部人员可见
 
     /**
-     * @return array[]
+     * @param $opn
+     * @param $studentId
+     * @return array
      * 获取推荐课程或可预约课程
      */
-    public static function recommendCourse()
+    public static function recommendCourse($opn, $studentId)
     {
-        return [
-            [
-                'collection_id'    => 1,
-                'collection_name'  => "哈农NO.1 第一课",
-                "collection_start_week" => "4",
-                "collection_start_time" => "11:40",
-                'collection_tags'  => ['基本功', '启蒙'],
-                'collection_img'   => 'www.baidu.com',
-                'is_new'           => true,
-                'lesson_count' => 4
-            ],
-            [
-                'collection_id'    => 2,
-                'collection_name'  => "哈农NO.1 第二课",
-                "collection_start_week" => "4",
-                "collection_start_time" => "10:40",
-                'collection_tags'  => ['基本功', '启蒙'],
-                'collection_img'   => 'www.baidu.com',
-                'is_new'           => true,
-                'lesson_count' => 5
-            ],
-        ];
+        $collectionList = self::collectionsWithTimeAndTag($opn);
+        $learnNumByCollection = StudentLearnRecordModel::learnNumByCollection($studentId);
+        $learnNumByCollectionKey = array_column($learnNumByCollection, null, 'collection_id');
+        $signUpCollectionIds = self::getSignUpCollections($studentId);
+        foreach ($collectionList as $key => $value) {
+            if (in_array($value['collection_id'], $signUpCollectionIds)) {
+                $collectionList[$key]['course_bind_status'] = self::COURSE_BIND_STATUS_SUCCESS;
+                $collectionList[$key]['learn_num'] = $learnNumByCollectionKey[$value['collection_id']]['learn_num'] ?? 0;
+            } else {
+                $collectionList[$key]['course_bind_status'] = self::COURSE_BIND_STATUS_UNREGISTER;
+            }
+        }
+
+        return $collectionList ?? [];
     }
 
     /**

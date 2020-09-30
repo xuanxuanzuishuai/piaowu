@@ -48,4 +48,16 @@ class StudentLearnRecordModel extends Model
         return $studentBindCourse ?? [];
     }
 
+    /**
+     * @param $studentId
+     * @return array|null
+     * 获取学生报名课程已经学习的课程数
+     */
+    public static function learnNumByCollection($studentId)
+    {
+        $db = MysqlDB::getDB();
+        $sql = "select collection_id,count(1) as learn_num from " . self::$table . " where student_id = " . $studentId . " GROUP BY student_id,collection_id";
+        return $db->queryAll($sql);
+    }
+
 }
