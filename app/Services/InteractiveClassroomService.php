@@ -14,6 +14,20 @@ use App\Libs\Util;
 
 class InteractiveClassroomService
 {
+    //学生上课状态
+    const FINISH_LEARNING = 1;      //完成上课
+    const MAKE_UP_LESSONS = 2;      //已补课
+    const TO_MAKE_UP_LESSONS = 3;   //待补课
+    const GO_TO_THE_CLASS = 4;      //去上课
+    const UNLOCK_THE_CLASS = 5;     //未解锁
+    const LOCK_THE_CLASS = 0;       //已解锁
+
+    //常用时间片段时间戳
+    const WEEK_TIMESTAMP = 604800;              //一周
+    const HALF_MONTH = 1296000;                 //半个
+    const HALF_HOUR = 1800;                     //半个小时
+    const ONE_DAY = 86400;                      //一天
+
     /**
      * @return array[]
      * 获取推荐课程或可预约课程
@@ -89,33 +103,138 @@ class InteractiveClassroomService
     }
 
     /**
-     * @param null $student_id
+     * @param $opn
+     * @param $collectionIds
+     * @return array
+     * 根据集合ID获取课程的封面
+     */
+    public static function getLessonCovers($opn,$collectionIds)
+    {
+        $result = $opn->collectionsByIds($collectionIds);
+        if (empty($result['data'])) {
+            return [];
+        }
+        foreach ($result['data'] as $value) {
+            $data[$value['id']] = $value['img_list'][0] ?? '';
+        }
+        return $data ?? [];
+    }
+
+    /**
+     * @param $opn
+     * @param $collectionIds
+     * @return array
+     * 获取每个几个的课程ID并根据是否付费进行分类
+     */
+    public static function getLessonIds($opn, $collectionIds)
+    {
+        $page = 1;
+        $pageSize = 50;
+        foreach ($collectionIds as $v) {
+            $result = $opn->lessons($v, $page, $pageSize);
+            foreach ($result['data']['list'] as $value) {
+                if ($value['freeflag'] == true) {
+                    $data[$v]['freeLessonList'][] = $value['id'];
+                } else {
+                    $data[$v]['payLessonList'][] = $value['id'];
+                }
+            }
+        }
+        return $data ?? [];
+    }
+
+    /**
+     * @param $firstCourseTime
+     * @param $timestamp
+     * @return bool|int
+     * 判断在$endTime这天应该上第几节课
+     */
+    public static function getSort($firstCourseTime, $timestamp)
+    {
+        list($beginDay, $endDay) = Util::getStartEndTimestamp($timestamp);
+        if ($firstCourseTime >= $beginDay && $firstCourseTime <= $endDay) {
+            return 0;
+        }
+
+        $startTimeToTimestamp = strtotime(date('Y-m-d', $firstCourseTime + self::ONE_DAY));
+        $endTimeToTimestamp = strtotime(date('Y-m-d', $timestamp));
+        if ($endTimeToTimestamp < $startTimeToTimestamp) {
+            return false;
+        }
+        $diff = gmstrftime('%e', $endTimeToTimestamp - $startTimeToTimestamp) / 7;
+        if (!is_int($diff)) {
+            return false;
+        }
+        return $diff;
+    }
+
+    /**
+     * @param $courseStartTime
      * @param $date
+     * @return int
+     * 判断课程应该展示的状态
+     */
+    public static function getLearnStatus($courseStartTime, $date)
+    {
+        if (($courseStartTime + self::HALF_HOUR) >= $date) {
+            return self::GO_TO_THE_CLASS;
+        } else {
+            return self::TO_MAKE_UP_LESSONS;
+        }
+    }
+
+    /**
+     * @param $opn
+     * @param null $student_id
+     * @param $timestamp
      * @return \array[][]
      * 获取用户上课计划
      */
-    public static function studentCoursePlan($student_id, $date)
+    public static function studentCoursePlan($opn, $student_id, $timestamp)
     {
-        return [
-            [
-                'lesson_id'           => 1,
-                'lesson_name'         => "哈农NO.1 第一课",
-                "lesson_start_time"   => "18:30",
-                "lesson_learn_status" => 1,
-                "collection_id" => 1,
-                "lesson_cover" => 'www.baidu.com',
-                "lesson_start_timestamp" => "1601100000"
-            ],
-            [
-                'lesson_id'           => 2,
-                'lesson_name'         => "哈农NO.1 第二课",
-                "lesson_start_time"   => "17:30",
-                "lesson_learn_status" => 1,
-                "collection_id" => 1,
-                "lesson_cover" => 'www.baidu.com',
-                "lesson_start_timestamp" => "1601100000"
-            ],
-        ];
+        $lastRecord = StudentSignUpCourseModel::getLearnRecords($student_id, $timestamp);
+        $lastRecordKeyByCollectionId = array_column($lastRecord, null, 'collection_id');
+        $lastRecordKeyByLessonId = array_column($lastRecord, null, 'lesson_id');
+        if (empty($lastRecordKeyByCollectionId)) {
+            return [];
+        }
+
+        //获取所有课的详细信息
+        $collectionIds = array_keys($lastRecordKeyByCollectionId);
+        $lessonCoverList = self::getLessonCovers($opn,$collectionIds);
+        $lessonListWithCollection = self::getLessonIds($opn, $collectionIds);
+        foreach ($lastRecord as $value) {
+            $sort = self::getSort($value['first_course_time'], $timestamp) ?: 0;
+            $lessonIds[] = $lessonListWithCollection[$value['collection_id']]['payLessonList'][$sort];
+        }
+        if (empty($lessonIds)) {
+            return [];
+        }
+
+        $result = $opn->lessonsByIds(implode(',', $lessonIds));
+        $lessonList = $result['data'];
+        //将记录表中的信息写入的课程信息中
+        foreach ($lessonList as $key => $v) {
+            $courseStartTime = (array_search($v['id'], $lessonListWithCollection[$v['collection_id']])) * self::WEEK_TIMESTAMP + $lastRecordKeyByCollectionId[$v['collection_id']]['first_course_time'];
+            if (isset($lastRecordKeyByLessonId[$v['id']]) && $v['id'] == $lastRecordKeyByLessonId[$v['id']]) {
+                $lessonLearnStatus = $lastRecordKeyByLessonId[$v['id']]['learn_status'];
+            } else {
+                $lessonLearnStatus = self::getLearnStatus($courseStartTime, $timestamp);
+            }
+
+            $data[] = [
+                'lesson_id'              => $v['id'],
+                'lesson_name'            => $v['name'],
+                "lesson_start_time"      => date('H:i', $courseStartTime),
+                "lesson_learn_status"    => $lessonLearnStatus,
+                "collection_id"          => $v['collection_id'],
+                "lesson_cover"           => $lessonCoverList[$v['collection_id']] ?? '',
+                "lesson_start_timestamp" => $courseStartTime,
+            ];
+        }
+        var_dump($data);
+        die();
+        return $data ?? [];
     }
 
 

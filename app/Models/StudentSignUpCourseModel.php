@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Libs\MysqlDB;
 use App\Libs\RedisDB;
+use App\Libs\Util;
 
 class StudentSignUpCourseModel extends Model
 {
@@ -67,5 +68,29 @@ class StudentSignUpCourseModel extends Model
             $cacheKey = self::STUDENT_LEARN_MONTH_CALENDAR . $studentId . '_0' . $delMonth;
             $redis->del([$cacheKey]);
         }
+    }
+
+    /**
+     * @param $studentId
+     * @param $timestamp
+     * @return array|null
+     * 获取用户截止指定时间点当天的报名课程及其上课记录
+     */
+    public static function getLearnRecords($studentId,$timestamp)
+    {
+        $signUp = self::$table;
+        $learnRecord = StudentLearnRecordModel::$table;
+        $student = StudentModel::$table;
+        list($beginDay, $endDay) = Util::getStartEndTimestamp($timestamp);
+        $weekNo = date("N", $timestamp);
+
+        $where = "s.student_id = " . $studentId . " AND s.start_week = " . $weekNo . " AND s.bind_status = " . self::COURSE_BING_SUCCESS . "
+        AND (NOT (s.first_course_time >" . $endDay . ")) AND (NOT (s.last_course_time < " . $beginDay . "))";
+
+        $sql = "select s.collection_id, s.start_week, s.start_time, s.first_course_time, s.bind_status, s.update_time, l.lesson_id, l.sort, l.learn_status, stu.sub_end_date from {$signUp} as s 
+                inner join {$student} as stu on s.student_id = stu.id 
+                left join {$learnRecord} as l on s.collection_id = l.collection_id and s.student_id = l.student_id where " . $where . "group by s.student_id,s.collection_id";
+        $db = MysqlDB::getDB();
+        return $db->queryAll($sql);
     }
 }
