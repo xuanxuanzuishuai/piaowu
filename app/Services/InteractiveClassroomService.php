@@ -28,6 +28,23 @@ class InteractiveClassroomService
     const HALF_HOUR = 1800;                     //半个小时
     const ONE_DAY = 86400;                      //一天
 
+    //集合状态
+    const COLLECTION_STATUS_SIGN_UP = 1;        //可报名
+    const COLLECTION_STATUS_PRE_ONLINE = 2;     //待上线
+    const COLLECTION_STATUS_MAKING = 3;         //制作中
+
+    //学生报名状态
+    const COURSE_BIND_STATUS_UNREGISTER = 0;    //未报名
+    const COURSE_BIND_STATUS_SUCCESS = 1;       //报名成功
+    const COURSE_BIND_STATUS_CANCEL = 2;        //取消报名
+
+    //获取标签信息时区分集合和课程的type
+    const OBJECT_COLLECTION = 1;                //集合
+    const OBJECT_LESSON = 2;                    //课程
+
+    //tag可见属性
+    const TAG_OUTER_ENABLE = 1;                 //tag对外部人员可见
+
     /**
      * @return array[]
      * 获取推荐课程或可预约课程
@@ -232,49 +249,194 @@ class InteractiveClassroomService
                 "lesson_start_timestamp" => $courseStartTime,
             ];
         }
-        var_dump($data);
-        die();
+
         return $data ?? [];
     }
 
 
     /**
-     * @return \array[][]
+     * @param $opn
+     * @return int|mixed
+     * 获取互动课堂分类ID（唯一）
+     */
+    public static function erpCategory($opn)
+    {
+        $page = 1;
+        $pageSize = 1;
+        $result = $opn->categories($page, $pageSize);
+        return $result['data']['list'][0]['id'] ?? 0;
+    }
+
+    /**
+     * @param $opn
+     * @param int $type
+     * @return array
+     * 获取互动课堂指定状态集合信息
+     */
+    public static function erpCollection($opn, $type = self::COLLECTION_STATUS_SIGN_UP)
+    {
+        $page = 1;
+        $pageSize = 100;
+        $categoryId = self::erpCategory($opn);
+        if (empty($categoryId)) {
+            return [];
+        }
+
+        $result = $opn->collections($categoryId, $page, $pageSize, $type);
+        if (empty($result)) {
+            return [];
+        }
+        foreach ($result['data']['list'] as $value) {
+            $collectionList[$value['id']] = [
+                'collection_id'   => $value['id'],
+                'collection_name' => $value['name'],
+                'collection_img'  => $value['cover'],
+                'lesson_count'    => $value['lesson_count'],
+                'type'            => $value['type'],
+                'publish_time'    => $value['publish_time'],
+            ];
+        }
+        return $collectionList ?? [];
+    }
+
+    /**
+     * @param $opn
+     * @param $type
+     * @param $collectionIds
+     * @return array
+     * 获取标签信息
+     */
+    public static function objectTags($opn,$type, $collectionIds)
+    {
+        $tagsResult = $opn->objectTags($type, $collectionIds);
+        if (empty($tagsResult['data'])) {
+            return [];
+        }
+        return $tagsResult['data'] ?? [];
+    }
+
+    /**
+     * @param $opn
+     * @param $collectionIds
+     * @return array|mixed
+     * 获取集合上课时间信息
+     */
+    public static function collectionTimetable($opn,$collectionIds)
+    {
+        $result = $opn->timetable($collectionIds);
+        if (empty($result)) {
+            return [];
+        }
+        return $result['data'] ?? [];
+    }
+
+    /**
+     * @param $opn
+     * @return array
+     * 集合整合时间和标签
+     */
+    public static function collectionsWithTimeAndTag($opn)
+    {
+        $collections = self::erpCollection($opn);
+        if (empty($collections)) {
+            return [];
+        }
+
+        //获取标签信息
+        $collectionIds = array_keys($collections);
+        $tags = self::objectTags($opn,self::OBJECT_COLLECTION, $collectionIds);
+        if (!empty($tags)) {
+            foreach ($tags as $key => $value) {
+                foreach ($value as $item) {
+                    if ($item['outer_view'] == self::TAG_OUTER_ENABLE) {
+                        $itemTags[] = $item['name'];
+                    }
+                }
+                $tagList[$key] = $itemTags ?? [];
+            }
+        }
+
+        //获取上课时间表
+        $timeTable = self::collectionTimetable($opn, $collectionIds);
+        $timeTableByCollectionKey = array_column($timeTable, null, 'collection_id');
+        $time = time();
+        foreach ($collections as $key => $value) {
+            $collections[$key]['tags'] = $tagList[$key] ?? [];
+            $collections[$key]['collection_start_week'] = $timeTableByCollectionKey[$key]['start_week_day'] ?? 0;
+            $collections[$key]['collection_start_time'] = date("H:i", $timeTableByCollectionKey[$key]['start_time']) ?? 0;
+            $collections[$key]['collection_start_time'] = date("H:i", $timeTableByCollectionKey[$key]['start_time']) ?? 0;
+            $collections[$key]['is_new'] = ($time - $value['publish_time']) < self::HALF_MONTH;
+        }
+
+        return $collections;
+    }
+
+    /**
+     * @param $studentId
+     * @return array
+     * 获取用户报名的所有课程
+     */
+    public static function getSignUpCollections($studentId)
+    {
+        $where = [
+            'student_id'  => $studentId,
+            'bind_status' => StudentSignUpCourseModel::COURSE_BING_SUCCESS
+        ];
+        $signUpCollections = StudentSignUpCourseModel::getRecords($where, ['collection_id']);
+        if (empty($signUpCollections)) {
+            return [];
+        }
+        foreach ($signUpCollections as $value) {
+            $signUpCollectionIds[] = $value['collection_id'];
+        }
+        return $signUpCollectionIds ?? [];
+    }
+
+
+    /**
+     * @param $opn
+     * @param $studentId
+     * @return array|array[]
      * 获取平台今明两天的开课计划
      */
-    public static function platformCoursePlan()
+    public static function platformCoursePlan($opn, $studentId)
     {
+        //获取所有可报名状态的集合信息
+        $todayWeek = date('N', time());
+        $collectionList = self::collectionsWithTimeAndTag($opn);
+        if (empty($collectionList)) {
+            return [];
+        }
+        $todayCoursePlan = self::studentCoursePlan($opn, $studentId, '1601474400');
+        $todayCoursePlanByCId = array_column($todayCoursePlan, null, 'collection_id');
+        $signUpCollections = self::getSignUpCollections($studentId);
+        foreach ($collectionList as $key => $value) {
+            if ($value['start_week'] = $todayWeek) {
+                if (in_array($value['collection_id'], $signUpCollections)) {
+                    $value['lesson_learn_status'] = $todayCoursePlanByCId[$value['collection_id']]['lesson_learn_status'];
+                    $value['lesson_id'] = $todayCoursePlanByCId[$value['collection_id']]['id'];
+                    $value['lesson_start_time'] = $todayCoursePlanByCId[$value['collection_id']]['lesson_start_time'];
+                    $value['lesson_start_timestamp'] = $todayCoursePlanByCId[$value['collection_id']]['lesson_start_timestamp'];
+                } else {
+                    $value['course_bind_status'] = self::COURSE_BIND_STATUS_UNREGISTER;
+                }
+                $today[] = $value;
+            } elseif (($value['start_week'] - 1) == $todayWeek) {
+                if (in_array($value['collection_id'], $signUpCollections)) {
+                    $value['course_bind_status'] = self::COURSE_BIND_STATUS_SUCCESS;
+                } else {
+                    $value['course_bind_status'] = self::COURSE_BIND_STATUS_UNREGISTER;
+                }
+                $tomorrow[] = $value;
+            }
+        }
+
         return [
-            'today'    => [
-                [
-                    'collection_id'         => 1,
-                    'collection_name'       => "哈农NO.1 第一课",
-                    "collection_start_time" => "20:00",
-                    'collection_tags'       => ['基本功', '启蒙']
-                ],
-                [
-                    'collection_id'         => 2,
-                    'collection_name'       => "哈农NO.1 第二课",
-                    "collection_start_time" => "19:35",
-                    'collection_tags'       => ['基本功', '启蒙']
-                ],
-            ],
-            'tomorrow' => [
-                [
-                    'collection_id'         => 1,
-                    'collection_name'       => "哈农NO.1 第一课",
-                    "collection_start_time" => "16:30",
-                    'collection_tags'       => ['基本功', '启蒙']
-                ],
-                [
-                    'collection_id'         => 2,
-                    'collection_name'       => "哈农NO.1 第二课",
-                    "collection_start_time" => "17:30",
-                    'collection_tags'       => ['基本功', '启蒙']
-                ],
-            ]
+            'today'    => $today ?? [],
+            'tomorrow' => $tomorrow ?? [],
         ];
     }
+
     /**
      * 可报名课程
      * @param $studentId

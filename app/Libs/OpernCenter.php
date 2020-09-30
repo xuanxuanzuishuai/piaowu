@@ -39,6 +39,8 @@ class OpernCenter
     const OPERN_API_KNOWLEDGE_SEARCH = '/api/knowledge/search';
 
     const OPERN_API_ENGINE = '/api/opern/engine';
+    const OPERN_API_TIMETABLE = '/api/opern/timetable';
+    const OPERN_API_OBJECT_TAGS = '/api/opern/object_tags';
 
     const DEFAULT_PAGE_SIZE = 20;
     const DEFAULT_AUDITING = 0;
@@ -421,6 +423,34 @@ class OpernCenter
         $result = self::commonAPI(self::OPERN_API_ENGINE, [
             'pro_id' => $this->proId,
             'pro_ver' => $this->proVer
+        ]);
+        return empty($result) ? [] : $result;
+    }
+
+    /**
+     * @param array $collectionIds
+     * @return array|bool|mixed
+     * 获取指定合集的上课时间表
+     */
+    public function timetable($collectionIds = [])
+    {
+        $result = self::commonAPI(self::OPERN_API_TIMETABLE, [
+            'collection_id' => $collectionIds,
+        ]);
+        return empty($result) ? [] : $result;
+    }
+
+    /**
+     * @param int $type
+     * @param array $collectionIds
+     * @return array|bool|mixed
+     * 获取指定对象的标签
+     */
+    public function objectTags($type = 1, $collectionIds = [])
+    {
+        $result = self::commonAPI(self::OPERN_API_OBJECT_TAGS, [
+            'object_type' => $type,
+            'object_id'   => $collectionIds,
         ]);
         return empty($result) ? [] : $result;
     }
