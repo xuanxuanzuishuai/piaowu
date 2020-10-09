@@ -141,6 +141,7 @@ class DictConstants {
             'get_lesson_rank_time_offset_20203',
             'get_lesson_rank_time_standard',
             'get_omr_music_score_search_switch',
+            'get_share_class_url',
         ]
     ];
 
