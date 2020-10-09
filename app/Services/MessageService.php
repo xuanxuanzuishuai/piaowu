@@ -189,6 +189,7 @@ class MessageService
             }
         }
         // 手机号模板文件：
+        // 上传手机号模板文件脚本：script/upload_mobile_number_template.php
         $filePath     = $_ENV['ENV_NAME'].'/'.AliOSS::DIR_MESSAGE_EXCEL."/mobile_number.xlsx";
         $templateFile = AliOSS::replaceCdnDomainForDss($filePath);
         return [MessagePushRulesModel::PUSH_TYPE_DICT, $templateFile, $data];
