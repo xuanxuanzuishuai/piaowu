@@ -70,6 +70,15 @@ class AIPlayReportService
         }
 
         $report = AIPlayRecordService::getDayReportData($studentId, $date);
+        //获取用户的今日课程，没有课程获取推荐课包
+        $todayClass = InteractiveClassroomService::studentCoursePlan($studentId, $date);
+        if (empty($todayClass)) {
+            $recommendCourse = InteractiveClassroomService::recommendCourse();
+        } else{
+            $recommendCourse = [];
+        }
+        $report['today_class'] = $todayClass;
+        $report['recommend_course'] = $recommendCourse;
         $report["day_report_fabulous"] = self::getDayReportFabulous($studentId, $date);
         $report["share_token"] = self::getShareReportToken($studentId, $date);
         $report['replay_token'] = AIBackendService::genStudentToken($studentId);
@@ -97,11 +106,21 @@ class AIPlayReportService
             'referee_id' => $TicketData['qr_ticket']
         );
 
+        //获取用户的今日课程，没有课程获取推荐课包
+        $todayClass = InteractiveClassroomService::studentCoursePlan($shareTokenInfo["student_id"], strtotime($shareTokenInfo["date"]));
+        if (empty($todayClass)) {
+            $recommendCourse = InteractiveClassroomService::recommendCourse();
+        } else{
+            $recommendCourse = [];
+        }
+
         $report['share_url'] = $playShareAssessUrl . '?' . http_build_query($data);
         $report['qr_ticket_image'] = empty($TicketData['qr_url']) ? '' : AliOSS::signUrls($TicketData['qr_url']);
         $report["share_token"] = $shareToken;
         $report['replay_token'] = AIBackendService::genStudentToken($shareTokenInfo["student_id"]);
         $report["day_report_fabulous"] = self::getDayReportFabulous($shareTokenInfo["student_id"], $shareTokenInfo["date"]);
+        $report['today_class'] = $todayClass;
+        $report['recommend_course'] = $recommendCourse;
         return $report;
     }
 
