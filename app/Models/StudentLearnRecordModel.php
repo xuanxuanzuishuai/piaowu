@@ -10,8 +10,13 @@ class StudentLearnRecordModel extends Model
 {
     public static $table = "student_learn_record";
 
-    const FINISH_LEARNING = 1;//完成上课
-    const GO_TO_THE_CLASS= 4; //去上课
+    const FINISH_LEARNING = 1;      //完成上课
+    const MAKE_UP_LESSONS = 2;      //已补课
+    const TO_MAKE_UP_LESSONS = 3;   //待补课
+    const GO_TO_THE_CLASS = 4;      //去上课
+    const UNLOCK_THE_CLASS = 5;     //未解锁
+    const LOCK_THE_CLASS = 0;       //已解锁
+
     /**
      * 获取用户已完成上课的节数
      * @param $studentId
