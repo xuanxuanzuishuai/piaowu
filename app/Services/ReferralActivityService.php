@@ -50,12 +50,8 @@ class ReferralActivityService
         $data['student_status'] = $studentInfo['student_status'];
         if ($studentInfo['student_status'] == StudentModel::STATUS_BUY_TEST_COURSE) {
             //付费体验课
-            if ($studentInfo['student_info']['collection_id']) {
-                $wechatQr = CollectionModel::getById($studentInfo['student_info']['collection_id'])['wechat_qr'];
-            } else {
-                $wechatQr = CollectionModel::getRecord(["type" => CollectionModel::COLLECTION_TYPE_PUBLIC], ['wechat_qr'], false)['wechat_qr'];
-            }
-            $data['oss_wechat_qr'] = AliOSS::signUrls($wechatQr);
+            list($needAddWx, $wechatQr) = CollectionService::getCollectionWechatInfo($studentInfo['student_info']['collection_id']);
+            $data['oss_wechat_qr'] = $wechatQr;
         } elseif ($studentInfo['student_status'] == StudentModel::STATUS_BUY_NORMAL_COURSE) {
             //付费正式课
             $activityInfo = self::getStudentActivityPoster($studentId);
