@@ -192,7 +192,7 @@ class MessageService
         // 上传手机号模板文件脚本：script/upload_mobile_number_template.php
         $filePath     = $_ENV['ENV_NAME'].'/'.AliOSS::DIR_MESSAGE_EXCEL."/mobile_number.xlsx";
         $templateFile = AliOSS::replaceCdnDomainForDss($filePath);
-        return [MessagePushRulesModel::PUSH_TYPE_DICT, $templateFile, $data];
+        return [$templateFile, $data];
     }
 
     /**
@@ -279,6 +279,7 @@ class MessageService
         $insertData = [];
         $insertData['type'] = $data['push_type'] ?? 0;
         $insertData['file'] = $data['push_file'] ?? '';
+        $insertData['create_time'] = time();
         $encodeList = ['content_1', 'content_2', 'image', 'first_sentence', 'activity_detail', 'activity_desc', 'remark', 'link'];
         foreach ($encodeList as $key) {
             if (isset($data[$key]) && !Util::emptyExceptZero($data[$key]) && is_string($data[$key])) {

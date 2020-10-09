@@ -178,13 +178,12 @@ class Message extends ControllerBase
     public function manualLastPush(Request $request, Response $response)
     {
         try {
-            list($typeDict, $templateFile, $data) = MessageService::manualLastPush();
+            list($templateFile, $data) = MessageService::manualLastPush();
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
 
         return HttpHelper::buildResponse($response, [
-            'type' => $typeDict,
             'file' => $templateFile,
             'data' => $data,
         ]);

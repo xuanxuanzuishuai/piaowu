@@ -28,10 +28,13 @@ CREATE TABLE `message_manual_push_log` (
   `type` tinyint(1) NOT NULL DEFAULT 1 COMMENT '推送形式:1客服消息;2模板消息;',
   `file` varchar(256) NOT NULL DEFAULT '' COMMENT '用户EXCEL地址',
   `data` json DEFAULT NULL COMMENT '发送数据JSON',
+  `create_time` int(10) NOT NULL COMMENT '创建时间',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '手动推送历史记录';
 
 INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`) VALUES
+        ('message_push_type', '消息推送形式', '1', '客服消息'),
+        ('message_push_type', '消息推送形式', '2', '模板消息'),
         ('message_rule_active_status', '消息推送规则启动状态', '1', '已启用'),
         ('message_rule_active_status', '消息推送规则启动状态', '0', '未启用');
 
