@@ -4,6 +4,7 @@
 namespace App\Services;
 
 use App\Libs\Constants;
+use App\Models\StudentCollectionExceptModel;
 use App\Libs\HttpHelper;
 use App\Models\StudentLearnRecordModel;
 use App\Models\StudentModel;
@@ -15,9 +16,12 @@ use App\Libs\Util;
 class InteractiveClassroomService
 {
     //学生上课状态
+    const FINISH_LEARNING = 1;      //完成上课
+    const MAKE_UP_LESSONS = 2;      //已补课
     const TO_MAKE_UP_LESSONS = 3;   //待补课
     const GO_TO_THE_CLASS = 4;      //去上课
-
+    const LOCK_THE_CLASS = 5;       //未解锁
+    const UNLOCK_THE_CLASS = 0;     //已解锁
 
     //常用时间片段时间戳
     const WEEK_TIMESTAMP = 604800;              //一周
@@ -67,46 +71,77 @@ class InteractiveClassroomService
     }
 
     /**
-     * @return array[]
+     * @param $opn
+     * @param $page
+     * @param $studentId
+     * @param int $pageSize
+     * @return array|mixed
      * 待上线课程
      */
-    public static function preOnlineCourse()
+    public static function preOnlineCourse($opn, $page, $studentId, $pageSize = 4)
     {
+        $expectBaseNum = 3000;
+        $categoryId = self::erpCategory($opn);
+        if (empty($categoryId)) {
+            return [];
+        }
+
+        $result = $opn->collections($categoryId, $page, $pageSize, self::COLLECTION_STATUS_PRE_ONLINE);
+        if (empty($result['data']['list'])){
+            return [];
+        }
+        $collectionIds = array_keys(array_column($result['data']['list'],null,'id'));
+        $expectNum = StudentCollectionExceptModel::collectionExpectNum($collectionIds);
+        $expectNumByCollection = array_column($expectNum,null,'collection_id');
+        $isExceptByStudent = StudentCollectionExceptModel::isExceptByStudent($studentId);
+        $eisExceptByCollection = array_column($isExceptByStudent,null,'collection_id');
+
+        foreach ($result['data']['list'] as $key => $value){
+            $collectionList[] = [
+                'collection_id'   => $value['id'],
+                'collection_name' => $value['name'],
+                'collection_img'  => $value['cover'],
+                'expect_num'      => $expectBaseNum + $expectNumByCollection[$value['id']]['num'],
+                'is_expect'       => isset($eisExceptByCollection[$value['id']]),
+            ];
+        }
+
         return [
-            [
-                'collection_id'   => 1,
-                'collection_name' => "哈农NO.1 第一课",
-                'collection_img'  => 'www.baidu.com',
-                'expect_num'      => '6000',
-                'is_expect'       => true
-            ],
-            [
-                'collection_id'   => 2,
-                'collection_name' => "哈农NO.1 第二课",
-                'collection_img'  => 'www.baidu.com',
-                'expect_num'      => '6000',
-                'is_expect'       => true
-            ],
+            'total_count' => $result['data']['total_count'],
+            'list' => $collectionList ?? [],
         ];
     }
 
     /**
+     * @param $opn
+     * @param int $page
+     * @param int $pageSize
      * @return array[]
      * 制作中课程
      */
-    public static function makingCourse()
+    public static function makingCourse($opn, $page = 1, $pageSize = 4)
     {
+        $categoryId = self::erpCategory($opn);
+        if (empty($categoryId)) {
+            return [];
+        }
+
+        $result = $opn->collections($categoryId, $page, $pageSize, self::COLLECTION_STATUS_MAKING);
+        if (empty($result['data']['list'])){
+            return [];
+        }
+
+        foreach ($result['data']['list'] as $key => $value){
+            $collectionList[] = [
+                'collection_id'   => $value['id'],
+                'collection_name' => $value['name'],
+                'collection_img'  => $value['cover'],
+            ];
+        }
+
         return [
-            [
-                'collection_id'   => 1,
-                'collection_name' => "哈农NO.1 第一课",
-                'collection_img'  => 'www.baidu.com',
-            ],
-            [
-                'collection_id'   => 2,
-                'collection_name' => "哈农NO.1 第二课",
-                'collection_img'  => 'www.baidu.com',
-            ],
+            'total_count' => $result['data']['total_count'],
+            'list' => $collectionList ?? [],
         ];
     }
 
@@ -116,7 +151,7 @@ class InteractiveClassroomService
      * @return array
      * 根据集合ID获取课程的封面
      */
-    public static function getLessonCovers($opn,$collectionIds)
+    public static function getLessonCovers($opn, $collectionIds)
     {
         $result = $opn->collectionsByIds($collectionIds);
         if (empty($result['data'])) {
@@ -131,13 +166,13 @@ class InteractiveClassroomService
     /**
      * @param $opn
      * @param $collectionIds
+     * @param int $page
+     * @param int $pageSize
      * @return array
      * 获取每个几个的课程ID并根据是否付费进行分类
      */
-    public static function getLessonIds($opn, $collectionIds)
+    public static function getLessonIds($opn, $collectionIds, $page = 1, $pageSize = 50)
     {
-        $page = 1;
-        $pageSize = 50;
         foreach ($collectionIds as $v) {
             $result = $opn->lessons($v, $page, $pageSize);
             foreach ($result['data']['list'] as $value) {
@@ -247,13 +282,13 @@ class InteractiveClassroomService
 
     /**
      * @param $opn
+     * @param int $page
+     * @param int $pageSize
      * @return int|mixed
      * 获取互动课堂分类ID（唯一）
      */
-    public static function erpCategory($opn)
+    public static function erpCategory($opn, $page = 1, $pageSize = 1)
     {
-        $page = 1;
-        $pageSize = 1;
         $result = $opn->categories($page, $pageSize);
         return $result['data']['list'][0]['id'] ?? 0;
     }
@@ -261,13 +296,13 @@ class InteractiveClassroomService
     /**
      * @param $opn
      * @param int $type
+     * @param int $page
+     * @param int $pageSize
      * @return array
      * 获取互动课堂指定状态集合信息
      */
-    public static function erpCollection($opn, $type = self::COLLECTION_STATUS_SIGN_UP)
+    public static function erpCollection($opn, $type = self::COLLECTION_STATUS_SIGN_UP, $page = 1, $pageSize = 100)
     {
-        $page = 1;
-        $pageSize = 100;
         $categoryId = self::erpCategory($opn);
         if (empty($categoryId)) {
             return [];
@@ -426,6 +461,163 @@ class InteractiveClassroomService
             'today'    => $today ?? [],
             'tomorrow' => $tomorrow ?? [],
         ];
+    }
+
+    /**
+     * @param $opn
+     * @param $collectionId
+     * @param $studentId
+     * @param int $page
+     * @param int $pageSize
+     * @return array
+     * 课程详情
+     */
+    public static function collectionDetail($opn, $collectionId, $studentId, $page = 1, $pageSize = 50)
+    {
+        //获取课包的所有数据
+        $collectionResult = $opn->collectionsByIds($collectionId);
+        if (empty($collectionResult['data'])) {
+            return [];
+        }
+        $collection = $collectionResult['data'];
+
+        //整合tags
+        $tagsResult = $opn->objectTags(self::OBJECT_COLLECTION, $collectionId);
+        if (!empty($tagsResult['data'])) {
+            foreach ($tagsResult['data'][$collectionId] as $value) {
+                if ($value['outer_view']) {
+                    $tags[] = $value['name'];
+                }
+            }
+        }
+
+        //整合课程信息
+        $lessonResult = $opn->lessons($collectionId, $page, $pageSize);
+        $collection[0]['lessons'] = $lessonResult['data']['list'] ?? [];
+
+        //整合课包开课时间
+        $timeTableResult = $opn->timetable($collectionId);
+        $collection[0]['collection_start_week'] = $timeTableResult['data'][0]['start_week_day'] ?? '';
+        $collection[0]['collection_start_time'] = $timeTableResult['data'][0]['start_time'] ?? '';
+
+        //获取报名状态
+        $collectionLearnRecord = StudentSignUpCourseModel::getLearnRecordByCollection($collectionId, $studentId);
+        $collectionLearnRecordByLessonId = array_column($collectionLearnRecord, null, 'lesson_id');
+        if (!empty($collectionLearnRecord)) {
+            $collection[0]['collection_bind_status'] = $collectionLearnRecord[0]['bind_status'] ?? self::COURSE_BIND_STATUS_UNREGISTER;
+        }
+
+        //判断课程状态
+        $time = time();
+        if (!empty($collection[0]['lessons'])) {
+            foreach ($collection[0]['lessons'] as $value) {
+                if ($value['freeflag'] == true) {
+                    $learn_status = self::UNLOCK_THE_CLASS;
+                    $freeLessonList[] = $value['lesson_id'];
+                } else {
+                    $payLessonList[] = $value['lesson_id'];
+                    $learn_status = self::LOCK_THE_CLASS;
+                    //当前为报名状态
+                    if ($collection['collection_bind_status'] == self::COURSE_BIND_STATUS_SUCCESS) {
+                        if (isset($collectionLearnRecordByLessonId[$value['lesson_id']])) {
+                            $learn_status = $collectionLearnRecordByLessonId[$value['lesson_id']]['sort'];
+                        } else {
+                            $courseStartTime = (count($payLessonList) - 1) * self::WEEK_TIMESTAMP + $collectionLearnRecord[0]['first_course_time'];
+                            $subEndDay = strtotime($collectionLearnRecord[0]['sub_end_date']);
+                            if ($courseStartTime > $subEndDay) {
+                                $learn_status = self::LOCK_THE_CLASS;
+                            } elseif ($time >= $courseStartTime && $time <= ($courseStartTime + self::HALF_HOUR)) {
+                                $learn_status = self::GO_TO_THE_CLASS;
+                            } elseif (time() < ($courseStartTime + self::HALF_HOUR) && $courseStartTime < $subEndDay) {
+                                $learn_status = self::TO_MAKE_UP_LESSONS;
+                            }
+                        }
+                    } else {
+                        //当前为取消报名状态但是之前报过名
+                        if (!empty($collectionLearnRecord)) {
+                            if (isset($collectionLearnRecordByLessonId[$value['lesson_id']])) {
+                                $learn_status = $collectionLearnRecordByLessonId[$value['lesson_id']]['sort'];
+                            } else {
+                                $courseStartTime = (count($payLessonList) - 1) * self::WEEK_TIMESTAMP + $collectionLearnRecord[0]['first_course_time'];
+                                $subEndDay = strtotime($collectionLearnRecord[0]['sub_end_date']);
+
+                                if ($courseStartTime >= $collectionLearnRecord[0]['update_time'] || $courseStartTime > $subEndDay) {
+                                    $learn_status = self::LOCK_THE_CLASS;
+                                } elseif ($time >= $courseStartTime && $time <= ($courseStartTime + self::HALF_HOUR)) {
+                                    $learn_status = self::GO_TO_THE_CLASS;
+                                } elseif (time() < ($courseStartTime + self::HALF_HOUR) && $courseStartTime < $subEndDay) {
+                                    $learn_status = self::TO_MAKE_UP_LESSONS;
+                                }
+                            }
+                        } else {
+                            $learn_status = self::LOCK_THE_CLASS;
+                        }
+                    }
+                }
+                $lesson[] = [
+                    'lesson_id'      => $value['lesson_id'],
+                    'lesson_name'    => $value['lesson_name'],
+                    'learn_freeflag' => $value['freeflag'],
+                    'learn_status'   => $learn_status,
+                    'learn_sort'     => $value['sort'],
+                ];
+            }
+        }
+
+        foreach ($collection as $value) {
+            $result = [
+                'collection_id'         => $value['id'],
+                'collection_name'       => $value['name'],
+                "collection_start_week" => $value['collection_start_week'],
+                "collection_start_time" => date('H:i', $value['collection_start_time']) ?? "00:00",
+                'collection_tags'       => $tags ?? [],
+                'collection_cover'      => $value['cover'],
+                'collection_desc'       => $value['abstract'],
+                'lessons'               => $lesson ?? [],
+            ];
+        }
+
+        return $result ?? [];
+    }
+
+    /**
+     * @param $opn
+     * @param $collectionId
+     * @param int $page
+     * @param int $pageSize
+     * @return array
+     * 获取单个课包推荐信息【完课报告分享页】
+     */
+    public static function erpCollectionByIds($opn, $collectionId, $page = 1, $pageSize = 50)
+    {
+        $collectionResult = $opn->collectionsByIds($collectionId);
+        if (empty($collectionResult['data'])) {
+            return [];
+        }
+        $collection = $collectionResult['data'];
+
+        //整合课程信息
+        $lessonResult = $opn->lessons($collectionId, $page, $pageSize);
+        if (!empty($lessonResult['data']['list'])){
+            foreach ($lessonResult['data']['list'] as $key => $value){
+                if ($value['freeflag'] == true){
+                    $lesson = $value;
+                }
+            }
+        }
+
+        //整合课包开课时间
+        $timeTableResult = $opn->timetable($collectionId);
+
+        $data = [
+            'collection_id'         => $collection[0]['id'],
+            'collection_name'       => $collection[0]['name'],
+            "collection_start_week" => $timeTableResult['data'][0]['start_week_day'] ?? '',
+            "collection_start_time" => $timeTableResult['data'][0]['start_time'] ?? '',
+            'collection_desc'       => $collection[0]['abstract'],
+            'lessons_url'           => $lesson['resources']['resource_url'] ?? '',
+        ];
+        return $data ?? [];
     }
 
     /**

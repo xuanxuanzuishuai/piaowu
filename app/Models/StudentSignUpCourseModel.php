@@ -2,6 +2,7 @@
 /**
  *  用户报名课包
  */
+
 namespace App\Models;
 
 use App\Libs\MysqlDB;
@@ -40,9 +41,9 @@ class StudentSignUpCourseModel extends Model
         $sql = "select * from student_sign_up where bind_status = :bind_status and student_id = :student_id and !(last_course_time < :start_time) and !(first_course_time > :end_time)";
         $map = [
             ':bind_status' => self::COURSE_BING_SUCCESS,
-            ':student_id' => $studentId,
-            ':start_time' => $startTime,
-            ':end_time' => $endTime
+            ':student_id'  => $studentId,
+            ':start_time'  => $startTime,
+            ':end_time'    => $endTime
         ];
 
         $studentBindCourse = MysqlDB::getDB()->queryAll($sql, $map);
@@ -63,8 +64,8 @@ class StudentSignUpCourseModel extends Model
 
         $startMonth = date('m', $collectionData['first_course_time']);
         $endMonth = date('m', $collectionData['last_course_time']);
-        for ($i=0; $i <= $endMonth - $startMonth; $i++) {
-            $delMonth = $startMonth+$i;
+        for ($i = 0; $i <= $endMonth - $startMonth; $i++) {
+            $delMonth = $startMonth + $i;
             $cacheKey = self::STUDENT_LEARN_MONTH_CALENDAR . $studentId . '_0' . $delMonth;
             $redis->del([$cacheKey]);
         }
@@ -76,7 +77,7 @@ class StudentSignUpCourseModel extends Model
      * @return array|null
      * 获取用户截止指定时间点当天的报名课程及其上课记录
      */
-    public static function getLearnRecords($studentId,$timestamp)
+    public static function getLearnRecords($studentId, $timestamp)
     {
         $signUp = self::$table;
         $learnRecord = StudentLearnRecordModel::$table;
@@ -89,8 +90,41 @@ class StudentSignUpCourseModel extends Model
 
         $sql = "select s.collection_id, s.start_week, s.start_time, s.first_course_time, s.bind_status, s.update_time, l.lesson_id, l.sort, l.learn_status, stu.sub_end_date from {$signUp} as s 
                 inner join {$student} as stu on s.student_id = stu.id 
-                left join {$learnRecord} as l on s.collection_id = l.collection_id and s.student_id = l.student_id where " . $where . "group by s.student_id,s.collection_id";
+                left join {$learnRecord} as l on s.collection_id = l.collection_id and s.student_id = l.student_id where " . $where . "group by s.collection_id";
         $db = MysqlDB::getDB();
         return $db->queryAll($sql);
+    }
+
+    /**
+     * @param $collectionId
+     * @param $studentId
+     * @return array
+     * 获取某个学生指定课程的学习记录
+     */
+    public static function getLearnRecordByCollection($collectionId, $studentId)
+    {
+        $signUp = self::$table;
+        $learnRecord = StudentLearnRecordModel::$table;
+        $student = StudentModel::$table;
+
+        return MysqlDB::getDB()->select("$signUp(sin)", [
+            "[><]{$learnRecord}(lr)" => ["sin.collection_id" => "collection_id", "sin.student_id" => "student_id"],
+            "[><]{$student}(s)"      => ["sin.student_id" => "id"],
+        ], [
+            "sin.collection_id",
+            "sin.start_week",
+            "sin.start_time",
+            "sin.first_course_time",
+            "sin.bind_status",
+            "sin.update_time",
+            "lr.lesson_id",
+            "lr.sort",
+            "lr.learn_status",
+            "s.has_review_course",
+            "s.sub_end_date",
+        ], [
+            "sin.collection_id" => $collectionId,
+            "sin.student_id"    => $studentId,
+        ]);
     }
 }

@@ -2,6 +2,7 @@
 /**
  * 用户上课记录
  */
+
 namespace App\Models;
 
 use App\Libs\MysqlDB;
@@ -28,7 +29,7 @@ class StudentLearnRecordModel extends Model
 
         $sql = "select COUNT(DISTINCT(lesson_id)) attend_class_count,collection_id from {$studentLearnRecord} where student_id = :student_id and learn_status = :learn_status  group by collection_id";
         $map = [
-            ':student_id' => $studentId,
+            ':student_id'   => $studentId,
             ':learn_status' => self::FINISH_LEARNING
         ];
         $records = MysqlDB::getDB()->queryAll($sql, $map);
