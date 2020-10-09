@@ -14,7 +14,7 @@ use App\Models\MessageRecordModel;
 class MessageRecordService
 {
 
-    public static function add($type, $activityId, $successNum, $failNum, $employeeId, $time)
+    public static function add($type, $activityId, $successNum, $failNum, $employeeId, $time, $activityType)
     {
         MessageRecordModel::insertRecord([
             'type' => $type,
@@ -22,7 +22,8 @@ class MessageRecordService
             'success_num' => $successNum,
             'fail_num' => $failNum,
             'operator_id' => $employeeId,
-            'create_time' => $time
+            'create_time' => $time,
+            'activity_type' => $activityType
         ]);
     }
 
@@ -31,14 +32,16 @@ class MessageRecordService
      * @param $activityId
      * @param $employeeId
      * @param $pushWxTime
+     * @param $activityType
      * @return mixed
      */
-    public static function getMsgRecord($activityId, $employeeId, $pushWxTime)
+    public static function getMsgRecord($activityId, $employeeId, $pushWxTime, $activityType)
     {
         return MessageRecordModel::getRecord([
             'activity_id' => $activityId,
             'create_time' => $pushWxTime,
-            'operator_id' => $employeeId
+            'operator_id' => $employeeId,
+            'activity_type' => $activityType
         ]);
     }
 

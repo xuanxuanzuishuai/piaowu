@@ -7,20 +7,40 @@
 
 namespace App\Services;
 
+use App\Libs\DictConstants;
 use App\Libs\RedisDB;
+use App\Libs\SimpleLogger;
+use App\Libs\UserCenter;
+use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\MessagePushRulesModel;
 use App\Models\MessageManualPushLogModel;
 use App\Libs\Util;
 use App\Libs\AliOSS;
 use App\Libs\Exceptions\RunTimeException;
+use App\Models\MessageRecordModel;
 use App\Models\PosterModel;
+use App\Models\PackageExtModel;
+use App\Models\ReferralModel;
+use App\Models\ReviewCourseModel;
+use App\Models\SharePosterModel;
+use App\Models\StudentModel;
+use App\Models\UserQrTicketModel;
+use App\Models\UserWeixinModel;
 use App\Models\WeChatConfigModel;
+use App\Services\Queue\QueueService;
 use Exception;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class MessageService
 {
     const PUSH_MESSAGE_RULE_KEY = 'push_message_rules';
+    //用户接收微信消息的限制
+    const PUSH_MESSAGE_RULE = [
+        ['expire_time' => '14400', 'limit' => 1],
+        ['expire_time' => '172800', 'limit' => 2]
+    ];
+    //用户消息规则key
+    const MESSAGE_RULE_KEY = 'message_rule_key_';
 
     /**
      * @param $params
@@ -126,7 +146,6 @@ class MessageService
         $rule['display_target']    = MessagePushRulesModel::PUSH_TARGET_DICT[$rule['target']] ?? '';
         $rule['update_time']       = date('Y-m-d H:i:s', $rule['update_time']);
         $rule['display_is_active'] = DictService::getKeyValue('message_rule_active_status', $rule['is_active']);
-        
         // 解析【推送时间】字段
         if (!isset($rule['display_time']) && isset($rule['time'])) {
             $time = json_decode($rule['time'], true);
@@ -264,5 +283,300 @@ class MessageService
         }
         $insertData['data'] = json_encode($data);
         return MessageManualPushLogModel::insertRecord($insertData, false);
+    }
+
+    /**
+     * @param $data
+     * 消息队列发送消息
+     */
+    public static function realSendMessage($data)
+    {
+        //实际发送前再次确认带过来的规则是否适用
+        $data = self::transformOpenidRelateRule($data);
+        //校验是否超过发送消息限制
+        $verify = self::preSendVerify($data['open_id'], $data['rule_id']);
+        if (empty($verify)) {
+            return;
+        }
+        $messageRule = self::getMessagePushRuleByID($data['rule_id']);
+        //发送客服消息
+        if ($messageRule['type'] == MessagePushRulesModel::PUSH_TYPE_CUSTOMER) {
+            self::pushCustomMessage($messageRule, $data);
+        }
+        //记录发送限制
+        self::recordUserMessageRuleLimit($data['open_id']);
+    }
+
+    /**
+     * @param $data
+     * 手动消息
+     */
+    public static function realSendManualMessage($data)
+    {
+        $info = MessageManualPushLogModel::getById($data['log_id']);
+        if ($info['type'] == MessagePushRulesModel::PUSH_TYPE_TEMPLATE) {
+            //模版消息
+            $templateConfig = json_decode($info['data'], true);
+            $sendData = [];
+            //根据关键标志替换模板内容
+            $sendData['first']['value'] = $templateConfig['first_sentence'] ?? '';
+            $sendData['keyword1']['value'] = $templateConfig['activity_detail'] ?? '';
+            $sendData['keyword2']['value'] = $templateConfig['activity_desc'] ?? '';
+            $sendData['remark']['value'] = $templateConfig['remark'] ?? '';
+            $result = WeChatService::notifyUserWeixinTemplateInfo(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT, WeChatService::USER_TYPE_STUDENT,
+                $data['open_id'],
+                DictConstants::get(DictConstants::MESSAGE_RULE, 'assign_template_id'), $sendData, $templateConfig['link']);
+        }
+
+        $successNum = $result ? 1 : 0;
+        $failNum = $result ? 0 : 1;
+        // 发微信的记录
+        $record = MessageRecordService::getMsgRecord($data['log_id'], $data['employee_id'], $data['push_wx_time'], $data['activity_type']);
+        if (empty($record)) {
+            MessageRecordService::add(MessageRecordModel::MSG_TYPE_WEIXIN, $data['log_id'], $successNum, $failNum, $data['employee_id'], $data['push_wx_time'], $data['activity_type']);
+        } else {
+            MessageRecordService::updateMsgRecord($record['id'], [
+                'success_num[+]' => $successNum,
+                'fail_num[+]' => $failNum,
+                'update_time' => time()
+            ]);
+        }
+    }
+
+    /**
+     * @param $messageRule
+     * @param $data
+     * 基于规则 发送客服消息
+     */
+    private static function pushCustomMessage($messageRule, $data)
+    {
+        //即时发送
+        array_map(function ($item)use($data) {
+            if (empty($item['value'])) {
+                return;
+            }
+            if ($item['type'] == WeChatConfigModel::CONTENT_TYPE_TEXT) { //发送文本消息
+                //转义数据
+                $content = Util::textDecode($item['value']);
+                WeChatService::notifyUserWeixinTextInfo(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
+                    UserWeixinModel::USER_TYPE_STUDENT, $data['open_id'], $content);
+            } elseif ($item['type'] == WeChatConfigModel::CONTENT_TYPE_IMG) { //发送图片消息
+                $posterImgFile = self::dealPosterByRule($data, $item);
+                if (empty($posterImgFile)) {
+                    return;
+                }
+                //上传到微信服务器
+                $weChatAppIdSecret = WeChatService::getWeCHatAppIdSecret(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT, UserWeixinModel::USER_TYPE_STUDENT);
+
+                $wx = WeChatMiniPro::factory(['app_id' => $weChatAppIdSecret['app_id'], 'app_secret' => $weChatAppIdSecret['secret']]);
+                if (empty($wx)) {
+                    SimpleLogger::error('wx create fail', ['we_chat_type'=>UserWeixinModel::USER_TYPE_STUDENT]);
+                    return;
+                }
+                $data = $wx->getTempMedia('image', $posterImgFile['unique'], $posterImgFile['poster_save_full_path']);
+                //发送海报
+                if (!empty($data['media_id'])) {
+                    WeChatService::toNotifyUserWeixinCustomerInfoForImage(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT, UserWeixinModel::USER_TYPE_STUDENT, $data['open_id'], $data['media_id']);
+                }
+            }
+        }, $messageRule['content']);
+    }
+
+    /***
+     * @param $data
+     * @param $item
+     * @return array|string|void
+     * 基于规则处理要发送的图片
+     */
+    private static function dealPosterByRule($data, $item)
+    {
+        //走关注规则，无法获取转介绍二维码
+        if ($data['rule_id'] == DictConstants::get(DictConstants::MESSAGE_RULE, 'subscribe_rule_id')) {
+            $posterImgFile = ['poster_save_full_path' => $item['value'], 'unique' => md5($data['open_id'].$item['value'])];
+        } else {
+            //非关注拼接转介绍二维码
+            $userInfo = UserWeixinModel::getBoundInfoByOpenId($data['open_id'],
+                UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
+                WeChatService::USER_TYPE_STUDENT,
+                UserWeixinModel::BUSI_TYPE_STUDENT_SERVER);
+            if (empty($userInfo['user_id'])) {
+                return;
+            }
+            $posterImgFile = UserService::generateQRPosterAliOss($userInfo['user_id'], $item['path'], UserQrTicketModel::STUDENT_TYPE, $item['poster_width'], $item['poster_height'], $item['qr_width'], $item['qr_height'], $item['qr_x'], $item['qr_y'], DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'NORMAL_STUDENT_INVITE_STUDENT'));
+        }
+        return $posterImgFile;
+    }
+
+    /**
+     * @param $data
+     * @return mixed
+     * 特定规则在实际发送的时候需要依据最新用户状态
+     */
+    public static function transformOpenidRelateRule($data)
+    {
+        if (!in_array($data['rule_id'], DictConstants::getValues(DictConstants::MESSAGE_RULE, [
+            'year_user_c_rule_id',
+            'trail_user_c_rule_id',
+            'register_user_c_rule_id'
+        ]))) {
+            return $data;
+        }
+        $data['rule_id'] = self::judgeUserRelateRuleId($data['open_id']);
+        return $data;
+    }
+
+    /**
+     * @param $openId
+     * @param $ruleId
+     * 发送消息
+     */
+    public static function sendMessage($openId, $ruleId)
+    {
+        is_string($openId) && $openId = [$openId];
+        $sendArr = [];
+        array_map(function ($item)use($ruleId, &$sendArr){
+            $sendArr[] = self::preSendVerify($item, $ruleId);
+        },$openId);
+        QueueService::messageRulePushMessage($sendArr);
+    }
+
+    /**
+     * @param $openId
+     * @param $ruleId
+     * @return array|void
+     * 发送消息的前置校验
+     */
+    public static function preSendVerify($openId, $ruleId)
+    {
+        //是否超过次数限制
+        if (self::judgeOverMessageRuleLimit($openId)) {
+            return;
+        }
+        //是否开启
+        $messageRule = self::getMessagePushRuleByID($ruleId);
+        if (in_array($messageRule['is_active'], [MessagePushRulesModel::STATUS_DOWN, MessagePushRulesModel::STATUS_DISABLE])) {
+            SimpleLogger::info('message rule not active ', ['rule_id' => $ruleId]);
+            return;
+        }
+        //延迟时间
+        $delayTime = $messageRule['setting']['delay_time'];
+        return ['delay_time' => $delayTime, 'rule_id' => $ruleId, 'open_id' => $openId];
+    }
+
+    /**
+     * @param $openId
+     * 清除用户的消息规则限制
+     */
+    public static function clearMessageRuleLimit($openId)
+    {
+        $redis = RedisDB::getConn();
+        array_map(function ($item)use($redis, $openId){
+            $redis->del([self::MESSAGE_RULE_KEY . $item['expire_time'] . '_' . $openId]);
+        }, self::PUSH_MESSAGE_RULE);
+    }
+
+    /**
+     * @param $openId
+     * @return bool
+     * 判断当前用户是否超过限制条数
+     */
+    public static function judgeOverMessageRuleLimit($openId)
+    {
+        $redis = RedisDB::getConn();
+        foreach (self::PUSH_MESSAGE_RULE as $v) {
+            $key = self::MESSAGE_RULE_KEY . $v['expire_time'] . '_' .  $openId;
+            $num = intval($redis->get($key));
+            if ($num >= $v['limit']) {
+                SimpleLogger::info('message over num limit ', ['expire_time' => $v['expire_time']]);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @param $openId
+     * 记录用户有效时间消息发送的条数
+     */
+    public static function recordUserMessageRuleLimit($openId)
+    {
+        $redis = RedisDB::getConn();
+        array_map(function ($item) use($redis, $openId) {
+            $value = $redis->get(self::MESSAGE_RULE_KEY . $item['expire_time'] . '_' .  $openId);
+            $redis->setex(self::MESSAGE_RULE_KEY . $item['expire_time'] . '_' . $openId, $item['expire_time'], (int)$value + 1);
+        },self::PUSH_MESSAGE_RULE);
+    }
+
+    /**
+     * @param $openId
+     * 用户与微信交互后的消息处理
+     */
+    public static function interActionDealMessage($openId)
+    {
+        $ruleId = self::judgeUserRelateRuleId($openId);
+        if (!empty($ruleId)) {
+            self::sendMessage($openId, $ruleId);
+        }
+
+    }
+
+    /**
+     * @param $openId
+     * @return array|mixed|void|null
+     * 当前交互用户适用哪类推送
+     */
+    public static function judgeUserRelateRuleId($openId)
+    {
+        //当前用户
+        $userInfo = UserWeixinModel::getBoundInfoByOpenId($openId,
+            UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
+            WeChatService::USER_TYPE_STUDENT,
+            UserWeixinModel::BUSI_TYPE_STUDENT_SERVER);
+        //当前用户属于何种用户分类
+        if (empty($userInfo['user_id'])) {
+            return;
+        }
+        $time = time();
+        $studentInfo = StudentModel::getById($userInfo['user_id']);
+        list($inviteDiffTime, $resultDiffTime) = DictConstants::getValues(DictConstants::MESSAGE_RULE, ['how_long_not_invite', 'how_long_not_result']);
+        //所有年包id
+        $yearPackageIdArr = array_column(PackageExtModel::getPackages(['package_type' => PackageExtModel::PACKAGE_TYPE_NORMAL]), 'package_id');
+        //7天内转介绍行为
+        $inviteOperateInfo = SharePosterModel::getRecord(['student_id' => $studentInfo['id'], 'create_time[>]' => $time - $inviteDiffTime]);
+        if ($studentInfo['has_review_course'] == ReviewCourseModel::REVIEW_COURSE_1980) {
+            //转介绍结果（30天内带来例子)
+            $inviteResultInfo = ReferralModel::getRecord(['referrer_id' => $studentInfo['id'], 'create_time[>]' => $time - $resultDiffTime]);
+            if (empty($inviteOperateInfo) && empty($inviteResultInfo)) {
+                //年卡c用户
+                return DictConstants::get(DictConstants::MESSAGE_RULE, 'year_user_c_rule_id');
+            }
+        } else {
+            //转介绍结果（30天被推荐人付费年卡）
+            $inviteResultInfo = ReferralModel::refereeBuyCertainPackage($studentInfo['id'], $yearPackageIdArr, $time - $resultDiffTime);
+            if (empty($inviteOperateInfo) && empty($inviteResultInfo)) {
+                return $studentInfo['has_review_course'] == ReviewCourseModel::REVIEW_COURSE_NO ? DictConstants::get(DictConstants::MESSAGE_RULE, 'register_user_c_rule_id') : DictConstants::get(DictConstants::MESSAGE_RULE, 'trail_user_c_rule_id');
+            }
+        }
+        SimpleLogger::info('not message rule apply user ', ['student_id' => $studentInfo['id']]);
+        return ;
+    }
+
+    /**
+     * @param $logId
+     * @param $mobileArr
+     * @param $employeeId
+     * 手动发送消息
+     */
+    public static function manualPushMessage($logId, $mobileArr, $employeeId)
+    {
+        $boundUsers = UserWeixinModel::getBoundInfoByMobile($mobileArr, UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT, WeChatService::USER_TYPE_STUDENT, UserWeixinModel::BUSI_TYPE_STUDENT_SERVER);
+        $info = MessageManualPushLogModel::getById($logId);
+        $content = json_decode($info['data'], true);
+        if ($info['type'] == MessagePushRulesModel::PUSH_TYPE_CUSTOMER) {
+            // 放到nsq队列中一个个处理
+            QueueService::pushWX($boundUsers,$content['content_1'] ?? '', $content['content_2'] ?? '', $content['image'] ?? '', $logId, $employeeId, MessageRecordModel::MANUAL_PUSH);
+        } else {
+            QueueService::manualPushMessage($boundUsers, $logId, $employeeId, MessageRecordModel::MANUAL_PUSH);
+        }
     }
 }

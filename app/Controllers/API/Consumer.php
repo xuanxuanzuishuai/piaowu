@@ -18,6 +18,7 @@ use App\Services\CallCenterService;
 use App\Services\CallCenterTRLogService;
 use App\Services\ChannelService;
 use App\Services\LeadsPool\LeadsService;
+use App\Services\MessageService;
 use App\Services\PlayClassRecordMessageService;
 use App\Services\Queue\PushMessageTopic;
 use App\Services\Queue\TableSyncTopic;
@@ -183,6 +184,12 @@ class Consumer extends ControllerBase
                 break;
             case PushMessageTopic::EVENT_NEW_LEADS:
                 LeadsService::newLeads($params['msg_body']);
+                break;
+            case PushMessageTopic::EVENT_PUSH_RULE_WX:
+                MessageService::realSendMessage($params['msg_body']);
+                break;
+            case PushMessageTopic::EVENT_PUSH_MANUAL_RULE_WX:
+                MessageService::realSendManualMessage($params['msg_body']);
                 break;
             default:
                 SimpleLogger::error('consume_push_message', ['unknown_event_type' => $params['event_type']]);

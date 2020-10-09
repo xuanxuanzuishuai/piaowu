@@ -425,7 +425,7 @@ class ReferralActivityService
 
         // 发短信记录
         $failNum = count($students) - $successNum;
-        MessageRecordService::add(MessageRecordModel::MSG_TYPE_SMS, $activityId, $successNum, $failNum, $employeeId, time());
+        MessageRecordService::add(MessageRecordModel::MSG_TYPE_SMS, $activityId, $successNum, $failNum, $employeeId, time(), MessageRecordModel::ACTIVITY_TYPE_AWARD);
 
         return true;
     }
@@ -458,7 +458,7 @@ class ReferralActivityService
 
 
             // 放到nsq队列中一个个处理
-            QueueService::pushWX($boundUsers, $guideWord, $shareWord, $posterUrl, $activityId, $employeeId);
+            QueueService::pushWX($boundUsers, $guideWord, $shareWord, $posterUrl, $activityId, $employeeId, MessageRecordModel::ACTIVITY_TYPE_AWARD);
 
 
             return true;
@@ -481,6 +481,7 @@ class ReferralActivityService
         $activityId = $msgBody['activity_id'];
         $employeeId = $msgBody['employee_id'];
         $pushTime = $msgBody['push_wx_time'];
+        $activityType = $msgBody['activity_type'];
 
 
         $result = self::sendWeixinTextAndImage($studentId, $openId, $guideWord, $shareWord, $posterUrl);
@@ -488,9 +489,9 @@ class ReferralActivityService
         $failNum = $result ? 0 : 1;
 
         // 发微信的记录
-        $record = MessageRecordService::getMsgRecord($activityId, $employeeId, $pushTime);
+        $record = MessageRecordService::getMsgRecord($activityId, $employeeId, $pushTime, $activityType);
         if (empty($record)) {
-            MessageRecordService::add(MessageRecordModel::MSG_TYPE_WEIXIN, $activityId, $successNum, $failNum, $employeeId, $pushTime);
+            MessageRecordService::add(MessageRecordModel::MSG_TYPE_WEIXIN, $activityId, $successNum, $failNum, $employeeId, $pushTime, $activityType);
         } else {
             MessageRecordService::updateMsgRecord($record['id'], [
                 'success_num[+]' => $successNum,

@@ -10,6 +10,7 @@ namespace App\Controllers\StudentWX;
 
 use App\Controllers\ControllerBase;
 use App\Libs\SimpleLogger;
+use App\Services\MessageService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 
@@ -79,6 +80,7 @@ class Callback extends ControllerBase
         } else { //text, image, voice, location ... 等客服消息
             WeChatMsgHandler::autoReply($xml);
         }
+        WeChatMsgHandler::interActionDealMessage($xml);
         return $result;
     }
 

@@ -47,6 +47,25 @@ class UserWeixinModel extends Model
         return self::getRecord($where, false);
     }
 
+    public static function getBoundInfoByMobile($mobileArr, $appId, $userType, $busiType)
+    {
+        return MysqlDB::getDB()->select(self::$table,
+        [
+            '[><]' . StudentModel::$table => ['user_id' => 'id']
+        ],
+        [
+            StudentModel::$table . '.id(user_id)',
+            self::$table . '.open_id'
+        ],
+        [
+            StudentModel::$table . '.mobile' => $mobileArr,
+            self::$table . '.app_id' => $appId,
+            self::$table . '.user_type' => $userType,
+            self::$table . '.busi_type' => $busiType,
+            self::$table . '.status' => self::STATUS_NORMAL
+        ]);
+    }
+
     public static function getBoundInfoByUserId($userId, $appId, $userType, $busiType)
     {
         $where = [

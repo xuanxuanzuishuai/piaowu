@@ -454,6 +454,23 @@ class DictConstants {
         'keys' => ['initial_num']
     ];
 
+    //消息推送规则
+    const MESSAGE_RULE = [
+        'type' => 'message_rule_config',
+        'keys' => [
+            'subscribe_rule_id',
+            'receive_red_pack_rule_id',
+            'start_class_day_rule_id',
+            'start_class_seven_day_rule_id',
+            'year_user_c_rule_id',
+            'trail_user_c_rule_id',
+            'register_user_c_rule_id',
+            'how_long_not_invite',
+            'how_long_not_result',
+            'assign_template_id'
+        ]
+    ];
+
     public static function get($type, $key)
     {
         if (empty($type) || empty($key)) {

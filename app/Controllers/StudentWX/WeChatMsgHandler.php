@@ -16,6 +16,7 @@ use App\Models\AutoReplyAnswerModel;
 use App\Models\UserQrTicketModel;
 use App\Models\WeChatOpenIdListModel;
 use App\Services\AutoReplyService;
+use App\Services\MessageService;
 use App\Services\UserService;
 use App\Services\WeChatService;
 use App\Models\UserWeixinModel;
@@ -33,22 +34,7 @@ class WeChatMsgHandler
     public static function subscribe($xml)
     {
         $userOpenId = (string)$xml->FromUserName;
-        //获取后台设置的关注回复内容数据
-        $contentInfo = WeChatConfigModel::getRecords(["msg_type" => (string)$xml->MsgType,"event_type" => (string)$xml->Event, "type" => WeChatConfigModel::WECHAT_TYPE_STUDENT], ['content', 'content_type'], false);
-        if ($contentInfo) {
-            foreach ($contentInfo as $cval) {
-                if ($cval['content_type'] == WeChatConfigModel::CONTENT_TYPE_TEXT) {
-                    //转义数据
-                    $content = Util::textDecode($cval['content']);
-                    //发送文本消息
-                    WeChatService::notifyUserWeixinTextInfo(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
-                        UserWeixinModel::USER_TYPE_STUDENT, $userOpenId, $content);
-                } elseif ($cval['content_type'] == WeChatConfigModel::CONTENT_TYPE_IMG) {
-                    //发送图片消息
-                    WeChatService::toNotifyUserWeixinCustomerInfoForImage(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT, UserWeixinModel::USER_TYPE_STUDENT, $userOpenId, $cval['content']);
-                }
-            }
-        }
+        MessageService::sendMessage($userOpenId, DictConstants::get(DictConstants::MESSAGE_RULE, 'subscribe_rule_id'));
         //关注记录
         WeChatService::weChatOpenIdSubscribeRelate($userOpenId, WeChatOpenIdListModel::SUBSCRIBE_WE_CHAT, UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT, UserWeixinModel::USER_TYPE_STUDENT, UserWeixinModel::BUSI_TYPE_STUDENT_SERVER);
     }
@@ -60,6 +46,8 @@ class WeChatMsgHandler
     public static function unSubscribe($xml)
     {
         $userOpenId = (string)$xml->FromUserName;
+        //解除发送消息限制
+        MessageService::clearMessageRuleLimit($userOpenId);
         //取消关注记录
         WeChatService::weChatOpenIdSubscribeRelate($userOpenId, WeChatOpenIdListModel::UNSUBSCRIBE_WE_CHAT, UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT, UserWeixinModel::USER_TYPE_STUDENT, UserWeixinModel::BUSI_TYPE_STUDENT_SERVER);
     }
@@ -191,5 +179,14 @@ class WeChatMsgHandler
             $result = true;
         }
         return $result;
+    }
+
+    /**
+     * @param $xml
+     * 用户与微信有交互
+     */
+    public static function interActionDealMessage($xml)
+    {
+        MessageService::interActionDealMessage((string)$xml->FromUserName);
     }
 }

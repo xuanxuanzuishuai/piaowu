@@ -16,7 +16,8 @@ class MessageRecordModel extends Model
     //消息类型：1短信 2微信
     const MSG_TYPE_SMS = 1;
     const MSG_TYPE_WEIXIN = 2;
-    //活动类型：1上传截图领奖 2上传截图领返现
+    //活动类型：1上传截图领奖 2上传截图领返现 3基于规则手动push
     const ACTIVITY_TYPE_AWARD = 1;
     const ACTIVITY_TYPE_CASH = 2;
+    const MANUAL_PUSH = 3;
 }
