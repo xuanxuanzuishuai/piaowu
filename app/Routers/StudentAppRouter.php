@@ -474,5 +474,10 @@ class StudentAppRouter extends RouterBase
             'call'    => InteractiveClassroom::class . ':getCalendarDetails',
             'middles' => [StudentAuthCheckMiddleWareForApp::class,AppApiForStudent::class]
         ],
+        '/student_app/interactive_classroom/get_student_share_token' => [
+            'method'  => ['get'],
+            'call'    => InteractiveClassroom::class . ':studentShareToken',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class,AppApiForStudent::class]
+        ],
     ];
 }

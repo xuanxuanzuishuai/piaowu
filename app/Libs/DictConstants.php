@@ -374,6 +374,7 @@ class DictConstants {
             'share_evaluate_grade_task_id', //每日分享评测成绩奖
             'music_basic_question_task_id', //音基题
             'example_video_task_id', //示范视频
+            'attend_class_task_id', //互动课堂本日首次上课
             'view_difficult_spot_task_id', //浏览重难点
             'know_chart_promotion_task_id', //识谱，提升
         ]

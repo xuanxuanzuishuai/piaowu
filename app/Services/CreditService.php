@@ -43,6 +43,8 @@ class CreditService
     const MUSIC_BASIC_QUESTION = 'music_basic_question';
     //示范视频
     const EXAMPLE_VIDEO = 'example_video';
+    //互动课堂本日首次上课
+    const ATTEND_CLASS = 'attend_class';
     //浏览重难点
     const VIEW_DIFFICULT_SPOT = 'view_difficult_spot';
     //识谱，提升
@@ -57,6 +59,7 @@ class CreditService
         self::SHARE_GRADE => 'shareGrade',
         self::MUSIC_BASIC_QUESTION => 'musicBasicQuestion',
         self::EXAMPLE_VIDEO => 'exampleVideo',
+        self::ATTEND_CLASS => 'attendClass',
         self::VIEW_DIFFICULT_SPOT => 'viewDifficultSpot',
         self::KNOW_CHART_PROMOTION => 'knowChartPromotion'
     ];
@@ -99,6 +102,8 @@ class CreditService
         $musicBasicQuestion = self::getMusicBasicQuestionTask();
         //示范视频
         $exampleVideo = self::getExampleVideoTask();
+        //互动课堂本日首次上课
+        $attendClass = self::getAttendClassTask();
         //浏览重难点
         $viewDifficultSpot = self::getViewDifficultSpotTask();
         //识谱，提升
@@ -125,6 +130,9 @@ class CreditService
                         }
                         if (in_array($v['id'], $exampleVideo)) {
                             $allActivityArr[self::EXAMPLE_VIDEO][] = $v;
+                        }
+                        if (in_array($v['id'], $attendClass)) {
+                            $allActivityArr[self::ATTEND_CLASS][] = $v;
                         }
                         if (in_array($v['id'], $viewDifficultSpot)) {
                             $allActivityArr[self::VIEW_DIFFICULT_SPOT][] = $v;
@@ -252,6 +260,17 @@ class CreditService
     {
         return DictConstants::get(DictConstants::CREDIT_ACTIVITY_CONFIG, [
             'example_video_task_id'
+        ]);
+    }
+
+    /**
+     * @return array|mixed|null
+     * 互动课堂本日首次上课相关的task
+     */
+    private static function getAttendClassTask()
+    {
+        return DictConstants::get(DictConstants::CREDIT_ACTIVITY_CONFIG, [
+            'attend_class_task_id'
         ]);
     }
 
@@ -499,6 +518,16 @@ class CreditService
     public static function exampleVideoAction($data)
     {
         return self::oneTypeOneTaskCommonDeal(self::EXAMPLE_VIDEO, $data);
+    }
+
+    /**
+     * 互动课堂，每日首次上课
+     * @param $data
+     * @return array|void
+     */
+    public static function attendClassAction($data)
+    {
+        return self::oneTypeOneTaskCommonDeal(self::ATTEND_CLASS, $data);
     }
 
     /**

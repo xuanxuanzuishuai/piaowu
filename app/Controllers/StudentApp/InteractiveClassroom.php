@@ -4,6 +4,7 @@ namespace App\Controllers\StudentApp;
 use App\Controllers\ControllerBase;
 use App\Libs\Valid;
 use App\Models\StudentModel;
+use App\Services\AIBackendService;
 use App\Services\AIPlayRecordService;
 use App\Services\AIPlayReportService;
 use App\Services\CreditService;
@@ -330,4 +331,25 @@ class InteractiveClassroom extends ControllerBase
         return HttpHelper::buildResponse($response, ['calendar_details' => $calendarDetails]);
     }
 
+    /**
+     * 分享课程报告需要token
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function studentShareToken(Request $request, Response $response)
+    {
+        $studentId = $this->ci['student']['id'];
+        $student = StudentModel::getById($studentId);
+        if (empty($student)) {
+            HttpHelper::buildResponse($response, []);
+        }
+        $report["share_token"] = AIPlayReportService::getShareReportToken($studentId, date('Ymd'));
+        $report['replay_token'] = AIBackendService::genStudentToken($studentId);
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $report,
+        ], StatusCode::HTTP_OK);
+    }
 }
