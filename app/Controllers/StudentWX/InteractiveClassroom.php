@@ -9,6 +9,7 @@
 namespace App\Controllers\StudentWX;
 
 use App\Controllers\ControllerBase;
+use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\Valid;
 use App\Models\StudentLearnRecordModel;
@@ -113,6 +114,44 @@ class InteractiveClassroom extends ControllerBase
             }
         }
         return HttpHelper::buildResponse($response, $classStatus);
+    }
+
+    /**
+     * 互动课堂分享课程
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function shareClassInformation(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'jwt',
+                'type' => 'required',
+                'error_code' => 'jwt_is_required'
+            ],
+            [
+                'key' => 'collection_id',
+                'type' => 'required',
+                'error_code' => 'collection_id_is_required'
+            ]
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            $report = InteractiveClassroomService::shareClassInformation($params['jwt'], $params['collection_id']);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $report,
+        ], StatusCode::HTTP_OK);
+
     }
 
 }

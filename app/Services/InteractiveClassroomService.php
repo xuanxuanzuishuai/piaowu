@@ -3,9 +3,13 @@
 
 namespace App\Services;
 
+use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Models\StudentCollectionExceptModel;
+use App\Libs\DictConstants;
 use App\Libs\HttpHelper;
+use App\Libs\OpernCenter;
+use App\Models\AIPlayRecordModel;
 use App\Models\StudentLearnRecordModel;
 use App\Models\StudentModel;
 use App\Models\StudentSignUpCourseModel;
@@ -1035,4 +1039,54 @@ class InteractiveClassroomService
         return $result;
     }
 
+    /**
+     * 完课报告分享
+     * @param $jwt
+     * @param $collectionId
+     * @return array
+     */
+    public static function shareClassInformation($jwt, $collectionId)
+    {
+        $report = [];
+        $data = PlayRecordService::parseShareReportToken($jwt);
+        if ($data["code" != 0]) {
+            throw new RunTimeException(['jwt_invalid']);
+        }
+
+        $studentId = $data["student_id"];
+        $student = StudentModel::getById($studentId);
+        if (empty($student)) {
+            throw new RunTimeException(['record_not_found']);
+        }
+
+        $channel_id = DictConstants::get(DictConstants::WEIXIN_STUDENT_CONFIG, 'share_class_information_channel_id');
+        $playShareAssessUrl = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'play_share_assess_url');
+
+        $report['replay_token'] = AIBackendService::genStudentToken($studentId);
+        $report['share_token'] = $jwt;
+        $TicketData = UserService::getUserQRAliOss($studentId, 1, $channel_id);
+
+        $data = array(
+            'ad'=>0,
+            'channel_id'=>$channel_id,
+            'referee_id'=>$TicketData['qr_ticket']
+        );
+
+        $report['play_share_assess_url'] = $playShareAssessUrl.'?'.http_build_query($data);
+
+        //分享课包信息
+        $collectionInfo = self::erpCollectionByIds($collectionId);
+        //累计练习天数
+        $accumulateDays= AIPlayRecordModel::getAccumulateDays($studentId);
+
+        $report['thumb'] = !empty($student['thumb']) ? AliOSS::signUrls($student['thumb']) : '';
+        $report['name'] = $student['name'];
+        $report['accumulate_days'] = $accumulateDays;
+        $report['collection_name'] = $collectionInfo['data'][0]['name'];
+        $report['collection_cover'] = $collectionInfo['data'][0]['collection_cover'];
+        $report['collection_abstract'] = $collectionInfo['data'][0]['abstract'];
+        $report['start_week'] = $collectionInfo['data'][0]['start_week'];
+        $report['start_time'] = $collectionInfo['data'][0]['start_time'];
+        return $report;
+    }
 }
