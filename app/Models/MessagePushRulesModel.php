@@ -52,7 +52,7 @@ class MessagePushRulesModel extends Model
     public static function rulesList($params)
     {
         $sql = "
-SELECT `id`,`name`,`type`,`target`,`is_active`,time->>'$.desc' as `display_time`,`update_time`
+SELECT `id`,`name`,`type`,`target`,`is_active`,time->>'$.desc' as `display_time`,`update_time`,`remark`
 FROM ".self::$table;
 
         $db = MysqlDB::getDB();
