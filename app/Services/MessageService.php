@@ -188,7 +188,10 @@ class MessageService
                 }
             }
         }
-        return [MessagePushRulesModel::PUSH_TYPE_DICT, $data];
+        // 手机号模板文件：
+        $filePath     = $_ENV['ENV_NAME'].'/'.AliOSS::DIR_MESSAGE_EXCEL."/mobile_number.xlsx";
+        $templateFile = AliOSS::replaceCdnDomainForDss($filePath);
+        return [MessagePushRulesModel::PUSH_TYPE_DICT, $templateFile, $data];
     }
 
     /**
