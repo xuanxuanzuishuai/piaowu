@@ -2,6 +2,7 @@
 namespace App\Controllers\StudentApp;
 
 use App\Controllers\ControllerBase;
+use App\Libs\OpernCenter;
 use App\Libs\Valid;
 use App\Models\StudentModel;
 use App\Services\AIBackendService;
@@ -26,7 +27,8 @@ class InteractiveClassroom extends ControllerBase
     public function getSignUpCourse(Request $request, Response $response)
     {
         $studentId = $this->ci['student']['id'];
-        $CourseSignUpList = InteractiveClassroomService::getSignUpCourse($studentId);
+        $opn = new OpernCenter(OpernCenter::PRO_ID_INTERACTION_CLASSROOM, OpernCenter::version);
+        $CourseSignUpList = InteractiveClassroomService::getSignUpCourse($opn, $studentId);
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
@@ -42,7 +44,10 @@ class InteractiveClassroom extends ControllerBase
      */
     public function getToBeLaunchedCourse(Request $request, Response $response)
     {
-        $result = InteractiveClassroomService::getToBeLaunchedCourse();
+        $params = $request->getParams();
+        $studentId = $this->ci['student']['id'];
+        $opn = new OpernCenter(OpernCenter::PRO_ID_INTERACTION_CLASSROOM, OpernCenter::version);
+        $result = InteractiveClassroomService::getToBeLaunchedCourse($opn, $studentId, $params['page']);
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => $result,
@@ -57,7 +62,9 @@ class InteractiveClassroom extends ControllerBase
      */
     public function getInProductionCourse(Request $request, Response $response)
     {
-        $result = InteractiveClassroomService::getInProductionCourse();
+        $params = $request->getParams();
+        $opn = new OpernCenter(OpernCenter::PRO_ID_INTERACTION_CLASSROOM, OpernCenter::version);
+        $result = InteractiveClassroomService::getInProductionCourse($opn, $params['page']);
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => $result,
@@ -81,8 +88,9 @@ class InteractiveClassroom extends ControllerBase
         $result['finish_the_task'] = (INT)$finishTheTask;
         //总任务
         $result['general_task'] = $generalTask;
+        $opn = new OpernCenter(OpernCenter::PRO_ID_INTERACTION_CLASSROOM, OpernCenter::version);
         //今日课程
-        list($todayCourse, $todayRecommendCourse) = InteractiveClassroomService::getTodayCourse($studentId);
+        list($todayCourse, $todayRecommendCourse) = InteractiveClassroomService::getTodayCourse($opn, $studentId);
         $result['today_course'] = $todayCourse;
         $result['today_recommend_course'] = $todayRecommendCourse;
 
@@ -100,7 +108,10 @@ class InteractiveClassroom extends ControllerBase
      */
     public function smallHornInfo(Request $request, Response $response)
     {
-        $smallHornInfo = InteractiveClassroomService::getSmallHornInfo();
+        $studentId = $this->ci['student']['id'];
+
+        $opn = new OpernCenter(OpernCenter::PRO_ID_INTERACTION_CLASSROOM, OpernCenter::version);
+        $smallHornInfo = InteractiveClassroomService::getSmallHornInfo($opn, $studentId);
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => $smallHornInfo,
@@ -326,8 +337,8 @@ class InteractiveClassroom extends ControllerBase
         $params = $request->getParams();
 
         $studentId = $this->ci['student']['id'];
-
-        $calendarDetails = InteractiveClassroomService::getCalendarDetails($studentId, $params["year"], $params["month"], $params['day']);
+        $opn = new OpernCenter(OpernCenter::PRO_ID_INTERACTION_CLASSROOM, OpernCenter::version);
+        $calendarDetails = InteractiveClassroomService::getCalendarDetails($opn, $studentId, $params["year"], $params["month"], $params['day']);
         return HttpHelper::buildResponse($response, ['calendar_details' => $calendarDetails]);
     }
 

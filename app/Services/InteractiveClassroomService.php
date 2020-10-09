@@ -626,69 +626,79 @@ class InteractiveClassroomService
 
     /**
      * 可报名课程
+     * @param $opn
      * @param $studentId
      * @return array
      */
-    public static function getSignUpCourse($studentId)
+    public static function getSignUpCourse($opn, $studentId)
     {
         $student = StudentModel::getById($studentId);
         if (empty($student)) {
             return [];
         }
         //获取所有可报名课包
-        $singUpCourse = self::recommendCourse();
-        $singUpCourseData = array_combine(array_column($singUpCourse, 'collection_id'), $singUpCourse);
-        //获取用户购买的课包
-        $studentBingCourse = StudentSignUpCourseModel::getRecords(['student_id'=> $studentId, 'bind_status' => StudentSignUpCourseModel::COURSE_BING_SUCCESS]);
-        $studentBingCourseData = array_combine(array_column($studentBingCourse, 'collection_id'), $studentBingCourse);
-        //统计用户已上课次数
-        $StudentLearnCount = StudentLearnRecordModel::getStudentLearnCount($studentId);
+        $singUpCourse = self::recommendCourse($opn, $studentId);
+//        $singUpCourseData = array_combine(array_column($singUpCourse, 'collection_id'), $singUpCourse);
+//        //获取用户购买的课包
+//        $studentBingCourse = StudentSignUpCourseModel::getRecords(['student_id'=> $studentId, 'bind_status' => StudentSignUpCourseModel::COURSE_BING_SUCCESS]);
+//        $studentBingCourseData = array_combine(array_column($studentBingCourse, 'collection_id'), $studentBingCourse);
+//        //统计用户已上课次数
+//        $studentLearnCount = StudentLearnRecordModel::getStudentLearnCount($studentId);
+//
+//        foreach ($singUpCourseData as $key => $value){
+//            $value['course_bind_status'] = $studentBingCourseData[$value['collection_id']] ? (INT)$studentBingCourseData[$value['collection_id']]['bind_status'] : StudentSignUpCourseModel::COURSE_BING_ERROR;
+//            $value['attend_class_count'] = $studentBingCourseData[$value['collection_id']] ? (INT)$studentLearnCount[$value['collection_id']]['attend_class_count'] : Constants::STATUS_FALSE;
+//            $result[] = $value;
+//        }
+//        return $result ?? [];
 
-        foreach ($singUpCourseData as $key => $value){
-            $value['course_bind_status'] = $studentBingCourseData[$value['collection_id']] ? (INT)$studentBingCourseData[$value['collection_id']]['bind_status'] : StudentSignUpCourseModel::COURSE_BING_ERROR;
-            $value['attend_class_count'] = $studentBingCourseData[$value['collection_id']] ? (INT)$StudentLearnCount[$value['collection_id']]['attend_class_count'] : Constants::STATUS_FALSE;
-            $result[] = $value;
-        }
-        return $result ?? [];
+        return array_values($singUpCourse) ?? [];
     }
 
 
     /**
      * 待发布课程
+     * @param $opn
+     * @param $studentId
+     * @param $page
      * @return array|array[]
      */
-    public static function getToBeLaunchedCourse()
+    public static function getToBeLaunchedCourse($opn, $studentId, $page)
     {
-        $preOnLineCourse = self::preOnlineCourse();
+        $preOnLineCourse = self::preOnlineCourse($opn, $studentId, $page);
         return $preOnLineCourse ?? [];
     }
 
     /**
      * 获取制作中课程
+     * @param $opn
+     * @param $page
      * @return array|array[]
      */
-    public static function getInProductionCourse()
+    public static function getInProductionCourse($opn, $page)
     {
-        $preOnLineCourse = self::makingCourse();
+        $preOnLineCourse = self::makingCourse($opn, $page);
         return $preOnLineCourse ?? [];
     }
 
     /**
      * 今日练琴计划，显示离当前时间最近的一节课，如果没计划返回今日推荐课程
+     * @param $opn
      * @param $studentId
      * @return array|array[]
      */
-    public static function getTodayCourse($studentId)
+    public static function getTodayCourse($opn, $studentId)
     {
         $date = date('Y-m-d');
         $time = time();
         //获取用户今日练琴计划->只要待上课的状态
-        $studentTodayCoursePlan = self::studentCoursePlan($studentId, strtotime($date));
+        $studentTodayCoursePlan = self::studentCoursePlan($opn, $studentId, strtotime($date));
         foreach ($studentTodayCoursePlan as $item) {
             if ($item['lesson_learn_status'] == StudentLearnRecordModel::GO_TO_THE_CLASS) {
                 $studentTodayCoursePlanData[] = $item;
             }
         }
+
         //如果不为空直接返回待上课的一节课程
         if (!empty($studentTodayCoursePlanData)) {
             usort($studentTodayCoursePlanData, function ($a, $b) {
@@ -697,7 +707,7 @@ class InteractiveClassroomService
             return [$studentTodayCoursePlanData[0], []];
         }
         //没有今日上课计划，获取今日推荐课程
-        $recommendCourse = self::recommendCourse();
+        $recommendCourse = self::recommendCourse($opn, $studentId);
         if (empty($recommendCourse)) {
             return [[],[]];
         }
@@ -733,12 +743,14 @@ class InteractiveClassroomService
 
     /**
      * 获取小喇叭轮播 小喇叭轮播当前时间往后的课程，包含上课中的课程，上课没有统一结束时间，都以开课之后的半小时为边界
+     * @param $opn
+     * @param $studentId
      * @return array|\array[][]
      */
-    public static function getSmallHornInfo()
+    public static function getSmallHornInfo($opn, $studentId)
     {
         //获取今明两天的上课计划,如果为空则不做任何处理
-        $platformCoursePlan = self::platformCoursePlan();
+        $platformCoursePlan = self::platformCoursePlan($opn, $studentId);
         if (empty($platformCoursePlan['today']) && empty($platformCoursePlan['tomorrow'])) {
             return $platformCoursePlan;
         }
@@ -828,10 +840,10 @@ class InteractiveClassroomService
             $firstCourseTime = strtotime(date('Y-m-d').$startTime);
             $lastTime = $firstCourseTime + Util::TIMESTAMP_ONEDAY * StudentSignUpCourseModel::A_WEEK * ($lessonCount - 1);
         } elseif ($nowWeek > $startWeek) {
-            $firstCourseTime = strtotime(date("Y-m-d ", strtotime("+" . $nowWeek - $startWeek ."day")) . $startTime);
+            $firstCourseTime = strtotime(date("Y-m-d ", strtotime("+" . StudentSignUpCourseModel::A_WEEK - $nowWeek + $startWeek ."day")) . $startTime);
             $lastTime = $firstCourseTime + Util::TIMESTAMP_ONEDAY * StudentSignUpCourseModel::A_WEEK * ($lessonCount - 1);
         } elseif ($nowWeek < $startWeek) {
-            $firstCourseTime = strtotime(date("Y-m-d ", strtotime("+" . StudentSignUpCourseModel::A_WEEK - $nowWeek + $startWeek ."day")) . $startTime);
+            $firstCourseTime = strtotime(date("Y-m-d ", strtotime("+" . $startWeek - $nowWeek ."day")) . $startTime);
             $lastTime = $firstCourseTime + Util::TIMESTAMP_ONEDAY * StudentSignUpCourseModel::A_WEEK * ($lessonCount - 1);
         } else {
             $firstCourseTime = Constants::STATUS_FALSE;
@@ -989,13 +1001,14 @@ class InteractiveClassroomService
 
     /**
      * 获取上课日历详情
+     * @param $opn
      * @param $studentId
      * @param $year
      * @param $month
      * @param $day
      * @return mixed
      */
-    public static function getCalendarDetails($studentId, $year, $month, $day)
+    public static function getCalendarDetails($opn, $studentId, $year, $month, $day)
     {
         $student = StudentModel::getById($studentId);
         if (empty($student)) {
@@ -1003,9 +1016,9 @@ class InteractiveClassroomService
         }
         //判断用户是否年卡用户，年卡是否过期
         if ($student['has_review_course'] == ReviewCourseModel::REVIEW_COURSE_1980 && $student['sub_end_date'] < date('Ymd', time())) {
-            $result['student_status'] = ReviewCourseModel::REVIEW_COURSE_1980;
-        } elseif ($student['has_review_course'] == ReviewCourseModel::REVIEW_COURSE_1980 && $student['sub_end_date'] > date('Ymd', time())) {
             $result['student_status'] = ReviewCourseModel::REVIEW_COURSE_BE_OVERDUE;
+        } elseif ($student['has_review_course'] == ReviewCourseModel::REVIEW_COURSE_1980 && $student['sub_end_date'] > date('Ymd', time())) {
+            $result['student_status'] = ReviewCourseModel::REVIEW_COURSE_1980;
         } else {
             $result['student_status'] = $student['has_review_course'];
         }
@@ -1020,7 +1033,7 @@ class InteractiveClassroomService
         $startTime = strtotime($date);
         $endTime = $startTime + 86400 -1;
         //今日课程
-        $todayClass = self::studentCoursePlan($studentId, $startTime);
+        $todayClass = self::studentCoursePlan($opn, $studentId, $startTime);
         //如果获取的是今日数据，需要把用户今天的练琴记录返回客户端，客户端实时更新课程状态
         if ($date == date('Y-m-d')) {
             $todayLearn = StudentLearnRecordModel::getRecords(['student_id' => $studentId, 'create_time[>=]' => $startTime]);
