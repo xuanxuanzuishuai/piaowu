@@ -93,6 +93,7 @@ class CHDB
     public function queryAll($query, $map = [])
     {
         $statement = $this->select($query, $map);
+        SimpleLogger::info("query sql",[$statement->sql()]);
         if ($statement) {
             return $statement->rows();
         }
