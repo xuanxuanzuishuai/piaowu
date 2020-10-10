@@ -1056,9 +1056,11 @@ class InteractiveClassroomService
      * 完课报告分享
      * @param $jwt
      * @param $collectionId
+     * @param $opn
      * @return array
+     * @throws RunTimeException
      */
-    public static function shareClassInformation($jwt, $collectionId)
+    public static function shareClassInformation($jwt, $collectionId, $opn)
     {
         $report = [];
         $data = PlayRecordService::parseShareReportToken($jwt);
@@ -1088,18 +1090,18 @@ class InteractiveClassroomService
         $report['play_share_assess_url'] = $playShareAssessUrl.'?'.http_build_query($data);
 
         //分享课包信息
-        $collectionInfo = self::erpCollectionByIds($collectionId);
+        $collectionInfo = self::erpCollectionByIds($opn, $collectionId);
         //累计练习天数
         $accumulateDays= AIPlayRecordModel::getAccumulateDays($studentId);
 
         $report['thumb'] = !empty($student['thumb']) ? AliOSS::signUrls($student['thumb']) : '';
         $report['name'] = $student['name'];
         $report['accumulate_days'] = $accumulateDays;
-        $report['collection_name'] = $collectionInfo['data'][0]['name'];
-        $report['collection_cover'] = $collectionInfo['data'][0]['collection_cover'];
-        $report['collection_abstract'] = $collectionInfo['data'][0]['abstract'];
-        $report['start_week'] = $collectionInfo['data'][0]['start_week'];
-        $report['start_time'] = $collectionInfo['data'][0]['start_time'];
+        $report['collection_name'] = $collectionInfo['collection_name'];
+        $report['collection_cover'] = $collectionInfo['lessons_url'];
+        $report['collection_abstract'] = $collectionInfo['collection_desc'];
+        $report['start_week'] = $collectionInfo['collection_start_week'];
+        $report['start_time'] = $collectionInfo['collection_start_time'];
         return $report;
     }
 }

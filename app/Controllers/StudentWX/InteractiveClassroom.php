@@ -11,6 +11,7 @@ namespace App\Controllers\StudentWX;
 use App\Controllers\ControllerBase;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
+use App\Libs\OpernCenter;
 use App\Libs\Valid;
 use App\Models\StudentLearnRecordModel;
 use App\Models\StudentModel;
@@ -97,9 +98,9 @@ class InteractiveClassroom extends ControllerBase
         if (empty($student)) {
             HttpHelper::buildResponse($response, []);
         }
-
+        $opn = new OpernCenter(OpernCenter::PRO_ID_INTERACTION_CLASSROOM, OpernCenter::version);
         $dateTime = strtotime($params['year'].'-'.$params['month'].'-'.$params['day']);
-        $calendarData = InteractiveClassroomService::studentCoursePlan($studentId, $dateTime);
+        $calendarData = InteractiveClassroomService::studentCoursePlan($opn, $studentId, $dateTime);
         $classStatus['class_count'] = count($calendarData) ?? 0; //今日总课数
         $lessonLearnStatus = array_count_values(array_column($calendarData, 'lesson_learn_status'));
 
@@ -143,7 +144,8 @@ class InteractiveClassroom extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         try {
-            $report = InteractiveClassroomService::shareClassInformation($params['jwt'], $params['collection_id']);
+            $opn = new OpernCenter(OpernCenter::PRO_ID_INTERACTION_CLASSROOM, OpernCenter::version);
+            $report = InteractiveClassroomService::shareClassInformation($params['jwt'], $params['collection_id'], $opn);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
