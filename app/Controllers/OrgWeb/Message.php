@@ -200,12 +200,7 @@ class Message extends ControllerBase
                 'key'        => 'push_type',
                 'type'       => 'required',
                 'error_code' => 'push_type_is_required',
-            ],
-            [
-                'key'        => 'push_file',
-                'type'       => 'required',
-                'error_code' => 'push_file_is_required',
-            ],
+            ]
         ];
         $params = $request->getParams();
         if ($params['push_type'] == MessagePushRulesModel::PUSH_TYPE_CUSTOMER) {
@@ -268,19 +263,20 @@ class Message extends ControllerBase
 
         try {
             // 获取上传文件
-            $file = $request->getUploadedFiles();
-            $pushFile = $file['push_file'] ?? [];
+            $pushFile = $_FILES['push_file'] ?? [];
             if (empty($pushFile)) {
                 throw new RunTimeException(['push_file_is_required']);
             }
             // 验证文件
-            $extension = strtolower(pathinfo($params['push_file'])['extension']);
+            $extension = strtolower(pathinfo($pushFile['name'])['extension']);
             if (!in_array($extension, ['xls', 'xlsx'])) {
                 throw new RunTimeException(['file_format_invalid']);
             }
             // 暂存文件
             $fileName = $_ENV['STATIC_FILE_SAVE_PATH'].'/'.md5(rand().time()).'.'.$extension;
-            $pushFile->moveTo($fileName);
+            if (move_uploaded_file($pushFile['tmp_name'], $fileName) == false) {
+                throw new RunTimeException(['download_file_error']);
+            }
 
             $data = MessageService::verifySendList($fileName);
             unlink($fileName);
