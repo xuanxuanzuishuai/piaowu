@@ -7,10 +7,8 @@
 namespace App\Controllers\OrgWeb;
 
 use App\Controllers\ControllerBase;
-use App\Libs\AliOSS;
 use App\Libs\HttpHelper;
 use App\Libs\Valid;
-use App\Libs\Request as LibsRequest;
 use App\Services\MessageService;
 use App\Models\MessagePushRulesModel;
 use App\Libs\Exceptions\RunTimeException;
@@ -269,29 +267,32 @@ class Message extends ControllerBase
         }
 
         try {
+            // 获取上传文件
+            $file = $request->getUploadedFiles();
+            $pushFile = $file['push_file'] ?? [];
+            if (empty($pushFile)) {
+                throw new RunTimeException(['push_file_is_required']);
+            }
+            // 验证文件
             $extension = strtolower(pathinfo($params['push_file'])['extension']);
             if (!in_array($extension, ['xls', 'xlsx'])) {
                 throw new RunTimeException(['file_format_invalid']);
             }
-            $res = LibsRequest::get(['url' => AliOSS::replaceCdnDomainForDss($params['push_file'])]);
-            if ($res['status'] != StatusCode::HTTP_OK) {
-                throw new RunTimeException(['download_file_error_get']);
-            }
-
+            // 暂存文件
             $fileName = $_ENV['STATIC_FILE_SAVE_PATH'].'/'.md5(rand().time()).'.'.$extension;
-            $res = file_put_contents($fileName, $res['body']);
-            if ($res === false) {
-                throw new RunTimeException(['download_file_error']);
-            }
+            $pushFile->moveTo($fileName);
 
             $data = MessageService::verifySendList($fileName);
             unlink($fileName);
             if (!empty($data) && is_string($data)) {
                 throw new RunTimeException([$data]);
             }
+            if (empty($data)) {
+                throw new RunTimeException(['send_list_empty']);
+            }
             // Save send log
             $logId = MessageService::saveSendLog($params);
-            
+
             // Send message with number: $data
             MessageService::manualPushMessage($logId, $data, $this->getEmployeeId());
         } catch (RunTimeException $e) {
