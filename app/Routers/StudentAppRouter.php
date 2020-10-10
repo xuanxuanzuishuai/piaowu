@@ -490,7 +490,7 @@ class StudentAppRouter extends RouterBase
             'middles' => [StudentAuthCheckMiddleWareForApp::class,AppApiForStudent::class]
         ],
         '/student_app/interactive_classroom/expect' => [
-            'method'  => ['get'],
+            'method'  => ['post'],
             'call'    => InteractiveClassroom::class . ':expect',
             'middles' => [StudentAuthCheckMiddleWareForApp::class,AppApiForStudent::class]
         ],

@@ -64,6 +64,7 @@ class InteractiveClassroomService
      */
     public static function recommendCourse($opn, $studentId)
     {
+        $weekNo = date('N',time());
         $collectionList = self::collectionsWithTimeAndTag($opn);
         $collectionIds = array_keys($collectionList);
         $classifyLessonInfo = self::getLessonIds($opn, $collectionIds);
@@ -79,6 +80,17 @@ class InteractiveClassroomService
                 $collectionList[$key]['course_bind_status'] = self::COURSE_BIND_STATUS_UNREGISTER;
                 $collectionList[$key]['attend_class_count'] = 0;
             }
+            $startTime = $value['collection_start_time'];
+            if ($weekNo < $value['collection_start_week']) {
+                $diffDayNum = $value['collection_start_week'] - $weekNo;
+                $collectionList[$key]['lesson_start_timestamp'] = strtotime(date("Y-m-d $startTime", strtotime("+$diffDayNum day")));
+            } elseif ($weekNo > $value['collection_start_week']) {
+                $diffDayNum = 7 - $weekNo + $value['collection_start_week'];
+                $collectionList[$key]['lesson_start_timestamp'] = strtotime(date("Y-m-d $startTime", strtotime("+$diffDayNum day")));
+            } elseif ($weekNo == $value['collection_start_week']) {
+                $collectionList[$key]['lesson_start_timestamp'] = strtotime(date("Y-m-d $startTime", time()));
+            }
+
             $collectionList[$key]['lesson_count'] = count($classifyLessonInfo[$key]['payLessonList']);
         }
 
@@ -648,6 +660,7 @@ class InteractiveClassroomService
             "collection_start_week" => $timeTableResult['data'][0]['start_week_day'] ?? '',
             "collection_start_time" => $timeTableResult['data'][0]['start_time'] ?? '',
             'collection_desc'       => $collection[0]['abstract'],
+            'collection_cover'       => $collection[0]['cover'] ?? '',
             'lessons_url'           => $lesson['resources']['resource_url'] ?? '',
         ];
         return $data ?? [];
