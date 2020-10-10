@@ -185,6 +185,9 @@ class MessageService
                     if (is_string($value)) {
                         $value = Util::textDecode($value);
                     }
+                    if ($key == 'image') {
+                        $data['image_url'] = AliOSS::replaceCdnDomainForDss($value);
+                    }
                 }
             }
         }
