@@ -363,4 +363,129 @@ class InteractiveClassroom extends ControllerBase
             'data' => $report,
         ], StatusCode::HTTP_OK);
     }
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * 获取课程资源
+     */
+    public function lessonRecourse(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'lesson_id',
+                'type' => 'required',
+                'error_code' => 'lesson_id_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $opn = new OpernCenter(OpernCenter::PRO_ID_INTERACTION_CLASSROOM, OpernCenter::version);
+        $data = InteractiveClassroomService::lessonRecourse($opn, $params['lesson_id']);
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $data,
+        ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * 期待记录接口
+     */
+    public function expect(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'collection_id',
+                'type' => 'required',
+                'error_code' => 'collection_id_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $studentId = $this->ci['student']['id'];
+        InteractiveClassroomService::expect($studentId, $params['collection_id']);
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => [],
+        ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * 获取平台今明两天的开课计划
+     */
+    public function platformCoursePlan(Request $request, Response $response)
+    {
+        $opn = new OpernCenter(OpernCenter::PRO_ID_INTERACTION_CLASSROOM, OpernCenter::version);
+        $studentId = $this->ci['student']['id'];
+        $data = InteractiveClassroomService::platformCoursePlan($opn,$studentId);
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $data,
+        ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * 获取课包详情接口
+     */
+    public function collectionDetail(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'collection_id',
+                'type' => 'required',
+                'error_code' => 'collection_id_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $studentId = $this->ci['student']['id'];
+        $opn = new OpernCenter(OpernCenter::PRO_ID_INTERACTION_CLASSROOM, OpernCenter::version);
+        $data = InteractiveClassroomService::collectionDetail($opn,$params['collection_id'],$studentId);
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $data,
+        ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * 获取热门教材
+     */
+    public static function hotTextbook(Request $request, Response $response)
+    {
+        $opn = new OpernCenter(OpernCenter::PRO_ID_INTERACTION_CLASSROOM, OpernCenter::version);
+        $data = InteractiveClassroomService::hotTextbook($opn);
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $data,
+        ], StatusCode::HTTP_OK);
+    }
 }

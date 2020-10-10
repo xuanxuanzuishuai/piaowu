@@ -5,6 +5,7 @@ namespace App\Services;
 
 use App\Libs\AliOSS;
 use App\Libs\Constants;
+use App\Libs\RedisDB;
 use App\Models\StudentCollectionExceptModel;
 use App\Libs\DictConstants;
 use App\Libs\HttpHelper;
@@ -29,7 +30,7 @@ class InteractiveClassroomService
 
     //常用时间片段时间戳
     const WEEK_TIMESTAMP = 604800;              //一周
-    const HALF_MONTH = 1296000;                 //半个
+    const HALF_MONTH = 1296000;                 //半个月
     const HALF_HOUR = 1800;                     //半个小时
     const ONE_DAY = 86400;                      //一天
 
@@ -50,6 +51,11 @@ class InteractiveClassroomService
     //tag可见属性
     const TAG_OUTER_ENABLE = 1;                 //tag对外部人员可见
 
+    //Redis缓存集合课程信息
+    const CACHE_KEY = "collection_classify_lesson";
+    public static $redisDB;
+
+
     /**
      * @param $opn
      * @param $studentId
@@ -59,16 +65,21 @@ class InteractiveClassroomService
     public static function recommendCourse($opn, $studentId)
     {
         $collectionList = self::collectionsWithTimeAndTag($opn);
+        $collectionIds = array_keys($collectionList);
+        $classifyLessonInfo = self::getLessonIds($opn, $collectionIds);
         $learnNumByCollection = StudentLearnRecordModel::learnNumByCollection($studentId);
         $learnNumByCollectionKey = array_column($learnNumByCollection, null, 'collection_id');
         $signUpCollectionIds = self::getSignUpCollections($studentId);
+
         foreach ($collectionList as $key => $value) {
             if (in_array($value['collection_id'], $signUpCollectionIds)) {
                 $collectionList[$key]['course_bind_status'] = self::COURSE_BIND_STATUS_SUCCESS;
-                $collectionList[$key]['learn_num'] = $learnNumByCollectionKey[$value['collection_id']]['learn_num'] ?? 0;
+                $collectionList[$key]['attend_class_count'] = $learnNumByCollectionKey[$value['collection_id']]['learn_num'] ?? 0;
             } else {
                 $collectionList[$key]['course_bind_status'] = self::COURSE_BIND_STATUS_UNREGISTER;
+                $collectionList[$key]['attend_class_count'] = 0;
             }
+            $collectionList[$key]['lesson_count'] = count($classifyLessonInfo[$key]['payLessonList']);
         }
 
         return $collectionList ?? [];
@@ -82,7 +93,7 @@ class InteractiveClassroomService
      * @return array|mixed
      * 待上线课程
      */
-    public static function preOnlineCourse($opn, $page, $studentId, $pageSize = 4)
+    public static function preOnlineCourse($opn, $studentId, $page = 1, $pageSize = 4)
     {
         $expectBaseNum = 3000;
         $categoryId = self::erpCategory($opn);
@@ -173,11 +184,29 @@ class InteractiveClassroomService
      * @param int $page
      * @param int $pageSize
      * @return array
-     * 获取每个几个的课程ID并根据是否付费进行分类
+     * 获取每个集合的课程ID并根据是否付费进行分类
      */
     public static function getLessonIds($opn, $collectionIds, $page = 1, $pageSize = 50)
     {
+        if (empty($collectionIds)){
+            return [];
+        }
+
+        $redis = RedisDB::getConn(self::$redisDB);
+        $todayEndTimestamp = strtotime(date('Y-m-d 23:59:59',time()));
+        $redis->expireat(self::CACHE_KEY,$todayEndTimestamp);
+        $list = $redis->hgetall(self::CACHE_KEY);
+        if (!empty($list)) {
+            $list = array_map(function ($v) {
+                return json_decode($v, true);
+            }, $list);
+        }
+
         foreach ($collectionIds as $v) {
+            if (array_key_exists($v, $list)) {
+                $data[$v] = $list[$v];
+                continue;
+            }
             $result = $opn->lessons($v, $page, $pageSize);
             foreach ($result['data']['list'] as $value) {
                 if ($value['freeflag'] == true) {
@@ -186,6 +215,7 @@ class InteractiveClassroomService
                     $data[$v]['payLessonList'][] = $value['id'];
                 }
             }
+            $redis->hset(self::CACHE_KEY, $v, json_encode($data[$v] ?? []));
         }
         return $data ?? [];
     }
@@ -394,7 +424,6 @@ class InteractiveClassroomService
             $collections[$key]['tags'] = $tagList[$key] ?? [];
             $collections[$key]['collection_start_week'] = $timeTableByCollectionKey[$key]['start_week_day'] ?? 0;
             $collections[$key]['collection_start_time'] = date("H:i", $timeTableByCollectionKey[$key]['start_time']) ?? 0;
-            $collections[$key]['collection_start_time'] = date("H:i", $timeTableByCollectionKey[$key]['start_time']) ?? 0;
             $collections[$key]['is_new'] = ($time - $value['publish_time']) < self::HALF_MONTH;
         }
 
@@ -441,7 +470,7 @@ class InteractiveClassroomService
         $todayCoursePlanByCId = array_column($todayCoursePlan, null, 'collection_id');
         $signUpCollections = self::getSignUpCollections($studentId);
         foreach ($collectionList as $key => $value) {
-            if ($value['start_week'] = $todayWeek) {
+            if ($value['collection_start_week'] == $todayWeek) {
                 if (in_array($value['collection_id'], $signUpCollections)) {
                     $value['lesson_learn_status'] = $todayCoursePlanByCId[$value['collection_id']]['lesson_learn_status'];
                     $value['lesson_id'] = $todayCoursePlanByCId[$value['collection_id']]['id'];
@@ -451,7 +480,7 @@ class InteractiveClassroomService
                     $value['course_bind_status'] = self::COURSE_BIND_STATUS_UNREGISTER;
                 }
                 $today[] = $value;
-            } elseif (($value['start_week'] - 1) == $todayWeek) {
+            } elseif (($value['collection_start_week'] - 1) == $todayWeek) {
                 if (in_array($value['collection_id'], $signUpCollections)) {
                     $value['course_bind_status'] = self::COURSE_BIND_STATUS_SUCCESS;
                 } else {
@@ -622,6 +651,64 @@ class InteractiveClassroomService
             'lessons_url'           => $lesson['resources']['resource_url'] ?? '',
         ];
         return $data ?? [];
+    }
+
+    /**
+     * @param $opn
+     * @param $lessonId
+     * @return array
+     * 获取课程资源信息
+     */
+    public static function lessonRecourse($opn, $lessonId)
+    {
+        $withResources = 1;
+        $resourceTypes = 'mp4';
+        $lesson = $opn->lessonsByIds($lessonId, $withResources, $resourceTypes);
+        return $lesson['data'] ?? [];
+    }
+
+    /**
+     * @param $studentId
+     * @param $collectionId
+     * @return array|int|mixed|string|null
+     * 期待记录
+     */
+    public static function expect($studentId, $collectionId)
+    {
+        $expectRecord = StudentCollectionExceptModel::getRecord(['student_id' => $studentId, 'collection_id' => $collectionId], ['id'], false);
+        if (!empty($expectRecord)) {
+            return [];
+        }
+        $insertData = [
+            'student_id'    => $studentId,
+            'collection_id' => $collectionId,
+            'create_time'   => time(),
+        ];
+        return StudentCollectionExceptModel::insertRecord($insertData, false);
+    }
+
+    /**
+     * @param $opn
+     * @return array
+     * 获取热门教材
+     */
+    public static function hotTextbook($opn)
+    {
+        $hotCollectionIds = json_decode(DictConstants::get(DictConstants::APP_CONFIG_COMMON,'hot_textbook'),true);
+        if (empty($hotCollectionIds)){
+            return [];
+        }
+        $collectionList = $opn->collectionsByIds($hotCollectionIds);
+        if (isset($collectionList['data']) && !empty($collectionList['data'])){
+            foreach ($collectionList['data'] as $value){
+                $hotCollectionList[] = [
+                    'collection_id'=>$value['id'],
+                    'collection_name'=>$value['name'],
+                    'collection_cover'=>$value['cover'],
+                ];
+            }
+        }
+        return $hotCollectionList ?? [];
     }
 
     /**

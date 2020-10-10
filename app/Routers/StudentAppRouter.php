@@ -484,6 +484,32 @@ class StudentAppRouter extends RouterBase
             'call'    => InteractiveClassroom::class . ':studentShareToken',
             'middles' => [StudentAuthCheckMiddleWareForApp::class,AppApiForStudent::class]
         ],
+        '/student_app/interactive_classroom/lesson_recourse' => [
+            'method'  => ['get'],
+            'call'    => InteractiveClassroom::class . ':lessonRecourse',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class,AppApiForStudent::class]
+        ],
+        '/student_app/interactive_classroom/expect' => [
+            'method'  => ['get'],
+            'call'    => InteractiveClassroom::class . ':expect',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class,AppApiForStudent::class]
+        ],
+        '/student_app/interactive_classroom/platform_course_plan' => [
+            'method'  => ['get'],
+            'call'    => InteractiveClassroom::class . ':platformCoursePlan',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class,AppApiForStudent::class]
+        ],
+        '/student_app/interactive_classroom/collection_detail' => [
+            'method'  => ['get'],
+            'call'    => InteractiveClassroom::class . ':collectionDetail',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class,AppApiForStudent::class]
+        ],
+        '/student_app/interactive_classroom/hot_textbook' => [
+            'method'  => ['get'],
+            'call'    => InteractiveClassroom::class . ':hotTextbook',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class,AppApiForStudent::class]
+        ],
+
         //万圣节活动相关路由
         '/student_app/halloween/sign_up' => [
             'method'  => ['post'],

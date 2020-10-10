@@ -156,10 +156,11 @@ class OpernCenter
      * 分类下书籍列表
      * @param $categoryId
      * @param $page
-     * @param $pageSize
+     * @param int $pageSize
+     * @param int $type
      * @return array|bool|mixed
      */
-    public function collections($categoryId, $page, $pageSize = self::DEFAULT_PAGE_SIZE)
+    public function collections($categoryId, $page, $pageSize = self::DEFAULT_PAGE_SIZE, $type = 1)
     {
         $result = self::commonAPI(self::OPERN_API_COLLECTIONS, [
             'pro_id' => $this->proId,
@@ -168,7 +169,8 @@ class OpernCenter
             'publish' => $this->publish,
             'page' => $page,
             'page_size' => $pageSize,
-            'category_id' => $categoryId
+            'category_id' => $categoryId,
+            'type' => $type
         ]);
 
         return empty($result) ? [] : $result;
