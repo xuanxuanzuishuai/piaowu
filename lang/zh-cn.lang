@@ -445,4 +445,5 @@ halloween_event_task_invalid='事件任务数据无效'
 not_reach_valid_rank_num="尚未达到当前排名奖励要求"
 task_rank_num_invalid="不符合当前任务的排名要求"
 task_student_status_invalid="不符合当前任务的年卡要求"
+halloween_take_award_time_error='奖品领取时间错误'
 send_list_empty='发送目标为空，请检查'

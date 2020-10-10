@@ -641,4 +641,35 @@ WHERE
         return $dayWonderfulData ?? [];
 
     }
+    /**
+     * 获取学生某段时间内有效时长按天分组
+     * @param $studentId
+     * @param $startTime
+     * @param $endTime
+     * @param $validMaxTime
+     * @return array|null
+     */
+    public static function getStudentValidSumByDate($studentId, $startTime, $endTime, $validMaxTime)
+    {
+        $db = MysqlDB::getDB();
+        $sql = "SELECT
+                    FROM_UNIXTIME(end_time, '%Y%m%d') AS create_date,
+                    if(SUM(duration)>=:valid_max_time,:valid_max_time,SUM(duration)) AS sum_duration
+                FROM
+                    ai_play_record
+                WHERE
+                    student_id = :student_id
+                        AND end_time >= :start_time
+                        AND end_time < :end_time
+                        AND duration > 0
+                GROUP BY create_date";
+        $map = [
+            ':start_time' => $startTime,
+            ':end_time' => $endTime,
+            ':student_id' => $studentId,
+            ':valid_max_time' => $validMaxTime,
+        ];
+        $result = $db->queryAll($sql, $map);
+        return $result;
+    }
 }

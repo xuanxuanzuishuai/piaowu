@@ -168,7 +168,7 @@ class PointActivity extends ControllerBase
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
-        return HttpHelper::buildResponse($response, []);
+        return HttpHelper::buildResponse($response, ['review_course_type' => $this->ci['student']['has_review_course']]);
     }
 
     /**

@@ -17,7 +17,6 @@ use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\ActivitySignUpModel;
-use App\Models\AIPlayRecordCHModel;
 use App\Models\AIPlayRecordModel;
 use App\Models\CategoryV1Model;
 use App\Models\GoodsV1Model;
@@ -51,17 +50,6 @@ class HalloweenService
     {
         //活动配置数据
         $halloweenConfig = DictConstants::getSet(DictConstants::HALLOWEEN_CONFIG);
-        //检测用户是否报名
-        $signInfo = ActivitySignUpModel::getRecord(
-            [
-                'user_id' => $studentId,
-                'event_id' => $halloweenConfig['halloween_event'],
-                'status' => ActivitySignUpModel::STATUS_ABLE
-            ],
-            ['create_time', 'complete_time'], false);
-        if (empty($signInfo)) {
-            throw new RunTimeException(['user_not_join_halloween']);
-        }
         //当天的有效里程
         $completeProcess = self::getStudentDayMileagesStaticsData($studentId, $halloweenConfig['halloween_event']);
         //获取里程统计数据
@@ -81,15 +69,13 @@ class HalloweenService
     {
         $nowTime = time();
         $eventInfo = self::getEventTaskCache($eventId, self::HALLOWEEN_EVENT_FIELD, date('Y-m-d'));
-        list($startTime, $endTime) = Util::getStartEndTimestamp($nowTime);
-        $todayRecord = AIPlayRecordCHModel::getStudentValidTotalDuration($studentId, $startTime, $endTime, $eventInfo['every_day_valid_seconds']);
+        list($startTime, $endTime) = self::getTodayDurationStartTime($studentId, $eventId);
+        $todayRecord = AIPlayRecordModel::getStudentValidSumByDate($studentId, $startTime, $endTime, $eventInfo['every_day_valid_seconds']);
         return [
             'today_mileages' => floor($todayRecord[0]['sum_duration'] / 60),
             'day_valid_mileages' => $eventInfo['every_day_valid_seconds'] / 60,
             'remaining_hours' => floor(($eventInfo['end_time'] - $nowTime) % Util::TIMESTAMP_ONEDAY / Util::TIMESTAMP_1H),
             'remaining_days' => floor(($eventInfo['end_time'] - $nowTime) / Util::TIMESTAMP_ONEDAY),
-            'start_time' => $eventInfo['start_time'],
-            'end_time' => $eventInfo['end_time'],
         ];
     }
 
@@ -159,22 +145,25 @@ class HalloweenService
                 $tmpRankList['rank_list'][$sId] = [
                     'name' => $studentsInfo[$sId]['name'],
                     'thumb' => $studentsInfo[$sId]['thumb'] ? AliOSS::replaceCdnDomainForDss($studentsInfo[$sId]['thumb']) : AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb')),
-                    'medal_thumb' => StudentServiceForApp::getStudentShowMedal($sId),
                     'mileages' => floor($mileages / 60),
                     'rank_num' => $i,
                 ];
                 $i++;
             });
         }
-        $rankData = self::getStudentAwardInfoByRank($tmpRankList['rank_list'], $studentsInfo);
+        $rankData = $tmpRankList['rank_list'];
         //获取用户自己的排名信息
         if ($studentIsInRank == true) {
             //获取奖品领取状态
             $rankList['self'] = self::checkSelfAwardStatus($rankData[$studentId], $studentsInfo[$studentId]);
         } else {
             $rankList['self'] = self::getStudentMileagesStaticsData($studentId);
-            //获取距离最后一名的里程数
-            $rankList['self']['space'] = end($rankData)['mileages'] - $rankList['self']['mileages'];
+            if ($rankLimit > count($rankData)) {
+                $rankList['self']['space'] = 1;
+            } else {
+                //获取距离最后一名的里程数
+                $rankList['self']['space'] = end($rankData)['mileages'] - $rankList['self']['mileages'];
+            }
         }
         $rankList['rank_list'] = array_values($rankData);
         return $rankList;
@@ -188,40 +177,49 @@ class HalloweenService
      */
     private static function checkSelfAwardStatus($awardData, $studentInfo)
     {
-        $rankAwardTaskIds = array_column($awardData['rank_award'], 'task_id');
-        $extraAwardTaskIds = array_column($awardData['extra_award'], 'task_id');
+        $rankAwardData = self::getStudentAwardInfoByRank([$studentInfo['id'] => $awardData], [$studentInfo['id'] => $studentInfo], $studentInfo['id']);
+        $resultAwardData = $rankAwardData[$studentInfo['id']];
+        $rankAwardTaskIds = array_column($resultAwardData['rank_award'], 'task_id');
+        $extraAwardTaskIds = array_column($resultAwardData['extra_award'], 'task_id');
         $erp = new Erp();
         $records = $erp->getUserTaskRelateInfo(['uuid' => $studentInfo['uuid'], 'task_id' => implode(',', array_merge($rankAwardTaskIds, $extraAwardTaskIds))])['data']['records'] ?? [];
         $relateInfo = array_column($records, 'status', 'event_task_id');
-        array_walk($awardData['rank_award'], function (&$rlv, $rlk) use ($relateInfo) {
+        array_walk($resultAwardData['rank_award'], function (&$rlv, $rlk) use ($relateInfo) {
             $rlv['has_draw'] = (isset($relateInfo[$rlv['task_id']]) && $relateInfo[$rlv['task_id']] == ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
         });
-        array_walk($awardData['extra_award'], function (&$elv, $elk) use ($relateInfo) {
-            $elv['has_draw'] = (isset($relateInfo[$elv['task_id']]) && $relateInfo[$elv['task_id']] == ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
-        });
-        return $awardData;
+        if ($studentInfo['has_review_course'] == ReviewCourseModel::REVIEW_COURSE_1980) {
+            array_walk($resultAwardData['extra_award'], function (&$elv, $elk) use ($relateInfo) {
+                $elv['has_draw'] = (isset($relateInfo[$elv['task_id']]) && $relateInfo[$elv['task_id']] == ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
+            });
+        } else {
+            $resultAwardData['extra_award'] = [];
+        }
+        return $resultAwardData;
     }
 
     /**
      * 通过排行名次获取用户奖励数据
      * @param $rankList
-     * @param $studentInfo
+     * @param $studentsInfo
+     * @param $studentId
      * @return array
      */
-    public static function getStudentAwardInfoByRank($rankList, $studentInfo)
+    private static function getStudentAwardInfoByRank($rankList, $studentsInfo, $studentId)
     {
         $halloweenConfig = DictConstants::getSet(DictConstants::HALLOWEEN_CONFIG);
         $rankAward = self::getEventTaskCache($halloweenConfig['halloween_event'], self::HALLOWEEN_AWARD_FIELD, date('Y-m-d'));
         //查询实物奖品详细信息
-        $extraAwardData = [];
-        array_walk($rankList, function (&$rav, $rak) use (&$extraAwardData, $halloweenConfig, $rankAward, $studentInfo) {
-            //排行任务奖励
-            $rav['rank_award'] = $rankAward[$halloweenConfig['rank_task_type']][$rav['rank_num']];
-            //年卡用户获取额外任务奖励
-            $rav['extra_award'] = [];
-            if ($studentInfo[$rak]['has_review_course'] == ReviewCourseModel::REVIEW_COURSE_1980) {
-                $rav['extra_award'] = $rankAward[$halloweenConfig['extra_task_type']][$rav['rank_num']];
+        array_walk($rankList, function (&$rav, $rak) use ($halloweenConfig, $rankAward, $studentsInfo, $studentId) {
+            if ($studentId == $rak) {
+                //排行任务奖励
+                $rav['rank_award'] = $rankAward[$halloweenConfig['rank_task_type']][$rav['rank_num']];
+                //年卡用户获取额外任务奖励
+                $rav['extra_award'] = [];
+                if ($studentsInfo[$rak]['has_review_course'] == ReviewCourseModel::REVIEW_COURSE_1980) {
+                    $rav['extra_award'] = $rankAward[$halloweenConfig['extra_task_type']][$rav['rank_num']];
+                }
             }
+            $rav['is_can_take_award'] = self::checkTakeAwardRightTime($halloweenConfig['rank_task_type']);
         });
         return $rankList;
     }
@@ -234,20 +232,25 @@ class HalloweenService
      */
     public static function getStudentMileagesStaticsData($studentId)
     {
-        $studentsInfo = StudentModelForApp::getById($studentId);
+        $studentInfo = StudentModelForApp::getById($studentId);
         //配置的活动ID
         $halloweenConfig = DictConstants::getSet(DictConstants::HALLOWEEN_CONFIG);
         //获取配置活动的详细信息
         $eventInfo = self::getEventTaskCache($halloweenConfig['halloween_event'], self::HALLOWEEN_EVENT_FIELD, date('Y-m-d'));
         //获取里程统计数据
-        $selfRankData = AIPlayRecordCHModel::getStudentValidTotalDuration($studentId, $eventInfo['start_time'], $eventInfo['end_time'], $eventInfo['every_day_valid_seconds']);
+        $signData = ActivitySignUpModel::getRecord(['user_id' => $studentId, 'event_id' => $halloweenConfig['halloween_event']], ['create_time'], false);
+        $selfMileages = 0;
+        if (!empty($signData)) {
+            $selfRankData = AIPlayRecordModel::getStudentValidSumByDate($studentId, $signData['create_time'], $eventInfo['end_time'], $eventInfo['every_day_valid_seconds']);
+            $selfMileages = floor(array_sum(array_column($selfRankData, 'sum_duration')) / 60);
+        }
         $rankNum = self::getStudentHalloweenRankNum($studentId);
         return [
-            'name' => $studentsInfo[$studentId]['name'],
-            'thumb' => $studentsInfo[$studentId]['thumb'] ? AliOSS::replaceCdnDomainForDss($studentsInfo[$studentId]['thumb']) : AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb')),
-            'medal_thumb' => StudentServiceForApp::getStudentShowMedal($studentId),
-            'mileages' => floor(array_sum(array_column($selfRankData, 'sum_duration')) / 60),
+            'name' => $studentInfo['name'],
+            'thumb' => $studentInfo['thumb'] ? AliOSS::replaceCdnDomainForDss($studentInfo['thumb']) : AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb')),
+            'mileages' => $selfMileages,
             'rank_num' => $rankNum,
+            'is_can_take_award' => false,
         ];
     }
 
@@ -394,12 +397,14 @@ class HalloweenService
         $redis->del([$cacheKey]);
         //配置的活动ID
         $halloweenConfig = DictConstants::getSet(DictConstants::HALLOWEEN_CONFIG);
-        //获取配置活动的详细信息
-        $eventInfo = self::getEventTaskCache($halloweenConfig['halloween_event'], self::HALLOWEEN_EVENT_FIELD, date('Y-m-d'));
         //获取里程统计数据
-        $rankData = AIPlayRecordCHModel::getHalloweenDurationRank($halloweenConfig['halloween_event'], $eventInfo['every_day_valid_seconds'], $eventInfo['start_time'], $eventInfo['end_time'], $halloweenConfig['rank_limit']);
+        $rankData = ActivitySignUpModel::getRankData($halloweenConfig['halloween_event']);
         if (!empty($rankData)) {
-            $redis->zadd($cacheKey, array_column($rankData, 'user_total_du', 'student_id'));
+            $rankCacheData = [];
+            array_walk($rankData, function ($rv, $rk) use (&$rankCacheData) {
+                $rankCacheData[$rv['student_id']] = round($rv['user_total_du'] . '.' . ($rk + 1), 3);
+            });
+            $redis->zadd($cacheKey, $rankCacheData);
             $redis->expire($cacheKey, self::HALLOWEEN_RANK_CACHE_EXPIRE_TIME);
         }
     }
@@ -417,7 +422,16 @@ class HalloweenService
         if (empty($redis->exists($cacheKey))) {
             self::setHalloweenRankCache();
         }
-        return $redis->zrevrange($cacheKey, $start, $stop, ['WITHSCORES' => true]);
+        $rank = [];
+        $cacheData = $redis->zrevrange($cacheKey, $start, $stop, ['WITHSCORES' => true]);
+        if (empty($cacheData)) {
+            return $rank;
+        }
+        array_walk($cacheData, function ($cv, $ck) use (&$rank) {
+            $rv = explode(".", $cv);
+            $rank[$ck] = $rv[0];
+        });
+        return $rank;
     }
 
     /**
@@ -452,9 +466,11 @@ class HalloweenService
             SimpleLogger::info("halloween event info empty", ['event_id' => $halloweenConfig['halloween_event']]);
             return false;
         }
-        $todayTotalDuration = AIPlayRecordModel::getDailyDurationCache($studentId);
-        if ($todayTotalDuration > $eventInfo['every_day_valid_seconds']) {
-            SimpleLogger::info("duration gt student day valid seconds", ['duration' => $todayTotalDuration]);
+        //获取当日有效的练琴时长
+        list($startTime, $endTime) = self::getTodayDurationStartTime($studentId, $halloweenConfig['halloween_event']);
+        $todayRecord = AIPlayRecordModel::getStudentValidSumByDate($studentId, $startTime, $endTime, $eventInfo['every_day_valid_seconds']);
+        if ($todayRecord[0]['sum_duration'] > $eventInfo['every_day_valid_seconds']) {
+            SimpleLogger::info("duration gt student day valid seconds", ['today_duration' => $todayRecord[0]['sum_duration']]);
             return false;
         }
         //记录每日有效时长完成的时间
@@ -514,8 +530,11 @@ class HalloweenService
     private static function checkStudentCheckAwardQuality($taskIds, $studentInfo)
     {
         //获取活动配置数据
+        $time = time();
+        $date = date('Y-m-d', $time);
         $halloweenConfig = DictConstants::getSet(DictConstants::HALLOWEEN_CONFIG);
-        $eventTasks = self::getEventTaskCache($halloweenConfig['halloween_event'], self::HALLOWEEN_TASK_FIELD, date('Y-m-d'));
+        $eventInfo = self::getEventTaskCache($halloweenConfig['halloween_event'], self::HALLOWEEN_EVENT_FIELD, $date);
+        $eventTasks = self::getEventTaskCache($halloweenConfig['halloween_event'], self::HALLOWEEN_TASK_FIELD, $date);
         if (empty($eventTasks)) {
             throw new RunTimeException(['halloween_event_task_error']);
         }
@@ -526,6 +545,7 @@ class HalloweenService
         $records = $erp->getUserTaskRelateInfo(['uuid' => $studentInfo['uuid'], 'task_id' => implode(',', $taskIds)])['data']['records'] ?? [];
         $relateInfo = array_column($records, 'status', 'event_task_id');
         //检测用户是否满足领奖条件
+        $signData = ActivitySignUpModel::getRecord(['user_id' => $studentInfo['id'], 'event_id' => $halloweenConfig['halloween_event']], ['create_time'], false);
         $validTasks = [];
         foreach ($taskIds as $taskId) {
             //任务已完成禁止重复完成
@@ -537,11 +557,13 @@ class HalloweenService
             }
             $takeAwardTask = $taskList[$taskId];
             $condition = json_decode($takeAwardTask['condition'], true);
-            $eventInfo = self::getEventTaskCache($halloweenConfig['halloween_event'], self::HALLOWEEN_EVENT_FIELD, date('Y-m-d'));
             if ($takeAwardTask['type'] == $halloweenConfig['process_task_type']) {
                 //游行阶段任务
                 //获取活动期间用户有效的里程数据
-                $aiPlayRecord = AIPlayRecordCHModel::getStudentValidTotalDuration($studentInfo['id'], $eventInfo['start_time'], $eventInfo['end_time'], $eventInfo['every_day_valid_seconds']);
+                if (($time < $eventInfo['start_time']) || ($time > $eventInfo['end_time'])) {
+                    throw new RunTimeException(['halloween_take_award_time_error']);
+                }
+                $aiPlayRecord = AIPlayRecordModel::getStudentValidSumByDate($studentInfo['id'], $signData['create_time'], $eventInfo['end_time'], $eventInfo['every_day_valid_seconds']);
                 $totalMileages = array_sum(array_column($aiPlayRecord, 'sum_duration'));
                 if ($condition['valid_num'] > $totalMileages) {
                     SimpleLogger::error('process task student not reach valid num', ['task_id' => $taskId, 'valid_num' => $condition['valid_num'], 'total_mileages' => $totalMileages, 'student_id' => $studentInfo['id']]);
@@ -549,6 +571,9 @@ class HalloweenService
                 }
             } else {
                 //排行榜任务&额外任务
+                if ($time < $eventInfo['end_time']) {
+                    throw new RunTimeException(['halloween_take_award_time_error']);
+                }
                 //获取用户排名
                 $rankNum = self::getStudentHalloweenRankNum($studentInfo['id']);
                 if (is_null($rankNum) || ($rankNum > $halloweenConfig['take_award_rank_limit'])) {
@@ -572,5 +597,55 @@ class HalloweenService
             throw new RunTimeException(['halloween_event_task_invalid']);
         }
         return $validTasks;
+    }
+
+    /**
+     * 获取当日有效时长计算的开始时间
+     * @param $studentId
+     * @param $eventId
+     * @return mixed
+     */
+    private static function getTodayDurationStartTime($studentId, $eventId)
+    {
+        $nowTime = time();
+        list($dayStartTime, $datEndTime) = Util::getStartEndTimestamp($nowTime);
+        $signData = ActivitySignUpModel::getRecord(['user_id' => $studentId, 'event_id' => $eventId], ['create_time'], false);
+        if ($signData['create_time'] >= $dayStartTime) {
+            $sTime = $signData['create_time'];
+        } else {
+            $sTime = $dayStartTime;
+        }
+        return [$sTime, $datEndTime];
+    }
+
+    /**
+     * 检测当前时间是否可以领取奖励
+     * @param $taskType
+     * @return bool
+     */
+    private static function checkTakeAwardRightTime($taskType)
+    {
+        //获取活动配置数据
+        $time = time();
+        $date = date('Y-m-d', $time);
+        $halloweenConfig = DictConstants::getSet(DictConstants::HALLOWEEN_CONFIG);
+        $eventInfo = self::getEventTaskCache($halloweenConfig['halloween_event'], self::HALLOWEEN_EVENT_FIELD, $date);
+        //不同的任务类型，领取奖励的时间不同
+        switch ($taskType) {
+            case $halloweenConfig['process_task_type']:
+                if (($time < $eventInfo['start_time']) || ($time > $eventInfo['end_time'])) {
+                    return false;
+                };
+                break;
+            case $halloweenConfig['rank_task_type']:
+            case $halloweenConfig['extra_task_type']:
+                if ($time < $eventInfo['end_time']) {
+                    return false;
+                }
+                break;
+            default:
+                return false;
+        }
+        return true;
     }
 }
