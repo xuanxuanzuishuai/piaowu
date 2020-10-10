@@ -8,8 +8,6 @@ use App\Libs\Constants;
 use App\Libs\RedisDB;
 use App\Models\StudentCollectionExceptModel;
 use App\Libs\DictConstants;
-use App\Libs\HttpHelper;
-use App\Libs\OpernCenter;
 use App\Models\AIPlayRecordModel;
 use App\Models\StudentLearnRecordModel;
 use App\Models\StudentModel;
@@ -1055,7 +1053,6 @@ class InteractiveClassroomService
      * 处理学生上课状态，是否有缺课
      * @param $item
      * @param $studentLearnRecordData
-     * @param $studentTodayBindCourseRes
      * @return int
      */
     public static function calculationClassStatus($item, $studentLearnRecordData)
@@ -1141,14 +1138,18 @@ class InteractiveClassroomService
             $todayLearn = [];
         }
 
-        $result['sum_duration'] = AIPlayRecordService::getStudentDaySumDuration($studentId, $startTime, $endTime);
+        //获取今日练琴时长
+        $startTime = strtotime($year . "-" . $month . "-" . $day);
+        $endTime = strtotime('+1 day', $startTime) - 1;
+        $result['sum_duration'] = AIPlayRecordModel::getStudentSumByDate($studentId, $startTime, $endTime)[0]['sum_duration'];
+
         //练琴任务
         list($generalTask,$finishTheTask) = CreditService::getActivityList($studentId);
-        $result['finish_the_task'] = (INT)$finishTheTask;   //完成练琴任务次数
-        $result['general_task'] = $generalTask;//总任务
+        $result['finish_the_task'] = !empty($generalTask) ? (INT)$finishTheTask : 0;//完成练琴任务次数
+        $result['general_task'] = !empty($generalTask) ? $generalTask : 0;//总任务
         $result['today_class'] = $todayClass;
         $result['today_learn'] = $todayLearn;
-        $result['date'] = date('Y-m-d', time());
+        $result['date'] = strtotime('today');
         return $result;
     }
 
@@ -1198,7 +1199,8 @@ class InteractiveClassroomService
         $report['name'] = $student['name'];
         $report['accumulate_days'] = $accumulateDays;
         $report['collection_name'] = $collectionInfo['collection_name'];
-        $report['collection_cover'] = $collectionInfo['lessons_url'];
+        $report['lessons_url'] = $collectionInfo['lessons_url'];
+        $report['collection_cover'] = $collectionInfo['collection_cover'];
         $report['collection_abstract'] = $collectionInfo['collection_desc'];
         $report['start_week'] = $collectionInfo['collection_start_week'];
         $report['start_time'] = $collectionInfo['collection_start_time'];
