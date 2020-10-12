@@ -445,6 +445,9 @@ class MessageService
         array_map(function ($item)use($ruleId, &$sendArr){
             $sendArr[] = self::preSendVerify($item, $ruleId);
         },$openId);
+        if (empty($sendArr)) {
+            return;
+        }
         QueueService::messageRulePushMessage($sendArr);
     }
 
@@ -456,6 +459,9 @@ class MessageService
      */
     public static function preSendVerify($openId, $ruleId)
     {
+        if (empty($ruleId)) {
+            return;
+        }
         //是否超过次数限制
         if (self::judgeOverMessageRuleLimit($openId)) {
             return;
@@ -495,7 +501,7 @@ class MessageService
             $key = self::MESSAGE_RULE_KEY . $v['expire_time'] . '_' .  $openId;
             $num = intval($redis->get($key));
             if ($num >= $v['limit']) {
-                SimpleLogger::info('message over num limit ', ['expire_time' => $v['expire_time']]);
+                SimpleLogger::info('message over num limit ', ['expire_time' => $v['expire_time'], 'open_id' => $openId]);
                 return true;
             }
         }
