@@ -766,10 +766,9 @@ class InteractiveClassroomService
      */
     public static function getTodayCourse($opn, $studentId)
     {
-        $date = date('Y-m-d');
         $time = time();
         //获取用户今日练琴计划->只要待上课的状态
-        $studentTodayCoursePlan = self::studentCoursePlan($opn, $studentId, strtotime($date));
+        $studentTodayCoursePlan = self::studentCoursePlan($opn, $studentId, $time);
         foreach ($studentTodayCoursePlan as $item) {
             if ($item['lesson_learn_status'] == StudentLearnRecordModel::GO_TO_THE_CLASS) {
                 $studentTodayCoursePlanData[] = $item;
@@ -791,6 +790,9 @@ class InteractiveClassroomService
 
         //判断今天是周几，并且当前课包是否有今天的课
         foreach ($recommendCourse as $item) {
+            if ($item['course_bind_status'] != StudentSignUpCourseModel::COURSE_BING_ERROR) {
+                continue;
+            }
             if ($item['collection_start_week'] == date("N", $time)) {
                 //上课状态->去报名
                 $item['course_bind_status'] = StudentSignUpCourseModel::COURSE_BING_ERROR;

@@ -85,9 +85,9 @@ class InteractiveClassroom extends ControllerBase
         list($generalTask,$finishTheTask) = CreditService::getActivityList($studentId);
         $result['sum_duration'] = AIPlayRecordService::getStudentSumDuration($studentId);
         //完成练琴任务次数
-        $result['finish_the_task'] = (INT)$finishTheTask;
+        $result['finish_the_task'] = !empty($generalTask) ? (INT)$finishTheTask : 0;//完成练琴任务次数
         //总任务
-        $result['general_task'] = $generalTask;
+        $result['general_task'] = !empty($generalTask) ? $generalTask : 0;//总任务
         $opn = new OpernCenter(OpernCenter::PRO_ID_INTERACTION_CLASSROOM, OpernCenter::version);
         //今日课程
         list($todayCourse, $todayRecommendCourse) = InteractiveClassroomService::getTodayCourse($opn, $studentId);
