@@ -381,10 +381,10 @@ class MessageService
                     SimpleLogger::error('wx create fail', ['we_chat_type'=>UserWeixinModel::USER_TYPE_STUDENT]);
                     return;
                 }
-                $data = $wx->getTempMedia('image', $posterImgFile['unique'], $posterImgFile['poster_save_full_path']);
+                $wxData = $wx->getTempMedia('image', $posterImgFile['unique'], $posterImgFile['poster_save_full_path']);
                 //发送海报
-                if (!empty($data['media_id'])) {
-                    WeChatService::toNotifyUserWeixinCustomerInfoForImage(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT, UserWeixinModel::USER_TYPE_STUDENT, $data['open_id'], $data['media_id']);
+                if (!empty($wxData['media_id'])) {
+                    WeChatService::toNotifyUserWeixinCustomerInfoForImage(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT, UserWeixinModel::USER_TYPE_STUDENT, $data['open_id'], $wxData['media_id']);
                 }
             }
         }, $messageRule['content']);
@@ -400,7 +400,7 @@ class MessageService
     {
         //走关注规则，无法获取转介绍二维码
         if ($data['rule_id'] == DictConstants::get(DictConstants::MESSAGE_RULE, 'subscribe_rule_id')) {
-            $posterImgFile = ['poster_save_full_path' => $item['value'], 'unique' => md5($data['open_id'].$item['value'])];
+            $posterImgFile = ['poster_save_full_path' => $item['value'], 'unique' => md5($data['open_id'].$item['value']) . '.jpg'];
         } else {
             //非关注拼接转介绍二维码
             $userInfo = UserWeixinModel::getBoundInfoByOpenId($data['open_id'],
