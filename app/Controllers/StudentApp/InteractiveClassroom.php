@@ -471,21 +471,4 @@ class InteractiveClassroom extends ControllerBase
             'data' => $data,
         ], StatusCode::HTTP_OK);
     }
-
-    /**
-     * @param Request $request
-     * @param Response $response
-     * @return Response
-     * 获取热门教材
-     */
-    public static function hotTextbook(Request $request, Response $response)
-    {
-        $opn = new OpernCenter(OpernCenter::PRO_ID_INTERACTION_CLASSROOM, OpernCenter::version);
-        $data = InteractiveClassroomService::hotTextbook($opn);
-
-        return $response->withJson([
-            'code' => Valid::CODE_SUCCESS,
-            'data' => $data,
-        ], StatusCode::HTTP_OK);
-    }
 }

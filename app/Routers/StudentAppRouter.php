@@ -504,11 +504,6 @@ class StudentAppRouter extends RouterBase
             'call'    => InteractiveClassroom::class . ':collectionDetail',
             'middles' => [StudentAuthCheckMiddleWareForApp::class,AppApiForStudent::class]
         ],
-        '/student_app/interactive_classroom/hot_textbook' => [
-            'method'  => ['get'],
-            'call'    => InteractiveClassroom::class . ':hotTextbook',
-            'middles' => [StudentAuthCheckMiddleWareForApp::class,AppApiForStudent::class]
-        ],
 
         //万圣节活动相关路由
         '/student_app/halloween/sign_up' => [

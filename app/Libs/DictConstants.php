@@ -104,7 +104,6 @@ class DictConstants {
             'review_validate_code',
             'super_validate_code',
             'res_test_mobiles',
-            'hot_textbook',
         ]
     ];
 

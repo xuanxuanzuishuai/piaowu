@@ -89,7 +89,7 @@ class InteractiveClassroomService
                 $collectionList[$key]['lesson_start_timestamp'] = strtotime(date("Y-m-d $startTime", time()));
             }
 
-            $collectionList[$key]['lesson_count'] = count($classifyLessonInfo[$key]['payLessonList']);
+            $collectionList[$key]['lesson_count'] = isset($classifyLessonInfo[$key]['payLessonList']) ? count($classifyLessonInfo[$key]['payLessonList']) : 0;
         }
 
         return $collectionList ?? [];
@@ -640,11 +640,14 @@ class InteractiveClassroomService
         $collection = $collectionResult['data'];
 
         //整合课程信息
-        $lessonResult = $opn->lessons($collectionId, $page, $pageSize);
+        $withResources = 1;
+        $resourceTypes = 'mp10';
+        $lessonResult = $opn->lessons($collectionId, $page, $pageSize,$withResources,$resourceTypes);
         if (!empty($lessonResult['data']['list'])){
             foreach ($lessonResult['data']['list'] as $key => $value){
                 if ($value['freeflag'] == true){
                     $lesson = $value;
+                    break;
                 }
             }
         }
@@ -659,7 +662,7 @@ class InteractiveClassroomService
             "collection_start_time" => $timeTableResult['data'][0]['start_time'] ?? '',
             'collection_desc'       => $collection[0]['abstract'],
             'collection_cover'       => $collection[0]['cover'] ?? '',
-            'lessons_url'           => $lesson['resources']['resource_url'] ?? '',
+            'lessons_url'           => $lesson['resources'][0]['resource_url'] ?? '',
         ];
         return $data ?? [];
     }
@@ -696,30 +699,6 @@ class InteractiveClassroomService
             'create_time'   => time(),
         ];
         return StudentCollectionExceptModel::insertRecord($insertData, false);
-    }
-
-    /**
-     * @param $opn
-     * @return array
-     * 获取热门教材
-     */
-    public static function hotTextbook($opn)
-    {
-        $hotCollectionIds = json_decode(DictConstants::get(DictConstants::APP_CONFIG_COMMON,'hot_textbook'),true);
-        if (empty($hotCollectionIds)){
-            return [];
-        }
-        $collectionList = $opn->collectionsByIds($hotCollectionIds);
-        if (isset($collectionList['data']) && !empty($collectionList['data'])){
-            foreach ($collectionList['data'] as $value){
-                $hotCollectionList[] = [
-                    'collection_id'=>$value['id'],
-                    'collection_name'=>$value['name'],
-                    'collection_cover'=>$value['cover'],
-                ];
-            }
-        }
-        return $hotCollectionList ?? [];
     }
 
     /**
