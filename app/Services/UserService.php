@@ -122,14 +122,6 @@ class UserService
      */
     public static function generateQRPosterAliOss($userId, $posterFile, $type, $imageWidth, $imageHeight, $qrWidth, $qrHeight, $qrX, $qrY, $channelId)
     {
-        //合成海报保存目录
-        $posterFirstDir = UserQrTicketModel::$posterDir[$type];
-        //海报保存二级目录
-        $posterSecondDir = md5($posterFile);
-        //海报文件名称
-        $posterFileName = $userId . "_" . $channelId . ".png";
-        //获取宣传海报文件：不存在重新生成
-        $posterSaveFullPath = $_ENV['STATIC_FILE_SAVE_PATH'] . "/".$posterFirstDir."/".$posterSecondDir."/".$posterFileName;
         //通过oss合成海报并保存
         //海报资源
         $posterAliOssFileExits = AliOSS::doesObjectExist($posterFile);
@@ -168,14 +160,8 @@ class UserService
         ];
         $imgSizeStr = implode(",", $imgSize) . '/';
         $resImgFile = AliOSS::signUrls($posterFile, "", "", "", false, $waterMarkStr, $imgSizeStr);
-        //生成宣传海报图
-        list($subPath, $hashDir, $fullDir) = File::createDir($posterFirstDir."/".$posterSecondDir);
-        $posterQrFile=file_get_contents($resImgFile);
-        $posterQrFileTmpPath = $fullDir.$posterFileName;
-        file_put_contents($posterQrFileTmpPath,$posterQrFile);
-        chmod($posterQrFileTmpPath, 0755);
         //返回数据
-        return ['poster_save_full_path' => $posterSaveFullPath, 'unique' => md5($userId.$posterFile.$userQrUrl['qr_url'])];
+        return ['poster_save_full_path' => $resImgFile, 'unique' => md5($userId . $posterFile . $userQrUrl['qr_url']) . ".jpg"];
     }
 
     /**

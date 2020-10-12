@@ -663,7 +663,7 @@ class WeChatService
             if (empty($wx)) {
                 SimpleLogger::error('wx create fail', ['config' => $config, 'we_chat_type'=>UserWeixinModel::USER_TYPE_STUDENT]);
             }
-            $data = $wx->getTempMedia('image', md5($configData['content']), $configData['content']);
+            $data = $wx->getTempMedia('image', md5($configData['content']) . ".jpg", $configData['content']);
             if (!empty($data['media_id'])) {
                 $res = self::toNotifyUserWeixinCustomerInfoForImage($appId, $userType, $userWeChatInfo['open_id'], $data['media_id']);
             }
