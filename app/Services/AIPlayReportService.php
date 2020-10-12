@@ -11,6 +11,7 @@ namespace App\Services;
 use App\Libs\AliOSS;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
+use App\Libs\OpernCenter;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\AIPlayRecordModel;
@@ -71,9 +72,10 @@ class AIPlayReportService
 
         $report = AIPlayRecordService::getDayReportData($studentId, $date);
         //获取用户的今日课程，没有课程获取推荐课包
-        $todayClass = InteractiveClassroomService::studentCoursePlan($studentId, $date);
+        $opn = new OpernCenter(OpernCenter::PRO_ID_INTERACTION_CLASSROOM, OpernCenter::version);
+        $todayClass = InteractiveClassroomService::studentCoursePlan($opn, $studentId, time());
         if (empty($todayClass)) {
-            $recommendCourse = InteractiveClassroomService::recommendCourse();
+            $recommendCourse = InteractiveClassroomService::recommendCourse($opn, $studentId);
         } else{
             $recommendCourse = [];
         }
@@ -107,9 +109,10 @@ class AIPlayReportService
         );
 
         //获取用户的今日课程，没有课程获取推荐课包
-        $todayClass = InteractiveClassroomService::studentCoursePlan($shareTokenInfo["student_id"], strtotime($shareTokenInfo["date"]));
+        $opn = new OpernCenter(OpernCenter::PRO_ID_INTERACTION_CLASSROOM, OpernCenter::version);
+        $todayClass = InteractiveClassroomService::studentCoursePlan($opn,$shareTokenInfo["student_id"], strtotime($shareTokenInfo["date"]));
         if (empty($todayClass)) {
-            $recommendCourse = InteractiveClassroomService::recommendCourse();
+            $recommendCourse = InteractiveClassroomService::recommendCourse($opn, $shareTokenInfo['student_id']);
         } else{
             $recommendCourse = [];
         }
