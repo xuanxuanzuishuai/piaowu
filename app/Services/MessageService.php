@@ -127,11 +127,11 @@ class MessageService
         if (!empty($updateData['content'])) {
             $updateData['content'] = json_encode($updateData['content']);
         }
-        self::updatePushRuleCache($params['id']);
         $res = MessagePushRulesModel::updateRecord($params['id'], $updateData, false);
         if (is_null($res)) {
             return 'update_failure';
         }
+        self::updatePushRuleCache($params['id']);
         return null;
     }
 
