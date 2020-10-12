@@ -652,11 +652,10 @@ class ReviewCourseService
     {
         $refTaskId = null;
         if ($packageType == PackageExtModel::PACKAGE_TYPE_TRIAL) {
-            if ($trialType == PackageExtModel::TRIAL_TYPE_49) {
-                // 购买49体验包完成转介绍任务
+            if (in_array($trialType, [PackageExtModel::TRIAL_TYPE_49, PackageExtModel::TRIAL_TYPE_9])) {
+                // 购买49,9.9体验包完成转介绍任务
                 $refTaskId = ErpReferralService::getTrailPayTaskId();
             }
-
         } elseif ($packageType == PackageExtModel::PACKAGE_TYPE_NORMAL) {
             if ($appId == PackageExtModel::APP_AI) {
                 // 购买正式包完成转介绍任务
