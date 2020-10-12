@@ -209,6 +209,33 @@ class Opn extends ControllerBase
         ], StatusCode::HTTP_OK);
     }
 
+    /**
+     * 获取热门教材
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function hotCollections(Request $request, Response $response)
+    {
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT,
+            $this->ci['opn_pro_ver'],
+            $this->ci['opn_auditing'],
+            $this->ci['opn_publish']);
+
+        $categoryId = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'popular_textbooks_ids');
+        $result = $opn->collectionsByIds($categoryId);
+        if (empty($result) || !empty($result['errors'])) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $data = $result;
+        $list = OpernService::appFormatCollections($data['data']);
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $list
+        ], StatusCode::HTTP_OK);
+    }
+
+
     public function lessons(Request $request, Response $response)
     {
         $rules = [

@@ -1,0 +1,1 @@
+INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES ('APP_CONFIG_STUDENT', 'AI练琴后端设置', 'popular_textbooks_ids', '79,25,14,371,94,20,373,1028,258,462,8,263,433,372,77,367,113,83,259,495,1', '热门教材');
