@@ -178,6 +178,9 @@ class InteractiveClassroomService
      */
     public static function getLessonCovers($opn, $collectionIds)
     {
+        if (is_array($collectionIds)) {
+            $collectionIds = implode(',', $collectionIds);
+        }
         $result = $opn->collectionsByIds($collectionIds);
         if (empty($result['data'])) {
             return [];
@@ -302,7 +305,7 @@ class InteractiveClassroomService
         $lessonList = $result['data'];
         //将记录表中的信息写入的课程信息中
         foreach ($lessonList as $key => $v) {
-            $courseStartTime = (array_search($v['id'], $lessonListWithCollection[$v['collection_id']])) * self::WEEK_TIMESTAMP + $lastRecordKeyByCollectionId[$v['collection_id']]['first_course_time'];
+            $courseStartTime = (array_search($v['id'], $lessonListWithCollection[$v['collection_id']]['payLessonList'])) * self::WEEK_TIMESTAMP + $lastRecordKeyByCollectionId[$v['collection_id']]['first_course_time'];
             if (isset($lastRecordKeyByLessonId[$v['id']]) && $v['id'] == $lastRecordKeyByLessonId[$v['id']]) {
                 $lessonLearnStatus = $lastRecordKeyByLessonId[$v['id']]['learn_status'];
             } else {
@@ -518,6 +521,9 @@ class InteractiveClassroomService
     public static function collectionDetail($opn, $collectionId, $studentId, $page = 1, $pageSize = 50)
     {
         //获取课包的所有数据
+        if (is_array($collectionId)) {
+            $collectionId = implode(',', $collectionId);
+        }
         $collectionResult = $opn->collectionsByIds($collectionId);
         if (empty($collectionResult['data'])) {
             return [];
@@ -633,6 +639,9 @@ class InteractiveClassroomService
      */
     public static function erpCollectionByIds($opn, $collectionId, $page = 1, $pageSize = 50)
     {
+        if (is_array($collectionId)) {
+            $collectionId = implode(',', $collectionId);
+        }
         $collectionResult = $opn->collectionsByIds($collectionId);
         if (empty($collectionResult['data'])) {
             return [];
@@ -675,8 +684,11 @@ class InteractiveClassroomService
      */
     public static function lessonRecourse($opn, $lessonId)
     {
+        if (is_array($lessonId)) {
+            $lessonId = implode(',', $lessonId);
+        }
         $withResources = 1;
-        $resourceTypes = 'mp4';
+        $resourceTypes = 'mp10';
         $lesson = $opn->lessonsByIds($lessonId, $withResources, $resourceTypes);
         return $lesson['data'] ?? [];
     }
