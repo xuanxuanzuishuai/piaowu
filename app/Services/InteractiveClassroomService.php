@@ -1109,14 +1109,6 @@ class InteractiveClassroomService
         if (empty($student)) {
             return [];
         }
-        //判断用户是否年卡用户，年卡是否过期
-        if ($student['has_review_course'] == ReviewCourseModel::REVIEW_COURSE_1980 && $student['sub_end_date'] < date('Ymd', time())) {
-            $result['student_status'] = ReviewCourseModel::REVIEW_COURSE_BE_OVERDUE;
-        } elseif ($student['has_review_course'] == ReviewCourseModel::REVIEW_COURSE_1980 && $student['sub_end_date'] > date('Ymd', time())) {
-            $result['student_status'] = ReviewCourseModel::REVIEW_COURSE_1980;
-        } else {
-            $result['student_status'] = $student['has_review_course'];
-        }
 
         //没有传时间，默认时间为今天
         if (empty($year) && empty($month) && empty($day)) {
@@ -1124,9 +1116,7 @@ class InteractiveClassroomService
         } else {
             $date = $year.'-'.$month.'-'.$day;
         }
-        //练琴时长
         $startTime = strtotime($date);
-        $endTime = $startTime + 86400 -1;
         //今日课程
         $todayClass = self::studentCoursePlan($opn, $studentId, $startTime);
         //如果获取的是今日数据，需要把用户今天的练琴记录返回客户端，客户端实时更新课程状态
@@ -1134,6 +1124,20 @@ class InteractiveClassroomService
             $todayLearn = StudentLearnRecordModel::getRecords(['student_id' => $studentId, 'create_time[>=]' => $startTime]);
         } else{
             $todayLearn = [];
+        }
+
+        //如果今日数据为空，并且请求的时间戳大于当前时间戳，返回推荐课包信息
+        $recommendCourses = [];
+        if (empty($todayClass) && strtotime($date) > time()) {
+            $recommendCourseData = self::recommendCourse($opn, $studentId);
+        } else {
+            $recommendCourseData = [];
+        }
+        //返回今日推荐&未报名的课包
+        foreach ($recommendCourseData as $recommendCourse) {
+            if ($recommendCourse['collection_start_week'] == date("N", time()) && $recommendCourse['course_bind_status'] == StudentSignUpCourseModel::COURSE_BING_ERROR) {
+                $recommendCourses[] = $recommendCourse;
+            }
         }
 
         //获取今日练琴时长
@@ -1147,6 +1151,7 @@ class InteractiveClassroomService
         $result['general_task'] = !empty($generalTask) ? $generalTask : 0;//总任务
         $result['today_class'] = $todayClass;
         $result['today_learn'] = $todayLearn;
+        $result['recommend_course'] = $recommendCourses;
         $result['date'] = strtotime('today');
         return $result;
     }
@@ -1203,5 +1208,30 @@ class InteractiveClassroomService
         $report['start_week'] = $collectionInfo['collection_start_week'];
         $report['start_time'] = $collectionInfo['collection_start_time'];
         return $report;
+    }
+
+    /**
+     * 获取用户年卡状态
+     * @param $studentId
+     * @return mixed
+     * @throws RunTimeException
+     */
+    public static function getStudentIdentity($studentId)
+    {
+        $student = StudentModel::getById($studentId);
+        if (empty($student)) {
+           throw new RunTimeException(['record_not_found']);
+        }
+
+        $appSubStatus = StudentServiceForApp::checkSubStatus($student['sub_status'], $student['sub_end_date']);
+        //判断用户是否年卡用户，年卡是否过期
+        if ($student['has_review_course'] == ReviewCourseModel::REVIEW_COURSE_1980 && !$appSubStatus) {
+            $result['student_status'] = ReviewCourseModel::REVIEW_COURSE_BE_OVERDUE;
+        } elseif ($student['has_review_course'] == ReviewCourseModel::REVIEW_COURSE_1980 && $appSubStatus) {
+            $result['student_status'] = ReviewCourseModel::REVIEW_COURSE_1980;
+        } else {
+            $result['student_status'] = (INT)$student['has_review_course'];
+        }
+        return $result;
     }
 }

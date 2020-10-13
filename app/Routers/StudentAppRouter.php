@@ -489,6 +489,11 @@ class StudentAppRouter extends RouterBase
             'call'    => InteractiveClassroom::class . ':studentShareToken',
             'middles' => [StudentAuthCheckMiddleWareForApp::class,AppApiForStudent::class]
         ],
+        '/student_app/interactive_classroom/get_student_identity' => [
+            'method'  => ['get'],
+            'call'    => InteractiveClassroom::class . ':getStudentIdentity',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class,AppApiForStudent::class]
+        ],
         '/student_app/interactive_classroom/lesson_recourse' => [
             'method'  => ['get'],
             'call'    => InteractiveClassroom::class . ':lessonRecourse',

@@ -385,6 +385,26 @@ class InteractiveClassroom extends ControllerBase
     }
 
     /**
+     * 获取用户年卡身份
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getStudentIdentity(Request $request, Response $response)
+    {
+        $studentId = $this->ci['student']['id'];
+        try {
+            $result = InteractiveClassroomService::getStudentIdentity($studentId);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData());
+        }
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $result,
+        ], StatusCode::HTTP_OK);
+    }
+    /**
      * @param Request $request
      * @param Response $response
      * @return Response
