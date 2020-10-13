@@ -13,6 +13,7 @@ use App\Libs\DictConstants;
 use App\Libs\HttpHelper;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
+use App\Libs\Util;
 use App\Models\TrackModel;
 use App\Models\UserWeixinModel;
 
@@ -47,6 +48,7 @@ class TrackService
     const CHANNEL_BAIDU = 7; // 百度，转化追踪
     const CHANNEL_HUAWEI = 8; // 华为
     const CHANNEL_OPPO = 9; // oppo
+    const CHANNEL_KS = 10; // 快手
 
     public static function addInfo($info, $eventType = NULL)
     {
@@ -242,6 +244,8 @@ class TrackService
             case self::CHANNEL_HUAWEI:
             case self::CHANNEL_OPPO:
                 return true;
+            case self::CHANNEL_KS:
+                return self::trackCallKuaiShou($eventType, $trackData);
             default:
                 return false;
         }
@@ -439,6 +443,30 @@ class TrackService
 
         $response = HttpHelper::requestJson($api, $data, 'POST');
         $success = (!empty($response) && $response['header']['status'] == 0);
+        return $success;
+    }
+
+    public static function trackCallKuaiShou($eventType, $trackData)
+    {
+        $api = 'http://ad.partner.gifshow.com/track/activate';
+        switch ($eventType) {
+            case self::TRACK_EVENT_FORM_COMPLETE:
+                $type = '9';
+                break;
+            case self::TRACK_EVENT_PAY:
+                $type = '3';
+                break;
+            default:
+                return false;
+        }
+
+        $data = [
+            'event_type' => $type,
+            'event_time' => Util::milliSecond(),
+            'callback' => $trackData['callback'],
+        ];
+        $response = HttpHelper::requestJson($api, $data, 'GET');
+        $success = (!empty($response) && $response['result'] == 1);
         return $success;
     }
 
