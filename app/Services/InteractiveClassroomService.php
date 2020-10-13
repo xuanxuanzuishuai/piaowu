@@ -506,6 +506,8 @@ class InteractiveClassroomService
         return [
             'today'    => $today ?? [],
             'tomorrow' => $tomorrow ?? [],
+            'today_date' => date("m月d日",time()),
+            'tomorrow_date' => date("m月d日",strtotime("+1 day")),
         ];
     }
 
