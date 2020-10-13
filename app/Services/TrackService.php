@@ -455,6 +455,7 @@ class TrackService
                 break;
             case self::TRACK_EVENT_PAY:
                 $type = '3';
+                $purchaseAmount = '9.9';
                 break;
             default:
                 return false;
@@ -465,6 +466,9 @@ class TrackService
             'event_time' => Util::milliSecond(),
             'callback' => $trackData['callback'],
         ];
+        if (isset($purchaseAmount)){
+            $data['purchase_amount'] = $purchaseAmount;
+        }
         $response = HttpHelper::requestJson($api, $data, 'GET');
         $success = (!empty($response) && $response['result'] == 1);
         return $success;
