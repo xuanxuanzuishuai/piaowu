@@ -301,7 +301,10 @@ class InteractiveClassroomService
             return [];
         }
 
-        $result = $opn->lessonsByIds(implode(',', $lessonIds));
+        if (is_array($lessonIds)){
+            $lessonIds = implode(',', $lessonIds);
+        }
+        $result = $opn->lessonsByIds($lessonIds);
         $lessonList = $result['data'];
         //将记录表中的信息写入的课程信息中
         foreach ($lessonList as $key => $v) {
@@ -473,20 +476,22 @@ class InteractiveClassroomService
      */
     public static function platformCoursePlan($opn, $studentId)
     {
+        $time = time();
         //获取所有可报名状态的集合信息
-        $todayWeek = date('N', time());
+        $todayWeek = date('N', $time);
         $collectionList = self::collectionsWithTimeAndTag($opn);
         if (empty($collectionList)) {
             return [];
         }
-        $todayCoursePlan = self::studentCoursePlan($opn, $studentId, '1601474400');
+        $todayCoursePlan = self::studentCoursePlan($opn, $studentId, $time);
         $todayCoursePlanByCId = array_column($todayCoursePlan, null, 'collection_id');
         $signUpCollections = self::getSignUpCollections($studentId);
         foreach ($collectionList as $key => $value) {
             if ($value['collection_start_week'] == $todayWeek) {
                 if (in_array($value['collection_id'], $signUpCollections)) {
+                    $value['course_bind_status'] = self::COURSE_BIND_STATUS_SUCCESS;
                     $value['lesson_learn_status'] = $todayCoursePlanByCId[$value['collection_id']]['lesson_learn_status'];
-                    $value['lesson_id'] = $todayCoursePlanByCId[$value['collection_id']]['id'];
+                    $value['lesson_id'] = $todayCoursePlanByCId[$value['collection_id']]['lesson_id'];
                     $value['lesson_start_time'] = $todayCoursePlanByCId[$value['collection_id']]['lesson_start_time'];
                     $value['lesson_start_timestamp'] = $todayCoursePlanByCId[$value['collection_id']]['lesson_start_timestamp'];
                 } else {
@@ -556,6 +561,8 @@ class InteractiveClassroomService
         $collectionLearnRecordByLessonId = array_column($collectionLearnRecord, null, 'lesson_id');
         if (!empty($collectionLearnRecord)) {
             $collection[0]['collection_bind_status'] = $collectionLearnRecord[0]['bind_status'] ?? self::COURSE_BIND_STATUS_UNREGISTER;
+        }else{
+            $collection[0]['collection_bind_status'] = self::COURSE_BIND_STATUS_UNREGISTER;
         }
 
         //判断课程状态
@@ -617,14 +624,15 @@ class InteractiveClassroomService
 
         foreach ($collection as $value) {
             $result = [
-                'collection_id'         => $value['id'],
-                'collection_name'       => $value['name'],
-                "collection_start_week" => $value['collection_start_week'],
-                "collection_start_time" => date('H:i', $value['collection_start_time']) ?? "00:00",
-                'collection_tags'       => $tags ?? [],
-                'collection_cover'      => $value['cover'],
-                'collection_desc'       => $value['abstract'],
-                'lessons'               => $lesson ?? [],
+                'collection_id'          => $value['id'],
+                'collection_name'        => $value['name'],
+                'collection_bind_status' => $value['collection_bind_status'],
+                "collection_start_week"  => $value['collection_start_week'],
+                "collection_start_time"  => date('H:i', $value['collection_start_time']) ?? "00:00",
+                'collection_tags'        => $tags ?? [],
+                'collection_cover'       => $value['cover'],
+                'collection_desc'        => $value['abstract'],
+                'lessons'                => $lesson ?? [],
             ];
         }
 
