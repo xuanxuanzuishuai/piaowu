@@ -18,6 +18,7 @@ use App\Models\AIPlayRecordModel;
 use App\Models\DayReportFabulousModel;
 use App\Models\ReviewCourseModel;
 use App\Models\ReviewCourseTaskModel;
+use App\Models\StudentSignUpCourseModel;
 use App\Services\Queue\PushMessageTopic;
 use Lcobucci\JWT\Signer\Hmac\Sha256;
 use Lcobucci\JWT\Builder;
@@ -66,6 +67,7 @@ class AIPlayReportService
      */
     public static function getDayReport($studentId, $date = null)
     {
+        $recommendCourseDate = [];
         if (empty($date)) {
             $date = date('Ymd');
         }
@@ -73,14 +75,21 @@ class AIPlayReportService
         $report = AIPlayRecordService::getDayReportData($studentId, $date);
         //获取用户的今日课程，没有课程获取推荐课包
         $opn = new OpernCenter(OpernCenter::PRO_ID_INTERACTION_CLASSROOM, OpernCenter::version);
-        $todayClass = InteractiveClassroomService::studentCoursePlan($opn, $studentId, time());
+        $todayClass = InteractiveClassroomService::studentCoursePlan($opn, $studentId, strtotime($date));
         if (empty($todayClass)) {
-            $recommendCourse = InteractiveClassroomService::recommendCourse($opn, $studentId);
+            $recommendCourses = InteractiveClassroomService::recommendCourse($opn, $studentId);
         } else{
-            $recommendCourse = [];
+            $recommendCourses = [];
         }
-        $report['today_class'] = $todayClass;
-        $report['recommend_course'] = $recommendCourse;
+
+        foreach ($recommendCourses as $recommendCourse) {
+            if ($recommendCourse['course_bind_status'] != StudentSignUpCourseModel::COURSE_BING_ERROR) {
+                continue;
+            }
+            $recommendCourseDate[] = $recommendCourse;
+        }
+        $report['today_class'] = array_values($todayClass);
+        $report['recommend_course'] = array_values($recommendCourseDate);
         $report["day_report_fabulous"] = self::getDayReportFabulous($studentId, $date);
         $report["share_token"] = self::getShareReportToken($studentId, $date);
         $report['replay_token'] = AIBackendService::genStudentToken($studentId);
@@ -95,6 +104,7 @@ class AIPlayReportService
      */
     public static function getSharedDayReport($shareToken)
     {
+        $recommendCourseDate = [];
         $shareTokenInfo = AIPlayReportService::parseShareReportToken($shareToken);
 
         $report = AIPlayRecordService::getDayReportData($shareTokenInfo["student_id"], $shareTokenInfo["date"]);
@@ -111,19 +121,22 @@ class AIPlayReportService
         //获取用户的今日课程，没有课程获取推荐课包
         $opn = new OpernCenter(OpernCenter::PRO_ID_INTERACTION_CLASSROOM, OpernCenter::version);
         $todayClass = InteractiveClassroomService::studentCoursePlan($opn,$shareTokenInfo["student_id"], strtotime($shareTokenInfo["date"]));
-        if (empty($todayClass)) {
-            $recommendCourse = InteractiveClassroomService::recommendCourse($opn, $shareTokenInfo['student_id']);
-        } else{
-            $recommendCourse = [];
+        if (empty($todayClass)) $recommendCourses = InteractiveClassroomService::recommendCourse($opn, $shareTokenInfo['student_id']); else{
+            $recommendCourses = [];
         }
-
+        foreach ($recommendCourses as $recommendCourse) {
+            if ($recommendCourse['course_bind_status'] != StudentSignUpCourseModel::COURSE_BING_ERROR) {
+                continue;
+            }
+            $recommendCourseDate[] = $recommendCourse;
+        }
         $report['share_url'] = $playShareAssessUrl . '?' . http_build_query($data);
         $report['qr_ticket_image'] = empty($TicketData['qr_url']) ? '' : AliOSS::signUrls($TicketData['qr_url']);
         $report["share_token"] = $shareToken;
         $report['replay_token'] = AIBackendService::genStudentToken($shareTokenInfo["student_id"]);
         $report["day_report_fabulous"] = self::getDayReportFabulous($shareTokenInfo["student_id"], $shareTokenInfo["date"]);
-        $report['today_class'] = $todayClass;
-        $report['recommend_course'] = $recommendCourse;
+        $report['today_class'] = array_values($todayClass);
+        $report['recommend_course'] = array_values($recommendCourseDate);
         return $report;
     }
 
