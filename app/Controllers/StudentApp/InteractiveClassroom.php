@@ -4,6 +4,7 @@ namespace App\Controllers\StudentApp;
 use App\Controllers\ControllerBase;
 use App\Libs\OpernCenter;
 use App\Libs\Valid;
+use App\Models\AIPlayRecordModel;
 use App\Models\StudentModel;
 use App\Services\AIBackendService;
 use App\Services\AIPlayRecordService;
@@ -350,6 +351,20 @@ class InteractiveClassroom extends ControllerBase
      */
     public function studentShareToken(Request $request, Response $response)
     {
+        $rules = [
+            [
+                'key' => 'collection_id',
+                'type' => 'required',
+                'error_code' => 'collection_id_is_required'
+            ]
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
         $studentId = $this->ci['student']['id'];
         $student = StudentModel::getById($studentId);
         if (empty($student)) {
@@ -357,6 +372,11 @@ class InteractiveClassroom extends ControllerBase
         }
         $report["share_token"] = AIPlayReportService::getShareReportToken($studentId, date('Ymd'));
         $report['replay_token'] = AIBackendService::genStudentToken($studentId);
+        $opn = new OpernCenter(OpernCenter::PRO_ID_INTERACTION_CLASSROOM, OpernCenter::version);
+        $collectionData = InteractiveClassroomService::erpCollectionByIds($opn, $params['collection_id']);
+        $report['collection_cover'] = $collectionData['collection_cover'];
+        $report['collection_name'] = $collectionData['collection_name'];
+        $report['accumulate_days'] = AIPlayRecordModel::getAccumulateDays($studentId);
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,

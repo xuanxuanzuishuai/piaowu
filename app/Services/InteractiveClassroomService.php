@@ -789,20 +789,15 @@ class InteractiveClassroomService
     public static function getTodayCourse($opn, $studentId)
     {
         $time = time();
-        //获取用户今日练琴计划->只要待上课的状态
+        //获取用户今日练琴计划
         $studentTodayCoursePlan = self::studentCoursePlan($opn, $studentId, $time);
-        foreach ($studentTodayCoursePlan as $item) {
-            if ($item['lesson_learn_status'] == StudentLearnRecordModel::GO_TO_THE_CLASS) {
-                $studentTodayCoursePlanData[] = $item;
-            }
-        }
 
         //如果不为空直接返回待上课的一节课程
-        if (!empty($studentTodayCoursePlanData)) {
-            usort($studentTodayCoursePlanData, function ($a, $b) {
+        if (!empty($studentTodayCoursePlan)) {
+            usort($studentTodayCoursePlan, function ($a, $b) {
                 return $a['lesson_start_time'] > $b['lesson_start_time'];
             });
-            return [$studentTodayCoursePlanData[0], []];
+            return [$studentTodayCoursePlan[0], []];
         }
         //没有今日上课计划，获取今日推荐课程
         $recommendCourse = self::recommendCourse($opn, $studentId);
