@@ -108,7 +108,7 @@ class StudentSignUpCourseModel extends Model
         $student = StudentModel::$table;
 
         return MysqlDB::getDB()->select("$signUp(sin)", [
-            "[><]{$learnRecord}(lr)" => ["sin.collection_id" => "collection_id", "sin.student_id" => "student_id"],
+            "[>]{$learnRecord}(lr)" => ["sin.collection_id" => "collection_id", "sin.student_id" => "student_id"],
             "[><]{$student}(s)"      => ["sin.student_id" => "id"],
         ], [
             "sin.collection_id",
@@ -118,7 +118,6 @@ class StudentSignUpCourseModel extends Model
             "sin.bind_status",
             "sin.update_time",
             "lr.lesson_id",
-            "lr.sort",
             "lr.learn_status",
             "s.has_review_course",
             "s.sub_end_date",
