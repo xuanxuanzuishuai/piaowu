@@ -307,12 +307,13 @@ class InteractiveClassroomService
         $result = $opn->lessonsByIds($lessonIds);
         $lessonList = $result['data'];
         //将记录表中的信息写入的课程信息中
+        $time = time();
         foreach ($lessonList as $key => $v) {
             $courseStartTime = (array_search($v['id'], $lessonListWithCollection[$v['collection_id']]['payLessonList'])) * self::WEEK_TIMESTAMP + $lastRecordKeyByCollectionId[$v['collection_id']]['first_course_time'];
             if (isset($lastRecordKeyByLessonId[$v['id']])) {
                 $lessonLearnStatus = $lastRecordKeyByLessonId[$v['id']]['learn_status'];
             } else {
-                $lessonLearnStatus = self::getLearnStatus($courseStartTime, $timestamp);
+                $lessonLearnStatus = self::getLearnStatus($courseStartTime, $time);
             }
 
             $data[] = [
