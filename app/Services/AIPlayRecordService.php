@@ -14,6 +14,7 @@ use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\OpernCenter;
+use App\Libs\RedisDB;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\AIPlayRecordModel;
@@ -569,11 +570,24 @@ class AIPlayRecordService
             'score_rhythm' => $score,
             'score_speed' => $score,
             'score_speed_average' => $score,
+            'is_join_ranking' => $playData['is_join_ranking'] ?? StudentModel::STATUS_JOIN_RANKING_ABLE,
         ];
 
         $recordID = AIPlayRecordModel::addRecord($studentId, $recordData, $playData['duration']);
         //上报练琴时长获取积分
         self::reportPoint($studentId, $recordData, $appVersion);
+        //同步数据到click house
+        if($_ENV['CLICKHOUSE_WRITE'] == true) {
+            $recordData['created_at'] = $now;
+            $recordData['data_type'] = AIPlayRecordModel::DATA_TYPE_NORMAL;
+            $recordData['platform'] = $playData['platform'];
+            $recordData['version'] = $appVersion;
+            $recordData['uuid'] = $playData['uuid'];
+            $key = $_ENV['CHDB_REDDIS_PRE_KEY']. time();
+            $redis = RedisDB::getConn($_ENV['CHDB_REDIS_DB']);
+            $redis->rpush($key, [json_encode($recordData)]);
+            $redis->expire($key, 5);
+        }
         return $recordID;
     }
 

@@ -140,6 +140,8 @@ class Play extends ControllerBase
         // 区分新版app和旧版app的数据
         $isOldVersion = AIPlayRecordService::isOldVersionApp($this->ci['version']);
         $params['data']['old_format'] = ($isOldVersion ? Constants::STATUS_TRUE : Constants::STATUS_FALSE);
+        $params['data']['uuid'] = $this->ci['student']['uuid'];
+        $params['data']['platform'] =  $this->ci['platform'];
         AIPlayRecordService::insertOldPracticeData($userID, $params['data'], $this->ci['version']);
 
         return $response->withJson([
