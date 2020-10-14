@@ -481,6 +481,7 @@ class DictConstants {
             'rank_task_type',
             'extra_task_type',
             'take_award_rank_limit',
+            'medal_task_type',
         ]
     ];
     //线索分配相关配置

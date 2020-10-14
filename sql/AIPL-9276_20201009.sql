@@ -25,6 +25,8 @@ VALUES ('halloween_config', '万圣节配置', 'halloween_event', '26', '万圣�
 INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
 VALUES ('halloween_config', '万圣节配置', 'rank_limit', '500', '万圣节排行榜名次最大值');
 INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
+VALUES ('halloween_config', '万圣节配置', 'medal_task_type', '8', '万圣节徽章任务');
+INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
 VALUES ('halloween_config', '万圣节配置', 'process_task_type', '10', '万圣节游行任务');
 INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
 VALUES ('halloween_config', '万圣节配置', 'rank_task_type', '11', '万圣节排行任务');

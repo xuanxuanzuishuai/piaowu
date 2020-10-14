@@ -321,6 +321,7 @@ class PointActivityService
      * 活动报名
      * @param $userId
      * @param $eventId
+     * @return bool
      * @throws RunTimeException
      */
     public static function activitySignUp($userId, $eventId)
@@ -340,5 +341,6 @@ class PointActivityService
         if (empty($res)) {
             throw new RunTimeException(['insert_failure']);
         }
+        return StudentService::checkStudentIsFormalCourse($userId);
     }
 }

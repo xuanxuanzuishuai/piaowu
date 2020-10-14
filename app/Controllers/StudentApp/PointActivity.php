@@ -150,7 +150,7 @@ class PointActivity extends ControllerBase
     public function getStudentTotalPoints(/** @noinspection PhpUnusedParameterInspection */Request $request, Response $response)
     {
         $data = PointActivityService::totalPoints($this->ci['student']['id'], PointActivityService::ACCOUNT_SUB_TYPE_STUDENT_POINTS);
-        return HttpHelper::buildResponse($response, ['total_points' => $data['total_num']]);
+        return HttpHelper::buildResponse($response, ['total_points' => (int)$data['total_num']]);
     }
 
     /**
@@ -164,11 +164,17 @@ class PointActivity extends ControllerBase
         try {
             //获取万圣节配置的活动ID
             $eventId = DictConstants::get(DictConstants::HALLOWEEN_CONFIG, ['halloween_event']);
-            PointActivityService::activitySignUp($this->ci['student']['id'], $eventId[0]);
+            //检测活动是否结束
+            $time = time();
+            $eventInfo = HalloweenService::getEventTaskCache($eventId, HalloweenService::HALLOWEEN_EVENT_FIELD, date('Y-m-d', $time));
+            if ($eventInfo['end_time'] < $time) {
+                throw new RunTimeException(['halloween_is_end']);
+            }
+            $rct = PointActivityService::activitySignUp($this->ci['student']['id'], $eventId[0]);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
-        return HttpHelper::buildResponse($response, ['review_course_type' => $this->ci['student']['has_review_course']]);
+        return HttpHelper::buildResponse($response, ['review_course_type' => $rct]);
     }
 
     /**

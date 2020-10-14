@@ -1781,4 +1781,20 @@ class StudentService
         $data = StudentModel::getRecord(['mobile' => $mobile]);
         return $data['id'] ?? '';
     }
+
+    /**
+     * 检测学生是否是有效的年卡用户
+     * @param $studentId
+     * @return bool
+     */
+    public static function checkStudentIsFormalCourse($studentId)
+    {
+        $isFormalCourse = false;
+        $studentInfo = StudentModel::getById($studentId);
+        $appSubStatus = StudentServiceForApp::checkSubStatus($studentInfo['sub_status'], $studentInfo['sub_end_date']);
+        if (($studentInfo['has_review_course'] == ReviewCourseModel::REVIEW_COURSE_1980) && $appSubStatus) {
+            $isFormalCourse = true;
+        }
+        return $isFormalCourse;
+    }
 }
