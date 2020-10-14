@@ -159,6 +159,8 @@ class SharePosterService
         if (empty($activityList)) {
             return $data;
         }
+        //奖励相关的状态
+        $awardInfo = array_column((new Erp())->getUserAwardInfo(implode(',', array_column($activityList, 'award_id')))['data']['award_info'], NULL, 'award_id');
         //红包相关的发放状态
         $redPackDeal = array_column(WeChatAwardCashDealModel::getRecords(['user_event_task_award_id' => array_column($activityList, 'award_id')]), NULL, 'user_event_task_award_id');
         //获取活动信息
@@ -185,7 +187,9 @@ class SharePosterService
             $data['list'][$k]['award'] = ($v['status'] == SharePosterModel::STATUS_QUALIFIED) ? $awardListInfo[$activityEventId][$activityEventTaskId]['amount'] : '-';
             $data['list'][$k]['img_oss_url'] = $v['img_oss_url'];
             $data['list'][$k]['reason_str'] = $v['reason_str'];
-            $data['list'][$k]['award_explain'] = self::displayAwardExplain($awardListInfo[$activityEventId][$activityEventTaskId], $redPackDeal[$v['award_id']]);
+            list($awardStatusZh, $failReasonZh) = self::displayAwardExplain($awardListInfo[$activityEventId][$activityEventTaskId], $awardInfo[$v['award_id']], $redPackDeal[$v['award_id']]);
+            $data['list'][$k]['award_status_zh'] = $awardStatusZh;
+            $data['list'][$k]['fail_reason_zh'] = $failReasonZh;
         }
         return $data;
     }
@@ -193,19 +197,23 @@ class SharePosterService
     /**
      * @param $awardBaseInfo
      * @param $awardGiveInfo
-     * @return string|void
+     * @param $redPackGiveInfo
+     * @return array|void
      * 奖励领取说明信息
      */
-    private static function displayAwardExplain($awardBaseInfo, $awardGiveInfo)
+    private static function displayAwardExplain($awardBaseInfo, $awardGiveInfo, $redPackGiveInfo)
     {
+        $failReasonZh = '';
         if ($awardBaseInfo['type'] != ErpReferralService::AWARD_TYPE_CASH) {
             return;
         }
         if ($awardGiveInfo['status'] == ErpReferralService::AWARD_STATUS_GIVE_FAIL) {
-            return WeChatAwardCashDealModel::getWeChatErrorMsg($awardGiveInfo['result_code']);
-        } else {
-            return ErpReferralService::AWARD_STATUS[$awardGiveInfo['status']];
+            $failReasonZh = WeChatAwardCashDealModel::getWeChatErrorMsg($redPackGiveInfo['result_code']);
+        } else if ($awardGiveInfo['status'] == ErpReferralService::AWARD_STATUS_REJECTED) {
+            $failReasonZh = $awardGiveInfo['reason'];
         }
+        $awardStatusZh = ErpReferralService::AWARD_STATUS[$awardGiveInfo['status']];
+        return [$awardStatusZh, $failReasonZh];
     }
 
     /**
@@ -350,7 +358,7 @@ class SharePosterService
                 return ;
             }
 
-            list($baseAwardId, $dealStatus) = CashGrantService::cashGiveOut($baseAward['uuid'], $baseAward['award_id'], $baseAward['award_amount'], $employeeId, WeChatAwardCashDealModel::COMMUNITY_PIC_WORD);
+            list($baseAwardId, $dealStatus) = CashGrantService::cashGiveOut($baseAward['uuid'], $baseAward['award_id'], $baseAward['award_amount'], $employeeId, WeChatAwardCashDealModel::REFERRER_PIC_WORD);
             //重试操作无变化，无须更新erp
             if ($baseAward['status'] != $dealStatus) {
                 return [$baseAwardId, $dealStatus];
