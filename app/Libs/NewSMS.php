@@ -220,7 +220,7 @@ class NewSMS
      */
     public function sendAttendActSMS($mobile, $sign, $startTime, $countryCode = NewSMS::DEFAULT_COUNTRY_CODE)
     {
-        $msg = "您预约的“0元领取3天使用时长”已于{$startTime}开始，请在【小叶子智能陪练】微信号点击【推荐有奖】参加。详情可咨询助教老师";
+        $msg = "您预约的“0元领取10元红包”已于{$startTime}开始，请在【小叶子智能陪练】微信号点击【推荐有奖】参加。详情可咨询助教老师";
         return self::batchSend($sign, $mobile, $msg, $countryCode);
     }
 }

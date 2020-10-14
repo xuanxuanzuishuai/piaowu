@@ -20,6 +20,7 @@ use App\Models\ReferralActivityModel;
 use App\Models\SharePosterModel;
 use App\Models\StudentModel;
 use App\Libs\Erp;
+use App\Models\WeChatAwardCashDealModel;
 
 class SharePosterService
 {
@@ -154,10 +155,12 @@ class SharePosterService
         }
         $queryWhere['ORDER'] = ['create_time' => 'DESC'];
         $queryWhere['LIMIT'] = [$offset, $limit];
-        $activityList = SharePosterModel::getRecords($queryWhere, ['activity_id', 'status', 'create_time', 'img_url', 'reason', 'remark'], false);
+        $activityList = SharePosterModel::getRecords($queryWhere, ['activity_id', 'status', 'create_time', 'img_url', 'reason', 'remark', 'award_id'], false);
         if (empty($activityList)) {
             return $data;
         }
+        //红包相关的发放状态
+        $redPackDeal = array_column(WeChatAwardCashDealModel::getRecords(['user_event_task_award_id' => array_column($activityList, 'award_id')]), NULL, 'user_event_task_award_id');
         //获取活动信息
         $activityInfo = array_column(ReferralActivityModel::getRecords(['id' => array_unique(array_column($activityList, 'activity_id'))], ['name', 'id', 'task_id', 'event_id'], false), null, 'id');
         //获取奖励信息:审核通过的截图才会发放奖励
@@ -182,8 +185,27 @@ class SharePosterService
             $data['list'][$k]['award'] = ($v['status'] == SharePosterModel::STATUS_QUALIFIED) ? $awardListInfo[$activityEventId][$activityEventTaskId]['amount'] : '-';
             $data['list'][$k]['img_oss_url'] = $v['img_oss_url'];
             $data['list'][$k]['reason_str'] = $v['reason_str'];
+            $data['list'][$k]['award_explain'] = self::displayAwardExplain($awardListInfo[$activityEventId][$activityEventTaskId], $redPackDeal[$v['award_id']]);
         }
         return $data;
+    }
+
+    /**
+     * @param $awardBaseInfo
+     * @param $awardGiveInfo
+     * @return string|void
+     * 奖励领取说明信息
+     */
+    private static function displayAwardExplain($awardBaseInfo, $awardGiveInfo)
+    {
+        if ($awardBaseInfo['type'] != ErpReferralService::AWARD_TYPE_CASH) {
+            return;
+        }
+        if ($awardGiveInfo['status'] == ErpReferralService::AWARD_STATUS_GIVE_FAIL) {
+            return WeChatAwardCashDealModel::getWeChatErrorMsg($awardGiveInfo['result_code']);
+        } else {
+            return ErpReferralService::AWARD_STATUS[$awardGiveInfo['status']];
+        }
     }
 
     /**
@@ -264,40 +286,80 @@ class SharePosterService
     public static function approval($posterIds, $employeeId)
     {
         $erp = new Erp();
-
+        if (count($posterIds) > 50) {
+            throw new RunTimeException(['over_max_allow_num']);
+        }
         $posters = SharePosterModel::getPostersByIds($posterIds);
         if (count($posters) != count($posterIds)) {
             throw new RunTimeException(['get_share_poster_error']);
         }
-
         $time = time();
         $status = SharePosterModel::STATUS_QUALIFIED;
+        $needDealAwardArr = [];
+
+        //红包奖励会针对发放结果产生新的状态
+        $awardBaseInfo = $erp->getUserAwardInfo(implode(',', array_column($posters, 'award_id')));
+        array_map(function ($item) use ($employeeId, &$needDealAwardArr) {
+            $result = self::dealRelateAward($item, $employeeId);
+            !empty($result[0]) && $needDealAwardArr[$result[0]] = $result;
+        }, $awardBaseInfo['data']['award_info']);
+
+        //推送消息
         foreach ($posters as $poster) {
+            $singleAwardStatus = [];
+            SharePosterModel::updateRecord($poster['id'], [
+                'status' => $status,
+                'check_time' => $time,
+                'update_time' => $time,
+                'operator_id' => $employeeId,
+            ]);
+            array_map(function ($item)use(&$singleAwardStatus, $needDealAwardArr){
+                $singleAwardStatus[] = $needDealAwardArr[$item][1];
+            },explode(',', $poster['award_id']));
 
-            // 一次任务，多个奖励
-            $awardIds = explode(',', $poster['award_id']);
-            $response = $erp->updateAward($awardIds, ErpReferralService::AWARD_STATUS_GIVEN, $employeeId);
-            if (empty($response) || $response['code'] != 0) {
-                SimpleLogger::error('update award error', ['award_id' => $awardIds, 'error' => $response['errors']]);
-                $errorCode = $response['errors'][0]['err_no'] ?? 'erp_request_error';
-                throw new RunTimeException([$errorCode]);
-            }
-
-            $eventTaskId = $response['data']['event_task_id'];
-            if ($eventTaskId > 0) {
-                SharePosterModel::updateRecord($poster['id'], [
-                    'status' => $status,
-                    'check_time' => $time,
-                    'update_time' => $time,
-                    'operator_id' => $employeeId,
-                ]);
-
+            if (empty(array_diff($singleAwardStatus, [ErpReferralService::AWARD_STATUS_GIVEN, ErpReferralService::AWARD_STATUS_GIVE_ING]))) {
                 // 发送审核通过模版消息
                 self::sendTemplate($poster['open_id'], $poster['activity_name'], $status);
             }
         }
+        $formatAwardArr = [];
+        array_map(function ($item) use($employeeId, $time, &$formatAwardArr){
+             $formatAwardArr[$item[0]] = [
+                'award_id' => $item[0],
+                'status' => $item[1],
+                'reviewer_id' => $employeeId,
+                'review_time' => $time
+            ];
+        }, $needDealAwardArr);
+        $erp->batchUpdateAward($formatAwardArr);
         return true;
     }
+
+    /**
+     * @param $baseAward
+     * @param $employeeId
+     * @return array|void
+     * 上传海报发放红包相关
+     */
+    public static function dealRelateAward($baseAward, $employeeId)
+    {
+        $time = time();
+        //仅现金,且未发放/已发放失败,且满足奖励延迟时间限制可调用
+        if ($baseAward['award_type'] == ErpReferralService::AWARD_TYPE_CASH) {
+            if ($baseAward['status'] != ErpReferralService::AWARD_STATUS_WAITING || $baseAward['create_time'] + $baseAward['delay'] >= $time) {
+                return ;
+            }
+
+            list($baseAwardId, $dealStatus) = CashGrantService::cashGiveOut($baseAward['uuid'], $baseAward['award_id'], $baseAward['award_amount'], $employeeId, WeChatAwardCashDealModel::COMMUNITY_PIC_WORD);
+            //重试操作无变化，无须更新erp
+            if ($baseAward['status'] != $dealStatus) {
+                return [$baseAwardId, $dealStatus];
+            }
+        } else {
+            return [$baseAward['award_id'], ErpReferralService::AWARD_STATUS_GIVEN];
+        }
+    }
+
 
     /**
      * @param $posterIds
@@ -440,7 +502,7 @@ class SharePosterService
     {
         $url = $_ENV["WECHAT_FRONT_DOMAIN"] . "/student/referral?tag=2";
 
-        $keyword3 = "您上传的截图审核已通过，奖励您的3天年卡延长包已自动生效，请您继续坚持分享！";
+        $keyword3 = "您上传的截图审核已通过，奖励已自动发放，请您继续坚持分享！";
         $remark = "【点此消息】查看更多任务记录";
         $color = "#868686";
         if ($status == SharePosterModel::STATUS_UNQUALIFIED) {

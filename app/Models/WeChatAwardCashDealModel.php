@@ -144,7 +144,7 @@ class WeChatAwardCashDealModel extends Model
                 return '微信红包未领取';
                 break;
             default:
-                return '';
+                return '发放失败';
         }
     }
 }
