@@ -439,7 +439,7 @@ class InteractiveClassroomService
         $timeTableByCollectionKey = array_column($timeTable, null, 'collection_id');
         $time = time();
         foreach ($collections as $key => $value) {
-            $collections[$key]['tags'] = $tagList[$key] ?? [];
+            $collections[$key]['collection_tags'] = $tagList[$key] ?? [];
             $collections[$key]['collection_start_week'] = $timeTableByCollectionKey[$key]['start_week_day'] ?? 0;
             $collections[$key]['collection_start_time'] = date("H:i", $timeTableByCollectionKey[$key]['start_time']) ?? 0;
             $collections[$key]['is_new'] = ($time - $value['publish_time']) < self::HALF_MONTH;
@@ -588,6 +588,7 @@ class InteractiveClassroomService
                                 $learn_status = self::LOCK_THE_CLASS;
                             } elseif ($time >= $courseStartTime && $time <= ($courseStartTime + self::HALF_HOUR)) {
                                 $learn_status = self::GO_TO_THE_CLASS;
+                                $value['lesson_start_timestamp'] = $courseStartTime;
                             } elseif (time() < ($courseStartTime + self::HALF_HOUR) && $courseStartTime < $subEndDay) {
                                 $learn_status = self::TO_MAKE_UP_LESSONS;
                             }
@@ -604,6 +605,7 @@ class InteractiveClassroomService
                                 if ($courseStartTime >= $collectionLearnRecord[0]['update_time'] || $courseStartTime > $subEndDay) {
                                     $learn_status = self::LOCK_THE_CLASS;
                                 } elseif ($time >= $courseStartTime && $time <= ($courseStartTime + self::HALF_HOUR)) {
+                                    $value['lesson_start_timestamp'] = $courseStartTime;
                                     $learn_status = self::GO_TO_THE_CLASS;
                                 } elseif (time() < ($courseStartTime + self::HALF_HOUR) && $courseStartTime < $subEndDay) {
                                     $learn_status = self::TO_MAKE_UP_LESSONS;
@@ -615,11 +617,12 @@ class InteractiveClassroomService
                     }
                 }
                 $lesson[] = [
-                    'lesson_id'      => $value['lesson_id'],
-                    'lesson_name'    => $value['lesson_name'],
-                    'learn_freeflag' => $value['freeflag'],
-                    'learn_status'   => $learn_status,
-                    'learn_sort'     => $value['sort'],
+                    'lesson_id'              => $value['lesson_id'],
+                    'lesson_name'            => $value['lesson_name'],
+                    'learn_freeflag'         => $value['freeflag'],
+                    'learn_status'           => $learn_status,
+                    'learn_sort'             => $value['sort'],
+                    'lesson_start_timestamp' => $value['lesson_start_timestamp'] ?? 0,
                 ];
             }
         }
