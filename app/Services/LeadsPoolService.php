@@ -8,9 +8,11 @@
 
 namespace App\Services;
 
+use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
 use App\Libs\Util;
+use App\Models\EmployeeModel;
 use App\Models\LeadsPoolModel;
 use App\Models\LeadsPoolOpLogModel;
 use App\Models\LeadsPoolRuleModel;
@@ -23,10 +25,11 @@ class LeadsPoolService
      * 添加线索分配池
      * @param $params
      * @param $operatorId
+     * @param $type
      * @return int
      * @throws RunTimeException
      */
-    public static function add($params, $operatorId)
+    public static function add($params, $operatorId, $type = LeadsPoolModel::LEADS_POOL_TYPE_SELF_CREATE)
     {
         if ($params['target_type'] == LeadsPoolModel::LEADS_POOL_TARGET_TYPE_TO_PEOPLE && empty($params['dept_id'])) {
             throw  new RunTimeException(['dept_id_is_required']);
@@ -40,7 +43,7 @@ class LeadsPoolService
             'operator' => $operatorId,
             'create_time' => $time,
             'status' => LeadsPoolModel::LEADS_POOL_STATUS_ABLE,
-            'type' => LeadsPoolModel::LEADS_POOL_TYPE_SELF_CREATE,
+            'type' => $type,
         ];
         //池子分配规则
         $poolRulesInsertData = [];
@@ -72,9 +75,14 @@ class LeadsPoolService
         if (empty($insertResPoolId)) {
             $db->rollBack();
             throw  new RunTimeException(['insert_failure']);
-        } else {
-            $db->commit();
         }
+        //记录课管分配最大上限
+        if (!empty($params['extra_data'])) {
+            array_walk($params['extra_data'], function ($mn, $eid) {
+                EmployeeModel::updateEmployee($eid, ['leads_max_nums' => $mn]);
+            });
+        }
+        $db->commit();
         //更新分配规则缓存信息
         CacheManager::delPoolRulesCache($insertResPoolId, date("Ymd", $time));
         return true;
@@ -108,7 +116,6 @@ class LeadsPoolService
                 'name' => $params['pool_name'],
                 'target_type' => $params['target_type'],
                 'target_set_id' => ($params['target_type'] == LeadsPoolModel::LEADS_POOL_TARGET_TYPE_TO_PEOPLE) ? $params['dept_id'] : 0,
-                'type' => LeadsPoolModel::LEADS_POOL_TYPE_SELF_CREATE,
             ];
             //检测数据是否发生变化
             if (!empty(array_diff_assoc($poolUpdateData, $leadsPoolOldData[0]['detail']))) {
@@ -201,9 +208,14 @@ class LeadsPoolService
         if (empty($updateRes)) {
             $db->rollBack();
             throw  new RunTimeException(['update_failure']);
-        } else {
-            $db->commit();
         }
+        //记录课管分配最大上限
+        if (!empty($params['extra_data'])) {
+            array_walk($params['extra_data'], function ($mn, $eid) {
+                EmployeeModel::updateEmployee($eid, ['leads_max_nums' => $mn]);
+            });
+        }
+        $db->commit();
         //更新分配规则缓存信息
         CacheManager::delPoolRulesCache($params['pool_id'], date("Ymd", $time));
         return true;
@@ -296,17 +308,26 @@ class LeadsPoolService
      * @param $page
      * @param $count
      * @param $status
+     * @param $type
      * @return array|null
      */
-    public static function getPoolList($page, $count, $status = LeadsPoolModel::LEADS_POOL_STATUS_ABLE)
+    public static function getPoolList($page, $count, $status = LeadsPoolModel::LEADS_POOL_STATUS_ABLE, $type = LeadsPoolModel::LEADS_POOL_TYPE_SELF_CREATE)
     {
         $list = [
             'list' => [],
             'count' => 0,
         ];
+        //获取不同公池的id
+        $leadsConfig = DictConstants::getSet(DictConstants::LEADS_CONFIG);
+        if ($type == LeadsPoolModel::LEADS_POOL_TYPE_SELF_CREATE) {
+            $publicPoolId = $leadsConfig['assistant_public_pool_id'];
+        } else {
+            $publicPoolId = $leadsConfig['course_manage_public_pool_id'];
+        }
         $leadPoolCount = LeadsPoolModel::getCount(
             [
                 'status' => $status,
+                'type' => $type,
             ]);
         if (empty($leadPoolCount)) {
             return $list;
@@ -314,8 +335,14 @@ class LeadsPoolService
         $list['count'] = $leadPoolCount;
         $leadPoolList = LeadsPoolModel::getRecords(
             [
-                'status' => $status,
-                "ORDER" => ["type" => "ASC"],
+                "AND" => [
+                    'status' => $status,
+                    'OR' => [
+                        'type' => $type,
+                        'id' => $publicPoolId,
+                    ],
+                ],
+                "ORDER" => ["id" => "ASC"],
                 "LIMIT" => [($page - 1) * $count, $count],
             ],
             ["id", "name", "target_type", "target_set_id", "status", "type"],
@@ -341,5 +368,110 @@ class LeadsPoolService
             return [];
         }
         return $poolDetail;
+    }
+
+    /**
+     * 检测目标id是否存在
+     * @param $targetIds
+     * @return bool
+     */
+    public static function checkPoolRuleTargetIdIsExists($targetIds)
+    {
+        $targetData = LeadsPoolModel::getRecords(
+            [
+                LeadsPoolModel::$table . '.type' => LeadsPoolModel::LEADS_POOL_TYPE_COURSE_MANAGE_SELF_CREATE,
+                LeadsPoolRuleModel::$table . '.target_id' => $targetIds,
+                LeadsPoolRuleModel::$table . '.status[!=]' => LeadsPoolRuleModel::LEADS_POOL_RULE_STATUS_DEL,
+            ],
+            [
+                LeadsPoolRuleModel::$table . '.target_id',
+            ],
+            false,
+            ["[>]" . LeadsPoolRuleModel::$table => ["id" => "pool_id"]]);
+        if (empty($targetData) || empty(array_intersect(array_column($targetData, 'target_id'), $targetIds))) {
+            return false;
+        }
+        return true;
+    }
+
+
+    /**
+     * 过滤课管分配规则
+     * @param $rules
+     * @return mixed
+     */
+    private static function filterCourseManageRules($rules)
+    {
+
+        array_map(function ($arv) use (&$filterData) {
+            $maxNum = (int)$arv['leads_max_nums'];
+            if ($maxNum <= 0) {
+                throw  new RunTimeException(['cm_pool_rule_max_num_invalid']);
+            }
+            $filterData[$arv['target_id']] = $maxNum;
+        }, $rules);
+        return $filterData;
+    }
+
+    /**
+     * 新增线索分配池：课管分配学员
+     * @param $params
+     * @param $operatorId
+     * @return bool
+     * @throws RunTimeException
+     */
+    public static function addCourseManagePool($params, $operatorId)
+    {
+        //检测规则是否重复存在
+        $targetIds = array_column($params['alloc_rules'], 'target_id');
+        $existsRes = self::checkPoolRuleTargetIdIsExists($targetIds);
+        if ($existsRes) {
+            throw  new RunTimeException(['pool_rule_target_id_repeat']);
+        }
+        $params['extra_data'] = self::filterCourseManageRules($params['alloc_rules']);
+        //添加分配池和规则
+        self::add($params, $operatorId, LeadsPoolModel::LEADS_POOL_TYPE_COURSE_MANAGE_SELF_CREATE);
+        return true;
+    }
+
+    /**
+     * 修改线索分配池：课管分配学员
+     * @param $params
+     * @param $operatorId
+     * @return int
+     * @throws RunTimeException
+     */
+    public static function updateCourseManagePool($params, $operatorId)
+    {
+        //检测规则是否重复存在
+        $targetIds = array_column($params['alloc_rules']['add'], 'target_id');
+        $existsRes = self::checkPoolRuleTargetIdIsExists($targetIds);
+        if ($existsRes) {
+            throw  new RunTimeException(['pool_rule_target_id_repeat']);
+        }
+        $params['extra_data'] = self::filterCourseManageRules(array_merge($params['alloc_rules']['add'], $params['alloc_rules']['update']));
+        return self::update($params, $operatorId);
+    }
+
+    /**
+     * 线索分配池详情：课管分配学员
+     * @param $poolId
+     * @return mixed
+     * @throws RunTimeException
+     */
+    public static function courseManagePoolDetail($poolId)
+    {
+        //获取详情
+        $detailData = self::detail($poolId)[0];
+        if (empty($detailData)) {
+            throw  new RunTimeException(['pool_id_is_invalid']);
+        }
+        //获取课管例子分配最大人数
+        $courseManageIds = array_column($detailData['rules'], 'target_id');
+        $courseManageList = array_column(EmployeeModel::getRecords(['id' => $courseManageIds], ['id', 'leads_max_nums'], false), null, 'id');
+        foreach ($detailData['rules'] as $dk => &$dv) {
+            $dv['leads_max_nums'] = $courseManageList[$dv['target_id']]['leads_max_nums'];
+        }
+        return $detailData;
     }
 }

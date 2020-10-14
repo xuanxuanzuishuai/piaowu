@@ -13,6 +13,7 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Libs\HttpHelper;
+use App\Models\LeadsPoolModel;
 use App\Services\LeadsPoolService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -185,6 +186,133 @@ class LeadsPool extends ControllerBase
         list($params['page'], $params['count']) = Util::formatPageCount($params);
         $params['count'] = 100;
         $data = LeadsPoolService::getPoolList($params['page'], $params['count']);
+        return HttpHelper::buildResponse($response, $data);
+    }
+
+
+    /**
+     * 添加线索分配池：课管分配学员
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function addCourseManagePool(Request $request, Response $response)
+    {
+        //接收数据
+        $rules = [
+            [
+                'key' => 'pool_name',
+                'type' => 'required',
+                'error_code' => 'pool_name_is_required'
+            ],
+            [
+                'key' => 'dept_id',
+                'type' => 'required',
+                'error_code' => 'dept_id_is_required'
+            ],
+            [
+                'key' => 'alloc_rules',
+                'type' => 'required',
+                'error_code' => 'alloc_rules_is_required'
+            ]
+        ];
+        //验证合法性
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            $params['target_type'] = LeadsPoolModel::LEADS_POOL_TARGET_TYPE_TO_PEOPLE;
+            LeadsPoolService::addCourseManagePool($params, $this->getEmployeeId());
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData(), $e->getData());
+        }
+        return HttpHelper::buildResponse($response, []);
+    }
+
+    /**
+     * 修改线索分配池：课管分配学员
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function updateCourseManagePool(Request $request, Response $response)
+    {
+        //接收数据
+        $rules = [
+            [
+                'key' => 'pool_id',
+                'type' => 'required',
+                'error_code' => 'pool_id_is_required'
+            ],
+            [
+                'key' => 'pool_name',
+                'type' => 'required',
+                'error_code' => 'pool_name_is_required'
+            ],
+            [
+                'key' => 'alloc_rules',
+                'type' => 'required',
+                'error_code' => 'alloc_rules_is_required'
+            ]
+        ];
+        //验证合法性
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            $params['target_type'] = LeadsPoolModel::LEADS_POOL_TARGET_TYPE_TO_PEOPLE;
+            LeadsPoolService::updateCourseManagePool($params, $this->getEmployeeId());
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData(), $e->getData());
+        }
+        return HttpHelper::buildResponse($response, []);
+    }
+
+    /**
+     * 获取线索分配池列表：课管分配学员
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getCourseManagePoolList(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        list($params['page'], $params['count']) = Util::formatPageCount($params);
+        $data = LeadsPoolService::getPoolList($params['page'], $params['count'], LeadsPoolModel::LEADS_POOL_STATUS_ABLE, LeadsPoolModel::LEADS_POOL_TYPE_COURSE_MANAGE_SELF_CREATE);
+        return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
+     * 获取线索分配池规则详细数据：课管分配学员
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function courseManagePoolDetail(Request $request, Response $response)
+    {
+        //接收数据
+        $rules = [
+            [
+                'key' => 'pool_id',
+                'type' => 'required',
+                'error_code' => 'pool_id_is_required'
+            ],
+        ];
+        //验证合法性
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            $data = LeadsPoolService::courseManagePoolDetail($params['pool_id']);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData(), $e->getData());
+        }
         return HttpHelper::buildResponse($response, $data);
     }
 }

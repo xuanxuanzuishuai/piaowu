@@ -62,4 +62,28 @@ class Employee extends ControllerBase
         $members = EmployeeService::getDeptAssistantMembers($params['dept_id']);
         return HttpHelper::buildResponse($response, ['members' => $members]);
     }
+
+    /**
+     * 通过部门id获取本部门以及子部门的助教成员
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getDeptCourseManageMembers(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'dept_id',
+                'type' => 'required',
+                'error_code' => 'dept_id_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $members = EmployeeService::getDeptCourseManageMembers($params['dept_id']);
+        return HttpHelper::buildResponse($response, ['members' => $members]);
+    }
 }

@@ -106,6 +106,8 @@ class OrgWebRouter extends RouterBase
         ],
         //通过部门id获取本部门以及子部门的助教成员
         '/org_web/employee/get_dept_assistant' => ['method' => ['get'], 'call' => OrgWebEmployee::class . ':getDeptAssistantMembers'],
+        //通过部门id获取本部门以及子部门的课管成员
+        '/org_web/employee/get_dept_course_manage' => ['method' => ['get'], 'call' => OrgWebEmployee::class . ':getDeptCourseManageMembers'],
 
         '/privilege/privilege/employee_menu' => array('method' => array('get'), 'call' => '\App\Controllers\Privilege\Privilege:employee_menu'),
         '/privilege/privilege/list' => array('method' => array('get'), 'call' => '\App\Controllers\Privilege\Privilege:list'),
@@ -525,12 +527,17 @@ class OrgWebRouter extends RouterBase
         '/org_web/wx_tag/update' => ['method' => ['post'], 'call' => WxTags::class . ':update'],
         '/org_web/wx_tag/del' => ['method' => ['post'], 'call' => WxTags::class . ':del'],
         '/org_web/wx_tag/list' => ['method' => ['get'], 'call' => WxTags::class . ':list'],
-        //线索分配池管理
+        //线索分配池管理-助教
         '/org_web/leads_pool/add' => ['method' => ['post'], 'call' => LeadsPool::class . ':add'],
         '/org_web/leads_pool/update' => ['method' => ['post'], 'call' => LeadsPool::class . ':update'],
         '/org_web/leads_pool/update_pool_status' => ['method' => ['post'], 'call' => LeadsPool::class . ':updatePoolStatus'],
         '/org_web/leads_pool/detail' => ['method' => ['get'], 'call' => LeadsPool::class . ':detail'],
         '/org_web/leads_pool/list' => ['method' => ['get'], 'call' => LeadsPool::class . ':getPoolList'],
+        //线索分配池管理-课管
+        '/org_web/leads_pool/add_cm_pool' => ['method' => ['post'], 'call' => LeadsPool::class . ':addCourseManagePool'],
+        '/org_web/leads_pool/update_cm_pool' => ['method' => ['post'], 'call' => LeadsPool::class . ':updateCourseManagePool'],
+        '/org_web/leads_pool/cm_pool_list' => ['method' => ['get'], 'call' => LeadsPool::class . ':getCourseManagePoolList'],
+        '/org_web/leads_pool/cm_pool_detail' => ['method' => ['get'], 'call' => LeadsPool::class . ':courseManagePoolDetail'],
 
         //课管服务->学生列表
         '/org_web/student/search_list' => ['method' => ['get'], 'call' => Student::class . ':courseStudentList'],

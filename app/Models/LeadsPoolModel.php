@@ -22,9 +22,10 @@ class LeadsPoolModel extends Model
     //流出目标类型：1池到池 2池到人
     const LEADS_POOL_TARGET_TYPE_TO_POOL = 1;
     const LEADS_POOL_TARGET_TYPE_TO_PEOPLE = 2;
-    //池子类型1默认总池 2自定义池子
+    //池子类型1默认总池 2助教分配学生池子 3课管分配学生池子
     const LEADS_POOL_TYPE_PUBLIC = 1;
     const LEADS_POOL_TYPE_SELF_CREATE = 2;
+    const LEADS_POOL_TYPE_COURSE_MANAGE_SELF_CREATE = 3;
 
 
     /**

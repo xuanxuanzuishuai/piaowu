@@ -483,6 +483,14 @@ class DictConstants {
             'take_award_rank_limit',
         ]
     ];
+    //线索分配相关配置
+    const LEADS_CONFIG = [
+        'type' => 'leads_config',
+        'keys' => [
+            'assistant_public_pool_id',
+            'course_manage_public_pool_id',
+        ]
+    ];
 
     public static function get($type, $key)
     {

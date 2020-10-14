@@ -447,3 +447,6 @@ task_rank_num_invalid="不符合当前任务的排名要求"
 task_student_status_invalid="不符合当前任务的年卡要求"
 halloween_take_award_time_error='奖品领取时间错误'
 send_list_empty='发送目标为空，请检查'
+pool_rule_target_id_repeat='线索池分配目标id重复'
+cm_pool_rule_max_num_invalid='课管线索池规则最大上限参数无效'
+pool_id_is_invalid="线索池子id无效"

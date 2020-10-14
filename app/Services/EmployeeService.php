@@ -404,4 +404,19 @@ class EmployeeService
         $employeeData = EmployeeModel::getRecord(['id' => $id], ['wx_nick', 'wx_thumb', 'wx_qr']);
         return $employeeData ?? [];
     }
+    /**
+     * 通过部门id获取本部门以及子部门的课管成员列表
+     * @param $deptId
+     * @return array
+     */
+    public static function getDeptCourseManageMembers($deptId)
+    {
+        $members = StudentService::getDeptPrivilege($deptId);
+        $list = [];
+        if (empty($members['course_manage_id'])) {
+            return $list;
+        }
+        $list = EmployeeModel::getRecords(['id' => $members['course_manage_id'], 'status' => EmployeeModel::STATUS_NORMAL], ['name', 'id'], false);
+        return $list;
+    }
 }
