@@ -430,6 +430,7 @@ class InteractiveClassroomService
                     }
                 }
                 $tagList[$key] = $itemTags ?? [];
+                unset($itemTags);
             }
         }
 
@@ -491,7 +492,7 @@ class InteractiveClassroomService
             if ($value['collection_start_week'] == $todayWeek) {
                 if (in_array($value['collection_id'], $signUpCollections)) {
                     $value['course_bind_status'] = self::COURSE_BIND_STATUS_SUCCESS;
-                    $value['lesson_learn_status'] = $todayCoursePlanByCId[$value['collection_id']]['lesson_learn_status'];
+                    $value['lesson_learn_status'] = (int)$todayCoursePlanByCId[$value['collection_id']]['lesson_learn_status'];
                     $value['lesson_id'] = $todayCoursePlanByCId[$value['collection_id']]['lesson_id'];
                     $value['lesson_start_time'] = $todayCoursePlanByCId[$value['collection_id']]['lesson_start_time'];
                     $value['lesson_start_timestamp'] = $todayCoursePlanByCId[$value['collection_id']]['lesson_start_timestamp'];
