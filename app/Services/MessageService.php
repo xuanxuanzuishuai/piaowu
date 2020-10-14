@@ -555,8 +555,8 @@ class MessageService
         list($inviteDiffTime, $resultDiffTime) = DictConstants::getValues(DictConstants::MESSAGE_RULE, ['how_long_not_invite', 'how_long_not_result']);
         //所有年包id
         $yearPackageIdArr = array_column(PackageExtModel::getPackages(['package_type' => PackageExtModel::PACKAGE_TYPE_NORMAL]), 'package_id');
-        //7天内转介绍行为
-        $inviteOperateInfo = SharePosterModel::getRecord(['student_id' => $studentInfo['id'], 'create_time[>]' => $time - $inviteDiffTime]);
+        //X天内转介绍行为
+        $inviteOperateInfo = SharePosterModel::getRecord(['student_id' => $studentInfo['id'], 'create_time[>]' => $time - $inviteDiffTime, 'status' => SharePosterModel::STATUS_QUALIFIED]);
         if ($studentInfo['has_review_course'] == ReviewCourseModel::REVIEW_COURSE_1980) {
             //转介绍结果（30天内带来例子)
             $inviteResultInfo = ReferralModel::getRecord(['referrer_id' => $studentInfo['id'], 'create_time[>]' => $time - $resultDiffTime]);
