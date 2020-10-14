@@ -9,6 +9,7 @@
 namespace App\Services;
 
 
+use App\Libs\MysqlDB;
 use App\Libs\Valid;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\AIPlayRecordModel;
@@ -349,16 +350,16 @@ class ReferralActivityService
      */
     public static function getPaidAndNotAttendStudents($activityId)
     {
-        $attendStudentIds = SharePosterModel::getRecords(['activity_id' => $activityId], 'student_id');
+        $students = MysqlDB::getDB()->queryAll("
+SELECT
+    id, mobile, country_code
+FROM
+    " . StudentModel::$table . "
+WHERE
+    has_review_course = " . StudentModel::CRM_AI_LEADS_STATUS_BUY_NORMAL_COURSE . "
+    AND status = " . StudentModel::STATUS_NORMAL . "
+    AND id NOT IN (SELECT student_id FROM " . SharePosterModel::$table . " WHERE activity_id = :activity_id)", [':activity_id' => $activityId]);
 
-        $where = [
-            'has_review_course' => StudentModel::CRM_AI_LEADS_STATUS_BUY_NORMAL_COURSE,
-            'status' => StudentModel::STATUS_NORMAL
-        ];
-        if (!empty($attendStudentIds)) {
-            $where['id[!]'] = array_unique($attendStudentIds);
-        }
-        $students = StudentModel::getRecords($where, ['id', 'mobile', 'country_code']);
         if (empty($students)) {
             throw new RunTimeException(['no_students']);
         }
@@ -447,11 +448,24 @@ class ReferralActivityService
             }
 
             // 当前阶段为付费正式课且未参加当前活动的学员
-            $students = self::getPaidAndNotAttendStudents($activityId);
-            $studentIds = array_column($students, 'id');
+            $boundUsers = MysqlDB::getDB()->queryAll("
+SELECT
+    uw.user_id, uw.open_id
+FROM
+    " . StudentModel::$table . " s
+INNER JOIN
+    " . UserWeixinModel::$table . " uw ON uw.user_id = s.id
+WHERE
+    s.has_review_course = " . StudentModel::CRM_AI_LEADS_STATUS_BUY_NORMAL_COURSE . "
+    AND s.status = " . StudentModel::STATUS_NORMAL . "
+    AND s.id NOT IN (SELECT student_id FROM " . SharePosterModel::$table . " WHERE activity_id = :activity_id)
+    AND uw.user_type = " . UserWeixinModel::USER_TYPE_STUDENT . "
+    AND uw.status = " . UserWeixinModel::STATUS_NORMAL . "
+    AND uw.app_id = " . UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT, [':activity_id' => $activityId]);
 
-            $boundUsers = UserWeixinModel::getBoundUserIds($studentIds, UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT);
-
+            if (empty($boundUsers)) {
+                throw new RunTimeException(['no_students']);
+            }
 
             // 放到nsq队列中一个个处理
             QueueService::pushWX($boundUsers, $guideWord, $shareWord, $posterUrl, $activityId, $employeeId, MessageRecordModel::ACTIVITY_TYPE_AWARD);
