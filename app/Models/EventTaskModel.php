@@ -20,4 +20,12 @@ class EventTaskModel extends Model
 
     //关联奖励的类型
     const MEDAL_AWARD = 4;
+
+    const TYPE_REGISTER          = 1; // 注册
+    const TYPE_LOGIN             = 2; // 登录
+    const TYPE_ATTEND_CLASS      = 3; // 上课
+    const TYPE_PURCHASE          = 4; // 购买
+    const TYPE_UPLOAD_SCREENSHOT = 5; // 上传截图
+
+
 }

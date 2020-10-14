@@ -13,6 +13,7 @@ use App\Controllers\ControllerBase;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\Valid;
+use App\Libs\Erp;
 use App\Models\WeChatAwardCashDealModel;
 use App\Services\ErpReferralService;
 use App\Services\WeChatService;
@@ -99,6 +100,81 @@ class Referral extends ControllerBase
     }
 
     /**
+     * 转介绍二期红包发放审核列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function refereeAwardList(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'event_task_id',
+                'type' => 'required',
+                'error_code' => 'event_task_id_is_required'
+            ]
+        ];
+
+        $params                 = $request->getParams();
+        $params['award_relate'] = Erp::AWARD_RELATE_REFEREE;
+        $result                 = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        if (isset($params['award_status']) && $params['award_status'] === '') {
+            unset($params['award_status']);
+        }
+        if (empty($params['award_type'])) {
+            $params['award_type'] = ErpReferralService::AWARD_TYPE_CASH;
+        }
+
+        try {
+            $ret = ErpReferralService::getAwardList($params);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+
+        return HttpHelper::buildResponse($response, $ret);
+    }
+
+    /**
+     * 转介绍二期新增红包发放审核
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function refereeUpdateAward(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'event_task_id',
+                'type' => 'required',
+                'error_code' => 'event_task_id_is_required'
+            ]
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            $ret = ErpReferralService::updateAward(
+                $params['award_id'],
+                $params['status'],
+                $this->getEmployeeId(),
+                $params['reason'],
+                WeChatAwardCashDealModel::REFERRER_PIC_WORD,
+                $params['event_task_id']
+            );
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+
+        return HttpHelper::buildResponse($response, $ret);
+    }
+    /**
      * 更新奖励状态
      * @param Request $request
      * @param Response $response
@@ -120,11 +196,14 @@ class Referral extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         try {
-            $ret = ErpReferralService::updateAward($params['award_id'],
+            $ret = ErpReferralService::updateAward(
+                $params['award_id'],
                 $params['status'],
                 $this->getEmployeeId(),
                 $params['reason'],
-            WeChatAwardCashDealModel::NORMAL_PIC_WORD, $params['event_task_id']);
+                WeChatAwardCashDealModel::NORMAL_PIC_WORD,
+                $params['event_task_id']
+            );
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }

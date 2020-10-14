@@ -487,25 +487,6 @@ class StudentServiceForApp
             return null;
         }
 
-        $updateResult = $erp->updateTask($uuid,
-            ErpReferralService::getRegisterTaskId(),
-            ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
-
-        if(!empty($updateResult)
-            && $updateResult['code'] == 0
-            && $updateResult['data']['user_event_task_award_affected_rows'] > 0
-            && $response['data']['is_new'] == true
-            && !empty($referrer)) {
-
-            WeChatService::notifyUserCustomizeMessage(
-                $referrer['mobile'],
-                ErpReferralService::getRegisterTaskId(),
-                [
-                    'mobile' => Util::hideUserMobile($mobile),
-                    'url' => $_ENV['STUDENT_INVITED_RECORDS_URL'],
-                ]
-            );
-        }
         //保存转介绍关系数据
         if (!empty($referrer) && $response['data']['is_new'] == true) {
             StudentRefereeService::recordStudentRefereeData($referrer['id'], $lastId, $refType);

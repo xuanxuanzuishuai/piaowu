@@ -23,6 +23,7 @@ class Erp
     //转介绍奖励和返现奖励的关联表不同
     const AWARD_RELATE_REFERRAL = 1;
     const AWARD_RELATE_COMMUNITY = 2;
+    const AWARD_RELATE_REFEREE = 3;
 
     const API_CREATE_BILL = '/ai_dss/bill/create_bill';
     const API_BILL_DETAIL = '/ai_dss/bill/detail';

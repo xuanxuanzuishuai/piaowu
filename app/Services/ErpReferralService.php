@@ -34,22 +34,26 @@ class ErpReferralService
     /**
      * 前端传值的对应关系
      */
-    const EXPECT_REGISTER = 1; //注册
-    const EXPECT_TRAIL_PAY = 2; //付费体验卡
-    const EXPECT_YEAR_PAY = 3; //付费年卡
+    const EXPECT_REGISTER          = 1; //注册
+    const EXPECT_TRAIL_PAY         = 2; //付费体验卡
+    const EXPECT_YEAR_PAY          = 3; //付费年卡
+    const EXPECT_FIRST_NORMAL      = 4; //首购智能正式课
+    const EXPECT_UPLOAD_SCREENSHOT = 5; //上传截图审核通过
 
     /** 转介绍阶段任务 */
-    const EVENT_TASK_ID_REGISTER = [1]; // 注册
-    const EVENT_TASK_ID_TRIAL_PAY = [52, 2]; // 体验支付
-    const EVENT_TASK_ID_PAY = [53, 3]; // 支付
-
+    const EVENT_TASK_ID_REGISTER       = [1];               // 注册
+    const EVENT_TASK_ID_TRIAL_PAY      = [201, 203, 52, 2]; // 体验支付
+    const EVENT_TASK_ID_PAY            = [202, 204, 53, 3]; // 支付
+    const EVENT_TASK_UPLOAD_SCREENSHOT = [];                // 上传截图审核通过任务,通过getEventTasksList动态获取
     /**
      * 此属性用于和前端交互时的对应
      */
     const EVENT_TASKS = [
-        self::EXPECT_REGISTER => '注册',
-        self::EXPECT_TRAIL_PAY => '付费体验卡',
-        self::EXPECT_YEAR_PAY => '付费年卡',
+        self::EXPECT_REGISTER          => '注册',
+        self::EXPECT_TRAIL_PAY         => '付费体验卡',
+        self::EXPECT_YEAR_PAY          => '付费年卡',
+        self::EXPECT_FIRST_NORMAL      => '首购智能正式课',
+        self::EXPECT_UPLOAD_SCREENSHOT => '上传截图审核通过',
     ];
 
     /** 任务状态 */
@@ -135,22 +139,30 @@ class ErpReferralService
     }
 
     /**
+     * @param int $index
      * @return int
      * 当前生效的体验付费任务
      */
-    public static function getTrailPayTaskId()
+    public static function getTrailPayTaskId($index = 0)
     {
         $arr = self::EVENT_TASK_ID_TRIAL_PAY;
+        if (isset($arr[$index])) {
+            return $arr[$index];
+        }
         return reset($arr);
     }
 
     /**
+     * @param int $index
      * @return int
      * 当前生效的年卡付费任务
      */
-    public static function getYearPayTaskId()
+    public static function getYearPayTaskId($index = 0)
     {
         $arr = self::EVENT_TASK_ID_PAY;
+        if (isset($arr[$index])) {
+            return $arr[$index];
+        }
         return reset($arr);
     }
 
@@ -297,7 +309,7 @@ class ErpReferralService
         $exclude = [];
         switch ($expectTask) {
             case self::EXPECT_REGISTER:
-                $exclude = array_merge( self::EVENT_TASK_ID_TRIAL_PAY, self::EVENT_TASK_ID_PAY);
+                $exclude = array_merge(self::EVENT_TASK_ID_TRIAL_PAY, self::EVENT_TASK_ID_PAY);
                 $include = self::EVENT_TASK_ID_REGISTER;
                 break;
             case self::EXPECT_TRAIL_PAY:
@@ -320,7 +332,7 @@ class ErpReferralService
     public static function getAwardList($params)
     {
         $erp = new Erp();
-        $params['award_relate'] = Erp::AWARD_RELATE_REFERRAL;
+        $params['award_relate'] = $params['award_relate'] ?? Erp::AWARD_RELATE_REFERRAL;
         if (!empty($params['reviewer_name'])) {
             $params['reviewer_id'] = EmployeeModel::getRecord(['name[~]' => Util::sqlLike($params['reviewer_name'])], 'id');
         }
@@ -334,9 +346,22 @@ class ErpReferralService
             $errorCode = $response['errors'][0]['err_no'] ?? 'erp_request_error';
             throw new RunTimeException([$errorCode]);
         }
+        // 转介绍二期红包列表：
+        if ($params['award_relate'] == Erp::AWARD_RELATE_REFEREE) {
+            return self::formatRefereeAwardList($response);
+        }
+        // DSS-转介绍-红包审核列表：
+        return self::formatAwardList($response);
+    }
 
-        $reviewerNames = EmployeeService::getNameMap(array_column($response['data']['records'], 'reviewer_id'));
-        $reviewerNames = array_column($reviewerNames, 'name', 'id');
+    /**
+     * DSS-转介绍-红包审核
+     * @param $response
+     * @return array
+     */
+    public static function formatAwardList($response)
+    {
+        $reviewerNames = self::getReviewerNames(array_column($response['data']['records'], 'reviewer_id'));
 
         $list = [];
         //批量获取学生信息
@@ -396,7 +421,78 @@ class ErpReferralService
             ];
             $list[] = $item;
         }
+        return ['list' => $list, 'total_count' => $response['data']['total_count']];
+    }
 
+    public static function getReviewerNames($ids)
+    {
+        $reviewerNames = EmployeeService::getNameMap($ids);
+        return array_column($reviewerNames, 'name', 'id');
+    }
+    /**
+     * 转介绍二期红包列表
+     * @param $response
+     * @return array
+     */
+    public static function formatRefereeAwardList($response)
+    {
+        $reviewerNames = self::getReviewerNames(array_column($response['data']['records'], 'reviewer_id'));
+
+        $list = [];
+        //批量获取学生信息
+        $uuidList = array_column($response['data']['records'], 'student_uuid');
+        if (empty($uuidList)) {
+            $studentInfoList = [];
+        } else {
+            $studentInfoList = array_column(StudentService::getByUuids($uuidList, ['name', 'id', 'uuid']), null, 'uuid');
+        }
+
+        //当前奖励在微信发放的状态
+        $relateUserEventTaskAwardIdArr = array_column($response['data']['records'], 'user_event_task_award_id');
+        if (empty($relateUserEventTaskAwardIdArr)) {
+            $relateAwardStatusArr = [];
+        } else {
+            $relateAwardStatusArr = array_column(WeChatAwardCashDealModel::getRecords(['user_event_task_award_id' => $relateUserEventTaskAwardIdArr], ['result_code', 'user_event_task_award_id']), null, 'user_event_task_award_id');
+        }
+        //列表用户微信关注/绑定情况
+        $studentUuidArr = array_column($response['data']['records'], 'student_uuid');
+        if (empty($studentUuidArr)) {
+            $weChatRelateInfo = [];
+        } else {
+            $weChatRelateInfo = array_column(WeChatOpenIdListModel::getUuidOpenIdInfo($studentUuidArr), null, 'uuid');
+        }
+
+        //关注公众号相关信息
+        foreach ($response['data']['records'] as $award) {
+            $subscribeStatus = $weChatRelateInfo[$award['student_uuid']]['subscribe_status'] ?? WeChatOpenIdListModel::UNSUBSCRIBE_WE_CHAT;
+            $bindStatus = $weChatRelateInfo[$award['student_uuid']]['bind_status'] ?? UserWeixinModel::STATUS_DISABLE;
+            $item = [
+                'user_event_task_award_id' => $award['user_event_task_award_id'],
+                'student_id'               => $award['student_id'],
+                'student_uuid'             => $award['student_uuid'],
+                'student_name'             => $studentInfoList[$award['student_uuid']]['name'],
+                'student_mobile_hidden'    => Util::hideUserMobile($award['student_mobile']),
+                'subscribe_status'         => $subscribeStatus,
+                'subscribe_status_zh'      => $subscribeStatus == WeChatOpenIdListModel::SUBSCRIBE_WE_CHAT ? '已关注' : '未关注',
+                'bind_status'              => $bindStatus,
+                'bind_status_zh'           => $bindStatus == UserWeixinModel::STATUS_NORMAL ? '已绑定' : '未绑定',
+                'award_status'             => $award['award_status'],
+                'award_status_zh'          => $award['award_status_zh'],
+                'event_task_name'          => $award['event_task_name'],
+                'event_task_type'          => $award['event_task_type'],
+                'award_amount'             => $award['award_type'] == self::AWARD_TYPE_CASH ? ($award['award_amount'] / 100) : $award['award_amount'],
+                'fail_reason_zh'           => isset($relateAwardStatusArr[$award['user_event_task_award_id']]) ? WeChatAwardCashDealModel::getWeChatErrorMsg($relateAwardStatusArr[$award['user_event_task_award_id']]['result_code']) : '',
+                'reviewer_id'              => $award['reviewer_id'],
+                'reviewer_name'            => $reviewerNames[$award['reviewer_id']] ?? '',
+                'review_time'              => $award['review_time'],
+                'reason'                   => $award['reason'],
+                'create_time'              => $award['create_time'],
+                'event_task_id'            => $award['event_task_id'],
+                'award_type'               => $award['award_type'],
+                'delay'                    => $award['delay'],
+            ];
+            $list[] = $item;
+        }
         return ['list' => $list, 'total_count' => $response['data']['total_count']];
     }
 
@@ -491,10 +587,13 @@ class ErpReferralService
      */
     private static function expectTaskRelateRealTask($expectTaskId)
     {
+        $eventTask = self::getEventTasksList(0, self::EVENT_TYPE_UPLOAD_POSTER);
         $arr = [
-            self::EXPECT_REGISTER => self::EVENT_TASK_ID_REGISTER,
-            self::EXPECT_TRAIL_PAY => self::EVENT_TASK_ID_TRIAL_PAY,
-            self::EXPECT_YEAR_PAY => self::EVENT_TASK_ID_PAY
+            self::EXPECT_REGISTER          => self::EVENT_TASK_ID_REGISTER,
+            self::EXPECT_TRAIL_PAY         => self::EVENT_TASK_ID_TRIAL_PAY,
+            self::EXPECT_YEAR_PAY          => self::EVENT_TASK_ID_PAY,
+            self::EXPECT_FIRST_NORMAL      => self::EVENT_TASK_ID_PAY,
+            self::EXPECT_UPLOAD_SCREENSHOT => array_column($eventTask, 'id'),
         ];
         return $arr[$expectTaskId] ?? explode(',', $expectTaskId);
     }
@@ -579,10 +678,10 @@ class ErpReferralService
         if (!empty($awardIdArr)) {
             foreach ($awardIdArr as $value) {
                 $needDealAward[$value] = [
-                    'award_id' => $value,
-                    'status' => $status,
+                    'award_id'    => $value,
+                    'status'      => $status,
                     'reviewer_id' => $reviewerId,
-                    'reason' => $reason,
+                    'reason'      => $reason,
                     'review_time' => $time
                 ];
             }
@@ -592,7 +691,7 @@ class ErpReferralService
             //当前操作的奖励基础信息
             $awardBaseInfo = $erp->getUserAwardInfo($awardId);
             if (!empty($awardBaseInfo['data']['award_info'])) {
-                $needCheckAward = array_filter($awardBaseInfo['data']['award_info'], function ($award)use($time) {
+                $needCheckAward = array_filter($awardBaseInfo['data']['award_info'], function ($award) use ($time) {
                     return ($award['award_type'] == self::AWARD_TYPE_CASH && in_array($award['status'], [self::AWARD_STATUS_WAITING, self::AWARD_STATUS_GIVE_FAIL]) && $award['create_time'] + $award['delay'] < $time);
                 });
                 //验证被推荐人是否已退费
@@ -602,7 +701,10 @@ class ErpReferralService
                 }
                 foreach ($awardBaseInfo['data']['award_info'] as $award) {
                     //仅现金,且未发放/已发放失败,且满足奖励延迟时间限制可调用
-                    if ($award['award_type'] == self::AWARD_TYPE_CASH && in_array($award['status'], [self::AWARD_STATUS_WAITING, self::AWARD_STATUS_GIVE_FAIL]) && $award['create_time'] + $award['delay'] < $time) {
+                    if ($award['award_type'] == self::AWARD_TYPE_CASH
+                        && in_array($award['status'], [self::AWARD_STATUS_WAITING, self::AWARD_STATUS_GIVE_FAIL])
+                        && $award['create_time'] + $award['delay'] < $time
+                    ) {
                         list($baseAwardId, $dealStatus) = CashGrantService::cashGiveOut($award['uuid'], $award['award_id'], $award['award_amount'], $reviewerId, $keyCode);
                         //重试操作无变化，无须更新erp
                         if ($award['status'] != $dealStatus) {
@@ -629,7 +731,7 @@ class ErpReferralService
             throw new RunTimeException([$errorCode]);
         }
 
-        if(!empty($response['data'])) {
+        if (!empty($response['data'])) {
             foreach ($response['data'] as $v) {
                 if (!empty($v['event_task_id'])) {
                     WeChatService::notifyUserCustomizeMessage(
