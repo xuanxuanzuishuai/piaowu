@@ -578,9 +578,9 @@ class InteractiveClassroomService
                     $payLessonList[] = $value['lesson_id'];
                     $learn_status = self::LOCK_THE_CLASS;
                     //当前为报名状态
-                    if ($collection['collection_bind_status'] == self::COURSE_BIND_STATUS_SUCCESS) {
+                    if ($collection[0]['collection_bind_status'] == self::COURSE_BIND_STATUS_SUCCESS) {
                         if (isset($collectionLearnRecordByLessonId[$value['lesson_id']])) {
-                            $learn_status = $collectionLearnRecordByLessonId[$value['lesson_id']]['sort'];
+                            $learn_status = $collectionLearnRecordByLessonId[$value['lesson_id']]['learn_status'];
                         } else {
                             $courseStartTime = (count($payLessonList) - 1) * self::WEEK_TIMESTAMP + $collectionLearnRecord[0]['first_course_time'];
                             $subEndDay = strtotime($collectionLearnRecord[0]['sub_end_date']);
