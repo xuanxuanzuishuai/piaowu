@@ -18,6 +18,7 @@ use App\Services\CommonServiceForApp;
 use App\Services\StudentService;
 use App\Services\StudentServiceForApp;
 use App\Services\StudentServiceForWeb;
+use App\Services\TrackService;
 use App\Services\WeChatService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -200,33 +201,34 @@ class Auth extends ControllerBase
         $db = MysqlDB::getDB();
 
         $channelId = $params['channel_id'] ?? StudentModel::CHANNEL_SPACKAGE_LANDING;
-
-
         $adChannel = $params['ad'];
-        $adParams = [
-            // 抖音参数
-            'ad_id' => $params['adid'] ?? 0,
-            'callback' => urlencode($params['ref']) ?? '',
+        $adParams = [];
 
-            // 广点通参数
-            'qz_gdt' => $params['qz_gdt'] ?? '',
+        switch ($adChannel) {
+            case TrackService::CHANNEL_GDT: // 广点通和微信参数共通
+            case TrackService::CHANNEL_WX:
+                if (!empty($params['qz_gdt'])) {
+                    $adParams['qz_gdt'] = $params['qz_gdt'];
+                    $adParams['callback'] = $params['qz_gdt'];
+                } elseif (!empty($params['gdt_vid'])) {
+                    $adParams['gdt_vid'] = $params['gdt_vid'];
+                    $adParams['callback'] = $params['gdt_vid'];
+                }
+                $adParams['wx_code'] = $params['wx_code'] ?? '';
+                break;
 
-            // 微信参数
-            'gdt_vid' => $params['gdt_vid'] ?? '',
-            'wx_code' => $params['wx_code'] ?? '',
-        ];
+            case TrackService::CHANNEL_OCEAN_LEADS: // 抖音
+                $adParams['ad_id'] = $params['adid'] ?? 0;
+                $adParams['callback'] = urlencode($params['ref']) ?? '';
+                break;
 
-        $adParams['bd_vid'] = '';
-        if (!empty($params['bd_vid']) && !empty($params['ref'])) {
-            $adParams['bd_vid'] = $params['ref'];
-        }
-        // 微信或广点通没有callback参数，需要用指定的click_id作为回调参数，所以把click_id保存在callback里
-        if (!empty($adParams['qz_gdt'])) {
-            $adParams['callback'] = $adParams['qz_gdt'];
-        } elseif (!empty($adParams['gdt_vid'])) {
-            $adParams['callback'] = $adParams['gdt_vid'];
-        } elseif (!empty($adParams['bd_vid'])){
-            $adParams['callback'] = $adParams['bd_vid'];
+            case TrackService::CHANNEL_BAIDU: // 百度
+                $adParams['callback'] = urlencode($params['ref']) ?? '';
+                break;
+
+            case TrackService::CHANNEL_KS: // 快手
+                $adParams['callback'] = $params['callback'] ?? '';
+                break;
         }
 
         try {
