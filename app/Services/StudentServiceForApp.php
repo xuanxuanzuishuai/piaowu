@@ -486,6 +486,28 @@ class StudentServiceForApp
             ]);
             return null;
         }
+        
+        // 2020年10月15日19:14:55
+        // 转介绍二期，注册不再给奖励，只存占位数据
+        $updateResult = $erp->updateTask($uuid,
+            ErpReferralService::getRegisterTaskId(),
+            ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
+
+        // if(!empty($updateResult)
+        //     && $updateResult['code'] == 0
+        //     && $updateResult['data']['user_event_task_award_affected_rows'] > 0
+        //     && $response['data']['is_new'] == true
+        //     && !empty($referrer)) {
+
+        //     WeChatService::notifyUserCustomizeMessage(
+        //         $referrer['mobile'],
+        //         ErpReferralService::getRegisterTaskId(),
+        //         [
+        //             'mobile' => Util::hideUserMobile($mobile),
+        //             'url' => $_ENV['STUDENT_INVITED_RECORDS_URL'],
+        //         ]
+        //     );
+        // }
 
         //保存转介绍关系数据
         if (!empty($referrer) && $response['data']['is_new'] == true) {

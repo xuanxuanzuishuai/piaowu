@@ -41,7 +41,7 @@ class ErpReferralService
     const EXPECT_UPLOAD_SCREENSHOT = 5; //上传截图审核通过
 
     /** 转介绍阶段任务 */
-    const EVENT_TASK_ID_REGISTER       = [1];               // 注册
+    const EVENT_TASK_ID_REGISTER       = [200, 1];          // 注册
     const EVENT_TASK_ID_TRIAL_PAY      = [201, 203, 52, 2]; // 体验支付
     const EVENT_TASK_ID_PAY            = [202, 204, 53, 3]; // 支付
     const EVENT_TASK_UPLOAD_SCREENSHOT = [];                // 上传截图审核通过任务,通过getEventTasksList动态获取
