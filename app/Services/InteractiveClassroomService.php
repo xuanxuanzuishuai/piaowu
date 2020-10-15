@@ -1131,16 +1131,16 @@ class InteractiveClassroomService
             $todayLearn = [];
         }
 
-        //如果今日数据为空，并且请求的时间戳大于当前时间戳，返回推荐课包信息
+        //如果今日数据为空，并且请求的时间戳大于等于今天时间戳，返回推荐课包信息
         $recommendCourses = [];
-        if (empty($todayClass) && strtotime($date) > time()) {
+        if (empty($todayClass) && strtotime($date) >= strtotime('today')) {
             $recommendCourseData = self::recommendCourse($opn, $studentId);
         } else {
             $recommendCourseData = [];
         }
         //返回今日推荐&未报名的课包
         foreach ($recommendCourseData as $recommendCourse) {
-            if ($recommendCourse['collection_start_week'] == date("N", time()) && $recommendCourse['course_bind_status'] == StudentSignUpCourseModel::COURSE_BING_ERROR) {
+            if ($recommendCourse['collection_start_week'] == date("N", $startTime) && $recommendCourse['course_bind_status'] == StudentSignUpCourseModel::COURSE_BING_ERROR) {
                 $recommendCourses[] = $recommendCourse;
             }
         }

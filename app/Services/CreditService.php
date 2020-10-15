@@ -749,12 +749,12 @@ class CreditService
             return [0,0];
         }
         $eventId = array_column($activityInfo, 'id');
-        $generalTask = EventTaskModel::getCount(['statue' => EventTaskModel::STATUS_NORMAL, 'event_id' => $eventId]);
+        $generalTask = EventTaskModel::getCount(['status' => EventTaskModel::STATUS_NORMAL, 'event_id' => $eventId]);
         if (empty($studentId)) {
             return [$generalTask, 0];
         }
 
-        $taskId = EventTaskModel::getRecords(['statue' => EventTaskModel::STATUS_NORMAL, 'event_id' => $eventId],'id');
+        $taskId = EventTaskModel::getRecords(['status' => EventTaskModel::STATUS_NORMAL, 'event_id' => $eventId],'id');
         $finishTheTask = PointActivityRecordModel::getCount([
             'student_id' => $studentId,
             'task_id' => $taskId,
