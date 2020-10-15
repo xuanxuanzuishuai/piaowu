@@ -396,18 +396,18 @@ WHERE
         $successNum = 0;
 
         foreach ($students as $student) {
-            $i++;
+            $i ++;
             if ($student['country_code'] == NewSMS::DEFAULT_COUNTRY_CODE) {
-                $mobiles[] = $student;
+                $mobiles[] = $student['mobile'];
             }
 
             if ($i >= 1000) {
                 $result = $sms->sendAttendActSMS($mobiles, $sign, $startTime);
-                $i = 0;
-                $mobiles = [];
                 if ($result) {
                     $successNum += count($mobiles);
                 }
+                $i = 0;
+                $mobiles = [];
             }
         }
 

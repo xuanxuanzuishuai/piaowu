@@ -215,12 +215,17 @@ class NewSMS
      * @param $mobile
      * @param $sign
      * @param $startTime
-     * @param string $countryCode
      * @return bool
      */
-    public function sendAttendActSMS($mobile, $sign, $startTime, $countryCode = NewSMS::DEFAULT_COUNTRY_CODE)
+    public function sendAttendActSMS($mobile, $sign, $startTime)
     {
         $msg = "您预约的“0元领取10元红包”已于{$startTime}开始，请在【小叶子智能陪练】微信号点击【推荐有奖】参加。详情可咨询助教老师";
-        return self::batchSend($sign, $mobile, $msg, $countryCode);
+        // phone_number 支持以逗号隔开的字符串
+        $data = [
+            'sign_name' => $sign,
+            'phone_number' => implode(',', $mobile),
+            'content' => $msg,
+        ];
+        return self::sendSMS($data);
     }
 }
