@@ -20,10 +20,10 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Models\MessageRecordModel;
 use App\Models\PosterModel;
 use App\Models\PackageExtModel;
-use App\Models\ReferralModel;
 use App\Models\ReviewCourseModel;
 use App\Models\SharePosterModel;
 use App\Models\StudentModel;
+use App\Models\StudentRefereeModel;
 use App\Models\UserQrTicketModel;
 use App\Models\UserWeixinModel;
 use App\Models\WeChatConfigModel;
@@ -311,6 +311,10 @@ class MessageService
         if ($messageRule['type'] == MessagePushRulesModel::PUSH_TYPE_CUSTOMER) {
             self::pushCustomMessage($messageRule, $data);
         }
+        //首关不记录
+        if ($data['rule_id'] == DictConstants::get(DictConstants::MESSAGE_RULE, 'subscribe_rule_id')) {
+            return;
+        }
         //记录发送限制
         self::recordUserMessageRuleLimit($data['open_id']);
     }
@@ -553,20 +557,22 @@ class MessageService
         $time = time();
         $studentInfo = StudentModel::getById($userInfo['user_id']);
         list($inviteDiffTime, $resultDiffTime) = DictConstants::getValues(DictConstants::MESSAGE_RULE, ['how_long_not_invite', 'how_long_not_result']);
+        //所有的体验包id
+        $trailPackageIdArr = array_column(PackageExtModel::getPackages(['package_type' => PackageExtModel::PACKAGE_TYPE_TRIAL]), 'package_id');
         //所有年包id
         $yearPackageIdArr = array_column(PackageExtModel::getPackages(['package_type' => PackageExtModel::PACKAGE_TYPE_NORMAL]), 'package_id');
         //X天内转介绍行为
         $inviteOperateInfo = SharePosterModel::getRecord(['student_id' => $studentInfo['id'], 'create_time[>]' => $time - $inviteDiffTime, 'status' => SharePosterModel::STATUS_QUALIFIED]);
         if ($studentInfo['has_review_course'] == ReviewCourseModel::REVIEW_COURSE_1980) {
-            //转介绍结果（30天内带来例子)
-            $inviteResultInfo = ReferralModel::getRecord(['referrer_id' => $studentInfo['id'], 'create_time[>]' => $time - $resultDiffTime]);
+            //转介绍结果（付过费就算)
+            $inviteResultInfo = StudentRefereeModel::refereeBuyCertainPackage($studentInfo['id'], array_merge($yearPackageIdArr, $trailPackageIdArr), $time - $resultDiffTime);
             if (empty($inviteOperateInfo) && empty($inviteResultInfo)) {
                 //年卡c用户
                 return DictConstants::get(DictConstants::MESSAGE_RULE, 'year_user_c_rule_id');
             }
         } else {
             //转介绍结果（30天被推荐人付费年卡）
-            $inviteResultInfo = ReferralModel::refereeBuyCertainPackage($studentInfo['id'], $yearPackageIdArr, $time - $resultDiffTime);
+            $inviteResultInfo = StudentRefereeModel::refereeBuyCertainPackage($studentInfo['id'], $yearPackageIdArr, $time - $resultDiffTime);
             if (empty($inviteOperateInfo) && empty($inviteResultInfo)) {
                 return $studentInfo['has_review_course'] == ReviewCourseModel::REVIEW_COURSE_NO ? DictConstants::get(DictConstants::MESSAGE_RULE, 'register_user_c_rule_id') : DictConstants::get(DictConstants::MESSAGE_RULE, 'trail_user_c_rule_id');
             }

@@ -65,26 +65,4 @@ class ReferralModel extends Model
             ]
         );
     }
-
-    /**
-     * @param $refererId
-     * @param $packageIdArr
-     * @param $startTime
-     * @return mixed
-     * 被推荐人在时间范围有没有买过特定的课包
-     */
-    public static function refereeBuyCertainPackage($refererId, $packageIdArr, $startTime)
-    {
-        $db = MysqlDB::getDB();
-        return $db->get(self::$table,
-        [
-            '[><]' . GiftCodeModel::$table => ['referee_id' => 'buyer']
-        ],
-        [GiftCodeModel::$table . '.id'],
-        [
-            self::$table . '.referrer_id' => $refererId,
-            GiftCodeModel::$table . '.bill_package_id' => $packageIdArr,
-            GiftCodeModel::$table . '.create_time[>]' => $startTime
-        ]);
-    }
 }
