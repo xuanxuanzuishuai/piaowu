@@ -49,9 +49,15 @@ class ErpReferralService
      * 此属性用于和前端交互时的对应
      */
     const EVENT_TASKS = [
-        self::EXPECT_REGISTER          => '注册',
-        self::EXPECT_TRAIL_PAY         => '付费体验卡',
-        self::EXPECT_YEAR_PAY          => '付费年卡',
+        self::EXPECT_REGISTER  => '注册',
+        self::EXPECT_TRAIL_PAY => '付费体验卡',
+        self::EXPECT_YEAR_PAY  => '付费年卡',
+    ];
+
+    /**
+     * 转介绍二期-红包审核任务
+     */
+    const REFEREE_EVENT_TASKS = [
         self::EXPECT_FIRST_NORMAL      => '首购智能正式课',
         self::EXPECT_UPLOAD_SCREENSHOT => '上传截图审核通过',
     ];
