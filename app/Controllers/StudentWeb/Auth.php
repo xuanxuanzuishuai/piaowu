@@ -205,8 +205,8 @@ class Auth extends ControllerBase
         $adChannel = $params['ad'];
         $adParams = [
             // 抖音参数
-            'ad_id' => $params['ad_id'] ?? 0,
-            'callback' => $params['callback'] ?? '',
+            'ad_id' => $params['adid'] ?? 0,
+            'callback' => urlencode($params['ref']) ?? '',
 
             // 广点通参数
             'qz_gdt' => $params['qz_gdt'] ?? '',
