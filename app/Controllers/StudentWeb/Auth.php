@@ -223,7 +223,7 @@ class Auth extends ControllerBase
                 break;
 
             case TrackService::CHANNEL_BAIDU: // 百度
-                $adParams['callback'] = urlencode($params['ref']) ?? '';
+                $adParams['callback'] = $params['ref'] ?? '';
                 break;
 
             case TrackService::CHANNEL_KS: // 快手
