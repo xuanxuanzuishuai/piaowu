@@ -485,6 +485,8 @@ class InteractiveClassroomService
         if (empty($collectionList)) {
             return [];
         }
+        $collectionIds = array_keys($collectionList);
+        $classifyLessonInfo = self::getLessonIds($opn, $collectionIds);
         $todayCoursePlan = self::studentCoursePlan($opn, $studentId, $time);
         $todayCoursePlanByCId = array_column($todayCoursePlan, null, 'collection_id');
         $signUpCollections = self::getSignUpCollections($studentId);
@@ -499,6 +501,7 @@ class InteractiveClassroomService
                 } else {
                     $value['course_bind_status'] = self::COURSE_BIND_STATUS_UNREGISTER;
                 }
+                $value['lesson_count'] = isset($classifyLessonInfo[$key]['payLessonList']) ? count($classifyLessonInfo[$key]['payLessonList']) : 0;
                 $today[] = $value;
             } elseif (($value['collection_start_week'] - 1) == $todayWeek) {
                 if (in_array($value['collection_id'], $signUpCollections)) {
@@ -506,6 +509,7 @@ class InteractiveClassroomService
                 } else {
                     $value['course_bind_status'] = self::COURSE_BIND_STATUS_UNREGISTER;
                 }
+                $value['lesson_count'] = isset($classifyLessonInfo[$key]['payLessonList']) ? count($classifyLessonInfo[$key]['payLessonList']) : 0;
                 $tomorrow[] = $value;
             }
         }
@@ -625,6 +629,7 @@ class InteractiveClassroomService
                     'lesson_start_timestamp' => $value['lesson_start_timestamp'] ?? 0,
                 ];
             }
+            $lessonCount = isset($payLessonList) ? count($payLessonList) : 0;
         }
 
         foreach ($collection as $value) {
@@ -637,6 +642,7 @@ class InteractiveClassroomService
                 'collection_tags'        => $tags ?? [],
                 'collection_cover'       => $value['cover'],
                 'collection_desc'        => $value['abstract'],
+                'lesson_count'           => $lessonCount ?? 0,
                 'lessons'                => $lesson ?? [],
             ];
         }
