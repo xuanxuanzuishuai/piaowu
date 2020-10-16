@@ -755,11 +755,7 @@ class CreditService
         }
 
         $taskId = EventTaskModel::getRecords(['status' => EventTaskModel::STATUS_NORMAL, 'event_id' => $eventId],'id');
-        $finishTheTask = PointActivityRecordModel::getCount([
-            'student_id' => $studentId,
-            'task_id' => $taskId,
-            'report_date' => date('Y-m-d')
-        ]);
+        $finishTheTask = PointActivityRecordModel::getStudentFinishTheTask($studentId, $taskId);
 
         return [$generalTask, $finishTheTask];
     }

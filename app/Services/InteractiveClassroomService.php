@@ -1092,13 +1092,31 @@ class InteractiveClassroomService
     public static function formatClassDate($studentBindCourse)
     {
         $formatDate = [];
-        foreach ($studentBindCourse as $item) for ($i = 0; $i < $item['lesson_count']; $i++) if ($i == 0) {
-            $formatDate[] = date('Ymd', $item['first_course_time']);
-        } else {
-            $last_time = array_pop($formatDate);
-            array_push($formatDate,$last_time);
-            $formatDate[] = date('Ymd',strtotime($last_time.'+7day'));
-        }
+
+
+        foreach ($studentBindCourse as $item) {
+            //如果用户取消当前课包，并且在开课前取消，不做任何处理
+            if ($item['bind_status'] == StudentSignUpCourseModel::COURSE_BING_CANCEL && $item['first_course_time'] > $item['update_time']) {
+                continue;
+            }
+            for ($i = 0; $i < $item['lesson_count']; $i++) {
+                $last_time = "";
+                if (!empty($formatDate)) {
+                    $last_time = array_pop($formatDate);
+                    array_push($formatDate,$last_time);
+                }
+
+                if ($i == 0) {
+                    $formatDate[] = date('Ymd', $item['first_course_time']);
+                } elseif($i > 0 && $item['bind_status'] == StudentSignUpCourseModel::COURSE_BING_SUCCESS) { //报名状态正常，直接计算用户所有的课程时间
+                    $formatDate[] = date('Ymd', strtotime($last_time.'+7day'));
+                } elseif ($i > 0 && $item['bind_status'] == StudentSignUpCourseModel::COURSE_BING_CANCEL && strtotime($last_time.'+7day') < $item['update_time']) { //取消报名，只计算取消报名前的课程
+                        $formatDate[] = date('Ymd',strtotime($last_time.'+7day'));
+                } else {
+                    continue;
+                }
+            }
+    }
         $formatDateRes = array_count_values($formatDate);
         $formatDateResult = [];
         reset($formatDateRes);

@@ -38,9 +38,8 @@ class StudentSignUpCourseModel extends Model
      */
     public static function getStudentBindCourse($studentId, $startTime, $endTime)
     {
-        $sql = "select * from student_sign_up where bind_status = :bind_status and student_id = :student_id and !(last_course_time < :start_time) and !(first_course_time > :end_time)";
+        $sql = "select * from student_sign_up where student_id = :student_id and !(last_course_time < :start_time) and !(first_course_time > :end_time)";
         $map = [
-            ':bind_status' => self::COURSE_BING_SUCCESS,
             ':student_id'  => $studentId,
             ':start_time'  => $startTime,
             ':end_time'    => $endTime
