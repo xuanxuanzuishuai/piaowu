@@ -474,7 +474,7 @@ class ErpReferralService
             $bindStatus = $weChatRelateInfo[$award['student_uuid']]['bind_status'] ?? UserWeixinModel::STATUS_DISABLE;
             $item = [
                 'user_event_task_award_id' => $award['user_event_task_award_id'],
-                'student_id'               => $award['student_id'],
+                'student_id'               => $studentInfoList[$award['student_uuid']]['id'],
                 'student_uuid'             => $award['student_uuid'],
                 'student_name'             => $studentInfoList[$award['student_uuid']]['name'],
                 'student_mobile_hidden'    => Util::hideUserMobile($award['student_mobile']),

@@ -659,7 +659,7 @@ class ReviewCourseService
         if ($packageType == PackageExtModel::PACKAGE_TYPE_TRIAL) {
             if (in_array($trialType, [PackageExtModel::TRIAL_TYPE_49, PackageExtModel::TRIAL_TYPE_9])) {
                 // 购买49,9.9体验包完成转介绍任务
-                if ($referralInfo['has_review_course'] == ReviewCourseModel::REVIEW_COURSE_49) {
+                if (in_array($referralInfo['has_review_course'], [ReviewCourseModel::REVIEW_COURSE_NO, ReviewCourseModel::REVIEW_COURSE_49])) {
                     // 若用户（推荐人）当前阶段为“已注册”或“付费体验课”
                     $refTaskId = ErpReferralService::getTrailPayTaskId();
                 } elseif (in_array($referralInfo['has_review_course'], [ReviewCourseModel::REVIEW_COURSE_1980, ReviewCourseModel::REVIEW_COURSE_BE_OVERDUE])) {
@@ -670,7 +670,7 @@ class ReviewCourseService
         } elseif ($packageType == PackageExtModel::PACKAGE_TYPE_NORMAL) {
             if ($appId == PackageExtModel::APP_AI) {
                 // 购买正式包完成转介绍任务
-                if ($referralInfo['has_review_course'] == ReviewCourseModel::REVIEW_COURSE_49) {
+                if (in_array($referralInfo['has_review_course'], [ReviewCourseModel::REVIEW_COURSE_NO, ReviewCourseModel::REVIEW_COURSE_49])) {
                     // 若用户（推荐人）当前阶段为“已注册”或“付费体验课”
                     $refTaskId = ErpReferralService::getYearPayTaskId();
                 } elseif (in_array($referralInfo['has_review_course'], [ReviewCourseModel::REVIEW_COURSE_1980, ReviewCourseModel::REVIEW_COURSE_BE_OVERDUE])) {
