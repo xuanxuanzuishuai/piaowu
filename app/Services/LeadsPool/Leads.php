@@ -5,6 +5,9 @@ namespace App\Services\LeadsPool;
 
 
 
+use App\Libs\SimpleLogger;
+use App\Models\PackageExtModel;
+
 class Leads
 {
     private $pid;
@@ -67,12 +70,31 @@ class Leads
             $this->date);
     }
 
+    /**
+     * 分配例子到助教或课管
+     * @param Pool $pool
+     * @return bool
+     */
     function assignTo(Pool $pool)
     {
-        return LeadsService::assign($this->pid,
-            $this->studentId,
-            $pool->getId(),
-            $this->package,
-            $this->date);
+        //年卡可包分配课管  体验卡分配助教
+        if ($this->package['package_type'] == PackageExtModel::PACKAGE_TYPE_NORMAL) {
+            return LeadsService::assignToCourseManage(
+                $this->pid,
+                $this->studentId,
+                $pool->getId(),
+                $this->package,
+                $this->date);
+        } elseif ($this->package['package_type'] == PackageExtModel::PACKAGE_TYPE_TRIAL) {
+            return LeadsService::assign($this->pid,
+                $this->studentId,
+                $pool->getId(),
+                $this->package,
+                $this->date);
+        } else {
+            SimpleLogger::error("package type stop allot leads", ['package' => $this->package]);
+            return true;
+        }
+
     }
 }

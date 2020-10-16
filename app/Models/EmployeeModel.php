@@ -327,4 +327,27 @@ class EmployeeModel extends Model
 
         return [$records, $total];
     }
+
+    /**
+     * 获取课管下的学生数量
+     * @param $courseManageId
+     * @return array
+     */
+    public static function getCourseManageStudentCount($courseManageId)
+    {
+        $db = MysqlDB::getDB();
+        $sql = "SELECT
+                    e.id,
+                    e.name,
+                    e.leads_max_nums,
+                    count( s.id ) AS student_nums
+                FROM
+                    employee AS e
+                    LEFT JOIN student AS s ON e.id = s.course_manage_id
+                WHERE
+                    e.id IN ( ".$courseManageId." )
+                GROUP BY
+                    e.id";
+        return $db->queryAll($sql);
+    }
 }

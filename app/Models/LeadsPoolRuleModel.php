@@ -16,4 +16,6 @@ class LeadsPoolRuleModel extends Model
     const LEADS_POOL_RULE_STATUS_ABLE = 1;
     const LEADS_POOL_RULE_STATUS_DISABLE = 2;
     const LEADS_POOL_RULE_STATUS_DEL = 3;
+    //默认分配比例
+    const DEFAULT_WEIGHT = 1;
 }

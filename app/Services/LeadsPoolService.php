@@ -85,7 +85,7 @@ class LeadsPoolService
         $db->commit();
         //更新分配规则缓存信息
         CacheManager::delPoolRulesCache($insertResPoolId, date("Ymd", $time));
-        return true;
+        return $insertResPoolId;
     }
 
     /**
@@ -377,17 +377,20 @@ class LeadsPoolService
      */
     public static function checkPoolRuleTargetIdIsExists($targetIds)
     {
-        $targetData = LeadsPoolModel::getRecords(
+        $db = MysqlDB::getDB();
+        $targetData = $db->select(
+            LeadsPoolRuleModel::$table,
             [
-                LeadsPoolModel::$table . '.type' => LeadsPoolModel::LEADS_POOL_TYPE_COURSE_MANAGE_SELF_CREATE,
-                LeadsPoolRuleModel::$table . '.target_id' => $targetIds,
-                LeadsPoolRuleModel::$table . '.status[!=]' => LeadsPoolRuleModel::LEADS_POOL_RULE_STATUS_DEL,
+                "[>]" . LeadsPoolModel::$table => ["pool_id" => "id"],
             ],
             [
                 LeadsPoolRuleModel::$table . '.target_id',
             ],
-            false,
-            ["[>]" . LeadsPoolRuleModel::$table => ["id" => "pool_id"]]);
+            [
+                LeadsPoolModel::$table . '.type' => LeadsPoolModel::LEADS_POOL_TYPE_COURSE_MANAGE_SELF_CREATE,
+                LeadsPoolRuleModel::$table . '.target_id' => $targetIds,
+                LeadsPoolRuleModel::$table . '.status[!]' => LeadsPoolRuleModel::LEADS_POOL_RULE_STATUS_DEL,
+            ]);
         if (empty($targetData) || empty(array_intersect(array_column($targetData, 'target_id'), $targetIds))) {
             return false;
         }
@@ -402,7 +405,9 @@ class LeadsPoolService
      */
     private static function filterCourseManageRules($rules)
     {
-
+        if (empty($rules)) {
+            return [];
+        }
         array_map(function ($arv) use (&$filterData) {
             $maxNum = (int)$arv['leads_max_nums'];
             if ($maxNum <= 0) {
@@ -430,8 +435,21 @@ class LeadsPoolService
         }
         $params['extra_data'] = self::filterCourseManageRules($params['alloc_rules']);
         //添加分配池和规则
-        self::add($params, $operatorId, LeadsPoolModel::LEADS_POOL_TYPE_COURSE_MANAGE_SELF_CREATE);
-        return true;
+        $poolId = self::add($params, $operatorId, LeadsPoolModel::LEADS_POOL_TYPE_COURSE_MANAGE_SELF_CREATE);
+        //创建总池子的分配规则
+        $publicPoolId = DictConstants::getSet(DictConstants::LEADS_CONFIG)['course_manage_public_pool_id'];
+        LeadsPoolRuleModel::insertRecord([
+            'weight' => LeadsPoolRuleModel::DEFAULT_WEIGHT,
+            'target_type' => LeadsPoolModel::LEADS_POOL_TARGET_TYPE_TO_POOL,
+            'target_id' => $poolId,
+            'operator' => $operatorId,
+            'create_time' => time(),
+            'status' => LeadsPoolRuleModel::LEADS_POOL_RULE_STATUS_ABLE,
+            'pool_id' => $publicPoolId
+        ], false);
+        //更新分配规则缓存信息
+        CacheManager::delPoolRulesCache($publicPoolId, date("Ymd"));
+        return $poolId;
     }
 
     /**
@@ -443,13 +461,21 @@ class LeadsPoolService
      */
     public static function updateCourseManagePool($params, $operatorId)
     {
-        //检测规则是否重复存在
-        $targetIds = array_column($params['alloc_rules']['add'], 'target_id');
-        $existsRes = self::checkPoolRuleTargetIdIsExists($targetIds);
-        if ($existsRes) {
-            throw  new RunTimeException(['pool_rule_target_id_repeat']);
+
+        $filterRules = [];
+        if (!empty($params['alloc_rules']['add'])) {
+            //检测规则是否重复存在
+            $targetIds = array_column($params['alloc_rules']['add'], 'target_id');
+            $existsRes = self::checkPoolRuleTargetIdIsExists($targetIds);
+            if ($existsRes) {
+                throw  new RunTimeException(['pool_rule_target_id_repeat']);
+            }
+            $filterRules = array_merge($params['alloc_rules']['add'], $filterRules);
         }
-        $params['extra_data'] = self::filterCourseManageRules(array_merge($params['alloc_rules']['add'], $params['alloc_rules']['update']));
+        if (!empty($params['alloc_rules']['update'])) {
+            $filterRules = array_merge($params['alloc_rules']['update'], $filterRules);
+        }
+        $params['extra_data'] = self::filterCourseManageRules($filterRules);
         return self::update($params, $operatorId);
     }
 
@@ -466,11 +492,12 @@ class LeadsPoolService
         if (empty($detailData)) {
             throw  new RunTimeException(['pool_id_is_invalid']);
         }
-        //获取课管例子分配最大人数
-        $courseManageIds = array_column($detailData['rules'], 'target_id');
-        $courseManageList = array_column(EmployeeModel::getRecords(['id' => $courseManageIds], ['id', 'leads_max_nums'], false), null, 'id');
+        //获取课管例子分配数据
+        $courseManageIdList = implode(',',array_column($detailData['rules'],'target_id'));
+        $courseManageList = array_column(EmployeeModel::getCourseManageStudentCount($courseManageIdList), null, 'id');
         foreach ($detailData['rules'] as $dk => &$dv) {
             $dv['leads_max_nums'] = $courseManageList[$dv['target_id']]['leads_max_nums'];
+            $dv['student_nums'] = $courseManageList[$dv['target_id']]['student_nums'];
         }
         return $detailData;
     }

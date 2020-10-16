@@ -185,6 +185,9 @@ class Consumer extends ControllerBase
             case PushMessageTopic::EVENT_NEW_LEADS:
                 LeadsService::newLeads($params['msg_body']);
                 break;
+            case PushMessageTopic::EVENT_COURSE_MANAGE_NEW_LEADS:
+                LeadsService::allotLeadsCourseManageWxPush($params['msg_body']);
+                break;
             case PushMessageTopic::EVENT_PUSH_RULE_WX:
                 MessageService::realSendMessage($params['msg_body']);
                 break;

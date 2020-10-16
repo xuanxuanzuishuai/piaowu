@@ -1292,9 +1292,10 @@ class StudentService
      * 第一次分配课管的学生，进行消息推送
      * @param $course_manage_id
      * @param $courseInfo
+     * @param $deferTime
      * @param $toBePushedStudentInfo
      */
-    public static function allotCoursePushMessage($course_manage_id, $courseInfo, $toBePushedStudentInfo)
+    public static function allotCoursePushMessage($course_manage_id, $courseInfo, $toBePushedStudentInfo, $deferTime = 0)
     {
         $url = $_ENV["WECHAT_FRONT_DOMAIN"] . "/student/codePage?id=" . $course_manage_id;
         $templateId = $_ENV["WECHAT_DISTRIBUTION_MANAGEMENT"];
@@ -1328,11 +1329,12 @@ class StudentService
             ]);
         }
 
-        foreach ($toBePushedStudentInfo as $info) {
+        foreach ($toBePushedStudentInfo as $sid => $info) {
             $msgBody['open_id'] = $info['open_id'];
+            $msgBody['student_id'] = $sid;
 
             try {
-                $topic->wxPushCommon($msgBody)->publish();
+                $topic->wxPushCommon($msgBody)->publish($deferTime);
 
             } catch (\Exception $e) {
                 SimpleLogger::error("allotCourseManage send failure", ['info' => $info]);

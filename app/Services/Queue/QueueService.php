@@ -325,4 +325,22 @@ class QueueService
         }
         return $deferMax;
     }
+
+    /**
+     * 购买正式课分配课管
+     * @param $msgBody
+     * @return bool
+     */
+    public static function courseAllotLeads($msgBody)
+    {
+        try {
+            $topic = new PushMessageTopic();
+            $topic->newLeads($msgBody, PushMessageTopic::EVENT_COURSE_MANAGE_NEW_LEADS)->publish();
+
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), $msgBody ?? []);
+            return false;
+        }
+        return true;
+    }
 }

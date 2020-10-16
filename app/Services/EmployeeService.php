@@ -416,7 +416,7 @@ class EmployeeService
         if (empty($members['course_manage_id'])) {
             return $list;
         }
-        $list = EmployeeModel::getRecords(['id' => $members['course_manage_id'], 'status' => EmployeeModel::STATUS_NORMAL], ['name', 'id'], false);
+        $list = EmployeeModel::getCourseManageStudentCount(implode(',',$members['course_manage_id']));
         return $list;
     }
 }

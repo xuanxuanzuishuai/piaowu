@@ -4,13 +4,20 @@
 namespace App\Services\LeadsPool;
 
 
+use App\Libs\DictConstants;
+use App\Libs\Exceptions\RunTimeException;
+use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
+use App\Libs\UserCenter;
+use App\Libs\Util;
 use App\Models\CollectionModel;
 use App\Models\EmployeeModel;
 use App\Models\LeadsPoolLogModel;
 use App\Models\PackageExtModel;
 use App\Models\StudentModel;
+use App\Models\UserWeixinModel;
 use App\Services\CollectionService;
+use App\Services\Queue\PushMessageTopic;
 use App\Services\Queue\QueueService;
 use App\Services\ReviewCourseService;
 use App\Services\StudentRefereeService;
@@ -36,9 +43,34 @@ class LeadsService
 
         // 检查、更新用户的serv_app_id
         StudentService::updateOutsideFlag($student, $package);
-
         //更新点评课标记
         $studentPackageType = ReviewCourseService::updateStudentReviewCourseStatus($student, $package);
+        //年卡用户分配课管
+        if ($package['package_type'] == PackageExtModel::PACKAGE_TYPE_NORMAL) {
+            self::normalLeadsAllot($event, $student);
+        }
+        //体验卡用户分配助教
+        if ($package['package_type'] == PackageExtModel::PACKAGE_TYPE_TRIAL) {
+            self::trailLeadsAllot($event, $package, $studentPackageType);
+        }
+        //学生支付通知
+        QueueService::studentPaid([
+            'uuid' => $event['uuid'],
+            'package_id' => $event['package_id'],
+        ]);
+        return true;
+    }
+
+
+    /**
+     * 体验卡用户分配助教
+     * @param $event
+     * @param $package
+     * @param $studentPackageType
+     * @return bool|mixed
+     */
+    private static function trailLeadsAllot($event, $package, $studentPackageType)
+    {
         // 已有班级，不用分班
         if (!empty($student['collection_id'])) {
             SimpleLogger::info("student has collection", ['student_uuid' => $event['uuid'], 'collection_id' => $student['collection_id']]);
@@ -73,14 +105,27 @@ class LeadsService
         if (empty($allotCollectionRes)) {
             self::defaultAssign($student['id'], $package);
         }
-
-        QueueService::studentPaid([
-            'uuid' => $event['uuid'],
-            'package_id' => $event['package_id'],
-        ]);
-
-        return true;
+        return $allotCollectionRes;
     }
+
+    /**
+     * 年卡用户分配课管
+     * @param $event
+     * @param $studentInfo
+     * @return bool|mixed
+     */
+    private static function normalLeadsAllot($event, $studentInfo)
+    {
+        $package = $event['package'];
+        //已经分配课管不在分配
+        if (!empty($studentInfo['course_manage_id'])) {
+            SimpleLogger::info("student has course manage", ['student_uuid' => $event['uuid'], 'course_manage_id' => $student['course_manage_id']]);
+            return true;
+        }
+        //分配课管
+        return self::pushCourseManageLeads($event['uuid'], $studentInfo, $package);
+    }
+
 
     /**
      * leads 转介绍分配
@@ -290,5 +335,241 @@ class LeadsService
         return true;
     }
 
+    /**
+     * leads分配课管
+     * @param $id
+     * @param $studentInfo
+     * @param $package
+     * @return bool
+     */
+    public static function pushCourseManageLeads($id, $studentInfo, $package)
+    {
+        $config = [
+            'id' => $id,
+            'student' => $studentInfo,
+            'package' => $package
+        ];
+        $leads = new Leads($config);
+        SimpleLogger::info("course manage push leads", $config);
+        //分配课管总池子id
+        $leadsConfig = DictConstants::getSet(DictConstants::LEADS_CONFIG);
+        if (empty($leadsConfig['course_manage_public_pool_id'])) {
+            SimpleLogger::error("course manage miss public pool id", ["leads_config" => $leadsConfig]);
+            return false;
+        }
+        $pm = PoolManager::getInstance();
+        return $pm->addLeads($leads, $leadsConfig['course_manage_public_pool_id']);
+    }
 
+    /**
+     * leads 分配到课管
+     * @param $pid
+     * @param $studentId
+     * @param $courseManageId
+     * @param $package
+     * @param $date
+     * @return bool
+     */
+    public static function assignToCourseManage($pid, $studentId, $courseManageId, $package, $date)
+    {
+        //检测课管名下学生数量是否超过设置人数
+        $allotRes = self::checkCourseManageLeadsCount($pid, $studentId, $courseManageId, $package, $date);
+        if ($allotRes === false) {
+            return false;
+        }
+        //分配到课管操作
+        $success = self::allotCourseManage($studentId, $courseManageId, $package, $date, $pid);
+        return boolval($success);
+    }
+
+    /**
+     * 检测课管名下学生数量是否超过设置人数
+     * @param $pid
+     * @param $studentId
+     * @param $courseManageId
+     * @param $package
+     * @param $date
+     * @return bool
+     */
+    private static function checkCourseManageLeadsCount($pid, $studentId, $courseManageId, $package, $date)
+    {
+        //获取当前已分配到此课管名下的学生数量
+        $studentCount = StudentModel::getCount(['course_manage_id' => $courseManageId]);
+        $courseManageInfo = EmployeeModel::getById($courseManageId);
+        $allotRes = false;
+        if ($studentCount >= $courseManageInfo['leads_max_nums']) {
+            $allotRes = true;
+            SimpleLogger::info('leads assign: course manage leads max num error', [
+                '$pid' => $pid,
+                '$studentId' => $studentId,
+                '$courseManageId' => $courseManageId,
+                '$package' => $package,
+                '$assignType' => LeadsPoolLogModel::TYPE_ASSIGN_COURSE_MANAGE,
+                '$studentCount' => $studentCount,
+                '$leadsMaxNums' => $courseManageInfo['leads_max_nums'],
+            ]);
+            LeadsPoolLogModel::insertRecord([
+                'pid' => $pid,
+                'type' => LeadsPoolLogModel::TYPE_NO_COURSE_MANAGE,
+                'pool_id' => $courseManageId,
+                'pool_type' => Pool::TYPE_EMPLOYEE,
+                'create_time' => time(),
+                'date' => $date,
+                'leads_student_id' => $studentId,
+                'detail' => json_encode([
+                    'course_manage_id' => $courseManageId,
+                    'package' => $package,
+                    'assign_type' => LeadsPoolLogModel::TYPE_ASSIGN_COURSE_MANAGE,
+                    'student_count' => $studentCount,
+                    'leads_max_nums' => $courseManageInfo['leads_max_nums'],
+                ]),
+            ]);
+        }
+        return $allotRes;
+    }
+
+
+    /**
+     * 分配到课管操作
+     * @param $studentId
+     * @param $courseManageId
+     * @param $package
+     * @param $date
+     * @param string $pid
+     * @return bool
+     */
+    private static function allotCourseManage($studentId, $courseManageId, $package, $date, $pid)
+    {
+        try {
+            //开启事务
+            $db = MysqlDB::getDB();
+            $db->beginTransaction();
+            $allotCourseManageRes = StudentService::allotCourseManage([$studentId], $courseManageId, EmployeeModel::SYSTEM_EMPLOYEE_ID);
+        } catch (RunTimeException $e) {
+            $allotCourseManageRes = false;
+        }
+        //提交事务
+        if ($allotCourseManageRes === true) {
+            $db->commit();
+            self::successAfter($studentId, $courseManageId, $package, $date, $pid);
+        } elseif ($allotCourseManageRes === false) {
+            $db->rollBack();
+            self::failAfter($studentId, $courseManageId, $package, $date, $pid);
+        }
+        return $allotCourseManageRes;
+    }
+
+    /**
+     * 分配失败后置方法
+     * @param $studentId
+     * @param $courseManageId
+     * @param $package
+     * @param $date
+     * @param $pid
+     */
+    private static function failAfter($studentId, $courseManageId, $package, $date, $pid)
+    {
+        //失败日志
+        LeadsPoolLogModel::insertRecord([
+            'pid' => $pid,
+            'type' => LeadsPoolLogModel::TYPE_SET_COURSE_MANAGE_ERROR,
+            'pool_id' => $courseManageId,
+            'pool_type' => Pool::TYPE_EMPLOYEE,
+            'create_time' => time(),
+            'date' => $date,
+            'leads_student_id' => $studentId,
+            'detail' => json_encode([
+                'course_manage_id' => $courseManageId,
+                'package' => $package,
+                'assign_type' => LeadsPoolLogModel::TYPE_ASSIGN_COURSE_MANAGE,
+            ]),
+        ]);
+        SimpleLogger::error('student update course manage fail', []);
+    }
+
+    /**
+     * 分配成功后置方法
+     * @param $studentId
+     * @param $courseManageId
+     * @param $package
+     * @param $date
+     * @param $pid
+     */
+    private static function successAfter($studentId, $courseManageId, $package, $date, $pid)
+    {
+        //成功日志
+        $time = time();
+        LeadsPoolLogModel::insertRecord([
+            'pid' => $pid,
+            'type' => LeadsPoolLogModel::TYPE_ASSIGN_COURSE_MANAGE,
+            'pool_id' => $courseManageId,
+            'pool_type' => Pool::TYPE_EMPLOYEE,
+            'create_time' => $time,
+            'date' => $date,
+            'leads_student_id' => $studentId,
+            'detail' => json_encode([
+                'course_manage_id' => $courseManageId,
+                'package' => $package,
+            ]),
+        ]);
+        SimpleLogger::error('student update course manage success', []);
+        //计算模板消息发送延迟时间
+        $deferTime  =self::allotCourseManageWxPushTime($time);
+        try {
+            $topic = new PushMessageTopic();
+            $msgBody['student_id'] = $studentId;
+            $msgBody['course_manage_id'] = $courseManageId;
+            $topic->courseManageNewLeadsPushWx($msgBody)->publish($deferTime);
+        } catch (\Exception $e) {
+            Util::errorCapture('PushMessageTopic init failure', [
+                'dateTime' => time(),
+            ]);
+        }
+    }
+
+    /**
+     * 计算分配课管的微信推送消息发放时间
+     * @param $time
+     * @return false|int
+     */
+    private static function allotCourseManageWxPushTime($time){
+        /**
+         * 微信消息推送规则
+         * 1.当天12：00之前的信息,当天12：00-12：30发送
+         * 2.当天12：00之后的信息,第二天的12：00-12：30发送
+         */
+        $twelve = strtotime('today +12 hour');
+        $randSeconds = mt_rand(0, 1800);
+        if ($time <= $twelve) {
+            $deferTime = $twelve + $randSeconds - $time;
+        } else {
+            //获取距离明天中午12:00-12:30这个区间的剩余秒数
+            $deferTime = strtotime('tomorrow +12 hour') + $randSeconds - $time;
+        }
+        return $deferTime;
+    }
+
+
+    /**
+     * 课管分配leads微信消息
+     * @param $msgBody
+     * @return bool
+     */
+    public static function allotLeadsCourseManageWxPush($msgBody)
+    {
+        SimpleLogger::info("allot course manage wx push to student start", ['msg_body' => $msgBody]);
+        //获取课管信息
+        $courseManageInfo = EmployeeModel::getRecord(['id' => $msgBody['course_manage_id']], ['wx_nick', 'wx_thumb', 'wx_qr']);
+        //获取学生openId
+        $userOpenIdInfo = UserWeixinModel::getBoundUserIds([$msgBody['student_id']], UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT);
+        if (empty($userOpenIdInfo)) {
+            SimpleLogger::error("student openid empty", []);
+            return false;
+        }
+        $toBePushedStudentInfo[$msgBody['student_id']]['open_id'] = empty($userOpenIdInfo[0]['open_id']) ? "" : $userOpenIdInfo[0]['open_id'];
+        //发送消息
+        StudentService::allotCoursePushMessage($msgBody['course_manage_id'], $courseManageInfo, $toBePushedStudentInfo);
+        SimpleLogger::info("allot course manage wx push to student end", []);
+        return true;
+    }
 }

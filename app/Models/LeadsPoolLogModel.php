@@ -26,6 +26,7 @@ class LeadsPoolLogModel extends Model
     const TYPE_PREPARE = 2006; // 预处理
 
     const TYPE_REF_ASSIGN = 2101; // 转介绍直接分配
+    const TYPE_ASSIGN_COURSE_MANAGE = 2007; //分配到课管
 
     /**
      * 错误事件
@@ -33,6 +34,8 @@ class LeadsPoolLogModel extends Model
     const TYPE_ERROR_NO_RULES = 9001; // 未配置规则
     const TYPE_NO_COLLECTION = 9002; // 无可分配班级
     const TYPE_SET_COLLECTION_ERROR = 9003; // 分班失败
+    const TYPE_NO_COURSE_MANAGE = 9004; // 无可分配课管
+    const TYPE_SET_COURSE_MANAGE_ERROR = 9005; // 分配课管失败
 
     public static $table = 'leads_pool_log';
 

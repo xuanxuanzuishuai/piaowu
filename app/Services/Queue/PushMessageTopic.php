@@ -21,7 +21,7 @@ class PushMessageTopic extends BaseTopic
     const EVENT_NEW_LEADS = 'new_leads'; // 新线索处理
     const EVENT_PUSH_RULE_WX = 'push_rule_wx'; //自动推送微信
     const EVENT_PUSH_MANUAL_RULE_WX = 'push_manual_rule_wx'; //手动推送微信
-
+    const EVENT_COURSE_MANAGE_NEW_LEADS = 'course_manage_new_leads'; // 正式课新线索分配课管推送微信消息
 
     public function __construct($publishTime = null)
     {
@@ -101,6 +101,19 @@ class PushMessageTopic extends BaseTopic
     }
 
     public function newLeads($data, $eventType = self::EVENT_NEW_LEADS)
+    {
+        $this->setEventType($eventType);
+        $this->setMsgBody($data);
+        return $this;
+    }
+
+    /**
+     * 课管分配leads发送微信消息
+     * @param $data
+     * @param string $eventType
+     * @return $this
+     */
+    public function courseManageNewLeadsPushWx($data, $eventType = self::EVENT_COURSE_MANAGE_NEW_LEADS)
     {
         $this->setEventType($eventType);
         $this->setMsgBody($data);
