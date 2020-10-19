@@ -878,8 +878,8 @@ class ErpReferralService
         $erp = new Erp();
         $needShowInfo = [
             ['type' => self::EXPECT_REGISTER, 'page' => 1, 'count' => 25],
-            ['type' => self::EXPECT_TRAIL_PAY, 'page' => 1, 'count' => 25],
-            ['type' => self::EXPECT_YEAR_PAY, 'page' => 1, 'count' => 30]
+            ['type' => self::EXPECT_TRAIL_PAY, 'page' => 1, 'count' => 35],
+            ['type' => self::EXPECT_YEAR_PAY, 'page' => 1, 'count' => 45]
         ];
         $returnInfo = [];
         foreach ($needShowInfo as $value) {
@@ -890,7 +890,7 @@ class ErpReferralService
             $response = $erp->awardList($params);
             $studentInfoList = array_column(StudentModel::getRecords(['uuid' => array_column($response['data']['records'], 'referrer_uuid')], ['name', 'uuid']), null, 'uuid');
             $returnInfo[$value['type']] = array_map(function ($item) use($studentInfoList) {
-                if (in_array($item['award_type'], [self::AWARD_TYPE_CASH, self::AWARD_TYPE_SUBS])) {
+                if (in_array($item['award_type'], [self::AWARD_TYPE_CASH])) {
                     if ($item['award_type'] == self::AWARD_TYPE_CASH) {
                         $str = $item['award_amount'] / 100 . '元';
                     } else {
