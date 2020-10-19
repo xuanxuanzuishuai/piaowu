@@ -184,7 +184,7 @@ class SharePosterService
             $data['list'][$k]['status'] = $v['status'];
             $data['list'][$k]['status_name'] = $v['status_name'];
             $data['list'][$k]['create_time'] = date('Y-m-d H:i', $v['create_time']);
-            $data['list'][$k]['award'] = ($v['status'] == SharePosterModel::STATUS_QUALIFIED) ? $awardListInfo[$activityEventId][$activityEventTaskId]['amount'] : '-';
+            $data['list'][$k]['award'] = $awardListInfo[$activityEventId][$activityEventTaskId]['amount'];
             $data['list'][$k]['img_oss_url'] = $v['img_oss_url'];
             $data['list'][$k]['reason_str'] = $v['reason_str'];
             list($awardStatusZh, $failReasonZh) = self::displayAwardExplain($awardListInfo[$activityEventId][$activityEventTaskId], $awardInfo[$v['award_id']], $redPackDeal[$v['award_id']]);
