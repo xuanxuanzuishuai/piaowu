@@ -354,7 +354,7 @@ class SharePosterService
         $time = time();
         //仅现金,且未发放/已发放失败,且满足奖励延迟时间限制可调用
         if ($baseAward['award_type'] == ErpReferralService::AWARD_TYPE_CASH) {
-            if ($baseAward['status'] != ErpReferralService::AWARD_STATUS_WAITING || $baseAward['create_time'] + $baseAward['delay'] >= $time) {
+            if (!in_array($baseAward['status'], [ErpReferralService::AWARD_STATUS_WAITING, ErpReferralService::AWARD_STATUS_REJECTED]) || $baseAward['create_time'] + $baseAward['delay'] >= $time) {
                 return ;
             }
 
@@ -447,7 +447,7 @@ class SharePosterService
             'reason' => implode(',', $reason),
             'remark' => $remark
         ]);
-
+        (new Erp())->updateAward(explode(',', $poster['award_id']), ErpReferralService::AWARD_STATUS_REJECTED, $employeeId);
         // 审核不通过, 发送模版消息
         if ($update > 0) {
             self::sendTemplate($poster['open_id'], $poster['activity_name'], $status);
