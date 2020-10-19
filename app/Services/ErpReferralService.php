@@ -342,6 +342,10 @@ class ErpReferralService
         if (!empty($params['reviewer_name'])) {
             $params['reviewer_id'] = EmployeeModel::getRecord(['name[~]' => Util::sqlLike($params['reviewer_name'])], 'id');
         }
+        if (!empty($params['student_name'])) {
+            $params['student_uuid'] = StudentModel::getRecord(['name[~]' => $params['student_name']], ['uuid']);
+            unset($params['student_name']);
+        }
 
         if (!empty($params['event_task_id'])) {
             $params['event_task_id'] = self::expectTaskRelateRealTask($params['event_task_id']);
@@ -487,7 +491,7 @@ class ErpReferralService
                 'event_task_name'          => $award['event_task_name'],
                 'event_task_type'          => $award['event_task_type'],
                 'award_amount'             => $award['award_type'] == self::AWARD_TYPE_CASH ? ($award['award_amount'] / 100) : $award['award_amount'],
-                'fail_reason_zh'           => isset($relateAwardStatusArr[$award['user_event_task_award_id']]) ? WeChatAwardCashDealModel::getWeChatErrorMsg($relateAwardStatusArr[$award['user_event_task_award_id']]['result_code']) : '',
+                'fail_reason_zh'           => $award['award_status'] == self::AWARD_STATUS_GIVE_FAIL ? WeChatAwardCashDealModel::getWeChatErrorMsg($relateAwardStatusArr[$award['user_event_task_award_id']]['result_code']) : '',
                 'reviewer_id'              => $award['reviewer_id'],
                 'reviewer_name'            => $reviewerNames[$award['reviewer_id']] ?? '',
                 'review_time'              => $award['review_time'],
