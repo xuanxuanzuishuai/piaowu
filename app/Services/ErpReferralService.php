@@ -410,7 +410,7 @@ class ErpReferralService
                 'award_status' => $award['award_status'],
                 'award_status_zh' => $award['award_status_zh'],
                 'award_amount' => $award['award_type'] == self::AWARD_TYPE_CASH ? ($award['award_amount'] / 100) : $award['award_amount'],
-                'fail_reason_zh' => isset($relateAwardStatusArr[$award['user_event_task_award_id']]) ? WeChatAwardCashDealModel::getWeChatErrorMsg($relateAwardStatusArr[$award['user_event_task_award_id']]['result_code']) : '',
+                'fail_reason_zh' => $award['award_status'] == self::AWARD_STATUS_GIVE_FAIL ? WeChatAwardCashDealModel::getWeChatErrorMsg($relateAwardStatusArr[$award['user_event_task_award_id']]['result_code']) : '',
                 'award_type' => $award['award_type'],
                 'create_time' => $award['create_time'],
                 'review_time' => $award['review_time'],
@@ -668,8 +668,14 @@ class ErpReferralService
      * @return array|bool
      * @throws RunTimeException
      */
-    public static function updateAward($awardId, $status, $reviewerId, $reason, $keyCode, $eventTaskId = NULL)
-    {
+    public static function updateAward(
+        $awardId,
+        $status,
+        $reviewerId,
+        $reason,
+        $keyCode,
+        $eventTaskId = null
+    ) {
         if (empty($awardId) || empty($reviewerId)) {
             throw new RunTimeException(['invalid_award_id_or_reviewer_id']);
         }
@@ -777,12 +783,24 @@ class ErpReferralService
             //所有年包id
             $packageIdArr = array_column(PackageExtModel::getPackages(['package_type' => PackageExtModel::PACKAGE_TYPE_NORMAL]), 'package_id');
         }
-
-        $existNormalBillStudentIdArr = array_column(GiftCodeModel::getRecords([
-            'buyer' => $studentIdArr, 'bill_package_id' => $packageIdArr,
-            'code_status' => [GiftCodeModel::CODE_STATUS_NOT_REDEEMED, GiftCodeModel::CODE_STATUS_HAS_REDEEMED]],
-            ['buyer' => Medoo::raw('DISTINCT(buyer)')]), 'buyer');
-
+        $existNormalBillStudentIdArr = array_column(
+            GiftCodeModel::getRecords(
+                [
+                    'buyer'           => $studentIdArr,
+                    'bill_package_id' => $packageIdArr,
+                    'bill_app_id'     => PackageExtModel::APP_AI,
+                    'code_status'     =>
+                    [
+                        GiftCodeModel::CODE_STATUS_NOT_REDEEMED,
+                        GiftCodeModel::CODE_STATUS_HAS_REDEEMED
+                    ]
+                ],
+                [
+                    'buyer' => Medoo::raw('DISTINCT(buyer)')
+                ]
+            ),
+            'buyer'
+        );
         $diffArr = array_diff($studentIdArr, $existNormalBillStudentIdArr);
         if (!empty($diffArr)) {
             return implode(',', StudentModel::getRecords(['id' => $diffArr], 'mobile'));

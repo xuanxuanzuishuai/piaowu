@@ -617,27 +617,73 @@ class ReviewCourseService
      * @param $package
      * @return null
      */
-    public static function updateStudentReviewCourseStatus($student,$package)
+    public static function updateStudentReviewCourseStatus($student, $package)
     {
-
-        $studentPackageType = null;
-        if ($student['has_review_course'] >= $package['package_type']) {
-            SimpleLogger::info('student has review course gt package type', ['has_review_course' => $student['has_review_course'], 'package_type' => $package['package_type']]);
-            $studentPackageType = $student['has_review_course'];
-        } else {
-            // 更新点评课标记
-            $update = [
-                'has_review_course' => $package['package_type'],
-            ];
+        $studentPackageType = $student['has_review_course'];
+        // 更新点评课标记
+        if (self::shouldUpdateReviewCourseStatus($student, $package)) {
             $studentPackageType = $package['package_type'];
-            StudentModel::updateRecord($student['id'], $update);
+            StudentModel::updateRecord($student['id'], ['has_review_course' => $package['package_type']]);
+        }
+        // 是否发奖
+        if (self::shouldCompleteEventTask($student, $package)) {
             self::completeEventTask($student['uuid'], $package['package_type'], $package['trial_type'], $package['app_id']);
         }
+
         //同步用户付费状态信息到crm粒子数据中
         if ($package['package_type'] == PackageExtModel::PACKAGE_TYPE_NORMAL) {
             QueueService::studentFirstPayNormalCourse($student['id']);
         }
         return $studentPackageType;
+    }
+
+    /**
+     * 判断是否应该更新Student: has_review_course
+     * @param $student
+     * @param $package
+     * @return bool
+     */
+    public static function shouldUpdateReviewCourseStatus($student, $package)
+    {
+        if ($package['package_type'] > $student['has_review_course']) {
+            return true;
+        } else {
+            SimpleLogger::info('student has review course gt package type', ['has_review_course' => $student['has_review_course'], 'package_type' => $package['package_type']]);
+            return false;
+        }
+    }
+
+    /**
+     * 判断是否应该完成任务及发放奖励
+     * @param $student
+     * @param $package
+     * @return bool
+     */
+    public static function shouldCompleteEventTask($student, $package)
+    {
+        // 真人业务不发奖
+        if ($package['app_id'] != PackageExtModel::APP_AI) {
+            return false;
+        }
+        // 所有年包：
+        $packageIdArr = array_column(PackageExtModel::getPackages(['package_type' => PackageExtModel::PACKAGE_TYPE_NORMAL, 'app_id' => PackageExtModel::APP_AI]), 'package_id');
+        // 二期需求：
+        // 判断用户是否是首次购买智能陪练正式课
+        $hadPurchaseCount = GiftCodeModel::getCount(
+            [
+                'buyer'           => $student['id'],
+                'bill_package_id' => $packageIdArr
+            ]
+        );
+        // 首购智能正式课
+        if ($hadPurchaseCount <= 1) {
+            return true;
+        }
+        // 升级
+        if ($package['package_type'] > $student['has_review_course']) {
+            return true;
+        }
+        return false;
     }
 
     /**
