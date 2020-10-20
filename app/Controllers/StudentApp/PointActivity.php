@@ -166,7 +166,7 @@ class PointActivity extends ControllerBase
             $eventId = DictConstants::get(DictConstants::HALLOWEEN_CONFIG, ['halloween_event']);
             //检测活动是否结束
             $time = time();
-            $eventInfo = HalloweenService::getEventTaskCache($eventId, HalloweenService::HALLOWEEN_EVENT_FIELD, date('Y-m-d', $time));
+            $eventInfo = HalloweenService::getEventTaskCache($eventId[0], HalloweenService::HALLOWEEN_EVENT_FIELD, date('Y-m-d', $time));
             if ($eventInfo['end_time'] < $time) {
                 throw new RunTimeException(['halloween_is_end']);
             }
