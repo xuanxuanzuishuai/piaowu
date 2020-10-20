@@ -9,6 +9,7 @@
 namespace App\Libs;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
 
@@ -75,9 +76,10 @@ class HttpHelper
      * @param $api
      * @param array $params
      * @param string $method
+     * @param array $headerParams
      * @return bool|array
      */
-    public static function requestJson($api,  $params = [], $method = 'GET')
+    public static function requestJson($api, $params = [], $method = 'GET', $headerParams = [])
     {
         try {
             $client = new Client(['debug' => false]);
@@ -86,7 +88,8 @@ class HttpHelper
                 $data = empty($params) ? [] : ['query' => $params];
             } elseif ($method == 'POST') {
                 $data = ['json' => $params];
-                $data['headers'] = ['Content-Type' => 'application/json'];
+                $baseHeader = ['Content-Type' => 'application/json'];
+                $data['headers'] = array_merge($baseHeader, $headerParams);
             } else {
                 return false;
             }
@@ -103,7 +106,7 @@ class HttpHelper
 
             $res = json_decode($body, true);
 
-        } catch (\Exception $e) {
+        } catch (GuzzleException $e) {
             SimpleLogger::error("[HttpHelper] send request error", [
                 'error_message' => $e->getMessage()
             ]);
