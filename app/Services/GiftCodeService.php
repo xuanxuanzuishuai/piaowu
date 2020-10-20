@@ -98,10 +98,6 @@ class GiftCodeService
             $params['code'] = $value;
 
             GiftCodeModel::insertRecord($params, false);
-            if ($multipleBuyer) {
-                $codes[$i] = $buyer[$i];
-                $codes[$i]['code'] = $value;
-            }
         }
 
         return $codes;

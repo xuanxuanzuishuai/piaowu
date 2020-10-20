@@ -38,11 +38,12 @@ class ErpPackageV1Service
     /**
      * 获取新产品包id，name
      * @param $subType
+     * @param $channel
      * @return array|null
      */
-    public static function getPackages($subType)
+    public static function getPackages($subType, $channel)
     {
-        return ErpPackageV1Model::getPackagesByType($subType);
+        return ErpPackageV1Model::getPackagesByType($subType, $channel);
     }
 
 

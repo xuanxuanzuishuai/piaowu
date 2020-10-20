@@ -135,11 +135,12 @@ and p.id = :package_id", [
     /**
      * 新产品包id、name---已上架
      * @param $subType
+     * @param $channel
      * @return array|null
      */
-    public static function getPackagesByType($subType)
+    public static function getPackagesByType($subType, $channel)
     {
-        $records = MysqlDB::getDB()->queryAll("
+        $sql = "
 select p.id, p.name
 from " . self::$table . " p
 inner join ". ErpPackageGoodsV1Model::$table . " pg on pg.package_id = p.id
@@ -148,12 +149,20 @@ inner join " . CategoryV1Model::$table . " c on c.id = g.category_id
 where pg.status = :status
 and c.sub_type = :sub_type
 and p.status = :p_status
-and p.is_custom = :is_custom", [
+and p.is_custom = :is_custom";
+        $map = [
             ':status' => ErpPackageGoodsV1Model::SUCCESS_NORMAL,
             ':sub_type' => $subType,
             ':p_status' => self::STATUS_ON_SALE,
             ':is_custom' => self::PACKAGE_IS_NOT_CUSTOM
-        ]);
+        ];
+
+        if (!empty($channel)) {
+            $sql .= " and p.channel & :channel";
+            $map[':channel'] = $channel;
+        }
+
+        $records = MysqlDB::getDB()->queryAll($sql, $map);
         return $records;
     }
 }

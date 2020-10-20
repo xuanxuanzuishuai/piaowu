@@ -151,7 +151,9 @@ class Package extends ControllerBase
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        $records = ErpPackageV1Service::getPackages($params['sub_type']);
+
+        $channel = $params['channel'] ?? null;
+        $records = ErpPackageV1Service::getPackages($params['sub_type'], $channel);
 
         return HttpHelper::buildResponse($response, $records);
     }
