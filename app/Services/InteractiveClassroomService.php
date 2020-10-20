@@ -103,7 +103,7 @@ class InteractiveClassroomService
      * @return array|mixed
      * 待上线课程
      */
-    public static function preOnlineCourse($opn, $studentId, $page = 1, $pageSize = 4)
+    public static function preOnlineCourse($opn, $studentId, $page = 1, $pageSize = 100)
     {
         $expectBaseNum = 3000;
         $categoryId = self::erpCategory($opn);
@@ -144,7 +144,7 @@ class InteractiveClassroomService
      * @return array[]
      * 制作中课程
      */
-    public static function makingCourse($opn, $page = 1, $pageSize = 4)
+    public static function makingCourse($opn, $page = 1, $pageSize = 100)
     {
         $categoryId = self::erpCategory($opn);
         if (empty($categoryId)) {
@@ -588,7 +588,7 @@ class InteractiveClassroomService
                         } else {
                             $courseStartTime = (count($payLessonList) - 1) * self::WEEK_TIMESTAMP + $collectionLearnRecord[0]['first_course_time'];
                             $subEndDay = strtotime($collectionLearnRecord[0]['sub_end_date']);
-                            if ($courseStartTime > $subEndDay) {
+                            if ($courseStartTime > $subEndDay || $courseStartTime > $time) {
                                 $learn_status = self::LOCK_THE_CLASS;
                             } elseif ($time >= $courseStartTime && $time <= ($courseStartTime + self::HALF_HOUR)) {
                                 $learn_status = self::GO_TO_THE_CLASS;

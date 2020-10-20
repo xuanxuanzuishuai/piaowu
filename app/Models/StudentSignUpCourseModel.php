@@ -84,7 +84,7 @@ class StudentSignUpCourseModel extends Model
         list($beginDay, $endDay) = Util::getStartEndTimestamp($timestamp);
         $weekNo = date("N", $timestamp);
 
-        $where = "s.student_id = " . $studentId . " AND s.start_week = " . $weekNo . " AND s.bind_status = " . self::COURSE_BING_SUCCESS . "
+        $where = "s.student_id = " . $studentId . " AND s.start_week = " . $weekNo . "
         AND (NOT (s.first_course_time >" . $endDay . ")) AND (NOT (s.last_course_time < " . $beginDay . "))";
 
         $sql = "select s.collection_id, s.start_week, s.start_time, s.first_course_time, s.bind_status, s.update_time, l.lesson_id, l.learn_status, stu.sub_end_date from {$signUp} as s 
