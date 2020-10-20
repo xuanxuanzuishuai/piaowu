@@ -343,7 +343,10 @@ class ErpReferralService
             $params['reviewer_id'] = EmployeeModel::getRecord(['name[~]' => Util::sqlLike($params['reviewer_name'])], 'id');
         }
         if (!empty($params['student_name'])) {
-            $params['student_uuid'] = StudentModel::getRecord(['name[~]' => $params['student_name']], ['uuid']);
+            $params['student_uuid'] = array_column(StudentModel::getRecords(['name[~]' => $params['student_name']], ['uuid']), 'uuid');
+            if (empty($params['student_uuid'])) {
+                return ['list' => [], 'total_count' => 0];
+            }
             unset($params['student_name']);
         }
 
@@ -774,7 +777,7 @@ class ErpReferralService
      */
     public static function verifyStudentStatus($eventTaskId, $uuidArr)
     {
-        if (empty($eventTaskId) || empty($uuidArr)) {
+        if ($eventTaskId == self::EXPECT_UPLOAD_SCREENSHOT || empty($eventTaskId) || empty($uuidArr)) {
             return NULL;
         }
 
