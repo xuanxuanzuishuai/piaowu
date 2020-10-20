@@ -349,7 +349,7 @@ class ErpReferralService
             }
             unset($params['student_name']);
         }
-
+        $expectTaskId = $params['event_task_id'];
         if (!empty($params['event_task_id'])) {
             $params['event_task_id'] = self::expectTaskRelateRealTask($params['event_task_id']);
         }
@@ -361,18 +361,19 @@ class ErpReferralService
         }
         // 转介绍二期红包列表：
         if ($params['award_relate'] == Erp::AWARD_RELATE_REFEREE) {
-            return self::formatRefereeAwardList($response);
+            return self::formatRefereeAwardList($response, $expectTaskId);
         }
         // DSS-转介绍-红包审核列表：
-        return self::formatAwardList($response);
+        return self::formatAwardList($response, $expectTaskId);
     }
 
     /**
      * DSS-转介绍-红包审核
      * @param $response
+     * @param $expectTaskId
      * @return array
      */
-    public static function formatAwardList($response)
+    public static function formatAwardList($response, $expectTaskId)
     {
         $reviewerNames = self::getReviewerNames(array_column($response['data']['records'], 'reviewer_id'));
 
@@ -412,7 +413,7 @@ class ErpReferralService
                 'referrer_name' => $studentInfoList[$award['referrer_uuid']]['name'],
                 'referrer_mobile_hidden' => Util::hideUserMobile($award['referrer_mobile']),
                 'event_task_id' => $award['event_task_id'],
-                'event_task_name' => $award['event_task_name'],
+                'event_task_name' => self::EVENT_TASKS[$expectTaskId], //产品期望筛选什么选项，展示什么名称
                 'user_event_task_award_id' => $award['user_event_task_award_id'],
                 'award_status' => $award['award_status'],
                 'award_status_zh' => $award['award_status_zh'],
@@ -445,9 +446,10 @@ class ErpReferralService
     /**
      * 转介绍二期红包列表
      * @param $response
+     * @param $expectTaskId
      * @return array
      */
-    public static function formatRefereeAwardList($response)
+    public static function formatRefereeAwardList($response, $expectTaskId)
     {
         $reviewerNames = self::getReviewerNames(array_column($response['data']['records'], 'reviewer_id'));
 
@@ -491,7 +493,7 @@ class ErpReferralService
                 'bind_status_zh'           => $bindStatus == UserWeixinModel::STATUS_NORMAL ? '已绑定' : '未绑定',
                 'award_status'             => $award['award_status'],
                 'award_status_zh'          => $award['award_status_zh'],
-                'event_task_name'          => $award['event_task_name'],
+                'event_task_name'          => self::REFEREE_EVENT_TASKS[$expectTaskId], //产品期望筛选什么选项，展示什么名称
                 'event_task_type'          => $award['event_task_type'],
                 'award_amount'             => $award['award_type'] == self::AWARD_TYPE_CASH ? ($award['award_amount'] / 100) : $award['award_amount'],
                 'fail_reason_zh'           => $award['award_status'] == self::AWARD_STATUS_GIVE_FAIL ? WeChatAwardCashDealModel::getWeChatErrorMsg($relateAwardStatusArr[$award['user_event_task_award_id']]['result_code']) : '',

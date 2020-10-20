@@ -56,16 +56,12 @@ class SharePosterService
         if (!empty($uploadRecord) && $uploadRecord['status'] != SharePosterModel::STATUS_UNQUALIFIED) {
             throw new RunTimeException(['stop_repeat_upload']);
         }
-        //远程调用erp接口添加学生事件任务:只在第一次创建任务时调用
-        $awardId = $uploadRecord['award_id'];
-        if (empty($awardId)) {
-            $erp = new Erp();
-            $taskResult = $erp->updateTask($studentInfo['uuid'], $activityInfo['task_id'], ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
-            if (empty($taskResult['data'])) {
-                throw new RunTimeException(['erp_create_user_event_task_award_fail']);
-            }
-            $awardId = implode(',', $taskResult['data']['user_award_ids']);
+        $erp = new Erp();
+        $taskResult = $erp->updateTask($studentInfo['uuid'], $activityInfo['task_id'], ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
+        if (empty($taskResult['data'])) {
+            throw new RunTimeException(['erp_create_user_event_task_award_fail']);
         }
+        $awardId = implode(',', $taskResult['data']['user_award_ids']);
         $time = time();
         $insertId = SharePosterModel::insertRecord(
             [
@@ -165,16 +161,7 @@ class SharePosterService
         $redPackDeal = array_column(WeChatAwardCashDealModel::getRecords(['user_event_task_award_id' => array_column($activityList, 'award_id')]), NULL, 'user_event_task_award_id');
         //获取活动信息
         $activityInfo = array_column(ReferralActivityModel::getRecords(['id' => array_unique(array_column($activityList, 'activity_id'))], ['name', 'id', 'task_id', 'event_id'], false), null, 'id');
-        //获取奖励信息:审核通过的截图才会发放奖励
-        $qualifiedRecord = $awardListInfo = [];
-        array_map(function ($record) use (&$qualifiedRecord) {
-            if ($record['status'] == SharePosterModel::STATUS_QUALIFIED) {
-                $qualifiedRecord[] = $record['activity_id'];
-            }
-        }, $activityList);
-        if (!empty($qualifiedRecord)) {
-            $awardListInfo = self::getEventTaskInfo(array_column($activityInfo, 'event_id'));
-        }
+        $awardListInfo = self::getEventTaskInfo(array_column($activityInfo, 'event_id'));
         //格式化信息
         $activityList = self::formatData($activityList);
         foreach ($activityList as $k => $v) {
