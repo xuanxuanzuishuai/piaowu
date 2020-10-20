@@ -21,6 +21,8 @@ class CreditService
 {
     //积分活动类型
     const CREDIT_TASK = 6;
+    //每日任务活动
+    const EVERY_DAY_ACTIVITY_NAME = "每日任务活动";
     //活动任务群体是时长有效用户(1所有2时长有效)
     const SUB_REMAIN_DURATION_VALID = 2;
     //每日任务
@@ -744,17 +746,16 @@ class CreditService
      */
     public static function getActivityList($studentId)
     {
-        $activityInfo = EventModel::getRecords(['type' => self::CREDIT_TASK, 'status' => EventModel::STATUS_NORMAL]);
+        $activityInfo = EventModel::getRecord(['name' => self::EVERY_DAY_ACTIVITY_NAME, 'status' => EventModel::STATUS_NORMAL]);
         if (empty($activityInfo)) {
             return [0,0];
         }
-        $eventId = array_column($activityInfo, 'id');
-        $generalTask = EventTaskModel::getCount(['status' => EventTaskModel::STATUS_NORMAL, 'event_id' => $eventId]);
+        $generalTask = EventTaskModel::getCount(['status' => EventTaskModel::STATUS_NORMAL, 'event_id' => $activityInfo['id']]);
         if (empty($studentId)) {
             return [$generalTask, 0];
         }
 
-        $taskId = EventTaskModel::getRecords(['status' => EventTaskModel::STATUS_NORMAL, 'event_id' => $eventId],'id');
+        $taskId = EventTaskModel::getRecords(['status' => EventTaskModel::STATUS_NORMAL, 'event_id' => $activityInfo['id']],'id');
         $finishTheTask = PointActivityRecordModel::getStudentFinishTheTask($studentId, $taskId);
 
         return [$generalTask, $finishTheTask];
