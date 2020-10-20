@@ -239,13 +239,14 @@ class TrackService
                 return self::trackCallBackIdfa($eventType, $trackData);
             case self::CHANNEL_BAIDU:
                 return self::trackCallBackBaidu($eventType, $trackData);
+            case self::CHANNEL_KS:
+                return self::trackCallKuaiShou($eventType, $trackData);
+            case self::CHANNEL_OPPO:
+                return self::trackCallbackOPPO($eventType, $trackData);
             case self::CHANNEL_OTHER:
             case self::CHANNEL_KOL:
             case self::CHANNEL_HUAWEI:
-            case self::CHANNEL_OPPO:
                 return true;
-            case self::CHANNEL_KS:
-                return self::trackCallKuaiShou($eventType, $trackData);
             default:
                 return false;
         }
@@ -472,6 +473,44 @@ class TrackService
         $response = HttpHelper::requestJson($api, $data, 'GET');
         $success = (!empty($response) && $response['result'] == 1);
         return $success;
+    }
+
+    public static function trackCallbackOPPO($eventType, $trackData)
+    {
+        $timestamp = Util::milliSecond();
+        $salt = '';
+        $base64Key = '';
+        $encrypt = function ($input, $base64Key) {
+            return openssl_encrypt($input, 'AES-128-ECB',base64_decode($base64Key),0,'');
+        };
+
+        $api = 'https://api.ads.heytapmobi.com/api/uploadActiveData';
+        switch ($eventType) {
+            case self::TRACK_EVENT_ACTIVE:
+                $type = 1;
+                break;
+            case self::TRACK_EVENT_REGISTER:
+                $type = 2;
+                break;
+            default:
+                return false;
+        }
+
+        $data = [
+            'imei' => !empty($trackData['imei']) ? $encrypt($trackData['imei'], $base64Key) : '',
+            'dataType' => $type,
+            'channel' => 1, // 1、OPPO，2、一加，0、其他
+            'timestamp' => Util::milliSecond(),
+        ];
+
+        $jsonBody = json_encode($data);
+        $content = $jsonBody . $timestamp . $salt;
+        $signature = md5($content);
+
+        $response = HttpHelper::requestJson($api, $data, 'POST');
+        $success = (!empty($response) && $response['ret'] == 0);
+        return $success;
+
     }
 
     public static function getAdChannel($userId)

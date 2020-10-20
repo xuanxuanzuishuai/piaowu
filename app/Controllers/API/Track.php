@@ -67,6 +67,21 @@ class Track extends ControllerBase
     }
 
     /**
+     * OPPO点击监测回调
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function adEventOPPO(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        SimpleLogger::debug("OPPO::track", [$params]);
+
+        $ret = ['ret' => 0, 'msg' => 'OK'];
+        return $response->withJson($ret, StatusCode::HTTP_OK);
+    }
+
+    /**
      * 渠道商调用接口
      * 查询idfa是否存在
      * @param Request $request

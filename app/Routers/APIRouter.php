@@ -35,6 +35,11 @@ class APIRouter extends RouterBase
             'call' => Track::class . ':adEventWx',
             'middles' => [],
         ],
+        '/api/track/ad_event/oppo' => [
+            'method' => ['get'],
+            'call' => Track::class . ':adEventOPPO',
+            'middles' => [],
+        ],
         '/api/track/idfaQueryApi' => [
             'method' => ['get'],
             'call' => Track::class . ':checkIdfa',
