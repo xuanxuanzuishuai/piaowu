@@ -250,7 +250,7 @@ class LeadsPoolService
         $upLevelPoolRules = LeadsPoolRuleModel::getRecords(
             [
                 'target_id' => $poolId,
-                'target_type' => $poolInfo['target_type'],
+                'target_type' => LeadsPoolModel::LEADS_POOL_TARGET_TYPE_TO_POOL,
                 'status[<]' => $poolStatus,
             ],
             ['id', 'pool_id'], false);
@@ -264,6 +264,8 @@ class LeadsPoolService
                 }
             }
         }
+        //修改本池子的分配规则
+        LeadsPoolRuleModel::batchUpdateRecord(['status' => $poolStatus], ['pool_id' => $poolId], false);
         //记录操作日志
         $opLogInsertRes = LeadsPoolOpLogModel::insertRecord([
             'op_type' => LeadsPoolOpLogModel::OP_TYPE_POOL_UPDATE,
@@ -317,12 +319,11 @@ class LeadsPoolService
             'list' => [],
             'count' => 0,
         ];
-        //获取不同公池的id
+        //获取不同公池的id:分配课管不展示公池信息
         $leadsConfig = DictConstants::getSet(DictConstants::LEADS_CONFIG);
+        $publicPoolId = 0;
         if ($type == LeadsPoolModel::LEADS_POOL_TYPE_SELF_CREATE) {
             $publicPoolId = $leadsConfig['assistant_public_pool_id'];
-        } else {
-            $publicPoolId = $leadsConfig['course_manage_public_pool_id'];
         }
         $leadPoolCount = LeadsPoolModel::getCount(
             [
@@ -493,7 +494,7 @@ class LeadsPoolService
             throw  new RunTimeException(['pool_id_is_invalid']);
         }
         //获取课管例子分配数据
-        $courseManageIdList = implode(',',array_column($detailData['rules'],'target_id'));
+        $courseManageIdList = implode(',', array_column($detailData['rules'], 'target_id'));
         $courseManageList = array_column(EmployeeModel::getCourseManageStudentCount($courseManageIdList), null, 'id');
         foreach ($detailData['rules'] as $dk => &$dv) {
             $dv['leads_max_nums'] = $courseManageList[$dv['target_id']]['leads_max_nums'];

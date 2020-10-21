@@ -346,6 +346,7 @@ class EmployeeModel extends Model
                     LEFT JOIN student AS s ON e.id = s.course_manage_id
                 WHERE
                     e.id IN ( ".$courseManageId." )
+                AND e.status = " . self::STATUS_NORMAL . "
                 GROUP BY
                     e.id";
         return $db->queryAll($sql);

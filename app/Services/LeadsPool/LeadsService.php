@@ -45,8 +45,11 @@ class LeadsService
         StudentService::updateOutsideFlag($student, $package);
         //更新点评课标记
         $studentPackageType = ReviewCourseService::updateStudentReviewCourseStatus($student, $package);
-        //年卡用户分配课管
-        if ($package['package_type'] == PackageExtModel::PACKAGE_TYPE_NORMAL) {
+        //第一次购买年卡&&课包属于智能业务线正式课包&&用户未分配课管
+        if (($package['package_type'] == PackageExtModel::PACKAGE_TYPE_NORMAL) &&
+            ($package['app_id'] == PackageExtModel::APP_AI) &&
+            empty($studentInfo['course_manage_id']) &&
+            ($student['has_review_course'] < PackageExtModel::PACKAGE_TYPE_NORMAL)) {
             self::normalLeadsAllot($event, $student);
         }
         //体验卡用户分配助教
@@ -115,16 +118,10 @@ class LeadsService
      * @param $studentInfo
      * @return bool|mixed
      */
-    private static function normalLeadsAllot($event, $studentInfo)
+    public static function normalLeadsAllot($event, $studentInfo)
     {
-        $package = $event['package'];
-        //已经分配课管不在分配
-        if (!empty($studentInfo['course_manage_id'])) {
-            SimpleLogger::info("student has course manage", ['student_uuid' => $event['uuid'], 'course_manage_id' => $studentInfo['course_manage_id']]);
-            return true;
-        }
         //分配课管
-        return self::pushCourseManageLeads($event['uuid'], $studentInfo, $package);
+        return self::pushCourseManageLeads($event['uuid'], $studentInfo, $event['package']);
     }
 
 
@@ -397,9 +394,7 @@ class LeadsService
         //获取当前已分配到此课管名下的学生数量
         $studentCount = StudentModel::getCount(['course_manage_id' => $courseManageId]);
         $courseManageInfo = EmployeeModel::getById($courseManageId);
-        $allotRes = false;
         if ($studentCount >= $courseManageInfo['leads_max_nums']) {
-            $allotRes = true;
             SimpleLogger::info('leads assign: course manage leads max num error', [
                 '$pid' => $pid,
                 '$studentId' => $studentId,
@@ -425,8 +420,9 @@ class LeadsService
                     'leads_max_nums' => $courseManageInfo['leads_max_nums'],
                 ]),
             ]);
+            return false;
         }
-        return $allotRes;
+        return true;
     }
 
 
@@ -515,7 +511,7 @@ class LeadsService
         ]);
         SimpleLogger::error('student update course manage success', []);
         //计算模板消息发送延迟时间
-        $deferTime  =self::allotCourseManageWxPushTime($time);
+        $deferTime = self::allotCourseManageWxPushTime($time);
         try {
             $topic = new PushMessageTopic();
             $msgBody['student_id'] = $studentId;
