@@ -478,10 +478,10 @@ class TrackService
     public static function trackCallbackOPPO($eventType, $trackData)
     {
         $timestamp = Util::milliSecond();
-        $salt = '';
-        $base64Key = '';
+        $salt = 'e0u6fnlag06lc3pl';
+        $base64Key = 'XGAXicVG5GMBsx5bueOe4w==';
         $encrypt = function ($input, $base64Key) {
-            return openssl_encrypt($input, 'AES-128-ECB',base64_decode($base64Key),0,'');
+            return openssl_encrypt($input, 'AES-128-ECB', base64_decode($base64Key), 0, '');
         };
 
         $api = 'https://api.ads.heytapmobi.com/api/uploadActiveData';
@@ -497,20 +497,21 @@ class TrackService
         }
 
         $data = [
-            'imei' => !empty($trackData['imei']) ? $encrypt($trackData['imei'], $base64Key) : '',
-            'dataType' => $type,
-            'channel' => 1, // 1、OPPO，2、一加，0、其他
-            'timestamp' => Util::milliSecond(),
+            'imei'      => !empty($trackData['imei']) ? $encrypt($trackData['imei'], $base64Key) : '',
+            'pkg'       => 'com.theone.aipeilian',
+            'dataType'  => $type,
+            'channel'   => 1, // 1、OPPO，2、一加，0、其他
+            'timestamp' => $timestamp,
         ];
 
-        $jsonBody = json_encode($data);
-        $content = $jsonBody . $timestamp . $salt;
-        $signature = md5($content);
-
-        $response = HttpHelper::requestJson($api, $data, 'POST');
+        $content = json_encode($data) . $timestamp . $salt;
+        $headerParams = [
+            'signature' => md5($content),
+            'timestamp' => $timestamp
+        ];
+        $response = HttpHelper::requestJson($api, $data, 'POST', $headerParams);
         $success = (!empty($response) && $response['ret'] == 0);
         return $success;
-
     }
 
     public static function getAdChannel($userId)

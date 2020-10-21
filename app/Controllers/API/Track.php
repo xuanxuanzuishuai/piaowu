@@ -77,7 +77,15 @@ class Track extends ControllerBase
         $params = $request->getParams();
         SimpleLogger::debug("OPPO::track", [$params]);
 
-        $ret = ['ret' => 0, 'msg' => 'OK'];
+        $info = [];
+        $info['platform'] = TrackService::PLAT_ID_ANDROID;
+        $info['imei'] = $params['imei'];
+        $info['ad_channel'] = TrackService::CHANNEL_OPPO;
+        $info['ad_id'] = $params['ad_id'];
+        $info['create_time'] = time();
+
+        $trackData = TrackService::trackEvent(TrackService::TRACK_EVENT_INIT, $info);
+        $ret = ['ret' => $trackData['complete'] ? 0 : 1, 'msg' => 'OK'];
         return $response->withJson($ret, StatusCode::HTTP_OK);
     }
 
