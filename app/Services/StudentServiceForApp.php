@@ -514,7 +514,7 @@ class StudentServiceForApp
             StudentRefereeService::recordStudentRefereeData($referrer['id'], $lastId, $refType);
         }
 
-        return [$lastId, $response['data']['is_new']];
+        return [$lastId, $response['data']['is_new'], $uuid];
     }
 
     /**

@@ -71,7 +71,11 @@ class WeChatService
         '1_' . UserWeixinModel::USER_TYPE_STUDENT => [ //landing页公众号内支付
             "app_id" => "STUDENT_PUB_PAY_APP_ID",
             "secret" => "STUDENT_PUB_PAY_APP_SECRET"
-        ]
+        ],
+        '2_' . UserWeixinModel::USER_TYPE_STUDENT => [ //转介绍小程序
+            "app_id" => "REFERRAL_LANDING_APP_ID",
+            "secret" => "REFERRAL_LANDING_APP_SECRET"
+        ],
     ];
 
     protected static $redisDB;
@@ -887,5 +891,20 @@ class WeChatService
         $fans = self::commonWeixinAPI($appId, $userType, 'POST', 'user/tag/get',
             json_encode(['tagid' => $tagId], JSON_UNESCAPED_UNICODE));
         return $fans;
+    }
+
+    /**
+     * 设置wx session key 缓存
+     * @param $openid
+     * @param $value
+     * @param $expire
+     * @return int
+     */
+    public static function setSessionKeyWithExpire($openid, $value, $expire = 1)
+    {
+        if (!empty($openid)) {
+            $redis = RedisDB::getConn(self::$redisDB);
+            return $redis->setex($openid . ".session_key", $expire, $value);
+        }
     }
 }

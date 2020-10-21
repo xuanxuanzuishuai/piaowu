@@ -25,6 +25,7 @@ class UserWeixinModel extends Model
     const BUSI_TYPE_TEACHER_SERVER = 2; // 老师服务号 (废弃)
     const BUSI_TYPE_EXAM_MINAPP = 6; // 音基小程序
     const BUSI_TYPE_STUDENT_MINAPP = 7; // 学生app推广小程序
+    const BUSI_TYPE_REFERRAL_MINAPP = 8; // 转介绍小程序
 
     /** 获取最近绑定的该open_id的信息
      * @param $openId

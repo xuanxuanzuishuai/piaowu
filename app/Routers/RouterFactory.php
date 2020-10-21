@@ -36,6 +36,7 @@ class RouterFactory
     const CLIENT_DD_EXAM_MINAPP = 'dd_exam'; //钉钉音基小程序
     const CLIENT_CLASSROOM_APP = 'classroom_app'; //集体课
     const CLIENT_CLASSROOM_TEACHER_WX = 'classroom_teacher_wx'; //TheONE国际钢琴课公众号老师端
+    const CLIENT_REFERRAL_MINIAPP = 'referral_miniapp'; // 转介绍
 
     /**
      * client_type 对应的 Router class
@@ -55,6 +56,7 @@ class RouterFactory
         self::CLIENT_DD_EXAM_MINAPP => DDExamMinAppRouter::class, //音基小程序
         self::CLIENT_CLASSROOM_APP => ClassroomAppRouter::class, //集体课
         self::CLIENT_CLASSROOM_TEACHER_WX => ClassroomTeacherWXRouter::class, //TheONE国际钢琴课公众号老师端
+        self::CLIENT_REFERRAL_MINIAPP => ReferralMinAppRouter::class, // 转介绍小程序
     ];
 
     /**
