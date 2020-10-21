@@ -73,10 +73,11 @@ class StudentSignUpCourseModel extends Model
     /**
      * @param $studentId
      * @param $timestamp
+     * @param bool $isRequireSignUp
      * @return array|null
      * 获取用户截止指定时间点当天的报名课程及其上课记录
      */
-    public static function getLearnRecords($studentId, $timestamp)
+    public static function getLearnRecords($studentId, $timestamp, $isRequireSignUp = true)
     {
         $signUp = self::$table;
         $learnRecord = StudentLearnRecordModel::$table;
@@ -86,6 +87,10 @@ class StudentSignUpCourseModel extends Model
 
         $where = "s.student_id = " . $studentId . " AND s.start_week = " . $weekNo . "
         AND (NOT (s.first_course_time >" . $endDay . ")) AND (NOT (s.last_course_time < " . $beginDay . "))";
+
+        if ($isRequireSignUp) {
+            $where .= " AND s.bind_status = " . self::COURSE_BING_SUCCESS;
+        }
 
         $sql = "select s.collection_id, s.start_week, s.start_time, s.first_course_time, s.bind_status, s.update_time, l.lesson_id, l.learn_status, stu.sub_end_date from {$signUp} as s 
                 inner join {$student} as stu on s.student_id = stu.id 

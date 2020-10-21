@@ -277,12 +277,13 @@ class InteractiveClassroomService
      * @param $opn
      * @param null $student_id
      * @param $timestamp
+     * @param bool $requireSignUp
      * @return \array[][]
      * 获取用户上课计划
      */
-    public static function studentCoursePlan($opn, $student_id, $timestamp)
+    public static function studentCoursePlan($opn, $student_id, $timestamp, $requireSignUp = true)
     {
-        $lastRecord = StudentSignUpCourseModel::getLearnRecords($student_id, $timestamp);
+        $lastRecord = StudentSignUpCourseModel::getLearnRecords($student_id, $timestamp,$requireSignUp);
         $lastRecordKeyByCollectionId = array_column($lastRecord, null, 'collection_id');
         $lastRecordKeyByLessonId = array_column($lastRecord, null, 'lesson_id');
         if (empty($lastRecordKeyByCollectionId)) {
@@ -601,7 +602,7 @@ class InteractiveClassroomService
                         //当前为取消报名状态但是之前报过名
                         if (!empty($collectionLearnRecord)) {
                             if (isset($collectionLearnRecordByLessonId[$value['lesson_id']])) {
-                                $learn_status = $collectionLearnRecordByLessonId[$value['lesson_id']]['sort'];
+                                $learn_status = $collectionLearnRecordByLessonId[$value['lesson_id']]['learn_status'];
                             } else {
                                 $courseStartTime = (count($payLessonList) - 1) * self::WEEK_TIMESTAMP + $collectionLearnRecord[0]['first_course_time'];
                                 $subEndDay = strtotime($collectionLearnRecord[0]['sub_end_date']);
@@ -1150,7 +1151,7 @@ class InteractiveClassroomService
         }
         $startTime = strtotime($date);
         //今日课程
-        $todayClass = self::studentCoursePlan($opn, $studentId, $startTime);
+        $todayClass = self::studentCoursePlan($opn, $studentId, $startTime,false);
         //如果获取的是今日数据，需要把用户今天的练琴记录返回客户端，客户端实时更新课程状态
         if ($date == date('Y-m-d')) {
             $todayLearn = StudentLearnRecordModel::getRecords(['student_id' => $studentId, 'create_time[>=]' => $startTime]);
