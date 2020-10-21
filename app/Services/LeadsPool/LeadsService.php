@@ -51,7 +51,7 @@ class LeadsService
         }
         //体验卡用户分配助教
         if ($package['package_type'] == PackageExtModel::PACKAGE_TYPE_TRIAL) {
-            self::trailLeadsAllot($event, $package, $studentPackageType);
+            self::trailLeadsAllot($event, $package, $studentPackageType, $student);
         }
         //学生支付通知
         QueueService::studentPaid([
@@ -67,9 +67,10 @@ class LeadsService
      * @param $event
      * @param $package
      * @param $studentPackageType
+     * @param $student
      * @return bool|mixed
      */
-    private static function trailLeadsAllot($event, $package, $studentPackageType)
+    private static function trailLeadsAllot($event, $package, $studentPackageType, $student)
     {
         // 已有班级，不用分班
         if (!empty($student['collection_id'])) {
@@ -119,7 +120,7 @@ class LeadsService
         $package = $event['package'];
         //已经分配课管不在分配
         if (!empty($studentInfo['course_manage_id'])) {
-            SimpleLogger::info("student has course manage", ['student_uuid' => $event['uuid'], 'course_manage_id' => $student['course_manage_id']]);
+            SimpleLogger::info("student has course manage", ['student_uuid' => $event['uuid'], 'course_manage_id' => $studentInfo['course_manage_id']]);
             return true;
         }
         //分配课管
