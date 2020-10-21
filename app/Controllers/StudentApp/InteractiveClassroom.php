@@ -2,6 +2,8 @@
 namespace App\Controllers\StudentApp;
 
 use App\Controllers\ControllerBase;
+use App\Libs\Constants;
+use App\Libs\Util;
 use App\Libs\OpernCenter;
 use App\Libs\Valid;
 use App\Models\AIPlayRecordModel;
@@ -376,7 +378,8 @@ class InteractiveClassroom extends ControllerBase
         $collectionData = InteractiveClassroomService::erpCollectionByIds($opn, $params['collection_id']);
         $report['collection_cover'] = $collectionData['collection_cover'];
         $report['collection_name'] = $collectionData['collection_name'];
-        $report['accumulate_days'] = AIPlayRecordModel::getAccumulateDays($studentId);
+        $accumulateDays = Util::dateDiff(date('Y-m-d', $student['create_time']), date('Y-m-d',time()));
+        $report['accumulate_days'] = !empty($accumulateDays) ? $accumulateDays : Constants::STATUS_TRUE;
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
