@@ -106,7 +106,7 @@ class InteractiveClassroom extends ControllerBase
 
         reset($lessonLearnStatus);
         while (list($key, $val) = each($lessonLearnStatus)) {
-            if($key == StudentLearnRecordModel::FINISH_LEARNING){
+            if($key == StudentLearnRecordModel::FINISH_LEARNING || $key == StudentLearnRecordModel::MAKE_UP_LESSONS){
                 $classStatus['finish_learning'] = $val ?? 0; //完成上课
             } elseif($key == StudentLearnRecordModel::TO_MAKE_UP_LESSONS) {
                 $classStatus['to_make_up_lesson'] = $val ?? 0; //待补课

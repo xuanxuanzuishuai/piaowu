@@ -1006,8 +1006,13 @@ class InteractiveClassroomService
             throw new RunTimeException(['record_not_found']);
         }
         //不是年卡用户不可以上课
-        if ($student['has_review_course'] != ReviewCourseModel::REVIEW_COURSE_1980 || $student['sub_end_date'] < date('Ymd')) {
+        if ($student['has_review_course'] != ReviewCourseModel::REVIEW_COURSE_1980) {
             throw new RunTimeException(['please_buy_the_annual_card']);
+        }
+
+        $studentLearnRecord = StudentLearnRecordModel::getRecord(['student_id' => $studentId, 'collection_id' => $collectionId, 'lesson_id' => $lessonId]);
+        if (!empty($studentLearnRecord)) {
+            throw new RunTimeException(['record_exist']);
         }
 
         $time = time();
@@ -1269,6 +1274,7 @@ class InteractiveClassroomService
         } else {
             $result['student_status'] = (INT)$student['has_review_course'];
         }
+        $result['sub_end_time'] = !empty($student['sub_end_date']) ? strtotime($student['sub_end_date']) : Constants::STATUS_FALSE;
         return $result;
     }
 }
