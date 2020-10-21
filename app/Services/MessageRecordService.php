@@ -9,6 +9,7 @@
 namespace App\Services;
 
 
+use App\Models\MessageRecordLogModel;
 use App\Models\MessageRecordModel;
 
 class MessageRecordService
@@ -53,5 +54,23 @@ class MessageRecordService
     public static function updateMsgRecord($msgId, $data)
     {
         MessageRecordModel::updateRecord($msgId, $data);
+    }
+
+    /**
+     * @param $openId
+     * @param $activityType
+     * @param $relateId
+     * @param $pushRes
+     * 每条消息的推送记录
+     */
+    public static function addRecordLog($openId, $activityType, $relateId, $pushRes)
+    {
+        MessageRecordLogModel::insertRecord([
+            'open_id' => $openId,
+            'activity_type' => $activityType,
+            'relate_id' => $relateId,
+            'push_res' => $pushRes,
+            'create_time' => time()
+        ]);
     }
 }

@@ -509,6 +509,10 @@ WHERE
                 'update_time' => time()
             ]);
         }
+        //目前仅需要记录消息规则相关
+        if (in_array($activityType, [MessageRecordModel::MANUAL_PUSH])) {
+            MessageRecordService::addRecordLog($openId, $activityType, $activityId, $result);
+        }
     }
 
     /**

@@ -17,6 +17,7 @@ use App\Models\MessageManualPushLogModel;
 use App\Libs\Util;
 use App\Libs\AliOSS;
 use App\Libs\Exceptions\RunTimeException;
+use App\Models\MessageRecordLogModel;
 use App\Models\MessageRecordModel;
 use App\Models\PosterModel;
 use App\Models\PackageExtModel;
@@ -309,7 +310,9 @@ class MessageService
         $messageRule = self::getMessagePushRuleByID($data['rule_id']);
         //发送客服消息
         if ($messageRule['type'] == MessagePushRulesModel::PUSH_TYPE_CUSTOMER) {
-            self::pushCustomMessage($messageRule, $data);
+            $res = self::pushCustomMessage($messageRule, $data);
+            //推送日志记录
+            MessageRecordService::addRecordLog($data['open_id'], MessageRecordModel::AUTO_PUSH, $data['rule_id'], $res);
         }
         //首关不记录
         if ($data['rule_id'] == DictConstants::get(DictConstants::MESSAGE_RULE, 'subscribe_rule_id')) {
@@ -338,40 +341,34 @@ class MessageService
             $result = WeChatService::notifyUserWeixinTemplateInfo(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT, WeChatService::USER_TYPE_STUDENT,
                 $data['open_id'],
                 DictConstants::get(DictConstants::MESSAGE_RULE, 'assign_template_id'), $sendData, $templateConfig['link']);
-        }
-
-        $successNum = $result ? 1 : 0;
-        $failNum = $result ? 0 : 1;
-        // 发微信的记录
-        $record = MessageRecordService::getMsgRecord($data['log_id'], $data['employee_id'], $data['push_wx_time'], $data['activity_type']);
-        if (empty($record)) {
-            MessageRecordService::add(MessageRecordModel::MSG_TYPE_WEIXIN, $data['log_id'], $successNum, $failNum, $data['employee_id'], $data['push_wx_time'], $data['activity_type']);
-        } else {
-            MessageRecordService::updateMsgRecord($record['id'], [
-                'success_num[+]' => $successNum,
-                'fail_num[+]' => $failNum,
-                'update_time' => time()
-            ]);
+            //推送日志记录
+            MessageRecordService::addRecordLog($data['open_id'], $data['activity_type'], $data['log_id'], ((!empty($result) && $result['errcode'] != 0) || empty($result)) ? MessageRecordLogModel::PUSH_FAIL : MessageRecordLogModel::PUSH_SUCCESS);
         }
     }
 
     /**
      * @param $messageRule
      * @param $data
+     * @return bool
      * 基于规则 发送客服消息
      */
     private static function pushCustomMessage($messageRule, $data)
     {
         //即时发送
-        array_map(function ($item)use($data) {
+        $res = MessageRecordLogModel::PUSH_SUCCESS;
+        array_map(function ($item)use($data, &$res) {
             if (empty($item['value'])) {
                 return;
             }
             if ($item['type'] == WeChatConfigModel::CONTENT_TYPE_TEXT) { //发送文本消息
                 //转义数据
                 $content = Util::textDecode($item['value']);
-                WeChatService::notifyUserWeixinTextInfo(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
+                $res1 = WeChatService::notifyUserWeixinTextInfo(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
                     UserWeixinModel::USER_TYPE_STUDENT, $data['open_id'], $content);
+                //全部推送成功才算成功
+                if ($res) {
+                    ((!empty($res1) && $res1['errcode'] != 0) || empty($res1)) && $res = MessageRecordLogModel::PUSH_FAIL;
+                }
             } elseif ($item['type'] == WeChatConfigModel::CONTENT_TYPE_IMG) { //发送图片消息
                 $posterImgFile = self::dealPosterByRule($data, $item);
                 if (empty($posterImgFile)) {
@@ -388,10 +385,15 @@ class MessageService
                 $wxData = $wx->getTempMedia('image', $posterImgFile['unique'], $posterImgFile['poster_save_full_path']);
                 //发送海报
                 if (!empty($wxData['media_id'])) {
-                    WeChatService::toNotifyUserWeixinCustomerInfoForImage(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT, UserWeixinModel::USER_TYPE_STUDENT, $data['open_id'], $wxData['media_id']);
+                    $res2 =  WeChatService::toNotifyUserWeixinCustomerInfoForImage(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT, UserWeixinModel::USER_TYPE_STUDENT, $data['open_id'], $wxData['media_id']);
+                    //全部推送成功才算成功
+                    if ($res) {
+                        ((!empty($res2) && $res2['errcode'] != 0) || empty($res2)) && $res = MessageRecordLogModel::PUSH_FAIL;
+                    }
                 }
             }
         }, $messageRule['content']);
+        return $res;
     }
 
     /***
