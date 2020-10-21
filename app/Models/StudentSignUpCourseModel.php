@@ -94,7 +94,7 @@ class StudentSignUpCourseModel extends Model
 
         $sql = "select s.collection_id, s.start_week, s.start_time, s.first_course_time, s.bind_status, s.update_time, l.lesson_id, l.learn_status, stu.sub_end_date from {$signUp} as s 
                 inner join {$student} as stu on s.student_id = stu.id 
-                left join {$learnRecord} as l on s.collection_id = l.collection_id and s.student_id = l.student_id where " . $where . "group by s.collection_id";
+                left join {$learnRecord} as l on s.collection_id = l.collection_id and s.student_id = l.student_id where " . $where . " group by s.collection_id";
         $db = MysqlDB::getDB();
         return $db->queryAll($sql);
     }

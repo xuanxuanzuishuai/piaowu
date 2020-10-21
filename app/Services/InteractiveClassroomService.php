@@ -281,8 +281,12 @@ class InteractiveClassroomService
      * @return \array[][]
      * 获取用户上课计划
      */
-    public static function studentCoursePlan($opn, $student_id, $timestamp, $requireSignUp = true)
+    public static function studentCoursePlan($opn, $student_id, $timestamp, $requireSignUp = false)
     {
+        list($beginDay, $endDay) = Util::getStartEndTimestamp(time());
+        if ($timestamp>= $beginDay && $timestamp <= $endDay){
+            $requireSignUp = true;
+        }
         $lastRecord = StudentSignUpCourseModel::getLearnRecords($student_id, $timestamp,$requireSignUp);
         $lastRecordKeyByCollectionId = array_column($lastRecord, null, 'collection_id');
         $lastRecordKeyByLessonId = array_column($lastRecord, null, 'lesson_id');
@@ -589,12 +593,12 @@ class InteractiveClassroomService
                         } else {
                             $courseStartTime = (count($payLessonList) - 1) * self::WEEK_TIMESTAMP + $collectionLearnRecord[0]['first_course_time'];
                             $subEndDay = strtotime($collectionLearnRecord[0]['sub_end_date']);
-                            if ($courseStartTime > $subEndDay || $courseStartTime > $time) {
+                            if ($courseStartTime > $time) {
                                 $learn_status = self::LOCK_THE_CLASS;
                             } elseif ($time >= $courseStartTime && $time <= ($courseStartTime + self::HALF_HOUR)) {
                                 $learn_status = self::GO_TO_THE_CLASS;
                                 $value['lesson_start_timestamp'] = $courseStartTime;
-                            } elseif (time() < ($courseStartTime + self::HALF_HOUR) && $courseStartTime < $subEndDay) {
+                            } elseif ($time > ($courseStartTime + self::HALF_HOUR) && $courseStartTime < $subEndDay) {
                                 $learn_status = self::TO_MAKE_UP_LESSONS;
                             }
                         }
@@ -612,7 +616,7 @@ class InteractiveClassroomService
                                 } elseif ($time >= $courseStartTime && $time <= ($courseStartTime + self::HALF_HOUR)) {
                                     $value['lesson_start_timestamp'] = $courseStartTime;
                                     $learn_status = self::GO_TO_THE_CLASS;
-                                } elseif (time() < ($courseStartTime + self::HALF_HOUR) && $courseStartTime < $subEndDay) {
+                                } elseif ($time > ($courseStartTime + self::HALF_HOUR) && $courseStartTime < $subEndDay) {
                                     $learn_status = self::TO_MAKE_UP_LESSONS;
                                 }
                             }
@@ -1151,7 +1155,7 @@ class InteractiveClassroomService
         }
         $startTime = strtotime($date);
         //今日课程
-        $todayClass = self::studentCoursePlan($opn, $studentId, $startTime,false);
+        $todayClass = self::studentCoursePlan($opn, $studentId, $startTime);
         //如果获取的是今日数据，需要把用户今天的练琴记录返回客户端，客户端实时更新课程状态
         if ($date == date('Y-m-d')) {
             $todayLearn = StudentLearnRecordModel::getRecords(['student_id' => $studentId, 'create_time[>=]' => $startTime]);
