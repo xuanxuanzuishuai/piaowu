@@ -160,7 +160,7 @@ class InteractiveClassroom extends ControllerBase
         try {
             InteractiveClassroomService::collectionSignUp($studentId, $params['collection_id'], $params['lesson_count'], $params['start_week'], $params['start_time']);
         } catch (RunTimeException $e) {
-            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
@@ -192,7 +192,7 @@ class InteractiveClassroom extends ControllerBase
         try {
             InteractiveClassroomService::cancelSignUp($studentId, $params['collection_id']);
         } catch (RunTimeException $e) {
-            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
@@ -240,7 +240,7 @@ class InteractiveClassroom extends ControllerBase
         try {
             InteractiveClassroomService::studentLearnRecode($studentId, $params['collection_id'], $params['lesson_id'], $params['learn_status'], $params['learn_time']);
         } catch (RunTimeException $e) {
-            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
 
         return $response->withJson([

@@ -170,6 +170,7 @@ class DictConstants {
             'shared_day_report_channel_id',
             'success_url_v1',
             'result_url_v1',
+            'share_class_information_channel_id',
         ]
     ];
 

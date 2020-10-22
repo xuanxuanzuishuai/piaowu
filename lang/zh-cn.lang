@@ -452,3 +452,4 @@ cm_pool_rule_max_num_invalid='课管线索池规则最大上限参数无效'
 pool_id_is_invalid="线索池子id无效"
 halloween_is_end='万圣节活动已结束'
 referrer_is_required='推荐人ID缺失'
+please_buy_the_annual_card='请购买年卡'
