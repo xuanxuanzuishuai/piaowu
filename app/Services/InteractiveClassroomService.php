@@ -284,7 +284,7 @@ class InteractiveClassroomService
     public static function studentCoursePlan($opn, $student_id, $timestamp, $requireSignUp = false)
     {
         list($beginDay, $endDay) = Util::getStartEndTimestamp(time());
-        if ($timestamp>= $beginDay && $timestamp <= $endDay){
+        if ($timestamp >= $beginDay) {
             $requireSignUp = true;
         }
         $lastRecord = StudentSignUpCourseModel::getLearnRecords($student_id, $timestamp,$requireSignUp);
@@ -592,7 +592,7 @@ class InteractiveClassroomService
                             $learn_status = $collectionLearnRecordByLessonId[$value['lesson_id']]['learn_status'];
                         } else {
                             $courseStartTime = (count($payLessonList) - 1) * self::WEEK_TIMESTAMP + $collectionLearnRecord[0]['first_course_time'];
-                            $subEndDay = strtotime($collectionLearnRecord[0]['sub_end_date']);
+                            $subEndDay = strtotime($collectionLearnRecord[0]['sub_end_date']." 23:59:59");
                             if ($courseStartTime > $time) {
                                 $learn_status = self::LOCK_THE_CLASS;
                             } elseif ($time >= $courseStartTime && $time <= ($courseStartTime + self::HALF_HOUR)) {
@@ -609,7 +609,7 @@ class InteractiveClassroomService
                                 $learn_status = $collectionLearnRecordByLessonId[$value['lesson_id']]['learn_status'];
                             } else {
                                 $courseStartTime = (count($payLessonList) - 1) * self::WEEK_TIMESTAMP + $collectionLearnRecord[0]['first_course_time'];
-                                $subEndDay = strtotime($collectionLearnRecord[0]['sub_end_date']);
+                                $subEndDay = strtotime($collectionLearnRecord[0]['sub_end_date']." 23:59:59");
 
                                 if ($courseStartTime >= $collectionLearnRecord[0]['update_time'] || $courseStartTime > $subEndDay) {
                                     $learn_status = self::LOCK_THE_CLASS;
