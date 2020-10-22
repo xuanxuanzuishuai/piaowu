@@ -29,10 +29,12 @@ class ReferralMinAppDevCheckMiddleware extends MiddlewareBase
                 ]
             );
             if ($sha1 == $params['signature']) {
-                return $response->getBody()->write($params['echostr']);
+                $response->getBody()->write($params['echostr']);
+                return $response;
             } else {
                 SimpleLogger::error('echostr signature verify error', $params);
-                return $response->getBody()->write("error");
+                $response->getBody()->write("error");
+                return $response;
             }
         }
         return $next($request, $response);

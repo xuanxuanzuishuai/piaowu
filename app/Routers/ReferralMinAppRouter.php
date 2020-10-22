@@ -11,12 +11,18 @@ use App\Middleware\ReferralMinAppAuthCheckMiddleware;
 use App\Middleware\ReferralMinAppDevCheckMiddleware;
 use App\Controllers\ReferralMiniapp\Landing;
 use App\Controllers\ReferralMiniapp\Pay;
+use App\Controllers\StudentWX\Student;
 
 class ReferralMinAppRouter extends RouterBase
 {
     protected $logFilename = 'dss_referral_minapp.log';
 
     protected $uriConfig = [
+        '/referral_miniapp/landing/send_sms_code' => [
+            'method'  => ['get'],
+            'call'    => Student::class.':sendSmsCode',
+            'middles' => []
+        ],
         '/referral_miniapp/landing/register' => [
             'method'  => ['post'],
             'call'    => Landing::class . ':register',
@@ -36,7 +42,7 @@ class ReferralMinAppRouter extends RouterBase
             'call'    => Landing::class . ':getCountryCode'
         ],
         '/referral_miniapp/landing/create_bill' => [
-            'method'  => ['get'],
+            'method'  => ['get', 'post'],
             'call'    => Pay::class . ':createBill'
         ],
         '/referral_miniapp/landing/bill_status' => [
@@ -45,4 +51,5 @@ class ReferralMinAppRouter extends RouterBase
             'middles' => []
         ],
     ];
+
 }

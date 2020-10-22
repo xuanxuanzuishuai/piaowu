@@ -11,6 +11,7 @@ namespace App\Services;
 use App\Libs\AliOSS;
 use App\Libs\CHDB;
 use App\Libs\Constants;
+use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
 use App\Libs\RedisDB;
@@ -164,12 +165,13 @@ class ReferralService
         $data['openid']        = $openid;
         $data['uuid']          = '';
         // 推荐人信息：
-        $referrerInfo = UserQrTicketModel::getRecord(['qr_ticket' => $referrer_id], ['user_id']);
-        if (!empty($referrerInfo)) {
-            $data['referrer_info'] = self::getReferrerInfoForMinApp($referrerInfo['user_id']);
+        if (!empty($referrer_id)) {
+            $referrerInfo = UserQrTicketModel::getRecord(['qr_ticket' => $referrer_id], ['user_id']);
+            $user_id = $referrerInfo['user_id'];
         } else {
-            return [];
+            $user_id = null;
         }
+        $data['referrer_info'] = self::getReferrerInfoForMinApp($user_id);
         // 是否是首次进入页面标记
         $redis = RedisDB::getConn();
         $data['first_flag'] = $redis->hget(self::LANDING_PAGE_USER_FIRST_KEY, $openid) ? false : true;
@@ -212,18 +214,26 @@ class ReferralService
 
     /**
      * 获取推荐人信息及推荐文案
-     * @param $referrer_id
+     * @param $user_id
      * @return array
      */
-    public static function getReferrerInfoForMinApp($referrer_id)
+    public static function getReferrerInfoForMinApp($user_id)
     {
-        $referrerInfo = UserWeixinModel::getRecord(['user_id' => $referrer_id], ['open_id']);
-        $data = WeChatService::getUserInfo($referrerInfo['open_id']);
+        // 推荐人不存在时返回默认数据
+        if (empty($user_id)) {
+            return [
+                'nickname'   => '小叶子用户',
+                'headimgurl' => AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb')),
+                'text'       => '自从有了小叶子，孩子终于会主动练琴了，也帮你领取了社群限时福利，快来体验吧！',
+            ];
+        }
+        $referrerInfo = UserWeixinModel::getRecord(['user_id' => $user_id], ['open_id', 'app_id']);
+        $data = WeChatService::getUserInfo($referrerInfo['open_id'], $referrerInfo['app_id']);
         // 练琴天数
-        $accumulateDays = AIPlayRecordModel::getAccumulateDays($referrer_id);
+        $accumulateDays = AIPlayRecordModel::getAccumulateDays($user_id);
 
         // 查询推荐者练习曲目，根据曲目数据得到推荐文案
-        [$percentage, $numbers] = self::getReferrerPlayData($referrer_id);
+        [$percentage, $numbers] = self::getReferrerPlayData($user_id);
         if ($percentage && $accumulateDays) {
             $data['text'] = sprintf('我家宝贝在小叶子练琴<span>%d</span>天，弹奏得分提升了<span>%d%%</span>，孩子学会了主动练琴，进步飞快！', $accumulateDays, $percentage);
         } elseif ($accumulateDays >= 5) {
@@ -385,8 +395,8 @@ class ReferralService
                 'app_id'    => $_ENV['REFERRAL_LANDING_APP_ID'],
             ], false);
         }
-
-        return [$openId, $lastId, $mobile, $uuid];
+        $hadPurchased = self::hadPurchaseTrail($mobile);
+        return [$openId, $lastId, $mobile, $uuid, $hadPurchased];
     }
 
     /**

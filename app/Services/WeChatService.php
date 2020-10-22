@@ -724,9 +724,9 @@ class WeChatService
      * @param $openId
      * @return array
      */
-    public static function getUserInfo($openId)
+    public static function getUserInfo($openId, $appid = UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT)
     {
-        $at = self::getAccessToken(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT, UserWeixinModel::USER_TYPE_STUDENT);
+        $at = self::getAccessToken($appid, UserWeixinModel::USER_TYPE_STUDENT);
         if (empty($at)) {
             SimpleLogger::error('[getUserInfo] getAccessToken fail', []);
             return [];
@@ -904,7 +904,7 @@ class WeChatService
     {
         if (!empty($openid)) {
             $redis = RedisDB::getConn(self::$redisDB);
-            return $redis->setex($openid . ".session_key", $expire, $value);
+            return $redis->setex($openid . ".session_key", intval($expire), $value);
         }
     }
 }

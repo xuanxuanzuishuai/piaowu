@@ -31,19 +31,7 @@ class Landing extends ControllerBase
     public function index(Request $request, Response $response)
     {
         try {
-            $rules = [
-                [
-                    'key'        => 'id',
-                    'type'       => 'required',
-                    'error_code' => 'id_is_required'
-                ]
-            ];
-            $params = $request->getParams();
-            $result = Valid::validate($params, $rules);
-            if ($result['code'] != Valid::CODE_SUCCESS) {
-                return $response->withJson($result, StatusCode::HTTP_OK);
-            }
-            $pageData = ReferralService::getLandingPageData($params['id'], $this->ci['referral_landing_openid']);
+            $pageData = ReferralService::getLandingPageData($params['id'] ?? null, $this->ci['referral_landing_openid']);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
@@ -133,11 +121,6 @@ class Landing extends ControllerBase
                 ],
             ];
         }
-        $rules[] = [
-            'key'        => 'referrer',
-            'type'       => 'required',
-            'error_code' => 'referrer_is_required'
-        ];
         $result = Valid::appValidate($params, $rules);
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
@@ -145,16 +128,21 @@ class Landing extends ControllerBase
         if (!empty($params['sms_code']) && !CommonServiceForApp::checkValidateCode($params["mobile"], $params["sms_code"], $params["country_code"])) {
             return $response->withJson(Valid::addAppErrors([], 'validate_code_error'), StatusCode::HTTP_OK);
         }
-        $referrerInfo = UserQrTicketModel::getRecord(['qr_ticket' => $params['referrer']], ['user_id','type']);
-        list($openid, $lastId, $mobile, $uuid) = ReferralService::register(
+        if (!empty($params['referrer'])) {
+            $referrerInfo = UserQrTicketModel::getRecord(['qr_ticket' => $params['referrer']], ['user_id','type']);
+            $user_id = $referrerInfo['user_id'];
+        } else {
+            $user_id = null;
+        }
+        list($openid, $lastId, $mobile, $uuid, $hadPurchased) = ReferralService::register(
             $this->ci['referral_landing_openid'],
             $params['iv'] ?? '',
             $params['encrypted_data'] ?? '',
             $this->ci['referral_landing_session_key'],
             $params['mobile'] ?? '',
             $params['country_code'] ?? '',
-            $referrerInfo['user_id']
+            $user_id
         );
-        return HttpHelper::buildResponse($response, ['openid' => $openid, 'last_id' => $lastId, 'mobile' => $mobile, 'uuid' => $uuid]);
+        return HttpHelper::buildResponse($response, ['openid' => $openid, 'last_id' => $lastId, 'mobile' => $mobile, 'uuid' => $uuid, 'had_purchased' => $hadPurchased]);
     }
 }

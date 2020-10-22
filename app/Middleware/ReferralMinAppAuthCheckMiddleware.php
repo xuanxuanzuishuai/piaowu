@@ -90,7 +90,7 @@ class ReferralMinAppAuthCheckMiddleware extends MiddlewareBase
 
             list($token, $expire) = $this->jwtToken(0, $content['openid'], '');
 
-            WechatService::setSessionKeyWithExpire($content['openid'], $expire, $content['session_key']);
+            WechatService::setSessionKeyWithExpire($content['openid'], $content['session_key'], $expire);
 
             $hasMobile = StudentForMinAppService::hasMobile($content['openid']);
             //返回token和过期时间，过期时间单位是毫秒
