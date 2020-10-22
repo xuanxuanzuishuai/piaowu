@@ -243,9 +243,10 @@ class TrackService
                 return self::trackCallKuaiShou($eventType, $trackData);
             case self::CHANNEL_OPPO:
                 return self::trackCallbackOPPO($eventType, $trackData);
+            case self::CHANNEL_HUAWEI:
+                return self::trackCallbackHuaWei($eventType, $trackData);
             case self::CHANNEL_OTHER:
             case self::CHANNEL_KOL:
-            case self::CHANNEL_HUAWEI:
                 return true;
             default:
                 return false;
@@ -512,6 +513,16 @@ class TrackService
         $response = HttpHelper::requestJson($api, $data, 'POST', $headerParams);
         $success = (!empty($response) && $response['ret'] == 0);
         return $success;
+    }
+
+    public static function trackCallbackHuaWei($eventType, $trackData)
+    {
+        switch ($eventType) {
+            case self::TRACK_EVENT_ACTIVE:
+               return true;
+            default:
+                return false;
+        }
     }
 
     public static function getAdChannel($userId)

@@ -129,7 +129,12 @@ class App extends ControllerBase
 
         $trackParams['platform'] = $platformId;
         $trackParams['ad_channel'] = $params['ad_channel'] ?? 0;
-        $trackParams['ad_id'] = $params['ad_id'] ?? 0;
+
+        switch ($params['ad_channel']){
+            case TrackService::CHANNEL_HUAWEI:
+                $trackParams['ad_id'] = $params['track_id'] ?? 0;
+                break;
+        }
 
         $trackData = TrackService::trackEvent(TrackService::TRACK_EVENT_ACTIVE, $trackParams);
         $result = [
