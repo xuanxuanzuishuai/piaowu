@@ -56,7 +56,12 @@ class HalloweenService
         //当天的有效里程
         $completeProcess = self::getStudentDayMileagesStaticsData($studentId, $halloweenConfig['halloween_event']);
         //获取里程统计数据
-        $completeProcess['total_mileages'] = self::getStudentMileagesStaticsData($studentId)['mileages'];
+        $studentMileages = ActivitySignUpModel::getRecord([
+            'user_id' => $studentId,
+            'event_id' => $halloweenConfig['halloween_event'],
+            'status' => ActivitySignUpModel::STATUS_ABLE,
+        ], ['complete_mileages'], false);
+        $completeProcess['total_mileages'] = floor($studentMileages['complete_mileages'] / self::DURATION_TO_MILEAGES_RATIO);
         //获取里程进行过程数据
         $completeProcess['process'] = self::getStudentEventTaskProcessStatus($halloweenConfig['halloween_event'], [$halloweenConfig['process_task_type'], $halloweenConfig['medal_task_type']], $studentId);
         return $completeProcess;
@@ -162,27 +167,20 @@ class HalloweenService
                 ];
                 $i++;
             });
+            $rankData = $tmpRankList['rank_list'];
         }
-        $rankData = $tmpRankList['rank_list'];
         //获取用户自己的排名信息
         if ($studentIsInRank == true) {
             //获取奖品领取状态
             $rankList['self'] = self::checkSelfAwardStatus($rankData[$studentId], $studentsInfo[$studentId]);
         } else {
-            /**
-             * 未上榜
-             * 1.里程数0
-             * 2.榜单数未达到100，space=1
-             * 3.榜单数达到100，space=最后一名的里程数
-             */
             $rankList['self'] = self::getStudentMileagesStaticsData($studentId);
             if ($rankLimit > count($rankData)) {
                 $rankList['self']['space'] = 1;
             } else {
                 //获取距离最后一名的里程数
-                $rankList['self']['space'] = end($rankData)['mileages'];
+                $rankList['self']['space'] = end($rankData)['mileages'] - $rankList['self']['mileages'];
             }
-            $rankList['self']['mileages'] = 0;
         }
         $rankList['rank_list'] = array_values($rankData);
         return $rankList;
@@ -251,19 +249,21 @@ class HalloweenService
      */
     public static function getStudentMileagesStaticsData($studentId)
     {
+        /**
+         * 1.100内正常展示排名，里程数，奖品
+         * 2.100-500展示排名，里程数，距离100名的里程数
+         * 3.500外，排名-，里程数，，距离100名的里程数
+         * 4.未报名，排名-，里程数0，距离100名的里程数
+         */
         $studentInfo = StudentModelForApp::getById($studentId);
-        //配置的活动ID
-        $halloweenConfig = DictConstants::getSet(DictConstants::HALLOWEEN_CONFIG);
-        //获取配置活动的详细信息
-        $eventInfo = self::getEventTaskCache($halloweenConfig['halloween_event'], self::HALLOWEEN_EVENT_FIELD, date('Y-m-d'));
-        //获取里程统计数据
-        $signData = ActivitySignUpModel::getRecord(['user_id' => $studentId, 'event_id' => $halloweenConfig['halloween_event']], ['create_time'], false);
-        $selfMileages = 0;
-        if (!empty($signData)) {
-            $selfRankData = AIPlayRecordModel::getStudentValidSumByDate($studentId, $signData['create_time'], $eventInfo['end_time'], $eventInfo['every_day_valid_seconds']);
-            $selfMileages = floor(array_sum(array_column($selfRankData, 'sum_duration')) / self::DURATION_TO_MILEAGES_RATIO);
-        }
+        //未报名
         $rankNum = self::getStudentHalloweenRankNum($studentId);
+        if (is_null($rankNum)) {
+            $rankNum = null;
+            $selfMileages = 0;
+        } else {
+            $selfMileages = floor(ActivitySignUpModel::getStudentHalloweenMileages(self::getMileagesCacheKey(), $studentId) / self::DURATION_TO_MILEAGES_RATIO);
+        }
         return [
             'name' => $studentInfo['name'],
             'thumb' => $studentInfo['thumb'] ? AliOSS::replaceCdnDomainForDss($studentInfo['thumb']) : AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb')),
@@ -480,7 +480,7 @@ class HalloweenService
     {
         $redis = RedisDB::getConn();
         $cacheKey = self::getRankCacheKey();
-        $rankNum = $redis->ZREVRANK($cacheKey, $studentId);
+        $rankNum = $redis->ZRANK($cacheKey, $studentId);
         if (!is_null($rankNum)) {
             $rankNum += 1;
         }

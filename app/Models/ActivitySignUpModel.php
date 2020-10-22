@@ -23,17 +23,15 @@ class ActivitySignUpModel extends Model
     /**
      * 获取排行数据
      * @param $eventID
-     * @param int $limit
      * @return array
      */
-    public static function getRankData($eventID, $limit = 500)
+    public static function getRankData($eventID)
     {
         return self::getRecords(
             [
                 'event_id' => $eventID,
                 'status' => self::STATUS_ABLE,
                 'complete_mileages[>=]' => self::MIN_MILEAGES,
-                "LIMIT" => $limit,
                 "ORDER" => ["complete_mileages" => "DESC", "complete_time" => "ASC"]
             ],
             [
@@ -99,5 +97,16 @@ class ActivitySignUpModel extends Model
         $redis->zadd($cacheKey, [$studentId => $duration]);
         $expireTime = strtotime('+2 days') - $time;
         $redis->expire($cacheKey, $expireTime);
+    }
+
+    /**
+     * 获取排行榜中学生有效里程
+     * @param $cacheKey
+     * @param $studentId
+     * @return string
+     */
+    public static function getStudentHalloweenMileages($cacheKey, $studentId){
+        $redis = RedisDB::getConn();
+        return $redis->hget($cacheKey, $studentId);
     }
 }
