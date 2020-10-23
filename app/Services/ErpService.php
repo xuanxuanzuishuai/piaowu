@@ -171,9 +171,14 @@ class ErpService
         $today = strtotime('today');
         // 增加的天数
         $days = intval(($endTime - $today) / 86400);
+        //新账号的所属业务线与原账号业务线保持
+        $dstStudentUpdate = [
+            'update_time'  => $now,
+            'serve_app_id'  => $srcStudent['serve_app_id'],
+            'has_review_course'  => $srcStudent['has_review_course'],
+        ];
         if ($days > 0) {
             // 新账号的时间
-            $dstStudentUpdate = ['update_time'  => $now];
             if (empty($dstStudent['sub_end_date'])) {
                 $dstEndTime = $today;
                 $dstStudentUpdate['sub_start_date'] = date('Ymd', $today);
@@ -182,13 +187,11 @@ class ErpService
             }
             $dstNewEndTime = strtotime("+{$days} day", $dstEndTime);
             $dstStudentUpdate['sub_end_date'] = date('Ymd', $dstNewEndTime);
-            if ($srcStudent['has_review_course'] != 0) {
-                $dstStudentUpdate['has_review_course'] = $srcStudent['has_review_course'];
-            }
-
-            $cnt = StudentModel::updateRecord($dstStudent['id'], $dstStudentUpdate, false);
-            if (empty($cnt)) { return 'data_error'; }
         }
+        //修改新账号数据
+        $cnt = StudentModel::updateRecord($dstStudent['id'], $dstStudentUpdate, false);
+        if (empty($cnt)) { return 'data_error'; }
+
 
         // 就账号删除时长
         $srcStudentUpdate = [
