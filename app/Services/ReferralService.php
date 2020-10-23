@@ -227,7 +227,7 @@ class ReferralService
                 'text'       => '自从有了小叶子，孩子终于会主动练琴了，也帮你领取了社群限时福利，快来体验吧！',
             ];
         }
-        $referrerInfo = UserWeixinModel::getRecord(['user_id' => $user_id], ['open_id', 'app_id']);
+        $referrerInfo = UserWeixinModel::getRecord(['user_id' => $user_id, 'ORDER' => ['id' => 'DESC']], ['open_id', 'app_id']);
         $data = WeChatService::getUserInfo($referrerInfo['open_id'], $referrerInfo['app_id']);
         // 练琴天数
         $accumulateDays = AIPlayRecordModel::getAccumulateDays($user_id);

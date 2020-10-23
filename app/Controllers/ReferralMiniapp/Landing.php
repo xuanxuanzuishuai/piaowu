@@ -31,6 +31,7 @@ class Landing extends ControllerBase
     public function index(Request $request, Response $response)
     {
         try {
+            $params = $request->getParams();
             $pageData = ReferralService::getLandingPageData($params['referrer'] ?? null, $this->ci['referral_landing_openid']);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
