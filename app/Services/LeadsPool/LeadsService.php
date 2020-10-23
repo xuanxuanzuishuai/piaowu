@@ -48,7 +48,7 @@ class LeadsService
         //第一次购买年卡&&课包属于智能业务线正式课包&&用户未分配课管
         if (($package['package_type'] == PackageExtModel::PACKAGE_TYPE_NORMAL) &&
             ($package['app_id'] == PackageExtModel::APP_AI) &&
-            empty($studentInfo['course_manage_id']) &&
+            empty($student['course_manage_id']) &&
             ($student['has_review_course'] < PackageExtModel::PACKAGE_TYPE_NORMAL)) {
             self::normalLeadsAllot($event, $student);
         }
@@ -515,7 +515,6 @@ class LeadsService
         try {
             $topic = new PushMessageTopic();
             $msgBody['student_id'] = $studentId;
-            $msgBody['course_manage_id'] = $courseManageId;
             $topic->courseManageNewLeadsPushWx($msgBody)->publish($deferTime);
         } catch (\Exception $e) {
             Util::errorCapture('PushMessageTopic init failure', [
@@ -555,17 +554,27 @@ class LeadsService
     public static function allotLeadsCourseManageWxPush($msgBody)
     {
         SimpleLogger::info("allot course manage wx push to student start", ['msg_body' => $msgBody]);
+        //获取学生信息
+        $studentInfo = StudentModel::getById($msgBody['student_id']);
+        SimpleLogger::info("student info", ['student' => $studentInfo]);
+        if (empty($studentInfo)) {
+            return false;
+        }
         //获取课管信息
-        $courseManageInfo = EmployeeModel::getRecord(['id' => $msgBody['course_manage_id']], ['wx_nick', 'wx_thumb', 'wx_qr']);
+        $courseManageInfo = EmployeeModel::getRecord(['id' => $studentInfo['course_manage_id']], ['wx_nick', 'wx_thumb', 'wx_qr'], false);
+        if (empty($courseManageInfo['wx_nick']) || empty($courseManageInfo['wx_thumb']) || empty($courseManageInfo['wx_qr'])) {
+            SimpleLogger::info("allot course manage wx info miss", ['course_manage' => $courseManageInfo]);
+            return false;
+        }
         //获取学生openId
         $userOpenIdInfo = UserWeixinModel::getBoundUserIds([$msgBody['student_id']], UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT);
         if (empty($userOpenIdInfo)) {
             SimpleLogger::error("student openid empty", []);
             return false;
         }
-        $toBePushedStudentInfo[$msgBody['student_id']]['open_id'] = empty($userOpenIdInfo[0]['open_id']) ? "" : $userOpenIdInfo[0]['open_id'];
+        $toBePushedStudentInfo[$msgBody['student_id']]['open_id'] = $userOpenIdInfo[0]['open_id'];
         //发送消息
-        StudentService::allotCoursePushMessage($msgBody['course_manage_id'], $courseManageInfo, $toBePushedStudentInfo);
+        StudentService::allotCoursePushMessage($studentInfo['course_manage_id'], $courseManageInfo, $toBePushedStudentInfo);
         SimpleLogger::info("allot course manage wx push to student end", []);
         return true;
     }
