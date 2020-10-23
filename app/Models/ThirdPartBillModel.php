@@ -69,10 +69,9 @@ class ThirdPartBillModel extends Model
             $where .= ' and t.package_id = :package_id ';
             $map[':package_id'] = $params['package_id'];
         }
-        if (!empty($params['package_v1'])) {
-            $where .= ' and t.package_v1 = ' . self::PACKAGE_V1;
-        } else {
-            $where .= ' and t.package_v1 = ' . self::PACKAGE_V1_NOT;
+        if (isset($params['package_v1'])) {
+            $packageV1 = !empty($params['package_v1']) ? self::PACKAGE_V1 : self::PACKAGE_V1_NOT;
+            $where .= ' and t.package_v1 = ' . $packageV1;
         }
         if(!empty($params['is_new'])) {
             $where .= ' and t.is_new = :is_new ';
