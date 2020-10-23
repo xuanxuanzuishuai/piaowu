@@ -87,6 +87,10 @@ class WeChatMiniPro
 
         $res = json_decode($body, true);
 
+        // 兼容响应为非文本，比如返回的是图片
+        if (empty($res)) {
+            $res = $body;
+        }
         return $res;
     }
 
@@ -264,6 +268,27 @@ class WeChatMiniPro
             'long_url' => $url,
         ];
 
+        return $this->requestJson($api, $params, 'POST');
+    }
+
+    /**
+     * 生成带参数的小程序码
+     * 注意参数最长32位
+     * @param $params
+     * @return false|mixed|string
+     */
+    public function getMiniappCodeImage($params)
+    {
+        $api = self::WX_HOST . '/wxa/getwxacodeunlimit?access_token=' . $this->getAccessToken();
+        $scene = "";
+        if (!empty($params)) {
+            foreach ($params as $key => $value) {
+                $scene .= '&' . $key . '=' . $value;
+            }
+        }
+        $params = [
+            'scene' => substr($scene, 0, 32)
+        ];
         return $this->requestJson($api, $params, 'POST');
     }
 }

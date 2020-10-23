@@ -39,6 +39,7 @@ class AliOSS
     const DIR_OPN_SEARCH = 'omr'; // 曲谱搜索图源
     const DIR_STUDENT_THUMB = 'thumb'; //头像
     const DIR_MESSAGE_EXCEL = 'message_excel'; // 推送消息EXCEL
+    const DIR_MINIAPP_CODE = 'miniapp_code';   // 小程序码
 
 
     private function gmt_iso8601($time) {

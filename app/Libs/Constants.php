@@ -219,6 +219,8 @@ class Constants
     const DICT_TYPE_LEADS_POOL_TARGET_TYPE = 'leads_pool_target_type';
     //学生班级分配方式
     const DICT_TYPE_STUDENT_COLLECTION_ALLOT_TYPE = 'student_collection_allot_type';
+    // 推荐海报中二维码类型
+    const DICT_TYPE_POSTER_QRCODE_TYPE = 'poster_qrcode_type';
 
     // 天润接口返回值
     const DICT_TR_ERROR = 'tr_error';

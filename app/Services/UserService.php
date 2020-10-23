@@ -13,7 +13,9 @@ namespace App\Services;
 use App\Libs\File;
 use App\Libs\QRcode;
 use App\Libs\RC4;
+use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\UserQrTicketModel;
+use App\Models\UserWeixinModel;
 use Intervention\Image\ImageManagerStatic as Image;
 use App\Libs\AliOSS;
 use App\Models\QRCodeModel;
@@ -165,6 +167,65 @@ class UserService
     }
 
     /**
+     * 生成小程序码
+     * @param $appid
+     * @param $userId
+     * @param $posterFile
+     * @param $type
+     * @param $imageWidth
+     * @param $imageHeight
+     * @param $qrWidth
+     * @param $qrHeight
+     * @param $qrX
+     * @param $qrY
+     * @param $channelId
+     * @return array|void
+     */
+    public static function generateMiniAppPosterAliOss($appid, $userId, $posterFile, $type, $imageWidth, $imageHeight, $qrWidth, $qrHeight, $qrX, $qrY, $channelId)
+    {
+        //通过oss合成海报并保存
+        //海报资源
+        $posterAliOssFileExits = AliOSS::doesObjectExist($posterFile);
+        if (empty($posterAliOssFileExits)) {
+            SimpleLogger::info('poster oss file is not exits', [$posterFile]);
+            return;
+        }
+        //带用户参数的小程序码
+        $userQrUrl = self::getUserMiniAppAliOss($appid, $userId, $type, $channelId);
+        if (empty($userQrUrl)) {
+            SimpleLogger::info('user qr make fail', [$userId,$type]);
+            return;
+        }
+        $userQrAliOssFileExits = AliOSS::doesObjectExist($userQrUrl['qr_url']);
+        if (empty($userQrAliOssFileExits)) {
+            SimpleLogger::info('user qr oss file is not exits', [$userQrUrl['qr_url']]);
+            return;
+        }
+        //海报添加水印
+        //先将内容编码成Base64结果
+        //将结果中的加号（+）替换成连接号（-）
+        //将结果中的正斜线（/）替换成下划线（_）
+        //将结果中尾部的等号（=）全部保留
+        $waterImgEncode = str_replace(["+", "/"], ["-", "_"], base64_encode($userQrUrl['qr_url'] . "?x-oss-process=image/resize,limit_0,w_" . $qrWidth . ",h_" . $qrHeight));
+        $waterMark = [
+            "image_" . $waterImgEncode,
+            "x_" . $qrX,
+            "y_" . $qrY,
+            "g_sw",//插入的基准位置以左下角作为原点
+        ];
+        $waterMarkStr = implode(",", $waterMark) . '/';
+        $imgSize = [
+            "w_" . $imageWidth,
+            "h_" . $imageHeight,
+            "limit_0",//强制图片缩放
+        ];
+        $imgSizeStr = implode(",", $imgSize) . '/';
+        $resImgFile = AliOSS::signUrls($posterFile, "", "", "", false, $waterMarkStr, $imgSizeStr);
+        //返回数据
+        return ['poster_save_full_path' => $resImgFile, 'unique' => md5($userId . $posterFile . $userQrUrl['qr_url']) . ".jpg"];
+    }
+
+    /**
      * 学生端微信分享二维码
      * @param $userId       学生 id或老师id
      * @param int $type 推荐人类型 1 学生 2 老师
@@ -174,7 +235,7 @@ class UserService
     public static function getUserQRAliOss($userId, $type, $channelId)
     {
         //获取学生转介绍学生二维码资源数据
-        $res = UserQrTicketModel::getRecord(['AND' => ['user_id' => $userId, 'type' => $type, 'channel_id' => $channelId]], [], false);
+        $res = UserQrTicketModel::getRecord(['AND' => ['user_id' => $userId, 'type' => $type, 'channel_id' => $channelId, 'landing_type' => UserQrTicketModel::LANDING_TYPE_NORMAL]], [], false);
         if (!empty($res['qr_url'])) {
             return $res;
         }
@@ -201,6 +262,69 @@ class UserService
             ];
             //删除临时二维码文件
             unlink($filePath);
+            UserQrTicketModel::insertRecord($data, false);
+        } catch (\Exception $e) {
+            echo $e->getMessage();
+            SimpleLogger::error('make user qr image exception', [print_r($e->getMessage(), true)]);
+            return $data;
+        }
+        return $data;
+    }
+
+    /**
+     * 生成带推荐人和渠道参数的小程序码
+     * @param $appid
+     * @param $userId
+     * @param $type
+     * @param $channelId
+     * @return array|mixed|string|string[]|void
+     */
+    public static function getUserMiniAppAliOss($appid, $userId, $type, $channelId)
+    {
+        // 获取用户小程序码
+        $res = UserQrTicketModel::getRecord(['AND' => ['user_id' => $userId, 'type' => $type, 'channel_id' => $channelId, 'landing_type' => UserQrTicketModel::LANDING_TYPE_MINIAPP]], [], false);
+        if (!empty($res['qr_url'])) {
+            return $res;
+        }
+        $data = [];
+        try {
+            //生成小程序码
+            $time              = time();
+            $userQrTicket      = RC4::encrypt($_ENV['COOKIE_SECURITY_KEY'], $type . "_" . $userId);
+            $weChatAppIdSecret = WeChatService::getWeCHatAppIdSecret($appid, UserWeixinModel::USER_TYPE_STUDENT);
+            $wx                = WeChatMiniPro::factory(['app_id' => $weChatAppIdSecret['app_id'], 'app_secret' => $weChatAppIdSecret['secret']]);
+            if (empty($wx)) {
+                SimpleLogger::error('wx create fail', ['we_chat_type'=>UserWeixinModel::USER_TYPE_STUDENT]);
+                return;
+            }
+            // 请求微信，获取小程序码图片
+            $imageUrl = '';
+            $res = $wx->getMiniappCodeImage(['r' => $userQrTicket, 'c' => $channelId]);
+            if (is_array($res)) {
+                SimpleLogger::error('get miniapp code image fail', $res);
+            } else {
+                $tmpFileFullPath = $_ENV['STATIC_FILE_SAVE_PATH'] . '/' . md5($userQrTicket) . '.jpg';
+                chmod($tmpFileFullPath, 0755);
+
+                $bytesWrite = file_put_contents($tmpFileFullPath, $res);
+                if (empty($bytesWrite)) {
+                    SimpleLogger::error('save miniapp code image file error', [$userQrTicket]);
+                }
+                $imageUrl = $_ENV['ENV_NAME'] . '/' . AliOSS::DIR_MINIAPP_CODE . '/' . md5($userQrTicket) . ".png";
+                AliOSS::uploadFile($imageUrl, $tmpFileFullPath);
+                unlink($tmpFileFullPath);
+                return AliOSS::replaceCdnDomainForDss($imageUrl);
+            }
+            //记录数据
+            $data = [
+                'create_time' => $time,
+                'user_id'     => $userId,
+                'qr_ticket'   => $userQrTicket,
+                'qr_url'      => $imageUrl,
+                'type'        => $type,
+                'channel_id'  => $channelId,
+                'landing_type' => UserQrTicketModel::LANDING_TYPE_MINIAPP
+            ];
             UserQrTicketModel::insertRecord($data, false);
         } catch (\Exception $e) {
             echo $e->getMessage();

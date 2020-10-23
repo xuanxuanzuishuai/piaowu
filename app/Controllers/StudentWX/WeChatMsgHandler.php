@@ -9,6 +9,7 @@
 namespace App\Controllers\StudentWX;
 
 use App\Libs\AliOSS;
+use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\SimpleLogger;
 use App\Libs\WeChat\WeChatMiniPro;
@@ -16,6 +17,7 @@ use App\Models\AutoReplyAnswerModel;
 use App\Models\UserQrTicketModel;
 use App\Models\WeChatOpenIdListModel;
 use App\Services\AutoReplyService;
+use App\Services\DictService;
 use App\Services\MessageService;
 use App\Services\UserService;
 use App\Services\WeChatService;
@@ -92,7 +94,14 @@ class WeChatMsgHandler
                     }
                     $settings = json_decode($referralConfig['settings'], true);
                     //生成二维码海报
-                    $posterImgFile = UserService::generateQRPosterAliOss($user['user_id'], $referralConfig['url'], UserQrTicketModel::STUDENT_TYPE, $settings['poster_width'], $settings['poster_height'], $settings['qr_width'], $settings['qr_height'], $settings['qr_x'], $settings['qr_y'], DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'NORMAL_STUDENT_INVITE_STUDENT'));
+                    $posterQrcodeType = DictService::getKeyValue(Constants::DICT_TYPE_POSTER_QRCODE_TYPE, 'qr_code_type');
+                    // 普通二维码
+                    if (empty($posterQrcodeType)) {
+                        $posterImgFile = UserService::generateQRPosterAliOss($user['user_id'], $referralConfig['url'], UserQrTicketModel::STUDENT_TYPE, $settings['poster_width'], $settings['poster_height'], $settings['qr_width'], $settings['qr_height'], $settings['qr_x'], $settings['qr_y'], DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'NORMAL_STUDENT_INVITE_STUDENT'));
+                    } else {
+                        // APPID:2 转介绍小程序
+                        $posterImgFile = UserService::generateMiniAppPosterAliOss(2, $user['user_id'], $referralConfig['url'], UserQrTicketModel::STUDENT_TYPE, $settings['poster_width'], $settings['poster_height'], $settings['qr_width'], $settings['qr_height'], $settings['qr_x'], $settings['qr_y'], DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'NORMAL_STUDENT_INVITE_STUDENT'));
+                    }
                     if(!empty($posterImgFile)){
                         //上传到微信服务器
                         $weChatAppIdSecret = WeChatService::getWeCHatAppIdSecret(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT, UserWeixinModel::USER_TYPE_STUDENT);
