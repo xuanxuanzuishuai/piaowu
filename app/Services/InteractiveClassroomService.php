@@ -571,7 +571,7 @@ class InteractiveClassroomService
         $collectionLearnRecord = StudentSignUpCourseModel::getLearnRecordByCollection($collectionId, $studentId);
         $collectionLearnRecordByLessonId = array_column($collectionLearnRecord, null, 'lesson_id');
         if (!empty($collectionLearnRecord)) {
-            $collection[0]['collection_bind_status'] = $collectionLearnRecord[0]['bind_status'] ?? self::COURSE_BIND_STATUS_UNREGISTER;
+            $collection[0]['collection_bind_status'] = $collectionLearnRecord[0]['bind_status'] ?: self::COURSE_BIND_STATUS_UNREGISTER;
         }else{
             $collection[0]['collection_bind_status'] = self::COURSE_BIND_STATUS_UNREGISTER;
         }
@@ -579,6 +579,7 @@ class InteractiveClassroomService
         //判断课程状态
         $time = time();
         if (!empty($collection[0]['lessons'])) {
+            $subEndDay = strtotime($collectionLearnRecord[0]['sub_end_date']." 23:59:59");
             foreach ($collection[0]['lessons'] as $value) {
                 if ($value['freeflag'] == true) {
                     $learn_status = self::UNLOCK_THE_CLASS;
@@ -588,40 +589,33 @@ class InteractiveClassroomService
                     $learn_status = self::LOCK_THE_CLASS;
                     //当前为报名状态
                     if ($collection[0]['collection_bind_status'] == self::COURSE_BIND_STATUS_SUCCESS) {
+                        $courseStartTime = (count($payLessonList) - 1) * self::WEEK_TIMESTAMP + $collectionLearnRecord[0]['first_course_time'];
+                        $value['lesson_start_timestamp'] = $courseStartTime;
                         if (isset($collectionLearnRecordByLessonId[$value['lesson_id']])) {
                             $learn_status = $collectionLearnRecordByLessonId[$value['lesson_id']]['learn_status'];
                         } else {
-                            $courseStartTime = (count($payLessonList) - 1) * self::WEEK_TIMESTAMP + $collectionLearnRecord[0]['first_course_time'];
-                            $subEndDay = strtotime($collectionLearnRecord[0]['sub_end_date']." 23:59:59");
                             if ($courseStartTime > $time) {
                                 $learn_status = self::LOCK_THE_CLASS;
                             } elseif ($time >= $courseStartTime && $time <= ($courseStartTime + self::HALF_HOUR)) {
                                 $learn_status = self::GO_TO_THE_CLASS;
-                                $value['lesson_start_timestamp'] = $courseStartTime;
                             } elseif ($time > ($courseStartTime + self::HALF_HOUR) && $courseStartTime < $subEndDay) {
                                 $learn_status = self::TO_MAKE_UP_LESSONS;
                             }
                         }
-                    } else {
-                        //当前为取消报名状态但是之前报过名
-                        if (!empty($collectionLearnRecord)) {
-                            if (isset($collectionLearnRecordByLessonId[$value['lesson_id']])) {
-                                $learn_status = $collectionLearnRecordByLessonId[$value['lesson_id']]['learn_status'];
-                            } else {
-                                $courseStartTime = (count($payLessonList) - 1) * self::WEEK_TIMESTAMP + $collectionLearnRecord[0]['first_course_time'];
-                                $subEndDay = strtotime($collectionLearnRecord[0]['sub_end_date']." 23:59:59");
-
-                                if ($courseStartTime >= $collectionLearnRecord[0]['update_time'] || $courseStartTime > $subEndDay) {
-                                    $learn_status = self::LOCK_THE_CLASS;
-                                } elseif ($time >= $courseStartTime && $time <= ($courseStartTime + self::HALF_HOUR)) {
-                                    $value['lesson_start_timestamp'] = $courseStartTime;
-                                    $learn_status = self::GO_TO_THE_CLASS;
-                                } elseif ($time > ($courseStartTime + self::HALF_HOUR) && $courseStartTime < $subEndDay) {
-                                    $learn_status = self::TO_MAKE_UP_LESSONS;
-                                }
-                            }
+                    //当前为取消报名状态
+                    } elseif ($collection[0]['collection_bind_status'] == self::COURSE_BIND_STATUS_CANCEL) {
+                        $courseStartTime = (count($payLessonList) - 1) * self::WEEK_TIMESTAMP + $collectionLearnRecord[0]['first_course_time'];
+                        $value['lesson_start_timestamp'] = $courseStartTime;
+                        if (isset($collectionLearnRecordByLessonId[$value['lesson_id']])) {
+                            $learn_status = $collectionLearnRecordByLessonId[$value['lesson_id']]['learn_status'];
                         } else {
-                            $learn_status = self::LOCK_THE_CLASS;
+                            if ($courseStartTime >= $collectionLearnRecord[0]['update_time'] || $courseStartTime > $subEndDay) {
+                                $learn_status = self::LOCK_THE_CLASS;
+                            } elseif ($time >= $courseStartTime && $time <= ($courseStartTime + self::HALF_HOUR)) {
+                                $learn_status = self::GO_TO_THE_CLASS;
+                            } elseif ($time > ($courseStartTime + self::HALF_HOUR) && $courseStartTime < $subEndDay) {
+                                $learn_status = self::TO_MAKE_UP_LESSONS;
+                            }
                         }
                     }
                 }

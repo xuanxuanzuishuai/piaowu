@@ -111,9 +111,9 @@ class StudentSignUpCourseModel extends Model
         $learnRecord = StudentLearnRecordModel::$table;
         $student = StudentModel::$table;
 
-        return MysqlDB::getDB()->select("$signUp(sin)", [
+        return MysqlDB::getDB()->select("{$student}(s)", [
+            "[><]{$signUp}(sin)"    => ["s.id" => "student_id"],
             "[>]{$learnRecord}(lr)" => ["sin.collection_id" => "collection_id", "sin.student_id" => "student_id"],
-            "[><]{$student}(s)"      => ["sin.student_id" => "id"],
         ], [
             "sin.collection_id",
             "sin.start_week",
