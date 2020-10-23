@@ -26,6 +26,7 @@ class ReferralMinAppRouter extends RouterBase
         '/referral_miniapp/landing/register' => [
             'method'  => ['post'],
             'call'    => Landing::class . ':register',
+            'middles' => [ReferralMinAppAuthCheckMiddleware::class],
         ],
         '/referral_miniapp/landing/index' => [
             'method'  => ['get'],

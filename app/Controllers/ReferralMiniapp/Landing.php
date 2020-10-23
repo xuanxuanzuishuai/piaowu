@@ -31,7 +31,7 @@ class Landing extends ControllerBase
     public function index(Request $request, Response $response)
     {
         try {
-            $pageData = ReferralService::getLandingPageData($params['id'] ?? null, $this->ci['referral_landing_openid']);
+            $pageData = ReferralService::getLandingPageData($params['referrer'] ?? null, $this->ci['referral_landing_openid']);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
@@ -125,7 +125,7 @@ class Landing extends ControllerBase
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        if (!empty($params['sms_code']) && !CommonServiceForApp::checkValidateCode($params["mobile"], $params["sms_code"], $params["country_code"])) {
+        if (!empty($params['sms_code']) && !CommonServiceForApp::checkValidateCode($params["mobile"], $params["sms_code"], $params["country_code"] ?? '')) {
             return $response->withJson(Valid::addAppErrors([], 'validate_code_error'), StatusCode::HTTP_OK);
         }
         if (!empty($params['referrer'])) {

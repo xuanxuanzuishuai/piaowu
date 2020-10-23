@@ -59,7 +59,7 @@ class Pay extends ControllerBase
         $extendedParams = [];
 
         // 微信支付，用code换取支付用公众号的open_id
-        if ($params['pay_channel'] == PayServices::PAY_CHANNEL_PUB) {
+        if (empty($params['open_id']) && $params['pay_channel'] == PayServices::PAY_CHANNEL_PUB) {
             if (empty($params['wx_code'])) {
                 return $response->withJson(Valid::addAppErrors([], 'need_wx_code'));
             }
@@ -68,6 +68,8 @@ class Pay extends ControllerBase
                 return $response->withJson(Valid::addAppErrors([], 'can_not_obtain_open_id'));
             }
             $extendedParams['open_id'] = $data['openid'];
+        } else {
+            $extendedParams['open_id'] = $params['open_id'];
         }
 
         // pay_channel 1 支付宝 2 微信H5 21 微信公众号
