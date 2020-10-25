@@ -711,7 +711,7 @@ class ReviewCourseService
                 if (in_array($referralInfo['has_review_course'], [ReviewCourseModel::REVIEW_COURSE_NO, ReviewCourseModel::REVIEW_COURSE_49])) {
                     // 若用户（推荐人）当前阶段为“已注册”或“付费体验课”
                     $refTaskId = ErpReferralService::getTrailPayTaskId();
-                } elseif (in_array($referralInfo['has_review_course'], [ReviewCourseModel::REVIEW_COURSE_1980, ReviewCourseModel::REVIEW_COURSE_BE_OVERDUE])) {
+                } elseif (in_array($referralInfo['has_review_course'], [ReviewCourseModel::REVIEW_COURSE_1980])) {
                     // 若用户（推荐人）当前阶段为“付费正式课”
                     $refTaskId = ErpReferralService::getTrailPayTaskId(1);
                 }
@@ -722,7 +722,7 @@ class ReviewCourseService
                 if (in_array($referralInfo['has_review_course'], [ReviewCourseModel::REVIEW_COURSE_NO, ReviewCourseModel::REVIEW_COURSE_49])) {
                     // 若用户（推荐人）当前阶段为“已注册”或“付费体验课”
                     $refTaskId = ErpReferralService::getYearPayTaskId();
-                } elseif (in_array($referralInfo['has_review_course'], [ReviewCourseModel::REVIEW_COURSE_1980, ReviewCourseModel::REVIEW_COURSE_BE_OVERDUE])) {
+                } elseif (in_array($referralInfo['has_review_course'], [ReviewCourseModel::REVIEW_COURSE_1980])) {
                     // 若用户（推荐人）当前阶段为“付费正式课”
                     $refTaskId = ErpReferralService::getYearPayTaskId(1);
                 }
