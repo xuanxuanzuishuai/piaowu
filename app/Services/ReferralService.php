@@ -16,6 +16,7 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
+use App\Libs\UserCenter;
 use App\Libs\Util;
 use App\Libs\WeChat\Helper;
 use App\Libs\WeChat\MsgErrorCode;
@@ -40,6 +41,10 @@ class ReferralService
 
     // 用户首次进入页面记录
     const LANDING_PAGE_USER_FIRST_KEY = 'REFERRAL_LANDING_PAGE_FIRST';
+
+    // 转介绍小程序
+    const REFERRAL_MINIAPP_ID = 2;
+
     /**
      * 添加转介绍记录
      * @param int $referrerId 介绍人id
@@ -219,16 +224,29 @@ class ReferralService
      */
     public static function getReferrerInfoForMinApp($user_id)
     {
+        $defaultData = [
+            'nickname'   => '小叶子',
+            'headimgurl' => AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb')),
+            'text'       => '自从有了小叶子，孩子终于会主动练琴了，也帮你领取了社群限时福利，快来体验吧！',
+        ];
         // 推荐人不存在时返回默认数据
         if (empty($user_id)) {
-            return [
-                'nickname'   => '小叶子用户',
-                'headimgurl' => AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb')),
-                'text'       => '自从有了小叶子，孩子终于会主动练琴了，也帮你领取了社群限时福利，快来体验吧！',
-            ];
+            return $defaultData;
         }
-        $referrerInfo = UserWeixinModel::getRecord(['user_id' => $user_id, 'ORDER' => ['id' => 'DESC']], ['open_id', 'app_id']);
-        $data = WeChatService::getUserInfo($referrerInfo['open_id'], $referrerInfo['app_id']);
+        $referrerInfo = UserWeixinModel::getRecord(
+            [
+                'user_id'   => $user_id,
+                'user_type' => UserWeixinModel::USER_TYPE_STUDENT,
+                'status'    => UserWeixinModel::STATUS_NORMAL,
+                'busi_type' => UserWeixinModel::BUSI_TYPE_REFERRAL_MINAPP,
+            ],
+            ['open_id']
+        );
+        if (empty($referrerInfo['open_id'])) {
+            return $defaultData;
+        }
+        // 获取用户微信昵称和头像
+        $data = WeChatService::getUserInfo($referrerInfo['open_id'], self::REFERRAL_MINIAPP_ID);
         // 练琴天数
         $accumulateDays = AIPlayRecordModel::getAccumulateDays($user_id);
 
@@ -392,7 +410,7 @@ class ReferralService
                 'open_id'   => $openId,
                 'status'    => UserWeixinModel::STATUS_NORMAL,
                 'busi_type' => UserWeixinModel::BUSI_TYPE_REFERRAL_MINAPP,
-                'app_id'    => $_ENV['REFERRAL_LANDING_APP_ID'],
+                'app_id'    => self::REFERRAL_MINIAPP_ID, // 转介绍小程序
             ], false);
         }
         $hadPurchased = self::hadPurchaseTrail($mobile);
@@ -443,7 +461,7 @@ class ReferralService
                 'LIMIT'              => [0, 1],
             ]
         );
-        return empty($records);
+        return !empty($records);
     }
 
     /**
@@ -483,15 +501,19 @@ class ReferralService
                     EmployeeModel::$table,
                     [
                         '[<>]' . StudentModel::$table    => ['id' => 'assistant_id'],
-                        '[<>]' . UserWeixinModel::$table => [StudentModel::$table.'.id' => UserWeixinModel::$table.'user_id']
+                        '[<>]' . UserWeixinModel::$table => [StudentModel::$table.'.id' => 'user_id']
                     ],
                     [
                         EmployeeModel::$table . '.wx_qr'
                     ],
                     [
-                        UserWeixinModel::$table . '.open_id' => $ele->FromUserName
+                        UserWeixinModel::$table . '.open_id' => trim((string)$ele->FromUserName)
                     ]
                 );
+                if (empty($assistant['wx_qr'])) {
+                    SimpleLogger::error('assistant\'s wx_qr image is empty', ['student_id' => (string)$ele->FromUserName]);
+                    return "success";
+                }
 
                 $config = [
                     'app_id'     => $_ENV['REFERRAL_LANDING_APP_ID'],
@@ -504,11 +526,15 @@ class ReferralService
                 $data = $wx->getTempMedia('image', $assistant['wx_qr'], AliOSS::replaceCdnDomainForDss($assistant['wx_qr']));
 
                 if (!empty($data['media_id'])) {
-                    Helper::sendMsg([
-                        'touser'  => (string)$ele->FromUserName,
-                        'msgtype' => 'image',
-                        'image'   => ['media_id'=>$data['media_id']]
-                    ]);
+                    Helper::sendMsg(
+                        [
+                            'touser'  => (string)$ele->FromUserName,
+                            'msgtype' => 'image',
+                            'image'   => ['media_id'=>$data['media_id']]
+                        ],
+                        $config['app_id'],
+                        $config['app_secret']
+                    );
                 }
                 return "success";
         }

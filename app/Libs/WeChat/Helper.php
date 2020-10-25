@@ -18,9 +18,15 @@ class Helper
 
     //回复客服消息
     //https://www.jianshu.com/p/b663d3aede02
-    public static function sendMsg(array $json)
+    public static function sendMsg(array $json, $appId = null, $secret = null)
     {
-        $access_token = self::accessToken($_ENV['EXAM_MINAPP_ID'], $_ENV['EXAM_MINAPP_SECRET']);
+        if (empty($appId)) {
+            $appId = $_ENV['EXAM_MINAPP_ID'];
+        }
+        if (empty($secret)) {
+            $secret = $_ENV['EXAM_MINAPP_SECRET'];
+        }
+        $access_token = self::accessToken($appId, $secret);
         $url = "https://api.weixin.qq.com/cgi-bin/message/custom/send?access_token=" . $access_token;
 
         $client = new Client(['debug' => false]);
@@ -39,7 +45,7 @@ class Helper
     public static function accessToken($appId, $secret)
     {
         $conn = RedisDB::getConn();
-        $at = $conn->get(self::EXAM_ACCESS_TOKEN_KEY);
+        $at = $conn->get(self::EXAM_ACCESS_TOKEN_KEY.$appId);
         if(!empty($at)) {
             return $at;
         }
@@ -51,8 +57,8 @@ class Helper
         $token = $array['access_token'];
 
         if(!empty($token)) {
-            $conn->set(self::EXAM_ACCESS_TOKEN_KEY, $token);
-            $conn->expire(self::EXAM_ACCESS_TOKEN_KEY, $array['expires_in'] - 100);
+            $conn->set(self::EXAM_ACCESS_TOKEN_KEY.$appId, $token);
+            $conn->expire(self::EXAM_ACCESS_TOKEN_KEY.$appId, $array['expires_in'] - 100);
         }
 
         SimpleLogger::info('we chat token', ['content' => $str]);

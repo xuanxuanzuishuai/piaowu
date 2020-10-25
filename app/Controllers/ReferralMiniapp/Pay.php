@@ -10,6 +10,7 @@ namespace App\Controllers\ReferralMiniapp;
 
 use App\Controllers\ControllerBase;
 use App\Libs\DictConstants;
+use App\Libs\RC4;
 use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Models\UserWeixinModel;
@@ -72,19 +73,23 @@ class Pay extends ControllerBase
             $extendedParams['open_id'] = $params['open_id'];
         }
 
+        $studentAddressId = $params['student_address_id'] ?? 0;
+        $employeeUuid     = !empty($params['employee_id']) ? RC4::decrypt($_ENV['COOKIE_SECURITY_KEY'], $params['employee_id']) : null;
+
         // pay_channel 1 支付宝 2 微信H5 21 微信公众号
-        $ret = PayServices::webCreateBill(
+        $ret = PayServices::weixinCreateBill(
+            $student['id'],
             $packageId,
-            $params['uuid'],
             $params['pay_channel'],
             $_SERVER['HTTP_X_REAL_IP'],
-            $extendedParams
+            $studentAddressId,
+            $extendedParams['open_id'],
+            $employeeUuid
         );
 
         if (empty($ret)) {
             $ret = Valid::addAppErrors([], 'create_bill_error');
         }
-
         return $response->withJson($ret, StatusCode::HTTP_OK);
     }
 
