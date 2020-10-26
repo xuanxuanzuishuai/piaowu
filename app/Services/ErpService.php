@@ -9,11 +9,13 @@
 namespace App\Services;
 
 
-use App\Libs\DictConstants;
+use App\Libs\Constants;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\EmployeeModel;
+use App\Models\GiftCodeDetailedModel;
 use App\Models\GiftCodeModel;
+use App\Models\StudentLeaveLogModel;
 use App\Models\StudentModel;
 
 class ErpService
@@ -27,6 +29,7 @@ class ErpService
      * @param int $giftCodeUnit
      * @param bool $autoApply
      * @param array $billInfo
+     * @param $package
      * @return array [string errorCode, array giftCodes]
      */
     public static function exchangeGiftCode($studentData,
@@ -34,7 +37,8 @@ class ErpService
                                             $giftCodeNum = 1,
                                             $giftCodeUnit = GiftCodeModel::CODE_TIME_YEAR,
                                             $autoApply = false,
-                                            $billInfo = [])
+                                            $billInfo = [],
+                                            $package)
     {
         $student = StudentService::getByUuid($studentData['uuid']);
 
@@ -83,6 +87,8 @@ class ErpService
 
         if ($autoApply) {
             StudentServiceForApp::redeemGiftCode($giftCodes[0], $student['id']);
+            //计算激活码的开始&结束时间，更新到gift_code_detailed这张表
+            GiftCodeDetailedService::CreateGiftCodeDetailed($giftCodes[0], $student['id'], $package['package_type']);
         }
 
         if (empty($student['first_pay_time'])) {
@@ -121,10 +127,30 @@ class ErpService
             return 'code_status_invalid';
         }
 
+        //如果激活码详细表有相应数据，扣减时间具体按照gift_code_detailed这张表的valid_days字段为标准，因为可能会有请假顺延时间的情况
+        $giftCodeDetailInfo = GiftCodeDetailedModel::getRecord(['apply_user' => $code['apply_user'], 'gift_code_id' => $code['id'], 'status' => Constants::STATUS_TRUE]);
+        if (!empty($giftCodeDetailInfo)) {
+            $validNum = $giftCodeDetailInfo['valid_days'];
+            $validUnits = GiftCodeModel::CODE_TIME_DAY;
+        } else {
+            $validNum = $code['valid_num'];
+            $validUnits = $code['valid_units'];
+        }
+
         if ($code['code_status'] == GiftCodeModel::CODE_STATUS_HAS_REDEEMED) {
             // 已激活的扣除响应时间
             $cnt = StudentService::reduceSubDuration($code['apply_user'], $code['valid_num'], $code['valid_units']);
             if (empty($cnt)) { return 'data_error'; }
+            //当前激活码之后已激活的从新计算每个激活码的开始&结束时间
+            $cnt = StudentService::reduceSubDuration($code['apply_user'],$validNum, $validUnits);
+            if (empty($cnt)) {
+                return 'gift_code_insert_error';
+            }
+            //作废激活码，取消所有的请假
+            $cnt = GiftCodeDetailedService::cancelLeave($student['id'], $code['id'], StudentLeaveLogModel::CANCEL_OPERATOR_SYSTEM, Constants::STATUS_FALSE);
+            if (empty($cnt)) {
+                return 'cancel_leave_error';
+            }
         }
 
         $cnt = GiftCodeService::abandonCode($code['id'], true);

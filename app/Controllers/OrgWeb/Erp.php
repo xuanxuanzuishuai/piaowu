@@ -15,15 +15,18 @@ use App\Libs\MysqlDB;
 use App\Libs\NewSMS;
 use App\Libs\Util;
 use App\Libs\Valid;
+use App\Models\GiftCodeDetailedModel;
 use App\Models\GiftCodeModel;
 use App\Models\GoodsV1Model;
 use App\Models\ModelV1\ErpPackageV1Model;
 use App\Models\PackageExtModel;
+use App\Models\StudentLeaveLogModel;
 use App\Models\StudentModelForApp;
 use App\Services\AIBillService;
 use App\Services\CommonServiceForApp;
 use App\Services\DictService;
 use App\Services\ErpService;
+use App\Services\GiftCodeDetailedService;
 use App\Services\GiftCodeService;
 use App\Services\Queue\QueueService;
 use App\Services\ReviewCourseService;
@@ -139,7 +142,8 @@ class Erp extends ControllerBase
                 'bill_app_id' => (int)$params['app_id'],
                 'bill_package_id' => (int)$params['package_id'],
                 'employee_uuid' => $params['employee_uuid'] ?? ''
-            ]
+            ],
+            $package
         );
 
         if (!empty($errorCode)) {
@@ -431,6 +435,7 @@ class Erp extends ControllerBase
             $durationNum = $package['duration_num'];
             $autoApply = ($package['apply_type'] == PackageExtModel::APPLY_TYPE_AUTO) ? true : false;
         } elseif (!empty($params['goods_id'])) {
+            $package = [];
             // 赠送产品
             $goods = GoodsV1Model::getGoods($params['goods_id']);
             $durationNum = $params['duration_num'] ?? $goods['duration_num'];
@@ -466,7 +471,8 @@ class Erp extends ControllerBase
                 'package_v1' => GiftCodeModel::PACKAGE_V1,
                 'operator_id' => $params['operator_id'] ?? 0,
                 'remarks' => $params['msg'] ?? ''
-            ]
+            ],
+            $package
         );
 
         if (!empty($errorCode)) {
@@ -610,16 +616,36 @@ class Erp extends ControllerBase
             return $response->withJson(Valid::addErrors([], 'bill_id', 'bill_not_exist'), StatusCode::HTTP_OK);
         }
 
+        $db = MysqlDB::getDB();
+        $db->beginTransaction();
+        $durationRows = $updateGiftCodeRows = $cancelLeaveRows = Constants::STATUS_TRUE;
         if ($giftCode['code_status'] == GiftCodeModel::CODE_STATUS_HAS_REDEEMED) {
             list($codeId, $useNum, $remainNum) = GiftCodeService::codeConsume($giftCode['buyer'], $giftCode['id']);
 
+            //如果激活码详细表有相应数据，扣减时间具体按照gift_code_detailed这张表的valid_days字段为标准，因为可能会有请假顺延时间的情况
+            $giftCodeDetailInfo = GiftCodeDetailedModel::getRecord(['apply_user' => $giftCode['apply_user'], 'gift_code_id' => $giftCode['id'], 'status' => Constants::STATUS_TRUE]);
+            if (!empty($giftCodeDetailInfo)) {
+                $remainNum = $giftCodeDetailInfo['valid_days'];
+            }
+
             // 已激活的扣除剩余时间
             if ($remainNum > 0) {
-                StudentService::reduceSubDuration($giftCode['apply_user'], $remainNum, GiftCodeModel::CODE_TIME_DAY);
+                $durationRows = StudentService::reduceSubDuration($giftCode['apply_user'], $remainNum, GiftCodeModel::CODE_TIME_DAY);
             }
+            //当前激活码之后已激活的从新计算每个激活码的开始&结束时间
+            $updateGiftCodeRows = GiftCodeDetailedService::abandonGiftCode($giftCode['apply_user'], $giftCode['id']);
+            //作废激活码，取消所有的请假
+            $cancelLeaveRows = GiftCodeDetailedService::cancelLeave($giftCode['apply_user'], $giftCode['id'], StudentLeaveLogModel::CANCEL_OPERATOR_SYSTEM, Constants::STATUS_FALSE);
         }
         // 激活码--废除
-        GiftCodeService::abandonCode($giftCode['id'], true);
+        $abandonCodeRows = GiftCodeService::abandonCode($giftCode['id'], true);
+        if (empty($durationRows) || empty($updateGiftCodeRows) || empty($cancelLeaveRows) || empty($abandonCodeRows)) {
+            $db->rollBack();
+            $result = Valid::addErrors([], 'bill_id', 'abandon_code_error');
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $db->commit();
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
