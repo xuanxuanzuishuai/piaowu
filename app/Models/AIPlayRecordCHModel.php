@@ -10,43 +10,53 @@ namespace App\Models;
 
 
 use App\Libs\CHDB;
+use App\Libs\Constants;
 
 class AIPlayRecordCHModel
 {
     static $table = 'ai_play_record';
 
-    public static function testLessonRank($lessonId)
+    public static function getLessonPlayRank($lessonId, $lessonRankTime)
     {
         $chdb = CHDB::getDB();
 
-        $sql = "select
-  id,
-  lesson_id,
-  student_id,
-  score_final,
-  record_id
-from
-  {apr_table} AS apr
-where
-  apr.lesson_id = {lesson_id}
-  AND apr.ui_entry = 2
-  AND apr.is_phrase = 0
-  AND apr.hand = 3
-  AND apr.score_final >= 60
-order by
-  score_final desc,
-  record_id desc
-limit
-  1 by lesson_id, student_id
-limit {rank_limit}";
+        $sql = "select id as play_id , lesson_id, student_id, record_id as ai_record_id, score_final as score, is_join_ranking from " . self::$table . " AS apr where
+  apr.lesson_id =:lesson_id 
+  AND apr.ui_entry =:ui_entry 
+  AND apr.is_phrase =:is_phrase 
+  AND apr.hand =:hand 
+  AND apr.score_final >=:rank_base_score 
+  AND apr.end_time >=:start_time 
+  AND apr.end_time <:end_time 
+  AND apr.is_join_ranking = :is_join_ranking 
+order by score_final desc, record_id desc 
+limit 1 by lesson_id, student_id 
+limit :rank_limit";
 
         $map = [
-            'apr_table' => self::$table,
-            'lesson_id' => $lessonId,
-            'rank_limit' => 150,
+            'lesson_id' => (int)$lessonId,
+            'ui_entry' => AIPlayRecordModel::UI_ENTRY_TEST,
+            'is_phrase' => Constants::STATUS_FALSE,
+            'hand' => AIPlayRecordModel::HAND_BOTH,
+            'rank_base_score' => AIPlayRecordModel::RANK_BASE_SCORE,
+            'is_join_ranking' => Constants::STATUS_TRUE,
+            'data_type' => Constants::STATUS_TRUE,
+            'rank_limit' => AIPlayRecordModel::RANK_LIMIT,
+            'start_time' => $lessonRankTime['start_time'],
+            'end_time' => $lessonRankTime['end_time']
         ];
-
-        return $chdb->queryAll($sql, $map);
+        $aiPlayInfo = $chdb->queryAll($sql, $map);
+        $returnInfo = [];
+        if (!empty($aiPlayInfo)) {
+            $allStudentId = array_unique(array_column($aiPlayInfo, 'student_id'));
+            $studentInfo = array_column(StudentModel::getRecords(['id' => $allStudentId], ['id', 'name', 'thumb']), NULL, 'id');
+            $returnInfo = array_map(function ($item) use($studentInfo){
+                $item['name'] = $studentInfo[$item['student_id']]['name'];
+                $item['thumb'] = $studentInfo[$item['student_id']]['thumb'];
+                return $item;
+            }, $aiPlayInfo);
+        }
+        return $returnInfo;
     }
 
     public static function getPlayInfo($studentId)

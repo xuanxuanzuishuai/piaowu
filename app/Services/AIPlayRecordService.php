@@ -17,6 +17,7 @@ use App\Libs\OpernCenter;
 use App\Libs\RedisDB;
 use App\Libs\Util;
 use App\Libs\Valid;
+use App\Models\AIPlayRecordCHModel;
 use App\Models\AIPlayRecordModel;
 use App\Models\AppVersionModel;
 use App\Models\HistoryRanksModel;
@@ -737,7 +738,7 @@ class AIPlayRecordService
         list('start_time' => $lastStartTime, 'end_time' => $lastEndTime) = self::getRankTimestamp($getLessonRankTime,Util::getQuarterStartEndTime($lastIssueNumber['up_quarter'])['start_time']);
         //判断是否获取上期数据:为空查看本期数据
         if (empty($issueNumber)) {
-            $ranks = AIPlayRecordModel::getLessonPlayRank($lessonId, $lessonRankTime);
+            $ranks = AIPlayRecordCHModel::getLessonPlayRank($lessonId, $lessonRankTime);
         } else {
             //查看指定期号数据
             $ranks = HistoryRanksModel::getRankList($issueNumber, $lessonId);
