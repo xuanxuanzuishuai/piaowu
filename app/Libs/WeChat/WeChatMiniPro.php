@@ -289,6 +289,11 @@ class WeChatMiniPro
         $params = [
             'scene' => substr($scene, 0, 32)
         ];
-        return $this->requestJson($api, $params, 'POST');
+        $res = $this->requestJson($api, $params, 'POST');
+        if (is_string($res) && strlen($res) > 0) {
+            return $res;
+        }
+        SimpleLogger::error("[WeChatMiniPro] get mini app code error", [$res]);
+        return false;
     }
 }

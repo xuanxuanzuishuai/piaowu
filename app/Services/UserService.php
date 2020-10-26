@@ -295,26 +295,25 @@ class UserService
             $wx                = WeChatMiniPro::factory(['app_id' => $weChatAppIdSecret['app_id'], 'app_secret' => $weChatAppIdSecret['secret']]);
             if (empty($wx)) {
                 SimpleLogger::error('wx create fail', ['we_chat_type'=>UserWeixinModel::USER_TYPE_STUDENT]);
-                return;
+                return $data;
             }
             // 请求微信，获取小程序码图片
             $imageUrl = '';
             $res = $wx->getMiniappCodeImage(['r' => $userQrTicket, 'c' => $channelId]);
-            if (is_array($res)) {
-                SimpleLogger::error('get miniapp code image fail', $res);
-            } else {
-                $tmpFileFullPath = $_ENV['STATIC_FILE_SAVE_PATH'] . '/' . md5($userQrTicket) . '.jpg';
-                chmod($tmpFileFullPath, 0755);
-
-                $bytesWrite = file_put_contents($tmpFileFullPath, $res);
-                if (empty($bytesWrite)) {
-                    SimpleLogger::error('save miniapp code image file error', [$userQrTicket]);
-                }
-                $imageUrl = $_ENV['ENV_NAME'] . '/' . AliOSS::DIR_MINIAPP_CODE . '/' . md5($userQrTicket) . ".png";
-                AliOSS::uploadFile($imageUrl, $tmpFileFullPath);
-                unlink($tmpFileFullPath);
-                return AliOSS::replaceCdnDomainForDss($imageUrl);
+            if ($res === false) {
+                return $data;
             }
+            $tmpFileFullPath = $_ENV['STATIC_FILE_SAVE_PATH'] . '/' . md5($userQrTicket) . '.jpg';
+            chmod($tmpFileFullPath, 0755);
+
+            $bytesWrite = file_put_contents($tmpFileFullPath, $res);
+            if (empty($bytesWrite)) {
+                SimpleLogger::error('save miniapp code image file error', [$userQrTicket]);
+                return $data;
+            }
+            $imageUrl = $_ENV['ENV_NAME'] . '/' . AliOSS::DIR_MINIAPP_CODE . '/' . md5($userQrTicket) . ".png";
+            AliOSS::uploadFile($imageUrl, $tmpFileFullPath);
+            unlink($tmpFileFullPath);
             //记录数据
             $data = [
                 'create_time' => $time,

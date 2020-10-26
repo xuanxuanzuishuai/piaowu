@@ -158,11 +158,11 @@ class ReferralService
 
     /**
      * 获取转介绍小程序landing页面数据
-     * @param $referrer_id
+     * @param $referrer_ticket
      * @param $openid
      * @return array
      */
-    public static function getLandingPageData($referrer_id, $openid)
+    public static function getLandingPageData($referrer_ticket, $openid)
     {
         $data                  = [];
         $data['had_purchased'] = false;
@@ -170,13 +170,16 @@ class ReferralService
         $data['openid']        = $openid;
         $data['uuid']          = '';
         // 推荐人信息：
-        if (!empty($referrer_id)) {
-            $referrerInfo = UserQrTicketModel::getRecord(['qr_ticket' => $referrer_id], ['user_id']);
+        if (!empty($referrer_ticket)) {
+            $referrerInfo = UserQrTicketModel::getRecord(['qr_ticket' => $referrer_ticket], ['user_id']);
             $user_id = $referrerInfo['user_id'];
         } else {
             $user_id = null;
         }
         $data['referrer_info'] = self::getReferrerInfoForMinApp($user_id);
+        // 转介绍注册时用的推荐人ticket参数
+        $data['referrer_info']['ticket'] = $referrer_ticket;
+
         // 是否是首次进入页面标记
         $redis = RedisDB::getConn();
         $data['first_flag'] = $redis->hget(self::LANDING_PAGE_USER_FIRST_KEY, $openid) ? false : true;
@@ -189,7 +192,6 @@ class ReferralService
         $recentPurchase = GiftCodeModel::getRecords(
             [
                 'bill_package_id' => $packageIdArr,
-                'code_status'     => GiftCodeModel::CODE_STATUS_HAS_REDEEMED,
                 'LIMIT'           => [0, 50],
                 'ORDER'           => ['id' => 'DESC'],
             ],
@@ -237,8 +239,8 @@ class ReferralService
             [
                 'user_id'   => $user_id,
                 'user_type' => UserWeixinModel::USER_TYPE_STUDENT,
-                'status'    => UserWeixinModel::STATUS_NORMAL,
-                'busi_type' => UserWeixinModel::BUSI_TYPE_REFERRAL_MINAPP,
+                'busi_type' => UserWeixinModel::BUSI_TYPE_STUDENT_SERVER,
+                'ORDER'     => ['id' => 'DESC'],
             ],
             ['open_id']
         );
@@ -246,7 +248,10 @@ class ReferralService
             return $defaultData;
         }
         // 获取用户微信昵称和头像
-        $data = WeChatService::getUserInfo($referrerInfo['open_id'], self::REFERRAL_MINIAPP_ID);
+        $data = WeChatService::getUserInfo($referrerInfo['open_id']);
+        if (empty($data)) {
+            $data = $defaultData;
+        }
         // 练琴天数
         $accumulateDays = AIPlayRecordModel::getAccumulateDays($user_id);
 

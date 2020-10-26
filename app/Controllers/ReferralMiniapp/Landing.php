@@ -32,7 +32,13 @@ class Landing extends ControllerBase
     {
         try {
             $params = $request->getParams();
-            $pageData = ReferralService::getLandingPageData($params['referrer'] ?? null, $this->ci['referral_landing_openid']);
+            $scene = $params['scene'] ?? '';
+            if (!empty($scene)) {
+                parse_str(urldecode($scene), $sceneData);
+            } else {
+                $sceneData = [];
+            }
+            $pageData = ReferralService::getLandingPageData($sceneData['r'] ?? '', $this->ci['referral_landing_openid']);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
