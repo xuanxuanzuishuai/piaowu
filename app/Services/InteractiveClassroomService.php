@@ -635,8 +635,7 @@ class InteractiveClassroomService
                 $freeLessonList[] = $value['lesson_id'];
             } else {
                 $payLessonList[] = $value['lesson_id'];
-                $learnStatus = self::LOCK_THE_CLASS;
-                $recordLearnStatus = $collectionLearnRecordByLessonId[$value['lesson_id']]['learn_status'] ?? $learnStatus;
+                $recordLearnStatus = $collectionLearnRecordByLessonId[$value['lesson_id']]['learn_status'] ?? '';
                 list($learnStatus, $value['lesson_start_timestamp']) = self::getLessonStatusAndTimestamp($collectionInfo, $payLessonList, $recordLearnStatus, $time);
             }
             $lesson[] = [
