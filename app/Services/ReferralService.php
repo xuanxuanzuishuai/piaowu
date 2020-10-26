@@ -290,15 +290,7 @@ class ReferralService
         ";
         $result = $chdb->queryAll($sql, ['table' => AIPlayRecordModel::$table, 'id' => $referrer_id]);
         // 练习曲目数量
-        $numbers = $chdb->queryAll("
-        SELECT
-           count(DISTINCT score_id)
-        FROM
-           {table}
-        WHERE
-           student_id = {id}
-        ", ['table'=>AIPlayRecordModel::$table, 'id' => $referrer_id]);
-
+        $numbers = AIPlayRecordModel::getAccumulateLessonCount($referrer_id);
         // 练琴提升百分比
         $percentage = 0;
         $minScore = 1;
@@ -503,16 +495,19 @@ class ReferralService
             case '1':
                 // 回复助教二维码
                 $assistant = MysqlDB::getDB()->get(
-                    EmployeeModel::$table,
+                    UserWeixinModel::$table,
                     [
-                        '[<>]' . StudentModel::$table    => ['id' => 'assistant_id'],
-                        '[<>]' . UserWeixinModel::$table => [StudentModel::$table.'.id' => 'user_id']
+                        '[><]' . StudentModel::$table  => ['user_id' => 'id'],
+                        '[><]' . EmployeeModel::$table => [StudentModel::$table.'.assistant_id' => 'id']
                     ],
                     [
                         EmployeeModel::$table . '.wx_qr'
                     ],
                     [
-                        UserWeixinModel::$table . '.open_id' => trim((string)$ele->FromUserName)
+                        UserWeixinModel::$table . '.open_id'   => trim((string)$ele->FromUserName),
+                        UserWeixinModel::$table . '.user_type' => UserWeixinModel::USER_TYPE_STUDENT,
+                        UserWeixinModel::$table . '.status'    => UserWeixinModel::STATUS_NORMAL,
+                        UserWeixinModel::$table . '.busi_type' => UserWeixinModel::BUSI_TYPE_REFERRAL_MINAPP,
                     ]
                 );
                 if (empty($assistant['wx_qr'])) {
@@ -527,6 +522,7 @@ class ReferralService
                 $wx = WeChatMiniPro::factory($config);
                 if (empty($wx)) {
                     SimpleLogger::error('wx create fail', ['config' => $config, 'we_chat_type'=>UserWeixinModel::USER_TYPE_STUDENT]);
+                    return "success";
                 }
                 $data = $wx->getTempMedia('image', $assistant['wx_qr'], AliOSS::replaceCdnDomainForDss($assistant['wx_qr']));
 

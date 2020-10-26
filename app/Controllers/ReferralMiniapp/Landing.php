@@ -117,15 +117,10 @@ class Landing extends ControllerBase
                     'error_code' => 'mobile_is_required'
                 ],
                 [
-                    'key'        => 'country_code',
-                    'type'       => 'integer',
-                    'error_code' => 'country_code_must_be_integer'
-                ],
-                [
                     'key'        => 'sms_code',
-                    'type'       => 'integer',
+                    'type'       => 'required',
                     'error_code' => 'validate_code_error'
-                ],
+                ]
             ];
         }
         $result = Valid::appValidate($params, $rules);
@@ -135,12 +130,6 @@ class Landing extends ControllerBase
         if (!empty($params['sms_code']) && !CommonServiceForApp::checkValidateCode($params["mobile"], $params["sms_code"], $params["country_code"] ?? '')) {
             return $response->withJson(Valid::addAppErrors([], 'validate_code_error'), StatusCode::HTTP_OK);
         }
-        if (!empty($params['referrer'])) {
-            $referrerInfo = UserQrTicketModel::getRecord(['qr_ticket' => $params['referrer']], ['user_id','type']);
-            $user_id = $referrerInfo['user_id'];
-        } else {
-            $user_id = null;
-        }
         list($openid, $lastId, $mobile, $uuid, $hadPurchased) = ReferralService::register(
             $this->ci['referral_landing_openid'],
             $params['iv'] ?? '',
@@ -148,7 +137,7 @@ class Landing extends ControllerBase
             $this->ci['referral_landing_session_key'],
             $params['mobile'] ?? '',
             $params['country_code'] ?? '',
-            $user_id
+            $params['referrer'] ?? ''
         );
         return HttpHelper::buildResponse($response, ['openid' => $openid, 'last_id' => $lastId, 'mobile' => $mobile, 'uuid' => $uuid, 'had_purchased' => $hadPurchased]);
     }
