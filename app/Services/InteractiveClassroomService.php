@@ -295,7 +295,7 @@ class InteractiveClassroomService
         }
 
         //获取所有课的详细信息
-        $collectionIds = array_keys($lastRecordKeyByCollectionId);
+        $collectionIds = array_unique(array_keys($lastRecordKeyByCollectionId));
         $lessonCoverList = self::getLessonCovers($opn,$collectionIds);
         $lessonListWithCollection = self::getLessonIds($opn, $collectionIds);
         foreach ($lastRecord as $value) {
@@ -528,6 +528,48 @@ class InteractiveClassroomService
     }
 
     /**
+     * 获取课包详情中的上课状态和开课时间
+     * @param $collectionInfo
+     * @param $payLessonList
+     * @param $recordLearnStatus
+     * @param $time
+     * @return array
+     */
+    public static function getLessonStatusAndTimestamp($collectionInfo, $payLessonList, $recordLearnStatus, $time)
+    {
+        $learnStatus = self::LOCK_THE_CLASS;
+        $courseStartTime = 0;
+        if ($collectionInfo['signUpStatus'] == self::COURSE_BIND_STATUS_SUCCESS) {
+            $courseStartTime = (count($payLessonList) - 1) * self::WEEK_TIMESTAMP + $collectionInfo['firstCourseTime'];
+            if (!empty($recordLearnStatus)) {
+                return [$recordLearnStatus, $courseStartTime];
+            }
+
+            if ($time >= $courseStartTime && $time <= ($courseStartTime + self::HALF_HOUR)) {
+                $learnStatus = self::GO_TO_THE_CLASS;
+            } elseif ($time > ($courseStartTime + self::HALF_HOUR)) {
+                $learnStatus = self::TO_MAKE_UP_LESSONS;
+            }
+            //当前为取消报名状态
+        } elseif ($collectionInfo['signUpStatus'] == self::COURSE_BIND_STATUS_CANCEL) {
+            $courseStartTime = (count($payLessonList) - 1) * self::WEEK_TIMESTAMP + $collectionInfo['firstCourseTime'];
+            if (!empty($recordLearnStatus)) {
+                return [$recordLearnStatus, $courseStartTime];
+            }
+
+            if ($courseStartTime >= $collectionInfo['lastLearnTime'] || $courseStartTime > $collectionInfo['subEndDay']) {
+                $learnStatus = self::LOCK_THE_CLASS;
+            } elseif ($time >= $courseStartTime && $time <= ($courseStartTime + self::HALF_HOUR)) {
+                $learnStatus = self::GO_TO_THE_CLASS;
+            } elseif ($time > ($courseStartTime + self::HALF_HOUR) && $courseStartTime < $collectionInfo['subEndDay']) {
+                $learnStatus = self::TO_MAKE_UP_LESSONS;
+            }
+        }
+
+        return [$learnStatus, $courseStartTime];
+    }
+
+    /**
      * @param $opn
      * @param $collectionId
      * @param $studentId
@@ -560,7 +602,10 @@ class InteractiveClassroomService
 
         //整合课程信息
         $lessonResult = $opn->lessons($collectionId, $page, $pageSize);
-        $collection[0]['lessons'] = $lessonResult['data']['list'] ?? [];
+        if (empty($lessonResult['data']['list'])){
+            return [];
+        }
+        $collection[0]['lessons'] = $lessonResult['data']['list'];
 
         //整合课包开课时间
         $timeTableResult = $opn->timetable($collectionId);
@@ -578,58 +623,32 @@ class InteractiveClassroomService
 
         //判断课程状态
         $time = time();
-        if (!empty($collection[0]['lessons'])) {
-            $subEndDay = strtotime($collectionLearnRecord[0]['sub_end_date']." 23:59:59");
-            foreach ($collection[0]['lessons'] as $value) {
-                if ($value['freeflag'] == true) {
-                    $learn_status = self::UNLOCK_THE_CLASS;
-                    $freeLessonList[] = $value['lesson_id'];
-                } else {
-                    $payLessonList[] = $value['lesson_id'];
-                    $learn_status = self::LOCK_THE_CLASS;
-                    //当前为报名状态
-                    if ($collection[0]['collection_bind_status'] == self::COURSE_BIND_STATUS_SUCCESS) {
-                        $courseStartTime = (count($payLessonList) - 1) * self::WEEK_TIMESTAMP + $collectionLearnRecord[0]['first_course_time'];
-                        $value['lesson_start_timestamp'] = $courseStartTime;
-                        if (isset($collectionLearnRecordByLessonId[$value['lesson_id']])) {
-                            $learn_status = $collectionLearnRecordByLessonId[$value['lesson_id']]['learn_status'];
-                        } else {
-                            if ($courseStartTime > $time) {
-                                $learn_status = self::LOCK_THE_CLASS;
-                            } elseif ($time >= $courseStartTime && $time <= ($courseStartTime + self::HALF_HOUR)) {
-                                $learn_status = self::GO_TO_THE_CLASS;
-                            } elseif ($time > ($courseStartTime + self::HALF_HOUR) && $courseStartTime < $subEndDay) {
-                                $learn_status = self::TO_MAKE_UP_LESSONS;
-                            }
-                        }
-                    //当前为取消报名状态
-                    } elseif ($collection[0]['collection_bind_status'] == self::COURSE_BIND_STATUS_CANCEL) {
-                        $courseStartTime = (count($payLessonList) - 1) * self::WEEK_TIMESTAMP + $collectionLearnRecord[0]['first_course_time'];
-                        $value['lesson_start_timestamp'] = $courseStartTime;
-                        if (isset($collectionLearnRecordByLessonId[$value['lesson_id']])) {
-                            $learn_status = $collectionLearnRecordByLessonId[$value['lesson_id']]['learn_status'];
-                        } else {
-                            if ($courseStartTime >= $collectionLearnRecord[0]['update_time'] || $courseStartTime > $subEndDay) {
-                                $learn_status = self::LOCK_THE_CLASS;
-                            } elseif ($time >= $courseStartTime && $time <= ($courseStartTime + self::HALF_HOUR)) {
-                                $learn_status = self::GO_TO_THE_CLASS;
-                            } elseif ($time > ($courseStartTime + self::HALF_HOUR) && $courseStartTime < $subEndDay) {
-                                $learn_status = self::TO_MAKE_UP_LESSONS;
-                            }
-                        }
-                    }
-                }
-                $lesson[] = [
-                    'lesson_id'              => $value['lesson_id'],
-                    'lesson_name'            => $value['lesson_name'],
-                    'learn_freeflag'         => $value['freeflag'],
-                    'learn_status'           => $learn_status,
-                    'learn_sort'             => $value['sort'],
-                    'lesson_start_timestamp' => $value['lesson_start_timestamp'] ?? 0,
-                ];
+        $collectionInfo = [
+            'signUpStatus'    => $collection[0]['collection_bind_status'],
+            'subEndDay'       => strtotime($collectionLearnRecord[0]['sub_end_date'] . " 23:59:59"),
+            'firstCourseTime' => $collectionLearnRecord[0]['first_course_time'] ?? 0,
+            'lastLearnTime'   => $collectionLearnRecord[0]['update_time'] ?? 0,
+        ];
+        foreach ($collection[0]['lessons'] as $value) {
+            if ($value['freeflag'] == true) {
+                $learnStatus = self::UNLOCK_THE_CLASS;
+                $freeLessonList[] = $value['lesson_id'];
+            } else {
+                $payLessonList[] = $value['lesson_id'];
+                $learnStatus = self::LOCK_THE_CLASS;
+                $recordLearnStatus = $collectionLearnRecordByLessonId[$value['lesson_id']]['learn_status'] ?? $learnStatus;
+                list($learnStatus, $value['lesson_start_timestamp']) = self::getLessonStatusAndTimestamp($collectionInfo, $payLessonList, $recordLearnStatus, $time);
             }
-            $lessonCount = isset($payLessonList) ? count($payLessonList) : 0;
+            $lesson[] = [
+                'lesson_id'              => $value['lesson_id'],
+                'lesson_name'            => $value['lesson_name'],
+                'learn_freeflag'         => $value['freeflag'],
+                'learn_status'           => $learnStatus,
+                'learn_sort'             => $value['sort'],
+                'lesson_start_timestamp' => $value['lesson_start_timestamp'] ?? 0,
+            ];
         }
+        $lessonCount = isset($payLessonList) ? count($payLessonList) : 0;
 
         foreach ($collection as $value) {
             $result = [
