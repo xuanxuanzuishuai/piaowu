@@ -343,7 +343,7 @@ class GiftCodeService
             'buyer' => $buyer,
             'code_status' => GiftCodeModel::CODE_STATUS_HAS_REDEEMED,
             'be_active_time[>]' => 0,
-            'ORDER' => ['be_active_time' => ['ASC']]
+            'ORDER' => ['be_active_time' => 'ASC']
         ]);
 
         $array = [];

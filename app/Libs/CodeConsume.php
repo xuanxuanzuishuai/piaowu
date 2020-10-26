@@ -24,7 +24,7 @@ class CodeConsume
                 $v->end = $v->activeTime + $v->duration * self::DAY;
             } else {
                 $prev = $this->list[$k - 1];
-                if (self::between($v->activeTime, $prev)) {
+                if ($v->activeTime <= $prev->end) {
                     $v->start = $prev->end + 1;
                 } else {
                     $v->start = $v->activeTime;
@@ -69,6 +69,8 @@ class CodeConsume
 
         if (self::between($now, $v)) {
             return [$v->id, intval(($now - $v->start) / self::DAY), intval(($v->end - $now) / self::DAY)];
+        } elseif ($now <= $v->start) {
+            return [$v->id, 0, $v->duration];
         }
         return [$v->id, $v->duration, 0];
     }
