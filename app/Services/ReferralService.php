@@ -9,20 +9,18 @@
 namespace App\Services;
 
 use App\Libs\AliOSS;
-use App\Libs\CHDB;
 use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
-use App\Libs\UserCenter;
 use App\Libs\Util;
-use App\Libs\WeChat\Helper;
 use App\Libs\WeChat\MsgErrorCode;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Libs\WeChat\WXBizDataCrypt;
 use App\Libs\WeChat\WXBizMsgCrypt;
+use App\Models\AIPlayRecordCHModel;
 use App\Models\AIPlayRecordModel;
 use App\Models\EmployeeModel;
 use App\Models\GiftCodeModel;
@@ -208,7 +206,11 @@ class ReferralService
                 's.uuid'
             ],
             [
-                'uw.open_id' => $openid
+                'uw.open_id'   => $openid,
+                'uw.user_type' => UserWeixinModel::USER_TYPE_STUDENT,
+                'uw.status'    => UserWeixinModel::STATUS_NORMAL,
+                'uw.busi_type' => UserWeixinModel::BUSI_TYPE_REFERRAL_MINAPP,
+                'uw.app_id'    => self::REFERRAL_MINIAPP_ID, // 转介绍小程序
             ]
         );
         if (!empty($mobile) && isset($mobile[0]['mobile'])) {
@@ -274,26 +276,12 @@ class ReferralService
      */
     public static function getReferrerPlayData($referrer_id)
     {
-        $chdb = new CHDB();
-        $sql  = "
-        SELECT
-           Max(score_final) AS max_score,
-           Min(score_final) AS min_score
-        FROM
-           {table}
-        WHERE
-           student_id = {id}
-        GROUP BY
-           score_id
-        HAVING
-           min_score > 0
-        ";
-        $result = $chdb->queryAll($sql, ['table' => AIPlayRecordModel::$table, 'id' => $referrer_id]);
         // 练习曲目数量
-        $numbers = AIPlayRecordModel::getAccumulateLessonCount($referrer_id);
+        $numbers = AIPlayRecordCHModel::getStudentLessonCount($referrer_id);
         // 练琴提升百分比
         $percentage = 0;
         $minScore = 1;
+        $result = AIPlayRecordCHModel::getStudentMaxAndMinScore($referrer_id);
         foreach ($result as $key => $value) {
             $diff = $value['max_score'] - $value['min_score'];
             if ($diff > $percentage) {
@@ -304,7 +292,7 @@ class ReferralService
         if (empty($percentage)) {
             return [$percentage, $numbers];
         }
-        return [intval($percentage / $minScore * 100), $numbers];
+        return [round($percentage / $minScore * 100), $numbers];
     }
 
     /**
@@ -360,6 +348,7 @@ class ReferralService
      * @param $mobile
      * @param $countryCode
      * @param $referrerId
+     * @param $channel
      * @return array
      */
     public static function register(
@@ -369,7 +358,8 @@ class ReferralService
         $sessionKey,
         $mobile,
         $countryCode,
-        $referrerId
+        $referrerId,
+        $channel = ''
     ) {
         if (!empty($encryptedData)) {
             $jsonMobile = self::decodeMobile($iv, $encryptedData, $sessionKey);
@@ -381,7 +371,7 @@ class ReferralService
 
         $stu = StudentModelForApp::getStudentInfo(null, $mobile);
         if (empty($stu)) {
-            list($lastId, $isNew, $uuid) = StudentServiceForApp::studentRegister($mobile, DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'NORMAL_STUDENT_INVITE_STUDENT'), null, $referrerId, $countryCode);
+            list($lastId, $isNew, $uuid) = StudentServiceForApp::studentRegister($mobile, $channel ?: DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'NORMAL_STUDENT_INVITE_STUDENT'), null, $referrerId, $countryCode);
             if (empty($lastId)) {
                 SimpleLogger::error('register fail from exam', ['mobile' => $mobile]);
                 return [$openId, $lastId, null];
@@ -527,15 +517,9 @@ class ReferralService
                 $data = $wx->getTempMedia('image', $assistant['wx_qr'], AliOSS::replaceCdnDomainForDss($assistant['wx_qr']));
 
                 if (!empty($data['media_id'])) {
-                    Helper::sendMsg(
-                        [
-                            'touser'  => (string)$ele->FromUserName,
-                            'msgtype' => 'image',
-                            'image'   => ['media_id'=>$data['media_id']]
-                        ],
-                        $config['app_id'],
-                        $config['app_secret']
-                    );
+                    $content = "请点击二维码后，长按二维码图片添加助教微信。若无法添加微信，请将二维码保存本地后，使用微信「扫一扫」添加助教微信";
+                    $wx->sendImage((string)$ele->FromUserName, $data['media_id']);
+                    $wx->sendText((string)$ele->FromUserName, $content);
                 }
                 return "success";
         }

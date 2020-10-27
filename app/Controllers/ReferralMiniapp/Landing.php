@@ -82,7 +82,7 @@ class Landing extends ControllerBase
             $list[$u][] = $item;
         });
         usort($hot['hot'], function ($a, $b) {
-            return $a['hot'] < $b['hot'];
+            return $a['hot'] > $b['hot'];
         });
         return HttpHelper::buildResponse($response, array_merge($hot, $list));
     }
@@ -130,6 +130,11 @@ class Landing extends ControllerBase
         if (!empty($params['sms_code']) && !CommonServiceForApp::checkValidateCode($params["mobile"], $params["sms_code"], $params["country_code"] ?? '')) {
             return $response->withJson(Valid::addAppErrors([], 'validate_code_error'), StatusCode::HTTP_OK);
         }
+        if (!empty($params['scene'])) {
+            parse_str($params['scene'], $sceneData);
+        } else {
+            $sceneData = [];
+        }
         list($openid, $lastId, $mobile, $uuid, $hadPurchased) = ReferralService::register(
             $this->ci['referral_landing_openid'],
             $params['iv'] ?? '',
@@ -137,7 +142,8 @@ class Landing extends ControllerBase
             $this->ci['referral_landing_session_key'],
             $params['mobile'] ?? '',
             $params['country_code'] ?? '',
-            $params['referrer'] ?? ''
+            $sceneData['r'] ?? '',
+            $sceneData['c'] ?? ''
         );
         return HttpHelper::buildResponse($response, ['openid' => $openid, 'last_id' => $lastId, 'mobile' => $mobile, 'uuid' => $uuid, 'had_purchased' => $hadPurchased]);
     }
