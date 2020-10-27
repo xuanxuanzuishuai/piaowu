@@ -27,8 +27,7 @@ class AIPlayRecordCHModel
   AND apr.hand =:hand 
   AND apr.score_final >=:rank_base_score 
   AND apr.end_time >=:start_time 
-  AND apr.end_time <:end_time 
-  AND apr.is_join_ranking = :is_join_ranking 
+  AND apr.end_time <:end_time  
 order by score_final desc, record_id desc 
 limit 1 by lesson_id, student_id 
 limit :rank_limit";

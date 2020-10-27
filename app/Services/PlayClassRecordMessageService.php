@@ -9,6 +9,7 @@
 namespace App\Services;
 
 
+use App\Libs\Constants;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Models\PlayClassRecordMessageModel;
@@ -102,6 +103,7 @@ class PlayClassRecordMessageService
             $message['student_id'] = $student['id'];
             $key = $_ENV['CHDB_REDDIS_PRE_KEY']. time();
             $redis = RedisDB::getConn($_ENV['CHDB_REDIS_DB']);
+            $message['is_join_ranking'] = $message['is_join_ranking'] ?? Constants::STATUS_TRUE;
             $redis->rpush($key, [json_encode($message)]);
             $redis->expire($key, 5);
         }
