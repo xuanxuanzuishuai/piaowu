@@ -7,6 +7,7 @@
  */
 
 namespace App\Services;
+use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
@@ -755,9 +756,22 @@ class CreditService
             return [$generalTask, 0];
         }
 
-        $taskId = EventTaskModel::getRecords(['status' => EventTaskModel::STATUS_NORMAL, 'event_id' => $activityInfo['id']],'id');
-        $finishTheTask = PointActivityRecordModel::getStudentFinishTheTask($studentId, $taskId);
+        $task = EventTaskModel::getRecords(['status' => EventTaskModel::STATUS_NORMAL, 'event_id' => $activityInfo['id']]);
+        $taskId = array_column($task, 'id');
 
+        $finishTheTaskDate = PointActivityRecordModel::getStudentFinishTheTask($studentId, $taskId);
+        if (empty($finishTheTaskDate)) {
+            return [$generalTask, 0];
+        }
+        $everyDayTaskCount = array_count_values(array_column($finishTheTaskDate, 'task_id'));
+
+        $finishTheTask = Constants::STATUS_FALSE;
+        foreach ($task as $item) {
+            $conditionInfo = json_decode($item['condition'], true);
+            if (!empty($everyDayTaskCount[$item['id']]) && $conditionInfo['every_day_count'] == $everyDayTaskCount[$item['id']]) {
+                $finishTheTask += 1;
+            }
+        }
         return [$generalTask, $finishTheTask];
     }
 
