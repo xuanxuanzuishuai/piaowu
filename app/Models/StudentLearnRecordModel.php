@@ -45,7 +45,7 @@ class StudentLearnRecordModel extends Model
     public static function getStudentLearnCalendar($studentId, $startTime)
     {
         $studentLearnRecord = self::$table;
-        $sql = "SELECT FROM_UNIXTIME(create_time, '%Y%m%d') class_record_time, count(*) class_record_count FROM {$studentLearnRecord} where student_id = :student_id and create_time > :start_time group by class_record_time";
+        $sql = "SELECT FROM_UNIXTIME(create_time, '%Y%m%d') class_record_time, count(*) class_record_count FROM {$studentLearnRecord} where student_id = :student_id and create_time >= :start_time group by class_record_time";
         $map = [
             ':student_id' => $studentId,
             ':start_time' => $startTime
