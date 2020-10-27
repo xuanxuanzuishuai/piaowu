@@ -46,14 +46,28 @@ limit :rank_limit";
         ];
         $aiPlayInfo = $chdb->queryAll($sql, $map);
         $returnInfo = [];
-        if (!empty($aiPlayInfo)) {
-            $allStudentId = array_unique(array_column($aiPlayInfo, 'student_id'));
-            $studentInfo = array_column(StudentModel::getRecords(['id' => $allStudentId], ['id', 'name', 'thumb']), NULL, 'id');
-            $returnInfo = array_map(function ($item) use($studentInfo){
-                $item['name'] = $studentInfo[$item['student_id']]['name'];
-                $item['thumb'] = $studentInfo[$item['student_id']]['thumb'];
-                return $item;
-            }, $aiPlayInfo);
+
+        if (empty($aiPlayInfo)) {
+            return $returnInfo;
+        }
+
+        $allStudentId = array_unique(array_column($aiPlayInfo, 'student_id'));
+        $students = StudentModel::getRecords([
+            'id' => $allStudentId,
+            'is_join_ranking' => StudentModel::STATUS_JOIN_RANKING_ABLE
+        ], ['id', 'name', 'thumb']);
+        $studentInfo = array_column($students, NULL, 'id');
+
+        foreach ($aiPlayInfo as $r) {
+            $sid = $r['student_id'];
+            if (empty($studentInfo[$sid])) {
+                continue;
+            }
+
+            $r['name'] = $studentInfo[$sid]['name'];
+            $r['thumb'] = $studentInfo[$sid]['thumb'];
+
+            $returnInfo[] = $r;
         }
         return $returnInfo;
     }
