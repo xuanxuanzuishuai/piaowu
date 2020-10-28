@@ -20,6 +20,7 @@ use App\Controllers\Org\Org;
 use App\Controllers\Org\OrgAccount as OrgAccount;
 use App\Controllers\Org\OrgLicense;
 use App\Controllers\OrgWeb\Activity;
+use App\Controllers\OrgWeb\Leave;
 use App\Controllers\OrgWeb\Message;
 use App\Controllers\OrgWeb\Admin;
 use App\Controllers\OrgWeb\Approval;
@@ -556,5 +557,11 @@ class OrgWebRouter extends RouterBase
         '/org_web/message/manual_last_push' => ['method' => ['get'], 'call' => Message::class . ':manualLastPush'],
         '/org_web/message/manual_push'      => ['method' => ['post'], 'call' => Message::class . ':manualPush'],
 
+        //学员请假
+        '/org_web/leave/list' => ['method' => ['get'], 'call' => Leave::class . ':getStudentLeaveList'],
+        '/org_web/leave/student_leave' => ['method' => ['post'], 'call' => Leave::class . ':studentLeave'],
+        '/org_web/leave/cancel_leave' => ['method' => ['post'], 'call' => Leave::class . ':cancelLeave'],
+        '/org_web/leave/leave_period' => ['method' => ['get'], 'call' => Leave::class . ':leavePeriod'],
+        '/org_web/leave/leave_status' => ['method' => ['get'], 'call' => Leave::class . ':leaveStatus'],
     ];
 }

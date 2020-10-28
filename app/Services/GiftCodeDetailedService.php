@@ -8,6 +8,7 @@ use App\Libs\Constants;
 use App\Libs\Util;
 use App\Models\GiftCodeDetailedModel;
 use App\Models\GiftCodeModel;
+use App\Models\PackageExtModel;
 use App\Models\StudentLeaveLogModel;
 use App\Models\StudentModelForApp;
 
@@ -99,7 +100,7 @@ class GiftCodeDetailedService
         //获取用户当前激活码的前一条数据
         $beforeGiftCodeDetailed = GiftCodeDetailedModel::getRecord(['apply_user' => $studentId, 'status' => Constants::STATUS_TRUE, 'id[<]' => $giftCodeDetailedInfo['id'], 'ORDER' => ['id' => 'DESC']]);
         if (empty($beforeGiftCodeDetailed)) {
-            $newCodeStartTime = $lastCodeEndTime = time();
+            $newCodeStartTime = $lastCodeEndTime = strtotime($giftCodeDetailedInfo['code_start_date']);
         } else {
             $newCodeStartTime = strtotime($beforeGiftCodeDetailed['code_end_date']) + 86400;
             $lastCodeEndTime = strtotime($beforeGiftCodeDetailed['code_end_date']);
@@ -108,42 +109,17 @@ class GiftCodeDetailedService
         //如果激活码开始使用时间大于今天，计算当前激活码已使用天数，并更新数据
         if ($giftCodeDetailedInfo['code_start_date'] < date('Ymd')) {
             $actualDays = Util::dateDiff($giftCodeDetailedInfo['code_start_date'], date('Ymd'));
-            $affectIdRows = GiftCodeDetailedModel::updateRecord($giftCodeDetailedInfo['id'],['actual_days' => $actualDays, 'update_time' => time()]);
+            $affectIdRows = GiftCodeDetailedModel::updateRecord($giftCodeDetailedInfo['id'], ['actual_days' => $actualDays, 'update_time' => time()]);
         }
 
         //用户当前激活码之后的所有激活码更改为废除
-        $delGiftCodeDetailedIds =  array_column($afterGiftCodeDetailedData,  'id');
+        $delGiftCodeDetailedIds = array_column($afterGiftCodeDetailedData, 'id');
         $affectIdsRows = GiftCodeDetailedModel::batchUpdateRecord(['status' => Constants::STATUS_FALSE, 'update_time' => time()], ['id' => $delGiftCodeDetailedIds]);
 
         if ($affectIdsRows && $affectIdRows) {
             return [null, $afterGiftCodeDetailedData, $newCodeStartTime, $lastCodeEndTime];
         }
         return ['update_gift_code_error'];
-    }
-
-    /**
-     * 取消请假
-     * @param $studentId
-     * @param $codeId
-     * @param $cancelOperator //取消操作人，为空说明系统取消
-     * @param $cancelOperatorType //取消请假操作人类型 1课管  2用户 3系统（用户退费）
-     * @return bool
-     */
-    public static function cancelLeave($studentId, $codeId, $cancelOperatorType, $cancelOperator = Constants::STATUS_FALSE)
-    {
-        $studentLeaveInfo = StudentLeaveLogModel::getRecord(['student_id' => $studentId, 'gift_code_id' => $codeId, 'leave_status' => StudentLeaveLogModel::STUDENT_LEAVE_STATUS_NORMAL]);
-        if (empty($studentLeaveInfo)) return true;
-
-        //请假开始时间小于当前时间戳，计算实际请假天数
-        if ($studentLeaveInfo['start_leave_time'] < time()) {
-            $actualDays = Util::dateDiff(strtotime('Y-m-d', $studentLeaveInfo['start_leave_time']), strtotime('Y-m-d', time()));
-        } else {
-            $actualDays = Constants::STATUS_FALSE;
-        }
-
-        $affectStudentLeaveRows = StudentLeaveLogModel::updateRecord($studentLeaveInfo['id'], ['leave_status' => StudentLeaveLogModel::STUDENT_LEAVE_STATUS_CANCEL, 'actual_end_time' => time(), 'actual_days' => $actualDays, 'cancel_time' => time(), 'cancel_operator_type' => $cancelOperatorType, 'cancel_operator' => $cancelOperator]);
-
-        return $affectStudentLeaveRows && $affectStudentLeaveRows > 0;
     }
 
 
@@ -174,7 +150,7 @@ class GiftCodeDetailedService
 
             if (!empty($accountData)) {
                 $lastData = array_pop($accountData);
-                array_push($accountData,$lastData);
+                array_push($accountData, $lastData);
                 $codeStartTime = strtotime($lastData['code_end_date']) + 86400;
                 $lastCodeEndTime = strtotime($lastData['code_end_date']);
             }
@@ -198,6 +174,173 @@ class GiftCodeDetailedService
             $affectDataRows = Constants::STATUS_TRUE;
         }
         return $affectDataRows;
+    }
+
+    /**
+     * 学生请假更改每个激活码的开始&结束时间，并且从新入库
+     * @param $studentId
+     * @param $giftCodeId
+     * @param $leaveDays //请假天数
+     * @return bool|int
+     */
+    public static function studentLeaveGiftCode($studentId, $giftCodeId, $leaveDays)
+    {
+        //请假之后所有的激活码，改为废除，并且获取需要重新计算时间的激活码
+        list($errorCode, $giftCodeData, $codeStartTime, $lastCodeEndTime) = self::updateGiftCodeInfo($studentId, $giftCodeId);
+        if (!empty($errorCode)) {
+            return Constants::STATUS_FALSE;
+        }
+
+        if (empty($giftCodeData)) {
+            return Constants::STATUS_TRUE;
+        }
+
+        $accountData = [];
+        foreach ($giftCodeData as $giftCodeDetailed) {
+            if ($giftCodeDetailed['gift_code_id'] == $giftCodeId)  {
+                $giftCodeDetailed['valid_days'] += $leaveDays;
+            }
+
+            $timeStr = '+' . $giftCodeDetailed['valid_days'] . 'day';
+
+            if (!empty($accountData)) {
+                $lastData = array_pop($accountData);
+                array_push($accountData,$lastData);
+                $codeStartTime = strtotime($lastData['code_end_date']) + 86400;
+                $lastCodeEndTime = strtotime($lastData['code_end_date']);
+            }
+
+            $account = [
+                'gift_code_id' => $giftCodeDetailed['gift_code_id'],
+                'apply_user' => $giftCodeDetailed['apply_user'],
+                'code_start_date' => date('Ymd', $codeStartTime),
+                'code_end_date' => date('Ymd', strtotime($timeStr, $lastCodeEndTime)),
+                'package_type' => $giftCodeDetailed['package_type'],
+                'valid_days' => $giftCodeDetailed['valid_days'],
+                'create_time' => time(),
+                'status' => Constants::STATUS_TRUE,
+            ];
+            $accountData[] = $account;
+        }
+        if (!empty($accountData)) {
+            $affectDataRows = GiftCodeDetailedModel::batchInsert($accountData);
+        } else {
+            $affectDataRows = Constants::STATUS_TRUE;
+        }
+        return $affectDataRows;
+    }
+
+    /**
+     * 学生取消请假
+     * @param $studentId
+     * @param $giftCodeId
+     * @param $leaveSurplusDays //请假剩余天数
+     * @return bool|int
+     */
+    public static function studentCancelGiftCode($studentId, $giftCodeId, $leaveSurplusDays)
+    {
+        //取消之后所有的激活码，改为废除，并且获取需要重新计算时间的激活码
+        list($errorCode, $giftCodeData, $codeStartTime, $lastCodeEndTime) = self::updateGiftCodeInfo($studentId, $giftCodeId);
+        if (!empty($errorCode)) {
+            return Constants::STATUS_FALSE;
+        }
+
+        if (empty($giftCodeData)) {
+            return Constants::STATUS_TRUE;
+        }
+
+        $accountData = [];
+        foreach ($giftCodeData as $giftCodeDetailed) {
+            //取消请假的激活码，请假天数减去剩余天数
+            if ($giftCodeDetailed['gift_code_id'] == $giftCodeId)  {
+                $giftCodeDetailed['valid_days'] -= $leaveSurplusDays;
+            }
+
+            $timeStr = '+' . $giftCodeDetailed['valid_days'] . 'day';
+
+            if (!empty($accountData)) {
+                $lastData = array_pop($accountData);
+                array_push($accountData,$lastData);
+                $codeStartTime = strtotime($lastData['code_end_date']) + 86400;
+                $lastCodeEndTime = strtotime($lastData['code_end_date']);
+            }
+
+            $account = [
+                'gift_code_id' => $giftCodeDetailed['gift_code_id'],
+                'apply_user' => $giftCodeDetailed['apply_user'],
+                'code_start_date' => date('Ymd', $codeStartTime),
+                'code_end_date' => date('Ymd', strtotime($timeStr, $lastCodeEndTime)),
+                'package_type' => $giftCodeDetailed['package_type'],
+                'valid_days' => $giftCodeDetailed['valid_days'],
+                'create_time' => time(),
+                'status' => Constants::STATUS_TRUE,
+            ];
+            $accountData[] = $account;
+        }
+        if (!empty($accountData)) {
+            $affectDataRows = GiftCodeDetailedModel::batchInsert($accountData);
+        } else {
+            $affectDataRows = Constants::STATUS_TRUE;
+        }
+        return $affectDataRows;
+    }
+
+    /**
+     * 取消请假，更新请假记录表
+     * @param $studentId
+     * @param $codeId
+     * @param $cancelOperator //取消操作人，为空说明系统取消
+     * @param $cancelOperatorType //取消请假操作人类型 1课管  2用户 3系统（用户退费）
+     * @return bool
+     */
+    public static function cancelLeave($studentId, $codeId, $cancelOperatorType, $cancelOperator = Constants::STATUS_FALSE)
+    {
+        $studentLeaveInfo = StudentLeaveLogModel::getRecord(['student_id' => $studentId, 'gift_code_id' => $codeId, 'leave_status' => StudentLeaveLogModel::STUDENT_LEAVE_STATUS_NORMAL]);
+        if (empty($studentLeaveInfo)) {
+            return true;
+        }
+
+        //请假开始时间小于当前时间戳，计算实际请假天数
+        if ($studentLeaveInfo['start_leave_time'] < time()) {
+            $actualDays = Util::dateDiff(date('Y-m-d', $studentLeaveInfo['start_leave_time']), date('Y-m-d', time()));
+        } else {
+            $actualDays = Constants::STATUS_FALSE;
+        }
+
+        $affectStudentLeaveRows = StudentLeaveLogModel::updateRecord($studentLeaveInfo['id'], ['leave_status' => StudentLeaveLogModel::STUDENT_LEAVE_STATUS_CANCEL, 'actual_end_time' => time(), 'actual_days' => $actualDays, 'cancel_time' => time(), 'cancel_operator_type' => $cancelOperatorType, 'cancel_operator' => $cancelOperator]);
+
+        return $affectStudentLeaveRows && $affectStudentLeaveRows > 0;
+    }
+
+    /**
+     * 判断用户请假的开始时间是否在年卡范围内
+     * @param $studentId
+     * @param $startLeaveDate
+     * @return bool
+     */
+    public static function startLeaveDateIsYear($studentId, $startLeaveDate)
+    {
+        $giftCodeId = "";
+        $studentYearGiftCodes = GiftCodeDetailedModel::getRecords(['apply_user' => $studentId, 'status' => Constants::STATUS_TRUE, 'package_type' => PackageExtModel::PACKAGE_TYPE_NORMAL]);
+
+        foreach ($studentYearGiftCodes as $studentYearGiftCode) {
+            if ($startLeaveDate >= $studentYearGiftCode['code_start_date'] && $startLeaveDate <= $studentYearGiftCode['code_end_date']) {
+                $giftCodeId = $studentYearGiftCode['gift_code_id'];
+                continue;
+            }
+        }
+        return $giftCodeId;
+    }
+
+    /**
+     * 获取学生正常激活码的状态
+     * @param $studentId
+     * @return array
+     */
+    public static function getStudentLeavePeriod($studentId)
+    {
+        $studentLeavePeriod = GiftCodeDetailedModel::getRecords(['apply_user' => $studentId, 'status' => Constants::STATUS_TRUE]);
+        return $studentLeavePeriod ?? [];
     }
 
 }
