@@ -131,7 +131,7 @@ class Landing extends ControllerBase
             return $response->withJson(Valid::addAppErrors([], 'validate_code_error'), StatusCode::HTTP_OK);
         }
         if (!empty($params['scene'])) {
-            parse_str($params['scene'], $sceneData);
+            parse_str(urldecode($params['scene']), $sceneData);
         } else {
             $sceneData = [];
         }

@@ -230,6 +230,7 @@ class UserService
     public static function getMiniappQrImage($appid, $params = [])
     {
         $userQrTicket      = $params['r'] ?? '';
+        $channelId         = $params['c'] ?? '';
         $weChatAppIdSecret = WeChatService::getWeCHatAppIdSecret($appid, UserWeixinModel::USER_TYPE_STUDENT);
         $wx                = WeChatMiniPro::factory(['app_id' => $weChatAppIdSecret['app_id'], 'app_secret' => $weChatAppIdSecret['secret']]);
         $data = [];
@@ -250,7 +251,7 @@ class UserService
             SimpleLogger::error('save miniapp code image file error', [$userQrTicket]);
             return $data;
         }
-        $imageUrl = $_ENV['ENV_NAME'] . '/' . AliOSS::DIR_MINIAPP_CODE . '/' . md5($userQrTicket) . ".png";
+        $imageUrl = $_ENV['ENV_NAME'] . '/' . AliOSS::DIR_MINIAPP_CODE . '/' . md5($userQrTicket.$channelId) . ".png";
         AliOSS::uploadFile($imageUrl, $tmpFileFullPath);
         unlink($tmpFileFullPath);
         return $imageUrl;
