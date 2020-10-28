@@ -246,12 +246,12 @@ class InteractiveClassroomService
             return 0;
         }
 
-        $startTimeToTimestamp = strtotime(date('Y-m-d', $firstCourseTime + self::ONE_DAY));
+        $startTimeToTimestamp = strtotime(date('Y-m-d', $firstCourseTime));
         $endTimeToTimestamp = strtotime(date('Y-m-d', $timestamp));
         if ($endTimeToTimestamp < $startTimeToTimestamp) {
             return false;
         }
-        $diff = gmstrftime('%e', $endTimeToTimestamp - $startTimeToTimestamp) / 7;
+        $diff = ($endTimeToTimestamp - $startTimeToTimestamp) / self::WEEK_TIMESTAMP;
         if (!is_int($diff)) {
             return false;
         }
@@ -299,7 +299,10 @@ class InteractiveClassroomService
         $lessonCoverList = self::getLessonCovers($opn,$collectionIds);
         $lessonListWithCollection = self::getLessonIds($opn, $collectionIds);
         foreach ($lastRecord as $value) {
-            $sort = self::getSort($value['first_course_time'], $timestamp) ?: 0;
+            $sort = self::getSort($value['first_course_time'], $timestamp);
+            if ($sort === false){
+                continue;
+            }
             $lessonIds[] = $lessonListWithCollection[$value['collection_id']]['payLessonList'][$sort];
         }
         if (empty($lessonIds)) {
