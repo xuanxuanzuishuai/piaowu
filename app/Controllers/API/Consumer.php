@@ -27,9 +27,9 @@ use App\Services\Queue\TableSyncTopic;
 use App\Services\Queue\ThirdPartBillTopic;
 use App\Services\ReferralActivityService;
 use App\Libs\TableSyncQueue;
+use App\Services\StudentLoginService;
 use App\Services\StudentService;
 use App\Services\ThirdPartBillService;
-use App\Services\TrackService;
 use App\Services\VoiceCall\VoiceCallTRService;
 use App\Services\WeChat\NewWeChatService;
 use Slim\Http\Request;
@@ -195,6 +195,9 @@ class Consumer extends ControllerBase
                 break;
             case PushMessageTopic::EVENT_PUSH_MANUAL_RULE_WX:
                 MessageService::realSendManualMessage($params['msg_body']);
+                break;
+            case PushMessageTopic::EVENT_STUDENT_LOGIN:
+                StudentLoginService::handleLoginInfo($params['msg_body']);
                 break;
             default:
                 SimpleLogger::error('consume_push_message', ['unknown_event_type' => $params['event_type']]);

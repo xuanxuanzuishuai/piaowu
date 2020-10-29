@@ -22,6 +22,7 @@ class PushMessageTopic extends BaseTopic
     const EVENT_PUSH_RULE_WX = 'push_rule_wx'; //自动推送微信
     const EVENT_PUSH_MANUAL_RULE_WX = 'push_manual_rule_wx'; //手动推送微信
     const EVENT_COURSE_MANAGE_NEW_LEADS = 'course_manage_new_leads'; // 正式课新线索分配课管推送微信消息
+    const EVENT_STUDENT_LOGIN = 'student_login'; // 学生登录事件
 
     public function __construct($publishTime = null)
     {
@@ -114,6 +115,19 @@ class PushMessageTopic extends BaseTopic
      * @return $this
      */
     public function courseManageNewLeadsPushWx($data, $eventType = self::EVENT_COURSE_MANAGE_NEW_LEADS)
+    {
+        $this->setEventType($eventType);
+        $this->setMsgBody($data);
+        return $this;
+    }
+
+    /**
+     * 学员从移动端登录记录login信息
+     * @param $data
+     * @param string $eventType
+     * @return $this
+     */
+    public function studentLoginByApp($data, $eventType = self::EVENT_STUDENT_LOGIN)
     {
         $this->setEventType($eventType);
         $this->setMsgBody($data);

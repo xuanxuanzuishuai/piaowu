@@ -169,6 +169,7 @@ class OrgWebRouter extends RouterBase
         '/student/student/searchList' => array('method' => array('get'), 'call' => '\App\Controllers\Student\Student:searchList'),
         '/student/student/allotCollection' => array('method' => array('post'), 'call' => '\App\Controllers\Student\Student:allotCollection'),
         '/student/student/allotAssistant' => array('method' => array('post'), 'call' => '\App\Controllers\Student\Student:allotAssistant'),
+        '/org_web/student/brushList' => array('method' => array('get'), 'call' => '\App\Controllers\Student\Student:brushList'),
         '/org_web/channel/getChannels' => array('method' => array('get'), 'call' => '\App\Controllers\Student\Student:getSChannels'),
         '/org_web/student/syncDataToCrm' => ['method' => ['post'], 'call' => OrgWebStudent::class . ':syncDataToCrm'],
         '/org_web/student/allot_course_manage' => ['method' => ['post'], 'call' => OrgWebStudent::class . ':allotCourseManage'],

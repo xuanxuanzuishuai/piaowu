@@ -14,6 +14,8 @@ use App\Libs\Valid;
 use App\Models\StudentModel;
 use App\Models\StudentModelForApp;
 use App\Services\CommonServiceForApp;
+use App\Services\Queue\QueueService;
+use App\Services\StudentLoginService;
 use App\Services\StudentServiceForApp;
 use App\Services\TrackService;
 use Slim\Http\Request;
@@ -83,9 +85,14 @@ class Auth extends ControllerBase
             $response = $response->withHeader('app-review', 1);
         }
 
+        $params['token'] = $loginData['token'];
+        QueueService::studentLoginByApp($params);
+
+        $loginData['probable_brush'] = StudentLoginService::getStudentBrush($loginData['id']);
+
         return $response->withJson([
-            'code'=> Valid::CODE_SUCCESS,
-            'data'=> $loginData,
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $loginData,
         ], StatusCode::HTTP_OK);
     }
 
@@ -134,6 +141,8 @@ class Auth extends ControllerBase
         if (in_array($reviewFlagId, $loginData['flags'])) {
             $response = $response->withHeader('app-review', 1);
         }
+
+        $loginData['probable_brush'] = StudentLoginService::getStudentBrush($loginData['id']);
 
         return $response->withJson([
             'code'=> Valid::CODE_SUCCESS,

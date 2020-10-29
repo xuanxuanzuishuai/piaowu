@@ -21,6 +21,7 @@ use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Libs\Util;
 use App\Libs\Valid;
+use App\Models\AppleDevicesModel;
 use App\Models\CollectionModel;
 use App\Models\DeptPrivilegeModel;
 use App\Models\EmployeeModel;
@@ -29,6 +30,7 @@ use App\Models\PackageExtModel;
 use App\Models\ReviewCourseModel;
 use App\Models\SharePosterModel;
 use App\Models\StudentAssistantLogModel;
+use App\Models\StudentBrushModel;
 use App\Models\StudentCollectionLogModel;
 use App\Models\StudentModel;
 use App\Models\StudentOrgModel;
@@ -507,7 +509,9 @@ class StudentService
         $refereeInfo = self::getStudentReferee($student['uuid'], "referrer_uuid");
         //获取学生注册渠道
         $channel = self::getStudentChannel($student['channel_id']);
-        return self::formatStudentInfo($student, $studentWeChatInfo, $refereeInfo, $channel);
+        //获取学生刷单信息
+        $brush = StudentLoginService::getStudentBrush($studentId);
+        return self::formatStudentInfo($student, $studentWeChatInfo, $refereeInfo, $channel, $brush);
     }
 
     /**
@@ -537,9 +541,10 @@ class StudentService
      * @param $studentWeChatInfo
      * @param $refereeInfo
      * @param $channel
+     * @param $brush
      * @return array
      */
-    public static function formatStudentInfo($student, $studentWeChatInfo, $refereeInfo, $channel)
+    public static function formatStudentInfo($student, $studentWeChatInfo, $refereeInfo, $channel, $brush)
     {
         $data = [];
         $data['student_id'] = $student['id'];
@@ -568,6 +573,7 @@ class StudentService
         $data['sync_status'] = $student['sync_status'];
         $data['course_manage_name'] = $student['course_manage_name'];
         $data['thumb'] = $student['thumb'] ? AliOSS::replaceCdnDomainForDss($student["thumb"]) : AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb'));
+        $data['probable_brush'] = $brush;
         return $data;
     }
 
@@ -727,6 +733,14 @@ class StudentService
         $stepMap = DictService::getTypeMap(Constants::DICT_TYPE_REVIEW_COURSE_STATUS);
         $remarkStatusMap = DictService::getTypeMap(Constants::DICT_TYPE_STUDENT_REMARK_STATUS);
 
+        //获取刷单信息
+        $studentIds = array_keys(array_column($list,null,'student_id'));
+        $brushStudentIds = StudentBrushModel::getRecords(['student_id'=>$studentIds],['student_id'],false);
+        $brushStudentIdArray = [];
+        if (!empty($brushStudentIds)){
+            $brushStudentIdArray = array_keys(array_column($brushStudentIds,null,'student_id'));
+        }
+
         // 格式化学生数据
         foreach($list as $item){
             $row = [];
@@ -751,6 +765,7 @@ class StudentService
             $row['wechat_account'] = $item['wechat_account'];
             $row['course_manage_name'] = $item['course_manage_name'];
             $row['serve_app_id'] = $item['serve_app_id'];
+            $row['probable_brush'] = in_array($item['student_id'], $brushStudentIdArray);
             $data[] = $row;
         }
         return $data;

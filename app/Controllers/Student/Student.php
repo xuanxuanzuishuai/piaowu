@@ -26,6 +26,7 @@ use App\Services\CallCenterLogService;
 use App\Services\ChannelService;
 use App\Services\FlagsService;
 use App\Services\StudentAccountService;
+use App\Services\StudentLoginService;
 use App\Services\StudentService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -874,6 +875,40 @@ class Student extends ControllerBase
             $db->commit();
         }
         return $response->withJson($res);
+    }
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * 获取某一用户刷单列表
+     */
+    public function brushList(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        $rules = [
+            [
+                'key'        => 'student_id',
+                'type'       => 'required',
+                'error_code' => 'student_id_is_required',
+            ],
+            [
+                'key'        => 'student_id',
+                'type'       => 'integer',
+                'error_code' => 'student_id_must_be_integer'
+            ]
+        ];
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $data = StudentLoginService::getStudentBrushList($params['student_id']);
+
+        if (empty($data)) {
+            $errorResult = Valid::addErrors([], 'student_id', 'student_not_exist');
+            return HttpHelper::buildOrgWebErrorResponse($response, $errorResult['data']['errors']);
+        }
+        return HttpHelper::buildResponse($response, $data);
     }
 
     /**

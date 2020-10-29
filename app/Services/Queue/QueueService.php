@@ -102,6 +102,23 @@ class QueueService
     }
 
     /**
+     * 用户在移动端登录数据推送
+     * @param $syncData
+     * @return bool
+     */
+    public static function studentLoginByApp($syncData)
+    {
+        try {
+            $topic = new PushMessageTopic();
+            $topic->studentLoginByApp($syncData)->publish();
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), $syncData);
+            return false;
+        }
+        return true;
+    }
+
+    /**
      * 给微信用户推送活动消息
      * @param $students
      * @param $guideWord
