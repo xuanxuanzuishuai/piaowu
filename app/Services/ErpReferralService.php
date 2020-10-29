@@ -16,6 +16,7 @@ use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\EmployeeModel;
+use App\Models\EventTaskModel;
 use App\Models\GiftCodeModel;
 use App\Models\PackageExtModel;
 use App\Models\StudentModel;
@@ -40,11 +41,28 @@ class ErpReferralService
     const EXPECT_FIRST_NORMAL      = 4; //首购智能正式课
     const EXPECT_UPLOAD_SCREENSHOT = 5; //上传截图审核通过
 
-    /** 转介绍阶段任务 */
+    const EXPECT_REISSUE_TRAIL_5 = 6; //补|转介绍付费体验卡-5元
+    const EXPECT_REISSUE_TRAIL_10 = 7; //补|转介绍付费体验卡-10元
+    const EXPECT_REISSUE_YEAR_100 = 8; //补|转介绍付费年卡-100元
+    const EXPECT_REISSUE_YEAR_200 = 9; //补|转介绍付费年卡-200元
+    const EXPECT_REISSUE_YEAR_50 = 10; //补|转介绍首购年卡-50元
+    const EXPECT_REISSUE_POSTER_10 = 11; //补|上传截图活动-10元
+    const EXPECT_REISSUE_RETURN_MONEY_49 = 12; //补|返现活动-49元
+
+    /** 阶段任务对应的任务id */
     const EVENT_TASK_ID_REGISTER       = [200, 1];          // 注册
     const EVENT_TASK_ID_TRIAL_PAY      = [201, 203, 52, 2]; // 体验支付
     const EVENT_TASK_ID_PAY            = [202, 204, 53, 3]; // 支付
     const EVENT_TASK_UPLOAD_SCREENSHOT = [];                // 上传截图审核通过任务,通过getEventTasksList动态获取
+
+    const EVENT_TASK_ID_REISSUE_TRAIL_5 = [209]; //体验卡补发5元
+    const EVENT_TASK_ID_REISSUE_TRAIL_10 = [210]; //体验课补10
+    const EVENT_TASK_ID_REISSUE_YEAR_100 = [211]; //年卡补100
+    const EVENT_TASK_ID_REISSUE_YEAR_200 = [212]; //年卡补200
+    const EVENT_TASK_ID_REISSUE_YEAR_50 = [213]; //年卡补50
+    const EVENT_TASK_ID_REISSUE_POSTER_10 = [214]; //上传截图补10
+    const EVENT_TASK_ID_REISSUE_RETURN_MONEY_49 = [215]; //返现补49
+
     /**
      * 此属性用于和前端交互时的对应
      */
@@ -60,6 +78,17 @@ class ErpReferralService
     const REFEREE_EVENT_TASKS = [
         self::EXPECT_FIRST_NORMAL      => '首购智能正式课',
         self::EXPECT_UPLOAD_SCREENSHOT => '上传截图审核通过',
+    ];
+
+    //补发红包相关
+    const REISSUE_CASH_AWARD = [
+        self::EXPECT_REISSUE_TRAIL_5 => '补|转介绍付费体验卡-5元',
+        self::EXPECT_REISSUE_TRAIL_10 => '补|转介绍付费体验卡-10元',
+        self::EXPECT_REISSUE_YEAR_100 => '补|转介绍付费年卡-100元',
+        self::EXPECT_REISSUE_YEAR_200 => '补|转介绍付费年卡-200元',
+        self::EXPECT_REISSUE_YEAR_50 => '补|转介绍首购年卡-50元',
+        self::EXPECT_REISSUE_POSTER_10 => '补|上传截图活动-10元',
+        self::EXPECT_REISSUE_RETURN_MONEY_49 => '补|返现活动-49元'
     ];
 
     /** 任务状态 */
@@ -97,6 +126,15 @@ class ErpReferralService
     //专属海报参加人数
     const PERSONAL_POSTER_ATTEND_NUM_KEY = 'personal_poster_attend_num_key';
 
+    public static function getAwardNode($source)
+    {
+        $awardNodeArr = [
+            'referee' => array_merge(self::REFEREE_EVENT_TASKS, self::REISSUE_CASH_AWARD),
+            'reissue_award' => self::REISSUE_CASH_AWARD
+        ];
+        return empty($awardNodeArr[$source]) ? self::EVENT_TASKS : $awardNodeArr[$source];
+    }
+
     /**
      * @param $taskId
      * @return int
@@ -112,6 +150,41 @@ class ErpReferralService
             return self::EXPECT_YEAR_PAY;
         } else {
             return 0;
+        }
+    }
+
+    /**
+     * @param $expectTaskId
+     * @return array
+     * 通过节点返回各个节点对应的所有的奖励
+     */
+    public static function getExpectTaskIdRelateAward($expectTaskId)
+    {
+        $taskIdArr = self::expectTaskRelateRealTask($expectTaskId);
+        $taskInfo = EventTaskModel::getRecords(['id' => $taskIdArr]);
+        $awardArr = [];
+        array_map(function ($item) use(&$awardArr){
+            $award = json_decode($item['award'], true)['awards'];
+            foreach ($award as $v) {
+                $awardArr[] = ['real_task_id' => $item['id'], 'award' => self::formatAward($v)];
+            }
+        }, $taskInfo);
+        return $awardArr;
+    }
+
+    /**
+     * @param $award
+     * @return string
+     * 格式化奖励
+     */
+    public static function formatAward($award)
+    {
+        if ($award['type'] == self::AWARD_TYPE_CASH) {
+            return $award['amount'] / 100 . '元';
+        } elseif ($award['type'] == self::AWARD_TYPE_SUBS) {
+            return $award['amount'] .  '天';
+        } else {
+            return '';
         }
     }
 
@@ -575,7 +648,7 @@ class ErpReferralService
                 'award_status' => $award['award_status'],
                 'award_status_zh' => $award['award_status_zh'],
                 'award_amount' => $award['award_type'] == self::AWARD_TYPE_CASH ? ($award['award_amount'] / 100) : $award['award_amount'],
-                'fail_reason_zh' => isset($relateAwardStatusArr[$award['user_event_task_award_id']]) ? WeChatAwardCashDealModel::getWeChatErrorMsg($relateAwardStatusArr[$award['user_event_task_award_id']]['result_code']) : '',
+                'fail_reason_zh' => $award['award_status'] == self::AWARD_STATUS_GIVE_FAIL ? WeChatAwardCashDealModel::getWeChatErrorMsg($relateAwardStatusArr[$award['user_event_task_award_id']]['result_code']) : '',
                 'award_type' => $award['award_type'],
                 'create_time' => $award['create_time'],
                 'review_time' => $award['review_time'],
@@ -600,7 +673,7 @@ class ErpReferralService
      * @return false|int[]|string[]
      * 前端传期望看到的task和实际对应的task关系
      */
-    private static function expectTaskRelateRealTask($expectTaskId)
+    public static function expectTaskRelateRealTask($expectTaskId)
     {
         $eventTask = self::getEventTasksList(0, self::EVENT_TYPE_UPLOAD_POSTER);
         $arr = [
@@ -609,6 +682,13 @@ class ErpReferralService
             self::EXPECT_YEAR_PAY          => self::EVENT_TASK_ID_PAY,
             self::EXPECT_FIRST_NORMAL      => self::EVENT_TASK_ID_PAY,
             self::EXPECT_UPLOAD_SCREENSHOT => array_column($eventTask, 'id'),
+            self::EXPECT_REISSUE_TRAIL_5   => self::EVENT_TASK_ID_REISSUE_TRAIL_5,
+            self::EXPECT_REISSUE_TRAIL_10  => self::EVENT_TASK_ID_REISSUE_TRAIL_10,
+            self::EXPECT_REISSUE_YEAR_100  => self::EVENT_TASK_ID_REISSUE_YEAR_100,
+            self::EXPECT_REISSUE_YEAR_200  => self::EVENT_TASK_ID_REISSUE_YEAR_200,
+            self::EXPECT_REISSUE_YEAR_50   => self::EVENT_TASK_ID_REISSUE_YEAR_50,
+            self::EXPECT_REISSUE_POSTER_10 => self::EVENT_TASK_ID_REISSUE_POSTER_10,
+            self::EXPECT_REISSUE_RETURN_MONEY_49 => self::EVENT_TASK_ID_REISSUE_RETURN_MONEY_49
         ];
         return $arr[$expectTaskId] ?? explode(',', $expectTaskId);
     }
@@ -724,7 +804,7 @@ class ErpReferralService
                     //仅现金,且未发放/已发放失败,且满足奖励延迟时间限制可调用
                     if ($award['award_type'] == self::AWARD_TYPE_CASH
                         && in_array($award['status'], [self::AWARD_STATUS_WAITING, self::AWARD_STATUS_GIVE_FAIL])
-                        && $award['create_time'] + $award['delay'] < $time
+                        && $award['create_time'] + $award['delay'] <= $time
                     ) {
                         list($baseAwardId, $dealStatus) = CashGrantService::cashGiveOut($award['uuid'], $award['award_id'], $award['award_amount'], $reviewerId, $keyCode);
                         //重试操作无变化，无须更新erp

@@ -9,8 +9,10 @@
 namespace App\Controllers\Employee;
 
 use App\Controllers\ControllerBase;
+use App\Libs\Code;
 use App\Libs\Constants;
 use App\Libs\Dict;
+use App\Libs\DingDing;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\MysqlDB;
@@ -696,6 +698,82 @@ class Employee extends ControllerBase
             'code' => Valid::CODE_SUCCESS,
             'data' => []
         ]);
+    }
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * 设置钉钉手机号
+     */
+    public function setDingMobile(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'user_id',
+                'type' => 'required',
+                'error_code' => 'user_id_is_required'
+            ],
+            [
+                'key' => 'mobile',
+                'type' => 'required',
+                'error_code' => 'mobile_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, 200);
+        }
+        try {
+            $employeeInfo = EmployeeModel::getById($params['user_id']);
+            $data = (new DingDing())->bindMobile(['uuid' => $employeeInfo['uuid'], 'mobile' => $params['mobile']]);
+            if ($data['code'] != Valid::CODE_SUCCESS) {
+                throw new RunTimeException(['has_bind_other']);
+            }
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
+        return HttpHelper::buildResponse($response, []);
+
+    }
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * 解除钉钉手机号
+     */
+    public function delDingMobile(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'user_id',
+                'type' => 'required',
+                'error_code' => 'user_id_is_required'
+            ],
+            [
+                'key' => 'mobile',
+                'type' => 'required',
+                'error_code' => 'mobile_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, 200);
+        }
+        try {
+            $employeeInfo = EmployeeModel::getById($params['user_id']);
+            $data = (new DingDing())->delBindMobile(['uuid' => $employeeInfo['uuid'], 'mobile' => $params['mobile']]);
+            if ($data['code'] != Valid::CODE_SUCCESS) {
+                throw new RunTimeException(['not_bind']);
+            }
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
+        return HttpHelper::buildResponse($response, []);
+
     }
 
 

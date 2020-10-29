@@ -12,6 +12,7 @@ use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\Dict;
 use App\Libs\DictConstants;
+use App\Libs\DingDing;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\JWTUtils;
 use App\Libs\SimpleLogger;
@@ -168,7 +169,9 @@ class EmployeeService
         list($seats, $inuseSeatType) = self::getEmployeeSeat($userId);
         $user['seats'] = $seats;
         $user['inuse_seat_type'] = $inuseSeatType;
-
+        //绑定钉钉信息
+        $dingDingMobileInfo = (new DingDing())->getMobileByUuid(['uuid' => $user['uuid']]);
+        $user['ding_ding'] = ['mobile' => $dingDingMobileInfo['data']['mobile'] ?? ''];
         return [$user, $roles];
     }
 

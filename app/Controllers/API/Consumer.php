@@ -9,10 +9,12 @@
 namespace App\Controllers\API;
 
 use App\Libs\DictConstants;
+use App\Libs\DingDing;
 use App\Libs\HttpHelper;
 use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Controllers\ControllerBase;
+use App\Services\ApplyAwardService;
 use App\Services\CallCenterRLLogService;
 use App\Services\CallCenterService;
 use App\Services\CallCenterTRLogService;
@@ -359,5 +361,17 @@ class Consumer extends ControllerBase
             default:
         }
         return $response->withJson(['code' => 0], 200);
+    }
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @throws \App\Libs\Exceptions\RunTimeException
+     * 处理钉钉回调
+     */
+    public function dingCallBack(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        ApplyAwardService::dealDingCallBack($params);
     }
 }

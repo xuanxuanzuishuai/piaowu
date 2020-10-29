@@ -494,6 +494,20 @@ class DictConstants {
         ]
     ];
 
+    //go的钉钉接口
+    const DING_DING_CONFIG = [
+        'type' => 'ding_ding',
+        'keys' => [
+            'host',
+            'tem_no',
+            'flow_url'
+        ]
+    ];
+    //钉钉审批状态
+    const DING_DING_STATUS = [
+        'type' => 'ding_apply_status',
+        'keys' => [1,2,3,4,5]
+    ];
     public static function get($type, $key)
     {
         if (empty($type) || empty($key)) {

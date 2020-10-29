@@ -103,5 +103,11 @@ class APIRouter extends RouterBase
             'call' => Crm::class . ':exportAIReferralUser',
             'middles' => [CrmMiddleware::class],
         ],
+        //钉钉回调
+        '/api/consumer/dingding_call_back' => [
+            'method' => ['post'],
+            'call' => Consumer::class . ':dingCallBack',
+            'middles' => [],
+        ]
     ];
 }

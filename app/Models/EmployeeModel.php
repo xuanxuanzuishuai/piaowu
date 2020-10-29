@@ -251,6 +251,7 @@ class EmployeeModel extends Model
             '[>]' . DeptModel::$table => ['dept_id' => 'id']
         ], [
             self::$table . '.id',
+            self::$table . '.uuid',
             self::$table . '.name',
             self::$table . '.role_id',
             self::$table . '.mobile',

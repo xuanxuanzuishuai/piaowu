@@ -40,6 +40,7 @@ use App\Controllers\OrgWeb\PosterTemplateWord;
 use App\Controllers\OrgWeb\Question;
 use App\Controllers\OrgWeb\QuestionTag;
 use App\Controllers\OrgWeb\Referral;
+use App\Controllers\OrgWeb\ReissueAward;
 use App\Controllers\OrgWeb\ReviewCourse;
 use App\Controllers\OrgWeb\SharePoster;
 use App\Controllers\OrgWeb\Employee as OrgWebEmployee;
@@ -87,6 +88,8 @@ class OrgWebRouter extends RouterBase
         '/employee/employee/modify' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Employee:modify'),
         '/employee/employee/set_seat' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Employee:setSeat'),
         '/employee/employee/del_seat' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Employee:delSeat'),
+        '/employee/employee/set_ding_mobile' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Employee:setDingMobile'),
+        '/employee/employee/del_ding_mobile' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Employee:delDingMobile'),
         '/employee/employee/setPwd' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Employee:setPwd'),
         '/employee/employee/userSetPwd' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Employee:userSetPwd'),
         '/employee/employee/getEmployeeListWithRole' => array('method' => array('get'), 'call' => '\App\Controllers\Employee\Employee:getEmployeeListWithRole'),
@@ -563,5 +566,12 @@ class OrgWebRouter extends RouterBase
         '/org_web/leave/cancel_leave' => ['method' => ['post'], 'call' => Leave::class . ':cancelLeave'],
         '/org_web/leave/leave_period' => ['method' => ['get'], 'call' => Leave::class . ':leavePeriod'],
         '/org_web/leave/leave_status' => ['method' => ['get'], 'call' => Leave::class . ':leaveStatus'],
+        
+        //补发红包
+        '/org_web/reissue/submit_apply' => ['method' => ['post'], 'call' => ReissueAward::class . ':submitApply'],
+        '/org_web/reissue/get_task_award' => ['method' => ['get'], 'call' => ReissueAward::class . ':getTaskAward'],
+        '/org_web/reissue/apply_list' => ['method' => ['get'], 'call' => ReissueAward::class . ':applyList'],
+        '/org_web/reissue/apply_detail' => ['method' => ['get'], 'call' => ReissueAward::class . ':applyDetail']
+
     ];
 }

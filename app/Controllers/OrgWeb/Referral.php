@@ -31,14 +31,9 @@ class Referral extends ControllerBase
      */
     public function config(/** @noinspection PhpUnusedParameterInspection */ Request $request, Response $response)
     {
-
-        $names = ErpReferralService::EVENT_TASKS;
-
         // 如有来源，根据来源取页面[奖励节点]select数据
         $params = $request->getParams();
-        if (isset($params['source']) && $params['source'] == 'referee') {
-            $names = ErpReferralService::REFEREE_EVENT_TASKS;
-        }
+        $names = ErpReferralService::getAwardNode($params['source']);
 
         $config = [
             'event_task_name' => $names,
