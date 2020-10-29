@@ -155,9 +155,10 @@ class EmployeeService
     }
 
     /**
-     * 获取用户详情
      * @param $userId
      * @return array
+     * @throws RunTimeException
+     * 获取用户详情
      */
     public static function getEmployeeDetail($userId)
     {
@@ -171,7 +172,7 @@ class EmployeeService
         $user['inuse_seat_type'] = $inuseSeatType;
         //绑定钉钉信息
         $dingDingMobileInfo = (new DingDing())->getMobileByUuid(['uuid' => $user['uuid']]);
-        $user['ding_ding'] = ['mobile' => $dingDingMobileInfo['data']['mobile'] ?? ''];
+        $user['ding_ding'] = ['mobile' => $dingDingMobileInfo['mobile'] ?? ''];
         return [$user, $roles];
     }
 

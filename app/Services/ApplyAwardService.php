@@ -8,7 +8,6 @@
 
 namespace App\Services;
 
-
 use App\Libs\AliOSS;
 use App\Libs\DictConstants;
 use App\Libs\DingDing;
@@ -35,9 +34,14 @@ class ApplyAwardService
     public static function applyAward($employeeId, $studentId, $eventTaskId, $reissueReason, $imageKeyArr)
     {
         $time = time();
+        $studentInfo = StudentModel::getById($studentId);
+        //校验数据
+        if (empty($studentInfo)) {
+            throw new RunTimeException(['student_not_exist']);
+        }
         $employeeInfo = EmployeeModel::getRecord(['id' => $employeeId]);
         $info = (new DingDing())->getMobileByUuid(['uuid' => $employeeInfo['uuid']]);
-        if (empty($info['data']['mobile'])) {
+        if (empty($info['mobile'])) {
             throw new RunTimeException(['not_bind_ding_ding']);
         }
         $awardInfo = ErpReferralService::getExpectTaskIdRelateAward($eventTaskId);
@@ -54,6 +58,7 @@ class ApplyAwardService
             throw new RunTimeException(['insert table fail']);
         }
         list($temNo, $url) = DictConstants::get(DictConstants::DING_DING_CONFIG, ['tem_no', 'flow_url']);
+        //发起钉钉审批
         $data = (new DingDing())->sponsorApply(
             [
                 'process_code' => $temNo,
@@ -66,10 +71,10 @@ class ApplyAwardService
                 ]
             ]
         );
-        if (empty($data['data']['workflow_instance_id'])) {
+        if (empty($data['workflow_instance_id'])) {
             throw new RunTimeException(['ding_ding_request_error']);
         }
-        ApplyAwardModel::updateRecord($id, ['workflow_id' => $data['data']['workflow_instance_id']]);
+        ApplyAwardModel::updateRecord($id, ['workflow_id' => $data['workflow_instance_id']]);
     }
 
     /**
@@ -81,8 +86,8 @@ class ApplyAwardService
      */
     public static function getApplyList($params, $page, $count)
     {
-        $info = ApplyAwardModel::getList($params, $page, $count);
-        return self::formatList($info);
+        list($info, $count) = ApplyAwardModel::getList($params, $page, $count);
+        return [self::formatList($info), $count];
     }
 
     /**
@@ -109,10 +114,10 @@ class ApplyAwardService
         $item['image_url'] = $item['image_key'] ? array_map(function ($item) {
             return AliOSS::replaceCdnDomainForDss($item);
         },json_decode($item['image_key'], true)) : [];
-        $item['amount_zh'] = $item['amount'] . '元';
-        $item['give_info'] = '';
-        if (!empty($item['cash_deal_id'])) {
-            $awardInfo = WeChatAwardCashDealModel::getById($item['cash_deal_id']);
+        $item['amount_zh'] = $item['amount'] / 100 . '元';
+        $item['give_info'] = [];
+        if (!empty($item['cash_award_id'])) {
+            $awardInfo = WeChatAwardCashDealModel::getRecord(['user_event_task_award_id' => $item['cash_award_id']]);
             $item['give_info'] = [
                 'id' => $awardInfo['id'],
                 'award_amount' => $awardInfo['award_amount'] / 100 . '元',
@@ -125,6 +130,7 @@ class ApplyAwardService
     /**
      * @param $id
      * @return array
+     * @throws RunTimeException
      * 申请详情
      */
     public static function getApplyDetail($id)
@@ -137,7 +143,7 @@ class ApplyAwardService
         array_map(function ($item) use(&$dingWorkflowArr){
                 $item['operation'] = $item['operation_result'] == DingDing::NONE ? DingDing::getOperationTypeZh($item['operation_type']) : DingDing::getOperationResultZh($item['operation_result']);
                 $dingWorkflowArr[] = $item;
-        }, $workflowDetailInfo['data']);
+        }, $workflowDetailInfo);
         $returnInfo['ding_info'] = $dingWorkflowArr;
         return $returnInfo;
     }
@@ -149,42 +155,55 @@ class ApplyAwardService
      */
     public static function dealDingCallBack($params)
     {
-        //目前仅需要处理正常结束且同意
-        if ($params['event_type'] != DingDing::BPMS_INSTANCE_CHANGE) {
-            return;
+        //根据流程处理状态 仅处理 拒绝/通过/撤销
+        $status = NULL;
+        $cashAwardId = NULL;
+        //审批流程的正常结束
+        if ($params['event_type'] == DingDing::BPMS_INSTANCE_CHANGE && $params['type'] == DingDing::BPMS_FINISH) {
+            if ($params['result'] == DingDing::BPMS_AGREE) {
+                //同意
+                $status = ApplyAwardModel::SUPPLY_PASS;
+            } elseif ($params['result'] == DingDing::BPMS_REFUSE) {
+                //拒绝
+                $status = ApplyAwardModel::SUPPLY_REFUSE;
+            }
         }
-        //正常结束
-        if ($params['type'] != DingDing::BPMS_FINISH) {
-            return;
-        }
-        //结果为同意
-        if ($params['result'] != DingDing::BPMS_AGREE) {
-            return;
+
+        //审批流程终止（发起人撤销审批单）
+        if ($params['event_type'] == DingDing::BPMS_INSTANCE_CHANGE && $params['type'] == DingDing::BPMS_BACK) {
+            $status = ApplyAwardModel::SUPPLY_BACK;
         }
 
         //对应的审批信息
         $applyAwardInfo = ApplyAwardModel::getRecord(['workflow_id' => $params['process_instance_id']]);
         if (empty($applyAwardInfo)) {
-            SimpleLogger::info('not apply award relate');
-            return;
-        }
-        //真正对应的task_id
-        $taskId = ErpReferralService::expectTaskRelateRealTask($applyAwardInfo['expect_event_task_id'])[0];
-        //创建红包
-        $studentInfo = StudentModel::getById($applyAwardInfo['student_id']);
-        $employeeInfo = EmployeeModel::getRecord(['uuid' => $applyAwardInfo['supply_employee_uuid']]);
-        $awardInfo = (new Erp())->updateTask($studentInfo['uuid'], $taskId, ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
-        if (empty($awardInfo['data']['user_award_ids'])) {
+            SimpleLogger::info('not apply award relate', ['workflow_id' => $params['process_instance_id']]);
             return;
         }
 
-        ErpReferralService::updateAward(
+        if (empty($status)) {
+            return;
+        }
+        //为通过的时候走红包发送
+        if ($status == ApplyAwardModel::SUPPLY_PASS) {
+            //真正对应的task_id
+            $taskId = ErpReferralService::expectTaskRelateRealTask($applyAwardInfo['expect_event_task_id'])[0];
+            //创建红包
+            $studentInfo = StudentModel::getById($applyAwardInfo['student_id']);
+            $employeeInfo = EmployeeModel::getRecord(['uuid' => $applyAwardInfo['supply_employee_uuid']]);
+            $awardInfo = (new Erp())->updateTask($studentInfo['uuid'], $taskId, ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
+            if (empty($awardInfo['data']['user_award_ids'])) {
+                return;
+            }
+            ErpReferralService::updateAward(
                 $awardInfo['data']['user_award_ids'][0],
                 ErpReferralService::AWARD_STATUS_GIVEN,
                 $employeeInfo['id'],
                 '',
                 WeChatAwardCashDealModel::REFERRER_PIC_WORD
             );
-        ApplyAwardModel::updateRecord($applyAwardInfo['id'], ['cash_deal_id' => $awardInfo['data']['user_award_ids'][0]]);
+            $cashAwardId = $awardInfo['data']['user_award_ids'][0];
+        }
+        ApplyAwardModel::updateRecord($applyAwardInfo['id'], ['cash_award_id' => $cashAwardId, 'status' => $status, 'update_time' => time()]);
     }
 }

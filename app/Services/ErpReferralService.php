@@ -126,10 +126,28 @@ class ErpReferralService
     //专属海报参加人数
     const PERSONAL_POSTER_ATTEND_NUM_KEY = 'personal_poster_attend_num_key';
 
+    /**
+     * @return int[]
+     * 不展示待发放的节点
+     */
+    public static function getNotDisplayWaitGiveTask()
+    {
+        return [
+            self::EXPECT_UPLOAD_SCREENSHOT,
+            self::EXPECT_REISSUE_TRAIL_5,
+            self::EXPECT_REISSUE_TRAIL_10,
+            self::EXPECT_REISSUE_YEAR_100,
+            self::EXPECT_REISSUE_YEAR_200,
+            self::EXPECT_REISSUE_YEAR_50,
+            self::EXPECT_REISSUE_POSTER_10,
+            self::EXPECT_REISSUE_RETURN_MONEY_49
+        ];
+    }
+
     public static function getAwardNode($source)
     {
         $awardNodeArr = [
-            'referee' => array_merge(self::REFEREE_EVENT_TASKS, self::REISSUE_CASH_AWARD),
+            'referee' => self::REFEREE_EVENT_TASKS + self::REISSUE_CASH_AWARD,
             'reissue_award' => self::REISSUE_CASH_AWARD
         ];
         return empty($awardNodeArr[$source]) ? self::EVENT_TASKS : $awardNodeArr[$source];

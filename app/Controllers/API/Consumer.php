@@ -369,6 +369,7 @@ class Consumer extends ControllerBase
     /**
      * @param Request $request
      * @param Response $response
+     * @return Response
      * @throws \App\Libs\Exceptions\RunTimeException
      * 处理钉钉回调
      */
@@ -376,5 +377,6 @@ class Consumer extends ControllerBase
     {
         $params = $request->getParams();
         ApplyAwardService::dealDingCallBack($params);
+        return HttpHelper::buildResponse($response, []);
     }
 }

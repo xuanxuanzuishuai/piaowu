@@ -12,8 +12,6 @@ namespace App\Controllers\OrgWeb;
 use App\Controllers\ControllerBase;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
-use App\Libs\NewSMS;
-use App\Libs\RedisDB;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Services\ErpReferralService;
@@ -53,6 +51,11 @@ class ReissueAward extends ControllerBase
                 'type'       => 'lengthMax',
                 'value'      => 500,
                 'error_code' => 'reissue_reason_length_more_then_500'
+            ],
+            [
+                'key'        => 'image_key_arr',
+                'type'       => 'array',
+                'error_code' => 'image_key_arr_must_be_arr'
             ]
         ];
 
@@ -109,14 +112,15 @@ class ReissueAward extends ControllerBase
     {
         $params = $request->getParams();
         list($page, $count) = Util::formatPageCount($params);
-        $data = ApplyAwardService::getApplyList($params, $page, $count);
-        return HttpHelper::buildResponse($response, ['data' => $data]);
+        list($data, $totalNum) = ApplyAwardService::getApplyList($params, $page, $count);
+        return HttpHelper::buildResponse($response, ['data' => $data, 'total_count' => $totalNum]);
     }
 
     /**
      * @param Request $request
      * @param Response $response
      * @return Response
+     * @throws RunTimeException
      * 申请详情
      */
     public function applyDetail(Request $request, Response $response)

@@ -130,7 +130,7 @@ class Referral extends ControllerBase
             $params['award_type'] = ErpReferralService::AWARD_TYPE_CASH;
         }
         //上传截图相关的红包，不展示待发放的
-        if ($params['event_task_id'] == ErpReferralService::EXPECT_UPLOAD_SCREENSHOT) {
+        if (in_array($params['event_task_id'], ErpReferralService::getNotDisplayWaitGiveTask())) {
             $params['not_award_status'] = [ErpReferralService::AWARD_STATUS_WAITING];
         }
 

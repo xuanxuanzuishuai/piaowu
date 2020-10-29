@@ -1,10 +1,12 @@
 <?php
 namespace App\Libs;
 
+use App\Libs\Exceptions\RunTimeException;
+
 class DingDing
 {
     private $host;
-
+    const SELF_APP_ID = 10;
     const SPONSOR_APPLY = '/rapi/v1/dingding/workflow/launch';
     const APPLY_DETAIL = '/rapi/v1/dingding/workflow/instance';
     const GET_UUID_GET_MOBILE = '/rapi/v1/dingding/user/mobile';
@@ -28,11 +30,13 @@ class DingDing
 
     //审批事件回调类型
     const BPMS_TASK_CHANGE = 'bpms_task_change';
-    const BPMS_INSTANCE_CHANGE = 'bpms_task_change';
+    const BPMS_INSTANCE_CHANGE = 'bpms_instance_change';
 
     const BPMS_FINISH = 'finish';
+    const BPMS_BACK   = 'terminate';
 
     const BPMS_AGREE = 'agree';
+    const BPMS_REFUSE = 'refuse';
 
     public function __construct()
     {
@@ -41,22 +45,34 @@ class DingDing
 
     /**
      * @param $params
-     * @return array|bool
+     * @return mixed
+     * @throws RunTimeException
      * 发起审批
      */
     public function sponsorApply($params)
     {
-        return HttpHelper::requestJson($this->host . self::SPONSOR_APPLY, $params, 'POST');
+        $params['app_id'] = self::SELF_APP_ID;
+        $data = HttpHelper::requestJson($this->host . self::SPONSOR_APPLY, $params, 'POST');
+        if ($data['code'] != Valid::CODE_SUCCESS) {
+            throw new RunTimeException([self::getErrorCodeMsg($data['code'])]);
+        }
+        return $data['data'];
     }
 
     /**
      * @param $params
-     * @return array|bool
+     * @return mixed
+     * @throws RunTimeException
      * 审批详情
      */
     public function getApplyDetail($params)
     {
-        return HttpHelper::requestJson($this->host . self::APPLY_DETAIL, $params, 'GET');
+        $params['app_id'] = self::SELF_APP_ID;
+        $data = HttpHelper::requestJson($this->host . self::APPLY_DETAIL, $params, 'GET');
+        if ($data['code'] != Valid::CODE_SUCCESS) {
+            throw new RunTimeException([$data['code']]);
+        }
+        return $data['data'];
     }
 
     /**
@@ -98,31 +114,67 @@ class DingDing
 
     /**
      * @param $params
-     * @return array|bool
+     * @return mixed
+     * @throws RunTimeException
      * uuid得到手机号
      */
     public function getMobileByUuid($params)
     {
-        return HttpHelper::requestJson($this->host . self::GET_UUID_GET_MOBILE, $params, 'GET');
+        $params['app_id'] = self::SELF_APP_ID;
+        $data =  HttpHelper::requestJson($this->host . self::GET_UUID_GET_MOBILE, $params, 'GET');
+        if ($data['code'] != Valid::CODE_SUCCESS) {
+            throw new RunTimeException([self::getErrorCodeMsg($data['code'])]);
+        }
+        return $data['data'];
     }
 
     /**
      * @param $params
-     * @return array|bool
+     * @throws RunTimeException
      * 绑定钉钉手机号
      */
     public function bindMobile($params)
     {
-        return HttpHelper::requestJson($this->host . self::BIND_MOBILE, $params, 'POST');
+        $params['app_id'] = self::SELF_APP_ID;
+        $data = HttpHelper::requestJson($this->host . self::BIND_MOBILE, $params, 'POST');
+        if ($data['code'] != Valid::CODE_SUCCESS) {
+            throw new RunTimeException([self::getErrorCodeMsg($data['code'])]);
+        }
+        return $data['data'];
     }
 
     /**
      * @param $params
-     * @return array|bool
+     * @return mixed
+     * @throws RunTimeException
      * 解除绑定手机号
      */
     public function delBindMobile($params)
     {
-        return HttpHelper::requestJson($this->host . self::DEL_BIND_MOBILE, $params, 'POST');
+        $params['app_id'] = self::SELF_APP_ID;
+        $data = HttpHelper::requestJson($this->host . self::DEL_BIND_MOBILE, $params, 'POST');
+        if ($data['code'] != Valid::CODE_SUCCESS) {
+            throw new RunTimeException([self::getErrorCodeMsg($data['code'])]);
+        }
+        return $data['data'];
+    }
+
+    /**
+     * @param $code
+     * @return string
+     * 错误信息对应
+     */
+    private static function getErrorCodeMsg($code)
+    {
+        $arr = [
+            '5000' => 'employee_not_exist',
+            '5001' => 'ding_ding_user_not_exist',
+            '5002' => 'ding_ding_mobile_has_bind',
+            '5003' => 'not_bind_ding_ding',
+            '5004' => 'not_find_ding_branch_info',
+            '5005' => 'ding_ding_create_apply_fail',
+            '5006' => 'not_find_ding_ding_apply'
+        ];
+        return $arr[$code] ?? 'ding_ding_request_error';
     }
 }

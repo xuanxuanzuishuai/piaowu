@@ -9,7 +9,6 @@
 namespace App\Controllers\Employee;
 
 use App\Controllers\ControllerBase;
-use App\Libs\Code;
 use App\Libs\Constants;
 use App\Libs\Dict;
 use App\Libs\DingDing;
@@ -612,10 +611,11 @@ class Employee extends ControllerBase
     }
 
     /**
-     * 获取对外信息
      * @param Request $request
      * @param Response $response
      * @return Response
+     * @throws RunTimeException
+     * 获取对外信息
      */
     public function getExternalInformation(Request $request, Response $response)
     {
@@ -623,6 +623,9 @@ class Employee extends ControllerBase
         $employeeInfo = EmployeeService::getExternalInformation($id);
         $employeeInfo['thumb'] = empty($employeeInfo['wx_thumb']) ? $employeeInfo['wx_thumb'] :AliOSS::signUrls($employeeInfo['wx_thumb']);
         $employeeInfo['qr'] = empty($employeeInfo['wx_qr']) ? $employeeInfo['wx_qr'] :AliOSS::signUrls($employeeInfo['wx_qr']);
+        //绑定钉钉信息
+        $dingDingMobileInfo = (new DingDing())->getMobileByUuid(['uuid' => $employeeInfo['uuid']]);
+        $employeeInfo['ding_ding'] = ['mobile' => $dingDingMobileInfo['mobile'] ?? ''];
         return HttpHelper::buildResponse($response, $employeeInfo);
     }
 
@@ -710,14 +713,15 @@ class Employee extends ControllerBase
     {
         $rules = [
             [
-                'key' => 'user_id',
-                'type' => 'required',
-                'error_code' => 'user_id_is_required'
-            ],
-            [
                 'key' => 'mobile',
                 'type' => 'required',
                 'error_code' => 'mobile_is_required'
+            ],
+            [
+                'key' => 'mobile',
+                'type' => 'regex',
+                'value' => '/^[0-9]{11}$/',
+                'error_code' => 'mobile_format_error'
             ]
         ];
         $params = $request->getParams();
@@ -726,11 +730,8 @@ class Employee extends ControllerBase
             return $response->withJson($result, 200);
         }
         try {
-            $employeeInfo = EmployeeModel::getById($params['user_id']);
-            $data = (new DingDing())->bindMobile(['uuid' => $employeeInfo['uuid'], 'mobile' => $params['mobile']]);
-            if ($data['code'] != Valid::CODE_SUCCESS) {
-                throw new RunTimeException(['has_bind_other']);
-            }
+            $employeeInfo = EmployeeModel::getById($params['user_id'] ?: $this->getEmployeeId());
+            (new DingDing())->bindMobile(['uuid' => $employeeInfo['uuid'], 'mobile' => $params['mobile']]);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
@@ -748,11 +749,6 @@ class Employee extends ControllerBase
     {
         $rules = [
             [
-                'key' => 'user_id',
-                'type' => 'required',
-                'error_code' => 'user_id_is_required'
-            ],
-            [
                 'key' => 'mobile',
                 'type' => 'required',
                 'error_code' => 'mobile_is_required'
@@ -764,11 +760,8 @@ class Employee extends ControllerBase
             return $response->withJson($result, 200);
         }
         try {
-            $employeeInfo = EmployeeModel::getById($params['user_id']);
-            $data = (new DingDing())->delBindMobile(['uuid' => $employeeInfo['uuid'], 'mobile' => $params['mobile']]);
-            if ($data['code'] != Valid::CODE_SUCCESS) {
-                throw new RunTimeException(['not_bind']);
-            }
+            $employeeInfo = EmployeeModel::getById($params['user_id'] ?: $this->getEmployeeId());
+            (new DingDing())->delBindMobile(['uuid' => $employeeInfo['uuid'], 'mobile' => $params['mobile']]);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
