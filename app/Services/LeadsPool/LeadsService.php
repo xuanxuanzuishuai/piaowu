@@ -9,15 +9,14 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
-use App\Libs\Util;
 use App\Models\CollectionModel;
 use App\Models\EmployeeModel;
+use App\Models\LeadsModel;
 use App\Models\LeadsPoolLogModel;
 use App\Models\PackageExtModel;
 use App\Models\StudentModel;
 use App\Models\UserWeixinModel;
 use App\Services\CollectionService;
-use App\Services\Queue\PushMessageTopic;
 use App\Services\Queue\QueueService;
 use App\Services\ReviewCourseService;
 use App\Services\StudentRefereeService;
@@ -510,42 +509,10 @@ class LeadsService
             ]),
         ]);
         SimpleLogger::error('student update course manage success', []);
-        //计算模板消息发送延迟时间
-        $deferTime = self::allotCourseManageWxPushTime($time);
-        try {
-            $topic = new PushMessageTopic();
-            $msgBody['student_id'] = $studentId;
-            $topic->courseManageNewLeadsPushWx($msgBody)->publish($deferTime);
-        } catch (\Exception $e) {
-            Util::errorCapture('PushMessageTopic init failure', [
-                'dateTime' => time(),
-            ]);
-        }
+        //把带发送微信消息的用户存入redis
+        LeadsModel::setPushCourseManageCache($studentId, $time);
+
     }
-
-    /**
-     * 计算分配课管的微信推送消息发放时间
-     * @param $time
-     * @return false|int
-     */
-    private static function allotCourseManageWxPushTime($time){
-        /**
-         * 微信消息推送规则
-         * 1.当天12：00之前的信息,当天12：00-12：30发送
-         * 2.当天12：00之后的信息,第二天的12：00-12：30发送
-         */
-        $twelve = strtotime('today +12 hour');
-        $randSeconds = mt_rand(0, 1800);
-        if ($time <= $twelve) {
-            $deferTime = $twelve + $randSeconds - $time;
-        } else {
-            //获取距离明天中午12:00-12:30这个区间的剩余秒数
-            $deferTime = strtotime('tomorrow +12 hour') + $randSeconds - $time;
-        }
-        return $deferTime;
-    }
-
-
     /**
      * 课管分配leads微信消息
      * @param $msgBody
@@ -574,7 +541,7 @@ class LeadsService
         }
         $toBePushedStudentInfo[$msgBody['student_id']]['open_id'] = $userOpenIdInfo[0]['open_id'];
         //发送消息
-        StudentService::allotCoursePushMessage($studentInfo['course_manage_id'], $courseManageInfo, $toBePushedStudentInfo);
+        StudentService::allotCoursePushMessage($studentInfo['course_manage_id'], $courseManageInfo, $toBePushedStudentInfo, mt_rand(0, 1800));
         SimpleLogger::info("allot course manage wx push to student end", []);
         return true;
     }
