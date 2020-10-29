@@ -278,13 +278,14 @@ class ReferralService
     {
         // 练习曲目数量
         $numbers = AIPlayRecordCHModel::getStudentLessonCount($referrer_id);
+        $numbers = $numbers[0]['lesson_count'] ?? 0;
         // 练琴提升百分比
         $percentage = 0;
         $minScore = 1;
         $result = AIPlayRecordCHModel::getStudentMaxAndMinScore($referrer_id);
         foreach ($result as $key => $value) {
             $diff = $value['max_score'] - $value['min_score'];
-            if ($diff > $percentage) {
+            if ($diff > $percentage && $diff > 10) {
                 $percentage = $diff;
                 $minScore = $value['min_score'];
             }

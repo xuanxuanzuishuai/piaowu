@@ -155,7 +155,7 @@ AND end_time <:end_time";
         $chdb = CHDB::getDB();
         return $chdb->queryAll("
         SELECT
-           count(DISTINCT lesson_id)
+           count(DISTINCT lesson_id) as lesson_count
         FROM
            {table}
         WHERE
