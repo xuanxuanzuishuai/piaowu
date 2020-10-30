@@ -25,13 +25,11 @@ class ApplyAwardModel extends Model
             $where[self::$table . '.id'] = $params['id'];
         }
         if (!empty($params['student_name'])) {
-            $studentIdInfo = StudentModel::getRecords(['name[~]' => $params['student_name']], 'id');
-            $where[self::$table . '.student_id'] = $studentIdInfo;
+            $where[StudentModel::$table . '.name[~]'] = $params['student_name'];
         }
 
         if (!empty($params['mobile'])) {
-            $studentIdInfo = StudentModel::getRecords(['mobile[~]' => $params['mobile']], 'id');
-            $where[self::$table . '.student_id'] = $studentIdInfo;
+            $where[StudentModel::$table . '.mobile[~]'] = $params['mobile'];
         }
 
         if (!empty($params['event_task_id'])) {
@@ -62,10 +60,8 @@ class ApplyAwardModel extends Model
         if (empty($totalNum)) {
             return [[], $totalNum];
         }
-        $where = [
-            'ORDER' => [self::$table . '.id' => 'DESC'],
-            'LIMIT' => [($page - 1) * $count, $count]
-        ];
+        $where['ORDER'] = [self::$table . '.id' => 'DESC'];
+        $where['LIMIT'] = [($page - 1) * $count, $count];
 
         $list = MysqlDB::getDB()->select(self::$table,
         [

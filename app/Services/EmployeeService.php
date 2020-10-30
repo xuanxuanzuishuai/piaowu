@@ -405,7 +405,7 @@ class EmployeeService
      */
     public static function getExternalInformation($id)
     {
-        $employeeData = EmployeeModel::getRecord(['id' => $id], ['wx_nick', 'wx_thumb', 'wx_qr']);
+        $employeeData = EmployeeModel::getRecord(['id' => $id], ['wx_nick', 'wx_thumb', 'wx_qr', 'uuid']);
         return $employeeData ?? [];
     }
     /**

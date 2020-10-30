@@ -50,7 +50,7 @@ class ApplyAwardService
             'expect_event_task_id' => $eventTaskId,
             'amount' => intval(reset($awardInfo)['award']) * 100,
             'reissue_reason' => $reissueReason,
-            'image_key' => json_encode($imageKeyArr),
+            'image_key' => !empty($imageKeyArr[0]) ? json_encode($imageKeyArr) : NULL,
             'create_time' => $time,
             'update_time' => $time,
             'status' => ApplyAwardModel::START_SUPPLY]);
@@ -115,7 +115,7 @@ class ApplyAwardService
             return AliOSS::replaceCdnDomainForDss($item);
         },json_decode($item['image_key'], true)) : [];
         $item['amount_zh'] = $item['amount'] / 100 . '元';
-        $item['give_info'] = [];
+        $item['give_info'] = NULL;
         if (!empty($item['cash_award_id'])) {
             $awardInfo = WeChatAwardCashDealModel::getRecord(['user_event_task_award_id' => $item['cash_award_id']]);
             $item['give_info'] = [
@@ -136,7 +136,7 @@ class ApplyAwardService
     public static function getApplyDetail($id)
     {
         $returnInfo = [];
-        $info = self::formatOne(ApplyAwardModel::getList(['id' => $id])[0]);
+        $info = self::formatOne(ApplyAwardModel::getList(['id' => $id])[0][0]);
         $returnInfo['base_info'] = $info;
         $workflowDetailInfo = (new DingDing())->getApplyDetail(['workflow_instance_id' => $info['workflow_id']]);
         $dingWorkflowArr = [];
