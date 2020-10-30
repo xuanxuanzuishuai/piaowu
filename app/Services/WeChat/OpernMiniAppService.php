@@ -6,7 +6,7 @@
  * Time: 20:10
  */
 
-namespace App\Services;
+namespace App\Services\WeChat;
 
 use App\Libs\AliOSS;
 use App\Libs\SimpleLogger;
@@ -17,7 +17,6 @@ class OpernMiniAppService
     // 自动回复二维码图片路径(oss)
     const AUTO_REPLAY_QR_CODE_PATH = '/miniapp_code/opern_miniapp_qr_code.png';
 
-
     public static function handler($message)
     {
         return self::miniprogrampage($message);
@@ -25,10 +24,6 @@ class OpernMiniAppService
 
     private static function miniprogrampage($message)
     {
-        if ($message['AppId'] !== $_ENV['OPERN_MINI_APP_ID']) {
-            return true;
-        }
-
         $config = [
             'app_id'     => $_ENV['OPERN_MINI_APP_ID'],
             'app_secret' => $_ENV['OPERN_MINI_APP_SECRET'],

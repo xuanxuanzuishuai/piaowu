@@ -8,7 +8,7 @@ namespace App\Controllers\OpernMiniapp;
 
 use App\Controllers\ControllerBase;
 use App\Libs\SimpleLogger;
-use App\Services\OpernMiniAppService;
+use App\Services\Wechat\OpernMiniAppService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 
