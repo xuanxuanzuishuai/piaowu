@@ -62,6 +62,11 @@ class StudentLoginService
             return false;
         }
 
+        $subEndTime = strtotime(date($studentInfo['sub_end_date'] . " 23:59:59"));
+        if ($studentInfo['has_review_course'] == StudentLoginInfoModel::STUDENT_PAY_TYPE_EXPERIENCE && $subEndTime >= $params['time']) {
+            $isExperience = StudentLoginInfoModel::IS_EXPERIENCE_TRUE;
+        }
+
         $insertData = [
             'student_id'        => $studentInfo['id'],
             'token'             => $params['token'] ?? '',
@@ -71,7 +76,8 @@ class StudentLoginService
             'imei'              => $params['imei'] ?? '',
             'android_id'        => $params['android_id'] ?? '',
             'has_review_course' => $studentInfo['has_review_course'],
-            'sub_end_time'      => strtotime(date($studentInfo['sub_end_date'] . " 23:59:59")),
+            'sub_end_time'      => $subEndTime,
+            'is_experience'     => $isExperience ?? StudentLoginInfoModel::IS_EXPERIENCE_FALSE,
             'create_time'       => $params['time'],
         ];
 
@@ -87,8 +93,7 @@ class StudentLoginService
     public static function getStudentIdList($params)
     {
         $where = [
-            'has_review_course' => 1,
-            'sub_end_time[>=]'  => $params['time'],
+            'is_experience' => 1,
         ];
 
         if (isset($params['idfa']) && $params['idfa'] != '00000000-0000-0000-0000-000000000000') {

@@ -9,6 +9,7 @@ CREATE TABLE `student_login_info` (
   `android_id` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '' COMMENT 'android设备的唯一识别码',
   `has_review_course` tinyint(4) NOT NULL COMMENT '是否有点评课 0无 1体验卡2周 2年卡',
   `sub_end_time` int(10) NOT NULL COMMENT '会员到期时间',
+  `is_experience` tinyint(4) NOT NULL DEFAULT '2' COMMENT '是否在体验期 1：是 2：不是',
   `create_time` int(10) NOT NULL COMMENT '记录创建时间',
   PRIMARY KEY (`id`),
   KEY `student_id` (`student_id`),
