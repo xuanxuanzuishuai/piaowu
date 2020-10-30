@@ -390,7 +390,10 @@ class DictConstants {
 
     const PERSONAL_LINK_PACKAGE_ID = [
         'type' => 'personal_link_package_id',
-        'keys' => ['package_id']
+        'keys' => [
+            'package_id',
+            'discount_package_id'
+        ]
     ];
 
     //打谱申请模板和跳转详情页链接

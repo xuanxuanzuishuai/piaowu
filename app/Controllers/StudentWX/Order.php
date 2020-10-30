@@ -10,15 +10,15 @@ namespace App\Controllers\StudentWX;
 
 
 use App\Controllers\ControllerBase;
+use App\Libs\DictConstants;
 use App\Libs\Erp;
-use App\Libs\Exceptions\RunTimeException;
-use App\Libs\HttpHelper;
 use App\Libs\RC4;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\ModelV1\ErpPackageV1Model;
 use App\Models\StudentModelForApp;
 use App\Services\ErpServiceV1\ErpOrderV1Service;
+use App\Services\GiftCodeService;
 use App\Services\PayServices;
 use App\Services\PointActivityService;
 use Slim\Http\Request;
@@ -114,6 +114,16 @@ class Order extends ControllerBase
         }
 
         $studentId = $this->ci['user_info']['user_id'];
+
+        // check 9折续费 产品包
+        $disPackageId = DictConstants::get(DictConstants::PERSONAL_LINK_PACKAGE_ID, 'discount_package_id');
+        if (intval($params['package_id']) == intval($disPackageId)) {
+            $isRenew = GiftCodeService::checkIsRenewStudent($studentId);
+            if (!$isRenew) {
+                return $response->withJson(Valid::addAppErrors([], 'only_renew_student_pay'), StatusCode::HTTP_OK);
+            }
+        }
+
         $student = StudentModelForApp::getById($studentId);
 
         $student = [

@@ -407,4 +407,52 @@ WHERE
         return $newSql;
     }
 
+    /**
+     * @param $studentId
+     * @return bool
+     */
+    public static function checkIsRenewStudentStatus($studentId)
+    {
+
+        $db = MysqlDB::getDB();
+
+        $code = self::$table;
+        $ext = PackageExtModel::$table;
+        $oldCodes = $db->queryAll("
+SELECT
+    code.buyer
+FROM
+    {$code} code
+INNER JOIN {$ext} ext ON ext.package_id = code.bill_package_id
+WHERE
+    code.buyer = " . $studentId . "
+    AND ext.package_type = " . PackageExtModel::PACKAGE_TYPE_NORMAL . "
+    AND code.package_v1 = " . self::PACKAGE_V1_NOT . "
+    AND code.code_status != " . self::CODE_STATUS_INVALID);
+
+
+        $pg = ErpPackageGoodsV1Model::$table;
+        $g = GoodsV1Model::$table;
+        $c = CategoryV1Model::$table;
+        $newCodes = $db->queryAll("
+SELECT
+    code.buyer
+FROM
+    {$code} code
+INNER JOIN
+    {$pg} pg ON pg.package_id = code.bill_package_id
+    AND pg.status = " . ErpPackageGoodsV1Model::SUCCESS_NORMAL . "
+INNER JOIN
+    {$g} g ON pg.goods_id = g.id
+INNER JOIN
+    {$c} c ON c.id = g.category_id
+WHERE
+    code.buyer = " . $studentId . "
+    AND c.sub_type = " . CategoryV1Model::DURATION_TYPE_NORMAL . "
+    AND code.package_v1 = " . self::PACKAGE_V1 . "
+    AND code.code_status != " . self::CODE_STATUS_INVALID);
+
+        return !empty($oldCodes) || !empty($newCodes);
+    }
+
 }

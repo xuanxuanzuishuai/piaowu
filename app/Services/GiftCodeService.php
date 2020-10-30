@@ -364,4 +364,15 @@ class GiftCodeService
         $consume = new CodeConsume($array);
         return $consume->consume($giftCodeId);
     }
+
+    /**
+     * 检查是否续费学员
+     * @param $studentId
+     * @return bool
+     */
+    public static function checkIsRenewStudent($studentId)
+    {
+        $isRenew = GiftCodeModel::checkIsRenewStudentStatus($studentId);
+        return $isRenew;
+    }
 }
