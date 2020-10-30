@@ -372,7 +372,7 @@ class ReferralService
 
         $stu = StudentModelForApp::getStudentInfo(null, $mobile);
         if (empty($stu)) {
-            list($lastId, $isNew, $uuid) = StudentServiceForApp::studentRegister($mobile, $channel ?: DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'NORMAL_STUDENT_INVITE_STUDENT'), null, $referrerId, $countryCode);
+            list($lastId, $isNew, $uuid) = StudentServiceForApp::studentRegister($mobile, $channel ?: DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'REFERRAL_MINIAPP_STUDENT_INVITE_STUDENT'), null, $referrerId, $countryCode);
             if (empty($lastId)) {
                 SimpleLogger::error('register fail from exam', ['mobile' => $mobile]);
                 return [$openId, $lastId, null];
