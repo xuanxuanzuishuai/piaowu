@@ -25,6 +25,8 @@ class StudentLoginService
      */
     public static function handleLoginInfo($params)
     {
+        $params['time'] = time();
+
         //学生信息入表
         $studentId = self::insertLoginInfo($params);
         if (empty($studentId)) {
@@ -38,11 +40,10 @@ class StudentLoginService
         }
 
         //生成同一用户刷单标识
-        $time = time();
-        $brushNo = $time . '_' . $studentId . '_' . Util::randString(4);
+        $brushNo = $params['time'] . '_' . $studentId . '_' . Util::randString(4);
 
         //插入或更新刷单表信息
-        self::insertBrushInfo($studentIdsOnSameDevice, $brushNo, $time);
+        self::insertBrushInfo($studentIdsOnSameDevice, $brushNo, $params['time']);
         return true;
     }
 
@@ -71,7 +72,7 @@ class StudentLoginService
             'android_id'        => $params['android_id'] ?? '',
             'has_review_course' => $studentInfo['has_review_course'],
             'sub_end_time'      => strtotime(date($studentInfo['sub_end_date'] . " 23:59:59")),
-            'create_time'       => time(),
+            'create_time'       => $params['time'],
         ];
 
         StudentLoginInfoModel::insertRecord($insertData);
@@ -87,7 +88,7 @@ class StudentLoginService
     {
         $where = [
             'has_review_course' => 1,
-            'sub_end_time[>=]'  => time(),
+            'sub_end_time[>=]'  => $params['time'],
         ];
 
         if (isset($params['idfa']) && $params['idfa'] != '00000000-0000-0000-0000-000000000000') {

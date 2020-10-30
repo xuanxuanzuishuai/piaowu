@@ -25,7 +25,7 @@ class StudentBrushModel extends Model
         $student = StudentModel::$table;
         $studentLoginInfo = StudentLoginInfoModel::$table;
         $employee = EmployeeModel::$table;
-        $collection = EmployeeModel::$table;
+        $collection = CollectionModel::$table;
 
         $sql = "SELECT
                     s.id as student_id,

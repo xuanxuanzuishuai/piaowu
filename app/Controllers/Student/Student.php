@@ -904,10 +904,6 @@ class Student extends ControllerBase
         }
         $data = StudentLoginService::getStudentBrushList($params['student_id']);
 
-        if (empty($data)) {
-            $errorResult = Valid::addErrors([], 'student_id', 'student_not_exist');
-            return HttpHelper::buildOrgWebErrorResponse($response, $errorResult['data']['errors']);
-        }
         return HttpHelper::buildResponse($response, $data);
     }
 
