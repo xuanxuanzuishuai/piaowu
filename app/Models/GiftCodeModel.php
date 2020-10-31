@@ -9,8 +9,10 @@
 namespace App\Models;
 
 use App\Libs\MysqlDB;
+use App\Libs\UserCenter;
 use App\Libs\Util;
 use App\Models\ModelV1\ErpPackageGoodsV1Model;
+use App\Models\ModelV1\ErpPackageV1Model;
 
 class GiftCodeModel extends Model
 {
@@ -418,39 +420,43 @@ WHERE
 
         $code = self::$table;
         $ext = PackageExtModel::$table;
+        $p = ErpPackageModel::$table;
         $oldCodes = $db->queryAll("
 SELECT
     code.buyer
 FROM
     {$code} code
 INNER JOIN {$ext} ext ON ext.package_id = code.bill_package_id
+INNER JOIN {$p} p ON p.id = code.bill_package_id
 WHERE
     code.buyer = " . $studentId . "
     AND ext.package_type = " . PackageExtModel::PACKAGE_TYPE_NORMAL . "
     AND code.package_v1 = " . self::PACKAGE_V1_NOT . "
-    AND code.code_status != " . self::CODE_STATUS_INVALID);
+    AND code.code_status != " . self::CODE_STATUS_INVALID . "
+    AND p.app_id = " . UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT);
 
 
         $pg = ErpPackageGoodsV1Model::$table;
         $g = GoodsV1Model::$table;
         $c = CategoryV1Model::$table;
+        $p1 = ErpPackageV1Model::$table;
         $newCodes = $db->queryAll("
 SELECT
     code.buyer
 FROM
     {$code} code
+INNER JOIN {$p1} p ON p.id = code.bill_package_id
 INNER JOIN
     {$pg} pg ON pg.package_id = code.bill_package_id
     AND pg.status = " . ErpPackageGoodsV1Model::SUCCESS_NORMAL . "
-INNER JOIN
-    {$g} g ON pg.goods_id = g.id
-INNER JOIN
-    {$c} c ON c.id = g.category_id
+INNER JOIN {$g} g ON pg.goods_id = g.id
+INNER JOIN {$c} c ON c.id = g.category_id
 WHERE
     code.buyer = " . $studentId . "
     AND c.sub_type = " . CategoryV1Model::DURATION_TYPE_NORMAL . "
     AND code.package_v1 = " . self::PACKAGE_V1 . "
-    AND code.code_status != " . self::CODE_STATUS_INVALID);
+    AND code.code_status != " . self::CODE_STATUS_INVALID . "
+    AND p.sale_shop = " . ErpPackageV1Model::SALE_SHOP_AI_PLAY);
 
         return !empty($oldCodes) || !empty($newCodes);
     }
