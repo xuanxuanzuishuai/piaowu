@@ -1027,7 +1027,7 @@ class InteractiveClassroomService
 
         $studentLearnRecord = StudentLearnRecordModel::getRecord(['student_id' => $studentId, 'collection_id' => $collectionId, 'lesson_id' => $lessonId]);
         if (!empty($studentLearnRecord)) {
-            throw new RunTimeException(['record_exist']);
+            throw new RunTimeException(['student_learn_record']);
         }
 
         $time = time();
