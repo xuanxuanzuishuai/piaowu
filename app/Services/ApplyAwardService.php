@@ -114,12 +114,13 @@ class ApplyAwardService
         $item['image_url'] = $item['image_key'] ? array_map(function ($item) {
             return AliOSS::replaceCdnDomainForDss($item);
         },json_decode($item['image_key'], true)) : [];
-        $item['amount_zh'] = $item['amount'] / 100 . '元';
+        $item['amount'] = $item['amount'] / 100;
+        $item['amount_zh'] = $item['amount'] . '元';
         $item['give_info'] = NULL;
         if (!empty($item['cash_award_id'])) {
             $awardInfo = WeChatAwardCashDealModel::getRecord(['user_event_task_award_id' => $item['cash_award_id']]);
             $item['give_info'] = [
-                'id' => $awardInfo['id'],
+                'id' => $awardInfo['user_event_task_award_id'],
                 'award_amount' => $awardInfo['award_amount'] / 100 . '元',
                 'status_zh' => ErpReferralService::AWARD_STATUS[$awardInfo['status']]
             ];
@@ -200,7 +201,7 @@ class ApplyAwardService
                 ErpReferralService::AWARD_STATUS_GIVEN,
                 $employeeInfo['id'],
                 '',
-                WeChatAwardCashDealModel::REFERRER_PIC_WORD
+                WeChatAwardCashDealModel::REISSUE_PIC_WORD
             );
             $cashAwardId = $awardInfo['data']['user_award_ids'][0];
         }

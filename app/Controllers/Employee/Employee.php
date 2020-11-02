@@ -731,7 +731,7 @@ class Employee extends ControllerBase
         }
         try {
             $employeeInfo = EmployeeModel::getById($params['user_id'] ?: $this->getEmployeeId());
-            (new DingDing())->bindMobile(['uuid' => $employeeInfo['uuid'], 'mobile' => $params['mobile']]);
+            (new DingDing())->bindMobile(['uuid' => $employeeInfo['uuid'], 'mobile' => $params['mobile'], 'sub_sys_staff_name' => $employeeInfo['name'], 'sub_sys_staff_account' => $employeeInfo['login_name']]);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }

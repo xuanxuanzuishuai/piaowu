@@ -504,7 +504,7 @@ class ErpReferralService
                 'referrer_name' => $studentInfoList[$award['referrer_uuid']]['name'],
                 'referrer_mobile_hidden' => Util::hideUserMobile($award['referrer_mobile']),
                 'event_task_id' => $award['event_task_id'],
-                'event_task_name' => self::EVENT_TASKS[$expectTaskId], //产品期望筛选什么选项，展示什么名称
+                'event_task_name' => self::getExpectTaskName($expectTaskId), //产品期望筛选什么选项，展示什么名称
                 'user_event_task_award_id' => $award['user_event_task_award_id'],
                 'award_status' => $award['award_status'],
                 'award_status_zh' => $award['award_status_zh'],
@@ -584,7 +584,7 @@ class ErpReferralService
                 'bind_status_zh'           => $bindStatus == UserWeixinModel::STATUS_NORMAL ? '已绑定' : '未绑定',
                 'award_status'             => $award['award_status'],
                 'award_status_zh'          => $award['award_status_zh'],
-                'event_task_name'          => self::REFEREE_EVENT_TASKS[$expectTaskId], //产品期望筛选什么选项，展示什么名称
+                'event_task_name'          => self::getExpectTaskName($expectTaskId), //产品期望筛选什么选项，展示什么名称
                 'event_task_type'          => $award['event_task_type'],
                 'award_amount'             => $award['award_type'] == self::AWARD_TYPE_CASH ? ($award['award_amount'] / 100) : $award['award_amount'],
                 'fail_reason_zh'           => $award['award_status'] == self::AWARD_STATUS_GIVE_FAIL ? WeChatAwardCashDealModel::getWeChatErrorMsg($relateAwardStatusArr[$award['user_event_task_award_id']]['result_code']) : '',
@@ -600,6 +600,17 @@ class ErpReferralService
             $list[] = $item;
         }
         return ['list' => $list, 'total_count' => $response['data']['total_count']];
+    }
+
+    /**
+     * 筛选节点对应的节点名称
+     * @param $expectTaskId
+     * @return string
+     */
+    private static function getExpectTaskName($expectTaskId)
+    {
+        $arr = self::EVENT_TASKS + self::REFEREE_EVENT_TASKS + self::REISSUE_CASH_AWARD;
+        return $arr[$expectTaskId] ?? '';
     }
 
     /**
@@ -858,7 +869,7 @@ class ErpReferralService
                         $v['event_task_id'],
                         [
                             'mobile' => Util::hideUserMobile($v['student_mobile']),
-                            'url' => $keyCode == WeChatAwardCashDealModel::COMMUNITY_PIC_WORD ? '' : $_ENV['STUDENT_INVITED_RECORDS_URL'],
+                            'url' => in_array($keyCode, [WeChatAwardCashDealModel::COMMUNITY_PIC_WORD,WeChatAwardCashDealModel::REISSUE_PIC_WORD]) ? '' : $_ENV['STUDENT_INVITED_RECORDS_URL'],
                             'awardValue' => $v['award_amount'] / 100
                         ]
                     );
