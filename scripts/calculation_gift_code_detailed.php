@@ -24,7 +24,7 @@ $dotenv->load();
 $dotenv->overload();
 try {
     $db = MysqlDB::getDB();
-    $giftCodeCount = $db->count('gift_codey', ['apply_user[!]' => null]);
+    $giftCodeCount = $db->count('gift_code', ['apply_user[!]' => null]);
     //分批查询数据:每次查询1000条数据
     $pageCount = 1000;
     $forTimes = ceil($giftCodeCount / $pageCount);

@@ -100,7 +100,8 @@ class GiftCodeDetailedService
         //获取用户当前激活码的前一条数据
         $beforeGiftCodeDetailed = GiftCodeDetailedModel::getRecord(['apply_user' => $studentId, 'status' => Constants::STATUS_TRUE, 'id[<]' => $giftCodeDetailedInfo['id'], 'ORDER' => ['id' => 'DESC']]);
         if (empty($beforeGiftCodeDetailed)) {
-            $newCodeStartTime = $lastCodeEndTime = strtotime($giftCodeDetailedInfo['code_start_date']);
+            $newCodeStartTime = strtotime($giftCodeDetailedInfo['code_start_date']);
+            $lastCodeEndTime = strtotime($giftCodeDetailedInfo['code_start_date']) + 86400;
         } else {
             $newCodeStartTime = strtotime($beforeGiftCodeDetailed['code_end_date']) + 86400;
             $lastCodeEndTime = strtotime($beforeGiftCodeDetailed['code_end_date']);
