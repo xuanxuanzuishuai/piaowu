@@ -1,27 +1,20 @@
-# Slim Framework 3 Skeleton Application
+# git clone with SSH
 
-Use this skeleton application to quickly setup and start working on a new Slim Framework 3 application. This application uses the latest Slim 3 with the PHP-View template renderer. It also uses the Monolog logger.
+	eg: git clone git@gitlab.sys.xyzops.com:php/dss_crm.git
 
-This skeleton application was built for Composer. This makes setting up a new Slim Framework application quick and easy.
+* add an ssh key
+* get clone url from project
+* then clone to local folder
 
-## Install the Application
+## git checkout -b "review_branch"
 
-Run this command from the directory in which you want to install your new Slim Framework application.
+* create local branch "review_branch"
+* change project
+* push your commit to local branch
 
-    php composer.phar create-project slim/slim-skeleton [my-app-name]
+## merge requests
 
-Replace `[my-app-name]` with the desired directory name for your new application. You'll want to:
-
-* Point your virtual host document root to your new application's `public/` directory.
-* Ensure `logs/` is web writeable.
-
-To run the application in development, you can run these commands 
-
-	cd [my-app-name]
-	php composer.phar start
-
-Run this command in the application directory to run the test suite
-
-	php composer.phar test
-
-That's it! Now go build something cool.
+* click new merge request in project
+* select source branch and target branch
+* compare branches and continue
+* select reviewer
