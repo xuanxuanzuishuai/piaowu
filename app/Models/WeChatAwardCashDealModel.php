@@ -16,6 +16,7 @@ class WeChatAwardCashDealModel extends Model
     const COMMUNITY_PIC_WORD   = 2;
     const TERM_SPRINT_PIC_WORD = 3;
     const REFERRER_PIC_WORD    = 4;
+    const REISSUE_PIC_WORD     = 5;
 
     //发送红包成功与否的标识
     const RESULT_FAIL_CODE = 'FAIL'; //发放红包失败

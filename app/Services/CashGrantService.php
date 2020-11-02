@@ -138,6 +138,7 @@ class CashGrantService
             WeChatAwardCashDealModel::NORMAL_PIC_WORD      => 'NORMAL_PIC_WORD',
             WeChatAwardCashDealModel::TERM_SPRINT_PIC_WORD => 'TERM_SPRINT_PIC_WORD',
             WeChatAwardCashDealModel::REFERRER_PIC_WORD    => 'REFERRER_PIC_WORD',
+            WeChatAwardCashDealModel::REISSUE_PIC_WORD     => 'REISSUE_PIC_WORD'
         ];
         return $arr[$keyCode] ?? NULL;
     }

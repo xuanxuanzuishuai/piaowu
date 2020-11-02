@@ -129,9 +129,10 @@ class DingDing
     }
 
     /**
-     * @param $params
-     * @throws RunTimeException
      * 绑定钉钉手机号
+     * @param $params
+     * @return mixed
+     * @throws RunTimeException
      */
     public function bindMobile($params)
     {
@@ -173,7 +174,8 @@ class DingDing
             '5003' => 'not_bind_ding_ding',
             '5004' => 'not_find_ding_branch_info',
             '5005' => 'ding_ding_create_apply_fail',
-            '5006' => 'not_find_ding_ding_apply'
+            '5006' => 'not_find_ding_ding_apply',
+            '5009' => 'binding_confirmation_has_been_sent'
         ];
         return $arr[$code] ?? 'ding_ding_request_error';
     }
