@@ -8,6 +8,7 @@ use App\Controllers\ControllerBase;
 use App\Libs\HttpHelper;
 use App\Libs\MysqlDB;
 use App\Libs\Valid;
+use App\Models\StudentLeaveLogModel;
 use App\Services\GiftCodeDetailedService;
 use App\Services\StudentLeaveLogService;
 use Slim\Http\Request;
@@ -127,7 +128,7 @@ class Leave extends ControllerBase
         $db = MysqlDB::getDB();
         $db->beginTransaction();
 
-        $errorCode = StudentLeaveLogService::cancelLeave($params['id'], $cancelOperator);
+        $errorCode = StudentLeaveLogService::cancelLeave($params['id'], $cancelOperator, StudentLeaveLogModel::CANCEL_OPERATOR_COURSE);
         if (!empty($errorCode)) {
             $db->rollBack();
             $result = Valid::addErrors([], 'student_leave', $errorCode);

@@ -21,6 +21,8 @@ class StudentLeaveLogModel extends Model
     const STUDENT_LEAVE_STATUS_CANCEL = 2;
     const STUDENT_LEAVE_STATUS_OVER = 3;
 
+    //学生请假天数
+    const STUDENT_LEAVE_DAYS = 42;
 
     /**
      * 获取学员请假列表

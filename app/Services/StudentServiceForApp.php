@@ -22,6 +22,8 @@ use App\Libs\Util;
 use App\Models\AIPlayRecordModel;
 use App\Models\CategoryV1Model;
 use App\Models\GoodsV1Model;
+use App\Models\ModelV1\ErpPackageV1Model;
+use App\Models\PackageExtModel;
 use App\Models\ReferralModel;
 use App\Models\StudentLeaveLogModel;
 use App\Models\StudentMedalCategoryModel;
@@ -649,7 +651,17 @@ class StudentServiceForApp
                 return [$errOrLastId->getErrorMsg()];
             }
         }
-
+        //判断订单是否是新产品包
+        if ($gift['package_v1'] == Constants::STATUS_TRUE) {
+            $package = ErpPackageV1Model::getPackage($gift['bill_package_id']);
+        } else {
+            $package = PackageExtModel::getByPackageId($gift['bill_package_id']);
+        }
+        //计算激活码的开始&结束时间，更新到gift_code_detailed这张表
+        $errorCode = GiftCodeDetailedService::CreateGiftCodeDetailed($gift, $studentId, $package['package_type']);
+        if (!empty($errorCode)) {
+            return $errorCode;
+        }
         $result = [
             'new_sub_end_date' => $newSubEndDate,
             'generate_channel' => $gift['generate_channel'],

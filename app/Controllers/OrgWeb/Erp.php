@@ -562,6 +562,13 @@ class Erp extends ControllerBase
 
         list($codeId, $useNum, $remainNum) = GiftCodeService::codeConsume($giftCode['buyer'], $giftCode['id']);
 
+        //计算用户已使用激活码的天数
+        $giftCodeDetailInfo = GiftCodeDetailedModel::getRecord(['apply_user' => $giftCode['apply_user'], 'gift_code_id' => $giftCode['id'], 'status' => Constants::STATUS_TRUE]);
+        if (!empty($giftCodeDetailInfo) && $giftCodeDetailInfo['code_start_date'] > date('Ymd')) {
+            //计算激活码开始时间到当前时间，已使用几天
+            $useNum = Util::dateDiff(date('Y-m-d', strtotime($giftCodeDetailInfo['code_start_date'])), date('Y-m-d'));
+        }
+
         $package = ErpPackageV1Model::getPackage($giftCode['bill_package_id']);
         // 售卖量消耗、赠送量消耗
         if ($package['num'] >= $useNum) {
@@ -622,10 +629,12 @@ class Erp extends ControllerBase
         if ($giftCode['code_status'] == GiftCodeModel::CODE_STATUS_HAS_REDEEMED) {
             list($codeId, $useNum, $remainNum) = GiftCodeService::codeConsume($giftCode['buyer'], $giftCode['id']);
 
-            //如果激活码详细表有相应数据，扣减时间具体按照gift_code_detailed这张表的valid_days字段为标准，因为可能会有请假顺延时间的情况
+            //如果激活码详细表有相应数据，扣减时间具体按照gift_code_detailed这张表的valid_days字段为计算，因为可能会有请假顺延时间的情况
             $giftCodeDetailInfo = GiftCodeDetailedModel::getRecord(['apply_user' => $giftCode['apply_user'], 'gift_code_id' => $giftCode['id'], 'status' => Constants::STATUS_TRUE]);
-            if (!empty($giftCodeDetailInfo)) {
-                $remainNum = $giftCodeDetailInfo['valid_days'];
+            if (!empty($giftCodeDetailInfo) && $giftCodeDetailInfo['code_start_date'] > date('Ymd')) {
+                //计算激活码开始时间到当前时间，已使用几天 ,总天数-已使用=剩余
+                $useNum = Util::dateDiff(date('Y-m-d', strtotime($giftCodeDetailInfo['code_start_date'])), date('Y-m-d'));
+                $remainNum = $giftCodeDetailInfo['valid_days'] - $useNum;
             }
 
             // 已激活的扣除剩余时间

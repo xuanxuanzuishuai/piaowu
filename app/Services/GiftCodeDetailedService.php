@@ -74,7 +74,6 @@ class GiftCodeDetailedService
         if ($affectRows == 0) {
             return ['insert_gift_code_detailed_fail'];
         }
-        return true;
     }
 
     /**

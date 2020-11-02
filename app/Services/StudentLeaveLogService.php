@@ -73,6 +73,10 @@ class StudentLeaveLogService
             return 'leave_days_error';
         }
 
+        if ($leaveDays > StudentLeaveLogModel::STUDENT_LEAVE_DAYS) {
+            return 'student_leave_days_error';
+        }
+
         //计算请假之后每个激活码的开始&结束时间
         $studentLeaveGiftCode = GiftCodeDetailedService::studentLeaveGiftCode($studentId, $giftCodeId, $leaveDays);
         if (empty($studentLeaveGiftCode)) {
@@ -107,9 +111,10 @@ class StudentLeaveLogService
      * 课管取消请假
      * @param $id
      * @param $cancelOperator
+     * @param $cancelOperatorType
      * @return string
      */
-    public static function cancelLeave($id, $cancelOperator)
+    public static function cancelLeave($id, $cancelOperator, $cancelOperatorType)
     {
         $cancelLeaveDate = StudentLeaveLogModel::getRecord(['id' => $id, 'leave_status' => StudentLeaveLogModel::STUDENT_LEAVE_STATUS_NORMAL]);
         if (empty($cancelLeaveDate)) {
@@ -134,7 +139,7 @@ class StudentLeaveLogService
         }
 
         //更新请假记录，请假状态为废除
-        $affectRows = GiftCodeDetailedService::cancelLeave($cancelLeaveDate['student_id'], $cancelLeaveDate['gift_code_id'], StudentLeaveLogModel::CANCEL_OPERATOR_COURSE, $cancelOperator);
+        $affectRows = GiftCodeDetailedService::cancelLeave($cancelLeaveDate['student_id'], $cancelLeaveDate['gift_code_id'], $cancelOperatorType, $cancelOperator);
         if (empty($affectRows)) {
             return 'cancel_leave_error';
         }
