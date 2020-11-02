@@ -194,10 +194,12 @@ class StudentLoginService
                     $dataList[$value['student_id']]['device_model'][] = $deviceModel;
                 }
             } else {
+                $dataList[$value['student_id']]['student_id'] = $value['student_id'];
                 $dataList[$value['student_id']]['student_name'] = $value['student_name'];
                 $dataList[$value['student_id']]['assistant_name'] = $value['assistant_name'];
                 $dataList[$value['student_id']]['collection_name'] = $value['collection_name'];
                 $dataList[$value['student_id']]['mobile'] = Util::hideUserMobile($value['mobile']);
+                $dataList[$value['student_id']]['join_class_time'] = date('Y-m-d H:i:s', $value['join_class_time']);
                 $dataList[$value['student_id']]['register_time'] = date('Y-m-d H:i:s', $value['register_time']);
                 $dataList[$value['student_id']]['is_login_account'] = false;
                 $dataList[$value['student_id']]['device_model'][] = self::getDeviceModel($value, $appleDeviceMap);

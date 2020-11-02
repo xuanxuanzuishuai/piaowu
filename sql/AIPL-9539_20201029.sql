@@ -1,12 +1,12 @@
-CREATE TABLE `student_login_info` (
+ utf8mb4 COCREATE TABLE `student_login_info` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键',
   `student_id` int(11) NOT NULL COMMENT '学员ID',
   `token` varchar(100) NOT NULL DEFAULT '' COMMENT '登录时token',
   `device_model` varchar(50) NOT NULL DEFAULT '' COMMENT '设备名称',
   `os` varchar(50) NOT NULL DEFAULT '' COMMENT '设备操作系统',
   `idfa` varchar(50) NOT NULL DEFAULT '' COMMENT '苹果设备唯一编号',
-  `imei` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '' COMMENT '国际移动设备识别码',
-  `android_id` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '' COMMENT 'android设备的唯一识别码',
+  `imei` varchar(50) NOT NULL DEFAULT '' COMMENT '国际移动设备识别码',
+  `android_id` varchar(50) NOT NULL DEFAULT '' COMMENT 'android设备的唯一识别码',
   `has_review_course` tinyint(4) NOT NULL COMMENT '是否有点评课 0无 1体验卡2周 2年卡',
   `sub_end_time` int(10) NOT NULL COMMENT '会员到期时间',
   `is_experience` tinyint(4) NOT NULL DEFAULT '2' COMMENT '是否在体验期 1：是 2：不是',
