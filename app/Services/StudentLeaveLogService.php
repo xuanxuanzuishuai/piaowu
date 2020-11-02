@@ -4,16 +4,13 @@
 namespace App\Services;
 
 
-use App\Controllers\ExamMinApp\Student;
 use App\Libs\Constants;
-use App\Libs\Exceptions\RunTimeException;
 use App\Libs\Util;
 use App\Models\GiftCodeDetailedModel;
 use App\Models\ReviewCourseModel;
 use App\Models\StudentLeaveLogModel;
 use App\Models\StudentModel;
 use App\Models\StudentModelForApp;
-use PhpOffice\PhpSpreadsheet\Writer\Ods\Content;
 
 class StudentLeaveLogService
 {
@@ -166,7 +163,7 @@ class StudentLeaveLogService
         }
 
         //检查用户是否有进行中的请假
-        $studentLeave = StudentLeaveLogModel::getRecords(['student_id' => $studentId, 'leave_status' => StudentLeaveLogModel::STUDENT_LEAVE_STATUS_NORMAL, 'end_leave_time[>]' => time()]);
+        $studentLeave = StudentLeaveLogModel::getRecord(['student_id' => $studentId, 'leave_status' => StudentLeaveLogModel::STUDENT_LEAVE_STATUS_NORMAL, 'end_leave_time[>]' => time()]);
         if (!empty($studentLeave)) {
             $leaveStatus = false;
         }
@@ -178,6 +175,37 @@ class StudentLeaveLogService
         }
         return $leaveStatus;
 
+    }
+
+    /**
+     * 学生取消请假
+     * @param $studentId
+     * @return string
+     */
+    public static function studentCancelLeave($studentId)
+    {
+        $leaveInfo = StudentLeaveLogModel::getRecord(['student_id' => $studentId, 'leave_status' => StudentLeaveLogModel::STUDENT_LEAVE_STATUS_NORMAL, 'ORDER' => ['id' => 'DESC']]);
+        if (empty($leaveInfo)) {
+            return false;
+        }
+
+        return self::cancelLeave($leaveInfo['id'], $studentId, StudentLeaveLogModel::CANCEL_OPERATOR_STUDENT);
+    }
+
+    /**
+     * 学生是否请假中
+     * @param $studentId
+     * @return bool
+     */
+    public static function getLeaveStatus($studentId)
+    {
+        $leaveStatus = true;
+        //检查用户是否有进行中的请假
+        $studentLeave = StudentLeaveLogModel::getRecord(['student_id' => $studentId, 'leave_status' => StudentLeaveLogModel::STUDENT_LEAVE_STATUS_NORMAL, 'end_leave_time[>]' => time()]);
+        if (!empty($studentLeave)) {
+            $leaveStatus = false;
+        }
+        return $leaveStatus;
     }
 
 }

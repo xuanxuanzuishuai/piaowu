@@ -8,6 +8,7 @@
 
 namespace App\Routers;
 use App\Controllers\API\MUSVG;
+use App\Controllers\StudentApp\Leave;
 use App\Controllers\StudentApp\App;
 use App\Controllers\StudentApp\Auth;
 use App\Controllers\StudentApp\InteractiveClassroom;
@@ -534,6 +535,12 @@ class StudentAppRouter extends RouterBase
         '/student_app/halloween/take_award' => [
             'method'  => ['post'],
             'call'    => PointActivity::class . ':halloweenTakeAward',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
+        //学生请假
+        '/student_app/leave/cancel_leave' => [
+            'method'  => ['post'],
+            'call'    => Leave::class . ':studentCancelLeave',
             'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
         ]
     ];

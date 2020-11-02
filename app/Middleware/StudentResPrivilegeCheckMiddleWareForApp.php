@@ -13,6 +13,7 @@ use App\Libs\DictConstants;
 use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Models\StudentModelForApp;
+use App\Services\StudentLeaveLogService;
 use App\Services\StudentServiceForApp;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -50,6 +51,12 @@ class StudentResPrivilegeCheckMiddleWareForApp extends MiddlewareBase
         if (!StudentServiceForApp::getSubStatus($student['id'])) {
             SimpleLogger::error(__FILE__ . ":" . __LINE__, ['no_res_privilege' => $student]);
             $errorCode = 'no_res_privilege';
+        }
+
+        //学生是否请假中
+        if (!StudentLeaveLogService::getLeaveStatus($student['id'])) {
+            SimpleLogger::error(__FILE__ . ":" . __LINE__, ['student_are_asking_for_leave' => $student]);
+            $errorCode = 'student_are_asking_for_leave';
         }
 
         if (!empty($errorCode)) {

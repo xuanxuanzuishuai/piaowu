@@ -23,6 +23,7 @@ use App\Models\AIPlayRecordModel;
 use App\Models\CategoryV1Model;
 use App\Models\GoodsV1Model;
 use App\Models\ReferralModel;
+use App\Models\StudentLeaveLogModel;
 use App\Models\StudentMedalCategoryModel;
 use App\Models\StudentMedalModel;
 use App\Models\StudentModel;
@@ -130,7 +131,9 @@ class StudentServiceForApp
             'is_anonymous' => 1,
             'student_is_set_pwd' => $isPwd,
             'is_join_ranking' => $student['is_join_ranking'],
-            'medal_thumb' => ''
+            'medal_thumb' => '',
+            'leave_start_date' => '',
+            'leave_end_date' => ''
         ];
 
         return [null, $loginData];
@@ -211,6 +214,9 @@ class StudentServiceForApp
         } else {
             $isPwd = Constants::STATUS_TRUE;
         }
+        //学生请假信息
+        list($leaveStartDate, $leaveEndDate) = StudentLeaveLogModel::getStudentLeaveInfo($student['id']);
+
         $loginData = [
             'id' => $student['id'],
             'uuid' => $student['uuid'],
@@ -237,7 +243,9 @@ class StudentServiceForApp
             'total_points' => $totalPoints['total_num'] ?? 0,
             'student_is_set_pwd' => $isPwd,
             'is_join_ranking' => $student['is_join_ranking'],
-            'medal_thumb' => self::getStudentShowMedal($student['id'])
+            'medal_thumb' => self::getStudentShowMedal($student['id']),
+            'leave_start_date' => $leaveStartDate,
+            'leave_end_date' => $leaveEndDate
         ];
 
         return [null, $loginData];
@@ -288,6 +296,8 @@ class StudentServiceForApp
             $isPwd = Constants::STATUS_TRUE;
         }
 
+        list($leaveStartDate, $leaveEndDate) = StudentLeaveLogModel::getStudentLeaveInfo($student['id']);
+
         $loginData = [
             'id' => $student['id'],
             'uuid' => $student['uuid'],
@@ -314,7 +324,9 @@ class StudentServiceForApp
             'total_points' => $totalPoints['total_num'] ?? 0,
             'student_is_set_pwd' => $isPwd,
             'is_join_ranking' => $student['is_join_ranking'],
-            'medal_thumb' => self::getStudentShowMedal($student['id'])
+            'medal_thumb' => self::getStudentShowMedal($student['id']),
+            'leave_start_date' => $leaveStartDate,
+            'leave_end_date' => $leaveEndDate
         ];
 
         return [null, $loginData];
