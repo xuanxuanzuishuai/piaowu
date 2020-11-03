@@ -1,4 +1,4 @@
- utf8mb4 COCREATE TABLE `student_login_info` (
+CREATE TABLE `student_login_info` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键',
   `student_id` int(11) NOT NULL COMMENT '学员ID',
   `token` varchar(100) NOT NULL DEFAULT '' COMMENT '登录时token',
