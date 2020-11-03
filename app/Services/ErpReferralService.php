@@ -48,6 +48,7 @@ class ErpReferralService
     const EXPECT_REISSUE_YEAR_50 = 10; //补|转介绍首购年卡-50元
     const EXPECT_REISSUE_POSTER_10 = 11; //补|上传截图活动-10元
     const EXPECT_REISSUE_RETURN_MONEY_49 = 12; //补|返现活动-49元
+    const EXPECT_REISSUE_RETURN_MONEY_9_9 = 13; //补|返现活动-9.9元
 
     /** 阶段任务对应的任务id */
     const EVENT_TASK_ID_REGISTER       = [200, 1];          // 注册
@@ -62,6 +63,7 @@ class ErpReferralService
     const EVENT_TASK_ID_REISSUE_YEAR_50 = [213]; //年卡补50
     const EVENT_TASK_ID_REISSUE_POSTER_10 = [214]; //上传截图补10
     const EVENT_TASK_ID_REISSUE_RETURN_MONEY_49 = [215]; //返现补49
+    const EVENT_TASK_ID_REISSUE_RETURN_MONEY_9_9 = [216]; //返现补9.9
 
     /**
      * 此属性用于和前端交互时的对应
@@ -88,7 +90,8 @@ class ErpReferralService
         self::EXPECT_REISSUE_YEAR_200 => '补|转介绍付费年卡-200元',
         self::EXPECT_REISSUE_YEAR_50 => '补|转介绍首购年卡-50元',
         self::EXPECT_REISSUE_POSTER_10 => '补|上传截图活动-10元',
-        self::EXPECT_REISSUE_RETURN_MONEY_49 => '补|返现活动-49元'
+        self::EXPECT_REISSUE_RETURN_MONEY_49 => '补|返现活动-49元',
+        self::EXPECT_REISSUE_RETURN_MONEY_9_9 => '补|返现活动-9.9元'
     ];
 
     /** 任务状态 */
@@ -140,7 +143,8 @@ class ErpReferralService
             self::EXPECT_REISSUE_YEAR_200,
             self::EXPECT_REISSUE_YEAR_50,
             self::EXPECT_REISSUE_POSTER_10,
-            self::EXPECT_REISSUE_RETURN_MONEY_49
+            self::EXPECT_REISSUE_RETURN_MONEY_49,
+            self::EXPECT_REISSUE_RETURN_MONEY_9_9
         ];
     }
 
@@ -717,7 +721,8 @@ class ErpReferralService
             self::EXPECT_REISSUE_YEAR_200  => self::EVENT_TASK_ID_REISSUE_YEAR_200,
             self::EXPECT_REISSUE_YEAR_50   => self::EVENT_TASK_ID_REISSUE_YEAR_50,
             self::EXPECT_REISSUE_POSTER_10 => self::EVENT_TASK_ID_REISSUE_POSTER_10,
-            self::EXPECT_REISSUE_RETURN_MONEY_49 => self::EVENT_TASK_ID_REISSUE_RETURN_MONEY_49
+            self::EXPECT_REISSUE_RETURN_MONEY_49 => self::EVENT_TASK_ID_REISSUE_RETURN_MONEY_49,
+            self::EXPECT_REISSUE_RETURN_MONEY_9_9 => self::EVENT_TASK_ID_REISSUE_RETURN_MONEY_9_9
         ];
         return $arr[$expectTaskId] ?? explode(',', $expectTaskId);
     }
@@ -888,7 +893,7 @@ class ErpReferralService
      */
     public static function verifyStudentStatus($eventTaskId, $uuidArr)
     {
-        if ($eventTaskId == self::EXPECT_UPLOAD_SCREENSHOT || empty($eventTaskId) || empty($uuidArr)) {
+        if (in_array($eventTaskId, self::notNeedVerifyTaskId()) || empty($eventTaskId) || empty($uuidArr)) {
             return NULL;
         }
 
@@ -924,6 +929,17 @@ class ErpReferralService
             return implode(',', StudentModel::getRecords(['id' => $diffArr], 'mobile'));
         }
         return NULL;
+    }
+
+    /**
+     * 不需要校验退费的节点
+     * @return array
+     */
+    public static function notNeedVerifyTaskId()
+    {
+       $arr = array_keys(self::REISSUE_CASH_AWARD);
+       array_push($arr, self::EXPECT_UPLOAD_SCREENSHOT);
+       return $arr;
     }
 
 

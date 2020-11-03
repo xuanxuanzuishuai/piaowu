@@ -89,8 +89,8 @@ class DingDing
             self::APPEND_TASK_AFTER => '后加签任务',
             self::REDIRECT_TASK => '转交任务',
             self::START_PROCESS_INSTANCE => '发起申请',
-            self::TERMINATE_PROCESS_INSTANCE => '终止(撤销)流程实例',
-            self::FINISH_PROCESS_INSTANCE => '结束流程实例',
+            self::TERMINATE_PROCESS_INSTANCE => '已撤销',
+            self::FINISH_PROCESS_INSTANCE => '已结束',
             self::ADD_REMARK => '添加评论',
             self::PROCESS_CC => '添加抄送人'
         ];
@@ -175,7 +175,9 @@ class DingDing
             '5004' => 'not_find_ding_branch_info',
             '5005' => 'ding_ding_create_apply_fail',
             '5006' => 'not_find_ding_ding_apply',
-            '5009' => 'binding_confirmation_has_been_sent'
+            '5009' => 'binding_confirmation_has_been_sent',
+            '5010' => 'ding_ding_mobile_has_bind',
+            '5011' => 'not_bind_now_mobile'
         ];
         return $arr[$code] ?? 'ding_ding_request_error';
     }

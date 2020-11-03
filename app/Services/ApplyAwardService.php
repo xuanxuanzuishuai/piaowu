@@ -48,7 +48,7 @@ class ApplyAwardService
         $id = ApplyAwardModel::insertRecord(['supply_employee_uuid' => $employeeInfo['uuid'],
             'student_id' => $studentId,
             'expect_event_task_id' => $eventTaskId,
-            'amount' => intval(reset($awardInfo)['award']) * 100,
+            'amount' => intval(floatval(reset($awardInfo)['award']) * 100),
             'reissue_reason' => $reissueReason,
             'image_key' => !empty($imageKeyArr[0]) ? json_encode($imageKeyArr) : NULL,
             'create_time' => $time,
