@@ -23,6 +23,7 @@ use App\Models\AppVersionModel;
 use App\Models\HistoryRanksModel;
 use App\Models\PlayRecordModel;
 use App\Models\StudentModel;
+use App\Models\StudentLeaveLogModel;
 use App\Models\StudentModelForApp;
 use Medoo\Medoo;
 use App\Libs\DictConstants;
@@ -130,8 +131,14 @@ class AIPlayRecordService
 
             $recordId = AIPlayRecordModel::modifyRecord($studentId, $playRecord['id'], $newRecord, $stepDuration);
         }
-        //上报练琴时长获取积分
-        self::reportPoint($studentId, $newRecord, $params['version']);
+        //获取用户请假信息
+        list($leaveStartDate, $leaveEndDate) = StudentLeaveLogModel::getStudentLeaveInfo($studentId);
+        $studentLeaveEmpty = empty($leaveStartDate) && empty($leaveEndDate);
+        $studentLeaveNotEmpty = !empty($leaveStartDate) && !empty($leaveEndDate);
+        //用户不请假，才会上报练琴时长获取积分
+        if ($studentLeaveEmpty || $studentLeaveNotEmpty) {
+            self::reportPoint($studentId, $newRecord, $params['version']);
+        }
         return $recordId ?? 0;
     }
 
