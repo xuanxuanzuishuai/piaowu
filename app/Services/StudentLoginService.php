@@ -34,8 +34,8 @@ class StudentLoginService
         }
 
         //统计该设备目前登录的用户数
-        $studentIdsOnSameDevice = array_unique(self::getStudentIdList($params));
-        if (count($studentIdsOnSameDevice) < 3) {
+        $studentIds = self::getStudentIdList($params);
+        if (count(array_unique($studentIds['experienceStudentIds'])) < 3) {
             return false;
         }
 
@@ -43,7 +43,7 @@ class StudentLoginService
         $brushNo = $params['time'] . '_' . $studentId . '_' . Util::randString(4);
 
         //插入或更新刷单表信息
-        self::insertBrushInfo($studentIdsOnSameDevice, $brushNo, $params['time']);
+        self::insertBrushInfo($studentIds['allStudentIds'], $brushNo, $params['time']);
         return true;
     }
 
@@ -92,28 +92,30 @@ class StudentLoginService
      */
     public static function getStudentIdList($params)
     {
-        $where = [
-            'is_experience' => 1,
-        ];
-
         if (isset($params['idfa']) && $params['idfa'] != '00000000-0000-0000-0000-000000000000') {
             $where['idfa'] = $params['idfa'];
-            $studentIdList = StudentLoginInfoModel::getRecords($where, ['student_id'], false);
+            $studentIdList = StudentLoginInfoModel::getRecords($where, ['student_id', 'is_experience'], false);
         } elseif (isset($params['imei'])) {
             $where['imei'] = $params['imei'];
-            $studentIdList = StudentLoginInfoModel::getRecords($where, ['student_id'], false);
+            $studentIdList = StudentLoginInfoModel::getRecords($where, ['student_id', 'is_experience'], false);
         } elseif (isset($params['android_id'])) {
             $where['android_id'] = $params['android_id'];
-            $studentIdList = StudentLoginInfoModel::getRecords($where, ['student_id'], false);
+            $studentIdList = StudentLoginInfoModel::getRecords($where, ['student_id', 'is_experience'], false);
         }
 
         if (!empty($studentIdList)) {
             foreach ($studentIdList as $value) {
-                $studentIds[] = $value['student_id'];
+                if ($value['is_experience'] == StudentLoginInfoModel::STUDENT_PAY_TYPE_EXPERIENCE) {
+                    $experienceStudentIds[] = $value['student_id'];
+                }
+                $allStudentIds[] = $value['student_id'];
             }
         }
 
-        return $studentIds ?? [];
+        return [
+            'experienceStudentIds' => $experienceStudentIds ?? [],
+            'allStudentIds'        => $allStudentIds ?? [],
+        ];
     }
 
     /**
