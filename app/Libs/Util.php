@@ -942,4 +942,16 @@ class Util
         }
         return $time;
     }
+
+    /**
+     * 获取指定日期所在的周的开始结束时间戳
+     * @param $timeStamp
+     * @return array
+     */
+    public static function getDateWeekStartEndTime($timeStamp)
+    {
+        $startTime = strtotime('last sunday next day', $timeStamp);
+        $endTime = strtotime('next monday', $timeStamp) - 1;
+        return [$startTime, $endTime, date("Y", $timeStamp), date("W", $timeStamp)];
+    }
 }
