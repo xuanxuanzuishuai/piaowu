@@ -37,6 +37,7 @@ class StudentBrushModel extends Model
                     sli.android_id,
                     e.name as assistant_name,
                     c.name as collection_name,
+                    s.allot_collection_time as join_class_time,
                     s.create_time as register_time
                 FROM
                     {$studentBrush} AS sbo
