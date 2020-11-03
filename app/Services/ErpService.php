@@ -87,8 +87,6 @@ class ErpService
 
         if ($autoApply) {
             StudentServiceForApp::redeemGiftCode($giftCodes[0], $student['id']);
-            //计算激活码的开始&结束时间，更新到gift_code_detailed这张表
-            GiftCodeDetailedService::CreateGiftCodeDetailed($giftCodes[0], $student['id'], $package['package_type']);
         }
 
         if (empty($student['first_pay_time'])) {
