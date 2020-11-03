@@ -140,7 +140,26 @@ class StudentWXRouter extends RouterBase
             'call' => PlayReport::class . ':sharedLessonTestReport',
             'middles' => []
         ],
-
+        // 练琴周报
+        '/student_wx/play_report/week_report' => [
+            'method' => ['get'],
+            'call' => PlayReport::class . ':weekReport',
+        ],
+        '/student_wx/play_report/week_report_play_detail' => [
+            'method' => ['get'],
+            'call' => PlayReport::class . ':weekReportPlayDetail',
+        ],
+        // 练琴周报(分享)
+        '/student_wx/play_report/shared_week_report' => [
+            'method' => ['get'],
+            'call' => PlayReport::class . ':sharedWeekReport',
+            'middles' => []
+        ],
+        '/student_wx/play_report/shared_week_report_play_detail' => [
+            'method' => ['get'],
+            'call' => PlayReport::class . ':shareWeekReportPlayDetail',
+            'middles' => []
+        ],
         // ???
         '/student_wx/play_record/get_shared_report' => [
             'method' => ['get'],

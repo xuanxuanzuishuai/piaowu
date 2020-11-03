@@ -322,7 +322,13 @@ AND end_time <:end_time";
         return $redis->exists($cacheKey);
     }
 
-
+    /**
+     * 获取学生演奏曲目最高分曲目
+     * @param $studentIdList
+     * @param $lessonId
+     * @param $lessonRankTime
+     * @return array
+     */
     public static function getLessonMaxScoreRecordId($studentIdList, $lessonId, $lessonRankTime)
     {
         $chDb = CHDB::getDB();
@@ -351,6 +357,34 @@ AND end_time <:end_time";
             'start_time' => $lessonRankTime['start_time'],
             'end_time' => $lessonRankTime['end_time']
         ];
+        return $chDb->queryAll($sql, $map);
+    }
+
+    /**
+     * 获取学生某段时间内练习曲目总数
+     * @param $studentIdList
+     * @param $startTime
+     * @param $endTime
+     * @return array
+     */
+    public static function getStudentLessonCountBetweenTime($studentIdList, $startTime, $endTime)
+    {
+        $chDb = CHDB::getDB();
+        $map = [
+            'student_id' => $studentIdList,
+            'start_time' => $startTime,
+            'end_time' => $endTime
+        ];
+        $sql = "SELECT
+                   count(DISTINCT lesson_id) as lesson_count,student_id
+                FROM
+                   " . self::$table . "
+                WHERE
+                   student_id in (:student_id)
+                AND end_time >= :start_time
+                AND end_time <= :end_time
+                group by student_id
+                ";
         return $chDb->queryAll($sql, $map);
     }
 }

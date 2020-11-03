@@ -175,8 +175,9 @@ class PlayReport extends ControllerBase
         }
 
         $calendar = AIPlayReportService::getPlayCalendar($studentId, $params["year"], $params["month"]);
-
-        return HttpHelper::buildResponse($response, ['calendar' => $calendar]);
+        //获取当月周报数据
+        $weekReportData = AIPlayReportService::getCalendarWeekReport($studentId, $params["year"], $params["month"]);
+        return HttpHelper::buildResponse($response, ['calendar' => $calendar, 'week_report' => $weekReportData]);
     }
 
     /**
@@ -250,6 +251,115 @@ class PlayReport extends ControllerBase
 
         return HttpHelper::buildResponse($response, $result);
     }
+    /**
+     * 练琴周报：基本信息
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function weekReport(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'report_id',
+                'type' => 'required',
+                'error_code' => 'report_id_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }        $studentId = $this->ci['user_info']['user_id'];
+        try {
+            $result = AIPlayReportService::getWeekReport($studentId, $params["report_id"]);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
 
+        return HttpHelper::buildResponse($response, $result);
+    }
 
+    /**
+     * 练琴周报:练琴详情
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function weekReportPlayDetail(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'report_id',
+                'type' => 'required',
+                'error_code' => 'report_id_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $studentId = $this->ci['user_info']['user_id'];
+        try {
+            $result = AIPlayReportService::weekReportPlayDetail($studentId, $params["report_id"]);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, $result);
+    }
+    /**
+     * 练琴周报(分享)
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function sharedWeekReport(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'share_token',
+                'type' => 'required',
+                'error_code' => 'share_token_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            $result = AIPlayReportService::getSharedWeekReport($params["share_token"]);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, $result);
+    }
+    /**
+     * 练琴周报:练琴详情(分享)
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function shareWeekReportPlayDetail(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'share_token',
+                'type' => 'required',
+                'error_code' => 'share_token_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            $result = AIPlayReportService::getShareWeekReportPlayDetail($params["share_token"]);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, $result);
+    }
 }

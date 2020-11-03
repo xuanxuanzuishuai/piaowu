@@ -531,6 +531,7 @@ class DictConstants {
             'ai_comment_bad',
             'ai_comment_middle',
             'pass_line',
+            'rand_data',
         ]
     ];
 
