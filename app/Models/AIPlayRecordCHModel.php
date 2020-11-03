@@ -11,40 +11,19 @@ namespace App\Models;
 
 use App\Libs\CHDB;
 use App\Libs\Constants;
+use App\Libs\RedisDB;
+use App\Libs\Util;
 
 class AIPlayRecordCHModel
 {
     static $table = 'ai_play_record';
+    //周报统计课程演奏排行榜缓存key
+    const WEEK_LESSON_RANK_CACHE_KEY = 'week_lesson_rank_';
+
 
     public static function getLessonPlayRank($lessonId, $lessonRankTime)
     {
-        $chdb = CHDB::getDB();
-
-        $sql = "select id as play_id , lesson_id, student_id, record_id as ai_record_id, score_final as score, is_join_ranking from " . self::$table . " AS apr where
-  apr.lesson_id =:lesson_id 
-  AND apr.ui_entry =:ui_entry 
-  AND apr.is_phrase =:is_phrase 
-  AND apr.hand =:hand 
-  AND apr.score_final >=:rank_base_score 
-  AND apr.end_time >=:start_time 
-  AND apr.end_time <:end_time  
-order by score_final desc, record_id desc 
-limit 1 by lesson_id, student_id 
-limit :rank_limit";
-
-        $map = [
-            'lesson_id' => (int)$lessonId,
-            'ui_entry' => AIPlayRecordModel::UI_ENTRY_TEST,
-            'is_phrase' => Constants::STATUS_FALSE,
-            'hand' => AIPlayRecordModel::HAND_BOTH,
-            'rank_base_score' => AIPlayRecordModel::RANK_BASE_SCORE,
-            'is_join_ranking' => Constants::STATUS_TRUE,
-            'data_type' => Constants::STATUS_TRUE,
-            'rank_limit' => AIPlayRecordModel::RANK_LIMIT,
-            'start_time' => $lessonRankTime['start_time'],
-            'end_time' => $lessonRankTime['end_time']
-        ];
-        $aiPlayInfo = $chdb->queryAll($sql, $map);
+        $aiPlayInfo = self::getLessonPlayRankList($lessonId, $lessonRankTime);
         $returnInfo = [];
 
         if (empty($aiPlayInfo)) {
@@ -72,6 +51,43 @@ limit :rank_limit";
         return $returnInfo;
     }
 
+
+    /**
+     * 获取曲谱排行榜数据
+     * @param $lessonId
+     * @param $lessonRankTime
+     * @return array
+     */
+    public static function getLessonPlayRankList($lessonId, $lessonRankTime)
+    {
+        $chDb = CHDB::getDB();
+
+        $sql = "select id as play_id , lesson_id, student_id, record_id as ai_record_id, score_final as score, is_join_ranking from " . self::$table . " AS apr where
+                  apr.lesson_id =:lesson_id
+                  AND apr.ui_entry =:ui_entry
+                  AND apr.is_phrase =:is_phrase
+                  AND apr.hand =:hand 
+                  AND apr.score_final >=:rank_base_score
+                  AND apr.end_time >=:start_time
+                  AND apr.end_time <:end_time
+                order by score_final desc, record_id desc
+                limit 1 by lesson_id, student_id
+                limit :rank_limit";
+
+        $map = [
+            'lesson_id' => (int)$lessonId,
+            'ui_entry' => AIPlayRecordModel::UI_ENTRY_TEST,
+            'is_phrase' => Constants::STATUS_FALSE,
+            'hand' => AIPlayRecordModel::HAND_BOTH,
+            'rank_base_score' => AIPlayRecordModel::RANK_BASE_SCORE,
+            'data_type' => Constants::STATUS_TRUE,
+            'rank_limit' => AIPlayRecordModel::RANK_LIMIT,
+            'start_time' => $lessonRankTime['start_time'],
+            'end_time' => $lessonRankTime['end_time']
+        ];
+        return $chDb->queryAll($sql, $map);
+    }
+
     public static function getPlayInfo($studentId)
     {
         $chdb = CHDB::getDB();
@@ -82,7 +98,7 @@ count(distinct(create_date)) as play_day FROM " . self::$table . " WHERE `studen
     }
 
     /**
-     * 学生练琴汇总(按天)
+     * 学生练琴汇总(按天):非怀旧模式
      * @param $studentId
      * @param $startTime
      * @param $endTime
@@ -90,14 +106,48 @@ count(distinct(create_date)) as play_day FROM " . self::$table . " WHERE `studen
      */
     public static function getStudentSumByDate($studentId, $startTime, $endTime)
     {
-        $chdb = CHDB::getDB();
+        $chDb = CHDB::getDB();
+        $sql = "select sum(duration) as sum_duration,create_date,student_id from (select
+                    student_id,
+                    duration,
+                    create_date,record_id,track_id
+                from
+                    ai_peilian_pre.ai_play_record
+                where
+                    duration > 0
+                     and track_id !=''
+                    and student_id in (:student_id)
+                    and end_time >= :start_time
+                    and end_time <= :end_time
+                order by
+                    duration desc limit 1 by student_id,track_id) as ta group by ta.student_id,ta.create_date";
+        $result = $chDb->queryAll($sql, ['student_id' => $studentId, 'start_time' => $startTime, 'end_time' => $endTime]);
+        return $result;
+    }
 
-        $sql = "select formatDateTime(parseDateTimeBestEffort(toString(create_time)), '%Y%m%d') AS play_date,
-COUNT(DISTINCT lesson_id) AS lesson_count,SUM(duration) AS sum_duration from (
-select * from ai_peilian.ai_play_record where student_id =:student_id and duration > 0 and end_time >=:start_time and end_time <:end_time
-order by duration desc limit 1 by track_id)
-GROUP BY play_date";
-        $result = $chdb->queryAll($sql, ['student_id' => $studentId, 'start_time' => $startTime, 'end_time' => $endTime]);
+    /**
+     * 学生练琴汇总(按天):怀旧模式
+     * @param $studentId
+     * @param $startTime
+     * @param $endTime
+     * @return array
+     */
+    public static function getStudentSumByDateGoldenPicture($studentId, $startTime, $endTime)
+    {
+        $chDb = CHDB::getDB();
+        $sql = "select sum(duration) as sum_duration,create_date,student_id from (select
+                    student_id,
+                    duration,
+                    create_date,record_id,track_id
+                from
+                    ai_peilian_pre.ai_play_record
+                where
+                    duration > 0
+                     and track_id =''
+                    and student_id in (:student_id)
+                    and end_time >= :start_time
+                    and end_time <= :end_time) as ta group by ta.student_id,ta.create_date";
+        $result = $chDb->queryAll($sql, ['student_id' => $studentId, 'start_time' => $startTime, 'end_time' => $endTime]);
         return $result;
     }
 
@@ -161,5 +211,146 @@ AND end_time <:end_time";
         WHERE
            student_id = {id}
         ", ['table'=>self::$table, 'id' => $student_id]);
+    }
+
+    /**
+     * 获取一段时间内有练琴记录的学生
+     * @param $startTime
+     * @param $endTime
+     * @return array
+     */
+    public static function getBetweenTimePlayStudent($startTime, $endTime)
+    {
+        //获取本周内练琴记录的学生id
+        $chDb = CHDB::getDB();
+        $sql = "select
+                student_id
+            from
+                ai_peilian_pre.ai_play_record
+            where
+                end_time >= :start_time
+                and end_time <= :end_time
+                and duration > 0
+            GROUP by
+                student_id";
+        $map = [
+            'start_time' => $startTime,
+            'end_time' => $endTime
+        ];
+        return $chDb->queryAll($sql, $map);
+    }
+
+
+    /**
+     * 获取用户某段时间内曲目的最高分和最低分相差指定分数的曲目
+     * @param $studentIdList
+     * @param $startTime
+     * @param $endTime
+     * @param $diffScore
+     * @return array
+     */
+    public static function getStudentMaxAndMinScoreByLesson($studentIdList, $startTime, $endTime, $diffScore = 5)
+    {
+        //获取本周内练琴记录的学生id
+        $chDb = CHDB::getDB();
+        $sql = "select tmp.*,tmp.max_score-tmp.min_score as score_diff from  (select
+                                student_id,lesson_id,MAX(score_final) as max_score,MIN(score_final)  as min_score
+                            from
+                                ai_peilian_pre.ai_play_record
+                            where
+                                student_id in (:student_id)
+                                and end_time >= :start_time
+                                and end_time <= :end_time
+                                and ui_entry = :ui_entry
+                                and hand = :hand
+                                and is_phrase = :is_phrase
+                                and duration > 0
+                                and data_type = :data_type
+                            GROUP by
+                                student_id,lesson_id
+                                HAVING max_score-min_score> :diff_score) as tmp ORDER BY tmp.student_id asc,
+                score_diff desc";
+        $map = [
+            'student_id' => $studentIdList,
+            'start_time' => $startTime,
+            'end_time' => $endTime,
+            'ui_entry' => AIPlayRecordModel::UI_ENTRY_TEST,
+            'hand' => AIPlayRecordModel::HAND_BOTH,
+            'is_phrase' => Constants::STATUS_FALSE,
+            'data_type' => AIPlayRecordModel::DATA_TYPE_NORMAL,
+            'diff_score' => $diffScore,
+        ];
+        return $chDb->queryAll($sql, $map);
+    }
+
+    /**
+     * 设置周报统计时的课程排行榜数据
+     * @param $lessonId
+     * @param $cacheData
+     */
+    public static function setWeekLessonRankCache($lessonId, $cacheData)
+    {
+        $redis = RedisDB::getConn();
+        $cacheKey = self::WEEK_LESSON_RANK_CACHE_KEY . $lessonId;
+        $redis->del([$cacheKey]);
+        $redis->zadd($cacheKey, $cacheData);
+        $redis->expire($cacheKey, Util::TIMESTAMP_ONEDAY);
+    }
+
+    /**
+     * 获取周报统计时的课程排行榜数据
+     * @param $lessonId
+     * @param $studentId
+     * @return int
+     */
+    public static function getWeekLessonRankCache($lessonId, $studentId)
+    {
+        $redis = RedisDB::getConn();
+        $cacheKey = self::WEEK_LESSON_RANK_CACHE_KEY . $lessonId;
+        return $redis->zrank($cacheKey, $studentId);
+    }
+
+    /**
+     * 检测周报统计的课程排行榜是否存在
+     * @param $lessonId
+     * @return int
+     */
+    public static function checkWeekLessonCacheExists($lessonId)
+    {
+        $redis = RedisDB::getConn();
+        $cacheKey = self::WEEK_LESSON_RANK_CACHE_KEY . $lessonId;
+        return $redis->exists($cacheKey);
+    }
+
+
+    public static function getLessonMaxScoreRecordId($studentIdList, $lessonId, $lessonRankTime)
+    {
+        $chDb = CHDB::getDB();
+
+        $sql = "select
+                    lesson_id, student_id, record_id
+                from " . self::$table . " AS apr
+                where
+                apr.student_id in (:student_id)
+                  AND apr.lesson_id in (:lesson_id)
+                  AND apr.ui_entry =:ui_entry
+                  AND apr.is_phrase =:is_phrase
+                  AND apr.hand =:hand
+                  AND apr.end_time >=:start_time
+                  AND apr.end_time <:end_time
+                order by score_final desc, record_id desc
+                limit 1 by lesson_id, student_id";
+
+        $map = [
+            'student_id' => $studentIdList,
+            'lesson_id' => $lessonId,
+            'ui_entry' => AIPlayRecordModel::UI_ENTRY_TEST,
+            'is_phrase' => Constants::STATUS_FALSE,
+            'hand' => AIPlayRecordModel::HAND_BOTH,
+            'data_type' => Constants::STATUS_TRUE,
+            'start_time' => $lessonRankTime['start_time'],
+            'end_time' => $lessonRankTime['end_time']
+        ];
+        return $chDb->queryAll($sql, $map);
     }
 }
