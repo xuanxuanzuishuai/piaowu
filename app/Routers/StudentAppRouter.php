@@ -8,6 +8,7 @@
 
 namespace App\Routers;
 use App\Controllers\API\MUSVG;
+use App\Controllers\StudentApp\Favorite;
 use App\Controllers\StudentApp\Leave;
 use App\Controllers\StudentApp\App;
 use App\Controllers\StudentApp\Auth;
@@ -542,6 +543,38 @@ class StudentAppRouter extends RouterBase
             'method'  => ['post'],
             'call'    => Leave::class . ':studentCancelLeave',
             'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
-        ]
+        ],
+
+        //收藏曲谱，教材
+        '/student_app/favorite/first_page_list' => [
+            'method'  => ['get'],
+            'call'    => Favorite::class . ':firstPageList',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
+        '/student_app/favorite/add' => [
+            'method'  => ['get'],
+            'call'    => Favorite::class . ':add',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
+        '/student_app/favorite/cancel' => [
+            'method'  => ['get'],
+            'call'    => Favorite::class . ':cancel',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
+        '/student_app/favorite/get_favorite_lesson' => [
+            'method'  => ['get'],
+            'call'    => Favorite::class . ':getFavoritesLesson',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
+        '/student_app/favorite/get_favorite_collection' => [
+            'method'  => ['get'],
+            'call'    => Favorite::class . ':getFavoriteCollection',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
+        '/student_app/favorite/lesson_favorite_status' => [
+            'method'  => ['get'],
+            'call'    => Favorite::class . ':lessonFavoriteStatus',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
     ];
 }
