@@ -66,4 +66,33 @@ class StudentLearnRecordModel extends Model
         return $db->queryAll($sql);
     }
 
+    /**
+     * 获取用户已完成上课的节数:完成上课&已补课
+     * @param $studentId
+     * @param $startTime
+     * @param $endTime
+     * @return array
+     */
+    public static function getStudentCompleteCount($studentId, $startTime, $endTime)
+    {
+        $sql = "SELECT
+                    COUNT( id ) AS class_count,student_id
+                FROM
+                    " . self::$table . "
+                WHERE
+                    student_id IN ( :student_id )
+                    AND learn_status IN ( ".self::FINISH_LEARNING.",".self::MAKE_UP_LESSONS." )
+                    AND create_time BETWEEN :start_time
+	                AND :end_time
+                GROUP BY
+                    student_id";
+        $map = [
+            ':student_id' => $studentId,
+            ':start_time' => $startTime,
+            ':end_time' => $endTime,
+        ];
+        $records = MysqlDB::getDB()->queryAll($sql, $map);
+        return $records ?? [];
+    }
+
 }

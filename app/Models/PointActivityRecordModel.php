@@ -28,4 +28,46 @@ class PointActivityRecordModel extends Model
         $result = self::getRecords($where);
         return $result ?? [];
     }
+
+    /**
+     * 获取学生任务完成数量
+     * @param $studentId
+     * @param $startTime
+     * @param $endTime
+     * @param $taskId
+     * @return array|null
+     */
+    public static function getStudentFinishTasksBetweenTime($studentId, $startTime, $endTime, $taskId)
+    {
+        $db = MysqlDB::getDB();
+        $map = [
+            ':start_time' => $startTime,
+            ':end_time' => $endTime];
+        $result = $db->queryAll('SELECT
+                                    count( * ) as cm,
+                                    ta.student_id,
+                                    ta.task_id
+                                FROM
+                                    (
+                                    SELECT
+                                        student_id,
+                                        task_id,
+                                        report_date
+                                    FROM
+                                        point_activity_record
+                                    WHERE
+                                        student_id IN ( '.implode(',',$studentId).' )
+                                        AND task_id IN ( '.implode(',',$taskId).' )
+                                        AND create_time BETWEEN :start_time
+                                        AND :end_time
+                                    GROUP BY
+                                        student_id,
+                                        task_id,
+                                        report_date
+                                    ) AS ta
+                                GROUP BY
+                                    ta.student_id,
+                                    ta.task_id', $map);
+        return $result;
+    }
 }
