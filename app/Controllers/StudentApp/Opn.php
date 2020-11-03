@@ -229,9 +229,17 @@ class Opn extends ControllerBase
         }
         $data = $result;
         $list = OpernService::appFormatCollections($data['data']);
+
+        $collectionList = array_combine(array_column($list, 'id'), $list);
+        $categoryIds = explode(',', $categoryId);
+        foreach ($categoryIds as $key => $id) {
+            if (!empty($collectionList[$id])) {
+                $resultList[] = $collectionList[$id];
+            }
+        }
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
-            'data' => $list
+            'data' => $resultList
         ], StatusCode::HTTP_OK);
     }
 
