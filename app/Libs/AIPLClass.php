@@ -13,6 +13,7 @@ class AIPLClass
 {
     const API_REPORT = '/report';
     const API_CLASS_REPORT = '/class_report';
+    const API_CLASS_WEEK_REPORT = '/week_report';
 
     /**
      * 获取点评话术
@@ -57,6 +58,28 @@ class AIPLClass
             return [];
         }
 
+        return $result['data'] ?? [];
+    }
+
+    /**
+     * 获取周报报告详情
+     * @param $uuid
+     * @param $year
+     * @param $week
+     * @return array|bool
+     */
+    public static function getWeekReport($uuid, $year, $week)
+    {
+        $host = DictConstants::get(DictConstants::SERVICE, 'ai_class_host');
+        $result = HttpHelper::requestJson($host . self::API_CLASS_WEEK_REPORT, [
+            'year' => $year,
+            'week' => $week,
+            'uuid' => $uuid
+        ]);
+        if (empty($result) || $result['code'] != 0) {
+            SimpleLogger::error("[AIPLClass getWeekReport] error", ['errors' => $result['errs'] ?? null]);
+            return [];
+        }
         return $result['data'] ?? [];
     }
 }
