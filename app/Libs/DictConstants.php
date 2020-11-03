@@ -512,6 +512,28 @@ class DictConstants {
         'type' => 'ding_apply_status',
         'keys' => [1,2,3,4,5]
     ];
+    //学生练琴周报相关配置
+    const WEEK_REPORT_CONFIG = [
+        'type' => 'week_report_config',
+        'keys' => [
+            'play_piano_30_minutes',
+            'evaluation_the_whole_song',
+            'sound_base_questions',
+            'watch_demo_video',
+            'difficult_points',
+            'tasks_total_count',
+            'compare_play_days_name',
+            'compare_average_duration_name',
+            'compare_class_name',
+            'compare_task_name',
+            'ai_comment_default',
+            'ai_comment_perfect',
+            'ai_comment_bad',
+            'ai_comment_middle',
+            'pass_line',
+        ]
+    ];
+
     public static function get($type, $key)
     {
         if (empty($type) || empty($key)) {

@@ -79,7 +79,7 @@ class CHDB
         try {
             $ret = call_user_func_array(array($this->client, $name), $arguments);
         } catch (\Exception $e) {
-            SimpleLogger::error('make user qr image exception', [print_r($e->getMessage(), true)]);
+            SimpleLogger::error('call user func exception', [print_r($e->getMessage(), true)]);
             return null;
         }
         return $ret;
