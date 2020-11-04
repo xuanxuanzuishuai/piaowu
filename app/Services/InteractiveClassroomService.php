@@ -1291,6 +1291,9 @@ class InteractiveClassroomService
             $result['student_status'] = (INT)$student['has_review_course'];
         }
         $result['sub_end_time'] = !empty($student['sub_end_date']) ? strtotime($student['sub_end_date'] . "23:59:59") : Constants::STATUS_FALSE;
+
+        $result['sub_status'] = $appSubStatus ? 1 : 0;
+
         return $result;
     }
 }
