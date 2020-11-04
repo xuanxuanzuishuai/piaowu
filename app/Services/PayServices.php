@@ -210,6 +210,10 @@ class PayServices
         $origin = $_SERVER['HTTP_ORIGIN'];
         $transUrl = (strpos($origin, 'referral') !== false);
 
+        // IE浏览器没有 HTTP_ORIGIN ，用 HTTP_REFERER 判断
+        $referer = $_SERVER['HTTP_REFERER'];
+        $transUrl = $transUrl || (strpos($referer, 'referral') !== false);
+
         $ret = $erp->createBill(
             $uuid,
             $packageId,
