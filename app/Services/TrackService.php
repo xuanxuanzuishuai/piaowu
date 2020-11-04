@@ -519,7 +519,9 @@ class TrackService
     {
         switch ($eventType) {
             case self::TRACK_EVENT_ACTIVE:
-               return true;
+            case self::TRACK_EVENT_REGISTER:
+            case self::TRACK_EVENT_PAY:
+                return true;
             default:
                 return false;
         }
