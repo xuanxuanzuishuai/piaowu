@@ -223,9 +223,9 @@ class StudentLoginService
     {
         if (!empty($params['idfa']) && $params['idfa'] != '00000000-0000-0000-0000-000000000000') {
             $deviceModel = ($appleDeviceMap[$params['device_model']] ?? '未知设备') . "(" . substr($params['idfa'], -4, 4) . ")";
-        } elseif (!empty($value['imei'])) {
+        } elseif (!empty($params['imei'])) {
             $deviceModel = $params['device_model'] . "(" . substr($params['imei'], -4, 4) . ")";
-        } elseif (!empty($value['android_id'])) {
+        } elseif (!empty($params['android_id'])) {
             $deviceModel = $params['device_model'] . "(" . substr($params['android_id'], -4, 4) . ")";
         } else {
             $deviceModel = $params['device_model'] . "(--)";

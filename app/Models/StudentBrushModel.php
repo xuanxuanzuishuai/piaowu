@@ -42,7 +42,7 @@ class StudentBrushModel extends Model
                 FROM
                     {$studentBrush} AS sbo
                     INNER JOIN {$studentBrush} AS sbn ON sbo.student_id = {$studentId} AND sbo.brush_no = sbn.brush_no
-                    LEFT JOIN {$studentLoginInfo} AS sli ON sli.student_id = sbn.student_id AND sli.has_review_course = 1
+                    LEFT JOIN {$studentLoginInfo} AS sli ON sli.student_id = sbn.student_id
                     LEFT JOIN {$student} as s ON s.id = sbn.student_id
                     LEFT JOIN {$employee} as e ON s.assistant_id = e.id
                     LEFT JOIN {$collection} as c ON s.collection_id = c.id";
