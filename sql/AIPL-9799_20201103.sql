@@ -80,6 +80,11 @@ INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
 VALUES ('week_report_config', '练琴周报配置', 'pass_line', '0.8', '及格线');
 INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
 VALUES ('week_report_config', '练琴周报配置', 'tasks_total_count', '35', '周任务总数');
+INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
+VALUES ('week_report_config', '练琴周报配置', 'diff_score', '5', '分差值');
+INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
+VALUES ('week_report_config', '练琴周报配置', 'audio_limit', '3', '获取音频数据最大数量');
+
 INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES
 ('week_report_config', '练琴周报配置', 'rand_data', '{\"nor\":{\"days\":{\"min\":4.5,\"max\":5.5},\"duration\":{\"min\":35,\"max\":45},\"class\":{\"min\":0.85,\"max\":0.95},\"task\":{\"min\":75,\"max\":85}},\"va\":{\"days\":{\"min\":5,\"max\":6},\"duration\":{\"min\":45,\"max\":60},\"class\":{\"min\":0.85,\"max\":0.95},\"task\":{\"min\":78,\"max\":88}}}', NULL);
 
@@ -99,7 +104,7 @@ VALUES ('week_report_config', '练琴周报配置', 'difficult_points', @difficu
 
 set @evaluation_the_whole_song_task_id = (select id
                                           from erp_event_task
-                                          where name = '完成1次双手全曲评测');
+                                          where name = '完成1次双手全曲评测'  order by id asc limit 1);
 INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
 VALUES ('week_report_config', '练琴周报配置', 'evaluation_the_whole_song', @evaluation_the_whole_song_task_id, '全曲评测taskid');
 
@@ -126,3 +131,12 @@ INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
 VALUES ('week_report_config', '练琴周报配置', @watch_demo_video_task_id, '观看示范视频', '');
 INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
 VALUES ('week_report_config', '练琴周报配置', @difficult_points_task_id, '学习重难点', '');
+
+-- 周报分享渠道
+INSERT INTO `dict` ( `type`, `key_name`, `key_code`, `key_value`, `desc` )
+VALUES
+	( 'WEIXIN_STUDENT_CONFIG', '智能陪练微信端设置', 'week_report_share_channel_id', '2018', '周报分享渠道' );
+-- 周报分享链接域名
+INSERT INTO `dict` ( `type`, `key_name`, `key_code`, `key_value`, `desc` )
+VALUES
+  ( 'APP_CONFIG_STUDENT', 'AI练琴后端设置', 'week_report_share_assess_url', 'https://referral.xiaoyezi.com/market/index', '周报分享链接域名' );

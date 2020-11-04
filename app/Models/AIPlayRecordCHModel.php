@@ -23,7 +23,7 @@ class AIPlayRecordCHModel
 
     public static function getLessonPlayRank($lessonId, $lessonRankTime)
     {
-        $aiPlayInfo = self::getLessonPlayRankList($lessonId, $lessonRankTime);
+        $aiPlayInfo = self::getLessonPlayRankList([(int)$lessonId], $lessonRankTime);
         $returnInfo = [];
 
         if (empty($aiPlayInfo)) {
@@ -54,16 +54,16 @@ class AIPlayRecordCHModel
 
     /**
      * 获取曲谱排行榜数据
-     * @param $lessonId
+     * @param $lessonIdList
      * @param $lessonRankTime
      * @return array
      */
-    public static function getLessonPlayRankList($lessonId, $lessonRankTime)
+    public static function getLessonPlayRankList($lessonIdList, $lessonRankTime)
     {
         $chDb = CHDB::getDB();
 
-        $sql = "select id as play_id , lesson_id, student_id, record_id as ai_record_id, score_final as score, is_join_ranking from " . self::$table . " AS apr where
-                  apr.lesson_id =:lesson_id
+        $sql = "select tmp.* from (select id as play_id , lesson_id, student_id, record_id as ai_record_id, score_final as score, is_join_ranking from " . self::$table . " AS apr where
+                  apr.lesson_id in (:lesson_id)
                   AND apr.ui_entry =:ui_entry
                   AND apr.is_phrase =:is_phrase
                   AND apr.hand =:hand 
@@ -71,11 +71,10 @@ class AIPlayRecordCHModel
                   AND apr.end_time >=:start_time
                   AND apr.end_time <:end_time
                 order by score_final desc, record_id desc
-                limit 1 by lesson_id, student_id
-                limit :rank_limit";
+                limit 1 by lesson_id, student_id) as tmp limit :rank_limit by tmp.lesson_id";
 
         $map = [
-            'lesson_id' => (int)$lessonId,
+            'lesson_id' => $lessonIdList,
             'ui_entry' => AIPlayRecordModel::UI_ENTRY_TEST,
             'is_phrase' => Constants::STATUS_FALSE,
             'hand' => AIPlayRecordModel::HAND_BOTH,
@@ -226,7 +225,7 @@ AND end_time <:end_time";
         $sql = "select
                 student_id
             from
-                ai_peilian_pre.ai_play_record
+                ".self::$table."
             where
                 end_time >= :start_time
                 and end_time <= :end_time
@@ -249,14 +248,14 @@ AND end_time <:end_time";
      * @param $diffScore
      * @return array
      */
-    public static function getStudentMaxAndMinScoreByLesson($studentIdList, $startTime, $endTime, $diffScore = 5)
+    public static function getStudentMaxAndMinScoreByLesson($studentIdList, $startTime, $endTime, $diffScore)
     {
         //获取本周内练琴记录的学生id
         $chDb = CHDB::getDB();
         $sql = "select tmp.*,tmp.max_score-tmp.min_score as score_diff from  (select
                                 student_id,lesson_id,MAX(score_final) as max_score,MIN(score_final)  as min_score
                             from
-                                ai_peilian_pre.ai_play_record
+                                ".self::$table."
                             where
                                 student_id in (:student_id)
                                 and end_time >= :start_time
@@ -272,13 +271,13 @@ AND end_time <:end_time";
                 score_diff desc";
         $map = [
             'student_id' => $studentIdList,
-            'start_time' => $startTime,
-            'end_time' => $endTime,
+            'start_time' => (int)$startTime,
+            'end_time' => (int)$endTime,
             'ui_entry' => AIPlayRecordModel::UI_ENTRY_TEST,
             'hand' => AIPlayRecordModel::HAND_BOTH,
             'is_phrase' => Constants::STATUS_FALSE,
             'data_type' => AIPlayRecordModel::DATA_TYPE_NORMAL,
-            'diff_score' => $diffScore,
+            'diff_score' => (int)$diffScore,
         ];
         return $chDb->queryAll($sql, $map);
     }
@@ -344,6 +343,7 @@ AND end_time <:end_time";
                   AND apr.hand =:hand
                   AND apr.end_time >=:start_time
                   AND apr.end_time <:end_time
+                  AND apr.data_type = :data_type
                 order by score_final desc, record_id desc
                 limit 1 by lesson_id, student_id";
 

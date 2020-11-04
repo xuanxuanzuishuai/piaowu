@@ -27,6 +27,7 @@ use App\Models\StudentLearnRecordModel;
 use App\Models\StudentModel;
 use App\Models\StudentSignUpCourseModel;
 use App\Models\StudentWeekReportModel;
+use App\Models\UserQrTicketModel;
 use App\Services\Queue\PushMessageTopic;
 use Lcobucci\JWT\Signer\Hmac\Sha256;
 use Lcobucci\JWT\Builder;
@@ -413,15 +414,64 @@ class AIPlayReportService
                 'id' => $reportId,
                 'student_id' => $studentId
             ],
-            ['year', 'week', 'basic_info', 'ai_comment', 'progress', 'tasks', 'is_pass', 'start_time', 'end_time'],
+            ['basic_info', 'ai_comment', 'progress', 'tasks', 'is_pass', 'start_time', 'end_time'],
             false);
         if (empty($report)) {
             return [];
         }
+        //获取演奏曲目的音频文件地址与课程信息
+        $progressData = json_decode($report['progress'], true);
+        if (is_array($progressData) && !empty($progressData)) {
+            //获取课程信息
+            $lessonIds = array_unique(array_column($progressData, 'lesson_id'));
+            $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, AIPlayRecordService::DEFAULT_APP_VER);
+            $res = $opn->lessonsByIds($lessonIds);
+            $lessonInfo = [];
+            if (!empty($res) && $res['code'] == Valid::CODE_SUCCESS) {
+                $lessonInfo = array_column($res['data'], null, 'lesson_id');
+            }
+            $weekReportConfig = DictConstants::getSet(DictConstants::WEEK_REPORT_CONFIG);
+            //音频文件：只获取首页的前n条数据，其余数据在详情页通过单独接口获取
+            $i = 1;
+            $audioLimit = $weekReportConfig['audio_limit'];
+            array_walk($progressData, function (&$pv) use ($lessonInfo, $audioLimit, &$i) {
+                //音频文件
+                $pv['audio_url'] = '';
+                if ($i <= $audioLimit) {
+                    $pv['audio_url'] = AIPLCenter::userAudio($pv['record_id'])['data']['audio_url'] ?? '';
+                }
+                $pv['collection_name'] = $lessonInfo[$pv['lesson_id']]['collection_name'];
+                $pv['lesson_name'] = $lessonInfo[$pv['lesson_id']]['lesson_name'];
+                $i++;
+            });
+        }
+        $report['progress'] = json_encode($progressData);
         $report['name'] = $studentInfo['name'];
+        $report['uuid'] = $studentInfo['uuid'];
         $report['thumb'] = $studentInfo['thumb'] ? AliOSS::replaceCdnDomainForDss($studentInfo['thumb']) : AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb'));
         $report["share_token"] = self::getShareReportToken($studentId, $reportId);
+        $report['replay_token'] = AIBackendService::genStudentToken($studentId);
+        //周报分享链接
+        $report['share_assess_url'] = self::makeWeekReportShareLink($studentId);
         return $report;
+    }
+
+    /**
+     * 生成周报分享链接地址
+     * @param $studentId
+     * @return string
+     */
+    private static function makeWeekReportShareLink($studentId)
+    {
+        $weekReportAssessUrl = DictConstants::get(DictConstants::APP_CONFIG_STUDENT, 'week_report_share_assess_url');
+        $channelId = DictConstants::get(DictConstants::WEIXIN_STUDENT_CONFIG, 'week_report_share_channel_id');
+        $TicketData = UserService::getUserQRAliOss($studentId, UserQrTicketModel::STUDENT_TYPE, $channelId);
+        $data = array(
+            'ad' => 0,
+            'channel_id' => $channelId,
+            'referee_id' => $TicketData['qr_ticket']
+        );
+        return $weekReportAssessUrl . '?' . http_build_query($data);
     }
 
     /**
@@ -437,7 +487,10 @@ class AIPlayReportService
         if (empty($studentInfo)) {
             throw new RunTimeException(['student_not_exist']);
         }
-        $detailData = [];
+        $detailData = [
+            'reports' => [],
+            'amended_statistics' => [],
+        ];
         $reportDetail = StudentWeekReportModel::getRecord(
             [
                 'id' => $reportId,
@@ -528,7 +581,7 @@ class AIPlayReportService
         $weekReportConfig = DictConstants::getSet(DictConstants::WEEK_REPORT_CONFIG);
         $studentCompleteTasks = self::getStudentFinishTasksBetweenTime($studentIdList, $startTime, $endTime, $weekReportConfig);
         //获取周进步数据
-        $lessonProgressData = self::getLessonProgressData($studentIdList, $startTime, $endTime);
+        $lessonProgressData = self::getLessonProgressData($studentIdList, $startTime, $endTime, $weekReportConfig['diff_score']);
         //统计数据
         array_map(function ($playVal) use (&$totalPlayData) {
             //练琴天数
@@ -539,20 +592,21 @@ class AIPlayReportService
 
         }, array_merge($playData, $goldenPicturePlayData));
         //获取其他人数据
-        $otherData = self::getOtherStudentRandPlayData($classCount);
+        $otherData = self::getOtherStudentRandPlayData($studentIdList, $classCount);
         //获取学生本周演奏的曲目数量
         $studentPlayLessonCountData = array_column(AIPlayRecordCHModel::getStudentLessonCountBetweenTime($studentIdList, $startTime, $endTime), null, 'student_id');
         array_map(function ($studentId) use ($totalPlayData, $classRoom, &$staticsData, $otherData, $weekReportConfig, $studentCompleteTasks, $lessonProgressData, $startTime, $endTime, $week, $year, $time, $studentPlayLessonCountData) {
             //练琴天数
+            $basicInfo = [];
             $playDays = count($totalPlayData[$studentId]['play_days']);
             $basicInfo['data']['days']['self'] = $playDays;
-            $basicInfo['data']['days']['other'] = $otherData['play_days'];
+            $basicInfo['data']['days']['other'] = $otherData[$studentId]['play_days'];
             //平均练琴时长
-            $basicInfo['data']['duration']['self'] = round(($totalPlayData[$studentId]['play_durations'] / 60) / $playDays);
-            $basicInfo['data']['duration']['other'] = $otherData['average_duration'];
+            $basicInfo['data']['duration']['self'] = ceil(($totalPlayData[$studentId]['play_durations'] / 60) / $playDays);
+            $basicInfo['data']['duration']['other'] = $otherData[$studentId]['average_duration'];
             //互动课堂
             $basicInfo['data']['class']['self'] = is_null($classRoom[$studentId]['class_count']) ? 0 : $classRoom[$studentId]['class_count'];
-            $basicInfo['data']['class']['other'] = $otherData['class_count'];
+            $basicInfo['data']['class']['other'] = $otherData[$studentId]['class_count'];
             //练琴曲目数，总时长
             $basicInfo['extra']['lesson_count'] = $studentPlayLessonCountData[$studentId]['lesson_count'];
             $basicInfo['extra']['sum_durations'] = $totalPlayData[$studentId]['play_durations'];
@@ -560,7 +614,7 @@ class AIPlayReportService
             //任务完成度
             $completePer = $studentCompleteTasks[$studentId]['total_complete_count'] / $weekReportConfig['tasks_total_count'];
             $basicInfo['data']['task']['self'] = round($completePer);
-            $basicInfo['data']['task']['other'] = $otherData['task'];
+            $basicInfo['data']['task']['other'] = $otherData[$studentId]['task'];
             //评语
             $staticsData[$studentId]['ai_comment'] = self::getAiComment($weekReportConfig, $basicInfo['data']);
             //周练琴完成任务列表
@@ -570,7 +624,7 @@ class AIPlayReportService
             //本周成绩是否及格
             $staticsData[$studentId]['is_pass'] = (int)($completePer >= $weekReportConfig['pass_line']);
             //进步曲目
-            $progress = empty($lessonProgressData[$studentId]) ? "" : $lessonProgressData[$studentId];
+            $progress = empty($lessonProgressData[$studentId]) ? (object)[] : $lessonProgressData[$studentId];
             //入库数据
             $staticsData[$studentId]['student_id'] = $studentId;
             $staticsData[$studentId]['week'] = $week;
@@ -579,6 +633,7 @@ class AIPlayReportService
             $staticsData[$studentId]['update_time'] = $time;
             $staticsData[$studentId]['start_time'] = $startTime;
             $staticsData[$studentId]['end_time'] = $endTime;
+            $basicInfo['data'] = array_values($basicInfo['data']);
             $staticsData[$studentId]['basic_info'] = json_encode($basicInfo);
             $staticsData[$studentId]['tasks'] = json_encode($tasks);
             $staticsData[$studentId]['progress'] = json_encode($progress);
@@ -587,43 +642,53 @@ class AIPlayReportService
     }
 
     /**
-     * 获取用户某段时间内曲目
+     * 获取用户某段时间内进步曲目
      * @param $studentIdList
      * @param $startTime
      * @param $endTime
+     * @param $diffScore
      * @return array
      */
-    private static function getLessonProgressData($studentIdList, $startTime, $endTime)
+    private static function getLessonProgressData($studentIdList, $startTime, $endTime, $diffScore)
     {
         $progressData = $lessonInfo = [];
-        $playLessonData = AIPlayRecordCHModel::getStudentMaxAndMinScoreByLesson($studentIdList, $startTime, $endTime);
+        $playLessonData = AIPlayRecordCHModel::getStudentMaxAndMinScoreByLesson($studentIdList, $startTime, $endTime, $diffScore);
         if (empty($playLessonData)) {
             return $progressData;
         }
         //获取课程信息
-        $lessonIds = array_column($playLessonData, 'lesson_id');
-        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, AIPlayRecordService::DEFAULT_APP_VER);
-        $res = $opn->lessonsByIds($lessonIds);
-        if (!empty($res) && $res['code'] == Valid::CODE_SUCCESS) {
-            $lessonInfo = array_column($res['data'], null, 'lesson_id');
-        }
+        $lessonIds = array_unique(array_column($playLessonData, 'lesson_id'));
         $lessonRankTime = ['start_time' => $startTime, 'end_time' => $endTime];
         //获取课程演奏排行榜数据
-        foreach ($lessonIds as $lid) {
+        $rankList = AIPlayRecordCHModel::getLessonPlayRankList($lessonIds, $lessonRankTime);
+        array_map(function ($rankVal) use (&$lessonRankData) {
+            $lessonRankData[$rankVal['lesson_id']][] = $rankVal;
+        }, $rankList);
+        array_map(function ($lid) use ($lessonRankData) {
             if (empty(AIPlayRecordCHModel::checkWeekLessonCacheExists($lid))) {
-                $rankList = AIPlayRecordCHModel::getLessonPlayRankList($lid, $lessonRankTime);
-                AIPlayRecordCHModel::setWeekLessonRankCache($lid, array_column($rankList, 'score', 'student_id'));
+                $cacheData = $lessonRankData[$lid];
+                if (empty($cacheData)) {
+                    //此曲目没有排行榜数据进行占位
+                    $cacheData = ['0' => 0];
+                } else {
+                    $cacheData = array_column($lessonRankData[$lid], 'score', 'student_id');
+                }
+                AIPlayRecordCHModel::setWeekLessonRankCache($lid, $cacheData);
             }
-        }
+        }, $lessonIds);
         //获取每个曲目得分第一名的record_id
-        $studentMaxScoreData = array_column(AIPlayRecordCHModel::getLessonMaxScoreRecordId($studentIdList, $lessonIds, $lessonRankTime), null, 'student_id');
-        array_map(function ($lv) use (&$progressData, $lessonInfo, $studentMaxScoreData) {
-            $lv['collection_name'] = $lessonInfo[$lv['lesson_id']]['collection_name'];
-            $lv['lesson_name'] = $lessonInfo[$lv['lesson_id']]['lesson_name'];
-            $lv['is_in_rank'] = is_null(AIPlayRecordCHModel::getWeekLessonRankCache($lv['lesson_id'], $lv['student_id'])) ? false : true;
-            $lv['record_id'] = $studentMaxScoreData[$lv['student_id']]['record_id'];
-            $lv['audio_url'] = AIPLCenter::userAudio($studentMaxScoreData[$lv['student_id']]['record_id'])['data']['audio_url'] ?? '';
-            $progressData[$lv['student_id']][] = $lv;
+        $studentMaxScoreData = AIPlayRecordCHModel::getLessonMaxScoreRecordId($studentIdList, $lessonIds, $lessonRankTime);
+        array_map(function ($rankVal) use (&$studentLessonRankData) {
+            $studentLessonRankData[$rankVal['student_id']][$rankVal['lesson_id']] = $rankVal;
+        }, $studentMaxScoreData);
+        array_map(function ($lv) use (&$progressData, $studentLessonRankData) {
+            $pdv['is_in_rank'] = is_null(AIPlayRecordCHModel::getWeekLessonRankCache($lv['lesson_id'], $lv['student_id'])) ? false : true;
+            $pdv['record_id'] = $studentLessonRankData[$lv['student_id']][$lv['lesson_id']]['record_id'];
+            $pdv['score_diff'] = (string)round($lv['score_diff'], 1);
+            $pdv['min_score'] = (string)round($lv['min_score'], 1);
+            $pdv['max_score'] = (string)round($lv['max_score'], 1);
+            $pdv['lesson_id'] = $lv['lesson_id'];
+            $progressData[$lv['student_id']][] = $pdv;
         }, $playLessonData);
         return $progressData;
     }
@@ -670,18 +735,22 @@ class AIPlayReportService
 
     /**
      * 获取对比数据
+     * @param $studentIdList
      * @param $classCount
      * @return array
      */
-    private static function getOtherStudentRandPlayData($classCount)
+    private static function getOtherStudentRandPlayData($studentIdList, $classCount)
     {
         $randData = self::weekReportRandData(time());
-        return [
-            'play_days' => self::randomFloat($randData['days']['min'], $randData['days']['max']),
-            'average_duration' => mt_rand($randData['duration']['min'], $randData['duration']['max']),
-            'class_count' => self::randomFloat($classCount * $randData['class']['min'], $classCount * $randData['class']['min']),
-            'task' => mt_rand($randData['task']['min'], $randData['task']['max']) / 100,
-        ];
+        array_map(function ($sid) use ($randData, $classCount, &$studentRandData) {
+            $studentRandData[$sid] = [
+                'play_days' => self::randomFloat($randData['days']['min'], $randData['days']['max']),
+                'average_duration' => mt_rand($randData['duration']['min'], $randData['duration']['max']),
+                'class_count' => self::randomFloat($classCount * $randData['class']['min'], $classCount * $randData['class']['min']),
+                'task' => mt_rand($randData['task']['min'], $randData['task']['max']) / 100,
+            ];
+        }, $studentIdList);
+        return $studentRandData;
     }
 
 
@@ -719,7 +788,7 @@ class AIPlayReportService
         } else {
             array_push($taskList['disparity'], $weekReportConfig['compare_task_name']);
         }
-        if (empty($playDays)) {
+        if (empty($studentPlayData['days']['self'])) {
             $aiComment = $weekReportConfig['ai_comment_default'];
         } elseif (($playDaysStatus == true) &&
             ($averageDurationStatus == true) &&

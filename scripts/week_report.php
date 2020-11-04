@@ -27,6 +27,9 @@ $dotenv = new Dotenv(PROJECT_ROOT, '.env');
 $dotenv->load();
 $dotenv->overload();
 try {
+    $sm = memory_get_usage();
+    $executeStartTime = time();
+    SimpleLogger::info("week report start", []);
     //获取本周内练琴记录的学生id
     list($startTime, $endTime, $year, $week) = Util::getDateWeekStartEndTime(strtotime("-1 day"));
     $studentList = array_column(AIPlayRecordCHModel::getBetweenTimePlayStudent($startTime, $endTime), 'student_id');
@@ -51,4 +54,11 @@ try {
     SimpleLogger::error($e->getMessage(), $msgBody ?? []);
     return false;
 }
-return true;
+$executeEndTime = time();
+$em = memory_get_usage();
+$logData = [
+    'start_time' => date("Y-m-d H:i:s", $executeStartTime),
+    'end_time' => date("Y-m-d H:i:s", $executeEndTime),
+    'student_count' => $studentCount,
+    'use_memory' => round(($em - $sm) / 1024 / 1024, 1) . 'MB'];
+SimpleLogger::info("week report end", $logData);

@@ -149,6 +149,10 @@ class StudentWXRouter extends RouterBase
             'method' => ['get'],
             'call' => PlayReport::class . ':weekReportPlayDetail',
         ],
+        '/student_wx/play_report/record_audio' => [
+            'method' => ['get'],
+            'call' => PlayReport::class . ':playRecordAudioUrl',
+        ],
         // 练琴周报(分享)
         '/student_wx/play_report/shared_week_report' => [
             'method' => ['get'],
@@ -158,6 +162,11 @@ class StudentWXRouter extends RouterBase
         '/student_wx/play_report/shared_week_report_play_detail' => [
             'method' => ['get'],
             'call' => PlayReport::class . ':shareWeekReportPlayDetail',
+            'middles' => []
+        ],
+        '/student_wx/play_report/shared_record_audio' => [
+            'method' => ['get'],
+            'call' => PlayReport::class . ':sharedPlayRecordAudioUrl',
             'middles' => []
         ],
         // ???

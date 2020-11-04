@@ -13,6 +13,7 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\Valid;
 use App\Models\StudentModel;
+use App\Services\AIPlayRecordService;
 use App\Services\AIPlayReportService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -270,7 +271,8 @@ class PlayReport extends ControllerBase
         $result = Valid::appValidate($params, $rules);
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
-        }        $studentId = $this->ci['user_info']['user_id'];
+        }
+        $studentId = $this->ci['user_info']['user_id'];
         try {
             $result = AIPlayReportService::getWeekReport($studentId, $params["report_id"]);
         } catch (RunTimeException $e) {
@@ -361,5 +363,70 @@ class PlayReport extends ControllerBase
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
         return HttpHelper::buildResponse($response, $result);
+    }
+
+    /**
+     * 获取练琴记录的音频记录
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function playRecordAudioUrl(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'record_id',
+                'type' => 'required',
+                'error_code' => 'record_id_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $studentId = $this->ci['user_info']['user_id'];
+        try {
+            $audioUrl = AIPlayRecordService::getAiAudio($studentId, $params["record_id"]);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+
+        return HttpHelper::buildResponse($response, ['audio_url' => $audioUrl]);
+    }
+
+    /**
+     * 获取练琴记录的音频记录:分享
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function sharedPlayRecordAudioUrl(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'share_token',
+                'type' => 'required',
+                'error_code' => 'share_token_is_required'
+            ],
+            [
+                'key' => 'record_id',
+                'type' => 'required',
+                'error_code' => 'record_id_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            //解析token数据
+            $shareTokenInfo = AIPlayReportService::parseShareReportToken($params["share_token"]);
+            $audioUrl = AIPlayRecordService::getAiAudio($shareTokenInfo["student_id"], $params["record_id"]);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, ['audio_url' => $audioUrl]);
     }
 }

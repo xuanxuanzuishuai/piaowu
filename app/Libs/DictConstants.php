@@ -143,6 +143,7 @@ class DictConstants {
             'get_omr_music_score_search_switch',
             'get_share_class_url',
             'popular_textbooks_ids',
+            'week_report_share_assess_url',
         ]
     ];
 
@@ -171,6 +172,7 @@ class DictConstants {
             'success_url_v1',
             'result_url_v1',
             'share_class_information_channel_id',
+            'week_report_share_channel_id',
         ]
     ];
 
@@ -532,6 +534,8 @@ class DictConstants {
             'ai_comment_middle',
             'pass_line',
             'rand_data',
+            'diff_score',
+            'audio_limit',
         ]
     ];
 
