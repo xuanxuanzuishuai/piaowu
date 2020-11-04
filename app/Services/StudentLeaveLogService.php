@@ -26,12 +26,16 @@ class StudentLeaveLogService
             return [];
         }
         array_walk($studentLeaveLogList, function (&$studentLeaveLog) {
-            if ($studentLeaveLog['leave_status'] == StudentLeaveLogModel::STUDENT_LEAVE_STATUS_NORMAL && $studentLeaveLog['end_leave_time'] < time()) $studentLeaveLog['leave_status'] = (string)StudentLeaveLogModel::STUDENT_LEAVE_STATUS_OVER;
+            $endLeaveTime = $studentLeaveLog['end_leave_time'] + 86400 -1;
+            if ($studentLeaveLog['leave_status'] == StudentLeaveLogModel::STUDENT_LEAVE_STATUS_NORMAL && $endLeaveTime < time()) {
+                $studentLeaveLog['leave_status'] = (string)StudentLeaveLogModel::STUDENT_LEAVE_STATUS_OVER;
+            }
             $studentLeaveLog['leave_time'] = !empty($studentLeaveLog['leave_time']) ? date('Y-m-d H:i:s', $studentLeaveLog['leave_time']) : '';
             $studentLeaveLog['start_leave_time'] = !empty($studentLeaveLog['start_leave_time']) ? date('Y-m-d', $studentLeaveLog['start_leave_time']) : '';
             $studentLeaveLog['end_leave_time'] = !empty($studentLeaveLog['end_leave_time']) ? date('Y-m-d', $studentLeaveLog['end_leave_time']) : '';
             $studentLeaveLog['actual_end_time'] = !empty($studentLeaveLog['actual_end_time']) ? date('Y-m-d', $studentLeaveLog['actual_end_time']) : '';
             $studentLeaveLog['cancel_time'] = !empty($studentLeaveLog['cancel_time']) ? date('Y-m-d H:i:s', $studentLeaveLog['cancel_time']) : '';
+            $studentLeaveLog['actual_days'] = $studentLeaveLog['leave_status'] == StudentLeaveLogModel::STUDENT_LEAVE_STATUS_CANCEL ? $studentLeaveLog['actual_days'] : '-';
         });
         return $studentLeaveLogList;
     }
@@ -168,7 +172,17 @@ class StudentLeaveLogService
         }
 
         //检查用户是否有进行中的请假
-        $studentLeave = StudentLeaveLogModel::getRecord(['student_id' => $studentId, 'leave_status' => StudentLeaveLogModel::STUDENT_LEAVE_STATUS_NORMAL, 'end_leave_time[>]' => time()]);
+        $studentLeaveDate = StudentLeaveLogModel::getRecords(['student_id' => $studentId, 'leave_status' => StudentLeaveLogModel::STUDENT_LEAVE_STATUS_NORMAL]);
+        if (empty($studentLeaveDate)) {
+            $leaveStatus = true;
+        } else {
+            foreach ($studentLeaveDate as $item) {
+                if (date('Ymd', $item['end_leave_time']) >= date('Ymd')) {
+                    $studentLeave[] = $item;
+                }
+            }
+        }
+
         if (!empty($studentLeave)) {
             $leaveStatus = false;
         }

@@ -151,10 +151,10 @@ class ErpService
 
         if ($code['code_status'] == GiftCodeModel::CODE_STATUS_HAS_REDEEMED) {
             // 已激活的扣除响应时间
-            $cnt = StudentService::reduceSubDuration($code['apply_user'], $code['valid_num'], $code['valid_units']);
+            $cnt = StudentService::reduceSubDuration($code['apply_user'], $validNum, $validUnits);
             if (empty($cnt)) { return 'data_error'; }
             //当前激活码之后已激活的从新计算每个激活码的开始&结束时间
-            $cnt = StudentService::reduceSubDuration($code['apply_user'],$validNum, $validUnits);
+            GiftCodeDetailedService::abandonGiftCode($student['id'], $code['id']);
             if (empty($cnt)) {
                 return 'gift_code_insert_error';
             }

@@ -101,7 +101,7 @@ class GiftCodeDetailedService
         $beforeGiftCodeDetailed = GiftCodeDetailedModel::getRecord(['apply_user' => $studentId, 'status' => Constants::STATUS_TRUE, 'id[<]' => $giftCodeDetailedInfo['id'], 'ORDER' => ['id' => 'DESC']]);
         if (empty($beforeGiftCodeDetailed)) {
             $newCodeStartTime = strtotime($giftCodeDetailedInfo['code_start_date']);
-            $lastCodeEndTime = strtotime($giftCodeDetailedInfo['code_start_date']) + 86400;
+            $lastCodeEndTime = strtotime($giftCodeDetailedInfo['code_start_date']) - 86400;
         } else {
             $newCodeStartTime = strtotime($beforeGiftCodeDetailed['code_end_date']) + 86400;
             $lastCodeEndTime = strtotime($beforeGiftCodeDetailed['code_end_date']);
@@ -343,16 +343,28 @@ class GiftCodeDetailedService
     public static function getStudentLeavePeriod($studentId)
     {
         $studentLeavePeriod = GiftCodeDetailedModel::getRecords(['apply_user' => $studentId, 'status' => Constants::STATUS_TRUE]);
-        return $studentLeavePeriod ?? [];
+        $date = date('Ymd');
+        foreach ($studentLeavePeriod as $item) {
+            if ($item['code_start_date'] >= $date) {
+                $studentLeavePeriodDate[] = $item;
+            } else if ($item['code_start_date'] <= $date && $item['code_end_date'] >= $date) {
+                $studentLeavePeriodDate[] = $item;
+            }
+        }
+        return $studentLeavePeriodDate ?? [];
     }
 
 
     /**
      *计算每个激活码的开始&结束时间，并且格式化插入数据
      * @param $studentGiftCodeDate
+     * @param $studentInfo
+     * @param $studentsLastCodeDetailedInfo
+     * @param $packageV1Date
+     * @param $packageDate
      * @return array
      */
-    public static function GiftCodeDataWashing($studentGiftCodeDate)
+    public static function GiftCodeDataWashing($studentGiftCodeDate, $studentInfo, $studentsLastCodeDetailedInfo, $packageV1Date, $packageDate)
     {
         $batchInsertData = [];
         $codeStartTime = $codeEndTime = $time = time();
@@ -361,7 +373,7 @@ class GiftCodeDetailedService
             $studentLastGiftCode = [];
             //如果批量插入的数组是空，说明item是第一条数据，直接调用计算方法
             if (empty($batchInsertData)) {
-                list($codeStartTime, $codeEndTime) = self::calculationDate($item['apply_user'], $item['be_active_time']);
+                list($codeStartTime, $codeEndTime) = self::calculationDate($item['apply_user'], $item['be_active_time'], '', $studentInfo, $studentsLastCodeDetailedInfo);
             }
             //如果批量插入的数组不为空，说明item至少是第二条数据，查看当前item激活码的使用人，是否在批量插入的数组内
             if (!empty($batchInsertData)) {
@@ -370,7 +382,7 @@ class GiftCodeDetailedService
                         $studentLastGiftCode[] = $value;
                     }
                 }
-                list($codeStartTime, $codeEndTime) = self::calculationDate($item['apply_user'], $item['be_active_time'], $studentLastGiftCode);
+                list($codeStartTime, $codeEndTime) = self::calculationDate($item['apply_user'], $item['be_active_time'], $studentLastGiftCode, $studentInfo, $studentsLastCodeDetailedInfo);
             }
 
             $timeStr = '+' . $item['valid_num'] . ' ';
@@ -395,9 +407,9 @@ class GiftCodeDetailedService
 
             //兑换package_type
             if ($item['package_v1'] == Constants::STATUS_TRUE && $item['bill_package_id'] != Constants::STATUS_FALSE) {
-                $package_type = ErpPackageV1Model::getPackage($item['bill_package_id'])['package_type'];
+                $package_type = $packageV1Date[$item['bill_package_id']]['package_type'];
             } elseif($item['package_v1'] == Constants::STATUS_FALSE && $item['bill_package_id'] != Constants::STATUS_FALSE) {
-                $package_type = PackageExtModel::getByPackageId($item['bill_package_id'])['package_type'];
+                $package_type = $packageDate[$item['bill_package_id']]['package_type'];
             } else {
                 $package_type = Constants::STATUS_FALSE;
             }
@@ -426,9 +438,11 @@ class GiftCodeDetailedService
      * @param $applyUser
      * @param $beActiveTime //激活时间
      * @param array $studentLastGiftCode
+     * @param $studentInfo
+     * @param $studentsLastCodeDetailedInfo
      * @return array
      */
-    public static function calculationDate($applyUser, $beActiveTime, $studentLastGiftCode = [])
+    public static function calculationDate($applyUser, $beActiveTime, $studentLastGiftCode = [], $studentInfo, $studentsLastCodeDetailedInfo)
     {
         //如果当前使用人的批量插入数据不为空，取最后一条激活码的插入数据
         if (!empty($studentLastGiftCode)) {
@@ -454,10 +468,15 @@ class GiftCodeDetailedService
         }
 
         //如果当前使用人的批量插入数据为空，取最后一条激活码的详细数据
-        $lastGiftCodeInfo = GiftCodeDetailedModel::getRecord(['apply_user' => $applyUser, 'ORDER' => ['id' => 'DESC']]);
+        if ($studentsLastCodeDetailedInfo[$applyUser]) {
+            $lastGiftCodeInfo = $studentsLastCodeDetailedInfo[$applyUser];
+        } else {
+            $lastGiftCodeInfo = [];
+        }
+
         if (empty($lastGiftCodeInfo)) {
             //如果最后一条激活码的详细数据为空，获取用户的信息
-            $studentInfo = StudentModelForApp::getRecord(['id' => $applyUser]);
+            $studentInfo = $studentInfo[$applyUser];
             //计算用户的体验时长
             $trialDays = Util::dateDiff(date('Y-m-d', strtotime($studentInfo['trial_start_date'])), date('Y-m-d', strtotime($studentInfo['trial_end_date'])));
             $timeStr = '+' . $trialDays . 'day';
@@ -498,15 +517,14 @@ class GiftCodeDetailedService
     }
 
 
-    public static function GiftCodeEndDateVerification($giftCodeDetailedInfo, $studentInfo)
+    public static function GiftCodeEndDateVerification($giftCodeDetailedInfo, $studentInfo, $studentLastGiftCodeDetailedInfo)
     {
         $insertDate = [];
         foreach ($giftCodeDetailedInfo as $giftCodeDetailed) {
             //如果用户的最后一条激活码状态为废除，则查询当前用户最后一条正常的激活码
             if ($giftCodeDetailed['status'] == Constants::STATUS_FALSE) {
-                $giftCodeDetailed = GiftCodeDetailedModel::getRecord(['apply_user' => $giftCodeDetailed['apply_user'], 'status' => Constants::STATUS_TRUE, 'ORDER' => ['id' => 'DESC']]);
+                $giftCodeDetailed = $studentLastGiftCodeDetailedInfo[$giftCodeDetailed['apply_user']];
             }
-
             if ($giftCodeDetailed['code_end_date'] == $studentInfo[$giftCodeDetailed['apply_user']]['sub_end_date'] || empty($giftCodeDetailed)) {
                 continue;
             } else {

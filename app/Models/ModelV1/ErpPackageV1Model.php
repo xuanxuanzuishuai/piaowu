@@ -8,6 +8,7 @@
 
 namespace App\Models\ModelV1;
 
+use App\Libs\Constants;
 use App\Libs\MysqlDB;
 use App\Models\CategoryV1Model;
 use App\Models\GoodsV1Model;
@@ -165,4 +166,46 @@ and p.is_custom = :is_custom";
         $records = MysqlDB::getDB()->queryAll($sql, $map);
         return $records;
     }
+
+    /**
+     * 查询所有产品包
+     * @return array
+     */
+    public static function getPackageData()
+    {
+        $db = MysqlDB::getDB();
+        $packageDate = $db->queryAll("
+select p.id package_id, p.name package_name, p.channel,
+    c.type, c.sub_type, c.callback_app_id,
+    g.extension, g.num, g.free_num
+from " . self::$table . " p
+inner join ". ErpPackageGoodsV1Model::$table . " pg on pg.package_id = p.id
+inner join " . GoodsV1Model::$table . " g on pg.goods_id = g.id
+inner join " . CategoryV1Model::$table . " c on c.id = g.category_id
+where pg.status = :status
+and c.type = :type",
+            [
+            ':status' => ErpPackageGoodsV1Model::SUCCESS_NORMAL,
+            ':type' => CategoryV1Model::TYPE_DURATION,
+        ]);
+        foreach ($packageDate as $package) {
+            $extension = json_decode($package['extension'], true);
+            // 发货方式
+            if (is_array($extension) && !empty($extension['apply_type'])) {
+                $package['apply_type'] = $extension['apply_type'];
+            }
+            // 体验课类型
+            $package['trial_type'] = !empty($extension['trail_type']) ? $extension['trail_type'] : PackageExtModel::TRIAL_TYPE_NONE;
+
+            // 课包类型
+            $package['package_type'] = self::PACKAGE_TYPE[$package['sub_type']];
+            $package['app_id'] = $package['callback_app_id'];
+
+            // 时长总天数
+            $package['duration_num'] = $package['num'] + $package['free_num'];
+            $returnPackageData[] = $package;
+        }
+        return $returnPackageData ?? [];
+    }
+
 }

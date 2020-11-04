@@ -10,6 +10,7 @@ define('LANG_ROOT', PROJECT_ROOT . '/lang');
 
 require_once PROJECT_ROOT . '/vendor/autoload.php';
 
+use App\Libs\Constants;
 use App\Models\GiftCodeDetailedModel;
 use App\Services\GiftCodeDetailedService;
 use Dotenv\Dotenv;
@@ -39,14 +40,24 @@ try {
                  ) gcd where r = 1 group by apply_user order by id asc ";
         $giftCodeDetailedSql .= Util::limitation($i, $pageCount);
         $giftCodeDetailedInfo = $db->queryAll($giftCodeDetailedSql);
+
         //查询学生数据
         $studentIds = array_column($giftCodeDetailedInfo, 'apply_user');
-        $studentSql = "select * from student where id in (" . implode(',', $studentIds) .')';
+        $studentStrIds = implode(',', $studentIds);
+        $studentSql = "select * from student where id in ($studentStrIds)";
         $studentInfo = $db->queryAll($studentSql);
         $studentInfo = array_combine(array_column($studentInfo, 'id'), $studentInfo);
 
+        //查询每个学生最后一条正常的激活码
+        $giftCodeDetailedSql = "select * from (
+                select id, gift_code_id, apply_user, code_start_date, code_end_date, package_type, valid_days, create_time, status, actual_days,
+                 ROW_NUMBER() OVER(PARTITION BY apply_user ORDER BY code_end_date DESC) r from gift_code_detailed where apply_user in ($studentStrIds) and status = :status
+                 ) gcd where r = 1";
+        $studentLastGiftCodeDetailedInfo = $db->queryAll($giftCodeDetailedSql, [':status' => Constants::STATUS_TRUE]);
+
+        $studentLastGiftCodeDetailedInfo = array_combine(array_column($studentLastGiftCodeDetailedInfo, 'apply_user'), $studentLastGiftCodeDetailedInfo);
         //验证学生最后一个激活码的结束时间是否于student内的sub_end_date相等
-        $batchInsertData = GiftCodeDetailedService::GiftCodeEndDateVerification($giftCodeDetailedInfo, $studentInfo);
+        $batchInsertData = GiftCodeDetailedService::GiftCodeEndDateVerification($giftCodeDetailedInfo, $studentInfo, $studentLastGiftCodeDetailedInfo);
         GiftCodeDetailedModel::batchInsert($batchInsertData);
         $db->commit();
     }

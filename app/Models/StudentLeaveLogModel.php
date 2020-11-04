@@ -35,13 +35,13 @@ class StudentLeaveLogModel extends Model
     sll.id, sll.student_id, sll.gift_code_id,sll.leave_time, sll.start_leave_time, sll.end_leave_time, sll.leave_days, sll.actual_end_time,
     sll.actual_days, sll.cancel_time, sll.leave_status, sll.cancel_operator_type, e.name leave_operator,
 	case
-	  when sll.cancel_operator_type = :cancel_operator_course then (select `name` from dss_dev.employee where sll.cancel_operator = id)
-      when  sll.cancel_operator_type = :cancel_operator_student then (select `name` from dss_dev.student where sll.cancel_operator = id)
+	  when sll.cancel_operator_type = :cancel_operator_course then (select `name` from employee where sll.cancel_operator = id)
+      when  sll.cancel_operator_type = :cancel_operator_student then (select `name` from student where sll.cancel_operator = id)
       when  sll.cancel_operator_type = :cancel_operator_system then '系统操作'
       end as cancel_operator_name
 FROM
-    dss_dev.student_leave_log sll  
-    left join dss_dev.employee e on sll.leave_operator = e.id 
+    student_leave_log sll  
+    left join employee e on sll.leave_operator = e.id 
     where student_id = :student_id order by sll.id desc";
 
         $map = [

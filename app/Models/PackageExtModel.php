@@ -10,6 +10,7 @@ namespace App\Models;
 
 
 use App\Libs\MysqlDB;
+use App\Models\ModelV1\ErpPackageGoodsV1Model;
 
 class PackageExtModel extends Model
 {
@@ -80,6 +81,20 @@ class PackageExtModel extends Model
         ], [$ptable . '.id' => $packageId]);
 
         return $package;
+    }
+
+    /**
+     * 获取所有产品包
+     * @return array
+     */
+    public static function getPackageData()
+    {
+        $packageDate = MysqlDB::getDB()->queryAll("select ep.id package_id, ep.name package_name, ep.app_id, ep.tprice price, ep.status package_status, ep.channel package_channel,
+p.package_type, p.trial_type, p.apply_type, p.create_time, p.update_time, p.operator
+from " . ErpPackageModel::$table . " ep
+left join " . self::$table ." p on p.package_id = ep.id");
+
+        return $packageDate ?? [];
     }
 
     public static function getPackagesCount($where)
