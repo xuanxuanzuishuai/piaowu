@@ -141,6 +141,45 @@ class LeadsService
             LeadsPoolLogModel::TYPE_REF_ASSIGN);
     }
 
+    public static function refAssign($pid, $studentId, $assistantId, $package, $date, $assignType = LeadsPoolLogModel::TYPE_ASSIGN)
+    {
+        //获取当前助教正在组班中的班级信息
+        $collection = CollectionService::getRefValidCollection($assistantId,
+            CollectionModel::COLLECTION_STATUS_IS_PUBLISH,
+            $package['package_type'],
+            $package['trial_type']);
+
+        if (empty($collection)) {
+            SimpleLogger::info('leads assign: no valid collection', [
+                '$pid' => $pid,
+                '$studentId' => $studentId,
+                '$assistantId' => $assistantId,
+                '$package' => $package,
+                '$assignType' => $assignType,
+            ]);
+
+            LeadsPoolLogModel::insertRecord([
+                'pid' => $pid,
+                'type' => LeadsPoolLogModel::TYPE_NO_COLLECTION,
+                'pool_id' => $assistantId,
+                'pool_type' => Pool::TYPE_EMPLOYEE,
+                'create_time' => time(),
+                'date' => $date,
+                'leads_student_id' => $studentId,
+                'detail' => json_encode([
+                    'assistant_id' => $assistantId,
+                    'package' => $package,
+                    'assign_type' => $assignType
+                ]),
+            ]);
+
+            return false;
+        }
+        //分配班级操作
+        $success = self::allotCollectionAndAssistant($studentId, $collection, $package, $assistantId, $date, $assignType, $pid);
+        return boolval($success);
+    }
+
     /**
      * leads 自动分配
      * @param $id
@@ -176,8 +215,8 @@ class LeadsService
     public static function assign($pid, $studentId, $assistantId, $package, $date, $assignType = LeadsPoolLogModel::TYPE_ASSIGN)
     {
         //获取当前助教正在组班中的班级信息
-        $collection = CollectionService::getRefCollection($assistantId,
-            CollectionModel::COLLECTION_READY_TO_GO_STATUS,
+        $collection = CollectionService::getValidCollection($assistantId,
+            CollectionModel::COLLECTION_STATUS_IS_PUBLISH,
             $package['package_type'],
             $package['trial_type']);
 
@@ -261,8 +300,8 @@ class LeadsService
      */
     public static function assistantAssign($studentId, $package, $assistantId)
     {
-        $collection = CollectionService::getRefCollection($assistantId,
-            CollectionModel::COLLECTION_READY_TO_GO_STATUS,
+        $collection = CollectionService::getValidCollection($assistantId,
+            CollectionModel::COLLECTION_STATUS_IS_PUBLISH,
             $package['package_type'],
             $package['trial_type']);
         if (empty($collection)) {

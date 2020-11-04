@@ -437,10 +437,10 @@ class CollectionService
      * @param $trialType
      * @return array
      */
-    public static function getRefCollection($assistantId,
-                                            $collectionStatus,
-                                            $packageType,
-                                            $trialType)
+    public static function getValidCollection($assistantId,
+                                              $collectionStatus,
+                                              $packageType,
+                                              $trialType)
     {
         //数据库对象
         $db = MysqlDB::getDB();
@@ -483,6 +483,50 @@ class CollectionService
         return $list[0] ?? null;
     }
 
+    public static function getRefValidCollection($assistantId,
+                                                 $collectionStatus,
+                                                 $packageType,
+                                                 $trialType)
+    {
+        //数据库对象
+        $db = MysqlDB::getDB();
+        $time = time();
+        //当前可用的班级列表
+        $dayStartEndTimestamp = Util::getStartEndTimestamp($time);
+        $querySql = "SELECT
+                        c.id,
+                        c.capacity,
+                        c.assistant_id,
+                        c.teaching_start_time,
+                        c.teaching_end_time,
+                        c.type,
+                        c.wechat_number,
+                        ( SELECT COUNT( id ) FROM student AS s WHERE s.collection_id = c.id ) AS total_allot,
+                        COUNT( scl.id ) AS today_allot
+                    FROM
+                        collection AS c
+                        LEFT JOIN student_collection_log AS scl ON c.id = scl.new_collection_id
+                        AND scl.old_collection_id = 0 AND scl.create_time BETWEEN " . $dayStartEndTimestamp[0] . " AND " . $dayStartEndTimestamp[1] . "
+                    WHERE
+                        c.status = " . $collectionStatus . "
+                        AND c.type = " . CollectionModel::COLLECTION_TYPE_NORMAL . " 
+                        AND c.teaching_type = " . $packageType . "
+                        AND c.trial_type = " . $trialType . "
+                        AND c.teaching_start_time > " . $time . "
+                        AND c.assistant_id  = " . $assistantId . "
+                    GROUP BY
+                        c.id
+                    HAVING
+                        c.capacity > total_allot
+                    ORDER BY
+                        prepare_start_time ASC,
+                        c.id ASC
+                    LIMIT 1";
+        //查询数据获取可分配班级
+        $list = $db->queryAll($querySql);
+        //返回结果
+        return $list[0] ?? null;
+    }
 
     /**
      * 根据用户uuid获取所属的集合信息
