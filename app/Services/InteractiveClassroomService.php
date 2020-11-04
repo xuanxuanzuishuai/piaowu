@@ -934,8 +934,8 @@ class InteractiveClassroomService
             throw new RunTimeException(['unknown_user']);
         }
 
-        //只有年卡用户并且在使用时间范围内，才可报名
-        if ($student['has_review_course'] != ReviewCourseModel::REVIEW_COURSE_1980 || $student['sub_end_date'] < date('Ymd', time())) {
+        // 检查用户是否过期
+        if ($student['sub_end_date'] <= date('Ymd', time())) {
             throw new RunTimeException(['please_buy_the_annual_card']);
         }
 
@@ -1020,8 +1020,9 @@ class InteractiveClassroomService
         if (empty($student)) {
             throw new RunTimeException(['record_not_found']);
         }
-        //不是年卡用户不可以上课
-        if ($student['has_review_course'] != ReviewCourseModel::REVIEW_COURSE_1980) {
+
+        // 检查用户是否过期
+        if ($student['sub_end_date'] <= date('Ymd', time())) {
             throw new RunTimeException(['please_buy_the_annual_card']);
         }
 

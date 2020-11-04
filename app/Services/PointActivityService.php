@@ -11,12 +11,15 @@ namespace App\Services;
 
 use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\CategoryV1Model;
 use App\Models\EventTaskModel;
 use App\Models\PointActivityRecordModel;
 use App\Models\CheckInRecordModel;
 use App\Libs\MysqlDB;
+use App\Models\ReviewCourseModel;
+use App\Models\StudentModel;
 use App\Models\StudentModelForApp;
 use App\Libs\Erp;
 use App\Models\ActivitySignUpModel;
@@ -70,8 +73,18 @@ class PointActivityService
             //双手全曲评测
             $reportData['score_final'] = $params['score_final'];
         } elseif ($activityType === CreditService::SHARE_GRADE) {
+            //分享成绩
             $reportData['play_grade_id'] = $params['play_grade_id'];
+        } elseif ($activityType === CreditService::ATTEND_CLASS) {
+            //互动课堂本日首次上课
+            $student = StudentModel::getById($studentId);
+            SimpleLogger::debug("catch CreditService::ATTEND_CLASS", $student);
+            // 非年卡用户不进行记录
+            if ($student['has_review_course'] != ReviewCourseModel::REVIEW_COURSE_1980) {
+                return $reportRes;
+            }
         }
+
         //创建奖励记录
         $completeRes = CreditService::setUserCompleteTask($activityType, $reportData);
         if (empty($completeRes)) {
