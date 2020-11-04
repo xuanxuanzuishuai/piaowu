@@ -59,9 +59,18 @@ class StudentFavoriteService
             if (isset($lessonListResult['data']) && !empty($lessonListResult['data'])) {
                 foreach ($lessonListResult['data'] as $value) {
                     $lessons[] = [
+                        'mp4'             => '0',
+                        'mp8'             => '0',
                         'id'              => $value['lesson_id'],
-                        'lesson_name'      => $value['lesson_name'],
+                        'lesson_name'     => $value['lesson_name'],
                         'collection_name' => $value['collection_name'],
+                        'score_id'        => $value['opern_id'],
+                        'is_free'         => $value['freeflag'] ? '1' : '0',
+                        'knowledge'       => $value['knowledge'] ? 1 : 0,
+                        'mmusic'          => $value['mmusic'] ? '1' : '0',
+                        'mmusicconfig'    => $value['mmusicconfig'] ? '1' : '0',
+                        'dynamic'         => $value['dynamic'] ? '1' : '0',
+                        'page'            => $value['page'],
                     ];
                 }
             }
@@ -74,6 +83,7 @@ class StudentFavoriteService
                         'id'               => $value['id'],
                         'collection_name'  => $value['name'],
                         'collection_cover' => $value['cover'] ?? '',
+                        'collection_freeflag' => $value['freeflag'] ? '1' : '0',
                     ];
                 }
             }
