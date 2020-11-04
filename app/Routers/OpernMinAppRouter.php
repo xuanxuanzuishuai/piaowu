@@ -8,6 +8,7 @@
 namespace App\Routers;
 
 use App\Middleware\OpernMiniAppAuthCheckMiddleware;
+use App\Middleware\OpernMiniAppBackupAuthCheckMiddleware;
 use App\Controllers\OpernMiniapp\Message;
 
 class OpernMinAppRouter extends RouterBase
@@ -19,6 +20,11 @@ class OpernMinAppRouter extends RouterBase
             'method'  => ['get', 'post'],
             'call'    => Message::class . ':notify',
             'middles' => [OpernMiniAppAuthCheckMiddleware::class]
+        ],
+        '/opern_miniapp/message/notify_backup' => [
+            'method'  => ['get', 'post'],
+            'call'    => Message::class . ':notifyBackup',
+            'middles' => [OpernMiniAppBackupAuthCheckMiddleware::class]
         ]
     ];
 

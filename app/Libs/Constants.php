@@ -221,6 +221,8 @@ class Constants
     const DICT_TYPE_STUDENT_COLLECTION_ALLOT_TYPE = 'student_collection_allot_type';
     // 推荐海报中二维码类型
     const DICT_TYPE_POSTER_QRCODE_TYPE = 'poster_qrcode_type';
+    // 识谱大作战小程序相关信息
+    const DICT_TYPE_OPERN_MINIAPP_INFO = 'opern_miniapp_info';
 
     // 天润接口返回值
     const DICT_TR_ERROR = 'tr_error';
