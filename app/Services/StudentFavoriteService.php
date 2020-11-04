@@ -57,8 +57,8 @@ class StudentFavoriteService
             $lessonListResult = $opn->lessonsByIds($ids);
 
             if (isset($lessonListResult['data']) && !empty($lessonListResult['data'])) {
-                foreach ($lessonListResult['data'] as $value) {
-                    $lessons[] = [
+                foreach ($lessonListResult['data'] as $key => $value) {
+                    $lessons[$key] = [
                         'mp4'             => '0',
                         'mp8'             => '0',
                         'id'              => $value['lesson_id'],
@@ -72,6 +72,13 @@ class StudentFavoriteService
                         'dynamic'         => $value['dynamic'] ? '1' : '0',
                         'page'            => $value['page'],
                     ];
+                    foreach($value['resources'] as $v) {
+                        if($v['type'] == 'mp8') {
+                            $lessons[$key]['mp8'] = '1';
+                        }elseif ($v['type'] == 'mp4'){
+                            $lessons[$key]['mp4'] = '1';
+                        }
+                    }
                 }
             }
             return $lessons ?? [];
