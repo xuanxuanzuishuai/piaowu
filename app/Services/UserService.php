@@ -202,6 +202,9 @@ class UserService
             } else {
                 $imageUrl = self::getReferralLandingPageQrImage($userQrTicket, $channelId);
             }
+            if (empty($imageUrl)) {
+                return [];
+            }
             $data = [
                 'create_time'  => $time,
                 'user_id'      => $userId,
@@ -213,9 +216,8 @@ class UserService
             ];
             UserQrTicketModel::insertRecord($data, false);
         } catch (\Exception $e) {
-            echo $e->getMessage();
             SimpleLogger::error('make user qr image exception', [print_r($e->getMessage(), true)]);
-            return $data;
+            return [];
         }
         return $data;
     }
@@ -241,7 +243,7 @@ class UserService
         // 请求微信，获取小程序码图片
         $res = $wx->getMiniappCodeImage($params);
         if ($res === false) {
-            return $data;
+            return [];
         }
         $tmpFileFullPath = $_ENV['STATIC_FILE_SAVE_PATH'] . '/' . md5($userQrTicket) . '.jpg';
         chmod($tmpFileFullPath, 0755);
