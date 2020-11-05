@@ -18,6 +18,9 @@ class StudentLearnRecordModel extends Model
     const UNLOCK_THE_CLASS = 5;     //未解锁
     const LOCK_THE_CLASS = 0;       //已解锁
 
+    const LEARN_STATUS_IN_TIME = 1; // 按时上课
+    const LEARN_STATUS_OUT_TIME = 2; // 过期补课
+
     /**
      * 获取用户已完成上课的节数
      * @param $studentId

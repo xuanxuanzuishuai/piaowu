@@ -1021,8 +1021,8 @@ class InteractiveClassroomService
             throw new RunTimeException(['record_not_found']);
         }
 
-        // 检查用户是否过期
-        if ($student['sub_end_date'] < date('Ymd', time())) {
+        // 上新课检查用户是否过期，补课不检查
+        if ($learnStatus == StudentLearnRecordModel::LEARN_STATUS_IN_TIME && $student['sub_end_date'] < date('Ymd', time())) {
             throw new RunTimeException(['please_buy_the_annual_card']);
         }
 
