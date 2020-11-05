@@ -111,6 +111,20 @@ class ErpService
     public static function abandonGiftCode($billId, $uuid)
     {
         $code = GiftCodeModel::getByBillId($billId);
+
+        // 如果是以'_1'结尾的订单号，本地检查是否有不带'_1'的数据
+        if (empty($code)) {
+            $p = strrpos($billId, '_1');
+            if ($p !== false) {
+                $billId = substr($billId, 0, $p);
+                $code = GiftCodeModel::getByBillId($billId);
+            }
+        }
+
+        if (empty($code)) {
+            return 'invalid_bill_id';
+        }
+
         if (($code['generate_channel'] != GiftCodeModel::BUYER_TYPE_ERP_EXCHANGE) &&
             ($code['generate_channel'] != GiftCodeModel::BUYER_TYPE_ERP_ORDER)) {
             return 'code_generate_channel_invalid';
