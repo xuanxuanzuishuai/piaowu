@@ -43,7 +43,7 @@ class StudentLoginService
         $brushNo = $params['time'] . '_' . $studentId . '_' . Util::randString(4);
 
         //插入或更新刷单表信息
-        self::insertBrushInfo($studentIds['allStudentIds'], $brushNo, $params['time']);
+        self::insertBrushInfo(array_unique($studentIds['allStudentIds']), $brushNo, $params['time']);
         return true;
     }
 
@@ -95,10 +95,10 @@ class StudentLoginService
         if (isset($params['idfa']) && $params['idfa'] != '00000000-0000-0000-0000-000000000000') {
             $where['idfa'] = $params['idfa'];
             $studentIdList = StudentLoginInfoModel::getRecords($where, ['student_id', 'is_experience'], false);
-        } elseif (isset($params['imei'])) {
+        } elseif (isset($params['imei']) && !empty($params['imei'])) {
             $where['imei'] = $params['imei'];
             $studentIdList = StudentLoginInfoModel::getRecords($where, ['student_id', 'is_experience'], false);
-        } elseif (isset($params['android_id'])) {
+        } elseif (isset($params['android_id']) && !empty($params['android_id'])) {
             $where['android_id'] = $params['android_id'];
             $studentIdList = StudentLoginInfoModel::getRecords($where, ['student_id', 'is_experience'], false);
         }
