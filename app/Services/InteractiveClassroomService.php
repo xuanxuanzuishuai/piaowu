@@ -935,7 +935,7 @@ class InteractiveClassroomService
         }
 
         // 检查用户是否过期
-        if ($student['sub_end_date'] <= date('Ymd', time())) {
+        if ($student['sub_end_date'] < date('Ymd', time())) {
             throw new RunTimeException(['please_buy_the_annual_card']);
         }
 
@@ -1022,7 +1022,7 @@ class InteractiveClassroomService
         }
 
         // 检查用户是否过期
-        if ($student['sub_end_date'] <= date('Ymd', time())) {
+        if ($student['sub_end_date'] < date('Ymd', time())) {
             throw new RunTimeException(['please_buy_the_annual_card']);
         }
 
