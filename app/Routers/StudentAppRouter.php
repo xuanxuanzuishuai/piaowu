@@ -552,12 +552,12 @@ class StudentAppRouter extends RouterBase
             'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
         ],
         '/student_app/favorite/add' => [
-            'method'  => ['get'],
+            'method'  => ['post'],
             'call'    => Favorite::class . ':add',
             'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
         ],
         '/student_app/favorite/cancel' => [
-            'method'  => ['get'],
+            'method'  => ['post'],
             'call'    => Favorite::class . ':cancel',
             'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
         ],
