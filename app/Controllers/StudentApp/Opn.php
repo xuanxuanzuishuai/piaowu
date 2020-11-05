@@ -200,6 +200,8 @@ class Opn extends ControllerBase
 
         $data = $result['data'];
         $list = OpernService::appFormatCollections($data['list']);
+        $studentId = $this->ci['student']['id'];
+        $list = OpernService::addFavoriteStatus($studentId,$list);
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => [
@@ -229,6 +231,9 @@ class Opn extends ControllerBase
         }
         $data = $result;
         $list = OpernService::appFormatCollections($data['data']);
+
+        $studentId = $this->ci['student']['id'];
+        $list = OpernService::addFavoriteStatus($studentId,$list);
 
         $collectionList = array_combine(array_column($list, 'id'), $list);
         $categoryIds = explode(',', $categoryId);

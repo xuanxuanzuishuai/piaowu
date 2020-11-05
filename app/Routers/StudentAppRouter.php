@@ -571,9 +571,9 @@ class StudentAppRouter extends RouterBase
             'call'    => Favorite::class . ':getFavoriteCollection',
             'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
         ],
-        '/student_app/favorite/lesson_favorite_status' => [
+        '/student_app/favorite/favorite_status' => [
             'method'  => ['get'],
-            'call'    => Favorite::class . ':lessonFavoriteStatus',
+            'call'    => Favorite::class . ':favoriteStatus',
             'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
         ],
 

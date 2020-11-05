@@ -87,10 +87,10 @@ class StudentFavoriteService
             if (isset($collectionListResult['data']) && !empty($collectionListResult['data'])) {
                 foreach ($collectionListResult['data'] as $value) {
                     $collections[] = [
-                        'id'               => $value['id'],
-                        'collection_name'  => $value['name'],
-                        'collection_cover' => $value['cover'] ?? '',
-                        'collection_freeflag' => $value['freeflag'] ? '1' : '0',
+                        'id'      => $value['id'],
+                        'name'    => $value['name'],
+                        'cover'   => $value['cover'] ?? '',
+                        'is_free' => $value['freeflag'] ? '1' : '0',
                     ];
                 }
             }
@@ -168,14 +168,14 @@ class StudentFavoriteService
 
     /**
      * @param $opn
-     * @param $params
+     * @param $studentId
      * @return array
      * 分页查询曲谱列表
      */
-    public static function getFavoritesLesson($opn, $params)
+    public static function getFavoritesLesson($opn, $studentId)
     {
         $where = [
-            'student_id' => $params['student_id'],
+            'student_id' => $studentId,
             'type'       => StudentFavoriteModel::FAVORITE_TYPE_LESSON,
             'status'     => StudentFavoriteModel::FAVORITE_SUCCESS,
         ];
@@ -184,7 +184,7 @@ class StudentFavoriteService
             return [];
         }
 
-        list($page, $limit) = Util::formatPageCount($params);
+        list($page, $limit) = Util::formatPageCount($params['count'] = 10);
         $where['ORDER'] = ['update_time' => 'DESC'];
         $where['LIMIT'] = [($page - 1) * $limit, $limit];
 
@@ -206,14 +206,14 @@ class StudentFavoriteService
 
     /**
      * @param $opn
-     * @param $params
+     * @param $studentId
      * @return array
      * 分页查询教材列表
      */
-    public static function getFavoritesCollection($opn, $params)
+    public static function getFavoritesCollection($opn, $studentId)
     {
         $where = [
-            'student_id' => $params['student_id'],
+            'student_id' => $studentId,
             'type'       => StudentFavoriteModel::FAVORITE_TYPE_COLLECTION,
             'status'     => StudentFavoriteModel::FAVORITE_SUCCESS,
         ];
@@ -222,7 +222,7 @@ class StudentFavoriteService
             return [];
         }
 
-        list($page, $limit) = Util::formatPageCount($params);
+        list($page, $limit) = Util::formatPageCount($params['count'] = 12);
         $where['ORDER'] = ['update_time' => 'DESC'];
         $where['LIMIT'] = [($page - 1) * $limit, $limit];
 
@@ -251,14 +251,14 @@ class StudentFavoriteService
     {
         $where = [
             'student_id' => $params['student_id'],
-            'type'       => StudentFavoriteModel::FAVORITE_TYPE_LESSON,
+            'type'       => $params['type'],
             "object_id"  => $params['object_id'],
         ];
 
         $result = StudentFavoriteModel::getRecord($where, ['status'], false);
 
         return [
-            'status' => $result['status'] ?? "0",
+            'status' => (int)$result['status'] ?? StudentFavoriteModel::FAVORITE_NOT,
         ];
 
     }

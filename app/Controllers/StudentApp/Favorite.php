@@ -29,20 +29,9 @@ class Favorite extends ControllerBase
      */
     public function firstPageList(Request $request, Response $response)
     {
-        $rules = [
-            [
-                'key'        => 'student_id',
-                'type'       => 'required',
-                'error_code' => 'student_id_is_required'
-            ]
-        ];
-        $params = $request->getParams();
-        $result = Valid::appValidate($params, $rules);
-        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
-            return $response->withJson($result, StatusCode::HTTP_OK);
-        }
+        $studentId = $this->ci['student']['id'];
         $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, $this->ci['opn_pro_ver'], $this->ci['opn_auditing'], $this->ci['opn_publish']);
-        $data = StudentFavoriteService::firstPageList($opn, $params['student_id']);
+        $data = StudentFavoriteService::firstPageList($opn, $studentId);
 
         return $response->withJson(['code' => Valid::CODE_SUCCESS, 'data' => $data], StatusCode::HTTP_OK);
     }
@@ -56,11 +45,6 @@ class Favorite extends ControllerBase
     public function add(Request $request, Response $response)
     {
         $rules = [
-            [
-                'key'        => 'student_id',
-                'type'       => 'required',
-                'error_code' => 'student_id_is_required'
-            ],
             [
                 'key'        => 'type',
                 'type'       => 'required',
@@ -79,6 +63,7 @@ class Favorite extends ControllerBase
         }
 
         try {
+            $params['student_id'] = $this->ci['student']['id'];
             StudentFavoriteService::addFavoriteObject($params);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
@@ -98,11 +83,6 @@ class Favorite extends ControllerBase
     {
         $rules = [
             [
-                'key'        => 'student_id',
-                'type'       => 'required',
-                'error_code' => 'student_id_is_required'
-            ],
-            [
                 'key'        => 'type',
                 'type'       => 'required',
                 'error_code' => 'type_is_required'
@@ -120,6 +100,7 @@ class Favorite extends ControllerBase
         }
 
         try {
+            $params['student_id'] = $this->ci['student']['id'];
             StudentFavoriteService::updateFavoriteStatus(StudentFavoriteModel::FAVORITE_CANCEL, $params);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
@@ -136,21 +117,9 @@ class Favorite extends ControllerBase
      */
     public function getFavoritesLesson(Request $request, Response $response)
     {
-        $rules = [
-            [
-                'key'        => 'student_id',
-                'type'       => 'required',
-                'error_code' => 'student_id_is_required'
-            ]
-        ];
-        $params = $request->getParams();
-        $result = Valid::appValidate($params, $rules);
-        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
-            return $response->withJson($result, StatusCode::HTTP_OK);
-        }
-
         $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, $this->ci['opn_pro_ver'], $this->ci['opn_auditing'], $this->ci['opn_publish']);
-        $data = StudentFavoriteService::getFavoritesLesson($opn, $params);
+        $studentId = $this->ci['student']['id'];
+        $data = StudentFavoriteService::getFavoritesLesson($opn, $studentId);
 
         return $response->withJson(['code' => Valid::CODE_SUCCESS, 'data' => $data], StatusCode::HTTP_OK);
     }
@@ -163,21 +132,9 @@ class Favorite extends ControllerBase
      */
     public function getFavoriteCollection(Request $request, Response $response)
     {
-        $rules = [
-            [
-                'key'        => 'student_id',
-                'type'       => 'required',
-                'error_code' => 'student_id_is_required'
-            ]
-        ];
-        $params = $request->getParams();
-        $result = Valid::appValidate($params, $rules);
-        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
-            return $response->withJson($result, StatusCode::HTTP_OK);
-        }
-
         $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, $this->ci['opn_pro_ver'], $this->ci['opn_auditing'], $this->ci['opn_publish']);
-        $data = StudentFavoriteService::getFavoritesCollection($opn, $params);
+        $studentId = $this->ci['student']['id'];
+        $data = StudentFavoriteService::getFavoritesCollection($opn, $studentId);
 
         return $response->withJson(['code' => Valid::CODE_SUCCESS, 'data' => $data], StatusCode::HTTP_OK);
     }
@@ -188,19 +145,19 @@ class Favorite extends ControllerBase
      * @return Response
      * 返回曲谱收藏状态
      */
-    public static function lessonFavoriteStatus(Request $request, Response $response)
+    public function favoriteStatus(Request $request, Response $response)
     {
         $rules = [
-            [
-                'key'        => 'student_id',
-                'type'       => 'required',
-                'error_code' => 'student_id_is_required'
-            ],
             [
                 'key'        => 'object_id',
                 'type'       => 'required',
                 'error_code' => 'object_id_is_required'
             ],
+            [
+                'key'        => 'type',
+                'type'       => 'required',
+                'error_code' => 'type_is_required'
+            ]
         ];
         $params = $request->getParams();
         $result = Valid::appValidate($params, $rules);
@@ -208,6 +165,7 @@ class Favorite extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
+        $params['student_id'] = $this->ci['student']['id'];
         $data = StudentFavoriteService::lessonFavoriteStatus($params);
 
         return $response->withJson(['code' => Valid::CODE_SUCCESS, 'data' => $data], StatusCode::HTTP_OK);

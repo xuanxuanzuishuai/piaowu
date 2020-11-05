@@ -19,6 +19,7 @@ class StudentFavoriteModel extends Model
     //收藏状态
     const FAVORITE_SUCCESS = 1;
     const FAVORITE_CANCEL = 2;
+    const FAVORITE_NOT = 3;
 
     public static $table = 'student_favorite';
 

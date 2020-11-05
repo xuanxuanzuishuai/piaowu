@@ -12,6 +12,7 @@ namespace App\Services;
 use App\Libs\DictConstants;
 use App\Libs\OpernCenter;
 use App\Libs\Valid;
+use App\Models\StudentFavoriteModel;
 
 class OpernService
 {
@@ -390,6 +391,33 @@ class OpernService
             $record_list[$i]["collection_name"] = $lesson_map[$lesson_id]["collection_name"];
         }
         return $record_list;
+    }
+
+    /**
+     * @param $studentId
+     * @param $list
+     * @return array
+     * 整合教材收藏状态
+     */
+    public static function addFavoriteStatus($studentId, $list)
+    {
+        if (empty($list)){
+            return $list;
+        }
+
+        $collectionIds = array_column($list, 'id');
+        $where = [
+            'type'       => StudentFavoriteModel::FAVORITE_TYPE_COLLECTION,
+            'object_id'  => $collectionIds,
+            'student_id' => $studentId,
+        ];
+        $result = StudentFavoriteModel::getRecords($where, ['object_id', 'status'], false);
+        $favoriteStatusByCollectionIds = array_column($result, null, 'object_id');
+
+        foreach ($list as $key => $value) {
+            $list[$key]['favorite_status'] = $favoriteStatusByCollectionIds[$value['id']]['status'] ?? StudentFavoriteModel::FAVORITE_NOT;
+        }
+        return $list;
     }
 
 }
