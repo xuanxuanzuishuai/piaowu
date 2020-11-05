@@ -133,7 +133,7 @@ class LeadsService
      */
     public static function refLeads($studentId, $assistantId, $package)
     {
-        return self::assign('',
+        return self::refAssign('',
             $studentId,
             $assistantId,
             $package,
