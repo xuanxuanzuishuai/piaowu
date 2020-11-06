@@ -137,19 +137,26 @@ class StudentLoginService
         }
 
         $insertStudentIds = array_diff($studentIdsOnSameDevice, $recordStudentIds);
-        foreach ($insertStudentIds as $value) {
-            $insertData[] = [
-                'student_id'  => $value,
-                'brush_no'    => $brushNo,
-                'create_time' => $time,
-            ];
+        $insertData = [];
+        if (!empty($insertStudentIds)){
+            foreach ($insertStudentIds as $value) {
+                $insertData[] = [
+                    'student_id'  => $value,
+                    'brush_no'    => $brushNo,
+                    'create_time' => $time,
+                ];
+            }
         }
 
         $db = MysqlDB::getDB();
         try {
             $db->beginTransaction();
-            StudentBrushModel::insertRecord($insertData);
-            StudentBrushModel::batchUpdateRecord(['brush_no' => $brushNo], ['brush_no' => $recordBrushNo], false);
+            if (!empty($insertData)) {
+                StudentBrushModel::insertRecord($insertData);
+            }
+            if (!empty($brushNo)) {
+                StudentBrushModel::batchUpdateRecord(['brush_no' => $brushNo], ['brush_no' => $recordBrushNo], false);
+            }
             $db->commit();
         } catch (\RuntimeException $e) {
             $db->rollBack();
@@ -221,8 +228,12 @@ class StudentLoginService
      */
     public static function getDeviceModel($params, $appleDeviceMap)
     {
-        if (!empty($params['idfa']) && $params['idfa'] != '00000000-0000-0000-0000-000000000000') {
-            $deviceModel = ($appleDeviceMap[$params['device_model']] ?? '未知设备') . "(" . substr($params['idfa'], -4, 4) . ")";
+        if (!empty($params['idfa'])) {
+            if ($params['idfa'] == '00000000-0000-0000-0000-000000000000') {
+                $deviceModel = ($appleDeviceMap[$params['device_model']] ?? '未知设备') . "(--)";
+            } else {
+                $deviceModel = ($appleDeviceMap[$params['device_model']] ?? '未知设备') . "(" . substr($params['idfa'], -4, 4) . ")";
+            }
         } elseif (!empty($params['imei'])) {
             $deviceModel = $params['device_model'] . "(" . substr($params['imei'], -4, 4) . ")";
         } elseif (!empty($params['android_id'])) {
