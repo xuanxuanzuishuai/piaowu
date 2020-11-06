@@ -168,14 +168,14 @@ class StudentFavoriteService
 
     /**
      * @param $opn
-     * @param $studentId
+     * @param $params
      * @return array
      * 分页查询曲谱列表
      */
-    public static function getFavoritesLesson($opn, $studentId)
+    public static function getFavoritesLesson($opn, $params)
     {
         $where = [
-            'student_id' => $studentId,
+            'student_id' => $params['student_id'],
             'type'       => StudentFavoriteModel::FAVORITE_TYPE_LESSON,
             'status'     => StudentFavoriteModel::FAVORITE_SUCCESS,
         ];
@@ -207,14 +207,14 @@ class StudentFavoriteService
 
     /**
      * @param $opn
-     * @param $studentId
+     * @param $params
      * @return array
      * 分页查询教材列表
      */
-    public static function getFavoritesCollection($opn, $studentId)
+    public static function getFavoritesCollection($opn, $params)
     {
         $where = [
-            'student_id' => $studentId,
+            'student_id' => $params['student_id'],
             'type'       => StudentFavoriteModel::FAVORITE_TYPE_COLLECTION,
             'status'     => StudentFavoriteModel::FAVORITE_SUCCESS,
         ];

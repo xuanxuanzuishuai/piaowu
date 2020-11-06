@@ -117,9 +117,10 @@ class Favorite extends ControllerBase
      */
     public function getFavoritesLesson(Request $request, Response $response)
     {
+        $params = $request->getParams();
+        $params['student_id'] = $this->ci['student']['id'];
         $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, $this->ci['opn_pro_ver'], $this->ci['opn_auditing'], $this->ci['opn_publish']);
-        $studentId = $this->ci['student']['id'];
-        $data = StudentFavoriteService::getFavoritesLesson($opn, $studentId);
+        $data = StudentFavoriteService::getFavoritesLesson($opn, $params);
 
         return $response->withJson(['code' => Valid::CODE_SUCCESS, 'data' => $data], StatusCode::HTTP_OK);
     }
@@ -132,9 +133,10 @@ class Favorite extends ControllerBase
      */
     public function getFavoriteCollection(Request $request, Response $response)
     {
+        $params = $request->getParams();
+        $params['student_id'] = $this->ci['student']['id'];
         $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, $this->ci['opn_pro_ver'], $this->ci['opn_auditing'], $this->ci['opn_publish']);
-        $studentId = $this->ci['student']['id'];
-        $data = StudentFavoriteService::getFavoritesCollection($opn, $studentId);
+        $data = StudentFavoriteService::getFavoritesCollection($opn, $params);
 
         return $response->withJson(['code' => Valid::CODE_SUCCESS, 'data' => $data], StatusCode::HTTP_OK);
     }
