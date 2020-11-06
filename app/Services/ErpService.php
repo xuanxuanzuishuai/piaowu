@@ -142,7 +142,12 @@ class ErpService
         //如果激活码详细表有相应数据，扣减时间具体按照gift_code_detailed这张表的valid_days字段为标准，因为可能会有请假顺延时间的情况
         $giftCodeDetailInfo = GiftCodeDetailedModel::getRecord(['apply_user' => $code['apply_user'], 'gift_code_id' => $code['id'], 'status' => Constants::STATUS_TRUE]);
         if (!empty($giftCodeDetailInfo)) {
-            $validNum = $giftCodeDetailInfo['valid_days'];
+            $beforeGiftCodeInfo = GiftCodeDetailedModel::getRecord(['apply_user' => $code['apply_user'], 'id[<]' => $giftCodeDetailInfo['id'], 'ORDER' => ['id' => 'DESC']]);
+            if (empty($beforeGiftCodeInfo)) {
+                $validNum = $giftCodeDetailInfo['valid_days'] - 1;
+            } else {
+                $validNum = $giftCodeDetailInfo['valid_days'];
+            }
             $validUnits = GiftCodeModel::CODE_TIME_DAY;
         } else {
             $validNum = $code['valid_num'];

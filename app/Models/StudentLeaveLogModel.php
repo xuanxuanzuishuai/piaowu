@@ -61,17 +61,18 @@ FROM
      */
     public static function getStudentLeaveInfo($studentId)
     {
-        $time = time();
+        $date = date('Y-m-d', time());
         //学生请假信息
         $studentLeaveInfo = StudentLeaveLogModel::getRecord(['student_id' => $studentId, 'leave_status' => StudentLeaveLogModel::STUDENT_LEAVE_STATUS_NORMAL, 'ORDER' => ['id' => 'DESC']]);
-        if (empty($studentLeaveInfo) || $studentLeaveInfo['end_leave_time'] < $time) {
-            return ['', ''];
-        }
         $leaveStartDate = date('Y-m-d', $studentLeaveInfo['start_leave_time']);
         $leaveEndDate = date('Y-m-d', $studentLeaveInfo['end_leave_time']);
 
+        if (empty($studentLeaveInfo) || $leaveEndDate < $date) {
+            return ['', ''];
+        }
+
         //请假开始时间大于当前，说明请假未开始，返回开始&结束时间
-        if ($leaveStartDate > date('Y-m-d', $time)) {
+        if ($leaveStartDate > $date) {
             return [$leaveStartDate, $leaveEndDate];
         } else {
             //请假开始时间小于等于当前时间，代表请假中

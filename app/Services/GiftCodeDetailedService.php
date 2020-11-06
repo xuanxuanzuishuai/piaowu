@@ -164,7 +164,7 @@ class GiftCodeDetailedService
                 'package_type' => $giftCodeDetailed['package_type'],
                 'valid_days' => $giftCodeDetailed['valid_days'],
                 'create_time' => time(),
-                'status' => Constants::STATUS_TRUE,
+                'status' => $giftCodeDetailed['status'],
             ];
             $accountData[] = $account;
         }
@@ -219,7 +219,7 @@ class GiftCodeDetailedService
                 'package_type' => $giftCodeDetailed['package_type'],
                 'valid_days' => $giftCodeDetailed['valid_days'],
                 'create_time' => time(),
-                'status' => Constants::STATUS_TRUE,
+                'status' => $giftCodeDetailed['status'],
             ];
             $accountData[] = $account;
         }
@@ -517,15 +517,11 @@ class GiftCodeDetailedService
     }
 
 
-    public static function GiftCodeEndDateVerification($giftCodeDetailedInfo, $studentInfo, $studentLastGiftCodeDetailedInfo)
+    public static function GiftCodeEndDateVerification($giftCodeDetailedInfo, $studentInfo)
     {
         $insertDate = [];
         foreach ($giftCodeDetailedInfo as $giftCodeDetailed) {
-            //如果用户的最后一条激活码状态为废除，则查询当前用户最后一条正常的激活码
-            if ($giftCodeDetailed['status'] == Constants::STATUS_FALSE) {
-                $giftCodeDetailed = $studentLastGiftCodeDetailedInfo[$giftCodeDetailed['apply_user']];
-            }
-            if ($giftCodeDetailed['code_end_date'] == $studentInfo[$giftCodeDetailed['apply_user']]['sub_end_date'] || empty($giftCodeDetailed)) {
+            if ($giftCodeDetailed['code_end_date'] == $studentInfo[$giftCodeDetailed['apply_user']]['sub_end_date']) {
                 continue;
             } else {
                 $batchInsertData = self::calculationStudentDate($giftCodeDetailed['apply_user'], $giftCodeDetailed['code_end_date'], $studentInfo[$giftCodeDetailed['apply_user']]['sub_end_date'], $giftCodeDetailed['id']);
