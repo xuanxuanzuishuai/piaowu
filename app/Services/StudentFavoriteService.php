@@ -184,7 +184,8 @@ class StudentFavoriteService
             return [];
         }
 
-        list($page, $limit) = Util::formatPageCount($params['count'] = 10);
+        $params['count'] = 10;
+        list($page, $limit) = Util::formatPageCount($params);
         $where['ORDER'] = ['update_time' => 'DESC'];
         $where['LIMIT'] = [($page - 1) * $limit, $limit];
 
@@ -221,8 +222,8 @@ class StudentFavoriteService
         if (empty($recordCount)) {
             return [];
         }
-
-        list($page, $limit) = Util::formatPageCount($params['count'] = 12);
+        $params['count'] = 12;
+        list($page, $limit) = Util::formatPageCount($params);
         $where['ORDER'] = ['update_time' => 'DESC'];
         $where['LIMIT'] = [($page - 1) * $limit, $limit];
 

@@ -35,18 +35,19 @@ class StudentFavoriteModel extends Model
                     type,
                     object_id 
                 FROM
-                    {$studentFavorite} s 
-                WHERE
                     (
                     SELECT
-                        COUNT( * ) 
+                        type,
+                        object_id,
+                        create_time,
+                        ROW_NUMBER ( ) over ( PARTITION BY student_id, type ORDER BY create_time DESC ) AS s 
                     FROM
-                        {$studentFavorite} f 
+                        {$studentFavorite} s 
                     WHERE
-                        s.student_id = f.student_id 
-                        AND s.type = f.type 
-                        AND f.create_time > s.create_time 
-                    ) < 10 
+                        student_id = {$studentId} AND status = 1
+                    ) tmp 
+                WHERE
+                    s <= 10 
                 ORDER BY
                     create_time DESC";
 
