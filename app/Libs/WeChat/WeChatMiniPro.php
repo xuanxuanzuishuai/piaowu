@@ -29,7 +29,10 @@ class WeChatMiniPro
 
     const TEMP_MEDIA_EXPIRE = 172800; // 临时media文件过期时间 2天
     const SHORT_URL_EXPIRE = 86400 * 15; // 短链接缓存过期时间 15天
-
+    // access token 删除次数计数
+    const CACHE_DELETE_COUNTER = '%s_delete_counter';
+    // 最多删除access token次数
+    const CACHE_DELETE_LIMIT = 500;
     private $appId = '';
     private $appSecret = '';
 
@@ -133,7 +136,10 @@ class WeChatMiniPro
 
         $res = $this->requestAccessToken();
         if (!empty($res['access_token'])) {
-            $redis->setex($cacheKey, $res['expires_in'] - 120, $res['access_token']);
+            $minExpire = 1800;
+            $expireIn  = $res['expires_in'] - 120;
+            $expire    = $expireIn < $minExpire ? $expireIn :  $minExpire;
+            $redis->setex($cacheKey, $expire, $res['access_token']);
         }
 
         return $redis->get($cacheKey);
@@ -277,7 +283,7 @@ class WeChatMiniPro
      * @param $params
      * @return false|mixed|string
      */
-    public function getMiniappCodeImage($params)
+    public function getMiniappCodeImage($params, $retry = false)
     {
         $api = self::WX_HOST . '/wxa/getwxacodeunlimit?access_token=' . $this->getAccessToken();
         $scene = "";
@@ -286,14 +292,40 @@ class WeChatMiniPro
                 $scene .= '&' . $key . '=' . $value;
             }
         }
-        $params = [
+        $requestParams = [
             'scene' => substr($scene, 0, 32)
         ];
-        $res = $this->requestJson($api, $params, 'POST');
+        $res = $this->requestJson($api, $requestParams, 'POST');
         if (is_string($res) && strlen($res) > 0) {
             return $res;
+        } elseif (is_array($res) && $res['errcode'] == 40001 && !$retry) {
+            self::delAccessToken();
+            return $this->getMiniappCodeImage($params, true);
         }
         SimpleLogger::error("[WeChatMiniPro] get mini app code error", [$res]);
+        return false;
+    }
+
+    /**
+     * 当请求微信报错40001时删除access_token
+     * @return bool
+     */
+    public function delAccessToken()
+    {
+        $redis      = RedisDB::getConn();
+        $counterKey = sprintf(self::CACHE_DELETE_COUNTER, $this->appId);
+        $date       = date('Ymd');
+        $counter    = $redis->hget($counterKey, $date);
+        if (empty($counter)) {
+            $counter = 0;
+        }
+        if ($counter < self::CACHE_DELETE_LIMIT) {
+            $cacheKey = $this->accessTokenCacheKey();
+            $redis->del([$cacheKey]);
+            $redis->hincrby($counterKey, $date, 1);
+            return true;
+        }
+        SimpleLogger::error("[WeChatMiniPro] max delete times reached", [$counterKey, $date, $counter]);
         return false;
     }
 }

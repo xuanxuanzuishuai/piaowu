@@ -199,6 +199,9 @@ class UserService
             // 根据配置生成二维码或小程序码
             if ($landingType == UserQrTicketModel::LANDING_TYPE_MINIAPP) {
                 $imageUrl = self::getMiniappQrImage($appid, ['r' => $userQrTicket, 'c' => $channelId]);
+                if (empty($imageUrl)) {
+                    $imageUrl = self::getReferralLandingPageQrImage($userQrTicket, $channelId);
+                }
             } else {
                 $imageUrl = self::getReferralLandingPageQrImage($userQrTicket, $channelId);
             }
