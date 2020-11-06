@@ -560,11 +560,11 @@ class InteractiveClassroomService
                 return [$recordLearnStatus, $courseStartTime];
             }
 
-            if ($courseStartTime >= $collectionInfo['lastLearnTime'] || $courseStartTime > $collectionInfo['subEndDay']) {
+            if ($courseStartTime >= $collectionInfo['lastLearnTime']) {
                 $learnStatus = self::LOCK_THE_CLASS;
             } elseif ($time >= $courseStartTime && $time <= ($courseStartTime + self::HALF_HOUR)) {
                 $learnStatus = self::GO_TO_THE_CLASS;
-            } elseif ($time > ($courseStartTime + self::HALF_HOUR) && $courseStartTime < $collectionInfo['subEndDay']) {
+            } elseif ($time > ($courseStartTime + self::HALF_HOUR)) {
                 $learnStatus = self::TO_MAKE_UP_LESSONS;
             }
         }
