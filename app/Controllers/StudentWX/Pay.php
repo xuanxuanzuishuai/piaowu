@@ -112,7 +112,8 @@ class Pay extends ControllerBase
             $_SERVER['HTTP_X_REAL_IP'],
             $studentAddressId,
             $openId,
-            $employeeUuid
+            $employeeUuid,
+            false
         );
 
         if (empty($ret)) {

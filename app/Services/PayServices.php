@@ -249,9 +249,10 @@ class PayServices
      * @param $studentAddressId
      * @param $openId
      * @param $employeeUuid
+     * @param $autoApply
      * @return array|bool
      */
-    public static function weixinCreateBill($studentId, $packageId, $payChannel, $clientIp, $studentAddressId, $openId, $employeeUuid)
+    public static function weixinCreateBill($studentId, $packageId, $payChannel, $clientIp, $studentAddressId, $openId, $employeeUuid, $autoApply)
     {
         $student = StudentModelForApp::getById($studentId);
         $uuid = $student['uuid'];
@@ -296,9 +297,8 @@ class PayServices
         }
 
         $bill = $ret['data']['bill'];
-        $autoApply = 0;
         // 写入ai_bill，手动激活
-        AIBillService::addAiBill($bill['id'], $uuid, $autoApply);
+        AIBillService::addAiBill($bill['id'], $uuid, (int)$autoApply);
         return $ret;
     }
 
