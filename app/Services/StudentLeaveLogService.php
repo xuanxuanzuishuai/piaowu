@@ -51,17 +51,19 @@ class StudentLeaveLogService
      */
     public static function studentLeave($studentId, $leaveOperator, $startLeaveDate, $endLeaveDate, $leaveDays)
     {
+        $time = time();
+        $date = date('Ymd');
         $student = StudentModelForApp::getStudentInfo($studentId, null);
         if (empty($student)) {
             return 'unknown_user';
         }
         //检查用户是否有正常的请假数据
-        $studentLeave = StudentLeaveLogModel::getRecords(['student_id' => $studentId, 'leave_status' => StudentLeaveLogModel::STUDENT_LEAVE_STATUS_NORMAL, 'end_leave_time[>]' => time()]);
+        $studentLeave = StudentLeaveLogModel::getRecords(['student_id' => $studentId, 'leave_status' => StudentLeaveLogModel::STUDENT_LEAVE_STATUS_NORMAL, 'end_leave_time[>]' => $time]);
         if (!empty($studentLeave)) {
             return 'please_complete_or_cancel_the_last_leave';
         }
-        //请假开始时间不可以小于当前时间
-        if ($startLeaveDate < date('Ymd')) {
+        //请假开始时间不可以小于今天
+        if ($startLeaveDate < $date) {
             return 'leave_time_cannot_be_less_than_today';
         }
 
@@ -89,7 +91,7 @@ class StudentLeaveLogService
 
         //年卡结束时间更改
         $subEndDate = date('Ymd', strtotime('+' . $leaveDays . 'day', strtotime($student['sub_end_date'])));
-        $affectRows = StudentModel::updateRecord($student['id'], ['sub_end_date' => $subEndDate, 'update_time' => time()]);
+        $affectRows = StudentModel::updateRecord($student['id'], ['sub_end_date' => $subEndDate, 'update_time' => $time]);
         if (empty($affectRows)) {
             return 'update_student_sub_end_date_error';
         }
@@ -99,7 +101,7 @@ class StudentLeaveLogService
            'gift_code_id' => $giftCodeId,
             'student_id' => $studentId,
             'leave_operator' => $leaveOperator,
-            'leave_time' => time(),
+            'leave_time' => $time,
             'start_leave_time' => strtotime($startLeaveDate),
             'end_leave_time' => strtotime($endLeaveDate),
             'leave_days' => $leaveDays,
@@ -109,6 +111,7 @@ class StudentLeaveLogService
         if (empty($affectRows)) {
             return 'student_leave_error';
         }
+        return '';
     }
 
     /**
@@ -120,17 +123,19 @@ class StudentLeaveLogService
      */
     public static function cancelLeave($id, $cancelOperator, $cancelOperatorType)
     {
+        $date = date('Ymd');
+        $time = time();
         $cancelLeaveDate = StudentLeaveLogModel::getRecord(['id' => $id, 'leave_status' => StudentLeaveLogModel::STUDENT_LEAVE_STATUS_NORMAL]);
         if (empty($cancelLeaveDate)) {
             return "record_not_found";
         }
         //如果请假结束时间小于当前时间，说明请假已过期，不可以在取消请假
-        if (date('Ymd', $cancelLeaveDate['end_leave_time']) < date('Ymd')) {
+        if (date('Ymd', $cancelLeaveDate['end_leave_time']) < $date) {
             return "leave_has_ended_you_can't_cancel_the_leave";
         }
 
-        //如果当前时间大于请假开始的的时间， 计算用户剩余请假天数
-        if (date('Y-m-d') > date('Y-m-d', $cancelLeaveDate['start_leave_time'])) {
+        //如果今天大于请假开始的的时间， 计算用户剩余请假天数
+        if ($date > date('Y-m-d', $cancelLeaveDate['start_leave_time'])) {
             $leaveSurplusDays = Util::dateDiff(date('Y-m-d'), date('Y-m-d', $cancelLeaveDate['end_leave_time']));
         } else {
             $leaveSurplusDays = $cancelLeaveDate['leave_days'];
@@ -150,11 +155,11 @@ class StudentLeaveLogService
         //年卡结束时间更改
         $student = StudentModelForApp::getStudentInfo($cancelLeaveDate['student_id'], null);
         $subEndDate = date('Ymd', strtotime('-' . $leaveSurplusDays . 'day', strtotime($student['sub_end_date'])));
-        $affectRows = StudentModel::updateRecord($student['id'], ['sub_end_date' => $subEndDate, 'update_time' => time()]);
+        $affectRows = StudentModel::updateRecord($student['id'], ['sub_end_date' => $subEndDate, 'update_time' => $time]);
         if (empty($affectRows)) {
             return 'update_student_sub_end_date_error';
         }
-
+        return '';
     }
 
     /**
@@ -165,6 +170,7 @@ class StudentLeaveLogService
     public static function studentLeaveStatus($studentId)
     {
         $leaveStatus = true;
+        $date = date('Ymd');
         //用户是否年卡用户
         $student = StudentModelForApp::getStudentInfo($studentId, null);
         if (empty($student) || $student['has_review_course'] != ReviewCourseModel::REVIEW_COURSE_1980) {
@@ -177,7 +183,7 @@ class StudentLeaveLogService
             $leaveStatus = true;
         } else {
             foreach ($studentLeaveDate as $item) {
-                if (date('Ymd', $item['end_leave_time']) >= date('Ymd')) {
+                if (date('Ymd', $item['end_leave_time']) >= $date) {
                     $studentLeave[] = $item;
                 }
             }
@@ -189,7 +195,7 @@ class StudentLeaveLogService
 
         //用户是否在年卡有效期，这个不根据student那张表sub_end_date,因为sub_end_date包含体验、赠送时长
         $validityOfAnnualPass = GiftCodeDetailedModel::getRecord(['apply_user' => $studentId, 'package_type' => ReviewCourseModel::REVIEW_COURSE_1980, 'status' => Constants::STATUS_TRUE, 'ORDER' => ['id' => 'DESC']]);
-        if (empty($validityOfAnnualPass) || $validityOfAnnualPass['code_end_date'] < date('Ymd')) {
+        if (empty($validityOfAnnualPass) || $validityOfAnnualPass['code_end_date'] < $date) {
             $leaveStatus = false;
         }
         return $leaveStatus;
@@ -218,6 +224,7 @@ class StudentLeaveLogService
      */
     public static function getLeaveStatus($studentId)
     {
+        $date = date('Ymd');
         $leaveStatus = true;
         //检查用户是否有进行中的请假
         $studentLeave = StudentLeaveLogModel::getRecords(['student_id' => $studentId, 'leave_status' => StudentLeaveLogModel::STUDENT_LEAVE_STATUS_NORMAL]);
@@ -227,7 +234,7 @@ class StudentLeaveLogService
         foreach ($studentLeave as $item) {
            $startLeaveDate = date('Ymd', $item['start_leave_time']);
            $endLeaveDate = date('Ymd', $item['end_leave_time']);
-           if ($startLeaveDate >= date('Ymd') && $endLeaveDate <= date('Ymd')) {
+           if ($startLeaveDate <= $date && $endLeaveDate >= $date) {
                $startLeaveInfo[] = $item;
            }
         }
