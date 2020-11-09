@@ -511,7 +511,7 @@ class InteractiveClassroomService
                 }
                 $value['lesson_count'] = isset($classifyLessonInfo[$key]['payLessonList']) ? count($classifyLessonInfo[$key]['payLessonList']) : 0;
                 $today[] = $value;
-            } elseif (($value['collection_start_week'] - 1) == $todayWeek) {
+            } elseif (($value['collection_start_week'] - 1) == $todayWeek || ($todayWeek == 7 && $value['collection_start_week'] == 1)) {
                 if (in_array($value['collection_id'], $signUpCollections)) {
                     $value['course_bind_status'] = self::COURSE_BIND_STATUS_SUCCESS;
                 } else {
