@@ -63,6 +63,12 @@ class PointActivityService
         $reportRes = [
             'amount' => 0,
         ];
+
+        //判断用户是否请假中,请假中，只有签到可以上报
+        $studentLeaveStatus = StudentLeaveLogService::getLeaveStatus($studentId);
+        if (!$studentLeaveStatus && $activityType !== CreditService::SIGN_IN_TASKS) {
+            return $reportRes;
+        }
         if ($activityType === CreditService::SIGN_IN_TASKS) {
             //连续签到
             $reportData['continue_days'] = CheckInRecordModel::studentCheckInDays($studentId) + 1;
@@ -185,6 +191,12 @@ class PointActivityService
             'student_point_info' => [],
             'activity_list' => [],
         ];
+
+        //判断用户是否请假中
+        $studentLeaveStatus = StudentLeaveLogService::getLeaveStatus($studentId);
+        if (!$studentLeaveStatus) {
+            return $formatData;
+        }
         $cacheData = $studentActivityRecord = [];
         $checkInTodayIsDone = false;
         $checkInDays = 0;
