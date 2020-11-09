@@ -220,11 +220,22 @@ class StudentLeaveLogService
     {
         $leaveStatus = true;
         //检查用户是否有进行中的请假
-        $studentLeave = StudentLeaveLogModel::getRecord(['student_id' => $studentId, 'leave_status' => StudentLeaveLogModel::STUDENT_LEAVE_STATUS_NORMAL, 'end_leave_time[>]' => time()]);
-        if (!empty($studentLeave)) {
-            $leaveStatus = false;
+        $studentLeave = StudentLeaveLogModel::getRecords(['student_id' => $studentId, 'leave_status' => StudentLeaveLogModel::STUDENT_LEAVE_STATUS_NORMAL]);
+        if (empty($studentLeave)) {
+            return $leaveStatus;
         }
-        return $leaveStatus;
+        foreach ($studentLeave as $item) {
+           $startLeaveDate = date('Ymd', $item['start_leave_time']);
+           $endLeaveDate = date('Ymd', $item['end_leave_time']);
+           if ($startLeaveDate >= date('Ymd') && $endLeaveDate <= date('Ymd')) {
+               $startLeaveInfo[] = $item;
+           }
+        }
+        if (empty($startLeaveInfo)) {
+            return $leaveStatus;
+        } else {
+            return false;
+        }
     }
 
 }

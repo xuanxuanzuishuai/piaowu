@@ -10,6 +10,7 @@ use App\Models\StudentCollectionExceptModel;
 use App\Libs\DictConstants;
 use App\Models\AIPlayRecordModel;
 use App\Models\StudentLearnRecordModel;
+use App\Models\StudentLeaveLogModel;
 use App\Models\StudentModel;
 use App\Models\StudentSignUpCourseModel;
 use App\Libs\Exceptions\RunTimeException;
@@ -932,6 +933,12 @@ class InteractiveClassroomService
         $student = StudentModel::getById($studentId);
         if (empty($student)) {
             throw new RunTimeException(['unknown_user']);
+        }
+        
+        //检查用户是否报名中
+        $studentLeaveStatus = StudentLeaveLogService::getLeaveStatus($studentId);
+        if (!$studentLeaveStatus) {
+            throw new RunTimeException(['student_are_asking_for_leave']);
         }
 
         // 检查用户是否过期
