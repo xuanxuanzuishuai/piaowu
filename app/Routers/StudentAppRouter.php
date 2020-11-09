@@ -27,7 +27,6 @@ use App\Middleware\StudentAuthCheckMiddleWareForApp;
 use App\Middleware\StudentResPrivilegeCheckMiddleWareForApp;
 use App\Controllers\StudentApp\Question;
 use App\Controllers\StudentApp\PointActivity;
-use App\Controllers\StudentApp\OpernMiniapp;
 
 class StudentAppRouter extends RouterBase
 {
@@ -574,13 +573,6 @@ class StudentAppRouter extends RouterBase
         '/student_app/favorite/favorite_status' => [
             'method'  => ['get'],
             'call'    => Favorite::class . ':favoriteStatus',
-            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
-        ],
-
-        // 获取当前启用的识谱小程序原始ID
-        '/student_app/opern_miniapp/getid' => [
-            'method'  => ['get'],
-            'call'    => OpernMiniapp::class . ':getID',
             'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
         ],
     ];

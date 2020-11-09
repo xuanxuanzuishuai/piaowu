@@ -38,6 +38,7 @@ class RouterFactory
     const CLIENT_CLASSROOM_TEACHER_WX = 'classroom_teacher_wx'; //TheONE国际钢琴课公众号老师端
     const CLIENT_REFERRAL_MINIAPP = 'referral_miniapp'; // 转介绍
     const CLIENT_OPERN_MINIAPP = 'opern_miniapp'; // 曲谱大作战小程序
+    const CLIENT_STAVE_APP = 'stave_app'; // 识谱大作战APP
 
     /**
      * client_type 对应的 Router class
@@ -59,6 +60,7 @@ class RouterFactory
         self::CLIENT_CLASSROOM_TEACHER_WX => ClassroomTeacherWXRouter::class, //TheONE国际钢琴课公众号老师端
         self::CLIENT_REFERRAL_MINIAPP => ReferralMinAppRouter::class, // 转介绍小程序
         self::CLIENT_OPERN_MINIAPP => OpernMinAppRouter::class, // 曲谱大作战小程序
+        self::CLIENT_STAVE_APP => StaveAppRouter::class, // 识谱大作战APP
     ];
 
     /**

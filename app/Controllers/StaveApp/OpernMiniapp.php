@@ -1,10 +1,10 @@
 <?php
 /**
  * User: lizao
- * Date: 2020.10.29 22:09
+ * Date: 2020.11.09 14:00
  */
 
-namespace App\Controllers\StudentApp;
+namespace App\Controllers\StaveApp;
 
 use App\Controllers\ControllerBase;
 use App\Libs\Valid;
