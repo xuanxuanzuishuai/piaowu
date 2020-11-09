@@ -498,8 +498,6 @@ FROM " . StudentModel::$table . " s LEFT JOIN " . CollectionModel::$table . " c 
         if (!empty($expireTime)) {
             $redis->expire($cacheKey, $expireTime);
         }
-        //记录有效时长完成的时间
-        HalloweenService::studentHalloweenCompleteTime($studentId, $stepDuration);
     }
 
     /**
