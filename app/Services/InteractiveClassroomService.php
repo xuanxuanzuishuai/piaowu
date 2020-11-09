@@ -935,7 +935,7 @@ class InteractiveClassroomService
             throw new RunTimeException(['unknown_user']);
         }
         
-        //检查用户是否报名中
+        //检查用户是否请假中
         $studentLeaveStatus = StudentLeaveLogService::getLeaveStatus($studentId);
         if (!$studentLeaveStatus) {
             throw new RunTimeException(['student_are_asking_for_leave']);
@@ -973,7 +973,7 @@ class InteractiveClassroomService
         //用户报名当天的课程，下课之前报的名，可以今天上课，下课之后报的名可以下周的这一天上课 上下课以半小时为边界
         $endClassTime = date("H:i", strtotime($startTime) + StudentSignUpCourseModel::DURATION_30MINUTES);
         $nowWeekTime = $nowWeek == $startWeek && date("H:i", $time) > $endClassTime;
-        if ($nowWeek == $startWeek && date("H:i", $time) < $endClassTime) {
+        if ($nowWeek == $startWeek && date("H:i", $time) <= $endClassTime) {
             $firstCourseTime = strtotime(date('Y-m-d').$startTime);
             $lastTime = $firstCourseTime + Util::TIMESTAMP_ONEDAY * StudentSignUpCourseModel::A_WEEK * ($lessonCount - 1);
         } elseif ($nowWeek > $startWeek || $nowWeekTime) {
