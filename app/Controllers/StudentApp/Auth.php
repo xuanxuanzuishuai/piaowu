@@ -65,7 +65,7 @@ class Auth extends ControllerBase
 
         $platformId = TrackService::getPlatformId($this->ci['platform']);
         $trackParams = TrackService::getPlatformParams($platformId, $params);
-        if (!empty($trackParams)) {
+        if (!empty($trackParams) && !empty($loginData['id']) && $loginData['id'] > 0) {
             $trackParams['platform'] = $platformId;
             $trackData = TrackService::trackEvent(TrackService::TRACK_EVENT_REGISTER,
                 $trackParams,
