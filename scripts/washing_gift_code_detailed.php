@@ -31,7 +31,7 @@ try {
     //查询激活码数据
     $giftCodeDetailedSql = "select * from (
             select id, gift_code_id, apply_user, code_start_date, code_end_date, package_type, valid_days, create_time, status, actual_days,
-             ROW_NUMBER() OVER(PARTITION BY apply_user ORDER BY code_end_date DESC) r from dss_dev.gift_code_detailed where status = 1
+             ROW_NUMBER() OVER(PARTITION BY apply_user ORDER BY code_end_date DESC) r from gift_code_detailed where status = 1
              ) gcd where r = 1 order by id asc ";
     $giftCodeDetailedSql .= Util::limitation($page, $pageCount);
     $giftCodeDetailedInfo = $db->queryAll($giftCodeDetailedSql, [':status' => Constants::STATUS_TRUE]);

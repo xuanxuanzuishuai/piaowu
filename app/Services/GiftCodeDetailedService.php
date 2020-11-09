@@ -468,22 +468,22 @@ class GiftCodeDetailedService
         }
 
         //如果当前使用人的批量插入数据为空，取最后一条激活码的详细数据
-        if ($studentsLastCodeDetailedInfo[$applyUser]) {
-            $lastGiftCodeInfo = $studentsLastCodeDetailedInfo[$applyUser];
-        } else {
+        if (empty($studentsLastCodeDetailedInfo[$applyUser])) {
             $lastGiftCodeInfo = [];
+        } else {
+            $lastGiftCodeInfo = $studentsLastCodeDetailedInfo[$applyUser];
         }
 
         if (empty($lastGiftCodeInfo)) {
             //如果最后一条激活码的详细数据为空，获取用户的信息
             $studentInfo = $studentInfo[$applyUser];
             //计算用户的体验时长
-            $trialDays = Util::dateDiff(date('Y-m-d', strtotime($studentInfo['trial_start_date'])), date('Y-m-d', strtotime($studentInfo['trial_end_date'])));
-            $timeStr = '+' . $trialDays . 'day';
-            if ($trialDays == 0) {
+            if (empty($studentInfo['trial_start_date']) || empty($studentInfo['trial_end_date'])) {
                 //用户第一个激活码真正的开始时间 = 开始时间+体验时长
-                $giftCodeFirstTime = strtotime($timeStr, strtotime($studentInfo['sub_start_date']));
+                $giftCodeFirstTime = strtotime($studentInfo['sub_start_date']);
             } else {
+                $trialDays = Util::dateDiff(date('Y-m-d', strtotime($studentInfo['trial_start_date'])), date('Y-m-d', strtotime($studentInfo['trial_end_date'])));
+                $timeStr = '+' . $trialDays . 'day';
                 $giftCodeFirstTime = strtotime($timeStr, strtotime($studentInfo['sub_start_date'])) + 86400;
             }
 

@@ -48,7 +48,7 @@ FROM gift_code WHERE apply_user IS NOT NULL order by id asc ";
     $studentStrIds = implode(',', $studentArrIds);
 
     //获取用户的信息
-    $studentSql = "select id from student where id in ($studentStrIds)";
+    $studentSql = "select * from student where id in ($studentStrIds)";
     $studentInfo = $db->queryAll($studentSql);
     $studentInfo = array_combine(array_column($studentInfo, 'id'), $studentInfo);
     //获取每个用户的最后一条激活码数据
