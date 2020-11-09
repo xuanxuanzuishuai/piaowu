@@ -539,6 +539,42 @@ class DictConstants {
         ]
     ];
 
+    //通用红包搜索节点
+    const COMMON_CASH_NODE = [
+        'type' => 'operation_common_node',
+        'keys' => [
+            '4','5','6','7','8','9','10','11','12','13'
+        ]
+    ];
+    //补发红包搜索节点
+    const REISSUE_CASH_NODE = [
+        'type' => 'operation_reissue_node',
+        'keys' => [
+            '6','7','8','9','10','11','12','13'
+        ]
+    ];
+    //转介绍红包搜索节点
+    const REFEREE_CASH_NODE = [
+        'type' => 'operation_referee_node',
+        'keys' => [
+            '1','2','3'
+        ]
+    ];
+    //节点特殊配置
+    const NODE_SETTING = [
+        'type' => 'node_setting',
+        'keys' => [
+            'not_display_wait',
+            'not_verify_refund'
+        ]
+    ];
+    //节点与task的对应关系
+    const NODE_RELATE_TASK = [
+        'type' => 'node_relate_task',
+        'keys' => [
+            '1','2','3','4','5','6','7','8','9','10','11','12','13'
+        ]
+    ];
     public static function get($type, $key)
     {
         if (empty($type) || empty($key)) {

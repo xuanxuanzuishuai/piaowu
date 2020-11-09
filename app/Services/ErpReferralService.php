@@ -7,8 +7,6 @@
  */
 
 namespace App\Services;
-
-
 use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
@@ -33,66 +31,13 @@ class ErpReferralService
     const EVENT_TYPE_UPLOAD_POSTER_RETURN_CASH = 5; // 上传分享海报领取返现
 
     /**
-     * 前端传值的对应关系
+     * 前端传相应的期望节点
      */
     const EXPECT_REGISTER          = 1; //注册
     const EXPECT_TRAIL_PAY         = 2; //付费体验卡
     const EXPECT_YEAR_PAY          = 3; //付费年卡
     const EXPECT_FIRST_NORMAL      = 4; //首购智能正式课
     const EXPECT_UPLOAD_SCREENSHOT = 5; //上传截图审核通过
-
-    const EXPECT_REISSUE_TRAIL_5 = 6; //补|转介绍付费体验卡-5元
-    const EXPECT_REISSUE_TRAIL_10 = 7; //补|转介绍付费体验卡-10元
-    const EXPECT_REISSUE_YEAR_100 = 8; //补|转介绍付费年卡-100元
-    const EXPECT_REISSUE_YEAR_200 = 9; //补|转介绍付费年卡-200元
-    const EXPECT_REISSUE_YEAR_50 = 10; //补|转介绍首购年卡-50元
-    const EXPECT_REISSUE_POSTER_10 = 11; //补|上传截图活动-10元
-    const EXPECT_REISSUE_RETURN_MONEY_49 = 12; //补|返现活动-49元
-    const EXPECT_REISSUE_RETURN_MONEY_9_9 = 13; //补|返现活动-9.9元
-
-    /** 阶段任务对应的任务id */
-    const EVENT_TASK_ID_REGISTER       = [200, 1];          // 注册
-    const EVENT_TASK_ID_TRIAL_PAY      = [201, 203, 52, 2]; // 体验支付
-    const EVENT_TASK_ID_PAY            = [202, 204, 53, 3]; // 支付
-    const EVENT_TASK_UPLOAD_SCREENSHOT = [];                // 上传截图审核通过任务,通过getEventTasksList动态获取
-
-    const EVENT_TASK_ID_REISSUE_TRAIL_5 = [209]; //体验卡补发5元
-    const EVENT_TASK_ID_REISSUE_TRAIL_10 = [210]; //体验课补10
-    const EVENT_TASK_ID_REISSUE_YEAR_100 = [211]; //年卡补100
-    const EVENT_TASK_ID_REISSUE_YEAR_200 = [212]; //年卡补200
-    const EVENT_TASK_ID_REISSUE_YEAR_50 = [213]; //年卡补50
-    const EVENT_TASK_ID_REISSUE_POSTER_10 = [214]; //上传截图补10
-    const EVENT_TASK_ID_REISSUE_RETURN_MONEY_49 = [215]; //返现补49
-    const EVENT_TASK_ID_REISSUE_RETURN_MONEY_9_9 = [216]; //返现补9.9
-
-    /**
-     * 此属性用于和前端交互时的对应
-     */
-    const EVENT_TASKS = [
-        self::EXPECT_REGISTER  => '注册',
-        self::EXPECT_TRAIL_PAY => '付费体验卡',
-        self::EXPECT_YEAR_PAY  => '付费年卡',
-    ];
-
-    /**
-     * 转介绍二期-红包审核任务
-     */
-    const REFEREE_EVENT_TASKS = [
-        self::EXPECT_FIRST_NORMAL      => '首购智能正式课',
-        self::EXPECT_UPLOAD_SCREENSHOT => '上传截图审核通过',
-    ];
-
-    //补发红包相关
-    const REISSUE_CASH_AWARD = [
-        self::EXPECT_REISSUE_TRAIL_5 => '补|转介绍付费体验卡-5元',
-        self::EXPECT_REISSUE_TRAIL_10 => '补|转介绍付费体验卡-10元',
-        self::EXPECT_REISSUE_YEAR_100 => '补|转介绍付费年卡-100元',
-        self::EXPECT_REISSUE_YEAR_200 => '补|转介绍付费年卡-200元',
-        self::EXPECT_REISSUE_YEAR_50 => '补|转介绍首购年卡-50元',
-        self::EXPECT_REISSUE_POSTER_10 => '补|上传截图活动-10元',
-        self::EXPECT_REISSUE_RETURN_MONEY_49 => '补|返现活动-49元',
-        self::EXPECT_REISSUE_RETURN_MONEY_9_9 => '补|返现活动-9.9元'
-    ];
 
     /** 任务状态 */
     const EVENT_TASK_STATUS_COMPLETE = 2;
@@ -129,50 +74,42 @@ class ErpReferralService
     //专属海报参加人数
     const PERSONAL_POSTER_ATTEND_NUM_KEY = 'personal_poster_attend_num_key';
 
+    //task对应都node名称key
+    const TASK_RELATE_NODE_KEY = 'task_relate_node_key';
+
     /**
-     * @return int[]
+     * 节点对应的所有task
+     * @param $node
+     * @return false|string[]
+     */
+    public static function getNodeRelateTask($node)
+    {
+        return explode(',', DictConstants::get(DictConstants::NODE_RELATE_TASK, $node));
+    }
+
+    /**
      * 不展示待发放的节点
+     * @return int[]
      */
     public static function getNotDisplayWaitGiveTask()
     {
-        return [
-            self::EXPECT_UPLOAD_SCREENSHOT,
-            self::EXPECT_REISSUE_TRAIL_5,
-            self::EXPECT_REISSUE_TRAIL_10,
-            self::EXPECT_REISSUE_YEAR_100,
-            self::EXPECT_REISSUE_YEAR_200,
-            self::EXPECT_REISSUE_YEAR_50,
-            self::EXPECT_REISSUE_POSTER_10,
-            self::EXPECT_REISSUE_RETURN_MONEY_49,
-            self::EXPECT_REISSUE_RETURN_MONEY_9_9
-        ];
-    }
-
-    public static function getAwardNode($source)
-    {
-        $awardNodeArr = [
-            'referee' => self::REFEREE_EVENT_TASKS + self::REISSUE_CASH_AWARD,
-            'reissue_award' => self::REISSUE_CASH_AWARD
-        ];
-        return empty($awardNodeArr[$source]) ? self::EVENT_TASKS : $awardNodeArr[$source];
+        $value = DictConstants::get(DictConstants::NODE_SETTING, 'not_display_wait');
+        return explode(',', $value);
     }
 
     /**
-     * @param $taskId
-     * @return int
-     * 前端展示用户转介绍阶段任务对应关系
+     * 红包搜索相关的节点
+     * @param $source
+     * @return array
      */
-    public static function getTaskRelateToVue($taskId)
+    public static function getAwardNode($source)
     {
-        if (in_array($taskId, self::EVENT_TASK_ID_REGISTER)) {
-            return self::EXPECT_REGISTER;
-        } elseif (in_array($taskId, self::EVENT_TASK_ID_TRIAL_PAY)) {
-            return self::EXPECT_TRAIL_PAY;
-        } elseif (in_array($taskId, self::EVENT_TASK_ID_PAY)) {
-            return self::EXPECT_YEAR_PAY;
-        } else {
-            return 0;
-        }
+        $awardNodeArr = [
+            'referee' => DictConstants::COMMON_CASH_NODE,
+            'reissue_award' => DictConstants::REISSUE_CASH_NODE
+        ];
+        $type = empty($awardNodeArr[$source]) ? DictConstants::REFEREE_CASH_NODE : $awardNodeArr[$source];
+        return DictConstants::getSet($type);
     }
 
     /**
@@ -210,32 +147,13 @@ class ErpReferralService
         }
     }
 
-
-    /**
-     * @param $taskId
-     * @return string
-     * 转介绍阶段任务的中文对应
-     */
-    public static function getTaskRelateZh($taskId)
-    {
-        if (in_array($taskId, self::EVENT_TASK_ID_REGISTER)) {
-            return '注册';
-        } elseif (in_array($taskId, self::EVENT_TASK_ID_TRIAL_PAY)) {
-            return '付费体验卡';
-        } elseif (in_array($taskId, self::EVENT_TASK_ID_PAY)) {
-            return '付费年卡';
-        } else {
-            return '暂不明确';
-        }
-    }
-
     /**
      * @return int
      * 当前生效的转介绍注册任务
      */
     public static function getRegisterTaskId()
     {
-        $arr = self::EVENT_TASK_ID_REGISTER;
+        $arr = self::getNodeRelateTask(self::EXPECT_REGISTER);
         return reset($arr);
     }
 
@@ -246,7 +164,7 @@ class ErpReferralService
      */
     public static function getTrailPayTaskId($index = 0)
     {
-        $arr = self::EVENT_TASK_ID_TRIAL_PAY;
+        $arr = self::getNodeRelateTask(self::EXPECT_TRAIL_PAY);
         if (isset($arr[$index])) {
             return $arr[$index];
         }
@@ -260,7 +178,7 @@ class ErpReferralService
      */
     public static function getYearPayTaskId($index = 0)
     {
-        $arr = self::EVENT_TASK_ID_PAY;
+        $arr = self::getNodeRelateTask(self::EXPECT_YEAR_PAY);
         if (isset($arr[$index])) {
             return $arr[$index];
         }
@@ -273,7 +191,7 @@ class ErpReferralService
      */
     public static function getAllReferralTaskId()
     {
-        return array_merge(self::EVENT_TASK_ID_REGISTER, self::EVENT_TASK_ID_TRIAL_PAY, self::EVENT_TASK_ID_PAY);
+        return array_merge(self::getNodeRelateTask(self::EXPECT_REGISTER), self::getNodeRelateTask(self::EXPECT_TRAIL_PAY), self::getNodeRelateTask(self::EXPECT_YEAR_PAY));
     }
 
     /**
@@ -316,7 +234,7 @@ class ErpReferralService
                 'referrer_uuid' => $referred['referrer_uuid'],
                 'referrer_name' => $studentInfoList[$referred['referrer_uuid']]['name'],
                 'referrer_mobile_hidden' => Util::hideUserMobile($referred['referrer_mobile']),
-                'max_event_task_name' => self::getTaskRelateZh($maxRefTaskId) ?? '-',
+                'max_event_task_name' => self::taskRelateNodeName($maxRefTaskId, true) ?? '-',
                 'register_time' => $referred['create_time'],
                 'student_id' => $studentInfoList[$referred['student_uuid']]['id'],
                 'referral_student_id' => $studentInfoList[$referred['referrer_uuid']]['id'],
@@ -357,10 +275,9 @@ class ErpReferralService
             $userTasks = [];
             foreach ($tasks as $task) {
                 //兼容前端展示
-                $task['event_task_id'] = self::getTaskRelateToVue($task['event_task_id']);
                 $userTasks[$task['event_task_id']] = [
                     'create_time' => $task['create_time'],
-                    'event_task_name' => self::getTaskRelateZh($task['event_task_id']),
+                    'event_task_name' => self::taskRelateNodeName($task['event_task_id'], true),
                 ];
             }
 
@@ -410,15 +327,15 @@ class ErpReferralService
         $exclude = [];
         switch ($expectTask) {
             case self::EXPECT_REGISTER:
-                $exclude = array_merge(self::EVENT_TASK_ID_TRIAL_PAY, self::EVENT_TASK_ID_PAY);
-                $include = self::EVENT_TASK_ID_REGISTER;
+                $exclude = array_merge(self::getNodeRelateTask(self::EXPECT_TRAIL_PAY), self::getNodeRelateTask(self::EXPECT_YEAR_PAY));
+                $include = self::getNodeRelateTask(self::EXPECT_REGISTER);
                 break;
             case self::EXPECT_TRAIL_PAY:
-                $exclude = self::EVENT_TASK_ID_PAY;
-                $include = self::EVENT_TASK_ID_TRIAL_PAY;
+                $exclude = self::getNodeRelateTask(self::EXPECT_YEAR_PAY);
+                $include = self::getNodeRelateTask(self::EXPECT_TRAIL_PAY);
                 break;
             case self::EXPECT_YEAR_PAY:
-                $include = self::EVENT_TASK_ID_PAY;
+                $include = self::getNodeRelateTask(self::EXPECT_YEAR_PAY);
                 break;
         }
         return [$include, $exclude];
@@ -456,19 +373,18 @@ class ErpReferralService
         }
         // 转介绍二期红包列表：
         if ($params['award_relate'] == Erp::AWARD_RELATE_REFEREE) {
-            return self::formatRefereeAwardList($response, $expectTaskId);
+            return self::formatRefereeAwardList($response);
         }
         // DSS-转介绍-红包审核列表：
-        return self::formatAwardList($response, $expectTaskId);
+        return self::formatAwardList($response);
     }
 
     /**
      * DSS-转介绍-红包审核
      * @param $response
-     * @param $expectTaskId
      * @return array
      */
-    public static function formatAwardList($response, $expectTaskId)
+    public static function formatAwardList($response)
     {
         $reviewerNames = self::getReviewerNames(array_column($response['data']['records'], 'reviewer_id'));
 
@@ -508,7 +424,7 @@ class ErpReferralService
                 'referrer_name' => $studentInfoList[$award['referrer_uuid']]['name'],
                 'referrer_mobile_hidden' => Util::hideUserMobile($award['referrer_mobile']),
                 'event_task_id' => $award['event_task_id'],
-                'event_task_name' => self::getExpectTaskName($expectTaskId), //产品期望筛选什么选项，展示什么名称
+                'event_task_name' => self::taskRelateNodeName($award['event_task_id'], true), //产品期望筛选什么选项，展示什么名称
                 'user_event_task_award_id' => $award['user_event_task_award_id'],
                 'award_status' => $award['award_status'],
                 'award_status_zh' => $award['award_status_zh'],
@@ -541,10 +457,9 @@ class ErpReferralService
     /**
      * 转介绍二期红包列表
      * @param $response
-     * @param $expectTaskId
      * @return array
      */
-    public static function formatRefereeAwardList($response, $expectTaskId)
+    public static function formatRefereeAwardList($response)
     {
         $reviewerNames = self::getReviewerNames(array_column($response['data']['records'], 'reviewer_id'));
 
@@ -588,7 +503,7 @@ class ErpReferralService
                 'bind_status_zh'           => $bindStatus == UserWeixinModel::STATUS_NORMAL ? '已绑定' : '未绑定',
                 'award_status'             => $award['award_status'],
                 'award_status_zh'          => $award['award_status_zh'],
-                'event_task_name'          => self::getExpectTaskName($expectTaskId), //产品期望筛选什么选项，展示什么名称
+                'event_task_name'          => self::taskRelateNodeName($award['event_task_id'], false), //产品期望筛选什么选项，展示什么名称
                 'event_task_type'          => $award['event_task_type'],
                 'award_amount'             => $award['award_type'] == self::AWARD_TYPE_CASH ? ($award['award_amount'] / 100) : $award['award_amount'],
                 'fail_reason_zh'           => $award['award_status'] == self::AWARD_STATUS_GIVE_FAIL ? WeChatAwardCashDealModel::getWeChatErrorMsg($relateAwardStatusArr[$award['user_event_task_award_id']]['result_code']) : '',
@@ -611,9 +526,9 @@ class ErpReferralService
      * @param $expectTaskId
      * @return string
      */
-    private static function getExpectTaskName($expectTaskId)
+    public static function getExpectTaskName($expectTaskId)
     {
-        $arr = self::EVENT_TASKS + self::REFEREE_EVENT_TASKS + self::REISSUE_CASH_AWARD;
+        $arr =  DictConstants::getSet(DictConstants::REFEREE_CASH_NODE) + DictConstants::getSet(DictConstants::COMMON_CASH_NODE);
         return $arr[$expectTaskId] ?? '';
     }
 
@@ -708,23 +623,12 @@ class ErpReferralService
      */
     public static function expectTaskRelateRealTask($expectTaskId)
     {
-        $eventTask = self::getEventTasksList(0, self::EVENT_TYPE_UPLOAD_POSTER);
-        $arr = [
-            self::EXPECT_REGISTER          => self::EVENT_TASK_ID_REGISTER,
-            self::EXPECT_TRAIL_PAY         => self::EVENT_TASK_ID_TRIAL_PAY,
-            self::EXPECT_YEAR_PAY          => self::EVENT_TASK_ID_PAY,
-            self::EXPECT_FIRST_NORMAL      => self::EVENT_TASK_ID_PAY,
-            self::EXPECT_UPLOAD_SCREENSHOT => array_column($eventTask, 'id'),
-            self::EXPECT_REISSUE_TRAIL_5   => self::EVENT_TASK_ID_REISSUE_TRAIL_5,
-            self::EXPECT_REISSUE_TRAIL_10  => self::EVENT_TASK_ID_REISSUE_TRAIL_10,
-            self::EXPECT_REISSUE_YEAR_100  => self::EVENT_TASK_ID_REISSUE_YEAR_100,
-            self::EXPECT_REISSUE_YEAR_200  => self::EVENT_TASK_ID_REISSUE_YEAR_200,
-            self::EXPECT_REISSUE_YEAR_50   => self::EVENT_TASK_ID_REISSUE_YEAR_50,
-            self::EXPECT_REISSUE_POSTER_10 => self::EVENT_TASK_ID_REISSUE_POSTER_10,
-            self::EXPECT_REISSUE_RETURN_MONEY_49 => self::EVENT_TASK_ID_REISSUE_RETURN_MONEY_49,
-            self::EXPECT_REISSUE_RETURN_MONEY_9_9 => self::EVENT_TASK_ID_REISSUE_RETURN_MONEY_9_9
-        ];
-        return $arr[$expectTaskId] ?? explode(',', $expectTaskId);
+        if ($expectTaskId == self::EXPECT_UPLOAD_SCREENSHOT) {
+            $eventTask = self::getEventTasksList(0, self::EVENT_TYPE_UPLOAD_POSTER);
+            return array_column($eventTask, 'id');
+        }
+        $allNodeRelate = DictConstants::getSet(DictConstants::NODE_RELATE_TASK);
+        return !empty($allNodeRelate[$expectTaskId]) ? explode(',', $allNodeRelate[$expectTaskId]) : explode(',', $expectTaskId);
     }
 
     /**
@@ -937,9 +841,7 @@ class ErpReferralService
      */
     public static function notNeedVerifyTaskId()
     {
-       $arr = array_keys(self::REISSUE_CASH_AWARD);
-       array_push($arr, self::EXPECT_UPLOAD_SCREENSHOT);
-       return $arr;
+         return explode(',', DictConstants::get(DictConstants::NODE_SETTING, 'not_verify_refund'));
     }
 
 
@@ -1050,5 +952,48 @@ class ErpReferralService
         } elseif ($count > 2) {
             return  mb_substr($name, 0, 1) . str_repeat('*', $count - 2) . mb_substr($name, -1, 1) ;
         }
+    }
+
+    /**
+     * 任务筛选的时候对应的节点名称
+     * 当一个任务推荐人和被推荐人同时有奖励的时候
+     * 筛选的时候节点名称不同，根据期望筛选的
+     * 身份选取不同的节点名称
+     * @param $taskId
+     * @param $isInviteUser
+     * @return mixed|string
+     */
+    public static function taskRelateNodeName($taskId, $isInviteUser = true)
+    {
+        $arr = DictConstants::getSet(DictConstants::NODE_RELATE_TASK);
+        $perTaskRelateNode = [];
+        //缓存 不每次都重新组合
+        $redis = RedisDB::getConn();
+        $data = $redis->get(self::TASK_RELATE_NODE_KEY);
+        if (empty($data)) {
+            foreach ($arr as $k => $value) {
+                foreach (explode(',', $value) as $v) {
+                    $perTaskRelateNode[$v][] = $k;
+                }
+            }
+            //所有的上传截图的节点
+            $eventTask = self::getEventTasksList(0, self::EVENT_TYPE_UPLOAD_POSTER);
+            array_map(function ($item) use(&$perTaskRelateNode){
+                $perTaskRelateNode[$item['id']][] = self::EXPECT_UPLOAD_SCREENSHOT;
+            }, $eventTask);
+            $redis->setex(self::TASK_RELATE_NODE_KEY, 300, json_encode($perTaskRelateNode));
+        } else {
+            $perTaskRelateNode = json_decode($data, true);
+        }
+
+        if (empty($perTaskRelateNode[$taskId])) {
+            return  '未知节点';
+        }
+
+        //当一个taskId对应多个节点时（推荐人取第一个被推荐人取最后一个）
+        sort($perTaskRelateNode[$taskId]);
+        $needNode = $isInviteUser ? reset($perTaskRelateNode[$taskId]) : end($perTaskRelateNode[$taskId]);
+        $allNode = DictConstants::getSet(DictConstants::COMMON_CASH_NODE) + DictConstants::getSet(DictConstants::REFEREE_CASH_NODE);
+        return $allNode[$needNode] ?? '未知节点';
     }
 }

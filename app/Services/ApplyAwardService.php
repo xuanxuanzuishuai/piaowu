@@ -109,7 +109,7 @@ class ApplyAwardService
         $allStatus = DictConstants::getSet(DictConstants::DING_DING_STATUS);
         $item['status_zh'] = $allStatus[$item['status']];
         $item['mobile'] = Util::hideUserMobile($item['mobile']);
-        $item['task_zh'] = ErpReferralService::REISSUE_CASH_AWARD[$item['expect_event_task_id']];
+        $item['task_zh'] = ErpReferralService::getExpectTaskName($item['expect_event_task_id']);
         $item['create_time'] = date('Y-m-d H:i:s', $item['create_time']);
         $item['image_url'] = $item['image_key'] ? array_map(function ($item) {
             return AliOSS::replaceCdnDomainForDss($item);
