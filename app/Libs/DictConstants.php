@@ -332,6 +332,7 @@ class DictConstants {
             'NORMAL_STUDENT_INVITE_STUDENT',
             'POSTER_LANDING_49_STUDENT_INVITE_STUDENT',
             'REFERRAL_MINIAPP_STUDENT_INVITE_STUDENT',
+            'BUY_TRAIL_STUDENT_INVITE_STUDENT'
         ]
     ];
     //个性化海报/标准海报配置

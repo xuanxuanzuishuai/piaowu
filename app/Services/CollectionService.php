@@ -15,6 +15,7 @@ use App\Models\CollectionModel;
 use App\Models\CollectionAssistantLogModel;
 use App\Models\EmployeeModel;
 use App\Models\PackageExtModel;
+use App\Models\PosterModel;
 use App\Models\StudentAssistantLogModel;
 use App\Models\StudentModel;
 use App\Models\DictModel;
@@ -22,6 +23,7 @@ use App\Libs\AliOSS;
 use App\Libs\DictConstants;
 use App\Libs\Util;
 use App\Libs\Valid;
+use App\Models\UserQrTicketModel;
 
 class CollectionService
 {
@@ -537,7 +539,7 @@ class CollectionService
     {
         //获取用户信息
         $collection = [];
-        $userInfo = StudentModel::getRecord(["uuid" => $UUID], ["collection_id"], false);
+        $userInfo = StudentModel::getRecord(["uuid" => $UUID], ["collection_id", 'id'], false);
         if (empty($userInfo['collection_id'])) {
             return $collection;
         }
@@ -557,6 +559,11 @@ class CollectionService
             ]
         );
         $collection["wechat_qr"] = $collection["wx_qr"] ? AliOSS::signUrls($collection["wx_qr"]) : AliOSS::signUrls($collection["wechat_qr"]);
+        //获取转介绍配置数据
+        $referralConfig = PosterModel::getRecord(["apply_type" => PosterModel::APPLY_TYPE_STUDENT_WECHAT, "status" => PosterModel::STATUS_PUBLISH, "poster_type" => PosterModel::POSTER_TYPE_WECHAT_STANDARD], ['url', 'settings', 'content1', 'content2']);
+        $settings = json_decode($referralConfig['settings'], true);
+        //生成二维码海报
+        $collection['recommend_info'] = UserService::generateQRPosterAliOss($userInfo['id'], $referralConfig['url'], UserQrTicketModel::STUDENT_TYPE, $settings['poster_width'], $settings['poster_height'], $settings['qr_width'], $settings['qr_height'], $settings['qr_x'], $settings['qr_y'], DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'BUY_TRAIL_STUDENT_INVITE_STUDENT'), UserQrTicketModel::LANDING_TYPE_NORMAL);
         //返回结果
         return $collection;
     }

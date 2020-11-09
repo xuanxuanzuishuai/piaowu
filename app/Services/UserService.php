@@ -121,9 +121,10 @@ class UserService
      * @param int $qrX          二维码图片在海报中的X轴位置
      * @param int $qrY          二维码图片在海报中的Y轴位置
      * @param int $channelId    二维码包含的渠道id
+     * @param int $landingType  指定生成的转介绍码的类型
      * @return array|string
      */
-    public static function generateQRPosterAliOss($userId, $posterFile, $type, $imageWidth, $imageHeight, $qrWidth, $qrHeight, $qrX, $qrY, $channelId)
+    public static function generateQRPosterAliOss($userId, $posterFile, $type, $imageWidth, $imageHeight, $qrWidth, $qrHeight, $qrX, $qrY, $channelId, $landingType = NULL)
     {
         //通过oss合成海报并保存
         //海报资源
@@ -133,7 +134,7 @@ class UserService
             return;
         }
         //用户二维码
-        $userQrUrl = self::getUserQRAliOss($userId, $type, $channelId);
+        $userQrUrl = self::getUserQRAliOss($userId, $type, $channelId, NULL, $landingType);
         if (empty($userQrUrl)) {
             SimpleLogger::info('user qr make fail', [$userId,$type]);
             return;
@@ -174,19 +175,15 @@ class UserService
      * @param int $type 推荐人类型 1 学生 2 老师
      * @param int $channelId 渠道ID
      * @param int $appid 小程序APPID
+     * @param $landingType 强制指定生成二维码的类型
      * @return array|mixed
      */
-    public static function getUserQRAliOss($userId, $type, $channelId, $appid = null)
+    public static function getUserQRAliOss($userId, $type, $channelId, $appid = null, $landingType = NULL)
     {
         if (empty($appid)) {
             $appid = ReferralService::REFERRAL_MINIAPP_ID;
         }
-        $landingType      = UserQrTicketModel::LANDING_TYPE_NORMAL;
-        $posterQrcodeType = DictService::getKeyValue(Constants::DICT_TYPE_POSTER_QRCODE_TYPE, 'qr_code_type');
-        // 配置：非空时为小程序码
-        if (!empty($posterQrcodeType)) {
-            $landingType = UserQrTicketModel::LANDING_TYPE_MINIAPP;
-        }
+        $landingType = self::getLandingType($landingType);
         //获取学生转介绍学生二维码资源数据
         $res = UserQrTicketModel::getRecord(['AND' => ['user_id' => $userId, 'type' => $type, 'channel_id' => $channelId, 'landing_type' => $landingType]], [], false);
         if (!empty($res['qr_url'])) {
@@ -225,6 +222,24 @@ class UserService
         return $data;
     }
 
+    /**
+     * @param $landingType
+     * @return int
+     * 判断用什么类型的二维码
+     */
+    private static function getLandingType($landingType)
+    {
+        if (!empty($landingType)) {
+            return $landingType;
+        }
+        $landingType      = UserQrTicketModel::LANDING_TYPE_NORMAL;
+        $posterQrcodeType = DictService::getKeyValue(Constants::DICT_TYPE_POSTER_QRCODE_TYPE, 'qr_code_type');
+        // 配置：非空时为小程序码
+        if (!empty($posterQrcodeType)) {
+            $landingType = UserQrTicketModel::LANDING_TYPE_MINIAPP;
+        }
+        return $landingType;
+    }
     /**
      * 获取小程序码图片
      * 可带参数
