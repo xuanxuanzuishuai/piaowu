@@ -23,7 +23,18 @@ class OpernMiniAppService
 
     public static function handler($message, $isBackup = false)
     {
-        return self::miniprogrampage($message, $isBackup);
+        switch ($message['MsgType']) {
+            // 除【事件】外，其他类型消息均回复二维码
+            case 'text':
+            case 'image':
+            case 'miniprogrampage':
+                return self::miniprogrampage($message, $isBackup);
+                break;
+            
+            default:
+                break;
+        }
+        return false;
     }
 
     private static function miniprogrampage($message, $isBackup = false)
