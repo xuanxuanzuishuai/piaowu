@@ -135,8 +135,8 @@ class StudentLeaveLogService
         }
 
         //如果今天大于请假开始的的时间， 计算用户剩余请假天数
-        if ($date > date('Y-m-d', $cancelLeaveDate['start_leave_time'])) {
-            $leaveSurplusDays = Util::dateDiff(date('Y-m-d'), date('Y-m-d', $cancelLeaveDate['end_leave_time']));
+        if ($date > date('Ymd', $cancelLeaveDate['start_leave_time'])) {
+            $leaveSurplusDays = Util::dateDiff(date('Y-m-d', $cancelLeaveDate['start_leave_time']), date('Y-m-d'));
         } else {
             $leaveSurplusDays = $cancelLeaveDate['leave_days'];
         }

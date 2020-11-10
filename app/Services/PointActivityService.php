@@ -192,10 +192,10 @@ class PointActivityService
             'activity_list' => [],
         ];
 
-        //判断用户是否请假中
+        //判断用户是否请假中,请假中只可以获取每日签到
         $studentLeaveStatus = StudentLeaveLogService::getLeaveStatus($studentId);
         if (!$studentLeaveStatus) {
-            return $formatData;
+            $activityType = CreditService::SIGN_IN_TASKS;
         }
         $cacheData = $studentActivityRecord = [];
         $checkInTodayIsDone = false;

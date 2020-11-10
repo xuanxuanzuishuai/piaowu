@@ -34,9 +34,13 @@ class GiftCodeDetailedService
         if (empty($student)) {
             return ['unknown_student'];
         }
+        //计算用户的体验时长
+        $trialDays = Util::dateDiff(date('Y-m-d', strtotime($student['trial_start_date'])), date('Y-m-d', strtotime($student['trial_end_date'])));
         //获取用户最后一次正常的激活记录
         $lastGiftCodeDetailed = GiftCodeDetailedModel::getRecord(['apply_user' => $studentID, 'status' => Constants::STATUS_TRUE, 'ORDER' => ['code_end_date' => 'DESC'],]);
-        if (empty($lastGiftCodeDetailed) || $lastGiftCodeDetailed['code_end_date'] < $date) {
+        if (empty($lastGiftCodeDetailed)) {
+            $codeStartTime = $lastCodeEndTime = $time + 86400 * $trialDays;
+        } elseif($lastGiftCodeDetailed['code_end_date'] < $date) {
             $codeStartTime = $lastCodeEndTime = $time;
         } else {
             $codeStartTime = strtotime($lastGiftCodeDetailed['code_end_date']) + 86400;
