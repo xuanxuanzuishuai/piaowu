@@ -25,6 +25,7 @@ class GiftCodeDetailedService
     {
         $date = date('Ymd');
         $time = time();
+
         $gift = GiftCodeModel::getByCode($code);
         if (empty($gift)) {
             return ['gift_code_error'];
@@ -34,12 +35,14 @@ class GiftCodeDetailedService
         if (empty($student)) {
             return ['unknown_student'];
         }
-        //计算用户的体验时长
-        $trialDays = Util::dateDiff(date('Y-m-d', strtotime($student['trial_start_date'])), date('Y-m-d', strtotime($student['trial_end_date'])));
+
         //获取用户最后一次正常的激活记录
         $lastGiftCodeDetailed = GiftCodeDetailedModel::getRecord(['apply_user' => $studentID, 'status' => Constants::STATUS_TRUE, 'ORDER' => ['code_end_date' => 'DESC'],]);
-        if (empty($lastGiftCodeDetailed)) {
-            $codeStartTime = $lastCodeEndTime = $time + 86400 * $trialDays;
+        if (empty($lastGiftCodeDetailed) && $student['trial_end_date'] >= $date) {
+            $codeStartTime = strtotime($student['trial_end_date']) + 86400;
+            $lastCodeEndTime = strtotime($student['trial_end_date']);
+        } elseif (empty($lastGiftCodeDetailed) && $student['trial_end_date'] < $date) {
+            $codeStartTime = $lastCodeEndTime = $time;
         } elseif($lastGiftCodeDetailed['code_end_date'] < $date) {
             $codeStartTime = $lastCodeEndTime = $time;
         } else {
@@ -66,6 +69,9 @@ class GiftCodeDetailedService
         $codeStartDate = date("Ymd", $codeStartTime);
         $codeEndDate = date('Ymd', strtotime($timeStr, $lastCodeEndTime));
         $validDays = Util::dateBetweenDays($codeStartDate, $codeEndDate);
+        if ($codeEndDate != $student['sub_end_date']) {
+            $codeEndDate = $student['sub_end_date'];
+        }
         $insertData = [
             'gift_code_id' => $gift['id'],
             'apply_user' => $studentID,
@@ -74,7 +80,8 @@ class GiftCodeDetailedService
             'package_type' => !empty($packageType) ? $packageType : Constants::STATUS_FALSE, //赠送时长没有packageType，跟数据库保持一致默认0
             'valid_days' => $validDays,
             'create_time' => $time,
-            'status' => Constants::STATUS_TRUE
+            'status' => Constants::STATUS_TRUE,
+            'be_active_time' => $gift['be_active_time']
         ];
         $affectRows = GiftCodeDetailedModel::insertRecord($insertData);
         if ($affectRows == 0) {
@@ -100,7 +107,7 @@ class GiftCodeDetailedService
             return [];
         }
         //获取用户当前激活码之后的所有数据
-        $afterGiftCodeDetailedData = GiftCodeDetailedModel::getRecords(['apply_user' => $studentId, 'id[>=]' => $giftCodeDetailedInfo['id']]);
+        $afterGiftCodeDetailedData = GiftCodeDetailedModel::getRecords(['apply_user' => $studentId, 'id[>=]' => $giftCodeDetailedInfo['id'], 'status' => Constants::STATUS_TRUE]);
         if (empty($afterGiftCodeDetailedData)) {
             return [];
         }
@@ -164,7 +171,11 @@ class GiftCodeDetailedService
                 $codeStartTime = strtotime($lastData['code_end_date']) + 86400;
                 $lastCodeEndTime = strtotime($lastData['code_end_date']);
             }
-
+            //推算时间小于激活时间，已激活时间为标准
+            if ($codeStartTime < $giftCodeDetailed['be_active_time']) {
+                $codeStartTime = $giftCodeDetailed['be_active_time'];
+                $lastCodeEndTime = $giftCodeDetailed['be_active_time'] - 86400;
+            }
             $account = [
                 'gift_code_id' => $giftCodeDetailed['gift_code_id'],
                 'apply_user' => $giftCodeDetailed['apply_user'],
@@ -174,11 +185,16 @@ class GiftCodeDetailedService
                 'valid_days' => $giftCodeDetailed['valid_days'],
                 'create_time' => $time,
                 'status' => $giftCodeDetailed['status'],
+                'be_active_time' => $giftCodeDetailed['be_active_time']
             ];
             $accountData[] = $account;
         }
 
         if (!empty($accountData)) {
+            $student = StudentModelForApp::getStudentInfo($studentId, null);
+            $lastGiftCodeDetailData = array_pop($accountData);
+            $lastGiftCodeDetailData['code_end_date'] = $student['sub_end_date'];
+            array_push($accountData, $lastGiftCodeDetailData);
             $affectDataRows = GiftCodeDetailedModel::batchInsert($accountData);
         } else {
             $affectDataRows = Constants::STATUS_TRUE;
@@ -193,7 +209,7 @@ class GiftCodeDetailedService
      * @param $leaveDays //请假天数
      * @return bool|int
      */
-    public static function studentLeaveGiftCode($studentId, $giftCodeId, $leaveDays)
+    public static function studentLeaveGiftCode($studentId, $giftCodeId, $leaveDays, $subEndDate)
     {
         $time = time();
         //请假之后所有的激活码，改为废除，并且获取需要重新计算时间的激活码
@@ -221,6 +237,12 @@ class GiftCodeDetailedService
                 $lastCodeEndTime = strtotime($lastData['code_end_date']);
             }
 
+            //推算时间小于激活时间，已激活时间为标准
+            if ($codeStartTime < $giftCodeDetailed['be_active_time']) {
+                $codeStartTime = $giftCodeDetailed['be_active_time'];
+                $lastCodeEndTime = $giftCodeDetailed['be_active_time'] - 86400;
+            }
+
             $account = [
                 'gift_code_id' => $giftCodeDetailed['gift_code_id'],
                 'apply_user' => $giftCodeDetailed['apply_user'],
@@ -230,10 +252,14 @@ class GiftCodeDetailedService
                 'valid_days' => $giftCodeDetailed['valid_days'],
                 'create_time' => $time,
                 'status' => $giftCodeDetailed['status'],
+                'be_active_time' => $giftCodeDetailed['be_active_time']
             ];
             $accountData[] = $account;
         }
         if (!empty($accountData)) {
+            $lastGiftCodeDetailData = array_pop($accountData);
+            $lastGiftCodeDetailData['code_end_date'] = $subEndDate;
+            array_push($accountData, $lastGiftCodeDetailData);
             $affectDataRows = GiftCodeDetailedModel::batchInsert($accountData);
         } else {
             $affectDataRows = Constants::STATUS_TRUE;
@@ -248,7 +274,7 @@ class GiftCodeDetailedService
      * @param $leaveSurplusDays //请假剩余天数
      * @return bool|int
      */
-    public static function studentCancelGiftCode($studentId, $giftCodeId, $leaveSurplusDays)
+    public static function studentCancelGiftCode($studentId, $giftCodeId, $leaveSurplusDays, $subEndDate)
     {
         $time = time();
         //取消之后所有的激活码，改为废除，并且获取需要重新计算时间的激活码
@@ -277,6 +303,12 @@ class GiftCodeDetailedService
                 $lastCodeEndTime = strtotime($lastData['code_end_date']);
             }
 
+            //推算时间小于激活时间，已激活时间为标准
+            if ($codeStartTime < $giftCodeDetailed['be_active_time']) {
+                $codeStartTime = $giftCodeDetailed['be_active_time'];
+                $lastCodeEndTime = $giftCodeDetailed['be_active_time'] - 86400;
+            }
+
             $account = [
                 'gift_code_id' => $giftCodeDetailed['gift_code_id'],
                 'apply_user' => $giftCodeDetailed['apply_user'],
@@ -286,12 +318,15 @@ class GiftCodeDetailedService
                 'valid_days' => $giftCodeDetailed['valid_days'],
                 'create_time' => $time,
                 'status' => $giftCodeDetailed['status'],
-                'actual_days' => $giftCodeDetailed['actual_days']
-
+                'actual_days' => $giftCodeDetailed['actual_days'],
+                'be_active_time' => $giftCodeDetailed['be_active_time']
             ];
             $accountData[] = $account;
         }
         if (!empty($accountData)) {
+            $lastGiftCodeDetailData = array_pop($accountData);
+            $lastGiftCodeDetailData['code_end_date'] = $subEndDate;
+            array_push($accountData, $lastGiftCodeDetailData);
             $affectDataRows = GiftCodeDetailedModel::batchInsert($accountData);
         } else {
             $affectDataRows = Constants::STATUS_TRUE;

@@ -83,11 +83,6 @@ class StudentLeaveLogService
             return 'student_leave_days_error';
         }
 
-        //计算请假之后每个激活码的开始&结束时间
-        $studentLeaveGiftCode = GiftCodeDetailedService::studentLeaveGiftCode($studentId, $giftCodeId, $leaveDays);
-        if (empty($studentLeaveGiftCode)) {
-            return 'gift_code_time_calculation_error';
-        }
 
         //年卡结束时间更改
         $subEndDate = date('Ymd', strtotime('+' . $leaveDays . 'day', strtotime($student['sub_end_date'])));
@@ -95,6 +90,13 @@ class StudentLeaveLogService
         if (empty($affectRows)) {
             return 'update_student_sub_end_date_error';
         }
+
+        //计算请假之后每个激活码的开始&结束时间
+        $studentLeaveGiftCode = GiftCodeDetailedService::studentLeaveGiftCode($studentId, $giftCodeId, $leaveDays, $subEndDate);
+        if (empty($studentLeaveGiftCode)) {
+            return 'gift_code_time_calculation_error';
+        }
+
 
         //请假记录入库
         $data = [
@@ -136,13 +138,22 @@ class StudentLeaveLogService
 
         //如果今天大于请假开始的的时间， 计算用户剩余请假天数
         if ($date > date('Ymd', $cancelLeaveDate['start_leave_time'])) {
-            $leaveSurplusDays = Util::dateDiff(date('Y-m-d', $cancelLeaveDate['start_leave_time']), date('Y-m-d'));
+            $studentUsedDays = Util::dateDiff(date('Y-m-d', $cancelLeaveDate['start_leave_time']), date('Y-m-d'));
+            $leaveSurplusDays = $cancelLeaveDate['leave_days'] - $studentUsedDays;
         } else {
             $leaveSurplusDays = $cancelLeaveDate['leave_days'];
         }
 
+        //年卡结束时间更改
+        $student = StudentModelForApp::getStudentInfo($cancelLeaveDate['student_id'], null);
+        $subEndDate = date('Ymd', strtotime('-' . $leaveSurplusDays . 'day', strtotime($student['sub_end_date'])));
+        $affectRows = StudentModel::updateRecord($student['id'], ['sub_end_date' => $subEndDate, 'update_time' => $time]);
+        if (empty($affectRows)) {
+            return 'update_student_sub_end_date_error';
+        }
+
         //取消请假，把取消请假之后的激活码全部废除，并且从新计算这些激活码的开始&结束时间，并且入库
-        $affectRows = GiftCodeDetailedService::studentCancelGiftCode($cancelLeaveDate['student_id'], $cancelLeaveDate['gift_code_id'], $leaveSurplusDays);
+        $affectRows = GiftCodeDetailedService::studentCancelGiftCode($cancelLeaveDate['student_id'], $cancelLeaveDate['gift_code_id'], $leaveSurplusDays, $subEndDate);
         if (empty($affectRows)) {
             return 'gift_code_time_calculation_error';
         }
@@ -152,13 +163,7 @@ class StudentLeaveLogService
         if (empty($affectRows)) {
             return 'cancel_leave_error';
         }
-        //年卡结束时间更改
-        $student = StudentModelForApp::getStudentInfo($cancelLeaveDate['student_id'], null);
-        $subEndDate = date('Ymd', strtotime('-' . $leaveSurplusDays . 'day', strtotime($student['sub_end_date'])));
-        $affectRows = StudentModel::updateRecord($student['id'], ['sub_end_date' => $subEndDate, 'update_time' => $time]);
-        if (empty($affectRows)) {
-            return 'update_student_sub_end_date_error';
-        }
+
         return '';
     }
 

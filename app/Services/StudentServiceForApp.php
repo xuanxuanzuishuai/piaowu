@@ -658,7 +658,7 @@ class StudentServiceForApp
             $package = PackageExtModel::getByPackageId($gift['bill_package_id']);
         }
         //计算激活码的开始&结束时间，更新到gift_code_detailed这张表
-        $errorCode = GiftCodeDetailedService::CreateGiftCodeDetailed($gift, $studentId, $package['package_type']);
+        $errorCode = GiftCodeDetailedService::CreateGiftCodeDetailed($code, $studentId, $package['package_type']);
         if (!empty($errorCode)) {
             return $errorCode;
         }

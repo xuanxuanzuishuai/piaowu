@@ -5,6 +5,7 @@ namespace App\Controllers\StudentApp;
 
 
 use App\Controllers\OrgWeb\Collection;
+use App\Libs\HttpHelper;
 use App\Libs\MysqlDB;
 use App\Libs\Valid;
 use App\Services\StudentLeaveLogService;
@@ -31,8 +32,7 @@ class leave extends Collection
         if (!empty($errorCode)) {
             $db->rollBack();
 
-            $result = Valid::addErrors([], 'student_cancel_error', $errorCode);
-            return $response->withJson($result, StatusCode::HTTP_OK);
+            return HttpHelper::buildOrgWebErrorResponse($response, 'student_cancel_error');
         }
 
         $db->commit();

@@ -21,3 +21,6 @@ INSERT INTO `privilege`(`name`, `uri`, `created_time`, `method`, `is_menu`, `men
 INSERT INTO `privilege`(`name`, `uri`, `created_time`, `method`, `is_menu`, `menu_name`, `parent_id`, `unique_en_name`, `status`) VALUES ('请假状态', '/org_web/leave/leave_status', 1604389321, 'get', 0, '', @parentId, 'leave_status', 1);
 INSERT INTO `privilege`(`name`, `uri`, `created_time`, `method`, `is_menu`, `menu_name`, `parent_id`, `unique_en_name`, `status`) VALUES ('可以请假时间段', '/org_web/leave/leave_period', 1604389262, 'get', 0, '', @parentId, 'leave_period', 1);
 INSERT INTO `privilege`(`name`, `uri`, `created_time`, `method`, `is_menu`, `menu_name`, `parent_id`, `unique_en_name`, `status`) VALUES ('请假记录', '/org_web/leave/list', 1604389182, 'get', 0, '', @parentId, 'leave_list', 1);
+
+ALTER TABLE `gift_code_detailed`
+CHANGE COLUMN `be_active_time` `be_active_time` INT(11) NULL DEFAULT NULL COMMENT '激活码激活时间' ;

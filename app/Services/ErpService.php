@@ -143,7 +143,7 @@ class ErpService
         $giftCodeDetailInfo = GiftCodeDetailedModel::getRecord(['apply_user' => $code['apply_user'], 'gift_code_id' => $code['id'], 'status' => Constants::STATUS_TRUE]);
         if (!empty($giftCodeDetailInfo)) {
             $beforeGiftCodeInfo = GiftCodeDetailedModel::getRecord(['apply_user' => $code['apply_user'], 'id[<]' => $giftCodeDetailInfo['id'], 'ORDER' => ['id' => 'DESC']]);
-            if (empty($beforeGiftCodeInfo)) {
+            if (empty($beforeGiftCodeInfo) && empty($student['trial_end_date'])) {
                 $validNum = $giftCodeDetailInfo['valid_days'] - 1;
             } else {
                 $validNum = $giftCodeDetailInfo['valid_days'];
