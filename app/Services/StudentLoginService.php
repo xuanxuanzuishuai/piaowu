@@ -27,9 +27,29 @@ class StudentLoginService
     {
         $params['time'] = time();
 
+        if (!isset($params['mobile']) || empty($params['mobile'])) {
+            return false;
+        }
+
+        $studentInfo = StudentModel::getRecord(['mobile' => $params['mobile']]);
+        if (empty($studentInfo)) {
+            return false;
+        }
+
+        $params['sub_end_time'] = strtotime(date($studentInfo['sub_end_date'] . " 23:59:59"));
+        $params['is_experience'] = StudentLoginInfoModel::IS_EXPERIENCE_FALSE;
+
+        if ($studentInfo['has_review_course'] == StudentLoginInfoModel::STUDENT_PAY_TYPE_EXPERIENCE && $params['sub_end_time'] >= $params['time']) {
+            $params['is_experience'] = StudentLoginInfoModel::IS_EXPERIENCE_TRUE;
+        }
+
         //学生信息入表
-        $studentId = self::insertLoginInfo($params);
+        $studentId = self::insertLoginInfo($params, $studentInfo);
         if (empty($studentId)) {
+            return false;
+        }
+
+        if ($params['is_experience'] == StudentLoginInfoModel::IS_EXPERIENCE_FALSE) {
             return false;
         }
 
@@ -48,25 +68,13 @@ class StudentLoginService
     }
 
     /**
-     * 用户登录信息入表
      * @param $params
-     * @return bool|int|mixed|string|null
+     * @param $studentInfo
+     * @return mixed
+     * 用户登录信息入表
      */
-    public static function insertLoginInfo($params)
+    public static function insertLoginInfo($params,$studentInfo)
     {
-        if (!isset($params['mobile']) || empty($params['mobile'])) {
-            return false;
-        }
-        $studentInfo = StudentModel::getRecord(['mobile' => $params['mobile']]);
-        if (empty($studentInfo)) {
-            return false;
-        }
-
-        $subEndTime = strtotime(date($studentInfo['sub_end_date'] . " 23:59:59"));
-        if ($studentInfo['has_review_course'] == StudentLoginInfoModel::STUDENT_PAY_TYPE_EXPERIENCE && $subEndTime >= $params['time']) {
-            $isExperience = StudentLoginInfoModel::IS_EXPERIENCE_TRUE;
-        }
-
         $insertData = [
             'student_id'        => $studentInfo['id'],
             'token'             => $params['token'] ?? '',
@@ -76,8 +84,8 @@ class StudentLoginService
             'imei'              => $params['imei'] ?? '',
             'android_id'        => $params['android_id'] ?? '',
             'has_review_course' => $studentInfo['has_review_course'],
-            'sub_end_time'      => $subEndTime,
-            'is_experience'     => $isExperience ?? StudentLoginInfoModel::IS_EXPERIENCE_FALSE,
+            'sub_end_time'      => $params['sub_end_time'],
+            'is_experience'     => $params['is_experience'],
             'create_time'       => $params['time'],
         ];
 
@@ -94,22 +102,24 @@ class StudentLoginService
     {
         if (isset($params['idfa']) && $params['idfa'] != '00000000-0000-0000-0000-000000000000') {
             $where['idfa'] = $params['idfa'];
-            $studentIdList = StudentLoginInfoModel::getRecords($where, ['student_id', 'is_experience'], false);
+            $studentIdList = StudentLoginInfoModel::getRecords($where, ['student_id', 'is_experience']);
         } elseif (isset($params['imei']) && !empty($params['imei'])) {
             $where['imei'] = $params['imei'];
-            $studentIdList = StudentLoginInfoModel::getRecords($where, ['student_id', 'is_experience'], false);
+            $studentIdList = StudentLoginInfoModel::getRecords($where, ['student_id', 'is_experience']);
         } elseif (isset($params['android_id']) && !empty($params['android_id'])) {
             $where['android_id'] = $params['android_id'];
-            $studentIdList = StudentLoginInfoModel::getRecords($where, ['student_id', 'is_experience'], false);
+            $studentIdList = StudentLoginInfoModel::getRecords($where, ['student_id', 'is_experience']);
         }
 
-        if (!empty($studentIdList)) {
-            foreach ($studentIdList as $value) {
-                if ($value['is_experience'] == StudentLoginInfoModel::STUDENT_PAY_TYPE_EXPERIENCE) {
-                    $experienceStudentIds[] = $value['student_id'];
-                }
-                $allStudentIds[] = $value['student_id'];
+        if (empty($studentIdList)){
+            return [];
+        }
+
+        foreach ($studentIdList as $value) {
+            if ($value['is_experience'] == StudentLoginInfoModel::STUDENT_PAY_TYPE_EXPERIENCE) {
+                $experienceStudentIds[] = $value['student_id'];
             }
+            $allStudentIds[] = $value['student_id'];
         }
 
         return [
