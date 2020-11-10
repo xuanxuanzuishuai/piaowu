@@ -275,9 +275,10 @@ class ErpReferralService
             $userTasks = [];
             foreach ($tasks as $task) {
                 //兼容前端展示
-                $userTasks[$task['event_task_id']] = [
+                $expectTaskId = self::taskRelateNode($task['event_task_id']);
+                $userTasks[$expectTaskId] = [
                     'create_time' => $task['create_time'],
-                    'event_task_name' => self::taskRelateNodeName($task['event_task_id'], true),
+                    'event_task_name' => self::getNodeName($expectTaskId),
                 ];
             }
 
@@ -965,6 +966,29 @@ class ErpReferralService
      */
     public static function taskRelateNodeName($taskId, $isInviteUser = true)
     {
+        $needNode = self::taskRelateNode($taskId, $isInviteUser);
+        return self::getNodeName($needNode);
+    }
+
+    /**
+     * 每个节点的名称
+     * @param $needNode
+     * @return mixed|string
+     */
+    public static function getNodeName($needNode)
+    {
+        $allNode = DictConstants::getSet(DictConstants::COMMON_CASH_NODE) + DictConstants::getSet(DictConstants::REFEREE_CASH_NODE);
+        return $allNode[$needNode] ?? '未知节点';
+    }
+
+    /**
+     * task对应的节点id
+     * @param $taskId
+     * @param bool $isInviteUser
+     * @return string
+     */
+    public static function taskRelateNode($taskId, $isInviteUser = true)
+    {
         $arr = DictConstants::getSet(DictConstants::NODE_RELATE_TASK);
         $perTaskRelateNode = [];
         //缓存 不每次都重新组合
@@ -992,8 +1016,6 @@ class ErpReferralService
 
         //当一个taskId对应多个节点时（推荐人取第一个被推荐人取最后一个）
         sort($perTaskRelateNode[$taskId]);
-        $needNode = $isInviteUser ? reset($perTaskRelateNode[$taskId]) : end($perTaskRelateNode[$taskId]);
-        $allNode = DictConstants::getSet(DictConstants::COMMON_CASH_NODE) + DictConstants::getSet(DictConstants::REFEREE_CASH_NODE);
-        return $allNode[$needNode] ?? '未知节点';
+        return $isInviteUser ? reset($perTaskRelateNode[$taskId]) : end($perTaskRelateNode[$taskId]);
     }
 }
