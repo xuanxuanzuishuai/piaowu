@@ -581,18 +581,17 @@ class AIPlayReportService
         $weekReportConfig = DictConstants::getSet(DictConstants::WEEK_REPORT_CONFIG);
         $studentCompleteTasks = self::getStudentFinishTasksBetweenTime($studentIdList, $startTime, $endTime, $weekReportConfig);
         //获取周进步数据
-        $lessonProgressData = self::getLessonProgressData($studentIdList, $startTime, $endTime, $weekReportConfig['diff_score']);
+        $lessonProgressData = self::getLessonProgressData($studentIdList, $startTime, $endTime, $weekReportConfig['diff_score'], $weekReportConfig['min_score_final']);
         //统计数据
         array_map(function ($playVal) use (&$totalPlayData) {
             //练琴天数
             $totalPlayData[$playVal['student_id']]['play_days'][$playVal['create_date']] = 1;
             //练琴时长
-            $sumDuration = (int)$totalPlayData[$playVal['student_id']]['play_durations'];
+            $sumDuration = empty($totalPlayData[$playVal['student_id']]['play_durations']) ? 0 : (int)$totalPlayData[$playVal['student_id']]['play_durations'];
             $totalPlayData[$playVal['student_id']]['play_durations'] = $playVal['sum_duration'] + $sumDuration;
-
         }, array_merge($playData, $goldenPicturePlayData));
         //获取其他人数据
-        $otherData = self::getOtherStudentRandPlayData($studentIdList, $classCount);
+        $otherData = self::getOtherStudentRandPlayData($classCount);
         //获取学生本周演奏的曲目数量
         $studentPlayLessonCountData = array_column(AIPlayRecordCHModel::getStudentLessonCountBetweenTime($studentIdList, $startTime, $endTime), null, 'student_id');
         array_map(function ($studentId) use ($totalPlayData, $classRoom, &$staticsData, $otherData, $weekReportConfig, $studentCompleteTasks, $lessonProgressData, $startTime, $endTime, $week, $year, $time, $studentPlayLessonCountData) {
@@ -600,26 +599,26 @@ class AIPlayReportService
             $basicInfo = [];
             $playDays = count($totalPlayData[$studentId]['play_days']);
             $basicInfo['data']['days']['self'] = $playDays;
-            $basicInfo['data']['days']['other'] = $otherData[$studentId]['play_days'];
+            $basicInfo['data']['days']['other'] = $otherData['play_days'];
             //平均练琴时长
             $basicInfo['data']['duration']['self'] = ceil(($totalPlayData[$studentId]['play_durations'] / 60) / $playDays);
-            $basicInfo['data']['duration']['other'] = $otherData[$studentId]['average_duration'];
+            $basicInfo['data']['duration']['other'] = $otherData['average_duration'];
             //互动课堂
-            $basicInfo['data']['class']['self'] = is_null($classRoom[$studentId]['class_count']) ? 0 : $classRoom[$studentId]['class_count'];
-            $basicInfo['data']['class']['other'] = $otherData[$studentId]['class_count'];
+            $basicInfo['data']['class']['self'] = empty($classRoom[$studentId]['class_count']) ? 0 : $classRoom[$studentId]['class_count'];
+            $basicInfo['data']['class']['other'] = $otherData['class_count'];
             //练琴曲目数，总时长
             $basicInfo['extra']['lesson_count'] = $studentPlayLessonCountData[$studentId]['lesson_count'];
             $basicInfo['extra']['sum_durations'] = $totalPlayData[$studentId]['play_durations'];
 
             //任务完成度
-            $completePer = $studentCompleteTasks[$studentId]['total_complete_count'] / $weekReportConfig['tasks_total_count'];
-            $basicInfo['data']['task']['self'] = round($completePer);
-            $basicInfo['data']['task']['other'] = $otherData[$studentId]['task'];
+            $completePer = round($studentCompleteTasks[$studentId]['total_complete_count'] / $weekReportConfig['tasks_total_count'], 2);
+            $basicInfo['data']['task']['self'] = $completePer;
+            $basicInfo['data']['task']['other'] = $otherData['task'];
             //评语
             $staticsData[$studentId]['ai_comment'] = self::getAiComment($weekReportConfig, $basicInfo['data']);
             //周练琴完成任务列表
             $tasks['list'] = array_values($studentCompleteTasks[$studentId]['list']);
-            $tasks['complete_per'] = round($completePer, 1);
+            $tasks['complete_per'] = $completePer;
             $tasks['total_complete_count'] = $studentCompleteTasks[$studentId]['total_complete_count'];
             //本周成绩是否及格
             $staticsData[$studentId]['is_pass'] = (int)($completePer >= $weekReportConfig['pass_line']);
@@ -647,12 +646,13 @@ class AIPlayReportService
      * @param $startTime
      * @param $endTime
      * @param $diffScore
+     * @param $scoreFinal
      * @return array
      */
-    private static function getLessonProgressData($studentIdList, $startTime, $endTime, $diffScore)
+    private static function getLessonProgressData($studentIdList, $startTime, $endTime, $diffScore, $scoreFinal)
     {
         $progressData = $lessonInfo = [];
-        $playLessonData = AIPlayRecordCHModel::getStudentMaxAndMinScoreByLesson($studentIdList, $startTime, $endTime, $diffScore);
+        $playLessonData = AIPlayRecordCHModel::getStudentMaxAndMinScoreByLesson($studentIdList, $startTime, $endTime, $diffScore, $scoreFinal);
         if (empty($playLessonData)) {
             return $progressData;
         }
@@ -661,13 +661,20 @@ class AIPlayReportService
         $lessonRankTime = ['start_time' => $startTime, 'end_time' => $endTime];
         //获取课程演奏排行榜数据
         $rankList = AIPlayRecordCHModel::getLessonPlayRankList($lessonIds, $lessonRankTime);
-        array_map(function ($rankVal) use (&$lessonRankData) {
-            $lessonRankData[$rankVal['lesson_id']][] = $rankVal;
+        $allStudentId = array_unique(array_column($rankList, 'student_id'));
+        $students = StudentModel::getRecords([
+            'id' => $allStudentId,
+            'is_join_ranking' => StudentModel::STATUS_JOIN_RANKING_ABLE
+        ], ['id']);
+        $studentListInfo = array_column($students, NULL, 'id');
+        array_map(function ($rankVal) use (&$lessonRankData, $studentListInfo) {
+            if (!empty($studentListInfo[$rankVal['student_id']])) {
+                $lessonRankData[$rankVal['lesson_id']][] = $rankVal;
+            }
         }, $rankList);
         array_map(function ($lid) use ($lessonRankData) {
             if (empty(AIPlayRecordCHModel::checkWeekLessonCacheExists($lid))) {
-                $cacheData = $lessonRankData[$lid];
-                if (empty($cacheData)) {
+                if (empty($lessonRankData[$lid])) {
                     //此曲目没有排行榜数据进行占位
                     $cacheData = ['0' => 0];
                 } else {
@@ -735,22 +742,19 @@ class AIPlayReportService
 
     /**
      * 获取对比数据
-     * @param $studentIdList
      * @param $classCount
      * @return array
      */
-    private static function getOtherStudentRandPlayData($studentIdList, $classCount)
+    private static function getOtherStudentRandPlayData($classCount)
     {
         $randData = self::weekReportRandData(time());
-        array_map(function ($sid) use ($randData, $classCount, &$studentRandData) {
-            $studentRandData[$sid] = [
-                'play_days' => self::randomFloat($randData['days']['min'], $randData['days']['max']),
-                'average_duration' => mt_rand($randData['duration']['min'], $randData['duration']['max']),
-                'class_count' => self::randomFloat($classCount * $randData['class']['min'], $classCount * $randData['class']['min']),
-                'task' => mt_rand($randData['task']['min'], $randData['task']['max']) / 100,
-            ];
-        }, $studentIdList);
-        return $studentRandData;
+        $otherStudentRandData = [
+            'play_days' => self::randomFloat($randData['days']['min'], $randData['days']['max']),
+            'average_duration' => mt_rand($randData['duration']['min'], $randData['duration']['max']),
+            'class_count' => self::randomFloat($classCount * $randData['class']['min'], $classCount * $randData['class']['min']),
+            'task' => mt_rand($randData['task']['min'], $randData['task']['max']) / 100,
+        ];
+        return $otherStudentRandData;
     }
 
 
@@ -921,7 +925,7 @@ class AIPlayReportService
                     'color' => "#323d83"
                 ],
                 'keyword3' => [
-                    'value' => "共练琴" . floor($info['sum_durations'] / 60) . "分钟",
+                    'value' => "共练琴" . ceil($info['sum_durations'] / 60) . "分钟",
                     'color' => "#323d83"
                 ],
             ];

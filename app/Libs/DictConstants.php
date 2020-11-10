@@ -538,6 +538,7 @@ class DictConstants {
             'rand_data',
             'diff_score',
             'audio_limit',
+            'min_score_final',
         ]
     ];
 

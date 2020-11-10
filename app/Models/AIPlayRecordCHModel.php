@@ -246,9 +246,10 @@ AND end_time <:end_time";
      * @param $startTime
      * @param $endTime
      * @param $diffScore
+     * @param $minScoreFinal
      * @return array
      */
-    public static function getStudentMaxAndMinScoreByLesson($studentIdList, $startTime, $endTime, $diffScore)
+    public static function getStudentMaxAndMinScoreByLesson($studentIdList, $startTime, $endTime, $diffScore, $minScoreFinal)
     {
         //获取本周内练琴记录的学生id
         $chDb = CHDB::getDB();
@@ -265,6 +266,7 @@ AND end_time <:end_time";
                                 and is_phrase = :is_phrase
                                 and duration > 0
                                 and data_type = :data_type
+                                and score_final > :score_final
                             GROUP by
                                 student_id,lesson_id
                                 HAVING max_score-min_score> :diff_score) as tmp ORDER BY tmp.student_id asc,
@@ -278,6 +280,7 @@ AND end_time <:end_time";
             'is_phrase' => Constants::STATUS_FALSE,
             'data_type' => AIPlayRecordModel::DATA_TYPE_NORMAL,
             'diff_score' => (int)$diffScore,
+            'score_final' => (int)$minScoreFinal,
         ];
         return $chDb->queryAll($sql, $map);
     }

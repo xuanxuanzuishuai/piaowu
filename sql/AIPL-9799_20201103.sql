@@ -69,9 +69,9 @@ VALUES ('week_report_config', '练琴周报配置', 'ai_comment_middle', '宝贝
 INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
 VALUES ('week_report_config', '练琴周报配置', 'ai_comment_perfect', '宝贝全面超越了其他同学，继续保持哦！', '');
 INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
-VALUES ('week_report_config', '练琴周报配置', 'compare_average_duration_name', '练琴时长', '');
+VALUES ('week_report_config', '练琴周报配置', 'compare_average_duration_name', '平均练琴时长', '');
 INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
-VALUES ('week_report_config', '练琴周报配置', 'compare_class_name', '互动课堂', '');
+VALUES ('week_report_config', '练琴周报配置', 'compare_class_name', '上课数', '');
 INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
 VALUES ('week_report_config', '练琴周报配置', 'compare_play_days_name', '练琴天数', '');
 INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
@@ -84,7 +84,8 @@ INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
 VALUES ('week_report_config', '练琴周报配置', 'diff_score', '5', '分差值');
 INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
 VALUES ('week_report_config', '练琴周报配置', 'audio_limit', '3', '获取音频数据最大数量');
-
+INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
+VALUES ('week_report_config', '练琴周报配置', 'min_score_final', '30', '测评最小分值');
 INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES
 ('week_report_config', '练琴周报配置', 'rand_data', '{\"nor\":{\"days\":{\"min\":4.5,\"max\":5.5},\"duration\":{\"min\":35,\"max\":45},\"class\":{\"min\":0.85,\"max\":0.95},\"task\":{\"min\":75,\"max\":85}},\"va\":{\"days\":{\"min\":5,\"max\":6},\"duration\":{\"min\":45,\"max\":60},\"class\":{\"min\":0.85,\"max\":0.95},\"task\":{\"min\":78,\"max\":88}}}', NULL);
 
@@ -122,15 +123,15 @@ VALUES ('week_report_config', '练琴周报配置', 'watch_demo_video', @watch_d
 
 
 INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
-VALUES ('week_report_config', '练琴周报配置', @play_piano_30_minutes_task_id, '练琴时长', '');
+VALUES ('week_report_config', '练琴周报配置', @play_piano_30_minutes_task_id, '练琴时长（每天30分钟）', '');
 INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
-VALUES ('week_report_config', '练琴周报配置', @evaluation_the_whole_song_task_id, '全曲评测', '');
+VALUES ('week_report_config', '练琴周报配置', @evaluation_the_whole_song_task_id, '全曲评测（每天1次）', '');
 INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
-VALUES ('week_report_config', '练琴周报配置', @sound_base_questions_task_id, '音基题', '');
+VALUES ('week_report_config', '练琴周报配置', @sound_base_questions_task_id, '音基题（每天1题）', '');
 INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
-VALUES ('week_report_config', '练琴周报配置', @watch_demo_video_task_id, '观看示范视频', '');
+VALUES ('week_report_config', '练琴周报配置', @watch_demo_video_task_id, '观看示范视频（每天1个）', '');
 INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
-VALUES ('week_report_config', '练琴周报配置', @difficult_points_task_id, '学习重难点', '');
+VALUES ('week_report_config', '练琴周报配置', @difficult_points_task_id, '学习重难点（每天1次）', '');
 
 -- 周报分享渠道
 INSERT INTO `dict` ( `type`, `key_name`, `key_code`, `key_value`, `desc` )

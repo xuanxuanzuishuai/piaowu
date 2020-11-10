@@ -83,19 +83,13 @@ class StudentLearnRecordModel extends Model
                 FROM
                     " . self::$table . "
                 WHERE
-                    student_id IN ( :student_id )
-                    AND learn_status IN ( ".self::FINISH_LEARNING.",".self::MAKE_UP_LESSONS." )
-                    AND create_time BETWEEN :start_time
-	                AND :end_time
+                    student_id IN ( " . $studentId . " )
+                    AND learn_status IN ( " . self::FINISH_LEARNING . "," . self::MAKE_UP_LESSONS . " )
+                    AND create_time BETWEEN " . $startTime . "
+	                AND " . $endTime . "
                 GROUP BY
                     student_id";
-        $map = [
-            ':student_id' => $studentId,
-            ':start_time' => $startTime,
-            ':end_time' => $endTime,
-        ];
-        $records = MysqlDB::getDB()->queryAll($sql, $map);
+        $records = MysqlDB::getDB()->queryAll($sql);
         return $records ?? [];
     }
-
 }
