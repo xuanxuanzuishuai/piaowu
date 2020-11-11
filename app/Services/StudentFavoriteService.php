@@ -91,6 +91,7 @@ class StudentFavoriteService
                         'name'    => $value['name'],
                         'cover'   => $value['cover'] ?? '',
                         'is_free' => $value['freeflag'] ? '1' : '0',
+                        'images'  => $value['img_list'] ?? [],
                     ];
                 }
             }
