@@ -919,15 +919,16 @@ class InteractiveClassroomService
 
     /**
      * 用户报名课程
+     * @param $opn
      * @param $studentId
      * @param $collectionId
      * @param $lessonCount
      * @param $startWeek
      * @param $startTime
-     * @return bool|int|mixed|string
+     * @return bool
      * @throws RunTimeException
      */
-    public static function collectionSignUp($studentId, $collectionId, $lessonCount, $startWeek, $startTime)
+    public static function collectionSignUp($opn, $studentId, $collectionId, $lessonCount, $startWeek, $startTime)
     {
 
         $student = StudentModel::getById($studentId);
@@ -950,13 +951,22 @@ class InteractiveClassroomService
         $time = time();
         if ($signUpData) {
             StudentSignUpCourseModel::updateRecord($signUpData['id'], ['bind_status' => StudentSignUpCourseModel::COURSE_BING_SUCCESS, 'update_time' => $time]);
+            $firstCourseTime = $signUpData['first_course_time'];
         } else {
             //获取用户开始上课&结束上课的时间戳
-            list($firstCourseTime, $lastTime) = self::calculationCourseTime($time, $startWeek, $startTime, $lessonCount);
+            $firstCourseTime= self::calculationCourseTime($time, $startWeek, $startTime);
 
-            StudentSignUpCourseModel::insertRecord(['student_id' => $studentId, 'collection_id' => $collectionId, 'bind_status' => StudentSignUpCourseModel::COURSE_BING_SUCCESS, 'lesson_count' => $lessonCount, 'start_week' => $startWeek,  'start_time' => strtotime(date('Y-m-d').$startTime), 'create_time' => $time, 'update_time' => $time, 'last_course_time' => $lastTime, 'first_course_time' => $firstCourseTime]);
+            StudentSignUpCourseModel::insertRecord(['student_id' => $studentId, 'collection_id' => $collectionId, 'bind_status' => StudentSignUpCourseModel::COURSE_BING_SUCCESS, 'lesson_count' => $lessonCount, 'start_week' => $startWeek,  'start_time' => strtotime(date('Y-m-d').$startTime), 'create_time' => $time, 'update_time' => $time, 'first_course_time' => $firstCourseTime]);
         }
-        StudentSignUpCourseModel::delStudentMonthRedis($studentId, $collectionId);
+        //获取课包的最后时间
+        $courseLastTime = self::calculationCourseLastTime($opn, $studentId, $collectionId, $firstCourseTime);
+        $startMonth = date('m', $signUpData['first_course_time']);
+        $endMonth = date('m', $courseLastTime);
+        for ($i = 0; $i <= $endMonth - $startMonth; $i++) {
+            $delMonth = $startMonth + $i;
+            StudentSignUpCourseModel::delStudentMonthRedis($studentId, $delMonth);
+        }
+        return true;
     }
 
     /**
@@ -964,10 +974,9 @@ class InteractiveClassroomService
      * @param $time
      * @param $startWeek
      * @param $startTime
-     * @param $lessonCount
-     * @return array
+     * @return false|int
      */
-    public static function calculationCourseTime($time, $startWeek, $startTime, $lessonCount)
+    public static function calculationCourseTime($time, $startWeek, $startTime)
     {
         $nowWeek = date("N", $time);
         //用户报名当天的课程，下课之前报的名，可以今天上课，下课之后报的名可以下周的这一天上课 上下课以半小时为边界
@@ -975,29 +984,26 @@ class InteractiveClassroomService
         $nowWeekTime = $nowWeek == $startWeek && date("H:i", $time) > $endClassTime;
         if ($nowWeek == $startWeek && date("H:i", $time) <= $endClassTime) {
             $firstCourseTime = strtotime(date('Y-m-d').$startTime);
-            $lastTime = $firstCourseTime + Util::TIMESTAMP_ONEDAY * StudentSignUpCourseModel::A_WEEK * ($lessonCount - 1);
         } elseif ($nowWeek > $startWeek || $nowWeekTime) {
             $firstCourseTime = strtotime(date("Y-m-d ", strtotime("+" . StudentSignUpCourseModel::A_WEEK - $nowWeek + $startWeek ."day")) . $startTime);
-            $lastTime = $firstCourseTime + Util::TIMESTAMP_ONEDAY * StudentSignUpCourseModel::A_WEEK * ($lessonCount - 1);
         } elseif ($nowWeek < $startWeek) {
             $firstCourseTime = strtotime(date("Y-m-d ", strtotime("+" . $startWeek - $nowWeek ."day")) . $startTime);
-            $lastTime = $firstCourseTime + Util::TIMESTAMP_ONEDAY * StudentSignUpCourseModel::A_WEEK * ($lessonCount - 1);
         } else {
             $firstCourseTime = Constants::STATUS_FALSE;
-            $lastTime = Constants::STATUS_FALSE;
         }
-        return [$firstCourseTime, $lastTime];
+        return $firstCourseTime;
     }
 
 
     /**
      * 用户取消报名
+     * @param $opn
      * @param $studentId
      * @param $collectionId
      * @return bool|int|mixed|string
      * @throws RunTimeException
      */
-    public static function cancelSignUp($studentId, $collectionId)
+    public static function cancelSignUp($opn, $studentId, $collectionId)
     {
         $student = StudentModel::getById($studentId);
         if (empty($student)) {
@@ -1009,7 +1015,14 @@ class InteractiveClassroomService
             throw new RunTimeException(['record_not_found']);
         }
         StudentSignUpCourseModel::updateRecord($signUpData['id'], ['bind_status' => StudentSignUpCourseModel::COURSE_BING_CANCEL, 'update_time' => time()]);
-        StudentSignUpCourseModel::delStudentMonthRedis($studentId, $collectionId);
+        //获取课包的最后时间
+        $courseLastTime = self::calculationCourseLastTime($opn, $studentId, $collectionId, $signUpData['first_course_time']);
+        $startMonth = date('m', $signUpData['first_course_time']);
+        $endMonth = date('m', $courseLastTime);
+        for ($i = 0; $i <= $endMonth - $startMonth; $i++) {
+            $delMonth = $startMonth + $i;
+            StudentSignUpCourseModel::delStudentMonthRedis($studentId, $delMonth);
+        }
     }
 
     /**
@@ -1023,13 +1036,14 @@ class InteractiveClassroomService
      */
     public static function studentLearnRecode($studentId, $collectionId, $lessonId, $learnStatus, $createTime)
     {
+        $time = time();
         $student = StudentModel::getById($studentId);
         if (empty($student)) {
             throw new RunTimeException(['record_not_found']);
         }
 
         // 上新课检查用户是否过期，补课不检查
-        if ($learnStatus == StudentLearnRecordModel::LEARN_STATUS_IN_TIME && $student['sub_end_date'] < date('Ymd', time())) {
+        if ($learnStatus == StudentLearnRecordModel::LEARN_STATUS_IN_TIME && $student['sub_end_date'] < date('Ymd', $time)) {
             throw new RunTimeException(['please_buy_the_annual_card']);
         }
 
@@ -1038,7 +1052,6 @@ class InteractiveClassroomService
             throw new RunTimeException(['student_learn_record']);
         }
 
-        $time = time();
         $insertData = [
             'student_id' => $studentId,
             'collection_id' => $collectionId,
@@ -1051,28 +1064,40 @@ class InteractiveClassroomService
         if (empty($insertRes)) {
             throw new RunTimeException(['insert_failure']);
         }
-        StudentSignUpCourseModel::delStudentMonthRedis($studentId, $collectionId);
+        StudentSignUpCourseModel::delStudentMonthRedis($studentId,substr($createTime, 5, -3));
     }
 
     /**
      * 获取学生上课日历
+     * @param $opn
      * @param $studentId
      * @param $year
      * @param $month
      * @return array
      */
 
-    public static function getLearnCalendar($studentId, $year, $month)
+    public static function getLearnCalendar($opn, $studentId, $year, $month)
     {
 
         $startTime = strtotime($year . "-" . $month);
         $endTime = strtotime('+1 month', $startTime) - 1;
 
+        $cacheKey = StudentSignUpCourseModel::STUDENT_LEARN_MONTH_CALENDAR . $studentId . '_'. $month;
+        $redis = RedisDB::getConn();
+        $cacheRes = $redis->get($cacheKey);
+        if (!empty($cacheRes)) {
+            return json_decode($cacheRes, true);
+        }
+
         //获取学生报名的所有课包
-        $studentAllBindCourse = StudentSignUpCourseModel::getStudentBindCourse($studentId, $startTime, $endTime);
-        if (empty($studentAllBindCourse)) return [];
-        $formatStudentAllBindCourse = self::formatClassDate($studentAllBindCourse);
-        $studentAllBindCourseRes = array_combine(array_column($formatStudentAllBindCourse, 'class_time'), $formatStudentAllBindCourse);
+        $studentAllBindCourse = StudentSignUpCourseModel::getStudentBindCourse($studentId, $endTime);
+        if (empty($studentAllBindCourse)) {
+            return [];
+        }
+        //计算每个课包的结束时间
+        $studentTheMonthBindCourse = self::calculationTheMonthCourseLastTime($opn, $studentAllBindCourse, $startTime, $endTime);
+        $formatStudentTheMonthBindCourse = self::formatClassDate($studentTheMonthBindCourse);
+        $studentTheMonthBindCourseRes = array_combine(array_column($formatStudentTheMonthBindCourse, 'class_time'), $formatStudentTheMonthBindCourse);
 
         //获取学生的上课记录
         $studentLearnRecord = StudentLearnRecordModel::getStudentLearnCalendar($studentId, $startTime);
@@ -1083,7 +1108,7 @@ class InteractiveClassroomService
         }
 
         //计算本月的所有上课状态，是否缺课
-        foreach ($studentAllBindCourseRes as $item) {
+        foreach ($studentTheMonthBindCourseRes as $item) {
             if (substr($item['class_time'], 4, -2) != $month) {
                 continue;
             }
@@ -1091,7 +1116,57 @@ class InteractiveClassroomService
             $item['class_status'] = $classStatus;
             $resultRes[] = $item;
         }
-        return $resultRes;
+        $redis->set($cacheKey, json_encode($resultRes));
+        return $resultRes ?? [];
+    }
+
+    /**
+     * 获取学生这一个月的课包
+     * @param $opn
+     * @param $studentAllBindCourse
+     * @param $startTime
+     * @param $endTime
+     * @return array
+     */
+    public static function calculationTheMonthCourseLastTime($opn, $studentAllBindCourse, $startTime, $endTime)
+    {
+        $collectionIds = array_column($studentAllBindCourse, 'collection_id');
+        $studentAllBindCourse = array_combine($collectionIds, $studentAllBindCourse);
+        //获取每个课包的节数
+        $collectionLessonIds = self::getLessonIds($opn, $collectionIds);
+        foreach ($collectionLessonIds as $key => $collectionLessonId) {
+            $collectionCount[$key] = count($collectionLessonId['payLessonList']) - 1;
+        }
+
+        foreach ($studentAllBindCourse as $courseKey => $courseValue) {
+            $courseLastTime = $courseValue['first_course_time'] + ($collectionCount[$courseKey] * StudentSignUpCourseModel::A_WEEK) * 86400;
+            $res1 = $courseValue['first_course_time'] < $startTime && $courseLastTime > $endTime;
+            $res2 = $courseValue['first_course_time'] < $startTime && $courseLastTime < $endTime;
+            $res3 = $courseValue['first_course_time'] > $startTime && $courseLastTime > $endTime;
+            $res4 = $courseValue['first_course_time'] > $startTime && $courseLastTime < $endTime;
+            if ($res1 || $res2 || $res3 || $res4) {
+                $collectionResult[] = $courseValue;
+            }
+        }
+        return $collectionResult ?? [];
+    }
+
+    /**
+     * 计算一个课包的结束时间
+     * @param $opn
+     * @param $studentId
+     * @param $collectionId
+     * @param $firstCourseTime
+     * @return string
+     */
+    public static function calculationCourseLastTime($opn, $studentId, $collectionId, $firstCourseTime)
+    {
+        $collectionLessonIds = self::getLessonIds($opn, [$collectionId]);
+        if (empty($collectionLessonIds[$collectionId])) {
+            return  '';
+        }
+        $collectionCount = count($collectionLessonIds[$collectionId]['payLessonList']) - 1;
+        return $firstCourseTime + ($collectionCount * StudentSignUpCourseModel::A_WEEK) * 86400;
     }
 
     /**

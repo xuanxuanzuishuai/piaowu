@@ -158,7 +158,8 @@ class InteractiveClassroom extends ControllerBase
         }
         $studentId = $this->ci['student']['id'];
         try {
-            InteractiveClassroomService::collectionSignUp($studentId, $params['collection_id'], $params['lesson_count'], $params['start_week'], $params['start_time']);
+            $opn = new OpernCenter(OpernCenter::PRO_ID_INTERACTION_CLASSROOM, OpernCenter::version);
+            InteractiveClassroomService::collectionSignUp($opn, $studentId, $params['collection_id'], $params['lesson_count'], $params['start_week'], $params['start_time']);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
@@ -190,7 +191,8 @@ class InteractiveClassroom extends ControllerBase
         }
         $studentId = $this->ci['student']['id'];
         try {
-            InteractiveClassroomService::cancelSignUp($studentId, $params['collection_id']);
+            $opn = new OpernCenter(OpernCenter::PRO_ID_INTERACTION_CLASSROOM, OpernCenter::version);
+            InteractiveClassroomService::cancelSignUp($opn, $studentId, $params['collection_id']);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
@@ -321,8 +323,8 @@ class InteractiveClassroom extends ControllerBase
         if (empty($student)) {
             HttpHelper::buildResponse($response, []);
         }
-
-        $learnCalendar = InteractiveClassroomService::getLearnCalendar($studentId, $params["year"], $params["month"]);
+        $opn = new OpernCenter(OpernCenter::PRO_ID_INTERACTION_CLASSROOM, OpernCenter::version);
+        $learnCalendar = InteractiveClassroomService::getLearnCalendar($opn, $studentId, $params["year"], $params["month"]);
 
         return HttpHelper::buildResponse($response, ['learn_calendar' => $learnCalendar]);
     }

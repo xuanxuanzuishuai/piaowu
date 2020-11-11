@@ -32,16 +32,14 @@ class StudentSignUpCourseModel extends Model
     /**
      * 获取当前月学生报名的课程
      * @param $studentId
-     * @param $startTime
      * @param $endTime
      * @return array
      */
-    public static function getStudentBindCourse($studentId, $startTime, $endTime)
+    public static function getStudentBindCourse($studentId, $endTime)
     {
-        $sql = "select * from student_sign_up where student_id = :student_id and !(last_course_time < :start_time) and !(first_course_time > :end_time)";
+        $sql = "select * from student_sign_up where student_id = :student_id and !(first_course_time > :end_time)";
         $map = [
             ':student_id'  => $studentId,
-            ':start_time'  => $startTime,
             ':end_time'    => $endTime
         ];
 
@@ -53,21 +51,14 @@ class StudentSignUpCourseModel extends Model
     /**
      * 清除用户的日历缓存
      * @param $studentId
-     * @param $collectionId
+     * @param $month
      */
-    public static function delStudentMonthRedis($studentId, $collectionId)
+    public static function delStudentMonthRedis($studentId, $month)
     {
         $redis = RedisDB::getConn();
 
-        $collectionData = self::getRecord(['student_id' => $studentId, 'collection_id' => $collectionId]);
-
-        $startMonth = date('m', $collectionData['first_course_time']);
-        $endMonth = date('m', $collectionData['last_course_time']);
-        for ($i = 0; $i <= $endMonth - $startMonth; $i++) {
-            $delMonth = $startMonth + $i;
-            $cacheKey = self::STUDENT_LEARN_MONTH_CALENDAR . $studentId . '_0' . $delMonth;
-            $redis->del([$cacheKey]);
-        }
+        $cacheKey = StudentSignUpCourseModel::STUDENT_LEARN_MONTH_CALENDAR . $studentId . '_'. $month;
+        $redis->del([$cacheKey]);
     }
 
     /**

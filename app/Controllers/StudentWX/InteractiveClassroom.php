@@ -56,7 +56,8 @@ class InteractiveClassroom extends ControllerBase
             HttpHelper::buildResponse($response, []);
         }
 
-        $learnCalendar = InteractiveClassroomService::getLearnCalendar($studentId, $params["year"], $params["month"]);
+        $opn = new OpernCenter(OpernCenter::PRO_ID_INTERACTION_CLASSROOM, OpernCenter::version);
+        $learnCalendar = InteractiveClassroomService::getLearnCalendar($opn, $studentId, $params["year"], $params["month"]);
 
         return HttpHelper::buildResponse($response, ['learn_calendar' => $learnCalendar]);
     }
