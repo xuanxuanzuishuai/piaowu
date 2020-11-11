@@ -22,8 +22,12 @@ use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
+use App\Models\CategoryV1Model;
 use App\Models\EmployeeModel;
 use App\Models\GiftCodeModel;
+use App\Models\GoodsV1Model;
+use App\Models\ModelV1\ErpPackageGoodsV1Model;
+use App\Models\ModelV1\ErpPackageV1Model;
 use App\Models\PackageExtModel;
 use App\Models\ReferralActivityModel;
 use App\Models\SharePosterModel;
@@ -126,7 +130,8 @@ class BatchSend
         $res = $this->db->queryAll($sql);
         $this->studentIDUUIDDict = array_combine(array_column($res, 'id'), array_column($res, 'uuid'));
         // 查询所有用户成为付费正式课时间点
-        $packageIdArr = array_column(PackageExtModel::getPackages(['package_type' => PackageExtModel::PACKAGE_TYPE_NORMAL, 'app_id' => PackageExtModel::APP_AI]), 'package_id');
+        $packageIdArr = array_column(PackageExtModel::getPackages(['package_type' => PackageExtModel::PACKAGE_TYPE_NORMAL]), 'package_id');
+        // 查询旧课包数据
         $sql = "
         SELECT * FROM 
         (
@@ -142,26 +147,68 @@ class BatchSend
                 ".GiftCodeModel::$table." 
             WHERE 
                 buyer IN (".implode(',', $studentIDs).") 
+                AND `package_v1` =".GiftCodeModel::PACKAGE_V1_NOT."
                 AND `bill_package_id` IN (".implode(',', $packageIdArr).")
         ) AS t WHERE row_num = 1 AND create_time >=". $this->startTime." AND create_time <= ".$this->endTime;
         $records = $this->db->queryAll($sql);
         foreach ($records as $key => $value) {
             if ($value['create_time'] >= $this->startTime && $value['create_time'] <= $this->endTime) {
-                $this->userList10[] = $value['buyer'];
+                $this->userList10[$value['buyer']] = $value['buyer'];
+            }
+        }
+        // 查询新课包数据
+        $pg  = ErpPackageGoodsV1Model::$table;
+        $g   = GoodsV1Model::$table;
+        $c   = CategoryV1Model::$table;
+        $p1  = ErpPackageV1Model::$table;
+        $sql = "
+        SELECT
+            p1.id
+        FROM
+            {$p1} p1
+        INNER JOIN {$pg} pg ON pg.package_id = p1.id
+            AND pg.status = " . ErpPackageGoodsV1Model::SUCCESS_NORMAL . "
+        INNER JOIN {$g} g ON pg.goods_id = g.id
+        INNER JOIN {$c} c ON c.id = g.category_id
+        WHERE
+            c.sub_type = " . CategoryV1Model::DURATION_TYPE_NORMAL . "
+            AND p1.sale_shop = " . ErpPackageV1Model::SALE_SHOP_AI_PLAY;
+        $newPackageIDs = $this->db->queryAll($sql);
+
+        $sql = "
+        SELECT * FROM 
+        (
+            SELECT 
+                buyer,
+                create_time, 
+                ROW_NUMBER() over 
+                (
+                    PARTITION BY buyer
+                    ORDER BY create_time ASC
+                ) AS row_num 
+            FROM 
+                ".GiftCodeModel::$table." 
+            WHERE 
+                buyer IN (".implode(',', $studentIDs).") 
+                AND `package_v1` =".GiftCodeModel::PACKAGE_V1."
+                AND `bill_package_id` IN (".implode(',', array_column($newPackageIDs, 'id')).")
+        ) AS t WHERE row_num = 1 AND create_time >=". $this->startTime." AND create_time <= ".$this->endTime;
+        $records = $this->db->queryAll($sql);
+        foreach ($records as $key => $value) {
+            if ($value['create_time'] >= $this->startTime && $value['create_time'] <= $this->endTime) {
+                $this->userList10[$value['buyer']] = $value['buyer'];
             }
         }
     }
 
     public function sendPacket()
     {
-        $taskID = $this->taskID10;
         foreach ($this->userList20 as $userID) {
-            $this->sendUserPacket($userID, $taskID);
+            $this->sendUserPacket($userID, $this->taskID20);
         }
         
-        $taskID = $this->taskID20;
         foreach ($this->userList10 as $userID) {
-            $this->sendUserPacket($userID, $taskID);
+            $this->sendUserPacket($userID, $this->taskID10);
         }
     }
 
@@ -224,18 +271,23 @@ if (isset($argv[1]) && strtotime($argv[1]) !== false) {
 }
 $endTime = strtotime("+1 month", $startTime);
 $task = new BatchSend($startTime, $endTime);
+$task->taskID10 = 0;
+$task->taskID20 = 0;
 $task->getActivityData();
 $task->getSharePosterData();
 $task->sendPacket();
+
 // echo "Send 20yuan List:".PHP_EOL;
 // if (!empty($task->userList20)) {
-//     print_r(MysqlDB::getDB()->queryAll(
+//     $res = MysqlDB::getDB()->queryAll(
 //         "SELECT mobile FROM `student` WHERE `id` IN (".implode(',', $task->userList20).")"
-//     ));
+//     );
+//     print_r(array_column($res, 'mobile'));
 // }
 // echo "Send 10yuan List:".PHP_EOL;
 // if (!empty($task->userList10)) {
-//     print_r(MysqlDB::getDB()->queryAll(
+//     $res = MysqlDB::getDB()->queryAll(
 //         "SELECT mobile FROM `student` WHERE `id` IN (".implode(',', $task->userList10).")"
-//     ));
+//     );
+//     print_r(array_column($res, 'mobile'));
 // }
