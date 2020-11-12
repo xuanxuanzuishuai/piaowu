@@ -12,6 +12,7 @@ use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\AppleDevicesModel;
+use App\Models\ReviewCourseModel;
 use App\Models\StudentBrushModel;
 use App\Models\StudentLoginInfoModel;
 use App\Models\StudentModel;
@@ -187,6 +188,30 @@ class StudentLoginService
         }
         $brushInfo = StudentBrushModel::getRecord(['student_id' => $studentId], ['student_id'], false);
         return empty($brushInfo) ? false : true;
+    }
+
+    /**
+     * @param $studentId
+     * @return bool
+     * 红包判断刷单状态
+     */
+    public static function getStudentBrushByLogin($studentId)
+    {
+        if (empty($studentId)) {
+            return false;
+        }
+        $brushInfo = StudentBrushModel::getStudentBrushByLogin($studentId);
+
+        if (empty($brushInfo)){
+            return false;
+        }
+
+        $subEndTime = strtotime(date($brushInfo[0]['sub_end_date'] . " 23:59:59"));
+        if ($brushInfo[0]['has_review_course'] == ReviewCourseModel::REVIEW_COURSE_49 && $subEndTime > time()) {
+            return true;
+        }
+
+        return false;
     }
 
     /**

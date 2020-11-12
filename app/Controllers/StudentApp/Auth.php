@@ -88,7 +88,7 @@ class Auth extends ControllerBase
         $params['token'] = $loginData['token'];
         QueueService::studentLoginByApp($params);
 
-        $loginData['probable_brush'] = StudentLoginService::getStudentBrush($loginData['id']);
+        $loginData['probable_brush'] = StudentLoginService::getStudentBrushByLogin($loginData['id']);
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
@@ -142,7 +142,7 @@ class Auth extends ControllerBase
             $response = $response->withHeader('app-review', 1);
         }
 
-        $loginData['probable_brush'] = StudentLoginService::getStudentBrush($loginData['id']);
+        $loginData['probable_brush'] = StudentLoginService::getStudentBrushByLogin($loginData['id']);
 
         return $response->withJson([
             'code'=> Valid::CODE_SUCCESS,

@@ -50,4 +50,24 @@ class StudentBrushModel extends Model
         $db = MysqlDB::getDB();
         return $db->queryAll($sql);
     }
+
+    /**
+     * @param $studentId
+     * @return array
+     * 登录用户刷单判断（红包弹窗逻辑）
+     */
+    public static function getStudentBrushByLogin($studentId)
+    {
+        $studentBrush = self::$table;
+        $student = StudentModel::$table;
+        return MysqlDB::getDB()->select($studentBrush, [
+            "[><]{$student}(s)" => ["student_id" => "id"],
+        ], [
+            's.id',
+            's.has_review_course',
+            's.sub_end_date',
+        ], [
+            's.id' => $studentId,
+        ]);
+    }
 }
