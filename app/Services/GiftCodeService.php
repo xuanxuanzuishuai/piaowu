@@ -19,6 +19,9 @@ use App\Libs\MysqlDB;
 use App\Models\EmployeeModel;
 use App\Models\GiftCodeModel;
 use App\Libs\Dict;
+use App\Models\GiftCodeDetailedModel;
+use App\Models\StudentLeaveLogModel;
+use App\Models\StudentModelForApp;
 
 class GiftCodeService
 {
@@ -287,9 +290,34 @@ class GiftCodeService
         $updateGiftCodeStatus = GiftCodeModel::updateRecord($giftCodeData['id'], ['code_status' => GiftCodeModel::CODE_STATUS_INVALID]);
         $updateSubDurationStatus = Constants::STATUS_TRUE;
 
+        $student = StudentModelForApp::getById($giftCodeData['apply_user']);
+        $giftCodeDetailInfo = GiftCodeDetailedModel::getRecord(['apply_user' => $giftCodeData['apply_user'], 'gift_code_id' => $giftCodeData['id'], 'status' => Constants::STATUS_TRUE]);
+        if (!empty($giftCodeDetailInfo)) {
+            $beforeGiftCodeInfo = GiftCodeDetailedModel::getRecord(['apply_user' => $giftCodeData['apply_user'], 'id[<]' => $giftCodeDetailInfo['id'], 'ORDER' => ['id' => 'DESC']]);
+            if (empty($beforeGiftCodeInfo) && empty($student['trial_end_date'])) {
+                $validNum = $giftCodeDetailInfo['valid_days'] - 1;
+            } else {
+                $validNum = $giftCodeDetailInfo['valid_days'];
+            }
+            $validUnits = GiftCodeModel::CODE_TIME_DAY;
+        } else {
+            $validNum = $giftCodeData['valid_num'];
+            $validUnits = $giftCodeData['valid_units'];
+        }
+
         // 已激活的扣除相应时间
         if ($giftCodeData['code_status'] == GiftCodeModel::CODE_STATUS_HAS_REDEEMED) {
-            $updateSubDurationStatus = StudentService::reduceSubDuration($giftCodeData['apply_user'], $giftCodeData['valid_num'], $giftCodeData['valid_units']);
+            $updateSubDurationStatus = StudentService::reduceSubDuration($giftCodeData['apply_user'], $validNum, $validUnits);
+            //当前激活码之后已激活的从新计算每个激活码的开始&结束时间
+            GiftCodeDetailedService::abandonGiftCode($giftCodeData['apply_user'], $giftCodeData['id']);
+            if (empty($updateSubDurationStatus)) {
+                return 'gift_code_insert_error';
+            }
+            //作废激活码，取消所有的请假
+            $cnt = GiftCodeDetailedService::cancelLeave($student['id'], $giftCodeData['id'], StudentLeaveLogModel::CANCEL_OPERATOR_SYSTEM, Constants::STATUS_FALSE);
+            if (empty($cnt)) {
+                return 'cancel_leave_error';
+            }
         }
 
         if (!$updateGiftCodeStatus || !$updateSubDurationStatus) {
