@@ -113,13 +113,13 @@ class StudentLoginService
             return [];
         }
 
-        $studentIdList = StudentLoginInfoModel::getRecords($where, ['student_id', 'is_experience']);
+        $studentIdList = StudentLoginInfoModel::getRecords($where, ['student_id', 'has_review_course']);
         if (!isset($studentIdList) || empty($studentIdList)) {
             return [];
         }
 
         foreach ($studentIdList as $value) {
-            if ($value['is_experience'] == StudentLoginInfoModel::STUDENT_PAY_TYPE_EXPERIENCE) {
+            if ($value['has_review_course'] == StudentLoginInfoModel::STUDENT_PAY_TYPE_EXPERIENCE) {
                 $experienceStudentIds[] = $value['student_id'];
             }
             $allStudentIds[] = $value['student_id'];
