@@ -77,7 +77,7 @@ class StudentSignUpCourseModel extends Model
         $weekNo = date("N", $timestamp);
 
         $where = "s.student_id = " . $studentId . " AND s.start_week = " . $weekNo . "
-        AND (NOT (s.first_course_time >" . $endDay . ")) AND (NOT (s.last_course_time < " . $beginDay . "))";
+        AND (NOT (s.first_course_time >" . $endDay . "))";
 
         if ($isRequireSignUp) {
             $where .= " AND s.bind_status = " . self::COURSE_BING_SUCCESS;

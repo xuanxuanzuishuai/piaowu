@@ -221,7 +221,14 @@ class InteractiveClassroomService
                 $data[$v] = $list[$v];
                 continue;
             }
+
             $result = $opn->lessons($v, $page, $pageSize);
+            if (empty($result['data']['list'])){
+                $data[$v]['freeLessonList'] = [];
+                $data[$v]['payLessonList'] = [];
+                continue;
+            }
+
             foreach ($result['data']['list'] as $value) {
                 if ($value['freeflag'] == true) {
                     $data[$v]['freeLessonList'][] = $value['id'];
@@ -284,13 +291,31 @@ class InteractiveClassroomService
      */
     public static function studentCoursePlan($opn, $student_id, $timestamp, $requireSignUp = false)
     {
-        list($beginDay, $endDay) = Util::getStartEndTimestamp(time());
-        if ($timestamp >= $beginDay) {
+        $todayBeginTimestamp = strtotime(date('Y-m-d',time()));
+        if ($timestamp >= $todayBeginTimestamp) {
             $requireSignUp = true;
         }
-        $lastRecord = StudentSignUpCourseModel::getLearnRecords($student_id, $timestamp,$requireSignUp);
-        $lastRecordKeyByCollectionId = array_column($lastRecord, null, 'collection_id');
-        $lastRecordKeyByLessonId = array_column($lastRecord, null, 'lesson_id');
+
+        $queryBeginTimestamp = strtotime(date('Y-m-d', $timestamp));
+        $studentSignUpRecord = StudentSignUpCourseModel::getLearnRecords($student_id, $timestamp, $requireSignUp);
+        if (empty($studentSignUpRecord)) {
+            return [];
+        }
+        $allCollectionIds = array_unique(array_column($studentSignUpRecord, 'collection_id'));
+        $lessonListWithCollection = self::getLessonIds($opn, $allCollectionIds);
+        foreach ($studentSignUpRecord as $key => $value) {
+            $payLessonNum = count($lessonListWithCollection[$value['collection_id']]['payLessonList']);
+            if ($payLessonNum < 1) {
+                unset($studentSignUpRecord[$key]);
+            }
+            $lastCourseTimestamp = $value['first_course_time'] + ($payLessonNum - 1) * self::WEEK_TIMESTAMP;
+            if ($lastCourseTimestamp < $queryBeginTimestamp) {
+                unset($studentSignUpRecord[$key]);
+            }
+        }
+
+        $lastRecordKeyByCollectionId = array_column($studentSignUpRecord, null, 'collection_id');
+        $lastRecordKeyByLessonId = array_column($studentSignUpRecord, null, 'lesson_id');
         if (empty($lastRecordKeyByCollectionId)) {
             return [];
         }
@@ -299,7 +324,7 @@ class InteractiveClassroomService
         $collectionIds = array_unique(array_keys($lastRecordKeyByCollectionId));
         $lessonCoverList = self::getLessonCovers($opn,$collectionIds);
         $lessonListWithCollection = self::getLessonIds($opn, $collectionIds);
-        foreach ($lastRecord as $value) {
+        foreach ($studentSignUpRecord as $value) {
             $sort = self::getSort($value['first_course_time'], $timestamp);
             if ($sort === false){
                 continue;
