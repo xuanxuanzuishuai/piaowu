@@ -54,6 +54,7 @@ class StudentFavoriteService
     public static function getOpnInfoByIds($type, $opn, $ids)
     {
         if ($type == StudentFavoriteModel::FAVORITE_TYPE_LESSON) {
+            $lessons = [];
             $lessonListResult = $opn->lessonsByIds($ids);
 
             if (isset($lessonListResult['data']) && !empty($lessonListResult['data'])) {
@@ -82,7 +83,7 @@ class StudentFavoriteService
                     }
                 }
             }
-            return $lessons ?? [];
+            return array_values($lessons);
         } elseif ($type == StudentFavoriteModel::FAVORITE_TYPE_COLLECTION) {
             $collectionListResult = $opn->collectionsByIds($ids);
             if (isset($collectionListResult['data']) && !empty($collectionListResult['data'])) {
