@@ -144,6 +144,7 @@ class DictConstants {
             'get_share_class_url',
             'popular_textbooks_ids',
             'week_report_share_assess_url',
+            'iapay_url',
         ]
     ];
 

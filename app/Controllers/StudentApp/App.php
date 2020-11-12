@@ -86,6 +86,7 @@ class App extends ControllerBase
         $config['request_ocr_search_service'] = $studentAppConfigs['request_ocr_search_service'];
         $config['get_omr_music_score_search_switch'] = $studentAppConfigs['get_omr_music_score_search_switch'];
         $config['get_share_class_url'] = $studentAppConfigs['get_share_class_url'];
+        $config['iapay_url'] = $studentAppConfigs['iapay_url'];
 
         $reviewFlagId = DictConstants::get(DictConstants::FLAG_ID, 'app_review');
         if ($this->ci['flags'][$reviewFlagId]) {

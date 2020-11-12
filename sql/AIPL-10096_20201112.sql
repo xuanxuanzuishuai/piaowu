@@ -1,0 +1,1 @@
+INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES ('APP_CONFIG_STUDENT', 'AI练琴后端设置', 'iapay_url', 'https://aipiano.xiongmaopeilian.com/ai_piano_app/#/iapay', '支付宝web，支付页面');
