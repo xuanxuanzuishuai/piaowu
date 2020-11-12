@@ -57,26 +57,27 @@ class StudentFavoriteService
             $lessonListResult = $opn->lessonsByIds($ids);
 
             if (isset($lessonListResult['data']) && !empty($lessonListResult['data'])) {
-                foreach ($lessonListResult['data'] as $key => $value) {
-                    $lessons[$key] = [
+                $lessonList = array_column($lessonListResult['data'],null,'lesson_id');
+                foreach ($ids as $value) {
+                    $lessons[$value] = [
                         'mp4'             => '0',
                         'mp8'             => '0',
-                        'id'              => $value['lesson_id'],
-                        'lesson_name'     => $value['lesson_name'],
-                        'collection_name' => $value['collection_name'],
-                        'score_id'        => $value['opern_id'],
-                        'is_free'         => $value['freeflag'] ? '1' : '0',
-                        'knowledge'       => $value['knowledge'] ? 1 : 0,
-                        'mmusic'          => $value['mmusic'] ? '1' : '0',
-                        'mmusicconfig'    => $value['mmusicconfig'] ? '1' : '0',
-                        'dynamic'         => $value['dynamic'] ? '1' : '0',
-                        'page'            => $value['page'],
+                        'id'              => $lessonList[$value]['lesson_id'],
+                        'lesson_name'     => $lessonList[$value]['lesson_name'],
+                        'collection_name' => $lessonList[$value]['collection_name'],
+                        'score_id'        => $lessonList[$value]['opern_id'],
+                        'is_free'         => $lessonList[$value]['freeflag'] ? '1' : '0',
+                        'knowledge'       => $lessonList[$value]['knowledge'] ? 1 : 0,
+                        'mmusic'          => $lessonList[$value]['mmusic'] ? '1' : '0',
+                        'mmusicconfig'    => $lessonList[$value]['mmusicconfig'] ? '1' : '0',
+                        'dynamic'         => $lessonList[$value]['dynamic'] ? '1' : '0',
+                        'page'            => $lessonList[$value]['page'],
                     ];
-                    foreach($value['resources'] as $v) {
+                    foreach($lessonList[$value]['resources'] as $v) {
                         if($v['type'] == 'mp8') {
-                            $lessons[$key]['mp8'] = '1';
+                            $lessons[$value]['mp8'] = '1';
                         }elseif ($v['type'] == 'mp4'){
-                            $lessons[$key]['mp4'] = '1';
+                            $lessons[$value]['mp4'] = '1';
                         }
                     }
                 }
@@ -85,13 +86,14 @@ class StudentFavoriteService
         } elseif ($type == StudentFavoriteModel::FAVORITE_TYPE_COLLECTION) {
             $collectionListResult = $opn->collectionsByIds($ids);
             if (isset($collectionListResult['data']) && !empty($collectionListResult['data'])) {
-                foreach ($collectionListResult['data'] as $value) {
+                $collectionsList = array_column($collectionListResult['data'],null,'id');
+                foreach ($ids as $value) {
                     $collections[] = [
-                        'id'      => $value['id'],
-                        'name'    => $value['name'],
-                        'cover'   => $value['cover'] ?? '',
-                        'is_free' => $value['freeflag'] ? '1' : '0',
-                        'images'  => $value['img_list'] ?? [],
+                        'id'      => $collectionsList[$value]['id'] ?? '',
+                        'name'    => $collectionsList[$value]['name'] ?? '',
+                        'cover'   => $collectionsList[$value]['cover'] ?? '',
+                        'is_free' => $collectionsList[$value]['freeflag'] ? '1' : '0',
+                        'images'  => $collectionsList[$value]['img_list'] ?? [],
                     ];
                 }
             }
