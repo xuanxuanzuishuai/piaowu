@@ -103,15 +103,17 @@ class StudentLoginService
     {
         if (isset($params['idfa']) && $params['idfa'] != '00000000-0000-0000-0000-000000000000') {
             $where['idfa'] = $params['idfa'];
-            $studentIdList = StudentLoginInfoModel::getRecords($where, ['student_id', 'is_experience']);
         } elseif (isset($params['imei']) && !empty($params['imei']) && strlen($params['imei']) > 10) {
             $where['imei'] = $params['imei'];
-            $studentIdList = StudentLoginInfoModel::getRecords($where, ['student_id', 'is_experience']);
         } elseif (isset($params['android_id']) && !empty($params['android_id']) && strlen($params['android_id']) > 10) {
             $where['android_id'] = $params['android_id'];
-            $studentIdList = StudentLoginInfoModel::getRecords($where, ['student_id', 'is_experience']);
         }
 
+        if (!isset($where) || empty($where)) {
+            return [];
+        }
+
+        $studentIdList = StudentLoginInfoModel::getRecords($where, ['student_id', 'is_experience']);
         if (!isset($studentIdList) || empty($studentIdList)) {
             return [];
         }
