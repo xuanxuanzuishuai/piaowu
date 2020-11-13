@@ -39,8 +39,8 @@ class StudentFavoriteModel extends Model
                     SELECT
                         type,
                         object_id,
-                        create_time,
-                        ROW_NUMBER ( ) over ( PARTITION BY student_id, type ORDER BY create_time DESC ) AS s 
+                        update_time,
+                        ROW_NUMBER ( ) over ( PARTITION BY student_id, type ORDER BY update_time DESC ) AS s 
                     FROM
                         {$studentFavorite} s 
                     WHERE
@@ -49,7 +49,7 @@ class StudentFavoriteModel extends Model
                 WHERE
                     s <= 10 
                 ORDER BY
-                    create_time DESC";
+                    update_time DESC";
 
         $db = MysqlDB::getDB();
         $result = $db->queryAll($sql);
