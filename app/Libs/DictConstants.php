@@ -203,6 +203,7 @@ class DictConstants {
             'erp',
             'org_web',
             'crm',
+            'sales_master',
         ]
     ];
 

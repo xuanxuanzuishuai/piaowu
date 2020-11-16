@@ -954,6 +954,16 @@ class StudentModel extends Model
     }
 
     /**
+     * 根据手机号获取学员信息
+     * @param $mobile
+     * @return array
+     */
+    public static function getStudentByMobile($mobile)
+    {
+        return self::getRecord(['mobile' => $mobile]);
+    }
+
+    /**
      * 更新学生班级和助教信息
      * @param $studentIds
      * @param $collectionId
