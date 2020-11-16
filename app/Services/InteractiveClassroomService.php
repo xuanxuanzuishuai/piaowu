@@ -1403,4 +1403,34 @@ class InteractiveClassroomService
 
         return $result;
     }
+
+
+    /**
+     * 完课报告
+     * @param $studentId
+     * @param $collectionId
+     * @param $opn
+     * @return array
+     */
+    public static function classInformation($studentId, $collectionId, $opn)
+    {
+        $report = [];
+
+        //分享课包信息
+        $collectionInfo = self::erpCollectionByIds($opn, $collectionId);
+        //累计练习天数
+        $accumulateDays= AIPlayRecordModel::getAccumulateDays($studentId);
+
+        $report['thumb'] = !empty($student['thumb']) ? AliOSS::signUrls($student['thumb']) : '';
+        $report['name'] = $student['name'];
+        $report['accumulate_days'] = $accumulateDays;
+        $report['collection_name'] = $collectionInfo['collection_name'];
+        $report['lessons_url'] = $collectionInfo['lessons_url'];
+        $report['collection_cover'] = $collectionInfo['collection_cover'];
+        $report['collection_abstract'] = $collectionInfo['collection_desc'];
+        $report['start_week'] = $collectionInfo['collection_start_week'];
+        $report['start_time'] = $collectionInfo['collection_start_time'];
+        return $report;
+    }
+
 }

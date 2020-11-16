@@ -285,6 +285,7 @@ class StudentWXRouter extends RouterBase
         '/student_wx/interactive_classroom/learn_calendar' => ['method' => ['get'], 'call' => InteractiveClassroom::class . ':getLearnCalendar'],
         '/student_wx/interactive_classroom/calendar_details' => ['method' => ['get'], 'call' => InteractiveClassroom::class . ':getCalendarDetails'],
         '/student_wx/interactive_classroom/share_class_information' => ['method' => ['get'], 'call' => InteractiveClassroom::class . ':shareClassInformation', 'middles' => []],
+        '/student_wx/interactive_classroom/class_information' => ['method' => ['get'], 'call' => InteractiveClassroom::class . ':classInformation'],
 
     ];
 }
