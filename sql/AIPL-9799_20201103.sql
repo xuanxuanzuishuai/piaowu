@@ -141,3 +141,6 @@ VALUES
 INSERT INTO `dict` ( `type`, `key_name`, `key_code`, `key_value`, `desc` )
 VALUES
   ( 'APP_CONFIG_STUDENT', 'AI练琴后端设置', 'week_report_share_assess_url', 'https://referral.xiaoyezi.com/market/index', '周报分享链接域名' );
+INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc` )
+VALUES
+	('SERVICE_CONFIG', '外部服务设置', 'ai_class_http_host', 'https://ai-class-http.xiaoyezi.com', 'ai class 新项目域名' );

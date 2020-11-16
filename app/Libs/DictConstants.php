@@ -61,7 +61,8 @@ class DictConstants {
             'voice_appId',
             'voice_appKey',
             'voice_url',
-            'voice_templateId'
+            'voice_templateId',
+            'ai_class_http_host',
         ]
     ];
 

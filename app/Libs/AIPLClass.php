@@ -70,7 +70,7 @@ class AIPLClass
      */
     public static function getWeekReport($uuid, $year, $week)
     {
-        $host = DictConstants::get(DictConstants::SERVICE, 'ai_class_host');
+        $host = DictConstants::get(DictConstants::SERVICE, 'ai_class_http_host');
         $result = HttpHelper::requestJson($host . self::API_CLASS_WEEK_REPORT, [
             'year' => $year,
             'week' => $week,
