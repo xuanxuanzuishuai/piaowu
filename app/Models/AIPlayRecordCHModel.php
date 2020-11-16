@@ -111,7 +111,7 @@ count(distinct(create_date)) as play_day FROM " . self::$table . " WHERE `studen
                     duration,
                     create_date,record_id,track_id
                 from
-                    ai_peilian_pre.ai_play_record
+                    ".self::$table."
                 where
                     duration > 0
                      and track_id !=''
@@ -139,7 +139,7 @@ count(distinct(create_date)) as play_day FROM " . self::$table . " WHERE `studen
                     duration,
                     create_date,record_id,track_id
                 from
-                    ai_peilian_pre.ai_play_record
+                    ".self::$table."
                 where
                     duration > 0
                      and track_id =''
