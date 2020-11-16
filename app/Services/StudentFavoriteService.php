@@ -55,7 +55,7 @@ class StudentFavoriteService
     {
         if ($type == StudentFavoriteModel::FAVORITE_TYPE_LESSON) {
             $lessons = [];
-            $lessonListResult = $opn->lessonsByIds($ids);
+            $lessonListResult = $opn->lessonsByIds($ids,1,'mp4,mp8');
 
             if (isset($lessonListResult['data']) && !empty($lessonListResult['data'])) {
                 $lessonList = array_column($lessonListResult['data'],null,'lesson_id');
