@@ -16,11 +16,6 @@ use App\Services\DictService;
 
 class OpernMiniAppService
 {
-    // 自动回复二维码图片路径(oss)
-    const AUTO_REPLAY_QR_CODE_PATH = '/miniapp_code/opern_miniapp_qr_code.png';
-    // 备用小程序消息推送图片路径
-    const AUTO_REPLAY_QR_CODE_BACKUP_PATH = '/miniapp_code/opern_miniapp_qr_code_backup.png';
-
     public static function handler($message, $isBackup = false)
     {
         switch ($message['MsgType']) {
@@ -43,14 +38,11 @@ class OpernMiniAppService
             'app_id'     => $_ENV['OPERN_MINI_APP_ID'],
             'app_secret' => $_ENV['OPERN_MINI_APP_SECRET'],
         ];
-        $filePath = $_ENV['ENV_NAME'].self::AUTO_REPLAY_QR_CODE_PATH;
-        
         if ($isBackup) {
             $config = [
                 'app_id'     => $_ENV['OPERN_MINI_BACKUP_APP_ID'],
                 'app_secret' => $_ENV['OPERN_MINI_BACKUP_APP_SECRET'],
             ];
-            $filePath = $_ENV['ENV_NAME'].self::AUTO_REPLAY_QR_CODE_BACKUP_PATH;
         }
 
         $wx = WeChatMiniPro::factory($config);
@@ -58,7 +50,8 @@ class OpernMiniAppService
             SimpleLogger::error('wx mini pro create fail', ['config' => $config]);
             return true;
         }
-        $media = $wx->getTempMedia('image', $filePath, AliOSS::replaceCdnDomainForDss($filePath));
+        list($path, $url) = DictService::getKeyValuesByArray(Constants::DICT_TYPE_OPERN_MINIAPP_INFO, ['wuxianpu_code_path', 'wuxianpu_code_url']);
+        $media = $wx->getTempMedia('image', $path, $url);
         if (!empty($media['media_id'])) {
             $wx->sendImage($message['FromUserName'], $media['media_id']);
         }
