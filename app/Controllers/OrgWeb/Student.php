@@ -8,16 +8,13 @@
 
 namespace App\Controllers\OrgWeb;
 
-use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\EmployeeModel;
 use App\Models\StudentModel;
 use App\Models\UserWeixinModel;
-use App\Services\AIPlayReportService;
-use App\Services\Queue\PushMessageTopic;
-use App\Services\ReviewCourseTaskService;
+use App\Services\EmployeeService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -201,7 +198,7 @@ class Student extends ControllerBase
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        $studentList = StudentService::fuzzySearchStudent($params, ['id', 'mobile', 'name']);
+        $studentList = StudentService::fuzzySearchStudent($params, ['id', 'mobile', 'name', 'real_name']);
         //返回数据
         return HttpHelper::buildResponse($response, $studentList);
     }
@@ -429,5 +426,82 @@ class Student extends ControllerBase
         $ret = StudentService::getEmployee($params);
 
         return HttpHelper::buildResponse($response, $ret);
+    }
+
+    /**
+     * 更新学生真实姓名
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function updateRealName(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'student_id',
+                'type' => 'required',
+                'error_code' => 'student_id_is_required',
+            ],
+            [
+                'key' => 'student_id',
+                'type' => 'integer',
+                'error_code' => 'student_id_must_be_integer'
+            ],
+            [
+                'key' => 'real_name',
+                'type' => 'required',
+                'error_code' => 'real_name_is_required',
+            ],
+            [
+                'key' => 'real_name',
+                'type' => 'lengthMax',
+                'value' => 10,
+                'error_code' => 'real_name_length_error',
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        //修改数据
+        try {
+            StudentService::updateRealName($params['student_id'], $params['real_name']);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, []);
+    }
+
+    /**
+     * 获取班级学生列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function collectionStudentList(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'collection_id',
+                'type' => 'required',
+                'error_code' => 'collection_id_is_required',
+            ],
+            [
+                'key' => 'play_timestamp',
+                'type' => 'required',
+                'error_code' => 'play_timestamp_is_required',
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $employee = $this->ci['employee'];
+        EmployeeService::checkSearchStudentPrivilege($employee, $params);
+        list($page, $count) = Util::formatPageCount($params);
+        $data = StudentService::searchCollectionStudentList($params, $page, $count);
+        return HttpHelper::buildResponse($response, $data);
     }
 }

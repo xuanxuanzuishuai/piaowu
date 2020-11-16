@@ -416,6 +416,7 @@ class StudentModel extends Model
             's.wechat_account',
             's.uuid',
             's.sync_status',
+            's.real_name',
             'em.name(course_manage_name)'
         ];
         $where = ['s.id' => $studentId];
@@ -908,6 +909,7 @@ class StudentModel extends Model
                        `s`.`create_time`,
                        `s`.`allot_collection_time`,
                        `s`.`wechat_account`,
+                       `s`.`real_name`,
                        `em`.`name` AS course_manage_name";
 
         //排序条件:默认按照注册时间倒叙

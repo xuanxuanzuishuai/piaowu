@@ -400,4 +400,19 @@ class Collection extends ControllerBase
             'data' => $data
         ], StatusCode::HTTP_OK);
     }
+
+    /**
+     * 获取班级列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function search(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        $employee = $this->ci['employee'];
+        EmployeeService::checkSearchStudentPrivilege($employee, $params);
+        $data = CollectionService::search($params);
+        return HttpHelper::buildResponse($response, $data);
+    }
 }

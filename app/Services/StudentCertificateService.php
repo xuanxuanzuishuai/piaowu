@@ -13,6 +13,7 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Libs\AliOSS;
 use App\Libs\Util;
 use App\Models\StudentCertificateModel;
+use App\Models\StudentCertificateTemplateModel;
 use App\Models\StudentModel;
 
 class StudentCertificateService
@@ -124,5 +125,25 @@ class StudentCertificateService
         unlink($tmpFileFullPath);
         //返回数据
         return $savePath;
+    }
+
+    /**
+     * 获取证书模板列表
+     * @param $type
+     * @return array
+     */
+    public static function certificateTemplate($type)
+    {
+        $data = [];
+        $list = StudentCertificateTemplateModel::getRecords(
+            ['type' => $type, 'status' => StudentCertificateTemplateModel::STATUS_ABLE],
+            ['save_path'],
+            false);
+        if (!empty($list)) {
+            array_map(function ($lv) use (&$data) {
+                $data[] = AliOSS::signUrls($lv['save_path']);
+            }, $list);
+        }
+        return $data;
     }
 }

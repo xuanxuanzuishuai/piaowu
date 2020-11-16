@@ -921,4 +921,22 @@ class CollectionService
         //返回结果
         return $list[0] ?? null;
     }
+
+    /**
+     * 搜索班级列表
+     * @param $params
+     * @return array
+     */
+    public static function search($params)
+    {
+        $where = [];
+        $field = ['id', 'name'];
+        if (!empty($params['name'])) {
+            $where['name[~]'] = $params['name'];
+        }
+        if (!empty($params['assistant_id'])) {
+            $where['assistant_id'] = $params['assistant_id'];
+        }
+        return CollectionModel::getRecords($where, $field);
+    }
 }

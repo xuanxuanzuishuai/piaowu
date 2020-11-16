@@ -670,4 +670,28 @@ WHERE
         $result = $db->queryAll($sql, $map);
         return $result;
     }
+
+    /**
+     * 获取学生某段时间内时长
+     * @param $studentIdList
+     * @param $startTime
+     * @param $endTime
+     * @return array|null
+     */
+    public static function getStudentSumDurations($studentIdList, $startTime, $endTime)
+    {
+        $db = MysqlDB::getDB();
+        $sql = "SELECT
+                    student_id,SUM(duration) AS sum_duration
+                FROM
+                    ai_play_record
+                WHERE
+                    student_id in (" . $studentIdList . ")
+                    AND end_time >= " . $startTime . "
+                    AND end_time < " . $endTime . "
+                    AND duration > 0
+                GROUP BY student_id ORDER BY sum_duration desc";
+        $result = $db->queryAll($sql);
+        return $result;
+    }
 }

@@ -183,6 +183,11 @@ class OrgWebRouter extends RouterBase
         '/org_web/student/referee_intellect_order' => array('method' => array('get'), 'call' => OrgWebStudent::class . ':refereeIntellectOrder'),
         '/org_web/student/intellect_order'         => array('method' => array('get'), 'call' => OrgWebStudent::class . ':intellectOrder'),
         '/org_web/student/get_make_order'          => array('method' => array('get'), 'call' => OrgWebStudent::class . ':getMakeOrder'),
+        //修改学生真实姓名
+        '/org_web/student/update_real_name'        => array('method' => array('post'), 'call' => OrgWebStudent::class . ':updateRealName'),
+        '/org_web/student/collection_student'      => array('method' => array('get'), 'call' => OrgWebStudent::class . ':collectionStudentList'),
+
+
         // 学生跟进记录
         '/student/student_remark/add' => array('method' => array('post'), 'call' => '\App\Controllers\Student\StudentRemark:add'),
         '/student/student_remark/remark_list' => array('method' => array('get'), 'call' => '\App\Controllers\Student\StudentRemark:remarkList'),
@@ -425,6 +430,7 @@ class OrgWebRouter extends RouterBase
         '/org_web/collection/reAllotCollectionAssistant' => ['method' => ['post'], 'call' => Collection::class . ':reAllotCollectionAssistant'],
         '/org_web/collection/event_task_list' => ['method' => ['get'], 'call' => Collection::class . ':getEventTasksList'],
         '/org_web/collection/dept_statistics' => ['method' => ['get'], 'call' => Collection::class . ':getCollectionDeptStatisticsData'],
+        '/org_web/collection/search' => ['method' => ['get'], 'call' => Collection::class . ':search'],
 
         //课包管理接口
         '/org_web/package/packageDictDetail' => ['method' => ['get'], 'call' => Package::class . ':packageDictDetail'],
@@ -508,6 +514,8 @@ class OrgWebRouter extends RouterBase
 
         // 学生证书管理
         '/org_web/student_certificate/create_certificate' => ['method' => ['post'], 'call' => StudentCertificate::class . ':createCertificate'],
+        '/org_web/student_certificate/certificate_template' => ['method' => ['get'], 'call' => StudentCertificate::class . ':certificateTemplate'],
+
         // 专属售卖链接
         '/org_web/personal_link/list' => ['method' => ['get'], 'call' => PersonalLink::class . ':list'],
         '/org_web/personal_link/create' => ['method' => ['post'], 'call' => PersonalLink::class . ':create'],

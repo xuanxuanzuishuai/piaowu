@@ -21,7 +21,7 @@ use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Libs\Util;
 use App\Libs\Valid;
-use App\Models\AppleDevicesModel;
+use App\Models\AIPlayRecordModel;
 use App\Models\CollectionModel;
 use App\Models\DeptPrivilegeModel;
 use App\Models\EmployeeModel;
@@ -574,6 +574,7 @@ class StudentService
         $data['course_manage_name'] = $student['course_manage_name'];
         $data['thumb'] = $student['thumb'] ? AliOSS::replaceCdnDomainForDss($student["thumb"]) : AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb'));
         $data['probable_brush'] = $brush;
+        $data['real_name'] = $student['real_name'];
         return $data;
     }
 
@@ -740,7 +741,6 @@ class StudentService
         if (!empty($brushStudentIds)){
             $brushStudentIdArray = array_keys(array_column($brushStudentIds,null,'student_id'));
         }
-
         // 格式化学生数据
         foreach($list as $item){
             $row = [];
@@ -766,6 +766,7 @@ class StudentService
             $row['course_manage_name'] = $item['course_manage_name'];
             $row['serve_app_id'] = $item['serve_app_id'];
             $row['probable_brush'] = in_array($item['student_id'], $brushStudentIdArray);
+            $row['real_name'] = $item['real_name'];
             $data[] = $row;
         }
         return $data;
@@ -1811,5 +1812,66 @@ class StudentService
             $isFormalCourse = true;
         }
         return $isFormalCourse;
+    }
+
+    /**
+     * 更新学生真实姓名
+     * @param $studentId
+     * @param $realName
+     * @return bool
+     * @throws RunTimeException
+     */
+    public static function updateRealName($studentId, $realName)
+    {
+        $studentInfo = StudentModel::getById($studentId);
+        if ($studentInfo['real_name'] == $realName) {
+            return true;
+        }
+        $updateRes = StudentModel::updateStudent($studentId, ['real_name' => $realName]);
+        if (empty($updateRes)) {
+            throw new RunTimeException(['update_date_failed']);
+        }
+        return true;
+    }
+
+    /**
+     * 获取班级学员
+     * @param $params
+     * @param $page
+     * @param $limit
+     * @return array
+     */
+    public static function searchCollectionStudentList($params, $page, $limit)
+    {
+        $where = [];
+        $data = ['total_count' => 0, 'list' => []];
+        if (!empty($params['mobile'])) {
+            $where['mobile'] = $params['mobile'];
+        }
+        if (!empty($params['assistant_id'])) {
+            $where['assistant_id'] = $params['assistant_id'];
+        }
+        if (!empty($params['collection_id'])) {
+            $where['collection_id'] = $params['collection_id'];
+        }
+        $count = StudentModel::getCount($where);
+        $offset = ($page - 1) * $limit;
+        if (empty($count) || ($count < $offset)) {
+            return $data;
+        }
+        $where['LIMIT'] = [$offset, $limit];
+        $list = StudentModel::getRecords($where, ['id', 'name', 'real_name', 'mobile', 'collection_id'], false);
+        $studentIdList = array_column($list, 'id');
+        //获取学生练琴时长数据
+        list($startTime, $endTime) = Util::getStartEndTimestamp($params['play_timestamp']);
+        $playRecordData = array_column(AIPlayRecordModel::getStudentSumDurations(implode(',', $studentIdList), $startTime, $endTime), null, 'student_id');
+        //班级数据
+        $collectionData = CollectionModel::getById($params['collection_id']);
+        array_walk($list, function (&$sv) use ($playRecordData, $collectionData) {
+            $sv['mobile'] = Util::hideUserMobile($sv['mobile']);
+            $sv['collection_name'] = $collectionData['name'];
+            $sv['sum_duration'] = empty($playRecordData[$sv['id']]['sum_duration']) ? 0 : Util::secondToDate($playRecordData[$sv['id']]['sum_duration']);
+        });
+        return ['total_count' => $count, 'list' => $list];
     }
 }

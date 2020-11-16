@@ -74,4 +74,34 @@ class StudentCertificate extends ControllerBase
         }
         return HttpHelper::buildResponse($response, $certificateData);
     }
+
+    /**
+     * 证书模板列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function certificateTemplate(Request $request, Response $response)
+    {
+        //接收数据
+        $rules = [
+            [
+                'key' => 'type',
+                'type' => 'required',
+                'error_code' => 'student_id_is_required'
+            ],
+        ];
+        //验证合法性
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            $certificateData = StudentCertificateService::certificateTemplate($params['type']);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, $certificateData);
+    }
 }
