@@ -70,4 +70,19 @@ class PointActivityRecordModel extends Model
                                     ta.task_id', $map);
         return $result;
     }
+
+    /**
+     * 获取学生完成的新手任务
+     * @param $studentId
+     * @param $taskId
+     * @return array
+     */
+    public static function getStudentFinishNoviceActivity($studentId, $taskId)
+    {
+        $table = self::$table;
+        $sql = "select * from {$table} where student_id = :student_id and task_id in (". $taskId .")";
+        $result = MysqlDB::getDB()->queryAll($sql, [':student_id' => $studentId]);
+        return $result ?? [];
+    }
+
 }

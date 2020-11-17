@@ -146,6 +146,7 @@ class DictConstants {
             'popular_textbooks_ids',
             'week_report_share_assess_url',
             'iapay_url',
+            'novice_activity_video'
         ]
     ];
 
@@ -495,6 +496,17 @@ class DictConstants {
             'extra_task_type',
             'take_award_rank_limit',
             'medal_task_type',
+        ]
+    ];
+
+    //新手任务配置
+    const NOVICE_ACTIVITY_CONFIG = [
+        'type' => 'novice_activity_config',
+        'keys' => [
+            'novice_activity_task',
+            'novice_activity_type',
+            'novice_activity_additional_type'
+
         ]
     ];
     //线索分配相关配置

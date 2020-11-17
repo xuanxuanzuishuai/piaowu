@@ -13,6 +13,7 @@ use App\Libs\Util;
 use App\Libs\Valid;
 use App\Services\HalloweenService;
 use App\Services\MedalService;
+use App\Services\NoviceActivityService;
 use App\Services\PointActivityService;
 use App\Services\TermSprintService;
 use Slim\Http\Request;
@@ -239,6 +240,53 @@ class PointActivity extends ControllerBase
         }
         try {
             HalloweenService::halloweenTakeAward($this->ci['student']['id'], explode(',', $params['task_ids']));
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
+        return HttpHelper::buildResponse($response, []);
+    }
+
+    /**
+     * 新手任务列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function noviceActivityList(Request $request, Response $response)
+    {
+        try {
+            if (empty($this->ci['version'])) {
+                throw new RunTimeException(['app_version_is_required']);
+            }
+            $records = NoviceActivityService::getNoviceActivityList($this->ci['student']['id'], $this->ci['version']);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
+        return HttpHelper::buildResponse($response, $records);
+    }
+
+    /**
+     * 新手任务上报
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function noviceActivityReport(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'task_ids',
+                'type' => 'required',
+                'error_code' => 'event_task_id_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            NoviceActivityService::noviceActivityReport($this->ci['student']['id'], explode(',', $params['task_ids']));
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }

@@ -575,5 +575,28 @@ class StudentAppRouter extends RouterBase
             'call'    => Favorite::class . ':favoriteStatus',
             'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
         ],
+
+        //新手任务
+        '/student_app/points/novice_activity_list' => [
+            'method'  => ['get'],
+            'call'    => PointActivity::class . ':noviceActivityList',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
+        '/student_app/points/novice_activity_report' => [
+            'method'  => ['post'],
+            'call'    => PointActivity::class . ':noviceActivityReport',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
+        '/student_app/student/student_personal_records' => [
+            'method'  => ['post'],
+            'call'    => App::class . ':studentPersonalRecords',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
+        //App首页公用接口
+        '/student_app/app/app_home_page' => [
+            'method'  => ['get'],
+            'call'    => App::class . ':appHomePage',
+            'middles' => [StudentAuthCheckMiddleWareForApp::class, AppApiForStudent::class]
+        ],
     ];
 }

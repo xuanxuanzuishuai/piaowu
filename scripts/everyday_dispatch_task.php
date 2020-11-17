@@ -19,6 +19,7 @@ require_once PROJECT_ROOT . '/vendor/autoload.php';
 use App\Services\CreditService;
 use App\Services\HalloweenService;
 use App\Services\MedalService;
+use App\Services\NoviceActivityService;
 use App\Services\TermSprintService;
 use Dotenv\Dotenv;
 
@@ -35,3 +36,4 @@ CreditService::createEveryDayTask($date);
 MedalService::createEveryDayTask($date);
 TermSprintService::createEveryDayTask($date);
 HalloweenService::setEventTaskCache($date);
+NoviceActivityService::createEventTaskCache($date);

@@ -893,4 +893,34 @@ class StudentServiceForApp
         }
         return $returnInfo;
     }
+
+    /**
+     * 完善个人档案
+     * @param $studentId
+     * @param $birthday
+     * @param $startPlayPianoTime
+     * @param $classReturnTime
+     * @throws RunTimeException
+     */
+    public static function studentPersonalRecords($studentId, $birthday, $startPlayPianoTime, $classReturnTime)
+    {
+        $time = time();
+        $year = date('Y', $time);
+        $studentInfo = StudentModelForApp::getById($studentId);
+        if (empty($studentInfo)) {
+            throw new RunTimeException(['student_ids_error']);
+        }
+
+        $updateDate = [
+            'birthday' => $birthday,
+            'start_play_piano_time' => $year - $startPlayPianoTime,
+            'class_return_time' => $classReturnTime,
+            'update_time' => $time
+        ];
+
+        $affectRows = StudentModelForApp::updateRecord($studentId, $updateDate);
+        if($affectRows == 0) {
+            throw new RunTimeException(['update_student_fail']);
+        }
+    }
 }

@@ -14,6 +14,7 @@ use App\Libs\AliOSS;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
+use App\Libs\OpernCenter;
 use App\Libs\PandaCRM;
 use App\Libs\Util;
 use App\Libs\Valid;
@@ -26,6 +27,8 @@ use App\Services\BannerService;
 use App\Services\CommonServiceForApp;
 use App\Services\FlagsService;
 use App\Services\MedalService;
+use App\Services\NoviceActivityService;
+use App\Services\StudentFavoriteService;
 use App\Services\StudentService;
 use App\Services\StudentServiceForApp;
 use App\Services\TrackService;
@@ -87,6 +90,7 @@ class App extends ControllerBase
         $config['get_omr_music_score_search_switch'] = $studentAppConfigs['get_omr_music_score_search_switch'];
         $config['get_share_class_url'] = $studentAppConfigs['get_share_class_url'];
         $config['iapay_url'] = $studentAppConfigs['iapay_url'];
+        $config['novice_activity_video'] = AliOSS::signUrls($studentAppConfigs['novice_activity_video']); //新手任务固定提升视频
 
         $reviewFlagId = DictConstants::get(DictConstants::FLAG_ID, 'app_review');
         if ($this->ci['flags'][$reviewFlagId]) {
@@ -562,5 +566,67 @@ class App extends ControllerBase
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
         return HttpHelper::buildResponse($response, []);
+    }
+
+    /**
+     * APP首页接口
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function appHomePage(Request $request, Response $response)
+    {
+        $studentId = $this->ci['student']['id'];
+
+        //App收藏列表
+        $opn = new OpernCenter(OpernCenter::PRO_ID_AI_STUDENT, $this->ci['opn_pro_ver'], $this->ci['opn_auditing'], $this->ci['opn_publish']);
+        $favoriteData = StudentFavoriteService::firstPageList($opn, $studentId);
+        //新手任务完成状况
+        $studentFinishNoviceTask = NoviceActivityService::getStudentFinishTaskStatus($studentId, $this->ci['version']);
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => ['favorite_date' => $favoriteData, 'finish_novice_task' => $studentFinishNoviceTask]
+        ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * 完善个人档案
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function studentPersonalRecords(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'birthday',
+                'type' => 'required',
+                'error_code' => 'birthday_is_required'
+            ],
+            [
+                'key' => 'start_play_piano_time',
+                'type' => 'required',
+                'error_code' => 'start_play_piano_time_is_required'
+            ],
+            [
+                'key' => 'class_return_time',
+                'type' => 'required',
+                'error_code' => 'class_return_time_is_required'
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            StudentServiceForApp::studentPersonalRecords($this->ci['student']['id'], $params['birthday'], $params['start_play_piano_time'], $params['class_return_time']);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData());
+        }
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => []
+        ], StatusCode::HTTP_OK);
     }
 }
