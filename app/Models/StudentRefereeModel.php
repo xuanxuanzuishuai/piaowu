@@ -21,22 +21,29 @@ class StudentRefereeModel extends Model
      * @param $refererId
      * @param $packageIdArr
      * @param $startTime
+     * @param null $isV1Package
      * @return mixed
      * 被推荐人在时间范围有没有买过特定的课包
      */
-    public static function refereeBuyCertainPackage($refererId, $packageIdArr, $startTime)
+    public static function refereeBuyCertainPackage($refererId, $packageIdArr, $startTime, $isV1Package = null)
     {
         $db = MysqlDB::getDB();
-        return $db->get(self::$table,
+        $where = [
+            self::$table . '.referee_id' => $refererId,
+            GiftCodeModel::$table . '.bill_package_id' => $packageIdArr,
+            GiftCodeModel::$table . '.create_time[>]' => $startTime
+        ];
+        if (!is_null($isV1Package)) {
+            $where[GiftCodeModel::$table . '.package_v1'] = $isV1Package;
+        }
+        return $db->get(
+            self::$table,
             [
                 '[><]' . GiftCodeModel::$table => ['student_id' => 'buyer']
             ],
             [GiftCodeModel::$table . '.id'],
-            [
-                self::$table . '.referee_id' => $refererId,
-                GiftCodeModel::$table . '.bill_package_id' => $packageIdArr,
-                GiftCodeModel::$table . '.create_time[>]' => $startTime
-            ]);
+            $where
+        );
     }
 
 }

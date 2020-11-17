@@ -461,4 +461,55 @@ WHERE
         return !empty($oldCodes) || !empty($newCodes);
     }
 
+    /**
+     * 判断用户是否有购买过体验或正式课包
+     * @param $mobile
+     * @return array|null
+     */
+    public static function hadPurchasePackageByType($studentID, $type = PackageExtModel::PACKAGE_TYPE_TRIAL)
+    {
+        if ($type == PackageExtModel::PACKAGE_TYPE_NORMAL) {
+            $packageIdArr = array_column(PackageExtModel::getPackages(['package_type' => PackageExtModel::PACKAGE_TYPE_NORMAL, 'app_id' => PackageExtModel::APP_AI]), 'package_id');
+            $v1PackageIdArr = ErpPackageV1Model::getNormalPackageIds();
+        } else {
+            $packageIdArr = array_column(PackageExtModel::getPackages(['package_type' => PackageExtModel::PACKAGE_TYPE_TRIAL, 'app_id' => PackageExtModel::APP_AI]), 'package_id');
+            $v1PackageIdArr = ErpPackageV1Model::getTrailPackageIds();
+        }
+
+        if (is_array($studentID)) {
+            $keyCondition = " AND `buyer` in (" . implode(',', $studentID) . ")";
+        } else {
+            $keyCondition = " AND `buyer` = " . $studentID;
+        }
+        
+        $codeStatusList = [self::CODE_STATUS_NOT_REDEEMED, self::CODE_STATUS_HAS_REDEEMED];
+
+        $sql = "
+        SELECT 
+            `id`,
+            `buyer`
+        FROM
+            " . self::$table . "
+        WHERE
+            (
+                `bill_package_id` in (" . implode(',', $packageIdArr) . ")
+                AND `bill_app_id` = " . PackageExtModel::APP_AI .
+                $keyCondition . "
+                AND `package_v1` = ". self::PACKAGE_V1_NOT . "
+                AND `code_status` in (" . implode(',', $codeStatusList) . ")
+            ) ";
+        if (!empty($v1PackageIdArr)) {
+            $sql .= "
+            OR 
+            (
+                `bill_package_id` in (" . implode(',', $v1PackageIdArr) . ")
+                AND `bill_app_id` = " . PackageExtModel::APP_AI .
+                $keyCondition . "
+                AND `package_v1` = ". self::PACKAGE_V1 . "
+                AND `code_status` in (" . implode(',', $codeStatusList) . ")
+            ) 
+            ";
+        }
+        return MysqlDB::getDB()->queryAll($sql);
+    }
 }

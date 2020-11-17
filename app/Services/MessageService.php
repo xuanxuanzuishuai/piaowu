@@ -12,6 +12,7 @@ use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Libs\WeChat\WeChatMiniPro;
+use App\Models\GiftCodeModel;
 use App\Models\MessagePushRulesModel;
 use App\Models\MessageManualPushLogModel;
 use App\Libs\Util;
@@ -19,6 +20,7 @@ use App\Libs\AliOSS;
 use App\Libs\Exceptions\RunTimeException;
 use App\Models\MessageRecordLogModel;
 use App\Models\MessageRecordModel;
+use App\Models\ModelV1\ErpPackageV1Model;
 use App\Models\PosterModel;
 use App\Models\PackageExtModel;
 use App\Models\ReviewCourseModel;
@@ -563,19 +565,26 @@ class MessageService
         $trailPackageIdArr = array_column(PackageExtModel::getPackages(['package_type' => PackageExtModel::PACKAGE_TYPE_TRIAL]), 'package_id');
         //所有年包id
         $yearPackageIdArr = array_column(PackageExtModel::getPackages(['package_type' => PackageExtModel::PACKAGE_TYPE_NORMAL]), 'package_id');
+        // 新产品中心：
+        // 所有体验课产品包ID：
+        $v1TrialPackageIdArr = ErpPackageV1Model::getTrailPackageIds();
+        // 所有正式课产品包ID：
+        $v1NormalPackageIdArr = ErpPackageV1Model::getNormalPackageIds();
+
         //X天内转介绍行为
         $inviteOperateInfo = SharePosterModel::getRecord(['student_id' => $studentInfo['id'], 'create_time[>]' => $time - $inviteDiffTime, 'status' => SharePosterModel::STATUS_QUALIFIED]);
         if ($studentInfo['has_review_course'] == ReviewCourseModel::REVIEW_COURSE_1980) {
             //转介绍结果（付过费就算)
-            $inviteResultInfo = StudentRefereeModel::refereeBuyCertainPackage($studentInfo['id'], array_merge($yearPackageIdArr, $trailPackageIdArr), $time - $resultDiffTime);
+            $inviteResultInfo = StudentRefereeModel::refereeBuyCertainPackage($studentInfo['id'], array_merge($yearPackageIdArr, $trailPackageIdArr, $v1TrialPackageIdArr, $v1NormalPackageIdArr), $time - $resultDiffTime);
             if (empty($inviteOperateInfo) && empty($inviteResultInfo)) {
                 //年卡c用户
                 return DictConstants::get(DictConstants::MESSAGE_RULE, 'year_user_c_rule_id');
             }
         } else {
             //转介绍结果（30天被推荐人付费年卡）
-            $inviteResultInfo = StudentRefereeModel::refereeBuyCertainPackage($studentInfo['id'], $yearPackageIdArr, $time - $resultDiffTime);
-            if (empty($inviteOperateInfo) && empty($inviteResultInfo)) {
+            $inviteResultInfo = StudentRefereeModel::refereeBuyCertainPackage($studentInfo['id'], $yearPackageIdArr, $time - $resultDiffTime, GiftCodeModel::PACKAGE_V1_NOT);
+            $inviteResultInfo2 = StudentRefereeModel::refereeBuyCertainPackage($studentInfo['id'], $v1NormalPackageIdArr, $time - $resultDiffTime, GiftCodeModel::PACKAGE_V1);
+            if (empty($inviteOperateInfo) && empty($inviteResultInfo) && empty($inviteResultInfo2)) {
                 return $studentInfo['has_review_course'] == ReviewCourseModel::REVIEW_COURSE_NO ? DictConstants::get(DictConstants::MESSAGE_RULE, 'register_user_c_rule_id') : DictConstants::get(DictConstants::MESSAGE_RULE, 'trail_user_c_rule_id');
             }
         }

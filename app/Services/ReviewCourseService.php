@@ -671,16 +671,8 @@ class ReviewCourseService
         } else {
             // 年包 && 首购智能陪练正式课
             if ($package['package_type'] == PackageExtModel::PACKAGE_TYPE_NORMAL) {
-                // 所有年包：
-                $packageIdArr = array_column(PackageExtModel::getPackages(['package_type' => PackageExtModel::PACKAGE_TYPE_NORMAL, 'app_id' => PackageExtModel::APP_AI]), 'package_id');
-                // 二期需求：
-                // 判断用户是否是首次购买智能陪练正式课
-                $hadPurchaseCount = GiftCodeModel::getCount(
-                    [
-                        'buyer'           => $student['id'],
-                        'bill_package_id' => $packageIdArr
-                    ]
-                );
+                $res = GiftCodeModel::hadPurchasePackageByType($student['id'], PackageService::PACKAGE_TYPE_NORMAL);
+                $hadPurchaseCount = count($res);
                 if ($hadPurchaseCount <= 1) {
                     return true;
                 }

@@ -203,7 +203,8 @@ class ReferralService
             ],
             [
                 's.mobile',
-                's.uuid'
+                's.uuid',
+                's.id'
             ],
             [
                 'uw.open_id'   => $openid,
@@ -216,7 +217,7 @@ class ReferralService
         if (!empty($mobile) && isset($mobile[0]['mobile'])) {
             $data['mobile'] = $mobile[0]['mobile'];
             $data['uuid'] = $mobile[0]['uuid'];
-            $data['had_purchased'] = self::hadPurchaseTrail($mobile[0]['mobile']);
+            $data['had_purchased'] = !empty(GiftCodeModel::hadPurchasePackageByType($mobile[0]['id']));
         }
         return $data;
     }
@@ -401,7 +402,7 @@ class ReferralService
                 'app_id'    => self::REFERRAL_MINIAPP_ID, // 转介绍小程序
             ], false);
         }
-        $hadPurchased = self::hadPurchaseTrail($mobile);
+        $hadPurchased = !empty(GiftCodeModel::hadPurchasePackageByType($lastId));
         return [$openId, $lastId, $mobile, $uuid, $hadPurchased];
     }
 
@@ -426,30 +427,6 @@ class ReferralService
             SimpleLogger::error('decode mobile error:', ['code' => $code]);
             return null;
         }
-    }
-
-    /**
-     * 用户是否有购买过体验包
-     * @param $mobile
-     */
-    public static function hadPurchaseTrail($mobile)
-    {
-        $packageIdArr = array_column(PackageExtModel::getPackages(['package_type' => PackageExtModel::PACKAGE_TYPE_TRIAL, 'app_id' => PackageExtModel::APP_AI]), 'package_id');
-        $records = MysqlDB::getDB()->select(
-            GiftCodeModel::$table . ' (gc) ',
-            [
-                '[>]' . StudentModel::$table . ' (s) ' => ['gc.buyer' => 'id']
-            ],
-            [
-                'gc.bill_package_id'
-            ],
-            [
-                's.mobile'           => $mobile,
-                'gc.bill_package_id' => $packageIdArr,
-                'LIMIT'              => [0, 1],
-            ]
-        );
-        return !empty($records);
     }
 
     /**

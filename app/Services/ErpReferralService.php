@@ -22,7 +22,6 @@ use App\Libs\Valid;
 use App\Models\UserWeixinModel;
 use App\Models\WeChatAwardCashDealModel;
 use App\Models\WeChatOpenIdListModel;
-use Medoo\Medoo;
 
 class ErpReferralService
 {
@@ -805,30 +804,11 @@ class ErpReferralService
         $studentIdArr = StudentModel::getRecords(['uuid' => $uuidArr], 'id');
 
         if ($eventTaskId == self::EXPECT_TRAIL_PAY) {
-            //所有的体验包id
-            $packageIdArr = array_column(PackageExtModel::getPackages(['package_type' => PackageExtModel::PACKAGE_TYPE_TRIAL]), 'package_id');
+            $giftCodeInfo = GiftCodeModel::hadPurchasePackageByType($studentIdArr);
         } else {
-            //所有年包id
-            $packageIdArr = array_column(PackageExtModel::getPackages(['package_type' => PackageExtModel::PACKAGE_TYPE_NORMAL]), 'package_id');
+            $giftCodeInfo = GiftCodeModel::hadPurchasePackageByType($studentIdArr, PackageExtModel::PACKAGE_TYPE_NORMAL);
         }
-        $existNormalBillStudentIdArr = array_column(
-            GiftCodeModel::getRecords(
-                [
-                    'buyer'           => $studentIdArr,
-                    'bill_package_id' => $packageIdArr,
-                    'bill_app_id'     => PackageExtModel::APP_AI,
-                    'code_status'     =>
-                    [
-                        GiftCodeModel::CODE_STATUS_NOT_REDEEMED,
-                        GiftCodeModel::CODE_STATUS_HAS_REDEEMED
-                    ]
-                ],
-                [
-                    'buyer' => Medoo::raw('DISTINCT(buyer)')
-                ]
-            ),
-            'buyer'
-        );
+        $existNormalBillStudentIdArr = array_column($giftCodeInfo, 'buyer');
         $diffArr = array_diff($studentIdArr, $existNormalBillStudentIdArr);
         if (!empty($diffArr)) {
             return implode(',', StudentModel::getRecords(['id' => $diffArr], 'mobile'));
