@@ -479,7 +479,9 @@ class DictConstants {
             'register_user_c_rule_id',
             'how_long_not_invite',
             'how_long_not_result',
-            'assign_template_id'
+            'assign_template_id',
+            'only_trail_rule_id',
+            'only_year_rule_id'
             ]
     ];
     //万圣节相关配置

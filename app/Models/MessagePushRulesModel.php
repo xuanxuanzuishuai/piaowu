@@ -35,6 +35,8 @@ class MessagePushRulesModel extends Model
     const PUSH_TARGET_YEAR_CARD   = 4; // 年卡C级用户
     const PUSH_TARGET_TRIAL       = 5; // 体验C级用户
     const PUSH_TARGET_REGISTER    = 6; // 注册C级用户
+    const PUSH_TARGET_ONLY_TRAIL  = 7; // 付费体验课用户
+    const PUSH_TARGET_ONLY_YEAR   = 8; // 付费年卡用户
     const PUSH_TARGET_DICT = [
         self::PUSH_TARGET_ALL         => '全部用户',
         self::PUSH_TARGET_CLASS_DAY_0 => '当日开班用户',
@@ -42,6 +44,8 @@ class MessagePushRulesModel extends Model
         self::PUSH_TARGET_YEAR_CARD   => '年卡C级用户',
         self::PUSH_TARGET_TRIAL       => '体验C级用户',
         self::PUSH_TARGET_REGISTER    => '注册C级用户',
+        self::PUSH_TARGET_ONLY_TRAIL  => '付费体验课用户',
+        self::PUSH_TARGET_ONLY_YEAR   => '付费正式课用户'
     ];
 
     /**

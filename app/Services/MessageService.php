@@ -39,8 +39,8 @@ class MessageService
     const PUSH_MESSAGE_RULE_KEY = 'push_message_rules';
     //用户接收微信消息的限制
     const PUSH_MESSAGE_RULE = [
-        ['expire_time' => '14400', 'limit' => 1],
-        ['expire_time' => '172800', 'limit' => 2]
+        ['expire_time' => '14400', 'limit' => 3],
+        ['expire_time' => '172800', 'limit' => 4]
     ];
     //用户消息规则key
     const MESSAGE_RULE_KEY = 'message_rule_key_';
@@ -430,14 +430,23 @@ class MessageService
      */
     public static function transformOpenidRelateRule($data)
     {
-        if (!in_array($data['rule_id'], DictConstants::getValues(DictConstants::MESSAGE_RULE, [
+        //年卡c体验c注册c
+        if (in_array($data['rule_id'], DictConstants::getValues(DictConstants::MESSAGE_RULE, [
             'year_user_c_rule_id',
             'trail_user_c_rule_id',
             'register_user_c_rule_id'
         ]))) {
+            $data['rule_id'] = self::judgeUserRelateRuleId($data['open_id']);
             return $data;
         }
-        $data['rule_id'] = self::judgeUserRelateRuleId($data['open_id']);
+        //体验绑定，年卡绑定
+        if (in_array($data['rule_id'], DictConstants::getValues(DictConstants::MESSAGE_RULE, [
+            'only_trail_rule_id',
+            'only_year_rule_id'
+        ]))) {
+            $data['rule_id'] = self::boundJudgeUserRuleId($data['open_id']);
+            return $data;
+        }
         return $data;
     }
 
@@ -543,9 +552,44 @@ class MessageService
     }
 
     /**
+     * 用户绑定后发送消息
+     * @param $openId
+     * @param $appId
+     * @param $userType
+     * @param $busiType
+     */
+    public static function boundWxActionDealMessage($openId, $appId, $userType, $busiType)
+    {
+        if ($appId != UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT || $userType != UserWeixinModel::USER_TYPE_STUDENT || $busiType != UserWeixinModel::BUSI_TYPE_STUDENT_SERVER) {
+            return;
+        }
+        $ruleId = self::boundJudgeUserRuleId($openId);
+        if (!empty($ruleId)) {
+            self::sendMessage($openId, $ruleId);
+        }
+    }
+
+    /**
+     * 当前绑定用户适用哪种规则消息
+     * @param $openId
+     * @return mixed|null
+     */
+    private static function boundJudgeUserRuleId($openId)
+    {
+        $userWx = UserWeixinModel::getBoundInfoByOpenId($openId, UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT, UserWeixinModel::USER_TYPE_STUDENT, UserWeixinModel::BUSI_TYPE_STUDENT_SERVER);
+        $studentInfo = !empty($userWx['user_id']) ? StudentModel::getById($userWx['user_id']) : NULL;
+        $arr = [
+            ReviewCourseModel::REVIEW_COURSE_NO => NULL,
+            ReviewCourseModel::REVIEW_COURSE_49 => DictConstants::get(DictConstants::MESSAGE_RULE, 'only_trail_rule_id'),
+            ReviewCourseModel::REVIEW_COURSE_1980 => DictConstants::get(DictConstants::MESSAGE_RULE, 'only_year_rule_id')
+        ];
+        return $arr[$studentInfo['has_review_course']] ?? NULL;
+    }
+
+    /**
+     * 与公众号交互 当前交互用户适用哪类推送
      * @param $openId
      * @return array|mixed|void|null
-     * 当前交互用户适用哪类推送
      */
     public static function judgeUserRelateRuleId($openId)
     {

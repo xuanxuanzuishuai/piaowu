@@ -8,6 +8,7 @@
 namespace App\Models;
 
 use App\Libs\MysqlDB;
+use App\Services\MessageService;
 
 
 class UserWeixinModel extends Model
@@ -105,7 +106,7 @@ class UserWeixinModel extends Model
             ]
         ], false);
 
-        return self::insertRecord([
+        $result = self::insertRecord([
             "open_id" => $openId,
             "user_id" => $userId,
             "app_id" => $appId,
@@ -113,6 +114,8 @@ class UserWeixinModel extends Model
             "busi_type" => $busiType,
             "status" => self::STATUS_NORMAL,
         ], false);
+        MessageService::boundWxActionDealMessage($openId, $appId, $userType, $busiType);
+        return $result;
     }
 
     /**
