@@ -37,10 +37,14 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 class MessageService
 {
     const PUSH_MESSAGE_RULE_KEY = 'push_message_rules';
-    //用户接收微信消息的限制
+    //用户接收微信消息整体规则的限制
     const PUSH_MESSAGE_RULE = [
         ['expire_time' => '14400', 'limit' => 3],
         ['expire_time' => '172800', 'limit' => 4]
+    ];
+    //用户接收微信消息单一规则的限制
+    const PER_RULE_MESSAGE_RULE = [
+        ['expire_time' => '600', 'limit' => 1],
     ];
     //用户消息规则key
     const MESSAGE_RULE_KEY = 'message_rule_key_';
@@ -321,7 +325,7 @@ class MessageService
             return;
         }
         //记录发送限制
-        self::recordUserMessageRuleLimit($data['open_id']);
+        self::recordUserMessageRuleLimit($data['open_id'], $data['rule_id']);
     }
 
     /**
@@ -480,7 +484,7 @@ class MessageService
             return;
         }
         //是否超过次数限制
-        if (self::judgeOverMessageRuleLimit($openId)) {
+        if (self::judgeOverMessageRuleLimit($openId, $ruleId)) {
             return;
         }
         //是否开启
@@ -508,12 +512,24 @@ class MessageService
 
     /**
      * @param $openId
+     * @param $ruleId
      * @return bool
      * 判断当前用户是否超过限制条数
      */
-    public static function judgeOverMessageRuleLimit($openId)
+    public static function judgeOverMessageRuleLimit($openId, $ruleId)
     {
         $redis = RedisDB::getConn();
+        //单个规则是否超过
+        foreach (self::PER_RULE_MESSAGE_RULE as $value) {
+            $key = self::MESSAGE_RULE_KEY . $value['expire_time'] . '_' . $ruleId . '_' . $openId;
+            $num = intval($redis->get($key));
+            if ($num >= $value['limit']) {
+                SimpleLogger::info('message over num per rule limit ', ['expire_time' => $value['expire_time'], 'open_id' => $openId, 'rule_id' => $ruleId]);
+                return true;
+            }
+        }
+
+        //整体规则限制是否超过
         foreach (self::PUSH_MESSAGE_RULE as $v) {
             $key = self::MESSAGE_RULE_KEY . $v['expire_time'] . '_' .  $openId;
             $num = intval($redis->get($key));
@@ -526,16 +542,22 @@ class MessageService
     }
 
     /**
-     * @param $openId
      * 记录用户有效时间消息发送的条数
+     * @param $openId
+     * @param $ruleId
      */
-    public static function recordUserMessageRuleLimit($openId)
+    public static function recordUserMessageRuleLimit($openId, $ruleId)
     {
         $redis = RedisDB::getConn();
         array_map(function ($item) use($redis, $openId) {
             $value = $redis->get(self::MESSAGE_RULE_KEY . $item['expire_time'] . '_' .  $openId);
             $redis->setex(self::MESSAGE_RULE_KEY . $item['expire_time'] . '_' . $openId, $item['expire_time'], (int)$value + 1);
         },self::PUSH_MESSAGE_RULE);
+
+        array_map(function ($item) use($redis, $openId, $ruleId) {
+            $value = $redis->get(self::MESSAGE_RULE_KEY . $item['expire_time'] . '_' . $ruleId . '_' . $openId);
+            $redis->setex(self::MESSAGE_RULE_KEY . $item['expire_time'] . '_' . $ruleId . '_' . $openId, $item['expire_time'], (int)$value + 1);
+        },self::PER_RULE_MESSAGE_RULE);
     }
 
     /**
