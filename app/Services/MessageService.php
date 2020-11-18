@@ -564,6 +564,10 @@ class MessageService
      */
     public static function recordUserMessageRuleLimit($openId, $ruleId)
     {
+        //首关不记录
+        if ($ruleId == DictConstants::get(DictConstants::MESSAGE_RULE, 'subscribe_rule_id')) {
+            return;
+        }
         $redis = RedisDB::getConn();
         array_map(function ($item) use($redis, $openId) {
             $key = self::getMessageKey($openId, $item['expire_time']);
