@@ -795,19 +795,6 @@ class InteractiveClassroomService
         }
         //获取所有可报名课包
         $singUpCourse = self::recommendCourse($opn, $studentId);
-//        $singUpCourseData = array_combine(array_column($singUpCourse, 'collection_id'), $singUpCourse);
-//        //获取用户购买的课包
-//        $studentBingCourse = StudentSignUpCourseModel::getRecords(['student_id'=> $studentId, 'bind_status' => StudentSignUpCourseModel::COURSE_BING_SUCCESS]);
-//        $studentBingCourseData = array_combine(array_column($studentBingCourse, 'collection_id'), $studentBingCourse);
-//        //统计用户已上课次数
-//        $studentLearnCount = StudentLearnRecordModel::getStudentLearnCount($studentId);
-//
-//        foreach ($singUpCourseData as $key => $value){
-//            $value['course_bind_status'] = $studentBingCourseData[$value['collection_id']] ? (INT)$studentBingCourseData[$value['collection_id']]['bind_status'] : StudentSignUpCourseModel::COURSE_BING_ERROR;
-//            $value['attend_class_count'] = $studentBingCourseData[$value['collection_id']] ? (INT)$studentLearnCount[$value['collection_id']]['attend_class_count'] : Constants::STATUS_FALSE;
-//            $result[] = $value;
-//        }
-//        return $result ?? [];
 
         return array_values($singUpCourse) ?? [];
     }
@@ -983,14 +970,6 @@ class InteractiveClassroomService
 
             StudentSignUpCourseModel::insertRecord(['student_id' => $studentId, 'collection_id' => $collectionId, 'bind_status' => StudentSignUpCourseModel::COURSE_BING_SUCCESS, 'start_week' => $startWeek,  'start_time' => strtotime(date('Y-m-d').$startTime), 'create_time' => $time, 'update_time' => $time, 'first_course_time' => $firstCourseTime]);
         }
-        //获取课包的最后时间
-        $courseLastTime = self::calculationCourseLastTime($opn, $studentId, $collectionId, $firstCourseTime);
-        $startMonth = date('m', $signUpData['first_course_time']);
-        $endMonth = date('m', $courseLastTime);
-        for ($i = 0; $i <= $endMonth - $startMonth; $i++) {
-            $delMonth = $startMonth + $i;
-            StudentSignUpCourseModel::delStudentMonthRedis($studentId, $delMonth);
-        }
         return true;
     }
 
@@ -1040,14 +1019,6 @@ class InteractiveClassroomService
             throw new RunTimeException(['record_not_found']);
         }
         StudentSignUpCourseModel::updateRecord($signUpData['id'], ['bind_status' => StudentSignUpCourseModel::COURSE_BING_CANCEL, 'update_time' => time()]);
-        //获取课包的最后时间
-        $courseLastTime = self::calculationCourseLastTime($opn, $studentId, $collectionId, $signUpData['first_course_time']);
-        $startMonth = date('m', $signUpData['first_course_time']);
-        $endMonth = date('m', $courseLastTime);
-        for ($i = 0; $i <= $endMonth - $startMonth; $i++) {
-            $delMonth = $startMonth + $i;
-            StudentSignUpCourseModel::delStudentMonthRedis($studentId, $delMonth);
-        }
     }
 
     /**
@@ -1089,7 +1060,6 @@ class InteractiveClassroomService
         if (empty($insertRes)) {
             throw new RunTimeException(['insert_failure']);
         }
-        StudentSignUpCourseModel::delStudentMonthRedis($studentId,substr($createTime, 5, -3));
     }
 
     /**
@@ -1106,13 +1076,6 @@ class InteractiveClassroomService
 
         $startTime = strtotime($year . "-" . $month);
         $endTime = strtotime('+1 month', $startTime) - 1;
-
-        $cacheKey = StudentSignUpCourseModel::STUDENT_LEARN_MONTH_CALENDAR . $studentId . '_'. $month;
-        $redis = RedisDB::getConn();
-        $cacheRes = $redis->get($cacheKey);
-        if (!empty($cacheRes)) {
-            return json_decode($cacheRes, true);
-        }
 
         //获取学生报名的所有课包
         $studentAllBindCourse = StudentSignUpCourseModel::getStudentBindCourse($studentId, $endTime);
@@ -1141,7 +1104,6 @@ class InteractiveClassroomService
             $item['class_status'] = $classStatus;
             $resultRes[] = $item;
         }
-        $redis->set($cacheKey, json_encode($resultRes));
         return $resultRes ?? [];
     }
 
@@ -1160,38 +1122,21 @@ class InteractiveClassroomService
         //获取每个课包的节数
         $collectionLessonIds = self::getLessonIds($opn, $collectionIds);
         foreach ($collectionLessonIds as $key => $collectionLessonId) {
-            $collectionCount[$key] = count($collectionLessonId['payLessonList']) - 1;
+            $collectionCount[$key] = count($collectionLessonId['payLessonList']);
         }
 
         foreach ($studentAllBindCourse as $courseKey => $courseValue) {
-            $courseLastTime = $courseValue['first_course_time'] + ($collectionCount[$courseKey] * StudentSignUpCourseModel::A_WEEK) * 86400;
+            $courseLastTime = $courseValue['first_course_time'] + ($collectionCount[$courseKey] - 1 ) * StudentSignUpCourseModel::A_WEEK * 86400;
             $res1 = $courseValue['first_course_time'] < $startTime && $courseLastTime > $endTime;
             $res2 = $courseValue['first_course_time'] < $startTime && $courseLastTime < $endTime;
             $res3 = $courseValue['first_course_time'] > $startTime && $courseLastTime > $endTime;
             $res4 = $courseValue['first_course_time'] > $startTime && $courseLastTime < $endTime;
             if ($res1 || $res2 || $res3 || $res4) {
+                $courseValue['lesson_count'] = $collectionCount[$courseKey];
                 $collectionResult[] = $courseValue;
             }
         }
         return $collectionResult ?? [];
-    }
-
-    /**
-     * 计算一个课包的结束时间
-     * @param $opn
-     * @param $studentId
-     * @param $collectionId
-     * @param $firstCourseTime
-     * @return string
-     */
-    public static function calculationCourseLastTime($opn, $studentId, $collectionId, $firstCourseTime)
-    {
-        $collectionLessonIds = self::getLessonIds($opn, [$collectionId]);
-        if (empty($collectionLessonIds[$collectionId])) {
-            return  '';
-        }
-        $collectionCount = count($collectionLessonIds[$collectionId]['payLessonList']) - 1;
-        return $firstCourseTime + ($collectionCount * StudentSignUpCourseModel::A_WEEK) * 86400;
     }
 
     /**
