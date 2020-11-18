@@ -217,7 +217,7 @@ class ReferralService
         if (!empty($mobile) && isset($mobile[0]['mobile'])) {
             $data['mobile'] = $mobile[0]['mobile'];
             $data['uuid'] = $mobile[0]['uuid'];
-            $data['had_purchased'] = !empty(GiftCodeModel::hadPurchasePackageByType($mobile[0]['id']));
+            $data['had_purchased'] = !empty(GiftCodeModel::hadPurchasePackageByType($mobile[0]['id'], PackageExtModel::PACKAGE_TYPE_TRIAL, false));
         }
         return $data;
     }
@@ -402,7 +402,7 @@ class ReferralService
                 'app_id'    => self::REFERRAL_MINIAPP_ID, // 转介绍小程序
             ], false);
         }
-        $hadPurchased = !empty(GiftCodeModel::hadPurchasePackageByType($lastId));
+        $hadPurchased = !empty(GiftCodeModel::hadPurchasePackageByType($lastId, PackageExtModel::PACKAGE_TYPE_TRIAL, false));
         return [$openId, $lastId, $mobile, $uuid, $hadPurchased];
     }
 

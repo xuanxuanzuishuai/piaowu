@@ -671,7 +671,7 @@ class ReviewCourseService
         } else {
             // 年包 && 首购智能陪练正式课
             if ($package['package_type'] == PackageExtModel::PACKAGE_TYPE_NORMAL) {
-                $res = GiftCodeModel::hadPurchasePackageByType($student['id'], PackageService::PACKAGE_TYPE_NORMAL);
+                $res = GiftCodeModel::hadPurchasePackageByType($student['id'], PackageExtModel::PACKAGE_TYPE_NORMAL);
                 $hadPurchaseCount = count($res);
                 if ($hadPurchaseCount <= 1) {
                     return true;

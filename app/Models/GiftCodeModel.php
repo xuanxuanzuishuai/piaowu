@@ -463,10 +463,12 @@ WHERE
 
     /**
      * 判断用户是否有购买过体验或正式课包
-     * @param $mobile
+     * @param $studentID
+     * @param int $type
+     * @param bool $verifyCode 是否验证Code Status
      * @return array|null
      */
-    public static function hadPurchasePackageByType($studentID, $type = PackageExtModel::PACKAGE_TYPE_TRIAL)
+    public static function hadPurchasePackageByType($studentID, $type = PackageExtModel::PACKAGE_TYPE_TRIAL, $verifyCode = true)
     {
         if ($type == PackageExtModel::PACKAGE_TYPE_NORMAL) {
             $packageIdArr = array_column(PackageExtModel::getPackages(['package_type' => PackageExtModel::PACKAGE_TYPE_NORMAL, 'app_id' => PackageExtModel::APP_AI]), 'package_id');
@@ -495,9 +497,9 @@ WHERE
                 `bill_package_id` in (" . implode(',', $packageIdArr) . ")
                 AND `bill_app_id` = " . PackageExtModel::APP_AI .
                 $keyCondition . "
-                AND `package_v1` = ". self::PACKAGE_V1_NOT . "
-                AND `code_status` in (" . implode(',', $codeStatusList) . ")
-            ) ";
+                AND `package_v1` = ". self::PACKAGE_V1_NOT .
+                ($verifyCode ? " AND `code_status` in (".implode(',', $codeStatusList).") " : '')."
+            )";
         if (!empty($v1PackageIdArr)) {
             $sql .= "
             OR 
@@ -505,8 +507,8 @@ WHERE
                 `bill_package_id` in (" . implode(',', $v1PackageIdArr) . ")
                 AND `bill_app_id` = " . PackageExtModel::APP_AI .
                 $keyCondition . "
-                AND `package_v1` = ". self::PACKAGE_V1 . "
-                AND `code_status` in (" . implode(',', $codeStatusList) . ")
+                AND `package_v1` = ". self::PACKAGE_V1 .
+                ($verifyCode ? " AND `code_status` in (".implode(',', $codeStatusList).") " : ''). "
             ) 
             ";
         }
