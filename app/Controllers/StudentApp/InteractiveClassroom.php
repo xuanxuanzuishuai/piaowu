@@ -159,7 +159,7 @@ class InteractiveClassroom extends ControllerBase
         $studentId = $this->ci['student']['id'];
         try {
             $opn = new OpernCenter(OpernCenter::PRO_ID_INTERACTION_CLASSROOM, OpernCenter::version);
-            InteractiveClassroomService::collectionSignUp($opn, $studentId, $params['collection_id'], $params['lesson_count'], $params['start_week'], $params['start_time']);
+            InteractiveClassroomService::collectionSignUp($opn, $studentId, $params['collection_id'], $params['start_week'], $params['start_time']);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }

@@ -351,6 +351,7 @@ class InteractiveClassroomService
             }
 
             $data[] = [
+                'course_bind_status'     => $lastRecordKeyByCollectionId[$v['collection_id']]['bind_status'],
                 'lesson_id'              => $v['id'],
                 'lesson_name'            => $v['name'],
                 "lesson_start_time"      => date('H:i', $courseStartTime),
@@ -947,13 +948,12 @@ class InteractiveClassroomService
      * @param $opn
      * @param $studentId
      * @param $collectionId
-     * @param $lessonCount
      * @param $startWeek
      * @param $startTime
      * @return bool
      * @throws RunTimeException
      */
-    public static function collectionSignUp($opn, $studentId, $collectionId, $lessonCount, $startWeek, $startTime)
+    public static function collectionSignUp($opn, $studentId, $collectionId, $startWeek, $startTime)
     {
 
         $student = StudentModel::getById($studentId);
@@ -981,7 +981,7 @@ class InteractiveClassroomService
             //获取用户开始上课&结束上课的时间戳
             $firstCourseTime= self::calculationCourseTime($time, $startWeek, $startTime);
 
-            StudentSignUpCourseModel::insertRecord(['student_id' => $studentId, 'collection_id' => $collectionId, 'bind_status' => StudentSignUpCourseModel::COURSE_BING_SUCCESS, 'lesson_count' => $lessonCount, 'start_week' => $startWeek,  'start_time' => strtotime(date('Y-m-d').$startTime), 'create_time' => $time, 'update_time' => $time, 'first_course_time' => $firstCourseTime]);
+            StudentSignUpCourseModel::insertRecord(['student_id' => $studentId, 'collection_id' => $collectionId, 'bind_status' => StudentSignUpCourseModel::COURSE_BING_SUCCESS, 'start_week' => $startWeek,  'start_time' => strtotime(date('Y-m-d').$startTime), 'create_time' => $time, 'update_time' => $time, 'first_course_time' => $firstCourseTime]);
         }
         //获取课包的最后时间
         $courseLastTime = self::calculationCourseLastTime($opn, $studentId, $collectionId, $firstCourseTime);
