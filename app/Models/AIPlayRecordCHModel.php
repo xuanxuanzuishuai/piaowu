@@ -70,7 +70,7 @@ class AIPlayRecordCHModel
                   AND apr.score_final >=:rank_base_score
                   AND apr.end_time >=:start_time
                   AND apr.end_time <:end_time
-                order by score_final desc, record_id desc
+                order by score_final desc, record_id asc
                 limit 1 by lesson_id, student_id) as tmp limit :rank_limit by tmp.lesson_id";
 
         $map = [
