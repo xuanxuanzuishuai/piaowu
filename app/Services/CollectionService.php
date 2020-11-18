@@ -563,7 +563,7 @@ class CollectionService
         $referralConfig = PosterModel::getRecord(["apply_type" => PosterModel::APPLY_TYPE_STUDENT_WECHAT, "status" => PosterModel::STATUS_PUBLISH, "poster_type" => PosterModel::POSTER_TYPE_WECHAT_STANDARD], ['url', 'settings', 'content1', 'content2']);
         $settings = json_decode($referralConfig['settings'], true);
         //生成二维码海报
-        $collection['recommend_info'] = UserService::generateQRPosterAliOss($userInfo['id'], $referralConfig['url'], UserQrTicketModel::STUDENT_TYPE, $settings['poster_width'], $settings['poster_height'], $settings['qr_width'], $settings['qr_height'], $settings['qr_x'], $settings['qr_y'], DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'BUY_TRAIL_STUDENT_INVITE_STUDENT'), UserQrTicketModel::LANDING_TYPE_NORMAL);
+        $collection['recommend_info'] = UserService::generateQRPosterAliOss($userInfo['id'], $referralConfig['url'], UserQrTicketModel::STUDENT_TYPE, $settings['poster_width'], $settings['poster_height'], $settings['qr_width'], $settings['qr_height'], $settings['qr_x'], $settings['qr_y'], DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'BUY_TRAIL_STUDENT_INVITE_STUDENT'), UserQrTicketModel::LANDING_TYPE_MINIAPP);
         //返回结果
         return $collection;
     }
