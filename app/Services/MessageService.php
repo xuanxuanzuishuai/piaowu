@@ -320,10 +320,6 @@ class MessageService
             //推送日志记录
             MessageRecordService::addRecordLog($data['open_id'], MessageRecordModel::AUTO_PUSH, $data['rule_id'], $res);
         }
-        //首关不记录
-        if ($data['rule_id'] == DictConstants::get(DictConstants::MESSAGE_RULE, 'subscribe_rule_id')) {
-            return;
-        }
         //记录发送限制
         self::recordUserMessageRuleLimit($data['open_id'], $data['rule_id']);
     }
@@ -505,9 +501,29 @@ class MessageService
     public static function clearMessageRuleLimit($openId)
     {
         $redis = RedisDB::getConn();
+        //整体限制清除
         array_map(function ($item)use($redis, $openId){
-            $redis->del([self::MESSAGE_RULE_KEY . $item['expire_time'] . '_' . $openId]);
+            $redis->del([self::getMessageKey($openId, $item['expire_time'])]);
         }, self::PUSH_MESSAGE_RULE);
+        //单一规则清除
+        $allRule = MessagePushRulesModel::getRecords(['id[>]' => 0], ['id']);
+        array_map(function ($item)use($redis, $openId, $allRule){
+            array_map(function ($i) use($redis, $openId, $item){
+                $redis->del([self::getMessageKey($openId, $item['expire_time'], $i['id'])]);
+            },$allRule);
+        }, self::PER_RULE_MESSAGE_RULE);
+    }
+
+    /**
+     * 消息存储key
+     * @param $openId
+     * @param $expireTime
+     * @param null $ruleId
+     * @return string
+     */
+    private static function getMessageKey($openId, $expireTime, $ruleId = NULL)
+    {
+        return empty($ruleId) ? self::MESSAGE_RULE_KEY . $openId . '_' .$expireTime  : self::MESSAGE_RULE_KEY . $openId . '_' . $expireTime . '_' . $ruleId;
     }
 
     /**
@@ -521,7 +537,7 @@ class MessageService
         $redis = RedisDB::getConn();
         //单个规则是否超过
         foreach (self::PER_RULE_MESSAGE_RULE as $value) {
-            $key = self::MESSAGE_RULE_KEY . $value['expire_time'] . '_' . $ruleId . '_' . $openId;
+            $key = self::getMessageKey($openId, $value['expire_time'], $ruleId);
             $num = intval($redis->get($key));
             if ($num >= $value['limit']) {
                 SimpleLogger::info('message over num per rule limit ', ['expire_time' => $value['expire_time'], 'open_id' => $openId, 'rule_id' => $ruleId]);
@@ -531,7 +547,7 @@ class MessageService
 
         //整体规则限制是否超过
         foreach (self::PUSH_MESSAGE_RULE as $v) {
-            $key = self::MESSAGE_RULE_KEY . $v['expire_time'] . '_' .  $openId;
+            $key = self::getMessageKey($openId, $v['expire_time']);
             $num = intval($redis->get($key));
             if ($num >= $v['limit']) {
                 SimpleLogger::info('message over num limit ', ['expire_time' => $v['expire_time'], 'open_id' => $openId]);
@@ -550,13 +566,15 @@ class MessageService
     {
         $redis = RedisDB::getConn();
         array_map(function ($item) use($redis, $openId) {
-            $value = $redis->get(self::MESSAGE_RULE_KEY . $item['expire_time'] . '_' .  $openId);
-            $redis->setex(self::MESSAGE_RULE_KEY . $item['expire_time'] . '_' . $openId, $item['expire_time'], (int)$value + 1);
+            $key = self::getMessageKey($openId, $item['expire_time']);
+            $value = $redis->get($key);
+            $redis->setex($key, $item['expire_time'], (int)$value + 1);
         },self::PUSH_MESSAGE_RULE);
 
         array_map(function ($item) use($redis, $openId, $ruleId) {
-            $value = $redis->get(self::MESSAGE_RULE_KEY . $item['expire_time'] . '_' . $ruleId . '_' . $openId);
-            $redis->setex(self::MESSAGE_RULE_KEY . $item['expire_time'] . '_' . $ruleId . '_' . $openId, $item['expire_time'], (int)$value + 1);
+            $key = self::getMessageKey($openId, $item['expire_time'], $ruleId);
+            $value = $redis->get($key);
+            $redis->setex($key, $item['expire_time'], (int)$value + 1);
         },self::PER_RULE_MESSAGE_RULE);
     }
 
