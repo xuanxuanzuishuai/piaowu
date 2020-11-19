@@ -70,7 +70,7 @@ class DingDing
         $params['app_id'] = self::SELF_APP_ID;
         $data = HttpHelper::requestJson($this->host . self::APPLY_DETAIL, $params, 'GET');
         if ($data['code'] != Valid::CODE_SUCCESS) {
-            throw new RunTimeException([$data['code']]);
+            throw new RunTimeException([self::getErrorCodeMsg($data['code'])]);
         }
         return $data['data'];
     }

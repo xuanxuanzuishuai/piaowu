@@ -13,6 +13,7 @@ use App\Libs\DictConstants;
 use App\Libs\DingDing;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\EmployeeModel;
@@ -45,6 +46,8 @@ class ApplyAwardService
             throw new RunTimeException(['not_bind_ding_ding']);
         }
         $awardInfo = ErpReferralService::getExpectTaskIdRelateAward($eventTaskId);
+        $db = MysqlDB::getDB();
+        $db->beginTransaction();
         $id = ApplyAwardModel::insertRecord(['supply_employee_uuid' => $employeeInfo['uuid'],
             'student_id' => $studentId,
             'expect_event_task_id' => $eventTaskId,
@@ -72,9 +75,11 @@ class ApplyAwardService
             ]
         );
         if (empty($data['workflow_instance_id'])) {
+            $db->rollBack();
             throw new RunTimeException(['ding_ding_request_error']);
         }
         ApplyAwardModel::updateRecord($id, ['workflow_id' => $data['workflow_instance_id']]);
+        $db->commit();
     }
 
     /**

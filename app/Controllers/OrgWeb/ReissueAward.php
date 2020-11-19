@@ -69,7 +69,7 @@ class ReissueAward extends ControllerBase
         try{
             ApplyAwardService::applyAward($this->getEmployeeId(), $params['student_id'], $params['event_task_id'], $params['reissue_reason'], $params['image_key_arr']);
         } catch (RunTimeException $e) {
-            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
 
         return HttpHelper::buildResponse($response, []);
@@ -139,7 +139,12 @@ class ReissueAward extends ControllerBase
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        $data = ApplyAwardService::getApplyDetail($params['id']);
+
+        try {
+            $data = ApplyAwardService::getApplyDetail($params['id']);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
         return HttpHelper::buildResponse($response, ['data' => $data]);
     }
 }
