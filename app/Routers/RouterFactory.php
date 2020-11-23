@@ -23,46 +23,15 @@ class RouterFactory
      * 其他情况为 org_web
      */
     const CLIENT_STUDENT_APP = 'student_app'; // AI练琴
-    const CLIENT_TEACHER_APP = 'teacher_app'; // 智能琴房
-    const CLIENT_STUDENT_WX = 'student_wx'; // 家长微信
-    const CLIENT_STUDENT_ORG_WX = 'student_org_wx'; // 机构微信
-    const CLIENT_STUDENT_PANDA_WX = 'student_panda_wx'; // 机构微信
-    const CLIENT_STUDENT_WEB = 'student_web'; // AI练琴Web页面
-    const CLIENT_TEACHER_WX = 'teacher_wx'; // 老师微信
     const CLIENT_ORG_WEB = 'org_web'; // 机构后台
-    const CLIENT_ADMIN = 'admin'; // 系统管理后台
     const CLIENT_API = 'api'; // 外部api调用
-    const CLIENT_EXAM_MINAPP = 'exam'; //音基小程序
-    const CLIENT_DD_EXAM_MINAPP = 'dd_exam'; //钉钉音基小程序
-    const CLIENT_CLASSROOM_APP = 'classroom_app'; //集体课
-    const CLIENT_CLASSROOM_TEACHER_WX = 'classroom_teacher_wx'; //TheONE国际钢琴课公众号老师端
-    const CLIENT_REFERRAL_MINIAPP = 'referral_miniapp'; // 转介绍
-    const CLIENT_OPERN_MINIAPP = 'opern_miniapp'; // 曲谱大作战小程序
-    const CLIENT_STAVE_APP = 'stave_app'; // 识谱大作战APP
     const CLIENT_SALES_MASTER = 'sales_master'; // 鲸鱼跳跃
 
     /**
      * client_type 对应的 Router class
      */
     const ROUTER_CLASSES = [
-        self::CLIENT_STUDENT_APP => StudentAppRouter::class, // AI练琴APP
-        self::CLIENT_TEACHER_APP => TeacherAppRouter::class, // 智能琴房APP
-        self::CLIENT_STUDENT_WX => StudentWXRouter::class, // 家长微信
-        self::CLIENT_STUDENT_ORG_WX => StudentWXRouter::class, // 直营机构微信，和家长微信共用一个class
-        self::CLIENT_STUDENT_PANDA_WX => StudentWXRouter::class, // 小叶子(熊猫)陪练微信，和家长微信共用一个class
-        self::CLIENT_STUDENT_WEB => StudentWebRouter::class,
-        self::CLIENT_TEACHER_WX => TeacherWXRouter::class, // 老师微信
         self::CLIENT_ORG_WEB => OrgWebRouter::class, // 机构后台
-        self::CLIENT_ADMIN => AdminRouter::class, // 系统管理后台
-        self::CLIENT_API => APIRouter::class, // 外部api调用
-        self::CLIENT_EXAM_MINAPP => ExamMinAppRouter::class, //音基小程序
-        self::CLIENT_DD_EXAM_MINAPP => DDExamMinAppRouter::class, //音基小程序
-        self::CLIENT_CLASSROOM_APP => ClassroomAppRouter::class, //集体课
-        self::CLIENT_CLASSROOM_TEACHER_WX => ClassroomTeacherWXRouter::class, //TheONE国际钢琴课公众号老师端
-        self::CLIENT_REFERRAL_MINIAPP => ReferralMinAppRouter::class, // 转介绍小程序
-        self::CLIENT_OPERN_MINIAPP => OpernMinAppRouter::class, // 曲谱大作战小程序
-        self::CLIENT_STAVE_APP => StaveAppRouter::class, // 识谱大作战APP
-        self::CLIENT_SALES_MASTER => SalesMasterRouter::class, // 鲸鱼跳跃
     ];
 
     /**
