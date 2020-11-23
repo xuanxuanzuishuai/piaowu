@@ -16,7 +16,7 @@ use Slim\Http\StatusCode;
 
 class Erp
 {
-    const SELF_APP_ID = 8;
+    const SELF_APP_ID = 19;
 
     const RSP_CODE_SUCCESS = 0;
 
