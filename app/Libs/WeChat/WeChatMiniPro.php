@@ -63,7 +63,7 @@ class WeChatMiniPro
     public function getAccessToken()
     {
         $accessToken = RedisDB::getConn()->get($this->getWxAccessTokenKey($this->nowWxApp));
-        //没有处理
+        //空处理
         if (empty($accessToken)) {
             $this->refreshAccessToken();
         }
