@@ -1,1 +1,0 @@
-INSERT INTO `privilege` (`name`, `uri`, `created_time`, `method`, `is_menu`, `parent_id`, `unique_en_name`) VALUES ('机构作废激活码', '/boss/gift_code/abandon_for_org', '1561367570', 'post', '0', '228', 'abandon_for_org');

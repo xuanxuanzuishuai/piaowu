@@ -1,0 +1,1 @@
+INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES ('SERVICE_CONFIG', '外部服务设置', 'dss_host', 'http://dss-dev.xiaoyezi.com', 'dss中心host');

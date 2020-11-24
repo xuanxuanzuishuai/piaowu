@@ -1,1 +1,0 @@
-insert into dict (type, key_name, key_code, key_value) value ('bill_pay_channel', '支付渠道', 11, 'pos机');

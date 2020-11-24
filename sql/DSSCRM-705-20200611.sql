@@ -1,1 +1,0 @@
-ALTER  TABLE  `ai_play_record`  ADD  INDEX record_id (`record_id`);

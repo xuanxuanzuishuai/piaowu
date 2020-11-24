@@ -1,1 +1,0 @@
-INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES ('STUDENT_INVITE', '学生转介绍渠道', 'BUY_TRAIL_STUDENT_INVITE_STUDENT', '2252', '体验课购买后转介绍');

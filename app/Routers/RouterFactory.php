@@ -32,6 +32,7 @@ class RouterFactory
      */
     const ROUTER_CLASSES = [
         self::CLIENT_ORG_WEB => OrgWebRouter::class, // 机构后台
+        self::CLIENT_API => APIRouter::class, // 外部api调用
     ];
 
     /**

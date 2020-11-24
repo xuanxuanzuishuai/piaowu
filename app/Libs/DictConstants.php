@@ -63,6 +63,7 @@ class DictConstants {
             'voice_url',
             'voice_templateId',
             'ai_class_http_host',
+            'dss_host'
         ]
     ];
 

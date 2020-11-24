@@ -9,6 +9,8 @@
 namespace App\Libs\WeChat;
 
 
+use App\Libs\Constants;
+use App\Libs\Dss;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use GuzzleHttp\Client;
@@ -18,37 +20,54 @@ use Slim\Http\StatusCode;
 class WeChatMiniPro
 {
     const WX_HOST = 'https://api.weixin.qq.com';
-    const API_GET_ACCESS_TOKEN = '/cgi-bin/token';
-    const API_SEND = '/cgi-bin/message/custom/send';
-    const API_TEMPLATE_SEND = '/cgi-bin/message/template/send';
-    const API_UPLOAD_IMAGE = '/cgi-bin/media/upload';
-    const API_SHORT_URL = '/cgi-bin/shorturl';
 
-    const CACHE_KEY = '%s';
-    const ACCESS_TOKEN_REFRESH_BEFORE = 120; // 提前一段时间刷新即将到期的access_token
+    const BASIC_WX_PREFIX = 'basic_wx_prefix_';
+    public $nowWxApp; //当前的微信应用
 
-    const TEMP_MEDIA_EXPIRE = 172800; // 临时media文件过期时间 2天
-    const SHORT_URL_EXPIRE = 86400 * 15; // 短链接缓存过期时间 15天
-    // access token 删除次数计数
-    const CACHE_DELETE_COUNTER = '%s_delete_counter';
-    // 最多删除access token次数
-    const CACHE_DELETE_LIMIT = 500;
-    private $appId = '';
-    private $appSecret = '';
 
-    public static function factory($config)
+    public static function factory($appId, $busiType)
     {
-        if (empty($config['app_id']) || empty($config['app_secret'])) {
-            return null;
-        }
-        $wx = new self($config);
-        return $wx;
+        $wxAppKey = self::getWxAppKey($appId, $busiType);
+        return new self($wxAppKey);
     }
 
     public function __construct($config)
     {
-        $this->appId = $config['app_id'];
-        $this->appSecret = $config['app_secret'];
+        $this->nowWxApp = $config;
+    }
+
+    /**
+     * 设置当前应用的access_token
+     * @param $accessToken
+     */
+    public function setAccessToken($accessToken)
+    {
+        RedisDB::getConn()->set($this->getWxAccessTokenKey($this->nowWxApp), $accessToken);
+    }
+
+    /**
+     * access_token key
+     * @param $app
+     * @return string
+     */
+    private function getWxAccessTokenKey($app)
+    {
+        return self::BASIC_WX_PREFIX . $app . '_access_token';
+    }
+
+    /**
+     * 得到当前应用的access_token
+     * @return string
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
+    public function getAccessToken()
+    {
+        $accessToken = RedisDB::getConn()->get($this->getWxAccessTokenKey($this->nowWxApp));
+        //没有处理
+        if (empty($accessToken)) {
+            $this->refreshAccessToken();
+        }
+        return RedisDB::getConn()->get($this->getWxAccessTokenKey($this->nowWxApp));
     }
 
     private function requestJson($api, $params = [], $method = 'GET')
@@ -97,191 +116,13 @@ class WeChatMiniPro
         return $res;
     }
 
-    public function apiUrl($api, $withToken = true)
-    {
-        if ($withToken) {
-            $token = $this->getAccessToken();
-            $query = '?' . http_build_query(['access_token' => $token]);
-        } else {
-            $query = '';
-        }
-        return self::WX_HOST . $api . $query;
-    }
-
-    private function accessTokenCacheKey()
-    {
-        // 此处的 key 和 WeChatService::getAccessToken() 方法里的保持一致，防止互相冲突刷新token
-        return sprintf(self::CACHE_KEY, $this->appId) . '_access_token';
-    }
-
-    private function tempMediaCacheKey($key)
-    {
-        return sprintf(self::CACHE_KEY, $this->appId) . '_temp_media_' . $key;
-    }
-
-    private function shortUrlCacheKey($url)
-    {
-        $key = md5($url);
-        return sprintf(self::CACHE_KEY, $this->appId) . '_short_url_' . $key;
-    }
-
-    private function getAccessToken()
-    {
-        $redis = RedisDB::getConn();
-        $cacheKey = $this->accessTokenCacheKey();
-        $cache = $redis->get($cacheKey);
-        if (!empty($cache)) {
-            return $cache;
-        }
-
-        $res = $this->requestAccessToken();
-        if (!empty($res['access_token'])) {
-            $minExpire = 1800;
-            $expireIn  = $res['expires_in'] - 120;
-            $expire    = $expireIn < $minExpire ? $expireIn :  $minExpire;
-            $redis->setex($cacheKey, $expire, $res['access_token']);
-        }
-
-        return $redis->get($cacheKey);
-    }
-
-    private function requestAccessToken()
-    {
-        $api = $this->apiUrl(self::API_GET_ACCESS_TOKEN, false);
-        $res = $this->requestJson($api, [
-            'appid' => $this->appId,
-            'secret' => $this->appSecret,
-            'grant_type' => 'client_credential'
-        ]);
-
-        if (empty($res['access_token'])) {
-            return false;
-        }
-
-        return $res;
-    }
-
-    private function send($openId, $type, $content)
-    {
-        $api = $this->apiUrl(self::API_SEND);
-
-        $params = [
-            'touser' => $openId,
-            'msgtype' => $type,
-            $type => $content
-        ];
-        return $this->requestJson($api, $params, 'POST');
-    }
-
-    public function sendText($openId, $content)
-    {
-        return $this->send($openId, 'text', ['content' => $content]);
-    }
-
-    public function sendImage($openId, $mediaId)
-    {
-        return $this->send($openId, 'image', ['media_id' => $mediaId]);
-    }
-
-    public function templateSend($openId, $templateId, $data, $url = NULL)
-    {
-        $api = $this->apiUrl(self::API_TEMPLATE_SEND);
-
-        $params = [
-            'touser' => $openId,
-            'template_id' => $templateId,
-            'data' => $data,
-            'url' => $url,
-        ];
-        return $this->requestJson($api, $params, 'POST');
-    }
-
-    public function getTempMedia($type, $tempKey, $url)
-    {
-        $redis = RedisDB::getConn();
-        $cacheKey = $this->tempMediaCacheKey($tempKey);
-        $cache = $redis->get($cacheKey);
-
-        if (!empty($cache)) {
-            $media = json_decode($cache, true);
-            return $media;
-        }
-
-        $content = file_get_contents($url);
-
-        SimpleLogger::info('download media file', [
-            'url' => $url,
-            'content_len' => strlen($content)
-        ]);
-
-        $res = self::uploadMedia($type, $tempKey, $content);
-
-        if (!empty($res['media_id'])) {
-            $redis->setex($cacheKey, self::TEMP_MEDIA_EXPIRE, json_encode($res));
-            return $res;
-        }
-
-        return false;
-    }
-
-    public function uploadMedia($type, $fileName, $content)
-    {
-        $api = $this->apiUrl(self::API_UPLOAD_IMAGE);
-
-        $params = [
-            'multipart' => [
-                [
-                    'name'     => 'type',
-                    'contents' => $type
-                ],
-                [
-                    'name'     => 'media',
-                    'filename' => $fileName,
-                    'contents' => $content,
-                ]
-            ],
-        ];
-        return $this->requestJson($api, $params, 'POST_FORM_DATA');
-    }
-
-    public function getShortUrl($url)
-    {
-        $redis = RedisDB::getConn();
-        $cacheKey = $this->shortUrlCacheKey($url);
-        $cache = $redis->get($cacheKey);
-
-        if (!empty($cache)) {
-            return $cache;
-        }
-
-        $res = self::createShortUrl($url);
-
-        if (!empty($res['short_url'])) {
-            $redis->setex($cacheKey, self::SHORT_URL_EXPIRE, $res['short_url']);
-            return $res['short_url'];
-        }
-
-        return false;
-
-    }
-
-    public function createShortUrl($url)
-    {
-        $api = $this->apiUrl(self::API_SHORT_URL);
-
-        $params = [
-            'action' => 'long2short',
-            'long_url' => $url,
-        ];
-
-        return $this->requestJson($api, $params, 'POST');
-    }
-
     /**
      * 生成带参数的小程序码
      * 注意参数最长32位
      * @param $params
-     * @return false|mixed|string
+     * @param bool $retry
+     * @return bool|string
+     * @throws \App\Libs\Exceptions\RunTimeException
      */
     public function getMiniappCodeImage($params, $retry = false)
     {
@@ -299,7 +140,7 @@ class WeChatMiniPro
         if (is_string($res) && strlen($res) > 0) {
             return $res;
         } elseif (is_array($res) && $res['errcode'] == 40001 && !$retry) {
-            self::delAccessToken();
+            $this->refreshAccessToken();
             return $this->getMiniappCodeImage($params, true);
         }
         SimpleLogger::error("[WeChatMiniPro] get mini app code error", [$res]);
@@ -307,25 +148,28 @@ class WeChatMiniPro
     }
 
     /**
-     * 当请求微信报错40001时删除access_token
-     * @return bool
+     * 实例化不同应用的基础key
+     * @param $appId
+     * @param $busiType
+     * @return string
      */
-    public function delAccessToken()
+    public static function getWxAppKey($appId, $busiType)
     {
-        $redis      = RedisDB::getConn();
-        $counterKey = sprintf(self::CACHE_DELETE_COUNTER, $this->appId);
-        $date       = date('Ymd');
-        $counter    = $redis->hget($counterKey, $date);
-        if (empty($counter)) {
-            $counter = 0;
+        return $appId . '_' . $busiType;
+    }
+
+    /**
+     * 刷新access_token
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
+    public function refreshAccessToken()
+    {
+        list($appId, $busiType) = explode('_', $this->nowWxApp);
+        if ($appId == Constants::SMART_APP_ID) {
+            $data = (new Dss())->updateAccessToken(['busi_type' => $busiType]);
+            if (!empty($data['access_token'])) {
+                $this->setAccessToken($data['access_token']);
+            }
         }
-        if ($counter < self::CACHE_DELETE_LIMIT) {
-            $cacheKey = $this->accessTokenCacheKey();
-            $redis->del([$cacheKey]);
-            $redis->hincrby($counterKey, $date, 1);
-            return true;
-        }
-        SimpleLogger::error("[WeChatMiniPro] max delete times reached", [$counterKey, $date, $counter]);
-        return false;
     }
 }

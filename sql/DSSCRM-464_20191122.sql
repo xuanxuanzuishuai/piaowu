@@ -1,3 +1,0 @@
-ALTER TABLE `student`
-  ADD COLUMN `last_play_time` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '最后练琴时间',
-  ADD COLUMN `last_review_time` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '最后点评时间';

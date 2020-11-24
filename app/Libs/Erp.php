@@ -13,11 +13,8 @@ use App\Services\ErpReferralService;
 use App\Services\EventService;
 use GuzzleHttp\Client;
 use Slim\Http\StatusCode;
-
 class Erp
 {
-    const SELF_APP_ID = 19;
-
     const RSP_CODE_SUCCESS = 0;
 
     //转介绍奖励和返现奖励的关联表不同
@@ -235,7 +232,7 @@ class Erp
     public function studentRegister($channelId, $mobile, $name, $refType = null, $refUuid = null, $countryCode = null)
     {
         $response = HttpHelper::requestJson($this->host . self::API_STUDENT_REGISTER, [
-            'app_id' => self::SELF_APP_ID,
+            'app_id' => Constants::SELF_APP_ID,
             'mobile' => $mobile,
             'country_code' => $countryCode,
             'name' => $name,
@@ -253,7 +250,7 @@ class Erp
      */
     public function referredList($params)
     {
-        $params['app_id'] = self::SELF_APP_ID;
+        $params['app_id'] = Constants::SELF_APP_ID;
         $response = HttpHelper::requestJson($this->host . self::API_REFERRED_LIST, $params);
         return $response;
     }
@@ -266,7 +263,7 @@ class Erp
      */
     public function eventTaskList($eventId = 0, $eventType = ErpReferralService::EVENT_TYPE_UPLOAD_POSTER)
     {
-        $params['app_id'] = self::SELF_APP_ID;
+        $params['app_id'] = Constants::SELF_APP_ID;
         if (!empty($eventId)) {
             $params['event_id'] = $eventId;
         }
@@ -286,7 +283,7 @@ class Erp
     public function copyTask($taskId, $startTime, $endTime, $name)
     {
         $response = HttpHelper::requestJson($this->host . self::API_COPY_TASK, [
-            'app_id' => self::SELF_APP_ID,
+            'app_id' => Constants::SELF_APP_ID,
             'task_id' => $taskId,
             'start_time' => $startTime,
             'end_time' => $endTime,
@@ -306,7 +303,7 @@ class Erp
      */
     public function modifyTask($taskId, $startTime, $endTime, $name, $status = null)
     {
-        $data['app_id'] = self::SELF_APP_ID;
+        $data['app_id'] = Constants::SELF_APP_ID;
         $data['task_id'] = $taskId;
 
         $data['start_time'] = !empty($startTime) ? $startTime : 0;
@@ -327,7 +324,7 @@ class Erp
      */
     public function awardList($params)
     {
-        $params['app_id'] = self::SELF_APP_ID;
+        $params['app_id'] = Constants::SELF_APP_ID;
         $response = HttpHelper::requestJson($this->host . self::API_AWARD_LIST, $params);
         return $response;
     }
@@ -342,7 +339,7 @@ class Erp
     public function updateTask($uuid, $eventTaskId, $status)
     {
         $params = [
-            'app_id' => self::SELF_APP_ID,
+            'app_id' => Constants::SELF_APP_ID,
             'user_type' => 1,
             'uuid' => $uuid,
             'event_task_id' => $eventTaskId,
@@ -362,9 +359,9 @@ class Erp
      */
     public function updateAward($awardId, $status, $reviewerId, $reason = '')
     {
-        $params['app_id'] = self::SELF_APP_ID;
+        $params['app_id'] = Constants::SELF_APP_ID;
         $params = [
-            'app_id' => self::SELF_APP_ID,
+            'app_id' => Constants::SELF_APP_ID,
             'user_event_task_award_id' => $awardId,
             'status' => $status,
             'reviewer_id' => $reviewerId,
@@ -383,7 +380,7 @@ class Erp
     public function batchUpdateAward($awardInfo)
     {
         array_walk($awardInfo, function (&$value) {
-            $value['app_id'] = self::SELF_APP_ID;
+            $value['app_id'] = Constants::SELF_APP_ID;
         });
         $response = HttpHelper::requestJson($this->host . self::API_BATCH_UPDATE_AWARD, ['award_info' => $awardInfo], 'POST');
         return $response;
@@ -397,7 +394,7 @@ class Erp
     public function getUserAwardInfo($awardIdStr)
     {
         $params = [
-            'app_id' => self::SELF_APP_ID,
+            'app_id' => Constants::SELF_APP_ID,
             'award_info_id_str' => $awardIdStr
         ];
         return HttpHelper::requestJson($this->host . self::API_AWARD_BASE_INFO, $params, 'GET');
@@ -411,7 +408,7 @@ class Erp
      */
     public function userReferralInfo($params)
     {
-        $params['app_id'] = self::SELF_APP_ID;
+        $params['app_id'] = Constants::SELF_APP_ID;
         $response = HttpHelper::requestJson($this->host . self::API_USER_REFERRAL_INFO, $params);
         return $response;
     }
@@ -423,7 +420,7 @@ class Erp
      */
     public function getStudentAddressList($uuid)
     {
-        $params['app_id'] = self::SELF_APP_ID;
+        $params['app_id'] = Constants::SELF_APP_ID;
         $params['uuid'] = $uuid;
         $response = HttpHelper::requestJson($this->host . self::API_STUDENT_ADDRESS_LIST, $params);
         return $response;
@@ -436,7 +433,7 @@ class Erp
      */
     public function modifyStudentAddress($params)
     {
-        $params['app_id'] = self::SELF_APP_ID;
+        $params['app_id'] = Constants::SELF_APP_ID;
         $response = HttpHelper::requestJson($this->host . self::API_STUDENT_MODIFY_ADDRESS, $params, 'POST');
         return $response;
     }
@@ -448,7 +445,7 @@ class Erp
      */
     public function deleteStudentAddress($params)
     {
-        $params['app_id'] = self::SELF_APP_ID;
+        $params['app_id'] = Constants::SELF_APP_ID;
         $response = HttpHelper::requestJson($this->host . self::API_STUDENT_DELETE_ADDRESS, $params, 'POST');
         return $response;
     }
@@ -461,7 +458,7 @@ class Erp
     public function studentAccount($studentUuid)
     {
         $params['student_uuid'] = $studentUuid;
-        $params['app_id'] = self::SELF_APP_ID;
+        $params['app_id'] = Constants::SELF_APP_ID;
         $response = HttpHelper::requestJson($this->host . self::API_STUDENT_ACCOUNTS, $params);
         return $response;
     }
@@ -479,7 +476,7 @@ class Erp
     {
         $params['student_uuid'] = $studentUuid;
         $params['sub_type'] = $subType;
-        $params['app_id'] = self::SELF_APP_ID;
+        $params['app_id'] = Constants::SELF_APP_ID;
         $params['page'] = $page;
         $params['count'] = $count;
         $params['create_time'] = $createTime;
@@ -494,7 +491,7 @@ class Erp
      */
     public function packageV1List($params)
     {
-        $params['app_id'] = self::SELF_APP_ID;
+        $params['app_id'] = Constants::SELF_APP_ID;
         $response = HttpHelper::requestJson($this->host . self::API_PACKAGE_V1_LIST, $params);
         return $response;
     }
@@ -506,7 +503,7 @@ class Erp
      */
     public function packageV1Detail($params)
     {
-        $params['app_id'] = self::SELF_APP_ID;
+        $params['app_id'] = Constants::SELF_APP_ID;
 
         $response = HttpHelper::requestJson($this->host . self::API_PACKAGE_V1_DETAIL, $params);
         return $response;
@@ -519,7 +516,7 @@ class Erp
      */
     public function createBillV1($params)
     {
-        $params['app_id'] = self::SELF_APP_ID;
+        $params['app_id'] = Constants::SELF_APP_ID;
         $params['sale_shop'] = $params['sale_shop'] ?? ErpPackageV1Model::SALE_SHOP_NOTE;
 
         $response = HttpHelper::requestJson($this->host . self::API_CREATE_BILL_V1, $params, 'POST');
@@ -545,7 +542,7 @@ class Erp
      */
     public function billListV1($params)
     {
-        $params['app_id'] = self::SELF_APP_ID;
+        $params['app_id'] = Constants::SELF_APP_ID;
 
         $response = HttpHelper::requestJson($this->host . self::API_BILL_LIST_V1, $params);
         return $response;
@@ -558,7 +555,7 @@ class Erp
      */
     public function billDetailV1($params)
     {
-        $params['app_id'] = self::SELF_APP_ID;
+        $params['app_id'] = Constants::SELF_APP_ID;
 
         $response = HttpHelper::requestJson($this->host . self::API_BILL_DETAIL_V1, $params);
         return $response;
@@ -571,7 +568,7 @@ class Erp
      */
     public function billStatusV1($params)
     {
-        $params['app_id'] = self::SELF_APP_ID;
+        $params['app_id'] = Constants::SELF_APP_ID;
 
         $response = HttpHelper::requestJson($this->host . self::API_BILL_STATUS_V1, $params);
         return $response;
@@ -584,7 +581,7 @@ class Erp
      */
     public function logisticsV1($params)
     {
-        $params['app_id'] = self::SELF_APP_ID;
+        $params['app_id'] = Constants::SELF_APP_ID;
 
         $response = HttpHelper::requestJson($this->host . self::API_LOGISTICS_V1, $params);
         return $response;
@@ -597,7 +594,7 @@ class Erp
      */
     public function getUserAddUpCredit($params)
     {
-        $params['app_id'] = self::SELF_APP_ID;
+        $params['app_id'] = Constants::SELF_APP_ID;
         $response = HttpHelper::requestJson($this->host . self::API_ADD_UP_CREDIT, $params);
         return $response;
     }
@@ -609,7 +606,7 @@ class Erp
      */
     public function getUserTaskRelateInfo($params)
     {
-        $params['app_id'] = self::SELF_APP_ID;
+        $params['app_id'] = Constants::SELF_APP_ID;
         $response = HttpHelper::requestJson($this->host . self::API_USER_RELATE_TASK, $params);
         return $response;
     }
@@ -621,7 +618,7 @@ class Erp
      */
     public function getTaskCompleteUser($params)
     {
-        $params['app_id'] = self::SELF_APP_ID;
+        $params['app_id'] = Constants::SELF_APP_ID;
         $response = HttpHelper::requestJson($this->host . self::API_TASK_COMPLETE_INFO, $params);
         return $response;
     }
