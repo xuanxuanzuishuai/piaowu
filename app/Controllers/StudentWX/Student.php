@@ -167,6 +167,7 @@ class Student extends ControllerBase
         if (empty($openId)) {
             return $response->withJson(Valid::addAppErrors([], 'need_bound'), StatusCode::HTTP_OK);
         }
+        var_dump ($openId);
         $app_id = UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT;
         $bound_info = UserWeixinModel::getBoundInfoByOpenId(
             $openId,
