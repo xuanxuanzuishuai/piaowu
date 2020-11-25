@@ -210,18 +210,6 @@ class DictConstants {
         ]
     ];
 
-    // 特殊机构对应id
-    const SPECIAL_ORG_ID = [
-        'type' => 'SPECIAL_ORG_ID',
-        'keys' => [
-            'internal', // 内部 0
-            'direct', // 直营 1
-            'panda', // 线上熊猫
-            'ec', // 电商
-            'classroom', // 老教室
-        ]
-    ];
-
     // 用户标签
     const FLAG_ID = [
         'type' => 'FLAG_ID',
@@ -593,6 +581,20 @@ class DictConstants {
         'type' => 'node_relate_task',
         'keys' => [
             '1','2','3','4','5','6','7','8','9','10','11','12','13'
+        ]
+    ];
+    //不同应用的微信app_id
+    const WECHAT_APPID = [
+        'type' => 'wechat_app_id',
+        'keys' => [
+            '8_1', '8_8'
+        ]
+    ];
+    //不同应用的微信app_secret
+    const WECHAT_APP_SECRET = [
+        'type' => 'wechat_app_secret',
+        'keys' => [
+            '8_1', '8_8'
         ]
     ];
     public static function get($type, $key)

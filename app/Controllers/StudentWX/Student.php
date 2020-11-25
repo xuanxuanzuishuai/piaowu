@@ -158,25 +158,16 @@ class Student extends ControllerBase
      */
     public function login(Request $request, Response $response)
     {
-
-        $rules = [
-        ];
-        $params = $request->getParams();
-        $result = Valid::appValidate($params, $rules);
-        if ($result['code'] != Valid::CODE_SUCCESS) {
-            return $response->withJson($result, StatusCode::HTTP_OK);
-        }
         $old_token = $this->ci["token"];
         if (!empty($old_token)){
             WeChatService::deleteToken($old_token);
         }
 
-        $app_id = UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT;
         $openId = $this->ci["open_id"];
         if (empty($openId)) {
             return $response->withJson(Valid::addAppErrors([], 'need_bound'), StatusCode::HTTP_OK);
         }
-
+        $app_id = UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT;
         $bound_info = UserWeixinModel::getBoundInfoByOpenId(
             $openId,
             UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,

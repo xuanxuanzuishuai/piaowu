@@ -26,6 +26,7 @@ class RouterFactory
     const CLIENT_ORG_WEB = 'org_web'; // 机构后台
     const CLIENT_API = 'api'; // 外部api调用
     const CLIENT_SALES_MASTER = 'sales_master'; // 鲸鱼跳跃
+    const CLIENT_STUDENT_WX = 'student_wx'; // 家长微信
 
     /**
      * client_type 对应的 Router class
@@ -33,6 +34,7 @@ class RouterFactory
     const ROUTER_CLASSES = [
         self::CLIENT_ORG_WEB => OrgWebRouter::class, // 机构后台
         self::CLIENT_API => APIRouter::class, // 外部api调用
+        self::CLIENT_STUDENT_WX => StudentWXRouter::class, // 家长微信
     ];
 
     /**

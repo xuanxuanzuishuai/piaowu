@@ -12,4 +12,7 @@ class Constants
     const SMART_MINI_BUSI_TYPE = 8;
     //智能陪练服务号的busi_type
     const SMART_WX_SERVICE = 1;
+
+    //用户类型定义
+    const USER_TYPE_STUDENT = 1; //学生
 }

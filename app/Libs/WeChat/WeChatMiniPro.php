@@ -10,7 +10,9 @@ namespace App\Libs\WeChat;
 
 
 use App\Libs\Constants;
+use App\Libs\DictConstants;
 use App\Libs\Dss;
+use App\Libs\HttpHelper;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use GuzzleHttp\Client;
@@ -171,5 +173,22 @@ class WeChatMiniPro
                 $this->setAccessToken($data['access_token']);
             }
         }
+    }
+
+    /**
+     * 通过code获取用户的open_id
+     * @param $code
+     * @return array|bool
+     */
+    public function getWeixnUserOpenIDAndAccessTokenByCode($code)
+    {
+       return HttpHelper::requestJson(self::WX_HOST . '/sns/oauth2/access_token', [
+
+           'code' => $code,
+           'grant_type' => 'authorization_code',
+           'appid' => DictConstants::get(DictConstants::WECHAT_APPID, $this->nowWxApp),
+           'secret' => DictConstants::get(DictConstants::WECHAT_APP_SECRET, $this->nowWxApp)
+
+       ]);
     }
 }
