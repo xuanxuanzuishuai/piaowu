@@ -15,4 +15,14 @@ class Constants
 
     //用户类型定义
     const USER_TYPE_STUDENT = 1; //学生
+
+    // 是否
+    const DICT_TYPE_YES_OR_NO = 'yes_or_no_status';
+
+    // 正常废除
+    const DICT_TYPE_NORMAL_OR_INVALID = 'normal_or_invalid';
+    
+    //role id 设置
+    const DICT_TYPE_ROLE_ID = 'ROLE_ID';
+
 }
