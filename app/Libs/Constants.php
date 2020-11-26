@@ -21,8 +21,16 @@ class Constants
 
     // 正常废除
     const DICT_TYPE_NORMAL_OR_INVALID = 'normal_or_invalid';
-    
+
     //role id 设置
     const DICT_TYPE_ROLE_ID = 'ROLE_ID';
+
+    const MOBILE_REGEX = "/^[0-9]{1,14}$/";
+
+    // 系统设置
+    const DICT_TYPE_SYSTEM_ENV = 'system_env';
+
+    // DICT 分页设置  key_code
+    const DEFAULT_PAGE_LIMIT = 'DEFAULT_PAGE_LIMIT';
 
 }

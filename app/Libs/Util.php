@@ -2,7 +2,6 @@
 
 namespace App\Libs;
 
-use App\Models\TeacherModel;
 use App\Services\DictService;
 
 /**
