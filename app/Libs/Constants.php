@@ -55,4 +55,7 @@ class Constants
     // JWT Token Type
     const DICT_KEY_TOKEN_TYPE_USER = 'TOKEN_TYPE_USER';
 
+    //dss
+    const CHANNEL_WE_CHAT_SCAN = 1226; //微信扫码注册
+
 }

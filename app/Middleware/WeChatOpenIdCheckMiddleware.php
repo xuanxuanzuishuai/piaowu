@@ -36,8 +36,13 @@ class WeChatOpenIdCheckMiddleware extends MiddlewareBase
         if (empty($appId)) {
             return $response->withJson(Valid::addAppErrors([], 'need_app_id'), StatusCode::HTTP_OK);
         }
-        $this->container['app_id'] = $appId;
-
+        $this->container["app_id"] = $appId;
+        //当前系统对应的应用busi_type
+        $arr = [
+            Constants::SMART_APP_ID => Constants::SMART_WX_SERVICE
+        ];
+        $busiType = $arr[$appId] ?? Constants::SMART_WX_SERVICE;
+        $this->container['busi_type'] = $busiType;
         $tokenHeader = $request->getHeader('token');
         $token = $tokenHeader[0] ?? null;
         $this->container["token"] = $token;
@@ -50,8 +55,9 @@ class WeChatOpenIdCheckMiddleware extends MiddlewareBase
         if (empty($userType)) {
             return $response->withJson(Valid::addAppErrors([], 'request_error'), StatusCode::HTTP_OK);
         }
-
-        $checkResult = $this::checkNeedWeChatCode($request, $appId, $userType);
+        $this->container['user_type'] = $userType;
+        //在使用前端的code获取用户的openid的信息时，需要判断出 当前用户类型 哪条业务线 哪个微信应用
+        $checkResult = $this::checkNeedWeChatCode($request, $appId, $userType, $busiType);
         // 是否要跳转到微信端获取用户code
         $needWeChatCode = $checkResult["needWeChatCode"];
         $openId = $checkResult["openId"] ?? '';
@@ -69,22 +75,16 @@ class WeChatOpenIdCheckMiddleware extends MiddlewareBase
             SimpleLogger::info('need weixin code:', []);
             return $response->withJson(Valid::addAppErrors([], 'need_code'), StatusCode::HTTP_OK);
         }
-
         $response = $next($request, $response);
         return $response;
     }
     
-    public function checkNeedWeChatCode(Request $request, $app_id, $user_type) {
+    public function checkNeedWeChatCode(Request $request, $app_id, $user_type, $busiType) {
         $openId = null;
         $needWeChatCode = false;
         $code = $request->getParam('wx_code');
         // 已经获取微信的用户code，通过微信API获取openid
         if (!empty($code)) {
-            //当前系统对应的应用busi_type
-            $arr = [
-                Constants::SMART_APP_ID => Constants::SMART_WX_SERVICE
-            ];
-            $busiType = $arr[$app_id] ?? Constants::SMART_WX_SERVICE;
             $data = WeChatMiniPro::factory($app_id, $busiType)->getWeixnUserOpenIDAndAccessTokenByCode($code);
             SimpleLogger::info("getWeixnUserOpenIDAndAccessTokenByCode", ["data" => $data]);
             if (!empty($data['openid'])) {

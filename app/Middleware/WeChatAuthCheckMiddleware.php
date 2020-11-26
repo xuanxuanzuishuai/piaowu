@@ -8,12 +8,13 @@
 
 namespace App\Middleware;
 
+use App\Libs\Constants;
 use App\Libs\SimpleLogger;
+use App\Services\WechatTokenService;
 use Slim\Http\Request;
 use App\Libs\Valid;
 use Slim\Http\StatusCode;
 use Slim\Http\Response;
-use App\Services\WeChatService;
 
 /**
  * 根据token获取用户信息，如果获取不到用户信息，则返回token_expired报错，客户端需要捕获该报错然后调用login接口
@@ -31,7 +32,7 @@ class WeChatAuthCheckMiddleware extends MiddlewareBase
 
         $userInfo = null;
         if (!empty($token)) {
-            $userInfo = WeChatService::getTokenInfo($token);
+            $userInfo = WechatTokenService::getTokenInfo($token);
             if (empty($userInfo)) {
                 return $response->withJson(Valid::addAppErrors([], 'token_expired'), StatusCode::HTTP_OK);
             }
@@ -42,26 +43,17 @@ class WeChatAuthCheckMiddleware extends MiddlewareBase
 
         $currentUrl = $request->getUri()->getPath();
 
-        switch ($this->getURLPrefix($currentUrl)) {
-            case '/student_wx': // 学生微信公众号
-                $user_type = WeChatService::USER_TYPE_STUDENT;
-                break;
-            case '/teacher_wx': // 老师微信公众号
-                $user_type = WeChatService::USER_TYPE_TEACHER;
-                break;
-            case '/classroom_teacher_wx': // TheONE国际钢琴课老师端
-                $user_type = WeChatService::USER_TYPE_TEACHER;
-                break;
-            default:
-                $user_type = WeChatService::USER_TYPE_STUDENT_ORG;
-        }
+        $arr = [
+            '/student_wx' => Constants::USER_TYPE_STUDENT
+        ];
+        $userType = $arr[$this->getURLPrefix($currentUrl)] ?? '';
 
         // 根据url确认哪种类型的用户，并检查当前token中保存的信息是否是该用户
-        if ($user_type != (int)$userInfo["user_type"]){
-            SimpleLogger::info("Invalid Token Access", [$user_type, (int)$userInfo["user_type"]]);
+        if ($userType != (int)$userInfo["user_type"]){
+            SimpleLogger::info("Invalid Token Access", [$userType, (int)$userInfo["user_type"]]);
             return $response->withJson(Valid::addAppErrors([], 'token_expired'), StatusCode::HTTP_OK);
         }
-        WeChatService::refreshToken($token);
+        WechatTokenService::refreshToken($token);
         $this->container['user_info'] = $userInfo;
         $this->container["open_id"] = $userInfo["open_id"];
         $response = $next($request, $response);

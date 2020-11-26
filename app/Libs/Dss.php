@@ -14,6 +14,7 @@ use Slim\Http\StatusCode;
 class Dss
 {
     const REFRESH_ACCESS_TOKEN = '/api/wechat/refresh_token'; //刷新
+    const ADD_STUDENT = '/op/user/register'; //添加学生
     private $host;
 
     public function __construct()
@@ -71,5 +72,18 @@ class Dss
             throw new RunTimeException(['update_fail']);
         }
         return !empty($data['data']) ? $data['data'] : NULL;
+    }
+
+    /**
+     * 学生注册
+     * @param $params
+     * @throws RunTimeException
+     */
+    public function studentRegister($params)
+    {
+        $data = self::commonAPI(self::ADD_STUDENT, $params, 'POST');
+        if ($data['code'] != Valid::CODE_SUCCESS) {
+            throw new RunTimeException(['update_fail']);
+        }
     }
 }

@@ -38,6 +38,7 @@ class MysqlDB
     private $name;
 
     const ERROR_CODE_NO_ERROR = '00000';
+    const CONFIG_SLAVE = 'slave';
     /**
      * @param null $configType
      * @return MysqlDB
