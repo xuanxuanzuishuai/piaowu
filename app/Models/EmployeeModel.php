@@ -118,7 +118,6 @@ class EmployeeModel extends Model
 
         $users = $db->select(self::$table, [
             '[>]' . RoleModel::$table => ['role_id' => 'id'],
-            '[>]' . OrganizationModel::$table => ['org_id' => 'id'],
             '[>]' . DeptModel::$table => ['dept_id' => 'id'],
             '[>]' . EmployeeSeatModel::$table => ['id' => 'employee_id']
         ], [

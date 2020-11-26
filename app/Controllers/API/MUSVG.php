@@ -10,12 +10,8 @@ namespace App\Controllers\API;
 
 
 use App\Controllers\ControllerBase;
-use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Libs\Valid;
-use App\Models\OrganizationModelForApp;
-use App\Models\StudentModelForApp;
-use App\Models\TeacherModelForApp;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
