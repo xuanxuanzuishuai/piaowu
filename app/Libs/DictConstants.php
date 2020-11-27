@@ -12,6 +12,14 @@ use App\Services\DictService;
 
 class DictConstants {
 
+    // 员工专项活动设置
+    const EMPLOYEE_ACTIVITY_ENV = [
+        'type' => 'EMPLOYEE_ACTIVITY_ENV',
+        'keys' => [
+            'employee_activity_landing_url'
+        ],
+    ];
+
     // 阿里云config
     const ALI_OSS_CONFIG = [
         'type' => 'ALI_OSS_CONFIG',

@@ -2088,7 +2088,7 @@ class QRsplit {
         if($ret < 0)
             return -1;
 
-        return $run;
+        return $ret;
     }
 
     //----------------------------------------------------------------------
@@ -2160,7 +2160,7 @@ class QRsplit {
                 case QR_MODE_NUM: $length = $this->eatNum(); break;
                 case QR_MODE_AN:  $length = $this->eatAn(); break;
                 case QR_MODE_KANJI:
-                    if ($hint == QR_MODE_KANJI)
+                    if ($this->hint == QR_MODE_KANJI)
                         $length = $this->eatKanji();
                     else    $length = $this->eat8();
                     break;
@@ -2899,7 +2899,7 @@ class QRrawcode {
     //----------------------------------------------------------------------
     public function getCode()
     {
-        $ret;
+        $ret = null;
 
         if($this->count < $this->dataLength) {
             $row = $this->count % $this->blocks;

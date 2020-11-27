@@ -20,7 +20,6 @@ class Model
     protected static $redisDB;
     protected static $redisExpire = 0;
     protected static $redisPri;
-    const ORG_ID_STR = "org_id";
 
     private static function getDefaultCacheKeyPri()
     {
@@ -105,18 +104,12 @@ class Model
      * 获取指定记录
      * @param $where
      * @param array $fields
-     * @param bool $isOrg
      * @return mixed
      */
-    public static function getRecord($where, $fields = [], $isOrg = true)
+    public static function getRecord($where, $fields = [])
     {
         if (empty($fields)) {
             $fields = '*';
-        }
-        if ($isOrg == true) {
-            global $orgId;
-            if ($orgId > 0 &&  empty($where[self::ORG_ID_STR]))
-                $where[self::ORG_ID_STR] = $orgId;
         }
         $db = MysqlDB::getDB();
         return $db->get(static::$table, $fields, $where);
@@ -126,18 +119,12 @@ class Model
      * 获取记录列表
      * @param       $where
      * @param array $fields
-     * @param bool $isOrg
      * @return array
      */
-    public static function getRecords($where, $fields = [], $isOrg = true)
+    public static function getRecords($where, $fields = [])
     {
         if (empty($fields)) {
             $fields = '*';
-        }
-        if ($isOrg == true) {
-            global $orgId;
-            if ($orgId > 0 &&  empty($where[self::ORG_ID_STR]))
-                $where[self::ORG_ID_STR] = $orgId;
         }
         $db = MysqlDB::getDB();
         return $db->select(static::$table, $fields, $where);
@@ -147,19 +134,13 @@ class Model
      * 更新记录内容
      * @param $id
      * @param $data
-     * @param bool $isOrg
      * @return int|null
      */
-    public static function updateRecord($id, $data, $isOrg = true)
+    public static function updateRecord($id, $data)
     {
         $where = ['id' => $id];
         if (empty($data)) {
             return 0;
-        }
-        if ($isOrg == true) {
-            global $orgId;
-            if ($orgId > 0 &&  empty($where[self::ORG_ID_STR]))
-                $where[self::ORG_ID_STR] = $orgId;
         }
         $db = MysqlDB::getDB();
         $cnt = $db->updateGetCount(static::$table, $data, $where);
@@ -171,18 +152,12 @@ class Model
      * 更新多条记录内容
      * @param $data
      * @param $where
-     * @param bool $isOrg
      * @return int|null
      */
-    public static function batchUpdateRecord($data, $where, $isOrg = true)
+    public static function batchUpdateRecord($data, $where)
     {
         if (empty($data)) {
             return 0;
-        }
-        if ($isOrg == true) {
-            global $orgId;
-            if ($orgId > 0 &&  empty($where[self::ORG_ID_STR]))
-                $where[self::ORG_ID_STR] = $orgId;
         }
         $db = MysqlDB::getDB();
         self::batchDelCache($where);
@@ -193,18 +168,12 @@ class Model
     /**
      * 添加数据
      * @param $data
-     * @param bool $isOrg
      * @return int|mixed|null|string
      */
-    public static function insertRecord($data, $isOrg = true)
+    public static function insertRecord($data)
     {
         if (empty($data)) {
             return 0;
-        }
-        if ($isOrg == true) {
-            global $orgId;
-            if ($orgId > 0 && empty($data[self::ORG_ID_STR]))
-                $data[self::ORG_ID_STR] = $orgId;
         }
         $db = MysqlDB::getDB();
         return $db->insertGetID(static::$table, $data);
@@ -213,20 +182,12 @@ class Model
     /**
      * 批量插入数据
      * @param $arr
-     * @param bool $isOrg
      * @return bool
      */
-    public static function batchInsert($arr, $isOrg = true)
+    public static function batchInsert($arr)
     {
         if (empty($arr)) {
             return false;
-        }
-        if ($isOrg == true) {
-            global $orgId;
-            foreach ($arr as $key => $val) {
-                if ($orgId > 0 && empty($val[self::ORG_ID_STR]))
-                    $arr[$key][self::ORG_ID_STR] = $orgId;
-            }
         }
         $db = MysqlDB::getDB();
         $pdo = $db->insert(static::$table, $arr);

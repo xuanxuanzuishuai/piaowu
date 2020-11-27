@@ -40,6 +40,7 @@ class AliOSS
     const DIR_STUDENT_THUMB = 'thumb'; //头像
     const DIR_MESSAGE_EXCEL = 'message_excel'; // 推送消息EXCEL
     const DIR_MINIAPP_CODE = 'miniapp_code';   // 小程序码
+    const DIR_EMPLOYEE_POSTER = 'employee_poster';   // 员工海报
 
 
     private function gmt_iso8601($time) {
