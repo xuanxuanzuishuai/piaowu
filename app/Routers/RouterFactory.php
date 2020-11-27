@@ -32,6 +32,7 @@ class RouterFactory
      * client_type 对应的 Router class
      */
     const ROUTER_CLASSES = [
+        self::CLIENT_STUDENT_APP => StudentAppRouter::class, // AI练琴APP
         self::CLIENT_ORG_WEB => OrgWebRouter::class, // 机构后台
         self::CLIENT_API => APIRouter::class, // 外部api调用
         self::CLIENT_STUDENT_WX => StudentWXRouter::class, // 家长微信
