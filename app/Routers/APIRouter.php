@@ -19,6 +19,11 @@ class APIRouter extends RouterBase
             'method' => ['post'],
             'call' => Consumer::class . ':updateAccessToken',
             'middles' => [],
+        ],
+        '/api/consumer/referee_award' => [
+            'method' => ['post'],
+            'call' => Consumer::class . ':refereeAward',
+            'middles' => [],
         ]
     ];
 }
