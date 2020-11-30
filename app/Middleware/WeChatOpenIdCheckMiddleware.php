@@ -31,7 +31,7 @@ class WeChatOpenIdCheckMiddleware extends MiddlewareBase
 
     public function __invoke(Request $request, Response $response, $next)
     {
-        SimpleLogger::info('--WeChatAuthCheckMiddleware--', []);
+        SimpleLogger::info('--WeChatOpenIdCheckMiddleware--', []);
         $appId = $request->getHeader('app-id')[0] ?? NULL;
         if (empty($appId)) {
             return $response->withJson(Valid::addAppErrors([], 'need_app_id'), StatusCode::HTTP_OK);

@@ -94,6 +94,6 @@ class DssModel
      */
     public static function getTableName()
     {
-        return  $_ENV['dss_dev'] . static::$table;
+        return  $_ENV['DSS_DB_NAME'] . '.' . static::$table;
     }
 }

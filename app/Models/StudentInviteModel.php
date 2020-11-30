@@ -8,7 +8,6 @@
 
 namespace App\Models;
 
-
 class StudentInviteModel extends Model
 {
     public static $table = "student_invite";

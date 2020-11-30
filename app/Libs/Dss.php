@@ -15,6 +15,8 @@ class Dss
 {
     const REFRESH_ACCESS_TOKEN = '/api/wechat/refresh_token'; //刷新
     const ADD_STUDENT = '/op/user/register'; //添加学生
+    const ADD_USER_TICKET = '/op/user/save_ticket';
+
     private $host;
 
     public function __construct()
@@ -83,6 +85,15 @@ class Dss
     {
         $data = self::commonAPI(self::ADD_STUDENT, $params, 'POST');
         if ($data['code'] != Valid::CODE_SUCCESS) {
+            throw new RunTimeException(['update_fail']);
+        }
+    }
+
+
+    public function saveTicket($data)
+    {
+        $res = self::commonAPI(self::ADD_USER_TICKET, $data, 'POST');
+        if ($res['code'] != Valid::CODE_SUCCESS) {
             throw new RunTimeException(['update_fail']);
         }
     }

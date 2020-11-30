@@ -9,6 +9,7 @@
 namespace App\Models;
 
 use App\Libs\MysqlDB;
+use App\Libs\UserCenter;
 use App\Libs\Util;
 
 class EmployeeActivityModel extends Model
@@ -36,8 +37,8 @@ class EmployeeActivityModel extends Model
         return self::insertRecord([
             'name'            => $data['name'],
             'status'          => self::STATUS_DISABLE,
-            'start_time'      => $data['start_time'],
-            'end_time'        => $data['end_time'],
+            'start_time'      => is_numeric($data['start_time']) ? $data['start_time'] : strtotime($data['start_time']),
+            'end_time'        => is_numeric($data['end_time']) ? $data['end_time'] : strtotime($data['end_time']),
             'rules'           => $data['rules'],
             'banner'          => $data['banner'],
             'figure'          => $data['figure'] ?? '',
@@ -46,6 +47,7 @@ class EmployeeActivityModel extends Model
             'remark'          => $data['remark'] ?? '',
             'employee_share'  => $data['employee_share'],
             'employee_poster' => $data['employee_poster'],
+            'app_id'          => $data['app_id'] ?? UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
             'create_time'     => $now,
         ]);
     }
@@ -108,29 +110,5 @@ class EmployeeActivityModel extends Model
             from " . $table . $where . $order . $limit, $map);
 
         return [$results, $totalCount];
-    }
-
-    /**
-     * 检查活动时间，与已启用活动有时间冲突，不可启用
-     * @param $startTime
-     * @param $endTime
-     * @param $eventId
-     * @param $exceptActId
-     * @return bool
-     */
-    public static function checkTimeConflict($startTime, $endTime, $eventId, $exceptActId = 0)
-    {
-        $where = [
-            'start_time[<=]' => $endTime,
-            'end_time[>=]' => $startTime,
-            'status' => self::STATUS_ENABLE,
-            'event_id' => $eventId
-        ];
-        if (!empty($exceptActId)) {
-            $where['id[!]'] = $exceptActId;
-        }
-
-        $act = ReferralActivityModel::getRecords($where);
-        return !empty($act) ? true : false;
     }
 }

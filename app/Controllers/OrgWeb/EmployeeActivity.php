@@ -6,9 +6,10 @@
  * Time: 6:33 PM
  */
 
-namespace App\Controllers\AdminWeb;
+namespace App\Controllers\OrgWeb;
 
 use App\Controllers\ControllerBase;
+use App\Libs\DictConstants;
 use App\Libs\HttpHelper;
 use App\Libs\Valid;
 use App\Services\ReferralActivityService;
@@ -311,46 +312,4 @@ class EmployeeActivity extends ControllerBase
 
         return HttpHelper::buildResponse($response, $activity);
     }
-
-
-    public function getPosterList(Request $request, Response $response)
-    {
-        $rules = [
-            [
-                'key'        => 'activity_id',
-                'type'       => 'required',
-                'error_code' => 'activity_id_is_required'
-            ],
-            [
-                'key'        => 'employee',
-                'type'       => 'required',
-                'error_code' => 'employee_is_required'
-            ],
-            [
-                'key'        => 'app_id',
-                'type'       => 'required',
-                'error_code' => 'app_id_is_required'
-            ]
-        ];
-
-        $params = $request->getParams();
-        $result = Valid::appValidate($params, $rules);
-        if ($result['code'] != Valid::CODE_SUCCESS) {
-            return $response->withJson($result, StatusCode::HTTP_OK);
-        }
-        try {
-            $activity = ReferralActivityService::getPosterList(
-                $params['ticket'],
-                $params['channel'] ?? '',
-                $params['activity_id'],
-                $params['employee'],
-                $params['app_id']
-            );
-        } catch (RunTimeException $e) {
-            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
-        }
-
-        return HttpHelper::buildResponse($response, $activity);
-    }
-
 }

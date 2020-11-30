@@ -12,7 +12,7 @@ use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
-use App\Libs\WeChat\WeChatMiniPro;
+use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\EmployeeActivityModel;
 use App\Libs\Util;
 use App\Libs\AliOSS;
@@ -238,19 +238,18 @@ class ReferralActivityService
                 $activity['poster_url'][] = AliOSS::signUrls($posterURL);
             }
         }
-
-        if ($activity['start_time'] > $now) {
-            $activity['act_time_status'] = 1; // 待开始
-        } elseif ($activity['end_time'] < $now) {
+        if ($activity['end_time'] < $now) {
             $activity['act_time_status'] = 3; // 已结束
+        } elseif ($activity['start_time'] > $now) {
+            $activity['act_time_status'] = 1; // 待开始
         } else {
             $activity['act_time_status'] = 2; // 进行中
         }
         $activity['banner_url']           = AliOSS::signUrls($activity['banner']);
         $activity['figure_url']           = AliOSS::signUrls($activity['figure']);
         $activity['employee_poster_url']  = AliOSS::signUrls($activity['employee_poster']);
-        $activity['show_start_time']      = date('Y-m-d', $activity['start_time']);
-        $activity['show_end_time']        = date('Y-m-d', $activity['end_time']);
+        $activity['show_start_time']      = date('Y-m-d H:i:s', $activity['start_time']);
+        $activity['show_end_time']        = date('Y-m-d H:i:s', $activity['end_time']);
         $activity['create_time']          = date('Y-m-d H:i', $activity['create_time']);
         $activity['activity_time_status'] = DictService::getKeyValue('activity_time_status', $activity['act_time_status']);
         $activity['activity_status']      = DictService::getKeyValue('activity_status', $activity['status']);
@@ -273,138 +272,52 @@ class ReferralActivityService
         return $data;
     }
 
-    public static function getMiniappQrImage($appid, $params = [])
-    {
-        $userQrTicket      = $params['r'] ?? '';
-        $channelId         = $params['c'] ?? '';
-        $activityID        = $params['a'] ?? '';
-        $employeeID        = $params['e'] ?? '';
-        $appID             = $params['ap'] ?? '';
-        // $weChatAppIdSecret = WeChatService::getWeCHatAppIdSecret($appid, UserWeixinModel::USER_TYPE_STUDENT);
-        // $wx                = WeChatMiniPro::factory(['app_id' => $weChatAppIdSecret['app_id'], 'app_secret' => $weChatAppIdSecret['secret']]);
-        // $data = [];
-        // if (empty($wx)) {
-        //     SimpleLogger::error('wx create fail', ['we_chat_type'=>UserWeixinModel::USER_TYPE_STUDENT]);
-        //     return $data;
-        // }
-        // // 请求微信，获取小程序码图片
-        // $res = $wx->getMiniappCodeImage($params);
-        // if ($res === false) {
-        //     return [];
-        // }
-        // $tmpFileFullPath = $_ENV['STATIC_FILE_SAVE_PATH'] . '/' . md5($userQrTicket) . '.jpg';
-        // chmod($tmpFileFullPath, 0755);
-
-        // $bytesWrite = file_put_contents($tmpFileFullPath, $res);
-        // if (empty($bytesWrite)) {
-        //     SimpleLogger::error('save miniapp code image file error', [$userQrTicket]);
-        //     return $data;
-        // }
-        $imageUrl = $_ENV['ENV_NAME'] . '/' . AliOSS::DIR_MINIAPP_CODE . '/' . md5(implode(',', $params)) . ".png";
-        // AliOSS::uploadFile($imageUrl, $tmpFileFullPath);
-        // unlink($tmpFileFullPath);
-        return [
-            'path'    => $imageUrl,
-            'ticket'  => $params['r'],
-            'channel' => $params['c'],
-            'ext'     => json_encode([
-                'activity_id' => $params['a'],
-                'employee_id' => $params['e'],
-            ]),
-            'app_id' => $params['ap']
-        ];
-    }
-
-    public static function getReferralLandingPageQrImage($params)
-    {
-        //生成二维码
-        $content = $_ENV["AI_REFERRER_URL"] . "?" . http_build_query($params);
-        list($filePath, $fileName) = QRCodeModel::genImage($content, time());
-        chmod($filePath, 0755);
-        //上传二维码到阿里oss
-        $envName  = $_ENV['ENV_NAME'] ?? 'dev';
-        $imageUrl = $envName . '/' . AliOSS::DIR_REFERRAL . '/' . $fileName;
-        AliOSS::uploadFile($imageUrl, $filePath);
-        //删除临时二维码文件
-        unlink($filePath);
-        // @TODO: parameters name
-        return [
-            'path'    => $imageUrl,
-            'ticket'  => $params['referee_id'],
-            'channel' => $params['channel_id'],
-            'ext'     => json_encode([
-                'activity_id' => $params['activity_id'],
-                'employee_id' => $params['employee_id'],
-            ]),
-            'app_id' => $params['app_id']
-        ];
-    }
-    public static function getUserQrCode(
-        $ticket,
-        $channel,
-        $activityID,
-        $employeeID,
-        $appID
-    ) {
-        $landingType = self::getLandingType();
-        if ($landingType == UserQrTicketModel::LANDING_TYPE_MINIAPP) {
-            $miniappID = null;
-            return self::getMiniappQrImage(
-                $miniappID,
-                [
-                    'r'  => $ticket,
-                    'c'  => $channel,
-                    'a'  => $activityID,
-                    'e'  => $employeeID,
-                    'ap' => $appID,
-                ]
-            );
-        }
-        return self::getReferralLandingPageQrImage(
-            [
-                'referee_id'  => $ticket,
-                'activity_id' => $activityID,
-                'employee_id' => $employeeID,
-                'channel_id'  => $channel,
-                'app_id'      => $appID
-            ]
-        );
-    }
-
-    private static function getLandingType($landingType = null)
-    {
-        return '';
-        // if (!empty($landingType)) {
-        //     return $landingType;
-        // }
-        // $landingType      = UserQrTicketModel::LANDING_TYPE_NORMAL;
-        // $posterQrcodeType = DictService::getKeyValue(Constants::DICT_TYPE_POSTER_QRCODE_TYPE, 'qr_code_type');
-        // // 配置：非空时为小程序码
-        // if (!empty($posterQrcodeType)) {
-        //     $landingType = UserQrTicketModel::LANDING_TYPE_MINIAPP;
-        // }
-        // return $landingType;
-    }
-
+    /**
+     * 获取员工活动海报
+     * @param $userID
+     * @param $channel
+     * @param $activityID
+     * @param $employeeID
+     * @param $appID
+     * @return array
+     * @throws RunTimeException
+     */
     public static function getPosterList(
-        $ticket,
+        $userID,
         $channel,
         $activityID,
         $employeeID,
         $appID
     ) {
+        if (empty($$channel)) {
+            $channel = DictConstants::get(DictConstants::EMPLOYEE_ACTIVITY_ENV, 'invite_channel');
+        }
         $activity = EmployeeActivityModel::getById($activityID);
         if (empty($activity)) {
             throw new RunTimeException(['record_not_found']);
         }
-        $posterList = json_decode($activity['poster'], true);
-        if ($posterList) {
-            foreach ($posterList as $posterURL) {
-                $posterList['poster_url'][] = AliOSS::signUrls($posterURL);
+        $posters = json_decode($activity['poster'], true);
+        $posterList = [];
+        if ($posters) {
+            foreach ($posters as $posterURL) {
+                $posterList[] = AliOSS::signUrls($posterURL);
             }
         }
-        $userQrPath = self::getUserQrCode($ticket, $channel, $activityID, $employeeID, $appID);
-        return [$posterList, $userQrPath];
+        $landingType =  self::getLandingType();
+        $userQrPath = DssUserQrTicketModel::getUserQrURL($userID, $channel, $activityID, $employeeID, $appID, $landingType);
+        if (empty($userQrPath)) {
+            SimpleLogger::error('empty user qr code path', [$userID, $channel, $activityID, $employeeID, $appID, $landingType]);
+        }
+        $userQrUrl = AliOSS::signUrls($userQrPath);
+        return ['poster_url' => $posterList, 'qr_url' => $userQrUrl];
+    }
+
+    public static function getLandingType($landingType = null)
+    {
+        if (!empty($landingType)) {
+            return $landingType;
+        }
+        return DictService::getKeyValue(Constants::DICT_TYPE_POSTER_QRCODE_TYPE, 'qr_code_type');
     }
 
 }

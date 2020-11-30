@@ -16,6 +16,7 @@ class DictConstants {
     const EMPLOYEE_ACTIVITY_ENV = [
         'type' => 'EMPLOYEE_ACTIVITY_ENV',
         'keys' => [
+            'invite_channel',
             'employee_activity_landing_url'
         ],
     ];
@@ -157,6 +158,11 @@ class DictConstants {
     const DING_DING_STATUS = [
         'type' => 'ding_apply_status',
         'keys' => [1,2,3,4,5]
+    ];
+
+    const HAS_REVIEW_COURSE = [
+        'type' => 'HAS_REVIEW_COURSE',
+        'keys' => [0, 1, 2, 3]
     ];
 
     //通用红包搜索节点

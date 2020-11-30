@@ -14,6 +14,7 @@ use App\Controllers\Employee\Auth;
 use App\Controllers\Employee\Employee;
 use App\Controllers\OrgWeb\Dept;
 use App\Controllers\OrgWeb\Employee as OrgWebEmployee;
+use App\Controllers\OrgWeb\EmployeeActivity;
 use App\Middleware\EmployeeAuthCheckMiddleWare;
 use App\Middleware\EmployeePrivilegeMiddleWare;
 use App\Middleware\OrgWebMiddleware;
@@ -76,6 +77,14 @@ class OrgWebRouter extends RouterBase
         '/org_web/dept/modify' => ['method' => ['post'], 'call' => Dept::class . ':modify'],
         '/org_web/dept/dept_privilege' => ['method' => ['get'], 'call' => Dept::class . ':deptPrivilege'],
         '/org_web/dept/privilege_modify' => ['method' => ['post'], 'call' => Dept::class . ':privilegeModify'],
+
+
+        '/op_web/employee_activity/list'          => ['method' => ['get'], 'call' => EmployeeActivity::class . ':list'],
+        '/op_web/employee_activity/detail'        => ['method' => ['get'], 'call' => EmployeeActivity::class . ':detail'],
+        '/op_web/employee_activity/add'           => ['method' => ['post'], 'call' => EmployeeActivity::class . ':add'],
+        '/op_web/employee_activity/modify'        => ['method' => ['post'], 'call' => EmployeeActivity::class . ':modify'],
+        '/op_web/employee_activity/update_status' => ['method' => ['post'], 'call' => EmployeeActivity::class . ':updateStatus'],
+
 
     ];
 }
