@@ -1,6 +1,8 @@
 <?php
 namespace App\Services;
 
+use App\Libs\Constants;
+use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\StudentInviteModel;
 use Elasticsearch\Common\Exceptions\RuntimeException;
 
@@ -26,5 +28,14 @@ class UserRefereeService
             throw new RuntimeException(['id is required for exists_source']);
         }
         //绑定转介绍关系
+        self::bindRegister($studentId, $qrTicket, $appId, $employeeId, $activityId);
+    }
+
+    public static function bindRegister($studentId, $qrTicket, $appId, $employeeId = NULL, $activityId = NULL)
+    {
+        if ($appId == Constants::SMART_APP_ID) {
+            //推荐人信息
+            $refereeInfo = DssUserQrTicketModel::getRecord(['qr_ticket' => $qrTicket]);
+        }
     }
 }
