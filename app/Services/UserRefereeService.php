@@ -91,6 +91,10 @@ class UserRefereeService
         if ($appId == Constants::SMART_APP_ID) {
             //推荐人信息
             $refereeInfo = DssUserQrTicketModel::getRecord(['qr_ticket' => $qrTicket]);
+            if (empty($refereeInfo)) {
+                SimpleLogger::info('not find ticket user', ['ticket' => $qrTicket]);
+                return false;
+            }
             //是否已经绑定
             $bindInfo = StudentInviteModel::getRecord(['student_id' => $studentId, 'app_id' => $appId]);
             if (!empty($bindInfo)) {
