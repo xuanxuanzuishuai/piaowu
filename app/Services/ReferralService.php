@@ -8,6 +8,7 @@
 
 namespace App\Services;
 
+use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\MysqlDB;
 use App\Models\Dss\DssChannelModel;
@@ -80,7 +81,7 @@ class ReferralService
             si.activity_id,
             ea.name as activity_name,
             e.name as employee_name,
-            si.referee_empoyee_id,
+            si.referee_employee_id,
             si.referee_id,
             c.name as channel_name,
             r.mobile as referral_mobile
@@ -93,7 +94,7 @@ class ReferralService
         INNER JOIN $s s ON si.student_id = s.id
         INNER JOIN $s r on r.id = si.referee_id
         LEFT JOIN $ea ea ON ea.id = si.activity_id
-        LEFT JOIN $e e ON e.id = si.referee_empoyee_id
+        LEFT JOIN $e e ON e.id = si.referee_employee_id
         LEFT JOIN $c c ON s.channel_id = c.id
         {$where} {$order}
         ";
@@ -113,6 +114,22 @@ class ReferralService
         $item['has_review_course_show'] = $hasReviewCourseSet[$item['has_review_course']];
         $item['create_time_show'] = date('Y-m-d H:i', $item['create_time']);
         return $item;
+    }
+
+    /**
+     * 某个用户的推荐信息
+     * @param $appId
+     * @param $studentId
+     * @return mixed
+     */
+    public static function getReferralInfo($appId, $studentId)
+    {
+        if ($appId == Constants::SMART_APP_ID) {
+            return StudentInviteModel::getRecord(
+                ['student_id' => $studentId, 'app_id' => $appId]
+            );
+        }
+        return NULL;
     }
 
 }

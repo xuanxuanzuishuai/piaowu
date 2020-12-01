@@ -20,5 +20,6 @@ class DSSRouter extends RouterBase
         '/dss/employee_activity/get_poster'  => ['method' => ['get'], 'call' => EmployeeActivity::class . ':getPoster'],
 
         '/dss/referral/list' => ['method' => ['get'], 'call' => Invite::class . ':list'],
+        '/dss/referral/referral_info' => ['method' => ['get'], 'call' => Invite::class . ':referralDetail'],
     ];
 }

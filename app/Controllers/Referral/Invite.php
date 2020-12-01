@@ -10,10 +10,12 @@ namespace App\Controllers\Referral;
 
 use App\Controllers\ControllerBase;
 use App\Libs\HttpHelper;
+use App\Libs\Valid;
 use App\Services\ReferralService;
 use App\Libs\Exceptions\RunTimeException;
 use Slim\Http\Request;
 use Slim\Http\Response;
+use Slim\Http\StatusCode;
 
 class Invite extends ControllerBase
 {
@@ -35,6 +37,44 @@ class Invite extends ControllerBase
         return HttpHelper::buildResponse($response, [
             'records' => $records,
             'total_count' => $totalCount
+        ]);
+    }
+
+    /**
+     * 详情
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function referralDetail(Request $request, Response $response)
+    {
+        try {
+            $rules = [
+                [
+                    'key' => 'student_id',
+                    'type' => 'required',
+                    'error_code' => 'student_id_is_required'
+                ],
+                [
+                    'key' => 'app_id',
+                    'type' => 'required',
+                    'error_code' => 'app_id_is_required'
+                ]
+            ];
+
+            $params = $request->getParams();
+            $result = Valid::appValidate($params, $rules);
+            if ($result['code'] != Valid::CODE_SUCCESS) {
+                return $response->withJson($result, StatusCode::HTTP_OK);
+            }
+            $params = $request->getParams();
+            $info = ReferralService::getReferralInfo($params['app_id'], $params['student_id']);
+        } catch (RuntimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+
+        return HttpHelper::buildResponse($response, [
+            'referee_info' => $info
         ]);
     }
 
