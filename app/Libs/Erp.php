@@ -8,9 +8,6 @@
 
 namespace App\Libs;
 
-use App\Models\ModelV1\ErpPackageV1Model;
-use App\Services\ErpReferralService;
-use App\Services\EventService;
 use GuzzleHttp\Client;
 use Slim\Http\StatusCode;
 class Erp
@@ -255,23 +252,6 @@ class Erp
         return $response;
     }
 
-    /**
-     * 获取事件任务
-     * @param int $eventId
-     * @param int $eventType
-     * @return array|bool
-     */
-    public function eventTaskList($eventId = 0, $eventType = ErpReferralService::EVENT_TYPE_UPLOAD_POSTER)
-    {
-        $params['app_id'] = Constants::SELF_APP_ID;
-        if (!empty($eventId)) {
-            $params['event_id'] = $eventId;
-        }
-        if (!empty($eventType)) {
-            $params['type'] = $eventType;
-        }
-        return ['code' => Valid::CODE_SUCCESS, 'data' => EventService::wholeEvents($params)];
-    }
 
     /**
      * 复制任务
@@ -509,19 +489,6 @@ class Erp
         return $response;
     }
 
-    /**
-     * 创建订单
-     * @param $params
-     * @return array|bool
-     */
-    public function createBillV1($params)
-    {
-        $params['app_id'] = Constants::SELF_APP_ID;
-        $params['sale_shop'] = $params['sale_shop'] ?? ErpPackageV1Model::SALE_SHOP_NOTE;
-
-        $response = HttpHelper::requestJson($this->host . self::API_CREATE_BILL_V1, $params, 'POST');
-        return $response;
-    }
 
     /**
      * 创建发货订单

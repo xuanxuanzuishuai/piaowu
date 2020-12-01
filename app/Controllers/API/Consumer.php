@@ -59,6 +59,12 @@ class Consumer extends ControllerBase
         WeChatMiniPro::factory($params['msg_body']['source_app_id'], $params['msg_body']['busi_type'])->setAccessToken($params['msg_body']['access_token']);
     }
 
+    /**
+     * 转介绍相关
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
     public function refereeAward(Request $request, Response $response)
     {
         $params = $request->getParams();
@@ -90,7 +96,7 @@ class Consumer extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         try {
-            UserRefereeService::refereeAwardDeal($params['event_type'], $params['msg_body']);
+            UserRefereeService::refereeAwardDeal($params['source_app_id'], $params['event_type'], $params['msg_body']);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
