@@ -20,7 +20,7 @@ class APIRouter extends RouterBase
             'call' => Consumer::class . ':updateAccessToken',
             'middles' => [],
         ],
-        '/api/consumer/referee_award' => [
+        '/api/consumer/referee_relate' => [
             'method' => ['post'],
             'call' => Consumer::class . ':refereeAward',
             'middles' => [],
