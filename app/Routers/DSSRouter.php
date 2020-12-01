@@ -21,5 +21,6 @@ class DSSRouter extends RouterBase
 
         '/dss/referral/list' => ['method' => ['get'], 'call' => Invite::class . ':list'],
         '/dss/referral/referral_info' => ['method' => ['get'], 'call' => Invite::class . ':referralDetail'],
+        '/dss/referral/referee_all_user' => ['method' => ['get'], 'call' => Invite::class . ':refereeAllUser'],
     ];
 }

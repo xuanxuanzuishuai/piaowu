@@ -117,7 +117,7 @@ class ReferralService
     }
 
     /**
-     * 某个用户的推荐信息
+     * 某个用户的推荐人信息
      * @param $appId
      * @param $studentId
      * @return mixed
@@ -131,5 +131,23 @@ class ReferralService
         }
         return NULL;
     }
+
+    /**
+     * @param $appId
+     * @param $studentId
+     * @return mixed
+     * 当前这个人推荐过来的所有用户
+     */
+    public static function getRefereeAllUser($appId, $studentId)
+    {
+        if ($appId == Constants::SMART_APP_ID) {
+            return StudentInviteModel::getRecords(
+                ['referee_id' => $studentId, 'app_id' => $appId]
+            );
+        }
+        return NULL;
+    }
+
+
 
 }

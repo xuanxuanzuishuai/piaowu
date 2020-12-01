@@ -41,7 +41,7 @@ class Invite extends ControllerBase
     }
 
     /**
-     * 详情
+     * 当前这个人的推荐人信息
      * @param Request $request
      * @param Response $response
      * @return Response
@@ -75,6 +75,44 @@ class Invite extends ControllerBase
 
         return HttpHelper::buildResponse($response, [
             'referee_info' => $info
+        ]);
+    }
+
+    /**
+     * 当前这个人推荐过来的所有用户
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function refereeAllUser(Request $request, Response $response)
+    {
+        try {
+            $rules = [
+                [
+                    'key' => 'student_id',
+                    'type' => 'required',
+                    'error_code' => 'student_id_is_required'
+                ],
+                [
+                    'key' => 'app_id',
+                    'type' => 'required',
+                    'error_code' => 'app_id_is_required'
+                ]
+            ];
+
+            $params = $request->getParams();
+            $result = Valid::appValidate($params, $rules);
+            if ($result['code'] != Valid::CODE_SUCCESS) {
+                return $response->withJson($result, StatusCode::HTTP_OK);
+            }
+            $params = $request->getParams();
+            $info = ReferralService::getRefereeAllUser($params['app_id'], $params['student_id']);
+        } catch (RuntimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+
+        return HttpHelper::buildResponse($response, [
+            'referee_all_user' => $info
         ]);
     }
 
