@@ -20,6 +20,9 @@ class EmployeeActivityModel extends Model
     const STATUS_ENABLE  = 1;
     const STATUS_DOWN    = 2;
 
+    const ACT_TIME_STATUS_PENDING     = 1;
+    const ACT_TIME_STATUS_IN_PROGRESS = 2;
+    const ACT_TIME_STATUS_OVER        = 3;
 
     //海报的位置/大小信息
     public static $activityPosterConfig = [
@@ -103,6 +106,7 @@ class EmployeeActivityModel extends Model
         }
 
         $order = ' order by id desc ';
+        list($params['page'], $params['count']) = Util::formatPageCount($params);
         $limit = Util::limitation($params['page'] ?? 1, $params['count'] ?? $_ENV['PAGE_RESULT_COUNT']);
 
         $results = MysqlDB::getDB()->queryAll("

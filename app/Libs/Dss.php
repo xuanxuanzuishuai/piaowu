@@ -9,13 +9,12 @@
 namespace App\Libs;
 
 use App\Libs\Exceptions\RunTimeException;
-use GuzzleHttp\Client;
-use Slim\Http\StatusCode;
+
 class Dss
 {
     const REFRESH_ACCESS_TOKEN = '/api/wechat/refresh_token'; //刷新
     const ADD_STUDENT = '/op/user/register'; //添加学生
-    const ADD_USER_TICKET = '/op/user/save_ticket';
+    const ADD_USER_TICKET = '/op/user/save_ticket'; // 保存ticket
 
     private $host;
 
@@ -24,37 +23,15 @@ class Dss
         $this->host = DictConstants::get(DictConstants::SERVICE, "dss_host");
     }
 
-    private function commonAPI($api,  $data = [], $method = 'GET', &$exportBody = '')
+    private function commonAPI($api, $data = [], $method = 'GET')
     {
         try {
-            $client = new Client([
-                'debug' => false
-            ]);
-
             $fullUrl = $this->host . $api;
-
-            if ($method == 'GET') {
-                $data = ['query' => $data];
-            } elseif ($method == 'POST') {
-                $data = ['json' => $data];
-            }
-            $data['headers'] = ['Content-Type' => 'application/json'];
             SimpleLogger::info(__FILE__ . ':' . __LINE__, ['api' => $fullUrl, 'data' => $data]);
-            $response = $client->request($method, $fullUrl, $data);
-            $body = $response->getBody()->getContents();
-            $status = $response->getStatusCode();
-            SimpleLogger::info(__FILE__ . ':' . __LINE__, ['api' => $api, 'body' => $body, 'status' => $status]);
+            $response = HttpHelper::requestJson($fullUrl, $data, $method);
+            SimpleLogger::info(__FILE__ . ':' . __LINE__, ['response' => print_r($response, true)]);
 
-            $exportBody = $body;
-
-            $res = json_decode($body, true);
-            SimpleLogger::info(__FILE__ . ':' . __LINE__, [print_r($res, true)]);
-
-            if (($status != StatusCode::HTTP_OK) || !isset($res['code']) || $res['code'] != Valid::CODE_SUCCESS) {
-                return false;
-            }
-            return $res;
-
+            return $response;
         } catch (\Exception $e) {
             SimpleLogger::error(__FILE__ . ':' . __LINE__, [print_r($e->getMessage(), true)]);
         }

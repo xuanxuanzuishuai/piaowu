@@ -30,8 +30,6 @@ class EmployeeActivity extends ControllerBase
     {
         try {
             $params = $request->getParams();
-            $params['page'] = $params['page'] ?? 1;
-            $params['count'] = $params['count'] ?? $_ENV['PAGE_RESULT_COUNT'];
             list($activities, $totalCount) = ReferralActivityService::getEmployeeActivities($params);
         } catch (RuntimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
@@ -193,9 +191,9 @@ class EmployeeActivity extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         try {
-            $activityID = $params['activity_id'];
+            $activityId = $params['activity_id'];
             unset($params['activity_id']);
-            $activity = ReferralActivityService::modifyEmployeeActivity($params, $activityID);
+            $activity = ReferralActivityService::modifyEmployeeActivity($params, $activityId);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }

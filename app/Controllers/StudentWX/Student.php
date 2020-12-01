@@ -184,14 +184,9 @@ class Student extends ControllerBase
                 'error_code' => 'activity_id_is_required'
             ],
             [
-                'key'        => 'employee',
+                'key'        => 'employee_id',
                 'type'       => 'required',
-                'error_code' => 'employee_is_required'
-            ],
-            [
-                'key'        => 'app_id',
-                'type'       => 'required',
-                'error_code' => 'app_id_is_required'
+                'error_code' => 'employee_id_is_required'
             ]
         ];
 
@@ -201,15 +196,16 @@ class Student extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         try {
+            $appId = $request->getHeader('app-id')[0] ?? null;
             $activity = ReferralActivityService::getPosterList(
                 $this->ci['user_info']['user_id'],
                 $params['channel'] ?? DictConstants::get(DictConstants::EMPLOYEE_ACTIVITY_ENV, 'invite_channel'),
                 $params['activity_id'],
-                $params['employee'],
-                $params['app_id']
+                $params['employee_id'],
+                $appId
             );
         } catch (RunTimeException $e) {
-            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
 
         return HttpHelper::buildResponse($response, $activity);

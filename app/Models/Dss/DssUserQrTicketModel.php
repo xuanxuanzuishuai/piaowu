@@ -52,12 +52,12 @@ class DssUserQrTicketModel extends DssModel
                 create_time,
                 landing_type,
                 ext
-            from %s
-            where 
+            FROM %s
+            WHERE 
                 `user_id` = :user_id
                 AND `channel_id` = :channel_id
-                and `type` = :type
-                and `landing_type` = :landing_type ";
+                AND `type` = :type
+                AND `landing_type` = :landing_type ";
         $map = [];
         $map[':user_id']      = $userID;
         $map[':channel_id']   = $channelID;

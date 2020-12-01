@@ -50,13 +50,13 @@ class ReferralActivityService
     /**
      * 员工专项活动修改
      * @param $data
-     * @param $activityID
+     * @param $activityId
      * @return int|null
      */
-    public static function modifyEmployeeActivity($data, $activityID)
+    public static function modifyEmployeeActivity($data, $activityId)
     {
         $data = self::formatEmployeeActivityPost($data);
-        return EmployeeActivityModel::modify($data, $activityID);
+        return EmployeeActivityModel::modify($data, $activityId);
     }
 
     /**
@@ -110,15 +110,15 @@ class ReferralActivityService
 
     /**
      * 获取员工活动海报
-     * @param $activityID
-     * @param $employeeID
+     * @param $activityId
+     * @param $employeeId
      * @return array
      * @throws RunTimeException
      */
-    public static function getEmployeePoster($activityID, $employeeID)
+    public static function getEmployeePoster($activityId, $employeeId)
     {
         $res = [];
-        $activity = EmployeeActivityModel::getById($activityID);
+        $activity = EmployeeActivityModel::getById($activityId);
         if (empty($activity)) {
             throw new RunTimeException(['record_not_found']);
         }
@@ -131,7 +131,7 @@ class ReferralActivityService
             return $res;
         }
 
-        $userQrPath = self::getEmployeeActivityQr($activity, $employeeID);
+        $userQrPath = self::getEmployeeActivityQr($activity, $employeeId);
         $res['poster'] = self::genEmployeePoster(
             $activity['employee_poster'],
             $imageWidth,
@@ -148,16 +148,18 @@ class ReferralActivityService
     /**
      * 获取员工带参二维码
      * @param $activity
-     * @param $employeeID
+     * @param $employeeId
      * @return string
      */
-    public static function getEmployeeActivityQr($activity, $employeeID)
+    public static function getEmployeeActivityQr($activity, $employeeId)
     {
         // return 'dev/employee_poster/3cc78caecb23370c95aff7faba87b281.png';
         // 带活动id和employee id参数的二维码
         $url = DictConstants::get(DictConstants::EMPLOYEE_ACTIVITY_ENV, 'employee_activity_landing_url');
-        $url = $url ?? $_ENV['AI_REFERRER_URL'];
-        $qrURL = sprintf($url.'?activity_id=%s&employee_id=%s&app=%s', $activity['id'], $employeeID, $activity['app_id']);
+        if (empty($url)) {
+            throw new RunTimeException(['employee_activity_landing_url not set']);
+        }
+        $qrURL = $url . '?' . http_build_query(['activity_id' => $activity['id'], 'employee_id' => $employeeId, 'app_id' => $activity['app_id']]);
         list($filePath, $fileName) = QRCodeModel::genImage($qrURL, time());
         chmod($filePath, 0755);
         //上传二维码到阿里oss
@@ -172,7 +174,7 @@ class ReferralActivityService
     /**
      * 生成员工海报
      * @param $activity
-     * @param $employeeID
+     * @param $employeeId
      * @param $imageWidth
      * @param $imageHeight
      * @param $qrWidth
@@ -235,19 +237,19 @@ class ReferralActivityService
         unset($activity['poster']);
         if ($posterData) {
             foreach ($posterData as $posterURL) {
-                $activity['poster_url'][] = AliOSS::signUrls($posterURL);
+                $activity['poster_url'][] = AliOSS::replaceCdnDomainForDss($posterURL);
             }
         }
         if ($activity['end_time'] < $now) {
-            $activity['act_time_status'] = 3; // 已结束
+            $activity['act_time_status'] = EmployeeActivityModel::ACT_TIME_STATUS_OVER; // 已结束
         } elseif ($activity['start_time'] > $now) {
-            $activity['act_time_status'] = 1; // 待开始
+            $activity['act_time_status'] = EmployeeActivityModel::ACT_TIME_STATUS_PENDING; // 待开始
         } else {
-            $activity['act_time_status'] = 2; // 进行中
+            $activity['act_time_status'] = EmployeeActivityModel::ACT_TIME_STATUS_IN_PROGRESS; // 进行中
         }
-        $activity['banner_url']           = AliOSS::signUrls($activity['banner']);
-        $activity['figure_url']           = AliOSS::signUrls($activity['figure']);
-        $activity['employee_poster_url']  = AliOSS::signUrls($activity['employee_poster']);
+        $activity['banner_url']           = AliOSS::replaceCdnDomainForDss($activity['banner']);
+        $activity['figure_url']           = AliOSS::replaceCdnDomainForDss($activity['figure']);
+        $activity['employee_poster_url']  = AliOSS::replaceCdnDomainForDss($activity['employee_poster']);
         $activity['show_start_time']      = date('Y-m-d H:i:s', $activity['start_time']);
         $activity['show_end_time']        = date('Y-m-d H:i:s', $activity['end_time']);
         $activity['create_time']          = date('Y-m-d H:i', $activity['create_time']);
@@ -274,25 +276,25 @@ class ReferralActivityService
 
     /**
      * 获取员工活动海报
-     * @param $userID
+     * @param $userId
      * @param $channel
-     * @param $activityID
-     * @param $employeeID
-     * @param $appID
+     * @param $activityId
+     * @param $employeeId
+     * @param $appId
      * @return array
      * @throws RunTimeException
      */
     public static function getPosterList(
-        $userID,
+        $userId,
         $channel,
-        $activityID,
-        $employeeID,
-        $appID
+        $activityId,
+        $employeeId,
+        $appId
     ) {
-        if (empty($$channel)) {
+        if (empty($channel)) {
             $channel = DictConstants::get(DictConstants::EMPLOYEE_ACTIVITY_ENV, 'invite_channel');
         }
-        $activity = EmployeeActivityModel::getById($activityID);
+        $activity = EmployeeActivityModel::getById($activityId);
         if (empty($activity)) {
             throw new RunTimeException(['record_not_found']);
         }
@@ -304,9 +306,9 @@ class ReferralActivityService
             }
         }
         $landingType =  self::getLandingType();
-        $userQrPath = DssUserQrTicketModel::getUserQrURL($userID, $channel, $activityID, $employeeID, $appID, $landingType);
+        $userQrPath = DssUserQrTicketModel::getUserQrURL($userId, $channel, $activityId, $employeeId, $appId, $landingType);
         if (empty($userQrPath)) {
-            SimpleLogger::error('empty user qr code path', [$userID, $channel, $activityID, $employeeID, $appID, $landingType]);
+            SimpleLogger::error('empty user qr code path', [$userId, $channel, $activityId, $employeeId, $appId, $landingType]);
         }
         $userQrUrl = AliOSS::signUrls($userQrPath);
         return ['poster_url' => $posterList, 'qr_url' => $userQrUrl];

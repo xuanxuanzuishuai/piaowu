@@ -60,6 +60,7 @@ class ReferralService
             $where .= ' and e.name like :employee_name ';
             $map[':employee_name'] = "{$params['employee_name']}%";
         }
+        list($params['page'], $params['count']) = Util::formatPageCount($params);
         $limit = Util::limitation($params['page'], $params['count']);
 
         $s  = DssStudentModel::getTableName();

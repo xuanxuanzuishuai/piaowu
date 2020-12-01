@@ -27,8 +27,6 @@ class Invite extends ControllerBase
     {
         try {
             $params = $request->getParams();
-            $params['page'] = $params['page'] ?? 1;
-            $params['count'] = $params['count'] ?? $_ENV['PAGE_RESULT_COUNT'];
             list($records, $totalCount) = ReferralService::getReferralList($params);
         } catch (RuntimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
