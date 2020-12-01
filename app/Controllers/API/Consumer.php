@@ -56,7 +56,7 @@ class Consumer extends ControllerBase
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        WeChatMiniPro::factory($params['msg_body']['source_app_id'], $params['msg_body']['busi_type'])->setAccessToken($params['msg_body']['access_token']);
+        WeChatMiniPro::factory($params['msg_body']['app_id'], $params['msg_body']['busi_type'])->setAccessToken($params['msg_body']['access_token']);
     }
 
     /**
@@ -96,7 +96,7 @@ class Consumer extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         try {
-            UserRefereeService::refereeAwardDeal($params['source_app_id'], $params['event_type'], $params['msg_body']);
+            UserRefereeService::refereeAwardDeal($params['msg_body']['app_id'], $params['event_type'], $params['msg_body']);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
