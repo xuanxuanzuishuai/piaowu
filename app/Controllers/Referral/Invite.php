@@ -97,6 +97,11 @@ class Invite extends ControllerBase
                     'key' => 'app_id',
                     'type' => 'required',
                     'error_code' => 'app_id_is_required'
+                ],
+                [
+                    'key' => 'referee_type',
+                    'type' => 'required',
+                    'error_code' => 'referee_type_is_required'
                 ]
             ];
 
@@ -106,7 +111,7 @@ class Invite extends ControllerBase
                 return $response->withJson($result, StatusCode::HTTP_OK);
             }
             $params = $request->getParams();
-            $info = ReferralService::getRefereeAllUser($params['app_id'], $params['student_id']);
+            $info = ReferralService::getRefereeAllUser($params['app_id'], $params['student_id'], $params['referee_type']);
         } catch (RuntimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
