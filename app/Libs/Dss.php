@@ -71,7 +71,7 @@ class Dss
     {
         $res = self::commonAPI(self::ADD_USER_TICKET, $data, 'POST');
         if ($res['code'] != Valid::CODE_SUCCESS) {
-            throw new RunTimeException(['update_fail']);
+            SimpleLogger::error('Save ticket error', [$res, $data]);
         }
     }
 }

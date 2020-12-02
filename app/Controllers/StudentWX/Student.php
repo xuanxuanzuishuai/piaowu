@@ -205,7 +205,7 @@ class Student extends ControllerBase
                 $appId
             );
         } catch (RunTimeException $e) {
-            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
 
         return HttpHelper::buildResponse($response, $activity);

@@ -270,6 +270,8 @@ class ReferralActivityService
     {
         $data['app_id']         = $data['app_id'] ?? UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT;
         $data['poster']         = json_encode($data['poster']);
+        $data['start_time']     = strtotime($data['start_time']);
+        $data['end_time']       = strtotime($data['end_time']);
         $data['invite_text']    = Util::textEncode($data['invite_text']);
         $data['employee_share'] = Util::textEncode($data['employee_share']);
         return $data;
@@ -299,20 +301,14 @@ class ReferralActivityService
         if (empty($activity)) {
             throw new RunTimeException(['record_not_found']);
         }
-        $posters = json_decode($activity['poster'], true);
-        $posterList = [];
-        if ($posters) {
-            foreach ($posters as $posterURL) {
-                $posterList[] = AliOSS::signUrls($posterURL);
-            }
-        }
-        $landingType =  self::getLandingType();
-        $userQrPath = DssUserQrTicketModel::getUserQrURL($userId, $channel, $activityId, $employeeId, $appId, $landingType);
+        $activity    = self::formatEmployeeActivity($activity);
+        $landingType = self::getLandingType();
+        $userQrPath  = DssUserQrTicketModel::getUserQrURL($userId, $channel, $activityId, $employeeId, $appId, $landingType);
         if (empty($userQrPath)) {
             SimpleLogger::error('empty user qr code path', [$userId, $channel, $activityId, $employeeId, $appId, $landingType]);
         }
         $userQrUrl = AliOSS::signUrls($userQrPath);
-        return ['poster_url' => $posterList, 'qr_url' => $userQrUrl];
+        return ['activity' => $activity, 'qr_url' => $userQrUrl];
     }
 
     public static function getLandingType($landingType = null)
