@@ -12,7 +12,6 @@ use App\Models\GroupPrivilegeModel;
 use App\Models\PrivilegeModel;
 use App\Models\RoleModel;
 use App\Models\EmployeeModel;
-use App\Models\EmployeePrivilegeModel;
 
 class EmployeePrivilegeService
 {

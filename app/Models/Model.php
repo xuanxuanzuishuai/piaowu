@@ -11,7 +11,6 @@ namespace App\Models;
 
 use App\Libs\MysqlDB;
 use App\Libs\RedisDB;
-use App\Libs\SimpleLogger;
 use App\Libs\Util;
 
 class Model
@@ -24,7 +23,7 @@ class Model
     private static function getDefaultCacheKeyPri()
     {
         $pri = empty(static::$redisPri) ? static::$table : static::$redisPri;
-        return "dss_{$pri}_";
+        return "op_{$pri}_";
     }
 
     public static function createCacheKey($key, $pri = null)

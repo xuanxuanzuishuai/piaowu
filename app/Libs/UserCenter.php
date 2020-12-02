@@ -8,11 +8,6 @@
  */
 
 namespace App\Libs;
-
-
-use App\Models\StudentModel;
-use App\Models\TeacherModel;
-use App\Services\DictService;
 use GuzzleHttp\Client;
 use Slim\Http\StatusCode;
 
