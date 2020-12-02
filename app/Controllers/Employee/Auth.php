@@ -29,7 +29,7 @@ class Auth extends ControllerBase
      */
     public function usercenterurl(Request $request, Response $response, $args)
     {
-        list($ucHost,$ucAppId) = DictConstants::get(DictConstants::USER_CENTER, ['host', 'app_id_dss']);
+        list($ucHost,$ucAppId) = DictConstants::get(DictConstants::USER_CENTER, ['host', 'app_id_op']);
         return $response->withJson(array(
             'code' => 0,
             'data' => [
