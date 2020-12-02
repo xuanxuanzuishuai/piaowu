@@ -26,12 +26,12 @@ class EmployeeActivityModel extends Model
 
     //海报的位置/大小信息
     public static $activityPosterConfig = [
-        'qr_x'          => 533,
-        'qr_y'          => 92,
+        'qr_x'          => 225,
+        'qr_y'          => 121,
         'poster_width'  => 750,
         'poster_height' => 1334,
-        'qr_width'      => 154,
-        'qr_height'     => 154
+        'qr_width'      => 300,
+        'qr_height'     => 300
     ];
 
     public static function insert($data)

@@ -35,7 +35,7 @@ class RoleModel extends Model
 
     public static function updateRole($id, $update)
     {
-       $result = self::updateRecord($id, $update,false);
+       $result = self::updateRecord($id, $update);
        return ($result && $result > 0);
     }
 

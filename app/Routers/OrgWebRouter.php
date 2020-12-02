@@ -22,12 +22,12 @@ use App\Middleware\OrgWebMiddleware;
 class OrgWebRouter extends RouterBase
 {
     public $middleWares = [EmployeePrivilegeMiddleWare::class, EmployeeAuthCheckMiddleWare::class, OrgWebMiddleware::class];
-    protected $logFilename = 'operation_org_web.log';
+    protected $logFilename = 'operation_admin_web.log';
     protected $uriConfig = [
 
         '/api/uictl/dropdown' => ['method' => ['get'], 'call' => UICtl::class . ':dropdown', 'middles' => [OrgWebMiddleware::class]],
         '/api/oss/callback' => ['method' => ['post'], 'call' => OSS::class . ':callback', 'middles' => [OrgWebMiddleware::class]],
-
+        '/api/oss/signature' => ['method' => ['get'], 'call' => OSS::class . ':signature', 'middles' => [OrgWebMiddleware::class]],
 
         '/employee/auth/tokenlogin' => ['method' => ['post'], 'call' => Auth::class . ':tokenlogin', 'middles' => [OrgWebMiddleware::class]],
         '/employee/auth/signout' => ['method' => ['post'], 'call' => Auth::class . ':signout', 'middles' => [EmployeeAuthCheckMiddleWare::class, OrgWebMiddleware::class]],
@@ -84,7 +84,6 @@ class OrgWebRouter extends RouterBase
         '/op_web/employee_activity/add'           => ['method' => ['post'], 'call' => EmployeeActivity::class . ':add'],
         '/op_web/employee_activity/modify'        => ['method' => ['post'], 'call' => EmployeeActivity::class . ':modify'],
         '/op_web/employee_activity/update_status' => ['method' => ['post'], 'call' => EmployeeActivity::class . ':updateStatus'],
-
 
     ];
 }

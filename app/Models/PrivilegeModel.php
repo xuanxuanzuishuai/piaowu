@@ -121,7 +121,7 @@ class PrivilegeModel extends Model
      */
     public static function updatePrivilege($id, $update)
     {
-        $result = self::updateRecord($id, $update,false);
+        $result = self::updateRecord($id, $update);
 
         if ($result && $result > 0) {
             $privilege = self::getById($id);

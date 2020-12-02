@@ -90,7 +90,7 @@ class DeptModel extends Model
 
     public static function insertRecord($data, $isOrg = true)
     {
-        $ret = parent::insertRecord($data, $isOrg);
+        $ret = parent::insertRecord($data);
         self::delCache(0);
         return $ret;
     }

@@ -299,7 +299,7 @@ class EmployeeService
             return $userId;
         }
 
-        $affectRows = EmployeeModel::updateRecord($userId, $update, false);
+        $affectRows = EmployeeModel::updateRecord($userId, $update);
         if(!is_numeric($affectRows)) {
             return Valid::addErrors([], 'employee', 'update_fail');
         }
@@ -329,7 +329,7 @@ class EmployeeService
         if (empty($employeeIds)) {
             return [];
         }
-        return EmployeeModel::getRecords(['id' => $employeeIds], ['id', 'name'], false);
+        return EmployeeModel::getRecords(['id' => $employeeIds], ['id', 'name']);
     }
 
     /**
@@ -393,7 +393,7 @@ class EmployeeService
         if (empty($members['assistant_id'])) {
             return $list;
         }
-        $list = EmployeeModel::getRecords(['id' => $members['assistant_id'], 'status' => EmployeeModel::STATUS_NORMAL], ['name', 'id'], false);
+        $list = EmployeeModel::getRecords(['id' => $members['assistant_id'], 'status' => EmployeeModel::STATUS_NORMAL], ['name', 'id']);
         return $list;
     }
 

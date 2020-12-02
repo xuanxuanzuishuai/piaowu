@@ -124,7 +124,7 @@ class ReferralActivityService
         }
         $res['employee_share'] = $activity['employee_share'];
         $setting = EmployeeActivityModel::$activityPosterConfig;
-        $activity['employee_poster_url'] = AliOSS::signUrls($activity['employee_poster']);
+        $activity['employee_poster_url'] = AliOSS::replaceCdnDomainForDss($activity['employee_poster']);
         list($imageWidth, $imageHeight) = getimagesize($activity['employee_poster_url']);
         if (empty($imageHeight) || empty($imageWidth)) {
             SimpleLogger::error('Error get image size', [$activity]);
@@ -233,11 +233,12 @@ class ReferralActivityService
     {
         $now = time();
 
-        $posterData = json_decode($activity['poster'], true);
-        unset($activity['poster']);
-        if ($posterData) {
-            foreach ($posterData as $posterURL) {
-                $activity['poster_url'][] = AliOSS::replaceCdnDomainForDss($posterURL);
+        $activity['poster'] = json_decode($activity['poster'], true);
+        if ($activity['poster']) {
+            foreach ($activity['poster'] as $posterURL) {
+                $activity['poster_url'][] = [
+                    'url' => AliOSS::replaceCdnDomainForDss($posterURL)
+                ];
             }
         }
         if ($activity['end_time'] < $now) {
@@ -319,7 +320,11 @@ class ReferralActivityService
         if (!empty($landingType)) {
             return $landingType;
         }
-        return DictService::getKeyValue(Constants::DICT_TYPE_POSTER_QRCODE_TYPE, 'qr_code_type');
+        $qrCodeType = DictService::getKeyValue(Constants::DICT_TYPE_POSTER_QRCODE_TYPE, 'qr_code_type');
+        if (!empty($qrCodeType)) {
+            return DssUserQrTicketModel::LANDING_TYPE_MINIAPP;
+        }
+        return DssUserQrTicketModel::LANDING_TYPE_NORMAL;
     }
 
 }
