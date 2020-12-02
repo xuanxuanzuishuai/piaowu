@@ -47,12 +47,8 @@ class DictConstants {
         'type' => 'USER_CENTER_CONFIG',
         'keys' => [
             'host',
-            'app_id_dss',
-            'app_secret_dss',
-            'app_id_student',
-            'app_secret_student',
-            'app_id_teacher',
-            'app_secret_teacher',
+            'app_id_op',
+            'app_secret_op'
         ]
     ];
 

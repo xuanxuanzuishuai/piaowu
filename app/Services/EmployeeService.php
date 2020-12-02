@@ -33,7 +33,7 @@ class EmployeeService
     public static function checkUcToken($token){
 
         // 用户中心验证Token及权限
-        list($appId, $appSecret) = DictConstants::get(DictConstants::USER_CENTER, ['app_id_dss', 'app_secret_dss']);
+        list($appId, $appSecret) = DictConstants::get(DictConstants::USER_CENTER, ['app_id_op', 'app_secret_op']);
         $uc = new UserCenter($appId, $appSecret);
         $ucData = $uc->CheckToken($token);
         if (empty($ucData['user'])){
