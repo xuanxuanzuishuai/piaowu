@@ -1,7 +1,7 @@
 <?php
 /**
  * Created by IntelliJ IDEA.
- * User: hemu
+ * User: yuxuan
  * Date: 2019/2/28
  * Time: 11:32 AM
  */
@@ -14,17 +14,13 @@ use App\Libs\Dict;
 use App\Libs\DingDing;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
-use App\Libs\MysqlDB;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\EmployeeModel;
 use App\Models\RoleModel;
-use App\Models\StudentModel;
 use App\Services\DictService;
 use App\Services\EmployeeSeatService;
 use App\Services\EmployeeService;
-use App\Services\RoleService;
-use App\Services\StudentService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
