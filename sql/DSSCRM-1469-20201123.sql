@@ -21,7 +21,7 @@ CREATE TABLE `employee_activity` (
 INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
 VALUES
   ('EMPLOYEE_ACTIVITY_ENV', '员工活动设置', 'invite_channel', '2380', '员工专项转介绍渠道'),
-('EMPLOYEE_ACTIVITY_ENV', '员工活动设置', 'employee_activity_landing_url', 'https://referral-pre.xiaoyezi.com/market/index', '员工专项转介绍海报生成页面URL'),
+('EMPLOYEE_ACTIVITY_ENV', '员工活动设置', 'employee_activity_landing_url', 'http://referral-pre.xiaoyezi.com/operation/student/staffPoster', '员工专项转介绍海报生成页面URL'),
 ('HAS_REVIEW_COURSE', '学生当前进度', '0', '注册', ''),
 ('HAS_REVIEW_COURSE', '学生当前进度', '1', '付费体验卡', ''),
 ('HAS_REVIEW_COURSE', '学生当前进度', '2', '付费年卡', '');
