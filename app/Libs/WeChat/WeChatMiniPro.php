@@ -141,7 +141,7 @@ class WeChatMiniPro
         $res = $this->requestJson($api, $requestParams, 'POST');
         if (is_string($res) && strlen($res) > 0) {
             return $res;
-        } elseif (is_array($res) && $res['errcode'] == 40001 && !$retry) {
+        } elseif (is_array($res) && in_array($res['errcode'], [40001,42001]) && !$retry) {
             $this->refreshAccessToken();
             return $this->getMiniappCodeImage($params, true);
         }
