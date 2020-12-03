@@ -34,7 +34,7 @@ class UserCenter
     const AUTH_APP_ID_LIEBAO = 5;
     const AUTH_APP_ID_AIPEILIAN_STUDENT = 8; //AI陪练学生
     const AUTH_APP_ID_AIPEILIAN_TEACHER = 13; //AI陪练老师
-    const AUTH_APP_ID_DSS = 10; //机构员工
+    const AUTH_APP_ID_OP = 19; //OP员工
     const APP_ID_PRACTICE = 1; //真人陪练
     //TheONE国际钢琴课公众号，与"AI陪练老师"共用一个APP_ID，以下APP_ID仅为了区分不同的app_id和secret，不能用作其他用途
     const AUTH_APP_ID_AIPEILIAN_CLASSROOM_TEACHER = 0;
@@ -131,7 +131,7 @@ class UserCenter
             ],
             'json' => [
                 'auth' => $auth,
-                'auth_app_id' => self::AUTH_APP_ID_DSS,
+                'auth_app_id' => self::AUTH_APP_ID_OP,
                 'user_info' => $userInfo,
                 'password_encoded' => $encode,
             ]

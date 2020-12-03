@@ -103,7 +103,7 @@ class EmployeeService
      */
     public static function changePassword($userId, $newPassword, $oldPassword = ""){
         $employee = EmployeeModel::getById($userId);
-        list($appId, $appSecret) = DictConstants::get(DictConstants::USER_CENTER, ['app_id_dss', 'app_secret_dss']);
+        list($appId, $appSecret) = DictConstants::get(DictConstants::USER_CENTER, ['app_id_op', 'app_secret_op']);
         $userCenter = new UserCenter($appId, $appSecret);
         $authResult = $userCenter->changePassword($employee['uuid'], $newPassword, $oldPassword);
         if (empty($authResult['code'])){
@@ -247,7 +247,7 @@ class EmployeeService
             $uuid = $params['uuid'];
         }
 
-        list($appId, $appSecret) = DictConstants::get(DictConstants::USER_CENTER, ['app_id_dss', 'app_secret_dss']);
+        list($appId, $appSecret) = DictConstants::get(DictConstants::USER_CENTER, ['app_id_op', 'app_secret_op']);
         $userCenter = new UserCenter($appId, $appSecret);
 
         if(empty($uuid)){
