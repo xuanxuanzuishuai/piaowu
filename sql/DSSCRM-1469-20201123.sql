@@ -24,5 +24,4 @@ VALUES
 ('EMPLOYEE_ACTIVITY_ENV', '员工活动设置', 'employee_activity_landing_url', 'https://referral-pre.xiaoyezi.com/market/index', '员工专项转介绍海报生成页面URL'),
 ('HAS_REVIEW_COURSE', '学生当前进度', '0', '注册', ''),
 ('HAS_REVIEW_COURSE', '学生当前进度', '1', '付费体验卡', ''),
-('HAS_REVIEW_COURSE', '学生当前进度', '2', '付费年卡', ''),
-('HAS_REVIEW_COURSE', '学生当前进度', '3', '已退费', '');
+('HAS_REVIEW_COURSE', '学生当前进度', '2', '付费年卡', '');
