@@ -73,7 +73,9 @@ class ReferralService
         $order = " ORDER BY si.create_time desc ";
         $countField = 'COUNT(s.id) as total';
         $field = "
-            s.name,
+            s.id as student_id,
+            s.name as student_name,
+            s.uuid as student_uuid,
             s.mobile,
             s.has_review_course,
             s.create_time,
@@ -84,7 +86,10 @@ class ReferralService
             si.referee_employee_id,
             si.referee_id,
             c.name as channel_name,
-            r.mobile as referral_mobile
+            r.mobile as referral_mobile,
+            r.uuid as referrer_uuid,
+            r.name as referrer_name,
+            r.id as referral_student_id
         ";
         $sql = "
         SELECT 
@@ -109,10 +114,11 @@ class ReferralService
     public static function formatStudentInvite($item)
     {
         $hasReviewCourseSet = DictConstants::getSet(DictConstants::HAS_REVIEW_COURSE);
-        $item['mobile_hidden'] = Util::hideUserMobile($item['mobile']);
+        $item['student_mobile_hidden']  = Util::hideUserMobile($item['mobile']);
         $item['referrer_mobile_hidden'] = Util::hideUserMobile($item['referral_mobile']);
         $item['has_review_course_show'] = $hasReviewCourseSet[$item['has_review_course']];
-        $item['create_time_show'] = date('Y-m-d H:i', $item['create_time']);
+        $item['create_time_show']       = date('Y-m-d H:i', $item['create_time']);
+        $item['register_time']          = $item['create_time'];
         return $item;
     }
 
