@@ -35,7 +35,7 @@ class Invite extends ControllerBase
         }
 
         return HttpHelper::buildResponse($response, [
-            'records' => $records,
+            'list' => $records,
             'total_count' => $totalCount
         ]);
     }
