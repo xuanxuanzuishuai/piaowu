@@ -197,7 +197,7 @@ class Student extends ControllerBase
                 $params['channel'] ?? DictConstants::get(DictConstants::EMPLOYEE_ACTIVITY_ENV, 'invite_channel'),
                 $params['activity_id'],
                 $params['employee_id'],
-                $this->ci['app_id']
+                $this->ci['user_info']['app_id']
             );
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
