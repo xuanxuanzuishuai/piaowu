@@ -73,7 +73,7 @@ class Student extends ControllerBase
         }
 
         try {
-            $appId = $request->getHeader('app-id')[0] ?? NULL;
+            $appId = $params['app_id'] ?? NULL;
             if (empty($appId)) {
                 throw new RunTimeException(['need_app_id']);
             }
@@ -192,13 +192,12 @@ class Student extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         try {
-            $appId = $request->getHeader('app-id')[0] ?? null;
             $activity = ReferralActivityService::getPosterList(
                 $this->ci['user_info']['user_id'],
                 $params['channel'] ?? DictConstants::get(DictConstants::EMPLOYEE_ACTIVITY_ENV, 'invite_channel'),
                 $params['activity_id'],
                 $params['employee_id'],
-                $appId
+                $this->ci['app_id']
             );
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
