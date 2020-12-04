@@ -33,7 +33,7 @@ class DssStudentModel extends DssModel
         }
         if (!empty($params['has_review_course'])) {
             $where .= ' and s.has_review_course = :has_review_course ';
-            $map[':has_review_course'] = "{$params['has_review_course']}%";
+            $map[':has_review_course'] = "{$params['has_review_course']}";
         }
         if (!empty($params['s_create_time'])) {
             $where .= ' and si.create_time >= :s_create_time ';
@@ -49,11 +49,11 @@ class DssStudentModel extends DssModel
         }
         if (!empty($params['activity'])) {
             $where .= ' and ea.name like :activity ';
-            $map[':activity'] = "{$params['activity']}%";
+            $map[':activity'] = "%{$params['activity']}%";
         }
         if (!empty($params['employee_name'])) {
             $where .= ' and e.name like :employee_name ';
-            $map[':employee_name'] = "{$params['employee_name']}%";
+            $map[':employee_name'] = "%{$params['employee_name']}%";
         }
         list($params['page'], $params['count']) = Util::formatPageCount($params);
         $limit = Util::limitation($params['page'], $params['count']);
