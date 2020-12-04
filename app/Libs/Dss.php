@@ -13,7 +13,7 @@ use App\Libs\Exceptions\RunTimeException;
 class Dss
 {
     const REFRESH_ACCESS_TOKEN = '/api/wechat/refresh_token'; //刷新
-    const ADD_STUDENT = '/op/user/register'; //添加学生
+    const ADD_STUDENT = '/op/user/register_bound'; //添加学生
     const ADD_USER_TICKET = '/op/user/save_ticket'; // 保存ticket
 
     private $host;
@@ -58,7 +58,7 @@ class Dss
      * @param $params
      * @throws RunTimeException
      */
-    public function studentRegister($params)
+    public function studentRegisterBound($params)
     {
         $data = self::commonAPI(self::ADD_STUDENT, $params, 'POST');
         if ($data['code'] != Valid::CODE_SUCCESS) {

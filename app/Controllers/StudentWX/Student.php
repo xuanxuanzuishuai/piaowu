@@ -91,11 +91,7 @@ class Student extends ControllerBase
             }
             $userType = Constants::USER_TYPE_STUDENT;
             $channelId = $params['channel_id'] ?? Constants::CHANNEL_WE_CHAT_SCAN;
-            //验证手机号是否已存在
-            $studentInfo = UserService::getUserInfo($appId, $params['mobile']);
-            if (empty($studentInfo)) {
-                UserService::studentRegister($appId, $params['mobile'], $channelId, $data['openid'], $busiType, $userType, $params["referee_id"]);
-            }
+            UserService::studentRegisterBound($appId, $params['mobile'], $channelId, $data['openid'], $busiType, $userType, $params["referee_id"]);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }

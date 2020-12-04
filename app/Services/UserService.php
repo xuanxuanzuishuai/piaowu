@@ -65,10 +65,10 @@ class UserService
      * @param null $refereeId
      * @throws \App\Libs\Exceptions\RunTimeException
      */
-    public static function studentRegister($appId, $mobile, $channelId, $openId = NULL, $busiType = NULL, $userType = NULL, $refereeId = NULL)
+    public static function studentRegisterBound($appId, $mobile, $channelId, $openId = NULL, $busiType = NULL, $userType = NULL, $refereeId = NULL)
     {
         if ($appId == Constants::SMART_APP_ID) {
-            (new Dss())->studentRegister([
+            (new Dss())->studentRegisterBound([
                 'mobile' => $mobile,
                 'channel_id' => $channelId,
                 'open_id' => $openId,
