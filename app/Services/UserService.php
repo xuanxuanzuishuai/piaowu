@@ -42,6 +42,29 @@ class UserService
     }
 
     /**
+     * 用户和当前openId是否还有绑定关系
+     * @param $appId
+     * @param $userId
+     * @param $openId
+     * @param $userType
+     * @param $busiType
+     * @return mixed|null
+     */
+    public static function getUserWeiXinInfoAndUserId($appId, $userId, $openId, $userType, $busiType)
+    {
+        if ($appId == Constants::SMART_APP_ID) {
+            return DssUserWeiXinModel::getRecord([
+                'user_id' => $userId,
+                'open_id' => $openId,
+                'user_type' => $userType,
+                'busi_type' => $busiType,
+                'status' => DssUserWeiXinModel::STATUS_NORMAL
+            ]);
+        }
+        return NULL;
+    }
+
+    /**
      * 手机号获取用户信息
      * @param $appId
      * @param $mobile
