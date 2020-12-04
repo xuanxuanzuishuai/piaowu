@@ -248,4 +248,12 @@ class Model
         $count = $db->count(static::$table, $where);
         return $count;
     }
+    /**
+     * 数据库名前缀的表
+     * @return string
+     */
+    public static function getTableNameWithDb()
+    {
+        return  $_ENV['DB_NAME'] . '.' . static::$table;
+    }
 }

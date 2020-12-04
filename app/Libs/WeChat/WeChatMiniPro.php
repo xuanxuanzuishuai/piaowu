@@ -131,9 +131,8 @@ class WeChatMiniPro
         $api = self::WX_HOST . '/wxa/getwxacodeunlimit?access_token=' . $this->getAccessToken();
         $scene = "";
         if (!empty($params)) {
-            foreach ($params as $key => $value) {
-                $scene .= '&' . $key . '=' . $value;
-            }
+            // 2020年12月04日11:52:37 长度不够，改格式
+            $scene = implode('&', $params);
         }
         $requestParams = [
             'scene' => substr($scene, 0, 32)

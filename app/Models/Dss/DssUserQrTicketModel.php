@@ -4,7 +4,6 @@ namespace App\Models\Dss;
 use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\Dss;
-use App\Libs\MysqlDB;
 use App\Libs\RC4;
 use App\Libs\SimpleLogger;
 use App\Libs\WeChat\WeChatMiniPro;
@@ -74,9 +73,9 @@ class DssUserQrTicketModel extends DssModel
             $map[':employee_id'] = $employeeID;
             $map[':app_id'] = $appID;
         }
-        $userTicket = MysqlDB::getDB()->queryAll(sprintf($sql, self::getTableName()), $map);
-        if (!empty($userTicket['ticket'])) {
-            return $userTicket['qr_url'];
+        $userTicket = self::dbRO()->queryAll(sprintf($sql, self::getTableNameWithDb()), $map);
+        if (!empty($userTicket[0]['qr_url'])) {
+            return $userTicket[0]['qr_url'];
         }
 
         $ticket = RC4::encrypt($_ENV['COOKIE_SECURITY_KEY'], $type . "_" . $userID);
@@ -87,8 +86,7 @@ class DssUserQrTicketModel extends DssModel
                     'r'  => $ticket,
                     'c'  => $channelID,
                     'a'  => $activityID,
-                    'e'  => $employeeID,
-                    'ap' => $appID,
+                    'e'  => $employeeID
                 ]
             );
         } else {
@@ -97,8 +95,7 @@ class DssUserQrTicketModel extends DssModel
                     'referee_id'  => $ticket,
                     'activity_id' => $activityID,
                     'employee_id' => $employeeID,
-                    'channel_id'  => $channelID,
-                    'app_id'      => $appID
+                    'channel_id'  => $channelID
                 ]
             );
         }

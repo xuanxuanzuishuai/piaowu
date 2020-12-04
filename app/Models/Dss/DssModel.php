@@ -92,7 +92,7 @@ class DssModel
      * 数据库名前缀的表
      * @return string
      */
-    public static function getTableName()
+    public static function getTableNameWithDb()
     {
         return  $_ENV['DSS_DB_NAME'] . '.' . static::$table;
     }

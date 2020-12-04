@@ -29,8 +29,8 @@ class Invite extends ControllerBase
     {
         try {
             $params = $request->getParams();
-            $params['s_create_time'] = strtotime($params['s_create_time']);
-            $params['e_create_time'] = strtotime($params['e_create_time']);
+            $params['s_create_time'] = strtotime($params['s_create_time'] ?? 0);
+            $params['e_create_time'] = strtotime($params['e_create_time'] ?? 0);
             list($records, $totalCount) = ReferralService::getReferralList($params);
         } catch (RuntimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());

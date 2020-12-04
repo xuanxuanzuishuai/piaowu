@@ -268,6 +268,7 @@ class ReferralActivityService
      */
     private static function formatEmployeeActivityPost($data)
     {
+        self::validateEmployeeActivityPost($data);
         $data['app_id']         = $data['app_id'] ?? UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT;
         $data['poster']         = json_encode($data['poster']);
         $data['start_time']     = strtotime($data['start_time']);
@@ -275,6 +276,18 @@ class ReferralActivityService
         $data['invite_text']    = Util::textEncode($data['invite_text']);
         $data['employee_share'] = Util::textEncode($data['employee_share']);
         return $data;
+    }
+
+    public static function validateEmployeeActivityPost($data)
+    {
+        $startTime = strtotime($data['start_time']);
+        $endTime = strtotime($data['end_time']);
+        if ($endTime <= $startTime || $endTime <= time()) {
+            throw new RuntimeException(['end_time_error']);
+        }
+        if (mb_strlen($data['remark']) > 500) {
+            throw new RuntimeException(['remark_length_invalid']);
+        }
     }
 
     /**
