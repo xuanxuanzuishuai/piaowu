@@ -2,11 +2,9 @@
 namespace App\Libs;
 
 use App\Libs\Exceptions\RunTimeException;
-
 class DingDing
 {
     private $host;
-    const SELF_APP_ID = 10;
     const SPONSOR_APPLY = '/rapi/v1/dingding/workflow/launch';
     const APPLY_DETAIL = '/rapi/v1/dingding/workflow/instance';
     const GET_UUID_GET_MOBILE = '/rapi/v1/dingding/user/mobile';
@@ -51,7 +49,7 @@ class DingDing
      */
     public function sponsorApply($params)
     {
-        $params['app_id'] = self::SELF_APP_ID;
+        $params['app_id'] = Constants::SELF_APP_ID;
         $data = HttpHelper::requestJson($this->host . self::SPONSOR_APPLY, $params, 'POST');
         if ($data['code'] != Valid::CODE_SUCCESS) {
             throw new RunTimeException([self::getErrorCodeMsg($data['code'])]);
@@ -67,7 +65,7 @@ class DingDing
      */
     public function getApplyDetail($params)
     {
-        $params['app_id'] = self::SELF_APP_ID;
+        $params['app_id'] = Constants::SELF_APP_ID;
         $data = HttpHelper::requestJson($this->host . self::APPLY_DETAIL, $params, 'GET');
         if ($data['code'] != Valid::CODE_SUCCESS) {
             throw new RunTimeException([self::getErrorCodeMsg($data['code'])]);
@@ -120,7 +118,7 @@ class DingDing
      */
     public function getMobileByUuid($params)
     {
-        $params['app_id'] = self::SELF_APP_ID;
+        $params['app_id'] = Constants::SELF_APP_ID;
         $data =  HttpHelper::requestJson($this->host . self::GET_UUID_GET_MOBILE, $params, 'GET');
         if ($data['code'] != Valid::CODE_SUCCESS) {
             throw new RunTimeException([self::getErrorCodeMsg($data['code'])]);
@@ -136,7 +134,7 @@ class DingDing
      */
     public function bindMobile($params)
     {
-        $params['app_id'] = self::SELF_APP_ID;
+        $params['app_id'] = Constants::SELF_APP_ID;
         $data = HttpHelper::requestJson($this->host . self::BIND_MOBILE, $params, 'POST');
         if ($data['code'] != Valid::CODE_SUCCESS) {
             throw new RunTimeException([self::getErrorCodeMsg($data['code'])]);
@@ -152,7 +150,7 @@ class DingDing
      */
     public function delBindMobile($params)
     {
-        $params['app_id'] = self::SELF_APP_ID;
+        $params['app_id'] = Constants::SELF_APP_ID;
         $data = HttpHelper::requestJson($this->host . self::DEL_BIND_MOBILE, $params, 'POST');
         if ($data['code'] != Valid::CODE_SUCCESS) {
             throw new RunTimeException([self::getErrorCodeMsg($data['code'])]);
