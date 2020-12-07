@@ -172,6 +172,17 @@ class Employee extends ControllerBase
                 'type'       => 'required',
                 'error_code' => 'status_is_required'
             ],
+            [
+                'key'        => 'mobile',
+                'type'       => 'required',
+                'error_code' => 'mobile_is_required'
+            ],
+            [
+                'key' => 'mobile',
+                'type' => 'regex',
+                'value' => '/^[0-9]{11}$/',
+                'error_code' => 'mobile_format_error'
+            ]
         ];
 
         $params = $request->getParams();
