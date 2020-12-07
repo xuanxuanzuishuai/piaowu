@@ -122,7 +122,7 @@ class ReferralActivityService
         if (empty($activity)) {
             throw new RunTimeException(['record_not_found']);
         }
-        $res['employee_share'] = $activity['employee_share'];
+        $res['employee_share'] = Util::textDecode($activity['employee_share']);
         $setting = EmployeeActivityModel::$activityPosterConfig;
         $activity['employee_poster_url'] = AliOSS::replaceCdnDomainForDss($activity['employee_poster']);
         list($imageWidth, $imageHeight) = getimagesize($activity['employee_poster_url']);

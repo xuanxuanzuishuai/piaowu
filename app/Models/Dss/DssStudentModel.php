@@ -31,7 +31,7 @@ class DssStudentModel extends DssModel
             $where .= ' and s.mobile like :mobile ';
             $map[':mobile'] = "{$params['mobile']}%";
         }
-        if (!empty($params['has_review_course'])) {
+        if (!Util::emptyExceptZero($params['has_review_course'])) {
             $where .= ' and s.has_review_course = :has_review_course ';
             $map[':has_review_course'] = "{$params['has_review_course']}";
         }
