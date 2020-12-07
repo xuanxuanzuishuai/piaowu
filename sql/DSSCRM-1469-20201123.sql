@@ -20,8 +20,16 @@ CREATE TABLE `employee_activity` (
 
 INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
 VALUES
-  ('EMPLOYEE_ACTIVITY_ENV', '员工活动设置', 'invite_channel', '2380', '员工专项转介绍渠道'),
+  ('EMPLOYEE_ACTIVITY_ENV', '员工活动设置', 'invite_channel', '2612', '员工专项转介绍渠道'),
 ('EMPLOYEE_ACTIVITY_ENV', '员工活动设置', 'employee_activity_landing_url', 'http://referral-pre.xiaoyezi.com/operation/student/staffPoster', '员工专项转介绍海报生成页面URL'),
 ('HAS_REVIEW_COURSE', '学生当前进度', '0', '注册', ''),
 ('HAS_REVIEW_COURSE', '学生当前进度', '1', '付费体验卡', ''),
 ('HAS_REVIEW_COURSE', '学生当前进度', '2', '付费年卡', '');
+
+INSERT INTO `privilege` (`name`, `uri`, `created_time`, `method`, `is_menu`, `menu_name`, `parent_id`, `unique_en_name`, `status`)
+VALUES 
+('活动详情', '/op_web/employee_activity/detail', unix_timestamp(), 'get', 0, '活动详情', 0, 'employee_activity_detail', 1),
+('活动修改', '/op_web/employee_activity/modify', unix_timestamp(), 'post', 0, '活动修改', 0, 'employee_activity_modify', 1),
+('添加活动', '/op_web/employee_activity/add', unix_timestamp(), 'post', 0, '添加活动', 0, 'employee_activity_add', 1),
+('修改状态', '/op_web/employee_activity/update_status', unix_timestamp(), 'post', 0, '修改状态', 0, 'employee_activity_update_status', 1)
+;
