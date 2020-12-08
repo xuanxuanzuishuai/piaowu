@@ -12,6 +12,8 @@ use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
+use App\Models\Dss\DssEmployeeModel;
+use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\EmployeeActivityModel;
 use App\Libs\Util;
@@ -258,6 +260,7 @@ class ReferralActivityService
         $activity['activity_status']      = DictService::getKeyValue('activity_status', $activity['status']);
         $activity['invite_text']          = Util::textDecode($activity['invite_text']);
         $activity['employee_share']       = Util::textDecode($activity['employee_share']);
+        $activity['rules']                = Util::textDecode($activity['rules']);
         return $activity;
     }
 
@@ -273,8 +276,9 @@ class ReferralActivityService
         $data['poster']         = json_encode($data['poster']);
         $data['start_time']     = strtotime($data['start_time']);
         $data['end_time']       = strtotime($data['end_time']);
-        $data['invite_text']    = Util::textEncode($data['invite_text']);
-        $data['employee_share'] = Util::textEncode($data['employee_share']);
+        $data['rules']          = Util::textEncode($data['rules']) ?: $data['rules'];
+        $data['invite_text']    = Util::textEncode($data['invite_text']) ?: $data['invite_text'];
+        $data['employee_share'] = Util::textEncode($data['employee_share']) ?: $data['employee_share'];
         return $data;
     }
 
@@ -321,7 +325,13 @@ class ReferralActivityService
             SimpleLogger::error('empty user qr code path', [$userId, $channel, $activityId, $employeeId, $appId, $landingType]);
         }
         $userQrUrl = AliOSS::signUrls($userQrPath);
-        return ['activity' => $activity, 'qr_url' => $userQrUrl];
+
+        return [
+            'staff'         => DssEmployeeModel::getRecord(['id' => $employeeId], ['uuid']),
+            'referral_info' => DssStudentModel::getRecord(['id' => $userId], ['uuid']),
+            'activity'      => $activity,
+            'qr_url'        => $userQrUrl
+        ];
     }
 
     public static function getLandingType($landingType = null)
