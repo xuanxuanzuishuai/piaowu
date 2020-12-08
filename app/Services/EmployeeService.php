@@ -20,7 +20,6 @@ use App\Libs\UserCenter;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\EmployeeModel;
-use App\Models\EmployeeSeatModel;
 use App\Models\RoleModel;
 
 
@@ -174,42 +173,6 @@ class EmployeeService
         $dingDingMobileInfo = (new DingDing())->getMobileByUuid(['uuid' => $user['uuid']]);
         $user['ding_ding'] = ['mobile' => $dingDingMobileInfo['mobile'] ?? ''];
         return [$user, $roles];
-    }
-
-    /**
-     * 获取用户坐席数据
-     * @param $userId
-     * @return array
-     */
-    public static function getEmployeeSeat($userId)
-    {
-        $seats = EmployeeSeatService::getUserSeats($userId);
-        return self::formatUserSeat($seats);
-    }
-
-    /**
-     * 格式化用户坐席数据
-     * @param $seats
-     * @return array
-     */
-    public static function formatUserSeat($seats)
-    {
-        $data = [];
-        $inuseSeatType = '';
-        if(empty($seats)){
-            return [$data, $inuseSeatType];
-        }
-        foreach($seats as $seat){
-            if($seat['status'] == EmployeeSeatModel::ON_USE){
-                $inuseSeatType = $seat['seat_type'];
-            }
-            if($seat['seat_type'] == EmployeeSeatModel::SEAT_RONGLIAN){
-                $data['ronglian'][] = $seat;
-            }else{
-                $data['tianrun'][] = $seat;
-            }
-        }
-        return [$data, $inuseSeatType];
     }
 
     /**

@@ -19,7 +19,6 @@ use App\Libs\Valid;
 use App\Models\EmployeeModel;
 use App\Models\RoleModel;
 use App\Services\DictService;
-use App\Services\EmployeeSeatService;
 use App\Services\EmployeeService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -519,80 +518,6 @@ class Employee extends ControllerBase
         $dingDingMobileInfo = (new DingDing())->getMobileByUuid(['uuid' => $employeeInfo['uuid']]);
         $employeeInfo['ding_ding'] = ['mobile' => $dingDingMobileInfo['mobile'] ?? ''];
         return HttpHelper::buildResponse($response, $employeeInfo);
-    }
-
-    /**
-     * 绑定坐席
-     * @param Request $request
-     * @param Response $response
-     * @return Response
-     */
-    public function setSeat(Request $request, Response $response)
-    {
-        $rules = [
-            [
-                'key' => 'user_id',
-                'type' => 'required',
-                'error_code' => 'user_id_is_required'
-            ],
-            [
-                'key' => 'seat_id',
-                'type' => 'required',
-                'error_code' => 'seat_id_is_required'
-            ],
-            [
-                'key' => 'seat_id',
-                'type' => 'numeric',
-                'error_code' => 'seat_id_format_error'
-            ],
-            [
-                'key' => 'seat_type',
-                'type' => 'required',
-                'error_code' => 'seat_type_is_required'
-            ]
-        ];
-        $params = $request->getParams();
-        $result = Valid::validate($params, $rules);
-        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
-            return $response->withJson($result, 200);
-        }
-        $extendType = isset($params['extend_type']) ? $params['extend_type'] : '';
-
-        $result = EmployeeSeatService::bindUserSeatService($params['user_id'], $params['seat_id'], $params['seat_type'], $extendType);
-        return $response->withJson($result, 200);
-    }
-
-    /**
-     * 解绑坐席
-     * @param Request $request
-     * @param Response $response
-     * @return Response
-     */
-    public function delSeat(Request $request, Response $response)
-    {
-        $rules = [
-            [
-                'key' => 'user_id',
-                'type' => 'required',
-                'error_code' => 'user_id_is_required'
-            ],
-            [
-                'key' => 'seat_type',
-                'type' => 'required',
-                'error_code' => 'seat_type_is_required'
-            ]
-        ];
-        $params = $request->getParams();
-        $result = Valid::validate($params, $rules);
-        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
-            return $response->withJson($result, 200);
-        }
-
-        EmployeeSeatService::unbindUserSeatService($params['user_id'], $params['seat_type']);
-        return $response->withJson([
-            'code' => Valid::CODE_SUCCESS,
-            'data' => []
-        ]);
     }
 
     /**

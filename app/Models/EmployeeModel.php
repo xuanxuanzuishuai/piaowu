@@ -119,7 +119,6 @@ class EmployeeModel extends Model
         $users = $db->select(self::$table, [
             '[>]' . RoleModel::$table => ['role_id' => 'id'],
             '[>]' . DeptModel::$table => ['dept_id' => 'id'],
-            '[>]' . EmployeeSeatModel::$table => ['id' => 'employee_id']
         ], [
             self::$table . '.id',
             self::$table . '.name',
@@ -135,7 +134,6 @@ class EmployeeModel extends Model
             self::$table . '.email',
             RoleModel::$table . '.name(role_name)',
             DeptModel::$table . '.name(dept_name)',
-            EmployeeSeatModel::$table . '.seat_id',
         ], $where);
 
         return $users ?: [];
@@ -278,9 +276,7 @@ class EmployeeModel extends Model
      */
     public static function getByUuid($uuid)
     {
-        $user = MysqlDB::getDB()->get(self::$table,[
-            '[>]' . EmployeeSeatModel::$table => ['id' => 'employee_id']
-        ], [
+        $user = MysqlDB::getDB()->get(self::$table, [
             self::$table . '.id',
             self::$table . '.name',
             self::$table . '.role_id',
@@ -291,9 +287,6 @@ class EmployeeModel extends Model
             self::$table . '.last_update_pwd_time',
             self::$table . '.org_id',
             self::$table . '.email',
-            EmployeeSeatModel::$table . '.seat_type',
-           EmployeeSeatModel::$table . '.seat_id',
-//            DeptModel::$table . '.dept_name',
         ], [
             'AND' => [
                 self::$table . '.uuid' => $uuid,

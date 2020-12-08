@@ -37,8 +37,6 @@ class OrgWebRouter extends RouterBase
         //list for org
         '/employee/employee/detail' => array('method' => array('get'), 'call' => '\App\Controllers\Employee\Employee:detail'),
         '/employee/employee/modify' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Employee:modify'),
-        '/employee/employee/set_seat' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Employee:setSeat'),
-        '/employee/employee/del_seat' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Employee:delSeat'),
         '/employee/employee/setPwd' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Employee:setPwd'),
         '/employee/employee/userSetPwd' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Employee:userSetPwd'),
         '/employee/employee/getEmployeeListWithRole' => array('method' => array('get'), 'call' => '\App\Controllers\Employee\Employee:getEmployeeListWithRole'),
