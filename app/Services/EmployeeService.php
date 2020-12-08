@@ -165,10 +165,6 @@ class EmployeeService
         $user['thumb'] = empty($user['wx_thumb']) ? '' : AliOSS::signUrls($user['wx_thumb']);
         $user['qr'] = empty($user['wx_qr']) ? '' : AliOSS::signUrls($user['wx_qr']);
         $roles = RoleModel::getRoles();
-        //获取用户坐席数据
-        list($seats, $inuseSeatType) = self::getEmployeeSeat($userId);
-        $user['seats'] = $seats;
-        $user['inuse_seat_type'] = $inuseSeatType;
         //绑定钉钉信息
         $dingDingMobileInfo = (new DingDing())->getMobileByUuid(['uuid' => $user['uuid']]);
         $user['ding_ding'] = ['mobile' => $dingDingMobileInfo['mobile'] ?? ''];
