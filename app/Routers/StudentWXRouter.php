@@ -12,6 +12,7 @@ namespace App\Routers;
 use App\Middleware\WeChatAuthCheckMiddleware;
 use App\Middleware\WeChatOpenIdCheckMiddleware;
 use App\Controllers\StudentWX\Student;
+use App\Controllers\StudentWX\Activity;
 
 class StudentWXRouter extends RouterBase
 {
@@ -30,5 +31,9 @@ class StudentWXRouter extends RouterBase
 
         // 获取分享海报：
         '/student_wx/employee_activity/poster' => ['method' => ['get'], 'call' => Student::class . ':getPosterList'],
+        //每日打卡活动相关路由
+        '/student_wx/sign/upload' => ['method' => ['post'], 'call' => Activity::class . ':signInUpload'],
+        '/student_wx/sign/data' => ['method' => ['get'], 'call' => Activity::class . ':signInData'],
+        '/student_wx/sign/copy_writing' => ['method' => ['get'], 'call' => Activity::class . ':signInCopyWriting'],
     ];
 }

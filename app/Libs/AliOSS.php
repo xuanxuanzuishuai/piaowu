@@ -41,6 +41,7 @@ class AliOSS
     const DIR_MESSAGE_EXCEL = 'message_excel'; // 推送消息EXCEL
     const DIR_MINIAPP_CODE = 'miniapp_code';   // 小程序码
     const DIR_EMPLOYEE_POSTER = 'employee_poster';   // 员工海报
+    const DIR_SIGN_IN_POSTER = 'sign_in_poster';//打卡截图上传
 
 
     private function gmt_iso8601($time) {
@@ -403,7 +404,8 @@ class AliOSS
             self::DIR_MAKE_OPERA,
             self::DIR_OPN_SEARCH,
             self::DIR_STUDENT_THUMB,
-            self::DIR_MESSAGE_EXCEL
+            self::DIR_MESSAGE_EXCEL,
+            self::DIR_SIGN_IN_POSTER,
         ];
         if (!in_array($dirType, $typeConstants)) {
             return null;

@@ -59,5 +59,5 @@ class Constants
     const CHANNEL_WE_CHAT_SCAN = 1226; //微信扫码注册
     // 推荐海报中二维码类型
     const DICT_TYPE_POSTER_QRCODE_TYPE = 'poster_qrcode_type';
-
+    const DICT_TYPE_SHARE_POSTER_CHECK_REASON='share_poster_check_reason';
 }

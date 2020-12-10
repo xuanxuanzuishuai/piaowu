@@ -61,7 +61,7 @@ class DssModel
         }
         return self::dbRO()->get(static::$table, $fields, $where);
     }
-    
+
 
     /**
      * 数据库名前缀的表
