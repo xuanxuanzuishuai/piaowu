@@ -32,9 +32,14 @@ class DssStudentModel extends DssModel
             $map[':mobile'] = "{$params['mobile']}%";
         }
 
-        if (!empty($params['uuid'])){
-            $where .= ' and s.uuid = :uuid ';
-            $map[':uuid'] = "{$params['uuid']}";
+        if (!empty($params['student_uuid'])){
+            $where .= ' and s.uuid = :student_uuid ';
+            $map[':student_uuid'] = "{$params['student_uuid']}";
+        }
+
+        if (!empty($params['referral_uuid'])){
+            $where .= ' and r.uuid = :referral_uuid ';
+            $map[':referral_uuid'] = "{$params['referral_uuid']}";
         }
         if (!Util::emptyExceptZero($params['has_review_course'])) {
             $where .= ' and s.has_review_course = :has_review_course ';
