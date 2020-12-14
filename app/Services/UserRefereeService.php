@@ -29,7 +29,9 @@ class UserRefereeService
     {
         //注册时间处理
         if ($eventType == self::EVENT_TYPE_REGISTER) {
-            self::registerDeal($params['student_id'] ?? NULL, $params['qr_ticket'] ?? NULL, $appId, $params['employee_id'] ?? NULL, $params['activity_id'] ?? NULL);
+            return;
+            //不再处理，有延迟，需要同步创建
+            //self::registerDeal($params['student_id'] ?? NULL, $params['qr_ticket'] ?? NULL, $appId, $params['employee_id'] ?? NULL, $params['activity_id'] ?? NULL);
         }
         //付费事件处理
         if ($eventType == self::EVENT_TYPE_BUY) {
@@ -40,13 +42,14 @@ class UserRefereeService
     /**
      * 注册事件处理
      * @param $studentId
+     * @param $uuid
      * @param $qrTicket
      * @param $appId
      * @param null $employeeId
      * @param null $activityId
      * @throws RunTimeException
      */
-    public static function registerDeal($studentId, $qrTicket, $appId, $employeeId = NULL, $activityId = NULL)
+    public static function registerDeal($studentId, $uuid, $qrTicket, $appId, $employeeId = NULL, $activityId = NULL)
     {
         if (empty($studentId) || empty($qrTicket) || empty($appId)) {
             throw new RunTimeException(['param_lay']);
@@ -57,21 +60,20 @@ class UserRefereeService
             return;
         }
         //注册奖励发放
-        self::registerAwardDeal($studentId, $appId);
+        self::registerAwardDeal($uuid, $appId);
     }
 
     /**
      * 注册奖励发放
-     * @param $studentId
+     * @param $uuid
      * @param $appId
      */
-    public static function registerAwardDeal($studentId, $appId)
+    public static function registerAwardDeal($uuid, $appId)
     {
         if ($appId == Constants::SMART_APP_ID) {
             //学生信息
-            $studentInfo = DssStudentModel::getRecord(['id' => $studentId]);
             // 转介绍二期，注册不再给奖励，只存占位数据
-            (new Erp())->updateTask($studentInfo['uuid'],
+            (new Erp())->updateTask($uuid,
                 RefereeAwardService::getDssRegisterTaskId(),
                 self::EVENT_TASK_STATUS_COMPLETE);
         }
