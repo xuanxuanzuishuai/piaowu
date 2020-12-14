@@ -73,16 +73,6 @@ class Dss extends ControllerBase
     {
         $rules = [
             [
-                'key'        => 'activity_id',
-                'type'       => 'required',
-                'error_code' => 'activity_id_is_required'
-            ],
-            [
-                'key'        => 'employee_id',
-                'type'       => 'required',
-                'error_code' => 'employee_id_is_required'
-            ],
-            [
                 'key'        => 'student_id',
                 'type'       => 'required',
                 'error_code' => 'student_id_is_required'
@@ -99,7 +89,7 @@ class Dss extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         try {
-            UserRefereeService::registerDeal($params['student_id'], $params['qr_ticket'], $params['app_id'], $params['employee_id'], $params['activity_id']);
+            UserRefereeService::registerDeal($params['student_id'], $params['qr_ticket'], $params['app_id'], $params['employee_id'] ?? NULL, $params['activity_id'] ?? NULL);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
