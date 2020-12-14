@@ -13,6 +13,7 @@ use App\Libs\HttpHelper;
 use App\Libs\Valid;
 use App\Services\ReferralActivityService;
 use App\Libs\Exceptions\RunTimeException;
+use App\Services\UserRefereeService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -66,5 +67,43 @@ class Dss extends ControllerBase
         }
 
         return HttpHelper::buildResponse($response, $activity);
+    }
+
+    public function createRelation(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key'        => 'activity_id',
+                'type'       => 'required',
+                'error_code' => 'activity_id_is_required'
+            ],
+            [
+                'key'        => 'employee_id',
+                'type'       => 'required',
+                'error_code' => 'employee_id_is_required'
+            ],
+            [
+                'key'        => 'student_id',
+                'type'       => 'required',
+                'error_code' => 'student_id_is_required'
+            ],
+            [
+                'key'        => 'qr_ticket',
+                'type'       => 'required',
+                'error_code' => 'qr_ticket_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            UserRefereeService::registerDeal($params['student_id'], $params['qr_ticket'], $params['app_id'], $params['employee_id'], $params['activity_id']);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+
+        return HttpHelper::buildResponse($response, []);
     }
 }
