@@ -69,6 +69,12 @@ class Dss extends ControllerBase
         return HttpHelper::buildResponse($response, $activity);
     }
 
+    /**
+     * 创建转介绍关系
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
     public function createRelation(Request $request, Response $response)
     {
         $rules = [
