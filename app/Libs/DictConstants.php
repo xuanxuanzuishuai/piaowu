@@ -211,6 +211,32 @@ class DictConstants {
             '8_1', '8_8'
         ]
     ];
+    //不同应用的微信商户号
+    const WECHAT_MCHID = [
+        'type' => 'wechat_mchid',
+        'keys' => [
+            '8_1'
+        ]
+    ];
+    //不同应用的cert的pem路径
+    const WECHAT_API_CERT_PEM = [
+        'type' => 'wechat_api_cert_pem',
+        'keys' => [
+            '8_1'
+        ]
+    ];
+    //不同应用的key的pem路径
+    const WECHAT_API_KEY_PEM = [
+        'type' => 'wechat_api_key_pem',
+        'keys' => [
+            '8_1'
+        ]
+    ];
+    //红包祝福语设置
+    const WE_CHAT_RED_PACK_CONFIG = [
+        'type' => 'WE_CHAT_RED_PACK',
+        'keys' => ['ACT_NAME', 'SEND_NAME', 'WISHING', 'NORMAL_PIC_WORD', 'COMMUNITY_PIC_WORD', 'TERM_SPRINT_PIC_WORD', 'REFERRER_PIC_WORD', 'REISSUE_PIC_WORD'],
+    ];
     public static function get($type, $key)
     {
         if (empty($type) || empty($key)) {

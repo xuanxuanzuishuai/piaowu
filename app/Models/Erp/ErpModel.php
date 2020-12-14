@@ -7,18 +7,18 @@
  * Time: 上午11:49
  */
 
-namespace App\Models\Dss;
+namespace App\Models\Erp;
 use App\Libs\MysqlDB;
 use App\Libs\RedisDB;
 
-class DssModel
+class ErpModel
 {
     protected static $cacheKeyPri = "";
     protected static $table = "";
     protected static $redisDB;
     protected static $redisExpire = 3 * 86400;
 
-    protected static $defaultRdsReadOnlyInstance = MysqlDB::CONFIG_SLAVE;
+    protected static $defaultRdsReadOnlyInstance = MysqlDB::CONFIG_ERP_SLAVE;
 
     protected static function dbRO()
     {
@@ -86,7 +86,7 @@ class DssModel
         }
         return self::dbRO()->get(static::$table, $fields, $where);
     }
-    
+
 
     /**
      * 数据库名前缀的表
@@ -94,6 +94,6 @@ class DssModel
      */
     public static function getTableNameWithDb()
     {
-        return  $_ENV['DB_DSS_S_NAME'] . '.' . static::$table;
+        return  $_ENV['DB_ERP_S_NAME'] . '.' . static::$table;
     }
 }

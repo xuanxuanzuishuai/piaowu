@@ -65,6 +65,27 @@ class UserService
     }
 
     /**
+     * 用户id查找用户微信信息
+     * @param $appId
+     * @param $userId
+     * @param $userType
+     * @param $busiType
+     * @return mixed|null
+     */
+    public static function getUserWeiXinInfoByUserId($appId, $userId, $userType, $busiType)
+    {
+        if ($appId == Constants::SMART_APP_ID) {
+            return DssUserWeiXinModel::getRecord([
+                'user_id' => $userId,
+                'user_type' => $userType,
+                'busi_type' => $busiType,
+                'status' => DssUserWeiXinModel::STATUS_NORMAL
+            ]);
+        }
+        return NULL;
+    }
+
+    /**
      * 手机号获取用户信息
      * @param $appId
      * @param $mobile

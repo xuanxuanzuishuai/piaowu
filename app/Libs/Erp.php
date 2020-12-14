@@ -8,6 +8,7 @@
 
 namespace App\Libs;
 
+use App\Libs\Exceptions\RunTimeException;
 use GuzzleHttp\Client;
 use Slim\Http\StatusCode;
 class Erp
@@ -310,11 +311,12 @@ class Erp
     }
 
     /**
-     * 活动任务
      * @param $uuid
      * @param $eventTaskId
      * @param $status
-     * @return array|bool
+     * @return mixed
+     * @throws RunTimeException
+     * 活动任务
      */
     public function updateTask($uuid, $eventTaskId, $status)
     {
@@ -326,7 +328,11 @@ class Erp
             'status' => $status
         ];
         $response = HttpHelper::requestJson($this->host . self::API_UPDATE_TASK, $params, 'POST');
-        return $response;
+        if ($response['code'] == Valid::CODE_PARAMS_ERROR) {
+            SimpleLogger::info('erp-> update task error', ['uuid' => $uuid, 'event_task_id' => $eventTaskId]);
+            throw new RunTimeException(['request_error']);
+        }
+        return $response['data'];
     }
 
     /**

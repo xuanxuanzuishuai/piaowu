@@ -39,6 +39,7 @@ class MysqlDB
 
     const ERROR_CODE_NO_ERROR = '00000';
     const CONFIG_SLAVE = 'slave';
+    const CONFIG_ERP_SLAVE = 'erp_slave';
     /**
      * @param null $configType
      * @return MysqlDB
@@ -177,10 +178,10 @@ class MysqlDB
     public static function getConfig($configType)
     {
         switch ($configType) {
-            case 'slave':
+            case self::CONFIG_SLAVE:
                 return [
                     'database_type' => $_ENV['DB_S_TYPE'],
-                    'database_name' => $_ENV['DB_S_NAME'],
+                    'database_name' => $_ENV['DB_DSS_S_NAME'],
                     'server' => $_ENV['DB_S_HOST'],
                     'username' => $_ENV['DB_S_USERNAME'],
                     'password' => $_ENV['DB_S_PASSWORD'],
@@ -193,7 +194,22 @@ class MysqlDB
                         \PDO::ATTR_EMULATE_PREPARES => true]
                 ];
                 break;
-
+            case self::CONFIG_ERP_SLAVE:
+                return [
+                    'database_type' => $_ENV['DB_S_TYPE'],
+                    'database_name' => $_ENV['DB_ERP_S_NAME'],
+                    'server' => $_ENV['DB_S_HOST'],
+                    'username' => $_ENV['DB_S_USERNAME'],
+                    'password' => $_ENV['DB_S_PASSWORD'],
+                    'charset' => $_ENV['DB_S_CHARSET'],
+                    'prefix' => $_ENV['DB_S_PREFIX'],
+                    'port' => $_ENV['DB_S_PORT'],
+                    'logging' => intval($_ENV['DB_DEBUG_MODE']) ? true : false,
+                    'debug_mode' => intval($_ENV['DB_DEBUG_MODE']) ? true : false,
+                    'option' => [\PDO::ATTR_STRINGIFY_FETCHES => false,
+                        \PDO::ATTR_EMULATE_PREPARES => true]
+                ];
+                break;
             default:
                 return [
                     'database_type' => $_ENV['DB_TYPE'],
