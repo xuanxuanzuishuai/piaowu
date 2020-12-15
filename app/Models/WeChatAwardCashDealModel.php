@@ -8,7 +8,7 @@
 
 namespace App\Models;
 
-class WechatAwardCashDealModel extends Model
+class WeChatAwardCashDealModel extends Model
 {
     public static $table = "wechat_award_cash_deal";
 
