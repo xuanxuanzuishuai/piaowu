@@ -336,12 +336,13 @@ class Erp
     }
 
     /**
-     * 更新奖励状态
      * @param $awardId
      * @param $status
      * @param $reviewerId
      * @param string $reason
-     * @return array|bool
+     * @return mixed
+     * @throws RunTimeException
+     * 更新奖励状态
      */
     public function updateAward($awardId, $status, $reviewerId, $reason = '')
     {
@@ -355,7 +356,11 @@ class Erp
             'reason' => $reason,
         ];
         $response = HttpHelper::requestJson($this->host . self::API_UPDATE_AWARD, $params, 'POST');
-        return $response;
+        if ($response['code'] == Valid::CODE_PARAMS_ERROR) {
+            SimpleLogger::info('erp-> update award error', ['award_if' => $awardId, 'status' => $status]);
+            throw new RunTimeException(['request_error']);
+        }
+        return $response['data'];
     }
 
     /**

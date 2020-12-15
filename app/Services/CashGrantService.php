@@ -8,6 +8,7 @@ namespace App\Services;
 
 use App\Libs\Constants;
 use App\Libs\DictConstants;
+use App\Libs\Erp;
 use App\Libs\SimpleLogger;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
@@ -20,19 +21,41 @@ use App\Libs\WeChatPackage;
 class CashGrantService
 {
     /**
+     * 给用户发放他获取的奖励红包
      * @param $awardId
      * @param $reviewerId
      * @param $keyCode
-     * @return array
-     * 给用户发放他获取的奖励红包
+     * @param string $reason
+     * @return array|mixed
+     * @throws \App\Libs\Exceptions\RunTimeException
      */
-    public static function cashGiveOut($awardId, $reviewerId, $keyCode)
+    public static function cashGiveOut($awardId, $reviewerId, $keyCode, $reason = '')
     {
         //前置校验奖励是否可发放
         $res = self::checkAwardCanSend($awardId);
         if (empty($res)) {
-            return ;
+            return [];
         }
+        $data = [];
+        //处理发放相关
+        list($awardId, $sendStatus) = self::tryToSendRedPack($awardId, $reviewerId, $keyCode);
+        //结果有变化，通知erp
+        $awardInfo = ErpUserEventTaskAwardModel::getById($awardId);
+        if ($awardInfo['status'] != $sendStatus) {
+            $data = (new Erp())->updateAward($awardId, $sendStatus, $reviewerId, $reason);
+        }
+        return $data;
+    }
+
+    /**
+     * 基础奖励校验通过后才可以调用此发放方法
+     * @param $awardId
+     * @param $reviewerId
+     * @param $keyCode
+     * @return array
+     */
+    private static function tryToSendRedPack($awardId, $reviewerId, $keyCode)
+    {
         //当前奖励的用户是否可正常接收奖励
         list($ifCan, $status, $resultCode, $userWxInfo) = self::checkUserAwardCanSend($awardId);
         $awardBaseInfo = ErpUserEventTaskAwardModel::getById($awardId);
