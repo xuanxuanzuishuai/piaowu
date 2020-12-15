@@ -13,13 +13,28 @@ use App\Libs\SimpleLogger;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\Dss\DssWechatOpenIdListModel;
+use App\Models\EmployeeModel;
 use App\Models\Erp\ErpUserEventTaskAwardModel;
 use App\Models\WeChatAwardCashDealModel;
 use App\Libs\WeChatPackage;
+use App\Services\Queue\RedPack;
 
 
 class CashGrantService
 {
+    /**
+     * 红包队列处理
+     * @param $awardId
+     * @param $eventType
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
+    public static function redPackQueueDeal($awardId, $eventType)
+    {
+        if ($eventType == RedPack::SEND_RED_PACK) {
+            self::cashGiveOut($awardId, EmployeeModel::SYSTEM_EMPLOYEE_ID, 'REFERRER_PIC_WORD', '');
+        }
+    }
+
     /**
      * 给用户发放他获取的奖励红包
      * @param $awardId
