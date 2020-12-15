@@ -34,17 +34,16 @@ class CashGrantService
         //前置校验奖励是否可发放
         $res = self::checkAwardCanSend($awardId);
         if (empty($res)) {
-            return [];
+            return false;
         }
-        $data = [];
         //处理发放相关
         list($awardId, $sendStatus) = self::tryToSendRedPack($awardId, $reviewerId, $keyCode);
         //结果有变化，通知erp
         $awardInfo = ErpUserEventTaskAwardModel::getById($awardId);
         if ($awardInfo['status'] != $sendStatus) {
-            $data = (new Erp())->updateAward($awardId, $sendStatus, $reviewerId, $reason);
+            (new Erp())->updateAward($awardId, $sendStatus, $reviewerId, $reason);
         }
-        return $data;
+        return ($sendStatus == ErpUserEventTaskAwardModel::STATUS_GIVE) && ($awardInfo['status'] != $sendStatus);
     }
 
     /**
