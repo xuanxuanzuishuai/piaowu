@@ -8,6 +8,7 @@ use App\Libs\SimpleLogger;
 use App\Models\Dss\DssPackageExtModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserQrTicketModel;
+use App\Models\EmployeeModel;
 use App\Models\StudentInviteModel;
 
 
@@ -27,7 +28,7 @@ class UserRefereeService
      */
     public static function  refereeAwardDeal($appId, $eventType, $params)
     {
-        //注册时间处理
+        //注册事件处理
         if ($eventType == self::EVENT_TYPE_REGISTER) {
             return;
             //不再处理，有延迟，需要同步创建
@@ -155,6 +156,7 @@ class UserRefereeService
      * @param $packageType
      * @param $trialType
      * @param $appId
+     * @throws RunTimeException
      */
     public static function dssCompleteEventTask($studentId, $packageType, $trialType, $appId)
     {
@@ -199,7 +201,12 @@ class UserRefereeService
         $studentInfo = DssStudentModel::getById($studentId);
         if (!empty($refTaskId)) {
             $erp = new Erp();
-            $erp->updateTask($studentInfo['uuid'], $refTaskId, self::EVENT_TASK_STATUS_COMPLETE);
+           $data = $erp->updateTask($studentInfo['uuid'], $refTaskId, self::EVENT_TASK_STATUS_COMPLETE);
+           if (!empty($data['user_award_ids'])) {
+               foreach ($data['user_award_ids'] as $awardId) {
+                   CashGrantService::cashGiveOut($awardId, EmployeeModel::SYSTEM_EMPLOYEE_ID, 'REFERRER_PIC_WORD');
+               }
+           }
         }
     }
 }
