@@ -12,6 +12,14 @@ use App\Services\DictService;
 
 class DictConstants {
 
+    //消息队列相关配置
+    const QUEUE_CONFIG = [
+        'type' => 'queue_config',
+        'keys' => [
+            'NSQ_LOOKUPS', 'NSQ_TOPIC_PREFIX'
+        ]
+    ];
+
     // 员工专项活动设置
     const EMPLOYEE_ACTIVITY_ENV = [
         'type' => 'EMPLOYEE_ACTIVITY_ENV',

@@ -55,6 +55,11 @@ class CashGrantService
      */
     private static function tryToSendRedPack($awardId, $reviewerId, $keyCode)
     {
+        //防止op红包发放成功，erp未更新成功的情况，倘若当前奖励在op已经成功，直接返回
+        $opAwardInfo = WeChatAwardCashDealModel::getRecord(['user_event_task_award_id']);
+        if (!empty($opAwardInfo) && in_array($opAwardInfo['status'], [ErpUserEventTaskAwardModel::STATUS_GIVE, ErpUserEventTaskAwardModel::STATUS_GIVE_ING])) {
+            return [$awardId, $opAwardInfo['status']];
+        }
         //当前奖励的用户是否可正常接收奖励
         list($ifCan, $status, $resultCode, $userWxInfo) = self::checkUserAwardCanSend($awardId);
         $awardBaseInfo = ErpUserEventTaskAwardModel::getById($awardId);

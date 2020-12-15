@@ -38,4 +38,14 @@ class ErpUserEventTaskAwardModel extends ErpModel
             ErpUserEventTaskAwardModel::$table . '.id' => $awardId
         ]);
     }
+
+    /**
+     * 需要发放的红包
+     * @return array|null
+     */
+    public static function needSendRedPackAward()
+    {
+        $time = time() - 1728000; //只处理最近二十天创建的
+        return self::dbRO()->queryAll("SELECT id FROM " . self::$table . " force index(create_time) WHERE create_time >= " . $time . " AND `status` IN (" . self::STATUS_WAITING . "," . self::STATUS_GIVE_FAIL .") AND award_type = " . self::AWARD_TYPE_CASH . " AND (create_time + delay) <= " . time());
+    }
 }
