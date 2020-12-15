@@ -153,7 +153,7 @@ class CashGrantService
         $ifCan = true;
         $status = NULL;
         $resultCode = NULL;
-        $userWxInfo = NULL;
+        $userWxInfo = [];
         if ($awardUserInfo['app_id'] == Constants::SMART_APP_ID) {
             $user = DssStudentModel::getRecord(['uuid' => $awardUserInfo['uuid']], ['id']);
             $userWxInfo = UserService::getUserWeiXinInfoByUserId(Constants::SMART_APP_ID, $user['id'], DssUserWeiXinModel::USER_TYPE_STUDENT, DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER);
@@ -169,6 +169,14 @@ class CashGrantService
                 //未关注服务号
                 $status = ErpUserEventTaskAwardModel::STATUS_GIVE_FAIL;
                 $resultCode = WeChatAwardCashDealModel::NOT_SUBSCRIBE_WE_CHAT;
+            }
+            //取不到微信信息有个默认
+            if (empty($ifCan)) {
+                $userWxInfo = [
+                    'app_id' => Constants::SMART_APP_ID,
+                    'user_type' => DssUserWeiXinModel::USER_TYPE_STUDENT,
+                    'busi_type' => DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER
+                ];
             }
         }
         return [$ifCan, $status, $resultCode, $userWxInfo];
