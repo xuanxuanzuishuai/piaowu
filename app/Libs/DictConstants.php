@@ -20,6 +20,14 @@ class DictConstants {
         ]
     ];
 
+    //默认头像
+    const STUDENT_DEFAULT_INFO = [
+        'type' => 'student_info',
+        'keys' => [
+            'default_thumb'
+        ]
+    ];
+    
     // 员工专项活动设置
     const EMPLOYEE_ACTIVITY_ENV = [
         'type' => 'EMPLOYEE_ACTIVITY_ENV',
@@ -253,6 +261,12 @@ class DictConstants {
             'receive_red_pack_rule_id',
         ]
     ];
+
+    const CHECKIN_PUSH_CONFIG = [
+        'type' => 'CHECKIN_PUSH_CONFIG',
+        'keys' => ['day_0', 'day_1', 'day_2', 'day_3', 'day_4', 'day_5', 'text_position', 'poster_config'],
+    ];
+
     public static function get($type, $key)
     {
         if (empty($type) || empty($key)) {

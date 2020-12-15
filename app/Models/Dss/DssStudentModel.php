@@ -1,6 +1,7 @@
 <?php
 namespace App\Models\Dss;
 
+use App\Libs\Constants;
 use App\Libs\Util;
 use App\Models\EmployeeActivityModel;
 use App\Models\StudentInviteModel;
@@ -111,5 +112,46 @@ class DssStudentModel extends DssModel
         $total   = $db->queryAll(sprintf($sql, $countField), $map);
         $records = $db->queryAll(sprintf($sql, $field) . " $limit", $map);
         return [$records, $total];
+    }
+
+    /**
+     * 根据班级ID获取学生
+     * @param $collectionIds
+     * @param false $withOpenId 是否带openid
+     * @return array|null
+     */
+    public static function getByCollectionId($collectionIds, $withOpenId = false)
+    {
+        if (empty($collectionIds)) {
+            return [];
+        }
+        $s = DssStudentModel::getTableNameWithDb();
+        $wx = DssUserWeiXinModel::getTableNameWithDb();
+        $c = DssCollectionModel::getTableNameWithDb();
+
+        $field = "s.id,s.collection_id,s.thumb,s.name, c.teaching_start_time";
+        $join  = "";
+        $order = " ORDER BY s.id";
+        $where = "";
+        $where .= " s.collection_id in (" . implode(',', $collectionIds) . ")";
+        $join .= " left join $c c on s.collection_id = c.id";
+        if ($withOpenId) {
+            $join .= " LEFT JOIN $wx wx ON wx.user_id = s.id ";
+            $field .= ",wx.open_id";
+            $where .= " AND wx.user_type = ".DssUserWeiXinModel::USER_TYPE_STUDENT;
+            $where .= " AND wx.status = ".DssUserWeiXinModel::STATUS_NORMAL;
+            $where .= " AND wx.app_id = ".Constants::SMART_APP_ID;
+        }
+
+        $sql = "
+        SELECT
+            {$field}
+        FROM
+            $s s
+            {$join}
+        WHERE
+            {$where} {$order}
+        ";
+        return self::dbRO()->queryAll($sql);
     }
 }

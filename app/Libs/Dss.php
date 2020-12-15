@@ -29,11 +29,11 @@ class Dss
             $fullUrl = $this->host . $api;
             SimpleLogger::info(__FILE__ . ':' . __LINE__, ['api' => $fullUrl, 'data' => $data]);
             $response = HttpHelper::requestJson($fullUrl, $data, $method);
-            SimpleLogger::info(__FILE__ . ':' . __LINE__, ['response' => print_r($response, true)]);
+            SimpleLogger::info(__FILE__ . ':' . __LINE__, ['response' => $response]);
 
             return $response;
         } catch (\Exception $e) {
-            SimpleLogger::error(__FILE__ . ':' . __LINE__, [print_r($e->getMessage(), true)]);
+            SimpleLogger::error(__FILE__ . ':' . __LINE__, [$e->getMessage()]);
         }
         return false;
     }

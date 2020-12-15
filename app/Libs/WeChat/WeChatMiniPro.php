@@ -24,7 +24,13 @@ class WeChatMiniPro
 {
     const WX_HOST = 'https://api.weixin.qq.com';
 
+    const TEMP_MEDIA_EXPIRE = 172800; // 临时media文件过期时间 2天
+    const CACHE_KEY = '%s';
     const BASIC_WX_PREFIX = 'basic_wx_prefix_';
+
+    const API_UPLOAD_IMAGE = '/cgi-bin/media/upload';
+    const API_SEND = '/cgi-bin/message/custom/send';
+    const API_USER_INFO = '/cgi-bin/user/info';
     public $nowWxApp; //当前的微信应用
 
 
@@ -196,5 +202,100 @@ class WeChatMiniPro
     public function sendTemplateMsg($body)
     {
         return HttpHelper::requestJson(self::WX_HOST . '/cgi-bin/message/template/send?access_token=' . $this->getAccessToken(), $body, 'POST');
+    }
+    
+    public function apiUrl($api, $withToken = true)
+    {
+        if ($withToken) {
+            $token = $this->getAccessToken();
+            $query = '?' . http_build_query(['access_token' => $token]);
+        } else {
+            $query = '';
+        }
+        return self::WX_HOST . $api . $query;
+    }
+    private function send($openId, $type, $content)
+    {
+        $api = $this->apiUrl(self::API_SEND);
+
+        $params = [
+            'touser' => $openId,
+            'msgtype' => $type,
+            $type => $content
+        ];
+        return $this->requestJson($api, $params, 'POST');
+    }
+
+    private function tempMediaCacheKey($key)
+    {
+        return sprintf(self::CACHE_KEY, $this->nowWxApp) . '_temp_media_' . $key;
+    }
+
+    public function sendText($openId, $content)
+    {
+        return $this->send($openId, 'text', ['content' => $content]);
+    }
+    
+    public function sendImage($openId, $mediaId)
+    {
+        return $this->send($openId, 'image', ['media_id' => $mediaId]);
+    }
+
+    public function getTempMedia($type, $tempKey, $url)
+    {
+        $redis = RedisDB::getConn();
+        $cacheKey = $this->tempMediaCacheKey($tempKey);
+        $cache = $redis->get($cacheKey);
+
+        if (!empty($cache)) {
+            $media = json_decode($cache, true);
+            return $media;
+        }
+
+        $content = file_get_contents($url);
+
+        SimpleLogger::info('download media file', [
+            'url' => $url,
+            'content_len' => strlen($content)
+        ]);
+
+        $res = self::uploadMedia($type, $tempKey, $content);
+
+        if (!empty($res['media_id'])) {
+            $redis->setex($cacheKey, self::TEMP_MEDIA_EXPIRE, json_encode($res));
+            return $res;
+        }
+
+        return false;
+    }
+
+    public function uploadMedia($type, $fileName, $content)
+    {
+        $api = $this->apiUrl(self::API_UPLOAD_IMAGE);
+
+        $params = [
+            'multipart' => [
+                [
+                    'name'     => 'type',
+                    'contents' => $type
+                ],
+                [
+                    'name'     => 'media',
+                    'filename' => $fileName,
+                    'contents' => $content,
+                ]
+            ],
+        ];
+        return $this->requestJson($api, $params, 'POST_FORM_DATA');
+    }
+
+    public function getUserInfo($openId)
+    {
+        $api = $this->apiUrl(self::API_USER_INFO, false);
+        $params = [
+            'access_token' => $this->getAccessToken(),
+            'openid' => $openId,
+        ];
+        return $this->requestJson($api, $params, 'GET');
     }
 }
