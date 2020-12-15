@@ -175,7 +175,8 @@ class CashGrantService
                 $userWxInfo = [
                     'app_id' => Constants::SMART_APP_ID,
                     'user_type' => DssUserWeiXinModel::USER_TYPE_STUDENT,
-                    'busi_type' => DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER
+                    'busi_type' => DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER,
+                    'user_id'   => $user['id']
                 ];
             }
         }
