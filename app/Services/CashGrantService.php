@@ -20,7 +20,7 @@ use App\Models\Erp\ErpEventModel;
 use App\Models\Erp\ErpUserEventTaskAwardModel;
 use App\Models\WeChatAwardCashDealModel;
 use App\Libs\WeChatPackage;
-use App\Services\Queue\RedPack;
+use App\Services\Queue\RedPackTopic;
 use App\Services\Queue\QueueService;
 
 class CashGrantService
@@ -33,11 +33,11 @@ class CashGrantService
      */
     public static function redPackQueueDeal($awardId, $eventType)
     {
-        if ($eventType == RedPack::SEND_RED_PACK) {
+        if ($eventType == RedPackTopic::SEND_RED_PACK) {
             self::cashGiveOut($awardId, EmployeeModel::SYSTEM_EMPLOYEE_ID, 'REFERRER_PIC_WORD', '');
         }
 
-        if ($eventType == RedPack::UPDATE_RED_PACK) {
+        if ($eventType == RedPackTopic::UPDATE_RED_PACK) {
             self::updateCashDealStatus($awardId);
         }
     }

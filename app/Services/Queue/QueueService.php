@@ -28,7 +28,7 @@ class QueueService
         try {
             $deferMax = self::getDeferMax(count($data));
             foreach ($data as $award) {
-                (new RedPack())->sendRedPack(['award_id' => $award['id']])->publish(rand(0, $deferMax));
+                (new RedPackTopic())->sendRedPack(['award_id' => $award['id']])->publish(rand(0, $deferMax));
             }
         } catch (Exception $e) {
             SimpleLogger::error($e->getMessage(), $msgBody ?? []);
@@ -47,7 +47,7 @@ class QueueService
         try {
             $deferMax = self::getDeferMax(count($data));
             foreach ($data as $award) {
-                (new RedPack())->updateRedPack(['award_id' => $award['user_event_task_award_id']])->publish(rand(0, $deferMax));
+                (new RedPackTopic())->updateRedPack(['award_id' => $award['user_event_task_award_id']])->publish(rand(0, $deferMax));
             }
         } catch (Exception $e) {
             SimpleLogger::error($e->getMessage(), $msgBody ?? []);

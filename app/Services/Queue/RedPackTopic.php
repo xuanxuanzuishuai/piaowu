@@ -9,7 +9,7 @@
 namespace App\Services\Queue;
 
 
-class RedPack extends BaseTopic
+class RedPackTopic extends BaseTopic
 {
     const TOPIC_NAME = "red_pack";
 
