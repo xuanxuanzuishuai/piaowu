@@ -48,4 +48,29 @@ class ErpUserEventTaskAwardModel extends ErpModel
         $time = time() - 1728000; //只处理最近二十天创建的
         return self::dbRO()->queryAll("SELECT id FROM " . self::$table . " force index(create_time) WHERE create_time >= " . $time . " AND `status` IN (" . self::STATUS_WAITING . "," . self::STATUS_GIVE_FAIL .") AND award_type = " . self::AWARD_TYPE_CASH . " AND (create_time + delay) <= " . time());
     }
+
+    /**
+     * 奖励对应的活动信息
+     * @param $awardId
+     * @return mixed
+     */
+    public static function awardRelateEvent($awardId)
+    {
+        return self::dbRO()->get(self::$table,
+            [
+                '[><]' . ErpUserEventTaskModel::$table => ['uet_id' => 'id'],
+                '[><]' . ErpStudentModel::$table => [ErpUserEventTaskModel::$table . '.user_id' => 'id'],
+                '[><]' . ErpEventTaskModel::$table => [ErpUserEventTaskModel::$table . '.event_task_id' => 'id'],
+                '[><]' . ErpEventModel::$table => [ErpEventTaskModel::$table . '.event_id' => 'id'],
+            ],
+            [
+                ErpStudentModel::$table . '.uuid',
+                ErpEventModel::$table . '.type',
+                ErpUserEventTaskModel::$table . '.app_id',
+                ErpUserEventTaskModel::$table . '.event_task_id'
+            ],
+            [
+                self::$table . '.id' => $awardId
+            ]);
+    }
 }

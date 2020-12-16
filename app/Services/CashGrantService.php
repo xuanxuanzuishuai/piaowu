@@ -10,10 +10,13 @@ use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\SimpleLogger;
+use App\Models\Dss\DssGiftCodeModel;
+use App\Models\Dss\DssPackageExtModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\Dss\DssWechatOpenIdListModel;
 use App\Models\EmployeeModel;
+use App\Models\Erp\ErpEventModel;
 use App\Models\Erp\ErpUserEventTaskAwardModel;
 use App\Models\WeChatAwardCashDealModel;
 use App\Libs\WeChatPackage;
@@ -55,14 +58,53 @@ class CashGrantService
         if (empty($res)) {
             return false;
         }
-        //处理发放相关
-        list($awardId, $sendStatus) = self::tryToSendRedPack($awardId, $reviewerId, $keyCode);
+        //退费验证
+        $verify = self::awardAndRefundVerify($awardId);
+        if ($verify) {
+            list($awardId, $sendStatus) = self::tryToSendRedPack($awardId, $reviewerId, $keyCode);
+        } else {
+            $sendStatus = ErpUserEventTaskAwardModel::STATUS_DISABLED;
+        }
+
         //结果有变化，通知erp
         $awardInfo = ErpUserEventTaskAwardModel::getById($awardId);
         if ($awardInfo['status'] != $sendStatus) {
             (new Erp())->updateAward($awardId, $sendStatus, $reviewerId, $reason);
         }
         return ($sendStatus == ErpUserEventTaskAwardModel::STATUS_GIVE) && ($awardInfo['status'] != $sendStatus);
+    }
+
+    /**
+     * 红包奖励的退费验证
+     * @param $awardId
+     * @return bool
+     */
+    public static function awardAndRefundVerify($awardId)
+    {
+        //当前奖励是否需要验证退费
+        $awardDetailInfo = ErpUserEventTaskAwardModel::awardRelateEvent($awardId);
+        $needVerify = $awardDetailInfo['type'] == ErpEventModel::TYPE_IS_REFERRAL;
+        if (!$needVerify) {
+            return true;
+        }
+
+        if ($awardDetailInfo['app_id'] == Constants::SMART_APP_ID) {
+            $studentInfo = DssStudentModel::getRecord(['uuid' => $awardDetailInfo['uuid']]);
+            //完成的体验任务
+            if (in_array($awardDetailInfo['event_task_id'], explode(',', DictConstants::get(DictConstants::NODE_RELATE_TASK, '2')))) {
+                $giftCodeInfo = DssGiftCodeModel::hadPurchasePackageByType($studentInfo['id']);
+            }
+
+            //完成的付费年卡任务
+            if (in_array($awardDetailInfo['event_task_id'], explode(',', DictConstants::get(DictConstants::NODE_RELATE_TASK, '3')) )) {
+                $giftCodeInfo = DssGiftCodeModel::hadPurchasePackageByType($studentInfo['id'], DssPackageExtModel::PACKAGE_TYPE_NORMAL);
+            }
+
+            if (!empty($giftCodeInfo)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -146,6 +188,11 @@ class CashGrantService
         //仅处理现金
         if ($awardInfo['award_type'] != ErpUserEventTaskAwardModel::AWARD_TYPE_CASH) {
             SimpleLogger::info('only deal cash deal', ['award_info' => $awardInfo]);
+            return false;
+        }
+        //金额要大于0
+        if ($awardInfo['award_amount'] <= 0) {
+            SimpleLogger::info('award amount not enough', ['award_info' => $awardInfo]);
             return false;
         }
         //仅处理待发放和发放失败
