@@ -190,4 +190,14 @@ class WeChatMiniPro
 
        ]);
     }
+
+    /**
+     * 推送模板消息
+     * @param $body
+     * @return array|bool
+     */
+    public function sendTemplateMsg($body)
+    {
+        return HttpHelper::requestJson(self::WX_HOST . '/message/template/send', $body, 'POST');
+    }
 }

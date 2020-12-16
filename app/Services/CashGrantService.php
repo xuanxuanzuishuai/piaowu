@@ -71,8 +71,12 @@ class CashGrantService
         //结果有变化，通知erp
         if ($awardDetailInfo['status'] != $sendStatus) {
             (new Erp())->updateAward($awardId, $sendStatus, $reviewerId, $reason);
+            if ($sendStatus == ErpUserEventTaskAwardModel::STATUS_GIVE_ING) {
+                //发放成功推送当前奖励相关的消息
+                PushMessageService::sendAwardRelateMessage($awardDetailInfo);
+            }
         }
-        return ($sendStatus == ErpUserEventTaskAwardModel::STATUS_GIVE) && ($awardDetailInfo['status'] != $sendStatus);
+        return ($sendStatus == ErpUserEventTaskAwardModel::STATUS_GIVE_ING) && ($awardDetailInfo['status'] != $sendStatus);
     }
 
     /**

@@ -60,16 +60,19 @@ class ErpUserEventTaskAwardModel extends ErpModel
             [
                 '[><]' . ErpUserEventTaskModel::$table => ['uet_id' => 'id'],
                 '[><]' . ErpStudentModel::$table => [ErpUserEventTaskModel::$table . '.user_id' => 'id'],
+                '[><]' . ErpStudentModel::$table . ' (r)' => ['user_id' => 'id'],
                 '[><]' . ErpEventTaskModel::$table => [ErpUserEventTaskModel::$table . '.event_task_id' => 'id'],
                 '[><]' . ErpEventModel::$table => [ErpEventTaskModel::$table . '.event_id' => 'id'],
             ],
             [
                 ErpStudentModel::$table . '.uuid',
+                'r.uuid (get_award_uuid)',
                 ErpEventModel::$table . '.type',
                 ErpUserEventTaskModel::$table . '.app_id',
                 ErpUserEventTaskModel::$table . '.event_task_id',
                 self::$table . '.status',
-                ErpEventTaskModel::$table . '.type (task_type)'
+                ErpEventTaskModel::$table . '.type (task_type)',
+                self::$table . '.award_amount'
             ],
             [
                 self::$table . '.id' => $awardId

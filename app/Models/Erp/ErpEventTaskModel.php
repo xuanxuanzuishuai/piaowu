@@ -13,6 +13,6 @@ class ErpEventTaskModel extends ErpModel
 
     //event_task_type
     const BUY = 4; //购买
-    const COMMUNITY_DURATION_POSTER = 6; //可是达标且审核通过
+    const COMMUNITY_DURATION_POSTER = 6; //课时达标且审核通过
     const REISSUE_AWARD = 13; //补发红包
 }
