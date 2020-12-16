@@ -53,6 +53,7 @@ class CashGrantService
      */
     public static function cashGiveOut($awardId, $reviewerId, $keyCode, $reason = '')
     {
+        $keyCode = 'NORMAL_PIC_WORD';
         //前置校验奖励是否可发放
         $res = self::checkAwardCanSend($awardId);
         if (empty($res)) {
