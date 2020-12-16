@@ -13,7 +13,6 @@ use App\Libs\RedisDB;
 
 class ErpModel
 {
-    protected static $cacheKeyPri = "";
     protected static $table = "";
     protected static $redisDB;
     protected static $redisExpire = 3 * 86400;
@@ -25,38 +24,13 @@ class ErpModel
         return MysqlDB::getDB(static::$defaultRdsReadOnlyInstance);
     }
 
-    public static function createCacheKey($key, $pri = null)
-    {
-        $pri = empty($pri) ? self::$cacheKeyPri : $pri;
-        return $pri . $key;
-    }
-
     /**
      * @param $id
      * @return mixed|null
      */
     public static function getById($id)
     {
-        $ret = null;
-
-        $redis = RedisDB::getConn(static::$redisDB);
-        $cacheKey = static::createCacheKey($id);
-        $res = $redis->get($cacheKey);
-
-        if (empty($res)) {
-            $ret = self::dbRO()->get(static::$table, '*', ['id' => $id]);
-            if (!empty($ret)) {
-                $redis->set($cacheKey, json_encode($ret));
-                $expire = static::$redisExpire;
-                if ($expire > 0) {
-                    $redis->expire($cacheKey, $expire);
-                }
-            }
-        } else {
-            $ret = json_decode($res, true);
-        }
-
-        return $ret;
+        return self::dbRO()->get(static::$table, '*', ['id' => $id]);
     }
 
     /**

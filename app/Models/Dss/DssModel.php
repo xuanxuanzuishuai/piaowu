@@ -9,11 +9,9 @@
 
 namespace App\Models\Dss;
 use App\Libs\MysqlDB;
-use App\Libs\RedisDB;
 
 class DssModel
 {
-    protected static $cacheKeyPri = "";
     protected static $table = "";
     protected static $redisDB;
     protected static $redisExpire = 3 * 86400;
@@ -25,11 +23,6 @@ class DssModel
         return MysqlDB::getDB(static::$defaultRdsReadOnlyInstance);
     }
 
-    public static function createCacheKey($key, $pri = null)
-    {
-        $pri = empty($pri) ? self::$cacheKeyPri : $pri;
-        return $pri . $key;
-    }
 
     /**
      * @param $id
@@ -37,26 +30,8 @@ class DssModel
      */
     public static function getById($id)
     {
-        $ret = null;
 
-        $redis = RedisDB::getConn(static::$redisDB);
-        $cacheKey = static::createCacheKey($id);
-        $res = $redis->get($cacheKey);
-
-        if (empty($res)) {
-            $ret = self::dbRO()->get(static::$table, '*', ['id' => $id]);
-            if (!empty($ret)) {
-                $redis->set($cacheKey, json_encode($ret));
-                $expire = static::$redisExpire;
-                if ($expire > 0) {
-                    $redis->expire($cacheKey, $expire);
-                }
-            }
-        } else {
-            $ret = json_decode($res, true);
-        }
-
-        return $ret;
+        return self::dbRO()->get(static::$table, '*', ['id' => $id]);
     }
 
     /**
