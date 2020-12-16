@@ -78,7 +78,7 @@ class DssGiftCodeModel extends DssModel
         }
 
         if (!empty($packageIdSql) && !empty($packageIdSqlV1)) {
-            $sql .= " AND " . $packageIdSql . " OR " . $packageIdSqlV1;
+            $sql .= " AND (" . $packageIdSql . " OR " . $packageIdSqlV1 . ")";
         }
 
         if (empty($packageIdSql) && !empty($packageIdSqlV1)) {
