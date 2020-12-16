@@ -289,7 +289,7 @@ class CashGrantService
      * @param $keyCode
      * 发送微信红包带的配置语
      */
-    public static function getRedPackConfigWord($awardId)
+    public static function getRedPackConfigWord($keyCode)
     {
         //奖励的详情
         $configArr = json_decode(DictConstants::get(DictConstants::WE_CHAT_RED_PACK_CONFIG, $keyCode), true);
