@@ -3,15 +3,11 @@ namespace App\Services;
 
 
 use App\Libs\Constants;
-use App\Libs\DictConstants;
-use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\Erp\ErpEventTaskModel;
-use App\Models\UserWeixinModel;
-use App\Models\WeChatAwardCashDealModel;
 use App\Models\WeChatConfigModel;
 
 class PushMessageService
@@ -62,14 +58,14 @@ class PushMessageService
     }
 
     /**
-     * @param $app_id int, 在UserCenter中定义
+     * @param $appId
      * @param $openid
      * @param $templateId
      * @param $content
      * @param string $url
      * @return array|bool|mixed
      */
-    public static function notifyUserWeixinTemplateInfo($app_id, $openid, $templateId, $content, $url = '')
+    public static function notifyUserWeixinTemplateInfo($appId, $openid, $templateId, $content, $url = '')
     {
         //组织数据
         $body = [
@@ -83,6 +79,6 @@ class PushMessageService
         $arr = [
             Constants::SMART_APP_ID => DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER
         ];
-        return WeChatMiniPro::factory($app_id, $arr[$app_id])->sendTemplateMsg($body);
+        return WeChatMiniPro::factory($appId, $arr[$appId])->sendTemplateMsg($body);
     }
 }
