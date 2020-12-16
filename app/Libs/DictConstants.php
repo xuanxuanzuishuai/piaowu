@@ -243,7 +243,7 @@ class DictConstants {
     //红包祝福语设置
     const WE_CHAT_RED_PACK_CONFIG = [
         'type' => 'WE_CHAT_RED_PACK',
-        'keys' => ['NORMAL_PIC_WORD', 'COMMUNITY_PIC_WORD', 'TERM_SPRINT_PIC_WORD', 'REFERRER_PIC_WORD', 'REISSUE_PIC_WORD'],
+        'keys' => ['NORMAL_PIC_WORD', 'COMMUNITY_PIC_WORD', 'REFERRER_PIC_WORD', 'REISSUE_PIC_WORD'],
     ];
 
     //消息推送规则

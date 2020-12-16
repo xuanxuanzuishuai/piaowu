@@ -67,7 +67,9 @@ class ErpUserEventTaskAwardModel extends ErpModel
                 ErpStudentModel::$table . '.uuid',
                 ErpEventModel::$table . '.type',
                 ErpUserEventTaskModel::$table . '.app_id',
-                ErpUserEventTaskModel::$table . '.event_task_id'
+                ErpUserEventTaskModel::$table . '.event_task_id',
+                self::$table . '.status',
+                ErpEventTaskModel::$table . '.type (task_type)'
             ],
             [
                 self::$table . '.id' => $awardId

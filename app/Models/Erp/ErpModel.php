@@ -9,7 +9,6 @@
 
 namespace App\Models\Erp;
 use App\Libs\MysqlDB;
-use App\Libs\RedisDB;
 
 class ErpModel
 {

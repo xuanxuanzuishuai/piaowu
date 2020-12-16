@@ -17,6 +17,7 @@ use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\Dss\DssWechatOpenIdListModel;
 use App\Models\EmployeeModel;
 use App\Models\Erp\ErpEventModel;
+use App\Models\Erp\ErpEventTaskModel;
 use App\Models\Erp\ErpUserEventTaskAwardModel;
 use App\Models\WeChatAwardCashDealModel;
 use App\Libs\WeChatPackage;
@@ -34,7 +35,7 @@ class CashGrantService
     public static function redPackQueueDeal($awardId, $eventType)
     {
         if ($eventType == RedPackTopic::SEND_RED_PACK) {
-            self::cashGiveOut($awardId, EmployeeModel::SYSTEM_EMPLOYEE_ID, 'REFERRER_PIC_WORD', '');
+            self::cashGiveOut($awardId, EmployeeModel::SYSTEM_EMPLOYEE_ID, '');
         }
 
         if ($eventType == RedPackTopic::UPDATE_RED_PACK) {
@@ -46,44 +47,42 @@ class CashGrantService
      * 给用户发放他获取的奖励红包
      * @param $awardId
      * @param $reviewerId
-     * @param $keyCode
      * @param string $reason
      * @return array|mixed
      * @throws \App\Libs\Exceptions\RunTimeException
      */
-    public static function cashGiveOut($awardId, $reviewerId, $keyCode, $reason = '')
+    public static function cashGiveOut($awardId, $reviewerId, $reason = '')
     {
-        $keyCode = 'NORMAL_PIC_WORD';
         //前置校验奖励是否可发放
         $res = self::checkAwardCanSend($awardId);
         if (empty($res)) {
             return false;
         }
+        $awardDetailInfo = ErpUserEventTaskAwardModel::awardRelateEvent($awardId);
         //退费验证
-        $verify = self::awardAndRefundVerify($awardId);
+        $verify = self::awardAndRefundVerify($awardDetailInfo);
         if ($verify) {
+            $keyCode = self::getAwardKeyWord($awardDetailInfo);
             list($awardId, $sendStatus) = self::tryToSendRedPack($awardId, $reviewerId, $keyCode);
         } else {
             $sendStatus = ErpUserEventTaskAwardModel::STATUS_DISABLED;
         }
 
         //结果有变化，通知erp
-        $awardInfo = ErpUserEventTaskAwardModel::getById($awardId);
-        if ($awardInfo['status'] != $sendStatus) {
+        if ($awardDetailInfo['status'] != $sendStatus) {
             (new Erp())->updateAward($awardId, $sendStatus, $reviewerId, $reason);
         }
-        return ($sendStatus == ErpUserEventTaskAwardModel::STATUS_GIVE) && ($awardInfo['status'] != $sendStatus);
+        return ($sendStatus == ErpUserEventTaskAwardModel::STATUS_GIVE) && ($awardDetailInfo['status'] != $sendStatus);
     }
 
     /**
      * 红包奖励的退费验证
-     * @param $awardId
+     * @param $awardDetailInfo
      * @return bool
      */
-    public static function awardAndRefundVerify($awardId)
+    public static function awardAndRefundVerify($awardDetailInfo)
     {
         //当前奖励是否需要验证退费
-        $awardDetailInfo = ErpUserEventTaskAwardModel::awardRelateEvent($awardId);
         $needVerify = $awardDetailInfo['type'] == ErpEventModel::TYPE_IS_REFERRAL;
         if (!$needVerify) {
             return true;
@@ -271,12 +270,28 @@ class CashGrantService
     }
 
     /**
+     * @param $awardDetailInfo
+     * @return string
+     * 转介绍的祝福语keycode
+     */
+    public static function getAwardKeyWord($awardDetailInfo)
+    {
+        $arr = [
+            ErpEventTaskModel::COMMUNITY_DURATION_POSTER => 'COMMUNITY_PIC_WORD',
+            ErpEventTaskModel::REISSUE_AWARD => 'REISSUE_PIC_WORD',
+            ErpEventTaskModel::BUY => 'NORMAL_PIC_WORD'
+        ];
+        return $arr[$awardDetailInfo['task_type']] ?? 'REFERRER_PIC_WORD';
+    }
+
+    /**
      * @return array
      * @param $keyCode
      * 发送微信红包带的配置语
      */
-    private static function getRedPackConfigWord($keyCode)
+    public static function getRedPackConfigWord($awardId)
     {
+        //奖励的详情
         $configArr = json_decode(DictConstants::get(DictConstants::WE_CHAT_RED_PACK_CONFIG, $keyCode), true);
         return [$configArr['act_name'], $configArr['send_name'], $configArr['wishing']];
     }
