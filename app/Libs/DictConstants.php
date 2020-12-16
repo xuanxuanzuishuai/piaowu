@@ -245,6 +245,14 @@ class DictConstants {
         'type' => 'WE_CHAT_RED_PACK',
         'keys' => ['ACT_NAME', 'SEND_NAME', 'WISHING', 'NORMAL_PIC_WORD', 'COMMUNITY_PIC_WORD', 'TERM_SPRINT_PIC_WORD', 'REFERRER_PIC_WORD', 'REISSUE_PIC_WORD'],
     ];
+
+    //消息推送规则
+    const MESSAGE_RULE = [
+        'type' => 'message_rule_config',
+        'keys' => [
+            'receive_red_pack_rule_id',
+        ]
+    ];
     public static function get($type, $key)
     {
         if (empty($type) || empty($key)) {
