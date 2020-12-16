@@ -3,6 +3,7 @@ namespace App\Services;
 
 
 use App\Libs\Constants;
+use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\Dss\DssStudentModel;
@@ -25,6 +26,10 @@ class PushMessageService
         $achieveUserInfo = DssStudentModel::getRecord(['uuid' => $awardDetailInfo['uuid']]);
         $awardUserInfo = DssStudentModel::getRecord(['uuid' => $awardDetailInfo['get_award_uuid']]);
         $getAwardUserInfo = UserService::getUserWeiXinInfoByUserId($awardDetailInfo['app_id'], $awardUserInfo['id'], DssUserWeiXinModel::USER_TYPE_STUDENT, DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER);
+        if (empty($getAwardUserInfo)){
+            SimpleLogger::info('not found user weixin info', ['user_id' => $awardUserInfo['id']]);
+            return;
+        }
         $replaceParams = [
             'mobile' => Util::hideUserMobile($achieveUserInfo['mobile']),
             'url' => in_array($awardDetailInfo['task_type'], [ErpEventTaskModel::COMMUNITY_DURATION_POSTER,ErpEventTaskModel::REISSUE_AWARD]) ? '' : $_ENV['STUDENT_INVITED_RECORDS_URL'],

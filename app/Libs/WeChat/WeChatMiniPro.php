@@ -198,6 +198,6 @@ class WeChatMiniPro
      */
     public function sendTemplateMsg($body)
     {
-        return HttpHelper::requestJson(self::WX_HOST . '/message/template/send', $body, 'POST');
+        return HttpHelper::requestJson(self::WX_HOST . '/cgi-bin/message/template/send?access_token=' . $this->getAccessToken(), $body, 'POST');
     }
 }
