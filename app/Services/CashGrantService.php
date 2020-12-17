@@ -17,7 +17,6 @@ use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\Dss\DssWechatOpenIdListModel;
 use App\Models\EmployeeModel;
 use App\Models\Erp\ErpEventModel;
-use App\Models\Erp\ErpEventTaskModel;
 use App\Models\Erp\ErpUserEventTaskAwardModel;
 use App\Models\WeChatAwardCashDealModel;
 use App\Libs\WeChatPackage;
@@ -284,9 +283,9 @@ class CashGrantService
     public static function getAwardKeyWord($awardDetailInfo)
     {
         $arr = [
-            ErpEventTaskModel::COMMUNITY_DURATION_POSTER => 'COMMUNITY_PIC_WORD',
-            ErpEventTaskModel::REISSUE_AWARD => 'REISSUE_PIC_WORD',
-            ErpEventTaskModel::BUY => 'NORMAL_PIC_WORD'
+            ErpEventModel::TYPE_IS_DURATION_POSTER => 'COMMUNITY_PIC_WORD',
+            ErpEventModel::TYPE_IS_REISSUE_AWARD => 'REISSUE_PIC_WORD',
+            ErpEventModel::TYPE_IS_REFERRAL => 'NORMAL_PIC_WORD'
         ];
         return $arr[$awardDetailInfo['task_type']] ?? 'REFERRER_PIC_WORD';
     }

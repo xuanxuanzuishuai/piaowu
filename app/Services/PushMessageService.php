@@ -8,7 +8,7 @@ use App\Libs\Util;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
-use App\Models\Erp\ErpEventTaskModel;
+use App\Models\Erp\ErpEventModel;
 use App\Models\WeChatConfigModel;
 
 class PushMessageService
@@ -32,7 +32,7 @@ class PushMessageService
         }
         $replaceParams = [
             'mobile' => Util::hideUserMobile($achieveUserInfo['mobile']),
-            'url' => in_array($awardDetailInfo['task_type'], [ErpEventTaskModel::COMMUNITY_DURATION_POSTER,ErpEventTaskModel::REISSUE_AWARD]) ? '' : $_ENV['STUDENT_INVITED_RECORDS_URL'],
+            'url' => $awardDetailInfo['type'] == ErpEventModel::TYPE_IS_REFERRAL ? $_ENV['STUDENT_INVITED_RECORDS_URL'] : '',
             'awardValue' => $awardDetailInfo['award_amount'] / 100
         ];
         self::notifyUserCustomizeMessage($baseTemId, $replaceParams, $getAwardUserInfo['open_id'], $awardDetailInfo['app_id']);
@@ -46,8 +46,8 @@ class PushMessageService
     public static function getAwardRelateTemId($awardDetailInfo)
     {
         $baseArr = [
-            ErpEventTaskModel::COMMUNITY_DURATION_POSTER => 5,
-            ErpEventTaskModel::REISSUE_AWARD => 240
+            ErpEventModel::TYPE_IS_DURATION_POSTER => 5,
+            ErpEventModel::TYPE_IS_REISSUE_AWARD => 240
         ];
 
         return $baseArr[$awardDetailInfo['task_type']] ?? $awardDetailInfo['event_task_id'];
