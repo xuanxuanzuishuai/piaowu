@@ -21,6 +21,10 @@ class PushMessageService
         }
         //当前奖励要发放的数据库的消息模板
         $baseTemId = self::getAwardRelateTemId($awardDetailInfo);
+        if (empty($baseTemId)) {
+            SimpleLogger::info('not found tem id', ['award' => $awardDetailInfo]);
+            return;
+        }
         //完成任务的用户信息
         $achieveUserInfo = DssStudentModel::getRecord(['uuid' => $awardDetailInfo['uuid']]);
         //得到奖励的用户信息
@@ -50,8 +54,7 @@ class PushMessageService
             ErpEventModel::TYPE_IS_DURATION_POSTER => 5,
             ErpEventModel::TYPE_IS_REISSUE_AWARD => 240
         ];
-
-        $temId = $baseArr[$awardDetailInfo['task_type']] ?? NULL;
+        $temId = $baseArr[$awardDetailInfo['type']] ?? NULL;
         if (empty($temId)) {
             $to = $awardDetailInfo['uuid'] == $awardDetailInfo['get_award_uuid'] ? ErpEventTaskModel::AWARD_TO_BE_REFERRER : ErpEventTaskModel::AWARD_TO_REFERRER;
             $temId = WeChatConfigModel::getRecord(['event_task_id' => $awardDetailInfo['event_task_id'], 'to' => $to] , 'id');
@@ -70,17 +73,18 @@ class PushMessageService
     public static function notifyUserCustomizeMessage($id, $replaceParams, $openId, $appId)
     {
         $weChatConfigInfo = WeChatConfigModel::getById(['id' => $id]);
-        if($weChatConfigInfo['content_type'] == WeChatConfigModel::CONTENT_TYPE_TEMPLATE)
+        if($weChatConfigInfo['content_type'] == WeChatConfigModel::CONTENT_TYPE_TEMPLATE) {
             //模版消息
             $templateConfig = json_decode($weChatConfigInfo['content'], true);
             //根据关键标志替换模板内容
-            foreach ($templateConfig['vars'] as &$tcv){
-                $tcv['value'] = Util::pregReplaceTargetStr(Util::textDecode($tcv['value']),$replaceParams);
+            foreach ($templateConfig['vars'] as &$tcv) {
+                $tcv['value'] = Util::pregReplaceTargetStr(Util::textDecode($tcv['value']), $replaceParams);
             }
             $url = $replaceParams['url'] ?? $templateConfig["url"];
             $res = self::notifyUserWeixinTemplateInfo($appId, $openId, $templateConfig["template_id"], $templateConfig['vars'], $url);
-        //返回数据
-        return $res;
+            //返回数据
+            return $res;
+        }
     }
 
     /**
