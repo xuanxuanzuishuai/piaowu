@@ -9,6 +9,7 @@ namespace App\Services;
 use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Erp;
+use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssPackageExtModel;
@@ -142,8 +143,7 @@ class CashGrantService
         //绑定微信且关注公众号
         if ($ifCan) {
             //如果pre环境需要特定的user_id才可以接收
-           // if (($_ENV['ENV_NAME'] == 'pre' && in_array($userWxInfo['user_id'], explode(',', $_ENV['ALLOW_SEND_RED_PACK_USER']))) || $_ENV['ENV_NAME'] == 'prod') {
-            if (true){
+            if (($_ENV['ENV_NAME'] == 'pre' && in_array($userWxInfo['open_id'], explode(',', RedisDB::getConn()->get('red_pack_white_open_id')))) || $_ENV['ENV_NAME'] == 'prod') {
                 //已绑定微信推送红包
                 $weChatPackage = new WeChatPackage($userWxInfo['app_id'], $userWxInfo['busi_type']);
                 $openId = $userWxInfo['open_id'];
@@ -240,12 +240,14 @@ class CashGrantService
                 $status = ErpUserEventTaskAwardModel::STATUS_GIVE_FAIL;
                 $resultCode = WeChatAwardCashDealModel::NOT_BIND_WE_CHAT;
             }
-            $subscribeInfo = DssWechatOpenIdListModel::getRecord(['openid' => $userWxInfo['open_id'], 'status' => DssWechatOpenIdListModel::SUBSCRIBE_WE_CHAT, 'user_type' => DssUserWeiXinModel::USER_TYPE_STUDENT, 'busi_type' => DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER]);
-            if (empty($subscribeInfo)) {
-                $ifCan = false;
-                //未关注服务号
-                $status = ErpUserEventTaskAwardModel::STATUS_GIVE_FAIL;
-                $resultCode = WeChatAwardCashDealModel::NOT_SUBSCRIBE_WE_CHAT;
+            if (!empty($userWxInfo['open_id'])) {
+                $subscribeInfo = DssWechatOpenIdListModel::getRecord(['openid' => $userWxInfo['open_id'], 'status' => DssWechatOpenIdListModel::SUBSCRIBE_WE_CHAT, 'user_type' => DssUserWeiXinModel::USER_TYPE_STUDENT, 'busi_type' => DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER]);
+                if (empty($subscribeInfo)) {
+                    $ifCan = false;
+                    //未关注服务号
+                    $status = ErpUserEventTaskAwardModel::STATUS_GIVE_FAIL;
+                    $resultCode = WeChatAwardCashDealModel::NOT_SUBSCRIBE_WE_CHAT;
+                }
             }
             //取不到微信信息有个默认
             if (empty($ifCan)) {
