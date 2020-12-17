@@ -13,6 +13,7 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\Valid;
 use App\Libs\WeChat\WeChatMiniPro;
+use App\Models\EmployeeModel;
 use App\Services\CashGrantService;
 use App\Services\UserRefereeService;
 use Slim\Http\Request;
@@ -142,7 +143,7 @@ class Consumer extends ControllerBase
         }
 
         try {
-            CashGrantService::redPackQueueDeal($params['msg_body']['award_id'], $params['event_type']);
+            CashGrantService::redPackQueueDeal($params['msg_body']['award_id'], $params['event_type'], $params['msg_body']['reviewer_id'] ?: EmployeeModel::SYSTEM_EMPLOYEE_ID, $params['msg_body']['reason'] ?: '');
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }

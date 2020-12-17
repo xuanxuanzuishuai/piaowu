@@ -30,12 +30,14 @@ class CashGrantService
      * 红包队列处理
      * @param $awardId
      * @param $eventType
+     * @param int $reviewerId
+     * @param string $reason
      * @throws \App\Libs\Exceptions\RunTimeException
      */
-    public static function redPackQueueDeal($awardId, $eventType)
+    public static function redPackQueueDeal($awardId, $eventType, $reviewerId = EmployeeModel::SYSTEM_EMPLOYEE_ID, $reason = '')
     {
         if ($eventType == RedPackTopic::SEND_RED_PACK) {
-            self::cashGiveOut($awardId, EmployeeModel::SYSTEM_EMPLOYEE_ID, '');
+            self::cashGiveOut($awardId, $reviewerId, $reason);
         }
 
         if ($eventType == RedPackTopic::UPDATE_RED_PACK) {
@@ -316,7 +318,9 @@ class CashGrantService
         $awardInfo = WeChatAwardCashDealModel::getRecord(['user_event_task_award_id' => $awardId]);
         //仅处理发放中
         if (!empty($awardInfo) && $awardInfo['status'] != ErpUserEventTaskAwardModel::STATUS_GIVE_ING) {
+            //因为某些原因erp没有同步状态成功，在此重试
             SimpleLogger::info('only deal ing award', ['award_id' => $awardId]);
+            (new Erp())->updateAward($awardId, $awardInfo['status'], EmployeeModel::SYSTEM_EMPLOYEE_ID, '');
             return;
         }
         $weChatPackage = new WeChatPackage($awardInfo['app_id'], $awardInfo['busi_type']);
