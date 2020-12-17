@@ -72,7 +72,7 @@ class PushMessageService
      */
     public static function notifyUserCustomizeMessage($id, $replaceParams, $openId, $appId)
     {
-        $weChatConfigInfo = WeChatConfigModel::getById(['id' => $id]);
+        $weChatConfigInfo = WeChatConfigModel::getById($id);
         if($weChatConfigInfo['content_type'] == WeChatConfigModel::CONTENT_TYPE_TEMPLATE) {
             //模版消息
             $templateConfig = json_decode($weChatConfigInfo['content'], true);
