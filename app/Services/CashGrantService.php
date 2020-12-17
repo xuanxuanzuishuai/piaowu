@@ -142,7 +142,8 @@ class CashGrantService
         //绑定微信且关注公众号
         if ($ifCan) {
             //如果pre环境需要特定的user_id才可以接收
-            if (($_ENV['ENV_NAME'] == 'pre' && in_array($userWxInfo['user_id'], explode(',', $_ENV['ALLOW_SEND_RED_PACK_USER']))) || $_ENV['ENV_NAME'] == 'prod') {
+           // if (($_ENV['ENV_NAME'] == 'pre' && in_array($userWxInfo['user_id'], explode(',', $_ENV['ALLOW_SEND_RED_PACK_USER']))) || $_ENV['ENV_NAME'] == 'prod') {
+            if (true){
                 //已绑定微信推送红包
                 $weChatPackage = new WeChatPackage($userWxInfo['app_id'], $userWxInfo['busi_type']);
                 $openId = $userWxInfo['open_id'];
