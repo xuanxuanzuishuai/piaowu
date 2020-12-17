@@ -6,6 +6,7 @@ use App\Libs\Constants;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Libs\WeChat\WeChatMiniPro;
+use App\Models\Dss\DssReferralActivityModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\Erp\ErpEventModel;
@@ -14,6 +15,10 @@ use App\Models\WeChatConfigModel;
 
 class PushMessageService
 {
+    /**
+     * 红包奖励相关的微信消息
+     * @param $awardDetailInfo
+     */
     public static function sendAwardRelateMessage($awardDetailInfo)
     {
         if ($awardDetailInfo['app_id'] != Constants::SMART_APP_ID) {
@@ -35,12 +40,33 @@ class PushMessageService
             SimpleLogger::info('not found user weixin info', ['user_id' => $awardUserInfo['id']]);
             return;
         }
-        $replaceParams = [
-            'mobile' => Util::hideUserMobile($achieveUserInfo['mobile']),
-            'url' => $awardDetailInfo['type'] == ErpEventModel::TYPE_IS_REFERRAL ? $_ENV['STUDENT_INVITED_RECORDS_URL'] : '',
-            'awardValue' => $awardDetailInfo['award_amount'] / 100
-        ];
+        $replaceParams = self::getReplaceParams($awardDetailInfo, $achieveUserInfo);
         self::notifyUserCustomizeMessage($baseTemId, $replaceParams, $getAwardUserInfo['open_id'], $awardDetailInfo['app_id']);
+    }
+
+    /**
+     * 可替换的变量
+     * @param $awardDetailInfo
+     * @param $achieveUserInfo
+     * @return array
+     */
+    public static function getReplaceParams($awardDetailInfo, $achieveUserInfo)
+    {
+        $urlArr = [
+            ErpEventModel::TYPE_IS_REFERRAL => $_ENV['STUDENT_INVITED_RECORDS_URL'],
+            ErpEventModel::DAILY_UPLOAD_POSTER => $_ENV["WECHAT_FRONT_DOMAIN"] . "/student/referral?tag=2"
+        ];
+        $url = $urlArr[$awardDetailInfo['type']] ?? '';
+        $activityName  = '';
+        if ($awardDetailInfo['type'] == ErpEventModel::DAILY_UPLOAD_POSTER) {
+            $activityName = DssReferralActivityModel::getRecord(['task_id' => $awardDetailInfo['event_task_id']], 'name');
+        }
+        return [
+            'mobile' => Util::hideUserMobile($achieveUserInfo['mobile']),
+            'url' => $url,
+            'awardValue' => $awardDetailInfo['award_amount'] / 100,
+            'activityName' => $activityName
+        ];
     }
 
     /**
@@ -53,7 +79,7 @@ class PushMessageService
         $baseArr = [
             ErpEventModel::TYPE_IS_DURATION_POSTER => 11,
             ErpEventModel::TYPE_IS_REISSUE_AWARD => 240,
-            ErpEventModel::DAILY_UPLOAD_POSTER => 5
+            ErpEventModel::DAILY_UPLOAD_POSTER => 259
         ];
         $temId = $baseArr[$awardDetailInfo['type']] ?? NULL;
         if (empty($temId)) {
