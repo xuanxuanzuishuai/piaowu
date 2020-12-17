@@ -293,7 +293,7 @@ class CashGrantService
             ErpEventModel::TYPE_IS_REISSUE_AWARD => 'REISSUE_PIC_WORD',
             ErpEventModel::TYPE_IS_REFERRAL => 'NORMAL_PIC_WORD'
         ];
-        return $arr[$awardDetailInfo['task_type']] ?? 'REFERRER_PIC_WORD';
+        return $arr[$awardDetailInfo['type']] ?? 'REFERRER_PIC_WORD';
     }
 
     /**
