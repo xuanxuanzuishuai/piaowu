@@ -116,31 +116,36 @@ class DssStudentModel extends DssModel
 
     /**
      * 根据班级ID获取学生
-     * @param $collectionIds
+     * @param $collectionId
      * @param false $withOpenId 是否带openid
      * @return array|null
      */
-    public static function getByCollectionId($collectionIds, $withOpenId = false)
+    public static function getByCollectionId($collectionId, $withOpenId = false, $appId = null)
     {
-        if (empty($collectionIds)) {
+        if (empty($collectionId)) {
             return [];
         }
-        $s = DssStudentModel::getTableNameWithDb();
+        if (empty($appId)) {
+            $appId = Constants::SMART_APP_ID;
+        }
+        $s  = DssStudentModel::getTableNameWithDb();
+        $c  = DssCollectionModel::getTableNameWithDb();
         $wx = DssUserWeiXinModel::getTableNameWithDb();
-        $c = DssCollectionModel::getTableNameWithDb();
 
         $field = "s.id,s.collection_id,s.thumb,s.name, c.teaching_start_time";
-        $join  = "";
+        $join  = " LEFT JOIN $c c ON s.collection_id = c.id";
         $order = " ORDER BY s.id";
-        $where = "";
-        $where .= " s.collection_id in (" . implode(',', $collectionIds) . ")";
-        $join .= " left join $c c on s.collection_id = c.id";
+        if (is_array($collectionId)) {
+            $where = " s.collection_id in (" . implode(',', $collectionId) . ")";
+        } else {
+            $where = " s.collection_id = $collectionId";
+        }
         if ($withOpenId) {
             $join .= " LEFT JOIN $wx wx ON wx.user_id = s.id ";
             $field .= ",wx.open_id";
             $where .= " AND wx.user_type = ".DssUserWeiXinModel::USER_TYPE_STUDENT;
             $where .= " AND wx.status = ".DssUserWeiXinModel::STATUS_NORMAL;
-            $where .= " AND wx.app_id = ".Constants::SMART_APP_ID;
+            $where .= " AND wx.app_id = ".$appId;
         }
 
         $sql = "

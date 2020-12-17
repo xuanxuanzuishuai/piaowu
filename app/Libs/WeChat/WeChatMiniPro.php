@@ -203,7 +203,14 @@ class WeChatMiniPro
     {
         return HttpHelper::requestJson(self::WX_HOST . '/cgi-bin/message/template/send?access_token=' . $this->getAccessToken(), $body, 'POST');
     }
-    
+
+    /**
+     * 拼装URL
+     * @param $api
+     * @param bool $withToken
+     * @return string
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
     public function apiUrl($api, $withToken = true)
     {
         if ($withToken) {
@@ -214,6 +221,15 @@ class WeChatMiniPro
         }
         return self::WX_HOST . $api . $query;
     }
+
+    /**
+     * 发送基本方法
+     * @param $openId
+     * @param $type
+     * @param $content
+     * @return false|mixed|string
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
     private function send($openId, $type, $content)
     {
         $api = $this->apiUrl(self::API_SEND);
@@ -226,21 +242,47 @@ class WeChatMiniPro
         return $this->requestJson($api, $params, 'POST');
     }
 
+    /**
+     * 获取临时素材缓存key
+     * @param $key
+     * @return string
+     */
     private function tempMediaCacheKey($key)
     {
         return sprintf(self::CACHE_KEY, $this->nowWxApp) . '_temp_media_' . $key;
     }
 
+    /**
+     * 发送文本消息
+     * @param $openId
+     * @param $content
+     * @return false|mixed|string
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
     public function sendText($openId, $content)
     {
         return $this->send($openId, 'text', ['content' => $content]);
     }
-    
+
+    /**
+     * 发送图片消息
+     * @param $openId
+     * @param $mediaId
+     * @return false|mixed|string
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
     public function sendImage($openId, $mediaId)
     {
         return $this->send($openId, 'image', ['media_id' => $mediaId]);
     }
 
+    /**
+     * 获取临时素材数据
+     * @param $type
+     * @param $tempKey
+     * @param $url
+     * @return false|mixed|string
+     */
     public function getTempMedia($type, $tempKey, $url)
     {
         $redis = RedisDB::getConn();
@@ -269,6 +311,14 @@ class WeChatMiniPro
         return false;
     }
 
+    /**
+     * 上传素材
+     * @param $type
+     * @param $fileName
+     * @param $content
+     * @return false|mixed|string
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
     public function uploadMedia($type, $fileName, $content)
     {
         $api = $this->apiUrl(self::API_UPLOAD_IMAGE);
@@ -289,6 +339,12 @@ class WeChatMiniPro
         return $this->requestJson($api, $params, 'POST_FORM_DATA');
     }
 
+    /**
+     * 获取用户基本信息
+     * @param $openId
+     * @return false|mixed|string
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
     public function getUserInfo($openId)
     {
         $api = $this->apiUrl(self::API_USER_INFO, false);

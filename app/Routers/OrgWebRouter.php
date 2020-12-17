@@ -15,6 +15,8 @@ use App\Controllers\Employee\Employee;
 use App\Controllers\OrgWeb\Dept;
 use App\Controllers\OrgWeb\Employee as OrgWebEmployee;
 use App\Controllers\OrgWeb\EmployeeActivity;
+use App\Controllers\OrgWeb\SharePoster;
+use App\Controllers\Referral\Award;
 use App\Middleware\EmployeeAuthCheckMiddleWare;
 use App\Middleware\EmployeePrivilegeMiddleWare;
 use App\Middleware\OrgWebMiddleware;
@@ -84,6 +86,16 @@ class OrgWebRouter extends RouterBase
         '/op_web/employee_activity/add'           => ['method' => ['post'], 'call' => EmployeeActivity::class . ':add'],
         '/op_web/employee_activity/modify'        => ['method' => ['post'], 'call' => EmployeeActivity::class . ':modify'],
         '/op_web/employee_activity/update_status' => ['method' => ['post'], 'call' => EmployeeActivity::class . ':updateStatus'],
+
+        // 打卡截图审核：
+        '/op_web/checkin_poster/list'     => ['method' => ['get'], 'call' => SharePoster::class . ':list'],
+        '/op_web/checkin_poster/approved' => ['method' => ['post'], 'call' => SharePoster::class . ':approved'],
+        '/op_web/checkin_poster/refused'  => ['method' => ['post'], 'call' => SharePoster::class . ':refused'],
+        // 红包列表：
+        '/op_web/referee/award_list'   => ['method' => ['get'], 'call' => Award::class . ':list'],
+        '/op_web/referee/award_verify' => ['method' => ['get'], 'call' => Award::class . ':updateAward'],
+        '/op_web/referee/config'       => ['method' => ['get'], 'call' => Award::class . ':config'],
+        
 
     ];
 }

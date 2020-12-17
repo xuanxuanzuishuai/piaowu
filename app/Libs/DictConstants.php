@@ -262,9 +262,24 @@ class DictConstants {
         ]
     ];
 
+    // 体验营打卡签到设置
     const CHECKIN_PUSH_CONFIG = [
         'type' => 'CHECKIN_PUSH_CONFIG',
-        'keys' => ['day_0', 'day_1', 'day_2', 'day_3', 'day_4', 'day_5', 'text_position', 'poster_config'],
+        'keys' => [
+            'day_0',
+            'day_1',
+            'day_2',
+            'day_3',
+            'day_4',
+            'day_5',
+            'text_position',
+            'poster_config',
+            'verify_message_config_id',
+            'url',
+            'collection_event_id',
+            'max_name_length',
+            'day_channel',
+        ],
     ];
 
     public static function get($type, $key)

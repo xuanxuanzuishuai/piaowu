@@ -6,8 +6,10 @@
  * Time: 17:38
  */
 /*
- * 体验班级5日打开，需要推送的所有学生数据查询
- * 每日9点前完成
+ * 体验班级5日打卡消息推送
+ * 每日9点执行
+ * 可接第一个参数：open_id, 调试模式，所有消息都发到参数传的open_id:
+ * /usr/bin/php push_5days_checkin_message.php o9QIhwpOPSprL-zAvZlqSmWNA_EY
  */
 namespace App;
 
@@ -22,35 +24,52 @@ define('LANG_ROOT', PROJECT_ROOT . '/lang');
 // require composer autoload
 require_once PROJECT_ROOT . '/vendor/autoload.php';
 
-use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\SimpleLogger;
 use App\Libs\RedisDB;
 use App\Libs\WeChat\WeChatMiniPro;
-use App\Services\ReferralService;
 use Dotenv\Dotenv;
 
 $dotenv = new Dotenv(PROJECT_ROOT, '.env');
 $dotenv->load();
 $dotenv->overload();
 
-$redis = RedisDB::getConn();
-$redisKey = "TRIAL_CLASS_PUSH_MESSAGE_CACHE-".date('Ymd');
-$data = $redis->hgetall($redisKey);
+$devFlag = false;
+if (!empty($argv[1])) {
+    $devFlag = $argv[1];
+}
 
 $wechat = WeChatMiniPro::factory(Constants::SMART_APP_ID, Constants::SMART_WX_SERVICE);
 if (empty($wechat)) {
-    SimpleLogger::error('wechat create fail', [$redisKey]);
+    SimpleLogger::error('wechat create fail', []);
     return ;
 }
-foreach ($data as $day => $value) {
-    $value = json_decode($value, true);
-    foreach ($value as $student) {
+$redis = RedisDB::getConn();
+$redisKey = "PUSH_CHECKIN_MESSAGE-".date('Ymd');
+
+$done = $redis->get($redisKey.'done');
+if (empty($done)) {
+    SimpleLogger::error("NOT FINISHED", [$redisKey]);
+    return;
+}
+
+for ($day = 0; $day < 6; $day++) {
+    $tempKey = $redisKey . '-' . $day;
+    $data = $redis->hgetall($tempKey);
+    foreach ($data as $sutdentId => $student) {
+        $student = json_decode($student, true);
+
+        if ($devFlag !== false) {
+            $student['open_id'] = $devFlag;
+        }
         $student = checkStudent($day, $student);
-        if (!$student) {
+        if ($student === false) {
             continue;
         }
-        list($content1, $content2, $posterImgFile) = ReferralService::getCheckinSendData($day, $student);
+        $content1 = $student['content1'] ?? '';
+        $content2 = $student['content2'] ?? '';
+        $posterImgFile = $student['posterImgFile'] ?? '';
+        SimpleLogger::info("PUSH MESSAGE:", [$content1, $content2, $posterImgFile]);
         if (!empty($content1)) {
             $wechat->sendText($student['open_id'], $content1);
         }
@@ -59,17 +78,23 @@ foreach ($data as $day => $value) {
         }
         if (empty($posterImgFile['poster_save_full_path'])) {
             SimpleLogger::error('EMPTY POSTER URL', [$posterImgFile, $day, $student]);
-        }
-        $data = $wechat->getTempMedia('image', $posterImgFile['unique'], $posterImgFile['poster_save_full_path']);
-        //发送海报
-        if (empty($data['media_id'])) {
-            SimpleLogger::error('EMPTY MEDIA DATA', [$data, $posterImgFile]);
             continue;
         }
-        $wechat->sendImage($student['open_id'], $data['media_id']);
+        $tempMedia = $wechat->getTempMedia('image', $posterImgFile['unique'], $posterImgFile['poster_save_full_path']);
+        //发送海报
+        if (empty($tempMedia['media_id'])) {
+            SimpleLogger::error('EMPTY MEDIA DATA', [$tempMedia, $posterImgFile]);
+            continue;
+        }
+        $wechat->sendImage($student['open_id'], $tempMedia['media_id']);
     }
 }
 
+/**
+ * @param $day
+ * @param $student
+ * @return false|array
+ */
 function checkStudent($day, $student)
 {
     if (empty($student['open_id'])) {

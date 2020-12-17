@@ -22,71 +22,82 @@ define('LANG_ROOT', PROJECT_ROOT . '/lang');
 // require composer autoload
 require_once PROJECT_ROOT . '/vendor/autoload.php';
 
-use App\Libs\AliOSS;
 use App\Libs\DictConstants;
 use App\Libs\SimpleLogger;
 use App\Libs\RedisDB;
 use App\Services\ReferralService;
+use DateTime;
 use Dotenv\Dotenv;
+use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\Dss\DssCollectionModel;
 use App\Models\Dss\DssStudentModel;
-use App\Models\Dss\DssAIPlayRecordCHModel;
+use App\Models\Dss\DssAiPlayRecordCHModel;
+use App\Libs\Constants;
 
 $dotenv = new Dotenv(PROJECT_ROOT, '.env');
 $dotenv->load();
 $dotenv->overload();
+$now = time();
 
 $redis = RedisDB::getConn();
-$redisKey = "TRIAL_CLASS_PUSH_MESSAGE_CACHE-".date('Ymd');
+$redisKey = "PUSH_CHECKIN_MESSAGE-".date('Ymd');
+$wechat = WeChatMiniPro::factory(Constants::SMART_APP_ID, Constants::SMART_WX_SERVICE);
 
 // 查询所有目前在进行的体验课班级
-$startTime = strtotime("-6 days", strtotime(date('Y-m-d', time())));
-$endTime = strtotime(date('Y-m-d 24:00:00', time()));
+$startTime = strtotime("-5 days", strtotime(date('Y-m-d', $now)));
+$endTime   = strtotime(date('Y-m-d 24:00:00', $now));
 $where = [];
+$where['teaching_start_time[>=]'] = $startTime;
 $where['teaching_start_time[<=]'] = $endTime;
-$where['teaching_end_time[>=]'] = $startTime;
 $where['teaching_type'] = DssCollectionModel::TEACHING_TYPE_TRIAL;
-// $where['event_id'] = '5'; // 指定打卡5日的EVENT ID
+$where['event_id']      = DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'collection_event_id');
 
-$allCollections = DssCollectionModel::getRecords($where, ['id', 'teaching_start_time', 'teaching_end_time']);
+$allCollections   = DssCollectionModel::getRecords($where, ['id', 'teaching_start_time', 'teaching_end_time']);
 $allCollectionIds = array_column($allCollections, 'id');
-$collectionInfo = array_combine($allCollectionIds, array_values($allCollections));
+$collectionInfo   = array_combine($allCollectionIds, array_values($allCollections));
+
 if (empty($allCollectionIds)) {
     SimpleLogger::info('EMPTY COLLECTION IDS', [$where]);
     return ;
 }
 // 所有学生：
-$allStudents = DssStudentModel::getByCollectionId($allCollectionIds, true);
 
-$dayInfoList = [];
+$dayList = [];
+$today = new DateTime(date('Y-m-d', $now));
 
-$today = new \DateTime(date('Y-m-d', time()));
-foreach ($allStudents as &$student) {
-    $teachingStartTime = $collectionInfo[$student['collection_id']]['teaching_start_time'] ?? 0;
-    $teachingEndTime = $collectionInfo[$student['collection_id']]['teaching_end_time'] ?? 0;
-    $student['teaching_start_time'] = $teachingStartTime;
-    if (empty($teachingStartTime) || empty($teachingEndTime)) {
-        continue;
+foreach ($collectionInfo as $collectionId => $collection) {
+    $allStudents = DssStudentModel::getByCollectionId($collectionId, true);
+
+    foreach ($allStudents as &$student) {
+        $teachingStartTime = $collectionInfo[$student['collection_id']]['teaching_start_time'] ?? 0;
+        $student['teaching_start_time'] = $teachingStartTime;
+        if (empty($teachingStartTime)) {
+            continue;
+        }
+        $startDay = new DateTime(date('Y-m-d', $teachingStartTime));
+        $dayDiff = $today->diff($startDay)->format('%a');
+        $student['day'] = $dayDiff;
+        $dayList[$dayDiff] = $dayDiff;
+        
+        $day = date("Y-m-d", strtotime("-".$dayDiff." days", $now));
+        $playInfo = DssAiPlayRecordCHModel::getStudentBetweenTimePlayRecord($student['id'], strtotime($day), strtotime($day . ' 23:59:59'));
+
+        $student['wechat']        = ReferralService::getWechatInfoForPush($student);
+        $student['lesson_count']  = $playInfo[0]['lesson_count'] ?? 0;
+        $student['duration_sum']  = $playInfo[0]['sum_duration'] ?? 0;
+        $student['score_final']   = $playInfo[0]['score_final'] ?? 0;
+        if (!empty($student['duration_sum'])) {
+            list($content1, $content2, $posterImgFile) = ReferralService::getCheckinSendData($dayDiff, $student);
+            $student['content1']      = $content1;
+            $student['content2']      = $content2;
+            $student['posterImgFile'] = $posterImgFile;
+            $wechat->getTempMedia('image', $posterImgFile['unique'], $posterImgFile['poster_save_full_path']);
+        }
+        $redis->hset($redisKey . '-' . $dayDiff, $student['id'], json_encode($student));
     }
-    $startDay = new \DateTime(date('Y-m-d', $teachingStartTime));
-    $dayInfoList[$today->diff($startDay)->format('%a')][$student['id']] = $student;
 }
-foreach ($dayInfoList as $dayDiff => &$value) {
-    if (empty($dayDiff)) {
-        continue;
-    }
-    foreach ($value as &$studentInfo) {
-        $day = date("Y-m-d", strtotime("-".$dayDiff." days", $studentInfo['teaching_start_time']));
-        $playInfo = DssAIPlayRecordCHModel::getStudentBetweenTimePlayRecord($studentInfo['id'], strtotime($day), strtotime($day . ' 23:59:59'));
-        $studentInfo['lesson_count'] = $playInfo[0]['lesson_count'] ?? 0;
-        $studentInfo['duration_sum'] = $playInfo[0]['duration_sum'] ?? 0;
-        $studentInfo['score_final'] = $playInfo[0]['score_final'] ?? 0;
-        $studentInfo['wechat'] = ReferralService::getWechatInfoForPush($studentInfo);
-    }
+foreach ($dayList as $day) {
+    $redis->expire($redisKey . '-' . $day, 2*86400);
 }
-if (!empty($dayInfoList)) {
-    foreach ($dayInfoList as $day => $value) {
-        $redis->hset($redisKey, $day, json_encode($value));
-    }
-    $redis->expire($redisKey, 2*86400);
-}
+$redis->set($redisKey."done", '1');
+$redis->expire($redisKey."done", 10*3600);

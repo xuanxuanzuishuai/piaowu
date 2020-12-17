@@ -36,7 +36,7 @@ class PushMessageService
         $awardUserInfo = DssStudentModel::getRecord(['uuid' => $awardDetailInfo['get_award_uuid']]);
         //得到奖励用户的微信信息
         $getAwardUserInfo = UserService::getUserWeiXinInfoByUserId($awardDetailInfo['app_id'], $awardUserInfo['id'], DssUserWeiXinModel::USER_TYPE_STUDENT, DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER);
-        if (empty($getAwardUserInfo)){
+        if (empty($getAwardUserInfo)) {
             SimpleLogger::info('not found user weixin info', ['user_id' => $awardUserInfo['id']]);
             return;
         }
@@ -61,11 +61,14 @@ class PushMessageService
         if ($awardDetailInfo['type'] == ErpEventModel::DAILY_UPLOAD_POSTER) {
             $activityName = DssReferralActivityModel::getRecord(['task_id' => $awardDetailInfo['event_task_id']], 'name');
         }
+        // 任务达成条件
+        $taskCondition = json_decode($awardDetailInfo['condition'], true);
         return [
-            'mobile' => Util::hideUserMobile($achieveUserInfo['mobile']),
-            'url' => $url,
-            'awardValue' => $awardDetailInfo['award_amount'] / 100,
-            'activityName' => $activityName
+            'mobile'       => Util::hideUserMobile($achieveUserInfo['mobile']),
+            'url'          => $url,
+            'awardValue'   => $awardDetailInfo['award_amount'] / 100,
+            'activityName' => $activityName,
+            'day'          => $taskCondition['total_days'] ?? 0,
         ];
     }
 

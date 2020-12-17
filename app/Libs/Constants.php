@@ -45,7 +45,10 @@ class Constants
 
     //系统外网地址
     const DICT_KEY_STATIC_FILE_URL = 'STATIC_FILE_URL';
-
+    //分享海报截图审核原因
+    const DICT_TYPE_SHARE_POSTER_CHECK_REASON = "share_poster_check_reason";
+    //分享截图审核状态
+    const DICT_TYPE_SHARE_POSTER_CHECK_STATUS = "share_poster_check_status";
     // JWT设置
     const DICT_KEY_JWT_ISSUER = 'JWT_ISSUER';
     const DICT_KEY_JWT_AUDIENCE = 'JWT_AUDIENCE';
@@ -59,5 +62,4 @@ class Constants
     const CHANNEL_WE_CHAT_SCAN = 1226; //微信扫码注册
     // 推荐海报中二维码类型
     const DICT_TYPE_POSTER_QRCODE_TYPE = 'poster_qrcode_type';
-    const DICT_TYPE_SHARE_POSTER_CHECK_REASON='share_poster_check_reason';
 }

@@ -16,10 +16,17 @@ use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\Dss\DssAIPlayRecordCHModel;
 use App\Models\Dss\DssStudentModel;
 use App\Libs\Util;
+use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\StudentInviteModel;
 
 class ReferralService
 {
+    const EXPECT_REGISTER          = 1; //注册
+    const EXPECT_TRAIL_PAY         = 2; //付费体验卡
+    const EXPECT_YEAR_PAY          = 3; //付费年卡
+    const EXPECT_FIRST_NORMAL      = 4; //首购智能正式课
+    const EXPECT_UPLOAD_SCREENSHOT = 5; //上传截图审核通过
+
     /**
      * 推荐学员列表
      * @param $params
@@ -100,7 +107,7 @@ class ReferralService
     }
 
     /**
-     * 生成学生打开海报
+     * 生成学生打卡海报
      * @param $poster
      * @param $day
      * @param $studentInfo
@@ -115,8 +122,8 @@ class ReferralService
             return ['poster_save_full_path' => AliOSS::signUrls($poster), 'unique' => md5($studentInfo['id'] . $day . $poster) . ".jpg"];
         }
         $headImageUrl = $studentInfo['wechat']['headimgurl'];
-        $name = $studentInfo['wechat']['nickname'];
-        $percent = self::getRandScore($studentInfo['score_final']);
+        $name = self::getPosterName($studentInfo['wechat']['nickname']);
+        $percent = self::getRandScore($studentInfo['duration_sum']);
         $posterConfig = DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'poster_config');
         if (!empty($posterConfig)) {
             $posterConfig = json_decode($posterConfig, true);
@@ -131,12 +138,26 @@ class ReferralService
                 AliOSS::uploadFile($thumb, $tmpFileFullPath);
             }
         }
-        $waterImgEncode = str_replace(["+", "/"], ["-", "_"], base64_encode($thumb. "?x-oss-process=image/resize,w_90,h_90/circle,r_100/format,png"));
+        $userQrPath  = DssUserQrTicketModel::getUserQrURL(
+            $studentInfo['id'],
+            self::getChannelByDay($day),
+            null,
+            null,
+            null,
+            DssUserQrTicketModel::LANDING_TYPE_MINIAPP,
+        );
+        $waterImgEncode = str_replace(["+", "/"], ["-", "_"], base64_encode($thumb."?x-oss-process=image/resize,w_90,h_90/circle,r_100/format,png"));
         $waterMark = [];
         $waterMark[] = [
             "image_" . $waterImgEncode,
             "x_" . $posterConfig['thumb_x'],
             "y_" . $posterConfig['thumb_y'],
+            "g_nw",
+        ];
+        $waterMark[] = [
+            "image_" . str_replace(["+", "/"], ["-", "_"], base64_encode($userQrPath."?x-oss-process=image/resize,w_".$posterConfig['qr_w'].",h_".$posterConfig['qr_h'])),
+            "x_" . $posterConfig['qr_x'],
+            "y_" . $posterConfig['qr_y'],
             "g_nw",
         ];
         $waterMark[] = self::getTextWaterMark($name, ['x' => $posterConfig['name_x'], 'y' => $posterConfig['name_y'], 'g' => 'nw', 's' => 30]);
@@ -182,6 +203,18 @@ class ReferralService
     }
 
     /**
+     * 获取海报渠道
+     * @param $day
+     * @return string
+     */
+    public static function getChannelByDay($day)
+    {
+        $config = DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'day_channel');
+        $config = json_decode($config, true);
+        return $config[$day] ?? '';
+    }
+
+    /**
      * 获取文字水印参数
      * @param $string
      * @param $configKey
@@ -194,11 +227,11 @@ class ReferralService
             $len = 3;
         }
         $config = DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'text_position');
-        if (!empty($config)) {
-            $config = json_decode($config, true);
+        $configArray = json_decode($config, true);
+        if (empty($configArray)) {
+            SimpleLogger::error("EMPTY TEXT POSITION CONFIG", [$config]);
         }
-        
-        return array_merge(['g' => 'nw'], $config[$len][$configKey]);
+        return array_merge(['g' => 'nw'], $configArray[$len][$configKey]);
     }
 
     /**
@@ -217,14 +250,16 @@ class ReferralService
         if (empty($sendData)) {
             return [];
         }
-        $today = new \DateTime(date('Y-m-d', time()));
+        $now = time();
+        $today = new \DateTime(date('Y-m-d', $now));
         $startDay = new \DateTime(date('Y-m-d', $sendData['teaching_start_time']));
         $dayDiff = $today->diff($startDay)->format('%a');
         if ($dayDiff <0 || $dayDiff > 5) {
+            SimpleLogger::error("WRONG DAY DATA", [$sendData]);
             return [];
         }
-        $day = date("Y-m-d", strtotime("-".$dayDiff." days", $sendData['teaching_start_time']));
-        $playInfo = DssAIPlayRecordCHModel::getStudentPlayInfoByDate([$studentInfo['id']], $day);
+        $day = date("Y-m-d", strtotime("-".$dayDiff." days", $now));
+        $playInfo = DssAIPlayRecordCHModel::getStudentBetweenTimePlayRecord($studentInfo['id'], strtotime($day), strtotime($day.' 23:59:59'));
         $sendData['lesson_count'] = $playInfo[0]['lesson_count'] ?? 0;
         $sendData['duration_sum'] = $playInfo[0]['duration_sum'] ?? 0;
         $sendData['score_final'] = $playInfo[0]['score_final'] ?? 0;
@@ -260,18 +295,56 @@ class ReferralService
 
     /**
      * 根据分数生成排行百分比
-     * @param $score
+     * @param $duration
      * @return int
      */
-    public static function getRandScore($score)
+    public static function getRandScore($duration)
     {
-        if ($score < 80) {
-            return rand(80, 85);
+        if ($duration < 10) {
+            return rand(60, 70);
         }
-        if ($score < 90) {
-            return rand(86, 90);
+        if ($duration < 30) {
+            return rand(70, 80);
         }
-        return rand(91, 100);
+        return rand(80, 99);
     }
 
+    /**
+     * 格式化海报名字长度
+     * @param $name
+     * @return string
+     */
+    public static function getPosterName($name)
+    {
+        $len = DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'max_name_length');
+        if (strlen($name) > $len) {
+            return substr($name, 0, $len) . '...的宝贝';
+        }
+        return $name . '的宝贝';
+    }
+
+    /**
+     * 获取不展示任务节点
+     * @return false|string[]
+     */
+    public static function getNotDisplayWaitGiveTask()
+    {
+        $value = DictConstants::get(DictConstants::NODE_SETTING, 'not_display_wait');
+        return explode(',', $value);
+    }
+
+    /**
+     * 获取展示节点
+     * @param $source
+     * @return array
+     */
+    public static function getAwardNode($source)
+    {
+        $awardNodeArr = [
+            'referee' => DictConstants::COMMON_CASH_NODE,
+            'reissue_award' => DictConstants::REISSUE_CASH_NODE
+        ];
+        $type = empty($awardNodeArr[$source]) ? DictConstants::REFEREE_CASH_NODE : $awardNodeArr[$source];
+        return DictConstants::getSet($type);
+    }
 }
