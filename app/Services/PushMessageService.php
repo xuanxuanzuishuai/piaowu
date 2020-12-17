@@ -9,6 +9,7 @@ use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\Erp\ErpEventModel;
+use App\Models\Erp\ErpEventTaskModel;
 use App\Models\WeChatConfigModel;
 
 class PushMessageService
@@ -50,7 +51,12 @@ class PushMessageService
             ErpEventModel::TYPE_IS_REISSUE_AWARD => 240
         ];
 
-        return $baseArr[$awardDetailInfo['task_type']] ?? $awardDetailInfo['event_task_id'];
+        $temId = $baseArr[$awardDetailInfo['task_type']] ?? NULL;
+        if (empty($temId)) {
+            $to = $awardDetailInfo['uuid'] == $awardDetailInfo['get_award_uuid'] ? ErpEventTaskModel::AWARD_TO_BE_REFERRER : ErpEventTaskModel::AWARD_TO_REFERRER;
+            $temId = WeChatConfigModel::getRecord(['event_task_id' => $awardDetailInfo['event_task_id'], 'to' => $to] , 'id');
+        }
+        return $temId;
     }
 
     /**
@@ -63,7 +69,7 @@ class PushMessageService
      */
     public static function notifyUserCustomizeMessage($id, $replaceParams, $openId, $appId)
     {
-        $weChatConfigInfo = WeChatConfigModel::getRecord(['id' => $id]);
+        $weChatConfigInfo = WeChatConfigModel::getById(['id' => $id]);
         if($weChatConfigInfo['content_type'] == WeChatConfigModel::CONTENT_TYPE_TEMPLATE)
             //模版消息
             $templateConfig = json_decode($weChatConfigInfo['content'], true);

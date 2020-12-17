@@ -125,6 +125,7 @@ class CashGrantService
         //防止op红包发放成功，erp未更新成功的情况，倘若当前奖励在op已经成功，直接返回
         $opAwardInfo = WeChatAwardCashDealModel::getRecord(['user_event_task_award_id' => $awardId]);
         if (!empty($opAwardInfo) && in_array($opAwardInfo['status'], [ErpUserEventTaskAwardModel::STATUS_GIVE, ErpUserEventTaskAwardModel::STATUS_GIVE_ING])) {
+            SimpleLogger::info('op award status has change', ['award_info' => $opAwardInfo]);
             return [$awardId, $opAwardInfo['status']];
         }
         //当前奖励的用户是否可正常接收奖励
