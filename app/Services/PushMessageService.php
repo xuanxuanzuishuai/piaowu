@@ -18,13 +18,13 @@ class PushMessageService
         if ($awardDetailInfo['app_id'] != Constants::SMART_APP_ID) {
             return;
         }
-        if ($awardDetailInfo['task_type'] == ErpEventTaskModel::COMMUNITY_DURATION_POSTER) {
-            $baseTemId = 5; //社群审核通过
-        } else {
-            $baseTemId = $awardDetailInfo['event_task_id'];
-        }
+        //当前奖励要发放的数据库的消息模板
+        $baseTemId = self::getAwardRelateTemId($awardDetailInfo);
+        //完成任务的用户信息
         $achieveUserInfo = DssStudentModel::getRecord(['uuid' => $awardDetailInfo['uuid']]);
+        //得到奖励的用户信息
         $awardUserInfo = DssStudentModel::getRecord(['uuid' => $awardDetailInfo['get_award_uuid']]);
+        //得到奖励用户的微信信息
         $getAwardUserInfo = UserService::getUserWeiXinInfoByUserId($awardDetailInfo['app_id'], $awardUserInfo['id'], DssUserWeiXinModel::USER_TYPE_STUDENT, DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER);
         if (empty($getAwardUserInfo)){
             SimpleLogger::info('not found user weixin info', ['user_id' => $awardUserInfo['id']]);
@@ -36,6 +36,21 @@ class PushMessageService
             'awardValue' => $awardDetailInfo['award_amount'] / 100
         ];
         self::notifyUserCustomizeMessage($baseTemId, $replaceParams, $getAwardUserInfo['open_id'], $awardDetailInfo['app_id']);
+    }
+
+    /**
+     * 当前发放奖励对应的wechat config表的基础id
+     * @param $awardDetailInfo
+     * @return int|mixed
+     */
+    public static function getAwardRelateTemId($awardDetailInfo)
+    {
+        $baseArr = [
+            ErpEventTaskModel::COMMUNITY_DURATION_POSTER => 5,
+            ErpEventTaskModel::REISSUE_AWARD => 240
+        ];
+
+        return $baseArr[$awardDetailInfo['task_type']] ?? $awardDetailInfo['event_task_id'];
     }
 
     /**
@@ -81,6 +96,7 @@ class PushMessageService
             $body['url'] = $url;
         }
         $body['data'] = $content;
+        //系统应用对应的微信factory的信息
         $arr = [
             Constants::SMART_APP_ID => DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER
         ];

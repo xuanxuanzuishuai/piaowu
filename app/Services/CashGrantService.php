@@ -63,8 +63,10 @@ class CashGrantService
         $verify = self::awardAndRefundVerify($awardDetailInfo);
         if ($verify) {
             $keyCode = self::getAwardKeyWord($awardDetailInfo);
+            SimpleLogger::info('red pack key code', ['award_id' => $awardId, 'key code' => $keyCode]);
             list($awardId, $sendStatus) = self::tryToSendRedPack($awardId, $reviewerId, $keyCode);
         } else {
+            SimpleLogger::info('refund verify not pass', ['award_id' => $awardId]);
             $sendStatus = ErpUserEventTaskAwardModel::STATUS_DISABLED;
         }
 
@@ -152,6 +154,7 @@ class CashGrantService
                 $status = trim($resultData['result_code']) == WeChatAwardCashDealModel::RESULT_SUCCESS_CODE ? ErpUserEventTaskAwardModel::STATUS_GIVE_ING : ErpUserEventTaskAwardModel::STATUS_GIVE_FAIL;
                 $resultCode = trim($resultData['err_code']);
             } else {
+                SimpleLogger::info('now env not satisfy', ['award_id' => $awardId]);
                 $status = ErpUserEventTaskAwardModel::STATUS_GIVE_FAIL;
                 $resultCode = WeChatAwardCashDealModel::RESULT_FAIL_CODE;
             }
