@@ -51,8 +51,9 @@ class PushMessageService
     public static function getAwardRelateTemId($awardDetailInfo)
     {
         $baseArr = [
-            ErpEventModel::TYPE_IS_DURATION_POSTER => 5,
-            ErpEventModel::TYPE_IS_REISSUE_AWARD => 240
+            ErpEventModel::TYPE_IS_DURATION_POSTER => 11,
+            ErpEventModel::TYPE_IS_REISSUE_AWARD => 240,
+            ErpEventModel::DAILY_UPLOAD_POSTER => 5
         ];
         $temId = $baseArr[$awardDetailInfo['type']] ?? NULL;
         if (empty($temId)) {
