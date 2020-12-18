@@ -79,12 +79,7 @@ class Activity extends ControllerBase
      */
     public function signInCopyWriting(/** @noinspection PhpUnusedParameterInspection */Request $request, Response $response)
     {
-        //todo
-        $data = [
-            'text'=>"这是文案",
-            'poster'=>"这是海报",
-        ];
+        $data = ActivityService::signInCopyWriting($this->ci['user_info']['user_id']);
         return HttpHelper::buildResponse($response, $data);
     }
-
 }

@@ -303,4 +303,16 @@ class ActivityService
         }, $posterData);
         return $posterReason;
     }
+
+    /**
+     * 打卡活动文案&海报
+     * @param $studentId
+     * @return array
+     */
+    public static function signInCopyWriting($studentId)
+    {
+        $studentInfo = ReferralService::getUserInfoForSendData($studentId);
+        list($content1, $content2, $poster) = ReferralService::getCheckinSendData($studentInfo['day'], $studentInfo);
+        return ['text' => $content2, 'poster' => $poster['poster_save_full_path']];
+    }
 }

@@ -260,7 +260,7 @@ class ReferralService
             return [];
         }
         $day = date("Y-m-d", strtotime("-".$dayDiff." days", $now));
-        $playInfo = DssAIPlayRecordCHModel::getStudentBetweenTimePlayRecord($studentInfo['id'], strtotime($day), strtotime($day.' 23:59:59'));
+        $playInfo = DssAIPlayRecordCHModel::getStudentBetweenTimePlayRecord($studentId, strtotime($day), strtotime($day.' 23:59:59'));
         $sendData['lesson_count'] = $playInfo[0]['lesson_count'] ?? 0;
         $sendData['duration_sum'] = $playInfo[0]['duration_sum'] ?? 0;
         $sendData['score_final'] = $playInfo[0]['score_final'] ?? 0;
