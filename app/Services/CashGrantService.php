@@ -365,7 +365,7 @@ class CashGrantService
             $updateRow = WeChatAwardCashDealModel::updateRecord($awardInfo['id'], ['status' => $status, 'result_code' => $resultCode, 'update_time' => $time]);
             SimpleLogger::info('we chat award update row', ['affectedRow' => $updateRow]);
             (new Erp())->updateAward($awardId, $status, EmployeeModel::SYSTEM_EMPLOYEE_ID, '');
-            if ($awardInfo['status'] != ErpUserEventTaskAwardModel::STATUS_GIVE) {
+            if ($status != ErpUserEventTaskAwardModel::STATUS_GIVE) {
                 return;
             }
             //红包接收成功发送微信消息
