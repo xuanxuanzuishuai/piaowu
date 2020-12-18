@@ -265,7 +265,6 @@ class ReferralService
      * 生成获取学生打卡文案所需的数据
      * @param $studentId
      * @return array|null
-     * @throws \Exception
      */
     public static function getUserInfoForSendData($studentId, $nodeDate)
     {
