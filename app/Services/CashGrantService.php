@@ -288,6 +288,11 @@ class CashGrantService
      */
     public static function getAwardKeyWord($awardDetailInfo)
     {
+        //完成任务的人，和奖励的人是同一个人的时候特殊处理
+        if ($awardDetailInfo['uuid'] == $awardDetailInfo['get_award_uuid']) {
+            return 'REFERRER_PIC_WORD';
+        }
+
         $arr = [
             ErpEventModel::TYPE_IS_DURATION_POSTER => 'COMMUNITY_PIC_WORD',
             ErpEventModel::TYPE_IS_REISSUE_AWARD => 'REISSUE_PIC_WORD',
