@@ -17,7 +17,6 @@ define('LANG_ROOT', PROJECT_ROOT . '/lang');
 require_once PROJECT_ROOT . '/vendor/autoload.php';
 
 use App\Models\Erp\ErpUserEventTaskAwardModel;
-use App\Models\WeChatAwardCashDealModel;
 use App\Services\Queue\QueueService;
 use Dotenv\Dotenv;
 
@@ -25,10 +24,5 @@ $dotenv = new Dotenv(PROJECT_ROOT,'.env');
 $dotenv->load();
 $dotenv->overload();
 //当前状态为待领取的
-$needQueryData = WeChatAwardCashDealModel::getRecords([
-    'status' => ErpUserEventTaskAwardModel::STATUS_GIVE_ING
-],
-[
-    'user_event_task_award_id'
-]);
+$needQueryData = ErpUserEventTaskAwardModel::needUpdateRedPackAward();
 QueueService::updateRedPack($needQueryData);

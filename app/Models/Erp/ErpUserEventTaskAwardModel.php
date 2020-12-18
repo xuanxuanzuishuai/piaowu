@@ -50,6 +50,16 @@ class ErpUserEventTaskAwardModel extends ErpModel
     }
 
     /**
+     * 需要更新状态的红包
+     * @return array|null
+     */
+    public static function needUpdateRedPackAward()
+    {
+        $time = time() - 864000; //只处理最近十天更新的
+        return self::dbRO()->queryAll("SELECT id FROM " . self::$table . " WHERE review_time >= " . $time . " AND `status` IN (" . self::STATUS_GIVE_ING .") AND award_type = " . self::AWARD_TYPE_CASH);
+    }
+
+    /**
      * 奖励对应的活动信息
      * @param $awardId
      * @return mixed
