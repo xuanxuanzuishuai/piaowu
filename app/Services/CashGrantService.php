@@ -364,9 +364,12 @@ class CashGrantService
             //更新当前记录
             $updateRow = WeChatAwardCashDealModel::updateRecord($awardInfo['id'], ['status' => $status, 'result_code' => $resultCode, 'update_time' => $time]);
             SimpleLogger::info('we chat award update row', ['affectedRow' => $updateRow]);
+            (new Erp())->updateAward($awardId, $status, EmployeeModel::SYSTEM_EMPLOYEE_ID, '');
+            if ($awardInfo['status'] != ErpUserEventTaskAwardModel::STATUS_GIVE) {
+                return;
+            }
             //红包接收成功发送微信消息
             QueueService::messageRulePushMessage([['delay_time' => 0, 'rule_id' => DictConstants::get(DictConstants::MESSAGE_RULE, 'receive_red_pack_rule_id'), 'open_id' => $awardInfo['open_id']]]);
-            (new Erp())->updateAward($awardId, $status, EmployeeModel::SYSTEM_EMPLOYEE_ID, '');
         }
     }
 }
