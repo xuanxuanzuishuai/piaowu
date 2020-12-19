@@ -44,7 +44,7 @@ class WeChatMiniPro
      */
     public function setAccessToken($accessToken)
     {
-        RedisDB::getConn()->set($this->getWxAccessTokenKey($this->nowWxApp), $accessToken);
+        RedisDB::getConn()->setex($this->getWxAccessTokenKey($this->nowWxApp), 1800, $accessToken);
     }
 
     /**
