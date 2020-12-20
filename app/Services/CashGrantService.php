@@ -195,6 +195,10 @@ class CashGrantService
     public static function checkAwardCanSend($awardId)
     {
         $awardInfo = ErpUserEventTaskAwardModel::getById($awardId);
+        if (empty($awardInfo)) {
+            SimpleLogger::info('not found award', ['award_id' => $awardId]);
+            return false;
+        }
         //仅处理现金
         if ($awardInfo['award_type'] != ErpUserEventTaskAwardModel::AWARD_TYPE_CASH) {
             SimpleLogger::info('only deal cash deal', ['award_info' => $awardInfo]);
