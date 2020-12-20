@@ -15,7 +15,7 @@ class QueueService
 
     private static function getDeferMax($count)
     {
-        return $count; //红包发送大概一秒一个，目前处理直接定义
+        return $count >= 2 ? $count : 2; //红包发送大概一秒一个，目前处理直接定义
     }
 
     /**

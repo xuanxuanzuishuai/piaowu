@@ -10,6 +10,7 @@ use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\EmployeeModel;
 use App\Models\StudentInviteModel;
+use App\Services\Queue\QueueService;
 
 
 class UserRefereeService
@@ -204,7 +205,7 @@ class UserRefereeService
            $data = $erp->updateTask($studentInfo['uuid'], $refTaskId, self::EVENT_TASK_STATUS_COMPLETE);
            if (!empty($data['user_award_ids'])) {
                foreach ($data['user_award_ids'] as $awardId) {
-                   CashGrantService::cashGiveOut($awardId, EmployeeModel::SYSTEM_EMPLOYEE_ID);
+                   QueueService::sendRedPack([['id' => $awardId]]);
                }
            }
         }
