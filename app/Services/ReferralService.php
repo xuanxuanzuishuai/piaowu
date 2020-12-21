@@ -144,7 +144,7 @@ class ReferralService
             null,
             null,
             null,
-            DssUserQrTicketModel::LANDING_TYPE_MINIAPP,
+            DssUserQrTicketModel::LANDING_TYPE_MINIAPP
         );
         $waterImgEncode = str_replace(["+", "/"], ["-", "_"], base64_encode($thumb."?x-oss-process=image/resize,w_90,h_90/circle,r_100/format,png"));
         $waterMark = [];
@@ -247,6 +247,7 @@ class ReferralService
         }
         $studentInfo = DssStudentModel::getRecord(['id' => $studentId], ['collection_id']);
         $sendData = DssStudentModel::getByCollectionId($studentInfo['collection_id'], true);
+        $sendData = $sendData[0] ?? [];
         if (empty($sendData)) {
             return [];
         }
@@ -264,7 +265,7 @@ class ReferralService
         $sendData['duration_sum'] = $playInfo[0]['duration_sum'] ?? 0;
         $sendData['score_final'] = $playInfo[0]['score_final'] ?? 0;
         $sendData['wechat'] = self::getWechatInfoForPush($studentInfo);
-        $sendData['day'] = $day;
+        $sendData['day'] = $dayDiff;
         return $sendData;
     }
 

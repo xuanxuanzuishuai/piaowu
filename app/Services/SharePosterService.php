@@ -133,8 +133,13 @@ class SharePosterService
                     }
                     $awardId = implode(',', $taskRes['user_award_ids']);
                     $awardBaseInfo = ErpUserEventTaskAwardModel::awardRelateEvent($taskRes['user_award_ids']);
+                    $needDealAward = [];
                     foreach ($awardBaseInfo as $award) {
-                        CashGrantService::cashGiveOut($award['award_id'], $employeeId);
+                        $needDealAward[$award['award_id']] = ['id' => $award['award_id']];
+                    }
+                    if (!empty($needDealAward)) {
+                        //实际发放结果数据 调用微信红包，
+                        QueueService::sendRedPack($needDealAward);
                     }
                 }
             }

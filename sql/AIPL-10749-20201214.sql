@@ -64,4 +64,13 @@ UPDATE `dict` SET `key_value` = concat(key_value, ',', 22) WHERE `key_code` = 'n
 INSERT INTO `wechat_config`(`type`, `content`, `msg_type`, `content_type`, `event_type`, `event_key`, `create_time`, `update_time`, `create_uid`, `update_uid`, `event_task_id`, `to`) VALUES (1, '{\"template_id\":\"mAOTPhrPgGYgw2eOjBBdDGAadf4FEoqoaRs1VGWTl2Y\",\"url\":\"{{url}}\",\"vars\":{\"first\":{\"value\":\"\\u5956\\u52b1\\u7ea2\\u5305\\u5df2\\u7ecf\\u53d1\\u653e\\uff0c\\u8bf7\\u53ca\\u65f6\\u9886\\u53d6\\uff0c\\u8be6\\u60c5\\u5982\\u4e0b\\uff1a\",\"color\":\"#FF8A00\"},\"keyword1\":{\"value\":\"\\u4f53\\u9a8c\\u8425\\u5206\\u4eab\\u8fd4\\u5b66\\u8d39\",\"color\":\"#FF8A00\"},\"keyword2\":{\"value\":\"\\u7d2f\\u8ba1\\u5b8c\\u6210{{day}}\\u65e5\\u6253\\u5361\",\"color\":\"#FF8A00\"},\"keyword3\":{\"value\":\"\\u5df2\\u5b8c\\u6210\\uff0c\\u5956\\u52b1{{awardValue}}\\u5143\\u5df2\\u53d1\\u653e\",\"color\":\"#FF8A00\"},\"remark\":{\"value\":\"{{remark}}\",\"color\":\"#FF8A00\"}}}', 'custom', 3, 'custom', '', unix_timestamp(), 0, 0, 0, $task_id, 2);
 
 
+SET @pid = ( SELECT id FROM privilege WHERE NAME = "转介绍管理" LIMIT 1);
+INSERT INTO `privilege` ( `name`, `uri`, `created_time`, `method`, `is_menu`, `menu_name`, `parent_id`, `unique_en_name`, `status` )
+VALUES
+  ('打卡截图审核', '/op_web/checkin_poster/list', unix_timestamp(), 'get', 1, '打卡截图审核', @pid, 'checkin_poster_list', 1),
+  ('打卡截图审核通过', '/op_web/checkin_poster/approved', unix_timestamp(), 'post', 0, '打卡截图审核通过', 0, 'checkin_poster_approved', 1),
+  ('打卡截图审核拒绝', '/op_web/checkin_poster/refused', unix_timestamp(), 'post', 0, '打卡截图审核拒绝', 0, 'checkin_poster_refused', 1),
+  ('红包审核', '/op_web/referee/award_list', unix_timestamp(), 'get', 1, '红包截图', @pid, 'referee_award_list', 1),
+  ('红包发放', '/op_web/referee/award_verify', unix_timestamp(), 'get', 0, '红包发放', 0, 'referee_award_verify', 1),
+  ('红包列表选项', '/op_web/referee/config', unix_timestamp(), 'get', 0, '红包列表选项', 0, 'referee_award_config', 1);
 
