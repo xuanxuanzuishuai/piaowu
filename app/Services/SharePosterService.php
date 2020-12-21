@@ -19,6 +19,7 @@ use App\Models\Erp\ErpUserEventTaskAwardModel;
 use App\Models\Erp\ErpUserEventTaskModel;
 use App\Models\SharePosterModel;
 use App\Libs\Erp;
+use App\Services\Queue\QueueService;
 use Medoo\Medoo;
 
 class SharePosterService
@@ -89,6 +90,9 @@ class SharePosterService
         foreach ($posters as $poster) {
             if ($poster['valid_time'] < $time) {
                 $timeoutOnes[] = $poster;
+                continue;
+            }
+            if ($poster['poster_status'] != SharePosterModel::VERIFY_STATUS_WAIT) {
                 continue;
             }
 

@@ -18,6 +18,7 @@ use App\Models\Dss\DssStudentModel;
 use App\Libs\Util;
 use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\StudentInviteModel;
+use App\Models\WeChatAwardCashDealModel;
 
 class ReferralService
 {
@@ -348,4 +349,20 @@ class ReferralService
         $type = empty($awardNodeArr[$source]) ? DictConstants::REFEREE_CASH_NODE : $awardNodeArr[$source];
         return DictConstants::getSet($type);
     }
+
+    /**
+     * 领取人微信信息
+     * @param $userEventTaskAwardId
+     * @return array|false|mixed|string
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
+    public static function getReceiveInfo($userEventTaskAwardId)
+    {
+        $data = WeChatAwardCashDealModel::getRecord(['user_event_task_award_id' => $userEventTaskAwardId]);
+        $openId = $data['open_id'] ?? '';
+        $wechat = WeChatMiniPro::factory(Constants::SMART_APP_ID, Constants::SMART_WX_SERVICE);
+        $wxInfo = $openId ? $wechat->getUserInfo($openId) : [];
+        return $wxInfo;
+    }
+    
 }

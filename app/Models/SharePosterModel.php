@@ -99,11 +99,11 @@ class SharePosterModel extends Model
         }
         if (!empty($params['start_time'])) {
             $where .= " AND sp.create_time >= :start_time";
-            $map[':start_time'] = strtotime($params['start_time']);
+            $map[':start_time'] = $params['start_time'];
         }
         if (!empty($params['end_time'])) {
             $where .= " AND sp.create_time <= :end_time";
-            $map[':end_time'] = strtotime($params['end_time']);
+            $map[':end_time'] = $params['end_time'];
         }
         if (!empty($params['poster_status'])) {
             $where .= " AND sp.status = :poster_status ";
@@ -187,7 +187,7 @@ class SharePosterModel extends Model
             AND uw.busi_type = " . DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER . "
             AND uw.app_id = " . Constants::SMART_APP_ID . "
         WHERE sp.id in ( " . implode(',', $posterIds) . " )
-            AND sp.status = " . self::VERIFY_STATUS_WAIT . "
+            AND sp.verify_status = " . self::VERIFY_STATUS_WAIT . "
             AND sp.type = " . self::TYPE_CHECKIN_UPLOAD;
 
         return MysqlDB::getDB()->queryAll($sql);

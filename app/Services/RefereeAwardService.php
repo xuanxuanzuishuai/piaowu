@@ -175,7 +175,14 @@ class RefereeAwardService
         $needDealAward = [];
         if (!empty($awardIdArr)) {
             foreach ($awardIdArr as $value) {
-                $needDealAward[$value] = ['id' => $value];
+                $needDealAward[$value] = [
+                    'id'          => $value,
+                    'award_id'    => $value,
+                    'status'      => $status,
+                    'reviewer_id' => $reviewerId,
+                    'reason'      => $reason,
+                    'review_time' => $time
+                ];
             }
         }
         //实际发放结果数据 调用微信红包，

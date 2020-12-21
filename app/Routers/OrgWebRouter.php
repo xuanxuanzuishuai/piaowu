@@ -95,6 +95,7 @@ class OrgWebRouter extends RouterBase
         '/op_web/referee/award_list'   => ['method' => ['get'], 'call' => Award::class . ':list'],
         '/op_web/referee/award_verify' => ['method' => ['get'], 'call' => Award::class . ':updateAward'],
         '/op_web/referee/config'       => ['method' => ['get'], 'call' => Award::class . ':config'],
+        '/op_web/referee/receive_info' => ['method' => ['get'], 'call' => Award::class . ':receiveInfo'],
         
 
     ];

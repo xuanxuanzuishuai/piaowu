@@ -70,7 +70,7 @@ class SharePoster extends ControllerBase
         try {
             $result = SharePosterService::approvedCheckin($params['poster_ids'], $employeeId);
             if (!empty($result)) {
-                return HttpHelper::buildErrorResponse($response, $result);
+                throw new RunTimeException(['invalid_time_exists']);
             }
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());

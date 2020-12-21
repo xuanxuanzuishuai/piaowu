@@ -110,4 +110,29 @@ class Award extends ControllerBase
         return HttpHelper::buildResponse($response, $config);
     }
 
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * 微信的用户信息
+     */
+    public function receiveInfo(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'user_event_task_award_id',
+                'type' => 'required',
+                'error_code' => 'user_event_task_award_id_is_required'
+            ]
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $wxInfo = ReferralService::getReceiveInfo($params['user_event_task_award_id']);
+        return HttpHelper::buildResponse($response, $wxInfo);
+    }
+
 }
