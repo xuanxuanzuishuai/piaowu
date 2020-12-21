@@ -117,7 +117,7 @@ WHERE a.create_time >= {$time} AND a.status IN (" . self::STATUS_WAITING . "," .
                 ErpEventModel::$table . '.type',
                 ErpUserEventTaskModel::$table . '.app_id',
                 ErpUserEventTaskModel::$table . '.event_task_id',
-                ErpUserEventTaskModel::$table . '.condition',
+                ErpEventTaskModel::$table . '.condition',
                 ErpEventTaskModel::$table . '.type (task_type)',
                 self::$table . '.status',
                 self::$table . '.award_amount',

@@ -93,9 +93,16 @@ class Award extends ControllerBase
     {
         $params = $request->getParams();
         $names = ReferralService::getAwardNode($params['source']);
+        $eventTask = [];
+        foreach ($names as $key => $value) {
+            $eventTask[] = [
+                'code' => $key,
+                'value' => $value,
+            ];
+        }
 
         $config = [
-            'event_task_name'   => $names,
+            'event_task_name'   => $eventTask,
             'has_review_course' => DictConstants::getSet(DictConstants::HAS_REVIEW_COURSE),
             'award_status'      => ErpUserEventTaskAwardModel::STATUS_DICT,
         ];
