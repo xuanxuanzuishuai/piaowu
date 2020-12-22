@@ -19,6 +19,7 @@ use App\Models\EmployeeActivityModel;
 use App\Libs\Util;
 use App\Libs\AliOSS;
 use App\Libs\Exceptions\RunTimeException;
+use App\Models\ParamMapModel;
 use App\Models\QRCodeModel;
 
 class ReferralActivityService
@@ -346,4 +347,49 @@ class ReferralActivityService
         return DssUserQrTicketModel::LANDING_TYPE_NORMAL;
     }
 
+    /**
+     * @param $params
+     * @return int|mixed|string|null
+     * 返回参数ID
+     */
+    public static function getParamsId($params)
+    {
+        $appId = $params['app_id'];
+        $type = $params['type'];
+        $userId = $params['user_id'];
+        unset($params['app_id'], $params['type'], $params['user_id']);
+        $paramInfo = json_encode($params);
+
+        $where = [
+            'app_id'     => $appId,
+            'type'       => $type,
+            'user_id'    => $userId,
+            'param_info' => $paramInfo,
+        ];
+        $result = ParamMapModel::getRecord($where, ['id']);
+        if (!empty($result)) {
+            return $result['id'];
+        }
+
+        $insertData = [
+            'app_id'      => $appId,
+            'type'        => $type,
+            'user_id'     => $userId,
+            'param_info'  => $paramInfo,
+            'create_time' => time(),
+        ];
+
+        return ParamMapModel::insertRecord($insertData);
+    }
+
+    /**
+     * @param $paramId
+     * @return mixed|string
+     * 根据ID返回信息
+     */
+    public static function getParamsInfo($paramId)
+    {
+        $result = ParamMapModel::getById($paramId);
+        return $result['param_info'] ?? '';
+    }
 }

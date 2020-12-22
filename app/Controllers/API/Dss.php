@@ -71,6 +71,67 @@ class Dss extends ControllerBase
     }
 
     /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * 分享海报，返回参数ID
+     */
+    public static function getParamsId(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key'        => 'app_id',
+                'type'       => 'required',
+                'error_code' => 'app_id_is_required'
+            ],
+            [
+                'key'        => 'type',
+                'type'       => 'required',
+                'error_code' => 'type_is_required'
+            ],
+            [
+                'key'        => 'user_id',
+                'type'       => 'required',
+                'error_code' => 'user_id_is_required'
+            ]
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $id = ReferralActivityService::getParamsId($params);
+        return HttpHelper::buildResponse($response, ['id' => $id]);
+    }
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * 分享海报根据参数ID返回参数信息
+     */
+    public static function getParamsInfo(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key'        => 'param_id',
+                'type'       => 'required',
+                'error_code' => 'param_id_is_required'
+            ]
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $paramInfo = ReferralActivityService::getParamsInfo($params['param_id']);
+        return HttpHelper::buildResponse($response, json_decode($paramInfo, true));
+    }
+
+    /**
      * 创建转介绍关系
      * @param Request $request
      * @param Response $response

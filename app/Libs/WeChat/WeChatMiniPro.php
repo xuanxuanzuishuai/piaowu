@@ -15,6 +15,7 @@ use App\Libs\Dss;
 use App\Libs\HttpHelper;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
+use App\Services\ReferralActivityService;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use Slim\Http\StatusCode;
@@ -121,19 +122,15 @@ class WeChatMiniPro
     /**
      * 生成带参数的小程序码
      * 注意参数最长32位
-     * @param $params
+     * @param $paramsId
      * @param bool $retry
      * @return bool|string
      * @throws \App\Libs\Exceptions\RunTimeException
      */
-    public function getMiniappCodeImage($params, $retry = false)
+    public function getMiniappCodeImage($paramsId, $retry = false)
     {
         $api = self::WX_HOST . '/wxa/getwxacodeunlimit?access_token=' . $this->getAccessToken();
-        $scene = "";
-        if (!empty($params)) {
-            // 2020年12月04日11:52:37 长度不够，改格式
-            $scene = implode('&', $params);
-        }
+        $scene = '&param_id=' . $paramsId;
         $requestParams = [
             'scene' => substr($scene, 0, 32)
         ];
@@ -142,7 +139,7 @@ class WeChatMiniPro
             return $res;
         } elseif (is_array($res) && in_array($res['errcode'], [40001,42001]) && !$retry) {
             $this->refreshAccessToken();
-            return $this->getMiniappCodeImage($params, true);
+            return $this->getMiniappCodeImage($paramsId, true);
         }
         SimpleLogger::error("[WeChatMiniPro] get mini app code error", [$res]);
         return false;

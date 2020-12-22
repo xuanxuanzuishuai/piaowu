@@ -8,6 +8,7 @@ use App\Libs\RC4;
 use App\Libs\SimpleLogger;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\QRCodeModel;
+use App\Services\ReferralActivityService;
 
 class DssUserQrTicketModel extends DssModel
 {
@@ -83,10 +84,13 @@ class DssUserQrTicketModel extends DssModel
             $imagePath = self::getMiniappQrImage(
                 Constants::SMART_APP_ID,
                 [
-                    'r'  => $ticket,
-                    'c'  => $channelID,
-                    'a'  => $activityID,
-                    'e'  => $employeeID
+                    'r'       => $ticket,
+                    'c'       => $channelID,
+                    'a'       => $activityID,
+                    'e'       => $employeeID,
+                    'app_id'  => Constants::SMART_APP_ID,
+                    'type'    => $type,
+                    'user_id' => $userID,
                 ]
             );
         } else {
@@ -130,7 +134,8 @@ class DssUserQrTicketModel extends DssModel
             return '';
         }
         // 请求微信，获取小程序码图片
-        $res = $wx->getMiniappCodeImage($params);
+        $paramsId = ReferralActivityService::getParamsId($params);
+        $res = $wx->getMiniappCodeImage($paramsId);
         if ($res === false) {
             SimpleLogger::error('get mini app code image error', [$res, $params]);
             return '';
