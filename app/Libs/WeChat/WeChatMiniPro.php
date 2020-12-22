@@ -27,10 +27,13 @@ class WeChatMiniPro
     const TEMP_MEDIA_EXPIRE = 172800; // 临时media文件过期时间 2天
     const CACHE_KEY = '%s';
     const BASIC_WX_PREFIX = 'basic_wx_prefix_';
+    
+    const API_UPLOAD_IMAGE     = '/cgi-bin/media/upload';
+    const API_SEND             = '/cgi-bin/message/custom/send';
+    const API_USER_INFO        = '/cgi-bin/user/info';
+    const API_GET_CURRENT_MENU = '/cgi-bin/get_current_selfmenu_info';
+    const API_CREATE_MENU      = '/cgi-bin/menu/create';
 
-    const API_UPLOAD_IMAGE = '/cgi-bin/media/upload';
-    const API_SEND = '/cgi-bin/message/custom/send';
-    const API_USER_INFO = '/cgi-bin/user/info';
     public $nowWxApp; //当前的微信应用
 
 
@@ -353,5 +356,28 @@ class WeChatMiniPro
             'openid' => $openId,
         ];
         return $this->requestJson($api, $params, 'GET');
+    }
+
+    /**
+     * 获取当前自定义菜单
+     * @return false|mixed|string
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
+    public function getCurrentMenu()
+    {
+        $api = $this->apiUrl(self::API_GET_CURRENT_MENU);
+        return $this->requestJson($api);
+    }
+
+    /**
+     * 创建菜单
+     * @param $data
+     * @return false|mixed|string
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
+    public function createMenu($data)
+    {
+        $api = $this->apiUrl(self::API_CREATE_MENU);
+        return $this->requestJson($api, $data, 'POST');
     }
 }
