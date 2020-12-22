@@ -17,6 +17,7 @@ use App\Models\Dss\DssAiPlayRecordCHModel;
 use App\Models\Dss\DssStudentModel;
 use App\Libs\Util;
 use App\Models\Dss\DssUserQrTicketModel;
+use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\StudentInviteModel;
 use App\Models\PosterModel;
 use App\Models\WeChatAwardCashDealModel;
@@ -186,7 +187,7 @@ class ReferralService
         $waterMark[] = self::getTextWaterMark($studentInfo['lesson_count'], self::getTextConfig($studentInfo['lesson_count'], 'lesson'));
         $waterMark[] = self::getTextWaterMark($studentInfo['duration_sum'], self::getTextConfig($studentInfo['duration_sum'], 'duration'));
         $waterMark[] = self::getTextWaterMark($percent.'%', self::getTextConfig($percent, 'percent'));
-        $waterMark[] = self::getTextWaterMark('分钟', self::getTextConfig($studentInfo['duration_sum'], 'minute'));
+        $waterMark[] = self::getTextWaterMark('分钟', self::getTextConfig(Util::formatDuration($studentInfo['duration_sum']), 'minute'));
         $waterMark[] = self::getTextWaterMark('首', self::getTextConfig($studentInfo['lesson_count'], 'qu'));
 
         $waterMarkStr = [];
@@ -268,6 +269,16 @@ class ReferralService
             return [];
         }
         $studentInfo = DssStudentModel::getRecord(['id' => $studentId], ['collection_id']);
+        $wechatInfo = DssUserWeiXinModel::getRecord(
+            [
+                'user_id'   => $studentId,
+                'status'    => DssUserWeiXinModel::STATUS_NORMAL,
+                'app_id'    => Constants::SMART_APP_ID,
+                'busi_type' => Constants::SMART_MINI_BUSI_TYPE,
+                'user_type' => DssUserWeiXinModel::USER_TYPE_STUDENT
+            ]
+        );
+        $studentInfo['open_id'] = $wechatInfo['open_id'] ?? '';
         $sendData = DssStudentModel::getByCollectionId($studentInfo['collection_id'], true);
         $sendData = $sendData[0] ?? [];
         if (empty($sendData)) {

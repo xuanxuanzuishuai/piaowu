@@ -3,6 +3,8 @@ namespace App\Models\Erp;
 
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
+use App\Models\EmployeeModel;
+use App\Models\WeChatAwardCashDealModel;
 
 class ErpUserEventTaskAwardModel extends ErpModel
 {
@@ -197,15 +199,19 @@ WHERE a.create_time >= {$time} AND a.status IN (" . self::STATUS_WAITING . "," .
         if (!empty($params['not_award_status'])) {
             $where  .= " and a.status not in ('" . implode("','", $params['not_award_status']) . "')";
         }
-        $a = ErpUserEventTaskAwardModel::$table;
-        $u = ErpUserEventTaskModel::$table;
-        $t = ErpEventTaskModel::$table;
-        $s = ErpStudentModel::$table;
+        $a = ErpUserEventTaskAwardModel::getTableNameWithDb();
+        $u = ErpUserEventTaskModel::getTableNameWithDb();
+        $t = ErpEventTaskModel::getTableNameWithDb();
+        $s = ErpStudentModel::getTableNameWithDb();
+        $e = EmployeeModel::getTableNameWithDb();
+        $wa = WeChatAwardCashDealModel::getTableNameWithDb();
 
         $joinCondition = "
            INNER JOIN {$u} u ON u.id = a.uet_id
            INNER JOIN {$t} t ON t.id = u.event_task_id
            INNER JOIN {$s} s ON s.id = a.user_id
+           LEFT JOIN {$e} e ON e.id = a.reviewer_id
+           LEFT JOIN {$wa} wa ON wa.user_event_task_award_id = a.id
         ";
         $sql = "
         SELECT 
@@ -226,8 +232,10 @@ WHERE a.create_time >= {$time} AND a.status IN (" . self::STATUS_WAITING . "," .
            a.reviewer_id,
            a.reason,
            a.delay,
-           a.create_time
-        FROM {$a} a
+           a.create_time,
+           e.name review_name,
+           wa.result_code
+        FROM {$a} a force index (create_time)
         {$joinCondition}
         {$where}";
 

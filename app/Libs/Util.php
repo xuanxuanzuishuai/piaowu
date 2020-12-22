@@ -953,4 +953,15 @@ class Util
         $endTime = strtotime('next monday', $timeStamp) - 1;
         return [$startTime, $endTime, date("Y", $timeStamp), date("W", $timeStamp)];
     }
+
+    /**
+     * 转换练习时长秒为其他单位
+     * @param $duration
+     * @param int $unit
+     * @return float
+     */
+    public static function formatDuration($duration, $unit = 60)
+    {
+        return bcdiv($duration, $unit) + (bcmod($duration, $unit) > 0 ? 1 : 0);
+    }
 }

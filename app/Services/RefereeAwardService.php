@@ -8,7 +8,11 @@ use App\Libs\Util;
 use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssPackageExtModel;
 use App\Models\Dss\DssStudentModel;
+use App\Models\Dss\DssUserWeiXinModel;
+use App\Models\Dss\DssWechatOpenIdListModel;
+use App\Models\EmployeeModel;
 use App\Models\Erp\ErpUserEventTaskAwardModel;
+use App\Models\WeChatAwardCashDealModel;
 use App\Services\Queue\QueueService;
 
 class RefereeAwardService
@@ -108,7 +112,7 @@ class RefereeAwardService
      */
     public static function getAwardList($params)
     {
-        list($page, $count) = Util::appPageLimit($params);
+        list($page, $count) = Util::formatPageCount($params);
         if (!empty($params['student_name'])) {
             $params['student_uuid'] = array_column(DssStudentModel::getRecords(['name[~]' => $params['student_name']], ['uuid']), 'uuid');
             if (empty($params['student_uuid'])) {
@@ -128,7 +132,47 @@ class RefereeAwardService
         if (!empty($params['event_task_id'])) {
             $params['event_task_id'] = self::expectTaskRelateRealTask($params['event_task_id']);
         }
-        return ErpUserEventTaskAwardModel::getAward($page, $count, $params);
+        list($records, $total) = ErpUserEventTaskAwardModel::getAward($page, $count, $params);
+        return [self::formatAward($records), $total];
+
+    }
+
+    /**
+     * 获取操作人名字
+     * @param $ids
+     * @return array
+     */
+    public static function getReviewerNames($ids)
+    {
+        return EmployeeModel::getRecords(['id' => $ids], ['id', 'name']);
+    }
+
+    /**
+     * 格式化红包数据
+     * @param $records
+     * @return mixed
+     */
+    public static function formatAward($records)
+    {
+        // 公众号关注状态：
+        $wechatSubscribeInfo = [];
+        $uuidArr = array_column($records, 'student_uuid');
+        if (!empty($uuidArr)) {
+            $wechatSubscribeInfo = array_column(DssWechatOpenIdListModel::getUuidOpenIdInfo($uuidArr), null, 'uuid');
+        }
+
+        foreach ($records as &$award) {
+            $subscribeStatus = $wechatSubscribeInfo[$award['student_uuid']]['subscribe_status'];
+            $bindStatus = $wechatSubscribeInfo[$award['student_uuid']]['bind_status'];
+
+            $award['subscribe_status']    = $subscribeStatus;
+            $award['subscribe_status_zh'] = $subscribeStatus == DssWechatOpenIdListModel::SUBSCRIBE_WE_CHAT ? '已关注' : '未关注';
+            $award['bind_status']         = $bindStatus;
+            $award['bind_status_zh']      = $bindStatus == DssUserWeiXinModel::STATUS_NORMAL ? '已绑定' : '未绑定';
+            $award['award_status_zh']     = ErpUserEventTaskAwardModel::STATUS_DICT[$award['award_status']] ?? '';
+            $award['fail_reason_zh']      = $award['award_status'] == ErpUserEventTaskAwardModel::STATUS_GIVE_FAIL ? WeChatAwardCashDealModel::getWeChatErrorMsg($award['result_code']) : '';
+        }
+        return $records;
     }
 
     /**
