@@ -2,20 +2,22 @@ ALTER TABLE `dict` CHANGE `key_value` `key_value` TEXT NULL  COMMENT '显示值'
 
 INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
 VALUES
-('CHECKIN_PUSH_CONFIG', '打卡签到设置', 'day_0', '{\"content1\":\"\\\\ud83d\\\\udd14琴童宝贝们注意啦~\\n\\n⏰小叶子智能陪练5天强化训练营，今天就要开始啦~\\n从现在起，小叶子智能陪练将陪伴宝贝度过快乐练琴的每一天~\\n\\n\\\\ud83d\\\\udd25恭喜你获得“分享赚双倍学费”活动资格\\\\ud83d\\\\udc47\\\\ud83c\\\\udffb\\\\ud83d\\\\udc47\\\\ud83c\\\\udffb\\\\ud83d\\\\udc47\\\\ud83c\\\\udffb\\n\\n训练营5天内，每天练琴，每天打卡，学费双倍返还，最高可得19.8元红包！[红包]\\n[爱心]活动详情【<a href=\\\"http://referral-pre.xiaoyezi.com/operation/student/clock5Day/home\\\">活动入口链接</a>】\",\"content2\":\"\",\"poster_path\":\"pre\\/referral\\/6346734caf0adae0932c98f6480f043a.jpg\"}', '第0天推送配置'),
-('CHECKIN_PUSH_CONFIG', '打卡签到设置', 'day_1', '{\"content1\":\"\\\\ud83c\\\\udf89恭喜宝贝已完成训练营第一天练琴，好棒哦～小叶子希望每天都能陪你[愉快]\\n\\n\\\\ud83d\\\\udd25“朋友圈打卡双倍返学费”活动已开始\\n\\n\\\\ud83c\\\\udfaf打卡方式：复制以下【文案➕海报】分享到朋友圈，即可领取打卡红包[红包]\\n[爱心]活动详情【<a href=\\\"http://referral-pre.xiaoyezi.com/operation/student/clock5Day/home\\\">活动入口链接</a>】\",\"content2\": \"为了鼓励宝贝坚持练琴，刚刚报名了“小叶子智能陪练”只要9.9元！\\\\ud83c\\\\udf89\\\\ud83c\\\\udf89\\n5天不限次练琴，有小叶子陪着练琴，宝贝第一天就爱上了~\",\"poster_path\":\"pre\\/referral\\/c47cc2ccfe2032df54a536dc636790c5.jpg\"}', '第1天推送配置'),
-('CHECKIN_PUSH_CONFIG', '打卡签到设置', 'day_2', '{\"content1\":\"\\\\ud83d\\\\udcaa已经坚持练琴2天啦，音准和节奏一定进步了不少，好棒哦！\\n\\n\\\\ud83d\\\\udd25爱练琴爱分享，打卡返学费活动第2⃣️天！\\n\\n\\\\ud83c\\\\udfaf打卡方式：复制以下【文案➕海报】分享至朋友圈，即可领取打卡红包[红包]\",\"content2\":  \"宝贝能爱上钢琴，真是一件非常幸运的事情[哇]～ 宝贝今天继续用“小叶子智能陪练”练琴，智能纠错，及时反馈，宝贝的错音越来越少！[加油！][加油！]\",\"poster_path\":\"pre\\/referral\\/1afa2511031de720d49ae64d5aa5b850.jpg\"}', '第2天推送配置'),
-('CHECKIN_PUSH_CONFIG', '打卡签到设置', 'day_3', '{\"content1\":\"\\\\ud83d\\\\udcaa宝贝真棒！你已经坚持练琴第3天啦[哇] \\n 练琴成绩开始提升了，小叶子希望宝贝坚持下去，成为“小小贝多芬”指日可期！\\\\ud83c\\\\udf89\\\\ud83c\\\\udf89 \\n\\n\\\\ud83d\\\\udd25爱练琴爱分享，打卡返学费活动第3⃣️天！\\n\\n\\\\ud83c\\\\udfaf打卡方式：复制以下【文案➕海报】分享至朋友圈，即可领取打卡红包[红包]\\n[爱心]活动详情【<a href=\\\"http://referral-pre.xiaoyezi.com/operation/student/clock5Day/home\\\">活动入口链接</a>】\",\"content2\": \"老师说孩子的音准和节奏都比以前有了明显进步[哇]每天都收到宝贝的练琴日报！    \\n孩子哪里弹错，练琴成绩如何都能在里面看到，真是太好了！\\\\ud83c\\\\udf89[加油！]\",\"poster_path\":\"pre\\/referral\\/98fad97a6f7ec345a7d7d8b17d7a4168.jpg\"}', '第3天推送配置'),
-('CHECKIN_PUSH_CONFIG', '打卡签到设置', 'day_4', '{\"content1\":\"\\\\ud83d\\\\udcaa坚持就是胜利，宝贝好棒！第4天就已经可以完整的弹奏一首曲目啦！\\n\\n\\\\ud83d\\\\udd25爱练琴爱分享，打卡返学费活动第4⃣️天！\\n\\n\\\\ud83c\\\\udfaf打卡方式：复制以下【文案➕海报】分享至朋友圈，即可领取打卡红包[红包]\\n[爱心]活动详情【<a href=\\\"http://referral-pre.xiaoyezi.com/operation/student/clock5Day/home\\\">活动入口链接</a>】\",\"content2\":\"孩子通过“小叶子智能陪练”，练了几个小时就能完整的弹奏一首曲子了\\\\ud83c\\\\udfb9  \\n效果这么棒真的让我意想不到，希望宝贝可以坚持下去！✊\\\\ud83c\\\\udf89\",\"poster_path\":\"pre\\/referral\\/ac6e448408cd68093f30604f00878431.jpg\"}', '第4天推送配置'),
-('CHECKIN_PUSH_CONFIG', '打卡签到设置', 'day_5', '{\"content1\":\"[爱心]这是宝贝和小叶子在一起的第5天，宝贝已经超过了全网93％的琴童哦，成为了“小叶子明日之星”\\n\\\\ud83c\\\\udf38未来的练琴路上小叶子希望跟孩子一起每天练琴，快乐成长！[加油]\\n\\n\\\\ud83d\\\\udd25爱练琴爱分享，打卡返学费活动第5⃣️天！\\n\\n\\\\ud83c\\\\udfaf打卡方式：复制以下【文案➕海报】分享至朋友圈，即可领取打卡红包[红包]\\n[爱心]活动详情【<a href=\\\"http://referral-pre.xiaoyezi.com/operation/student/clock5Day/home\\\">活动入口链接</a>】\",\"content2\": \"今天宝贝被授予了“小叶子明日之星”，练琴成绩已超全网93%的小琴童啦[哇][加油！]\\n音准和节奏也已经变得越来越好了，真为宝贝感到骄傲！\\\\ud83c\\\\udf89\\\\ud83c\\\\udf89\",\"poster_path\":\"pre\\/referral\\/afb75253767f2ee2df33e533a9f61f09.jpg\"}', '第5天推送配置'),
+('CHECKIN_PUSH_CONFIG', '打卡签到设置', 'day_0', '{\"content1\":\"\\\\ud83d\\\\udd14琴童宝贝们注意啦~\\n\\n⏰小叶子智能陪练5天强化训练营，今天就要开始啦~\\n从现在起，小叶子智能陪练将陪伴宝贝度过快乐练琴的每一天~\\n\\n\\\\ud83d\\\\udd25恭喜你获得“分享赚双倍学费”活动资格\\\\ud83d\\\\udc47\\\\ud83c\\\\udffb\\\\ud83d\\\\udc47\\\\ud83c\\\\udffb\\\\ud83d\\\\udc47\\\\ud83c\\\\udffb\\n\\n训练营5天内，每天练琴，每天打卡，学费双倍返还，最高可得19.8元红包！[红包]\\n[爱心]活动详情【<a href=\\\"{page_url}\\\">活动入口链接</a>】\",\"content2\":\"\"}', '第0天推送配置'),
+('CHECKIN_PUSH_CONFIG', '打卡签到设置', 'day_1', '{\"content1\":\"\\\\ud83c\\\\udf89恭喜宝贝已完成训练营第一天练琴，好棒哦～小叶子希望每天都能陪你[愉快]\\n\\n\\\\ud83d\\\\udd25“朋友圈打卡双倍返学费”活动已开始\\n\\n\\\\ud83c\\\\udfaf打卡方式：复制以下【文案➕海报】分享到朋友圈，即可领取打卡红包[红包]\\n[爱心]活动详情【<a href=\\\"{page_url}\\\">活动入口链接</a>】\",\"content2\": \"为了鼓励宝贝坚持练琴，刚刚报名了“小叶子智能陪练”只要9.9元！\\\\ud83c\\\\udf89\\\\ud83c\\\\udf89\\n5天不限次练琴，有小叶子陪着练琴，宝贝第一天就爱上了~\"}', '第1天推送配置'),
+('CHECKIN_PUSH_CONFIG', '打卡签到设置', 'day_2', '{\"content1\":\"\\\\ud83d\\\\udcaa已经坚持练琴2天啦，音准和节奏一定进步了不少，好棒哦！\\n\\n\\\\ud83d\\\\udd25爱练琴爱分享，打卡返学费活动第2⃣️天！\\n\\n\\\\ud83c\\\\udfaf打卡方式：复制以下【文案➕海报】分享至朋友圈，即可领取打卡红包[红包]\",\"content2\":  \"宝贝能爱上钢琴，真是一件非常幸运的事情[哇]～ 宝贝今天继续用“小叶子智能陪练”练琴，智能纠错，及时反馈，宝贝的错音越来越少！[加油！][加油！]\"}', '第2天推送配置'),
+('CHECKIN_PUSH_CONFIG', '打卡签到设置', 'day_3', '{\"content1\":\"\\\\ud83d\\\\udcaa宝贝真棒！你已经坚持练琴第3天啦[哇] \\n 练琴成绩开始提升了，小叶子希望宝贝坚持下去，成为“小小贝多芬”指日可期！\\\\ud83c\\\\udf89\\\\ud83c\\\\udf89 \\n\\n\\\\ud83d\\\\udd25爱练琴爱分享，打卡返学费活动第3⃣️天！\\n\\n\\\\ud83c\\\\udfaf打卡方式：复制以下【文案➕海报】分享至朋友圈，即可领取打卡红包[红包]\\n[爱心]活动详情【<a href=\\\"{page_url}\\\">活动入口链接</a>】\",\"content2\": \"老师说孩子的音准和节奏都比以前有了明显进步[哇]每天都收到宝贝的练琴日报！    \\n孩子哪里弹错，练琴成绩如何都能在里面看到，真是太好了！\\\\ud83c\\\\udf89[加油！]\"}', '第3天推送配置'),
+('CHECKIN_PUSH_CONFIG', '打卡签到设置', 'day_4', '{\"content1\":\"\\\\ud83d\\\\udcaa坚持就是胜利，宝贝好棒！第4天就已经可以完整的弹奏一首曲目啦！\\n\\n\\\\ud83d\\\\udd25爱练琴爱分享，打卡返学费活动第4⃣️天！\\n\\n\\\\ud83c\\\\udfaf打卡方式：复制以下【文案➕海报】分享至朋友圈，即可领取打卡红包[红包]\\n[爱心]活动详情【<a href=\\\"{page_url}\\\">活动入口链接</a>】\",\"content2\":\"孩子通过“小叶子智能陪练”，练了几个小时就能完整的弹奏一首曲子了\\\\ud83c\\\\udfb9  \\n效果这么棒真的让我意想不到，希望宝贝可以坚持下去！✊\\\\ud83c\\\\udf89\"}', '第4天推送配置'),
+('CHECKIN_PUSH_CONFIG', '打卡签到设置', 'day_5', '{\"content1\":\"[爱心]这是宝贝和小叶子在一起的第5天，宝贝已经超过了全网93％的琴童哦，成为了“小叶子明日之星”\\n\\\\ud83c\\\\udf38未来的练琴路上小叶子希望跟孩子一起每天练琴，快乐成长！[加油]\\n\\n\\\\ud83d\\\\udd25爱练琴爱分享，打卡返学费活动第5⃣️天！\\n\\n\\\\ud83c\\\\udfaf打卡方式：复制以下【文案➕海报】分享至朋友圈，即可领取打卡红包[红包]\\n[爱心]活动详情【<a href=\\\"{page_url}\\\">活动入口链接</a>】\",\"content2\": \"今天宝贝被授予了“小叶子明日之星”，练琴成绩已超全网93%的小琴童啦[哇][加油！]\\n音准和节奏也已经变得越来越好了，真为宝贝感到骄傲！\\\\ud83c\\\\udf89\\\\ud83c\\\\udf89\"}', '第5天推送配置'),
 ('CHECKIN_PUSH_CONFIG', '打卡签到设置', 'text_position', '{"1":{"duration":{"s":48,"x":143,"y":844},"lesson":{"s":48,"x":357,"y":844},"percent":{"s":48,"x":547,"y":844},"minute":{"x":170,"y":865,"s":16},"qu":{"x":384,"y":865,"s":16}},"2":{"duration":{"s":48,"x":132,"y":844},"lesson":{"s":48,"x":346,"y":844},"percent":{"s":48,"x":539,"y":844},"minute":{"x":184,"y":865,"s":16},"qu":{"x":396,"y":865,"s":16}},"3":{"duration":{"s":48,"x":120,"y":844},"lesson":{"s":48,"x":332,"y":844},"percent":{"s":48,"x":530,"y":844},"minute":{"x":198,"y":865,"s":16},"qu":{"x":409,"y":865,"s":16}}}', '海报中各数据元素位置'),
 ('CHECKIN_PUSH_CONFIG', '打卡签到设置', 'poster_config', '{"name_x":186,"name_y":726,"thumb_x":76,"thumb_y":692,"width":750,"height":1334,"qr_w":156,"qr_h":156,"qr_x":534,"qr_y":1110}', ''),
-('CHECKIN_PUSH_CONFIG', '打卡签到设置', 'url', 'https://referral-pre.xiaoyezi.com/market/index', ''),
+('CHECKIN_PUSH_CONFIG', '打卡签到设置', 'url', 'https://referral-pre.xiaoyezi.com/market/index', '消息点击跳转地址'),
+('CHECKIN_PUSH_CONFIG', '打卡签到设置', 'page_url', 'http://referral-pre.xiaoyezi.com/operation/student/clock5Day/home', '活动入口地址'),
 -- EVENT:
 ('CHECKIN_PUSH_CONFIG', '打卡签到设置', 'collection_event_id', '33', '参加打卡活动班级关联的EVENT ID'),
 ('CHECKIN_PUSH_CONFIG', '打卡签到设置', 'max_name_length', '18', '名字最大长度'),
 -- CHANNEL:
 ('CHECKIN_PUSH_CONFIG', '打卡签到设置', 'day_channel', '{"1":2576,"2":2577,"3":2578,"4":2579,"5":2580}', '每一天对应的小程序码渠道'),
+('CHECKIN_PUSH_CONFIG', '打卡签到设置', 'day_poster_config', '{"1":1,"2":2,"3":3,"4":4,"5":5,"0":6}', '每一天对应海报ID'),
 ('student_info', '学生默认信息配置', 'default_thumb', 'prod/thumb/uid_95670/thumb_1603699254.jpg', '学生默认头像'),
 ('share_poster_check_status', '分享截图审核状态', '1', '待审核', NULL),
 ('share_poster_check_status', '分享截图审核状态', '2', '已通过', NULL),
@@ -107,3 +109,21 @@ CREATE TABLE `share_poster` (
   KEY `activity_id` (`activity_id`) USING BTREE,
   KEY `sid` (`student_id`) USING BTREE
 ) ENGINE=InnoDB  COMMENT='用户分享海报表';
+
+CREATE TABLE `poster` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(50) NOT NULL DEFAULT '' COMMENT '海报名称',
+  `path` varchar(255) NOT NULL DEFAULT '' COMMENT '海报路径',
+  `status` tinyint(1) NOT NULL COMMENT '状态:1可用;0不可用',
+  `create_time` int(11) NOT NULL COMMENT '创建时间',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB COMMENT='海报存储表';
+
+INSERT INTO `poster` (`id`, `name`, `path`, `status`, `create_time`)
+  VALUES 
+  (1, '5日打卡-第1天', 'pre/referral/c47cc2ccfe2032df54a536dc636790c5.jpg', 1, unix_timestamp()),
+  (2, '5日打卡-第2天', 'pre/referral/1afa2511031de720d49ae64d5aa5b850.jpg', 1, unix_timestamp()),
+  (3, '5日打卡-第3天', 'pre/referral/98fad97a6f7ec345a7d7d8b17d7a4168.jpg', 1, unix_timestamp()),
+  (4, '5日打卡-第4天', 'pre/referral/ac6e448408cd68093f30604f00878431.jpg', 1, unix_timestamp()),
+  (5, '5日打卡-第5天', 'pre/referral/afb75253767f2ee2df33e533a9f61f09.jpg', 1, unix_timestamp()),
+  (6, '5日打卡-第0天', 'pre/referral/6346734caf0adae0932c98f6480f043a.jpg', 1, unix_timestamp());

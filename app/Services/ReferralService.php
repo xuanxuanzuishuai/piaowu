@@ -18,6 +18,7 @@ use App\Models\Dss\DssStudentModel;
 use App\Libs\Util;
 use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\StudentInviteModel;
+use App\Models\PosterModel;
 use App\Models\WeChatAwardCashDealModel;
 
 class ReferralService
@@ -99,28 +100,46 @@ class ReferralService
             SimpleLogger::error('EMPTY CONFIG', [$day]);
             return [];
         }
+        $pageUrl = DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'page_url');
         $configData = json_decode($configData, true);
         $content1 = Util::textDecode($configData['content1'] ?? '');
+        $content1 = str_replace('{page_url}', $pageUrl, $content1);
         $content2 = Util::textDecode($configData['content2'] ?? '');
-        $basePoster = $configData['poster_path'] ?? '';
-        $posterImage = self::genCheckinPoster($basePoster, $day, $studentInfo);
+        $posterData = self::getPosterByDay($day);
+        $posterImage = self::genCheckinPoster($posterData, $day, $studentInfo);
         return [$content1, $content2, $posterImage];
     }
 
     /**
+     * 根据第几天节点获取海报
+     * @param $day
+     * @return array|mixed
+     */
+    public static function getPosterByDay($day)
+    {
+        $configData = DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'day_poster_config');
+        $configData = json_decode($configData, true);
+        $id = $configData[$day] ?? 0;
+        if (empty($id)) {
+            return [];
+        }
+        return PosterModel::getRecord(['id' => $id]);
+    }
+
+    /**
      * 生成学生打卡海报
-     * @param $poster
+     * @param $posterInfo
      * @param $day
      * @param $studentInfo
      * @return array
      */
-    public static function genCheckinPoster($poster, $day, $studentInfo)
+    public static function genCheckinPoster($posterInfo, $day, $studentInfo)
     {
-        if (empty($poster)) {
+        if (empty($posterInfo)) {
             return [];
         }
         if (empty($day)) {
-            return ['poster_save_full_path' => AliOSS::signUrls($poster), 'unique' => md5($studentInfo['id'] . $day . $poster) . ".jpg"];
+            return ['poster_save_full_path' => AliOSS::signUrls($posterInfo['path']), 'unique' => md5($studentInfo['id'] . $day . $posterInfo['path']) . ".jpg"];
         }
         $headImageUrl = $studentInfo['wechat']['headimgurl'];
         $name = self::getPosterName($studentInfo['wechat']['nickname']);
@@ -145,7 +164,9 @@ class ReferralService
             null,
             null,
             null,
-            DssUserQrTicketModel::LANDING_TYPE_MINIAPP
+            DssUserQrTicketModel::LANDING_TYPE_MINIAPP,
+            DssUserQrTicketModel::STUDENT_TYPE,
+            $posterInfo['id']
         );
         $waterImgEncode = str_replace(["+", "/"], ["-", "_"], base64_encode($thumb."?x-oss-process=image/resize,w_90,h_90/circle,r_100/format,png"));
         $waterMark = [];
@@ -178,8 +199,8 @@ class ReferralService
             "limit_0",//强制图片缩放
         ];
         $imgSizeStr = implode(",", $imgSize) . '/';
-        $resImgFile = AliOSS::signUrls($poster, "", "", "", false, $waterMarkStr, $imgSizeStr);
-        return ['poster_save_full_path' => $resImgFile, 'unique' => md5($studentInfo['id'] . $day . $poster) . ".jpg"];
+        $resImgFile = AliOSS::signUrls($posterInfo['path'], "", "", "", false, $waterMarkStr, $imgSizeStr);
+        return ['poster_save_full_path' => $resImgFile, 'unique' => md5($studentInfo['id'] . $day . $posterInfo['path']) . ".jpg"];
     }
 
     /**

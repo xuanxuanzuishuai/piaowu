@@ -276,9 +276,11 @@ class DictConstants {
             'poster_config',
             'verify_message_config_id',
             'url',
+            'page_url',
             'collection_event_id',
             'max_name_length',
             'day_channel',
+            'day_poster_config',
         ],
     ];
 

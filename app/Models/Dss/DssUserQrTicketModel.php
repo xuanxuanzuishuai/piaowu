@@ -39,7 +39,8 @@ class DssUserQrTicketModel extends DssModel
         $employeeID = null,
         $appID = null,
         $landingType = self::LANDING_TYPE_NORMAL,
-        $type = self::STUDENT_TYPE
+        $type = self::STUDENT_TYPE,
+        $posterId = 0
     ) {
 
         $sql = "
@@ -88,6 +89,7 @@ class DssUserQrTicketModel extends DssModel
                     'c'       => $channelID,
                     'a'       => $activityID,
                     'e'       => $employeeID,
+                    'p'       => $posterId,
                     'app_id'  => Constants::SMART_APP_ID,
                     'type'    => $type,
                     'user_id' => $userID,
@@ -99,7 +101,8 @@ class DssUserQrTicketModel extends DssModel
                     'referee_id'  => $ticket,
                     'activity_id' => $activityID,
                     'employee_id' => $employeeID,
-                    'channel_id'  => $channelID
+                    'channel_id'  => $channelID,
+                    'poster_id'   => $posterId,
                 ]
             );
         }

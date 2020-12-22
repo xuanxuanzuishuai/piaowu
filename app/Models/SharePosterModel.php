@@ -116,10 +116,8 @@ class SharePosterModel extends Model
         
         $sp = self::$table;
         $s  = DssStudentModel::getTableNameWithDb();
-        $c  = DssCollectionModel::getTableNameWithDb();
         $e  = DssEmployeeModel::getTableNameWithDb();
         $join = " INNER JOIN $s s ON s.id = sp.student_id ";
-        $join .= "INNER JOIN $c c ON c.id = sp.activity_id ";
         $join .= "LEFT JOIN $e e ON e.id = sp.verify_user ";
 
         $totalCount = MysqlDB::getDB()->queryAll("SELECT count(sp.id) count FROM $sp sp $join $where ", $map);
@@ -162,7 +160,6 @@ class SharePosterModel extends Model
     {
         $sp = self::$table;
         $s  = DssStudentModel::getTableNameWithDb();
-        $c  = DssCollectionModel::getTableNameWithDb();
         $uw = DssUserWeiXinModel::getTableNameWithDb();
         $sql = "
         SELECT
@@ -174,12 +171,10 @@ class SharePosterModel extends Model
             sp.ext->>'$.valid_time' valid_time,
             sp.ext->>'$.node_order' day,
             uw.open_id,
-            c.task_id,
             s.uuid,
             s.mobile
         FROM
             $sp sp
-        INNER JOIN $c c ON c.id = sp.activity_id
         INNER JOIN $s s ON s.id = sp.student_id
         LEFT JOIN $uw uw ON uw.user_id = sp.student_id
             AND uw.user_type = " . DssUserWeiXinModel::USER_TYPE_STUDENT . "
