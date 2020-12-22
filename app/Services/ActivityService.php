@@ -121,7 +121,6 @@ class ActivityService
             return $data;
         }
         $data['status'] = true;
-        $data['activity'] = $activityData;
         $data['activity'] = [
             "activity_start_time" => $activityData['activity_start_time'],
             "activity_end_time" => $activityData['activity_end_time'],
@@ -184,7 +183,7 @@ class ActivityService
             return $activityData;
         }
         //班级打卡是否在有效期
-        $activityEndTime = strtotime("+7 day", $collectionData['teaching_start_time']);
+        $activityEndTime = strtotime("+7 day", $collectionData['teaching_start_time'] - 1);
         if (($time > $activityEndTime) || ($time < $collectionData['teaching_start_time'])) {
             SimpleLogger::error("activity status error ", ['teaching_start_time' => $collectionData['teaching_start_time']]);
         } else {
@@ -247,7 +246,7 @@ class ActivityService
         //截图上传数据
         $nodeIdList = array_column($nodeData, 'node_id');
         $posterData = array_column(SharePosterModel::signInNodePoster($studentId, implode(',', $nodeIdList)), null, 'node_id');
-        $nodeSignData['days'] = count($posterData);
+        $nodeSignData['days'] = 0;
         if (!empty($posterData)) {
             $posterData = self::posterCheckReason($posterData);
         }
@@ -265,6 +264,7 @@ class ActivityService
                     $node['node_status'] = SharePosterModel::NODE_STATUS_VERIFY_ING;
                 } elseif ($posterData[$node['node_id']]['verify_status'] == SharePosterModel::VERIFY_STATUS_QUALIFIED) {
                     $node['node_status'] = SharePosterModel::NODE_STATUS_HAVE_SIGN;
+                    $nodeSignData['days'] += 1;
                 } elseif ($posterData[$node['node_id']]['verify_status'] == SharePosterModel::VERIFY_STATUS_UNQUALIFIED) {
                     $node['node_status'] = SharePosterModel::NODE_STATUS_VERIFY_UNQUALIFIED;
                 }
@@ -307,11 +307,12 @@ class ActivityService
     /**
      * 打卡活动文案&海报
      * @param $studentId
+     * @param $nodeId
      * @return array
      */
-    public static function signInCopyWriting($studentId)
+    public static function signInCopyWriting($studentId, $nodeId)
     {
-        $studentInfo = ReferralService::getUserInfoForSendData($studentId);
+        $studentInfo = ReferralService::getUserInfoForSendData($studentId, strtotime($nodeId));
         list($content1, $content2, $poster) = ReferralService::getCheckinSendData($studentInfo['day'], $studentInfo);
         return ['text' => $content2, 'poster' => $poster['poster_save_full_path']];
     }

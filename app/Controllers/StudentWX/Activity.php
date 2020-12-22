@@ -77,9 +77,23 @@ class Activity extends ControllerBase
      * @param Response $response
      * @return Response
      */
-    public function signInCopyWriting(/** @noinspection PhpUnusedParameterInspection */Request $request, Response $response)
+    public function signInCopyWriting(Request $request, Response $response)
     {
-        $data = ActivityService::signInCopyWriting($this->ci['user_info']['user_id']);
+        $rules = [
+            [
+                'key' => 'node_id',
+                'type' => 'required',
+                'error_code' => 'node_id_is_required'
+            ]
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $params = $request->getParams();
+        $data = ActivityService::signInCopyWriting($this->ci['user_info']['user_id'],$params['node_id']);
         return HttpHelper::buildResponse($response, $data);
     }
 }

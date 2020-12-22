@@ -241,7 +241,7 @@ class ReferralService
      * @return array|null
      * @throws \Exception
      */
-    public static function getUserInfoForSendData($studentId)
+    public static function getUserInfoForSendData($studentId, $nodeDate)
     {
         if (empty($studentId)) {
             return [];
@@ -252,15 +252,14 @@ class ReferralService
         if (empty($sendData)) {
             return [];
         }
-        $now = time();
-        $today = new \DateTime(date('Y-m-d', $now));
+        $today = new \DateTime(date('Y-m-d', $nodeDate));
         $startDay = new \DateTime(date('Y-m-d', $sendData['teaching_start_time']));
         $dayDiff = $today->diff($startDay)->format('%a');
         if ($dayDiff <0 || $dayDiff > 5) {
             SimpleLogger::error("WRONG DAY DATA", [$sendData]);
             return [];
         }
-        $day = date("Y-m-d", strtotime("-".$dayDiff." days", $now));
+        $day = date("Y-m-d", strtotime("-".$dayDiff." days", $nodeDate));
         $playInfo = DssAiPlayRecordCHModel::getStudentBetweenTimePlayRecord($studentId, strtotime($day), strtotime($day.' 23:59:59'));
         $sendData['lesson_count'] = $playInfo[0]['lesson_count'] ?? 0;
         $sendData['duration_sum'] = $playInfo[0]['duration_sum'] ?? 0;
