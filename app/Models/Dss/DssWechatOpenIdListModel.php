@@ -29,6 +29,7 @@ class DssWechatOpenIdListModel extends DssModel
         $s   = DssStudentModel::$table;
         $uw  = DssUserWeiXinModel::$table;
         $wol = self::$table;
+        $where = "s.uuid IN ('" . implode("','", $uuid) . "')";
         $sql = "
         SELECT 
             s.uuid,
@@ -36,17 +37,19 @@ class DssWechatOpenIdListModel extends DssModel
             wol.status subscribe_status
         FROM 
             {$s} s
-            LEFT JOIN {$uw} uw ON s.uuid IN ('" . implode("','", $uuid) . "')
-                        AND s.id = uw.user_id
+            LEFT JOIN {$uw} uw ON s.id = uw.user_id
                         AND uw.app_id =:app_id
                         AND uw.busi_type =:busi_type
                         AND uw.user_type =:user_type
                         AND uw.`status` =:uwstatus
-            LEFT JOIN {$wol} wol ON uw.open_id = wol.openid";
+            LEFT JOIN {$wol} wol ON uw.open_id = wol.openid
+        WHERE
+            {$where}
+        ";
         $map = [
             ':app_id'    => Constants::SMART_APP_ID,
             ':user_type' => DssUserWeiXinModel::USER_TYPE_STUDENT,
-            ':busi_type' => Constants::SMART_MINI_BUSI_TYPE,
+            ':busi_type' => DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER,
             ':uwstatus'  => DssUserWeiXinModel::STATUS_NORMAL
         ];
         return $db->queryAll($sql, $map);

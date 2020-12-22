@@ -137,6 +137,7 @@ class SharePosterModel extends Model
             sp.verify_user,
             sp.verify_reason,
             sp.remark,
+            sp.ext->>'$.node_order' node_order,
             sp.type,
             s.name student_name,
             s.mobile,
