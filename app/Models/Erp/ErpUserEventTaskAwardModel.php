@@ -57,7 +57,7 @@ FROM {$a} a force index(create_time)
 inner join {$ue} ue on a.uet_id = ue.id 
 inner join {$t} t on ue.event_task_id = t.id
 inner join {$e} e on t.event_id = e.id
-WHERE a.create_time >= $time AND a.status IN (" . self::STATUS_WAITING . "," . self::STATUS_GIVE_FAIL .") AND a.award_type = 1 AND (a.create_time + a.delay) <= " . time();
+WHERE a.create_time >= {$time} AND a.status IN (" . self::STATUS_WAITING . "," . self::STATUS_GIVE_FAIL .") AND a.award_type = " .self::AWARD_TYPE_CASH. " AND (a.create_time + a.delay) <= " . time();
         $baseAward = self::dbRO()->queryAll($sql);
         //如果待发放并且是上传截图领奖，过滤掉
         $queueArr = [];
