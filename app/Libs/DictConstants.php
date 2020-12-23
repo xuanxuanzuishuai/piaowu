@@ -181,7 +181,7 @@ class DictConstants {
     const COMMON_CASH_NODE = [
         'type' => 'operation_common_node',
         'keys' => [
-            '4','5','6','7','8','9','10','11','12','13'
+            '20', '21', '22'
         ]
     ];
     //补发红包搜索节点

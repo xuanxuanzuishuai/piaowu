@@ -183,11 +183,12 @@ class ReferralService
             "y_" . $posterConfig['qr_y'],
             "g_nw",
         ];
+        $studentInfo['duration_sum'] = Util::formatDuration($studentInfo['duration_sum']);
         $waterMark[] = self::getTextWaterMark($name, ['x' => $posterConfig['name_x'], 'y' => $posterConfig['name_y'], 'g' => 'nw', 's' => 30]);
         $waterMark[] = self::getTextWaterMark($studentInfo['lesson_count'], self::getTextConfig($studentInfo['lesson_count'], 'lesson'));
         $waterMark[] = self::getTextWaterMark($studentInfo['duration_sum'], self::getTextConfig($studentInfo['duration_sum'], 'duration'));
         $waterMark[] = self::getTextWaterMark($percent.'%', self::getTextConfig($percent, 'percent'));
-        $waterMark[] = self::getTextWaterMark('分钟', self::getTextConfig(Util::formatDuration($studentInfo['duration_sum']), 'minute'));
+        $waterMark[] = self::getTextWaterMark('分钟', self::getTextConfig($studentInfo['duration_sum'], 'minute'));
         $waterMark[] = self::getTextWaterMark('首', self::getTextConfig($studentInfo['lesson_count'], 'qu'));
 
         $waterMarkStr = [];

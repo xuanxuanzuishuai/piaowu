@@ -13,9 +13,10 @@ use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\AliOSS;
 use App\Libs\Util;
+use App\Models\Dss\DssCollectionModel;
 use App\Models\Dss\DssEventTaskModel;
+use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
-use App\Models\Erp\ErpUserEventTaskAwardModel;
 use App\Models\Erp\ErpUserEventTaskModel;
 use App\Models\SharePosterModel;
 use App\Libs\Erp;
@@ -72,6 +73,9 @@ class SharePosterService
         if (count($posterIds) > 50) {
             throw new RunTimeException(['over_max_allow_num']);
         }
+        if (empty($posterIds)) {
+            throw new RunTimeException(['poster_id_is_required']);
+        }
         $posters = SharePosterModel::getPostersByIds($posterIds);
         if (count($posters) != count($posterIds)) {
             throw new RunTimeException(['get_share_poster_error']);
@@ -82,7 +86,7 @@ class SharePosterService
         $allTasks = DssEventTaskModel::getRecords(
             [
                 'event_id' => DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'collection_event_id'),
-                'type' => DssEventTaskModel::STATUS_NORMAL,
+                'status' => DssEventTaskModel::STATUS_NORMAL,
             ]
         );
         // 已超时的海报
@@ -96,24 +100,6 @@ class SharePosterService
                 continue;
             }
 
-            $userInfo = UserService::getUserWeiXinInfoByUserId(
-                Constants::SMART_APP_ID,
-                $poster['student_id'],
-                DssUserWeiXinModel::USER_TYPE_STUDENT,
-                DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER
-            );
-            // 发送审核消息
-            PushMessageService::notifyUserCustomizeMessage(
-                DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'verify_message_config_id'),
-                [
-                    'day'    => $poster['day'],
-                    'status' => DictService::getKeyValue('share_poster_check_status', $status),
-                    'url'    => DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'url'),
-                    'remark' => '【点此消息】查看更多打卡进度',
-                ],
-                $userInfo['open_id'],
-                Constants::SMART_APP_ID
-            );
             $awardId = $poster['award_id'];
             if (empty($awardId)) {
                 $taskId = 0;
@@ -123,6 +109,8 @@ class SharePosterService
                     'student_id'    => $poster['student_id'],
                     'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED
                 ]);
+                // 审核通过状态还未更新，查询总数加1
+                $total += 1;
                 foreach ($allTasks as $task) {
                     $condition = json_decode($task['condition'], true);
                     if ($total == $condition['total_days']) {
@@ -135,11 +123,8 @@ class SharePosterService
                     if (empty($taskRes['user_award_ids'])) {
                         throw new RuntimeException(['empty erp award ids']);
                     }
-                    $awardId = implode(',', $taskRes['user_award_ids']);
-                    $awardBaseInfo = ErpUserEventTaskAwardModel::awardRelateEvent($taskRes['user_award_ids']);
-                    $needDealAward = [];
-                    foreach ($awardBaseInfo as $award) {
-                        $needDealAward[$award['award_id']] = ['id' => $award['award_id']];
+                    foreach ($taskRes['user_award_ids'] as $awardId) {
+                        $needDealAward[$awardId] = ['id' => $awardId];
                     }
                     if (!empty($needDealAward)) {
                         //实际发放结果数据 调用微信红包，
@@ -162,6 +147,24 @@ class SharePosterService
             if (empty($updateRecord)) {
                 throw new RunTimeException(['update_failure']);
             }
+            $userInfo = UserService::getUserWeiXinInfoByUserId(
+                Constants::SMART_APP_ID,
+                $poster['student_id'],
+                DssUserWeiXinModel::USER_TYPE_STUDENT,
+                DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER
+            );
+            // 发送审核消息
+            PushMessageService::notifyUserCustomizeMessage(
+                DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'verify_message_config_id'),
+                [
+                    'day'    => $poster['day'],
+                    'status' => DictService::getKeyValue('share_poster_check_status', $status),
+                    'url'    => DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'url'),
+                    'remark' => '【点此消息】查看更多打卡进度',
+                ],
+                $userInfo['open_id'],
+                Constants::SMART_APP_ID
+            );
         }
         return $timeoutOnes;
     }
@@ -182,10 +185,10 @@ class SharePosterService
 
         $erp = new Erp();
         $taskResult = $erp->updateTask($uuid, $taskId, $status);
-        if (empty($taskResult['data'])) {
+        if (empty($taskResult)) {
             throw new RunTimeException(['erp_create_user_event_task_award_fail']);
         }
-        return $taskResult['data'];
+        return $taskResult;
     }
 
     /**
@@ -208,10 +211,13 @@ class SharePosterService
         if (empty($poster)) {
             throw new RunTimeException(['get_share_poster_error']);
         }
-
+        $studentInfo = DssStudentModel::getRecord(['id' => $poster['user_id']], ['collection_id']);
+        if (!empty($studentInfo['collection_id'])) {
+            $collection = DssCollectionModel::getRecord(['id' => $studentInfo['collection_id']], ['teaching_start_time']);
+        }
         $status = SharePosterModel::VERIFY_STATUS_UNQUALIFIED;
         $time = time();
-        $update = SharePosterModel::updateRecord($poster['id'], [
+        $updateData = [
             'verify_status' => $status,
             'award_id'      => $poster['award_id'],
             'verify_time'   => $time,
@@ -219,8 +225,12 @@ class SharePosterService
             'verify_user'   => $employeeId,
             'verify_reason' => implode(',', $reason),
             'remark'        => $remark,
-            'ext'           => Medoo::raw("JSON_SET(`ext`, '$.valid_time', '".($poster['valid_time'] + 24 * 3600)."')")
-        ]);
+        ];
+        if (!empty($collection['teaching_start_time']) &&
+            $poster['valid_time'] + 24 * 3600 <= $collection['teaching_start_time'] + 7 * 24 * 3600) {
+            $updateData['ext'] = Medoo::raw("JSON_SET(`ext`, '$.valid_time', '".($poster['valid_time'] + 24 * 3600)."')");
+        }
+        $update = SharePosterModel::updateRecord($poster['id'], $updateData);
         // 审核不通过, 发送模版消息
         if ($update > 0) {
             $userInfo = UserService::getUserWeiXinInfoByUserId(

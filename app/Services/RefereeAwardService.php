@@ -171,6 +171,7 @@ class RefereeAwardService
             $award['bind_status_zh']      = $bindStatus == DssUserWeiXinModel::STATUS_NORMAL ? '已绑定' : '未绑定';
             $award['award_status_zh']     = ErpUserEventTaskAwardModel::STATUS_DICT[$award['award_status']] ?? '';
             $award['fail_reason_zh']      = $award['award_status'] == ErpUserEventTaskAwardModel::STATUS_GIVE_FAIL ? WeChatAwardCashDealModel::getWeChatErrorMsg($award['result_code']) : '';
+            $award['award_amount']        = ($award['award_amount'] / 100);
         }
         return $records;
     }

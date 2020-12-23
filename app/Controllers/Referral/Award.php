@@ -14,6 +14,7 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\Valid;
 use App\Models\Erp\ErpUserEventTaskAwardModel;
+use App\Services\DictService;
 use App\Services\RefereeAwardService;
 use App\Services\ReferralService;
 use Slim\Http\Request;
@@ -33,9 +34,6 @@ class Award extends ControllerBase
         try {
             $params = $request->getParams();
             $params['award_type'] = ErpUserEventTaskAwardModel::AWARD_TYPE_CASH;
-            if (!empty($params['event_task_id']) && in_array($params['event_task_id'], ReferralService::getNotDisplayWaitGiveTask())) {
-                $params['not_award_status'] = [ErpUserEventTaskAwardModel::STATUS_WAITING];
-            }
 
             list($records, $totalCount) = RefereeAwardService::getAwardList($params);
         } catch (RunTimeException $e) {
@@ -106,7 +104,7 @@ class Award extends ControllerBase
             'has_review_course' => DictConstants::getSet(DictConstants::HAS_REVIEW_COURSE),
             'award_status'      => ErpUserEventTaskAwardModel::STATUS_DICT,
         ];
-
+        $config = array_merge(DictService::getListsByTypes(['share_poster_check_status']), $config);
         return HttpHelper::buildResponse($response, $config);
     }
 
