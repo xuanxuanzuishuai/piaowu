@@ -134,7 +134,7 @@ class DssStudentModel extends DssModel
 
         $field = "s.id,s.collection_id,s.thumb,s.name, c.teaching_start_time";
         $join  = " LEFT JOIN $c c ON s.collection_id = c.id";
-        $order = " ORDER BY s.id";
+
         if (is_array($collectionId)) {
             $where = " s.collection_id in (" . implode(',', $collectionId) . ")";
         } else {
@@ -155,7 +155,7 @@ class DssStudentModel extends DssModel
             $s s
             {$join}
         WHERE
-            {$where} {$order}
+            {$where}
         ";
         return self::dbRO()->queryAll($sql);
     }

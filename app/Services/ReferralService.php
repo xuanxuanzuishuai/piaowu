@@ -144,20 +144,23 @@ class ReferralService
         }
         $headImageUrl = $studentInfo['wechat']['headimgurl'];
         $name = self::getPosterName($studentInfo['wechat']['nickname']);
+        $studentInfo['duration_sum'] = Util::formatDuration($studentInfo['duration_sum']);
         $percent = self::getRandScore($studentInfo['duration_sum']);
         $posterConfig = DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'poster_config');
         if (!empty($posterConfig)) {
             $posterConfig = json_decode($posterConfig, true);
         }
-        
-        $thumb = $_ENV['ENV_NAME'] . '/' . AliOSS::DIR_REFERRAL . '/'.md5($studentInfo['open_id']) . '.jpg';
+
+        $fileName = md5($headImageUrl);
+        $thumb = $_ENV['ENV_NAME'] . '/' . AliOSS::DIR_REFERRAL . '/'. $fileName. '.jpg';
         if (!AliOSS::doesObjectExist($thumb)) {
-            $tmpFileFullPath = $_ENV['STATIC_FILE_SAVE_PATH'] . "/thumb_temp.jpg";
+            $tmpFileFullPath = $_ENV['STATIC_FILE_SAVE_PATH'] . "/" . $fileName . ".jpg";
             chmod($tmpFileFullPath, 0755);
             file_put_contents($tmpFileFullPath, file_get_contents($headImageUrl));
             if (file_exists($tmpFileFullPath)) {
                 AliOSS::uploadFile($thumb, $tmpFileFullPath);
             }
+            unlink($tmpFileFullPath);
         }
         $userQrPath  = DssUserQrTicketModel::getUserQrURL(
             $studentInfo['id'],
@@ -183,7 +186,6 @@ class ReferralService
             "y_" . $posterConfig['qr_y'],
             "g_nw",
         ];
-        $studentInfo['duration_sum'] = Util::formatDuration($studentInfo['duration_sum']);
         $waterMark[] = self::getTextWaterMark($name, ['x' => $posterConfig['name_x'], 'y' => $posterConfig['name_y'], 'g' => 'nw', 's' => 30]);
         $waterMark[] = self::getTextWaterMark($studentInfo['lesson_count'], self::getTextConfig($studentInfo['lesson_count'], 'lesson'));
         $waterMark[] = self::getTextWaterMark($studentInfo['duration_sum'], self::getTextConfig($studentInfo['duration_sum'], 'duration'));
@@ -352,7 +354,7 @@ class ReferralService
     {
         $len = DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'max_name_length');
         if (strlen($name) > $len) {
-            return substr($name, 0, $len) . '...的宝贝';
+            return mb_substr($name, 0, ($len/3)) . '...的宝贝';
         }
         return $name . '的宝贝';
     }

@@ -45,8 +45,8 @@ class SharePosterService
                 $poster['check_time']  = !empty($poster['check_time']) ? date('Y-m-d H:i', $poster['check_time']) : '';
 
                 $reasonStr = [];
-                if (!empty($poster['reason'])) {
-                    $reason = explode(',', $poster['reason']);
+                if (!empty($poster['verify_reason'])) {
+                    $reason = explode(',', $poster['verify_reason']);
                     foreach ($reason as $reasonId) {
                         $reasonStr[] = DictService::getKeyValue(Constants::DICT_TYPE_SHARE_POSTER_CHECK_REASON, $reasonId);
                     }
