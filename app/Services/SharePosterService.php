@@ -17,6 +17,7 @@ use App\Models\Dss\DssCollectionModel;
 use App\Models\Dss\DssEventTaskModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
+use App\Models\Erp\ErpEventTaskModel;
 use App\Models\Erp\ErpUserEventTaskModel;
 use App\Models\SharePosterModel;
 use App\Libs\Erp;
@@ -32,6 +33,10 @@ class SharePosterService
      */
     public static function sharePosterList($params)
     {
+        if (!empty($params['task_id'])) {
+            $taskInfo = ErpEventTaskModel::getInfoByNodeId($params['task_id']);
+            $params['task_id'] = $taskInfo[0]['event_id'] ?? 0;
+        }
         list($posters, $totalCount) = SharePosterModel::posterList($params);
 
         if (!empty($posters)) {
@@ -211,7 +216,7 @@ class SharePosterService
         if (empty($poster)) {
             throw new RunTimeException(['get_share_poster_error']);
         }
-        $studentInfo = DssStudentModel::getRecord(['id' => $poster['user_id']], ['collection_id']);
+        $studentInfo = DssStudentModel::getRecord(['id' => $poster['student_id']], ['collection_id']);
         if (!empty($studentInfo['collection_id'])) {
             $collection = DssCollectionModel::getRecord(['id' => $studentInfo['collection_id']], ['teaching_start_time']);
         }

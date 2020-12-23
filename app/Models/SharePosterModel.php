@@ -94,7 +94,7 @@ class SharePosterModel extends Model
             $map[':student_mobile'] = $params['student_mobile'];
         }
         if (!empty($params['task_id'])) {
-            $where .= " AND c.task_id = :task_id ";
+            $where .= " AND c.event_id = :task_id ";
             $map[':task_id'] = $params['task_id'];
         }
         if (!empty($params['start_time'])) {
@@ -116,8 +116,10 @@ class SharePosterModel extends Model
         
         $sp = self::$table;
         $s  = DssStudentModel::getTableNameWithDb();
+        $c  = DssCollectionModel::getTableNameWithDb();
         $e  = DssEmployeeModel::getTableNameWithDb();
         $join = " INNER JOIN $s s ON s.id = sp.student_id ";
+        $join .= " INNER JOIN $c c ON c.id = s.collection_id ";
         $join .= "LEFT JOIN $e e ON e.id = sp.verify_user ";
 
         $totalCount = MysqlDB::getDB()->queryAll("SELECT count(sp.id) count FROM $sp sp $join $where ", $map);

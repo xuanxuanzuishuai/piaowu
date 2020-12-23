@@ -2,6 +2,8 @@
 
 namespace App\Models\Erp;
 
+use App\Libs\DictConstants;
+
 class ErpEventTaskModel extends ErpModel
 {
     public static $table = 'erp_event_task';
@@ -39,5 +41,20 @@ class ErpEventTaskModel extends ErpModel
                 WHERE
                     uet.event_id = ' . $eventId;
         return $db->queryAll($sql);
+    }
+
+    /**
+     * 根据节点id获取任务信息
+     * @param $nodeId
+     * @return mixed
+     */
+    public static function getInfoByNodeId($nodeId)
+    {
+        $taskId = DictConstants::get(DictConstants::NODE_RELATE_TASK, $nodeId);
+        if (empty($taskId)) {
+            return [];
+        }
+        $taskIds = explode(',', $taskId);
+        return self::getRecords(['id' => $taskIds]);
     }
 }

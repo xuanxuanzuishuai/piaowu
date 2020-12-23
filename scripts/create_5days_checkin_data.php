@@ -68,7 +68,7 @@ $today = new DateTime(date('Y-m-d', $now));
 foreach ($collectionInfo as $collectionId => $collection) {
     $allStudents = DssStudentModel::getByCollectionId($collectionId, true);
 
-    foreach ($allStudents as &$student) {
+    foreach ($allStudents as $student) {
         $teachingStartTime = $collectionInfo[$student['collection_id']]['teaching_start_time'] ?? 0;
         $student['teaching_start_time'] = $teachingStartTime;
         if (empty($teachingStartTime)) {

@@ -14,6 +14,7 @@ use App\Libs\DictConstants;
 use App\Libs\SimpleLogger;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\Dss\DssAiPlayRecordCHModel;
+use App\Models\Dss\DssCollectionModel;
 use App\Models\Dss\DssStudentModel;
 use App\Libs\Util;
 use App\Models\Dss\DssUserQrTicketModel;
@@ -271,22 +272,22 @@ class ReferralService
         if (empty($studentId)) {
             return [];
         }
-        $studentInfo = DssStudentModel::getRecord(['id' => $studentId], ['collection_id']);
+        $sendData = DssStudentModel::getRecord(['id' => $studentId], ['id', 'collection_id', 'thumb', 'name']);
+        if (empty($sendData)) {
+            return [];
+        }
         $wechatInfo = DssUserWeiXinModel::getRecord(
             [
                 'user_id'   => $studentId,
                 'status'    => DssUserWeiXinModel::STATUS_NORMAL,
                 'app_id'    => Constants::SMART_APP_ID,
-                'busi_type' => Constants::SMART_MINI_BUSI_TYPE,
+                'busi_type' => DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER,
                 'user_type' => DssUserWeiXinModel::USER_TYPE_STUDENT
             ]
         );
-        $studentInfo['open_id'] = $wechatInfo['open_id'] ?? '';
-        $sendData = DssStudentModel::getByCollectionId($studentInfo['collection_id'], true);
-        $sendData = $sendData[0] ?? [];
-        if (empty($sendData)) {
-            return [];
-        }
+        $sendData['open_id'] = $wechatInfo['open_id'] ?? '';
+        $collectionInfo = DssCollectionModel::getRecord(['id' => $sendData['collection_id']]);
+        $sendData['teaching_start_time'] = $collectionInfo['teaching_start_time'] ?? 0;
         $today = new \DateTime(date('Y-m-d', $nodeDate));
         $startDay = new \DateTime(date('Y-m-d', $sendData['teaching_start_time']));
         $dayDiff = $today->diff($startDay)->format('%a');
@@ -294,12 +295,12 @@ class ReferralService
             SimpleLogger::error("WRONG DAY DATA", [$sendData]);
             return [];
         }
-        $day = date("Y-m-d", strtotime("-".$dayDiff." days", $nodeDate));
+        $day = date("Y-m-d", strtotime("-1 days", $today->getTimestamp()));
         $playInfo = DssAiPlayRecordCHModel::getStudentBetweenTimePlayRecord($studentId, strtotime($day), strtotime($day.' 23:59:59'));
         $sendData['lesson_count'] = $playInfo[0]['lesson_count'] ?? 0;
-        $sendData['duration_sum'] = $playInfo[0]['duration_sum'] ?? 0;
+        $sendData['duration_sum'] = $playInfo[0]['sum_duration'] ?? 0;
         $sendData['score_final'] = $playInfo[0]['score_final'] ?? 0;
-        $sendData['wechat'] = self::getWechatInfoForPush($studentInfo);
+        $sendData['wechat'] = self::getWechatInfoForPush($sendData);
         $sendData['day'] = $dayDiff;
         return $sendData;
     }
