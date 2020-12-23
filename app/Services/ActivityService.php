@@ -11,6 +11,7 @@ namespace App\Services;
 
 use App\Libs\AliOSS;
 use App\Libs\Constants;
+use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
@@ -178,8 +179,10 @@ class ActivityService
         $activityData = [];
         //获取学生班级信息
         $collectionData = DssCollectionModel::getById($collectionId);
-        //9.9班级
-        if (empty($collectionData) || ($collectionData['trial_type'] != DssPackageExtModel::TRIAL_TYPE_9)) {
+        //9.9班级 关联5日打卡任务活动
+        if (empty($collectionData) ||
+            ($collectionData['trial_type'] != DssPackageExtModel::TRIAL_TYPE_9) ||
+            ($collectionData['event_id'] != DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'collection_event_id'))) {
             return $activityData;
         }
         //班级打卡是否在有效期
@@ -251,27 +254,6 @@ class ActivityService
             $posterData = self::posterCheckReason($posterData);
         }
         array_map(function ($node) use (&$nodeSignData, $time, $playRecordData, $posterData) {
-            if ($node['node_start'] > $time) {
-                //待解锁
-                $node['node_status'] = SharePosterModel::NODE_STATUS_LOCK;
-            } elseif (($node['node_start'] <= $time) && ($node['node_end'] >= $time)) {
-                //进行中
-                if (empty($playRecordData[$node['node_play_date']])) {
-                    $node['node_status'] = SharePosterModel::NODE_STATUS_UN_PLAY;
-                } elseif (empty($posterData[$node['node_id']])) {
-                    $node['node_status'] = SharePosterModel::NODE_STATUS_ING;
-                } elseif ($posterData[$node['node_id']]['verify_status'] == SharePosterModel::VERIFY_STATUS_WAIT) {
-                    $node['node_status'] = SharePosterModel::NODE_STATUS_VERIFY_ING;
-                } elseif ($posterData[$node['node_id']]['verify_status'] == SharePosterModel::VERIFY_STATUS_QUALIFIED) {
-                    $node['node_status'] = SharePosterModel::NODE_STATUS_HAVE_SIGN;
-                    $nodeSignData['days'] += 1;
-                } elseif ($posterData[$node['node_id']]['verify_status'] == SharePosterModel::VERIFY_STATUS_UNQUALIFIED) {
-                    $node['node_status'] = SharePosterModel::NODE_STATUS_VERIFY_UNQUALIFIED;
-                }
-            } else {
-                //已过期
-                $node['node_status'] = SharePosterModel::NODE_STATUS_EXPIRED;
-            }
             //节点上传截图数据
             $node['poster_id'] = $node['verify_time'] = 0;
             $node['image_path'] = $node['verify_reason'] = '';
@@ -281,6 +263,31 @@ class ActivityService
                 $node['image_path'] = AliOSS::signUrls($posterData[$node['node_id']]['image_path']);
                 $node['verify_time'] = $posterData[$node['node_id']]['verify_time'];
                 $node['verify_reason'] = $posterData[$node['node_id']]['verify_reason'];
+            }
+            if ($node['node_start'] > $time) {
+                //待解锁
+                $node['node_status'] = SharePosterModel::NODE_STATUS_LOCK;
+            } elseif ((!empty($posterData[$node['node_id']])) && $posterData[$node['node_id']]['verify_status'] == SharePosterModel::VERIFY_STATUS_QUALIFIED) {
+                //已打卡
+                $node['node_status'] = SharePosterModel::NODE_STATUS_HAVE_SIGN;
+                $nodeSignData['days'] += 1;
+            } elseif (($node['node_start'] <= $time) && ($node['node_end'] >= $time)) {
+                if (empty($playRecordData[$node['node_play_date']])) {
+                    //未练琴
+                    $node['node_status'] = SharePosterModel::NODE_STATUS_UN_PLAY;
+                } elseif (empty($posterData[$node['node_id']])) {
+                    //进行中
+                    $node['node_status'] = SharePosterModel::NODE_STATUS_ING;
+                } elseif ($posterData[$node['node_id']]['verify_status'] == SharePosterModel::VERIFY_STATUS_WAIT) {
+                    //审核中
+                    $node['node_status'] = SharePosterModel::NODE_STATUS_VERIFY_ING;
+                } elseif ($posterData[$node['node_id']]['verify_status'] == SharePosterModel::VERIFY_STATUS_UNQUALIFIED) {
+                    //审核失败
+                    $node['node_status'] = SharePosterModel::NODE_STATUS_VERIFY_UNQUALIFIED;
+                }
+            } else {
+                //已过期
+                $node['node_status'] = SharePosterModel::NODE_STATUS_EXPIRED;
             }
             $nodeSignData['list'][$node['node_id']] = $node;
         }, $nodeData);
@@ -298,6 +305,9 @@ class ActivityService
         $posterReason = array_map(function (&$val) use ($dictReason) {
             if (($val['verify_status'] == SharePosterModel::VERIFY_STATUS_UNQUALIFIED) && !empty($val['verify_reason'])) {
                 $val['verify_reason'] = implode('、', array_intersect_key($dictReason, array_flip(explode(',', $val['verify_reason']))));
+            }
+            if (!empty($val['remark'])) {
+                $val['verify_reason'] .= '、' . $val['remark'];
             }
             return $val;
         }, $posterData);

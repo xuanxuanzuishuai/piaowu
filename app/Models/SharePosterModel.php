@@ -53,6 +53,7 @@ class SharePosterModel extends Model
                 verify_status,
                 verify_time,
                 verify_reason,
+                remark,
                 ext ->> '$.node_id' AS node_id,
                 ext ->> '$.valid_time' AS valid_time 
             FROM
