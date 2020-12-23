@@ -1,6 +1,8 @@
 <?php
 namespace App\Models\Erp;
 
+use App\Libs\SimpleLogger;
+
 class ErpUserEventTaskAwardModel extends ErpModel
 {
     public static $table = 'erp_user_event_task_award';
@@ -46,7 +48,29 @@ class ErpUserEventTaskAwardModel extends ErpModel
     public static function needSendRedPackAward()
     {
         $time = time() - 1728000; //只处理最近二十天创建的
-        return self::dbRO()->queryAll("SELECT id FROM " . self::$table . " force index(create_time) WHERE create_time >= " . $time . " AND `status` IN (" . self::STATUS_WAITING . "," . self::STATUS_GIVE_FAIL .") AND award_type = " . self::AWARD_TYPE_CASH . " AND (create_time + delay) <= " . time());
+        $a = ErpUserEventTaskAwardModel::$table;
+        $ue = ErpUserEventTaskModel::$table;
+        $t = ErpEventTaskModel::$table;
+        $e = ErpEventModel::$table;
+        $sql = "SELECT a.id,a.`status`,e.type,e.`name`,t.`name` 
+FROM {$a} a force index(create_time)
+inner join {$ue} ue on a.uet_id = ue.id 
+inner join {$t} t on ue.event_task_id = t.id
+inner join {$e} e on t.event_id = e.id
+WHERE a.create_time >= $time AND a.status IN (" . self::STATUS_WAITING . "," . self::STATUS_GIVE_FAIL .") AND a.award_type = 1 AND (a.create_time + a.delay) <= " . time();
+        $baseAward = self::dbRO()->queryAll($sql);
+        //如果待发放并且是上传截图领奖，过滤掉
+        $queueArr = [];
+        if (!empty($baseAward)) {
+            foreach ($baseAward as $award) {
+                if ($award['type'] == ErpEventModel::DAILY_UPLOAD_POSTER && $award['status'] == self::STATUS_WAITING) {
+                    SimpleLogger::info('auto send not can give', ['award' => $award]);
+                    continue;
+                }
+                $queueArr[] = ['id' => $award['id']];
+            }
+        }
+        return $queueArr;
     }
 
     /**
