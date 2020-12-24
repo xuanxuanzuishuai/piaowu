@@ -191,12 +191,15 @@ class CashGrantService
      * 当前奖励是否可发放
      * @param $awardId
      * @return bool
+     * @throws \Exception
      */
     public static function checkAwardCanSend($awardId)
     {
         $awardInfo = ErpUserEventTaskAwardModel::getById($awardId);
         if (empty($awardInfo)) {
             SimpleLogger::info('not found award', ['award_id' => $awardId]);
+            //重新入队
+            QueueService::sendRedPack([['id' => $awardId]]);
             return false;
         }
         //仅处理现金
