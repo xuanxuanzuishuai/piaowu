@@ -4,6 +4,8 @@ namespace App\Models\Dss;
 use App\Libs\Constants;
 use App\Libs\Util;
 use App\Models\EmployeeActivityModel;
+use App\Models\Erp\ErpStudentModel;
+use App\Models\Erp\ErpUserEventTaskModel;
 use App\Models\OperationActivityModel;
 use App\Models\StudentInviteModel;
 
@@ -46,9 +48,9 @@ class DssStudentModel extends DssModel
             $where .= ' and r.uuid = :referral_uuid ';
             $map[':referral_uuid'] = "{$params['referral_uuid']}";
         }
-        if (!Util::emptyExceptZero($params['has_review_course'])) {
-            $where .= ' and s.has_review_course = :has_review_course ';
-            $map[':has_review_course'] = "{$params['has_review_course']}";
+        if (!empty($params['task_id'])) {
+            $where .= ' and erp_ut.event_task_id in (:task_id)';
+            $map[':task_id'] = implode(',', $params['task_id']);
         }
         if (!empty($params['s_create_time'])) {
             $where .= ' and si.create_time >= :s_create_time ';
@@ -73,11 +75,13 @@ class DssStudentModel extends DssModel
         list($params['page'], $params['count']) = Util::formatPageCount($params);
         $limit = Util::limitation($params['page'], $params['count']);
 
-        $s  = self::$table;
+        $s  = self::getTableNameWithDb();
         $si = StudentInviteModel::getTableNameWithDb();
         $oa = OperationActivityModel::getTableNameWithDb();
-        $e  = DssEmployeeModel::$table;
-        $c  = DssChannelModel::$table;
+        $e  = DssEmployeeModel::getTableNameWithDb();
+        $c  = DssChannelModel::getTableNameWithDb();
+        $erp_ut = ErpUserEventTaskModel::getTableNameWithDb();
+        $erp_s = ErpStudentModel::getTableNameWithDb();
 
         $order = " ORDER BY si.create_time desc ";
         $countField = 'COUNT(s.id) as total';
@@ -98,23 +102,35 @@ class DssStudentModel extends DssModel
             r.mobile as referral_mobile,
             r.uuid as referrer_uuid,
             r.name as referrer_name,
-            r.id as referral_student_id
+            r.id as referral_student_id,
+            erp_ut.event_task_id as max_task_id,
+            ROW_NUMBER() OVER (PARTITION BY erp_ut.user_id ORDER BY erp_ut.event_task_id DESC) erp_ut_task_order
+        ";
+        $join = "
+            INNER JOIN $s s ON si.student_id = s.id
+            INNER JOIN $s r on r.id = si.referee_id
+            LEFT JOIN $oa oa ON oa.id = si.activity_id
+            LEFT JOIN $e e ON e.id = si.referee_employee_id
+            LEFT JOIN $c c ON s.channel_id = c.id
+            INNER JOIN $erp_s erp_s on erp_s.uuid = s.uuid
+            INNER JOIN $erp_ut erp_ut on erp_ut.user_id = erp_s.id
         ";
         $sql = "
         SELECT 
             %s
         FROM 
             $si si
-        INNER JOIN $s s ON si.student_id = s.id
-        INNER JOIN $s r on r.id = si.referee_id
-        LEFT JOIN $oa oa ON oa.id = si.activity_id
-        LEFT JOIN $e e ON e.id = si.referee_employee_id
-        LEFT JOIN $c c ON s.channel_id = c.id
+        {$join}
         {$where} {$order}
         ";
         $db = self::dbRO();
         $total   = $db->queryAll(sprintf($sql, $countField), $map);
-        $records = $db->queryAll(sprintf($sql, $field) . " $limit", $map);
+        $records = $db->queryAll(
+            "SELECT * FROM (" .
+            sprintf($sql, $field) . " $limit" .
+            ") t WHERE t.erp_ut_task_order = 1",
+            $map
+        );
         return [$records, $total];
     }
 

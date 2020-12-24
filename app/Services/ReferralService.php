@@ -39,8 +39,26 @@ class ReferralService
      */
     public static function getReferralList($params)
     {
+        $taskNodeDict = self::getReferralTaskNodeDict();
+        $nodeNameDict = self::getReferralNodeNameDict();
+        if (!Util::emptyExceptZero($params['has_review_course'])) {
+            $dict = [
+                DssStudentModel::REVIEW_COURSE_NO   => self::EXPECT_REGISTER,
+                DssStudentModel::REVIEW_COURSE_49   => self::EXPECT_TRAIL_PAY,
+                DssStudentModel::REVIEW_COURSE_1980 => self::EXPECT_YEAR_PAY,
+            ];
+            if (isset($dict[$params['has_review_course']])) {
+                $params['task_id'] = explode(',', DictConstants::get(DictConstants::NODE_RELATE_TASK, $dict[$params['has_review_course']]));
+            }
+        }
+        if (empty($params['task_id'])) {
+            $params['task_id'] = array_keys($taskNodeDict);
+        }
+
         list($records, $total) = DssStudentModel::getInviteList($params);
+
         foreach ($records as &$item) {
+            $item['has_review_course_show'] = self::getStageByMaxTaskIds($item['max_task_id'], $taskNodeDict, $nodeNameDict);
             $item = self::formatStudentInvite($item);
         }
         return [$records, $total[0]['total'] ?? 0];
@@ -48,13 +66,56 @@ class ReferralService
 
     public static function formatStudentInvite($item)
     {
-        $hasReviewCourseSet = DictConstants::getSet(DictConstants::HAS_REVIEW_COURSE);
         $item['student_mobile_hidden']  = Util::hideUserMobile($item['mobile']);
         $item['referrer_mobile_hidden'] = Util::hideUserMobile($item['referral_mobile']);
-        $item['has_review_course_show'] = $hasReviewCourseSet[$item['has_review_course']];
         $item['create_time_show']       = date('Y-m-d H:i', $item['create_time']);
         $item['register_time']          = $item['create_time'];
         return $item;
+    }
+
+    /**
+     * 根据用户完成的任务得到进度
+     * @param $taskId
+     * @return string
+     */
+    public static function getStageByMaxTaskIds($taskId, $taskNodeDict, $nodeNameDict)
+    {
+        if (empty($taskId)) {
+            return '';
+        }
+        // 得到最大任务id
+        // 根据任务得到节点
+        // 返回节点名称
+        $node = $taskNodeDict[$taskId] ?? 0;
+        return $nodeNameDict[$node] ?? '';
+    }
+
+    /**
+     * 获取转介绍节点名称字典
+     * node_id => name
+     * @return array
+     */
+    public static function getReferralNodeNameDict()
+    {
+        return DictConstants::getSet(DictConstants::REFEREE_CASH_NODE);
+    }
+
+    /**
+     * 获取转介绍任务节点字典
+     * task_id => node_id
+     * @return array
+     */
+    public static function getReferralTaskNodeDict()
+    {
+        $list = [self::EXPECT_REGISTER, self::EXPECT_TRAIL_PAY, self::EXPECT_YEAR_PAY];
+        $taskNodeDict = [];
+        foreach ($list as $code) {
+            $l = explode(',', DictConstants::get(DictConstants::NODE_RELATE_TASK, $code));
+            foreach ($l as $taskId) {
+                $taskNodeDict[$taskId] = $code;
+            }
+        }
+        return $taskNodeDict;
     }
 
     /**
