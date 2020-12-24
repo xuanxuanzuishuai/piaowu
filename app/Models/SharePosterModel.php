@@ -11,10 +11,11 @@ namespace App\Models;
 use App\Libs\MysqlDB;
 use App\Libs\Constants;
 use App\Libs\Util;
-use App\Models\Dss\DssCollectionModel;
 use App\Models\Dss\DssEmployeeModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
+use App\Models\Erp\ErpUserEventTaskAwardModel;
+use App\Models\Erp\ErpUserEventTaskModel;
 
 
 class SharePosterModel extends Model
@@ -95,7 +96,7 @@ class SharePosterModel extends Model
             $map[':student_mobile'] = $params['student_mobile'];
         }
         if (!empty($params['task_id'])) {
-            $where .= " AND c.event_id = :task_id ";
+            $where .= " AND erp_t.event_task_id = :task_id ";
             $map[':task_id'] = $params['task_id'];
         }
         if (!empty($params['start_time'])) {
@@ -115,13 +116,15 @@ class SharePosterModel extends Model
             $map[':day'] = $params['day'];
         }
         
-        $sp = self::$table;
+        $sp = self::getTableNameWithDb();
         $s  = DssStudentModel::getTableNameWithDb();
-        $c  = DssCollectionModel::getTableNameWithDb();
         $e  = DssEmployeeModel::getTableNameWithDb();
+        $erp_a = ErpUserEventTaskAwardModel::getTableNameWithDb();
+        $erp_t = ErpUserEventTaskModel::getTableNameWithDb();
         $join = " INNER JOIN $s s ON s.id = sp.student_id ";
-        $join .= " INNER JOIN $c c ON c.id = s.collection_id ";
-        $join .= "LEFT JOIN $e e ON e.id = sp.verify_user ";
+        $join .= " LEFT JOIN $erp_a erp_a ON erp_a.id = sp.award_id ";
+        $join .= " LEFT JOIN $erp_t erp_t ON erp_t.id = erp_a.uet_id ";
+        $join .= " LEFT JOIN $e e ON e.id = sp.verify_user ";
 
         $totalCount = MysqlDB::getDB()->queryAll("SELECT count(sp.id) count FROM $sp sp $join $where ", $map);
         $totalCount = $totalCount[0]['count'] ?? 0;

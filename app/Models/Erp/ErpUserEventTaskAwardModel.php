@@ -164,11 +164,11 @@ WHERE a.create_time >= {$time} AND a.status IN (" . self::STATUS_WAITING . "," .
         if (!empty($params['event_task_id'])) {
             $where .= " and t.id in ('" . implode("','", $params['event_task_id']) . "') ";
         }
-        if (isset($params['award_status'])) {
+        if (!Util::emptyExceptZero($params['award_status'])) {
             $where .= ' and a.status = :award_status ';
             $map[':award_status'] = $params['award_status'];
         }
-        if (isset($params['reviewer_id'])) {
+        if (!empty($params['reviewer_id'])) {
             $where .= ' and a.reviewer_id = :reviewer_id ';
             $map[':reviewer_id'] = $params['reviewer_id'];
         }

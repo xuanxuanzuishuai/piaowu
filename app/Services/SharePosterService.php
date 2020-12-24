@@ -35,7 +35,7 @@ class SharePosterService
     {
         if (!empty($params['task_id'])) {
             $taskInfo = ErpEventTaskModel::getInfoByNodeId($params['task_id']);
-            $params['task_id'] = $taskInfo[0]['event_id'] ?? 0;
+            $params['task_id'] = $taskInfo[0]['id'] ?? 0;
         }
         list($posters, $totalCount) = SharePosterModel::posterList($params);
 
@@ -164,7 +164,7 @@ class SharePosterService
                 [
                     'day'    => $poster['day'],
                     'status' => DictService::getKeyValue('share_poster_check_status', $status),
-                    'url'    => DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'url'),
+                    'url'    => DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'page_url'),
                     'remark' => '【点此消息】查看更多打卡进度',
                 ],
                 $userInfo['open_id'],
@@ -214,7 +214,7 @@ class SharePosterService
         $posters = SharePosterModel::getPostersByIds([$posterId]);
         $poster = $posters[0];
         if (empty($poster)) {
-            throw new RunTimeException(['get_share_poster_error']);
+            throw new RunTimeException(['record_not_found']);
         }
         $studentInfo = DssStudentModel::getRecord(['id' => $poster['student_id']], ['collection_id']);
         if (!empty($studentInfo['collection_id'])) {
@@ -249,7 +249,7 @@ class SharePosterService
                 [
                     'day'    => $poster['day'],
                     'status' => DictService::getKeyValue('share_poster_check_status', $status),
-                    'url'    => DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'url'),
+                    'url'    => DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'page_url'),
                     'remark' => '【点此消息】分享返学费活动主页重新上传',
                 ],
                 $userInfo['open_id'],
