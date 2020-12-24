@@ -5,7 +5,7 @@ use App\Libs\RedisDB;
 
 class WechatTokenService
 {
-    const cacheKeyTokenPri = "wechat_token_";
+    const cacheKeyTokenPri = "op_wechat_token_";
     public static $redisExpire = 2592000; // 30 days
     /**
      * 获取token key
