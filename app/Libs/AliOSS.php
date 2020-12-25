@@ -226,6 +226,7 @@ class AliOSS
         );
 
         $options = [];
+        $options['x-oss-process'] = NULL;
         if (!empty($style)) {
             $options['x-oss-process'] = 'style/' . $style;
         }
