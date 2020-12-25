@@ -145,6 +145,7 @@ class DssStudentModel extends DssModel
             $field .= ",wx.open_id";
             $where .= " AND wx.user_type = ".DssUserWeiXinModel::USER_TYPE_STUDENT;
             $where .= " AND wx.status = ".DssUserWeiXinModel::STATUS_NORMAL;
+            $where .= " AND wx.busi_type = ".DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER;
             $where .= " AND wx.app_id = ".$appId;
         }
 
