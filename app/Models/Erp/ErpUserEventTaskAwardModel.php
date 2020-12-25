@@ -210,7 +210,7 @@ WHERE a.create_time >= {$time} AND a.status IN (" . self::STATUS_WAITING . "," .
         $wa = WeChatAwardCashDealModel::getTableNameWithDb();
 
         $joinCondition = "
-           INNER JOIN {$a} u ON u.id = a.uet_id and u.user_id = a.user_id
+           INNER JOIN {$a} a ON u.id = a.uet_id and u.user_id = a.user_id
            INNER JOIN {$t} t ON t.id = u.event_task_id
            INNER JOIN {$s} s ON s.id = a.user_id
            LEFT JOIN {$e} e ON e.id = a.reviewer_id
