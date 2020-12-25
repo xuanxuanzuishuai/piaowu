@@ -34,23 +34,31 @@ class DssAiPlayRecordCHModel
         } else {
             $where =" student_id = $studentId ";
         }
+
         $sql = "
-        SELECT
-            SUM(duration) as sum_duration,
-            count(DISTINCT lesson_id) as lesson_count,
+        SELECT 
+            SUM(duration) AS sum_duration,
+            COUNT(DISTINCT lesson_id) AS lesson_count,
+            MAX(score_final) AS score_final,
             create_date,
-            student_id,
-            max(score_final) as score_final
-        FROM
-            " . self::$table . "
-        WHERE
-            {$where}
-            AND end_time >= :start_time
-            AND end_time <= :end_time
-            AND duration > 0
-        GROUP BY
-            student_id,
-            create_date";
+            student_id 
+        FROM (SELECT
+                    student_id,
+                    duration,
+                    create_date,record_id,track_id, lesson_id , score_final 
+                FROM
+                   ai_play_record apr 
+                where
+                    {$where}
+                    AND duration > 0
+                    AND track_id !=''
+                    AND end_time >= :start_time
+                    AND end_time <= :end_time
+                ORDER BY
+                    duration desc 
+                LIMIT 1 by student_id,track_id
+            ) as ta 
+            GROUP BY ta.student_id,ta.create_date";
         return $chDb->queryAll($sql, $map);
     }
 }
