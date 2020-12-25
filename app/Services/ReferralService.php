@@ -327,6 +327,7 @@ class ReferralService
         if (empty($data['headimgurl'])) {
             $data = $defaultData;
         }
+        $data['nickname'] = $data['nickname'].'的宝贝';
         return $data;
     }
 
@@ -355,9 +356,9 @@ class ReferralService
     {
         $len = DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'max_name_length');
         if (strlen($name) > $len) {
-            return mb_substr($name, 0, ($len/3)) . '...的宝贝';
+            return mb_substr($name, 0, 4) . '...' . mb_substr($name, -4);
         }
-        return $name . '的宝贝';
+        return $name;
     }
 
     /**
