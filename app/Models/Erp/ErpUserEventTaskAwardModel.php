@@ -167,7 +167,7 @@ WHERE a.create_time >= {$time} AND a.status IN (" . self::STATUS_WAITING . "," .
             $map[':referrer_mobile'] = "{$params['referrer_mobile']}%";
         }
         if (!empty($params['event_task_id'])) {
-            $where .= " and t.id in ('" . implode("','", $params['event_task_id']) . "') ";
+            $where .= " and u.event_task_id in ('" . implode("','", $params['event_task_id']) . "') ";
         }
         if (!Util::emptyExceptZero($params['award_status'])) {
             $where .= ' and a.status = :award_status ';
@@ -210,7 +210,7 @@ WHERE a.create_time >= {$time} AND a.status IN (" . self::STATUS_WAITING . "," .
         $wa = WeChatAwardCashDealModel::getTableNameWithDb();
 
         $joinCondition = "
-           INNER JOIN {$u} u ON u.id = a.uet_id and u.user_id = a.user_id
+           INNER JOIN {$a} u ON u.id = a.uet_id and u.user_id = a.user_id
            INNER JOIN {$t} t ON t.id = u.event_task_id
            INNER JOIN {$s} s ON s.id = a.user_id
            LEFT JOIN {$e} e ON e.id = a.reviewer_id
@@ -238,7 +238,7 @@ WHERE a.create_time >= {$time} AND a.status IN (" . self::STATUS_WAITING . "," .
            a.create_time,
            e.name review_name,
            wa.result_code
-        FROM {$a} a force index (create_time)
+        FROM {$u} u
         {$joinCondition}
         {$where}";
 
