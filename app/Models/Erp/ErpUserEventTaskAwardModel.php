@@ -146,8 +146,9 @@ WHERE a.create_time >= {$time} AND a.status IN (" . self::STATUS_WAITING . "," .
         $where = ' where 1=1 ';
         $map = [];
 
-        if (!empty($params['student_uuid'])) {
-            $where .= " and s.uuid in ('" . implode("','", $params['student_uuid']) . "') ";
+        if (!empty($params['uuid'])) {
+            $where .= " and s.uuid =:uuid ";
+            $map[':uuid'] = $params['uuid'];
         }
         if (!empty($params['referrer_name'])) {
             $where .= ' and r.name like :referrer_name ';
@@ -156,6 +157,10 @@ WHERE a.create_time >= {$time} AND a.status IN (" . self::STATUS_WAITING . "," .
         if (!empty($params['student_mobile'])) {
             $where .= ' and s.mobile like :student_mobile ';
             $map[':student_mobile'] = "{$params['student_mobile']}%";
+        }
+        if (!empty($params['student_name'])) {
+            $where .= ' and s.name like :student_name ';
+            $map[':student_name'] = "%{$params['student_name']}%";
         }
         if (!empty($params['referrer_mobile'])) {
             $where .= ' and r.mobile like :referrer_mobile ';

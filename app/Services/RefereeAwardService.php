@@ -113,28 +113,12 @@ class RefereeAwardService
     public static function getAwardList($params)
     {
         list($page, $count) = Util::formatPageCount($params);
-        if (!empty($params['student_name'])) {
-            $params['student_uuid'] = array_column(DssStudentModel::getRecords(['name[~]' => $params['student_name']], ['uuid']), 'uuid');
-            if (empty($params['student_uuid'])) {
-                return ['list' => [], 'total_count' => 0];
-            }
-            unset($params['student_name']);
-        }
-        //筛选项增加uuid
-        if (!empty($params['uuid'])) {
-            if (isset($params['student_uuid']) && !in_array($params['uuid'], $params['student_uuid'])) {
-                return ['list' => [], 'total_count' => 0];
-            }
-            $params['student_uuid'] = [$params['uuid']];
-            unset($params['uuid']);
-        }
 
         if (!empty($params['event_task_id'])) {
             $params['event_task_id'] = self::expectTaskRelateRealTask($params['event_task_id']);
         }
         list($records, $total) = ErpUserEventTaskAwardModel::getAward($page, $count, $params);
         return [self::formatAward($records), $total];
-
     }
 
     /**
