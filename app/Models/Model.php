@@ -19,7 +19,12 @@ class Model
     protected static $redisDB;
     protected static $redisExpire = 0;
     protected static $redisPri;
+    protected static $defaultRdsReadOnlyInstance = MysqlDB::CONFIG_SLAVE;
 
+    protected static function dbRO()
+    {
+        return MysqlDB::getDB(static::$defaultRdsReadOnlyInstance);
+    }
     private static function getDefaultCacheKeyPri()
     {
         $pri = empty(static::$redisPri) ? static::$table : static::$redisPri;

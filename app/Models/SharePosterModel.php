@@ -125,8 +125,8 @@ class SharePosterModel extends Model
         $join .= " LEFT JOIN $erp_a erp_a ON erp_a.id = sp.award_id ";
         $join .= " LEFT JOIN $erp_t erp_t ON erp_t.id = erp_a.uet_id ";
         $join .= " LEFT JOIN $e e ON e.id = sp.verify_user ";
-
-        $totalCount = MysqlDB::getDB()->queryAll("SELECT count(sp.id) count FROM $sp sp $join $where ", $map);
+        $db = self::dbRO();
+        $totalCount = $db->queryAll("SELECT count(sp.id) count FROM $sp sp $join $where ", $map);
         $totalCount = $totalCount[0]['count'] ?? 0;
         if ($totalCount == 0) {
             return [[], 0];
@@ -155,7 +155,7 @@ class SharePosterModel extends Model
         $order = " ORDER BY id DESC ";
         $limit = Util::limitation($params['page'], $params['count']);
         $sql = $sql . $join . $where . $order . $limit;
-        $posters = MysqlDB::getDB()->queryAll($sql, $map);
+        $posters = $db->queryAll($sql, $map);
         return [$posters, $totalCount];
     }
 
@@ -192,7 +192,7 @@ class SharePosterModel extends Model
         WHERE sp.id in ( " . implode(',', $posterIds) . " )
             AND sp.verify_status = " . self::VERIFY_STATUS_WAIT . "
             AND sp.type = " . self::TYPE_CHECKIN_UPLOAD;
-
-        return MysqlDB::getDB()->queryAll($sql);
+        $db = self::dbRO();
+        return $db->queryAll($sql);
     }
 }
