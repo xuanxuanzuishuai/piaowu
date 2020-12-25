@@ -166,7 +166,7 @@ class SharePosterModel extends Model
      */
     public static function getPostersByIds($posterIds)
     {
-        $sp = self::$table;
+        $sp = self::getTableNameWithDb();
         $s  = DssStudentModel::getTableNameWithDb();
         $uw = DssUserWeiXinModel::getTableNameWithDb();
         $sql = "
