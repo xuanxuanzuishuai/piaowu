@@ -65,7 +65,12 @@ if (empty($allCollectionIds)) {
 $dayList = [];
 $today = new DateTime(date('Y-m-d', $now));
 
+// 只处理尾数为参数的班级数据
+$arg = $argv[1] ?? 0;
 foreach ($collectionInfo as $collectionId => $collection) {
+    if (fmod($collectionId, 10) != $arg) {
+        continue;
+    }
     $allStudents = DssStudentModel::getByCollectionId($collectionId, true);
 
     foreach ($allStudents as $student) {
