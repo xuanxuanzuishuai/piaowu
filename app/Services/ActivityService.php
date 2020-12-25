@@ -304,11 +304,12 @@ class ActivityService
         $dictReason = DictService::getTypeMap(Constants::DICT_TYPE_SHARE_POSTER_CHECK_REASON);
         $posterReason = array_map(function (&$val) use ($dictReason) {
             if (($val['verify_status'] == SharePosterModel::VERIFY_STATUS_UNQUALIFIED) && !empty($val['verify_reason'])) {
-                $val['verify_reason'] = implode('、', array_intersect_key($dictReason, array_flip(explode(',', $val['verify_reason']))));
+                $verifyReason =  array_intersect_key($dictReason, array_flip(explode(',', $val['verify_reason'])));
             }
             if (!empty($val['remark'])) {
-                $val['verify_reason'] .= '、' . $val['remark'];
+                $verifyReason[] = $val['remark'];
             }
+            $val['verify_reason'] = implode('、', $verifyReason);
             return $val;
         }, $posterData);
         return $posterReason;
