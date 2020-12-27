@@ -295,10 +295,11 @@ class ReferralService
             return [];
         }
         $day = date("Y-m-d", strtotime("-1 days", $today->getTimestamp()));
-        $playInfo = DssAiPlayRecordCHModel::getStudentBetweenTimePlayRecord($studentId, strtotime($day), strtotime($day.' 23:59:59'));
-        $sendData['lesson_count'] = $playInfo[0]['lesson_count'] ?? 0;
-        $sendData['duration_sum'] = $playInfo[0]['sum_duration'] ?? 0;
-        $sendData['score_final'] = $playInfo[0]['score_final'] ?? 0;
+        $playInfo = DssAiPlayRecordCHModel::getStudentBetweenTimePlayRecord(intval($studentId), strtotime($day), strtotime($day.' 23:59:59'));
+        $sd = array_sum(array_column($playInfo, 'sum_duration'));
+        $lc = count(array_unique(array_column($playInfo, 'lesson_id')));
+        $sendData['lesson_count'] = $lc;
+        $sendData['duration_sum'] = $sd ?? 0;
         $sendData['wechat'] = self::getWechatInfoForPush($sendData);
         $sendData['day'] = $dayDiff;
         return $sendData;

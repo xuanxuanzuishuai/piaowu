@@ -85,11 +85,12 @@ foreach ($collectionInfo as $collectionId => $collection) {
         $dayList[$dayDiff] = $dayDiff;
         
         $day = date("Y-m-d", strtotime("+".($dayDiff-1)." days", $teachingStartTime));
-        $playInfo = DssAiPlayRecordCHModel::getStudentBetweenTimePlayRecord($student['id'], strtotime($day), strtotime($day . ' 23:59:59'));
+        $playInfo = DssAiPlayRecordCHModel::getStudentBetweenTimePlayRecord(intval($student['id']), strtotime($day), strtotime($day . ' 23:59:59'));
+        $sd = array_sum(array_column($playInfo, 'sum_duration'));
+        $lc = count(array_unique(array_column($playInfo, 'lesson_id')));
         $student['wechat']        = ReferralService::getWechatInfoForPush($student);
-        $student['lesson_count']  = $playInfo[0]['lesson_count'] ?? 0;
-        $student['duration_sum']  = $playInfo[0]['sum_duration'] ?? 0;
-        $student['score_final']   = $playInfo[0]['score_final'] ?? 0;
+        $student['lesson_count']  = $lc;
+        $student['duration_sum']  = $sd ?? 0;
         if (!empty($student['duration_sum']) || empty($dayDiff)) {
             list($content1, $content2, $posterImgFile) = ReferralService::getCheckinSendData($dayDiff, $student);
             $student['content1']      = $content1;

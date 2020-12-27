@@ -24,41 +24,68 @@ class DssAiPlayRecordCHModel
      */
     public static function getStudentBetweenTimePlayRecord($studentId, $startTime, $endTime)
     {
-        $chDb = CHDB::getDB();
-        $map = [
-            'start_time' => $startTime,
-            'end_time' => $endTime
-        ];
-        if (is_array($studentId)) {
-            $where =" student_id in (".implode(',', $studentId).") ";
-        } else {
-            $where =" student_id = $studentId ";
-        }
+        //非怀旧模式练琴数据
+        $playData = self::getStudentSumByDate($studentId, $startTime, $endTime);
+        //怀旧模式练琴数
+        $goldenPicturePlayData = self::getStudentSumByDateGoldenPicture($studentId, $startTime, $endTime);
+        return array_merge($playData, $goldenPicturePlayData);
+    }
 
-        $sql = "
-        SELECT 
-            SUM(duration) AS sum_duration,
-            COUNT(DISTINCT lesson_id) AS lesson_count,
-            MAX(score_final) AS score_final,
-            create_date,
-            student_id 
-        FROM (SELECT
+    /**
+     * 学生练琴汇总(按天):非怀旧模式
+     * @param $studentId
+     * @param $startTime
+     * @param $endTime
+     * @return array
+     */
+    public static function getStudentSumByDate($studentId, $startTime, $endTime)
+    {
+        if (is_array($studentId)) {
+            $studentId = implode(',', $studentId);
+        }
+        $chDb = CHDB::getDB();
+        $sql = "select sum(duration) as sum_duration,create_date,student_id,lesson_id from (select
                     student_id,
                     duration,
-                    create_date,record_id,track_id, lesson_id , score_final 
-                FROM
-                   ai_play_record apr 
+                    create_date,record_id,track_id,lesson_id
+                from
+                    ".self::$table."
                 where
-                    {$where}
-                    AND duration > 0
-                    AND track_id !=''
-                    AND end_time >= :start_time
-                    AND end_time <= :end_time
-                ORDER BY
-                    duration desc 
-                LIMIT 1 by student_id,track_id
-            ) as ta 
-            GROUP BY ta.student_id,ta.create_date";
-        return $chDb->queryAll($sql, $map);
+                    duration > 0
+                    and track_id !=''
+                    and student_id in (:student_id)
+                    and end_time >= :start_time
+                    and end_time <= :end_time
+                order by
+                    duration desc limit 1 by student_id,track_id) as ta group by ta.student_id,ta.create_date,ta.lesson_id";
+        return $chDb->queryAll($sql, ['student_id' => $studentId, 'start_time' => $startTime, 'end_time' => $endTime]);
+    }
+
+    /**
+     * 学生练琴汇总(按天):怀旧模式
+     * @param $studentId
+     * @param $startTime
+     * @param $endTime
+     * @return array
+     */
+    public static function getStudentSumByDateGoldenPicture($studentId, $startTime, $endTime)
+    {
+        if (is_array($studentId)) {
+            $studentId = implode(',', $studentId);
+        }
+        $chDb = CHDB::getDB();
+        $sql = "select sum(duration) as sum_duration,create_date,student_id,lesson_id from (select
+                    student_id,
+                    duration,
+                    create_date,record_id,track_id,lesson_id
+                from
+                    ".self::$table."
+                where
+                    duration > 0
+                    and track_id =''
+                    and student_id in (:student_id)
+                    and end_time >= :start_time
+                    and end_time <= :end_time) as ta group by ta.student_id,ta.create_date,ta.lesson_id";
+        return $chDb->queryAll($sql, ['student_id' => $studentId, 'start_time' => $startTime, 'end_time' => $endTime]);
     }
 }
