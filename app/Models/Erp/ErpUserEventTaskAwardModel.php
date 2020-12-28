@@ -269,8 +269,7 @@ WHERE a.create_time >= {$time} AND a.status IN (" . self::STATUS_WAITING . "," .
         $db = self::dbRO();
         $a = ErpUserEventTaskAwardModel::getTableNameWithDb();
         $u = ErpUserEventTaskModel::getTableNameWithDb();
-        $where = " u.user_id = " . $studentInfo['id'];
-        $where .= " AND u.status = " . ErpUserEventTaskModel::EVENT_TASK_STATUS_COMPLETE;
+        $where = " a.user_id = " . $studentInfo['id'];
         $where .= " AND a.award_type = " . self::AWARD_TYPE_CASH;
         $where .= " AND a.status = " . self::STATUS_GIVE;
 
@@ -282,7 +281,7 @@ WHERE a.create_time >= {$time} AND a.status IN (" . self::STATUS_WAITING . "," .
             sum(a.award_amount) as totalAmount 
         FROM
             {$u} u
-        INNER join {$a} a on a.uet_id = u.id
+        INNER join {$a} a on a.uet_id = u.id and a.user_id != u.user_id
         WHERE
          {$where}
         ";
