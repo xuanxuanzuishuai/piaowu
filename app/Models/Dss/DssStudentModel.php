@@ -4,6 +4,7 @@ namespace App\Models\Dss;
 use App\Libs\Constants;
 use App\Libs\Util;
 use App\Models\EmployeeActivityModel;
+use App\Models\OperationActivityModel;
 use App\Models\StudentInviteModel;
 
 class DssStudentModel extends DssModel
@@ -71,7 +72,7 @@ class DssStudentModel extends DssModel
 
         $s  = self::$table;
         $si = StudentInviteModel::getTableNameWithDb();
-        $ea = EmployeeActivityModel::getTableNameWithDb();
+        $oa = OperationActivityModel::getTableNameWithDb();
         $e  = DssEmployeeModel::$table;
         $c  = DssChannelModel::$table;
 
@@ -86,7 +87,7 @@ class DssStudentModel extends DssModel
             s.create_time,
             s.channel_id,
             si.activity_id,
-            ea.name as activity_name,
+            oa.name as activity_name,
             e.name as employee_name,
             si.referee_employee_id,
             si.referee_id,
@@ -103,7 +104,7 @@ class DssStudentModel extends DssModel
             $si si
         INNER JOIN $s s ON si.student_id = s.id
         INNER JOIN $s r on r.id = si.referee_id
-        LEFT JOIN $ea ea ON ea.id = si.activity_id
+        LEFT JOIN $oa oa ON oa.id = si.activity_id
         LEFT JOIN $e e ON e.id = si.referee_employee_id
         LEFT JOIN $c c ON s.channel_id = c.id
         {$where} {$order}
