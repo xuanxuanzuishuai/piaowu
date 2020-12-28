@@ -23,7 +23,7 @@ class DssUserQrTicketModel extends DssModel
      * 获取用户二维码图片
      * @param $userID
      * @param $channelID
-     * @param null $activityID
+     * @param null $activityID //这个地方是op总活动表的id
      * @param null $employeeID
      * @param null $appID
      * @param int $landingType

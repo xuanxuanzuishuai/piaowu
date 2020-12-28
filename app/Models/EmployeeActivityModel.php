@@ -87,6 +87,16 @@ class EmployeeActivityModel extends Model
     }
 
     /**
+     * 为了便于统计所有的活动会放到一个总表，当前这个活动会有一个对应的总表的id
+     * @param $activityId
+     * @return mixed
+     */
+    public static function getEmployeeActivityRelateOpActivityId($activityId)
+    {
+        return EmployeeActivityModel::getRecord(['id' => $activityId], 'op_activity_id');
+    }
+
+    /**
      * 活动列表
      * @param $params
      * @return array
