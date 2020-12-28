@@ -52,11 +52,6 @@ class Student extends ControllerBase
                 'key' => 'wx_code',
                 'type' => 'required',
                 'error_code' => 'wx_code_is_required'
-            ],
-            [
-                'key' => 'sms_code',
-                'type' => 'required',
-                'error_code' => 'sms_code_is_required'
             ]
         ];
 
