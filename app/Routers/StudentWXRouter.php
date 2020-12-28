@@ -24,7 +24,7 @@ class StudentWXRouter extends RouterBase
         '/student_wx/common/js_config' => ['method' => ['get'], 'call'=>'\App\Controllers\StudentWX\Common:getJsConfig', 'middles' => []],
 
         /** 用户信息 */
-
+        '/student_wx/student/account_detail' => ['method' => ['get'], 'call' => Student::class . ':accountDetail'],
         '/student_wx/student/register' => ['method'=>['post'],'call' => Student::class . ':register', 'middles' => []],
         '/student_wx/student/login'    => ['method'=>['get'],'call'=>Student::class . ':login', 'middles' => [WeChatOpenIdCheckMiddleware::class]],
         '/student_wx/student/send_sms_code' => ['method'=>['get'],'call'=>Student::class.':sendSmsCode', 'middles' => []],

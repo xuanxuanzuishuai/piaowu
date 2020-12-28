@@ -15,6 +15,7 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\Valid;
 use App\Libs\WeChat\WeChatMiniPro;
+use App\Models\Dss\DssStudentModel;
 use App\Services\ReferralActivityService;
 use App\Services\UserService;
 use App\Services\WechatTokenService;
@@ -203,5 +204,21 @@ class Student extends ControllerBase
         }
 
         return HttpHelper::buildResponse($response, $activity);
+    }
+
+    /**
+     * 用户的基本信息，目前仅提供埋点用
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function accountDetail(Request $request, Response $response)
+    {
+        $studentId = $this->ci['user_info']['user_id'];
+        $data = [];
+        if ($this->ci['user_info']['app_id'] == Constants::SMART_APP_ID) {
+            $data = DssStudentModel::getRecord(['id' => $studentId], ['uuid']);
+        }
+        return HttpHelper::buildResponse($response, $data);
     }
 }
