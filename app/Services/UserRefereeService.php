@@ -2,13 +2,13 @@
 namespace App\Services;
 
 use App\Libs\Constants;
+use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
 use App\Models\Dss\DssPackageExtModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserQrTicketModel;
-use App\Models\EmployeeModel;
 use App\Models\StudentInviteModel;
 use App\Services\Queue\QueueService;
 
@@ -174,40 +174,59 @@ class UserRefereeService
         }
         $refereeInfo = DssStudentModel::getRecord(['id' => $refereeRelation['referee_id']]);
 
-        $refTaskId = null;
+        $refTaskId = self::getTaskIdByType($packageType, $trialType, $refereeInfo['has_review_course'], $appId);
 
-        if ($packageType == DssPackageExtModel::PACKAGE_TYPE_TRIAL) {
-            if (in_array($trialType, [DssPackageExtModel::TRIAL_TYPE_49, DssPackageExtModel::TRIAL_TYPE_9])) {
-                // 购买49,9.9体验包完成转介绍任务
-                if (in_array($refereeInfo['has_review_course'], [DssStudentModel::REVIEW_COURSE_NO, DssStudentModel::REVIEW_COURSE_49])) {
-                    // 若用户（推荐人）当前阶段为“已注册”或“付费体验课”
-                    $refTaskId = RefereeAwardService::getDssTrailPayTaskId();
-                } elseif (in_array($refereeInfo['has_review_course'], [DssStudentModel::REVIEW_COURSE_1980])) {
-                    // 若用户（推荐人）当前阶段为“付费正式课”
-                    $refTaskId = RefereeAwardService::getDssTrailPayTaskId(1);
-                }
-            }
-        } elseif ($packageType == DssPackageExtModel::PACKAGE_TYPE_NORMAL) {
-            if ($appId == DssPackageExtModel::APP_AI) {
-                // 购买正式包完成转介绍任务
-                if (in_array($refereeInfo['has_review_course'], [DssStudentModel::REVIEW_COURSE_NO, DssStudentModel::REVIEW_COURSE_49])) {
-                    // 若用户（推荐人）当前阶段为“已注册”或“付费体验课”
-                    $refTaskId = RefereeAwardService::getDssYearPayTaskId();
-                } elseif (in_array($refereeInfo['has_review_course'], [DssStudentModel::REVIEW_COURSE_1980])) {
-                    // 若用户（推荐人）当前阶段为“付费正式课”
-                    $refTaskId = RefereeAwardService::getDssYearPayTaskId(1);
-                }
-            }
-        }
         $studentInfo = DssStudentModel::getById($studentId);
         if (!empty($refTaskId)) {
             $erp = new Erp();
-           $data = $erp->updateTask($studentInfo['uuid'], $refTaskId, self::EVENT_TASK_STATUS_COMPLETE);
-           if (!empty($data['user_award_ids'])) {
-               foreach ($data['user_award_ids'] as $awardId) {
-                   QueueService::sendRedPack([['id' => $awardId]]);
-               }
-           }
+            $data = $erp->updateTask($studentInfo['uuid'], $refTaskId, self::EVENT_TASK_STATUS_COMPLETE);
+            if (!empty($data['user_award_ids'])) {
+                foreach ($data['user_award_ids'] as $awardId) {
+                    QueueService::sendRedPack([['id' => $awardId]]);
+                }
+            }
         }
+    }
+
+    /**
+     * 根据购买类型获取对应任务ID
+     * @param $packageType
+     * @param $trialType
+     * @param $hasReviewCourse
+     * @param $appId
+     * @return int|string
+     */
+    public static function getTaskIdByType($packageType, $trialType, $hasReviewCourse, $appId)
+    {
+        // 旧规则起始点：
+        $index = 1;
+        // 新规则是否启用：
+        $startTime = DictConstants::get(DictConstants::REFERRAL_CONFIG, "new_rule_start_time");
+        if ($startTime <= time()) {
+            if ($packageType == DssPackageExtModel::PACKAGE_TYPE_TRIAL) {
+                return RefereeAwardService::getDssTrailPayTaskId();
+            } else {
+                return RefereeAwardService::getDssYearPayTaskId();
+            }
+        } else {
+            if ($packageType == DssPackageExtModel::PACKAGE_TYPE_TRIAL
+            && in_array($trialType, [DssPackageExtModel::TRIAL_TYPE_49, DssPackageExtModel::TRIAL_TYPE_9])) {
+                if (in_array($hasReviewCourse, [DssStudentModel::REVIEW_COURSE_1980])) {
+                    return RefereeAwardService::getDssTrailPayTaskId($index + 1);
+                } else {
+                    return RefereeAwardService::getDssTrailPayTaskId($index);
+                }
+            } elseif ($packageType == DssPackageExtModel::PACKAGE_TYPE_NORMAL) {
+                if ($appId == DssPackageExtModel::APP_AI) {
+                    if (in_array($hasReviewCourse, [DssStudentModel::REVIEW_COURSE_1980])) {
+                        // 若用户（推荐人）当前阶段为“付费正式课”
+                        return RefereeAwardService::getDssYearPayTaskId($index + 1);
+                    } else {
+                        return RefereeAwardService::getDssYearPayTaskId($index);
+                    }
+                }
+            }
+        }
+        return 0;
     }
 }

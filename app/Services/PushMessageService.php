@@ -11,6 +11,8 @@ use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\Erp\ErpEventModel;
 use App\Models\Erp\ErpEventTaskModel;
+use App\Models\Erp\ErpUserEventTaskAwardModel;
+use App\Models\Erp\ErpUserEventTaskModel;
 use App\Models\WeChatConfigModel;
 
 class PushMessageService
@@ -63,12 +65,21 @@ class PushMessageService
         }
         // 任务达成条件
         $taskCondition = json_decode($awardDetailInfo['condition'], true);
+        // 所有转介绍任务ID:
+        $event = ErpEventModel::getRecord(['type' => ErpEventModel::TYPE_IS_REFERRAL]);
+        $taskId = ErpEventTaskModel::getRecords(['event_id' => $event['id']]);
+        // 累计转介绍奖励总额：
+        $total = ErpUserEventTaskAwardModel::getUserTotal($awardDetailInfo['uuid'], array_column($taskId, 'id'));
+        $referralMobile = DssStudentModel::getRecord(['uuid' => $achieveUserInfo['uuid']], ['mobile']);
         return [
             'mobile'       => Util::hideUserMobile($achieveUserInfo['mobile']),
             'url'          => $url,
             'awardValue'   => $awardDetailInfo['award_amount'] / 100,
             'activityName' => $activityName,
             'day'          => $taskCondition['total_days'] ?? 0,
+            'userName'      => $achieveUserInfo['name'], // 当前用户
+            'totalAward'    => $total[0]['totalAmount'] ?? 0,
+            'refereeMobile' => $referralMobile['mobile'], // 被推荐人手机号
         ];
     }
 

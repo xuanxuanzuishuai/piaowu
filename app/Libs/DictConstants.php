@@ -284,6 +284,13 @@ class DictConstants {
             'day_poster_config',
         ],
     ];
+    // 转介绍相关配置
+    const REFERRAL_CONFIG = [
+        'type' => 'REFERRAL_CONFIG',
+        'keys' => [
+            'new_rule_start_time', // 新规则启用时间
+        ]
+    ];
 
     public static function get($type, $key)
     {

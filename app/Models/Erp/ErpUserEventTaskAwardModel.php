@@ -253,4 +253,40 @@ WHERE a.create_time >= {$time} AND a.status IN (" . self::STATUS_WAITING . "," .
 
         return [$records, $total[0]['count']];
     }
+
+    /**
+     * 获取用户完成任务的总奖励数值
+     * @param $uuid
+     * @param array $taskId
+     * @return array|int|null
+     */
+    public static function getUserTotal($uuid, $taskId = [])
+    {
+        $studentInfo = ErpStudentModel::getRecord(['uuid' => $uuid]);
+        if (empty($studentInfo)) {
+            return 0;
+        }
+        $db = self::dbRO();
+        $a = ErpUserEventTaskAwardModel::getTableNameWithDb();
+        $u = ErpUserEventTaskModel::getTableNameWithDb();
+        $where = " u.user_id = " . $studentInfo['id'];
+        $where .= " AND u.status = " . ErpUserEventTaskModel::EVENT_TASK_STATUS_COMPLETE;
+        $where .= " AND a.award_type = " . self::AWARD_TYPE_CASH;
+        $where .= " AND a.status = " . self::STATUS_GIVE;
+
+        if (!empty($taskId)) {
+            $where .= " AND u.event_task_id in (".(is_array($taskId) ? implode(',', $taskId) : $taskId).") ";
+        }
+        $sql = "
+        SELECT 
+            sum(a.award_amount) as totalAmount 
+        FROM
+            {$u} u
+        INNER join {$a} a on a.uet_id = u.id
+        WHERE
+         {$where}
+        ";
+        return $db->queryAll($sql);
+    }
+    
 }
