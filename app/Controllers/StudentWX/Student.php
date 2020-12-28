@@ -77,8 +77,12 @@ class Student extends ControllerBase
             if (empty($appId)) {
                 throw new RunTimeException(['need_app_id']);
             }
-            if (!CommonServiceForApp::checkValidateCode($params["mobile"], $params["sms_code"], $params['country_code'])) {
+            if (empty($params['sms_code']) && empty($params['password'])) {
+                return $response->withJson(Valid::addAppErrors([], 'please_check_the_parameters'), StatusCode::HTTP_OK);
+            } elseif (!empty($params['sms_code']) && !CommonServiceForApp::checkValidateCode($params["mobile"], $params["sms_code"], $params['country_code'])) {
                 return $response->withJson(Valid::addAppErrors([], 'incorrect_mobile_phone_number_or_verification_code'), StatusCode::HTTP_OK);
+            } elseif (!empty($params['password']) && !CommonServiceForApp::checkPassword($params['mobile'], $params['password'], $params['country_code'])) {
+                return $response->withJson(Valid::addAppErrors([], 'password_error'), StatusCode::HTTP_OK);
             }
             $arr = [
                 Constants::SMART_APP_ID => Constants::SMART_WX_SERVICE

@@ -14,6 +14,7 @@ use App\Libs\DictConstants;
 use App\Libs\NewSMS;
 use App\Libs\RedisDB;
 use App\Models\CountryCodeModel;
+use App\Models\Dss\DssStudentModel;
 
 class CommonServiceForApp
 {
@@ -126,6 +127,46 @@ class CommonServiceForApp
 
         $redis->del([$countKey, $cacheKey]);
         return true;
+    }
+
+    /**
+     * 检查登陆密码
+     * @param $mobile
+     * @param $password
+     * @param $countryCode
+     * @return bool
+     */
+    public static function checkPassword($mobile, $password, $countryCode = NewSMS::DEFAULT_COUNTRY_CODE)
+    {
+        if (empty($countryCode)) {
+            $countryCode = NewSMS::DEFAULT_COUNTRY_CODE;
+        }
+
+        if (empty($mobile) || empty($password) || empty($countryCode)) {
+            return false;
+        }
+
+        $student = DssStudentModel::getRecord(['mobile' => $mobile]);
+
+        if (empty($student)) {
+            return false;
+        }
+        $countryCodeStatus = $countryCode != $student['country_code'];
+        $passwordStatus = self::createPassword($student['uuid'], $password) != $student['password'];
+        if ($countryCodeStatus || $passwordStatus) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public static function createPassword($uuid, $password)
+    {
+        if (empty($uuid) || empty($password)) {
+            return false;
+        }
+
+        return md5($uuid.$password);
     }
 
     public static function getCountryCode()
