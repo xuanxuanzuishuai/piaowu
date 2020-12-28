@@ -8,6 +8,7 @@
 
 namespace App\Models;
 
+use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
 use App\Libs\UserCenter;
 use App\Libs\Util;
@@ -36,7 +37,12 @@ class EmployeeActivityModel extends Model
 
     public static function insert($data)
     {
+        //同步增加op_activity总表
         $now = time();
+        $id = OperationActivityModel::insertRecord(['name' => $data['name'], 'create_time' => $now, 'update_time' => $now]);
+        if (empty($id)) {
+            throw new RunTimeException(['insert_failure']);
+        }
         return self::insertRecord([
             'name'            => $data['name'],
             'status'          => self::STATUS_DISABLE,
@@ -51,6 +57,7 @@ class EmployeeActivityModel extends Model
             'employee_share'  => $data['employee_share'],
             'employee_poster' => $data['employee_poster'],
             'app_id'          => $data['app_id'] ?? UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
+            'op_activity_id'  => $id,
             'create_time'     => $now,
         ]);
     }
@@ -64,6 +71,9 @@ class EmployeeActivityModel extends Model
     public static function modify($data, $activityID)
     {
         $data = self::formatData($data);
+        //同步更新op_activity总表
+        $opActivityId = EmployeeActivityModel::getRecord(['id'], 'op_activity_id');
+        OperationActivityModel::updateRecord($opActivityId, ['name' => $data['name']]);
         return self::updateRecord($activityID, $data);
     }
 
