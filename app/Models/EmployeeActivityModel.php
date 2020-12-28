@@ -72,7 +72,7 @@ class EmployeeActivityModel extends Model
     {
         $data = self::formatData($data);
         //同步更新op_activity总表
-        $opActivityId = EmployeeActivityModel::getRecord(['id'], 'op_activity_id');
+        $opActivityId = EmployeeActivityModel::getRecord(['id' => $activityID], 'op_activity_id');
         OperationActivityModel::updateRecord($opActivityId, ['name' => $data['name']]);
         return self::updateRecord($activityID, $data);
     }
