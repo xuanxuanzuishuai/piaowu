@@ -39,7 +39,14 @@ class EmployeeActivityModel extends Model
     {
         //同步增加op_activity总表
         $now = time();
-        $id = OperationActivityModel::insertRecord(['name' => $data['name'], 'create_time' => $now, 'update_time' => $now]);
+        $id = OperationActivityModel::insertRecord(
+            [
+                'name' => $data['name'],
+                'create_time' => $now,
+                'update_time' => $now,
+                'app_id' => $data['app_id'] ?? UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
+            ]
+        );
         if (empty($id)) {
             throw new RunTimeException(['insert_failure']);
         }
@@ -73,7 +80,9 @@ class EmployeeActivityModel extends Model
         $data = self::formatData($data);
         //同步更新op_activity总表
         $opActivityId = EmployeeActivityModel::getRecord(['id' => $activityID], 'op_activity_id');
-        OperationActivityModel::updateRecord($opActivityId, ['name' => $data['name']]);
+        if (isset($data['name'])) {
+            OperationActivityModel::updateRecord($opActivityId, ['name' => $data['name']]);
+        }
         return self::updateRecord($activityID, $data);
     }
 
