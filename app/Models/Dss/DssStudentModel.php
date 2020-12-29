@@ -60,7 +60,7 @@ class DssStudentModel extends DssModel
             $map[':channel_id'] = $params['channel_id'];
         }
         if (!empty($params['activity'])) {
-            $where .= ' and ea.name like :activity ';
+            $where .= ' and oa.name like :activity ';
             $map[':activity'] = "%{$params['activity']}%";
         }
         if (!empty($params['employee_name'])) {
