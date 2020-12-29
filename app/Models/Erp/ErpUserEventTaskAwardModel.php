@@ -115,6 +115,7 @@ WHERE a.create_time >= {$time} AND a.status IN (" . self::STATUS_WAITING . "," .
             ],
             [
                 ErpStudentModel::$table . '.uuid',
+                ErpStudentModel::$table . '.mobile',
                 'r.uuid (get_award_uuid)',
                 ErpEventModel::$table . '.type',
                 ErpUserEventTaskModel::$table . '.app_id',

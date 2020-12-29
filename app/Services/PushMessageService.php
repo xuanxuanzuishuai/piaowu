@@ -36,6 +36,8 @@ class PushMessageService
         $achieveUserInfo = DssStudentModel::getRecord(['uuid' => $awardDetailInfo['uuid']]);
         //得到奖励的用户信息
         $awardUserInfo = DssStudentModel::getRecord(['uuid' => $awardDetailInfo['get_award_uuid']]);
+        // ERP和DSS名字不同步：
+        $awardDetailInfo['get_award_name'] = $awardUserInfo['name'];
         //得到奖励用户的微信信息
         $getAwardUserInfo = UserService::getUserWeiXinInfoByUserId($awardDetailInfo['app_id'], $awardUserInfo['id'], DssUserWeiXinModel::USER_TYPE_STUDENT, DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER);
         if (empty($getAwardUserInfo)) {
@@ -74,9 +76,6 @@ class PushMessageService
             // 累计转介绍奖励总额：
             $total = ErpUserEventTaskAwardModel::getUserTotal($awardDetailInfo['get_award_uuid'], array_column($taskId, 'id'));
             $total = $total[0]['totalAmount'] ?? 0;
-            // 被推荐人手机号：
-            $referralMobile = DssStudentModel::getRecord(['uuid' => $achieveUserInfo['uuid']], ['mobile']);
-            $referralMobile = $referralMobile['mobile'] ?? '';
         }
         return [
             'mobile'       => Util::hideUserMobile($achieveUserInfo['mobile']),
@@ -84,9 +83,9 @@ class PushMessageService
             'awardValue'   => $awardDetailInfo['award_amount'] / 100,
             'activityName' => $activityName,
             'day'          => $taskCondition['total_days'] ?? 0,
-            'userName'      => $achieveUserInfo['name'], // 当前用户
-            'totalAward'    => $total,
-            'refereeMobile' => $referralMobile,
+            'userName'       => $awardDetailInfo['get_award_name'], // 当前用户
+            'totalAward'     => ($total / 100),
+            'referralMobile' => Util::hideUserMobile($awardDetailInfo['mobile']), // 被推荐人手机号
         ];
     }
 
