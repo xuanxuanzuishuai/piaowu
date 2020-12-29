@@ -9,8 +9,10 @@
 namespace App\Controllers\API;
 
 use App\Controllers\ControllerBase;
+use App\Libs\Constants;
 use App\Libs\HttpHelper;
 use App\Libs\Valid;
+use App\Models\PosterModel;
 use App\Models\WeChatAwardCashDealModel;
 use App\Services\ReferralActivityService;
 use App\Libs\Exceptions\RunTimeException;
@@ -192,6 +194,29 @@ class Dss extends ControllerBase
         }
 
         $data = WeChatAwardCashDealModel::getRecords(['user_event_task_award_id' => explode(',', $params['award_id'])]);
+        return HttpHelper::buildResponse($response, $data);
+    }
+    /**
+     * 海报底图数据
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function posterBaseInfo(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'poster_id',
+                'type' => 'required',
+                'error_code' => 'poster_id_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $data = PosterModel::getRecord(['id' => $params['poster_id'], 'status' => Constants::STATUS_TRUE], ['path']);
         return HttpHelper::buildResponse($response, $data);
     }
 }
