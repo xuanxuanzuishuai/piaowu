@@ -18,4 +18,4 @@ update employee_activity set op_activity_id = id;
 
 INSERT INTO `operation_activity` (`name`, `app_id`, `create_time`, `update_time`)
 VALUES
-	('2020双旦专题活动', 8, UNIX_TIMESTAMP(), UNIX_TIMESTAMP());
+	('2021双旦专题活动', 8, UNIX_TIMESTAMP(), UNIX_TIMESTAMP());
