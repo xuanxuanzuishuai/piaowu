@@ -41,15 +41,9 @@ class ReferralService
     {
         $taskNodeDict = self::getReferralTaskNodeDict();
         $nodeNameDict = self::getReferralNodeNameDict();
-        if (!Util::emptyExceptZero($params['has_review_course'])) {
-            $dict = [
-                DssStudentModel::REVIEW_COURSE_NO   => self::EXPECT_REGISTER,
-                DssStudentModel::REVIEW_COURSE_49   => self::EXPECT_TRAIL_PAY,
-                DssStudentModel::REVIEW_COURSE_1980 => self::EXPECT_YEAR_PAY,
-            ];
-            if (isset($dict[$params['has_review_course']])) {
-                $params['task_id'] = explode(',', DictConstants::get(DictConstants::NODE_RELATE_TASK, $dict[$params['has_review_course']]));
-            }
+        if (!empty($params['has_review_course']) && $params['has_review_course'] == DssStudentModel::REVIEW_COURSE_1980) {
+            $params['task_id'] = explode(',', DictConstants::get(DictConstants::NODE_RELATE_TASK, self::EXPECT_YEAR_PAY));
+            unset($params['has_review_course']);
         }
         if (empty($params['task_id'])) {
             $params['task_id'] = array_keys($taskNodeDict);

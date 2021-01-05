@@ -49,8 +49,11 @@ class DssStudentModel extends DssModel
             $map[':referral_uuid'] = "{$params['referral_uuid']}";
         }
         if (!empty($params['task_id'])) {
-            $where .= ' and erp_ut.event_task_id in (:task_id)';
-            $map[':task_id'] = implode(',', $params['task_id']);
+            $where .= ' and erp_ut.event_task_id in (' . implode(',', $params['task_id']) . ')';
+        }
+        if (!Util::emptyExceptZero($params['has_review_course'])) {
+            $where .= ' and s.has_review_course = :has_review_course ';
+            $map[':has_review_course'] = "{$params['has_review_course']}";
         }
         if (!empty($params['s_create_time'])) {
             $where .= ' and si.create_time >= :s_create_time ';
@@ -84,7 +87,7 @@ class DssStudentModel extends DssModel
         $erp_s = ErpStudentModel::getTableNameWithDb();
 
         $order = " ORDER BY si.create_time desc ";
-        $countField = 'COUNT(s.id) as total';
+        $countField = 'COUNT(DISTINCT s.id) as total';
         $field = "
             s.id as student_id,
             s.name as student_name,
