@@ -28,6 +28,8 @@ class DSSRouter extends RouterBase
         '/dss/referral/create_relation' => ['method' => ['post'], 'call' => Dss::class . ':createRelation'],
         '/dss/red_pack/red_pack_info' => ['method' => ['get'], 'call' => Dss::class . ':redPackInfo'],
         //海报底图数据
-        '/dss/poster_base/info' => ['method' => ['get'], 'call' => Dss::class . ':posterBaseInfo']
+        '/dss/poster_base/info' => ['method' => ['get'], 'call' => Dss::class . ':posterBaseInfo'],
+        // 消息信息：
+        '/dss/message/info' => ['method' => ['get'], 'call' => Dss::class . ':messageInfo'],
     ];
 }

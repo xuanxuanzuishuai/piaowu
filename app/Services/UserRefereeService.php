@@ -47,17 +47,16 @@ class UserRefereeService
      * @param $uuid
      * @param $qrTicket
      * @param $appId
-     * @param null $employeeId
-     * @param null $activityId
+     * @param array $extParams
      * @throws RunTimeException
      */
-    public static function registerDeal($studentId, $uuid, $qrTicket, $appId, $employeeId = NULL, $activityId = NULL)
+    public static function registerDeal($studentId, $uuid, $qrTicket, $appId, $extParams = [])
     {
         if (empty($studentId) || empty($qrTicket) || empty($appId)) {
             throw new RunTimeException(['param_lay']);
         }
         //绑定转介绍关系
-        $res = self::bindRegister($studentId, $qrTicket, $appId, $employeeId, $activityId);
+        $res = self::bindRegister($studentId, $qrTicket, $appId, $extParams);
         if (empty($res)) {
             return;
         }
@@ -86,11 +85,10 @@ class UserRefereeService
      * @param $studentId
      * @param $qrTicket
      * @param $appId
-     * @param null $employeeId
-     * @param null $activityId
+     * @param array $extParams
      * @return bool
      */
-    public static function bindRegister($studentId, $qrTicket, $appId, $employeeId = NULL, $activityId = NULL)
+    public static function bindRegister($studentId, $qrTicket, $appId, $extParams = [])
     {
         if ($appId == Constants::SMART_APP_ID) {
             //推荐人信息
@@ -111,8 +109,8 @@ class UserRefereeService
                     'referee_id' => $refereeInfo['user_id'],
                     'referee_type' => $refereeInfo['type'],
                     'create_time' => time(),
-                    'referee_employee_id' => $employeeId,
-                    'activity_id' => $activityId,
+                    'referee_employee_id' => $extParams['e'] ?? 0,
+                    'activity_id' => $extParams['a'] ?? 0,
                     'app_id' => $appId
                 ]
             );

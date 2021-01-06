@@ -8,6 +8,10 @@
 namespace App\Models\Dss;
 
 
+use App\Libs\Constants;
+use App\Models\StudentInviteModel;
+use App\Services\ReferralService;
+
 class DssGiftCodeModel extends DssModel
 {
     public static $table = "gift_code";
@@ -53,7 +57,7 @@ class DssGiftCodeModel extends DssModel
 
         $codeStatusVerifySql = $verifyCode ? " AND `code_status` in (".implode(',', $codeStatusList).") " : '';
 
-        $baseCondition = " `bill_app_id` = " . DssPackageExtModel::APP_AI . $keyCondition . $codeStatusVerifySql;;
+        $baseCondition = " `bill_app_id` = " . DssPackageExtModel::APP_AI . $keyCondition . $codeStatusVerifySql;
 
         $sql = "
         SELECT 
@@ -90,5 +94,38 @@ class DssGiftCodeModel extends DssModel
         }
 
         return self::dbRO()->queryAll($sql);
+    }
+
+    /**
+     * 判断推荐人的所有被推荐人在某个时间点后是否有购买过特定课包
+     * @param $refererId
+     * @param $packageIdArr
+     * @param $startTime
+     * @param null $isV1Package
+     * @return mixed|null
+     */
+    public static function refereeBuyCertainPackage($refererId, $packageIdArr, $startTime, $isV1Package = null)
+    {
+        $refereeAllUser = ReferralService::getRefereeAllUser(Constants::SMART_APP_ID, $refererId, StudentInviteModel::REFEREE_TYPE_STUDENT);
+        if (empty($refereeAllUser)) {
+            return NULL;
+        }
+
+        $allStudentIdArr = array_column($refereeAllUser, 'student_id');
+
+        $db = self::dbRO();
+        $where = [
+            self::getTableNameWithDb() . '.buyer' => $allStudentIdArr,
+            self::getTableNameWithDb() . '.bill_package_id' => $packageIdArr,
+            self::getTableNameWithDb() . '.create_time[>]' => $startTime
+        ];
+        if (!is_null($isV1Package)) {
+            $where[self::getTableNameWithDb() . '.package_v1'] = $isV1Package;
+        }
+        return $db->get(
+            self::getTableNameWithDb(),
+            [self::getTableNameWithDb() . '.id'],
+            $where
+        );
     }
 }

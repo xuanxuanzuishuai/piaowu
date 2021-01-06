@@ -12,6 +12,14 @@ use App\Services\DictService;
 
 class DictConstants {
 
+    //邀请学生渠道配置
+    const STUDENT_INVITE_CHANNEL = [
+        'type' => 'STUDENT_INVITE',
+        'keys' => [
+            'NORMAL_STUDENT_INVITE_STUDENT'
+        ]
+    ];
+
     //消息队列相关配置
     const QUEUE_CONFIG = [
         'type' => 'queue_config',
@@ -147,6 +155,22 @@ class DictConstants {
         ]
     ];
 
+    /**
+     * 标准海报配置
+     * 2021-01-07 14:44:33
+     */
+    const POSTER_CONFIG = [
+        'type' => 'poster_config',
+        'keys' => [
+            'qr_x',
+            'qr_y',
+            'poster_width',
+            'poster_height',
+            'qr_width',
+            'qr_height',
+        ]
+    ];
+
     const DEPT_DATA_TYPE_NAME = [
         'type' => 'DEPT_DATA_TYPE_NAME',
         'keys' => [1]
@@ -260,6 +284,18 @@ class DictConstants {
         'type' => 'message_rule_config',
         'keys' => [
             'receive_red_pack_rule_id',
+            'trail_user_c_rule_id',
+            'assign_template_id',
+            'year_pay_rule_id',
+            'subscribe_rule_id',
+            'only_trail_rule_id',
+            'only_year_rule_id',
+            'year_user_c_rule_id',
+            'register_user_c_rule_id',
+            'how_long_not_invite',
+            'how_long_not_result',
+            'start_class_day_rule_id',
+            'start_class_seven_day_rule_id',
         ]
     ];
 

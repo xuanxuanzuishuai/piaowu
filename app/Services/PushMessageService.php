@@ -12,11 +12,13 @@ use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\Erp\ErpEventModel;
 use App\Models\Erp\ErpEventTaskModel;
 use App\Models\Erp\ErpUserEventTaskAwardModel;
-use App\Models\Erp\ErpUserEventTaskModel;
 use App\Models\WeChatConfigModel;
 
 class PushMessageService
 {
+    const APPID_BUSI_TYPE_DICT = [
+        Constants::SMART_APP_ID => DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER
+    ];
     /**
      * 红包奖励相关的微信消息
      * @param $awardDetailInfo
@@ -153,10 +155,11 @@ class PushMessageService
             $body['url'] = $url;
         }
         $body['data'] = $content;
-        //系统应用对应的微信factory的信息
-        $arr = [
-            Constants::SMART_APP_ID => DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER
-        ];
-        return WeChatMiniPro::factory($appId, $arr[$appId])->sendTemplateMsg($body);
+        return WeChatMiniPro::factory($appId, self::APPID_BUSI_TYPE_DICT[$appId])->sendTemplateMsg($body);
+    }
+
+    public static function notifyUserWeixinTextInfo($appId, $openid, $content)
+    {
+        return WeChatMiniPro::factory($appId, self::APPID_BUSI_TYPE_DICT[$appId])->sendText($openid, $content);
     }
 }

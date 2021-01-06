@@ -12,6 +12,7 @@ use App\Controllers\ControllerBase;
 use App\Libs\Constants;
 use App\Libs\HttpHelper;
 use App\Libs\Valid;
+use App\Models\MessagePushRulesModel;
 use App\Models\PosterModel;
 use App\Models\WeChatAwardCashDealModel;
 use App\Services\ReferralActivityService;
@@ -164,7 +165,7 @@ class Dss extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         try {
-            UserRefereeService::registerDeal($params['student_id'], $params['uuid'], $params['qr_ticket'], $params['app_id'], $params['employee_id'] ?? NULL, $params['activity_id'] ?? NULL);
+            UserRefereeService::registerDeal($params['student_id'], $params['uuid'], $params['qr_ticket'], $params['app_id'], $params['ext_params']);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
@@ -217,6 +218,30 @@ class Dss extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         $data = PosterModel::getRecord(['id' => $params['poster_id'], 'status' => Constants::STATUS_TRUE], ['path']);
+        return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
+     * 获取消息信息
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function messageInfo(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'id',
+                'type' => 'required',
+                'error_code' => 'id_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $data = MessagePushRulesModel::getById($params['id']);
         return HttpHelper::buildResponse($response, $data);
     }
 }

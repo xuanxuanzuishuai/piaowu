@@ -13,6 +13,7 @@ use App\Controllers\API\UICtl;
 use App\Controllers\Employee\Auth;
 use App\Controllers\Employee\Employee;
 use App\Controllers\OrgWeb\Dept;
+use App\Controllers\OrgWeb\Message;
 use App\Controllers\OrgWeb\Employee as OrgWebEmployee;
 use App\Controllers\OrgWeb\EmployeeActivity;
 use App\Controllers\OrgWeb\SharePoster;
@@ -96,6 +97,16 @@ class OrgWebRouter extends RouterBase
         '/op_web/referee/award_verify' => ['method' => ['get'], 'call' => Award::class . ':updateAward'],
         '/op_web/referee/config'       => ['method' => ['get'], 'call' => Award::class . ':config'],
         '/op_web/referee/receive_info' => ['method' => ['get'], 'call' => Award::class . ':receiveInfo'],
+
+        // 消息：
+        '/op_web/message/rules_list'         => ['method' => ['get'], 'call' => Message::class . ':rulesList'],
+        '/op_web/message/rule_detail'        => ['method' => ['get'], 'call' => Message::class . ':ruleDetail'],
+        '/op_web/message/rule_update_status' => ['method' => ['post'], 'call' => Message::class . ':ruleUpdateStatus'],
+        '/op_web/message/rule_update'        => ['method' => ['post'], 'call' => Message::class . ':ruleUpdate'],
+
+        // 手动推送：
+        '/op_web/message/manual_last_push' => ['method' => ['get'], 'call' => Message::class . ':manualLastPush'],
+        '/op_web/message/manual_push'      => ['method' => ['post'], 'call' => Message::class . ':manualPush'],
         
 
     ];

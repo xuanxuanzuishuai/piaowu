@@ -7,6 +7,8 @@
  */
 namespace App\Models\Dss;
 
+use App\Libs\Constants;
+
 class DssUserWeiXinModel extends DssModel
 {
     public static $table = "user_weixin";
@@ -23,4 +25,91 @@ class DssUserWeiXinModel extends DssModel
     const BUSI_TYPE_EXAM_MINAPP = 6; // 音基小程序
     const BUSI_TYPE_STUDENT_MINAPP = 7; // 学生app推广小程序
     const BUSI_TYPE_REFERRAL_MINAPP = 8; // 转介绍小程序
+
+    /**
+     * 处理App ID 默认值
+     * @param null $appId
+     * @return int|mixed
+     */
+    public static function dealAppId($appId = null)
+    {
+        if (!empty($appId)) {
+            return $appId;
+        }
+        return Constants::SMART_APP_ID;
+    }
+    /**
+     * 根据openid查询
+     * @param $openId
+     * @param int $appId
+     * @param int $userType
+     * @param int $busiType
+     * @return mixed
+     */
+    public static function getByOpenId($openId, $appId = null, $userType = self::USER_TYPE_STUDENT, $busiType = self::BUSI_TYPE_STUDENT_SERVER)
+    {
+        $appId = self::dealAppId($appId);
+        $where = [
+            'open_id'   => $openId,
+            'status'    => self::STATUS_NORMAL,
+            'app_id'    => $appId,
+            'user_type' => $userType,
+            'busi_type' => $busiType,
+            "ORDER"     => ["id" => "DESC"]
+        ];
+        return self::getRecord($where);
+    }
+
+    /**
+     * 根据user_id查询
+     * @param $userId
+     * @param int $appId
+     * @param int $userType
+     * @param int $busiType
+     * @return mixed
+     */
+    public static function getByUserId($userId, $appId = Constants::SMART_APP_ID, $userType = self::USER_TYPE_STUDENT, $busiType = self::BUSI_TYPE_STUDENT_SERVER)
+    {
+        $where = [
+            'user_id'   => $userId,
+            'status'    => self::STATUS_NORMAL,
+            'app_id'    => $appId,
+            'user_type' => $userType,
+            'busi_type' => $busiType,
+            "ORDER"     => ["id" => "DESC"]
+        ];
+        return self::getRecord($where);
+    }
+
+    /**
+     * 根据UUID查询
+     * @param $uuid
+     * @param int $appId
+     * @param int $userType
+     * @param int $busiType
+     * @return array|null
+     */
+    public static function getByUuid($uuid, $appId = Constants::SMART_APP_ID, $userType = self::USER_TYPE_STUDENT, $busiType = self::BUSI_TYPE_STUDENT_SERVER)
+    {
+        $db = self::dbRO();
+        $sql = "
+           SELECT
+               u.user_id,
+               u.open_id
+           FROM " . self::getTableNameWithDb() . " AS u
+           INNER JOIN " . DssStudentModel::getTableNameWithDb() . " as s on s.id = u.user_id
+           where s.uuid in ('" . implode("','", $uuid) . "')
+           and u.app_id    = :app_id
+           and u.user_type = :user_type
+           and u.busi_type = :busi_type
+           and u.status    = :status ";
+
+        $map = [
+            ':app_id'    => $appId,
+            ':user_type' => $userType,
+            ':busi_type' => $busiType,
+            ':status'    => self::STATUS_NORMAL
+        ];
+        return $db->queryAll($sql, $map);
+    }
 }
