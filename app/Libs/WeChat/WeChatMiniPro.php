@@ -380,4 +380,24 @@ class WeChatMiniPro
         $api = $this->apiUrl(self::API_CREATE_MENU);
         return $this->requestJson($api, $data, 'POST');
     }
+
+    /**
+     * 发送菜单消息
+     * @param $openId
+     * @param $data
+     * @return bool|false|mixed|string
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
+    //[
+    //    'head_content' => '测试title',
+    //    'list' => [
+    //        ['id' => 1, 'content' => '满意'],
+    //        ['id' => 2, 'content' => '不满意']
+    //    ],
+    //    'tail_content' => '欢迎'
+    //]
+    public function sendMenuMsg($openId, $data)
+    {
+        return $this->send($openId, 'msgmenu', $data);
+    }
 }
