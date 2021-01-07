@@ -128,6 +128,7 @@ class SharePosterService
                     if (empty($taskRes['user_award_ids'])) {
                         throw new RuntimeException(['empty erp award ids']);
                     }
+                    $needDealAward = [];
                     foreach ($taskRes['user_award_ids'] as $awardId) {
                         $needDealAward[$awardId] = ['id' => $awardId];
                     }
