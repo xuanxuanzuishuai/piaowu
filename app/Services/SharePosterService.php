@@ -70,7 +70,7 @@ class SharePosterService
      * 审核通过、发放奖励
      * @param $posterIds
      * @param $employeeId
-     * @return array
+     * @return bool
      * @throws RunTimeException
      */
     public static function approvedCheckin($posterIds, $employeeId)
@@ -95,12 +95,7 @@ class SharePosterService
             ]
         );
         // 已超时的海报
-        $timeoutOnes = [];
         foreach ($posters as $poster) {
-            if ($poster['valid_time'] < $time) {
-                $timeoutOnes[] = $poster;
-                continue;
-            }
             if ($poster['poster_status'] != SharePosterModel::VERIFY_STATUS_WAIT) {
                 continue;
             }
@@ -172,7 +167,7 @@ class SharePosterService
                 Constants::SMART_APP_ID
             );
         }
-        return $timeoutOnes;
+        return true;
     }
 
     /**
@@ -232,9 +227,13 @@ class SharePosterService
             'verify_reason' => implode(',', $reason),
             'remark'        => $remark,
         ];
-        if (!empty($collection['teaching_start_time']) &&
-            $poster['valid_time'] + 24 * 3600 <= $collection['teaching_start_time'] + 7 * 24 * 3600) {
-            $updateData['ext'] = Medoo::raw("JSON_SET(`ext`, '$.valid_time', '".($poster['valid_time'] + 24 * 3600)."')");
+        if (!empty($collection['teaching_start_time'])) {
+            // 当前审核时间：
+            $validTime = $time + Util::TIMESTAMP_ONEDAY;
+            if ($validTime > ($collection['teaching_start_time'] + Util::TIMESTAMP_ONEWEEK)) {
+                $validTime = $collection['teaching_start_time'] + Util::TIMESTAMP_ONEWEEK;
+            }
+            $updateData['ext'] = Medoo::raw("JSON_SET(`ext`, '$.valid_time', '".$validTime."')");
         }
         $update = SharePosterModel::updateRecord($poster['id'], $updateData);
         // 审核不通过, 发送模版消息

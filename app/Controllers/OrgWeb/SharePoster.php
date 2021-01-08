@@ -68,10 +68,7 @@ class SharePoster extends ControllerBase
         $employeeId = self::getEmployeeId();
 
         try {
-            $result = SharePosterService::approvedCheckin($params['poster_ids'], $employeeId);
-            if (!empty($result)) {
-                throw new RunTimeException(['invalid_time_exists']);
-            }
+            SharePosterService::approvedCheckin($params['poster_ids'], $employeeId);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
