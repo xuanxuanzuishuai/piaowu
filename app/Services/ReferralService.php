@@ -19,6 +19,7 @@ use App\Models\Dss\DssStudentModel;
 use App\Libs\Util;
 use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\Dss\DssUserWeiXinModel;
+use App\Models\SharePosterModel;
 use App\Models\StudentInviteModel;
 use App\Models\PosterModel;
 use App\Models\WeChatAwardCashDealModel;
@@ -146,7 +147,7 @@ class ReferralService
         $headImageUrl = $studentInfo['wechat']['headimgurl'];
         $name = self::getPosterName($studentInfo['wechat']['nickname']);
         $studentInfo['duration_sum'] = Util::formatDuration($studentInfo['duration_sum']);
-        $percent = self::getRandScore($studentInfo['duration_sum']);
+        $percent = SharePosterModel::getUserCheckInPercent($studentInfo['collection_id'], $studentInfo['id'], $day, $studentInfo['duration_sum']);
         $posterConfig = DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'poster_config');
         if (!empty($posterConfig)) {
             $posterConfig = json_decode($posterConfig, true);
