@@ -214,13 +214,12 @@ class ActivityService
         //节点时间
         $nodes = range($activityData['teaching_start_time'] + Util::TIMESTAMP_ONEDAY, $activityData['teaching_end_time'] + Util::TIMESTAMP_ONEDAY, Util::TIMESTAMP_ONEDAY);
         $nodeOrder = 1;
-        $activityEndTime = strtotime("+7 day", $activityData['teaching_start_time'] - 1);
-        array_map(function ($nodeTime) use (&$nodeData, &$nodeOrder, $activityEndTime) {
+        array_map(function ($nodeTime) use (&$nodeData, &$nodeOrder) {
             $nodeId = date("Ymd", $nodeTime);
             $nodeData[$nodeId] = [
                 'node_id' => $nodeId,
                 'node_start' => strtotime("+9 hours", $nodeTime),//节点解锁时间
-                'node_end' => $activityEndTime,//节点截止时间
+                'node_end' => strtotime("+33 hours", $nodeTime),//节点截止时间
                 'node_order' => $nodeOrder,//节点序号
                 'node_play_date' => date("Y-m-d", $nodeTime - Util::TIMESTAMP_ONEDAY),//节点练琴数据统计日期
             ];

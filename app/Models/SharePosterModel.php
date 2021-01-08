@@ -207,12 +207,12 @@ class SharePosterModel extends Model
      * @param $userId
      * @param int $day
      * @param int $duration
-     * @return array|int|mixed
+     * @return int|mixed
      */
     public static function getUserCheckInPercent($collectionId, $userId, $day = 0, $duration = 0)
     {
         if (empty($collectionId) || empty($userId)) {
-            return [];
+            return 0;
         }
         $redis = RedisDB::getConn();
         $data = $redis->hget(self::CHECKIN_POSTER_TMP_DATA . $collectionId, $userId . '_' . $day);
@@ -224,6 +224,6 @@ class SharePosterModel extends Model
         $jsonData = json_encode(['percent' => $percent]);
         $redis->hset(self::CHECKIN_POSTER_TMP_DATA . $collectionId, $userId . '_' . $day, $jsonData);
         $redis->expire(self::CHECKIN_POSTER_TMP_DATA . $collectionId, Util::TIMESTAMP_ONEWEEK);
-        return $data;
+        return $percent;
     }
 }
