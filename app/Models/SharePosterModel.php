@@ -10,14 +10,12 @@ namespace App\Models;
 
 use App\Libs\MysqlDB;
 use App\Libs\Constants;
-use App\Libs\RedisDB;
 use App\Libs\Util;
 use App\Models\Dss\DssEmployeeModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\Erp\ErpUserEventTaskAwardModel;
 use App\Models\Erp\ErpUserEventTaskModel;
-use App\Services\ReferralService;
 
 
 class SharePosterModel extends Model
@@ -39,9 +37,6 @@ class SharePosterModel extends Model
 
     //海报类型：1上传打卡截图
     const TYPE_CHECKIN_UPLOAD = 1;
-
-    // 每个班级学生相关打卡数据
-    const CHECKIN_POSTER_TMP_DATA = 'CHECKIN_POSTER_';
 
     /**
      * 获取打卡活动节点截图数据
@@ -199,31 +194,5 @@ class SharePosterModel extends Model
             AND sp.type = " . self::TYPE_CHECKIN_UPLOAD;
         $db = self::dbRO();
         return $db->queryAll($sql);
-    }
-
-    /**
-     * 获取学生练琴百分比数据
-     * @param $collectionId
-     * @param $userId
-     * @param int $day
-     * @param int $duration
-     * @return array|int|mixed
-     */
-    public static function getUserCheckInPercent($collectionId, $userId, $day = 0, $duration = 0)
-    {
-        if (empty($collectionId) || empty($userId)) {
-            return [];
-        }
-        $redis = RedisDB::getConn();
-        $data = $redis->hget(self::CHECKIN_POSTER_TMP_DATA . $collectionId, $userId . '_' . $day);
-        if (!empty($data)) {
-            $data = json_decode($data, true);
-            return $data['percent'] ?? 0;
-        }
-        $percent = ReferralService::getRandScore($duration);
-        $jsonData = json_encode(['percent' => $percent]);
-        $redis->hset(self::CHECKIN_POSTER_TMP_DATA . $collectionId, $userId . '_' . $day, $jsonData);
-        $redis->expire(self::CHECKIN_POSTER_TMP_DATA . $collectionId, Util::TIMESTAMP_ONEWEEK);
-        return $data;
     }
 }
