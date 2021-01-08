@@ -11,11 +11,13 @@ namespace App\Controllers\StudentWX;
 use App\Controllers\ControllerBase;
 use App\Libs\Constants;
 use App\Libs\DictConstants;
+use App\Libs\Dss;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\Valid;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\Dss\DssStudentModel;
+use App\Models\Dss\DssUserWeiXinModel;
 use App\Services\ReferralActivityService;
 use App\Services\UserService;
 use App\Services\WechatTokenService;
@@ -85,17 +87,25 @@ class Student extends ControllerBase
             ];
             $busiType = $arr[$appId] ?? Constants::SMART_WX_SERVICE;
 
-            $data = WeChatMiniPro::factory($appId, $busiType)->getWeixnUserOpenIDAndAccessTokenByCode($params['wx_code']);
-            if (empty($data) || empty($data['openid'])) {
-                throw new RunTimeException(['can_not_obtain_open_id']);
+            if (!empty($params['wx_code'])) {
+                $data = WeChatMiniPro::factory($appId, $busiType)->getWeixnUserOpenIDAndAccessTokenByCode($params['wx_code']);
+                if (empty($data) || empty($data['openid'])) {
+                    throw new RunTimeException(['can_not_obtain_open_id']);
+                }
+            } else {
+                $data['openid'] = NULL;
             }
+
             $userType = Constants::USER_TYPE_STUDENT;
             $channelId = $params['channel_id'] ?? Constants::CHANNEL_WE_CHAT_SCAN;
-            UserService::studentRegisterBound($appId, $params['mobile'], $channelId, $data['openid'], $busiType, $userType, $params["referee_id"]);
+            $info = UserService::studentRegisterBound($appId, $params['mobile'], $channelId, $data['openid'], $busiType, $userType, $params["referee_id"]);
+
+            $token = WechatTokenService::generateToken($info['student_id'], DssUserWeiXinModel::USER_TYPE_STUDENT,
+                $appId, '');
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
-        return HttpHelper::buildResponse($response, []);
+        return HttpHelper::buildResponse($response, ['token' => $token]);
     }
 
     /** token失效时获取token
@@ -218,6 +228,21 @@ class Student extends ControllerBase
         $data = [];
         if ($this->ci['user_info']['app_id'] == Constants::SMART_APP_ID) {
             $data = DssStudentModel::getRecord(['id' => $studentId], ['uuid']);
+        }
+        return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
+     * 其他系统的token
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getOtherToken(Request $request, Response $response)
+    {
+        $studentId = $this->ci['user_info']['user_id'];
+        if ($this->ci['user_info']['app_id'] == Constants::SMART_APP_ID) {
+            $data = (new Dss())->getToken(['student_id' => $studentId]);
         }
         return HttpHelper::buildResponse($response, $data);
     }

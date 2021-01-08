@@ -42,12 +42,14 @@ class WeChatAuthCheckMiddleware extends MiddlewareBase
                 Constants::SMART_APP_ID => Constants::SMART_WX_SERVICE
             ];
             $busiType = $arr[$userInfo['app_id']] ?? Constants::SMART_WX_SERVICE;
-            //是否还有绑定关系
-            $weixinInfo = UserService::getUserWeiXinInfoAndUserId($userInfo['app_id'], $userInfo['user_id'], $userInfo['open_id'], $userInfo['user_type'], $busiType);
-            if (empty($weixinInfo)) {
-                return $response->withJson(Valid::addAppErrors([], 'token_expired'), StatusCode::HTTP_OK);
+            if (!empty($userInfo['open_id'])) {
+                //是否还有绑定关系
+                $weixinInfo = UserService::getUserWeiXinInfoAndUserId($userInfo['app_id'], $userInfo['user_id'], $userInfo['open_id'], $userInfo['user_type'], $busiType);
+                if (empty($weixinInfo)) {
+                    return $response->withJson(Valid::addAppErrors([], 'token_expired'), StatusCode::HTTP_OK);
+                }
+                SimpleLogger::info('UserInfo: ', ["token" => $token, "userInfo" => $userInfo]);
             }
-            SimpleLogger::info('UserInfo: ', ["token" => $token, "userInfo" => $userInfo]);
         } else {
             return $response->withJson(Valid::addAppErrors([], 'token_expired'), StatusCode::HTTP_OK);
         }

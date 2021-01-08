@@ -22,6 +22,7 @@ class StudentWXRouter extends RouterBase
 
         /** 公共 */
         '/student_wx/common/js_config' => ['method' => ['get'], 'call'=>'\App\Controllers\StudentWX\Common:getJsConfig', 'middles' => []],
+        '/student_wx/student/getOtherToken' => ['method' => ['get'], 'call' => Student::class . ':getOtherToken'],
 
         /** 用户信息 */
         '/student_wx/student/account_detail' => ['method' => ['get'], 'call' => Student::class . ':accountDetail'],
@@ -35,5 +36,6 @@ class StudentWXRouter extends RouterBase
         '/student_wx/sign/upload' => ['method' => ['post'], 'call' => Activity::class . ':signInUpload'],
         '/student_wx/sign/data' => ['method' => ['get'], 'call' => Activity::class . ':signInData'],
         '/student_wx/sign/copy_writing' => ['method' => ['get'], 'call' => Activity::class . ':signInCopyWriting'],
+
     ];
 }
