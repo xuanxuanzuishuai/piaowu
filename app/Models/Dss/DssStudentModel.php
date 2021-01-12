@@ -86,7 +86,7 @@ class DssStudentModel extends DssModel
         $erp_ut = ErpUserEventTaskModel::getTableNameWithDb();
         $erp_s = ErpStudentModel::getTableNameWithDb();
 
-        $order = " ORDER BY si.create_time desc ";
+        $order = " ORDER BY invite_create_time desc ";
         $countField = 'COUNT(DISTINCT s.id) as total';
         $field = "
             s.id as student_id,
@@ -100,6 +100,7 @@ class DssStudentModel extends DssModel
             oa.name as activity_name,
             e.name as employee_name,
             si.referee_employee_id,
+            si.create_time as invite_create_time,
             si.referee_id,
             c.name as channel_name,
             r.mobile as referral_mobile,
@@ -124,14 +125,14 @@ class DssStudentModel extends DssModel
         FROM 
             $si si
         {$join}
-        {$where} {$order}
+        {$where}
         ";
         $db = self::dbRO();
-        $total   = $db->queryAll(sprintf($sql, $countField), $map);
+        $total   = $db->queryAll(sprintf($sql, $countField) . " ORDER BY si.create_time DESC ", $map);
         $records = $db->queryAll(
             "SELECT * FROM (" .
-            sprintf($sql, $field) . " $limit" .
-            ") t WHERE t.erp_ut_task_order = 1",
+            sprintf($sql, $field) .
+            ") t WHERE t.erp_ut_task_order = 1 $order $limit",
             $map
         );
         return [$records, $total];
