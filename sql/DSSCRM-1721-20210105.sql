@@ -67,6 +67,12 @@ VALUES
   ('poster_config', '标准海报配置', 'qr_x', '533', ''),
   ('poster_config', '标准海报配置', 'qr_y', '92', '');
 
+INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
+VALUES
+  ('message_push_type', '消息推送形式', '1', '客服消息', NULL),
+  ('message_push_type', '消息推送形式', '2', '模板消息', NULL);
+
+
 set @parent_id = (select id from privilege where menu_name = '转介绍管理');
 
 INSERT INTO `privilege` (`name`, `uri`, `created_time`, `method`, `is_menu`, `menu_name`, `parent_id`, `unique_en_name`, `status` )

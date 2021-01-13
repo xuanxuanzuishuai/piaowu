@@ -9,7 +9,6 @@ namespace App\Services;
 
 use App\Libs\Constants;
 use App\Libs\DictConstants;
-use App\Libs\Dss;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\WeChat\WeChatMiniPro;
@@ -26,7 +25,7 @@ use App\Models\MessageRecordModel;
 use App\Models\PosterModel;
 use App\Models\SharePosterModel;
 use App\Models\Dss\DssStudentModel;
-use App\Models\Dss\DssUserWeixinModel;
+use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\WeChatConfigModel;
 use App\Services\Queue\QueueService;
 use Exception;
@@ -331,7 +330,7 @@ class MessageService
     public static function realSendManualMessage($data)
     {
         $info = MessageManualPushLogModel::getById($data['log_id']);
-        $appId = DssUserWeixinModel::dealAppId($data['app_id']);
+        $appId = DssUserWeiXinModel::dealAppId($data['app_id']);
         if ($info['type'] == MessagePushRulesModel::PUSH_TYPE_TEMPLATE) {
             //模版消息
             $templateConfig = json_decode($info['data'], true);
@@ -366,7 +365,7 @@ class MessageService
      */
     private static function pushCustomMessage($messageRule, $data, $appId = null)
     {
-        $appId = DssUserWeixinModel::dealAppId($appId);
+        $appId = DssUserWeiXinModel::dealAppId($appId);
         //即时发送
         $res = MessageRecordLogModel::PUSH_SUCCESS;
         $wechat = WeChatMiniPro::factory($appId, PushMessageService::APPID_BUSI_TYPE_DICT[$appId]);
@@ -420,7 +419,7 @@ class MessageService
             $posterImgFile = ['poster_save_full_path' => $item['value'], 'unique' => md5($data['open_id'].$item['value']) . '.jpg'];
         } else {
             //非关注拼接转介绍二维码
-            $userInfo = DssUserWeixinModel::getByOpenId($data['open_id']);
+            $userInfo = DssUserWeiXinModel::getByOpenId($data['open_id']);
             if (empty($userInfo['user_id'])) {
                 return;
             }
@@ -431,7 +430,7 @@ class MessageService
                 $item['path'],
                 $config,
                 $userInfo['user_id'],
-                DssUserWeixinModel::USER_TYPE_STUDENT,
+                DssUserWeiXinModel::USER_TYPE_STUDENT,
                 Constants::SMART_APP_ID,
                 $channelId,
                 null,
@@ -490,7 +489,7 @@ class MessageService
      */
     public static function sendMessage($data, $ruleId, $appId = null)
     {
-        $appId = DssUserWeixinModel::dealAppId($appId);
+        $appId = DssUserWeiXinModel::dealAppId($appId);
         $sendArr = [];
         foreach ($data as $open_id => $value) {
             $tmp = array_merge($value, self::preSendVerify($open_id, $ruleId, $appId));
@@ -641,8 +640,8 @@ class MessageService
     public static function boundWxActionDealMessage($openId, $appId, $userType, $busiType)
     {
         if ($appId != Constants::SMART_APP_ID
-            || $userType != DssUserWeixinModel::USER_TYPE_STUDENT
-            || $busiType != DssUserWeixinModel::BUSI_TYPE_STUDENT_SERVER) {
+            || $userType != DssUserWeiXinModel::USER_TYPE_STUDENT
+            || $busiType != DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER) {
             return;
         }
         $ruleId = self::boundJudgeUserRuleId($openId);
@@ -665,10 +664,10 @@ class MessageService
      */
     public static function yearPayActionDealMessage($studentId, $packageType, $appId = null)
     {
-        $appId = DssUserWeixinModel::dealAppId($appId);
+        $appId = DssUserWeiXinModel::dealAppId($appId);
         if ($packageType == DssPackageExtModel::PACKAGE_TYPE_NORMAL) {
             $ruleId = DictConstants::get(DictConstants::MESSAGE_RULE, 'year_pay_rule_id');
-            $userWeiXinInfo = DssUserWeixinModel::getByUserId($studentId, $appId);
+            $userWeiXinInfo = DssUserWeiXinModel::getByUserId($studentId, $appId);
             if (!empty($ruleId) && !empty($userWeiXinInfo['open_id'])) {
                 $data = self::preSendVerify($userWeiXinInfo['open_id'], $ruleId, $appId);
                 if (!empty($data)) {
@@ -685,7 +684,7 @@ class MessageService
      */
     private static function boundJudgeUserRuleId($openId)
     {
-        $userWx = DssUserWeixinModel::getByOpenId($openId);
+        $userWx = DssUserWeiXinModel::getByOpenId($openId);
         $studentInfo = !empty($userWx['user_id']) ? DssStudentModel::getById($userWx['user_id']) : null;
         $arr = [
             DssStudentModel::REVIEW_COURSE_NO => null,
@@ -702,9 +701,9 @@ class MessageService
      */
     public static function judgeUserRelateRuleId($openId, $appId = null)
     {
-        $appId = DssUserWeixinModel::dealAppId($appId);
+        $appId = DssUserWeiXinModel::dealAppId($appId);
         //当前用户
-        $userInfo = DssUserWeixinModel::getByOpenId($openId, $appId);
+        $userInfo = DssUserWeiXinModel::getByOpenId($openId, $appId);
         //当前用户属于何种用户分类
         if (empty($userInfo['user_id'])) {
             return;
@@ -751,7 +750,7 @@ class MessageService
      */
     public static function manualPushMessage($logId, $uuidArr, $employeeId)
     {
-        $boundUsers = DssUserWeixinModel::getByUuid($uuidArr);
+        $boundUsers = DssUserWeiXinModel::getByUuid($uuidArr);
         $info = MessageManualPushLogModel::getById($logId);
         $content = json_decode($info['data'], true);
         if ($info['type'] == MessagePushRulesModel::PUSH_TYPE_CUSTOMER) {
@@ -790,7 +789,7 @@ class MessageService
         if (!is_array($openId)) {
             $openId = [$openId];
         }
-        $appId = DssUserWeixinModel::dealAppId($appId);
+        $appId = DssUserWeiXinModel::dealAppId($appId);
         $messageRule = self::getMessagePushRuleByID($ruleId);
         if ($messageRule['is_active'] != MessagePushRulesModel::STATUS_ENABLE) {
             SimpleLogger::error('RULE NOT ENABLE', [$messageRule]);
