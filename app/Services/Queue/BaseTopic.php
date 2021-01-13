@@ -34,7 +34,7 @@ class BaseTopic
      * @param int $sourceAppId
      * @throws Exception
      */
-    protected function __construct($topicName, $publishTime = null, $sourceAppId = 10)
+    protected function __construct($topicName, $publishTime = null, $sourceAppId = QueueService::FROM_OP)
     {
         //获取消息队列topic前缀和主机地址
         list($prefix, $lookupds) = DictConstants::getValues(DictConstants::QUEUE_CONFIG, ['NSQ_TOPIC_PREFIX', 'NSQ_LOOKUPS']);

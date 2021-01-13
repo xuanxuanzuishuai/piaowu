@@ -10,7 +10,7 @@ namespace App\Services\Queue;
 
 class PushMessageTopic extends BaseTopic
 {
-    const TOPIC_NAME = "op_push_message";
+    const TOPIC_NAME = "operation_message";
 
     const EVENT_PUSH_RULE_WX = 'push_rule_wx'; //自动推送微信
     const EVENT_PUSH_WX = 'push_wx';
@@ -23,6 +23,9 @@ class PushMessageTopic extends BaseTopic
     const EVENT_UNSUBSCRIBE        = 'wechat_unsubscribe';  // 微信取消关注
     const EVENT_START_CLASS        = 'start_class';         // 开班消息
     const EVENT_START_CLASS_SEVEN  = 'start_class_seven';   // 开班7天消息
+    const EVENT_BEFORE_CLASS_ONE   = 'before_class_one_day';// 开班前1天消息
+    const EVENT_BEFORE_CLASS_TWO   = 'before_class_two_day';// 开班前2天消息
+    const EVENT_AFTER_CLASS_ONE    = 'after_class_one_day';// 结班后1天消息
 
     public function __construct($publishTime = null)
     {

@@ -61,6 +61,15 @@ class DssModel
         }
         return self::dbRO()->get(static::$table, $fields, $where);
     }
+    /**
+     * 获取数据行数
+     * @param $where
+     * @return number
+     */
+    public static function getCount($where)
+    {
+        return self::dbRO()->count(static::$table, $where);
+    }
 
 
     /**

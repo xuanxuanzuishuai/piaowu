@@ -166,13 +166,10 @@ class ReferralService
         }
         $userQrPath  = DssUserQrTicketModel::getUserQrURL(
             $studentInfo['id'],
-            self::getChannelByDay($day),
-            null,
-            null,
-            null,
-            DssUserQrTicketModel::LANDING_TYPE_MINIAPP,
             DssUserQrTicketModel::STUDENT_TYPE,
-            $posterInfo['id']
+            self::getChannelByDay($day),
+            DssUserQrTicketModel::LANDING_TYPE_MINIAPP,
+            ['p' => $posterInfo['id']]
         );
         $waterImgEncode = str_replace(["+", "/"], ["-", "_"], base64_encode($thumb."?x-oss-process=image/resize,w_90,h_90/circle,r_100/format,png"));
         $waterMark = [];

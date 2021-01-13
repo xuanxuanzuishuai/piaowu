@@ -5,10 +5,8 @@ use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\Dss;
 use App\Libs\RC4;
-use App\Libs\SimpleLogger;
-use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\QRCodeModel;
-use App\Services\ReferralActivityService;
+use App\Services\PosterService;
 
 class DssUserQrTicketModel extends DssModel
 {
@@ -22,25 +20,20 @@ class DssUserQrTicketModel extends DssModel
     /**
      * 获取用户二维码图片
      * @param $userID
-     * @param $channelID
-     * @param null $activityID //这个地方是op总活动表的id
-     * @param null $employeeID
-     * @param null $appID
-     * @param int $landingType
      * @param int $type
+     * @param int $channelID
+     * @param int $landingType
+     * @param array $extParams
      * @return mixed|string
      * @throws \App\Libs\Exceptions\RunTimeException
      * @throws \App\Libs\KeyErrorRC4Exception
      */
     public static function getUserQrURL(
         $userID,
-        $channelID,
-        $activityID = null,
-        $employeeID = null,
-        $appID = null,
-        $landingType = self::LANDING_TYPE_NORMAL,
         $type = self::STUDENT_TYPE,
-        $posterId = 0
+        $channelID = 0,
+        $landingType = self::LANDING_TYPE_NORMAL,
+        $extParams = []
     ) {
 
         $sql = "
@@ -58,22 +51,23 @@ class DssUserQrTicketModel extends DssModel
                 `user_id` = :user_id
                 AND `channel_id` = :channel_id
                 AND `type` = :type
-                AND `landing_type` = :landing_type ";
+                AND `landing_type` = :landing_type 
+                ";
+
         $map = [];
         $map[':user_id']      = $userID;
         $map[':channel_id']   = $channelID;
         $map[':type']         = $type;
         $map[':landing_type'] = $landingType;
 
-        if (!empty($activityID)) {
-            $sql .= "
-                AND ext->>'$.activity_id' = :activity_id
-                AND ext->>'$.employee_id' = :employee_id
-                AND ext->>'$.app_id' = :app_id
-            ";
-            $map[':activity_id'] = $activityID;
-            $map[':employee_id'] = $employeeID;
-            $map[':app_id'] = $appID;
+        $extParamsDict = [
+            'activity_id' => $extParams['a'] ?? 0,
+            'employee_id' => $extParams['e'] ?? 0,
+            'poster_id'   => $extParams['p'] ?? 0,
+            'app_id'      => $extParams['app_id'] ?? 0,
+        ];
+        foreach ($extParamsDict as $key => $value) {
+            $sql .= " AND ext->>'$." . $key . "' = " . $value;
         }
         $userTicket = self::dbRO()->queryAll(sprintf($sql, self::getTableNameWithDb()), $map);
         if (!empty($userTicket[0]['qr_url'])) {
@@ -82,27 +76,24 @@ class DssUserQrTicketModel extends DssModel
 
         $ticket = RC4::encrypt($_ENV['COOKIE_SECURITY_KEY'], $type . "_" . $userID);
         if ($landingType == self::LANDING_TYPE_MINIAPP) {
-            $imagePath = self::getMiniappQrImage(
+            $imagePath = PosterService::getMiniappQrImage(
                 Constants::SMART_APP_ID,
-                [
-                    'r'       => $ticket,
-                    'c'       => $channelID,
-                    'a'       => $activityID,
-                    'e'       => $employeeID,
-                    'p'       => $posterId,
-                    'app_id'  => Constants::SMART_APP_ID,
-                    'type'    => $type,
-                    'user_id' => $userID,
-                ]
+                array_merge(
+                    [
+                        'r'       => $ticket,
+                        'c'       => $channelID,
+                        'app_id'  => Constants::SMART_APP_ID,
+                        'type'    => $type,
+                        'user_id' => $userID,
+                    ],
+                    $extParams
+                )
             );
         } else {
             $imagePath = self::getReferralLandingPageQrImage(
                 [
                     'referee_id'  => $ticket,
-                    'activity_id' => $activityID,
-                    'employee_id' => $employeeID,
                     'channel_id'  => $channelID,
-                    'poster_id'   => $posterId,
                 ]
             );
         }
@@ -115,46 +106,10 @@ class DssUserQrTicketModel extends DssModel
                 'channel_id'   => $channelID,
                 'type'         => $type,
                 'landing_type' => $landingType,
-                'ext'          => json_encode(['activity_id' => $activityID, 'employee_id' => $employeeID, 'app_id' => $appID])
+                'ext'          => json_encode($extParamsDict)
             ]
         );
         return $imagePath;
-    }
-
-    /**
-     * 获取小程序码图片
-     * @param $appid
-     * @param array $params
-     * @return string
-     * @throws \App\Libs\Exceptions\RunTimeException
-     */
-    public static function getMiniappQrImage($appid, $params = [])
-    {
-        $userQrTicket = $params['r'] ?? '';
-        $wx           = WeChatMiniPro::factory($appid, Constants::SMART_MINI_BUSI_TYPE);
-        if (empty($wx)) {
-            SimpleLogger::error('wx create fail', ['getMiniappQrImage'=>$params]);
-            return '';
-        }
-        // 请求微信，获取小程序码图片
-        $paramsId = ReferralActivityService::getParamsId($params);
-        $res = $wx->getMiniappCodeImage($paramsId);
-        if ($res === false) {
-            SimpleLogger::error('get mini app code image error', [$res, $params]);
-            return '';
-        }
-        $tmpFileFullPath = $_ENV['STATIC_FILE_SAVE_PATH'] . '/' . md5($userQrTicket) . '.jpg';
-        chmod($tmpFileFullPath, 0755);
-
-        $bytesWrite = file_put_contents($tmpFileFullPath, $res);
-        if (empty($bytesWrite)) {
-            SimpleLogger::error('save miniapp code image file error', [$userQrTicket]);
-            return '';
-        }
-        $imageUrl = $_ENV['ENV_NAME'] . '/' . AliOSS::DIR_MINIAPP_CODE . '/' . md5(implode(',', $params)) . ".png";
-        AliOSS::uploadFile($imageUrl, $tmpFileFullPath);
-        unlink($tmpFileFullPath);
-        return $imageUrl;
     }
 
     /**

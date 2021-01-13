@@ -321,7 +321,17 @@ class ReferralActivityService
         }
         $activity    = self::formatEmployeeActivity($activity);
         $landingType = self::getLandingType();
-        $userQrPath  = DssUserQrTicketModel::getUserQrURL($userId, $channel, EmployeeActivityModel::getEmployeeActivityRelateOpActivityId($activityId), $employeeId, $appId, $landingType);
+        $userQrPath  = DssUserQrTicketModel::getUserQrURL(
+            $userId,
+            DssUserQrTicketModel::STUDENT_TYPE,
+            $channel,
+            $landingType,
+            [
+                'a' => EmployeeActivityModel::getEmployeeActivityRelateOpActivityId($activityId),
+                'e' => $employeeId,
+                'app_id' => $appId,
+            ]
+        );
         if (empty($userQrPath)) {
             SimpleLogger::error('empty user qr code path', [$userId, $channel, $activityId, $employeeId, $appId, $landingType]);
         }

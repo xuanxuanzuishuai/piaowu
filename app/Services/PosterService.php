@@ -109,13 +109,9 @@ class PosterService
             'type'         => $type,
             'channel_id'   => $channelId,
             'landing_type' => $landingType,
+            "ext->>'$.activity_id'" => $extParams['a'] ?? 0,
+            "ext->>'$.poster_id'" => $extParams['p'] ?? 0,
         ];
-        if (!empty($extParams['a'])) {
-            $where["ext->>'$.activity_id'"] = $extParams['a'];
-        }
-        if (!empty($extParams['p'])) {
-            $where["ext->>'$.poster_id'"] = $extParams['p'];
-        }
         $res = DssUserQrTicketModel::getRecord($where, ['user_id','qr_ticket','qr_url','channel_id','type','create_time','landing_type','ext']);
         if (!empty($res['qr_url'])) {
             return $res;

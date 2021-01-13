@@ -8,10 +8,15 @@
 
 namespace App\Services\Queue;
 
+use App\Libs\DictConstants;
 use App\Libs\SimpleLogger;
+use App\Services\MessageService;
+use App\Services\PushMessageService;
 use Exception;
 class QueueService
 {
+
+    const FROM_OP = 19;
 
     private static function getDeferMax($count)
     {
@@ -157,4 +162,77 @@ class QueueService
         }
         return true;
     }
+
+    /**
+     * 班级消息推送
+     * @param $data [open_id => [data]]
+     * @param $type
+     * @return bool
+     */
+    public static function classMessage($data, $type)
+    {
+        if (empty($data) || empty($type)) {
+            return false;
+        }
+        $ruleId = 0;
+        switch ($type) {
+            case PushMessageTopic::EVENT_BEFORE_CLASS_ONE:
+                $ruleId = DictConstants::get(DictConstants::MESSAGE_RULE, 'before_class_one_day_rule_id');
+                break;
+
+            case PushMessageTopic::EVENT_BEFORE_CLASS_TWO:
+                $ruleId = DictConstants::get(DictConstants::MESSAGE_RULE, 'before_class_two_day_rule_id');
+                break;
+
+            case PushMessageTopic::EVENT_AFTER_CLASS_ONE:
+                $ruleId = DictConstants::get(DictConstants::MESSAGE_RULE, 'after_class_one_day_rule_id');
+                break;
+
+            case PushMessageTopic::EVENT_START_CLASS:
+                $ruleId = DictConstants::get(DictConstants::MESSAGE_RULE, 'start_class_day_rule_id');
+                break;
+
+            case PushMessageTopic::EVENT_START_CLASS_SEVEN:
+                $ruleId = DictConstants::get(DictConstants::MESSAGE_RULE, 'start_class_seven_day_rule_id');
+                break;
+            default:
+                break;
+        }
+        if (empty($ruleId)) {
+            return false;
+        }
+        MessageService::sendMessage($data, $ruleId);
+        return true;
+    }
+
+    /**
+     * 未练琴消息推送
+     * @param $data [open_id => [data]]
+     * @param $day
+     * @return bool
+     */
+    public static function noPlayMessage($data, $day)
+    {
+        $config = DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'no_play_day_rule_config');
+        if (empty($config)) {
+            return false;
+        }
+        $config = json_decode($config, true);
+        $ruleId = $config[$day] ?? 0;
+        if (empty($ruleId)) {
+            return false;
+        }
+        MessageService::sendMessage($data, $ruleId);
+        return true;
+    }
+
+    /**
+     * 每月活动消息
+     * @param array $openId
+     */
+    public static function monthlyEvent($openId)
+    {
+        MessageService::monthlyEvent($openId, DictConstants::get(DictConstants::MESSAGE_RULE, 'monthly_event_rule_id'));
+    }
+    
 }

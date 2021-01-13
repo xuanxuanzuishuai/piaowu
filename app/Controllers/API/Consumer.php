@@ -227,15 +227,6 @@ class Consumer extends ControllerBase
                 case PushMessageTopic::EVENT_UNSUBSCRIBE:
                     MessageService::clearMessageRuleLimit($params['msg_body']['open_id']);
                     break;
-
-                case PushMessageTopic::EVENT_START_CLASS:
-                    MessageService::startClass($params['msg_body'], DictConstants::get(DictConstants::MESSAGE_RULE, 'start_class_day_rule_id'));
-                    break;
-
-                case PushMessageTopic::EVENT_START_CLASS_SEVEN:
-                    MessageService::startClass($params['msg_body'], DictConstants::get(DictConstants::MESSAGE_RULE, 'start_class_seven_day_rule_id'));
-                    break;
-
             }
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());

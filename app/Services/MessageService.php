@@ -376,11 +376,12 @@ class MessageService
         }
         foreach ($messageRule['content'] as $item) {
             if (empty($item['value'])) {
-                return false;
+                continue;
             }
             if ($item['type'] == WeChatConfigModel::CONTENT_TYPE_TEXT) { //发送文本消息
                 //转义数据
                 $content = Util::textDecode($item['value']);
+                $content = Util::pregReplaceTargetStr($content, $data);
                 $res1 = $wechat->sendText($data['open_id'], $content);
                 //全部推送成功才算成功
                 if (empty($res1) || !empty($res1['errcode'])) {
@@ -390,7 +391,7 @@ class MessageService
                 $posterImgFile = self::dealPosterByRule($data, $item);
                 if (empty($posterImgFile)) {
                     SimpleLogger::error('empty poster file', ['pushCustomMessage', $data, $item]);
-                    return false;
+                    continue;
                 }
                 $wxData = $wechat->getTempMedia('image', $posterImgFile['unique'], $posterImgFile['poster_save_full_path']);
                 //发送海报
@@ -482,18 +483,18 @@ class MessageService
     }
 
     /**
-     * @param $openId
+     * @param $data [open_id => [data]]
      * @param $ruleId
      * @param $appId
      * 发送消息
      */
-    public static function sendMessage($openId, $ruleId, $appId = null)
+    public static function sendMessage($data, $ruleId, $appId = null)
     {
         $appId = DssUserWeixinModel::dealAppId($appId);
-        is_string($openId) && $openId = [$openId];
         $sendArr = [];
-        foreach ($openId as $open_id) {
-            $sendArr[] = self::preSendVerify($open_id, $ruleId, $appId);
+        foreach ($data as $open_id => $value) {
+            $tmp = array_merge($value, self::preSendVerify($open_id, $ruleId, $appId));
+            $sendArr[] = $tmp;
         }
         if (empty($sendArr)) {
             return;
@@ -775,20 +776,43 @@ class MessageService
     }
 
     /**
-     * 开班相关消息，当天和第七天
-     * 2021-01-11 10:34:08
-     * @param $openIds
+     * 每月活动消息
+     * @param $openId
      * @param $ruleId
      * @param null $appId
+     * @return bool
      */
-    public static function startClass($openIds, $ruleId, $appId = null)
+    public static function monthlyEvent($openId, $ruleId, $appId = null)
     {
-        $appId = DssUserWeixinModel::dealAppId($appId);
-        foreach ($openIds as $open_id) {
-            $data = self::preSendVerify($open_id, $ruleId, $appId);
-            if (!empty($data)) {
-                self::realSendMessage($data);
-            }
+        if (empty($openId) || empty($ruleId)) {
+            return false;
         }
+        if (!is_array($openId)) {
+            $openId = [$openId];
+        }
+        $appId = DssUserWeixinModel::dealAppId($appId);
+        $messageRule = self::getMessagePushRuleByID($ruleId);
+        if ($messageRule['is_active'] != MessagePushRulesModel::STATUS_ENABLE) {
+            SimpleLogger::error('RULE NOT ENABLE', [$messageRule]);
+            return false;
+        }
+        $data = [
+            'rule_id' => $ruleId,
+            'app_id'  => $appId
+        ];
+        foreach ($openId as $open_id) {
+            $data['open_id'] = $open_id;
+            if (self::judgeOverMessageRuleLimit($open_id, $ruleId)) {
+                continue;
+            }
+            if ($messageRule['type'] == MessagePushRulesModel::PUSH_TYPE_CUSTOMER) {
+                $res = self::pushCustomMessage($messageRule, $data, $appId);
+                //推送日志记录
+                MessageRecordService::addRecordLog($open_id, MessageRecordModel::ACTIVITY_TYPE_AUTO_PUSH, $ruleId, $res);
+            }
+            //记录发送限制
+            self::recordUserMessageRuleLimit($open_id, $ruleId);
+        }
+        return true;
     }
 }

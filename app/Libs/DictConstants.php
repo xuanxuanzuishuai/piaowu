@@ -296,6 +296,10 @@ class DictConstants {
             'how_long_not_result',
             'start_class_day_rule_id',
             'start_class_seven_day_rule_id',
+            'before_class_one_day_rule_id',
+            'before_class_two_day_rule_id',
+            'after_class_one_day_rule_id',
+            'monthly_event_rule_id',
         ]
     ];
 
@@ -318,6 +322,7 @@ class DictConstants {
             'max_name_length',
             'day_channel',
             'day_poster_config',
+            'no_play_day_rule_config', // 未练琴推送规则ID配置
         ],
     ];
     // 转介绍相关配置
