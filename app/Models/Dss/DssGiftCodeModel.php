@@ -114,18 +114,21 @@ class DssGiftCodeModel extends DssModel
         $allStudentIdArr = array_column($refereeAllUser, 'student_id');
 
         $db = self::dbRO();
-        $where = [
-            self::getTableNameWithDb() . '.buyer' => $allStudentIdArr,
-            self::getTableNameWithDb() . '.bill_package_id' => $packageIdArr,
-            self::getTableNameWithDb() . '.create_time[>]' => $startTime
-        ];
+        $where = ' buyer in (' . implode(',', $allStudentIdArr) . ')';
+        $where .= ' AND bill_package_id in (' . implode(',', $packageIdArr) . ')';
+        $where .= ' AND create_time > ' . $startTime;
         if (!is_null($isV1Package)) {
-            $where[self::getTableNameWithDb() . '.package_v1'] = $isV1Package;
+            $where .= ' AND package_v1 = ' . $isV1Package;
         }
-        return $db->get(
-            self::getTableNameWithDb(),
-            [self::getTableNameWithDb() . '.id'],
-            $where
-        );
+        $table = self::getTableNameWithDb();
+        $sql = "
+        SELECT
+            id
+        FORM
+            {$table}
+        WHERE
+            {$where}
+        ";
+        return $db->queryAll($sql);
     }
 }

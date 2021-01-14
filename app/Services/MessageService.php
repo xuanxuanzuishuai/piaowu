@@ -18,6 +18,7 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Models\Dss\DssErpPackageV1Model;
 use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssPackageExtModel;
+use App\Models\Dss\DssSharePosterModel;
 use App\Models\MessagePushRulesModel;
 use App\Models\MessageManualPushLogModel;
 use App\Models\MessageRecordLogModel;
@@ -539,10 +540,16 @@ class MessageService
             $redis->del([self::getMessageKey($openId, $item['expire_time'])]);
         }, self::PUSH_MESSAGE_RULE);
         //单一规则清除
-        $allRule = MessagePushRulesModel::getRecords(['id[>]' => 0], ['id']);
+        $allRule = MessagePushRulesModel::getRecords(['id[>]' => 0], ['id', 'time']);
         array_map(function ($item) use ($redis, $openId, $allRule) {
             array_map(function ($i) use ($redis, $openId, $item) {
-                $redis->del([self::getMessageKey($openId, $item['expire_time'], $i['id'])]);
+                $timeConfig = json_decode($item['time'], true);
+                $redis->del(
+                    [
+                        self::getMessageKey($openId, $item['expire_time'], $i['id']),
+                        self::getMessageKey($openId, $timeConfig['expire'] ?? 0, $i['id']),
+                    ]
+                );
             }, $allRule);
         }, self::PER_RULE_MESSAGE_RULE);
     }
@@ -568,6 +575,19 @@ class MessageService
     public static function judgeOverMessageRuleLimit($openId, $ruleId)
     {
         $redis = RedisDB::getConn();
+
+        $ruleInfo = MessagePushRulesModel::getById($ruleId);
+        $timeConfig = json_decode($ruleInfo['time'], true);
+        if (!empty($timeConfig['expire'])) {
+            $limit = $timeConfig['limit'] ?? 1;
+            $key = self::getMessageKey($openId, $timeConfig['expire'], $ruleId);
+            $num = intval($redis->get($key));
+            if ($num >= $limit) {
+                SimpleLogger::info('message over num per rule limit ', ['open_id' => $openId, 'rule' => $ruleInfo]);
+                return true;
+            }
+            return false;
+        }
         //单个规则是否超过
         foreach (self::PER_RULE_MESSAGE_RULE as $value) {
             $key = self::getMessageKey($openId, $value['expire_time'], $ruleId);
@@ -602,6 +622,13 @@ class MessageService
             return;
         }
         $redis = RedisDB::getConn();
+        $ruleInfo = MessagePushRulesModel::getById($ruleId);
+        $timeConfig = json_decode($ruleInfo['time'], true);
+        if (!empty($timeConfig['expire'])) {
+            $key = self::getMessageKey($openId, $timeConfig['expire'], $ruleId);
+            $value = intval($redis->get($key));
+            $redis->setex($key, $timeConfig['expire'], intval($value + 1));
+        }
         array_map(function ($item) use ($redis, $openId) {
             $key = self::getMessageKey($openId, $item['expire_time']);
             $value = $redis->get($key);
@@ -722,11 +749,12 @@ class MessageService
         $v1NormalPackageIdArr = DssErpPackageV1Model::getNormalPackageIds();
 
         //X天内转介绍行为
-        $inviteOperateInfo = SharePosterModel::getRecord(['student_id' => $studentInfo['id'], 'create_time[>]' => $time - $inviteDiffTime, 'status' => SharePosterModel::VERIFY_STATUS_QUALIFIED]);
+        $inviteOperateInfo = SharePosterModel::getRecord(['student_id' => $studentInfo['id'], 'create_time[>]' => $time - $inviteDiffTime, 'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED]);
+        $dssInviteInfo = DssSharePosterModel::getRecords(['student_id' => $studentInfo['id'], 'create_time[>]' => $time - $inviteDiffTime, 'status' => SharePosterModel::VERIFY_STATUS_QUALIFIED]);
         if ($studentInfo['has_review_course'] == DssStudentModel::REVIEW_COURSE_1980) {
             //转介绍结果（付过费就算)
             $inviteResultInfo = DssGiftCodeModel::refereeBuyCertainPackage($studentInfo['id'], array_merge($yearPackageIdArr, $trailPackageIdArr, $v1TrialPackageIdArr, $v1NormalPackageIdArr), $time - $resultDiffTime);
-            if (empty($inviteOperateInfo) && empty($inviteResultInfo)) {
+            if (empty($inviteOperateInfo) && empty($dssInviteInfo) && empty($inviteResultInfo)) {
                 //年卡c用户
                 return DictConstants::get(DictConstants::MESSAGE_RULE, 'year_user_c_rule_id');
             }
@@ -813,5 +841,102 @@ class MessageService
             self::recordUserMessageRuleLimit($open_id, $ruleId);
         }
         return true;
+    }
+
+    /**
+     * 给用户发送微信消息
+     * @param $msgBody
+     * @throws RunTimeException
+     */
+    public static function pushWXMsg($msgBody)
+    {
+        $studentId    = $msgBody['student_id'];
+        $openId       = $msgBody['open_id'];
+        $guideWord    = $msgBody['guide_word'];
+        $shareWord    = $msgBody['share_word'];
+        $posterUrl    = $msgBody['poster_url'];
+        $activityId   = $msgBody['activity_id'];
+        $employeeId   = $msgBody['employee_id'];
+        $pushTime     = $msgBody['push_wx_time'];
+        $activityType = $msgBody['activity_type'];
+
+        $appId = DssUserWeiXinModel::dealAppId($msgBody['app_id'] ?? 0);
+        $wechat = WeChatMiniPro::factory($appId, PushMessageService::APPID_BUSI_TYPE_DICT[$appId]);
+        $successFlag = true;
+
+        if (!empty($guideWord)) {
+            $res = $wechat->sendText($openId, Util::textDecode($guideWord));
+            if (empty($res) || !empty($res['errcode'])) {
+                $successFlag = false;
+            }
+        }
+
+        if (!empty($shareWord)) {
+            $res = $wechat->sendText($openId, Util::textDecode($shareWord));
+            if (empty($res) || !empty($res['errcode'])) {
+                $successFlag = false;
+            }
+        }
+
+        if (!empty($posterUrl)) {
+            $config = DictConstants::getSet(DictConstants::POSTER_CONFIG);
+            $posterImgFile = PosterService::generateQRPosterAliOss(
+                $posterUrl,
+                $config,
+                $studentId,
+                DssUserWeiXinModel::USER_TYPE_STUDENT,
+                Constants::SMART_APP_ID,
+                DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'NORMAL_STUDENT_INVITE_STUDENT'),
+                null,
+                [
+                    'p' => PosterModel::getIdByPath($posterUrl)
+                ]
+            );
+            if (!empty($posterImgFile['unique'])) {
+                $tempMedia = $wechat->getTempMedia('image', $posterImgFile['unique'], $posterImgFile['poster_save_full_path']);
+                if (!empty($tempMedia['media_id'])) {
+                    $res = $wechat->sendImage($openId, $tempMedia['media_id']);
+                    if (empty($res) || !empty($res['errcode'])) {
+                        $successFlag = false;
+                    }
+                }
+            }
+        }
+        $successNum = $successFlag ? 1 : 0;
+        $failNum = $successFlag ? 0 : 1;
+
+        // 发微信的记录
+        $record = MessageRecordService::getMsgRecord(
+            $activityId,
+            $employeeId,
+            $pushTime,
+            $activityType
+        );
+        if (empty($record)) {
+            MessageRecordService::add(
+                MessageRecordModel::MSG_TYPE_WEIXIN,
+                $activityId,
+                $successNum,
+                $failNum,
+                $employeeId,
+                $pushTime,
+                $activityType
+            );
+        } else {
+            MessageRecordService::updateMsgRecord($record['id'], [
+                'success_num[+]' => $successNum,
+                'fail_num[+]'    => $failNum,
+                'update_time'    => time()
+            ]);
+        }
+        //目前仅需要记录消息规则相关
+        if (in_array($activityType, [MessageRecordModel::ACTIVITY_TYPE_MANUAL_PUSH])) {
+            MessageRecordService::addRecordLog(
+                $openId,
+                $activityType,
+                $activityId,
+                $successFlag
+            );
+        }
     }
 }

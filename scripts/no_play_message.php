@@ -32,7 +32,7 @@ $dotenv->load();
 $dotenv->overload();
 
 $redis = RedisDB::getConn();
-$redisKey = "PUSH_CHECKIN_MESSAGE-".date('Ymd', strtotime('-1 day'));
+$redisKey = "PUSH_CHECKIN_MESSAGE-".date('Ymd');
 
 for ($day = 1; $day < 5; $day++) {
     $tempKey = $redisKey . '-' . $day;

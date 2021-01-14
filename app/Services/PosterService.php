@@ -8,6 +8,7 @@ use App\Libs\RC4;
 use App\Libs\SimpleLogger;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\Dss\DssUserQrTicketModel;
+use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\QRCodeModel;
 
 class PosterService
@@ -71,8 +72,8 @@ class PosterService
         ];
         $waterMarkStr = implode(",", $waterMark) . '/';
         $imgSize = [
-            "w_" . $config['image_width'],
-            "h_" . $config['image_height'],
+            "w_" . $config['poster_width'],
+            "h_" . $config['poster_height'],
             "limit_0",//强制图片缩放
         ];
         $imgSizeStr = implode(",", $imgSize) . '/';
@@ -141,8 +142,8 @@ class PosterService
             }
             //记录海报的扩展数据：海报底图ID
             $ext = [
-                'poster_id'   => $extParams['p'],
-                'activity_id' => $extParams['a'],
+                'poster_id'   => $extParams['p'] ?? 0,
+                'activity_id' => $extParams['a'] ?? 0,
                 'app_id'      => $appId
             ];
             $data = [
@@ -190,8 +191,9 @@ class PosterService
      */
     public static function getMiniappQrImage($appId, $params = [])
     {
+        $params['app_id'] = $params['app_id'] ?? $appId;
         $ticket    = $params['r'] ?? '';
-        $wechat    = WeChatMiniPro::factory($appId, PushMessageService::APPID_BUSI_TYPE_DICT[$appId]);
+        $wechat    = WeChatMiniPro::factory($appId, DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP);
         $imagePath = '';
         if (empty($wechat)) {
             SimpleLogger::error('wechat create fail', ['getMiniappQrImage', $appId, $params]);

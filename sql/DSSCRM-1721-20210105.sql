@@ -14,6 +14,18 @@ CREATE TABLE `message_push_rules` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB COMMENT='自动推送消息规则';
 
+CREATE TABLE `message_record` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT COMMENT '自增id',
+  `type` tinyint(1) unsigned NOT NULL COMMENT '消息类型1短信2微信',
+  `activity_id` int(11) unsigned NOT NULL COMMENT '活动ID',
+  `success_num` int(11) unsigned NOT NULL COMMENT '发送成功数量',
+  `fail_num` int(11) unsigned NOT NULL COMMENT '发送失败数量',
+  `operator_id` int(11) unsigned NOT NULL COMMENT '操作人',
+  `create_time` int(10) unsigned NOT NULL COMMENT '创建时间',
+  `update_time` int(10) DEFAULT '0',
+  `activity_type` tinyint(1) unsigned NOT NULL DEFAULT '1' COMMENT '活动类型1上传截图领奖2上传截图领返现',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB COMMENT='信息发送记录表';
 
 CREATE TABLE `message_manual_push_log` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT '自增ID',
@@ -37,6 +49,17 @@ VALUES
   (17, '体验营结束后一天', 1, 1, 0, "{\"desc\": \"体验营结束后一天\", \"delay_time\": 0}", "[{\"key\": \"content_1\", \"type\": 1, \"value\": \"@{{name}}你好\\n郎朗说：“强逼的孩子是成不了钢琴家的，一定要自己去发现音乐中的喜悦。”希望宝贝坚持下去，也许练琴路上会很辛苦，但是一定会有收获！！！\\n\\n⏰小叶子提示您还有一个红包待领取，2小时有效，速戳领取\\\\ud83d\\\\udc47\\\\ud83c\\\\udffb\\\\ud83d\\\\udc47\\\\ud83c\\\\udffb\\\\ud83d\\\\udc47\\\\ud83c\\\\udffb\\n\\\\ud83d\\\\udd25\\n<a href=\\\"https://referral.xiaoyezi.com/operation/activity/christmas?activity_id=6\\\">\\\\ud83d\\\\udd25邀好友得红包，万元豪礼0元领</a>\\n<a href=\\\"https://referral.xiaoyezi.com/operation/activity/christmas?activity_id=6\\\">\\\\ud83d\\\\udd25邀好友得红包，万元豪礼0元领</a>\"}, {\"key\": \"content_2\", \"type\": 1, \"value\": \"\"}]", '', unix_timestamp(), unix_timestamp()),
   (18, '每月活动', 1, 1, 0, "{\"desc\": \"每月活动\", \"delay_time\": 0}", "[{\"key\": \"content_1\", \"type\": 1, \"value\": \"亲爱的用户，您好！您已被小叶子本月专属福利砸中，请您查收！\\\\ud83c\\\\udf81\\n\\n专属福利：邀好友体验，领百元红包\\n<a href=\\\"https://referral.xiaoyezi.com/operation/activity/christmas?activity_id=6\\\">\\\\ud83d\\\\udd25邀好友得红包，万元豪礼0元领</a>\\n<a href=\\\"https://referral.xiaoyezi.com/operation/activity/christmas?activity_id=6\\\">\\\\ud83d\\\\udd25邀好友得红包，万元豪礼0元领</a>\"}, {\"key\": \"content_2\", \"type\": 1, \"value\": \"\"}]", '', unix_timestamp(), unix_timestamp());
 
+SET @j = (SELECT `time` FROM message_push_rules WHERE id = 5);
+UPDATE message_push_rules SET `time` = json_set(@j, '$.expire', 86400) WHERE id = 5;
+UPDATE message_push_rules SET `time` = json_set(@j, '$.limit', 1) WHERE id = 5;
+
+SET @j = (SELECT `time` FROM message_push_rules WHERE id = 6);
+UPDATE message_push_rules SET `time` = json_set(@j, '$.expire', 86400) WHERE id = 6;
+UPDATE message_push_rules SET `time` = json_set(@j, '$.limit', 1) WHERE id = 6;
+
+SET @j = (SELECT `time` FROM message_push_rules WHERE id = 7);
+UPDATE message_push_rules SET `time` = json_set(@j, '$.expire', 86400) WHERE id = 7;
+UPDATE message_push_rules SET `time` = json_set(@j, '$.limit', 1) WHERE id = 7;
 
 INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
 VALUES
@@ -56,6 +79,8 @@ VALUES
   ('message_rule_config', '消息推送规则', 'before_class_two_day_rule_id', '11', '开班前2天'),
   ('message_rule_config', '消息推送规则', 'after_class_one_day_rule_id', '17', '结班后1天'),
   ('message_rule_config', '消息推送规则', 'monthly_event_rule_id', '18', '每月活动消息'),
+  ('message_rule_config', '消息推送规则', 'only_trail_rule_id', '8', '体验用户绑定手机号相关规则'),
+  ('message_rule_config', '消息推送规则', 'only_year_rule_id', '9', '年卡用户绑定手机号相关规则'),
   ('message_rule_config', '消息推送规则', 'no_play_day_rule_config', '{"1":13, "2":14, "3":15, "4":16}', '未练琴天数对应规则配置');
 
 INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)

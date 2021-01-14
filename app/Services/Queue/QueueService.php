@@ -213,7 +213,7 @@ class QueueService
      */
     public static function noPlayMessage($data, $day)
     {
-        $config = DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'no_play_day_rule_config');
+        $config = DictConstants::get(DictConstants::MESSAGE_RULE, 'no_play_day_rule_config');
         if (empty($config)) {
             return false;
         }

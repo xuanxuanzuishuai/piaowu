@@ -41,31 +41,31 @@ $dotenv = new Dotenv(PROJECT_ROOT, '.env');
 $dotenv->load();
 $dotenv->overload();
 
-
+$today = strtotime(date('Y-m-d'));
 $teachStartTimeArr = [
     [
         // 开班当天
-        'start_time' => strtotime(date('Y-m-d')),
+        'start_time' => $today,
         'type' => PushMessageTopic::EVENT_START_CLASS
     ],
     [
         // 开班前1天
-        'start_time' => strtotime("-1 day"),
+        'start_time' => $today + (Util::TIMESTAMP_ONEDAY * 1),
         'type' => PushMessageTopic::EVENT_BEFORE_CLASS_ONE
     ],
     [
         // 开班前2天
-        'start_time' => strtotime("-2 days"),
+        'start_time' => $today + (Util::TIMESTAMP_ONEDAY * 2),
         'type' => PushMessageTopic::EVENT_BEFORE_CLASS_TWO
     ],
     [
         // 结班后1天
-        'start_time' => strtotime("-6 days"),
+        'start_time' => $today - (Util::TIMESTAMP_ONEDAY * 6),
         'type' => PushMessageTopic::EVENT_AFTER_CLASS_ONE
     ],
     [
         // 开班后7天
-        'start_time' => strtotime("-7 days"),
+        'start_time' => $today - (Util::TIMESTAMP_ONEDAY * 7),
         'type' => PushMessageTopic::EVENT_START_CLASS_SEVEN
     ],
 ];
@@ -75,7 +75,6 @@ foreach ($teachStartTimeArr as $item) {
     $where['teaching_start_time[>=]'] = $item['start_time'];
     $where['teaching_start_time[<]'] = $item['start_time'] + Util::TIMESTAMP_ONEDAY;
     $where['teaching_type'] = DssCollectionModel::TEACHING_TYPE_TRIAL;
-    $where['event_id'] = DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'collection_event_id');
 
     $allCollections = DssCollectionModel::getRecords($where, ['id', 'teaching_start_time', 'teaching_end_time']);
     $collectionInfo = array_column($allCollections, null, 'id');
