@@ -14,6 +14,10 @@ class DssCollectionModel extends DssModel
     const STATUS_NOT_PUBLISH = 1;
     const STATUS_IS_PUBLISH  = 2;
 
+    const TRAIL_TYPE_NONE      = 0;
+    const TRAIL_TYPE_TWO_WEEK  = 1; // 49元2周体验营
+    const TRAIL_TYPE_FIVE_DAYS = 2; // 9.9元5天体验营
+
     //集合类型1普通集合2公共集合
     const TYPE_NORMAL = 1;
     const TYPE_PUBLIC = 2;

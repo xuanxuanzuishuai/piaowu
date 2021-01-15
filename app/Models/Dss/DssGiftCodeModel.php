@@ -124,7 +124,7 @@ class DssGiftCodeModel extends DssModel
         $sql = "
         SELECT
             id
-        FORM
+        FROM
             {$table}
         WHERE
             {$where}

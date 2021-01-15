@@ -38,6 +38,14 @@ class MessagePushRulesModel extends Model
     const PUSH_TARGET_REGISTER    = 6; // 注册C级用户
     const PUSH_TARGET_ONLY_TRAIL  = 7; // 付费体验课用户
     const PUSH_TARGET_ONLY_YEAR   = 8; // 付费年卡用户
+    const PUSH_TARGET_TRAIL_BEFORE_2 = 9;
+    const PUSH_TARGET_TRAIL_BEFORE_1 = 10;
+    const PUSH_TARGET_TRAIL_NO_1     = 11;
+    const PUSH_TARGET_TRAIL_NO_2     = 12;
+    const PUSH_TARGET_TRAIL_NO_3     = 13;
+    const PUSH_TARGET_TRAIL_NO_4     = 14;
+    const PUSH_TARGET_ALL_TRAIL      = 15;
+    const PUSH_TARGET_ALL_AIPL       = 16;
     const PUSH_TARGET_DICT = [
         self::PUSH_TARGET_ALL         => '全部用户',
         self::PUSH_TARGET_CLASS_DAY_0 => '当日开班用户',
@@ -46,7 +54,15 @@ class MessagePushRulesModel extends Model
         self::PUSH_TARGET_TRIAL       => '体验C级用户',
         self::PUSH_TARGET_REGISTER    => '注册C级用户',
         self::PUSH_TARGET_ONLY_TRAIL  => '付费体验课用户',
-        self::PUSH_TARGET_ONLY_YEAR   => '付费正式课用户'
+        self::PUSH_TARGET_ONLY_YEAR   => '付费正式课用户',
+        self::PUSH_TARGET_TRAIL_BEFORE_2 => '体验营开班前2天',
+        self::PUSH_TARGET_TRAIL_BEFORE_1 => '体验营开班前1天',
+        self::PUSH_TARGET_TRAIL_NO_1     => '当期五日打卡活动的体验营，DAY1，未练琴用户',
+        self::PUSH_TARGET_TRAIL_NO_2     => '当期五日打卡活动的体验营，DAY2，未练琴用户',
+        self::PUSH_TARGET_TRAIL_NO_3     => '当期五日打卡活动的体验营，DAY3，未练琴用户',
+        self::PUSH_TARGET_TRAIL_NO_4     => '当期五日打卡活动的体验营，DAY4，未练琴用户',
+        self::PUSH_TARGET_ALL_TRAIL      => '所有体验营用户',
+        self::PUSH_TARGET_ALL_AIPL       => '所有智能注册用户',
     ];
 
     /**

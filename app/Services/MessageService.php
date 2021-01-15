@@ -493,7 +493,11 @@ class MessageService
         $appId = DssUserWeiXinModel::dealAppId($appId);
         $sendArr = [];
         foreach ($data as $open_id => $value) {
-            $tmp = array_merge($value, self::preSendVerify($open_id, $ruleId, $appId));
+            $check = self::preSendVerify($open_id, $ruleId, $appId);
+            if (empty($check)) {
+                continue;
+            }
+            $tmp = array_merge($value, $check);
             $sendArr[] = $tmp;
         }
         if (empty($sendArr)) {
@@ -543,7 +547,7 @@ class MessageService
         $allRule = MessagePushRulesModel::getRecords(['id[>]' => 0], ['id', 'time']);
         array_map(function ($item) use ($redis, $openId, $allRule) {
             array_map(function ($i) use ($redis, $openId, $item) {
-                $timeConfig = json_decode($item['time'], true);
+                $timeConfig = json_decode($i['time'], true);
                 $redis->del(
                     [
                         self::getMessageKey($openId, $item['expire_time'], $i['id']),

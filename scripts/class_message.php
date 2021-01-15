@@ -60,12 +60,12 @@ $teachStartTimeArr = [
     ],
     [
         // 结班后1天
-        'start_time' => $today - (Util::TIMESTAMP_ONEDAY * 6),
+        'start_time' => $today - (Util::TIMESTAMP_ONEDAY * 5),
         'type' => PushMessageTopic::EVENT_AFTER_CLASS_ONE
     ],
     [
         // 开班后7天
-        'start_time' => $today - (Util::TIMESTAMP_ONEDAY * 7),
+        'start_time' => $today - (Util::TIMESTAMP_ONEDAY * 6),
         'type' => PushMessageTopic::EVENT_START_CLASS_SEVEN
     ],
 ];
@@ -75,11 +75,15 @@ foreach ($teachStartTimeArr as $item) {
     $where['teaching_start_time[>=]'] = $item['start_time'];
     $where['teaching_start_time[<]'] = $item['start_time'] + Util::TIMESTAMP_ONEDAY;
     $where['teaching_type'] = DssCollectionModel::TEACHING_TYPE_TRIAL;
+    $where['trial_type'] = DssCollectionModel::TRAIL_TYPE_FIVE_DAYS;
 
     $allCollections = DssCollectionModel::getRecords($where, ['id', 'teaching_start_time', 'teaching_end_time']);
     $collectionInfo = array_column($allCollections, null, 'id');
     foreach ($collectionInfo as $collectionId => $collection) {
         $allStudents = DssStudentModel::getByCollectionId($collectionId, true);
+        array_walk($allStudents, function (&$item) {
+            $item['teaching_start_date'] = date('n月j日', $item['teaching_start_time']);
+        });
         $data = array_column($allStudents, null, 'open_id');
         if (!empty($data)) {
             QueueService::classMessage($data, $item['type']);
