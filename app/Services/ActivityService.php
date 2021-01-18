@@ -181,7 +181,6 @@ class ActivityService
         $collectionData = DssCollectionModel::getById($collectionId);
         //9.9班级 关联5日打卡任务活动
         if (empty($collectionData) ||
-            ($collectionData['trial_type'] != DssPackageExtModel::TRIAL_TYPE_9) ||
             ($collectionData['event_id'] != DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'collection_event_id'))) {
             return $activityData;
         }
@@ -212,7 +211,7 @@ class ActivityService
     public static function signInNodeData($studentId, $activityData, $time)
     {
         //节点时间
-        $nodes = range($activityData['teaching_start_time'] + Util::TIMESTAMP_ONEDAY, $activityData['teaching_end_time'] + Util::TIMESTAMP_ONEDAY, Util::TIMESTAMP_ONEDAY);
+        $nodes = range($activityData['teaching_start_time'] + Util::TIMESTAMP_ONEDAY, $activityData['teaching_start_time'] + 5 * Util::TIMESTAMP_ONEDAY, Util::TIMESTAMP_ONEDAY);
         $nodeOrder = 1;
         array_map(function ($nodeTime) use (&$nodeData, &$nodeOrder) {
             $nodeId = date("Ymd", $nodeTime);
