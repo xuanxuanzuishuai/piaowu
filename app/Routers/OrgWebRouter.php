@@ -112,6 +112,7 @@ class OrgWebRouter extends RouterBase
         // APP推送：
         '/op_web/app/push' => ['method' => ['post'], 'call' => AppPush::class . ':push'],
         '/op_web/app/push_list' => ['method' => ['get'], 'call' => AppPush::class . ':pushList'],
+        '/op_web/app/download_push_user_template' => ['method' => ['get'], 'call' => AppPush::class . ':downloadPushUserTemplate'],
 
     ];
 }

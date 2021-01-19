@@ -9,10 +9,13 @@
 namespace App\Controllers\OrgWeb;
 
 use App\Controllers\ControllerBase;
+use App\Libs\AliOSS;
+use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\Util;
 use App\Libs\Valid;
+use App\Services\DictService;
 use App\Services\PushServices;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -79,6 +82,22 @@ class AppPush extends ControllerBase
         return HttpHelper::buildResponse($response, [
             'rules'       => $list,
             'total_count' => $totalCount
+        ]);
+    }
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * 下载推送指定用户信息模板
+     */
+    public function downloadPushUserTemplate(Request $request, Response $response)
+    {
+        $url = DictService::getKeyValue(DictConstants::ORG_WEB_CONFIG, 'push_user_template');
+        $ossUrl = AliOSS::replaceCdnDomainForDss($url);
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => ['url' => $ossUrl]
         ]);
     }
 }

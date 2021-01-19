@@ -118,7 +118,8 @@ class DictConstants {
             'assistant_role',
             'course_manage_role',
             'maker_role',
-            'config_role'
+            'config_role',
+            'push_user_template',
         ]
     ];
 
