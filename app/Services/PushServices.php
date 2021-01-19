@@ -218,7 +218,7 @@ class PushServices
         $pushType = DictConstants::getSet(DictConstants::PUSH_TYPE);
         foreach ($result as $key => $value){
             $result[$key]['jump_type'] = $pushType[$value['jump_type']];
-            $result[$key]['create_time'] = date('Y-m-d H:i:s');
+            $result[$key]['create_time'] = date('Y-m-d H:i:s',$value['create_time']);
         }
 
         return [$result, $count];
