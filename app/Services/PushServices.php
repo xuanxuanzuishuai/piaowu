@@ -9,6 +9,7 @@
 
 namespace App\Services;
 
+use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\TPNS;
 use App\Models\Dss\DssPushDeviceModel;
@@ -214,10 +215,13 @@ class PushServices
             'id', 'jump_type', 'remark', 'push_id_android', 'push_id_ios', 'create_time'
         ]);
 
+        $pushType = DictService::getList(DictConstants::PUSH_TYPE);
+        $pushTypeByCode = array_column($pushType,null,'key_code');
         foreach ($result as $key => $value){
+            $result[$key]['jump_type'] = $pushTypeByCode[$value['jump_type']]['key_value'];
             $result[$key]['create_time'] = date('Y-m-d H:i:s');
         }
-        return [$result, $count];
 
+        return [$result, $count];
     }
 }

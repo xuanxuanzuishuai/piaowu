@@ -18,4 +18,13 @@ VALUES
 	( 'SERVICE_CONFIG', '外部服务设置', 'secret_key_android', '7f6c559aff7e7cf6d1a4ba7ff2d1c4c8', 'secret_key_android'),
 	( 'SERVICE_CONFIG', '外部服务设置', 'access_id_ios', '1600015187', 'access_id_ios'),
 	( 'SERVICE_CONFIG', '外部服务设置', 'secret_key_ios', '03092fc009ca84d7a2b78ee88b9787d2', 'secret_key_ios'),
-	( 'ORG_WEB_CONFIG', '后台配置', 'push_user_template', 'prod/excel/push_user_template.xlsx', 'push模板下载');
+	( 'ORG_WEB_CONFIG', '后台配置', 'push_user_template', 'prod/excel/push_user_template.xlsx', 'push模板下载'),
+	( 'push_type', '智能陪练推送类型', '1', '首页', NULL ),
+	( 'push_type', '智能陪练推送类型', '2', 'webview链接', NULL ),
+	( 'push_type', '智能陪练推送类型', '3', '浏览器链接', NULL ),
+	( 'push_type', '智能陪练推送类型', '4', '小程序', NULL ),
+	( 'push_type', '智能陪练推送类型', '5', '音符商城-商品详情页', NULL ),
+	( 'push_type', '智能陪练推送类型', '6', '练琴日历', NULL ),
+	( 'push_type', '智能陪练推送类型', '7', '套课详情页', NULL ),
+	( 'push_user_type', '智能陪练推送用户类型', '1', '全量用户推动', NULL ),
+	( 'push_user_type', '智能陪练推送用户类型', '2', '指定用户推送', NULL );

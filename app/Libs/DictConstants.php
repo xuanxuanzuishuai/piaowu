@@ -339,6 +339,29 @@ class DictConstants {
         ]
     ];
 
+    //推送用户类型
+    const PUSH_USER_TYPE = [
+        'type' => 'push_user_type',
+        'keys' => [
+            '1',    //全量用户推动
+            '2',    //指定用户推送
+        ]
+    ];
+
+    //推送类型
+    const PUSH_TYPE = [
+        'type' => 'push_type',
+        'keys' => [
+            '1',    //首页
+            '2',    //webview链接
+            '3',    //浏览器链接
+            '4',    //小程序
+            '5',    //音符商城-商品详情页
+            '6',    //练琴日历
+            '7',    //套课详情页
+        ]
+    ];
+
     public static function get($type, $key)
     {
         if (empty($type) || empty($key)) {
