@@ -590,7 +590,6 @@ class MessageService
                 SimpleLogger::info('message over num per rule limit ', ['open_id' => $openId, 'rule' => $ruleInfo]);
                 return true;
             }
-            return false;
         }
         //单个规则是否超过
         foreach (self::PER_RULE_MESSAGE_RULE as $value) {
