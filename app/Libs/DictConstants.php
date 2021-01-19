@@ -92,7 +92,12 @@ class DictConstants {
             'voice_url',
             'voice_templateId',
             'ai_class_http_host',
-            'dss_host'
+            'dss_host',
+            'tpns_host',
+            'access_id_android',
+            'secret_key_android',
+            'access_id_ios',
+            'secret_key_ios',
         ]
     ];
 

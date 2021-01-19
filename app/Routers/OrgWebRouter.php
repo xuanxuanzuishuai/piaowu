@@ -12,6 +12,7 @@ use App\Controllers\API\OSS;
 use App\Controllers\API\UICtl;
 use App\Controllers\Employee\Auth;
 use App\Controllers\Employee\Employee;
+use App\Controllers\OrgWeb\AppPush;
 use App\Controllers\OrgWeb\Dept;
 use App\Controllers\OrgWeb\Message;
 use App\Controllers\OrgWeb\Employee as OrgWebEmployee;
@@ -107,7 +108,10 @@ class OrgWebRouter extends RouterBase
         // 手动推送：
         '/op_web/message/manual_last_push' => ['method' => ['get'], 'call' => Message::class . ':manualLastPush'],
         '/op_web/message/manual_push'      => ['method' => ['post'], 'call' => Message::class . ':manualPush'],
-        
+
+        // APP推送：
+        '/op_web/app/push' => ['method' => ['post'], 'call' => AppPush::class . ':push'],
+        '/op_web/app/push_list' => ['method' => ['get'], 'call' => AppPush::class . ':pushList'],
 
     ];
 }

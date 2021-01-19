@@ -234,5 +234,33 @@ class QueueService
     {
         MessageService::monthlyEvent($openId, DictConstants::get(DictConstants::MESSAGE_RULE, 'monthly_event_rule_id'));
     }
+
+    /**
+     * 智能陪练push
+     * @param $syncData
+     * @return bool
+     */
+    public static function aiplPush($syncData)
+    {
+        try {
+            $topic = new PushMessageTopic();
+
+            $count = $syncData['count'];
+            if ($count > 500) { // 超过500条，半小时内发送完
+                $deferMax = 1800;
+            } elseif ($count > 100) { // 超过100条，10分钟内发送完
+                $deferMax = 600;
+            } elseif ($count > 30) { // 2分钟内发送完
+                $deferMax = 120;
+            } else {
+                $deferMax = 0;
+            }
+            $topic->aiplPush($syncData)->publish(rand(0, $deferMax));
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), $syncData);
+            return false;
+        }
+        return true;
+    }
     
 }

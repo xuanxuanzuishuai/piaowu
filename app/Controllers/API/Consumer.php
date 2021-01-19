@@ -12,6 +12,7 @@ use App\Controllers\ControllerBase;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
+use App\Libs\TPNS;
 use App\Libs\Valid;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\EmployeeModel;
@@ -230,6 +231,9 @@ class Consumer extends ControllerBase
 
                 case PushMessageTopic::EVENT_UNSUBSCRIBE:
                     MessageService::clearMessageRuleLimit($params['msg_body']['open_id']);
+                    break;
+                case PushMessageTopic::EVENT_AIPL_PUSH:
+                    TPNS::push($params['msg_body']);
                     break;
             }
         } catch (RunTimeException $e) {
