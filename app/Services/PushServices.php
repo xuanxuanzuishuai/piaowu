@@ -205,7 +205,7 @@ class PushServices
         }
 
         $startLimit = ($params['page'] - 1) * $params['limit'];
-        $endLimit = $params['page'] * $params['limit'];
+        $endLimit = $params['limit'];
         $where = [
             'LIMIT' => [$startLimit, $endLimit],
             'ORDER' => ['id' => 'DESC']
