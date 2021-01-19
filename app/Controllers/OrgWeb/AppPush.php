@@ -42,11 +42,6 @@ class AppPush extends ControllerBase
                 'error_code' => 'push_content_is_required'
             ],
             [
-                'key' => 'push_remark',
-                'type' => 'required',
-                'error_code' => 'push_remark_is_required'
-            ],
-            [
                 'key' => 'jump_type',
                 'type' => 'required',
                 'error_code' => 'jump_type_is_required'
