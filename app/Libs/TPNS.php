@@ -298,7 +298,7 @@ class TPNS
      */
     public static function webViewPush($params)
     {
-        $url = 'aipeilian:///h5?path=' . urlencode($params['link_url']) . '&needToken=' . $params['need_token'];
+        $url = 'aipeilian:///h5?path=' . urlencode($params['link_url']);
         list($androidList, $iosList) = self::formatParams($params, $url);
 
         $insertData = [
