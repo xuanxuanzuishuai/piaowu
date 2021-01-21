@@ -84,6 +84,10 @@ class PushServices
      */
     public static function checkParams($params)
     {
+        if ($params['push_user_type'] == PushServices::PUSH_USER_ALL && $_ENV['ENV_NAME'] != 'prod') {
+            throw new RunTimeException(['push_all_user_forbidden_test']);
+        }
+
         switch ($params['jump_type']) {
             case self::PUSH_JUMP_TYPE_WEB_VIEW:
             case self::PUSH_JUMP_TYPE_MUSICAL_NOTE_MALL:
@@ -95,7 +99,7 @@ class PushServices
                 }
                 break;
             case self::PUSH_JUMP_TYPE_LITE_APP:
-                if (empty($params['app_id']) || empty($params['env'])) {
+                if (empty($params['app_id'])) {
                     throw new RunTimeException(['params_can_not_be_empty']);
                 }
                 break;

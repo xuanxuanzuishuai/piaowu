@@ -336,9 +336,9 @@ class TPNS
     public static function liteAppPush($params)
     {
         if (empty($params['link_url'])) {
-            $url = 'aipeilian:///miniprogram?appId=' . $params['app_id'] . '&env=' . $params['env'];
+            $url = 'aipeilian:///miniprogram?appId=' . $params['app_id'] . '&env=release';
         } else {
-            $url = 'aipeilian:///miniprogram?appId=' . $params['app_id'] . '&path=' . urlencode($params['link_url']) . '&env=' . $params['env'];
+            $url = 'aipeilian:///miniprogram?appId=' . $params['app_id'] . '&path=' . urlencode($params['link_url']) . '&env=release';
         }
 
         list($androidList, $iosList) = self::formatParams($params, $url);
