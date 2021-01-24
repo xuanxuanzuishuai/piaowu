@@ -35,6 +35,7 @@ class UserCenter
     const AUTH_APP_ID_AIPEILIAN_STUDENT = 8; //AI陪练学生
     const AUTH_APP_ID_AIPEILIAN_TEACHER = 13; //AI陪练老师
     const AUTH_APP_ID_OP = 19; //OP员工
+    const AUTH_APP_ID_OP_AGENT = 21; //OP系统代理商
     const APP_ID_PRACTICE = 1; //真人陪练
     //TheONE国际钢琴课公众号，与"AI陪练老师"共用一个APP_ID，以下APP_ID仅为了区分不同的app_id和secret，不能用作其他用途
     const AUTH_APP_ID_AIPEILIAN_CLASSROOM_TEACHER = 0;
@@ -175,5 +176,41 @@ class UserCenter
             }
         }
         return ['code' => self::RSP_CODE_SUCCESS, 'data' => []];
+    }
+
+    /**
+     * 创建代理机构并授权登录App
+     * @param int $authAppID 授权的App
+     * @param $mobile
+     * @param $name
+     * @param string $uuid
+     * @param bool $auth 是否同时授权登录App
+     * @return array
+     */
+    function agentAuthorization($authAppID, $mobile, $name, $uuid="", $auth = true ){
+        $userInfo = [];
+        if (!empty($mobile)){
+            $userInfo['mobile'] = $mobile;
+        }
+        if (!empty($name)){
+            $userInfo['name'] = $name;
+        }
+        if (!empty($uuid)){
+            $userInfo['uuid'] = $uuid;
+        }
+        $result = $this->commonAPI(self::API_AUTHORIZATION, [
+            'headers' => [
+                'Content-Type' => 'application/json'
+            ],
+            'json' => [
+                'auth' => $auth,
+                'auth_app_id' => (int)$authAppID,
+                'user_info' => $userInfo
+            ]
+        ]);
+        if (!$result){
+            return Valid::addErrors([], 'uc_conflict_user', 'uc_conflict_user');
+        }
+        return $result['data'];
     }
 }

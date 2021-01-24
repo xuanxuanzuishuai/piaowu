@@ -12,7 +12,9 @@ use App\Controllers\API\OSS;
 use App\Controllers\API\UICtl;
 use App\Controllers\Employee\Auth;
 use App\Controllers\Employee\Employee;
+use App\Controllers\OrgWeb\Agent;
 use App\Controllers\OrgWeb\AppPush;
+use App\Controllers\OrgWeb\Area;
 use App\Controllers\OrgWeb\Dept;
 use App\Controllers\OrgWeb\Message;
 use App\Controllers\OrgWeb\Employee as OrgWebEmployee;
@@ -113,6 +115,17 @@ class OrgWebRouter extends RouterBase
         '/op_web/app/push' => ['method' => ['post'], 'call' => AppPush::class . ':push'],
         '/op_web/app/push_list' => ['method' => ['get'], 'call' => AppPush::class . ':pushList'],
         '/op_web/app/download_push_user_template' => ['method' => ['get'], 'call' => AppPush::class . ':downloadPushUserTemplate'],
-
+        // 代理管理后台
+        '/op_web/agent/add' => ['method' => ['post'], 'call' => Agent::class . ':add'],
+        '/op_web/agent/update' => ['method' => ['post'], 'call' => Agent::class . ':update'],
+        '/op_web/agent/detail' => ['method' => ['get'], 'call' => Agent::class . ':detail'],
+        '/op_web/agent/list' => ['method' => ['get'], 'call' => Agent::class . ':list'],
+        '/op_web/agent/statics' => ['method' => ['get'], 'call' => Agent::class . ':agentStaticsData'],
+        '/op_web/agent/freeze' => ['method' => ['post'], 'call' => Agent::class . ':freezeAgent'],
+        // 地址搜索国家/省/市/县（区）
+        '/op_web/area/country' => ['method' => ['get'], 'call' => Area::class . ':countryList'],
+        '/op_web/area/province' => ['method' => ['get'], 'call' => Area::class . ':provinceList'],
+        '/op_web/area/city' => ['method' => ['get'], 'call' => Area::class . ':cityList'],
+        '/op_web/area/district' => ['method' => ['get'], 'call' => Area::class . ':districtList'],
     ];
 }

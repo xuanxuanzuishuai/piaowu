@@ -350,6 +350,22 @@ class DictConstants {
             '7',    //套课详情页
         ]
     ];
+    //代理
+    const AGENT = [
+        'type' => 'agent',
+        'keys' => ['1', '2']
+    ];
+    //代理模式类型
+    const AGENT_TYPE = [
+        'type' => 'agent_type',
+        'keys' => ['1', '2', '3']
+    ];
+
+    const PACKAGE_APP_NAME = [
+        'type' => 'PACKAGE_APP_NAME',
+        'keys' => ['1', '8']
+
+    ];
 
     public static function get($type, $key)
     {
