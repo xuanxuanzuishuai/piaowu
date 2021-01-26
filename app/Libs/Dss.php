@@ -16,7 +16,7 @@ class Dss
     const ADD_STUDENT = '/op/user/register_bound'; //添加学生
     const ADD_USER_TICKET = '/op/user/save_ticket'; // 保存ticket
     const GET_TOKEN = '/op/user/get_token'; //获取token
-    const GET_TOKEN_UUID_INFO = '/student_app/app/get_uuid';//获取token对应的uuid信息
+    const GET_TOKEN_UUID_INFO = '/api/operation/get_uuid';//获取token对应的uuid信息
 
     private $host;
 
