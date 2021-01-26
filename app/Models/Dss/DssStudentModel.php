@@ -16,6 +16,9 @@ class DssStudentModel extends DssModel
     const REVIEW_COURSE_49 = 1; // 体验课课包
     const REVIEW_COURSE_1980 = 2; // 正式课课包
 
+    const STATUS_UNBIND = 3;//未绑定微信
+    const STATUS_BIND = 4;//已绑定微信
+
     /**
      * 推荐学员列表
      * @param $params
