@@ -10,12 +10,11 @@ namespace App\Routers;
 use App\Controllers\StudentApp\App;
 use App\Controllers\StudentApp\Auth;
 use App\Controllers\StudentApp\Poster;
-use App\Controllers\StudentWX\Student;
 use App\Middleware\AppAuthMiddleWare;
 
 class StudentAppRouter extends RouterBase
 {
-    protected $logFilename = 'operation_student.log';
+    protected $logFilename = 'operation_app.log';
 
     protected $uriConfig = [
         '/student_app/app/country_code' => [
