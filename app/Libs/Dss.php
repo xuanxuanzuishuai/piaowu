@@ -15,6 +15,8 @@ class Dss
     const REFRESH_ACCESS_TOKEN = '/api/wechat/refresh_token'; //刷新
     const ADD_STUDENT = '/op/user/register_bound'; //添加学生
     const ADD_USER_TICKET = '/op/user/save_ticket'; // 保存ticket
+    const GET_TOKEN = '/op/user/get_token'; //获取token
+    const GET_TOKEN_UUID_INFO = '/student_app/app/get_uuid';//获取token对应的uuid信息
 
     private $host;
 
@@ -73,5 +75,33 @@ class Dss
         if ($res['code'] != Valid::CODE_SUCCESS) {
             SimpleLogger::error('Save ticket error', [$res, $data]);
         }
+    }
+
+    /**
+     * 获取可用token
+     * @param $data
+     * @return mixed|null
+     */
+    public function getToken($data)
+    {
+        $res = self::commonAPI(self::GET_TOKEN, $data, 'POST');
+        if ($res['code'] != Valid::CODE_SUCCESS) {
+            SimpleLogger::error('Save ticket error', [$res, $data]);
+        }
+        return !empty($res['data']) ? $res['data'] : NULL;
+    }
+
+    /**
+     * token对应的信息
+     * @param $data
+     * @return mixed|null
+     */
+    public function getTokenRelateUuid($data)
+    {
+        $res = self::commonAPI(self::GET_TOKEN_UUID_INFO, $data);
+        if ($res['code'] != Valid::CODE_SUCCESS) {
+            SimpleLogger::error('Save ticket error', [$res, $data]);
+        }
+        return !empty($res['data']) ? $res['data'] : NULL;
     }
 }

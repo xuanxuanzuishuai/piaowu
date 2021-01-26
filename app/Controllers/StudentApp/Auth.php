@@ -11,6 +11,8 @@ namespace App\Controllers\StudentApp;
 
 use App\Controllers\ControllerBase;
 use App\Libs\Constants;
+use App\Libs\Dss;
+use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\Valid;
 use App\Models\Dss\DssStudentModel;
@@ -34,11 +36,6 @@ class Auth extends ControllerBase
                 'key' => 'token',
                 'type' => 'required',
                 'error_code' => 'token_is_required'
-            ],
-            [
-                'key' => 'auth',
-                'type' => 'required',
-                'error_code' => 'auth_is_required'
             ]
         ];
 
@@ -47,13 +44,17 @@ class Auth extends ControllerBase
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        $appId = empty($params['app_id']) ? Constants::SMART_APP_ID : $params['app_id'];
-        $userId = 153;
-        $token = AppTokenService::generateToken($userId, $appId);
+        try{
+            $appId = empty($params['app_id']) ? Constants::SMART_APP_ID : $params['app_id'];
+            $userId = (new Dss())->getTokenRelateUuid(['token' => $params['token']]);
+            if (empty($userId)) {
+                throw new RunTimeException(['invalid token']);
+            }
+            $token = AppTokenService::generateToken($userId, $appId);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+    }
         return HttpHelper::buildResponse($response, ['token' => $token]);
-        return $response->withJson([
-            'token' => $token
-        ], StatusCode::HTTP_OK);
     }
 
     /**
