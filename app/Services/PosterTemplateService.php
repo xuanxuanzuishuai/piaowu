@@ -36,10 +36,6 @@ class PosterTemplateService
             ],
         ];
         $data['student_status'] = $studentDetail['student_status'];
-        if ($data['student_status'] == DssStudentModel::STATUS_UNBIND) {
-            //未绑定
-            return $data;
-        }
         //用户系统昵称/头像
         $data['student_info']['nickname'] = $studentDetail['student_info']['name'];
         $data['student_info']['headimgurl'] = StudentService::getStudentThumb($studentDetail['student_info']['thumb']);
