@@ -16,7 +16,11 @@ class DictConstants {
     const STUDENT_INVITE_CHANNEL = [
         'type' => 'STUDENT_INVITE',
         'keys' => [
-            'NORMAL_STUDENT_INVITE_STUDENT'
+            'NORMAL_STUDENT_INVITE_STUDENT',
+            'BUY_NORMAL_STUDENT_INVITE_STUDENT',
+            'BUY_TRAIL_STUDENT_INVITE_STUDENT',
+            'REFERRAL_MINIAPP_STUDENT_INVITE_STUDENT',
+            'POSTER_LANDING_49_STUDENT_INVITE_STUDENT'
         ]
     ];
 
