@@ -51,7 +51,7 @@ class AppTokenService
      */
     public static function getUserTokenKey($userId, $appId)
     {
-        return self::cacheUserTokenKeyPri . $userId . $appId;
+        return self::cacheUserTokenKeyPri . $appId . '_' . $userId;
     }
 
     /**
