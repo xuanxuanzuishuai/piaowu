@@ -122,6 +122,7 @@ class OrgWebRouter extends RouterBase
         '/op_web/agent/list' => ['method' => ['get'], 'call' => Agent::class . ':list'],
         '/op_web/agent/statics' => ['method' => ['get'], 'call' => Agent::class . ':agentStaticsData'],
         '/op_web/agent/freeze' => ['method' => ['post'], 'call' => Agent::class . ':freezeAgent'],
+        '/op_web/agent/unfreeze' => ['method' => ['post'], 'call' => Agent::class . ':unfreezeAgent'],
         // 地址搜索国家/省/市/县（区）
         '/op_web/area/country' => ['method' => ['get'], 'call' => Area::class . ':countryList'],
         '/op_web/area/province' => ['method' => ['get'], 'call' => Area::class . ':provinceList'],

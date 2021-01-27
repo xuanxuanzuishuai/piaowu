@@ -9,14 +9,10 @@
 namespace App\Controllers\OrgWeb;
 
 use App\Controllers\ControllerBase;
-use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
-use App\Libs\Valid;
-use App\Services\AgentService;
 use App\Services\AreaService;
 use Slim\Http\Request;
 use Slim\Http\Response;
-use Slim\Http\StatusCode;
 
 class Area extends ControllerBase
 {
@@ -27,12 +23,12 @@ class Area extends ControllerBase
      * @param Response $response
      * @return Response
      */
-    public function countryList(Request $request, Response $response)
+    public function countryList(/** @noinspection PhpUnusedParameterInspection */Request $request, Response $response)
     {
-        $params = $request->getParams();
-        $list = AreaService::countryList($params);
+        $list = AreaService::countryList();
         return HttpHelper::buildResponse($response, $list);
     }
+
     /**
      * 获取省列表
      * @param Request $request

@@ -108,7 +108,7 @@ class AgentModel extends Model
                 "[><]" . AgentInfoModel::$table => ['id' => 'agent_id'],
                 "[><]" . AgentDivideRulesModel::$table => ['id' => 'agent_id'],
                 "[><]" . EmployeeModel::$table => ['employee_id' => 'id'],
-                "[>]" . EmployeeModel::$table.'(EA)' => ['service_employee_id' => 'id'],
+                "[>]" . EmployeeModel::$table . '(EA)' => ['service_employee_id' => 'id'],
 
             ],
             [
@@ -151,7 +151,6 @@ class AgentModel extends Model
         $db = MysqlDB::getDB();
         $data['count'] = $db->count(self::$table, [
             "[><]" . AgentInfoModel::$table => ['id' => 'agent_id'],
-            "[><]" . EmployeeModel::$table => ['employee_id' => 'id'],
         ], [self::$table . '.id'], $where);
         if (empty($data['count'])) {
             return $data;
@@ -180,7 +179,7 @@ class AgentModel extends Model
                     " . self::$table . "
                     INNER JOIN " . AgentInfoModel::$table . " ON `agent`.`id` = `agent_info`.`agent_id`
                     INNER JOIN " . EmployeeModel::$table . " ON `agent`.`employee_id` = `employee`.`id`
-                    LEFT JOIN " . EmployeeModel::$table . " EA ON `agent`.`service_employee_id` = `employee`.`id`
+                    LEFT JOIN " . EmployeeModel::$table . " EA ON `agent`.`service_employee_id` = `EA`.`id`
                     LEFT JOIN " . StudentInviteModel::$table . " AS s ON `agent`.`id` = s.`referee_id` 
                 WHERE
                     " . implode('AND', $whereSql) . "
@@ -197,6 +196,18 @@ class AgentModel extends Model
      */
     public static function agentSecondaryData($parentIds)
     {
-        return self::getRecords(['parent_id' => $parentIds], ['id', 'mobile', 'status', 'parent_id', 'create_time', 'employee_id', 'type']);
+        $db = MysqlDB::getDB();
+        $secondaryData = $db->select(
+            self::$table,
+            ['[><]' . AgentInfoModel::$table => ['id' => 'agent_id']],
+            [
+                self::$table.'.id', self::$table.'.mobile', self::$table.'.status',
+                self::$table.'.parent_id', self::$table.'.create_time', self::$table.'.employee_id',
+                self::$table.'.type',AgentInfoModel::$table.'.name'
+            ],
+            [
+                self::$table.'.parent_id' => $parentIds
+            ]);
+        return $secondaryData;
     }
 }

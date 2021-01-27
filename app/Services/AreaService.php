@@ -17,19 +17,11 @@ class AreaService
 {
     /**
      * 获取国家列表
-     * @param $params
      * @return array
      */
-    public static function countryList($params)
+    public static function countryList()
     {
-        $where = ['id[>]' => 0];
-        if (!empty($params['country_code'])) {
-            $where['country_code'] = $params['country_code'];
-        }
-        if (!empty($params['country_name'])) {
-            $where['name[~]'] = $params['country_name'];
-        }
-        return CountryCodeModel::getRecords($where, ['country_code', 'name']);
+        return CountryCodeModel::getAll();
     }
 
     /**
@@ -63,6 +55,9 @@ class AreaService
         if (!empty($params['city_name'])) {
             $where['city_name[~]'] = $params['city_name'];
         }
+        if (!empty($params['province_id'])) {
+            $where['province_id'] = $params['province_id'];
+        }
         return AreaCityModel::getRecords($where, ['id', 'city_name']);
     }
 
@@ -79,6 +74,12 @@ class AreaService
         }
         if (!empty($params['district_name'])) {
             $where['district_name[~]'] = $params['district_name'];
+        }
+        if (!empty($params['city_id'])) {
+            $where['city_id'] = $params['city_id'];
+        }
+        if (!empty($params['province_id'])) {
+            $where['province_id'] = $params['province_id'];
         }
         return AreaDistrictModel::getRecords($where, ['id', 'district_name']);
     }

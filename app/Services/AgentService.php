@@ -18,6 +18,7 @@ use App\Models\AgentInfoModel;
 use App\Models\AgentModel;
 use App\Models\AreaCityModel;
 use App\Models\AreaProvinceModel;
+use App\Models\EmployeeModel;
 use App\Models\StudentInviteModel;
 
 
@@ -187,7 +188,7 @@ class AgentService
      */
     private static function agentSecondaryData($agentIds)
     {
-        $data = [];
+        $data = array_fill_keys($agentIds, []);
         $secondaryList = AgentModel::agentSecondaryData($agentIds);
         if (empty($secondaryList)) {
             return $data;
@@ -196,9 +197,13 @@ class AgentService
         $agentReferralStudent = array_column(StudentInviteModel::getReferralStudentCount(
             implode(',', array_column($secondaryList, 'id')),
             StudentInviteModel::REFEREE_TYPE_AGENT), null, 'referee_id');
+        //二级代理订单推广数据
+        //todo
+        $agentReferralBill = [];
         //二级数据按照父类id分组
-        array_map(function ($item) use (&$data, $agentReferralStudent) {
+        array_map(function ($item) use (&$data, $agentReferralStudent, $agentReferralBill) {
             $item['referral_student_count'] = empty($agentReferralStudent[$item['id']]['s_count']) ? 0 : (int)$agentReferralStudent[$item['id']]['s_count'];
+            $item['referral_bill_count'] = empty($agentReferralBill[$item['id']]) ? 0 : $agentReferralBill[$item['id']]['b_count'];
             $data[$item['parent_id']][] = $item;
         }, $secondaryList);
         return $data;
@@ -249,7 +254,7 @@ class AgentService
     public static function listAgent($params)
     {
         $where = [AgentModel::$table . '.parent_id' => 0];
-
+        $data = ['list' => [], 'count' => 0];
         if (!empty($params['agent_id'])) {
             $where[AgentModel::$table . '.id'] = $params['agent_id'];
         }
@@ -268,11 +273,19 @@ class AgentService
         if (!empty($params['create_end_time'])) {
             $where[AgentModel::$table . '.create_time[<=]'] = $params['create_end_time'];
         }
-        if (!empty($params['employee_id'])) {
-            $where[AgentModel::$table . '.employee_id'] = $params['employee_id'];
+        if (!empty($params['employee_name'])) {
+            $employeeId = EmployeeModel::getRecord(['name' => $params['employee_name']], ['id']);
+            if (empty($employeeId)) {
+                return $data;
+            }
+            $where[AgentModel::$table . '.employee_id'] = $employeeId['id'];
         }
-        if (!empty($params['service_employee_id'])) {
-            $where[AgentModel::$table . '.service_employee_id'] = $params['service_employee_id'];
+        if (!empty($params['service_employee_name'])) {
+            $serviceEmployeeId = EmployeeModel::getRecord(['name' => $params['service_employee_name']], ['id']);
+            if (empty($serviceEmployeeId)) {
+                return $data;
+            }
+            $where[AgentModel::$table . '.service_employee_id'] = $serviceEmployeeId['id'];
         }
         if (!empty($params['name'])) {
             $where[AgentInfoModel::$table . '.name'] = $params['name'];
@@ -343,6 +356,28 @@ class AgentService
             throw new RunTimeException(['agent_not_exist']);
         }
         $res = AgentModel::updateRecord($agentId, ['status' => AgentModel::STATUS_FREEZE, 'update_time' => time()]);
+        if (empty($res)) {
+            throw new RunTimeException(['update_failure']);
+        }
+        return true;
+    }
+
+    /**
+     * 解除冻结
+     * @param $agentId
+     * @return bool
+     * @throws RunTimeException
+     */
+    public static function unFreezeAgent($agentId)
+    {
+        $agentData = AgentModel::getById($agentId);
+        if (empty($agentData)) {
+            throw new RunTimeException(['agent_not_exist']);
+        }
+        if ($agentData['status'] != AgentModel::STATUS_FREEZE) {
+            throw new RunTimeException(['agent_not_freeze_status']);
+        }
+        $res = AgentModel::updateRecord($agentId, ['status' => AgentModel::STATUS_OK, 'update_time' => time()]);
         if (empty($res)) {
             throw new RunTimeException(['update_failure']);
         }
