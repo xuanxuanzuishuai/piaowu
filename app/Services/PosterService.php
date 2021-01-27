@@ -105,15 +105,16 @@ class PosterService
      * 获取小程序码图片路径
      * @param $appId
      * @param array $params
-     * @return string
+     * @param int $busiType
+     * @return array|string
      * @throws \App\Libs\Exceptions\RunTimeException
      */
-    public static function getMiniappQrImage($appId, $params = [])
+    public static function getMiniappQrImage($appId, $params = [], $busiType = DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP)
     {
         $params['app_id'] = $params['app_id'] ?? $appId;
         $ticket    = $params['r'] ?? '';
-        $wechat    = WeChatMiniPro::factory($appId, DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP);
-        $imagePath = '';
+        $wechat    = WeChatMiniPro::factory($appId, $busiType);
+        $imagePath = [];
         if (empty($wechat)) {
             SimpleLogger::error('wechat create fail', ['getMiniappQrImage', $appId, $params]);
             return $imagePath;
@@ -135,7 +136,7 @@ class PosterService
         $imagePath = $_ENV['ENV_NAME'] . '/' . AliOSS::DIR_MINIAPP_CODE . '/' . md5($ticket.$paramId) . ".png";
         AliOSS::uploadFile($imagePath, $tmpFileFullPath);
         unlink($tmpFileFullPath);
-        return $imagePath;
+        return [$imagePath, $paramId];
     }
 
     /**

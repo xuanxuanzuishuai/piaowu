@@ -76,7 +76,7 @@ class DssUserQrTicketModel extends DssModel
 
         $ticket = RC4::encrypt($_ENV['COOKIE_SECURITY_KEY'], $type . "_" . $userID);
         if ($landingType == self::LANDING_TYPE_MINIAPP) {
-            $imagePath = PosterService::getMiniappQrImage(
+            [$imagePath, $paramsId] = PosterService::getMiniappQrImage(
                 Constants::SMART_APP_ID,
                 array_merge(
                     [

@@ -45,7 +45,6 @@ class UserWeiXinModel extends Model
         if (isset($wxInfo['thumb']) && !empty($wxInfo['thumb'])) {
             $update['thumb'] = $wxInfo['thumb'];
         }
-
         //没有需要更新的数据直接返回
         if (empty($update)) {
             return false;
