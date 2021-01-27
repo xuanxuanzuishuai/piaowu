@@ -29,9 +29,7 @@ class Dss
     {
         try {
             $fullUrl = $this->host . $api;
-            SimpleLogger::info(__FILE__ . ':' . __LINE__, ['api' => $fullUrl, 'data' => $data]);
             $response = HttpHelper::requestJson($fullUrl, $data, $method);
-            SimpleLogger::info(__FILE__ . ':' . __LINE__, ['response' => $response]);
 
             return $response;
         } catch (\Exception $e) {

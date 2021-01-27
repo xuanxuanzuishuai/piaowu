@@ -46,7 +46,7 @@ class Auth extends ControllerBase
         }
         try{
             $appId = empty($params['app_id']) ? Constants::SMART_APP_ID : $params['app_id'];
-            $userId = (new Dss())->getTokenRelateUuid(['token' => $params['token']]);
+            $userId = (new Dss())->getTokenRelateUuid(['token' => $params['token']])['id'];
             if (empty($userId)) {
                 throw new RunTimeException(['invalid token']);
             }
