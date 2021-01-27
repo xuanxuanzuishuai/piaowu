@@ -1,9 +1,9 @@
 <?php
 /**
  * Created by PhpStorm.
- * User: hemu
- * Date: 2018/6/26
- * Time: 上午11:34
+ * User: llp
+ * Date: 2021/1/28
+ * Time: 11:34
  */
 
 namespace App\Services;
@@ -407,7 +407,6 @@ class AgentService
         //返回数据
         return $authResult["uuid"];
     }
-
 
     /**
      * 绑定用户openid信息

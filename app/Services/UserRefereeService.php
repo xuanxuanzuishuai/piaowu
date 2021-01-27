@@ -6,9 +6,12 @@ use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
+use App\Models\AgentAwardDetailModel;
+use App\Models\AgentBillMapModel;
 use App\Models\Dss\DssPackageExtModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserQrTicketModel;
+use App\Models\ParamMapModel;
 use App\Models\StudentInviteModel;
 use App\Services\Queue\QueueService;
 
@@ -37,7 +40,12 @@ class UserRefereeService
         }
         //付费事件处理
         if ($eventType == self::EVENT_TYPE_BUY) {
-            self::buyDeal($params['pre_buy_student_info'] ?? NULL, $params['package_info'] ?? NULL, $appId);
+            self::buyDeal(
+                $params['pre_buy_student_info'] ?? [],
+                $params['package_info'] ?? [],
+                $appId,
+                $params['parent_bill_id'] ?? 0
+                );
         }
     }
 
@@ -68,6 +76,7 @@ class UserRefereeService
      * 注册奖励发放
      * @param $uuid
      * @param $appId
+     * @throws RunTimeException
      */
     public static function registerAwardDeal($uuid, $appId)
     {
@@ -81,6 +90,38 @@ class UserRefereeService
     }
 
     /**
+     * 检测qr票据的身份归属
+     * @param $qrTicket
+     * @return bool|array
+     */
+    private static function checkQrTicketIdentity($qrTicket)
+    {
+        //推荐人信息
+        $qrTicketData = [
+            'identity' => 0,
+            'referee_info' => []
+        ];
+        $identityData = ParamMapModel::getParamByQrTicket($qrTicket);
+        if (empty($identityData)) {
+            $identityData = DssUserQrTicketModel::getRecord(['qr_ticket' => $qrTicket]);
+        }
+        //数据不存在
+        if (empty($identityData)) {
+            SimpleLogger::info('not find ticket user', ['ticket' => $qrTicket]);
+            return $qrTicketData;
+        }
+        $qrTicketData['referee_info'] = $identityData;
+        if (($identityData['app_id'] == Constants::SELF_APP_ID) && ($identityData['type'] == ParamMapModel::TYPE_AGENT)) {
+            //代理商
+            $qrTicketData['identity'] = ParamMapModel::TYPE_AGENT;
+        } elseif ($identityData['type'] == ParamMapModel::TYPE_STUDENT) {
+            //智能陪练学生
+            $qrTicketData['identity'] = ParamMapModel::TYPE_STUDENT;
+        }
+        return $qrTicketData;
+    }
+
+    /**
      * 转介绍关系建立
      * @param $studentId
      * @param $qrTicket
@@ -90,25 +131,26 @@ class UserRefereeService
      */
     public static function bindRegister($studentId, $qrTicket, $appId, $extParams = [])
     {
+        $time = time();
         if ($appId == Constants::SMART_APP_ID) {
-            //推荐人信息
-            $refereeInfo = DssUserQrTicketModel::getRecord(['qr_ticket' => $qrTicket]);
-            if (empty($refereeInfo)) {
-                SimpleLogger::info('not find ticket user', ['ticket' => $qrTicket]);
-                return false;
-            }
             //是否已经绑定
             $bindInfo = StudentInviteModel::getRecord(['student_id' => $studentId, 'app_id' => $appId]);
             if (!empty($bindInfo)) {
                 SimpleLogger::info('has bind referee relation', ['bind_info' => $bindInfo]);
                 return false;
             }
+            //通过qr_ticket区分转介绍人的身份：代理商 学生
+            $qrTicketData = self::checkQrTicketIdentity($qrTicket);
+            if (empty($qrTicketData['identity'])) {
+                return false;
+            }
+            //绑定学生与转介绍的关系
             $res = StudentInviteModel::insertRecord(
                 [
                     'student_id' => $studentId,
-                    'referee_id' => $refereeInfo['user_id'],
-                    'referee_type' => $refereeInfo['type'],
-                    'create_time' => time(),
+                    'referee_id' => $qrTicketData['referee_info']['user_id'],
+                    'referee_type' => $qrTicketData['referee_info']['type'],
+                    'create_time' => $time,
                     'referee_employee_id' => $extParams['e'] ?? 0,
                     'activity_id' => $extParams['a'] ?? 0,
                     'app_id' => $appId
@@ -118,7 +160,13 @@ class UserRefereeService
                 SimpleLogger::info('bind relate fail', ['bind_info' => $bindInfo]);
                 return  false;
             }
+            if ($qrTicketData['identity'] == ParamMapModel::TYPE_AGENT) {
+                //发放奖励
+                AgentAwardService::agentReferralBillAward($qrTicketData['referee_info']['user_id'], ['id' => $studentId], AgentAwardDetailModel::AWARD_ACTION_TYPE_REGISTER);
+            }
             return true;
+        } else {
+            return false;
         }
     }
 
@@ -127,11 +175,20 @@ class UserRefereeService
      * @param $buyPreStudentInfo
      * @param $packageInfo
      * @param $appId
+     * @param int $parentBillId     主订单ID
+     * @throws RunTimeException
      */
-    public static function buyDeal($buyPreStudentInfo, $packageInfo, $appId)
+    public static function buyDeal($buyPreStudentInfo, $packageInfo, $appId, $parentBillId)
     {
         if ($appId == Constants::SMART_APP_ID) {
-            self::dssBuyDeal($buyPreStudentInfo, $packageInfo);
+            //根据订单ID区分下单来源
+            $agentId = AgentBillMapModel::get($parentBillId, $buyPreStudentInfo['id']);
+            if ($agentId) {
+                //代理商分享购买
+                AgentAwardService::agentReferralBillAward($agentId, $buyPreStudentInfo, $packageInfo['package_type'], $packageInfo, $parentBillId);
+            } else {
+                self::dssBuyDeal($buyPreStudentInfo, $packageInfo);
+            }
         }
     }
 
@@ -139,6 +196,7 @@ class UserRefereeService
      * dss付费事件处理
      * @param $buyPreStudentInfo
      * @param $packageInfo
+     * @throws RunTimeException
      */
     public static function dssBuyDeal($buyPreStudentInfo, $packageInfo)
     {

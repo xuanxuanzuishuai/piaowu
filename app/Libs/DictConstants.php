@@ -360,11 +360,15 @@ class DictConstants {
         'type' => 'agent_type',
         'keys' => ['1', '2', '3']
     ];
-
+    //业务线
     const PACKAGE_APP_NAME = [
         'type' => 'PACKAGE_APP_NAME',
         'keys' => ['1', '8']
-
+    ];
+    //代理绑定有效时间
+    const AGENT_BIND = [
+        'type' => 'agent_bind',
+        'keys' => ['1', '2']
     ];
 
     public static function get($type, $key)

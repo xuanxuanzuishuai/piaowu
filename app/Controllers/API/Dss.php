@@ -12,6 +12,7 @@ use App\Controllers\ControllerBase;
 use App\Libs\Constants;
 use App\Libs\HttpHelper;
 use App\Libs\Valid;
+use App\Models\AgentBillMapModel;
 use App\Models\MessagePushRulesModel;
 use App\Models\PosterModel;
 use App\Models\WeChatAwardCashDealModel;
@@ -48,13 +49,13 @@ class Dss extends ControllerBase
     {
         $rules = [
             [
-                'key'        => 'activity_id',
-                'type'       => 'required',
+                'key' => 'activity_id',
+                'type' => 'required',
                 'error_code' => 'activity_id_is_required'
             ],
             [
-                'key'        => 'employee_id',
-                'type'       => 'required',
+                'key' => 'employee_id',
+                'type' => 'required',
                 'error_code' => 'employee_id_is_required'
             ]
         ];
@@ -83,18 +84,18 @@ class Dss extends ControllerBase
     {
         $rules = [
             [
-                'key'        => 'app_id',
-                'type'       => 'required',
+                'key' => 'app_id',
+                'type' => 'required',
                 'error_code' => 'app_id_is_required'
             ],
             [
-                'key'        => 'type',
-                'type'       => 'required',
+                'key' => 'type',
+                'type' => 'required',
                 'error_code' => 'type_is_required'
             ],
             [
-                'key'        => 'user_id',
-                'type'       => 'required',
+                'key' => 'user_id',
+                'type' => 'required',
                 'error_code' => 'user_id_is_required'
             ]
         ];
@@ -118,8 +119,8 @@ class Dss extends ControllerBase
     {
         $rules = [
             [
-                'key'        => 'param_id',
-                'type'       => 'required',
+                'key' => 'param_id',
+                'type' => 'required',
                 'error_code' => 'param_id_is_required'
             ]
         ];
@@ -144,18 +145,18 @@ class Dss extends ControllerBase
     {
         $rules = [
             [
-                'key'        => 'student_id',
-                'type'       => 'required',
+                'key' => 'student_id',
+                'type' => 'required',
                 'error_code' => 'student_id_is_required'
             ],
             [
-                'key'        => 'uuid',
-                'type'       => 'required',
+                'key' => 'uuid',
+                'type' => 'required',
                 'error_code' => 'uuid_is_required'
             ],
             [
-                'key'        => 'qr_ticket',
-                'type'       => 'required',
+                'key' => 'qr_ticket',
+                'type' => 'required',
                 'error_code' => 'qr_ticket_is_required'
             ]
         ];
@@ -183,8 +184,8 @@ class Dss extends ControllerBase
     {
         $rules = [
             [
-                'key'        => 'award_id',
-                'type'       => 'required',
+                'key' => 'award_id',
+                'type' => 'required',
                 'error_code' => 'award_id_is_required'
             ]
         ];
@@ -197,6 +198,7 @@ class Dss extends ControllerBase
         $data = WeChatAwardCashDealModel::getRecords(['user_event_task_award_id' => explode(',', $params['award_id'])]);
         return HttpHelper::buildResponse($response, $data);
     }
+
     /**
      * 海报底图数据
      * @param Request $request
@@ -243,5 +245,39 @@ class Dss extends ControllerBase
         }
         $data = MessagePushRulesModel::getById($params['id']);
         return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
+     * 创建代理和订单映射关系
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function makeAgentBillMap(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'student_id',
+                'type' => 'required',
+                'error_code' => 'student_id_is_required'
+            ],
+            [
+                'key' => 'parent_bill_id',
+                'type' => 'required',
+                'error_code' => 'parent_bill_id_is_required'
+            ],
+            [
+                'key' => 'param_id',
+                'type' => 'required',
+                'error_code' => 'param_map_id_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $res = AgentBillMapModel::add($params['param_id'], $params['parent_bill_id'], $params['student_id']);
+        return HttpHelper::buildResponse($response, ['res' => $res]);
     }
 }

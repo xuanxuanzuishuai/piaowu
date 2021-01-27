@@ -27,9 +27,11 @@ class DSSRouter extends RouterBase
         '/dss/share_post/get_params_info' => ['method' => ['get'], 'call' => Dss::class . ':getParamsInfo'],
         '/dss/referral/create_relation' => ['method' => ['post'], 'call' => Dss::class . ':createRelation'],
         '/dss/red_pack/red_pack_info' => ['method' => ['get'], 'call' => Dss::class . ':redPackInfo'],
-        //海报底图数据
+        // 海报底图数据
         '/dss/poster_base/info' => ['method' => ['get'], 'call' => Dss::class . ':posterBaseInfo'],
         // 消息信息：
         '/dss/message/info' => ['method' => ['get'], 'call' => Dss::class . ':messageInfo'],
+        // 代理和订单映射关系
+        '/dss/agent_bill_map/make' => ['method' => ['post'], 'call' => Dss::class . ':makeAgentBillMap'],
     ];
 }
