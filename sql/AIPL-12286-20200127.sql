@@ -1,0 +1,1 @@
+INSERT INTO `operation_activity`(`name`, `app_id`, `create_time`, `update_time`) VALUES ('2021新年巨献', 8, 1609323768, 1609323768);
