@@ -10,8 +10,10 @@ namespace App\Services;
 
 use App\Libs\Constants;
 use App\Libs\Dss;
+use App\Libs\UserCenter;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
+use App\Models\UserWeiXinModel;
 
 /**
  * 公共调用
@@ -52,14 +54,25 @@ class UserService
      */
     public static function getUserWeiXinInfoAndUserId($appId, $userId, $openId, $userType, $busiType)
     {
-        if ($appId == Constants::SMART_APP_ID) {
-            return DssUserWeiXinModel::getRecord([
-                'user_id' => $userId,
-                'open_id' => $openId,
-                'user_type' => $userType,
-                'busi_type' => $busiType,
-                'status' => DssUserWeiXinModel::STATUS_NORMAL
-            ]);
+        switch ($appId) {
+            case Constants::SMART_APP_ID:
+                return DssUserWeiXinModel::getRecord([
+                    'user_id' => $userId,
+                    'open_id' => $openId,
+                    'user_type' => $userType,
+                    'busi_type' => $busiType,
+                    'status' => DssUserWeiXinModel::STATUS_NORMAL
+                ]);
+            case UserCenter::AUTH_APP_ID_OP_AGENT:
+                return UserWeiXinModel::getRecord([
+                    'user_id' => $userId,
+                    'open_id' => $openId,
+                    'user_type' => $userType,
+                    'busi_type' => $busiType,
+                    'status' => DssUserWeiXinModel::STATUS_NORMAL
+                ]);
+            default:
+                break;
         }
         return NULL;
     }
@@ -122,5 +135,4 @@ class UserService
             ]);
         }
     }
-
 }

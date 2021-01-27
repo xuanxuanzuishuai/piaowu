@@ -10,6 +10,7 @@ namespace App\Models;
 
 
 use App\Libs\MysqlDB;
+use App\Libs\NewSMS;
 use App\Libs\SimpleLogger;
 
 class AgentModel extends Model
@@ -209,5 +210,46 @@ class AgentModel extends Model
                 self::$table.'.parent_id' => $parentIds
             ]);
         return $secondaryData;
+    }
+
+    /**
+     * 根据手机号查询代理
+     * @param $mobile
+     * @param $countryCode
+     * @return array|mixed
+     */
+    public static function getByMobile($mobile, $countryCode = NewSMS::DEFAULT_COUNTRY_CODE)
+    {
+        if (empty($mobile)) {
+            return [];
+        }
+        return self::getRecord(['mobile' => $mobile, 'country_code' => $countryCode]);
+    }
+
+    /**
+     * 根据openid查询代理
+     * @param $openId
+     * @return array|mixed
+     */
+    public static function getByOpenid($openId)
+    {
+        if (empty($openId)) {
+            return [];
+        }
+        $db    = MysqlDB::getDB();
+        $field = '*';
+        $res   = $db->select(
+            self::$table,
+            [
+                '[><]' . UserWeiXinModel::$table => ['id' => 'user_id'],
+            ],
+            $field,
+            [
+                'open_id' => $openId,
+                'user_type' => UserWeiXinModel::USER_TYPE_AGENT,
+                'status' => UserWeiXinModel::STATUS_NORMAL
+            ]
+        );
+        return $res[0] ?? [];
     }
 }

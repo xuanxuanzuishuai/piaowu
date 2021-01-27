@@ -237,14 +237,14 @@ class DictConstants {
     const WECHAT_APPID = [
         'type' => 'wechat_app_id',
         'keys' => [
-            '8_1', '8_8'
+            '8_1', '8_8', '21_2'
         ]
     ];
     //不同应用的微信app_secret
     const WECHAT_APP_SECRET = [
         'type' => 'wechat_app_secret',
         'keys' => [
-            '8_1', '8_8'
+            '8_1', '8_8', '21_2'
         ]
     ];
     //不同应用的微信商户号

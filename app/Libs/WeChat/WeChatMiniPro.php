@@ -15,7 +15,7 @@ use App\Libs\Dss;
 use App\Libs\HttpHelper;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
-use App\Services\ReferralActivityService;
+use App\Libs\UserCenter;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use Slim\Http\StatusCode;
@@ -27,12 +27,16 @@ class WeChatMiniPro
     const TEMP_MEDIA_EXPIRE = 172800; // 临时media文件过期时间 2天
     const CACHE_KEY = '%s';
     const BASIC_WX_PREFIX = 'basic_wx_prefix_';
+    const SESSION_KEY = 'SESSION_KEY';
     
     const API_UPLOAD_IMAGE     = '/cgi-bin/media/upload';
     const API_SEND             = '/cgi-bin/message/custom/send';
     const API_USER_INFO        = '/cgi-bin/user/info';
     const API_GET_CURRENT_MENU = '/cgi-bin/get_current_selfmenu_info';
     const API_CREATE_MENU      = '/cgi-bin/menu/create';
+    const API_CREATE_SCHEME    = '/wxa/generatescheme';
+    const API_CODE_2_SESSION   = '/sns/jscode2session';
+    const API_TOKEN            = '/cgi-bin/token';
 
     public $nowWxApp; //当前的微信应用
 
@@ -52,9 +56,9 @@ class WeChatMiniPro
      * 设置当前应用的access_token
      * @param $accessToken
      */
-    public function setAccessToken($accessToken)
+    public function setAccessToken($accessToken, $expire = 1800)
     {
-        RedisDB::getConn()->setex($this->getWxAccessTokenKey($this->nowWxApp), 1800, $accessToken);
+        RedisDB::getConn()->setex($this->getWxAccessTokenKey($this->nowWxApp), $expire, $accessToken);
     }
 
     /**
@@ -177,8 +181,34 @@ class WeChatMiniPro
             if (!empty($data['access_token'])) {
                 $this->setAccessToken($data['access_token']);
             }
+        } elseif ($appId == UserCenter::AUTH_APP_ID_OP_AGENT) {
+            $this->requestAccessToken();
+        } else {
+            SimpleLogger::info('UNKNOW APPID', [$appId, $busiType]);
         }
     }
+
+    /**
+     * 请求微信access_token
+     * @return void
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
+    public function requestAccessToken()
+    {
+        $params = [
+            'grant_type' => 'client_credential',
+            'appid'      => DictConstants::get(DictConstants::WECHAT_APPID, $this->nowWxApp),
+            'secret'     => DictConstants::get(DictConstants::WECHAT_APP_SECRET, $this->nowWxApp),
+        ];
+        $apiUrl = $this->apiUrl(self::API_TOKEN, false);
+        $res = $this->requestJson($apiUrl, $params);
+        if (empty($res) || !empty($res['errcode'])) {
+            SimpleLogger::error('GET ACCESS TOKEN ERROR', [$res, $params]);
+            return;
+        }
+        $this->setAccessToken($res['access_token'], $res['expires_in']);
+    }
+    
 
     /**
      * 通过code获取用户的open_id
@@ -400,4 +430,98 @@ class WeChatMiniPro
     {
         return $this->send($openId, 'msgmenu', $data);
     }
+
+    /**
+     * 生成可在短信内打开的小程序链接
+     * @param $path
+     * @param $query
+     * @param int $expireTime
+     * @return bool|mixed|string
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
+    public function getSupportSmsJumpLink($path, $query, $expireTime = 0)
+    {
+        $api = $this->apiUrl(self::API_CREATE_SCHEME);
+        empty($expireTime) ? $isExpire = false : $isExpire = true;
+        $data = [
+            'jump_wxa' => [
+                'path' => $path,
+                'query' => $query
+            ],
+            'is_expire' => $isExpire,
+            'expire_time' => $expireTime
+        ];
+        return $this->requestJson($api, $data, 'POST');
+    }
+
+    /**
+     * 小程序登录
+     * @param string $code
+     * @return array|false|mixed|string
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
+    public function code2Session($code = '')
+    {
+        if (empty($code)) {
+            return [];
+        }
+        $url = $this->apiUrl(self::API_CODE_2_SESSION, false);
+        $params = [
+            'appid'      => DictConstants::get(DictConstants::WECHAT_APPID, $this->nowWxApp),
+            'secret'     => DictConstants::get(DictConstants::WECHAT_APP_SECRET, $this->nowWxApp),
+            'js_code'    => $code,
+            'grant_type' => 'authorization_code',
+        ];
+        $data = $this->requestJson($url, $params, 'get');
+        if (empty($data['errcode'])) {
+            $this->setSessionKey($data['openid'], $data['session_key']);
+        }
+        return $data;
+    }
+
+    /**
+     * 记录登录session信息
+     * @param $openId
+     * @param $sessionKey
+     * @return int
+     */
+    public function setSessionKey($openId, $sessionKey)
+    {
+        return RedisDB::getConn()->hset(self::SESSION_KEY, $openId, $sessionKey);
+    }
+
+    /**
+     * 获取session_key
+     * @param $openId
+     * @return string
+     */
+    public function getSessionKey($openId)
+    {
+        return RedisDB::getConn()->hget(self::SESSION_KEY, $openId);
+    }
+
+    /**
+     * 解密手机号
+     * @param $openId
+     * @param $iv
+     * @param $encryptedData
+     * @return array|mixed
+     */
+    public function decryptMobile($openId, $iv, $encryptedData)
+    {
+        $sessionKey = $this->getSessionKey($openId);
+        if (empty($sessionKey)) {
+            SimpleLogger::error('SESSION KEY IS EMPTY', [$openId]);
+            return [];
+        }
+        $w = new WXBizDataCrypt(DictConstants::get(DictConstants::WECHAT_APPID, $this->nowWxApp), $sessionKey);
+        $code = $w->decryptData($encryptedData, $iv, $data);
+        if ($code == 0) {
+            return json_decode($data, true);
+        }
+        SimpleLogger::error('DECODE MOBILE ERROR:', ['code' => $code]);
+        return [];
+    }
+
+    
 }

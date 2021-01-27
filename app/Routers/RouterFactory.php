@@ -28,6 +28,7 @@ class RouterFactory
     const CLIENT_SALES_MASTER = 'sales_master'; // 鲸鱼跳跃
     const CLIENT_STUDENT_WX = 'student_wx'; // 家长微信
     const CLIENT_DSS = 'dss';
+    const CLIENT_AGENT_MINI = 'agent';
 
     /**
      * client_type 对应的 Router class
@@ -38,6 +39,7 @@ class RouterFactory
         self::CLIENT_API => APIRouter::class, // 外部api调用
         self::CLIENT_STUDENT_WX => StudentWXRouter::class, // 家长微信
         self::CLIENT_DSS => DSSRouter::class, // 家长微信
+        self::CLIENT_AGENT_MINI => AgentMiniAppRouter::class, // 代理小程序
     ];
 
     /**

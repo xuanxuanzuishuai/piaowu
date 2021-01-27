@@ -12,7 +12,10 @@ namespace App\Services;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
+use App\Libs\NewSMS;
 use App\Libs\UserCenter;
+use App\Libs\Util;
+use App\Models\AgentApplicationModel;
 use App\Models\AgentDivideRulesModel;
 use App\Models\AgentInfoModel;
 use App\Models\AgentModel;
@@ -20,6 +23,7 @@ use App\Models\AreaCityModel;
 use App\Models\AreaProvinceModel;
 use App\Models\EmployeeModel;
 use App\Models\StudentInviteModel;
+use App\Models\UserWeiXinModel;
 
 
 class AgentService
@@ -404,4 +408,159 @@ class AgentService
         return $authResult["uuid"];
     }
 
+
+    /**
+     * 绑定用户openid信息
+     * @param $appId
+     * @param $mobile
+     * @param $openId
+     * @param $unionId
+     * @param string $countryCode
+     * @param null $userType
+     * @param null $busiType
+     * @return array
+     * @throws RunTimeException
+     */
+    public static function bindAgentWechat($appId, $mobile, $openId, $unionId, $countryCode = NewSMS::DEFAULT_COUNTRY_CODE, $userType = null, $busiType = null)
+    {
+        $agentInfo = AgentModel::getByMobile($mobile, $countryCode);
+        if (empty($agentInfo)) {
+            throw new RunTimeException(['record_not_found']);
+        }
+        if (self::checkAgentFreeze($agentInfo)) {
+            throw new RunTimeException(['agent_freeze']);
+        }
+        if (empty($userType)) {
+            $userType = UserWeiXinModel::USER_TYPE_AGENT;
+        }
+        if (empty($busiType)) {
+            $busiType = UserWeiXinModel::BUSI_TYPE_AGENT_MINI;
+        }
+        $data = [
+            'user_id'     => $agentInfo['id'],
+            'user_type'   => $userType,
+            'open_id'     => $openId,
+            'union_id'    => $unionId,
+            'status'      => UserWeiXinModel::STATUS_NORMAL,
+            'busi_type'   => $busiType,
+            'app_id'      => $appId,
+        ];
+        $bindInfo = UserWeiXinModel::getRecord($data);
+        if (empty($bindInfo)) {
+            $data['create_time'] = time();
+            UserWeiXinModel::insertRecord($data);
+        }
+        $token = AgentMiniAppTokenService::generateToken($agentInfo['id'], $userType, $appId, $openId);
+        return [$token, $agentInfo];
+    }
+
+    /**
+     * 小程序退出登录(解绑)
+     * @param $openId
+     * @param $userId
+     * @return int|null
+     */
+    public static function miniAppLogout($openId, $userId)
+    {
+        if (empty($openId) || empty($userId)) {
+            return 0;
+        }
+        $db = MysqlDB::getDB();
+        $where = [
+            'user_id'   => $userId,
+            'open_id'   => $openId,
+            'status'    => UserWeiXinModel::STATUS_NORMAL,
+            'user_type' => UserWeiXinModel::USER_TYPE_AGENT,
+            'busi_type' => UserWeiXinModel::BUSI_TYPE_AGENT_MINI,
+            'app_id'    => UserCenter::AUTH_APP_ID_OP_AGENT,
+        ];
+        $data = [
+            'status'      => UserWeiXinModel::STATUS_NORMAL,
+            'update_time' => time(),
+        ];
+        return $db->updateGetCount(UserWeiXinModel::$table, $data, $where);
+    }
+
+    /**
+     * 添加代理商申请
+     * @param array $data
+     * @return array|int|mixed|string|null
+     * @throws RunTimeException
+     */
+    public static function addApplication($data = [])
+    {
+        $mobile = $data['mobile'] ?? '';
+        $countryCode = $data['country_code'] ?? NewSMS::DEFAULT_COUNTRY_CODE;
+        if (empty($data)) {
+            return [];
+        }
+        $insertData = [
+            'name'         => $data['name'],
+            'mobile'       => $mobile,
+            'country_code' => $countryCode,
+            'create_time'  => time(),
+            'update_time'  => 0
+        ];
+        if (self::checkAgentApplicationExists($mobile, $countryCode)) {
+            throw new RunTimeException(['agent_application_exists']);
+        }
+        if (self::checkAgentExists($mobile, $countryCode)) {
+            throw new RunTimeException(['agent_have_exist']);
+        }
+        return AgentApplicationModel::insertRecord($insertData);
+    }
+
+    /**
+     * 检查代理商是否已存在
+     * @param $mobile
+     * @param string $countryCode
+     * @return bool
+     */
+    public static function checkAgentExists($mobile, $countryCode = NewSMS::DEFAULT_COUNTRY_CODE)
+    {
+        if (empty($mobile)) {
+            return false;
+        }
+        $agentInfo = AgentModel::getRecord(['mobile' => $mobile, 'country_code' => $countryCode]);
+        if (!empty($agentInfo)) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 代理商冻结检查
+     * @param $info
+     * @return bool
+     */
+    public static function checkAgentFreeze($info)
+    {
+        if (empty($info)) {
+            return true;
+        }
+        if (!empty($info['status'])
+            && $info['status'] == AgentModel::STATUS_FREEZE
+            && time()-$info['update_time'] >= Util::TIMESTAMP_ONEWEEK) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 检查代理商申请是否已存在
+     * @param $mobile
+     * @param string $countryCode
+     * @return bool
+     */
+    public static function checkAgentApplicationExists($mobile, $countryCode = NewSMS::DEFAULT_COUNTRY_CODE)
+    {
+        if (empty($mobile)) {
+            return false;
+        }
+        $agentInfo = AgentApplicationModel::getRecord(['mobile' => $mobile, 'country_code' => $countryCode]);
+        if (!empty($agentInfo)) {
+            return true;
+        }
+        return false;
+    }
 }
