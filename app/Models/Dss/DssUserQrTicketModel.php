@@ -64,7 +64,7 @@ class DssUserQrTicketModel extends DssModel
             'activity_id' => $extParams['a'] ?? 0,
             'employee_id' => $extParams['e'] ?? 0,
             'poster_id'   => $extParams['p'] ?? 0,
-            'app_id'      => $extParams['app_id'] ?? 0,
+            'app_id'      => $extParams['app_id'] ?? Constants::SMART_APP_ID,
         ];
         foreach ($extParamsDict as $key => $value) {
             $sql .= " AND ext->>'$." . $key . "' = " . $value;

@@ -44,12 +44,12 @@ class PosterService
             return $emptyRes;
         }
         //用户二维码
-        $userQrUrl = self::getUserQRAliOss($userId, $type, $channelId, $appId, $landingType, $extParams);
+        $userQrUrl = DssUserQrTicketModel::getUserQrURL($userId, $type, $channelId, DssUserQrTicketModel::LANDING_TYPE_MINIAPP, $extParams);
         if (empty($userQrUrl)) {
             SimpleLogger::info('user qr make fail', [$userId, $type, $channelId]);
             return $emptyRes;
         }
-        $exists = AliOSS::doesObjectExist($userQrUrl['qr_url']);
+        $exists = AliOSS::doesObjectExist($userQrUrl);
         if (empty($exists)) {
             SimpleLogger::info('user qr oss file not exits', [$userQrUrl]);
             return $emptyRes;
@@ -62,7 +62,7 @@ class PosterService
         $waterImgEncode = str_replace(
             ["+", "/"],
             ["-", "_"],
-            base64_encode($userQrUrl['qr_url'] . "?x-oss-process=image/resize,limit_0,w_" . $config['qr_width'] . ",h_" . $config['qr_height'])
+            base64_encode($userQrUrl . "?x-oss-process=image/resize,limit_0,w_" . $config['qr_width'] . ",h_" . $config['qr_height'])
         );
         $waterMark = [
             "image_" . $waterImgEncode,
@@ -79,88 +79,7 @@ class PosterService
         $imgSizeStr = implode(",", $imgSize) . '/';
         $resImageUrl = AliOSS::signUrls($posterPath, "", "", "", false, $waterMarkStr, $imgSizeStr);
         //返回数据
-        return ['poster_save_full_path' => $resImageUrl, 'unique' => md5($userId . $posterPath . $userQrUrl['qr_url']) . ".jpg"];
-    }
-
-    /**
-     * 获取用户QR码图片路径
-     * @param $userId
-     * @param $type
-     * @param $channelId
-     * @param null $appId
-     * @param null $landingType
-     * @param array $extParams
-     * @return array|mixed
-     */
-    public static function getUserQRAliOss(
-        $userId,
-        $type,
-        $channelId,
-        $appId = null,
-        $landingType = null,
-        $extParams = []
-    ) {
-        if (empty($appId)) {
-            $appId = Constants::SMART_APP_ID;
-        }
-        $landingType = self::getLandingType($landingType);
-        //获取学生转介绍学生二维码资源数据
-        $where = [
-            'user_id'      => $userId,
-            'type'         => $type,
-            'channel_id'   => $channelId,
-            'landing_type' => $landingType,
-            "ext->>'$.activity_id'" => $extParams['a'] ?? 0,
-            "ext->>'$.poster_id'" => $extParams['p'] ?? 0,
-        ];
-        $res = DssUserQrTicketModel::getRecord($where, ['user_id','qr_ticket','qr_url','channel_id','type','create_time','landing_type','ext']);
-        if (!empty($res['qr_url'])) {
-            return $res;
-        }
-        try {
-            $userQrTicket = RC4::encrypt($_ENV['COOKIE_SECURITY_KEY'], $type . "_" . $userId);
-            // 根据配置生成二维码或小程序码
-            if ($landingType == DssUserQrTicketModel::LANDING_TYPE_MINIAPP) {
-                $imagePath = self::getMiniappQrImage(
-                    $appId,
-                    array_merge(
-                        $extParams,
-                        [
-                            'r'       => $userQrTicket,
-                            'c'       => $channelId,
-                            'type'    => $type,
-                            'user_id' => $userId,
-                        ]
-                    )
-                );
-            }
-            if (empty($imagePath)) {
-                $imagePath = self::getReferralLandingPageQrImage($userQrTicket, $channelId);
-            }
-            if (empty($imagePath)) {
-                return [];
-            }
-            //记录海报的扩展数据：海报底图ID
-            $ext = [
-                'poster_id'   => $extParams['p'] ?? 0,
-                'activity_id' => $extParams['a'] ?? 0,
-                'app_id'      => $appId
-            ];
-            $data = [
-                'user_id'      => $userId,
-                'qr_ticket'    => $userQrTicket,
-                'qr_url'       => $imagePath,
-                'channel_id'   => $channelId,
-                'type'         => $type,
-                'landing_type' => $landingType,
-                'ext'          => json_encode($ext)
-            ];
-            (new Dss())->saveTicket($data);
-        } catch (\Exception $e) {
-            SimpleLogger::error('make user qr image exception', [print_r($e->getMessage(), true)]);
-            return [];
-        }
-        return $data;
+        return ['poster_save_full_path' => $resImageUrl, 'unique' => md5($userId . $posterPath . $userQrUrl) . ".jpg"];
     }
 
     /**

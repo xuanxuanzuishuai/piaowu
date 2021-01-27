@@ -74,7 +74,7 @@ class PosterTemplateService
             $channelId = DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'NORMAL_STUDENT_INVITE_STUDENT');
 //        }
         //转介绍码
-        $landingQrRes = PosterService::getUserQRAliOss($studentId, DssUserQrTicketModel::STUDENT_TYPE, $channelId, NULL, NULL, ['a' => $activityId]);
+        $qrImagePath = DssUserQrTicketModel::getUserQrURL($studentId, DssUserQrTicketModel::STUDENT_TYPE, $channelId, DssUserQrTicketModel::LANDING_TYPE_MINIAPP, ['a' => $activityId]);
         //获取海报/二维码宽高配置数据
         $posterConfig = DictConstants::getSet(DictConstants::TEMPLATE_POSTER_CONFIG);
         foreach ($templateList as $k => $value) {
@@ -83,7 +83,7 @@ class PosterTemplateService
                 $row['poster_url'],
                 $posterConfig['POSTER_WIDTH'],
                 $posterConfig['POSTER_HEIGHT'],
-                $landingQrRes['qr_url'],
+                $qrImagePath,
                 $posterConfig['QR_WIDTH'],
                 $posterConfig['QR_HEIGHT'],
                 $posterConfig['QR_X'],
