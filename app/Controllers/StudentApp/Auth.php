@@ -48,11 +48,11 @@ class Auth extends ControllerBase
             $appId = empty($params['app_id']) ? Constants::SMART_APP_ID : $params['app_id'];
             $userId = (new Dss())->getTokenRelateUuid(['token' => $params['token']])['id'];
             if (empty($userId)) {
-                throw new RunTimeException(['invalid token']);
+                throw new RunTimeException(['token_expired']);
             }
             $token = AppTokenService::generateToken($userId, $appId);
         } catch (RunTimeException $e) {
-            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
     }
         return HttpHelper::buildResponse($response, ['token' => $token]);
     }

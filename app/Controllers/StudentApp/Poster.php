@@ -54,7 +54,7 @@ class Poster extends ControllerBase
             $studentId = $this->ci['user_info']['user_id'];
             $activityData = PosterTemplateService::templatePosterList($studentId, $params['template_type'], !empty($params['activity_id']) ? $params['activity_id'] : NULL);
         } catch (RunTimeException $e) {
-            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
         //返回数据
         return HttpHelper::buildResponse($response, $activityData);
