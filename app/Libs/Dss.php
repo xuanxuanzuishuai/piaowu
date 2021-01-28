@@ -84,7 +84,7 @@ class Dss
     {
         $res = self::commonAPI(self::GET_TOKEN, $data, 'POST');
         if ($res['code'] != Valid::CODE_SUCCESS) {
-            SimpleLogger::error('Save ticket error', [$res, $data]);
+            SimpleLogger::error('get token error', [$res, $data]);
         }
         return !empty($res['data']) ? $res['data'] : NULL;
     }
@@ -98,7 +98,7 @@ class Dss
     {
         $res = self::commonAPI(self::GET_TOKEN_UUID_INFO, $data);
         if ($res['code'] != Valid::CODE_SUCCESS) {
-            SimpleLogger::error('Save ticket error', [$res, $data]);
+            SimpleLogger::error('get relate uuid error', [$res, $data]);
         }
         return !empty($res['data']) ? $res['data'] : NULL;
     }
