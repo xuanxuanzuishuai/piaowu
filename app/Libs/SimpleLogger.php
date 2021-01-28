@@ -28,7 +28,8 @@ namespace App\Libs;
 use Monolog\Formatter\JsonFormatter;
 use Monolog\Handler\RotatingFileHandler;
 use Monolog\Logger;
-use Monolog\Processor\UidProcessor;
+use Monolog\Processor\ProcessorInterface;
+use Monolog\ResettableInterface;
 
 class SimpleLogger
 {
@@ -42,10 +43,60 @@ class SimpleLogger
             $handle = new RotatingFileHandler($_ENV['LOG_FILE_PATH'], $_ENV['LOG_BACKUP_COUNT'], $_ENV['LOG_LEVEL']);
             $handle->setFormatter(new JsonFormatter());
             self::$logger->pushHandler($handle);
-            self::$logger->pushProcessor(new UidProcessor());
+            self::$logger->pushProcessor(self::getUidProcessor());
         }
 
         return self::$logger;
+    }
+
+    /**
+     * 自定义log唯一id
+     * 如果前端在header里添加identify，通过HTTP_IDENTIFY获取并设置为uid
+     * 否则生成随机id
+     * @return callable
+     */
+    public static function getUidProcessor()
+    {
+        return new class implements ProcessorInterface, ResettableInterface
+        {
+            private $uid;
+
+            public function __construct($length = 32)
+            {
+                $identify = $_SERVER['HTTP_IDENTIFY'];
+                if (!empty($identify)) {
+                    $this->uid = $identify;
+                }
+                else {
+                    $this->uid = $this->generateUid($length);
+                }
+            }
+
+            public function __invoke(array $record)
+            {
+                $record['extra']['uid'] = $this->uid;
+
+                return $record;
+            }
+
+            /**
+             * @return string
+             */
+            public function getUid()
+            {
+                return $this->uid;
+            }
+
+            public function reset()
+            {
+                $this->uid = $this->generateUid(strlen($this->uid));
+            }
+
+            private function generateUid($length)
+            {
+                return substr(hash('md5', uniqid('', true)), 0, $length);
+            }
+        };
     }
 
     public static function debug($msg, $data)
