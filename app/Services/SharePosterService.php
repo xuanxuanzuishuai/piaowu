@@ -156,6 +156,7 @@ class SharePosterService
                 DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER
             );
             // 发送审核消息
+            //todo 更改成队列
             PushMessageService::notifyUserCustomizeMessage(
                 DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'verify_message_config_id'),
                 [
