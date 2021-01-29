@@ -248,4 +248,38 @@ class Agent extends ControllerBase
         }
         return HttpHelper::buildResponse($response, []);
     }
+
+    /**
+     * 推广学员列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function recommendUsersList(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        list($params['page'], $params['count']) = Util::formatPageCount($params);
+        $data = AgentService::recommendUsersList($params);
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $data
+        ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * 推广订单列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function recommendBillsList(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        list($params['page'], $params['count']) = Util::formatPageCount($params);
+        $data = AgentService::recommendBillsList($params);
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $data
+        ], StatusCode::HTTP_OK);
+    }
 }

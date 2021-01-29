@@ -53,4 +53,25 @@ class UserWeiXinModel extends Model
         $result = self::updateRecord($userId, $update);
         return ($result && $result > 0);
     }
+
+
+    /**
+     * 检测账户与微信是否绑定
+     * @param $agentId
+     * @param $userType
+     * @param $busiType
+     * @param $appId
+     * @return array
+     */
+    public static function userBindData($agentId, $userType, $busiType, $appId)
+    {
+        $where = [
+            'user_id' => $agentId,
+            'user_type' => $userType,
+            'status' => self::STATUS_NORMAL,
+            'busi_type' => $busiType,
+            'app_id' => $appId,
+        ];
+        return self::getRecords($where, ['id']);
+    }
 }

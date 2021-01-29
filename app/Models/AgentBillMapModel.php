@@ -13,6 +13,8 @@ namespace App\Models;
 use App\Libs\MysqlDB;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
+use App\Models\Dss\DssErpPackageV1Model;
+use App\Models\Dss\DssGiftCodeModel;
 
 class AgentBillMapModel extends Model
 {
@@ -71,7 +73,7 @@ class AgentBillMapModel extends Model
      * @param array $fields
      * @return array
      */
-    public static function getListByAgentId(array $agentIdArr, array $limit,array $fields = [])
+    public static function getListByAgentId(array $agentIdArr, array $limit, array $fields = [])
     {
         $where = [
             'agent_id' => $agentIdArr,

@@ -19,6 +19,7 @@ use App\Controllers\OrgWeb\Dept;
 use App\Controllers\OrgWeb\Message;
 use App\Controllers\OrgWeb\Employee as OrgWebEmployee;
 use App\Controllers\OrgWeb\EmployeeActivity;
+use App\Controllers\OrgWeb\Package;
 use App\Controllers\OrgWeb\SharePoster;
 use App\Controllers\Referral\Award;
 use App\Middleware\EmployeeAuthCheckMiddleWare;
@@ -123,10 +124,15 @@ class OrgWebRouter extends RouterBase
         '/op_web/agent/statics' => ['method' => ['get'], 'call' => Agent::class . ':agentStaticsData'],
         '/op_web/agent/freeze' => ['method' => ['post'], 'call' => Agent::class . ':freezeAgent'],
         '/op_web/agent/unfreeze' => ['method' => ['post'], 'call' => Agent::class . ':unfreezeAgent'],
+        '/op_web/agent/recommend_users' => ['method' => ['get'], 'call' => Agent::class . ':recommendUsersList'],
+        '/op_web/agent/recommend_bills' => ['method' => ['get'], 'call' => Agent::class . ':recommendBillsList'],
         // 地址搜索国家/省/市/县（区）
         '/op_web/area/country' => ['method' => ['get'], 'call' => Area::class . ':countryList'],
         '/op_web/area/province' => ['method' => ['get'], 'call' => Area::class . ':provinceList'],
         '/op_web/area/city' => ['method' => ['get'], 'call' => Area::class . ':cityList'],
         '/op_web/area/district' => ['method' => ['get'], 'call' => Area::class . ':districtList'],
+        // 课包管理
+        '/op_web/package/search' => ['method' => ['get'], 'call' => Package::class . ':search'],
+
     ];
 }

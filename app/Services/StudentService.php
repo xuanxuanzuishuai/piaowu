@@ -59,4 +59,29 @@ class StudentService
     {
         return !empty($thumb) ? AliOSS::replaceCdnDomainForDss($thumb) : AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb'));
     }
+
+    /**
+     * 搜索学生数据
+     * @param $params
+     * @return array|mixed
+     */
+    public static function searchStudentList($params)
+    {
+        if (!empty($params['id'])) {
+            $where['id'] = $params['id'];
+        }
+        if (!empty($params['mobile'])) {
+            $where['mobile'] = $params['mobile'];
+        }
+        if (!empty($params['uuid'])) {
+            $where['uuid'] = $params['uuid'];
+        }
+        if (!empty($params['name'])) {
+            $where['name'] = $params['name'];
+        }
+        if (empty($where)) {
+            return [];
+        }
+        return DssStudentModel::getRecords($where, ['name', 'uuid', 'mobile', 'id']);
+    }
 }

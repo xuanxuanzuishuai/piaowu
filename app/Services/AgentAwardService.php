@@ -105,7 +105,6 @@ class AgentAwardService
             'create_time' => $time,
         ];
         $bindData = [
-            'bind_status' => AgentUserModel::BIND_STATUS_BIND,
             'bind_time' => $time,
             'deadline' => $time + DictConstants::get(DictConstants::AGENT_BIND, AgentUserModel::STAGE_TRIAL),
             'stage' => AgentUserModel::STAGE_TRIAL,

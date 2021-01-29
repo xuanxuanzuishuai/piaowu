@@ -18,9 +18,9 @@ use App\Libs\UserCenter;
 use App\Libs\Util;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\AgentApplicationModel;
+use App\Models\AgentAwardDetailModel;
 use App\Models\AgentBillMapModel;
 use App\Models\AgentDivideRulesModel;
-use App\Models\AgentInfoModel;
 use App\Models\AgentModel;
 use App\Models\AgentUserModel;
 use App\Models\AreaCityModel;
@@ -50,6 +50,7 @@ class AgentService
             'service_employee_id' => empty($params['service_employee_id']) ? 0 : $params['service_employee_id'],
             'uuid' => self::agentAuth($params['name'], $params['mobile']),
             'mobile' => $params['mobile'],
+            'name' => $params['name'],
             'type' => $params['agent_type'],
             'country_code' => $params['country_code'],
             'create_time' => $time,
@@ -70,7 +71,6 @@ class AgentService
             'city' => (int)$params['city_code'],
             'address' => empty($params['address']) ? '' : $params['address'],
             'remark' => empty($params['remark']) ? '' : $params['remark'],
-            'name' => $params['name'],
             'create_time' => $time,
         ];
         $db = MysqlDB::getDB();
@@ -128,6 +128,7 @@ class AgentService
         //agent数据
         $agentUpdateData = [
             'mobile' => $params['mobile'],
+            'name' => $params['name'],
             'type' => $params['agent_type'],
             'service_employee_id' => empty($params['service_employee_id']) ? 0 : (int)$params['service_employee_id'],
             'country_code' => (int)$params['country_code'],
@@ -149,7 +150,6 @@ class AgentService
             'city' => empty($params['city_code']) ? 0 : (int)$params['city_code'],
             'address' => empty($params['address']) ? '' : $params['address'],
             'remark' => empty($params['remark']) ? '' : $params['remark'],
-            'name' => $params['name'],
             'update_time' => $time,
         ];
         $db = MysqlDB::getDB();
@@ -182,9 +182,16 @@ class AgentService
         $staticsData['detail'] = self::detailAgent($agentId, $appId);
         if (!empty($staticsData['detail'])) {
             //推广数据统计
-            $staticsData['spread'] = self::agentSpreadData($agentId);
+            $spreadData = self::agentSpreadData([$agentId]);
+            $staticsData['spread'] = [
+                "referral_student_count" => $spreadData[$agentId]['total']['s_count'],
+                "referral_bill_count" => $spreadData[$agentId]['total']['b_count'],
+                "direct_referral_student_count" => $spreadData[$agentId]['self']['s_count'],
+                "direct_referral_bill_count" => $spreadData[$agentId]['self']['b_count'],
+                "secondary_count" => $spreadData[$agentId]['son_num'],
+            ];
             //二级代理
-            $staticsData['secondary_agent'] = self::formatAgentData(self::agentSecondaryData([$agentId])[$agentId]);
+            $staticsData['secondary_agent'] = self::formatAgentData(self::agentSecondaryData([$agentId], $spreadData[$agentId]['son'])[$agentId]);
             $staticsData['detail'] = self::formatAgentData([$staticsData['detail']]);
         }
         return $staticsData;
@@ -194,26 +201,20 @@ class AgentService
     /**
      * 获取一级代理的二级代理数据
      * @param array $agentIds
+     * @param array $spreadData
      * @return array
      */
-    private static function agentSecondaryData($agentIds)
+    private static function agentSecondaryData($agentIds, $spreadData)
     {
         $data = array_fill_keys($agentIds, []);
         $secondaryList = AgentModel::agentSecondaryData($agentIds);
         if (empty($secondaryList)) {
             return $data;
         }
-        //二级代理学生介绍数据
-        $agentReferralStudent = array_column(StudentInviteModel::getReferralStudentCount(
-            implode(',', array_column($secondaryList, 'id')),
-            StudentInviteModel::REFEREE_TYPE_AGENT), null, 'referee_id');
-        //二级代理订单推广数据
-        //todo
-        $agentReferralBill = [];
-        //二级数据按照父类id分组
-        array_map(function ($item) use (&$data, $agentReferralStudent, $agentReferralBill) {
-            $item['referral_student_count'] = empty($agentReferralStudent[$item['id']]['s_count']) ? 0 : (int)$agentReferralStudent[$item['id']]['s_count'];
-            $item['referral_bill_count'] = empty($agentReferralBill[$item['id']]) ? 0 : $agentReferralBill[$item['id']]['b_count'];
+        //推广数据
+        array_map(function ($item) use (&$data, $spreadData) {
+            $item['referral_student_count'] = $spreadData[$item['id']]['s_count'];
+            $item['referral_bill_count'] = $spreadData[$item['id']]['b_count'];
             $data[$item['parent_id']][] = $item;
         }, $secondaryList);
         return $data;
@@ -221,19 +222,39 @@ class AgentService
 
     /**
      * 推广数据统计
-     * @param $agentId
+     * @param $parentAgentIds
      * @return array
      */
-    private static function agentSpreadData($agentId)
+    private static function agentSpreadData($parentAgentIds)
     {
-        //等待订单回调完成在完善具体逻辑
-        return [
-            'referral_student_count' => 0,
-            'referral_bill_count' => 0,
-            'direct_referral_student_count' => 0,
-            'direct_referral_bill_count' => 0,
-            'secondary_count' => 0,
-        ];
+        //代理数据
+        $agentList = AgentModel::getRecords(['OR' => ['id' => $parentAgentIds, 'parent_id' => $parentAgentIds], 'ORDER' => ['parent_id' => "ASC"]], ['id', 'parent_id']);
+        //推广人数量
+        $agentIds = array_column($agentList, 'id');
+        $agentIdStr = implode(',', $agentIds);
+        $dataTree = array_fill_keys($agentIds, []);
+        $referralStudents = array_column(AgentUserModel::getAgentStudentCount($agentIdStr), null, 'agent_id');
+        //推广订单数量
+        $referralBills = array_column(AgentAwardDetailModel::getAgentBillCount($agentIdStr), null, 'agent_id');
+
+        array_walk($agentList, function ($item) use (&$dataTree, $referralStudents, $referralBills) {
+            if ($item['parent_id'] == 0) {
+                //一级代理直接推广数据
+                $dataTree[$item['id']]['son_num'] = 0;
+                $dataTree[$item['id']]['total']['s_count'] = $dataTree[$item['id']]['self']['s_count'] = $referralStudents[$item['id']]['s_count'] ?? 0;
+                $dataTree[$item['id']]['total']['b_count'] = $dataTree[$item['id']]['self']['b_count'] = $referralBills[$item['id']]['b_count'] ?? 0;
+            } else {
+                //一级代理的下属二级推广数据
+                $dataTree[$item['parent_id']]['son'][$item['id']]['s_count'] = $referralStudents[$item['id']]['s_count'] ?? 0;
+                $dataTree[$item['parent_id']]['son'][$item['id']]['b_count'] = $referralBills[$item['id']]['b_count'] ?? 0;
+                //推广数据汇总
+                $dataTree[$item['parent_id']]['total']['s_count'] += $dataTree[$item['parent_id']]['son'][$item['id']]['s_count'];
+                $dataTree[$item['parent_id']]['total']['b_count'] += $dataTree[$item['parent_id']]['son'][$item['id']]['b_count'];
+                //一级代理发展的下属二级代理总数
+                $dataTree[$item['parent_id']]['son_num'] += 1;
+            }
+        });
+        return $dataTree;
     }
 
 
@@ -249,8 +270,9 @@ class AgentService
         $detail = AgentModel::detail($agentId, $appId);
         //微信数据:是否绑定,昵称
         if (!empty($detail)) {
-            $detail['wx_bind_status'] = '是否绑定';
-            $detail['wx_nick_name'] = '昵称';
+            $bindData = UserWeiXinModel::userBindData($agentId, UserWeiXinModel::USER_TYPE_AGENT, UserWeiXinModel::BUSI_TYPE_AGENT_MINI, $appId);
+            $detail['wx_bind_status'] = empty($bindData) ? 0 : 1;
+            $detail['wx_nick_name'] = self::batchGetUserNicknameAndHead([$agentId])['nickname'];
         }
         return $detail;
     }
@@ -298,21 +320,22 @@ class AgentService
             $where[AgentModel::$table . '.service_employee_id'] = $serviceEmployeeId['id'];
         }
         if (!empty($params['name'])) {
-            $where[AgentInfoModel::$table . '.name'] = $params['name'];
+            $where[AgentModel::$table . '.name'] = $params['name'];
         }
-        $agentList = AgentModel::list($where);
+        $agentList = AgentModel::list($where, $params['page'], $params['count']);
         if (empty($agentList['list'])) {
             return $agentList;
         }
-        //二级代理数&&推广学员总数
-        $agentSecondary = self::agentSecondaryData(array_column($agentList['list'], 'id'));
-        array_walk($agentList['list'], function (&$agv) use ($agentSecondary) {
+        $firstAgentIds = array_column($agentList['list'], 'id');
+        $spreadData = self::agentSpreadData($firstAgentIds);
+        //推广数据
+        array_walk($agentList['list'], function (&$agv) use ($spreadData) {
             //二级代理数量
-            $agv['secondary_count'] = count($agentSecondary[$agv['id']]);
+            $agv['secondary_count'] = $spreadData[$agv['id']]['son_num'];
             //推广学员总数
-            $agv['referral_student_count'] += array_sum(array_column($agentSecondary[$agv['id']], 'referral_student_count'));
+            $agv['referral_student_count'] = $spreadData[$agv['id']]['total']['s_count'];
             //推广订单总数
-            $agv['referral_bill_count'] = self::agentSpreadData($agv['id'])['referral_bill_count'];
+            $agv['referral_bill_count'] = $spreadData[$agv['id']]['total']['b_count'];
 
         });
         $agentList['list'] = self::formatAgentData($agentList['list']);
@@ -335,6 +358,9 @@ class AgentService
         if (!empty($cityIds)) {
             $city = array_column(AreaCityModel::getRecords(['id' => $cityIds], ['id', 'city_name']), null, 'id');
         }
+        $agentTypeDict = DictConstants::getSet(DictConstants::AGENT_TYPE);
+        $agentStatusDict = DictConstants::getSet(DictConstants::AGENT);
+        $appIdDict = DictConstants::getSet(DictConstants::PACKAGE_APP_NAME);
         foreach ($agentData as &$agv) {
             // 省
             if (!empty($agv['province'])) {
@@ -345,9 +371,9 @@ class AgentService
                 $agv['city_name'] = $city[$agv['city']]['city_name'];
             }
             //代理模式
-            $agv['agent_type_name'] = DictConstants::getSet(DictConstants::AGENT_TYPE)[$agv['type']];
-            $agv['status_name'] = DictConstants::getSet(DictConstants::AGENT)[$agv['status']];
-            $agv['app_id_name'] = '智能陪练';
+            $agv['agent_type_name'] = $agentTypeDict[$agv['type']];
+            $agv['status_name'] = $agentStatusDict[$agv['status']];
+            $agv['app_id_name'] = empty($agv['app_id']) ? '' : $appIdDict[$agv['app_id']];
 
         }
         return $agentData;
@@ -442,13 +468,13 @@ class AgentService
             $busiType = UserWeiXinModel::BUSI_TYPE_AGENT_MINI;
         }
         $data = [
-            'user_id'     => $agentInfo['id'],
-            'user_type'   => $userType,
-            'open_id'     => $openId,
-            'union_id'    => $unionId,
-            'status'      => UserWeiXinModel::STATUS_NORMAL,
-            'busi_type'   => $busiType,
-            'app_id'      => $appId,
+            'user_id' => $agentInfo['id'],
+            'user_type' => $userType,
+            'open_id' => $openId,
+            'union_id' => $unionId,
+            'status' => UserWeiXinModel::STATUS_NORMAL,
+            'busi_type' => $busiType,
+            'app_id' => $appId,
         ];
         $bindInfo = UserWeiXinModel::getRecord($data);
         if (empty($bindInfo)) {
@@ -472,15 +498,15 @@ class AgentService
         }
         $db = MysqlDB::getDB();
         $where = [
-            'user_id'   => $userId,
-            'open_id'   => $openId,
-            'status'    => UserWeiXinModel::STATUS_NORMAL,
+            'user_id' => $userId,
+            'open_id' => $openId,
+            'status' => UserWeiXinModel::STATUS_NORMAL,
             'user_type' => UserWeiXinModel::USER_TYPE_AGENT,
             'busi_type' => UserWeiXinModel::BUSI_TYPE_AGENT_MINI,
-            'app_id'    => UserCenter::AUTH_APP_ID_OP_AGENT,
+            'app_id' => UserCenter::AUTH_APP_ID_OP_AGENT,
         ];
         $data = [
-            'status'      => UserWeiXinModel::STATUS_NORMAL,
+            'status' => UserWeiXinModel::STATUS_NORMAL,
             'update_time' => time(),
         ];
         return $db->updateGetCount(UserWeiXinModel::$table, $data, $where);
@@ -500,11 +526,11 @@ class AgentService
             return [];
         }
         $insertData = [
-            'name'         => $data['name'],
-            'mobile'       => $mobile,
+            'name' => $data['name'],
+            'mobile' => $mobile,
             'country_code' => $countryCode,
-            'create_time'  => time(),
-            'update_time'  => 0
+            'create_time' => time(),
+            'update_time' => 0
         ];
         if (self::checkAgentApplicationExists($mobile, $countryCode)) {
             throw new RunTimeException(['agent_application_exists']);
@@ -545,7 +571,7 @@ class AgentService
         }
         if (!empty($info['status'])
             && $info['status'] == AgentModel::STATUS_FREEZE
-            && time()-$info['update_time'] >= Util::TIMESTAMP_ONEWEEK) {
+            && time() - $info['update_time'] >= Util::TIMESTAMP_ONEWEEK) {
             return true;
         }
         return false;
@@ -575,6 +601,7 @@ class AgentService
      * @param $type
      * @param $page
      * @param $limit
+     * @return array
      */
     public static function getBindUserList($agentId, $type, $page, $limit)
     {
@@ -615,7 +642,7 @@ class AgentService
         }
 
         //获取总数
-        $returnData['total'] = AgentUserModel::getCount(['agent_id' => $agentIdArr,'stage[!]' => AgentUserModel::STAGE_REGISTER]);
+        $returnData['total'] = AgentUserModel::getCount(['agent_id' => $agentIdArr, 'stage[!]' => AgentUserModel::STAGE_REGISTER]);
 
 
         $userIdArr = [];
@@ -643,7 +670,7 @@ class AgentService
             $bindUserList[$key]['mobile'] = $encodeMobileArr[$val['user_id']] ?? '';
             $bindUserList[$key]['second_agent_name'] = $agentNameArr[$val['user_id']] ?? '';
             $bindUserList[$key]['format_bind_time'] = date('Y-m-d H:i:s', $val['bind_time']);
-            $bindUserList[$key]['bind_status'] = self::getAgentUserBindStatus($val['deadline'],$val['stage']);
+            $bindUserList[$key]['bind_status'] = self::getAgentUserBindStatus($val['deadline'], $val['stage']);
         }
 
         $returnData['bind_user_list'] = $bindUserList;
@@ -751,7 +778,7 @@ class AgentService
             $orderIdArr[] = $item['bill_id'];
         }, $orderList);
 
-        $returnData['total'] = AgentBillMapModel::getCount(['agent_id'=>$agentIdArr]);
+        $returnData['total'] = AgentBillMapModel::getCount(['agent_id' => $agentIdArr]);
 
         //获取用户昵称头像
         $userNicknameArr = self::batchGetUserNicknameAndHead($userIdArr);
@@ -794,21 +821,224 @@ class AgentService
     /**
      * 根据时间判断代理和用户的绑定状态， 这里stage必须是年卡或体验
      * stage = 0 注册状态， deadline可能是0
+     * @param $stage
      * @param $deadline
      * @return int
      */
-    public static function getAgentUserBindStatus($deadline,$stage){
+    public static function getAgentUserBindStatus($deadline, $stage)
+    {
         //未绑定 - 注册状态不存在绑定和不绑定的关系
         if ($stage == 0) {
             return AgentUserModel::BIND_STATUS_UNBIND;
         }
         switch ($deadline) {
             case 0:    //已购年卡 - 永久绑定中
-            return AgentUserModel::BIND_STATUS_BIND;
+                return AgentUserModel::BIND_STATUS_BIND;
             case $deadline >= time():   //已购体验
                 return AgentUserModel::BIND_STATUS_BIND;
             default:    //解绑
                 return AgentUserModel::BIND_STATUS_DEL_BIND;
         }
+    }
+
+    /**
+     * 推广学员列表数据
+     * @param $params
+     * @return array|mixed
+     */
+    public static function recommendUsersList($params)
+    {
+        $recommendUserList = ['count' => 0, 'list' => []];
+        $dssStudentWhere = [];
+        $time = time();
+        //dss数据表学生条件
+        if (!empty($params['student_id'])) {
+            $dssStudentWhere['id'] = $params['student_id'];
+        }
+        if (!empty($params['student_name'])) {
+            $dssStudentWhere['name'] = $params['student_name'];
+        }
+        if (!empty($params['student_uuid'])) {
+            $dssStudentWhere['uuid'] = $params['student_uuid'];
+        }
+        if (!empty($params['student_mobile'])) {
+            $dssStudentWhere['mobile'] = $params['student_mobile'];
+        }
+        if (!empty($dssStudentWhere)) {
+            $dssStudentList = StudentService::searchStudentList($dssStudentWhere);
+            if (empty($dssStudentList)) {
+                return $recommendUserList;
+            }
+            $whereStudentIds = array_column($dssStudentList, 'id');
+        }
+
+        //代理学生数据
+        $agentUserWhere = 'au.stage>0 ';
+        if (!empty($whereStudentIds)) {
+            $agentUserWhere .= ' AND  au.user_id in( ' . implode(',', $whereStudentIds) . ')';
+        }
+        if (!empty($params['stage'])) {
+            $agentUserWhere .= ' AND au.stage= ' . $params['stage'];
+        }
+        if (!empty($params['bind_start_time'])) {
+            $agentUserWhere .= ' AND au.create_time>= ' . $params['bind_start_time'];
+        }
+        if (!empty($params['bind_end_time'])) {
+            $agentUserWhere .= ' AND au.create_time<= ' . $params['bind_end_time'];
+        }
+        if (!empty($params['bind_status']) && $params['bind_status'] == AgentUserModel::BIND_STATUS_BIND) {
+            $agentUserWhere .= ' AND (au.deadline>= ' . $time . ' OR au.stage=' . AgentUserModel::STAGE_FORMAL . ') ';
+        }
+        if (!empty($params['bind_status']) && $params['bind_status'] == AgentUserModel::BIND_STATUS_DEL_BIND) {
+            $agentUserWhere .= ' AND au.deadline< ' . $time . 'AND au.stage=' . AgentUserModel::STAGE_TRIAL . ' ';
+        }
+
+        //一级代理数据
+        $firstAgentWhere = ' ';
+        if (!empty($params['first_agent_name'])) {
+            $firstAgentWhere .= " AND fa.name='" . $params['first_agent_name'] . "'";
+        }
+        if (!empty($params['first_agent_id'])) {
+            $firstAgentWhere .= ' AND fa.id=' . $params['first_agent_id'];
+        }
+        if (!empty($params['agent_type'])) {
+            $firstAgentWhere .= ' AND fa.type=' . $params['agent_type'];
+        }
+        //二级代理数据
+        $secondAgentTable = 'sa';
+        $secondAgentWhere = ' ';
+        if (!empty($params['second_agent_id'])) {
+            $secondAgentWhere .= ' AND ' . $secondAgentTable . '.id=' . $params['second_agent_id'];
+        }
+        if (!empty($params['second_agent_name'])) {
+            $secondAgentWhere .= " AND " . $secondAgentTable . ".name='" . $params['second_agent_name'] . "'";
+        }
+        list($recommendUserList['count'], $recommendUserList['list']) = AgentUserModel:: agentRecommendUserList($agentUserWhere, $firstAgentWhere, $secondAgentWhere, $params['page'], $params['count']);
+        if (empty($recommendUserList['count'])) {
+            return $recommendUserList;
+        }
+        return self::formatRecommendUsersData($recommendUserList);
+    }
+
+    /**
+     * 格式化推广学员列表数据
+     * @param $recommendUserData
+     * @return mixed
+     */
+    private static function formatRecommendUsersData($recommendUserData)
+    {
+        //学生详细数据
+        $studentListDetail = array_column(StudentService::searchStudentList(['id' => array_column($recommendUserData['list'], 'user_id')]), null, 'id');
+        array_walk($recommendUserData['list'], function (&$rv) use ($studentListDetail) {
+            $rv['student_name'] = $studentListDetail[$rv['user_id']]['name'];
+            $rv['student_uuid'] = $studentListDetail[$rv['user_id']]['uuid'];
+            $rv['student_mobile'] = Util::hideUserMobile($studentListDetail[$rv['user_id']]['mobile']);
+            //绑定关系状态
+            $rv['bind_status'] = self::getAgentUserBindStatus($rv['deadline'], $rv['stage']);
+            unset($rv['second_agent_id']);
+        });
+        return $recommendUserData;
+    }
+
+    /**
+     * 推广订单列表数据
+     * @param $params
+     * @return array|mixed
+     */
+    public static function recommendBillsList($params)
+    {
+        $recommendUserList = ['count' => 0, 'list' => []];
+        $dssStudentWhere = [];
+        //学员名称——姓名/ID/手机号
+        //学员UUID
+        //dss数据表学生条件
+        if (!empty($params['student_id'])) {
+            $dssStudentWhere['id'] = $params['student_id'];
+        }
+        if (!empty($params['student_name'])) {
+            $dssStudentWhere['name'] = $params['student_name'];
+        }
+        if (!empty($params['student_uuid'])) {
+            $dssStudentWhere['uuid'] = $params['student_uuid'];
+        }
+        if (!empty($params['student_mobile'])) {
+            $dssStudentWhere['mobile'] = $params['student_mobile'];
+        }
+        if (!empty($dssStudentWhere)) {
+            $dssStudentList = StudentService::searchStudentList($dssStudentWhere);
+            if (empty($dssStudentList)) {
+                return $recommendUserList;
+            }
+            $whereStudentIds = array_column($dssStudentList, 'id');
+        }
+
+        //订单状态 支付时间
+        $giftCodeWhere = ' ';
+        if (!empty($params['code_status'])) {
+            $giftCodeWhere .= ' AND gc.code_status=' . $params['code_status'];
+        }
+        if (!empty($params['pay_start_time'])) {
+            $giftCodeWhere .= ' AND gc.create_time>=' . $params['pay_start_time'];
+        }
+        if (!empty($params['pay_end_time'])) {
+            $giftCodeWhere .= ' AND gc.create_time<=' . $params['pay_end_time'];
+        }
+        //订单ID 购买产品包
+        $agentBillWhere = ' ab.id>0 AND ab.action_type != ' . AgentAwardDetailModel::AWARD_ACTION_TYPE_REGISTER;
+        if (!empty($whereStudentIds)) {
+            $agentBillWhere .= ' AND  ab.student_id in( ' . implode(',', $whereStudentIds) . ')';
+        }
+        if (!empty($params['parent_bill_id'])) {
+            $agentBillWhere .= " AND ab.ext->>'$.parent_bill_id'=" . $params['parent_bill_id'];
+        }
+        if (!empty($params['package_id'])) {
+            $agentBillWhere .= " AND ab.ext->>'$.package_id'=" . $params['package_id'];
+        }
+
+        //一级代理数据
+        $firstAgentWhere = ' ';
+        if (!empty($params['first_agent_name'])) {
+            $firstAgentWhere .= " AND fa.name='" . $params['first_agent_name'] . "'";
+        }
+        if (!empty($params['first_agent_id'])) {
+            $firstAgentWhere .= ' AND fa.id=' . $params['first_agent_id'];
+        }
+        if (!empty($params['agent_type'])) {
+            $firstAgentWhere .= ' AND fa.type=' . $params['agent_type'];
+        }
+        //二级代理数据
+        $secondAgentTable = 'sa';
+        $secondAgentWhere = ' ';
+        if (!empty($params['second_agent_id'])) {
+            $secondAgentWhere .= ' AND ' . $secondAgentTable . '.id=' . $params['second_agent_id'];
+        }
+        if (!empty($params['second_agent_name'])) {
+            $secondAgentWhere .= " AND " . $secondAgentTable . ".name='" . $params['second_agent_name'] . "'";
+        }
+        list($recommendUserList['count'], $recommendUserList['list']) = AgentAwardDetailModel:: agentBillsList($agentBillWhere, $firstAgentWhere, $secondAgentWhere, $giftCodeWhere, $params['page'], $params['count']);
+        if (empty($recommendUserList['count'])) {
+            return $recommendUserList;
+        }
+        return self::formatRecommendBillsData($recommendUserList);
+    }
+
+
+    /**
+     * 格式化推广学员列表数据
+     * @param $recommendUserData
+     * @return mixed
+     */
+    private static function formatRecommendBillsData($recommendUserData)
+    {
+        //学生详细数据
+        $studentListDetail = array_column(StudentService::searchStudentList(['id' => array_column($recommendUserData['list'], 'student_id')]), null, 'id');
+        array_walk($recommendUserData['list'], function (&$rv) use ($studentListDetail) {
+            $rv['student_name'] = $studentListDetail[$rv['student_id']]['name'];
+            $rv['student_uuid'] = $studentListDetail[$rv['student_id']]['uuid'];
+            $rv['student_mobile'] = Util::hideUserMobile($studentListDetail[$rv['student_id']]['mobile']);
+            $rv['bill_amount'] = $rv['bill_amount'] / 100;
+            unset($rv['second_agent_id']);
+        });
+        return $recommendUserData;
     }
 }

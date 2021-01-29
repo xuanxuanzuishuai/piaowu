@@ -19,7 +19,7 @@ class AgentModel extends Model
     //状态：1正常 2冻结
     const STATUS_OK = 1;
     const STATUS_FREEZE = 2;
-    const LEVEL_FIRST= 1; //一级代理
+    const LEVEL_FIRST = 1; //一级代理
 
     /**
      * 新增代理账户
@@ -120,7 +120,7 @@ class AgentModel extends Model
                 self::$table . '.employee_id',
                 self::$table . '.type',
                 self::$table . '.status',
-                AgentInfoModel::$table . '.name',
+                self::$table . '.name',
                 AgentInfoModel::$table . '.country',
                 AgentInfoModel::$table . '.province',
                 AgentInfoModel::$table . '.city',
@@ -145,9 +145,11 @@ class AgentModel extends Model
     /**
      * 获取代理账户列表
      * @param $where
+     * @param $page
+     * @param $limit
      * @return array
      */
-    public static function list($where)
+    public static function list($where, $page, $limit)
     {
         $data = ['count' => 0, 'list' => [],];
         $db = MysqlDB::getDB();
@@ -160,6 +162,7 @@ class AgentModel extends Model
         array_walk($where, function ($wv, $wk) use (&$whereSql) {
             $whereSql[] = ' ' . $wk . '=' . $wv . ' ';
         });
+        $offset = ($page - 1) * $limit;
         $sql = "SELECT
                     `agent`.`id`,
                     `agent`.`mobile`,
@@ -168,7 +171,7 @@ class AgentModel extends Model
                     `agent`.`employee_id`,
                     `agent`.`type`,
                     `agent`.`service_employee_id`,
-                    `agent_info`.`name`,
+                    `agent`.`name`,
                     `agent_info`.`country`,
                     `agent_info`.`province`,
                     `agent_info`.`city`,
@@ -176,17 +179,19 @@ class AgentModel extends Model
                     `agent_info`.`address`,
                     `employee`.`name` AS `e_name`,
                     EA.`name` AS `e_s_name`,
-                    count( s.student_id ) as `referral_student_count`
+                    count( s.student_id ) as `referral_student_count`,
+                    dr.app_id
                 FROM
                     " . self::$table . "
                     INNER JOIN " . AgentInfoModel::$table . " ON `agent`.`id` = `agent_info`.`agent_id`
                     INNER JOIN " . EmployeeModel::$table . " ON `agent`.`employee_id` = `employee`.`id`
                     LEFT JOIN " . EmployeeModel::$table . " EA ON `agent`.`service_employee_id` = `EA`.`id`
                     LEFT JOIN " . StudentInviteModel::$table . " AS s ON `agent`.`id` = s.`referee_id` 
+                    LEFT JOIN " . AgentDivideRulesModel::$table . " AS dr ON `agent`.`id` = dr.`agent_id` AND dr.status=" . AgentDivideRulesModel::STATUS_OK . " 
                 WHERE
                     " . implode('AND', $whereSql) . "
                 GROUP BY
-                    " . self::$table . ".`id` ORDER BY  " . self::$table . ".id DESC";
+                    " . self::$table . ".`id` ORDER BY  " . self::$table . ".id DESC LIMIT " . $offset . ',' . $limit;
         $data['list'] = $db->queryAll($sql);
         return $data;
     }
@@ -203,12 +208,12 @@ class AgentModel extends Model
             self::$table,
             ['[><]' . AgentInfoModel::$table => ['id' => 'agent_id']],
             [
-                self::$table.'.id', self::$table.'.mobile', self::$table.'.status',
-                self::$table.'.parent_id', self::$table.'.create_time', self::$table.'.employee_id',
-                self::$table.'.type',AgentInfoModel::$table.'.name'
+                self::$table . '.id', self::$table . '.mobile', self::$table . '.status',
+                self::$table . '.parent_id', self::$table . '.create_time', self::$table . '.employee_id',
+                self::$table . '.type', AgentInfoModel::$table . '.name'
             ],
             [
-                self::$table.'.parent_id' => $parentIds
+                self::$table . '.parent_id' => $parentIds
             ]);
         return $secondaryData;
     }
@@ -237,9 +242,9 @@ class AgentModel extends Model
         if (empty($openId)) {
             return [];
         }
-        $db    = MysqlDB::getDB();
+        $db = MysqlDB::getDB();
         $field = '*';
-        $res   = $db->select(
+        $res = $db->select(
             self::$table,
             [
                 '[><]' . UserWeiXinModel::$table => ['id' => 'user_id'],
