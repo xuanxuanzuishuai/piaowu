@@ -8,7 +8,6 @@
 
 namespace App\Models;
 
-
 class AgentUserModel extends Model
 {
     public static $table = "agent_user";
@@ -21,4 +20,22 @@ class AgentUserModel extends Model
     const STAGE_TRIAL = 1;
     const STAGE_FORMAL = 2;
 
+
+    /**
+     * 根据agent_id获取绑定用户列表
+     * @param array $agentIdArr
+     * @param array $limit [offset,limit]
+     * @param array $fields
+     * @return array
+     */
+    public static function getListByAgentId(array $agentIdArr, array $limit, array $fields = [])
+    {
+        $where = [
+            'agent_id' => $agentIdArr,
+            "ORDER" => ["bind_time" => "DESC"],
+            'stage[!]' => self::STAGE_REGISTER,
+            "LIMIT" => $limit
+        ];
+        return self::getRecords($where, $fields);
+    }
 }

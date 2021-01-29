@@ -6,10 +6,12 @@
  * Time: 21:52
  */
 
+
 namespace App\Models;
 
 
 use App\Libs\MysqlDB;
+use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 
 class AgentBillMapModel extends Model
@@ -60,5 +62,22 @@ class AgentBillMapModel extends Model
             return [];
         }
         return $mapData;
+    }
+
+    /**
+     * 根据agent_id获取代理的推广订单列表
+     * @param array $agentIdArr
+     * @param array $limit [offset,limit]
+     * @param array $fields
+     * @return array
+     */
+    public static function getListByAgentId(array $agentIdArr, array $limit,array $fields = [])
+    {
+        $where = [
+            'agent_id' => $agentIdArr,
+            "ORDER" => ["pay_time" => "DESC"],
+            "LIMIT" => $limit
+        ];
+        return self::getRecords($where, $fields);
     }
 }

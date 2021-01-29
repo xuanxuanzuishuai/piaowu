@@ -9,6 +9,8 @@ namespace App\Models\Dss;
 
 
 use App\Libs\Constants;
+use App\Libs\MysqlDB;
+use App\Libs\Util;
 use App\Models\StudentInviteModel;
 use App\Services\ReferralService;
 
@@ -130,5 +132,59 @@ class DssGiftCodeModel extends DssModel
             {$where}
         ";
         return $db->queryAll($sql);
+    }
+
+    /**
+     * 获取订单信息列表
+     * @param $params
+     * @param false $isGetCount
+     * @return array
+     */
+    public static function getOrderList($params,$isGetCount = false){
+        $giftCode = self::$table;
+        $erpPackage = DssErpPackageModel::$table;
+        $where =[];
+        $returnData = [
+            'list' => [],
+            'totalCount' => 0
+        ];
+
+        if (isset($params['order_id']) && !empty($params['order_id'])) {
+            $where["{$giftCode}.parent_bill_id"] = $params['order_id'];
+        }
+
+        $join = [
+            "[>]{$erpPackage}" => ["{$giftCode}.bill_package_id" => "id"],
+        ];
+
+        if($isGetCount) {
+            $totalCount = MysqlDB::getDB()->count($giftCode, $join, ["{$giftCode}.id"], $where);
+            if (empty($totalCount)){
+                return $returnData;
+            }
+        }
+
+        if(isset($params['page']) && $params['page'] > 0) {
+            list($params['page'], $params['count']) = Util::formatPageCount($params);
+            $where['LIMIT'] = [($params['page'] - 1) * $params['count'], $params['count']];
+        }
+
+        if(isset($params['ORDER']) && !empty($params['ORDER'])) {
+            $where['ORDER'] = ["{$giftCode}.create_time" => "DESC"];
+        }
+
+        $list = MysqlDB::getDB()->select($giftCode, $join, [
+            "{$giftCode}.parent_bill_id",
+            "{$erpPackage}.name(package_name)",
+            "{$giftCode}.bill_amount",
+            "{$giftCode}.code_status",
+            "{$giftCode}.buy_time",
+            "{$giftCode}.create_time",
+            "{$giftCode}.employee_uuid",
+        ], $where);
+
+        $returnData['list'] = is_array($list) ? $list :[];
+        $returnData['totalCount'] = $totalCount ?? 0;
+        return $returnData;
     }
 }

@@ -37,6 +37,7 @@ class WeChatMiniPro
     const API_CREATE_SCHEME    = '/wxa/generatescheme';
     const API_CODE_2_SESSION   = '/sns/jscode2session';
     const API_TOKEN            = '/cgi-bin/token';
+    const API_BATCH_USER_INFO  = '/cgi-bin/user/info/batchget';
 
     public $nowWxApp; //当前的微信应用
 
@@ -523,5 +524,13 @@ class WeChatMiniPro
         return [];
     }
 
-    
+
+    public function batchGetUserInfo(array $openidArr)
+    {
+        $api = $this->apiUrl(self::API_BATCH_USER_INFO);
+        $params = [
+            'user_list' => $openidArr,
+        ];
+        return $this->requestJson($api, $params, 'POST');
+    }
 }

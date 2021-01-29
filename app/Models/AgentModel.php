@@ -19,6 +19,7 @@ class AgentModel extends Model
     //状态：1正常 2冻结
     const STATUS_OK = 1;
     const STATUS_FREEZE = 2;
+    const LEVEL_FIRST= 1; //一级代理
 
     /**
      * 新增代理账户

@@ -8,10 +8,14 @@
 
 namespace App\Models;
 
+use App\Libs\RedisDB;
+
 class UserWeiXinModel extends Model
 {
     //表名称
     public static $table = "user_weixin";
+    //用户微信信息存储redis key
+    const REDIS_KEY_USER_WX_INFO_PREFIX = 'wechat_agent_student_';
 
     const STATUS_NORMAL = 1;
     const STATUS_DISABLE = 2;
@@ -20,4 +24,33 @@ class UserWeiXinModel extends Model
 
     const BUSI_TYPE_AGENT_MINI = 9; // 代理小程序
 
+    /**
+     * 根据用户id更新用户微信昵称和头像地址
+     * @param $userId
+     * @param $wxInfo
+     * @return bool
+     */
+    public static function updateWxInfoByUserid($userId, $wxInfo)
+    {
+        //更新redis
+        $redis = RedisDB::getConn();
+        $redis->set(self::REDIS_KEY_USER_WX_INFO_PREFIX . $userId, json_encode($wxInfo));
+        $redis->expire(self::REDIS_KEY_USER_WX_INFO_PREFIX . $userId, 86400);  //24小时
+
+        //更新表
+        $update = [];
+        if (isset($wxInfo['nickname']) && !empty($wxInfo['nickname'])) {
+            $update['nickname'] = $wxInfo['nickname'];
+        }
+        if (isset($wxInfo['thumb']) && !empty($wxInfo['thumb'])) {
+            $update['thumb'] = $wxInfo['thumb'];
+        }
+
+        //没有需要更新的数据直接返回
+        if (empty($update)) {
+            return false;
+        }
+        $result = self::updateRecord($userId, $update);
+        return ($result && $result > 0);
+    }
 }
