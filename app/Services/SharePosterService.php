@@ -107,7 +107,8 @@ class SharePosterService
                 $total = SharePosterModel::getCount([
                     'type'          => SharePosterModel::TYPE_CHECKIN_UPLOAD,
                     'student_id'    => $poster['student_id'],
-                    'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED
+                    'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED,
+                    'id[!]' => $poster['id']
                 ]);
                 // 审核通过状态还未更新，查询总数加1
                 $total += 1;
