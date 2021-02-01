@@ -9,12 +9,7 @@
 
 namespace App\Models;
 
-
-use App\Libs\MysqlDB;
-use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
-use App\Models\Dss\DssErpPackageV1Model;
-use App\Models\Dss\DssGiftCodeModel;
 
 class AgentBillMapModel extends Model
 {

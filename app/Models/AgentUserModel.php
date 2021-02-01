@@ -101,4 +101,14 @@ class AgentUserModel extends Model
                     agent_id;';
         return $db->queryAll($sql);
     }
+
+    /**
+     * 获取学生有效的绑定关系
+     * @param $studentId
+     * @return array
+     */
+    public static function getValidBindData($studentId)
+    {
+        return self::getRecord(['user_id' => $studentId, 'stage' => self::STAGE_TRIAL, 'deadline[>=]' => time()], ['agent_id', 'id']);
+    }
 }

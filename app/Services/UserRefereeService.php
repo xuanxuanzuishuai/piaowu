@@ -7,7 +7,6 @@ use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
 use App\Models\AgentAwardDetailModel;
-use App\Models\AgentBillMapModel;
 use App\Models\Dss\DssPackageExtModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserQrTicketModel;
@@ -182,7 +181,7 @@ class UserRefereeService
     {
         if ($appId == Constants::SMART_APP_ID) {
             //根据订单ID区分下单来源
-            $agentId = AgentBillMapModel::get($parentBillId, $buyPreStudentInfo['id']);
+            $agentId =AgentService::checkBillIsAgent($buyPreStudentInfo, $packageInfo, $parentBillId);
             if ($agentId) {
                 //代理商分享购买
                 AgentAwardService::agentReferralBillAward($agentId, $buyPreStudentInfo, $packageInfo['package_type'], $packageInfo, $parentBillId);

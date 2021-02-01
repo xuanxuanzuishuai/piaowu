@@ -27,8 +27,8 @@ use App\Models\AreaCityModel;
 use App\Models\AreaProvinceModel;
 use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssStudentModel;
+use App\Models\Dss\DssPackageExtModel;
 use App\Models\EmployeeModel;
-use App\Models\StudentInviteModel;
 use App\Models\UserWeiXinModel;
 
 
@@ -1040,5 +1040,23 @@ class AgentService
             unset($rv['second_agent_id']);
         });
         return $recommendUserData;
+    }
+
+    /**
+     * 检测订单是否属于代理业务线
+     * @param $studentInfo
+     * @param $packageInfo
+     * @param $parentBillId
+     * @return int
+     */
+    public
+    static function checkBillIsAgent($studentInfo, $packageInfo, $parentBillId)
+    {
+        if ($packageInfo['package_type'] == DssPackageExtModel::PACKAGE_TYPE_NORMAL) {
+            $agentData = AgentUserModel::getValidBindData($studentInfo['id']);
+        } else {
+            $agentData = AgentBillMapModel::get($parentBillId, $studentInfo['id']);
+        }
+        return empty($agentData) ? 0 : $agentData['agent_id'];
     }
 }
