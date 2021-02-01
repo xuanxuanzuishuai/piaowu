@@ -8,7 +8,6 @@
 
 namespace App\Services;
 
-
 use App\Libs\AliOSS;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
@@ -32,9 +31,9 @@ use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssPackageExtModel;
 use App\Models\EmployeeModel;
 use App\Models\GoodsResourceModel;
+use App\Models\PosterModel;
 use App\Models\UserWeiXinModel;
 use Medoo\Medoo;
-
 
 class AgentService
 {
@@ -204,8 +203,8 @@ class AgentService
 
     /**
      * 获取一级代理的二级代理数据
-     * @param array $agentIds
-     * @param array $spreadData
+     * @param $agentIds
+     * @param $spreadData
      * @return array
      */
     private static function agentSecondaryData($agentIds, $spreadData)
@@ -510,7 +509,7 @@ class AgentService
             'app_id' => UserCenter::AUTH_APP_ID_OP_AGENT,
         ];
         $data = [
-            'status' => UserWeiXinModel::STATUS_NORMAL,
+            'status' => UserWeiXinModel::STATUS_DISABLE,
             'update_time' => time(),
         ];
         return $db->updateGetCount(UserWeiXinModel::$table, $data, $where);
@@ -548,15 +547,26 @@ class AgentService
     /**
      * 检查代理商是否已存在
      * @param $mobile
-     * @param string $countryCode
+     * @param null $countryCode
+     * @param int $excludeId
      * @return bool
      */
-    public static function checkAgentExists($mobile, $countryCode = NewSMS::DEFAULT_COUNTRY_CODE)
+    public static function checkAgentExists($mobile, $countryCode = null, $excludeId = 0)
     {
         if (empty($mobile)) {
             return false;
         }
-        $agentInfo = AgentModel::getRecord(['mobile' => $mobile, 'country_code' => $countryCode]);
+        if (empty($countryCode)) {
+            $countryCode = NewSMS::DEFAULT_COUNTRY_CODE;
+        }
+        $where = [
+            'mobile' => $mobile,
+            'country_code' => $countryCode
+        ];
+        if (!empty($excludeId)) {
+            $where['id[!]'] = $excludeId;
+        }
+        $agentInfo = AgentModel::getRecord($where);
         if (!empty($agentInfo)) {
             return true;
         }
@@ -832,8 +842,8 @@ class AgentService
     public static function getAgentUserBindStatus($deadline, $stage)
     {
         //未绑定 - 注册状态不存在绑定和不绑定的关系
-        if ($stage == 0) {
-            return AgentUserModel::BIND_STATUS_UNBIND;
+        if ($stage == AgentUserModel::STAGE_REGISTER) {
+            return AgentUserModel::BIND_STATUS_PENDING;
         }
         switch ($deadline) {
             case 0:    //已购年卡 - 永久绑定中
@@ -841,8 +851,168 @@ class AgentService
             case $deadline >= time():   //已购体验
                 return AgentUserModel::BIND_STATUS_BIND;
             default:    //解绑
-                return AgentUserModel::BIND_STATUS_DEL_BIND;
+                return AgentUserModel::BIND_STATUS_UNBIND;
         }
+    }
+
+    /**
+     * 代理小程序首页
+     * @param $agentId
+     * @return array
+     * @throws RunTimeException
+     * @throws \App\Libs\KeyErrorRC4Exception
+     */
+    public static function getMiniAppIndex($agentId)
+    {
+        if (empty($agentId)) {
+            throw new RunTimeException(['agent_not_exist']);
+        }
+        $agentInfo  = AgentModel::getById($agentId);
+        if (empty($agentInfo)) {
+            throw new RunTimeException(['agent_not_exist']);
+        }
+        $wechatInfo = self::batchGetUserNicknameAndHead([$agentId]);
+        $agentInfo['thumb']      = $wechatInfo[$agentId]['thumb'] ?? '';
+        $agentInfo['users']      = AgentUserModel::getCount(['agent_id' => $agentId]);
+        $agentInfo['orders']     = AgentBillMapModel::getCount(['agent_id' => $agentId]);
+        $agentInfo['sec_agents'] = AgentModel::getCount(['parent_id' => $agentId]);
+        $agentInfo['config']     = self::popularMaterialInfo($agentId);
+        $agentInfo['parent']     = AgentModel::getRecord(['id' => $agentInfo['parent_id']]);
+        return $agentInfo;
+    }
+
+    /**
+     * 添加二级代理
+     * @param $agentId
+     * @param array $params
+     * @return bool
+     * @throws RunTimeException
+     */
+    public static function secAgentAdd($agentId, $params = [])
+    {
+        if (self::checkAgentExists($params['mobile'])) {
+            throw new RunTimeException(['agent_have_exist']);
+        }
+        $data = [
+            'name'         => $params['name'],
+            'mobile'       => $params['mobile'],
+            'parent_id'    => $agentId,
+            'agent_type'   => AgentModel::TYPE_DISTRIBUTION,
+            'country_code' => $params['country_code'] ?? NewSMS::DEFAULT_COUNTRY_CODE,
+            'app_id'       => UserCenter::AUTH_APP_ID_OP_AGENT,
+            'divide_type'  => AgentDivideRulesModel::TYPE_LEADS,
+        ];
+        return self::addAgent($data, 0);
+    }
+
+    /**
+     * 更新二级代理
+     * @param $agentId
+     * @param array $params
+     * @return int|null
+     * @throws RunTimeException
+     */
+    public static function secAgentUpdate($agentId, $params = [])
+    {
+        $record = AgentModel::getById($agentId);
+        if (empty($record)) {
+            throw new RunTimeException(['record_not_found']);
+        }
+        if (self::checkAgentExists(
+            $params['mobile'],
+            $params['country_code'],
+            $agentId
+        )) {
+            throw new RunTimeException(['agent_have_exist']);
+        }
+        $data = [
+            'name'         => $params['name'],
+            'mobile'       => $params['mobile'],
+            'country_code' => $params['country_code'] ?? NewSMS::DEFAULT_COUNTRY_CODE,
+        ];
+        return AgentModel::updateRecord($record['id'], $data);
+    }
+
+    /**
+     * 二级代理详情
+     * @param $agentId
+     * @return array|mixed|null
+     */
+    public static function secAgentDetail($agentId)
+    {
+        if (empty($agentId)) {
+            return [];
+        }
+        return AgentModel::getById($agentId);
+    }
+
+    /**
+     * 我的上级代理
+     * @param $agentId
+     * @return mixed
+     * @throws RunTimeException
+     */
+    public static function secAgentParent($agentId)
+    {
+        if (empty($agentId)) {
+            throw new RunTimeException(['record_not_found']);
+        }
+        $record = AgentModel::getById($agentId);
+        if (empty($record) || empty($record['parent_id'])) {
+            throw new RunTimeException(['record_not_found']);
+        }
+        $parent = AgentModel::getById($record['parent_id']);
+        if (empty($parent)) {
+            throw new RunTimeException(['record_not_found']);
+        }
+        return $parent;
+    }
+
+    /**
+     * 二级代理列表
+     * @param $agentId
+     * @param array $params
+     * @return array
+     */
+    public static function secAgentList($agentId, $params = [])
+    {
+        $data = ['records' => [], 'total' => 0];
+        if (empty($agentId)) {
+            return $data;
+        }
+        list($page, $count) = Util::formatPageCount($params);
+        $where = [
+            'parent_id' => $agentId,
+        ];
+        $data['total'] = AgentModel::getCount($where);
+        if (empty($data['total'])) {
+            return $data;
+        }
+        $where['LIMIT'] = [($page - 1) * $count, $count];
+        $where['ORDER'] = ['id' => 'DESC'];
+        $records = AgentModel::getRecords($where);
+        $data['records'] = self::formatMiniAppAgent($records);
+        return $data;
+    }
+
+    /**
+     * 格式化小程序代理列表
+     * @param array $records
+     * @return array|mixed
+     */
+    public static function formatMiniAppAgent($records = [])
+    {
+        if (empty($records)) {
+            return [];
+        }
+        $wechatInfo = self::batchGetUserNicknameAndHead(array_column($records, 'id'));
+        foreach ($records as &$record) {
+            $record['create_time_show'] = Util::formatTimestamp($record['create_time']);
+            $record['status_show']      = AgentModel::STATUS_DICT[$record['status']] ?? $record['status'];
+            $record['thumb']            = $wechatInfo[$record['id']]['thumb'] ?? '';
+            $record['nickname']         = $wechatInfo[$record['id']]['nickname'] ?? '';
+        }
+        return $records;
     }
 
     /**
@@ -893,7 +1063,7 @@ class AgentService
         if (!empty($params['bind_status']) && $params['bind_status'] == AgentUserModel::BIND_STATUS_BIND) {
             $agentUserWhere .= ' AND (au.deadline>= ' . $time . ' OR au.stage=' . AgentUserModel::STAGE_FORMAL . ') ';
         }
-        if (!empty($params['bind_status']) && $params['bind_status'] == AgentUserModel::BIND_STATUS_DEL_BIND) {
+        if (!empty($params['bind_status']) && $params['bind_status'] == AgentUserModel::BIND_STATUS_UNBIND) {
             $agentUserWhere .= ' AND au.deadline< ' . $time . 'AND au.stage=' . AgentUserModel::STAGE_TRIAL . ' ';
         }
 
@@ -1190,10 +1360,13 @@ class AgentService
     }
 
     /**
+     * @param int $agentId
      * @return array|mixed
      * 获取推广素材方法
+     * @throws RunTimeException
+     * @throws \App\Libs\KeyErrorRC4Exception
      */
-    public static function popularMaterialInfo()
+    public static function popularMaterialInfo($agentId = 0)
     {
         $packageId = self::getPackageId('WEB_STUDENT_CONFIG', 'mini_package_id');
         $result = GoodsResourceModel::getRecord(['package_id' => $packageId], ['id', 'package_id', 'ext']);
@@ -1201,13 +1374,32 @@ class AgentService
             return $result;
         }
         $data = [];
-        $ext = json_decode($result['ext'], true);
-        foreach ($ext as $value) {
-            $data[$value['key']] = $value['value'];
+        $agentInfo = [];
+        if (!empty($agentId)) {
+            $agentInfo = AgentModel::getById($agentId);
         }
-        $data['product_img_url'] = AliOSS::signUrls($data['product_img']);
-        $data['poster_url'] = AliOSS::signUrls($data['poster']);
-        $data['mini_app_card_url'] = AliOSS::signUrls($data['mini_app_card']);
+        $ext = json_decode($result['ext'], true);
+
+        $posterConfig = DictConstants::getSet(DictConstants::POSTER_CONFIG);
+        foreach ($ext as $item) {
+            if ($item['type'] == GoodsResourceModel::CONTENT_TYPE_IMAGE) {
+                $data[$item['key'] . '_url'] = AliOSS::signUrls($item['value']);
+            } elseif ($item['type'] == GoodsResourceModel::CONTENT_TYPE_TEXT) {
+                $data[$item['key']] = Util::textDecode($item['value']);
+            } elseif ($item['type'] == GoodsResourceModel::CONTENT_TYPE_POSTER && !empty($agentId)) {
+                $posterUrl = PosterService::generateQRPosterAliOss(
+                    $item['value'],
+                    $posterConfig,
+                    $agentId,
+                    UserWeiXinModel::USER_TYPE_AGENT,
+                    GoodsResourceModel::getAgentChannel($agentInfo['type'] ?? 0),
+                    [
+                        'p' => PosterModel::getIdByPath($item['value'])
+                    ]
+                );
+                $data[$item['key'] . '_url'] = $posterUrl['poster_save_full_path'] ?? '';
+            }
+        }
         return $data;
     }
 }

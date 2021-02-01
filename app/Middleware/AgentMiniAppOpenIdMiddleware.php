@@ -27,20 +27,20 @@ class AgentMiniAppOpenIdMiddleware extends MiddlewareBase
         SimpleLogger::info('--AgentMiniAppOpenIdMiddleware--', []);
         $code = $request->getParam('wx_code');
         if (empty($code)) {
-            return $response->withJson(Valid::addAppErrors([], 'need_wx_code'), StatusCode::HTTP_OK);
+            return $response->withJson(Valid::addAppErrors([], 'need_wx_code'), StatusCode::HTTP_UNAUTHORIZED);
         }
         try {
             $wechat = WeChatMiniPro::factory(UserCenter::AUTH_APP_ID_OP_AGENT, UserWeiXinModel::BUSI_TYPE_AGENT_MINI);
             $loginData = $wechat->code2Session($code);
             if (!empty($loginData['errcode']) || empty($loginData['openid'])) {
                 SimpleLogger::error('GET DATA BY WX CODE ERROR', [$loginData, $code]);
-                return $response->withJson(Valid::addAppErrors([], 'request_error'), StatusCode::HTTP_OK);
+                return $response->withJson(Valid::addAppErrors([], 'request_error'), StatusCode::HTTP_UNAUTHORIZED);
             }
             $this->container['open_id'] = $loginData['openid'];
             $this->container['unionid'] = $loginData['unionid'];
 
         } catch (RunTimeException $e) {
-            return $response->withJson(Valid::addAppErrors([], 'request_error'), StatusCode::HTTP_OK);
+            return $response->withJson(Valid::addAppErrors([], 'request_error'), StatusCode::HTTP_UNAUTHORIZED);
         }
         return $next($request, $response);
     }

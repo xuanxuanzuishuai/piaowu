@@ -3,8 +3,6 @@ namespace App\Services;
 
 use App\Libs\AliOSS;
 use App\Libs\Constants;
-use App\Libs\Dss;
-use App\Libs\RC4;
 use App\Libs\SimpleLogger;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\Dss\DssUserQrTicketModel;
@@ -19,20 +17,18 @@ class PosterService
      * @param $config
      * @param $userId
      * @param $type
-     * @param $appId
      * @param $channelId
-     * @param null $landingType
      * @param array $extParams
      * @return array|string[]
+     * @throws \App\Libs\Exceptions\RunTimeException
+     * @throws \App\Libs\KeyErrorRC4Exception
      */
     public static function generateQRPosterAliOss(
         $posterPath,
         $config,
         $userId,
         $type,
-        $appId,
         $channelId,
-        $landingType = null,
         $extParams = []
     ) {
         //通过oss合成海报并保存

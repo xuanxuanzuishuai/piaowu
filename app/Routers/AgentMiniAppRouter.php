@@ -8,6 +8,7 @@
 
 namespace App\Routers;
 
+use App\Controllers\Agent\Agent;
 use App\Controllers\Agent\Auth;
 use App\Controllers\Agent\Order;
 use App\Controllers\Agent\User;
@@ -28,5 +29,17 @@ class AgentMiniAppRouter extends RouterBase
         '/agent/user/bind_list' => ['method' => ['get'], 'call' => User::class . ':bindList', 'middles' => [AgentMiniAppOpenIdMiddleware::class]],
         // 代理的推广订单列表
         '/agent/order/list' => ['method' => ['get'], 'call' => Order::class . ':list', 'middles' => [AgentMiniAppOpenIdMiddleware::class]],
+        // 首页
+        '/agent/user/index' => ['method' => ['get'], 'call' => Agent::class . ':miniAppIndex'],
+        // 素材
+        '/agent/config/get' => ['method' => ['get'], 'call' => Agent::class . ':getConfig'],
+        // 我的下级代理：
+        '/agent/sec_agent/list'     => ['method' => ['get'],  'call' => Agent::class . ':secAgentList'],
+        '/agent/sec_agent/detail'   => ['method' => ['get'],  'call' => Agent::class . ':secAgentDetail'],
+        '/agent/sec_agent/parent'   => ['method' => ['get'],  'call' => Agent::class . ':secAgentParent'],
+        '/agent/sec_agent/add'      => ['method' => ['post'], 'call' => Agent::class . ':secAgentAdd'],
+        '/agent/sec_agent/update'   => ['method' => ['post'], 'call' => Agent::class . ':secAgentUpdate'],
+        '/agent/sec_agent/freeze'   => ['method' => ['post'], 'call' => Agent::class . ':secAgentFreeze'],
+        '/agent/sec_agent/unfreeze' => ['method' => ['post'], 'call' => Agent::class . ':secAgentUnfreeze'],
     ];
 }

@@ -21,6 +21,21 @@ class AgentModel extends Model
     const STATUS_FREEZE = 2;
     const LEVEL_FIRST = 1; //一级代理
 
+    const STATUS_DICT = [
+        self::STATUS_FREEZE => '已冻结',
+        self::STATUS_OK => '正常'
+    ];
+
+    // 1分销渠道 2个人代理 3线下代理
+    const TYPE_DISTRIBUTION = 1;
+    const TYPE_INDIVIDUAL   = 2;
+    const TYPE_OFFLINE      = 3;
+    const TYPE_DICT = [
+        self::TYPE_DISTRIBUTION => '分销渠道',
+        self::TYPE_INDIVIDUAL   => '个人代理',
+        self::TYPE_OFFLINE      => '线下代理',
+    ];
+
     /**
      * 新增代理账户
      * @param $agentData

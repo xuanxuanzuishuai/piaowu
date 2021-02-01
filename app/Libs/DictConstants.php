@@ -237,7 +237,7 @@ class DictConstants {
     const WECHAT_APPID = [
         'type' => 'wechat_app_id',
         'keys' => [
-            '8_1', '8_8', '21_2'
+            '8_1', '8_8', '21_9'
         ]
     ];
     //不同应用的微信app_secret
@@ -369,6 +369,17 @@ class DictConstants {
     const AGENT_BIND = [
         'type' => 'agent_bind',
         'keys' => ['1', '2']
+    ];
+
+    // 代理配置
+    const AGENT_CONFIG = [
+        'type' => 'AGENT_CONFIG',
+        'keys' => [
+            'channel_distribution',
+            'channel_individual',
+            'channel_offline',
+            'channel_dict',
+        ]
     ];
 
     public static function get($type, $key)

@@ -432,9 +432,7 @@ class MessageService
                 $config,
                 $userInfo['user_id'],
                 DssUserWeiXinModel::USER_TYPE_STUDENT,
-                Constants::SMART_APP_ID,
                 $channelId,
-                null,
                 [
                     'p' => PosterModel::getIdByPath($item['path'])
                 ]
@@ -891,9 +889,7 @@ class MessageService
                 $config,
                 $studentId,
                 DssUserWeiXinModel::USER_TYPE_STUDENT,
-                Constants::SMART_APP_ID,
                 DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'NORMAL_STUDENT_INVITE_STUDENT'),
-                null,
                 [
                     'p' => PosterModel::getIdByPath($posterUrl)
                 ]
