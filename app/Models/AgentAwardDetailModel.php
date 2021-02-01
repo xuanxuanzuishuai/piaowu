@@ -40,7 +40,16 @@ class AgentAwardDetailModel extends Model
      */
     public static function agentBillsList($agentBillWhere, $firstAgentWhere, $secondAgentWhere, $giftCodeWhere, $page, $limit)
     {
-        $db = MysqlDB::getDB();
+        //获取从库对象
+        $db = self::dbRO();
+        //获取库+表完整名称
+        $opAgentAwardDetailTableName = self::getTableNameWithDb();
+        $opAgentTableName = AgentModel::getTableNameWithDb();
+        $opAgentDivideRuleTableName = AgentDivideRulesModel::getTableNameWithDb();
+
+        $dssPackageV1TableName = DssErpPackageV1Model::getTableNameWithDb();
+        $dssGiftCodeTableName = DssGiftCodeModel::getTableNameWithDb();
+
         $baseSql = 'select query_field
                  FROM (' .
             'SELECT
@@ -51,15 +60,15 @@ class AgentAwardDetailModel extends Model
                                         ab.ext->>\'$.parent_bill_id\' as parent_bill_id,
                                         ab.student_id
                                 FROM
-                                    ' . self::$table . ' as ab
-                                    INNER JOIN ' . AgentModel::$table . ' AS a ON ab.agent_id = a.id
+                                    ' . $opAgentAwardDetailTableName . ' as ab
+                                    INNER JOIN ' . $opAgentTableName . ' AS a ON ab.agent_id = a.id
                                 WHERE ' . $agentBillWhere . '
                                 ) as tma 
-             INNER JOIN ' . AgentModel::$table . ' AS fa ON tma.first_agent_id=fa.id  ' . $firstAgentWhere .
-            ' INNER JOIN ' . AgentModel::$table . ' AS sa ON tma.second_agent_id=sa.id  ' . $secondAgentWhere .
-            ' LEFT JOIN ' . AgentDivideRulesModel::$table . ' AS dr ON fa.id = dr.agent_id AND dr.status = ' . AgentDivideRulesModel::STATUS_OK . ' 
-            INNER JOIN `dss_dev`.' . DssGiftCodeModel::$table . ' AS gc ON tma.parent_bill_id = gc.parent_bill_id ' . $giftCodeWhere . '
-            INNER JOIN `dss_dev`.' . DssErpPackageV1Model::$table . ' AS ep ON gc.bill_package_id = ep.id 
+             INNER JOIN ' . $opAgentTableName . ' AS fa ON tma.first_agent_id=fa.id  ' . $firstAgentWhere .
+            ' INNER JOIN ' . $opAgentTableName . ' AS sa ON tma.second_agent_id=sa.id  ' . $secondAgentWhere .
+            ' LEFT JOIN ' . $opAgentDivideRuleTableName . ' AS dr ON fa.id = dr.agent_id AND dr.status = ' . AgentDivideRulesModel::STATUS_OK . ' 
+            INNER JOIN ' . $dssGiftCodeTableName . ' AS gc ON tma.parent_bill_id = gc.parent_bill_id ' . $giftCodeWhere . '
+            INNER JOIN ' . $dssPackageV1TableName . ' AS ep ON gc.bill_package_id = ep.id 
             ORDER BY tma.id DESC';
         $countSql = 'count(tma.id) as total_count';
         $listSql = 'tma.*,

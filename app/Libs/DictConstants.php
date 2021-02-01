@@ -370,6 +370,23 @@ class DictConstants {
         'type' => 'agent_bind',
         'keys' => ['1', '2']
     ];
+    //订单状态
+    const CODE_STATUS = [
+        'type' => 'code_status',
+        'keys' => ['1', '2']
+    ];
+    //代理转介绍学生的当前进度
+    const AGENT_USER_STAGE = [
+        'type' => 'agent_user_stage',
+        'keys' => ['0', '1', '2']
+    ];
+    //代理和学生绑定状态
+    const AGENT_BIND_STATUS = [
+        'type' => 'agent_bind_status',
+        'keys' => ['0', '1', '2']
+    ];
+
+
 
     // 代理配置
     const AGENT_CONFIG = [

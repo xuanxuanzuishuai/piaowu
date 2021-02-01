@@ -1103,12 +1103,19 @@ class AgentService
     {
         //学生详细数据
         $studentListDetail = array_column(StudentService::searchStudentList(['id' => array_column($recommendUserData['list'], 'user_id')]), null, 'id');
-        array_walk($recommendUserData['list'], function (&$rv) use ($studentListDetail) {
+        $dict = DictService::getTypesMap([DictConstants::AGENT_TYPE['type'], DictConstants::AGENT_USER_STAGE['type'], DictConstants::PACKAGE_APP_NAME['type'], DictConstants::AGENT_BIND_STATUS['type']]);
+
+        array_walk($recommendUserData['list'], function (&$rv) use ($studentListDetail, $dict) {
             $rv['student_name'] = $studentListDetail[$rv['user_id']]['name'];
             $rv['student_uuid'] = $studentListDetail[$rv['user_id']]['uuid'];
             $rv['student_mobile'] = Util::hideUserMobile($studentListDetail[$rv['user_id']]['mobile']);
             //绑定关系状态
             $rv['bind_status'] = self::getAgentUserBindStatus($rv['deadline'], $rv['stage']);
+
+            $rv['type_name'] = $dict[DictConstants::AGENT_TYPE['type']][$rv['type']]['value'];
+            $rv['stage_name'] = $dict[DictConstants::AGENT_USER_STAGE['type']][$rv['stage']]['value'];
+            $rv['app_id_name'] = $dict[DictConstants::PACKAGE_APP_NAME['type']][$rv['app_id']]['value'];
+            $rv['bind_status_name'] = $dict[DictConstants::AGENT_BIND_STATUS['type']][$rv['bind_status']]['value'];
             unset($rv['second_agent_id']);
         });
         return $recommendUserData;
@@ -1206,11 +1213,15 @@ class AgentService
     {
         //学生详细数据
         $studentListDetail = array_column(StudentService::searchStudentList(['id' => array_column($recommendUserData['list'], 'student_id')]), null, 'id');
-        array_walk($recommendUserData['list'], function (&$rv) use ($studentListDetail) {
+        $dict = DictService::getTypesMap([DictConstants::AGENT_TYPE['type'], DictConstants::CODE_STATUS['type'], DictConstants::PACKAGE_APP_NAME['type']]);
+        array_walk($recommendUserData['list'], function (&$rv) use ($studentListDetail, $dict) {
             $rv['student_name'] = $studentListDetail[$rv['student_id']]['name'];
             $rv['student_uuid'] = $studentListDetail[$rv['student_id']]['uuid'];
             $rv['student_mobile'] = Util::hideUserMobile($studentListDetail[$rv['student_id']]['mobile']);
             $rv['bill_amount'] = $rv['bill_amount'] / 100;
+            $rv['type_name'] = $dict[DictConstants::AGENT_TYPE['type']][$rv['type']]['value'];
+            $rv['code_status_name'] = $dict[DictConstants::CODE_STATUS['type']][$rv['code_status']]['value'];
+            $rv['app_id_name'] = $dict[DictConstants::PACKAGE_APP_NAME['type']][$rv['app_id']]['value'];
             unset($rv['second_agent_id']);
         });
         return $recommendUserData;
