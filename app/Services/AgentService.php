@@ -30,6 +30,7 @@ use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssPackageExtModel;
 use App\Models\EmployeeModel;
 use App\Models\UserWeiXinModel;
+use Medoo\Medoo;
 
 
 class AgentService
@@ -1058,5 +1059,57 @@ class AgentService
             $agentData = AgentBillMapModel::get($parentBillId, $studentInfo['id']);
         }
         return empty($agentData) ? 0 : $agentData['agent_id'];
+    }
+
+    /**
+     * @param $params
+     * @return array
+     * 代理申请列表
+     */
+    public static function applyList($params)
+    {
+        list($page, $count) = Util::formatPageCount($params);
+        $where = [];
+
+        if (!empty($params['name'])) {
+            $where['name[~]'] = $params['name'];
+        }
+
+        if (!empty($params['mobile'])) {
+            $where['mobile'] = $params['mobile'];
+        }
+
+        if (!empty($params['start_time'])) {
+            $where['create_time[>=]'] = $params['start_time'];
+        }
+
+        if (!empty($params['end_time'])) {
+            $where['create_time[<=]'] = $params['end_time'];
+        }
+
+        $where['ORDER'] = ['create_time' => 'DESC'];
+        $where['LIMIT'] = [$page - 1, $count];
+        $count = AgentApplicationModel::getCount($where);
+        if (empty($count)) {
+            return [
+                'list'       => [],
+                'totalCount' => 0
+            ];
+        }
+        $list = AgentApplicationModel::getRecords($where, ['id', 'name', 'mobile', 'create_time' => Medoo::raw('FROM_UNIXTIME(<create_time>)'), 'remark']);
+        return [
+            'list'       => $list,
+            'totalCount' => $count
+        ];
+    }
+
+    /**
+     * @param $params
+     * @return int|null
+     * 添加备注
+     */
+    public static function applyRemark($params)
+    {
+        return AgentApplicationModel::updateRecord($params['id'],['remark'=>$params['remark']]);
     }
 }

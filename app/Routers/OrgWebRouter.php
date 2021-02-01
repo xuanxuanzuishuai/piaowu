@@ -126,6 +126,8 @@ class OrgWebRouter extends RouterBase
         '/op_web/agent/unfreeze' => ['method' => ['post'], 'call' => Agent::class . ':unfreezeAgent'],
         '/op_web/agent/recommend_users' => ['method' => ['get'], 'call' => Agent::class . ':recommendUsersList'],
         '/op_web/agent/recommend_bills' => ['method' => ['get'], 'call' => Agent::class . ':recommendBillsList'],
+        '/op_web/agent/apply_list' => ['method' => ['get'], 'call' => Agent::class . ':applyList'],
+        '/op_web/agent/apply_remark' => ['method' => ['post'], 'call' => Agent::class . ':applyRemark'],
         // 地址搜索国家/省/市/县（区）
         '/op_web/area/country' => ['method' => ['get'], 'call' => Area::class . ':countryList'],
         '/op_web/area/province' => ['method' => ['get'], 'call' => Area::class . ':provinceList'],

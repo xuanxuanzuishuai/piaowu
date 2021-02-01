@@ -282,4 +282,53 @@ class Agent extends ControllerBase
             'data' => $data
         ], StatusCode::HTTP_OK);
     }
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * 代理申请列表接口
+     */
+    public function applyList(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        $data = AgentService::applyList($params);
+        return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * 代理申请列表添加备注接口
+     */
+    public function applyRemark(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key'        => 'id',
+                'type'       => 'required',
+                'error_code' => 'id_is_required'
+            ],
+            [
+                'key'        => 'remark',
+                'type'       => 'required',
+                'error_code' => 'remark_is_required'
+            ],
+            [
+                'key'        => 'remark',
+                'type'       => 'lengthMax',
+                'value'      => 200,
+                'error_code' => 'remark_max_length_is_20'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        AgentService::applyRemark($params);
+        return HttpHelper::buildResponse($response, []);
+    }
 }
