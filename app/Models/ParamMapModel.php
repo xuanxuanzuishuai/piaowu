@@ -83,29 +83,30 @@ class ParamMapModel extends Model
      * @param $userId
      * @param $appId
      * @param $type
-     * @param $channelId
-     * @param $activityId
-     * @param $employeeId
-     * @param $posterId
-     * @param $landingType
+     * @param array $extParams 参数说明         $paramInfo = [
+     *                                              'c' => $extParams['c'] ?? 0,//渠道ID
+     *                                              'a' => $extParams['a'] ?? 0,//活动ID
+     *                                              'e' => $extParams['e'] ?? 0,//员工ID
+     *                                              'p' => $extParams['p'] ?? 0,//海报ID：二维码智能出现在特殊指定的海报
+     *                                              'lt' => $landingType,//二维码类型
+     *                                         ];
      * @return array|null
      */
-    public static function getQrUrl($userId, $appId, $type, $channelId, $activityId, $employeeId, $posterId, $landingType)
+    public static function getQrUrl($userId, $appId, $type, array $extParams)
     {
+        //组合ext查询条件
+        array_walk($extParams, function ($ev, $ek) use (&$extWhere) {
+            $extWhere .= " AND param_info ->>'$." . $ek . "'=" . $ev;
+        });
         $db = MysqlDB::getDB();
         $sql = "SELECT
-                    id, user_id,app_id,type,param_info->>'$.qu_url' as qu_url
+                    id,user_id,app_id,type,param_info->>'$.qr_url' as qr_url
                 FROM
                     param_map 
                 WHERE
                     user_id = " . $userId . " 
                     AND app_id = " . $appId . " 
-                    AND type = " . $type . " 
-                    AND param_info ->> '$.c' = " . $channelId . " 
-                    AND param_info ->> '$.a' = " . $activityId . "
-                    AND param_info ->> '$.e' = " . $employeeId . " 
-                    AND param_info ->> '$.p' = " . $posterId . " 
-                    AND param_info ->> '$.lt' = " . $landingType;
+                    AND type = " . $type . $extWhere;
         return $db->queryAll($sql)[0];
     }
 }
