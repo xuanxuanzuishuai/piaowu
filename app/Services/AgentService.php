@@ -1156,7 +1156,7 @@ class AgentService
             [
                 "key"   => "text",
                 "type"  => GoodsResourceModel::CONTENT_TYPE_TEXT,
-                "value" => $params['text']
+                "value" => $params['text'] ?? ''
             ],
             [
                 "key"   => "mini_app_card",

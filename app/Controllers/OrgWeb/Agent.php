@@ -353,11 +353,6 @@ class Agent extends ControllerBase
             ],
             [
                 'key'        => 'text',
-                'type'       => 'required',
-                'error_code' => 'text_is_required'
-            ],
-            [
-                'key'        => 'text',
                 'type'       => 'lengthMax',
                 'value'      => 200,
                 'error_code' => 'text_max_length_is_200'
