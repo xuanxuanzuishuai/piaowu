@@ -319,7 +319,7 @@ class Agent extends ControllerBase
                 'key'        => 'remark',
                 'type'       => 'lengthMax',
                 'value'      => 200,
-                'error_code' => 'remark_max_length_is_20'
+                'error_code' => 'remark_max_length_is_200'
             ]
         ];
         $params = $request->getParams();
@@ -330,5 +330,74 @@ class Agent extends ControllerBase
 
         AgentService::applyRemark($params);
         return HttpHelper::buildResponse($response, []);
+    }
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * 推广素材增加和编辑接口
+     */
+    public function popularMaterial(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key'        => 'product_img',
+                'type'       => 'required',
+                'error_code' => 'product_img_is_required'
+            ],
+            [
+                'key'        => 'poster',
+                'type'       => 'required',
+                'error_code' => 'poster_is_required'
+            ],
+            [
+                'key'        => 'text',
+                'type'       => 'required',
+                'error_code' => 'text_is_required'
+            ],
+            [
+                'key'        => 'text',
+                'type'       => 'lengthMax',
+                'value'      => 200,
+                'error_code' => 'text_max_length_is_200'
+            ],
+            [
+                'key'        => 'mini_app_card',
+                'type'       => 'required',
+                'error_code' => 'mini_app_card_is_required'
+            ],
+            [
+                'key'        => 'mini_app_text',
+                'type'       => 'required',
+                'error_code' => 'mini_app_text_is_required'
+            ],
+            [
+                'key'        => 'mini_app_text',
+                'type'       => 'lengthMax',
+                'value'      => 30,
+                'error_code' => 'mini_app_text_max_length_is_30'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        AgentService::popularMaterial($params);
+        return HttpHelper::buildResponse($response, []);
+    }
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * 推广素材信息获取接口
+     */
+    public static function popularMaterialInfo(Request $request, Response $response)
+    {
+        $data = AgentService::popularMaterialInfo();
+        return HttpHelper::buildResponse($response, $data);
     }
 }

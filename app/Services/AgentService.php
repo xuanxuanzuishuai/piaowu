@@ -9,6 +9,7 @@
 namespace App\Services;
 
 
+use App\Libs\AliOSS;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
@@ -25,10 +26,12 @@ use App\Models\AgentModel;
 use App\Models\AgentUserModel;
 use App\Models\AreaCityModel;
 use App\Models\AreaProvinceModel;
+use App\Models\Dss\DssDictModel;
 use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssPackageExtModel;
 use App\Models\EmployeeModel;
+use App\Models\GoodsResourceModel;
 use App\Models\UserWeiXinModel;
 use Medoo\Medoo;
 
@@ -1111,5 +1114,100 @@ class AgentService
     public static function applyRemark($params)
     {
         return AgentApplicationModel::updateRecord($params['id'],['remark'=>$params['remark']]);
+    }
+
+    /**
+     * @param $type
+     * @param $keyCode
+     * @return mixed
+     * 获取packageID公共方法
+     */
+    public static function getPackageId($type,$keyCode)
+    {
+        $where = [
+            'type' => $type,
+            'key_code' => $keyCode,
+        ];
+        $result = DssDictModel::getRecord($where,['key_value']);
+        return $result['key_value'];
+    }
+
+    /**
+     * @param $params
+     * @return bool
+     * 推广素材新增、编辑接口
+     */
+    public static function popularMaterial($params)
+    {
+        $time = time();
+        $packageId = self::getPackageId('WEB_STUDENT_CONFIG', 'mini_package_id');
+        $exist = GoodsResourceModel::getRecord(['package_id' => $packageId], ['id', 'package_id', 'ext']);
+        $ext = [
+            [
+                "key"   => "product_img",
+                "type"  => GoodsResourceModel::CONTENT_TYPE_IMAGE,
+                "value" => $params['product_img']
+            ],
+            [
+                "key"   => "poster",
+                "type"  => GoodsResourceModel::CONTENT_TYPE_POSTER,
+                "value" => $params['poster']
+            ],
+            [
+                "key"   => "text",
+                "type"  => GoodsResourceModel::CONTENT_TYPE_TEXT,
+                "value" => $params['text']
+            ],
+            [
+                "key"   => "mini_app_card",
+                "type"  => GoodsResourceModel::CONTENT_TYPE_IMAGE,
+                "value" => $params['mini_app_card']
+            ],
+            [
+                "key"   => "mini_app_text",
+                "type"  => GoodsResourceModel::CONTENT_TYPE_TEXT,
+                "value" => $params['mini_app_text']
+            ],
+
+        ];
+        $jsonExt = json_encode($ext);
+        if ($exist) {
+            $updateData = [
+                'ext'         => $jsonExt,
+                'update_time' => $time,
+            ];
+            GoodsResourceModel::updateRecord($exist['id'], $updateData);
+        } else {
+            $insertData = [
+                'package_id'  => $packageId,
+                'ext'         => $jsonExt,
+                'create_time' => $time,
+                'update_time' => $time,
+            ];
+            GoodsResourceModel::insertRecord($insertData);
+        }
+        return true;
+    }
+
+    /**
+     * @return array|mixed
+     * 获取推广素材方法
+     */
+    public static function popularMaterialInfo()
+    {
+        $packageId = self::getPackageId('WEB_STUDENT_CONFIG', 'mini_package_id');
+        $result = GoodsResourceModel::getRecord(['package_id' => $packageId], ['id', 'package_id', 'ext']);
+        if (empty($result)) {
+            return $result;
+        }
+        $data = [];
+        $ext = json_decode($result['ext'], true);
+        foreach ($ext as $value) {
+            $data[$value['key']] = $value['value'];
+        }
+        $data['product_img_url'] = AliOSS::signUrls($data['product_img']);
+        $data['poster_url'] = AliOSS::signUrls($data['poster']);
+        $data['mini_app_card_url'] = AliOSS::signUrls($data['mini_app_card']);
+        return $data;
     }
 }
