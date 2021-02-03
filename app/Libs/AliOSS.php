@@ -10,6 +10,8 @@
 namespace App\Libs;
 
 
+use Classroom\Libs\File;
+use Classroom\Libs\SimpleLogger;
 use DateTime;
 use OSS\Core\OssException;
 use OSS\OssClient;
@@ -472,5 +474,51 @@ class AliOSS
         }
         //返回结果
         return $result;
+    }
+
+    /**
+     * 保存临时文件到本地服务器
+     * @param $imgUrl
+     * @return bool|string
+     */
+    public static function saveTmpImgFile($imgUrl)
+    {
+        $imgData = file_get_contents($imgUrl);
+        if (empty($imgData)) {
+            return false;
+        }
+        //保存临时文件
+        $tmpFileName = md5($imgUrl) . '.jpg';
+        list($subPath, $hashDir, $fullDir) = self::createDir('tmp_img', $tmpFileName);
+        $tmpSavePath = $fullDir . '/' . $tmpFileName;
+        $saveRes = file_put_contents($tmpSavePath, $imgData);
+        if (empty($saveRes)) {
+            return false;
+        }
+        chmod($tmpSavePath, 0755);
+        return $tmpSavePath;
+    }
+
+    /**
+     * 创建文件夹
+     * @param string $subDir 存储的子目录
+     * @param string $filename 文件名, 注：文件名通常为hash过的字符串
+     * @return array [文件存储的子路径, 哈希后的文件夹路径, 本地存储的完整文件夹路径]
+     */
+    public static function createDir ($subDir, $filename)
+    {
+        // 文件夹 hash
+        $d1 = substr($filename, 0, 2);
+        $d2 = substr($filename, 2, 2);
+
+        $hashPath = "{$d1}/{$d2}";
+        $subPath = "{$subDir}/{$hashPath}";
+        $fullPath = $_ENV['STATIC_FILE_SAVE_PATH'] . "/{$subPath}";
+
+        if (!file_exists($fullPath)) {
+            mkdir($fullPath, 0777, true);
+        }
+
+        return [$subPath, $hashPath, $fullPath];
     }
 }

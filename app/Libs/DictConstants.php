@@ -37,7 +37,8 @@ class DictConstants {
     const STUDENT_DEFAULT_INFO = [
         'type' => 'student_info',
         'keys' => [
-            'default_thumb'
+            'default_thumb',
+            'default_wx_nickname'
         ]
     ];
     

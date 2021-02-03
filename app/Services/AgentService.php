@@ -29,8 +29,10 @@ use App\Models\Dss\DssDictModel;
 use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssPackageExtModel;
+use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\EmployeeModel;
 use App\Models\GoodsResourceModel;
+use App\Models\UserWeiXinInfoModel;
 use App\Models\PosterModel;
 use App\Models\UserWeiXinModel;
 use Medoo\Medoo;
@@ -275,7 +277,7 @@ class AgentService
         if (!empty($detail)) {
             $bindData = UserWeiXinModel::userBindData($agentId, UserWeiXinModel::USER_TYPE_AGENT, UserWeiXinModel::BUSI_TYPE_AGENT_MINI, $appId);
             $detail['wx_bind_status'] = empty($bindData) ? 0 : 1;
-            $detail['wx_nick_name'] = self::batchGetUserNicknameAndHead([$agentId])['nickname'];
+            $detail['wx_nick_name'] = self::batchGetAgentUserWxInfoByAgentId([$agentId])['nickname'];
         }
         return $detail;
     }
@@ -656,7 +658,7 @@ class AgentService
         }
 
         //获取总数
-        $returnData['total'] = AgentUserModel::getCount(['agent_id' => $agentIdArr, 'stage[!]' => AgentUserModel::STAGE_REGISTER]);
+        $returnData['total'] = AgentUserModel::getCount(['agent_id' => $agentIdArr,'stage[!]' => AgentUserModel::STAGE_REGISTER]);
 
 
         $userIdArr = [];
@@ -674,8 +676,7 @@ class AgentService
 
 
         //获取头像和昵称
-        $userNicknameArr = self::batchGetUserNicknameAndHead($userIdArr);
-
+        $userNicknameArr = self::batchGetAgentUserWxInfoByUserId($userIdArr);
         //组合数据
         foreach ($bindUserList as $key => $val) {
             $tmpUserInfo = $userNicknameArr[$val['user_id']] ?? [];
@@ -684,7 +685,7 @@ class AgentService
             $bindUserList[$key]['mobile'] = $encodeMobileArr[$val['user_id']] ?? '';
             $bindUserList[$key]['second_agent_name'] = $agentNameArr[$val['user_id']] ?? '';
             $bindUserList[$key]['format_bind_time'] = date('Y-m-d H:i:s', $val['bind_time']);
-            $bindUserList[$key]['bind_status'] = self::getAgentUserBindStatus($val['deadline'], $val['stage']);
+            $bindUserList[$key]['bind_status'] = self::getAgentUserBindStatus($val['deadline'],$val['stage']);
         }
 
         $returnData['bind_user_list'] = $bindUserList;
@@ -693,56 +694,148 @@ class AgentService
 
     /**
      * 批量获取用户头像和昵称，  如果缓存中不存在头像和昵称则批量请求微信接口获取最新消息
+     * 第一优先级:取当前最新的用户微信信息
+     * 第二优先级:取系统获取的用户最后一次微信信息
+     * 第三优先级:取默认头像(当前系统里面的小叶子默认头像)
      * 缓存有效时间 24小时
-     * @param array $userIdArr
+     * @param array $userList
      * @return array
      */
-    public static function batchGetUserNicknameAndHead(array $userIdArr)
+    public static function batchGetUserNicknameAndHead(array $userList)
     {
-        $userNicknameAndHead = [];
-        // 获取redis缓存数据，如果缓存不存在，请求微信接口获取数据
-        // 微信接口拿到数据后更新redis和数据表字段
-        if (empty($userIdArr)) {
-            return $userNicknameAndHead;
-        }
-
-        $notFindUser = [];
         $redis = RedisDB::getConn();
-        foreach ($userIdArr as $_user_id) {
-            $tmpUserInfo = $redis->get(UserWeixinModel::REDIS_KEY_USER_WX_INFO_PREFIX . $_user_id);
-            if ($tmpUserInfo) {
-                $tmpUserInfoArr = json_decode($tmpUserInfo, true);
-                $userNicknameAndHead[$_user_id] = [
-                    'nickname' => $tmpUserInfoArr['nickname'] ?? '',
-                    'thumb' => $tmpUserInfoArr['thumb'] ?? '',
+        $wxRequestData = [];
+        $openidList = [];   //这个只存放openid的一维数组
+
+        //缓存中获取信息
+        $redisKey = UserWeiXinInfoModel::createCacheKey(date("Y-m-d"), UserWeiXinInfoModel::REDIS_HASH_USER_WEIXIN_INFO_PREFIX);
+        foreach ($userList as $uInfo) {
+            $hashKey = $uInfo['app_id'] . '_' . $uInfo['busi_type'] . '_' . $uInfo['user_type'] . '_' . $uInfo['open_id'];
+            //缓存不存在
+            if (!$redis->hexists($redisKey, $hashKey)) {
+                //初始化用户头像默认值
+                $userNicknameAndHead[$uInfo['user_id']] = [
+                    'nickname' => DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_wx_nickname'),
+                    "thumb" => AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb')),
                 ];
-            } else {
-                $notFindUser[] = $_user_id;
+
+                // 放入临时数组，等待向微信发起请求
+                // 不同的app_id和busi_type下的openid放到不同的组里面
+                $key = $uInfo['app_id'] . '_' . $uInfo['busi_type'];
+                if (array_key_exists($key, $wxRequestData)) {
+                    $wxRequestData[$key]['openid_arr'][] = $uInfo['open_id'];
+                    $wxRequestData[$key]['other_info'][$uInfo['open_id']] = [
+                        'user_id' => $uInfo['user_id'],
+                        'user_type' => $uInfo['user_type'],
+                    ];
+                } else {
+                    $wxRequestData[$key] = [
+                        'app_id' => $uInfo['app_id'],
+                        'busi_type' => $uInfo['busi_type'],
+                        'openid_arr' => [$uInfo['open_id']],
+                        //open_id其他信息
+                        'other_info' => [
+                            $uInfo['open_id'] => [
+                                'user_id' => $uInfo['user_id'],
+                                'user_type' => $uInfo['user_type'],
+                            ],
+                        ],
+                    ];
+                }
+                continue;
             }
+
+            //缓存存在 - 从缓存获取用户的昵称和头像
+            $hashVal = $redis->hget($redisKey, $hashKey);
+            $userWxInfo = json_encode($hashVal, true);
+            $userNicknameAndHead[$uInfo['user_id']] = [
+                'nickname' => $userWxInfo['nickname'],
+                "thumb" => $userWxInfo['headimgurl'],
+            ];
         }
 
-        //获取缓存已经过期的用户头像和昵称
-        if (!empty($notFindUser)) {
-            $userList = UserWeixinModel::getRecords(['user_id' => $notFindUser], ['user_id', 'open_id']);
-            $openidArr = [];
-            array_map(function ($item) use (&$openidArr) {
-                $openidArr[$item['open_id']] = $item['user_id'];
-            }, $userList);
-            $wechat = WeChatMiniPro::factory(UserCenter::AUTH_APP_ID_OP_AGENT, UserWeixinModel::BUSI_TYPE_AGENT_MINI);
-            $wxUserList = $wechat->batchGetUserInfo(array_keys($openidArr));
+        /** 向微信发起获取头像昵称的请求, 并记录获取成功的openid */
+        $successOpenid = [];  //成功从微信获取头像和昵称的用户id
+        foreach ($wxRequestData as $wxParam) {
+            $wechat = WeChatMiniPro::factory($wxParam['app_id'], $wxParam['busi_type']);
+            $wxUserList = $wechat->batchGetUserInfo($wxParam['openid_arr']);
             $wxUserList = $wxUserList['user_info_list'] ?? [];
+
+            //组合微信接口拿到的用户头像和昵称
             foreach ($wxUserList as $wxVal) {
-                $tmpUserId = $openidArr[$wxVal['openid']] ?? 0;
+                $tmpOtherInfo = $wxParam['other_info'][$wxVal['openid']] ?? []; //openid其他信息
+                $tmpUserId = $tmpOtherInfo['user_id'] ?? 0;
+                $tmpUserType = $tmpOtherInfo['user_type'] ?? 0;
                 $userNicknameAndHead[$tmpUserId] = [
                     'nickname' => $wxVal['nickname'] ?? '',
                     'thumb' => $wxVal['headimgurl'] ?? '',
                 ];
-                //更新数据表
-                // UserWeixinModel::updateWxInfoByUserid($tmpUserId, $userNicknameAndHead[$tmpUserId]);
+
+                //缓存信息 , 缓存app_id, busi_type, open_id, user_type
+                $hashKey = $wxParam['app_id'] . '_' . $wxParam['busi_type'] . '_' . $tmpUserType . '_' . $wxParam['open_id'];
+                $redis->hset($redisKey, $hashKey, json_encode($wxVal));
+                $redis->expire($redisKey,86400*2);  //两天过期
+
+                //记录成功从微信获取头像和昵称的用户id
+                $successOpenid[] = $wxVal['openid'];
+            }
+        }
+
+        /** 获取用户最后一次拉取的头像 */
+        $getFailOpenidList = array_diff($openidList, $successOpenid); //两个数组的差集就是没有成功从微信拉取信息的用户id
+        if (!empty($getFailOpenidList)) {
+            //获取openid最后一次拉取微信信息数据
+            $userList = UserWeiXinInfoModel::getRecords(['open_id' => $getFailOpenidList], ['nickname', 'head_url']);
+            $userNickList = [];
+            foreach ($userList as $tmpVOne) {
+                $userNickList[$tmpVOne['open_id']] = $tmpVOne;
+            }
+            //找到openid最后一次拉取的用户信息
+            foreach ($userList as $tmpKTwo => $tmpVTwo) {
+                $tmpInfo = $userNickList[$tmpVTwo['open_id']] ?? [];
+                if (empty($tmpInfo)) {
+                    continue;
+                }
+                $userNicknameAndHead[$tmpKTwo] = [
+                    'nickname' => $tmpInfo['nickname'],
+                    'thumb' => AliOSS::signUrls($tmpInfo['head_url'])
+                ];
             }
         }
 
         return $userNicknameAndHead;
+    }
+
+    /**
+     * 获取代理用户的微信头像和昵称
+     * @param array $agentIdArr
+     * @return array
+     */
+    public static function batchGetAgentUserWxInfoByAgentId(array $agentIdArr) {
+        $userNicknameAndHead = [];
+        if (empty($agentIdArr)) {
+            return $userNicknameAndHead;
+        }
+        //从dss读取用户信息
+        $userList = UserWeiXinModel::getRecords(['user_id' => $agentIdArr], ['user_id', 'open_id', 'app_id', 'busi_type','user_type']);
+
+        return self::batchGetUserNicknameAndHead($userList);
+    }
+
+    /**
+     * 获取用户的微信头像和昵称
+     * @param array $userIdArr
+     * @return array
+     */
+    public static function batchGetAgentUserWxInfoByUserId(array $userIdArr){
+        $userNicknameAndHead = [];
+        if (empty($userIdArr)) {
+            return $userNicknameAndHead;
+        }
+        //从dss读取用户信息
+        $userList = DssUserWeiXinModel::getRecords(['user_id' => $userIdArr], ['user_id', 'open_id', 'app_id', 'busi_type','user_type']);
+
+        return self::batchGetUserNicknameAndHead($userList);
     }
 
     /**
@@ -784,18 +877,19 @@ class AgentService
             ($page - 1) * $limit,
             $limit
         ];
-        $orderList = AgentBillMapModel::getListByAgentId($agentIdArr, $sqlLimitArr);
+        $orderList = AgentAwardDetailModel::getListByAgentId($agentIdArr, $sqlLimitArr) ?? [];
         $userIdArr = [];
         $orderIdArr = [];
         array_map(function ($item) use (&$userIdArr, &$orderIdArr) {
             $userIdArr[] = $item['student_id'];
-            $orderIdArr[] = $item['bill_id'];
+            $extInfo = json_decode($item['ext'],true);
+            $orderIdArr[] = $extInfo['parent_bill_id'] ?? 0;
         }, $orderList);
 
-        $returnData['total'] = AgentBillMapModel::getCount(['agent_id' => $agentIdArr]);
+        $returnData['total'] = AgentAwardDetailModel::getCount(['agent_id'=>$agentIdArr]);
 
         //获取用户昵称头像
-        $userNicknameArr = self::batchGetUserNicknameAndHead($userIdArr);
+        $userNicknameArr = self::batchGetAgentUserWxInfoByUserId($userIdArr);
 
         //获取手机号
         $mobileList = DssStudentModel::getRecords(['id' => $userIdArr], ['id', 'mobile']);
@@ -805,27 +899,15 @@ class AgentService
             $encodeMobileArr[$item['id']] = Util::hideUserMobile($item['mobile']);
         }, $mobileList);
 
-        //获取订单详细信息， 商品名称，订单号，实付金额，商品类型
-        $orderInfoList = DssGiftCodeModel::getOrderList(['order_id' => $orderIdArr], false);
-        $orderInfoArr = [];
-        array_map(function ($itemOrder) use (&$orderInfoArr) {
-            $orderInfoArr[$itemOrder['parent_bill_id']] = $itemOrder;
-        }, $orderInfoList['list']);
-
         //组合返回数据
         foreach ($orderList as $key => $val) {
             $tmpUserInfo = $userNicknameArr[$val['user_id']] ?? [];
-            $tmpOrderInfo = $orderInfoArr[$val['bill_id']] ?? [];
 
             $orderList[$key]['thumb'] = $tmpUserInfo['thumb'] ?? '';
             $orderList[$key]['nickname'] = $tmpUserInfo['nickname'] ?? '';
             $orderList[$key]['mobile'] = $encodeMobileArr[$val['user_id']] ?? '';
             $orderList[$key]['second_agent_name'] = $agentNameArr[$val['user_id']] ?? '';
-            $orderList[$key]['format_pay_time'] = date("Y-m-d H:i:s", $val['pay_time']);
-            //订单信息
-            $orderList[$key]['package_name'] = $tmpOrderInfo['package_name'] ?? '';
-            $orderList[$key]['bill_amount'] = $tmpOrderInfo['bill_amount'] ?? 0;
-            $orderList[$key]['code_status'] = $tmpOrderInfo['code_status'] ?? 0;
+            $orderList[$key]['format_pay_time'] = date("Y-m-d H:i:s", $val['buy_time']);
         }
 
         $returnData['order_list'] = $orderList;
@@ -835,14 +917,12 @@ class AgentService
     /**
      * 根据时间判断代理和用户的绑定状态， 这里stage必须是年卡或体验
      * stage = 0 注册状态， deadline可能是0
-     * @param $stage
      * @param $deadline
      * @return int
      */
-    public static function getAgentUserBindStatus($deadline, $stage)
-    {
+    public static function getAgentUserBindStatus($deadline,$stage){
         //未绑定 - 注册状态不存在绑定和不绑定的关系
-        if ($stage == AgentUserModel::STAGE_REGISTER) {
+        if ($stage == 0) {
             return AgentUserModel::BIND_STATUS_PENDING;
         }
         switch ($deadline) {

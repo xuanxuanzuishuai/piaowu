@@ -25,6 +25,25 @@ class UserWeiXinModel extends Model
     const BUSI_TYPE_AGENT_MINI = 9; // 代理小程序
 
     /**
+     * 检测账户与微信是否绑定
+     * @param $agentId
+     * @param $userType
+     * @param $busiType
+     * @param $appId
+     * @return array
+     */
+    public static function userBindData($agentId, $userType, $busiType, $appId)
+    {
+        $where = [
+            'user_id' => $agentId,
+            'user_type' => $userType,
+            'status' => self::STATUS_NORMAL,
+            'busi_type' => $busiType,
+            'app_id' => $appId,
+        ];
+        return self::getRecords($where, ['id']);
+    }
+    /**
      * 根据用户id更新用户微信昵称和头像地址
      * @param $userId
      * @param $wxInfo
@@ -45,32 +64,12 @@ class UserWeiXinModel extends Model
         if (isset($wxInfo['thumb']) && !empty($wxInfo['thumb'])) {
             $update['thumb'] = $wxInfo['thumb'];
         }
+
         //没有需要更新的数据直接返回
         if (empty($update)) {
             return false;
         }
         $result = self::updateRecord($userId, $update);
         return ($result && $result > 0);
-    }
-
-
-    /**
-     * 检测账户与微信是否绑定
-     * @param $agentId
-     * @param $userType
-     * @param $busiType
-     * @param $appId
-     * @return array
-     */
-    public static function userBindData($agentId, $userType, $busiType, $appId)
-    {
-        $where = [
-            'user_id' => $agentId,
-            'user_type' => $userType,
-            'status' => self::STATUS_NORMAL,
-            'busi_type' => $busiType,
-            'app_id' => $appId,
-        ];
-        return self::getRecords($where, ['id']);
     }
 }

@@ -112,4 +112,30 @@ class AgentAwardDetailModel extends Model
                     agent_id;';
         return $db->queryAll($sql);
     }
+
+    /**
+     * 根据agent_id获取代理的推广订单列表
+     * @param array $agentIdArr
+     * @param array $limit [offset,limit]
+     * @return array
+     */
+    public static function getListByAgentId(array $agentIdArr, array $limit)
+    {
+        $db = self::dbRO();
+        $agentAwardDetailTable = AgentAwardDetailModel::getTableNameWithDb();
+        $erpPackageV1Table = DssErpPackageV1Model::getTableNameWithDb();
+        $gitCodeTable = DssGiftCodeModel::getTableNameWithDb();
+        $sql = 'SELECT ad.id,ad.agent_id,dg.bill_package_id,dg.parent_bill_id,de.name as package_name,dg.bill_amount,dg.code_status,dg.buy_time,dg.create_time,dg.employee_uuid' .
+            ' FROM ' . $agentAwardDetailTable . ' as ad ' .
+            " JOIN " . $gitCodeTable . " as dg ON ad.ext->'$.parent_bill_id'=dg.parent_bill_id " .
+            " JOIN " . $erpPackageV1Table . " as de ON de.id=dg.bill_package_id" .
+            ' WHERE ad.agent_id in (' . implode(',', $agentIdArr) . ') and ad.action_type!=' . self::AWARD_ACTION_TYPE_REGISTER . ' ORDER BY dg.buy_time DESC,ad.id asc';
+        $offset = $limit[0] ?? 0;
+        $limitNum = $limit[1] ?? 0;
+        if ($limitNum > 0) {
+            $sql .= ' LIMIT ' . $offset . ',' . $limitNum;
+        }
+        $list = $db->queryAll($sql);
+        return is_array($list) ? $list : [];
+    }
 }
