@@ -109,11 +109,11 @@ class Auth extends ControllerBase
     {
         try {
             $openId = $this->ci['open_id'];
-            $userId = $this->ci['user_id'];
+            $userInfo = $this->ci['user_info'];
             if (empty($openId) || empty($userId)) {
                 throw new RunTimeException(['invalid_data']);
             }
-            AgentService::miniAppLogout($openId, $userId);
+            AgentService::miniAppLogout($openId, $userInfo['user_id']);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }

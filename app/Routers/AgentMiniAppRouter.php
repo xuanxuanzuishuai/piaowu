@@ -33,6 +33,7 @@ class AgentMiniAppRouter extends RouterBase
         '/agent/user/index' => ['method' => ['get'], 'call' => Agent::class . ':miniAppIndex'],
         // 素材
         '/agent/config/get' => ['method' => ['get'], 'call' => Agent::class . ':getConfig'],
+        '/agent/config/country_code' => ['method' => ['get'], 'call' => Agent::class . ':countryCode', 'middles' => []],
         // 我的下级代理：
         '/agent/sec_agent/list'     => ['method' => ['get'],  'call' => Agent::class . ':secAgentList'],
         '/agent/sec_agent/detail'   => ['method' => ['get'],  'call' => Agent::class . ':secAgentDetail'],

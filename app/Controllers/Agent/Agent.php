@@ -8,6 +8,7 @@ use App\Libs\HttpHelper;
 use App\Libs\Valid;
 use App\Models\GoodsResourceModel;
 use App\Services\AgentService;
+use App\Services\CommonServiceForApp;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -245,4 +246,33 @@ class Agent extends ControllerBase
         }
         return HttpHelper::buildResponse($response, $data);
     }
+
+    /**
+     * 国际区号列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function countryCode(Request $request, Response $response)
+    {
+        $countryCode = CommonServiceForApp::getCountryCode();
+        // 热门国际区号 + 全部区号国家名字母序
+        $hot = [];
+        $list = [];
+        array_walk($countryCode, function ($item) use (&$hot, &$list) {
+            if ($item['hot'] > 0) {
+                $hot['hot'][] = $item;
+            }
+            $u = strtoupper(substr($item['pinyin'], 0, 1));
+            if (!isset($list[$u])) {
+                $list[$u] = [];
+            }
+            $list[$u][] = $item;
+        });
+        usort($hot['hot'], function ($a, $b) {
+            return $a['hot'] > $b['hot'];
+        });
+        return HttpHelper::buildResponse($response, array_merge($hot, $list));
+    }
+
 }

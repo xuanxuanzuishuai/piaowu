@@ -3,6 +3,7 @@ namespace App\Services;
 
 use App\Libs\AliOSS;
 use App\Libs\Constants;
+use App\Libs\DictConstants;
 use App\Libs\SimpleLogger;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\Dss\DssUserQrTicketModel;
@@ -154,5 +155,15 @@ class PosterService
         //删除临时二维码文件
         unlink($filePath);
         return $imagePath;
+    }
+
+    /**
+     * 获取海报配置
+     * @param array $key
+     * @return array
+     */
+    public static function getPosterConfig($key = DictConstants::TEMPLATE_POSTER_CONFIG)
+    {
+        return DictConstants::getSet($key);
     }
 }

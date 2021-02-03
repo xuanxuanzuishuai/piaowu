@@ -1471,7 +1471,7 @@ class AgentService
         }
         $ext = json_decode($result['ext'], true);
 
-        $posterConfig = DictConstants::getSet(DictConstants::POSTER_CONFIG);
+        $posterConfig = PosterService::getPosterConfig();
         foreach ($ext as $item) {
             if ($item['type'] == GoodsResourceModel::CONTENT_TYPE_IMAGE) {
                 $data[$item['key'] . '_url'] = AliOSS::signUrls($item['value']);
