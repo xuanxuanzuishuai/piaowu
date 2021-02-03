@@ -103,7 +103,6 @@ class WeChatMiniPro
         } else {
             return false;
         }
-
         SimpleLogger::info("[WeChatMiniPro] send request", ['api' => $api, 'data' => $data]);
 
         try {
@@ -473,7 +472,7 @@ class WeChatMiniPro
             'js_code'    => $code,
             'grant_type' => 'authorization_code',
         ];
-        $data = $this->requestJson($url, $params, 'get');
+        $data = $this->requestJson($url, $params);
         if (empty($data['errcode'])) {
             $this->setSessionKey($data['openid'], $data['session_key']);
         }

@@ -266,9 +266,9 @@ class AgentModel extends Model
             ],
             $field,
             [
-                'open_id' => $openId,
-                'user_type' => UserWeiXinModel::USER_TYPE_AGENT,
-                'status' => UserWeiXinModel::STATUS_NORMAL
+                UserWeiXinModel::$table . '.open_id' => $openId,
+                UserWeiXinModel::$table . '.user_type' => UserWeiXinModel::USER_TYPE_AGENT,
+                UserWeiXinModel::$table . '.status' => UserWeiXinModel::STATUS_NORMAL
             ]
         );
         return $res[0] ?? [];

@@ -8,6 +8,7 @@
 
 namespace App\Middleware;
 
+use App\Libs\HttpHelper;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Libs\WeChat\WeChatMiniPro;
@@ -67,11 +68,11 @@ class AgentMiniAppMiddleware extends MiddlewareBase
             }
             // 返回TOKEN
             $token = AgentMiniAppTokenService::generateToken($userInfo['id'], UserWeiXinModel::USER_TYPE_AGENT, UserCenter::AUTH_APP_ID_OP_AGENT, $data['openid']);
-            return [
+            return HttpHelper::buildResponse($response, [
                 'token'  => $token,
                 'openid' => $data['openid']
-            ];
+            ]);
         }
-        return null;
+        return $response->withJson(Valid::addAppErrors([], 'token_expired'), StatusCode::HTTP_UNAUTHORIZED);
     }
 }

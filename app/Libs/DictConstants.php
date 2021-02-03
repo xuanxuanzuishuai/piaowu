@@ -244,7 +244,7 @@ class DictConstants {
     const WECHAT_APP_SECRET = [
         'type' => 'wechat_app_secret',
         'keys' => [
-            '8_1', '8_8', '21_2'
+            '8_1', '8_8', '21_9'
         ]
     ];
     //不同应用的微信商户号
