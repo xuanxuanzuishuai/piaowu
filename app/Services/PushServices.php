@@ -90,6 +90,10 @@ class PushServices
 
         switch ($params['jump_type']) {
             case self::PUSH_JUMP_TYPE_WEB_VIEW:
+                if (empty($params['link_url']) || empty($params['jump_to'])) {
+                    throw new RunTimeException(['params_can_not_be_empty']);
+                }
+                break;
             case self::PUSH_JUMP_TYPE_MUSICAL_NOTE_MALL:
             case self::PUSH_JUMP_TYPE_COLLECTION_DETAIL:
             case self::PUSH_JUMP_TYPE_BROWSER:
