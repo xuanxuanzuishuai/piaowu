@@ -126,6 +126,7 @@ class DictConstants {
             'maker_role',
             'config_role',
             'push_user_template',
+            'third_part_import_bill_template',
         ]
     ];
 
@@ -386,6 +387,12 @@ class DictConstants {
         'type' => 'agent_bind_status',
         'keys' => ['0', '1', '2']
     ];
+    //第三方订单导入状态
+    const THIRD_PART_BILL_STATUS = [
+        'type' => 'third_part_bill_status',
+        'keys' => [1, 2]
+    ];
+
     // 代理配置
     const AGENT_CONFIG = [
         'type' => 'AGENT_CONFIG',

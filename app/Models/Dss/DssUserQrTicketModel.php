@@ -39,7 +39,7 @@ class DssUserQrTicketModel extends DssModel
     ) {
         if ($type == UserWeiXinModel::USER_TYPE_AGENT) {
             $extParams['c'] = $channelID;
-            return MiniAppQrService::getSmartQRAliOss($userID, $type, $extParams);
+            return MiniAppQrService::getSmartQRAliOss($userID, $type, $extParams)['qr_url'];
         }
         $sql = "
             SELECT 

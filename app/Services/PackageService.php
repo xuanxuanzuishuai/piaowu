@@ -30,4 +30,18 @@ class PackageService
 
         return DssErpPackageV1Model::getRecords($where, ['id', 'name']);
     }
+
+    /**
+     * 新产品包通过subtype查询
+     * @param $subType
+     * @return array|mixed
+     */
+    public static function getPackageBySubType($subType)
+    {
+        $packageId = DssErpPackageV1Model::getPackageIds($subType);
+        if (empty($packageId)) {
+            return [];
+        }
+        return DssErpPackageV1Model::getRecords(['id' => $packageId], ['id', 'name']);
+    }
 }

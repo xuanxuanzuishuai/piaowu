@@ -350,4 +350,19 @@ class AgentAwardService
         }
         return true;
     }
+
+    /**
+     * 检测订单ID是否存在奖励发放记录
+     * @param $parentBillId
+     * @return bool
+     */
+    public static function checkBillIsValid($parentBillId)
+    {
+        $awardRecord = AgentAwardDetailModel::getDetailByParentBillId($parentBillId);
+        if (!empty($awardRecord)) {
+            SimpleLogger::info('bill have used', ['parent_bill_id' => $parentBillId, 'award_detail_id' => $awardRecord[0]['id']]);
+            return false;
+        }
+        return true;
+    }
 }

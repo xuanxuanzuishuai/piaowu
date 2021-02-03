@@ -55,7 +55,7 @@ class MiniAppQrService
         //检测二维码是否已存在
         $res = ParamMapModel::getQrUrl($userId, $appId, $type, $paramInfo);
         if (!empty($res['qr_url'])) {
-            return $res['qr_url'];
+            return $res;
         }
         //生成小程序码
         try {
@@ -72,6 +72,6 @@ class MiniAppQrService
             SimpleLogger::error('make agent qr image exception', [print_r($e->getMessage(), true)]);
             return '';
         }
-        return $qrData[0];
+        return ['qr_url' => $qrData[0], 'id' => $qrData[1], 'qr_ticket' => $userQrTicket];
     }
 }

@@ -187,4 +187,25 @@ class DssGiftCodeModel extends DssModel
         $returnData['totalCount'] = $totalCount ?? 0;
         return $returnData;
     }
+
+
+    /**
+     * 获取学生体验课包的订单
+     * @param $mobiles
+     * @param $packageIds
+     * @param $packageV1
+     * @return array|null
+     */
+    public static function getStudentTrailOrderList($mobiles, $packageIds, $packageV1)
+    {
+        $db = self::dbRO();
+        $sql = "SELECT 
+                        distinct s.mobile
+                FROM " . self::$table . " g
+                INNER JOIN " . DssStudentModel::$table . " s ON s.id = g.buyer
+                WHERE s.mobile IN (" . $mobiles . ") 
+                AND g.bill_package_id IN (" . $packageIds . ") 
+                AND g.package_v1 = " . $packageV1;
+        return $db->queryAll($sql);
+    }
 }

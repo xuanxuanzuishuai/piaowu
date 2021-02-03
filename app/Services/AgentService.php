@@ -1603,6 +1603,11 @@ class AgentService
         if (empty($hasAgentReferral)) {
             return $agentId;
         }
+        //检测当前订单是否已经有奖励发放记录
+        $billIsValid = AgentAwardService::checkBillIsValid($parentBillId);
+        if (empty($billIsValid)){
+            return $agentId;
+        }
         if ($packageType == DssPackageExtModel::PACKAGE_TYPE_TRIAL) {
             //体验课:订单映射关系是否存在
             $billAgentMap = AgentBillMapModel::get($parentBillId, $studentId);
@@ -1637,5 +1642,21 @@ class AgentService
                 'op_type' => $opType
             ]);
         $agentOpEventObj::fire($agentOpEventObj);
+    }
+
+
+    /**
+     * 一级代理模糊搜索
+     * @param $params
+     * @return array
+     */
+    public static function agentFuzzySearch($params)
+    {
+        $where = [AgentModel::$table . '.parent_id' => 0];
+        if (!empty($params['name'])) {
+            $where[AgentModel::$table . '.name[~]'] = $params['name'];
+        }
+        $agentList = AgentModel::getRecords($where,['name', 'id']);
+        return $agentList;
     }
 }

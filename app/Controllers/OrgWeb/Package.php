@@ -9,12 +9,8 @@
 namespace App\Controllers\OrgWeb;
 
 use App\Controllers\ControllerBase;
-use App\Libs\Constants;
-use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
-use App\Libs\Util;
 use App\Libs\Valid;
-use App\Services\AgentService;
 use App\Services\PackageService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -32,6 +28,31 @@ class Package extends ControllerBase
     {
         $params = $request->getParams();
         $data = PackageService::packageSearch($params);
+        return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
+     * 获取新产品包
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getNewPackage(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'sub_type',
+                'type' => 'required',
+                'error_code' => 'sub_type_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $params = $request->getParams();
+        $data = PackageService::getPackageBySubType($params['sub_type']);
         return HttpHelper::buildResponse($response, $data);
     }
 }

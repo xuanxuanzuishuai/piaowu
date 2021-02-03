@@ -152,4 +152,21 @@ class AgentAwardDetailModel extends Model
         $list = $db->queryAll($sql.$sqlFrom.$joinGiftCode.$joinErpPackage.$where.$limitSql);
         return [$list,$total];
     }
+
+    /**
+     * 通过订单ID获取奖励记录
+     * @param $parentBillId
+     * @return array|null
+     */
+    public static function getDetailByParentBillId($parentBillId)
+    {
+        $db = MysqlDB::getDB();
+        $sql = 'SELECT
+                    id 
+                FROM
+                    ' . self::$table . ' 
+                WHERE
+                     ext->>"$.parent_bill_id"="' . $parentBillId . '"';
+        return $db->queryAll($sql);
+    }
 }

@@ -391,14 +391,29 @@ class Agent extends ControllerBase
     }
 
     /**
+     * 推广素材信息获取接口
      * @param Request $request
      * @param Response $response
      * @return Response
-     * 推广素材信息获取接口
+     * @throws RunTimeException
+     * @throws \App\Libs\KeyErrorRC4Exception
      */
-    public static function popularMaterialInfo(Request $request, Response $response)
+    public static function popularMaterialInfo(/** @noinspection PhpUnusedParameterInspection */ Request $request, Response $response)
     {
         $data = AgentService::popularMaterialInfo();
+        return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
+     * 一级代理模糊搜索
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public static function agentFuzzySearch(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        $data = AgentService::agentFuzzySearch($params);
         return HttpHelper::buildResponse($response, $data);
     }
 }

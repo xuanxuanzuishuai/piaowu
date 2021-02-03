@@ -101,7 +101,7 @@ class ParamMapModel extends Model
         });
         $db = MysqlDB::getDB();
         $sql = "SELECT
-                    id,user_id,app_id,type,param_info->>'$.qr_url' as qr_url
+                    id,user_id,app_id,type,param_info->>'$.qr_url' as qr_url,param_info->>'$.r' as qr_ticket
                 FROM
                     param_map 
                 WHERE

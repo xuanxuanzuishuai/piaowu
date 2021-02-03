@@ -33,5 +33,7 @@ class DSSRouter extends RouterBase
         '/dss/message/info' => ['method' => ['get'], 'call' => Dss::class . ':messageInfo'],
         // 代理和订单映射关系
         '/dss/agent_bill_map/make' => ['method' => ['post'], 'call' => Dss::class . ':makeAgentBillMap'],
+        // 第三方订单查询列表
+        '/dss/third_part_bill/list' => ['method' => ['get'], 'call' => Dss::class . ':thirdBillList'],
     ];
 }

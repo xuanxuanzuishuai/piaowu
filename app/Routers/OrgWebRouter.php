@@ -15,6 +15,8 @@ use App\Controllers\Employee\Employee;
 use App\Controllers\OrgWeb\Agent;
 use App\Controllers\OrgWeb\AppPush;
 use App\Controllers\OrgWeb\Area;
+use App\Controllers\OrgWeb\Bill;
+use App\Controllers\OrgWeb\Channel;
 use App\Controllers\OrgWeb\Dept;
 use App\Controllers\OrgWeb\Message;
 use App\Controllers\OrgWeb\Employee as OrgWebEmployee;
@@ -130,6 +132,7 @@ class OrgWebRouter extends RouterBase
         '/op_web/agent/apply_remark' => ['method' => ['post'], 'call' => Agent::class . ':applyRemark'],
         '/op_web/agent/popular_material' => ['method' => ['post'], 'call' => Agent::class . ':popularMaterial'],
         '/op_web/agent/popular_material_info' => ['method' => ['get'], 'call' => Agent::class . ':popularMaterialInfo'],
+        '/op_web/agent/fuzzy_search' => ['method' => ['get'], 'call' => Agent::class . ':agentFuzzySearch'],
         // 地址搜索国家/省/市/县（区）
         '/op_web/area/country' => ['method' => ['get'], 'call' => Area::class . ':countryList'],
         '/op_web/area/province' => ['method' => ['get'], 'call' => Area::class . ':provinceList'],
@@ -137,6 +140,14 @@ class OrgWebRouter extends RouterBase
         '/op_web/area/district' => ['method' => ['get'], 'call' => Area::class . ':districtList'],
         // 课包管理
         '/op_web/package/search' => ['method' => ['get'], 'call' => Package::class . ':search'],
+        '/op_web/package/new_package' => ['method' => ['get'], 'call' => Package::class . ':getNewPackage'],
+
+        // 第三方订单管理
+        '/op_web/bill/third_bill_list' => ['method' => ['get'], 'call' => Bill::class . ':thirdBillList'],
+        '/op_web/bill/third_bill_import' => ['method' => ['post'], 'call' => Bill::class . ':thirdBillImport'],
+        '/op_web/bill/download_template' => ['method' => ['get'], 'call' => Bill::class . ':thirdBillDownloadTemplate'],
+        // 渠道管理
+        '/op_web/channel/getChannels' => ['method' => ['get'], 'call' => Channel::class . ':getChannels'],
 
     ];
 }

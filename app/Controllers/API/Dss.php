@@ -11,6 +11,7 @@ namespace App\Controllers\API;
 use App\Controllers\ControllerBase;
 use App\Libs\Constants;
 use App\Libs\HttpHelper;
+use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\AgentBillMapModel;
 use App\Models\MessagePushRulesModel;
@@ -18,6 +19,7 @@ use App\Models\PosterModel;
 use App\Models\WeChatAwardCashDealModel;
 use App\Services\ReferralActivityService;
 use App\Libs\Exceptions\RunTimeException;
+use App\Services\ThirdPartBillService;
 use App\Services\UserRefereeService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -279,5 +281,23 @@ class Dss extends ControllerBase
         }
         $res = AgentBillMapModel::add($params['qr_ticket'], $params['parent_bill_id'], $params['student_id']);
         return HttpHelper::buildResponse($response, ['res' => $res]);
+    }
+
+
+    /**
+     * 第三方导入订单列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function thirdBillList(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        list($page, $count) = Util::formatPageCount($params);
+        $records = ThirdPartBillService::thirdBillList($params, $page, $count);
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $records,
+        ]);
     }
 }
