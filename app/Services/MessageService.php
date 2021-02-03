@@ -113,7 +113,7 @@ class MessageService
             'content_2' => WeChatConfigModel::CONTENT_TYPE_TEXT,
             'image'     => WeChatConfigModel::CONTENT_TYPE_IMG,
         ];
-        $posterConfig = DictConstants::getSet(DictConstants::POSTER_CONFIG);
+        $posterConfig = DictConstants::getSet(DictConstants::TEMPLATE_POSTER_CONFIG);
         foreach ($keyTypeDict as $key => $type) {
             if (isset($params[$key]) && !Util::emptyExceptZero($params[$key])) {
                 $item = [];
@@ -426,7 +426,7 @@ class MessageService
             }
             list($baseChannelId, $yearBuyChannel) = DictConstants::getValues(DictConstants::STUDENT_INVITE_CHANNEL, ['NORMAL_STUDENT_INVITE_STUDENT', 'BUY_NORMAL_STUDENT_INVITE_STUDENT']);
             $channelId = $data['rule_id'] == DictConstants::get(DictConstants::MESSAGE_RULE, 'year_pay_rule_id') ? $yearBuyChannel : $baseChannelId;
-            $config = DictConstants::getSet(DictConstants::POSTER_CONFIG);
+            $config = DictConstants::getSet(DictConstants::TEMPLATE_POSTER_CONFIG);
             $posterImgFile = PosterService::generateQRPosterAliOss(
                 $item['path'],
                 $config,
@@ -882,7 +882,7 @@ class MessageService
         }
 
         if (!empty($posterUrl)) {
-            $config = DictConstants::getSet(DictConstants::POSTER_CONFIG);
+            $config = DictConstants::getSet(DictConstants::TEMPLATE_POSTER_CONFIG);
             $posterImgFile = PosterService::generateQRPosterAliOss(
                 $posterUrl,
                 $config,

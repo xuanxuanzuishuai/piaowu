@@ -62,18 +62,18 @@ class PosterService
         $waterImgEncode = str_replace(
             ["+", "/"],
             ["-", "_"],
-            base64_encode($userQrUrl . "?x-oss-process=image/resize,limit_0,w_" . $config['qr_width'] . ",h_" . $config['qr_height'])
+            base64_encode($userQrUrl . "?x-oss-process=image/resize,limit_0,w_" . $config['QR_WIDTH'] . ",h_" . $config['QR_HEIGHT'])
         );
         $waterMark = [
             "image_" . $waterImgEncode,
-            "x_" . $config['qr_x'],
-            "y_" . $config['qr_y'],
+            "x_" . $config['QR_X'],
+            "y_" . $config['QR_Y'],
             "g_sw",//插入的基准位置以左下角作为原点
         ];
         $waterMarkStr = implode(",", $waterMark) . '/';
         $imgSize = [
-            "w_" . $config['poster_width'],
-            "h_" . $config['poster_height'],
+            "w_" . $config['POSTER_WIDTH'],
+            "h_" . $config['POSTER_HEIGHT'],
             "limit_0",//强制图片缩放
         ];
         $imgSizeStr = implode(",", $imgSize) . '/';

@@ -166,22 +166,6 @@ class DictConstants {
         ]
     ];
 
-    /**
-     * 标准海报配置
-     * 2021-01-07 14:44:33
-     */
-    const POSTER_CONFIG = [
-        'type' => 'poster_config',
-        'keys' => [
-            'qr_x',
-            'qr_y',
-            'poster_width',
-            'poster_height',
-            'qr_width',
-            'qr_height',
-        ]
-    ];
-
     const DEPT_DATA_TYPE_NAME = [
         'type' => 'DEPT_DATA_TYPE_NAME',
         'keys' => [1]
