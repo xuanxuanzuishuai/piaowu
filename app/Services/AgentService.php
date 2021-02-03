@@ -676,7 +676,7 @@ class AgentService
 
 
         //获取头像和昵称
-        $userNicknameArr = self::batchGetAgentUserWxInfoByUserId($userIdArr);
+        $userNicknameArr = self::batchDssUserWxInfoByUserId($userIdArr);
         //组合数据
         foreach ($bindUserList as $key => $val) {
             $tmpUserInfo = $userNicknameArr[$val['user_id']] ?? [];
@@ -698,21 +698,26 @@ class AgentService
      * 第二优先级:取系统获取的用户最后一次微信信息
      * 第三优先级:取默认头像(当前系统里面的小叶子默认头像)
      * 缓存有效时间 24小时
-     * @param array $userList
+     * @param array $userList   必须是相同的app_id, busi_type, user_type
      * @return array
      */
     public static function batchGetUserNicknameAndHead(array $userList)
     {
         $redis = RedisDB::getConn();
         $wxRequestData = [];
-        $openidList = [];   //这个只存放openid的一维数组
+        $appid = '';
+        $busi_type = '';
+        $user_type = '';
 
         //缓存中获取信息
-        $redisKey = UserWeiXinInfoModel::createCacheKey(date("Y-m-d"), UserWeiXinInfoModel::REDIS_HASH_USER_WEIXIN_INFO_PREFIX);
+        $redisHashKey  = UserWeiXinInfoModel::REDIS_HASH_USER_WEIXIN_INFO_PREFIX.date("Y-m-d");
         foreach ($userList as $uInfo) {
-            $hashKey = $uInfo['app_id'] . '_' . $uInfo['busi_type'] . '_' . $uInfo['user_type'] . '_' . $uInfo['open_id'];
+            $appid = $uInfo['app_id'];
+            $busi_type = $uInfo['busi_type'];
+            $user_type = $uInfo['user_type'];
+            $hashField = $uInfo['app_id'] . '_' . $uInfo['busi_type'] . '_' . $uInfo['user_type'] . '_' . $uInfo['open_id'];
             //缓存不存在
-            if (!$redis->hexists($redisKey, $hashKey)) {
+            if (!$redis->hexists($redisHashKey, $hashField)) {
                 //初始化用户头像默认值
                 $userNicknameAndHead[$uInfo['user_id']] = [
                     'nickname' => DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_wx_nickname'),
@@ -720,34 +725,16 @@ class AgentService
                 ];
 
                 // 放入临时数组，等待向微信发起请求
-                // 不同的app_id和busi_type下的openid放到不同的组里面
-                $key = $uInfo['app_id'] . '_' . $uInfo['busi_type'];
-                if (array_key_exists($key, $wxRequestData)) {
-                    $wxRequestData[$key]['openid_arr'][] = $uInfo['open_id'];
-                    $wxRequestData[$key]['other_info'][$uInfo['open_id']] = [
-                        'user_id' => $uInfo['user_id'],
-                        'user_type' => $uInfo['user_type'],
-                    ];
-                } else {
-                    $wxRequestData[$key] = [
-                        'app_id' => $uInfo['app_id'],
-                        'busi_type' => $uInfo['busi_type'],
-                        'openid_arr' => [$uInfo['open_id']],
-                        //open_id其他信息
-                        'other_info' => [
-                            $uInfo['open_id'] => [
-                                'user_id' => $uInfo['user_id'],
-                                'user_type' => $uInfo['user_type'],
-                            ],
-                        ],
-                    ];
-                }
+                $wxRequestData[$uInfo['open_id']] = [
+                    'user_id' => $uInfo['user_id'],
+                    'user_type' => $uInfo['user_type'],
+                ];
                 continue;
             }
 
             //缓存存在 - 从缓存获取用户的昵称和头像
-            $hashVal = $redis->hget($redisKey, $hashKey);
-            $userWxInfo = json_encode($hashVal, true);
+            $hashVal = $redis->hget($redisHashKey, $hashField);
+            $userWxInfo = json_decode($hashVal, true);
             $userNicknameAndHead[$uInfo['user_id']] = [
                 'nickname' => $userWxInfo['nickname'],
                 "thumb" => $userWxInfo['headimgurl'],
@@ -755,37 +742,41 @@ class AgentService
         }
 
         /** 向微信发起获取头像昵称的请求, 并记录获取成功的openid */
+        $wechat = WeChatMiniPro::factory($appid,$busi_type);
+        $wxUserList = $wechat->batchGetUserInfo(array_keys($wxRequestData));
+        $wxUserList = $wxUserList['user_info_list'] ?? [];
+
+        //组合微信接口拿到的用户头像和昵称
         $successOpenid = [];  //成功从微信获取头像和昵称的用户id
-        foreach ($wxRequestData as $wxParam) {
-            $wechat = WeChatMiniPro::factory($wxParam['app_id'], $wxParam['busi_type']);
-            $wxUserList = $wechat->batchGetUserInfo($wxParam['openid_arr']);
-            $wxUserList = $wxUserList['user_info_list'] ?? [];
+        foreach ($wxUserList as $wxVal) {
+            $tmpOtherInfo = $wxRequestData[$wxVal['openid']] ?? []; //openid其他信息
+            $tmpUserId = $tmpOtherInfo['user_id'] ?? 0;
+            $tmpUserType = $tmpOtherInfo['user_type'] ?? 0;
+            $userNicknameAndHead[$tmpUserId] = [
+                'nickname' => $wxVal['nickname'] ?? '',
+                'thumb' => $wxVal['headimgurl'] ?? '',
+            ];
 
-            //组合微信接口拿到的用户头像和昵称
-            foreach ($wxUserList as $wxVal) {
-                $tmpOtherInfo = $wxParam['other_info'][$wxVal['openid']] ?? []; //openid其他信息
-                $tmpUserId = $tmpOtherInfo['user_id'] ?? 0;
-                $tmpUserType = $tmpOtherInfo['user_type'] ?? 0;
-                $userNicknameAndHead[$tmpUserId] = [
-                    'nickname' => $wxVal['nickname'] ?? '',
-                    'thumb' => $wxVal['headimgurl'] ?? '',
-                ];
+            //缓存信息 , 缓存app_id, busi_type, open_id, user_type
+            $hashField = $appid . '_' . $busi_type . '_' . $tmpUserType . '_' . $wxVal['openid'];
+            $redis->hset($redisHashKey, $hashField, json_encode($wxVal));
+            $redis->expire($redisHashKey,86400*2);  //两天过期
 
-                //缓存信息 , 缓存app_id, busi_type, open_id, user_type
-                $hashKey = $wxParam['app_id'] . '_' . $wxParam['busi_type'] . '_' . $tmpUserType . '_' . $wxParam['open_id'];
-                $redis->hset($redisKey, $hashKey, json_encode($wxVal));
-                $redis->expire($redisKey,86400*2);  //两天过期
-
-                //记录成功从微信获取头像和昵称的用户id
-                $successOpenid[] = $wxVal['openid'];
-            }
+            //记录成功从微信获取头像和昵称的用户id
+            $successOpenid[] = $wxVal['openid'];
         }
 
+
         /** 获取用户最后一次拉取的头像 */
-        $getFailOpenidList = array_diff($openidList, $successOpenid); //两个数组的差集就是没有成功从微信拉取信息的用户id
+        $getFailOpenidList = array_diff(array_column($userList, 'open_id'), $successOpenid); //两个数组的差集就是没有成功从微信拉取信息的用户id
         if (!empty($getFailOpenidList)) {
             //获取openid最后一次拉取微信信息数据
-            $userList = UserWeiXinInfoModel::getRecords(['open_id' => $getFailOpenidList], ['nickname', 'head_url']);
+            $where = [
+                'open_id' => $getFailOpenidList,
+                'app_id' => $appid,
+                'busi_type' => $busi_type,
+            ];
+            $userList = UserWeiXinInfoModel::getRecords($where, ['nickname', 'head_url']);
             $userNickList = [];
             foreach ($userList as $tmpVOne) {
                 $userNickList[$tmpVOne['open_id']] = $tmpVOne;
@@ -797,8 +788,8 @@ class AgentService
                     continue;
                 }
                 $userNicknameAndHead[$tmpKTwo] = [
-                    'nickname' => $tmpInfo['nickname'],
-                    'thumb' => AliOSS::signUrls($tmpInfo['head_url'])
+                    'nickname' => Util::textDecode($tmpInfo['nickname']),
+                    'thumb' => AliOSS::replaceCdnDomainForDss($tmpInfo['head_url']),
                 ];
             }
         }
@@ -816,8 +807,8 @@ class AgentService
         if (empty($agentIdArr)) {
             return $userNicknameAndHead;
         }
-        //从dss读取用户信息
-        $userList = UserWeiXinModel::getRecords(['user_id' => $agentIdArr], ['user_id', 'open_id', 'app_id', 'busi_type','user_type']);
+        //读取用户信息
+        $userList = UserWeiXinModel::getUserWeiXinListByUserid($agentIdArr, ['user_id', 'open_id', 'app_id', 'busi_type','user_type']);
 
         return self::batchGetUserNicknameAndHead($userList);
     }
@@ -827,13 +818,13 @@ class AgentService
      * @param array $userIdArr
      * @return array
      */
-    public static function batchGetAgentUserWxInfoByUserId(array $userIdArr){
+    public static function batchDssUserWxInfoByUserId(array $userIdArr){
         $userNicknameAndHead = [];
         if (empty($userIdArr)) {
             return $userNicknameAndHead;
         }
         //从dss读取用户信息
-        $userList = DssUserWeiXinModel::getRecords(['user_id' => $userIdArr], ['user_id', 'open_id', 'app_id', 'busi_type','user_type']);
+        $userList = DssUserWeiXinModel::getUserWeiXinListByUserid($userIdArr, ['user_id', 'open_id', 'app_id', 'busi_type','user_type']);
 
         return self::batchGetUserNicknameAndHead($userList);
     }
@@ -889,7 +880,7 @@ class AgentService
         $returnData['total'] = AgentAwardDetailModel::getCount(['agent_id'=>$agentIdArr]);
 
         //获取用户昵称头像
-        $userNicknameArr = self::batchGetAgentUserWxInfoByUserId($userIdArr);
+        $userNicknameArr = self::batchDssUserWxInfoByUserId($userIdArr);
 
         //获取手机号
         $mobileList = DssStudentModel::getRecords(['id' => $userIdArr], ['id', 'mobile']);
@@ -917,12 +908,13 @@ class AgentService
     /**
      * 根据时间判断代理和用户的绑定状态， 这里stage必须是年卡或体验
      * stage = 0 注册状态， deadline可能是0
+     * @param $stage
      * @param $deadline
      * @return int
      */
     public static function getAgentUserBindStatus($deadline,$stage){
         //未绑定 - 注册状态不存在绑定和不绑定的关系
-        if ($stage == 0) {
+        if ($stage == AgentUserModel::STAGE_REGISTER) {
             return AgentUserModel::BIND_STATUS_PENDING;
         }
         switch ($deadline) {

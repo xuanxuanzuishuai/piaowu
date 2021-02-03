@@ -112,4 +112,22 @@ class DssUserWeiXinModel extends DssModel
         ];
         return $db->queryAll($sql, $map);
     }
+
+
+    /**
+     * 只获取学生服务号， 转介绍小程序 的学生id
+     * @param $userId
+     * @param $fields
+     * @return mixed
+     */
+    public static function getUserWeiXinListByUserid($userId,$fields) {
+        $where = [
+            'user_id' => $userId,
+            'status' => self::STATUS_NORMAL,
+            'user_type' => self::USER_TYPE_STUDENT,
+            'busi_type' => self::BUSI_TYPE_STUDENT_SERVER,
+            'app_id' => Constants::SMART_APP_ID,
+        ];
+        return self::getRecords($where, $fields);
+    }
 }

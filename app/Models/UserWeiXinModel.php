@@ -8,7 +8,9 @@
 
 namespace App\Models;
 
+use App\Libs\Constants;
 use App\Libs\RedisDB;
+use App\Libs\UserCenter;
 
 class UserWeiXinModel extends Model
 {
@@ -71,5 +73,22 @@ class UserWeiXinModel extends Model
         }
         $result = self::updateRecord($userId, $update);
         return ($result && $result > 0);
+    }
+
+    /**
+     * 获取代理小程序 ，智能陪练app 的 学生信息
+     * @param $userId
+     * @param $fields
+     * @return array
+     */
+    public static function getUserWeiXinListByUserid($userId,$fields) {
+        $where = [
+            'user_id' => $userId,
+            'status' => self::STATUS_NORMAL,
+            'user_type' => self::USER_TYPE_AGENT,
+            'busi_type' => self::BUSI_TYPE_AGENT_MINI,
+            'app_id' => UserCenter::AUTH_APP_ID_OP_AGENT,
+        ];
+        return self::getRecords($where, $fields);
     }
 }

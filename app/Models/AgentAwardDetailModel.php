@@ -125,7 +125,7 @@ class AgentAwardDetailModel extends Model
         $agentAwardDetailTable = AgentAwardDetailModel::getTableNameWithDb();
         $erpPackageV1Table = DssErpPackageV1Model::getTableNameWithDb();
         $gitCodeTable = DssGiftCodeModel::getTableNameWithDb();
-        $sql = 'SELECT ad.id,ad.agent_id,dg.bill_package_id,dg.parent_bill_id,de.name as package_name,dg.bill_amount,dg.code_status,dg.buy_time,dg.create_time,dg.employee_uuid' .
+        $sql = 'SELECT ad.id,ad.agent_id,ad.student_id,dg.bill_package_id,dg.parent_bill_id,de.name as package_name,dg.bill_amount,dg.code_status,dg.buy_time,dg.create_time,dg.employee_uuid' .
             ' FROM ' . $agentAwardDetailTable . ' as ad ' .
             " JOIN " . $gitCodeTable . " as dg ON ad.ext->'$.parent_bill_id'=dg.parent_bill_id " .
             " JOIN " . $erpPackageV1Table . " as de ON de.id=dg.bill_package_id" .

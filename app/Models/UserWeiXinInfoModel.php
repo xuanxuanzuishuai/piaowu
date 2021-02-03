@@ -4,6 +4,7 @@
 namespace App\Models;
 
 
+use App\Libs\Constants;
 use App\Libs\MysqlDB;
 
 class UserWeiXinInfoModel extends Model
@@ -20,7 +21,7 @@ class UserWeiXinInfoModel extends Model
     public static function updateWxInfo($where, $wxInfo)
     {
         //更新表
-        $update = ['update_time' => time()];
+        $update = [];
         if (isset($wxInfo['nickname']) && !empty($wxInfo['nickname'])) {
             $update['nickname'] = $wxInfo['nickname'];
         }
@@ -32,6 +33,7 @@ class UserWeiXinInfoModel extends Model
         if (empty($update)) {
             return false;
         }
+        $update['update_time'] = time();
         $db = MysqlDB::getDB();
         $result = $db->updateGetCount(self::$table, $update, $where);
         if ($result && $result > 0) {

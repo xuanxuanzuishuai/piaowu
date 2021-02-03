@@ -4,6 +4,7 @@
  * User: yuxuan
  * Date: 2020/1/7
  * Time: 3:19 PM
+ * 执行时间，每天凌晨12:05
  */
 
 namespace App;
@@ -19,10 +20,8 @@ require_once PROJECT_ROOT . '/vendor/autoload.php';
 use App\Libs\AliOSS;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
-use App\Libs\UserCenter;
-use App\Libs\WeChat\WeChatMiniPro;
+use App\Libs\Util;
 use App\Models\UserWeiXinInfoModel;
-use App\Models\UserWeiXinModel;
 use Dotenv\Dotenv;
 
 $dotenv = new Dotenv(PROJECT_ROOT, '.env');
@@ -30,8 +29,8 @@ $dotenv->load();
 $dotenv->overload();
 while (true) {
     $redis = RedisDB::getConn();
-    $hashKey = UserWeiXinInfoModel::createCacheKey(date("Y-m-d", strtotime("-1 day")), UserWeiXinInfoModel::REDIS_HASH_USER_WEIXIN_INFO_PREFIX);
-    $redisData = $redis->hgetall($hashKey);
+    $redisHashKey = UserWeiXinInfoModel::REDIS_HASH_USER_WEIXIN_INFO_PREFIX . date("Y-m-d", strtotime("-1 day"));
+    $redisData = $redis->hgetall($redisHashKey);
     if (empty($redisData)) {
         SimpleLogger::info('upload user wx head to oss is openid empty exec end', []);
         break;
@@ -41,8 +40,6 @@ while (true) {
         $appInfo = explode('_', $key);
         $appid = $appInfo[0];
         $busi_type = $appInfo[1];
-        $user_type = $appInfo[2];
-        $wechat = WeChatMiniPro::factory($appid, $busi_type);
 
         //oss 上传到本地
         $localPath = AliOSS::saveTmpImgFile($wxInfo['headimgurl']);
@@ -62,12 +59,12 @@ while (true) {
         // 删除临时文件
         unlink($localPath);
 
-        $where = ['app_id' => $appid, 'busi_type' => $busi_type, 'user_type' => $user_type, 'open_id' => $wxInfo['openid']];
+        $where = ['app_id' => $appid, 'busi_type' => $busi_type, 'open_id' => $wxInfo['openid']];
         $dbInfo = UserWeiXinInfoModel::getRecord($where, ['id']);
         if (!$dbInfo) {
             //更新数据表
             $updateData = [
-                'nickname' => $wxInfo['nickname'] ?? '',
+                'nickname' => Util::textEncode($wxInfo['nickname']),
                 'head_url' => $ossFile
             ];
             UserWeiXinInfoModel::updateWxInfo($where, $updateData);
@@ -75,14 +72,13 @@ while (true) {
             $insertData = [
                 'app_id' => $appid,
                 'busi_type' => $busi_type,
-                'user_type' => $user_type,
                 'open_id' => $wxInfo['openid'],
-                'nickname' => $wxInfo['nickname'] ?? '',
+                'nickname' => Util::textEncode($wxInfo['nickname']),
                 'head_url' => $ossFile,
                 'create_time' => time(),
             ];
             UserWeiXinInfoModel::insertRecord($insertData);
         }
     }
-
+    break;
 }
