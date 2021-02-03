@@ -286,4 +286,30 @@ class AgentModel extends Model
         );
         return $res[0] ?? [];
     }
+
+    /**
+     * 获取代理商以及其父级信息
+     * @param $agentId
+     * @return array
+     */
+    public static function getAgentParentData($agentId)
+    {
+        $db = MysqlDB::getDB();
+        $data = $db->select(
+            self::$table . "(a)",
+            [
+                "[>]" . self::$table . "(b)" => ["a.parent_id" => 'id']
+            ],
+            [
+                "a.id",
+                "a.status",
+                "b.id(p_id)",
+                "b.status(p_status)",
+            ],
+            [
+                "a.id" => $agentId
+            ]
+        );
+        return $data[0];
+    }
 }

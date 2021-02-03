@@ -113,6 +113,20 @@ class AgentUserModel extends Model
      */
     public static function getValidBindData($studentId)
     {
-        return self::getRecord(['user_id' => $studentId, 'stage' => self::STAGE_TRIAL, 'deadline[>=]' => time()], ['agent_id', 'id']);
+        return self::getRecord(
+            [
+                "OR"=>[
+                    "AND #the first condition"=>[
+                        'user_id' => $studentId,
+                        'stage' => self::STAGE_TRIAL,
+                        'deadline[>=]' => time()
+                    ],
+                    "AND #the second condition"=>[
+                        'user_id' => $studentId,
+                        'stage' => self::STAGE_FORMAL,
+                    ],
+                ],
+            ],
+            ['agent_id', 'id']);
     }
 }

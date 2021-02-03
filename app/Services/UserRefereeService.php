@@ -7,6 +7,7 @@ use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
 use App\Models\AgentAwardDetailModel;
+use App\Models\AgentUserModel;
 use App\Models\Dss\DssPackageExtModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserQrTicketModel;
@@ -63,12 +64,10 @@ class UserRefereeService
             throw new RunTimeException(['param_lay']);
         }
         //绑定转介绍关系
-        $res = self::bindRegister($studentId, $qrTicket, $appId, $extParams);
+        $res = self::bindRegister($uuid, $studentId, $qrTicket, $appId, $extParams);
         if (empty($res)) {
             return;
         }
-        //注册奖励发放
-        self::registerAwardDeal($uuid, $appId);
     }
 
     /**
@@ -100,7 +99,7 @@ class UserRefereeService
             'identity' => 0,
             'referee_info' => []
         ];
-        $identityData = ParamMapModel::getParamByQrTicket($qrTicket);
+        $identityData = ParamMapModel::checkAgentValidStatusByQr($qrTicket);
         if (empty($identityData)) {
             $identityData = DssUserQrTicketModel::getRecord(['qr_ticket' => $qrTicket]);
         }
@@ -122,13 +121,15 @@ class UserRefereeService
 
     /**
      * 转介绍关系建立
+     * @param $uuid
      * @param $studentId
      * @param $qrTicket
      * @param $appId
      * @param array $extParams
      * @return bool
+     * @throws RunTimeException
      */
-    public static function bindRegister($studentId, $qrTicket, $appId, $extParams = [])
+    public static function bindRegister($uuid, $studentId, $qrTicket, $appId, $extParams = [])
     {
         $time = time();
         if ($appId == Constants::SMART_APP_ID) {
@@ -162,6 +163,9 @@ class UserRefereeService
             if ($qrTicketData['identity'] == ParamMapModel::TYPE_AGENT) {
                 //发放奖励
                 AgentAwardService::agentReferralBillAward($qrTicketData['referee_info']['user_id'], ['id' => $studentId], AgentAwardDetailModel::AWARD_ACTION_TYPE_REGISTER);
+            } else {
+                //注册奖励发放
+                self::registerAwardDeal($uuid, $appId);
             }
             return true;
         } else {
@@ -181,7 +185,7 @@ class UserRefereeService
     {
         if ($appId == Constants::SMART_APP_ID) {
             //根据订单ID区分下单来源
-            $agentId =AgentService::checkBillIsAgent($buyPreStudentInfo, $packageInfo, $parentBillId);
+            $agentId = AgentUserModel::getRecord(['user_id' => $buyPreStudentInfo['id'], 'stage[>]' => AgentUserModel::STAGE_REGISTER], ['agent_id']);
             if ($agentId) {
                 //代理商分享购买
                 AgentAwardService::agentReferralBillAward($agentId, $buyPreStudentInfo, $packageInfo['package_type'], $packageInfo, $parentBillId);

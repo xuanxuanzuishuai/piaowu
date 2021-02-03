@@ -1144,7 +1144,7 @@ class AgentService
             $agentUserWhere .= ' AND (au.deadline>= ' . $time . ' OR au.stage=' . AgentUserModel::STAGE_FORMAL . ') ';
         }
         if (!empty($params['bind_status']) && $params['bind_status'] == AgentUserModel::BIND_STATUS_UNBIND) {
-            $agentUserWhere .= ' AND au.deadline< ' . $time . 'AND au.stage=' . AgentUserModel::STAGE_TRIAL . ' ';
+            $agentUserWhere .= ' AND au.deadline< ' . $time . ' AND au.stage=' . AgentUserModel::STAGE_TRIAL . ' ';
         }
 
         //一级代理数据
@@ -1305,24 +1305,6 @@ class AgentService
             unset($rv['second_agent_id']);
         });
         return $recommendUserData;
-    }
-
-    /**
-     * 检测订单是否属于代理业务线
-     * @param $studentInfo
-     * @param $packageInfo
-     * @param $parentBillId
-     * @return int
-     */
-    public
-    static function checkBillIsAgent($studentInfo, $packageInfo, $parentBillId)
-    {
-        if ($packageInfo['package_type'] == DssPackageExtModel::PACKAGE_TYPE_NORMAL) {
-            $agentData = AgentUserModel::getValidBindData($studentInfo['id']);
-        } else {
-            $agentData = AgentBillMapModel::get($parentBillId, $studentInfo['id']);
-        }
-        return empty($agentData) ? 0 : $agentData['agent_id'];
     }
 
     /**
@@ -1496,5 +1478,19 @@ class AgentService
             }
         }
         return $data;
+    }
+
+    /**
+     * 检测当前代理商是否有效
+     * @param $agentId
+     * @return bool
+     */
+    public static function checkAgentStatusIsValid($agentId)
+    {
+        $data = AgentModel::getAgentParentData($agentId);
+        if (($data['status'] != AgentModel::STATUS_FREEZE) && ($data['p_status'] != AgentModel::STATUS_FREEZE)) {
+            return true;
+        }
+        return false;
     }
 }

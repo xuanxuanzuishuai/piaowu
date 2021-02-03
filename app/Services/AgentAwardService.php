@@ -36,6 +36,12 @@ class AgentAwardService
         if (empty($studentInfo) || empty($actionType) || empty($agentId)) {
             return false;
         }
+        //检测当前代理是否有效:包括父级
+        $agentIsValid = AgentService::checkAgentStatusIsValid($agentId);
+        if (empty($agentIsValid)) {
+            SimpleLogger::info('agent status invalid', []);
+            return false;
+        }
         $time = time();
         switch ($actionType) {
             case AgentAwardDetailModel::AWARD_ACTION_TYPE_REGISTER:
@@ -299,8 +305,8 @@ class AgentAwardService
             SimpleLogger::info('not an experience class to buy first', []);
             return false;
         }
-        //已存在体验卡绑定关系不可注册绑定
-        $agentBuyTrailBindInfo = AgentUserModel::getRecord(['user_id' => $studentId, 'stage' => AgentUserModel::STAGE_TRIAL], ['id']);
+        //已存在绑定关系不可注册绑定
+        $agentBuyTrailBindInfo = AgentUserModel::getRecord(['user_id' => $studentId, 'stage[>=]' => AgentUserModel::STAGE_TRIAL], ['id']);
         if (!empty($agentBuyTrailBindInfo)) {
             SimpleLogger::info('student has buy trail', []);
             return false;
@@ -324,6 +330,7 @@ class AgentAwardService
         //检测此学生是否存在有效的体验课绑定关系的代理数据
         $validBind = AgentUserModel::getValidBindData($studentId);
         if (empty($validBind)) {
+            SimpleLogger::info('not valid bind data', []);
             return false;
         }
         return true;

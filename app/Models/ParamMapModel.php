@@ -9,6 +9,7 @@
 namespace App\Models;
 
 use App\Libs\MysqlDB;
+use App\Libs\UserCenter;
 
 class ParamMapModel extends Model
 {
@@ -108,5 +109,27 @@ class ParamMapModel extends Model
                     AND app_id = " . $appId . " 
                     AND type = " . $type . $extWhere;
         return $db->queryAll($sql)[0];
+    }
+
+    /**
+     * 检测qr ticket对应的代理商是否有效
+     * @param $qrTicket
+     * @return mixed
+     */
+    public static function checkAgentValidStatusByQr($qrTicket)
+    {
+        $db = MysqlDB::getDB();
+        $sql = "SELECT
+                    p.id,
+                    p.user_id,
+                FROM
+                    " . self::$table . " as p     
+                INNER JOIN " . AgentModel::$table . " AS a ON a.id=p.user_id AND a.status=" . AgentModel::STATUS_OK . " 
+                WHERE
+                    param_info ->> '$.r' = '" . $qrTicket . "' 
+                    AND app_id=" . UserCenter::AUTH_APP_ID_OP_AGENT . " 
+                    AND type=" . self::TYPE_AGENT;
+        return $db->queryAll($sql)[0];
+
     }
 }
