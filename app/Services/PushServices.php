@@ -90,7 +90,7 @@ class PushServices
 
         switch ($params['jump_type']) {
             case self::PUSH_JUMP_TYPE_WEB_VIEW:
-                if (empty($params['link_url']) || empty($params['jump_to'])) {
+                if (empty($params['link_url']) || (empty($params['jump_to']) && $params['jump_to'] !== '0')) {
                     throw new RunTimeException(['params_can_not_be_empty']);
                 }
                 break;
