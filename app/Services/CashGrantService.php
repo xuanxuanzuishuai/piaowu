@@ -32,12 +32,13 @@ class CashGrantService
      * @param $eventType
      * @param int $reviewerId
      * @param string $reason
+     * @param array $ext
      * @throws \App\Libs\Exceptions\RunTimeException
      */
-    public static function redPackQueueDeal($awardId, $eventType, $reviewerId = EmployeeModel::SYSTEM_EMPLOYEE_ID, $reason = '')
+    public static function redPackQueueDeal($awardId, $eventType, $reviewerId = EmployeeModel::SYSTEM_EMPLOYEE_ID, $reason = '', $ext = [])
     {
         if ($eventType == RedPackTopic::SEND_RED_PACK) {
-            self::cashGiveOut($awardId, $reviewerId, $reason);
+            self::cashGiveOut($awardId, $reviewerId, $reason, $ext);
         }
 
         if ($eventType == RedPackTopic::UPDATE_RED_PACK) {
@@ -50,10 +51,11 @@ class CashGrantService
      * @param $awardId
      * @param $reviewerId
      * @param string $reason
+     * @param array $ext
      * @return array|mixed
      * @throws \App\Libs\Exceptions\RunTimeException
      */
-    public static function cashGiveOut($awardId, $reviewerId, $reason = '')
+    public static function cashGiveOut($awardId, $reviewerId, $reason = '', $ext = [])
     {
         //前置校验奖励是否可发放
         $res = self::checkAwardCanSend($awardId);
@@ -77,7 +79,7 @@ class CashGrantService
             (new Erp())->updateAward($awardId, $sendStatus, $reviewerId, $reason);
             if ($sendStatus == ErpUserEventTaskAwardModel::STATUS_GIVE_ING) {
                 //发放成功推送当前奖励相关的消息
-                PushMessageService::sendAwardRelateMessage($awardDetailInfo);
+                PushMessageService::sendAwardRelateMessage($awardDetailInfo, $ext);
             }
         }
         return ($sendStatus == ErpUserEventTaskAwardModel::STATUS_GIVE_ING) && ($awardDetailInfo['status'] != $sendStatus);

@@ -22,8 +22,9 @@ class PushMessageService
     /**
      * 红包奖励相关的微信消息
      * @param $awardDetailInfo
+     * @param array $ext
      */
-    public static function sendAwardRelateMessage($awardDetailInfo)
+    public static function sendAwardRelateMessage($awardDetailInfo, $ext = [])
     {
         if ($awardDetailInfo['app_id'] != Constants::SMART_APP_ID) {
             return;
@@ -46,7 +47,7 @@ class PushMessageService
             SimpleLogger::info('not found user weixin info', ['user_id' => $awardUserInfo['id']]);
             return;
         }
-        $replaceParams = self::getReplaceParams($awardDetailInfo, $achieveUserInfo);
+        $replaceParams = self::getReplaceParams($awardDetailInfo, $achieveUserInfo, $ext);
         self::notifyUserCustomizeMessage($baseTemId, $replaceParams, $getAwardUserInfo['open_id'], $awardDetailInfo['app_id']);
     }
 
@@ -54,9 +55,10 @@ class PushMessageService
      * 可替换的变量
      * @param $awardDetailInfo
      * @param $achieveUserInfo
+     * @param array $ext
      * @return array
      */
-    public static function getReplaceParams($awardDetailInfo, $achieveUserInfo)
+    public static function getReplaceParams($awardDetailInfo, $achieveUserInfo, $ext = [])
     {
         $urlArr = [
             ErpEventModel::TYPE_IS_REFERRAL => $_ENV['STUDENT_INVITED_RECORDS_URL'],
@@ -65,7 +67,7 @@ class PushMessageService
         $url = $urlArr[$awardDetailInfo['type']] ?? '';
         $activityName  = '';
         if ($awardDetailInfo['type'] == ErpEventModel::DAILY_UPLOAD_POSTER) {
-            $activityName = DssReferralActivityModel::getRecord(['task_id' => $awardDetailInfo['event_task_id']], 'name');
+            $activityName = DssReferralActivityModel::getRecord(['id' => $ext['activity_id']], 'name');
         }
         // 任务达成条件
         $taskCondition = json_decode($awardDetailInfo['condition'], true);
