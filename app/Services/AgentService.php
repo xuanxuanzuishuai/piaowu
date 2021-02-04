@@ -171,10 +171,9 @@ class AgentService
     /**
      * 代理运营统计数据
      * @param $agentId
-     * @param $appId
      * @return array
      */
-    public static function agentStaticsData($agentId, $appId)
+    public static function agentStaticsData($agentId)
     {
         $staticsData = [
             'detail' => [],
@@ -182,7 +181,7 @@ class AgentService
             'secondary_agent' => [],
         ];
         //详情
-        $staticsData['detail'] = self::detailAgent($agentId, $appId);
+        $staticsData['detail'] = self::detailAgent($agentId);
         if (!empty($staticsData['detail'])) {
             //推广数据统计
             $spreadData = self::agentSpreadData([$agentId]);
@@ -264,16 +263,15 @@ class AgentService
     /**
      * 获取代理账户详情
      * @param $agentId
-     * @param $appId
      * @return array
      */
-    public static function detailAgent($agentId, $appId)
+    public static function detailAgent($agentId)
     {
         //详情
-        $detail = AgentModel::detail($agentId, $appId);
+        $detail = AgentModel::detail($agentId);
         //微信数据:是否绑定,昵称
         if (!empty($detail)) {
-            $bindData = UserWeiXinModel::userBindData($agentId, UserWeiXinModel::USER_TYPE_AGENT, UserWeiXinModel::BUSI_TYPE_AGENT_MINI, $appId);
+            $bindData = UserWeiXinModel::userBindData($agentId, UserWeiXinModel::USER_TYPE_AGENT, UserWeiXinModel::BUSI_TYPE_AGENT_MINI, UserCenter::AUTH_APP_ID_OP_AGENT);
             $detail['wx_bind_status'] = empty($bindData) ? 0 : 1;
         }
         return $detail;

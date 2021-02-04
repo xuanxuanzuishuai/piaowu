@@ -147,7 +147,7 @@ class Agent extends ControllerBase
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        $data = AgentService::detailAgent($params['agent_id'], Constants::SMART_APP_ID);
+        $data = AgentService::detailAgent($params['agent_id']);
         return HttpHelper::buildResponse($response, $data);
     }
 
@@ -171,7 +171,7 @@ class Agent extends ControllerBase
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        $data = AgentService::agentStaticsData($params['agent_id'], Constants::SMART_APP_ID);
+        $data = AgentService::agentStaticsData($params['agent_id']);
         return HttpHelper::buildResponse($response, $data);
     }
 

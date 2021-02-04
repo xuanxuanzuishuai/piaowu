@@ -364,7 +364,7 @@ class DictConstants {
     //业务线
     const PACKAGE_APP_NAME = [
         'type' => 'PACKAGE_APP_NAME',
-        'keys' => ['1', '8']
+        'keys' => ['8']
     ];
     //代理绑定有效时间
     const AGENT_BIND = [

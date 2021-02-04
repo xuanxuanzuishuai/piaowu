@@ -113,10 +113,9 @@ class AgentModel extends Model
     /**
      * 获取代理账户详情
      * @param $agentId
-     * @param $appId
      * @return array
      */
-    public static function detail($agentId, $appId)
+    public static function detail($agentId)
     {
         $db = MysqlDB::getDB();
         $data = $db->select(
@@ -143,15 +142,13 @@ class AgentModel extends Model
                 AgentInfoModel::$table . '.address',
                 AgentInfoModel::$table . '.remark',
                 AgentDivideRulesModel::$table . '.app_id',
-                AgentDivideRulesModel::$table . '.type',
                 AgentDivideRulesModel::$table . '.rule',
                 EmployeeModel::$table . '.name(e_name)',
-                EmployeeModel::$table . '.name(e_s_name)',
+                'EA.name(e_s_name)',
             ],
             [
                 self::$table . '.id' => $agentId,
                 AgentDivideRulesModel::$table . '.status' => AgentDivideRulesModel::STATUS_OK,
-                AgentDivideRulesModel::$table . '.app_id' => $appId,
             ]
         );
         return $data[0];
@@ -178,36 +175,39 @@ class AgentModel extends Model
             $whereSql[] = ' ' . $wk . '=' . $wv . ' ';
         });
         $offset = ($page - 1) * $limit;
-        $sql = "SELECT
-                    `agent`.`id`,
-                    `agent`.`mobile`,
-                    `agent`.`status`,
-                    `agent`.`create_time`,
-                    `agent`.`employee_id`,
-                    `agent`.`type`,
-                    `agent`.`service_employee_id`,
-                    `agent`.`name`,
-                    `agent_info`.`country`,
-                    `agent_info`.`province`,
-                    `agent_info`.`city`,
-                    `agent_info`.`district`,
-                    `agent_info`.`address`,
-                    `employee`.`name` AS `e_name`,
-                    EA.`name` AS `e_s_name`,
-                    count( s.student_id ) as `referral_student_count`,
-                    dr.app_id
-                FROM
-                    " . self::$table . "
-                    INNER JOIN " . AgentInfoModel::$table . " ON `agent`.`id` = `agent_info`.`agent_id`
-                    INNER JOIN " . EmployeeModel::$table . " ON `agent`.`employee_id` = `employee`.`id`
-                    LEFT JOIN " . EmployeeModel::$table . " EA ON `agent`.`service_employee_id` = `EA`.`id`
-                    LEFT JOIN " . StudentInviteModel::$table . " AS s ON `agent`.`id` = s.`referee_id` 
-                    LEFT JOIN " . AgentDivideRulesModel::$table . " AS dr ON `agent`.`id` = dr.`agent_id` AND dr.status=" . AgentDivideRulesModel::STATUS_OK . " 
-                WHERE
-                    " . implode('AND', $whereSql) . "
-                GROUP BY
-                    " . self::$table . ".`id` ORDER BY  " . self::$table . ".id DESC LIMIT " . $offset . ',' . $limit;
-        $data['list'] = $db->queryAll($sql);
+        $where[AgentDivideRulesModel::$table.'.status'] = AgentDivideRulesModel::STATUS_OK;
+        $data['list'] = $db->select(
+            self::$table,
+            [
+                "[><]" . AgentInfoModel::$table => ['id' => 'agent_id'],
+                "[><]" . EmployeeModel::$table => ['employee_id' => 'id'],
+                "[>]" . EmployeeModel::$table . "(e)" => ['service_employee_id' => 'id'],
+                "[>]" . AgentDivideRulesModel::$table => ['id' => 'agent_id'],
+            ],
+            [
+                self::$table . '.id',
+                self::$table . '.mobile',
+                self::$table . '.status',
+                self::$table . '.create_time',
+                self::$table . '.employee_id',
+                self::$table . '.type',
+                self::$table . '.service_employee_id',
+                self::$table . '.name',
+                AgentInfoModel::$table . '.country',
+                AgentInfoModel::$table . '.province',
+                AgentInfoModel::$table . '.city',
+                AgentInfoModel::$table . '.district',
+                AgentInfoModel::$table . '.address',
+                EmployeeModel::$table . '.name(e_name)',
+                AgentDivideRulesModel::$table . '.app_id',
+                'e.name(e_s_name)'
+            ],
+            [
+                "AND" => $where,
+                "ORDER" => [self::$table . ".id" => 'DESC'],
+                "LIMIT" => [$offset, $limit],
+            ]
+        );
         return $data;
     }
 
@@ -225,7 +225,7 @@ class AgentModel extends Model
             [
                 self::$table . '.id', self::$table . '.mobile', self::$table . '.status',
                 self::$table . '.parent_id', self::$table . '.create_time', self::$table . '.employee_id',
-                self::$table . '.type', AgentInfoModel::$table . '.name'
+                self::$table . '.type', AgentModel::$table . '.name'
             ],
             [
                 self::$table . '.parent_id' => $parentIds
