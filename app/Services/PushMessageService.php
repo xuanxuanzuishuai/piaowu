@@ -60,7 +60,7 @@ class PushMessageService
     {
         $urlArr = [
             ErpEventModel::TYPE_IS_REFERRAL => $_ENV['STUDENT_INVITED_RECORDS_URL'],
-            ErpEventModel::DAILY_UPLOAD_POSTER => $_ENV["WECHAT_FRONT_DOMAIN"] . "/student/referral?tag=2"
+            ErpEventModel::DAILY_UPLOAD_POSTER => $_ENV["WECHAT_FRONT_DOMAIN"] . "/student/poster"
         ];
         $url = $urlArr[$awardDetailInfo['type']] ?? '';
         $activityName  = '';
@@ -71,7 +71,7 @@ class PushMessageService
         $taskCondition = json_decode($awardDetailInfo['condition'], true);
         $total = 0;
         $referralMobile = '';
-        if (in_array($awardDetailInfo['type'], [ErpEventModel::TYPE_IS_REFERRAL, ErpEventModel::DAILY_UPLOAD_POSTER])) {
+        if (in_array($awardDetailInfo['type'], [ErpEventModel::TYPE_IS_REFERRAL])) {
             // 所有转介绍任务ID:
             $event = ErpEventModel::getRecord(['type' => ErpEventModel::TYPE_IS_REFERRAL]);
             $taskId = ErpEventTaskModel::getRecords(['event_id' => $event['id']]);
