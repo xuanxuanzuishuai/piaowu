@@ -17,24 +17,24 @@ class AgentBillMapModel extends Model
 
     /**
      * 记录数据
-     * @param $paramId
+     * @param $qrTicket
      * @param $parentBillId
      * @param $studentId
      * @return bool
      */
-    public static function add($paramId, $parentBillId, $studentId)
+    public static function add($qrTicket, $parentBillId, $studentId)
     {
         //检测二维码参数ID是否为代理类型并且代理状态是否正常
-        $paramInfo = ParamMapModel::checkParamToAgentValidStatus($paramId);
+        $paramInfo = ParamMapModel::checkAgentValidStatusByQr($qrTicket);
         if (empty($paramInfo)) {
-            SimpleLogger::error('param id relate agent status error', ['param_id' => $paramId, 'parent_bill_id' => $parentBillId, 'student_id' => $studentId]);
+            SimpleLogger::error('qr ticket relate agent status error', ['qr_ticket' => $qrTicket, 'parent_bill_id' => $parentBillId, 'student_id' => $studentId]);
             return false;
         }
         $insertData = [
-            'param_map_id' => $paramId,
+            'param_map_id' => $paramInfo['id'],
             'bill_id' => $parentBillId,
             'student_id' => $studentId,
-            'agent_id' => $paramInfo['agent_id'],
+            'agent_id' => $paramInfo['user_id'],
             'create_time' => time()
         ];
         $id = self::insertRecord($insertData);

@@ -6,6 +6,7 @@ use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
+use App\Libs\UserCenter;
 use App\Models\AgentAwardDetailModel;
 use App\Models\AgentUserModel;
 use App\Models\Dss\DssPackageExtModel;
@@ -109,10 +110,10 @@ class UserRefereeService
             return $qrTicketData;
         }
         $qrTicketData['referee_info'] = $identityData;
-        if (($identityData['app_id'] == Constants::SELF_APP_ID) && ($identityData['type'] == ParamMapModel::TYPE_AGENT)) {
+        if (($identityData['app_id'] == UserCenter::AUTH_APP_ID_OP_AGENT) && ($identityData['type'] == ParamMapModel::TYPE_AGENT)) {
             //代理商
             $qrTicketData['identity'] = ParamMapModel::TYPE_AGENT;
-        } elseif ($identityData['type'] == ParamMapModel::TYPE_STUDENT) {
+        } elseif (($identityData['app_id'] == UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT) &&($identityData['type'] == ParamMapModel::TYPE_STUDENT)) {
             //智能陪练学生
             $qrTicketData['identity'] = ParamMapModel::TYPE_STUDENT;
         }

@@ -122,13 +122,14 @@ class ParamMapModel extends Model
         $sql = "SELECT
                     p.id,
                     p.user_id,
+                    p.app_id
                 FROM
                     " . self::$table . " as p     
                 INNER JOIN " . AgentModel::$table . " AS a ON a.id=p.user_id AND a.status=" . AgentModel::STATUS_OK . " 
                 WHERE
-                    param_info ->> '$.r' = '" . $qrTicket . "' 
-                    AND app_id=" . UserCenter::AUTH_APP_ID_OP_AGENT . " 
-                    AND type=" . self::TYPE_AGENT;
+                    p.param_info ->> '$.r' = '" . $qrTicket . "' 
+                    AND p.app_id=" . UserCenter::AUTH_APP_ID_OP_AGENT . " 
+                    AND p.type=" . self::TYPE_AGENT;
         return $db->queryAll($sql)[0];
 
     }
