@@ -26,10 +26,11 @@ class Agent extends ControllerBase
     {
         try {
             $userInfo = $this->ci['user_info'];
+            $openId = $this->ci['open_id'];
             if (empty($userInfo['user_id'])) {
                 throw new RunTimeException(['agent_not_exist']);
             }
-            $data = AgentService::getMiniAppIndex($userInfo['user_id']);
+            $data = AgentService::getMiniAppIndex($userInfo['user_id'], $openId);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }

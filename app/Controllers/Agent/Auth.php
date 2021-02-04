@@ -110,7 +110,7 @@ class Auth extends ControllerBase
         try {
             $openId = $this->ci['open_id'];
             $userInfo = $this->ci['user_info'];
-            if (empty($openId) || empty($userId)) {
+            if (empty($openId) || empty($userInfo['user_id'])) {
                 throw new RunTimeException(['invalid_data']);
             }
             AgentService::miniAppLogout($openId, $userInfo['user_id']);

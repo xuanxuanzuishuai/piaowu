@@ -26,7 +26,6 @@ use App\Models\AgentUserModel;
 use App\Models\AreaCityModel;
 use App\Models\AreaProvinceModel;
 use App\Models\Dss\DssDictModel;
-use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssPackageExtModel;
 use App\Models\Dss\DssUserWeiXinModel;
@@ -52,6 +51,7 @@ class AgentService
         //agent数据
         $agentInsertData = [
             'employee_id' => $employeeId,
+            'parent_id' => $params['parent_id'] ?? 0,
             'service_employee_id' => empty($params['service_employee_id']) ? 0 : $params['service_employee_id'],
             'uuid' => self::agentAuth($params['name'], $params['mobile']),
             'mobile' => $params['mobile'],
@@ -930,11 +930,12 @@ class AgentService
     /**
      * 代理小程序首页
      * @param $agentId
+     * @param $openId
      * @return array
      * @throws RunTimeException
      * @throws \App\Libs\KeyErrorRC4Exception
      */
-    public static function getMiniAppIndex($agentId)
+    public static function getMiniAppIndex($agentId, $openId)
     {
         if (empty($agentId)) {
             throw new RunTimeException(['agent_not_exist']);
@@ -943,13 +944,26 @@ class AgentService
         if (empty($agentInfo)) {
             throw new RunTimeException(['agent_not_exist']);
         }
-        $wechatInfo = self::batchGetUserNicknameAndHead([$agentId]);
+        $wechatInfo  = self::batchGetAgentUserWxInfoByAgentId([$agentId]);
         $agentInfo['thumb']      = $wechatInfo[$agentId]['thumb'] ?? '';
-        $agentInfo['users']      = AgentUserModel::getCount(['agent_id' => $agentId]);
-        $agentInfo['orders']     = AgentBillMapModel::getCount(['agent_id' => $agentId]);
+        $agentInfo['users']      = AgentUserModel::getCount(
+            [
+                'agent_id' => $agentId,
+                'stage[!]' => AgentUserModel::STAGE_REGISTER,
+            ]
+        );
+        $agentInfo['orders']     = AgentAwardDetailModel::getCount(
+            [
+                'agent_id' => $agentId,
+                'action_type[!]' => AgentAwardDetailModel::AWARD_ACTION_TYPE_REGISTER
+            ]
+        );
         $agentInfo['sec_agents'] = AgentModel::getCount(['parent_id' => $agentId]);
         $agentInfo['config']     = self::popularMaterialInfo($agentId);
         $agentInfo['parent']     = AgentModel::getRecord(['id' => $agentInfo['parent_id']]);
+        $thumbInfo = UserWeiXinInfoModel::getRecord(['open_id' => $openId]);
+        $agentInfo['update_flag'] = intval(empty($thumbInfo['head_url'])
+            || (time() - $agentInfo['update_time'] >= Util::TIMESTAMP_ONEWEEK));
         return $agentInfo;
     }
 

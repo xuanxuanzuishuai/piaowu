@@ -22,13 +22,13 @@ class AgentMiniAppRouter extends RouterBase
     protected $uriConfig = [
         '/agent/user/login'            => ['method' => ['get'], 'call' => Auth::class . ':login', 'middles' => [AgentMiniAppOpenIdMiddleware::class]],
         '/agent/user/logout'           => ['method' => ['get'], 'call' => Auth::class . ':logout'],
-        '/agent/user/application'      => ['method' => ['post'], 'call' => Auth::class . ':application', 'middles' => [AgentMiniAppOpenIdMiddleware::class]],
+        '/agent/user/application'      => ['method' => ['post'], 'call' => Auth::class . ':application', 'middles' => []],
         '/agent/user/login_code'       => ['method' => ['get'], 'call' => Auth::class . ':loginSmsCode', 'middles' => []],
         '/agent/user/application_code' => ['method' => ['get'], 'call' => Auth::class . ':applicationCode', 'middles' => []],
         // 代理的绑定用户列表
-        '/agent/user/bind_list' => ['method' => ['get'], 'call' => User::class . ':bindList', 'middles' => [AgentMiniAppOpenIdMiddleware::class]],
+        '/agent/user/bind_list' => ['method' => ['get'], 'call' => User::class . ':bindList'],
         // 代理的推广订单列表
-        '/agent/order/list' => ['method' => ['get'], 'call' => Order::class . ':list', 'middles' => [AgentMiniAppOpenIdMiddleware::class]],
+        '/agent/order/list' => ['method' => ['get'], 'call' => Order::class . ':list'],
         // 首页
         '/agent/user/index' => ['method' => ['get'], 'call' => Agent::class . ':miniAppIndex'],
         // 素材
