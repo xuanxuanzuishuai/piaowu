@@ -38,11 +38,16 @@ class AgentUserModel extends Model
     {
         $where = [
             'agent_id' => $agentIdArr,
-            "ORDER" => ["bind_time" => "DESC"],
             'stage[!]' => self::STAGE_REGISTER,
-            "LIMIT" => $limit
         ];
-        return self::getRecords($where, $fields);
+        $total = self::getCount($where);
+        if ($total <= 0) {
+            return [[], 0];
+        }
+        $where['ORDER'] = ["bind_time" => "DESC"];
+        $where['LIMIT'] = $limit;
+        $list = self::getRecords($where, $fields);
+        return [$list, $total];
     }
 
     /**

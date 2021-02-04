@@ -25,6 +25,7 @@ class AgentMiniAppRouter extends RouterBase
         '/agent/user/application'      => ['method' => ['post'], 'call' => Auth::class . ':application', 'middles' => []],
         '/agent/user/login_code'       => ['method' => ['get'], 'call' => Auth::class . ':loginSmsCode', 'middles' => []],
         '/agent/user/application_code' => ['method' => ['get'], 'call' => Auth::class . ':applicationCode', 'middles' => []],
+        '/agent/user/update_info' => ['method' => ['post'], 'call' => User::class . ':updateInfo'],
         // 代理的绑定用户列表
         '/agent/user/bind_list' => ['method' => ['get'], 'call' => User::class . ':bindList'],
         // 代理的推广订单列表

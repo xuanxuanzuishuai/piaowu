@@ -35,7 +35,7 @@ class Order
                 'error_code' => 'page_is_integer'
             ],
             [
-                'key' => 'limit',
+                'key' => 'count',
                 'type' => 'integer',
                 'error_code' => 'limit_is_integer'
             ]

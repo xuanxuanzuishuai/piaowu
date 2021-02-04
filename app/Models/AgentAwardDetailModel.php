@@ -125,17 +125,27 @@ class AgentAwardDetailModel extends Model
         $agentAwardDetailTable = AgentAwardDetailModel::getTableNameWithDb();
         $erpPackageV1Table = DssErpPackageV1Model::getTableNameWithDb();
         $gitCodeTable = DssGiftCodeModel::getTableNameWithDb();
-        $sql = 'SELECT ad.id,ad.agent_id,ad.student_id,dg.bill_package_id,dg.parent_bill_id,de.name as package_name,dg.bill_amount,dg.code_status,dg.buy_time,dg.create_time,dg.employee_uuid' .
-            ' FROM ' . $agentAwardDetailTable . ' as ad ' .
-            " JOIN " . $gitCodeTable . " as dg ON ad.ext->'$.parent_bill_id'=dg.parent_bill_id " .
-            " JOIN " . $erpPackageV1Table . " as de ON de.id=dg.bill_package_id" .
-            ' WHERE ad.agent_id in (' . implode(',', $agentIdArr) . ') and ad.action_type!=' . self::AWARD_ACTION_TYPE_REGISTER . ' ORDER BY dg.buy_time DESC,ad.id asc';
+        $sqlFrom = ' FROM ' . $agentAwardDetailTable . ' as ad ';
+        $joinGiftCode = " JOIN " . $gitCodeTable . " as dg ON ad.ext->'$.parent_bill_id'=dg.parent_bill_id ";
+        $joinErpPackage =" JOIN " . $erpPackageV1Table . " as de ON de.id=dg.bill_package_id";
+        $where = ' WHERE ad.agent_id in (' . implode(',', $agentIdArr) . ') and ad.action_type!=' . self::AWARD_ACTION_TYPE_REGISTER . ' ORDER BY dg.buy_time DESC,ad.id asc';
+
+        $totalSql = "SELECT count(ad.id) as total ".$sqlFrom.$joinGiftCode.$joinErpPackage.$where;
+        $total = $db->queryAll($totalSql);
+        $total = $total[0]['total'] ?? 0;
+        if ($total == 0) {
+            return [[], 0];
+        }
+
+        $sql = 'SELECT ad.id,ad.agent_id,ad.student_id,dg.bill_package_id,dg.parent_bill_id,de.name as package_name,dg.bill_amount,dg.code_status,dg.buy_time,dg.create_time,dg.employee_uuid';
         $offset = $limit[0] ?? 0;
         $limitNum = $limit[1] ?? 0;
+        $limitSql = "";
         if ($limitNum > 0) {
-            $sql .= ' LIMIT ' . $offset . ',' . $limitNum;
+            $limitSql = ' LIMIT ' . $offset . ',' . $limitNum;
         }
-        $list = $db->queryAll($sql);
-        return is_array($list) ? $list : [];
+
+        $list = $db->queryAll($sql.$sqlFrom.$joinGiftCode.$joinErpPackage.$where.$limitSql);
+        return [$list,$total];
     }
 }

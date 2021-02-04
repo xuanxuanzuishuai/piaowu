@@ -4,10 +4,17 @@
 namespace App\Controllers\Agent;
 
 
+use App\Libs\AliOSS;
+use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
+use App\Libs\SimpleLogger;
+use App\Libs\UserCenter;
 use App\Libs\Util;
 use App\Libs\Valid;
+use App\Models\AgentModel;
+use App\Models\UserWeiXinInfoModel;
+use App\Models\UserWeiXinModel;
 use App\Services\AgentService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -35,7 +42,7 @@ class User
                 'error_code' => 'page_is_integer'
             ],
             [
-                'key' => 'limit',
+                'key' => 'count',
                 'type' => 'integer',
                 'error_code' => 'limit_is_integer'
             ]

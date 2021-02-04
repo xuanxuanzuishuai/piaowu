@@ -11,6 +11,7 @@ class UserWeiXinInfoModel extends Model
 {
     public static $table = "user_weixin_info";
     const REDIS_HASH_USER_WEIXIN_INFO_PREFIX = 'user_weixin_info_';
+    const REDIS_HASH_AGENT_WEIXIN_INFO = 'agent_user_weixin_info';
 
     /**
      * 根据用户openid更新用户微信昵称和头像地址
