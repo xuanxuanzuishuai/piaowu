@@ -1,0 +1,1 @@
+INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES ('STUDENT_INVITE', '学生转介绍渠道', 'APP_CAPSULE_INVITE_CHANNEL', '3250', 'app胶囊位注册');

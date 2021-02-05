@@ -71,7 +71,7 @@ class PosterTemplateService
 //            $channelId = DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'POSTER_LANDING_49_STUDENT_INVITE_STUDENT');
 //        } else {
             //标准海报渠道ID
-            $channelId = DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'NORMAL_STUDENT_INVITE_STUDENT');
+            $channelId = DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'APP_CAPSULE_INVITE_CHANNEL');
 //        }
         //转介绍码
         $qrImagePath = DssUserQrTicketModel::getUserQrURL($studentId, DssUserQrTicketModel::STUDENT_TYPE, $channelId, DssUserQrTicketModel::LANDING_TYPE_MINIAPP, ['a' => $activityId]);
