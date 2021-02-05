@@ -61,7 +61,7 @@ while (true) {
 
         $where = ['app_id' => $appid, 'busi_type' => $busi_type, 'open_id' => $wxInfo['openid']];
         $dbInfo = UserWeiXinInfoModel::getRecord($where, ['id']);
-        if (!$dbInfo) {
+        if ($dbInfo) {
             //更新数据表
             $updateData = [
                 'nickname' => Util::textEncode($wxInfo['nickname']),
