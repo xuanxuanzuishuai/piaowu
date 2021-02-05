@@ -400,14 +400,6 @@ class DictConstants {
         ]
     ];
 
-    // redis过去时间
-    const REDIS_EXPIRE_TIME = [
-        'type' => 'REDIS_EXPIRE_TIME',
-        'keys' => [
-            'agent_user_weixin_info'
-        ]
-    ];
-
     public static function get($type, $key)
     {
         if (empty($type) || empty($key)) {

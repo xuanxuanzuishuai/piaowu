@@ -527,9 +527,12 @@ class WeChatMiniPro
     public function batchGetUserInfo(array $openidArr)
     {
         $api = $this->apiUrl(self::API_BATCH_USER_INFO);
-        $params = [
-            'user_list' => $openidArr,
-        ];
+        foreach ($openidArr as $openid) {
+            $params['user_list'][] = [
+                'openid' => $openid
+            ];
+        }
+
         return $this->requestJson($api, $params, 'POST');
     }
 }

@@ -15,6 +15,7 @@ use App\Libs\MysqlDB;
 use App\Libs\NewSMS;
 use App\Libs\RC4;
 use App\Libs\RedisDB;
+use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Libs\Util;
 use App\Libs\WeChat\WeChatMiniPro;
@@ -722,9 +723,11 @@ class AgentService
         $appid = '';
         $busi_type = '';
         $userNicknameAndHead = [];
+        $openidAndUserid = [];
         //缓存中获取信息
         $redisHashKey  = UserWeiXinInfoModel::REDIS_HASH_USER_WEIXIN_INFO_PREFIX.date("Y-m-d");
         foreach ($userList as $uInfo) {
+            $openidAndUserid[$uInfo['open_id']] = $uInfo['user_id'];
             $appid = $uInfo['app_id'];
             $busi_type = $uInfo['busi_type'];
             $hashField = $uInfo['app_id'] . '_' . $uInfo['busi_type'] . '_' . $uInfo['user_type'] . '_' . $uInfo['open_id'];
@@ -782,7 +785,14 @@ class AgentService
         /** 获取用户最后一次拉取的头像 */
         $getFailOpenidList = array_diff(array_column($userList, 'open_id'), $successOpenid); //两个数组的差集就是没有成功从微信拉取信息的用户id
         $getDbUserInfo = self::getUserWeiXinInfoNameAndHead($appid,$busi_type,$getFailOpenidList);
-        return array_merge($userNicknameAndHead,$getDbUserInfo);
+        foreach ($getDbUserInfo as $openid => $info) {
+            $tmpUserId = $openidAndUserid[$openid];
+            $userNicknameAndHead[$tmpUserId] = [
+                'nickname' => $info['nickname'] ?? '',
+                'thumb' => $info['head_url'] ?? '',
+            ];
+        }
+        return $userNicknameAndHead;
     }
 
     /**
@@ -801,7 +811,7 @@ class AgentService
                 'app_id' => $appid,
                 'busi_type' => $busi_type,
             ];
-            $userList = UserWeiXinInfoModel::getRecords($where, ['nickname', 'head_url']);
+            $userList = UserWeiXinInfoModel::getRecords($where);
             $userNickList = [];
             array_map(function ($item) use (&$userNickList){
                 $userNickList[$item['open_id']] = $item;
@@ -815,7 +825,7 @@ class AgentService
                 }
                 $userNicknameAndHead[$openid] = [
                     'nickname' => Util::textDecode($tmpInfo['nickname']),
-                    'thumb' => AliOSS::replaceCdnDomainForDss($tmpInfo['head_url']),
+                    'head_url' => AliOSS::replaceCdnDomainForDss($tmpInfo['head_url']),
                 ];
             }
         }
