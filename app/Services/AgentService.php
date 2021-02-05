@@ -13,6 +13,7 @@ use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
 use App\Libs\NewSMS;
+use App\Libs\RC4;
 use App\Libs\RedisDB;
 use App\Libs\UserCenter;
 use App\Libs\Util;
@@ -391,7 +392,14 @@ class AgentService
         if (empty($agentData)) {
             throw new RunTimeException(['agent_not_exist']);
         }
-        $res = AgentModel::updateRecord($agentId, ['status' => AgentModel::STATUS_FREEZE, 'update_time' => time()]);
+        $res = AgentModel::updateRecord(
+            $agentId,
+            [
+                'status' => AgentModel::STATUS_FREEZE,
+                'update_time' => time(),
+                'freeze_time' => time(),
+            ]
+        );
         if (empty($res)) {
             throw new RunTimeException(['update_failure']);
         }
@@ -413,7 +421,14 @@ class AgentService
         if ($agentData['status'] != AgentModel::STATUS_FREEZE) {
             throw new RunTimeException(['agent_not_freeze_status']);
         }
-        $res = AgentModel::updateRecord($agentId, ['status' => AgentModel::STATUS_OK, 'update_time' => time()]);
+        $res = AgentModel::updateRecord(
+            $agentId,
+            [
+                'status' => AgentModel::STATUS_OK,
+                'update_time' => time(),
+                'freeze_time' => 0,
+             ]
+        );
         if (empty($res)) {
             throw new RunTimeException(['update_failure']);
         }
@@ -582,8 +597,12 @@ class AgentService
         }
         if (!empty($info['status'])
             && $info['status'] == AgentModel::STATUS_FREEZE
-            && time() - $info['update_time'] >= Util::TIMESTAMP_ONEWEEK) {
+            && time() - $info['freeze_time'] >= Util::TIMESTAMP_ONEWEEK) {
             return true;
+        }
+        if (!empty($info['parent_id'])) {
+            $agentInfo = AgentModel::getById($info['parent_id']);
+            return self::checkAgentFreeze(['status' => $agentInfo['status'], 'freeze_time' => $agentInfo['freeze_time']]);
         }
         return false;
     }
@@ -949,7 +968,23 @@ class AgentService
         $agentInfo['sec_agents'] = AgentModel::getCount(['parent_id' => $agentId]);
         $agentInfo['config']     = self::popularMaterialInfo($agentId);
         $agentInfo['parent']     = AgentModel::getRecord(['id' => $agentInfo['parent_id']]);
+        $agentInfo['show_status'] = self::getAgentStatus($agentInfo);
         return $agentInfo;
+    }
+
+    /**
+     * 获取代理商状态
+     * @param $info
+     * @return string
+     */
+    public static function getAgentStatus($info)
+    {
+        $status = $info['status'];
+        if (!empty($info['parent_id']) && $info['status'] == AgentModel::STATUS_OK) {
+            $agentInfo = AgentModel::getById($info['parent_id']);
+            $status = $agentInfo['status'];
+        }
+        return $status;
     }
 
     /**
@@ -1448,21 +1483,36 @@ class AgentService
                 $data[$item['key'] . '_url'] = AliOSS::signUrls($item['value']);
             } elseif ($item['type'] == GoodsResourceModel::CONTENT_TYPE_TEXT) {
                 $data[$item['key']] = Util::textDecode($item['value']);
-            }elseif ($item['type'] == GoodsResourceModel::CONTENT_TYPE_POSTER){
+            } elseif ($item['type'] == GoodsResourceModel::CONTENT_TYPE_POSTER) {
                 $data[$item['key']] = $item['value'];
                 $data[$item['key'] . '_url'] = AliOSS::signUrls($item['value']);
-            }elseif ($item['type'] == GoodsResourceModel::CONTENT_TYPE_POSTER && !empty($agentId)) {
-                $posterUrl = PosterService::generateQRPosterAliOss(
-                    $item['value'],
-                    $posterConfig,
-                    $agentId,
-                    UserWeiXinModel::USER_TYPE_AGENT,
-                    GoodsResourceModel::getAgentChannel($agentInfo['type'] ?? 0),
-                    [
-                        'p' => PosterModel::getIdByPath($item['value'])
-                    ]
-                );
-                $data[$item['key'] . '_agent_url'] = $posterUrl['poster_save_full_path'] ?? '';
+                if (!empty($agentId)) {
+                    $channel = GoodsResourceModel::getAgentChannel($agentInfo['type'] ?? 0);
+                    $extParams = [
+                        'p' => PosterModel::getIdByPath($item['value']),
+                        'app_id' => UserCenter::AUTH_APP_ID_OP_AGENT,
+                    ];
+                    $posterUrl = PosterService::generateQRPosterAliOss(
+                        $item['value'],
+                        $posterConfig,
+                        $agentId,
+                        UserWeiXinModel::USER_TYPE_AGENT,
+                        $channel,
+                        $extParams
+                    );
+                    $data[$item['key'] . '_agent_url'] = $posterUrl['poster_save_full_path'] ?? '';
+                    $data['share_data'] = '&param_id=' . ReferralActivityService::getParamsId(
+                        array_merge(
+                            [
+                                'r'       => RC4::encrypt($_ENV['COOKIE_SECURITY_KEY'], UserWeiXinModel::USER_TYPE_AGENT . "_" . $agentId),
+                                'c'       => $channel,
+                                'type'    => UserWeiXinModel::USER_TYPE_AGENT,
+                                'user_id' => $agentId,
+                            ],
+                            $extParams
+                        )
+                    );
+                }
             }
         }
         return $data;

@@ -14,9 +14,9 @@ use App\Libs\UserCenter;
 class ParamMapModel extends Model
 {
     public static $table = "param_map";
-    //用户类型：1智能陪练学生 2运营系统代理商
+    //用户类型：1智能陪练学生 4运营系统代理商
     const TYPE_STUDENT = 1;
-    const TYPE_AGENT = 2;
+    const TYPE_AGENT = 4;
 
     /**
      * 检测代理转介绍二维码对应的代理商状态
@@ -122,15 +122,15 @@ class ParamMapModel extends Model
         $sql = "SELECT
                     p.id,
                     p.user_id,
-                    p.app_id
+                    p.app_id,
+                    p.type
                 FROM
                     " . self::$table . " as p     
                 INNER JOIN " . AgentModel::$table . " AS a ON a.id=p.user_id AND a.status=" . AgentModel::STATUS_OK . " 
                 WHERE
-                    p.param_info ->> '$.r' = '" . $qrTicket . "' 
+                    p.param_info ->> '$.r' = '" . $qrTicket . "'
                     AND p.app_id=" . UserCenter::AUTH_APP_ID_OP_AGENT . " 
                     AND p.type=" . self::TYPE_AGENT;
         return $db->queryAll($sql)[0];
-
     }
 }

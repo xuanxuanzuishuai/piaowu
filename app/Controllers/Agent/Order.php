@@ -4,6 +4,7 @@
 namespace App\Controllers\Agent;
 
 
+use App\Controllers\ControllerBase;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\Util;
@@ -13,7 +14,7 @@ use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
 
-class Order
+class Order extends ControllerBase
 {
     /**
      * 代理推广订单列表

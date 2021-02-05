@@ -148,10 +148,6 @@ class Auth extends ControllerBase
             if (empty($agentInfo)) {
                 throw new RunTimeException(['agent_not_exist']);
             }
-            // 2.验证冻结超过7天
-            if (AgentService::checkAgentFreeze($agentInfo)) {
-                throw new RunTimeException(['agent_freeze']);
-            }
             $errorCode = CommonServiceForApp::sendValidateCode($mobile, CommonServiceForApp::SIGN_WX_STUDENT_APP, $countryCode);
             if (!empty($errorCode)) {
                 $result = Valid::addAppErrors([], $errorCode);
@@ -173,11 +169,6 @@ class Auth extends ControllerBase
     {
         $params = $request->getParams();
         $rules = [
-            [
-                'key'        => 'name',
-                'type'       => 'required',
-                'error_code' => 'name_is_required'
-            ],
             [
                 'key'        => 'mobile',
                 'type'       => 'required',

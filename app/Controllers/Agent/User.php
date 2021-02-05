@@ -4,23 +4,17 @@
 namespace App\Controllers\Agent;
 
 
-use App\Libs\AliOSS;
-use App\Libs\Constants;
+use App\Controllers\ControllerBase;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
-use App\Libs\SimpleLogger;
-use App\Libs\UserCenter;
 use App\Libs\Util;
 use App\Libs\Valid;
-use App\Models\AgentModel;
-use App\Models\UserWeiXinInfoModel;
-use App\Models\UserWeiXinModel;
 use App\Services\AgentService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
 
-class User
+class User extends ControllerBase
 {
     /**
      * 获取绑定用户列表

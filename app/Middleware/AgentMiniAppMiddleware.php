@@ -14,7 +14,6 @@ use App\Libs\UserCenter;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\AgentModel;
 use App\Models\UserWeiXinModel;
-use App\Services\AgentService;
 use App\Services\UserService;
 use App\Services\AgentMiniAppTokenService;
 use Slim\Http\Request;
@@ -43,10 +42,6 @@ class AgentMiniAppMiddleware extends MiddlewareBase
             $weixinInfo = UserService::getUserWeiXinInfoAndUserId($userInfo['app_id'], $userInfo['user_id'], $userInfo['open_id'], $userInfo['user_type'], UserWeiXinModel::BUSI_TYPE_AGENT_MINI);
             if (empty($weixinInfo)) {
                 return $response->withJson(Valid::addAppErrors([], 'need_bind'), StatusCode::HTTP_UNAUTHORIZED);
-            }
-            $agentInfo = AgentModel::getById($userInfo['user_id']);
-            if (AgentService::checkAgentFreeze($agentInfo)) {
-                return $response->withJson(Valid::addAppErrors([], 'agent_freeze'), StatusCode::HTTP_UNAUTHORIZED);
             }
             $this->container['user_info'] = $userInfo;
             $this->container['open_id'] = $userInfo['open_id'];

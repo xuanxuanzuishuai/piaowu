@@ -181,6 +181,7 @@ class AgentAwardService
         //记录关系绑定数据
         $bindData['agent_id'] = $awardData['agent_id'];
         $bindData['user_id'] = $awardData['student_id'];
+        $bindData['create_time'] = $awardData['create_time'];
         $bindId = AgentUserModel::insertRecord($bindData);
         if (empty($bindId)) {
             SimpleLogger::error("agent user bind register data record fail", [$bindData]);
@@ -271,15 +272,9 @@ class AgentAwardService
     private static function checkRegisterBindQuality($studentId)
     {
         //是否已经绑定学生转介绍学生绑定关系
-        $bindInfo = StudentInviteModel::getRecord(['student_id' => $studentId, 'app_id' => Constants::SMART_APP_ID]);
+        $bindInfo = StudentInviteModel::getRecord(['student_id' => $studentId, 'app_id' => Constants::SMART_APP_ID, 'referee_type' => StudentInviteModel::REFEREE_TYPE_STUDENT]);
         if (!empty($bindInfo)) {
             SimpleLogger::info('has bind student referee student relation', ['bind_info' => $bindInfo]);
-            return false;
-        }
-        //已存在代理商关系不可注册绑定
-        $agentBindInfo = AgentUserModel::getRecord(['user_id' => $studentId], ['id']);
-        if (!empty($agentBindInfo)) {
-            SimpleLogger::info('student has register', []);
             return false;
         }
         return true;
@@ -294,7 +289,7 @@ class AgentAwardService
     private static function checkTrailBindQuality($studentId)
     {
         //是否已经绑定学生转介绍学生绑定关系
-        $bindInfo = StudentInviteModel::getRecord(['student_id' => $studentId, 'app_id' => Constants::SMART_APP_ID]);
+        $bindInfo = StudentInviteModel::getRecord(['student_id' => $studentId, 'app_id' => Constants::SMART_APP_ID, 'referee_type' => StudentInviteModel::REFEREE_TYPE_STUDENT]);
         if (!empty($bindInfo)) {
             SimpleLogger::info('has bind student referee student relation', ['bind_info' => $bindInfo]);
             return false;
@@ -322,7 +317,7 @@ class AgentAwardService
     private static function checkFormalBindQuality($studentId)
     {
         //是否已经绑定学生转介绍学生关系
-        $bindInfo = StudentInviteModel::getRecord(['student_id' => $studentId, 'app_id' => Constants::SMART_APP_ID]);
+        $bindInfo = StudentInviteModel::getRecord(['student_id' => $studentId, 'app_id' => Constants::SMART_APP_ID, 'referee_type' => StudentInviteModel::REFEREE_TYPE_STUDENT]);
         if (!empty($bindInfo)) {
             SimpleLogger::info('has bind student referee student relation', ['bind_info' => $bindInfo]);
             return false;
