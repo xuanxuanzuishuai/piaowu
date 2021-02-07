@@ -24,22 +24,26 @@ use App\Models\UserWeiXinModel;
 class MiniAppQrService
 {
     //代理商小程序转介绍票据前缀
-    const AGENT_TICKET_PREFIX = 'agent_ticket_';
+    const AGENT_TICKET_PREFIX = 'ag_';
 
     /**
-     * 获取用户QR码图片路径：运营系统代理商小程序(图片保存到aliOss)
+     * 获取用户QR码图片路径：智能小程序
      * @param $userId
+     * @param $type
      * @param array $extParams
      * @return array|mixed
      */
-    public static function getAgentQRAliOss($userId, $extParams = [])
+    public static function getSmartQRAliOss($userId, $type, $extParams = [])
     {
         //应用ID
-        $appId = UserCenter::AUTH_APP_ID_OP_AGENT;
+        $appId = UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT;
         //二维码识别后跳转地址类型
         $landingType = DssUserQrTicketModel::LANDING_TYPE_MINIAPP;
-        //用户类型
-        $type = ParamMapModel::TYPE_AGENT;
+        //ticket的前缀
+        $ticketPrefix = '';
+        if ($type == ParamMapModel::TYPE_AGENT) {
+            $ticketPrefix = self::AGENT_TICKET_PREFIX;
+        }
         //获取学生转介绍学生二维码资源数据
         $paramInfo = [
             'c' => $extParams['c'] ?? "0",//渠道ID
@@ -49,16 +53,16 @@ class MiniAppQrService
             'lt' => $landingType,//二维码类型
         ];
         //检测二维码是否已存在
-        $res = ParamMapModel:: getQrUrl($userId, $appId, $type, $paramInfo);
+        $res = ParamMapModel::getQrUrl($userId, $appId, $type, $paramInfo);
         if (!empty($res['qr_url'])) {
             return $res['qr_url'];
         }
         //生成小程序码
         try {
-            $userQrTicket = self::AGENT_TICKET_PREFIX . RC4::encrypt($_ENV['COOKIE_SECURITY_KEY'], $type . "_" . $userId);
+            $userQrTicket = $ticketPrefix . RC4::encrypt($_ENV['COOKIE_SECURITY_KEY'], $type . "_" . $userId);
             $paramInfo['r'] = $userQrTicket;
             $params = array_merge($paramInfo, ['app_id' => $appId, 'type' => $type, 'user_id' => $userId]);
-            $qrData =PosterService::getMiniappQrImage($appId, $params, UserWeiXinModel::BUSI_TYPE_AGENT_MINI);
+            $qrData = PosterService::getMiniappQrImage($appId, $params);
             if (empty($qrData[0])) {
                 return '';
             }

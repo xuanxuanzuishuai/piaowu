@@ -120,17 +120,24 @@ class DssUserWeiXinModel extends DssModel
      * @param $fields
      * @return mixed
      */
-    public static function getUserWeiXinListByUserid($userId) {
+    public static function getUserWeiXinListByUserid($userId)
+    {
         $db = self::dbRO();
         $dssStudentTable = DssStudentModel::getTableNameWithDb();
         $dssUserWeiXinTable = DssUserWeiXinModel::getTableNameWithDb();
-        $sql = 'SELECT d_s.id as user_id,d_u.open_id,d_u.app_id,d_u.busi_type,d_u.user_type'.
-            ' FROM '.$dssStudentTable.' as d_s LEFT JOIN '.$dssUserWeiXinTable.' as d_u ON d_u.user_id = d_s.id'.
-            ' WHERE d_s.id in ('.implode(',',$userId).')'.
-            ' AND d_u.app_id='.Constants::SMART_APP_ID.
-            ' AND d_u.busi_type='.self::BUSI_TYPE_STUDENT_SERVER.
-            ' AND d_u.user_type='.self::USER_TYPE_STUDENT.
-            ' AND d_u.status='.self::STATUS_NORMAL;
+        $sql = 'SELECT 
+        d_s.id as user_id,
+        d_u.open_id,
+        d_u.app_id,
+        d_u.busi_type,
+        d_u.user_type
+        FROM '.$dssStudentTable.' as d_s '.
+        ' LEFT JOIN '.$dssUserWeiXinTable.' as d_u ON d_u.user_id = d_s.id'.
+        ' AND d_u.app_id='.Constants::SMART_APP_ID.
+        ' AND d_u.busi_type='.self::BUSI_TYPE_STUDENT_SERVER.
+        ' AND d_u.user_type='.self::USER_TYPE_STUDENT.
+        ' AND d_u.status='.self::STATUS_NORMAL .
+        ' WHERE d_s.id in ('.implode(',', $userId).')';
         $list = $db->queryAll($sql);
         return $list;
     }

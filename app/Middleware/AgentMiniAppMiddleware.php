@@ -43,6 +43,8 @@ class AgentMiniAppMiddleware extends MiddlewareBase
             if (empty($weixinInfo)) {
                 return $response->withJson(Valid::addAppErrors([], 'need_bind'), StatusCode::HTTP_UNAUTHORIZED);
             }
+            AgentMiniAppTokenService::refreshUserToken($userInfo['user_id'], $userInfo['user_type'], $userInfo['app_id'], $userInfo['open_id']);
+            AgentMiniAppTokenService::refreshToken($token);
             $this->container['user_info'] = $userInfo;
             $this->container['open_id'] = $userInfo['open_id'];
             return $next($request, $response);

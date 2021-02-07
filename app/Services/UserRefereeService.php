@@ -185,11 +185,11 @@ class UserRefereeService
     public static function buyDeal($buyPreStudentInfo, $packageInfo, $appId, $parentBillId)
     {
         if ($appId == Constants::SMART_APP_ID) {
-            //根据订单ID区分下单来源
-            $agentId = AgentUserModel::getRecord(['user_id' => $buyPreStudentInfo['id'], 'stage[>]' => AgentUserModel::STAGE_REGISTER], ['agent_id']);
+            // 查询代理商绑定关系
+            $agentId = AgentUserModel::getRecord(['user_id' => $buyPreStudentInfo['id']], ['agent_id']);
             if ($agentId) {
                 //代理商分享购买
-                AgentAwardService::agentReferralBillAward($agentId, $buyPreStudentInfo, $packageInfo['package_type'], $packageInfo, $parentBillId);
+                AgentAwardService::agentReferralBillAward($agentId['agent_id'], $buyPreStudentInfo, $packageInfo['package_type'], $packageInfo, $parentBillId);
             } else {
                 self::dssBuyDeal($buyPreStudentInfo, $packageInfo);
             }

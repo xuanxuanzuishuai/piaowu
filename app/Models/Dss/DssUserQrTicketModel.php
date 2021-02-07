@@ -6,6 +6,8 @@ use App\Libs\Constants;
 use App\Libs\Dss;
 use App\Libs\RC4;
 use App\Models\QRCodeModel;
+use App\Models\UserWeiXinModel;
+use App\Services\MiniAppQrService;
 use App\Services\PosterService;
 
 class DssUserQrTicketModel extends DssModel
@@ -35,7 +37,10 @@ class DssUserQrTicketModel extends DssModel
         $landingType = self::LANDING_TYPE_NORMAL,
         $extParams = []
     ) {
-
+        if ($type == UserWeiXinModel::USER_TYPE_AGENT) {
+            $extParams['c'] = $channelID;
+            return MiniAppQrService::getSmartQRAliOss($userID, $type, $extParams);
+        }
         $sql = "
             SELECT 
                 user_id,

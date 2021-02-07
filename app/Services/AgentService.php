@@ -461,21 +461,17 @@ class AgentService
      * @param $appId
      * @param $mobile
      * @param $openId
-     * @param $unionId
      * @param string $countryCode
      * @param null $userType
      * @param null $busiType
      * @return array
      * @throws RunTimeException
      */
-    public static function bindAgentWechat($appId, $mobile, $openId, $unionId, $countryCode = NewSMS::DEFAULT_COUNTRY_CODE, $userType = null, $busiType = null)
+    public static function bindAgentWechat($appId, $mobile, $openId, $countryCode = NewSMS::DEFAULT_COUNTRY_CODE, $userType = null, $busiType = null)
     {
         $agentInfo = AgentModel::getByMobile($mobile, $countryCode);
         if (empty($agentInfo)) {
             throw new RunTimeException(['record_not_found']);
-        }
-        if (self::checkAgentFreeze($agentInfo)) {
-            throw new RunTimeException(['agent_freeze']);
         }
         if (empty($userType)) {
             $userType = UserWeiXinModel::USER_TYPE_AGENT;
@@ -484,13 +480,12 @@ class AgentService
             $busiType = UserWeiXinModel::BUSI_TYPE_AGENT_MINI;
         }
         $data = [
-            'user_id' => $agentInfo['id'],
+            'user_id'   => $agentInfo['id'],
             'user_type' => $userType,
-            'open_id' => $openId,
-            'union_id' => $unionId,
-            'status' => UserWeiXinModel::STATUS_NORMAL,
+            'open_id'   => $openId,
+            'status'    => UserWeiXinModel::STATUS_NORMAL,
             'busi_type' => $busiType,
-            'app_id' => $appId,
+            'app_id'    => $appId,
         ];
         $bindInfo = UserWeiXinModel::getRecord($data);
         if (empty($bindInfo)) {
@@ -647,7 +642,7 @@ class AgentService
             $agentIdArr = [$agentId];
         } else {
             //获取二级代理绑定用户
-            $secondAgentList = AgentModel::getRecords(['parent_id' => $agentId], ['id']);
+            $secondAgentList = AgentModel::getRecords(['parent_id' => $agentId], ['id', 'name']);
             $agentIdArr = [];
             array_map(function ($item) use (&$agentIdArr, &$agentNameArr) {
                 $agentIdArr[] = $item['id'];
@@ -698,7 +693,7 @@ class AgentService
             $bindUserList[$key]['thumb'] = $tmpUserInfo['thumb'] ?? '';     //这里如果需要返回默认头像的话需要调整
             $bindUserList[$key]['nickname'] = $tmpUserInfo['nickname'] ?? '';
             $bindUserList[$key]['mobile'] = $encodeMobileArr[$val['user_id']] ?? '';
-            $bindUserList[$key]['second_agent_name'] = $agentNameArr[$val['user_id']] ?? '';
+            $bindUserList[$key]['second_agent_name'] = $agentNameArr[$val['agent_id']] ?? '';
             $bindUserList[$key]['format_bind_time'] = date('Y-m-d H:i:s', $val['bind_time']);
             $bindUserList[$key]['bind_status'] = self::getAgentUserBindStatus($val['deadline'],$val['stage']);
         }
@@ -908,6 +903,9 @@ class AgentService
             $limit
         ];
         list($orderList,$orderTotal) = AgentAwardDetailModel::getListByAgentId($agentIdArr, $sqlLimitArr) ?? [];
+        if (empty($orderList)) {
+            return $returnData;
+        }
         $userIdArr = [];
         $orderIdArr = [];
         array_map(function ($item) use (&$userIdArr, &$orderIdArr) {
@@ -931,12 +929,12 @@ class AgentService
 
         //组合返回数据
         foreach ($orderList as $key => $val) {
-            $tmpUserInfo = $userNicknameArr[$val['user_id']] ?? [];
+            $tmpUserInfo = $userNicknameArr[$val['student_id']] ?? [];
 
             $orderList[$key]['thumb'] = $tmpUserInfo['thumb'] ?? '';
             $orderList[$key]['nickname'] = $tmpUserInfo['nickname'] ?? '';
-            $orderList[$key]['mobile'] = $encodeMobileArr[$val['user_id']] ?? '';
-            $orderList[$key]['second_agent_name'] = $agentNameArr[$val['user_id']] ?? '';
+            $orderList[$key]['mobile'] = $encodeMobileArr[$val['student_id']] ?? '';
+            $orderList[$key]['second_agent_name'] = $agentNameArr[$val['agent_id']] ?? '';
             $orderList[$key]['format_pay_time'] = date("Y-m-d H:i:s", $val['buy_time']);
             $orderList[$key]['bill_amount'] = $orderList[$key]['bill_amount']/100;  //单位元
         }
@@ -983,16 +981,21 @@ class AgentService
         if (empty($agentInfo)) {
             throw new RunTimeException(['agent_not_exist']);
         }
+        $ids = [$agentId];
+        if (empty($agentInfo['parent_id'])) {
+            $allSec = AgentModel::getRecords(['parent_id' => $agentId], ['id']);
+            $ids = array_merge($ids, array_column($allSec, 'id'));
+        }
 
-        $agentInfo['users']      = AgentUserModel::getCount(
+        $agentInfo['users'] = AgentUserModel::getCount(
             [
-                'agent_id' => $agentId,
+                'agent_id' => $ids,
                 'stage[!]' => AgentUserModel::STAGE_REGISTER,
             ]
         );
-        $agentInfo['orders']     = AgentAwardDetailModel::getCount(
+        $agentInfo['orders'] = AgentAwardDetailModel::getCount(
             [
-                'agent_id' => $agentId,
+                'agent_id' => $ids,
                 'action_type[!]' => AgentAwardDetailModel::AWARD_ACTION_TYPE_REGISTER
             ]
         );
