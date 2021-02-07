@@ -29,10 +29,11 @@ class DssAiPlayRecordCHModel
         //怀旧模式练琴数
         $goldenPicturePlayData = self::getStudentSumByDateGoldenPicture($studentId, $startTime, $endTime);
         $playData = array_merge($playData, $goldenPicturePlayData);
-        if ($startTime <= strtotime('2021-02-07') && $endTime >= strtotime('2021-02-07')) {
+        $date = '2021-02-07';
+        if ($startTime <= strtotime($date) && $endTime >= strtotime($date)) {
             $playData[] = [
                 'sum_duration' => "1200",
-                'create_date' => '2021-02-07',
+                'create_date' => $date,
                 'student_id' => $studentId,
                 'lesson_id' => 481
             ];
