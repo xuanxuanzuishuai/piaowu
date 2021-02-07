@@ -67,7 +67,7 @@ class ReferralService
     {
         if ($appId == Constants::SMART_APP_ID) {
             return StudentInviteModel::getRecord(
-                ['student_id' => $studentId, 'app_id' => $appId]
+                ['student_id' => $studentId, 'app_id' => $appId, 'referee_type' => StudentInviteModel::REFEREE_TYPE_STUDENT]
             );
         }
         return NULL;

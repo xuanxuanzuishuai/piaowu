@@ -21,12 +21,14 @@ use App\Libs\Util;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\AgentApplicationModel;
 use App\Models\AgentAwardDetailModel;
+use App\Models\AgentBillMapModel;
 use App\Models\AgentDivideRulesModel;
 use App\Models\AgentModel;
 use App\Models\AgentUserModel;
 use App\Models\AreaCityModel;
 use App\Models\AreaProvinceModel;
 use App\Models\Dss\DssDictModel;
+use App\Models\Dss\DssPackageExtModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\EmployeeModel;
@@ -1017,7 +1019,8 @@ class AgentService
         $agentInfo['orders'] = AgentAwardDetailModel::getCount(
             [
                 'agent_id' => $ids,
-                'action_type[!]' => AgentAwardDetailModel::AWARD_ACTION_TYPE_REGISTER
+                'action_type[!]' => AgentAwardDetailModel::AWARD_ACTION_TYPE_REGISTER,
+                'in_bind' => AgentAwardDetailModel::IS_BIND_STATUS_YES,
             ]
         );
         $agentInfo['sec_agents'] = AgentModel::getCount(['parent_id' => $agentId]);
@@ -1333,6 +1336,9 @@ class AgentService
         if (!empty($params['package_id'])) {
             $agentBillWhere .= " AND ab.ext->>'$.package_id'=" . $params['package_id'];
         }
+        if (isset($params['is_bind']) && is_numeric($params['is_bind'])) {
+            $agentBillWhere .= " AND ab.is_bind=" . $params['is_bind'];
+        }
 
         //一级代理数据
         $firstAgentWhere = ' ';
@@ -1371,7 +1377,7 @@ class AgentService
     {
         //学生详细数据
         $studentListDetail = array_column(StudentService::searchStudentList(['id' => array_column($recommendUserData['list'], 'student_id')]), null, 'id');
-        $dict = DictService::getTypesMap([DictConstants::AGENT_TYPE['type'], DictConstants::CODE_STATUS['type'], DictConstants::PACKAGE_APP_NAME['type']]);
+        $dict = DictService::getTypesMap([DictConstants::AGENT_TYPE['type'], DictConstants::CODE_STATUS['type'], DictConstants::PACKAGE_APP_NAME['type'], DictConstants::YSE_OR_NO_STATUS['type']]);
         array_walk($recommendUserData['list'], function (&$rv) use ($studentListDetail, $dict) {
             $rv['student_name'] = $studentListDetail[$rv['student_id']]['name'];
             $rv['student_uuid'] = $studentListDetail[$rv['student_id']]['uuid'];
@@ -1380,6 +1386,7 @@ class AgentService
             $rv['type_name'] = $dict[DictConstants::AGENT_TYPE['type']][$rv['type']]['value'];
             $rv['code_status_name'] = $dict[DictConstants::CODE_STATUS['type']][$rv['code_status']]['value'];
             $rv['app_id_name'] = $dict[DictConstants::PACKAGE_APP_NAME['type']][$rv['app_id']]['value'];
+            $rv['is_bind_name'] = $dict[DictConstants::YSE_OR_NO_STATUS['type']][$rv['is_bind']]['value'];
             unset($rv['second_agent_id']);
         });
         return $recommendUserData;
@@ -1574,5 +1581,31 @@ class AgentService
             return true;
         }
         return false;
+    }
+
+    /**
+     * 检测此订单是否为代理商转化而来
+     * @param $studentId
+     * @param $parentBillId
+     * @param $packageType
+     * @return int
+     */
+    public static function checkBillIsAgentReferral($studentId, $parentBillId, $packageType)
+    {
+        $agentId = 0;
+        if ($packageType == DssPackageExtModel::PACKAGE_TYPE_TRIAL) {
+            //体验课:订单映射关系是否存在
+            $billAgentMap = AgentBillMapModel::get($parentBillId, $studentId);
+            if (!empty($billAgentMap)) {
+                $agentId = $billAgentMap['agent_id'];
+            }
+        } elseif ($packageType == DssPackageExtModel::PACKAGE_TYPE_NORMAL) {
+            //正式课:检测此学生是否存在绑定关系的代理数据
+            $validAgentBind = AgentUserModel::getRecord(['user_id' => $studentId, 'stage[>=]' => AgentUserModel::STAGE_TRIAL], ['agent_id']);
+            if (!empty($validAgentBind)) {
+                $agentId = $validAgentBind['agent_id'];
+            }
+        }
+        return $agentId;
     }
 }

@@ -186,10 +186,10 @@ class UserRefereeService
     {
         if ($appId == Constants::SMART_APP_ID) {
             // 查询代理商绑定关系
-            $agentId = AgentUserModel::getRecord(['user_id' => $buyPreStudentInfo['id']], ['agent_id']);
+            $agentId = AgentService::checkBillIsAgentReferral($buyPreStudentInfo['id'], $parentBillId, $packageInfo['package_type']);
             if ($agentId) {
                 //代理商分享购买
-                AgentAwardService::agentReferralBillAward($agentId['agent_id'], $buyPreStudentInfo, $packageInfo['package_type'], $packageInfo, $parentBillId);
+                AgentAwardService::agentReferralBillAward($agentId, $buyPreStudentInfo, $packageInfo['package_type'], $packageInfo, $parentBillId);
             } else {
                 self::dssBuyDeal($buyPreStudentInfo, $packageInfo);
             }
@@ -225,7 +225,8 @@ class UserRefereeService
         $refereeRelation = StudentInviteModel::getRecord(
             [
                 'student_id' => $studentId,
-                'app_id' => Constants::SMART_APP_ID
+                'app_id' => Constants::SMART_APP_ID,
+                'referee_type' => StudentInviteModel::REFEREE_TYPE_STUDENT
             ]
         );
         if (empty($refereeRelation)) {

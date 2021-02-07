@@ -386,9 +386,6 @@ class DictConstants {
         'type' => 'agent_bind_status',
         'keys' => ['0', '1', '2']
     ];
-
-
-
     // 代理配置
     const AGENT_CONFIG = [
         'type' => 'AGENT_CONFIG',
@@ -399,6 +396,13 @@ class DictConstants {
             'channel_dict',
         ]
     ];
+    // 是否
+    const YSE_OR_NO_STATUS = [
+        'type' => 'yes_or_no_status',
+        'keys' => ['0', '1']
+    ];
+
+
 
     public static function get($type, $key)
     {

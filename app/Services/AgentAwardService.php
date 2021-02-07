@@ -30,7 +30,7 @@ class AgentAwardService
      * @param int $parentBillId
      * @return bool
      */
-    public static function agentReferralBillAward($agentId, $studentInfo, $actionType, $packageInfo = [], $parentBillId = 0)
+    public static function agentReferralBillAward(int $agentId, $studentInfo, $actionType, $packageInfo = [], $parentBillId = 0)
     {
         //根据奖励动作类型执行不同奖励
         if (empty($studentInfo) || empty($actionType) || empty($agentId)) {
@@ -140,6 +140,7 @@ class AgentAwardService
             return false;
         }
         //奖励
+        $bindData = [];
         $awardData = [
             'agent_id' => $agentId,
             'student_id' => $studentInfo['id'],
@@ -147,13 +148,19 @@ class AgentAwardService
             'ext' => json_encode(['parent_bill_id' => $parentBillId, 'package_type' => $packageInfo['package_type'], 'package_id' => $packageInfo['package_id']]),
             'create_time' => $time,
         ];
-        //绑定关系
-        $bindData = [
-            'deadline' => 0,
-            'stage' => AgentUserModel::STAGE_FORMAL,
-            'update_time' => $time,
-
-        ];
+        //获取学生是否存在有效的体验课绑定关系的代理数据
+//        $validBind = AgentUserModel::getValidBindData($studentInfo['id']);
+        $validBind = AgentUserModel::getValidBindData(989898888);
+        if (empty($validBind)) {
+            $awardData['is_bind'] = AgentAwardDetailModel::IS_BIND_STATUS_NO;
+        } else {
+            //绑定关系
+            $bindData = [
+                'deadline' => 0,
+                'stage' => AgentUserModel::STAGE_FORMAL,
+                'update_time' => $time,
+            ];
+        }
         $res = self::recordFormalAwardAndBindData($awardData, $bindData);
         if (empty($res)) {
             return false;
@@ -167,7 +174,7 @@ class AgentAwardService
      * @param $bindData
      * @return bool
      */
-    private static function recordRegisterAwardAndBindData($awardData, $bindData = [])
+    private static function recordRegisterAwardAndBindData($awardData, $bindData)
     {
         $db = MysqlDB::getDB();
         $db->beginTransaction();
@@ -198,7 +205,7 @@ class AgentAwardService
      * @param $bindData
      * @return bool
      */
-    private static function recordTrailAwardAndBindData($awardData, $bindData = [])
+    private static function recordTrailAwardAndBindData($awardData, $bindData)
     {
         $db = MysqlDB::getDB();
         $db->beginTransaction();
@@ -242,7 +249,7 @@ class AgentAwardService
      * @param $bindData
      * @return bool
      */
-    private static function recordFormalAwardAndBindData($awardData, $bindData = [])
+    private static function recordFormalAwardAndBindData($awardData, $bindData)
     {
         $db = MysqlDB::getDB();
         $db->beginTransaction();
@@ -254,11 +261,13 @@ class AgentAwardService
             return false;
         }
         //记录关系绑定数据
-        $bindId = AgentUserModel::batchUpdateRecord($bindData, ['agent_id' => $awardData['agent_id'], 'user_id' => $awardData['student_id']]);
-        if (empty($bindId)) {
-            SimpleLogger::error("agent user bind formal data record fail", [$bindData]);
-            $db->rollBack();
-            return false;
+        if (!empty($bindData)) {
+            $bindId = AgentUserModel::batchUpdateRecord($bindData, ['agent_id' => $awardData['agent_id'], 'user_id' => $awardData['student_id']]);
+            if (empty($bindId)) {
+                SimpleLogger::error("agent user bind formal data record fail", [$bindData]);
+                $db->rollBack();
+                return false;
+            }
         }
         $db->commit();
         return true;
@@ -300,7 +309,7 @@ class AgentAwardService
             SimpleLogger::info('not an experience class to buy first', []);
             return false;
         }
-        //已存在绑定关系不可注册绑定
+        //已存在绑定关系不可绑定
         $agentBuyTrailBindInfo = AgentUserModel::getRecord(['user_id' => $studentId, 'stage[>=]' => AgentUserModel::STAGE_TRIAL], ['id']);
         if (!empty($agentBuyTrailBindInfo)) {
             SimpleLogger::info('student has buy trail', []);
@@ -320,12 +329,6 @@ class AgentAwardService
         $bindInfo = StudentInviteModel::getRecord(['student_id' => $studentId, 'app_id' => Constants::SMART_APP_ID, 'referee_type' => StudentInviteModel::REFEREE_TYPE_STUDENT]);
         if (!empty($bindInfo)) {
             SimpleLogger::info('has bind student referee student relation', ['bind_info' => $bindInfo]);
-            return false;
-        }
-        //检测此学生是否存在有效的体验课绑定关系的代理数据
-        $validBind = AgentUserModel::getValidBindData($studentId);
-        if (empty($validBind)) {
-            SimpleLogger::info('not valid bind data', []);
             return false;
         }
         return true;

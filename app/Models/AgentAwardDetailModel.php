@@ -26,6 +26,9 @@ class AgentAwardDetailModel extends Model
     const AWARD_ACTION_TYPE_BUY_TRAIL_CLASS = 1;
     const AWARD_ACTION_TYPE_BUY_FORMAL_CLASS = 2;
     const AWARD_ACTION_TYPE_REGISTER = 3;
+    //是否绑定期中订单:0否1是
+    const IS_BIND_STATUS_YES = 1;
+    const IS_BIND_STATUS_NO = 0;
 
 
     /**
@@ -58,7 +61,8 @@ class AgentAwardDetailModel extends Model
                                         ab.agent_id AS second_agent_id,
                                         ab.id,
                                         ab.ext->>\'$.parent_bill_id\' as parent_bill_id,
-                                        ab.student_id
+                                        ab.student_id,
+                                        ab.is_bind
                                 FROM
                                     ' . $opAgentAwardDetailTableName . ' as ab
                                     INNER JOIN ' . $opAgentTableName . ' AS a ON ab.agent_id = a.id
@@ -108,6 +112,7 @@ class AgentAwardDetailModel extends Model
                 WHERE
                     agent_id IN (' . $agentIds . ') 
                 AND action_type !=' . self::AWARD_ACTION_TYPE_REGISTER . '
+                AND is_bind =' . self::IS_BIND_STATUS_YES . '
                 GROUP BY
                     agent_id;';
         return $db->queryAll($sql);
@@ -128,15 +133,14 @@ class AgentAwardDetailModel extends Model
         $sqlFrom = ' FROM ' . $agentAwardDetailTable . ' as ad ';
         $joinGiftCode = " JOIN " . $gitCodeTable . " as dg ON ad.ext->'$.parent_bill_id'=dg.parent_bill_id ";
         $joinErpPackage =" JOIN " . $erpPackageV1Table . " as de ON de.id=dg.bill_package_id";
-        $where = ' WHERE ad.agent_id in (' . implode(',', $agentIdArr) . ') and ad.action_type!=' . self::AWARD_ACTION_TYPE_REGISTER . ' ORDER BY dg.buy_time DESC,ad.id asc';
-
+        $where = ' WHERE ad.agent_id in (' . implode(',', $agentIdArr) . ') and ad.action_type!=' . self::AWARD_ACTION_TYPE_REGISTER . ' AND ad.in_bind=' . self::IS_BIND_STATUS_YES .
+            ' ORDER BY dg.buy_time DESC,ad.id asc';
         $totalSql = "SELECT count(ad.id) as total ".$sqlFrom.$joinGiftCode.$joinErpPackage.$where;
         $total = $db->queryAll($totalSql);
         $total = $total[0]['total'] ?? 0;
         if ($total == 0) {
             return [[], 0];
         }
-
         $sql = 'SELECT ad.id,ad.agent_id,ad.student_id,dg.bill_package_id,dg.parent_bill_id,de.name as package_name,dg.bill_amount,dg.code_status,dg.buy_time,dg.create_time,dg.employee_uuid';
         $offset = $limit[0] ?? 0;
         $limitNum = $limit[1] ?? 0;

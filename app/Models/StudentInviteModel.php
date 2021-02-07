@@ -8,7 +8,6 @@
 
 namespace App\Models;
 
-use App\Libs\MysqlDB;
 
 class StudentInviteModel extends Model
 {
