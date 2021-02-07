@@ -259,6 +259,6 @@ class Model
      */
     public static function getTableNameWithDb()
     {
-        return  $_ENV['DB_NAME'] . '.' . static::$table;
+        return  $_ENV['DB_OP_S_NAME'] . '.' . static::$table;
     }
 }
