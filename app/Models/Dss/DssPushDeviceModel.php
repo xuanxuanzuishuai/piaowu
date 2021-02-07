@@ -56,4 +56,29 @@ class DssPushDeviceModel extends DssModel
         return $deviceTokenList ?? [];
     }
 
+    /**
+     * @param $uuid
+     * @return array
+     * 根据UUID获取deviceToken
+     */
+    public static function getDeviceTokenByUUid($uuid)
+    {
+        $pushDevice = self::$table;
+        $student = DssStudentModel::$table;
+        $uuidStr = implode(',',$uuid);
+
+        $sql = "SELECT
+                    pt.device_token,
+                    pt.platform
+                FROM
+                    {$pushDevice} AS pt
+                    INNER JOIN {$student} AS s ON pt.mobile = s.mobile 
+                WHERE
+                    pt.`status` = " . self::STATUS_NORMAL . " 
+                    AND s.uuid IN ({$uuidStr})";
+
+        $result = DssModel::dbRO()->queryAll($sql);
+        return $result ?? [];
+    }
+
 }

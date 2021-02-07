@@ -164,7 +164,7 @@ class PushServices
             $sheetData = $spreadsheet->getActiveSheet()->toArray(null, true, true, true);
             $data = [];
             foreach ($sheetData as $v) {
-                if (empty($v) || $v['A'] != 'mobile') {
+                if (!empty($v['A']) && $v['A'] != 'uuid') {
                     $data[] = $v['A'];
                 }
             }
@@ -175,17 +175,17 @@ class PushServices
     }
 
     /**
-     * @param $mobiles
+     * @param $uuid
      * @return array
      * 根据手机号获取device_token
      */
-    public static function getDeviceToken($mobiles)
+    public static function getDeviceToken($uuid)
     {
-        if (empty($mobiles)) {
+        if (empty($uuid)) {
             return [];
         }
 
-        $result = DssPushDeviceModel::getRecords(['mobile' => $mobiles, 'status' => DssPushDeviceModel::STATUS_NORMAL], ['device_token', 'platform']);
+        $result = DssPushDeviceModel::getDeviceTokenByUUid($uuid);
         if (empty($result)) {
             return [];
         }

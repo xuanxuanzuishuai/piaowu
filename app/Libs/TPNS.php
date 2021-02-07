@@ -162,8 +162,8 @@ class TPNS
                 break;
             case PushServices::PUSH_USER_PART:
                 $data['audience_type'] = 'token_list';
-                $mobiles = PushServices::analysisExcel($params['file_name']);
-                $deviceTokenList = PushServices::getDeviceToken($mobiles);
+                $uuid = PushServices::analysisExcel($params['file_name']);
+                $deviceTokenList = PushServices::getDeviceToken($uuid);
                 break;
             case PushServices::PUSH_USER_PAY:
                 $data['audience_type'] = 'token_list';
