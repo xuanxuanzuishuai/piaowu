@@ -7,6 +7,7 @@ use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\Dss\DssReferralActivityModel;
+use App\Models\Dss\DssSharePosterModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\Erp\ErpEventModel;
@@ -67,7 +68,9 @@ class PushMessageService
         $url = $urlArr[$awardDetailInfo['type']] ?? '';
         $activityName  = '';
         if ($awardDetailInfo['type'] == ErpEventModel::DAILY_UPLOAD_POSTER) {
-            $activityName = DssReferralActivityModel::getRecord(['id' => $ext['activity_id']], 'name');
+            $activityId = !empty($ext['activity_id']) ? $ext['activity_id'] : DssSharePosterModel::getRecord(['award_id' => $awardDetailInfo['award_id']], 'activity_id');
+
+            $activityName = DssReferralActivityModel::getRecord(['id' => $activityId], 'name');
         }
         // 任务达成条件
         $taskCondition = json_decode($awardDetailInfo['condition'], true);
