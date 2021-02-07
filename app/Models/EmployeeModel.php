@@ -207,13 +207,14 @@ class EmployeeModel extends Model
     /**
      * 获取指定角色雇员
      * @param $roleId
+     * @param $status
      * @return array
      */
-    public static function getEmployeeWithRole($roleId)
+    public static function getEmployeeWithRole($roleId, $status)
     {
         return self::getRecords([
             'role_id' => $roleId,
-            'status' => self::STATUS_NORMAL],
+            'status' => $status],
             ['id', 'name']
             );
     }

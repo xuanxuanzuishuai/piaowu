@@ -89,7 +89,7 @@ class Auth extends ControllerBase
                 $countryCode = $decryptedData['countryCode'];
             }
 
-            list($token, $userInfo) = AgentService::bindAgentWechat($appId, $mobile, $openId, $unionId, $countryCode);
+            list($token, $userInfo) = AgentService::bindAgentWechat($appId, $mobile, $openId, $countryCode);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }

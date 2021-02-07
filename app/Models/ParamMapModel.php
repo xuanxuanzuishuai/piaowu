@@ -51,7 +51,7 @@ class ParamMapModel extends Model
         $db = MysqlDB::getDB();
         $sql = "UPDATE 
                     param_map 
-                    SET param_info = JSON_SET( param_info, '$.qr_url', " . $qrUrl . " ) 
+                    SET param_info = JSON_SET( param_info, '$.qr_url', '" . $qrUrl . "' ) 
                 WHERE
                     id = " . $id;
         return $db->queryAll($sql);
@@ -129,7 +129,6 @@ class ParamMapModel extends Model
                 INNER JOIN " . AgentModel::$table . " AS a ON a.id=p.user_id AND a.status=" . AgentModel::STATUS_OK . " 
                 WHERE
                     p.param_info ->> '$.r' = '" . $qrTicket . "'
-                    AND p.app_id=" . UserCenter::AUTH_APP_ID_OP_AGENT . " 
                     AND p.type=" . self::TYPE_AGENT;
         return $db->queryAll($sql)[0];
     }

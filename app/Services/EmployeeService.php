@@ -269,11 +269,12 @@ class EmployeeService
     /**
      * 获取雇员列表数据
      * @param $roleId
+     * @param $status
      * @return array
      */
-    public static function getEmployeeListWithRole($roleId)
+    public static function getEmployeeListWithRole($roleId, $status)
     {
-        $employees = EmployeeModel::getEmployeeWithRole($roleId);
+        $employees = EmployeeModel::getEmployeeWithRole($roleId, $status);
         return $employees;
     }
 

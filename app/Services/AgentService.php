@@ -9,6 +9,7 @@
 namespace App\Services;
 
 use App\Libs\AliOSS;
+use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
@@ -711,13 +712,10 @@ class AgentService
      * @param array $userList   必须是相同的app_id, busi_type, user_type
      * @return array
      */
-    public static function batchGetUserNicknameAndHead(array $userList)
+    public static function batchGetUserNicknameAndHead($appid, $busi_type, $userList)
     {
         $redis = RedisDB::getConn();
         $redisHashKey  = UserWeiXinInfoModel::REDIS_HASH_USER_WEIXIN_INFO_PREFIX.date("Y-m-d");
-
-        $appid = array_column($userList,'app_id')[0];
-        $busi_type = array_column($userList,'busi_type')[0];
 
         //缓存中获取信息
         list($userNicknameAndHead,$wxRequestData) = self::getCacheUserWxInfo($appid,$busi_type,$userList);
@@ -859,8 +857,7 @@ class AgentService
         }
         //从dss读取用户信息
         $userList = DssUserWeiXinModel::getUserWeiXinListByUserid($userIdArr);
-
-        return self::batchGetUserNicknameAndHead($userList);
+        return self::batchGetUserNicknameAndHead(Constants::SMART_APP_ID, DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER, $userList);
     }
 
     /**

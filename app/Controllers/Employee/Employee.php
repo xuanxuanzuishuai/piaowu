@@ -356,7 +356,7 @@ class Employee extends ControllerBase
         if(empty($role_id) && $role_id !== '0'){
             return $response->withJson(Valid::addErrors([], 'role_id','role_id_is_not_exist'), StatusCode::HTTP_OK);
         }
-        $data = EmployeeService::getEmployeeListWithRole($role_id);
+        $data = EmployeeService::getEmployeeListWithRole($role_id, [EmployeeModel::STATUS_DEL, EmployeeModel::STATUS_NORMAL]);
         return $response->withJson([
             'code'=>0,
             'data'=>$data
