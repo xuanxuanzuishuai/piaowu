@@ -16,7 +16,6 @@ use App\Libs\MysqlDB;
 use App\Libs\NewSMS;
 use App\Libs\RC4;
 use App\Libs\RedisDB;
-use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Libs\Util;
 use App\Libs\WeChat\WeChatMiniPro;
@@ -72,7 +71,7 @@ class AgentService
         ];
         //agent_info
         $agentInfoInsertData = [
-            'country' => (int)$params['country_code'],
+            'country' => $params['country_id'],
             'province' => (int)$params['province_code'],
             'city' => (int)$params['city_code'],
             'address' => empty($params['address']) ? '' : $params['address'],
@@ -137,7 +136,7 @@ class AgentService
             'name' => $params['name'],
             'type' => $params['agent_type'],
             'service_employee_id' => empty($params['service_employee_id']) ? 0 : (int)$params['service_employee_id'],
-            'country_code' => (int)$params['country_code'],
+            'country_code' => $params['country_code'],
             'update_time' => $time,
         ];
         //agent_divide_rules数据
@@ -151,7 +150,7 @@ class AgentService
         ];
         //agent_info
         $agentInfoUpdateData = [
-            'country' => (int)$params['country_code'],
+            'country' => $params['country_id'],
             'province' => empty($params['province_code']) ? 0 : (int)$params['province_code'],
             'city' => empty($params['city_code']) ? 0 : (int)$params['city_code'],
             'address' => empty($params['address']) ? '' : $params['address'],

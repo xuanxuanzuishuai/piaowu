@@ -54,7 +54,17 @@ class Agent extends ControllerBase
                 'key' => 'agent_type',
                 'type' => 'required',
                 'error_code' => 'agent_type_is_required'
-            ]
+            ],
+            [
+                'key' => 'country_code',
+                'type' => 'required',
+                'error_code' => 'country_code_is_required'
+            ],
+            [
+                'key' => 'country_id',
+                'type' => 'required',
+                'error_code' => 'country_id_is_required'
+            ],
         ];
 
         $params = $request->getParams();
@@ -110,7 +120,17 @@ class Agent extends ControllerBase
                 'key' => 'agent_type',
                 'type' => 'required',
                 'error_code' => 'agent_type_is_required'
-            ]
+            ],
+            [
+                'key' => 'country_code',
+                'type' => 'required',
+                'error_code' => 'country_code_is_required'
+            ],
+            [
+                'key' => 'country_id',
+                'type' => 'required',
+                'error_code' => 'country_id_is_required'
+            ],
         ];
 
         $params = $request->getParams();

@@ -135,6 +135,7 @@ class AgentModel extends Model
                 self::$table . '.type',
                 self::$table . '.status',
                 self::$table . '.name',
+                self::$table . '.country_code',
                 AgentInfoModel::$table . '.country',
                 AgentInfoModel::$table . '.province',
                 AgentInfoModel::$table . '.city',
