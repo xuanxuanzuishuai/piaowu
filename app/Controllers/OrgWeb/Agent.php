@@ -356,22 +356,6 @@ class Agent extends ControllerBase
                 'type'       => 'lengthMax',
                 'value'      => 200,
                 'error_code' => 'text_max_length_is_200'
-            ],
-            [
-                'key'        => 'mini_app_card',
-                'type'       => 'required',
-                'error_code' => 'mini_app_card_is_required'
-            ],
-            [
-                'key'        => 'mini_app_text',
-                'type'       => 'required',
-                'error_code' => 'mini_app_text_is_required'
-            ],
-            [
-                'key'        => 'mini_app_text',
-                'type'       => 'lengthMax',
-                'value'      => 30,
-                'error_code' => 'mini_app_text_max_length_is_30'
             ]
         ];
         $params = $request->getParams();

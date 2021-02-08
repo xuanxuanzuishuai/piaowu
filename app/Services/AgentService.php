@@ -1479,18 +1479,7 @@ class AgentService
                 "key"   => "text",
                 "type"  => GoodsResourceModel::CONTENT_TYPE_TEXT,
                 "value" => Util::textEncode($params['text']) ?? ''
-            ],
-            [
-                "key"   => "mini_app_card",
-                "type"  => GoodsResourceModel::CONTENT_TYPE_IMAGE,
-                "value" => $params['mini_app_card']
-            ],
-            [
-                "key"   => "mini_app_text",
-                "type"  => GoodsResourceModel::CONTENT_TYPE_TEXT,
-                "value" => $params['mini_app_text']
-            ],
-
+            ]
         ];
         $jsonExt = json_encode($ext);
         if ($exist) {
