@@ -400,6 +400,10 @@ class ReferralActivityService
     public static function getParamsInfo($paramId)
     {
         $result = ParamMapModel::getById($paramId);
-        return $result['param_info'] ?? '';
+        $merge = [
+            'type' => $result['type'],
+        ];
+        $info = json_decode($result['param_info'], true);
+        return array_merge($merge, $info);
     }
 }

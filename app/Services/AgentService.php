@@ -480,6 +480,18 @@ class AgentService
         if (empty($busiType)) {
             $busiType = UserWeiXinModel::BUSI_TYPE_AGENT_MINI;
         }
+        $db = MysqlDB::getDB();
+        $db->beginTransaction();
+        UserWeiXinModel::batchUpdateRecord(
+            [
+                'status' => UserWeiXinModel::STATUS_DISABLE,
+                'update_time' => time(),
+            ],
+            [
+                'user_id' => $agentInfo['id'],
+                'open_id[!]' => $openId
+            ]
+        );
         $data = [
             'user_id'   => $agentInfo['id'],
             'user_type' => $userType,
@@ -491,8 +503,13 @@ class AgentService
         $bindInfo = UserWeiXinModel::getRecord($data);
         if (empty($bindInfo)) {
             $data['create_time'] = time();
-            UserWeiXinModel::insertRecord($data);
+            $count = UserWeiXinModel::insertRecord($data);
+            if (empty($count)) {
+                $db->rollBack();
+                throw new RunTimeException(['insert_failure']);
+            }
         }
+        $db->commit();
         $token = AgentMiniAppTokenService::generateToken($agentInfo['id'], $userType, $appId, $openId);
         return [$token, $agentInfo];
     }
