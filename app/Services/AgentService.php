@@ -688,15 +688,20 @@ class AgentService
 
         //获取头像和昵称
         $userNicknameArr = self::batchDssUserWxInfoByUserId($userIdArr);
+        $dict = DictConstants::getSet(DictConstants::AGENT_BIND_STATUS);
         //组合数据
         foreach ($bindUserList as $key => $val) {
             $tmpUserInfo = $userNicknameArr[$val['user_id']] ?? [];
+            $tmpBindStatus = self::getAgentUserBindStatus($val['deadline'], $val['stage']);
+
             $bindUserList[$key]['thumb'] = $tmpUserInfo['thumb'] ?? '';     //这里如果需要返回默认头像的话需要调整
             $bindUserList[$key]['nickname'] = $tmpUserInfo['nickname'] ?? '';
             $bindUserList[$key]['mobile'] = $encodeMobileArr[$val['user_id']] ?? '';
             $bindUserList[$key]['second_agent_name'] = $agentNameArr[$val['agent_id']] ?? '';
             $bindUserList[$key]['format_bind_time'] = date('Y-m-d H:i:s', $val['bind_time']);
-            $bindUserList[$key]['bind_status'] = self::getAgentUserBindStatus($val['deadline'],$val['stage']);
+            $bindUserList[$key]['bind_status'] = $tmpBindStatus;
+            $bindUserList[$key]['bind_status_name'] = $dict[$tmpBindStatus];
+
         }
 
         $returnData['bind_user_list'] = $bindUserList;
@@ -907,7 +912,7 @@ class AgentService
         $orderIdArr = [];
         array_map(function ($item) use (&$userIdArr, &$orderIdArr) {
             $userIdArr[] = $item['student_id'];
-            $extInfo = json_decode($item['ext'],true);
+            $extInfo = json_decode($item['ext'], true);
             $orderIdArr[] = $extInfo['parent_bill_id'] ?? 0;
         }, $orderList);
 
@@ -925,6 +930,7 @@ class AgentService
         }, $mobileList);
 
         //组合返回数据
+        $dict = DictConstants::getSet(DictConstants::CODE_STATUS);
         foreach ($orderList as $key => $val) {
             $tmpUserInfo = $userNicknameArr[$val['student_id']] ?? [];
 
@@ -934,6 +940,8 @@ class AgentService
             $orderList[$key]['second_agent_name'] = $agentNameArr[$val['agent_id']] ?? '';
             $orderList[$key]['format_pay_time'] = date("Y-m-d H:i:s", $val['buy_time']);
             $orderList[$key]['bill_amount'] = $orderList[$key]['bill_amount']/100;  //单位元
+            $orderList[$key]['code_status_name'] = $dict[$val['code_status']] ?? '';
+
         }
 
         $returnData['order_list'] = $orderList;
