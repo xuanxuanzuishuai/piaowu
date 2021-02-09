@@ -6,6 +6,7 @@ use App\Controllers\ControllerBase;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\Valid;
+use App\Models\AgentOperationLogModel;
 use App\Models\GoodsResourceModel;
 use App\Services\AgentService;
 use App\Services\CommonServiceForApp;
@@ -212,7 +213,11 @@ class Agent extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         try {
-            $data = AgentService::freezeAgent($params['agent_id']);
+            $userInfo = $this->ci['user_info'];
+            if (empty($userInfo['user_id'])) {
+                throw new RunTimeException(['agent_not_exist']);
+            }
+            $data = AgentService::freezeAgent($params['agent_id'], $userInfo['user_id'], AgentOperationLogModel::OP_TYPE_AGENT_FREEZE_AGENT);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
@@ -240,7 +245,11 @@ class Agent extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         try {
-            $data = AgentService::unFreezeAgent($params['agent_id']);
+            $userInfo = $this->ci['user_info'];
+            if (empty($userInfo['user_id'])) {
+                throw new RunTimeException(['agent_not_exist']);
+            }
+            $data = AgentService::unFreezeAgent($params['agent_id'], $userInfo['user_id'], AgentOperationLogModel::OP_TYPE_AGENT_UNFREEZE_AGENT);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }

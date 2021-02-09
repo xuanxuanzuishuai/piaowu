@@ -9,11 +9,11 @@
 namespace App\Controllers\OrgWeb;
 
 use App\Controllers\ControllerBase;
-use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\Util;
 use App\Libs\Valid;
+use App\Models\AgentOperationLogModel;
 use App\Services\AgentService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -234,7 +234,8 @@ class Agent extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         try {
-            AgentService::freezeAgent($params['agent_id']);
+            $employeeId = self::getEmployeeId();
+            AgentService::freezeAgent($params['agent_id'], $employeeId, AgentOperationLogModel::OP_TYPE_FREEZE_AGENT);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
@@ -262,7 +263,8 @@ class Agent extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         try {
-            AgentService::unFreezeAgent($params['agent_id']);
+            $employeeId = self::getEmployeeId();
+            AgentService::unFreezeAgent($params['agent_id'], $employeeId, AgentOperationLogModel::OP_TYPE_UNFREEZE_AGENT);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }

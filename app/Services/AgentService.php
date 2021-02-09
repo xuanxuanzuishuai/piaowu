@@ -11,6 +11,7 @@ namespace App\Services;
 use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\DictConstants;
+use App\Libs\EventListener\AgentOpEvent;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
 use App\Libs\NewSMS;
@@ -24,6 +25,7 @@ use App\Models\AgentAwardDetailModel;
 use App\Models\AgentBillMapModel;
 use App\Models\AgentDivideRulesModel;
 use App\Models\AgentModel;
+use App\Models\AgentOperationLogModel;
 use App\Models\AgentUserModel;
 use App\Models\AreaCityModel;
 use App\Models\AreaProvinceModel;
@@ -386,10 +388,12 @@ class AgentService
     /**
      * 冻结代理商账户
      * @param $agentId
+     * @param $operatorId
+     * @param $opType
      * @return bool
      * @throws RunTimeException
      */
-    public static function freezeAgent($agentId)
+    public static function freezeAgent($agentId, $operatorId, $opType)
     {
         $agentData = AgentModel::getById($agentId);
         if (empty($agentData)) {
@@ -406,16 +410,20 @@ class AgentService
         if (empty($res)) {
             throw new RunTimeException(['update_failure']);
         }
+        //记录操作日志
+        self::agentFreezeStatusOpLogEvent($agentId, $operatorId, AgentModel::STATUS_FREEZE, $opType);
         return true;
     }
 
     /**
      * 解除冻结
      * @param $agentId
+     * @param $operatorId
+     * @param $opType
      * @return bool
      * @throws RunTimeException
      */
-    public static function unFreezeAgent($agentId)
+    public static function unFreezeAgent($agentId, $operatorId, $opType)
     {
         $agentData = AgentModel::getById($agentId);
         if (empty($agentData)) {
@@ -435,6 +443,8 @@ class AgentService
         if (empty($res)) {
             throw new RunTimeException(['update_failure']);
         }
+        //记录操作日志
+        self::agentFreezeStatusOpLogEvent($agentId, $operatorId, AgentModel::STATUS_OK, $opType);
         return true;
     }
 
@@ -1607,5 +1617,25 @@ class AgentService
             }
         }
         return $agentId;
+    }
+
+    /**
+     * 代理商状态操作日志事件触发器
+     * @param $agentId
+     * @param $operatorId
+     * @param $status
+     * @param $opType
+     */
+    private static function agentFreezeStatusOpLogEvent($agentId, $operatorId, $status, $opType)
+    {
+        //日志记录
+        $agentOpEventObj = new AgentOpEvent(
+            [
+                'agent_id' => $agentId,
+                'status' => $status,
+                'operator_id' => $operatorId,
+                'op_type' => $opType
+            ]);
+        $agentOpEventObj::fire($agentOpEventObj);
     }
 }
