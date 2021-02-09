@@ -1020,7 +1020,7 @@ class AgentService
             [
                 'agent_id' => $ids,
                 'action_type[!]' => AgentAwardDetailModel::AWARD_ACTION_TYPE_REGISTER,
-                'in_bind' => AgentAwardDetailModel::IS_BIND_STATUS_YES,
+                'is_bind' => AgentAwardDetailModel::IS_BIND_STATUS_YES,
             ]
         );
         $agentInfo['sec_agents'] = AgentModel::getCount(['parent_id' => $agentId]);

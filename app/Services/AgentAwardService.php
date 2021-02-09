@@ -149,8 +149,7 @@ class AgentAwardService
             'create_time' => $time,
         ];
         //获取学生是否存在有效的体验课绑定关系的代理数据
-//        $validBind = AgentUserModel::getValidBindData($studentInfo['id']);
-        $validBind = AgentUserModel::getValidBindData(989898888);
+        $validBind = AgentUserModel::getValidBindData($studentInfo['id']);
         if (empty($validBind)) {
             $awardData['is_bind'] = AgentAwardDetailModel::IS_BIND_STATUS_NO;
         } else {
@@ -171,10 +170,9 @@ class AgentAwardService
     /**
      * 注册奖励
      * @param $awardData
-     * @param $bindData
      * @return bool
      */
-    private static function recordRegisterAwardAndBindData($awardData, $bindData)
+    private static function recordRegisterAwardAndBindData($awardData)
     {
         $db = MysqlDB::getDB();
         $db->beginTransaction();

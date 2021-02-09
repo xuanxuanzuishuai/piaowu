@@ -133,7 +133,7 @@ class AgentAwardDetailModel extends Model
         $sqlFrom = ' FROM ' . $agentAwardDetailTable . ' as ad ';
         $joinGiftCode = " JOIN " . $gitCodeTable . " as dg ON ad.ext->'$.parent_bill_id'=dg.parent_bill_id ";
         $joinErpPackage =" JOIN " . $erpPackageV1Table . " as de ON de.id=dg.bill_package_id";
-        $where = ' WHERE ad.agent_id in (' . implode(',', $agentIdArr) . ') and ad.action_type!=' . self::AWARD_ACTION_TYPE_REGISTER . ' AND ad.in_bind=' . self::IS_BIND_STATUS_YES .
+        $where = ' WHERE ad.agent_id in (' . implode(',', $agentIdArr) . ') and ad.action_type!=' . self::AWARD_ACTION_TYPE_REGISTER . ' AND ad.is_bind=' . self::IS_BIND_STATUS_YES .
             ' ORDER BY dg.buy_time DESC,ad.id asc';
         $totalSql = "SELECT count(ad.id) as total ".$sqlFrom.$joinGiftCode.$joinErpPackage.$where;
         $total = $db->queryAll($totalSql);
