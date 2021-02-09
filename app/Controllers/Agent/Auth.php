@@ -184,7 +184,7 @@ class Auth extends ControllerBase
             $countryCode = $params['country_code'] ?? NewSMS::DEFAULT_COUNTRY_CODE;
             // 1.验证是否已存在代理手机号
             if (AgentService::checkAgentExists($mobile, $countryCode)) {
-                throw new RunTimeException(['agent_have_exist']);
+                throw new RunTimeException(['agent_have_exist_login']);
             }
             // 2.验证是否已存在申请
             if (AgentService::checkAgentApplicationExists($mobile, $countryCode)) {

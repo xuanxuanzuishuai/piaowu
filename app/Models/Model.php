@@ -251,7 +251,7 @@ class Model
     {
         $db = MysqlDB::getDB();
         $count = $db->count(static::$table, $where);
-        return $count;
+        return (int)$count;
     }
     /**
      * 数据库名前缀的表

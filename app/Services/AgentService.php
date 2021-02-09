@@ -15,7 +15,6 @@ use App\Libs\EventListener\AgentOpEvent;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
 use App\Libs\NewSMS;
-use App\Libs\RC4;
 use App\Libs\RedisDB;
 use App\Libs\UserCenter;
 use App\Libs\Util;
@@ -60,7 +59,7 @@ class AgentService
             'uuid' => self::agentAuth($params['name'], $params['mobile']),
             'mobile' => $params['mobile'],
             'name' => $params['name'],
-            'type' => $params['agent_type'],
+            'type' => $params['agent_type'] ?? 0,
             'country_code' => $params['country_code'],
             'create_time' => $time,
         ];
@@ -572,11 +571,11 @@ class AgentService
             'create_time' => time(),
             'update_time' => 0
         ];
+        if (self::checkAgentExists($mobile, $countryCode)) {
+            throw new RunTimeException(['agent_have_exist_front']);
+        }
         if (self::checkAgentApplicationExists($mobile, $countryCode)) {
             throw new RunTimeException(['agent_application_exists']);
-        }
-        if (self::checkAgentExists($mobile, $countryCode)) {
-            throw new RunTimeException(['agent_have_exist']);
         }
         return AgentApplicationModel::insertRecord($insertData);
     }
@@ -1034,7 +1033,7 @@ class AgentService
             ]
         );
         $agentInfo['sec_agents'] = AgentModel::getCount(['parent_id' => $agentId]);
-        $agentInfo['config']     = self::popularMaterialInfo($agentId);
+        $agentInfo['config']     = self::popularMaterialInfo();
         $agentInfo['parent']     = AgentModel::getRecord(['id' => $agentInfo['parent_id']]);
         $agentInfo['show_status'] = self::getAgentStatus($agentInfo);
         return $agentInfo;
@@ -1065,16 +1064,15 @@ class AgentService
     public static function secAgentAdd($agentId, $params = [])
     {
         if (self::checkAgentExists($params['mobile'])) {
-            throw new RunTimeException(['agent_have_exist']);
+            throw new RunTimeException(['agent_have_exist_front']);
         }
         $data = [
             'name'         => $params['name'],
             'mobile'       => $params['mobile'],
+            'country_id'   => $params['country_id'] ?? 0,
             'parent_id'    => $agentId,
-            'agent_type'   => AgentModel::TYPE_DISTRIBUTION,
             'country_code' => $params['country_code'] ?? NewSMS::DEFAULT_COUNTRY_CODE,
             'app_id'       => UserCenter::AUTH_APP_ID_OP_AGENT,
-            'divide_type'  => AgentDivideRulesModel::TYPE_LEADS,
         ];
         return self::addAgent($data, 0);
     }
@@ -1097,7 +1095,7 @@ class AgentService
             $params['country_code'],
             $agentId
         )) {
-            throw new RunTimeException(['agent_have_exist']);
+            throw new RunTimeException(['agent_have_exist_front']);
         }
         $data = [
             'name'         => $params['name'],
@@ -1534,6 +1532,9 @@ class AgentService
         $agentInfo = [];
         if (!empty($agentId)) {
             $agentInfo = AgentModel::getById($agentId);
+            if (!empty($agentId['parent_id'])) {
+                $agentInfo = AgentModel::getByMobile($agentInfo['parent_id']);
+            }
         }
         $ext = json_decode($result['ext'], true);
 
@@ -1562,17 +1563,6 @@ class AgentService
                         $extParams
                     );
                     $data[$item['key'] . '_agent_url'] = $posterUrl['poster_save_full_path'] ?? '';
-                    $data['share_data'] = '&param_id=' . ReferralActivityService::getParamsId(
-                        array_merge(
-                            [
-                                'r'       => RC4::encrypt($_ENV['COOKIE_SECURITY_KEY'], UserWeiXinModel::USER_TYPE_AGENT . "_" . $agentId),
-                                'c'       => $channel,
-                                'type'    => UserWeiXinModel::USER_TYPE_AGENT,
-                                'user_id' => $agentId,
-                            ],
-                            $extParams
-                        )
-                    );
                 }
             }
         }

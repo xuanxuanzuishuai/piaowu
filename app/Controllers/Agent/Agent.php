@@ -139,6 +139,11 @@ class Agent extends ControllerBase
                 'type'       => 'required',
                 'error_code' => 'mobile_is_required'
             ],
+            [
+                'key'        => 'country_id',
+                'type'       => 'required',
+                'error_code' => 'country_id_is_required'
+            ],
         ];
         $params = $request->getParams();
         $result = Valid::appValidate($params, $rules);

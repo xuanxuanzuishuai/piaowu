@@ -74,7 +74,7 @@ class PosterService
             "limit_0",//强制图片缩放
         ];
         $imgSizeStr = implode(",", $imgSize) . '/';
-        $resImageUrl = AliOSS::signUrls($posterPath, "", "", "", false, $waterMarkStr, $imgSizeStr);
+        $resImageUrl = AliOSS::signUrls($posterPath, "", "", "", true, $waterMarkStr, $imgSizeStr);
         //返回数据
         return ['poster_save_full_path' => $resImageUrl, 'unique' => md5($userId . $posterPath . $userQrUrl) . ".jpg"];
     }

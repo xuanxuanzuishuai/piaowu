@@ -132,7 +132,7 @@ class Dss extends ControllerBase
         }
 
         $paramInfo = ReferralActivityService::getParamsInfo($params['param_id']);
-        return HttpHelper::buildResponse($response, json_decode($paramInfo, true));
+        return HttpHelper::buildResponse($response, $paramInfo);
     }
 
     /**
