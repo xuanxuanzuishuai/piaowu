@@ -1429,7 +1429,7 @@ class AgentService
         }
 
         $where['ORDER'] = ['create_time' => 'DESC'];
-        $where['LIMIT'] = [$page - 1, $count];
+        $where['LIMIT'] = [($page - 1) * $count, $count];
         $count = AgentApplicationModel::getCount($where);
         if (empty($count)) {
             return [
