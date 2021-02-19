@@ -325,7 +325,7 @@ class AgentService
             $where[AgentModel::$table . '.service_employee_id'] = $serviceEmployeeId['id'];
         }
         if (!empty($params['name'])) {
-            $where[AgentModel::$table . '.name'] = $params['name'];
+            $where[AgentModel::$table . '.name[~]'] = $params['name'];
         }
         $agentList = AgentModel::list($where, $params['page'], $params['count']);
         if (empty($agentList['list'])) {
@@ -572,7 +572,7 @@ class AgentService
             'update_time' => 0
         ];
         if (self::checkAgentExists($mobile, $countryCode)) {
-            throw new RunTimeException(['agent_have_exist_front']);
+            throw new RunTimeException(['agent_have_exist_login']);
         }
         if (self::checkAgentApplicationExists($mobile, $countryCode)) {
             throw new RunTimeException(['agent_application_exists']);
@@ -1063,7 +1063,7 @@ class AgentService
      */
     public static function secAgentAdd($agentId, $params = [])
     {
-        if (self::checkAgentExists($params['mobile'])) {
+        if (self::checkAgentExists($params['mobile'], $params['country_code'])) {
             throw new RunTimeException(['agent_have_exist_front']);
         }
         $data = [
@@ -1239,7 +1239,7 @@ class AgentService
         //一级代理数据
         $firstAgentWhere = ' ';
         if (!empty($params['first_agent_name'])) {
-            $firstAgentWhere .= " AND fa.name='" . $params['first_agent_name'] . "'";
+            $firstAgentWhere .= " AND fa.name like '%" . $params['first_agent_name'] . "%'";
         }
         if (!empty($params['first_agent_id'])) {
             $firstAgentWhere .= ' AND fa.id=' . $params['first_agent_id'];
@@ -1254,7 +1254,7 @@ class AgentService
             $secondAgentWhere .= ' AND ' . $secondAgentTable . '.id=' . $params['second_agent_id'];
         }
         if (!empty($params['second_agent_name'])) {
-            $secondAgentWhere .= " AND " . $secondAgentTable . ".name='" . $params['second_agent_name'] . "'";
+            $secondAgentWhere .= " AND " . $secondAgentTable . ".name like '%" . $params['second_agent_name'] . "%'";
         }
         list($recommendUserList['count'], $recommendUserList['list']) = AgentUserModel:: agentRecommendUserList($agentUserWhere, $firstAgentWhere, $secondAgentWhere, $params['page'], $params['count']);
         if (empty($recommendUserList['count'])) {
@@ -1351,7 +1351,7 @@ class AgentService
         //一级代理数据
         $firstAgentWhere = ' ';
         if (!empty($params['first_agent_name'])) {
-            $firstAgentWhere .= " AND fa.name='" . $params['first_agent_name'] . "'";
+            $firstAgentWhere .= " AND fa.name like '%" . $params['first_agent_name'] . "%'";
         }
         if (!empty($params['first_agent_id'])) {
             $firstAgentWhere .= ' AND fa.id=' . $params['first_agent_id'];
@@ -1366,7 +1366,7 @@ class AgentService
             $secondAgentWhere .= ' AND ' . $secondAgentTable . '.id=' . $params['second_agent_id'];
         }
         if (!empty($params['second_agent_name'])) {
-            $secondAgentWhere .= " AND " . $secondAgentTable . ".name='" . $params['second_agent_name'] . "'";
+            $secondAgentWhere .= " AND " . $secondAgentTable . ".name like '%" . $params['second_agent_name'] . "%'";
         }
         list($recommendUserList['count'], $recommendUserList['list']) = AgentAwardDetailModel:: agentBillsList($agentBillWhere, $firstAgentWhere, $secondAgentWhere, $giftCodeWhere, $params['page'], $params['count']);
         if (empty($recommendUserList['count'])) {
@@ -1532,8 +1532,8 @@ class AgentService
         $agentInfo = [];
         if (!empty($agentId)) {
             $agentInfo = AgentModel::getById($agentId);
-            if (!empty($agentId['parent_id'])) {
-                $agentInfo = AgentModel::getByMobile($agentInfo['parent_id']);
+            if (!empty($agentInfo['parent_id'])) {
+                $agentInfo = AgentModel::getById($agentInfo['parent_id']);
             }
         }
         $ext = json_decode($result['ext'], true);

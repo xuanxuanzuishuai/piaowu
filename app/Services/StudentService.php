@@ -77,7 +77,7 @@ class StudentService
             $where['uuid'] = $params['uuid'];
         }
         if (!empty($params['name'])) {
-            $where['name'] = $params['name'];
+            $where['name[~]'] = $params['name'];
         }
         if (empty($where)) {
             return [];
