@@ -24,7 +24,6 @@ use App\Models\AgentAwardDetailModel;
 use App\Models\AgentBillMapModel;
 use App\Models\AgentDivideRulesModel;
 use App\Models\AgentModel;
-use App\Models\AgentOperationLogModel;
 use App\Models\AgentUserModel;
 use App\Models\AreaCityModel;
 use App\Models\AreaProvinceModel;
@@ -1036,6 +1035,7 @@ class AgentService
         $agentInfo['config']     = self::popularMaterialInfo();
         $agentInfo['parent']     = AgentModel::getRecord(['id' => $agentInfo['parent_id']]);
         $agentInfo['show_status'] = self::getAgentStatus($agentInfo);
+        $agentInfo['mobile'] = Util::hideUserMobile($agentInfo['mobile'] ?? '');
         return $agentInfo;
     }
 
@@ -1592,7 +1592,13 @@ class AgentService
      */
     public static function checkBillIsAgentReferral($studentId, $parentBillId, $packageType)
     {
+        //检测是否满足执行代理奖励逻辑条件
         $agentId = 0;
+        //检测转介绍关系
+        $hasAgentReferral = AgentAwardService::checkReferralIsAgent($studentId);
+        if (empty($hasAgentReferral)) {
+            return $agentId;
+        }
         if ($packageType == DssPackageExtModel::PACKAGE_TYPE_TRIAL) {
             //体验课:订单映射关系是否存在
             $billAgentMap = AgentBillMapModel::get($parentBillId, $studentId);

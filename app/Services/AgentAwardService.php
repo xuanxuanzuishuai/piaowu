@@ -278,10 +278,9 @@ class AgentAwardService
      */
     private static function checkRegisterBindQuality($studentId)
     {
-        //是否已经绑定学生转介绍学生绑定关系
-        $bindInfo = StudentInviteModel::getRecord(['student_id' => $studentId, 'app_id' => Constants::SMART_APP_ID, 'referee_type' => StudentInviteModel::REFEREE_TYPE_STUDENT]);
-        if (!empty($bindInfo)) {
-            SimpleLogger::info('has bind student referee student relation', ['bind_info' => $bindInfo]);
+        //检测转介绍关系
+        $hasAgentReferral = self::checkReferralIsAgent($studentId);
+        if (empty($hasAgentReferral)) {
             return false;
         }
         return true;
@@ -295,10 +294,9 @@ class AgentAwardService
      */
     private static function checkTrailBindQuality($studentId)
     {
-        //是否已经绑定学生转介绍学生绑定关系
-        $bindInfo = StudentInviteModel::getRecord(['student_id' => $studentId, 'app_id' => Constants::SMART_APP_ID, 'referee_type' => StudentInviteModel::REFEREE_TYPE_STUDENT]);
-        if (!empty($bindInfo)) {
-            SimpleLogger::info('has bind student referee student relation', ['bind_info' => $bindInfo]);
+        //检测转介绍关系
+        $hasAgentReferral = self::checkReferralIsAgent($studentId);
+        if (empty($hasAgentReferral)) {
             return false;
         }
         //学员先购买智能年卡，不可绑定
@@ -323,10 +321,24 @@ class AgentAwardService
      */
     private static function checkFormalBindQuality($studentId)
     {
-        //是否已经绑定学生转介绍学生关系
-        $bindInfo = StudentInviteModel::getRecord(['student_id' => $studentId, 'app_id' => Constants::SMART_APP_ID, 'referee_type' => StudentInviteModel::REFEREE_TYPE_STUDENT]);
-        if (!empty($bindInfo)) {
-            SimpleLogger::info('has bind student referee student relation', ['bind_info' => $bindInfo]);
+        //检测转介绍关系
+        $hasAgentReferral = self::checkReferralIsAgent($studentId);
+        if (empty($hasAgentReferral)) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 检测学生转介绍关系:无转介绍关系&代理转介绍返回true，否则返回false
+     * @param $studentId
+     * @return bool
+     */
+    public static function checkReferralIsAgent($studentId)
+    {
+        $referralInfo = StudentInviteModel::getRecord(['student_id' => $studentId, 'app_id' => Constants::SMART_APP_ID, 'referee_type[!]' => StudentInviteModel::REFEREE_TYPE_AGENT]);
+        if ($referralInfo) {
+            SimpleLogger::info('has bind student referee student relation', ['referral_info' => $referralInfo]);
             return false;
         }
         return true;
