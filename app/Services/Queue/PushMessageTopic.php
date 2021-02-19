@@ -27,6 +27,7 @@ class PushMessageTopic extends BaseTopic
     const EVENT_BEFORE_CLASS_TWO   = 'before_class_two_day';// 开班前2天消息
     const EVENT_AFTER_CLASS_ONE    = 'after_class_one_day';// 结班后1天消息
     const EVENT_AIPL_PUSH = 'aipl_push'; // 智能陪练push
+    const EVENT_MONTHLY_PUSH = 'monthly_push'; // 每月1号活动推送
 
     public function __construct($publishTime = null)
     {
@@ -78,6 +79,19 @@ class PushMessageTopic extends BaseTopic
      * @return $this
      */
     public function aiplPush($data, $eventType = self::EVENT_AIPL_PUSH)
+    {
+        $this->setEventType($eventType);
+        $this->setMsgBody($data);
+        return $this;
+    }
+
+    /**
+     * 每月活动推送
+     * @param $data
+     * @param string $eventType
+     * @return $this
+     */
+    public function monthlyPush($data, $eventType = self::EVENT_MONTHLY_PUSH)
     {
         $this->setEventType($eventType);
         $this->setMsgBody($data);

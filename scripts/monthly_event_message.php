@@ -45,7 +45,7 @@ if (empty($total)) {
     SimpleLogger::error('NO DATA', [$where]);
     return;
 }
-$amount = 10000;
+$amount = 1000;
 
 for ($start = 0; $start <= $total; $start += $amount) {
     $where['LIMIT'] = [$start, $amount];

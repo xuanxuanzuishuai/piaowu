@@ -3,6 +3,7 @@ namespace App\Services;
 
 
 use App\Libs\Constants;
+use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Libs\WeChat\WeChatMiniPro;
@@ -17,6 +18,8 @@ use App\Models\WeChatConfigModel;
 
 class PushMessageService
 {
+
+    const MESSAGE_TIMEOUT = 180000; // 微信消息超时时间50小时
     const APPID_BUSI_TYPE_DICT = [
         Constants::SMART_APP_ID => DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER
     ];
@@ -163,8 +166,23 @@ class PushMessageService
         return WeChatMiniPro::factory($appId, self::APPID_BUSI_TYPE_DICT[$appId])->sendTemplateMsg($body);
     }
 
-    public static function notifyUserWeixinTextInfo($appId, $openid, $content)
+    /**
+     * 检查openid最新活跃时间
+     * @param $openId
+     * @return bool
+     */
+    public static function checkLastActiveTime($openId)
     {
-        return WeChatMiniPro::factory($appId, self::APPID_BUSI_TYPE_DICT[$appId])->sendText($openid, $content);
+        if (empty($openId)) {
+            return false;
+        }
+        $redisKey = Constants::DSS_OPENID_LAST_ACTIVE;
+        $redis = RedisDB::getConn($_ENV['DSS_REDIS_DB']);
+        $lastActive = (int)$redis->hget($redisKey, $openId);
+        $now = time();
+        if (!empty($lastActive) && $now - $lastActive <= self::MESSAGE_TIMEOUT) {
+            return true;
+        }
+        return false;
     }
 }

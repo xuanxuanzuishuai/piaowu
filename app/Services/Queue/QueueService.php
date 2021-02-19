@@ -10,9 +10,11 @@ namespace App\Services\Queue;
 
 use App\Libs\DictConstants;
 use App\Libs\SimpleLogger;
+use App\Libs\Util;
 use App\Services\MessageService;
 use App\Services\PushMessageService;
 use Exception;
+
 class QueueService
 {
 
@@ -145,17 +147,18 @@ class QueueService
     {
         try {
             $topic    = new PushMessageTopic();
-            $pushTime = time();
             $deferMax = self::getDeferMax(count($sendArr));
-            array_map(function ($i) use ($topic, $deferMax, $pushTime, $logId, $employeeId, $activityType) {
-                $deferMax += $i['delay_time'];
-                $i['push_wx_time']  = $pushTime;
-                $i['log_id']        = $logId;
-                $i['activity_type'] = $activityType;
-                $i['employee_id']   = $employeeId;
-                $topic->pushManualRuleWx($i)->publish(rand(0, $deferMax));
-            }, $sendArr);
-
+            $now      = time();
+            foreach ($sendArr as $item) {
+                $deferMax += $item['delay_time'];
+                $item['push_wx_time']  = $now;
+                $item['log_id']        = $logId;
+                $item['activity_type'] = $activityType;
+                $item['employee_id']   = $employeeId;
+                if (PushMessageService::checkLastActiveTime($item['open_id'])) {
+                    $topic->pushManualRuleWx($item)->publish(rand(0, $deferMax));
+                }
+            }
         } catch (Exception $e) {
             SimpleLogger::error($e->getMessage(), $msgBody ?? []);
             return false;
@@ -228,11 +231,26 @@ class QueueService
 
     /**
      * 每月活动消息
-     * @param array $openId
+     * @param $openIds
+     * @return bool
      */
-    public static function monthlyEvent($openId)
+    public static function monthlyEvent($openIds)
     {
-        MessageService::monthlyEvent($openId, DictConstants::get(DictConstants::MESSAGE_RULE, 'monthly_event_rule_id'));
+        try {
+            $topic    = new PushMessageTopic();
+            $pushList = [];
+            foreach ($openIds as $openId) {
+                if (PushMessageService::checkLastActiveTime($openId)) {
+                    $pushList[] = $openId;
+                }
+            }
+            if (!empty($pushList)) {
+                $topic->monthlyPush($pushList)->publish();
+            }
+        } catch (Exception $e) {
+            return false;
+        }
+        return true;
     }
 
     /**

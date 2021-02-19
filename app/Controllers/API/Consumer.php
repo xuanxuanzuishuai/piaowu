@@ -232,8 +232,13 @@ class Consumer extends ControllerBase
                 case PushMessageTopic::EVENT_UNSUBSCRIBE:
                     MessageService::clearMessageRuleLimit($params['msg_body']['open_id']);
                     break;
+
                 case PushMessageTopic::EVENT_AIPL_PUSH:
                     TPNS::push($params['msg_body']);
+                    break;
+
+                case PushMessageTopic::EVENT_MONTHLY_PUSH:
+                    MessageService::monthlyEvent($params['msg_body']);
                     break;
             }
         } catch (RunTimeException $e) {

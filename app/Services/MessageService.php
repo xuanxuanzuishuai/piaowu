@@ -812,8 +812,11 @@ class MessageService
      * @param null $appId
      * @return bool
      */
-    public static function monthlyEvent($openId, $ruleId, $appId = null)
+    public static function monthlyEvent($openId, $ruleId = null, $appId = null)
     {
+        if (empty($ruleId)) {
+            $ruleId = DictConstants::get(DictConstants::MESSAGE_RULE, 'monthly_event_rule_id');
+        }
         if (empty($openId) || empty($ruleId)) {
             return false;
         }
