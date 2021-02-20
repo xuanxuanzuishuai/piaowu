@@ -286,6 +286,7 @@ class Agent extends ControllerBase
         usort($hot['hot'], function ($a, $b) {
             return $a['hot'] > $b['hot'];
         });
+        ksort($list);
         return HttpHelper::buildResponse($response, array_merge($hot, $list));
     }
 

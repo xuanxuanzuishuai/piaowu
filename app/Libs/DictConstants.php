@@ -394,6 +394,7 @@ class DictConstants {
             'channel_individual',
             'channel_offline',
             'channel_dict',
+            'default_thumb',
         ]
     ];
     // 是否

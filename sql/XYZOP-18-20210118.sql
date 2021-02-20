@@ -6,10 +6,11 @@ INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES (
 
 INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`)
 VALUES
-('AGENT_CONFIG', '系统设置', 'channel_distribution', '3095', '代理分销渠道'),
-('AGENT_CONFIG', '系统设置', 'channel_individual', '3096', '代理个人渠道'),
-('AGENT_CONFIG', '系统设置', 'channel_offline', '3097', '代理线下渠道'),
-('AGENT_CONFIG', '系统设置', 'channel_dict', '{"1":3095, "2":3096, "3":3097}', '代理类型渠道字典');
+('AGENT_CONFIG', '代理系统设置', 'channel_distribution', '3095', '代理分销渠道'),
+('AGENT_CONFIG', '代理系统设置', 'channel_individual', '3096', '代理个人渠道'),
+('AGENT_CONFIG', '代理系统设置', 'channel_offline', '3097', '代理线下渠道'),
+('AGENT_CONFIG', '代理系统设置', 'channel_dict', '{"1":3095, "2":3096, "3":3097}', '代理类型渠道字典'),
+('AGENT_CONFIG', '代理系统设置', 'default_thumb', 'prod/thumb/default_thumb_agent.png', '代理默认头像');
 
 CREATE TABLE `user_weixin` (
   `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '主键',

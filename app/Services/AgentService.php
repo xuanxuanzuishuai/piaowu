@@ -481,7 +481,7 @@ class AgentService
     {
         $agentInfo = AgentModel::getByMobile($mobile, $countryCode);
         if (empty($agentInfo)) {
-            throw new RunTimeException(['record_not_found']);
+            throw new RunTimeException(['agent_not_exist']);
         }
         if (empty($userType)) {
             $userType = UserWeiXinModel::USER_TYPE_AGENT;
@@ -564,7 +564,7 @@ class AgentService
             return [];
         }
         $insertData = [
-            'name' => $data['name'],
+            'name' => Util::filterEmoji($data['name']),
             'mobile' => $mobile,
             'country_code' => $countryCode,
             'create_time' => time(),
@@ -808,7 +808,7 @@ class AgentService
         //缓存中获取信息
         $redisHashKey  = UserWeiXinInfoModel::REDIS_HASH_USER_WEIXIN_INFO_PREFIX.date("Y-m-d");
         $defaultNickname = DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_wx_nickname');
-        $defaultThumb = AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb'));
+        $defaultThumb = AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::AGENT_CONFIG, 'default_thumb'));
         foreach ($userList as $uInfo) {
             $hashField = $appid . '_' . $busi_type . '_' . $uInfo['open_id'];
             //缓存不存在
