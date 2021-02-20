@@ -130,7 +130,8 @@ class PushMessageService
     public static function notifyUserCustomizeMessage($id, $replaceParams, $openId, $appId)
     {
         $weChatConfigInfo = WeChatConfigModel::getById($id);
-        if($weChatConfigInfo['content_type'] == WeChatConfigModel::CONTENT_TYPE_TEMPLATE) {
+        SimpleLogger::info("send wx red pack notifyUserCustomizeMessage config info >>> ", ['info' => $weChatConfigInfo]);
+        if ($weChatConfigInfo['content_type'] == WeChatConfigModel::CONTENT_TYPE_TEMPLATE) {
             //模版消息
             $templateConfig = json_decode($weChatConfigInfo['content'], true);
             //根据关键标志替换模板内容
@@ -140,6 +141,12 @@ class PushMessageService
             $url = $replaceParams['url'] ?? $templateConfig["url"];
             $res = self::notifyUserWeixinTemplateInfo($appId, $openId, $templateConfig["template_id"], $templateConfig['vars'], $url);
             //返回数据
+            return $res;
+        } elseif ($weChatConfigInfo['content_type'] == WeChatConfigModel::CONTENT_TYPE_TEXT) {
+            //客服消息 - 文本消息
+            $content = Util::pregReplaceTargetStr(Util::textDecode($weChatConfigInfo['content']), $replaceParams);
+            $res = self::notifyUserWeixinTextInfo($appId, $openId, $content);
+            SimpleLogger::info("send wx red pack notifyUserCustomizeMessage res>>>", ['res' => $res]);
             return $res;
         }
     }
@@ -164,6 +171,19 @@ class PushMessageService
         }
         $body['data'] = $content;
         return WeChatMiniPro::factory($appId, self::APPID_BUSI_TYPE_DICT[$appId])->sendTemplateMsg($body);
+    }
+
+    /**
+     * 发送客服文本消息
+     * @param $appId
+     * @param $openid
+     * @param $content
+     * @return false|mixed|string
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
+    public static function notifyUserWeixinTextInfo($appId, $openid, $content)
+    {
+        return WeChatMiniPro::factory($appId, self::APPID_BUSI_TYPE_DICT[$appId])->sendText($openid, $content);
     }
 
     /**
