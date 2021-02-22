@@ -169,9 +169,10 @@ class PushMessageService
     /**
      * 检查openid最新活跃时间
      * @param $openId
+     * @param int $timeout
      * @return bool
      */
-    public static function checkLastActiveTime($openId)
+    public static function checkLastActiveTime($openId, $timeout = self::MESSAGE_TIMEOUT)
     {
         if (empty($openId)) {
             return false;
@@ -180,7 +181,7 @@ class PushMessageService
         $redis = RedisDB::getConn($_ENV['DSS_REDIS_DB']);
         $lastActive = (int)$redis->hget($redisKey, $openId);
         $now = time();
-        if (!empty($lastActive) && $now - $lastActive <= self::MESSAGE_TIMEOUT) {
+        if (!empty($lastActive) && $now - $lastActive <= $timeout) {
             return true;
         }
         return false;

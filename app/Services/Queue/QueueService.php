@@ -125,8 +125,9 @@ class QueueService
                     'employee_id'   => $employeeId,
                     'activity_type' => $activityType
                 ];
-
-                $topic->pushWX($msgBody)->publish(rand(0, $deferMax));
+                if (PushMessageService::checkLastActiveTime($student['open_id'])) {
+                    $topic->pushWX($msgBody)->publish(rand(0, $deferMax));
+                }
             }
 
         } catch (Exception $e) {
@@ -155,9 +156,7 @@ class QueueService
                 $item['log_id']        = $logId;
                 $item['activity_type'] = $activityType;
                 $item['employee_id']   = $employeeId;
-                if (PushMessageService::checkLastActiveTime($item['open_id'])) {
-                    $topic->pushManualRuleWx($item)->publish(rand(0, $deferMax));
-                }
+                $topic->pushManualRuleWx($item)->publish(rand(0, $deferMax));
             }
         } catch (Exception $e) {
             SimpleLogger::error($e->getMessage(), $msgBody ?? []);
