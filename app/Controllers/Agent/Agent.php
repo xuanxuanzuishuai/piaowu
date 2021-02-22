@@ -5,6 +5,7 @@ namespace App\Controllers\Agent;
 use App\Controllers\ControllerBase;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
+use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\AgentOperationLogModel;
 use App\Models\GoodsResourceModel;
@@ -146,6 +147,7 @@ class Agent extends ControllerBase
             ],
         ];
         $params = $request->getParams();
+        $params['name'] = Util::filterEmoji($params['name']);
         $result = Valid::appValidate($params, $rules);
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
@@ -185,6 +187,7 @@ class Agent extends ControllerBase
             ],
         ];
         $params = $request->getParams();
+        $params['name'] = Util::filterEmoji($params['name']);
         $result = Valid::appValidate($params, $rules);
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);

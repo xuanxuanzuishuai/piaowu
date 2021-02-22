@@ -62,7 +62,9 @@ class AgentService
             'country_code' => $params['country_code'],
             'create_time' => $time,
         ];
-        self::checkAddAgentData($agentInsertData);
+        if (self::checkAgentExists($agentInsertData['mobile'], $agentInsertData['country_code'])) {
+            throw new RunTimeException(['agent_have_exist']);
+        }
         //agent_divide_rules数据
         $agentDivideRulesInsertData = [
             'app_id' => $params['app_id'],
@@ -93,28 +95,6 @@ class AgentService
     }
 
     /**
-     * 检测新增代理商数据
-     * @param $agentData
-     * @throws RunTimeException
-     */
-    private static function checkAddAgentData($agentData)
-    {
-        //检测账户是否存在
-        $agentExists = AgentModel::getRecord(['mobile' => $agentData['mobile']], ['id']);
-        if (!empty($agentExists)) {
-            throw new RunTimeException(['agent_have_exist']);
-        }
-        //检测父类是否存在
-        if (!empty($agentData['parent_id'])) {
-            $parentAgent = AgentModel::getRecord(['id' => $agentData['parent_id'], 'status' => AgentModel::STATUS_OK], ['id']);
-            if (empty($parentAgent)) {
-                throw new RunTimeException(['agent_parent_freeze']);
-            }
-        }
-    }
-
-
-    /**
      * 编辑代理商
      * @param $params
      * @param $employeeId
@@ -125,7 +105,7 @@ class AgentService
     {
         $time = time();
         //agent数据
-        $agentExists = AgentModel::getRecords(['OR' => ['id' => $params['agent_id'], 'mobile' => $params['mobile']]], ['id', 'mobile']);
+        $agentExists = AgentModel::getRecords(['OR' => ['id' => $params['agent_id'], 'AND' => ['mobile' => $params['mobile'], 'country_code' => $params['country_code']]]], ['id', 'mobile']);
         if (empty($agentExists)) {
             throw new RunTimeException(['agent_not_exist']);
         }
