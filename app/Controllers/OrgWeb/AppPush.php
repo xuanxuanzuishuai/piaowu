@@ -88,7 +88,7 @@ class AppPush extends ControllerBase
      */
     public function downloadPushUserTemplate(Request $request, Response $response)
     {
-        $url = DictService::getKeyValue(DictConstants::ORG_WEB_CONFIG, 'push_user_template');
+        $url = DictConstants::get(DictConstants::ORG_WEB_CONFIG, 'push_user_template');
         $ossUrl = AliOSS::replaceCdnDomainForDss($url);
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,

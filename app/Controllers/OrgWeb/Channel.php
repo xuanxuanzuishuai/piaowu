@@ -31,11 +31,6 @@ class Channel extends ControllerBase
                 'key' => 'parent_channel_id',
                 'type' => 'required',
                 'error_code' => 'parent_channel_id_is_required'
-            ],
-            [
-                'key' => 'app_id',
-                'type' => 'required',
-                'error_code' => 'app_id_is_required'
             ]
         ];
         $params = $request->getParams();
@@ -43,7 +38,7 @@ class Channel extends ControllerBase
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        $channels = ChannelService::getChannels($params['parent_channel_id'], $params['app_id']);
+        $channels = ChannelService::getChannels($params);
         return $response->withJson([
             'code' => 0,
             'data' => $channels

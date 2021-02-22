@@ -210,12 +210,10 @@ class ThirdPartBillService
                 $thirdIdentityTableName = AgentModel::getTableNameWithDb();
             }
         }
-
-
         $billList = ThirdPartBillModel::list($where, $map, $page, $count, $thirdIdentityTableName);
-        if (!empty($billList['list'])) {
+        if (!empty($billList['records'])) {
             $statusDict = DictConstants::getSet(DictConstants::THIRD_PART_BILL_STATUS);
-            foreach ($billList['list'] as $k => &$v) {
+            foreach ($billList['records'] as $k => &$v) {
                 $v['status_zh'] = $statusDict[$v['status']];
                 $records[$k] = $v;
             }

@@ -16,15 +16,17 @@ class ChannelService
 {
     /**
      * 获取一级、二级渠道列表
-     * @param int $parentId 父类ID
-     * @param $appId
+     * @param $params
      * @return mixed
      */
-    public static function getChannels(int $parentId, int $appId)
+    public static function getChannels($params)
     {
-        $where['parent_id'] = $parentId;
-        $where['app_id'] = $appId;
-        $where['status'] = Constants::STATUS_TRUE;
-        return DssChannelModel::getRecords($where, ['id', 'name']);
+        $where['status'] = (string)Constants::STATUS_TRUE;
+        //业务线ID
+        if (!empty($params['app_id'])) {
+            $where['app_id'] = (int)$params['app_id'];
+        }
+        $where['parent_id'] = (int)$params['parent_channel_id'];
+        return DssChannelModel::getRecords($where, ['id', 'name', 'app_id']);
     }
 }

@@ -1656,7 +1656,29 @@ class AgentService
         if (!empty($params['name'])) {
             $where[AgentModel::$table . '.name[~]'] = $params['name'];
         }
-        $agentList = AgentModel::getRecords($where,['name', 'id']);
+        $agentType = 0;
+        if (!empty($params['channel_id'])) {
+            $agentType = self::getAgentTypeByChannel($params['channel_id']);
+        }
+        if (!empty($params['type']) || !empty($agentType)) {
+            $where[AgentModel::$table . '.type'] = [$params['type'], $agentType];
+        }
+        $agentList = AgentModel::getRecords($where, ['name', 'id']);
         return $agentList;
+    }
+
+    /**
+     * 查询代理商代理模式通过渠道ID
+     * @param $channelId
+     * @return mixed
+     */
+    public static function getAgentTypeByChannel($channelId)
+    {
+        $channelTypeMap = DictConstants::get(DictConstants::AGENT_CONFIG, 'channel_dict');
+        $config = json_decode($channelTypeMap, true);
+        if (!empty($config)) {
+            $config = array_flip($config);
+        }
+        return empty($config[$channelId]) ? 0 : (int)$config[$channelId];
     }
 }

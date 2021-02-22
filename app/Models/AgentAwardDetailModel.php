@@ -160,13 +160,6 @@ class AgentAwardDetailModel extends Model
      */
     public static function getDetailByParentBillId($parentBillId)
     {
-        $db = MysqlDB::getDB();
-        $sql = 'SELECT
-                    id 
-                FROM
-                    ' . self::$table . ' 
-                WHERE
-                     ext->>"$.parent_bill_id"="' . $parentBillId . '"';
-        return $db->queryAll($sql);
+        return self::getRecord(['ext_parent_bill_id' => $parentBillId], ['id']);
     }
 }
