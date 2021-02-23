@@ -544,7 +544,7 @@ class AgentService
             return [];
         }
         $insertData = [
-            'name' => Util::filterEmoji($data['name']),
+            'name' => Util::textEncode($data['name']),
             'mobile' => $mobile,
             'country_code' => $countryCode,
             'create_time' => time(),
@@ -1015,7 +1015,7 @@ class AgentService
         $agentInfo['config']     = self::popularMaterialInfo();
         $agentInfo['parent']     = AgentModel::getRecord(['id' => $agentInfo['parent_id']]);
         $agentInfo['show_status'] = self::getAgentStatus($agentInfo);
-        $agentInfo['mobile'] = Util::hideUserMobile($agentInfo['mobile'] ?? '');
+        $agentInfo = self::formatFrontAgentData($agentInfo);
         return $agentInfo;
     }
 
@@ -1047,7 +1047,7 @@ class AgentService
             throw new RunTimeException(['agent_have_exist_front']);
         }
         $data = [
-            'name'         => $params['name'],
+            'name'         => Util::textEncode($params['name']),
             'mobile'       => $params['mobile'],
             'country_id'   => $params['country_id'] ?? 0,
             'parent_id'    => $agentId,
@@ -1078,7 +1078,7 @@ class AgentService
             throw new RunTimeException(['agent_have_exist_front']);
         }
         $data = [
-            'name'         => $params['name'],
+            'name'         => Util::textEncode($params['name']),
             'mobile'       => $params['mobile'],
             'country_code' => $params['country_code'] ?? NewSMS::DEFAULT_COUNTRY_CODE,
         ];
@@ -1095,7 +1095,22 @@ class AgentService
         if (empty($agentId)) {
             return [];
         }
-        return AgentModel::getById($agentId);
+        return self::formatFrontAgentData(AgentModel::getById($agentId));
+    }
+
+    /**
+     * 前端用：格式化数据
+     * @param $info
+     * @return array
+     */
+    public static function formatFrontAgentData($info)
+    {
+        if (empty($info)) {
+            return [];
+        }
+        $info['mobile'] = Util::hideUserMobile($info['mobile'] ?? '');
+        $info['name'] = Util::textDecode($info['name'] ?? '');
+        return $info;
     }
 
     /**
@@ -1117,7 +1132,7 @@ class AgentService
         if (empty($parent)) {
             throw new RunTimeException(['record_not_found']);
         }
-        return $parent;
+        return self::formatFrontAgentData($parent);
     }
 
     /**
@@ -1160,6 +1175,7 @@ class AgentService
         foreach ($records as &$record) {
             $record['create_time_show'] = Util::formatTimestamp($record['create_time']);
             $record['status_show']      = AgentModel::STATUS_DICT[$record['status']] ?? $record['status'];
+            $record['name']             = Util::textDecode($record['name']);
         }
         return $records;
     }
@@ -1416,6 +1432,9 @@ class AgentService
             ];
         }
         $list = AgentApplicationModel::getRecords($where, ['id', 'name', 'mobile', 'create_time' => Medoo::raw('FROM_UNIXTIME(<create_time>)'), 'remark']);
+        foreach ($list as &$item) {
+            $item['name'] = Util::textDecode($item['name']);
+        }
         return [
             'list'       => $list,
             'totalCount' => $count

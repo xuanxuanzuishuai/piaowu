@@ -147,7 +147,6 @@ class Agent extends ControllerBase
             ],
         ];
         $params = $request->getParams();
-        $params['name'] = Util::filterEmoji($params['name']);
         $result = Valid::appValidate($params, $rules);
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
@@ -187,7 +186,6 @@ class Agent extends ControllerBase
             ],
         ];
         $params = $request->getParams();
-        $params['name'] = Util::filterEmoji($params['name']);
         $result = Valid::appValidate($params, $rules);
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
