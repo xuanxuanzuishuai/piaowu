@@ -2,6 +2,7 @@
 
 namespace App\Libs;
 
+use App\Libs\Exceptions\RunTimeException;
 use App\Services\DictService;
 
 /**
@@ -655,6 +656,33 @@ class Util
             },
             $text);
         return $clean_text;
+    }
+
+    /**
+     * @param $input
+     * @param false $throwError
+     * @return false
+     * @throws RunTimeException
+     */
+    public static function containEmoji($input, $throwError = false)
+    {
+        if (empty($input)) {
+            return false;
+        }
+        $contain = false;
+        $contain = preg_replace_callback(
+            '/./u',
+            function (array $match) use (&$contain) {
+                if (strlen($match[0]) >=4 && !$contain) {
+                    return true;
+                }
+            },
+            $input
+        );
+        if ($contain && $throwError) {
+            throw new RunTimeException(['emoji_not_allowed']);
+        }
+        return $contain;
     }
 
     /**

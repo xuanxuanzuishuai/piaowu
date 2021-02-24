@@ -544,7 +544,7 @@ class AgentService
             return [];
         }
         $insertData = [
-            'name' => Util::textEncode($data['name']),
+            'name' => $data['name'],
             'mobile' => $mobile,
             'country_code' => $countryCode,
             'create_time' => time(),
@@ -1047,7 +1047,7 @@ class AgentService
             throw new RunTimeException(['agent_have_exist_front']);
         }
         $data = [
-            'name'         => Util::textEncode($params['name']),
+            'name'         => $params['name'],
             'mobile'       => $params['mobile'],
             'country_id'   => $params['country_id'] ?? 0,
             'parent_id'    => $agentId,
@@ -1078,7 +1078,7 @@ class AgentService
             throw new RunTimeException(['agent_have_exist_front']);
         }
         $data = [
-            'name'         => Util::textEncode($params['name']),
+            'name'         => $params['name'],
             'mobile'       => $params['mobile'],
             'country_code' => $params['country_code'] ?? NewSMS::DEFAULT_COUNTRY_CODE,
         ];

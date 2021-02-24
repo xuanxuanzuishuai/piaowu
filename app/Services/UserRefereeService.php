@@ -179,7 +179,8 @@ class UserRefereeService
      * @param $buyPreStudentInfo
      * @param $packageInfo
      * @param $appId
-     * @param int $parentBillId     主订单ID
+     * @param int $parentBillId 主订单ID
+     * @return bool
      * @throws RunTimeException
      */
     public static function buyDeal($buyPreStudentInfo, $packageInfo, $appId, $parentBillId)
@@ -187,13 +188,17 @@ class UserRefereeService
         if ($appId == Constants::SMART_APP_ID) {
             // 查询代理商绑定关系
             $agentId = AgentService::checkBillIsAgentReferral($buyPreStudentInfo['id'], $parentBillId, $packageInfo['package_type']);
+            $flag = RefereeAwardService::dssShouldCompleteEventTask($buyPreStudentInfo, $parentBillId);
+            if (!$flag) {
+                return false;
+            }
             if ($agentId) {
                 //代理商分享购买
-                AgentAwardService::agentReferralBillAward($agentId, $buyPreStudentInfo, $packageInfo['package_type'], $packageInfo, $parentBillId);
-            } else {
-                self::dssBuyDeal($buyPreStudentInfo, $packageInfo);
+                return AgentAwardService::agentReferralBillAward($agentId, $buyPreStudentInfo, $packageInfo['package_type'], $packageInfo, $parentBillId);
             }
+            self::dssBuyDeal($buyPreStudentInfo, $packageInfo);
         }
+        return true;
     }
 
     /**
@@ -204,10 +209,7 @@ class UserRefereeService
      */
     public static function dssBuyDeal($buyPreStudentInfo, $packageInfo)
     {
-        // 是否发奖
-        if (RefereeAwardService::dssShouldCompleteEventTask($buyPreStudentInfo, $packageInfo)) {
-            self::dssCompleteEventTask($buyPreStudentInfo['id'], $packageInfo['package_type'], $packageInfo['trial_type'], $packageInfo['app_id']);
-        }
+        self::dssCompleteEventTask($buyPreStudentInfo['id'], $packageInfo['package_type'], $packageInfo['trial_type'], $packageInfo['app_id']);
     }
 
 

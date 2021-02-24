@@ -14,6 +14,7 @@ use App\Libs\HttpHelper;
 use App\Libs\NewSMS;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
+use App\Libs\Util;
 use App\Libs\Valid;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\UserWeiXinModel;
@@ -236,6 +237,7 @@ class Auth extends ControllerBase
             return $response->withJson(Valid::addAppErrors([], 'validate_code_error'), StatusCode::HTTP_OK);
         }
         try {
+            Util::containEmoji($params['name'], true);
             AgentService::addApplication($params);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());

@@ -8,7 +8,6 @@ use App\Libs\HttpHelper;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\AgentOperationLogModel;
-use App\Models\GoodsResourceModel;
 use App\Services\AgentService;
 use App\Services\CommonServiceForApp;
 use Slim\Http\Request;
@@ -152,6 +151,7 @@ class Agent extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         try {
+            Util::containEmoji($params['name'], true);
             $userInfo = $this->ci['user_info'];
             AgentService::secAgentAdd($userInfo['user_id'], $params);
         } catch (RunTimeException $e) {
@@ -191,6 +191,7 @@ class Agent extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         try {
+            Util::containEmoji($params['name'], true);
             $data = AgentService::secAgentUpdate($params['agent_id'], $params);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
