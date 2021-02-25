@@ -6,9 +6,7 @@ use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
-use App\Libs\UserCenter;
 use App\Models\AgentAwardDetailModel;
-use App\Models\AgentUserModel;
 use App\Models\Dss\DssPackageExtModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserQrTicketModel;
@@ -188,10 +186,6 @@ class UserRefereeService
         if ($appId == Constants::SMART_APP_ID) {
             // 查询代理商绑定关系
             $agentId = AgentService::checkBillIsAgentReferral($buyPreStudentInfo['id'], $parentBillId, $packageInfo['package_type']);
-            $flag = RefereeAwardService::dssShouldCompleteEventTask($buyPreStudentInfo, $parentBillId);
-            if (!$flag) {
-                return false;
-            }
             if ($agentId) {
                 //代理商分享购买
                 return AgentAwardService::agentReferralBillAward($agentId, $buyPreStudentInfo, $packageInfo['package_type'], $packageInfo, $parentBillId);
@@ -209,7 +203,9 @@ class UserRefereeService
      */
     public static function dssBuyDeal($buyPreStudentInfo, $packageInfo)
     {
-        self::dssCompleteEventTask($buyPreStudentInfo['id'], $packageInfo['package_type'], $packageInfo['trial_type'], $packageInfo['app_id']);
+        if (RefereeAwardService::dssShouldCompleteEventTask($buyPreStudentInfo, $packageInfo)) {
+            self::dssCompleteEventTask($buyPreStudentInfo['id'], $packageInfo['package_type'], $packageInfo['trial_type'], $packageInfo['app_id']);
+        }
     }
 
 

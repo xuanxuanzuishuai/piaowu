@@ -139,6 +139,9 @@ class AgentAwardService
         if ($bindQuality === false) {
             return false;
         }
+        if ($packageInfo['app_id'] != Constants::SMART_APP_ID) {
+            return false;
+        }
         //奖励
         $bindData = [];
         $awardData = [
