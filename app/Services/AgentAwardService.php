@@ -15,6 +15,8 @@ use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
 use App\Models\AgentAwardDetailModel;
 use App\Models\AgentUserModel;
+use App\Models\Dss\DssGiftCodeModel;
+use App\Models\Dss\DssPackageExtModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\StudentInviteModel;
 
@@ -304,7 +306,9 @@ class AgentAwardService
         }
         //学员先购买智能年卡，不可绑定
         $studentInfo = DssStudentModel::getById($studentId);
-        if ($studentInfo['has_review_course'] != DssStudentModel::REVIEW_COURSE_49) {
+        $buyDss = DssGiftCodeModel::hadPurchasePackageByType($studentId, DssPackageExtModel::PACKAGE_TYPE_NORMAL);
+        if ($studentInfo['has_review_course'] != DssStudentModel::REVIEW_COURSE_49
+            && count($buyDss) >=1) {
             SimpleLogger::info('not an experience class to buy first', []);
             return false;
         }
