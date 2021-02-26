@@ -1393,7 +1393,7 @@ class AgentService
             $rv['student_mobile'] = Util::hideUserMobile($studentListDetail[$rv['student_id']]['mobile']);
             $rv['bill_amount'] = $rv['bill_amount'] / 100;
             $rv['type_name'] = $dict[DictConstants::AGENT_TYPE['type']][$rv['type']]['value'];
-            $rv['code_status_name'] = ($rv['code_status'] == DssGiftCodeModel::CODE_STATUS_INVALID) ? "已退费" : "已处理";
+            $rv['code_status_name'] = ($rv['code_status'] == DssGiftCodeModel::CODE_STATUS_INVALID) ? "已退款" : "已支付";
             $rv['app_id_name'] = $dict[DictConstants::PACKAGE_APP_NAME['type']][$rv['app_id']]['value'];
             $rv['is_bind_name'] = $dict[DictConstants::YSE_OR_NO_STATUS['type']][$rv['is_bind']]['value'];
             unset($rv['second_agent_id']);
