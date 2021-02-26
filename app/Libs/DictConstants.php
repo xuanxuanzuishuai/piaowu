@@ -327,6 +327,8 @@ class DictConstants {
         'type' => 'REFERRAL_CONFIG',
         'keys' => [
             'new_rule_start_time', // 新规则启用时间
+            'normal_task_config', // 买年卡，根据人数决定奖励
+            'task_stop_change_number', // 买年卡，超过多少人后奖励不再变化。ex:第6个及以后都是相同奖励
         ]
     ];
 

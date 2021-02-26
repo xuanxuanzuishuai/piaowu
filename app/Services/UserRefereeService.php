@@ -233,7 +233,7 @@ class UserRefereeService
         }
         $refereeInfo = DssStudentModel::getRecord(['id' => $refereeRelation['referee_id']]);
 
-        $refTaskId = self::getTaskIdByType($packageType, $trialType, $refereeInfo['has_review_course'], $appId);
+        $refTaskId = self::getTaskIdByType($packageType, $trialType, $refereeInfo, $appId);
 
         $studentInfo = DssStudentModel::getById($studentId);
         if (!empty($refTaskId)) {
@@ -251,41 +251,46 @@ class UserRefereeService
      * 根据购买类型获取对应任务ID
      * @param $packageType
      * @param $trialType
-     * @param $hasReviewCourse
+     * @param $refereeInfo
      * @param $appId
      * @return int|string
      */
-    public static function getTaskIdByType($packageType, $trialType, $hasReviewCourse, $appId)
+    public static function getTaskIdByType($packageType, $trialType, $refereeInfo, $appId)
     {
-        // 旧规则起始点：
-        $index = 1;
-        // 新规则是否启用：
-        $startTime = DictConstants::get(DictConstants::REFERRAL_CONFIG, "new_rule_start_time");
-        if ($startTime <= time()) {
-            if ($packageType == DssPackageExtModel::PACKAGE_TYPE_TRIAL) {
+        // 推荐人当前状态：非付费正式课：
+        if ($refereeInfo['has_review_course'] != DssStudentModel::REVIEW_COURSE_1980) {
+            if ($packageType == DssPackageExtModel::PACKAGE_TYPE_TRIAL
+                && in_array($trialType, [DssPackageExtModel::TRIAL_TYPE_49, DssPackageExtModel::TRIAL_TYPE_9])) {
+                // DSSCRM-1841: 奖励推荐人1元：
                 return RefereeAwardService::getDssTrailPayTaskId();
             } else {
+                // DSSCRM-1841: 奖励推荐人168元，被推荐人50元：
                 return RefereeAwardService::getDssYearPayTaskId();
             }
         } else {
             if ($packageType == DssPackageExtModel::PACKAGE_TYPE_TRIAL
-            && in_array($trialType, [DssPackageExtModel::TRIAL_TYPE_49, DssPackageExtModel::TRIAL_TYPE_9])) {
-                if (in_array($hasReviewCourse, [DssStudentModel::REVIEW_COURSE_1980])) {
-                    return RefereeAwardService::getDssTrailPayTaskId($index + 1);
-                } else {
-                    return RefereeAwardService::getDssTrailPayTaskId($index);
+                && in_array($trialType, [DssPackageExtModel::TRIAL_TYPE_49, DssPackageExtModel::TRIAL_TYPE_9])) {
+                // DSSCRM-1841: 奖励推荐人1元：
+                return RefereeAwardService::getDssTrailPayTaskId();
+            } else {
+                // 年卡：
+                // 查询当前被推荐人是第几个：
+                // 根据个数决定奖励
+                $refereeCount = StudentInviteModel::getCount(['referee_id' => $refereeInfo['id'], 'app_id' => $appId, 'referee_type' => StudentInviteModel::REFEREE_TYPE_STUDENT]);
+                if (empty($refereeCount)) {
+                    return 0;
                 }
-            } elseif ($packageType == DssPackageExtModel::PACKAGE_TYPE_NORMAL) {
-                if ($appId == DssPackageExtModel::APP_AI) {
-                    if (in_array($hasReviewCourse, [DssStudentModel::REVIEW_COURSE_1980])) {
-                        // 若用户（推荐人）当前阶段为“付费正式课”
-                        return RefereeAwardService::getDssYearPayTaskId($index + 1);
-                    } else {
-                        return RefereeAwardService::getDssYearPayTaskId($index);
-                    }
+                $noChangeNumber = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'task_stop_change_number');
+                if ($refereeCount > $noChangeNumber) {
+                    $refereeCount = $noChangeNumber;
                 }
+                $config = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'normal_task_config');
+                $config = json_decode($config, true);
+                if (empty($config)) {
+                    SimpleLogger::error("EMPTY REFEREE TASK CONFIG", [$config]);
+                }
+                return $config[$refereeCount] ?? 0;
             }
         }
-        return 0;
     }
 }
