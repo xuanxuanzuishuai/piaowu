@@ -28,6 +28,7 @@ use App\Models\AgentUserModel;
 use App\Models\AreaCityModel;
 use App\Models\AreaProvinceModel;
 use App\Models\Dss\DssDictModel;
+use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssPackageExtModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
@@ -1321,7 +1322,11 @@ class AgentService
         //订单状态 支付时间
         $giftCodeWhere = ' ';
         if (!empty($params['code_status'])) {
-            $giftCodeWhere .= ' AND gc.code_status=' . $params['code_status'];
+            if ($params['code_status'] != DssGiftCodeModel::CODE_STATUS_INVALID) {
+                $giftCodeWhere .= ' AND gc.code_status !=' . DssGiftCodeModel::CODE_STATUS_INVALID;
+            } else {
+                $giftCodeWhere .= ' AND gc.code_status=' . DssGiftCodeModel::CODE_STATUS_INVALID;
+            }
         }
         if (!empty($params['pay_start_time'])) {
             $giftCodeWhere .= ' AND gc.create_time>=' . $params['pay_start_time'];
@@ -1388,7 +1393,7 @@ class AgentService
             $rv['student_mobile'] = Util::hideUserMobile($studentListDetail[$rv['student_id']]['mobile']);
             $rv['bill_amount'] = $rv['bill_amount'] / 100;
             $rv['type_name'] = $dict[DictConstants::AGENT_TYPE['type']][$rv['type']]['value'];
-            $rv['code_status_name'] = $dict[DictConstants::CODE_STATUS['type']][$rv['code_status']]['value'];
+            $rv['code_status_name'] = ($rv['code_status'] == DssGiftCodeModel::CODE_STATUS_INVALID) ? "已退费" : "已处理";
             $rv['app_id_name'] = $dict[DictConstants::PACKAGE_APP_NAME['type']][$rv['app_id']]['value'];
             $rv['is_bind_name'] = $dict[DictConstants::YSE_OR_NO_STATUS['type']][$rv['is_bind']]['value'];
             unset($rv['second_agent_id']);
