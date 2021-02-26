@@ -28,8 +28,10 @@ class DssStudentModel extends DssModel
      */
     public static function getInviteList($params)
     {
-        $where = ' where 1=1 ';
-        $map = [];
+        $where = ' where si.referee_type=:referee_type';
+        $map = [
+            ':referee_type' => StudentInviteModel::REFEREE_TYPE_STUDENT
+        ];
         if (!empty($params['referral_mobile'])) {
             $where .= ' and r.mobile like :referral_mobile ';
             $map[':referral_mobile'] = "{$params['referral_mobile']}%";
