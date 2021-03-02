@@ -18,15 +18,21 @@ class ErpEventTaskModel extends ErpModel
     const BUY = 4; //购买
     const COMMUNITY_DURATION_POSTER = 6; //课时达标且审核通过
     const REISSUE_AWARD = 13; //补发红包
+
     /**
      * 检测任务奖励完成状态
-     * @param $userId
-     * @param $eventId
+     * @param int $userId       用户ID
+     * @param int $eventId      事件ID
+     * @param array $taskIds      任务ID
      * @return array|null
      */
-    public static function checkUserTaskAwardStatus($userId, $eventId)
+    public static function checkUserTaskAwardStatus($userId, $eventId, $taskIds)
     {
         $db = self::dbRO();
+        $taskIdWhere = '';
+        if (!empty($taskIds)) {
+            $taskIdWhere = ' AND uet.id in (' . implode(',', $taskIds) . ')';
+        }
         $sql = 'SELECT
                     ue.user_id,
                     ueta.status as "award_status",
@@ -39,7 +45,7 @@ class ErpEventTaskModel extends ErpModel
                     AND ue.user_id = ' . $userId . '
                     LEFT JOIN ' . ErpUserEventTaskAwardModel::$table . ' AS ueta ON ue.id = ueta.uet_id 
                 WHERE
-                    uet.event_id = ' . $eventId;
+                    uet.event_id = ' . $eventId . $taskIdWhere;
         return $db->queryAll($sql);
     }
 

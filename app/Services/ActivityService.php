@@ -17,7 +17,6 @@ use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\Dss\DssAiPlayRecordCHModel;
 use App\Models\Dss\DssCollectionModel;
-use App\Models\Dss\DssPackageExtModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Erp\ErpEventTaskModel;
 use App\Models\Erp\ErpStudentModel;
@@ -52,7 +51,7 @@ class ActivityService
                 'activity_id' => $activityData['event_id'],
                 'image_path' => $imagePath,
                 //节点id，节点序号，有效期
-                'ext' => json_encode(['node_order' => $nodeData[$nodeId]['node_order'], 'node_id' => $nodeId, 'valid_time' => $nodeData[$nodeId]['node_end']]),
+                'ext' => json_encode(['node_order' => $nodeData[$nodeId]['node_order'], 'node_id' => $nodeId]),
                 'create_time' => $time,
             ];
             $dbRes = SharePosterModel::insertRecord($insertData);
@@ -86,9 +85,6 @@ class ActivityService
         $activityData = self::signInActivityData($studentData['collection_id'], $time);
         if (empty($activityData)) {
             throw new RunTimeException(['sign_in_activity_empty']);
-        }
-        if ($activityData['activity_end_time'] < $time) {
-            throw new RunTimeException(['sign_in_activity_end']);
         }
         if ($activityData['activity_start_time'] > $time) {
             throw new RunTimeException(['sign_in_activity_un_start']);
@@ -144,8 +140,12 @@ class ActivityService
      */
     private static function taskAwardCompleteStatus($studentUuId, $eventId)
     {
+        //获取学生数据
         $erpStudentData = ErpStudentModel::getRecord(['uuid' => $studentUuId], ['id']);
-        $awardData = ErpEventTaskModel::checkUserTaskAwardStatus($erpStudentData['id'], $eventId);
+        //获取活动task列表
+        $taskIds = DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'task_ids');
+        $taskIds = json_decode($taskIds, true);
+        $awardData = ErpEventTaskModel::checkUserTaskAwardStatus($erpStudentData['id'], $eventId, $taskIds);
         $awardCompleteData = [];
         foreach ($awardData as $award) {
             if (is_null($award['user_id'])) {
@@ -157,8 +157,6 @@ class ActivityService
             } else {
                 $awardStatus = ErpUserEventTaskAwardModel::STATUS_GIVE;
             }
-            $awardCompleteStatus['task_name'] = $award['task_name'];
-            $awardCompleteStatus['task_desc'] = $award['task_desc'];
             $awardCompleteData[] = [
                 'award_status' => $awardStatus,
                 'task_name' => $award['task_name'],
@@ -184,9 +182,10 @@ class ActivityService
             ($collectionData['event_id'] != DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'collection_event_id'))) {
             return $activityData;
         }
-        //班级打卡是否在有效期
+        //班级打卡是否已开始:由于2021.3.2规则改动不再考虑截止时间，但是之前的活动使用旧规则依然考虑活动截止时间
+        $dividingLineTime = DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG,'new_old_rule_dividing_line_time');
         $activityEndTime = strtotime("+7 day", $collectionData['teaching_start_time'] - 1);
-        if (($time > $activityEndTime) || ($time < $collectionData['teaching_start_time'])) {
+        if (($time > $activityEndTime && $activityEndTime <= $dividingLineTime) || ($time < $collectionData['teaching_start_time'])) {
             SimpleLogger::error("activity status error ", ['teaching_start_time' => $collectionData['teaching_start_time']]);
         } else {
             $activityData = [
@@ -218,7 +217,6 @@ class ActivityService
             $nodeData[$nodeId] = [
                 'node_id' => $nodeId,
                 'node_start' => strtotime("+9 hours", $nodeTime),//节点解锁时间
-                'node_end' => strtotime("+33 hours", $nodeTime),//节点截止时间
                 'node_order' => $nodeOrder,//节点序号
                 'node_play_date' => date("Y-m-d", $nodeTime - Util::TIMESTAMP_ONEDAY),//节点练琴数据统计日期
             ];
@@ -257,7 +255,6 @@ class ActivityService
             $node['poster_id'] = $node['verify_time'] = 0;
             $node['image_path'] = $node['verify_reason'] = '';
             if (!empty($posterData[$node['node_id']])) {
-                $node['node_end'] = $posterData[$node['node_id']]['valid_time'];//重新计算节点有效期
                 $node['poster_id'] = $posterData[$node['node_id']]['id'];
                 $node['image_path'] = AliOSS::signUrls($posterData[$node['node_id']]['image_path']);
                 $node['verify_time'] = $posterData[$node['node_id']]['verify_time'];
@@ -273,7 +270,7 @@ class ActivityService
             } elseif ((!empty($posterData[$node['node_id']])) && $posterData[$node['node_id']]['verify_status'] == SharePosterModel::VERIFY_STATUS_WAIT) {
                 //审核中
                 $node['node_status'] = SharePosterModel::NODE_STATUS_VERIFY_ING;
-            } elseif (($node['node_start'] <= $time) && ($node['node_end'] >= $time)) {
+            } else {
                 if (empty($playRecordData[$node['node_play_date']])) {
                     //未练琴
                     $node['node_status'] = SharePosterModel::NODE_STATUS_UN_PLAY;
@@ -284,9 +281,6 @@ class ActivityService
                     //审核失败
                     $node['node_status'] = SharePosterModel::NODE_STATUS_VERIFY_UNQUALIFIED;
                 }
-            } else {
-                //已过期
-                $node['node_status'] = SharePosterModel::NODE_STATUS_EXPIRED;
             }
             $nodeSignData['list'][$node['node_id']] = $node;
         }, $nodeData);

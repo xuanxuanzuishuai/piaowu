@@ -320,6 +320,7 @@ class DictConstants {
             'max_name_length',
             'day_channel',
             'day_poster_config',
+            'new_old_rule_dividing_line_time',
         ],
     ];
     // 转介绍相关配置
