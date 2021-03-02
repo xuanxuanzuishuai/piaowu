@@ -65,13 +65,13 @@ class ThirdPartBillService
                     $invalidMobiles[] = $v;
                 }
             }
-            if (count($invalidMobiles) > 0) {
-                throw new RunTimeException(['invalid_mobile', 'import'], ['list' => $invalidMobiles]);
-            }
         } catch (\Exception $e) {
-            throw new RunTimeException([$e->getMessage()]);
+            throw new RunTimeException(['excel_factory_error','import']);
         }
 
+        if (count($invalidMobiles) > 0) {
+            throw new RunTimeException(['invalid_mobile', 'import'], ['list' => $invalidMobiles]);
+        }
         // 检查数据是否为空
         if (count($data) == 0) {
             throw new RunTimeException(['data_can_not_be_empty', 'import']);
@@ -272,7 +272,7 @@ class ThirdPartBillService
             'uuid' => $student['uuid'],
             'package_id' => $params['package_id'],
             'pay_time' => $params['pay_time'],
-            'description' => 'DSS表格导入订单',
+            'description' => '运营系统表格导入订单',
             'trade_no' => $params['trade_no'],
             'pay_channel' => $params['pay_channel'],
             'app_id' => $appId,
