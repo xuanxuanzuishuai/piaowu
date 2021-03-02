@@ -276,7 +276,8 @@ class UserRefereeService
                 // 年卡：
                 // 查询当前被推荐人是第几个：
                 // 根据个数决定奖励
-                $refereeCount = StudentInviteModel::getCount(['referee_id' => $refereeInfo['id'], 'app_id' => $appId, 'referee_type' => StudentInviteModel::REFEREE_TYPE_STUDENT]);
+                $startPoint = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'new_rule_start_time');
+                $refereeCount = StudentInviteModel::getCount(['referee_id' => $refereeInfo['id'], 'app_id' => $appId, 'referee_type' => StudentInviteModel::REFEREE_TYPE_STUDENT, 'create_time[>=]' => $startPoint]);
                 if (empty($refereeCount)) {
                     return 0;
                 }
