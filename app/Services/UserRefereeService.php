@@ -232,6 +232,7 @@ class UserRefereeService
             return;
         }
         $refereeInfo = DssStudentModel::getRecord(['id' => $refereeRelation['referee_id']]);
+        $refereeInfo['student_id'] = $studentId;
 
         $refTaskId = self::getTaskIdByType($packageType, $trialType, $refereeInfo, $appId);
 
@@ -276,10 +277,21 @@ class UserRefereeService
                 // 年卡：
                 // 查询当前被推荐人是第几个：
                 // 根据个数决定奖励
-                $startPoint = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'new_rule_start_time');
-                $refereeCount = StudentInviteModel::getCount(['referee_id' => $refereeInfo['id'], 'app_id' => $appId, 'referee_type' => StudentInviteModel::REFEREE_TYPE_STUDENT, 'create_time[>=]' => $startPoint]);
-                if (empty($refereeCount)) {
+                $startPoint = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'dsscrm_1841_start_time');
+                $refereeData = StudentInviteModel::getRefereeBuyData(['referee_id' => $refereeInfo['id'], 'app_id' => $appId, 'referee_type' => StudentInviteModel::REFEREE_TYPE_STUDENT, 'create_time' => $startPoint]);
+                if (empty($refereeData)) {
                     return 0;
+                }
+                // 被推荐人个数
+                $refereeCount = 0;
+                foreach ($refereeData as $item) {
+                    if ($item['create_time'] >= $startPoint) {
+                        $refereeCount++;
+                    }
+                    // 筛选到当前被推荐人时停止计数
+                    if ($item['buyer'] == $refereeInfo['student_id']) {
+                        break;
+                    }
                 }
                 $noChangeNumber = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'task_stop_change_number');
                 if ($refereeCount > $noChangeNumber) {

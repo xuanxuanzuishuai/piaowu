@@ -42,9 +42,8 @@ UPDATE `dict` SET `key_value` = concat(@year_task_id, ',', key_value) WHERE `key
 INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`)
 VALUES
 ('REFERRAL_CONFIG', '转介绍配置', 'task_stop_change_number', 6, '超过多少人后奖励不再变化'),
-('REFERRAL_CONFIG', '转介绍配置', 'normal_task_config', '{\"1\":327, \"2\":328, \"3\":329, \"4\":329, \"5\":329, \"6\":330}', '年卡推荐人数对应任务');
--- 年卡推荐人数计算起始点：
-UPDATE `dict` set key_value = '1614528000' where type = 'REFERRAL_CONFIG' and key_code = 'new_rule_start_time';
+('REFERRAL_CONFIG', '转介绍配置', 'normal_task_config', '{\"1\":327, \"2\":328, \"3\":329, \"4\":329, \"5\":329, \"6\":330}', '年卡推荐人数对应任务'),
+('REFERRAL_CONFIG', '转介绍配置', 'dsscrm_1841_start_time', '1614528000', '转介绍新规则起始时间');
 
 
 -- 修改对应task的wechat_config消息task_id
