@@ -198,6 +198,11 @@ class DictConstants {
         'keys' => [0, 1, 2, 3]
     ];
 
+    const SHARE_POSTER_CHECK_STATUS = [
+        'type' => 'share_poster_check_status',
+        'keys' => [1, 2, 3]
+    ];
+
     //通用红包搜索节点
     const COMMON_CASH_NODE = [
         'type' => 'operation_common_node',
@@ -321,6 +326,7 @@ class DictConstants {
             'day_channel',
             'day_poster_config',
             'new_old_rule_dividing_line_time',
+            'task_ids',
         ],
     ];
     // 转介绍相关配置

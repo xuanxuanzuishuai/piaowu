@@ -279,5 +279,31 @@ class QueueService
         }
         return true;
     }
+
+    /**
+     * 打卡海报审核消息
+     * @param $day
+     * @param $status
+     * @param $openId
+     * @param $appId
+     * @return bool
+     */
+    public static function checkinPosterMessage($day, $status, $openId, $appId)
+    {
+        try {
+            $topic = new PushMessageTopic();
+            $data = [
+                'day'     => $day,
+                'status'  => $status,
+                'open_id' => $openId,
+                'app_id'  => $appId,
+            ];
+            $topic->checkinMessage($data)->publish(rand(0, 10));
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), [$day, $status, $openId, $appId]);
+            return false;
+        }
+        return true;
+    }
     
 }

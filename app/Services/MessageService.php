@@ -941,4 +941,32 @@ class MessageService
             );
         }
     }
+
+    /**
+     * 打卡海报审核消息
+     * @param $data
+     * @return array|bool|mixed
+     */
+    public static function checkinMessage($data)
+    {
+        $day    = $data['day'] ?? 0;
+        $status = $data['status'] ?? 0;
+        $openId = $data['open_id'] ?? '';
+        $appId  = $data['app_id'] ?? Constants::SMART_APP_ID;
+        if (empty($openId)) {
+            SimpleLogger::error('EMPTY OPEN ID', [$data]);
+            return false;
+        }
+        return PushMessageService::notifyUserCustomizeMessage(
+            DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'verify_message_config_id'),
+            [
+                'day'    => $day,
+                'status' => DictConstants::get(DictConstants::SHARE_POSTER_CHECK_STATUS, $status),
+                'url'    => DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'page_url'),
+                'remark' => '【点此消息】查看更多打卡进度',
+            ],
+            $openId,
+            $appId
+        );
+    }
 }

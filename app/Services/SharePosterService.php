@@ -12,6 +12,7 @@ use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\AliOSS;
+use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\Dss\DssCollectionModel;
 use App\Models\Dss\DssEventTaskModel;
@@ -72,6 +73,7 @@ class SharePosterService
      * @param $employeeId
      * @return bool
      * @throws RunTimeException
+     * @throws \Exception
      */
     public static function approvedCheckin($posterIds, $employeeId)
     {
@@ -88,12 +90,19 @@ class SharePosterService
         $time = time();
         $status = SharePosterModel::VERIFY_STATUS_QUALIFIED;
         // 查询所有打卡活动下的任务：
-        $allTasks = DssEventTaskModel::getRecords(
-            [
-                'event_id' => DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'collection_event_id'),
-                'status' => DssEventTaskModel::STATUS_NORMAL,
-            ]
-        );
+        $taskIds = DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'task_ids');
+        $taskIds = json_decode($taskIds, true);
+        if (empty($taskIds)) {
+            SimpleLogger::error('EMPTY TASK CONFIG', []);
+        }
+        $allTasks = [];
+        if (!empty($taskIds)) {
+            $allTasks = DssEventTaskModel::getRecords(
+                [
+                    'id' => $taskIds
+                ]
+            );
+        }
         // 已超时的海报
         foreach ($posters as $poster) {
             if ($poster['poster_status'] != SharePosterModel::VERIFY_STATUS_WAIT) {
@@ -155,19 +164,8 @@ class SharePosterService
                 DssUserWeiXinModel::USER_TYPE_STUDENT,
                 DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER
             );
-            // 发送审核消息
-            //todo 更改成队列
-            PushMessageService::notifyUserCustomizeMessage(
-                DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'verify_message_config_id'),
-                [
-                    'day'    => $poster['day'],
-                    'status' => DictService::getKeyValue('share_poster_check_status', $status),
-                    'url'    => DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'page_url'),
-                    'remark' => '【点此消息】查看更多打卡进度',
-                ],
-                $userInfo['open_id'],
-                Constants::SMART_APP_ID
-            );
+            // 发送审核消息队列
+            QueueService::checkinPosterMessage($poster['day'], $status, $userInfo['open_id'], Constants::SMART_APP_ID);
         }
         return true;
     }
@@ -214,10 +212,6 @@ class SharePosterService
         if (empty($poster)) {
             throw new RunTimeException(['record_not_found']);
         }
-        $studentInfo = DssStudentModel::getRecord(['id' => $poster['student_id']], ['collection_id']);
-        if (!empty($studentInfo['collection_id'])) {
-            $collection = DssCollectionModel::getRecord(['id' => $studentInfo['collection_id']], ['teaching_start_time']);
-        }
         $status = SharePosterModel::VERIFY_STATUS_UNQUALIFIED;
         $time = time();
         $updateData = [
@@ -229,14 +223,6 @@ class SharePosterService
             'verify_reason' => implode(',', $reason),
             'remark'        => $remark,
         ];
-        if (!empty($collection['teaching_start_time'])) {
-            // 当前审核时间：
-            $validTime = $time + Util::TIMESTAMP_ONEDAY;
-            if ($validTime > ($collection['teaching_start_time'] + Util::TIMESTAMP_ONEWEEK)) {
-                $validTime = $collection['teaching_start_time'] + Util::TIMESTAMP_ONEWEEK;
-            }
-            $updateData['ext'] = Medoo::raw("JSON_SET(`ext`, '$.valid_time', '".$validTime."')");
-        }
         $update = SharePosterModel::updateRecord($poster['id'], $updateData);
         // 审核不通过, 发送模版消息
         if ($update > 0) {
@@ -246,20 +232,9 @@ class SharePosterService
                 DssUserWeiXinModel::USER_TYPE_STUDENT,
                 DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER
             );
-            PushMessageService::notifyUserCustomizeMessage(
-                DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'verify_message_config_id'),
-                [
-                    'day'    => $poster['day'],
-                    'status' => DictService::getKeyValue('share_poster_check_status', $status),
-                    'url'    => DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'page_url'),
-                    'remark' => '【点此消息】分享返学费活动主页重新上传',
-                ],
-                $userInfo['open_id'],
-                Constants::SMART_APP_ID
-            );
+            QueueService::checkinPosterMessage($poster['day'], $status, $userInfo['open_id'], Constants::SMART_APP_ID);
         }
 
         return $update > 0;
     }
-
 }

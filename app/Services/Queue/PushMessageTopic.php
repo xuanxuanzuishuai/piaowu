@@ -15,6 +15,7 @@ class PushMessageTopic extends BaseTopic
     const EVENT_PUSH_RULE_WX = 'push_rule_wx'; //自动推送微信
     const EVENT_PUSH_WX = 'push_wx';
     const EVENT_PUSH_MANUAL_RULE_WX = 'push_manual_rule_wx'; //手动推送微信
+    const EVENT_PUSH_CHECKIN_MESSAGE = 'push_checkin_message'; //打卡海报审核消息
 
     const EVENT_WECHAT_INTERACTION = 'wechat_interaction';  // 微信交互
     const EVENT_USER_BIND_WECHAT   = 'bind_wechat';         // 绑定微信
@@ -92,6 +93,19 @@ class PushMessageTopic extends BaseTopic
      * @return $this
      */
     public function monthlyPush($data, $eventType = self::EVENT_MONTHLY_PUSH)
+    {
+        $this->setEventType($eventType);
+        $this->setMsgBody($data);
+        return $this;
+    }
+
+    /**
+     * 打卡海报审核消息
+     * @param $data
+     * @param string $eventType
+     * @return $this
+     */
+    public function checkinMessage($data, $eventType = self::EVENT_PUSH_CHECKIN_MESSAGE)
     {
         $this->setEventType($eventType);
         $this->setMsgBody($data);

@@ -67,7 +67,7 @@ class DssAiPlayRecordCHModel
                     and end_time >= :start_time
                     and end_time <= :end_time
                 order by
-                    duration desc limit 1 by student_id,track_id) as ta group by ta.student_id,ta.create_date,ta.lesson_id";
+                    duration desc,create_date desc limit 1 by student_id,track_id) as ta group by ta.student_id,ta.create_date,ta.lesson_id";
         return $chDb->queryAll($sql, ['student_id' => $studentId, 'start_time' => $startTime, 'end_time' => $endTime]);
     }
 

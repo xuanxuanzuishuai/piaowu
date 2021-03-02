@@ -91,6 +91,9 @@ class DssUserWeiXinModel extends DssModel
      */
     public static function getByUuid($uuid, $appId = Constants::SMART_APP_ID, $userType = self::USER_TYPE_STUDENT, $busiType = self::BUSI_TYPE_STUDENT_SERVER)
     {
+        if (empty($uuid)) {
+            return [];
+        }
         $db = self::dbRO();
         $sql = "
            SELECT
