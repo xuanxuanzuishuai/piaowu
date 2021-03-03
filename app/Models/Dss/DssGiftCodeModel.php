@@ -208,4 +208,44 @@ class DssGiftCodeModel extends DssModel
                 AND g.package_v1 = " . $packageV1;
         return $db->queryAll($sql);
     }
+
+    /**
+     * 获取用户第一次购买正式课信息
+     * @param $userId
+     * @return array|null
+     */
+    public static function getUserFirstPayNormalInfo($userId)
+    {
+        if (empty($userId)) {
+            return [];
+        }
+        $gc = DssGiftCodeModel::getTableNameWithDb();
+        $p  = DssErpPackageV1Model::getTableNameWithDb();
+        $pg = DssErpPackageGoodsV1Model::getTableNameWithDb();
+        $g  = DssGoodsV1Model::getTableNameWithDb();
+        $c  = DssCategoryV1Model::getTableNameWithDb();
+        $sql = "
+        SELECT 
+            gc.id,
+            gc.create_time
+        FROM  $gc gc
+        INNER JOIN  $p p ON gc.bill_package_id = p.id
+        INNER JOIN  $pg pg ON pg.package_id = p.id
+        INNER JOIN  $g g ON g.id = pg.goods_id
+        INNER JOIN  $c c ON c.id = g.category_id
+        WHERE 
+            gc.buyer = :buyer
+            AND gc.code_status = :code_status
+            AND c.sub_type = ".DssCategoryV1Model::DURATION_TYPE_NORMAL."
+        ORDER BY gc.id 
+        LIMIT 1;
+        ";
+        $map = [
+            ':buyer' => $userId,
+            ':code_status' => self::CODE_STATUS_HAS_REDEEMED,
+        ];
+        $db = self::dbRO();
+        $res = $db->queryAll($sql, $map);
+        return $res[0] ?? [];
+    }
 }

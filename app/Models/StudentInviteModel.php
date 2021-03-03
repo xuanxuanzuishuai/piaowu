@@ -55,10 +55,6 @@ class StudentInviteModel extends Model
             $condition .= ' AND si.referee_type = :referee_type ';
             $map[':referee_type'] = $where['referee_type'];
         }
-        if (!empty($where['create_time'])) {
-            $condition .= ' AND si.create_time >= :create_time ';
-            $map[':create_time'] = $where['create_time'];
-        }
         // 查询所有被推荐人：
         $sql = "
         SELECT si.student_id
@@ -87,6 +83,8 @@ class StudentInviteModel extends Model
            INNER JOIN  $g g ON g.id = pg.goods_id
            INNER JOIN  $c c ON c.id = g.category_id
            WHERE gc.buyer IN (".implode(',', $allUser).")
+             AND gc.create_time >= ".$where['create_time']."
+             AND p.sale_shop = ".DssErpPackageV1Model::SALE_SHOP_AI_PLAY."
              AND c.sub_type = ".($type == DssStudentModel::REVIEW_COURSE_1980 ? DssCategoryV1Model::DURATION_TYPE_NORMAL : DssCategoryV1Model::DURATION_TYPE_TRAIL)."
           ) t
         WHERE t.query_order = 1 LIMIT $limit";

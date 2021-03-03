@@ -13,10 +13,12 @@ class DssErpPackageV1Model extends DssModel
 {
     public static $table = 'erp_package_v1';
 
-    // 销售商城 1 音符商城 2 金叶子商城 3 智能陪练商城
+    // 销售商城 1 音符商城 2 金叶子商城 3 智能陪练商城 4 魔法石商城 5 真人陪练商城
     const SALE_SHOP_NOTE = 1;
     const SALE_SHOP_LEAF = 2;
     const SALE_SHOP_AI_PLAY = 3;
+    const SALE_SHOP_MAGIC_STONE = 4;
+    const SALE_SHOP_VIDEO_PLAY = 5;
 
     // channel 渠道授权 1 Android 2 IOS 4 公众号 8 ERP
     const CHANNEL_ANDROID = 1;

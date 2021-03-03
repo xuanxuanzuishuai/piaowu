@@ -7,6 +7,7 @@ use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
 use App\Models\AgentAwardDetailModel;
+use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssPackageExtModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserQrTicketModel;
@@ -233,6 +234,7 @@ class UserRefereeService
         }
         $refereeInfo = DssStudentModel::getRecord(['id' => $refereeRelation['referee_id']]);
         $refereeInfo['student_id'] = $studentId;
+        $refereeInfo['first_pay_normal_info'] = DssGiftCodeModel::getUserFirstPayNormalInfo($refereeRelation['referee_id']);
 
         $refTaskId = self::getTaskIdByType($packageType, $trialType, $refereeInfo, $appId);
 
@@ -278,6 +280,10 @@ class UserRefereeService
                 // 查询当前被推荐人是第几个：
                 // 根据个数决定奖励
                 $startPoint = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'dsscrm_1841_start_time');
+                if (!empty($refereeInfo['first_pay_normal_info']['create_time'])
+                    && $refereeInfo['first_pay_normal_info']['create_time'] >= $startPoint) {
+                    $startPoint = $refereeInfo['first_pay_normal_info']['create_time'];
+                }
                 $refereeData = StudentInviteModel::getRefereeBuyData(['referee_id' => $refereeInfo['id'], 'app_id' => $appId, 'referee_type' => StudentInviteModel::REFEREE_TYPE_STUDENT, 'create_time' => $startPoint]);
                 if (empty($refereeData)) {
                     return 0;
