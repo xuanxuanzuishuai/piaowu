@@ -11,6 +11,7 @@ namespace App\Services;
 use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Libs\Util;
 use App\Models\AgentBillMapModel;
@@ -59,10 +60,13 @@ class ThirdPartBillService
                 }
             }
             // 检查所有的手机号是否合法, 并返回所有错误的记录
-            $invalidMobiles = [];
+            $invalidMobiles = $invalidTradeNo = [];
             foreach ($data as $v) {
                 if (!Util::isChineseMobile($v['mobile'])) {
                     $invalidMobiles[] = $v;
+                }
+                if (empty($v['trade_no'])) {
+                    $invalidTradeNo[] = $v;
                 }
             }
         } catch (\Exception $e) {
@@ -71,6 +75,9 @@ class ThirdPartBillService
 
         if (count($invalidMobiles) > 0) {
             throw new RunTimeException(['invalid_mobile', 'import'], ['list' => $invalidMobiles]);
+        }
+        if (count($invalidTradeNo) > 0) {
+            throw new RunTimeException(['trade_no_can_not_be_empty', 'import'], ['list' => $invalidTradeNo]);
         }
         // 检查数据是否为空
         if (count($data) == 0) {
@@ -121,9 +128,18 @@ class ThirdPartBillService
     public static function thirdBillPush($data)
     {
         try {
+            //计算延时时间
+            $dataCount = count($data);
+            if ($dataCount <= 100) {
+                $deferRand = mt_rand(1, 60);
+            } elseif (($dataCount > 100) && ($dataCount <= 200)) {
+                $deferRand = mt_rand(1, 90);
+            } else {
+                $deferRand = mt_rand(1, 180);
+            }
             $queue = new ThirdPartBillTopic();
             foreach ($data as $v) {
-                $queue->import($v)->publish();
+                $queue->import($v)->publish($deferRand);
             }
         } catch (\Exception $e) {
             throw new RunTimeException([$e->getMessage()]);
@@ -249,6 +265,11 @@ class ThirdPartBillService
             'third_identity_type' => (int)$params['third_identity_type'],
         ];
 
+        $paramMapInfo = [];
+        //当第三方角色是代理商时候获取代理商转介绍二维码
+        if (!empty($params['third_identity_id']) && ($params['third_identity_type'] == ThirdPartBillModel::THIRD_IDENTITY_TYPE_AGENT)) {
+            $paramMapInfo = MiniAppQrService::getSmartQRAliOss($params['third_identity_id'], ParamMapModel::TYPE_AGENT);
+        }
         //检测学生数据是否存在：不存在时注册新用户
         $student = DssStudentModel::getRecord(['mobile' => $data['mobile']]);
         if (empty($student)) {
@@ -266,6 +287,14 @@ class ThirdPartBillService
         } else {
             $data['student_id'] = $student['id'];
         }
+
+        //去重检测
+        $checkIsExists = ThirdPartBillModel::getRecord(['student_id' => $data['student_id'], 'trade_no' => $params['trade_no']], ['id']);
+        if (!empty($checkIsExists)) {
+            SimpleLogger::error('third part bill have exists', ['data' => $checkIsExists]);
+            return true;
+        }
+
         //通知ERP创建订单
         $erp = new Erp();
         list($result, $body) = $erp->manCreateDeliverBillV1([
@@ -287,8 +316,6 @@ class ThirdPartBillService
 
         //如果是代理商创建的体验课订单，记录订单与代理的映射关系
         if (($data['status'] == ThirdPartBillModel::STATUS_SUCCESS) && ($params['third_identity_type'] == ThirdPartBillModel::THIRD_IDENTITY_TYPE_AGENT)) {
-            //当第三方角色是代理商时候获取代理商转介绍二维码
-            $paramMapInfo = MiniAppQrService::getSmartQRAliOss($params['third_identity_id'], ParamMapModel::TYPE_AGENT);
             $billMapRes = AgentBillMapModel::add($paramMapInfo['qr_ticket'], $result['data']['order_id'], $data['student_id']);
             if ($billMapRes) {
                 //补发奖励

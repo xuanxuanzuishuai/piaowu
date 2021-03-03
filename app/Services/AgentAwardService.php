@@ -118,7 +118,7 @@ class AgentAwardService
             'stage' => AgentUserModel::STAGE_TRIAL,
             'create_time' => $time,
         ];
-        $res = self::recordTrailAwardAndBindData($awardData, $bindData);
+        $res = self::recordTrailAwardAndBindData($awardData, $bindData, $parentBillId);
         if (empty($res)) {
             return false;
         }
@@ -206,10 +206,16 @@ class AgentAwardService
      * 购买体验课奖励
      * @param $awardData
      * @param $bindData
+     * @param $parentBillId
      * @return bool
      */
-    private static function recordTrailAwardAndBindData($awardData, $bindData)
+    private static function recordTrailAwardAndBindData($awardData, $bindData, $parentBillId)
     {
+        //正式发送奖励之前再次检查一次，避免奖励已发放
+        $billIsValid = self::checkBillIsValid($parentBillId);
+        if (empty($billIsValid)) {
+            return false;
+        }
         $db = MysqlDB::getDB();
         $db->beginTransaction();
         //记录奖励详情数据
