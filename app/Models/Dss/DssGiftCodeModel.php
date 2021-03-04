@@ -235,14 +235,12 @@ class DssGiftCodeModel extends DssModel
         INNER JOIN  $c c ON c.id = g.category_id
         WHERE 
             gc.buyer = :buyer
-            AND gc.code_status = :code_status
             AND c.sub_type = ".DssCategoryV1Model::DURATION_TYPE_NORMAL."
         ORDER BY gc.id 
         LIMIT 1;
         ";
         $map = [
             ':buyer' => $userId,
-            ':code_status' => self::CODE_STATUS_HAS_REDEEMED,
         ];
         $db = self::dbRO();
         $res = $db->queryAll($sql, $map);
