@@ -42,6 +42,7 @@ class StudentInviteModel extends Model
         $g  = DssGoodsV1Model::getTableNameWithDb();
         $c  = DssCategoryV1Model::getTableNameWithDb();
         $condition = ' 1=1 ';
+        $map = [];
         if (!empty($where['referee_id'])) {
             $condition .= ' AND si.referee_id = :referee_id ';
             $map[':referee_id'] = $where['referee_id'];
@@ -60,7 +61,7 @@ class StudentInviteModel extends Model
         FROM $si si
         WHERE $condition";
         $db = MysqlDB::getDB();
-        $allUser = $db->queryAll($sql);
+        $allUser = $db->queryAll($sql, $map);
         $allUser = array_column($allUser, 'student_id');
         if (empty($allUser)) {
             return [];
