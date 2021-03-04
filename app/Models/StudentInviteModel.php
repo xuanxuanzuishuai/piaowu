@@ -87,6 +87,6 @@ class StudentInviteModel extends Model
            ORDER BY gc.create_time
           ) t
         WHERE t.query_order = 1 AND t.create_time >= ".$where['create_time']." LIMIT $limit";
-        return $db->queryAll($sql);
+        return self::dbRO()->queryAll($sql);
     }
 }
