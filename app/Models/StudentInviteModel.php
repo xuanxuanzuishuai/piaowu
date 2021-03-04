@@ -8,6 +8,7 @@
 
 namespace App\Models;
 
+use App\Libs\MysqlDB;
 use App\Models\Dss\DssCategoryV1Model;
 use App\Models\Dss\DssErpPackageGoodsV1Model;
 use App\Models\Dss\DssErpPackageV1Model;
@@ -58,7 +59,7 @@ class StudentInviteModel extends Model
         SELECT si.student_id
         FROM $si si
         WHERE $condition";
-        $db = self::dbRO();
+        $db = MysqlDB::getDB();
         $allUser = $db->queryAll($sql);
         $allUser = array_column($allUser, 'student_id');
         if (empty($allUser)) {
