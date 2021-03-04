@@ -287,9 +287,13 @@ class ThirdPartBillService
         } else {
             $data['student_id'] = $student['id'];
         }
+        //如果从库数据没有同步成功，使用接口返回值替代
+        if (empty($student)) {
+            $student = ['id' => $result['student_id'], 'uuid' => $result['uuid']];
+        }
 
         //去重检测
-        $checkIsExists = ThirdPartBillModel::getRecord(['student_id' => $data['student_id'], 'trade_no' => $params['trade_no']], ['id']);
+        $checkIsExists = ThirdPartBillModel::getRecord(['student_id' => $data['student_id'], 'trade_no' => $params['trade_no'], 'status' => ThirdPartBillModel::STATUS_SUCCESS], ['id']);
         if (!empty($checkIsExists)) {
             SimpleLogger::error('third part bill have exists', ['data' => $checkIsExists]);
             return true;
