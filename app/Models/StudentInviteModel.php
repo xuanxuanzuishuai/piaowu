@@ -83,11 +83,11 @@ class StudentInviteModel extends Model
            INNER JOIN  $g g ON g.id = pg.goods_id
            INNER JOIN  $c c ON c.id = g.category_id
            WHERE gc.buyer IN (".implode(',', $allUser).")
-             AND gc.create_time >= ".$where['create_time']."
              AND p.sale_shop = ".DssErpPackageV1Model::SALE_SHOP_AI_PLAY."
              AND c.sub_type = ".($type == DssStudentModel::REVIEW_COURSE_1980 ? DssCategoryV1Model::DURATION_TYPE_NORMAL : DssCategoryV1Model::DURATION_TYPE_TRAIL)."
+           ORDER BY gc.create_time
           ) t
-        WHERE t.query_order = 1 LIMIT $limit";
+        WHERE t.query_order = 1 AND t.create_time >= ".$where['create_time']." LIMIT $limit";
         return $db->queryAll($sql);
     }
 }
