@@ -56,6 +56,7 @@ class Dss
     /**
      * 学生注册
      * @param $params
+     * @return mixed|null
      * @throws RunTimeException
      */
     public function studentRegisterBound($params)
@@ -64,6 +65,7 @@ class Dss
         if ($data['code'] != Valid::CODE_SUCCESS) {
             throw new RunTimeException(['update_fail']);
         }
+        return !empty($data['data']) ? $data['data'] : NULL;
     }
 
 
