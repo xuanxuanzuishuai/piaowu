@@ -35,14 +35,12 @@ class StudentInviteModel extends Model
             return [];
         }
         $si = self::getTableNameWithDb();
-        $s  = DssStudentModel::getTableNameWithDb();
         $gc = DssGiftCodeModel::getTableNameWithDb();
         $p  = DssErpPackageV1Model::getTableNameWithDb();
         $pg = DssErpPackageGoodsV1Model::getTableNameWithDb();
         $g  = DssGoodsV1Model::getTableNameWithDb();
         $c  = DssCategoryV1Model::getTableNameWithDb();
-        $condition = 's.has_review_course = :has_review_course ';
-        $map[':has_review_course'] = $type;
+        $condition = ' 1=1 ';
         if (!empty($where['referee_id'])) {
             $condition .= ' AND si.referee_id = :referee_id ';
             $map[':referee_id'] = $where['referee_id'];
@@ -59,10 +57,9 @@ class StudentInviteModel extends Model
         $sql = "
         SELECT si.student_id
         FROM $si si
-        INNER JOIN $s s ON s.id = si.student_id
         WHERE $condition";
         $db = self::dbRO();
-        $allUser = $db->queryAll($sql, $map);
+        $allUser = $db->queryAll($sql);
         $allUser = array_column($allUser, 'student_id');
         if (empty($allUser)) {
             return [];
