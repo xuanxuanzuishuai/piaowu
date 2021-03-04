@@ -34,7 +34,7 @@ class StudentInviteModel extends Model
         if (empty($where)) {
             return [];
         }
-        $si = self::getTableNameWithDb();
+        $si = self::$table;
         $gc = DssGiftCodeModel::getTableNameWithDb();
         $p  = DssErpPackageV1Model::getTableNameWithDb();
         $pg = DssErpPackageGoodsV1Model::getTableNameWithDb();
