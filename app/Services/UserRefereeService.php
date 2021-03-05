@@ -286,18 +286,26 @@ class UserRefereeService
                 }
                 $refereeData = StudentInviteModel::getRefereeBuyData(['referee_id' => $refereeInfo['id'], 'app_id' => $appId, 'referee_type' => StudentInviteModel::REFEREE_TYPE_STUDENT, 'create_time' => $startPoint]);
                 if (empty($refereeData)) {
+                    SimpleLogger::error("EMPTY REFEREE DATA", [$refereeInfo['id'], $startPoint]);
                     return 0;
                 }
                 // 被推荐人个数
                 $refereeCount = 0;
+                // 查询出来的被推荐人购买年卡数据一定包含当前购买人
+                $includeFlag = false;
                 foreach ($refereeData as $item) {
                     if ($item['create_time'] >= $startPoint) {
                         $refereeCount++;
                     }
                     // 筛选到当前被推荐人时停止计数
                     if ($item['buyer'] == $refereeInfo['student_id']) {
+                        $includeFlag = true;
                         break;
                     }
+                }
+                if (empty($refereeCount) || !$includeFlag) {
+                    SimpleLogger::error('RETURN TASK ID:0', [$refereeCount, $refereeData]);
+                    return 0;
                 }
                 $noChangeNumber = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'task_stop_change_number');
                 if ($refereeCount > $noChangeNumber) {

@@ -95,7 +95,7 @@ class RefereeAwardService
         } else {
             // 年包 && 首购智能陪练正式课
             if ($package['package_type'] == DssPackageExtModel::PACKAGE_TYPE_NORMAL) {
-                $res = DssGiftCodeModel::hadPurchasePackageByType($student['id'], DssPackageExtModel::PACKAGE_TYPE_NORMAL);
+                $res = DssGiftCodeModel::hadPurchasePackageByType($student['id'], DssPackageExtModel::PACKAGE_TYPE_NORMAL, false);
                 $hadPurchaseCount = count($res);
                 if ($hadPurchaseCount <= 1) {
                     return true;

@@ -30,7 +30,7 @@ class StudentInviteModel extends Model
      * @param int $limit
      * @return array|null
      */
-    public static function getRefereeBuyData($where, $type = DssStudentModel::REVIEW_COURSE_1980, $limit = 10)
+    public static function getRefereeBuyData($where, $type = DssStudentModel::REVIEW_COURSE_1980, $limit = 1000)
     {
         if (empty($where)) {
             return [];
@@ -66,8 +66,8 @@ class StudentInviteModel extends Model
         if (empty($allUser)) {
             return [];
         }
-        // 查询被推荐人首次购买年卡的时间，按创建时间正序排序
-        // 只取第一条
+        // 查询被推荐人购买信息，按创建时间正序排序
+        // 带购买次数query_order标记
         $sql = "
         SELECT *
         FROM ( 
