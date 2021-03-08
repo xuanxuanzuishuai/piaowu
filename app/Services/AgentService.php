@@ -11,6 +11,7 @@ namespace App\Services;
 use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\DictConstants;
+use App\Libs\Dss;
 use App\Libs\EventListener\AgentOpEvent;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
@@ -21,20 +22,26 @@ use App\Libs\UserCenter;
 use App\Libs\Util;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\AgentApplicationModel;
+use App\Models\AgentAwardBillExtModel;
 use App\Models\AgentAwardDetailModel;
 use App\Models\AgentBillMapModel;
 use App\Models\AgentDivideRulesModel;
 use App\Models\AgentModel;
+use App\Models\AgentOperationLogModel;
+use App\Models\AgentSalePackageModel;
 use App\Models\AgentUserModel;
 use App\Models\AreaCityModel;
 use App\Models\AreaProvinceModel;
+use App\Models\Dss\DssCategoryV1Model;
 use App\Models\Dss\DssDictModel;
+use App\Models\Dss\DssErpPackageV1Model;
 use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssPackageExtModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\EmployeeModel;
+use App\Models\Erp\ErpPackageV1Model;
 use App\Models\GoodsResourceModel;
 use App\Models\ParamMapModel;
 use App\Models\UserWeiXinInfoModel;
@@ -64,6 +71,7 @@ class AgentService
             'mobile' => $params['mobile'],
             'name' => $params['name'],
             'type' => $params['agent_type'] ?? 0,
+            'division_model' => $params['division_model'] ?? 0,
             'country_code' => $params['country_code'],
             'create_time' => $time,
         ];
@@ -87,9 +95,14 @@ class AgentService
             'remark' => empty($params['remark']) ? '' : $params['remark'],
             'create_time' => $time,
         ];
+        //agent_sale_package
+        $packageIds = [];
+        if (!empty($params['package_id'])) {
+            $packageIds = explode(',',$params['package_id']);
+        }
         $db = MysqlDB::getDB();
         $db->beginTransaction();
-        $res = AgentModel::add($agentInsertData, $agentDivideRulesInsertData, $agentInfoInsertData);
+        $res = AgentModel::add($agentInsertData, $agentDivideRulesInsertData, $agentInfoInsertData,$packageIds, $params['app_id']);
         if (empty($res)) {
             $db->rollBack();
             throw new RunTimeException(['insert_failure']);
@@ -125,6 +138,7 @@ class AgentService
             'service_employee_id' => empty($params['service_employee_id']) ? 0 : (int)$params['service_employee_id'],
             'country_code' => $params['country_code'],
             'update_time' => $time,
+            'division_model' => $params['division_model'] ?? 0,
         ];
         //agent_divide_rules数据
         $agentDivideRulesInsertData = [
@@ -144,15 +158,22 @@ class AgentService
             'remark' => empty($params['remark']) ? '' : $params['remark'],
             'update_time' => $time,
         ];
+        //agent_sale_package
+        $packageIds = [];
+        if (!empty($params['package_id'])) {
+            $packageIds = explode(',',$params['package_id']);
+        }
         $db = MysqlDB::getDB();
         $db->beginTransaction();
-        $res = AgentModel::update($params['agent_id'], $agentUpdateData, $agentDivideRulesInsertData, $agentInfoUpdateData);
+        $res = AgentModel::update($params['agent_id'], $agentUpdateData, $agentDivideRulesInsertData, $agentInfoUpdateData, $packageIds, $params['app_id']);
         if (empty($res)) {
             $db->rollBack();
             throw new RunTimeException(['update_failure']);
         } else {
             $db->commit();
         }
+        //操作日志记录
+        self::agentDataUpdateOpLogEvent($params['agent_id'], $employeeId, ['agent_type' => $params['agent_type'], 'division_model' => $params['division_model']], AgentOperationLogModel::OP_TYPE_AGENT_DATA_UPDATE);
         return true;
     }
 
@@ -212,6 +233,62 @@ class AgentService
     }
 
     /**
+     * 代理推广订单:订单归属人/成单人去重统计
+     * @param $params
+     * @return array
+     */
+    public static function getAgentRecommendDuplicationBills($params)
+    {
+        //推广订单类型:1累计订单订单2直接推广订单
+        if ($params['recommend_bill_type'] == AgentAwardBillExtModel::AGENT_RECOMMEND_BILL_TYPE_SELF) {
+            $agentList = implode(',', array_column(AgentModel::getRecords(['OR' => ['id' => $params['agent_id'], 'parent_id' => $params['agent_id']], 'ORDER' => ['parent_id' => "ASC"]], ['id[Int]']), 'id'));
+        } else {
+            $agentList = $params['agent_id'];
+        }
+        $billList = AgentAwardDetailModel::getAgentRecommendDuplicationBill($agentList, false, $params['page'], $params['count']);
+        if (empty($billList['count'])) {
+            return $billList;
+        }
+        //查询订单的详细数据
+        $giftCodeDetail = array_column(DssGiftCodeModel::getGiftCodeDetailByBillId(array_column($billList['list'], 'parent_bill_id')), null, 'parent_bill_id');
+        //查询成单代理商数据&查询归属代理商数据
+        $recommendBillsSignerAgentIdArr = array_column($billList['list'], 'signer_agent_id');
+        $recommendBillsOwnAgentIdArr = array_column($billList['list'], 'own_agent_id');
+        $recommendBillsAgentData = AgentModel::getAgentParentData(array_unique(array_merge($recommendBillsSignerAgentIdArr, $recommendBillsOwnAgentIdArr)));
+        if (!empty($recommendBillsAgentData)) {
+            $recommendBillsAgentData = array_column($recommendBillsAgentData, null, 'id');
+        }
+        //组合课包数据以及成单人数据
+        foreach ($billList['list'] as $rsk => &$rsv) {
+            //成单人
+            $rsv['signer_first_agent_name'] = $rsv['signer_second_agent_name'] = $rsv['signer_first_agent_id'] = $rsv['signer_second_agent_id'] = "";
+            if (!empty($rsv['signer_agent_id'])) {
+                $rsv['signer_first_agent_name'] = !empty($recommendBillsAgentData[$rsv['signer_agent_id']]['parent_name']) ? $recommendBillsAgentData[$rsv['signer_agent_id']]['parent_name'] : $recommendBillsAgentData[$rsv['signer_agent_id']]['name'];
+                $rsv['signer_second_agent_name'] = !empty($recommendBillsAgentData[$rsv['signer_agent_id']]['parent_name']) ? $recommendBillsAgentData[$rsv['signer_agent_id']]['name'] : "";
+                $rsv['signer_first_agent_id'] = !empty($recommendBillsAgentData[$rsv['signer_agent_id']]['p_id']) ? $recommendBillsAgentData[$rsv['signer_agent_id']]['p_id'] : $recommendBillsAgentData[$rsv['signer_agent_id']]['id'];
+                $rsv['signer_second_agent_id'] = !empty($recommendBillsAgentData[$rsv['signer_agent_id']]['p_id']) ? $recommendBillsAgentData[$rsv['signer_agent_id']]['id'] : "";
+            }
+            //课包
+            $rsv['bill_package_id'] = $giftCodeDetail[$rsv['parent_bill_id']]['bill_package_id'];
+            $rsv['bill_amount'] = $giftCodeDetail[$rsv['parent_bill_id']]['bill_amount'];
+            $rsv['code_status'] = $giftCodeDetail[$rsv['parent_bill_id']]['code_status'];
+            $rsv['buy_time'] = $giftCodeDetail[$rsv['parent_bill_id']]['buy_time'];
+            $rsv['package_name'] = $giftCodeDetail[$rsv['parent_bill_id']]['package_name'];
+            //归属人
+            $rsv['first_agent_name'] = !empty($recommendBillsAgentData[$rsv['own_agent_id']]['parent_name']) ? $recommendBillsAgentData[$rsv['own_agent_id']]['parent_name'] : $recommendBillsAgentData[$rsv['own_agent_id']]['name'];
+            $rsv['second_agent_name'] = !empty($recommendBillsAgentData[$rsv['own_agent_id']]['parent_name']) ? $recommendBillsAgentData[$rsv['own_agent_id']]['name'] : "";
+            $rsv['first_agent_id'] = !empty($recommendBillsAgentData[$rsv['own_agent_id']]['p_id']) ? $recommendBillsAgentData[$rsv['own_agent_id']]['p_id'] : $recommendBillsAgentData[$rsv['own_agent_id']]['id'];
+            $rsv['second_agent_id_true'] = !empty($recommendBillsAgentData[$rsv['own_agent_id']]['p_id']) ? $recommendBillsAgentData[$rsv['own_agent_id']]['id'] : "";
+            $rsv['agent_type'] = $recommendBillsAgentData[$rsv['own_agent_id']]['agent_type'];
+            $rsv['app_id'] = UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT;
+        }
+        array_map(function ($bv) use (&$parentBillIdStr) {
+            $parentBillIdStr .= "'" . $bv['parent_bill_id'] . "',";
+        }, $billList['list']);
+        return self::formatRecommendBillsData($billList);
+    }
+
+    /**
      * 推广数据统计
      * @param $parentAgentIds
      * @return array
@@ -225,22 +302,28 @@ class AgentService
         $agentIdStr = implode(',', $agentIds);
         $dataTree = array_fill_keys($agentIds, []);
         $referralStudents = array_column(AgentUserModel::getAgentStudentCount($agentIdStr), null, 'agent_id');
-        //推广订单数量
-        $referralBills = array_column(AgentAwardDetailModel::getAgentBillCount($agentIdStr), null, 'agent_id');
+        //等级分组
+        $levelGroup = [];
+        foreach ($agentList as $kk => $vv) {
+            if (empty($vv['parent_id'])) {
+                $vv['parent_id'] = $vv['id'];
+            }
+            $levelGroup[$vv['parent_id']][] = $vv['id'];
+        }
 
-        array_walk($agentList, function ($item) use (&$dataTree, $referralStudents, $referralBills) {
+        array_walk($agentList, function ($item) use (&$dataTree, $referralStudents,$levelGroup) {
             if ($item['parent_id'] == 0) {
                 //一级代理直接推广数据
                 $dataTree[$item['id']]['son_num'] = 0;
                 $dataTree[$item['id']]['total']['s_count'] = $dataTree[$item['id']]['self']['s_count'] = $referralStudents[$item['id']]['s_count'] ?? 0;
-                $dataTree[$item['id']]['total']['b_count'] = $dataTree[$item['id']]['self']['b_count'] = $referralBills[$item['id']]['b_count'] ?? 0;
+                $dataTree[$item['id']]['total']['b_count'] = AgentAwardDetailModel::getAgentRecommendDuplicationBill(implode(',', $levelGroup[$item['id']]))['count'];
+                $dataTree[$item['id']]['self']['b_count'] = AgentAwardDetailModel::getAgentRecommendDuplicationBill($item['id'])['count'];
             } else {
                 //一级代理的下属二级推广数据
                 $dataTree[$item['parent_id']]['son'][$item['id']]['s_count'] = $referralStudents[$item['id']]['s_count'] ?? 0;
-                $dataTree[$item['parent_id']]['son'][$item['id']]['b_count'] = $referralBills[$item['id']]['b_count'] ?? 0;
+                $dataTree[$item['parent_id']]['son'][$item['id']]['b_count'] = AgentAwardDetailModel::getAgentRecommendDuplicationBill($item['id'])['count'];
                 //推广数据汇总
                 $dataTree[$item['parent_id']]['total']['s_count'] += $dataTree[$item['parent_id']]['son'][$item['id']]['s_count'];
-                $dataTree[$item['parent_id']]['total']['b_count'] += $dataTree[$item['parent_id']]['son'][$item['id']]['b_count'];
                 //一级代理发展的下属二级代理总数
                 $dataTree[$item['parent_id']]['son_num'] += 1;
             }
@@ -263,6 +346,8 @@ class AgentService
             $bindData = UserWeiXinModel::userBindData($agentId, UserWeiXinModel::USER_TYPE_AGENT, UserWeiXinModel::BUSI_TYPE_AGENT_MINI, UserCenter::AUTH_APP_ID_OP_AGENT);
             $detail['wx_bind_status'] = empty($bindData) ? 0 : 1;
         }
+        //获取代理商售卖课包列表数据
+        $detail['package_list'] = AgentSalePackageModel::getPackageData($agentId, UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT);
         return $detail;
     }
 
@@ -270,9 +355,10 @@ class AgentService
     /**
      * 获取一级代理数据列表
      * @param $params
+     * @param $currentEmployeeId
      * @return array
      */
-    public static function listAgent($params)
+    public static function listAgent($params, $currentEmployeeId)
     {
         $where = [AgentModel::$table . '.parent_id' => 0];
         $data = ['list' => [], 'count' => 0];
@@ -302,14 +388,24 @@ class AgentService
             $where[AgentModel::$table . '.employee_id'] = $employeeId['id'];
         }
         if (!empty($params['service_employee_name'])) {
-            $serviceEmployeeId = EmployeeModel::getRecord(['name' => $params['service_employee_name']], ['id']);
-            if (empty($serviceEmployeeId)) {
+            $serviceEmployeeIds = EmployeeModel::getRecords(['name[~]' => $params['service_employee_name']], ['id']);
+            if (empty($serviceEmployeeIds)) {
                 return $data;
             }
-            $where[AgentModel::$table . '.service_employee_id'] = $serviceEmployeeId['id'];
+            $where[AgentModel::$table . '.service_employee_id'] = array_column($serviceEmployeeIds,'id');
         }
         if (!empty($params['name'])) {
             $where[AgentModel::$table . '.name[~]'] = $params['name'];
+        }
+        if (!empty($params['division_model'])) {
+            $where[AgentModel::$table . '.division_model'] = $params['division_model'];
+        }
+        //数据权限
+        if ($params['only_read_self']) {
+            $where["OR"] = [
+                AgentModel::$table . '.service_employee_id' => $currentEmployeeId,
+                AgentModel::$table . '.employee_id' => $currentEmployeeId,
+            ];
         }
         $agentList = AgentModel::list($where, $params['page'], $params['count']);
         if (empty($agentList['list'])) {
@@ -331,7 +427,6 @@ class AgentService
         return $agentList;
     }
 
-
     /**
      * 格式化数据
      * @param $agentData
@@ -348,9 +443,7 @@ class AgentService
         if (!empty($cityIds)) {
             $city = array_column(AreaCityModel::getRecords(['id' => $cityIds], ['id', 'city_name']), null, 'id');
         }
-        $agentTypeDict = DictConstants::getSet(DictConstants::AGENT_TYPE);
-        $agentStatusDict = DictConstants::getSet(DictConstants::AGENT);
-        $appIdDict = DictConstants::getSet(DictConstants::PACKAGE_APP_NAME);
+        $dict = DictConstants::getTypesMap([DictConstants::AGENT_TYPE['type'], DictConstants::AGENT['type'], DictConstants::PACKAGE_APP_NAME['type'], DictConstants::AGENT_DIVISION_MODEL['type']]);
         foreach ($agentData as &$agv) {
             // 省
             if (!empty($agv['province'])) {
@@ -361,10 +454,10 @@ class AgentService
                 $agv['city_name'] = $city[$agv['city']]['city_name'];
             }
             //代理模式
-            $agv['agent_type_name'] = $agentTypeDict[$agv['type']];
-            $agv['status_name'] = $agentStatusDict[$agv['status']];
-            $agv['app_id_name'] = empty($agv['app_id']) ? '' : $appIdDict[$agv['app_id']];
-
+            $agv['agent_type_name'] = $dict[DictConstants::AGENT_TYPE['type']][$agv['type']]['value'];
+            $agv['status_name'] = $dict[DictConstants::AGENT['type']][$agv['status']]['value'];
+            $agv['app_id_name'] = empty($agv['app_id']) ? '' : $dict[DictConstants::PACKAGE_APP_NAME['type']][$agv['app_id']]['value'];
+            $agv['division_model_name'] = empty($agv['division_model']) ? '' : $dict[DictConstants::AGENT_DIVISION_MODEL['type']][$agv['division_model']]['value'];
         }
         return $agentData;
     }
@@ -422,7 +515,7 @@ class AgentService
                 'status' => AgentModel::STATUS_OK,
                 'update_time' => time(),
                 'freeze_time' => 0,
-             ]
+            ]
         );
         if (empty($res)) {
             throw new RunTimeException(['update_failure']);
@@ -748,7 +841,6 @@ class AgentService
             foreach ($wxUserList as $wxVal) {
                 $tmpOtherInfo = $wxRequestData[$wxVal['openid']] ?? []; //openid其他信息
                 $tmpUserId = $tmpOtherInfo['user_id'] ?? 0;
-                $tmpUserType = $tmpOtherInfo['user_type'] ?? 0;
                 $userNicknameAndHead[$tmpUserId] = [
                     'nickname' => $wxVal['nickname'] ?? '',
                     'thumb' => $wxVal['headimgurl'] ?? '',
@@ -826,6 +918,7 @@ class AgentService
         }
         return [$userNicknameAndHead,$noCacheData];
     }
+
     /**
      * 根据openid获取用户数据表里的头像和昵称
      * @param $appid
@@ -880,12 +973,12 @@ class AgentService
     /**
      * 获取代理商的 推广订单列表
      * @param $agentId
-     * @param $type
+     * @param $level
      * @param $page
      * @param $limit
      * @return array
      */
-    public static function getPopularizeOrderList($agentId, $type, $page, $limit)
+    public static function getAgentOrderList($agentId, $level, $page, $limit)
     {
         $agentNameArr = [];
         $returnData = [
@@ -893,7 +986,7 @@ class AgentService
             'total' => 0,
         ];
         //获取直接绑定还是代理绑定
-        if ($type == AgentModel::LEVEL_FIRST) {
+        if ($level == AgentModel::LEVEL_FIRST) {
             //获取直接绑定用户
             $agentIdArr = [$agentId];
         } else {
@@ -910,32 +1003,53 @@ class AgentService
                 return $returnData;
             }
         }
-
-        //获取订单
-        $sqlLimitArr = [
-            ($page - 1) * $limit,
-            $limit
-        ];
-        list($orderList,$orderTotal) = AgentAwardDetailModel::getListByAgentId($agentIdArr, $sqlLimitArr) ?? [];
-        if (empty($orderList)) {
+        $orderList = AgentAwardDetailModel::getAgentRecommendDuplicationBill(implode(',', $agentIdArr), false, $page, $limit);
+        if (empty($orderList['count'])) {
             return $returnData;
         }
+        $returnData['total'] = $orderList['count'];
         $userIdArr = [];
         $orderIdArr = [];
-        array_map(function ($item) use (&$userIdArr, &$orderIdArr) {
-            $userIdArr[] = $item['student_id'];
-            $extInfo = json_decode($item['ext'], true);
-            $orderIdArr[] = $extInfo['parent_bill_id'] ?? 0;
-        }, $orderList);
+        $orderAgentIdArr = [];
+        foreach ($orderList['list'] as $item) {
+            if (!empty($item['student_id'])) {
+                $userIdArr[$item['student_id']] = $item['student_id'];
+            }
+            if (!empty($item['parent_bill_id'])) {
+                $orderIdArr[$item['parent_bill_id']] = $item['parent_bill_id'];
+            }
+            if (!empty($item['own_agent_id'])) {
+                $orderAgentIdArr[$item['own_agent_id']] = $item['own_agent_id'];
+            }
+            if (!empty($item['signer_agent_id'])) {
+                $orderAgentIdArr[$item['signer_agent_id']] = $item['signer_agent_id'];
+            }
+        }
+        // 代理信息
+        $allAgentInfo = [];
+        if (!empty($orderAgentIdArr)) {
+            $allAgentInfo = AgentModel::getRecords(['id' => $orderAgentIdArr], ['id', 'name']);
+            if (!empty($allAgentInfo)) {
+                $allAgentInfo = array_column($allAgentInfo, null, 'id');
+            }
+        }
+        // 订单信息
+        $giftCodeArr = [];
+        if (!empty($orderIdArr)) {
+            $giftCodeArr = DssGiftCodeModel::getGiftCodeDetailByBillId($orderIdArr);
+            if (!empty($giftCodeArr)) {
+                $giftCodeArr = array_column($giftCodeArr, null, 'parent_bill_id');
+            }
+        }
+        $userNicknameArr = [];
+        $mobileList = [];
+        if (!empty($userIdArr)) {
+            //获取用户昵称头像
+            $userNicknameArr = self::batchDssUserWxInfoByUserId($userIdArr);
+            //获取手机号
+            $mobileList = DssStudentModel::getRecords(['id' => $userIdArr], ['id', 'mobile']);
+        }
 
-        $returnData['total'] = $orderTotal;
-
-        //获取用户昵称头像
-        $userNicknameArr = self::batchDssUserWxInfoByUserId($userIdArr);
-
-        //获取手机号
-        $mobileList = DssStudentModel::getRecords(['id' => $userIdArr], ['id', 'mobile']);
-        $mobileList = is_array($mobileList) ? $mobileList : [];
         $encodeMobileArr = [];
         array_map(function ($item) use (&$encodeMobileArr) {
             $encodeMobileArr[$item['id']] = Util::hideUserMobile($item['mobile']);
@@ -943,20 +1057,29 @@ class AgentService
 
         //组合返回数据
         $dict = DictConstants::getSet(DictConstants::CODE_STATUS);
-        foreach ($orderList as $key => $val) {
+        foreach ($orderList['list'] as &$val) {
             $tmpUserInfo = $userNicknameArr[$val['student_id']] ?? [];
 
-            $orderList[$key]['thumb'] = $tmpUserInfo['thumb'] ?? '';
-            $orderList[$key]['nickname'] = $tmpUserInfo['nickname'] ?? '';
-            $orderList[$key]['mobile'] = $encodeMobileArr[$val['student_id']] ?? '';
-            $orderList[$key]['second_agent_name'] = $agentNameArr[$val['agent_id']] ?? '';
-            $orderList[$key]['format_pay_time'] = date("Y-m-d H:i:s", $val['buy_time']);
-            $orderList[$key]['bill_amount'] = $orderList[$key]['bill_amount']/100;  //单位元
-            $orderList[$key]['code_status_name'] = $dict[$val['code_status']] ?? '';
+            $val['thumb'] = $tmpUserInfo['thumb'] ?? '';
+            $val['nickname'] = $tmpUserInfo['nickname'] ?? '';
+            $val['mobile'] = $encodeMobileArr[$val['student_id']] ?? '';
+            if (in_array($val['signer_agent_id'], $agentIdArr)) {
+                $val['second_agent_name'] = $allAgentInfo[$val['signer_agent_id']]['name'] ?? '';
+            } else {
+                $val['second_agent_name'] = $allAgentInfo[$val['own_agent_id']]['name'] ?? '';
+            }
+            $val['format_pay_time'] = date("Y-m-d H:i:s", $val['create_time']);
+            $val['bill_amount'] = Util::yuan($giftCodeArr[$val['parent_bill_id']]['bill_amount'], 2);
+            $val['agent_id'] = $val['signer_agent_id'] ?? '';
+            $val['bill_id'] = $val['parent_bill_id'] ?? '';
+            $val['buy_time'] = $val['create_time'] ?? '';
+            $val['package_name'] = $giftCodeArr[$val['parent_bill_id']]['package_name'] ?? '';
+            $val['code_status'] = $giftCodeArr[$val['parent_bill_id']]['code_status'] ?? '';
+            $val['code_status_name'] = $dict[$giftCodeArr[$val['parent_bill_id']]['code_status']] ?? '';
 
         }
 
-        $returnData['order_list'] = $orderList;
+        $returnData['order_list'] = $orderList['list'];
         return $returnData;
     }
 
@@ -985,9 +1108,8 @@ class AgentService
     /**
      * 代理小程序首页
      * @param $agentId
-     * @return array
+     * @return mixed|null
      * @throws RunTimeException
-     * @throws \App\Libs\KeyErrorRC4Exception
      */
     public static function getMiniAppIndex($agentId)
     {
@@ -1010,19 +1132,66 @@ class AgentService
                 'stage[!]' => AgentUserModel::STAGE_REGISTER,
             ]
         );
-        $agentInfo['orders'] = AgentAwardDetailModel::getCount(
-            [
-                'agent_id' => $ids,
-                'action_type[!]' => AgentAwardDetailModel::AWARD_ACTION_TYPE_REGISTER,
-                'is_bind' => AgentAwardDetailModel::IS_BIND_STATUS_YES,
-            ]
-        );
+        $order = AgentAwardDetailModel::getAgentRecommendDuplicationBill(implode(',', $ids));
+        $agentInfo['orders'] = $order['count'] ?? 0;
         $agentInfo['sec_agents'] = AgentModel::getCount(['parent_id' => $agentId]);
-        $agentInfo['config']     = self::popularMaterialInfo($agentId);
+        $agentInfo['config']     = self::getPackageList($agentId);
         $agentInfo['parent']     = AgentModel::getRecord(['id' => $agentInfo['parent_id']]);
         $agentInfo['show_status'] = self::getAgentStatus($agentInfo);
         $agentInfo = self::formatFrontAgentData($agentInfo);
         return $agentInfo;
+    }
+
+
+    /**
+     * 代理分享页数据
+     * @param $packageId
+     * @param $agentId
+     * @return array
+     * @throws RunTimeException
+     * @throws \App\Libs\KeyErrorRC4Exception
+     */
+    public static function getShareInfo($packageId, $agentId)
+    {
+        $package = ErpPackageV1Model::getById($packageId);
+        if (empty($package)) {
+            throw new RunTimeException(['record_not_found']);
+        }
+        if ($package['status'] != ErpPackageV1Model::STATUS_ON_SALE) {
+            throw new RunTimeException(['package_not_available_for_sale']);
+        }
+        $logo = DictConstants::get(DictConstants::AGENT_CONFIG, 'share_card_logo');
+        $agent = AgentModel::getById($agentId);
+        $appId = Constants::SMART_APP_ID;
+
+        $channel = DictConstants::get(DictConstants::AGENT_CONFIG, 'channel_distribution');
+        if (!empty($agent['type'])) {
+            $channel = self::getAgentChannel($agent['type']);
+        }
+        $paramInfo = [
+            'app_id'  => $appId,
+            'type'    => ParamMapModel::TYPE_AGENT,
+            'user_id' => $agentId,
+            'r'       => MiniAppQrService::AGENT_TICKET_PREFIX. RC4::encrypt($_ENV['COOKIE_SECURITY_KEY'], ParamMapModel::TYPE_AGENT . "_" . $agentId),
+            'c'       => $channel
+        ];
+        $paramId = ReferralActivityService::getParamsId($paramInfo);
+        $pageParams = [
+            'package_id' => $package['id'],
+            'param_id' => $paramId,
+        ];
+
+        $packageExt = GoodsResourceModel::getRecord(['package_id' => $package['id']], ['ext']);
+        $resource = GoodsResourceModel::formatExt($packageExt['ext'], $agent, ['lt' => DssUserQrTicketModel::LANDING_TYPE_NORMAL, 'package_id' => $package['id']]);
+
+        return [
+            'buy_page'   => PosterService::getAgentLandingPageUrl($pageParams),
+            'name'       => $package['name'] ?? '',
+            'desc'       => $package['desc'] ?? '',
+            'logo'       => AliOSS::replaceCdnDomainForDss($logo),
+            'poster_url' => $resource['poster_agent_url'] ?? '',
+            'text' => $resource['text'] ?? '',
+        ];
     }
 
     /**
@@ -1189,9 +1358,10 @@ class AgentService
     /**
      * 推广学员列表数据
      * @param $params
+     * @param $employeeId
      * @return array|mixed
      */
-    public static function recommendUsersList($params)
+    public static function recommendUsersList($params, $employeeId)
     {
         $recommendUserList = ['count' => 0, 'list' => []];
         $dssStudentWhere = [];
@@ -1232,35 +1402,50 @@ class AgentService
             $agentUserWhere .= ' AND au.create_time<= ' . $params['bind_end_time'];
         }
         if (!empty($params['bind_status']) && $params['bind_status'] == AgentUserModel::BIND_STATUS_BIND) {
-            $agentUserWhere .= ' AND (au.deadline>= ' . $time . ' OR au.stage=' . AgentUserModel::STAGE_FORMAL . ') ';
+            $agentUserWhere .= ' AND au.deadline>= ' . $time;
         }
         if (!empty($params['bind_status']) && $params['bind_status'] == AgentUserModel::BIND_STATUS_UNBIND) {
-            $agentUserWhere .= ' AND au.deadline< ' . $time . ' AND au.stage=' . AgentUserModel::STAGE_TRIAL . ' ';
+            $agentUserWhere .= ' AND au.deadline< ' . $time;
         }
-
-        //一级代理数据
-        $firstAgentWhere = ' ';
-        if (!empty($params['first_agent_name'])) {
-            $firstAgentWhere .= " AND fa.name like '%" . $params['first_agent_name'] . "%'";
+        //数据权限
+        $agentWhere = '';
+        if ($params['only_read_self']) {
+            $employeeAgentIdList = self::getAgentIdByEmployeeId($employeeId);
+            if (empty($employeeAgentIdList)) {
+                return $recommendUserList;
+            }
+            $agentWhere = ' AND (a.id in(' . implode(',', $employeeAgentIdList) . '))';
         }
-        if (!empty($params['first_agent_id'])) {
-            $firstAgentWhere .= ' AND fa.id=' . $params['first_agent_id'];
+        //代理数据
+        $searchAgentIdList = self::getSearchAgentIdList($params);
+        if (is_array($searchAgentIdList) && !empty($searchAgentIdList)) {
+            $agentUserWhere .= " AND au.agent_id in(" . implode(',', $searchAgentIdList) . ")";
+        } elseif (is_array($searchAgentIdList) && empty($searchAgentIdList)) {
+            return $recommendUserList;
         }
         if (!empty($params['agent_type'])) {
-            $firstAgentWhere .= ' AND fa.type=' . $params['agent_type'];
+            $agentTypeData = AgentModel::getAgentParentData($searchAgentIdList);
+            if (!in_array($params['agent_type'],array_column($agentTypeData,'agent_type'))) {
+                return $recommendUserList;
+            }
         }
-        //二级代理数据
-        $secondAgentTable = 'sa';
-        $secondAgentWhere = ' ';
-        if (!empty($params['second_agent_id'])) {
-            $secondAgentWhere .= ' AND ' . $secondAgentTable . '.id=' . $params['second_agent_id'];
-        }
-        if (!empty($params['second_agent_name'])) {
-            $secondAgentWhere .= " AND " . $secondAgentTable . ".name like '%" . $params['second_agent_name'] . "%'";
-        }
-        list($recommendUserList['count'], $recommendUserList['list']) = AgentUserModel:: agentRecommendUserList($agentUserWhere, $firstAgentWhere, $secondAgentWhere, $params['page'], $params['count']);
+        list($recommendUserList['count'], $recommendUserList['list']) = AgentUserModel:: agentRecommendUserList($agentUserWhere, $agentWhere, $params['page'], $params['count']);
         if (empty($recommendUserList['count'])) {
             return $recommendUserList;
+        }
+        //获取等级数据
+        $firstAgentIdArr = array_column($recommendUserList['list'], 'first_agent_id');
+        $secondAgentIdArr = array_column($recommendUserList['list'], 'second_agent_id');
+        $agentData = AgentModel::getAgentParentData(array_unique(array_merge($firstAgentIdArr,$secondAgentIdArr)));
+        if (!empty($agentData)) {
+            $agentData = array_column($agentData, null, 'id');
+        }
+        foreach ($recommendUserList['list'] as $rsk => &$rsv) {
+            $rsv['first_agent_name'] = !empty($agentData[$rsv['first_agent_id']]['parent_name']) ? $agentData[$rsv['first_agent_id']]['parent_name'] : $agentData[$rsv['first_agent_id']]['name'];
+            $rsv['second_agent_name'] = !empty($agentData[$rsv['second_agent_id']]['parent_name']) ? $agentData[$rsv['second_agent_id']]['name'] : "";
+            $rsv['second_agent_id_true'] = empty($rsv['second_agent_id']) ? '' : $rsv['second_agent_id'];
+            $rsv['app_id'] = UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT;
+            $rsv['agent_type'] = $agentData[$rsv['first_agent_id']]['agent_type'];
         }
         return self::formatRecommendUsersData($recommendUserList);
     }
@@ -1274,7 +1459,7 @@ class AgentService
     {
         //学生详细数据
         $studentListDetail = array_column(StudentService::searchStudentList(['id' => array_column($recommendUserData['list'], 'user_id')]), null, 'id');
-        $dict = DictService::getTypesMap([DictConstants::AGENT_TYPE['type'], DictConstants::AGENT_USER_STAGE['type'], DictConstants::PACKAGE_APP_NAME['type'], DictConstants::AGENT_BIND_STATUS['type']]);
+        $dict = DictConstants::getTypesMap([DictConstants::AGENT_TYPE['type'], DictConstants::AGENT_USER_STAGE['type'], DictConstants::PACKAGE_APP_NAME['type'], DictConstants::AGENT_BIND_STATUS['type']]);
 
         array_walk($recommendUserData['list'], function (&$rv) use ($studentListDetail, $dict) {
             $rv['student_name'] = $studentListDetail[$rv['user_id']]['name'];
@@ -1282,24 +1467,24 @@ class AgentService
             $rv['student_mobile'] = Util::hideUserMobile($studentListDetail[$rv['user_id']]['mobile']);
             //绑定关系状态
             $rv['bind_status'] = self::getAgentUserBindStatus($rv['deadline'], $rv['stage']);
-
-            $rv['type_name'] = $dict[DictConstants::AGENT_TYPE['type']][$rv['type']]['value'];
+            $rv['type_name'] = $dict[DictConstants::AGENT_TYPE['type']][$rv['agent_type']]['value'];
             $rv['stage_name'] = $dict[DictConstants::AGENT_USER_STAGE['type']][$rv['stage']]['value'];
             $rv['app_id_name'] = $dict[DictConstants::PACKAGE_APP_NAME['type']][$rv['app_id']]['value'];
             $rv['bind_status_name'] = $dict[DictConstants::AGENT_BIND_STATUS['type']][$rv['bind_status']]['value'];
-            unset($rv['second_agent_id']);
+            $rv['second_agent_id_true'] = empty($rv['second_agent_id']) ? '' : $rv['second_agent_id'];
+
         });
         return $recommendUserData;
     }
 
     /**
-     * 推广订单列表数据
+     * 格式化推荐订单列表查询条件
      * @param $params
-     * @return array|mixed
+     * @param $employeeId
+     * @return array
      */
-    public static function recommendBillsList($params)
+    private static function formatRecommendBillsListWhere($params, $employeeId)
     {
-        $recommendUserList = ['count' => 0, 'list' => []];
         $dssStudentWhere = [];
         //学员名称——姓名/ID/手机号
         //学员UUID
@@ -1319,7 +1504,7 @@ class AgentService
         if (!empty($dssStudentWhere)) {
             $dssStudentList = StudentService::searchStudentList($dssStudentWhere);
             if (empty($dssStudentList)) {
-                return $recommendUserList;
+                return [];
             }
             $whereStudentIds = array_column($dssStudentList, 'id');
         }
@@ -1339,13 +1524,21 @@ class AgentService
         if (!empty($params['pay_end_time'])) {
             $giftCodeWhere .= ' AND gc.create_time<=' . $params['pay_end_time'];
         }
-        //订单ID 购买产品包
-        $agentBillWhere = ' ab.id>0 AND ab.action_type != ' . AgentAwardDetailModel::AWARD_ACTION_TYPE_REGISTER;
+        $agentBillWhere = ' ';
+        //目标代理商ID列表
+        $searchAgentIdList = self::getSearchAgentIdList($params);
+        if (is_array($searchAgentIdList) && !empty($searchAgentIdList)) {
+            $agentBillWhere .= " AND ab.agent_id in(" . implode(',', $searchAgentIdList) . ") AND ab.is_bind !=".AgentAwardDetailModel::IS_BIND_STATUS_NOT_HAVE_AGENT;
+        } elseif (is_array($searchAgentIdList) && empty($searchAgentIdList)) {
+            return [];
+        }
         if (!empty($whereStudentIds)) {
             $agentBillWhere .= ' AND  ab.student_id in( ' . implode(',', $whereStudentIds) . ')';
         }
+        $agentBillWhere .= ' AND ab.action_type != ' . AgentAwardDetailModel::AWARD_ACTION_TYPE_REGISTER;
+        //订单ID 购买产品包
         if (!empty($params['parent_bill_id'])) {
-            $agentBillWhere .= " AND ab.ext->>'$.parent_bill_id'=" . $params['parent_bill_id'];
+            $agentBillWhere .= ' AND ab.ext_parent_bill_id =\'' . $params['parent_bill_id'] . '\'';
         }
         if (!empty($params['package_id'])) {
             $agentBillWhere .= " AND ab.ext->>'$.package_id'=" . $params['package_id'];
@@ -1353,57 +1546,161 @@ class AgentService
         if (isset($params['is_bind']) && is_numeric($params['is_bind'])) {
             $agentBillWhere .= " AND ab.is_bind=" . $params['is_bind'];
         }
-
-        //一级代理数据
-        $firstAgentWhere = ' ';
-        if (!empty($params['first_agent_name'])) {
-            $firstAgentWhere .= " AND fa.name like '%" . $params['first_agent_name'] . "%'";
-        }
-        if (!empty($params['first_agent_id'])) {
-            $firstAgentWhere .= ' AND fa.id=' . $params['first_agent_id'];
+        if (!empty($params['division_model'])) {
+            $agentBillWhere .= " AND ab.ext->>'$.division_model'=" . $params['division_model'];
         }
         if (!empty($params['agent_type'])) {
-            $firstAgentWhere .= ' AND fa.type=' . $params['agent_type'];
+            $agentBillWhere .= " AND ab.ext->>'$.agent_type'=" . $params['agent_type'];
         }
-        //二级代理数据
-        $secondAgentTable = 'sa';
-        $secondAgentWhere = ' ';
-        if (!empty($params['second_agent_id'])) {
-            $secondAgentWhere .= ' AND ' . $secondAgentTable . '.id=' . $params['second_agent_id'];
+        //区分是否存在真实绑定关系
+        if (!empty($firstAgentId) || !empty($secondAgentId)) {
+            $agentBillWhere .= " AND ab.is_bind=" . AgentAwardDetailModel::IS_BIND_STATUS_YES;
+        } else {
+            $agentBillWhere .= " AND ab.is_bind!=" . AgentAwardDetailModel::IS_BIND_STATUS_NO;
         }
-        if (!empty($params['second_agent_name'])) {
-            $secondAgentWhere .= " AND " . $secondAgentTable . ".name like '%" . $params['second_agent_name'] . "%'";
+        //是否有推荐人:1有 2没有
+        $agentAwardBillExtTable = 'bex';
+        $agentAwardBillExtWhere = ' 1=1 ';
+        if (!empty($params['is_referral_relation']) && ($params['is_referral_relation'] == AgentAwardBillExtModel::IS_HAVE_STUDENT_REFERRAL_YES)) {
+            $agentAwardBillExtWhere .= " AND " . $agentAwardBillExtTable . ".student_referral_id>0";
+        } elseif (!empty($params['is_referral_relation']) && ($params['is_referral_relation'] == AgentAwardBillExtModel::IS_HAVE_STUDENT_REFERRAL_NO)) {
+            $agentAwardBillExtWhere .= " AND " . $agentAwardBillExtTable . ".student_referral_id=0";
         }
-        list($recommendUserList['count'], $recommendUserList['list']) = AgentAwardDetailModel:: agentBillsList($agentBillWhere, $firstAgentWhere, $secondAgentWhere, $giftCodeWhere, $params['page'], $params['count']);
-        if (empty($recommendUserList['count'])) {
-            return $recommendUserList;
+
+        if (!empty($params['is_hit_order'])) {
+            $agentAwardBillExtWhere .= " AND bex.is_hit_order=" . $params['is_hit_order'];
         }
-        return self::formatRecommendBillsData($recommendUserList);
+
+        //数据权限
+        $agentWhere = '';
+        $employeeAgentIdList = [];
+        if ($params['only_read_self']) {
+            $employeeAgentIdList = self::getAgentIdByEmployeeId($employeeId);
+            if (empty($employeeAgentIdList)) {
+                return [];
+            }
+        }
+        //成单的代理——姓名/ID搜索，模糊搜索即可
+        $signerAgentIdList = [];
+        if (!empty($params['signer_agent_id'])) {
+            $signerAgentIdList[] = $params['signer_agent_id'];
+        }
+        if (!empty($params['signer_agent_name'])) {
+            $signerAgents = AgentModel::getRecords(['name[~]' => $params['signer_agent_name']], ['id']);
+            if (empty($signerAgents)) {
+                return [];
+            }
+            $signerAgentIdList = array_merge($signerAgentIdList, array_column($signerAgents, 'id'));
+        }
+        if (!empty($signerAgentIdList)) {
+            $agentAwardBillExtWhere .= " AND " . $agentAwardBillExtTable . ".signer_agent_id in (" . implode(',', $signerAgentIdList) . ")";
+        } elseif ($params['only_read_self']) {
+            $agentAwardBillExtWhere .= " AND (" . $agentAwardBillExtTable . ".signer_agent_id in (" . implode(',', $employeeAgentIdList) . ") OR ". $agentAwardBillExtTable . ".own_agent_id in (" . implode(',', $employeeAgentIdList)."))";
+        }
+        $agentAwardBillExtWhere .= ' AND ((bex.own_agent_status=' . AgentModel::STATUS_OK . ' OR bex.signer_agent_status=' . AgentModel::STATUS_OK . '))';
+        //是否首单
+        if (!empty($params['is_first_order'])) {
+            $signerAgentIdList[] = $params['is_first_order'];
+            $agentAwardBillExtWhere .= " AND " . $agentAwardBillExtTable . ".is_first_order =" . $params['is_first_order'];
+        }
+        return [
+            'gift_code_where' => $giftCodeWhere,
+            'agent_bill_where' => $agentBillWhere,
+            'award_bill_ext_where' => $agentAwardBillExtWhere,
+            'agent_where' => $agentWhere,
+        ];
+    }
+
+    /**
+     * 推广订单列表数据:订单归属人角度，成单人角度
+     * @param $params
+     * @param $employeeId
+     * @return array|mixed
+     */
+
+    public static function recommendBillsList($params, $employeeId)
+    {
+        $recommendBillsList = ['count' => 0, 'list' => []];
+        //格式化查询条件
+        $whereData = self::formatRecommendBillsListWhere($params, $employeeId);
+        if (empty($whereData)) {
+            return $recommendBillsList;
+        }
+        //获取推荐订单列表
+        list($recommendBillsList['count'], $recommendBillsList['list']) = AgentAwardDetailModel:: agentBillsList(
+            $whereData['agent_bill_where'], $whereData['gift_code_where'],
+            $whereData['agent_where'], $whereData['award_bill_ext_where'],
+            $params['page'], $params['count']);
+        if (empty($recommendBillsList['count'])) {
+            return $recommendBillsList;
+        }
+        //查询订单的详细数据
+        $giftCodeDetail = array_column(DssGiftCodeModel::getGiftCodeDetailByBillId(array_column($recommendBillsList['list'], 'parent_bill_id')), null, 'parent_bill_id');
+        //查询成单代理商的数据&查询归属代理商数据
+        $recommendBillsSignerAgentIdArr = array_column($recommendBillsList['list'], 'signer_agent_id');
+        $recommendBillsFirstAgentIdArr = array_column($recommendBillsList['list'], 'first_agent_id');
+        $recommendBillsSecondAgentIdArr = array_column($recommendBillsList['list'], 'second_agent_id');
+        $recommendBillsAgentData = AgentModel::getAgentParentData(array_unique(array_merge($recommendBillsSignerAgentIdArr, $recommendBillsSecondAgentIdArr, $recommendBillsFirstAgentIdArr)));
+        if (!empty($recommendBillsAgentData)) {
+            $recommendBillsAgentData = array_column($recommendBillsAgentData, null, 'id');
+        }
+        //组合课包数据以及成单人数据
+        foreach ($recommendBillsList['list'] as $rsk => &$rsv) {
+            $rsv['signer_first_agent_name'] = $rsv['signer_second_agent_name'] = $rsv['signer_first_agent_id'] = $rsv['signer_second_agent_id'] = $rsv['signer_agent_type'] = "";
+            if (!empty($rsv['signer_agent_id'])) {
+                $rsv['signer_first_agent_name'] = !empty($recommendBillsAgentData[$rsv['signer_agent_id']]['parent_name']) ? $recommendBillsAgentData[$rsv['signer_agent_id']]['parent_name'] : $recommendBillsAgentData[$rsv['signer_agent_id']]['name'];
+                $rsv['signer_second_agent_name'] = !empty($recommendBillsAgentData[$rsv['signer_agent_id']]['parent_name']) ? $recommendBillsAgentData[$rsv['signer_agent_id']]['name'] : "";
+                $rsv['signer_first_agent_id'] = !empty($recommendBillsAgentData[$rsv['signer_agent_id']]['p_id']) ? $recommendBillsAgentData[$rsv['signer_agent_id']]['p_id'] : $recommendBillsAgentData[$rsv['signer_agent_id']]['id'];
+                $rsv['signer_second_agent_id'] = !empty($recommendBillsAgentData[$rsv['signer_agent_id']]['p_id']) ? $recommendBillsAgentData[$rsv['signer_agent_id']]['id'] : "";
+                $rsv['signer_agent_type'] = $recommendBillsAgentData[$rsv['signer_agent_id']]['agent_type'];
+            }
+            $rsv['bill_package_id'] = $giftCodeDetail[$rsv['parent_bill_id']]['bill_package_id'];
+            $rsv['bill_amount'] = $giftCodeDetail[$rsv['parent_bill_id']]['bill_amount'];
+            $rsv['code_status'] = $giftCodeDetail[$rsv['parent_bill_id']]['code_status'];
+            $rsv['buy_time'] = $giftCodeDetail[$rsv['parent_bill_id']]['buy_time'];
+            $rsv['package_name'] = $giftCodeDetail[$rsv['parent_bill_id']]['package_name'];
+            //归属人
+            $rsv['first_agent_name'] = !empty($recommendBillsAgentData[$rsv['first_agent_id']]['parent_name']) ? $recommendBillsAgentData[$rsv['first_agent_id']]['parent_name'] : $recommendBillsAgentData[$rsv['first_agent_id']]['name'];
+            $rsv['second_agent_name'] = !empty($recommendBillsAgentData[$rsv['second_agent_id']]['parent_name']) ? $recommendBillsAgentData[$rsv['second_agent_id']]['name'] : "";
+            $rsv['second_agent_id_true'] = empty($rsv['second_agent_id']) ? '' : $rsv['second_agent_id'];
+            $rsv['app_id'] = UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT;
+        }
+        return self::formatRecommendBillsData($recommendBillsList);
     }
 
 
     /**
      * 格式化推广学员列表数据
-     * @param $recommendUserData
+     * @param $recommendBillsData
      * @return mixed
      */
-    private static function formatRecommendBillsData($recommendUserData)
+    private static function formatRecommendBillsData($recommendBillsData)
     {
         //学生详细数据
-        $studentListDetail = array_column(StudentService::searchStudentList(['id' => array_column($recommendUserData['list'], 'student_id')]), null, 'id');
-        $dict = DictService::getTypesMap([DictConstants::AGENT_TYPE['type'], DictConstants::CODE_STATUS['type'], DictConstants::PACKAGE_APP_NAME['type'], DictConstants::YSE_OR_NO_STATUS['type']]);
-        array_walk($recommendUserData['list'], function (&$rv) use ($studentListDetail, $dict) {
+        $studentListDetail = array_column(StudentService::searchStudentList(['id' => array_column($recommendBillsData['list'], 'student_id')]), null, 'id');
+        $dict = DictConstants::getTypesMap([DictConstants::AGENT_TYPE['type'], DictConstants::CODE_STATUS['type'], DictConstants::PACKAGE_APP_NAME['type'], DictConstants::YSE_OR_NO_STATUS['type'], DictConstants::AGENT_DIVISION_MODEL['type']]);
+        array_walk($recommendBillsData['list'], function (&$rv) use ($studentListDetail, $dict) {
             $rv['student_name'] = $studentListDetail[$rv['student_id']]['name'];
             $rv['student_uuid'] = $studentListDetail[$rv['student_id']]['uuid'];
             $rv['student_mobile'] = Util::hideUserMobile($studentListDetail[$rv['student_id']]['mobile']);
             $rv['bill_amount'] = $rv['bill_amount'] / 100;
-            $rv['type_name'] = $dict[DictConstants::AGENT_TYPE['type']][$rv['type']]['value'];
+            $rv['signer_agent_type_name'] = empty($rv['signer_agent_type']) ? '' : $dict[DictConstants::AGENT_TYPE['type']][$rv['signer_agent_type']]['value'];
             $rv['code_status_name'] = ($rv['code_status'] == DssGiftCodeModel::CODE_STATUS_INVALID) ? "已退款" : "已支付";
             $rv['app_id_name'] = $dict[DictConstants::PACKAGE_APP_NAME['type']][$rv['app_id']]['value'];
-            $rv['is_bind_name'] = $dict[DictConstants::YSE_OR_NO_STATUS['type']][$rv['is_bind']]['value'];
-            unset($rv['second_agent_id']);
+            //这两项数据暂时隐藏不展示
+            //$rv['is_bind_name'] = $dict[DictConstants::YSE_OR_NO_STATUS['type']][$rv['is_bind']]['value'];
+            //$rv['division_model_name'] = $dict[DictConstants::AGENT_DIVISION_MODEL['type']][$rv['division_model']]['value'];
+            //区分是否存在真正的绑定关系
+            if ($rv['is_bind'] == AgentUserModel::BIND_STATUS_UNBIND) {
+                $rv['first_agent_id'] = $rv['first_agent_name'] = $rv['second_agent_id'] = $rv['second_agent_name'] = $rv['second_agent_id_true'] = $rv['type_name'] = '';
+            } else {
+                $rv['type_name'] = $dict[DictConstants::AGENT_TYPE['type']][$rv['agent_type']]['value'];
+            }
+            $rv['student_referral_id'] = empty($rv['student_referral_id']) ? '' : $rv['student_referral_id'];
+            $rv['is_first_order_name'] = ($rv['is_first_order']==AgentAwardBillExtModel::IS_FIRST_ORDER_YES) ? "是" : "否";
+
         });
-        return $recommendUserData;
+        return $recommendBillsData;
     }
 
     /**
@@ -1486,14 +1783,9 @@ class AgentService
     public static function popularMaterial($params)
     {
         $time = time();
-        $packageId = self::getPackageId('WEB_STUDENT_CONFIG', 'mini_package_id');
+        $packageId = $params['package_id'];
         $exist = GoodsResourceModel::getRecord(['package_id' => $packageId], ['id', 'package_id', 'ext']);
         $ext = [
-            [
-                "key"   => "product_img",
-                "type"  => GoodsResourceModel::CONTENT_TYPE_IMAGE,
-                "value" => $params['product_img']
-            ],
             [
                 "key"   => "poster",
                 "type"  => GoodsResourceModel::CONTENT_TYPE_POSTER,
@@ -1525,14 +1817,18 @@ class AgentService
     }
 
     /**
-     * @param int $agentId
-     * @return array|mixed
      * 获取推广素材方法
+     * @param int $agentId
+     * @param int $packageId
+     * @return array|mixed
      * @throws RunTimeException
+     * @throws \App\Libs\KeyErrorRC4Exception
      */
-    public static function popularMaterialInfo($agentId = 0)
+    public static function popularMaterialInfo($agentId = 0, $packageId=0)
     {
-        $packageId = self::getPackageId('WEB_STUDENT_CONFIG', 'mini_package_id');
+        if (empty($packageId)) {
+            $packageId = self::getPackageId('WEB_STUDENT_CONFIG', 'mini_package_id');
+        }
         $result = GoodsResourceModel::getRecord(['package_id' => $packageId], ['id', 'package_id', 'ext']);
         if (empty($result)) {
             return $result;
@@ -1580,53 +1876,50 @@ class AgentService
 
     /**
      * 检测当前代理商是否有效
-     * @param $agentId
-     * @return bool
+     * @param $agentIds
+     * @return array
      */
-    public static function checkAgentStatusIsValid($agentId)
+    public static function checkAgentStatusIsValid($agentIds)
     {
-        $data = AgentModel::getAgentParentData($agentId);
-        if (($data['status'] != AgentModel::STATUS_FREEZE) && ($data['p_status'] != AgentModel::STATUS_FREEZE)) {
-            return true;
+        $agentValidStatus = array_fill_keys($agentIds, AgentModel::STATUS_FREEZE);
+        $agentData = AgentModel::getAgentParentData($agentIds);
+        if (empty($agentData)) {
+            return $agentValidStatus;
         }
-        return false;
+        foreach ($agentData as $k => $v) {
+            if (($v['status'] != AgentModel::STATUS_FREEZE) && ($v['p_status'] != AgentModel::STATUS_FREEZE)) {
+                $agentValidStatus[$v['id']] = AgentModel::STATUS_OK;
+            }
+        }
+        return $agentValidStatus;
     }
 
     /**
-     * 检测此订单是否为代理商转化而来
-     * @param $studentId
+     * 代理奖励发放逻辑
+     * @param $studentInfo
      * @param $parentBillId
-     * @param $packageType
-     * @return int
+     * @param $packageInfo
+     * @return bool
      */
-    public static function checkBillIsAgentReferral($studentId, $parentBillId, $packageType)
+    public static function agentAwardLogic($studentInfo, $parentBillId, $packageInfo)
     {
-        //检测是否满足执行代理奖励逻辑条件
-        $agentId = 0;
-        //检测转介绍关系
-        $hasAgentReferral = AgentAwardService::checkReferralIsAgent($studentId);
-        if (empty($hasAgentReferral)) {
-            return $agentId;
+        //真人赠送智能课包直接返回
+        if ($packageInfo['app_id'] != Constants::SMART_APP_ID) {
+            return false;
         }
         //检测当前订单是否已经有奖励发放记录
         $billIsValid = AgentAwardService::checkBillIsValid($parentBillId);
         if (empty($billIsValid)){
-            return $agentId;
+            return false;
         }
-        if ($packageType == DssPackageExtModel::PACKAGE_TYPE_TRIAL) {
-            //体验课:订单映射关系是否存在
-            $billAgentMap = AgentBillMapModel::get($parentBillId, $studentId);
-            if (!empty($billAgentMap)) {
-                $agentId = $billAgentMap['agent_id'];
-            }
-        } elseif ($packageType == DssPackageExtModel::PACKAGE_TYPE_NORMAL) {
-            //正式课:检测此学生是否存在绑定关系的代理数据
-            $validAgentBind = AgentUserModel::getRecord(['user_id' => $studentId, 'stage[>=]' => AgentUserModel::STAGE_TRIAL], ['agent_id']);
-            if (!empty($validAgentBind)) {
-                $agentId = $validAgentBind['agent_id'];
-            }
+        //获取此次奖励订单归属以及代理商关系绑定数据
+        $bindAndAwardCheckObj = new AgentDispatchService($parentBillId, $studentInfo['id'], $packageInfo);
+        $awardData = $bindAndAwardCheckObj::getBindAndBillOwnAgentData();
+        if (empty($awardData)) {
+            return false;
         }
-        return $agentId;
+        AgentAwardService::agentReferralBillAward($awardData['bind_agent_id'], $studentInfo, $packageInfo['package_type'], $packageInfo, $parentBillId, $awardData['own_agent_id']);
+        return true;
     }
 
     /**
@@ -1688,6 +1981,78 @@ class AgentService
     }
 
     /**
+     * 根据分成模式不同获取推广课包列表
+     * @param $divisionModel
+     * @return array
+     */
+    public static function getAgentDivisionModelToPackage($divisionModel)
+    {
+        //根据分成模式，选择可推广的课包列表
+        switch ($divisionModel) {
+            case AgentModel::DIVISION_MODEL_LEADS:
+                $packageIds = DssErpPackageV1Model::getTrailPackageIds();
+                break;
+            case AgentModel::DIVISION_MODEL_LEADS_AND_SALE:
+                $packageIds = array_column(DssErpPackageV1Model::getPackageIds([DssCategoryV1Model::DURATION_TYPE_TRAIL, DssCategoryV1Model::DURATION_TYPE_NORMAL]), 'package_id');
+                break;
+            default:
+                return [];
+        }
+        return ErpPackageV1Model::getPackageInfoByIdChannel($packageIds, ErpPackageV1Model::CHANNEL_OP_AGENT, ErpPackageV1Model::STATUS_ON_SALE);
+    }
+
+    /**
+     * 获取代理推广产品列表
+     * @param $agentId
+     * @return array
+     */
+    public static function getPackageList($agentId)
+    {
+        if (empty($agentId)) {
+            return [];
+        }
+        $agentInfo = AgentModel::getById($agentId);
+
+        $list = AgentSalePackageModel::getPackageList(!empty($agentInfo['parent_id']) ? $agentInfo['parent_id'] : $agentId);
+        if (empty($list)) {
+            return [];
+        }
+        // 查询不可用产品包ID
+        $allPackageIds = array_column($list, 'package_id');
+        $notAvailable = DssErpPackageV1Model::getRecords(['id' => $allPackageIds, 'status[!]' => DssErpPackageV1Model::STATUS_ON_SALE], 'id');
+
+        $data = [];
+        foreach ($list as $value) {
+            $oneItem = [
+                'package_id' => $value['package_id']
+            ];
+            if (in_array($value['package_id'], $notAvailable)) {
+                $oneItem['error_message'] = Lang::getWord('package_not_available_for_sale');
+            }
+            if (!empty($value['cover'])) {
+                $oneItem['product_img'] = $value['cover'];
+                $oneItem['product_img_url'] = AliOSS::replaceShopCdnDomain($value['cover']);
+            }
+            $data[] = $oneItem;
+        }
+        return $data;
+    }
+
+    /**
+     * 产品包详情
+     * @param $packageId
+     * @return array|bool
+     * @throws RunTimeException
+     */
+    public static function packageDetail($packageId)
+    {
+        if (empty($packageId)) {
+            return [];
+        }
+        return PackageService::getPackageV1Detail($packageId);
+    }
+
+    /**
      * 查询代理商渠道
      * @param $type
      * @return array|mixed|null
@@ -1727,5 +2092,188 @@ class AgentService
             $data = array_merge($data, AgentModel::getById($data['agent_id']));
         }
         return $data;
+    }
+
+    /**
+     * 检测代理奖励明细中，用户和代理商的绑定关系状态字段数据
+     * @param $userId
+     * @param $agentId
+     * @param $bindAgentId
+     * @return int
+     */
+    public static function checkAwardIsBindStatus($userId, $agentId, $bindAgentId)
+    {
+        $agentUser = AgentUserModel::getRecord(['agent_id' => $agentId, 'user_id' => $userId, 'stage[>=]' => AgentUserModel::STAGE_TRIAL], ['id', 'stage', 'deadline']);
+        if (empty($agentUser) && empty($bindAgentId)) {
+            //无绑定关系,且无需绑定
+            return AgentAwardDetailModel::IS_BIND_STATUS_NOT_HAVE_AGENT;
+        } elseif (empty($agentUser) && !empty($bindAgentId)) {
+            //无绑定关系,且需绑定
+            return AgentAwardDetailModel::IS_BIND_STATUS_YES;
+        } elseif (($agentUser['stage'] == AgentUserModel::STAGE_TRIAL || $agentUser['stage'] == AgentUserModel::STAGE_FORMAL) && ($agentUser['deadline'] >= time())) {
+            //绑定中
+            return AgentAwardDetailModel::IS_BIND_STATUS_YES;
+        } else {
+            //已解绑
+            return AgentAwardDetailModel::IS_BIND_STATUS_NO;
+        }
+    }
+
+    /**
+     * 通过订单ID获取映射代理商数据,检测社群分班条件
+     * @param $parentBillId
+     * @param $studentId
+     * @return bool
+     */
+    public static function distributionClassCondition($parentBillId, $studentId)
+    {
+        //分班条件:代理渠道购买并且代理商分成模式为线索+售卖不分班，其余均可以分班
+        //订单映射数据
+        $mapData = AgentBillMapModel::get($parentBillId, $studentId);
+        if (empty($mapData)) {
+            return true;
+        }
+        //代理商数据
+        $agentData = AgentModel::getAgentParentData([$mapData['agent_id']]);
+        if ($agentData[0]['division_model'] == AgentModel::DIVISION_MODEL_LEADS_AND_SALE) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 代理商数据更改操作日志事件触发器
+     * @param $agentId
+     * @param $operatorId
+     * @param $updateData
+     * @param $opType
+     */
+    private static function agentDataUpdateOpLogEvent($agentId, $operatorId, $updateData, $opType)
+    {
+        //日志记录
+        $agentOpEventObj = new AgentOpEvent(
+            [
+                'agent_id' => $agentId,
+                'update_data' => $updateData,
+                'operator_id' => $operatorId,
+                'op_type' => $opType
+            ]);
+        $agentOpEventObj::fire($agentOpEventObj);
+    }
+
+    /**
+     * 获取代理商id列表通过一级代理以及二级代理搜索条件
+     * @param $params
+     * @return array|bool
+     */
+    private static function getSearchAgentIdList($params)
+    {
+        if (empty($params['first_agent_name']) &&
+            empty($params['first_agent_id']) &&
+            empty($params['second_agent_name']) &&
+            empty($params['second_agent_id'])) {
+            return false;
+        }
+        //一级代理数据
+        $firstAgentId = [];
+        $firstAgentWhere = [];
+        if (!empty($params['first_agent_name'])) {
+            $firstAgentWhere['name[~]'] = $params['first_agent_name'];
+        }
+        if (is_numeric($params['first_agent_id'])) {
+            $firstAgentWhere['id'] = $params['first_agent_id'];
+        }
+        if (!empty($firstAgentWhere)) {
+            $firstAgentWhere['parent_id'] = 0;
+            $firstAgentData = AgentModel::getRecords($firstAgentWhere, ['id']);
+            if (empty($firstAgentData)) {
+                return [];
+            }
+            $firstAgentId = array_column($firstAgentData, 'id');
+        }
+        //一级代理和二级代理相等的：查询一级代理的直接推广数据
+        if (!empty($params['first_agent_id']) && !empty($params['second_agent_id']) && $params['first_agent_id'] == $params['second_agent_id']) {
+            return $firstAgentId;
+        }
+        //二级代理数据
+        $secondAgentId = [];
+        $secondAgentWhere = [];
+        if (!empty($firstAgentId)) {
+            $secondAgentWhere['parent_id'] = $firstAgentId;
+        }
+        if (!empty($params['second_agent_name'])) {
+            $secondAgentWhere['name[~]'] = $params['second_agent_name'];
+        }
+        if (is_numeric($params['second_agent_id'])) {
+            $secondAgentWhere['id'] = $params['second_agent_id'];
+        }
+        if (!empty($secondAgentWhere)) {
+            $secondAgentWhere['parent_id[>]'] = 0;
+            $secondAgentData = AgentModel::getRecords($secondAgentWhere, ['id']);
+            if (!empty($secondAgentData)) {
+                $secondAgentId = array_column($secondAgentData, 'id');
+            }
+        }
+        //一级和二级同时搜索
+        if (!empty($firstAgentId) && (!empty($secondAgentWhere['name[~]']) || !empty($secondAgentWhere['id']))) {
+            if (empty($secondAgentId)) {
+                return [];
+            } else {
+                return $secondAgentId;
+            }
+        } else {
+            return array_merge($firstAgentId, $secondAgentId);
+        }
+    }
+
+    /**
+     * 通过负责人id获取此负责人下的代理id
+     * @param $employeeId
+     * @return array
+     */
+    public static function getAgentIdByEmployeeId($employeeId)
+    {
+        $parentIdData = AgentModel::getRecords(["OR" => ['service_employee_id' => $employeeId, 'employee_id' => $employeeId]], ['id']);
+        if (empty($parentIdData)) {
+            return [];
+        }
+        $parentIds = array_column($parentIdData, 'id');
+        $secondAgent = AgentModel::agentSecondaryData($parentIds);
+        $secondAgentIds = [];
+        if (!empty($secondAgent)) {
+            $secondAgentIds = array_column($secondAgent, 'id');
+        }
+        return array_merge($parentIds, $secondAgentIds);
+    }
+
+    /**
+     * 是否绑定了线下代理
+     * @param $studentId
+     * @param string $parentBillId
+     * @param string $type
+     * @return bool
+     */
+    public static function isBindOffLine($studentId, $parentBillId = '', $type = '')
+    {
+        $agentIdArr = AgentUserModel::getRecords(['user_id' => $studentId, 'stage[!]' => AgentUserModel::STAGE_REGISTER], ['agent_id']);
+        $agentId = [];
+        if (!empty($agentIdArr)) {
+            $agentId = array_column($agentIdArr, 'agent_id');
+        } else {
+            if (!empty($parentBillId)) {
+                $bindAndAwardCheckObj = new AgentDispatchService($parentBillId, $studentId, ['package_type' => $type]);
+                $awardData = $bindAndAwardCheckObj::getBindAndBillOwnAgentData();
+                if (!empty($awardData)) {
+                    $agentId = array($awardData['bind_agent_id']);
+                }
+            }
+        }
+        if (!empty($agentId)) {
+            $agentInfo = AgentModel::getAgentParentData($agentId);
+            if (in_array(AgentModel::TYPE_OFFLINE, array_column($agentInfo, 'agent_type'))) {
+                return true;
+            }
+        }
+        return  false;
     }
 }

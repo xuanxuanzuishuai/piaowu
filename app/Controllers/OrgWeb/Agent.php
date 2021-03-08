@@ -65,6 +65,11 @@ class Agent extends ControllerBase
                 'type' => 'required',
                 'error_code' => 'country_id_is_required'
             ],
+            [
+                'key' => 'division_model',
+                'type' => 'required',
+                'error_code' => 'division_model_is_required'
+            ],
         ];
 
         $params = $request->getParams();
@@ -130,6 +135,11 @@ class Agent extends ControllerBase
                 'key' => 'country_id',
                 'type' => 'required',
                 'error_code' => 'country_id_is_required'
+            ],
+            [
+                'key' => 'division_model',
+                'type' => 'required',
+                'error_code' => 'division_model_is_required'
             ],
         ];
 
@@ -328,19 +338,19 @@ class Agent extends ControllerBase
     {
         $rules = [
             [
-                'key'        => 'id',
-                'type'       => 'required',
+                'key' => 'id',
+                'type' => 'required',
                 'error_code' => 'id_is_required'
             ],
             [
-                'key'        => 'remark',
-                'type'       => 'required',
+                'key' => 'remark',
+                'type' => 'required',
                 'error_code' => 'remark_is_required'
             ],
             [
-                'key'        => 'remark',
-                'type'       => 'lengthMax',
-                'value'      => 200,
+                'key' => 'remark',
+                'type' => 'lengthMax',
+                'value' => 200,
                 'error_code' => 'remark_max_length_is_200'
             ]
         ];
@@ -364,21 +374,26 @@ class Agent extends ControllerBase
     {
         $rules = [
             [
-                'key'        => 'product_img',
-                'type'       => 'required',
+                'key' => 'product_img',
+                'type' => 'required',
                 'error_code' => 'product_img_is_required'
             ],
             [
-                'key'        => 'poster',
-                'type'       => 'required',
+                'key' => 'poster',
+                'type' => 'required',
                 'error_code' => 'poster_is_required'
             ],
             [
-                'key'        => 'text',
-                'type'       => 'lengthMax',
-                'value'      => 200,
+                'key' => 'text',
+                'type' => 'lengthMax',
+                'value' => 200,
                 'error_code' => 'text_max_length_is_200'
-            ]
+            ],
+            [
+                'key' => 'package_id',
+                'type' => 'required',
+                'error_code' => 'package_id_is_required'
+            ],
         ];
         $params = $request->getParams();
         $result = Valid::appValidate($params, $rules);
@@ -398,9 +413,22 @@ class Agent extends ControllerBase
      * @throws RunTimeException
      * @throws \App\Libs\KeyErrorRC4Exception
      */
-    public static function popularMaterialInfo(/** @noinspection PhpUnusedParameterInspection */ Request $request, Response $response)
+    public static function popularMaterialInfo(/** @noinspection PhpUnusedParameterInspection */
+        Request $request, Response $response)
     {
-        $data = AgentService::popularMaterialInfo();
+        $rules = [
+            [
+                'key' => 'package_id',
+                'type' => 'required',
+                'error_code' => 'package_id_is_required'
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $data = AgentService::popularMaterialInfo(0, $params['package_id']);
         return HttpHelper::buildResponse($response, $data);
     }
 
@@ -416,4 +444,31 @@ class Agent extends ControllerBase
         $data = AgentService::agentFuzzySearch($params);
         return HttpHelper::buildResponse($response, $data);
     }
+
+    /**
+     * 获取不同分成模式允许推广的商品包列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public static function agentDivisionToPackage(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'division_model',
+                'type' => 'required',
+                'error_code' => 'division_model_is_required'
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $params = $request->getParams();
+        $data = AgentService::getAgentDivisionModelToPackage($params['division_model']);
+        return HttpHelper::buildResponse($response, $data);
+    }
+
+
 }

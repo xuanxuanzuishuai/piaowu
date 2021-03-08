@@ -20,13 +20,6 @@ class DssErpPackageV1Model extends DssModel
     const SALE_SHOP_MAGIC_STONE = 4;
     const SALE_SHOP_VIDEO_PLAY = 5;
 
-    // channel 渠道授权 1 Android 2 IOS 4 公众号 8 ERP
-    const CHANNEL_ANDROID = 1;
-    const CHANNEL_IOS = 2;
-    const CHANNEL_WX = 4;
-    const CHANNEL_ERP = 8;
-    const CHANNEL_H5 = 32;
-
     // 商品包状态 -1 已下架 0 未上架 1 已上架
     const STATUS_OFF_SALE = -1;
     const STATUS_WAIT_SALE = 0;

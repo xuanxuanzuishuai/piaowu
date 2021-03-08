@@ -9,7 +9,9 @@
 namespace App\Controllers\OrgWeb;
 
 use App\Controllers\ControllerBase;
+use App\Libs\DictConstants;
 use App\Libs\HttpHelper;
+use App\Libs\Util;
 use App\Libs\Valid;
 use App\Services\PackageService;
 use Slim\Http\Request;
@@ -51,8 +53,51 @@ class Package extends ControllerBase
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        $params = $request->getParams();
         $data = PackageService::getPackageBySubType($params['sub_type']);
         return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
+     * 产品包列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function packageList(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        list($params['page'], $params['count']) = Util::formatPageCount($params);
+        $data = PackageService::list($params);
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $data
+        ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * 产品包状态字典
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function packageDropDownDict(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'dict_type',
+                'type' => 'required',
+                'error_code' => 'dict_type_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $data = DictConstants::getErpDict($params['dict_type']);
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $data
+        ], StatusCode::HTTP_OK);
     }
 }

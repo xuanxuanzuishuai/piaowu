@@ -42,7 +42,7 @@ class DictConstants {
             'default_wx_nickname'
         ]
     ];
-    
+
     // 员工专项活动设置
     const EMPLOYEE_ACTIVITY_ENV = [
         'type' => 'EMPLOYEE_ACTIVITY_ENV',
@@ -385,7 +385,7 @@ class DictConstants {
     //代理模式类型
     const AGENT_TYPE = [
         'type' => 'agent_type',
-        'keys' => ['1', '2', '3']
+        'keys' => ['1', '2', '3', '4']
     ];
     //业务线
     const PACKAGE_APP_NAME = [
@@ -481,6 +481,15 @@ class DictConstants {
         ]
     ];
 
+    //检测未激活正式课激活码的过期时间
+    const DSS_CHECK_NO_ACTIVE_CODE_EXPIRE_TIME = [
+        'type' => 'check_no_active_code_expire_time',
+        'keys' => [
+            'is_check_no_active_code_expire',    //是否检测未激活正式课激活码的过期时间
+            'no_active_code_expire_day',    //未激活正式课激活码的过期天数
+        ]
+    ];
+
     /**
      * erp阿里云config
      */
@@ -525,6 +534,9 @@ class DictConstants {
             'cancel_url',
             'result_url',
             'broadcast_config',
+            'success_url_v1',
+            'cancel_url_v1',
+            'result_url_v1',
         ]
     ];
 
@@ -546,6 +558,26 @@ class DictConstants {
         'keys' => [
             'event_deadline',
         ]
+    ];
+
+    // 签名秘钥
+    const SERVICE_SIGN_KEY = [
+        'type' => 'SERVICE_SIGN_KEY',
+        'keys' => [
+            'erp_service_key'
+        ],
+    ];
+
+    //一级渠道与支付方式映射关系
+    const CHANNEL_PAY_TYPE_MAP = [
+        'type' => 'channel_pay_type_map',
+        'keys' => [0]
+    ];
+
+    //代理订单撞单数据发送邮件地址列表
+    const AGENT_HIT_EMAILS = [
+        'type' => 'agent_hit_emails',
+        'keys' => [1, 2, 3, 4, 5, 6, 7, 8, 9,]
     ];
 
     /**
@@ -638,7 +670,7 @@ class DictConstants {
             if (!empty(array_diff($key, $type['keys']))) {
                 return [];
             }
-            return ErpDictModel::getKeyValuesByArray($type, $key);
+            return ErpDictModel::getKeyValuesByArray($type['type'], $key);
         }
 
         if (!in_array($key, $type['keys'])) {
