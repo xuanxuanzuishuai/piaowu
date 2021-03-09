@@ -186,4 +186,49 @@ class DssStudentModel extends DssModel
         ";
         return self::dbRO()->queryAll($sql);
     }
+
+    public static function getStudentInfo($studentID, $mobile, $uuid = null)
+    {
+        if (empty($studentID) && empty($mobile) && empty($uuid)) {
+            return null;
+        }
+
+        $where = [];
+        if (!empty($studentID)) {
+            $where[self::$table . '.id'] = $studentID;
+        }
+        if (!empty($mobile)) {
+            $where[self::$table . '.mobile'] = $mobile;
+        }
+        if (!empty($uuid)) {
+            $where[self::$table . '.uuid'] = $uuid;
+        }
+
+        $db = self::dbRO();
+        return $db->get(self::$table, [
+            self::$table . '.id',
+            self::$table . '.uuid',
+            self::$table . '.mobile',
+            self::$table . '.country_code',
+            self::$table . '.create_time',
+            self::$table . '.channel_id',
+            self::$table . '.status',
+            self::$table . '.sub_status',
+            self::$table . '.sub_start_date',
+            self::$table . '.sub_end_date',
+            self::$table . '.trial_start_date',
+            self::$table . '.trial_end_date',
+            self::$table . '.act_sub_info',
+            self::$table . '.first_pay_time',
+            self::$table . '.name',
+            self::$table . '.thumb',
+            self::$table . '.flags',
+            self::$table . '.last_play_time',
+            self::$table . '.has_review_course',
+            self::$table . '.collection_id',
+            self::$table . '.password',
+            self::$table . '.is_join_ranking',
+            self::$table . '.pay_vip_time',
+        ], $where);
+    }
 }

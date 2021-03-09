@@ -22,9 +22,18 @@ class UserWeiXinModel extends Model
     const STATUS_NORMAL = 1;
     const STATUS_DISABLE = 2;
 
+    const USER_TYPE_STUDENT = 1; // 学生
+    const USER_TYPE_TEACHER = 2;  // 老师 (废弃)
+    const USER_TYPE_STUDENT_ORG = 3; // 学生机构号 (废弃)
     const USER_TYPE_AGENT = 4;
 
+    const BUSI_TYPE_STUDENT_SERVER = 1; // 学生服务号
+    const BUSI_TYPE_TEACHER_SERVER = 2; // 老师服务号 (废弃)
+    const BUSI_TYPE_EXAM_MINAPP = 6; // 音基小程序
+    const BUSI_TYPE_STUDENT_MINAPP = 7; // 学生app推广小程序
+    const BUSI_TYPE_REFERRAL_MINAPP = 8; // 转介绍小程序
     const BUSI_TYPE_AGENT_MINI = 9; // 代理小程序
+    const BUSI_TYPE_SHOW_MINI = 10; //评测分享小程序
 
     /**
      * 检测账户与微信是否绑定

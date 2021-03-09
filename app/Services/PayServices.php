@@ -9,6 +9,8 @@
 namespace App\Services;
 
 
+use App\Libs\Erp;
+use App\Libs\HttpHelper;
 use App\Libs\Util;
 use App\Models\Dss\DssErpPackageV1Model;
 use App\Models\Dss\DssGiftCodeModel;
@@ -16,6 +18,12 @@ use App\Models\Dss\DssPackageExtModel;
 
 class PayServices
 {
+    const PACKAGE_4900 = 1; // 49元课包
+    const PACKAGE_990  = 2; // 9.9元课包
+    const PACKAGE_1    = 3; // 0.01元课包
+    const PACKAGE_1000 = 4; // 1元课包
+    const PACKAGE_4900_v2 = 5; // 49元课包（两周体验营+礼盒）
+
     /**
      * 获取学生体验课包的订单
      * @param $mobile
@@ -43,5 +51,19 @@ class PayServices
             $newTrials = DssGiftCodeModel::getStudentTrailOrderList($mobiles, $newPackageIds, DssGiftCodeModel::PACKAGE_V1);
         }
         return array_merge($oldTrials, $newTrials);
+    }
+
+    public static function getBillStatus($orderId)
+    {
+        $erp = new Erp();
+
+        $params = ['order_id' => $orderId];
+        $resp = $erp->billStatusV1($params);
+
+        if (empty($resp) || $resp['code'] != HttpHelper::STATUS_SUCCESS) {
+            return null;
+        }
+
+        return (string)$resp['data']['order_status'];
     }
 }

@@ -17,6 +17,7 @@ class Dss
     const ADD_USER_TICKET = '/op/user/save_ticket'; // 保存ticket
     const GET_TOKEN = '/op/user/get_token'; //获取token
     const GET_TOKEN_UUID_INFO = '/api/operation/get_uuid';//获取token对应的uuid信息
+    const CREATE_BILL = '/op/user/create_bill';//小程序创建订单
 
     private $host;
 
@@ -101,6 +102,20 @@ class Dss
         $res = self::commonAPI(self::GET_TOKEN_UUID_INFO, $data);
         if ($res['code'] != Valid::CODE_SUCCESS) {
             SimpleLogger::error('get relate uuid error', [$res, $data]);
+        }
+        return !empty($res['data']) ? $res['data'] : NULL;
+    }
+
+    /**
+     * 创建订单
+     * @param $data
+     * @return mixed|null
+     */
+    public function createBill($data)
+    {
+        $res = self::commonAPI(self::CREATE_BILL, $data);
+        if ($res['code'] != Valid::CODE_SUCCESS) {
+            SimpleLogger::error('create bill error', [$res, $data]);
         }
         return !empty($res['data']) ? $res['data'] : NULL;
     }

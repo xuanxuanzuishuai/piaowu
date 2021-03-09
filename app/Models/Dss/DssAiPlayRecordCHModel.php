@@ -98,4 +98,46 @@ class DssAiPlayRecordCHModel
                     and end_time <= :end_time) as ta group by ta.student_id,ta.create_date,ta.lesson_id";
         return $chDb->queryAll($sql, ['student_id' => $studentId, 'start_time' => $startTime, 'end_time' => $endTime]);
     }
+
+    /**
+     * 获取学生练习曲目总数
+     * @param $student_id
+     * @return array
+     */
+    public static function getStudentLessonCount($student_id)
+    {
+        $chdb = CHDB::getDB();
+        return $chdb->queryAll("
+        SELECT
+           count(DISTINCT lesson_id) as lesson_count
+        FROM
+           {table}
+        WHERE
+           student_id = {id}
+        ", ['table'=>self::$table, 'id' => $student_id]);
+    }
+
+    /**
+     * 获取用户最高分和最低分
+     * @param $student_id
+     * @return array
+     */
+    public static function getStudentMaxAndMinScore($student_id)
+    {
+        $chdb = CHDB::getDB();
+        $sql  = "
+        SELECT
+           Max(score_final) AS max_score,
+           Min(score_final) AS min_score
+        FROM
+           {table}
+        WHERE
+           student_id = {id}
+           AND score_final > 0
+        GROUP BY
+           lesson_id
+        ";
+        $result = $chdb->queryAll($sql, ['table' => self::$table, 'id' => $student_id]);
+        return $result;
+    }
 }

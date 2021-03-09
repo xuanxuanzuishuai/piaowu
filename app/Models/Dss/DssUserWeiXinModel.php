@@ -8,6 +8,7 @@
 namespace App\Models\Dss;
 
 use App\Libs\Constants;
+use App\Libs\UserCenter;
 
 class DssUserWeiXinModel extends DssModel
 {
@@ -25,6 +26,7 @@ class DssUserWeiXinModel extends DssModel
     const BUSI_TYPE_EXAM_MINAPP = 6; // 音基小程序
     const BUSI_TYPE_STUDENT_MINAPP = 7; // 学生app推广小程序
     const BUSI_TYPE_REFERRAL_MINAPP = 8; // 转介绍小程序
+    const BUSI_TYPE_SHOW_MINAPP = 10; //学生测评分享小程序
 
     /**
      * 处理App ID 默认值
@@ -143,5 +145,32 @@ class DssUserWeiXinModel extends DssModel
         ' WHERE d_s.id in ('.implode(',', $userId).')';
         $list = $db->queryAll($sql);
         return $list;
+    }
+
+    /**
+     * @param $openid
+     * @return array
+     * 根据openId获取用户测评分享小程序绑定信息
+     */
+    public static function getUserInfoBindWX($openid)
+    {
+        return self::dbRO()->select(
+            DssStudentModel::$table . ' (s) ',
+            [
+                '[>]' . DssUserWeiXinModel::$table . ' (uw) ' => ['s.id' => 'user_id']
+            ],
+            [
+                's.mobile',
+                's.uuid',
+                's.id'
+            ],
+            [
+                'uw.open_id'   => $openid,
+                'uw.user_type' => self::USER_TYPE_STUDENT,
+                'uw.status'    => self::STATUS_NORMAL,
+                'uw.busi_type' => self::BUSI_TYPE_SHOW_MINAPP,
+                'uw.app_id'    => UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT     // 测评分享小程序
+            ]
+        );
     }
 }
