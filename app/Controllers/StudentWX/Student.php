@@ -30,7 +30,8 @@ use App\Services\CommonServiceForApp;
 class Student extends ControllerBase
 {
 
-    /** 注册并绑定
+    /** 注册/登录 并绑定
+     * wechat && web
      * @param Request $request
      * @param Response $response
      * @return Response
@@ -100,8 +101,12 @@ class Student extends ControllerBase
             $channelId = $params['channel_id'] ?? Constants::CHANNEL_WE_CHAT_SCAN;
             $info = UserService::studentRegisterBound($appId, $params['mobile'], $channelId, $data['openid'], $busiType, $userType, $params["referee_id"]);
 
-            $token = WechatTokenService::generateToken($info['student_id'], DssUserWeiXinModel::USER_TYPE_STUDENT,
-                $appId, '');
+            $token = WechatTokenService::generateToken(
+                $info['student_id'],
+                DssUserWeiXinModel::USER_TYPE_STUDENT,
+                $appId,
+                $data['openid']
+            );
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
@@ -109,6 +114,7 @@ class Student extends ControllerBase
     }
 
     /** token失效时获取token
+     * wechat
      * @param Request $request
      * @param Response $response
      * @return Response

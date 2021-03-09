@@ -80,4 +80,9 @@ class DssModel
     {
         return  $_ENV['DB_DSS_S_NAME'] . '.' . static::$table;
     }
+
+    public static function createCacheKey($type, $pri)
+    {
+        return $type.$pri;
+    }
 }

@@ -27,6 +27,7 @@ class RouterFactory
     const CLIENT_API = 'api'; // 外部api调用
     const CLIENT_SALES_MASTER = 'sales_master'; // 鲸鱼跳跃
     const CLIENT_STUDENT_WX = 'student_wx'; // 家长微信
+    const CLIENT_STUDENT_WEB = 'student_web'; // 学生WEB
     const CLIENT_DSS = 'dss';
     const CLIENT_AGENT_MINI = 'agent';
     const CLIENT_SHOW_MINI = 'show_miniapp';
@@ -42,6 +43,7 @@ class RouterFactory
         self::CLIENT_DSS => DSSRouter::class, // 家长微信
         self::CLIENT_AGENT_MINI => AgentMiniAppRouter::class, // 代理小程序
         self::CLIENT_SHOW_MINI => ShowMiniAppRouter::class, // 测评分享小程序
+        self::CLIENT_STUDENT_WEB => StudentWebRouter::class, // WEB端
     ];
 
     /**

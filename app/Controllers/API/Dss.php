@@ -21,6 +21,7 @@ use App\Services\ReferralActivityService;
 use App\Libs\Exceptions\RunTimeException;
 use App\Services\ThirdPartBillService;
 use App\Services\UserRefereeService;
+use App\Services\WechatTokenService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -299,5 +300,29 @@ class Dss extends ControllerBase
             'code' => Valid::CODE_SUCCESS,
             'data' => $records,
         ]);
+    }
+
+    /**
+     * 用户登出
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function tokenLogout(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'user_id',
+                'type' => 'required',
+                'error_code' => 'user_id_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        WechatTokenService::delTokenByUserId($params['user_id']);
+        return HttpHelper::buildResponse($response, []);
     }
 }
