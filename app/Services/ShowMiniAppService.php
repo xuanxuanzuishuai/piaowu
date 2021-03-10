@@ -25,6 +25,7 @@ use App\Models\Dss\DssPackageExtModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\Dss\DssUserWeiXinModel;
+use App\Models\UserWeiXinModel;
 
 class ShowMiniAppService
 {
@@ -361,7 +362,7 @@ class ShowMiniAppService
             SimpleLogger::error('session key is empty', []);
             return null;
         }
-        $w = new WXBizDataCrypt($_ENV['REFERRAL_LANDING_APP_ID'], $sessionKey);
+        $w = new WXBizDataCrypt('wx6aaca64ad27efaeb', $sessionKey);
         $code = $w->decryptData($encryptedData, $iv, $data);
         if ($code == 0) {
             return json_decode($data, 1);
