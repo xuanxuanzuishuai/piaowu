@@ -14,7 +14,6 @@ use App\Libs\UserCenter;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\UserWeiXinModel;
 use App\Services\ShowMiniAppTokenService;
-use App\Services\UserService;
 use Slim\Http\Request;
 use App\Libs\Valid;
 use Slim\Http\StatusCode;
@@ -36,19 +35,19 @@ class ShowMiniAppOpenIdMiddleware extends MiddlewareBase
         if (!empty($token)) {
             $userInfo = ShowMiniAppTokenService::getTokenInfo($token);
             if (empty($userInfo['open_id'])) {
-                return $response->withJson(Valid::addAppErrors([], 'token_expired'), StatusCode::HTTP_UNAUTHORIZED);
+                return $response->withJson(Valid::addAppErrors([], StatusCode::HTTP_UNAUTHORIZED), StatusCode::HTTP_OK);
             }
             $this->container['open_id'] = $userInfo['open_id'];
             return $next($request, $response);
         }
 
-        $code = $request->getParam('wx_code');
+        $code = $request->getParam('code');
         if (!empty($code)) {
             // 获取open id
             $wechat = WeChatMiniPro::factory(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT, UserWeiXinModel::BUSI_TYPE_SHOW_MINI);
             $data = $wechat->code2Session($code);
             if (empty($data['openid'])) {
-                return $response->withJson(Valid::addAppErrors([], 'request_error'), StatusCode::HTTP_UNAUTHORIZED);
+                return $response->withJson(Valid::addAppErrors([], StatusCode::HTTP_UNAUTHORIZED), StatusCode::HTTP_OK);
             }
             // 返回TOKEN
             $token = ShowMiniAppTokenService::generateOpenIdToken($data['openid']);
@@ -58,6 +57,6 @@ class ShowMiniAppOpenIdMiddleware extends MiddlewareBase
             ]);
         }
 
-        return $response->withJson(Valid::addAppErrors([], 'token_expired'), StatusCode::HTTP_UNAUTHORIZED);
+        return $response->withJson(Valid::addAppErrors([], StatusCode::HTTP_UNAUTHORIZED), StatusCode::HTTP_OK);
     }
 }
