@@ -25,7 +25,6 @@ use App\Models\Dss\DssPackageExtModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\Dss\DssUserWeiXinModel;
-use App\Models\UserWeixinModel;
 
 class ShowMiniAppService
 {
@@ -154,19 +153,19 @@ class ShowMiniAppService
             $referrerUuid = DssStudentModel::getRecord(['id' => $user_id], ['uuid', 'has_review_course']);
             $data['uuid'] = $referrerUuid['uuid'] ?? '';
             $data['has_review_course'] = $referrerUuid['has_review_course'] ?? '';
-            $referrerInfo = UserWeixinModel::getRecord(
+            $referrerInfo = DssUserWeiXinModel::getRecord(
                 [
                     'user_id'   => $user_id,
                     'user_type' => DssUserWeiXinModel::USER_TYPE_STUDENT,
                     'busi_type' => DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER,
-                    'status'    => UserWeixinModel::STATUS_NORMAL,
+                    'status'    => DssUserWeiXinModel::STATUS_NORMAL,
                     'ORDER'     => ['id' => 'DESC'],
                 ],
                 ['open_id']
             );
             if (!empty($referrerInfo['open_id'])) {
                 // 获取用户微信昵称和头像
-                $wxData = WeChatMiniPro::factory(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,UserWeixinModel::BUSI_TYPE_STUDENT_SERVER)->getUserInfo($referrerInfo['open_id']);
+                $wxData = WeChatMiniPro::factory(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER)->getUserInfo($referrerInfo['open_id']);
                 if (!empty($wxData['headimgurl'])) {
                     $data['nickname'] = $wxData['nickname'];
                     $data['headimgurl'] = $wxData['headimgurl'];
