@@ -32,8 +32,13 @@ $menuList = [
             'sub_button' => [
                 [
                     "type" => "view",
+                    "name" => "🔥分享有礼",
+                    "url"  => "https://referral.xiaoyezi.com/operation/activity/christmas?activity_id=12"
+                ],
+                [
+                    "type" => "view",
                     "name" => "专属海报",
-                    "url"  => "https://dss-weixin-pre.xiongmaopeilian.com/student/poster"
+                    "url"  => "https://dss-weixin.xiongmaopeilian.com/student/poster"
                 ],
                 [
                     "type" => "click",
@@ -42,25 +47,20 @@ $menuList = [
                 ],
                 [
                     "type" => "view",
-                    "name" => "分享返学费",
-                    "url"  => "http://referral-pre.xiaoyezi.com/operation/student/clock5Day/home"
+                    "name" => "🧧分享返学费",
+                    "url"  => "https://dss-weixin.xiongmaopeilian.com/student/returnMoney?tag=1"
                 ],
                 [
                     "type" => "view",
-                    "name" => "上传截图领奖",
-                    "url"  => "https://dss-weixin-pre.xiongmaopeilian.com/student/referral?tag=1"
-                ],
-                [
-                    "type" => "view",
-                    "name" => "郎朗测评",
-                    "url" => "http://mp.weixin.qq.com/s?__biz=MzU1NTkxNzY3MQ==&mid=100000231&idx=1&sn=d11c0cfa5a19418dab0c99c1d8b9b77a&chksm=7bcc49ef4cbbc0f9f923570f89f7389933ee84750cd1751f8be23084d4311f740aff1d9c8775&scene=18#rd"
+					"name" => "上传截图领奖",
+					"url" => "https://dss-weixin.xiongmaopeilian.com/student/referral?tag=1"
                 ],
             ],
         ],
         [
             "type" => "view",
-            "name" => "马上体验",
-            "url" => "https://referral-pre.xiaoyezi.com/market/landing?channel_id=1244"
+            "name" => "💯练琴神器",
+            "url" => "https://referral.xiaoyezi.com/market/landing20200929_d5?ad=0&channel_id=1244"
         ],
         [
             "name" => "我的账户",
@@ -68,12 +68,12 @@ $menuList = [
                 [
                     "type" => "view",
                     "name" => "我的账户",
-                    "url" => "https://dss-weixin-pre.xiongmaopeilian.com/student/myAccount"
+                    "url" => "https://dss-weixin.xiongmaopeilian.com/student/myAccount"
                 ],
                 [
                     "type" => "view",
                     "name" => "练琴日报",
-                    "url" => "https://dss-weixin-pre.xiongmaopeilian.com/student/calendar"
+                    "url" => "https://dss-weixin.xiongmaopeilian.com/student/calendar"
                 ],
                 [
                     "type" => "view",
@@ -82,13 +82,13 @@ $menuList = [
                 ],
                 [
                     "type" => "view",
-                    "name" => "下载App",
-                    "url" => "http://www.xiaoyezi.com/html/aipeilian.html"
+                    "name" => "联系客服",
+                    "url" => "https://ceshi10.sobot.com/chat/h5/v2/index.html?sysnum=4a24039fb3cd4bce89f738a341a3e93a&channelid=10&uname=用户"
                 ],
                 [
                     "type" => "view",
-                    "name" => "联系客服",
-                    "url" => "https://ceshi10.sobot.com/chat/h5/v2/index.html?sysnum=4a24039fb3cd4bce89f738a341a3e93a&channelid=10&uname=用户"
+                    "name" => "郎朗测评",
+                    "url" => "http://mp.weixin.qq.com/s?__biz=MzU1NTkxNzY3MQ==&mid=100000231&idx=1&sn=d11c0cfa5a19418dab0c99c1d8b9b77a&chksm=7bcc49ef4cbbc0f9f923570f89f7389933ee84750cd1751f8be23084d4311f740aff1d9c8775&scene=18#rd"
                 ]
             ]
         ],
