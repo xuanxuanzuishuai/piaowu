@@ -96,7 +96,7 @@ class ThirdPartBillService
         $params['third_identity_type'] = $params['third_identity_id'] = 0;
         //检测渠道是否为合作代理&检测代理商数据
         if (!empty($params['agent_id'])) {
-            $agentInfo = AgentModel::getAgentParentData($params['agent_id']);
+            $agentInfo = AgentModel::getAgentParentData($params['agent_id'])[0];
             $agentChannelIds = DictConstants::get(DictConstants::AGENT_CONFIG, 'channel_dict');
             if (!in_array($params['channel_id'], json_decode($agentChannelIds, true)) || ($agentInfo['p_id'] !== null)) {
                 throw new RunTimeException(['agent_info_error'], []);

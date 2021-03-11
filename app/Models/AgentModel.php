@@ -202,9 +202,6 @@ class AgentModel extends Model
         if (empty($data['count'])) {
             return $data;
         }
-        array_walk($where, function ($wv, $wk) use (&$whereSql) {
-            $whereSql[] = ' ' . $wk . '=' . $wv . ' ';
-        });
         $offset = ($page - 1) * $limit;
         $where[AgentDivideRulesModel::$table.'.status'] = AgentDivideRulesModel::STATUS_OK;
         $data['list'] = $db->select(
@@ -321,10 +318,10 @@ class AgentModel extends Model
 
     /**
      * 获取代理商以及其父级信息
-     * @param $agentId
+     * @param $agentIds
      * @return array
      */
-    public static function getAgentParentData($agentId)
+    public static function getAgentParentData($agentIds)
     {
         $db = MysqlDB::getDB();
         $data = $db->select(
@@ -339,9 +336,9 @@ class AgentModel extends Model
                 "b.status(p_status)",
             ],
             [
-                "a.id" => $agentId
+                "a.id" => $agentIds
             ]
         );
-        return $data[0];
+        return $data;
     }
 }

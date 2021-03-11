@@ -216,7 +216,8 @@ class Agent extends ControllerBase
     {
         $params = $request->getParams();
         list($params['page'], $params['count']) = Util::formatPageCount($params);
-        $data = AgentService::listAgent($params);
+        $params['only_read_self'] = self::getEmployeeDataPermission();
+        $data = AgentService::listAgent($params, self::getEmployeeId());
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => $data
@@ -291,7 +292,8 @@ class Agent extends ControllerBase
     {
         $params = $request->getParams();
         list($params['page'], $params['count']) = Util::formatPageCount($params);
-        $data = AgentService::recommendUsersList($params);
+        $params['only_read_self'] = self::getEmployeeDataPermission();
+        $data = AgentService::recommendUsersList($params, self::getEmployeeId());
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => $data
@@ -308,7 +310,8 @@ class Agent extends ControllerBase
     {
         $params = $request->getParams();
         list($params['page'], $params['count']) = Util::formatPageCount($params);
-        $data = AgentService::recommendBillsList($params);
+        $params['only_read_self'] = self::getEmployeeDataPermission();
+        $data = AgentService::recommendBillsList($params, self::getEmployeeId());
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => $data
@@ -373,11 +376,6 @@ class Agent extends ControllerBase
     public function popularMaterial(Request $request, Response $response)
     {
         $rules = [
-            [
-                'key' => 'product_img',
-                'type' => 'required',
-                'error_code' => 'product_img_is_required'
-            ],
             [
                 'key' => 'poster',
                 'type' => 'required',

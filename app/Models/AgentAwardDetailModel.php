@@ -37,11 +37,12 @@ class AgentAwardDetailModel extends Model
      * @param $firstAgentWhere
      * @param $secondAgentWhere
      * @param $giftCodeWhere
+     * @param $agentWhere
      * @param $page
      * @param $limit
      * @return array
      */
-    public static function agentBillsList($agentBillWhere, $firstAgentWhere, $secondAgentWhere, $giftCodeWhere, $page, $limit)
+    public static function agentBillsList($agentBillWhere, $firstAgentWhere, $secondAgentWhere, $giftCodeWhere, $agentWhere, $page, $limit)
     {
         //获取从库对象
         $db = self::dbRO();
@@ -61,11 +62,12 @@ class AgentAwardDetailModel extends Model
                                         ab.agent_id AS second_agent_id,
                                         ab.id,
                                         ab.ext->>\'$.parent_bill_id\' as parent_bill_id,
+                                        ab.ext->>\'$.division_model\' as division_model,
                                         ab.student_id,
                                         ab.is_bind
                                 FROM
                                     ' . $opAgentAwardDetailTableName . ' as ab
-                                    INNER JOIN ' . $opAgentTableName . ' AS a ON ab.agent_id = a.id
+                                    INNER JOIN ' . $opAgentTableName . ' AS a ON ab.agent_id = a.id '.$agentWhere.'
                                 WHERE ' . $agentBillWhere . '
                                 ) as tma 
              INNER JOIN ' . $opAgentTableName . ' AS fa ON tma.first_agent_id=fa.id  ' . $firstAgentWhere .

@@ -55,11 +55,12 @@ class AgentUserModel extends Model
      * @param $agentUserWhere
      * @param $firstAgentWhere
      * @param $secondAgentWhere
+     * @param $agentWhere
      * @param $page
      * @param $limit
      * @return array
      */
-    public static function agentRecommendUserList($agentUserWhere, $firstAgentWhere, $secondAgentWhere, $page, $limit)
+    public static function agentRecommendUserList($agentUserWhere, $firstAgentWhere, $secondAgentWhere, $agentWhere, $page, $limit)
     {
         $db = MysqlDB::getDB();
         $baseSql = 'select query_field
@@ -70,7 +71,7 @@ class AgentUserModel extends Model
                                     au.id,au.stage,au.user_id,au.bind_time,au.deadline
                                 FROM
                                     ' . self::$table . ' as au
-                                    INNER JOIN ' . AgentModel::$table . ' AS a ON au.agent_id = a.id
+                                    INNER JOIN ' . AgentModel::$table . ' AS a ON au.agent_id = a.id '.$agentWhere.'
                                 WHERE ' . $agentUserWhere . '
                                 ) as tma 
              INNER JOIN ' . AgentModel::$table . ' AS fa ON tma.first_agent_id=fa.id  ' . $firstAgentWhere .
@@ -116,7 +117,7 @@ class AgentUserModel extends Model
      * @param $studentId
      * @return array
      */
-    public static function getValidBindData($studentId)
+    public static function getValidBindData(int $studentId)
     {
         return self::getRecord(
             [
@@ -133,5 +134,24 @@ class AgentUserModel extends Model
                 ],
             ],
             ['agent_id', 'id']);
+    }
+
+    /**
+     * 获取学生无效的绑定关系
+     * @param $studentId
+     * @return mixed
+     */
+    public static function getInvalidBindData(int $studentId)
+    {
+        return self::getRecord(
+            [
+                'user_id' => $studentId,
+                'stage' => self::STAGE_TRIAL,
+                'deadline[<]' => time()
+            ],
+            [
+                'agent_id',
+                'id'
+            ]);
     }
 }

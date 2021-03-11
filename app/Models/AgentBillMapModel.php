@@ -9,11 +9,13 @@
 
 namespace App\Models;
 
+use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
 
 class AgentBillMapModel extends Model
 {
     public static $table = "agent_bill_map";
+
 
     /**
      * 记录数据
@@ -76,5 +78,32 @@ class AgentBillMapModel extends Model
             "LIMIT" => $limit
         ];
         return self::getRecords($where, $fields);
+    }
+
+    /**
+     * 获取订单映射代理商数据
+     * @param $parentBillId
+     * @param int $studentId
+     * @return array
+     */
+    public static function getBillMapAgentData(string $parentBillId, int $studentId)
+    {
+        $db = MysqlDB::getDB();
+        $mapData = $db->select(self::$table,
+            [
+                '[><]' . AgentModel::$table => ['agent_id' => 'id']
+            ],
+            [
+                self::$table . '.agent_id',
+                self::$table . '.param_map_id',
+                self::$table . '.bill_id',
+                self::$table . '.student_id',
+                AgentModel::$table . '.division_model',
+            ],
+            [
+                self::$table . '.student_id' => $studentId,
+                self::$table . '.bill_id' => $parentBillId,
+            ]);
+        return empty($mapData) ? [] : $mapData[0];
     }
 }
