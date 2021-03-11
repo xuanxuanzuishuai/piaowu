@@ -33,7 +33,7 @@ class Landing extends ControllerBase
     {
         try {
             $params = $request->getParams();
-            $sceneData = ShowMiniAppService::getSceneData($params['scene'] ?? '');
+            $sceneData = ShowMiniAppService::getSceneData(urldecode($params['scene'] ?? ''));
             $pageData = ShowMiniAppService::getMiniAppPlayReviewData($sceneData, $this->ci['open_id']);
             $pageData['share_scene'] = urlencode($params['scene']);
         } catch (RunTimeException $e) {
@@ -149,7 +149,7 @@ class Landing extends ControllerBase
             if (!empty($params['sms_code']) && !CommonServiceForApp::checkValidateCode($params["mobile"], $params["sms_code"], $params["country_code"] ?? '')) {
                 return $response->withJson(Valid::addAppErrors([], 'validate_code_error'), StatusCode::HTTP_OK);
             }
-            $sceneData = ShowMiniAppService::getSceneData($params['scene'] ?? '');
+            $sceneData = ShowMiniAppService::getSceneData(urldecode($params['scene'] ?? ''));
             $sessionKeyOpenId = $this->ci['open_id'];
             list($openid, $lastId, $mobile, $uuid, $hadPurchased) = ShowMiniAppService::remoteRegister(
                 $this->ci['open_id'],
