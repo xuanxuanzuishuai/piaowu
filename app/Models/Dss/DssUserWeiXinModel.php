@@ -173,4 +173,24 @@ class DssUserWeiXinModel extends DssModel
             ]
         );
     }
+
+    public static function getWxQr($openid, $userType, $status, $busiType)
+    {
+        return self::dbRO()->select(
+            DssUserWeiXinModel::$table,
+            [
+                '[><]' . DssStudentModel::$table  => ['user_id' => 'id'],
+                '[><]' . DssEmployeeModel::$table => [DssStudentModel::$table . '.assistant_id' => 'id']
+            ],
+            [
+                DssEmployeeModel::$table . '.wx_qr'
+            ],
+            [
+                DssUserWeiXinModel::$table . '.open_id'   => $openid,
+                DssUserWeiXinModel::$table . '.user_type' => $userType,
+                DssUserWeiXinModel::$table . '.status'    => $status,
+                DssUserWeiXinModel::$table . '.busi_type' => $busiType,
+            ]
+        );
+    }
 }

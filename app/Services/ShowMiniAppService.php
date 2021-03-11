@@ -387,10 +387,11 @@ class ShowMiniAppService
      */
     public static function miniAppNotify($params, $postData)
     {
+        $appId = DictConstants::get(DictConstants::WECHAT_APPID, '8_10');
         $wx = new WXBizMsgCrypt(
             DictConstants::get(DictConstants::WECHAT_APP_PUSH_CONFIG, '8_10_token'),
             DictConstants::get(DictConstants::WECHAT_APP_PUSH_CONFIG, '8_10_encoding_aes_key'),
-            DictConstants::get(DictConstants::WECHAT_APPID, '8_10')
+            $appId
         );
 
         $code = $wx->decryptMsg(
@@ -412,34 +413,20 @@ class ShowMiniAppService
         switch (trim((string)$ele->Content)) {
             case '1':
                 // 回复助教二维码
-                $assistant = MysqlDB::getDB()->get(
-                    DssUserWeiXinModel::$table,
-                    [
-                        '[><]' . DssStudentModel::$table  => ['user_id' => 'id'],
-                        '[><]' . DssEmployeeModel::$table => [DssStudentModel::$table.'.assistant_id' => 'id']
-                    ],
-                    [
-                        EmployeeModel::$table . '.wx_qr'
-                    ],
-                    [
-                        DssUserWeiXinModel::$table . '.open_id'   => trim((string)$ele->FromUserName),
-                        DssUserWeiXinModel::$table . '.user_type' => DssUserWeiXinModel::USER_TYPE_STUDENT,
-                        DssUserWeiXinModel::$table . '.status'    => DssUserWeiXinModel::STATUS_NORMAL,
-                        DssUserWeiXinModel::$table . '.busi_type' => DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP,
-                    ]
-                );
+                $openid = trim((string)$ele->FromUserName);
+                $userType = DssUserWeiXinModel::USER_TYPE_STUDENT;
+                $status = DssUserWeiXinModel::STATUS_NORMAL;
+                $busiType =  DssUserWeiXinModel::BUSI_TYPE_SHOW_MINAPP;
+                $assistant = DssUserWeiXinModel::getWxQr($openid, $userType, $status, $busiType)[0];
+
                 if (empty($assistant['wx_qr'])) {
                     SimpleLogger::error('assistant\'s wx_qr image is empty', ['student_id' => (string)$ele->FromUserName]);
                     return "success";
                 }
 
-                $config = [
-                    'app_id'     => DictConstants::get(DictConstants::WECHAT_APPID, '8_10'),
-                    'app_secret' => DictConstants::get(DictConstants::WECHAT_APP_SECRET, '8_10'),
-                ];
-                $wx = WeChatMiniPro::factory($config);
+                $wx = WeChatMiniPro::factory(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,$busiType);
                 if (empty($wx)) {
-                    SimpleLogger::error('wx create fail', ['config' => $config, 'we_chat_type'=>DssUserWeiXinModel::USER_TYPE_STUDENT]);
+                    SimpleLogger::error('wx create fail', ['appId' => $appId, 'we_chat_type'=>$userType]);
                     return "success";
                 }
                 $data = $wx->getTempMedia('image', $assistant['wx_qr'], AliOSS::replaceCdnDomainForDss($assistant['wx_qr']));

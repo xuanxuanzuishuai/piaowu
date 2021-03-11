@@ -9,6 +9,7 @@
 namespace App\Middleware;
 
 
+use App\Libs\DictConstants;
 use App\Libs\SimpleLogger;
 use App\Libs\WeChat\SHA1;
 use Slim\Http\Request;
@@ -25,7 +26,7 @@ class ShowMiniAppDevCheckMiddleware extends MiddlewareBase
                 [
                     $params['timestamp'],
                     $params['nonce'],
-                    $_ENV['REFERRAL_LANDING_APP_MESSAGE_TOKEN']
+                    DictConstants::get(DictConstants::WECHAT_APP_PUSH_CONFIG, '8_10_token'),
                 ]
             );
             if ($sha1 == $params['signature']) {
