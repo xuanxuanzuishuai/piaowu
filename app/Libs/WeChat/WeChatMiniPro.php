@@ -16,6 +16,7 @@ use App\Libs\HttpHelper;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
+use App\Models\Dss\DssUserWeiXinModel;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use Slim\Http\StatusCode;
@@ -176,7 +177,9 @@ class WeChatMiniPro
     public function refreshAccessToken()
     {
         list($appId, $busiType) = explode('_', $this->nowWxApp);
-        if ($appId == Constants::SMART_APP_ID) {
+        if ($appId == Constants::SMART_APP_ID && $busiType == DssUserWeiXinModel::BUSI_TYPE_SHOW_MINAPP){
+            $this->requestAccessToken();
+        } elseif ($appId == Constants::SMART_APP_ID) {
             $data = (new Dss())->updateAccessToken(['busi_type' => $busiType]);
             if (!empty($data['access_token'])) {
                 $this->setAccessToken($data['access_token']);

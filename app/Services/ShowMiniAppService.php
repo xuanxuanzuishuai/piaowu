@@ -457,7 +457,7 @@ class ShowMiniAppService
     public static function genStudentToken($studentId)
     {
         $token = 'AI' . '_' . DssAuthModel::randomToken();
-        $redis = RedisDB::getConn();
+        $redis = RedisDB::getConn($_ENV['DSS_REDIS_DB']);
         $redis->setex($token, DssAuthModel::TOKEN_EXPIRE_HOUR, $studentId);
         return $token;
     }
