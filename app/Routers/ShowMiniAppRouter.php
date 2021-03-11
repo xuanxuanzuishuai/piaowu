@@ -10,6 +10,7 @@ namespace App\Routers;
 
 use App\Controllers\ShowMiniApp\Landing;
 use App\Middleware\ShowMiniAppOpenIdMiddleware;
+use App\Middleware\ShowMiniAppDevCheckMiddleware;
 
 class ShowMiniAppRouter extends RouterBase
 {
@@ -41,6 +42,10 @@ class ShowMiniAppRouter extends RouterBase
             'method' => ['get'],
             'call'   => Landing::class . ':billStatus'
         ],
-
+        '/show_miniapp/landing/notify' => [
+            'method'  => ['get', 'post'],
+            'call'    => Landing::class . ':notify',
+            'middles' => [ShowMiniAppDevCheckMiddleware::class]
+        ],
     ];
 }

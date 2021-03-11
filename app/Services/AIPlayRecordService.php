@@ -57,6 +57,10 @@ class AIPlayRecordService
             }
         }
 
+        if ($report && $report['student_id']) {
+            $report['replay_token'] = ShowMiniAppService::genStudentToken($report["student_id"]);
+        }
+
         if (!empty($report['score_rank']) && $report['score_rank'] > 0 && $report['score_rank'] < 60 || $report['is_phrase'] == 1 || $report['hand'] != 3) {
             $report['score_rank'] = "0";
         }

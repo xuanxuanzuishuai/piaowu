@@ -12,10 +12,7 @@ namespace App\Controllers\ShowMiniApp;
 use App\Controllers\ControllerBase;
 use App\Libs\Dss;
 use App\Libs\HttpHelper;
-use App\Libs\UserCenter;
 use App\Libs\Valid;
-use App\Libs\WeChat\WeChatMiniPro;
-use App\Models\UserWeiXinModel;
 use App\Services\CommonServiceForApp;
 use App\Services\PayServices;
 use App\Services\ShowMiniAppService;
@@ -227,6 +224,19 @@ class Landing extends ControllerBase
                 'bill_status' => $status
             ]
         ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * 转介绍Landing小程序消息
+     * @param Request $request
+     * @param Response $response
+     * @return int
+     */
+    public function notify(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        $postData = file_get_contents('php://input');
+        return $response->getBody()->write(ShowMiniAppService::miniAppNotify($params, $postData));
     }
 
 }

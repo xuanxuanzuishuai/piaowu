@@ -12,19 +12,25 @@ namespace App\Services;
 use App\Libs\AliOSS;
 use App\Libs\DictConstants;
 use App\Libs\Dss;
+use App\Libs\MysqlDB;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
+use App\Libs\WeChat\MsgErrorCode;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Libs\WeChat\WXBizDataCrypt;
+use App\Libs\WeChat\WXBizMsgCrypt;
 use App\Models\Dss\DssAiPlayRecordCHModel;
 use App\Models\Dss\DssAiPlayRecordModel;
+use App\Models\Dss\DssAuthModel;
+use App\Models\Dss\DssEmployeeModel;
 use App\Models\Dss\DssErpPackageV1Model;
 use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssPackageExtModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\Dss\DssUserWeiXinModel;
+use App\Models\EmployeeModel;
 use App\Models\UserWeiXinModel;
 
 class ShowMiniAppService
@@ -362,7 +368,8 @@ class ShowMiniAppService
             SimpleLogger::error('session key is empty', []);
             return null;
         }
-        $w = new WXBizDataCrypt('wx6aaca64ad27efaeb', $sessionKey);
+        $appId = DictConstants::get(DictConstants::WECHAT_APPID, '8_10');
+        $w = new WXBizDataCrypt($appId, $sessionKey);
         $code = $w->decryptData($encryptedData, $iv, $data);
         if ($code == 0) {
             return json_decode($data, 1);
@@ -370,5 +377,101 @@ class ShowMiniAppService
             SimpleLogger::error('decode mobile error:', ['code' => $code]);
             return null;
         }
+    }
+
+    /**
+     * 客服消息接收及回复
+     * @param $params
+     * @param $postData
+     * @return int
+     */
+    public static function miniAppNotify($params, $postData)
+    {
+        $wx = new WXBizMsgCrypt(
+            DictConstants::get(DictConstants::WECHAT_APP_PUSH_CONFIG, '8_10_token'),
+            DictConstants::get(DictConstants::WECHAT_APP_PUSH_CONFIG, '8_10_encoding_aes_key'),
+            DictConstants::get(DictConstants::WECHAT_APPID, '8_10')
+        );
+
+        $code = $wx->decryptMsg(
+            $params['msg_signature'],
+            $params['timestamp'],
+            $params['nonce'],
+            $postData,
+            $msg
+        );
+
+        if ($code != MsgErrorCode::$OK) {
+            $params['code'] = $code;
+            SimpleLogger::error('decrypt msg error', $params);
+            return "success";
+        }
+
+        SimpleLogger::info('referral minapp server msg', ['msg' => $msg]);
+        $ele = simplexml_load_string($msg);
+        switch (trim((string)$ele->Content)) {
+            case '1':
+                // 回复助教二维码
+                $assistant = MysqlDB::getDB()->get(
+                    DssUserWeiXinModel::$table,
+                    [
+                        '[><]' . DssStudentModel::$table  => ['user_id' => 'id'],
+                        '[><]' . DssEmployeeModel::$table => [DssStudentModel::$table.'.assistant_id' => 'id']
+                    ],
+                    [
+                        EmployeeModel::$table . '.wx_qr'
+                    ],
+                    [
+                        DssUserWeiXinModel::$table . '.open_id'   => trim((string)$ele->FromUserName),
+                        DssUserWeiXinModel::$table . '.user_type' => DssUserWeiXinModel::USER_TYPE_STUDENT,
+                        DssUserWeiXinModel::$table . '.status'    => DssUserWeiXinModel::STATUS_NORMAL,
+                        DssUserWeiXinModel::$table . '.busi_type' => DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP,
+                    ]
+                );
+                if (empty($assistant['wx_qr'])) {
+                    SimpleLogger::error('assistant\'s wx_qr image is empty', ['student_id' => (string)$ele->FromUserName]);
+                    return "success";
+                }
+
+                $config = [
+                    'app_id'     => DictConstants::get(DictConstants::WECHAT_APPID, '8_10'),
+                    'app_secret' => DictConstants::get(DictConstants::WECHAT_APP_SECRET, '8_10'),
+                ];
+                $wx = WeChatMiniPro::factory($config);
+                if (empty($wx)) {
+                    SimpleLogger::error('wx create fail', ['config' => $config, 'we_chat_type'=>DssUserWeiXinModel::USER_TYPE_STUDENT]);
+                    return "success";
+                }
+                $data = $wx->getTempMedia('image', $assistant['wx_qr'], AliOSS::replaceCdnDomainForDss($assistant['wx_qr']));
+
+                if (!empty($data['media_id'])) {
+                    $content = "请点击二维码后，长按二维码图片添加助教微信。若无法添加微信，请将二维码保存本地后，使用微信「扫一扫」添加助教微信";
+                    $wx->sendImage((string)$ele->FromUserName, $data['media_id']);
+                    $wx->sendText((string)$ele->FromUserName, $content);
+                }
+                return "success";
+        }
+        //转到客服消息
+        if (in_array((string)$ele->MsgType, ['text', 'image', 'link', 'miniprogrampage'])) {
+            $xmlString = $wx->transfer2Server((string)$ele->FromUserName, (string)$ele->ToUserName, (string)$ele->CreateTime);
+            SimpleLogger::info("transfer to server:", ['content' => $xmlString]);
+            return $xmlString;
+        }
+        //剩下的信息都回success
+        return "success";
+    }
+
+    /**
+     * 生成用于访问AIBackend服务的token
+     * 格式为 AI_abc123
+     * @param $studentId
+     * @return string
+     */
+    public static function genStudentToken($studentId)
+    {
+        $token = 'AI' . '_' . DssAuthModel::randomToken();
+        $redis = RedisDB::getConn();
+        $redis->setex($token, DssAuthModel::TOKEN_EXPIRE_HOUR, $studentId);
+        return $token;
     }
 }

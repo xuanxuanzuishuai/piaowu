@@ -254,6 +254,16 @@ class DictConstants {
             '8_1', '8_8', '21_9','8_10'
         ]
     ];
+
+    //不同应用的微信消息推动配置
+    const WECHAT_APP_PUSH_CONFIG = [
+        'type' => 'wechat_app_push_config',
+        'keys' => [
+            '8_10_token',
+            '8_10_encoding_aes_key',
+        ]
+    ];
+
     //不同应用的微信商户号
     const WECHAT_MCHID = [
         'type' => 'wechat_mchid',
