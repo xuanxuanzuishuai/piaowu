@@ -127,6 +127,7 @@ class DictConstants {
             'config_role',
             'push_user_template',
             'third_part_import_bill_template',
+            'batch_import_reward_points_template'
         ]
     ];
 
@@ -452,7 +453,8 @@ class DictConstants {
         'type' => 'award_points_send_mail_config',
         'keys' => [
             'to_mail',
-            'title'
+            'title',
+            'err_title'
         ]
     ];
 

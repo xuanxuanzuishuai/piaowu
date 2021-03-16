@@ -992,4 +992,30 @@ class Util
     {
         return bcdiv($duration, $unit) + (bcmod($duration, $unit) > 0 ? 1 : 0);
     }
+
+    /**
+     * 元 => 分
+     * @param $price string 单位元
+     * @return int 单位分
+     */
+    public static function fen($price)
+    {
+        if (empty($price)) {
+            return 0;
+        }
+        return bcmul($price, 100);
+    }
+
+    /**
+     * 分 => 元
+     * @param $price string 单位分
+     * @return int 单位元
+     */
+    public static function yuan($price)
+    {
+        if (empty($price)) {
+            return 0;
+        }
+        return bcdiv($price, 100, 2);
+    }
 }

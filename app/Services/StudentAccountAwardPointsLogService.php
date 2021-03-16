@@ -12,6 +12,7 @@ namespace App\Services;
 use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\MysqlDB;
+use App\Libs\Util;
 use App\Models\Erp\ErpDictModel;
 use App\Models\StudentAccountAwardPointsLogModel;
 
@@ -27,25 +28,7 @@ class StudentAccountAwardPointsLogService
      */
     public static function getList($params, $page, $count)
     {
-        $where = [];
-        if (!empty($params['uuid'])) {
-            $where['uuid'] = $params['uuid'];
-        }
-        if (!empty($params['mobile'])) {
-            $where['mobile'] = $params['mobile'];
-        }
-        if (!empty($params['account_name'])) {
-            $accountType = explode(StudentAccountAwardPointsLogModel::APPID_SUBTYPE_EXPLODE, $params['account_name']);
-            $where['app_id'] = $accountType[0] ?? 0;
-            $where['sub_type'] = $accountType['1'] ?? 0;
-        }
-        if (!empty($params['start_time'])) {
-            $where['create_time[>=]'] = strtotime($params['start_time']);
-        }
-        if (!empty($params['end_time'])) {
-            $where['create_time[<=]'] = strtotime($params['end_time']);
-        }
-        $awardPointsLogList = StudentAccountAwardPointsLogModel::getList($where, $page, $count);
+        $awardPointsLogList = StudentAccountAwardPointsLogModel::getList($params, $page, $count);
         $awardPointsLogList['list'] = self::formatAwardPointsLogInfo($awardPointsLogList['list']);
         return $awardPointsLogList;
     }
@@ -61,6 +44,7 @@ class StudentAccountAwardPointsLogService
         foreach ($awardPointsLogList as $key => $val) {
             $awardPointsLogList[$key]['format_create_time'] = date("Y-m-d H:i", $val['create_time']);
             $awardPointsLogList[$key]['account_name'] = $accountNameList[$val['app_id'] . '_' . $val['sub_type']] ?? '';
+            $awardPointsLogList[$key]['num'] = Util::yuan($val['num']);
         }
         return $awardPointsLogList;
     }
@@ -92,6 +76,6 @@ class StudentAccountAwardPointsLogService
     {
         // 获取积分账户， 从表获取数据需要排除现金
         $accountNameList = DictConstants::getErpDictArr(Constants::ERP_DICT_ACCOUNT_NAME_TYPE, [], [Constants::ERP_ACCOUNT_NAME_CASH]);
-        return array_column($accountNameList,'code','value');
+        return array_column($accountNameList[Constants::ERP_DICT_ACCOUNT_NAME_TYPE],'value','code');
     }
 }

@@ -14,13 +14,31 @@ class StudentAccountAwardPointsLogModel extends Model
 
     /**
      * 获取列表
-     * @param $where
+     * @param $params
      * @param $page
      * @param $count
      * @return array
      */
-    public static function getList($where, $page, $count)
+    public static function getList($params, $page, $count)
     {
+        $where = [];
+        if (!empty($params['uuid'])) {
+            $where['b.uuid'] = $params['uuid'];
+        }
+        if (!empty($params['mobile'])) {
+            $where['b.mobile'] = $params['mobile'];
+        }
+        if (!empty($params['account_name'])) {
+            $accountType = explode(StudentAccountAwardPointsLogModel::APPID_SUBTYPE_EXPLODE, $params['account_name']);
+            $where['b.app_id'] = $accountType[0] ?? 0;
+            $where['b.sub_type'] = $accountType['1'] ?? 0;
+        }
+        if (!empty($params['start_time'])) {
+            $where['b.create_time[>=]'] = strtotime($params['start_time']);
+        }
+        if (!empty($params['end_time'])) {
+            $where['b.create_time[<=]'] = strtotime($params['end_time']);
+        }
         $returnData = ['total' => 0, 'list' => []];
         $db = MysqlDB::getDB();
 
@@ -31,7 +49,7 @@ class StudentAccountAwardPointsLogModel extends Model
 
         $listWhere = $where;
         $listWhere['LIMIT'] = [($page - 1) * $count, $count];
-        $returnData['list'] = $db->select(self::$table . '(b)', [
+        $list = $db->select(self::$table . '(b)', [
             '[>]' . EmployeeModel::$table . '(e)' => ['b.operator_id' => 'id'],
         ], [
             'e.name(operator_name)',
@@ -47,6 +65,7 @@ class StudentAccountAwardPointsLogModel extends Model
             'b.remark',
             'b.create_time',
         ], $listWhere);
+        $returnData['list'] = is_array($list) ? $list : [];
         return $returnData;
     }
 }

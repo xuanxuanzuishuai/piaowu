@@ -5,6 +5,8 @@ namespace App\Controllers\OrgWeb;
 
 
 use App\Controllers\ControllerBase;
+use App\Libs\AliOSS;
+use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\Util;
@@ -177,5 +179,21 @@ class StudentAccount extends ControllerBase
         } catch (RuntimeException $e) {
             return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData(), $e->getData());
         }
+    }
+
+    /**
+     * 获取批量发放积分导入模板地址
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function batchImportRewardPointsTemplate(Request $request, Response $response)
+    {
+        $url = DictConstants::get(DictConstants::ORG_WEB_CONFIG,'batch_import_reward_points_template');
+        $ossUrl = AliOSS::replaceCdnDomainForDss($url);
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => ['url' => $ossUrl]
+        ]);
     }
 }

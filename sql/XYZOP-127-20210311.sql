@@ -39,4 +39,6 @@ insert into dict (`type`,`key_name`,`key_code`,`key_value`,`desc`) values
 ('send_mail_config','发送邮件设置','smtp_server','smtp.exmail.qq.com','smtp服务地址'),
 ('send_mail_config','发送邮件设置','smtp_port','465','smtp服务端口'),
 ('award_points_send_mail_config','批量发放积分邮件通知配置','to_mail','lianqingfeng@xiaoyezi.com','接受人邮件'),
-('award_points_send_mail_config','批量发放积分邮件通知配置','title','批量发放积分','标题');
+('award_points_send_mail_config','批量发放积分邮件通知配置','title','批量发放积分完成','标题'),
+('award_points_send_mail_config','批量发放积分邮件通知配置','err_title','批量发放积分错误数据','标题'),
+('ORG_WEB_CONFIG','后台配置','batch_import_reward_points_template','prod/excel/batch_import_reward_points_template.xlsx','批量导入积分模板');

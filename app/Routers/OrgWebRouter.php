@@ -156,5 +156,7 @@ class OrgWebRouter extends RouterBase
         '/op_web/student_account/importRewardPointsInfo' => ['method' => ['get'], 'call' => StudentAccount::class . ':importRewardPointsInfo'],
         // 获取导入学生积分奖励列表
         '/op_web/student_account/importRewardPointsList' => ['method' => ['get'], 'call' => StudentAccount::class . ':importRewardPointsList'],
+        // 获取批量发放积分导入模板地址
+        '/op_web/student_account/download_template' => ['method' => ['get'], 'call' => StudentAccount::class . ':batchImportRewardPointsTemplate'],
     ];
 }

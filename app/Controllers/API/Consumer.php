@@ -18,6 +18,7 @@ use App\Libs\PhpMail;
 use App\Libs\SimpleLogger;
 use App\Libs\Spreadsheet;
 use App\Libs\TPNS;
+use App\Libs\Util;
 use App\Libs\Valid;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\EmployeeModel;
@@ -30,6 +31,7 @@ use App\Services\Queue\PushMessageTopic;
 use App\Services\Queue\StudentAccountAwardPointsTopic;
 use App\Services\Queue\ThirdPartBillTopic;
 use App\Services\StudentAccountAwardPointsLogService;
+use App\Services\StudentService;
 use App\Services\ThirdPartBillService;
 use App\Services\UserRefereeService;
 use Slim\Http\Request;
@@ -369,6 +371,7 @@ class Consumer extends ControllerBase
 
             // 读取excel
             $excelData = Spreadsheet::getActiveSheetData($localPath);
+            $excelTitle = array_shift($excelData);
             //如果excel为空，直接标记任务完成
             if (empty($excelData)) {
                 $lockRes = StudentAccountAwardPointsFileModel::updateStatusCreateToCompleteById($info['id']);
@@ -380,27 +383,10 @@ class Consumer extends ControllerBase
 
             //查询student信息 and 组装请求数据
             $requestErpData = StudentAccountAwardPointsLogService::excelDataToLogData($excelData);
-            $excelTitle = array_shift($requestErpData);
             $uuidArr = array_diff(array_column($requestErpData,'uuid'), [null]);
             $mobileArr = array_diff(array_column($requestErpData,'mobile'), [null]);
-            if (!empty($uuidArr) && !empty($mobileArr)) {
-                $studentWhere = [
-                    "OR" => [
-                        'uuid' => $uuidArr,
-                        'mobile' => $mobileArr
-                    ],
-                ];
-            }elseif (!empty($uuidArr)) {
-                $studentWhere = [
-                    'uuid' => $uuidArr,
-                ];
-            }else {
-                $studentWhere = [
-                    'mobile' => $mobileArr
-                ];
-            }
-
-            $studentList = ErpStudentModel::getRecords($studentWhere,['id','uuid','mobile']);
+            $studentList = ErpStudentModel::getListByUuidAndMobile($uuidArr, $mobileArr, ['id','uuid','mobile']);
+            // 生成新的以 uuid 和 mobile为key 的数组
             $uuidInfoList = [];
             $mobileInfoList = [];
             foreach ($studentList as $_sTime) {
@@ -408,9 +394,19 @@ class Consumer extends ControllerBase
                 $mobileInfoList[$_sTime['mobile']] = $_sTime;
             }
             unset($studentList);
+
+            // 组合数据 - 请求erp接口数据和日志表保存数据
             $batchInsertData = [];
+            $errData = [];
             foreach ($requestErpData as $_key => $_info) {
+                $_student_info = !empty($_info['uuid']) ? $uuidInfoList[$_info['uuid']] : $mobileInfoList[$_info['mobile']];
+                // 如果student_id不存在，直接按失败处理 ,  $_student_info is NULL or empty continue and add $errData
+                if (!$_student_info) {
+                    $errData[] = StudentService::formatErrData($_info['uuid'], $_info['mobile'],'学生不存在', $_info['num']);
+                    continue;
+                }
                 $batchInsertData[$_key] = $_info;
+                $batchInsertData[$_key]['num'] = Util::fen($_info['num']);  //转换成分和erp.student_account表单位保持一致
                 $batchInsertData[$_key]['operator_id'] = $msgBody['operator_id'];
                 $batchInsertData[$_key]['app_id'] = $msgBody['app_id'];
                 $batchInsertData[$_key]['sub_type'] = $msgBody['sub_type'];
@@ -418,12 +414,10 @@ class Consumer extends ControllerBase
                 $batchInsertData[$_key]['create_time'] = $time;
                 $batchInsertData[$_key]['file_id'] = $info['id'];
                 // student_id, uuid, mobile,
-                $_student_info = !empty($_info['uuid']) ? $uuidInfoList[$_info['uuid']] : $mobileInfoList[$_info['mobile']];
                 $batchInsertData[$_key]['student_id'] = $_student_info['id'];
                 $batchInsertData[$_key]['uuid'] = $_student_info['uuid'];
                 $batchInsertData[$_key]['mobile'] = $_student_info['mobile'];
-
-                // 补全 请求erp接口必要字段
+                //补全 请求erp接口必要字段
                 $requestErpData[$_key]['student_id'] = $_student_info['id'];
             }
 
@@ -433,6 +427,7 @@ class Consumer extends ControllerBase
                 SimpleLogger::info("consumer::studentAccountAwardPoints update status create to exec error.", ['params' => $params, 'info' => $info]);
                 return HttpHelper::buildErrorResponse($response, ['update status create to exec error']);
             }
+
             // 发放积分
             $requestErpRes = (new Erp())->batchAwardPoints([
                 'award_points_list' => $requestErpData,
@@ -445,6 +440,7 @@ class Consumer extends ControllerBase
 
             if ($requestErpRes['code'] == 0) {
                 $failList = $requestErpRes['data']['fail_list'];
+                $fail_num = isset($requestErpRes['data']['fail_list']) ? count($requestErpRes['data']['fail_list']) : 0;
                 // 移除添加失败的记录
                 foreach ($batchInsertData as $_insertKey => $_insertVal) {
                     foreach ($failList as $_fKey => $_fVal) {
@@ -459,6 +455,7 @@ class Consumer extends ControllerBase
             }else {
                 // 发放失败， 不写入日志
                 $failList = $requestErpData;
+                $fail_num = count($requestErpData);
             }
 
 
@@ -473,26 +470,20 @@ class Consumer extends ControllerBase
             $failExcelLocalPath = pathinfo($localPath, PATHINFO_DIRNAME) . '/fail_' . pathinfo($localPath, PATHINFO_BASENAME);
             if (!empty($failList)) {
                 $excelTitle[]='失败原因';
-                $createExcelData = [];
                 foreach ($failList as $_fTime) {
-                    $createExcelData[] =[
-                        $_fTime['uuid'],
-                        $_fTime['mobile'],
-                        $_fTime['num'],
-                        $_fTime['err_msg']
-                    ];
+                    $errData[] = StudentService::formatErrData($_fTime['uuid'], $_fTime['mobile'], $_fTime['err_msg'], $_fTime['num']);
                 }
-                Spreadsheet::createXml($failExcelLocalPath, $excelTitle, $createExcelData);
+                SimpleLogger::info("consumer::studentAccountAwardPoints error data.", ['title' => $excelTitle, 'info' => $errData]);
+                Spreadsheet::createXml($failExcelLocalPath, $excelTitle, $errData);
             }
             // 发送邮件 - 把本次失败的数据生成excel 发送到指定邮箱
-            list($toMail, $title) = DictConstants::get(DictConstants::AWARD_POINTS_SEND_MAIL_CONFIG, ['to_mail', 'title']);
+            list($toMail, $err_title, $title) = DictConstants::get(DictConstants::AWARD_POINTS_SEND_MAIL_CONFIG, ['to_mail', 'err_title', 'title']);
             $success_num = $requestErpRes['data']['success_num'] ?? 0;
             $accountNameList = StudentAccountAwardPointsLogService::getAccountName();
             $account_name = $accountNameList[$params['app_id'] . '_' . $params['sub_type']];
-            $fail_num = isset($requestErpRes['data']['fail_list']) ? count($requestErpRes['data']['fail_list']) : 0;
-
-            $content = '本次处理积分账户' . $account_name . '总共' . count($requestErpData) . '条数据，成功处理' . $success_num . '条，有 ' . $fail_num . '条导入失败，可下载附件，查看失败数据及其内容。重新导入失败数据时，请按照上传模板重新导入失败数据';
-            $res = PhpMail::sendEmail($toMail, $title, $content, $failExcelLocalPath);
+            $emailTitle = $fail_num > 0 ? $err_title : $title;
+            $content = '本次积分账户已发放完成' . $account_name . '总共' . count($requestErpData) . '条数据，成功处理' . $success_num . '条，有 ' . $fail_num . '条导入失败，可下载附件，查看失败数据及其内容。重新导入失败数据时，请按照上传模板重新导入失败数据';
+            $res = PhpMail::sendEmail($toMail, $emailTitle, $content, $failExcelLocalPath);
             if (!$res) {
                 SimpleLogger::error("Consumer::studentAccountAwardPoints send mail fail", ['params' => $params, 'info' => $info, 'error' => $res]);
             }

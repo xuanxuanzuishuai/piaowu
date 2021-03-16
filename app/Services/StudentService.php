@@ -13,6 +13,7 @@ namespace App\Services;
 use App\Libs\AliOSS;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\PhpMail;
 use App\Libs\SimpleLogger;
 use App\Libs\Spreadsheet;
 use App\Models\Dss\DssCategoryV1Model;
@@ -136,6 +137,12 @@ class StudentService
 
         $sheetData = Spreadsheet::getActiveSheetData($localFilePath);
         $excelTitle = array_shift($sheetData);
+        // 超过1w条发送邮件
+        if (count($excelTitle) > 10000) {
+            list($toMail, $title) = DictConstants::get(DictConstants::AWARD_POINTS_SEND_MAIL_CONFIG, ['to_mail', 'err_title']);
+            PhpMail::sendEmail($toMail, $title, 'excel内容超过1万条，请分批导入');
+            throw new RunTimeException(['excel_max_line']);
+        }
         // 校验否有不符合规则的手机号 - 11位纯数字
         $errData = [];
         foreach ($sheetData as $_time) {
@@ -155,7 +162,11 @@ class StudentService
         $mobileArr = array_diff(array_column($sheetData,'B'),[null]);
         $repeatArr = self::checkRepeatUuidMobile(array_values($uuidArr), $mobileArr);
         if (!empty($repeatArr)) {
-            throw new RunTimeException(['info_insert_or_update_error_check_duplicate'],['err_data' => $repeatArr]);
+            // 发送邮件
+            $content = self::createRepeatDataMailContent($repeatArr);
+            list($toMail, $title) = DictConstants::get(DictConstants::AWARD_POINTS_SEND_MAIL_CONFIG, ['to_mail', 'err_title']);
+            PhpMail::sendEmail($toMail, $title, $content);
+            throw new RunTimeException(['excel_data_exist_err_data'],['err_data' => $repeatArr]);
         }
         $dataList = array_chunk($sheetData, 5000);
         $fileInfo = pathinfo($localFilePath);
@@ -229,6 +240,12 @@ class StudentService
             foreach ($rUuid as $_v) {
                 $repeatArr[] = self::formatErrData($_v, $uuidArr[$_v], 'repeat_uuid');
             }
+
+            // 不存在的uuid
+            $noExistUuid = array_diff($uuidArr,array_keys($uuidKeyArr));
+            foreach ($noExistUuid as $_v) {
+                $repeatArr[] = self::formatErrData($_v, '', 'uuid_not_exist');
+            }
         }
         // 查询mobile
         if (!empty($mobileArr) ){
@@ -238,6 +255,12 @@ class StudentService
             $mobileKeyArr = array_column($mobileStudentList,'uuid','mobile');
             foreach ($rMobile as $_v) {
                 $repeatArr[] = self::formatErrData($mobileKeyArr[$_v], $_v, 'repeat_mobile');
+            }
+
+            // 不存在的mobile
+            $noExistMobile = array_diff($mobileArr,array_keys($mobileKeyArr));
+            foreach ($noExistMobile as $_v) {
+                $repeatArr[] = self::formatErrData('', $_v, 'mobile_not_exist');
             }
         }
 
@@ -263,13 +286,35 @@ class StudentService
      * @param $errCode
      * @return array
      */
-    public static function formatErrData($uuid, $mobile, $errCode)
+    public static function formatErrData($uuid, $mobile, $errCode, $num = 0)
     {
         $errMsg = Lang::getWord($errCode);
-        return [
+        $errInfo =  [
             'uuid' => $uuid,
             'mobile' => $mobile,
             'err_msg' => !empty($errMsg) ? $errMsg : $errCode,
         ];
+        if ($num >0) {
+            $errInfo['num'] = $num;
+        }
+        return $errInfo;
+    }
+
+    /**
+     * 批量发放积分 有重复数据的邮件内容
+     * @param $repeatArr
+     * @return string
+     */
+    public static function createRepeatDataMailContent($repeatArr)
+    {
+        //检测积分发放表+文件名称，
+        // 错误数据表内容包括：用户UUID、用户手机号、失败原因
+        $content = '检测积分发放上传表，以下内容为错误数据，请更新完后重新上传表。<br><table border="1px solid #ccc" cellspacing="0" cellpadding="0">'.
+            '<tr><td width="30%">用户UUID</td><td width="30%">用户手机号</td><td>失败原因</td></tr>';
+        foreach ($repeatArr as $_r) {
+            $content .= '<tr><td>'.$_r['uuid'].'</td><td>'.$_r['mobile'].'</td><td>'.$_r['err_msg'].'</td></tr>';
+        }
+        $content .='</table>';
+        return $content;
     }
 }
