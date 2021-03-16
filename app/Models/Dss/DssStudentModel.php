@@ -228,7 +228,6 @@ class DssStudentModel extends DssModel
             self::$table . '.collection_id',
             self::$table . '.password',
             self::$table . '.is_join_ranking',
-            self::$table . '.pay_vip_time',
         ], $where);
     }
 }
