@@ -158,6 +158,45 @@ class PosterService
     }
 
     /**
+     * 代理推广页面地址
+     * @param array $params
+     * @return string
+     */
+    public static function getAgentLandingPageUrl($params = [])
+    {
+        $link = DictConstants::get(DictConstants::AGENT_CONFIG, 'package_buy_page_url');
+        return $link . "?". http_build_query($params);
+    }
+
+    /**
+     * 代理二期
+     * 新web端销售页面二维码
+     * @param $appId
+     * @param array $params
+     * @param int $packageId
+     * @return array
+     */
+    public static function getAgentLandingPageQrImage($appId, $params = [], $packageId = 0)
+    {
+        $params['app_id'] = $params['app_id'] ?? $appId;
+        $paramId = ReferralActivityService::getParamsId($params);
+        $params = [
+            'package_id' => $packageId,
+            'param_id' => $paramId
+        ];
+        $content = self::getAgentLandingPageUrl($params);
+        list($filePath, $fileName) = QRCodeModel::genImage($content, time());
+        chmod($filePath, 0755);
+        //上传二维码到阿里oss
+        $envName  = $_ENV['ENV_NAME'] ?? 'dev';
+        $imagePath = $envName . '/' . AliOSS::DIR_REFERRAL . '/' . $fileName;
+        AliOSS::uploadFile($imagePath, $filePath);
+        //删除临时二维码文件
+        unlink($filePath);
+        return [$imagePath, $paramId];
+    }
+
+    /**
      * 获取海报配置
      * @param array $key
      * @return array

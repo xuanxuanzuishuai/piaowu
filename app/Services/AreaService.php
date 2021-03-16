@@ -12,6 +12,7 @@ use App\Models\AreaCityModel;
 use App\Models\AreaDistrictModel;
 use App\Models\AreaProvinceModel;
 use App\Models\CountryCodeModel;
+use App\Models\Dss\DssAreaModel;
 
 class AreaService
 {
@@ -82,5 +83,28 @@ class AreaService
             $where['province_id'] = $params['province_id'];
         }
         return AreaDistrictModel::getRecords($where, ['id', 'district_name']);
+    }
+
+    /**
+     * 根据 parent_code 获取区域信息
+     * @param $parent_code
+     * @return mixed
+     */
+    public static function getAreaByParentCode($parent_code)
+    {
+        //判断传入的值是否为空，如果为空，则取顶级区域
+        $parent_code = empty($parent_code) ? '000000' : $parent_code;
+
+        return DssAreaModel::getRecordsByParentCode($parent_code);
+    }
+
+    /**
+     * 根据code获取信息
+     * @param $code
+     * @return array
+     */
+    public static function getByCode($code)
+    {
+        return DssAreaModel::getRecordByCode($code);
     }
 }

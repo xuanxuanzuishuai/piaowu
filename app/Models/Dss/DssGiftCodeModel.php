@@ -41,6 +41,9 @@ class DssGiftCodeModel extends DssModel
      */
     public static function hadPurchasePackageByType($studentID, $type = DssPackageExtModel::PACKAGE_TYPE_TRIAL, $verifyCode = true)
     {
+        if (empty($studentId)) {
+            return [];
+        }
         if ($type == DssPackageExtModel::PACKAGE_TYPE_NORMAL) {
             $packageIdArr = array_column(DssPackageExtModel::getPackages(['package_type' => DssPackageExtModel::PACKAGE_TYPE_NORMAL, 'app_id' => DssPackageExtModel::APP_AI]), 'package_id');
             $v1PackageIdArr = DssErpPackageV1Model::getNormalPackageIds();

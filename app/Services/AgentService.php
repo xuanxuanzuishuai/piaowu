@@ -15,6 +15,7 @@ use App\Libs\EventListener\AgentOpEvent;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
 use App\Libs\NewSMS;
+use App\Libs\RC4;
 use App\Libs\RedisDB;
 use App\Libs\UserCenter;
 use App\Libs\Util;
@@ -31,9 +32,11 @@ use App\Models\Dss\DssDictModel;
 use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssPackageExtModel;
 use App\Models\Dss\DssStudentModel;
+use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\EmployeeModel;
 use App\Models\GoodsResourceModel;
+use App\Models\ParamMapModel;
 use App\Models\UserWeiXinInfoModel;
 use App\Models\PosterModel;
 use App\Models\UserWeiXinModel;
@@ -326,6 +329,7 @@ class AgentService
         $agentList['list'] = self::formatAgentData($agentList['list']);
         return $agentList;
     }
+
 
     /**
      * 格式化数据
@@ -1524,7 +1528,6 @@ class AgentService
      * @return array|mixed
      * 获取推广素材方法
      * @throws RunTimeException
-     * @throws \App\Libs\KeyErrorRC4Exception
      */
     public static function popularMaterialInfo($agentId = 0)
     {
@@ -1554,7 +1557,7 @@ class AgentService
                 $data[$item['key']] = $item['value'];
                 $data[$item['key'] . '_url'] = AliOSS::signUrls($item['value']);
                 if (!empty($agentId)) {
-                    $channel = GoodsResourceModel::getAgentChannel($agentInfo['type'] ?? 0);
+                    $channel = self::getAgentChannel($agentInfo['type'] ?? 0);
                     $extParams = [
                         'p' => PosterModel::getIdByPath($item['value']),
                         'app_id' => UserCenter::AUTH_APP_ID_OP_AGENT,
@@ -1681,5 +1684,47 @@ class AgentService
             $config = array_flip($config);
         }
         return empty($config[$channelId]) ? 0 : (int)$config[$channelId];
+    }
+
+    /**
+     * 查询代理商渠道
+     * @param $type
+     * @return array|mixed|null
+     */
+    public static function getAgentChannel($type)
+    {
+        $default = DictConstants::get(DictConstants::AGENT_CONFIG, 'channel_distribution');
+        $config = DictConstants::get(DictConstants::AGENT_CONFIG, 'channel_dict');
+        $config = json_decode($config, true);
+        if (empty($type) || empty($config)) {
+            return $default;
+        }
+        return $config[$type] ?? $default;
+    }
+
+    /**
+     * 获取用户当前代理
+     * @param $userId
+     * @return array|mixed
+     */
+    public static function getUserAgent($userId)
+    {
+        if (empty($userId)) {
+            return [];
+        }
+        $agentUser = AgentUserModel::getRecords(['user_id' => $userId], ['agent_id', 'user_id']);
+        $data = [];
+        foreach ($agentUser as $agent) {
+            if ($agent['status'] == AgentUserModel::BIND_STATUS_PENDING) {
+                $data = $agent;
+            }
+            if ($agent['status'] == AgentUserModel::BIND_STATUS_BIND && empty($data)) {
+                $data = $agent;
+            }
+        }
+        if (!empty($data['agent_id'])) {
+            $data = array_merge($data, AgentModel::getById($data['agent_id']));
+        }
+        return $data;
     }
 }

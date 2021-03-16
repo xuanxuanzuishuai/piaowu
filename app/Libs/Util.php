@@ -1019,4 +1019,14 @@ class Util
         }
         return bcdiv($price, 100, $scale);
     }
+
+    /**
+     * 擦除字符串中的所有空白，包括空格、换行和制表符
+     * @param $s
+     * @return null|string|string[]
+     */
+    public static function trimAllSpace($s)
+    {
+        return preg_replace('/[\s\t\n]/', '', $s);
+    }
 }

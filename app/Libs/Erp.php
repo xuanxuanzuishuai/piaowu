@@ -9,8 +9,10 @@
 namespace App\Libs;
 
 use App\Libs\Exceptions\RunTimeException;
+use App\Models\Dss\DssErpPackageV1Model;
 use GuzzleHttp\Client;
 use Slim\Http\StatusCode;
+
 class Erp
 {
     const RSP_CODE_SUCCESS = 0;
@@ -40,7 +42,6 @@ class Erp
     const API_STUDENT_ADDRESS_LIST = '/ai_dss/student/address_list';
     const API_STUDENT_MODIFY_ADDRESS = '/ai_dss/student/modify_address';
     const API_STUDENT_DELETE_ADDRESS = '/ai_dss/student/delete_address';
-
     // 新产品包
     const API_PACKAGE_V1_LIST = '/ai_dss/package/package_v1_list';
     const API_PACKAGE_V1_DETAIL = '/ai_dss/package/package_v1_detail';
@@ -53,6 +54,8 @@ class Erp
     // 创建订单（可以创建后立即发货）
     const API_MAN_CREATE_BILL_V1 = '/ai_dss/billV1/man_create';
     const API_REFUND_FREE_BILL = '/ai_dss/billV1/abandon_free';
+    const API_CHECK_PACKAGE_HAVE_KIND_V1 = '/ai_dss/billV1/check_package_have_kind';
+    const API_UPDATE_ORDER_ADDRESS_V1 = '/ai_dss/billV1/update_order_address';
 
     // 账户
     const API_STUDENT_ACCOUNTS = '/ai_dss/account/detail';
@@ -623,5 +626,38 @@ class Erp
     {
         $result = self::commonAPI(self::API_BATCH_AWARD_POINTS, $params, 'POST');
         return $result ?? null;
+    }
+
+    /**
+     * 创建订单
+     * @param $params
+     * @return array|bool
+     */
+    public function createBillV1($params)
+    {
+        $params['sale_shop'] = $params['sale_shop'] ?? DssErpPackageV1Model::SALE_SHOP_NOTE;
+        return HttpHelper::requestJson($this->host . self::API_CREATE_BILL_V1, $params, 'POST');
+    }
+
+    /**
+     * 订单中的产品或赠品是否包含实物
+     * @param $params
+     * @return array|bool
+     */
+    public function checkPackageHaveKind($params)
+    {
+        $params['app_id'] = $params['app_id'] ?? Constants::SMART_APP_ID;
+        return HttpHelper::requestJson($this->host . self::API_CHECK_PACKAGE_HAVE_KIND_V1, $params);
+    }
+
+    /**
+     * 更新订单发货地址
+     * @param $params
+     * @return array|bool
+     */
+    public function updateOrderAddress($params)
+    {
+        $params['app_id'] = $params['app_id'] ?? Constants::SMART_APP_ID;
+        return HttpHelper::requestJson($this->host . self::API_UPDATE_ORDER_ADDRESS_V1, $params);
     }
 }

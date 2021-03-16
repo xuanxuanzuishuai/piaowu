@@ -15,4 +15,9 @@ class DssCategoryV1Model extends DssModel
     const DURATION_TYPE_NORMAL = 2001;
     const DURATION_TYPE_TRAIL = 2002;
     const DURATION_TYPE_GIFT = 2003;
+
+    public static function containObject($goods)
+    {
+        return in_array(self::TYPE_OBJECT, array_column($goods, 'category_type'));
+    }
 }

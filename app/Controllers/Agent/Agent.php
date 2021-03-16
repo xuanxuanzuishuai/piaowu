@@ -5,11 +5,13 @@ namespace App\Controllers\Agent;
 use App\Controllers\ControllerBase;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
+use App\Libs\KeyErrorRC4Exception;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\AgentOperationLogModel;
 use App\Services\AgentService;
 use App\Services\CommonServiceForApp;
+use App\Services\PackageService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -290,6 +292,60 @@ class Agent extends ControllerBase
         });
         ksort($list);
         return HttpHelper::buildResponse($response, array_merge($hot, $list));
+    }
+
+    /**
+     * 推广商品列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * @throws \App\Libs\KeyErrorRC4Exception
+     */
+    public function packageList(Request $request, Response $response)
+    {
+        try {
+            $userInfo = $this->ci['user_info'];
+            if (empty($userInfo['user_id'])) {
+                throw new RunTimeException(['agent_not_exist']);
+            }
+            $data = AgentService::getPackageList($userInfo['user_id']);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
+        return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
+     * 产品包详情
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * @throws KeyErrorRC4Exception
+     */
+    public function packageDetail(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key'        => 'package_id',
+                'type'       => 'required',
+                'error_code' => 'package_id_is_required'
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            $userInfo = $this->ci['user_info'];
+            if (empty($userInfo['user_id'])) {
+                throw new RunTimeException(['agent_not_exist']);
+            }
+            $data = PackageService::getPackageV1Detail($params['package_id']);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
+        return HttpHelper::buildResponse($response, $data);
     }
 
 }

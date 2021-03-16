@@ -419,10 +419,13 @@ class DictConstants {
         'type' => 'AGENT_CONFIG',
         'keys' => [
             'channel_distribution',
-            'channel_individual',
+            'channel_individual', // 个人家长代理
+            'channel_individual_teacher', // 个人老师代理
             'channel_offline',
             'channel_dict',
             'default_thumb',
+            'package_buy_page_url', // 产品购买页面
+            'share_card_logo', // 分享卡片logo
         ]
     ];
     // 是否
@@ -463,6 +466,24 @@ class DictConstants {
     const ERP_PACKAGE_V1_STATUS = [
         'type' => 'package_v1_status',
         'keys' => ['-1', '0', '1']
+    ];
+
+    const DSS_PERSONAL_LINK_PACKAGE_ID = [
+        'type' => 'personal_link_package_id',
+        'keys' => [
+            'package_id',
+            'discount_package_id'
+        ]
+    ];
+
+    /**
+     * erp阿里云config
+     */
+    const ERP_ALI_OSS_CONFIG = [
+        'type' => 'ALI_OSS_CONFIG',
+        'keys' => [
+            'shop_cdn_domain'
+        ]
     ];
 
 
@@ -540,27 +561,35 @@ class DictConstants {
 
     /**
      * 获取erp系统dict配置数据
-     * @param $types
-     * @param array $keys
+     * @param $type
+     * @param $key
      * @return array
      */
-    public static function getErpDict($types, $keys = [])
+    public static function getErpDict($type, $key = [])
     {
-        $where = [
-            'type' => $types,
-        ];
-        $dictList = [];
-        if (!empty($keys)) {
-            $where['key_code'] = $keys;
+        if (empty($type)) {
+            return null;
         }
-        $data = ErpDictModel::getRecords($where, ['type', 'key_code', 'key_value']);
-        if (empty($data)) {
-            return $dictList;
+        if (empty($key)) {
+            $key = $type['keys'] ?? [];
         }
-        foreach ($data as $k => $v) {
-            $dictList[$v['type']][$v['key_code']] = $v['key_value'];
+
+        if (is_array($key)) {
+            if (!empty(array_diff($key, $type['keys']))) {
+                return [];
+            }
+            return ErpDictModel::getKeyValuesByArray($type, $key);
         }
-        return $dictList;
+
+        if (!in_array($key, $type['keys'])) {
+            SimpleLogger::error(__FILE__ . __LINE__ . ' DictConstants::getErpDict [invalid key]', [
+                'type' => $type,
+                'key'  => $key
+            ]);
+            return null;
+        }
+
+        return ErpDictModel::getKeyValue($type['type'], $key);
     }
 
     /**

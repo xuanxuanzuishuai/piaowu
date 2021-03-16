@@ -42,5 +42,10 @@ class AgentMiniAppRouter extends RouterBase
         '/agent/sec_agent/update'   => ['method' => ['post'], 'call' => Agent::class . ':secAgentUpdate'],
         '/agent/sec_agent/freeze'   => ['method' => ['post'], 'call' => Agent::class . ':secAgentFreeze'],
         '/agent/sec_agent/unfreeze' => ['method' => ['post'], 'call' => Agent::class . ':secAgentUnfreeze'],
+
+        '/agent/package/list' => ['method' => ['get'], 'call' => Agent::class . ':packageList'],
+        '/agent/package/detail' => ['method' => ['get'], 'call' => Agent::class . ':packageDetail'],
+        '/agent/package/share' => ['method' => ['get'], 'call' => Agent::class . ':packageShareInfo'],
+
     ];
 }

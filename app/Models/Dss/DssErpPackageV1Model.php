@@ -96,7 +96,7 @@ and p.sale_shop = " . self::SALE_SHOP_AI_PLAY, [
     {
         $db = self::dbRO();
         $package = $db->queryAll("
-                        select p.id package_id, p.name package_name, p.channel, p.sale_shop,
+                        select p.id package_id, p.name package_name, p.channel, p.sale_shop, p.status package_status,
                             c.type, c.sub_type, c.callback_app_id,
                             g.extension, g.num, g.free_num
                         from " . self::$table . " p

@@ -9,7 +9,6 @@
 
 namespace App\Libs;
 
-
 use DateTime;
 use OSS\Core\OssException;
 use OSS\OssClient;
@@ -42,6 +41,24 @@ class AliOSS
     const DIR_MINIAPP_CODE = 'miniapp_code';   // 小程序码
     const DIR_EMPLOYEE_POSTER = 'employee_poster';   // 员工海报
     const DIR_SIGN_IN_POSTER = 'sign_in_poster';//打卡截图上传
+
+    /**
+     * 替换cdn域名 erp上传图片专用
+     * @param $url
+     * @return string|string[]
+     */
+    public static function replaceShopCdnDomain($url)
+    {
+        $cdnDomain = DictConstants::getErpDict(DictConstants::ERP_ALI_OSS_CONFIG, 'shop_cdn_domain');
+        //外部传输已经处理过的url
+        if (Util::isUrl($url)) {
+            $reg = '/(http[s]):\/\/([^\/]+)/i';
+            $newUrl = preg_replace($reg, $cdnDomain, $url);
+        } else {
+            $newUrl = $cdnDomain . '/' . ($url);
+        }
+        return $newUrl ?? $url;
+    }
 
 
     private function gmt_iso8601($time) {

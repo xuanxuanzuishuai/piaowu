@@ -8,13 +8,11 @@
 
 namespace App\Services;
 
-
 use App\Libs\RC4;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\ParamMapModel;
-use App\Models\UserWeiXinModel;
 
 /**
  * 小程序二维码管理类
@@ -38,7 +36,7 @@ class MiniAppQrService
         //应用ID
         $appId = UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT;
         //二维码识别后跳转地址类型
-        $landingType = DssUserQrTicketModel::LANDING_TYPE_MINIAPP;
+        $landingType = $extParams['lt'] ?? DssUserQrTicketModel::LANDING_TYPE_MINIAPP;
         //ticket的前缀
         $ticketPrefix = '';
         if ($type == ParamMapModel::TYPE_AGENT) {
@@ -62,7 +60,11 @@ class MiniAppQrService
             $userQrTicket = $ticketPrefix . RC4::encrypt($_ENV['COOKIE_SECURITY_KEY'], $type . "_" . $userId);
             $paramInfo['r'] = $userQrTicket;
             $params = array_merge($paramInfo, ['app_id' => $appId, 'type' => $type, 'user_id' => $userId]);
-            $qrData = PosterService::getMiniappQrImage($appId, $params);
+            if ($landingType == DssUserQrTicketModel::LANDING_TYPE_MINIAPP) {
+                $qrData = PosterService::getMiniappQrImage($appId, $params);
+            } else {
+                $qrData = PosterService::getAgentLandingPageQrImage($appId, $params, $extParams['package_id'] ?? 0);
+            }
             if (empty($qrData[0])) {
                 return '';
             }

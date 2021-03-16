@@ -23,7 +23,7 @@ class ErpDictModel extends ErpModel
     {
         $result = [];
         foreach ($keyCodes as $keyCode) {
-            $result[$keyCode] = self::getKeyValue($type, $keyCode);
+            $result[] = self::getKeyValue($type, $keyCode);
         }
         return $result;
     }
