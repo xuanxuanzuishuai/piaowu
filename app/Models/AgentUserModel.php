@@ -15,12 +15,9 @@ class AgentUserModel extends Model
 {
     public static $table = "agent_user";
     //绑定状态:0未绑定 1已绑定 2已解绑
-    // const BIND_STATUS_UNBIND = 0;
-    // const BIND_STATUS_BIND = 1;
-    // const BIND_STATUS_DEL_BIND = 2;
     const BIND_STATUS_PENDING = 0; // 未绑定
-    const BIND_STATUS_BIND    = 1; // 已绑定
-    const BIND_STATUS_UNBIND  = 2; // 已解绑
+    const BIND_STATUS_BIND = 1; // 已绑定
+    const BIND_STATUS_UNBIND = 2; // 已解绑
 
     // 进度:0注册 1体验 2年卡
     const STAGE_REGISTER = 0;
@@ -71,7 +68,7 @@ class AgentUserModel extends Model
                                     au.id,au.stage,au.user_id,au.bind_time,au.deadline
                                 FROM
                                     ' . self::$table . ' as au
-                                    INNER JOIN ' . AgentModel::$table . ' AS a ON au.agent_id = a.id '.$agentWhere.'
+                                    INNER JOIN ' . AgentModel::$table . ' AS a ON au.agent_id = a.id ' . $agentWhere . '
                                 WHERE ' . $agentUserWhere . '
                                 ) as tma 
              INNER JOIN ' . AgentModel::$table . ' AS fa ON tma.first_agent_id=fa.id  ' . $firstAgentWhere .
@@ -121,37 +118,37 @@ class AgentUserModel extends Model
     {
         return self::getRecord(
             [
-                "OR"=>[
-                    "AND #the first condition"=>[
-                        'user_id' => $studentId,
-                        'stage' => self::STAGE_TRIAL,
-                        'deadline[>=]' => time()
-                    ],
-                    "AND #the second condition"=>[
-                        'user_id' => $studentId,
-                        'stage' => self::STAGE_FORMAL,
-                    ],
-                ],
+
+                'user_id' => $studentId,
+                'stage' => [self::STAGE_TRIAL, self::STAGE_FORMAL],
+                'deadline[>=]' => time()
+
             ],
-            ['agent_id', 'id']);
+            ['agent_id', 'id', 'stage']);
     }
 
     /**
-     * 获取学生无效的绑定关系
+     * 获取代理和学生最新的绑定关系
+     * @param $agentId
      * @param $studentId
      * @return mixed
      */
-    public static function getInvalidBindData(int $studentId)
+    public static function getAgentStudentLastBindData(int $agentId, int $studentId)
     {
         return self::getRecord(
             [
+                'agent_id' => $agentId,
                 'user_id' => $studentId,
-                'stage' => self::STAGE_TRIAL,
-                'deadline[<]' => time()
+                'stage' => [self::STAGE_TRIAL, self::STAGE_FORMAL],
+                'ORDER' => ["id" => "DESC"],
+                "LIMIT" => [1],
             ],
             [
                 'agent_id',
-                'id'
+                'id',
+                'stage',
+                'deadline',
+                'bind_time',
             ]);
     }
 }

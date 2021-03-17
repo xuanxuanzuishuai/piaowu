@@ -324,21 +324,21 @@ class AgentModel extends Model
     public static function getAgentParentData($agentIds)
     {
         $db = MysqlDB::getDB();
-        $data = $db->select(
-            self::$table . "(a)",
-            [
-                "[>]" . self::$table . "(b)" => ["a.parent_id" => 'id']
-            ],
-            [
-                "a.id",
-                "a.status",
-                "b.id(p_id)",
-                "b.status(p_status)",
-            ],
-            [
-                "a.id" => $agentIds
-            ]
-        );
+        $sql = "SELECT
+                    a.id,
+                    a.status,
+                    a.name,
+                    b.name as 'parent_name',
+                    b.id AS p_id,
+                    b.status AS p_status,
+                    IF ( b.division_model IS NULL, a.division_model, b.division_model ) AS division_model, 
+                    IF ( b.type IS NULL, a.type, b.type ) AS agent_type
+                FROM
+                    agent AS a
+                    LEFT JOIN agent AS b ON a.parent_id = b.id 
+                WHERE
+                    a.id in(".implode(',',$agentIds).");";
+        $data = $db->queryAll($sql);
         return $data;
     }
 }

@@ -17,12 +17,12 @@ use App\Models\Dss\DssAreaModel;
 class AreaService
 {
     /**
-     * 获取国家列表
+     * 获取国家列表:中国排在首位
      * @return array
      */
     public static function countryList()
     {
-        return CountryCodeModel::getAll();
+        return CountryCodeModel::getDataSpecifySort("country_code <> 86");
     }
 
     /**

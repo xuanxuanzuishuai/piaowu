@@ -53,7 +53,7 @@ class AgentBillMapModel extends Model
      * @param $studentId
      * @return array
      */
-    public static function get($parentBillId, int $studentId)
+    public static function get(string $parentBillId, int $studentId)
     {
         $mapData = self::getRecord(['student_id' => $studentId, 'bill_id' => $parentBillId], ['agent_id']);
         if (empty($mapData)) {
@@ -78,32 +78,5 @@ class AgentBillMapModel extends Model
             "LIMIT" => $limit
         ];
         return self::getRecords($where, $fields);
-    }
-
-    /**
-     * 获取订单映射代理商数据
-     * @param $parentBillId
-     * @param int $studentId
-     * @return array
-     */
-    public static function getBillMapAgentData(string $parentBillId, int $studentId)
-    {
-        $db = MysqlDB::getDB();
-        $mapData = $db->select(self::$table,
-            [
-                '[><]' . AgentModel::$table => ['agent_id' => 'id']
-            ],
-            [
-                self::$table . '.agent_id',
-                self::$table . '.param_map_id',
-                self::$table . '.bill_id',
-                self::$table . '.student_id',
-                AgentModel::$table . '.division_model',
-            ],
-            [
-                self::$table . '.student_id' => $studentId,
-                self::$table . '.bill_id' => $parentBillId,
-            ]);
-        return empty($mapData) ? [] : $mapData[0];
     }
 }

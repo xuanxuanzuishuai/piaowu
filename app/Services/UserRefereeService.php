@@ -187,12 +187,9 @@ class UserRefereeService
     public static function buyDeal($buyPreStudentInfo, $packageInfo, $appId, $parentBillId)
     {
         if ($appId == Constants::SMART_APP_ID) {
-            //查询代理商绑定关系
-            $agentIdData = AgentService::checkBillIsAgentReferral($buyPreStudentInfo['id'], $parentBillId, $packageInfo);
-            if ($agentIdData) {
-                //代理商转化购买
-                AgentAwardService::agentReferralBillAward($agentIdData['bind_agent_id'], $buyPreStudentInfo, $packageInfo['package_type'], $packageInfo, $parentBillId, $agentIdData['bill_own_agent_id']);
-            }
+            //代理奖励
+            AgentService::agentAwardLogic($buyPreStudentInfo, $parentBillId, $packageInfo);
+            //转介绍奖励
             self::dssBuyDeal($buyPreStudentInfo, $packageInfo);
         }
         return true;

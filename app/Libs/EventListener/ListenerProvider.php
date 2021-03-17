@@ -24,6 +24,9 @@ class ListenerProvider
         'App\Libs\EventListener\AgentOpEvent' => [
             [AgentOpListener::class, 'handle']
         ],
+        'App\Libs\EventListener\AgentAwardExtEvent' => [
+            [AgentAwardExtListener::class, 'handle']
+        ],
     ];
 
     /**

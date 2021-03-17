@@ -73,31 +73,4 @@ class Package extends ControllerBase
             'data' => $data
         ], StatusCode::HTTP_OK);
     }
-
-    /**
-     * 产品包状态字典
-     * @param Request $request
-     * @param Response $response
-     * @return Response
-     */
-    public function packageDropDownDict(Request $request, Response $response)
-    {
-        $rules = [
-            [
-                'key' => 'dict_type',
-                'type' => 'required',
-                'error_code' => 'dict_type_is_required'
-            ]
-        ];
-        $params = $request->getParams();
-        $result = Valid::validate($params, $rules);
-        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
-            return $response->withJson($result, StatusCode::HTTP_OK);
-        }
-        $data = DictConstants::getErpDictArr($params['dict_type']);
-        return $response->withJson([
-            'code' => Valid::CODE_SUCCESS,
-            'data' => $data
-        ], StatusCode::HTTP_OK);
-    }
 }

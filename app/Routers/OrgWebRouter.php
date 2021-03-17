@@ -144,7 +144,6 @@ class OrgWebRouter extends RouterBase
         '/op_web/package/search' => ['method' => ['get'], 'call' => Package::class . ':search'],
         '/op_web/package/new_package' => ['method' => ['get'], 'call' => Package::class . ':getNewPackage'],
         '/op_web/package/list' => ['method' => ['get'], 'call' => Package::class . ':packageList'],
-        '/op_web/package/drop_down_dict' => ['method' => ['get'], 'call' => Package::class . ':packageDropDownDict'],
 
         // 第三方订单管理
         '/op_web/bill/third_bill_list' => ['method' => ['get'], 'call' => Bill::class . ':thirdBillList'],
