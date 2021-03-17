@@ -1427,22 +1427,23 @@ class AgentService
             $where['create_time[<=]'] = $params['end_time'];
         }
 
-        $where['ORDER'] = ['create_time' => 'DESC'];
-        $where['LIMIT'] = [($page - 1) * $count, $count];
-        $count = AgentApplicationModel::getCount($where);
-        if (empty($count)) {
+        $totalCount = AgentApplicationModel::getCount($where);
+        if (empty($totalCount)) {
             return [
                 'list'       => [],
                 'totalCount' => 0
             ];
         }
+
+        $where['ORDER'] = ['create_time' => 'DESC'];
+        $where['LIMIT'] = [($page - 1) * $count, $count];
         $list = AgentApplicationModel::getRecords($where, ['id', 'name', 'mobile', 'create_time' => Medoo::raw('FROM_UNIXTIME(<create_time>)'), 'remark']);
         foreach ($list as &$item) {
             $item['name'] = Util::textDecode($item['name']);
         }
         return [
             'list'       => $list,
-            'totalCount' => $count
+            'totalCount' => $totalCount
         ];
     }
 
