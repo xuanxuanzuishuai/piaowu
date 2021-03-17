@@ -12,7 +12,10 @@ namespace App\Controllers\ShowMiniApp;
 use App\Controllers\ControllerBase;
 use App\Libs\Dss;
 use App\Libs\HttpHelper;
+use App\Libs\UserCenter;
 use App\Libs\Valid;
+use App\Libs\WeChat\WeChatMiniPro;
+use App\Models\Dss\DssUserWeiXinModel;
 use App\Services\CommonServiceForApp;
 use App\Services\PayServices;
 use App\Services\ShowMiniAppService;
@@ -150,7 +153,7 @@ class Landing extends ControllerBase
                 return $response->withJson(Valid::addAppErrors([], 'validate_code_error'), StatusCode::HTTP_OK);
             }
             $sceneData = ShowMiniAppService::getSceneData(urldecode($params['scene'] ?? ''));
-            $sessionKeyOpenId = $this->ci['open_id'];
+            $sessionKeyOpenId = WeChatMiniPro::factory(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,DssUserWeiXinModel::BUSI_TYPE_SHOW_MINAPP)->getSessionKey($this->ci['open_id']);
             list($openid, $lastId, $mobile, $uuid, $hadPurchased) = ShowMiniAppService::remoteRegister(
                 $this->ci['open_id'],
                 $params['iv'] ?? '',

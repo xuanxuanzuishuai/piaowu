@@ -332,24 +332,18 @@ class ShowMiniAppService
             $mobile = $jsonMobile['purePhoneNumber'];
         }
 
-        $stu = DssStudentModel::getStudentInfo(null, $mobile);
-        if (empty($stu)) {
-            $userInfo = (new Dss())->studentRegisterBound([
-                'mobile'       => $mobile,
-                'channel_id'   => $channel ?: DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'REFERRAL_MINIAPP_STUDENT_INVITE_STUDENT'),
-                'open_id'      => $openId,
-                'busi_type'    => UserWeiXinModel::BUSI_TYPE_SHOW_MINI,
-                'user_type'    => UserWeiXinModel::USER_TYPE_STUDENT,
-                'referee_id'   => $referrerId,
-                'country_code' => $countryCode,
-                'ext_params'   => $extParams
-            ]);
-            $lastId = $userInfo['student_id'];
-            $uuid = $userInfo['uuid'];
-        } else {
-            $lastId = $stu['id'];
-            $uuid = $stu['uuid'];
-        }
+        $userInfo = (new Dss())->studentRegisterBound([
+            'mobile'       => $mobile,
+            'channel_id'   => $channel ?: DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'REFERRAL_MINIAPP_STUDENT_INVITE_STUDENT'),
+            'open_id'      => $openId,
+            'busi_type'    => UserWeiXinModel::BUSI_TYPE_SHOW_MINI,
+            'user_type'    => UserWeiXinModel::USER_TYPE_STUDENT,
+            'referee_id'   => $referrerId,
+            'country_code' => $countryCode,
+            'ext_params'   => $extParams
+        ]);
+        $lastId = $userInfo['student_id'];
+        $uuid = $userInfo['uuid'];
 
         $hadPurchased = !empty(DssGiftCodeModel::hadPurchasePackageByType($lastId, DssPackageExtModel::PACKAGE_TYPE_TRIAL, false));
         return [$openId, $lastId, $mobile, $uuid, $hadPurchased];
