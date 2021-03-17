@@ -30,6 +30,8 @@ class StudentAccount extends ControllerBase
      */
     public function batchImportRewardPoints(Request $request, Response $response)
     {
+        //1w条数据可能超时
+        set_time_limit(60);
         $rules = [
             [
                 'key' => 'account_name',    // app_id + sub_type

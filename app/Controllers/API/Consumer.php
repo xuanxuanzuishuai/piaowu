@@ -361,11 +361,6 @@ class Consumer extends ControllerBase
                 SimpleLogger::info("consumer::studentAccountAwardPoints status is not create.", ['params' => $params, 'info' => $info]);
                 return HttpHelper::buildErrorResponse($response, ['status is not create']);
             }
-            $employeeInfo = EmployeeModel::getRecord(['id' => $msgBody['operator_id']],['uuid']);
-            if (empty($employeeInfo)) {
-                SimpleLogger::info("consumer::studentAccountAwardPoints is employee empty.", ['params' => $params, 'info' => $info]);
-                return HttpHelper::buildErrorResponse($response, ['employee error']);
-            }
 
             // 保存文件到本地
             $localPath = AliOSS::saveTmpFile(AliOSS::signUrls($msgBody['chunk_file']));
@@ -438,11 +433,10 @@ class Consumer extends ControllerBase
                 'award_points_list' => $requestErpData,
                 'app_id' => $msgBody['app_id'],
                 'sub_type' => $msgBody['sub_type'],
-                'employee_uuid' => $employeeInfo['uuid'],   // erp 接受参数名字是 employee_id
                 'batch_id' => 'op_' . $info['id'],  //批次号
                 'remark' => $msgBody['remark'],
             ]);
-            SimpleLogger::info("consumer::studentAccountAwardPoints request erp request",['res' => $requestErpRes]);
+            SimpleLogger::info("consumer::studentAccountAwardPoints request erp request",['res' => $requestErpRes, 'fileid'=>$info['id']]);
 
             if (isset($requestErpRes['code']) && $requestErpRes['code'] == 0) {
                 $failList = $requestErpRes['data']['fail_list'];
@@ -457,16 +451,21 @@ class Consumer extends ControllerBase
                     }
                 }
                 // 保存发放日志
-                StudentAccountAwardPointsLogModel::batchInsert($batchInsertData);
+                SimpleLogger::info("consumer::studentAccountAwardPoints batch insert start",['fileid'=>$info['id']]);
+                $batchInsertDataChunk = array_chunk($batchInsertData,2000);
+                foreach ($batchInsertDataChunk as $_chunk) {
+                    StudentAccountAwardPointsLogModel::batchInsert($_chunk);
+                }
+                SimpleLogger::info("consumer::studentAccountAwardPoints batch insert end",['fileid'=>$info['id']]);
+
             }else {
                 // 发放失败， 不写入日志
                 $failList = $requestErpData;
                 $fail_num = count($requestErpData);
             }
 
-            SimpleLogger::info("consumer::studentAccountAwardPoints update status start ", []);
-
             // 更新状态为完成
+            SimpleLogger::info("consumer::studentAccountAwardPoints update status start ", ['fileid'=>$info['id']]);
             $lockRes = StudentAccountAwardPointsFileModel::updateStatusExecToCompleteById($info['id']);
             if (!$lockRes) {
                 SimpleLogger::info("consumer::studentAccountAwardPoints update status create exec to complete error.", ['params' => $params, 'info' => $info]);
@@ -480,11 +479,11 @@ class Consumer extends ControllerBase
                 foreach ($failList as $_fTime) {
                     $errData[] = StudentService::formatErrData($_fTime['uuid'], $_fTime['mobile'], $_fTime['err_msg'], $_fTime['num']);
                 }
-                SimpleLogger::info("consumer::studentAccountAwardPoints error data.", ['title' => $excelTitle, 'info' => $errData]);
+                SimpleLogger::info("consumer::studentAccountAwardPoints error data.", ['title' => $excelTitle, 'info' => $errData, 'fileid'=>$info['id']]);
                 Spreadsheet::createXml($failExcelLocalPath, $excelTitle, $errData);
             }
-            SimpleLogger::info("consumer::studentAccountAwardPoints send mail start ", []);
             // 发送邮件 - 把本次失败的数据生成excel 发送到指定邮箱
+            SimpleLogger::info("consumer::studentAccountAwardPoints send mail start ", ['fileid'=>$info['id']]);
             list($toMail, $err_title, $title) = DictConstants::get(DictConstants::AWARD_POINTS_SEND_MAIL_CONFIG, ['to_mail', 'err_title', 'title']);
             $success_num = $requestErpRes['data']['success_num'] ?? 0;
             $accountNameList = StudentAccountAwardPointsLogService::getAccountName();
@@ -493,9 +492,10 @@ class Consumer extends ControllerBase
             $content = '本次积分账户已发放完成' . $account_name . '总共' . count($requestErpData) . '条数据，成功处理' . $success_num . '条，有 ' . $fail_num . '条导入失败，可下载附件，查看失败数据及其内容。重新导入失败数据时，请按照上传模板重新导入失败数据';
             $res = PhpMail::sendEmail($toMail, $emailTitle, $content, $failExcelLocalPath);
             if (!$res) {
-                SimpleLogger::error("Consumer::studentAccountAwardPoints send mail fail", ['params' => $params, 'info' => $info, 'error' => $res]);
+                SimpleLogger::error("Consumer::studentAccountAwardPoints send mail fail", ['params' => $params, 'info' => $info, 'error' => $res,'fileid'=>$info['id']]);
             }
         } catch (RunTimeException $runTimeException) {
+            SimpleLogger::error("consumer::studentAccountAwardPoints catch", ['params' => $params, 'err' => $runTimeException->getAppErrorData()]);
             return HttpHelper::buildErrorResponse($response, $runTimeException->getAppErrorData());
         }
         return HttpHelper::buildResponse($response, []);

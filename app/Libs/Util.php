@@ -1009,13 +1009,14 @@ class Util
     /**
      * 分 => 元
      * @param $price string 单位分
+     * @param int $scale 小数保留几位
      * @return int 单位元
      */
-    public static function yuan($price)
+    public static function yuan($price, $scale = 2)
     {
         if (empty($price)) {
             return 0;
         }
-        return bcdiv($price, 100, 2);
+        return bcdiv($price, 100, $scale);
     }
 }

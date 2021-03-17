@@ -44,7 +44,7 @@ class StudentAccountAwardPointsLogService
         foreach ($awardPointsLogList as $key => $val) {
             $awardPointsLogList[$key]['format_create_time'] = date("Y-m-d H:i", $val['create_time']);
             $awardPointsLogList[$key]['account_name'] = $accountNameList[$val['app_id'] . '_' . $val['sub_type']] ?? '';
-            $awardPointsLogList[$key]['num'] = Util::yuan($val['num']);
+            $awardPointsLogList[$key]['num'] = Util::yuan($val['num'], 0);
         }
         return $awardPointsLogList;
     }

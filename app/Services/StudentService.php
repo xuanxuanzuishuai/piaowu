@@ -153,12 +153,17 @@ class StudentService
             if (strlen((string)$_mobile) != 11) {
                 $errData[] = self::formatErrData($_time['A'], $_mobile, 'mobile_len_err');
             }
-            if (!is_integer($_time['num']) || $_time['num'] < 0) {
+            $num = intval($_time['C']);
+            // 不是数字字符串， 并且intval之后与原数不符， 小于0 都表示不是正整数
+            if (!is_numeric($_time['C']) || $num != $_time['C'] || $_time['C'] < 0) {
                 $errData[] = self::formatErrData($_time['A'], $_mobile, 'account_award_points_num_is_int');
             }
         }
         if (!empty($errData)) {
-            throw new RunTimeException(['mobile_len_err'],['err_data' => $errData]);
+            $content = self::createRepeatDataMailContent($errData);
+            list($toMail, $title) = DictConstants::get(DictConstants::AWARD_POINTS_SEND_MAIL_CONFIG, ['to_mail', 'err_title']);
+            PhpMail::sendEmail($toMail, $title, $content);
+            throw new RunTimeException(['excel_data_exist_err_data'],['err_data' => $errData]);
         }
         // 校验数据是否有重复
         $uuidArr = array_diff(array_column($sheetData,'A'),[null]);
