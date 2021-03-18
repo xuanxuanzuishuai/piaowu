@@ -485,8 +485,34 @@ class DictConstants {
             'shop_cdn_domain'
         ]
     ];
+    const DSS_WEIXIN_STUDENT_CONFIG = [
+        'type' => 'WEIXIN_STUDENT_CONFIG',
+        'keys' => [
+            'success_url',
+            'cancel_url',
+            'result_url',
+            'success_url_v1',
+            'result_url_v1',
+        ]
+    ];
 
+    const DSS_APP_CONFIG_STUDENT = [
+        'type' => 'APP_CONFIG_STUDENT',
+        'keys' => [
+            'success_url',
+            'cancel_url',
+            'result_url',
+        ]
+    ];
 
+    const AGENT_WEB_STUDENT_CONFIG = [
+        'type' => 'AGENT_WEB_STUDENT_CONFIG',
+        'keys' => [
+            'success_url',
+            'cancel_url',
+            'result_url',
+        ]
+    ];
 
     /**
      * 单个获取op系统dict配置数据

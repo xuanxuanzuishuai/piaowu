@@ -13,6 +13,7 @@ use App\Libs\Constants;
 use App\Libs\Erp;
 use App\Libs\Valid;
 use App\Models\Dss\DssStudentModel;
+use App\Services\WechatTokenService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -118,5 +119,21 @@ class Student extends ControllerBase
         $erp = new Erp();
         $result = $erp->modifyStudentAddress($params);
         return $response->withJson($result, StatusCode::HTTP_OK);
+    }
+
+    /**
+     * 解除绑定
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function unbind(Request $request, Response $response)
+    {
+        $studentId = $this->ci['user_info']['user_id'];
+        WechatTokenService::delTokenByUserId($studentId);
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => []
+        ], StatusCode::HTTP_OK);
     }
 }

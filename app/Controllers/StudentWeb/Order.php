@@ -148,12 +148,19 @@ class Order extends ControllerBase
                 $sceneData = ReferralActivityService::getParamsInfo($params['param_id']);
             }
             // 检查购买人当前绑定的代理是否一致
-            if (!empty($sceneData['user_id']) && $packageInfo['sub_type'] == DssCategoryV1Model::DURATION_TYPE_NORMAL) {
+            if (!empty($sceneData['user_id'])) {
                 // 获取用户当前绑定代理
                 $userAgentInfo = AgentService::getUserAgent($student['user_id']);
-                if (!empty($userAgentInfo) && !$userAgentInfo['agent_id'] != $sceneData['user_id']) {
+                if (!empty($userAgentInfo) && $userAgentInfo['agent_id'] != $sceneData['user_id']) {
+                    SimpleLogger::error('different_agent_not_allowed', [$userAgentInfo, $sceneData]);
                     throw new RunTimeException([['different_agent_not_allowed', null, null, [$userAgentInfo['name']]]]);
                 }
+            }
+
+            // 年卡不可购买体验包
+            if ($studentInfo['has_review_course'] == DssStudentModel::REVIEW_COURSE_1980 && $packageInfo['sub_type'] == DssCategoryV1Model::DURATION_TYPE_TRAIL) {
+                SimpleLogger::error('STUDENT_DOWN_STAGE_NOT_ALLOWED', [$studentInfo, $packageInfo]);
+                throw new RunTimeException(['student_down_stage_not_allowed']);
             }
 
             // check 9折续费 产品包

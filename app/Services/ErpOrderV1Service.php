@@ -9,12 +9,14 @@
 namespace App\Services;
 
 use App\Libs\Constants;
+use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Models\Dss\DssErpPackageV1Model;
 use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Erp\ErpGiftGroupV1Model;
+use App\Models\Erp\ErpPackageV1Model;
 use App\Models\Erp\ErpStudentOrderV1Model;
 
 class ErpOrderV1Service
@@ -113,10 +115,33 @@ class ErpOrderV1Service
         $resultUrl = null;
         $cancelUrl = null;
 
+        if ($channel == ErpPackageV1Model::CHANNEL_WX) {
+            list($successUrl, $resultUrl) = DssDictService::getKeyValuesByArray(
+                DictConstants::DSS_WEIXIN_STUDENT_CONFIG,
+                ['success_url_v1', 'result_url_v1']
+            );
+
+        } elseif ($channel == ErpPackageV1Model::CHANNEL_ANDROID || $channel == ErpPackageV1Model::CHANNEL_IOS) {
+            list($successUrl, $cancelUrl, $resultUrl) = DssDictService::getKeyValuesByArray(
+                DictConstants::DSS_APP_CONFIG_STUDENT,
+                ['success_url', 'cancel_url', 'result_url']
+            );
+
+        } elseif ($channel == ErpPackageV1Model::CHANNEL_OP_AGENT) {
+            list($successUrl, $cancelUrl, $resultUrl) = DictConstants::getValues(
+                DictConstants::AGENT_WEB_STUDENT_CONFIG,
+                ['success_url', 'cancel_url', 'result_url']
+            );
+        }
+
+        if ($payChannel == PayServices::PAY_CHANNEL_V1_ALIPAY_PC) {
+            $cancelUrl = null;
+        }
+
         return [
             'success_url' => $successUrl,
-            'result_url'  => $resultUrl,
-            'cancel_url'  => $cancelUrl,
+            'result_url' => $resultUrl,
+            'cancel_url' => $cancelUrl,
         ];
     }
 

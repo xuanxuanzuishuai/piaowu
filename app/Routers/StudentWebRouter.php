@@ -34,6 +34,7 @@ class StudentWebRouter extends RouterBase
         '/student_web/order/pay_success' => ['method' => ['get'], 'call' => Order::class . ':paySuccess'],
         '/student_web/student/address_list' => ['method' => ['get'], 'call' => Student::class . ':addressList'],
         '/student_web/student/modify_address' => ['method' => ['post'], 'call' => Student::class . ':modifyAddress'],
+        '/student_web/student/unbind' => ['method' => ['post'], 'call' => Student::class . ':unbind'],
 
         '/student_web/area/get_by_parent_code' => ['method' => ['get'], 'call' => Area::class . ':getByParentCode'],
         '/student_web/area/get_by_code' => ['method' => ['get'], 'call' => Area::class . ':getByCode'],

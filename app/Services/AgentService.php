@@ -1687,6 +1687,84 @@ class AgentService
     }
 
     /**
+<<<<<<< HEAD
+=======
+     * 根据分成模式不同获取推广课包列表
+     * @param $divisionModel
+     * @return array
+     */
+    public static function getAgentDivisionModelToPackage($divisionModel)
+    {
+        //根据分成模式，选择可推广的课包列表
+        switch ($divisionModel) {
+            case AgentModel::DIVISION_MODEL_LEADS:
+                $packageIds = DssErpPackageV1Model::getTrailPackageIds();
+                break;
+            case AgentModel::DIVISION_MODEL_LEADS_AND_SALE:
+                $packageIds = array_column(DssErpPackageV1Model::getPackageIds([DssCategoryV1Model::DURATION_TYPE_TRAIL, DssCategoryV1Model::DURATION_TYPE_NORMAL]), 'package_id');
+                break;
+            default:
+                return [];
+        }
+        return ErpPackageV1Model::getPackageInfoByIdChannel($packageIds, ErpPackageV1Model::CHANNEL_OP_AGENT);
+    }
+
+    /**
+     * 获取代理推广产品列表
+     * @param $agentId
+     * @return array
+     * @throws RunTimeException
+     */
+    public static function getPackageList($agentId)
+    {
+        if (empty($agentId)) {
+            return [];
+        }
+        $agentInfo = AgentModel::getById($agentId);
+
+        $list = AgentSalePackageModel::getPackageList(!empty($agentInfo['parent_id']) ? $agentInfo['parent_id'] : $agentId);
+        if (empty($list)) {
+            return [];
+        }
+        // 查询不可用产品包ID
+        $allPackageIds = array_column($list, 'package_id');
+        $notAvailable = DssErpPackageV1Model::getRecords(['id' => $allPackageIds, 'status[!]' => DssErpPackageV1Model::STATUS_ON_SALE], 'id');
+
+        $data = [];
+        foreach ($list as $value) {
+            if (in_array($value['package_id'], $notAvailable)) {
+                continue;
+            }
+
+            $oneItem = [
+                'package_id' => $value['package_id']
+            ];
+            if (!empty($value['cover'])) {
+                $oneItem['product_img'] = $value['cover'];
+                $oneItem['product_img_url'] = AliOSS::replaceShopCdnDomain($value['cover']);
+            }
+            $data[] = $oneItem;
+        }
+        return $data;
+    }
+
+    /**
+     * 产品包详情
+     * @param $packageId
+     * @param $agentId
+     * @return array|bool
+     * @throws RunTimeException
+     */
+    public static function packageDetail($packageId, $agentId)
+    {
+        if (empty($packageId)) {
+            return [];
+        }
+        return PackageService::getPackageV1Detail($packageId);
+    }
+
+    /**
+>>>>>>> 376ba8f7... XYZOP-125: [fix] package list
      * 查询代理商渠道
      * @param $type
      * @return array|mixed|null
