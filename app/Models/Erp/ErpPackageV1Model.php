@@ -98,9 +98,10 @@ class ErpPackageV1Model extends ErpModel
      * 根据课包ID和售卖渠道获取数据
      * @param $packageIds
      * @param $channel
+     * @param $status
      * @return array|null
      */
-    public static function getPackageInfoByIdChannel($packageIds, $channel)
+    public static function getPackageInfoByIdChannel($packageIds, $channel, $status)
     {
         //获取数据库对象
         $db = self::dbRO();
@@ -110,7 +111,8 @@ class ErpPackageV1Model extends ErpModel
                     erp_package_v1 
                 WHERE
                     id IN ( ".implode(',', $packageIds)." ) 
-                    AND channel & :channel";
+                    AND channel & :channel 
+                    AND status=" . $status;
         $map = [
             ":channel" => $channel
         ];

@@ -94,7 +94,7 @@ class Package extends ControllerBase
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        $data = DictConstants::getErpDict($params['dict_type']);
+        $data = DictConstants::getErpDictArr($params['dict_type']);
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => $data
