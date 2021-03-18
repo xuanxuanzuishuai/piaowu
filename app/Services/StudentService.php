@@ -215,10 +215,12 @@ class StudentService
     {
         $uuidArr = [];      //excel所有uuid
         $mobileArr = [];    //excel所有mobile
+        $uuidArrLine = [];  //uuid 对应的excel行号
+        $mobileArrLine = [];  //mobile 对应的excel行号
         $uuidKeyMobileVal = []; //用于检测，同一行 uuid 和 mobile是不是同一个人
         $errData = [];  // 错误数据
         // 检测excel本身数据是否存在问题
-        foreach ($excelData as $_time) {
+        foreach ($excelData as $_k => $_time) {
             // uuid 和 mobile 都是空 认为是错误数据
             if (empty($_time['A']) && empty($_time['B'])) {
                 $errData[] = self::formatErrData($_time['A'], $_time['B'], 'uuid_mobile_is_empty');
@@ -236,19 +238,21 @@ class StudentService
             if ($_time['B']) {
                 if (Util::isChineseMobile($_time['B'])) {
                     $mobileArr[] =$_time['B'];
+                    $mobileArrLine[$_time['B']] = $_k;
                 }else{
                     $errData[] = self::formatErrData($_time['A'], $_time['B'], 'mobile_len_err');
                 }
             }
             $num = intval($_time['C']);
             // 不是数字字符串， 并且intval之后与原数不符， 小于0 都表示不是正整数
-            if (!is_numeric($_time['C']) || $num != $_time['C'] || $_time['C'] < 0) {
+            if (!is_numeric($_time['C']) || $num != $_time['C'] || $_time['C'] <= 0) {
                 $errData[] = self::formatErrData($_time['A'], $_time['B'], 'account_award_points_num_is_int');
             }
 
             if ($_time['A']) {
                 $uuidArr[] =$_time['A'];
                 $uuidKeyMobileVal[$_time['A']] = $_time['B'];
+                $uuidArrLine[$_time['A']] = $_k;
             }
         }
         if (!empty($errData)) {
@@ -277,19 +281,19 @@ class StudentService
                 $errData[] = self::formatErrData('', $_v, 'mobile_not_exist');
             }
         }
-        //找出 mobile 和 uuid 对应的id相同的
+        //找出 mobile 和 uuid 是不是同一个人
         if (!empty($mobileKeyArr)) {
             foreach ($uuidKeyArr as $_uuid => $_mobile) {
-                if (isset($uuidKeyMobileVal[$_uuid]) && $uuidKeyMobileVal[$_uuid] != $_mobile) {
-                    // 同一条数据手机号和uuid 不是同一个人
-                    $errData[] = self::formatErrData($_uuid, $_mobile, 'uuid_mobile_is_neq');
-                }elseif (isset($mobileKeyArr[$_mobile])) {
-                    // 存在相同
+                // 如果是同一行跳过
+                if ($mobileArrLine[$_mobile] == $uuidArrLine[$_uuid]) {
+                    continue;
+                }
+                //uuid 和 mobile 是同一个用户
+                if ($mobileKeyArr[$_mobile] == $_uuid) {
                     $errData[] = self::formatErrData($_uuid, $_mobile, 'uuid_mobile_is_eq');
                 }
             }
         }
-
         return $errData;
     }
 

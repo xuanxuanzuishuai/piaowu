@@ -49,6 +49,7 @@ class StudentAccountAwardPointsLogModel extends Model
 
         $listWhere = $where;
         $listWhere['LIMIT'] = [($page - 1) * $count, $count];
+        $listWhere['ORDER'] = ['id' => "DESC"];
         $list = $db->select(self::$table . '(b)', [
             '[>]' . EmployeeModel::$table . '(e)' => ['b.operator_id' => 'id'],
         ], [
