@@ -217,13 +217,17 @@ class StudentService
         $mobileArr = [];    //excel所有mobile
         $uuidArrLine = [];  //uuid 对应的excel行号
         $mobileArrLine = [];  //mobile 对应的excel行号
-        $uuidKeyMobileVal = []; //用于检测，同一行 uuid 和 mobile是不是同一个人
         $errData = [];  // 错误数据
         // 检测excel本身数据是否存在问题
         foreach ($excelData as $_k => $_time) {
             // uuid 和 mobile 都是空 认为是错误数据
             if (empty($_time['A']) && empty($_time['B'])) {
                 $errData[] = self::formatErrData($_time['A'], $_time['B'], 'uuid_mobile_is_empty');
+                continue;
+            }
+            // uuid 和 mobile 都不为空 认为是错误数据
+            if (!empty($_time['A']) && !empty($_time['B'])) {
+                $errData[] = self::formatErrData($_time['A'], $_time['B'], 'uuid_mobile_is_choice_one');
                 continue;
             }
             // 找出重复的 uuid
@@ -251,7 +255,6 @@ class StudentService
 
             if ($_time['A']) {
                 $uuidArr[] =$_time['A'];
-                $uuidKeyMobileVal[$_time['A']] = $_time['B'];
                 $uuidArrLine[$_time['A']] = $_k;
             }
         }
@@ -284,10 +287,6 @@ class StudentService
         //找出 mobile 和 uuid 是不是同一个人
         if (!empty($mobileKeyArr)) {
             foreach ($uuidKeyArr as $_uuid => $_mobile) {
-                // 如果是同一行跳过
-                if ($mobileArrLine[$_mobile] == $uuidArrLine[$_uuid]) {
-                    continue;
-                }
                 //uuid 和 mobile 是同一个用户
                 if ($mobileKeyArr[$_mobile] == $_uuid) {
                     $errData[] = self::formatErrData($_uuid, $_mobile, 'uuid_mobile_is_eq');
