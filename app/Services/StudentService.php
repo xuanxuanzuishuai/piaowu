@@ -16,6 +16,7 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Libs\PhpMail;
 use App\Libs\SimpleLogger;
 use App\Libs\Spreadsheet;
+use App\Libs\Util;
 use App\Models\Dss\DssCategoryV1Model;
 use App\Models\Dss\DssErpPackageV1Model;
 use App\Models\Dss\DssGiftCodeModel;
@@ -137,38 +138,18 @@ class StudentService
 
         $sheetData = Spreadsheet::getActiveSheetData($localFilePath);
         $excelTitle = array_shift($sheetData);
+        // 空excel 提示
+        if (count($sheetData) <= 0) {
+            throw new RunTimeException(['excel_is_empty']);
+        }
         // 超过1w条发送邮件
-        if (count($excelTitle) > 10000) {
+        if (count($sheetData) > 10000) {
             list($toMail, $title) = DictConstants::get(DictConstants::AWARD_POINTS_SEND_MAIL_CONFIG, ['to_mail', 'err_title']);
             PhpMail::sendEmail($toMail, $title, 'excel内容超过1万条，请分批导入');
             throw new RunTimeException(['excel_max_line']);
         }
-        // 校验否有不符合规则的手机号 - 11位纯数字
-        $errData = [];
-        foreach ($sheetData as $_time) {
-            $_mobile = $_time['B'];
-            if (is_null($_mobile) || empty($_mobile)) {
-                continue;
-            }
-            if (strlen((string)$_mobile) != 11) {
-                $errData[] = self::formatErrData($_time['A'], $_mobile, 'mobile_len_err');
-            }
-            $num = intval($_time['C']);
-            // 不是数字字符串， 并且intval之后与原数不符， 小于0 都表示不是正整数
-            if (!is_numeric($_time['C']) || $num != $_time['C'] || $_time['C'] < 0) {
-                $errData[] = self::formatErrData($_time['A'], $_mobile, 'account_award_points_num_is_int');
-            }
-        }
-        if (!empty($errData)) {
-            $content = self::createRepeatDataMailContent($errData);
-            list($toMail, $title) = DictConstants::get(DictConstants::AWARD_POINTS_SEND_MAIL_CONFIG, ['to_mail', 'err_title']);
-            PhpMail::sendEmail($toMail, $title, $content);
-            throw new RunTimeException(['excel_data_exist_err_data'],['err_data' => $errData]);
-        }
         // 校验数据是否有重复
-        $uuidArr = array_diff(array_column($sheetData,'A'),[null]);
-        $mobileArr = array_diff(array_column($sheetData,'B'),[null]);
-        $repeatArr = self::checkRepeatUuidMobile(array_values($uuidArr), $mobileArr);
+        $repeatArr = self::checkRepeatUuidMobile($sheetData);
         if (!empty($repeatArr)) {
             // 发送邮件
             $content = self::createRepeatDataMailContent($repeatArr);
@@ -191,7 +172,7 @@ class StudentService
             if (!empty($fileInfo['dirname'])) {
                 $_filePath = $fileInfo['dirname'] . '/' . $_fileName;
             }
-            Spreadsheet::createXml($_filePath, $excelTitle, $info, 0, 'aaaaaaaa');
+            Spreadsheet::createXml($_filePath, $excelTitle, $info);
             //上传到Oss
             $ossFile = $_ENV['ENV_NAME'] . '/' . AliOSS::DIR_REFERRAL . '/import_student_account_award_points/' . $_fileName;
             AliOSS::uploadFile($ossFile, $_filePath);
@@ -227,63 +208,89 @@ class StudentService
 
     /**
      * 检查uuid 和 mobile 是否重复
-     * @param $uuidArr
-     * @param $mobileArr
+     * @param $excelData
      * @return array
      */
-    public static function checkRepeatUuidMobile($uuidArr, $mobileArr)
+    public static function checkRepeatUuidMobile($excelData)
     {
-        $repeatArr = [];    //重复的数组
-        $uuidKeyArr = [];   // uuid=>mobile
-        $mobileKeyArr = []; // mobile=>uuid
-        if (empty($uuidArr) && empty($mobileArr)) {
-            return $repeatArr;
-        }
-        // 查询uuid
-        if (!empty($uuidArr)) {
-            //找出重复的uuid
-            $rUuid = array_diff_assoc($uuidArr,array_unique($uuidArr));
-            $uuidStudentList = ErpStudentModel::getRecords(['uuid' => $uuidArr],['uuid','mobile']);
-            $uuidKeyArr = array_column($uuidStudentList,'mobile','uuid');
-            foreach ($rUuid as $_v) {
-                $repeatArr[] = self::formatErrData($_v, $uuidArr[$_v], 'repeat_uuid');
+        $uuidArr = [];      //excel所有uuid
+        $mobileArr = [];    //excel所有mobile
+        $uuidKeyMobileVal = []; //用于检测，同一行 uuid 和 mobile是不是同一个人
+        $errData = [];  // 错误数据
+        // 检测excel本身数据是否存在问题
+        foreach ($excelData as $_time) {
+            // uuid 和 mobile 都是空 认为是错误数据
+            if (empty($_time['A']) && empty($_time['B'])) {
+                $errData[] = self::formatErrData($_time['A'], $_time['B'], 'uuid_mobile_is_empty');
+                continue;
+            }
+            // 找出重复的 uuid
+            if (in_array($_time['A'],$uuidArr)) {
+                $errData[] = self::formatErrData($_time['A'], $_time['B'], 'repeat_uuid');
+            }
+            // 找出重复的 mobile
+            if (in_array($_time['B'],$mobileArr)) {
+                $errData[] = self::formatErrData($_time['A'], $_time['B'],'repeat_mobile');
+            }
+            // 校验否有不符合规则的手机号
+            if ($_time['B']) {
+                if (Util::isChineseMobile($_time['B'])) {
+                    $mobileArr[] =$_time['B'];
+                }else{
+                    $errData[] = self::formatErrData($_time['A'], $_time['B'], 'mobile_len_err');
+                }
+            }
+            $num = intval($_time['C']);
+            // 不是数字字符串， 并且intval之后与原数不符， 小于0 都表示不是正整数
+            if (!is_numeric($_time['C']) || $num != $_time['C'] || $_time['C'] < 0) {
+                $errData[] = self::formatErrData($_time['A'], $_time['B'], 'account_award_points_num_is_int');
             }
 
+            if ($_time['A']) {
+                $uuidArr[] =$_time['A'];
+                $uuidKeyMobileVal[$_time['A']] = $_time['B'];
+            }
+        }
+        if (!empty($errData)) {
+            return $errData;
+        }
+
+        $uuidKeyArr = [];   // uuid=>mobile
+        $mobileKeyArr = []; // mobile=>uuid
+        // 查询uuid
+        if (!empty($uuidArr)) {
+            $uuidStudentList = ErpStudentModel::getRecords(['uuid' => $uuidArr],['uuid','mobile']);
+            $uuidKeyArr = array_column($uuidStudentList,'mobile','uuid');
             // 不存在的uuid
             $noExistUuid = array_diff($uuidArr,array_keys($uuidKeyArr));
             foreach ($noExistUuid as $_v) {
-                $repeatArr[] = self::formatErrData($_v, '', 'uuid_not_exist');
+                $errData[] = self::formatErrData($_v, '', 'uuid_not_exist');
             }
         }
         // 查询mobile
         if (!empty($mobileArr) ){
-            //找出重复mobile
-            $rMobile = array_diff_assoc($mobileArr,array_unique($mobileArr));
             $mobileStudentList = ErpStudentModel::getRecords(['mobile' => $mobileArr],['uuid','mobile']);
             $mobileKeyArr = array_column($mobileStudentList,'uuid','mobile');
-            foreach ($rMobile as $_v) {
-                $repeatArr[] = self::formatErrData($mobileKeyArr[$_v], $_v, 'repeat_mobile');
-            }
-
             // 不存在的mobile
             $noExistMobile = array_diff($mobileArr,array_keys($mobileKeyArr));
             foreach ($noExistMobile as $_v) {
-                $repeatArr[] = self::formatErrData('', $_v, 'mobile_not_exist');
+                $errData[] = self::formatErrData('', $_v, 'mobile_not_exist');
             }
         }
-
         //找出 mobile 和 uuid 对应的id相同的
         if (!empty($mobileKeyArr)) {
             foreach ($uuidKeyArr as $_uuid => $_mobile) {
-                // 存在相同
-                if (isset($mobileKeyArr[$_mobile])) {
-                    $repeatArr[] = self::formatErrData($_uuid, $_mobile, 'uuid_mobile_is_eq');
-                    continue;
+                if (isset($uuidKeyMobileVal[$_uuid]) && $uuidKeyMobileVal[$_uuid] != $_mobile) {
+                    // 同一条数据手机号和uuid 不是同一个人
+                    $errData[] = self::formatErrData($_uuid, $_mobile, 'uuid_mobile_is_neq');
+                }elseif (isset($mobileKeyArr[$_mobile])) {
+                    // 存在相同
+                    $errData[] = self::formatErrData($_uuid, $_mobile, 'uuid_mobile_is_eq');
                 }
             }
         }
 
-        return $repeatArr;
+        return $errData;
     }
 
     /**
