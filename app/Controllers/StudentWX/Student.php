@@ -99,6 +99,10 @@ class Student extends ControllerBase
 
             $userType = Constants::USER_TYPE_STUDENT;
             $channelId = $params['channel_id'] ?? Constants::CHANNEL_WE_CHAT_SCAN;
+            $sceneData = ReferralActivityService::getParamsInfo($params['param_id']);
+            if (!empty($sceneData['c'])) {
+                $channelId = $sceneData['c'];
+            }
             $info = UserService::studentRegisterBound($appId, $params['mobile'], $channelId, $data['openid'], $busiType, $userType, $params["referee_id"]);
 
             $token = WechatTokenService::generateToken(

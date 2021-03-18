@@ -10,7 +10,6 @@ namespace App\Models;
 
 use App\Libs\SimpleLogger;
 use App\Models\Erp\ErpPackageV1Model;
-use App\Libs\MysqlDB;
 use App\Models\Dss\DssUserWeiXinModel;
 
 class AgentSalePackageModel extends Model
@@ -96,6 +95,7 @@ class AgentSalePackageModel extends Model
             ':status' => $status,
             ':app_id' => $appId
         ];
+        $order = ' asp.id DESC';
         $sql = "
         SELECT
         asp.package_id,
@@ -103,11 +103,12 @@ class AgentSalePackageModel extends Model
         asp.status,
         asp.app_id,
         p.thumbs->>'$.thumbs[0]' cover 
-        from {$asp} asp
-        inner join {$p} p on p.id = asp.package_id
-        where asp.agent_id = :agent_id
-        and asp.status = :status
-        and asp.app_id = :app_id
+        FROM {$asp} asp
+        INNER JOIN {$p} p ON p.id = asp.package_id
+        WHERE asp.agent_id = :agent_id
+        AND asp.status = :status
+        AND asp.app_id = :app_id
+        ORDER BY {$order}
         ";
         return $db->queryAll($sql, $map);
     }

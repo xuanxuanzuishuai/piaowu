@@ -1,6 +1,7 @@
 <?php
 namespace App\Models\Dss;
 
+use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\Util;
 use App\Models\EmployeeActivityModel;
@@ -229,5 +230,29 @@ class DssStudentModel extends DssModel
             self::$table . '.password',
             self::$table . '.is_join_ranking',
         ], $where);
+    }
+
+    /**
+     * 获取学生助教二维码
+     * @param $studentId
+     * @return array|mixed
+     */
+    public static function getAssistantQrCodeUrl($studentId)
+    {
+        if (empty($studentId)) {
+            return [];
+        }
+        $s = self::$table;
+        $e = DssEmployeeModel::$table;
+        $sql = "
+        SELECT 
+            e.wx_qr
+        FROM {$s} s
+        INNER JOIN {$e} e ON s.assistant_id = e.id
+        WHERE s.id = :id
+        ";
+        $data = self::dbRO()->queryAll($sql, [':id' => $studentId]);
+        $path = $data[0]['wx_qr'] ?? '';
+        return empty($path) ? '' : AliOSS::replaceCdnDomainForDss($path);
     }
 }

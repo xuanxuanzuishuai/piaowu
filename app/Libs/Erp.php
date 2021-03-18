@@ -454,7 +454,7 @@ class Erp
     public function studentAccount($studentUuid)
     {
         $params['student_uuid'] = $studentUuid;
-        $params['app_id'] = Constants::SELF_APP_ID;
+        $params['app_id'] = Constants::SMART_APP_ID;
         $response = HttpHelper::requestJson($this->host . self::API_STUDENT_ACCOUNTS, $params);
         return $response;
     }

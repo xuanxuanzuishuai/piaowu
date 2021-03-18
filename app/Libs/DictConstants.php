@@ -426,6 +426,7 @@ class DictConstants {
             'default_thumb',
             'package_buy_page_url', // 产品购买页面
             'share_card_logo', // 分享卡片logo
+            'ai_wx_office_account_qr_code', // 智能陪练公众号二维码
         ]
     ];
     // 是否

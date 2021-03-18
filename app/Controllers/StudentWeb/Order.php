@@ -48,6 +48,7 @@ class Order extends ControllerBase
      * @param Response $response
      * @return Response
      * @throws KeyErrorRC4Exception
+     * @throws RunTimeException
      */
     public function getPackageDetail(Request $request, Response $response)
     {
@@ -93,7 +94,12 @@ class Order extends ControllerBase
         return HttpHelper::buildResponse($response, [
             'package' => $package,
             'student' => $user,
-            'default_address' => $defaultAddress
+            'default_address' => $defaultAddress,
+            'share_info' => [
+                'name' => $package['name'] ?? '',
+                'desc' => $package['desc'] ?? '',
+                'logo' => AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::AGENT_CONFIG, 'share_card_logo')),
+            ],
         ]);
     }
 
@@ -371,11 +377,29 @@ class Order extends ControllerBase
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        $paramInfo = ReferralActivityService::getParamsInfo($params['param_id']);
-        $agent = null;
-        if (stripos($paramInfo['r'], MiniAppQrService::AGENT_TICKET_PREFIX) !== false) {
-            $agent = AgentModel::getById($paramInfo['user_id']);
+        try {
+            $student = $this->ci['user_info'];
+            $paramInfo = ReferralActivityService::getParamsInfo($params['param_id']);
+            $agent = null;
+            if (stripos($paramInfo['r'], MiniAppQrService::AGENT_TICKET_PREFIX) !== false) {
+                $agent = AgentModel::getById($paramInfo['user_id']);
+            }
+            $qrCodeUrl = '';
+            $assistantQrCodeUrl = '';
+            if ($agent['division_model'] == AgentModel::DIVISION_MODEL_LEADS) {
+                $qrCode = DictConstants::get(DictConstants::AGENT_CONFIG, 'ai_wx_office_account_qr_code');
+                $qrCodeUrl = AliOSS::replaceCdnDomainForDss($qrCode);
+            } else {
+                $assistantQrCodeUrl = DssStudentModel::getAssistantQrCodeUrl($student['user_id']);
+            }
+            $data = [
+                'model' => $agent['division_model'] ?? 0,
+                'assistant_qr_url' => $assistantQrCodeUrl,
+                'ai_qr_url' => $qrCodeUrl,
+            ];
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
-        return HttpHelper::buildResponse($response, ['model' => $agent['division_model'] ?? 0]);
+        return HttpHelper::buildResponse($response, $data);
     }
 }
