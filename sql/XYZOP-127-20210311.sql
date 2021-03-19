@@ -42,3 +42,7 @@ insert into dict (`type`,`key_name`,`key_code`,`key_value`,`desc`) values
 ('award_points_send_mail_config','批量发放积分邮件通知配置','title','批量发放积分完成','标题'),
 ('award_points_send_mail_config','批量发放积分邮件通知配置','err_title','批量发放积分错误数据','标题'),
 ('ORG_WEB_CONFIG','后台配置','batch_import_reward_points_template','prod/excel/batch_import_reward_points_template.xlsx','批量导入积分模板');
+
+INSERT INTO `privilege`(`name`, `uri`, `created_time`, `method`, `is_menu`, `menu_name`, `parent_id`, `unique_en_name`, `status`) VALUES
+('批量导入学生积分奖励', '/op_web/student_account/batchImportRewardPoints', 1615953178, 'post', 0, '', 464, 'batch_import_award_points_upload_excel', 1),
+('批量发放积分', '/op_web/student_account/importRewardPointsList', 1615949397, 'get', 1, '批量发放积分', 464, 'batch_import_award_points', 1);

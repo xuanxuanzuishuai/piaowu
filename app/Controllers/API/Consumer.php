@@ -346,7 +346,7 @@ class Consumer extends ControllerBase
             $time = time();
             $msgBody = $params['msg_body'];
             // 检查 event_type 和 topic_name
-            if ($params['topic_name'] != StudentAccountAwardPointsTopic::TOPIC_NAME || $params['event_type'] != StudentAccountAwardPointsTopic::EVENT_TYPE_IMPORT) {
+            if ($params['event_type'] != StudentAccountAwardPointsTopic::EVENT_TYPE_IMPORT) {
                 SimpleLogger::info("consumer::studentAccountAwardPoints topic_name or event_type error.", ['params' => $params]);
                 return HttpHelper::buildErrorResponse($response, ['event_type error']);
             }
@@ -360,6 +360,11 @@ class Consumer extends ControllerBase
             if (empty($info) || $info['status'] != StudentAccountAwardPointsFileModel::STATUS_CREATE) {
                 SimpleLogger::info("consumer::studentAccountAwardPoints status is not create.", ['params' => $params, 'info' => $info]);
                 return HttpHelper::buildErrorResponse($response, ['status is not create']);
+            }
+            $employeeInfo = EmployeeModel::getRecord(['id' => $msgBody['operator_id']],['uuid']);
+            if (empty($employeeInfo)) {
+                SimpleLogger::info("consumer::studentAccountAwardPoints is employee empty.", ['params' => $params, 'info' => $info]);
+                return HttpHelper::buildErrorResponse($response, ['employee error']);
             }
 
             // 保存文件到本地
@@ -433,12 +438,13 @@ class Consumer extends ControllerBase
                 'award_points_list' => $requestErpData,
                 'app_id' => $msgBody['app_id'],
                 'sub_type' => $msgBody['sub_type'],
-                'employee_id' => $msgBody['operator_id'],   // erp 接受参数名字是 employee_id
+                'employee_uuid' => $employeeInfo['uuid'],   // erp 接受参数名字是 employee_id
+                'batch_id' => 'op_' . $info['id'],  //批次号
                 'remark' => $msgBody['remark'],
             ]);
-            SimpleLogger::info("Consumer::studentAccountAwardPoints request erp request",['res' => $requestErpRes]);
+            SimpleLogger::info("consumer::studentAccountAwardPoints request erp request",['res' => $requestErpRes]);
 
-            if ($requestErpRes['code'] == 0) {
+            if (isset($requestErpRes['code']) && $requestErpRes['code'] == 0) {
                 $failList = $requestErpRes['data']['fail_list'];
                 $fail_num = isset($requestErpRes['data']['fail_list']) ? count($requestErpRes['data']['fail_list']) : 0;
                 // 移除添加失败的记录
@@ -458,6 +464,7 @@ class Consumer extends ControllerBase
                 $fail_num = count($requestErpData);
             }
 
+            SimpleLogger::info("consumer::studentAccountAwardPoints update status start ", []);
 
             // 更新状态为完成
             $lockRes = StudentAccountAwardPointsFileModel::updateStatusExecToCompleteById($info['id']);
@@ -476,6 +483,7 @@ class Consumer extends ControllerBase
                 SimpleLogger::info("consumer::studentAccountAwardPoints error data.", ['title' => $excelTitle, 'info' => $errData]);
                 Spreadsheet::createXml($failExcelLocalPath, $excelTitle, $errData);
             }
+            SimpleLogger::info("consumer::studentAccountAwardPoints send mail start ", []);
             // 发送邮件 - 把本次失败的数据生成excel 发送到指定邮箱
             list($toMail, $err_title, $title) = DictConstants::get(DictConstants::AWARD_POINTS_SEND_MAIL_CONFIG, ['to_mail', 'err_title', 'title']);
             $success_num = $requestErpRes['data']['success_num'] ?? 0;

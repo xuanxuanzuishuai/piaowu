@@ -153,6 +153,9 @@ class StudentService
             if (strlen((string)$_mobile) != 11) {
                 $errData[] = self::formatErrData($_time['A'], $_mobile, 'mobile_len_err');
             }
+            if (!is_integer($_time['num']) || $_time['num'] < 0) {
+                $errData[] = self::formatErrData($_time['A'], $_mobile, 'account_award_points_num_is_int');
+            }
         }
         if (!empty($errData)) {
             throw new RunTimeException(['mobile_len_err'],['err_data' => $errData]);
@@ -292,11 +295,9 @@ class StudentService
         $errInfo =  [
             'uuid' => $uuid,
             'mobile' => $mobile,
+            'num' => $num,
             'err_msg' => !empty($errMsg) ? $errMsg : $errCode,
         ];
-        if ($num >0) {
-            $errInfo['num'] = $num;
-        }
         return $errInfo;
     }
 
