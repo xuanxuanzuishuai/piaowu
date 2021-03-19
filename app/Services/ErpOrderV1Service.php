@@ -75,7 +75,7 @@ class ErpOrderV1Service
      */
     public static function createOrder($packageId, $student, $payChannel, $payType, $employeeUuid, $channel, $giftGoods = [], $callback = null)
     {
-        $studentId = $student['user_id'];
+        $studentId = $student['id'];
         if (DssGiftCodeModel::hadPurchasePackageByType($studentId)) {
             SimpleLogger::error('has_trialed', ['student_id' => $studentId]);
             return Valid::addAppErrors([], 'has_trialed');

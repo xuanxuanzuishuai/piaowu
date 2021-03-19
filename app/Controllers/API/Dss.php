@@ -14,6 +14,7 @@ use App\Libs\HttpHelper;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\AgentBillMapModel;
+use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\MessagePushRulesModel;
 use App\Models\PosterModel;
 use App\Models\WeChatAwardCashDealModel;
@@ -322,7 +323,9 @@ class Dss extends ControllerBase
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        WechatTokenService::delTokenByUserId($params['user_id']);
+        $userType = $params['user_type'] ?: DssUserWeiXinModel::USER_TYPE_STUDENT;
+        $appId = DssUserWeiXinModel::dealAppId($params['app_id']);
+        WechatTokenService::delTokenByUserId($params['user_id'], $userType, $appId);
         return HttpHelper::buildResponse($response, []);
     }
 }

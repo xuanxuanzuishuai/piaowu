@@ -383,6 +383,9 @@ class Order extends ControllerBase
             $agent = null;
             if (stripos($paramInfo['r'], MiniAppQrService::AGENT_TICKET_PREFIX) !== false) {
                 $agent = AgentModel::getById($paramInfo['user_id']);
+                if (!empty($agent['parent_id'])) {
+                    $agent = AgentModel::getById($agent['parent_id']);
+                }
             }
             $qrCodeUrl = '';
             $assistantQrCodeUrl = '';

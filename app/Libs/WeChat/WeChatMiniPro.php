@@ -29,6 +29,7 @@ class WeChatMiniPro
     const CACHE_KEY = '%s';
     const BASIC_WX_PREFIX = 'basic_wx_prefix_';
     const SESSION_KEY = 'SESSION_KEY';
+    const KEY_TICKET = "jsapi_ticket";
     
     const API_UPLOAD_IMAGE     = '/cgi-bin/media/upload';
     const API_SEND             = '/cgi-bin/message/custom/send';
@@ -39,6 +40,7 @@ class WeChatMiniPro
     const API_CODE_2_SESSION   = '/sns/jscode2session';
     const API_TOKEN            = '/cgi-bin/token';
     const API_BATCH_USER_INFO  = '/cgi-bin/user/info/batchget';
+    const API_GET_TICKET       = '/cgi-bin/ticket/getticket';
 
     public $nowWxApp; //当前的微信应用
 
@@ -537,5 +539,79 @@ class WeChatMiniPro
         }
 
         return $this->requestJson($api, $params, 'POST');
+    }
+
+    public function getJSSignature($noncestr, $timestamp, $url)
+    {
+
+        $ticket = self::getJSAPITicket();
+
+        if (!empty($ticket)) {
+            $s = 'jsapi_ticket=' . $ticket . '&noncestr=' . $noncestr . '&timestamp=' . $timestamp . '&url=' . $url;
+            SimpleLogger::info('==js signature string: ==', []);
+            SimpleLogger::info($s, []);
+            return sha1($s);
+        }
+        return false;
+    }
+
+    /**
+     * 获取微信 js api ticket
+     * @return bool|string
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
+    public function getJSAPITicket()
+    {
+        list($appId, $busiType) = explode('_', $this->nowWxApp);
+        $redis = RedisDB::getConn();
+        $key = $appId . "_" . self::KEY_TICKET;
+        $ticket = $redis->get($key);
+        $count = 0;
+        if (empty($ticket)) {
+            $keyLock = $key . "_LOCK";
+            $lock = $redis->setnx($keyLock, "1");
+            if ($lock) {
+                $redis->expire($keyLock, 2);
+                $data = $this->generateJSAPITicket();
+                if ($data) {
+                    $redis->setex($key, $data['expires_in'] - 120, $data['ticket']);
+                    $ticket = $data['ticket'];
+                }
+                $redis->del([$keyLock]);
+
+            } else {
+                $count++;
+                if ($count > 3) {
+                    return false;
+                } else {
+                    sleep(2);
+                }
+                $ticket = self::getJSAPITicket();
+            }
+        }
+        return $ticket;
+    }
+
+    /**
+     * @return false|mixed
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
+    public function generateJSAPITicket()
+    {
+        // 获取 微信access token
+        $at = $this->getAccessToken();
+        if (!$at) {
+            return false;
+        }
+        $api = $this->apiUrl(self::API_GET_TICKET, false);
+        $params = [
+            'access_token' => $at,
+            'type' => 'jsapi'
+        ];
+        $data = $this->requestJson($api, $params);
+        if (!empty($data['errcode'])) {
+            SimpleLogger::error('REQUEST WECHAT ERROR', [$data, $params]);
+        }
+        return $data;
     }
 }
