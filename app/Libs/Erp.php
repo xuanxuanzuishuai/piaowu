@@ -65,6 +65,8 @@ class Erp
     const API_USER_RELATE_TASK = '/api/dss/get_user_relate_task';
     //特定任务的完成用户情况
     const API_TASK_COMPLETE_INFO = '/api/dss/get_task_complete';
+    // 批量发放用户奖励积分
+    const API_BATCH_AWARD_POINTS = '/api/operation/award_points';
 
     private $host;
 
@@ -610,5 +612,16 @@ class Erp
     {
         $result = self::commonAPI(self::API_REFUND_FREE_BILL, $params, 'POST');
         return $result;
+    }
+
+    /**
+     * 批量发放用户奖励积分
+     * @param $params
+     * @return array
+     */
+    public function batchAwardPoints($params)
+    {
+        $result = self::commonAPI(self::API_BATCH_AWARD_POINTS, $params, 'POST');
+        return $result ?? null;
     }
 }

@@ -8,6 +8,7 @@
 
 namespace App\Libs;
 
+use App\Models\Erp\ErpDictModel;
 use App\Services\DictService;
 
 class DictConstants {
@@ -71,7 +72,6 @@ class DictConstants {
             'dss_cdn_domain'
         ]
     ];
-
     // 用户中心
     const USER_CENTER = [
         'type' => 'USER_CENTER_CONFIG',
@@ -430,8 +430,47 @@ class DictConstants {
         'keys' => ['0', '1']
     ];
 
+    //代理分成模式类型
+    const AGENT_DIVISION_MODEL = [
+        'type' => 'agent_division_model',
+        'keys' => ['1', '2']
+    ];
+
+    // 发送邮件设置
+    const SEND_MAIL_CONFIG = [
+        'type' => 'send_mail_config',
+        'keys' => [
+            'from_mail',
+            'from_mail_pasd',
+            'from_name',
+            'smtp_server',
+            'smtp_port',
+        ]
+    ];
+    // 批量发放积分邮件通知配置
+    const AWARD_POINTS_SEND_MAIL_CONFIG = [
+        'type' => 'award_points_send_mail_config',
+        'keys' => [
+            'to_mail',
+            'title'
+        ]
+    ];
+
+    /**前缀为ERP的配置，数据均配置在erp数据库中erp_dict数据表，不再op系统重复配置，保持数据的唯一性**/
+    //新产品包状态
+    const ERP_PACKAGE_V1_STATUS = [
+        'type' => 'package_v1_status',
+        'keys' => ['-1', '0', '1']
+    ];
 
 
+
+    /**
+     * 单个获取op系统dict配置数据
+     * @param $type
+     * @param $key
+     * @return array|mixed|null
+     */
     public static function get($type, $key)
     {
         if (empty($type) || empty($key)) {
@@ -453,6 +492,12 @@ class DictConstants {
         return DictService::getKeyValue($type['type'], $key);
     }
 
+    /**
+     * 批量获取op系统dict配置数据
+     * @param $type
+     * @param $keys
+     * @return array
+     */
     public static function getValues($type, $keys)
     {
         if (empty($type)) {
@@ -471,8 +516,81 @@ class DictConstants {
         return DictService::getKeyValuesByArray($type['type'], $keys);
     }
 
+    /**
+     * 获取op系统dict配置数据
+     * @param $type
+     * @return array
+     */
     public static function getSet($type)
     {
         return DictService::getTypeMap($type['type']);
     }
+
+    /**
+     * 获取指定多个类型数据map
+     * @param $types
+     * @return array
+     */
+    public static function getTypesMap($types)
+    {
+        return DictService::getTypesMap($types);
+    }
+
+    /**
+     * 获取erp系统dict配置数据
+     * @param $types
+     * @param array $keys
+     * @return array
+     */
+    public static function getErpDict($types, $keys = [])
+    {
+        $where = [
+            'type' => $types,
+        ];
+        $dictList = [];
+        if (!empty($keys)) {
+            $where['key_code'] = $keys;
+        }
+        $data = ErpDictModel::getRecords($where, ['type', 'key_code', 'key_value']);
+        if (empty($data)) {
+            return $dictList;
+        }
+        foreach ($data as $k => $v) {
+            $dictList[$v['type']][$v['key_code']] = $v['key_value'];
+        }
+        return $dictList;
+    }
+
+    /**
+     * 获取erp系统dict配置数据, 二维数组 [{code,value}]
+     * @param $types
+     * @param array $keys
+     * @return array
+     */
+    public static function getErpDictArr($types, $keys = [], $filterCode = [])
+    {
+        $where = [
+            'type' => $types,
+        ];
+        $dictList = [];
+        if (!empty($keys)) {
+            $where['key_code'] = $keys;
+        }
+        $data = ErpDictModel::getRecords($where, ['type', 'key_code', 'key_value']);
+        if (empty($data)) {
+            return $dictList;
+        }
+        foreach ($data as $k => $v) {
+            // 过滤敏感key_code
+            if (in_array($v['key_code'],$filterCode)){
+                continue;
+            }
+            $dictList[$v['type']][] = [
+                'code' => $v['key_code'],
+                'value' =>$v['key_value']
+            ];
+        }
+        return $dictList;
+    }
+
 }

@@ -23,6 +23,7 @@ use App\Controllers\OrgWeb\Employee as OrgWebEmployee;
 use App\Controllers\OrgWeb\EmployeeActivity;
 use App\Controllers\OrgWeb\Package;
 use App\Controllers\OrgWeb\SharePoster;
+use App\Controllers\OrgWeb\StudentAccount;
 use App\Controllers\Referral\Award;
 use App\Middleware\EmployeeAuthCheckMiddleWare;
 use App\Middleware\EmployeePrivilegeMiddleWare;
@@ -149,5 +150,11 @@ class OrgWebRouter extends RouterBase
         // 渠道管理
         '/op_web/channel/getChannels' => ['method' => ['get'], 'call' => Channel::class . ':getChannels'],
 
+        // 批量导入学生积分奖励
+        '/op_web/student_account/batchImportRewardPoints' => ['method' => ['post'], 'call' => StudentAccount::class . ':batchImportRewardPoints'],
+        // 查询学生积分奖励导入状态信息
+        '/op_web/student_account/importRewardPointsInfo' => ['method' => ['get'], 'call' => StudentAccount::class . ':importRewardPointsInfo'],
+        // 获取导入学生积分奖励列表
+        '/op_web/student_account/importRewardPointsList' => ['method' => ['get'], 'call' => StudentAccount::class . ':importRewardPointsList'],
     ];
 }

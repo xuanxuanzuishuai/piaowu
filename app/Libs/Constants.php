@@ -65,4 +65,9 @@ class Constants
 
     // DSS redis中缓存的用户微信最新活跃时间
     const DSS_OPENID_LAST_ACTIVE = 'user_last_active_time';
+
+    // 积分账户类型 erp_dict表里的type
+    const ERP_DICT_ACCOUNT_NAME_TYPE = 'student_account_app_type';
+    // 积分账户类型  - 现金
+    const ERP_ACCOUNT_NAME_CASH = '8_1001';
 }

@@ -9,6 +9,7 @@
 namespace App\Controllers\API;
 
 use App\Controllers\ControllerBase;
+use App\Libs\DictConstants;
 use App\Libs\Valid;
 use App\Services\DictService;
 use Slim\App;
@@ -45,9 +46,14 @@ class UICtl extends ControllerBase
 
         $keys = explode(",", $params['dp_types']);
 
-        $result = DictService::getListsByTypes($keys);
-
-
+        // service 是 erp 读取erp.erp_dict表， 默认读取op.dict表
+        if ($params['service'] == 'erp') {
+            $filterCode = !empty($params['filter_code']) ? explode(',',$params['filter_code']) : [];
+            $getCode = !empty($params['code']) ? explode(',',$params['code']) : [];
+            $result = DictConstants::getErpDictArr($keys, $getCode, $filterCode);
+        }else {
+            $result = DictService::getListsByTypes($keys);
+        }
 
         return $response->withJson($result, StatusCode::HTTP_OK);
 

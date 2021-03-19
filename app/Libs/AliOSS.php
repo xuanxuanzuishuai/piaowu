@@ -10,8 +10,6 @@
 namespace App\Libs;
 
 
-use Classroom\Libs\File;
-use Classroom\Libs\SimpleLogger;
 use DateTime;
 use OSS\Core\OssException;
 use OSS\OssClient;
@@ -521,4 +519,66 @@ class AliOSS
 
         return [$subPath, $hashPath, $fullPath];
     }
+
+    /**
+     * 生成erp商品图片地址
+     * @param $urlNeedSigns
+     * @return array
+     */
+    public static function signErpShopUrls($urlNeedSigns)
+    {
+        //获取oss参数
+        $ossDict = DictConstants::getErpDict(DictConstants::ALI_OSS_CONFIG['type'], array(
+            'access_key_id',
+            'access_key_secret',
+            'shop_bucket',
+            'endpoint',
+        ))[DictConstants::ALI_OSS_CONFIG['type']];
+        $options = $result = [];
+        $options['x-oss-process'] = NULL;
+        try {
+            //获取客户端操作对象
+            $timeout = 3600 * 8;
+            $ossClient = new OssClient($ossDict['access_key_id'], $ossDict['access_key_secret'], $ossDict['endpoint']);
+            //处理敏感字符,循环获取签名图片
+            foreach ($urlNeedSigns as $urlKey => $urlVal) {
+                $urlNeedSign = preg_replace("/^\//", "", $urlVal);
+                $result[$urlKey] = $ossClient->signUrl($ossDict['shop_bucket'],
+                    $urlNeedSign,
+                    $timeout,
+                    OssClient::OSS_HTTP_GET,
+                    $options);
+            }
+
+        } catch (OssException $e) {
+            SimpleLogger::error("OSSClient error", [$e]);
+        }
+        return $result;
+    }
+
+    /**
+     * 保存临时文件到本地服务器
+     * @param $imgUrl
+     * @return bool|string
+     */
+    public static function saveTmpFile($fileUrl)
+    {
+        $imgData = file_get_contents($fileUrl);
+        if (empty($imgData)) {
+            return false;
+        }
+        //保存临时文件
+        $extension = pathinfo($fileUrl,PATHINFO_EXTENSION);
+        $extension = explode('?',$extension)[0];
+        $tmpFileName = md5($fileUrl) . '.' . $extension;
+        list($subPath, $hashDir, $fullDir) = self::createDir('tmp_file', $tmpFileName);
+        $tmpSavePath = $fullDir . '/' . $tmpFileName;
+        $saveRes = file_put_contents($tmpSavePath, $imgData);
+        if (empty($saveRes)) {
+            return false;
+        }
+        chmod($tmpSavePath, 0755);
+        return $tmpSavePath;
+    }
+
 }
