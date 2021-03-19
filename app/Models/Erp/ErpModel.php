@@ -69,4 +69,9 @@ class ErpModel
     {
         return  $_ENV['DB_ERP_S_NAME'] . '.' . static::$table;
     }
+
+    public static function createCacheKey($type, $pri)
+    {
+        return $type.$pri;
+    }
 }
