@@ -96,16 +96,16 @@ and p.sale_shop = " . self::SALE_SHOP_AI_PLAY, [
     {
         $db = self::dbRO();
         $package = $db->queryAll("
-                        select p.id package_id, p.name package_name, p.channel, p.sale_shop, p.status package_status,
-                            c.type, c.sub_type, c.callback_app_id,
-                            g.extension, g.num, g.free_num
-                        from " . self::$table . " p
-                        inner join " . DssErpPackageGoodsV1Model::$table . " pg on pg.package_id = p.id
-                        inner join " . DssGoodsV1Model::$table . " g on pg.goods_id = g.id
-                        inner join " . DssCategoryV1Model::$table . " c on c.id = g.category_id
-                        where pg.status = :status
-                        and c.type = :type
-                        and p.id = :package_id", [
+            select p.id package_id, p.name package_name, p.channel, p.sale_shop, p.status package_status,
+                c.type, c.sub_type, c.callback_app_id,
+                g.extension, g.num, g.free_num
+            from " . self::$table . " p
+            inner join " . DssErpPackageGoodsV1Model::$table . " pg on pg.package_id = p.id
+            inner join " . DssGoodsV1Model::$table . " g on pg.goods_id = g.id
+            inner join " . DssCategoryV1Model::$table . " c on c.id = g.category_id
+            where pg.status = :status
+            and c.type = :type
+            and p.id = :package_id", [
             ':status' => DssErpPackageGoodsV1Model::SUCCESS_NORMAL,
             ':type' => DssCategoryV1Model::TYPE_DURATION,
             ':package_id' => $id

@@ -336,3 +336,4 @@ different_agent_not_allowed='尊敬的小叶子用户，您已绑定小叶子合
 package_not_available='该产品包已下架，不可购买。'
 package_not_available_for_sale='该产品包已下架，暂且不可推广。'
 student_down_stage_not_allowed='暂不可购买体验课包'
+event_pass_deadline='该活动已结束'

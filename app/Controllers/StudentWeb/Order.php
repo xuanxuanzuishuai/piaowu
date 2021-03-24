@@ -28,6 +28,7 @@ use App\Models\Dss\DssPackageExtModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Erp\ErpGiftGoodsV1Model;
 use App\Models\Erp\ErpPackageV1Model;
+use App\Models\ParamMapModel;
 use App\Services\AgentService;
 use App\Services\DssDictService;
 use App\Services\ErpOrderV1Service;
@@ -154,7 +155,7 @@ class Order extends ControllerBase
                 $sceneData = ReferralActivityService::getParamsInfo($params['param_id']);
             }
             // 检查购买人当前绑定的代理是否一致
-            if (!empty($sceneData['user_id'])) {
+            if (!empty($sceneData['user_id']) && $sceneData['type'] == ParamMapModel::TYPE_AGENT) {
                 // 获取用户当前绑定代理
                 $userAgentInfo = AgentService::getUserAgent($student['user_id']);
                 if (!empty($userAgentInfo) && $userAgentInfo['agent_id'] != $sceneData['user_id']) {
@@ -182,6 +183,7 @@ class Order extends ControllerBase
 
             $studentInfo['open_id'] = $this->ci['open_id'] ?? null;
             $studentInfo['address_id'] = $params['address_id'] ?? 0;
+            $studentInfo['package_sub_type'] = $packageInfo['sub_type'];
             $employeeUuid = !empty($params['employee_id']) ? RC4::decrypt($_ENV['COOKIE_SECURITY_KEY'], $params['employee_id']) : null;
             $channel = ErpPackageV1Model::CHANNEL_OP_AGENT;
             $payChannel = PayServices::payChannelToV1($params['pay_channel']);
@@ -387,19 +389,16 @@ class Order extends ControllerBase
                     $agent = AgentModel::getById($agent['parent_id']);
                 }
             }
-            $qrCodeUrl = '';
-            $assistantQrCodeUrl = '';
+            $qrCode = DictConstants::get(DictConstants::AGENT_CONFIG, 'ai_wx_official_account_qr_code');
+            $qrCodeUrl = AliOSS::replaceCdnDomainForDss($qrCode);
+            $assistantInfo = [];
             if ($agent['division_model'] == AgentModel::DIVISION_MODEL_LEADS) {
-                $qrCode = DictConstants::get(DictConstants::AGENT_CONFIG, 'ai_wx_office_account_qr_code');
-                $qrCodeUrl = AliOSS::replaceCdnDomainForDss($qrCode);
-            } else {
-                $assistantQrCodeUrl = DssStudentModel::getAssistantQrCodeUrl($student['user_id']);
+                $assistantInfo = DssStudentModel::getAssistantInfo($student['user_id']);
             }
-            $data = [
+            $data = array_merge([
                 'model' => $agent['division_model'] ?? 0,
-                'assistant_qr_url' => $assistantQrCodeUrl,
                 'ai_qr_url' => $qrCodeUrl,
-            ];
+            ], $assistantInfo);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }

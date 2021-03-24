@@ -11,10 +11,13 @@ namespace App\Services;
 use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Erp;
+use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
 use App\Libs\Valid;
+use App\Models\Dss\DssCategoryV1Model;
 use App\Models\Dss\DssErpPackageV1Model;
 use App\Models\Dss\DssGiftCodeModel;
+use App\Models\Dss\DssPackageExtModel;
 use App\Models\Erp\ErpGiftGroupV1Model;
 use App\Models\Erp\ErpPackageV1Model;
 use App\Models\Erp\ErpStudentOrderV1Model;
@@ -72,13 +75,15 @@ class ErpOrderV1Service
      * @param array $giftGoods
      * @param null | string $callback 指定的支付宝回调地址
      * @return array|bool
+     * @throws RunTimeException
      */
     public static function createOrder($packageId, $student, $payChannel, $payType, $employeeUuid, $channel, $giftGoods = [], $callback = null)
     {
         $studentId = $student['id'];
-        if (DssGiftCodeModel::hadPurchasePackageByType($studentId)) {
+        if ($student['package_sub_type'] == DssCategoryV1Model::DURATION_TYPE_TRAIL
+            && DssGiftCodeModel::hadPurchasePackageByType($studentId, DssPackageExtModel::PACKAGE_TYPE_TRIAL, false)) {
             SimpleLogger::error('has_trialed', ['student_id' => $studentId]);
-            return Valid::addAppErrors([], 'has_trialed');
+            throw new RunTimeException(['has_trialed']);
         }
 
         $callbacks  = self::callbacks($channel, $payChannel);
@@ -104,7 +109,8 @@ class ErpOrderV1Service
             'gift_goods'    => $giftGoods, //选择的赠品
         ]);
         if (empty($result) || !empty($result['code'])) {
-            return Valid::addAppErrors([], 'create_bill_error');
+            SimpleLogger::error('CREATE BILL ERROR', [$result]);
+            throw new RunTimeException(['create_bill_error']);
         }
         return $result['data'] ?? [];
     }

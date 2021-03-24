@@ -8,9 +8,12 @@
 
 namespace App\Routers;
 
+use App\Controllers\Agent\Agent;
 use App\Controllers\StudentWeb\Order;
+use App\Controllers\StudentWeb\Recall;
 use App\Controllers\StudentWeb\Student;
 use App\Controllers\StudentWeb\Area;
+use App\Middleware\RecallAuthCheckMiddleware;
 use App\Middleware\WebAuthCheckMiddleware;
 
 class StudentWebRouter extends RouterBase
@@ -38,5 +41,10 @@ class StudentWebRouter extends RouterBase
 
         '/student_web/area/get_by_parent_code' => ['method' => ['get'], 'call' => Area::class . ':getByParentCode'],
         '/student_web/area/get_by_code' => ['method' => ['get'], 'call' => Area::class . ':getByCode'],
+
+        // 召回页
+        '/student_web/recall/token' => ['method' => ['get'], 'call' => Recall::class . ':getToken', 'middles' => []],
+        '/student_web/recall/index' => ['method' => ['get'], 'call' => Recall::class . ':index', 'middles' => [RecallAuthCheckMiddleware::class]],
+        '/student_web/config/country_code' => ['method' => ['get'], 'call' => Agent::class . ':countryCode', 'middles' => []],
     ];
 }

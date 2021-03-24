@@ -127,7 +127,8 @@ class ErpPackageV1Model extends ErpModel
         $package = self::$table;
         $stock = ErpPackageStockV1Model::$table;
         $pg = ErpPackageGoodsV1Model::$table;
-
+        $g = ErpGoodsV1Model::$table;
+        $c = ErpCategoryV1Model::$table;
         $sql = "
         SELECT 
             p.id,
@@ -143,11 +144,14 @@ class ErpPackageV1Model extends ErpModel
             p.status,
             p.channel,
             p.sale_shop,
+            c.sub_type,
             sum(pg.o_price) o_price,
             sum(pg.r_price) r_price
         FROM {$package} p
         LEFT JOIN {$stock} s on s.package_id = p.id
         INNER JOIN {$pg} pg on pg.package_id = p.id AND pg.status = " . ErpPackageGoodsV1Model::SUCCESS_NORMAL . "
+        INNER JOIN {$g} g on pg.goods_id = g.id
+        INNER JOIN  {$c} c on c.id = g.category_id
         WHERE p.id = :package_id
             AND p.is_custom = " . self::PACKAGE_IS_NOT_CUSTOM;
         if ($isShow) {

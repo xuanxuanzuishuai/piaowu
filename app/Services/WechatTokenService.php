@@ -2,6 +2,7 @@
 namespace App\Services;
 
 use App\Libs\RedisDB;
+use App\Libs\SimpleLogger;
 
 class WechatTokenService
 {
@@ -28,7 +29,7 @@ class WechatTokenService
     public static function generateToken($user_id, $user_type, $app_id, $open_id)
     {
         $redis = RedisDB::getConn();
-        $cacheKey = self::getUserTokenKey($user_id, $user_type, $app_id);
+        $cacheKey = self::getUserTokenKey($user_id, $user_type, $app_id, $open_id);
         $cache = $redis->get($cacheKey);
         if (!empty($cache)) {
             return $cache;
@@ -54,9 +55,9 @@ class WechatTokenService
      * @param $open_id
      * @return string
      */
-    public static function getUserTokenKey($user_id, $user_type, $app_id)
+    public static function getUserTokenKey($user_id, $user_type, $app_id, $open_id)
     {
-        return self::USER_TOKEN_KEY . implode('_', [$app_id, $user_type, $user_id]);
+        return self::USER_TOKEN_KEY . implode('_', [$app_id, $user_type, $user_id, $open_id]);
     }
 
     /**
@@ -67,7 +68,7 @@ class WechatTokenService
     public static function getUserTokenKeyByToken($token)
     {
         $tokenInfo = json_decode(self::getTokenInfo($token), true);
-        return self::getUserTokenKey($tokenInfo['user_id'], $tokenInfo['user_type'], $tokenInfo['app_id']);
+        return self::getUserTokenKey($tokenInfo['user_id'], $tokenInfo['user_type'], $tokenInfo['app_id'], $tokenInfo['open_id']);
     }
 
 
@@ -115,10 +116,27 @@ class WechatTokenService
     public static function delTokenByUserId($user_id, $user_type = null, $app_id = null)
     {
         $redis = RedisDB::getConn();
-        $token = $redis->get(self::getUserTokenKey($user_id, $user_type, $app_id));
-        if (!empty($token)) {
-            self::deleteToken($token);
+        $list = self::getUserTokenKeyPattern($user_id, $user_type, $app_id);
+        if (!empty($list)) {
+            $redis->del($list);
         }
         return true;
+    }
+    public static function getUserTokenKeyPattern($user_id, $user_type = null, $app_id = null)
+    {
+        if (empty($user_id)) {
+            return [];
+        }
+        $redis = RedisDB::getConn();
+        $keys = self::USER_TOKEN_KEY . implode('_', [$app_id, $user_type, $user_id]) . '*';
+        $list = $redis->keys($keys);
+        foreach ($list as $token) {
+            $key = self::getTokenKey($redis->get($token));
+            $ret = $redis->get($key);
+            if (!empty($ret)) {
+                $list[] = $key;
+            }
+        }
+        return $list;
     }
 }

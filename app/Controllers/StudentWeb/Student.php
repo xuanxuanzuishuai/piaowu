@@ -13,6 +13,7 @@ use App\Libs\Constants;
 use App\Libs\Erp;
 use App\Libs\Valid;
 use App\Models\Dss\DssStudentModel;
+use App\Models\Dss\DssUserWeiXinModel;
 use App\Services\WechatTokenService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -129,8 +130,11 @@ class Student extends ControllerBase
      */
     public function unbind(Request $request, Response $response)
     {
-        $studentId = $this->ci['user_info']['user_id'];
-        WechatTokenService::delTokenByUserId($studentId);
+        $params = $request->getParams();
+        $student = $this->ci['user_info'];
+        $userType = $params['user_type'] ?: DssUserWeiXinModel::USER_TYPE_STUDENT;
+        $appId = DssUserWeiXinModel::dealAppId($params['app_id']);
+        WechatTokenService::delTokenByUserId($student['user_id'], $userType, $appId);
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => []

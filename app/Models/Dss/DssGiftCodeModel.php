@@ -41,7 +41,7 @@ class DssGiftCodeModel extends DssModel
      */
     public static function hadPurchasePackageByType($studentID, $type = DssPackageExtModel::PACKAGE_TYPE_TRIAL, $verifyCode = true)
     {
-        if (empty($studentId)) {
+        if (empty($studentID)) {
             return [];
         }
         if ($type == DssPackageExtModel::PACKAGE_TYPE_NORMAL) {

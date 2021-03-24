@@ -426,7 +426,7 @@ class DictConstants {
             'default_thumb',
             'package_buy_page_url', // 产品购买页面
             'share_card_logo', // 分享卡片logo
-            'ai_wx_office_account_qr_code', // 智能陪练公众号二维码
+            'ai_wx_official_account_qr_code', // 智能陪练公众号二维码
         ]
     ];
     // 是否
@@ -512,6 +512,27 @@ class DictConstants {
             'success_url',
             'cancel_url',
             'result_url',
+            'broadcast_config',
+        ]
+    ];
+
+    const DSS_WEB_STUDENT_CONFIG = [
+        'type' => 'WEB_STUDENT_CONFIG',
+        'keys' => [
+            'package_id',
+            'plus_package_id',
+            'mini_package_id',
+            'mini_package_id_v1',
+            'mini_001_package_id',
+            'mini_1_package_id',
+            'package_id_v2'
+        ]
+    ];
+
+    const RECALL_CONFIG = [
+        'type' => 'RECALL_CONFIG',
+        'keys' => [
+            'event_deadline',
         ]
     ];
 

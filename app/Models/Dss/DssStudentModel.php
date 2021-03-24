@@ -233,11 +233,11 @@ class DssStudentModel extends DssModel
     }
 
     /**
-     * 获取学生助教二维码
+     * 获取学生助教信息
      * @param $studentId
      * @return array|mixed
      */
-    public static function getAssistantQrCodeUrl($studentId)
+    public static function getAssistantInfo($studentId)
     {
         if (empty($studentId)) {
             return [];
@@ -246,13 +246,25 @@ class DssStudentModel extends DssModel
         $e = DssEmployeeModel::$table;
         $sql = "
         SELECT 
-            e.wx_qr
+            e.wx_qr,
+            e.wx_num,
+            e.wx_thumb,
+            e.wx_nick
         FROM {$s} s
         INNER JOIN {$e} e ON s.assistant_id = e.id
         WHERE s.id = :id
         ";
         $data = self::dbRO()->queryAll($sql, [':id' => $studentId]);
-        $path = $data[0]['wx_qr'] ?? '';
-        return empty($path) ? '' : AliOSS::replaceCdnDomainForDss($path);
+        if (empty($data[0])) {
+            return [];
+        }
+        $data = $data[0];
+        $urlList = ['wx_qr', 'wx_thumb'];
+        foreach ($urlList as $path) {
+            if (!empty($data[$path])) {
+                $data[$path] = AliOSS::replaceCdnDomainForDss($data[$path]);
+            }
+        }
+        return $data;
     }
 }

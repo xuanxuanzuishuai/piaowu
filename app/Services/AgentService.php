@@ -40,6 +40,7 @@ use App\Models\ParamMapModel;
 use App\Models\UserWeiXinInfoModel;
 use App\Models\PosterModel;
 use App\Models\UserWeiXinModel;
+use I18N\Lang;
 use Medoo\Medoo;
 
 class AgentService
@@ -1684,21 +1685,6 @@ class AgentService
             $config = array_flip($config);
         }
         return empty($config[$channelId]) ? 0 : (int)$config[$channelId];
-    }
-
-    /**
-     * 产品包详情
-     * @param $packageId
-     * @param $agentId
-     * @return array|bool
-     * @throws RunTimeException
-     */
-    public static function packageDetail($packageId, $agentId)
-    {
-        if (empty($packageId)) {
-            return [];
-        }
-        return PackageService::getPackageV1Detail($packageId);
     }
 
     /**
