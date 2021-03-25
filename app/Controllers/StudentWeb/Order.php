@@ -199,7 +199,7 @@ class Order extends ControllerBase
             $ret = ErpOrderV1Service::createOrder($params['package_id'], $studentInfo, $payChannel, $params['pay_type'], $employeeUuid, $channel, $params['gift_res']);
             if (!empty($sceneData['user_id']) && !empty($ret['order_id'])) {
                 // 保存agent_bill_map数据
-                AgentBillMapModel::add($sceneData['r'], $ret['order_id'], $studentInfo['id']);
+                // AgentBillMapModel::add($sceneData['r'], $ret['order_id'], $studentInfo['id']);
             }
         } catch (RuntimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
@@ -391,10 +391,7 @@ class Order extends ControllerBase
             }
             $qrCode = DictConstants::get(DictConstants::AGENT_CONFIG, 'ai_wx_official_account_qr_code');
             $qrCodeUrl = AliOSS::replaceCdnDomainForDss($qrCode);
-            $assistantInfo = [];
-            if ($agent['division_model'] == AgentModel::DIVISION_MODEL_LEADS) {
-                $assistantInfo = DssStudentModel::getAssistantInfo($student['user_id']);
-            }
+            $assistantInfo = DssStudentModel::getAssistantInfo($student['user_id']);
             $data = array_merge([
                 'model' => $agent['division_model'] ?? 0,
                 'ai_qr_url' => $qrCodeUrl,

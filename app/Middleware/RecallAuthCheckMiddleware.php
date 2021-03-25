@@ -30,7 +30,7 @@ class RecallAuthCheckMiddleware extends MiddlewareBase
         $token = $tokenHeader[0] ?? null;
 
         $userInfo = null;
-        if (!empty($token)) {
+        if (!empty($token) && $token != "null") {
             $userInfo = WechatTokenService::getTokenInfo($token);
             if (empty($userInfo)) {
                 return $response->withJson(Valid::addAppErrors([], 'token_expired'), StatusCode::HTTP_OK);

@@ -57,7 +57,7 @@ class RecallLandingService
             }
         }
         $data['package'] = $package;
-        if ($package['r_price'] != 9900) {
+        if ($package['r_price'] != 990) {
             $data['pkg'] = PayServices::PACKAGE_1;
         }
         // 24小时内是否首次进入页面
