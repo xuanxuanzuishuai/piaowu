@@ -4,10 +4,10 @@ namespace App\Services;
 use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssPackageExtModel;
-use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\Dss\DssWechatOpenIdListModel;
 use App\Models\EmployeeModel;
@@ -223,6 +223,33 @@ class RefereeAwardService
                 $errorCode = $response['errors'][0]['err_no'] ?? 'erp_request_error';
                 throw new RunTimeException([$errorCode]);
             }
+        }
+        return true;
+    }
+
+    /**
+     * 时长奖励发放
+     * @param $awardId
+     * @return bool
+     */
+    public static function sendDuration($awardId)
+    {
+        if (empty($awardId)) {
+            SimpleLogger::error("EMPTY AWARD ID", [$awardId]);
+            return false;
+        }
+        $sendStatus = ErpUserEventTaskAwardModel::STATUS_GIVE;
+        $reviewerId = EmployeeModel::SYSTEM_EMPLOYEE_ID;
+        try {
+            $awardDetailInfo = ErpUserEventTaskAwardModel::awardRelateEvent($awardId);
+            if ($awardDetailInfo['award_type'] != ErpUserEventTaskAwardModel::AWARD_TYPE_DURATION) {
+                return false;
+            }
+            (new Erp())->updateAward($awardId, $sendStatus, $reviewerId);
+            PushMessageService::sendAwardRelateMessage($awardDetailInfo);
+        } catch (RunTimeException $e) {
+            SimpleLogger::error('ERP UPDATE AWARD ERROR', [$e->getMessage()]);
+            return false;
         }
         return true;
     }

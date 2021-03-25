@@ -348,6 +348,10 @@ class DictConstants {
             'normal_task_config', // 买年卡，根据人数决定奖励
             'task_stop_change_number', // 买年卡，超过多少人后奖励不再变化。ex:第6个及以后都是相同奖励
             'dsscrm_1841_start_time', // 年卡推荐人数计算起始时间点
+            'xyzop_178_start_point',
+            'trial_task_stop_change_number_xyzop_178',
+            'trial_task_config_xyzop_178',
+            'extra_task_id_normal_xyzop_178',
         ]
     ];
 

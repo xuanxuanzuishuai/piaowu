@@ -43,6 +43,24 @@ class QueueService
         }
         return true;
     }
+    /**
+     * 发放时长奖励
+     * @param $data
+     * @return bool
+     */
+    public static function sendDuration($data)
+    {
+        try {
+            $deferMax = self::getDeferMax(count($data));
+            foreach ($data as $award) {
+                (new DurationTopic())->sendDuration(['award_id' => $award['id']])->publish(rand(2, $deferMax));
+            }
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), $msgBody ?? []);
+            return false;
+        }
+        return true;
+    }
 
     /**
      * @param $data

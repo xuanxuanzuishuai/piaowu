@@ -27,13 +27,16 @@ use App\Models\StudentAccountAwardPointsFileModel;
 use App\Models\StudentAccountAwardPointsLogModel;
 use App\Services\CashGrantService;
 use App\Services\MessageService;
+use App\Services\Queue\DurationTopic;
 use App\Services\Queue\PushMessageTopic;
 use App\Services\Queue\StudentAccountAwardPointsTopic;
 use App\Services\Queue\ThirdPartBillTopic;
+use App\Services\RefereeAwardService;
 use App\Services\StudentAccountAwardPointsLogService;
 use App\Services\StudentService;
 use App\Services\ThirdPartBillService;
 use App\Services\UserRefereeService;
+use Cassandra\Duration;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -497,6 +500,55 @@ class Consumer extends ControllerBase
         } catch (RunTimeException $runTimeException) {
             SimpleLogger::error("consumer::studentAccountAwardPoints catch", ['params' => $params, 'err' => $runTimeException->getAppErrorData()]);
             return HttpHelper::buildErrorResponse($response, $runTimeException->getAppErrorData());
+        }
+        return HttpHelper::buildResponse($response, []);
+    }
+
+    /**
+     * 延迟发放的时长奖励
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function sendDuration(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        $rules = [
+            [
+                'key' => 'topic_name',
+                'type' => 'required',
+                'error_code' => 'topic_name_is_required',
+            ],
+            [
+                'key' => 'source_app_id',
+                'type' => 'required',
+                'error_code' => 'source_app_id_is_required',
+            ],
+            [
+                'key' => 'event_type',
+                'type' => 'required',
+                'error_code' => 'event_type_is_required',
+            ],
+            [
+                'key' => 'msg_body',
+                'type' => 'required',
+                'error_code' => 'msg_body_is_required',
+            ],
+        ];
+
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        try {
+            switch ($params['event_type']) {
+                case DurationTopic::EVENT_SEND_DURATION:
+                    RefereeAwardService::sendDuration($params['msg_body']['award_id']);
+                    break;
+            }
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
         return HttpHelper::buildResponse($response, []);
     }

@@ -78,7 +78,6 @@ class PushMessageService
         // 任务达成条件
         $taskCondition = json_decode($awardDetailInfo['condition'], true);
         $total = 0;
-        $referralMobile = '';
         if (in_array($awardDetailInfo['type'], [ErpEventModel::TYPE_IS_REFERRAL])) {
             // 所有转介绍任务ID:
             $event = ErpEventModel::getRecord(['type' => ErpEventModel::TYPE_IS_REFERRAL]);
@@ -86,6 +85,18 @@ class PushMessageService
             // 累计转介绍奖励总额：
             $total = ErpUserEventTaskAwardModel::getUserTotal($awardDetailInfo['get_award_uuid'], array_column($taskId, 'id'));
             $total = $total[0]['totalAmount'] ?? 0;
+        }
+        $awardType = '红包';
+        $remark = '请点击红包领取';
+
+        if ($awardDetailInfo['award_type'] == ErpUserEventTaskAwardModel::AWARD_TYPE_DURATION) {
+            $awardType = '时长';
+            $unit = '天';
+            $remark = '';
+            $duration = $awardDetailInfo['award_amount'].$unit;
+        } else {
+            $unit = '元';
+            $duration = $awardDetailInfo['award_amount'] / 100 . $unit;
         }
         return [
             'mobile'       => Util::hideUserMobile($achieveUserInfo['mobile']),
@@ -96,6 +107,9 @@ class PushMessageService
             'userName'       => $awardDetailInfo['get_award_name'], // 当前用户
             'totalAward'     => ($total / 100),
             'referralMobile' => Util::hideUserMobile($awardDetailInfo['mobile']), // 被推荐人手机号
+            'awardType' => $awardType,
+            'duration' => $duration,
+            'remark' => $remark,
         ];
     }
 

@@ -88,6 +88,55 @@ WHERE a.create_time >= {$time} AND a.status IN (" . self::STATUS_WAITING . "," .
     }
 
     /**
+     * 需要发放的延迟时长奖励
+     * @return array
+     */
+    public static function needSendDurationAward()
+    {
+        // 16天内的数据
+        $time = time() - 1382400;
+        $a = ErpUserEventTaskAwardModel::$table;
+        $ue = ErpUserEventTaskModel::$table;
+        $e = ErpEventModel::$table;
+        $t = ErpEventTaskModel::$table;
+
+        $sql = "
+        SELECT 
+            a.id,
+            a.`status`,
+            a.`create_time`,
+            a.`delay`,
+            e.type
+        FROM {$a} a force index(create_time)
+        INNER JOIN {$ue} ue on a.uet_id = ue.id 
+        inner join {$t} t on ue.event_task_id = t.id
+        INNER JOIN {$e} e on t.event_id = e.id
+        WHERE 
+            a.create_time >= {$time}
+            AND a.status IN (" . self::STATUS_WAITING . "," . self::STATUS_GIVE_FAIL .")
+            AND a.award_type = " .self::AWARD_TYPE_DURATION. "
+            AND a.delay > 0";
+        $baseAward = self::dbRO()->queryAll($sql);
+        // 如果待发放并且是上传截图领奖，过滤掉
+        $queueArr = [];
+        if (empty($baseAward)) {
+            return $queueArr;
+        }
+        foreach ($baseAward as $award) {
+            if ($award['type'] == ErpEventModel::DAILY_UPLOAD_POSTER
+                && $award['status'] == self::STATUS_WAITING) {
+                SimpleLogger::info('FILTER POSTER AWARD', ['award' => $award]);
+                continue;
+            }
+            if ($award['create_time'] + $award['delay'] < time()) {
+                continue;
+            }
+            $queueArr[] = ['id' => $award['id']];
+        }
+        return $queueArr;
+    }
+
+    /**
      * 需要更新状态的红包
      * @return array|null
      */
