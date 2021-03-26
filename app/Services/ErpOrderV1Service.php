@@ -121,24 +121,10 @@ class ErpOrderV1Service
         $resultUrl = null;
         $cancelUrl = null;
 
-        if ($channel == ErpPackageV1Model::CHANNEL_WX) {
-            list($successUrl, $resultUrl) = DssDictService::getKeyValuesByArray(
-                DictConstants::DSS_WEIXIN_STUDENT_CONFIG,
-                ['success_url_v1', 'result_url_v1']
-            );
-
-        } elseif ($channel == ErpPackageV1Model::CHANNEL_ANDROID || $channel == ErpPackageV1Model::CHANNEL_IOS) {
-            list($successUrl, $cancelUrl, $resultUrl) = DssDictService::getKeyValuesByArray(
-                DictConstants::DSS_APP_CONFIG_STUDENT,
-                ['success_url', 'cancel_url', 'result_url']
-            );
-
-        } elseif ($channel == ErpPackageV1Model::CHANNEL_OP_AGENT) {
-            list($successUrl, $cancelUrl, $resultUrl) = DictConstants::getValues(
-                DictConstants::AGENT_WEB_STUDENT_CONFIG,
-                ['success_url', 'cancel_url', 'result_url']
-            );
-        }
+        list($successUrl, $cancelUrl, $resultUrl) = DictConstants::getValues(
+            DictConstants::AGENT_WEB_STUDENT_CONFIG,
+            ['success_url', 'cancel_url', 'result_url']
+        );
 
         if ($payChannel == PayServices::PAY_CHANNEL_V1_ALIPAY_PC) {
             $cancelUrl = null;

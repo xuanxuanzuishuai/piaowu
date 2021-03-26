@@ -22,10 +22,12 @@ use App\Libs\Valid;
 use App\Models\AgentBillMapModel;
 use App\Models\AgentModel;
 use App\Models\Dss\DssCategoryV1Model;
+use App\Models\Dss\DssCollectionModel;
 use App\Models\Dss\DssErpPackageV1Model;
 use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssPackageExtModel;
 use App\Models\Dss\DssStudentModel;
+use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\Erp\ErpGiftGoodsV1Model;
 use App\Models\Erp\ErpPackageV1Model;
 use App\Models\ParamMapModel;
@@ -187,6 +189,13 @@ class Order extends ControllerBase
             $employeeUuid = !empty($params['employee_id']) ? RC4::decrypt($_ENV['COOKIE_SECURITY_KEY'], $params['employee_id']) : null;
             $channel = ErpPackageV1Model::CHANNEL_OP_AGENT;
             $payChannel = PayServices::payChannelToV1($params['pay_channel']);
+            if ($payChannel == PayServices::PAY_CHANNEL_V1_WEIXIN
+            && empty($studentInfo['open_id'])) {
+                $userWeixin = DssUserWeiXinModel::getByUserId($student['user_id']);
+                if (!empty($userWeixin['open_id'])) {
+                    $studentInfo['open_id'] = $userWeixin['open_id'];
+                }
+            }
 
             //AIPL-10499 专属售卖链接支持选择赠品
             if (isset($params['gift_res'])
@@ -366,24 +375,15 @@ class Order extends ControllerBase
      */
     public function paySuccess(Request $request, Response $response)
     {
-        $rules = [
-            [
-                'key' => 'param_id',
-                'type' => 'required',
-                'error_code' => 'param_id_is_required',
-            ]
-        ];
-
-        $params = $request->getParams();
-        $result = Valid::appValidate($params, $rules);
-        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
-            return $response->withJson($result, StatusCode::HTTP_OK);
-        }
         try {
             $student = $this->ci['user_info'];
-            $paramInfo = ReferralActivityService::getParamsInfo($params['param_id']);
+            $paramInfo = [];
+            if (!empty($params['param_id'])) {
+                $paramInfo = ReferralActivityService::getParamsInfo($params['param_id']);
+            }
             $agent = null;
-            if (stripos($paramInfo['r'], MiniAppQrService::AGENT_TICKET_PREFIX) !== false) {
+            if (!empty($paramInfo['r'])
+            && stripos($paramInfo['r'], MiniAppQrService::AGENT_TICKET_PREFIX) !== false) {
                 $agent = AgentModel::getById($paramInfo['user_id']);
                 if (!empty($agent['parent_id'])) {
                     $agent = AgentModel::getById($agent['parent_id']);
@@ -392,6 +392,13 @@ class Order extends ControllerBase
             $qrCode = DictConstants::get(DictConstants::AGENT_CONFIG, 'ai_wx_official_account_qr_code');
             $qrCodeUrl = AliOSS::replaceCdnDomainForDss($qrCode);
             $assistantInfo = DssStudentModel::getAssistantInfo($student['user_id']);
+            if (empty($assistantInfo['wx_qr'])) {
+                $studentInfo = DssStudentModel::getById($student['user_id']);
+                $collectionInfo = DssCollectionModel::getById($studentInfo['collection_id']);
+                if (!empty($collectionInfo['wechat_qr'])) {
+                    $assistantInfo['wx_qr'] = $collectionInfo['wechat_qr'];
+                }
+            }
             $data = array_merge([
                 'model' => $agent['division_model'] ?? 0,
                 'ai_qr_url' => $qrCodeUrl,
