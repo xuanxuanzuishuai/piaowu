@@ -14,7 +14,8 @@ class ErpPackageV1Model extends ErpModel
     const CHANNEL_IOS = 2;
     const CHANNEL_WX = 4;
     const CHANNEL_ERP = 8;
-    const CHANNEL_OP_AGENT = 32;
+    const CHANNEL_H5 = 32;
+    const CHANNEL_OP_AGENT = 64;
 
     // 销售列表是否可见 0 不可见 1 可见
     const IS_SHOW = 1;

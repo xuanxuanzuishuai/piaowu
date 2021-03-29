@@ -245,8 +245,14 @@ class RefereeAwardService
             if ($awardDetailInfo['award_type'] != ErpUserEventTaskAwardModel::AWARD_TYPE_DURATION) {
                 return false;
             }
+            if (!CashGrantService::awardAndRefundVerify($awardDetailInfo)) {
+                $sendStatus = ErpUserEventTaskAwardModel::STATUS_DISABLED;
+                SimpleLogger::error('REFUND VERIFY FAIL', [$awardDetailInfo]);
+            }
             (new Erp())->updateAward($awardId, $sendStatus, $reviewerId);
-            PushMessageService::sendAwardRelateMessage($awardDetailInfo);
+            if ($sendStatus == ErpUserEventTaskAwardModel::STATUS_GIVE) {
+                PushMessageService::sendAwardRelateMessage($awardDetailInfo);
+            }
         } catch (RunTimeException $e) {
             SimpleLogger::error('ERP UPDATE AWARD ERROR', [$e->getMessage()]);
             return false;

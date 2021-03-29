@@ -128,7 +128,7 @@ WHERE a.create_time >= {$time} AND a.status IN (" . self::STATUS_WAITING . "," .
                 SimpleLogger::info('FILTER POSTER AWARD', ['award' => $award]);
                 continue;
             }
-            if ($award['create_time'] + $award['delay'] < time()) {
+            if ($award['create_time'] + $award['delay'] > time()) {
                 continue;
             }
             $queueArr[] = ['id' => $award['id']];

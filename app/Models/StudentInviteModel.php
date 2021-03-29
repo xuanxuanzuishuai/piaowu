@@ -15,6 +15,8 @@ use App\Models\Dss\DssErpPackageV1Model;
 use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssGoodsV1Model;
 use App\Models\Dss\DssStudentModel;
+use App\Models\Erp\ErpStudentModel;
+use App\Models\Erp\ErpUserEventTaskModel;
 
 class StudentInviteModel extends Model
 {
@@ -88,5 +90,41 @@ class StudentInviteModel extends Model
           ) t
         WHERE t.query_order = 1 AND t.create_time >= ".$where['create_time']." LIMIT $limit";
         return self::dbRO()->queryAll($sql);
+    }
+
+    /**
+     * 查询推荐人是否已经完成了一次性的额外奖励任务
+     * @param $where
+     * @param $taskId
+     * @return array
+     */
+    public static function getRefereeExtraTask($where, $taskId)
+    {
+        if (empty($taskId)) {
+            return [];
+        }
+        $uet = ErpUserEventTaskModel::getTableNameWithDb();
+        $s = DssStudentModel::getTableNameWithDb();
+        $es = ErpStudentModel::getTableNameWithDb();
+        $sql = "
+            SELECT 
+                ueta.id,
+                ueta.uet_id,
+                ueta.status
+            FROM  {$uet} uet ON ueta.uet_id = uet.id
+            INNER JOIN {$es} es on ueta.user_id = es.id
+            INNER JOIN {$s} s ON s.uuid = es.uuid
+            WHERE s.id = :user_id
+            AND uet.create_time >= :create_time
+            AND uet.event_task_id = :task_id
+            AND uet.status = :status
+        ";
+        $map = [
+            ':user_id' => $where['referee_id'],
+            ':task_id' => $taskId,
+            ':create_time' => $where['create_time'],
+            ':status' => ErpUserEventTaskModel::EVENT_TASK_STATUS_COMPLETE
+        ];
+        return self::dbRO()->queryAll($sql, $map);
     }
 }

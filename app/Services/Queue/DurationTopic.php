@@ -10,7 +10,7 @@ namespace App\Services\Queue;
 
 class DurationTopic extends BaseTopic
 {
-    const TOPIC_NAME = "duration";
+    const TOPIC_NAME = "operation_duration";
 
     const EVENT_SEND_DURATION = 'send_duration'; //发放时长
 

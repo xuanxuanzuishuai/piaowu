@@ -276,16 +276,16 @@ class UserRefereeService
             if ($packageType == DssPackageExtModel::PACKAGE_TYPE_TRIAL
                 && in_array($trialType, [DssPackageExtModel::TRIAL_TYPE_49, DssPackageExtModel::TRIAL_TYPE_9])) {
                 // DSSCRM-1841: 奖励推荐人1元：
-                return RefereeAwardService::getDssTrailPayTaskId(1);
+                return RefereeAwardService::getDssTrailPayTaskId(4);
             } else {
                 // DSSCRM-1841: 奖励推荐人168元，被推荐人50元：
-                return RefereeAwardService::getDssYearPayTaskId(2);
+                return RefereeAwardService::getDssYearPayTaskId(3);
             }
         } else {
             if ($packageType == DssPackageExtModel::PACKAGE_TYPE_TRIAL
                 && in_array($trialType, [DssPackageExtModel::TRIAL_TYPE_49, DssPackageExtModel::TRIAL_TYPE_9])) {
                 // DSSCRM-1841: 奖励推荐人1元：
-                return RefereeAwardService::getDssTrailPayTaskId(1);
+                return RefereeAwardService::getDssTrailPayTaskId(4);
             } else {
                 // 年卡：
                 // 查询当前被推荐人是第几个：
@@ -385,7 +385,18 @@ class UserRefereeService
                 $taskIds[] = RefereeAwardService::getDssYearPayTaskId(1);
                 // XYZOP-178-2.2.2
                 if (time() <= $refereeInfo['first_pay_normal_info']['create_time'] + Util::TIMESTAMP_ONEDAY * 15) {
-                    $taskIds[] = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'extra_task_id_normal_xyzop_178');
+                    $extraTaskId = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'extra_task_id_normal_xyzop_178');
+                    $startPoint = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'xyzop_178_start_point');
+                    $extraCount = StudentInviteModel::getRefereeExtraTask(
+                        [
+                            'referee_id' => $refereeInfo['id'],
+                            'create_time' => $startPoint
+                        ],
+                        $extraTaskId
+                    );
+                    if (empty($extraCount)) {
+                        $taskIds[] = $extraTaskId;
+                    }
                 }
             }
         }

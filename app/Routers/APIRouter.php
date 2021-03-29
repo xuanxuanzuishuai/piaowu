@@ -35,6 +35,11 @@ class APIRouter extends RouterBase
             'call' => Consumer::class . ':pushMessage',
             'middles' => [],
         ],
+        '/api/consumer/send_duration' => [
+            'method' => ['post'],
+            'call' => Consumer::class . ':sendDuration',
+            'middles' => [],
+        ],
         '/api/consumer/third_part_bill' => [
             'method' => ['post'],
             'call' => Consumer::class . ':thirdPartBill',
