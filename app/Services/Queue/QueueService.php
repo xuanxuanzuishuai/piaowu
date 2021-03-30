@@ -51,9 +51,11 @@ class QueueService
     public static function sendDuration($data)
     {
         try {
-            $deferMax = self::getDeferMax(count($data));
+            $gap = 1;
             foreach ($data as $award) {
-                (new DurationTopic())->sendDuration(['award_id' => $award['id']])->publish(rand(2, $deferMax));
+                $delay = $gap + rand(1, 10);
+                $gap += 3;
+                (new DurationTopic())->sendDuration(['award_id' => $award['id']])->publish($delay);
             }
         } catch (Exception $e) {
             SimpleLogger::error($e->getMessage(), $msgBody ?? []);
