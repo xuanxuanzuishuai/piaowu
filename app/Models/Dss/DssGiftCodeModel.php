@@ -217,7 +217,7 @@ class DssGiftCodeModel extends DssModel
      * @param $userId
      * @return array|null
      */
-    public static function getUserFirstPayNormalInfo($userId)
+    public static function getUserFirstPayInfo($userId, $type = DssCategoryV1Model::DURATION_TYPE_NORMAL)
     {
         if (empty($userId)) {
             return [];
@@ -238,12 +238,13 @@ class DssGiftCodeModel extends DssModel
         INNER JOIN  $c c ON c.id = g.category_id
         WHERE 
             gc.buyer = :buyer
-            AND c.sub_type = ".DssCategoryV1Model::DURATION_TYPE_NORMAL."
+            AND c.sub_type = :type
         ORDER BY gc.id 
         LIMIT 1;
         ";
         $map = [
             ':buyer' => $userId,
+            ':type' => $type,
         ];
         $db = self::dbRO();
         $res = $db->queryAll($sql, $map);

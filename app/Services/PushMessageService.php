@@ -87,7 +87,7 @@ class PushMessageService
             $total = $total[0]['totalAmount'] ?? 0;
         }
         $awardType = '红包';
-        $remark = '请点击红包领取';
+        $remark = '，请点击红包领取';
 
         if ($awardDetailInfo['award_type'] == ErpUserEventTaskAwardModel::AWARD_TYPE_DURATION) {
             $awardType = '时长';

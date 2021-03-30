@@ -164,12 +164,11 @@ class Order extends ControllerBase
                     SimpleLogger::error('different_agent_not_allowed', [$userAgentInfo, $sceneData]);
                     throw new RunTimeException([['different_agent_not_allowed', null, null, [$userAgentInfo['name']]]]);
                 }
-            }
-
-            // 年卡不可购买体验包
-            if ($studentInfo['has_review_course'] == DssStudentModel::REVIEW_COURSE_1980 && $packageInfo['sub_type'] == DssCategoryV1Model::DURATION_TYPE_TRAIL) {
-                SimpleLogger::error('STUDENT_DOWN_STAGE_NOT_ALLOWED', [$studentInfo, $packageInfo]);
-                throw new RunTimeException(['student_down_stage_not_allowed']);
+                // 年卡不可购买体验包
+                if ($studentInfo['has_review_course'] == DssStudentModel::REVIEW_COURSE_1980 && $packageInfo['sub_type'] == DssCategoryV1Model::DURATION_TYPE_TRAIL) {
+                    SimpleLogger::error('STUDENT_DOWN_STAGE_NOT_ALLOWED', [$studentInfo, $packageInfo]);
+                    throw new RunTimeException(['student_down_stage_not_allowed']);
+                }
             }
 
             // check 9折续费 产品包

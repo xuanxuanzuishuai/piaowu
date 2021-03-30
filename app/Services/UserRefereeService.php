@@ -236,7 +236,7 @@ class UserRefereeService
         }
         $refereeInfo = DssStudentModel::getRecord(['id' => $refereeRelation['referee_id']]);
         $refereeInfo['student_id'] = $studentId;
-        $refereeInfo['first_pay_normal_info'] = DssGiftCodeModel::getUserFirstPayNormalInfo($refereeRelation['referee_id']);
+        $refereeInfo['first_pay_normal_info'] = DssGiftCodeModel::getUserFirstPayInfo($refereeRelation['referee_id']);
 
         $refTaskId = self::getTaskIdByType($packageType, $trialType, $refereeInfo, $appId);
         if (!is_array($refTaskId) && !empty($refTaskId)) {
