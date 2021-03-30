@@ -96,31 +96,50 @@ class AgentAwardDetailModel extends Model
 
 
     /**
-     * 根据agent_id获取代理的推广订单数量
+     * 根据agent_id获取代理的推广订单:订单归属人/成单人去重统计
      * @param $agentIds
+     * @param $page
+     * @param $limit
+     * @param $onlyCount
      * @return array|null
      */
-    public static function getAgentBillCount($agentIds)
+    public static function getAgentRecommendDuplicationBill($agentIds, $onlyCount = true, $page = 1, $limit = 20)
     {
+        $data = ['total_count' => 0, 'list' => []];
         $db = MysqlDB::getDB();
-        $sql = 'SELECT
-                    COUNT( ad.id ) AS b_count,
-                    ad.agent_id 
-                FROM
-                    ' . self::$table . ' as ad
-                    INNER JOIN ' . AgentAwardBillExtModel::$table . ' as bex ON ad.ext_parent_bill_id=bex.parent_bill_id
-                WHERE
-                    ad.agent_id IN (' . $agentIds . ') 
-                AND ad.action_type !=' . self::AWARD_ACTION_TYPE_REGISTER . '
-                AND ad.is_bind =' . self::IS_BIND_STATUS_YES . '
-                AND ( ( ad.ext ->> \'$.division_model\' = ' . AgentModel::DIVISION_MODEL_LEADS . ' 
-                AND bex.is_first_normal_order = ' . AgentAwardBillExtModel::IS_FIRST_ORDER_YES . ' ) 
-                OR ( ad.ext ->> \'$.division_model\' = ' . AgentModel::DIVISION_MODEL_LEADS_AND_SALE . ' ) ) 
-                AND ((bex.own_agent_status=' . AgentModel::STATUS_OK . ' 
-                AND bex.signer_agent_status=' . AgentModel::STATUS_OK . '))                
-                GROUP BY
-                    agent_id;';
-        return $db->queryAll($sql);
+        $baseSql = 'SELECT
+                 :sql_filed
+            FROM
+                agent_award_bill_ext AS bex
+                INNER JOIN agent_award_detail AS ad ON ad.ext_parent_bill_id = bex.parent_bill_id 
+            WHERE
+                (
+                    bex.signer_agent_id IN (' . $agentIds . ') 
+                    OR (
+                        bex.own_agent_id IN (' . $agentIds . ') 
+                        AND ( ( ad.ext ->> \'$.division_model\' = ' . AgentModel::DIVISION_MODEL_LEADS . '  AND bex.is_first_order = ' . AgentAwardBillExtModel::IS_FIRST_ORDER_YES . ' ) OR ( ad.ext ->> \'$.division_model\' = ' . AgentModel::DIVISION_MODEL_LEADS_AND_SALE . ' ) ) 
+                        AND ad.action_type != ' . self::AWARD_ACTION_TYPE_REGISTER . '
+                        AND ad.is_bind != (' . self::IS_BIND_STATUS_NO . ') 
+                    ) 
+                ) 
+                AND ((bex.own_agent_status=' . AgentModel::STATUS_OK . ' AND bex.signer_agent_status=' . AgentModel::STATUS_OK . '))                
+            ORDER BY
+                bex.id DESC';
+        $countSql = str_replace(":sql_filed", 'count(*) as total_count', $baseSql);
+        $countData = $db->queryAll($countSql);
+        if (empty($countData)) {
+            return $data;
+        }
+        $data['total_count'] = $countData[0]['total_count'];
+        if ($onlyCount) {
+            return $data;
+        }
+        $limitWhere = " limit " . ($page - 1) * $limit . ',' . $limit;
+        $listSql = str_replace(":sql_filed",
+            'bex.id,bex.parent_bill_id,bex.student_id',
+            $baseSql . $limitWhere);
+        $data['list'] = $db->queryAll($listSql);
+        return $data;
     }
 
     /**

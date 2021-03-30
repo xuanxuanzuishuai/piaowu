@@ -44,7 +44,7 @@ class AgentAwardExtService
         $signerAgentId = !empty($billMapData['agent_id']) ? $billMapData['agent_id'] : 0;
 
         //订单归属代理商与学生的绑定关系状态
-        $agentBindData = AgentUserModel::getAgentStudentLastBindData($agentAwardData['agent_id'], $agentAwardData['student_id']);
+//        $agentBindData = AgentUserModel::getAgentStudentLastBindData($agentAwardData['agent_id'], $agentAwardData['student_id']);
 
         //学生当前有效绑定关系的代理商数据
         $validAgentBindData = AgentUserModel::getValidBindData($agentAwardData['student_id']);
@@ -57,20 +57,21 @@ class AgentAwardExtService
             'own_agent_id' => $agentAwardData['agent_id'],
             'signer_agent_id' => $signerAgentId,
             'is_hit_order' => AgentAwardBillExtModel::IS_HIT_ORDER_NO,
-            'is_first_normal_order' => AgentAwardBillExtModel::IS_FIRST_ORDER_NO,
+            'is_first_order' => AgentAwardBillExtModel::IS_FIRST_ORDER_YES,
             'is_agent_channel_buy' => empty($billMapData) ? AgentAwardBillExtModel::IS_AGENT_CHANNEL_BUY_NO : AgentAwardBillExtModel::IS_AGENT_CHANNEL_BUY_YES,
             'create_time' => $time,
             'own_agent_status' => AgentModel::STATUS_OK,
             'signer_agent_status' => AgentModel::STATUS_OK,//如果没有成单人，默认为正常
         ];
         //检测当前订单是否为学生和代理商绑定关系后，首次购买年卡
-        if (($agentAwardExtData['package_type'] == DssPackageExtModel::PACKAGE_TYPE_NORMAL) && (!empty($agentBindData))) {
+//        if (($agentAwardExtData['package_type'] == DssPackageExtModel::PACKAGE_TYPE_NORMAL) && (!empty($agentBindData))) {
+        if (($agentAwardExtData['package_type'] == DssPackageExtModel::PACKAGE_TYPE_NORMAL)) {
             $normalOrder = AgentAwardDetailModel::getAgentStudentBillCountByPackageType($agentAwardData['agent_id'], $agentAwardData['student_id'], DssPackageExtModel::PACKAGE_TYPE_NORMAL);
-            if ((int)$normalOrder[0]['data_count'] == 1) {
-                $agentAwardBillExtData['is_first_normal_order'] = AgentAwardBillExtModel::IS_FIRST_ORDER_YES;
+            if ((int)$normalOrder[0]['data_count'] > 1) {
+                $agentAwardBillExtData['is_first_order'] = AgentAwardBillExtModel::IS_FIRST_ORDER_NO;
             }
         }
-        //检测是否撞单:订单的对应的学生的推荐人、与学生有绑定期中的代理、成单人代理，任何两种及两种以上的关系，则为撞单
+        //检测是否撞单:1.学生有推荐人 2.学生有绑定期中的代理 3.成单代理与绑定期的代理不是同一个,任何两种及两种以上的关系则为撞单
         $isHitOrderCondition = [];
         //学生的推荐人
         if ($studentReferralData) {
@@ -81,7 +82,7 @@ class AgentAwardExtService
             $isHitOrderCondition['bill_map_data'] = 'yes';
         }
         //成单人代理和学生绑定期中的代理不是同一个人
-        if ($signerAgentId != $validAgentId) {
+        if (!empty($validAgentId) && ($signerAgentId != $validAgentId)) {
             $isHitOrderCondition['agent_bind_data'] = 'yes';
         }
         if (!empty($isHitOrderCondition)) {

@@ -46,7 +46,7 @@ CREATE TABLE `agent_award_bill_ext` (
   COMMENT '订单成单代理商冻结状态1正常2冻结',
   `is_hit_order`          tinyint(1) unsigned NOT NULL DEFAULT '2'
   COMMENT '是否撞单1是2不是',
-  `is_first_normal_order` tinyint(1) unsigned NOT NULL DEFAULT '2'
+  `is_first_order` tinyint(1) unsigned NOT NULL DEFAULT '2'
   COMMENT '是否是绑定关系建立后年卡首单 1是2不是',
   `is_agent_channel_buy`  tinyint(1) unsigned NOT NULL DEFAULT '2'
   COMMENT '是否是代理渠道购买1是2不是',
@@ -58,6 +58,20 @@ CREATE TABLE `agent_award_bill_ext` (
   KEY `idx_student_id` (`student_id`) USING BTREE COMMENT '学生ID索引'
 )
   COMMENT ='代理奖励订单扩展表';
+
+
+CREATE TABLE `agent_dispatch_log` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `student_id` int(10) unsigned NOT NULL DEFAULT '0' COMMENT '学生ID',
+  `parent_bill_id` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '订单ID',
+  `result_type` tinyint(4) unsigned NOT NULL DEFAULT '0' COMMENT '结果类型0成功,其余参照代码注释',
+  `content` json NOT NULL COMMENT '日志详情',
+  `create_time` int(11) NOT NULL COMMENT '创建时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_student_bill` (`student_id`,`parent_bill_id`) USING BTREE
+) COMMENT='学生购买课包后代理分配日志';
+
+
 
 -- 增加字段 修改表字段注释
 ALTER TABLE `agent`

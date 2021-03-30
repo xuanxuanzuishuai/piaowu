@@ -22,6 +22,7 @@ require_once PROJECT_ROOT . '/vendor/autoload.php';
 use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
 use App\Models\AgentAwardBillExtModel;
+use App\Models\Dss\DssPackageExtModel;
 use App\Models\StudentInviteModel;
 use Dotenv\Dotenv;
 
@@ -39,6 +40,7 @@ $sql = 'SELECT
             aw.ext_parent_bill_id,
             aw.agent_id,
             aw.student_id,
+            aw.ext->>\'$.package_type\' as package_type,
             abm.id as "bill_map_id"
             FROM
             agent_award_detail AS aw
@@ -58,9 +60,21 @@ $studentIds = array_column($agentAwardBillData, 'student_id');
 $studentReferralData = StudentInviteModel::getRecords(['student_id' => $studentIds, 'referee_type' => 1], ['student_id', 'referee_id']);
 $studentReferralData = array_column($studentReferralData, null, 'student_id');
 
+//判断订单是否是学生与代理建立绑定关系后的首单
+$studentFirstOrder = [];
+$agentAwardBillFormatData = array_map(function (&$val) use (&$studentFirstOrder) {
+    if ($val['package_type'] == DssPackageExtModel::PACKAGE_TYPE_TRIAL) {
+        $val['is_first_order'] = AgentAwardBillExtModel::IS_FIRST_ORDER_YES;
+    } elseif (($val['package_type'] == DssPackageExtModel::PACKAGE_TYPE_NORMAL) && empty($studentFirstOrder[$val['student_id']][$val['agent_id']])) {
+        $val['is_first_order'] = AgentAwardBillExtModel::IS_FIRST_ORDER_YES;
+        $studentFirstOrder[$val['student_id']][$val['agent_id']] = true;
+    }
+    return $val;
+}, $agentAwardBillData);
+
 //组合数据
 $agentAwardBillExtData = [];
-foreach ($agentAwardBillData as $k => $v) {
+foreach ($agentAwardBillFormatData as $k => $v) {
     $agentAwardBillExtData[] = [
         'student_id' => $v['student_id'],
         'parent_bill_id' => $v['ext_parent_bill_id'],
@@ -70,12 +84,11 @@ foreach ($agentAwardBillData as $k => $v) {
         'signer_agent_id' => $v['agent_id'],
         'signer_agent_status' => 1,
         'is_hit_order' => empty($studentReferralData[$v['student_id']]) ? 2 : 1,
-        'is_first_normal_order' => 2,
+        'is_first_order' => empty($v['is_first_order']) ? AgentAwardBillExtModel::IS_FIRST_ORDER_NO : $v['is_first_order'],
         'is_agent_channel_buy' => empty($v['bill_map_id']) ? 2 : 1,
         'create_time' => $now,
     ];
 }
-
 //批量写入数据
 $res = AgentAwardBillExtModel::batchInsert($agentAwardBillExtData);
 SimpleLogger::info('insert bill ext data', ['res' => $res, $agentAwardBillExtData]);

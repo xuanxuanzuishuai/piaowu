@@ -468,5 +468,33 @@ class Agent extends ControllerBase
         return HttpHelper::buildResponse($response, $data);
     }
 
+    /**
+     * 获取代理商的推广订单列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function agentRecommendDuplicationBills(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'agent_id',
+                'type' => 'required',
+                'error_code' => 'agent_id_is_required'
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        list($params['page'], $params['count']) = Util::formatPageCount($params);
+        $params['only_read_self'] = self::getEmployeeDataPermission();
+        $data = AgentService::getAgentRecommendDuplicationBills($params);
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $data
+        ], StatusCode::HTTP_OK);
+    }
 
 }

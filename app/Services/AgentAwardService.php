@@ -285,7 +285,7 @@ class AgentAwardService
                 $insertBindData = $bindData;
                 unset($insertBindData['update_time']);
                 $bindId = AgentUserModel::insertRecord($insertBindData);
-            } elseif (($normalBindData['stage'] == AgentUserModel::STAGE_REGISTER)) {
+            } elseif (($normalBindData['stage'] == AgentUserModel::STAGE_REGISTER)||($normalBindData['stage'] == AgentUserModel::STAGE_TRIAL)) {
                 //修改绑定关系数据
                 $bindId = AgentUserModel::batchUpdateRecord($bindData, ['agent_id' => $bindData['agent_id'], 'user_id' => $bindData['user_id']]);
             }
