@@ -38,5 +38,7 @@ class DSSRouter extends RouterBase
         '/dss/user/logout' => ['method' => ['post'], 'call' => Dss::class . ':tokenLogout'],
         // 检测当前代理商分成模式是否可以进行社群分班
         '/dss/agent/distribution_class_condition' => ['method' => ['get'], 'call' => Dss::class . ':distributionClassCondition'],
+        // 海报管理接口
+        '/dss/poster/get_path_id' => ['method' => ['post'], 'call' => Dss::class . ':getPathId'],   // 不存在新增
     ];
 }

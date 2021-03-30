@@ -54,6 +54,7 @@ class PosterTemplateService
                 "poster_url",
                 "poster_name",
                 "example_url",
+                "op_poster_id"
             ]
         );
         if (empty($templateList)) {
@@ -73,11 +74,12 @@ class PosterTemplateService
             //标准海报渠道ID
             $channelId = DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'APP_CAPSULE_INVITE_CHANNEL');
 //        }
-        //转介绍码
-        $qrImagePath = DssUserQrTicketModel::getUserQrURL($studentId, DssUserQrTicketModel::STUDENT_TYPE, $channelId, DssUserQrTicketModel::LANDING_TYPE_MINIAPP, ['a' => $activityId]);
-        //获取海报/二维码宽高配置数据
+       //获取海报/二维码宽高配置数据
         $posterConfig = DictConstants::getSet(DictConstants::TEMPLATE_POSTER_CONFIG);
         foreach ($templateList as $k => $value) {
+            $qrExtentParams = ['a' => $activityId, 'user_current_status' => $studentDetail['student_status'], 'p' => $value['op_poster_id']];
+            //转介绍码
+            $qrImagePath = DssUserQrTicketModel::getUserQrURL($studentId, DssUserQrTicketModel::STUDENT_TYPE, $channelId, DssUserQrTicketModel::LANDING_TYPE_MINIAPP, $qrExtentParams);
             $row = self::formatPosterInfo($value);
             $row['poster_complete_example'] = ReferralActivityService::genEmployeePoster(
                 $row['poster_url'],

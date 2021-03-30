@@ -19,8 +19,18 @@ class DssStudentModel extends DssModel
     const REVIEW_COURSE_49 = 1; // 体验课课包
     const REVIEW_COURSE_1980 = 2; // 正式课课包
 
+    // 学生的状态
+    const STATUS_REGISTER = 0;//注册
+    const STATUS_BUY_TEST_COURSE = 1;//付费体验课
+    const STATUS_BUY_TEST_COURSE_EXPIRED = 6; // 体验已过期
+    const STATUS_BUY_NORMAL_COURSE = 2;//付费正式课
     const STATUS_UNBIND = 3;//未绑定微信
     const STATUS_BIND = 4;//已绑定微信
+    const STATUS_HAS_EXPIRED = 5;//已过期
+
+    // 订阅
+    const SUB_STATUS_ON = 1;
+    const SUB_STATUS_OFF = 0;
 
     /**
      * 推荐学员列表

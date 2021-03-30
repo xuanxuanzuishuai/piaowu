@@ -239,7 +239,8 @@ class MessageService
                 'target'    => $rule['target'],
                 'type'      => $rule['type'],
                 'content'   => $ruleFormat['content_detail'],
-                'setting'   => json_decode($rule['time'], true)
+                'setting'   => json_decode($rule['time'], true),
+                'name' => $rule['name'] ?? '',
             ];
         }
         if (!empty($data)) {
@@ -427,6 +428,10 @@ class MessageService
             list($baseChannelId, $yearBuyChannel) = DictConstants::getValues(DictConstants::STUDENT_INVITE_CHANNEL, ['NORMAL_STUDENT_INVITE_STUDENT', 'BUY_NORMAL_STUDENT_INVITE_STUDENT']);
             $channelId = $data['rule_id'] == DictConstants::get(DictConstants::MESSAGE_RULE, 'year_pay_rule_id') ? $yearBuyChannel : $baseChannelId;
             $config = DictConstants::getSet(DictConstants::TEMPLATE_POSTER_CONFIG);
+
+            // 埋点 - 海报id、用户身份
+            $userStatus  = StudentService::dssStudentStatusCheck($userInfo['user_id']); // 获取用户当前状态
+            $posterName = $item['name'] ?? ''; // message_push_rules表中name字段作为海报名称
             $posterImgFile = PosterService::generateQRPosterAliOss(
                 $item['path'],
                 $config,
@@ -434,7 +439,8 @@ class MessageService
                 DssUserWeiXinModel::USER_TYPE_STUDENT,
                 $channelId,
                 [
-                    'p' => PosterModel::getIdByPath($item['path'])
+                    'p' => PosterModel::getIdByPath($item['path'], ['name' => $posterName]),
+                    'user_current_status' => $userStatus['student_status']
                 ]
             );
         }

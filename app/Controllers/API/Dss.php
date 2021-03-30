@@ -18,6 +18,7 @@ use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\MessagePushRulesModel;
 use App\Models\PosterModel;
 use App\Models\WeChatAwardCashDealModel;
+use App\Services\PosterService;
 use App\Services\AgentService;
 use App\Services\ReferralActivityService;
 use App\Libs\Exceptions\RunTimeException;
@@ -357,5 +358,33 @@ class Dss extends ControllerBase
         }
         $condition = AgentService::distributionClassCondition($params['parent_bill_id'], $params['student_id']);
         return HttpHelper::buildResponse($response, (int)$condition);
+    }
+
+    /**
+     * 获取海报图片路径对应的id
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getPathId(Request $request, Response $response)
+    {
+        try {
+            $rules = [
+                [
+                    'key' => 'path',
+                    'type' => 'required',
+                    'error_code' => 'path_is_required'
+                ]
+            ];
+            $params = $request->getParams();
+            $result = Valid::appValidate($params, $rules);
+            if ($result['code'] != Valid::CODE_SUCCESS) {
+                return $response->withJson($result, StatusCode::HTTP_OK);
+            }
+            $posterId = PosterService::getIdByPath($params['path'], $params);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, ['poster_id' => $posterId]);
     }
 }

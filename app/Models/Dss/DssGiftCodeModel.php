@@ -33,6 +33,21 @@ class DssGiftCodeModel extends DssModel
     const PACKAGE_V1_NOT = 0;
 
     /**
+     * 激活码时间单位
+     * 1 天
+     * 2 月
+     * 3 年
+     */
+    const CODE_TIME_DAY = 1;
+    const CODE_TIME_MONTH = 2;
+    const CODE_TIME_YEAR = 3;
+    const CODE_TIME_UNITS = [
+        self::CODE_TIME_DAY => 'day',
+        self::CODE_TIME_MONTH => 'month',
+        self::CODE_TIME_YEAR => 'year',
+    ];
+
+    /**
      * 判断用户是否有购买过体验或正式课包
      * @param $studentID
      * @param int $type

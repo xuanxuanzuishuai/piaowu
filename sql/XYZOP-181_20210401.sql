@@ -1,0 +1,1 @@
+alter table poster add index idx_path (path);

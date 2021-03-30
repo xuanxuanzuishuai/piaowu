@@ -3,6 +3,7 @@
 namespace App\Libs;
 
 use App\Libs\Exceptions\RunTimeException;
+use App\Models\Dss\DssGiftCodeModel;
 use App\Services\DictService;
 
 /**
@@ -1040,5 +1041,23 @@ class Util
             return true;
         }
         return false;
+    }
+
+    /**
+     * 年月日 转换成秒
+     * @param $units
+     * @param $num
+     * @return float|int
+     */
+    public static function formatDurationSecond($units, $num)
+    {
+        if ($units == DssGiftCodeModel::CODE_TIME_YEAR) {
+            $duration = $num * 366;
+        } elseif ($units == DssGiftCodeModel::CODE_TIME_MONTH) {
+            $duration = $num * 31;
+        } else {
+            $duration = $num;
+        }
+        return $duration;
     }
 }

@@ -20,6 +20,7 @@ use App\Libs\Util;
 use App\Libs\AliOSS;
 use App\Libs\Exceptions\RunTimeException;
 use App\Models\ParamMapModel;
+use App\Models\PosterModel;
 use App\Models\QRCodeModel;
 
 class ReferralActivityService
@@ -46,7 +47,13 @@ class ReferralActivityService
      */
     public static function addEmployeeActivity($data)
     {
+        // 海报入poster表
+        $posterName = $data['name'] ?? '';
+        foreach ($data['poster'] as $p) {
+            PosterService::getIdByPath($p,['name' => $posterName]);
+        }
         $data = self::formatEmployeeActivityPost($data);
+
         return EmployeeActivityModel::insert($data);
     }
 
@@ -58,6 +65,11 @@ class ReferralActivityService
      */
     public static function modifyEmployeeActivity($data, $activityId)
     {
+        // 海报入poster表
+        $posterName = $data['name'] ?? '';
+        foreach ($data['poster'] as $p) {
+            PosterService::getIdByPath($p,['name' => $posterName]);
+        }
         $data = self::formatEmployeeActivityPost($data);
         return EmployeeActivityModel::modify($data, $activityId);
     }
@@ -321,27 +333,44 @@ class ReferralActivityService
         }
         $activity    = self::formatEmployeeActivity($activity);
         $landingType = self::getLandingType();
-        $userQrPath  = DssUserQrTicketModel::getUserQrURL(
-            $userId,
-            DssUserQrTicketModel::STUDENT_TYPE,
-            $channel,
-            $landingType,
-            [
-                'a' => EmployeeActivityModel::getEmployeeActivityRelateOpActivityId($activityId),
-                'e' => $employeeId,
-                'app_id' => $appId,
-            ]
-        );
-        if (empty($userQrPath)) {
-            SimpleLogger::error('empty user qr code path', [$userId, $channel, $activityId, $employeeId, $appId, $landingType]);
+
+        $posterConfig = PosterService::getPosterConfig();
+        // 检查用户当前状态
+        $userDetail = StudentService::studentStatusCheck($userId);
+        $posterUrlIdList = PosterModel::getRecords(['path' => $activity['poster_url'], ['id', 'path']]);
+        $posterFullPath = [];
+        foreach ($posterUrlIdList as $item) {
+            $user_current_status = $userDetail['student_status'] ?? 0;
+            $userQrPath  = DssUserQrTicketModel::getUserQrURL(
+                $userId,
+                DssUserQrTicketModel::STUDENT_TYPE,
+                $channel,
+                $landingType,
+                [
+                    'a' => EmployeeActivityModel::getEmployeeActivityRelateOpActivityId($activityId),
+                    'e' => $employeeId,
+                    'app_id' => $appId,
+                    'user_current_status' => $user_current_status,
+                    'p' => $item['id'],
+                ]
+            );
+            $extParams = ['p' => $item['id'], 'user_current_status' => $user_current_status];
+            $poster_save_full_path = PosterService::generateQRPosterAliOss(
+                $item['path'],
+                $posterConfig,
+                $userId,
+                $landingType,
+                $channel,
+                $extParams
+            );
+            $posterFullPath[] = $poster_save_full_path;
         }
-        $userQrUrl = AliOSS::signUrls($userQrPath);
+        $activity['poster_fullPath'] = $posterFullPath;
 
         return [
             'staff'         => DssEmployeeModel::getRecord(['id' => $employeeId], ['uuid']),
             'referral_info' => DssStudentModel::getRecord(['id' => $userId], ['uuid']),
             'activity'      => $activity,
-            'qr_url'        => $userQrUrl
         ];
     }
 

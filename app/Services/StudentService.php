@@ -17,12 +17,11 @@ use App\Libs\PhpMail;
 use App\Libs\SimpleLogger;
 use App\Libs\Spreadsheet;
 use App\Libs\Util;
-use App\Models\Dss\DssCategoryV1Model;
 use App\Models\Dss\DssErpPackageV1Model;
 use App\Models\Dss\DssGiftCodeModel;
-use App\Models\Dss\DssPackageExtModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
+use App\Models\Erp\ErpPackageV1Model;
 use App\Models\Erp\ErpStudentModel;
 use App\Models\StudentAccountAwardPointsFileModel;
 use App\Services\Queue\StudentAccountAwardPointsTopic;
@@ -31,15 +30,15 @@ use I18N\Lang;
 class StudentService
 {
     /**
-     * 学生当前状态
-     * @param $studentId
-     * @return array
+     * 获取学生当前状态
+     * @param int $studentId
+     * @return array $studentStatus
      * @throws RunTimeException
      */
     public static function dssStudentStatusCheck($studentId)
     {
         //获取学生信息
-        $studentInfo = DssStudentModel::getRecord(['id' => $studentId]);
+        $studentInfo = DssStudentModel::getById($studentId);
         $data = [];
         if (empty($studentInfo)) {
             throw new RunTimeException(['student_not_exist']);
@@ -56,10 +55,84 @@ class StudentService
             //未绑定
             $data['student_status'] = DssStudentModel::STATUS_UNBIND;
         } else {
-            $data['student_status'] = $studentInfo['has_review_course'];
+            switch ($studentInfo['has_review_course']) {
+                case DssStudentModel::REVIEW_COURSE_49:
+                    if ($studentInfo['sub_end_date'] < time()) {
+                        //付费体验课 - 体验期过期
+                        $data['student_status'] = DssStudentModel::STATUS_BUY_TEST_COURSE_EXPIRED;
+                    }else {
+                        //付费体验课 - 体验期
+                        $data['student_status'] = DssStudentModel::STATUS_BUY_TEST_COURSE;
+                    }
+                    break;
+                case DssStudentModel::REVIEW_COURSE_1980:
+                    //付费正式课
+                    //是否仍在有效期
+                    $appStatus = self::checkSubStatus($studentInfo['sub_status'], $studentInfo['sub_end_date']);
+                    if (empty($appStatus)) {
+                        // 付费正式课有效期已过期但名下有未激活的单个激活码有效期超过指定天数的认为是付费正式课用户
+                        if (self::checkNoActiveFormalClassStatus($studentInfo['id'])) {
+                            $data['student_status'] = DssStudentModel::STATUS_BUY_NORMAL_COURSE;
+                        }else{
+                            $data['student_status'] = DssStudentModel::STATUS_HAS_EXPIRED;
+                        }
+                    } else {
+                        $data['student_status'] = DssStudentModel::STATUS_BUY_NORMAL_COURSE;
+                    }
+                    break;
+                default:
+                    //注册
+                    $data['student_status'] = DssStudentModel::STATUS_REGISTER;
+                    break;
+            }
         }
         //返回数据
         return $data;
+    }
+
+    public static function checkSubStatus($subStatus, $subEndDate)
+    {
+        if ($subStatus != DssStudentModel::SUB_STATUS_ON) {
+            return false;
+        }
+
+        $endTime = strtotime($subEndDate) + 86400;
+        return $endTime > time();
+    }
+
+    /**
+     * 检查用户是否存在未激活的激活码并且单条激活码日期超过指定天数的激活码
+     * @param $studentId
+     * @return bool 存在返回true 不存在false
+     */
+    public static function checkNoActiveFormalClassStatus($studentId)
+    {
+        $isExistFormalClass = false;
+        // list($isCheck, $expireDay) = DictConstants::get(DssDictService::CHECK_NO_ACTIVE_CODE_EXPIRE_TIME, ['is_check_no_active_code_expire', 'no_active_code_expire_day']);
+        $isCheck = DssDictService::getKeyValue(DictConstants::DSS_CHECK_NO_ACTIVE_CODE_EXPIRE_TIME, 'is_check_no_active_code_expire');
+        $expireDay = DssDictService::getKeyValue(DictConstants::DSS_CHECK_NO_ACTIVE_CODE_EXPIRE_TIME, 'no_active_code_expire_day');
+        //未开启检测功能，直接返回false
+        if ($isCheck == 0) {
+            return $isExistFormalClass;
+        }
+        // 获取未激活的兑换码
+        $giftCodeList = DssGiftCodeModel::getRecords(['buyer' => $studentId, 'code_status' => DssGiftCodeModel::CODE_STATUS_NOT_REDEEMED]);
+        // 获取正式课ids
+        $noExpireCodeIdList = DssErpPackageV1Model::getNormalPackageIds();
+        // 检查是否过期
+        foreach ($giftCodeList as $codeInfo) {
+            // 非正式课
+            if (!in_array($codeInfo['bill_package_id'], $noExpireCodeIdList)) {
+                continue;
+            }
+            // 判断单个兑换码未激活的时间是否超过设定时间，单位天
+            $codeExpireDay = Util::formatDurationSecond($codeInfo['valid_units'], $codeInfo['valid_num']);
+            if ($codeExpireDay > $expireDay) {
+                $isExistFormalClass = true;
+                break;
+            }
+        }
+        return $isExistFormalClass;
     }
 
     /**

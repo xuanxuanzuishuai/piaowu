@@ -4,10 +4,12 @@ namespace App\Services;
 use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\DictConstants;
+use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\Dss\DssUserWeiXinModel;
+use App\Models\PosterModel;
 use App\Models\QRCodeModel;
 
 class PosterService
@@ -204,5 +206,16 @@ class PosterService
     public static function getPosterConfig($key = DictConstants::TEMPLATE_POSTER_CONFIG)
     {
         return DictConstants::getSet($key);
+    }
+
+    /**
+     * 获取海报路径对应的id ,如果不存在新增一条记录并返回对应的id
+     * @param $path
+     * @param $params
+     * @return int|mixed|string|null
+     */
+    public static function getIdByPath($path, $params)
+    {
+        return PosterModel::getIdByPath($path, $params);
     }
 }
