@@ -26,8 +26,7 @@ class CountryCodeModel extends Model
 
         $redis = RedisDB::getConn();
         $db = MysqlDB::getDB();
-        //中国排在第一位
-        $records = $db->queryAll("select * from {$table} where status = {$status} ORDER BY country_code <> 86,pinyin ASC");
+        $records = $db->queryAll("select * from {$table} where status = {$status} ORDER BY pinyin ASC");
         $cache = json_encode($records);
         $redis->setex(self::CACHE_KEY, self::CACHE_EXPIRE, $cache);
         return $records;
