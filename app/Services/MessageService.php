@@ -9,6 +9,7 @@ namespace App\Services;
 
 use App\Libs\Constants;
 use App\Libs\DictConstants;
+use App\Libs\NewSMS;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\WeChat\WeChatMiniPro;
@@ -996,5 +997,28 @@ class MessageService
             $openId,
             $appId
         );
+    }
+
+    /**
+     * 年卡召回页面按钮点击短信
+     * @param $data
+     * @return bool
+     */
+    public static function sendRecallPageSms($data)
+    {
+        $uuid    = $data['uuid'];
+        $mobile  = $data['mobile'];
+        $stage   = $data['stage'];
+        $action  = $data['action'];
+        $sMobile = $data['sMobile'];
+        $sign    = $data['sign'] ?? CommonServiceForApp::SIGN_STUDENT_APP;
+        $buyTime = date('Y-m-d H:i:s', $data['buyTime']);
+        $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
+        $success = $sms->sendWebPageClickNotify($sign, $mobile, $stage, $action, $sMobile, $buyTime);
+        if (!$success) {
+            SimpleLogger::error('SEND RECALL PAGE SMS FAILED', [$data]);
+            return false;
+        }
+        return true;
     }
 }

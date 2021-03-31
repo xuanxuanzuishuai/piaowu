@@ -29,6 +29,7 @@ class PushMessageTopic extends BaseTopic
     const EVENT_AFTER_CLASS_ONE    = 'after_class_one_day';// 结班后1天消息
     const EVENT_AIPL_PUSH = 'aipl_push'; // 智能陪练push
     const EVENT_MONTHLY_PUSH = 'monthly_push'; // 每月1号活动推送
+    const EVENT_WEB_PAGE_CLICK = 'web_page_click'; // 召回页面按钮点击事件
 
     public function __construct($publishTime = null)
     {
@@ -106,6 +107,19 @@ class PushMessageTopic extends BaseTopic
      * @return $this
      */
     public function checkinMessage($data, $eventType = self::EVENT_PUSH_CHECKIN_MESSAGE)
+    {
+        $this->setEventType($eventType);
+        $this->setMsgBody($data);
+        return $this;
+    }
+
+    /**
+     * 年卡召回页面消息（短信）
+     * @param $data
+     * @param string $eventType
+     * @return $this
+     */
+    public function webPageMessage($data, $eventType = self::EVENT_WEB_PAGE_CLICK)
     {
         $this->setEventType($eventType);
         $this->setMsgBody($data);

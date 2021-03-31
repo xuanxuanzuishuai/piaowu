@@ -38,6 +38,7 @@ class StudentWebRouter extends RouterBase
         '/student_web/student/address_list' => ['method' => ['get'], 'call' => Student::class . ':addressList'],
         '/student_web/student/modify_address' => ['method' => ['post'], 'call' => Student::class . ':modifyAddress'],
         '/student_web/student/unbind' => ['method' => ['post'], 'call' => Student::class . ':unbind'],
+        '/student_web/student/assistant' => ['method' => ['get'], 'call' => Student::class . ':getAssistant'],
 
         '/student_web/area/get_by_parent_code' => ['method' => ['get'], 'call' => Area::class . ':getByParentCode'],
         '/student_web/area/get_by_code' => ['method' => ['get'], 'call' => Area::class . ':getByCode'],
@@ -46,5 +47,6 @@ class StudentWebRouter extends RouterBase
         '/student_web/recall/token' => ['method' => ['get'], 'call' => Recall::class . ':getToken', 'middles' => []],
         '/student_web/recall/index' => ['method' => ['get'], 'call' => Recall::class . ':index', 'middles' => [RecallAuthCheckMiddleware::class]],
         '/student_web/config/country_code' => ['method' => ['get'], 'call' => Agent::class . ':countryCode', 'middles' => []],
+        '/student_web/event/web_page' => ['method' => ['post'], 'call' => Student::class . ':webPageEvent'],
     ];
 }

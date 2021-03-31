@@ -173,12 +173,12 @@ class RecallLandingService
             'sMobile' => $student['mobile'],
             'buyTime' => $payInfo['create_time'] ?? 0,
         ];
-        // QueueService::sendAssistantSms($data);
-        // QueueService::sendAssistantSmsBi([
-        //     'uuid' => $data['uuid'],
-        //     'activity_id' => strval($data['event_id']),
-        //     'content' => $smsConfig['content'] ?? ''
-        // ]);
+        QueueService::sendAssistantSms($data);
+        QueueService::sendAssistantSmsBi([
+            'uuid' => $data['uuid'],
+            'activity_id' => strval($data['event_id']),
+            'content' => $smsConfig['content'] ?? ''
+        ]);
         return true;
     }
 }

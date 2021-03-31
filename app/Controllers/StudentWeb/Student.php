@@ -11,9 +11,12 @@ namespace App\Controllers\StudentWeb;
 use App\Controllers\ControllerBase;
 use App\Libs\Constants;
 use App\Libs\Erp;
+use App\Libs\Exceptions\RunTimeException;
+use App\Libs\HttpHelper;
 use App\Libs\Valid;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
+use App\Services\RecallLandingService;
 use App\Services\WechatTokenService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -139,5 +142,46 @@ class Student extends ControllerBase
             'code' => Valid::CODE_SUCCESS,
             'data' => []
         ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getAssistant(Request $request, Response $response)
+    {
+        $student = $this->ci['user_info'];
+        $assistantInfo = [];
+        if (!empty($student['user_id'])) {
+            $assistantInfo = DssStudentModel::getAssistantInfo($student['user_id']);
+        }
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $assistantInfo
+        ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * 体验转年卡页面
+     * 按钮点击和进入页面助教短信
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * @throws \Exception
+     */
+    public function webPageEvent(Request $request, Response $response)
+    {
+        try {
+            $params = $request->getParams();
+            $student = $this->ci['user_info'];
+            $event = $params['event'] ?? null;
+            if (!is_null($event) && !empty($student['user_id'])) {
+                RecallLandingService::webEventMessage($event, $student['user_id'], $params);
+            }
+        } catch (RuntimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
+        return HttpHelper::buildResponse($response, []);
     }
 }

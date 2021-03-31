@@ -260,6 +260,10 @@ class Consumer extends ControllerBase
                 case PushMessageTopic::EVENT_PUSH_CHECKIN_MESSAGE:
                     MessageService::checkinMessage($params['msg_body']);
                     break;
+
+                case PushMessageTopic::EVENT_WEB_PAGE_CLICK:
+                    MessageService::sendRecallPageSms($params['msg_body']);
+                    break;
             }
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
