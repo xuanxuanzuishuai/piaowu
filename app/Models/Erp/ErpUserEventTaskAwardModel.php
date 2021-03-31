@@ -106,6 +106,7 @@ WHERE a.create_time >= {$time} AND a.status IN (" . self::STATUS_WAITING . "," .
             a.`status`,
             a.`create_time`,
             a.`delay`,
+            a.`user_id`,
             e.type
         FROM {$a} a force index(create_time)
         INNER JOIN {$ue} ue on a.uet_id = ue.id 
@@ -131,7 +132,7 @@ WHERE a.create_time >= {$time} AND a.status IN (" . self::STATUS_WAITING . "," .
             if ($award['create_time'] + $award['delay'] > time()) {
                 continue;
             }
-            $queueArr[] = ['id' => $award['id']];
+            $queueArr[] = ['id' => $award['id'], 'user_id' => $award['user_id']];
         }
         return $queueArr;
     }

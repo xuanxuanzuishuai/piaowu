@@ -51,11 +51,12 @@ class QueueService
     public static function sendDuration($data)
     {
         try {
-            $gap = 1;
+            $markList = [];
             foreach ($data as $award) {
-                $delay = $gap + rand(1, 10);
-                $gap += 3;
+                $times = $markList[$award['user_id']] ?? 0;
+                $delay = $times * 3;
                 (new DurationTopic())->sendDuration(['award_id' => $award['id']])->publish($delay);
+                $markList[$award['user_id']] = $times + 1;
             }
         } catch (Exception $e) {
             SimpleLogger::error($e->getMessage(), $msgBody ?? []);
