@@ -43,19 +43,6 @@ class Student extends ControllerBase
                 'key' => 'mobile',
                 'type' => 'required',
                 'error_code' => 'mobile_is_required'
-            ],
-            [
-                'key' => 'referee_type',
-                'type' => 'integer'
-            ],
-            [
-                'key' => 'referee_id',
-                'type' => 'integer'
-            ],
-            [
-                'key' => 'wx_code',
-                'type' => 'required',
-                'error_code' => 'wx_code_is_required'
             ]
         ];
 
