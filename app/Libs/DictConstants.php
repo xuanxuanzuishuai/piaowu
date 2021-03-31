@@ -500,6 +500,14 @@ class DictConstants {
             'result_url_v1',
         ]
     ];
+    const WEIXIN_ALIPAY_CONFIG = [
+        'type' => 'WEIXIN_ALIPAY_CONFIG',
+        'keys' => [
+            'success_url',
+            'cancel_url',
+            'result_url',
+        ]
+    ];
 
     const DSS_APP_CONFIG_STUDENT = [
         'type' => 'APP_CONFIG_STUDENT',

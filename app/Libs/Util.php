@@ -1029,4 +1029,16 @@ class Util
     {
         return preg_replace('/[\s\t\n]/', '', $s);
     }
+
+    /**
+     * 判断当前浏览器是否是微信内
+     * @return bool
+     */
+    public static function isWx()
+    {
+        if (strpos($_SERVER['HTTP_USER_AGENT'], 'MicroMessenger') !== false) {
+            return true;
+        }
+        return false;
+    }
 }

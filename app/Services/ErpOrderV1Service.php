@@ -120,14 +120,17 @@ class ErpOrderV1Service
         $successUrl = null;
         $resultUrl = null;
         $cancelUrl = null;
-
         list($successUrl, $cancelUrl, $resultUrl) = DictConstants::getValues(
             DictConstants::AGENT_WEB_STUDENT_CONFIG,
             ['success_url', 'cancel_url', 'result_url']
         );
 
-        if ($payChannel == PayServices::PAY_CHANNEL_V1_ALIPAY_PC) {
-            $cancelUrl = null;
+        if ($channel == ErpPackageV1Model::CHANNEL_WX
+        && $payChannel == PayServices::PAY_CHANNEL_V1_ALIPAY) {
+            list($successUrl, $cancelUrl, $resultUrl) = DictConstants::getValues(
+                DictConstants::WEIXIN_ALIPAY_CONFIG,
+                ['success_url', 'cancel_url', 'result_url']
+            );
         }
 
         return [

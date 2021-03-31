@@ -186,7 +186,7 @@ class Order extends ControllerBase
             $studentInfo['address_id'] = $params['address_id'] ?? 0;
             $studentInfo['package_sub_type'] = $packageInfo['sub_type'];
             $employeeUuid = !empty($params['employee_id']) ? RC4::decrypt($_ENV['COOKIE_SECURITY_KEY'], $params['employee_id']) : null;
-            $channel = $params['pay_channel'] ?? ErpPackageV1Model::CHANNEL_H5;
+            $channel = Util::isWx() ? ErpPackageV1Model::CHANNEL_WX : ErpPackageV1Model::CHANNEL_H5;
             $payChannel = PayServices::payChannelToV1($params['pay_channel']);
             if ($payChannel == PayServices::PAY_CHANNEL_V1_WEIXIN
             && empty($studentInfo['open_id'])) {
