@@ -23,10 +23,11 @@ class RecallLandingService
     /**
      * @param $packageId
      * @param $student
+     * @param array $params
      * @return array
      * @throws RunTimeException
      */
-    public static function getIndexData($packageId, $student)
+    public static function getIndexData($packageId, $student, $params = [])
     {
         if (empty($packageId)) {
             return [];
@@ -64,7 +65,7 @@ class RecallLandingService
         if (!empty($student['id'])) {
             $redis = RedisDB::getConn();
             $data['first_flag'] = $redis->get(self::LANDING_PAGE_USER_FIRST_KEY . '_' . $student['id']) ? false : true;
-            if ($data['first_flag']) {
+            if ((Util::isWx() && !empty($params['wx_code'])) || !Util::isWx()) {
                 $redis->setex(self::LANDING_PAGE_USER_FIRST_KEY . '_' . $student['id'], Util::TIMESTAMP_ONEDAY, time());
             }
         }
