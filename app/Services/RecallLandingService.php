@@ -35,7 +35,7 @@ class RecallLandingService
         $data['had_trial'] = false;
         $data['package'] = [];
         $data['recent_purchase'] = [];
-        $data['first_flag'] = true;
+        $data['first_flag'] = false;
         $data['pkg'] = PayServices::PACKAGE_990;
         $package = PackageService::getPackageV1Detail($packageId);
         //判断产品包是否绑定赠品组

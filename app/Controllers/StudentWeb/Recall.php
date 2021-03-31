@@ -96,6 +96,9 @@ class Recall extends ControllerBase
             if (!empty($studentId)) {
                 $student = DssStudentModel::getById($studentId);
             }
+            if (!empty($mobile) && empty($student)) {
+                $student = DssStudentModel::getRecord(['mobile' => $mobile]);
+            }
             $data = RecallLandingService::getIndexData($packageId, $student);
             $data['mobile'] = $params['mobile'] ?: $student['mobile'];
         } catch (RunTimeException $e) {

@@ -48,6 +48,7 @@ class Agent extends ControllerBase
     public function getConfig(Request $request, Response $response)
     {
         try {
+            $params = $request->getParams();
             $userInfo = $this->ci['user_info'];
             if (empty($userInfo['user_id'])) {
                 throw new RunTimeException(['agent_not_exist']);
@@ -292,27 +293,6 @@ class Agent extends ControllerBase
         });
         ksort($list);
         return HttpHelper::buildResponse($response, array_merge($hot, $list));
-    }
-
-    /**
-     * 推广商品列表
-     * @param Request $request
-     * @param Response $response
-     * @return Response
-     * @throws \App\Libs\KeyErrorRC4Exception
-     */
-    public function packageList(Request $request, Response $response)
-    {
-        try {
-            $userInfo = $this->ci['user_info'];
-            if (empty($userInfo['user_id'])) {
-                throw new RunTimeException(['agent_not_exist']);
-            }
-            $data = AgentService::getPackageList($userInfo['user_id']);
-        } catch (RunTimeException $e) {
-            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
-        }
-        return HttpHelper::buildResponse($response, $data);
     }
 
     /**

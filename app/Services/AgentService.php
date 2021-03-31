@@ -1018,7 +1018,7 @@ class AgentService
             ]
         );
         $agentInfo['sec_agents'] = AgentModel::getCount(['parent_id' => $agentId]);
-        $agentInfo['config']     = self::popularMaterialInfo();
+        $agentInfo['config']     = self::popularMaterialInfo($agentId);
         $agentInfo['parent']     = AgentModel::getRecord(['id' => $agentInfo['parent_id']]);
         $agentInfo['show_status'] = self::getAgentStatus($agentInfo);
         $agentInfo = self::formatFrontAgentData($agentInfo);
