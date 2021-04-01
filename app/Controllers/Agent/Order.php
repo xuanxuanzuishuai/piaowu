@@ -50,7 +50,7 @@ class Order extends ControllerBase
         }
         try {
             list($page, $limit) = Util::formatPageCount($params);
-            $bindOrderData = AgentService::getPopularizeOrderList($agentId, $params['type'], $page, $limit);
+            $bindOrderData = AgentService::getAgentOrderList($agentId, $params['type'], $page, $limit);
             //返回数据
             return HttpHelper::buildResponse($response, $bindOrderData);
         } catch (RunTimeException $e) {
