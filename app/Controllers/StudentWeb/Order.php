@@ -139,6 +139,7 @@ class Order extends ControllerBase
         try {
             $student = $this->ci['user_info'];
             $studentInfo = [];
+            $channel = null;
             if (!empty($student['user_id'])) {
                 $studentInfo = DssStudentModel::getById($student['user_id']);
                 if (empty($studentInfo)) {
@@ -158,17 +159,12 @@ class Order extends ControllerBase
             }
             // 检查购买人当前绑定的代理是否一致
             if (!empty($sceneData['user_id']) && $sceneData['type'] == ParamMapModel::TYPE_AGENT) {
-                // 获取用户当前绑定代理
-                $userAgentInfo = AgentService::getUserAgent($student['user_id']);
-                if (!empty($userAgentInfo) && $userAgentInfo['agent_id'] != $sceneData['user_id']) {
-                    SimpleLogger::error('different_agent_not_allowed', [$userAgentInfo, $sceneData]);
-                    throw new RunTimeException([['different_agent_not_allowed', null, null, [$userAgentInfo['name']]]]);
-                }
                 // 年卡不可购买体验包
                 if ($studentInfo['has_review_course'] == DssStudentModel::REVIEW_COURSE_1980 && $packageInfo['sub_type'] == DssCategoryV1Model::DURATION_TYPE_TRAIL) {
                     SimpleLogger::error('STUDENT_DOWN_STAGE_NOT_ALLOWED', [$studentInfo, $packageInfo]);
                     throw new RunTimeException(['student_down_stage_not_allowed']);
                 }
+                $channel = ErpPackageV1Model::CHANNEL_OP_AGENT;
             }
 
             // check 9折续费 产品包
@@ -186,7 +182,9 @@ class Order extends ControllerBase
             $studentInfo['address_id'] = $params['address_id'] ?? 0;
             $studentInfo['package_sub_type'] = $packageInfo['sub_type'];
             $employeeUuid = !empty($params['employee_id']) ? RC4::decrypt($_ENV['COOKIE_SECURITY_KEY'], $params['employee_id']) : null;
-            $channel = Util::isWx() ? ErpPackageV1Model::CHANNEL_WX : ErpPackageV1Model::CHANNEL_H5;
+            if (is_null($channel)) {
+                $channel = Util::isWx() ? ErpPackageV1Model::CHANNEL_WX : ErpPackageV1Model::CHANNEL_H5;
+            }
             $payChannel = PayServices::payChannelToV1($params['pay_channel']);
             if ($payChannel == PayServices::PAY_CHANNEL_V1_WEIXIN
             && empty($studentInfo['open_id'])) {
@@ -207,7 +205,7 @@ class Order extends ControllerBase
             $ret = ErpOrderV1Service::createOrder($params['package_id'], $studentInfo, $payChannel, $params['pay_type'], $employeeUuid, $channel, $params['gift_res']);
             if (!empty($sceneData['user_id']) && !empty($ret['order_id'])) {
                 // 保存agent_bill_map数据
-                // AgentBillMapModel::add($sceneData['r'], $ret['order_id'], $studentInfo['id']);
+                AgentBillMapModel::add($sceneData['r'], $ret['order_id'], $studentInfo['id']);
             }
         } catch (RuntimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
