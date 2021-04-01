@@ -14,10 +14,11 @@ class PhpMail
      * @param $to
      * @param string $subject
      * @param string $content
+     * @param string $attachment
+     * @param string $addCCEmails
      * @return bool
-     * @throws \PHPMailer\PHPMailer\Exception
      */
-    public static function sendEmail($to, $subject = '', $content = '', $attachment = '')
+    public static function sendEmail($to, $subject = '', $content = '', $attachment = '', $addCCEmails='')
     {
         $mail = new PHPMailer(true);    // Passing `true` enables exceptions
         try {
@@ -50,8 +51,17 @@ class PhpMail
             } else {
                 $mail->addAddress($to);
             }
+            //抄送
+            if (!empty($addCCEmails)) {
+                if (is_array($addCCEmails)) {
+                    foreach ($addCCEmails as $cv) {
+                        $mail->addCC($cv);
+                    }
+                } else {
+                    $mail->addCC($addCCEmails);
+                }
+            }
             // $mail->addReplyTo('xxxx@163.com', 'info'); //回复的时候回复给哪个邮箱 建议和发件人一致
-            //$mail->addCC('cc@example.com');                    //抄送
             //$mail->addBCC('bcc@example.com');                    //密送
 
             //发送附件
