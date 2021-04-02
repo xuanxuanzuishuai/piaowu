@@ -24,4 +24,7 @@ class AgentAwardBillExtModel extends Model
     //是否有推荐人:1有 2没有
     const IS_HAVE_STUDENT_REFERRAL_YES = 1;
     const IS_HAVE_STUDENT_REFERRAL_NO = 2;
+    //推广订单类型:1代理自身与下级代理推广订单综合 2代理自身直接推广订单
+    const AGENT_RECOMMEND_BILL_TYPE_SELF = 1;
+    const AGENT_RECOMMEND_BILL_TYPE_SELF_AND_SECOND = 2;
 }

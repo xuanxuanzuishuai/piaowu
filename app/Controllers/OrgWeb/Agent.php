@@ -482,6 +482,11 @@ class Agent extends ControllerBase
                 'type' => 'required',
                 'error_code' => 'agent_id_is_required'
             ],
+            [
+                'key' => 'recommend_bill_type',
+                'type' => 'required',
+                'error_code' => 'recommend_bill_type_is_required'
+            ],
         ];
         $params = $request->getParams();
         $result = Valid::appValidate($params, $rules);
@@ -489,7 +494,6 @@ class Agent extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         list($params['page'], $params['count']) = Util::formatPageCount($params);
-        $params['only_read_self'] = self::getEmployeeDataPermission();
         $data = AgentService::getAgentRecommendDuplicationBills($params);
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,

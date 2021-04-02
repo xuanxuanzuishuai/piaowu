@@ -105,7 +105,7 @@ class AgentAwardDetailModel extends Model
      */
     public static function getAgentRecommendDuplicationBill($agentIds, $onlyCount = true, $page = 1, $limit = 20)
     {
-        $data = ['total_count' => 0, 'list' => []];
+        $data = ['count' => 0, 'list' => []];
         $db = MysqlDB::getDB();
         $baseSql = 'SELECT
                  :sql_filed
@@ -130,13 +130,13 @@ class AgentAwardDetailModel extends Model
         if (empty($countData)) {
             return $data;
         }
-        $data['total_count'] = $countData[0]['total_count'];
+        $data['count'] = $countData[0]['total_count'];
         if ($onlyCount) {
             return $data;
         }
         $limitWhere = " limit " . ($page - 1) * $limit . ',' . $limit;
         $listSql = str_replace(":sql_filed",
-            'bex.id,bex.parent_bill_id,bex.student_id,bex.signer_agent_id,bex.create_time',
+            'bex.id,bex.parent_bill_id,bex.student_id,bex.signer_agent_id,bex.create_time,bex.own_agent_id',
             $baseSql . $limitWhere);
         $data['list'] = $db->queryAll($listSql);
         return $data;
