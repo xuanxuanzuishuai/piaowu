@@ -32,7 +32,10 @@ class AgentMiniAppTokenService
         $userKey = self::getUserTokenKey($user_id, $user_type, $app_id, $open_id);
         $hasExistToken = $redis->get($userKey);
         if (!empty($hasExistToken)) {
-            return $hasExistToken;
+            $token = self::getTokenInfo($hasExistToken);
+            if ($token['open_id'] == $open_id) {
+                return $hasExistToken;
+            }
         }
 
         $token = bin2hex(openssl_random_pseudo_bytes(16));

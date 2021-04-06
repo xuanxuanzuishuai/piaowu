@@ -1,0 +1,1 @@
+UPDATE `dict` SET `key_value` = '{"1":3095, "2":3096, "3":3097, "4":3096}' WHERE `key_code` = 'channel_dict' AND `type` = 'AGENT_CONFIG';
