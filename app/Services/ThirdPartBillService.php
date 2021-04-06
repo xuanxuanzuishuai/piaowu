@@ -70,7 +70,7 @@ class ThirdPartBillService
                 if (empty($v['trade_no'])) {
                     $invalidTradeNo[] = $v;
                 }
-                if (($v['dss_amount'] < 0) || ($v['dss_amount'] == '') || !is_numeric($v['dss_amount'])) {
+                if (($v['dss_amount'] < 0) || ($v['dss_amount'] == '') || !is_numeric($v['dss_amount']) || ($v['dss_amount'] > 5000)) {
                     $invalidDssAmount[] = $v;
                 }
                 if ($v['dss_amount'] == 0) {
@@ -90,7 +90,7 @@ class ThirdPartBillService
             throw new RunTimeException(['trade_no_can_not_be_empty', 'import'], ['list' => $invalidTradeNo]);
         }
         if (count($invalidDssAmount) > 0) {
-            throw new RunTimeException(['bill_dss_amount_lt_zero', 'import'], ['list' => $invalidDssAmount]);
+            throw new RunTimeException(['bill_dss_amount_error', 'import'], ['list' => $invalidDssAmount]);
         }
         // 检查数据是否为空
         if (count($data) == 0) {
