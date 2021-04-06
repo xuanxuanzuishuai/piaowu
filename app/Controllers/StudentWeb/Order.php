@@ -50,8 +50,6 @@ class Order extends ControllerBase
      * @param Request $request
      * @param Response $response
      * @return Response
-     * @throws KeyErrorRC4Exception
-     * @throws RunTimeException
      */
     public function getPackageDetail(Request $request, Response $response)
     {
@@ -87,6 +85,7 @@ class Order extends ControllerBase
             //判断产品包是否绑定赠品组
             $giftGroup = ErpOrderV1Service::haveBoundGiftGroup($params['package_id']);
             $package['has_gift_group'] = $giftGroup;
+            $package['gift_group'] =  ErpGiftGoodsV1Model::getOnlineGroupGifts($params['package_id'], true);
 
             // 现金账户余额
             $user['cash'] = ErpUserService::getStudentCash($studentInfo['uuid']);
@@ -270,14 +269,9 @@ class Order extends ControllerBase
         }
 
         //产品包包含的赠品组
-        $groupGifts = ErpGiftGoodsV1Model::getOnlineGroupGifts($params['package_id']);
-        $giftGroupGoods = [];
-        foreach ($groupGifts as $v) {
-            $v['thumb'] = AliOSS::replaceShopCdnDomain($v['thumb']);
-            $giftGroupGoods[$v['gift_group_id']][] = $v;
-        }
-        $giftGroupGoods = array_values($giftGroupGoods);
-        return HttpHelper::buildResponse($response, ['gift_group_goods' => $giftGroupGoods]);
+        $groupGifts = ErpGiftGoodsV1Model::getOnlineGroupGifts($params['package_id'], true);
+
+        return HttpHelper::buildResponse($response, ['gift_group_goods' => $groupGifts]);
     }
 
     /**
@@ -389,12 +383,16 @@ class Order extends ControllerBase
             }
             $qrCode = DictConstants::get(DictConstants::AGENT_CONFIG, 'ai_wx_official_account_qr_code');
             $qrCodeUrl = AliOSS::replaceCdnDomainForDss($qrCode);
-            $assistantInfo = DssStudentModel::getAssistantInfo($student['user_id']);
-            if (empty($assistantInfo['wx_qr'])) {
-                $studentInfo = DssStudentModel::getById($student['user_id']);
-                $collectionInfo = DssCollectionModel::getById($studentInfo['collection_id']);
-                if (!empty($collectionInfo['wechat_qr'])) {
-                    $assistantInfo['wx_qr'] = AliOSS::signUrls($collectionInfo['wechat_qr']);
+            if (!empty($params['type']) && $params['type'] == DssCategoryV1Model::DURATION_TYPE_NORMAL) {
+                $assistantInfo = DssStudentModel::getAssistantInfo($student['course_manage_id']);
+            } else {
+                $assistantInfo = DssStudentModel::getAssistantInfo($student['user_id']);
+                if (empty($assistantInfo['wx_qr'])) {
+                    $studentInfo = DssStudentModel::getById($student['user_id']);
+                    $collectionInfo = DssCollectionModel::getById($studentInfo['collection_id']);
+                    if (!empty($collectionInfo['wechat_qr'])) {
+                        $assistantInfo['wx_qr'] = AliOSS::signUrls($collectionInfo['wechat_qr']);
+                    }
                 }
             }
             if (!is_null($agent)) {

@@ -1,6 +1,8 @@
 <?php
 namespace App\Models\Erp;
 
+use App\Libs\AliOSS;
+
 class ErpGiftGoodsV1Model extends ErpModel
 {
     const STATUS_NORMAL = 1; //使用
@@ -11,9 +13,10 @@ class ErpGiftGoodsV1Model extends ErpModel
     /**
      * 产品包包含的赠品组
      * @param $package_id
+     * @param bool $format
      * @return array
      */
-    public static function getOnlineGroupGifts($package_id)
+    public static function getOnlineGroupGifts($package_id, $format = false)
     {
         $gift_group = ErpGiftGroupV1Model::getTableNameWithDb();
         $gift_goods = self::getTableNameWithDb();
@@ -42,6 +45,15 @@ class ErpGiftGoodsV1Model extends ErpModel
         ];
 
         $result = self::dbRO()->queryAll($sql, $map);
+
+        if ($format) {
+            $giftGroupGoods = [];
+            foreach ($result as $v) {
+                $v['thumb'] = AliOSS::replaceShopCdnDomain($v['thumb']);
+                $giftGroupGoods[$v['gift_group_id']][] = $v;
+            }
+            return array_values($giftGroupGoods);
+        }
         return $result ?? [];
     }
 }
