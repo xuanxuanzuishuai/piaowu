@@ -273,7 +273,7 @@ class AgentAwardService
         if (!empty($bindData)) {
             //检查用户是否存在与代理商的注册关系数据
             $bindId = true;
-            $normalBindData = AgentUserModel::getRecord(['agent_id' => $bindData['agent_id'], 'user_id' => $bindData['user_id']], ['id', 'stage', 'deadline']);
+            $normalBindData = AgentUserModel::getRecord(['agent_id' => $bindData['agent_id'], 'user_id' => $bindData['user_id'], "ORDER"=>["id"=>"DESC"]], ['id', 'stage', 'deadline']);
             if (empty($normalBindData) ||
                 (
                     ($normalBindData['stage'] == AgentUserModel::STAGE_FORMAL) ||
@@ -285,9 +285,12 @@ class AgentAwardService
                 $insertBindData = $bindData;
                 unset($insertBindData['update_time']);
                 $bindId = AgentUserModel::insertRecord($insertBindData);
-            } elseif (($normalBindData['stage'] == AgentUserModel::STAGE_REGISTER)||($normalBindData['stage'] == AgentUserModel::STAGE_TRIAL)) {
-                //修改绑定关系数据
-                $bindId = AgentUserModel::batchUpdateRecord($bindData, ['agent_id' => $bindData['agent_id'], 'user_id' => $bindData['user_id']]);
+            } elseif (($normalBindData['stage'] == AgentUserModel::STAGE_REGISTER)) {
+                //注册阶段修改绑定关系数据
+                $bindId = AgentUserModel::batchUpdateRecord($bindData, ['id' => $normalBindData['id']]);
+            } elseif ($normalBindData['stage'] == AgentUserModel::STAGE_TRIAL) {
+                //体验课阶段只修改进度为年卡阶段
+                $bindId = AgentUserModel::batchUpdateRecord(['stage' => $bindData['stage']], ['id' => $normalBindData['id']]);
             }
             if (empty($bindId)) {
                 SimpleLogger::error("agent user bind formal data record fail", [$bindData]);

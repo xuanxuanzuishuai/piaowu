@@ -140,7 +140,7 @@ class AgentDispatchService
         }
         //存在有效的绑定关系
         if (self::$validBindAgentId) {
-            self::$billOwnAgentId = self::$validBindAgentId;
+            self::$billOwnAgentId = self::$bindAgentId= self::$validBindAgentId;
         } else {
             self::$billOwnAgentId = self::$bindAgentId = self::$billMapAgentId;
         }

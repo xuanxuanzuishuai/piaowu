@@ -35,8 +35,6 @@ class AgentAwardDetailModel extends Model
     /**
      * 推广订单列表列表
      * @param $agentBillWhere
-     * @param $firstAgentWhere
-     * @param $secondAgentWhere
      * @param $giftCodeWhere
      * @param $agentWhere
      * @param $agentAwardBillExtWhere
@@ -44,47 +42,37 @@ class AgentAwardDetailModel extends Model
      * @param $limit
      * @return array
      */
-    public static function agentBillsList($agentBillWhere, $firstAgentWhere, $secondAgentWhere, $giftCodeWhere, $agentWhere, $agentAwardBillExtWhere, $page, $limit)
+    public static function agentBillsList($agentBillWhere, $giftCodeWhere, $agentWhere, $agentAwardBillExtWhere, $page, $limit)
     {
         //获取从库对象
         $db = self::dbRO();
         //获取库+表完整名称
         $opAgentAwardDetailTableName = self::getTableNameWithDb();
         $opAgentTableName = AgentModel::getTableNameWithDb();
-        $opAgentDivideRuleTableName = AgentDivideRulesModel::getTableNameWithDb();
         $opAgentAwardBillExtTableName = AgentAwardBillExtModel::getTableNameWithDb();
         $dssGiftCodeTableName = DssGiftCodeModel::getTableNameWithDb();
 
-        $baseSql = 'select query_field
-                 FROM (' .
-            'SELECT
-                                    IF
-                                        ( a.parent_id = 0, ab.agent_id, a.parent_id ) AS first_agent_id,
-                                        ab.agent_id AS second_agent_id,
-                                        ab.id,
-                                        ab.ext->>\'$.parent_bill_id\' as parent_bill_id,
-                                        ab.ext->>\'$.division_model\' as division_model,
-                                        ab.ext->>\'$.agent_type\' as agent_type,
-                                        ab.student_id,
-                                        ab.is_bind,
-                                        bex.signer_agent_id,
-                                        bex.student_referral_id
-                                FROM
-                                    ' . $opAgentAwardDetailTableName . ' as ab
-                                    INNER JOIN ' . $opAgentTableName . ' AS a ON ab.agent_id = a.id ' . $agentWhere . '
-                                    INNER JOIN ' . $opAgentAwardBillExtTableName . ' AS bex ON ab.ext_parent_bill_id = bex.parent_bill_id ' . $agentAwardBillExtWhere . '
-                                WHERE ' . $agentBillWhere . ' ) as tma 
-             INNER JOIN ' . $opAgentTableName . ' AS fa ON tma.first_agent_id=fa.id  ' . $firstAgentWhere .
-            ' INNER JOIN ' . $opAgentTableName . ' AS sa ON tma.second_agent_id=sa.id  ' . $secondAgentWhere .
-            ' LEFT JOIN ' . $opAgentDivideRuleTableName . ' AS dr ON fa.id = dr.agent_id AND dr.status = ' . AgentDivideRulesModel::STATUS_OK . ' 
-            INNER JOIN ' . $dssGiftCodeTableName . ' AS gc ON tma.parent_bill_id = gc.parent_bill_id ' . $giftCodeWhere . '
-            ORDER BY tma.id DESC';
-        $countSql = 'count(tma.id) as total_count';
-        $listSql = 'tma.*,
-                    fa.NAME AS `first_agent_name`,
-                    IF( tma.first_agent_id = tma.second_agent_id, NULL, sa.NAME ) AS `second_agent_name`,
-                    IF( tma.first_agent_id = tma.second_agent_id, NULL, tma.second_agent_id ) AS `second_agent_id_true`,
-                    dr.app_id ';
+        $baseSql = 'SELECT query_field                                    
+                    FROM
+                        ' . $opAgentAwardDetailTableName . ' as ab
+                        INNER JOIN ' . $opAgentTableName . ' AS a ON ab.agent_id = a.id ' . $agentWhere . '
+                        INNER JOIN ' . $opAgentAwardBillExtTableName . ' AS bex ON ab.ext_parent_bill_id = bex.parent_bill_id ' . $agentAwardBillExtWhere . '
+                        INNER JOIN ' . $dssGiftCodeTableName . ' AS gc ON ab.ext_parent_bill_id = gc.parent_bill_id ' . $giftCodeWhere . '
+                    WHERE ' . $agentBillWhere . ' 
+                    ORDER BY ab.id DESC';
+        $countSql = 'count(ab.id) as total_count';
+        $listSql = "IF
+                        ( a.parent_id = 0, ab.agent_id, a.parent_id ) AS first_agent_id,
+                    IF
+                        ( a.parent_id = 0, 0, ab.agent_id ) AS second_agent_id,
+                        ab.id,
+                        ab.ext->>'$.parent_bill_id' as parent_bill_id,
+                        ab.ext->>'$.division_model' as division_model,
+                        ab.ext->>'$.agent_type' as agent_type,
+                        ab.student_id,
+                        ab.is_bind,
+                        bex.signer_agent_id,
+                        bex.student_referral_id";
         $dataCount = $db->queryAll(str_replace("query_field", $countSql, $baseSql));
         if (empty($dataCount[0]['total_count'])) {
             return [0, []];
@@ -136,7 +124,7 @@ class AgentAwardDetailModel extends Model
         }
         $limitWhere = " limit " . ($page - 1) * $limit . ',' . $limit;
         $listSql = str_replace(":sql_filed",
-            'bex.id,bex.parent_bill_id,bex.student_id,bex.signer_agent_id,bex.create_time,bex.own_agent_id',
+            'bex.id,bex.parent_bill_id,bex.student_id,bex.signer_agent_id,bex.create_time,bex.own_agent_id,bex.student_referral_id',
             $baseSql . $limitWhere);
         $data['list'] = $db->queryAll($listSql);
         return $data;
