@@ -27,4 +27,9 @@ class DssCollectionModel extends DssModel
     //班级授课类型 1体验课2正式课3全部课程
     const TEACHING_TYPE_TRIAL  = 1;
     const TEACHING_TYPE_NORMAL = 2;
+
+    const TEACHING_STATUS_BEFORE            = 0; // 开班前
+    const TEACHING_STATUS_ONGOING           = 1; // 开班中
+    const TEACHING_STATUS_FINISHED          = 2; // 已结班
+    const TEACHING_STATUS_FINISHED_TWO_WEEK = 3; // 已结班超过2周
 }

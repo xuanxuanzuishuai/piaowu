@@ -31,11 +31,14 @@ use App\Services\Queue\DurationTopic;
 use App\Services\Queue\PushMessageTopic;
 use App\Services\Queue\StudentAccountAwardPointsTopic;
 use App\Services\Queue\ThirdPartBillTopic;
+use App\Services\Queue\WechatTopic;
 use App\Services\RefereeAwardService;
 use App\Services\StudentAccountAwardPointsLogService;
 use App\Services\StudentService;
 use App\Services\ThirdPartBillService;
 use App\Services\UserRefereeService;
+use App\Services\UserService;
+use App\Services\WechatService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -80,6 +83,7 @@ class Consumer extends ControllerBase
         }
         WeChatMiniPro::factory($params['msg_body']['app_id'], $params['msg_body']['busi_type'])->setAccessToken($params['msg_body']['access_token']);
     }
+
 
     /**
      * 转介绍相关
@@ -263,6 +267,10 @@ class Consumer extends ControllerBase
 
                 case PushMessageTopic::EVENT_WEB_PAGE_CLICK:
                     MessageService::sendRecallPageSms($params['msg_body']);
+                    break;
+
+                case PushMessageTopic::EVENT_RECORD_USER_ACTIVE:
+                    UserService::recordUserActiveConsumer($params['msg_body']);
                     break;
             }
         } catch (RunTimeException $e) {
@@ -548,6 +556,56 @@ class Consumer extends ControllerBase
             switch ($params['event_type']) {
                 case DurationTopic::EVENT_SEND_DURATION:
                     RefereeAwardService::sendDuration($params['msg_body']['award_id']);
+                    break;
+            }
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
+        return HttpHelper::buildResponse($response, []);
+    }
+
+    /**
+     * 微信相关消费者
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function wechatConsumer(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        $rules = [
+            [
+                'key' => 'topic_name',
+                'type' => 'required',
+                'error_code' => 'topic_name_is_required',
+            ],
+            [
+                'key' => 'source_app_id',
+                'type' => 'required',
+                'error_code' => 'source_app_id_is_required',
+            ],
+            [
+                'key' => 'event_type',
+                'type' => 'required',
+                'error_code' => 'event_type_is_required',
+            ],
+            [
+                'key' => 'msg_body',
+                'type' => 'required',
+                'error_code' => 'msg_body_is_required',
+            ],
+        ];
+
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        try {
+            switch ($params['event_type']) {
+                // 更新用户标签-消费者
+                case WechatTopic::EVENT_UPDATE_USER_TAG:
+                    WechatService::updateUserTag($params['msg_body']);
                     break;
             }
         } catch (RunTimeException $e) {

@@ -10,6 +10,7 @@ namespace App\Services;
 
 use App\Libs\Constants;
 use App\Libs\Dss;
+use App\Libs\RedisDB;
 use App\Libs\UserCenter;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
@@ -135,5 +136,32 @@ class UserService
                 'referee_id' => $refereeId
             ]);
         }
+    }
+
+    /**
+     * 记录用户7天内活跃
+     * @param $userId
+     * @return bool
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
+    public static function recordUserActiveConsumer($userId)
+    {
+        if (empty($userId)) {
+            return false;
+        }
+        $userWx = DssUserWeiXinModel::getByUserId($userId);
+        if (empty($userWx['open_id'])) {
+            return false;
+        }
+        $date = date('Ymd');
+        $redis = RedisDB::getConn();
+        $expire = WechatService::KEY_WECHAT_DAILY_ACTIVE_EXPIRE; // 8 days
+        $key = WechatService::KEY_WECHAT_DAILY_ACTIVE . $date;
+        $redis->hset($key, $userWx['open_id'], time());
+        $redis->expire($key, $expire);
+
+        // 登录
+        WechatService::updateUserTag($userWx['open_id'], true);
+        return true;
     }
 }

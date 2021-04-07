@@ -586,6 +586,16 @@ class DictConstants {
         'keys' => [0]
     ];
 
+    const WECHAT_CONFIG = [
+        'type' => 'WECHAT_CONFIG',
+        'keys' => [
+            'menu_redirect', // 菜单重定向配置
+            'user_type_tag_dict', // 用户对应菜单的标签
+            'tag_update_amount', // 请求更新标签数量
+            'all_menu_tag',
+        ],
+    ];
+
     /**
      * 单个获取op系统dict配置数据
      * @param $type

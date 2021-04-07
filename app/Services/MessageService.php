@@ -686,6 +686,8 @@ class MessageService
                 self::realSendMessage($data);
             }
         }
+        // 记录用户公众号"登录"行为
+        WechatService::wechatInteractionLog($openId);
     }
 
     /**

@@ -191,6 +191,8 @@ class UserRefereeService
             AgentService::agentAwardLogic($buyPreStudentInfo, $parentBillId, $packageInfo);
             //转介绍奖励
             self::dssBuyDeal($buyPreStudentInfo, $packageInfo);
+            // 更新用户微信标签
+            WechatService::updateUserTagByUserId($buyPreStudentInfo['id'], true);
         }
         return true;
     }

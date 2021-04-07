@@ -363,4 +363,24 @@ class QueueService
         return true;
     }
 
+    /**
+     * 更新用户标签
+     * @param $openIds
+     * @return bool
+     */
+    public static function dailyUpdateUserMenuTag($openIds)
+    {
+        try {
+            $topic = new WechatTopic();
+            foreach ($openIds as $openId) {
+                $topic->updateUserTag($openId)->publish(rand(1, 1800));
+            }
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), [$openIds]);
+            return false;
+        }
+        return true;
+    }
+
+
 }

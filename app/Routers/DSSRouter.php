@@ -42,5 +42,7 @@ class DSSRouter extends RouterBase
         '/dss/poster/get_path_id' => ['method' => ['post'], 'call' => Dss::class . ':getPathId'],   // 不存在新增
         //是不是线下代理
         '/dss/student/is_bind_offline' => ['method' => ['get'], 'call' => Dss::class . ':isBindOffline'],   // 不存在新增
+        '/dss/student/wx_menu_type' => ['method' => ['get'], 'call' => Dss::class . ':getUserMenuType'],
+        '/dss/student/update_tag' => ['method' => ['get'], 'call' => Dss::class . ':updateUserTag'],
     ];
 }

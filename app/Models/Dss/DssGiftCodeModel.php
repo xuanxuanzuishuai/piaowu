@@ -7,10 +7,7 @@
  */
 namespace App\Models\Dss;
 
-
 use App\Libs\Constants;
-use App\Libs\MysqlDB;
-use App\Libs\Util;
 use App\Models\StudentInviteModel;
 use App\Services\ReferralService;
 
@@ -202,11 +199,13 @@ class DssGiftCodeModel extends DssModel
     }
 
     /**
-     * 获取用户第一次购买正式课信息
+     * 获取用户 [首次|最后一次] 购买 [正式|体验] 信息
      * @param $userId
+     * @param int $type
+     * @param string $order
      * @return array|null
      */
-    public static function getUserFirstPayInfo($userId, $type = DssCategoryV1Model::DURATION_TYPE_NORMAL)
+    public static function getUserFirstPayInfo($userId, $type = DssCategoryV1Model::DURATION_TYPE_NORMAL, $order = '')
     {
         if (empty($userId)) {
             return [];
@@ -228,7 +227,7 @@ class DssGiftCodeModel extends DssModel
         WHERE 
             gc.buyer = :buyer
             AND c.sub_type = :type
-        ORDER BY gc.id 
+        ORDER BY gc.id $order
         LIMIT 1;
         ";
         $map = [

@@ -783,12 +783,6 @@ class WeChatMiniPro
         return $data;
     }
 
-    // // 用户批量打标签
-    // const API_TAGS_BATCH_TAG      = '/cgi-bin/tags/members/batchtagging';
-    // // 用户批量取消标签
-    // const API_TAGS_BATCH_UNTAG    = '/cgi-bin/tags/members/batchuntagging';
-    // // 获取用户身上的标签列表
-    // const API_TAGS_GETIDLIST      = '/cgi-bin/tags/getidlist';
     /**
      * 批量为用户打标签
      * @param $openId
@@ -821,7 +815,7 @@ class WeChatMiniPro
      * 批量为用户取消标签
      * @param $openId
      * @param $tagId
-     * @return false|mixed|string
+     * @return bool
      * @throws \App\Libs\Exceptions\RunTimeException
      */
     public function batchUnTagUsers($openId, $tagId)
@@ -833,16 +827,20 @@ class WeChatMiniPro
         if (!is_array($openId)) {
             $openId = [$openId];
         }
+        if (!is_array($tagId)) {
+            $tagId = [$tagId];
+        }
         $params = [
             'openid_list' => $openId,
-            'tagid' => $tagId
         ];
-        $data = $this->requestJson($api, $params, 'POST');
-        if (!empty($data['errcode'])) {
-            SimpleLogger::error(__FUNCTION__, [$data]);
-            return false;
+        foreach ($tagId as $id) {
+            $params['tagid'] = $id;
+            $data = $this->requestJson($api, $params, 'POST');
+            if (!empty($data['errcode'])) {
+                SimpleLogger::error(__FUNCTION__, [$data]);
+            }
         }
-        return $data;
+        return true;
     }
 
     /**
@@ -863,5 +861,14 @@ class WeChatMiniPro
             return false;
         }
         return $data;
+    }
+
+    public function delAllMenus()
+    {
+        $allMenu = $this->getAllMenu();
+        foreach ($allMenu['conditionalmenu'] as $subMenu) {
+            $this->delConditionalMenu($subMenu['menuid']);
+        }
+        return true;
     }
 }

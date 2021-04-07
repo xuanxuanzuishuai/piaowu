@@ -22,6 +22,8 @@ class Util
     const TIMESTAMP_ONEDAY = 86400;
     // 一周
     const TIMESTAMP_ONEWEEK = 604800;
+    // 两周
+    const TIMESTAMP_TWOWEEK = 1209600;
     // 30天
     const TIMESTAMP_THIRTY_DAYS = 2592000;
 

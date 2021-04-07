@@ -24,6 +24,8 @@ use App\Services\ReferralActivityService;
 use App\Libs\Exceptions\RunTimeException;
 use App\Services\ThirdPartBillService;
 use App\Services\UserRefereeService;
+use App\Services\UserService;
+use App\Services\WechatService;
 use App\Services\WechatTokenService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -327,7 +329,12 @@ class Dss extends ControllerBase
         }
         $userType = $params['user_type'] ?: DssUserWeiXinModel::USER_TYPE_STUDENT;
         $appId = DssUserWeiXinModel::dealAppId($params['app_id']);
-        WechatTokenService::delTokenByUserId($params['user_id'], $userType, $appId);
+        try {
+            WechatTokenService::delTokenByUserId($params['user_id'], $userType, $appId);
+            UserService::recordUserActiveConsumer($params['user_id']);
+        } catch (RunTimeException $e) {
+            SimpleLogger::error('token logout error', [$e->getAppErrorData()]);
+        }
         return HttpHelper::buildResponse($response, []);
     }
 
@@ -414,5 +421,61 @@ class Dss extends ControllerBase
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
         return HttpHelper::buildResponse($response, ['res' => $res]);
+    }
+
+    /**
+     * 获取用户个性化菜单类型
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getUserMenuType(Request $request, Response $response)
+    {
+        try {
+            $rules = [
+                [
+                    'key' => 'open_id',
+                    'type' => 'required',
+                    'error_code' => 'open_id_is_required'
+                ]
+            ];
+            $params = $request->getParams();
+            $result = Valid::appValidate($params, $rules);
+            if ($result['code'] != Valid::CODE_SUCCESS) {
+                return $response->withJson($result, StatusCode::HTTP_OK);
+            }
+            $res = WechatService::getUserTypeByOpenid($params['open_id']);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, ['type' => $res]);
+    }
+
+    /**
+     * 强制更新用户标签
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function updateUserTag(Request $request, Response $response)
+    {
+        try {
+            $rules = [
+                [
+                    'key' => 'open_id',
+                    'type' => 'required',
+                    'error_code' => 'open_id_is_required'
+                ]
+            ];
+            $params = $request->getParams();
+            $result = Valid::appValidate($params, $rules);
+            if ($result['code'] != Valid::CODE_SUCCESS) {
+                return $response->withJson($result, StatusCode::HTTP_OK);
+            }
+            $res = WechatService::updateUserTag($params['open_id'], true);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, ['type' => $res]);
     }
 }

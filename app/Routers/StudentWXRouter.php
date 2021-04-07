@@ -37,6 +37,7 @@ class StudentWXRouter extends RouterBase
         '/student_wx/sign/data' => ['method' => ['get'], 'call' => Activity::class . ':signInData'],
         '/student_wx/sign/copy_writing' => ['method' => ['get'], 'call' => Activity::class . ':signInCopyWriting'],
         '/student_wx/menu/test' => ['method' => ['get', 'post'], 'call' => Student::class . ':menuTest', 'middles' => []],
+        '/student_wx/menu/redirect' => ['method' => ['get', 'post'], 'call' => Student::class . ':menuRedirect', 'middles' => []],
 
     ];
 }

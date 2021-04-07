@@ -40,20 +40,23 @@ class DssUserWeiXinModel extends DssModel
         }
         return Constants::SMART_APP_ID;
     }
+
     /**
      * 根据openid查询
      * @param $openId
-     * @param int $appId
+     * @param null $appId
      * @param int $userType
      * @param int $busiType
+     * @param array $param
      * @return mixed
      */
-    public static function getByOpenId($openId, $appId = null, $userType = self::USER_TYPE_STUDENT, $busiType = self::BUSI_TYPE_STUDENT_SERVER)
+    public static function getByOpenId($openId, $appId = null, $userType = self::USER_TYPE_STUDENT, $busiType = self::BUSI_TYPE_STUDENT_SERVER, $param = [])
     {
         $appId = self::dealAppId($appId);
+        $status = $param['status'] ?? self::STATUS_NORMAL;
         $where = [
             'open_id'   => $openId,
-            'status'    => self::STATUS_NORMAL,
+            'status'    => $status,
             'app_id'    => $appId,
             'user_type' => $userType,
             'busi_type' => $busiType,
@@ -68,13 +71,15 @@ class DssUserWeiXinModel extends DssModel
      * @param int $appId
      * @param int $userType
      * @param int $busiType
+     * @param array $param
      * @return mixed
      */
-    public static function getByUserId($userId, $appId = Constants::SMART_APP_ID, $userType = self::USER_TYPE_STUDENT, $busiType = self::BUSI_TYPE_STUDENT_SERVER)
+    public static function getByUserId($userId, $appId = Constants::SMART_APP_ID, $userType = self::USER_TYPE_STUDENT, $busiType = self::BUSI_TYPE_STUDENT_SERVER, $param = [])
     {
+        $status = $param['status'] ?? self::STATUS_NORMAL;
         $where = [
             'user_id'   => $userId,
-            'status'    => self::STATUS_NORMAL,
+            'status'    => $status,
             'app_id'    => $appId,
             'user_type' => $userType,
             'busi_type' => $busiType,
@@ -89,13 +94,15 @@ class DssUserWeiXinModel extends DssModel
      * @param int $appId
      * @param int $userType
      * @param int $busiType
+     * @param array $param
      * @return array|null
      */
-    public static function getByUuid($uuid, $appId = Constants::SMART_APP_ID, $userType = self::USER_TYPE_STUDENT, $busiType = self::BUSI_TYPE_STUDENT_SERVER)
+    public static function getByUuid($uuid, $appId = Constants::SMART_APP_ID, $userType = self::USER_TYPE_STUDENT, $busiType = self::BUSI_TYPE_STUDENT_SERVER, $param = [])
     {
         if (empty($uuid)) {
             return [];
         }
+        $status = $param['status'] ?? self::STATUS_NORMAL;
         $db = self::dbRO();
         $sql = "
            SELECT
@@ -113,7 +120,7 @@ class DssUserWeiXinModel extends DssModel
             ':app_id'    => $appId,
             ':user_type' => $userType,
             ':busi_type' => $busiType,
-            ':status'    => self::STATUS_NORMAL
+            ':status'    => $status
         ];
         return $db->queryAll($sql, $map);
     }

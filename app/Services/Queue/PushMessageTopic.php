@@ -30,6 +30,8 @@ class PushMessageTopic extends BaseTopic
     const EVENT_AIPL_PUSH = 'aipl_push'; // 智能陪练push
     const EVENT_MONTHLY_PUSH = 'monthly_push'; // 每月1号活动推送
     const EVENT_WEB_PAGE_CLICK = 'web_page_click'; // 召回页面按钮点击事件
+    const EVENT_RECORD_USER_ACTIVE = 'record_user_active'; // 记录用户活跃
+
 
     public function __construct($publishTime = null)
     {
