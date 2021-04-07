@@ -276,8 +276,11 @@ class AgentAwardService
             $normalBindData = AgentUserModel::getRecord(['agent_id' => $bindData['agent_id'], 'user_id' => $bindData['user_id'], "ORDER"=>["id"=>"DESC"]], ['id', 'stage', 'deadline']);
             if (empty($normalBindData) ||
                 (
-                    ($normalBindData['stage'] == AgentUserModel::STAGE_FORMAL) ||
-                    ($normalBindData['stage'] == AgentUserModel::STAGE_TRIAL) &&
+                    (
+                        ($normalBindData['stage'] == AgentUserModel::STAGE_FORMAL) ||
+                        ($normalBindData['stage'] == AgentUserModel::STAGE_TRIAL)
+                    )
+                    &&
                     ($normalBindData['deadline'] < time())
                 )
             ) {

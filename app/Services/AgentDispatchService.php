@@ -145,7 +145,8 @@ class AgentDispatchService
             self::$billOwnAgentId = self::$bindAgentId = self::$billMapAgentId;
         }
         //检测是否需要执行绑定关系操作:1.存在学生推荐人,非首次购买 2.非代理商渠道购买,均不需要绑定关系操作
-        if ((!empty(self::$referralStudentId) && (self::$isFirstBuyOrder !== true)) || (self::$isAgentChannelBuy === false)) {
+        if ((!empty(self::$referralStudentId) && (self::$isFirstBuyOrder !== true) && empty(self::$validBindAgentId) && empty(self::$invalidBindAgentId)) ||
+            (self::$isAgentChannelBuy === false && empty(self::$validBindAgentId))) {
             //存在学生推荐人,非首次购买：不再绑定
             self::$bindAgentId = 0;
         }

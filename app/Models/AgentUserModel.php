@@ -57,28 +57,25 @@ class AgentUserModel extends Model
      * @param $limit
      * @return array
      */
-    public static function agentRecommendUserList($agentUserWhere, $firstAgentWhere, $secondAgentWhere, $agentWhere, $page, $limit)
+    public static function agentRecommendUserList($agentUserWhere, $agentWhere, $page, $limit)
     {
         $db = MysqlDB::getDB();
-        $baseSql = 'select query_field
-                 FROM (' .
-            'SELECT
-                                    if(a.parent_id=0,au.agent_id,a.parent_id) AS first_agent_id,
-                                    au.agent_id AS second_agent_id,
-                                    au.id,au.stage,au.user_id,au.bind_time,au.deadline
-                                FROM
-                                    ' . self::$table . ' as au
-                                    INNER JOIN ' . AgentModel::$table . ' AS a ON au.agent_id = a.id ' . $agentWhere . '
-                                WHERE ' . $agentUserWhere . '
-                                ) as tma 
-             INNER JOIN ' . AgentModel::$table . ' AS fa ON tma.first_agent_id=fa.id  ' . $firstAgentWhere .
-            ' INNER JOIN ' . AgentModel::$table . ' AS sa ON tma.second_agent_id=sa.id  ' . $secondAgentWhere .
-            ' LEFT JOIN ' . AgentDivideRulesModel::$table . ' AS dr ON fa.id = dr.agent_id AND dr.status = ' . AgentDivideRulesModel::STATUS_OK . ' ORDER BY tma.id DESC';
-        $countSql = 'count(tma.id) as total_count';
-        $listSql = 'tma.*,fa.type,fa.NAME AS "first_agent_name",
-        IF( tma.first_agent_id = tma.second_agent_id, null, sa.NAME ) AS "second_agent_name",
-        IF( tma.first_agent_id = tma.second_agent_id, null, tma.second_agent_id ) AS `second_agent_id_true`,
-        dr.app_id';
+        $baseSql = 'SELECT query_field
+                    FROM  ' . self::$table . ' as au
+                    INNER JOIN ' . AgentModel::$table . ' AS a ON au.agent_id = a.id ' . $agentWhere . '
+                    WHERE ' . $agentUserWhere .
+                    ' ORDER BY au.id DESC';
+        $countSql = 'count(au.id) as total_count';
+        $listSql = "IF
+                        ( a.parent_id = 0, au.agent_id, a.parent_id ) AS first_agent_id,
+                    IF
+                        ( a.parent_id = 0, 0, au.agent_id ) AS second_agent_id,
+                        au.id,
+                        au.agent_id,
+                        au.stage,
+                        au.user_id,
+                        au.bind_time,
+                        au.deadline ";
         $dataCount = $db->queryAll(str_replace("query_field", $countSql, $baseSql));
         if (empty($dataCount[0]['total_count'])) {
             return [0, []];

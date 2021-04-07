@@ -124,7 +124,7 @@ class AgentAwardDetailModel extends Model
         }
         $limitWhere = " limit " . ($page - 1) * $limit . ',' . $limit;
         $listSql = str_replace(":sql_filed",
-            'bex.id,bex.parent_bill_id,bex.student_id,bex.signer_agent_id,bex.create_time,bex.own_agent_id,bex.student_referral_id',
+            'ad.is_bind,bex.id,bex.parent_bill_id,bex.student_id,bex.signer_agent_id,bex.create_time,bex.own_agent_id,bex.student_referral_id',
             $baseSql . $limitWhere);
         $data['list'] = $db->queryAll($listSql);
         return $data;
