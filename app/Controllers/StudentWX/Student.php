@@ -243,4 +243,29 @@ class Student extends ControllerBase
         }
         return HttpHelper::buildResponse($response, $data);
     }
+
+    public function menuTest(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key'        => 'function',
+                'type'       => 'required',
+                'error_code' => 'function_is_required'
+            ]
+        ];
+
+        $params = $request->getParams();
+        if (!empty($params['redirect'])) {
+            return $response->withRedirect($params['redirect']);
+        }
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $wechat = WeChatMiniPro::factory(Constants::SMART_APP_ID, DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER);
+        if (method_exists($wechat, $params['function'])) {
+            $res = call_user_func_array([$wechat, $params['function']], $params['params'] ?? []);
+        }
+        return HttpHelper::buildResponse($response, $res);
+    }
 }

@@ -35,12 +35,29 @@ class WeChatMiniPro
     const API_SEND             = '/cgi-bin/message/custom/send';
     const API_USER_INFO        = '/cgi-bin/user/info';
     const API_GET_CURRENT_MENU = '/cgi-bin/get_current_selfmenu_info';
+    const API_GET_ALL_MENU     = '/cgi-bin/menu/get';
     const API_CREATE_MENU      = '/cgi-bin/menu/create';
     const API_CREATE_SCHEME    = '/wxa/generatescheme';
     const API_CODE_2_SESSION   = '/sns/jscode2session';
     const API_TOKEN            = '/cgi-bin/token';
     const API_BATCH_USER_INFO  = '/cgi-bin/user/info/batchget';
     const API_GET_TICKET       = '/cgi-bin/ticket/getticket';
+    // 个性化菜单：
+    const API_MENU_ADDCONDITIONAL = '/cgi-bin/menu/addconditional';
+    const API_MENU_DELCONDITIONAL = '/cgi-bin/menu/delconditional';
+    const API_MENU_TRYMATCH       = '/cgi-bin/menu/trymatch';
+    // 标签管理：
+    const API_TAGS_CREATE         = '/cgi-bin/tags/create';
+    const API_TAGS_GET            = '/cgi-bin/tags/get';
+    const API_TAGS_UPDATE         = '/cgi-bin/tags/update';
+    const API_TAGS_DELETE         = '/cgi-bin/tags/delete';
+    // 用户批量打标签
+    const API_TAGS_BATCH_TAG      = '/cgi-bin/tags/members/batchtagging';
+    // 用户批量取消标签
+    const API_TAGS_BATCH_UNTAG    = '/cgi-bin/tags/members/batchuntagging';
+    // 获取用户身上的标签列表
+    const API_TAGS_GETIDLIST      = '/cgi-bin/tags/getidlist';
+
 
     public $nowWxApp; //当前的微信应用
 
@@ -405,6 +422,17 @@ class WeChatMiniPro
     }
 
     /**
+     * 查询自定义菜单的结构
+     * @return false|mixed|string
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
+    public function getAllMenu()
+    {
+        $api = $this->apiUrl(self::API_GET_ALL_MENU);
+        return $this->requestJson($api);
+    }
+
+    /**
      * 创建菜单
      * @param $data
      * @return false|mixed|string
@@ -611,6 +639,228 @@ class WeChatMiniPro
         $data = $this->requestJson($api, $params);
         if (!empty($data['errcode'])) {
             SimpleLogger::error('REQUEST WECHAT ERROR', [$data, $params]);
+        }
+        return $data;
+    }
+
+    /**
+     * 添加个性化菜单
+     * @param $menu
+     * @return false|mixed|string
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
+    public function addConditionalMenu($menu)
+    {
+        if (empty($menu)) {
+            return false;
+        }
+        if (is_string($menu)) {
+            $menu = json_decode($menu, true);
+        }
+        $api = $this->apiUrl(self::API_MENU_ADDCONDITIONAL);
+        $data = $this->requestJson($api, $menu, 'POST');
+        if (!empty($data['errcode'])) {
+            SimpleLogger::error(__FUNCTION__, [$data]);
+            return false;
+        }
+        return $data;
+    }
+
+    /**
+     * 删除个性化菜单
+     * @param $menuId
+     * @return false|mixed|string
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
+    public function delConditionalMenu($menuId)
+    {
+        if (empty($menuId)) {
+            return false;
+        }
+        $api = $this->apiUrl(self::API_MENU_DELCONDITIONAL);
+        $data = $this->requestJson($api, ['menuid' => $menuId], 'POST');
+        if (!empty($data['errcode'])) {
+            SimpleLogger::error(__FUNCTION__, [$data]);
+            return false;
+        }
+        return $data;
+    }
+
+    /**
+     * 测试个性化菜单匹配结果
+     * @param $openId
+     * @return false|mixed|string
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
+    public function tryMatchMenu($openId)
+    {
+        if (empty($openId)) {
+            return false;
+        }
+        $api = $this->apiUrl(self::API_MENU_TRYMATCH);
+        $data = $this->requestJson($api, ['user_id' => $openId], 'POST');
+        if (!empty($data['errcode'])) {
+            SimpleLogger::error(__FUNCTION__, [$data]);
+            return false;
+        }
+        return $data;
+    }
+
+    /**
+     * 创建标签
+     * @param $name
+     * @return false|mixed|string
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
+    public function createTags($name)
+    {
+        if (empty($name)) {
+            return false;
+        }
+        $api = $this->apiUrl(self::API_TAGS_CREATE);
+        $data = $this->requestJson($api, ['tag' => ['name' => $name]], 'POST');
+        if (!empty($data['errcode'])) {
+            SimpleLogger::error(__FUNCTION__, [$data]);
+            return false;
+        }
+        return $data;
+    }
+
+    /**
+     * 编辑标签
+     * @param $id
+     * @param $name
+     * @return false|mixed|string
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
+    public function editTags($id, $name)
+    {
+        if (empty($id) || empty($name)) {
+            return false;
+        }
+        $api = $this->apiUrl(self::API_TAGS_UPDATE);
+        $data = $this->requestJson($api, ['tag' => ['id' => $id, 'name' => $name]], 'POST');
+        if (!empty($data['errcode'])) {
+            SimpleLogger::error(__FUNCTION__, [$data]);
+            return false;
+        }
+        return $data;
+    }
+
+    /**
+     * 删除标签
+     * @param $id
+     * @return false|mixed|string
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
+    public function deleteTags($id)
+    {
+        if (empty($id)) {
+            return false;
+        }
+        $api = $this->apiUrl(self::API_TAGS_DELETE);
+        $data = $this->requestJson($api, ['tag' => ['id' => $id]], 'POST');
+        if (!empty($data['errcode'])) {
+            SimpleLogger::error(__FUNCTION__, [$data]);
+            return false;
+        }
+        return $data;
+    }
+
+    /**
+     * 获取公众号已创建的标签
+     * @return false|mixed|string
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
+    public function getTags()
+    {
+        $api = $this->apiUrl(self::API_TAGS_GET);
+        $data = $this->requestJson($api);
+        if (!empty($data['errcode'])) {
+            SimpleLogger::error(__FUNCTION__, [$data]);
+            return false;
+        }
+        return $data;
+    }
+
+    // // 用户批量打标签
+    // const API_TAGS_BATCH_TAG      = '/cgi-bin/tags/members/batchtagging';
+    // // 用户批量取消标签
+    // const API_TAGS_BATCH_UNTAG    = '/cgi-bin/tags/members/batchuntagging';
+    // // 获取用户身上的标签列表
+    // const API_TAGS_GETIDLIST      = '/cgi-bin/tags/getidlist';
+    /**
+     * 批量为用户打标签
+     * @param $openId
+     * @param $tagId
+     * @return false|mixed|string
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
+    public function batchTagUsers($openId, $tagId)
+    {
+        if (empty($tagId) || empty($openId)) {
+            return false;
+        }
+        $api = $this->apiUrl(self::API_TAGS_BATCH_TAG);
+        if (!is_array($openId)) {
+            $openId = [$openId];
+        }
+        $params = [
+            'openid_list' => $openId,
+            'tagid' => $tagId
+        ];
+        $data = $this->requestJson($api, $params, 'POST');
+        if (!empty($data['errcode'])) {
+            SimpleLogger::error(__FUNCTION__, [$data]);
+            return false;
+        }
+        return $data;
+    }
+
+    /**
+     * 批量为用户取消标签
+     * @param $openId
+     * @param $tagId
+     * @return false|mixed|string
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
+    public function batchUnTagUsers($openId, $tagId)
+    {
+        if (empty($tagId) || empty($openId)) {
+            return false;
+        }
+        $api = $this->apiUrl(self::API_TAGS_BATCH_UNTAG);
+        if (!is_array($openId)) {
+            $openId = [$openId];
+        }
+        $params = [
+            'openid_list' => $openId,
+            'tagid' => $tagId
+        ];
+        $data = $this->requestJson($api, $params, 'POST');
+        if (!empty($data['errcode'])) {
+            SimpleLogger::error(__FUNCTION__, [$data]);
+            return false;
+        }
+        return $data;
+    }
+
+    /**
+     * 获取用户身上的标签列表
+     * @param $openId
+     * @return false|mixed|string
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
+    public function getUserTags($openId)
+    {
+        if (empty($openId)) {
+            return false;
+        }
+        $api = $this->apiUrl(self::API_TAGS_GETIDLIST);
+        $data = $this->requestJson($api, ['openid' => $openId], 'POST');
+        if (!empty($data['errcode'])) {
+            SimpleLogger::error(__FUNCTION__, [$data]);
+            return false;
         }
         return $data;
     }
