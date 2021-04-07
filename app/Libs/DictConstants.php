@@ -525,6 +525,9 @@ class DictConstants {
             'cancel_url',
             'result_url',
             'broadcast_config',
+            'success_url_v1',
+            'cancel_url_v1',
+            'result_url_v1',
         ]
     ];
 
