@@ -149,10 +149,12 @@ class DssUserWeiXinModel extends DssModel
 
     /**
      * @param $openid
+     * @param string $appId
+     * @param string $busi_type
      * @return array
      * 根据openId获取用户测评分享小程序绑定信息
      */
-    public static function getUserInfoBindWX($openid)
+    public static function getUserInfoBindWX($openid, $appId = UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT, $busi_type = DssUserWeiXinModel::BUSI_TYPE_SHOW_MINAPP)
     {
         return self::dbRO()->select(
             DssStudentModel::$table . ' (s) ',
@@ -168,8 +170,8 @@ class DssUserWeiXinModel extends DssModel
                 'uw.open_id'   => $openid,
                 'uw.user_type' => self::USER_TYPE_STUDENT,
                 'uw.status'    => self::STATUS_NORMAL,
-                'uw.busi_type' => self::BUSI_TYPE_SHOW_MINAPP,
-                'uw.app_id'    => UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT     // 测评分享小程序
+                'uw.busi_type' => $busi_type,
+                'uw.app_id'    => $appId     // 默认测评分享小程序
             ]
         );
     }

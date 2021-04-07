@@ -29,6 +29,7 @@ use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\WeChatConfigModel;
 use App\Services\Queue\QueueService;
+use App\Services\Queue\SaBpDataTopic;
 use Exception;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
@@ -367,6 +368,8 @@ class MessageService
      */
     private static function pushCustomMessage($messageRule, $data, $appId = null)
     {
+        $posterId = 0;
+        $user_current_status = DssStudentModel::STATUS_REGISTER;
         $appId = DssUserWeiXinModel::dealAppId($appId);
         //即时发送
         $res = MessageRecordLogModel::PUSH_SUCCESS;
@@ -403,8 +406,23 @@ class MessageService
                         $res = MessageRecordLogModel::PUSH_FAIL;
                     }
                 }
+                $posterId = PosterModel::getIdByPath($item['path']);
+                $user_current_status = $posterImgFile['user_current_status'];
             }
         }
+
+        // 海报埋点 - 全部推送成功
+        if ($res == MessageRecordLogModel::PUSH_SUCCESS && $posterId > 0) {
+            $openidUserInfo = DssUserWeiXinModel::getUserInfoBindWX($data['open_id'], $appId, PushMessageService::APPID_BUSI_TYPE_DICT[$appId]);
+            $queueData = [
+                'uuid' => $openidUserInfo['uuid'],
+                'poster_id' => $posterId,
+                'activity_name' => $messageRule['name'] ?? '',
+                'user_status' => $user_current_status,
+            ];
+            (new SaBpDataTopic())->posterPush($queueData)->publish();
+        }
+
         return $res;
     }
 
@@ -418,7 +436,7 @@ class MessageService
     {
         //走关注规则，无法获取转介绍二维码
         if ($data['rule_id'] == DictConstants::get(DictConstants::MESSAGE_RULE, 'subscribe_rule_id')) {
-            $posterImgFile = ['poster_save_full_path' => $item['value'], 'unique' => md5($data['open_id'].$item['value']) . '.jpg'];
+            $posterImgFile = ['poster_save_full_path' => $item['value'], 'unique' => md5($data['open_id'].$item['value']) . '.jpg', 'user_current_status' => DssStudentModel::STATUS_REGISTER];
         } else {
             //非关注拼接转介绍二维码
             $userInfo = DssUserWeiXinModel::getByOpenId($data['open_id']);
@@ -443,6 +461,7 @@ class MessageService
                     'user_current_status' => $userStatus['student_status']
                 ]
             );
+            $posterImgFile['user_current_status'] = $userStatus['student_status'];
         }
         return $posterImgFile;
     }

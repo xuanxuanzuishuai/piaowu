@@ -38,7 +38,7 @@ class StudentService
     public static function dssStudentStatusCheck($studentId)
     {
         //获取学生信息
-        $studentInfo = DssStudentModel::getById($studentId);
+        $studentInfo = DssStudentModel::getRecord(['id' => $studentId]);
         $data = [];
         if (empty($studentInfo)) {
             throw new RunTimeException(['student_not_exist']);
