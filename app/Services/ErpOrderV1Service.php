@@ -111,7 +111,7 @@ class ErpOrderV1Service
         ]);
         if (empty($result) || !empty($result['code'])) {
             SimpleLogger::error('CREATE BILL ERROR', [$result]);
-            throw new RunTimeException(['create_bill_error']);
+            throw new RunTimeException(['create_bill_error', '', '', [':'.$result['errors'][0]['err_msg']]]);
         }
         return $result['data'] ?? [];
     }

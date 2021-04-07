@@ -13,6 +13,7 @@ use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
+use App\Libs\Util;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
@@ -47,6 +48,10 @@ class Recall extends ControllerBase
             Constants::SMART_APP_ID => Constants::SMART_WX_SERVICE
         ];
         $busiType = $arr[$appId] ?? Constants::SMART_WX_SERVICE;
+
+        if (Util::isWx() && empty($params['wx_code'])) {
+            throw new RunTimeException(['need_wx_code']);
+        }
         if (!empty($params['wx_code'])) {
             $data = WeChatMiniPro::factory($appId, $busiType)->getWeixnUserOpenIDAndAccessTokenByCode($params['wx_code']);
             if (empty($data) || empty($data['openid'])) {

@@ -1012,7 +1012,7 @@ class MessageService
         $action  = $data['action'];
         $sMobile = $data['sMobile'];
         $sign    = $data['sign'] ?? CommonServiceForApp::SIGN_STUDENT_APP;
-        $buyTime = date('Y-m-d', $data['buyTime']);
+        $buyTime = !empty($data['buyTime']) ? date('Y-m-d', $data['buyTime']) : '暂未';
         $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
         $success = $sms->sendWebPageClickNotify($sign, $mobile, $stage, $action, $sMobile, $buyTime);
         if (!$success) {

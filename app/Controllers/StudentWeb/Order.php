@@ -178,7 +178,7 @@ class Order extends ControllerBase
             }
 
             $studentInfo['open_id'] = $this->ci['open_id'] ?? null;
-            $studentInfo['address_id'] = $params['address_id'] ?? 0;
+            $studentInfo['address_id'] = $params['address_id'] ?? true;
             $studentInfo['package_sub_type'] = $packageInfo['sub_type'];
             $employeeUuid = !empty($params['employee_id']) ? RC4::decrypt($_ENV['COOKIE_SECURITY_KEY'], $params['employee_id']) : null;
             if (is_null($channel)) {
