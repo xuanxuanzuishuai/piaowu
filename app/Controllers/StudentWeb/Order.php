@@ -396,6 +396,12 @@ class Order extends ControllerBase
                     $assistantInfo['wx_qr'] = AliOSS::signUrls($collectionInfo['wechat_qr']);
                 }
             }
+            if (!is_null($agent)) {
+                $defaultNickName = '';
+                $defaultThumb = AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::AGENT_CONFIG, 'default_thumb'));
+                $assistantInfo['wx_nick'] = $assistantInfo['wx_nick'] ?: $defaultNickName;
+                $assistantInfo['wx_thumb'] = $assistantInfo['wx_thumb'] ?: $defaultThumb;
+            }
             $data = array_merge([
                 'model' => $agent['division_model'] ?? 0,
                 'ai_qr_url' => $qrCodeUrl,
