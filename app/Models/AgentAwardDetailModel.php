@@ -54,11 +54,11 @@ class AgentAwardDetailModel extends Model
 
         $baseSql = 'SELECT query_field                                    
                     FROM
-                        ' . $opAgentAwardDetailTableName . ' as ab
+                        ' . $opAgentAwardBillExtTableName . ' as bex
+                        INNER JOIN ' . $opAgentAwardDetailTableName . ' AS ab ON ab.ext_parent_bill_id = bex.parent_bill_id ' . $agentBillWhere . '
                         INNER JOIN ' . $opAgentTableName . ' AS a ON ab.agent_id = a.id ' . $agentWhere . '
-                        INNER JOIN ' . $opAgentAwardBillExtTableName . ' AS bex ON ab.ext_parent_bill_id = bex.parent_bill_id ' . $agentAwardBillExtWhere . '
                         INNER JOIN ' . $dssGiftCodeTableName . ' AS gc ON ab.ext_parent_bill_id = gc.parent_bill_id ' . $giftCodeWhere . '
-                    WHERE ' . $agentBillWhere . ' 
+                    WHERE ' .  $agentAwardBillExtWhere. ' 
                     ORDER BY ab.id DESC';
         $countSql = 'count(ab.id) as total_count';
         $listSql = "IF
@@ -72,6 +72,7 @@ class AgentAwardDetailModel extends Model
                         ab.student_id,
                         ab.is_bind,
                         bex.signer_agent_id,
+                        bex.is_first_order,
                         bex.student_referral_id";
         $dataCount = $db->queryAll(str_replace("query_field", $countSql, $baseSql));
         if (empty($dataCount[0]['total_count'])) {

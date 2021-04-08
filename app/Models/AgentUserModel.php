@@ -50,8 +50,6 @@ class AgentUserModel extends Model
     /**
      * 获取推广学员列表
      * @param $agentUserWhere
-     * @param $firstAgentWhere
-     * @param $secondAgentWhere
      * @param $agentWhere
      * @param $page
      * @param $limit
