@@ -7,6 +7,7 @@ use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
 use App\Libs\WeChat\WeChatMiniPro;
+use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\PosterModel;
@@ -77,8 +78,16 @@ class PosterService
         ];
         $imgSizeStr = implode(",", $imgSize) . '/';
         $resImageUrl = AliOSS::signUrls($posterPath, "", "", "", true, $waterMarkStr, $imgSizeStr);
+        $user_current_status = $extParams['user_current_status'] ?? DssStudentModel::STATUS_REGISTER;
+
         //返回数据
-        return ['poster_save_full_path' => $resImageUrl, 'unique' => md5($userId . $posterPath . $userQrUrl) . ".jpg"];
+        return [
+            'poster_save_full_path' => $resImageUrl,
+            'unique' => md5($userId . $posterPath . $userQrUrl) . ".jpg",
+            'poster_id' => $extParams['p'] ?? 0,
+            'user_current_status' => $user_current_status,
+            'user_current_status_zh' => DssStudentModel::STUDENT_IDENTITY_ZH_MAP[$user_current_status] ?? '',
+        ];
     }
 
     /**

@@ -336,24 +336,11 @@ class ReferralActivityService
 
         $posterConfig = PosterService::getPosterConfig();
         // 检查用户当前状态
-        $userDetail = StudentService::studentStatusCheck($userId);
-        $posterUrlIdList = PosterModel::getRecords(['path' => $activity['poster_url'], ['id', 'path']]);
+        $userDetail = StudentService::dssStudentStatusCheck($userId);
+        $posterUrlIdList = PosterModel::getRecords(['path' => $activity['poster']], ['id', 'path']);
         $posterFullPath = [];
         foreach ($posterUrlIdList as $item) {
             $user_current_status = $userDetail['student_status'] ?? 0;
-            $userQrPath  = DssUserQrTicketModel::getUserQrURL(
-                $userId,
-                DssUserQrTicketModel::STUDENT_TYPE,
-                $channel,
-                $landingType,
-                [
-                    'a' => EmployeeActivityModel::getEmployeeActivityRelateOpActivityId($activityId),
-                    'e' => $employeeId,
-                    'app_id' => $appId,
-                    'user_current_status' => $user_current_status,
-                    'p' => $item['id'],
-                ]
-            );
             $extParams = ['p' => $item['id'], 'user_current_status' => $user_current_status];
             $poster_save_full_path = PosterService::generateQRPosterAliOss(
                 $item['path'],
@@ -367,9 +354,14 @@ class ReferralActivityService
         }
         $activity['poster_fullPath'] = $posterFullPath;
 
+        $referralInfo = DssStudentModel::getRecord(['id' => $userId], ['uuid']);
         return [
             'staff'         => DssEmployeeModel::getRecord(['id' => $employeeId], ['uuid']),
-            'referral_info' => DssStudentModel::getRecord(['id' => $userId], ['uuid']),
+            'referral_info' => [
+                'uuid' => $referralInfo['uuid'],
+                'student_status' => $userDetail['student_status'],
+                'student_status_zh' => DssStudentModel::STUDENT_IDENTITY_ZH_MAP[$userDetail['student_status']] ?? DssStudentModel::STATUS_REGISTER,
+            ],
             'activity'      => $activity,
         ];
     }

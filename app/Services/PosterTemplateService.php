@@ -36,6 +36,7 @@ class PosterTemplateService
             ],
         ];
         $data['student_status'] = $studentDetail['student_status'];
+        $data['student_status_zh'] = DssStudentModel::STUDENT_IDENTITY_ZH_MAP[$studentDetail['student_status']] ?? DssStudentModel::STATUS_REGISTER;
         //用户系统昵称/头像
         $data['student_info']['nickname'] = $studentDetail['student_info']['name'];
         $data['student_info']['headimgurl'] = StudentService::getStudentThumb($studentDetail['student_info']['thumb']);
@@ -94,7 +95,6 @@ class PosterTemplateService
             unset($row['example_url']);
             $data['template_list']['list'][] = $row;
         }
-
         //返回数据
         return $data;
     }
@@ -133,6 +133,9 @@ class PosterTemplateService
         }
         if (isset($row['order_num'])) {
             $formatData['order_num'] = $row['order_num'];
+        }
+        if (isset($row['op_poster_id'])) {
+            $formatData['op_poster_id'] = $row['op_poster_id'];
         }
         return $formatData;
     }

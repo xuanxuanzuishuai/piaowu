@@ -32,6 +32,16 @@ class DssStudentModel extends DssModel
     const SUB_STATUS_ON = 1;
     const SUB_STATUS_OFF = 0;
 
+    const STUDENT_IDENTITY_ZH_MAP = [
+        0 => '未付费', // 注册
+        1 => '体验期', // 付费体验课
+        2 => '年卡',  // 付费正式课
+        3 => '未绑定微信',
+        4 => '已绑定微信',
+        5 => '年卡过期',
+        6 => '体验期过期',
+    ];
+
     /**
      * 推荐学员列表
      * @param $params
