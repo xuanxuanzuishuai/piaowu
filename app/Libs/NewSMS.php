@@ -241,7 +241,7 @@ class NewSMS
      */
     public function sendWebPageClickNotify($sign, $mobile, $stage, $action, $sMobile, $buyTime)
     {
-        $msg = "有{$stage}学员待跟进，用户行为:{$action}, 请尽快联系学员 ! 学员电话:{$sMobile},于{$buyTime}购买体验卡";
+        $msg = "有{$stage}学员待跟进，用户行为:{$action}, 请尽快联系学员 ! 学员电话:{$sMobile},{$buyTime}购买体验卡";
         // phone_number 支持以逗号隔开的字符串
         $data = [
             'sign_name' => $sign,

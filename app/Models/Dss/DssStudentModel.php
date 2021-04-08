@@ -4,7 +4,6 @@ namespace App\Models\Dss;
 use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\Util;
-use App\Models\EmployeeActivityModel;
 use App\Models\Erp\ErpStudentModel;
 use App\Models\Erp\ErpUserEventTaskModel;
 use App\Models\OperationActivityModel;
@@ -253,17 +252,23 @@ class DssStudentModel extends DssModel
     }
 
     /**
-     * 获取学生助教信息
+     * 获取学生助教/课管信息
      * @param $studentId
+     * @param bool $assistant
      * @return array|mixed
      */
-    public static function getAssistantInfo($studentId)
+    public static function getAssistantInfo($studentId, $assistant = true)
     {
         if (empty($studentId)) {
             return [];
         }
         $s = self::$table;
         $e = DssEmployeeModel::$table;
+        if ($assistant) {
+            $join = " s.assistant_id = e.id";
+        } else {
+            $join = " s.course_manage_id = e.id";
+        }
         $sql = "
         SELECT 
             e.wx_qr,
@@ -271,7 +276,7 @@ class DssStudentModel extends DssModel
             e.wx_thumb,
             e.wx_nick
         FROM {$s} s
-        INNER JOIN {$e} e ON s.assistant_id = e.id
+        INNER JOIN {$e} e ON {$join}
         WHERE s.id = :id
         ";
         $data = self::dbRO()->queryAll($sql, [':id' => $studentId]);

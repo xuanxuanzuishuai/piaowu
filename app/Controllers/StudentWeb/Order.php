@@ -384,7 +384,7 @@ class Order extends ControllerBase
             $qrCode = DictConstants::get(DictConstants::AGENT_CONFIG, 'ai_wx_official_account_qr_code');
             $qrCodeUrl = AliOSS::replaceCdnDomainForDss($qrCode);
             if (!empty($params['type']) && $params['type'] == DssCategoryV1Model::DURATION_TYPE_NORMAL) {
-                $assistantInfo = DssStudentModel::getAssistantInfo($student['course_manage_id']);
+                $assistantInfo = DssStudentModel::getAssistantInfo($student['user_id'], false);
             } else {
                 $assistantInfo = DssStudentModel::getAssistantInfo($student['user_id']);
                 if (empty($assistantInfo['wx_qr'])) {

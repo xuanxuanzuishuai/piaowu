@@ -67,7 +67,10 @@ class WechatTokenService
      */
     public static function getUserTokenKeyByToken($token)
     {
-        $tokenInfo = json_decode(self::getTokenInfo($token), true);
+        $tokenInfo = self::getTokenInfo($token);
+        if (!is_array($tokenInfo)) {
+            $tokenInfo = json_decode($tokenInfo, true);
+        }
         return self::getUserTokenKey($tokenInfo['user_id'], $tokenInfo['user_type'], $tokenInfo['app_id'], $tokenInfo['open_id']);
     }
 

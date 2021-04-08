@@ -48,32 +48,35 @@ class Recall extends ControllerBase
             Constants::SMART_APP_ID => Constants::SMART_WX_SERVICE
         ];
         $busiType = $arr[$appId] ?? Constants::SMART_WX_SERVICE;
-
-        if (Util::isWx() && empty($params['wx_code'])) {
-            throw new RunTimeException(['need_wx_code']);
-        }
-        if (!empty($params['wx_code'])) {
-            $data = WeChatMiniPro::factory($appId, $busiType)->getWeixnUserOpenIDAndAccessTokenByCode($params['wx_code']);
-            if (empty($data) || empty($data['openid'])) {
-                throw new RunTimeException(['can_not_obtain_open_id']);
+        try {
+            if (Util::isWx() && empty($params['wx_code'])) {
+                throw new RunTimeException(['need_wx_code']);
             }
-            $openId = $data['openid'] ?? null;
-        }
+            if (!empty($params['wx_code'])) {
+                $data = WeChatMiniPro::factory($appId, $busiType)->getWeixnUserOpenIDAndAccessTokenByCode($params['wx_code']);
+                if (empty($data) || empty($data['openid'])) {
+                    throw new RunTimeException(['can_not_obtain_open_id']);
+                }
+                $openId = $data['openid'] ?? null;
+            }
 
-        $student = DssStudentModel::getRecord(['mobile' => $params['mobile']]);
-        if (empty($student)) {
-            $info = UserService::studentRegisterBound($appId, $params['mobile'], $channelId, $openId, $busiType, $userType, $params["referee_id"] ?? '');
-            $student['id'] = $info['student_id'];
-            $student['uuid'] = $info['uuid'];
-        }
+            $student = DssStudentModel::getRecord(['mobile' => $params['mobile']]);
+            if (empty($student)) {
+                $info = UserService::studentRegisterBound($appId, $params['mobile'], $channelId, $openId, $busiType, $userType, $params["referee_id"] ?? '');
+                $student['id'] = $info['student_id'];
+                $student['uuid'] = $info['uuid'];
+            }
 
-        if (!empty($student['id'])) {
-            $token = WechatTokenService::generateToken(
-                $student['id'],
-                $userType,
-                $appId,
-                $openId
-            );
+            if (!empty($student['id'])) {
+                $token = WechatTokenService::generateToken(
+                    $student['id'],
+                    $userType,
+                    $appId,
+                    $openId
+                );
+            }
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
         return HttpHelper::buildResponse(
             $response,

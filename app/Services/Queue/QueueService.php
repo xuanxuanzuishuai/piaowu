@@ -10,7 +10,6 @@ namespace App\Services\Queue;
 
 use App\Libs\DictConstants;
 use App\Libs\SimpleLogger;
-use App\Libs\Util;
 use App\Services\MessageService;
 use App\Services\PushMessageService;
 use Exception;
@@ -327,5 +326,41 @@ class QueueService
         }
         return true;
     }
-    
+
+    /**
+     * 给助教推送学员页面动态短信
+     * @param $data
+     * @param int $delay
+     * @return bool
+     */
+    public static function sendAssistantSms($data, $delay = 900)
+    {
+        try {
+            $topic = new PushMessageTopic();
+            $topic->webPageMessage($data)->publish($delay);
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), [$data]);
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 给助教发送短信埋点
+     * @param $data
+     * @param int $delay
+     * @return bool
+     */
+    public static function sendAssistantSmsBi($data, $delay = 0)
+    {
+        try {
+            $sensorTopic = new SaBpDataTopic();
+            $sensorTopic->sendAssistantSms($data)->publish($delay);
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), [$data]);
+            return false;
+        }
+        return true;
+    }
+
 }
