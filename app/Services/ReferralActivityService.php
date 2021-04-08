@@ -339,14 +339,21 @@ class ReferralActivityService
         $userDetail = StudentService::dssStudentStatusCheck($userId);
         $posterUrlIdList = PosterModel::getRecords(['path' => $activity['poster']], ['id', 'path']);
         $posterFullPath = [];
+
         foreach ($posterUrlIdList as $item) {
             $user_current_status = $userDetail['student_status'] ?? 0;
-            $extParams = ['p' => $item['id'], 'user_current_status' => $user_current_status];
+            $extParams = [
+                'p' => $item['id'],
+                'user_current_status' => $user_current_status,
+                'a' => EmployeeActivityModel::getEmployeeActivityRelateOpActivityId($activityId),
+                'e' => $employeeId,
+                'app_id' => $appId,
+            ];
             $poster_save_full_path = PosterService::generateQRPosterAliOss(
                 $item['path'],
                 $posterConfig,
                 $userId,
-                $landingType,
+                DssUserQrTicketModel::STUDENT_TYPE,
                 $channel,
                 $extParams
             );

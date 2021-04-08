@@ -416,7 +416,7 @@ class MessageService
             $openidUserInfo = DssUserWeiXinModel::getUserInfoBindWX($data['open_id'], $appId, PushMessageService::APPID_BUSI_TYPE_DICT[$appId]);
             $queueData = [
                 'uuid' => $openidUserInfo['uuid'],
-                'poster_id' => $posterId,
+                'poster_id' => intval($posterId),
                 'activity_name' => $messageRule['name'] ?? '',
                 'user_status' => $user_current_status,
             ];
