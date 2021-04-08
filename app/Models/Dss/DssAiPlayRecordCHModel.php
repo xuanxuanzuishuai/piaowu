@@ -154,7 +154,16 @@ class DssAiPlayRecordCHModel
            input_type,
            audio_url,
            student_id,
-           score_rank
+           score_rank,
+           score_final,
+           score_complete,
+           score_pitch,
+           score_rhythm,
+           score_speed,
+           score_speed_average,
+           score_rank,
+           lesson_id,
+           record_id
         FROM
            {table}
         WHERE
