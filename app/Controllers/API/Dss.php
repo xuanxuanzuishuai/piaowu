@@ -387,4 +387,32 @@ class Dss extends ControllerBase
         }
         return HttpHelper::buildResponse($response, ['poster_id' => $posterId]);
     }
+
+    /**
+     * 是否绑定了线下代理
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function isBindOffline(Request $request, Response $response)
+    {
+        try {
+            $rules = [
+                [
+                    'key' => 'student_id',
+                    'type' => 'required',
+                    'error_code' => 'student_id_is_required'
+                ]
+            ];
+            $params = $request->getParams();
+            $result = Valid::appValidate($params, $rules);
+            if ($result['code'] != Valid::CODE_SUCCESS) {
+                return $response->withJson($result, StatusCode::HTTP_OK);
+            }
+            $res = AgentService::isBindOffLine($params['student_id']);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, ['res' => $res]);
+    }
 }

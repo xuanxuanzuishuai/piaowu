@@ -40,5 +40,7 @@ class DSSRouter extends RouterBase
         '/dss/agent/distribution_class_condition' => ['method' => ['get'], 'call' => Dss::class . ':distributionClassCondition'],
         // 海报管理接口
         '/dss/poster/get_path_id' => ['method' => ['post'], 'call' => Dss::class . ':getPathId'],   // 不存在新增
+        //是不是线下代理
+        '/dss/student/is_bind_offline' => ['method' => ['get'], 'call' => Dss::class . ':isBindOffline'],   // 不存在新增
     ];
 }
