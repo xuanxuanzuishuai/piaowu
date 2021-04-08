@@ -103,15 +103,14 @@ class AgentAwardDetailModel extends Model
                 INNER JOIN agent_award_detail AS ad ON ad.ext_parent_bill_id = bex.parent_bill_id 
             WHERE
                 (
-                    bex.signer_agent_id IN (' . $agentIds . ') 
+                    (bex.signer_agent_id IN (' . $agentIds . ') and bex.signer_agent_status='.AgentModel::STATUS_OK.')
                     OR (
-                        bex.own_agent_id IN (' . $agentIds . ') 
+                        bex.own_agent_id IN (' . $agentIds . ') and bex.own_agent_status='.AgentModel::STATUS_OK.'
                         AND ( ( ad.ext ->> \'$.division_model\' = ' . AgentModel::DIVISION_MODEL_LEADS . '  AND bex.is_first_order = ' . AgentAwardBillExtModel::IS_FIRST_ORDER_YES . ' ) OR ( ad.ext ->> \'$.division_model\' = ' . AgentModel::DIVISION_MODEL_LEADS_AND_SALE . ' ) ) 
                         AND ad.action_type != ' . self::AWARD_ACTION_TYPE_REGISTER . '
                         AND ad.is_bind != (' . self::IS_BIND_STATUS_NO . ') 
                     ) 
                 ) 
-                AND ((bex.own_agent_status=' . AgentModel::STATUS_OK . ' AND bex.signer_agent_status=' . AgentModel::STATUS_OK . '))                
             ORDER BY
                 bex.id DESC';
         $countSql = str_replace(":sql_filed", 'count(*) as total_count', $baseSql);
@@ -125,7 +124,7 @@ class AgentAwardDetailModel extends Model
         }
         $limitWhere = " limit " . ($page - 1) * $limit . ',' . $limit;
         $listSql = str_replace(":sql_filed",
-            'ad.is_bind,bex.id,bex.parent_bill_id,bex.student_id,bex.signer_agent_id,bex.create_time,bex.own_agent_id,bex.student_referral_id',
+            'ad.is_bind,bex.is_first_order,bex.id,bex.parent_bill_id,bex.student_id,bex.signer_agent_id,bex.create_time,bex.own_agent_id,bex.student_referral_id',
             $baseSql . $limitWhere);
         $data['list'] = $db->queryAll($listSql);
         return $data;
