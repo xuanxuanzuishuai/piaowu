@@ -13,6 +13,7 @@ use App\Libs\AIPLCenter;
 use App\Libs\AliOSS;
 use App\Libs\OpernCenter;
 use App\Libs\Valid;
+use App\Models\Dss\DssAiPlayRecordCHModel;
 use App\Models\Dss\DssAiPlayRecordModel;
 use App\Models\Dss\DssStudentModel;
 use App\Libs\DictConstants;
@@ -30,7 +31,7 @@ class AIPlayRecordService
      */
     public static function getStudentAssessData($recordId)
     {
-        $report = DssAiPlayRecordModel::getRecord(['record_id' => $recordId]);
+        $report = DssAiPlayRecordCHModel::getRecordIdInfo($recordId);
         if (empty($report)) {
             $report = [];
         }

@@ -140,4 +140,29 @@ class DssAiPlayRecordCHModel
         $result = $chdb->queryAll($sql, ['table' => self::$table, 'id' => $student_id]);
         return $result;
     }
+
+    /**
+     * @param $recordId
+     * @return array|mixed
+     * 当前演奏详情数据
+     */
+    public static function getRecordIdInfo($recordId)
+    {
+        $chdb = CHDB::getDB();
+        $sql  = "
+        SELECT
+           input_type,
+           audio_url,
+           student_id,
+           score_rank
+        FROM
+           {table}
+        WHERE
+           record_id = {id}
+           AND audio_url != ''
+           order by score_final desc limit 1
+        ";
+        $result = $chdb->queryAll($sql, ['table' => self::$table, 'id' => $recordId]);
+        return empty($result) ? [] : $result[0];
+    }
 }
