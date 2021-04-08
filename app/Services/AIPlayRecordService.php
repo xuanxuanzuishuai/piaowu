@@ -81,10 +81,6 @@ class AIPlayRecordService
         if (empty($aiRecordId)) {
             return [];
         }
-        $playInfo = DssAiPlayRecordModel::getRecord(["student_id" => $studentId, "record_id" => $aiRecordId]);
-        if (empty($playInfo)) {
-            return [];
-        }
         $data = AIPLCenter::userAudio($aiRecordId);
         return $data['data']['audio_url'] ?? '';
     }

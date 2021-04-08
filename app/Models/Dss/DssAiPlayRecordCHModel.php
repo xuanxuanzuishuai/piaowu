@@ -168,7 +168,6 @@ class DssAiPlayRecordCHModel
            {table}
         WHERE
            record_id = {id}
-           AND audio_url != ''
            order by score_final desc limit 1
         ";
         $result = $chdb->queryAll($sql, ['table' => self::$table, 'id' => $recordId]);
