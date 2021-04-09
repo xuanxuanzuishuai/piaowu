@@ -31,6 +31,7 @@ class RouterFactory
     const CLIENT_DSS = 'dss';
     const CLIENT_AGENT_MINI = 'agent';
     const CLIENT_SHOW_MINI = 'show_miniapp';
+    const CLIENT_ERP_API = 'erp';
 
     /**
      * client_type 对应的 Router class
@@ -44,6 +45,7 @@ class RouterFactory
         self::CLIENT_AGENT_MINI => AgentMiniAppRouter::class, // 代理小程序
         self::CLIENT_SHOW_MINI => ShowMiniAppRouter::class, // 测评分享小程序
         self::CLIENT_STUDENT_WEB => StudentWebRouter::class, // WEB端
+        self::CLIENT_ERP_API => ErpRouter::class, // ERP
     ];
 
     /**
