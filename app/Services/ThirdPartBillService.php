@@ -106,6 +106,12 @@ class ThirdPartBillService
         if (!empty($records)) {
             throw new RunTimeException(['has_trialed_records', 'import'], ['list' => $records]);
         }
+        //检查用户是否已是年卡用户
+        $mobiles = DssStudentModel::getRecords(['mobile' => array_column($data, 'mobile'),'has_review_course'=> DssStudentModel::REVIEW_COURSE_1980], ['mobile']);
+        if (!empty($mobiles)) {
+            throw new RunTimeException(['has_vip_student', 'import'], ['list' => $mobiles]);
+        }
+
         $params['third_identity_type'] = $params['third_identity_id'] = 0;
         //检测渠道是否为合作代理&检测代理商数据
         if (!empty($params['agent_id'])) {

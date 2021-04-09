@@ -26,6 +26,9 @@ class ChannelService
         if (!empty($params['app_id'])) {
             $where['app_id'] = (int)$params['app_id'];
         }
+        if (!empty($params['name'])) {
+            $where['name[~]'] = $params['name'];
+        }
         $where['parent_id'] = (int)$params['parent_channel_id'];
         return DssChannelModel::getRecords($where, ['id', 'name', 'app_id']);
     }
