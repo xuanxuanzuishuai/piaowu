@@ -415,10 +415,10 @@ class MessageService
         if ($res == MessageRecordLogModel::PUSH_SUCCESS && $posterId > 0) {
             $openidUserInfo = DssUserWeiXinModel::getUserInfoBindWX($data['open_id'], $appId, PushMessageService::APPID_BUSI_TYPE_DICT[$appId]);
             $queueData = [
-                'uuid' => $openidUserInfo['uuid'],
+                'uuid' => $openidUserInfo[0]['uuid'],
                 'poster_id' => intval($posterId),
                 'activity_name' => $messageRule['name'] ?? '',
-                'user_status' => $user_current_status,
+                'user_status' => DssStudentModel::STUDENT_IDENTITY_ZH_MAP[$user_current_status],
             ];
             (new SaBpDataTopic())->posterPush($queueData)->publish();
         }
