@@ -64,7 +64,6 @@ class AgentAwardExtService
             'signer_agent_status' => AgentModel::STATUS_OK,//如果没有成单人，默认为正常
         ];
         //检测当前订单是否为学生和代理商绑定关系后，首次购买年卡
-//        if (($agentAwardExtData['package_type'] == DssPackageExtModel::PACKAGE_TYPE_NORMAL) && (!empty($agentBindData))) {
         if (($agentAwardExtData['package_type'] == DssPackageExtModel::PACKAGE_TYPE_NORMAL)) {
             $normalOrder = AgentAwardDetailModel::getAgentStudentBillCountByPackageType($agentAwardData['agent_id'], $agentAwardData['student_id'], DssPackageExtModel::PACKAGE_TYPE_NORMAL);
             if ((int)$normalOrder[0]['data_count'] > 1) {

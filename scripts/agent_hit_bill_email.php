@@ -61,8 +61,7 @@ $excelTitle = [
  * 撞单数据:每周一早上11点发送邮件，统计上周的数据及总数据
  */
 SimpleLogger::info('agent hit bill start', []);
-list($startTime, $endTime) = Util::getDateWeekStartEndTime(strtotime("-2 days"));
-
+list($startTime, $endTime) = Util::getDateWeekStartEndTime(strtotime("-1 week"));
 //历史撞单总数
 $historyHitCount = AgentAwardBillExtModel::getCount(['is_hit_order' => AgentAwardBillExtModel::IS_HIT_ORDER_YES]);
 if (!empty($historyHitCount)) {
@@ -97,7 +96,7 @@ if (!empty($historyHitCount)) {
     $lastWeekHitCount = AgentAwardBillExtModel::getCount(
         [
             "create_time[<>]" => [$startTime, $endTime],
-            'is_first_order' => AgentAwardBillExtModel::IS_FIRST_ORDER_YES,
+            'is_hit_order' => AgentAwardBillExtModel::IS_HIT_ORDER_YES,
         ]);
     //上周转介绍与代理撞单订单数
     $lastWeekReferralAndAgentHitCount = AgentAwardBillExtModel::getCount(
@@ -133,7 +132,7 @@ if (!empty($historyHitCount)) {
     $pageGetCount = 500;
     $params = [
         'only_read_self' => false,
-        'is_hit_order' => AgentAwardBillExtModel::IS_FIRST_ORDER_YES,
+        'is_hit_order' => AgentAwardBillExtModel::IS_HIT_ORDER_YES,
         'page' => 1,
         'count' => $pageGetCount,
     ];
@@ -189,7 +188,7 @@ $fontSize = '6';
 $fontColor = '#dc143c';
 $content = "代理系统撞单统计如下:<br>
             上周撞单总数统计:撞单总数<font color='" . $fontColor . "' size='" . $fontSize . "'>" . $lastWeekHitCount . "</font>,转介绍与代理撞单订单数<font color='" . $fontColor . "' size='" . $fontSize . "'>" . $lastWeekReferralAndAgentHitCount . "</font>,代理与代理撞单的订单数<font color='" . $fontColor . "' size='" . $fontSize . "''>" . $lastWeekAgentAndAgentHitCount . "</font>。<br>
-            历史撞单总数统计:撞单总数<font color='" . $fontColor . "' size='" . $fontSize . "'>" . $historyHitCount . "</font>,转介绍与代理撞单订单数<font color='" . $fontColor . "' size='" . $fontSize . "'>" . $historyReferralAndAgentHitCount . "</font>,代理与代理撞单的订单数<font color='" . $fontColor . "' size='" . $fontSize . "'>" . $historyAgentAndAgentHitCount . "</font>。<br>
+            历史撞单总数统计:撞单总数<font color='" . $fontColor . "' size='" . $fontSize . "'>" . $historyHitCount . "</font>,转介绍与代理撞单订单数<font color='" . $fontColor . "' size='" . $fontSize . "'>" . $historyReferralAndAgentHitCount . "</font>,代理与代理撞单的订单数<font color='" . $fontColor . "' size='" . $fontSize . "'>" . $historyAgentAndAgentHitCount . "</font>。<br><br>
             <font color='" . $fontColor . "'>注：用户同时存在学生转介绍关系、绑定中的代理关系、又通过其他代理购买，该订单属于三方撞单（此订单在转介绍与代理撞单、代理与代理撞单中均会存在）。</font>";
 //发送邮件
 PhpMail::sendEmail(array_shift($emailsConfig)['value'], $title, $content, $tmpFileSavePath, array_column($emailsConfig, 'value'));
