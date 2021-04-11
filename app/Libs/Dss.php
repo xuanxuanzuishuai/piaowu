@@ -18,6 +18,7 @@ class Dss
     const GET_TOKEN = '/op/user/get_token'; //获取token
     const GET_TOKEN_UUID_INFO = '/api/operation/get_uuid';//获取token对应的uuid信息
     const CREATE_BILL = '/op/user/create_bill';//小程序创建订单
+    const GET_TRAIL_INFO = '/op/user/get_trail_log';//得到用户的购买体验课信息
 
     private $host;
 
@@ -116,6 +117,20 @@ class Dss
         $res = self::commonAPI(self::CREATE_BILL, $data);
         if ($res['code'] != Valid::CODE_SUCCESS) {
             SimpleLogger::error('create bill error', [$res, $data]);
+        }
+        return !empty($res['data']) ? $res['data'] : NULL;
+    }
+
+    /**
+     * 得到用户的体验课信息
+     * @param $studentId
+     * @return mixed|null
+     */
+    public function getTrailInfo($studentId)
+    {
+        $res = self::commonAPI(self::GET_TRAIL_INFO, ['student_id' => $studentId]);
+        if ($res['code'] != Valid::CODE_SUCCESS) {
+            SimpleLogger::error('create bill error', [$res, $studentId]);
         }
         return !empty($res['data']) ? $res['data'] : NULL;
     }
