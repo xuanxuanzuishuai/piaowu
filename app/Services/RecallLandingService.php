@@ -15,10 +15,6 @@ use App\Libs\RedisDB;
 use App\Libs\Util;
 use App\Models\Dss\DssCategoryV1Model;
 use App\Models\Dss\DssGiftCodeModel;
-use App\Models\Dss\DssStudentModel;
-use App\Models\ParamMapModel;
-use App\Services\Queue\PushMessageTopic;
-use App\Services\Queue\SaBpDataTopic;
 
 class RecallLandingService
 {
@@ -42,8 +38,6 @@ class RecallLandingService
         $data['recent_purchase'] = [];
         $data['first_flag'] = false;
         $data['pkg'] = PayServices::PACKAGE_990;
-        $data['deadline'] = false;
-        $isAgent = false;
         $package = PackageService::getPackageV1Detail($packageId);
         //判断产品包是否绑定赠品组
         $giftGroup = ErpOrderV1Service::haveBoundGiftGroup($packageId);
@@ -52,17 +46,11 @@ class RecallLandingService
             return [];
         }
 
-        $sceneData = [];
-        if (!empty($params['param_id'])) {
-            $sceneData = ReferralActivityService::getParamsInfo($params['param_id']);
-        }
-        if (!empty($sceneData['user_id']) && $sceneData['type'] == ParamMapModel::TYPE_AGENT) {
-            $isAgent = true;
-        }
-        if ($package['sub_type'] == DssCategoryV1Model::DURATION_TYPE_TRAIL) {
+        if ($package['sub_type'] == DssCategoryV1Model::DURATION_TYPE_TRAIL
+        && !empty($student['id'])) {
             $res = DssGiftCodeModel::hadPurchasePackageByType($student['id']);
             $data['had_trial'] = !empty($res);
-        } elseif (!$isAgent) {
+        } else {
             // 年卡需要判断当前在有效期内
             $deadLine = DictConstants::get(DictConstants::RECALL_CONFIG, 'event_deadline');
             if (!empty($deadLine) && time() > $deadLine) {
