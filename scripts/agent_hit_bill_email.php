@@ -19,11 +19,16 @@ define('LANG_ROOT', PROJECT_ROOT . '/lang');
 require_once PROJECT_ROOT . '/vendor/autoload.php';
 
 use App\Libs\DictConstants;
+use App\Libs\MysqlDB;
 use App\Libs\PhpMail;
 use App\Libs\SimpleLogger;
 use App\Libs\Spreadsheet;
+use App\Libs\UserCenter;
 use App\Libs\Util;
 use App\Models\AgentAwardBillExtModel;
+use App\Models\AgentModel;
+use App\Models\Dss\DssGiftCodeModel;
+use App\Models\Dss\DssStudentModel;
 use App\Services\AgentService;
 use Dotenv\Dotenv;
 
@@ -130,21 +135,73 @@ if (!empty($historyHitCount)) {
     }
     //分批次获取一次500条
     $pageGetCount = 500;
-    $params = [
-        'only_read_self' => false,
-        'is_hit_order' => AgentAwardBillExtModel::IS_HIT_ORDER_YES,
-        'page' => 1,
-        'count' => $pageGetCount,
-    ];
-    $hitOrderList = AgentService::recommendBillsList($params, 0);
-    $totalOrderData = $hitOrderList['list'];
-
-    for ($i = 2; $i <= ceil($hitOrderList['count'] / $pageGetCount); $i++) {
-        $params['page'] = $i;
-        array_merge($totalOrderData, AgentService::recommendBillsList($params, 0)['list']);
+    $totalOrderData = [];
+    $db = MysqlDB::getDB();
+    $listSql = "SELECT
+                IF
+                    ( a.parent_id = 0, ab.agent_id, a.parent_id ) AS first_agent_id,
+                IF
+                    ( a.parent_id = 0, 0, ab.agent_id ) AS second_agent_id,
+                    ab.id,
+                    ab.ext ->> '$.parent_bill_id' AS parent_bill_id,
+                    ab.ext ->> '$.division_model' AS division_model,
+                    ab.ext ->> '$.agent_type' AS agent_type,
+                    ab.student_id,
+                    ab.is_bind,
+                    bex.signer_agent_id,
+                    bex.is_first_order,
+                    bex.student_referral_id 
+                FROM
+                    agent_award_bill_ext AS bex
+                    INNER JOIN agent_award_detail AS ab ON ab.ext_parent_bill_id = bex.parent_bill_id
+                    INNER JOIN agent AS a ON ab.agent_id = a.id 
+                WHERE
+                    bex.is_hit_order = 1 
+                ORDER BY
+                    bex.id DESC";
+    for ($i = 1; $i <= ceil($historyHitCount / $pageGetCount); $i++) {
+        $orderData = $db->queryAll($listSql . " LIMIT " . ($i - 1) * $pageGetCount . "," . $pageGetCount);
+        $totalOrderData = array_merge($totalOrderData, $orderData);
     }
+    //查询订单的详细数据
+    $giftCodeDetail = array_column(DssGiftCodeModel::getGiftCodeDetailByBillId(array_column($totalOrderData, 'parent_bill_id')), null, 'parent_bill_id');
+    //查询成单代理商的数据&查询归属代理商数据
+    $recommendBillsSignerAgentIdArr = array_column($totalOrderData, 'signer_agent_id');
+    $recommendBillsFirstAgentIdArr = array_column($totalOrderData, 'first_agent_id');
+    $recommendBillsSecondAgentIdArr = array_column($totalOrderData, 'second_agent_id');
+    $recommendBillsAgentData = AgentModel::getAgentParentData(array_unique(array_merge($recommendBillsSignerAgentIdArr, $recommendBillsSecondAgentIdArr, $recommendBillsFirstAgentIdArr)));
+    if (!empty($recommendBillsAgentData)) {
+        $recommendBillsAgentData = array_column($recommendBillsAgentData, null, 'id');
+    }
+    //查询学生推荐人数据
+    $studentReferralIds = array_column($totalOrderData, 'student_referral_id');
+    $studentReferralData = array_column(DssStudentModel::getRecords(['id' => array_unique($studentReferralIds)], ['id', 'name']), null, 'id');
+    //组合课包数据以及成单人数据
+    foreach ($totalOrderData as $rsk => &$rsv) {
+        $rsv['signer_first_agent_name'] = $rsv['signer_second_agent_name'] = $rsv['signer_first_agent_id'] = $rsv['signer_second_agent_id'] = $rsv['signer_agent_type'] = "";
+        if (!empty($rsv['signer_agent_id'])) {
+            $rsv['signer_first_agent_name'] = !empty($recommendBillsAgentData[$rsv['signer_agent_id']]['parent_name']) ? $recommendBillsAgentData[$rsv['signer_agent_id']]['parent_name'] : $recommendBillsAgentData[$rsv['signer_agent_id']]['name'];
+            $rsv['signer_second_agent_name'] = !empty($recommendBillsAgentData[$rsv['signer_agent_id']]['parent_name']) ? $recommendBillsAgentData[$rsv['signer_agent_id']]['name'] : "";
+            $rsv['signer_first_agent_id'] = !empty($recommendBillsAgentData[$rsv['signer_agent_id']]['p_id']) ? $recommendBillsAgentData[$rsv['signer_agent_id']]['p_id'] : $recommendBillsAgentData[$rsv['signer_agent_id']]['id'];
+            $rsv['signer_second_agent_id'] = !empty($recommendBillsAgentData[$rsv['signer_agent_id']]['p_id']) ? $recommendBillsAgentData[$rsv['signer_agent_id']]['id'] : "";
+            $rsv['signer_agent_type'] = $recommendBillsAgentData[$rsv['signer_agent_id']]['agent_type'];
+        }
+        $rsv['bill_package_id'] = $giftCodeDetail[$rsv['parent_bill_id']]['bill_package_id'];
+        $rsv['bill_amount'] = $giftCodeDetail[$rsv['parent_bill_id']]['bill_amount'];
+        $rsv['code_status'] = $giftCodeDetail[$rsv['parent_bill_id']]['code_status'];
+        $rsv['buy_time'] = $giftCodeDetail[$rsv['parent_bill_id']]['buy_time'];
+        $rsv['package_name'] = $giftCodeDetail[$rsv['parent_bill_id']]['package_name'];
+        //归属人
+        $rsv['first_agent_name'] = !empty($recommendBillsAgentData[$rsv['first_agent_id']]['parent_name']) ? $recommendBillsAgentData[$rsv['first_agent_id']]['parent_name'] : $recommendBillsAgentData[$rsv['first_agent_id']]['name'];
+        $rsv['second_agent_name'] = !empty($recommendBillsAgentData[$rsv['second_agent_id']]['parent_name']) ? $recommendBillsAgentData[$rsv['second_agent_id']]['name'] : "";
+        $rsv['second_agent_id_true'] = empty($rsv['second_agent_id']) ? '' : $rsv['second_agent_id'];
+        $rsv['app_id'] = UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT;
+        //学生转介绍人名称
+        $rsv['student_referral_name'] = empty($rsv['student_referral_id'])?'':$studentReferralData[$rsv['student_referral_id']]['name'];
+    }
+    $totalOrderData = AgentService::formatRecommendBillsData(['list' => $totalOrderData]);
     //撞单的订单明细表字段
-    foreach ($totalOrderData as $ek => $ev) {
+    foreach ($totalOrderData['list'] as $ek => $ev) {
         $excelData[date('Y-m', $ev['buy_time'])][] = [
             'parent_bill_id' => $ev['parent_bill_id'],
             'student_name' => $ev['student_name'],
@@ -153,9 +210,9 @@ if (!empty($historyHitCount)) {
             'package_name' => $ev['package_name'],
             'buy_time' => date("Y-m-d H:i:s", $ev['buy_time']),
             'code_status_name' => $ev['code_status_name'],
+            'student_referral_id' => $ev['student_referral_name'],
             'first_agent_name' => $ev['first_agent_name'],
             'first_agent_id' => $ev['first_agent_id'],
-            'student_referral_id' => $ev['student_referral_id'],
             'second_agent_name' => $ev['second_agent_name'],
             'second_agent_id_true' => $ev['second_agent_id_true'],
             'type_name' => $ev['type_name'],

@@ -11,7 +11,6 @@ namespace App\Services;
 use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\DictConstants;
-use App\Libs\Dss;
 use App\Libs\EventListener\AgentOpEvent;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
@@ -36,7 +35,6 @@ use App\Models\Dss\DssCategoryV1Model;
 use App\Models\Dss\DssDictModel;
 use App\Models\Dss\DssErpPackageV1Model;
 use App\Models\Dss\DssGiftCodeModel;
-use App\Models\Dss\DssPackageExtModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\Dss\DssUserWeiXinModel;
@@ -515,7 +513,7 @@ class AgentService
                 'status' => AgentModel::STATUS_OK,
                 'update_time' => time(),
                 'freeze_time' => 0,
-            ]
+             ]
         );
         if (empty($res)) {
             throw new RunTimeException(['update_failure']);
@@ -1162,9 +1160,6 @@ class AgentService
         }
         $logo = DictConstants::get(DictConstants::AGENT_CONFIG, 'share_card_logo');
         $agent = AgentModel::getById($agentId);
-        if (!empty($agent['parent_id'])) {
-            $agent = AgentModel::getById($agent['parent_id']);
-        }
         $appId = Constants::SMART_APP_ID;
 
         $channel = DictConstants::get(DictConstants::AGENT_CONFIG, 'channel_distribution');
@@ -1677,7 +1672,7 @@ class AgentService
      * @param $recommendBillsData
      * @return mixed
      */
-    private static function formatRecommendBillsData($recommendBillsData)
+    public static function formatRecommendBillsData($recommendBillsData)
     {
         //学生详细数据
         $studentListDetail = array_column(StudentService::searchStudentList(['id' => array_column($recommendBillsData['list'], 'student_id')]), null, 'id');
@@ -2278,5 +2273,36 @@ class AgentService
             }
         }
         return  false;
+    }
+
+    /**
+     * 检测两个代理是否是属于同一个团队
+     * @param $firstAgentId
+     * @param $secondAgentId
+     * @return bool
+     */
+    public static function checkTwoAgentIsTeam($firstAgentId, $secondAgentId)
+    {
+        if (empty($firstAgentId) || empty($secondAgentId)) {
+            return false;
+        }
+        //同一个代理商
+        if ($firstAgentId == $secondAgentId) {
+            return true;
+        }
+        $data = AgentModel::getAgentParentData([$firstAgentId, $secondAgentId]);
+        //代理商均为顶级代理
+        if (empty($data[0]['p_id']) && empty($data[1]['p_id'])) {
+            return false;
+        }
+        //同一个父级
+        if ($data[0]['p_id'] == $data[1]['p_id']) {
+            return true;
+        }
+        //上下级关系
+        if (($data[0]['p_id'] == $data[1]['id']) || ($data[1]['p_id'] == $data[0]['id'])) {
+            return true;
+        }
+        return false;
     }
 }

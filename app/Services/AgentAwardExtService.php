@@ -42,10 +42,6 @@ class AgentAwardExtService
         //获取订单成单人数据
         $billMapData = AgentBillMapModel::get($agentAwardExtData['parent_bill_id'], $agentAwardData['student_id']);
         $signerAgentId = !empty($billMapData['agent_id']) ? $billMapData['agent_id'] : 0;
-
-        //订单归属代理商与学生的绑定关系状态
-//        $agentBindData = AgentUserModel::getAgentStudentLastBindData($agentAwardData['agent_id'], $agentAwardData['student_id']);
-
         //学生当前有效绑定关系的代理商数据
         $validAgentBindData = AgentUserModel::getValidBindData($agentAwardData['student_id']);
         $validAgentId = !empty($validAgentBindData) ? $validAgentBindData['agent_id'] : 0;
@@ -70,7 +66,15 @@ class AgentAwardExtService
                 $agentAwardBillExtData['is_first_order'] = AgentAwardBillExtModel::IS_FIRST_ORDER_NO;
             }
         }
-        //检测是否撞单:1.学生有推荐人 2.学生有绑定期中的代理 3.成单代理与绑定期的代理不是同一个,任何两种及两种以上的关系则为撞单
+        /**
+         * 检测是否撞单:
+         *          1.学生有推荐人
+         *          2.学生有绑定期中的代理
+         *          3.成单代理与绑定期的代理不是同一个,任何两种及两种以上的关系则为撞单
+         * 例外：
+         *          1.成单代理与归属代理属于上下级的不算撞单
+         *          2.无成单代理商不考虑成单代理逻辑
+         */
         $isHitOrderCondition = [];
         //学生的推荐人
         if ($studentReferralData) {
@@ -78,11 +82,16 @@ class AgentAwardExtService
         }
         //学生绑定期中的代理
         if ($validAgentId) {
-            $isHitOrderCondition['bill_map_data'] = 'yes';
+            $isHitOrderCondition['valid_agent'] = 'yes';
         }
-        //成单人代理和学生绑定期中的代理不是同一个人
-        if (!empty($validAgentId) && ($signerAgentId != $validAgentId)) {
-            $isHitOrderCondition['agent_bind_data'] = 'yes';
+        //检查成单代理商和归属代理商是否属于同一个团队
+        $isTeam = AgentService::checkTwoAgentIsTeam($signerAgentId, $agentAwardData['agent_id']);
+        //成单代理商存在
+        if (!empty($signerAgentId) && empty($isTeam)) {
+            //成单人代理和学生绑定期中的代理不是同一个人
+            if (!empty($validAgentId) && ($signerAgentId != $validAgentId)) {
+                $isHitOrderCondition['agent_bind_data'] = 'yes';
+            }
         }
         if (!empty($isHitOrderCondition)) {
             $hitOrderRes = array_count_values($isHitOrderCondition);
