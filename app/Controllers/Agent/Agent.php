@@ -48,25 +48,13 @@ class Agent extends ControllerBase
      */
     public function getConfig(Request $request, Response $response)
     {
-        $rules = [
-            [
-                'key' => 'package_id',
-                'type' => 'required',
-                'error_code' => 'package_id_is_required'
-            ],
-        ];
-        $params = $request->getParams();
-        $result = Valid::appValidate($params, $rules);
-        if ($result['code'] != Valid::CODE_SUCCESS) {
-            return $response->withJson($result, StatusCode::HTTP_OK);
-        }
         try {
             $params = $request->getParams();
             $userInfo = $this->ci['user_info'];
             if (empty($userInfo['user_id'])) {
                 throw new RunTimeException(['agent_not_exist']);
             }
-            $data = AgentService::popularMaterialInfo($userInfo['user_id'], $params['package_id']);
+            $data = AgentService::popularMaterialInfo($userInfo['user_id'], $params['package_id'] ?? 0);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
@@ -309,6 +297,27 @@ class Agent extends ControllerBase
     }
 
     /**
+     * 推广商品列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * @throws \App\Libs\KeyErrorRC4Exception
+     */
+    public function packageList(Request $request, Response $response)
+    {
+        try {
+            $userInfo = $this->ci['user_info'];
+            if (empty($userInfo['user_id'])) {
+                throw new RunTimeException(['agent_not_exist']);
+            }
+            $data = AgentService::getPackageList($userInfo['user_id']);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
+        return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
      * 产品包详情
      * @param Request $request
      * @param Response $response
@@ -335,6 +344,39 @@ class Agent extends ControllerBase
                 throw new RunTimeException(['agent_not_exist']);
             }
             $data = PackageService::getPackageV1Detail($params['package_id']);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
+        return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
+     * 产品包推广信息
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * @throws KeyErrorRC4Exception
+     */
+    public function packageShareInfo(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key'        => 'package_id',
+                'type'       => 'required',
+                'error_code' => 'package_id_is_required'
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            $userInfo = $this->ci['user_info'];
+            if (empty($userInfo['user_id'])) {
+                throw new RunTimeException(['agent_not_exist']);
+            }
+            $data = AgentService::getShareInfo($params['package_id'], $userInfo['user_id']);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
