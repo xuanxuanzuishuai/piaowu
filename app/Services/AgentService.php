@@ -925,9 +925,6 @@ class AgentService
             if (!empty($item['parent_bill_id'])) {
                 $orderIdArr[$item['parent_bill_id']] = $item['parent_bill_id'];
             }
-            if (!empty($item['own_agent_id'])) {
-                $orderAgentIdArr[$item['own_agent_id']] = $item['own_agent_id'];
-            }
             if (!empty($item['signer_agent_id'])) {
                 $orderAgentIdArr[$item['signer_agent_id']] = $item['signer_agent_id'];
             }
@@ -970,11 +967,7 @@ class AgentService
             $val['thumb'] = $tmpUserInfo['thumb'] ?? '';
             $val['nickname'] = $tmpUserInfo['nickname'] ?? '';
             $val['mobile'] = $encodeMobileArr[$val['student_id']] ?? '';
-            if (in_array($val['signer_agent_id'], $agentIdArr)) {
-                $val['second_agent_name'] = $allAgentInfo[$val['signer_agent_id']]['name'] ?? '';
-            } else {
-                $val['second_agent_name'] = $allAgentInfo[$val['own_agent_id']]['name'] ?? '';
-            }
+            $val['second_agent_name'] = $allAgentInfo[$val['signer_agent_id']]['name'] ?? '';
             $val['format_pay_time'] = date("Y-m-d H:i:s", $val['create_time']);
             $val['bill_amount'] = Util::yuan($giftCodeArr[$val['parent_bill_id']]['bill_amount'], 2);
             $val['agent_id'] = $val['signer_agent_id'] ?? '';

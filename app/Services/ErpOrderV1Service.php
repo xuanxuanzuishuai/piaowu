@@ -13,7 +13,6 @@ use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
-use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\Dss\DssCategoryV1Model;
 use App\Models\Dss\DssErpPackageV1Model;
@@ -121,40 +120,17 @@ class ErpOrderV1Service
         $successUrl = null;
         $resultUrl = null;
         $cancelUrl = null;
-        // 体验&年卡：
-        // H5
-        // weixin不调用支付宝
-        // https://referral.xiaoyezi.com/operation/landing/pay?
         list($successUrl, $cancelUrl, $resultUrl) = DictConstants::getValues(
             DictConstants::AGENT_WEB_STUDENT_CONFIG,
             ['success_url', 'cancel_url', 'result_url']
         );
 
-        // 微信调用支付宝
-        // 体验&年卡
-        // https://referral.xiaoyezi.com/operation/landing/whechatali?
         if ($channel == ErpPackageV1Model::CHANNEL_WX
         && $payChannel == PayServices::PAY_CHANNEL_V1_ALIPAY) {
             list($successUrl, $cancelUrl, $resultUrl) = DictConstants::getValues(
                 DictConstants::WEIXIN_ALIPAY_CONFIG,
                 ['success_url', 'cancel_url', 'result_url']
             );
-        }
-
-        // 代理回调：
-        if ($channel == ErpPackageV1Model::CHANNEL_OP_AGENT) {
-            if ($payChannel == PayServices::PAY_CHANNEL_V1_ALIPAY && Util::isWx()) {
-                list($successUrl, $cancelUrl, $resultUrl) = DictConstants::getValues(
-                    DictConstants::WEIXIN_ALIPAY_CONFIG,
-                    ['success_url', 'cancel_url', 'result_url']
-                );
-            } else {
-                // https://referral.xiaoyezi.com/operation/pay?
-                list($successUrl, $cancelUrl, $resultUrl) = DictConstants::getValues(
-                    DictConstants::AGENT_WEB_STUDENT_CONFIG,
-                    ['success_url_v1', 'cancel_url_v1', 'result_url_v1']
-                );
-            }
         }
 
         return [

@@ -265,8 +265,7 @@ class QueueService
                 }
             }
             if (!empty($pushList)) {
-                // 最长延迟20分钟
-                $topic->monthlyPush($pushList)->publish(rand(0, 1200));
+                $topic->monthlyPush($pushList)->publish();
             }
         } catch (Exception $e) {
             return false;
