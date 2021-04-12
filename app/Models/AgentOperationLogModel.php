@@ -18,6 +18,7 @@ class AgentOperationLogModel extends Model
     const OP_TYPE_UNFREEZE_AGENT = 2;//2后台管理人员解冻一级代理
     const OP_TYPE_AGENT_FREEZE_AGENT = 3;//3上级代理冻结下级代理
     const OP_TYPE_AGENT_UNFREEZE_AGENT = 4;//4上级代理解冻下级代理
+    const OP_TYPE_AGENT_DATA_UPDATE = 5;//5代理商详情数据修改
 
     /**
      * 根据操作类型过滤日志内容记录字段
@@ -34,7 +35,9 @@ class AgentOperationLogModel extends Model
             case self::OP_TYPE_AGENT_FREEZE_AGENT:
             case self::OP_TYPE_AGENT_UNFREEZE_AGENT:
                 $logContent['contents']['status'] = $contents['status'];
-                $logContent['agent_id'] = $contents['agent_id'];
+                break;
+            case self::OP_TYPE_AGENT_DATA_UPDATE:
+                $logContent['contents'] = $contents['update_data'];
                 break;
             default:
                 return $logContent;
@@ -45,11 +48,12 @@ class AgentOperationLogModel extends Model
     /**
      * 记录日志数据
      * @param $contents
+     * @param $agentId
      * @param $operatorId
      * @param $opType
      * @return bool
      */
-    public static function recordOpLog($contents, $operatorId, $opType)
+    public static function recordOpLog($contents, $agentId, $operatorId, $opType)
     {
         $time = time();
         $opLog = self::filterLogContent($contents, $opType);
@@ -58,7 +62,7 @@ class AgentOperationLogModel extends Model
             return false;
         }
         $insertData[] = [
-            'agent_id' => $opLog['agent_id'],
+            'agent_id' => $agentId,
             'operator_id' => $operatorId,
             'type' => $opType,
             'content' => json_encode($opLog['contents']),

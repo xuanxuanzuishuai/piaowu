@@ -2,6 +2,7 @@
 
 namespace App\Models\Erp;
 
+
 use App\Libs\Util;
 
 class ErpPackageV1Model extends ErpModel
@@ -14,17 +15,7 @@ class ErpPackageV1Model extends ErpModel
     const CHANNEL_IOS = 2;
     const CHANNEL_WX = 4;
     const CHANNEL_ERP = 8;
-    const CHANNEL_H5 = 32;
-    const CHANNEL_OP_AGENT = 64;
-
-    // 销售列表是否可见 0 不可见 1 可见
-    const IS_SHOW = 1;
-    const IS_NOT_SHOW = 0;
-
-    // 商品包状态 -1 已下架 0 未上架 1 已上架
-    const STATUS_OFF_SALE = -1;
-    const STATUS_WAIT_SALE = 0;
-    const STATUS_ON_SALE = 1;
+    const CHANNEL_OP_AGENT = 32;
 
     /**
      * 获取课包列表
@@ -98,9 +89,10 @@ class ErpPackageV1Model extends ErpModel
      * 根据课包ID和售卖渠道获取数据
      * @param $packageIds
      * @param $channel
+     * @param $status
      * @return array|null
      */
-    public static function getPackageInfoByIdChannel($packageIds, $channel)
+    public static function getPackageInfoByIdChannel($packageIds, $channel, $status)
     {
         //获取数据库对象
         $db = self::dbRO();
@@ -110,61 +102,11 @@ class ErpPackageV1Model extends ErpModel
                     erp_package_v1 
                 WHERE
                     id IN ( ".implode(',', $packageIds)." ) 
-                    AND channel & :channel";
+                    AND channel & :channel 
+                    AND status=" . $status;
         $map = [
             ":channel" => $channel
         ];
         return $db->queryAll($sql, $map);
-    }
-
-    /**
-     * 产品包详情
-     * @param $packageId
-     * @param int $isShow
-     * @return array|mixed
-     */
-    public static function packageDetail($packageId, $isShow = self::IS_SHOW)
-    {
-        $package = self::$table;
-        $stock = ErpPackageStockV1Model::$table;
-        $pg = ErpPackageGoodsV1Model::$table;
-        $g = ErpGoodsV1Model::$table;
-        $c = ErpCategoryV1Model::$table;
-        $sql = "
-        SELECT 
-            p.id,
-            p.thumbs,
-            p.name,
-            p.`desc` ->> '$.desc' `desc`,
-            p.consume_stock,
-            s.stock,
-            p.price_json,
-            p.limit_json,
-            p.flags,
-            p.sales,
-            p.status,
-            p.channel,
-            p.sale_shop,
-            c.sub_type,
-            sum(pg.o_price) o_price,
-            sum(pg.r_price) r_price
-        FROM {$package} p
-        LEFT JOIN {$stock} s on s.package_id = p.id
-        INNER JOIN {$pg} pg on pg.package_id = p.id AND pg.status = " . ErpPackageGoodsV1Model::SUCCESS_NORMAL . "
-        INNER JOIN {$g} g on pg.goods_id = g.id
-        INNER JOIN  {$c} c on c.id = g.category_id
-        WHERE p.id = :package_id
-            AND p.is_custom = " . self::PACKAGE_IS_NOT_CUSTOM;
-        if ($isShow) {
-            $sql .= " and p.is_show = {$isShow}";
-        }
-        $sql .= " group by p.id";
-
-        $db = self::dbRO();
-        $records = $db->queryAll($sql, [
-           ':package_id' => $packageId
-        ]);
-
-        return !empty($records) ? $records[0] : [];
     }
 }

@@ -26,66 +26,54 @@ class AgentAwardDetailModel extends Model
     const AWARD_ACTION_TYPE_BUY_TRAIL_CLASS = 1;
     const AWARD_ACTION_TYPE_BUY_FORMAL_CLASS = 2;
     const AWARD_ACTION_TYPE_REGISTER = 3;
-    //是否绑定期中订单:0否1是
+    //是否绑定期中订单:0否 1是 2无代理商绑定关系
     const IS_BIND_STATUS_YES = 1;
     const IS_BIND_STATUS_NO = 0;
+    const IS_BIND_STATUS_NOT_HAVE_AGENT = 2;
 
 
     /**
      * 推广订单列表列表
      * @param $agentBillWhere
-     * @param $firstAgentWhere
-     * @param $secondAgentWhere
      * @param $giftCodeWhere
+     * @param $agentWhere
+     * @param $agentAwardBillExtWhere
      * @param $page
      * @param $limit
      * @return array
      */
-    public static function agentBillsList($agentBillWhere, $firstAgentWhere, $secondAgentWhere, $giftCodeWhere, $page, $limit)
+    public static function agentBillsList($agentBillWhere, $giftCodeWhere, $agentWhere, $agentAwardBillExtWhere, $page, $limit)
     {
         //获取从库对象
         $db = self::dbRO();
         //获取库+表完整名称
         $opAgentAwardDetailTableName = self::getTableNameWithDb();
         $opAgentTableName = AgentModel::getTableNameWithDb();
-        $opAgentDivideRuleTableName = AgentDivideRulesModel::getTableNameWithDb();
-
-        $dssPackageV1TableName = DssErpPackageV1Model::getTableNameWithDb();
+        $opAgentAwardBillExtTableName = AgentAwardBillExtModel::getTableNameWithDb();
         $dssGiftCodeTableName = DssGiftCodeModel::getTableNameWithDb();
 
-        $baseSql = 'select query_field
-                 FROM (' .
-            'SELECT
-                                    IF
-                                        ( a.parent_id = 0, ab.agent_id, a.parent_id ) AS first_agent_id,
-                                        ab.agent_id AS second_agent_id,
-                                        ab.id,
-                                        ab.ext->>\'$.parent_bill_id\' as parent_bill_id,
-                                        ab.student_id,
-                                        ab.is_bind
-                                FROM
-                                    ' . $opAgentAwardDetailTableName . ' as ab
-                                    INNER JOIN ' . $opAgentTableName . ' AS a ON ab.agent_id = a.id
-                                WHERE ' . $agentBillWhere . '
-                                ) as tma 
-             INNER JOIN ' . $opAgentTableName . ' AS fa ON tma.first_agent_id=fa.id  ' . $firstAgentWhere .
-            ' INNER JOIN ' . $opAgentTableName . ' AS sa ON tma.second_agent_id=sa.id  ' . $secondAgentWhere .
-            ' LEFT JOIN ' . $opAgentDivideRuleTableName . ' AS dr ON fa.id = dr.agent_id AND dr.status = ' . AgentDivideRulesModel::STATUS_OK . ' 
-            INNER JOIN ' . $dssGiftCodeTableName . ' AS gc ON tma.parent_bill_id = gc.parent_bill_id ' . $giftCodeWhere . '
-            INNER JOIN ' . $dssPackageV1TableName . ' AS ep ON gc.bill_package_id = ep.id 
-            ORDER BY tma.id DESC';
-        $countSql = 'count(tma.id) as total_count';
-        $listSql = 'tma.*,
-                    fa.type,
-                    fa.NAME AS `first_agent_name`,
-                    gc.bill_package_id,
-                    gc.bill_amount,
-                    gc.code_status,
-                    gc.buy_time,
-                    ep.NAME AS "package_name",
-                    IF( tma.first_agent_id = tma.second_agent_id, NULL, sa.NAME ) AS `second_agent_name`,
-                    IF( tma.first_agent_id = tma.second_agent_id, NULL, tma.second_agent_id ) AS `second_agent_id_true`,
-                    dr.app_id ';
+        $baseSql = 'SELECT query_field                                    
+                    FROM
+                        ' . $opAgentAwardBillExtTableName . ' as bex
+                        INNER JOIN ' . $opAgentAwardDetailTableName . ' AS ab ON ab.ext_parent_bill_id = bex.parent_bill_id ' . $agentBillWhere . '
+                        INNER JOIN ' . $opAgentTableName . ' AS a ON ab.agent_id = a.id ' . $agentWhere . '
+                        INNER JOIN ' . $dssGiftCodeTableName . ' AS gc ON ab.ext_parent_bill_id = gc.parent_bill_id ' . $giftCodeWhere . '
+                    WHERE ' .  $agentAwardBillExtWhere. ' 
+                    ORDER BY ab.id DESC';
+        $countSql = 'count(ab.id) as total_count';
+        $listSql = "IF
+                        ( a.parent_id = 0, ab.agent_id, a.parent_id ) AS first_agent_id,
+                    IF
+                        ( a.parent_id = 0, 0, ab.agent_id ) AS second_agent_id,
+                        ab.id,
+                        ab.ext->>'$.parent_bill_id' as parent_bill_id,
+                        ab.ext->>'$.division_model' as division_model,
+                        ab.ext->>'$.agent_type' as agent_type,
+                        ab.student_id,
+                        ab.is_bind,
+                        bex.signer_agent_id,
+                        bex.is_first_order,
+                        bex.student_referral_id";
         $dataCount = $db->queryAll(str_replace("query_field", $countSql, $baseSql));
         if (empty($dataCount[0]['total_count'])) {
             return [0, []];
@@ -97,12 +85,16 @@ class AgentAwardDetailModel extends Model
 
 
     /**
-     * 根据agent_id获取代理的推广订单数量
+     * 根据agent_id获取代理的推广订单:订单归属人/成单人去重统计
      * @param $agentIds
+     * @param $page
+     * @param $limit
+     * @param $onlyCount
      * @return array|null
      */
-    public static function getAgentBillCount($agentIds)
+    public static function getAgentRecommendDuplicationBill($agentIds, $onlyCount = true, $page = 1, $limit = 20)
     {
+        $data = ['count' => 0, 'list' => []];
         $db = MysqlDB::getDB();
         $baseSql = 'SELECT
                  :sql_filed
@@ -111,15 +103,14 @@ class AgentAwardDetailModel extends Model
                 INNER JOIN agent_award_detail AS ad ON ad.ext_parent_bill_id = bex.parent_bill_id 
             WHERE
                 (
-                    bex.signer_agent_id IN (' . $agentIds . ') 
+                    (bex.signer_agent_id IN (' . $agentIds . ') and bex.signer_agent_status='.AgentModel::STATUS_OK.')
                     OR (
-                        bex.own_agent_id IN (' . $agentIds . ') 
+                        bex.own_agent_id IN (' . $agentIds . ') and bex.own_agent_status='.AgentModel::STATUS_OK.'
                         AND ( ( ad.ext ->> \'$.division_model\' = ' . AgentModel::DIVISION_MODEL_LEADS . '  AND bex.is_first_order = ' . AgentAwardBillExtModel::IS_FIRST_ORDER_YES . ' ) OR ( ad.ext ->> \'$.division_model\' = ' . AgentModel::DIVISION_MODEL_LEADS_AND_SALE . ' ) ) 
                         AND ad.action_type != ' . self::AWARD_ACTION_TYPE_REGISTER . '
                         AND ad.is_bind != (' . self::IS_BIND_STATUS_NO . ') 
                     ) 
                 ) 
-                AND ((bex.own_agent_status=' . AgentModel::STATUS_OK . ' AND bex.signer_agent_status=' . AgentModel::STATUS_OK . '))                
             ORDER BY
                 bex.id DESC';
         $countSql = str_replace(":sql_filed", 'count(*) as total_count', $baseSql);
@@ -127,13 +118,13 @@ class AgentAwardDetailModel extends Model
         if (empty($countData)) {
             return $data;
         }
-        $data['total_count'] = $countData[0]['total_count'];
+        $data['count'] = $countData[0]['total_count'];
         if ($onlyCount) {
             return $data;
         }
         $limitWhere = " limit " . ($page - 1) * $limit . ',' . $limit;
         $listSql = str_replace(":sql_filed",
-            'bex.id,bex.parent_bill_id,bex.student_id,bex.signer_agent_id,bex.create_time',
+            'ad.is_bind,bex.is_first_order,bex.id,bex.parent_bill_id,bex.student_id,bex.signer_agent_id,bex.create_time,bex.own_agent_id,bex.student_referral_id',
             $baseSql . $limitWhere);
         $data['list'] = $db->queryAll($listSql);
         return $data;
@@ -182,5 +173,29 @@ class AgentAwardDetailModel extends Model
     public static function getDetailByParentBillId($parentBillId)
     {
         return self::getRecord(['ext_parent_bill_id' => $parentBillId], ['id']);
+    }
+
+
+    /**
+     * 获取学生和代理商产生奖励数据的课包数量
+     * @param int $agentId
+     * @param int $studentId
+     * @param $packageType
+     * @return array|null
+     */
+    public static function getAgentStudentBillCountByPackageType(int $agentId, int $studentId, $packageType)
+    {
+        $db = MysqlDB::getDB();
+        $sql = 'SELECT
+                    COUNT( id ) AS data_count
+                FROM
+                    ' . self::$table . ' 
+                WHERE
+                    agent_id = ' . $agentId . ' 
+                AND student_id = ' . $studentId . ' 
+                AND action_type !=' . self::AWARD_ACTION_TYPE_REGISTER . '
+                AND ext->>\'$.package_type\' =' . $packageType;
+        $data = $db->queryAll($sql);
+        return $data;
     }
 }

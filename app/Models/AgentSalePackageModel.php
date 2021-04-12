@@ -6,11 +6,11 @@
  * Time: 21:52
  */
 
+
 namespace App\Models;
 
 use App\Libs\SimpleLogger;
 use App\Models\Erp\ErpPackageV1Model;
-use App\Models\Dss\DssUserWeiXinModel;
 
 class AgentSalePackageModel extends Model
 {
@@ -72,44 +72,5 @@ class AgentSalePackageModel extends Model
                 ORDER BY
                     sp.id DESC;";
         return $db->queryAll($sql);
-    }
-
-    /**
-     * 可售卖产品包列表
-     * @param $agentId
-     * @param int $status
-     * @param int $appId
-     * @return array|null
-     */
-    public static function getPackageList($agentId, $status = self::STATUS_OK, $appId = 0)
-    {
-        if (empty($agentId)) {
-            return [];
-        }
-        $appId = DssUserWeiXinModel::dealAppId($appId);
-        $asp = self::getTableNameWithDb();
-        $p = ErpPackageV1Model::getTableNameWithDb();
-        $db = self::dbRO();
-        $map = [
-            ':agent_id' => $agentId,
-            ':status' => $status,
-            ':app_id' => $appId
-        ];
-        $order = ' asp.id DESC';
-        $sql = "
-        SELECT
-        asp.package_id,
-        asp.agent_id,
-        asp.status,
-        asp.app_id,
-        p.thumbs->>'$.thumbs[0]' cover 
-        FROM {$asp} asp
-        INNER JOIN {$p} p ON p.id = asp.package_id
-        WHERE asp.agent_id = :agent_id
-        AND asp.status = :status
-        AND asp.app_id = :app_id
-        ORDER BY {$order}
-        ";
-        return $db->queryAll($sql, $map);
     }
 }

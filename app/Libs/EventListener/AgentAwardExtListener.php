@@ -10,13 +10,14 @@ namespace App\Libs\EventListener;
 
 use App\Libs\SimpleLogger;
 use App\Models\AgentOperationLogModel;
+use App\Services\AgentAwardExtService;
 
 /**
- * 代理商账户后台操作事件监听器
+ * 代理商奖励扩展信息处理事件监听器
  * Class AgentOpListener
  * @package App\Libs\EventListener
  */
-class AgentOpListener extends Listener
+class AgentAwardExtListener extends Listener
 {
     /**
      * 事件处理
@@ -27,9 +28,9 @@ class AgentOpListener extends Listener
     {
         $contents = $event->getPayload();
         if (empty($contents)) {
-            SimpleLogger::error('valid log data', []);
+            SimpleLogger::error('agent award data empty', []);
             return false;
         }
-        return AgentOperationLogModel::recordOpLog($contents, $contents['agent_id'], $contents['operator_id'], $contents['op_type']);
+        return AgentAwardExtService::addAgentAwardExtData($contents['agent_award_detail_id']);
     }
 }

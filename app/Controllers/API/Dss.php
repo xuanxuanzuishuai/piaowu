@@ -18,6 +18,7 @@ use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\MessagePushRulesModel;
 use App\Models\PosterModel;
 use App\Models\WeChatAwardCashDealModel;
+use App\Services\AgentService;
 use App\Services\ReferralActivityService;
 use App\Libs\Exceptions\RunTimeException;
 use App\Services\ThirdPartBillService;
@@ -327,5 +328,34 @@ class Dss extends ControllerBase
         $appId = DssUserWeiXinModel::dealAppId($params['app_id']);
         WechatTokenService::delTokenByUserId($params['user_id'], $userType, $appId);
         return HttpHelper::buildResponse($response, []);
+    }
+
+    /**
+     * 检测社群分班条件
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function distributionClassCondition(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'parent_bill_id',
+                'type' => 'required',
+                'error_code' => 'parent_bill_id_is_required'
+            ],
+            [
+                'key' => 'student_id',
+                'type' => 'required',
+                'error_code' => 'student_id_is_required'
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $condition = AgentService::distributionClassCondition($params['parent_bill_id'], $params['student_id']);
+        return HttpHelper::buildResponse($response, (int)$condition);
     }
 }

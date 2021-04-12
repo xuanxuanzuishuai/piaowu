@@ -72,5 +72,19 @@ class EmployeePrivilegeService
         return false;
     }
 
-
+    /**
+     * 检测当前角色拥有的数据权限
+     * @param $employee
+     * @return bool
+     */
+    public static function checkEmployeeDataPermission($employee)
+    {
+        //超级管理员拥有所有权限,其他角色拥有查看自己创建的数据的权限
+        if (self::checkIsSuperAdmin($employee)) {
+            $onlyReadSelf = false;
+        } else {
+            $onlyReadSelf = true;
+        }
+        return $onlyReadSelf;
+    }
 }

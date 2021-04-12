@@ -2,6 +2,7 @@
 
 namespace App\Models\Erp;
 
+
 class ErpGiftGroupV1Model extends ErpModel
 {
     public static $table = 'erp_gift_group_v1';
@@ -28,6 +29,7 @@ class ErpGiftGroupV1Model extends ErpModel
         ]);
         return $data;
     }
+<<<<<<< HEAD
     /**
      * 判断产品包是否绑定赠品组
      * @param $packageId

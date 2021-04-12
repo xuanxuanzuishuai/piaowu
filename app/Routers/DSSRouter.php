@@ -36,5 +36,7 @@ class DSSRouter extends RouterBase
         // 第三方订单查询列表
         '/dss/third_part_bill/list' => ['method' => ['get'], 'call' => Dss::class . ':thirdBillList'],
         '/dss/user/logout' => ['method' => ['post'], 'call' => Dss::class . ':tokenLogout'],
+        // 检测当前代理商分成模式是否可以进行社群分班
+        '/dss/agent/distribution_class_condition' => ['method' => ['get'], 'call' => Dss::class . ':distributionClassCondition'],
     ];
 }
