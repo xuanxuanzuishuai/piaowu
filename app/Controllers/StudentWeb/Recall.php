@@ -44,6 +44,7 @@ class Recall extends ControllerBase
         $channelId = $params['channel_id'] ?? Constants::CHANNEL_WE_CHAT_SCAN;
         $openId = null;
         $token = '';
+        $student = null;
         $arr = [
             Constants::SMART_APP_ID => Constants::SMART_WX_SERVICE
         ];
@@ -54,20 +55,42 @@ class Recall extends ControllerBase
             }
             if (!empty($params['wx_code'])) {
                 $data = WeChatMiniPro::factory($appId, $busiType)->getWeixnUserOpenIDAndAccessTokenByCode($params['wx_code']);
+                $wxError = null;
                 if (empty($data) || empty($data['openid'])) {
-                    throw new RunTimeException(['can_not_obtain_open_id']);
+                    // 修复后退/刷新获取openid错误
+                    $tokenHeader = $request->getHeader('token');
+                    $tokenHeader = $tokenHeader[0] ?? null;
+                    if (!empty($tokenHeader)) {
+                        $tokenInfo = WechatTokenService::getTokenInfo($tokenHeader);
+                        if (!empty($tokenInfo['user_id']) && !empty($tokenInfo['open_id'])) {
+                            $student = DssStudentModel::getById($tokenInfo['user_id']);
+                            if (!empty($student['mobile']) && $student['mobile'] == $params['mobile']) {
+                                $token = $tokenHeader;
+                            } else {
+                                $wxError = 'can_not_obtain_open_id';
+                            }
+                        } else {
+                            $wxError = 'can_not_obtain_open_id';
+                        }
+                    } else {
+                        $wxError = 'can_not_obtain_open_id';
+                    }
+
+                    if (!is_null($wxError)) {
+                        throw new RunTimeException([$wxError]);
+                    }
                 }
                 $openId = $data['openid'] ?? null;
             }
 
-            $student = DssStudentModel::getRecord(['mobile' => $params['mobile']]);
+            $student = empty($student) ? DssStudentModel::getRecord(['mobile' => $params['mobile']]) : $student;
             if (empty($student)) {
                 $info = UserService::studentRegisterBound($appId, $params['mobile'], $channelId, $openId, $busiType, $userType, $params["referee_id"] ?? '');
                 $student['id'] = $info['student_id'];
                 $student['uuid'] = $info['uuid'];
             }
 
-            if (!empty($student['id'])) {
+            if (!empty($student['id']) && empty($token)) {
                 $token = WechatTokenService::generateToken(
                     $student['id'],
                     $userType,
