@@ -112,7 +112,8 @@ class Bill extends ControllerBase
      * @param Response $response
      * @return Response
      */
-    public function thirdBillDownloadTemplate(/** @noinspection PhpUnusedParameterInspection */Request $request, Response $response)
+    public function thirdBillDownloadTemplate(/** @noinspection PhpUnusedParameterInspection */
+        Request $request, Response $response)
     {
         $url = DictConstants::get(DictConstants::ORG_WEB_CONFIG,'third_part_import_bill_template');
         $ossUrl = AliOSS::replaceCdnDomainForDss($url);

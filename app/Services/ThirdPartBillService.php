@@ -49,34 +49,24 @@ class ThirdPartBillService
                     continue;
                 }
                 $A = trim($v['A']);
-                $C = trim($v['C']);
-                if (trim($v['D']) != ThirdPartBillModel::IGNORE) {
+                if (trim($v['C']) != ThirdPartBillModel::IGNORE) {
                     $data[] = [
                         'mobile' => $A,
                         'trade_no' => trim($v['B']),
                         'operator_id' => $operatorId,
                         'pay_time' => $now,
                         'create_time' => $now,
-                        'dss_amount' => ($C == '') ? '' : $C,
                     ];
                 }
             }
-            // 检查所有的手机号/订单号/实付金额是否合法, 并返回所有错误的记录
-            $invalidMobiles = $invalidTradeNo = $invalidDssAmount = [];
-            foreach ($data as &$v) {
+            // 检查所有的手机号是否合法, 并返回所有错误的记录
+            $invalidMobiles = $invalidTradeNo = [];
+            foreach ($data as $v) {
                 if (!Util::isChineseMobile($v['mobile'])) {
                     $invalidMobiles[] = $v;
                 }
                 if (empty($v['trade_no'])) {
                     $invalidTradeNo[] = $v;
-                }
-                if (($v['dss_amount'] < 0) || ($v['dss_amount'] == '') || !is_numeric($v['dss_amount'])) {
-                    $invalidDssAmount[] = $v;
-                }
-                if ($v['dss_amount'] == 0) {
-                    $v['dss_amount'] = 1;
-                } else {
-                    $v['dss_amount'] *= 100;
                 }
             }
         } catch (\Exception $e) {
@@ -88,9 +78,6 @@ class ThirdPartBillService
         }
         if (count($invalidTradeNo) > 0) {
             throw new RunTimeException(['trade_no_can_not_be_empty', 'import'], ['list' => $invalidTradeNo]);
-        }
-        if (count($invalidDssAmount) > 0) {
-            throw new RunTimeException(['bill_dss_amount_lt_zero', 'import'], ['list' => $invalidDssAmount]);
         }
         // 检查数据是否为空
         if (count($data) == 0) {
@@ -125,7 +112,6 @@ class ThirdPartBillService
             $v['third_identity_id'] = $params['third_identity_id'];
             $v['third_identity_type'] = $params['third_identity_type'];
             $v['package_v1'] = ThirdPartBillModel::PACKAGE_V1;
-            $v['operator_system_id'] = UserCenter::AUTH_APP_ID_OP;
             $data[$k] = $v;
         }
         // 表格内容发送至消息队列
@@ -277,8 +263,8 @@ class ThirdPartBillService
             'business_id' => empty($params['business_id']) ? $appId : $params['business_id'],
             'third_identity_id' => (int)$params['third_identity_id'],
             'third_identity_type' => (int)$params['third_identity_type'],
-            'paid_in_price' => $params['dss_amount'],
         ];
+
         $paramMapInfo = [];
         //当第三方角色是代理商时候获取代理商转介绍二维码
         if (!empty($params['third_identity_id']) && ($params['third_identity_type'] == ThirdPartBillModel::THIRD_IDENTITY_TYPE_AGENT)) {
@@ -312,25 +298,17 @@ class ThirdPartBillService
             SimpleLogger::error('third part bill have exists', ['data' => $checkIsExists]);
             return true;
         }
-        //通过一级渠道ID确认支付方式
-        $channelPayMapData = DictConstants::getTypesMap([DictConstants::CHANNEL_PAY_TYPE_MAP['type']])[DictConstants::CHANNEL_PAY_TYPE_MAP['type']];
-        //区分操作后台
-        $description = "DSS系统表格导入订单";
-        if ($params['operator_system_id'] == UserCenter::AUTH_APP_ID_OP){
-            $description = "运营系统表格导入订单";
-        }
+
         //通知ERP创建订单
         $erp = new Erp();
         list($result, $body) = $erp->manCreateDeliverBillV1([
             'uuid' => $student['uuid'],
             'package_id' => $params['package_id'],
             'pay_time' => $params['pay_time'],
-            'description' => $description,
+            'description' => '运营系统表格导入订单',
             'trade_no' => $params['trade_no'],
             'pay_channel' => $params['pay_channel'],
             'app_id' => $appId,
-            'dss_amount' => $params['dss_amount'],
-            'sub_type' => empty($channelPayMapData[$params['parent_channel_id']]) ? $channelPayMapData[0]['value'] : $channelPayMapData[$params['parent_channel_id']]['value'],
         ]);
         //记录请求结果
         if ($result === false) {
