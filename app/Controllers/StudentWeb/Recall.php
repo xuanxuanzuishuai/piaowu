@@ -122,11 +122,7 @@ class Recall extends ControllerBase
         $packageId = $params['package_id'] ?? DssDictService::getKeyValue(DictConstants::DSS_WEB_STUDENT_CONFIG, 'mini_package_id_v1');
         $mobile = $params['mobile'] ?? '';
         try {
-            $studentId = $this->ci['user_info']['user_id'] ?? 0;
             $student = null;
-            if (!empty($studentId)) {
-                $student = DssStudentModel::getById($studentId);
-            }
             if (!empty($mobile) && empty($student)) {
                 $student = DssStudentModel::getRecord(['mobile' => $mobile]);
             }
