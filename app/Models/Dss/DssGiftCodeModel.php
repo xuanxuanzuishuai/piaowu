@@ -255,6 +255,7 @@ class DssGiftCodeModel extends DssModel
                 'gc.create_time[>=]' => $createTime,
                 'gc.bill_app_id' => $appIds,
                 'c.sub_type' => $subTypes,
+                'pg.status' => DssErpPackageGoodsV1Model::SUCCESS_NORMAL,
             ]);
         return $records;
     }

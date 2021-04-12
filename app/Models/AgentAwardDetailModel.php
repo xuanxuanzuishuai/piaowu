@@ -57,7 +57,6 @@ class AgentAwardDetailModel extends Model
                         ' . $opAgentAwardBillExtTableName . ' as bex
                         INNER JOIN ' . $opAgentAwardDetailTableName . ' AS ab ON ab.ext_parent_bill_id = bex.parent_bill_id ' . $agentBillWhere . '
                         INNER JOIN ' . $opAgentTableName . ' AS a ON ab.agent_id = a.id ' . $agentWhere . '
-                        INNER JOIN ' . $dssGiftCodeTableName . ' AS gc ON ab.ext_parent_bill_id = gc.parent_bill_id ' . $giftCodeWhere . '
                     WHERE ' .  $agentAwardBillExtWhere. ' 
                     ORDER BY ab.id DESC';
         $countSql = 'count(ab.id) as total_count';
