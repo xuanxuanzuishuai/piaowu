@@ -36,20 +36,14 @@ class AgentModel extends Model
         self::TYPE_OFFLINE      => '线下代理',
     ];
 
-    //分成模式:1线索获量 2线索获量+售卖模式
-    const DIVISION_MODEL_LEADS = 1;
-    const DIVISION_MODEL_LEADS_AND_SALE = 2;
-
     /**
      * 新增代理账户
      * @param $agentData
      * @param $agentDivideRulesInsertData
      * @param $agentInfoInsertData
-     * @param $packageIds
-     * @param $appId
      * @return bool
      */
-    public static function add($agentData, $agentDivideRulesInsertData, $agentInfoInsertData, $packageIds, $appId)
+    public static function add($agentData, $agentDivideRulesInsertData, $agentInfoInsertData)
     {
         //记录代理商基础数据
         $agentId = self::insertRecord($agentData);
@@ -71,13 +65,6 @@ class AgentModel extends Model
             SimpleLogger::error('insert agent info data error', $agentInfoInsertData);
             return false;
         }
-        //记录代理商售卖商品包列表
-        if (!empty($packageIds) && is_array($packageIds)) {
-            $salePackageId = AgentSalePackageModel::addRecord($packageIds, $agentId, $appId);
-            if (empty($salePackageId)) {
-                return false;
-            }
-        }
         return true;
     }
 
@@ -87,11 +74,9 @@ class AgentModel extends Model
      * @param $agentUpdateData
      * @param $agentDivideRulesInsertData
      * @param $agentInfoUpdateData
-     * @param $packageIds
-     * @param $appId
      * @return bool
      */
-    public static function update($agentId, $agentUpdateData, $agentDivideRulesInsertData, $agentInfoUpdateData, $packageIds, $appId)
+    public static function update($agentId, $agentUpdateData, $agentDivideRulesInsertData, $agentInfoUpdateData)
     {
         //编辑代理商基础数据
         $baseUpdateRes = AgentModel::updateRecord($agentId, $agentUpdateData);
@@ -122,20 +107,6 @@ class AgentModel extends Model
             SimpleLogger::error('update agent info data error', $agentInfoUpdateData);
             return false;
         }
-        //编辑代理商售卖课包数据
-        AgentSalePackageModel::batchUpdateRecord(
-            ['status' => AgentSalePackageModel::STATUS_DEL],
-            [
-                'agent_id' => $agentId,
-                'app_id' => $agentDivideRulesInsertData['app_id'],
-            ]);
-        //记录代理商售卖课包数据
-        if (!empty($packageIds) && is_array($packageIds)) {
-            $salePackageId = AgentSalePackageModel::addRecord($packageIds, $agentId, $appId);
-            if (empty($salePackageId)) {
-                return false;
-            }
-        }
         return true;
     }
 
@@ -165,7 +136,6 @@ class AgentModel extends Model
                 self::$table . '.status',
                 self::$table . '.name',
                 self::$table . '.country_code',
-                self::$table . '.division_model',
                 AgentInfoModel::$table . '.country',
                 AgentInfoModel::$table . '.province',
                 AgentInfoModel::$table . '.city',
@@ -202,6 +172,9 @@ class AgentModel extends Model
         if (empty($data['count'])) {
             return $data;
         }
+        array_walk($where, function ($wv, $wk) use (&$whereSql) {
+            $whereSql[] = ' ' . $wk . '=' . $wv . ' ';
+        });
         $offset = ($page - 1) * $limit;
         $where[AgentDivideRulesModel::$table.'.status'] = AgentDivideRulesModel::STATUS_OK;
         $data['list'] = $db->select(
@@ -221,7 +194,6 @@ class AgentModel extends Model
                 self::$table . '.type',
                 self::$table . '.service_employee_id',
                 self::$table . '.name',
-                self::$table . '.division_model',
                 AgentInfoModel::$table . '.country',
                 AgentInfoModel::$table . '.province',
                 AgentInfoModel::$table . '.city',
@@ -318,27 +290,27 @@ class AgentModel extends Model
 
     /**
      * 获取代理商以及其父级信息
-     * @param $agentIds
+     * @param $agentId
      * @return array
      */
-    public static function getAgentParentData($agentIds)
+    public static function getAgentParentData($agentId)
     {
         $db = MysqlDB::getDB();
-        $sql = "SELECT
-                    a.id,
-                    a.status,
-                    a.name,
-                    b.name as 'parent_name',
-                    b.id AS p_id,
-                    b.status AS p_status,
-                    IF ( b.division_model IS NULL, a.division_model, b.division_model ) AS division_model, 
-                    IF ( b.type IS NULL, a.type, b.type ) AS agent_type
-                FROM
-                    agent AS a
-                    LEFT JOIN agent AS b ON a.parent_id = b.id 
-                WHERE
-                    a.id in(".implode(',',$agentIds).");";
-        $data = $db->queryAll($sql);
-        return $data;
+        $data = $db->select(
+            self::$table . "(a)",
+            [
+                "[>]" . self::$table . "(b)" => ["a.parent_id" => 'id']
+            ],
+            [
+                "a.id",
+                "a.status",
+                "b.id(p_id)",
+                "b.status(p_status)",
+            ],
+            [
+                "a.id" => $agentId
+            ]
+        );
+        return $data[0];
     }
 }

@@ -45,19 +45,4 @@ class CountryCodeModel extends Model
 
         return $cache ?? [];
     }
-
-    /**
-     * 通过指定的排序规则获取数据
-     * @param $sortColumnRule
-     * @return array|null
-     */
-    public static function getDataSpecifySort($sortColumnRule)
-    {
-        $db = MysqlDB::getDB();
-        $orderRule = " pinyin ASC";
-        if (!empty($sortColumnRule)) {
-            $orderRule = $sortColumnRule . "," . $orderRule;
-        }
-        return $db->queryAll("select * from ".self::$table." where status = ".self::SELECT_STATUS." ORDER BY  ".$orderRule);
-    }
 }

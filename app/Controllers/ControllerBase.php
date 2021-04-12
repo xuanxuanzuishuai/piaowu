@@ -93,13 +93,4 @@ class ControllerBase
     {
         return $this->ci['employee']['role_id'] == $roleId;
     }
-
-    /**
-     * 获取账户数据权限
-     * @return mixed
-     */
-    public function getEmployeeDataPermission()
-    {
-        return $this->ci['employee']['only_read_self'];
-    }
 }

@@ -20,6 +20,13 @@ class DssErpPackageV1Model extends DssModel
     const SALE_SHOP_MAGIC_STONE = 4;
     const SALE_SHOP_VIDEO_PLAY = 5;
 
+    // channel 渠道授权 1 Android 2 IOS 4 公众号 8 ERP
+    const CHANNEL_ANDROID = 1;
+    const CHANNEL_IOS = 2;
+    const CHANNEL_WX = 4;
+    const CHANNEL_ERP = 8;
+    const CHANNEL_H5 = 32;
+
     // 商品包状态 -1 已下架 0 未上架 1 已上架
     const STATUS_OFF_SALE = -1;
     const STATUS_WAIT_SALE = 0;
@@ -40,7 +47,7 @@ class DssErpPackageV1Model extends DssModel
      */
     public static function getTrailPackageIds()
     {
-        return array_column(self::getPackageIds(DssCategoryV1Model::DURATION_TYPE_TRAIL), 'package_id');
+        return self::getPackageIds(DssCategoryV1Model::DURATION_TYPE_TRAIL);
     }
 
     /**
@@ -49,40 +56,35 @@ class DssErpPackageV1Model extends DssModel
      */
     public static function getNormalPackageIds()
     {
-        return array_column(self::getPackageIds(DssCategoryV1Model::DURATION_TYPE_NORMAL), 'package_id');
+        return self::getPackageIds(DssCategoryV1Model::DURATION_TYPE_NORMAL);
     }
 
     /**
      * 新产品包ids----已上架、已下架
      * @param $subType
-     * @param $status
      * @return array
      */
-    public static function getPackageIds($subType, $status = DssErpPackageGoodsV1Model::SUCCESS_NORMAL)
+    public static function getPackageIds($subType)
     {
         $db = self::dbRO();
-        $where = [
-            'p.status[!]'=>self::STATUS_WAIT_SALE,
-            'p.is_custom'=>self::PACKAGE_IS_NOT_CUSTOM,
-            'p.sale_shop'=>self::SALE_SHOP_AI_PLAY,
-            'c.sub_type'=>$subType,
-        ];
-        if(!empty($status)){
-           $where['pg.status'] = $status;
-        }
-        $records = $db->select(
-            self::$table."(p)",
-            [
-                "[><]".DssErpPackageGoodsV1Model::$table.'(pg)'=>['p.id'=>'package_id'],
-                "[><]".DssGoodsV1Model::$table."(g)"=>['pg.goods_id'=>'id'],
-                "[><]".DssCategoryV1Model::$table."(c)"=>['g.category_id'=>'id'],
-            ],
-            [
-                "p.id(package_id)",
-                "c.sub_type"
-            ],
-            $where);
-        return $records;
+        $records = $db->queryAll("
+select p.id
+from " . self::$table . " p
+inner join ". DssErpPackageGoodsV1Model::$table . " pg on pg.package_id = p.id
+inner join " . DssGoodsV1Model::$table . " g on pg.goods_id = g.id
+inner join " . DssCategoryV1Model::$table . " c on c.id = g.category_id
+where pg.status = :status
+and c.sub_type = :sub_type
+and p.status != :p_status
+and p.is_custom = :is_custom
+and p.sale_shop = " . self::SALE_SHOP_AI_PLAY, [
+            ':status' => DssErpPackageGoodsV1Model::SUCCESS_NORMAL,
+            ':sub_type' => $subType,
+            ':p_status' => self::STATUS_WAIT_SALE,
+            ':is_custom' => self::PACKAGE_IS_NOT_CUSTOM
+        ]);
+
+        return array_column($records, 'id');
     }
 
     /**

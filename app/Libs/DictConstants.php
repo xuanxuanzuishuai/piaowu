@@ -348,6 +348,10 @@ class DictConstants {
             'normal_task_config', // 买年卡，根据人数决定奖励
             'task_stop_change_number', // 买年卡，超过多少人后奖励不再变化。ex:第6个及以后都是相同奖励
             'dsscrm_1841_start_time', // 年卡推荐人数计算起始时间点
+            'xyzop_178_start_point',
+            'trial_task_stop_change_number_xyzop_178',
+            'trial_task_config_xyzop_178',
+            'extra_task_id_normal_xyzop_178',
         ]
     ];
 
@@ -381,7 +385,7 @@ class DictConstants {
     //代理模式类型
     const AGENT_TYPE = [
         'type' => 'agent_type',
-        'keys' => ['1', '2', '3', '4']
+        'keys' => ['1', '2', '3']
     ];
     //业务线
     const PACKAGE_APP_NAME = [
@@ -426,6 +430,7 @@ class DictConstants {
             'default_thumb',
             'package_buy_page_url', // 产品购买页面
             'share_card_logo', // 分享卡片logo
+            'ai_wx_official_account_qr_code', // 智能陪练公众号二维码
         ]
     ];
     // 是否
@@ -495,6 +500,14 @@ class DictConstants {
             'result_url_v1',
         ]
     ];
+    const WEIXIN_ALIPAY_CONFIG = [
+        'type' => 'WEIXIN_ALIPAY_CONFIG',
+        'keys' => [
+            'success_url',
+            'cancel_url',
+            'result_url',
+        ]
+    ];
 
     const DSS_APP_CONFIG_STUDENT = [
         'type' => 'APP_CONFIG_STUDENT',
@@ -511,6 +524,30 @@ class DictConstants {
             'success_url',
             'cancel_url',
             'result_url',
+            'broadcast_config',
+            'success_url_v1',
+            'cancel_url_v1',
+            'result_url_v1',
+        ]
+    ];
+
+    const DSS_WEB_STUDENT_CONFIG = [
+        'type' => 'WEB_STUDENT_CONFIG',
+        'keys' => [
+            'package_id',
+            'plus_package_id',
+            'mini_package_id',
+            'mini_package_id_v1',
+            'mini_001_package_id',
+            'mini_1_package_id',
+            'package_id_v2'
+        ]
+    ];
+
+    const RECALL_CONFIG = [
+        'type' => 'RECALL_CONFIG',
+        'keys' => [
+            'event_deadline',
         ]
     ];
 
@@ -604,7 +641,7 @@ class DictConstants {
             if (!empty(array_diff($key, $type['keys']))) {
                 return [];
             }
-            return ErpDictModel::getKeyValuesByArray($type['type'], $key);
+            return ErpDictModel::getKeyValuesByArray($type, $key);
         }
 
         if (!in_array($key, $type['keys'])) {

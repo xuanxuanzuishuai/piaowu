@@ -138,31 +138,57 @@ class DssGiftCodeModel extends DssModel
     }
 
     /**
-     * 获取订单信息列表通过订单ID
-     * @param $parentBillIds
+     * 获取订单信息列表
+     * @param $params
+     * @param false $isGetCount
      * @return array
      */
-    public static function getGiftCodeDetailByBillId($parentBillIds)
-    {
-        //数据库对象
-        $db = self::dbRO();
-        $giftCodeData = $db->select(
-            self::$table . "(gc)",
-            [
-                "[><]" . DssErpPackageV1Model::$table . "(p)" => ["gc.bill_package_id" => "id"]
-            ],
-            [
-                "gc.bill_package_id",
-                "gc.parent_bill_id",
-                "gc.bill_amount",
-                "gc.code_status",
-                "gc.buy_time",
-                "p.name (package_name)",
-            ],
-            [
-                "gc.parent_bill_id" => $parentBillIds
-            ]);
-        return $giftCodeData;
+    public static function getOrderList($params,$isGetCount = false){
+        $giftCode = self::$table;
+        $erpPackage = DssErpPackageModel::$table;
+        $where =[];
+        $returnData = [
+            'list' => [],
+            'totalCount' => 0
+        ];
+
+        if (isset($params['order_id']) && !empty($params['order_id'])) {
+            $where["{$giftCode}.parent_bill_id"] = $params['order_id'];
+        }
+
+        $join = [
+            "[>]{$erpPackage}" => ["{$giftCode}.bill_package_id" => "id"],
+        ];
+
+        if($isGetCount) {
+            $totalCount = MysqlDB::getDB()->count($giftCode, $join, ["{$giftCode}.id"], $where);
+            if (empty($totalCount)){
+                return $returnData;
+            }
+        }
+
+        if(isset($params['page']) && $params['page'] > 0) {
+            list($params['page'], $params['count']) = Util::formatPageCount($params);
+            $where['LIMIT'] = [($params['page'] - 1) * $params['count'], $params['count']];
+        }
+
+        if(isset($params['ORDER']) && !empty($params['ORDER'])) {
+            $where['ORDER'] = ["{$giftCode}.create_time" => "DESC"];
+        }
+
+        $list = MysqlDB::getDB()->select($giftCode, $join, [
+            "{$giftCode}.parent_bill_id",
+            "{$erpPackage}.name(package_name)",
+            "{$giftCode}.bill_amount",
+            "{$giftCode}.code_status",
+            "{$giftCode}.buy_time",
+            "{$giftCode}.create_time",
+            "{$giftCode}.employee_uuid",
+        ], $where);
+
+        $returnData['list'] = is_array($list) ? $list :[];
+        $returnData['totalCount'] = $totalCount ?? 0;
+        return $returnData;
     }
 
 
@@ -223,39 +249,5 @@ class DssGiftCodeModel extends DssModel
         $db = self::dbRO();
         $res = $db->queryAll($sql, $map);
         return $res[0] ?? [];
-    }
-
-    /**
-     * 获取学生购买记录列表
-     * @param $studentId
-     * @param $subTypes
-     * @param $appIds
-     * @param $createTime
-     * @return array
-     */
-    public static function getStudentGiftCodeList(int $studentId, $subTypes, $appIds, $createTime = 0)
-    {
-        $db = self::dbRO();
-        $records = $db->select(
-            self::$table . "(gc)",
-            [
-                "[><]" . DssErpPackageV1Model::$table . '(p)' => ['gc.bill_package_id' => 'id'],
-                "[><]" . DssErpPackageGoodsV1Model::$table . '(pg)' => ['p.id' => 'package_id'],
-                "[><]" . DssGoodsV1Model::$table . "(g)" => ['pg.goods_id' => 'id'],
-                "[><]" . DssCategoryV1Model::$table . "(c)" => ['g.category_id' => 'id'],
-            ],
-            [
-                "p.id(package_id)",
-                "p.app_id",
-                "c.sub_type",
-                "gc.create_time",
-            ],
-            [
-                'gc.buyer' => $studentId,
-                'gc.create_time[>=]' => $createTime,
-                'gc.bill_app_id' => $appIds,
-                'c.sub_type' => $subTypes,
-            ]);
-        return $records;
     }
 }

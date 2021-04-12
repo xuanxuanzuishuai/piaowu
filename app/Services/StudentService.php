@@ -97,6 +97,31 @@ class StudentService
         return DssStudentModel::getRecords($where, ['name', 'uuid', 'mobile', 'id']);
     }
 
+
+    /**
+     * 获取学生购买课包列表: 体验课/正式课
+     * @param $studentId
+     * @return mixed
+     */
+    public static function getStudentGiftCodeList($studentId)
+    {
+        //旧产品包列表
+        $oldPackageIdArr = DssPackageExtModel::getPackages(['package_type' => [DssPackageExtModel::PACKAGE_TYPE_NORMAL, DssPackageExtModel::PACKAGE_TYPE_TRIAL], 'app_id' => DssPackageExtModel::APP_AI]);
+        //新产品包列表
+        $v1PackageIdArr = DssErpPackageV1Model::getPackageIds([DssCategoryV1Model::DURATION_TYPE_TRAIL, DssCategoryV1Model::DURATION_TYPE_NORMAL]);
+        $packageIdArr = array_merge($oldPackageIdArr, $v1PackageIdArr);
+        $giftCodeList = DssGiftCodeModel::getRecords(['buyer' => $studentId, 'bill_package_id' => array_column($packageIdArr, 'package_id')], ['id', 'bill_package_id']);
+        if (empty($giftCodeList)){
+            return [];
+        }
+        $packageType = array_column($packageIdArr, null, 'package_id');
+        foreach ($giftCodeList as &$v)
+        {
+            $v['package_type'] = $packageType[$v['bill_package_id']]['sub_type'];
+        }
+        return $giftCodeList;
+    }
+
     /**
      * 保存上传的批量发放积分奖励的excel
      * @param $localFilePath

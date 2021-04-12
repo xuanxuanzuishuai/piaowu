@@ -11,7 +11,6 @@ namespace App\Middleware;
 use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Models\EmployeeModel;
-use App\Services\EmployeePrivilegeService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 
@@ -49,12 +48,10 @@ class EmployeeAuthCheckMiddleWare extends MiddlewareBase
         $employee = EmployeeModel::getById($cacheEmployeeId);
         // 延长登录token过期时间
         EmployeeModel::refreshEmployeeCache($token);
-
-        //数据权限
-        $employee['only_read_self'] = EmployeePrivilegeService::checkEmployeeDataPermission($employee);
         $this->container['employee'] = $employee;
         global $orgId;
         $orgId = $employee['org_id'];
+
         SimpleLogger::info(__FILE__ . ":" . __LINE__, [
             'middleWare' => 'EmployeeAuthCheckMiddleWare',
             'employee' => $employee

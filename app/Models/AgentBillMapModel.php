@@ -9,13 +9,11 @@
 
 namespace App\Models;
 
-use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
 
 class AgentBillMapModel extends Model
 {
     public static $table = "agent_bill_map";
-
 
     /**
      * 记录数据
@@ -53,7 +51,7 @@ class AgentBillMapModel extends Model
      * @param $studentId
      * @return array
      */
-    public static function get(string $parentBillId, int $studentId)
+    public static function get($parentBillId, int $studentId)
     {
         $mapData = self::getRecord(['student_id' => $studentId, 'bill_id' => $parentBillId], ['agent_id']);
         if (empty($mapData)) {

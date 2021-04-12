@@ -538,6 +538,42 @@ class AliOSS
     }
 
     /**
+     * 生成erp商品图片地址
+     * @param $urlNeedSigns
+     * @return array
+     */
+    public static function signErpShopUrls($urlNeedSigns)
+    {
+        //获取oss参数
+        $ossDict = DictConstants::getErpDict(DictConstants::ALI_OSS_CONFIG['type'], array(
+            'access_key_id',
+            'access_key_secret',
+            'shop_bucket',
+            'endpoint',
+        ))[DictConstants::ALI_OSS_CONFIG['type']];
+        $options = $result = [];
+        $options['x-oss-process'] = NULL;
+        try {
+            //获取客户端操作对象
+            $timeout = 3600 * 8;
+            $ossClient = new OssClient($ossDict['access_key_id'], $ossDict['access_key_secret'], $ossDict['endpoint']);
+            //处理敏感字符,循环获取签名图片
+            foreach ($urlNeedSigns as $urlKey => $urlVal) {
+                $urlNeedSign = preg_replace("/^\//", "", $urlVal);
+                $result[$urlKey] = $ossClient->signUrl($ossDict['shop_bucket'],
+                    $urlNeedSign,
+                    $timeout,
+                    OssClient::OSS_HTTP_GET,
+                    $options);
+            }
+
+        } catch (OssException $e) {
+            SimpleLogger::error("OSSClient error", [$e]);
+        }
+        return $result;
+    }
+
+    /**
      * 保存临时文件到本地服务器
      * @param $imgUrl
      * @return bool|string

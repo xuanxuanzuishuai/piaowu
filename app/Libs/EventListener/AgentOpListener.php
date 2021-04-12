@@ -30,6 +30,6 @@ class AgentOpListener extends Listener
             SimpleLogger::error('valid log data', []);
             return false;
         }
-        return AgentOperationLogModel::recordOpLog($contents, $contents['agent_id'], $contents['operator_id'], $contents['op_type']);
+        return AgentOperationLogModel::recordOpLog($contents, $contents['operator_id'], $contents['op_type']);
     }
 }
