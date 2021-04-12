@@ -409,7 +409,7 @@ class Dss extends ControllerBase
             if ($result['code'] != Valid::CODE_SUCCESS) {
                 return $response->withJson($result, StatusCode::HTTP_OK);
             }
-            $res = AgentService::isBindOffLine($params['student_id']);
+            $res = AgentService::isBindOffLine($params['student_id'], $params['parent_bill_id'] ?: '', $params['type'] ?: '');
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
