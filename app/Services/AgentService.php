@@ -1162,6 +1162,9 @@ class AgentService
         }
         $logo = DictConstants::get(DictConstants::AGENT_CONFIG, 'share_card_logo');
         $agent = AgentModel::getById($agentId);
+        if (!empty($agent['parent_id'])) {
+            $agent = AgentModel::getById($agent['parent_id']);
+        }
         $appId = Constants::SMART_APP_ID;
 
         $channel = DictConstants::get(DictConstants::AGENT_CONFIG, 'channel_distribution');

@@ -373,6 +373,7 @@ class Order extends ControllerBase
     public function paySuccess(Request $request, Response $response)
     {
         try {
+            $params = $request->getParams();
             $student = $this->ci['user_info'];
             $paramInfo = [];
             if (!empty($params['param_id'])) {
