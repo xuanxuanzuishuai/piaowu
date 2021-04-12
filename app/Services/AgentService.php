@@ -880,12 +880,12 @@ class AgentService
     /**
      * 获取代理商的 推广订单列表
      * @param $agentId
-     * @param $level
+     * @param $type
      * @param $page
      * @param $limit
      * @return array
      */
-    public static function getAgentOrderList($agentId, $level, $page, $limit)
+    public static function getPopularizeOrderList($agentId, $type, $page, $limit)
     {
         $agentNameArr = [];
         $returnData = [
@@ -893,7 +893,7 @@ class AgentService
             'total' => 0,
         ];
         //获取直接绑定还是代理绑定
-        if ($level == AgentModel::LEVEL_FIRST) {
+        if ($type == AgentModel::LEVEL_FIRST) {
             //获取直接绑定用户
             $agentIdArr = [$agentId];
         } else {
@@ -910,50 +910,32 @@ class AgentService
                 return $returnData;
             }
         }
-        $orderList = AgentAwardDetailModel::getAgentRecommendDuplicationBill(implode(',', $agentIdArr), false, $page, $limit);
-        if (empty($orderList['total_count'])) {
+
+        //获取订单
+        $sqlLimitArr = [
+            ($page - 1) * $limit,
+            $limit
+        ];
+        list($orderList,$orderTotal) = AgentAwardDetailModel::getListByAgentId($agentIdArr, $sqlLimitArr) ?? [];
+        if (empty($orderList)) {
             return $returnData;
         }
-        $returnData['total'] = $orderList['total_count'];
         $userIdArr = [];
         $orderIdArr = [];
-        $orderAgentIdArr = [];
-        foreach ($orderList['list'] as $item) {
-            if (!empty($item['student_id'])) {
-                $userIdArr[$item['student_id']] = $item['student_id'];
-            }
-            if (!empty($item['parent_bill_id'])) {
-                $orderIdArr[$item['parent_bill_id']] = $item['parent_bill_id'];
-            }
-            if (!empty($item['signer_agent_id'])) {
-                $orderAgentIdArr[$item['signer_agent_id']] = $item['signer_agent_id'];
-            }
-        }
-        // 代理信息
-        $allAgentInfo = [];
-        if (!empty($orderAgentIdArr)) {
-            $allAgentInfo = AgentModel::getRecords(['id' => $orderAgentIdArr], ['id', 'name']);
-            if (!empty($allAgentInfo)) {
-                $allAgentInfo = array_column($allAgentInfo, null, 'id');
-            }
-        }
-        // 订单信息
-        $giftCodeArr = [];
-        if (!empty($orderIdArr)) {
-            $giftCodeArr = DssGiftCodeModel::getRecords(['parent_bill_id' => $orderIdArr]);
-            if (!empty($giftCodeArr)) {
-                $giftCodeArr = array_column($giftCodeArr, null, 'parent_bill_id');
-            }
-        }
-        $userNicknameArr = [];
-        $mobileList = [];
-        if (!empty($userIdArr)) {
-            //获取用户昵称头像
-            $userNicknameArr = self::batchDssUserWxInfoByUserId($userIdArr);
-            //获取手机号
-            $mobileList = DssStudentModel::getRecords(['id' => $userIdArr], ['id', 'mobile']);
-        }
+        array_map(function ($item) use (&$userIdArr, &$orderIdArr) {
+            $userIdArr[] = $item['student_id'];
+            $extInfo = json_decode($item['ext'], true);
+            $orderIdArr[] = $extInfo['parent_bill_id'] ?? 0;
+        }, $orderList);
 
+        $returnData['total'] = $orderTotal;
+
+        //获取用户昵称头像
+        $userNicknameArr = self::batchDssUserWxInfoByUserId($userIdArr);
+
+        //获取手机号
+        $mobileList = DssStudentModel::getRecords(['id' => $userIdArr], ['id', 'mobile']);
+        $mobileList = is_array($mobileList) ? $mobileList : [];
         $encodeMobileArr = [];
         array_map(function ($item) use (&$encodeMobileArr) {
             $encodeMobileArr[$item['id']] = Util::hideUserMobile($item['mobile']);
@@ -961,20 +943,20 @@ class AgentService
 
         //组合返回数据
         $dict = DictConstants::getSet(DictConstants::CODE_STATUS);
-        foreach ($orderList['list'] as &$val) {
+        foreach ($orderList as $key => $val) {
             $tmpUserInfo = $userNicknameArr[$val['student_id']] ?? [];
 
-            $val['thumb'] = $tmpUserInfo['thumb'] ?? '';
-            $val['nickname'] = $tmpUserInfo['nickname'] ?? '';
-            $val['mobile'] = $encodeMobileArr[$val['student_id']] ?? '';
-            $val['second_agent_name'] = $allAgentInfo[$val['signer_agent_id']]['name'] ?? '';
-            $val['format_pay_time'] = date("Y-m-d H:i:s", $val['create_time']);
-            $val['bill_amount'] = Util::yuan($giftCodeArr[$val['parent_bill_id']]['bill_amount'], 0);
-            $val['code_status_name'] = $dict[$giftCodeArr[$val['parent_bill_id']]['code_status']] ?? '';
+            $orderList[$key]['thumb'] = $tmpUserInfo['thumb'] ?? '';
+            $orderList[$key]['nickname'] = $tmpUserInfo['nickname'] ?? '';
+            $orderList[$key]['mobile'] = $encodeMobileArr[$val['student_id']] ?? '';
+            $orderList[$key]['second_agent_name'] = $agentNameArr[$val['agent_id']] ?? '';
+            $orderList[$key]['format_pay_time'] = date("Y-m-d H:i:s", $val['buy_time']);
+            $orderList[$key]['bill_amount'] = $orderList[$key]['bill_amount']/100;  //单位元
+            $orderList[$key]['code_status_name'] = $dict[$val['code_status']] ?? '';
 
         }
 
-        $returnData['order_list'] = $orderList['list'];
+        $returnData['order_list'] = $orderList;
         return $returnData;
     }
 
@@ -1028,10 +1010,15 @@ class AgentService
                 'stage[!]' => AgentUserModel::STAGE_REGISTER,
             ]
         );
-        $order = AgentAwardDetailModel::getAgentRecommendDuplicationBill(implode(',', $ids));
-        $agentInfo['orders'] = $order['count'] ?? 0;
+        $agentInfo['orders'] = AgentAwardDetailModel::getCount(
+            [
+                'agent_id' => $ids,
+                'action_type[!]' => AgentAwardDetailModel::AWARD_ACTION_TYPE_REGISTER,
+                'is_bind' => AgentAwardDetailModel::IS_BIND_STATUS_YES,
+            ]
+        );
         $agentInfo['sec_agents'] = AgentModel::getCount(['parent_id' => $agentId]);
-        $agentInfo['config']     = self::getPackageList($agentId);
+        $agentInfo['config']     = self::popularMaterialInfo($agentId);
         $agentInfo['parent']     = AgentModel::getRecord(['id' => $agentInfo['parent_id']]);
         $agentInfo['show_status'] = self::getAgentStatus($agentInfo);
         $agentInfo = self::formatFrontAgentData($agentInfo);
