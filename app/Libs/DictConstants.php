@@ -514,6 +514,12 @@ class DictConstants {
         ]
     ];
 
+    //一级渠道与支付方式映射关系
+    const CHANNEL_PAY_TYPE_MAP = [
+        'type' => 'channel_pay_type_map',
+        'keys' => [0]
+    ];
+
     /**
      * 单个获取op系统dict配置数据
      * @param $type
