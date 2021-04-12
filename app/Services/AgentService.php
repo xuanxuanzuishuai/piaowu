@@ -940,7 +940,7 @@ class AgentService
         // 订单信息
         $giftCodeArr = [];
         if (!empty($orderIdArr)) {
-            $giftCodeArr = DssGiftCodeModel::getGiftCodeDetailByBillId($orderIdArr);
+            $giftCodeArr = DssGiftCodeModel::getRecords(['parent_bill_id' => $orderIdArr]);
             if (!empty($giftCodeArr)) {
                 $giftCodeArr = array_column($giftCodeArr, null, 'parent_bill_id');
             }
@@ -969,12 +969,7 @@ class AgentService
             $val['mobile'] = $encodeMobileArr[$val['student_id']] ?? '';
             $val['second_agent_name'] = $allAgentInfo[$val['signer_agent_id']]['name'] ?? '';
             $val['format_pay_time'] = date("Y-m-d H:i:s", $val['create_time']);
-            $val['bill_amount'] = Util::yuan($giftCodeArr[$val['parent_bill_id']]['bill_amount'], 2);
-            $val['agent_id'] = $val['signer_agent_id'] ?? '';
-            $val['bill_id'] = $val['parent_bill_id'] ?? '';
-            $val['buy_time'] = $val['create_time'] ?? '';
-            $val['package_name'] = $giftCodeArr[$val['parent_bill_id']]['package_name'] ?? '';
-            $val['code_status'] = $giftCodeArr[$val['parent_bill_id']]['code_status'] ?? '';
+            $val['bill_amount'] = Util::yuan($giftCodeArr[$val['parent_bill_id']]['bill_amount'], 0);
             $val['code_status_name'] = $dict[$giftCodeArr[$val['parent_bill_id']]['code_status']] ?? '';
 
         }
