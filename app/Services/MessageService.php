@@ -411,16 +411,19 @@ class MessageService
             }
         }
 
-        // 海报埋点 - 全部推送成功
-        if ($res == MessageRecordLogModel::PUSH_SUCCESS && $posterId > 0) {
-            $openidUserInfo = DssUserWeiXinModel::getUserInfoBindWX($data['open_id'], $appId, PushMessageService::APPID_BUSI_TYPE_DICT[$appId]);
-            $queueData = [
-                'uuid' => $openidUserInfo[0]['uuid'],
-                'poster_id' => intval($posterId),
-                'activity_name' => $messageRule['name'] ?? '',
-                'user_status' => DssStudentModel::STUDENT_IDENTITY_ZH_MAP[$user_current_status],
-            ];
-            (new SaBpDataTopic())->posterPush($queueData)->publish();
+        // 关注规则，无法获取转介绍二维码
+        if ($data['rule_id'] != DictConstants::get(DictConstants::MESSAGE_RULE, 'subscribe_rule_id')) {
+            // 海报埋点 - 全部推送成功
+            if ($res == MessageRecordLogModel::PUSH_SUCCESS && $posterId > 0) {
+                $openidUserInfo = DssUserWeiXinModel::getUserInfoBindWX($data['open_id'], $appId, PushMessageService::APPID_BUSI_TYPE_DICT[$appId]);
+                $queueData = [
+                    'uuid' => $openidUserInfo[0]['uuid'],
+                    'poster_id' => intval($posterId),
+                    'activity_name' => $messageRule['name'] ?? '',
+                    'user_status' => DssStudentModel::STUDENT_IDENTITY_ZH_MAP[$user_current_status],
+                ];
+                (new SaBpDataTopic())->posterPush($queueData)->publish();
+            }
         }
 
         return $res;
