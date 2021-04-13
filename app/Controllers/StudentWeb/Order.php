@@ -398,7 +398,7 @@ class Order extends ControllerBase
                 }
             }
             if (!is_null($agent)) {
-                $defaultNickName = '';
+                $defaultNickName = '小叶子老师';
                 $defaultThumb = AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::AGENT_CONFIG, 'default_thumb'));
                 $assistantInfo['wx_nick'] = $assistantInfo['wx_nick'] ?: $defaultNickName;
                 $assistantInfo['wx_thumb'] = $assistantInfo['wx_thumb'] ?: $defaultThumb;
