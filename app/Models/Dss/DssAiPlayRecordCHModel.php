@@ -173,4 +173,32 @@ class DssAiPlayRecordCHModel
         $result = $chdb->queryAll($sql, ['table' => self::$table, 'id' => $recordId]);
         return empty($result) ? [] : $result[0];
     }
+
+    /**
+     * 统计学生练琴天数
+     * @param $studentId int | string
+     * @param $startTime int | string
+     * @param $endTime int | string
+     * @return int
+     */
+    public static function getStudentPlayDayCount($studentId, $startTime = 0, $endTime = 0)
+    {
+        $chDb = new CHDB();
+        $sql = "SELECT 
+                COUNT(DISTINCT toDate(end_time)) AS play_day 
+                FROM " . self::$table . "
+                WHERE duration > 0 
+                  AND student_id = {$studentId}";
+
+        if (!empty($startTime)) {
+            $sql .= " and end_time >= {$startTime}";
+        }
+
+        if (!empty($endTime)) {
+            $sql .= " and end_time <= {$endTime}";
+        }
+
+        $record = $chDb->queryAll($sql)[0];
+        return (int)$record['play_day'];
+    }
 }

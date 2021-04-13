@@ -178,7 +178,7 @@ class ShowMiniAppService
                     $data['headimgurl'] = $wxData['headimgurl'];
                 }
                 // 练琴天数
-                $accumulateDays = DssAiPlayRecordModel::getAccumulateDays($user_id);
+                $accumulateDays = DssAiPlayRecordCHModel::getStudentPlayDayCount($user_id);
                 // 查询推荐者练习曲目
                 [$percentage, $numbers] = self::getReferrerPlayData($user_id);
             }
