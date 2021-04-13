@@ -10,6 +10,7 @@ namespace App\Controllers\Referral;
 
 use App\Controllers\ControllerBase;
 use App\Libs\HttpHelper;
+use App\Libs\Util;
 use App\Libs\Valid;
 use App\Services\ReferralService;
 use App\Libs\Exceptions\RunTimeException;
@@ -27,19 +28,10 @@ class Invite extends ControllerBase
      */
     public function list(Request $request, Response $response)
     {
-        try {
-            $params = $request->getParams();
-            $params['s_create_time'] = is_numeric($params['s_create_time']) ? $params['s_create_time'] : strtotime($params['s_create_time']);
-            $params['e_create_time'] = is_numeric($params['e_create_time']) ? $params['e_create_time'] : strtotime($params['e_create_time']);
-            list($records, $totalCount) = ReferralService::getReferralList($params);
-        } catch (RuntimeException $e) {
-            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
-        }
-
-        return HttpHelper::buildResponse($response, [
-            'list' => $records,
-            'total_count' => $totalCount
-        ]);
+        $params = $request->getParams();
+        list($params['page'], $params['count']) = Util::formatPageCount($params);
+        $list = ReferralService::getReferralList($params);
+        return HttpHelper::buildResponse($response, $list);
     }
 
     /**
@@ -113,7 +105,7 @@ class Invite extends ControllerBase
                 return $response->withJson($result, StatusCode::HTTP_OK);
             }
             $params = $request->getParams();
-            $info = ReferralService::getRefereeAllUser($params['app_id'], $params['student_id'], $params['referee_type']);
+            $info = ReferralService::getRefereeAllUser($params['app_id'], $params['student_id']);
         } catch (RuntimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }

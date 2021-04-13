@@ -8,7 +8,6 @@
 namespace App\Models\Dss;
 
 use App\Libs\Constants;
-use App\Models\StudentInviteModel;
 use App\Services\ReferralService;
 
 class DssGiftCodeModel extends DssModel
@@ -123,7 +122,7 @@ class DssGiftCodeModel extends DssModel
      */
     public static function refereeBuyCertainPackage($refererId, $packageIdArr, $startTime, $isV1Package = null)
     {
-        $refereeAllUser = ReferralService::getRefereeAllUser(Constants::SMART_APP_ID, $refererId, StudentInviteModel::REFEREE_TYPE_STUDENT);
+        $refereeAllUser = ReferralService::getRefereeAllUser(Constants::SMART_APP_ID, $refererId);
         if (empty($refereeAllUser)) {
             return NULL;
         }

@@ -132,6 +132,11 @@ class UserRefereeService
     public static function buyDeal($buyPreStudentInfo, $packageInfo, $appId, $parentBillId)
     {
         if ($appId == Constants::SMART_APP_ID) {
+            //绑定关系处理逻辑
+            $inviteRes = StudentInviteService::studentInviteRecord($buyPreStudentInfo['id'], '', $packageInfo['type'], $appId, [], $parentBillId);
+            if (empty($inviteRes)) {
+                return false;
+            }
             //代理奖励
             AgentService::agentAwardLogic($buyPreStudentInfo, $parentBillId, $packageInfo);
             // 更新用户微信标签
@@ -167,14 +172,8 @@ class UserRefereeService
      */
     public static function dssCompleteEventTask($studentId, $packageType, $trialType, $appId)
     {
-        //当前用户的推荐人
-        $refereeRelation = StudentInviteModel::getRecord(
-            [
-                'student_id' => $studentId,
-                'app_id' => Constants::SMART_APP_ID,
-                'referee_type' => StudentInviteModel::REFEREE_TYPE_STUDENT
-            ]
-        );
+        //当前用户的学生推荐人
+        $refereeRelation = StudentReferralStudentStatisticsModel::getRecord(['student_id' => $studentId]);
         if (empty($refereeRelation)) {
             SimpleLogger::info('not referee relate', ['student_id' => $studentId, 'app_id' => Constants::SMART_APP_ID]);
             return;
@@ -226,7 +225,6 @@ class UserRefereeService
         // if (!empty($newRuleStartPoint) && time() >= $newRuleStartPoint) {
         //     return self::getTaskIdByTypeNew($packageType, $trialType, $refereeInfo, $appId);
         // }
-
         $taskIds = [];
         // 推荐人当前状态：非付费正式课：
         if ($refereeInfo['has_review_course'] != DssStudentModel::REVIEW_COURSE_1980) {
@@ -281,8 +279,8 @@ class UserRefereeService
                 $endPoint = strtotime(date("Y-m-01 00:00:00", strtotime("+1 month")));
 
                 // 查询被推荐人数量：
-                $refereeCount = self::getRefereeCount($refereeInfo, $appId, $startPoint, $endPoint, DssStudentModel::REVIEW_COURSE_1980);
-                $noChangeNumber = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'task_stop_change_number');
+                $refereeCount = self::getRefereeCount($refereeInfo, $startPoint, $endPoint);
+                $noChangeNumber = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'trial_task_stop_change_number_xyzop_178');
                 if ($refereeCount > $noChangeNumber) {
                     $refereeCount = $noChangeNumber;
                 }
@@ -321,18 +319,15 @@ class UserRefereeService
     /**
      * 查询被推荐人数量
      * @param $refereeInfo
-     * @param $appId
      * @param $startPoint
      * @param int $type
      * @return int
      */
-    public static function getRefereeCount($refereeInfo, $appId, $startPoint, $endPoint, $type = DssStudentModel::REVIEW_COURSE_1980)
+    public static function getRefereeCount($refereeInfo, $startPoint, $endPoint, $type = DssStudentModel::REVIEW_COURSE_1980)
     {
         $refereeData = StudentInviteModel::getRefereeBuyData(
             [
                 'referee_id' => $refereeInfo['id'],
-                'app_id' => $appId,
-                'referee_type' => StudentInviteModel::REFEREE_TYPE_STUDENT,
                 'create_time' => $startPoint
             ],
             $type

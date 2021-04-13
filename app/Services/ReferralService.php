@@ -14,13 +14,15 @@ use App\Libs\DictConstants;
 use App\Libs\SimpleLogger;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\Dss\DssAiPlayRecordCHModel;
+use App\Models\Dss\DssChannelModel;
 use App\Models\Dss\DssCollectionModel;
+use App\Models\Dss\DssEmployeeModel;
 use App\Models\Dss\DssStudentModel;
 use App\Libs\Util;
 use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\Dss\DssUserWeiXinModel;
+use App\Models\OperationActivityModel;
 use App\Models\SharePosterModel;
-use App\Models\StudentInviteModel;
 use App\Models\PosterModel;
 use App\Models\StudentReferralStudentDetailModel;
 use App\Models\StudentReferralStudentStatisticsModel;
@@ -41,32 +43,181 @@ class ReferralService
      */
     public static function getReferralList($params)
     {
-        $taskNodeDict = self::getReferralTaskNodeDict();
-        $nodeNameDict = self::getReferralNodeNameDict();
-        if (!empty($params['has_review_course']) && $params['has_review_course'] == DssStudentModel::REVIEW_COURSE_1980) {
-            $params['task_id'] = explode(',', DictConstants::get(DictConstants::NODE_RELATE_TASK, self::EXPECT_YEAR_PAY));
-            unset($params['has_review_course']);
+        $listData = [
+            'total_count' => 0,
+            'list' => [],
+        ];
+        $whereData = self::formatReferralListWhere($params);
+        if (empty($whereData)) {
+            return $listData;
         }
-        if (empty($params['task_id'])) {
-            $params['task_id'] = array_keys($taskNodeDict);
+        //查询数据
+        $count = StudentReferralStudentStatisticsModel::getCount($whereData);
+        if (empty($count)) {
+            return $listData;
         }
-
-        list($records, $total) = DssStudentModel::getInviteList($params);
-
-        foreach ($records as &$item) {
-            $item['has_review_course_show'] = self::getStageByMaxTaskIds($item['max_task_id'], $taskNodeDict, $nodeNameDict);
-            $item = self::formatStudentInvite($item);
-        }
-        return [$records, $total[0]['total'] ?? 0];
+        $listData['total_count'] = $count;
+        $whereData['ORDER'] = ["id" => "DESC"];
+        $whereData['LIMIT'] = [($params['page'] - 1) * $params['count'], $params['count']];
+        $listData['list'] = StudentReferralStudentStatisticsModel::getRecords(
+            $whereData,
+            [
+                'id[Int]',
+                'student_id[Int]',
+                'last_stage[Int]',
+                'referee_id[Int]',
+                'referee_employee_id[Int]',
+                'activity_id[Int]',
+                'create_time'
+            ]);
+        return self::formatStudentInvite($listData);
     }
 
-    public static function formatStudentInvite($item)
+    /**
+     * 格式化推荐学员列表数据
+     * @param $listData
+     * @return mixed
+     */
+    public static function formatStudentInvite($listData)
     {
-        $item['student_mobile_hidden']  = Util::hideUserMobile($item['mobile']);
-        $item['referrer_mobile_hidden'] = Util::hideUserMobile($item['referral_mobile']);
-        $item['create_time_show']       = date('Y-m-d H:i', $item['create_time']);
-        $item['register_time']          = $item['create_time'];
-        return $item;
+        $studentIds = array_column($listData['list'], 'student_id');
+        $refereeStudentIds = array_column($listData['list'], 'referee_id');
+        //批量获取学生信息
+        $studentDetail = array_column(DssStudentModel::getRecords(
+            [
+                'id' => array_unique(array_merge($studentIds, $refereeStudentIds))
+            ],
+            ['id', 'name', 'uuid', 'mobile', 'create_time', 'channel_id[Int]']), null, 'id');
+        //进度
+        $dictData = DictConstants::getSet(DictConstants::AGENT_USER_STAGE);
+        //批量获取渠道信息
+        $channelData = array_column(DssChannelModel::getRecords(['id' => array_unique(array_column($studentDetail, 'channel_id'))], ['name', 'id']), null, 'id');
+        //批量获取员工信息
+        $employeeData = array_column(DssEmployeeModel::getRecords(['id' => array_unique(array_column($listData['list'], 'referee_employee_id'))], ['name', 'id']), null, 'id');
+        //批量获取活动信息
+        $activityData = array_column(OperationActivityModel::getRecords(['id' => array_unique(array_column($listData['list'], 'activity_id'))], ['name', 'id']), null, 'id');
+        foreach ($listData['list'] as $lk => &$lv) {
+            $lv['student_name'] = $studentDetail[$lv['student_id']]['name'];
+            $lv['student_uuid'] = $studentDetail[$lv['student_id']]['uuid'];
+            $lv['student_mobile_hidden'] = $studentDetail[$lv['student_id']]['mobile'];
+            $lv['register_time'] = $studentDetail[$lv['student_id']]['create_time'];
+            $lv['channel_name'] = $channelData[$studentDetail[$lv['student_id']]['channel_id']]['name'];
+            $lv['last_stage_show'] = $dictData[$lv['last_stage']];
+
+            $lv['referrer_mobile_hidden'] = $studentDetail[$lv['referee_id']]['mobile'];
+            $lv['referrer_uuid'] = $studentDetail[$lv['referee_id']]['uuid'];
+            $lv['referrer_name'] = $studentDetail[$lv['referee_id']]['name'];
+
+            $lv['employee_name'] = !empty($lv['referee_employee_id']) ? $employeeData[$lv['referee_employee_id']]['name'] : '';
+            $lv['activity_name'] = !empty($lv['activity_id']) ? $activityData[$lv['activity_id']]['name'] : '';
+        }
+        return $listData;
+    }
+
+
+    /**
+     * 格式化推荐学员搜索条件
+     * @param $params
+     * @return array
+     */
+    private static function formatReferralListWhere($params)
+    {
+        //推荐时间
+        $statisticsWhere['id[>]'] = 0;
+        if (!empty($params['referral_s_create_time'])) {
+            $statisticsWhere['create_time[>=]'] = $params['referral_s_create_time'];
+        }
+        if (!empty($params['referral_e_create_time'])) {
+            $statisticsWhere['create_time[<=]'] = $params['referral_e_create_time'];
+        }
+        //当前进度
+        if (is_numeric($params['last_stage']) && isset($params['last_stage'])) {
+            $statisticsWhere['last_stage'] = $params['last_stage'];
+        }
+
+        //员工
+        if (!empty($params['employee_name'])) {
+            $employeeData = DssEmployeeModel::getRecords(['name[~]' => $params['employee_name']], ['id[Int]']);
+            if (empty($employeeData)) {
+                return [];
+            }
+            $statisticsWhere['referee_employee_id'] = array_column($employeeData, 'id');
+        }
+        //活动
+        if (!empty($params['activity'])) {
+            $activityData = OperationActivityModel::getRecords(['name[~]' => $params['activity']], ['id[Int]']);
+            if (empty($activityData)) {
+                return [];
+            }
+            $statisticsWhere['activity_id'] = array_column($activityData, 'id');
+        }
+        //推荐人手机号
+        $referralStudentIds = [];
+        if (!empty($params['referral_mobile'])) {
+            $referralMobileData = DssStudentModel::getRecord(['mobile[~]' => $params['referral_mobile']], ['id[Int]']);
+            if (empty($referralMobileData)) {
+                return [];
+            }
+            $referralStudentIds = array_column($referralMobileData, 'id');
+        }
+        //推荐人uuid
+        if (!empty($params['referral_uuid'])) {
+            $referralUuidData = DssStudentModel::getRecord(['uuid' => $params['referral_uuid']], ['id[Int]']);
+            if (empty($referralUuidData)) {
+                return [];
+            }
+            $referralStudentIds = array_merge($referralStudentIds, array_column($referralUuidData, 'id'));
+        }
+        if (!empty($referralStudentIds)) {
+            $statisticsWhere['referee_id'] = $referralStudentIds;
+        }
+
+        //学员手机号
+        $studentIds = [];
+        if (!empty($params['mobile'])) {
+            $mobileData = DssStudentModel::getRecord(['mobile[~]' => $params['mobile']], ['id[Int]']);
+            if (empty($mobileData)) {
+                return [];
+            }
+            $studentIds = array_column($mobileData, 'id');
+        }
+        //学员uuid
+        if (!empty($params['uuid'])) {
+            $uuidData = DssStudentModel::getRecord(['uuid' => $params['uuid']], ['id[Int]']);
+            if (empty($uuidData)) {
+                return [];
+            }
+            $studentIds = array_merge($studentIds, array_column($uuidData, 'id'));
+        }
+        //学员注册渠道
+        if (!empty($params['channel_id'])) {
+            $channelData = DssStudentModel::getRecord(['channel_id' => $params['channel_id']], ['id[Int]']);
+            if (empty($channelData)) {
+                return [];
+            }
+            $studentIds = array_merge($studentIds, array_column($channelData, 'id'));
+        }
+
+        //学员注册时间
+        $registerStudentIds = [];
+        if (!empty($params['register_s_create_time'])) {
+            $registerStartData = StudentReferralStudentDetailModel::getRecords(['create_time[>=]' => $params['register_s_create_time'], 'stage' => StudentReferralStudentStatisticsModel::STAGE_REGISTER], ['student_id[Int]']);
+            if (empty($registerStartData)) {
+                return [];
+            }
+            $registerStudentIds = array_merge($registerStudentIds, array_column($registerStartData, 'student_id'));
+        }
+        if (!empty($params['register_e_create_time'])) {
+            $registerEndData = StudentReferralStudentDetailModel::getRecords(['create_time[<=]' => $params['register_e_create_time'], 'stage' => StudentReferralStudentStatisticsModel::STAGE_REGISTER], ['student_id[Int]']);
+            if (empty($registerEndData)) {
+                return [];
+            }
+            $registerStudentIds = array_merge($registerStudentIds, array_column($registerEndData, 'student_id'));
+        }
+        if (!empty($studentIds) || !empty($registerStudentIds)) {
+            $statisticsWhere['student_id'] = array_unique(array_merge($studentIds, $registerStudentIds));
+        }
+        return $statisticsWhere;
     }
 
     /**
@@ -115,7 +266,7 @@ class ReferralService
     }
 
     /**
-     * 某个用户的推荐人信息
+     * 某个学生用户的学生推荐人信息
      * @param $appId
      * @param $studentId
      * @return mixed
@@ -123,8 +274,8 @@ class ReferralService
     public static function getReferralInfo($appId, $studentId)
     {
         if ($appId == Constants::SMART_APP_ID) {
-            return StudentInviteModel::getRecord(
-                ['student_id' => $studentId, 'app_id' => $appId, 'referee_type' => StudentInviteModel::REFEREE_TYPE_STUDENT]
+            return StudentReferralStudentStatisticsModel::getRecord(
+                ['student_id' => $studentId]
             );
         }
         return NULL;
@@ -133,15 +284,14 @@ class ReferralService
     /**
      * @param $appId
      * @param $studentId
-     * @param $refereeType
      * @return mixed
-     * 当前这个人推荐过来的所有用户
+     * 获取当前这个学生推荐的所有学生
      */
-    public static function getRefereeAllUser($appId, $studentId, $refereeType)
+    public static function getRefereeAllUser($appId, $studentId)
     {
         if ($appId == Constants::SMART_APP_ID) {
-            return StudentInviteModel::getRecords(
-                ['referee_id' => $studentId, 'app_id' => $appId, 'referee_type' => $refereeType]
+            return StudentReferralStudentStatisticsModel::getRecords(
+                ['referee_id' => $studentId]
             );
         }
         return NULL;

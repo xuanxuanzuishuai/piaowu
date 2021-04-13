@@ -5,9 +5,9 @@ use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\Util;
 use App\Models\Erp\ErpStudentModel;
-use App\Models\Erp\ErpUserEventTaskModel;
 use App\Models\OperationActivityModel;
-use App\Models\StudentInviteModel;
+use App\Models\StudentReferralStudentDetailModel;
+use App\Models\StudentReferralStudentStatisticsModel;
 
 class DssStudentModel extends DssModel
 {
@@ -40,125 +40,6 @@ class DssStudentModel extends DssModel
         5 => '年卡过期',
         6 => '体验期过期',
     ];
-
-    /**
-     * 推荐学员列表
-     * @param $params
-     * @return array
-     */
-    public static function getInviteList($params)
-    {
-        $where = ' where si.referee_type=:referee_type';
-        $map = [
-            ':referee_type' => StudentInviteModel::REFEREE_TYPE_STUDENT
-        ];
-        if (!empty($params['referral_mobile'])) {
-            $where .= ' and r.mobile like :referral_mobile ';
-            $map[':referral_mobile'] = "{$params['referral_mobile']}%";
-        }
-        if (!empty($params['mobile'])) {
-            $where .= ' and s.mobile like :mobile ';
-            $map[':mobile'] = "{$params['mobile']}%";
-        }
-
-        if (!empty($params['student_uuid'])){
-            $where .= ' and s.uuid = :student_uuid ';
-            $map[':student_uuid'] = "{$params['student_uuid']}";
-        }
-
-        if (!empty($params['referral_uuid'])){
-            $where .= ' and r.uuid = :referral_uuid ';
-            $map[':referral_uuid'] = "{$params['referral_uuid']}";
-        }
-        if (!empty($params['task_id'])) {
-            $where .= ' and erp_ut.event_task_id in (' . implode(',', $params['task_id']) . ')';
-        }
-        if (!Util::emptyExceptZero($params['has_review_course'])) {
-            $where .= ' and s.has_review_course = :has_review_course ';
-            $map[':has_review_course'] = "{$params['has_review_course']}";
-        }
-        if (!empty($params['s_create_time'])) {
-            $where .= ' and si.create_time >= :s_create_time ';
-            $map[':s_create_time'] = $params['s_create_time'];
-        }
-        if (!empty($params['e_create_time'])) {
-            $where .= ' and si.create_time <= :e_create_time ';
-            $map[':e_create_time'] = $params['e_create_time'];
-        }
-        if (!empty($params['channel_id'])) {
-            $where .= ' and s.channel_id = :channel_id ';
-            $map[':channel_id'] = $params['channel_id'];
-        }
-        if (!empty($params['activity'])) {
-            $where .= ' and oa.name like :activity ';
-            $map[':activity'] = "%{$params['activity']}%";
-        }
-        if (!empty($params['employee_name'])) {
-            $where .= ' and e.name like :employee_name ';
-            $map[':employee_name'] = "%{$params['employee_name']}%";
-        }
-        list($params['page'], $params['count']) = Util::formatPageCount($params);
-        $limit = Util::limitation($params['page'], $params['count']);
-
-        $s  = self::getTableNameWithDb();
-        $si = StudentInviteModel::getTableNameWithDb();
-        $oa = OperationActivityModel::getTableNameWithDb();
-        $e  = DssEmployeeModel::getTableNameWithDb();
-        $c  = DssChannelModel::getTableNameWithDb();
-        $erp_ut = ErpUserEventTaskModel::getTableNameWithDb();
-        $erp_s = ErpStudentModel::getTableNameWithDb();
-
-        $order = " ORDER BY invite_create_time desc ";
-        $countField = 'COUNT(DISTINCT s.id) as total';
-        $field = "
-            s.id as student_id,
-            s.name as student_name,
-            s.uuid as student_uuid,
-            s.mobile,
-            s.has_review_course,
-            s.create_time,
-            s.channel_id,
-            si.activity_id,
-            oa.name as activity_name,
-            e.name as employee_name,
-            si.referee_employee_id,
-            si.create_time as invite_create_time,
-            si.referee_id,
-            c.name as channel_name,
-            r.mobile as referral_mobile,
-            r.uuid as referrer_uuid,
-            r.name as referrer_name,
-            r.id as referral_student_id,
-            erp_ut.event_task_id as max_task_id,
-            ROW_NUMBER() OVER (PARTITION BY erp_ut.user_id ORDER BY erp_ut.event_task_id DESC) erp_ut_task_order
-        ";
-        $join = "
-            INNER JOIN $s s ON si.student_id = s.id
-            INNER JOIN $s r on r.id = si.referee_id
-            LEFT JOIN $oa oa ON oa.id = si.activity_id
-            LEFT JOIN $e e ON e.id = si.referee_employee_id
-            LEFT JOIN $c c ON s.channel_id = c.id
-            INNER JOIN $erp_s erp_s on erp_s.uuid = s.uuid
-            INNER JOIN $erp_ut erp_ut on erp_ut.user_id = erp_s.id
-        ";
-        $sql = "
-        SELECT 
-            %s
-        FROM 
-            $si si
-        {$join}
-        {$where}
-        ";
-        $db = self::dbRO();
-        $total   = $db->queryAll(sprintf($sql, $countField) . " ORDER BY si.create_time DESC ", $map);
-        $records = $db->queryAll(
-            "SELECT * FROM (" .
-            sprintf($sql, $field) .
-            ") t WHERE t.erp_ut_task_order = 1 $order $limit",
-            $map
-        );
-        return [$records, $total];
-    }
 
     /**
      * 根据班级ID获取学生

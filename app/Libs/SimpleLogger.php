@@ -63,9 +63,8 @@ class SimpleLogger
 
             public function __construct($length = 32)
             {
-                $identify = $_SERVER['HTTP_IDENTIFY'];
-                if (!empty($identify)) {
-                    $this->uid = $identify;
+                if (!empty($_SERVER['HTTP_IDENTIFY'])) {
+                    $this->uid = $_SERVER['HTTP_IDENTIFY'];
                 }
                 else {
                     $this->uid = $this->generateUid($length);

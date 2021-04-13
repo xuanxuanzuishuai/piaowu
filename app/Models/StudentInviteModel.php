@@ -27,7 +27,7 @@ class StudentInviteModel extends Model
 
 
     /**
-     * 查询推荐人的被推荐人首次购买指定类型课包的时间数据
+     * 获取指定推荐人推荐的所有学员，首次购买指定类型课包的时间数据
      * @param $where
      * @param int $type
      * @param int $limit
@@ -38,7 +38,7 @@ class StudentInviteModel extends Model
         if (empty($where)) {
             return [];
         }
-        $si = self::$table;
+        $si = StudentReferralStudentStatisticsModel::getTableNameWithDb();
         $gc = DssGiftCodeModel::getTableNameWithDb();
         $p  = DssErpPackageV1Model::getTableNameWithDb();
         $pg = DssErpPackageGoodsV1Model::getTableNameWithDb();
@@ -49,14 +49,6 @@ class StudentInviteModel extends Model
         if (!empty($where['referee_id'])) {
             $condition .= ' AND si.referee_id = :referee_id ';
             $map[':referee_id'] = $where['referee_id'];
-        }
-        if (!empty($where['app_id'])) {
-            $condition .= ' AND si.app_id = :app_id ';
-            $map[':app_id'] = $where['app_id'];
-        }
-        if (!empty($where['referee_type'])) {
-            $condition .= ' AND si.referee_type = :referee_type ';
-            $map[':referee_type'] = $where['referee_type'];
         }
         // 查询所有被推荐人：
         $sql = "
