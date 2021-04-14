@@ -30,7 +30,7 @@ foreach ($templatePosterList as $item) {
     $posterList = json_decode($item['poster']);
     if (!empty($posterList)) {
         foreach ($posterList as $_p) {
-            $posterId = PosterModel::getIdByPath(['path' =>$_p], ['name' => $item['name']]);
+            $posterId = PosterModel::getIdByPath($_p, ['name' => $item['name']]);
             if ($posterId <= 0) {
                 var_dump("fail :: template_id".$item['id']);
                 continue;
