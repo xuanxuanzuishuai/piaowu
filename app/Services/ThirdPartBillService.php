@@ -16,10 +16,12 @@ use App\Libs\UserCenter;
 use App\Libs\Util;
 use App\Models\AgentBillMapModel;
 use App\Models\AgentModel;
+use App\Models\Dss\DssCategoryV1Model;
 use App\Models\Dss\DssEmployeeModel;
 use App\Models\Dss\DssErpPackageV1Model;
 use App\Models\Dss\DssStudentModel;
 use App\Models\EmployeeModel;
+use App\Models\Erp\ErpPackageV1Model;
 use App\Models\ParamMapModel;
 use App\Models\ThirdPartBillModel;
 use App\Services\Queue\ThirdPartBillTopic;
@@ -89,28 +91,38 @@ class ThirdPartBillService
         if (count($invalidTradeNo) > 0) {
             throw new RunTimeException(['trade_no_can_not_be_empty', 'import'], ['list' => $invalidTradeNo]);
         }
-        if (count($invalidDssAmount) > 0) {
-            throw new RunTimeException(['bill_dss_amount_error', 'import'], ['list' => $invalidDssAmount]);
-        }
         // 检查数据是否为空
         if (count($data) == 0) {
             throw new RunTimeException(['data_can_not_be_empty', 'import']);
         }
 
-        // 学生手机号重复
-        if (count($data) != count(array_unique(array_column($data, 'mobile')))) {
-            throw new RunTimeException(['mobile_repeat', 'import']);
-        }
-        // 检查是否已经有发货记录
-        $records = PayServices::trialedUserByMobile(array_column($data, 'mobile'));
-        if (!empty($records)) {
-            throw new RunTimeException(['has_trialed_records', 'import'], ['list' => $records]);
-        }
-        //检查用户是否已是年卡用户
-        $mobiles = DssStudentModel::getRecords(['mobile' => array_column($data, 'mobile'),'has_review_course'=> DssStudentModel::REVIEW_COURSE_1980], ['mobile']);
-        if (!empty($mobiles)) {
-            throw new RunTimeException(['has_vip_student', 'import'], ['list' => $mobiles]);
-        }
+	    // 检查数据是否为空
+	    if (count($data) == 0) {
+		    throw new RunTimeException(['data_can_not_be_empty', 'import']);
+	    }
+
+	    // 检查是否已经有发货记录
+	    $records = PayServices::trialedUserByMobile(array_column($data, 'mobile'));
+	    if (!empty($records)) {
+		    throw new RunTimeException(['has_trialed_records', 'import'], ['list' => $records]);
+	    }
+
+	    $package = ErpPackageV1Model::packageDetail($params['package_id']);
+	    if ($package['sub_type'] != DssCategoryV1Model::DURATION_TYPE_NORMAL ){
+		    //检查用户是否已是年卡用户
+		    $mobiles = DssStudentModel::getRecords(['mobile' => array_column($data, 'mobile'),'has_review_course'=> DssStudentModel::REVIEW_COURSE_1980], ['mobile']);
+		    if (!empty($mobiles)) {
+			    throw new RunTimeException(['has_vip_student', 'import'], ['list' => $mobiles]);
+		    }
+	    }
+
+	    if (count($invalidDssAmount) > 0) {
+		    throw new RunTimeException(['bill_dss_amount_error', 'import'], ['list' => $invalidDssAmount]);
+	    }
+	    // 学生手机号重复
+	    if (count($data) != count(array_unique(array_column($data, 'mobile')))) {
+		    throw new RunTimeException(['mobile_repeat', 'import']);
+	    }
 
         $params['third_identity_type'] = $params['third_identity_id'] = 0;
         //检测渠道是否为合作代理&检测代理商数据
@@ -327,7 +339,7 @@ class ThirdPartBillService
         }
         //通知ERP创建订单
         $erp = new Erp();
-        list($result, $body) = $erp->manCreateDeliverBillV1([
+        [$result, $body] = $erp->manCreateDeliverBillV1([
             'uuid' => $student['uuid'],
             'package_id' => $params['package_id'],
             'pay_time' => $params['pay_time'],
