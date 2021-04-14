@@ -31,6 +31,10 @@ class AIPlayRecordService
      */
     public static function getStudentAssessData($recordId)
     {
+        if (empty($recordId)){
+            return [];
+        }
+
         $report = DssAiPlayRecordCHModel::getRecordIdInfo($recordId);
         if (empty($report)) {
             $report = [];

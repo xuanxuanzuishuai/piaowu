@@ -34,6 +34,20 @@ class Landing extends ControllerBase
      */
     public function playReview(Request $request, Response $response)
     {
+        $rules = [
+            [
+                'key' => 'scene',
+                'type' => 'required',
+                'error_code' => 'scene_is_required'
+            ]
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
         try {
             $params = $request->getParams();
             $sceneData = ShowMiniAppService::getSceneData(urldecode($params['scene'] ?? ''));
