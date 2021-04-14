@@ -75,15 +75,21 @@ class AgentAwardExtService
          *          1.成单代理与归属代理属于上下级的不算撞单
          *          2.无成单代理商不考虑成单代理逻辑
          */
+        //检查成单代理商和归属代理商是否属于同一个团队
+        $isTeam = AgentService::checkTwoAgentIsTeam($signerAgentId, $agentAwardData['agent_id']);
         if (!empty($studentReferralData)) {
-            if (!empty($validAgentId) || !empty($signerAgentId)) {
-                $agentAwardBillExtData['is_hit_order'] = AgentAwardBillExtModel::IS_HIT_ORDER_YES;
+            if (!empty($validAgentId) && empty($signerAgentId)) {
+                $agentAwardBillExtData['is_hit_order'] = AgentAwardBillExtModel::IS_HIT_ORDER_REFERRAL_HIT_BIND_AGENT;
+            } elseif (!empty($validAgentId) && !empty($signerAgentId) && empty($isTeam)) {
+                $agentAwardBillExtData['is_hit_order'] = AgentAwardBillExtModel::IS_HIT_ORDER_REFERRAL_HIT_AND_BIND_AGENT_AND_SIGNER_AGENT;
+            } elseif (!empty($validAgentId) && !empty($signerAgentId) && !empty($isTeam)) {
+                $agentAwardBillExtData['is_hit_order'] = AgentAwardBillExtModel::IS_HIT_ORDER_REFERRAL_HIT_BIND_AGENT;
+            } elseif (empty($validAgentId) && !empty($signerAgentId)) {
+                $agentAwardBillExtData['is_hit_order'] = AgentAwardBillExtModel::IS_HIT_ORDER_REFERRAL_HIT_SIGNER_AGENT;
             }
         } else {
-            //检查成单代理商和归属代理商是否属于同一个团队
-            $isTeam = AgentService::checkTwoAgentIsTeam($signerAgentId, $agentAwardData['agent_id']);
-            if (!empty($signerAgentId) && empty($isTeam)) {
-                $agentAwardBillExtData['is_hit_order'] = AgentAwardBillExtModel::IS_HIT_ORDER_YES;
+            if (!empty($signerAgentId) && ($signerAgentId != $validAgentId) && empty($isTeam)) {
+                $agentAwardBillExtData['is_hit_order'] = AgentAwardBillExtModel::IS_HIT_ORDER_AGENT_HIT_AGENT;
             }
         }
         //查询订单归属代理商和成单代理商的状态

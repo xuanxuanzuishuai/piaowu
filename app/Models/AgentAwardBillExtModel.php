@@ -12,9 +12,14 @@ namespace App\Models;
 class AgentAwardBillExtModel extends Model
 {
     public static $table = "agent_award_bill_ext";
-    //是否撞单:1是 2不是
-    const IS_HIT_ORDER_YES = 1;
+    //撞单:1转介绍与绑定中的代理商撞单 2不撞单 3绑定中代理商与成单代理商撞单 4转介绍与成单的代理商撞单 5转介绍&&绑定中的代理商&&成单的代理商三者撞单
+    const IS_HIT_ORDER_REFERRAL_HIT_BIND_AGENT = 1;
     const IS_HIT_ORDER_NO = 2;
+    const IS_HIT_ORDER_AGENT_HIT_AGENT = 3;
+    const IS_HIT_ORDER_REFERRAL_HIT_SIGNER_AGENT = 4;
+    const IS_HIT_ORDER_REFERRAL_HIT_AND_BIND_AGENT_AND_SIGNER_AGENT = 5;
+
+
     //是否是绑定关系建立后首单:1是 2不是
     const IS_FIRST_ORDER_YES = 1;
     const IS_FIRST_ORDER_NO = 2;
