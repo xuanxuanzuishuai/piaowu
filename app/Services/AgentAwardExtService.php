@@ -75,27 +75,14 @@ class AgentAwardExtService
          *          1.成单代理与归属代理属于上下级的不算撞单
          *          2.无成单代理商不考虑成单代理逻辑
          */
-        $isHitOrderCondition = [];
-        //学生的推荐人
-        if ($studentReferralData) {
-            $isHitOrderCondition['student_referral_data'] = 'yes';
-        }
-        //学生绑定期中的代理
-        if ($validAgentId) {
-            $isHitOrderCondition['valid_agent'] = 'yes';
-        }
-        //检查成单代理商和归属代理商是否属于同一个团队
-        $isTeam = AgentService::checkTwoAgentIsTeam($signerAgentId, $agentAwardData['agent_id']);
-        //成单代理商存在
-        if (!empty($signerAgentId) && empty($isTeam)) {
-            //成单人代理和学生绑定期中的代理不是同一个人
-            if (!empty($validAgentId) && ($signerAgentId != $validAgentId)) {
-                $isHitOrderCondition['agent_bind_data'] = 'yes';
+        if (!empty($studentReferralData)) {
+            if (!empty($validAgentId) || !empty($signerAgentId)) {
+                $agentAwardBillExtData['is_hit_order'] = AgentAwardBillExtModel::IS_HIT_ORDER_YES;
             }
-        }
-        if (!empty($isHitOrderCondition)) {
-            $hitOrderRes = array_count_values($isHitOrderCondition);
-            if ($hitOrderRes['yes'] >= 2) {
+        } else {
+            //检查成单代理商和归属代理商是否属于同一个团队
+            $isTeam = AgentService::checkTwoAgentIsTeam($signerAgentId, $agentAwardData['agent_id']);
+            if (!empty($signerAgentId) && empty($isTeam)) {
                 $agentAwardBillExtData['is_hit_order'] = AgentAwardBillExtModel::IS_HIT_ORDER_YES;
             }
         }

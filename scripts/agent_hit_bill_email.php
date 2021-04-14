@@ -76,11 +76,11 @@ if (!empty($historyHitCount)) {
             "AND" => [
                 'is_hit_order' => AgentAwardBillExtModel::IS_HIT_ORDER_YES,
                 "OR" => [
-                    "OR #the first condition" => [
+                    "AND #the first condition" => [
                         'student_referral_id[!]' => 0,
                         'own_agent_id[!]' => 0,
                     ],
-                    "OR #the second condition" => [
+                    "AND #the second condition" => [
                         'student_referral_id[!]' => 0,
                         'signer_agent_id[!]' => 0,
                     ]
@@ -92,6 +92,8 @@ if (!empty($historyHitCount)) {
         [
             "AND" => [
                 'own_agent_id[!=]signer_agent_id',
+                'own_agent_id[!]' => 0,
+                'signer_agent_id[!]' => 0,
                 'is_hit_order' => AgentAwardBillExtModel::IS_HIT_ORDER_YES,
             ]
         ]);
@@ -109,11 +111,11 @@ if (!empty($historyHitCount)) {
             "AND" => [
                 "create_time[<>]" => [$startTime, $endTime],
                 "OR" => [
-                    "OR #the first condition" => [
+                    "AND #the first condition" => [
                         'student_referral_id[!]' => 0,
                         'own_agent_id[!]' => 0,
                     ],
-                    "OR #the second condition" => [
+                    "AND #the second condition" => [
                         'student_referral_id[!]' => 0,
                         'signer_agent_id[!]' => 0,
                     ]
@@ -127,6 +129,8 @@ if (!empty($historyHitCount)) {
             "AND" => [
                 "create_time[<>]" => [$startTime, $endTime],
                 'own_agent_id[!=]signer_agent_id',
+                'own_agent_id[!]' => 0,
+                'signer_agent_id[!]' => 0,
                 'is_hit_order' => AgentAwardBillExtModel::IS_HIT_ORDER_YES,
             ]
         ]);
@@ -197,7 +201,7 @@ if (!empty($historyHitCount)) {
         $rsv['second_agent_id_true'] = empty($rsv['second_agent_id']) ? '' : $rsv['second_agent_id'];
         $rsv['app_id'] = UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT;
         //学生转介绍人名称
-        $rsv['student_referral_name'] = empty($rsv['student_referral_id'])?'':$studentReferralData[$rsv['student_referral_id']]['name'];
+        $rsv['student_referral_name'] = empty($rsv['student_referral_id']) ? '' : $studentReferralData[$rsv['student_referral_id']]['name'];
     }
     $totalOrderData = AgentService::formatRecommendBillsData(['list' => $totalOrderData]);
     //撞单的订单明细表字段
