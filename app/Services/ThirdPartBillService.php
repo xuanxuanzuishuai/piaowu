@@ -47,7 +47,7 @@ class ThirdPartBillService
             $now = time();
             $data = [];
             foreach ($sheetData as $k => $v) {
-                if (empty($v['A']) || $k == 1) { // 忽略表头和空白行
+                if ($k == 1) { // 忽略表头和空白行
                     continue;
                 }
                 $A = trim($v['A']);
@@ -95,39 +95,32 @@ class ThirdPartBillService
         if (count($data) == 0) {
             throw new RunTimeException(['data_can_not_be_empty', 'import']);
         }
+        $package = ErpPackageV1Model::packageDetail($params['package_id']);
+        if ($package['sub_type'] != DssCategoryV1Model::DURATION_TYPE_NORMAL) {
+            // 检查是否已经有发货记录
+            $records = PayServices::trialedUserByMobile(array_column($data, 'mobile'));
+            if (!empty($records)) {
+                throw new RunTimeException(['has_trialed_records', 'import'], ['list' => $records]);
+            }
+            //检查用户是否已是年卡用户
+            $mobiles = DssStudentModel::getRecords(['mobile' => array_column($data, 'mobile'),'has_review_course'=> DssStudentModel::REVIEW_COURSE_1980], ['mobile']);
+            if (!empty($mobiles)) {
+                throw new RunTimeException(['has_vip_student', 'import'], ['list' => $mobiles]);
+            }
+        }
 
-	    // 检查数据是否为空
-	    if (count($data) == 0) {
-		    throw new RunTimeException(['data_can_not_be_empty', 'import']);
-	    }
-
-	    // 检查是否已经有发货记录
-	    $records = PayServices::trialedUserByMobile(array_column($data, 'mobile'));
-	    if (!empty($records)) {
-		    throw new RunTimeException(['has_trialed_records', 'import'], ['list' => $records]);
-	    }
-
-	    $package = ErpPackageV1Model::packageDetail($params['package_id']);
-	    if ($package['sub_type'] != DssCategoryV1Model::DURATION_TYPE_NORMAL ){
-		    //检查用户是否已是年卡用户
-		    $mobiles = DssStudentModel::getRecords(['mobile' => array_column($data, 'mobile'),'has_review_course'=> DssStudentModel::REVIEW_COURSE_1980], ['mobile']);
-		    if (!empty($mobiles)) {
-			    throw new RunTimeException(['has_vip_student', 'import'], ['list' => $mobiles]);
-		    }
-	    }
-
-	    if (count($invalidDssAmount) > 0) {
-		    throw new RunTimeException(['bill_dss_amount_error', 'import'], ['list' => $invalidDssAmount]);
-	    }
-	    // 学生手机号重复
-	    if (count($data) != count(array_unique(array_column($data, 'mobile')))) {
-		    throw new RunTimeException(['mobile_repeat', 'import']);
-	    }
+        if (count($invalidDssAmount) > 0) {
+            throw new RunTimeException(['bill_dss_amount_error', 'import'], ['list' => $invalidDssAmount]);
+        }
+        // 学生手机号重复
+        if (count($data) != count(array_unique(array_column($data, 'mobile')))) {
+            throw new RunTimeException(['mobile_repeat', 'import']);
+        }
 
         $params['third_identity_type'] = $params['third_identity_id'] = 0;
         //检测渠道是否为合作代理&检测代理商数据
         if (!empty($params['agent_id'])) {
-            $agentInfo = AgentModel::getAgentParentData($params['agent_id'])[0];
+            $agentInfo = AgentModel::getAgentParentData([$params['agent_id']])[0];
             $agentChannelIds = DictConstants::get(DictConstants::AGENT_CONFIG, 'channel_dict');
             if (!in_array($params['channel_id'], json_decode($agentChannelIds, true)) || ($agentInfo['p_id'] !== null)) {
                 throw new RunTimeException(['agent_info_error'], []);
@@ -135,7 +128,7 @@ class ThirdPartBillService
             $params['third_identity_type'] = ThirdPartBillModel::THIRD_IDENTITY_TYPE_AGENT;
             $params['third_identity_id'] = $params['agent_id'];
         }
-        foreach ($data as $k => $v) {
+        foreach ($data as &$v) {
             $v['parent_channel_id'] = $params['parent_channel_id'];
             $v['channel_id'] = $params['channel_id'];
             $v['package_id'] = $params['package_id'];
@@ -144,7 +137,6 @@ class ThirdPartBillService
             $v['third_identity_type'] = $params['third_identity_type'];
             $v['package_v1'] = ThirdPartBillModel::PACKAGE_V1;
             $v['operator_system_id'] = UserCenter::AUTH_APP_ID_OP;
-            $data[$k] = $v;
         }
         // 表格内容发送至消息队列
         self::thirdBillPush($data);
@@ -334,7 +326,7 @@ class ThirdPartBillService
         $channelPayMapData = DictConstants::getTypesMap([DictConstants::CHANNEL_PAY_TYPE_MAP['type']])[DictConstants::CHANNEL_PAY_TYPE_MAP['type']];
         //区分操作后台
         $description = "DSS系统表格导入订单";
-        if ($params['operator_system_id'] == UserCenter::AUTH_APP_ID_OP){
+        if ($params['operator_system_id'] == UserCenter::AUTH_APP_ID_OP) {
             $description = "运营系统表格导入订单";
         }
         //通知ERP创建订单
