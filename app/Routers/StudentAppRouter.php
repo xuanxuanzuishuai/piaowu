@@ -10,6 +10,7 @@ namespace App\Routers;
 use App\Controllers\StudentApp\App;
 use App\Controllers\StudentApp\Auth;
 use App\Controllers\StudentApp\Poster;
+use App\Controllers\StudentApp\ReferralActivity;
 use App\Middleware\AppAuthMiddleWare;
 
 class StudentAppRouter extends RouterBase
@@ -39,7 +40,25 @@ class StudentAppRouter extends RouterBase
             'method' => ['get'],
             'call' => Poster::class . ':getTemplateWord',
             'middles' => [AppAuthMiddleWare::class]
-        ]
+        ],
+        //周周有礼
+        '/student_app/referral/activity_info' => [
+            'method' => ['get'],
+            'call' => ReferralActivity::class . ':activityInfo',
+            'middles' => [AppAuthMiddleWare::class]
+        ],
+        '/student_app/referral/upload_share_poster' => [
+            'method' => ['get'],
+            'call'    => ReferralActivity::class . ':uploadSharePoster',
+            'middles' => [AppAuthMiddleWare::class]
+
+        ],
+        '/student_app/referral/join_record_list' => [
+	        'method' => ['get'],
+	        'call' => ReferralActivity::class . ':joinRecordList',
+	        'middles' => [AppAuthMiddleWare::class]
+
+        ],
 
     ];
 }

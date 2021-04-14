@@ -19,6 +19,8 @@ class Dss
     const GET_TOKEN_UUID_INFO = '/api/operation/get_uuid';//获取token对应的uuid信息
     const CREATE_BILL = '/op/user/create_bill';//小程序创建订单
     const GET_TRAIL_INFO = '/op/user/get_trail_log';//得到用户的购买体验课信息
+    const GET_ACTIVITY_INFO = '/op/referral/activity_info';//周周有礼活动页
+    const UPLOAD_SHARE_POSTER = '/op/referral/upload_share_poster';//周周有礼上传图片信息
 
     private $host;
 
@@ -134,4 +136,34 @@ class Dss
         }
         return !empty($res['data']) ? $res['data'] : NULL;
     }
+
+    /**
+     * 获取周周活动信息
+     * @param int $studentId
+     * @return mixed|null
+     */
+    public function getActivityInfo($studentId)
+    {
+        $res = self::commonAPI(self::GET_ACTIVITY_INFO, ['student_id' => $studentId]);
+        if ($res['code'] != Valid::CODE_SUCCESS) {
+            SimpleLogger::error('create bill error', [$res, $studentId]);
+        }
+        return $res;
+    }
+
+	/**
+	 * 周周有礼上传图片信息
+	 * @param $params
+	 *
+	 * @return mixed|null
+	 * @throws RunTimeException
+	 */
+	public function uploadSharePoster($params)
+	{
+		$res = self::commonAPI(self::UPLOAD_SHARE_POSTER, $params, 'POST');
+		if ($res['code'] != Valid::CODE_SUCCESS) {
+			throw new RunTimeException(['update_failure']);
+		}
+		return $res;
+	}
 }
