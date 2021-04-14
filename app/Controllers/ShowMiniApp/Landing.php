@@ -45,7 +45,7 @@ class Landing extends ControllerBase
         $params = $request->getParams();
         $result = Valid::appValidate($params, $rules);
         if ($result['code'] != Valid::CODE_SUCCESS) {
-            return $response->withJson($result, StatusCode::HTTP_OK);
+            return HttpHelper::buildResponse($response, ['err_msg' => $result['errors'][0]['err_msg']]);
         }
 
         try {
