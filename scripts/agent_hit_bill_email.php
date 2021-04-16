@@ -67,42 +67,47 @@ $excelTitle = [
  */
 SimpleLogger::info('agent hit bill start', []);
 list($startTime, $endTime) = Util::getDateWeekStartEndTime(strtotime("-1 week"));
+
+//获取测试使用代理商ID列表，查询数据将此类数据排除在外
+$companyTestAgentIdsDict = DictConstants::getSet(DictConstants::COMPANY_TEST_AGENT_IDS);
+$companyTestAgentIds = [];
+if (!empty($companyTestAgentIdsDict[0])) {
+    foreach (explode(',', $companyTestAgentIdsDict[0]) as $ck => $cv) {
+        $companyTestAgentIds[] = (int)$cv;
+    }
+}
+
 //历史撞单总数
-$historyHitCount = AgentAwardBillExtModel::getCount(['is_hit_order[!]' => AgentAwardBillExtModel::IS_HIT_ORDER_NO]);
+$historyHitCount = AgentAwardBillExtModel::getCount(
+    [
+        'is_hit_order[!]' => AgentAwardBillExtModel::IS_HIT_ORDER_NO,
+        'signer_agent_id[!]' => $companyTestAgentIds,
+        'own_agent_id[!]' => $companyTestAgentIds,
+    ]);
+
 if (!empty($historyHitCount)) {
     //历史转介绍与代理撞单订单数
     $historyReferralAndAgentHitCount = AgentAwardBillExtModel::getCount(
         [
-            "AND" => [
-                'is_hit_order' => [
-                    AgentAwardBillExtModel::IS_HIT_ORDER_REFERRAL_HIT_BIND_AGENT,
-                    AgentAwardBillExtModel::IS_HIT_ORDER_REFERRAL_HIT_SIGNER_AGENT,
-                    AgentAwardBillExtModel::IS_HIT_ORDER_REFERRAL_HIT_AND_BIND_AGENT_AND_SIGNER_AGENT,
-                ],
-                "OR" => [
-                    "AND #the first condition" => [
-                        'student_referral_id[!]' => 0,
-                        'own_agent_id[!]' => 0,
-                    ],
-                    "AND #the second condition" => [
-                        'student_referral_id[!]' => 0,
-                        'signer_agent_id[!]' => 0,
-                    ]
-                ]
-            ]
+
+            'is_hit_order' => [
+                AgentAwardBillExtModel::IS_HIT_ORDER_REFERRAL_HIT_BIND_AGENT,
+                AgentAwardBillExtModel::IS_HIT_ORDER_REFERRAL_HIT_SIGNER_AGENT,
+                AgentAwardBillExtModel::IS_HIT_ORDER_REFERRAL_HIT_AND_BIND_AGENT_AND_SIGNER_AGENT,
+            ],
+            'signer_agent_id[!]' => $companyTestAgentIds,
+            'own_agent_id[!]' => $companyTestAgentIds
         ]);
     //历史代理与代理撞单的订单数
     $historyAgentAndAgentHitCount = AgentAwardBillExtModel::getCount(
         [
-            "AND" => [
-                'own_agent_id[!=]signer_agent_id',
-                'own_agent_id[!]' => 0,
-                'signer_agent_id[!]' => 0,
-                'is_hit_order' => [
-                    AgentAwardBillExtModel::IS_HIT_ORDER_AGENT_HIT_AGENT,
-                    AgentAwardBillExtModel::IS_HIT_ORDER_REFERRAL_HIT_AND_BIND_AGENT_AND_SIGNER_AGENT,
-                ],
-            ]
+            'is_hit_order' => [
+                AgentAwardBillExtModel::IS_HIT_ORDER_AGENT_HIT_AGENT,
+                AgentAwardBillExtModel::IS_HIT_ORDER_REFERRAL_HIT_AND_BIND_AGENT_AND_SIGNER_AGENT,
+            ],
+            'signer_agent_id[!]' => $companyTestAgentIds,
+            'own_agent_id[!]' => $companyTestAgentIds
+
         ]);
 
 
@@ -111,42 +116,32 @@ if (!empty($historyHitCount)) {
         [
             "create_time[<>]" => [$startTime, $endTime],
             'is_hit_order[!]' => AgentAwardBillExtModel::IS_HIT_ORDER_NO,
+            'signer_agent_id[!]' => $companyTestAgentIds,
+            'own_agent_id[!]' => $companyTestAgentIds
         ]);
     //上周转介绍与代理撞单订单数
     $lastWeekReferralAndAgentHitCount = AgentAwardBillExtModel::getCount(
         [
-            "AND" => [
-                "create_time[<>]" => [$startTime, $endTime],
-                "OR" => [
-                    "AND #the first condition" => [
-                        'student_referral_id[!]' => 0,
-                        'own_agent_id[!]' => 0,
-                    ],
-                    "AND #the second condition" => [
-                        'student_referral_id[!]' => 0,
-                        'signer_agent_id[!]' => 0,
-                    ]
-                ],
-                'is_hit_order' => [
-                    AgentAwardBillExtModel::IS_HIT_ORDER_REFERRAL_HIT_BIND_AGENT,
-                    AgentAwardBillExtModel::IS_HIT_ORDER_REFERRAL_HIT_SIGNER_AGENT,
-                    AgentAwardBillExtModel::IS_HIT_ORDER_REFERRAL_HIT_AND_BIND_AGENT_AND_SIGNER_AGENT,
-                ],
-            ]
+
+            "create_time[<>]" => [$startTime, $endTime],
+            'is_hit_order' => [
+                AgentAwardBillExtModel::IS_HIT_ORDER_REFERRAL_HIT_BIND_AGENT,
+                AgentAwardBillExtModel::IS_HIT_ORDER_REFERRAL_HIT_SIGNER_AGENT,
+                AgentAwardBillExtModel::IS_HIT_ORDER_REFERRAL_HIT_AND_BIND_AGENT_AND_SIGNER_AGENT,
+            ],
+            'signer_agent_id[!]' => $companyTestAgentIds,
+            'own_agent_id[!]' => $companyTestAgentIds
         ]);
     //上周代理与代理撞单的订单数
     $lastWeekAgentAndAgentHitCount = AgentAwardBillExtModel::getCount(
         [
-            "AND" => [
-                "create_time[<>]" => [$startTime, $endTime],
-                'own_agent_id[!=]signer_agent_id',
-                'own_agent_id[!]' => 0,
-                'signer_agent_id[!]' => 0,
-                'is_hit_order' => [
-                    AgentAwardBillExtModel::IS_HIT_ORDER_AGENT_HIT_AGENT,
-                    AgentAwardBillExtModel::IS_HIT_ORDER_REFERRAL_HIT_AND_BIND_AGENT_AND_SIGNER_AGENT,
-                ],
-            ]
+            "create_time[<>]" => [$startTime, $endTime],
+            'is_hit_order' => [
+                AgentAwardBillExtModel::IS_HIT_ORDER_AGENT_HIT_AGENT,
+                AgentAwardBillExtModel::IS_HIT_ORDER_REFERRAL_HIT_AND_BIND_AGENT_AND_SIGNER_AGENT,
+            ],
+            'signer_agent_id[!]' => $companyTestAgentIds,
+            'own_agent_id[!]' => $companyTestAgentIds
         ]);
     if (empty($historyHitCount)) {
         return true;
@@ -154,6 +149,7 @@ if (!empty($historyHitCount)) {
     //分批次获取一次500条
     $pageGetCount = 500;
     $totalOrderData = [];
+    $companyTestAgentIdsStr = implode(',', $companyTestAgentIds);
     $db = MysqlDB::getDB();
     $listSql = "SELECT
                 IF
@@ -175,6 +171,8 @@ if (!empty($historyHitCount)) {
                     INNER JOIN agent AS a ON ab.agent_id = a.id 
                 WHERE
                     bex.is_hit_order != " . AgentAwardBillExtModel::IS_HIT_ORDER_NO . " 
+                    AND bex.signer_agent_id NOT IN ( " . $companyTestAgentIdsStr . " ) 
+                    AND bex.own_agent_id NOT IN ( " . $companyTestAgentIdsStr . " )
                 ORDER BY
                     bex.id DESC";
     for ($i = 1; $i <= ceil($historyHitCount / $pageGetCount); $i++) {

@@ -580,6 +580,12 @@ class DictConstants {
         'keys' => [1, 2, 3, 4, 5, 6, 7, 8, 9,]
     ];
 
+    //测试使用代理商ID
+    const COMPANY_TEST_AGENT_IDS = [
+        'type' => 'company_test_agent_ids',
+        'keys' => [0]
+    ];
+
     /**
      * 单个获取op系统dict配置数据
      * @param $type
