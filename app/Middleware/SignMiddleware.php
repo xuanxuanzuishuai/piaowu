@@ -42,7 +42,7 @@ class SignMiddleware extends MiddlewareBase
     {
         unset($params['sign']);
         ksort($params);
-        $paramsStr = implode('&', $params);
+        $paramsStr = http_build_query($params);
         $paramsStr .='&service_key=' . $service_key;
         return md5($paramsStr);
     }

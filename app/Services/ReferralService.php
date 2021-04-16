@@ -22,6 +22,8 @@ use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\SharePosterModel;
 use App\Models\StudentInviteModel;
 use App\Models\PosterModel;
+use App\Models\StudentReferralStudentDetailModel;
+use App\Models\StudentReferralStudentStatisticsModel;
 use App\Models\WeChatAwardCashDealModel;
 
 class ReferralService
@@ -453,5 +455,63 @@ class ReferralService
         $wxInfo = $openId ? $wechat->getUserInfo($openId) : [];
         return $wxInfo;
     }
-    
+
+    /**
+     * 我邀请的学员列表
+     * @param $params
+     * @param $page
+     * @param $count
+     * @return array
+     */
+    public static function myInviteStudentList($params, $page, $count)
+    {
+        $returnList = [
+            'invite_total_num' => 6,
+            'invite_student_list' => [],
+        ];
+        // 获取用户信息
+        $studentInfo = DssStudentModel::getRecord(['uuid' => $params['referrer_uuid']], ['id']);
+        $where = ['referee_id' => $studentInfo['id']];
+        $returnList['invite_total_num'] = StudentReferralStudentStatisticsModel::getCount($where);
+        if ($returnList['invite_total_num'] <= 0) {
+            return $returnList;
+        }
+
+        $where['LIMIT'] = [($page - 1) * $count, $count];
+        $where['ORDER'] = ['id' => 'DESC'];
+        // 获取邀请学生id列表
+        $list = StudentReferralStudentStatisticsModel::getRecords($where);
+        $inviteStudentId = array_column($list,'student_id');
+        // 获取所有学生信息
+        $inviteStudentList = DssStudentModel::getRecords(['id' => $inviteStudentId], ['name', 'mobile', 'thumb']);
+        $inviteStudentArr = [];
+        if (is_array($inviteStudentList)) {
+            foreach ($inviteStudentList as $_item){
+                $inviteStudentArr['id'] = $_item;
+            }
+        }
+        // 获取学生节点名称
+        $stageNameList = DictConstants::getSet(DictConstants::AGENT_USER_STAGE);
+        // 获取学生节点
+        $studentStageList = StudentReferralStudentDetailModel::getRecords(['student_id' => $inviteStudentId]);
+        $studentStageArr = [];
+        foreach ($studentStageList as $item) {
+            $studentStageArr[$item['student_id']][] = [
+                'stage_name' => $stageNameList[$item['stage']] ?? '',
+                'create_time' => date("Y-m-d", $item['create_time'])
+            ];
+        }
+
+        foreach ($list as $_invite) {
+            $s_info = $inviteStudentArr[$_invite['student_id']] ?? [];
+            $returnList['invite_student_list'][] = [
+                'mobile' => isset($s_info['mobile']) ? Util::hideUserMobile($s_info['mobile']) : '',
+                'name' => isset($s_info['name']) ? $s_info['name'] : '',
+                'thumb' => isset($s_info['thumb']) ? AliOSS::signUrls($s_info['thumb']) : '',
+                'stage' => $studentStageArr[$_invite['student_id']] ?? [],
+            ];
+        }
+
+        return $returnList;
+    }
 }

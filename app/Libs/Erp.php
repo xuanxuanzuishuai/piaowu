@@ -30,7 +30,7 @@ class Erp
     const API_REFERRED_LIST = '/api/dss/referred_list';
     const API_AWARD_LIST = '/api/dss/awards';
     const API_UPDATE_TASK = '/api/dss/add_user_event_task';
-    const API_GET_TASK_IDS = '/api/dss/get_task_ids';
+    const API_GET_TASK_IDS = '/api/operation/get_task_ids'; // 添加（完成）任务 （A推荐B，B是作任务的人，返回任务id）
     const API_UPDATE_AWARD = '/api/dss/award';
     const API_BATCH_UPDATE_AWARD = '/api/dss/batch_award';
     const API_USER_REFERRAL_INFO = '/api/dss/get_user_referral_info';

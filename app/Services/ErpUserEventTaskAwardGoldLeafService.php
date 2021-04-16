@@ -5,6 +5,7 @@ namespace App\Services;
 
 
 use App\Libs\Util;
+use App\Models\EmployeeModel;
 use App\Models\Erp\ErpStudentModel;
 use App\Models\Erp\ErpUserEventTaskAwardGoldLeafModel;
 
@@ -25,9 +26,10 @@ class ErpUserEventTaskAwardGoldLeafService
      * @param $params
      * @param $page
      * @param $limitNum
+     * @param bool $isBackend 是否是后台调用
      * @return array
      */
-    public static function getWaitingGoldLeafList($params, $page, $limitNum)
+    public static function getWaitingGoldLeafList($params, $page, $limitNum, $isBackend = false)
     {
         $limit = [
             ($page - 1) * $limitNum,
@@ -39,16 +41,22 @@ class ErpUserEventTaskAwardGoldLeafService
         $returnList['total_num'] = 0;
         foreach ($list['list'] as $item) {
             $returnList['total_num'] += $item['award_num'];
-            $returnList['list'][] = self::formatGoldLeafInfo($item);
+            $returnList['list'][] = self::formatGoldLeafInfo($item, $isBackend);
         }
         return $returnList;
     }
 
-    public static function formatGoldLeafInfo($goldLeafInfo)
+    public static function formatGoldLeafInfo($goldLeafInfo, $isBackend)
     {
         $goldLeafInfo['format_create_time'] = date("Y-m-d H:i:s", $goldLeafInfo['create_time']);
         $goldLeafInfo['mobile'] = Util::hideUserMobile($goldLeafInfo['mobile']);
         $goldLeafInfo['status_zh'] = self::STATUS_DICT[$goldLeafInfo['status']] ?? '';
+
+        if ($isBackend) {
+            $goldLeafInfo['bill_id'] = "";  // erp后台需要的字段
+            // 后期如果需要操作人，这里需要获取操作人的名称
+            $goldLeafInfo['operator_name'] = $goldLeafInfo['operator_id'] == 0 ? EmployeeModel::SYSTEM_EMPLOYEE_NAME : '';  // erp后台需要的字段
+        }
         return $goldLeafInfo;
     }
 }

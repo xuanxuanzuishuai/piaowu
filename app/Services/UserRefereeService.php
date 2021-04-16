@@ -192,12 +192,21 @@ class UserRefereeService
         if (!empty($refTaskId)) {
             $erp = new Erp();
             foreach ($refTaskId as $taskId) {
-                $data = $erp->updateTask($studentInfo['uuid'], $taskId, self::EVENT_TASK_STATUS_COMPLETE);
-                if (!empty($data['user_award_ids'])) {
-                    foreach ($data['user_award_ids'] as $awardId) {
-                        QueueService::sendRedPack([['id' => $awardId]]);
-                    }
-                }
+                $data = $erp->getTaskIds($studentInfo['uuid'], $taskId, self::EVENT_TASK_STATUS_COMPLETE);
+                SimpleLogger::info("UserRefereeService::dssCompleteEventTask", [
+                    'params' => [
+                        $studentId,
+                        $packageType,
+                        $trialType,
+                        $appId
+                    ],
+                    'reqParams' => [
+                        $studentInfo['uuid'],
+                        $taskId,
+                        self::EVENT_TASK_STATUS_COMPLETE
+                    ],
+                    'response' => $data,
+                ]);
             }
         }
     }

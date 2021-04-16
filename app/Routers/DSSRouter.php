@@ -22,6 +22,8 @@ class DSSRouter extends RouterBase
         '/dss/referral/list' => ['method' => ['get'], 'call' => Invite::class . ':list'],
         '/dss/referral/referral_info' => ['method' => ['get'], 'call' => Invite::class . ':referralDetail'],
         '/dss/referral/referee_all_user' => ['method' => ['get'], 'call' => Invite::class . ':refereeAllUser'],
+        // 我邀请的学生信息列表
+        '/dss/referral/my_invite_student_list' => ['method' => ['get'], 'call' => Dss::class . ':myInviteStudentList'],
 
         '/dss/share_post/get_params_id' => ['method' => ['post'], 'call' => Dss::class . ':getParamsId'],
         '/dss/share_post/get_params_info' => ['method' => ['get'], 'call' => Dss::class . ':getParamsInfo'],
