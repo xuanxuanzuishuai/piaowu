@@ -51,11 +51,17 @@ class ThirdPartBillService
                     continue;
                 }
                 $A = trim($v['A']);
+                $B = trim($v['B']);
                 $C = trim($v['C']);
-                if (trim($v['D']) != ThirdPartBillModel::IGNORE) {
+                $D = trim($v['D']);
+                //四项必填数据全部为空，忽略不处理
+                if (empty($A) && empty($B) && empty($C) && empty($D)) {
+                    continue;
+                }
+                if ($D != ThirdPartBillModel::IGNORE) {
                     $data[] = [
                         'mobile' => $A,
-                        'trade_no' => trim($v['B']),
+                        'trade_no' => $B,
                         'operator_id' => $operatorId,
                         'pay_time' => $now,
                         'create_time' => $now,
