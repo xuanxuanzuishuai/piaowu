@@ -21,6 +21,7 @@ use App\Models\Dss\DssSharePosterModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\Erp\ErpEventTaskModel;
+use App\Models\Erp\ErpUserEventTaskAwardModel;
 use App\Models\Erp\ErpUserEventTaskModel;
 use App\Models\SharePosterModel;
 use App\Libs\Erp;
@@ -271,10 +272,14 @@ class SharePosterService
         if (empty($activityList)) {
             return $data;
         }
-        //奖励相关的状态
-        $awardInfo = array_column((new Erp())->getUserAwardInfo(implode(',', array_column($activityList, 'award_id')))['data']['award_info'], NULL, 'award_id');
-        //红包相关的发放状态
-        $redPackDeal = array_column(WeChatAwardCashDealModel::getRecords(['user_event_task_award_id' => array_column($activityList, 'award_id')]), null, 'user_event_task_award_id');
+        $awardIds = array_filter(array_unique(array_column($activityList, 'award_id')));
+        $awardInfo = $redPackDeal = [];
+        if (!empty($awardIds)) {
+            //奖励相关的状态
+            $awardInfo = array_column(ErpUserEventTaskAwardModel::getRecords(['id'=>$awardIds], ['id','award_amount','award_type','status','reason']), null, 'id');
+            //红包相关的发放状态
+            $redPackDeal = array_column(WeChatAwardCashDealModel::getRecords(['user_event_task_award_id' => $awardIds]), null, 'user_event_task_award_id');
+        }
         //获取活动信息
         $activityInfo = array_column(DssReferralActivityModel::getRecords(['id' => array_unique(array_column($activityList, 'activity_id'))], ['name', 'id', 'task_id', 'event_id']), null, 'id');
         //格式化信息
@@ -287,7 +292,7 @@ class SharePosterService
             $data['list'][$k]['award'] = !empty($awardInfo[$v['award_id']]) ? self::formatAwardInfo($awardInfo[$v['award_id']]['award_amount'], $awardInfo[$v['award_id']]['award_type']) : '';
             $data['list'][$k]['img_oss_url'] = $v['img_oss_url'];
             $data['list'][$k]['reason_str'] = $v['reason_str'];
-            [$awardStatusZh, $failReasonZh] = !empty($v['award_id']) ? self::displayAwardExplain($awardInfo[$v['award_id']], $awardInfo[$v['award_id']], $redPackDeal[$v['award_id']] ?? NULL) : [];
+            [$awardStatusZh, $failReasonZh] = !empty($v['award_id']) ? self::displayAwardExplain($awardInfo[$v['award_id']], $awardInfo[$v['award_id']], $redPackDeal[$v['award_id']] ?? null) : [];
             $data['list'][$k]['award_status_zh'] = $awardStatusZh;
             $data['list'][$k]['fail_reason_zh'] = $failReasonZh;
         }
@@ -322,14 +327,13 @@ class SharePosterService
             if (!empty($dv['reason'])) {
                 $dv['reason'] = explode(',', $dv['reason']);
                 array_map(function ($reasonId) use ($dictMap, &$reasonStr) {
-                    $reasonStr [] = $dictMap[Constants::DICT_TYPE_SHARE_POSTER_CHECK_REASON][$reasonId]['value'];
+                    $reasonStr[] = $dictMap[Constants::DICT_TYPE_SHARE_POSTER_CHECK_REASON][$reasonId]['value'];
                 }, $dv['reason']);
             }
             if ($dv['remark']) {
-                $reasonStr [] = $dv['remark'];
+                $reasonStr[] = $dv['remark'];
             }
             $dv['reason_str'] = implode('/', $reasonStr);
-
         }
         return $formatData;
     }
@@ -349,7 +353,7 @@ class SharePosterService
         }
         if ($awardGiveInfo['status'] == ErpReferralService::AWARD_STATUS_GIVE_FAIL) {
             $failReasonZh = WeChatAwardCashDealModel::getWeChatErrorMsg($redPackGiveInfo['result_code']);
-        } else if ($awardGiveInfo['status'] == ErpReferralService::AWARD_STATUS_REJECTED) {
+        } elseif ($awardGiveInfo['status'] == ErpReferralService::AWARD_STATUS_REJECTED) {
             $failReasonZh = $awardGiveInfo['reason'];
         }
         $awardStatusZh = ErpReferralService::AWARD_STATUS[$awardGiveInfo['status']];

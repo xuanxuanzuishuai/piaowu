@@ -9,6 +9,10 @@ use App\Models\WeChatAwardCashDealModel;
 class ErpUserEventTaskAwardModel extends ErpModel
 {
     public static $table = 'erp_user_event_task_award';
+
+    //用户类型
+    const USER_TYPE_STUDENT = 1;
+
     //奖励发放状态
     const STATUS_DISABLED  = 0; // 不发放
     const STATUS_WAITING   = 1; // 待发放
@@ -338,5 +342,6 @@ WHERE a.create_time >= {$time} AND a.status IN (" . self::STATUS_WAITING . "," .
         ";
         return $db->queryAll($sql);
     }
-    
+
+
 }
