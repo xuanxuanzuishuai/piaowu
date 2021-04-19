@@ -151,19 +151,19 @@ class Dss
         return $res;
     }
 
-	/**
-	 * 周周有礼上传图片信息
-	 * @param $params
-	 *
-	 * @return mixed|null
-	 * @throws RunTimeException
-	 */
-	public function uploadSharePoster($params)
-	{
-		$res = self::commonAPI(self::UPLOAD_SHARE_POSTER, $params, 'POST');
-		if ($res['code'] != Valid::CODE_SUCCESS) {
-			throw new RunTimeException(['update_failure']);
-		}
-		return $res;
-	}
+    /**
+     * 周周有礼上传图片信息
+     * @param $params
+     *
+     * @return mixed|null
+     * @throws RunTimeException
+     */
+    public function uploadSharePoster($params)
+    {
+        $res = self::commonAPI(self::UPLOAD_SHARE_POSTER, $params, 'POST');
+        if ($res['code'] != Valid::CODE_SUCCESS) {
+            throw new RunTimeException(['update_failure']);
+        }
+        return $res;
+    }
 }

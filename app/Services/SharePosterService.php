@@ -12,7 +12,6 @@ use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\AliOSS;
-use App\Libs\Operation;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\Dss\DssCollectionModel;
@@ -244,116 +243,116 @@ class SharePosterService
 
 
 
-	/**
-	 * 获取学生参加周周有奖活动的记录列表
-	 * @param $studentId
-	 * @param $page
-	 * @param $limit
-	 * @return array
-	 */
-	public static function joinRecordList($studentId, $page, $limit)
-	{
-		//获取学生已参加活动列表
-		$data = ['count' => 0, 'list' => []];
-		$queryWhere = ['student_id' => $studentId, 'type' => DssSharePosterModel::TYPE_UPLOAD_IMG];
-		$count = DssSharePosterModel::getCount($queryWhere);
-		if (empty($count)) {
-			return $data;
-		}
-		$data['count'] = $count;
-		//查询起始数据量超出数据总量，直接返回
-		$offset = ($page - 1) * $limit;
-		if ($offset > $count) {
-			return $data;
-		}
-		$queryWhere['ORDER'] = ['create_time' => 'DESC'];
-		$queryWhere['LIMIT'] = [$offset, $limit];
-		$activityList = DssSharePosterModel::getRecords($queryWhere, ['activity_id', 'status', 'create_time', 'img_url', 'reason', 'remark', 'award_id']);
-		if (empty($activityList)) {
-			return $data;
-		}
-		//奖励相关的状态
-		$awardInfo = array_column((new Erp())->getUserAwardInfo(implode(',', array_column($activityList, 'award_id')))['data']['award_info'], NULL, 'award_id');
-		//红包相关的发放状态
-		$redPackDeal = array_column((new Operation())->getAwardInfo(['award_id' => implode(',', array_column($activityList, 'award_id'))]), NULL, 'user_event_task_award_id');
-		//获取活动信息
-		$activityInfo = array_column(DssReferralActivityModel::getRecords(['id' => array_unique(array_column($activityList, 'activity_id'))], ['name', 'id', 'task_id', 'event_id']), null, 'id');
-		//格式化信息
-		$activityList = self::formatData($activityList);
-		foreach ($activityList as $k => $v) {
-			$data['list'][$k]['name'] = $activityInfo[$v['activity_id']]['name'];
-			$data['list'][$k]['status'] = $v['status'];
-			$data['list'][$k]['status_name'] = $v['status_name'];
-			$data['list'][$k]['create_time'] = date('Y-m-d H:i', $v['create_time']);
-			$data['list'][$k]['award'] = !empty($awardInfo[$v['award_id']]) ? self::formatAwardInfo($awardInfo[$v['award_id']]['award_amount'], $awardInfo[$v['award_id']]['award_type']) : '';
-			$data['list'][$k]['img_oss_url'] = $v['img_oss_url'];
-			$data['list'][$k]['reason_str'] = $v['reason_str'];
-			[$awardStatusZh, $failReasonZh] = !empty($v['award_id']) ? self::displayAwardExplain($awardInfo[$v['award_id']], $awardInfo[$v['award_id']], $redPackDeal[$v['award_id']] ?? NULL) : [];
-			$data['list'][$k]['award_status_zh'] = $awardStatusZh;
-			$data['list'][$k]['fail_reason_zh'] = $failReasonZh;
-		}
-		return $data;
-	}
+    /**
+     * 获取学生参加周周有奖活动的记录列表
+     * @param $studentId
+     * @param $page
+     * @param $limit
+     * @return array
+     */
+    public static function joinRecordList($studentId, $page, $limit)
+    {
+        //获取学生已参加活动列表
+        $data = ['count' => 0, 'list' => []];
+        $queryWhere = ['student_id' => $studentId, 'type' => DssSharePosterModel::TYPE_UPLOAD_IMG];
+        $count = DssSharePosterModel::getCount($queryWhere);
+        if (empty($count)) {
+            return $data;
+        }
+        $data['count'] = $count;
+        //查询起始数据量超出数据总量，直接返回
+        $offset = ($page - 1) * $limit;
+        if ($offset > $count) {
+            return $data;
+        }
+        $queryWhere['ORDER'] = ['create_time' => 'DESC'];
+        $queryWhere['LIMIT'] = [$offset, $limit];
+        $activityList = DssSharePosterModel::getRecords($queryWhere, ['activity_id', 'status', 'create_time', 'img_url', 'reason', 'remark', 'award_id']);
+        if (empty($activityList)) {
+            return $data;
+        }
+        //奖励相关的状态
+        $awardInfo = array_column((new Erp())->getUserAwardInfo(implode(',', array_column($activityList, 'award_id')))['data']['award_info'], NULL, 'award_id');
+        //红包相关的发放状态
+        $redPackDeal = array_column(WeChatAwardCashDealModel::getRecords(['user_event_task_award_id' => array_column($activityList, 'award_id')]), null, 'user_event_task_award_id');
+        //获取活动信息
+        $activityInfo = array_column(DssReferralActivityModel::getRecords(['id' => array_unique(array_column($activityList, 'activity_id'))], ['name', 'id', 'task_id', 'event_id']), null, 'id');
+        //格式化信息
+        $activityList = self::formatData($activityList);
+        foreach ($activityList as $k => $v) {
+            $data['list'][$k]['name'] = $activityInfo[$v['activity_id']]['name'];
+            $data['list'][$k]['status'] = $v['status'];
+            $data['list'][$k]['status_name'] = $v['status_name'];
+            $data['list'][$k]['create_time'] = date('Y-m-d H:i', $v['create_time']);
+            $data['list'][$k]['award'] = !empty($awardInfo[$v['award_id']]) ? self::formatAwardInfo($awardInfo[$v['award_id']]['award_amount'], $awardInfo[$v['award_id']]['award_type']) : '';
+            $data['list'][$k]['img_oss_url'] = $v['img_oss_url'];
+            $data['list'][$k]['reason_str'] = $v['reason_str'];
+            [$awardStatusZh, $failReasonZh] = !empty($v['award_id']) ? self::displayAwardExplain($awardInfo[$v['award_id']], $awardInfo[$v['award_id']], $redPackDeal[$v['award_id']] ?? NULL) : [];
+            $data['list'][$k]['award_status_zh'] = $awardStatusZh;
+            $data['list'][$k]['fail_reason_zh'] = $failReasonZh;
+        }
+        return $data;
+    }
 
-	public static function formatAwardInfo($amount, $type)
-	{
-		if ($type == 1) {
-			//金钱单位：分
-			return ($amount / 100) . '元';
-		} elseif ($type == 2) {
-			//时间单位：天
-			return $amount . '天';
-		}
-	}
+    public static function formatAwardInfo($amount, $type)
+    {
+        if ($type == 1) {
+            //金钱单位：分
+            return ($amount / 100) . '元';
+        } elseif ($type == 2) {
+            //时间单位：天
+            return $amount . '天';
+        }
+    }
 
 
-	/**
-	 * 格式化信息
-	 * @param $formatData
-	 * @return mixed
-	 */
-	public static function formatData($formatData)
-	{
-		// 获取dict数据
-		$dictMap = DictService::getTypesMap([Constants::DICT_TYPE_SHARE_POSTER_CHECK_REASON, Constants::DICT_TYPE_SHARE_POSTER_CHECK_STATUS]);
-		foreach ($formatData as $dk => &$dv) {
-			$dv['img_oss_url'] = AliOSS::signUrls($dv['img_url']);
-			$dv['status_name'] = $dictMap[Constants::DICT_TYPE_SHARE_POSTER_CHECK_STATUS][$dv['status']]['value'];
-			$reasonStr = [];
-			if (!empty($dv['reason'])) {
-				$dv['reason'] = explode(',', $dv['reason']);
-				array_map(function ($reasonId) use ($dictMap, &$reasonStr) {
-					$reasonStr [] = $dictMap[Constants::DICT_TYPE_SHARE_POSTER_CHECK_REASON][$reasonId]['value'];
-				}, $dv['reason']);
-			}
-			if ($dv['remark']) {
-				$reasonStr [] = $dv['remark'];
-			}
-			$dv['reason_str'] = implode('/', $reasonStr);
+    /**
+     * 格式化信息
+     * @param $formatData
+     * @return mixed
+     */
+    public static function formatData($formatData)
+    {
+        // 获取dict数据
+        $dictMap = DssDictService::getTypesMap([Constants::DICT_TYPE_SHARE_POSTER_CHECK_REASON, Constants::DICT_TYPE_SHARE_POSTER_CHECK_STATUS]);
+        foreach ($formatData as $dk => &$dv) {
+            $dv['img_oss_url'] = AliOSS::signUrls($dv['img_url']);
+            $dv['status_name'] = $dictMap[Constants::DICT_TYPE_SHARE_POSTER_CHECK_STATUS][$dv['status']]['value'];
+            $reasonStr = [];
+            if (!empty($dv['reason'])) {
+                $dv['reason'] = explode(',', $dv['reason']);
+                array_map(function ($reasonId) use ($dictMap, &$reasonStr) {
+                    $reasonStr [] = $dictMap[Constants::DICT_TYPE_SHARE_POSTER_CHECK_REASON][$reasonId]['value'];
+                }, $dv['reason']);
+            }
+            if ($dv['remark']) {
+                $reasonStr [] = $dv['remark'];
+            }
+            $dv['reason_str'] = implode('/', $reasonStr);
 
-		}
-		return $formatData;
-	}
+        }
+        return $formatData;
+    }
 
-	/**
-	 * @param $awardBaseInfo
-	 * @param $awardGiveInfo
-	 * @param $redPackGiveInfo
-	 * @return array|void
-	 * 奖励领取说明信息
-	 */
-	private static function displayAwardExplain($awardBaseInfo, $awardGiveInfo, $redPackGiveInfo)
-	{
-		$failReasonZh = '';
-		if ($awardBaseInfo['award_type'] != ErpReferralService::AWARD_TYPE_CASH) {
-			return;
-		}
-		if ($awardGiveInfo['status'] == ErpReferralService::AWARD_STATUS_GIVE_FAIL) {
-			$failReasonZh = WeChatAwardCashDealModel::getWeChatErrorMsg($redPackGiveInfo['result_code']);
-		} else if ($awardGiveInfo['status'] == ErpReferralService::AWARD_STATUS_REJECTED) {
-			$failReasonZh = $awardGiveInfo['reason'];
-		}
-		$awardStatusZh = ErpReferralService::AWARD_STATUS[$awardGiveInfo['status']];
-		return [$awardStatusZh, $failReasonZh];
-	}
+    /**
+     * @param $awardBaseInfo
+     * @param $awardGiveInfo
+     * @param $redPackGiveInfo
+     * @return array|void
+     * 奖励领取说明信息
+     */
+    private static function displayAwardExplain($awardBaseInfo, $awardGiveInfo, $redPackGiveInfo)
+    {
+        $failReasonZh = '';
+        if ($awardBaseInfo['award_type'] != ErpReferralService::AWARD_TYPE_CASH) {
+            return;
+        }
+        if ($awardGiveInfo['status'] == ErpReferralService::AWARD_STATUS_GIVE_FAIL) {
+            $failReasonZh = WeChatAwardCashDealModel::getWeChatErrorMsg($redPackGiveInfo['result_code']);
+        } else if ($awardGiveInfo['status'] == ErpReferralService::AWARD_STATUS_REJECTED) {
+            $failReasonZh = $awardGiveInfo['reason'];
+        }
+        $awardStatusZh = ErpReferralService::AWARD_STATUS[$awardGiveInfo['status']];
+        return [$awardStatusZh, $failReasonZh];
+    }
 }

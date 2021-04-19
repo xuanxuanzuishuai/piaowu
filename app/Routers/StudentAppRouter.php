@@ -48,15 +48,15 @@ class StudentAppRouter extends RouterBase
             'middles' => [AppAuthMiddleWare::class]
         ],
         '/student_app/referral/upload_share_poster' => [
-            'method' => ['get'],
+            'method' => ['post'],
             'call'    => ReferralActivity::class . ':uploadSharePoster',
             'middles' => [AppAuthMiddleWare::class]
 
         ],
         '/student_app/referral/join_record_list' => [
-	        'method' => ['get'],
-	        'call' => ReferralActivity::class . ':joinRecordList',
-	        'middles' => [AppAuthMiddleWare::class]
+            'method' => ['get'],
+            'call' => ReferralActivity::class . ':joinRecordList',
+            'middles' => [AppAuthMiddleWare::class]
 
         ],
 
