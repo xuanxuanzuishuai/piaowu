@@ -603,11 +603,8 @@ class Consumer extends ControllerBase
 
         try {
             CashGrantService::pointsExchangeRedPack(
-                $params['msg_body']['user_points_exchange_order_id']
-                // $params['event_type'],
-                // $params['msg_body']['reviewer_id'] ?: EmployeeModel::SYSTEM_EMPLOYEE_ID,
-                // $params['msg_body']['reason'] ?: '',
-                // ['activity_id' => $params['msg_body']['activity_id'] ?? 0]
+                $params['msg_body']['user_points_exchange_order_id'],
+                $params['msg_body']['record_sn'],
             );
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());

@@ -26,6 +26,7 @@ use App\Services\ReferralActivityService;
 use App\Libs\Exceptions\RunTimeException;
 use App\Services\ReferralService;
 use App\Services\ThirdPartBillService;
+use App\Services\UserPointsExchangeOrderService;
 use App\Services\UserRefereeService;
 use App\Services\UserService;
 use App\Services\WechatService;
@@ -553,6 +554,40 @@ class Dss extends ControllerBase
                 return $response->withJson($result, StatusCode::HTTP_OK);
             }
             $res = WechatService::updateUserTag($params['open_id'], true);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, ['type' => $res]);
+    }
+
+    /**
+     * 积分兑换红包列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function pointsExchangeRedPackList(Request $request, Response $response)
+    {
+        try {
+            $rules = [
+                [
+                    'key' => 'count',
+                    'type' => 'integer',
+                    'error_code' => 'count_is_integer'
+                ],
+                [
+                    'key' => 'page',
+                    'type' => 'integer',
+                    'error_code' => 'page_is_integer'
+                ],
+            ];
+            $params = $request->getParams();
+            $result = Valid::appValidate($params, $rules);
+            if ($result['code'] != Valid::CODE_SUCCESS) {
+                return $response->withJson($result, StatusCode::HTTP_OK);
+            }
+            list($page, $count) = Util::formatPageCount($params);
+            $res = UserPointsExchangeOrderService::getList($params, $page, $count);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }

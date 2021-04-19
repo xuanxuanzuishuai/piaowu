@@ -18,6 +18,9 @@ class ErpUserEventTaskAwardGoldLeafModel extends ErpModel
     const STATUS_GIVE_ING = 4; // 发放中/已发放待领取
     const STATUS_GIVE_FAIL = 5; // 发放失败
 
+    // 拒绝发放原因
+    const REASON_RETURN_COST = 'return_cost'; // 退费
+
     /**
      * 获取一级代理数据列表
      * @param array $where

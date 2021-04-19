@@ -496,9 +496,10 @@ class ReferralService
         $studentStageList = StudentReferralStudentDetailModel::getRecords(['student_id' => $inviteStudentId]);
         $studentStageArr = [];
         foreach ($studentStageList as $item) {
-            $studentStageArr[$item['student_id']][] = [
+            $studentStageArr[$item['student_id']][$item['stage']+1] = [
                 'stage_name' => $stageNameList[$item['stage']] ?? '',
-                'create_time' => date("Y-m-d", $item['create_time'])
+                'create_time' => date("Y-m-d", $item['create_time']),
+                'stage' => $item['stage']
             ];
         }
 

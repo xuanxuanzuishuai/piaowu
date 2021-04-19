@@ -1,50 +1,56 @@
 -------------------- op --------------------
-INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES ('SERVICE_SIGN_KEY', '各个服务调取op接口签名秘钥', 'erp_service', 'AAAEbm9uZQAAAAAAAAABAAABFwAAAAdzc2gtcn', NULL);
+INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES ('SERVICE_SIGN_KEY', '各个服务调取op接口签名秘钥', 'erp_service', 'AAAEbm9uZQAAAAAAAAABAAABFwAAAAdzc3gtcn', NULL);
 
 -- 需要先执行 insert erp_event_task  然后查出原有值，最后更新 select * from dict where `type`='node_relate_task' and `key_code`='2';
 UPDATE `dict` SET `key_value` = '474,465,467,468,469,325,284,201,203,52,2' WHERE `type`='node_relate_task' and `key_code`='2';
 
+-- 推荐人年卡 - 被推荐人购买体验卡
+
+-- 红包表
 CREATE TABLE `user_points_exchange_order` (
-    `id` bigint(10) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键',
-    `uuid` varchar(32) NOT NULL DEFAULT '' COMMENT '用户uuid',
-    `user_id` bigint(10) unsigned NOT NULL DEFAULT '0' COMMENT 'dss.student表用户id',
-    `order_id` bigint(10) unsigned NOT NULL DEFAULT '0' COMMENT '订单id',
-    `order_type` varchar(20) NOT NULL DEFAULT '' COMMENT '订单类型 red_pack:兑换红包',
-    `order_from` varchar(20) NOT NULL DEFAULT '' COMMENT '订单来源 erp:erp服务',
-    `points` int(10) NOT NULL DEFAULT '0' COMMENT '积分数量',
-    `app_id` int(10) NOT NULL DEFAULT '0' COMMENT 'app id',
-    `account_sub_type` smallint(4) NOT NULL COMMENT '账户子类型',
-    `order_amounts` int(10) NOT NULL DEFAULT '0' COMMENT '订单金额 单位:分',
-    `status` tinyint(1) NOT NULL DEFAULT '0' COMMENT '状态 0 废除 1 待发放 2 审核中 3 发放成功 4 拒绝发放 5 发放中 6 发放失败 7 发放成功',
-    `status_code` varchar(50) NOT NULL DEFAULT '' COMMENT '状态对应的说明',
-    `create_time` int(10) NOT NULL DEFAULT '0' COMMENT '创建时间',
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `unq_order_id` (`order_type`,`order_id`)
+      `id` bigint(10) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键',
+      `uuid` varchar(32) NOT NULL DEFAULT '' COMMENT '用户uuid',
+      `user_id` bigint(10) unsigned NOT NULL DEFAULT '0' COMMENT 'dss.student表用户id',
+      `order_id` bigint(10) unsigned NOT NULL DEFAULT '0' COMMENT '订单id',
+      `order_type` varchar(20) NOT NULL DEFAULT '' COMMENT '订单类型 red_pack:兑换红包',
+      `order_from` varchar(20) NOT NULL DEFAULT '' COMMENT '订单来源 erp:erp服务',
+      `points` int(10) NOT NULL DEFAULT '0' COMMENT '积分数量',
+      `app_id` int(10) NOT NULL DEFAULT '0' COMMENT 'app id',
+      `account_sub_type` smallint(4) NOT NULL COMMENT '账户子类型',
+      `order_amounts` int(10) NOT NULL DEFAULT '0' COMMENT '订单金额 单位:分',
+      `create_time` int(10) NOT NULL DEFAULT '0' COMMENT '创建时间',
+      `update_tiem` int(10) NOT NULL DEFAULT '0' COMMENT '更新时间',
+      PRIMARY KEY (`id`)
 ) ENGINE=InnoDB CHARSET=utf8mb4 COMMENT='用户积分兑换订单';
-
-
 CREATE TABLE `user_points_exchange_order_wx` (
-    `id` int(11) NOT NULL AUTO_INCREMENT,
-    `user_points_exchange_order_id` bigint(10) unsigned NOT NULL DEFAULT '0' COMMENT 'user_points_exchange_order表主键',
-    `uuid` varchar(32) NOT NULL DEFAULT '' COMMENT '用户uuid',
-    `user_id` bigint(10) unsigned NOT NULL DEFAULT '0' COMMENT 'dss.student表用户id',
-    `mch_billno` varchar(32) NOT NULL DEFAULT '' COMMENT '请求微信付款的交易号',
-    `order_amounts` int(10) NOT NULL DEFAULT '0' COMMENT '订单金额 单位:分',
-    `status` tinyint(1) NOT NULL DEFAULT '4' COMMENT '请求微信的结果 3发放成功，4发放中/已发放待领取，5发放失败 ',
-    `open_id` varchar(32) DEFAULT '' COMMENT '用户微信标识',
-    `app_id` tinyint(4) DEFAULT '0' COMMENT '业务标识',
-    `busi_type` tinyint(1) NOT NULL DEFAULT '0' COMMENT '业务类型 1：学生服务号 2：老师服务号 3：学生订阅号 4: 老师订阅号 5: XX小程序',
-    `result_code` varchar(500) NOT NULL DEFAULT '' COMMENT '请求微信的返回值',
-    `create_time` int(11) NOT NULL DEFAULT '0',
-    `update_time` int(11) NOT NULL DEFAULT '0',
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `mch_billno` (`mch_billno`),
-    KEY `user_points_exchange_order_id` (`user_points_exchange_order_id`)
+     `id` int(11) NOT NULL AUTO_INCREMENT,
+     `user_points_exchange_order_id` bigint(10) unsigned NOT NULL DEFAULT '0' COMMENT 'user_points_exchange_order表主键',
+     `uuid` varchar(32) NOT NULL DEFAULT '' COMMENT '用户uuid',
+     `user_id` bigint(10) unsigned NOT NULL DEFAULT '0' COMMENT 'dss.student表用户id',
+     `mch_billno` varchar(32) NOT NULL DEFAULT '' COMMENT '请求微信付款的交易号',
+     `order_amounts` int(10) NOT NULL DEFAULT '0' COMMENT '订单金额 单位:分',
+     `status` tinyint(1) NOT NULL DEFAULT '4' COMMENT '状态 0 不发放 1 待发放 2 审核中 3 发放成功 4 发放中/已发放待领取 5 发放失败',
+     `status_code` varchar(50) NOT NULL DEFAULT '' COMMENT '失败原因状态码',
+     `open_id` varchar(32) DEFAULT '' COMMENT '用户微信标识',
+     `app_id` tinyint(4) DEFAULT '0' COMMENT '业务标识',
+     `busi_type` tinyint(1) NOT NULL DEFAULT '0' COMMENT '业务类型 1：学生服务号 2：老师服务号 3：学生订阅号 4: 老师订阅号 5: XX小程序',
+     `result_status` tinyint(1) NOT NULL DEFAULT '4' COMMENT '请求微信的结果 3发放成功，4发放中/已发放待领取，5发放失败 ',
+     `result_code` varchar(500) NOT NULL DEFAULT '' COMMENT '请求微信的返回值',
+     `record_sn` int(10) NOT NULL DEFAULT '0' COMMENT '全局唯一记录标识',
+     `create_time` int(11) NOT NULL DEFAULT '0',
+     `update_time` int(11) NOT NULL DEFAULT '0',
+     PRIMARY KEY (`id`),
+     UNIQUE KEY `mch_billno` (`mch_billno`),
+     KEY `user_points_exchange_order_id` (`user_points_exchange_order_id`)
 ) ENGINE=InnoDB CHARSET=utf8mb4 COMMENT='积分兑换红包微信交易信息';
 
 
 -------------------- dss --------------------
 alter table share_poster add points_award_id varchar (128) not null default '' comment "积分奖励id"
+INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES
+    ('node_setting', '节点的特殊设置', 'points_exchange_red_pack_id', 'points_red_pack', '积分兑换红包节点id'),
+    ('operation_common_node', '通用红包搜索节点', 'points_red_pack', '金叶子商城兑换红包', '这个节点并不是event_task_id里面的人物');
+
 
 -- 需要先执行 insert erp_event_task  然后查出原有值，最后更新 确认 key_value 对应的 event_task_id 是多少   key_value = event_task_id
 UPDATE `dict` SET `key_value` = '302' WHERE `type` = 'normal_upload_poster_task' and `key_value`='302' and `key_code`='-1';
@@ -80,8 +86,5 @@ CREATE TABLE `erp_user_event_task_award_gold_leaf` (
     `create_time` int(10) unsigned NOT NULL DEFAULT '0' COMMENT '创建时间戳',
     `update_time` int(10) unsigned NOT NULL DEFAULT '0',
     PRIMARY KEY (`id`),
-    KEY `user_id` (`user_id`),
-    KEY `create_time` (`create_time`),
-    KEY `review_time` (`review_time`),
-    KEY `operate_time` (`operate_time`)
+    KEY `idx_user_id` (`user_id`)
 ) ENGINE=InnoDB CHARSET=utf8mb4 COMMENT='用户金叶子任务奖励明细';

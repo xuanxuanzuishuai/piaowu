@@ -49,5 +49,7 @@ class DSSRouter extends RouterBase
         '/dss/integral/gold_leaf_list' => ['method' => ['get'], 'call' => Dss::class . ':goldLeafList'],
         '/dss/student/wx_menu_type' => ['method' => ['get'], 'call' => Dss::class . ':getUserMenuType'],
         '/dss/student/update_tag' => ['method' => ['get'], 'call' => Dss::class . ':updateUserTag'],
+        // 积分兑换红包列表
+        '/dss/points/exchange_red_pack_list' => ['method' => ['get'], 'call' => Dss::class . ':pointsExchangeRedPackList'],
     ];
 }

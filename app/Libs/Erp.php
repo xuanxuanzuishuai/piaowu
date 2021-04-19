@@ -30,7 +30,7 @@ class Erp
     const API_REFERRED_LIST = '/api/dss/referred_list';
     const API_AWARD_LIST = '/api/dss/awards';
     const API_UPDATE_TASK = '/api/dss/add_user_event_task';
-    const API_GET_TASK_IDS = '/api/operation/get_task_ids'; // 添加（完成）任务 （A推荐B，B是作任务的人，返回任务id）
+    const API_ADD_EVENT_TASK_AWARD = '/api/operation/add_event_task_award'; // 添加（完成）任务 （A推荐B，B是作任务的人，返回任务id）
     const API_UPDATE_AWARD = '/api/dss/award';
     const API_BATCH_UPDATE_AWARD = '/api/dss/batch_award';
     const API_USER_REFERRAL_INFO = '/api/dss/get_user_referral_info';
@@ -38,6 +38,7 @@ class Erp
     const API_COPY_TASK = '/api/dss/copy_task';
     const API_MODIFY_TASK = '/api/dss/modify_task';
     const API_AWARD_BASE_INFO = '/api/dss/task_award_info';
+    const API_USER_GET_RED_PACKET_CALL = '/api/app/user_get_red_packet_call_back';  //积分兑换红包 - 红包被用户成功领取通知erp接口地址
 
     // 地址管理
     const API_STUDENT_ADDRESS_LIST = '/ai_dss/student/address_list';
@@ -663,22 +664,45 @@ class Erp
     }
 
     /**
-     * 获取活动任务id
+     * 添加任务奖励
      * @param $uuid
      * @param $eventTaskId
      * @param $status
      * @return array|bool
      */
-    public function getTaskIds($uuid, $eventTaskId, $status)
+    public function addEventTaskAward($uuid, $eventTaskId, $status, $awardId = 0)
     {
         $params = [
             'app_id' => Constants::SMART_APP_ID,
             'user_type' => 1,
             'uuid' => $uuid,
             'event_task_id' => $eventTaskId,
-            'status' => $status
+            'status' => $status,
+            'task_award_id' => $awardId
         ];
-        $response = HttpHelper::requestJson($this->host . self::API_GET_TASK_IDS, $params, 'POST');
+        $response = HttpHelper::requestJson($this->host . self::API_ADD_EVENT_TASK_AWARD, $params, 'POST');
+        return $response;
+    }
+
+    /**
+     * 通知erp用户成功领取红包成功
+     * @param string $uuid
+     * @param int $orderId 订单Id
+     * @param int $recordSn 订单中的红包对应的唯一标识 (一个订单可能有多个红包)
+     * @param int $status 领取状态
+     * @return array|bool
+     */
+    public function noticeErpUserGetRedPackStatus($uuid, $orderId, $recordSn = 0, $status = 0)
+    {
+        $params = [
+            'app_id' => Constants::SMART_APP_ID,
+            'user_type' => 1,
+            'uuid' => $uuid,
+            'award_id' => $recordSn,
+            'order_id' => $orderId,
+            'status' => $status,
+        ];
+        $response = HttpHelper::requestJson($this->host . self::API_USER_GET_RED_PACKET_CALL, $params, 'POST');
         return $response;
     }
 }

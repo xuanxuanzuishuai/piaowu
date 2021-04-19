@@ -55,6 +55,11 @@ class Erp extends ControllerBase
                 'error_code' => 'sign_is_required',
             ],
             [
+                'key' => 'award_id',
+                'type' => 'required',
+                'error_code' => 'award_id_is_required',
+            ],
+            [
                 'key' => 'points_exchange',
                 'type' => 'integer',
                 'error_code' => 'points_exchange_is_integer',
@@ -71,6 +76,7 @@ class Erp extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         try {
+            $params['record_sn'] = $params['award_id'];
             $res = UserPointsExchangeOrderService::toRedPack($params);
         } catch (RunTimeException $e) {
             SimpleLogger::info("Erp::integralExchangeRedPack error", ['params' => $params, 'err' => $e->getData()]);
@@ -110,7 +116,7 @@ class Erp extends ControllerBase
         }
         try {
             list($page, $limit) = Util::formatPageCount($params);
-            $res = ErpUserEventTaskAwardGoldLeafService::getWaitingGoldLeafList($params, $page, $limit);
+            $res = ErpUserEventTaskAwardGoldLeafService::getWaitingGoldLeafList($params, $page, $limit, true);
         } catch (RunTimeException $e) {
             SimpleLogger::info("Erp::integralExchangeRedPack error", ['params' => $params, 'err' => $e->getData()]);
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());

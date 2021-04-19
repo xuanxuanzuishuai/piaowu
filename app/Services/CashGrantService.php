@@ -388,10 +388,11 @@ class CashGrantService
 
     /**
      * 积分兑换红包
-     * @param $userPointsExchangeOrderId
+     * @param int $userPointsExchangeOrderId 红包兑换的订单Id
+     * @param int $recordSn  红包兑换记录的唯一标识
      * @return bool
      */
-    public static function pointsExchangeRedPack($userPointsExchangeOrderId)
+    public static function pointsExchangeRedPack($userPointsExchangeOrderId, $recordSn)
     {
         // 获取订单详情 - 不存在不发放
         $orderInfo = UserPointsExchangeOrderModel::getRecord(['id' => $userPointsExchangeOrderId]);
@@ -399,55 +400,46 @@ class CashGrantService
             SimpleLogger::info('CashGrantService::pointsExchangeRedPack', ['err' => 'not found award', 'id' => $userPointsExchangeOrderId]);
             return false;
         }
-        // 只处理发放失败和等待发放的订单
-        if (!in_array($orderInfo['status'], [ UserPointsExchangeOrderModel::STATUS_WAITING, UserPointsExchangeOrderModel::STATUS_GIVE_FAIL])) {
+        // 获取发放记录，如果记录存在则只处理发放失败和等待发放的订单
+        $recordInfo = UserPointsExchangeOrderWxModel::getRecord(['record_sn' => $recordSn, 'user_points_exchange_order_id' => $userPointsExchangeOrderId]);
+        if (empty($recordInfo)) {
+            SimpleLogger::info('CashGrantService::pointsExchangeRedPack', ['err' => 'not found record_info', 'id' => $userPointsExchangeOrderId, 'record_sn' => $recordSn]);
+            return false;
+        }
+        if (!in_array($recordInfo['status'], [ UserPointsExchangeOrderWxModel::STATUS_WAITING, UserPointsExchangeOrderWxModel::STATUS_GIVE_FAIL])) {
             SimpleLogger::info('CashGrantService::pointsExchangeRedPack', ['err' => 'order_is_not_wait_or_not_fail', 'id' => $userPointsExchangeOrderId, 'order_info' => $orderInfo]);
             return false;
         }
         // 检查数据是否正确，不正确直接作废
-        if (!self::checkSendRedPackDataRight($orderInfo)) {
+        if (!self::checkSendRedPackDataRight($recordInfo)) {
             SimpleLogger::info('CashGrantService::pointsExchangeRedPack', ['err' => 'checkIsCanSendRedPack is false', 'id' => $userPointsExchangeOrderId, 'order_info' => $orderInfo]);
-            UserPointsExchangeOrderModel::updateStatusDisabled($userPointsExchangeOrderId, UserPointsExchangeOrderModel::STATUS_CODE_RED_PACK_DATA_ERROR);
+            UserPointsExchangeOrderWxModel::updateStatusDisabled($userPointsExchangeOrderId, UserPointsExchangeOrderModel::STATUS_CODE_RED_PACK_DATA_ERROR);
             return false;
         }
         // 检查用户是否可接受 - 绑定微信，关注公众号
         list($statusCode, $userWxInfo) = self::checkUserIsCanAcceptRedPack($orderInfo);
         if (!empty($statusCode)) {
             SimpleLogger::info('CashGrantService::pointsExchangeRedPack', ['err' => 'checkUserIsCanAcceptRedPack is false', 'id' => $userPointsExchangeOrderId, 'order_info' => $orderInfo]);
-            UserPointsExchangeOrderModel::updateStatusFailed($userPointsExchangeOrderId, $statusCode);
+            UserPointsExchangeOrderWxModel::updateStatusFailed($userPointsExchangeOrderId, $statusCode);
             return false;
         }
 
         $time = time();
         // 获取订单号 - 如果之前已经存在交易号用之前的交易号重试
-        $hasRedPackRecord = UserPointsExchangeOrderWxModel::getRecord(['user_points_exchange_order_id' => $orderInfo['id']]);
-        $mchBillNo = self::getMchBillNo($orderInfo['id'], $hasRedPackRecord, $orderInfo['order_amount']);
+        $mchBillNo = self::getMchBillNo($orderInfo['id'], $recordInfo, $orderInfo['order_amount']);
         $keyCode = '';
 
         // 调取微信发红包接口
         $res = self::requestWxSendRedPack($mchBillNo, $userWxInfo, $orderInfo, $keyCode);
 
         // 保存日志
-        $data['status'] = $res['status'];
+        $data['result_status'] = $res['status'];
         $data['result_code'] = $res['result_code'];
         $data['open_id'] = $userWxInfo['open_id'] ?? '';
         $data['update_time'] = $time;
-        $data['order_amounts'] = $orderInfo['order_amounts'];
         $data['mch_billno'] = $mchBillNo;
         //处理结果入库
-        if (empty($hasRedPackRecord)) {
-            $data['user_type'] = $userWxInfo['user_type'];
-            $data['busi_type'] = $userWxInfo['busi_type'];
-            $data['app_id'] = $userWxInfo['app_id'];
-            $data['create_time'] = $time;
-            $data['user_id'] = $userWxInfo['user_id'];
-            $data['uuid'] = $orderInfo['uuid'];
-            $data['user_points_exchange_order_id'] = $userPointsExchangeOrderId;
-            //记录发送红包
-            $result = UserPointsExchangeOrderWxModel::insertRecord($data);
-        } else {
-            $result = UserPointsExchangeOrderWxModel::updateRecord($hasRedPackRecord['id'], $data);
-        }
+        $result = UserPointsExchangeOrderWxModel::updateRecord($recordInfo['id'], $data);
         if (empty($result)) {
             SimpleLogger::error('cash deal data operate fail', $data);
         }
@@ -538,7 +530,7 @@ class CashGrantService
                 'order' => $orderInfo,
                 'keyCode' => $keyCode,
             ]);
-            $status = trim($resultData['result_code']) == WeChatAwardCashDealModel::RESULT_SUCCESS_CODE ? UserPointsExchangeOrderModel::STATUS_GIVE_ING : UserPointsExchangeOrderModel::STATUS_GIVE_FAIL;
+            $status = trim($resultData['result_code']) == WeChatAwardCashDealModel::RESULT_SUCCESS_CODE ? UserPointsExchangeOrderWxModel::STATUS_GIVE_ING : UserPointsExchangeOrderWxModel::STATUS_GIVE_FAIL;
             $resultCode = trim($resultData['err_code']);
         } else {
             SimpleLogger::info('CashGrantService::requestWxSendRedPack now env not satisfy', [
@@ -547,12 +539,90 @@ class CashGrantService
                 'order' => $orderInfo,
                 'keyCode' => $keyCode,
             ]);
-            $status = UserPointsExchangeOrderModel::STATUS_GIVE_FAIL;
+            $status = UserPointsExchangeOrderWxModel::STATUS_GIVE_FAIL;
             $resultCode = UserPointsExchangeOrderModel::STATUS_CODE_ENV_SATISFY;
         }
         return [
             'status' => $status,            // 发放结果
             'result_code' => $resultCode,   // 发放结果子状态
         ];
+    }
+
+    /**
+     * 查询待领取的红包在微信平台的发放结果
+     * @param $awardId
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
+    public static function updatePointsExchangeRedPackStatus($awardId)
+    {
+        $awardInfo = UserPointsExchangeOrderWxModel::getRecord(['id' => $awardId]);
+        //仅处理发放中
+        if (!empty($awardInfo) && $awardInfo['result_status'] != UserPointsExchangeOrderWxModel::STATUS_GIVE_ING) {
+            SimpleLogger::info('CashGrantService::updatePointsExchangeRedPackStatus', ['info' => 'only deal ing award','award_id' => $awardId]);
+            return;
+        }
+
+        // 获取订单信息
+        $orderInfo = UserPointsExchangeOrderModel::getRecord(['id' => $awardInfo['user_points_exchange_order_id']]);
+        if (empty($orderInfo)) {
+            SimpleLogger::info('CashGrantService::updatePointsExchangeRedPackStatus', ['info' => 'not_found_order_info','award_id' => $awardId]);
+            return;
+        }
+        $weChatPackage = new WeChatPackage($awardInfo['app_id'], $awardInfo['busi_type']);
+        $time = time();
+        //调用微信
+        $resultData = $weChatPackage->getRedPackBillInfo($awardInfo['mch_billno']);
+        SimpleLogger::info("CashGrantService::updatePointsExchangeRedPackStatus", [
+            'info' => 'wx red pack query',
+            'mch_billno' => $awardInfo['mch_billno'],
+            'data' => $resultData,
+            'award_order_id' => $awardId
+        ]);
+        $status = $awardInfo['status'];
+        $resultCode = $awardInfo['result_code'];
+        //处理微信返回结果 根据微信文档 需要根据微信结果两个字段标识判断 status / result_code
+        //请求结果失败
+        if ($resultData['result_code'] == WeChatAwardCashDealModel::RESULT_FAIL_CODE) {
+            $status = UserPointsExchangeOrderWxModel::STATUS_GIVE_FAIL;
+            $resultCode = $resultData['err_code'];
+        } else {
+            //已领取
+            if (in_array($resultData['status'], [WeChatAwardCashDealModel::RECEIVED])) {
+                $status = UserPointsExchangeOrderWxModel::STATUS_GIVE;
+                $resultCode = $resultData['status'];
+            }
+
+            //发放失败/退款中/已退款
+            if (in_array($resultData['status'], [WeChatAwardCashDealModel::REFUND, WeChatAwardCashDealModel::RFUND_ING, WeChatAwardCashDealModel::FAILED])) {
+                $status = UserPointsExchangeOrderWxModel::STATUS_GIVE_FAIL;
+                $resultCode = $resultData['status'];
+            }
+
+            //发放中/已发放待领取
+            if (in_array($resultData['status'], [WeChatAwardCashDealModel::SENDING, WeChatAwardCashDealModel::SENT])) {
+                $status = UserPointsExchangeOrderWxModel::STATUS_GIVE_ING;
+                $resultCode = $resultData['status'];
+            }
+        }
+
+        if ($status != $awardInfo['status']) {
+            //更新当前记录
+            $updateRow = UserPointsExchangeOrderWxModel::updateRecord($awardInfo['id'], ['status' => $status, 'result_status' => $status, 'result_code' => $resultCode, 'update_time' => $time]);
+            SimpleLogger::info("CashGrantService::updatePointsExchangeRedPackStatus", [
+                'info' => 'we chat award update row',
+                'affectedRow' => $updateRow,
+                'award_order_id' => $awardId,
+            ]);
+            if (empty($updateRow)) {
+                return;
+            }
+
+            // 红包被用户成功领取 - 通知erp
+            if ($status == UserPointsExchangeOrderWxModel::STATUS_GIVE) {
+                (new Erp())->noticeErpUserGetRedPackStatus($awardInfo['uuid'], $orderInfo['order_id'], $awardInfo['record_sn']);
+                //红包接收成功发送微信消息
+                // QueueService::messageRulePushMessage([['delay_time' => 0, 'rule_id' => DictConstants::get(DictConstants::MESSAGE_RULE, 'receive_red_pack_rule_id'), 'open_id' => $awardInfo['open_id']]]);
+            }
+        }
     }
 }

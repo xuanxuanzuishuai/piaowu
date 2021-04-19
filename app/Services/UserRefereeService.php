@@ -192,7 +192,7 @@ class UserRefereeService
         if (!empty($refTaskId)) {
             $erp = new Erp();
             foreach ($refTaskId as $taskId) {
-                $data = $erp->getTaskIds($studentInfo['uuid'], $taskId, self::EVENT_TASK_STATUS_COMPLETE);
+                $data = $erp->addEventTaskAward($studentInfo['uuid'], $taskId, self::EVENT_TASK_STATUS_COMPLETE);
                 SimpleLogger::info("UserRefereeService::dssCompleteEventTask", [
                     'params' => [
                         $studentId,
@@ -221,80 +221,12 @@ class UserRefereeService
      */
     public static function getTaskIdByType($packageType, $trialType, $refereeInfo, $appId)
     {
-        $newRuleStartPoint = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'xyzop_178_start_point');
-        if (!empty($newRuleStartPoint) && time() >= $newRuleStartPoint) {
-            return self::getTaskIdByTypeNew($packageType, $trialType, $refereeInfo, $appId);
-        }
-        // 推荐人当前状态：非付费正式课：
-        if ($refereeInfo['has_review_course'] != DssStudentModel::REVIEW_COURSE_1980) {
-            if ($packageType == DssPackageExtModel::PACKAGE_TYPE_TRIAL
-                && in_array($trialType, [DssPackageExtModel::TRIAL_TYPE_49, DssPackageExtModel::TRIAL_TYPE_9])) {
-                // DSSCRM-1841: 奖励推荐人1元：
-                return RefereeAwardService::getDssTrailPayTaskId(4);
-            } else {
-                // DSSCRM-1841: 奖励推荐人168元，被推荐人50元：
-                return RefereeAwardService::getDssYearPayTaskId(3);
-            }
-        } else {
-            if ($packageType == DssPackageExtModel::PACKAGE_TYPE_TRIAL
-                && in_array($trialType, [DssPackageExtModel::TRIAL_TYPE_49, DssPackageExtModel::TRIAL_TYPE_9])) {
-                // DSSCRM-1841: 奖励推荐人1元：
-                return RefereeAwardService::getDssTrailPayTaskId(4);
-            } else {
-                // 年卡：
-                // 查询当前被推荐人是第几个：
-                // 根据个数决定奖励
-                $startPoint = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'dsscrm_1841_start_time');
-                if (!empty($refereeInfo['first_pay_normal_info']['create_time'])
-                    && $refereeInfo['first_pay_normal_info']['create_time'] >= $startPoint) {
-                    $startPoint = $refereeInfo['first_pay_normal_info']['create_time'];
-                }
-                $refereeData = StudentInviteModel::getRefereeBuyData(['referee_id' => $refereeInfo['id'], 'app_id' => $appId, 'referee_type' => StudentInviteModel::REFEREE_TYPE_STUDENT, 'create_time' => $startPoint]);
-                if (empty($refereeData)) {
-                    SimpleLogger::error("EMPTY REFEREE DATA", [$refereeInfo['id'], $startPoint]);
-                    return 0;
-                }
-                // 被推荐人个数
-                $refereeCount = 0;
-                // 查询出来的被推荐人购买年卡数据一定包含当前购买人
-                $includeFlag = false;
-                foreach ($refereeData as $item) {
-                    if ($item['create_time'] >= $startPoint) {
-                        $refereeCount++;
-                    }
-                    // 筛选到当前被推荐人时停止计数
-                    if ($item['buyer'] == $refereeInfo['student_id']) {
-                        $includeFlag = true;
-                        break;
-                    }
-                }
-                if (empty($refereeCount) || !$includeFlag) {
-                    SimpleLogger::error('RETURN TASK ID:0', [$refereeCount, $refereeData]);
-                    return 0;
-                }
-                $noChangeNumber = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'task_stop_change_number');
-                if ($refereeCount > $noChangeNumber) {
-                    $refereeCount = $noChangeNumber;
-                }
-                $config = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'normal_task_config');
-                $config = json_decode($config, true);
-                if (empty($config)) {
-                    SimpleLogger::error("EMPTY REFEREE TASK CONFIG", [$config]);
-                }
-                return $config[$refereeCount] ?? 0;
-            }
-        }
-    }
+        // 保留代码 后期新规则时使用
+        // $newRuleStartPoint = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'xyzop_178_start_point');
+        // if (!empty($newRuleStartPoint) && time() >= $newRuleStartPoint) {
+        //     return self::getTaskIdByTypeNew($packageType, $trialType, $refereeInfo, $appId);
+        // }
 
-    /**
-     * @param $packageType
-     * @param $trialType
-     * @param $refereeInfo
-     * @param $appId
-     * @return array
-     */
-    public static function getTaskIdByTypeNew($packageType, $trialType, $refereeInfo, $appId)
-    {
         $taskIds = [];
         // 推荐人当前状态：非付费正式课：
         if ($refereeInfo['has_review_course'] != DssStudentModel::REVIEW_COURSE_1980) {
@@ -311,20 +243,51 @@ class UserRefereeService
             // 被推荐人购买体验课：
             if ($packageType == DssPackageExtModel::PACKAGE_TYPE_TRIAL
                 && in_array($trialType, [DssPackageExtModel::TRIAL_TYPE_49, DssPackageExtModel::TRIAL_TYPE_9])) {
+                /** 推荐人购买体验卡 - 不在需要判断数量 现在发放的都是固定奖励 */
                 // 确定时间起点：
-                $startPoint = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'xyzop_178_start_point');
+                // $startPoint = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'xyzop_178_start_point');
+                // if (!empty($refereeInfo['first_pay_normal_info']['create_time'])
+                //     && $refereeInfo['first_pay_normal_info']['create_time'] >= $startPoint) {
+                //     $startPoint = $refereeInfo['first_pay_normal_info']['create_time'];
+                // }
+                // // 查询被推荐人数量：
+                // $refereeCount = self::getRefereeCount($refereeInfo, $appId, $startPoint, DssStudentModel::REVIEW_COURSE_49);
+                // $noChangeNumber = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'trial_task_stop_change_number_xyzop_178');
+                // if ($refereeCount > $noChangeNumber) {
+                //     $refereeCount = $noChangeNumber;
+                // }
+                // // 根据配置返回taskId：
+                // $config = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'trial_task_config_xyzop_178');
+                // $config = json_decode($config, true);
+                // if (empty($config)) {
+                //     SimpleLogger::error("EMPTY REFEREE TASK CONFIG", [$config]);
+                // }
+                // $taskId = $config[$refereeCount] ?? 0;
+                // if (!empty($taskId)) {
+                //     $taskIds[] = $taskId;
+                // }
+                $taskIds[] = RefereeAwardService::getDssTrailPayTaskId();
+            } else {
+                // 被推荐人购买年卡：
+                // XYZOP-178-2.2.1
+                $taskIds[] = RefereeAwardService::getDssYearPayTaskId(1);
+
+                // 确定时间起点：
+                $startPoint = strtotime(date("Y-m-01 00:00：00"));
                 if (!empty($refereeInfo['first_pay_normal_info']['create_time'])
                     && $refereeInfo['first_pay_normal_info']['create_time'] >= $startPoint) {
                     $startPoint = $refereeInfo['first_pay_normal_info']['create_time'];
                 }
+                $endPoint = strtotime(date("Y-m-01 00:00:00", strtotime("+1 month")));
+
                 // 查询被推荐人数量：
-                $refereeCount = self::getRefereeCount($refereeInfo, $appId, $startPoint, DssStudentModel::REVIEW_COURSE_49);
-                $noChangeNumber = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'trial_task_stop_change_number_xyzop_178');
+                $refereeCount = self::getRefereeCount($refereeInfo, $appId, $startPoint, $endPoint, DssStudentModel::REVIEW_COURSE_1980);
+                $noChangeNumber = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'task_stop_change_number');
                 if ($refereeCount > $noChangeNumber) {
                     $refereeCount = $noChangeNumber;
                 }
                 // 根据配置返回taskId：
-                $config = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'trial_task_config_xyzop_178');
+                $config = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'normal_task_config');
                 $config = json_decode($config, true);
                 if (empty($config)) {
                     SimpleLogger::error("EMPTY REFEREE TASK CONFIG", [$config]);
@@ -333,10 +296,7 @@ class UserRefereeService
                 if (!empty($taskId)) {
                     $taskIds[] = $taskId;
                 }
-            } else {
-                // 被推荐人购买年卡：
-                // XYZOP-178-2.2.1
-                $taskIds[] = RefereeAwardService::getDssYearPayTaskId(1);
+
                 // XYZOP-178-2.2.2
                 if (time() <= $refereeInfo['first_pay_normal_info']['create_time'] + Util::TIMESTAMP_ONEDAY * 15) {
                     $extraTaskId = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'extra_task_id_normal_xyzop_178');
@@ -344,7 +304,8 @@ class UserRefereeService
                     $extraCount = StudentInviteModel::getRefereeExtraTask(
                         [
                             'referee_id' => $refereeInfo['id'],
-                            'create_time' => $startPoint
+                            'create_time' => $startPoint,
+                            'end_time' => $endPoint
                         ],
                         $extraTaskId
                     );
@@ -365,7 +326,7 @@ class UserRefereeService
      * @param int $type
      * @return int
      */
-    public static function getRefereeCount($refereeInfo, $appId, $startPoint, $type = DssStudentModel::REVIEW_COURSE_1980)
+    public static function getRefereeCount($refereeInfo, $appId, $startPoint, $endPoint, $type = DssStudentModel::REVIEW_COURSE_1980)
     {
         $refereeData = StudentInviteModel::getRefereeBuyData(
             [
