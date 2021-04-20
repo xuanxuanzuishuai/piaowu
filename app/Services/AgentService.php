@@ -23,7 +23,7 @@ use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\AgentApplicationModel;
 use App\Models\AgentAwardBillExtModel;
 use App\Models\AgentAwardDetailModel;
-use App\Models\AgentBillMapModel;
+use App\Models\BillMapModel;
 use App\Models\AgentDivideRulesModel;
 use App\Models\AgentModel;
 use App\Models\AgentOperationLogModel;
@@ -2126,12 +2126,12 @@ class AgentService
     {
         //分班条件:代理渠道购买并且代理商分成模式为线索+售卖不分班，其余均可以分班
         //订单映射数据
-        $mapData = AgentBillMapModel::get($parentBillId, $studentId);
+        $mapData = BillMapModel::get($parentBillId, $studentId, BillMapModel::USER_TYPE_AGENT);
         if (empty($mapData)) {
             return true;
         }
         //代理商数据
-        $agentData = AgentModel::getAgentParentData([$mapData['agent_id']]);
+        $agentData = AgentModel::getAgentParentData([$mapData['user_id']]);
         if ($agentData[0]['division_model'] == AgentModel::DIVISION_MODEL_LEADS_AND_SALE) {
             return false;
         }

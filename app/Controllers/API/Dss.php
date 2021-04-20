@@ -13,15 +13,17 @@ use App\Libs\Constants;
 use App\Libs\HttpHelper;
 use App\Libs\Util;
 use App\Libs\Valid;
-use App\Models\AgentBillMapModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\MessagePushRulesModel;
 use App\Models\PosterModel;
 use App\Models\WeChatAwardCashDealModel;
+use App\Services\BillMapService;
+use App\Services\ErpUserEventTaskAwardGoldLeafService;
 use App\Services\PosterService;
 use App\Services\AgentService;
 use App\Services\ReferralActivityService;
 use App\Libs\Exceptions\RunTimeException;
+use App\Services\ReferralService;
 use App\Services\ThirdPartBillService;
 use App\Services\UserRefereeService;
 use App\Services\UserService;
@@ -423,6 +425,83 @@ class Dss extends ControllerBase
         return HttpHelper::buildResponse($response, ['res' => $res]);
     }
 
+    /**
+     * 获取待发放金叶子积分明细
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function goldLeafList(Request $request, Response $response) {
+        $rules = [
+            [
+                'key' => 'uuid',
+                'type' => 'required',
+                'error_code' => 'uuid_is_required',
+            ],
+            [
+                'key' => 'page',
+                'type' => 'integer',
+                'error_code' => 'page_is_integer'
+            ],
+            [
+                'key' => 'count',
+                'type' => 'integer',
+                'error_code' => 'count_is_integer'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            list($page, $limit) = Util::formatPageCount($params);
+            $res = ErpUserEventTaskAwardGoldLeafService::getWaitingGoldLeafList($params, $page, $limit);
+        } catch (RunTimeException $e) {
+            SimpleLogger::info("Dss::goldLeafList error", ['params' => $params, 'err' => $e->getData()]);
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, [
+            'total_count' => $res['total'],
+            'logs' => $res['list'],
+            'total_num' => $res['total_num'],
+        ]);
+    }
+
+    //我邀请的学生信息列表
+    public function myInviteStudentList(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        $rules = [
+            [
+                'key' => 'referrer_uuid',
+                'type' => 'required',
+                'error_code' => 'referrer_uuid_is_required'
+            ],
+            [
+                'key' => 'count',
+                'type' => 'integer',
+                'error_code' => 'count_is_integer'
+            ],
+            [
+                'key' => 'page',
+                'type' => 'integer',
+                'error_code' => 'page_is_integer'
+            ],
+        ];
+        $result = Valid::Validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            list($page, $count) = Util::formatPageCount($params);
+            $inviteStudentList = ReferralService::myInviteStudentList($params, $page, $count);
+        } catch (RunTimeException $e) {
+            SimpleLogger::info("Dss::myInviteStudentList error", ['params' => $params, 'err' => $e->getData()]);
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, $inviteStudentList);
+    }
     /**
      * 获取用户个性化菜单类型
      * @param Request $request

@@ -14,7 +14,6 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Libs\Util;
-use App\Models\AgentBillMapModel;
 use App\Models\AgentModel;
 use App\Models\Dss\DssCategoryV1Model;
 use App\Models\Dss\DssEmployeeModel;
@@ -358,7 +357,7 @@ class ThirdPartBillService
 
         //如果是代理商创建的体验课订单，记录订单与代理的映射关系
         if (($data['status'] == ThirdPartBillModel::STATUS_SUCCESS) && ($params['third_identity_type'] == ThirdPartBillModel::THIRD_IDENTITY_TYPE_AGENT)) {
-            $billMapRes = AgentBillMapModel::add($paramMapInfo['qr_ticket'], $result['data']['order_id'], $data['student_id']);
+            $billMapRes = BillMapService::mapDataRecord($paramMapInfo['qr_ticket'], $result['data']['order_id'], $data['student_id']);
             if ($billMapRes) {
                 //补发奖励
                 $packageInfo = DssErpPackageV1Model::getPackageById($data['package_id']);

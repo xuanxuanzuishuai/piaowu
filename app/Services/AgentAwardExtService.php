@@ -12,11 +12,11 @@ namespace App\Services;
 use App\Libs\SimpleLogger;
 use App\Models\AgentAwardDetailModel;
 use App\Models\AgentAwardBillExtModel;
-use App\Models\AgentBillMapModel;
+use App\Models\BillMapModel;
 use App\Models\AgentModel;
 use App\Models\AgentUserModel;
 use App\Models\Dss\DssPackageExtModel;
-use App\Models\StudentInviteModel;
+use App\Models\StudentReferralStudentStatisticsModel;
 
 
 class AgentAwardExtService
@@ -36,12 +36,12 @@ class AgentAwardExtService
         }
         $agentAwardExtData = json_decode($agentAwardData['ext'], true);
         //获取学生转介绍数据
-        $studentReferralData = StudentInviteModel::getRecord(['student_id' => (int)$agentAwardData['student_id'], 'referee_type' => StudentInviteModel::REFEREE_TYPE_STUDENT], ['referee_id']);
+        $studentReferralData = StudentReferralStudentStatisticsModel::getRecord(['student_id' => (int)$agentAwardData['student_id']], ['referee_id']);
         $studentReferralId = !empty($studentReferralData['referee_id']) ? $studentReferralData['referee_id'] : 0;
 
         //获取订单成单人数据
-        $billMapData = AgentBillMapModel::get($agentAwardExtData['parent_bill_id'], $agentAwardData['student_id']);
-        $signerAgentId = !empty($billMapData['agent_id']) ? $billMapData['agent_id'] : 0;
+        $billMapData = BillMapModel::get($agentAwardExtData['parent_bill_id'], $agentAwardData['student_id'], BillMapModel::USER_TYPE_AGENT);
+        $signerAgentId = !empty($billMapData['user_id']) ? $billMapData['user_id'] : 0;
         //学生当前有效绑定关系的代理商数据
         $validAgentBindData = AgentUserModel::getValidBindData($agentAwardData['student_id']);
         $validAgentId = !empty($validAgentBindData) ? $validAgentBindData['agent_id'] : 0;

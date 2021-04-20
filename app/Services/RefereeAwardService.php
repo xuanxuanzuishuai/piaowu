@@ -8,10 +8,12 @@ use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssPackageExtModel;
+use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\Dss\DssWechatOpenIdListModel;
 use App\Models\EmployeeModel;
 use App\Models\Erp\ErpUserEventTaskAwardModel;
+use App\Models\StudentReferralStudentStatisticsModel;
 use App\Models\WeChatAwardCashDealModel;
 use App\Services\Queue\QueueService;
 
@@ -80,12 +82,30 @@ class RefereeAwardService
      * 判断是否应该完成任务及发放奖励
      * @param $student
      * @param $package
+     * @param $parentBillId
      * @return bool
      */
-    public static function dssShouldCompleteEventTask($student, $package)
+    public static function dssShouldCompleteEventTask($student, $package, $parentBillId)
     {
         // 真人业务不发奖
         if ($package['app_id'] != DssPackageExtModel::APP_AI) {
+            return false;
+        }
+        //绑定关系处理逻辑
+        $inviteRes = StudentInviteService::studentInviteRecord($student['id'], $package['type'], $package['app_id'],'', [], $parentBillId);
+        if (empty($inviteRes)) {
+            return false;
+        }
+
+        // 不发奖励 - 推荐人状态为非"付费正式课"不发奖励
+        $referralInfo = StudentReferralStudentStatisticsModel::getRecord(['student_id' => $student['id']]);
+        if (empty($referralInfo)) {
+            SimpleLogger::info("RefereeAwardService::dssShouldCompleteEventTask", ['err' => 'no_fond_referee', 'student' => $student, 'package' => $package]);
+            return false;
+        }
+        $referralUser = DssStudentModel::getRecord(['id' => $referralInfo['referee_id']]);
+        if ($referralUser['has_review_course'] != DssStudentModel::REVIEW_COURSE_1980) {
+            SimpleLogger::info("RefereeAwardService::dssShouldCompleteEventTask", ['err' => 'no_REVIEW_COURSE_1980', 'student' => $student, 'package' => $package]);
             return false;
         }
 

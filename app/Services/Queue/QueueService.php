@@ -25,9 +25,9 @@ class QueueService
     }
 
     /**
+     * 发送红包
      * @param $data
      * @return bool
-     * @throws \Exception
      */
     public static function sendRedPack($data)
     {

@@ -19,7 +19,6 @@ use App\Libs\RC4;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Libs\Valid;
-use App\Models\AgentBillMapModel;
 use App\Models\AgentModel;
 use App\Models\Dss\DssCategoryV1Model;
 use App\Models\Dss\DssCollectionModel;
@@ -31,7 +30,7 @@ use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\Erp\ErpGiftGoodsV1Model;
 use App\Models\Erp\ErpPackageV1Model;
 use App\Models\ParamMapModel;
-use App\Services\AgentService;
+use App\Services\BillMapService;
 use App\Services\DssDictService;
 use App\Services\ErpOrderV1Service;
 use App\Services\ErpUserService;
@@ -204,7 +203,7 @@ class Order extends ControllerBase
             $ret = ErpOrderV1Service::createOrder($params['package_id'], $studentInfo, $payChannel, $params['pay_type'], $employeeUuid, $channel, $params['gift_res']);
             if (!empty($sceneData['user_id']) && !empty($ret['order_id'])) {
                 // 保存agent_bill_map数据
-                AgentBillMapModel::add($sceneData['r'], $ret['order_id'], $studentInfo['id']);
+                BillMapService::mapDataRecord($sceneData['r'], $ret['order_id'], $studentInfo['id']);
             }
         } catch (RuntimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());

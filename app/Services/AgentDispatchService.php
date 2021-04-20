@@ -10,14 +10,14 @@ namespace App\Services;
 
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
-use App\Models\AgentBillMapModel;
+use App\Models\BillMapModel;
 use App\Models\AgentDispatchLogModel;
 use App\Models\AgentModel;
 use App\Models\AgentUserModel;
 use App\Models\Dss\DssCategoryV1Model;
 use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssPackageExtModel;
-use App\Models\StudentInviteModel;
+use App\Models\StudentReferralStudentStatisticsModel;
 
 
 /**
@@ -140,7 +140,7 @@ class AgentDispatchService
         }
         //存在有效的绑定关系
         if (self::$validBindAgentId) {
-            self::$billOwnAgentId = self::$bindAgentId= self::$validBindAgentId;
+            self::$billOwnAgentId = self::$bindAgentId = self::$validBindAgentId;
         } else {
             self::$billOwnAgentId = self::$bindAgentId = self::$billMapAgentId;
         }
@@ -158,9 +158,9 @@ class AgentDispatchService
      */
     private static function setBillMapData()
     {
-        $billMapInfo = AgentBillMapModel::get(self::$parentBillId, self::$studentId);
+        $billMapInfo = BillMapModel::get(self::$parentBillId, self::$studentId, BillMapModel::USER_TYPE_AGENT);
         if (!empty($billMapInfo)) {
-            self::$billMapAgentId = $billMapInfo['agent_id'];
+            self::$billMapAgentId = $billMapInfo['user_id'];
         } else {
             self::$isAgentChannelBuy = false;
             //无代理绑定关系
@@ -184,7 +184,7 @@ class AgentDispatchService
     private static function setReferralId()
     {
         //转介绍关系
-        $referralInfo = StudentInviteModel::getRecord(['student_id' => self::$studentId, 'referee_type' => StudentInviteModel::REFEREE_TYPE_STUDENT], ['referee_id']);
+        $referralInfo = StudentReferralStudentStatisticsModel::getRecord(['student_id' => self::$studentId], ['referee_id']);
         if (!empty($referralInfo)) {
             self::$referralStudentId = $referralInfo['referee_id'];
         }

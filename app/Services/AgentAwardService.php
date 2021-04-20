@@ -9,7 +9,6 @@
 namespace App\Services;
 
 
-use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\EventListener\AgentAwardExtEvent;
 use App\Libs\MysqlDB;
@@ -17,7 +16,6 @@ use App\Libs\SimpleLogger;
 use App\Models\AgentAwardDetailModel;
 use App\Models\AgentModel;
 use App\Models\AgentUserModel;
-use App\Models\StudentInviteModel;
 
 
 class AgentAwardService
@@ -303,21 +301,6 @@ class AgentAwardService
         }
         $db->commit();
         self::AgentAwardExtDataRecord($awardId);
-        return true;
-    }
-
-    /**
-     * 检测学生转介绍关系:无转介绍关系&代理转介绍返回true，否则返回false
-     * @param $studentId
-     * @return bool
-     */
-    public static function checkReferralIsAgent($studentId)
-    {
-        $referralInfo = StudentInviteModel::getRecord(['student_id' => $studentId, 'app_id' => Constants::SMART_APP_ID, 'referee_type[!]' => StudentInviteModel::REFEREE_TYPE_AGENT]);
-        if ($referralInfo) {
-            SimpleLogger::info('has bind student referee student relation', ['referral_info' => $referralInfo]);
-            return false;
-        }
         return true;
     }
 

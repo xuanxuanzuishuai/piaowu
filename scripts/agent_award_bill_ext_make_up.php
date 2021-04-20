@@ -23,7 +23,7 @@ use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
 use App\Models\AgentAwardBillExtModel;
 use App\Models\Dss\DssPackageExtModel;
-use App\Models\StudentInviteModel;
+use App\Models\StudentReferralStudentStatisticsModel;
 use Dotenv\Dotenv;
 
 $dotenv = new Dotenv(PROJECT_ROOT, '.env');
@@ -57,7 +57,7 @@ if (empty($agentAwardBillData)) {
 }
 //获取学生的转介绍推荐人数据
 $studentIds = array_column($agentAwardBillData, 'student_id');
-$studentReferralData = StudentInviteModel::getRecords(['student_id' => $studentIds, 'referee_type' => 1], ['student_id', 'referee_id']);
+$studentReferralData = StudentReferralStudentStatisticsModel::getRecords(['student_id' => $studentIds], ['student_id', 'referee_id']);
 $studentReferralData = array_column($studentReferralData, null, 'student_id');
 
 //判断订单是否是学生与代理建立绑定关系后的首单
