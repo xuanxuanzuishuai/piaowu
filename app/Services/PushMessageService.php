@@ -220,4 +220,64 @@ class PushMessageService
         }
         return false;
     }
+
+    /**
+     * 发送任务奖励积分消息
+     * @param $awardDetailInfo
+     * @param array $ext
+     */
+    public static function sendAwardPointsMessage($awardDetailInfo, $ext = [])
+    {
+        if ($awardDetailInfo['app_id'] != Constants::SMART_APP_ID) {
+            return;
+        }
+        //当前奖励要发放的数据库的消息模板
+        $baseTemId = self::getAwardRelateTemId($awardDetailInfo);
+        if (empty($baseTemId)) {
+            SimpleLogger::info('not found tem id', ['award' => $awardDetailInfo]);
+            return;
+        }
+        //完成任务的用户信息
+        // $achieveUserInfo = DssStudentModel::getRecord(['uuid' => $awardDetailInfo['uuid']]);
+        //得到奖励的用户信息
+        $awardUserInfo = DssStudentModel::getRecord(['uuid' => $awardDetailInfo['uuid']]);
+        // ERP和DSS名字不同步：
+        $awardDetailInfo['get_award_name'] = $awardUserInfo['name'];
+        //得到奖励用户的微信信息
+        $getAwardUserInfo = UserService::getUserWeiXinInfoByUserId($awardDetailInfo['app_id'], $awardUserInfo['id'], DssUserWeiXinModel::USER_TYPE_STUDENT, DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER);
+        if (empty($getAwardUserInfo)) {
+            SimpleLogger::info('not found user weixin info', ['user_id' => $awardUserInfo['id']]);
+            return;
+        }
+        $replaceParams = self::getAwardPointsReplaceParams($awardDetailInfo, $ext);
+        self::notifyUserCustomizeMessage($baseTemId, $replaceParams, $getAwardUserInfo['open_id'], $awardDetailInfo['app_id']);
+    }
+
+    /**
+     * 获取积分奖励可替换的变量
+     * @param $awardDetailInfo
+     * @param $achieveUserInfo
+     * @param array $ext
+     * @return array
+     */
+    public static function getAwardPointsReplaceParams($awardDetailInfo, $ext = [])
+    {
+        $urlArr = [
+            ErpEventModel::TYPE_IS_REFERRAL => $_ENV['STUDENT_INVITED_RECORDS_URL'],
+            ErpEventModel::DAILY_UPLOAD_POSTER => $_ENV["WECHAT_FRONT_DOMAIN"] . "/student/poster"
+        ];
+        $url = $urlArr[$awardDetailInfo['type']] ?? '';
+        $activityName  = '';
+        if ($awardDetailInfo['type'] == ErpEventModel::DAILY_UPLOAD_POSTER) {
+            $activityId = !empty($ext['activity_id']) ? $ext['activity_id'] : DssSharePosterModel::getRecord(['award_id' => $awardDetailInfo['award_id']], 'activity_id');
+
+            $activityName = DssReferralActivityModel::getRecord(['id' => $activityId], 'name');
+        }
+
+        return [
+            'url'          => $url,
+            'awardValue'   => $awardDetailInfo['award_num'],
+            'activityName' => $activityName,
+        ];
+    }
 }

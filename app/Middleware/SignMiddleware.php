@@ -10,6 +10,7 @@ namespace App\Middleware;
 
 
 use App\Libs\DictConstants;
+use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Services\IPService;
 use Slim\Http\Request;
@@ -30,6 +31,7 @@ class SignMiddleware extends MiddlewareBase
         $paramsCreateSign = self::createSign($params, $service_key);
         if ($sign != $paramsCreateSign) {
             $errs = Valid::addErrors([], 'sign', 'sign_error');
+            SimpleLogger::info("SignMiddleware sign error",['sign' => $paramsCreateSign, 'params' => $params]);
             return $response->withJson($errs, 200);
         }
 
@@ -40,7 +42,7 @@ class SignMiddleware extends MiddlewareBase
     {
         unset($params['sign']);
         ksort($params);
-        $paramsStr = implode($params,'&');
+        $paramsStr = implode('&', $params);
         $paramsStr .='&service_key=' . $service_key;
         return md5($paramsStr);
     }

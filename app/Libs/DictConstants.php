@@ -564,7 +564,7 @@ class DictConstants {
     const SERVICE_SIGN_KEY = [
         'type' => 'SERVICE_SIGN_KEY',
         'keys' => [
-            'erp_service_key'
+            'erp_service'
         ],
     ];
 

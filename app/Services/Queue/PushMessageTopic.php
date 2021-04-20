@@ -32,6 +32,8 @@ class PushMessageTopic extends BaseTopic
     const EVENT_WEB_PAGE_CLICK = 'web_page_click'; // 召回页面按钮点击事件
     const EVENT_RECORD_USER_ACTIVE = 'record_user_active'; // 记录用户活跃
 
+    const EVENT_UPLOAD_SCREENSHOT_AWARD = 'upload_screenshot_award';    // 上传截图领奖
+
 
     public function __construct($publishTime = null)
     {

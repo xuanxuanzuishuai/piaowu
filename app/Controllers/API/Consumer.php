@@ -272,6 +272,9 @@ class Consumer extends ControllerBase
                 case PushMessageTopic::EVENT_RECORD_USER_ACTIVE:
                     UserService::recordUserActiveConsumer($params['msg_body']);
                     break;
+                case PushMessageTopic::EVENT_UPLOAD_SCREENSHOT_AWARD:
+                    MessageService::sendTaskAwardPointsMessage($params['msg_body']);
+                    break;
             }
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
@@ -558,6 +561,52 @@ class Consumer extends ControllerBase
                     RefereeAwardService::sendDuration($params['msg_body']['award_id']);
                     break;
             }
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
+        return HttpHelper::buildResponse($response, []);
+    }
+
+    /**
+     * 积分兑换红包
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function pointsExchangeRedPack(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        $rules = [
+            [
+                'key' => 'topic_name',
+                'type' => 'required',
+                'error_code' => 'topic_name_is_required',
+            ],
+            [
+                'key' => 'event_type',
+                'type' => 'required',
+                'error_code' => 'event_type_is_required',
+            ],
+            [
+                'key' => 'msg_body',
+                'type' => 'required',
+                'error_code' => 'msg_body_is_required',
+            ],
+        ];
+
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        try {
+            CashGrantService::pointsExchangeRedPack(
+                $params['msg_body']['user_points_exchange_order_id']
+                // $params['event_type'],
+                // $params['msg_body']['reviewer_id'] ?: EmployeeModel::SYSTEM_EMPLOYEE_ID,
+                // $params['msg_body']['reason'] ?: '',
+                // ['activity_id' => $params['msg_body']['activity_id'] ?? 0]
+            );
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }

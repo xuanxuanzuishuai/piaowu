@@ -20,6 +20,8 @@ use App\Models\Dss\DssErpPackageV1Model;
 use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssPackageExtModel;
 use App\Models\Dss\DssSharePosterModel;
+use App\Models\Erp\ErpEventTaskModel;
+use App\Models\Erp\ErpUserEventTaskAwardGoldLeafModel;
 use App\Models\MessagePushRulesModel;
 use App\Models\MessageManualPushLogModel;
 use App\Models\MessageRecordLogModel;
@@ -28,6 +30,7 @@ use App\Models\PosterModel;
 use App\Models\SharePosterModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
+use App\Models\UserPointsExchangeOrderModel;
 use App\Models\WeChatConfigModel;
 use App\Services\Queue\QueueService;
 use App\Services\Queue\SaBpDataTopic;
@@ -1025,6 +1028,19 @@ class MessageService
             SimpleLogger::error('SEND RECALL PAGE SMS FAILED', [$data]);
             return false;
         }
+        return true;
+    }
+
+    /**
+     * 积分任务奖励微信消息
+     * @param $msgData
+     * @return bool
+     */
+    public static function sendTaskAwardPointsMessage($msgBody)
+    {
+        $awardDetailInfo = ErpUserEventTaskAwardGoldLeafModel::getRecord(['id' => explode(',', $msgBody['points_award_id'])]);
+        $awardDetailInfo['app_id'] = Constants::SMART_APP_ID;
+        PushMessageService::sendAwardPointsMessage($awardDetailInfo);
         return true;
     }
 }

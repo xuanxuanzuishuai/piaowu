@@ -13,7 +13,10 @@ class ErpRouter extends RouterBase
     public $middleWares = [OrgWebMiddleware::class, SignMiddleware::class];
 
     protected $uriConfig = [
+        // 兑换红包
         '/erp/integral/exchange_red_pack' => ['method' => ['post'], 'call' => Erp::class . ':integralExchangeRedPack'],
+        // 获取待发放金叶子积分明细
+        '/erp/integral/gold_leaf_list' => ['method' => ['get'], 'call' => Erp::class . ':goldLeafList'],
     ];
 
 }
