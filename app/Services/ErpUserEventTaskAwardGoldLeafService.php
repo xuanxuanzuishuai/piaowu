@@ -36,7 +36,9 @@ class ErpUserEventTaskAwardGoldLeafService
         $params['status'] = ErpUserEventTaskAwardGoldLeafModel::STATUS_WAITING;
         $list = ErpUserEventTaskAwardGoldLeafModel::getList($params, $limit);
         $returnList['total'] = $list['total'];
+        $returnList['total_num'] = 0;
         foreach ($list['list'] as $item) {
+            $returnList['total_num'] += $item['award_num'];
             $returnList['list'][] = self::formatGoldLeafInfo($item);
         }
         return $returnList;

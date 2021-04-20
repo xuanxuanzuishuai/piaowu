@@ -30,6 +30,7 @@ class Erp
     const API_REFERRED_LIST = '/api/dss/referred_list';
     const API_AWARD_LIST = '/api/dss/awards';
     const API_UPDATE_TASK = '/api/dss/add_user_event_task';
+    const API_GET_TASK_IDS = '/api/dss/get_task_ids';
     const API_UPDATE_AWARD = '/api/dss/award';
     const API_BATCH_UPDATE_AWARD = '/api/dss/batch_award';
     const API_USER_REFERRAL_INFO = '/api/dss/get_user_referral_info';
@@ -659,5 +660,25 @@ class Erp
     {
         $params['app_id'] = $params['app_id'] ?? Constants::SMART_APP_ID;
         return HttpHelper::requestJson($this->host . self::API_UPDATE_ORDER_ADDRESS_V1, $params);
+    }
+
+    /**
+     * 获取活动任务id
+     * @param $uuid
+     * @param $eventTaskId
+     * @param $status
+     * @return array|bool
+     */
+    public function getTaskIds($uuid, $eventTaskId, $status)
+    {
+        $params = [
+            'app_id' => Constants::SMART_APP_ID,
+            'user_type' => 1,
+            'uuid' => $uuid,
+            'event_task_id' => $eventTaskId,
+            'status' => $status
+        ];
+        $response = HttpHelper::requestJson($this->host . self::API_GET_TASK_IDS, $params, 'POST');
+        return $response;
     }
 }

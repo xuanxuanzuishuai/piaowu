@@ -11,6 +11,7 @@ namespace App\Controllers\API;
 use App\Controllers\ControllerBase;
 use App\Libs\Constants;
 use App\Libs\HttpHelper;
+use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\Dss\DssUserWeiXinModel;

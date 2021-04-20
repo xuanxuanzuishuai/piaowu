@@ -36,16 +36,16 @@ class ErpUserEventTaskAwardGoldLeafModel extends ErpModel
         $returnList = ['list' => [], 'total' => 0];
         $sqlWhere = [];
         if (isset($where['user_id'])) {
-            $sqlWhere[] = 'user_id=' . $where['user_id'];
+            $sqlWhere[] = 'a.user_id=' . $where['user_id'];
         }
         if (isset($where['uuid'])) {
-            $sqlWhere[] = 'uuid=' . $where['uuid'];
+            $sqlWhere[] = 'a.uuid=' . $where['uuid'];
         }
         if (isset($where['status'])) {
-            $sqlWhere[] = 'status=' . $where['status'];
+            $sqlWhere[] = 'a.status=' . $where['status'];
         }
         $db = self::dbRO();
-        $count = $db->queryAll('select count(*) as total from ' . $awardTableName . ' where ' . implode(" AND ", $sqlWhere));
+        $count = $db->queryAll('select count(*) as total from ' . $awardTableName . ' as a where ' . implode(" AND ", $sqlWhere));
         if ($count[0]['total'] <= 0) {
             return $returnList;
         }

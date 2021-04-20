@@ -1,6 +1,9 @@
 -------------------- op --------------------
 INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES ('SERVICE_SIGN_KEY', '各个服务调取op接口签名秘钥', 'erp_service', 'AAAEbm9uZQAAAAAAAAABAAABFwAAAAdzc2gtcn', NULL);
 
+-- 需要先执行 insert erp_event_task  然后查出原有值，最后更新 select * from dict where `type`='node_relate_task' and `key_code`='2';
+UPDATE `dict` SET `key_value` = '474,465,467,468,469,325,284,201,203,52,2' WHERE `type`='node_relate_task' and `key_code`='2';
+
 CREATE TABLE `user_points_exchange_order` (
     `id` bigint(10) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键',
     `uuid` varchar(32) NOT NULL DEFAULT '' COMMENT '用户uuid',
@@ -43,23 +46,23 @@ CREATE TABLE `user_points_exchange_order_wx` (
 -------------------- dss --------------------
 alter table share_poster add points_award_id varchar (128) not null default '' comment "积分奖励id"
 
+-- 需要先执行 insert erp_event_task  然后查出原有值，最后更新 确认 key_value 对应的 event_task_id 是多少   key_value = event_task_id
+UPDATE `dict` SET `key_value` = '302' WHERE `type` = 'normal_upload_poster_task' and `key_value`='302' and `key_code`='-1';
+UPDATE `dict` SET `key_value` = '300' WHERE `type` = 'normal_upload_poster_task' and `key_value`='300' and `key_code`='0';
+UPDATE `dict` SET `key_value` = '301' WHERE `type` = 'normal_upload_poster_task' and `key_value`='301' and `key_code`='1';
+UPDATE `dict` SET `key_value` = '301' WHERE `type` = 'normal_upload_poster_task' and `key_value`='301' and `key_code`='2';
+
+
+-------------------- erp --------------------
+
 -- 确认  event_id 是否正确
 INSERT INTO `erp_event_task`(`type`, `condition`, `event_id`, `name`, `desc`, `create_time`, `creator_id`, `update_time`, `updator_id`, `award`, `start_time`, `end_time`, `status`) VALUES
 (5, '{"can_repeat_attend":1}', 2, '上传截图领奖', '海报分享', 1588228856, 591, 1612087387, 591, '{"awards":[{"to":2,"amount":3000,"type":3,"need_check":0,"account_sub_type":"3002"}]}', 1611936000, 1893427200, 1),
 (5, '{"can_repeat_attend":1}', 2, '上传截图领奖', '海报分享', 1588228856, 591, 1613806910, 10038, '{"awards":[{"to":2,"amount":2000,"type":3,"need_check":0,"account_sub_type":"3002"}]}', 1612281600, 1740585599, 1),
 (5, '{"can_repeat_attend":1}', 2, '上传截图领奖', '海报分享', 1588228856, 591, 1612343404, 591, '{"awards":[{"to":2,"amount":1000,"type":3,"need_check":0,"account_sub_type":"3002"}]}', 1611936000, 1893427200, 1);
-(1, 'c', 1, '付费体验卡', 'XYZOP-178-1.1', 1616756138, 751, 1616756138, 10027, '{"awards":[{"to":1,"amount":100,"type":3,"delay":0,"need_check":1,"account_sub_type":"3002"}]}', 1616756138, 1672416000, 1);
-
--- 确认 key_value 对应的 event_task_id 是多少   key_value = event_task_id
-UPDATE `dict` SET `key_value` = '302' WHERE `type` = 'normal_upload_poster_task' and `key_value`='302' and `key_code`='-1';
-UPDATE `dict` SET `key_value` = '300' WHERE `type` = 'normal_upload_poster_task' and `key_value`='300' and `key_code`='0';
-UPDATE `dict` SET `key_value` = '301' WHERE `type` = 'normal_upload_poster_task' and `key_value`='301' and `key_code`='1';
-UPDATE `dict` SET `key_value` = '301' WHERE `type` = 'normal_upload_poster_task' and `key_value`='301' and `key_code`='2';
--- select * from dict where `type`='node_relate_task' and `key_code`='2';
-UPDATE `dict` SET `key_value` = '301' WHERE `type`='node_relate_task' and `key_code`='2';
+(1, 'c', 1, '付费体验卡', 'AIPL-13989-4.16', 1616756138, 751, 1616756138, 10027, '{"awards":[{"to":1,"amount":100,"type":3,"delay":0,"need_check":1,"account_sub_type":"3002"}]}', 1616756138, 1672416000, 1);
 
 
--------------------- erp --------------------
 CREATE TABLE `erp_user_event_task_award_gold_leaf` (
     `id` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT '自增id',
     `status` tinyint(2) unsigned NOT NULL DEFAULT '1' COMMENT '奖励发放状态 0 不发放 1 待发放 2 审核中 3 发放成功 4 发放中/待领取 5 发放失败',

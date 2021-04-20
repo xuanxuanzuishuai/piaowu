@@ -42,6 +42,9 @@ class DSSRouter extends RouterBase
         '/dss/poster/get_path_id' => ['method' => ['post'], 'call' => Dss::class . ':getPathId'],   // 不存在新增
         //是不是线下代理
         '/dss/student/is_bind_offline' => ['method' => ['get'], 'call' => Dss::class . ':isBindOffline'],   // 不存在新增
+
+        // 获取待发放金叶子积分明细
+        '/dss/integral/gold_leaf_list' => ['method' => ['get'], 'call' => Dss::class . ':goldLeafList'],
         '/dss/student/wx_menu_type' => ['method' => ['get'], 'call' => Dss::class . ':getUserMenuType'],
         '/dss/student/update_tag' => ['method' => ['get'], 'call' => Dss::class . ':updateUserTag'],
     ];

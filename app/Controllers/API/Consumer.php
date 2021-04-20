@@ -569,6 +569,8 @@ class Consumer extends ControllerBase
 
     /**
      * 积分兑换红包
+     * topic_name = "points_exchange_red_pack";
+     * event_type = 'send_red_pack_from_points_exchange'
      * @param Request $request
      * @param Response $response
      * @return Response
