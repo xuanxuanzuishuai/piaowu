@@ -25,7 +25,9 @@ class WechatService
     const KEY_WECHAT_DAILY_ACTIVE         = 'WECHAT_LOGIN_LOG_'; // hash
     const KEY_WECHAT_DAILY_ACTIVE_EXPIRE  = 691200; // 8 days
     const KEY_WECHAT_USER_NOT_EXISTS      = 'WECHAT_USER_NOT_EXISTS_'; // list
+    const KEY_WECHAT_USER_NOT_EXISTS_MAP  = 'WECHAT_USER_NOT_EXISTS_MAP_'; // hash
     const KEY_UPDATE_TAG_WAITING          = 'WECHAT_UPDATE_TAG_WAITING_'; // list
+    const KEY_UPDATE_TAG_WAITING_MAP      = 'WECHAT_UPDATE_TAG_WAITING_MAP_'; // hash
 
     const USER_TYPE_1_1 = '1_1';// 未绑定
     const USER_TYPE_1_2 = '1_2';// 解除绑定
@@ -63,10 +65,16 @@ class WechatService
         $user = DssUserWeiXinModel::getByOpenId($openId);
         if (empty($user)) {
             $key = self::KEY_WECHAT_USER_NOT_EXISTS . $date;
+            $mapKey = self::KEY_WECHAT_USER_NOT_EXISTS_MAP . $date;
+            $exists = $redis->hget($mapKey, $openId);
+            if ($exists) {
+                return false;
+            }
             $redis->lpush($key, [$openId]);
             $redis->expire($key, 172800); // 2 days
+            $redis->hset($mapKey, $openId, time());
+            $redis->expire($mapKey, 172800); // 2 days
         }
-
         return true;
     }
 
@@ -108,19 +116,31 @@ class WechatService
         }
         // 订阅结束时间
         $subEndDate = strtotime($user['sub_end_date']);
+        // 班级信息
+        $collection = null;
+        if (!empty($user['collection_id'])) {
+            // 去除公海班级
+            $defaultCollection = DssCollectionModel::getRecords(
+                [
+                    "type" => DssCollectionModel::TYPE_PUBLIC,
+                ],
+                ['id']
+            );
+            $defaultIds = array_column($defaultCollection, 'id');
+            if (in_array($user['collection_id'], $defaultIds)) {
+                return '';
+            } else {
+                $collection = DssCollectionModel::getById($user['collection_id']);
+            }
+        }
         // 注册
         if ($user['has_review_course'] == DssStudentModel::REVIEW_COURSE_NO) {
             // 七天内活跃记录：
             $active = self::getUserActiveRecord($openId);
-            if ($active) {
+            if ($active && empty($collection)) {
                 return self::USER_TYPE_2_1;
             }
             return self::USER_TYPE_3_1;
-        }
-        // 班级信息
-        $collection = null;
-        if (!empty($user['collection_id'])) {
-            $collection = DssCollectionModel::getById($user['collection_id']);
         }
 
         // 上次购买年卡信息
@@ -137,33 +157,34 @@ class WechatService
                 // 当前班级状态：开班前
                 if ($teachingStatus == DssCollectionModel::TEACHING_STATUS_BEFORE) {
                     // 购买年卡时间在开班前
-                    if ($lastPayInfo['create_time'] < $collection['teaching_start_time']) {
+                    if ($lastPayInfo['buy_time'] < $collection['teaching_start_time']) {
                         return self::USER_TYPE_4_1;
                     }
                 }
                 // 当前班级状态：开班中
                 if ($teachingStatus == DssCollectionModel::TEACHING_STATUS_ONGOING) {
                     // 年卡购买时间在开班中
-                    if ($lastPayInfo['create_time'] > $collection['teaching_start_time']
-                    && $lastPayInfo['create_time'] <= $collection['teaching_end_time']) {
+                    if ($lastPayInfo['buy_time'] > $collection['teaching_start_time']
+                    && $lastPayInfo['buy_time'] <= $collection['teaching_end_time']) {
                         return self::USER_TYPE_4_2;
                     }
                 }
                 // 当前班级状态：结班2周内
                 if ($teachingStatus == DssCollectionModel::TEACHING_STATUS_FINISHED) {
                     // 年卡购买时间在结班14天内
-                    if ($lastPayInfo['create_time'] > ($collection['teaching_end_time'] + Util::TIMESTAMP_TWOWEEK)) {
+                    if ($lastPayInfo['buy_time'] < ($collection['teaching_end_time'] + Util::TIMESTAMP_TWOWEEK)) {
+                        return self::USER_TYPE_4_3;
+                    } else {
                         // 年卡已过期
                         if ($subEndDate < $today) {
                             return self::USER_TYPE_8_1;
                         }
-                        return self::USER_TYPE_4_3;
                     }
                 }
                 // 当前班级状态：结班2周+
                 if ($teachingStatus == DssCollectionModel::TEACHING_STATUS_FINISHED_TWO_WEEK) {
                     // 年卡购买时间为结班后2周外
-                    if ($lastPayInfo['create_time'] > ($collection['teaching_end_time'] + Util::TIMESTAMP_TWOWEEK)) {
+                    if ($lastPayInfo['buy_time'] > ($collection['teaching_end_time'] + Util::TIMESTAMP_TWOWEEK)) {
                         // 年卡有效期剩余超过30天
                         if ($subEndDate - $today >= Util::TIMESTAMP_THIRTY_DAYS) {
                             return self::USER_TYPE_6_1;
@@ -270,13 +291,20 @@ class WechatService
         $redis  = RedisDB::getConn();
         if (empty($config[$typeId])) {
             SimpleLogger::error('EMPTY MENU TAG ID', [$config, $typeId]);
-            return false;
+            return self::unTagUser($openId);
         }
         $key = self::KEY_UPDATE_TAG_WAITING . date('Ymd') . '_' . $config[$typeId];
-        $redis->lpush($key, [$openId]);
-        $len = $redis->llen($key);
-        if ($len >= $amount || $force) {
-            self::batchUpdateUserTagList($key, $force);
+        $mapKey = self::KEY_UPDATE_TAG_WAITING_MAP . date('Ymd') . '_' . $config[$typeId];
+        $exists = $redis->hget($mapKey, $openId);
+        if (!$exists) {
+            $redis->hset($mapKey, $openId, time());
+            $redis->lpush($key, [$openId]);
+            $len = $redis->llen($key);
+            if ($len >= $amount || $force) {
+                self::batchUpdateUserTagList($key, $force);
+            }
+            $redis->expire($key, 172800); // 2 days
+            $redis->expire($mapKey, 172800); // 2 days
         }
         return true;
     }
@@ -322,6 +350,7 @@ class WechatService
         $allTagId = DictConstants::get(DictConstants::WECHAT_CONFIG, 'all_menu_tag');
         $allTagId = json_decode($allTagId, true);
         $wechat = WeChatMiniPro::factory(DssUserWeiXinModel::dealAppId($params['appid'] ?? null), $params['busi_type'] ?? DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER);
+        $mapKey = self::KEY_UPDATE_TAG_WAITING_MAP . date('Ymd') . '_' . $tagId;
         // 可强制全部更新，也可多次更新
         while ($counter < $limit) {
             $item = $redis->rpop($key);
@@ -330,6 +359,7 @@ class WechatService
             }
             $counter ++;
             $list[] = $item;
+            $redis->hdel($mapKey, [$item]);
             if ($counter >= $limit) {
                 $wechat->batchUnTagUsers($list, $allTagId);
                 $wechat->batchTagUsers($list, $tagId);
@@ -346,6 +376,27 @@ class WechatService
             $wechat->batchUnTagUsers($list, $allTagId);
             $wechat->batchTagUsers($list, $tagId);
         }
+        return true;
+    }
+
+    /**
+     * 取消用户标签
+     * @param $openId
+     * @param array $tagId
+     * @return bool
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
+    public static function unTagUser($openId, $tagId = [])
+    {
+        if (empty($openId)) {
+            return false;
+        }
+        if (empty($tagId)) {
+            $allTagId = DictConstants::get(DictConstants::WECHAT_CONFIG, 'all_menu_tag');
+            $tagId = json_decode($allTagId, true);
+        }
+        $wechat = WeChatMiniPro::factory(DssUserWeiXinModel::dealAppId($params['appid'] ?? null), $params['busi_type'] ?? DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER);
+        $wechat->batchUnTagUsers([$openId], $tagId);
         return true;
     }
 }

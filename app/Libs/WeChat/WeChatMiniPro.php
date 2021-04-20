@@ -806,9 +806,38 @@ class WeChatMiniPro
         $data = $this->requestJson($api, $params, 'POST');
         if (!empty($data['errcode'])) {
             SimpleLogger::error(__FUNCTION__, [$data]);
-            return false;
+            return $this->retryTagUsers($openId, $tagId);
         }
         return $data;
+    }
+
+    /**
+     * 重试给用户打标签
+     * @param $openId
+     * @param $tagId
+     * @return bool
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
+    public function retryTagUsers($openId, $tagId)
+    {
+        if (empty($tagId) || empty($openId)) {
+            return false;
+        }
+        $api = $this->apiUrl(self::API_TAGS_BATCH_TAG);
+        if (!is_array($openId)) {
+            $openId = [$openId];
+        }
+        $params = [
+            'tagid' => $tagId
+        ];
+        foreach ($openId as $oid) {
+            $params['openid_list'] = [$oid];
+            $data = $this->requestJson($api, $params, 'POST');
+            if (!empty($data['errcode'])) {
+                SimpleLogger::error(__FUNCTION__, [$data]);
+            }
+        }
+        return true;
     }
 
     /**
@@ -838,6 +867,42 @@ class WeChatMiniPro
             $data = $this->requestJson($api, $params, 'POST');
             if (!empty($data['errcode'])) {
                 SimpleLogger::error(__FUNCTION__, [$data]);
+                $this->retryUntagUsers($openId, $tagId);
+            }
+        }
+        return true;
+    }
+
+    /**
+     * 重试取消用户标签
+     * @param $openId
+     * @param $tagId
+     * @return bool
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
+    public function retryUntagUsers($openId, $tagId)
+    {
+        if (empty($tagId) || empty($openId)) {
+            return false;
+        }
+        $api = $this->apiUrl(self::API_TAGS_BATCH_UNTAG);
+        if (!is_array($openId)) {
+            $openId = [$openId];
+        }
+        if (!is_array($tagId)) {
+            $tagId = [$tagId];
+        }
+
+        foreach ($tagId as $tid) {
+            foreach ($openId as $oid) {
+                $params = [
+                    'tagid' => $tid,
+                    'openid_list' => [$oid]
+                ];
+                $data = $this->requestJson($api, $params, 'POST');
+                if (!empty($data['errcode'])) {
+                    SimpleLogger::error(__FUNCTION__, [$data]);
+                }
             }
         }
         return true;

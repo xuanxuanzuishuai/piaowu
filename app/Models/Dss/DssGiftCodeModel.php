@@ -218,6 +218,7 @@ class DssGiftCodeModel extends DssModel
         $sql = "
         SELECT 
             gc.id,
+            gc.buy_time,
             gc.create_time
         FROM  $gc gc
         INNER JOIN  $p p ON gc.bill_package_id = p.id
