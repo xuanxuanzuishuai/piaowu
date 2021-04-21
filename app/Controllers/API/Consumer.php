@@ -268,12 +268,14 @@ class Consumer extends ControllerBase
                 case PushMessageTopic::EVENT_WEB_PAGE_CLICK:
                     MessageService::sendRecallPageSms($params['msg_body']);
                     break;
+                case PushMessageTopic::EVENT_UPLOAD_SCREENSHOT_AWARD:
+                case PushMessageTopic::EVENT_PAY_TRIAL:
+                case PushMessageTopic::EVENT_NORMAL_COURSE:
+                    MessageService::sendTaskAwardPointsMessage($params['msg_body']);
+                    break;
 
                 case PushMessageTopic::EVENT_RECORD_USER_ACTIVE:
                     UserService::recordUserActiveConsumer($params['msg_body']);
-                    break;
-                case PushMessageTopic::EVENT_UPLOAD_SCREENSHOT_AWARD:
-                    MessageService::sendTaskAwardPointsMessage($params['msg_body']);
                     break;
             }
         } catch (RunTimeException $e) {
@@ -604,7 +606,7 @@ class Consumer extends ControllerBase
         try {
             CashGrantService::pointsExchangeRedPack(
                 $params['msg_body']['user_points_exchange_order_id'],
-                $params['msg_body']['record_sn'],
+                $params['msg_body']['record_sn']
             );
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());

@@ -12,9 +12,11 @@ use App\Models\AgentAwardDetailModel;
 use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssPackageExtModel;
 use App\Models\Dss\DssStudentModel;
+use App\Models\Erp\ErpUserEventTaskAwardGoldLeafModel;
 use App\Models\ParamMapModel;
 use App\Models\StudentInviteModel;
 use App\Models\StudentReferralStudentStatisticsModel;
+use App\Services\Queue\PushMessageTopic;
 use App\Services\Queue\QueueService;
 
 
@@ -187,11 +189,18 @@ class UserRefereeService
             $refTaskId = [$refTaskId];
         }
 
+        $sendStatus = ErpUserEventTaskAwardGoldLeafModel::STATUS_WAITING;
+        // 购买体验卡直接发放积分
+        if ($packageType == DssPackageExtModel::PACKAGE_TYPE_TRIAL){
+            $sendStatus =  self::EVENT_TASK_STATUS_COMPLETE;
+        }
+
         $studentInfo = DssStudentModel::getById($studentId);
         if (!empty($refTaskId)) {
             $erp = new Erp();
+            $pushMessageData = [];  //消息队列需要的数据
             foreach ($refTaskId as $taskId) {
-                $data = $erp->addEventTaskAward($studentInfo['uuid'], $taskId, self::EVENT_TASK_STATUS_COMPLETE);
+                $taskResult = $erp->addEventTaskAward($studentInfo['uuid'], $taskId, $sendStatus);
                 SimpleLogger::info("UserRefereeService::dssCompleteEventTask", [
                     'params' => [
                         $studentId,
@@ -204,8 +213,21 @@ class UserRefereeService
                         $taskId,
                         self::EVENT_TASK_STATUS_COMPLETE
                     ],
-                    'response' => $data,
+                    'response' => $taskResult,
                 ]);
+
+                if (empty($taskResult['data'])) {
+                    throw new RunTimeException(['erp_create_user_event_task_award_fail']);
+                }
+                $pushMessageData[] = ['points_award_ids' => $taskResult['data']['points_award_ids']];
+            }
+            // 积分发放成功后 把消息放入到 客服消息队列
+            switch ($packageType) {
+                case DssPackageExtModel::PACKAGE_TYPE_TRIAL:    //购买体验包会直接给用户发放积分奖励 - 这里直接发送客服消息
+                    (new PushMessageTopic())->pushWX($pushMessageData,PushMessageTopic::EVENT_PAY_TRIAL);
+                    break;
+                default:
+                    break;
             }
         }
     }
@@ -268,7 +290,7 @@ class UserRefereeService
             } else {
                 // 被推荐人购买年卡：
                 // XYZOP-178-2.2.1
-                $taskIds[] = RefereeAwardService::getDssYearPayTaskId(1);
+                // $taskIds[] = RefereeAwardService::getDssYearPayTaskId(1);
 
                 // 确定时间起点：
                 $startPoint = strtotime(date("Y-m-01 00:00：00"));
@@ -276,11 +298,10 @@ class UserRefereeService
                     && $refereeInfo['first_pay_normal_info']['create_time'] >= $startPoint) {
                     $startPoint = $refereeInfo['first_pay_normal_info']['create_time'];
                 }
-                $endPoint = strtotime(date("Y-m-01 00:00:00", strtotime("+1 month")));
 
                 // 查询被推荐人数量：
-                $refereeCount = self::getRefereeCount($refereeInfo, $startPoint, $endPoint);
-                $noChangeNumber = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'trial_task_stop_change_number_xyzop_178');
+                $refereeCount = self::getRefereeCount($refereeInfo, $startPoint);
+                $noChangeNumber = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'task_stop_change_number');
                 if ($refereeCount > $noChangeNumber) {
                     $refereeCount = $noChangeNumber;
                 }
@@ -303,7 +324,6 @@ class UserRefereeService
                         [
                             'referee_id' => $refereeInfo['id'],
                             'create_time' => $startPoint,
-                            'end_time' => $endPoint
                         ],
                         $extraTaskId
                     );
@@ -323,7 +343,7 @@ class UserRefereeService
      * @param int $type
      * @return int
      */
-    public static function getRefereeCount($refereeInfo, $startPoint, $endPoint, $type = DssStudentModel::REVIEW_COURSE_1980)
+    public static function getRefereeCount($refereeInfo, $startPoint, $type = DssStudentModel::REVIEW_COURSE_1980)
     {
         $refereeData = StudentInviteModel::getRefereeBuyData(
             [

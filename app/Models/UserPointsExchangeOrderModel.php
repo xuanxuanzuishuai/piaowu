@@ -22,5 +22,5 @@ class UserPointsExchangeOrderModel extends Model
     const STATUS_CODE_ILLEGAL_APPID	= 'ILLEGAL_APPID';  // 无效的appid
     const STATUS_CODE_NOT_BIND_WE_CHAT = 'NOT_BIND_WX'; // 用户没有绑定微信
     const STATUS_CODE_NOT_SUBSCRIBE_WE_CHAT = 'NOT_SUBSCRIBE_WE_CHAT';  // 未关注公众号
-    const STATUS_CODE_ENV_SATISFY = 'NOT_SUBSCRIBE_WE_CHAT';  // 环境不对
+    const STATUS_CODE_ENV_SATISFY = 'NOT_ENV_SATISFY';  // 环境不对
 }

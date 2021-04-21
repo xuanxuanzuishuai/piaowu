@@ -20,6 +20,7 @@ use App\Libs\Util;
 use App\Models\Erp\ErpUserEventTaskAwardGoldLeafModel;
 use App\Models\Erp\ErpUserEventTaskModel;
 use App\Services\CashGrantService;
+use App\Services\Queue\PushMessageTopic;
 use Dotenv\Dotenv;
 
 $dotenv = new Dotenv(PROJECT_ROOT,'.env');
@@ -56,9 +57,14 @@ foreach ($pointsList as $points) {
         }
     }
 
-    $data = $erp->addEventTaskAward($points['uuid'], $points['event_task_id'], $status, $points['id']);
+    $taskResult = $erp->addEventTaskAward($points['uuid'], $points['event_task_id'], $status, $points['id']);
     SimpleLogger::info("script::auto_send_task_award_points", [
         'params' => $points,
-        'response' => $data,
+        'response' => $taskResult,
     ]);
+    // 积分发放成功后 把消息放入到 客服消息队列
+    if (!empty($taskResult['data'])) {
+        $pushMessageData[] = ['points_award_ids' => $taskResult['data']['points_award_ids']];
+        (new PushMessageTopic())->pushWX($pushMessageData,PushMessageTopic::EVENT_PAY_TRIAL);
+    }
 }

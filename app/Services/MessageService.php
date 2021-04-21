@@ -20,6 +20,7 @@ use App\Models\Dss\DssErpPackageV1Model;
 use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssPackageExtModel;
 use App\Models\Dss\DssSharePosterModel;
+use App\Models\Erp\ErpEventModel;
 use App\Models\Erp\ErpEventTaskModel;
 use App\Models\Erp\ErpUserEventTaskAwardGoldLeafModel;
 use App\Models\MessagePushRulesModel;
@@ -1038,9 +1039,19 @@ class MessageService
      */
     public static function sendTaskAwardPointsMessage($msgBody)
     {
-        $awardDetailInfo = ErpUserEventTaskAwardGoldLeafModel::getRecord(['id' => explode(',', $msgBody['points_award_id'])]);
-        $awardDetailInfo['app_id'] = Constants::SMART_APP_ID;
-        PushMessageService::sendAwardPointsMessage($awardDetailInfo);
+        $awardDetailList = ErpUserEventTaskAwardGoldLeafModel::getRecords(['id' => $msgBody['points_award_ids']]);
+        if (empty($awardDetailList)) {
+            SimpleLogger::info("MessageService::sendTaskAwardPointsMessage>>",['info' => "not_found", "awardDetailInfo" => $awardDetailList]);
+            return false;
+        }
+        foreach ($awardDetailList as $item) {
+            $awardDetailInfo = $item;
+            $awardDetailInfo['app_id'] = Constants::SMART_APP_ID;
+            $eventTaskInfo = ErpEventTaskModel::getRecord(['id' => $awardDetailInfo['event_task_id']]);
+            $eventInfo = ErpEventModel::getRecord(['id' => $eventTaskInfo['event_id']]);
+            $awardDetailInfo['type'] = $eventInfo['type'];
+            PushMessageService::sendAwardPointsMessage($awardDetailInfo);
+        }
         return true;
     }
 }

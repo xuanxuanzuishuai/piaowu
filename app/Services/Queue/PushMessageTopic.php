@@ -31,6 +31,8 @@ class PushMessageTopic extends BaseTopic
     const EVENT_MONTHLY_PUSH = 'monthly_push'; // 每月1号活动推送
     const EVENT_WEB_PAGE_CLICK = 'web_page_click'; // 召回页面按钮点击事件
     const EVENT_RECORD_USER_ACTIVE = 'record_user_active'; // 记录用户活跃
+    const EVENT_PAY_TRIAL = 'pay_trial'; // 购买体验课
+    const EVENT_NORMAL_COURSE = 'pay_normal_course'; // 购买正式课
 
     const EVENT_UPLOAD_SCREENSHOT_AWARD = 'upload_screenshot_award';    // 上传截图领奖
 

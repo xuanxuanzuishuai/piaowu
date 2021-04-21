@@ -426,13 +426,14 @@ class CashGrantService
 
         $time = time();
         // 获取订单号 - 如果之前已经存在交易号用之前的交易号重试
-        $mchBillNo = self::getMchBillNo($orderInfo['id'], $recordInfo, $orderInfo['order_amount']);
-        $keyCode = '';
+        $mchBillNo = self::getMchBillNo($orderInfo['id'], $recordInfo, $orderInfo['order_amounts']);
+        $keyCode = 'POINTS_EXCHANGE_RED_PACK_SEND_NAME';
 
         // 调取微信发红包接口
         $res = self::requestWxSendRedPack($mchBillNo, $userWxInfo, $orderInfo, $keyCode);
 
         // 保存日志
+        $data['status'] = $res['status'];
         $data['result_status'] = $res['status'];
         $data['result_code'] = $res['result_code'];
         $data['open_id'] = $userWxInfo['open_id'] ?? '';
@@ -522,7 +523,7 @@ class CashGrantService
             list($actName, $sendName, $wishing) = self::getRedPackConfigWord($keyCode);
 
             //请求微信发红包
-            $resultData = $weChatPackage->sendPackage($mchBillNo, $actName, $sendName, $openId, $orderInfo['order_amount'], $wishing, 'redPack');
+            $resultData = $weChatPackage->sendPackage($mchBillNo, $actName, $sendName, $openId, $orderInfo['order_amounts'], $wishing, 'redPack');
             SimpleLogger::info('CashGrantService::requestWxSendRedPack we chat send red pack result data:', [
                 'mchBillNo' => $mchBillNo,
                 'resultData' => $resultData,

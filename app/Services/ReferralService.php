@@ -633,11 +633,11 @@ class ReferralService
         $list = StudentReferralStudentStatisticsModel::getRecords($where);
         $inviteStudentId = array_column($list,'student_id');
         // 获取所有学生信息
-        $inviteStudentList = DssStudentModel::getRecords(['id' => $inviteStudentId], ['name', 'mobile', 'thumb']);
+        $inviteStudentList = DssStudentModel::getRecords(['id' => $inviteStudentId], ['id', 'name', 'mobile', 'thumb']);
         $inviteStudentArr = [];
         if (is_array($inviteStudentList)) {
             foreach ($inviteStudentList as $_item){
-                $inviteStudentArr['id'] = $_item;
+                $inviteStudentArr[$_item['id']] = $_item;
             }
         }
         // 获取学生节点名称
