@@ -552,6 +552,13 @@ class DictConstants {
             'package_id_v2'
         ]
     ];
+    const WEB_STUDENT_CONFIG = [
+        'type' => 'WEB_STUDENT_CONFIG',
+        'keys' => [
+            'mini_0_package_id',
+            'mini_package_id_v1',
+        ]
+    ];
 
     const RECALL_CONFIG = [
         'type' => 'RECALL_CONFIG',

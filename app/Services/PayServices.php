@@ -8,18 +8,22 @@
 
 namespace App\Services;
 
+use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\HttpHelper;
 use App\Libs\Util;
+use App\Models\Dss\DssCategoryV1Model;
 use App\Models\Dss\DssErpPackageV1Model;
 use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssPackageExtModel;
+use App\Models\Erp\ErpPackageGoodsV1Model;
 
 class PayServices
 {
     const PACKAGE_4900 = 1; // 49元课包
     const PACKAGE_990  = 2; // 9.9元课包
     const PACKAGE_1    = 3; // 0.01元课包
+    const PACKAGE_0    = 6; // 0元支付0.01元课包
     const PACKAGE_1000 = 4; // 1元课包
     const PACKAGE_4900_v2 = 5; // 49元课包（两周体验营+礼盒）
 
@@ -35,6 +39,8 @@ class PayServices
     const PAY_CHANNEL_V1_ALIPAY_PC      = 4019;
     const PAY_CHANNEL_V1_WEIXIN_MINIPRO = 4020;
 
+    const PAY_TYPE_DIRECT = 1; // 直付
+    const PAY_TYPE_ACCOUNT = 2; // 账户
     /**
      * 获取学生体验课包的订单
      * @param $mobile
@@ -110,5 +116,54 @@ class PayServices
         }
 
         return (string)$resp['data']['order_status'];
+    }
+
+    /**
+     * 下单时根据pkg参数查询对应Package ID
+     * @param $pkg
+     * @return array|mixed|null
+     */
+    public static function getPackageIDByParameterPkg($pkg)
+    {
+        $arr = [
+            self::PACKAGE_1       => DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'mini_001_package_id'), //0.01
+            self::PACKAGE_0       => DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'mini_0_package_id'), //0
+            self::PACKAGE_990     => DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'mini_package_id_v1'), // 9.9
+            self::PACKAGE_1000    => DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'mini_1_package_id'), //1
+            self::PACKAGE_4900    => DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'package_id'), //49
+            self::PACKAGE_4900_v2 => DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'package_id_v2'), //49 v2
+        ];
+        return $arr[$pkg] ?? DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'mini_package_id_v1');
+    }
+
+    /**
+     * 是否是体验课包
+     * @param $packageId
+     * @return bool
+     */
+    public static function isTrialPackage($packageId)
+    {
+        if (empty($packageId)) {
+            return false;
+        }
+
+        // 新产品包
+        $goods = ErpPackageGoodsV1Model::goodsListByPackageId($packageId);
+        $types = array_column($goods, 'category_sub_type');
+        if (in_array(DssCategoryV1Model::DURATION_TYPE_TRAIL, $types)) {
+            return true;
+        }
+
+        // 旧产品包
+        $trailPackages = DssPackageExtModel::getPackages([
+            'package_type' => DssPackageExtModel::PACKAGE_TYPE_TRIAL,
+            'package_id' => $packageId
+        ]);
+
+        if (!empty($trailPackages)) {
+            return true;
+        }
+
+        return false;
     }
 }
