@@ -32,7 +32,7 @@ $menuList = [
             'sub_button' => [
                 [
                     "type" => "view",
-                    "name" => "🔥分享有礼",
+                    "name" => "🔥月月有奖",
                     "url"  => "https://referral.xiaoyezi.com/operation/activity/christmas?activity_id=12"
                 ],
                 [
@@ -47,13 +47,13 @@ $menuList = [
                 ],
                 [
                     "type" => "view",
-                    "name" => "🧧分享返学费",
+                    "name" => "🧧分享领学费",
                     "url"  => "https://dss-weixin.xiongmaopeilian.com/student/returnMoney?tag=1"
                 ],
                 [
                     "type" => "view",
-					"name" => "上传截图领奖",
-					"url" => "https://dss-weixin.xiongmaopeilian.com/student/referral?tag=1"
+                    "name" => "周周有奖",
+                    "url" => "https://dss-weixin.xiongmaopeilian.com/student/referral?tag=1"
                 ],
             ],
         ],
@@ -96,5 +96,5 @@ $menuList = [
 ];
 // $res = $wechat->getCurrentMenu();
 // echo json_encode($res);
-// $res = $wechat->createMenu($menuList);
-// print_r($res);
+$res = $wechat->createMenu($menuList);
+print_r($res);

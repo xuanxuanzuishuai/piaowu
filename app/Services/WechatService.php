@@ -134,7 +134,7 @@ class WechatService
             }
         }
         // 注册
-        if ($user['has_review_course'] == DssStudentModel::REVIEW_COURSE_NO) {
+        if ($user['has_review_course'] == DssStudentModel::REVIEW_COURSE_NO && empty($collection)) {
             // 七天内活跃记录：
             $active = self::getUserActiveRecord($openId);
             if ($active && empty($collection)) {
@@ -191,6 +191,9 @@ class WechatService
                         } elseif ($subEndDate > $today) {
                             // 年卡未过期
                             return self::USER_TYPE_7_1;
+                        } else {
+                            // 年卡已过期
+                            return self::USER_TYPE_8_1;
                         }
                     }
                 }

@@ -441,6 +441,9 @@ class WeChatMiniPro
     public function createMenu($data)
     {
         $api = $this->apiUrl(self::API_CREATE_MENU);
+        if (!is_array($data)) {
+            $data = json_decode($data, true);
+        }
         return $this->requestJson($api, $data, 'POST');
     }
 
