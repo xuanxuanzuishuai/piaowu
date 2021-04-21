@@ -27,7 +27,7 @@ class DssPushDeviceModel extends DssModel
     {
         $pushDevice = self::$table;
         $student = DssStudentModel::$table;
-        $time = time();
+        $time = date('Ymd', time());
 
         $sql = "SELECT
                     pt.device_token,
