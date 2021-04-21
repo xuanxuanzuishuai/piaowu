@@ -99,12 +99,12 @@ class ReferralService
         foreach ($listData['list'] as $lk => &$lv) {
             $lv['student_name'] = $studentDetail[$lv['student_id']]['name'];
             $lv['student_uuid'] = $studentDetail[$lv['student_id']]['uuid'];
-            $lv['student_mobile_hidden'] = $studentDetail[$lv['student_id']]['mobile'];
+            $lv['student_mobile_hidden'] = Util::hideUserMobile($studentDetail[$lv['student_id']]['mobile']);
             $lv['register_time'] = $studentDetail[$lv['student_id']]['create_time'];
             $lv['channel_name'] = $channelData[$studentDetail[$lv['student_id']]['channel_id']]['name'];
             $lv['last_stage_show'] = $dictData[$lv['last_stage']];
 
-            $lv['referrer_mobile_hidden'] = $studentDetail[$lv['referee_id']]['mobile'];
+            $lv['referrer_mobile_hidden'] = Util::hideUserMobile($studentDetail[$lv['referee_id']]['mobile']);
             $lv['referrer_uuid'] = $studentDetail[$lv['referee_id']]['uuid'];
             $lv['referrer_name'] = $studentDetail[$lv['referee_id']]['name'];
 
@@ -154,7 +154,7 @@ class ReferralService
         //推荐人手机号
         $referralStudentIds = [];
         if (!empty($params['referral_mobile'])) {
-            $referralMobileData = DssStudentModel::getRecord(['mobile[~]' => $params['referral_mobile']], ['id[Int]']);
+            $referralMobileData = DssStudentModel::getRecords(['mobile' => $params['referral_mobile']], ['id[Int]']);
             if (empty($referralMobileData)) {
                 return [];
             }
@@ -175,7 +175,7 @@ class ReferralService
         //学员手机号
         $studentIds = [];
         if (!empty($params['mobile'])) {
-            $mobileData = DssStudentModel::getRecord(['mobile[~]' => $params['mobile']], ['id[Int]']);
+            $mobileData = DssStudentModel::getRecords(['mobile' => $params['mobile']], ['id[Int]']);
             if (empty($mobileData)) {
                 return [];
             }

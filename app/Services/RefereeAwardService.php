@@ -92,7 +92,7 @@ class RefereeAwardService
             return false;
         }
         //绑定关系处理逻辑
-        $inviteRes = StudentInviteService::studentInviteRecord($student['id'], $package['type'], $package['app_id'],'', [], $parentBillId);
+        $inviteRes = StudentInviteService::studentInviteRecord($student['id'], $package['package_type'], $package['app_id'],'', [], $parentBillId);
         if (empty($inviteRes)) {
             return false;
         }

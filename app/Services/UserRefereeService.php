@@ -134,11 +134,6 @@ class UserRefereeService
     public static function buyDeal($buyPreStudentInfo, $packageInfo, $appId, $parentBillId)
     {
         if ($appId == Constants::SMART_APP_ID) {
-            //绑定关系处理逻辑
-            $inviteRes = StudentInviteService::studentInviteRecord($buyPreStudentInfo['id'], '', $packageInfo['type'], $appId, [], $parentBillId);
-            if (empty($inviteRes)) {
-                return false;
-            }
             //代理奖励
             AgentService::agentAwardLogic($buyPreStudentInfo, $parentBillId, $packageInfo);
             // 更新用户微信标签
