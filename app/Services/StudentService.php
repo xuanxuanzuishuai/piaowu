@@ -57,7 +57,7 @@ class StudentService
         } else {
             switch ($studentInfo['has_review_course']) {
                 case DssStudentModel::REVIEW_COURSE_49:
-                    if ($studentInfo['sub_end_date'] < time()) {
+                    if ($studentInfo['sub_end_date'] < date("Ymd")) {
                         //付费体验课 - 体验期过期
                         $data['student_status'] = DssStudentModel::STATUS_BUY_TEST_COURSE_EXPIRED;
                     }else {
