@@ -60,7 +60,7 @@ $menuList = [
         [
             "type" => "view",
             "name" => "💯练琴神器",
-            "url" => "https://referral.xiaoyezi.com/market/landing20200929_d5?ad=0&channel_id=1244"
+            "url" => "https://referral.xiaoyezi.com/operation/landing/recall?m=&a=99&p=17&c=3782"
         ],
         [
             "name" => "我的账户",
