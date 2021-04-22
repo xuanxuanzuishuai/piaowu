@@ -43,7 +43,7 @@ class ReferralMinAppAuthCheckMiddleware extends MiddlewareBase
                 $userId,
                 $userType,
                 $appId,
-                $busiType
+                $data['openid']
             );
             //返回token
             return HttpHelper::buildResponse($response, [

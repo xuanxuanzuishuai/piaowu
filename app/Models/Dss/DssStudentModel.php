@@ -17,6 +17,7 @@ class DssStudentModel extends DssModel
     const REVIEW_COURSE_NO = 0; // 非点评课学生
     const REVIEW_COURSE_49 = 1; // 体验课课包
     const REVIEW_COURSE_1980 = 2; // 正式课课包
+    const REVIEW_COURSE_BE_OVERDUE = 3; //年卡已过期
 
     // 学生的状态
     const STATUS_REGISTER = 0;//注册

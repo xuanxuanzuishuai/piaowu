@@ -56,6 +56,13 @@ class ReferralService
     // 转介绍小程序
     const REFERRAL_MINI_APP_ID = 2;
 
+
+    //用户类型
+    const STUDENT_TYPE_REGISTERED = 0; //注册用户
+    const STUDENT_TYPE_GIFT_CODE = 1; //赠送(激活码)用户
+    const STUDENT_TYPE_TRIAL = 2; //体验用户(9.9, 49.9)
+    const STUDENT_TYPE_YEAR_CARD = 3; //年卡用户
+
     /**
      * 推荐学员列表
      * @param $params
@@ -737,6 +744,7 @@ class ReferralService
         $data['staff'] = [];
         $data['share_scene'] = '';
         $data['scene_data'] = '';
+        $data['subscribe_status'] = null;
         $packageType = PayServices::PACKAGE_990;
         $isAgent = false;
 
@@ -759,17 +767,17 @@ class ReferralService
         } elseif ($sceneData['type'] == DssUserQrTicketModel::STUDENT_TYPE && $referrerUserId) {
             $refereeStudent = DssStudentModel::getRecord(['id' => $referrerUserId]);
             $data['referrer_info']['uuid'] = $refereeStudent['uuid'] ?? '';
+            list($data['subscribe_status']) = self::formatStudentSubscribeStatus($refereeStudent['has_review_course'], $refereeStudent['sub_status'], $refereeStudent['sub_end_date']);
             if ($refereeStudent['has_review_course'] == DssStudentModel::REVIEW_COURSE_1980 && ($refereeStudent['sub_end_date'] > date('Ymd'))) {
                 $packageType = PayServices::PACKAGE_0;
             }
         }
 
-
         //产品包
         $data['pkg'] = $packageType;
 
         //用户信息
-        $mobile = DssUserWeiXinModel::getUserInfoBindWX($openid, UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
+        $mobile = DssUserWeiXinModel::getUserInfoBindWX($openid, self::REFERRAL_MINI_APP_ID,
             DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP);
         if (!empty($mobile) && isset($mobile[0]['mobile'])) {
             $data['mobile'] = $mobile[0]['mobile'];
@@ -1067,4 +1075,47 @@ class ReferralService
         return ['poster' => $referralPoster['poster_save_full_path'], 'share_scene' => $shareScene];
     }
 
+
+
+
+    /**
+     * 格式化学生订阅状态
+     * @param $hasReviewCourse
+     * @param $subStatus
+     * @param $subEndDate
+     * @return array
+     */
+    public static function formatStudentSubscribeStatus($hasReviewCourse, $subStatus, $subEndDate)
+    {
+
+        switch ($hasReviewCourse) {
+            case DssStudentModel::REVIEW_COURSE_49:
+                $subscribeStatus = self::STUDENT_TYPE_TRIAL;
+                break;
+            case DssStudentModel::REVIEW_COURSE_1980:
+                $subscribeStatus = self::STUDENT_TYPE_YEAR_CARD;
+                break;
+            default:
+                $subscribeStatus = empty($subEndDate) ? self::STUDENT_TYPE_REGISTERED : self::STUDENT_TYPE_GIFT_CODE;
+        }
+
+        if (empty($subEndDate)) {
+            $subscribeStatusStr = '未订阅';
+        } elseif (self::checkSubStatus($subStatus, $subEndDate)) {
+            $subscribeStatusStr = (ceil((strtotime($subEndDate) - time()) / Util::TIMESTAMP_THIRTY_DAYS) > 120) ? '长期有效' : '有效期至' . date('Y-m-d', strtotime($subEndDate));
+        } else {
+            $subscribeStatusStr = ($hasReviewCourse == DssStudentModel::REVIEW_COURSE_49) ? '体验期已到期' : '已到期';
+        }
+        return [$subscribeStatus, $subscribeStatusStr];
+    }
+
+    public static function checkSubStatus($subStatus, $subEndDate)
+    {
+        if ($subStatus != DssStudentModel::SUB_STATUS_ON) {
+            return false;
+        }
+
+        $endTime = strtotime($subEndDate) + 86400;
+        return $endTime > time();
+    }
 }

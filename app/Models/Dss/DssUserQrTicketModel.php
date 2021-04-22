@@ -152,7 +152,7 @@ class DssUserQrTicketModel extends DssModel
     {
         $sql = "
             SELECT
-                qr_ticket,
+                qr_ticket
             FROM " . self::$table . "
             WHERE
             `user_id` = :user_id
