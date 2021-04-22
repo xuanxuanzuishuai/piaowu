@@ -836,6 +836,7 @@ class ReferralService
      * @param array $ext 附加参数
      * @param bool $isTakeActivity 是否保留活动id参数 false不保留 true保留
      * @param bool $isTakeEmployee 是否保留员工id参数 false不保留 true保留
+     * @param bool  $isChannel 是否保留渠道id参数 false不保留 true保留
      * @return string
      * @throws \App\Libs\KeyErrorRC4Exception
      */
@@ -844,7 +845,8 @@ class ReferralService
         $scene,
         $ext = [],
         $isTakeActivity = false,
-        $isTakeEmployee = false
+        $isTakeEmployee = false,
+        $isChannel = false
     ) {
         $userId = $studentData['id'] ?? 0;
 
@@ -852,7 +854,9 @@ class ReferralService
         //若用户绑定过小程序，使用小程序转发功能推荐给好友后，若好友注册并购买了体验课，则注册渠道ID为1220，与转发用户形成转介绍关系。
         //若用户未绑定小程序，使用小程序转发功能推荐给好友后，若好友注册并购买了体验课，则注册渠道ID为2185，不形成转介绍关系。
 
-        if (!empty($studentData['id'])) {
+        if ($isChannel === true){
+            $sceneData['c'] = $scene['c'];
+        } elseif (!empty($studentData['id'])) {
             $sceneData['c'] = DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL,
                 'NORMAL_STUDENT_INVITE_STUDENT');
         } else {
@@ -1117,7 +1121,7 @@ class ReferralService
             throw new RunTimeException(['referral_poster_make_fail']);
         }
         //分享给好友的scene
-        $shareScene = self::makeReferralMiniShareScene($studentInfo['student_info'],['c' => $channelId],['p' => $posterBaseId,'user_current_status' => $studentInfo['student_status']]);
+        $shareScene = self::makeReferralMiniShareScene($studentInfo['student_info'],['c' => $channelId],['p' => $posterBaseId,'user_current_status' => $studentInfo['student_status']], false, false, true);
         return ['poster' => $referralPoster['poster_save_full_path'], 'share_scene' => $shareScene];
     }
 
