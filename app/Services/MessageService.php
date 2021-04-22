@@ -423,6 +423,7 @@ class MessageService
                     'activity_name' => $messageRule['name'] ?? '',
                     'user_status' => DssStudentModel::STUDENT_IDENTITY_ZH_MAP[$user_current_status],
                 ];
+                SimpleLogger::info('MessageService::pushCustomMessage', ['info' => 'SaBpDataTopic', 'queueData' => $queueData, 'param_data' => $data]);
                 (new SaBpDataTopic())->posterPush($queueData)->publish();
             }
         }
