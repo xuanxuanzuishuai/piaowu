@@ -1063,7 +1063,7 @@ class ReferralService
                 'landing_type' => DssUserQrTicketModel::LANDING_TYPE_MINIAPP,
                 'ext_params' => $extParams
             ];
-            (new SaveTicketTopic())->sendTicket($data);
+            (new SaveTicketTopic())->sendTicket($data)->publish();
             return RC4::encrypt($_ENV['COOKIE_SECURITY_KEY'], DssUserQrTicketModel::STUDENT_TYPE . "_" . $userId);
         }
 
