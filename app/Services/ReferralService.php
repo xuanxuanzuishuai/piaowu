@@ -12,6 +12,7 @@ use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Dss;
+use App\Libs\Exceptions\RunTimeException;
 use App\Libs\RC4;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
@@ -50,7 +51,6 @@ class ReferralService
     const PURCHASED_STATUS_IN_24 = 1; //已购买未超过24小时
     const PURCHASED_STATUS_OUT_24 = 2; //已购买已超过24小时
 
-    const ZERO_ORDER_EXPERIENCE_KEY = 'zero_order_experience_surplus'; //0元订单 用户显示剩余购买数量
     const BUY_NAME_CACHE_KEY = 'zero_order_buy_name'; //0元订单 缓存用户名称
 
     // 转介绍小程序
@@ -735,27 +735,35 @@ class ReferralService
         $data['openid'] = $openid;
         $data['uuid'] = '';
         $data['staff'] = [];
+        $data['share_scene'] = '';
+        $data['scene_data'] = '';
         $packageType = PayServices::PACKAGE_990;
         $isAgent = false;
 
         // 推荐人信息：
         if (!empty($sceneData['r'])) {
             $referrerInfo = DssUserQrTicketModel::getRecord(['qr_ticket' => $sceneData['r']], ['user_id']);
-            $referrerUserId = $referrerInfo['user_id'];
+            $referrerUserId = $referrerInfo['user_id'] ?? '';
         } else {
             $referrerUserId = null;
         }
 
+        // 转介绍注册时用的推荐人ticket参数
+        $data['referrer_info']['uuid'] = '';
+        $data['referrer_info']['ticket'] = $sceneData['r'];
+
         // 判断当前ticket是否是代理商
-        if (!empty($sceneData['type']) && $sceneData['type'] == DssUserQrTicketModel::AGENT_TYPE) {
+        if ($sceneData['type'] == DssUserQrTicketModel::AGENT_TYPE) {
             $packageType = PayServices::PACKAGE_0;
             $isAgent = true;
-        } elseif (!empty($sceneData['type']) && $sceneData['type'] == DssUserQrTicketModel::STUDENT_TYPE && $referrerUserId) {
+        } elseif ($sceneData['type'] == DssUserQrTicketModel::STUDENT_TYPE && $referrerUserId) {
             $refereeStudent = DssStudentModel::getRecord(['id' => $referrerUserId]);
-            if ($refereeStudent['has_review_course'] == DssStudentModel::REVIEW_COURSE_1980 && (strtotime($refereeStudent['sub_end_date']) + Util::TIMESTAMP_ONEDAY > time())) {
+            $data['referrer_info']['uuid'] = $refereeStudent['uuid'] ?? '';
+            if ($refereeStudent['has_review_course'] == DssStudentModel::REVIEW_COURSE_1980 && ($refereeStudent['sub_end_date'] > date('Ymd'))) {
                 $packageType = PayServices::PACKAGE_0;
             }
         }
+
 
         //产品包
         $data['pkg'] = $packageType;
@@ -786,14 +794,6 @@ class ReferralService
 
         $data['scene_data'] = $sceneData;
 
-        // 购买次数
-//        $redis = RedisDB::getConn();
-//        $data['surplus'] = $redis->hget(self::ZERO_ORDER_EXPERIENCE_KEY, $openid) ?? 30;
-//        if ($data['surplus'] > 1) {
-//            $surplus = (($surplus = $data['surplus'] - 10) > 0) ? $surplus : 1;
-//            $redis->hset(self::ZERO_ORDER_EXPERIENCE_KEY, $openid, $surplus);
-//        }
-
         return $data;
     }
 
@@ -816,12 +816,12 @@ class ReferralService
         //若用户绑定过小程序，使用小程序转发功能推荐给好友后，若好友注册并购买了体验课，则注册渠道ID为1220，与转发用户形成转介绍关系。
         //若用户未绑定小程序，使用小程序转发功能推荐给好友后，若好友注册并购买了体验课，则注册渠道ID为2185，不形成转介绍关系。
         if (!empty($studentData['id'])) {
-            $sceneData['c'] = DssDictService::getKeyValue(DictConstants::STUDENT_INVITE_CHANNEL,
+            $sceneData['c'] = DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL,
                 'NORMAL_STUDENT_INVITE_STUDENT');
             //获取用户的ticket
             $sceneData['r'] = self::getUserQrTicket($studentData['id'],$sceneData['c']);
         } else {
-            $sceneData['c'] = DssDictService::getKeyValue(DictConstants::STUDENT_INVITE_CHANNEL,
+            $sceneData['c'] = DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL,
                 'REFERRAL_MINIAPP_STUDENT_INVITE_STUDENT');
         }
         //是否保留活动id参数
@@ -968,33 +968,103 @@ class ReferralService
             $username = json_decode($username, true);
         }
 
-        return $username;
+        $words = [];
+        foreach ($username as $key => $value){
+            if ($key%2 == 0){
+                $words[] = '恭喜'.$value['name'].'抢到了<span>5天</span>体验营';
+            }else{
+                $words[] = '恭喜'.$value['name'].'获得了<span>19.8元</span>现金红包';
+            }
+        }
+
+        return $words;
     }
 
     /**
      * 获取用户某个渠道的ticket
+     *
      * @param int $userId
      * @param int $channelId
-     * @return string
+     * @param array $extParams
+     * @return mixed|string|string[]|null
      * @throws \App\Libs\KeyErrorRC4Exception
      */
-    public static function getUserQrTicket($userId, $channelId)
+    public static function getUserQrTicket(int $userId, int $channelId, array $extParams = [])
     {
         //获取学生转介绍学生二维码资源数据
-        $res = DssUserQrTicketModel::getUserQrRecord($userId, DssUserQrTicketModel::STUDENT_TYPE, $channelId, DssUserQrTicketModel::LANDING_TYPE_MINIAPP);
+        $res = DssUserQrTicketModel::getUserQrRecord($userId, DssUserQrTicketModel::STUDENT_TYPE, $channelId,
+            DssUserQrTicketModel::LANDING_TYPE_MINIAPP);
         if (!empty($res['qr_ticket'])) {
             return $res['qr_ticket'];
-        }else{
+        } else {
             $data = [
-                'user_id'      => $userId,
-                'type'         => DssUserQrTicketModel::STUDENT_TYPE,
-                'channel_id'   => $channelId,
+                'user_id' => $userId,
+                'type' => DssUserQrTicketModel::STUDENT_TYPE,
+                'channel_id' => $channelId,
                 'landing_type' => DssUserQrTicketModel::LANDING_TYPE_MINIAPP,
+                'ext_params' => $extParams
             ];
             (new SaveTicketTopic())->sendTicket($data);
             return RC4::encrypt($_ENV['COOKIE_SECURITY_KEY'], DssUserQrTicketModel::STUDENT_TYPE . "_" . $userId);
         }
 
+    }
+
+
+    /**
+     * 小程序已购买体验课转介绍海报
+     *
+     * @param string $openId
+     * @return array
+     * @throws RunTimeException
+     * @throws \App\Libs\KeyErrorRC4Exception
+     */
+    public static function miniBuyPageReferralPoster(string $openId): array
+    {
+        //微信绑定数据
+        $weiXinBindData = DssUserWeixinModel::getByOpenId($openId, self::REFERRAL_MINI_APP_ID,
+            DssUserWeixinModel::USER_TYPE_STUDENT, DssUserWeixinModel::BUSI_TYPE_REFERRAL_MINAPP);
+        if (empty($weiXinBindData)) {
+            throw new RunTimeException(['student_need_bind_mini']);
+        }
+        // 获取用户信息
+        $studentInfo = StudentService::dssStudentStatusCheck($weiXinBindData['user_id']);
+
+        if (empty($studentInfo)) {
+            throw new RunTimeException(['student_not_exist']);
+        }
+
+        //海报底图数据
+        $posterBaseId = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'buy_trail_re_mini_sis_p_id');
+        $posterBaseInfo = PosterModel::getRecord(['id' => $posterBaseId, 'status' => Constants::STATUS_TRUE], ['path']);
+
+        if (empty($posterBaseInfo)) {
+            throw new RunTimeException(['wechat_poster_not_exists']);
+        }
+        //渠道ID
+        $channelId = DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'BUY_TRAIL_REFERRAL_MINIAPP_STUDENT_INVITE_STUDENT');
+        if (empty($channelId)) {
+            throw new RunTimeException(['generate_channel_invalid']);
+        }
+
+        //生成二维码海报
+        $posterConfig = PosterService::getPosterConfig();
+        $referralPoster = PosterService::generateQRPosterAliOss(
+            $posterBaseInfo['path'],
+            $posterConfig,
+            $studentInfo['student_info']['id'],
+            DssUserQrTicketModel::STUDENT_TYPE,
+            $channelId,
+            ['p' => $posterBaseId, 'user_current_status' => $studentInfo['student_status']]
+        );
+
+        if (empty($referralPoster)) {
+            throw new RunTimeException(['referral_poster_make_fail']);
+        }
+        //分享给好友的scene
+        $qrTicket = self::getUserQrTicket($studentInfo['student_info']['id'], $channelId, ['p' => $posterBaseId,'user_current_status' => $studentInfo['student_status']]);
+        $shareScene = urlencode(implode('&', ['r' => $qrTicket, 'c' => $channelId, 'a' => 0, 'e' => 0]));
+        return ['poster' => $referralPoster['poster_save_full_path'], 'share_scene' => $shareScene];
     }
 
 }

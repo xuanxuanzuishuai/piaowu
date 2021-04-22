@@ -9,6 +9,7 @@
 namespace App\Middleware;
 
 use App\Libs\HttpHelper;
+use App\Libs\Valid;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Services\WechatTokenService;
@@ -25,7 +26,7 @@ class ReferralMinAppAuthCheckMiddleware extends MiddlewareBase
         $params = $request->getParams();
         if (empty($token)) {
             if (empty($params['wx_code'])) {
-                return $response->withStatus(StatusCode::HTTP_UNAUTHORIZED);
+                return $response->withJson(Valid::addAppErrors([], StatusCode::HTTP_UNAUTHORIZED)); // 401
             }
             $appId = Constants::SMART_APP_ID;
             $busiType = Constants::SMART_MINI_BUSI_TYPE;
@@ -33,18 +34,17 @@ class ReferralMinAppAuthCheckMiddleware extends MiddlewareBase
             $wechat = WeChatMiniPro::factory($appId, $busiType);
             $data = $wechat->code2Session($params['wx_code']);
             if (empty($data['openid'])) {
-                return $response->withStatus(StatusCode::HTTP_UNAUTHORIZED);
+                return $response->withJson(Valid::addAppErrors([], StatusCode::HTTP_UNAUTHORIZED)); // 401
             }
             // 根据open id 获取用户信息
             $userInfo = DssUserWeiXinModel::getByOpenid($data['openid'], $appId, $userType, $busiType);
-            if (!empty($userInfo['user_id'])) {
-                $token = WechatTokenService::generateToken(
-                    $userInfo['user_id'],
-                    $userType,
-                    $appId,
-                    $busiType
-                );
-            }
+            $userId = $userInfo['user_id'] ?? '';
+            $token = WechatTokenService::generateToken(
+                $userId,
+                $userType,
+                $appId,
+                $busiType
+            );
             //返回token
             return HttpHelper::buildResponse($response, [
                 'token'   => $token,
@@ -53,7 +53,7 @@ class ReferralMinAppAuthCheckMiddleware extends MiddlewareBase
         } else {
             $data = WechatTokenService::getTokenInfo($token);
             if (empty($data)) {
-                return $response->withStatus(StatusCode::HTTP_UNAUTHORIZED);
+                return $response->withJson(Valid::addAppErrors([], StatusCode::HTTP_UNAUTHORIZED)); // 401
             }
             $this->container['referral_miniapp_userid']   = $data['user_id'];
             $this->container['referral_miniapp_openid']   = $data['open_id'];

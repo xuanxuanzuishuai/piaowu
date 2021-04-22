@@ -276,7 +276,7 @@ class DssGiftCodeModel extends DssModel
 
 
     /**
-     * 获取购买着姓名
+     * 获取购买者姓名
      * @return array
      */
     public static function getBuyUserName()

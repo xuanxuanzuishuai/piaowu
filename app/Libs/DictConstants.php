@@ -22,6 +22,7 @@ class DictConstants {
             'BUY_TRAIL_STUDENT_INVITE_STUDENT',
             'REFERRAL_MINIAPP_STUDENT_INVITE_STUDENT',
             'POSTER_LANDING_49_STUDENT_INVITE_STUDENT',
+            'BUY_TRAIL_REFERRAL_MINIAPP_STUDENT_INVITE_STUDENT',//智能陪练一级智能体验营小程序已购买转介绍
             'APP_CAPSULE_INVITE_CHANNEL'
         ]
     ];
@@ -353,6 +354,7 @@ class DictConstants {
             'trial_task_config_xyzop_178',
             'extra_task_id_normal_xyzop_178',
             'student_invite_send_points_start_time', // 我的邀请人发放积分开始时间
+            'buy_trail_re_mini_sis_p_id', //智能体验营小程序已购买转介绍海报底图id
         ]
     ];
 

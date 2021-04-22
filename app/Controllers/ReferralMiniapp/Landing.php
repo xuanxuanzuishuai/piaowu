@@ -7,10 +7,10 @@ use App\Libs\NewSMS;
 use App\Libs\UserCenter;
 use App\Libs\Valid;
 use App\Libs\WeChat\WeChatMiniPro;
-use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\UserWeiXinModel;
 use App\Services\CommonServiceForApp;
 use App\Services\ReferralService;
+use App\Services\ShowMiniAppService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use App\Libs\Exceptions\RunTimeException;
@@ -31,7 +31,7 @@ class Landing extends ControllerBase
         try {
             $params = $request->getParams();
             $sceneData = ReferralService::getSceneData(urldecode($params['scene'] ?? ''));
-            $pageData = ReferralService::getMiniAppIndexData($sceneData, $this->ci['referral_landing_openid']);
+            $pageData = ReferralService::getMiniAppIndexData($sceneData, $this->ci['referral_miniapp_openid']);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
@@ -124,6 +124,44 @@ class Landing extends ControllerBase
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
         return HttpHelper::buildResponse($response, $data);
+    }
+
+
+    /**
+     * 小程序已购买转介绍海报
+     *
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function buyPageReferralPoster(Request $request, Response $response)
+    {
+        try {
+            $pageData = ReferralService::miniBuyPageReferralPoster($this->ci['referral_miniapp_openid']);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, $pageData);
+    }
+
+    /**
+     * 练琴测评3.0落地页
+
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function playReview(Request $request, Response $response)
+    {
+        try {
+            $params = $request->getParams();
+            $sceneData = ReferralService::getSceneData(urldecode($params['scene'] ?? ''));
+            $pageData = ShowMiniAppService::getMiniAppPlayReviewData($sceneData, $this->ci['referral_miniapp_openid']);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+
+        return HttpHelper::buildResponse($response, $pageData);
     }
 
 

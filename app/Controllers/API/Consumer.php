@@ -704,7 +704,8 @@ class Consumer extends ControllerBase
             switch ($params['event_type']) {
                 case SaveTicketTopic::EVENT_SEND_TICKET:
                     DssUserQrTicketModel::getUserQrURL($params['msg_body']['user_id'], $params['msg_body']['type'],
-                        $params['msg_body']['channel_id'], $params['msg_body']['landing_type']);
+                        $params['msg_body']['channel_id'], $params['msg_body']['landing_type'],
+                        $params['msg_body']['ext_params']);
                     break;
             }
         } catch (RunTimeException $runTimeException) {
