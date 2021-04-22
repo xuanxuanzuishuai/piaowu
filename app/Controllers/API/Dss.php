@@ -289,7 +289,7 @@ class Dss extends ControllerBase
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        $res = AgentBillMapModel::add($params['qr_ticket'], $params['parent_bill_id'], $params['student_id']);
+        $res = BillMapService::mapDataRecord($params['qr_ticket'], $params['parent_bill_id'], $params['student_id']);
         return HttpHelper::buildResponse($response, ['res' => $res]);
     }
 
