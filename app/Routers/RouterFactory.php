@@ -32,6 +32,8 @@ class RouterFactory
     const CLIENT_AGENT_MINI = 'agent';
     const CLIENT_SHOW_MINI = 'show_miniapp';
     const CLIENT_ERP_API = 'erp';
+    const CLIENT_REFERRAL_MINI_APP = 'referral_miniapp'; // 体验营小程序
+
 
     /**
      * client_type 对应的 Router class
@@ -46,6 +48,7 @@ class RouterFactory
         self::CLIENT_SHOW_MINI => ShowMiniAppRouter::class, // 测评分享小程序
         self::CLIENT_STUDENT_WEB => StudentWebRouter::class, // WEB端
         self::CLIENT_ERP_API => ErpRouter::class, // ERP
+        self::CLIENT_REFERRAL_MINI_APP => ReferralMinAppRouter::class, // 体验营小程序
     ];
 
     /**

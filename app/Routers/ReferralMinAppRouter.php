@@ -8,6 +8,7 @@
 namespace App\Routers;
 
 use App\Controllers\Agent\Agent;
+use App\Controllers\ReferralMiniapp\Landing;
 use App\Controllers\ReferralMiniapp\Pay;
 use App\Middleware\ReferralMinAppAuthCheckMiddleware;
 use App\Middleware\ReferralMinAppServerCheckMiddleware;
@@ -27,20 +28,27 @@ class ReferralMinAppRouter extends RouterBase
             'method'  => ['get'],
             'call'    => Agent::class . ':countryCode'
         ],
-        // '/referral_miniapp/landing/register' => [
-        //     'method'  => ['post'],
-        //     'call'    => Landing::class . ':register',
-        //     'middles' => [ReferralMinAppAuthCheckMiddleware::class],
-        // ],
-        // '/referral_miniapp/landing/index' => [
-        //     'method'  => ['get'],
-        //     'call'    => Landing::class . ':index',
-        //     'middles' => [ReferralMinAppAuthCheckMiddleware::class],
-        // ],
+         '/referral_miniapp/landing/register' => [
+             'method'  => ['post'],
+             'call'    => Landing::class . ':register',
+             'middles' => [ReferralMinAppAuthCheckMiddleware::class],
+         ],
+         '/referral_miniapp/landing/index' => [
+             'method'  => ['get'],
+             'call'    => Landing::class . ':index',
+             'middles' => [ReferralMinAppAuthCheckMiddleware::class],
+         ],
         '/referral_miniapp/landing/create_bill' => [
             'method'  => ['get', 'post'],
             'call'    => Pay::class . ':createBill'
         ],
+        '/referral_miniapp/landing/buy_name' => [
+            'method'  => ['get', 'post'],
+            'call'    => Landing::class . ':buyName',
+            'middles' => [ReferralMinAppAuthCheckMiddleware::class]
+        ],
+
+
     ];
 
 }

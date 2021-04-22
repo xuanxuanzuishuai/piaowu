@@ -273,4 +273,21 @@ class DssGiftCodeModel extends DssModel
             ]);
         return $records;
     }
+
+
+    /**
+     * 获取购买着姓名
+     * @return array
+     */
+    public static function getBuyUserName()
+    {
+        $db = self::dbRO();
+        $sql = "SELECT 
+                    s.name
+                FROM " . self::$table . " g
+                INNER JOIN " . DssStudentModel::$table . " s ON s.id = g.buyer
+                ORDER BY g.id DESC
+                LIMIT 0, 50";
+        return $db->queryAll($sql) ?? [];
+    }
 }

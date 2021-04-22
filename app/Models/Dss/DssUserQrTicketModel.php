@@ -15,7 +15,8 @@ class DssUserQrTicketModel extends DssModel
     public static $table = "user_qr_ticket";
         
     const STUDENT_TYPE = 1;
-    
+    const AGENT_TYPE   = 4;
+
     const LANDING_TYPE_NORMAL  = 1; // 普通Landing页
     const LANDING_TYPE_MINIAPP = 2; // 小程序
 
@@ -137,5 +138,34 @@ class DssUserQrTicketModel extends DssModel
         unlink($filePath);
         
         return $imageUrl;
+    }
+
+    /**
+     * 是否已有二维码记录
+     * @param $userId
+     * @param $type
+     * @param $channelId
+     * @param $landingType
+     * @return array
+     */
+    public static function getUserQrRecord($userId, $type, $channelId, $landingType)
+    {
+        $sql = "
+            SELECT
+                qr_ticket,
+            FROM " . self::$table . "
+            WHERE
+            `user_id` = :user_id
+                AND `channel_id` = :channel_id
+                AND `type` = :type
+                AND `landing_type` = :landing_type
+               ";
+        $map = [];
+        $map[':user_id'] = $userId;
+        $map[':channel_id'] = $channelId;
+        $map[':type'] = $type;
+        $map[':landing_type'] = $landingType;
+
+        return self::dbRO()->queryAll($sql, $map)[0] ?? [];
     }
 }

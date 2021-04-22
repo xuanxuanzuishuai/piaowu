@@ -21,6 +21,7 @@ use App\Libs\TPNS;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Libs\WeChat\WeChatMiniPro;
+use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\EmployeeModel;
 use App\Models\Erp\ErpStudentModel;
 use App\Models\StudentAccountAwardPointsFileModel;
@@ -29,6 +30,7 @@ use App\Services\CashGrantService;
 use App\Services\MessageService;
 use App\Services\Queue\DurationTopic;
 use App\Services\Queue\PushMessageTopic;
+use App\Services\Queue\SaveTicketTopic;
 use App\Services\Queue\StudentAccountAwardPointsTopic;
 use App\Services\Queue\ThirdPartBillTopic;
 use App\Services\Queue\WechatTopic;
@@ -661,6 +663,53 @@ class Consumer extends ControllerBase
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
+        return HttpHelper::buildResponse($response, []);
+    }
+
+    /**
+     * nsq消费ticket接口
+     *
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * @throws \App\Libs\KeyErrorRC4Exception
+     */
+    public function saveTicket(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'topic_name',
+                'type' => 'required',
+                'error_code' => 'topic_name_is_required',
+            ],
+            [
+                'key' => 'event_type',
+                'type' => 'required',
+                'error_code' => 'event_type_is_required',
+            ],
+            [
+                'key' => 'msg_body',
+                'type' => 'required',
+                'error_code' => 'msg_body_is_required',
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        try {
+            switch ($params['event_type']) {
+                case SaveTicketTopic::EVENT_SEND_TICKET:
+                    DssUserQrTicketModel::getUserQrURL($params['msg_body']['user_id'], $params['msg_body']['type'],
+                        $params['msg_body']['channel_id'], $params['msg_body']['landing_type']);
+                    break;
+            }
+        } catch (RunTimeException $runTimeException) {
+            return HttpHelper::buildErrorResponse($response, $runTimeException->getAppErrorData());
+        }
+
         return HttpHelper::buildResponse($response, []);
     }
 }

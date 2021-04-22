@@ -60,5 +60,10 @@ class APIRouter extends RouterBase
             'call' => Consumer::class . ':pointsExchangeRedPack',
             'middles' => [],
         ],
+        '/api/consumer/save_ticket' => [
+            'method' => ['post'],
+            'call' => Consumer::class . ':saveTicket',
+            'middles' => [],
+        ]
     ];
 }

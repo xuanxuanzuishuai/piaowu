@@ -43,7 +43,7 @@ class RouterUtil
             self::CLIENT_STUDENT_WX,
             self::CLIENT_TEACHER_WX,
             self::CLIENT_STUDENT_ORG_WX,
-            self::CLIENT_ORG_WEB
+            self::CLIENT_ORG_WEB,
         ])) {
             $clientType = self::CLIENT_ORG_WEB;
         }

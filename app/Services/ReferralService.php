@@ -11,12 +11,19 @@ namespace App\Services;
 use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\DictConstants;
+use App\Libs\Dss;
+use App\Libs\RC4;
+use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
+use App\Libs\UserCenter;
 use App\Libs\WeChat\WeChatMiniPro;
+use App\Libs\WeChat\WXBizDataCrypt;
 use App\Models\Dss\DssAiPlayRecordCHModel;
+use App\Models\Dss\DssCategoryV1Model;
 use App\Models\Dss\DssChannelModel;
 use App\Models\Dss\DssCollectionModel;
 use App\Models\Dss\DssEmployeeModel;
+use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssStudentModel;
 use App\Libs\Util;
 use App\Models\Dss\DssUserQrTicketModel;
@@ -27,14 +34,25 @@ use App\Models\PosterModel;
 use App\Models\StudentReferralStudentDetailModel;
 use App\Models\StudentReferralStudentStatisticsModel;
 use App\Models\WeChatAwardCashDealModel;
+use App\Services\Queue\SaveTicketTopic;
 
 class ReferralService
 {
-    const EXPECT_REGISTER          = 1; //注册
-    const EXPECT_TRAIL_PAY         = 2; //付费体验卡
-    const EXPECT_YEAR_PAY          = 3; //付费年卡
-    const EXPECT_FIRST_NORMAL      = 4; //首购智能正式课
+    const EXPECT_REGISTER = 1; //注册
+    const EXPECT_TRAIL_PAY = 2; //付费体验卡
+    const EXPECT_YEAR_PAY = 3; //付费年卡
+    const EXPECT_FIRST_NORMAL = 4; //首购智能正式课
     const EXPECT_UPLOAD_SCREENSHOT = 5; //上传截图审核通过
+
+    const PURCHASED_STATUS_NONE = 0; //未购买
+    const PURCHASED_STATUS_IN_24 = 1; //已购买未超过24小时
+    const PURCHASED_STATUS_OUT_24 = 2; //已购买已超过24小时
+
+    const ZERO_ORDER_EXPERIENCE_KEY = 'zero_order_experience_surplus'; //0元订单 用户显示剩余购买数量
+    const BUY_NAME_CACHE_KEY = 'zero_order_buy_name'; //0元订单 缓存用户名称
+
+    // 转介绍小程序
+    const REFERRAL_MINI_APP_ID = 2;
 
     /**
      * 推荐学员列表
@@ -91,11 +109,17 @@ class ReferralService
         //进度
         $dictData = DictConstants::getSet(DictConstants::AGENT_USER_STAGE);
         //批量获取渠道信息
-        $channelData = array_column(DssChannelModel::getRecords(['id' => array_unique(array_column($studentDetail, 'channel_id'))], ['name', 'id']), null, 'id');
+        $channelData = array_column(DssChannelModel::getRecords([
+            'id' => array_unique(array_column($studentDetail, 'channel_id'))
+        ], ['name', 'id']), null, 'id');
         //批量获取员工信息
-        $employeeData = array_column(DssEmployeeModel::getRecords(['id' => array_unique(array_column($listData['list'], 'referee_employee_id'))], ['name', 'id']), null, 'id');
+        $employeeData = array_column(DssEmployeeModel::getRecords([
+            'id' => array_unique(array_column($listData['list'], 'referee_employee_id'))
+        ], ['name', 'id']), null, 'id');
         //批量获取活动信息
-        $activityData = array_column(OperationActivityModel::getRecords(['id' => array_unique(array_column($listData['list'], 'activity_id'))], ['name', 'id']), null, 'id');
+        $activityData = array_column(OperationActivityModel::getRecords([
+            'id' => array_unique(array_column($listData['list'], 'activity_id'))
+        ], ['name', 'id']), null, 'id');
         foreach ($listData['list'] as $lk => &$lv) {
             $lv['student_name'] = $studentDetail[$lv['student_id']]['name'];
             $lv['student_uuid'] = $studentDetail[$lv['student_id']]['uuid'];
@@ -201,14 +225,20 @@ class ReferralService
         //学员注册时间
         $registerStudentIds = [];
         if (!empty($params['register_s_create_time'])) {
-            $registerStartData = StudentReferralStudentDetailModel::getRecords(['create_time[>=]' => $params['register_s_create_time'], 'stage' => StudentReferralStudentStatisticsModel::STAGE_REGISTER], ['student_id[Int]']);
+            $registerStartData = StudentReferralStudentDetailModel::getRecords([
+                'create_time[>=]' => $params['register_s_create_time'],
+                'stage' => StudentReferralStudentStatisticsModel::STAGE_REGISTER
+            ], ['student_id[Int]']);
             if (empty($registerStartData)) {
                 return [];
             }
             $registerStudentIds = array_merge($registerStudentIds, array_column($registerStartData, 'student_id'));
         }
         if (!empty($params['register_e_create_time'])) {
-            $registerEndData = StudentReferralStudentDetailModel::getRecords(['create_time[<=]' => $params['register_e_create_time'], 'stage' => StudentReferralStudentStatisticsModel::STAGE_REGISTER], ['student_id[Int]']);
+            $registerEndData = StudentReferralStudentDetailModel::getRecords([
+                'create_time[<=]' => $params['register_e_create_time'],
+                'stage' => StudentReferralStudentStatisticsModel::STAGE_REGISTER
+            ], ['student_id[Int]']);
             if (empty($registerEndData)) {
                 return [];
             }
@@ -278,7 +308,7 @@ class ReferralService
                 ['student_id' => $studentId]
             );
         }
-        return NULL;
+        return null;
     }
 
     /**
@@ -294,7 +324,7 @@ class ReferralService
                 ['referee_id' => $studentId]
             );
         }
-        return NULL;
+        return null;
     }
 
     /**
@@ -305,7 +335,7 @@ class ReferralService
      */
     public static function getCheckinSendData($day, $studentInfo)
     {
-        $configData = DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'day_'.$day);
+        $configData = DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'day_' . $day);
         if (empty($configData)) {
             SimpleLogger::error('EMPTY CONFIG', [$day]);
             return [];
@@ -349,19 +379,23 @@ class ReferralService
             return [];
         }
         if (empty($day)) {
-            return ['poster_save_full_path' => AliOSS::signUrls($posterInfo['path']), 'unique' => md5($studentInfo['id'] . $day . $posterInfo['path']) . ".jpg"];
+            return [
+                'poster_save_full_path' => AliOSS::signUrls($posterInfo['path']),
+                'unique' => md5($studentInfo['id'] . $day . $posterInfo['path']) . ".jpg"
+            ];
         }
         $headImageUrl = $studentInfo['wechat']['headimgurl'];
         $name = self::getPosterName($studentInfo['wechat']['nickname']);
         $studentInfo['duration_sum'] = Util::formatDuration($studentInfo['duration_sum']);
-        $percent = SharePosterModel::getUserCheckInPercent($studentInfo['collection_id'], $studentInfo['id'], $day, $studentInfo['duration_sum']);
+        $percent = SharePosterModel::getUserCheckInPercent($studentInfo['collection_id'], $studentInfo['id'], $day,
+            $studentInfo['duration_sum']);
         $posterConfig = DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'poster_config');
         if (!empty($posterConfig)) {
             $posterConfig = json_decode($posterConfig, true);
         }
 
         $fileName = md5($headImageUrl);
-        $thumb = $_ENV['ENV_NAME'] . '/' . AliOSS::DIR_REFERRAL . '/'. $fileName. '.jpg';
+        $thumb = $_ENV['ENV_NAME'] . '/' . AliOSS::DIR_REFERRAL . '/' . $fileName . '.jpg';
         if (!AliOSS::doesObjectExist($thumb)) {
             $tmpFileFullPath = $_ENV['STATIC_FILE_SAVE_PATH'] . "/" . $fileName . ".jpg";
             chmod($tmpFileFullPath, 0755);
@@ -371,14 +405,15 @@ class ReferralService
             }
             unlink($tmpFileFullPath);
         }
-        $userQrPath  = DssUserQrTicketModel::getUserQrURL(
+        $userQrPath = DssUserQrTicketModel::getUserQrURL(
             $studentInfo['id'],
             DssUserQrTicketModel::STUDENT_TYPE,
             self::getChannelByDay($day),
             DssUserQrTicketModel::LANDING_TYPE_MINIAPP,
             ['p' => $posterInfo['id']]
         );
-        $waterImgEncode = str_replace(["+", "/"], ["-", "_"], base64_encode($thumb."?x-oss-process=image/resize,w_90,h_90/circle,r_100/format,png"));
+        $waterImgEncode = str_replace(["+", "/"], ["-", "_"],
+            base64_encode($thumb . "?x-oss-process=image/resize,w_90,h_90/circle,r_100/format,png"));
         $waterMark = [];
         $waterMark[] = [
             "image_" . $waterImgEncode,
@@ -387,15 +422,19 @@ class ReferralService
             "g_nw",
         ];
         $waterMark[] = [
-            "image_" . str_replace(["+", "/"], ["-", "_"], base64_encode($userQrPath."?x-oss-process=image/resize,w_".$posterConfig['qr_w'].",h_".$posterConfig['qr_h'])),
+            "image_" . str_replace(["+", "/"], ["-", "_"],
+                base64_encode($userQrPath . "?x-oss-process=image/resize,w_" . $posterConfig['qr_w'] . ",h_" . $posterConfig['qr_h'])),
             "x_" . $posterConfig['qr_x'],
             "y_" . $posterConfig['qr_y'],
             "g_nw",
         ];
-        $waterMark[] = self::getTextWaterMark($name, ['x' => $posterConfig['name_x'], 'y' => $posterConfig['name_y'], 'g' => 'nw', 's' => 30]);
-        $waterMark[] = self::getTextWaterMark($studentInfo['lesson_count'], self::getTextConfig($studentInfo['lesson_count'], 'lesson'));
-        $waterMark[] = self::getTextWaterMark($studentInfo['duration_sum'], self::getTextConfig($studentInfo['duration_sum'], 'duration'));
-        $waterMark[] = self::getTextWaterMark($percent.'%', self::getTextConfig($percent, 'percent'));
+        $waterMark[] = self::getTextWaterMark($name,
+            ['x' => $posterConfig['name_x'], 'y' => $posterConfig['name_y'], 'g' => 'nw', 's' => 30]);
+        $waterMark[] = self::getTextWaterMark($studentInfo['lesson_count'],
+            self::getTextConfig($studentInfo['lesson_count'], 'lesson'));
+        $waterMark[] = self::getTextWaterMark($studentInfo['duration_sum'],
+            self::getTextConfig($studentInfo['duration_sum'], 'duration'));
+        $waterMark[] = self::getTextWaterMark($percent . '%', self::getTextConfig($percent, 'percent'));
         $waterMark[] = self::getTextWaterMark('分钟', self::getTextConfig($studentInfo['duration_sum'], 'minute'));
         $waterMark[] = self::getTextWaterMark('首', self::getTextConfig($studentInfo['lesson_count'], 'qu'));
 
@@ -410,7 +449,10 @@ class ReferralService
         ];
         $imgSizeStr = implode(",", $imgSize) . '/';
         $resImgFile = AliOSS::signUrls($posterInfo['path'], "", "", "", false, $waterMarkStr, $imgSizeStr);
-        return ['poster_save_full_path' => $resImgFile, 'unique' => md5($studentInfo['id'] . $day . $posterInfo['path']) . ".jpg"];
+        return [
+            'poster_save_full_path' => $resImgFile,
+            'unique' => md5($studentInfo['id'] . $day . $posterInfo['path']) . ".jpg"
+        ];
     }
 
     /**
@@ -482,9 +524,9 @@ class ReferralService
         }
         $wechatInfo = DssUserWeiXinModel::getRecord(
             [
-                'user_id'   => $studentId,
-                'status'    => DssUserWeiXinModel::STATUS_NORMAL,
-                'app_id'    => Constants::SMART_APP_ID,
+                'user_id' => $studentId,
+                'status' => DssUserWeiXinModel::STATUS_NORMAL,
+                'app_id' => Constants::SMART_APP_ID,
                 'busi_type' => DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER,
                 'user_type' => DssUserWeiXinModel::USER_TYPE_STUDENT
             ]
@@ -495,12 +537,13 @@ class ReferralService
         $today = new \DateTime(date('Y-m-d', $nodeDate));
         $startDay = new \DateTime(date('Y-m-d', $sendData['teaching_start_time']));
         $dayDiff = $today->diff($startDay)->format('%a');
-        if ($dayDiff <0 || $dayDiff > 5) {
+        if ($dayDiff < 0 || $dayDiff > 5) {
             SimpleLogger::error("WRONG DAY DATA", [$sendData]);
             return [];
         }
         $day = date("Y-m-d", strtotime("-1 days", $today->getTimestamp()));
-        $playInfo = DssAiPlayRecordCHModel::getStudentBetweenTimePlayRecord(intval($studentId), strtotime($day), strtotime($day.' 23:59:59'));
+        $playInfo = DssAiPlayRecordCHModel::getStudentBetweenTimePlayRecord(intval($studentId), strtotime($day),
+            strtotime($day . ' 23:59:59'));
         $sd = array_sum(array_column($playInfo, 'sum_duration'));
         $lc = count(array_unique(array_column($playInfo, 'lesson_id')));
         $sendData['lesson_count'] = $lc;
@@ -519,20 +562,21 @@ class ReferralService
     {
         if (!empty($studentInfo['thumb'])) {
             return [
-                'nickname'   => $studentInfo['name'],
+                'nickname' => $studentInfo['name'],
                 'headimgurl' => AliOSS::replaceCdnDomainForDss($studentInfo['thumb'])
             ];
         }
         $defaultData = [
-            'nickname'   => '小叶子',
-            'headimgurl' => AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb'))
+            'nickname' => '小叶子',
+            'headimgurl' => AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO,
+                'default_thumb'))
         ];
         $wechat = WeChatMiniPro::factory(Constants::SMART_APP_ID, Constants::SMART_WX_SERVICE);
         $data = $wechat->getUserInfo($studentInfo['open_id']);
         if (empty($data['headimgurl'])) {
             $data = $defaultData;
         }
-        $data['nickname'] = $data['nickname'].'的宝贝';
+        $data['nickname'] = $data['nickname'] . '的宝贝';
         return $data;
     }
 
@@ -631,12 +675,12 @@ class ReferralService
         $where['ORDER'] = ['id' => 'DESC'];
         // 获取邀请学生id列表
         $list = StudentReferralStudentStatisticsModel::getRecords($where);
-        $inviteStudentId = array_column($list,'student_id');
+        $inviteStudentId = array_column($list, 'student_id');
         // 获取所有学生信息
         $inviteStudentList = DssStudentModel::getRecords(['id' => $inviteStudentId], ['id', 'name', 'mobile', 'thumb']);
         $inviteStudentArr = [];
         if (is_array($inviteStudentList)) {
-            foreach ($inviteStudentList as $_item){
+            foreach ($inviteStudentList as $_item) {
                 $inviteStudentArr[$_item['id']] = $_item;
             }
         }
@@ -646,7 +690,7 @@ class ReferralService
         $studentStageList = StudentReferralStudentDetailModel::getRecords(['student_id' => $inviteStudentId]);
         $studentStageArr = [];
         foreach ($studentStageList as $item) {
-            $studentStageArr[$item['student_id']][$item['stage']+1] = [
+            $studentStageArr[$item['student_id']][$item['stage'] + 1] = [
                 'stage_name' => $stageNameList[$item['stage']] ?? '',
                 'create_time' => date("Y-m-d", $item['create_time']),
                 'stage' => $item['stage']
@@ -665,4 +709,282 @@ class ReferralService
 
         return $returnList;
     }
+
+
+    /**
+     * 0元 体验营
+     * @param array $sceneData
+     * @param string $openid
+     * @return array
+     */
+    public static function getMiniAppIndexData(array $sceneData, string $openid): array
+    {
+        $data = [];
+        $data['had_purchased'] = 0;
+        $data['mobile'] = '';
+        $data['openid'] = $openid;
+        $data['uuid'] = '';
+        $data['staff'] = [];
+        $packageType = PayServices::PACKAGE_990;
+        $isAgent = false;
+
+        // 推荐人信息：
+        if (!empty($sceneData['r'])) {
+            $referrerInfo = DssUserQrTicketModel::getRecord(['qr_ticket' => $sceneData['r']], ['user_id']);
+            $referrerUserId = $referrerInfo['user_id'];
+        } else {
+            $referrerUserId = null;
+        }
+
+        // 判断当前ticket是否是代理商
+        if (!empty($sceneData['type']) && $sceneData['type'] == DssUserQrTicketModel::AGENT_TYPE) {
+            $packageType = PayServices::PACKAGE_0;
+            $isAgent = true;
+        } elseif (!empty($sceneData['type']) && $sceneData['type'] == DssUserQrTicketModel::STUDENT_TYPE && $referrerUserId) {
+            $refereeStudent = DssStudentModel::getRecord(['id' => $referrerUserId]);
+            if ($refereeStudent['has_review_course'] == DssStudentModel::REVIEW_COURSE_1980 && (strtotime($refereeStudent['sub_end_date']) + Util::TIMESTAMP_ONEDAY > time())) {
+                $packageType = PayServices::PACKAGE_0;
+            }
+        }
+
+        //产品包
+        $data['pkg'] = $packageType;
+
+        //用户信息
+        $mobile = DssUserWeiXinModel::getUserInfoBindWX($openid, UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,
+            DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP);
+        if (!empty($mobile) && isset($mobile[0]['mobile'])) {
+            $data['mobile'] = $mobile[0]['mobile'];
+            $data['uuid'] = $mobile[0]['uuid'];
+            $data['had_purchased'] = self::getPurchasedStatus($mobile[0]['id']);
+        } else {
+            return $data;
+        }
+
+        // 员工信息：
+        if (!empty($sceneData['e'])) {
+            $data['staff'] = DssEmployeeModel::getRecord(['id' => $sceneData['e']], ['uuid']);
+        }
+
+        if ($isAgent) {
+            // 代理商参数的小程序，转发参数依然为代理商
+            unset($sceneData['type']);
+            $data['share_scene'] = urlencode('&param_id=' . $sceneData['param_id']);
+        } else {
+            $data['share_scene'] = self::makeReferralMiniShareScene($mobile[0], $sceneData);
+        }
+
+        $data['scene_data'] = $sceneData;
+
+        // 购买次数
+//        $redis = RedisDB::getConn();
+//        $data['surplus'] = $redis->hget(self::ZERO_ORDER_EXPERIENCE_KEY, $openid) ?? 30;
+//        if ($data['surplus'] > 1) {
+//            $surplus = (($surplus = $data['surplus'] - 10) > 0) ? $surplus : 1;
+//            $redis->hset(self::ZERO_ORDER_EXPERIENCE_KEY, $openid, $surplus);
+//        }
+
+        return $data;
+    }
+
+    /**
+     * 生成小程序非首页的分享转介绍参数
+     * @param array $studentData 学生信息
+     * @param array $scene 首页原始的分享参数
+     * @param bool $isTakeActivity 是否保留活动id参数 false不保留 true保留
+     * @param bool $isTakeEmployee 是否保留员工id参数 false不保留 true保留
+     * @return string
+     * @throws \App\Libs\KeyErrorRC4Exception
+     */
+    public static function makeReferralMiniShareScene(
+        $studentData,
+        $scene,
+        $isTakeActivity = false,
+        $isTakeEmployee = false
+    ) {
+        $sceneData['e'] = $sceneData['a'] = $sceneData['c'] = $sceneData['r'] = '';
+        //若用户绑定过小程序，使用小程序转发功能推荐给好友后，若好友注册并购买了体验课，则注册渠道ID为1220，与转发用户形成转介绍关系。
+        //若用户未绑定小程序，使用小程序转发功能推荐给好友后，若好友注册并购买了体验课，则注册渠道ID为2185，不形成转介绍关系。
+        if (!empty($studentData['id'])) {
+            $sceneData['c'] = DssDictService::getKeyValue(DictConstants::STUDENT_INVITE_CHANNEL,
+                'NORMAL_STUDENT_INVITE_STUDENT');
+            //获取用户的ticket
+            $sceneData['r'] = self::getUserQrTicket($studentData['id'],$sceneData['c']);
+        } else {
+            $sceneData['c'] = DssDictService::getKeyValue(DictConstants::STUDENT_INVITE_CHANNEL,
+                'REFERRAL_MINIAPP_STUDENT_INVITE_STUDENT');
+        }
+        //是否保留活动id参数
+        if ($isTakeActivity === true) {
+            $sceneData['a'] = $scene['a'];
+        }
+        //是否保留员工id参数
+        if ($isTakeEmployee === true) {
+            $sceneData['e'] = $scene['e'];
+        }
+        return urlencode(implode('&', $sceneData));
+    }
+
+    /**
+     * 注册
+     * @param $openId
+     * @param $iv
+     * @param $encryptedData
+     * @param $sessionKey
+     * @param $mobile
+     * @param $countryCode
+     * @param $referrerId
+     * @param string $channel
+     * @param array $extParams
+     * @return array
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
+    public static function remoteRegister(
+        $openId,
+        $iv,
+        $encryptedData,
+        $sessionKey,
+        $mobile,
+        $countryCode,
+        $referrerId,
+        $channel = '',
+        $extParams = []
+    ) {
+        if (!empty($encryptedData)) {
+            $jsonMobile = self::decodeMobile($iv, $encryptedData, $sessionKey);
+            if (empty($jsonMobile)) {
+                return [$openId, 0, null];
+            }
+            $mobile = $jsonMobile['purePhoneNumber'];
+            $countryCode = $jsonMobile['countryCode'];
+        }
+
+        $userInfo = (new Dss())->studentRegisterBound([
+            'mobile' => $mobile,
+            'channel_id' => $channel ?: DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL,
+                'REFERRAL_MINIAPP_STUDENT_INVITE_STUDENT'),
+            'open_id' => $openId,
+            'busi_type' => DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP,
+            'user_type' => DssUserWeiXinModel::USER_TYPE_STUDENT,
+            'referee_id' => $referrerId,
+            'country_code' => $countryCode,
+            'ext_params' => $extParams
+        ]);
+        $lastId = $userInfo['student_id'];
+        $uuid = $userInfo['uuid'];
+        $hadPurchased = self::getPurchasedStatus($lastId);
+
+        return [$openId, $lastId, $mobile, $uuid, $hadPurchased];
+    }
+
+    /**
+     * 解密手机号
+     * @param $iv
+     * @param $encryptedData
+     * @param $sessionKey
+     * @return mixed|null
+     */
+    public static function decodeMobile($iv, $encryptedData, $sessionKey)
+    {
+        if (empty($sessionKey)) {
+            SimpleLogger::error('session key is empty', []);
+            return null;
+        }
+        $appId = DictConstants::get(DictConstants::WECHAT_APPID, '8_8');
+        $w = new WXBizDataCrypt($appId, $sessionKey);
+        $code = $w->decryptData($encryptedData, $iv, $data);
+        if ($code == 0) {
+            return json_decode($data, 1);
+        } else {
+            SimpleLogger::error('decode mobile error:', ['code' => $code]);
+            return null;
+        }
+    }
+
+    /**
+     * 解析scene参数
+     *
+     * @param string $scene
+     * @return array
+     */
+    public static function getSceneData(string $scene): array
+    {
+        $sceneData = ShowMiniAppService::getSceneData($scene);
+        // 用户生成参数时状态转成文字
+        if (isset($sceneData['user_current_status'])) {
+            $sceneData['user_current_status_zh'] = DssStudentModel::STUDENT_IDENTITY_ZH_MAP[$sceneData['user_current_status']];
+        }
+        return $sceneData;
+    }
+
+    /**
+     * 可购买超时状态
+     *
+     * @param int $userId
+     * @return int
+     */
+    private static function getPurchasedStatus(int $userId): int
+    {
+        $purchasedStatus = self::PURCHASED_STATUS_NONE;
+        //获取最新一条体验课信息
+        $giftCode = DssGiftCodeModel::getUserFirstPayInfo($userId, DssCategoryV1Model::DURATION_TYPE_TRAIL, 'desc');
+        if (!empty($giftCode) && $giftCode['buy_time'] + Util::TIMESTAMP_ONEDAY > time()) {
+            $purchasedStatus = self::PURCHASED_STATUS_OUT_24;
+        } elseif (!empty($giftCode) && $giftCode['buy_time'] + Util::TIMESTAMP_ONEDAY < time()) {
+            $purchasedStatus = self::PURCHASED_STATUS_IN_24;
+        }
+        return $purchasedStatus;
+    }
+
+
+    /**
+     * 前50名用户
+     * @return array
+     */
+    public static function getBuyUserName(): array
+    {
+        $redis = RedisDB::getConn();
+        $username = $redis->get(self::BUY_NAME_CACHE_KEY);
+        if (empty($username)) {
+            // 最近购买信息
+            $username = DssGiftCodeModel::getBuyUserName();
+
+            array_walk($username, function (&$value) {
+                $value['name'] = mb_substr($value['name'], 0, 3, 'utf-8') . '***';
+            });
+            $redis->set(self::BUY_NAME_CACHE_KEY, json_encode($username));
+            $redis->expire(self::BUY_NAME_CACHE_KEY, 5 * 60);  //5分钟
+        } else {
+            $username = json_decode($username, true);
+        }
+
+        return $username;
+    }
+
+    /**
+     * 获取用户某个渠道的ticket
+     * @param int $userId
+     * @param int $channelId
+     * @return string
+     * @throws \App\Libs\KeyErrorRC4Exception
+     */
+    public static function getUserQrTicket($userId, $channelId)
+    {
+        //获取学生转介绍学生二维码资源数据
+        $res = DssUserQrTicketModel::getUserQrRecord($userId, DssUserQrTicketModel::STUDENT_TYPE, $channelId, DssUserQrTicketModel::LANDING_TYPE_MINIAPP);
+        if (!empty($res['qr_ticket'])) {
+            return $res['qr_ticket'];
+        }else{
+            $data = [
+                'user_id'      => $userId,
+                'type'         => DssUserQrTicketModel::STUDENT_TYPE,
+                'channel_id'   => $channelId,
+                'landing_type' => DssUserQrTicketModel::LANDING_TYPE_MINIAPP,
+            ];
+            (new SaveTicketTopic())->sendTicket($data);
+            return RC4::encrypt($_ENV['COOKIE_SECURITY_KEY'], DssUserQrTicketModel::STUDENT_TYPE . "_" . $userId);
+        }
+
+    }
+
 }
