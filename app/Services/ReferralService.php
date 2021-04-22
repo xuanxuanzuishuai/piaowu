@@ -794,8 +794,6 @@ class ReferralService
             $data['mobile'] = $mobile[0]['mobile'];
             $data['uuid'] = $mobile[0]['uuid'];
             $data['had_purchased'] = self::getPurchasedStatus($mobile[0]['id']);
-        } else {
-            return $data;
         }
 
         // 员工信息：
@@ -860,7 +858,7 @@ class ReferralService
         $paramId = ReferralActivityService::getParamsId(array_merge($sceneData,[
                 'app_id' => Constants::SMART_APP_ID,
                 'type' => ParamMapModel::TYPE_STUDENT,
-                'user_id' => $studentData['id'],
+                'user_id' => $studentData['id'] ?? 0,
             ])
         );
 
