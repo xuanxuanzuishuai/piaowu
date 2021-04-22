@@ -17,12 +17,10 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Libs\RC4;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
-use App\Libs\UserCenter;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Libs\WeChat\WXBizDataCrypt;
 use App\Models\BillMapModel;
 use App\Models\Dss\DssAiPlayRecordCHModel;
-use App\Models\Dss\DssCategoryV1Model;
 use App\Models\Dss\DssChannelModel;
 use App\Models\Dss\DssCollectionModel;
 use App\Models\Dss\DssEmployeeModel;
@@ -809,16 +807,12 @@ class ReferralService
             // 代理商参数的小程序，转发参数依然为代理商
             unset($sceneData['type']);
             $paramId = $sceneData['param_id'];
+            $shareScene = urlencode('&param_id=' . $paramId);
         } else {
-            $paramId = ReferralActivityService::getParamsId(array_merge($sceneData,[
-                'app_id' => Constants::SMART_APP_ID,
-                'type' => ParamMapModel::TYPE_STUDENT,
-                'user_id' => $mobile[0]['id']
-                ])
-            );
+            $shareScene = self::makeReferralMiniShareScene($mobile[0],$sceneData);
         }
 
-        $data['share_scene'] = urlencode('&param_id=' . $paramId);
+        $data['share_scene'] = $shareScene;
 
         $data['scene_data'] = $sceneData;
 
@@ -829,6 +823,7 @@ class ReferralService
      * 生成小程序非首页的分享转介绍参数
      * @param array $studentData 学生信息
      * @param array $scene 首页原始的分享参数
+     * @param array $ext 附加参数
      * @param bool $isTakeActivity 是否保留活动id参数 false不保留 true保留
      * @param bool $isTakeEmployee 是否保留员工id参数 false不保留 true保留
      * @return string
@@ -837,6 +832,7 @@ class ReferralService
     public static function makeReferralMiniShareScene(
         $studentData,
         $scene,
+        $ext = [],
         $isTakeActivity = false,
         $isTakeEmployee = false
     ) {
@@ -847,7 +843,7 @@ class ReferralService
             $sceneData['c'] = DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL,
                 'NORMAL_STUDENT_INVITE_STUDENT');
             //获取用户的ticket
-            $sceneData['r'] = self::getUserQrTicket($studentData['id'],$sceneData['c']);
+            $sceneData['r'] = self::getUserQrTicket($studentData['id'],$sceneData['c'], $ext);
         } else {
             $sceneData['c'] = DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL,
                 'REFERRAL_MINIAPP_STUDENT_INVITE_STUDENT');
@@ -860,7 +856,15 @@ class ReferralService
         if ($isTakeEmployee === true) {
             $sceneData['e'] = $scene['e'];
         }
-        return urlencode(implode('&', $sceneData));
+
+        $paramId = ReferralActivityService::getParamsId(array_merge($sceneData,[
+                'app_id' => Constants::SMART_APP_ID,
+                'type' => ParamMapModel::TYPE_STUDENT,
+                'user_id' => $studentData['id'],
+            ])
+        );
+
+        return urlencode('&param_id=' . $paramId);
     }
 
     /**
@@ -976,7 +980,7 @@ class ReferralService
         if (empty($giftCode)) {
             return self::PURCHASED_STATUS_NONE;
         }
-        if (time() - $giftCode['buy_time'] < Util::TIMESTAMP_ONEDAY) {
+        if (time() - $giftCode[0]['buy_time'] < Util::TIMESTAMP_ONEDAY) {
             return self::PURCHASED_STATUS_IN_24;
         }
         return self::PURCHASED_STATUS_OUT_24;
@@ -1098,8 +1102,7 @@ class ReferralService
             throw new RunTimeException(['referral_poster_make_fail']);
         }
         //分享给好友的scene
-        $qrTicket = self::getUserQrTicket($studentInfo['student_info']['id'], $channelId, ['p' => $posterBaseId,'user_current_status' => $studentInfo['student_status']]);
-        $shareScene = urlencode(implode('&', ['r' => $qrTicket, 'c' => $channelId, 'a' => 0, 'e' => 0]));
+        $shareScene = self::makeReferralMiniShareScene($studentInfo['student_info'],['c' => $channelId],['p' => $posterBaseId,'user_current_status' => $studentInfo['student_status']]);
         return ['poster' => $referralPoster['poster_save_full_path'], 'share_scene' => $shareScene];
     }
 
