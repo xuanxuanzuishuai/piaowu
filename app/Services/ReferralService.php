@@ -846,18 +846,23 @@ class ReferralService
         $isTakeActivity = false,
         $isTakeEmployee = false
     ) {
+        $userId = $studentData['id'] ?? 0;
+
         $sceneData['e'] = $sceneData['a'] = $sceneData['c'] = $sceneData['r'] = '';
         //若用户绑定过小程序，使用小程序转发功能推荐给好友后，若好友注册并购买了体验课，则注册渠道ID为1220，与转发用户形成转介绍关系。
         //若用户未绑定小程序，使用小程序转发功能推荐给好友后，若好友注册并购买了体验课，则注册渠道ID为2185，不形成转介绍关系。
+
         if (!empty($studentData['id'])) {
             $sceneData['c'] = DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL,
                 'NORMAL_STUDENT_INVITE_STUDENT');
-            //获取用户的ticket
-            $sceneData['r'] = self::getUserQrTicket($studentData['id'],$sceneData['c'], $ext);
         } else {
             $sceneData['c'] = DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL,
                 'REFERRAL_MINIAPP_STUDENT_INVITE_STUDENT');
         }
+
+        //获取用户的ticket
+        $sceneData['r'] = self::getUserQrTicket($userId, $sceneData['c'], $ext);
+
         //是否保留活动id参数
         if ($isTakeActivity === true) {
             $sceneData['a'] = $scene['a'];
@@ -870,7 +875,7 @@ class ReferralService
         $paramId = ReferralActivityService::getParamsId(array_merge($sceneData,[
                 'app_id' => Constants::SMART_APP_ID,
                 'type' => ParamMapModel::TYPE_STUDENT,
-                'user_id' => $studentData['id'] ?? 0,
+                'user_id' => $userId,
             ])
         );
 
