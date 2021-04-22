@@ -11,6 +11,8 @@ use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
+use App\Libs\UserCenter;
+use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssPackageExtModel;
 use App\Models\Dss\DssStudentModel;
@@ -253,8 +255,8 @@ class CashGrantService
                 $resultCode = WeChatAwardCashDealModel::NOT_BIND_WE_CHAT;
             }
             if (!empty($userWxInfo['open_id'])) {
-                $subscribeInfo = DssWechatOpenIdListModel::getRecord(['openid' => $userWxInfo['open_id'], 'status' => DssWechatOpenIdListModel::SUBSCRIBE_WE_CHAT, 'user_type' => DssUserWeiXinModel::USER_TYPE_STUDENT, 'busi_type' => DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER]);
-                if (empty($subscribeInfo)) {
+                $subscribeInfo = WeChatMiniPro::factory(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER)->getUserInfo($userWxInfo['open_id']);
+                if (empty($subscribeInfo['subscribe'])) {
                     $ifCan = false;
                     //未关注服务号
                     $status = ErpUserEventTaskAwardModel::STATUS_GIVE_FAIL;
