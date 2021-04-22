@@ -27,12 +27,14 @@ use App\Models\Dss\DssChannelModel;
 use App\Models\Dss\DssCollectionModel;
 use App\Models\Dss\DssEmployeeModel;
 use App\Models\Dss\DssGiftCodeModel;
+use App\Models\Dss\DssPackageExtModel;
 use App\Models\Dss\DssStudentModel;
 use App\Libs\Util;
 use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\Erp\ErpEventTaskModel;
 use App\Models\OperationActivityModel;
+use App\Models\ParamMapModel;
 use App\Models\SharePosterModel;
 use App\Models\PosterModel;
 use App\Models\StudentReferralStudentDetailModel;
@@ -769,8 +771,13 @@ class ReferralService
             $refereeStudent = DssStudentModel::getRecord(['id' => $referrerUserId]);
             $data['referrer_info']['uuid'] = $refereeStudent['uuid'] ?? '';
             list($data['subscribe_status']) = self::formatStudentSubscribeStatus($refereeStudent['has_review_course'], $refereeStudent['sub_status'], $refereeStudent['sub_end_date']);
-            if ($refereeStudent['has_review_course'] == DssStudentModel::REVIEW_COURSE_1980 && ($refereeStudent['sub_end_date'] > date('Ymd'))) {
+            if ($refereeStudent['has_review_course'] == DssStudentModel::REVIEW_COURSE_1980) {
                 $packageType = PayServices::PACKAGE_0;
+            }else{
+                $giftCode = DssGiftCodeModel::hadPurchasePackageByType($referrerUserId, DssPackageExtModel::PACKAGE_TYPE_NORMAL);
+                if (!empty($giftCode)){
+                    $packageType = PayServices::PACKAGE_0;
+                }
             }
         }
         // 是否可0元购买开关
@@ -801,10 +808,17 @@ class ReferralService
         if ($isAgent) {
             // 代理商参数的小程序，转发参数依然为代理商
             unset($sceneData['type']);
-            $data['share_scene'] = urlencode('&param_id=' . $sceneData['param_id']);
+            $paramId = $sceneData['param_id'];
         } else {
-            $data['share_scene'] = self::makeReferralMiniShareScene($mobile[0], $sceneData);
+            $paramId = ReferralActivityService::getParamsId(array_merge($sceneData,[
+                'app_id' => Constants::SMART_APP_ID,
+                'type' => ParamMapModel::TYPE_STUDENT,
+                'user_id' => $mobile[0]['id']
+                ])
+            );
         }
+
+        $data['share_scene'] = urlencode('&param_id=' . $paramId);
 
         $data['scene_data'] = $sceneData;
 
