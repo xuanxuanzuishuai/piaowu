@@ -176,7 +176,7 @@ class RecallLandingService
         QueueService::sendAssistantSms($data);
         QueueService::sendAssistantSmsBi([
             'uuid' => $data['uuid'],
-            'activity_id' => strval($data['event_id']),
+            'activity_id' => strval($params['activity_id']),
             'content' => $smsConfig['content'] ?? ''
         ]);
         return true;
