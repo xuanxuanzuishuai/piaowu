@@ -426,7 +426,7 @@ class CashGrantService
 
         $time = time();
         // 获取订单号 - 如果之前已经存在交易号用之前的交易号重试
-        $mchBillNo = self::getMchBillNo($orderInfo['id'], $recordInfo, $orderInfo['order_amounts']);
+        $mchBillNo = self::createMchBillNo([$orderInfo['id'], $recordSn['record_sn']], $recordInfo, $orderInfo['order_amounts']);
         $keyCode = 'POINTS_EXCHANGE_RED_PACK_SEND_NAME';
 
         // 调取微信发红包接口
@@ -455,8 +455,8 @@ class CashGrantService
      */
     public static function checkSendRedPackDataRight($orderInfo)
     {
-        //金额要大于0
-        if ($orderInfo['order_amounts'] <= 0) {
+        //金额要大于100分，小于1块不能发送
+        if ($orderInfo['order_amounts'] < 100) {
             SimpleLogger::info('CashGrantService::checkIsCanSendRedPack', ['err' => 'amount not enough', 'order_info' => $orderInfo]);
             return false;
         }
@@ -521,6 +521,9 @@ class CashGrantService
             $openId = $userWxInfo['open_id'];
             // 红包对应的文字
             list($actName, $sendName, $wishing) = self::getRedPackConfigWord($keyCode);
+            $wishing = str_replace('{{order_amounts}}', $orderInfo['order_amounts']/100, $wishing);
+            $sendName = str_replace('{{order_amounts}}', $orderInfo['order_amounts']/100, $sendName);
+            $actName = str_replace('{{order_amounts}}', $orderInfo['order_amounts']/100, $actName);
 
             //请求微信发红包
             $resultData = $weChatPackage->sendPackage($mchBillNo, $actName, $sendName, $openId, $orderInfo['order_amounts'], $wishing, 'redPack');
@@ -625,5 +628,21 @@ class CashGrantService
                 // QueueService::messageRulePushMessage([['delay_time' => 0, 'rule_id' => DictConstants::get(DictConstants::MESSAGE_RULE, 'receive_red_pack_rule_id'), 'open_id' => $awardInfo['open_id']]]);
             }
         }
+    }
+
+    /**
+     * 多个条件生成订单号
+     * @param $mchBill
+     * @param $hasRedPackRecord
+     * @param $amount
+     * @return mixed|string
+     * 如果已经有微信红包记录，并且错误码为 微信内部/ca错误的 用原有单号重试
+     */
+    public static function createMchBillNo($mchBill, $hasRedPackRecord, $amount)
+    {
+        if (is_array($mchBill)) {
+            $mchBill = implode("a",array_values($mchBill));
+        }
+        self::getMchBillNo($mchBill,$hasRedPackRecord,$amount);
     }
 }

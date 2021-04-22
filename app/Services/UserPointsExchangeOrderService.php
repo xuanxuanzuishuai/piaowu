@@ -76,7 +76,7 @@ class UserPointsExchangeOrderService
             'user_points_exchange_order_id' => $id,
             'uuid' => $uuid,
             'user_id' => $userInfo['id'],
-            'mch_billno' => "",
+            'mch_billno' => CashGrantService::createMchBillNo([$id, $params['record_sn']], [], $params['red_amounts']),
             'order_amounts' => $params['red_amounts'],
             'status' => UserPointsExchangeOrderWxModel::STATUS_WAITING,
             'record_sn' => $params['record_sn']

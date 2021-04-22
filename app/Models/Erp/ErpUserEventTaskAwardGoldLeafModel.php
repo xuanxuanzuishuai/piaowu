@@ -38,6 +38,9 @@ class ErpUserEventTaskAwardGoldLeafModel extends ErpModel
 
         $returnList = ['list' => [], 'total' => 0];
         $sqlWhere = [];
+        if (isset($where['id'])) {
+            $sqlWhere[] = 'a.id=' . $where['id'];
+        }
         if (isset($where['user_id'])) {
             $sqlWhere[] = 'a.user_id=' . $where['user_id'];
         }
