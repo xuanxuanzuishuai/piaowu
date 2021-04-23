@@ -13,6 +13,12 @@ class ErpEventTaskModel extends ErpModel
     const AWARD_TO_REFERRER = 1; //奖励介绍人
     const AWARD_TO_BE_REFERRER = 2; //奖励被介绍人
 
+    // 奖励类型
+    const AWARD_TYPE_CASH = 1; // 现金
+    const AWARD_TYPE_DURATION = 2; // 有效期时长
+    const AWARD_TYPE_INTEGRATION = 3; // 积分
+
+
 
     //event_task_type
     const BUY = 4; //购买

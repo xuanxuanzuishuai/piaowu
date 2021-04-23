@@ -27,6 +27,8 @@ class DSSRouter extends RouterBase
 
         '/dss/share_post/get_params_id' => ['method' => ['post'], 'call' => Dss::class . ':getParamsId'],
         '/dss/share_post/get_params_info' => ['method' => ['get'], 'call' => Dss::class . ':getParamsInfo'],
+        // 上传截图奖励明细列表
+        '/dss/share_post/award_list' => ['method' => ['get'], 'call' => Dss::class . ':sharePostAwardList'],
         '/dss/referral/create_relation' => ['method' => ['post'], 'call' => Dss::class . ':createRelation'],
         '/dss/red_pack/red_pack_info' => ['method' => ['get'], 'call' => Dss::class . ':redPackInfo'],
         // 海报底图数据
@@ -51,5 +53,7 @@ class DSSRouter extends RouterBase
         '/dss/student/update_tag' => ['method' => ['get'], 'call' => Dss::class . ':updateUserTag'],
         // 积分兑换红包列表
         '/dss/points/exchange_red_pack_list' => ['method' => ['get'], 'call' => Dss::class . ':pointsExchangeRedPackList'],
+        // dss手动重试发送积分红包
+        '/dss/points/retry_exchange_red_pack' => ['method' => ['post'], 'call' => Dss::class . ':retryExchangeRedPack'],
     ];
 }

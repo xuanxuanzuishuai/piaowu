@@ -195,7 +195,7 @@ class UserRefereeService
             $erp = new Erp();
             $pushMessageData = [];  //消息队列需要的数据
             foreach ($refTaskId as $taskId) {
-                $taskResult = $erp->addEventTaskAward($studentInfo['uuid'], $taskId, $sendStatus);
+                $taskResult = $erp->addEventTaskAward($studentInfo['uuid'], $taskId, $sendStatus, $refereeRelation['referee_id']);
                 SimpleLogger::info("UserRefereeService::dssCompleteEventTask", [
                     'params' => [
                         $studentId,
@@ -219,7 +219,7 @@ class UserRefereeService
             // 积分发放成功后 把消息放入到 客服消息队列
             switch ($packageType) {
                 case DssPackageExtModel::PACKAGE_TYPE_TRIAL:    //购买体验包会直接给用户发放积分奖励 - 这里直接发送客服消息
-                    (new PushMessageTopic())->pushWX($pushMessageData,PushMessageTopic::EVENT_PAY_TRIAL);
+                    (new PushMessageTopic())->pushWX($pushMessageData,PushMessageTopic::EVENT_PAY_TRIAL)->publish();
                     break;
                 default:
                     break;
@@ -295,8 +295,8 @@ class UserRefereeService
                 }
 
                 // 查询被推荐人数量：
-                $refereeCount = self::getRefereeCount($refereeInfo, $startPoint);
                 $noChangeNumber = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'task_stop_change_number');
+                $refereeCount = self::getRefereeCount($refereeInfo, $startPoint, DssStudentModel::REVIEW_COURSE_1980, $noChangeNumber);
                 if ($refereeCount > $noChangeNumber) {
                     $refereeCount = $noChangeNumber;
                 }
@@ -332,43 +332,28 @@ class UserRefereeService
     }
 
     /**
-     * 查询被推荐人数量
+     * 查询被推荐人是推荐人指定时间内成功推荐的第几个人
+     * 时间是 自然月，  类型年卡
      * @param $refereeInfo
      * @param $startPoint
      * @param int $type
      * @return int
      */
-    public static function getRefereeCount($refereeInfo, $startPoint, $type = DssStudentModel::REVIEW_COURSE_1980)
+    public static function getRefereeCount($refereeInfo, $startPoint, $type = DssStudentModel::REVIEW_COURSE_1980, $noChangeNumber = 1000)
     {
-        $refereeData = StudentInviteModel::getRefereeBuyData(
-            [
-                'referee_id' => $refereeInfo['id'],
-                'create_time' => $startPoint
-            ],
-            $type
-        );
+        $where = [
+            'last_stage' => $type,
+            'create_time[>=]' => $startPoint,
+            'LIMIT' => [0, $noChangeNumber + 10], // 增加10个偏移量，这个是说明当前需要查询到最多的人数，超过这个说说明后面的奖励应该是一样的
+        ];
+        $refereeData = StudentReferralStudentStatisticsModel::getRecords($where);
         if (empty($refereeData)) {
-            SimpleLogger::error("EMPTY REFEREE DATA", [$refereeInfo, $startPoint, $type]);
+            SimpleLogger::error("EMPTY REFEREE DATA", [$refereeInfo, $startPoint, $type, $noChangeNumber]);
             return 0;
         }
-        // 被推荐人个数
-        $refereeCount = 0;
-        // 查询出来的被推荐人购买数据一定包含当前购买人
-        $includeFlag = false;
-        foreach ($refereeData as $item) {
-            if ($item['create_time'] >= $startPoint) {
-                $refereeCount++;
-            }
-            // 筛选到当前被推荐人时停止计数
-            if ($item['buyer'] == $refereeInfo['student_id']) {
-                $includeFlag = true;
-                break;
-            }
-        }
-        if (empty($refereeCount) || !$includeFlag) {
-            SimpleLogger::error('RETURN TASK ID:0', [$refereeCount, $refereeInfo, $refereeData]);
-            return 0;
-        }
-        return $refereeCount;
+        // 计算被推荐人所在的位置
+        $refList = array_column($refereeData, 'student_id');
+        $refereeCount = array_search($refereeInfo['student_id'], $refList);
+        return empty($refereeCount) ? intval($refereeCount) : 0;
     }
 }

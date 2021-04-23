@@ -152,4 +152,32 @@ class UserPointsExchangeOrderService
         $returnList['records'] = $list;
         return $returnList;
     }
+
+    /**
+     * 重试发送积分兑换红包
+     * @throws RunTimeException
+     */
+    public static function retryExchangeRedPack($ids)
+    {
+        $awardList = UserPointsExchangeOrderWxModel::getRecords(['id' => $ids]);
+        if (empty($awardList)) {
+            return true;
+        }
+        foreach ($awardList as $item) {
+            // 放入待发放红包队列
+            $queueData = ['user_points_exchange_order_id' => $item['user_points_exchange_order_id'], 'record_sn' => $item['record_sn']];
+            try {
+                (new UserPointsExchangeRedPackTopic())->sendRedPack($queueData)->publish();
+            } catch (RunTimeException $e) {
+                SimpleLogger::info('UserExchangePointsOrderService::retryExchangeRedPack', [
+                    'err' => 'retryExchangeRedPack',
+                    'id' => $ids,
+                    'queueData' => $queueData,
+                    'add_queue_err' => $e->getMessage(),
+                ]);
+                return false;
+            }
+        }
+        return true;
+    }
 }

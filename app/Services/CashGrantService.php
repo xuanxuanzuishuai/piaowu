@@ -413,14 +413,14 @@ class CashGrantService
         // 检查数据是否正确，不正确直接作废
         if (!self::checkSendRedPackDataRight($recordInfo)) {
             SimpleLogger::info('CashGrantService::pointsExchangeRedPack', ['err' => 'checkIsCanSendRedPack is false', 'id' => $userPointsExchangeOrderId, 'order_info' => $orderInfo]);
-            UserPointsExchangeOrderWxModel::updateStatusDisabled($userPointsExchangeOrderId, UserPointsExchangeOrderModel::STATUS_CODE_RED_PACK_DATA_ERROR);
+            UserPointsExchangeOrderWxModel::updateStatusDisabled($recordInfo['id'], UserPointsExchangeOrderModel::STATUS_CODE_RED_PACK_DATA_ERROR);
             return false;
         }
         // 检查用户是否可接受 - 绑定微信，关注公众号
         list($statusCode, $userWxInfo) = self::checkUserIsCanAcceptRedPack($orderInfo);
         if (!empty($statusCode)) {
             SimpleLogger::info('CashGrantService::pointsExchangeRedPack', ['err' => 'checkUserIsCanAcceptRedPack is false', 'id' => $userPointsExchangeOrderId, 'order_info' => $orderInfo]);
-            UserPointsExchangeOrderWxModel::updateStatusFailed($userPointsExchangeOrderId, $statusCode);
+            UserPointsExchangeOrderWxModel::updateStatusFailed($recordInfo['id']['id'], $statusCode);
             return false;
         }
 

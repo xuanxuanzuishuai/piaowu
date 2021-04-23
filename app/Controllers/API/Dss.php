@@ -25,6 +25,7 @@ use App\Services\AgentService;
 use App\Services\ReferralActivityService;
 use App\Libs\Exceptions\RunTimeException;
 use App\Services\ReferralService;
+use App\Services\SharePosterService;
 use App\Services\ThirdPartBillService;
 use App\Services\UserPointsExchangeOrderService;
 use App\Services\UserRefereeService;
@@ -458,7 +459,7 @@ class Dss extends ControllerBase
         }
         try {
             list($page, $limit) = Util::formatPageCount($params);
-            $res = ErpUserEventTaskAwardGoldLeafService::getWaitingGoldLeafList($params, $page, $limit);
+            $res = ErpUserEventTaskAwardGoldLeafService::getWaitingGoldLeafList($params, $page, $limit,true);
         } catch (RunTimeException $e) {
             SimpleLogger::info("Dss::goldLeafList error", ['params' => $params, 'err' => $e->getData()]);
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
@@ -588,6 +589,68 @@ class Dss extends ControllerBase
             }
             list($page, $count) = Util::formatPageCount($params);
             $res = UserPointsExchangeOrderService::getList($params, $page, $count);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, $res);
+    }
+
+    /**
+     * 手动发送积分兑换红包
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function retryExchangeRedPack(Request $request, Response $response)
+    {
+        try {
+            $rules = [
+                [
+                    'key' => 'points_exchange_order_wx_id',
+                    'type' => 'required',
+                    'error_code' => 'points_exchange_order_wx_id_is_required'
+                ]
+            ];
+            $params = $request->getParams();
+            $result = Valid::appValidate($params, $rules);
+            if ($result['code'] != Valid::CODE_SUCCESS) {
+                return $response->withJson($result, StatusCode::HTTP_OK);
+            }
+            $res = UserPointsExchangeOrderService::retryExchangeRedPack($params['points_exchange_order_wx_id']);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, $res);
+    }
+
+    /**
+     * 上传截图奖励明细列表
+     * @param Request $request
+     * @param Response $response
+     */
+    public function sharePostAwardList(Request $request, Response $response)
+    {
+        try {
+            $rules = [
+                [
+                    'key' => 'count',
+                    'type' => 'integer',
+                    'error_code' => 'count_is_integer'
+                ],
+                [
+                    'key' => 'page',
+                    'type' => 'integer',
+                    'error_code' => 'page_is_integer'
+                ],
+            ];
+            $params = $request->getParams();
+            $result = Valid::appValidate($params, $rules);
+            if ($result['code'] != Valid::CODE_SUCCESS) {
+                return $response->withJson($result, StatusCode::HTTP_OK);
+            }
+            $studentId = $this->ci['user_info']['user_id'];
+            list($page, $count) = Util::formatPageCount($params);
+            $res = SharePosterService::sharePostAwardList($studentId, $page, $count);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }

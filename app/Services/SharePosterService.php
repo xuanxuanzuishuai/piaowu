@@ -21,6 +21,7 @@ use App\Models\Dss\DssSharePosterModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\Erp\ErpEventTaskModel;
+use App\Models\Erp\ErpUserEventTaskAwardGoldLeafModel;
 use App\Models\Erp\ErpUserEventTaskAwardModel;
 use App\Models\Erp\ErpUserEventTaskModel;
 use App\Models\SharePosterModel;
@@ -307,6 +308,9 @@ class SharePosterService
         } elseif ($type == 2) {
             //时间单位：天
             return $amount . '天';
+        } elseif ($type == 3) {
+            // 积分
+            return $amount . '积分';
         }
     }
 
@@ -358,5 +362,83 @@ class SharePosterService
         }
         $awardStatusZh = ErpReferralService::AWARD_STATUS[$awardGiveInfo['status']];
         return [$awardStatusZh, $failReasonZh];
+    }
+
+    /**
+     * 上传截图奖励明细列表
+     * @param $studentId
+     * @param $page
+     * @param $limit
+     * @return array
+     */
+    public static function sharePostAwardList($studentId, $page, $limit)
+    {
+        //获取学生已参加活动列表
+        $data = ['count' => 0, 'list' => []];
+        $queryWhere = ['student_id' => $studentId, 'type' => DssSharePosterModel::TYPE_UPLOAD_IMG];
+        $count = DssSharePosterModel::getCount($queryWhere);
+        if (empty($count)) {
+            return $data;
+        }
+        $data['count'] = $count;
+        //查询起始数据量超出数据总量，直接返回
+        $offset = ($page - 1) * $limit;
+        if ($offset > $count) {
+            return $data;
+        }
+        $queryWhere['ORDER'] = ['create_time' => 'DESC'];
+        $queryWhere['LIMIT'] = [$offset, $limit];
+        $activityList = DssSharePosterModel::getRecords($queryWhere, ['id','activity_id', 'status', 'create_time', 'img_url', 'reason', 'remark', 'award_id', 'points_award_id']);
+        if (empty($activityList)) {
+            return $data;
+        }
+        // 获取老的红包奖励信息
+        $awardIds = array_filter(array_unique(array_column($activityList, 'award_id')));
+        $awardInfo = $redPackDeal = [];
+        if (!empty($awardIds)) {
+            //奖励相关的状态
+            $awardInfo = array_column(ErpUserEventTaskAwardModel::getRecords(['id'=>$awardIds], ['id','award_amount','award_type','status','reason']), null, 'id');
+            //红包相关的发放状态
+            $redPackDeal = array_column(WeChatAwardCashDealModel::getRecords(['user_event_task_award_id' => $awardIds]), null, 'user_event_task_award_id');
+        }
+        // 获取新的积分奖励信息
+        $pointsAwardIds = array_column($activityList, 'points_award_id');
+        if (!empty($pointsAwardIds)) {
+            $pointsAwardList = ErpUserEventTaskAwardGoldLeafModel::getRecords(['id' => $pointsAwardIds]);
+            $pointsAwardArr = array_column($pointsAwardList, null, 'id');
+        }
+
+        //获取活动信息
+        $activityInfo = array_column(DssReferralActivityModel::getRecords(['id' => array_unique(array_column($activityList, 'activity_id'))], ['name', 'id', 'task_id', 'event_id']), null, 'id');
+        //格式化信息
+        $activityList = self::formatData($activityList);
+        foreach ($activityList as $k => $v) {
+            $data['list'][$k]['name'] = $activityInfo[$v['activity_id']]['name'];
+            $data['list'][$k]['status'] = $v['status'];
+            $data['list'][$k]['status_name'] = $v['status_name'];
+            $data['list'][$k]['create_time'] = date('Y-m-d H:i', $v['create_time']);
+            $data['list'][$k]['img_oss_url'] = $v['img_oss_url'];
+            $data['list'][$k]['reason_str'] = $v['reason_str'];
+            $data['list'][$k]['id'] = $v['id'];
+            // 计算奖励
+            if ($v['points_award_id'] >0) {
+                $_pointsAwardInfo = !empty($pointsAwardArr[$v['points_award_id']]) ? $pointsAwardArr[$v['points_award_id']] : [];
+                // 积分奖励
+                $_awardNum =  $_pointsAwardInfo['award_num'] ?? 0;
+                $_awardType =  ErpEventTaskModel::AWARD_TYPE_INTEGRATION;
+                $awardStatusZh = ErpReferralService::AWARD_STATUS[$_pointsAwardInfo['status']];
+                $failReasonZh = "";
+            }else {
+                // 老版现金奖励
+                $_awardNum =  !empty($awardInfo[$v['award_id']]) ? $awardInfo[$v['award_id']]['award_amount'] : 0;
+                $_awardType =  !empty($awardInfo[$v['award_id']]) ? $awardInfo[$v['award_id']]['award_type'] : 0;
+                list($awardStatusZh, $failReasonZh) = !empty($v['award_id']) ? self::displayAwardExplain($awardInfo[$v['award_id']], $awardInfo[$v['award_id']], $redPackDeal[$v['award_id']] ?? null) : [];
+            }
+
+            $data['list'][$k]['award'] = self::formatAwardInfo($_awardNum, $_awardType);
+            $data['list'][$k]['award_status_zh'] = $awardStatusZh;
+            $data['list'][$k]['fail_reason_zh'] = $failReasonZh;
+        }
+        return $data;
     }
 }

@@ -668,14 +668,16 @@ class Erp
      * @param $uuid
      * @param $eventTaskId
      * @param $status
+     * @param $refereeUid
      * @return array|bool
      */
-    public function addEventTaskAward($uuid, $eventTaskId, $status, $awardId = 0)
+    public function addEventTaskAward($uuid, $eventTaskId, $status, $awardId = 0, $refereeUid = '')
     {
         $params = [
             'app_id' => Constants::SMART_APP_ID,
             'user_type' => 1,
             'uuid' => $uuid,
+            'refereeUid' => $refereeUid,
             'event_task_id' => $eventTaskId,
             'status' => $status,
             'task_award_id' => $awardId

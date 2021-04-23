@@ -17,8 +17,10 @@ require_once PROJECT_ROOT . '/vendor/autoload.php';
 use App\Libs\Erp;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
+use App\Models\Dss\DssStudentModel;
 use App\Models\Erp\ErpUserEventTaskAwardGoldLeafModel;
 use App\Models\Erp\ErpUserEventTaskModel;
+use App\Models\StudentReferralStudentStatisticsModel;
 use App\Services\CashGrantService;
 use App\Services\Queue\PushMessageTopic;
 use Dotenv\Dotenv;
@@ -37,6 +39,26 @@ if (empty($pointsList)) {
     return 'success';
 }
 
+// 获取奖励所有推荐人uuid
+$studentUuid = array_column($pointsList, 'uuid');
+// 获取学生的id
+$studentIdList = DssStudentModel::getRecords(['uuid' => $studentUuid], ['id']);
+$studentIdToUuid = array_column($studentIdList,'uuid', 'id');
+// 获取转介绍关系
+$refList = StudentReferralStudentStatisticsModel::getRecords(['student_id' => array_column($studentIdList, 'id')]);
+// 取得介绍人的uuid
+$refUuidList = DssStudentModel::getRecords(['id' => array_column($refList, 'referee_id')], ['id', 'uuid']);
+$refUuidArr = array_column($refUuidList, 'uuid', 'id');
+// 整理用户推荐的uuid
+$studentRef=[];
+foreach ($refList as $item) {
+    $_stu_uuid = $studentIdToUuid[$item['student_id']] ?? '';
+    if (empty($_stu_uuid)) {
+        continue;
+    }
+    $studentRef[$_stu_uuid] = $refUuidArr[$item['referee_id']];
+}
+
 $time = time();
 $erp = new Erp();
 foreach ($pointsList as $points) {
@@ -45,6 +67,7 @@ foreach ($pointsList as $points) {
     if ($points['status'] == ErpUserEventTaskAwardGoldLeafModel::STATUS_WAITING) {
         // 如果待发放的没有到期，则不发放
         $delayTime = $points['create_time'] + ($points['delay'] * Util::TIMESTAMP_ONEDAY);
+
         if ($delayTime > $time) {
             continue;
         }
@@ -57,14 +80,15 @@ foreach ($pointsList as $points) {
         }
     }
 
-    $taskResult = $erp->addEventTaskAward($points['uuid'], $points['event_task_id'], $status, $points['id']);
+    $taskResult = $erp->addEventTaskAward($points['uuid'], $points['event_task_id'], $status, $points['id'],$studentRef[$points['uuid']]);
     SimpleLogger::info("script::auto_send_task_award_points", [
         'params' => $points,
         'response' => $taskResult,
+        'status' => $status,
     ]);
     // 积分发放成功后 把消息放入到 客服消息队列
     if (!empty($taskResult['data'])) {
         $pushMessageData[] = ['points_award_ids' => $taskResult['data']['points_award_ids']];
-        (new PushMessageTopic())->pushWX($pushMessageData,PushMessageTopic::EVENT_PAY_TRIAL);
+        (new PushMessageTopic())->pushWX($pushMessageData,PushMessageTopic::EVENT_PAY_TRIAL)->publish();
     }
 }
