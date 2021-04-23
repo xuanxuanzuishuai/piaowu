@@ -55,10 +55,5 @@ class APIRouter extends RouterBase
             'call' => Consumer::class . ':studentAccountAwardPoints',
             'middles' => [],
         ],
-        '/api/consumer/wechat' => [
-            'method' => ['post'],
-            'call' => Consumer::class . ':wechatConsumer',
-            'middles' => [],
-        ]
     ];
 }
