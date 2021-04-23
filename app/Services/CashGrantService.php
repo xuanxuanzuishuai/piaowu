@@ -643,6 +643,6 @@ class CashGrantService
         if (is_array($mchBill)) {
             $mchBill = implode("a",array_values($mchBill));
         }
-        self::getMchBillNo($mchBill,$hasRedPackRecord,$amount);
+        return self::getMchBillNo($mchBill,$hasRedPackRecord,$amount);
     }
 }

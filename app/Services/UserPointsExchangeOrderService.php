@@ -118,24 +118,24 @@ class UserPointsExchangeOrderService
     {
         $returnList = ['records' => [], 'total_count' => []];
         $where = [];
-        if (isset($params['student_uuid'])) {
+        if (!empty($params['student_uuid'])) {
             $where['uuid'] = $params['student_uuid'];
         }
-        if (isset($params['reviewer_id'])) {
+        if (!empty($params['reviewer_id'])) {
             $where['uuid'] = $params['reviewer_id'];
         }
-        if (isset($params['student_mobile'])) {
+        if (!empty($params['student_mobile'])) {
             $studentList = DssStudentModel::getRecords(['mobile' => $params['student_mobile']], ['uuid']);
             $where['uuid'] = array_column($studentList,'uuid');
         }
-        if (isset($params['award_status'])) {
+        if (!empty($params['award_status'])) {
             $where['status'] = $params['award_status'];
         }
-        if (isset($params['s_create_time'])) {
-            $where['[>=]create_time'] = $params['s_create_time'];
+        if (!empty($params['s_create_time'])) {
+            $where['create_time[>=]'] = $params['s_create_time'];
         }
-        if (isset($params['e_create_time'])) {
-            $where['[<]create_time'] = $params['e_create_time'];
+        if (!empty($params['e_create_time'])) {
+            $where['create_time[<]'] = $params['e_create_time'];
         }
         $returnList['total_count'] = UserPointsExchangeOrderWxModel::getCount($where);
 
@@ -146,6 +146,8 @@ class UserPointsExchangeOrderService
         foreach ($list as $_key => $_info) {
             $list[$_key]['student_uuid'] = $_info['uuid'];
             $list[$_key]['award_status_zh'] = UserPointsExchangeOrderWxModel::STATUS_DICT[$_info['status']];
+            $list[$_key]['user_event_task_award_id'] = $_info['id'];
+            $list[$_key]['student_mobile'] = $_info['id'];
         }
         $returnList['records'] = $list;
         return $returnList;

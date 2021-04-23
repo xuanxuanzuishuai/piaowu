@@ -269,8 +269,7 @@ class PushMessageService
         $url = $urlArr[$awardDetailInfo['type']] ?? '';
         $activityName  = '';
         if ($awardDetailInfo['type'] == ErpEventModel::DAILY_UPLOAD_POSTER) {
-            $activityId = !empty($ext['activity_id']) ? $ext['activity_id'] : DssSharePosterModel::getRecord(['award_id' => $awardDetailInfo['award_id']], 'activity_id');
-
+            $activityId = !empty($ext['activity_id']) ? $ext['activity_id'] : DssSharePosterModel::getRecord(['points_award_id' => $awardDetailInfo['id']], 'activity_id');
             $activityName = DssReferralActivityModel::getRecord(['id' => $activityId], 'name');
         }
 

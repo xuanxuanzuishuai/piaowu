@@ -111,5 +111,5 @@ INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES
 UPDATE `dict` SET `key_value` = '478' WHERE `type` = 'normal_upload_poster_task' and `key_value`='302' and `key_code`='-1';
 UPDATE `dict` SET `key_value` = '476' WHERE `type` = 'normal_upload_poster_task' and `key_value`='300' and `key_code`='0';
 UPDATE `dict` SET `key_value` = '477' WHERE `type` = 'normal_upload_poster_task' and `key_value`='301' and `key_code`='1';
-UPDATE `dict` SET `key_value` = '478' WHERE `type` = 'normal_upload_poster_task' and `key_value`='301' and `key_code`='2';
+UPDATE `dict` SET `key_value` = '477' WHERE `type` = 'normal_upload_poster_task' and `key_value`='301' and `key_code`='2';
 

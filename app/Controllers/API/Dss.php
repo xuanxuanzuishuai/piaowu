@@ -591,6 +591,6 @@ class Dss extends ControllerBase
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
-        return HttpHelper::buildResponse($response, ['type' => $res]);
+        return HttpHelper::buildResponse($response, $res);
     }
 }
