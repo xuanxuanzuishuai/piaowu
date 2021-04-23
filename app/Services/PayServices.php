@@ -41,6 +41,14 @@ class PayServices
 
     const PAY_TYPE_DIRECT = 1; // 直付
     const PAY_TYPE_ACCOUNT = 2; // 账户
+
+    const NEW_PAY_CHANNEL_DICT = [
+        self::PAY_CHANNEL_ALIPAY         => self::PAY_CHANNEL_V1_ALIPAY,
+        self::PAY_CHANNEL_WEIXIN_H5      => self::PAY_CHANNEL_V1_WEIXIN_H5,
+        self::PAY_CHANNEL_ALIPAY_PC      => self::PAY_CHANNEL_V1_ALIPAY_PC,
+        self::PAY_CHANNEL_PUB            => self::PAY_CHANNEL_V1_WEIXIN,
+        self::PAY_CHANNEL_WEIXIN_MINIPRO => self::PAY_CHANNEL_V1_WEIXIN_MINIPRO,
+    ];
     /**
      * 获取学生体验课包的订单
      * @param $mobile
@@ -77,26 +85,7 @@ class PayServices
      */
     public static function payChannelToV1($oldPayChannel)
     {
-        switch ($oldPayChannel) {
-            case self::PAY_CHANNEL_ALIPAY:
-                $newPayChannel = self::PAY_CHANNEL_V1_ALIPAY;
-                break;
-            case self::PAY_CHANNEL_WEIXIN_H5:
-                $newPayChannel = self::PAY_CHANNEL_V1_WEIXIN_H5;
-                break;
-            case self::PAY_CHANNEL_ALIPAY_PC:
-                $newPayChannel = self::PAY_CHANNEL_V1_ALIPAY_PC;
-                break;
-            case self::PAY_CHANNEL_PUB:
-                $newPayChannel = self::PAY_CHANNEL_V1_WEIXIN;
-                break;
-            case self::PAY_CHANNEL_WEIXIN_MINIPRO:
-                $newPayChannel = self::PAY_CHANNEL_V1_WEIXIN_MINIPRO;
-                break;
-            default:
-                $newPayChannel = $oldPayChannel;
-        }
-        return $newPayChannel;
+        return self::NEW_PAY_CHANNEL_DICT[$oldPayChannel] ?? $oldPayChannel;
     }
 
     /**

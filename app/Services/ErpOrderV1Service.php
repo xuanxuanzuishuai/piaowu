@@ -67,6 +67,43 @@ class ErpOrderV1Service
     }
 
     /**
+     * 创建0元体验订单
+     * @param $packageId
+     * @param $student
+     * @param string $remark
+     * @return array|mixed
+     * @throws RunTimeException
+     */
+    public static function createZeroOrder($packageId, $student, $remark = '')
+    {
+        self::checkHadPurchaseTrail($student['id']);
+
+        $erp = new Erp();
+        $res = $erp->createZeroBillV1([
+            'uuid' => $student['uuid'],
+            'package_id' => $packageId,
+            'remark' => $remark
+        ]);
+        if (empty($res) || !empty($res['code'])) {
+            SimpleLogger::error('CREATE BILL ERROR', [$res]);
+            throw new RunTimeException(['create_bill_error', '', '', [':'.$res['errors'][0]['err_msg']]]);
+        }
+        return $result['data'] ?? [];
+    }
+
+    /**
+     * @param $studentId
+     * @throws RunTimeException
+     */
+    public static function checkHadPurchaseTrail($studentId)
+    {
+        if (DssGiftCodeModel::hadPurchasePackageByType($studentId, DssPackageExtModel::PACKAGE_TYPE_TRIAL, false)) {
+            SimpleLogger::error('has_trialed', ['student_id' => $studentId]);
+            throw new RunTimeException(['has_trialed']);
+        }
+    }
+
+    /**
      * @param $packageId
      * @param $student
      * @param $payChannel
@@ -81,10 +118,8 @@ class ErpOrderV1Service
     public static function createOrder($packageId, $student, $payChannel, $payType, $employeeUuid, $channel, $giftGoods = [], $callback = null)
     {
         $studentId = $student['id'];
-        if ($student['package_sub_type'] == DssCategoryV1Model::DURATION_TYPE_TRAIL
-            && DssGiftCodeModel::hadPurchasePackageByType($studentId, DssPackageExtModel::PACKAGE_TYPE_TRIAL, false)) {
-            SimpleLogger::error('has_trialed', ['student_id' => $studentId]);
-            throw new RunTimeException(['has_trialed']);
+        if ($student['package_sub_type'] == DssCategoryV1Model::DURATION_TYPE_TRAIL) {
+            self::checkHadPurchaseTrail($studentId);
         }
 
         $callbacks  = self::callbacks($channel, $payChannel);

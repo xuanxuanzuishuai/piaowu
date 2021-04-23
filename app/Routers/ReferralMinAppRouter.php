@@ -10,9 +10,8 @@ namespace App\Routers;
 use App\Controllers\Agent\Agent;
 use App\Controllers\ReferralMiniapp\Landing;
 use App\Controllers\ReferralMiniapp\Pay;
+use App\Controllers\StudentWX\Student;
 use App\Middleware\ReferralMinAppAuthCheckMiddleware;
-use App\Middleware\ReferralMinAppServerCheckMiddleware;
-use App\Controllers\Agent\Auth as AgentAuth;
 
 class ReferralMinAppRouter extends RouterBase
 {
@@ -21,7 +20,7 @@ class ReferralMinAppRouter extends RouterBase
     protected $uriConfig = [
         '/referral_miniapp/landing/send_sms_code' => [
             'method'  => ['get'],
-            'call'    => AgentAuth::class . ':loginSmsCode',
+            'call'    => Student::class.':sendSmsCode',
             'middles' => []
         ],
         '/referral_miniapp/landing/country_code' => [

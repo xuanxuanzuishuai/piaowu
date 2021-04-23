@@ -10,6 +10,7 @@ namespace App\Controllers\ReferralMiniapp;
 
 use App\Controllers\ControllerBase;
 use App\Libs\Constants;
+use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\RC4;
@@ -48,6 +49,11 @@ class Pay extends ControllerBase
                 'key'        => 'uuid',
                 'type'       => 'required',
                 'error_code' => 'uuid_is_required',
+            ],
+            [
+                'key'        => 'pkg',
+                'type'       => 'required',
+                'error_code' => 'pkg_is_required',
             ]
         ];
         $params = $request->getParams();
@@ -57,42 +63,37 @@ class Pay extends ControllerBase
         }
         try {
             $student = DssStudentModel::getRecord(['uuid' => $params['uuid']]);
-            $openId = $params['open_id'];
+            if (empty($student)) {
+                throw new RunTimeException(['record_not_found']);
+            }
+            $openId = $params['open_id'] ?? '';
 
             $packageId = PayServices::getPackageIDByParameterPkg($params['pkg']);
-            $isTrialPackage = PayServices::isTrialPackage($packageId);
-            $buyTrialInfo = DssGiftCodeModel::hadPurchasePackageByType($student['id']);
-            if ($isTrialPackage && !empty($buyTrialInfo)) {
-                SimpleLogger::error('has_trialed', [$packageId, $buyTrialInfo]);
-                $ret = Valid::addAppErrors([], 'has_trialed');
-                return $response->withJson($ret, StatusCode::HTTP_OK);
-            }
-
             // 微信支付，用code换取支付用公众号的open_id
             if (empty($openId) && !empty($params['wx_code'])) {
-                $appId = Constants::SMART_APP_ID;
+                $appId    = Constants::SMART_APP_ID;
                 $busiType = Constants::SMART_MINI_BUSI_TYPE;
-                $wechat = WeChatMiniPro::factory($appId, $busiType);
-                $data = $wechat->code2Session($params['wx_code']);
+                $wechat   = WeChatMiniPro::factory($appId, $busiType);
+                $data     = $wechat->code2Session($params['wx_code']);
                 if (empty($data['openid'])) {
                     SimpleLogger::error('can_not_obtain_open_id', [$data]);
                 }
                 $openId = $data['openid'];
             }
             $student = [
-                'id' => $student['id'],
-                'uuid' => $student['uuid'],
-                'open_id' => $openId,
-                'address_id' => $params['address_id'] ?? 0
+                'id'         => $student['id'],
+                'uuid'       => $student['uuid'],
+                'open_id'    => $openId,
+                'address_id' => $params['address_id'] ?? true
             ];
-            $payChannel = PayServices::payChannelToV1($params['pay_channel']);
-            $payType = PayServices::PAY_TYPE_DIRECT;
+            $payChannel   = PayServices::payChannelToV1($params['pay_channel']);
+            $payType      = PayServices::PAY_TYPE_DIRECT;
             $employeeUuid = !empty($params['employee_id']) ? RC4::decrypt($_ENV['COOKIE_SECURITY_KEY'], $params['employee_id']) : null;
-            $channel = ErpPackageV1Model::CHANNEL_WX;
+            $channel      = $params['channel_id'] ?? ErpPackageV1Model::CHANNEL_WX;
             if ($params['pkg'] == PayServices::PACKAGE_0) {
-                // @TODO:请求新0元接口
-                $payType = PayServices::PAY_TYPE_ACCOUNT;
-                $res = [$payType];
+                // 0元体验课订单
+                $remark = DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'zero_order_remark');
+                $res = ErpOrderV1Service::createZeroOrder($packageId, $student, $remark);
             } else {
                 $res = ErpOrderV1Service::createOrder($packageId, $student, $payChannel, $payType, $employeeUuid, $channel);
             }
@@ -141,12 +142,6 @@ class Pay extends ControllerBase
             $result = Valid::addAppErrors([], 'bill_not_exist');
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-
-        return $response->withJson([
-            'code' => 0,
-            'data' => [
-                'bill_status' => $status
-            ]
-        ], StatusCode::HTTP_OK);
+        return HttpHelper::buildResponse($response, ['bill_status' => $status]);
     }
 }

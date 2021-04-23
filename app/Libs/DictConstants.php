@@ -560,6 +560,7 @@ class DictConstants {
         'keys' => [
             'mini_0_package_id',
             'mini_package_id_v1',
+            'zero_order_remark',
         ]
     ];
 

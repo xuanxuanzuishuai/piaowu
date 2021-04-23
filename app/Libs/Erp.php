@@ -53,6 +53,7 @@ class Erp
     const API_BILL_DETAIL_V1 = '/ai_dss/billV1/bill_detail';
     const API_LOGISTICS_V1 = '/ai_dss/billV1/logistics';
     const API_BILL_STATUS_V1 = '/ai_dss/billV1/bill_status';
+    const API_CREATE_ZERO_BILL = '/ai_dss/billV1/create_bill_zero';
     // 创建订单（可以创建后立即发货）
     const API_MAN_CREATE_BILL_V1 = '/ai_dss/billV1/man_create';
     const API_REFUND_FREE_BILL = '/ai_dss/billV1/abandon_free';
@@ -639,6 +640,16 @@ class Erp
     {
         $params['sale_shop'] = $params['sale_shop'] ?? DssErpPackageV1Model::SALE_SHOP_NOTE;
         return HttpHelper::requestJson($this->host . self::API_CREATE_BILL_V1, $params, 'POST');
+    }
+
+    /**
+     * 创建0元体验订单
+     * @param $params
+     * @return array|bool
+     */
+    public function createZeroBillV1($params)
+    {
+        return HttpHelper::requestJson($this->host . self::API_CREATE_ZERO_BILL, $params, 'POST');
     }
 
     /**
