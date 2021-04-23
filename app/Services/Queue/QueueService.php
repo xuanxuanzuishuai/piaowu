@@ -366,14 +366,15 @@ class QueueService
     /**
      * 更新用户标签
      * @param $openIds
+     * @param int $delay
      * @return bool
      */
-    public static function dailyUpdateUserMenuTag($openIds)
+    public static function dailyUpdateUserMenuTag($openIds, $delay = 1800)
     {
         try {
             $topic = new WechatTopic();
             foreach ($openIds as $openId) {
-                $topic->updateUserTag($openId)->publish(rand(1, 1800));
+                $topic->updateUserTag($openId)->publish(rand(1, $delay));
             }
         } catch (Exception $e) {
             SimpleLogger::error($e->getMessage(), [$openIds]);

@@ -15,7 +15,6 @@ use App\Libs\UserCenter;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\UserWeiXinModel;
-use App\Services\Queue\QueueService;
 
 /**
  * 公共调用
