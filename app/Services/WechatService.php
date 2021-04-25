@@ -188,7 +188,7 @@ class WechatService
                         // 年卡有效期剩余超过30天
                         if ($subEndDate - $today >= Util::TIMESTAMP_THIRTY_DAYS) {
                             return self::USER_TYPE_6_1;
-                        } elseif ($subEndDate > $today) {
+                        } elseif ($subEndDate >= $today) {
                             // 年卡未过期
                             return self::USER_TYPE_7_1;
                         } else {
@@ -217,7 +217,7 @@ class WechatService
             if ($isNormal) {
                 if ($subEndDate - $today >= Util::TIMESTAMP_THIRTY_DAYS) {
                     return self::USER_TYPE_6_2;
-                } elseif ($subEndDate > $today) {
+                } elseif ($subEndDate >= $today) {
                     return self::USER_TYPE_7_2;
                 } else {
                     return self::USER_TYPE_8_2;
