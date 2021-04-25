@@ -32,7 +32,7 @@ $menuList = [
             'sub_button' => [
                 [
                     "type" => "view",
-                    "name" => "🔥月月领奖",
+                    "name" => "🔥周周有奖",
                     "url"  => "https://referral.xiaoyezi.com/operation/activity/christmas?activity_id=12"
                 ],
                 [
