@@ -9,7 +9,7 @@
 /**
  * 每日判断用户tag，用于公众号个性化菜单
  * 2021年04月13日14:38:16
- * 每天凌晨非高峰运行
+ * 每天凌晨1点，2点，3点，4点，各运行一次
  */
 namespace App;
 
@@ -36,6 +36,9 @@ $dotenv = new Dotenv(PROJECT_ROOT, '.env');
 $dotenv->load();
 $dotenv->overload();
 
+const KEY_DAILY_WX_MENU_TAG = 'DAILY_WX_MENU_TAG_'; // 每天待更新数据
+const KEY_DAILY_WX_MENU_TAG_MARK = 'DAILY_WX_MENU_TAG_MARK'; // 每天待更新数据是否完成组装
+
 // QUERY：
 // 1.查库中全量数据，能覆盖范围：年卡，体验
 // 2.查询单独记录的7天内点击菜单记录，覆盖范围：注册用户
@@ -45,7 +48,8 @@ $where = [
     'app_id' => Constants::SMART_APP_ID,
     'user_type' => DssUserWeiXinModel::USER_TYPE_STUDENT,
     'busi_type' => DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER,
-    'status' => DssUserWeiXinModel::STATUS_NORMAL
+    'status' => DssUserWeiXinModel::STATUS_NORMAL,
+    'ORDER' => ['id']
 ];
 $total = DssUserWeiXinModel::getCount($where);
 if (empty($total)) {
@@ -54,34 +58,63 @@ if (empty($total)) {
 }
 $amount = 1000;
 
-for ($start = 0; $start <= $total; $start += $amount) {
-    $where['LIMIT'] = [$start, $amount];
-    $records = DssUserWeiXinModel::getRecords($where);
-    $openIds = array_unique(array_column($records, 'open_id'));
-    if (!empty($openIds)) {
-        QueueService::dailyUpdateUserMenuTag($openIds);
+$hour = date('H');
+$date = date('ymd');
+$redis = RedisDB::getConn();
+$expire = 172800;
+$todayKey = KEY_DAILY_WX_MENU_TAG_MARK . $date;
+$done = $redis->get($todayKey);
+if (!$done) {
+    // 创建分成4组的待更新openid数据
+    for ($start = 0; $start <= $total; $start += $amount) {
+        $where['LIMIT'] = [$start, $amount];
+        $records = DssUserWeiXinModel::getRecords($where);
+        $records = array_column($records, null, 'open_id');
+        foreach ($records as $item) {
+            $part = (fmod($item['id'], 4) + 1);
+            $key = KEY_DAILY_WX_MENU_TAG . $part;
+            $redis->lpush($key, [$item['open_id']]);
+        }
     }
+
+    // 未绑定用户
+    $key = WechatService::KEY_WECHAT_USER_NOT_EXISTS . date('Ymd', strtotime('-1 day'));
+    $item = '1';
+    while (!empty($item)) {
+        $item = $redis->rpop($key);
+        if (empty($item)) {
+            break;
+        }
+        $key = KEY_DAILY_WX_MENU_TAG . mt_rand(1, 4);
+        $redis->lpush($key, [$item]);
+    }
+    $redis->del([$key]);
+
+    for ($i = 0; $i < 4; $i ++) {
+        $redis->expire(KEY_DAILY_WX_MENU_TAG . $i, $expire);
+    }
+    $redis->set($todayKey, time());
+    $redis->expire($todayKey, $expire);
 }
 
-// 未绑定用户
-$key = WechatService::KEY_WECHAT_USER_NOT_EXISTS . date('Ymd', strtotime('-1 day'));
-$redis = RedisDB::getConn();
+// 更新当前时间（小时）组的数据
+$key = KEY_DAILY_WX_MENU_TAG . $hour;
 $counter = 0;
-$openIds = [];
-$limit = 100;
+$limit = 50;
+$list = [];
 while ($counter < $limit) {
     $item = $redis->rpop($key);
     if (empty($item)) {
         break;
     }
-    $counter++;
-    $openIds[$item] = $item;
-    if ($counter > $limit) {
-        QueueService::dailyUpdateUserMenuTag($openIds);
+    $list[$item] = $item;
+    $counter ++;
+    if ($counter >= $limit) {
+        QueueService::dailyUpdateUserMenuTag($list, 3500);
+        $list = [];
         $counter = 0;
-        $openIds = [];
     }
 }
-if (!empty($openIds)) {
-    QueueService::dailyUpdateUserMenuTag($openIds);
+if (!empty($list)) {
+    QueueService::dailyUpdateUserMenuTag($list, 3500);
 }

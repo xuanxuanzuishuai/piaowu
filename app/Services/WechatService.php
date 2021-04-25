@@ -290,7 +290,7 @@ class WechatService
         $config = DictConstants::get(DictConstants::WECHAT_CONFIG, 'user_type_tag_dict');
         $config = json_decode($config, true);
         $amount = DictConstants::get(DictConstants::WECHAT_CONFIG, 'tag_update_amount');
-        $amount = $amount ?: 10;
+        $amount = $amount ?: 50;
         $redis  = RedisDB::getConn();
         if (empty($config[$typeId])) {
             SimpleLogger::error('EMPTY MENU TAG ID', [$config, $typeId]);
@@ -303,7 +303,7 @@ class WechatService
             $redis->hset($mapKey, $openId, time());
             $redis->lpush($key, [$openId]);
             $len = $redis->llen($key);
-            if ($len >= $amount || $force) {
+            if ($len >= $amount) {
                 self::batchUpdateUserTagList($key, $force);
             }
             $redis->expire($key, 172800); // 2 days
@@ -334,7 +334,7 @@ class WechatService
     /**
      * 处理列表中待更新数据
      * @param $key
-     * @param false $force
+     * @param false $force @deprecated
      * @param array $params
      * @return bool
      * @throws \App\Libs\Exceptions\RunTimeException
@@ -350,8 +350,6 @@ class WechatService
             SimpleLogger::error('EMPTY TAG ID', [$key]);
             return false;
         }
-        $allTagId = DictConstants::get(DictConstants::WECHAT_CONFIG, 'all_menu_tag');
-        $allTagId = json_decode($allTagId, true);
         $wechat = WeChatMiniPro::factory(DssUserWeiXinModel::dealAppId($params['appid'] ?? null), $params['busi_type'] ?? DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER);
         $mapKey = self::KEY_UPDATE_TAG_WAITING_MAP . date('Ymd') . '_' . $tagId;
         // 可强制全部更新，也可多次更新
@@ -362,21 +360,18 @@ class WechatService
             }
             $counter ++;
             $list[] = $item;
-            $redis->hdel($mapKey, [$item]);
             if ($counter >= $limit) {
-                $wechat->batchUnTagUsers($list, $allTagId);
+                $redis->hdel($mapKey, $list);
+                $wechat->batchUnTagUsers($list, $tagId);
                 $wechat->batchTagUsers($list, $tagId);
                 $list = [];
-                if ($force) {
-                    $counter = 0;
-                } else {
-                    break;
-                }
+                $counter = 0;
             }
         }
 
         if (!empty($list)) {
-            $wechat->batchUnTagUsers($list, $allTagId);
+            $redis->hdel($mapKey, $list);
+            $wechat->batchUnTagUsers($list, $tagId);
             $wechat->batchTagUsers($list, $tagId);
         }
         return true;

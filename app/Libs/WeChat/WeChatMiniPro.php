@@ -60,6 +60,7 @@ class WeChatMiniPro
 
 
     public $nowWxApp; //当前的微信应用
+    private $timeout;
 
 
     public static function factory($appId, $busiType)
@@ -71,6 +72,15 @@ class WeChatMiniPro
     public function __construct($config)
     {
         $this->nowWxApp = $config;
+    }
+
+    /**
+     * 如果需要可以设置超时
+     * @param $timeout
+     */
+    public function setTimeout($timeout)
+    {
+        $this->timeout = $timeout;
     }
 
     /**
@@ -117,6 +127,13 @@ class WeChatMiniPro
             // JSON_UNESCAPED_UNICODE 参数指定不对unicode转码 否则中文会显示为unicode
             $data = ['body' => json_encode($params, JSON_UNESCAPED_UNICODE)];
             $data['headers'] = ['Content-Type' => 'application/json'];
+            // 部分接口不需要等待响应
+            if (!empty($params['timeout'])) {
+                $data['timeout'] = $params['timeout'];
+            }
+            if (!empty($this->timeout) && empty($data['timeout'])) {
+                $data['timeout'] = $this->timeout;
+            }
         } elseif ($method == 'POST_FORM_DATA') {
             $method = 'POST';
             $data = $params;
@@ -790,10 +807,11 @@ class WeChatMiniPro
      * 批量为用户打标签
      * @param $openId
      * @param $tagId
+     * @param int $timeout
      * @return false|mixed|string
      * @throws \App\Libs\Exceptions\RunTimeException
      */
-    public function batchTagUsers($openId, $tagId)
+    public function batchTagUsers($openId, $tagId, $timeout = 1)
     {
         if (empty($tagId) || empty($openId)) {
             return false;
@@ -806,6 +824,9 @@ class WeChatMiniPro
             'openid_list' => $openId,
             'tagid' => $tagId
         ];
+        if (!empty($timeout)) {
+            $params['timeout'] = $timeout;
+        }
         $data = $this->requestJson($api, $params, 'POST');
         if (!empty($data['errcode'])) {
             SimpleLogger::error(__FUNCTION__, [$data]);
@@ -847,10 +868,11 @@ class WeChatMiniPro
      * 批量为用户取消标签
      * @param $openId
      * @param $tagId
+     * @param int $timeout
      * @return bool
      * @throws \App\Libs\Exceptions\RunTimeException
      */
-    public function batchUnTagUsers($openId, $tagId)
+    public function batchUnTagUsers($openId, $tagId, $timeout = 1)
     {
         if (empty($tagId) || empty($openId)) {
             return false;
@@ -862,16 +884,15 @@ class WeChatMiniPro
         if (!is_array($tagId)) {
             $tagId = [$tagId];
         }
+        if (!empty($timeout)) {
+            $params['timeout'] = $timeout;
+        }
         $params = [
             'openid_list' => $openId,
         ];
         foreach ($tagId as $id) {
             $params['tagid'] = $id;
-            $data = $this->requestJson($api, $params, 'POST');
-            if (!empty($data['errcode'])) {
-                SimpleLogger::error(__FUNCTION__, [$data]);
-                $this->retryUntagUsers($openId, $tagId);
-            }
+            $this->requestJson($api, $params, 'POST');
         }
         return true;
     }

@@ -15,6 +15,7 @@ use App\Libs\UserCenter;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\UserWeiXinModel;
+use App\Services\Queue\QueueService;
 
 /**
  * 公共调用
@@ -127,7 +128,7 @@ class UserService
     public static function studentRegisterBound($appId, $mobile, $channelId, $openId = NULL, $busiType = NULL, $userType = NULL, $refereeId = NULL)
     {
         if ($appId == Constants::SMART_APP_ID) {
-            return (new Dss())->studentRegisterBound([
+           return (new Dss())->studentRegisterBound([
                 'mobile' => $mobile,
                 'channel_id' => $channelId,
                 'open_id' => $openId,
@@ -159,9 +160,6 @@ class UserService
         $key = WechatService::KEY_WECHAT_DAILY_ACTIVE . $date;
         $redis->hset($key, $userWx['open_id'], time());
         $redis->expire($key, $expire);
-
-        // 登录
-        WechatService::updateUserTag($userWx['open_id'], true);
         return true;
     }
 }
