@@ -10,7 +10,7 @@ INSERT INTO `erp_event_task`(`id`,`type`, `condition`, `event_id`, `name`, `desc
 (482, 1, '{"count\":2}', 1, '付费年卡', 'AIPL-13989-4.22', 1619082667, 751, 1619082667, 10027, '{"awards":[{"to":1,"amount":20000,"type":3,"delay":15,"need_check":1,"account_sub_type":"3002"},{"to":2,"amount":5000,"type":3,"delay":15,"need_check":1,"account_sub_type":"3002"}]}', 1619082667, 1672416000, 1),
 (483, 1, '{"count":5}', 1, '付费年卡', 'AIPL-13989-4.22', 1619082667, 751, 1619082667, 10027, '{"awards":[{"to":1,"amount":20000,"type":3,"delay":15,"need_check":1,"account_sub_type":"3002"},{"to":2,"amount":5000,"type":3,"delay":15,"need_check":1,"account_sub_type":"3002"}]}', 1619082667, 1672416000, 1),
 (484, 1, '{"count":6}', 1, '付费年卡', 'AIPL-13989-4.22', 1619082667, 751, 1619082667, 10027, '{"awards":[{"to":1,"amount":20000,"type":3,"delay":15,"need_check":1,"account_sub_type":"3002"},{"to":2,"amount":5000,"type":3,"delay":15,"need_check":1,"account_sub_type":"3002"}]}', 1619082667, 1672416000, 1),
-(485, 1, '{"can_repeat_attend":0}', 1, '付费年卡', 'AIPL-13989-4.22', 1619082667, 751, 1619082667, 10027, '{"awards":[{"to":1,"amount":10000,"type":3,"delay":15,"need_check":1,"account_sub_type":"3002"}]}', 1619082667, 1672416000, 1);
+(485, 1, '{"can_repeat_attend":0}', 1, '付费年卡', 'AIPL-13989-4.22-额外奖励', 1619082667, 751, 1619082667, 10027, '{"awards":[{"to":1,"amount":10000,"type":3,"delay":15,"need_check":1,"account_sub_type":"3002"}]}', 1619082667, 1672416000, 1);
 
 CREATE TABLE `erp_user_event_task_award_gold_leaf` (
     `id` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT '自增id',

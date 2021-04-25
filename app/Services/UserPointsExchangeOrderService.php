@@ -10,6 +10,7 @@ use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\Dss\DssStudentModel;
+use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\Erp\ErpStudentAccountModel;
 use App\Models\UserPointsExchangeOrderModel;
 use App\Models\UserPointsExchangeOrderWxModel;
@@ -71,6 +72,7 @@ class UserPointsExchangeOrderService
             SimpleLogger::info('UserPointsExchangeOrderService::toRedPack', ['err' => 'insert_failure', 'params' => $params, 'insertData' => $insertRedPackData, 'id' => $id]);
             throw new RunTimeException(['insert_failure']);
         }
+
         // 保存兑换记录
         $insertRecodeData = [
             'user_points_exchange_order_id' => $id,
@@ -79,10 +81,10 @@ class UserPointsExchangeOrderService
             'mch_billno' => CashGrantService::createMchBillNo([$id, $params['record_sn']], [], $params['red_amounts']),
             'order_amounts' => $params['red_amounts'],
             'status' => UserPointsExchangeOrderWxModel::STATUS_WAITING,
-            'record_sn' => $params['record_sn']
+            'record_sn' => $params['record_sn'],
+            'app_id' => Constants::SMART_APP_ID,
+            'busi_type' => DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER,
             // `open_id` varchar(32) DEFAULT '' COMMENT '用户微信标识',
-            // `app_id` tinyint(4) DEFAULT '0' COMMENT '业务标识',
-            // `busi_type` tinyint(1) NOT NULL DEFAULT '0' COMMENT '业务类型 1：学生服务号 2：老师服务号 3：学生订阅号 4: 老师订阅号 5: XX小程序',
             // `result_code` varchar(500) NOT NULL DEFAULT '' COMMENT '请求微信的返回值',
             // `create_time` int(11) NOT NULL DEFAULT '0',
         ];
@@ -148,6 +150,10 @@ class UserPointsExchangeOrderService
             $list[$_key]['award_status_zh'] = UserPointsExchangeOrderWxModel::STATUS_DICT[$_info['status']];
             $list[$_key]['user_event_task_award_id'] = $_info['id'];
             $list[$_key]['student_mobile'] = $_info['id'];
+            $list[$_key]['award_amount'] = $_info['order_amounts'];
+            $list[$_key]['create_time'] = date("Y-m-d H:i:s", $_info['create_time']);
+            $list[$_key]['review_time'] = date("Y-m-d H:i:s", $_info['update_time']);
+            $list[$_key]['result_code_zh'] = WeChatAwardCashDealModel::getWeChatErrorMsg($_info['result_code']);
         }
         $returnList['records'] = $list;
         return $returnList;

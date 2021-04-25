@@ -677,7 +677,7 @@ class Erp
             'app_id' => Constants::SMART_APP_ID,
             'user_type' => 1,
             'uuid' => $uuid,
-            'refereeUid' => $refereeUid,
+            'referee_uuid' => $refereeUid,
             'event_task_id' => $eventTaskId,
             'status' => $status,
             'task_award_id' => $awardId

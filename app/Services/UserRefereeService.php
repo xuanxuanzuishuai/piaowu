@@ -178,12 +178,13 @@ class UserRefereeService
         $refereeInfo = DssStudentModel::getRecord(['id' => $refereeRelation['referee_id']]);
         $refereeInfo['student_id'] = $studentId;
         $refereeInfo['first_pay_normal_info'] = DssGiftCodeModel::getUserFirstPayInfo($refereeRelation['referee_id']);
+        SimpleLogger::info('UserRefereeService::dssCompleteEventTask',['ref' => $refereeInfo,'stu_id' => $studentId]);
 
         $refTaskId = self::getTaskIdByType($packageType, $trialType, $refereeInfo, $appId);
         if (!is_array($refTaskId) && !empty($refTaskId)) {
             $refTaskId = [$refTaskId];
         }
-
+        SimpleLogger::info("UserRefereeService::dssCompleteEventTask", ['taskid' => $refTaskId]);
         $sendStatus = ErpUserEventTaskAwardGoldLeafModel::STATUS_WAITING;
         // 购买体验卡直接发放积分
         if ($packageType == DssPackageExtModel::PACKAGE_TYPE_TRIAL){
@@ -193,9 +194,8 @@ class UserRefereeService
         $studentInfo = DssStudentModel::getById($studentId);
         if (!empty($refTaskId)) {
             $erp = new Erp();
-            $pushMessageData = [];  //消息队列需要的数据
             foreach ($refTaskId as $taskId) {
-                $taskResult = $erp->addEventTaskAward($studentInfo['uuid'], $taskId, $sendStatus, $refereeRelation['referee_id']);
+                $taskResult = $erp->addEventTaskAward($studentInfo['uuid'], $taskId, $sendStatus, 0, $refereeInfo['uuid']);
                 SimpleLogger::info("UserRefereeService::dssCompleteEventTask", [
                     'params' => [
                         $studentId,
@@ -214,15 +214,15 @@ class UserRefereeService
                 if (empty($taskResult['data'])) {
                     throw new RunTimeException(['erp_create_user_event_task_award_fail']);
                 }
-                $pushMessageData[] = ['points_award_ids' => $taskResult['data']['points_award_ids']];
-            }
-            // 积分发放成功后 把消息放入到 客服消息队列
-            switch ($packageType) {
-                case DssPackageExtModel::PACKAGE_TYPE_TRIAL:    //购买体验包会直接给用户发放积分奖励 - 这里直接发送客服消息
-                    (new PushMessageTopic())->pushWX($pushMessageData,PushMessageTopic::EVENT_PAY_TRIAL)->publish();
-                    break;
-                default:
-                    break;
+                $pushMessageData = ['points_award_ids' => $taskResult['data']['points_award_ids']];
+                // 积分发放成功后 把消息放入到 客服消息队列
+                switch ($packageType) {
+                    case DssPackageExtModel::PACKAGE_TYPE_TRIAL:    //购买体验包会直接给用户发放积分奖励 - 这里直接发送客服消息
+                        (new PushMessageTopic())->pushWX($pushMessageData,PushMessageTopic::EVENT_PAY_TRIAL)->publish();
+                        break;
+                    default:
+                        break;
+                }
             }
         }
     }
@@ -307,6 +307,7 @@ class UserRefereeService
                     SimpleLogger::error("EMPTY REFEREE TASK CONFIG", [$config]);
                 }
                 $taskId = $config[$refereeCount] ?? 0;
+                SimpleLogger::error("getTaskIdByType::ref", ['r' => $refereeCount, 'c' => $noChangeNumber,'t' => $taskId]);
                 if (!empty($taskId)) {
                     $taskIds[] = $taskId;
                 }
@@ -315,13 +316,9 @@ class UserRefereeService
                 if (time() <= $refereeInfo['first_pay_normal_info']['create_time'] + Util::TIMESTAMP_ONEDAY * 15) {
                     $extraTaskId = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'extra_task_id_normal_xyzop_178');
                     $startPoint = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'xyzop_178_start_point');
-                    $extraCount = StudentInviteModel::getRefereeExtraTask(
-                        [
-                            'referee_id' => $refereeInfo['id'],
-                            'create_time' => $startPoint,
-                        ],
-                        $extraTaskId
-                    );
+                    // 查询推荐人是否已经有一次奖励的
+                    $refWhere = ['uuid' => $refereeInfo['uuid'], 'create_time[>=]' => $startPoint, 'event_task_id' => $extraTaskId];
+                    $extraCount = ErpUserEventTaskAwardGoldLeafModel::getRecord($refWhere);
                     if (empty($extraCount)) {
                         $taskIds[] = $extraTaskId;
                     }
@@ -342,9 +339,11 @@ class UserRefereeService
     public static function getRefereeCount($refereeInfo, $startPoint, $type = DssStudentModel::REVIEW_COURSE_1980, $noChangeNumber = 1000)
     {
         $where = [
+            'referee_id' => $refereeInfo['id'],
             'last_stage' => $type,
             'create_time[>=]' => $startPoint,
             'LIMIT' => [0, $noChangeNumber + 10], // 增加10个偏移量，这个是说明当前需要查询到最多的人数，超过这个说说明后面的奖励应该是一样的
+            'ORDER' => ['create_time'=>'ASC'],
         ];
         $refereeData = StudentReferralStudentStatisticsModel::getRecords($where);
         if (empty($refereeData)) {
