@@ -65,8 +65,14 @@ class StudentReferralStudentService
      */
     public static function trailReferralRecord($studentId, $qrTicketIdentityData, $extParams, $time)
     {
-        //检测当前学生是否存可以建立绑定关系
-        $conditionRes = self::checkBindReferralCondition($studentId);
+        //检测当前学生是否可以建立绑定关系：已存在绑定关系的老数据跳过检测
+        $bindReferralInfo = StudentReferralStudentStatisticsModel::getRecord(['student_id' => $studentId], ['student_id', 'id', 'last_stage']);
+        if (empty($bindReferralInfo)) {
+            //新绑定逻辑条件检测
+            $conditionRes = self::checkBindReferralCondition($studentId);
+        } else {
+            $conditionRes = true;
+        }
         if (empty($conditionRes)) {
             return false;
         }
@@ -90,16 +96,28 @@ class StudentReferralStudentService
             'create_time' => $time
         ];
         StudentReferralStudentDetailModel::batchInsert($batchInsertData);
-        $statisticsId = StudentReferralStudentStatisticsModel::insertRecord(
-            [
-                'student_id' => $studentId,
-                'referee_id' => $qrTicketIdentityData['user_id'],
-                'last_stage' => StudentReferralStudentStatisticsModel::STAGE_TRIAL,
-                'create_time' => $time,
-                'referee_employee_id' => $extParams['e'] ?? 0,
-                'activity_id' => $extParams['a'] ?? 0,
-            ]
-        );
+        //判断是否记录统计数据
+        $statisticsId = true;
+        if (empty($bindReferralInfo)) {
+            //插入
+            $statisticsId = StudentReferralStudentStatisticsModel::insertRecord(
+                [
+                    'student_id' => $studentId,
+                    'referee_id' => $qrTicketIdentityData['user_id'],
+                    'last_stage' => StudentReferralStudentStatisticsModel::STAGE_TRIAL,
+                    'create_time' => $time,
+                    'referee_employee_id' => $extParams['e'] ?? 0,
+                    'activity_id' => $extParams['a'] ?? 0,
+                ]
+            );
+        } elseif ($bindReferralInfo['last_stage'] < StudentReferralStudentStatisticsModel::STAGE_TRIAL) {
+            //修改学生最新的节点数据为体验卡
+            $statisticsId = StudentReferralStudentStatisticsModel::updateRecord($bindReferralInfo['id'],
+                [
+                    'last_stage' => StudentReferralStudentStatisticsModel::STAGE_TRIAL,
+                ]
+            );
+        }
         if (empty($statisticsId)) {
             SimpleLogger::info('bind referral record fail', []);
             return false;
