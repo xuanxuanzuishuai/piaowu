@@ -827,12 +827,7 @@ class WeChatMiniPro
         if (!empty($timeout)) {
             $params['timeout'] = $timeout;
         }
-        $data = $this->requestJson($api, $params, 'POST');
-        if (!empty($data['errcode'])) {
-            SimpleLogger::error(__FUNCTION__, [$data]);
-            return $this->retryTagUsers($openId, $tagId);
-        }
-        return $data;
+        return $this->requestJson($api, $params, 'POST');
     }
 
     /**
