@@ -27,13 +27,7 @@ class StudentReferralStudentService
      */
     public static function checkBindReferralCondition($studentId)
     {
-        //不可以建立绑定关系的条件:1已存在绑定关系 2存在真人转介绍关系 3已购买过年卡（智能年卡，真人送智能年卡）
-        //已存在智能学生转介绍绑定关系
-        $bindReferralInfo = StudentReferralStudentStatisticsModel::getRecord(['student_id' => $studentId], ['student_id']);
-        if (!empty($bindReferralInfo)) {
-            SimpleLogger::info('has bind referral relation', ['bind_referral_info' => $bindReferralInfo]);
-            return false;
-        }
+        //不可以建立绑定关系的条件:1存在真人转介绍关系 2已购买过年卡（智能年卡，真人送智能年卡）
         //存在真人转介绍关系
         $erpReferralUserRefereeData = [];
         $dssStudentData = DssStudentModel::getRecord(['id' => $studentId], ['uuid', 'mobile']);

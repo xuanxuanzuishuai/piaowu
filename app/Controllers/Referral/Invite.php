@@ -62,7 +62,7 @@ class Invite extends ControllerBase
                 return $response->withJson($result, StatusCode::HTTP_OK);
             }
             $params = $request->getParams();
-            $info = ReferralService::getReferralInfo($params['app_id'], $params['student_id']);
+            $info = ReferralService::getReferralInfo($params['app_id'], $params['student_id'], $params['parent_bill_id']);
         } catch (RuntimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }

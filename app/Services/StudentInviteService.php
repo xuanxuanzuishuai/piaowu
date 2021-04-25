@@ -123,8 +123,14 @@ class StudentInviteService
      */
     private static function trailLogic($studentId, $parentBillId, $time, $extParams)
     {
-        //通过订单ID获取成单人的映射关系
-        $qrTicketIdentityData = BillMapModel::paramMapDataByBillId($parentBillId, $studentId);
+        //通过订单ID获取成单人的映射关系：已存在学生转介绍绑定关系的老数据跳过检测
+        $bindReferralInfo = StudentReferralStudentStatisticsModel::getRecord(['student_id' => $studentId], ['referee_id']);
+        if (empty($bindReferralInfo)) {
+            //新绑定逻辑条件检测
+            $qrTicketIdentityData = BillMapModel::paramMapDataByBillId($parentBillId, $studentId);
+        } else {
+            $qrTicketIdentityData = ['type' => ParamMapModel::TYPE_STUDENT, 'user_id' => $bindReferralInfo['referee_id']];
+        }
         if (empty($qrTicketIdentityData)) {
             return false;
         }

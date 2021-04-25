@@ -18,6 +18,7 @@ use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Libs\WeChat\WXBizDataCrypt;
+use App\Models\BillMapModel;
 use App\Models\Dss\DssAiPlayRecordCHModel;
 use App\Models\Dss\DssCategoryV1Model;
 use App\Models\Dss\DssChannelModel;
@@ -177,76 +178,60 @@ class ReferralService
             $statisticsWhere['activity_id'] = array_column($activityData, 'id');
         }
         //推荐人手机号
-        $referralStudentIds = [];
+        $referralStudentWhere = [];
         if (!empty($params['referral_mobile'])) {
-            $referralMobileData = DssStudentModel::getRecords(['mobile' => $params['referral_mobile']], ['id[Int]']);
-            if (empty($referralMobileData)) {
-                return [];
-            }
-            $referralStudentIds = array_column($referralMobileData, 'id');
+            $referralStudentWhere['mobile'] = $params['referral_mobile'];
         }
         //推荐人uuid
         if (!empty($params['referral_uuid'])) {
-            $referralUuidData = DssStudentModel::getRecord(['uuid' => $params['referral_uuid']], ['id[Int]']);
-            if (empty($referralUuidData)) {
-                return [];
-            }
-            $referralStudentIds = array_merge($referralStudentIds, array_column($referralUuidData, 'id'));
+            $referralStudentWhere['uuid'] = $params['referral_uuid'];
         }
-        if (!empty($referralStudentIds)) {
-            $statisticsWhere['referee_id'] = $referralStudentIds;
+        if (!empty($referralStudentWhere)) {
+            $statisticsWhere['referee_id'] = array_column(DssStudentModel::getRecords($referralStudentWhere,['id[Int]']),'id');
         }
 
         //学员手机号
-        $studentIds = [];
+        $studentWhere = $studentIds = [];
         if (!empty($params['mobile'])) {
-            $mobileData = DssStudentModel::getRecords(['mobile' => $params['mobile']], ['id[Int]']);
-            if (empty($mobileData)) {
-                return [];
-            }
-            $studentIds = array_column($mobileData, 'id');
+            $studentWhere['mobile'] = $params['mobile'];
         }
         //学员uuid
-        if (!empty($params['uuid'])) {
-            $uuidData = DssStudentModel::getRecord(['uuid' => $params['uuid']], ['id[Int]']);
-            if (empty($uuidData)) {
-                return [];
-            }
-            $studentIds = array_merge($studentIds, array_column($uuidData, 'id'));
+        if (!empty($params['student_uuid'])) {
+            $studentWhere['uuid'][] = $params['student_uuid'];
         }
         //学员注册渠道
         if (!empty($params['channel_id'])) {
-            $channelData = DssStudentModel::getRecord(['channel_id' => $params['channel_id']], ['id[Int]']);
-            if (empty($channelData)) {
-                return [];
-            }
-            $studentIds = array_merge($studentIds, array_column($channelData, 'id'));
+            $studentWhere['channel_id'] = (int)$params['channel_id'];
         }
-
-        //学员注册时间
-        $registerStudentIds = [];
-        if (!empty($params['register_s_create_time'])) {
-            $registerStartData = StudentReferralStudentDetailModel::getRecords([
-                'create_time[>=]' => $params['register_s_create_time'],
-                'stage' => StudentReferralStudentStatisticsModel::STAGE_REGISTER
-            ], ['student_id[Int]']);
-            if (empty($registerStartData)) {
+        if (!empty($studentWhere)) {
+            $studentIds = array_column(DssStudentModel::getRecords($studentWhere, ['id[Int]']), 'id');
+            if (empty($studentIds)) {
                 return [];
             }
-            $registerStudentIds = array_merge($registerStudentIds, array_column($registerStartData, 'student_id'));
+        }
+        //学员注册时间
+        $registerStudentWhere = $registerStudentIds = [];
+        if (!empty($params['register_s_create_time'])) {
+            $registerStudentWhere['create_time[>=]'] = $params['register_s_create_time'];
         }
         if (!empty($params['register_e_create_time'])) {
-            $registerEndData = StudentReferralStudentDetailModel::getRecords([
-                'create_time[<=]' => $params['register_e_create_time'],
-                'stage' => StudentReferralStudentStatisticsModel::STAGE_REGISTER
-            ], ['student_id[Int]']);
-            if (empty($registerEndData)) {
+            $registerStudentWhere['create_time[<=]'] = $params['register_e_create_time'];
+        }
+        if (!empty($registerStudentWhere)) {
+            $registerStudentWhere['stage'] = StudentReferralStudentStatisticsModel::STAGE_REGISTER;
+            $registerStudentIds = array_column(StudentReferralStudentDetailModel::getRecords($registerStudentWhere, ['student_id[Int]']), 'student_id');
+            if (empty($registerStudentIds)) {
                 return [];
             }
-            $registerStudentIds = array_merge($registerStudentIds, array_column($registerEndData, 'student_id'));
+            if (empty($studentIds)) {
+                $studentIds = $registerStudentIds;
+            } else {
+                $studentIds = array_intersect($studentIds, $registerStudentIds);
+            }
         }
-        if (!empty($studentIds) || !empty($registerStudentIds)) {
-            $statisticsWhere['student_id'] = array_unique(array_merge($studentIds, $registerStudentIds));
+        //搜索条件
+        if (!empty($studentIds)) {
+            $statisticsWhere['student_id'] = $studentIds;
         }
         return $statisticsWhere;
     }
@@ -300,14 +285,29 @@ class ReferralService
      * 某个学生用户的学生推荐人信息
      * @param $appId
      * @param $studentId
+     * @param $parentBillId
      * @return mixed
      */
-    public static function getReferralInfo($appId, $studentId)
+    public static function getReferralInfo($appId, $studentId, $parentBillId = '')
     {
         if ($appId == Constants::SMART_APP_ID) {
-            return StudentReferralStudentStatisticsModel::getRecord(
-                ['student_id' => $studentId]
-            );
+            $referralData = StudentReferralStudentStatisticsModel::getRecord(['student_id' => $studentId], ['referee_id', '']);
+            if (!empty($referralData)) {
+                return $referralData;
+            }
+            if (empty($parentBillId)) {
+                return [];
+            } else {
+                //支付成功消息队列处理不及时，直接通过订单ID映射关系来检查推荐人信息
+                $bindReferralRelationCondition = StudentReferralStudentService::checkBindReferralCondition($studentId);
+                if (empty($bindReferralRelationCondition)) {
+                    return [];
+                } else {
+                    //通过订单ID获取成单人的映射关系
+                    $mapData = BillMapModel::paramMapDataByBillId($parentBillId, $studentId);
+                    return ['referee_id' => (int)$mapData['user_id']];
+                }
+            }
         }
         return null;
     }
