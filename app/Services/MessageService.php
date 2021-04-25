@@ -417,6 +417,9 @@ class MessageService
             // 海报埋点 - 全部推送成功
             if ($res == MessageRecordLogModel::PUSH_SUCCESS && $posterId > 0) {
                 $openidUserInfo = DssUserWeiXinModel::getUserInfoBindWX($data['open_id'], $appId, PushMessageService::APPID_BUSI_TYPE_DICT[$appId]);
+                if (empty($openidUserInfo[0]['uuid'])) {
+                    return $res;
+                }
                 $queueData = [
                     'uuid' => $openidUserInfo[0]['uuid'],
                     'poster_id' => intval($posterId),
