@@ -338,21 +338,25 @@ class UserRefereeService
      */
     public static function getRefereeCount($refereeInfo, $startPoint, $type = DssStudentModel::REVIEW_COURSE_1980, $noChangeNumber = 1000)
     {
+
         $where = [
             'referee_id' => $refereeInfo['id'],
             'last_stage' => $type,
             'create_time[>=]' => $startPoint,
-            'LIMIT' => [0, $noChangeNumber + 10], // 增加10个偏移量，这个是说明当前需要查询到最多的人数，超过这个说说明后面的奖励应该是一样的
-            'ORDER' => ['create_time'=>'ASC'],
+            'student_id' => $refereeInfo['student_id'],
         ];
-        $refereeData = StudentReferralStudentStatisticsModel::getRecords($where);
-        if (empty($refereeData)) {
-            SimpleLogger::error("EMPTY REFEREE DATA", [$refereeInfo, $startPoint, $type, $noChangeNumber]);
+        $refereeStudentData = StudentReferralStudentStatisticsModel::getRecord($where, ['id']);
+        if (empty($refereeStudentData)) {
             return 0;
         }
-        // 计算被推荐人所在的位置
-        $refList = array_column($refereeData, 'student_id');
-        $refereeCount = array_search($refereeInfo['student_id'], $refList);
-        return empty($refereeCount) ? intval($refereeCount) : 0;
+
+        $where = [
+            'referee_id' => $refereeInfo['id'],
+            'last_stage' => $type,
+            'create_time[>=]' => $startPoint,
+            'id[<=]' => $refereeStudentData['id'],
+        ];
+        $refereeCount = StudentReferralStudentStatisticsModel::getCount($where);
+        return $refereeCount;
     }
 }

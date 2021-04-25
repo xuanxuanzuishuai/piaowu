@@ -18,6 +18,7 @@ use App\Libs\Erp;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\Dss\DssStudentModel;
+use App\Models\Erp\ErpEventTaskModel;
 use App\Models\Erp\ErpUserEventTaskAwardGoldLeafModel;
 use App\Models\Erp\ErpUserEventTaskModel;
 use App\Models\StudentReferralStudentStatisticsModel;
@@ -42,7 +43,7 @@ if (empty($pointsList)) {
 // 获取奖励所有推荐人uuid
 $studentUuid = array_column($pointsList, 'uuid');
 // 获取学生的id
-$studentIdList = DssStudentModel::getRecords(['uuid' => $studentUuid], ['id']);
+$studentIdList = DssStudentModel::getRecords(['uuid' => $studentUuid], ['id','uuid']);
 $studentIdToUuid = array_column($studentIdList,'uuid', 'id');
 // 获取转介绍关系
 $refList = StudentReferralStudentStatisticsModel::getRecords(['student_id' => array_column($studentIdList, 'id')]);
@@ -79,8 +80,12 @@ foreach ($pointsList as $points) {
             $status = ErpUserEventTaskAwardGoldLeafModel::REASON_RETURN_COST;
         }
     }
-
-    $taskResult = $erp->addEventTaskAward($points['uuid'], $points['event_task_id'], $status, $points['id'],$studentRef[$points['uuid']]);
+    $referrerUuid = $studentRef[$points['uuid']];
+    // 如果本条是推荐人的奖励，直接用uuid即可
+    if ($points['to'] == ErpEventTaskModel::AWARD_TO_REFERRER){
+        $referrerUuid = $points['uuid'];
+    }
+    $taskResult = $erp->addEventTaskAward($points['uuid'], $points['event_task_id'], $status, $points['id'], $referrerUuid);
     SimpleLogger::info("script::auto_send_task_award_points", [
         'params' => $points,
         'response' => $taskResult,
@@ -88,7 +93,7 @@ foreach ($pointsList as $points) {
     ]);
     // 积分发放成功后 把消息放入到 客服消息队列
     if (!empty($taskResult['data'])) {
-        $pushMessageData[] = ['points_award_ids' => $taskResult['data']['points_award_ids']];
+        $pushMessageData = ['points_award_ids' => $taskResult['data']['points_award_ids']];
         (new PushMessageTopic())->pushWX($pushMessageData,PushMessageTopic::EVENT_PAY_TRIAL)->publish();
     }
 }

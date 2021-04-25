@@ -11,6 +11,7 @@ use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
+use App\Models\Erp\ErpEventTaskModel;
 use App\Models\Erp\ErpStudentAccountModel;
 use App\Models\UserPointsExchangeOrderModel;
 use App\Models\UserPointsExchangeOrderWxModel;
@@ -84,9 +85,7 @@ class UserPointsExchangeOrderService
             'record_sn' => $params['record_sn'],
             'app_id' => Constants::SMART_APP_ID,
             'busi_type' => DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER,
-            // `open_id` varchar(32) DEFAULT '' COMMENT '用户微信标识',
-            // `result_code` varchar(500) NOT NULL DEFAULT '' COMMENT '请求微信的返回值',
-            // `create_time` int(11) NOT NULL DEFAULT '0',
+            'create_time' => time(),
         ];
         $recordId = UserPointsExchangeOrderWxModel::insertRecord($insertRecodeData);
         if (empty($recordId)) {
@@ -154,6 +153,7 @@ class UserPointsExchangeOrderService
             $list[$_key]['create_time'] = date("Y-m-d H:i:s", $_info['create_time']);
             $list[$_key]['review_time'] = date("Y-m-d H:i:s", $_info['update_time']);
             $list[$_key]['result_code_zh'] = WeChatAwardCashDealModel::getWeChatErrorMsg($_info['result_code']);
+            $list[$_key]['award_type'] = ErpEventTaskModel::AWARD_TYPE_CASH;
         }
         $returnList['records'] = $list;
         return $returnList;

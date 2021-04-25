@@ -1050,6 +1050,7 @@ class MessageService
             $eventTaskInfo = ErpEventTaskModel::getRecord(['id' => $awardDetailInfo['event_task_id']]);
             $eventInfo = ErpEventModel::getRecord(['id' => $eventTaskInfo['event_id']]);
             $awardDetailInfo['type'] = $eventInfo['type'];
+            $awardDetailInfo['get_award_uuid'] = $awardDetailInfo['finish_task_uuid'];
             PushMessageService::sendAwardPointsMessage($awardDetailInfo);
         }
         return true;

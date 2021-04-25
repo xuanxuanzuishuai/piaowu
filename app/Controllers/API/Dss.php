@@ -642,15 +642,19 @@ class Dss extends ControllerBase
                     'type' => 'integer',
                     'error_code' => 'page_is_integer'
                 ],
+                [
+                    'key' => 'user_id',
+                    'type' => 'required',
+                    'error_code' => 'user_id_is_required'
+                ]
             ];
             $params = $request->getParams();
             $result = Valid::appValidate($params, $rules);
             if ($result['code'] != Valid::CODE_SUCCESS) {
                 return $response->withJson($result, StatusCode::HTTP_OK);
             }
-            $studentId = $this->ci['user_info']['user_id'];
             list($page, $count) = Util::formatPageCount($params);
-            $res = SharePosterService::sharePostAwardList($studentId, $page, $count);
+            $res = SharePosterService::sharePostAwardList($params['user_id'], $page, $count);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
