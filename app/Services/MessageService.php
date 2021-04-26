@@ -618,7 +618,7 @@ class MessageService
             $key = self::getMessageKey($openId, $timeConfig['expire'], $ruleId);
             $num = intval($redis->get($key));
             if ($num >= $limit) {
-                SimpleLogger::info('message over num per rule limit ', ['open_id' => $openId, 'rule' => $ruleInfo]);
+                SimpleLogger::info('message over num per rule limit ', ['open_id' => $openId, 'rule_id' => $ruleId]);
                 return true;
             }
         }
