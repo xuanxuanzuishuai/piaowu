@@ -309,7 +309,8 @@ class WeChatMiniPro
         $params = [
             'touser' => $openId,
             'msgtype' => $type,
-            $type => $content
+            $type => $content,
+            'timeout' => 2
         ];
         return $this->requestJson($api, $params, 'POST');
     }
