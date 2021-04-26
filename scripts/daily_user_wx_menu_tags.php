@@ -85,8 +85,8 @@ if (!$done) {
         if (empty($item)) {
             break;
         }
-        $key = KEY_DAILY_WX_MENU_TAG . mt_rand(1, 4);
-        $redis->lpush($key, [$item]);
+        $updateKey = KEY_DAILY_WX_MENU_TAG . mt_rand(1, 4);
+        $redis->lpush($updateKey, [$item]);
     }
     $redis->del([$key]);
 
