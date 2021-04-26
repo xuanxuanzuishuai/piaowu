@@ -9,6 +9,7 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
+use App\Models\Dss\DssEmployeeModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\Erp\ErpEventTaskModel;
@@ -144,6 +145,7 @@ class UserPointsExchangeOrderService
         $where['ORDER'] = ['id' => 'DESC'];
         $list = UserPointsExchangeOrderWxModel::getRecords($where);
 
+
         foreach ($list as $_key => $_info) {
             $list[$_key]['student_uuid'] = $_info['uuid'];
             $list[$_key]['award_status_zh'] = UserPointsExchangeOrderWxModel::STATUS_DICT[$_info['status']];
@@ -154,6 +156,7 @@ class UserPointsExchangeOrderService
             $list[$_key]['review_time'] = date("Y-m-d H:i:s", $_info['update_time']);
             $list[$_key]['result_code_zh'] = WeChatAwardCashDealModel::getWeChatErrorMsg($_info['result_code']);
             $list[$_key]['award_type'] = ErpEventTaskModel::AWARD_TYPE_CASH;
+            $list[$_key]['reviewer_id'] = $_info['operator_id'];
         }
         $returnList['records'] = $list;
         return $returnList;
@@ -163,15 +166,16 @@ class UserPointsExchangeOrderService
      * 重试发送积分兑换红包
      * @throws RunTimeException
      */
-    public static function retryExchangeRedPack($ids)
+    public static function retryExchangeRedPack($params)
     {
+        $ids = $params['points_exchange_order_wx_id'];
         $awardList = UserPointsExchangeOrderWxModel::getRecords(['id' => $ids]);
         if (empty($awardList)) {
             return true;
         }
         foreach ($awardList as $item) {
             // 放入待发放红包队列
-            $queueData = ['user_points_exchange_order_id' => $item['user_points_exchange_order_id'], 'record_sn' => $item['record_sn']];
+            $queueData = ['user_points_exchange_order_id' => $item['user_points_exchange_order_id'], 'record_sn' => $item['record_sn'], 'operator_id' => $params['employee_id']];
             try {
                 (new UserPointsExchangeRedPackTopic())->sendRedPack($queueData)->publish();
             } catch (RunTimeException $e) {

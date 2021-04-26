@@ -352,6 +352,7 @@ class DictConstants {
             'trial_task_stop_change_number_xyzop_178',
             'trial_task_config_xyzop_178',
             'extra_task_id_normal_xyzop_178',
+            'student_invite_send_points_start_time', // 我的邀请人发放积分开始时间
         ]
     ];
 

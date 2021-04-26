@@ -28,6 +28,7 @@ use App\Models\Dss\DssStudentModel;
 use App\Libs\Util;
 use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\Dss\DssUserWeiXinModel;
+use App\Models\Erp\ErpEventTaskModel;
 use App\Models\OperationActivityModel;
 use App\Models\SharePosterModel;
 use App\Models\PosterModel;
@@ -660,12 +661,21 @@ class ReferralService
     public static function myInviteStudentList($params, $page, $count)
     {
         $returnList = [
-            'invite_total_num' => 6,
+            'invite_total_num' => 0,
             'invite_student_list' => [],
         ];
+
         // 获取用户信息
         $studentInfo = DssStudentModel::getRecord(['uuid' => $params['referrer_uuid']], ['id']);
+
         $where = ['referee_id' => $studentInfo['id']];
+        // 是我的奖金页面的邀请名单，只读取到发放积分开始的日期
+        if ($params['award_type'] == ErpEventTaskModel::AWARD_TYPE_CASH){
+            // 获取开始发放积分的时间节点
+            $stopTime = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'student_invite_send_points_start_time');
+            $where['create_time[<]'] = $stopTime;
+
+         }
         $returnList['invite_total_num'] = StudentReferralStudentStatisticsModel::getCount($where);
         if ($returnList['invite_total_num'] <= 0) {
             return $returnList;

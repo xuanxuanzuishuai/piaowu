@@ -616,7 +616,7 @@ class Dss extends ControllerBase
             if ($result['code'] != Valid::CODE_SUCCESS) {
                 return $response->withJson($result, StatusCode::HTTP_OK);
             }
-            $res = UserPointsExchangeOrderService::retryExchangeRedPack($params['points_exchange_order_wx_id']);
+            $res = UserPointsExchangeOrderService::retryExchangeRedPack($params);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }

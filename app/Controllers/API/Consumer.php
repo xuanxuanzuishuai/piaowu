@@ -608,7 +608,8 @@ class Consumer extends ControllerBase
         try {
             CashGrantService::pointsExchangeRedPack(
                 $params['msg_body']['user_points_exchange_order_id'],
-                $params['msg_body']['record_sn']
+                $params['msg_body']['record_sn'],
+                $params['msg_body']['operator_id']
             );
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());

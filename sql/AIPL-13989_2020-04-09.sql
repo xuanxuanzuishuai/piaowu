@@ -6,11 +6,11 @@ INSERT INTO `erp_event_task`(`id`,`type`, `condition`, `event_id`, `name`, `desc
 (476, 5, '{"can_repeat_attend":1}', 4, '上传截图领奖', '海报分享', 1588228856, 591, 1612087387, 591, '{"awards":[{"to":2,"amount":3000,"type":3,"need_check":0,"account_sub_type":"3002"}]}', 1611936000, 1893427200, 1),
 (477, 5, '{"can_repeat_attend":1}', 4, '上传截图领奖', '海报分享', 1588228856, 591, 1613806910, 10038, '{"awards":[{"to":2,"amount":2000,"type":3,"need_check":0,"account_sub_type":"3002"}]}', 1612281600, 1740585599, 1),
 (478, 5, '{"can_repeat_attend":1}', 4, '上传截图领奖', '海报分享', 1588228856, 591, 1612343404, 591, '{"awards":[{"to":2,"amount":1000,"type":3,"need_check":0,"account_sub_type":"3002"}]}', 1611936000, 1893427200, 1),
-(481, 1, 'c', 1, '付费体验卡', 'AIPL-13989-4.22', 1616756138, 751, 1619082667, 10027, '{"awards":[{"to":1,"amount":1000,"type":3,"delay":15,"need_check":0,"account_sub_type":"3002"}]}', 1619082667, 1672416000, 1),
-(482, 1, '{"count\":2}', 1, '付费年卡', 'AIPL-13989-4.22', 1619082667, 751, 1619082667, 10027, '{"awards":[{"to":1,"amount":20000,"type":3,"delay":15,"need_check":1,"account_sub_type":"3002"},{"to":2,"amount":5000,"type":3,"delay":15,"need_check":1,"account_sub_type":"3002"}]}', 1619082667, 1672416000, 1),
-(483, 1, '{"count":5}', 1, '付费年卡', 'AIPL-13989-4.22', 1619082667, 751, 1619082667, 10027, '{"awards":[{"to":1,"amount":20000,"type":3,"delay":15,"need_check":1,"account_sub_type":"3002"},{"to":2,"amount":5000,"type":3,"delay":15,"need_check":1,"account_sub_type":"3002"}]}', 1619082667, 1672416000, 1),
-(484, 1, '{"count":6}', 1, '付费年卡', 'AIPL-13989-4.22', 1619082667, 751, 1619082667, 10027, '{"awards":[{"to":1,"amount":20000,"type":3,"delay":15,"need_check":1,"account_sub_type":"3002"},{"to":2,"amount":5000,"type":3,"delay":15,"need_check":1,"account_sub_type":"3002"}]}', 1619082667, 1672416000, 1),
-(485, 1, '{"can_repeat_attend":0}', 1, '付费年卡', 'AIPL-13989-4.22-额外奖励', 1619082667, 751, 1619082667, 10027, '{"awards":[{"to":1,"amount":10000,"type":3,"delay":15,"need_check":1,"account_sub_type":"3002"}]}', 1619082667, 1672416000, 1);
+(481, 1, 'c', 1, '付费体验卡', 'AIPL-13989-4.22', 1616756138, 751, 1619082667, 10027, '{"awards":[{"to":1,"amount":1000,"type":3,"delay":0,"need_check":0,"account_sub_type":"3002"}]}', 1619082667, 1672416000, 1),
+(482, 1, '{"count\":2}', 1, '付费年卡', 'AIPL-13989-4.22', 1619082667, 751, 1619082667, 10027, '{"awards":[{"to":1,"amount":20000,"type":3,"delay":1296000,"need_check":1,"account_sub_type":"3002"},{"to":2,"amount":5000,"type":3,"delay":1296000,"need_check":1,"account_sub_type":"3002"}]}', 1619082667, 1672416000, 1),
+(483, 1, '{"count":5}', 1, '付费年卡', 'AIPL-13989-4.22', 1619082667, 751, 1619082667, 10027, '{"awards":[{"to":1,"amount":20000,"type":3,"delay":1296000,"need_check":1,"account_sub_type":"3002"},{"to":2,"amount":5000,"type":3,"delay":1296000,"need_check":1,"account_sub_type":"3002"}]}', 1619082667, 1672416000, 1),
+(484, 1, '{"count":6}', 1, '付费年卡', 'AIPL-13989-4.22', 1619082667, 751, 1619082667, 10027, '{"awards":[{"to":1,"amount":20000,"type":3,"delay":1296000,"need_check":1,"account_sub_type":"3002"},{"to":2,"amount":5000,"type":3,"delay":1296000,"need_check":1,"account_sub_type":"3002"}]}', 1619082667, 1672416000, 1),
+(485, 1, '{"can_repeat_attend":0}', 1, '付费年卡', 'AIPL-13989-4.22-额外奖励', 1619082667, 751, 1619082667, 10027, '{"awards":[{"to":1,"amount":10000,"type":3,"delay":1296000,"need_check":1,"account_sub_type":"3002"}]}', 1619082667, 1672416000, 1);
 
 CREATE TABLE `erp_user_event_task_award_gold_leaf` (
     `id` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT '自增id',
@@ -38,7 +38,8 @@ CREATE TABLE `erp_user_event_task_award_gold_leaf` (
 -------------------- op --------------------
 INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES
 ('WE_CHAT_RED_PACK', '微信红包显示语', 'POINTS_EXCHANGE_RED_PACK_SEND_NAME', '{\"act_name\":\"\\u8f6c\\u4ecb\\u7ecd\\u5956\\u52b1\",\"send_name\":\"\\u79ef\\u5206\\u5151\\u6362{{order_amounts}}\\u5143\\u7ea2\\u5305\",\"wishing\":\"\\u79ef\\u5206\\u5151\\u6362{{order_amounts}}\\u5143\\u7ea2\\u5305\"}', '积分兑换红包');
-('SERVICE_SIGN_KEY', '各个服务调取op接口签名秘钥', 'erp_service', 'AAAEbm8uZQAAAAACAAABAAABFwAAAAdzc3gtcn', NULL);
+('SERVICE_SIGN_KEY', '各个服务调取op接口签名秘钥', 'erp_service', 'AAAEbm8uZQAAAAACAAABAAABFwAAAAdzc3gtcn', NULL),
+('REFERRAL_CONFIG', '转介绍配置', 'student_invite_send_points_start_time', '1619107200', '我的邀请人发放积分开始时间');
 
 -- 推荐人年卡 - 被推荐人购买体验卡
 -- 需要先执行 insert erp_event_task 然后查出原值 select * from dict where `type`='node_relate_task' and `key_code`='2';
@@ -83,6 +84,7 @@ CREATE TABLE `user_points_exchange_order_wx` (
     `result_status` tinyint(1) NOT NULL DEFAULT '4' COMMENT '请求微信的结果 3发放成功，4发放中/已发放待领取，5发放失败 ',
     `result_code` varchar(500) NOT NULL DEFAULT '' COMMENT '请求微信的返回值',
     `record_sn` int(10) NOT NULL DEFAULT '0' COMMENT '全局唯一记录标识',
+    `operator_id` int(10) NOT NULL DEFAULT '0' COMMENT '操作人',
     `create_time` int(11) NOT NULL DEFAULT '0',
     `update_time` int(11) NOT NULL DEFAULT '0',
     PRIMARY KEY (`id`),

@@ -669,9 +669,11 @@ class Erp
      * @param $eventTaskId
      * @param $status
      * @param $refereeUid
+     * @param $packageType
+     * @param $extParams
      * @return array|bool
      */
-    public function addEventTaskAward($uuid, $eventTaskId, $status, $awardId = 0, $refereeUid = '')
+    public function addEventTaskAward($uuid, $eventTaskId, $status, $awardId = 0, $refereeUid = '', $extParams = [])
     {
         $params = [
             'app_id' => Constants::SMART_APP_ID,
@@ -680,6 +682,7 @@ class Erp
             'referee_uuid' => $refereeUid,
             'event_task_id' => $eventTaskId,
             'status' => $status,
+            'reason' => $extParams['reason'] ?? '',
             'task_award_id' => $awardId
         ];
         $response = HttpHelper::requestJson($this->host . self::API_ADD_EVENT_TASK_AWARD, $params, 'POST');

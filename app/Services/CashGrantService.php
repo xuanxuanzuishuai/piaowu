@@ -390,9 +390,10 @@ class CashGrantService
      * 积分兑换红包
      * @param int $userPointsExchangeOrderId 红包兑换的订单Id
      * @param int $recordSn  红包兑换记录的唯一标识
+     * @param int $operatorId  操作人
      * @return bool
      */
-    public static function pointsExchangeRedPack($userPointsExchangeOrderId, $recordSn)
+    public static function pointsExchangeRedPack($userPointsExchangeOrderId, $recordSn, $operatorId)
     {
         // 获取订单详情 - 不存在不发放
         $orderInfo = UserPointsExchangeOrderModel::getRecord(['id' => $userPointsExchangeOrderId]);
@@ -437,6 +438,7 @@ class CashGrantService
         $data['result_status'] = $res['status'];
         $data['result_code'] = $res['result_code'];
         $data['open_id'] = $userWxInfo['open_id'] ?? '';
+        $data['operator_d'] = $operatorId;
         $data['update_time'] = $time;
         $data['mch_billno'] = $mchBillNo;
         //处理结果入库

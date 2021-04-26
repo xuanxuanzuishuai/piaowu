@@ -20,6 +20,9 @@ class ErpUserEventTaskAwardGoldLeafModel extends ErpModel
 
     // 拒绝发放原因
     const REASON_RETURN_COST = 'return_cost'; // 退费
+    const REASON_RETURN_DICT = [
+        self::REASON_RETURN_COST => '已废除',
+    ];
 
     /**
      * 获取一级代理数据列表
@@ -38,17 +41,21 @@ class ErpUserEventTaskAwardGoldLeafModel extends ErpModel
 
         $returnList = ['list' => [], 'total' => 0];
         $sqlWhere = [];
-        if (isset($where['id'])) {
+        if (!empty($where['id'])) {
             $sqlWhere[] = 'a.id=' . $where['id'];
         }
-        if (isset($where['user_id'])) {
+        if (!empty($where['user_id'])) {
             $sqlWhere[] = 'a.user_id=' . $where['user_id'];
         }
-        if (isset($where['uuid'])) {
+        if (!empty($where['uuid'])) {
             $sqlWhere[] = 'a.uuid=' . $where['uuid'];
         }
-        if (isset($where['status'])) {
-            $sqlWhere[] = 'a.status=' . $where['status'];
+        if (!empty($where['status'])) {
+            if (is_array($where['status'])) {
+                $sqlWhere[] = 'a.status in (' . implode(',', $where['status']) . ')';
+            }else {
+                $sqlWhere[] = 'a.status=' . $where['status'];
+            }
         }
         $db = self::dbRO();
         $count = $db->queryAll('select count(*) as total from ' . $awardTableName . ' as a where ' . implode(" AND ", $sqlWhere));

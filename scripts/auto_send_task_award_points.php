@@ -47,6 +47,7 @@ $studentIdList = DssStudentModel::getRecords(['uuid' => $studentUuid], ['id','uu
 $studentIdToUuid = array_column($studentIdList,'uuid', 'id');
 // 获取转介绍关系
 $refList = StudentReferralStudentStatisticsModel::getRecords(['student_id' => array_column($studentIdList, 'id')]);
+
 // 取得介绍人的uuid
 $refUuidList = DssStudentModel::getRecords(['id' => array_column($refList, 'referee_id')], ['id', 'uuid']);
 $refUuidArr = array_column($refUuidList, 'uuid', 'id');
@@ -64,10 +65,11 @@ $time = time();
 $erp = new Erp();
 foreach ($pointsList as $points) {
     $status = ErpUserEventTaskModel::EVENT_TASK_STATUS_COMPLETE;
+    $reason = '';
     // 待发放
     if ($points['status'] == ErpUserEventTaskAwardGoldLeafModel::STATUS_WAITING) {
         // 如果待发放的没有到期，则不发放
-        $delayTime = $points['create_time'] + ($points['delay'] * Util::TIMESTAMP_ONEDAY);
+        $delayTime = $points['create_time'] + $points['delay'];
 
         if ($delayTime > $time) {
             continue;
@@ -77,19 +79,21 @@ foreach ($pointsList as $points) {
         $verify = CashGrantService::awardAndRefundVerify($points);
         if (!$verify) {
             SimpleLogger::info('script::auto_send_task_award_points', ['info' => 'refund verify not pass', 'param' => $points]);
-            $status = ErpUserEventTaskAwardGoldLeafModel::REASON_RETURN_COST;
+            $status = ErpUserEventTaskAwardGoldLeafModel::STATUS_DISABLED;
+            $reason = ErpUserEventTaskAwardGoldLeafModel::REASON_RETURN_COST;
         }
     }
     $referrerUuid = $studentRef[$points['uuid']];
-    // 如果本条是推荐人的奖励，直接用uuid即可
-    if ($points['to'] == ErpEventTaskModel::AWARD_TO_REFERRER){
+    // 本条记录如果是给被推荐人发放奖励，说名完成人和获得奖励的人是同一个人， uuid = finish_task_uuid
+    if ($points['to'] == ErpEventTaskModel::AWARD_TO_BE_REFERRER){
         $referrerUuid = $points['uuid'];
     }
-    $taskResult = $erp->addEventTaskAward($points['uuid'], $points['event_task_id'], $status, $points['id'], $referrerUuid);
+    $taskResult = $erp->addEventTaskAward($points['uuid'], $points['event_task_id'], $status, $points['id'], $referrerUuid, ['reason' => $reason]);
     SimpleLogger::info("script::auto_send_task_award_points", [
         'params' => $points,
         'response' => $taskResult,
         'status' => $status,
+        'referrer_uuid' => $referrerUuid,
     ]);
     // 积分发放成功后 把消息放入到 客服消息队列
     if (!empty($taskResult['data'])) {

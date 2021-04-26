@@ -22,7 +22,7 @@ class ErpUserEventTaskAwardGoldLeafService
     ];
 
     /**
-     * 获取待发放金叶子积分明细列表
+     * 获取待发放和发放失败金叶子积分明细列表
      * @param $params
      * @param $page
      * @param $limitNum
@@ -35,7 +35,10 @@ class ErpUserEventTaskAwardGoldLeafService
             ($page - 1) * $limitNum,
             $limitNum,
         ];
-        $params['status'] = ErpUserEventTaskAwardGoldLeafModel::STATUS_WAITING;
+        $params['status'] = [
+            ErpUserEventTaskAwardGoldLeafModel::STATUS_WAITING,
+            ErpUserEventTaskAwardGoldLeafModel::STATUS_DISABLED,
+        ];
         $list = ErpUserEventTaskAwardGoldLeafModel::getList($params, $limit);
         $returnList['total'] = $list['total'];
         $returnList['total_num'] = 0;
@@ -50,7 +53,11 @@ class ErpUserEventTaskAwardGoldLeafService
     {
         $goldLeafInfo['format_create_time'] = date("Y-m-d H:i:s", $goldLeafInfo['create_time']);
         $goldLeafInfo['mobile'] = Util::hideUserMobile($goldLeafInfo['mobile']);
-        $goldLeafInfo['status_zh'] = self::STATUS_DICT[$goldLeafInfo['status']] ?? '';
+        if (!empty($goldLeafInfo['reason']) && $goldLeafInfo['status'] == ErpUserEventTaskAwardGoldLeafModel::STATUS_DISABLED) {
+            $goldLeafInfo['status_zh'] = ErpUserEventTaskAwardGoldLeafModel::REASON_RETURN_DICT[$goldLeafInfo['reason']] ?? '';
+        }else {
+            $goldLeafInfo['status_zh'] = self::STATUS_DICT[$goldLeafInfo['status']] ?? '';
+        }
 
         if ($isBackend) {
             $goldLeafInfo['bill_id'] = "";  // erp后台需要的字段
