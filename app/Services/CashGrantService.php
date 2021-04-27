@@ -438,7 +438,7 @@ class CashGrantService
         $data['result_status'] = $res['status'];
         $data['result_code'] = $res['result_code'];
         $data['open_id'] = $userWxInfo['open_id'] ?? '';
-        $data['operator_d'] = $operatorId;
+        $data['operator_id'] = $operatorId;
         $data['update_time'] = $time;
         $data['mch_billno'] = $mchBillNo;
         //处理结果入库

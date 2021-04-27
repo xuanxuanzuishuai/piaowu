@@ -15,6 +15,7 @@ use App\Models\Dss\DssStudentModel;
 use App\Models\Erp\ErpUserEventTaskAwardGoldLeafModel;
 use App\Models\ParamMapModel;
 use App\Models\StudentInviteModel;
+use App\Models\StudentReferralStudentDetailModel;
 use App\Models\StudentReferralStudentStatisticsModel;
 use App\Services\Queue\PushMessageTopic;
 use App\Services\Queue\QueueService;
@@ -345,7 +346,7 @@ class UserRefereeService
             'create_time[>=]' => $startPoint,
             'student_id' => $refereeInfo['student_id'],
         ];
-        $refereeStudentData = StudentReferralStudentStatisticsModel::getRecord($where, ['id']);
+        $refereeStudentData = StudentReferralStudentDetailModel::getRecord($where, ['id']);
         if (empty($refereeStudentData)) {
             return 0;
         }
@@ -356,7 +357,7 @@ class UserRefereeService
             'create_time[>=]' => $startPoint,
             'id[<=]' => $refereeStudentData['id'],
         ];
-        $refereeCount = StudentReferralStudentStatisticsModel::getCount($where);
+        $refereeCount = StudentReferralStudentDetailModel::getCount($where);
         return $refereeCount;
     }
 }
