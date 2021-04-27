@@ -9,7 +9,6 @@
 namespace App\Models;
 
 use App\Libs\MysqlDB;
-use App\Libs\UserCenter;
 
 class ParamMapModel extends Model
 {
@@ -17,29 +16,6 @@ class ParamMapModel extends Model
     //用户类型：1智能陪练学生 4运营系统代理商
     const TYPE_STUDENT = 1;
     const TYPE_AGENT = 4;
-
-    /**
-     * 检测代理转介绍二维码对应的代理商状态
-     * @param $paramId
-     * @return array|null
-     */
-    public static function checkParamToAgentValidStatus($paramId)
-    {
-        $db = MysqlDB::getDB();
-        $sql = 'SELECT
-                    a.id as "agent_id",ap.id as "agent_parent_id" 
-                FROM
-                    ' . self::$table . ' as p 
-                    INNER JOIN ' . AgentModel::$table . ' as a ON p.user_id = a.id
-                    INNER JOIN ' . AgentModel::$table . ' AS ap ON ap.id = a.parent_id 
-                WHERE
-                    p.id = ' . $paramId . ' 
-                    AND p.type = ' . self::TYPE_AGENT . ' 
-                    AND a.status = ' . AgentModel::STATUS_OK . ' 
-                    AND ap.status =' . AgentModel::STATUS_OK;
-        return $db->queryAll($sql)[0];
-    }
-
     /**
      * 更新小程序二维码图片地址
      * @param $id
@@ -130,6 +106,27 @@ class ParamMapModel extends Model
                 WHERE
                     p.param_info ->> '$.r' = '" . $qrTicket . "'
                     AND p.type=" . self::TYPE_AGENT;
+        return $db->queryAll($sql)[0];
+    }
+
+    /**
+     * 通过param_id查询小程序转介绍二维码数据
+     * @param $paramId
+     * @return mixed
+     */
+    public static function getParamByQrById(int $paramId)
+    {
+        $db = MysqlDB::getDB();
+        $sql = "SELECT
+                    id,
+                    app_id,
+                    type,
+                    user_id,
+                    param_info 
+                FROM
+                    " . self::$table . " 
+                WHERE
+                    id= " . $paramId;
         return $db->queryAll($sql)[0];
     }
 }

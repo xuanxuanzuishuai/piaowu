@@ -53,11 +53,10 @@ class StudentReferralStudentService
      * 购买体验卡数据记录
      * @param $studentId
      * @param $qrTicketIdentityData
-     * @param $extParams
      * @param $time
      * @return bool
      */
-    public static function trailReferralRecord($studentId, $qrTicketIdentityData, $extParams, $time)
+    public static function trailReferralRecord($studentId, $qrTicketIdentityData, $time)
     {
         //检测当前学生是否可以建立绑定关系：已存在绑定关系的老数据跳过检测
         $bindReferralInfo = StudentReferralStudentStatisticsModel::getRecord(['student_id' => $studentId], ['student_id', 'id', 'last_stage']);
@@ -100,8 +99,8 @@ class StudentReferralStudentService
                     'referee_id' => $qrTicketIdentityData['user_id'],
                     'last_stage' => StudentReferralStudentStatisticsModel::STAGE_TRIAL,
                     'create_time' => $time,
-                    'referee_employee_id' => $extParams['e'] ?? 0,
-                    'activity_id' => $extParams['a'] ?? 0,
+                    'referee_employee_id' => $qrTicketIdentityData['e'] ?? 0,
+                    'activity_id' => $qrTicketIdentityData['a'] ?? 0,
                 ]
             );
         } elseif ($bindReferralInfo['last_stage'] < StudentReferralStudentStatisticsModel::STAGE_TRIAL) {

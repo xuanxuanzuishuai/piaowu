@@ -38,7 +38,7 @@ class StudentInviteService
             $inviteRes = self::registerLogic($studentId, $qrTicket, $appId, $time, $extParams);
         } elseif ($stage == StudentReferralStudentStatisticsModel::STAGE_TRIAL) {
             //购买体验卡
-            $inviteRes = self::trailLogic($studentId, $parentBillId, $time, $extParams);
+            $inviteRes = self::trailLogic($studentId, $parentBillId, $time);
         } elseif ($stage == StudentReferralStudentStatisticsModel::STAGE_FORMAL) {
             //购买年卡
             $inviteRes = self::normalLogic($studentId, $time);
@@ -118,25 +118,28 @@ class StudentInviteService
      * @param $studentId
      * @param $parentBillId
      * @param $time
-     * @param $extParams
      * @return bool
      */
-    private static function trailLogic($studentId, $parentBillId, $time, $extParams)
+    private static function trailLogic($studentId, $parentBillId, $time)
     {
         //通过订单ID获取成单人的映射关系：已存在学生转介绍绑定关系的老数据跳过检测
-        $bindReferralInfo = StudentReferralStudentStatisticsModel::getRecord(['student_id' => $studentId], ['referee_id']);
+        $bindReferralInfo = StudentReferralStudentStatisticsModel::getRecord(['student_id' => $studentId], ['activity_id', 'referee_employee_id', 'referee_id']);
         if (empty($bindReferralInfo)) {
             //新绑定逻辑条件检测
             $qrTicketIdentityData = BillMapModel::paramMapDataByBillId($parentBillId, $studentId);
         } else {
-            $qrTicketIdentityData = ['type' => ParamMapModel::TYPE_STUDENT, 'user_id' => $bindReferralInfo['referee_id']];
+            $qrTicketIdentityData = [
+                'a' => $bindReferralInfo['activity_id'],
+                'e' => $bindReferralInfo['referee_employee_id'],
+                'type' => ParamMapModel::TYPE_STUDENT,
+                'user_id' => $bindReferralInfo['referee_id']];
         }
         if (empty($qrTicketIdentityData)) {
             return false;
         }
         if ($qrTicketIdentityData['type'] == ParamMapModel::TYPE_STUDENT) {
             //成单人身份是学生
-            return StudentReferralStudentService::trailReferralRecord($studentId, $qrTicketIdentityData, $extParams, $time);
+            return StudentReferralStudentService::trailReferralRecord($studentId, $qrTicketIdentityData, $time);
         } elseif ($qrTicketIdentityData['type'] == ParamMapModel::TYPE_AGENT) {
             //成单人身份是代理商，此处不处理，执行代理商关系绑定以及奖励逻辑
             return true;

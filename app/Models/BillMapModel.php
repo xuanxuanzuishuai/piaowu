@@ -48,6 +48,8 @@ class BillMapModel extends Model
         $data = $db->queryAll("SELECT
                                 pm.id,
                                 pm.param_info ->> '$.r' AS qr_ticket,
+                                pm.param_info ->> '$.e' AS e,
+                                pm.param_info ->> '$.a' AS a,
                                 pm.user_id, 
                                 pm.type
                             FROM

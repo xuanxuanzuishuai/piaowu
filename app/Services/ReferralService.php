@@ -291,7 +291,7 @@ class ReferralService
     public static function getReferralInfo($appId, $studentId, $parentBillId = '')
     {
         if ($appId == Constants::SMART_APP_ID) {
-            $referralData = StudentReferralStudentStatisticsModel::getRecord(['student_id' => $studentId], ['referee_id', '']);
+            $referralData = StudentReferralStudentStatisticsModel::getRecord(['student_id' => $studentId], ['referee_id']);
             if (!empty($referralData)) {
                 return $referralData;
             }

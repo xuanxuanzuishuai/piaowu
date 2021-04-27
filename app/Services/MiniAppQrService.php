@@ -35,21 +35,35 @@ class MiniAppQrService
     {
         //应用ID
         $appId = UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT;
-        //二维码识别后跳转地址类型
-        $landingType = $extParams['lt'] ?? DssUserQrTicketModel::LANDING_TYPE_MINIAPP;
         //ticket的前缀
         $ticketPrefix = '';
+        $paramInfo = [];
         if ($type == ParamMapModel::TYPE_AGENT) {
+            //二维码识别后跳转地址类型
+            $landingType = $extParams['lt'] ?? DssUserQrTicketModel::LANDING_TYPE_MINIAPP;
             $ticketPrefix = self::AGENT_TICKET_PREFIX;
+            //获取学生转介绍学生二维码资源数据
+            $paramInfo = [
+                'c' => $extParams['c'] ?? "0",//渠道ID
+                'a' => $extParams['a'] ?? "0",//活动ID
+                'e' => $extParams['e'] ?? "0",//员工ID
+                'p' => $extParams['p'] ?? "0",//海报ID：二维码智能出现在特殊指定的海报
+                'lt' => $landingType,//二维码类型
+            ];
+        } elseif ($type == ParamMapModel::TYPE_STUDENT) {
+            $landingType = $extParams['lt'] ?? DssUserQrTicketModel::LANDING_TYPE_MINIAPP;
+            if (isset($extParams['c']) && !empty($extParams['c'])) {
+                $paramInfo['c'] = (int)$extParams['c'];//渠道ID
+            }
+            if (isset($extParams['a']) && !empty($extParams['a'])) {
+                $paramInfo['a'] = (int)$extParams['a'];//活动ID
+            }
+            if (isset($extParams['e']) && !empty($extParams['e'])) {
+                $paramInfo['e'] = (int)$extParams['e'];//员工ID
+            }
+        } else {
+            return '';
         }
-        //获取学生转介绍学生二维码资源数据
-        $paramInfo = [
-            'c' => $extParams['c'] ?? "0",//渠道ID
-            'a' => $extParams['a'] ?? "0",//活动ID
-            'e' => $extParams['e'] ?? "0",//员工ID
-            'p' => $extParams['p'] ?? "0",//海报ID：二维码智能出现在特殊指定的海报
-            'lt' => $landingType,//二维码类型
-        ];
         //检测二维码是否已存在
         $res = ParamMapModel::getQrUrl($userId, $appId, $type, $paramInfo);
         if (!empty($res['qr_url'])) {
@@ -68,12 +82,14 @@ class MiniAppQrService
             if (empty($qrData[0])) {
                 return '';
             }
-            //记录二维码图片地址数据
-            ParamMapModel::updateParamInfoQrUrl($qrData[1], $qrData[0]);
+            //记录二维码图片地址数据:学生的图片数据不在这里记录
+            if ($type == ParamMapModel::TYPE_AGENT) {
+                ParamMapModel::updateParamInfoQrUrl($qrData[1], $qrData[0]);
+            }
         } catch (\Exception $e) {
             SimpleLogger::error('make agent qr image exception', [print_r($e->getMessage(), true)]);
             return '';
         }
-        return ['qr_url' => $qrData[0], 'id' => $qrData[1], 'qr_ticket' => $userQrTicket];
+        return ['qr_url' => $qrData[0], 'id' => $qrData[1], 'qr_ticket' => $userQrTicket, 'type' => $type, 'user_id' => $userId];
     }
 }

@@ -280,9 +280,9 @@ class Dss extends ControllerBase
                 'error_code' => 'parent_bill_id_is_required'
             ],
             [
-                'key' => 'qr_ticket',
+                'key' => 'scene_data',
                 'type' => 'required',
-                'error_code' => 'qr_ticket_is_required'
+                'error_code' => 'scene_data_is_required'
             ]
         ];
         $params = $request->getParams();
@@ -290,7 +290,7 @@ class Dss extends ControllerBase
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        $res = BillMapService::mapDataRecord($params['qr_ticket'], $params['parent_bill_id'], $params['student_id']);
+        $res = BillMapService::mapDataRecord($params['scene_data'], $params['parent_bill_id'], $params['student_id']);
         return HttpHelper::buildResponse($response, ['res' => $res]);
     }
 
