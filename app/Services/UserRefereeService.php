@@ -294,6 +294,11 @@ class UserRefereeService
                     && $refereeInfo['first_pay_normal_info']['create_time'] >= $startPoint) {
                     $startPoint = $refereeInfo['first_pay_normal_info']['create_time'];
                 }
+                // 计算活动时间是否已经开始
+                $activStartTime = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'dsscrm_1841_start_time');
+                if ($activStartTime > $startPoint) {
+                    $startPoint = $activStartTime;
+                }
 
                 // 查询被推荐人数量：
                 $noChangeNumber = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'task_stop_change_number');
@@ -339,25 +344,27 @@ class UserRefereeService
      */
     public static function getRefereeCount($refereeInfo, $startPoint, $type = DssStudentModel::REVIEW_COURSE_1980, $noChangeNumber = 1000)
     {
-
+        // 查询当前推荐关系是否存在
         $where = [
             'referee_id' => $refereeInfo['id'],
             'last_stage' => $type,
             'create_time[>=]' => $startPoint,
             'student_id' => $refereeInfo['student_id'],
         ];
-        $refereeStudentData = StudentReferralStudentDetailModel::getRecord($where, ['id']);
+        $refereeStudentData = StudentReferralStudentStatisticsModel::getRecord($where, ['id']);
         if (empty($refereeStudentData)) {
             return 0;
         }
 
-        $where = [
-            'referee_id' => $refereeInfo['id'],
-            'last_stage' => $type,
-            'create_time[>=]' => $startPoint,
-            'id[<=]' => $refereeStudentData['id'],
-        ];
-        $refereeCount = StudentReferralStudentDetailModel::getCount($where);
-        return $refereeCount;
+        $refereeCount = 0;
+        // 确定当前被推荐人是第几个成功购买年卡的人
+        $list = StudentReferralStudentStatisticsModel::getStudentList($refereeInfo['id'], $type, $startPoint, [0,$noChangeNumber]);
+        foreach ($list as $item) {
+            $refereeCount +=1;
+            if ($item['student_id'] == $refereeInfo['student_id']) {
+                break;
+            }
+        }
+        return  $refereeCount == 0 ? $noChangeNumber : $refereeCount;
     }
 }

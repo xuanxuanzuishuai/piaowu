@@ -44,6 +44,8 @@ INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES
 -- 推荐人年卡 - 被推荐人购买体验卡
 -- 需要先执行 insert erp_event_task 然后查出原值 select * from dict where `type`='node_relate_task' and `key_code`='2';
 UPDATE `dict` SET `key_value` = '481,462,464,465,466,307,285,201,203,52,2' WHERE `type`='node_relate_task' and `key_code`='2';
+-- 更新年卡奖励包含的所有任务id    -- select * from dict where `type`='node_relate_task' and `key_code`='3';
+UPDATE `dict` SET `key_value` = '466,470,471,326,327,328,329,330,285,202,204,53,3,482,483,484' WHERE `type`='node_relate_task' and `key_code`='3';
 
 -- 推荐人年卡 - 被推荐人购买年卡
 -- 需要先执行 insert erp_event_task 然后查出原值 select * from dict where `type`='REFERRAL_CONFIG' and `key_code`='normal_task_config';
@@ -53,6 +55,8 @@ UPDATE `dict` SET `key_value` = '{"1":482,"2":482,"3":483,"4":483,"5":483,"6":48
 -- 需要先执行 insert erp_event_task 然后查出原值 select * from dict where `type`='REFERRAL_CONFIG' and `key_code`='extra_task_id_normal_xyzop_178';
 UPDATE `dict` SET `key_value` = '485' WHERE  `type`='REFERRAL_CONFIG' and `key_code`='extra_task_id_normal_xyzop_178';
 
+-- 修改活动开始时间   - 上线时需要确认这个时间， 因为这个时间之前的介绍不算数量
+UPDATE `dict` SET `key_value` = '1620576000' WHERE `type` = 'REFERRAL_CONFIG' and `key_code` = 'dsscrm_1841_start_time';
 -- 红包表
 CREATE TABLE `user_points_exchange_order` (
     `id` bigint(10) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键',
@@ -95,14 +99,13 @@ CREATE TABLE `user_points_exchange_order_wx` (
 -- 更新客服消息
 UPDATE `wechat_config` SET `content` = '您好，您的金叶子已到账，详情如下：\n任务名称：上传截图领奖\n任务内容：{{activityName}}\n完成情况：审核通过，小叶子奖励您{{awardValue}}金叶子，请再接再厉呀！\n<a href="{{url}}">更多的奖励活动期待您的参与，【点此消息】分享海报赢金叶子</a>' WHERE `id` = 259;
 INSERT INTO `wechat_config`(`type`, `content`, `msg_type`, `content_type`, `event_type`, `event_key`, `create_time`, `update_time`, `create_uid`, `update_uid`, `event_task_id`, `to`) VALUES
-(1, '奖励金叶子已经发放，详情如下：\n任务名称：转介绍奖励\n任务内容：邀请好友报名智能陪练体验营\n完成情况：已完成，奖励{{awardValue}}金叶子已发放，请到【我的】及时查看\n<a href=\"{{url}}\">【点此消息】查看更多邀请记录</a>', '3', 1, 'award', '', 1583918495, 0, 0, 0, 481, 1),
-(1, '奖励金叶子已经发放，详情如下：\n任务名称：转介绍奖励\n任务内容：好友付费智能陪练年卡\n完成情况：已完成，奖励{{awardValue}}金叶子已发放，请到【我的】及时查看\n<a href=\"{{url}}\">【点此消息】查看更多邀请记录</a>', '3', 1, 'award', '', 1583918495, 0, 0, 0, 482, 1),
-(1, '奖励金叶子已经发放，详情如下：\n任务名称：转介绍奖励\n任务内容：付费智能陪练年卡\n完成情况：已完成，奖励{{awardValue}}金叶子已发放，请到【我的】及时查看\n<a href=\"{{url}}\">【点此消息】查看更多邀请记录</a>', '3', 1, 'award', '', 1583918495, 0, 0, 0, 482, 2),
-(1, '奖励金叶子已经发放，详情如下：\n任务名称：转介绍奖励\n任务内容：好友付费智能陪练年卡\n完成情况：已完成，奖励{{awardValue}}金叶子已发放，请到【我的】及时查看\n<a href=\"{{url}}\">【点此消息】查看更多邀请记录</a>', '3', 1, 'award', '', 1583918495, 0, 0, 0, 483, 1),
-(1, '奖励金叶子已经发放，详情如下：\n任务名称：转介绍奖励\n任务内容：付费智能陪练年卡\n完成情况：已完成，奖励{{awardValue}}金叶子已发放，请到【我的】及时查看\n<a href=\"{{url}}\">【点此消息】查看更多邀请记录</a>', '3', 1, 'award', '', 1583918495, 0, 0, 0, 483, 2),
-(1, '奖励金叶子已经发放，详情如下：\n任务名称：转介绍奖励\n任务内容：好友付费智能陪练年卡\n完成情况：已完成，奖励{{awardValue}}金叶子已发放，请到【我的】及时查看\n<a href=\"{{url}}\">【点此消息】查看更多邀请记录</a>', '3', 1, 'award', '', 1583918495, 0, 0, 0, 484, 1),
-(1, '奖励金叶子已经发放，详情如下：\n任务名称：转介绍奖励\n任务内容：付费智能陪练年卡\n完成情况：已完成，奖励{{awardValue}}金叶子已发放，请到【我的】及时查看\n<a href=\"{{url}}\">【点此消息】查看更多邀请记录</a>', '3', 1, 'award', '', 1583918495, 0, 0, 0, 484, 2);
-
+(1, '奖励金叶子已经发放，详情如下：\n任务名称：转介绍奖励\n任务内容：邀请好友报名智能陪练体验营\n完成情况：已完成，奖励{{awardValue}}金叶子已发放，请到【我的】及时查看\n<a href=\"{{url}}\">【点此消息】查看金叶子明细</a>', '3', 1, 'award', '', 1583918495, 0, 0, 0, 481, 1),
+(1, '奖励金叶子已经发放，详情如下：\n任务名称：转介绍奖励\n任务内容：好友付费智能陪练年卡\n完成情况：已完成，奖励{{awardValue}}金叶子已发放，请到【我的】及时查看\n<a href=\"{{url}}\">【点此消息】查看金叶子明细</a>', '3', 1, 'award', '', 1583918495, 0, 0, 0, 482, 1),
+(1, '奖励金叶子已经发放，详情如下：\n任务名称：转介绍奖励\n任务内容：付费智能陪练年卡\n完成情况：已完成，奖励{{awardValue}}金叶子已发放，请到【我的】及时查看\n<a href=\"{{url}}\">【点此消息】查看金叶子明细</a>', '3', 1, 'award', '', 1583918495, 0, 0, 0, 482, 2),
+(1, '奖励金叶子已经发放，详情如下：\n任务名称：转介绍奖励\n任务内容：好友付费智能陪练年卡\n完成情况：已完成，奖励{{awardValue}}金叶子已发放，请到【我的】及时查看\n<a href=\"{{url}}\">【点此消息】查看金叶子明细</a>', '3', 1, 'award', '', 1583918495, 0, 0, 0, 483, 1),
+(1, '奖励金叶子已经发放，详情如下：\n任务名称：转介绍奖励\n任务内容：付费智能陪练年卡\n完成情况：已完成，奖励{{awardValue}}金叶子已发放，请到【我的】及时查看\n<a href=\"{{url}}\">【点此消息】查看金叶子明细</a>', '3', 1, 'award', '', 1583918495, 0, 0, 0, 483, 2),
+(1, '奖励金叶子已经发放，详情如下：\n任务名称：转介绍奖励\n任务内容：好友付费智能陪练年卡\n完成情况：已完成，奖励{{awardValue}}金叶子已发放，请到【我的】及时查看\n<a href=\"{{url}}\">【点此消息】查看金叶子明细</a>', '3', 1, 'award', '', 1583918495, 0, 0, 0, 484, 1),
+(1, '奖励金叶子已经发放，详情如下：\n任务名称：转介绍奖励\n任务内容：付费智能陪练年卡\n完成情况：已完成，奖励{{awardValue}}金叶子已发放，请到【我的】及时查看\n<a href=\"{{url}}\">【点此消息】查看金叶子明细</a>', '3', 1, 'award', '', 1583918495, 0, 0, 0, 484, 2);
 
 -------------------- dss --------------------
 alter table share_poster add points_award_id varchar (128) not null default '' comment "积分奖励id";

@@ -153,7 +153,7 @@ class UserPointsExchangeOrderService
             $list[$_key]['student_mobile'] = $_info['id'];
             $list[$_key]['award_amount'] = $_info['order_amounts'];
             $list[$_key]['create_time'] = date("Y-m-d H:i:s", $_info['create_time']);
-            $list[$_key]['review_time'] = date("Y-m-d H:i:s", $_info['update_time']);
+            $list[$_key]['review_time'] = $_info['update_time']>0 ? date("Y-m-d H:i:s", $_info['update_time']) : '';
             $list[$_key]['result_code_zh'] = WeChatAwardCashDealModel::getWeChatErrorMsg($_info['result_code']);
             $list[$_key]['award_type'] = ErpEventTaskModel::AWARD_TYPE_CASH;
             $list[$_key]['reviewer_id'] = $_info['operator_id'];

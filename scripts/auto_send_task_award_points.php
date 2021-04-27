@@ -14,10 +14,12 @@ define('LANG_ROOT', PROJECT_ROOT . '/lang');
 
 require_once PROJECT_ROOT . '/vendor/autoload.php';
 
+use App\Libs\Constants;
 use App\Libs\Erp;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\Dss\DssStudentModel;
+use App\Models\Erp\ErpEventModel;
 use App\Models\Erp\ErpEventTaskModel;
 use App\Models\Erp\ErpUserEventTaskAwardGoldLeafModel;
 use App\Models\Erp\ErpUserEventTaskModel;
@@ -40,27 +42,28 @@ if (empty($pointsList)) {
     return 'success';
 }
 
-// 获取奖励所有推荐人uuid
-$studentUuid = array_column($pointsList, 'uuid');
-// 获取学生的id
+// 获取完成任务的人uuid 和 id
+$studentUuid = array_column($pointsList, 'finish_task_uuid');
 $studentIdList = DssStudentModel::getRecords(['uuid' => $studentUuid], ['id','uuid']);
 $studentIdToUuid = array_column($studentIdList,'uuid', 'id');
 // 获取转介绍关系
 $refList = StudentReferralStudentStatisticsModel::getRecords(['student_id' => array_column($studentIdList, 'id')]);
-
-// 取得介绍人的uuid
+// 取得介绍人的uuid 和 id
 $refUuidList = DssStudentModel::getRecords(['id' => array_column($refList, 'referee_id')], ['id', 'uuid']);
 $refUuidArr = array_column($refUuidList, 'uuid', 'id');
 // 整理用户推荐的uuid
 $studentRef=[];
 foreach ($refList as $item) {
+    // 被推荐人的uuid
     $_stu_uuid = $studentIdToUuid[$item['student_id']] ?? '';
     if (empty($_stu_uuid)) {
         continue;
     }
+    // 被推荐人对应的推荐人uuid
     $studentRef[$_stu_uuid] = $refUuidArr[$item['referee_id']];
 }
 
+$eventTypeList = [];
 $time = time();
 $erp = new Erp();
 foreach ($pointsList as $points) {
@@ -75,15 +78,26 @@ foreach ($pointsList as $points) {
             continue;
         }
 
+        // 获取任务类型
+        if (!isset($eventTypeList[$points['event_task_id']])) {
+            $eventTaskInfo = ErpEventTaskModel::getRecord(['id' => $points['event_task_id']]);
+            $eventInfo = ErpEventModel::getRecord(['id' => $eventTaskInfo['event_id']]);
+            $eventTypeList[$points['event_task_id']] = $eventInfo['type'];
+        }
+
         //退费验证
-        $verify = CashGrantService::awardAndRefundVerify($points);
+        $verifyArr['type'] =$eventTypeList[$points['event_task_id']];
+        $verifyArr['event_task_id'] =$points['event_task_id'];
+        $verifyArr['uuid'] =$points['finish_task_uuid'];
+        $verifyArr['app_id'] = Constants::SMART_APP_ID;
+        $verify = CashGrantService::awardAndRefundVerify($verifyArr);
         if (!$verify) {
             SimpleLogger::info('script::auto_send_task_award_points', ['info' => 'refund verify not pass', 'param' => $points]);
             $status = ErpUserEventTaskAwardGoldLeafModel::STATUS_DISABLED;
             $reason = ErpUserEventTaskAwardGoldLeafModel::REASON_RETURN_COST;
         }
     }
-    $referrerUuid = $studentRef[$points['uuid']];
+    $referrerUuid = $studentRef[$points['finish_task_uuid']];
     // 本条记录如果是给被推荐人发放奖励，说名完成人和获得奖励的人是同一个人， uuid = finish_task_uuid
     if ($points['to'] == ErpEventTaskModel::AWARD_TO_BE_REFERRER){
         $referrerUuid = $points['uuid'];
