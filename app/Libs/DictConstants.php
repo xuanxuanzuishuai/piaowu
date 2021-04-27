@@ -593,6 +593,7 @@ class DictConstants {
             'user_type_tag_dict', // 用户对应菜单的标签
             'tag_update_amount', // 请求更新标签数量
             'all_menu_tag',
+            'menu_tag_none',
         ],
     ];
 

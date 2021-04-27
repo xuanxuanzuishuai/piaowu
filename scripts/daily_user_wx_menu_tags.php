@@ -71,7 +71,7 @@ if (!$done) {
         $records = DssUserWeiXinModel::getRecords($where);
         $records = array_column($records, null, 'open_id');
         foreach ($records as $item) {
-            $part = (fmod($item['id'], 4) + 1);
+            $part = (fmod($item['id'], 8) + 1);
             $key = KEY_DAILY_WX_MENU_TAG . $part;
             $redis->lpush($key, [$item['open_id']]);
         }
@@ -85,7 +85,7 @@ if (!$done) {
         if (empty($item)) {
             break;
         }
-        $updateKey = KEY_DAILY_WX_MENU_TAG . mt_rand(1, 4);
+        $updateKey = KEY_DAILY_WX_MENU_TAG . mt_rand(1, 8);
         $redis->lpush($updateKey, [$item]);
     }
     $redis->del([$key]);
@@ -98,7 +98,7 @@ if (!$done) {
 }
 
 // 更新当前时间（小时）组的数据
-$key = KEY_DAILY_WX_MENU_TAG . $hour;
+$key = KEY_DAILY_WX_MENU_TAG . intval($hour);
 $counter = 0;
 $limit = 50;
 $list = [];
@@ -110,11 +110,11 @@ while ($counter < $limit) {
     $list[$item] = $item;
     $counter ++;
     if ($counter >= $limit) {
-        QueueService::dailyUpdateUserMenuTag($list, 3500);
+        QueueService::dailyUpdateUserMenuTag($list, 3600);
         $list = [];
         $counter = 0;
     }
 }
 if (!empty($list)) {
-    QueueService::dailyUpdateUserMenuTag($list, 3500);
+    QueueService::dailyUpdateUserMenuTag($list, 3600);
 }

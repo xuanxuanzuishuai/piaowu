@@ -390,11 +390,13 @@ class WechatService
             return false;
         }
         if (empty($tagId)) {
-            $allTagId = DictConstants::get(DictConstants::WECHAT_CONFIG, 'all_menu_tag');
-            $tagId = json_decode($allTagId, true);
+            $tagId = DictConstants::get(DictConstants::WECHAT_CONFIG, 'menu_tag_none');
+        }
+        if (empty($tagId)) {
+            return false;
         }
         $wechat = WeChatMiniPro::factory(DssUserWeiXinModel::dealAppId($params['appid'] ?? null), $params['busi_type'] ?? DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER);
-        $wechat->batchUnTagUsers([$openId], $tagId);
+        $wechat->batchTagUsers([$openId], $tagId);
         return true;
     }
 }
