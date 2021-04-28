@@ -103,7 +103,7 @@ class Pay extends ControllerBase
             //转介绍订单关系绑定
             $sceneData = ShowMiniAppService::getSceneData($params['scene'] ?? '');
             if (!empty($res['data']['order_id']) && !empty($sceneData)) {
-                BillMapService::mapDataRecord($sceneData['r'], $res['data']['order_id'], $student['id']);
+                BillMapService::mapDataRecord($sceneData, $res['data']['order_id'], $student['id']);
             }
             $res['data']['bill'] = [
                 'id' => $res['data']['order_id']

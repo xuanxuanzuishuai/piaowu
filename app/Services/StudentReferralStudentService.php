@@ -129,8 +129,7 @@ class StudentReferralStudentService
         //检测当前学生是否存在有效的绑定关系:必须存在有效的体验课绑定关系
         $bindReferralInfo = StudentReferralStudentStatisticsModel::getRecord(
             [
-                'student_id' => $studentId,
-                'last_stage[>=]' => StudentReferralStudentStatisticsModel::STAGE_TRIAL
+                'student_id' => $studentId
             ],
             ['student_id', 'last_stage', 'id']);
         if (empty($bindReferralInfo)) {

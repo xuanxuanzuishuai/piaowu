@@ -434,6 +434,7 @@ class ReferralActivityService
         $merge = [
             'type' => $result['type'],
             'user_id' => $result['user_id'],
+            'id' => $result['id'],
         ];
         $info = json_decode($result['param_info'], true);
         return array_merge($merge, $info);
