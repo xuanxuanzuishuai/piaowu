@@ -88,7 +88,7 @@ class ErpOrderV1Service
             SimpleLogger::error('CREATE BILL ERROR', [$res]);
             throw new RunTimeException(['create_bill_error', '', '', [':'.$res['errors'][0]['err_msg']]]);
         }
-        return $result['data'] ?? [];
+        return $res ?? [];
     }
 
     /**

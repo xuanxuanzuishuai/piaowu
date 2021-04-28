@@ -10,6 +10,7 @@ namespace App\Services;
 
 use App\Libs\AliOSS;
 use App\Libs\Constants;
+use App\Libs\Dict;
 use App\Libs\DictConstants;
 use App\Libs\Dss;
 use App\Libs\Exceptions\RunTimeException;
@@ -771,6 +772,11 @@ class ReferralService
             if ($refereeStudent['has_review_course'] == DssStudentModel::REVIEW_COURSE_1980 && ($refereeStudent['sub_end_date'] > date('Ymd'))) {
                 $packageType = PayServices::PACKAGE_0;
             }
+        }
+        // 是否可0元购买开关
+        $enableFlag = DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'zero_package_enable');
+        if (empty($enableFlag) && $packageType == PayServices::PACKAGE_0) {
+            $packageType = PayServices::PACKAGE_1;
         }
 
         //产品包
