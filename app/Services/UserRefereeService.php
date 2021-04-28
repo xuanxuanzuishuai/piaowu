@@ -348,7 +348,6 @@ class UserRefereeService
         $where = [
             'referee_id' => $refereeInfo['id'],
             'last_stage' => $type,
-            'create_time[>=]' => $startPoint,
             'student_id' => $refereeInfo['student_id'],
         ];
         $refereeStudentData = StudentReferralStudentStatisticsModel::getRecord($where, ['id']);

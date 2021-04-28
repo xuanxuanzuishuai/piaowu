@@ -43,7 +43,10 @@ class ErpUserEventTaskAwardGoldLeafService
         $returnList['total'] = $list['total'];
         $returnList['total_num'] = 0;
         foreach ($list['list'] as $item) {
-            $returnList['total_num'] += $item['award_num'];
+            // 等于作废不计算总数
+            if ($item['status'] != ErpUserEventTaskAwardGoldLeafModel::STATUS_DISABLED) {
+                $returnList['total_num'] += $item['award_num'];
+            }
             $returnList['list'][] = self::formatGoldLeafInfo($item, $isBackend);
         }
         return $returnList;

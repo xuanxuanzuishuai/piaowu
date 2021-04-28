@@ -97,11 +97,12 @@ foreach ($pointsList as $points) {
             $reason = ErpUserEventTaskAwardGoldLeafModel::REASON_RETURN_COST;
         }
     }
-    $referrerUuid = $studentRef[$points['finish_task_uuid']];
-    // 本条记录如果是给被推荐人发放奖励，说名完成人和获得奖励的人是同一个人， uuid = finish_task_uuid
-    if ($points['to'] == ErpEventTaskModel::AWARD_TO_BE_REFERRER){
-        $referrerUuid = $points['uuid'];
-    }
+    $referrerUuid = $studentRef[$points['finish_task_uuid']] ?? '';
+    // // 本条记录如果是给被推荐人发放奖励，说名完成人和获得奖励的人是同一个人， uuid = finish_task_uuid
+    // if ($points['to'] == ErpEventTaskModel::AWARD_TO_BE_REFERRER){
+    //     $referrerUuid = $points['uuid'];
+    // }
+    // var_dump(count($pointsList),$points['uuid'], $points['event_task_id'], $status, $points['id'], $referrerUuid, ['reason' => $reason]);exit;
     $taskResult = $erp->addEventTaskAward($points['uuid'], $points['event_task_id'], $status, $points['id'], $referrerUuid, ['reason' => $reason]);
     SimpleLogger::info("script::auto_send_task_award_points", [
         'params' => $points,

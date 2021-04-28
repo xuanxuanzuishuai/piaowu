@@ -37,7 +37,7 @@ CREATE TABLE `erp_user_event_task_award_gold_leaf` (
 
 -------------------- op --------------------
 INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES
-('WE_CHAT_RED_PACK', '微信红包显示语', 'POINTS_EXCHANGE_RED_PACK_SEND_NAME', '{\"act_name\":\"\\u8f6c\\u4ecb\\u7ecd\\u5956\\u52b1\",\"send_name\":\"\\u79ef\\u5206\\u5151\\u6362{{order_amounts}}\\u5143\\u7ea2\\u5305\",\"wishing\":\"\\u79ef\\u5206\\u5151\\u6362{{order_amounts}}\\u5143\\u7ea2\\u5305\"}', '积分兑换红包');
+('WE_CHAT_RED_PACK', '微信红包显示语', 'POINTS_EXCHANGE_RED_PACK_SEND_NAME', '{\"act_name\":\"\\u8f6c\\u4ecb\\u7ecd\\u5956\\u52b1\",\"send_name\":\"\\u79ef\\u5206\\u5151\\u6362{{order_amounts}}\\u5143\",\"wishing\":\"\\u5c0f\\u53f6\\u5b50\\u667a\\u80fd\\u966a\\u7ec3\"}', '积分兑换红包'),
 ('SERVICE_SIGN_KEY', '各个服务调取op接口签名秘钥', 'erp_service', 'AAAEbm8uZQAAAAACAAABAAABFwAAAAdzc3gtcn', NULL),
 ('REFERRAL_CONFIG', '转介绍配置', 'student_invite_send_points_start_time', '1619107200', '我的邀请人发放积分开始时间');
 
