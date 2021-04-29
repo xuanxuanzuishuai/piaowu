@@ -43,12 +43,13 @@ class ErpUserEventTaskAwardGoldLeafService
         ];
         $list = ErpUserEventTaskAwardGoldLeafModel::getList($params, $limit);
         $returnList['total'] = $list['total'];
-        $returnList['total_num'] = 0;
+        $returnList['total_num'] = $list['total_award_num'];
 
         // 如果自己是推荐人，显示被推荐人的手机号
         $buyerStudentMobileArr = [];
 
         foreach ($list['list'] as $item) {
+            $item['buyer_student_mobile'] = '';
             // 判断本条奖励是不是推荐人奖励 - 如果是推荐人获取被推荐人的手机号
             if ($item['to'] == ErpEventTaskModel::AWARD_TO_REFERRER) {
                 if (!isset($buyerStudentMobileArr[$item['finish_task_uuid']])) {
@@ -56,10 +57,6 @@ class ErpUserEventTaskAwardGoldLeafService
                     !empty($buyerStudentInfo) && $buyerStudentMobileArr[$item['finish_task_uuid']] = Util::hideUserMobile($buyerStudentInfo['mobile']);
                 }
                 $item['buyer_student_mobile'] = $buyerStudentMobileArr[$item['finish_task_uuid']];
-            }
-            // 等于作废不计算总数
-            if ($item['status'] != ErpUserEventTaskAwardGoldLeafModel::STATUS_DISABLED) {
-                $returnList['total_num'] += $item['award_num'];
             }
             $returnList['list'][] = self::formatGoldLeafInfo($item, $isBackend);
         }
@@ -75,6 +72,7 @@ class ErpUserEventTaskAwardGoldLeafService
         }else {
             $goldLeafInfo['status_zh'] = self::STATUS_DICT[$goldLeafInfo['status']] ?? '';
         }
+        $goldLeafInfo['reason'] = $goldLeafInfo['status_zh'];
 
         if ($isBackend) {
             $goldLeafInfo['bill_id'] = "";  // erp后台需要的字段

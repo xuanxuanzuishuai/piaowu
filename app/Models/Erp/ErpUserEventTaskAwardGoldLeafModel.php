@@ -25,7 +25,7 @@ class ErpUserEventTaskAwardGoldLeafModel extends ErpModel
     ];
 
     /**
-     * 获取一级代理数据列表
+     * 获取任务积分奖励列表
      * @param array $where
      * @param array $limit
      * @param array $order
@@ -39,7 +39,7 @@ class ErpUserEventTaskAwardGoldLeafModel extends ErpModel
         $eventTaskTableName = ErpEventTaskModel::getTableNameWithDb();
         $studentTableName = ErpStudentModel::getTableNameWithDb();
 
-        $returnList = ['list' => [], 'total' => 0];
+        $returnList = ['list' => [], 'total' => 0, 'total_award_num' => 0];
         $sqlWhere = [];
         if (!empty($where['id'])) {
             $sqlWhere[] = 'a.id=' . $where['id'];
@@ -63,6 +63,14 @@ class ErpUserEventTaskAwardGoldLeafModel extends ErpModel
             return $returnList;
         }
         $returnList['total'] = $count[0]['total'];
+
+        // 计算金额总数 - 等于作废不计算总数
+        $awardNumList = $db->queryAll('select `a`.`status`, `a`.`award_num` from ' . $awardTableName .' as a  where ' . implode(' AND ', $sqlWhere));
+        foreach ($awardNumList as $item) {
+            if ($item['status'] != self::STATUS_DISABLED) {
+                $returnList['total_award_num'] += $item['award_num'];
+            }
+        }
 
         $listSql = 'select a.*,et.name as event_name,s.mobile from ' . $awardTableName . ' as a' .
             ' left join ' . $eventTaskTableName . ' as et on et.id=a.event_task_id' .

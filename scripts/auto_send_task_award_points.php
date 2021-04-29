@@ -103,7 +103,7 @@ foreach ($pointsList as $points) {
     //     $referrerUuid = $points['uuid'];
     // }
     // var_dump(count($pointsList),$points['uuid'], $points['event_task_id'], $status, $points['id'], $referrerUuid, ['reason' => $reason]);exit;
-    $taskResult = $erp->addEventTaskAward($points['uuid'], $points['event_task_id'], $status, $points['id'], $referrerUuid, ['reason' => $reason]);
+    $taskResult = $erp->addEventTaskAward($points['finish_task_uuid'], $points['event_task_id'], $status, $points['id'], $referrerUuid, ['reason' => $reason]);
     SimpleLogger::info("script::auto_send_task_award_points", [
         'params' => $points,
         'response' => $taskResult,
