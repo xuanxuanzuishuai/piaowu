@@ -88,7 +88,7 @@ class ErpOrderV1Service
             SimpleLogger::error('CREATE BILL ERROR', [$res]);
             throw new RunTimeException(['create_bill_error', '', '', [':'.$res['errors'][0]['err_msg']]]);
         }
-        return $res ?? [];
+        return $res['data'] ?? [];
     }
 
     /**
@@ -118,7 +118,7 @@ class ErpOrderV1Service
     public static function createOrder($packageId, $student, $payChannel, $payType, $employeeUuid, $channel, $giftGoods = [], $callback = null)
     {
         $studentId = $student['id'];
-        if ($student['package_sub_type'] == DssCategoryV1Model::DURATION_TYPE_TRAIL) {
+        if (PayServices::isTrialPackage($packageId)) {
             self::checkHadPurchaseTrail($studentId);
         }
 

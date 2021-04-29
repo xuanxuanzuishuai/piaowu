@@ -48,9 +48,10 @@ class DssGiftCodeModel extends DssModel
      * @param $studentID
      * @param int $type
      * @param bool $verifyCode 是否验证Code Status
+     * @param array $extParams
      * @return array|null
      */
-    public static function hadPurchasePackageByType($studentID, $type = DssPackageExtModel::PACKAGE_TYPE_TRIAL, $verifyCode = true)
+    public static function hadPurchasePackageByType($studentID, $type = DssPackageExtModel::PACKAGE_TYPE_TRIAL, $verifyCode = true, $extParams = [])
     {
         if (empty($studentID)) {
             return [];
@@ -78,7 +79,8 @@ class DssGiftCodeModel extends DssModel
         $sql = "
         SELECT 
             `id`,
-            `buyer`
+            `buyer`,
+            `buy_time`
         FROM
             " . self::$table . "
         WHERE " . $baseCondition;
@@ -107,6 +109,12 @@ class DssGiftCodeModel extends DssModel
 
         if (!empty($packageIdSql) && empty($packageIdSqlV1)) {
             $sql .= " AND " . $packageIdSql;
+        }
+        if (!empty($extParams['order'])) {
+            $sql .= ' ORDER BY ' . $extParams['order'];
+        }
+        if (!empty($extParams['limit'])) {
+            $sql .= " LIMIT " . $extParams['limit'];
         }
 
         return self::dbRO()->queryAll($sql);

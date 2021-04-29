@@ -100,13 +100,14 @@ class Pay extends ControllerBase
             if (empty($res)) {
                 $res = Valid::addAppErrors([], 'create_bill_error');
             }
+            $orderId = $res['order_id'] ?? '';
             //转介绍订单关系绑定
             $sceneData = ShowMiniAppService::getSceneData($params['scene'] ?? '');
-            if (!empty($res['data']['order_id']) && !empty($sceneData)) {
-                BillMapService::mapDataRecord($sceneData, $res['data']['order_id'], $student['id']);
+            if (!empty($orderId) && !empty($sceneData)) {
+                BillMapService::mapDataRecord($sceneData, $orderId, $student['id']);
             }
             $res['data']['bill'] = [
-                'id' => $res['data']['order_id']
+                'id' => $orderId
             ];
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());

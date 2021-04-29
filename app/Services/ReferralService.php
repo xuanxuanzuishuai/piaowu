@@ -908,8 +908,11 @@ class ReferralService
             'country_code' => $countryCode,
             'ext_params' => $extParams
         ]);
-        $lastId = $userInfo['student_id'];
-        $uuid = $userInfo['uuid'];
+        $lastId = $userInfo['student_id'] ?? '';
+        if (empty($lastId)) {
+            throw new RunTimeException(['user_register_fail']);
+        }
+        $uuid = $userInfo['uuid'] ?? '';
         $hadPurchased = self::getPurchasedStatus($lastId);
 
         return [$openId, $lastId, $mobile, $uuid, $hadPurchased];
@@ -963,15 +966,20 @@ class ReferralService
      */
     private static function getPurchasedStatus(int $userId): int
     {
-        $purchasedStatus = self::PURCHASED_STATUS_NONE;
         //获取最新一条体验课信息
-        $giftCode = DssGiftCodeModel::getUserFirstPayInfo($userId, DssCategoryV1Model::DURATION_TYPE_TRAIL, 'desc');
-        if (!empty($giftCode) && $giftCode['buy_time'] + Util::TIMESTAMP_ONEDAY > time()) {
-            $purchasedStatus = self::PURCHASED_STATUS_OUT_24;
-        } elseif (!empty($giftCode) && $giftCode['buy_time'] + Util::TIMESTAMP_ONEDAY < time()) {
-            $purchasedStatus = self::PURCHASED_STATUS_IN_24;
+        $giftCode = DssGiftCodeModel::hadPurchasePackageByType(
+            $userId,
+            DssPackageExtModel::PACKAGE_TYPE_TRIAL,
+            false,
+            ['order' => ' id desc', 'limit' => 1]
+        );
+        if (empty($giftCode)) {
+            return self::PURCHASED_STATUS_NONE;
         }
-        return $purchasedStatus;
+        if (time() - $giftCode['buy_time'] < Util::TIMESTAMP_ONEDAY) {
+            return self::PURCHASED_STATUS_IN_24;
+        }
+        return self::PURCHASED_STATUS_OUT_24;
     }
 
 
