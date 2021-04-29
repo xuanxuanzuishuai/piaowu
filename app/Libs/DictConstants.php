@@ -231,7 +231,8 @@ class DictConstants {
         'type' => 'node_setting',
         'keys' => [
             'not_display_wait',
-            'not_verify_refund'
+            'not_verify_refund',
+            'points_exchange_red_pack_id',  // 积分兑换红包节点id
         ]
     ];
     //节点与task的对应关系

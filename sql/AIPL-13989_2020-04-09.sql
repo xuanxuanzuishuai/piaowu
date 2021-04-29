@@ -3,9 +3,9 @@
 -- 确认  event_id 是否正确
 -- select * from erp_event;  pre event_id=4, prod event_id=2
 INSERT INTO `erp_event_task`(`id`,`type`, `condition`, `event_id`, `name`, `desc`, `create_time`, `creator_id`, `update_time`, `updator_id`, `award`, `start_time`, `end_time`, `status`) VALUES
-(476, 5, '{"can_repeat_attend":1}', 4, '上传截图领奖', '海报分享', 1588228856, 591, 1612087387, 591, '{"awards":[{"to":2,"amount":3000,"type":3,"need_check":0,"account_sub_type":"3002"}]}', 1611936000, 1893427200, 1),
-(477, 5, '{"can_repeat_attend":1}', 4, '上传截图领奖', '海报分享', 1588228856, 591, 1613806910, 10038, '{"awards":[{"to":2,"amount":2000,"type":3,"need_check":0,"account_sub_type":"3002"}]}', 1612281600, 1740585599, 1),
-(478, 5, '{"can_repeat_attend":1}', 4, '上传截图领奖', '海报分享', 1588228856, 591, 1612343404, 591, '{"awards":[{"to":2,"amount":1000,"type":3,"need_check":0,"account_sub_type":"3002"}]}', 1611936000, 1893427200, 1),
+(476, 5, '{"can_repeat_attend":1}', 4, '周周领奖', '海报分享', 1588228856, 591, 1612087387, 591, '{"awards":[{"to":2,"amount":3000,"type":3,"need_check":0,"account_sub_type":"3002"}]}', 1611936000, 1893427200, 1),
+(477, 5, '{"can_repeat_attend":1}', 4, '周周领奖', '海报分享', 1588228856, 591, 1613806910, 10038, '{"awards":[{"to":2,"amount":2000,"type":3,"need_check":0,"account_sub_type":"3002"}]}', 1612281600, 1740585599, 1),
+(478, 5, '{"can_repeat_attend":1}', 4, '周周领奖', '海报分享', 1588228856, 591, 1612343404, 591, '{"awards":[{"to":2,"amount":1000,"type":3,"need_check":0,"account_sub_type":"3002"}]}', 1611936000, 1893427200, 1),
 (481, 1, 'c', 1, '付费体验卡', 'AIPL-13989-4.22', 1616756138, 751, 1619082667, 10027, '{"awards":[{"to":1,"amount":1000,"type":3,"delay":0,"need_check":0,"account_sub_type":"3002"}]}', 1619082667, 1672416000, 1),
 (482, 1, '{"count\":2}', 1, '付费年卡', 'AIPL-13989-4.22', 1619082667, 751, 1619082667, 10027, '{"awards":[{"to":1,"amount":20000,"type":3,"delay":1296000,"need_check":1,"account_sub_type":"3002"},{"to":2,"amount":5000,"type":3,"delay":1296000,"need_check":1,"account_sub_type":"3002"}]}', 1619082667, 1672416000, 1),
 (483, 1, '{"count":5}', 1, '付费年卡', 'AIPL-13989-4.22', 1619082667, 751, 1619082667, 10027, '{"awards":[{"to":1,"amount":20000,"type":3,"delay":1296000,"need_check":1,"account_sub_type":"3002"},{"to":2,"amount":5000,"type":3,"delay":1296000,"need_check":1,"account_sub_type":"3002"}]}', 1619082667, 1672416000, 1),
@@ -89,6 +89,7 @@ CREATE TABLE `user_points_exchange_order_wx` (
     `result_code` varchar(500) NOT NULL DEFAULT '' COMMENT '请求微信的返回值',
     `record_sn` int(10) NOT NULL DEFAULT '0' COMMENT '全局唯一记录标识',
     `operator_id` int(10) NOT NULL DEFAULT '0' COMMENT '操作人',
+    `remark` varchar(255) NOT NULL DEFAULT '' COMMENT '操作人操作备注',
     `create_time` int(11) NOT NULL DEFAULT '0',
     `update_time` int(11) NOT NULL DEFAULT '0',
     PRIMARY KEY (`id`),
@@ -97,15 +98,15 @@ CREATE TABLE `user_points_exchange_order_wx` (
 ) ENGINE=InnoDB CHARSET=utf8mb4 COMMENT='积分兑换红包微信交易信息';
 
 -- 更新客服消息
-UPDATE `wechat_config` SET `content` = '您好，您的金叶子已到账，详情如下：\n任务名称：上传截图领奖\n任务内容：{{activityName}}\n完成情况：审核通过，小叶子奖励您{{awardValue}}金叶子，请再接再厉呀！\n<a href="{{url}}">更多的奖励活动期待您的参与，【点此消息】分享海报赢金叶子</a>' WHERE `id` = 259;
+UPDATE `wechat_config` SET `content` = '您好，您的金叶子已到账，详情如下：\n任务名称：周周领奖\n任务内容：{{activityName}}\n完成情况：审核通过，小叶子奖励您{{awardValue}}金叶子，请再接再厉呀！\n<a href="{{url}}">更多的奖励活动期待您的参与，【点此消息】分享海报赢金叶子</a>' WHERE `id` = 259;
 INSERT INTO `wechat_config`(`type`, `content`, `msg_type`, `content_type`, `event_type`, `event_key`, `create_time`, `update_time`, `create_uid`, `update_uid`, `event_task_id`, `to`) VALUES
-(1, '奖励金叶子已经发放，详情如下：\n任务名称：转介绍奖励\n任务内容：邀请好友报名智能陪练体验营\n完成情况：已完成，奖励{{awardValue}}金叶子已发放，请到【我的】及时查看\n<a href=\"{{url}}\">【点此消息】查看金叶子明细</a>', '3', 1, 'award', '', 1583918495, 0, 0, 0, 481, 1),
-(1, '奖励金叶子已经发放，详情如下：\n任务名称：转介绍奖励\n任务内容：好友付费智能陪练年卡\n完成情况：已完成，奖励{{awardValue}}金叶子已发放，请到【我的】及时查看\n<a href=\"{{url}}\">【点此消息】查看金叶子明细</a>', '3', 1, 'award', '', 1583918495, 0, 0, 0, 482, 1),
-(1, '奖励金叶子已经发放，详情如下：\n任务名称：转介绍奖励\n任务内容：付费智能陪练年卡\n完成情况：已完成，奖励{{awardValue}}金叶子已发放，请到【我的】及时查看\n<a href=\"{{url}}\">【点此消息】查看金叶子明细</a>', '3', 1, 'award', '', 1583918495, 0, 0, 0, 482, 2),
-(1, '奖励金叶子已经发放，详情如下：\n任务名称：转介绍奖励\n任务内容：好友付费智能陪练年卡\n完成情况：已完成，奖励{{awardValue}}金叶子已发放，请到【我的】及时查看\n<a href=\"{{url}}\">【点此消息】查看金叶子明细</a>', '3', 1, 'award', '', 1583918495, 0, 0, 0, 483, 1),
-(1, '奖励金叶子已经发放，详情如下：\n任务名称：转介绍奖励\n任务内容：付费智能陪练年卡\n完成情况：已完成，奖励{{awardValue}}金叶子已发放，请到【我的】及时查看\n<a href=\"{{url}}\">【点此消息】查看金叶子明细</a>', '3', 1, 'award', '', 1583918495, 0, 0, 0, 483, 2),
-(1, '奖励金叶子已经发放，详情如下：\n任务名称：转介绍奖励\n任务内容：好友付费智能陪练年卡\n完成情况：已完成，奖励{{awardValue}}金叶子已发放，请到【我的】及时查看\n<a href=\"{{url}}\">【点此消息】查看金叶子明细</a>', '3', 1, 'award', '', 1583918495, 0, 0, 0, 484, 1),
-(1, '奖励金叶子已经发放，详情如下：\n任务名称：转介绍奖励\n任务内容：付费智能陪练年卡\n完成情况：已完成，奖励{{awardValue}}金叶子已发放，请到【我的】及时查看\n<a href=\"{{url}}\">【点此消息】查看金叶子明细</a>', '3', 1, 'award', '', 1583918495, 0, 0, 0, 484, 2);
+(1, '奖励金叶子已经发放，详情如下：\n任务名称：转介绍奖励\n任务内容：邀请好友报名智能陪练体验营\n完成情况：已完成，奖励{{awardValue}}金叶子已发放，请到【我的账户】及时查看\n<a href=\"{{url}}\">【点此消息】查看金叶子明细</a>', '3', 1, 'award', '', 1583918495, 0, 0, 0, 481, 1),
+(1, '奖励金叶子已经发放，详情如下：\n任务名称：转介绍奖励\n任务内容：好友付费智能陪练年卡\n完成情况：已完成，奖励{{awardValue}}金叶子已发放，请到【我的账户】及时查看\n<a href=\"{{url}}\">【点此消息】查看金叶子明细</a>', '3', 1, 'award', '', 1583918495, 0, 0, 0, 482, 1),
+(1, '奖励金叶子已经发放，详情如下：\n任务名称：转介绍奖励\n任务内容：付费智能陪练年卡\n完成情况：已完成，奖励{{awardValue}}金叶子已发放，请到【我的账户】及时查看\n<a href=\"{{url}}\">【点此消息】查看金叶子明细</a>', '3', 1, 'award', '', 1583918495, 0, 0, 0, 482, 2),
+(1, '奖励金叶子已经发放，详情如下：\n任务名称：转介绍奖励\n任务内容：好友付费智能陪练年卡\n完成情况：已完成，奖励{{awardValue}}金叶子已发放，请到【我的账户】及时查看\n<a href=\"{{url}}\">【点此消息】查看金叶子明细</a>', '3', 1, 'award', '', 1583918495, 0, 0, 0, 483, 1),
+(1, '奖励金叶子已经发放，详情如下：\n任务名称：转介绍奖励\n任务内容：付费智能陪练年卡\n完成情况：已完成，奖励{{awardValue}}金叶子已发放，请到【我的账户】及时查看\n<a href=\"{{url}}\">【点此消息】查看金叶子明细</a>', '3', 1, 'award', '', 1583918495, 0, 0, 0, 483, 2),
+(1, '奖励金叶子已经发放，详情如下：\n任务名称：转介绍奖励\n任务内容：好友付费智能陪练年卡\n完成情况：已完成，奖励{{awardValue}}金叶子已发放，请到【我的账户】及时查看\n<a href=\"{{url}}\">【点此消息】查看金叶子明细</a>', '3', 1, 'award', '', 1583918495, 0, 0, 0, 484, 1),
+(1, '奖励金叶子已经发放，详情如下：\n任务名称：转介绍奖励\n任务内容：付费智能陪练年卡\n完成情况：已完成，奖励{{awardValue}}金叶子已发放，请到【我的账户】及时查看\n<a href=\"{{url}}\">【点此消息】查看金叶子明细</a>', '3', 1, 'award', '', 1583918495, 0, 0, 0, 484, 2);
 
 -------------------- dss --------------------
 alter table share_poster add points_award_id varchar (128) not null default '' comment "积分奖励id";

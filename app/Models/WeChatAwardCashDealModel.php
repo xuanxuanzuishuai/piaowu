@@ -150,4 +150,22 @@ class WeChatAwardCashDealModel extends Model
                 return '发放失败';
         }
     }
+
+    public static function getWeChatResultCodeMsg($resultCode) {
+        $msg = '';
+        $isBreak = false;
+        switch ($resultCode) {
+            case self::RECEIVED:
+                $msg = '已领取';
+                break;
+            case self::RESULT_SUCCESS_CODE:
+                $msg = '';
+                $isBreak = true;
+                break;
+        }
+        if ($isBreak == false && empty($msg)) {
+            $msg = self::getWeChatErrorMsg($resultCode);
+        }
+        return $msg;
+    }
 }

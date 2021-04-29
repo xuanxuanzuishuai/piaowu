@@ -5,7 +5,9 @@ namespace App\Services;
 
 
 use App\Libs\Util;
+use App\Models\Dss\DssStudentModel;
 use App\Models\EmployeeModel;
+use App\Models\Erp\ErpEventTaskModel;
 use App\Models\Erp\ErpStudentModel;
 use App\Models\Erp\ErpUserEventTaskAwardGoldLeafModel;
 
@@ -42,7 +44,19 @@ class ErpUserEventTaskAwardGoldLeafService
         $list = ErpUserEventTaskAwardGoldLeafModel::getList($params, $limit);
         $returnList['total'] = $list['total'];
         $returnList['total_num'] = 0;
+
+        // 如果自己是推荐人，显示被推荐人的手机号
+        $buyerStudentMobileArr = [];
+
         foreach ($list['list'] as $item) {
+            // 判断本条奖励是不是推荐人奖励 - 如果是推荐人获取被推荐人的手机号
+            if ($item['to'] == ErpEventTaskModel::AWARD_TO_REFERRER) {
+                if (!isset($buyerStudentMobileArr[$item['finish_task_uuid']])) {
+                    $buyerStudentInfo = DssStudentModel::getRecord(['uuid' => $item['finish_task_uuid']], ['mobile']);
+                    !empty($buyerStudentInfo) && $buyerStudentMobileArr[$item['finish_task_uuid']] = Util::hideUserMobile($buyerStudentInfo['mobile']);
+                }
+                $item['buyer_student_mobile'] = $buyerStudentMobileArr[$item['finish_task_uuid']];
+            }
             // 等于作废不计算总数
             if ($item['status'] != ErpUserEventTaskAwardGoldLeafModel::STATUS_DISABLED) {
                 $returnList['total_num'] += $item['award_num'];

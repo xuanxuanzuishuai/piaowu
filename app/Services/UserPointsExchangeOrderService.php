@@ -5,6 +5,7 @@ namespace App\Services;
 
 
 use App\Libs\Constants;
+use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
@@ -124,7 +125,7 @@ class UserPointsExchangeOrderService
             $where['uuid'] = $params['student_uuid'];
         }
         if (!empty($params['reviewer_id'])) {
-            $where['uuid'] = $params['reviewer_id'];
+            $where['operator_id'] = $params['reviewer_id'];
         }
         if (!empty($params['student_mobile'])) {
             $studentList = DssStudentModel::getRecords(['mobile' => $params['student_mobile']], ['uuid']);
@@ -152,11 +153,14 @@ class UserPointsExchangeOrderService
             $list[$_key]['user_event_task_award_id'] = $_info['id'];
             $list[$_key]['student_mobile'] = $_info['id'];
             $list[$_key]['award_amount'] = $_info['order_amounts'];
-            $list[$_key]['create_time'] = date("Y-m-d H:i:s", $_info['create_time']);
+            // $list[$_key]['create_time'] = date("Y-m-d H:i:s", $_info['create_time']);
             $list[$_key]['review_time'] = $_info['update_time']>0 ? date("Y-m-d H:i:s", $_info['update_time']) : '';
-            $list[$_key]['result_code_zh'] = WeChatAwardCashDealModel::getWeChatErrorMsg($_info['result_code']);
             $list[$_key]['award_type'] = ErpEventTaskModel::AWARD_TYPE_CASH;
             $list[$_key]['reviewer_id'] = $_info['operator_id'];
+            $list[$_key]['award_status'] = $_info['status'];
+            $list[$_key]['node_relate_task'] = DssDictService::getKeyValue(DictConstants::NODE_SETTING, 'points_exchange_red_pack_id');
+            $list[$_key]['result_code_zh'] = WeChatAwardCashDealModel::getWeChatResultCodeMsg($_info['result_code']);
+
         }
         $returnList['records'] = $list;
         return $returnList;
@@ -175,7 +179,13 @@ class UserPointsExchangeOrderService
         }
         foreach ($awardList as $item) {
             // 放入待发放红包队列
-            $queueData = ['user_points_exchange_order_id' => $item['user_points_exchange_order_id'], 'record_sn' => $item['record_sn'], 'operator_id' => $params['employee_id']];
+            $queueData = [
+                'user_points_exchange_order_id' => $item['user_points_exchange_order_id'],
+                'record_sn' => $item['record_sn'],
+                'operator_id' => $params['employee_id'],
+                'reason' => $params['reason'],      // 发放原因
+                'status' => $params['status'] ?? 0, // 默认不发放
+            ];
             try {
                 (new UserPointsExchangeRedPackTopic())->sendRedPack($queueData)->publish();
             } catch (RunTimeException $e) {

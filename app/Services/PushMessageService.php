@@ -263,7 +263,7 @@ class PushMessageService
     public static function getAwardPointsReplaceParams($awardDetailInfo, $ext = [])
     {
         $urlArr = [
-            ErpEventModel::TYPE_IS_REFERRAL => $_ENV['STUDENT_INVITED_RECORDS_URL'],
+            ErpEventModel::TYPE_IS_REFERRAL => $_ENV['STUDENT_AWARD_POINTS_URL'],
             ErpEventModel::DAILY_UPLOAD_POSTER => $_ENV["WECHAT_FRONT_DOMAIN"] . "/student/poster"
         ];
         $url = $urlArr[$awardDetailInfo['type']] ?? '';

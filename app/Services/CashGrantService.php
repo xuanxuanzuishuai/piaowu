@@ -391,9 +391,11 @@ class CashGrantService
      * @param int $userPointsExchangeOrderId 红包兑换的订单Id
      * @param int $recordSn  红包兑换记录的唯一标识
      * @param int $operatorId  操作人
+     * @param string $actStatus  操作状态
+     * @param string $actReason  操作备注
      * @return bool
      */
-    public static function pointsExchangeRedPack($userPointsExchangeOrderId, $recordSn, $operatorId)
+    public static function pointsExchangeRedPack($userPointsExchangeOrderId, $recordSn, $operatorId, $actStatus, $actRemark)
     {
         // 获取订单详情 - 不存在不发放
         $orderInfo = UserPointsExchangeOrderModel::getRecord(['id' => $userPointsExchangeOrderId]);
@@ -401,12 +403,31 @@ class CashGrantService
             SimpleLogger::info('CashGrantService::pointsExchangeRedPack', ['err' => 'not found award', 'id' => $userPointsExchangeOrderId]);
             return false;
         }
+
         // 获取发放记录，如果记录存在则只处理发放失败和等待发放的订单
         $recordInfo = UserPointsExchangeOrderWxModel::getRecord(['record_sn' => $recordSn, 'user_points_exchange_order_id' => $userPointsExchangeOrderId]);
         if (empty($recordInfo)) {
             SimpleLogger::info('CashGrantService::pointsExchangeRedPack', ['err' => 'not found record_info', 'id' => $userPointsExchangeOrderId, 'record_sn' => $recordSn]);
             return false;
         }
+
+        // 如果要处理的操作是不发放，直接改变状态即可
+        if ($actStatus == UserPointsExchangeOrderWxModel::STATUS_DISABLED) {
+            // 保存日志
+            $updateData['status'] = $actStatus;
+            $updateData['operator_id'] = $operatorId;
+            $updateData['update_time'] = time();
+            $updateData['remark'] = $actRemark;
+            //处理结果入库
+            $result = UserPointsExchangeOrderWxModel::updateRecord($recordInfo['id'], $updateData);
+            if (empty($result)) {
+                SimpleLogger::error('CashGrantService::pointsExchangeRedPack update error', [$updateData, $recordInfo]);
+                return false;
+            }
+            return true;
+        }
+
+        // 只处理发放失败和等待发放的订单
         if (!in_array($recordInfo['status'], [ UserPointsExchangeOrderWxModel::STATUS_WAITING, UserPointsExchangeOrderWxModel::STATUS_GIVE_FAIL])) {
             SimpleLogger::info('CashGrantService::pointsExchangeRedPack', ['err' => 'order_is_not_wait_or_not_fail', 'id' => $userPointsExchangeOrderId, 'order_info' => $orderInfo]);
             return false;

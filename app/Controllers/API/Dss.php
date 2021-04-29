@@ -10,6 +10,7 @@ namespace App\Controllers\API;
 
 use App\Controllers\ControllerBase;
 use App\Libs\Constants;
+use App\Libs\DictConstants;
 use App\Libs\HttpHelper;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
@@ -17,8 +18,10 @@ use App\Libs\Valid;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\MessagePushRulesModel;
 use App\Models\PosterModel;
+use App\Models\UserPointsExchangeOrderWxModel;
 use App\Models\WeChatAwardCashDealModel;
 use App\Services\BillMapService;
+use App\Services\DssDictService;
 use App\Services\ErpUserEventTaskAwardGoldLeafService;
 use App\Services\PosterService;
 use App\Services\AgentService;
@@ -208,7 +211,11 @@ class Dss extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $data = WeChatAwardCashDealModel::getRecords(['user_event_task_award_id' => explode(',', $params['award_id'])]);
+        if (isset($params['node_relate_task']) && $params['node_relate_task'] == DssDictService::getKeyValue(DictConstants::NODE_SETTING, 'points_exchange_red_pack_id')){
+            $data = UserPointsExchangeOrderWxModel::getRecords(['id' => explode(',', $params['award_id'])]);
+        }else {
+            $data = WeChatAwardCashDealModel::getRecords(['user_event_task_award_id' => explode(',', $params['award_id'])]);
+        }
         return HttpHelper::buildResponse($response, $data);
     }
 
