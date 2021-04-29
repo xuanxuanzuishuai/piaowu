@@ -28,6 +28,7 @@ class WechatService
     const KEY_WECHAT_USER_NOT_EXISTS_MAP  = 'WECHAT_USER_NOT_EXISTS_MAP_'; // hash
     const KEY_UPDATE_TAG_WAITING          = 'WECHAT_UPDATE_TAG_WAITING_'; // list
     const KEY_UPDATE_TAG_WAITING_MAP      = 'WECHAT_UPDATE_TAG_WAITING_MAP_'; // hash
+    const KEY_USER_CURRENT_MENU_TAG       = 'WECHAT_USER_CURRENT_MENU_TAG'; // hash
 
     const USER_TYPE_1_1 = '1_1';// 未绑定
     const USER_TYPE_1_2 = '1_2';// 解除绑定
@@ -292,12 +293,24 @@ class WechatService
         $amount = DictConstants::get(DictConstants::WECHAT_CONFIG, 'tag_update_amount');
         $amount = $amount ?: 50;
         $redis  = RedisDB::getConn();
-        if (empty($config[$typeId])) {
+        $tagId = $config[$typeId];
+        if (empty($tagId)) {
             SimpleLogger::error('EMPTY MENU TAG ID', [$config, $typeId]);
-            return self::unTagUser($openId);
+            // 不匹配任何菜单，打一个没有菜单的标签
+            $tagId = DictConstants::get(DictConstants::WECHAT_CONFIG, 'menu_tag_none');
+            if (empty($tagId)) {
+                return false;
+            }
         }
-        $key = self::KEY_UPDATE_TAG_WAITING . date('Ymd') . '_' . $config[$typeId];
-        $mapKey = self::KEY_UPDATE_TAG_WAITING_MAP . date('Ymd') . '_' . $config[$typeId];
+        // 待更新标签和已有标签对比，无变化不更新
+        $userCurrentTag = $redis->hget(self::KEY_USER_CURRENT_MENU_TAG, $openId);
+        if (!empty($userCurrentTag) && $userCurrentTag == $tagId) {
+            return false;
+        }
+        $redis->hset(self::KEY_USER_CURRENT_MENU_TAG, $openId, $tagId);
+
+        $key = self::KEY_UPDATE_TAG_WAITING . date('Ymd') . '_' . $tagId;
+        $mapKey = self::KEY_UPDATE_TAG_WAITING_MAP . date('Ymd') . '_' . $tagId;
         $exists = $redis->hget($mapKey, $openId);
         if (!$exists) {
             $redis->hset($mapKey, $openId, time());
@@ -374,29 +387,6 @@ class WechatService
             $wechat->batchUnTagUsers($list, $tagId);
             $wechat->batchTagUsers($list, $tagId);
         }
-        return true;
-    }
-
-    /**
-     * 取消用户标签
-     * @param $openId
-     * @param array $tagId
-     * @return bool
-     * @throws \App\Libs\Exceptions\RunTimeException
-     */
-    public static function unTagUser($openId, $tagId = [])
-    {
-        if (empty($openId)) {
-            return false;
-        }
-        if (empty($tagId)) {
-            $tagId = DictConstants::get(DictConstants::WECHAT_CONFIG, 'menu_tag_none');
-        }
-        if (empty($tagId)) {
-            return false;
-        }
-        $wechat = WeChatMiniPro::factory(DssUserWeiXinModel::dealAppId($params['appid'] ?? null), $params['busi_type'] ?? DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER);
-        $wechat->batchTagUsers([$openId], $tagId);
         return true;
     }
 }

@@ -25,9 +25,11 @@ define('LANG_ROOT', PROJECT_ROOT . '/lang');
 require_once PROJECT_ROOT . '/vendor/autoload.php';
 
 use App\Libs\Constants;
+use App\Libs\MysqlDB;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Models\Dss\DssUserWeiXinModel;
+use App\Models\Dss\DssWechatOpenIdListModel;
 use App\Services\Queue\QueueService;
 use App\Services\WechatService;
 use Dotenv\Dotenv;
@@ -44,34 +46,53 @@ const KEY_DAILY_WX_MENU_TAG_MARK = 'DAILY_WX_MENU_TAG_MARK'; // 每天待更新�
 // 2.查询单独记录的7天内点击菜单记录，覆盖范围：注册用户
 // 3.查询单独记录的点击菜单且不在库中的数据，覆盖范围：未绑定用户
 
-$where = [
-    'app_id' => Constants::SMART_APP_ID,
-    'user_type' => DssUserWeiXinModel::USER_TYPE_STUDENT,
-    'busi_type' => DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER,
-    'status' => DssUserWeiXinModel::STATUS_NORMAL,
-    'ORDER' => ['id']
+$db = MysqlDB::getDB(MysqlDB::CONFIG_SLAVE);
+$uw = DssUserWeiXinModel::$table;
+$wol = DssWechatOpenIdListModel::$table;
+
+$sql = "
+SELECT 
+    %s
+FROM  $uw uw
+INNER JOIN $wol wol ON wol.openid = uw.open_id
+WHERE uw.app_id = :app_id
+AND uw.user_type = :user_type
+AND uw.busi_type = :busi_type
+AND uw.status = :busi_type
+AND wol.status = :sub_status
+";
+$map = [
+    ':app_id'     => Constants::SMART_APP_ID,
+    ':user_type'  => DssUserWeiXinModel::USER_TYPE_STUDENT,
+    ':busi_type'  => DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER,
+    ':status'     => DssUserWeiXinModel::STATUS_NORMAL,
+    ':sub_status' => DssWechatOpenIdListModel::SUBSCRIBE_WE_CHAT,
 ];
-$total = DssUserWeiXinModel::getCount($where);
+$field = ' count(uw.id) as total ';
+$total = $db->queryAll(sprintf($sql, $field), $map);
+$total = $total[0]['total'] ?? 0;
 if (empty($total)) {
-    SimpleLogger::error('NO DATA', [$where]);
+    SimpleLogger::error('NO DATA', [$map]);
     return;
 }
 $amount = 1000;
 
-$hour = date('H');
-$date = date('ymd');
-$redis = RedisDB::getConn();
-$expire = 172800;
+$field    = ' uw.id,uw.open_id ';
+$hour     = date('H');
+$date     = date('ymd');
+$redis    = RedisDB::getConn();
+$expire   = 172800;
 $todayKey = KEY_DAILY_WX_MENU_TAG_MARK . $date;
-$done = $redis->get($todayKey);
+$done     = $redis->get($todayKey);
+$batchAmount = 8;
 if (!$done) {
     // 创建分成4组的待更新openid数据
     for ($start = 0; $start <= $total; $start += $amount) {
-        $where['LIMIT'] = [$start, $amount];
-        $records = DssUserWeiXinModel::getRecords($where);
-        $records = array_column($records, null, 'open_id');
+        $batchSql = $sql . " ORDER BY uw.id LIMIT $start,$amount;";
+        $records  = $db->queryAll(sprintf($batchSql, $field), $map);
+        $records  = array_column($records, null, 'open_id');
         foreach ($records as $item) {
-            $part = (fmod($item['id'], 8) + 1);
+            $part = (fmod($item['id'], $batchAmount) + 1);
             $key = KEY_DAILY_WX_MENU_TAG . $part;
             $redis->lpush($key, [$item['open_id']]);
         }
@@ -85,12 +106,12 @@ if (!$done) {
         if (empty($item)) {
             break;
         }
-        $updateKey = KEY_DAILY_WX_MENU_TAG . mt_rand(1, 8);
+        $updateKey = KEY_DAILY_WX_MENU_TAG . mt_rand(1, $batchAmount);
         $redis->lpush($updateKey, [$item]);
     }
     $redis->del([$key]);
 
-    for ($i = 0; $i < 4; $i ++) {
+    for ($i = 0; $i < $batchAmount; $i ++) {
         $redis->expire(KEY_DAILY_WX_MENU_TAG . $i, $expire);
     }
     $redis->set($todayKey, time());

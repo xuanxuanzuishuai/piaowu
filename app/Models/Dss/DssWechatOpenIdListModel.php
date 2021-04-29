@@ -12,7 +12,7 @@ use App\Libs\Constants;
 
 class DssWechatOpenIdListModel extends DssModel
 {
-    protected static $table = "wechat_openid_list";
+    public static $table = "wechat_openid_list";
     //关注公众号信息
     const SUBSCRIBE_WE_CHAT = 1;
     const UNSUBSCRIBE_WE_CHAT = 2;

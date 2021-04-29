@@ -256,16 +256,11 @@ class QueueService
     public static function monthlyEvent($openIds)
     {
         try {
-            $topic    = new PushMessageTopic();
-            $pushList = [];
+            $topic = new PushMessageTopic();
             foreach ($openIds as $openId) {
                 if (PushMessageService::checkLastActiveTime($openId)) {
-                    $pushList[] = $openId;
+                    $topic->monthlyPush($openId)->publish(rand(0, 3600));
                 }
-            }
-            if (!empty($pushList)) {
-                // 最长延迟20分钟
-                $topic->monthlyPush($pushList)->publish(rand(0, 1200));
             }
         } catch (Exception $e) {
             return false;
