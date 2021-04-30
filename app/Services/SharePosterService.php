@@ -21,6 +21,7 @@ use App\Models\Dss\DssSharePosterModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\Erp\ErpEventTaskModel;
+use App\Models\Erp\ErpStudentAccountModel;
 use App\Models\Erp\ErpUserEventTaskAwardGoldLeafModel;
 use App\Models\Erp\ErpUserEventTaskAwardModel;
 use App\Models\Erp\ErpUserEventTaskModel;
@@ -300,7 +301,7 @@ class SharePosterService
         return $data;
     }
 
-    public static function formatAwardInfo($amount, $type)
+    public static function formatAwardInfo($amount, $type, $subType = '')
     {
         if ($type == 1) {
             //金钱单位：分
@@ -308,9 +309,9 @@ class SharePosterService
         } elseif ($type == 2) {
             //时间单位：天
             return $amount . '天';
-        } elseif ($type == 3) {
+        } elseif ($type == 3 && $subType == ErpStudentAccountModel::SUB_TYPE_GOLD_LEAF ) {
             // 积分
-            return $amount . '积分';
+            return $amount . '金叶子';
         }
     }
 
@@ -428,14 +429,16 @@ class SharePosterService
                 $_awardType =  ErpEventTaskModel::AWARD_TYPE_INTEGRATION;
                 $awardStatusZh = ErpReferralService::AWARD_STATUS[$_pointsAwardInfo['status']];
                 $failReasonZh = "";
+                $_awardTypeSubType = ErpStudentAccountModel::SUB_TYPE_GOLD_LEAF;
             }else {
                 // 老版现金奖励
                 $_awardNum =  !empty($awardInfo[$v['award_id']]) ? $awardInfo[$v['award_id']]['award_amount'] : 0;
                 $_awardType =  !empty($awardInfo[$v['award_id']]) ? $awardInfo[$v['award_id']]['award_type'] : 0;
                 list($awardStatusZh, $failReasonZh) = !empty($v['award_id']) ? self::displayAwardExplain($awardInfo[$v['award_id']], $awardInfo[$v['award_id']], $redPackDeal[$v['award_id']] ?? null) : [];
+                $_awardTypeSubType = '';
             }
 
-            $data['list'][$k]['award'] = self::formatAwardInfo($_awardNum, $_awardType);
+            $data['list'][$k]['award'] = self::formatAwardInfo($_awardNum, $_awardType, $_awardTypeSubType);
             $data['list'][$k]['award_status_zh'] = $awardStatusZh;
             $data['list'][$k]['fail_reason_zh'] = $failReasonZh;
         }

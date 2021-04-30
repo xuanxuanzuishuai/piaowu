@@ -99,7 +99,7 @@ class ReferralActivity extends ControllerBase
         $studentId = $this->ci['user_info']['user_id'];
         [$page, $count] = Util::formatPageCount($request->getParams());
         try {
-            $data = SharePosterService::joinRecordList($studentId, $page, $count);
+            $data = SharePosterService::sharePostAwardList($studentId, $page, $count);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
