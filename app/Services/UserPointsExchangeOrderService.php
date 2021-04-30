@@ -173,6 +173,9 @@ class UserPointsExchangeOrderService
     public static function retryExchangeRedPack($params)
     {
         $ids = $params['points_exchange_order_wx_id'];
+        if (is_string($ids)) {
+            $ids = explode(',',$ids);
+        }
         $awardList = UserPointsExchangeOrderWxModel::getRecords(['id' => $ids]);
         if (empty($awardList)) {
             return true;

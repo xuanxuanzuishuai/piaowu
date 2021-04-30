@@ -25,9 +25,10 @@ $dotenv->load();
 $dotenv->overload();
 
 
+// 重试发放条件，只处理发放失败的
 $where = [
     'status' => [
-        UserPointsExchangeOrderWxModel::STATUS_WAITING,
+        // UserPointsExchangeOrderWxModel::STATUS_WAITING,
         UserPointsExchangeOrderWxModel::STATUS_GIVE_FAIL,
     ],
 ];

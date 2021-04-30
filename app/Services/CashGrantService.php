@@ -429,19 +429,19 @@ class CashGrantService
 
         // 只处理发放失败和等待发放的订单
         if (!in_array($recordInfo['status'], [ UserPointsExchangeOrderWxModel::STATUS_WAITING, UserPointsExchangeOrderWxModel::STATUS_GIVE_FAIL])) {
-            SimpleLogger::info('CashGrantService::pointsExchangeRedPack', ['err' => 'order_is_not_wait_or_not_fail', 'id' => $userPointsExchangeOrderId, 'order_info' => $orderInfo]);
+            SimpleLogger::info('CashGrantService::pointsExchangeRedPack', ['err' => 'order_is_not_wait_or_not_fail', 'id' => $userPointsExchangeOrderId, 'order_info' => $orderInfo, 'record_info' => $recordInfo]);
             return false;
         }
         // 检查数据是否正确，不正确直接作废
         if (!self::checkSendRedPackDataRight($recordInfo)) {
-            SimpleLogger::info('CashGrantService::pointsExchangeRedPack', ['err' => 'checkIsCanSendRedPack is false', 'id' => $userPointsExchangeOrderId, 'order_info' => $orderInfo]);
+            SimpleLogger::info('CashGrantService::pointsExchangeRedPack', ['err' => 'checkIsCanSendRedPack is false', 'id' => $userPointsExchangeOrderId, 'order_info' => $orderInfo, 'record_info' => $recordInfo]);
             UserPointsExchangeOrderWxModel::updateStatusDisabled($recordInfo['id'], UserPointsExchangeOrderModel::STATUS_CODE_RED_PACK_DATA_ERROR);
             return false;
         }
         // 检查用户是否可接受 - 绑定微信，关注公众号
         list($statusCode, $userWxInfo) = self::checkUserIsCanAcceptRedPack($orderInfo);
         if (!empty($statusCode)) {
-            SimpleLogger::info('CashGrantService::pointsExchangeRedPack', ['err' => 'checkUserIsCanAcceptRedPack is false', 'id' => $userPointsExchangeOrderId, 'order_info' => $orderInfo]);
+            SimpleLogger::info('CashGrantService::pointsExchangeRedPack', ['err' => 'checkUserIsCanAcceptRedPack is false', 'id' => $userPointsExchangeOrderId, 'order_info' => $orderInfo, 'record_info' => $recordInfo]);
             UserPointsExchangeOrderWxModel::updateStatusFailed($recordInfo['id']['id'], $statusCode);
             return false;
         }
@@ -452,7 +452,7 @@ class CashGrantService
         $keyCode = 'POINTS_EXCHANGE_RED_PACK_SEND_NAME';
 
         // 调取微信发红包接口
-        $res = self::requestWxSendRedPack($mchBillNo, $userWxInfo, $orderInfo, $keyCode);
+        $res = self::requestWxSendRedPack($mchBillNo, $userWxInfo, $recordInfo, $keyCode);
 
         // 保存日志
         $data['status'] = $res['status'];

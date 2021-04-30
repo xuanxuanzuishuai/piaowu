@@ -196,7 +196,7 @@ class UserRefereeService
         if (!empty($refTaskId)) {
             $erp = new Erp();
             foreach ($refTaskId as $taskId) {
-                $taskResult = $erp->addEventTaskAward($studentInfo['uuid'], $taskId, $sendStatus, 0, $studentInfo['uuid']);
+                $taskResult = $erp->addEventTaskAward($studentInfo['uuid'], $taskId, $sendStatus, 0, $refereeInfo['uuid']);
                 SimpleLogger::info("UserRefereeService::dssCompleteEventTask", [
                     'params' => [
                         $studentId,
