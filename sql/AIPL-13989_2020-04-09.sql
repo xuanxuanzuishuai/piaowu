@@ -28,6 +28,8 @@ CREATE TABLE `erp_user_event_task_award_gold_leaf` (
     `delay` int(10) NOT NULL DEFAULT '0' COMMENT '奖励延迟时间，单位是秒',
     `finish_task_uuid` varchar(32) NOT NULL COMMENT '完成任务的人',
     `to` tinyint(1) NOT NULL COMMENT '1推荐人奖励，2被推荐人奖励',
+    `bill_id` varchar(50) NOT NULL DEFAULT '' COMMENT '订单号',
+    `package_type` tinyint(1) NOT NULL DEFAULT '0' COMMENT '课包类型 1:体验包；2:正式包',
     `create_time` int(10) unsigned NOT NULL DEFAULT '0' COMMENT '创建时间戳',
     `update_time` int(10) unsigned NOT NULL DEFAULT '0' COMMENT '更新时间',
     PRIMARY KEY (`id`),

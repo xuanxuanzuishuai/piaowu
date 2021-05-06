@@ -75,7 +75,6 @@ class ErpUserEventTaskAwardGoldLeafService
         $goldLeafInfo['reason'] = $goldLeafInfo['status_zh'];
 
         if ($isBackend) {
-            $goldLeafInfo['bill_id'] = "";  // erp后台需要的字段
             // 后期如果需要操作人，这里需要获取操作人的名称
             $goldLeafInfo['operator_name'] = $goldLeafInfo['operator_id'] == 0 ? EmployeeModel::SYSTEM_EMPLOYEE_NAME : '';  // erp后台需要的字段
         }

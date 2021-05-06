@@ -155,7 +155,7 @@ class UserRefereeService
     public static function dssBuyDeal($buyPreStudentInfo, $packageInfo, $parentBillId)
     {
         if (RefereeAwardService::dssShouldCompleteEventTask($buyPreStudentInfo, $packageInfo, $parentBillId)) {
-            self::dssCompleteEventTask($buyPreStudentInfo['id'], $packageInfo['package_type'], $packageInfo['trial_type'], $packageInfo['app_id']);
+            self::dssCompleteEventTask($buyPreStudentInfo['id'], $packageInfo['package_type'], $packageInfo['trial_type'], $packageInfo['app_id'], $parentBillId);
         }
     }
 
@@ -166,9 +166,10 @@ class UserRefereeService
      * @param $packageType
      * @param $trialType
      * @param $appId
+     * @param $parentBillId
      * @throws RunTimeException
      */
-    public static function dssCompleteEventTask($studentId, $packageType, $trialType, $appId)
+    public static function dssCompleteEventTask($studentId, $packageType, $trialType, $appId, $parentBillId = '')
     {
         //当前用户的学生推荐人
         $refereeRelation = StudentReferralStudentStatisticsModel::getRecord(['student_id' => $studentId]);
@@ -196,7 +197,7 @@ class UserRefereeService
         if (!empty($refTaskId)) {
             $erp = new Erp();
             foreach ($refTaskId as $taskId) {
-                $taskResult = $erp->addEventTaskAward($studentInfo['uuid'], $taskId, $sendStatus, 0, $refereeInfo['uuid']);
+                $taskResult = $erp->addEventTaskAward($studentInfo['uuid'], $taskId, $sendStatus, 0, $refereeInfo['uuid'], ['bill_id' => $parentBillId, 'package_type' => $packageType]);
                 SimpleLogger::info("UserRefereeService::dssCompleteEventTask", [
                     'params' => [
                         $studentId,
