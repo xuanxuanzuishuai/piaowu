@@ -36,12 +36,12 @@ class Recall extends ControllerBase
     public function getToken(Request $request, Response $response)
     {
         $params = $request->getParams();
-        if (empty($params['mobile'])) {
+        if (empty($params['uuid'])) {
             return HttpHelper::buildResponse($response, ['token' => '']);
         }
+
         $appId = DssUserWeiXinModel::dealAppId($params['app_id'] ?? null);
         $userType = Constants::USER_TYPE_STUDENT;
-        $channelId = $params['channel_id'] ?? Constants::CHANNEL_WE_CHAT_SCAN;
         $openId = null;
         $token = '';
         $student = null;
@@ -54,7 +54,7 @@ class Recall extends ControllerBase
                 throw new RunTimeException(['need_wx_code']);
             }
             if (!empty($params['wx_code'])) {
-                $data = WeChatMiniPro::factory($appId, $busiType)->getWeixnUserOpenIDAndAccessTokenByCode($params['wx_code']);
+                $data = WeChatMiniPro::factory($appId, $busiType)->code2Session($params['wx_code']);
                 $wxError = null;
                 if (empty($data) || empty($data['openid'])) {
                     // 修复后退/刷新获取openid错误
@@ -64,7 +64,7 @@ class Recall extends ControllerBase
                         $tokenInfo = WechatTokenService::getTokenInfo($tokenHeader);
                         if (!empty($tokenInfo['user_id']) && !empty($tokenInfo['open_id'])) {
                             $student = DssStudentModel::getById($tokenInfo['user_id']);
-                            if (!empty($student['mobile']) && $student['mobile'] == $params['mobile']) {
+                            if (!empty($student['uuid']) && $student['uuid'] == $params['uuid']) {
                                 $token = $tokenHeader;
                             } else {
                                 $wxError = 'can_not_obtain_open_id';
@@ -83,11 +83,10 @@ class Recall extends ControllerBase
                 $openId = $data['openid'] ?? null;
             }
 
-            $student = empty($student) ? DssStudentModel::getRecord(['mobile' => $params['mobile']]) : $student;
-            if (empty($student)) {
-                $info = UserService::studentRegisterBound($appId, $params['mobile'], $channelId, $openId, $busiType, $userType, $params["referee_id"] ?? '');
-                $student['id'] = $info['student_id'];
-                $student['uuid'] = $info['uuid'];
+            $student = empty($student) ? DssStudentModel::getRecord(['uuid' => $params['uuid']]) : $student;
+
+            if (empty($student)){
+                return HttpHelper::buildResponse($response, ['token' => '']);
             }
 
             if (!empty($student['id']) && empty($token)) {
@@ -104,6 +103,7 @@ class Recall extends ControllerBase
         return HttpHelper::buildResponse(
             $response,
             [
+                'mobile' => $student['mobile'],
                 'token' => $token,
                 'uuid' => $student['uuid']
             ]
@@ -120,11 +120,12 @@ class Recall extends ControllerBase
     {
         $params = $request->getParams();
         $packageId = $params['package_id'] ?? DssDictService::getKeyValue(DictConstants::DSS_WEB_STUDENT_CONFIG, 'mini_package_id_v1');
-        $mobile = $params['mobile'] ?? '';
+        $uuid = $params['uuid'] ?? '';
         try {
             $student = null;
-            if (!empty($mobile) && empty($student)) {
-                $student = DssStudentModel::getRecord(['mobile' => $mobile]);
+            if (!empty($uuid) && empty($student)) {
+                $student = DssStudentModel::getRecord(['uuid' => $uuid]);
+                $params['mobile'] = $student['mobile'];
             }
             $data = RecallLandingService::getIndexData($packageId, $student, $params);
             $data['mobile'] = $params['mobile'] ?: $student['mobile'];
