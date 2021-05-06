@@ -1070,7 +1070,6 @@ class AgentService
             $val['bill_amount'] = Util::yuan($giftCodeArr[$val['parent_bill_id']]['bill_amount'], 2);
             $val['agent_id'] = $val['signer_agent_id'] ?? '';
             $val['bill_id'] = $val['parent_bill_id'] ?? '';
-            $val['buy_time'] = $val['create_time'] ?? '';
             $val['package_name'] = $giftCodeArr[$val['parent_bill_id']]['package_name'] ?? '';
             $val['code_status'] = $giftCodeArr[$val['parent_bill_id']]['code_status'] ?? '';
             $val['code_status_name'] = $dict[$giftCodeArr[$val['parent_bill_id']]['code_status']] ?? '';
