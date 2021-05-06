@@ -1066,7 +1066,7 @@ class AgentService
             } else {
                 $val['second_agent_name'] = $allAgentInfo[$val['own_agent_id']]['name'] ?? '';
             }
-            $val['format_pay_time'] = date("Y-m-d H:i:s", $val['create_time']);
+            $val['format_pay_time'] = date("Y-m-d H:i:s", $val['buy_time']);
             $val['bill_amount'] = Util::yuan($giftCodeArr[$val['parent_bill_id']]['bill_amount'], 2);
             $val['agent_id'] = $val['signer_agent_id'] ?? '';
             $val['bill_id'] = $val['parent_bill_id'] ?? '';
