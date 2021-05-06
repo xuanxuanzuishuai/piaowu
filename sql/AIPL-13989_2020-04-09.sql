@@ -33,7 +33,8 @@ CREATE TABLE `erp_user_event_task_award_gold_leaf` (
     `create_time` int(10) unsigned NOT NULL DEFAULT '0' COMMENT '创建时间戳',
     `update_time` int(10) unsigned NOT NULL DEFAULT '0' COMMENT '更新时间',
     PRIMARY KEY (`id`),
-    KEY `idx_user_id` (`user_id`)
+    KEY `idx_user_id` (`user_id`),
+    KEY `idx_uuid` (`uuid`)
 ) ENGINE=InnoDB CHARSET=utf8mb4 COMMENT='用户金叶子任务奖励明细';
 
 
@@ -96,6 +97,7 @@ CREATE TABLE `user_points_exchange_order_wx` (
     `update_time` int(11) NOT NULL DEFAULT '0',
     PRIMARY KEY (`id`),
     UNIQUE KEY `mch_billno` (`mch_billno`),
+    UNIQUE KEY `unq_record_sn` (`record_sn`),
     KEY `user_points_exchange_order_id` (`user_points_exchange_order_id`)
 ) ENGINE=InnoDB CHARSET=utf8mb4 COMMENT='积分兑换红包微信交易信息';
 
