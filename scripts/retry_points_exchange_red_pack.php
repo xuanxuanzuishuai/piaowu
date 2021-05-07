@@ -31,6 +31,7 @@ $where = [
         // UserPointsExchangeOrderWxModel::STATUS_WAITING,
         UserPointsExchangeOrderWxModel::STATUS_GIVE_FAIL,
     ],
+    'create_time[>=]' => time() - 1728000, //只处理最近二十天创建的
 ];
 // 获取重试积分兑换红包的列表
 $redPackList = UserPointsExchangeOrderWxModel::getRecords($where);
