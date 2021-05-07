@@ -54,7 +54,7 @@ class Recall extends ControllerBase
                 throw new RunTimeException(['need_wx_code']);
             }
             if (!empty($params['wx_code'])) {
-                $data = WeChatMiniPro::factory($appId, $busiType)->code2Session($params['wx_code']);
+                $data = WeChatMiniPro::factory($appId, $busiType)->getWeixnUserOpenIDAndAccessTokenByCode($params['wx_code']);
                 $wxError = null;
                 if (empty($data) || empty($data['openid'])) {
                     // 修复后退/刷新获取openid错误
