@@ -400,7 +400,7 @@ class DictConstants {
     //订单状态
     const CODE_STATUS = [
         'type' => 'code_status',
-        'keys' => ['1', '2']
+        'keys' => ['0', '1', '2']
     ];
     //代理转介绍学生的当前进度
     const AGENT_USER_STAGE = [
