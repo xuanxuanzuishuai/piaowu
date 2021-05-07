@@ -711,17 +711,29 @@ class ReferralService
             $studentStageArr[$item['student_id']][$item['stage'] + 1] = [
                 'stage_name' => $stageNameList[$item['stage']] ?? '',
                 'create_time' => date("Y-m-d", $item['create_time']),
+                'unix_create_time' => $item['create_time'],
                 'stage' => $item['stage']
             ];
         }
 
         foreach ($list as $_invite) {
             $s_info = $inviteStudentArr[$_invite['student_id']] ?? [];
+            // 如果购买体验课的时间比购买年卡的时间大，不显示体验卡节点
+            $stage = $studentStageArr[$_invite['student_id']] ?? [];
+            if (isset($stage[3]) && isset($stage[2]) && $stage[3]['unix_create_time'] < $stage[2]['unix_create_time']) {
+                unset($stage[2]);
+            }
+
+            // 更改绑定关系建立的时间
+            if (isset($stage[1])) {
+                $stage[1]['create_time'] = date("Y-m-d", $_invite['create_time']);
+                $stage[1]['unix_create_time'] =$_invite['create_time'];
+            }
             $returnList['invite_student_list'][] = [
                 'mobile' => isset($s_info['mobile']) ? Util::hideUserMobile($s_info['mobile']) : '',
                 'name' => isset($s_info['name']) ? $s_info['name'] : '',
                 'thumb' => isset($s_info['thumb']) ? AliOSS::signUrls($s_info['thumb']) : '',
-                'stage' => $studentStageArr[$_invite['student_id']] ?? [],
+                'stage' => $stage,
             ];
         }
 
