@@ -140,16 +140,16 @@ class UserService
 
     /**
      * 记录用户7天内活跃
-     * @param $userId
+     * @param $data
      * @return bool
      * @throws \App\Libs\Exceptions\RunTimeException
      */
-    public static function recordUserActiveConsumer($userId)
+    public static function recordUserActiveConsumer($data)
     {
-        if (empty($userId)) {
+        if (empty($data['user_id'])) {
             return false;
         }
-        $userWx = DssUserWeiXinModel::getByUserId($userId);
+        $userWx = DssUserWeiXinModel::getByUserId($data['user_id']);
         if (empty($userWx['open_id'])) {
             return false;
         }
@@ -159,6 +159,9 @@ class UserService
         $key = WechatService::KEY_WECHAT_DAILY_ACTIVE . $date;
         $redis->hset($key, $userWx['open_id'], time());
         $redis->expire($key, $expire);
+        if ($data['update'] === true) {
+            WechatService::updateUserTagByUserId($data['user_id']);
+        }
         return true;
     }
 }
