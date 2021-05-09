@@ -45,7 +45,7 @@ class GoldLeafShop extends ControllerBase
         }
         try {
             list($page, $limit) = Util::formatPageCount($params);
-            $res = ErpUserEventTaskAwardGoldLeafService::goldLeafList($params, $page, $limit);
+            $res = ErpUserEventTaskAwardGoldLeafService::getWaitingGoldLeafList($params, $page, $limit);
         } catch (RunTimeException $e) {
             SimpleLogger::info("Erp::integralExchangeRedPack error", ['params' => $params, 'err' => $e->getData()]);
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());

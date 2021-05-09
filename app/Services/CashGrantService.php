@@ -442,7 +442,7 @@ class CashGrantService
         list($statusCode, $userWxInfo) = self::checkUserIsCanAcceptRedPack($orderInfo);
         if (!empty($statusCode)) {
             SimpleLogger::info('CashGrantService::pointsExchangeRedPack', ['err' => 'checkUserIsCanAcceptRedPack is false', 'id' => $userPointsExchangeOrderId, 'order_info' => $orderInfo, 'record_info' => $recordInfo]);
-            UserPointsExchangeOrderWxModel::updateStatusFailed($recordInfo['id']['id'], $statusCode);
+            UserPointsExchangeOrderWxModel::updateStatusFailed($recordInfo['id'], $statusCode);
             return false;
         }
 
