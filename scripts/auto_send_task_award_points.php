@@ -113,6 +113,6 @@ foreach ($pointsList as $points) {
     // 积分发放成功后 把消息放入到 客服消息队列
     if (!empty($taskResult['data'])) {
         $pushMessageData = ['points_award_ids' => $taskResult['data']['points_award_ids']];
-        (new PushMessageTopic())->pushWX($pushMessageData,PushMessageTopic::EVENT_PAY_TRIAL)->publish();
+        (new PushMessageTopic())->pushWX($pushMessageData,PushMessageTopic::EVENT_PAY_TRIAL)->publish(5);
     }
 }

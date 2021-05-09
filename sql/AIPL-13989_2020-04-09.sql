@@ -42,8 +42,8 @@ CREATE TABLE `erp_user_event_task_award_gold_leaf` (
 -------------------- op --------------------
 INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES
 ('WE_CHAT_RED_PACK', '微信红包显示语', 'POINTS_EXCHANGE_RED_PACK_SEND_NAME', '{\"act_name\":\"\\u8f6c\\u4ecb\\u7ecd\\u5956\\u52b1\",\"send_name\":\"\\u91d1\\u53f6\\u5b50\\u5151\\u6362{{order_amounts}}\\u5143\",\"wishing\":\"\\u5c0f\\u53f6\\u5b50\\u667a\\u80fd\\u966a\\u7ec3\"}', '积分兑换红包'),
-('SERVICE_SIGN_KEY', '各个服务调取op接口签名秘钥', 'erp_service', 'AAAEbm8uZQAAAAACAAABAAABFwAAAAdzc3gtcn', NULL),
-('REFERRAL_CONFIG', '转介绍配置', 'student_invite_send_points_start_time', '1619107200', '我的邀请人发放积分开始时间');
+('SERVICE_SIGN_KEY', '各个服务调取op接口签名秘钥', 'erp_service', 'UwJ82aSFzBQz2FeT8F062t4Ky0vsI2B5', NULL),
+('REFERRAL_CONFIG', '转介绍配置', 'student_invite_send_points_start_time', '1620576000', '我的邀请人发放积分开始时间');
 
 -- 推荐人年卡 - 被推荐人购买体验卡
 -- 需要先执行 insert erp_event_task 然后查出原值 select * from dict where `type`='node_relate_task' and `key_code`='2';
