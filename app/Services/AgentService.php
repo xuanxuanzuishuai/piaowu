@@ -2337,7 +2337,9 @@ class AgentService
         $relationAgent = self::getRelationAgentIds($packageId);
 
         $type = [];
-        $typeDict = AgentModel::TYPE_DICT;
+
+        $typeDict = array_column(DictConstants::getTypesMap([DictConstants::AGENT_TYPE['type']])[DictConstants::AGENT_TYPE['type']],'value','code');
+
         array_walk($typeDict, function ($value, $key) use (&$type) {
             $type[$key]['id'] = 'type_' . $key;
             $type[$key]['name'] = $value;
