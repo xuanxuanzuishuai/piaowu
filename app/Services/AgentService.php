@@ -2404,7 +2404,7 @@ class AgentService
         if (!empty($agentIds)){
             //过滤前端非法标识数据
             array_walk($agentIds, function ($value, $key) use (&$agentIds){
-                if (is_numeric($value)){
+                if (!is_numeric($value)){
                     unset($agentIds[$key]);
                 }
             });
