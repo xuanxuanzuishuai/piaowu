@@ -2324,7 +2324,7 @@ class AgentService
             return $data;
         }
 
-        $card = ErpPackageV1Model::packageIsYearCard($packageId);
+        $isYearCard = ErpPackageV1Model::packageIsYearCard($packageId);
 
         if (empty($fuzzySearch)) {
             $where = [];
@@ -2334,13 +2334,13 @@ class AgentService
             $where['name[~]'] = $fuzzySearch;
         }
 
+        $where['parent_id'] = 0;
+
         //所有agent数据
-        $agent = AgentModel::getRecords($where, ['id', 'parent_id', 'division_model', 'name', 'type']);
-        if (empty($agent)) {
+        $agentList = AgentModel::getRecords($where, ['id', 'parent_id', 'division_model', 'name', 'type']);
+        if (empty($agentList)) {
             return $data;
         }
-
-        $agentList = array_column($agent, null, 'id');
 
         $type = [];
         $typeDict = AgentModel::TYPE_DICT;
@@ -2358,14 +2358,10 @@ class AgentService
         $data['relation_people_number'] = count($relationAgent);
 
         foreach ($agentList as $agent) {
-
             $agent['disabled'] = false;
-            if ($agent['parent_id']) {
-                $agent['division_model'] = $agent['division_model'] ?: $agentList[$agent['parent_id']]['division_model'];
-                $agent['type'] = $agent['type'] ?: $agentList[$agent['parent_id']]['type'];
-            }
+
             //若推广的商品为年卡，则只能关联到线索+售卖模式下的代理商，可置灰线索获量模式的代理商，不可选中
-            if ($card && $agent['division_model'] != AgentModel::DIVISION_MODEL_LEADS_AND_SALE) {
+            if ($isYearCard && $agent['division_model'] != AgentModel::DIVISION_MODEL_LEADS_AND_SALE) {
                 $agent['disabled'] = true;
             }
 
@@ -2377,19 +2373,19 @@ class AgentService
         }
 
         $open = []; //用与前端tree是否展开
-        array_walk($type, function (&$value,$key) use (&$type,&$open) {
+        array_walk($type, function (&$value, $key) use (&$type, &$open) {
             $value['number'] = count($value['list']);
-            if (empty($value['number'])){
+            if (empty($value['number'])) {
                 unset($type[$key]);
             }
-            if ($value['open']){
+            if ($value['open']) {
                 $open[] = $value['id'];
             }
         });
 
         $data['agent_list'] = array_values($type);
-        $data['relation'] = $relationAgent;
-        $data['open'] = $open ;
+        $data['relation'] = array_values($relationAgent);
+        $data['open'] = $open;
 
         return $data;
     }
@@ -2404,6 +2400,15 @@ class AgentService
      */
     public static function updateAgentRelationToPackage(int $packageId, array $agentIds = []): bool
     {
+
+        if (!empty($agentIds)){
+            //过滤前端非法标识数据
+            array_walk($agentIds, function ($value, $key) use (&$agentIds){
+                if (is_numeric($value)){
+                    unset($agentIds[$key]);
+                }
+            });
+        }
         //所有关联的agentId
         $relationAgent = self::getRelationAgentIds($packageId);
 
@@ -2465,13 +2470,13 @@ class AgentService
     private static function getRelationAgentIds(int $packageId): array
     {
         //所有关联的agentId
-        return array_unique(array_column(
+        return array_filter(array_unique(array_column(
             AgentSalePackageModel::getRecords([
                 'package_id' => $packageId,
                 'status' => AgentSalePackageModel::STATUS_OK,
                 'app_id' => UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT
             ], ['agent_id']) ?? [],
             'agent_id'
-        ));
+        )));
     }
 }
