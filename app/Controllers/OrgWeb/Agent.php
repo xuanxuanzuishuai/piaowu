@@ -559,9 +559,8 @@ class Agent extends ControllerBase
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        $agentIds = $params['agent_ids'] ? explode(',', $params['agent_ids']) : [];
         try {
-            AgentService::updateAgentRelationToPackage($params['package_id'], $agentIds);
+            AgentService::updateAgentRelationToPackage($params['package_id'], $params['agent_ids'] ?? []);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }

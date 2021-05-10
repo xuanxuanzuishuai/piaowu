@@ -2324,7 +2324,7 @@ class AgentService
             return $data;
         }
 
-        $card = ErpPackageV1Model::packageSubType($packageId);
+        $card = ErpPackageV1Model::packageIsYearCard($packageId);
 
         if (empty($fuzzySearch)) {
             $where = [];
@@ -2345,10 +2345,11 @@ class AgentService
         $type = [];
         $typeDict = AgentModel::TYPE_DICT;
         array_walk($typeDict, function ($value, $key) use (&$type) {
-            $type[$key]['id'] = $key;
+            $type[$key]['id'] = 'type_' . $key;
             $type[$key]['name'] = $value;
             $type[$key]['number'] = 0;
             $type[$key]['list'] = [];
+            $type[$key]['open'] = false;
         });
 
         //所有关联的agentId
@@ -2368,19 +2369,27 @@ class AgentService
                 $agent['disabled'] = true;
             }
 
+            if (in_array($agent['id'], $relationAgent)) {
+                $type[$agent['type']]['open'] = true;
+            }
 
             $type[$agent['type']]['list'][] = $agent;
         }
 
-        array_walk($type, function (&$value,$key) use (&$type) {
+        $open = []; //用与前端tree是否展开
+        array_walk($type, function (&$value,$key) use (&$type,&$open) {
             $value['number'] = count($value['list']);
             if (empty($value['number'])){
                 unset($type[$key]);
+            }
+            if ($value['open']){
+                $open[] = $value['id'];
             }
         });
 
         $data['agent_list'] = array_values($type);
         $data['relation'] = $relationAgent;
+        $data['open'] = $open ;
 
         return $data;
     }

@@ -176,7 +176,7 @@ class ErpPackageV1Model extends ErpModel
      * @param int $packageId
      * @return bool
      */
-    public static function packageSubType(int $packageId) :bool
+    public static function packageIsYearCard(int $packageId) :bool
     {
         $package = self::$table;
         $pg = ErpPackageGoodsV1Model::$table;
