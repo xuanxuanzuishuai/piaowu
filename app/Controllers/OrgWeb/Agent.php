@@ -526,7 +526,7 @@ class Agent extends ControllerBase
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        $data = AgentService::getAgentRelationToPackage($params['package_id'], $params['fuzzy_search']);
+        $data = AgentService::getAgentRelationToPackage($params['package_id']);
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => $data

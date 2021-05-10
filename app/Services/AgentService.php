@@ -2305,14 +2305,14 @@ class AgentService
         return false;
     }
 
+
     /**
      * 产品包关联代理信息
      *
      * @param int $packageId
-     * @param string $fuzzySearch
      * @return array
      */
-    public static function getAgentRelationToPackage(int $packageId, string $fuzzySearch = ''): array
+    public static function getAgentRelationToPackage(int $packageId): array
     {
         $data = [
             'relation_people_number' => 0,
@@ -2326,21 +2326,15 @@ class AgentService
 
         $isYearCard = ErpPackageV1Model::packageIsYearCard($packageId);
 
-        if (empty($fuzzySearch)) {
-            $where = [];
-        } elseif (is_numeric($fuzzySearch)) {
-            $where['id'] = $fuzzySearch;
-        } else {
-            $where['name[~]'] = $fuzzySearch;
-        }
-
-        $where['parent_id'] = 0;
-
         //所有agent数据
-        $agentList = AgentModel::getRecords($where, ['id', 'parent_id', 'division_model', 'name', 'type']);
+        $agentList = AgentModel::getRecords(['parent_id' => 0], ['id', 'parent_id', 'division_model', 'name', 'type']);
+
         if (empty($agentList)) {
             return $data;
         }
+
+        //所有关联的agentId
+        $relationAgent = self::getRelationAgentIds($packageId);
 
         $type = [];
         $typeDict = AgentModel::TYPE_DICT;
@@ -2352,8 +2346,6 @@ class AgentService
             $type[$key]['open'] = false;
         });
 
-        //所有关联的agentId
-        $relationAgent = self::getRelationAgentIds($packageId);
 
         $data['relation_people_number'] = count($relationAgent);
 
