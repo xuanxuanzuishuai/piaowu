@@ -26,14 +26,16 @@ class AgentModel extends Model
         self::STATUS_OK => '正常'
     ];
 
-    // 1分销渠道 2个人代理 3线下代理
+    // 1分销渠道 2个人家长代理 3线下代理 4个人老师代理
     const TYPE_DISTRIBUTION = 1;
-    const TYPE_INDIVIDUAL   = 2;
-    const TYPE_OFFLINE      = 3;
+    const TYPE_INDIVIDUAL_PARENT = 2;
+    const TYPE_OFFLINE = 3;
+    const TYPE_INDIVIDUAL_TEACHER = 4;
     const TYPE_DICT = [
         self::TYPE_DISTRIBUTION => '分销渠道',
-        self::TYPE_INDIVIDUAL   => '个人代理',
-        self::TYPE_OFFLINE      => '线下代理',
+        self::TYPE_INDIVIDUAL_PARENT => '个人家长代理',
+        self::TYPE_OFFLINE => '线下代理',
+        self::TYPE_INDIVIDUAL_TEACHER => '个人老师代理',
     ];
 
     //分成模式:1线索获量 2线索获量+售卖模式

@@ -112,4 +112,31 @@ class AgentSalePackageModel extends Model
         ";
         return $db->queryAll($sql, $map);
     }
+
+    /**
+     * 记录课包关联代理商数据
+     *
+     * @param int $packageId
+     * @param array $agentIds
+     * @param int $appId
+     * @return bool
+     */
+    public static function addPackageRelationAgentRecord(int $packageId, array $agentIds, int $appId): bool
+    {
+        $agentPackageInsertData = [];
+        foreach ($agentIds as $agentId) {
+            $agentPackageInsertData[] = [
+                'package_id' => $packageId,
+                'agent_id' => $agentId,
+                'app_id' => $appId,
+                'create_time' => time(),
+            ];
+        }
+        $agentPackageId = self::batchInsert($agentPackageInsertData);
+        if (empty($agentPackageId)) {
+            SimpleLogger::error('insert agent sale package data error', $agentPackageInsertData);
+            return false;
+        }
+        return true;
+    }
 }

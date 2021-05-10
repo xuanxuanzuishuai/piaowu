@@ -62,6 +62,9 @@ class WeChatMiniPro
     public $nowWxApp; //当前的微信应用
     private $timeout;
 
+    private $appId = ''; //当前的微信id
+    private $secret = ''; //当前的微信secret
+
 
     public static function factory($appId, $busiType)
     {
@@ -234,10 +237,11 @@ class WeChatMiniPro
      */
     public function requestAccessToken()
     {
+        self::getWeChatAppIdSecretFromDict();
         $params = [
             'grant_type' => 'client_credential',
-            'appid'      => DictConstants::get(DictConstants::WECHAT_APPID, $this->nowWxApp),
-            'secret'     => DictConstants::get(DictConstants::WECHAT_APP_SECRET, $this->nowWxApp),
+            'appid'      => $this->appId,
+            'secret'     => $this->secret,
         ];
         $apiUrl = $this->apiUrl(self::API_TOKEN, false);
         $res = $this->requestJson($apiUrl, $params);
@@ -256,12 +260,14 @@ class WeChatMiniPro
      */
     public function getWeixnUserOpenIDAndAccessTokenByCode($code)
     {
+        self::getWeChatAppIdSecretFromDict();
+
        return HttpHelper::requestJson(self::WX_HOST . '/sns/oauth2/access_token', [
 
            'code' => $code,
            'grant_type' => 'authorization_code',
-           'appid' => DictConstants::get(DictConstants::WECHAT_APPID, $this->nowWxApp),
-           'secret' => DictConstants::get(DictConstants::WECHAT_APP_SECRET, $this->nowWxApp)
+           'appid' => $this->appId,
+           'secret' => $this->secret
 
        ]);
     }
@@ -535,9 +541,12 @@ class WeChatMiniPro
             return [];
         }
         $url = $this->apiUrl(self::API_CODE_2_SESSION, false);
+
+        self::getWeChatAppIdSecretFromDict();
+
         $params = [
-            'appid'      => DictConstants::get(DictConstants::WECHAT_APPID, $this->nowWxApp),
-            'secret'     => DictConstants::get(DictConstants::WECHAT_APP_SECRET, $this->nowWxApp),
+            'appid'      => $this->appId,
+            'secret'     => $this->secret,
             'js_code'    => $code,
             'grant_type' => 'authorization_code',
         ];
@@ -583,7 +592,9 @@ class WeChatMiniPro
             SimpleLogger::error('SESSION KEY IS EMPTY', [$openId]);
             return [];
         }
-        $w = new WXBizDataCrypt(DictConstants::get(DictConstants::WECHAT_APPID, $this->nowWxApp), $sessionKey);
+
+        self::getWeChatAppIdSecretFromDict(true, false);
+        $w = new WXBizDataCrypt($this->appId, $sessionKey);
         $code = $w->decryptData($encryptedData, $iv, $data);
         if ($code == 0) {
             return json_decode($data, true);
@@ -970,5 +981,28 @@ class WeChatMiniPro
             $this->delConditionalMenu($subMenu['menuid']);
         }
         return true;
+    }
+
+    /**
+     * 获取微信配置信息
+     *
+     * @param bool $getAppId
+     * @param bool $getSecret
+     * @return array
+     */
+    public function getWeChatAppIdSecretFromDict(bool $getAppId = true, bool $getSecret = true)
+    {
+        if ($getAppId && empty($this->appId)) {
+            $this->appId = DictConstants::get(DictConstants::WECHAT_APPID, $this->nowWxApp);
+        }
+
+        if ($getSecret && empty($this->secret)) {
+            $this->secret = DictConstants::get(DictConstants::WECHAT_APP_SECRET, $this->nowWxApp);
+        }
+
+        return [
+            'app_id' => $this->appId,
+            'secret' => $this->secret,
+        ];
     }
 }

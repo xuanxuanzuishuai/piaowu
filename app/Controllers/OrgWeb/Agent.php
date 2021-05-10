@@ -501,4 +501,70 @@ class Agent extends ControllerBase
         ], StatusCode::HTTP_OK);
     }
 
+    /**
+     * 产品包关联代理信息
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function agentRelationToPackage(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'package_id',
+                'type' => 'required',
+                'error_code' => 'package_id_is_required'
+            ],
+            [
+                'key' => 'package_id',
+                'type' => 'integer',
+                'error_code' => 'package_id_must_be_integer'
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $data = AgentService::getAgentRelationToPackage($params['package_id'], $params['fuzzy_search']);
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $data
+        ], StatusCode::HTTP_OK);
+    }
+
+
+    /**
+     * 产品包关联代理信息
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function updateAgentRelationToPackage(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'package_id',
+                'type' => 'required',
+                'error_code' => 'package_id_is_required'
+            ],
+            [
+                'key' => 'package_id',
+                'type' => 'integer',
+                'error_code' => 'package_id_must_be_integer'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $agentIds = $params['agent_ids'] ? explode(',', $params['agent_ids']) : [];
+        try {
+            AgentService::updateAgentRelationToPackage($params['package_id'], $agentIds);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, []);
+    }
 }

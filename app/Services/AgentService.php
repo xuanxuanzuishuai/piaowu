@@ -2304,4 +2304,165 @@ class AgentService
         }
         return false;
     }
+
+    /**
+     * 产品包关联代理信息
+     *
+     * @param int $packageId
+     * @param string $fuzzySearch
+     * @return array
+     */
+    public static function getAgentRelationToPackage(int $packageId, string $fuzzySearch = ''): array
+    {
+        $data = [
+            'relation_people_number' => 0,
+            'agent_list' => [],
+            'relation' => []
+        ];
+
+        if (empty($packageId)) {
+            return $data;
+        }
+
+        $card = ErpPackageV1Model::packageSubType($packageId);
+
+        if (empty($fuzzySearch)) {
+            $where = [];
+        } elseif (is_numeric($fuzzySearch)) {
+            $where['id'] = $fuzzySearch;
+        } else {
+            $where['name[~]'] = $fuzzySearch;
+        }
+
+        //所有agent数据
+        $agent = AgentModel::getRecords($where, ['id', 'parent_id', 'division_model', 'name', 'type']);
+        if (empty($agent)) {
+            return $data;
+        }
+
+        $agentList = array_column($agent, null, 'id');
+
+        $type = [];
+        $typeDict = AgentModel::TYPE_DICT;
+        array_walk($typeDict, function ($value, $key) use (&$type) {
+            $type[$key]['id'] = $key;
+            $type[$key]['name'] = $value;
+            $type[$key]['number'] = 0;
+            $type[$key]['list'] = [];
+        });
+
+        //所有关联的agentId
+        $relationAgent = self::getRelationAgentIds($packageId);
+
+        $data['relation_people_number'] = count($relationAgent);
+
+        foreach ($agentList as $agent) {
+
+            $agent['disabled'] = false;
+            if ($agent['parent_id']) {
+                $agent['division_model'] = $agent['division_model'] ?: $agentList[$agent['parent_id']]['division_model'];
+                $agent['type'] = $agent['type'] ?: $agentList[$agent['parent_id']]['type'];
+            }
+            //若推广的商品为年卡，则只能关联到线索+售卖模式下的代理商，可置灰线索获量模式的代理商，不可选中
+            if ($card && $agent['division_model'] != AgentModel::DIVISION_MODEL_LEADS_AND_SALE) {
+                $agent['disabled'] = true;
+            }
+
+
+            $type[$agent['type']]['list'][] = $agent;
+        }
+
+        array_walk($type, function (&$value,$key) use (&$type) {
+            $value['number'] = count($value['list']);
+            if (empty($value['number'])){
+                unset($type[$key]);
+            }
+        });
+
+        $data['agent_list'] = array_values($type);
+        $data['relation'] = $relationAgent;
+
+        return $data;
+    }
+
+    /**
+     * 课包关联代理批量更新操作
+     *
+     * @param int $packageId
+     * @param array $agentIds
+     * @return bool
+     * @throws RunTimeException
+     */
+    public static function updateAgentRelationToPackage(int $packageId, array $agentIds = []): bool
+    {
+        //所有关联的agentId
+        $relationAgent = self::getRelationAgentIds($packageId);
+
+        if (empty($relationAgent) && empty($agentIds)) {
+            return true;
+        } elseif (!empty($relationAgent) && empty($agentIds)) {
+            $res = AgentSalePackageModel::batchUpdateRecord(['status' => AgentSalePackageModel::STATUS_DEL],
+                [
+                    'package_id' => $packageId,
+                    'status' => AgentSalePackageModel::STATUS_OK,
+                    'app_id' => UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT
+                ]);
+            if (empty($res)) {
+                throw new RunTimeException(['update_failure']);
+            }
+            return true;
+        }
+
+        //取差集
+        $updateDate = array_diff($relationAgent, $agentIds);
+        $createDate = array_diff($agentIds, $relationAgent);
+
+        $db = MysqlDB::getDB();
+        $db->beginTransaction();
+
+        if (!empty($updateDate)) {
+            $res = AgentSalePackageModel::batchUpdateRecord(['status' => AgentSalePackageModel::STATUS_DEL],
+                [
+                    'package_id' => $packageId,
+                    'agent_id' => $updateDate,
+                    'status' => AgentSalePackageModel::STATUS_OK,
+                    'app_id' => UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT
+                ]);
+            if (empty($res)) {
+                $db->rollBack();
+                throw new RunTimeException(['update_failure']);
+            }
+        }
+        if (!empty($createDate)) {
+            $res = AgentSalePackageModel::addPackageRelationAgentRecord($packageId, $createDate,
+                UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT);
+            if (empty($res)) {
+                $db->rollBack();
+                throw new RunTimeException(['insert_failure']);
+            }
+        }
+
+        $db->commit();
+        return true;
+    }
+
+
+    /**
+     * 获取产品包关联的代理ids
+     *
+     * @param int $packageId
+     * @return array
+     */
+    private static function getRelationAgentIds(int $packageId): array
+    {
+        //所有关联的agentId
+        return array_unique(array_column(
+            AgentSalePackageModel::getRecords([
+                'package_id' => $packageId,
+                'status' => AgentSalePackageModel::STATUS_OK,
+                'app_id' => UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT
+            ], ['agent_id']) ?? [],
+            'agent_id'
+        ));
+    }
 }

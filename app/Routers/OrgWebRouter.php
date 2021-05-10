@@ -137,6 +137,8 @@ class OrgWebRouter extends RouterBase
         '/op_web/agent/popular_material_info' => ['method' => ['get'], 'call' => Agent::class . ':popularMaterialInfo'],
         '/op_web/agent/fuzzy_search' => ['method' => ['get'], 'call' => Agent::class . ':agentFuzzySearch'],
         '/op_web/agent/division_to_package' => ['method' => ['get'], 'call' => Agent::class . ':agentDivisionToPackage'],
+        '/op_web/agent/package_relation_agent' => ['method' => ['get'], 'call' => Agent::class . ':agentRelationToPackage'],
+        '/op_web/agent/update_package_relation_agent' => ['method' => ['post'], 'call' => Agent::class . ':updateAgentRelationToPackage'],
         // 地址搜索国家/省/市/县（区）
         '/op_web/area/country' => ['method' => ['get'], 'call' => Area::class . ':countryList'],
         '/op_web/area/province' => ['method' => ['get'], 'call' => Area::class . ':provinceList'],

@@ -169,4 +169,37 @@ class ErpPackageV1Model extends ErpModel
 
         return !empty($records) ? $records[0] : [];
     }
+
+    /**
+     * 产品包是否是年卡
+     *
+     * @param int $packageId
+     * @return bool
+     */
+    public static function packageSubType(int $packageId) :bool
+    {
+        $package = self::$table;
+        $pg = ErpPackageGoodsV1Model::$table;
+        $g = ErpGoodsV1Model::$table;
+        $c = ErpCategoryV1Model::$table;
+        $sql = "
+        SELECT 
+            c.sub_type
+        FROM {$package} p
+        INNER JOIN {$pg} pg on pg.package_id = p.id
+        INNER JOIN {$g} g on pg.goods_id = g.id
+        INNER JOIN  {$c} c on c.id = g.category_id
+        WHERE p.id = :package_id ";
+
+        $db = self::dbRO();
+        $records = $db->queryAll($sql, [
+            ':package_id' => $packageId
+        ]);
+
+        $data = !empty($records) ? $records[0] : [];
+        if ($data['sub_type'] == ErpCategoryV1Model::DURATION_TYPE_NORMAL) {
+            return true;
+        }
+        return false;
+    }
 }

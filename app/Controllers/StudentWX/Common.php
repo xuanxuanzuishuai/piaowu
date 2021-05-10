@@ -42,11 +42,13 @@ class Common extends ControllerBase
         }
         $t = time();
         $noncestr = Util::token();
-        $appId= Constants::SMART_APP_ID;
+        $appId = Constants::SMART_APP_ID;
         $wechat = WeChatMiniPro::factory($appId, DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER);
         $signature = $wechat->getJSSignature($noncestr, $t, $params["url"]);
+        $app_info = $wechat->getWeChatAppIdSecretFromDict();
+
         $wxJSConfig = [
-            'appId'     => $appId,
+            'appId'     => $app_info["app_id"],
             'timestamp' => $t,
             'nonceStr'  => $noncestr,
             'signature' => $signature
