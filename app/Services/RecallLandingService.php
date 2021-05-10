@@ -173,7 +173,10 @@ class RecallLandingService
             'sMobile' => $student['mobile'],
             'buyTime' => $payInfo['create_time'] ?? 0,
         ];
-        QueueService::sendAssistantSms($data);
+        $flag = DictConstants::get(DictConstants::RECALL_CONFIG, 'send_sms_flag');
+        if (!empty($flag)) {
+            QueueService::sendAssistantSms($data);
+        }
         QueueService::sendAssistantSmsBi([
             'uuid' => $data['uuid'],
             'activity_id' => strval($params['activity_id']),

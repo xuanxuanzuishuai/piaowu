@@ -574,6 +574,7 @@ class DictConstants {
         'type' => 'RECALL_CONFIG',
         'keys' => [
             'event_deadline',
+            'send_sms_flag', // 短信发送开关
         ]
     ];
 
