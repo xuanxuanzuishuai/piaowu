@@ -42,7 +42,7 @@ class ParamMapModel extends Model
     public static function getParamByQrTicket($qrTicket)
     {
         $db = MysqlDB::getDB();
-        $sql = "SELECT
+        $sql = "SELECT sql_no_cache
                     id,
                     app_id,
                     type,
@@ -51,7 +51,7 @@ class ParamMapModel extends Model
                 FROM
                     " . self::$table . " 
                 WHERE
-                    param_info ->> '$.r' = '" . $qrTicket . "'";
+                    r_virtual = '" . $qrTicket . "'";
         return $db->queryAll($sql)[0];
     }
 
