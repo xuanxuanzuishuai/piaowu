@@ -15,13 +15,9 @@ define('LANG_ROOT', PROJECT_ROOT . '/lang');
 
 require_once PROJECT_ROOT . '/vendor/autoload.php';
 
-use App\Libs\Erp;
 use App\Libs\SimpleLogger;
-use App\Models\Erp\ErpUserEventTaskAwardGoldLeafModel;
-use App\Models\Erp\ErpUserEventTaskModel;
-use App\Models\UserPointsExchangeOrderModel;
 use App\Models\UserPointsExchangeOrderWxModel;
-use App\Services\CashGrantService;
+use App\Services\Queue\QueueService;
 use Dotenv\Dotenv;
 use Elasticsearch\Common\Exceptions\RuntimeException;
 
@@ -35,7 +31,8 @@ $where = [
 $list = UserPointsExchangeOrderWxModel::getRecords($where);
 foreach ($list as $item) {
     try {
-        CashGrantService::updatePointsExchangeRedPackStatus($item['id']);
+        // CashGrantService::updatePointsExchangeRedPackStatus($item['id']);
+        QueueService::awardPointsRedPackUpdateSpeed(['points_exchange_order_wx_id' => $item['id']]);
     }catch (RuntimeException $e) {
         SimpleLogger::info('script::get_points_exchange_red_pack_speed', ['info' => $e->getMessage(), 'award_info' => $item]);
     }

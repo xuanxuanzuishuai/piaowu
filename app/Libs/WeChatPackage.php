@@ -349,6 +349,7 @@ eof;
         $this->set_mch_billno($mchBillNo);                //唯一订单号
         $this->set_nonce_str(self::getNonceStr()); // 随机字符串
         $getNewData = $this->getRedBackBillInfo($this);
+        SimpleLogger::info("WeChatPackage::getRedPackBillInfo", ['req_data' => $getNewData]);
         $data =  $this->curl_post_ssl($getNewData['api_url'], $getNewData['xml_data']);
         $obj = simplexml_load_string($data,"SimpleXMLElement", LIBXML_NOCDATA);
         return json_decode(json_encode($obj),true);

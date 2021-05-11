@@ -378,5 +378,20 @@ class QueueService
         return true;
     }
 
+    /**
+     * 更新积分兑换红包领取进度
+     * @param $data
+     * @return bool
+     */
+    public static function awardPointsRedPackUpdateSpeed($data) {
+        try {
+            $topic = new UserPointsExchangeRedPackTopic();
+            $topic->updateRedPackSpeed($data)->publish(5);
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), [$data]);
+            return false;
+        }
+        return true;
+    }
 
 }
