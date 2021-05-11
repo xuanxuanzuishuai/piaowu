@@ -9,7 +9,7 @@ class UserPointsExchangeRedPackTopic extends BaseTopic
     const TOPIC_NAME = "points_exchange_red_pack";
 
     const SEND_RED_PACK = 'send_red_pack_from_points_exchange'; //发送红包 - 积分兑换
-    const SEND_RED_PACK_SPEED = 'send_red_pack_from_points_exchange'; //更新红包领取进度 - 积分兑换
+    const SEND_RED_PACK_SPEED = 'send_red_pack_speed'; //更新红包领取进度 - 积分兑换
 
     /**
      * @param null $publishTime
