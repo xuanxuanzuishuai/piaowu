@@ -131,7 +131,7 @@ class UserPointsExchangeOrderService
             $studentList = DssStudentModel::getRecords(['mobile' => $params['student_mobile']], ['uuid']);
             $where['uuid'] = array_column($studentList,'uuid');
         }
-        if (!empty($params['award_status'])) {
+        if (!Util::emptyExceptZero($params['award_status'])) {
             $where['status'] = $params['award_status'];
         }
         if (!empty($params['s_create_time'])) {
