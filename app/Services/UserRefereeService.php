@@ -188,16 +188,24 @@ class UserRefereeService
         }
         SimpleLogger::info("UserRefereeService::dssCompleteEventTask", ['taskid' => $refTaskId]);
         $sendStatus = ErpUserEventTaskAwardGoldLeafModel::STATUS_WAITING;
+        $studentInviteStage =  StudentReferralStudentStatisticsModel::STAGE_FORMAL;
         // 购买体验卡直接发放积分
         if ($packageType == DssPackageExtModel::PACKAGE_TYPE_TRIAL){
-            $sendStatus =  self::EVENT_TASK_STATUS_COMPLETE;
+            $studentInviteStage = StudentReferralStudentStatisticsModel::STAGE_TRIAL;
         }
+
+        // 获取用户购买年卡时的转介绍信息
+        $studentYearCardStageInfo = StudentReferralStudentDetailModel::getRecord(['student_id' => $studentId, 'stage' => $studentInviteStage], ['id']);
 
         $studentInfo = DssStudentModel::getById($studentId);
         if (!empty($refTaskId)) {
             $erp = new Erp();
             foreach ($refTaskId as $taskId) {
-                $taskResult = $erp->addEventTaskAward($studentInfo['uuid'], $taskId, $sendStatus, 0, $refereeInfo['uuid'], ['bill_id' => $parentBillId, 'package_type' => $packageType]);
+                $taskResult = $erp->addEventTaskAward($studentInfo['uuid'], $taskId, $sendStatus, 0, $refereeInfo['uuid'], [
+                    'bill_id' => $parentBillId,
+                    'package_type' => $packageType,
+                    'invite_detail_id' => $studentYearCardStageInfo['id'],
+                ]);
                 SimpleLogger::info("UserRefereeService::dssCompleteEventTask", [
                     'params' => [
                         $studentId,
@@ -258,8 +266,7 @@ class UserRefereeService
         } else {
             // 推荐人状态：付费正式课
             // 被推荐人购买体验课：
-            if ($packageType == DssPackageExtModel::PACKAGE_TYPE_TRIAL
-                && in_array($trialType, [DssPackageExtModel::TRIAL_TYPE_49, DssPackageExtModel::TRIAL_TYPE_9])) {
+            if ($packageType == DssPackageExtModel::PACKAGE_TYPE_TRIAL) {
                 /** 推荐人购买体验卡 - 不在需要判断数量 现在发放的都是固定奖励 */
                 // 确定时间起点：
                 // $startPoint = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'xyzop_178_start_point');

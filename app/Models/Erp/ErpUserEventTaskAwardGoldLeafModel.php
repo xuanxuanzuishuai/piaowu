@@ -4,6 +4,7 @@
 namespace App\Models\Erp;
 
 
+use App\Libs\Util;
 use App\Models\Dss\DssStudentModel;
 
 class ErpUserEventTaskAwardGoldLeafModel extends ErpModel
@@ -20,9 +21,15 @@ class ErpUserEventTaskAwardGoldLeafModel extends ErpModel
 
     // 拒绝发放原因
     const REASON_RETURN_COST = 'return_cost'; // 退费
+    const REASON_NO_PLAY = 'no_play'; // 未练琴
     const REASON_RETURN_DICT = [
         self::REASON_RETURN_COST => '已废除',
+        self::REASON_NO_PLAY => '已废除',
     ];
+
+    // 奖励节点
+    const AWARD_NODE_BUY_TRIAL = 'buy_trial_card';    // 购买体验卡
+    const AWARD_NODE_CUMULATIVE_INVITE_BUY_YEAR = 'cumulative_invite_buy_year_card';    // 累计邀请购买年卡
 
     /**
      * 获取任务积分奖励列表
@@ -95,5 +102,39 @@ class ErpUserEventTaskAwardGoldLeafModel extends ErpModel
         $returnList['list'] = $db->queryAll($listSql);
 
         return $returnList;
+    }
+
+    /**
+     * 获取学生奖励列表
+     * @param $where
+     * @param string $group
+     * @return array|null
+     */
+    public static function getStudentAwardList($where, $group = '')
+    {
+        $returnList = [];
+        $whereSqlStr = [];
+        if (!empty($where['start_time'])) {
+            $whereSqlStr[] = ' `create_time`>=' . $where['start_time'];
+        }
+        if (!empty($where['end_time'])) {
+            $whereSqlStr[] = ' `create_time`<' . $where['end_time'];
+        }
+        if (!Util::emptyExceptZero($where['status'])) {
+            $whereSqlStr[] = ' `status`=' . intval($where['status']);
+        }
+        if (!Util::emptyExceptZero($where['to'])) {
+            $whereSqlStr[] = ' `to`=' . $where['to'];
+        }
+        if (!Util::emptyExceptZero($where['package_type'])) {
+            $whereSqlStr[] = ' `package_type`=' . $where['package_type'];
+        }
+
+        if (empty($whereSqlStr)) {
+            return $returnList;
+        }
+        $sql = "select count(*) as total,uuid from " . self::getTableNameWithDb() . ' where ' . implode(' AND ', $whereSqlStr) . ' ' . $group;
+
+        return self::dbRO()->queryAll($sql);
     }
 }

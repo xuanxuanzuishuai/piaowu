@@ -32,9 +32,10 @@ $dotenv = new Dotenv(PROJECT_ROOT,'.env');
 $dotenv->load();
 $dotenv->overload();
 
-// 获取到期发待发放和发放失败的积分列表
+// 获取到期发待发放和发放失败的积分列表, 只读取award_type 为空或者指定的award_node
 $where = [
     'status' => [ErpUserEventTaskAwardGoldLeafModel::STATUS_WAITING, ErpUserEventTaskAwardGoldLeafModel::STATUS_GIVE_FAIL],
+    'award_node' => [''],
 ];
 $pointsList= ErpUserEventTaskAwardGoldLeafModel::getRecords($where);
 if (empty($pointsList)) {
