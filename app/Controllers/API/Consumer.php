@@ -254,6 +254,7 @@ class Consumer extends ControllerBase
 
                 case PushMessageTopic::EVENT_UNSUBSCRIBE:
                     MessageService::clearMessageRuleLimit($params['msg_body']['open_id']);
+                    WechatService::clearCurrentTag($params['msg_body']['open_id']);
                     break;
 
                 case PushMessageTopic::EVENT_AIPL_PUSH:

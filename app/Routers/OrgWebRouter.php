@@ -12,6 +12,7 @@ use App\Controllers\API\OSS;
 use App\Controllers\API\UICtl;
 use App\Controllers\Employee\Auth;
 use App\Controllers\Employee\Employee;
+use App\Controllers\OrgWeb\Admin;
 use App\Controllers\OrgWeb\Agent;
 use App\Controllers\OrgWeb\AppPush;
 use App\Controllers\OrgWeb\Area;
@@ -161,5 +162,7 @@ class OrgWebRouter extends RouterBase
         '/op_web/student_account/importRewardPointsList' => ['method' => ['get'], 'call' => StudentAccount::class . ':importRewardPointsList'],
         // 获取批量发放积分导入模板地址
         '/op_web/student_account/download_template' => ['method' => ['get'], 'call' => StudentAccount::class . ':batchImportRewardPointsTemplate'],
+        // DEV: 创建验证码
+        '/op_web/admin/sms_code' => ['method' => ['post'], 'call' => Admin::class . ':smsCode', 'middles' => []],
     ];
 }

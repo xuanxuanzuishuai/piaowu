@@ -167,7 +167,7 @@ class Landing extends ControllerBase
                 return $response->withJson(Valid::addAppErrors([], 'validate_code_error'), StatusCode::HTTP_OK);
             }
             $sceneData = ShowMiniAppService::getSceneData(urldecode($params['scene'] ?? ''));
-            $sessionKeyOpenId = WeChatMiniPro::factory(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,DssUserWeiXinModel::BUSI_TYPE_SHOW_MINAPP)->getSessionKey($this->ci['open_id']);
+            $sessionKeyOpenId = WeChatMiniPro::factory(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,DssUserWeiXinModel::BUSI_TYPE_SHOW_MINAPP)->getSessionKey($this->ci['open_id'], $params['code'] ?? '');
             list($openid, $lastId, $mobile, $uuid, $hadPurchased) = ShowMiniAppService::remoteRegister(
                 $this->ci['open_id'],
                 $params['iv'] ?? '',

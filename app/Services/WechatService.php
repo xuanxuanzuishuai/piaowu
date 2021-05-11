@@ -389,4 +389,15 @@ class WechatService
         }
         return true;
     }
+
+    /**
+     * 取关后清除用户标签
+     * @param $openId
+     * @return int
+     */
+    public static function clearCurrentTag($openId)
+    {
+        $redis = RedisDB::getConn();
+        return $redis->hdel(self::KEY_USER_CURRENT_MENU_TAG, [$openId]);
+    }
 }
