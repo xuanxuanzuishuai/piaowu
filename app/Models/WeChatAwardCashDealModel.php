@@ -156,8 +156,6 @@ class WeChatAwardCashDealModel extends Model
         $isBreak = false;
         switch ($resultCode) {
             case self::RECEIVED:
-                $msg = '已领取';
-                break;
             case self::RESULT_SUCCESS_CODE:
                 $msg = '';
                 $isBreak = true;
