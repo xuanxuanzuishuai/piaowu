@@ -277,9 +277,9 @@ class MessageService
                 }
                 $data[] = $uuid;
             }
-            if (count($data) > 10000) {
-                return 'file_over_maximum_limits';
-            }
+//            if (count($data) > 10000) {
+//                return 'file_over_maximum_limits';
+//            }
             return $data;
         } catch (Exception $e) {
             return new RunTimeException([$e->getMessage()]);

@@ -108,6 +108,27 @@ class QueueService
     }
 
     /**
+     * @param $uuidList
+     * @param $logId
+     * @param $employeeId
+     * @throws Exception
+     * 推送用户列表放入队列
+     */
+    public static function pushWxUuid($uuidList, $logId, $employeeId)
+    {
+        $topic = new PushMessageTopic();
+        $uuidListGroup = array_chunk($uuidList, 5000);
+        foreach ($uuidListGroup as $value) {
+            $msgBody = [
+                'uuidList'   => $value,
+                'logId'      => $logId,
+                'employeeId' => $employeeId
+            ];
+            $topic->pushWxUuid($msgBody)->publish();
+        }
+    }
+
+    /**
      * 给微信用户推送活动消息
      * @param $students
      * @param $guideWord
@@ -125,13 +146,7 @@ class QueueService
             $pushTime = time();
 
             $count = count($students);
-            if ($count > 5000) { // 超过5000条，半小时内发送完
-                $deferMax = 1800;
-            } elseif ($count > 1000) { // 超过1000条，10分钟内发送完
-                $deferMax = 600;
-            } else { // 默认2分钟内发送完
-                $deferMax = 120;
-            }
+            $deferMax = intval($count/2);
 
             foreach ($students as $student) {
                 $msgBody = [

@@ -244,6 +244,11 @@ class Consumer extends ControllerBase
                     MessageService::realSendManualMessage($params['msg_body']);
                     break;
 
+                case PushMessageTopic::EVENT_PUSH_WX_UUID:
+                    $msg = $params['msg_body'];
+                    MessageService::manualPushMessage($msg['logId'], $msg['uuidList'], $msg['employeeId']);
+                    break;
+
                 case PushMessageTopic::EVENT_PUSH_WX:
                     MessageService::pushWXMsg($params['msg_body']);
                     break;

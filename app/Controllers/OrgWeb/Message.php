@@ -12,6 +12,7 @@ use App\Libs\Valid;
 use App\Services\MessageService;
 use App\Models\MessagePushRulesModel;
 use App\Libs\Exceptions\RunTimeException;
+use App\Services\Queue\QueueService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -289,8 +290,9 @@ class Message extends ControllerBase
             // Save send log
             $logId = MessageService::saveSendLog($params);
 
+            QueueService::pushWxUuid($data, $logId, $this->getEmployeeId());
             // Send message with number: $data
-            MessageService::manualPushMessage($logId, $data, $this->getEmployeeId());
+//            MessageService::manualPushMessage($logId, $data, $this->getEmployeeId());
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }

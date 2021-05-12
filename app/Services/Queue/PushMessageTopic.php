@@ -13,6 +13,7 @@ class PushMessageTopic extends BaseTopic
     const TOPIC_NAME = "operation_message";
 
     const EVENT_PUSH_RULE_WX = 'push_rule_wx'; //自动推送微信
+    const EVENT_PUSH_WX_UUID = 'push_wx_uuid';
     const EVENT_PUSH_WX = 'push_wx';
     const EVENT_PUSH_MANUAL_RULE_WX = 'push_manual_rule_wx'; //手动推送微信
     const EVENT_PUSH_CHECKIN_MESSAGE = 'push_checkin_message'; //打卡海报审核消息
@@ -61,6 +62,19 @@ class PushMessageTopic extends BaseTopic
      * 基于规则手动推送微信消息
      */
     public function pushManualRuleWx($data, $eventType = self::EVENT_PUSH_MANUAL_RULE_WX)
+    {
+        $this->setEventType($eventType);
+        $this->setMsgBody($data);
+        return $this;
+    }
+
+    /**
+     * 微信消息推送对象
+     * @param $data
+     * @param $eventType
+     * @return $this
+     */
+    public function pushWxUuid($data, $eventType = self::EVENT_PUSH_WX_UUID)
     {
         $this->setEventType($eventType);
         $this->setMsgBody($data);
