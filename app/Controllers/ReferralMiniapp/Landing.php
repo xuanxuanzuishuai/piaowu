@@ -89,7 +89,7 @@ class Landing extends ControllerBase
             $openid = $this->ci['referral_miniapp_openid'];
             // 获取open id
             $weChat = WeChatMiniPro::factory(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT, UserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP);
-            $sessionKey = $weChat->getSessionKey($openid, $params['wx_code'] ?? '');
+            $sessionKey = $weChat->getSessionKey($openid);
             $sceneData = ReferralService::getSceneData(urldecode($params['scene'] ?? ''));
             $sceneData['app_id'] = ReferralService::REFERRAL_MINI_APP_ID;
             list($openid, $lastId, $mobile, $uuid, $hadPurchased) = ReferralService::remoteRegister(

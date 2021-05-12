@@ -26,7 +26,6 @@ class WeChatMiniPro
     const WX_HOST = 'https://api.weixin.qq.com';
 
     const TEMP_MEDIA_EXPIRE = 172800; // 临时media文件过期时间 2天
-    const SESSION_KEY_EXPIRE = 172800; // SESSION KEY 2天
     const CACHE_KEY = '%s';
     const BASIC_WX_PREFIX = 'basic_wx_prefix_';
     const SESSION_KEY = 'SESSION_KEY';
@@ -542,24 +541,17 @@ class WeChatMiniPro
      */
     public function setSessionKey($openId, $sessionKey)
     {
-        return RedisDB::getConn()->setex(self::SESSION_KEY . $openId, self::SESSION_KEY_EXPIRE, $sessionKey);
+        return RedisDB::getConn()->hset(self::SESSION_KEY, $openId, $sessionKey);
     }
 
     /**
      * 获取session_key
      * @param $openId
-     * @param string $code
      * @return string
-     * @throws \App\Libs\Exceptions\RunTimeException
      */
-    public function getSessionKey($openId, $code = '')
+    public function getSessionKey($openId)
     {
-        $cache = RedisDB::getConn()->get(self::SESSION_KEY . $openId);
-        if (empty($cache) && !empty($code)) {
-            $this->code2Session($code);
-            return $this->getSessionKey($openId);
-        }
-        return $cache;
+        return RedisDB::getConn()->hget(self::SESSION_KEY, $openId);
     }
 
     /**
