@@ -307,7 +307,6 @@ class WechatService
         if (!empty($userCurrentTag) && $userCurrentTag == $tagId) {
             return false;
         }
-        $redis->hset(self::KEY_USER_CURRENT_MENU_TAG, $openId, $tagId);
 
         $key = self::KEY_UPDATE_TAG_WAITING . date('Ymd') . '_' . $tagId;
         $mapKey = self::KEY_UPDATE_TAG_WAITING_MAP . date('Ymd') . '_' . $tagId;
@@ -373,6 +372,7 @@ class WechatService
             }
             $counter ++;
             $list[] = $item;
+            $redis->hset(self::KEY_USER_CURRENT_MENU_TAG, $item, $tagId);
             if ($counter >= $limit) {
                 $redis->hdel($mapKey, $list);
                 $wechat->batchUnTagUsers($list, $tagId);

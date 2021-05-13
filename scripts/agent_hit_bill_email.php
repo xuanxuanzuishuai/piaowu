@@ -282,18 +282,67 @@ $lastWeekYearCardCount = AgentAwardBillExtModel::getCount([
 //组合数据
 $emailsConfig = DictConstants::getTypesMap([DictConstants::AGENT_HIT_EMAILS['type']])[DictConstants::AGENT_HIT_EMAILS['type']];
 $title = date("Y-m-d") . "撞单数据统计汇总";
-$fontSize = '6';
+$fontSize = '5';
 $fontColor = '#dc143c';
-$content = "代理系统目前订单总数:<br>
-            上周代理订单总数统计:<font color='" . $fontColor . "' size='" . $fontSize . "'>" . $lastWeekCount . "</font>单，其中体验卡<font color='" . $fontColor . "' size='" . $fontSize . "'>" . ($lastWeekCount - $lastWeekYearCardCount) . "</font>单，年卡<font color='" . $fontColor . "' size='" . $fontSize . "''>" . $lastWeekYearCardCount . "</font>单。<br>
-            历史代理订单总数统计:<font color='" . $fontColor . "' size='" . $fontSize . "'>" . $historyCount . "</font>单，其中体验卡<font color='" . $fontColor . "' size='" . $fontSize . "'>" . ($historyCount - $historyYearCardCount) . "</font>单，年卡<font color='" . $fontColor . "' size='" . $fontSize . "''>" . $historyYearCardCount . "</font>单。<br><br>";
 
-$content .= "代理系统撞单统计如下:<br>
-            上周撞单总数统计:撞单总数<font color='" . $fontColor . "' size='" . $fontSize . "'>" . $lastWeekHitCount . "</font>，撞单率为<font color='" . $fontColor . "' size='" . $fontSize . "'>" . bcdiv($lastWeekHitCount, $lastWeekCount, 4) * 100 . "</font>%。<br>
-            其中转介绍与代理撞单订单数<font color='" . $fontColor . "' size='" . $fontSize . "'>" . $lastWeekReferralAndAgentHitCount . "</font>，占比<font color='" . $fontColor . "' size='" . $fontSize . "'>" . bcdiv($lastWeekReferralAndAgentHitCount, $lastWeekHitCount, 4) * 100 . "</font>%；代理与代理撞单的订单数<font color='" . $fontColor . "' size='" . $fontSize . "''>" . $lastWeekAgentAndAgentHitCount . "</font>，占比<font color='" . $fontColor . "' size='" . $fontSize . "'>" . bcdiv($lastWeekAgentAndAgentHitCount, $lastWeekHitCount, 4) * 100 . "</font>%。<br>
-            历史撞单总数统计:撞单总数<font color='" . $fontColor . "' size='" . $fontSize . "'>" . $historyHitCount . "</font>，撞单率为<font color='" . $fontColor . "' size='" . $fontSize . "'>" . bcdiv($historyHitCount, $historyCount, 4) * 100  . "</font>%。<br>
-            其中转介绍与代理撞单订单数<font color='" . $fontColor . "' size='" . $fontSize . "'>" . $historyReferralAndAgentHitCount . "</font>，占比<font color='" . $fontColor . "' size='" . $fontSize . "'>" . bcdiv($historyReferralAndAgentHitCount, $historyHitCount, 4) * 100 . "</font>%；代理与代理撞单的订单数<font color='" . $fontColor . "' size='" . $fontSize . "'>" . $historyAgentAndAgentHitCount . "</font>，占比<font color='" . $fontColor . "' size='" . $fontSize . "'>" . bcdiv($historyAgentAndAgentHitCount, $historyHitCount, 4) * 100 . "</font>%。<br><br>
-            <font color='" . $fontColor . "'>注：用户同时存在学生转介绍关系、绑定中的代理关系、又通过其他代理购买，该订单属于三方撞单（此订单在转介绍与代理撞单、代理与代理撞单中均会存在）。</font>";
+$content = '<table border="1" style="border-collapse: collapse;" width="400">
+    <caption style="text-align:left"><font size='. $fontSize . '>代理系统目前订单总数:</font></caption>
+    <tbody>
+        <tr>
+            <th>日期</th>
+            <th>总数</th>
+            <th>体验卡</th>
+            <th>年卡</th>
+        </tr>
+        <tr>
+            <td>上周</td>
+            <td>'. $lastWeekCount .'</td>
+            <td>'. ($lastWeekCount - $lastWeekYearCardCount) .'</td>
+            <td>'. $lastWeekYearCardCount .'</td>
+        </tr>
+        <tr>
+            <td>历史</td>
+            <td>'. $historyCount .'</td>
+            <td>'. ($historyCount - $historyYearCardCount) .'</td>
+            <td>'. $historyYearCardCount .'</td>
+        </tr>
+    </tbody>
+</table><br><br>';
+
+$content .= '<table border="1" style="border-collapse: collapse;" width="800">
+    <caption style="text-align:left"><font size='. $fontSize .'>代理系统撞单统计如下:</font></caption>
+    <tbody>
+        <tr>
+            <th>日期</th>
+            <th>撞单总数</th>
+            <th>撞单率</th>
+            <th>转介绍与代理撞单数</th>
+            <th>转介绍与代理撞单占比</th>
+            <th>代理与代理撞单数</th>
+            <th>代理与代理撞单占比</th>
+        </tr>
+        <tr>
+            <td>上周</td>
+            <td>'. $lastWeekHitCount .'</td>
+            <td>'. bcdiv($lastWeekHitCount, $lastWeekCount, 4) * 100 .'%</td>
+            <td>'. $lastWeekReferralAndAgentHitCount .'</td>
+            <td>'. bcdiv($lastWeekReferralAndAgentHitCount, $lastWeekHitCount, 4) * 100 .  '%</td>
+            <td>'. $lastWeekAgentAndAgentHitCount .  '</td>
+            <td>'. bcdiv($lastWeekAgentAndAgentHitCount, $lastWeekHitCount, 4) * 100 .  '%</td>
+        </tr>
+        <tr>
+            <td>历史</td>
+            <td>'. $historyHitCount .'</td>
+            <td>'. bcdiv($historyHitCount, $historyCount, 4) * 100 .'%</td>
+            <td>'. $historyReferralAndAgentHitCount .'</td>
+            <td>'. bcdiv($historyReferralAndAgentHitCount, $historyHitCount, 4) * 100  .'%</td>
+            <td>'. $historyAgentAndAgentHitCount  .'</td>
+            <td>'. bcdiv($historyAgentAndAgentHitCount, $historyHitCount, 4) * 100  .'%</td>
+        </tr>
+    </tbody>
+</table><br><br>';
+
+$content .= '<font color='. $fontColor .'>注：用户同时存在学生转介绍关系、绑定中的代理关系、又通过其他代理购买，该订单属于三方撞单（此订单在转介绍与代理撞单、代理与代理撞单中均会存在）。</font>';
 //发送邮件
 PhpMail::sendEmail(array_shift($emailsConfig)['value'], $title, $content, $tmpFileSavePath, array_column($emailsConfig, 'value'));
 //记录执行日志
