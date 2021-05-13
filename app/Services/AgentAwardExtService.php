@@ -49,6 +49,7 @@ class AgentAwardExtService
         $agentAwardBillExtData = [
             'student_id' => $agentAwardData['student_id'],
             'parent_bill_id' => $agentAwardExtData['parent_bill_id'],
+            'package_type' => $agentAwardExtData['package_type'],
             'student_referral_id' => $studentReferralId,
             'own_agent_id' => $agentAwardData['agent_id'],
             'signer_agent_id' => $signerAgentId,

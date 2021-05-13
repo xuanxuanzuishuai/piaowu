@@ -255,15 +255,28 @@ if (!empty($historyHitCount)) {
 
 $historyCount = $historyYearCardCount = $lastWeekCount = $lastWeekYearCardCount = 0;
 //历史代理订单总数
-$historyCount = AgentAwardBillExtModel::getCount([]);
+$historyCount = AgentAwardBillExtModel::getCount([
+    'signer_agent_id[!]' => $companyTestAgentIds,
+    'own_agent_id[!]' => $companyTestAgentIds
+]);
 //历史代理年卡订单总数
-$historyYearCardCount = AgentAwardBillExtModel::getCount(['package_type' => AgentAwardBillExtModel::PACKAGE_TYPE_YEAR]);
+$historyYearCardCount = AgentAwardBillExtModel::getCount([
+    'package_type' => AgentAwardBillExtModel::PACKAGE_TYPE_YEAR,
+    'signer_agent_id[!]' => $companyTestAgentIds,
+    'own_agent_id[!]' => $companyTestAgentIds
+]);
 //上周代理订单总数
-$lastWeekCount = AgentAwardBillExtModel::getCount(["create_time[<>]" => [$startTime, $endTime]]);
+$lastWeekCount = AgentAwardBillExtModel::getCount([
+    "create_time[<>]" => [$startTime, $endTime],
+    'signer_agent_id[!]' => $companyTestAgentIds,
+    'own_agent_id[!]' => $companyTestAgentIds
+]);
 //上周代理年卡订单总数
 $lastWeekYearCardCount = AgentAwardBillExtModel::getCount([
     'package_type' => AgentAwardBillExtModel::PACKAGE_TYPE_YEAR,
-    "create_time[<>]" => [$startTime, $endTime]
+    "create_time[<>]" => [$startTime, $endTime],
+    'signer_agent_id[!]' => $companyTestAgentIds,
+    'own_agent_id[!]' => $companyTestAgentIds
 ]);
 
 //组合数据
