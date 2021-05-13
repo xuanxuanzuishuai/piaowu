@@ -32,4 +32,7 @@ class AgentAwardBillExtModel extends Model
     //推广订单类型:1代理自身与下级代理推广订单综合 2代理自身直接推广订单
     const AGENT_RECOMMEND_BILL_TYPE_SELF = 1;
     const AGENT_RECOMMEND_BILL_TYPE_SELF_AND_SECOND = 2;
+
+    //订单产品包类型 1 体验卡 2年卡
+    const PACKAGE_TYPE_YEAR = 2;
 }

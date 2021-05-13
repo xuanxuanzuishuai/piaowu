@@ -78,6 +78,7 @@ foreach ($agentAwardBillFormatData as $k => $v) {
     $agentAwardBillExtData[] = [
         'student_id' => $v['student_id'],
         'parent_bill_id' => $v['ext_parent_bill_id'],
+        'package_type' => $v['package_type'],
         'student_referral_id' => empty($studentReferralData[$v['student_id']]) ? 0 : $studentReferralData[$v['student_id']]['referee_id'],
         'own_agent_id' => $v['agent_id'],
         'own_agent_status' => 1,

@@ -252,14 +252,34 @@ if (!empty($historyHitCount)) {
     $historyHitCount = $historyReferralAndAgentHitCount = $historyAgentAndAgentHitCount =
     $lastWeekHitCount = $lastWeekReferralAndAgentHitCount = $lastWeekAgentAndAgentHitCount = 0;
 }
+
+$historyCount = $historyYearCardCount = $lastWeekCount = $lastWeekYearCardCount = 0;
+//历史代理订单总数
+$historyCount = AgentAwardBillExtModel::getCount([]);
+//历史代理年卡订单总数
+$historyYearCardCount = AgentAwardBillExtModel::getCount(['package_type' => AgentAwardBillExtModel::PACKAGE_TYPE_YEAR]);
+//上周代理订单总数
+$lastWeekCount = AgentAwardBillExtModel::getCount(["create_time[<>]" => [$startTime, $endTime]]);
+//上周代理年卡订单总数
+$lastWeekYearCardCount = AgentAwardBillExtModel::getCount([
+    'package_type' => AgentAwardBillExtModel::PACKAGE_TYPE_YEAR,
+    "create_time[<>]" => [$startTime, $endTime]
+]);
+
 //组合数据
 $emailsConfig = DictConstants::getTypesMap([DictConstants::AGENT_HIT_EMAILS['type']])[DictConstants::AGENT_HIT_EMAILS['type']];
 $title = date("Y-m-d") . "撞单数据统计汇总";
 $fontSize = '6';
 $fontColor = '#dc143c';
-$content = "代理系统撞单统计如下:<br>
-            上周撞单总数统计:撞单总数<font color='" . $fontColor . "' size='" . $fontSize . "'>" . $lastWeekHitCount . "</font>,转介绍与代理撞单订单数<font color='" . $fontColor . "' size='" . $fontSize . "'>" . $lastWeekReferralAndAgentHitCount . "</font>,代理与代理撞单的订单数<font color='" . $fontColor . "' size='" . $fontSize . "''>" . $lastWeekAgentAndAgentHitCount . "</font>。<br>
-            历史撞单总数统计:撞单总数<font color='" . $fontColor . "' size='" . $fontSize . "'>" . $historyHitCount . "</font>,转介绍与代理撞单订单数<font color='" . $fontColor . "' size='" . $fontSize . "'>" . $historyReferralAndAgentHitCount . "</font>,代理与代理撞单的订单数<font color='" . $fontColor . "' size='" . $fontSize . "'>" . $historyAgentAndAgentHitCount . "</font>。<br><br>
+$content = "代理系统目前订单总数:<br>
+            上周代理订单总数统计:<font color='" . $fontColor . "' size='" . $fontSize . "'>" . $lastWeekCount . "</font>单，其中体验卡<font color='" . $fontColor . "' size='" . $fontSize . "'>" . ($lastWeekCount - $lastWeekYearCardCount) . "</font>单，年卡<font color='" . $fontColor . "' size='" . $fontSize . "''>" . $lastWeekYearCardCount . "</font>单。<br>
+            历史代理订单总数统计:<font color='" . $fontColor . "' size='" . $fontSize . "'>" . $historyCount . "</font>单，其中体验卡<font color='" . $fontColor . "' size='" . $fontSize . "'>" . ($historyCount - $historyYearCardCount) . "</font>单，年卡<font color='" . $fontColor . "' size='" . $fontSize . "''>" . $historyYearCardCount . "</font>单。<br><br>";
+
+$content .= "代理系统撞单统计如下:<br>
+            上周撞单总数统计:撞单总数<font color='" . $fontColor . "' size='" . $fontSize . "'>" . $lastWeekHitCount . "</font>，撞单率为<font color='" . $fontColor . "' size='" . $fontSize . "'>" . bcdiv($lastWeekHitCount, $lastWeekCount, 4) * 100 . "</font>%。<br>
+            其中转介绍与代理撞单订单数<font color='" . $fontColor . "' size='" . $fontSize . "'>" . $lastWeekReferralAndAgentHitCount . "</font>，占比<font color='" . $fontColor . "' size='" . $fontSize . "'>" . bcdiv($lastWeekReferralAndAgentHitCount, $lastWeekHitCount, 4) * 100 . "</font>%；代理与代理撞单的订单数<font color='" . $fontColor . "' size='" . $fontSize . "''>" . $lastWeekAgentAndAgentHitCount . "</font>，占比<font color='" . $fontColor . "' size='" . $fontSize . "'>" . bcdiv($lastWeekAgentAndAgentHitCount, $lastWeekHitCount, 4) * 100 . "</font>%。<br>
+            历史撞单总数统计:撞单总数<font color='" . $fontColor . "' size='" . $fontSize . "'>" . $historyHitCount . "</font>，撞单率为<font color='" . $fontColor . "' size='" . $fontSize . "'>" . bcdiv($historyHitCount, $historyCount, 4) * 100  . "</font>%。<br>
+            其中转介绍与代理撞单订单数<font color='" . $fontColor . "' size='" . $fontSize . "'>" . $historyReferralAndAgentHitCount . "</font>，占比<font color='" . $fontColor . "' size='" . $fontSize . "'>" . bcdiv($historyReferralAndAgentHitCount, $historyHitCount, 4) * 100 . "</font>%；代理与代理撞单的订单数<font color='" . $fontColor . "' size='" . $fontSize . "'>" . $historyAgentAndAgentHitCount . "</font>，占比<font color='" . $fontColor . "' size='" . $fontSize . "'>" . bcdiv($historyAgentAndAgentHitCount, $historyHitCount, 4) * 100 . "</font>%。<br><br>
             <font color='" . $fontColor . "'>注：用户同时存在学生转介绍关系、绑定中的代理关系、又通过其他代理购买，该订单属于三方撞单（此订单在转介绍与代理撞单、代理与代理撞单中均会存在）。</font>";
 //发送邮件
 PhpMail::sendEmail(array_shift($emailsConfig)['value'], $title, $content, $tmpFileSavePath, array_column($emailsConfig, 'value'));
