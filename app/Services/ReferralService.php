@@ -195,7 +195,10 @@ class ReferralService
             $referralStudentWhere['uuid'] = $params['referral_uuid'];
         }
         if (!empty($referralStudentWhere)) {
-            $statisticsWhere['referee_id'] = array_column(DssStudentModel::getRecords($referralStudentWhere,['id[Int]']),'id');
+            $referralStudentList = DssStudentModel::getRecords($referralStudentWhere,['id[Int]']);
+            if (!empty($referralStudentList)) {
+                $statisticsWhere['referee_id'] = array_column($referralStudentList,'id');
+            }
         }
 
         //学员手机号
@@ -693,6 +696,10 @@ class ReferralService
         $where['ORDER'] = ['id' => 'DESC'];
         // 获取邀请学生id列表
         $list = StudentReferralStudentStatisticsModel::getRecords($where);
+        // 如果数据为空直接返回
+        if (empty($list)) {
+            return $returnList;
+        }
         $inviteStudentId = array_column($list, 'student_id');
         // 获取所有学生信息
         $inviteStudentList = DssStudentModel::getRecords(['id' => $inviteStudentId], ['id', 'name', 'mobile', 'thumb']);
