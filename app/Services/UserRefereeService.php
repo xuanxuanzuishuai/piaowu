@@ -220,19 +220,6 @@ class UserRefereeService
                     ],
                     'response' => $taskResult,
                 ]);
-
-                if (empty($taskResult['data'])) {
-                    throw new RunTimeException(['erp_create_user_event_task_award_fail']);
-                }
-                $pushMessageData = ['points_award_ids' => $taskResult['data']['points_award_ids']];
-                // 积分发放成功后 把消息放入到 客服消息队列
-                switch ($packageType) {
-                    case DssPackageExtModel::PACKAGE_TYPE_TRIAL:    //购买体验包会直接给用户发放积分奖励 - 这里直接发送客服消息
-                        (new PushMessageTopic())->pushWX($pushMessageData,PushMessageTopic::EVENT_PAY_TRIAL)->publish(5);
-                        break;
-                    default:
-                        break;
-                }
             }
         }
     }

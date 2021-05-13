@@ -133,7 +133,7 @@ class ErpUserEventTaskAwardGoldLeafModel extends ErpModel
         if (empty($whereSqlStr)) {
             return $returnList;
         }
-        $sql = "select count(*) as total,uuid from " . self::getTableNameWithDb() . ' where ' . implode(' AND ', $whereSqlStr) . ' ' . $group;
+        $sql = "select count(*) as total,uuid,finish_task_uuid from " . self::getTableNameWithDb() . ' where ' . implode(' AND ', $whereSqlStr) . ' ' . $group;
 
         return self::dbRO()->queryAll($sql);
     }

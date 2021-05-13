@@ -10,7 +10,7 @@ INSERT INTO `erp_dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`) VALU
 UPDATE `erp_event_task` SET `desc` = 'AIPL-14955-5.12体验卡校验是否练琴', `award` = '{\"awards\":[{\"to\":1,\"amount\":1000,\"type\":3,\"delay\":1036800,\"need_check\":0,\"account_sub_type\":\"3002\",\"award_node\":\"buy_trial_card\"}]}' WHERE `id` = 481;
 -- 增加年卡会员推荐好友购买年卡累计奖励
 INSERT INTO `erp_event_task`(`id`, `type`, `condition`, `event_id`, `name`, `desc`, `create_time`, `creator_id`, `update_time`, `updator_id`, `award`, `start_time`, `end_time`, `status`)
- VALUES (522, 1, 'c', 1, '付费年卡累计邀请', 'AIPL-14954-5.12', 1616756138, 751, 1619082667, 10027, '{\"awards\":[{\"to\":1,\"amount\":40000,\"type\":3,\"delay\":0,\"need_check\":0,\"account_sub_type\":\"3002\",\"award_node\":\"cumulative_invite_buy_year_card\"}]}', 1619082667, 1798646400, 1);
+ VALUES (522, 1, 'c', 1, '付费年卡累计奖励', 'AIPL-14954-5.12', 1616756138, 751, 1619082667, 10027, '{\"awards\":[{\"to\":1,\"amount\":40000,\"type\":3,\"delay\":0,\"need_check\":0,\"account_sub_type\":\"3002\",\"award_node\":\"cumulative_invite_buy_year_card\"}]}', 1619082667, 1798646400, 1);
 
 
 -- op ------------------------

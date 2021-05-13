@@ -74,8 +74,8 @@ foreach ($pointsList as $points) {
             continue;
         }
     }
-
-    $taskResult = $erp->addEventTaskAward($points['finish_task_uuid'], $points['event_task_id'], $status, $points['id'], $points['finish_task_uuid'], ['reason' => $reason]);
+    // var_dump($points['finish_task_uuid'], $points['event_task_id'], $status, $points['id'], $points['finish_task_uuid'], ['reason' => $reason]);exit;
+    $taskResult = $erp->addEventTaskAward($points['finish_task_uuid'], $points['event_task_id'], $status, $points['id'], $points['uuid'], ['reason' => $reason]);
     SimpleLogger::info("script::auto_send_buy_trial_award_points", [
         'params' => $points,
         'response' => $taskResult,
