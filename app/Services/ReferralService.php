@@ -198,6 +198,8 @@ class ReferralService
             $referralStudentList = DssStudentModel::getRecords($referralStudentWhere,['id[Int]']);
             if (!empty($referralStudentList)) {
                 $statisticsWhere['referee_id'] = array_column($referralStudentList,'id');
+            }else {
+                $statisticsWhere['referee_id'] = 0;
             }
         }
 
