@@ -129,6 +129,13 @@ class ErpUserEventTaskAwardGoldLeafModel extends ErpModel
         if (!Util::emptyExceptZero($where['package_type'])) {
             $whereSqlStr[] = ' `package_type`=' . $where['package_type'];
         }
+        if (!empty($where['event_task_id'])) {
+            if (is_array($where['event_task_id'])) {
+                $whereSqlStr[] = ' `event_task_id` in (' . implode(',', $where['event_task_id']) . ')';
+            }else {
+                $whereSqlStr[] = ' `event_task_id`=' . $where['event_task_id'];
+            }
+        }
 
         if (empty($whereSqlStr)) {
             return $returnList;

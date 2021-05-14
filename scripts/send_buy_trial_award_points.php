@@ -36,13 +36,13 @@ $dotenv->overload();
 // create_time 转换指定的时间格式 - 这里去掉分和秒
 $formatTime = "Y-m-d H:00:00";
 // 查询数据的范围  14天内的数据， 因为 1号19点购买的可以再13号19点练琴(那就是14号才能处理)
-$whereTime = strtotime(date($formatTime)) - 14 * Util::TIMESTAMP_ONEDAY;
+$whereTime = strtotime(date("Y-m-d 00:00:00")) - 14 * Util::TIMESTAMP_ONEDAY;
 
 // 获取到期发待发放和发放失败的积分列表, 只读invite_stage=1 体验卡奖励
 $where = [
     'status' => [ErpUserEventTaskAwardGoldLeafModel::STATUS_WAITING, ErpUserEventTaskAwardGoldLeafModel::STATUS_GIVE_FAIL],
     'award_node' => ErpUserEventTaskAwardGoldLeafModel::AWARD_NODE_BUY_TRIAL,
-    'create_time[>=]' => $whereTime
+    'create_time[>=]' => $whereTime,
 ];
 $pointsList = ErpUserEventTaskAwardGoldLeafModel::getRecords($where);
 if (empty($pointsList)) {
@@ -59,22 +59,21 @@ foreach ($pointsList as $points) {
     $createHour = strtotime(date($formatTime, $points['create_time']));
     // 任务完成截止时间
     $taskLastTime = intval($createHour + $points['delay']);
-    if ($taskLastTime < $time) {
-        // 超过12天不发放
-        $status = ErpUserEventTaskAwardGoldLeafModel::STATUS_DISABLED;
-        $reason = ErpUserEventTaskAwardGoldLeafModel::REASON_NO_PLAY;
-    }else {
-        // 12天内没有练琴记录本次不发放
-        // 计算是否有练琴记录
-        $studentInfo = DssStudentModel::getRecord(['uuid' => $points['finish_task_uuid']], ['id']);
-        $aiPlayList = DssAiPlayRecordCHModel::getStudentBetweenTimePlayRecord((int)$studentInfo['id'], (int)$points['create_time'], $taskLastTime);
-        SimpleLogger::info("script::auto_send_buy_trial_award_points",['info'=>'aiplay','data'=> $aiPlayList]);
-        // 没有练琴记录-本次不处理该条奖励
-        if (count($aiPlayList) <= 0) {
+    // 12天内没有练琴记录本次不发放
+    // 计算是否有练琴记录
+    $studentInfo = DssStudentModel::getRecord(['uuid' => $points['finish_task_uuid']], ['id']);
+    $aiPlayList = DssAiPlayRecordCHModel::getStudentBetweenTimePlayRecord((int)$studentInfo['id'], (int)$points['create_time'], $taskLastTime);
+    SimpleLogger::info("script::auto_send_buy_trial_award_points",['info'=>'aiplay','data'=> $aiPlayList, 'award_info' => $points, 'taskLastTime' => $taskLastTime,'time' => $time]);
+    // 没有练琴记录-检查是否超过12天，超过标记不发放， 没超过不处理
+    if (count($aiPlayList) <= 0) {
+        if ($taskLastTime < $time) {
+            // 超过12天不发放
+            $status = ErpUserEventTaskAwardGoldLeafModel::STATUS_DISABLED;
+            $reason = ErpUserEventTaskAwardGoldLeafModel::REASON_NO_PLAY;
+        }else {
             continue;
         }
     }
-    // var_dump($points['finish_task_uuid'], $points['event_task_id'], $status, $points['id'], $points['finish_task_uuid'], ['reason' => $reason]);exit;
     $taskResult = $erp->addEventTaskAward($points['finish_task_uuid'], $points['event_task_id'], $status, $points['id'], $points['uuid'], ['reason' => $reason]);
     SimpleLogger::info("script::auto_send_buy_trial_award_points", [
         'params' => $points,

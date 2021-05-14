@@ -1,9 +1,7 @@
 <?php
 /**
  * 发放购买年卡累计奖励
- * 每天18点执行
- *
- * 每月第一天需要处理上个月由于时间差造成的最后一天计算不准确的问题
+ * 每天18:30执行
  */
 
 
@@ -38,12 +36,14 @@ $dotenv->overload();
 $monthOneDay = date('Y-m-01 00:00:00', strtotime(" -15 day"));
 $nextMonthOneDay = date("Y-m-01 00:00:00", strtotime("$monthOneDay + 1 month"));
 SimpleLogger::info("script::send_cumulative_invite_buy_year_card", ['info' => "start", 'monthOneDay' => $monthOneDay, 'nextMonthOneDay' => $nextMonthOneDay]);
+$yearCardTask = json_decode(DictConstants::get(DictConstants::REFERRAL_CONFIG, 'normal_task_config'), true);
 $where = [
-    'create_time[>=]' => strtotime($monthOneDay),
-    'create_time[<]' => strtotime($nextMonthOneDay),
+    'start_time' => strtotime($monthOneDay),
+    'end_time' => strtotime($nextMonthOneDay),
     'status' => ErpUserEventTaskAwardGoldLeafModel::STATUS_GIVE,
     'to' => ErpEventTaskModel::AWARD_TO_REFERRER,
     'package_type' => DssPackageExtModel::PACKAGE_TYPE_NORMAL,
+    'event_task_id' => array_values($yearCardTask),
 ];
 $list = ErpUserEventTaskAwardGoldLeafModel::getStudentAwardList($where,'group by uuid');
 if (empty($list)) {
@@ -76,7 +76,6 @@ foreach ($refAwardList as $item) {
         $refCumulativeNum[$item['uuid']]=1;
     }
 }
-
 /** 获取推荐人在指定的月份已经获取到的所有累计邀请奖励 end */
 SimpleLogger::info("script::auto_send_buy_trial_award_points ", [$currDay,$refAwardWhere,$refAwardList,$refCumulativeNum]);
 $taskId = DictConstants::get(DictConstants::REFERRAL_CONFIG,'cumulative_invite_buy_year_card');
@@ -90,24 +89,23 @@ foreach ($list as $award) {
     }
     // 计算应发奖励总数
     $awardNum = intval($award['total']/$awardStageNum);
-    // var_dump($awardNum,$refCumulativeNum[$award['uuid']],$refCumulativeNum,$refAwardWhere, $award);exit;
-    // 应发奖励数不大于已发奖励数说明奖励已发放 - 不发奖励scripts/send_buy_trial_award_points.php
+    // 应发奖励数不大于已发奖励数说明奖励已发放 - 不发奖励
     if ($awardNum <= $refCumulativeNum[$award['uuid']]) {
         continue;
     }
 
     // 发放奖励
-    $status = ErpUserEventTaskModel::EVENT_TASK_STATUS_COMPLETE;
-    $reason = '';
-    // var_dump($awardNum,$refCumulativeNum[$award['uuid']],$refCumulativeNum,$refAwardWhere, $award);
-    // var_dump($award['finish_task_uuid'], $taskId, $status, $award['id'], $award['uuid'], ['reason' => $reason]);exit;
-    $taskResult = $erp->addEventTaskAward($award['finish_task_uuid'], $taskId, $status, 0, $award['uuid'], ['reason' => $reason]);
-    SimpleLogger::info("script::auto_send_buy_trial_award_points", [
-        'params' => $award,
-        'response' => $taskResult,
-        'status' => $status,
-        'referrer_uuid' => $award['finish_task_uuid'],
-    ]);
+    for ($i=0; $i<$awardNum; $i++) {
+        $status = ErpUserEventTaskModel::EVENT_TASK_STATUS_COMPLETE;
+        $reason = '';
+        $taskResult = $erp->addEventTaskAward($award['finish_task_uuid'], $taskId, $status, 0, $award['uuid'], ['reason' => $reason]);
+        SimpleLogger::info("script::auto_send_buy_trial_award_points", [
+            'params' => $award,
+            'response' => $taskResult,
+            'status' => $status,
+            'referrer_uuid' => $award['finish_task_uuid'],
+        ]);
+    }
 }
 
 // 如果是16号还需要处理当月1号产生的累计数据 （处理的数据应该是当天确认发放20000奖励的数据，即当月1号18前购买的数据）
@@ -117,11 +115,12 @@ if ($currDay == 16) {
     $nextMonthOneDay = date("Y-m-01 00:00:00", strtotime("$monthOneDay + 1 month"));
     SimpleLogger::info("script::send_cumulative_invite_buy_year_card current day is 16", ['info' => "start", 'monthOneDay' => $monthOneDay, 'nextMonthOneDay' => $nextMonthOneDay]);
     $where = [
-        'create_time[>=]' => strtotime($monthOneDay),
-        'create_time[<]' => strtotime($nextMonthOneDay),
+        'start_time' => strtotime($monthOneDay),
+        'end_time' => strtotime($nextMonthOneDay),
         'status' => ErpUserEventTaskAwardGoldLeafModel::STATUS_GIVE,
         'to' => ErpEventTaskModel::AWARD_TO_REFERRER,
         'package_type' => DssPackageExtModel::PACKAGE_TYPE_NORMAL,
+        'event_task_id' => array_values($yearCardTask),
     ];
     $list = ErpUserEventTaskAwardGoldLeafModel::getStudentAwardList($where,'group by uuid');
     if (empty($list)) {
@@ -146,7 +145,7 @@ if ($currDay == 16) {
     SimpleLogger::info("script::auto_send_buy_trial_award_points current day is 16", [$currDay,$refAwardWhere,$refAwardList]);
     $taskId = DictConstants::get(DictConstants::REFERRAL_CONFIG,'cumulative_invite_buy_year_card');
     $erp = new Erp();
-// 奖励阶段数 - 没满足这个数量应发奖励+1
+    // 奖励阶段数 - 没满足这个数量应发奖励+1
     $awardStageNum = 3;
     foreach ($list as $award) {
         // 如果count小于3，不需要发放奖励
@@ -155,23 +154,23 @@ if ($currDay == 16) {
         }
         // 计算应发奖励总数
         $awardNum = intval($award['total']/$awardStageNum);
-        // var_dump($awardNum,$refCumulativeNum,$refAwardWhere);exit;
         // 应发奖励数不大于已发奖励数说明奖励已发放 - 不发奖励
         if ($awardNum <= $refCumulativeNum[$award['uuid']]) {
             continue;
         }
 
         // 发放奖励
-        $status = ErpUserEventTaskModel::EVENT_TASK_STATUS_COMPLETE;
-        $reason = '';
-        // var_dump($award['finish_task_uuid'], $taskId, $status, $award['id'], $award['uuid'], ['reason' => $reason]);exit;
-        $taskResult = $erp->addEventTaskAward($award['finish_task_uuid'], $taskId, $status, 0, $award['uuid'], ['reason' => $reason]);
-        SimpleLogger::info("script::auto_send_buy_trial_award_points current day is 16", [
-            'params' => $award,
-            'response' => $taskResult,
-            'status' => $status,
-            'referrer_uuid' => $award['finish_task_uuid'],
-        ]);
+        for ($i=0; $i<$awardNum; $i++) {
+            $status = ErpUserEventTaskModel::EVENT_TASK_STATUS_COMPLETE;
+            $reason = '';
+            $taskResult = $erp->addEventTaskAward($award['finish_task_uuid'], $taskId, $status, 0, $award['uuid'], ['reason' => $reason]);
+            SimpleLogger::info("script::auto_send_buy_trial_award_points", [
+                'params' => $award,
+                'response' => $taskResult,
+                'status' => $status,
+                'referrer_uuid' => $award['finish_task_uuid'],
+            ]);
+        }
     }
 
 }
