@@ -218,7 +218,7 @@ if (!empty($historyHitCount)) {
     $totalOrderData = AgentService::formatRecommendBillsData(['list' => $totalOrderData]);
     //撞单的订单明细表字段
     foreach ($totalOrderData['list'] as $ek => $ev) {
-        $excelData[date('Y-m', $ev['buy_time'])][] = [
+        $excelData[] = [
             'parent_bill_id' => $ev['parent_bill_id'],
             'student_name' => $ev['student_name'],
             'student_uuid' => $ev['student_uuid'],
@@ -242,13 +242,11 @@ if (!empty($historyHitCount)) {
     //生成excel文件
     $tmpFileName = '/' . date("Y-m-d") . '撞单数据统计.xlsx';
     $tmpFileSavePath = $attachmentFilePath . $tmpFileName;
-    foreach ($excelData as $edk => $edv) {
-        try {
-            Spreadsheet::createXml($tmpFileSavePath, $excelTitle, $edv, 0, $edk);
-            $tmpFileNameList[] = $tmpFileSavePath;
-        } catch (\PhpOffice\PhpSpreadsheet\Exception $e) {
-            SimpleLogger::error("create hit order excel file error", ['error_msg' => $e->getMessage()]);
-        }
+    try {
+        Spreadsheet::createXml($tmpFileSavePath, $excelTitle, $excelData);
+        $tmpFileNameList[] = $tmpFileSavePath;
+    } catch (\PhpOffice\PhpSpreadsheet\Exception $e) {
+        SimpleLogger::error("create hit order excel file error", ['error_msg' => $e->getMessage()]);
     }
 } else {
     $historyHitCount = $historyReferralAndAgentHitCount = $historyAgentAndAgentHitCount =
