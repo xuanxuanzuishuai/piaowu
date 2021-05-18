@@ -18,6 +18,7 @@ use App\Libs\Valid;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\MessagePushRulesModel;
 use App\Models\PosterModel;
+use App\Models\SharePosterModel;
 use App\Models\UserPointsExchangeOrderWxModel;
 use App\Models\WeChatAwardCashDealModel;
 use App\Services\BillMapService;
@@ -666,5 +667,138 @@ class Dss extends ControllerBase
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
         return HttpHelper::buildResponse($response, $res);
+    }
+
+    /**
+     * 截图列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function posterList(Request $request, Response $response)
+    {
+        try {
+            $params = $request->getParams();
+            list($list, $total) = SharePosterModel::getPosterList($params);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, [$list, $total]);
+    }
+
+    /**
+     * 截图上传
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function uploadSharePoster(Request $request, Response $response)
+    {
+        try {
+            $rules = [
+                [
+                    'key' => 'student_id',
+                    'type' => 'required',
+                    'error_code' => 'student_id_is_required'
+                ],
+                [
+                    'key' => 'activity_id',
+                    'type' => 'required',
+                    'error_code' => 'activity_id_is_required'
+                ],
+                [
+                    'key' => 'image_path',
+                    'type' => 'required',
+                    'error_code' => 'image_path_is_required'
+                ],
+                [
+                    'key' => 'type',
+                    'type' => 'required',
+                    'error_code' => 'type_is_required'
+                ]
+            ];
+            $params = $request->getParams();
+            $result = Valid::appValidate($params, $rules);
+            if ($result['code'] != Valid::CODE_SUCCESS) {
+                return $response->withJson($result, StatusCode::HTTP_OK);
+            }
+            list($list, $total) = SharePosterService::uploadSharePoster($params);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, [$list, $total]);
+    }
+
+    /**
+     * 查询上传截图
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getSharePoster(Request $request, Response $response)
+    {
+        try {
+            $params = $request->getParams();
+            $sharePoster = SharePosterModel::getRecord($params['where'] ?? [], $params['field'] ?? []);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, $sharePoster);
+    }
+
+    /**
+     * 截图审核通过
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function approvalPoster(Request $request, Response $response)
+    {
+        try {
+            $rules = [
+                [
+                    'key' => 'id',
+                    'type' => 'required',
+                    'error_code' => 'id_is_required'
+                ]
+            ];
+            $params = $request->getParams();
+            $result = Valid::appValidate($params, $rules);
+            if ($result['code'] != Valid::CODE_SUCCESS) {
+                return $response->withJson($result, StatusCode::HTTP_OK);
+            }
+            $sharePoster = SharePosterService::approvalPoster($params['id'], $params);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, $sharePoster);
+    }
+
+    /**
+     * 截图审核驳回
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function refusedPoster(Request $request, Response $response)
+    {
+        try {
+            $rules = [
+                [
+                    'key' => 'id',
+                    'type' => 'required',
+                    'error_code' => 'id_is_required'
+                ]
+            ];
+            $params = $request->getParams();
+            $result = Valid::appValidate($params, $rules);
+            if ($result['code'] != Valid::CODE_SUCCESS) {
+                return $response->withJson($result, StatusCode::HTTP_OK);
+            }
+            $sharePoster = SharePosterService::refusedPoster($params['id'], $params);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, $sharePoster);
     }
 }

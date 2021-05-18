@@ -617,20 +617,27 @@ class Consumer extends ControllerBase
         }
 
         try {
-            // 更新红包领取进度
-            if ($params['event_type'] == UserPointsExchangeRedPackTopic::SEND_RED_PACK_SPEED) {
-                CashGrantService::updatePointsExchangeRedPackStatus($params['msg_body']['points_exchange_order_wx_id']);
-            }else {
-                // 发送红包
-                // 如果没传，默认是发放， dss后台，不发放接口需要穿 status=0
-                $actStatus = isset($params['msg_body']['status']) ? $params['msg_body']['status'] : 1;
-                CashGrantService::pointsExchangeRedPack(
-                    $params['msg_body']['user_points_exchange_order_id'],
-                    $params['msg_body']['record_sn'],
-                    $params['msg_body']['operator_id'],
-                    $actStatus,
-                    $params['msg_body']['reason']
-                );
+            switch ($params['event_type']) {
+                case UserPointsExchangeRedPackTopic::SEND_RED_PACK_SPEED:
+                    CashGrantService::updatePointsExchangeRedPackStatus($params['msg_body']['points_exchange_order_wx_id']);
+                    break;
+
+                case UserPointsExchangeRedPackTopic::SEND_POSTER_AWARD:
+                    SharePosterService::addUserAward($params['msg_body']);
+                    break;
+
+                default:
+                    // 发送红包
+                    // 如果没传，默认是发放， dss后台，不发放接口需要穿 status=0
+                    $actStatus = isset($params['msg_body']['status']) ? $params['msg_body']['status'] : 1;
+                    CashGrantService::pointsExchangeRedPack(
+                        $params['msg_body']['user_points_exchange_order_id'],
+                        $params['msg_body']['record_sn'],
+                        $params['msg_body']['operator_id'],
+                        $actStatus,
+                        $params['msg_body']['reason']
+                    );
+                    break;
             }
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());

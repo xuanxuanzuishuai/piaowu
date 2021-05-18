@@ -475,15 +475,29 @@ class QueueService
             return false;
         }
 
-        foreach ($data as $k => $v){
+        foreach ($data as $k => $v) {
             //过滤不活跃无法收到消息的openId
-            if (!PushMessageService::checkLastActiveTime($k)){
+            if (!PushMessageService::checkLastActiveTime($k)) {
                 unset($data[$k]);
             }
         }
 
         MessageService::sendMessage($data, $ruleId, null, Util::TIMESTAMP_1H);
+    }
+    /**
+     * 截图审核通过发奖
+     * @param $data
+     * @return bool
+     */
+    public static function addUserPosterAward($data)
+    {
+        try {
+            $topic = new UserPointsExchangeRedPackTopic();
+            $topic->addUserPosterAward($data)->publish(5);
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), [$data]);
+            return false;
+        }
         return true;
     }
-
 }

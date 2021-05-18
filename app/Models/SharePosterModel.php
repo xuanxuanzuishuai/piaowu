@@ -13,6 +13,8 @@ use App\Libs\Constants;
 use App\Libs\RedisDB;
 use App\Libs\Util;
 use App\Models\Dss\DssEmployeeModel;
+use App\Models\Dss\DssModel;
+use App\Models\Dss\DssReferralActivityModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\Erp\ErpUserEventTaskAwardModel;
@@ -37,8 +39,13 @@ class SharePosterModel extends Model
     const NODE_STATUS_EXPIRED = 6;//已过期
     const NODE_STATUS_UN_PLAY = 7;//未练琴
 
-    //海报类型：1上传打卡截图
+    // 海报类型：
+    // 1上传打卡截图
+    // 2上传截图返现
+    // 3周周领奖
     const TYPE_CHECKIN_UPLOAD = 1;
+    const TYPE_RETURN_CASH = 2;
+    const TYPE_WEEK_UPLOAD = 3;
 
     // 每个班级学生相关打卡数据
     const CHECKIN_POSTER_TMP_DATA = 'CHECKIN_POSTER_';
@@ -188,6 +195,7 @@ class SharePosterModel extends Model
         $sp = self::getTableNameWithDb();
         $s  = DssStudentModel::getTableNameWithDb();
         $uw = DssUserWeiXinModel::getTableNameWithDb();
+        $ac = OperationActivityModel::getTableNameWithDb();
         $sql = "
         SELECT
             sp.id,
@@ -197,12 +205,15 @@ class SharePosterModel extends Model
             sp.award_id,
             sp.ext->>'$.valid_time' valid_time,
             sp.ext->>'$.node_order' day,
+            sp.create_time,
+            ac.name activity_name,
             uw.open_id,
             s.uuid,
             s.mobile
         FROM
             $sp sp
         INNER JOIN $s s ON s.id = sp.student_id
+        LEFT JOIN $ac ac on ac.id = sp.activity_id
         LEFT JOIN $uw uw ON uw.user_id = sp.student_id
             AND uw.user_type = " . DssUserWeiXinModel::USER_TYPE_STUDENT . "
             AND uw.status = " . DssUserWeiXinModel::STATUS_NORMAL . "
@@ -239,5 +250,102 @@ class SharePosterModel extends Model
         $redis->hset(self::CHECKIN_POSTER_TMP_DATA . $collectionId, $userId . '_' . $day, $jsonData);
         $redis->expire(self::CHECKIN_POSTER_TMP_DATA . $collectionId, Util::TIMESTAMP_ONEWEEK);
         return $percent;
+    }
+
+    /**
+     * 截图列表
+     * @param $params
+     * @return array
+     */
+    public static function getPosterList($params)
+    {
+        $where = " WHERE 1 = 1 ";
+        $map = [];
+        if (!empty($params['student_mobile'])) {
+            $where .= " AND s.mobile = :student_mobile ";
+            $map[':student_mobile'] = $params['student_mobile'];
+        }
+        if (!empty($params['student_name'])) {
+            $where .= " AND s.name like :student_name ";
+            $map[':student_name'] = "%" . $params['student_name'] . "%";
+        }
+
+        if (!empty($params['activity_id'])) {
+            $where .= " AND sp.activity_id = :activity_id ";
+            $map[':activity_id'] = $params['activity_id'];
+        }
+
+        if (!empty($params['poster_status'])) {
+            $where .= " AND sp.status = :poster_status ";
+            $map[':poster_status'] = $params['poster_status'];
+        }
+
+        if (!empty($params['start_time'])) {
+            $where .= " AND sp.create_time >= :start_time";
+            $map[':start_time'] = strtotime($params['start_time']);
+        }
+        if (!empty($params['end_time'])) {
+            $where .= " AND sp.create_time <= :end_time";
+            $map[':end_time'] = strtotime($params['end_time']);
+        }
+        if (!empty($params['type'])) {
+            $where .= " AND sp.type = :type";
+            $map[':type'] = $params['type'];
+        }
+
+        if (!empty($params['uuid'])) {
+            $where .= " AND s.uuid = :uuid ";
+            $map[':uuid'] = $params['uuid'];
+        }
+        $s = DssStudentModel::getTableNameWithDb();
+        // @TODO: migration confirm
+        $ac = DssReferralActivityModel::getTableNameWithDb();
+        $e = DssEmployeeModel::getTableNameWithDb();
+        $sp = self::getTableNameWithDb();
+
+        $join = "
+        STRAIGHT_JOIN
+        {$s} s ON s.id = sp.student_id
+        STRAIGHT_JOIN
+        {$ac} ra ON ra.id = sp.activity_id
+        LEFT JOIN
+        {$e} e ON e.id = sp.operator_id ";
+        $db = self::dbRO();
+        $totalCount = $db->queryAll(
+            "SELECT count(sp.id) count FROM $sp sp $join $where ",
+            $map
+        );
+        $totalCount = $totalCount[0]['count'];
+        if ($totalCount == 0) {
+            return [[], 0];
+        }
+
+        $sql = "
+        SELECT
+            sp.id,
+            sp.student_id,
+            sp.activity_id,
+            sp.image_path img_url,
+            sp.status poster_status,
+            sp.create_time,
+            sp.verify_time check_time,
+            sp.verify_user operator_id,
+            sp.verify_reason reason,
+            sp.remark,
+            sp.type,
+            s.name student_name,
+            s.mobile,
+            s.uuid,
+            ra.name activity_name,
+            e.name operator_name
+        FROM
+        $sp sp ";
+
+        $order = " ORDER BY id DESC ";
+        $limit = Util::limitation($params['page'], $params['count']);
+        $sql = $sql . $join . $where . $order . $limit;
+        $posters = $db->queryAll($sql, $map);
+
+        return [$posters, $totalCount];
     }
 }

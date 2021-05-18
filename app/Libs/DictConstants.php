@@ -626,6 +626,20 @@ class DictConstants {
             'menu_tag_none',
         ],
     ];
+    //上传截图奖励规则分割时间点
+    const NORMAL_UPLOAD_POSTER_DIVISION_TIME = [
+        'type' => 'normal_poster_change_award',
+        'keys' => [
+            'division_time'
+        ]
+    ];
+    //上传截图对应的task_id
+    const NORMAL_UPLOAD_POSTER_TASK = [
+        'type' => 'normal_upload_poster_task',
+        'keys' => [
+            '0','1','2','-1'
+        ]
+    ];
 
     //端午节活动配置
     const ACTIVITY_DUANWU_CONFIG = [

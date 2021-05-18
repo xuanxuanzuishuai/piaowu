@@ -439,4 +439,24 @@ class ReferralActivityService
         $info = json_decode($result['param_info'], true);
         return array_merge($merge, $info);
     }
+
+    /**
+     * @param $activityId
+     * @return array
+     */
+    public static function checkActivityIsEnable($activityId)
+    {
+        if (empty($activityId)) {
+            return [];
+        }
+        $time = time();
+        $activityWhere = [
+            'id' => $activityId,
+            'status' => 0,
+            'start_time[<=]' => $time,
+            'end_time[>=]' => $time
+        ];
+        return [];
+        // return ReferralActivityModel::getRecord($activityWhere, ['id', 'event_id', 'task_id'], false);
+    }
 }

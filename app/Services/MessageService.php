@@ -1063,4 +1063,31 @@ class MessageService
         }
         return true;
     }
+
+    /**
+     * 发送审核消息
+     * @param $openId
+     * @param array $params
+     * @return bool
+     * @throws RunTimeException
+     */
+    public static function sendPosterVerifyMessage($openId, $params = [])
+    {
+        $appId  = DssUserWeiXinModel::dealAppId($params['app_id'] ?? '');
+        $name   = $params['activity_name'] ?? '';
+        $status = $params['status'] ?? '';
+        $url    = $_ENV["WECHAT_FRONT_DOMAIN"] . "/student/referral?tag=2";
+
+        //审核未通过客服消息
+        if ($status == SharePosterModel::VERIFY_STATUS_UNQUALIFIED) {
+            $wechat = WeChatMiniPro::factory($appId, PushMessageService::APPID_BUSI_TYPE_DICT[$appId]);
+            $content = '您好，您上传的截图审核结束，详情如下：'. PHP_EOL.
+                '任务名称：周周领奖'. PHP_EOL.
+                '任务内容：'.$name. PHP_EOL.
+                '完成情况：未通过'. PHP_EOL.
+                '<a href="'.$url.'">【点此消息】查看更多任务记录，或进入“当前活动”重新上传</a>';
+            $wechat->sendText($openId, $content);
+        }
+        return true;
+    }
 }

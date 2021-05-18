@@ -10,6 +10,7 @@ class UserPointsExchangeRedPackTopic extends BaseTopic
 
     const SEND_RED_PACK = 'send_red_pack_from_points_exchange'; //发送红包 - 积分兑换
     const SEND_RED_PACK_SPEED = 'send_red_pack_speed'; //更新红包领取进度 - 积分兑换
+    const SEND_POSTER_AWARD = 'send_poster_award'; // 截图审核通过发奖
 
     /**
      * @param null $publishTime
@@ -39,6 +40,18 @@ class UserPointsExchangeRedPackTopic extends BaseTopic
      */
     public function updateRedPackSpeed($data) {
         $this->setEventType(self::SEND_RED_PACK_SPEED);
+        $this->setMsgBody($data);
+        return $this;
+    }
+
+    /**
+     * 截图审核通过发奖
+     * @param $data
+     * @return $this
+     */
+    public function addUserPosterAward($data)
+    {
+        $this->setEventType(self::SEND_POSTER_AWARD);
         $this->setMsgBody($data);
         return $this;
     }
