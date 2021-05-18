@@ -367,7 +367,22 @@ class WeChatMiniPro
             return $media;
         }
 
-        $content = file_get_contents($url);
+        $opts = array(
+            "http" => array(
+                "method" => "GET",
+                "timeout" => 1,//单位秒
+            )
+        );
+        $cnt = 0;
+        while ($cnt < 3 && ($content = file_get_contents($url, false, stream_context_create($opts))) === FALSE) {
+            SimpleLogger::info('saveTmpImgFile get file ---', ['cnt' => $cnt]);
+            $cnt++;
+        }
+
+        if (empty($content)) {
+            SimpleLogger::info('fail get img resource', []);
+            return  false;
+        }
 
         SimpleLogger::info('download media file', [
             'url' => $url,
