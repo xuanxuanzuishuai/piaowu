@@ -10,6 +10,7 @@ namespace App\Libs;
 
 use App\Libs\Exceptions\RunTimeException;
 use App\Models\Dss\DssErpPackageV1Model;
+use App\Models\Erp\ErpEventModel;
 use GuzzleHttp\Client;
 use Slim\Http\StatusCode;
 
@@ -722,5 +723,23 @@ class Erp
         ];
         $response = HttpHelper::requestJson($this->host . self::API_USER_GET_RED_PACKET_CALL, $params, 'POST');
         return $response;
+    }
+
+    /**
+     * 获取事件任务
+     * @param int $eventId
+     * @param int $eventType
+     * @return array|bool
+     */
+    public function eventTaskList($eventId = 0, $eventType = ErpEventModel::DAILY_UPLOAD_POSTER)
+    {
+        $params['app_id'] = Constants::SMART_APP_ID;
+        if (!empty($eventId)) {
+            $params['event_id'] = $eventId;
+        }
+        if (!empty($eventType)) {
+            $params['type'] = $eventType;
+        }
+        return ['code' => Valid::CODE_SUCCESS, 'data' => ErpEventModel::wholeEvents($params)];
     }
 }

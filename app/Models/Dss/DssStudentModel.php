@@ -28,6 +28,10 @@ class DssStudentModel extends DssModel
     const STATUS_BIND = 4;//已绑定微信
     const STATUS_HAS_EXPIRED = 5;//已过期
 
+    // 学生账号状态
+    const STATUS_NORMAL = 1; //正常
+    const STATUS_STOP = 2; //禁用
+
     // 订阅
     const SUB_STATUS_ON = 1;
     const SUB_STATUS_OFF = 0;

@@ -1070,6 +1070,32 @@ class Util
     }
 
     /**
+     * 获取某天的 0时0分0秒
+     * @param string $day Y-m-d or Y-m-d H:i:s
+     * @return int
+     */
+    public static function getDayFirstSecondUnix($day)
+    {
+        if (empty($day)) {
+            return 0;
+        }
+        return intval(strtotime(date("Y-m-d 00:00:00", strtotime($day))));
+    }
+
+    /**
+     * 获取某天的 23时59分59秒
+     * @param string $day Y-m-d or Y-m-d H:i:s
+     * @return int
+     */
+    public static function getDayLastSecondUnix($day)
+    {
+        if (empty($day)) {
+            return 0;
+        }
+        return intval(strtotime(date("Y-m-d 23:59:59", strtotime($day))));
+    }
+
+    /**
      * 敏感词校验
      * @param $keyWordRules
      * @param $content

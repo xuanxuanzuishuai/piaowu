@@ -25,6 +25,7 @@ use App\Controllers\OrgWeb\EmployeeActivity;
 use App\Controllers\OrgWeb\Package;
 use App\Controllers\OrgWeb\SharePoster;
 use App\Controllers\OrgWeb\StudentAccount;
+use App\Controllers\OrgWeb\WeekActivity;
 use App\Controllers\Referral\Award;
 use App\Middleware\EmployeeAuthCheckMiddleWare;
 use App\Middleware\EmployeePrivilegeMiddleWare;
@@ -166,5 +167,19 @@ class OrgWebRouter extends RouterBase
         '/op_web/student_account/download_template' => ['method' => ['get'], 'call' => StudentAccount::class . ':batchImportRewardPointsTemplate'],
         // DEV: 创建验证码
         '/op_web/admin/sms_code' => ['method' => ['post'], 'call' => Admin::class . ':smsCode', 'middles' => []],
+
+        // event事件列表
+        '/op_web/event/task_list' => ['method' => ['get'], 'call' => WeekActivity::class . ':eventTaskList', 'middles' => [EmployeeAuthCheckMiddleWare::class]],
+
+        // 周周有奖
+        '/op_web/week_activity/save' => ['method' => ['post'], 'call' => WeekActivity::class . ':save'],
+        '/op_web/week_activity/list' => ['method' => ['get'], 'call' => WeekActivity::class . ':list'],
+        '/op_web/week_activity/detail' => ['method' => ['get'], 'call' => WeekActivity::class . ':detail'],
+        '/op_web/week_activity/enable_status' => ['method' => ['post'], 'call' => WeekActivity::class . ':editEnableStatus'],
+        // 月月有奖
+        '/op_web/month_activity/save' => ['method' => ['post'], 'call' => WeekActivity::class . ':save'],
+        '/op_web/month_activity/list' => ['method' => ['get'], 'call' => WeekActivity::class . ':list'],
+        '/op_web/month_activity/detail' => ['method' => ['get'], 'call' => WeekActivity::class . ':detail'],
+        '/op_web/month_activity/enable_status' => ['method' => ['post'], 'call' => WeekActivity::class . ':editEnableStatus'],
     ];
 }
