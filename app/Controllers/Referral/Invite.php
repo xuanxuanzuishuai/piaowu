@@ -106,9 +106,9 @@ class Invite extends ControllerBase
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
 
-        return HttpHelper::buildResponse($response, [
+        return HttpHelper::buildResponse($response, 
              $info
-        ]);
+        );
     }
 
     /**
