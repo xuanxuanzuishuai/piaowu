@@ -24,6 +24,7 @@ use App\Controllers\OrgWeb\Employee as OrgWebEmployee;
 use App\Controllers\OrgWeb\EmployeeActivity;
 use App\Controllers\OrgWeb\MonthActivity;
 use App\Controllers\OrgWeb\Package;
+use App\Controllers\OrgWeb\PosterTemplateWord;
 use App\Controllers\OrgWeb\SharePoster;
 use App\Controllers\OrgWeb\StudentAccount;
 use App\Controllers\OrgWeb\WeekActivity;
@@ -31,6 +32,7 @@ use App\Controllers\Referral\Award;
 use App\Middleware\EmployeeAuthCheckMiddleWare;
 use App\Middleware\EmployeePrivilegeMiddleWare;
 use App\Middleware\OrgWebMiddleware;
+use App\Controllers\OrgWeb\PosterTemplate;
 
 class OrgWebRouter extends RouterBase
 {
@@ -97,6 +99,19 @@ class OrgWebRouter extends RouterBase
         '/op_web/employee_activity/add'           => ['method' => ['post'], 'call' => EmployeeActivity::class . ':add'],
         '/op_web/employee_activity/modify'        => ['method' => ['post'], 'call' => EmployeeActivity::class . ':modify'],
         '/op_web/employee_activity/update_status' => ['method' => ['post'], 'call' => EmployeeActivity::class . ':updateStatus'],
+
+        //转介绍管理 - 个性化海报,标准海报,文案
+        '/org_web/poster_template/individualityList' => ['method' => ['get'], 'call' => PosterTemplate::class . ':individualityList'],
+        '/org_web/poster_template/standardList' => ['method' => ['get'], 'call' => PosterTemplate::class . ':standardList'],
+        '/org_web/poster_template/individualityAdd' => ['method' => ['post'], 'call' => PosterTemplate::class . ':individualityAdd'],
+        '/org_web/poster_template/standardAdd' => ['method' => ['post'], 'call' => PosterTemplate::class . ':standardAdd'],
+        '/org_web/poster_template/getPosterInfo' => ['method' => ['get'], 'call' => PosterTemplate::class . ':getPosterInfo'],
+        '/org_web/poster_template/editPosterInfo' => ['method' => ['post'], 'call' => PosterTemplate::class . ':editPosterInfo'],
+        '/org_web/poster_template_word/addWord' => ['method' => ['post'], 'call' => PosterTemplateWord::class . ':addWord'],
+        '/org_web/poster_template_word/wordList' => ['method' => ['get'], 'call' => PosterTemplateWord::class . ':wordList'],
+        '/org_web/poster_template_word/getWordInfo' => ['method' => ['get'], 'call' => PosterTemplateWord::class . ':getWordInfo'],
+        '/org_web/poster_template_word/editWordInfo' => ['method' => ['post'], 'call' => PosterTemplateWord::class . ':editWordInfo'],
+
 
         // 打卡截图审核：
         '/op_web/checkin_poster/list'     => ['method' => ['get'], 'call' => SharePoster::class . ':list'],

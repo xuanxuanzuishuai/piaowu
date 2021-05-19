@@ -3,12 +3,17 @@ namespace App\Services;
 
 use App\Libs\AliOSS;
 use App\Libs\DictConstants;
+use App\Libs\Exceptions\RunTimeException;
+use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\Dss\DssAiPlayRecordModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssTemplatePosterModel;
 use App\Models\Dss\DssTemplatePosterWordModel;
 use App\Models\Dss\DssUserQrTicketModel;
+use App\Models\PosterModel;
+use App\Models\TemplatePosterModel;
+use App\Models\TemplatePosterWordModel;
 
 class PosterTemplateService
 {
@@ -196,5 +201,238 @@ class PosterTemplateService
             $formatData['operator_name'] = $row['operator_name'] ?? '';
         }
         return $formatData;
+    }
+    
+    /**
+     * @param $row
+     * @return array
+     * 格式化某一条的信息
+     */
+    private static function formatOpPosterInfo($row)
+    {
+        if (isset($row['poster_path'])) {
+            $row['poster_url'] = AliOSS::signUrls($row['poster_path']);
+        }
+        if (isset($row['example_path'])) {
+            $row['example_url'] = AliOSS::signUrls($row['example_path']);
+        }
+        if (isset($row['status'])) {
+            $row['status_zh'] = DictConstants::get(DictConstants::TEMPLATE_POSTER_CONFIG, $row['status']);
+        }
+        if (isset($row['update_time'])) {
+            $row['update_time'] = date('Y-m-d H:i', $row['update_time']);
+        }
+        return $row;
+    }
+    
+    /**
+     * @param $row
+     * @return array
+     * 格式化模板图文案信息
+     */
+    private static function formatOpWordInfo($row)
+    {
+        if (isset($row['content'])) {
+            $row['content'] = Util::textDecode($row['content']);
+        }
+        if (isset($row['status'])) {
+            $row['status_zh'] = DictConstants::get(DictConstants::TEMPLATE_POSTER_CONFIG, $row['status']);
+        }
+        if (isset($row['update_time'])) {
+            $row['update_time'] = date('Y-m-d H:i', $row['update_time']);
+        }
+        return $row;
+    }
+    
+    /**
+     * @param $params
+     * @return array
+     * 处理模板图数据
+     */
+    public static function getList($params)
+    {
+        list($res, $pageId, $pageLimit, $totalCount) = TemplatePosterModel::getList($params);
+        $data = [];
+        if (!empty($res)) {
+            foreach ($res as $k => $value) {
+                $row = self::formatOpPosterInfo($value);
+                $row['display_order_num'] = $value['order_num'];
+                $data[] = $row;
+            }
+        }
+        return [$data, $pageId, $pageLimit, $totalCount];
+    }
+    
+    /**
+     * @param $posterId
+     * @return array
+     * 某条海报模板图信息
+     */
+    public static function getOnePosterInfo($posterId)
+    {
+        $info = TemplatePosterModel::getRecord(['id' => $posterId]);
+        return self::formatOpPosterInfo($info);
+    }
+    
+    /**
+     * @param $params
+     * @param $operateId
+     * @return bool
+     * @throws RunTimeException
+     * 添加数据
+     */
+    public static function addData($params, $operateId)
+    {
+        $time = time();
+        $data = [
+            'name' => $params['name'],
+            'poster_path' => $params['poster_path'],
+            'example_path' => $params['example_path'],
+            'status' => $params['status'],
+            'order_num' => $params['order_num'],
+            'type' => $params['type'],
+            'operate_id' => $operateId,
+            'create_time' => $time,
+            'update_time' => $time,
+        ];
+        
+        $posterPath = $params['poster_path'];
+        $posterParams = [
+            'path' => $posterPath,
+            'name' => $params['name'],
+        ];
+        $posterId = PosterModel::getIdByPath($posterPath, $posterParams);
+        $data['poster_id'] = $posterId;
+        
+        $examplePath = $params['example_path'];
+        $exampleParams = [
+            'path' => $posterPath,
+            'name' => $params['name'],
+        ];
+        $exampleId = PosterModel::getIdByPath($examplePath, $exampleParams);
+        $data['example_id'] = $exampleId;
+        
+        $res = TemplatePosterModel::insertRecord($data);
+        if (empty($res)) {
+            SimpleLogger::error('template poster add data fail', $data);
+            throw new RunTimeException(['template_poster_add_data_fail']);
+        }
+        return true;
+    }
+    
+    /**
+     * 更新某条海报的信息
+     * @param $params
+     * @param $operateId
+     * @return mixed
+     * @throws RunTimeException
+     */
+    public static function editData($params, $operateId)
+    {
+        $needUpdate['update_time'] = time();
+        $needUpdate['operate_id'] = $operateId;
+        isset($params['name']) && $needUpdate['name'] = $params['name'];
+        isset($params['poster_path']) && $needUpdate['poster_path'] = $params['poster_path'];
+        isset($params['example_path']) && $needUpdate['example_path'] = $params['example_path'];
+        isset($params['status']) && $needUpdate['status'] = $params['status'];
+        isset($params['order_num']) && $needUpdate['order_num'] = $params['order_num'];
+        
+        if (isset($needUpdate['poster_path'])) {
+            $posterPath = $params['poster_path'];
+            $posterParams = [
+                'path' => $posterPath,
+                'name' => $params['name'],
+            ];
+            $posterId = PosterModel::getIdByPath($posterPath, $posterParams);
+            if ($posterId <= 0) {
+                throw new RunTimeException(['template_poster_add_data_fail'], ['path' => $params['poster_url'], 'name' => $params['poster_name']]);
+            }
+            $needUpdate['poster_id'] = $posterId;
+        }
+        
+        if (isset($needUpdate['example_url'])) {
+            $examplePath = $params['example_url'];
+            $exampleParams = [
+                'path' => $posterPath,
+                'name' => $params['poster_name'],
+            ];
+            $exampleId = PosterModel::getIdByPath($examplePath, $exampleParams);
+            if ($exampleId <= 0) {
+                throw new RunTimeException(['template_poster_add_data_fail'], ['path' => $params['poster_url'], 'name' => $params['poster_name']]);
+            }
+            $needUpdate['example_id'] = $exampleId;
+        }
+        
+        TemplatePosterModel::updateRecord($params['id'], $needUpdate);
+        return $needUpdate;
+    }
+    
+    /**
+     * @param $params
+     * @param $operateId
+     * @return bool
+     * @throws RunTimeException
+     * 海报模板图文案添加
+     */
+    public static function addWordData($params, $operateId)
+    {
+        $time = time();
+        $data = [
+            'content' => Util::textEncode($params['content']),
+            'status'  => $params['status'],
+            'create_time' => $time,
+            'update_time' => $time,
+            'operate_id' => $operateId
+        ];
+        $res = TemplatePosterWordModel::insertRecord($data);
+        if (empty($res)) {
+            SimpleLogger::error('template poster word add data fail', $data);
+            throw new RunTimeException(['template_poster_word_add_data_fail']);
+        }
+        return true;
+    }
+    
+    /**
+     * @param $params
+     * @return array
+     * 海报模板图文案列表
+     */
+    public static function getWordList($params)
+    {
+        list($res, $pageId, $pageLimit, $totalCount) = TemplatePosterWordModel::getList($params);
+        $data = [];
+        if (!empty($res)) {
+            foreach ($res as $k => $value) {
+                $data[] = self::formatOpWordInfo($value);
+            }
+        }
+        return [$data, $pageId, $pageLimit, $totalCount];
+    }
+    
+    /**
+     * @param $posterWordId
+     * @return array
+     * 获取某条文案信息
+     */
+    public static function getOnePosterWordInfo($posterWordId)
+    {
+        $info = TemplatePosterWordModel::getRecord(['id' => $posterWordId], []);
+        return self::formatOpWordInfo($info);
+    }
+    
+    /**
+     * @param $params
+     * @param $operateId
+     * @return mixed
+     * 更新海报文案信息
+     */
+    public static function editWordData($params, $operateId)
+    {
+        $needUpdate['update_time'] = time();
+        $needUpdate['operate_id'] = $operateId;
+        isset($params['content']) && $needUpdate['content'] = Util::textEncode($params['content']);
+        isset($params['status']) && $needUpdate['status'] = $params['status'];
+        TemplatePosterWordModel::updateRecord($params['id'], $needUpdate);
+        return $needUpdate;
     }
 }
