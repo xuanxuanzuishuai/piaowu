@@ -495,13 +495,13 @@ class SharePosterService
         }else{
             switch ($status) {
                 case -1:
-                    $params['reason'] = '海报与参加的活动不符合，请重新上传';
+                    $params['reason'] = [3];
                     break;
                 case -2:
-                    $params['reason'] = '间隔未超过12小时，请重新上传';
+                    $params['reason'] = [12];
                     break;
                 case -3:
-                    $params['reason'] = '分享分组可见';
+                    $params['reason'] = [1];
                     break;
                 default:
                     break;
