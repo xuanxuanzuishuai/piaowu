@@ -100,7 +100,6 @@ function checkExecTime(int $current, int $check)
 //获取所有年卡用户
 $student = DssStudentModel::getRecords([
     'has_review_course' => DssStudentModel::REVIEW_COURSE_1980,
-    'sub_end_date[>]' => date("Ymd")
 ], ['id']);
 
 $studentIds = array_chunk(array_column($student, 'id'), 1000);
