@@ -521,9 +521,10 @@ class MessageService
      * @param $data [open_id => [data]]
      * @param $ruleId
      * @param $appId
+     * @param int $deferMax
      * 发送消息
      */
-    public static function sendMessage($data, $ruleId, $appId = null)
+    public static function sendMessage($data, $ruleId, $appId = null, $deferMax = 0)
     {
         $appId = DssUserWeiXinModel::dealAppId($appId);
         $sendArr = [];
@@ -538,7 +539,7 @@ class MessageService
         if (empty($sendArr)) {
             return;
         }
-        QueueService::messageRulePushMessage($sendArr);
+        QueueService::messageRulePushMessage($sendArr, $deferMax);
     }
 
     /**

@@ -34,9 +34,18 @@ class PushMessageTopic extends BaseTopic
     const EVENT_RECORD_USER_ACTIVE = 'record_user_active'; // 记录用户活跃
     const EVENT_PAY_TRIAL = 'pay_trial'; // 购买体验课
     const EVENT_NORMAL_COURSE = 'pay_normal_course'; // 购买正式课
-
     const EVENT_UPLOAD_SCREENSHOT_AWARD = 'upload_screenshot_award';    // 上传截图领奖
-
+    const EVENT_WEEK_REWARD_MON = 'week_reward_mon'; //周周有奖 星期一消息
+    const EVENT_WEEK_REWARD_TUE = 'week_reward_tue'; //周周有奖 星期二消息
+    const EVENT_WEEK_REWARD_WED = 'week_reward_wed'; //周周有奖 星期三消息
+    const EVENT_WEEK_REWARD_THUR = 'week_reward_thur'; //周周有奖 星期四消息
+    const EVENT_WEEK_REWARD_FRI = 'week_reward_fri'; //周周有奖 星期五消息
+    const EVENT_WEEK_REWARD_SAT = 'week_reward_sat'; //周周有奖 星期六消息
+    const EVENT_WEEK_REWARD_SUN = 'week_reward_sun'; //周周有奖 星期日消息
+    const EVENT_MONTH_REWARD_MON = 'month_reward_mon'; //月月有奖 星期一消息
+    const EVENT_MONTH_REWARD_WED = 'month_reward_wed'; //月月有奖 星期三消息
+    const EVENT_MONTH_REWARD_FRI = 'month_reward_fri'; //月月有奖 星期五消息
+    const EVENT_MONTH_REWARD_SUN = 'month_reward_sun'; //月月有奖 星期日消息
 
     public function __construct($publishTime = null)
     {

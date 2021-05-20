@@ -10,6 +10,7 @@ namespace App\Services\Queue;
 
 use App\Libs\DictConstants;
 use App\Libs\SimpleLogger;
+use App\Libs\Util;
 use App\Services\MessageService;
 use App\Services\PushMessageService;
 use Exception;
@@ -85,15 +86,16 @@ class QueueService
 
     /**
      * @param $sendArr
+     * @param int $deferMax
      * @return bool
      * 消息规则推送
      */
-    public static function messageRulePushMessage($sendArr)
+    public static function messageRulePushMessage($sendArr, $deferMax = 0)
     {
         try {
             $topic = new PushMessageTopic();
             $pushTime = time();
-            $deferMax = self::getDeferMax(count($sendArr));
+            $deferMax = $deferMax ?: self::getDeferMax(count($sendArr));
             array_map(function ($i) use($topic, $deferMax, $pushTime){
                 $deferMax += $i['delay_time'];
                 $i['push_wx_time'] = $pushTime;
@@ -406,6 +408,81 @@ class QueueService
             SimpleLogger::error($e->getMessage(), [$data]);
             return false;
         }
+        return true;
+    }
+
+    /**
+     * 周周有礼/月月有奖消息推送
+     * @param $data [open_id => [data]]
+     * @param $type
+     * @return bool
+     */
+    public static function weekAndMonthRewardMessage($data, $type)
+    {
+        if (empty($data) || empty($type)) {
+            return false;
+        }
+        $ruleId = 0;
+        switch ($type) {
+            case PushMessageTopic::EVENT_WEEK_REWARD_MON:
+                $ruleId = DictConstants::get(DictConstants::MESSAGE_RULE, 'week_reward_mon_rule_id');
+                break;
+
+            case PushMessageTopic::EVENT_WEEK_REWARD_TUE:
+                $ruleId = DictConstants::get(DictConstants::MESSAGE_RULE, 'week_reward_tue_rule_id');
+                break;
+
+            case PushMessageTopic::EVENT_WEEK_REWARD_WED:
+                $ruleId = DictConstants::get(DictConstants::MESSAGE_RULE, 'week_reward_wed_rule_id');
+                break;
+
+            case PushMessageTopic::EVENT_WEEK_REWARD_THUR:
+                $ruleId = DictConstants::get(DictConstants::MESSAGE_RULE, 'week_reward_thur_rule_id');
+                break;
+
+            case PushMessageTopic::EVENT_WEEK_REWARD_FRI:
+                $ruleId = DictConstants::get(DictConstants::MESSAGE_RULE, 'week_reward_fri_rule_id');
+                break;
+
+            case PushMessageTopic::EVENT_WEEK_REWARD_SAT:
+                $ruleId = DictConstants::get(DictConstants::MESSAGE_RULE, 'week_reward_sat_rule_id');
+                break;
+
+            case PushMessageTopic::EVENT_WEEK_REWARD_SUN:
+                $ruleId = DictConstants::get(DictConstants::MESSAGE_RULE, 'week_reward_sun_rule_id');
+                break;
+
+            case PushMessageTopic::EVENT_MONTH_REWARD_MON:
+                $ruleId = DictConstants::get(DictConstants::MESSAGE_RULE, 'month_reward_mon_rule_id');
+                break;
+
+            case PushMessageTopic::EVENT_MONTH_REWARD_WED:
+                $ruleId = DictConstants::get(DictConstants::MESSAGE_RULE, 'month_reward_wed_rule_id');
+                break;
+
+            case PushMessageTopic::EVENT_MONTH_REWARD_FRI:
+                $ruleId = DictConstants::get(DictConstants::MESSAGE_RULE, 'month_reward_fri_rule_id');
+                break;
+
+            case PushMessageTopic::EVENT_MONTH_REWARD_SUN:
+                $ruleId = DictConstants::get(DictConstants::MESSAGE_RULE, 'month_reward_sun_rule_id');
+                break;
+
+            default:
+                break;
+        }
+        if (empty($ruleId)) {
+            return false;
+        }
+
+        foreach ($data as $k => $v){
+            //过滤不活跃无法收到消息的openId
+            if (!PushMessageService::checkLastActiveTime($k)){
+                unset($data[$k]);
+            }
+        }
+
+        MessageService::sendMessage($data, $ruleId, null, Util::TIMESTAMP_1H);
         return true;
     }
 

@@ -316,6 +316,17 @@ class DictConstants {
             'after_class_one_day_rule_id',
             'monthly_event_rule_id',
             'no_play_day_rule_config', // 未练琴推送规则ID配置
+            'week_reward_mon_rule_id',
+            'week_reward_tue_rule_id',
+            'week_reward_wed_rule_id',
+            'week_reward_thur_rule_id',
+            'week_reward_fri_rule_id',
+            'week_reward_sat_rule_id',
+            'week_reward_sun_rule_id',
+            'month_reward_mon_rule_id',
+            'month_reward_wed_rule_id',
+            'month_reward_fri_rule_id',
+            'month_reward_sun_rule_id',
         ]
     ];
 
