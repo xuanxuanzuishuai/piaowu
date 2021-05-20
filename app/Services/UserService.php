@@ -146,7 +146,7 @@ class UserService
      */
     public static function recordUserActiveConsumer($data)
     {
-        if (empty($data['user_id'])) {
+        if (empty($data['user_id']) || StudentService::isAnonymousStudentId($data['user_id'])) {
             return false;
         }
         $userWx = DssUserWeiXinModel::getByUserId($data['user_id']);

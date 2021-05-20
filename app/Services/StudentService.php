@@ -381,4 +381,9 @@ class StudentService
         $content .='</table>';
         return $content;
     }
+
+    public static function isAnonymousStudentId($id)
+    {
+        return $id < 0;
+    }
 }
