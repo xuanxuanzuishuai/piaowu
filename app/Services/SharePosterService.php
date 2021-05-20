@@ -15,13 +15,10 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Libs\AliOSS;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
-use App\Models\Dss\DssCollectionModel;
 use App\Models\Dss\DssEventTaskModel;
 use App\Models\Dss\DssReferralActivityModel;
 use App\Models\Dss\DssSharePosterModel;
-use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
-use App\Models\EmployeeModel;
 use App\Models\Erp\ErpEventTaskModel;
 use App\Models\Erp\ErpStudentAccountModel;
 use App\Models\Erp\ErpUserEventTaskAwardGoldLeafModel;
@@ -31,7 +28,6 @@ use App\Models\SharePosterModel;
 use App\Libs\Erp;
 use App\Models\WeChatAwardCashDealModel;
 use App\Services\Queue\QueueService;
-use Medoo\Medoo;
 use App\Libs\HttpHelper;
 
 class SharePosterService
