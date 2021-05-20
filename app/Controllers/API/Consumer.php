@@ -28,6 +28,7 @@ use App\Models\StudentAccountAwardPointsFileModel;
 use App\Models\StudentAccountAwardPointsLogModel;
 use App\Services\CashGrantService;
 use App\Services\MessageService;
+use App\Services\Queue\CheckPosterSyncTopic;
 use App\Services\Queue\DurationTopic;
 use App\Services\Queue\PushMessageTopic;
 use App\Services\Queue\SaveTicketTopic;
@@ -45,6 +46,7 @@ use App\Services\WechatService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
+use App\Services\SharePosterService;
 
 class Consumer extends ControllerBase
 {
@@ -731,4 +733,55 @@ class Consumer extends ControllerBase
 
         return HttpHelper::buildResponse($response, []);
     }
+    /**
+     * 海报自动审核
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function checkPoster(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        $rules = [
+            [
+                'key' => 'topic_name',
+                'type' => 'required',
+                'error_code' => 'topic_name_is_required',
+            ],
+            [
+                'key' => 'event_type',
+                'type' => 'required',
+                'error_code' => 'event_type_is_required',
+            ],
+            [
+                'key' => 'msg_body',
+                'type' => 'required',
+                'error_code' => 'msg_body_is_required',
+            ],
+        ];
+
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        //todo 上线去除
+        SimpleLogger::info('get share poster', $params['msg_body']);
+        try {
+            switch ($params['event_type']) {
+                case CheckPosterSyncTopic::CHECK_POSTER :
+                    $postInfo = SharePosterService::getSharePosters($params['msg_body']);
+                    if(!empty($postInfo)){
+                        $status = SharePosterService::checkByOcr($postInfo);
+                        //todo 上线去除
+                        SimpleLogger::info('get share poster', $postInfo);
+                        SharePosterService::checkSharePosters($params['msg_body'],$status);
+                    }
+                    break;
+            }
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
+        return HttpHelper::buildResponse($response, []);
+    }
+
 }

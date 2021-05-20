@@ -1062,4 +1062,24 @@ class Util
         }
         return $duration;
     }
+
+    /**
+     * 敏感词校验
+     * @param $keyWordRules
+     * @param $content
+     * @return bool
+     */
+    public static function sensitiveWordFilter($keyWordRules,$content){
+        if(empty($keyWordRules) || empty($content)) {
+            return false;
+        }
+        $content = str_replace(" ", "", $content);
+        foreach ($keyWordRules as $key_word) {
+            if (mb_strpos($content, $key_word) !== false) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }
