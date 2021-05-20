@@ -108,6 +108,7 @@ $studentIds = array_chunk(array_column($student, 'id'), 1000);
 foreach ($studentIds as $studentId) {
     $records = DssUserWeiXinModel::getRecords([
         'user_id' => $studentId,
+        'status' => DssUserWeiXinModel::STATUS_NORMAL,
         'user_type' => DssUserWeiXinModel::USER_TYPE_STUDENT,
         'busi_type' => DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER,
         'app_id' => Constants::SMART_APP_ID
@@ -115,7 +116,7 @@ foreach ($studentIds as $studentId) {
 
     $studentOpenIds = array_chunk($records, 50);
 
-    foreach ($studentOpenIds as $openIdChunk){
+    foreach ($studentOpenIds as $openIdChunk) {
         $openIds = [];
         foreach ($openIdChunk as $value) {
             $openIds[$value['open_id']] = [];

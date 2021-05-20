@@ -140,13 +140,14 @@ $student = DssStudentModel::getRecords([
 $studentIds = array_column($student, 'id');
 $joinActivityStudentIds = array_column($sharePoster, 'student_id');
 
-$diff = array_diff($studentIds,$joinActivityStudentIds);
+$diff = array_diff($studentIds, $joinActivityStudentIds);
 
 $diffStudentIds = array_chunk($diff, 1000);
 
 foreach ($diffStudentIds as $diffStudentId) {
     $records = DssUserWeiXinModel::getRecords([
         'user_id' => $diffStudentId,
+        'status' => DssUserWeiXinModel::STATUS_NORMAL,
         'user_type' => DssUserWeiXinModel::USER_TYPE_STUDENT,
         'busi_type' => DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER,
         'app_id' => Constants::SMART_APP_ID
