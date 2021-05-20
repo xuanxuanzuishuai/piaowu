@@ -503,6 +503,9 @@ class SharePosterService
                 case -2:
                     $params['reason'] = '间隔未超过12小时，请重新上传';
                     break;
+                case -3:
+                    $params['reason'] = '分享分组可见';
+                    break;
                 default:
                     break;
             }
@@ -602,6 +605,11 @@ class SharePosterService
             //判定是否是自己朋友圈-是否有删除文案且距离顶部的高度大于海报高度(580)
             if ($issetDel && $val['rect']['top'] > 580) {
                 $shareOwner = true;
+            }
+            //屏蔽类型-设置私密照片
+            if($shareOwner && mb_strpos($word,'私密照片')){
+                $status = -3;
+                break;
             }
             //上传时间处理 根据坐标定位
             if ($shareCorner && $val['rect']['top'] > 580 && Util::sensitiveWordFilter($dateKeyword, $word) == true) {
