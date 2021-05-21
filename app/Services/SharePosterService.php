@@ -654,7 +654,7 @@ class SharePosterService
                 $shareIden = true;
             }
             //判断3.关键字
-            if (!$issetCorner && (mb_strlen($word) > 5 || Util::sensitiveWordFilter($contentKeyword, $word) == true)) {
+            if (!$issetCorner && $shareType && (mb_strlen($word) > 5 || Util::sensitiveWordFilter($contentKeyword, $word) == true)) {
                 $shareKeyword = true;
             }
             if (mb_strpos($word, '删除') !== false) {
@@ -671,6 +671,19 @@ class SharePosterService
             }
             //上传时间处理 根据坐标定位
             if ($shareCorner && $val['rect']['top'] > 580 && Util::sensitiveWordFilter($dateKeyword, $word) == true) {
+                //如果包含年月
+                if(Util::sensitiveWordFilter(['年','月','日'], $word) == true){
+                    if(mb_strpos($word,'年') === false){
+                        continue;
+                    }
+                    if(mb_strpos($word,'月') === false){
+                        continue;
+                    }
+                    if(mb_strpos($word,'日') === false){
+                        continue;
+                    }
+                }
+
                 //特殊情况-第一张图 发布时间和删除下标相同
                 if ($shareOwner && !$issetDel) {
                     continue;
