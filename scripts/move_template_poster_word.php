@@ -16,8 +16,10 @@ define('PROJECT_ROOT', realpath(__DIR__ . '/..'));
 // require composer autoload
 require_once PROJECT_ROOT . '/vendor/autoload.php';
 
+use App\Libs\SimpleLogger;
 use Dotenv\Dotenv;
 use App\Libs\MysqlDB;
+use App\Models\EmployeeModel;
 
 $dotenv = new Dotenv(PROJECT_ROOT, '.env');
 $dotenv->load();
@@ -38,12 +40,17 @@ while (true){
 		break;
 	}
 	$maxId = max( array_column($dssWordData, 'id') );
+	
 	foreach ($dssWordData as &$dssWordDataE){
-		unset($dssWordDataE['id']);
+        $dssWordDataE['operate_id'] = EmployeeModel::SYSTEM_EMPLOYEE_ID;
+		//unset($dssWordDataE['id']);
 	}
 	unset($dssWordDataE);
 	
-	$res = MysqlDB::getDB()->insert('template_poster_word', $dssWordData);
+	$pdo = MysqlDB::getDB()->insert('template_poster_word', $dssWordData);
+    if ($pdo->errorCode() != \PDO::ERR_NONE) {
+        SimpleLogger::error('INSTER ERROR', $pdo->errorInfo());
+    }
 	//echo $res->queryString . PHP_EOL;
 }
 

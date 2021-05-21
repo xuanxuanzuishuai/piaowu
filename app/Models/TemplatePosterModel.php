@@ -29,11 +29,19 @@ class TemplatePosterModel extends Model
     public static function getList($params)
     {
         $db = MysqlDB::getDB();
-        $totalCount = self::getTotalCount($params);
-        if ($totalCount == 0) {
-            return [[],1,0,0];
-        }
+        
+        $totalCount = $db->count(
+            self::$table,
+            [
+                'type' => $params['type'],
+            ]
+        );
+    
         list($pageId, $pageLimit) = Util::appPageLimit($params);
+        if ($totalCount == 0) {
+            return [[], $pageId, $pageLimit, 0];
+        }
+        
         $res = $db->select(self::$table,
             [
                 '[>]' . EmployeeModel::$table => ['operate_id' => 'id']
@@ -59,12 +67,4 @@ class TemplatePosterModel extends Model
         return [$res, $pageId, $pageLimit, $totalCount];
     }
 
-    public static function getTotalCount($params)
-    {
-        $db = MysqlDB::getDB();
-        return $db->count(self::$table,
-            [
-                'type' => $params['type'],
-            ]);
-    }
 }

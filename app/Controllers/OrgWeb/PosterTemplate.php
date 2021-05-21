@@ -166,6 +166,7 @@ class PosterTemplate extends ControllerBase
             //}
             $employeeId = $this->getEmployeeId();
             $params['type'] = TemplatePosterModel::STANDARD_POSTER;
+            $params['example_path'] = $params['example_path'] ?? '';
             PosterTemplateService::addData($params, $employeeId);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
