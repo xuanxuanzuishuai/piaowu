@@ -15,6 +15,7 @@ use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\PhpMail;
+use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Spreadsheet;
 use App\Libs\TPNS;
@@ -769,6 +770,13 @@ class Consumer extends ControllerBase
         try {
             switch ($params['event_type']) {
                 case CheckPosterSyncTopic::CHECK_POSTER :
+                    $redis = RedisDB::getConn();
+                    $cacheKey = 'checkSharePoster';
+                    $isCheckSharePoster = $redis->get($cacheKey);
+                    //禁用-自动审核图片功能
+                    if($isCheckSharePoster == 'notCheck'){
+                        break;
+                    }
                     $postInfo = SharePosterService::getSharePosters($params['msg_body']);
                     if(!empty($postInfo)){
                         $status = SharePosterService::checkByOcr($postInfo);

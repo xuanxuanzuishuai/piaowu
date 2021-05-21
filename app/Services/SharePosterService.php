@@ -636,7 +636,8 @@ class SharePosterService
             if(strstr($word,'(')){
                 $word = str_replace('(','',$word);
             }
-            if(preg_match($patten, $word) && $val['rect']['top'] > 70) {
+            //识别到角标且在删除之前的
+            if(preg_match($patten, $word) && $val['rect']['top'] > 70 && !$shareOwner) {
                 $issetCorner = true;
                 if($word == $checkDate){
                     $shareCorner = true;
