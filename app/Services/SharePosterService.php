@@ -482,11 +482,50 @@ class SharePosterService
         $redis = RedisDB::getConn();
         $cacheKey = 'letterIden';
         if(!$redis->hexists($cacheKey,$date)){
-            $redis->hset($cacheKey,$date,'TYEWDXAYAG');
+            $letterIden = self::transformDate($activity['start_time']);
+            $redis->hset($cacheKey,$date,$letterIden);
             $redis->expire($cacheKey, self::$redisExpire);
         }
         $letterIden = $redis->hget($cacheKey,$date);
         return [$date, $letterIden, AliOSS::replaceCdnDomainForDss($result['img_url'])];
+    }
+
+    /**
+     * 日期转换为对应标识
+     * @param $date
+     * @return string
+     */
+    public static function transformDate($date){
+        $date = explode('-',date('Y-m-d',$date));
+        $array = ['A','B','C','D','E','F','G','H','I','J','K','L'];
+        $letterIden = '';
+        foreach ($date as $key => $val){
+            switch ($key){
+                case 0 :
+                    $yearDate = str_split($val,1);
+                    foreach ($yearDate as $item){
+                        $letterIden .= $array[$item] ?? 'A';
+                    }
+                    break;
+                case 1 :
+                    $month = intval($val);
+                    $letterIden .= $array[$month-1] ?? 'A';
+                    break;
+                case 2 :
+                    if($val < 8){
+                        $day = 0;
+                    }elseif($val < 15){
+                        $day = 1;
+                    }elseif($val < 22){
+                        $day = 2;
+                    }else{
+                        $day = 3;
+                    }
+                    $letterIden .= $array[$day] ?? 'A';
+                    break;
+            }
+        }
+        return $letterIden;
     }
 
     /**
@@ -641,7 +680,6 @@ class SharePosterService
                     break;
                 }
                 if (mb_strpos($word, '小时前') !== false) {
-                    $word        = '12小时前';
                     $endWord    = '小时前';
                     $start       = 0;
                     $end         = mb_strpos($word, $endWord) - $start;
