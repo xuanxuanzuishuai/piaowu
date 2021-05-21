@@ -626,7 +626,7 @@ class SharePosterService
                 $shareOwner = true;
             }
             //屏蔽类型-设置私密照片
-            if($shareOwner && mb_strpos($word,'私密照片')){
+            if($shareOwner && mb_strpos($word,'私密照片') !== false){
                 $status = -3;
                 break;
             }
