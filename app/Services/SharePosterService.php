@@ -13,6 +13,7 @@ use App\Libs\DictConstants;
 use App\Libs\Dss;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\AliOSS;
+use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\Dss\DssEventTaskModel;
@@ -33,6 +34,8 @@ use App\Libs\HttpHelper;
 
 class SharePosterService
 {
+    public static $redisExpire = 432000; // 12小时
+
     /**
      * 上传截图列表
      * @param $params
@@ -476,7 +479,14 @@ class SharePosterService
         $date = date('m-d',$activity['start_time']);
         $date = str_replace('-','.',$date);
         $date = str_replace('0','',$date);
-        return [$date, AliOSS::replaceCdnDomainForDss($result['img_url'])];
+        $redis = RedisDB::getConn();
+        $cacheKey = 'letterIden';
+        if(!$redis->hexists($cacheKey,$date)){
+            $redis->hset($cacheKey,$date,'TYEWDXAYAG');
+            $redis->expire($cacheKey, self::$redisExpire);
+        }
+        $letterIden = $redis->hget($cacheKey,$date);
+        return [$date, $letterIden, AliOSS::replaceCdnDomainForDss($result['img_url'])];
     }
 
     /**
@@ -494,14 +504,20 @@ class SharePosterService
             (new Dss())->checkPosterApproval($params);
         }else{
             switch ($status) {
-                case -1:
-                    $params['reason'] = [3];
+                case -1: //未使用最新海报
+                    $params['reason'] = [2];
                     break;
-                case -2:
+                case -2: //朋友圈保留时长不足12小时，请重新上传
                     $params['reason'] = [12];
                     break;
-                case -3:
+                case -3: //分享分组可见
                     $params['reason'] = [1];
+                    break;
+                case -4: //请发布到朋友圈并截取朋友圈照片
+                    $params['reason'] = [11];
+                    break;
+                case -5: //上传截图出错
+                    $params['reason'] = [3];
                     break;
                 default:
                     break;
@@ -516,7 +532,8 @@ class SharePosterService
      * @return int|bool
      */
     public static function checkByOcr($data){
-        list($checkDate,$image) = $data;
+        list($checkDate,$letterIden,$image) = $data;
+
         //调用ocr-识别图片
         $host = "https://tysbgpu.market.alicloudapi.com";
         $path = "/api/predict/ocr_general";
@@ -553,7 +570,7 @@ class SharePosterService
         $screenDate     = null; //截图时间初始化
         $uploadTime     = time(); //上传时间
         $contentKeyword = ['小叶子', '琴', '练琴', '很棒', '求赞']; //内容关键字
-        $dateKeyword    = ['年', '月', '日', '昨天', '天前', '小时前', '上午', ':']; //日期关键字
+        $dateKeyword    = ['年', '月', '日', '昨天', '天前', '小时前', '分钟前','上午', ':']; //日期关键字
 
         $shareType    = false; //分享-类型为朋友圈
         $shareKeyword = false; //分享-关键字存在
@@ -562,9 +579,9 @@ class SharePosterService
         $shareDate    = false; //分享-日期超过12小时
         $shareDisplay = true;  //分享-是否显示
         $shareIden    = false; //分享-海报底部字母标识
+        $leafKeyWord  = false; //分享-小叶子关键字
 
         $issetCorner = false;  //分享-角标是否存在
-//        $letterIden = ''; //每期对应的字母标识
         $status = 0; //-1|-2.审核不通过 0.过滤 2.审核通过
         $patten = "/^(([1-9]|(10|11|12))\.([1-2][0-9]|3[0-1]|[0-9]))$/"; //角标规则匹配
         foreach ($result as $key => $val) {
@@ -589,9 +606,14 @@ class SharePosterService
                     break;
                 }
             }
-//            if($word == $letterIden){
-//                $shareIden = true;
-//            }
+            //小叶子关键字
+            if(mb_strpos($word,'小叶子') !== false){
+                $leafKeyWord = true;
+            }
+            //右下角标识
+            if($word == $letterIden){
+                $shareIden = true;
+            }
             //判断3.关键字
             if (!$issetCorner && (mb_strlen($word) > 5 || Util::sensitiveWordFilter($contentKeyword, $word) == true)) {
                 $shareKeyword = true;
@@ -613,6 +635,10 @@ class SharePosterService
                 //特殊情况-第一张图 发布时间和删除下标相同
                 if ($shareOwner && !$issetDel) {
                     continue;
+                }
+                if(mb_strpos($word, '分钟前') !== false){
+                    $status = -2;
+                    break;
                 }
                 if (mb_strpos($word, '小时前') !== false) {
                     $word        = '12小时前';
@@ -667,6 +693,14 @@ class SharePosterService
                     $shareDisplay = false;
                 }
             }
+        }
+        //包含朋友圈或详情 且没有删除
+        if($shareType && !$shareOwner){
+            $status = -4;
+        }
+        //未识别到角标&&未识别到右下角标识&&未识别到小叶子
+        if(!$issetCorner && !$shareIden && !$leafKeyWord){
+            $status = -5;
         }
         if ($shareType && $shareKeyword && $shareOwner && $shareDate && $shareDisplay && ($shareCorner || $shareIden )) {
             $status = 2;
