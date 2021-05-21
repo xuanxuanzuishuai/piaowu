@@ -694,13 +694,16 @@ class SharePosterService
                 }
             }
         }
+        if($status < 0){
+            return $status;
+        }
         //包含朋友圈或详情 且没有删除
         if($shareType && !$shareOwner){
-            $status = -4;
+            return -4;
         }
         //未识别到角标&&未识别到右下角标识&&未识别到小叶子
         if(!$issetCorner && !$shareIden && !$leafKeyWord){
-            $status = -5;
+            return -5;
         }
         if ($shareType && $shareKeyword && $shareOwner && $shareDate && $shareDisplay && ($shareCorner || $shareIden )) {
             $status = 2;
