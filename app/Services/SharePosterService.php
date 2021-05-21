@@ -619,6 +619,7 @@ class SharePosterService
         $shareDisplay = true;  //分享-是否显示
         $shareIden    = false; //分享-海报底部字母标识
         $leafKeyWord  = false; //分享-小叶子关键字
+        $gobalIssetDel = false; //分享-全局存在删除
 
         $issetCorner = false;  //分享-角标是否存在
         $status = 0; //-1|-2.审核不通过 0.过滤 2.审核通过
@@ -660,6 +661,7 @@ class SharePosterService
             }
             if (mb_strpos($word, '删除') !== false) {
                 $issetDel = true;
+                $gobalIssetDel = true;
             }
             //判定是否是自己朋友圈-是否有删除文案且距离顶部的高度大于海报高度(580)
             if ($issetDel && $val['rect']['top'] > 580) {
@@ -671,7 +673,7 @@ class SharePosterService
                 break;
             }
             //上传时间处理 根据坐标定位
-            if ($shareCorner && $val['rect']['top'] > 580 && Util::sensitiveWordFilter($dateKeyword, $word) == true) {
+            if (($shareCorner || $shareIden) && $val['rect']['top'] > 580 && Util::sensitiveWordFilter($dateKeyword, $word) == true) {
                 //如果包含年月
                 if(Util::sensitiveWordFilter(['年','月','日'], $word) == true){
                     if(mb_strpos($word,'年') === false){
@@ -750,7 +752,7 @@ class SharePosterService
             return $status;
         }
         //包含朋友圈或详情 且没有删除
-        if($shareType && !$shareOwner){
+        if($shareType && !$gobalIssetDel){
             return -4;
         }
         //未识别到角标&&未识别到右下角标识&&未识别到小叶子
