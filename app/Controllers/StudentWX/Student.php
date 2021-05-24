@@ -17,6 +17,7 @@ use App\Libs\HttpHelper;
 use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Libs\WeChat\WeChatMiniPro;
+use App\Models\DictModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Services\ReferralActivityService;
@@ -253,6 +254,9 @@ class Student extends ControllerBase
         $res = '';
         if (method_exists($wechat, $params['function'])) {
             $res = call_user_func_array([$wechat, $params['function']], $params['params'] ?? []);
+        }
+        if ($params['function'] == 'delCache') {
+            $res = DictModel::delCache($params['type'], 'dict_list_');
         }
         return HttpHelper::buildResponse($response, $res);
     }

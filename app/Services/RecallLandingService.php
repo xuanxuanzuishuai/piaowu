@@ -78,6 +78,13 @@ class RecallLandingService
             if (!empty($deadLine) && time() > $deadLine) {
                 $data['deadline'] = true;
             }
+            $imageKey = 'event_images' . $eventId;
+            $eventImages = DictService::getKeyValue(DictConstants::RECALL_CONFIG['type'], $imageKey);
+            $eventImages = json_decode($eventImages, true) ?: [];
+            foreach ($eventImages as &$item) {
+                $item = AliOSS::replaceCdnDomainForDss($item);
+            }
+            $data['event_images'] = $eventImages;
             // 发送进入页面短信
             self::webEventMessage(self::EVENT_WEB_PAGE_ENTER, $student['id'], $params);
         }
