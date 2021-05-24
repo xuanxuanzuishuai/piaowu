@@ -650,7 +650,6 @@ class SharePosterService
                     $shareCorner = true;
                 }else{
                     $status = -1;
-                    break;
                 }
             }
             //小叶子关键字
@@ -719,7 +718,7 @@ class SharePosterService
                     $end         = $issetDel ? (mb_strpos($word, $endWord) - $start) : mb_strlen($word) - 1;
                     $string      = mb_substr($word, $start, $end);
                     $screenDate = date('Y-m-d ' . str_replace('：', ':', $string));//截图时间
-                } elseif (mb_strpos($word, '昨天') == true) {
+                } elseif (mb_strpos($word, '昨天') !== false) {
                     if (mb_strlen($word) == 2) {
                         $screenDate = date('Y-m-d', strtotime('-1 day'));
                     } elseif (mb_strpos($word, '上午') !== false || mb_strpos($word, '凌晨') !== false) {
@@ -745,6 +744,11 @@ class SharePosterService
                         $string      = mb_substr($word, $start, $end);
                         $screenDate = date('Y-m-d ' . str_replace('：', ':', $string), strtotime('-1 day'));//截图时间
                     }
+                }elseif(mb_strpos($word, '：') !== false && mb_strpos($word, '年') === false){
+                    $word_str = str_replace('：',0,$word);
+                    if(strlen($word_str) < 5 || !is_numeric($word_str)){
+                        continue;
+                    }
                 }
                 //上传时间是否已超过12小时
                 if (empty($screenDate) || (!empty($screenDate) && strtotime($screenDate) + $hours < $uploadTime)) {
@@ -758,6 +762,10 @@ class SharePosterService
                     $shareDisplay = false;
                 }
             }
+        }
+        //角标识别错误 && 字符串识别正确则往下判断
+        if($status == -1 && $shareIden){
+            $status = 0;
         }
         if($status < 0){
             return $status;
