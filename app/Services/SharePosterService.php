@@ -600,7 +600,7 @@ class SharePosterService
         $result = array();
         //过滤掉识别率低的
         foreach ($response['ret'] as $val){
-            if($val['prob'] < 0.9){
+            if($val['prob'] < 0.95){
                 continue;
             }
             array_push($result,$val);
@@ -609,7 +609,7 @@ class SharePosterService
         $screenDate     = null; //截图时间初始化
         $uploadTime     = time(); //上传时间
         $contentKeyword = ['小叶子', '琴', '练琴', '很棒', '求赞']; //内容关键字
-        $dateKeyword    = ['年', '月', '日', '昨天', '天前', '小时前', '分钟前','上午', ':']; //日期关键字
+        $dateKeyword    = ['年', '月', '日', '昨天', '天前', '小时前', '分钟前','上午', '：']; //日期关键字
 
         $shareType    = false; //分享-类型为朋友圈
         $shareKeyword = false; //分享-关键字存在
@@ -695,7 +695,9 @@ class SharePosterService
                     $status = -2;
                     break;
                 }
-                if (mb_strpos($word, '小时前') !== false) {
+                if(mb_strpos($word, '：') !== false && mb_strlen($word) == 5){
+                    $screenDate = date('Y-m-d ' . str_replace('：', ':', $word));//截图时间
+                }elseif (mb_strpos($word, '小时前') !== false) {
                     $endWord    = '小时前';
                     $start       = 0;
                     $end         = mb_strpos($word, $endWord) - $start;
