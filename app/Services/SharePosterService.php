@@ -644,7 +644,7 @@ class SharePosterService
                 $word = str_replace('(','',$word);
             }
             //识别到角标且在删除之前的
-            if(preg_match($patten, $word) && $val['rect']['top'] > 70 && !$shareOwner) {
+            if(preg_match($patten, $word) && !$shareOwner) {
                 $issetCorner = true;
                 if($word == $checkDate){
                     $shareCorner = true;
@@ -658,6 +658,9 @@ class SharePosterService
                 $leafKeyWord = true;
             }
             //右下角标识
+            if(mb_strpos($word,' ') !== false){
+                $word = str_replace(' ','',$word);
+            }
             if($word == $letterIden){
                 $shareIden = true;
             }
@@ -679,7 +682,7 @@ class SharePosterService
                 break;
             }
             //上传时间处理 根据坐标定位
-            if (($shareCorner || $shareIden) && $val['rect']['top'] > 580 && Util::sensitiveWordFilter($dateKeyword, $word) == true) {
+            if ($val['rect']['top'] > 580 && Util::sensitiveWordFilter($dateKeyword, $word) == true) {
                 //如果包含年月
                 if(Util::sensitiveWordFilter(['年','月','日'], $word) == true){
                     if(mb_strpos($word,'年') === false){
