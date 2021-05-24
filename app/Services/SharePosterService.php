@@ -476,9 +476,15 @@ class SharePosterService
             SimpleLogger::error('not found activity', ['id' => $result['activity_id']]);
             return null;
         }
-        $date = date('m-d',$activity['start_time']);
-        $date = str_replace('-','.',$date);
-        $date = str_replace('0','',$date);
+        $start_time = date('m-d',$activity['start_time']);
+        $start_time = str_replace('-','.',$start_time);
+        $date = '';
+        foreach (str_split($start_time) as $key =>  $val){
+            if($key != strlen($start_time) - 1 && $val == '0'){
+                continue;
+            }
+            $date .= $val;
+        }
         $redis = RedisDB::getConn();
         $cacheKey = 'letterIden';
         if(!$redis->hexists($cacheKey,$date)){
