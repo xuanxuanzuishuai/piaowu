@@ -36,26 +36,6 @@ class OperationActivityModel extends Model
     ];
 
     /**
-     * 当前阶段为付费正式课且未参加当前活动的学员手机号
-     * @param $activityId
-     * @return array
-     */
-    public static function getPaidAndNotAttendStudentsMobile($activityId)
-    {
-        $students = MysqlDB::getDB()->queryAll("
-SELECT
-    id, mobile, country_code
-FROM
-    " . DssStudentModel::$table . "
-WHERE
-    has_review_course = " . DssStudentModel::REVIEW_COURSE_1980 . "
-    AND status = " . DssStudentModel::STATUS_NORMAL . "
-    AND id NOT IN (SELECT student_id FROM " . SharePosterModel::$table . " WHERE activity_id = :activity_id)", [':activity_id' => $activityId]);
-
-        return $students ?? [];
-    }
-
-    /**
      * 当前阶段为付费正式课且未参加当前活动的学员手微信open_id
      * @param $activityId
      * @return array

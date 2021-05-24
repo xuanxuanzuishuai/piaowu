@@ -22,6 +22,7 @@ use App\Controllers\OrgWeb\Dept;
 use App\Controllers\OrgWeb\Message;
 use App\Controllers\OrgWeb\Employee as OrgWebEmployee;
 use App\Controllers\OrgWeb\EmployeeActivity;
+use App\Controllers\OrgWeb\MonthActivity;
 use App\Controllers\OrgWeb\Package;
 use App\Controllers\OrgWeb\SharePoster;
 use App\Controllers\OrgWeb\StudentAccount;
@@ -176,10 +177,12 @@ class OrgWebRouter extends RouterBase
         '/op_web/week_activity/list' => ['method' => ['get'], 'call' => WeekActivity::class . ':list'],
         '/op_web/week_activity/detail' => ['method' => ['get'], 'call' => WeekActivity::class . ':detail'],
         '/op_web/week_activity/enable_status' => ['method' => ['post'], 'call' => WeekActivity::class . ':editEnableStatus'],
+        '/op_web/week_activity/send_msg' => ['method' => ['post'], 'call' => WeekActivity::class . ':sendMsg'],
+        '/op_web/week_activity/push_weixin_msg' => ['method' => ['post'], 'call' => WeekActivity::class . ':pushWeixinMsg'],
         // 月月有奖
-        '/op_web/month_activity/save' => ['method' => ['post'], 'call' => WeekActivity::class . ':save'],
-        '/op_web/month_activity/list' => ['method' => ['get'], 'call' => WeekActivity::class . ':list'],
-        '/op_web/month_activity/detail' => ['method' => ['get'], 'call' => WeekActivity::class . ':detail'],
-        '/op_web/month_activity/enable_status' => ['method' => ['post'], 'call' => WeekActivity::class . ':editEnableStatus'],
+        '/op_web/month_activity/save' => ['method' => ['post'], 'call' => MonthActivity::class . ':save'],
+        '/op_web/month_activity/list' => ['method' => ['get'], 'call' => MonthActivity::class . ':list'],
+        '/op_web/month_activity/detail' => ['method' => ['get'], 'call' => MonthActivity::class . ':detail'],
+        '/op_web/month_activity/enable_status' => ['method' => ['post'], 'call' => MonthActivity::class . ':editEnableStatus'],
     ];
 }

@@ -13,8 +13,13 @@ use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\ActivityExtModel;
 use App\Models\ActivityPosterModel;
+use App\Models\Dss\DssStudentModel;
+use App\Models\Dss\DssUserWeiXinModel;
+use App\Models\MessageManualPushLogModel;
+use App\Models\MessagePushRulesModel;
 use App\Models\MessageRecordModel;
 use App\Models\OperationActivityModel;
+use App\Models\SharePosterModel;
 use App\Models\TemplatePosterModel;
 use App\Models\WeekActivityModel;
 use App\Services\Queue\QueueService;
@@ -411,15 +416,13 @@ class WeekActivityService
             throw new RunTimeException(['record_not_found']);
         }
         // 若活动处于“进行中”且“已启用”状态，则短信提醒的【发送】功能可用
-        $check = self::checkActivityStatus($activityId);
+        $check = self::checkActivityStatus($activityInfo);
         if (!$check) {
             throw new RunTimeException(['send_sms_activity_status_error']);
         }
-
         $startTime = date('m月d日', $activityInfo['start_time']);
         // 当前阶段为付费正式课且未参加当前活动的学员
-        $students = OperationActivityModel::getPaidAndNotAttendStudentsMobile($activityId);
-
+        $students = self::getPaidAndNotAttendStudents($activityId);
         $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
         $sign = CommonServiceForApp::SIGN_STUDENT_APP;
         $i = 0;
@@ -472,21 +475,75 @@ class WeekActivityService
         if (empty($guideWord) && empty($shareWord) && empty($posterUrl)) {
             throw new RunTimeException(['no_send_message']);
         }
+        $activityInfo = WeekActivityModel::getRecord(['activity_id' => $activityId]);
+        if (empty($activityInfo)) {
+            throw new RunTimeException(['record_not_found']);
+        }
         // 若活动处于“进行中”且“已启用”状态，则客服消息提醒的【发送】功能可用
-        $check = self::checkActivityStatus($activityId);
+        $check = self::checkActivityStatus($activityInfo);
         if (!$check) {
             throw new RunTimeException(['send_weixin_activity_status_error']);
         }
 
         // 当前阶段为付费正式课且未参加当前活动的学员
-        $boundUsers = OperationActivityModel::getPaidAndNotAttendStudentsOpenid($activityId);
+        $boundUsers = self::getPaidAndNotAttendStudents($activityId);
         if (empty($boundUsers)) {
             throw new RunTimeException(['no_students']);
         }
 
+        // 写入发送信息的log ,然后把logId放入到队列
+        $manualData = [
+            'push_type' => MessagePushRulesModel::PUSH_TYPE_CUSTOMER,
+            'content_1' => $guideWord,
+            'content_2' => $shareWord,
+            'image' => $posterUrl,
+        ];
+        $logId = MessageService::saveSendLog($manualData);
         // 放到nsq队列中一个个处理
-        QueueService::pushWX($boundUsers, $guideWord, $shareWord, $posterUrl, $activityId, $employeeId, MessageRecordModel::ACTIVITY_TYPE_AWARD);
-
+        MessageService::manualPushMessage(
+            $logId,
+            array_column($boundUsers, 'uuid'),
+            $employeeId
+        );
         return true;
+    }
+
+
+    /**
+     * 当前阶段为付费正式课且未参加当前活动的学员手机号和uuid
+     * @param $activityId
+     * @return array
+     */
+    public static function getPaidAndNotAttendStudents($activityId)
+    {
+        // 获取所有参数活动的学生id
+        $inActivityStudent = SharePosterModel::getRecords(['activity_id' => $activityId], ['student_id']);
+        $inActivityStudentId = [];
+        if (!empty($inActivityStudent)) {
+            $inActivityStudentId = array_column($inActivityStudent, 'student_id');
+        }
+        $noJoinActivityStudent = [];
+        // 获取所有年卡用户 - 每次处理10w条
+        $lastId = 0;
+        while (true) {
+            $tmpWhere = ['has_review_course' => DssStudentModel::REVIEW_COURSE_1980, 'status' => DssStudentModel::STATUS_NORMAL, 'ORDER' => ['id' => 'ASC'], 'LIMIT' => 50000, 'id[>]' => $lastId];
+            $studentList = DssStudentModel::getRecords($tmpWhere, ['id', 'mobile', 'country_code', 'uuid']);
+            // 没有数据跳出
+            if (empty($studentList)) {
+                break;
+            }
+            foreach ($studentList as $_info) {
+                // 记录处理的最后一个id
+                $lastId = $_info['id'];
+                // 这个学生已经参加过活动
+                if (isset($inActivityStudentId[$_info['id']])) {
+                    continue;
+                }
+                $noJoinActivityStudent[] = $_info;
+            }
+            // 删除变量
+            unset($studentList);
+        }
+        return $noJoinActivityStudent;
     }
 }
