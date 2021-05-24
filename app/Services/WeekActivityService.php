@@ -548,7 +548,7 @@ class WeekActivityService
         $inActivityStudent = SharePosterModel::getRecords(['activity_id' => $activityId], ['student_id']);
         $inActivityStudentId = [];
         if (!empty($inActivityStudent)) {
-            $inActivityStudentId = array_column($inActivityStudent, 'student_id');
+            $inActivityStudentId = array_column($inActivityStudent, 'student_id', 'student_id');
         }
         $noJoinActivityStudent = [];
         // 获取所有年卡用户 - 每次处理10w条

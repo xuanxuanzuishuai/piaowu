@@ -21,7 +21,7 @@ CREATE TABLE week_activity (
     KEY `idx_activity_id` (`activity_id`),
     KEY `idx_start_time` (`start_time`),
     KEY `idx_end_time` (`end_time`),
-    KEY `idx_create_time` (`create_time`),
+    KEY `idx_create_time` (`create_time`)
 )engine=innodb charset=utf8mb4 comment '周周领奖活动表';
 
 create table activity_poster (
@@ -29,7 +29,7 @@ create table activity_poster (
     `activity_id` int(10) unsigned not null default 0 comment 'operation_activity活动总表主键',
     `poster_id` int(10) unsigned not null default 0 comment '海报库表主键',
     `status` tinyint(1) not null default 1 comment '上线状态 1线下，2上线',
-    `is_del` tinyint(1) not null default 0 comment '是否已删除 0:为删除，1:删除'
+    `is_del` tinyint(1) not null default 0 comment '是否已删除 0:为删除，1:删除',
     primary key `id`(`id`),
     key `idx_activity_id`(`activity_id`),
     key `idx_poster_id`(`poster_id`)
@@ -64,7 +64,7 @@ CREATE TABLE month_activity (
     KEY `idx_activity_id` (`activity_id`),
     KEY `idx_start_time` (`start_time`),
     KEY `idx_end_time` (`end_time`),
-    KEY `idx_create_time` (`create_time`),
+    KEY `idx_create_time` (`create_time`)
 )engine=innodb charset=utf8mb4 comment '月月有奖活动表';
 
 -- op 权限表
