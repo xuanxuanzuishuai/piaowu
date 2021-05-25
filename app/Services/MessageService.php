@@ -268,13 +268,20 @@ class MessageService
             $spreadSheet = $reader->load($fileName);
             $activeSheet = $spreadSheet->getActiveSheet();
             $data = [];
+
+            $filterRow = 0;
             foreach ($activeSheet->getRowIterator() as $row) {
                 $rowIndex     = $row->getRowIndex();
                 //TOCRM-1191 bi里筛选导出的用户没有手机号了，这里要换成uuid
                 $uuid = trim($activeSheet->getCellByColumnAndRow(1, $rowIndex)->getValue());
                 if (empty($uuid) || $rowIndex == 1) {
+                    if ($filterRow > 10) {
+                        break;
+                    }
+                    $filterRow++;
                     continue;
                 }
+
                 $data[] = $uuid;
             }
 //            if (count($data) > 10000) {
