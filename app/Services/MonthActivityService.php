@@ -8,6 +8,7 @@ namespace App\Services;
 
 use App\Libs\AliOSS;
 use App\Libs\Constants;
+use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
@@ -148,7 +149,7 @@ class MonthActivityService
         $info['format_start_time'] = date("Y-m-d H:i:s", $activityInfo['start_time']);
         $info['format_end_time'] = date("Y-m-d H:i:s", $activityInfo['end_time']);
         $info['format_create_time'] = date("Y-m-d H:i:s", $activityInfo['create_time']);
-        $info['enable_status_zh'] = OperationActivityModel::ENABLE_STATUS_ZH[$activityInfo['enable_status']] ?? '';
+        $info['enable_status_zh'] = DictConstants::get(DictConstants::ACTIVITY_ENABLE_STATUS, $activityInfo['enable_status']);
         $info['banner_url'] = AliOSS::replaceCdnDomainForDss($activityInfo['banner']);
         $info['make_poster_button_url'] = AliOSS::replaceCdnDomainForDss($activityInfo['make_poster_button_img']);
         $info['award_detail_url'] = AliOSS::replaceCdnDomainForDss($activityInfo['award_detail_img']);

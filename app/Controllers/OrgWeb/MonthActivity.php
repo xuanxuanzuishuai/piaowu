@@ -64,12 +64,6 @@ class MonthActivity extends ControllerBase
                 'error_code' => 'make_poster_tip_word_is_required'
             ],
             [
-                'key' => 'make_poster_tip_word',
-                'type' => 'lengthMax',
-                'value' => 1000,
-                'error_code' => 'make_poster_tip_word_length_invalid'
-            ],
-            [
                 'key' => 'award_detail_img',
                 'type' => 'required',
                 'error_code' => 'award_detail_img_is_required'
@@ -83,12 +77,6 @@ class MonthActivity extends ControllerBase
                 'key' => 'share_poster_tip_word',
                 'type' => 'required',
                 'error_code' => 'share_poster_tip_word_is_required'
-            ],
-            [
-                'key' => 'share_poster_tip_word',
-                'type' => 'lengthMax',
-                'value' => 50,
-                'error_code' => 'share_poster_tip_word_length_invalid'
             ],
             [
                 'key' => 'create_poster_button_img',

@@ -53,6 +53,16 @@ class DictConstants {
         ],
     ];
 
+    // 活动启用状态
+    const ACTIVITY_ENABLE_STATUS = [
+        'type' => 'ACTIVITY_ENABLE_STATUS',
+        'keys' => [
+            '1',    // 1,待启用
+            '2',    // 2,启用
+            '3',    // 3,已禁用
+        ]
+    ];
+
     // 阿里云config
     const ALI_OSS_CONFIG = [
         'type' => 'ALI_OSS_CONFIG',

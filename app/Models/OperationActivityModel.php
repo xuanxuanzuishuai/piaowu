@@ -25,12 +25,6 @@ class OperationActivityModel extends Model
     const ENABLE_STATUS_OFF = 1;        // 待启用
     const ENABLE_STATUS_ON = 2;         // 启用
     const ENABLE_STATUS_DISABLE = 3;    // 已禁用
-    // 启用状态对应的文字
-    const ENABLE_STATUS_ZH = [
-        self::ENABLE_STATUS_OFF => '待启用',
-        self::ENABLE_STATUS_ON => '已启用',
-        self::ENABLE_STATUS_DISABLE => '已禁用',
-    ];
 
     // 活动开始状态描述
     const ACTIVITY_STATUS_ZH = [

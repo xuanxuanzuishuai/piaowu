@@ -29,12 +29,16 @@ class TemplatePosterModel extends Model
     public static function getList($params)
     {
         $db = MysqlDB::getDB();
-        
+
+        $where = [
+            self::$table . '.type' => $params['type'],
+        ];
+        if (!empty($params['status']) && in_array($params['status'], [self::DISABLE_STATUS, self::STANDARD_POSTER])) {
+            $where[self::$table . '.status'] = $params['status'];
+        }
         $totalCount = $db->count(
             self::$table,
-            [
-                'type' => $params['type'],
-            ]
+            $where
         );
     
         list($pageId, $pageLimit) = Util::appPageLimit($params);
@@ -56,14 +60,14 @@ class TemplatePosterModel extends Model
                self::$table . '.update_time',
                self::$table . '.example_path',
             ],
-            [
-                'type' => $params['type'],
+            array_merge([
                 'ORDER' => [
                     'order_num' => 'ASC',
                     'update_time' => 'DESC'
                 ],
                 'LIMIT' => [($pageId - 1) * $pageLimit, $pageLimit]
-            ]);
+            ], $where)
+        );
         return [$res, $pageId, $pageLimit, $totalCount];
     }
 

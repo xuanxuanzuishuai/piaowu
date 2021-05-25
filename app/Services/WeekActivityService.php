@@ -14,15 +14,12 @@ use App\Libs\Util;
 use App\Models\ActivityExtModel;
 use App\Models\ActivityPosterModel;
 use App\Models\Dss\DssStudentModel;
-use App\Models\Dss\DssUserWeiXinModel;
-use App\Models\MessageManualPushLogModel;
 use App\Models\MessagePushRulesModel;
 use App\Models\MessageRecordModel;
 use App\Models\OperationActivityModel;
 use App\Models\SharePosterModel;
 use App\Models\TemplatePosterModel;
 use App\Models\WeekActivityModel;
-use App\Services\Queue\QueueService;
 
 class WeekActivityService
 {
@@ -188,7 +185,7 @@ class WeekActivityService
         $info['format_start_time'] = date("Y-m-d H:i:s", $activityInfo['start_time']);
         $info['format_end_time'] = date("Y-m-d H:i:s", $activityInfo['end_time']);
         $info['format_create_time'] = date("Y-m-d H:i:s", $activityInfo['create_time']);
-        $info['enable_status_zh'] = OperationActivityModel::ENABLE_STATUS_ZH[$activityInfo['enable_status']] ?? '';
+        $info['enable_status_zh'] = DictConstants::get(DictConstants::ACTIVITY_ENABLE_STATUS, $activityInfo['enable_status']);
         $info['banner_url'] = AliOSS::replaceCdnDomainForDss($activityInfo['banner']);
         $info['share_button_url'] = AliOSS::replaceCdnDomainForDss($activityInfo['share_button_img']);
         $info['award_detail_url'] = AliOSS::replaceCdnDomainForDss($activityInfo['award_detail_img']);
