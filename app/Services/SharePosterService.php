@@ -453,12 +453,13 @@ class SharePosterService
      * @param $data
      * @return array|null
      */
-    public static function getSharePosters($data){
-        if(empty($data) || empty($data['id']) || empty($data['app_id'])){
+    public static function getSharePosters($data)
+    {
+        if (empty($data) || empty($data['id']) || empty($data['app_id'])) {
             return null;
         }
         switch ($data['app_id']) {
-            case Constants::SMART_APP_ID : //智能陪练 类型为上传截图领奖且未审核的
+            case Constants::SMART_APP_ID: //智能陪练 类型为上传截图领奖且未审核的
                 $result = DssSharePosterModel::getRecord(['id' => $data['id'],'type' => 1,'status' => 1],['activity_id','img_url']);
                 break;
 //            case 2: //真人转介绍
@@ -467,32 +468,32 @@ class SharePosterService
                 break;
         }
         //未找到符合审核条件的图片
-        if(empty($result)){
+        if (empty($result)) {
             SimpleLogger::error('empty poster image', ['id' => $data['id']]);
             return null;
         }
         $activity = DssReferralActivityModel::getById($result['activity_id']);
-        if(empty($activity) || $activity['status'] != 1){
+        if (empty($activity) || $activity['status'] != 1) {
             SimpleLogger::error('not found activity', ['id' => $result['activity_id']]);
             return null;
         }
-        $start_time = date('m-d',$activity['start_time']);
-        $start_time = str_replace('-','.',$start_time);
+        $start_time = date('m-d', $activity['start_time']);
+        $start_time = str_replace('-', '.', $start_time);
         $date = '';
-        foreach (str_split($start_time) as $key =>  $val){
-            if($key != strlen($start_time) - 1 && $val == '0'){
+        foreach (str_split($start_time) as $key => $val) {
+            if ($key != strlen($start_time) - 1 && $val == '0') {
                 continue;
             }
             $date .= $val;
         }
         $redis = RedisDB::getConn();
         $cacheKey = 'letterIden';
-        if(!$redis->hexists($cacheKey,$date)){
+        if (!$redis->hexists($cacheKey, $date)) {
             $letterIden = self::transformDate($activity['start_time']);
-            $redis->hset($cacheKey,$date,$letterIden);
+            $redis->hset($cacheKey, $date, $letterIden);
             $redis->expire($cacheKey, self::$redisExpire);
         }
-        $letterIden = $redis->hget($cacheKey,$date);
+        $letterIden = $redis->hget($cacheKey, $date);
         return [$date, $letterIden, AliOSS::replaceCdnDomainForDss($result['img_url'])];
     }
 
@@ -576,7 +577,8 @@ class SharePosterService
      * @param $data [图片|需要校验的角标日期]
      * @return int|bool
      */
-    public static function checkByOcr($data){
+    public static function checkByOcr($data)
+    {
         list($checkDate,$letterIden,$image) = $data;
 
         //调用ocr-识别图片
@@ -600,16 +602,16 @@ class SharePosterService
         ];
         $url = $host . $path;
         $response = HttpHelper::requestJson($url, $bodys, 'POST', $headers);
-        if(!$response){
+        if (!$response) {
             return false;
         }
         $result = array();
         //过滤掉识别率低的
-        foreach ($response['ret'] as $val){
-            if($val['prob'] < 0.95){
+        foreach ($response['ret'] as $val) {
+            if ($val['prob'] < 0.95) {
                 continue;
             }
-            array_push($result,$val);
+            array_push($result, $val);
         }
         $hours           = 3600 * 12; //12小时
         $screenDate     = null; //截图时间初始化
@@ -640,27 +642,27 @@ class SharePosterService
             }
             //判断2.角标
             //特殊处理 部分图片日期如5.10 会识别为(5.10
-            if(strstr($word,'(')){
-                $word = str_replace('(','',$word);
+            if (strstr($word, '(')) {
+                $word = str_replace('(', '', $word);
             }
             //识别到角标且在删除之前的
-            if(preg_match($patten, $word) && !$shareOwner) {
+            if (preg_match($patten, $word) && !$shareOwner) {
                 $issetCorner = true;
-                if($word == $checkDate){
+                if ($word == $checkDate) {
                     $shareCorner = true;
-                }else{
+                } else {
                     $status = -1;
                 }
             }
             //小叶子关键字
-            if(mb_strpos($word,'小叶子') !== false){
+            if (mb_strpos($word, '小叶子') !== false) {
                 $leafKeyWord = true;
             }
             //右下角标识
-            if(mb_strpos($word,' ') !== false){
-                $word = str_replace(' ','',$word);
+            if (mb_strpos($word, ' ') !== false) {
+                $word = str_replace(' ', '', $word);
             }
-            if($word == $letterIden){
+            if ($word == $letterIden) {
                 $shareIden = true;
             }
             //判断3.关键字
@@ -676,21 +678,21 @@ class SharePosterService
                 $shareOwner = true;
             }
             //屏蔽类型-设置私密照片
-            if($shareOwner && mb_strpos($word,'私密照片') !== false){
+            if ($shareOwner && mb_strpos($word, '私密照片') !== false) {
                 $status = -3;
                 break;
             }
             //上传时间处理 根据坐标定位
             if ($val['rect']['top'] > 580 && Util::sensitiveWordFilter($dateKeyword, $word) == true) {
                 //如果包含年月
-                if(Util::sensitiveWordFilter(['年','月','日'], $word) == true){
-                    if(mb_strpos($word,'年') === false){
+                if (Util::sensitiveWordFilter(['年', '月', '日'], $word) == true) {
+                    if (mb_strpos($word, '年') === false) {
                         continue;
                     }
-                    if(mb_strpos($word,'月') === false){
+                    if (mb_strpos($word, '月') === false) {
                         continue;
                     }
-                    if(mb_strpos($word,'日') === false){
+                    if (mb_strpos($word, '日') === false) {
                         continue;
                     }
                 }
@@ -699,13 +701,13 @@ class SharePosterService
                 if ($shareOwner && !$issetDel) {
                     continue;
                 }
-                if(mb_strpos($word, '分钟前') !== false){
+                if (mb_strpos($word, '分钟前') !== false) {
                     $status = -2;
                     break;
                 }
-                if(mb_strpos($word, '：') !== false && mb_strlen($word) == 5){
+                if (mb_strpos($word, '：') !== false && mb_strlen($word) == 5) {
                     $screenDate = date('Y-m-d ' . str_replace('：', ':', $word));//截图时间
-                }elseif (mb_strpos($word, '小时前') !== false) {
+                } elseif (mb_strpos($word, '小时前') !== false) {
                     $endWord    = '小时前';
                     $start       = 0;
                     $end         = mb_strpos($word, $endWord) - $start;
@@ -722,15 +724,15 @@ class SharePosterService
                     if (mb_strlen($word) == 2) {
                         $screenDate = date('Y-m-d', strtotime('-1 day'));
                     } elseif (mb_strpos($word, '上午') !== false || mb_strpos($word, '凌晨') !== false) {
-                        $beginWord  = '昨天上午';
-                        $endWord    = '删除';
+                        $beginWord = '昨天上午';
+                        $endWord   = '删除';
                         $start       = mb_strpos($word, $beginWord) + mb_strlen($beginWord);
                         $end         = $issetDel ? (mb_strpos($word, $endWord) - $start) : mb_strlen($word) - 1;
                         $string      = mb_substr($word, $start, $end);
                         $screenDate = date('Y-m-d ' . str_replace('：', ':', $string), strtotime('-1 day'));//截图时间
                     } elseif (mb_strpos($word, '下午') !== false) {
-                        $beginWord  = '昨天下午';
-                        $endWord    = '删除';
+                        $beginWord = '昨天下午';
+                        $endWord   = '删除';
                         $start       = mb_strpos($word, $beginWord) + mb_strlen($beginWord);
                         $end         = $issetDel ? (mb_strpos($word, $endWord) - $start) : mb_strlen($word) - 1;
                         $string      = mb_substr($word, $start, $end);
@@ -744,9 +746,9 @@ class SharePosterService
                         $string      = mb_substr($word, $start, $end);
                         $screenDate = date('Y-m-d ' . str_replace('：', ':', $string), strtotime('-1 day'));//截图时间
                     }
-                }elseif(mb_strpos($word, '：') !== false && mb_strpos($word, '年') === false){
-                    $word_str = str_replace('：',0,$word);
-                    if(strlen($word_str) < 5 || !is_numeric($word_str)){
+                } elseif (mb_strpos($word, '：') !== false && mb_strpos($word, '年') === false) {
+                    $word_str = str_replace('：', 0, $word);
+                    if (strlen($word_str) < 5 || !is_numeric($word_str)) {
                         continue;
                     }
                 }
@@ -768,18 +770,18 @@ class SharePosterService
             }
         }
         //角标识别错误 && 字符串识别正确则往下判断
-        if($status == -1 && $shareIden){
+        if ($status == -1 && $shareIden) {
             $status = 0;
         }
-        if($status < 0){
+        if ($status < 0) {
             return $status;
         }
         //包含朋友圈或详情 且没有删除
-        if($shareType && !$gobalIssetDel){
+        if ($shareType && !$gobalIssetDel) {
             return -4;
         }
         //未识别到角标&&未识别到右下角标识&&未识别到小叶子
-        if(!$issetCorner && !$shareIden && !$leafKeyWord){
+        if (!$issetCorner && !$shareIden && !$leafKeyWord) {
             return -5;
         }
         if ($shareType && $shareKeyword && $shareOwner && $shareDate && $shareDisplay && ($shareCorner || $shareIden )) {

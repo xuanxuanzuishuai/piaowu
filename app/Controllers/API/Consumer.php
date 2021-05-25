@@ -765,24 +765,20 @@ class Consumer extends ControllerBase
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        //todo 上线去除
-        SimpleLogger::info('get share poster', $params['msg_body']);
         try {
             switch ($params['event_type']) {
-                case CheckPosterSyncTopic::CHECK_POSTER :
+                case CheckPosterSyncTopic::CHECK_POSTER:
                     $redis = RedisDB::getConn();
                     $cacheKey = 'checkSharePoster';
                     $isCheckSharePoster = $redis->get($cacheKey);
                     //禁用-自动审核图片功能
-                    if($isCheckSharePoster == 'notCheck'){
+                    if ($isCheckSharePoster == 'notCheck') {
                         break;
                     }
                     $postInfo = SharePosterService::getSharePosters($params['msg_body']);
-                    if(!empty($postInfo)){
+                    if (!empty($postInfo)) {
                         $status = SharePosterService::checkByOcr($postInfo);
-                        //todo 上线去除
-                        SimpleLogger::info('get share poster', $postInfo);
-                        SharePosterService::checkSharePosters($params['msg_body'],$status);
+                        SharePosterService::checkSharePosters($params['msg_body'], $status);
                     }
                     break;
             }
