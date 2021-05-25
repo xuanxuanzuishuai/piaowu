@@ -21,7 +21,6 @@ use App\Models\Dss\DssReferralActivityModel;
 use App\Models\Dss\DssSharePosterModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
-use App\Models\EmployeeModel;
 use App\Models\Erp\ErpEventTaskModel;
 use App\Models\Erp\ErpStudentAccountModel;
 use App\Models\Erp\ErpUserEventTaskAwardGoldLeafModel;
@@ -511,4 +510,587 @@ class SharePosterService
         }
         return $data;
     }
+
+    /**
+     * 获取要审核的图片
+     * @param $data
+     * @return array|null
+     */
+    public static function getSharePosters($data)
+    {
+        if (empty($data) || empty($data['id']) || empty($data['app_id'])) {
+            return null;
+        }
+        switch ($data['app_id']) {
+            case Constants::SMART_APP_ID: //智能陪练 类型为上传截图领奖且未审核的
+                $result = DssSharePosterModel::getRecord(['id' => $data['id'],'type' => 1,'status' => 1],['activity_id','img_url']);
+                break;
+//            case 2: //真人转介绍
+//                break;
+            default:
+                break;
+        }
+        //未找到符合审核条件的图片
+        if (empty($result)) {
+            SimpleLogger::error('empty poster image', ['id' => $data['id']]);
+            return null;
+        }
+        $activity = DssReferralActivityModel::getById($result['activity_id']);
+        if (empty($activity) || $activity['status'] != 1) {
+            SimpleLogger::error('not found activity', ['id' => $result['activity_id']]);
+            return null;
+        }
+        $start_time = date('m-d', $activity['start_time']);
+        $start_time = str_replace('-', '.', $start_time);
+        $date = '';
+        foreach (str_split($start_time) as $key => $val) {
+            if ($key != strlen($start_time) - 1 && $val == '0') {
+                continue;
+            }
+            $date .= $val;
+        }
+        $redis = RedisDB::getConn();
+        $cacheKey = 'letterIden';
+        if (!$redis->hexists($cacheKey, $date)) {
+            $letterIden = self::transformDate($activity['start_time']);
+            $redis->hset($cacheKey, $date, $letterIden);
+            $redis->expire($cacheKey, self::$redisExpire);
+        }
+        $letterIden = $redis->hget($cacheKey, $date);
+        return [$date, $letterIden, AliOSS::replaceCdnDomainForDss($result['img_url'])];
+    }
+
+    /**
+     * 日期转换为对应标识
+     * @param $date
+     * @return string
+     */
+    public static function transformDate($date){
+        $date = explode('-',date('Y-m-d',$date));
+        $array = ['A','B','C','D','E','F','G','H','I','J','K','L'];
+        $letterIden = '';
+        foreach ($date as $key => $val){
+            switch ($key){
+                case 0 :
+                    $yearDate = str_split($val,1);
+                    foreach ($yearDate as $item){
+                        $letterIden .= $array[$item] ?? 'A';
+                    }
+                    break;
+                case 1 :
+                    $month = intval($val);
+                    $letterIden .= $array[$month-1] ?? 'A';
+                    break;
+                case 2 :
+                    if($val < 8){
+                        $day = 0;
+                    }elseif($val < 15){
+                        $day = 1;
+                    }elseif($val < 22){
+                        $day = 2;
+                    }else{
+                        $day = 3;
+                    }
+                    $letterIden .= $array[$day] ?? 'A';
+                    break;
+            }
+        }
+        return $letterIden;
+    }
+
+    /**
+     * 审核结果
+     * @param $data
+     * @param $status
+     * @return false|void
+     */
+    public static function checkSharePosters($data,$status){
+        if(!$status){
+            return;
+        }
+        $params['poster_ids'] = [$data['id']];
+        if($status > 0){
+            (new Dss())->checkPosterApproval($params);
+        }else{
+            switch ($status) {
+                case -1: //未使用最新海报
+                    $params['reason'] = [2];
+                    break;
+                case -2: //朋友圈保留时长不足12小时，请重新上传
+                    $params['reason'] = [12];
+                    break;
+                case -3: //分享分组可见
+                    $params['reason'] = [1];
+                    break;
+                case -4: //请发布到朋友圈并截取朋友圈照片
+                    $params['reason'] = [11];
+                    break;
+                case -5: //上传截图出错
+                    $params['reason'] = [3];
+                    break;
+                default:
+                    break;
+            }
+            (new Dss())->checkPosterRefused($params);
+        }
+    }
+
+    /**
+     * ocr审核海报
+     * @param $data [图片|需要校验的角标日期]
+     * @return int|bool
+     */
+    public static function checkByOcr($data)
+    {
+        list($checkDate,$letterIden,$image) = $data;
+
+        //调用ocr-识别图片
+        $host = "https://tysbgpu.market.alicloudapi.com";
+        $path = "/api/predict/ocr_general";
+        $appcode = "af272f9db1a14eecb3d5c0fb1153051e";
+        //根据API的要求，定义相对应的Content-Type
+        $headers = [
+            'Authorization' => 'APPCODE '. $appcode,
+            'Content-Type' => 'application/json; charset=UTF-8'
+        ];
+        $bodys = [
+            'image' => $image,
+            'configure' => [
+                'min_size' => 1, #图片中文字的最小高度，单位像素
+                'output_prob' => true,#是否输出文字框的概率
+                'output_keypoints' => false, #是否输出文字框角点
+                'skip_detection' => false,#是否跳过文字检测步骤直接进行文字识别
+                'without_predicting_direction' => true#是否关闭文字行方向预测
+            ]
+        ];
+        $url = $host . $path;
+        $response = HttpHelper::requestJson($url, $bodys, 'POST', $headers);
+        if (!$response) {
+            return false;
+        }
+        $result = array();
+        //过滤掉识别率低的
+        foreach ($response['ret'] as $val) {
+//            if ($val['prob'] < 0.95) {
+//                continue;
+//            }
+            array_push($result, $val);
+        }
+        $hours           = 3600 * 12; //12小时
+        $screenDate     = null; //截图时间初始化
+        $uploadTime     = time(); //上传时间
+        $contentKeyword = ['小叶子', '琴', '练琴', '很棒', '求赞']; //内容关键字
+        $dateKeyword    = ['年', '月', '日', '昨天', '天前', '小时前', '分钟前','上午', '：']; //日期关键字
+
+        $shareType    = false; //分享-类型为朋友圈
+        $shareKeyword = false; //分享-关键字存在
+        $shareOwner   = false; //分享-自己朋友圈
+        $shareCorner  = false; //分享-角标
+        $shareDate    = false; //分享-日期超过12小时
+        $shareDisplay = true;  //分享-是否显示
+        $shareIden    = false; //分享-海报底部字母标识
+        $leafKeyWord  = false; //分享-小叶子关键字
+        $gobalIssetDel = false; //分享-全局存在删除
+
+        $issetCorner = false;  //分享-角标是否存在
+        $status = 0; //-1|-2.审核不通过 0.过滤 2.审核通过
+        $patten = "/^(([1-9]|(10|11|12))\.([1-2][0-9]|3[0-1]|[0-9]))$/"; //角标规则匹配
+        foreach ($result as $key => $val) {
+            $issetDel = false; //是否包含有删除
+            $word      = $val['word'];
+            //判断1.详情朋友圈
+            if (!$shareType && ($word == '朋友圈' || $word == '详情') && $val['rect']['top'] < 200) {
+                $shareType = true;
+                continue;
+            }
+            //判断2.角标
+            //特殊处理 部分图片日期如5.10 会识别为(5.10
+            if (strstr($word, '(')) {
+                $word = str_replace('(', '', $word);
+            }
+            //识别到角标且在删除之前的
+            if (preg_match($patten, $word) && !$shareOwner) {
+                $issetCorner = true;
+                if ($word == $checkDate) {
+                    $shareCorner = true;
+                } else {
+                    $status = -1;
+                }
+            }
+            //小叶子关键字
+            if (mb_strpos($word, '小叶子') !== false) {
+                $leafKeyWord = true;
+            }
+            //右下角标识
+            if (mb_strpos($word, ' ') !== false) {
+                $word = str_replace(' ', '', $word);
+            }
+            if ($word == $letterIden) {
+                $shareIden = true;
+            }
+            //判断3.关键字
+            if (!$issetCorner && $shareType && (mb_strlen($word) > 5 || Util::sensitiveWordFilter($contentKeyword, $word) == true)) {
+                $shareKeyword = true;
+            }
+            if (mb_strpos($word, '删除') !== false) {
+                $issetDel = true;
+                $gobalIssetDel = true;
+            }
+            //判定是否是自己朋友圈-是否有删除文案且距离顶部的高度大于海报高度(580)
+            if ($issetDel && $val['rect']['top'] > 300) {
+                $shareOwner = true;
+            }
+            //屏蔽类型-设置私密照片
+            if ($shareOwner && mb_strpos($word, '私密照片') !== false) {
+                $status = -3;
+                break;
+            }
+            //上传时间处理 根据坐标定位
+            if ($val['rect']['top'] > 300 && Util::sensitiveWordFilter($dateKeyword, $word) == true) {
+                //如果包含年月
+                if (Util::sensitiveWordFilter(['年', '月', '日'], $word) == true) {
+                    if (mb_strpos($word, '年') === false) {
+                        continue;
+                    }
+                    if (mb_strpos($word, '月') === false) {
+                        continue;
+                    }
+                    if (mb_strpos($word, '日') === false) {
+                        continue;
+                    }
+                }
+
+                //特殊情况-第一张图 发布时间和删除下标相同
+                if ($shareOwner && !$issetDel) {
+                    continue;
+                }
+                if (mb_strpos($word, '分钟前') !== false) {
+                    $status = -2;
+                    break;
+                }
+                if (mb_strpos($word, '：') !== false && mb_strlen($word) == 5) {
+                    $screenDate = date('Y-m-d ' . str_replace('：', ':', $word));//截图时间
+                } elseif (mb_strpos($word, '小时前') !== false) {
+                    $endWord    = '小时前';
+                    $start       = 0;
+                    $end         = mb_strpos($word, $endWord) - $start;
+                    $string      = mb_substr($word, $start, $end);
+                    $screenDate = date('Y-m-d H:i', strtotime('-' . $string . ' hours'));
+                } elseif (mb_strpos($word, '昨天') === false && mb_strpos($word, '上午') !== false) { //当做今天的 下午可忽略
+                    $beginWord  = '上午';
+                    $endWord    = '删除';
+                    $start       = mb_strpos($word, $beginWord) + mb_strlen($beginWord);
+                    $end         = $issetDel ? (mb_strpos($word, $endWord) - $start) : mb_strlen($word) - 1;
+                    $string      = mb_substr($word, $start, $end);
+                    $screenDate = date('Y-m-d ' . str_replace('：', ':', $string));//截图时间
+                } elseif (mb_strpos($word, '昨天') !== false) {
+                    if (mb_strlen($word) == 2) {
+                        $screenDate = date('Y-m-d', strtotime('-1 day'));
+                    } elseif (mb_strpos($word, '上午') !== false || mb_strpos($word, '凌晨') !== false) {
+                        $beginWord = '昨天上午';
+                        $endWord   = '删除';
+                        $start       = mb_strpos($word, $beginWord) + mb_strlen($beginWord);
+                        $end         = $issetDel ? (mb_strpos($word, $endWord) - $start) : mb_strlen($word) - 1;
+                        $string      = mb_substr($word, $start, $end);
+                        $screenDate = date('Y-m-d ' . str_replace('：', ':', $string), strtotime('-1 day'));//截图时间
+                    } elseif (mb_strpos($word, '下午') !== false) {
+                        $beginWord = '昨天下午';
+                        $endWord   = '删除';
+                        $start       = mb_strpos($word, $beginWord) + mb_strlen($beginWord);
+                        $end         = $issetDel ? (mb_strpos($word, $endWord) - $start) : mb_strlen($word) - 1;
+                        $string      = mb_substr($word, $start, $end);
+                        $screenDate = date('Y-m-d ' . str_replace('：', ':', $string), strtotime('-1 day'));//截图时间
+                        $screenDate = date('Y-m-d H:i', strtotime($screenDate) + $hours);
+                    } else {
+                        $beginWord  = '昨天';
+                        $endWord    = '删除';
+                        $start       = mb_strpos($word, $beginWord) + mb_strlen($beginWord);
+                        $end         = $issetDel ? (mb_strpos($word, $endWord) - $start) : mb_strlen($word) - 1;
+                        $string      = mb_substr($word, $start, $end);
+                        $screenDate = date('Y-m-d ' . str_replace('：', ':', $string), strtotime('-1 day'));//截图时间
+                    }
+                } elseif (mb_strpos($word, '：') !== false && mb_strpos($word, '年') === false) {
+                    $word_str = str_replace('：', 0, $word);
+                    if (strlen($word_str) < 5 || !is_numeric($word_str)) {
+                        continue;
+                    }
+                }
+                //上传时间是否已超过12小时
+                if (empty($screenDate) || (!empty($screenDate) && strtotime($screenDate) + $hours < $uploadTime)) {
+                    $shareDate = true;
+                } else {
+                    if($status == -1 && !$shareIden){
+                        $status = -1;
+                        break;
+                    }
+                    $status = -2;
+                    break;
+                }
+                //判定是否被屏蔽 特殊情况:发布时间和删除下标相同
+                if (!$shareOwner && isset($result[$key + 1]) && Util::sensitiveWordFilter(['删除','智能陪练'], $result[$key + 1]['word']) == false) {
+                    $shareDisplay = false;
+                }
+            }
+        }
+        //角标识别错误 && 字符串识别正确则往下判断
+        if ($status == -1 && $shareIden) {
+            $status = 0;
+        }
+        if ($status < 0) {
+            return $status;
+        }
+        //包含朋友圈或详情 且没有删除
+        if ($shareType && !$gobalIssetDel) {
+            return -4;
+        }
+        //未识别到角标&&未识别到右下角标识&&未识别到小叶子
+        if (!$issetCorner && !$shareIden && !$leafKeyWord) {
+            return -5;
+        }
+        if ($shareType && $shareKeyword && $shareOwner && $shareDate && $shareDisplay && ($shareCorner || $shareIden )) {
+            $status = 2;
+        }
+        return $status;
+    }
+    /**
+     * 上传截图
+     * @param $params
+     * @return int|mixed|string|null
+     * @throws RunTimeException
+     */
+    public static function uploadSharePoster($params)
+    {
+        $activityId = $params['activity_id'] ?? 0;
+        $studentId = $params['student_id'] ?? 0;
+        $imagePath = $params['image_path'] ?? '';
+
+        //获取学生信息
+        $studentDetail = StudentService::dssStudentStatusCheck($studentId);
+        if ($studentDetail['student_status'] != DssStudentModel::STATUS_BUY_NORMAL_COURSE) {
+            throw new RunTimeException(['student_status_disable']);
+        }
+        //检查活动是否有效
+        $activityInfo = ReferralActivityService::checkActivityIsEnable($activityId);
+        if (empty($activityInfo)) {
+            throw new RunTimeException(['activity_is_disable']);
+        }
+        //审核通过不允许上传截图
+        $type = SharePosterModel::TYPE_WEEK_UPLOAD;
+        $where = [
+            'activity_id' => $activityId,
+            'student_id'  => $studentId,
+            'type'        => $type,
+            'ORDER'       => ['id' => 'DESC']
+        ];
+        $field = ['id', 'verify_status', 'award_id'];
+        $uploadRecord = SharePosterModel::getRecord($where, $field);
+        if (!empty($uploadRecord['verify_status'])
+            && $uploadRecord['verify_status'] == SharePosterModel::VERIFY_STATUS_QUALIFIED) {
+            throw new RunTimeException(['stop_repeat_upload']);
+        }
+        $time = time();
+        $data = [
+            'student_id'  => $studentId,
+            'type'        => $type,
+            'activity_id' => $activityId,
+            'image_path'  => $imagePath,
+            'create_time' => $time,
+            'update_time' => $time,
+        ];
+        // @TODO: 接入自动审核
+        if (empty($uploadRecord)) {
+            $res = SharePosterModel::insertRecord($data);
+        } else {
+            $res = SharePosterModel::updateRecord($uploadRecord['id'], $data);
+        }
+        if (empty($res)) {
+            throw new RunTimeException(['share_poster_add_fail']);
+        }
+        return $res;
+    }
+
+    /**
+     * 截图审核通过
+     * @param $id
+     * @param array $params
+     * @return bool
+     * @throws RunTimeException
+     */
+    public static function approvalPoster($id, $params = [])
+    {
+        $posters = SharePosterModel::getPostersByIds($id);
+        if (count($posters) != count($id)) {
+            throw new RunTimeException(['get_share_poster_error']);
+        }
+
+        $divisionTime = DictConstants::get(DictConstants::NORMAL_UPLOAD_POSTER_DIVISION_TIME, 'division_time');
+        $taskConfig = DictConstants::getSet(DictConstants::NORMAL_UPLOAD_POSTER_TASK);
+
+        $updateData = [
+            'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED,
+            'verify_time'   => time(),
+            'verify_user'   => $params['employee_id'] ?? 0,
+            'remark'        => $params['remark'] ?? '',
+            'update_time'   => time(),
+        ];
+        $redis = RedisDB::getConn();
+        $needAwardList = [];
+        foreach ($posters as $key => $poster) {
+            // 审核数据操作锁，解决并发导致的重复审核和发奖
+            $lock = $redis->get(self::KEY_POSTER_VERIFY_LOCK . $poster['id']);
+            if (!empty($lock)) {
+                continue;
+            }
+            $redis->setex(self::KEY_POSTER_VERIFY_LOCK . $poster['id'], 120, $poster['id']);
+            if (!empty($poster['award_id'])) {
+                $needRejectAward[] = $poster['award_id'];
+            }
+            $where = [
+                'id' => $poster['id'],
+                'verify_status' => $poster['poster_status']
+            ];
+            $update = SharePosterModel::batchUpdateRecord($updateData, $where);
+
+            //计算当前真正应该获得的奖励
+            $where = [
+                'id[!]'      => $poster['id'],
+                'student_id' => $poster['student_id'],
+                'type'       => SharePosterModel::TYPE_WEEK_UPLOAD,
+                'status'     => SharePosterModel::VERIFY_STATUS_QUALIFIED,
+                'create_time[>=]' => $divisionTime,
+            ];
+            $count = SharePosterModel::getCount($where);
+            if ($poster['create_time'] < $divisionTime) {
+                $taskId = $taskConfig['-1'];
+            } else {
+                $taskId = $taskConfig[$count] ?? $taskConfig['-1'];
+            }
+            if (!empty($update) && empty($poster['points_award_ids'])) {
+                $needAwardList[] = [
+                    'id' => $poster['id'],
+                    'uuid' => $poster['uuid'],
+                    'task_id' => $taskId
+                ];
+            }
+        }
+        if (!empty($needAwardList)) {
+            QueueService::addUserPosterAward($needAwardList);
+        }
+        return true;
+    }
+
+    /**
+     * 截图审核-发奖-消费者
+     * @param $data
+     * @return bool
+     */
+    public static function addUserAward($data)
+    {
+        if (empty($data)) {
+            return false;
+        }
+        foreach ($data as $poster) {
+            $res = (new Erp())->addEventTaskAward($poster['uuid'], $poster['task_id'], ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
+            if (empty($res['data'])) {
+                SimpleLogger::error('ERP_CREATE_USER_EVENT_TASK_AWARD_FAIL', [$poster]);
+            }
+            $awardIds  = $res['data']['user_award_ids'] ?? [];
+            $pointsIds = $res['data']['points_award_ids'] ?? [];
+            $awardId   = implode(',', $awardIds);
+            $pointsId  = implode(',', $pointsIds);
+            SharePosterModel::updateRecord($poster['id'], ['award_id' => $awardId, 'points_award_id'=> $pointsId]);
+            MessageService::sendTaskAwardPointsMessage(['points_award_ids' => $pointsIds]);
+        }
+        return true;
+    }
+
+    /**
+     * 截图审核-未通过
+     * @param $id
+     * @param array $params
+     * @return bool
+     * @throws RunTimeException
+     */
+    public static function refusedPoster($id, $params = [])
+    {
+
+        $poster = SharePosterModel::getPostersByIds([$id]);
+        $poster = $poster[0] ?? [];
+        if (empty($poster)) {
+            throw new RunTimeException(['get_share_poster_error']);
+        }
+
+        $status = SharePosterModel::VERIFY_STATUS_UNQUALIFIED;
+        $time   = time();
+        $update = SharePosterModel::updateRecord($poster['id'], [
+            'status'      => $status,
+            'check_time'  => $time,
+            'update_time' => $time,
+            'operator_id' => $params['employee_id'],
+            'reason'      => implode(',', $params['reason']),
+            'remark'      => $params['remark'] ?? '',
+        ]);
+        if (!empty($poster['award_id'])) {
+            (new Erp())->updateAward(
+                explode(',', $poster['award_id']),
+                ErpReferralService::AWARD_STATUS_REJECTED,
+                $params['employee_id']
+            );
+        }
+        // 审核不通过, 发送模版消息
+        if ($update > 0) {
+            $vars = [
+                'activity_name' => $poster['activity_name'],
+                'status' => $status
+            ];
+            MessageService::sendPosterVerifyMessage($poster['open_id'], $vars);
+        }
+
+        return $update > 0;
+    }
+
+    /**
+     * 获取分享文案列表
+     * @param $params
+     * @return array
+     */
+    public static function getShareWordList($params)
+    {
+        $list = TemplatePosterWordModel::getFrontList($params);
+        foreach ($list as &$item) {
+            $item = TemplatePosterWordModel::formatOne($item);
+        }
+        return $list;
+    }
+
+    /**
+     * 截图审核详情
+     * @param $id
+     * @return array|mixed
+     */
+    public static function sharePosterDetail($id)
+    {
+        if (empty($id)) {
+            return [];
+        }
+        list($posters) = SharePosterModel::getPosterList(['id' => $id]);
+        $poster = $posters[0];
+        if (empty($poster)) {
+            return [];
+        }
+        $poster['can_upload'] = Constants::STATUS_TRUE;
+        $poster['image_path'] = $poster['img_url'];
+        $activities = WeekActivityModel::getSelectList([]);
+        $allIds = array_column($activities, 'activity_id');
+        if (!in_array($poster['activity_id'], $allIds)) {
+            $poster['can_upload'] = Constants::STATUS_FALSE;
+        }
+        if ($poster['poster_status'] == SharePosterModel::VERIFY_STATUS_QUALIFIED) {
+            $poster['can_upload'] = Constants::STATUS_FALSE;
+        }
+        $poster = self::formatOne($poster);
+        $activity = ActivityService::getByTypeAndId(TemplatePosterModel::STANDARD_POSTER, $poster['activity_id']);
+        return ['poster' => $poster, 'activity' => $activity];
+    }
+
 }

@@ -244,6 +244,11 @@ class PosterService
         if (empty($allPosterIds)) {
             return [];
         }
-        return TemplatePosterModel::getRecords(['id' => $allPosterIds]);
+        $field = ['name', 'poster_id', 'poster_path', 'example_id', 'example_path', 'order_num'];
+        $where = [
+            'id' => $allPosterIds,
+            'ORDER' => ['order_num' => 'ASC']
+        ];
+        return TemplatePosterModel::getRecords($where, $field);
     }
 }

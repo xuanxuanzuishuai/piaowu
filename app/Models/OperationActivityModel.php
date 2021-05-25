@@ -18,7 +18,7 @@ class OperationActivityModel extends Model
 {
     public static $table = "operation_activity";
 
-    const KEY_CURRENT_ACTIVE = 'CURRENT_ACTIVE_';
+    const KEY_CURRENT_ACTIVE = 'CURRENT_ACTIVE_ACTIVITY_';
     const ACTIVITY_CACHE_EXPIRE = 86400;
 
     // 启用状态
@@ -75,9 +75,9 @@ WHERE
     {
         if (!empty($id)) {
             if ($posterType == TemplatePosterModel::INDIVIDUALITY_POSTER) {
-                return MonthActivityModel::getById($id);
+                return MonthActivityModel::getRecord(['activity_id' => $id]);
             }
-            return WeekActivityModel::getById($id);
+            return WeekActivityModel::getRecord(['activity_id' => $id]);
         }
 
         $redis = RedisDB::getConn();

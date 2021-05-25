@@ -340,15 +340,6 @@ class ActivityService
     }
 
     /**
-     * @param $activityId
-     * @return mixed
-     */
-    public static function getActivityExt($activityId)
-    {
-        return ActivityExtModel::getById($activityId);
-    }
-
-    /**
      * 活动信息格式化
      * @param $activity
      * @return mixed

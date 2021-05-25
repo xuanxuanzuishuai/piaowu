@@ -385,7 +385,7 @@ class SharePosterModel extends Model
 
         $join = "
         STRAIGHT_JOIN
-        {$ac} ac ON ac.id = sp.activity_id
+        {$ac} ac ON ac.activity_id = sp.activity_id
         ";
         $db = self::dbRO();
         $totalCount = $db->queryAll(

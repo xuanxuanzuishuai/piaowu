@@ -143,7 +143,7 @@ class WeekActivityModel extends Model
         if (empty($active)) {
             return self::getRecords(['ORDER' => ['id' => 'DESC'], 'LIMIT' => [0, $limit]]);
         }
-        $list = self::getRecords(['id[<=]' => $active['id'], 'ORDER' => ['id' => 'DESC'], 'LIMIT' => [0, $limit]]);
+        $list = self::getRecords(['id[<=]' => $active['id'], 'ORDER' => ['id' => 'ASC'], 'LIMIT' => [0, $limit]]);
         $now = time();
         foreach ($list as &$item) {
             $item['active'] = Constants::STATUS_FALSE;

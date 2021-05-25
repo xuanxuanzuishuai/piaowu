@@ -6,6 +6,7 @@ use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
+use App\Models\ActivityExtModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssTemplatePosterModel;
 use App\Models\Dss\DssTemplatePosterWordModel;
@@ -157,6 +158,8 @@ class PosterTemplateService
         if (isset($row['op_poster_id'])) {
             $formatData['op_poster_id'] = $row['op_poster_id'];
         }
+        $formatData['poster_id'] = $row['poster_id'] ?? 0;
+        $formatData['example_id'] = $row['example_id'] ?? 0;
         return $formatData;
     }
 
@@ -495,7 +498,7 @@ class PosterTemplateService
 
         // 查询活动配置
         if ($withExt) {
-            $activityInfo['ext'] = ActivityService::getActivityExt($activityInfo['activity_id']);
+            $activityInfo['ext'] = ActivityExtModel::getActivityExt($activityInfo['activity_id']);
         }
         // 周周领奖限制检测
         if ($type == TemplatePosterModel::STANDARD_POSTER) {
