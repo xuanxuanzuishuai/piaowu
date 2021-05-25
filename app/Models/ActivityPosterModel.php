@@ -7,6 +7,7 @@ namespace App\Models;
 
 use App\Libs\RedisDB;
 use App\Libs\Util;
+use App\Libs\MysqlDB;
 
 class ActivityPosterModel extends Model
 {
@@ -91,5 +92,37 @@ class ActivityPosterModel extends Model
         $diffIds = array_diff($posterIds, $posterIdArr);
 
         return empty($diffIds) ? false : true;
+    }
+    
+    /**
+     * @param $arrActPosId
+     * @param $arrActId
+     * 下线活动中的海报模板,并删除缓存
+     */
+    public static function editPosterStatus($posId, $status)
+    {
+        $db = MysqlDB::getDB();
+        $data = [
+            'status' => $status,
+        ];
+        $where = [
+            'poster_id' => $posId,
+        ];
+        $db->updateGetCount(self::$table, $data, $where);
+    }
+    
+    /**
+     * @param $posId
+     * 删除缓存
+     */
+    public static function delRedisCache($posId) {
+        $db = MysqlDB::getDB();
+        $res = $db->select(self::$table, ['activity_id'], ['poster_id' => $posId]);
+        $arrActId = array_column($res, 'activity_id');
+        $redis = RedisDB::getConn();
+        foreach ($arrActId as $actId) {
+            $cacheKey = self::KEY_ACTIVITY_POSTER . implode('_', [$actId, self::NORMAL_STATUS, self::IS_DEL_FALSE]);
+            $redis->del([$cacheKey]);
+        }
     }
 }

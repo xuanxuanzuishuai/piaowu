@@ -6,6 +6,7 @@ use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
+use App\Models\ActivityPosterModel;
 use App\Models\ActivityExtModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssTemplatePosterModel;
@@ -68,7 +69,7 @@ class PosterTemplateService
             return $data;
         }
 //        //区分海报类型获取不同数据
-//        if ($templateType == DssTemplatePosterWordModel::INDIVIDUALITY_POSTER) {
+//        if ($templateType == TemplatePosterWordModel::INDIVIDUALITY_POSTER) {
 //            //练琴数据
 //            $playRecord = DssAiPlayRecordModel::getStudentSumByDate($studentId, 0, time());
 //            if ($playRecord) {
@@ -176,16 +177,16 @@ class PosterTemplateService
             'list' => [],
         ];
         $where = [
-            "status" => DssTemplatePosterWordModel::NORMAL_STATUS
+            "status" => TemplatePosterWordModel::NORMAL_STATUS
         ];
         $startCount = ($params['page'] - 1) * $params['count'];
-        $dataCount = DssTemplatePosterWordModel::getCount($where);
+        $dataCount = TemplatePosterWordModel::getCount($where);
         $list['count'] = $dataCount;
         if (empty($dataCount) || ($startCount > $dataCount)) {
             return $list;
         }
         $where['LIMIT'] = [$startCount, $params['count']];
-        $data = DssTemplatePosterWordModel::getRecords($where, ['content', 'id']);
+        $data = TemplatePosterWordModel::getRecords($where, ['content', 'id']);
         foreach ($data as $k => $value) {
             $row = self::formatWordInfo($value);
             $list['list'][] = $row;
@@ -339,6 +340,21 @@ class PosterTemplateService
     }
     
     /**
+     * 下线某条海报前校验
+     * @param $params
+     * @return mixed
+     * @throws RunTimeException
+     */
+    public static function offlinePosterCheck($params)
+    {
+        $id = $params['id'];
+        list($resWeek, $resMonth) = TemplatePosterModel::getActivityByPosterId($id);
+        $arrWeekId = array_column($resWeek, 'activity_id');
+        $arrMonthId = array_column($resMonth, 'activity_id');
+        return [$arrWeekId, $arrMonthId];
+    }
+    
+    /**
      * 更新某条海报的信息
      * @param $params
      * @param $operateId
@@ -379,6 +395,19 @@ class PosterTemplateService
                 throw new RunTimeException(['template_poster_add_data_fail'], ['path' => $params['poster_url'], 'name' => $params['poster_name']]);
             }
             $needUpdate['example_id'] = $exampleId;
+        }
+        
+        //更新activity_poster表数据
+        if (isset($params['status'])) {
+            $id = $params['id'];
+            $statusMap = [
+                TemplatePosterModel::DISABLE_STATUS => ActivityPosterModel::DISABLE_STATUS,
+                TemplatePosterModel::NORMAL_STATUS => ActivityPosterModel::NORMAL_STATUS,
+            ];
+            if (isset($statusMap[$params['status']])) {
+                ActivityPosterModel::editPosterStatus($id, $statusMap[$params['status']]);
+                ActivityPosterModel::delRedisCache($id);
+            }
         }
         
         TemplatePosterModel::updateRecord($params['id'], $needUpdate);

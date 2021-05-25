@@ -275,4 +275,36 @@ class PosterTemplate extends ControllerBase
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
     }
+    
+    public static function offlinePosterCheck(Request $request, Response $response)
+    {
+        try {
+            $rules = [
+                [
+                    'key' => 'id',
+                    'type' => 'required',
+                    'error_code' => 'id_is_required'
+                ]
+            ];
+            //验证合法性
+            $params = $request->getParams();
+            $result = Valid::validate($params, $rules);
+            if ($result['code'] != Valid::CODE_SUCCESS) {
+                return $response->withJson($result, StatusCode::HTTP_OK);
+            }
+            list($arrWeekId, $arrMonthId) = PosterTemplateService::offlinePosterCheck($params);
+            $arrErrorMsg = [];
+            $arrWeekId && $arrErrorMsg[] = '周周有奖活动' . implode('、',$arrWeekId);
+            $arrMonthId && $arrErrorMsg[] = '月月有奖活动' . implode('、',$arrMonthId);
+            if ($arrErrorMsg) {
+                $strErrorMsg = implode('；', $arrErrorMsg);
+                $strErrorMsg = "该海报在{$strErrorMsg}中使用，请确认是否下线该海报";
+                return HttpHelper::buildErrorResponse($response, $strErrorMsg);
+            } else {
+                return HttpHelper::buildResponse($response, []);
+            }
+        }catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+    }
 }

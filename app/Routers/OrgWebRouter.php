@@ -107,6 +107,7 @@ class OrgWebRouter extends RouterBase
         '/org_web/poster_template/standardAdd' => ['method' => ['post'], 'call' => PosterTemplate::class . ':standardAdd'],
         '/org_web/poster_template/getPosterInfo' => ['method' => ['get'], 'call' => PosterTemplate::class . ':getPosterInfo'],
         '/org_web/poster_template/editPosterInfo' => ['method' => ['post'], 'call' => PosterTemplate::class . ':editPosterInfo'],
+        '/org_web/poster_template/offlinePosterCheck' => ['method' => ['get'], 'call' => PosterTemplate::class . ':offlinePosterCheck'],
         '/org_web/poster_template_word/addWord' => ['method' => ['post'], 'call' => PosterTemplateWord::class . ':addWord'],
         '/org_web/poster_template_word/wordList' => ['method' => ['get'], 'call' => PosterTemplateWord::class . ':wordList'],
         '/org_web/poster_template_word/getWordInfo' => ['method' => ['get'], 'call' => PosterTemplateWord::class . ':getWordInfo'],
