@@ -608,9 +608,9 @@ class SharePosterService
         $result = array();
         //过滤掉识别率低的
         foreach ($response['ret'] as $val) {
-            if ($val['prob'] < 0.95) {
-                continue;
-            }
+//            if ($val['prob'] < 0.95) {
+//                continue;
+//            }
             array_push($result, $val);
         }
         $hours           = 3600 * 12; //12小时
@@ -674,7 +674,7 @@ class SharePosterService
                 $gobalIssetDel = true;
             }
             //判定是否是自己朋友圈-是否有删除文案且距离顶部的高度大于海报高度(580)
-            if ($issetDel && $val['rect']['top'] > 580) {
+            if ($issetDel && $val['rect']['top'] > 300) {
                 $shareOwner = true;
             }
             //屏蔽类型-设置私密照片
@@ -683,7 +683,7 @@ class SharePosterService
                 break;
             }
             //上传时间处理 根据坐标定位
-            if ($val['rect']['top'] > 580 && Util::sensitiveWordFilter($dateKeyword, $word) == true) {
+            if ($val['rect']['top'] > 300 && Util::sensitiveWordFilter($dateKeyword, $word) == true) {
                 //如果包含年月
                 if (Util::sensitiveWordFilter(['年', '月', '日'], $word) == true) {
                     if (mb_strpos($word, '年') === false) {
