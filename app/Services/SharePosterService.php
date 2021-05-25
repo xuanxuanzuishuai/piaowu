@@ -754,6 +754,10 @@ class SharePosterService
                 if (empty($screenDate) || (!empty($screenDate) && strtotime($screenDate) + $hours < $uploadTime)) {
                     $shareDate = true;
                 } else {
+                    if($status == -1 && !$shareIden){
+                        $status = -1;
+                        break;
+                    }
                     $status = -2;
                     break;
                 }
