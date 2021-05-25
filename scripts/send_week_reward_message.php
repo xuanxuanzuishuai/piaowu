@@ -33,10 +33,11 @@ require_once PROJECT_ROOT . '/vendor/autoload.php';
 
 use App\Libs\Constants;
 use App\Libs\SimpleLogger;
-use App\Models\Dss\DssReferralActivityModel;
-use App\Models\Dss\DssSharePosterModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
+use App\Models\OperationActivityModel;
+use App\Models\SharePosterModel;
+use App\Models\WeekActivityModel;
 use App\Services\Queue\PushMessageTopic;
 use App\Services\Queue\QueueService;
 use Dotenv\Dotenv;
@@ -117,19 +118,23 @@ function checkExecTime(int $current, int $check)
 
 $time = time();
 //获取周周有礼活动信息
-$activityInfo = DssReferralActivityModel::getRecord([
-    'status' => DssReferralActivityModel::STATUS_ENABLE,
+$activityInfo = WeekActivityModel::getRecord([
+    'enable_status' => OperationActivityModel::ENABLE_STATUS_ON,
     'start_time[<=]' => $time,
     'end_time[>=]' => $time,
     'ORDER' => ['create_time' => 'DESC'],
-], ['id']);
+], ['activity_id']);
 if (empty($activityInfo)) {
     SimpleLogger::info('send week reward massage activity not find', [$week, $checkTime]);
     return false;
 }
 
 //查询已参加活动的用户信息
-$sharePoster = DssSharePosterModel::getRecords(['activity_id' => $activityInfo['id']], ['student_id']);
+$sharePoster = SharePosterModel::getRecords(
+    [
+        'activity_id' => $activityInfo['activity_id'],
+        'type' => SharePosterModel::TYPE_WEEK_UPLOAD
+    ], ['student_id']);
 
 //获取所有年卡用户
 $student = DssStudentModel::getRecords([
