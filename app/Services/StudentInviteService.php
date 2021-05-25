@@ -134,7 +134,7 @@ class StudentInviteService
                 'type' => ParamMapModel::TYPE_STUDENT,
                 'user_id' => $bindReferralInfo['referee_id']];
         }
-        if (empty($qrTicketIdentityData)) {
+        if (empty($qrTicketIdentityData) || ($qrTicketIdentityData['user_id'] == $studentId)) {
             return false;
         }
         if ($qrTicketIdentityData['type'] == ParamMapModel::TYPE_STUDENT) {
