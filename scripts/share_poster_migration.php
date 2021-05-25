@@ -53,7 +53,7 @@ if (empty($total)) {
     SimpleLogger::error('NO DATA', [$map]);
     return;
 }
-$amount = 10;
+$amount = 1000;
 
 $field    = ' sp.* ';
 // 创建分成4组的待更新openid数据
@@ -85,8 +85,6 @@ for ($start = 0; $start <= $total; $start += $amount) {
         ];
     }
     if (!empty($insert)) {
-        // print_r($insert);
-        // die();
         $res = SharePosterModel::batchInsert($insert);
         if (empty($res)) {
             SimpleLogger::error('INSERT ERROR', $insert);

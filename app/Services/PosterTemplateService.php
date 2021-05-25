@@ -6,7 +6,6 @@ use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
-use App\Models\Dss\DssAiPlayRecordModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssTemplatePosterModel;
 use App\Models\Dss\DssTemplatePosterWordModel;
@@ -14,6 +13,7 @@ use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\PosterModel;
 use App\Models\TemplatePosterModel;
 use App\Models\TemplatePosterWordModel;
+use I18N\Lang;
 
 class PosterTemplateService
 {
@@ -118,17 +118,32 @@ class PosterTemplateService
         if (isset($row['poster_name'])) {
             $formatData['poster_name'] = $row['poster_name'];
         }
+        if (isset($row['name'])) {
+            $formatData['poster_name'] = $row['name'];
+        }
         if (isset($row['poster_url'])) {
             $formatData['poster_url'] = $row['poster_url'];
             $formatData['full_poster_url'] = AliOSS::signUrls($row['poster_url']);
+        }
+        if (isset($row['poster_path'])) {
+            $formatData['poster_path'] = $row['poster_path'];
+            $formatData['full_poster_url'] = AliOSS::signUrls($row['poster_path']);
         }
         if (isset($row['example_url'])) {
             $formatData['example_url'] = $row['example_url'];
             $formatData['full_example_url'] = AliOSS::signUrls($row['example_url']);
         }
+        if (isset($row['example_path'])) {
+            $formatData['example_path'] = $row['example_path'];
+            $formatData['full_example_url'] = AliOSS::signUrls($row['example_path']);
+        }
         if (isset($row['poster_status'])) {
             $formatData['poster_status'] = $row['poster_status'];
-            $formatData['poster_status_zh'] = DictConstants::get(DictConstants::TEMPLATE_POSTER_CONFIG, $row['poster_status']);
+            $formatData['poster_status_zh'] = DictConstants::get(DictConstants::SHARE_POSTER_CHECK_STATUS, $row['poster_status']);
+        }
+        if (isset($row['status'])) {
+            $formatData['poster_status'] = $row['status'];
+            $formatData['poster_status_zh'] = DictConstants::get(DictConstants::SHARE_POSTER_CHECK_STATUS, $row['status']);
         }
         if (isset($row['update_time'])) {
             $formatData['update_time'] = date('Y-m-d H:i', $row['update_time']);
@@ -202,7 +217,7 @@ class PosterTemplateService
         }
         return $formatData;
     }
-    
+
     /**
      * @param $row
      * @return array
@@ -434,5 +449,77 @@ class PosterTemplateService
         isset($params['status']) && $needUpdate['status'] = $params['status'];
         TemplatePosterWordModel::updateRecord($params['id'], $needUpdate);
         return $needUpdate;
+    }
+
+    /**
+     * 获取海报列表
+     * @param $studentId
+     * @param $type
+     * @param int $activityId
+     * @param false $withExt
+     * @return array
+     * @throws \App\Libs\Exceptions\RunTimeException
+     * @throws \App\Libs\KeyErrorRC4Exception
+     */
+    public static function getPosterList($studentId, $type, $activityId = 0, $withExt = false)
+    {
+        $data = ['list' => [], 'activity' => []];
+        // 查询活动：
+        $activityInfo = ActivityService::getByTypeAndId($type, $activityId);
+        if (empty($activityInfo)) {
+            return $data;
+        }
+        $posterConfig = PosterService::getPosterConfig();
+        $userDetail = StudentService::dssStudentStatusCheck($studentId);
+
+        // 查询活动对应海报
+        $posterList = PosterService::getActivityPosterList($activityInfo);
+        $channel = self::getChannelByType($type);
+        foreach ($posterList as &$item) {
+            $item = self::formatPosterInfo($item);
+            $extParams = [
+                'p' => $item['poster_id'],
+                'user_current_status' => $userDetail['student_status'] ?? 0,
+                'a' => $activityId,
+            ];
+            $poster = PosterService::generateQRPosterAliOss(
+                $item['poster_path'],
+                $posterConfig,
+                $studentId,
+                DssUserQrTicketModel::STUDENT_TYPE,
+                $channel,
+                $extParams
+            );
+            $item['poster_complete_example'] = $poster['poster_save_full_path'];
+        }
+
+        // 查询活动配置
+        if ($withExt) {
+            $activityInfo['ext'] = ActivityService::getActivityExt($activityInfo['activity_id']);
+        }
+        // 周周领奖限制检测
+        if ($type == TemplatePosterModel::STANDARD_POSTER) {
+            if ($userDetail['student_info']['has_review_course'] != DssStudentModel::REVIEW_COURSE_1980) {
+                $activityInfo['error'] = Lang::getWord('only_year_user_enter_event');
+            }
+        }
+        $data['list'] = $posterList;
+        $data['activity'] = $activityInfo;
+        return $data;
+    }
+
+    /**
+     * 获取海报渠道
+     * @param $type
+     * @return array|mixed|null
+     */
+    private static function getChannelByType($type)
+    {
+        // 个性化海报渠道
+        if ($type == DssTemplatePosterModel::INDIVIDUALITY_POSTER) {
+            return DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'POSTER_LANDING_49_STUDENT_INVITE_STUDENT');
+        }
+        // 标准海报渠道ID
+        return DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'APP_CAPSULE_INVITE_CHANNEL');
     }
 }

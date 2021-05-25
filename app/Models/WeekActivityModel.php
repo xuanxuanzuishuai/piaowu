@@ -5,7 +5,6 @@
 
 namespace App\Models;
 
-
 use App\Libs\Constants;
 use App\Libs\MysqlDB;
 use App\Libs\Util;
@@ -130,5 +129,43 @@ class WeekActivityModel extends Model
         }
 
         return self::getRecords($where);
+    }
+
+    /**
+     * 获取可分享活动列表
+     * @param $params
+     * @return array
+     */
+    public static function getSelectList($params)
+    {
+        $limit = $params['limit'] ?? 2;
+        $active = OperationActivityModel::getActiveActivity(TemplatePosterModel::STANDARD_POSTER);
+        if (empty($active)) {
+            return self::getRecords(['ORDER' => ['id' => 'DESC'], 'LIMIT' => [0, $limit]]);
+        }
+        $list = self::getRecords(['id[<=]' => $active['id'], 'ORDER' => ['id' => 'DESC'], 'LIMIT' => [0, $limit]]);
+        $now = time();
+        foreach ($list as &$item) {
+            $item['active'] = Constants::STATUS_FALSE;
+            if ($now - $item['start_time'] >= Util::TIMESTAMP_12H) {
+                $item['active'] = Constants::STATUS_TRUE;
+            }
+            $item = self::formatOne($item);
+        }
+        return $list;
+    }
+
+    /**
+     * 格式化数据
+     * @param $item
+     * @return mixed
+     */
+    private static function formatOne($item)
+    {
+        if (!empty($item['name'])) {
+            $item['name'] = $item['name'] . '(' . date('m月d日', $item['start_time']) . '-' . date('m月d日', $item['end_time']) . ')';
+        }
+
+        return $item;
     }
 }

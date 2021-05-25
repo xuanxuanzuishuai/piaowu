@@ -5,6 +5,9 @@
 
 namespace App\Models;
 
+use App\Libs\RedisDB;
+use App\Libs\Util;
+
 class ActivityPosterModel extends Model
 {
     public static $table = 'activity_poster';
@@ -15,14 +18,34 @@ class ActivityPosterModel extends Model
     const IS_DEL_TRUE = 1; //已删除
     const IS_DEL_FALSE = 0; //未删除
 
+    const KEY_ACTIVITY_POSTER = 'ACTIVITY_POSTER_';
+
     /**
-     * 获取未删除已上线的海报 - 正序排列
+     * 获取活动海报
      * @param $activityId
+     * @param int $status
+     * @param int $isDel
+     * @param string[] $order
      * @return array
      */
-    public static function getListByActivityId($activityId)
-    {
-        return self::getRecords(['activity_id' => $activityId, 'status' => self::NORMAL_STATUS, 'is_del' => self::IS_DEL_FALSE, 'ORDER' => ['id' => 'ASC']]);
+    public static function getListByActivityId(
+        $activityId,
+        $status = self::NORMAL_STATUS,
+        $isDel = self::IS_DEL_FALSE,
+        $order = ['id' => 'ASC']
+    ) {
+        $redis = RedisDB::getConn();
+        $cacheKey = self::KEY_ACTIVITY_POSTER . implode('_', [$activityId, $status, $isDel]);
+        $cache = $redis->get($cacheKey);
+        if (!empty($cache)) {
+            return json_decode($cache, true);
+        }
+
+        $list = self::getRecords(['activity_id' => $activityId, 'status' => $status, 'is_del' => $isDel, 'ORDER' => $order]);
+        if (!empty($list)) {
+            $redis->setex($cacheKey, Util::TIMESTAMP_ONEDAY, json_encode($list));
+        }
+        return $list;
     }
 
     /**
@@ -39,10 +62,10 @@ class ActivityPosterModel extends Model
             $activityPoster[] = [
                 'activity_id' => $activityId,
                 'poster_id' => $posterId,
-                'status' => ActivityPosterModel::NORMAL_STATUS,
+                'status' => self::NORMAL_STATUS,
             ];
         }
-        $activityPosterRes = ActivityPosterModel::batchInsert($activityPoster);
+        $activityPosterRes = self::batchInsert($activityPoster);
         if (empty($activityPosterRes)) {
             return false;
         }
@@ -60,7 +83,7 @@ class ActivityPosterModel extends Model
         if (empty($posterList)) {
             return false;
         }
-        $activityPosterList = ActivityPosterModel::getListByActivityId($activityId);
+        $activityPosterList = self::getListByActivityId($activityId);
         if (empty($activityPosterList)) {
             return false;
         }

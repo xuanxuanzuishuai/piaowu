@@ -710,11 +710,6 @@ class Dss extends ControllerBase
                     'key' => 'image_path',
                     'type' => 'required',
                     'error_code' => 'image_path_is_required'
-                ],
-                [
-                    'key' => 'type',
-                    'type' => 'required',
-                    'error_code' => 'type_is_required'
                 ]
             ];
             $params = $request->getParams();

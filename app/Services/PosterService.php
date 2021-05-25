@@ -4,14 +4,15 @@ namespace App\Services;
 use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\DictConstants;
-use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
 use App\Libs\WeChat\WeChatMiniPro;
+use App\Models\ActivityPosterModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\PosterModel;
 use App\Models\QRCodeModel;
+use App\Models\TemplatePosterModel;
 
 class PosterService
 {
@@ -226,5 +227,23 @@ class PosterService
     public static function getIdByPath($path, $params)
     {
         return PosterModel::getIdByPath($path, $params);
+    }
+
+    /**
+     * 查询活动对应海报
+     * @param $activityInfo
+     * @return array|mixed
+     */
+    public static function getActivityPosterList($activityInfo)
+    {
+        if (empty($activityInfo['activity_id'])) {
+            return [];
+        }
+        $allPosterIds = ActivityPosterModel::getListByActivityId($activityInfo['activity_id']);
+        $allPosterIds = array_column($allPosterIds, 'poster_id');
+        if (empty($allPosterIds)) {
+            return [];
+        }
+        return TemplatePosterModel::getRecords(['id' => $allPosterIds]);
     }
 }

@@ -11,6 +11,7 @@ namespace App\Routers;
 
 use App\Controllers\StudentWX\DuanWuActivity;
 use App\Controllers\StudentWX\GoldLeafShop;
+use App\Controllers\StudentWX\Poster;
 use App\Middleware\WeChatAuthCheckMiddleware;
 use App\Middleware\WeChatOpenIdCheckMiddleware;
 use App\Controllers\StudentWX\Student;
@@ -43,7 +44,18 @@ class StudentWXRouter extends RouterBase
 
         /** 积分商城 start */
         '/student_wx/points_shop/gold_leaf_list' => ['method' => ['get'], 'call' => GoldLeafShop::class . ':goldLeafList'],  // 获取待发放金叶子积分明细
-        
+
+        // 月月有奖 && 周周领奖
+        // 海报列表
+        '/student_wx/poster/list'          => ['method' => ['get'], 'call' => Poster::class . ':list'],
+        '/student_wx/poster/upload'        => ['method' => ['post'], 'call' => Poster::class . ':upload'],
+        '/student_wx/text/list'            => ['method' => ['get'], 'call' => Poster::class . ':wordList'],
+        '/student_wx/activity/list'        => ['method' => ['get'], 'call' => Activity::class . ':weekActivityList'],
+        '/student_wx/share_poster/list'    => ['method' => ['get'], 'call' => Poster::class . ':shareList'],
+        '/student_wx/share_poster/detail'  => ['method' => ['get'], 'call' => Poster::class . ':shareDetail'],
+        '/student_wx/referral/invite_list' => ['method' => ['get'], 'call' => Student::class . ':inviteList'],
+
+
         //端午节活动
         '/student_wx/duanwu_activity/activity_info' => ['method' => ['get'], 'call' => DuanWuActivity::class . ':activityInfo'],
         '/student_wx/duanwu_activity/referee_list' => ['method' => ['get'], 'call' => DuanWuActivity::class . ':refereeList'],

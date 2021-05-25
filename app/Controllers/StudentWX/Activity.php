@@ -96,4 +96,18 @@ class Activity extends ControllerBase
         $data = ActivityService::signInCopyWriting($this->ci['user_info']['user_id'],$params['node_id']);
         return HttpHelper::buildResponse($response, $data);
     }
+
+    /**
+     * 周周有奖活动列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function weekActivityList(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        $params['user_info'] = $this->ci['user_info'];
+        $data = ActivityService::getWeekActivityList($params);
+        return HttpHelper::buildResponse($response, $data);
+    }
 }

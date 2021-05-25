@@ -10,12 +10,16 @@ namespace App\Models;
 
 use App\Libs\Constants;
 use App\Libs\MysqlDB;
+use App\Libs\RedisDB;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 
 class OperationActivityModel extends Model
 {
     public static $table = "operation_activity";
+
+    const KEY_CURRENT_ACTIVE = 'CURRENT_ACTIVE_';
+    const ACTIVITY_CACHE_EXPIRE = 86400;
 
     // 启用状态
     const ENABLE_STATUS_OFF = 1;        // 待启用
@@ -59,5 +63,51 @@ WHERE
     AND uw.app_id = " . Constants::SMART_APP_ID, [':activity_id' => $activityId]);
 
         return $boundUsers ?? [];
+    }
+
+    /**
+     * 获取当前生效的活动
+     * @param $posterType
+     * @param int $id
+     * @return array|mixed|null
+     */
+    public static function getActiveActivity($posterType, $id = 0)
+    {
+        if (!empty($id)) {
+            if ($posterType == TemplatePosterModel::INDIVIDUALITY_POSTER) {
+                return MonthActivityModel::getById($id);
+            }
+            return WeekActivityModel::getById($id);
+        }
+
+        $redis = RedisDB::getConn();
+        $cacheKey = OperationActivityModel::KEY_CURRENT_ACTIVE . $posterType;
+        $cache = $redis->get($cacheKey);
+        if (!empty($cache)) {
+            return json_decode($cache, true) ?: [];
+        }
+        $allActive = [];
+        if ($posterType == TemplatePosterModel::INDIVIDUALITY_POSTER) {
+            $allActive = MonthActivityModel::getRecords(['enable_status' => OperationActivityModel::ENABLE_STATUS_ON]);
+        }
+        if ($posterType == TemplatePosterModel::STANDARD_POSTER) {
+            $allActive = WeekActivityModel::getRecords(['enable_status' => OperationActivityModel::ENABLE_STATUS_ON]);
+        }
+        if (empty($allActive)) {
+            return [];
+        }
+
+        $now = time();
+        $activity = [];
+        foreach ($allActive as $item) {
+            if ($item['start_time'] < $now && $item['end_time'] > $now) {
+                $activity = $item;
+                break;
+            }
+        }
+        if (!empty($activity)) {
+            $redis->setex($cacheKey, OperationActivityModel::ACTIVITY_CACHE_EXPIRE, json_encode($activity));
+        }
+        return $activity;
     }
 }

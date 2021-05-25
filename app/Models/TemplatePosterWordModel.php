@@ -9,14 +9,18 @@
 namespace App\Models;
 
 use App\Libs\MysqlDB;
+use App\Libs\RedisDB;
 use App\Libs\Util;
 
 class TemplatePosterWordModel extends Model
 {
     //表名称
     public static $table = "template_poster_word";
+
     const DISABLE_STATUS = 1; //下线
     const NORMAL_STATUS = 2; //上线
+
+    const KEY_WORD_LIST = 'TEMPLATE_POSTER_WORD';
 
     public static function getList($params)
     {
@@ -26,7 +30,8 @@ class TemplatePosterWordModel extends Model
         if ($totalCount == 0) {
             return [[], $pageId, $pageLimit, 0];
         }
-        $res = $db->select(self::$table,
+        $res = $db->select(
+            self::$table,
             [
                 '[>]' . EmployeeModel::$table => ['operate_id' => 'id']
             ],
@@ -43,8 +48,43 @@ class TemplatePosterWordModel extends Model
                     'update_time' => 'DESC'
                 ],
                 'LIMIT' => [($pageId - 1) * $pageLimit, $pageLimit]
-            ]);
+            ]
+        );
         return [$res, $pageId, $pageLimit, $totalCount];
     }
 
+    /**
+     * 前端调用文案列表
+     * @param $params
+     * @return array|mixed
+     */
+    public static function getFrontList($params)
+    {
+        $redis = RedisDB::getConn();
+        $status = $params['status'] ?: self::NORMAL_STATUS;
+        $cacheKey = self::KEY_WORD_LIST . $status;
+        $cache = $redis->get($cacheKey);
+        if (!empty($cache)) {
+            return json_decode($cache, true);
+        }
+
+        $list = self::getRecords(['status' => $status]);
+        if (!empty($list)) {
+            $redis->setex($cacheKey, Util::TIMESTAMP_ONEDAY, json_encode($list));
+        }
+        return $list;
+    }
+
+    /**
+     * 格式化数据
+     * @param $item
+     * @return mixed
+     */
+    public static function formatOne($item)
+    {
+        if (!empty($item['content'])) {
+            $item['content'] = Util::textDecode($item['content']);
+        }
+        return $item;
+    }
 }

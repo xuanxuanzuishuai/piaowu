@@ -13,14 +13,11 @@ use App\Libs\Constants;
 use App\Libs\RedisDB;
 use App\Libs\Util;
 use App\Models\Dss\DssEmployeeModel;
-use App\Models\Dss\DssModel;
-use App\Models\Dss\DssReferralActivityModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\Erp\ErpUserEventTaskAwardModel;
 use App\Models\Erp\ErpUserEventTaskModel;
 use App\Services\ReferralService;
-
 
 class SharePosterModel extends Model
 {
@@ -89,7 +86,6 @@ class SharePosterModel extends Model
                 student_id = " . $studentId . " 
                 AND ext ->> '$.node_id' in( " . $nodeId . ")";
         return $db->queryAll($sql);
-
     }
 
     /**
@@ -101,6 +97,9 @@ class SharePosterModel extends Model
     {
         if ($params['type'] == self::TYPE_CHECKIN_UPLOAD) {
             return self::getCheckinPosterList($params);
+        }
+        if ($params['type'] == self::TYPE_WEEK_UPLOAD) {
+            return self::getWeekPosterList($params);
         }
     }
 
@@ -297,9 +296,12 @@ class SharePosterModel extends Model
             $where .= " AND s.uuid = :uuid ";
             $map[':uuid'] = $params['uuid'];
         }
+        if (!empty($params['id'])) {
+            $where .= " AND sp.id = :id ";
+            $map[':id'] = $params['id'];
+        }
         $s = DssStudentModel::getTableNameWithDb();
-        // @TODO: migration confirm
-        $ac = DssReferralActivityModel::getTableNameWithDb();
+        $ac = OperationActivityModel::getTableNameWithDb();
         $e = DssEmployeeModel::getTableNameWithDb();
         $sp = self::getTableNameWithDb();
 
@@ -307,9 +309,9 @@ class SharePosterModel extends Model
         STRAIGHT_JOIN
         {$s} s ON s.id = sp.student_id
         STRAIGHT_JOIN
-        {$ac} ra ON ra.id = sp.activity_id
+        {$ac} ac ON ac.id = sp.activity_id
         LEFT JOIN
-        {$e} e ON e.id = sp.operator_id ";
+        {$e} e ON e.id = sp.verify_user ";
         $db = self::dbRO();
         $totalCount = $db->queryAll(
             "SELECT count(sp.id) count FROM $sp sp $join $where ",
@@ -326,7 +328,7 @@ class SharePosterModel extends Model
             sp.student_id,
             sp.activity_id,
             sp.image_path img_url,
-            sp.status poster_status,
+            sp.verify_status poster_status,
             sp.create_time,
             sp.verify_time check_time,
             sp.verify_user operator_id,
@@ -336,8 +338,82 @@ class SharePosterModel extends Model
             s.name student_name,
             s.mobile,
             s.uuid,
-            ra.name activity_name,
+            ac.name activity_name,
             e.name operator_name
+        FROM
+        $sp sp ";
+
+        $order = " ORDER BY id DESC ";
+        $limit = Util::limitation($params['page'], $params['count']);
+        $sql = $sql . $join . $where . $order . $limit;
+        $posters = $db->queryAll($sql, $map);
+
+        return [$posters, $totalCount];
+    }
+
+    /**
+     * 周周有奖截图列表
+     * @param $params
+     * @return array
+     */
+    public static function getWeekPosterList($params)
+    {
+        $sp = self::getTableNameWithDb();
+        $ac = WeekActivityModel::getTableNameWithDb();
+        $where = " WHERE 1 = 1 ";
+        $map = [];
+
+        if (!empty($params['activity_id'])) {
+            $where .= " AND sp.activity_id = :activity_id ";
+            $map[':activity_id'] = $params['activity_id'];
+        }
+
+        if (!empty($params['poster_status'])) {
+            $where .= " AND sp.verify_status = :poster_status ";
+            $map[':poster_status'] = $params['poster_status'];
+        }
+
+        if (!empty($params['user_id'])) {
+            $where .= " AND sp.student_id = :student_id ";
+            $map[':student_id'] = $params['user_id'];
+        }
+
+        if (!empty($params['id'])) {
+            $where .= " AND sp.id = :id ";
+            $map[':id'] = $params['id'];
+        }
+
+        $join = "
+        STRAIGHT_JOIN
+        {$ac} ac ON ac.id = sp.activity_id
+        ";
+        $db = self::dbRO();
+        $totalCount = $db->queryAll(
+            "SELECT count(sp.id) count FROM $sp sp $join $where ",
+            $map
+        );
+        $totalCount = $totalCount[0]['count'];
+        if ($totalCount == 0) {
+            return [[], 0];
+        }
+
+        $sql = "
+        SELECT
+            sp.id,
+            sp.student_id,
+            sp.activity_id,
+            sp.image_path,
+            sp.verify_status poster_status,
+            sp.create_time,
+            sp.verify_time check_time,
+            sp.verify_user operator_id,
+            sp.verify_reason,
+            sp.remark,
+            sp.points_award_id,
+            sp.type,
+            ac.name activity_name,
+            ac.start_time,
+            ac.end_time
         FROM
         $sp sp ";
 

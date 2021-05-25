@@ -8,20 +8,23 @@
 
 namespace App\Services;
 
-
 use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
+use App\Models\ActivityExtModel;
 use App\Models\Dss\DssAiPlayRecordCHModel;
 use App\Models\Dss\DssCollectionModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Erp\ErpEventTaskModel;
 use App\Models\Erp\ErpStudentModel;
 use App\Models\Erp\ErpUserEventTaskAwardModel;
+use App\Models\OperationActivityModel;
 use App\Models\SharePosterModel;
+use App\Models\WeekActivityModel;
+use I18N\Lang;
 
 class ActivityService
 {
@@ -319,5 +322,93 @@ class ActivityService
         $studentInfo = ReferralService::getUserInfoForSendData($studentId, strtotime($nodeId));
         list($content1, $content2, $poster) = ReferralService::getCheckinSendData($studentInfo['day'], $studentInfo);
         return ['text' => $content2, 'poster' => $poster['poster_save_full_path']];
+    }
+
+    /**
+     * 获取活动信息
+     * @param $type
+     * @param int $activityId
+     * @return array|mixed
+     */
+    public static function getByTypeAndId($type, $activityId = 0)
+    {
+        $activity = OperationActivityModel::getActiveActivity($type, $activityId);
+        if (empty($activity)) {
+            return [];
+        }
+        return self::formatData($activity);
+    }
+
+    /**
+     * @param $activityId
+     * @return mixed
+     */
+    public static function getActivityExt($activityId)
+    {
+        return ActivityExtModel::getById($activityId);
+    }
+
+    /**
+     * 活动信息格式化
+     * @param $activity
+     * @return mixed
+     */
+    public static function formatData($activity)
+    {
+        $imageList = [
+            'banner',
+            'share_button_img',
+            'award_detail_img',
+            'upload_button_img',
+            'strategy_img',
+            'make_poster_button_img',
+            'award_detail_img',
+            'create_poster_button_img',
+        ];
+        foreach ($imageList as $key) {
+            $activity[$key . '_url'] = '';
+            if (!empty($activity[$key])) {
+                $activity[$key . '_url'] = AliOSS::replaceCdnDomainForDss($activity[$key]);
+            }
+        }
+        return $activity;
+    }
+
+    /**
+     * 周周有奖可选活动列表
+     * @param array $params
+     * @return mixed
+     */
+    public static function getWeekActivityList($params = [])
+    {
+        $list = WeekActivityModel::getSelectList($params);
+        if (empty($list)) {
+            return [];
+        }
+        $student = DssStudentModel::getById($params['user_info']['user_id']);
+        if (empty($student)) {
+            SimpleLogger::error('STUDENT NOT FOUND', [$params]);
+        }
+        $available = false;
+        foreach ($list as $key => &$activity) {
+            $activity['is_show'] = Constants::STATUS_TRUE;
+            $where = [
+                'student_id' => $student['id'],
+                'activity_id' => $activity['activity_id'],
+                'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED
+            ];
+            $shareRecord = SharePosterModel::getRecord($where);
+            if (!empty($shareRecord)) {
+                $activity['is_show'] = Constants::STATUS_FALSE;
+            } else {
+                $available = true;
+            }
+        }
+        // 没有活动可选
+        $error = '';
+        if (!$available) {
+            $error = Lang::getWord('wait_for_next_event');
+        }
+        return ['error' => $error, 'list' => $list];
     }
 }

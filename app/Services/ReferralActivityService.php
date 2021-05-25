@@ -19,9 +19,11 @@ use App\Models\EmployeeActivityModel;
 use App\Libs\Util;
 use App\Libs\AliOSS;
 use App\Libs\Exceptions\RunTimeException;
+use App\Models\OperationActivityModel;
 use App\Models\ParamMapModel;
 use App\Models\PosterModel;
 use App\Models\QRCodeModel;
+use App\Models\WeekActivityModel;
 
 class ReferralActivityService
 {
@@ -441,6 +443,7 @@ class ReferralActivityService
     }
 
     /**
+     * 检查上传截图活动有效
      * @param $activityId
      * @return array
      */
@@ -451,12 +454,11 @@ class ReferralActivityService
         }
         $time = time();
         $activityWhere = [
-            'id' => $activityId,
-            'status' => 0,
+            'activity_id' => $activityId,
+            'enable_status' => OperationActivityModel::ENABLE_STATUS_ON,
             'start_time[<=]' => $time,
             'end_time[>=]' => $time
         ];
-        return [];
-        // return ReferralActivityModel::getRecord($activityWhere, ['id', 'event_id', 'task_id'], false);
+        return WeekActivityModel::getRecord($activityWhere);
     }
 }

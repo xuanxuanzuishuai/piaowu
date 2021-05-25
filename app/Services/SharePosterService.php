@@ -19,6 +19,7 @@ use App\Libs\Util;
 use App\Models\Dss\DssEventTaskModel;
 use App\Models\Dss\DssReferralActivityModel;
 use App\Models\Dss\DssSharePosterModel;
+use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\EmployeeModel;
 use App\Models\Erp\ErpEventTaskModel;
@@ -28,14 +29,18 @@ use App\Models\Erp\ErpUserEventTaskAwardModel;
 use App\Models\Erp\ErpUserEventTaskModel;
 use App\Models\SharePosterModel;
 use App\Libs\Erp;
+use App\Models\TemplatePosterModel;
+use App\Models\TemplatePosterWordModel;
 use App\Models\WeChatAwardCashDealModel;
+use App\Models\WeekActivityModel;
 use App\Services\Queue\QueueService;
-
 use App\Libs\HttpHelper;
 
 class SharePosterService
 {
     public static $redisExpire = 432000; // 12小时
+
+    const KEY_POSTER_VERIFY_LOCK = 'POSTER_VERIFY_LOCK';
 
     /**
      * 上传截图列表
@@ -48,33 +53,91 @@ class SharePosterService
             $taskInfo = ErpEventTaskModel::getInfoByNodeId($params['task_id']);
             $params['task_id'] = $taskInfo[0]['id'] ?? 0;
         }
+        $params['type'] = SharePosterModel::TYPE_WEEK_UPLOAD;
         list($posters, $totalCount) = SharePosterModel::posterList($params);
-
         if (!empty($posters)) {
-            $imgSizeH = DictConstants::get(DictConstants::ALI_OSS_CONFIG, 'img_size_h');
-
+            $reasonDict = DictService::getTypeMap(Constants::DICT_TYPE_SHARE_POSTER_CHECK_REASON);
+            $statusDict = DictService::getTypeMap(Constants::DICT_TYPE_SHARE_POSTER_CHECK_STATUS);
             foreach ($posters as &$poster) {
-                $poster['mobile']      = Util::hideUserMobile($poster['mobile']);
-                $poster['img_url']     = AliOSS::signUrls($poster['image_path'], "", "", "", false, "", $imgSizeH);
-                $poster['status_name'] = DictService::getKeyValue(Constants::DICT_TYPE_SHARE_POSTER_CHECK_STATUS, $poster['poster_status']);
-                $poster['create_time'] = date('Y-m-d H:i', $poster['create_time']);
-                $poster['check_time']  = !empty($poster['check_time']) ? date('Y-m-d H:i', $poster['check_time']) : '';
-
-                $reasonStr = [];
-                if (!empty($poster['verify_reason'])) {
-                    $reason = explode(',', $poster['verify_reason']);
-                    foreach ($reason as $reasonId) {
-                        $reasonStr[] = DictService::getKeyValue(Constants::DICT_TYPE_SHARE_POSTER_CHECK_REASON, $reasonId);
-                    }
-                }
-                if (!empty($poster['remark'])) {
-                    $reasonStr[] = $poster['remark'];
-                }
-                $poster['reason_str'] = implode('/', $reasonStr);
+                $poster = self::formatOne($poster, $statusDict, $reasonDict);
             }
         }
 
         return [$posters, $totalCount];
+    }
+
+    /**
+     * 格式化单条数据
+     * @param $poster
+     * @param array $statusDict
+     * @param array $reasonDict
+     * @return mixed
+     */
+    public static function formatOne($poster, $statusDict = [], $reasonDict = [])
+    {
+        if (empty($reasonDict)) {
+            $reasonDict = DictService::getTypeMap(Constants::DICT_TYPE_SHARE_POSTER_CHECK_REASON);
+        }
+        if (empty($statusDict)) {
+            $statusDict = DictService::getTypeMap(Constants::DICT_TYPE_SHARE_POSTER_CHECK_STATUS);
+        }
+        $imgSizeH = DictConstants::get(DictConstants::ALI_OSS_CONFIG, 'img_size_h');
+        $poster['status_name'] = $statusDict[$poster['poster_status']];
+        $poster['reason_str']  = self::reasonToStr($poster['verify_reason'], $reasonDict);
+        $poster['mobile']      = Util::hideUserMobile($poster['mobile']);
+        $poster['create_time'] = date('Y-m-d H:i', $poster['create_time']);
+        $poster['check_time']  = Util::formatTimestamp($poster['check_time'], '');
+        $poster['img_url']     = AliOSS::signUrls(
+            $poster['image_path'],
+            "",
+            "",
+            "",
+            false,
+            "",
+            $imgSizeH
+        );
+        if (!empty($poster['remark'])) {
+            $poster['reason_str'][] = $poster['remark'];
+        }
+        if (!empty($poster['reason_str'])) {
+            $poster['reason_str'] = implode('/', $poster['reason_str']);
+        }
+
+        $poster['award_amount'] = 0;
+        if (!empty($poster['points_award_id'])) {
+            $ids = explode(',', $poster['points_award_id']);
+            if (!empty($ids)) {
+                $awards = ErpUserEventTaskAwardGoldLeafModel::getRecords(['id' => $ids], ['award_num']);
+                $awards = array_sum(array_column($awards, 'award_num')) ?: 0;
+                $poster['award_amount'] = $awards;
+            }
+        }
+        $poster['activity_name'] = $poster['activity_name'] . '(' . date('m月d日', $poster['start_time']) . '-' . date('m月d日', $poster['end_time']) . ')';
+        return $poster;
+    }
+
+    /**
+     * 审核原因转字符串
+     * @param $reason
+     * @param array $dict
+     * @return array
+     */
+    public static function reasonToStr($reason, $dict = [])
+    {
+        if (is_string($reason)) {
+            $reason = explode(',', $reason);
+        }
+        if (empty($reason)) {
+            return [];
+        }
+        if (empty($dict)) {
+            $dict = DictService::getTypeMap(Constants::DICT_TYPE_SHARE_POSTER_CHECK_REASON);
+        }
+        $str = [];
+        foreach ($reason as $item) {
+            $str[] = $dict[$item] ?? $item;
+        }
+        return $str;
     }
 
     /**

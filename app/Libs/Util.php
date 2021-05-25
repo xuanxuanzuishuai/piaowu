@@ -18,6 +18,7 @@ class Util
     const TIMESTAMP_2H = 7200;
     const TIMESTAMP_3H = 10800;
     const TIMESTAMP_6H = 21600;
+    const TIMESTAMP_12H = 43200;
     // 一天
     const TIMESTAMP_ONEDAY = 86400;
     // 一周
@@ -270,17 +271,19 @@ class Util
         $endTimeSundayEnd = strtotime(date('Y-m-d', $endTime)) - $endWeekIndex * self::TIMESTAMP_ONEDAY + self::TIMESTAMP_ONEWEEK;
         return [$startTimeMonday, $endTimeSundayEnd];
     }
+
     /**
      * 时间转化字符串
      * @param $date
+     * @param string $empty
      * @return false|string
      */
-    public static function formatTimestamp($date)
+    public static function formatTimestamp($date, $empty = '-')
     {
         if (!empty($date)) {
             return date('Y-m-d H:i:s', $date);
         }
-        return '-';
+        return $empty;
     }
 
     /**
