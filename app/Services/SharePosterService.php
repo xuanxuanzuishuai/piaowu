@@ -628,6 +628,7 @@ class SharePosterService
         $shareIden    = false; //分享-海报底部字母标识
         $leafKeyWord  = false; //分享-小叶子关键字
         $gobalIssetDel = false; //分享-全局存在删除
+        $issetDate     = false; //分享-全局存在时间
 
         $issetCorner = false;  //分享-角标是否存在
         $status = 0; //-1|-2.审核不通过 0.过滤 2.审核通过
@@ -648,7 +649,7 @@ class SharePosterService
             //识别到角标且在删除之前的
             if (preg_match($patten, $word) && !$shareOwner) {
                 $issetCorner = true;
-                if ($word == $checkDate) {
+                if ($word === $checkDate) {
                     $shareCorner = true;
                 } else {
                     $status = -1;
@@ -683,7 +684,7 @@ class SharePosterService
                 break;
             }
             //上传时间处理 根据坐标定位
-            if ($val['rect']['top'] > 300 && Util::sensitiveWordFilter($dateKeyword, $word) == true) {
+            if (($shareIden || $shareCorner) && !$issetDate && Util::sensitiveWordFilter($dateKeyword, $word) == true) {
                 //如果包含年月
                 if (Util::sensitiveWordFilter(['年', '月', '日'], $word) == true) {
                     if (mb_strpos($word, '年') === false) {
@@ -752,11 +753,12 @@ class SharePosterService
                         continue;
                     }
                 }
+                $issetDate = true;
                 //上传时间是否已超过12小时
                 if (empty($screenDate) || (!empty($screenDate) && strtotime($screenDate) + $hours < $uploadTime)) {
                     $shareDate = true;
                 } else {
-                    if($status == -1 && !$shareIden){
+                    if ($status == -1 && !$shareIden) {
                         $status = -1;
                         break;
                     }
@@ -764,7 +766,7 @@ class SharePosterService
                     break;
                 }
                 //判定是否被屏蔽 特殊情况:发布时间和删除下标相同
-                if (!$shareOwner && isset($result[$key + 1]) && Util::sensitiveWordFilter(['删除','智能陪练'], $result[$key + 1]['word']) == false) {
+                if (!$shareOwner && isset($result[$key + 1]) && Util::sensitiveWordFilter(['删除','智能陪练','：'], $result[$key + 1]['word']) == false) {
                     $shareDisplay = false;
                 }
             }
