@@ -43,6 +43,20 @@ class SharePosterModel extends Model
     // 每个班级学生相关打卡数据
     const CHECKIN_POSTER_TMP_DATA = 'CHECKIN_POSTER_';
 
+    //系统审核code
+    const SYSTEM_REFUSE_CODE_NEW    = -1; //未使用最新海报
+    const SYSTEM_REFUSE_CODE_TIME   = -2; //朋友圈保留时长不足12小时，请重新上传
+    const SYSTEM_REFUSE_CODE_GROUP  = -3; //分享分组可见
+    const SYSTEM_REFUSE_CODE_FRIEND = -4; //请发布到朋友圈并截取朋友圈照片
+    const SYSTEM_REFUSE_CODE_UPLOAD = -5; //上传截图出错
+
+    //系统审核拒绝原因code
+    const SYSTEM_REFUSE_REASON_CODE_NEW    = 2; //未使用最新海报
+    const SYSTEM_REFUSE_REASON_CODE_TIME   = 12; //朋友圈保留时长不足12小时，请重新上传
+    const SYSTEM_REFUSE_REASON_CODE_GROUP  = 1; //分享分组可见
+    const SYSTEM_REFUSE_REASON_CODE_FRIEND = 11; //请发布到朋友圈并截取朋友圈照片
+    const SYSTEM_REFUSE_REASON_CODE_UPLOAD = 3; //上传截图出错
+
     /**
      * 获取打卡活动节点截图数据
      * @param $studentId

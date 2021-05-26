@@ -27,6 +27,7 @@ use App\Models\EmployeeModel;
 use App\Models\Erp\ErpStudentModel;
 use App\Models\StudentAccountAwardPointsFileModel;
 use App\Models\StudentAccountAwardPointsLogModel;
+use App\Services\AutoCheckPicture;
 use App\Services\CashGrantService;
 use App\Services\MessageService;
 use App\Services\Queue\CheckPosterSyncTopic;
@@ -775,17 +776,17 @@ class Consumer extends ControllerBase
                     if ($isCheckSharePoster == 'notCheck') {
                         break;
                     }
-                    $postInfo = SharePosterService::getSharePosters($params['msg_body']);
+                    $postInfo = AutoCheckPicture::getSharePosters($params['msg_body']);
                     if (!empty($postInfo)) {
-                        $status = SharePosterService::checkByOcr($postInfo);
+                        $status = AutoCheckPicture::checkByOcr($postInfo);
                         if ($status !== 2) {
-                            $record = SharePosterService::getSharePostersHistoryRecord($params['msg_body']);
+                            $record = AutoCheckPicture::getSharePostersHistoryRecord($params['msg_body']);
                             //审核不通过 且之前同期有记录的 则打到人工
                             if (!empty($record['historyRecord'])) {
                                 break;
                             }
                         }
-                        SharePosterService::checkSharePosters($params['msg_body'], $status);
+                        AutoCheckPicture::checkSharePosters($params['msg_body'], $status);
                     }
                     break;
             }
