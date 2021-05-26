@@ -456,35 +456,11 @@ class SharePosterService
      */
     public static function getSharePosters($data)
     {
-        if (empty($data) || empty($data['id']) || empty($data['app_id'])) {
+        $record = self::getSharePostersHistoryRecord($data);
+        if (empty($record['result'])) {
             return null;
         }
-        switch ($data['app_id']) {
-            case Constants::SMART_APP_ID: //智能陪练 类型为上传截图领奖且未审核的
-                $result = DssSharePosterModel::getRecord(['id' => $data['id'],'type' => DssSharePosterModel::TYPE_UPLOAD_IMG,'status' => SharePosterModel::VERIFY_STATUS_WAIT],['student_id','activity_id','img_url']);
-                break;
-//            case 2: //真人转介绍
-//                break;
-            default:
-                break;
-        }
-        //未找到符合审核条件的图片
-        if (empty($result)) {
-            SimpleLogger::error('empty poster image', ['id' => $data['id']]);
-            return null;
-        }
-        //查询本周活动是否有系统审核拒绝的
-        $conds = [
-            'student_id'  => $result['student_id'],
-            'activity_id' => $result['activity_id'],
-            'type'        => DssSharePosterModel::TYPE_UPLOAD_IMG,
-            'status'      => SharePosterModel::VERIFY_STATUS_UNQUALIFIED,
-            'operator_id' => EmployeeModel::SYSTEM_EMPLOYEE_ID
-        ];
-        $historyRecord = DssSharePosterModel::getRecord($conds, ['id']);
-        if (!empty($historyRecord)) {
-            return null;
-        }
+        $result = $record['result'];
         $activity = DssReferralActivityModel::getById($result['activity_id']);
         if (empty($activity) || $activity['status'] != 1) {
             SimpleLogger::error('not found activity', ['id' => $result['activity_id']]);
@@ -508,6 +484,40 @@ class SharePosterService
         }
         $letterIden = $redis->hget($cacheKey, $date);
         return [$date, $letterIden, AliOSS::replaceCdnDomainForDss($result['img_url'])];
+    }
+
+    /**
+     * 获取历史审核记录
+     * @param $data
+     * @return array|null
+     */
+    public static function getSharePostersHistoryRecord($data)
+    {
+        if (empty($data) || empty($data['id']) || empty($data['app_id'])) {
+            return null;
+        }
+        switch ($data['app_id']) {
+            case Constants::SMART_APP_ID: //智能陪练 类型为上传截图领奖且未审核的
+                $result = DssSharePosterModel::getRecord(['id' => $data['id'],'type' => DssSharePosterModel::TYPE_UPLOAD_IMG,'status' => SharePosterModel::VERIFY_STATUS_WAIT],['student_id','activity_id','img_url']);
+                break;
+            default:
+                break;
+        }
+        //未找到符合审核条件的图片
+        if (empty($result)) {
+            SimpleLogger::error('empty poster image', ['id' => $data['id']]);
+            return null;
+        }
+        //查询本周活动是否有系统审核拒绝的
+        $conds = [
+            'student_id'  => $result['student_id'],
+            'activity_id' => $result['activity_id'],
+            'type'        => DssSharePosterModel::TYPE_UPLOAD_IMG,
+            'status'      => SharePosterModel::VERIFY_STATUS_UNQUALIFIED,
+            'operator_id' => EmployeeModel::SYSTEM_EMPLOYEE_ID
+        ];
+        $historyRecord = DssSharePosterModel::getRecord($conds, ['id']);
+        return compact('result', 'historyRecord');
     }
 
     /**

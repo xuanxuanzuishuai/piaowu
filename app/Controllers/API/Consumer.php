@@ -778,6 +778,13 @@ class Consumer extends ControllerBase
                     $postInfo = SharePosterService::getSharePosters($params['msg_body']);
                     if (!empty($postInfo)) {
                         $status = SharePosterService::checkByOcr($postInfo);
+                        if ($status !== 2) {
+                            $record = SharePosterService::getSharePostersHistoryRecord($params['msg_body']);
+                            //审核不通过 且之前同期有记录的 则打到人工
+                            if (!empty($record['historyRecord'])) {
+                                break;
+                            }
+                        }
                         SharePosterService::checkSharePosters($params['msg_body'], $status);
                     }
                     break;
