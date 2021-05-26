@@ -1,15 +1,24 @@
 <?php
+/**
+ * Created by PhpStorm.
+ * User: llp
+ * Date: 2021/5/26
+ * Time: 10:52
+ */
+
 namespace App\Models;
 
 use App\Libs\MysqlDB;
-
 class AgentPreStorageReviewLogModel extends Model
 {
     public static $table = "agent_pre_storage_review_log";
     //状态：1预存年卡订单 2退款
+    const DATA_TYPE_PRE_STORAGE = 1;
     const DATA_TYPE_REFUND = 2;
-
-    //再次提交
+    //日志操作类型：1提交 2审核通过 3驳回审核不通过 4重新提交
+    const LOG_TYPE_SUBMIT = 1;
+    const LOG_TYPE_APPROVED = 2;
+    const LOG_TYPE_REJECT = 3;
     const TYPE_RESET_PUSH = 4;
 
 
@@ -46,7 +55,4 @@ class AgentPreStorageReviewLogModel extends Model
         );
         return $data ?: [];
     }
-
-
-
 }

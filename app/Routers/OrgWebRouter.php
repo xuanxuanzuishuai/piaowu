@@ -158,6 +158,15 @@ class OrgWebRouter extends RouterBase
         '/op_web/agent/division_to_package' => ['method' => ['get'], 'call' => Agent::class . ':agentDivisionToPackage'],
         '/op_web/agent/package_relation_agent' => ['method' => ['get'], 'call' => Agent::class . ':agentRelationToPackage'],
         '/op_web/agent/update_package_relation_agent' => ['method' => ['post'], 'call' => Agent::class . ':updateAgentRelationToPackage'],
+
+        // 代理商预存订单
+        '/op_web/agent_storage/add' => ['method' => ['post'], 'call' => AgentStorage::class . ':add'],
+        '/op_web/agent_storage/update' => ['method' => ['post'], 'call' => AgentStorage::class . ':update'],
+        '/op_web/agent_storage/list' => ['method' => ['get'], 'call' => AgentStorage::class . ':list'],
+        '/op_web/agent_storage/detail' => ['method' => ['get'], 'call' => AgentStorage::class . ':detail'],
+        '/op_web/agent_storage/approval' => ['method' => ['post'], 'call' => AgentStorage::class . ':approval'],
+        '/op_web/agent_storage/process_log' => ['method' => ['get'], 'call' => AgentStorage::class . ':processLog'],
+
         // 地址搜索国家/省/市/县（区）
         '/op_web/area/country' => ['method' => ['get'], 'call' => Area::class . ':countryList'],
         '/op_web/area/province' => ['method' => ['get'], 'call' => Area::class . ':provinceList'],

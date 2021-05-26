@@ -9,6 +9,8 @@
 namespace App\Models;
 
 
+use App\Libs\MysqlDB;
+
 class AgentAwardBillExtModel extends Model
 {
     public static $table = "agent_award_bill_ext";
@@ -35,4 +37,30 @@ class AgentAwardBillExtModel extends Model
 
     //订单产品包类型 1 体验卡 2年卡
     const PACKAGE_TYPE_YEAR = 2;
+
+    /**
+     * 获取代理商作为成单人角色的推荐订单
+     * @param int $agentId
+     * @param $createTime
+     * @return array|null
+     */
+    public static function getAgentAsSignerNormalBill($agentId, $createTime)
+    {
+        $db = MysqlDB::getDB();
+        return $db->select(
+            self::$table,
+            [
+                '[><]' . AgentAwardDetailModel::$table => ['parent_bill_id' => 'ext_parent_bill_id']
+            ],
+            [
+                self::$table . '.parent_bill_id',
+            ],
+            [
+                self::$table . '.signer_agent_id' => $agentId,
+                self::$table . '.package_type' => self::PACKAGE_TYPE_YEAR,
+                AgentAwardDetailModel::$table . '.create_time[>=]' => $createTime,
+                'ORDER' => [self::$table . '.id' => 'DESC']
+            ]
+        );
+    }
 }

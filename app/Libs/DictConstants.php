@@ -669,6 +669,33 @@ class DictConstants {
             '0','1','2','-1'
         ]
     ];
+    //付款方式
+    const PAYMENT_MODE = [
+        'type' => 'payment_mode',
+        'keys' => [1, 2, 3]
+    ];
+    //审核状态
+    const CHECK_STATUS = [
+        'type' => 'check_status',
+        'keys' => [1, 2, 3]
+    ];
+
+    //预存订单审核操作行为
+    const AGENT_STORAGE_APPROVED_ACTION = [
+        'type' => 'agent_storage_approved_action',
+        'keys' => [1, 2, 3, 4]
+    ];
+    //预存年卡数据产生和消费过程日志类型
+    const AGENT_STORAGE_PROCESS_LOG_TYPE = [
+        'type' => 'agent_storage_process_log_type',
+        'keys' => [1, 2]
+    ];
+    //预存年卡配置数据
+    const AGENT_STORAGE_CONFIG = [
+        'type' => 'agent_storage_config',
+        'keys' => ['interval_time_days']
+    ];
+
 
     //端午节活动配置
     const ACTIVITY_DUANWU_CONFIG = [
