@@ -81,7 +81,7 @@ class ActivityPosterModel extends Model
      */
     public static function diffPosterChange($activityId, $posterIdArr)
     {
-        if (empty($posterList)) {
+        if (empty($posterIdArr)) {
             return false;
         }
         $activityPosterList = self::getListByActivityId($activityId);
@@ -89,9 +89,8 @@ class ActivityPosterModel extends Model
             return false;
         }
         $posterIds = array_column($activityPosterList, 'poster_id');
-        $diffIds = array_diff($posterIds, $posterIdArr);
-
-        return empty($diffIds) ? false : true;
+        $arrayIntersect = array_intersect($posterIds, $posterIdArr);
+        return count($arrayIntersect) == count($posterIdArr) ? false : true;
     }
     
     /**

@@ -9,6 +9,7 @@ use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
 use App\Libs\NewSMS;
+use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\ActivityExtModel;
@@ -345,6 +346,19 @@ class WeekActivityService
         }
 
         $db->commit();
+
+        // 删除缓存
+        ActivityService::delActivityCache(
+            $activityId,
+            [
+                ActivityPosterModel::KEY_ACTIVITY_POSTER,
+                ActivityExtModel::KEY_ACTIVITY_EXT,
+                OperationActivityModel::KEY_CURRENT_ACTIVE,
+            ],
+            [
+                OperationActivityModel::KEY_CURRENT_ACTIVE . '_poster_type' => TemplatePosterModel::STANDARD_POSTER,   // 周周领奖 - 标准海报
+            ]
+        );
         return true;
     }
 
@@ -358,7 +372,7 @@ class WeekActivityService
      */
     public static function editEnableStatus($activityId, $enableStatus, $employeeId)
     {
-        if (!in_array($enableStatus, [OperationActivityModel::ENABLE_STATUS_OFF, OperationActivityModel::ENABLE_STATUS_ON])) {
+        if (!in_array($enableStatus, [OperationActivityModel::ENABLE_STATUS_OFF, OperationActivityModel::ENABLE_STATUS_ON, OperationActivityModel::ENABLE_STATUS_DISABLE])) {
             throw new RunTimeException(['enable_status_invalid']);
         }
         $activityInfo = WeekActivityModel::getRecord(['activity_id' => $activityId]);
@@ -370,7 +384,7 @@ class WeekActivityService
         }
         // 如果是启用 检查时间是否冲突
         if ($enableStatus == OperationActivityModel::ENABLE_STATUS_ON) {
-            $startActivity = WeekActivityModel::checkTimeConflict($activityInfo['start_time'], $activityInfo['end_time']);
+            $startActivity = WeekActivityModel::checkTimeConflict($activityInfo['start_time'], $activityInfo['end_time'], $activityInfo['event_id']);
             if (!empty($startActivity)) {
                 throw new RunTimeException(['activity_time_conflict_id', '', '', array_column($startActivity, 'activity_id')]);
             }
@@ -381,6 +395,18 @@ class WeekActivityService
         if (is_null($res)) {
             throw new RunTimeException(['update_failure']);
         }
+
+        // 删除缓存
+        ActivityService::delActivityCache(
+            $activityId,
+            [
+                OperationActivityModel::KEY_CURRENT_ACTIVE,
+            ],
+            [
+                OperationActivityModel::KEY_CURRENT_ACTIVE . '_poster_type' => TemplatePosterModel::STANDARD_POSTER,   // 周周领奖 - 标准海报
+            ]
+        );
+
         return true;
     }
 

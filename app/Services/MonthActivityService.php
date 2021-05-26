@@ -201,7 +201,7 @@ class MonthActivityService
      */
     public static function editEnableStatus($activityId, $enableStatus, $employeeId)
     {
-        if (!in_array($enableStatus, [OperationActivityModel::ENABLE_STATUS_OFF, OperationActivityModel::ENABLE_STATUS_ON])) {
+        if (!in_array($enableStatus, [OperationActivityModel::ENABLE_STATUS_OFF, OperationActivityModel::ENABLE_STATUS_ON, OperationActivityModel::ENABLE_STATUS_DISABLE])) {
             throw new RunTimeException(['enable_status_invalid']);
         }
         $activityInfo = MonthActivityModel::getRecord(['activity_id' => $activityId]);
@@ -224,6 +224,18 @@ class MonthActivityService
         if (is_null($res)) {
             throw new RunTimeException(['update_failure']);
         }
+
+        // 删除缓存
+        ActivityService::delActivityCache(
+            $activityId,
+            [
+                OperationActivityModel::KEY_CURRENT_ACTIVE,
+            ],
+            [
+                OperationActivityModel::KEY_CURRENT_ACTIVE . '_poster_type' => TemplatePosterModel::INDIVIDUALITY_POSTER,   // 月月领奖 - 个性化海报
+            ]
+        );
+
         return true;
     }
 
@@ -324,6 +336,19 @@ class MonthActivityService
         }
 
         $db->commit();
+
+        // 删除缓存
+        ActivityService::delActivityCache(
+            $activityId,
+            [
+                ActivityPosterModel::KEY_ACTIVITY_POSTER,
+                ActivityExtModel::KEY_ACTIVITY_EXT,
+                OperationActivityModel::KEY_CURRENT_ACTIVE,
+            ],
+            [
+                OperationActivityModel::KEY_CURRENT_ACTIVE . '_poster_type' => TemplatePosterModel::INDIVIDUALITY_POSTER,   // 月月领奖 - 个性化海报
+            ]
+        );
         return true;
     }
 }

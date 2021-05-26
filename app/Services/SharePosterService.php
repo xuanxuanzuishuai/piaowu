@@ -307,63 +307,6 @@ class SharePosterService
         return $update > 0;
     }
 
-
-
-    /**
-     * 获取学生参加周周有奖活动的记录列表
-     * @param $studentId
-     * @param $page
-     * @param $limit
-     * @return array
-     */
-    public static function joinRecordList($studentId, $page, $limit)
-    {
-        //获取学生已参加活动列表
-        $data = ['count' => 0, 'list' => []];
-        $queryWhere = ['student_id' => $studentId, 'type' => DssSharePosterModel::TYPE_UPLOAD_IMG];
-        $count = DssSharePosterModel::getCount($queryWhere);
-        if (empty($count)) {
-            return $data;
-        }
-        $data['count'] = $count;
-        //查询起始数据量超出数据总量，直接返回
-        $offset = ($page - 1) * $limit;
-        if ($offset > $count) {
-            return $data;
-        }
-        $queryWhere['ORDER'] = ['create_time' => 'DESC'];
-        $queryWhere['LIMIT'] = [$offset, $limit];
-        $activityList = DssSharePosterModel::getRecords($queryWhere, ['activity_id', 'status', 'create_time', 'img_url', 'reason', 'remark', 'award_id']);
-        if (empty($activityList)) {
-            return $data;
-        }
-        $awardIds = array_filter(array_unique(array_column($activityList, 'award_id')));
-        $awardInfo = $redPackDeal = [];
-        if (!empty($awardIds)) {
-            //奖励相关的状态
-            $awardInfo = array_column(ErpUserEventTaskAwardModel::getRecords(['id'=>$awardIds], ['id','award_amount','award_type','status','reason']), null, 'id');
-            //红包相关的发放状态
-            $redPackDeal = array_column(WeChatAwardCashDealModel::getRecords(['user_event_task_award_id' => $awardIds]), null, 'user_event_task_award_id');
-        }
-        //获取活动信息
-        $activityInfo = array_column(DssReferralActivityModel::getRecords(['id' => array_unique(array_column($activityList, 'activity_id'))], ['name', 'id', 'task_id', 'event_id']), null, 'id');
-        //格式化信息
-        $activityList = self::formatData($activityList);
-        foreach ($activityList as $k => $v) {
-            $data['list'][$k]['name'] = $activityInfo[$v['activity_id']]['name'];
-            $data['list'][$k]['status'] = $v['status'];
-            $data['list'][$k]['status_name'] = $v['status_name'];
-            $data['list'][$k]['create_time'] = date('Y-m-d H:i', $v['create_time']);
-            $data['list'][$k]['award'] = !empty($awardInfo[$v['award_id']]) ? self::formatAwardInfo($awardInfo[$v['award_id']]['award_amount'], $awardInfo[$v['award_id']]['award_type']) : '';
-            $data['list'][$k]['img_oss_url'] = $v['img_oss_url'];
-            $data['list'][$k]['reason_str'] = $v['reason_str'];
-            [$awardStatusZh, $failReasonZh] = !empty($v['award_id']) ? self::displayAwardExplain($awardInfo[$v['award_id']], $awardInfo[$v['award_id']], $redPackDeal[$v['award_id']] ?? null) : [];
-            $data['list'][$k]['award_status_zh'] = $awardStatusZh;
-            $data['list'][$k]['fail_reason_zh'] = $failReasonZh;
-        }
-        return $data;
-    }
-
     public static function formatAwardInfo($amount, $type, $subType = '')
     {
         if ($type == 1) {

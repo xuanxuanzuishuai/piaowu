@@ -12,9 +12,11 @@ use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\ActivityExtModel;
+use App\Models\ActivityPosterModel;
 use App\Models\Dss\DssAiPlayRecordCHModel;
 use App\Models\Dss\DssCollectionModel;
 use App\Models\Dss\DssStudentModel;
@@ -414,5 +416,49 @@ class ActivityService
             $error = Lang::getWord('wait_for_next_event');
         }
         return ['error' => $error, 'list' => $list];
+    }
+
+    /**
+     * 删除活动缓存
+     * @param $activityId
+     * @param array $delKeyPrefix
+     * @param array $extData
+     * @return bool|int
+     */
+    public static function delActivityCache($activityId, array $delKeyPrefix, array $extData = [])
+    {
+        // 没有要删除的key返回false
+        if (empty($delKeyPrefix)) {
+            return false;
+        }
+        $delKeys = [];
+        foreach ($delKeyPrefix as $cachePrefix) {
+            switch ($cachePrefix) {
+                // 删除活动关联的海报缓存
+                case ActivityPosterModel::KEY_ACTIVITY_POSTER:
+                    $status = $extData[ActivityPosterModel::KEY_ACTIVITY_POSTER . '_status'] ?? ActivityPosterModel::NORMAL_STATUS;
+                    $isDel = $extData[ActivityPosterModel::KEY_ACTIVITY_POSTER . '_is_del'] ?? ActivityPosterModel::IS_DEL_FALSE;
+                    $delKeys[] = ActivityPosterModel::KEY_ACTIVITY_POSTER . implode('_', [$activityId, $status, $isDel]);
+                    break;
+                // 删除活动扩展信息缓存
+                case ActivityExtModel::KEY_ACTIVITY_EXT:
+                    $delKeys[] = ActivityExtModel::KEY_ACTIVITY_EXT . $activityId;
+                    break;
+                // 删除正在进行的活动信息缓存
+                case OperationActivityModel::KEY_CURRENT_ACTIVE:
+                    $posterType = $extData[OperationActivityModel::KEY_CURRENT_ACTIVE . '_poster_type'] ?? "";
+                    if (!empty($posterType)) {
+                        $delKeys[] = OperationActivityModel::KEY_CURRENT_ACTIVE . $posterType;
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+        // 没有要删除的key返回false
+        if (empty($delKeys)) {
+            return false;
+        }
+        return RedisDB::getConn()->del($delKeys);
     }
 }

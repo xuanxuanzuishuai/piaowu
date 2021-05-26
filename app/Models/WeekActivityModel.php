@@ -114,7 +114,7 @@ class WeekActivityModel extends Model
      * @param $exceptActId
      * @return array
      */
-    public static function checkTimeConflict($startTime, $endTime, $eventId = [ErpEventModel::DAILY_UPLOAD_POSTER], $exceptActId = 0)
+    public static function checkTimeConflict($startTime, $endTime, $eventId, $exceptActId = 0)
     {
         $where = [
             'start_time[<=]' => $endTime,
