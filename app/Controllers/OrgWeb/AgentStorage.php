@@ -46,6 +46,12 @@ class AgentStorage extends ControllerBase
                 'type' => 'integer',
                 'error_code' => 'amount_is_integer'
             ],
+            [
+                'key' => 'amount',
+                'type' => 'min',
+                'value' => 1,
+                'error_code' => 'amount_min_is_1'
+            ],
         ];
 
         $params = $request->getParams();
@@ -175,7 +181,13 @@ class AgentStorage extends ControllerBase
                 'key' => 'amount',
                 'type' => 'integer',
                 'error_code' => 'amount_is_integer'
-            ]
+            ],
+            [
+                'key' => 'amount',
+                'type' => 'min',
+                'value' => 1,
+                'error_code' => 'amount_min_is_1'
+            ],
         ];
 
         $params = $request->getParams();

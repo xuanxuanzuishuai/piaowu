@@ -12,6 +12,7 @@ use App\Libs\AliOSS;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
+use App\Libs\Util;
 use App\Models\AgentAwardBillExtModel;
 use App\Models\AgentInfoModel;
 use App\Models\AgentPreStorageRefundModel;
@@ -39,7 +40,7 @@ class AgentStorageService
         //refund数据
         $refundInsertData = [
             'agent_id' => $params['agent_id'],
-            'amount' => $params['amount'] * 100,
+            'amount' => Util::fen($params['amount']),
             'remark' => $params['remark'] ?? '',
             'employee_id' => $employeeId,
             'create_time' => $time,
@@ -60,10 +61,19 @@ class AgentStorageService
             ]
         ];
 
+        //log数据
+        $log = [
+            'reviewer_uid' => $employeeId,
+            'create_time' => $time,
+            'data_type' => AgentPreStorageReviewLogModel::DATA_TYPE_REFUND,
+            'type' => AgentPreStorageReviewLogModel::LOG_TYPE_SUBMIT,
+            'remark' => $params['remark'] ?? '',
+        ];
+
         $db = MysqlDB::getDB();
         $db->beginTransaction();
 
-        $res = AgentPreStorageRefundModel::add($refundInsertData, $agentUpdateData);
+        $res = AgentPreStorageRefundModel::add($refundInsertData, $agentUpdateData, $log);
 
         if (empty($res)) {
             $db->rollBack();
@@ -112,7 +122,7 @@ class AgentStorageService
                 'status' => AgentPreStorageRefundModel::STATUS_VERIFY_REBUT,
             ],
             'data' => [
-                'amount' => $params['amount'] * 100,
+                'amount' => Util::fen($params['amount']),
                 'status' => AgentPreStorageRefundModel::STATUS_VERIFY_WAIT,
                 'remark' => $params['remark'] ?? '',
             ],
@@ -143,6 +153,7 @@ class AgentStorageService
             'data_type' => AgentPreStorageReviewLogModel::DATA_TYPE_REFUND,
             'data_id' => $refund['id'],
             'type' => AgentPreStorageReviewLogModel::TYPE_RESET_PUSH,
+            'remark' => $params['remark'] ?? '',
         ];
 
         $db = MysqlDB::getDB();
@@ -187,6 +198,7 @@ class AgentStorageService
             'create_time' => $time,
             'data_type' => AgentPreStorageReviewLogModel::DATA_TYPE_REFUND,
             'data_id' => $refund['id'],
+            'remark' => $params['remark'] ?? '',
         ];
 
         $agentAmountData = [];
@@ -755,7 +767,7 @@ class AgentStorageService
         foreach ($data['list'] as &$value) {
             $value['status_show']      = $dictData[DictConstants::CHECK_STATUS['type']][$value['status']]['value'] ?? '';
             $value['type_show']        = AgentPreStorageRefundModel::TYPE_MAP[$value['type']];
-            $value['amount']           = $value['amount'] / 100;
+            $value['amount']           = Util::yuan($value['amount']);
             $value['amount_show']      = ($value['type'] == AgentPreStorageRefundModel::TYPE_REFUND_AMOUNT ? '-' : '+') . $value['amount'];
             $value['bill_id']          = $value['bill_id'] ?: $value['id'];
             $value['create_time_show'] = date('Y-m-d H:i:s', $value['create_time']);
@@ -779,7 +791,7 @@ class AgentStorageService
             ]);
 
             $detail['status_show']      = $dictData[DictConstants::CHECK_STATUS['type']][$detail['status']]['value'];
-            $detail['amount']           = $detail['amount'] / 100;
+            $detail['amount']           = Util::yuan($detail['amount']);
             $detail['create_time_show'] = date('Y-m-d H:i:s', $detail['create_time']);
             $detail['operation_log']    = AgentPreStorageReviewLogModel::getLogList($refundId);
 

@@ -345,7 +345,7 @@ class AgentService
         if (!empty($detail)) {
             $bindData = UserWeiXinModel::userBindData($agentId, UserWeiXinModel::USER_TYPE_AGENT, UserWeiXinModel::BUSI_TYPE_AGENT_MINI, UserCenter::AUTH_APP_ID_OP_AGENT);
             $detail['wx_bind_status'] = empty($bindData) ? 0 : 1;
-            $detail['amount'] = $detail['amount'] /100;
+            $detail['amount'] = Util::yuan($detail['amount']);
         }
         //获取代理商售卖课包列表数据
         $detail['package_list'] = AgentSalePackageModel::getPackageData($agentId, UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT);
