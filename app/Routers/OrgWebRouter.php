@@ -14,6 +14,7 @@ use App\Controllers\Employee\Auth;
 use App\Controllers\Employee\Employee;
 use App\Controllers\OrgWeb\Admin;
 use App\Controllers\OrgWeb\Agent;
+use App\Controllers\OrgWeb\AgentStorage;
 use App\Controllers\OrgWeb\AppPush;
 use App\Controllers\OrgWeb\Area;
 use App\Controllers\OrgWeb\Bill;
@@ -200,5 +201,14 @@ class OrgWebRouter extends RouterBase
         '/op_web/month_activity/list' => ['method' => ['get'], 'call' => MonthActivity::class . ':list'],
         '/op_web/month_activity/detail' => ['method' => ['get'], 'call' => MonthActivity::class . ':detail'],
         '/op_web/month_activity/enable_status' => ['method' => ['post'], 'call' => MonthActivity::class . ':editEnableStatus'],
+
+
+        //代理退款
+        '/op_web/agent_storage/refund_add' => ['method' => ['post'], 'call' => AgentStorage::class . ':refundAdd'],
+        '/op_web/agent_storage/refund_update' => ['method' => ['post'], 'call' => AgentStorage::class . ':refundUpdate'],
+        '/op_web/agent_storage/refund_verify' => ['method' => ['post'], 'call' => AgentStorage::class . ':refundVerify'],
+        '/op_web/agent_storage/refund_detail' => ['method' => ['get'], 'call' => AgentStorage::class . ':refundDetail'],
+        '/op_web/agent_storage/refund_list' => ['method' => ['get'], 'call' => AgentStorage::class . ':refundList'],
+
     ];
 }

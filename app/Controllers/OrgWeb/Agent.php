@@ -70,6 +70,12 @@ class Agent extends ControllerBase
                 'type' => 'required',
                 'error_code' => 'division_model_is_required'
             ],
+            [
+                'key' => 'organization',
+                'type' => 'lengthMax',
+                'value' => 20,
+                'error_code' => 'organization_max_length_is_20'
+            ],
         ];
 
         $params = $request->getParams();
@@ -140,6 +146,12 @@ class Agent extends ControllerBase
                 'key' => 'division_model',
                 'type' => 'required',
                 'error_code' => 'division_model_is_required'
+            ],
+            [
+                'key' => 'organization',
+                'type' => 'lengthMax',
+                'value' => 20,
+                'error_code' => 'organization_max_length_is_20'
             ],
         ];
 

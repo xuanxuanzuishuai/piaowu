@@ -71,13 +71,48 @@ class PosterService
             "y_" . $config['QR_Y'],
             "g_sw",//插入的基准位置以左下角作为原点
         ];
-        $waterMarkStr = implode(",", $waterMark) . '/';
+        $waterMarkStr[] = implode(",", $waterMark);
         $imgSize = [
             "w_" . $config['POSTER_WIDTH'],
             "h_" . $config['POSTER_HEIGHT'],
             "limit_0",//强制图片缩放
         ];
         $imgSizeStr = implode(",", $imgSize) . '/';
+
+        if (!empty($extParams['organization'])) {
+
+            $organizationWordEncode = str_replace(
+                ["+", "/"],
+                ["-", "_"],
+                base64_encode($extParams['organization'])
+            );
+
+            $organizationMark = [
+                "text_" . $organizationWordEncode,
+                "x_" . $config['ORGANIZATION_WORD_X'],
+                "y_" . $config['ORGANIZATION_WORD_Y'],
+                "size_" . $config['ORGANIZATION_WORD_SIZE'],
+                "color_" . $config['ORGANIZATION_WORD_COLOR'],
+                "g_nw",
+            ];
+
+            $waterMarkStr[] = implode(",", $organizationMark);
+
+            $recommendWordEncode = str_replace(
+                ["+", "/"],
+                ["-", "_"],
+                base64_encode('倾情推荐')
+            );
+            $recommendMark = [
+                "text_" . $recommendWordEncode,
+                "x_" . $config['RECOMMEND_WORD_X'],
+                "y_" . $config['RECOMMEND_WORD_Y'],
+                "size_" . $config['RECOMMEND_WORD_SIZE'],
+                "color_" . $config['RECOMMEND_WORD_COLOR'],
+                "g_nw",
+            ];
+            $waterMarkStr[] = implode(",", $recommendMark);
+        }
         $resImageUrl = AliOSS::signUrls($posterPath, "", "", "", true, $waterMarkStr, $imgSizeStr);
         $user_current_status = $extParams['user_current_status'] ?? DssStudentModel::STATUS_REGISTER;
 

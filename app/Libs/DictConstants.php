@@ -181,6 +181,22 @@ class DictConstants {
         ]
     ];
 
+
+    //代理特有海报配置
+    const AGENT_POSTER_CONFIG = [
+        'type' => 'agent_poster_config',
+        'keys' => [
+            'ORGANIZATION_WORD_X',
+            'ORGANIZATION_WORD_Y',
+            'ORGANIZATION_WORD_COLOR',
+            'ORGANIZATION_WORD_SIZE',
+            'RECOMMEND_WORD_X',
+            'RECOMMEND_WORD_Y',
+            'RECOMMEND_WORD_COLOR',
+            'RECOMMEND_WORD_SIZE',
+        ]
+    ];
+
     const DEPT_DATA_TYPE_NAME = [
         'type' => 'DEPT_DATA_TYPE_NAME',
         'keys' => [1]

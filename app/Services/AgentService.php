@@ -72,6 +72,7 @@ class AgentService
             'division_model' => $params['division_model'] ?? 0,
             'country_code' => $params['country_code'],
             'create_time' => $time,
+            'organization' => $params['organization'],
         ];
         if (self::checkAgentExists($agentInsertData['mobile'], $agentInsertData['country_code'])) {
             throw new RunTimeException(['agent_have_exist']);
@@ -137,6 +138,7 @@ class AgentService
             'country_code' => $params['country_code'],
             'update_time' => $time,
             'division_model' => $params['division_model'] ?? 0,
+            'organization' => $params['organization'] ?? '',
         ];
         //agent_divide_rules数据
         $agentDivideRulesInsertData = [
@@ -1855,7 +1857,10 @@ class AgentService
                     $extParams = [
                         'p' => PosterModel::getIdByPath($item['value']),
                         'app_id' => UserCenter::AUTH_APP_ID_OP_AGENT,
+                        'organization' => $agentInfo['organization'] ?? '',
                     ];
+                    $posterConfig = array_merge($posterConfig, PosterService::getPosterConfig(DictConstants::AGENT_POSTER_CONFIG));
+
                     $posterUrl = PosterService::generateQRPosterAliOss(
                         $item['value'],
                         $posterConfig,
