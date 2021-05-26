@@ -923,13 +923,12 @@ class ReferralService
         $wxCode = $extParams['wx_code'] ?? '';
         unset($extParams['wx_code']);
         if (!empty($encryptedData)) {
-            $jsonMobile = self::decodeMobile($iv, $encryptedData, $sessionKey);
-            if (empty($jsonMobile) && !empty($wxCode)) {
-                $wechat = WeChatMiniPro::factory(Constants::SMART_APP_ID, Constants::SMART_MINI_BUSI_TYPE);
-                $wechat->code2Session($wxCode);
-                $sessionKey = $wechat->getSessionKey($openId);
-                $jsonMobile = self::decodeMobile($iv, $encryptedData, $sessionKey);
-            }
+            $jsonMobile = self::decodeMobile(
+                $iv,
+                $encryptedData,
+                $sessionKey,
+                ['wx_code' => $wxCode, 'open_id' => $openId]
+            );
             if (empty($jsonMobile)) {
                 return [$openId, 0, null];
             }
@@ -963,9 +962,11 @@ class ReferralService
      * @param $iv
      * @param $encryptedData
      * @param $sessionKey
+     * @param array $extParams
      * @return mixed|null
+     * @throws RunTimeException
      */
-    public static function decodeMobile($iv, $encryptedData, $sessionKey)
+    public static function decodeMobile($iv, $encryptedData, $sessionKey, $extParams = [])
     {
         if (empty($sessionKey)) {
             SimpleLogger::error('session key is empty', []);
@@ -976,10 +977,16 @@ class ReferralService
         $code = $w->decryptData($encryptedData, $iv, $data);
         if ($code == 0) {
             return json_decode($data, 1);
-        } else {
-            SimpleLogger::error('decode mobile error:', ['code' => $code]);
-            return null;
         }
+
+        if (!empty($extParams['wx_code']) && !empty($extParams['open_id'])) {
+            $wechat = WeChatMiniPro::factory(Constants::SMART_APP_ID, Constants::SMART_MINI_BUSI_TYPE);
+            $wechat->code2Session($extParams['wx_code']);
+            $sessionKey = $wechat->getSessionKey($extParams['open_id']);
+            return self::decodeMobile($iv, $encryptedData, $sessionKey);
+        }
+        SimpleLogger::error("DECODE MOBILE ERROR", [$sessionKey, $extParams]);
+        return null;
     }
 
     /**
