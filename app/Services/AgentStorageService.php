@@ -717,7 +717,16 @@ class AgentStorageService
     public static function listRefund(array $params, int $employeeId): array
     {
         $where = [AgentModel::$table . '.parent_id' => 0];
-        $where[AgentPreStorageRefundModel::$table . '.type'] = AgentPreStorageRefundModel::TYPE_REFUND_AMOUNT;
+
+        if ($params['data_type'] != 'record') {
+            $where[AgentPreStorageRefundModel::$table . '.type'] = AgentPreStorageRefundModel::TYPE_REFUND_AMOUNT;
+            //数据权限
+            if ($params['only_read_self']) {
+                $where[AgentPreStorageRefundModel::$table . '.employee_id'] = $employeeId;
+            }
+        }else{
+            $where[AgentPreStorageRefundModel::$table . '.status'] = AgentPreStorageRefundModel::STATUS_VERIFY_PASS;
+        }
 
         if (!empty($params['agent_id'])) {
             $where[AgentPreStorageRefundModel::$table . '.agent_id'] = $params['agent_id'];
@@ -737,11 +746,19 @@ class AgentStorageService
         if (!empty($params['name'])) {
             $where[AgentModel::$table . '.name[~]'] = $params['name'];
         }
-        //数据权限
-        if ($params['only_read_self']) {
-            $where[AgentPreStorageRefundModel::$table . '.employee_id'] = $employeeId;
+
+        $data =  AgentPreStorageRefundModel::list($where, $params['page'], $params['count']);
+
+        $dictData = DictConstants::getTypesMap([DictConstants::CHECK_STATUS['type']]);
+
+        foreach ($data['list'] as &$value) {
+            $value['status_show'] = $dictData[DictConstants::CHECK_STATUS['type']][$value['status']]['value'];
+            $value['type_show'] = AgentPreStorageRefundModel::TYPE_MAP[$value['type']];
+            $value['amount'] =  $value['amount'] / 100;
+            $value['create_time_show'] = date('Y-m-d H:i:s', $value['create_time']);
         }
-        return AgentPreStorageRefundModel::list($where, $params['page'], $params['count']);
+
+        return $data;
     }
 
     /**
@@ -753,6 +770,11 @@ class AgentStorageService
     {
         $detail = AgentPreStorageRefundModel::detail($refundId);
         if (!empty($detail)) {
+            $dictData = DictConstants::getTypesMap([DictConstants::CHECK_STATUS['type']]);
+            $detail['status_show'] = $dictData[DictConstants::CHECK_STATUS['type']][$detail['status']]['value'];
+            $detail['type_show'] = AgentPreStorageRefundModel::TYPE_MAP[$detail['type']];
+            $detail['amount'] = $detail['amount'] / 100;
+            $detail['create_time_show'] = date('Y-m-d H:i:s', $detail['create_time']);
             $detail['operation_log'] = AgentPreStorageReviewLogModel::getLogList($refundId);
         }
         return $detail;

@@ -19,8 +19,14 @@ class AgentPreStorageRefundModel extends Model
     const STATUS_VERIFY_PASS = 2;
     const STATUS_VERIFY_REBUT = 3;
 
-    // 2 退款打款
+    //1推广消耗 2 退款打款
+    const TYPE_SPREAD_CONSUME = 1;
     const TYPE_REFUND_AMOUNT = 2;
+
+    const TYPE_MAP = [
+        self::TYPE_SPREAD_CONSUME => '推广消耗',
+        self::TYPE_REFUND_AMOUNT => '退款打款'
+    ];
 
     /**
      * 新增代理退款申请
@@ -108,6 +114,7 @@ class AgentPreStorageRefundModel extends Model
             [
                 self::$table . '.id',
                 self::$table . '.agent_id',
+                self::$table . '.type',
                 self::$table . '.amount',
                 self::$table . '.create_time',
                 self::$table . '.status',
