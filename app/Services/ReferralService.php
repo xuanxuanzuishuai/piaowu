@@ -920,8 +920,16 @@ class ReferralService
         $channel = '',
         $extParams = []
     ) {
+        $wxCode = $extParams['wx_code'] ?? '';
+        unset($extParams['wx_code']);
         if (!empty($encryptedData)) {
             $jsonMobile = self::decodeMobile($iv, $encryptedData, $sessionKey);
+            if (empty($jsonMobile) && !empty($wxCode)) {
+                $wechat = WeChatMiniPro::factory(Constants::SMART_APP_ID, Constants::SMART_MINI_BUSI_TYPE);
+                $wechat->code2Session($wxCode);
+                $sessionKey = $wechat->getSessionKey($openId);
+                $jsonMobile = self::decodeMobile($iv, $encryptedData, $sessionKey);
+            }
             if (empty($jsonMobile)) {
                 return [$openId, 0, null];
             }
