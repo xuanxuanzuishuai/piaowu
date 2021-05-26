@@ -25,7 +25,7 @@ class AgentPreStorageRefundModel extends Model
 
     const TYPE_MAP = [
         self::TYPE_SPREAD_CONSUME => '推广消耗',
-        self::TYPE_REFUND_AMOUNT => '退款打款'
+        self::TYPE_REFUND_AMOUNT  => '退款打款'
     ];
 
     /**
@@ -61,7 +61,7 @@ class AgentPreStorageRefundModel extends Model
     public static function update(array $refundUpdateData, array $agentAmountData, array $log) :bool
     {
 
-        $refundUpdateRow = self::updateRecord($refundUpdateData['where']['id'],$refundUpdateData['data']);
+        $refundUpdateRow = self::batchUpdateRecord($refundUpdateData['data'], $refundUpdateData['where']);
 
         if (empty($refundUpdateRow)) {
             SimpleLogger::error('update agent pre storage refund data error', $refundUpdateData);
@@ -119,6 +119,7 @@ class AgentPreStorageRefundModel extends Model
                 self::$table . '.create_time',
                 self::$table . '.status',
                 self::$table . '.employee_id',
+                self::$table . '.bill_id',
                 AgentModel::$table . '.name',
                 EmployeeModel::$table . '.name(employee_name)' ,
             ],
@@ -153,6 +154,7 @@ class AgentPreStorageRefundModel extends Model
                 self::$table . '.create_time',
                 self::$table . '.status',
                 self::$table . '.employee_id',
+                self::$table . '.remark',
                 AgentModel::$table . '.name',
                 EmployeeModel::$table . '.name(employee_name)',
             ],

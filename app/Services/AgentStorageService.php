@@ -113,6 +113,7 @@ class AgentStorageService
             ],
             'data' => [
                 'amount' => $params['amount'] * 100,
+                'status' => AgentPreStorageRefundModel::STATUS_VERIFY_WAIT,
                 'remark' => $params['remark'] ?? '',
             ],
         ];
@@ -752,9 +753,11 @@ class AgentStorageService
         $dictData = DictConstants::getTypesMap([DictConstants::CHECK_STATUS['type']]);
 
         foreach ($data['list'] as &$value) {
-            $value['status_show'] = $dictData[DictConstants::CHECK_STATUS['type']][$value['status']]['value'];
-            $value['type_show'] = AgentPreStorageRefundModel::TYPE_MAP[$value['type']];
-            $value['amount'] =  $value['amount'] / 100;
+            $value['status_show']      = $dictData[DictConstants::CHECK_STATUS['type']][$value['status']]['value'] ?? '';
+            $value['type_show']        = AgentPreStorageRefundModel::TYPE_MAP[$value['type']];
+            $value['amount']           = $value['amount'] / 100;
+            $value['amount_show']      = ($value['type'] == AgentPreStorageRefundModel::TYPE_REFUND_AMOUNT ? '-' : '+') . $value['amount'];
+            $value['bill_id']          = $value['bill_id'] ?: $value['id'];
             $value['create_time_show'] = date('Y-m-d H:i:s', $value['create_time']);
         }
 
@@ -770,12 +773,20 @@ class AgentStorageService
     {
         $detail = AgentPreStorageRefundModel::detail($refundId);
         if (!empty($detail)) {
-            $dictData = DictConstants::getTypesMap([DictConstants::CHECK_STATUS['type']]);
-            $detail['status_show'] = $dictData[DictConstants::CHECK_STATUS['type']][$detail['status']]['value'];
-            $detail['type_show'] = AgentPreStorageRefundModel::TYPE_MAP[$detail['type']];
-            $detail['amount'] = $detail['amount'] / 100;
+            $dictData = DictConstants::getTypesMap([
+                DictConstants::AGENT_STORAGE_APPROVED_ACTION['type'],
+                DictConstants::CHECK_STATUS['type']
+            ]);
+
+            $detail['status_show']      = $dictData[DictConstants::CHECK_STATUS['type']][$detail['status']]['value'];
+            $detail['amount']           = $detail['amount'] / 100;
             $detail['create_time_show'] = date('Y-m-d H:i:s', $detail['create_time']);
-            $detail['operation_log'] = AgentPreStorageReviewLogModel::getLogList($refundId);
+            $detail['operation_log']    = AgentPreStorageReviewLogModel::getLogList($refundId);
+
+            foreach ($detail['operation_log'] as &$value) {
+                $value['type_show']        = $dictData[DictConstants::AGENT_STORAGE_APPROVED_ACTION['type']][$value['type']]['value'] ?? '';
+                $value['create_time_show'] = date('Y-m-d H:i:s', $value['create_time']);
+            }
         }
         return $detail;
     }
