@@ -79,39 +79,29 @@ class PosterService
         ];
         $imgSizeStr = implode(",", $imgSize) . '/';
 
-        if (!empty($extParams['organization'])) {
+        if (!empty($extParams['text'])) {
 
-            $organizationWordEncode = str_replace(
-                ["+", "/"],
-                ["-", "_"],
-                base64_encode($extParams['organization'])
-            );
+            if (count($extParams['text']) == count($extParams['text'], COUNT_RECURSIVE)) {
+                $textParam[] = $extParams['text'];
+            } else {
+                $textParam = $extParams['text'];
+            }
 
-            $organizationMark = [
-                "text_" . $organizationWordEncode,
-                "x_" . $config['ORGANIZATION_WORD_X'],
-                "y_" . $config['ORGANIZATION_WORD_Y'],
-                "size_" . $config['ORGANIZATION_WORD_SIZE'],
-                "color_" . $config['ORGANIZATION_WORD_COLOR'],
-                "g_nw",
-            ];
-
-            $waterMarkStr[] = implode(",", $organizationMark);
-
-            $recommendWordEncode = str_replace(
-                ["+", "/"],
-                ["-", "_"],
-                base64_encode('倾情推荐')
-            );
-            $recommendMark = [
-                "text_" . $recommendWordEncode,
-                "x_" . $config['RECOMMEND_WORD_X'],
-                "y_" . $config['RECOMMEND_WORD_Y'],
-                "size_" . $config['RECOMMEND_WORD_SIZE'],
-                "color_" . $config['RECOMMEND_WORD_COLOR'],
-                "g_nw",
-            ];
-            $waterMarkStr[] = implode(",", $recommendMark);
+            foreach ($textParam as $text) {
+                $wordMark = [
+                    "text_" . str_replace(
+                        ["+", "/"],
+                        ["-", "_"],
+                        base64_encode($text['word'])
+                    ),
+                    "x_" . $text['x'],
+                    "y_" . $text['y'],
+                    "size_" . $text['size'],
+                    "color_" . $text['color'],
+                    "g_nw",
+                ];
+                $waterMarkStr[] = implode(",", $wordMark);
+            }
         }
         $resImageUrl = AliOSS::signUrls($posterPath, "", "", "", true, $waterMarkStr, $imgSizeStr);
         $user_current_status = $extParams['user_current_status'] ?? DssStudentModel::STATUS_REGISTER;

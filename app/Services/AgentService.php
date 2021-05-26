@@ -1857,9 +1857,8 @@ class AgentService
                     $extParams = [
                         'p' => PosterModel::getIdByPath($item['value']),
                         'app_id' => UserCenter::AUTH_APP_ID_OP_AGENT,
-                        'organization' => $agentInfo['organization'] ?? '',
+                        'text' => self::agentWordWaterMark($agentInfo['organization'] ?? ''),
                     ];
-                    $posterConfig = array_merge($posterConfig, PosterService::getPosterConfig(DictConstants::AGENT_POSTER_CONFIG));
 
                     $posterUrl = PosterService::generateQRPosterAliOss(
                         $item['value'],
@@ -1874,6 +1873,36 @@ class AgentService
             }
         }
         return $data;
+    }
+
+    /**
+     * 代理文字水印
+     * @param string $organization
+     * @return array|array[]
+     */
+    private static function agentWordWaterMark(string $organization): array
+    {
+        if (empty($organization)) {
+            return [];
+        }
+        $config = PosterService::getPosterConfig(DictConstants::AGENT_POSTER_CONFIG);
+
+        return [
+            [
+                'text_' => $organization,
+                "x" => $config['ORGANIZATION_WORD_X'],
+                "y" . $config['ORGANIZATION_WORD_Y'],
+                "size" . $config['ORGANIZATION_WORD_SIZE'],
+                "color" . $config['ORGANIZATION_WORD_COLOR'],
+            ],
+            [
+                'text_' => '倾情推荐',
+                "x" => $config['RECOMMEND_WORD_X'],
+                "y" . $config['RECOMMEND_WORD_Y'],
+                "size" . $config['RECOMMEND_WORD_SIZE'],
+                "color" . $config['RECOMMEND_WORD_COLOR'],
+            ],
+        ];
     }
 
     /**
