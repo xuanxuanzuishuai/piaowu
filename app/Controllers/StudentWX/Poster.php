@@ -14,6 +14,7 @@ use App\Libs\HttpHelper;
 use App\Libs\KeyErrorRC4Exception;
 use App\Libs\Valid;
 use App\Models\Dss\DssStudentModel;
+use App\Models\SharePosterModel;
 use App\Services\PosterTemplateService;
 use App\Services\SharePosterService;
 use Slim\Http\Request;
@@ -48,11 +49,7 @@ class Poster extends ControllerBase
 
         try {
             $userInfo = $this->ci['user_info'];
-            $student = DssStudentModel::getById($userInfo['user_id']);
-            if (empty($student)) {
-                throw new RunTimeException(['record_not_found']);
-            }
-            $data = PosterTemplateService::getPosterList($student['id'], $params['type'], $params['activity_id'] ?? 0, $params['ext'] ?? true);
+            $data = PosterTemplateService::getPosterList($userInfo['user_id'], $params['type'], $params['activity_id'] ?? 0, $params['ext'] ?? true);
 
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
@@ -88,11 +85,7 @@ class Poster extends ControllerBase
         }
         try {
             $userInfo = $this->ci['user_info'];
-            $student = DssStudentModel::getById($userInfo['user_id']);
-            if (empty($student)) {
-                throw new RunTimeException(['record_not_found']);
-            }
-            $params['student_id'] = $student['id'];
+            $params['student_id'] = $userInfo['user_id'];
             $data = SharePosterService::uploadSharePoster($params);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
@@ -132,6 +125,7 @@ class Poster extends ControllerBase
             if (empty($student)) {
                 throw new RunTimeException(['record_not_found']);
             }
+            $params['type'] = SharePosterModel::TYPE_WEEK_UPLOAD;
             list($posters, $total) = SharePosterService::sharePosterList($params);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
@@ -160,11 +154,6 @@ class Poster extends ControllerBase
             $result = Valid::appValidate($params, $rules);
             if ($result['code'] != Valid::CODE_SUCCESS) {
                 return $response->withJson($result, StatusCode::HTTP_OK);
-            }
-            $userInfo = $this->ci['user_info'];
-            $student = DssStudentModel::getById($userInfo['user_id']);
-            if (empty($student)) {
-                throw new RunTimeException(['record_not_found']);
             }
             $poster = SharePosterService::sharePosterDetail($params['id']);
         } catch (RunTimeException $e) {

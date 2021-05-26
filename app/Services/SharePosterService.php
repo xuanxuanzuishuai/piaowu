@@ -52,7 +52,6 @@ class SharePosterService
             $taskInfo = ErpEventTaskModel::getInfoByNodeId($params['task_id']);
             $params['task_id'] = $taskInfo[0]['id'] ?? 0;
         }
-        $params['type'] = SharePosterModel::TYPE_WEEK_UPLOAD;
         list($posters, $totalCount) = SharePosterModel::posterList($params);
         if (!empty($posters)) {
             $reasonDict = DictService::getTypeMap(Constants::DICT_TYPE_SHARE_POSTER_CHECK_REASON);
@@ -98,9 +97,7 @@ class SharePosterService
         if (!empty($poster['remark'])) {
             $poster['reason_str'][] = $poster['remark'];
         }
-        if (!empty($poster['reason_str'])) {
-            $poster['reason_str'] = implode('/', $poster['reason_str']);
-        }
+        $poster['reason_str'] = implode('/', $poster['reason_str']);
 
         $poster['award_amount'] = 0;
         if (!empty($poster['points_award_id'])) {
@@ -898,10 +895,14 @@ class SharePosterService
             'update_time' => $time,
         ];
         // @TODO: 接入自动审核
-        if (empty($uploadRecord)) {
+        if (empty($uploadRecord) || $uploadRecord['verify_status'] == SharePosterModel::VERIFY_STATUS_UNQUALIFIED) {
             $res = SharePosterModel::insertRecord($data);
         } else {
-            $res = SharePosterModel::updateRecord($uploadRecord['id'], $data);
+            $count = SharePosterModel::updateRecord($uploadRecord['id'], $data);
+            if (empty($count)) {
+                throw new RunTimeException(['update_fail']);
+            }
+            $res = $uploadRecord['id'];
         }
         if (empty($res)) {
             throw new RunTimeException(['share_poster_add_fail']);
@@ -1073,13 +1074,12 @@ class SharePosterService
         if (empty($id)) {
             return [];
         }
-        list($posters) = SharePosterModel::getPosterList(['id' => $id]);
+        list($posters) = SharePosterModel::getWeekPosterList(['id' => $id]);
         $poster = $posters[0];
         if (empty($poster)) {
             return [];
         }
         $poster['can_upload'] = Constants::STATUS_TRUE;
-        $poster['image_path'] = $poster['img_url'];
         $activities = WeekActivityModel::getSelectList([]);
         $allIds = array_column($activities, 'activity_id');
         if (!in_array($poster['activity_id'], $allIds)) {

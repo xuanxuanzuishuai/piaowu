@@ -346,6 +346,7 @@ class ActivityService
      */
     public static function formatData($activity)
     {
+        // 图片路径转URL
         $imageList = [
             'banner',
             'share_button_img',
@@ -360,6 +361,18 @@ class ActivityService
             $activity[$key . '_url'] = '';
             if (!empty($activity[$key])) {
                 $activity[$key . '_url'] = AliOSS::replaceCdnDomainForDss($activity[$key]);
+            }
+        }
+        // 文字内容解码
+        $textList = [
+            'make_poster_tip_word',
+            'share_poster_tip_word',
+            'guide_word',
+            'share_word',
+        ];
+        foreach ($textList as $key) {
+            if (!empty($activity[$key])) {
+                $activity[$key] = Util::textDecode($activity[$key]);
             }
         }
         return $activity;

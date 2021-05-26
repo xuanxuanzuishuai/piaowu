@@ -27,12 +27,17 @@ class ActivityExtModel extends Model
         $redis = RedisDB::getConn();
         $cache = $redis->get($cacheKey);
         if (!empty($cache)) {
-            return json_decode($cache, true);
+            $cache = json_decode($cache, true);
+            $cache['award_rule'] = Util::textDecode($cache['award_rule']);
+            return $cache;
         }
 
         $record = self::getRecord(['activity_id' => $activityId]);
         if (!empty($record)) {
             $redis->setex($cacheKey, Util::TIMESTAMP_ONEDAY, json_encode($record));
+        }
+        if (!empty($record['award_rule'])) {
+            $record['award_rule'] = Util::textDecode($record['award_rule']);
         }
         return $record;
     }

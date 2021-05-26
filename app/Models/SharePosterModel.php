@@ -360,8 +360,11 @@ class SharePosterModel extends Model
     {
         $sp = self::getTableNameWithDb();
         $ac = WeekActivityModel::getTableNameWithDb();
-        $where = " WHERE 1 = 1 ";
-        $map = [];
+        $type = $params['type'] ?? self::TYPE_WEEK_UPLOAD;
+        $where = " WHERE type = :type";
+        $map = [
+            ':type' => $type
+        ];
 
         if (!empty($params['activity_id'])) {
             $where .= " AND sp.activity_id = :activity_id ";
