@@ -734,23 +734,13 @@ class AgentStorageService
         if (!empty($params['create_end_time'])) {
             $where[AgentPreStorageRefundModel::$table . '.create_time[<=]'] = $params['create_end_time'];
         }
-//        if (!empty($params['employee_name'])) {
-//            $employeeId = EmployeeModel::getRecord(['name' => $params['employee_name']], ['id']);
-//            if (empty($employeeId)) {
-//                return $data;
-//            }
-//            $where[AgentModel::$table . '.employee_id'] = $employeeId['id'];
-//        }
         if (!empty($params['name'])) {
             $where[AgentModel::$table . '.name[~]'] = $params['name'];
         }
         //数据权限
-//        if ($params['only_read_self']) {
-//            $where["OR"] = [
-//                AgentModel::$table . '.service_employee_id' => $currentEmployeeId,
-//                AgentModel::$table . '.employee_id' => $currentEmployeeId,
-//            ];
-//        }
+        if ($params['only_read_self']) {
+            $where[AgentPreStorageRefundModel::$table . '.employee_id'] = $employeeId;
+        }
         return AgentPreStorageRefundModel::list($where, $params['page'], $params['count']);
     }
 

@@ -13,6 +13,8 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\Util;
 use App\Libs\Valid;
+use App\Models\AgentPreStorageRefundModel;
+use App\Models\EmployeeModel;
 use App\Services\AgentStorageService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -294,6 +296,9 @@ class AgentStorage extends ControllerBase
         $params = $request->getParams();
         list($params['page'], $params['count']) = Util::formatPageCount($params);
         $params['only_read_self'] = self::getEmployeeDataPermission();
+        if (self::getRoleId() == EmployeeModel::ROLE_FINANCE) {
+            $params['only_read_self'] = false;
+        }
         $data = AgentStorageService::listRefund($params, self::getEmployeeId());
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
@@ -361,6 +366,12 @@ class AgentStorage extends ControllerBase
                 'key' => 'operation',
                 'type' => 'required',
                 'error_code' => 'operation_is_required'
+            ],
+            [
+                'key' => 'operation',
+                'type' => 'in',
+                'value' => [AgentPreStorageRefundModel::STATUS_VERIFY_PASS, AgentPreStorageRefundModel::STATUS_VERIFY_REBUT],
+                'error_code' => 'operation_is_invalid'
             ]
         ];
 
@@ -370,6 +381,9 @@ class AgentStorage extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         $employeeId = self::getEmployeeId();
+        if (self::getRoleId() == EmployeeModel::ROLE_FINANCE) {
+            return $response->withJson(Valid::addErrors([], 'employee_role_id', 'no_privilege'), StatusCode::HTTP_OK);
+        }
         try {
             AgentStorageService::verifyRefund($params, $employeeId);
         } catch (RunTimeException $e) {

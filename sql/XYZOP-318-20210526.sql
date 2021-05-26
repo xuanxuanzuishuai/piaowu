@@ -15,3 +15,6 @@ VALUES
   ('agent_poster_config', '代理海报特殊配置', 'RECOMMEND_WORD_Y', '1130', '推荐文字y轴偏移量'),
   ('agent_poster_config', '代理海报特殊配置', 'RECOMMEND_WORD_COLOR', 'FFFF00', '推荐文字字体颜色'),
   ('agent_poster_config', '代理海报特殊配置', 'RECOMMEND_WORD_SIZE', '30', '推荐文字字体大小');
+
+INSERT INTO `privilege`(`name`, `created_time`, `method`, `is_menu`,`menu_name`,`parent_id`,`unique_en_name`) VALUE
+('代理商退款列表', unix_timestamp(), 'get', 1, '退款明细',677,'agent_refund_list');

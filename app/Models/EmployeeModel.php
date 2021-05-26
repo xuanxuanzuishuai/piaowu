@@ -26,9 +26,13 @@ class EmployeeModel extends Model
     const STATUS_DEL = 0;
 
     const SUPER_ADMIN_ROLE_ID = -1; //强制规定项目超级管理员 admin_role_id为 -1，不可改变
+    //角色 9 财务
+    const ROLE_FINANCE = 9;
 
     const SYSTEM_EMPLOYEE_ID = 10000;
     const SYSTEM_EMPLOYEE_NAME = '系统';
+
+
 
     /**
      * @param $loginName
