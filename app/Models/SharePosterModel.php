@@ -275,7 +275,7 @@ class SharePosterModel extends Model
         }
 
         if (!empty($params['poster_status'])) {
-            $where .= " AND sp.status = :poster_status ";
+            $where .= " AND sp.verify_status = :poster_status ";
             $map[':poster_status'] = $params['poster_status'];
         }
 

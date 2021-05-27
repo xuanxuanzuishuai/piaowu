@@ -19,6 +19,7 @@ use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\MessagePushRulesModel;
 use App\Models\PosterModel;
 use App\Models\SharePosterModel;
+use App\Models\TemplatePosterModel;
 use App\Models\UserPointsExchangeOrderWxModel;
 use App\Models\WeChatAwardCashDealModel;
 use App\Services\BillMapService;
@@ -679,6 +680,9 @@ class Dss extends ControllerBase
     {
         try {
             $params = $request->getParams();
+            if (!empty($params['type']) && $params['type'] == SharePosterModel::TYPE_CHECKIN_UPLOAD) {
+                $params['type'] = SharePosterModel::TYPE_WEEK_UPLOAD;
+            }
             list($list, $total) = SharePosterModel::getPosterList($params);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());

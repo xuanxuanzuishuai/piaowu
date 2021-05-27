@@ -537,6 +537,8 @@ class PosterTemplateService
         }
         $data['list'] = $posterList;
         $data['activity'] = $activityInfo;
+        $data['student_status'] = $userDetail['student_status'];
+        $data['student_status_zh'] = DssStudentModel::STUDENT_IDENTITY_ZH_MAP[$userDetail['student_status']] ?? DssStudentModel::STATUS_REGISTER;
         return $data;
     }
 
