@@ -19,6 +19,8 @@ use App\Models\SharePosterModel;
 
 class AutoCheckPicture
 {
+    public static $redisExpire = 432000; // 12小时
+
     /**
      * 获取要审核的图片
      * @param $data
