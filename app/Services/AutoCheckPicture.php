@@ -313,7 +313,7 @@ class AutoCheckPicture
                     $end         = mb_strpos($word, $endWord) - $start;
                     $string      = mb_substr($word, $start, $end);
                     $screenDate = date('Y-m-d H:i', strtotime('-' . $string . ' hours'));
-                } elseif (mb_strpos($word, '昨天') === false && mb_strpos($word, '上午') !== false) { //当做今天的 下午可忽略
+                } elseif (Util::sensitiveWordFilter(['昨天', '年'], $word) === false && mb_strpos($word, '上午') !== false) { //当做今天的 下午可忽略
                     $beginWord  = '上午';
                     $endWord    = '删除';
                     $start       = mb_strpos($word, $beginWord) + mb_strlen($beginWord);
@@ -365,7 +365,7 @@ class AutoCheckPicture
                     break;
                 }
                 //判定是否被屏蔽 特殊情况:发布时间和删除下标相同
-                if (!$shareOwner && isset($result[$key + 1]) && Util::sensitiveWordFilter(['删除','智能陪练','：','册'], $result[$key + 1]['word']) == false) {
+                if (!$shareOwner && isset($result[$key + 1]) && Util::sensitiveWordFilter(['删除','智能陪练','：','册','删'], $result[$key + 1]['word']) == false) {
                     $shareDisplay = false;
                 }
             }
