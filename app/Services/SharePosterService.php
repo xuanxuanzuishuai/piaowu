@@ -809,11 +809,6 @@ class SharePosterService
         if ($studentDetail['student_status'] != DssStudentModel::STATUS_BUY_NORMAL_COURSE) {
             throw new RunTimeException(['student_status_disable']);
         }
-        //检查活动是否有效
-        $activityInfo = ReferralActivityService::checkActivityIsEnable($activityId);
-        if (empty($activityInfo)) {
-            throw new RunTimeException(['activity_is_disable']);
-        }
         //审核通过不允许上传截图
         $type = SharePosterModel::TYPE_WEEK_UPLOAD;
         $where = [

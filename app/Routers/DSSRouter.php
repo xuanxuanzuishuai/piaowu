@@ -58,10 +58,11 @@ class DSSRouter extends RouterBase
         '/dss/points/retry_exchange_red_pack' => ['method' => ['post'], 'call' => Dss::class . ':retryExchangeRedPack'],
 
         // SHARE_POSER:
-        '/dss/share_poster/list'      => ['method' => ['get'], 'call' => Dss::class . ':posterList'],
-        '/dss/share_poster/get'       => ['method' => ['get'], 'call' => Dss::class . ':getSharePoster'],
-        '/dss/share_poster/upload'    => ['method' => ['post'], 'call' => Dss::class . ':uploadSharePoster'],
-        '/dss/share_poster/approval'  => ['method' => ['post'], 'call' => Dss::class . ':approvalPoster'],
-        '/dss/share_poster/refused'   => ['method' => ['post'], 'call' => Dss::class . ':refusedPoster'],
+        '/dss/share_poster/list'     => ['method' => ['get'], 'call' => Dss::class . ':posterList'],
+        '/dss/share_poster/get'      => ['method' => ['get'], 'call' => Dss::class . ':getSharePoster'],
+        '/dss/share_poster/upload'   => ['method' => ['post'], 'call' => Dss::class . ':uploadSharePoster'],
+        '/dss/share_poster/approval' => ['method' => ['post'], 'call' => Dss::class . ':approvalPoster'],
+        '/dss/share_poster/refused'  => ['method' => ['post'], 'call' => Dss::class . ':refusedPoster'],
+        '/dss/activity/list'         => ['method' => ['get'], 'call' => Dss::class . ':activityList'],
     ];
 }

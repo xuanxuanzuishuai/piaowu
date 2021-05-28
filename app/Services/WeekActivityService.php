@@ -569,4 +569,20 @@ class WeekActivityService
         }
         return $noJoinActivityStudent;
     }
+
+    /**
+     * 截图-活动列表
+     * @param $params
+     * @return array
+     */
+    public static function getSelectList($params)
+    {
+        list($page, $limit) = Util::formatPageCount($params);
+        $limitOffset = [($page - 1) * $limit, $limit];
+        list($list, $total) = WeekActivityModel::searchList($params, $limitOffset);
+        if (empty($total)) {
+            return [$list, $total];
+        }
+        return [$list, $total];
+    }
 }

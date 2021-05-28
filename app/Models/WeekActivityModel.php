@@ -42,6 +42,9 @@ class WeekActivityModel extends Model
         if (isset($params['activity_id']) && !Util::emptyExceptZero($params['activity_id'])) {
             $where['activity_id'] = $params['activity_id'];
         }
+        if (!empty($params['status'])) {
+            $where['status'] = $params['status'];
+        }
 
         $total = self::getCount($where);
         if ($total <= 0) {

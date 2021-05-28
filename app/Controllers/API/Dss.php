@@ -37,6 +37,7 @@ use App\Services\UserRefereeService;
 use App\Services\UserService;
 use App\Services\WechatService;
 use App\Services\WechatTokenService;
+use App\Services\WeekActivityService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -799,5 +800,22 @@ class Dss extends ControllerBase
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
         return HttpHelper::buildResponse($response, $sharePoster);
+    }
+
+    /**
+     * 截图审核-活动列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function activityList(Request $request, Response $response)
+    {
+        try {
+            $params = $request->getParams();
+            list($data, $total) = WeekActivityService::getSelectList($params);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, ['activities' => $data, 'total_count' => $total]);
     }
 }
