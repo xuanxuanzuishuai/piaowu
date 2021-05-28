@@ -158,7 +158,7 @@ class WeekActivityService
             $activityExtArr = array_column($activityExtList, null, 'activity_id');
         }
 
-        $returnData = ['total' => $total, 'list' => []];
+        $returnData = ['total_count' => $total, 'list' => []];
         foreach ($list as $item) {
             $extInfo = $activityExtArr[$item['activity_id']] ?? [];
             $returnData['list'][] = self::formatActivityInfo($item, $extInfo);
