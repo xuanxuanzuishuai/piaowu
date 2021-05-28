@@ -813,6 +813,7 @@ class DictConstants {
      * 获取erp系统dict配置数据, 二维数组 [{code,value}]
      * @param $types
      * @param array $keys
+     * @param array $filterCode
      * @return array
      */
     public static function getErpDictArr($types, $keys = [], $filterCode = [])
@@ -840,5 +841,4 @@ class DictConstants {
         }
         return $dictList;
     }
-
 }

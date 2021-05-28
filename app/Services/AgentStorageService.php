@@ -17,6 +17,7 @@ use App\Models\AgentInfoModel;
 use App\Models\AgentPreStorageRefundModel;
 use App\Models\AgentPreStorageReviewLogModel;
 use App\Models\AgentModel;
+use App\Models\Dss\DssGiftCodeModel;
 use App\Models\EmployeeModel;
 use App\Libs\SimpleLogger;
 use App\Models\AgentPreStorageDetailModel;
@@ -245,6 +246,11 @@ class AgentStorageService
         if (empty($agentData) || !empty($agentData['p_id'])) {
             throw new RunTimeException(['agent_info_error']);
         }
+        //检测流水号是否存在
+        $paymentSerialNumber = AgentPreStorageModel::getRecords(['payment_serial_number' => $params['payment_serial_number']], ['id']);
+        if (!empty($paymentSerialNumber)) {
+            throw new RunTimeException(['payment_serial_number_is_exits']);
+        }
         $time = time();
         $db = MysqlDB::getDB();
         $db->beginTransaction();
@@ -288,11 +294,6 @@ class AgentStorageService
      */
     public static function updateAgentPreStorage($params, $employeeId)
     {
-        //检测代理商是否是一级代理商
-        $agentData = AgentModel::getAgentParentData([$params['agent_id']]);
-        if (empty($agentData) || !empty($agentData['p_id'])) {
-            throw new RunTimeException(['agent_info_error']);
-        }
         //检测数据是否存在
         $agentStorageData = AgentPreStorageModel::getById($params['storage_id']);
         if (empty($agentStorageData)) {
@@ -301,6 +302,16 @@ class AgentStorageService
         //检测当前状态是否允许编辑
         if ($agentStorageData['status'] == AgentPreStorageModel::STATUS_APPROVED) {
             throw new RunTimeException(['agent_storage_data_status_stop_update']);
+        }
+        //检测流水号是否存在
+        $paymentSerialNumber = AgentPreStorageModel::getRecords(['id[!]' => $params['storage_id'], 'payment_serial_number' => $params['payment_serial_number']], ['id']);
+        if (!empty($paymentSerialNumber)) {
+            throw new RunTimeException(['payment_serial_number_is_exits']);
+        }
+        //检测代理商是否是一级代理商
+        $agentData = AgentModel::getAgentParentData([$params['agent_id']]);
+        if (empty($agentData) || !empty($agentData['p_id'])) {
+            throw new RunTimeException(['agent_info_error']);
         }
         $time = time();
         $db = MysqlDB::getDB();
@@ -343,11 +354,11 @@ class AgentStorageService
      */
     public static function getAgentPreStorageDetail($storageId)
     {
-        $data = AgentPreStorageModel::getById($storageId);
-        if (empty($data)) {
+        $detailData = AgentPreStorageModel::getRecords(['id' => $storageId]);
+        if (empty($detailData)) {
             return [];
         }
-        $data['payment_screen_shot_oss_url'] = AliOSS::signUrls($data['payment_screen_shot']);
+        $data = self::formatPreStorageSearchResult($detailData)[0];
         $data['review_log'] = self::getAgentPreStorageReviewLog($storageId);
         return $data;
     }
@@ -414,7 +425,7 @@ class AgentStorageService
         $dictData = DictConstants::getSet(DictConstants::AGENT_STORAGE_APPROVED_ACTION);
         $employeeData = array_column(EmployeeModel::getRecords(['id' => array_column($reviewLogData, 'reviewer_uid')], ['id', 'name']), null, 'id');
         foreach ($reviewLogData as &$rv) {
-            $rv['type_name'] = $dictData[$rv['type']];
+            $rv['type_show'] = $dictData[$rv['type']];
             $rv['reviewer_name'] = $employeeData[$rv['reviewer_uid']]['name'];
             $rv['create_time_show'] = date('Y-m-d H:i:s', $rv['create_time']);
         }
@@ -460,7 +471,7 @@ class AgentStorageService
         $agentIds = [];
         //预存单号
         if ($params['storage_id']) {
-            $where['id'] = $params['storage_id'];
+            $where['id'] = (int)$params['storage_id'];
         }
         //代理商ID与代理商名称
         if ($params['agent_name']) {
@@ -470,7 +481,7 @@ class AgentStorageService
             }
         }
         if (!empty($params['agent_id'])) {
-            $agentIds[] = $params['agent_id'];
+            $agentIds[] = (int)$params['agent_id'];
         }
         if (!empty($agentIds)) {
             $where['agent_id'] = $agentIds;
@@ -481,18 +492,18 @@ class AgentStorageService
         }
         //付款时间
         if ($params['payment_time_start']) {
-            $where['payment_time[>=]'] = $params['payment_time_start'];
+            $where['payment_time[>=]'] = (int)$params['payment_time_start'];
         }
         if ($params['payment_time_end']) {
-            $where['payment_time[<=]'] = $params['payment_time_end'];
+            $where['payment_time[<=]'] = (int)$params['payment_time_end'];
         }
         //支付方式
         if ($params['payment_mode']) {
-            $where['payment_mode'] = $params['payment_mode'];
+            $where['payment_mode'] = (int)$params['payment_mode'];
         }
         //当前状态
         if ($params['status']) {
-            $where['status'] = $params['status'];
+            $where['status'] = (int)$params['status'];
         }
         return $where;
     }
@@ -512,31 +523,42 @@ class AgentStorageService
         $dictData = DictConstants::getTypesMap([DictConstants::PAYMENT_MODE['type'], DictConstants::CHECK_STATUS['type']]);
         foreach ($list as &$value) {
             $value['agent_name'] = $agentData[$value['agent_id']]['name'];
-            $value['payment_mode_name'] = $dictData[DictConstants::PAYMENT_MODE['type']][$value['payment_mode']]['value'];
-            $value['status_name'] = $dictData[DictConstants::CHECK_STATUS['type']][$value['status']]['value'];
-            $value['total_amount'] = $value['package_amount'] * $value['package_unit_price'] / 100;
+            $value['payment_mode_show'] = $dictData[DictConstants::PAYMENT_MODE['type']][$value['payment_mode']]['value'];
+            $value['status_show'] = $dictData[DictConstants::CHECK_STATUS['type']][$value['status']]['value'];
+            $value['total_amount'] = ($value['package_amount'] * $value['package_unit_price']) / 100;
+            $value['package_unit_price'] = $value['package_unit_price'] / 100;
             $value['payment_time_show'] = date('Y-m-d H:i:s', $value['payment_time']);
+            $value['payment_screen_shot_oss_url'] = AliOSS::signUrls($value['payment_screen_shot']);
         }
         return $list;
     }
 
     /**
+     * 预存订单审核
      * @param $storageId
      * @param $status
+     * @param $remark
      * @param $employeeId
      * @return bool
      * @throws RunTimeException
      */
-    public static function approvalAgentPreStorage($storageId, $status, $employeeId)
+    public static function approvalAgentPreStorage($storageId, $status, $remark, $employeeId)
     {
         //获取预存订单数据
         $agentStorageData = AgentPreStorageModel::getById($storageId);
         if (empty($agentStorageData)) {
             throw new RunTimeException(['agent_storage_data_error']);
         }
+        if ($agentStorageData['status'] == $status) {
+            throw new RunTimeException(['nothing_change']);
+        }
         //检测当前状态是否允许编辑
         if ($agentStorageData['status'] == AgentPreStorageModel::STATUS_APPROVED) {
             throw new RunTimeException(['agent_storage_data_status_stop_update']);
+        }
+        //拒绝通过，必须填写备注原因
+        if (($status == AgentPreStorageModel::STATUS_REJECT) && empty($remark)) {
+            throw new RunTimeException(['reject_reason_is_required']);
         }
         $time = time();
         $db = MysqlDB::getDB();
@@ -552,6 +574,7 @@ class AgentStorageService
             'data_id' => $storageId,
             'data_type' => AgentPreStorageReviewLogModel::DATA_TYPE_PRE_STORAGE,
             'type' => $status,
+            'remark'=> $remark,
             'reviewer_uid' => $employeeId,
             'create_time' => $time,
         ]);
@@ -596,7 +619,7 @@ class AgentStorageService
     {
         //检测代理商剩余年卡数量是否大于0
         $agentData = AgentInfoModel::getRecord(['agent_id' => $agentId], ['quantity[Int]', 'id']);
-        if ($agentData['quantity']<=0) {
+        if ($agentData['quantity'] <= 0) {
             SimpleLogger::info('agent storage quantity eq or lt 0 ', $agentData);
             return true;
         }
@@ -612,7 +635,13 @@ class AgentStorageService
             SimpleLogger::info('agent no recommend bill ', []);
             return true;
         }
-        $billCount = count($agentBillData);
+        //检测订单状态是否正常：指定的时间段内没有退款
+        $normalsStatusBill = DssGiftCodeModel::getRecords(['parent_bill_id' => array_column($agentBillData, 'parent_bill_id'), 'code_status[!]' => DssGiftCodeModel::CODE_STATUS_INVALID], ['parent_bill_id']);
+        if (empty($normalsStatusBill)) {
+            SimpleLogger::info('bill status id refund', [$agentBillData]);
+            return true;
+        }
+        $billCount = count($normalsStatusBill);
         //获取预存订单拆分的年卡订单数据
         $storageDetailList = AgentPreStorageDetailModel::getRecords(
             [
@@ -626,7 +655,7 @@ class AgentStorageService
         $storageDetailUpdateData = $processLogInsertData = $refundInsertData = [];
         //消耗的年卡数量/退款金额
         $consumerAmount = $refundAmount = 0;
-        foreach ($agentBillData as $cv) {
+        foreach ($normalsStatusBill as $cv) {
             if (empty($storageDetailList)) {
                 break;
             }

@@ -1982,6 +1982,9 @@ class AgentService
     public static function agentFuzzySearch($params)
     {
         $where = [AgentModel::$table . '.parent_id' => 0];
+        if (!empty($params['id'])) {
+            $where[AgentModel::$table . '.id'] = $params['id'];
+        }
         if (!empty($params['name'])) {
             $where[AgentModel::$table . '.name[~]'] = $params['name'];
         }

@@ -39,7 +39,7 @@ class AgentAwardBillExtModel extends Model
     const PACKAGE_TYPE_YEAR = 2;
 
     /**
-     * 获取代理商作为成单人角色的推荐订单
+     * 获取代理商作为成单人角色且没有进行预存订单消费的推荐订单
      * @param int $agentId
      * @param $createTime
      * @return array|null
@@ -50,7 +50,8 @@ class AgentAwardBillExtModel extends Model
         return $db->select(
             self::$table,
             [
-                '[><]' . AgentAwardDetailModel::$table => ['parent_bill_id' => 'ext_parent_bill_id']
+                '[><]' . AgentAwardDetailModel::$table => ['parent_bill_id' => 'ext_parent_bill_id'],
+                '[>]' . AgentPreStorageDetailModel::$table => ['parent_bill_id' => 'parent_bill_id'],
             ],
             [
                 self::$table . '.parent_bill_id',
@@ -59,6 +60,7 @@ class AgentAwardBillExtModel extends Model
                 self::$table . '.signer_agent_id' => $agentId,
                 self::$table . '.package_type' => self::PACKAGE_TYPE_YEAR,
                 AgentAwardDetailModel::$table . '.create_time[>=]' => $createTime,
+                AgentPreStorageDetailModel::$table . '.id' => null,
                 'ORDER' => [self::$table . '.id' => 'DESC']
             ]
         );

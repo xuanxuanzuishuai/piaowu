@@ -41,6 +41,7 @@ class AliOSS
     const DIR_MINIAPP_CODE = 'miniapp_code';   // 小程序码
     const DIR_EMPLOYEE_POSTER = 'employee_poster';   // 员工海报
     const DIR_SIGN_IN_POSTER = 'sign_in_poster';//打卡截图上传
+    const DIR_AGENT_PRE_STORAGE_BILL = 'agent_pre_storage_bill';//代理商预存订单支付截图保存目录
 
     /**
      * 替换cdn域名 erp上传图片专用
@@ -424,6 +425,7 @@ class AliOSS
             self::DIR_STUDENT_THUMB,
             self::DIR_MESSAGE_EXCEL,
             self::DIR_SIGN_IN_POSTER,
+            self::DIR_AGENT_PRE_STORAGE_BILL,
         ];
         if (!in_array($dirType, $typeConstants)) {
             return null;

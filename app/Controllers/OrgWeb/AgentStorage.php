@@ -410,7 +410,7 @@ class AgentStorage extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         try {
-            AgentStorageService::approvalAgentPreStorage($params['storage_id'], $params['status'], self::getEmployeeId());
+            AgentStorageService::approvalAgentPreStorage($params['storage_id'], $params['status'], $params['remark'], self::getEmployeeId());
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
