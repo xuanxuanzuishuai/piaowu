@@ -349,8 +349,8 @@ class PosterTemplateService
     {
         $id = $params['id'];
         list($resWeek, $resMonth) = TemplatePosterModel::getActivityByPosterId($id);
-        $arrWeekId = array_column($resWeek, 'activity_id');
-        $arrMonthId = array_column($resMonth, 'activity_id');
+        $arrWeekId = array_values(array_unique(array_column($resWeek, 'activity_id')));
+        $arrMonthId = array_values(array_unique(array_column($resMonth, 'activity_id')));
         return [$arrWeekId, $arrMonthId];
     }
     

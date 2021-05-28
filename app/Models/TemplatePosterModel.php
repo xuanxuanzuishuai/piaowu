@@ -106,7 +106,8 @@ class TemplatePosterModel extends Model
             return [];
         }
         $status1 = self::NORMAL_STATUS;
-        $status2 = ActivityPosterModel::NORMAL_STATUS;
+        $status21 = ActivityPosterModel::NORMAL_STATUS;
+        $status22 = ActivityPosterModel::IS_DEL_FALSE;
         $status31 = OperationActivityModel::ENABLE_STATUS_OFF;
         $status32 = OperationActivityModel::ENABLE_STATUS_ON;
         $sql = "
@@ -119,7 +120,8 @@ class TemplatePosterModel extends Model
             WHERE
                 {$table1}.id = {$id}
                 AND {$table1}.`status` = {$status1}
-                AND {$table2}.`status` = {$status2}
+                AND {$table2}.`status` = {$status21}
+                AND {$table2}.`is_del` = {$status22}
                 AND {$table3}.enable_status IN ( {$status31}, {$status32} )
                 AND {$table3}.end_time > {$time}
         ";

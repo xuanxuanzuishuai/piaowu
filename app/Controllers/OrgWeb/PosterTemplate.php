@@ -15,6 +15,7 @@ use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\TemplatePosterModel;
 use App\Services\PosterTemplateService;
+use I18N\Lang;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -294,11 +295,17 @@ class PosterTemplate extends ControllerBase
             }
             list($arrWeekId, $arrMonthId) = PosterTemplateService::offlinePosterCheck($params);
             $arrErrorMsg = [];
+            $arrWeekId = array_map(function ($v) {
+                return 'ID'.$v;
+            }, $arrWeekId);
+            $arrMonthId = array_map(function ($v) {
+                return 'ID'.$v;
+            }, $arrMonthId);
             $arrWeekId && $arrErrorMsg[] = '周周有奖活动' . implode('、', $arrWeekId);
             $arrMonthId && $arrErrorMsg[] = '月月有奖活动' . implode('、', $arrMonthId);
             if ($arrErrorMsg) {
-                $strErrorMsg = implode('；', $arrErrorMsg);
-                $strErrorMsg = "该海报在{$strErrorMsg}中使用，请确认是否下线该海报";
+                $strErrorMsgPart = implode('；', $arrErrorMsg);
+                $strErrorMsg = sprintf(Lang::getWord('template_poster_offline_tips'), $strErrorMsgPart);
                 $data = ['err_msg' => $strErrorMsg];
                 return HttpHelper::buildResponse($response, $data);
             } else {
