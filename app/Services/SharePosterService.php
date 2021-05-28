@@ -882,11 +882,10 @@ class SharePosterService
         foreach ($posters as $key => $poster) {
             // 审核数据操作锁，解决并发导致的重复审核和发奖
             $lockKey = self::KEY_POSTER_VERIFY_LOCK . $poster['id'];
-            $lock = $redis->setnx($lockKey, $poster['id']);
+            $lock = $redis->set($lockKey, $poster['id'], 'EX', 120, 'NX');
             if (empty($lock)) {
                 continue;
             }
-            $redis->expire($lockKey, 120);
             if (!empty($poster['award_id'])) {
                 $needRejectAward[] = $poster['award_id'];
             }

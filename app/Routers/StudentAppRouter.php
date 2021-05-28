@@ -7,10 +7,13 @@
  */
 
 namespace App\Routers;
+
 use App\Controllers\StudentApp\App;
 use App\Controllers\StudentApp\Auth;
 use App\Controllers\StudentApp\DuanWuActivity;
 use App\Controllers\StudentApp\Poster;
+use App\Controllers\StudentWX\Activity;
+use App\Controllers\StudentWX\Poster AS WXPoster;
 use App\Controllers\StudentApp\ReferralActivity;
 use App\Middleware\AppAuthMiddleWare;
 
@@ -70,6 +73,39 @@ class StudentAppRouter extends RouterBase
         '/student_app/duanwu_activity/referee_list' => [
             'method' => ['get'],
             'call'   => DuanWuActivity::class . ':refereeList',
+            'middles' => [AppAuthMiddleWare::class]
+        ],
+
+        // 月月有奖 && 周周领奖
+        // 海报列表
+        '/student_app/poster/list' => [
+            'method' => ['get'],
+            'call' => WXPoster::class . ':list',
+            'middles' => [AppAuthMiddleWare::class]
+        ],
+        '/student_app/poster/upload' => [
+            'method' => ['post'],
+            'call' => WXPoster::class . ':upload',
+            'middles' => [AppAuthMiddleWare::class]
+        ],
+        '/student_app/text/list' => [
+            'method' => ['get'],
+            'call' => WXPoster::class . ':wordList',
+            'middles' => [AppAuthMiddleWare::class]
+        ],
+        '/student_app/activity/list' => [
+            'method' => ['get'],
+            'call' => Activity::class . ':weekActivityList',
+            'middles' => [AppAuthMiddleWare::class]
+        ],
+        '/student_app/share_poster/list' => [
+            'method' => ['get'],
+            'call' => WXPoster::class . ':shareList',
+            'middles' => [AppAuthMiddleWare::class]
+        ],
+        '/student_app/share_poster/detail' => [
+            'method' => ['get'],
+            'call' => WXPoster::class . ':shareDetail',
             'middles' => [AppAuthMiddleWare::class]
         ],
     ];
