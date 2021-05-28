@@ -9,6 +9,7 @@
 namespace App\Routers;
 
 
+use App\Controllers\StudentWX\DuanWuActivity;
 use App\Controllers\StudentWX\GoldLeafShop;
 use App\Middleware\WeChatAuthCheckMiddleware;
 use App\Middleware\WeChatOpenIdCheckMiddleware;
@@ -42,5 +43,9 @@ class StudentWXRouter extends RouterBase
 
         /** 积分商城 start */
         '/student_wx/points_shop/gold_leaf_list' => ['method' => ['get'], 'call' => GoldLeafShop::class . ':goldLeafList'],  // 获取待发放金叶子积分明细
+        
+        //端午节活动
+        '/student_wx/duanwu_activity/activity_info' => ['method' => ['get'], 'call' => DuanWuActivity::class . ':activityInfo'],
+        '/student_wx/duanwu_activity/referee_list' => ['method' => ['get'], 'call' => DuanWuActivity::class . ':refereeList'],
     ];
 }

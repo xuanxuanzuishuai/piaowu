@@ -627,6 +627,14 @@ class DictConstants {
         ],
     ];
 
+    //端午节活动配置
+    const ACTIVITY_DUANWU_CONFIG = [
+        'type' => 'activity_duanwu_config',
+        'keys' => [
+            'wx_url','app_url','app_poster_path','activity_id'
+        ]
+    ];
+    
     /**
      * 单个获取op系统dict配置数据
      * @param $type

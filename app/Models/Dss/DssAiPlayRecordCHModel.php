@@ -201,4 +201,29 @@ class DssAiPlayRecordCHModel
         $record = $chDb->queryAll($sql)[0];
         return (int)$record['play_day'];
     }
+    
+    /**
+     * @param $studentId
+     * 获取学生第一次练琴时间
+     */
+    public static function getStudentEarliestPlayTime($studentId, $startTime, $endTime)
+    {
+        $chDB = CHDB::getDB();
+        $sql = "
+            SELECT
+                student_id,create_time
+            FROM
+                ai_play_record
+            WHERE
+                student_id = {$studentId}
+                AND duration > 0
+                AND create_time >= {$startTime}
+                AND create_time <= {$endTime}
+            ORDER BY
+                create_time ASC
+            LIMIT 0,1
+        ";
+        $res = $chDB->queryAll($sql);
+        return $res ? $res[0]['create_time'] : 0;
+    }
 }
