@@ -294,16 +294,17 @@ class PosterTemplate extends ControllerBase
             }
             list($arrWeekId, $arrMonthId) = PosterTemplateService::offlinePosterCheck($params);
             $arrErrorMsg = [];
-            $arrWeekId && $arrErrorMsg[] = '周周有奖活动' . implode('、',$arrWeekId);
-            $arrMonthId && $arrErrorMsg[] = '月月有奖活动' . implode('、',$arrMonthId);
+            $arrWeekId && $arrErrorMsg[] = '周周有奖活动' . implode('、', $arrWeekId);
+            $arrMonthId && $arrErrorMsg[] = '月月有奖活动' . implode('、', $arrMonthId);
             if ($arrErrorMsg) {
                 $strErrorMsg = implode('；', $arrErrorMsg);
                 $strErrorMsg = "该海报在{$strErrorMsg}中使用，请确认是否下线该海报";
-                return HttpHelper::buildErrorResponse($response, $strErrorMsg);
+                $data = ['err_msg' => $strErrorMsg];
+                return HttpHelper::buildResponse($response, $data);
             } else {
-                return HttpHelper::buildResponse($response, []);
+                return HttpHelper::buildResponse($response, ['err_msg' => '']);
             }
-        }catch (RunTimeException $e) {
+        } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
     }
