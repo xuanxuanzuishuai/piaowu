@@ -722,11 +722,11 @@ class Dss extends ControllerBase
             if ($result['code'] != Valid::CODE_SUCCESS) {
                 return $response->withJson($result, StatusCode::HTTP_OK);
             }
-            list($list, $total) = SharePosterService::uploadSharePoster($params);
+            $id = SharePosterService::uploadSharePoster($params);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
-        return HttpHelper::buildResponse($response, [$list, $total]);
+        return HttpHelper::buildResponse($response, $id);
     }
 
     /**

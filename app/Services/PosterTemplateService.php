@@ -10,7 +10,6 @@ use App\Models\ActivityPosterModel;
 use App\Models\ActivityExtModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssTemplatePosterModel;
-use App\Models\Dss\DssTemplatePosterWordModel;
 use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\PosterModel;
 use App\Models\TemplatePosterModel;
@@ -471,7 +470,10 @@ class PosterTemplateService
         }
         $posterConfig = PosterService::getPosterConfig();
         $userDetail = StudentService::dssStudentStatusCheck($studentId);
-
+        $userInfo = [
+            'nickname' => $userDetail['student_info']['name'] ?? '',
+            'headimgurl' => StudentService::getStudentThumb($userDetail['student_info']['thumb'])
+        ];
         // 查询活动对应海报
         $posterList = PosterService::getActivityPosterList($activityInfo);
         $channel = self::getChannelByType($type);
@@ -514,12 +516,13 @@ class PosterTemplateService
         }
         // 周周领奖限制检测
         if ($type == TemplatePosterModel::STANDARD_POSTER) {
-            if ($userDetail['student_info']['has_review_course'] != DssStudentModel::REVIEW_COURSE_1980) {
+            if ($data['student_status'] != DssStudentModel::STATUS_BUY_NORMAL_COURSE) {
                 $activityInfo['error'] = Lang::getWord('only_year_user_enter_event');
             }
         }
         $data['list'] = $posterList;
         $data['activity'] = $activityInfo;
+        $data['student_info'] = $userInfo;
         $data['student_status'] = $userDetail['student_status'];
         $data['student_status_zh'] = DssStudentModel::STUDENT_IDENTITY_ZH_MAP[$userDetail['student_status']] ?? DssStudentModel::STATUS_REGISTER;
         return $data;

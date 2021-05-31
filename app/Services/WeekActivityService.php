@@ -583,6 +583,9 @@ class WeekActivityService
         if (empty($total)) {
             return [$list, $total];
         }
+        foreach ($list as &$item) {
+            $item['id'] = $item['activity_id'];
+        }
         return [$list, $total];
     }
 }

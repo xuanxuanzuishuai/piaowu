@@ -805,7 +805,7 @@ class SharePosterService
         $imagePath = $params['image_path'] ?? '';
 
         //获取学生信息
-        $studentDetail = StudentService::dssStudentStatusCheck($studentId);
+        $studentDetail = StudentService::dssStudentStatusCheck($studentId, false);
         if ($studentDetail['student_status'] != DssStudentModel::STATUS_BUY_NORMAL_COURSE) {
             throw new RunTimeException(['student_status_disable']);
         }
@@ -952,8 +952,8 @@ class SharePosterService
      */
     public static function refusedPoster($id, $params = [])
     {
-
-        $poster = SharePosterModel::getPostersByIds([$id]);
+        $type = $params['type'] ?? SharePosterModel::TYPE_WEEK_UPLOAD;
+        $poster = SharePosterModel::getPostersByIds([$id], $type);
         $poster = $poster[0] ?? [];
         if (empty($poster)) {
             throw new RunTimeException(['get_share_poster_error']);
@@ -962,12 +962,12 @@ class SharePosterService
         $status = SharePosterModel::VERIFY_STATUS_UNQUALIFIED;
         $time   = time();
         $update = SharePosterModel::updateRecord($poster['id'], [
-            'status'      => $status,
-            'check_time'  => $time,
-            'update_time' => $time,
-            'operator_id' => $params['employee_id'],
-            'reason'      => implode(',', $params['reason']),
-            'remark'      => $params['remark'] ?? '',
+            'verify_status' => $status,
+            'verify_time'   => $time,
+            'verify_user'   => $params['employee_id'],
+            'verify_reason' => implode(',', $params['reason']),
+            'update_time'   => $time,
+            'remark'        => $params['remark'] ?? '',
         ]);
         if (!empty($poster['award_id'])) {
             (new Erp())->updateAward(

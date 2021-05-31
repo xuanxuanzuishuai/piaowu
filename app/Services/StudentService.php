@@ -31,11 +31,12 @@ class StudentService
 {
     /**
      * 获取学生当前状态
-     * @param int $studentId
+     * @param $studentId
+     * @param bool $isWechat
      * @return array $studentStatus
      * @throws RunTimeException
      */
-    public static function dssStudentStatusCheck($studentId)
+    public static function dssStudentStatusCheck($studentId, $isWechat = true)
     {
         //获取学生信息
         $studentInfo = DssStudentModel::getRecord(['id' => $studentId]);
@@ -51,7 +52,7 @@ class StudentService
             'user_type' => DssUserWeiXinModel::USER_TYPE_STUDENT,
             'busi_type' => DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER,
         ], ['id']);
-        if (empty($userIsBind)) {
+        if (empty($userIsBind) && $isWechat) {
             //未绑定
             $data['student_status'] = DssStudentModel::STATUS_UNBIND;
         } else {
@@ -60,7 +61,7 @@ class StudentService
                     if ($studentInfo['sub_end_date'] < date("Ymd")) {
                         //付费体验课 - 体验期过期
                         $data['student_status'] = DssStudentModel::STATUS_BUY_TEST_COURSE_EXPIRED;
-                    }else {
+                    } else {
                         //付费体验课 - 体验期
                         $data['student_status'] = DssStudentModel::STATUS_BUY_TEST_COURSE;
                     }
@@ -73,7 +74,7 @@ class StudentService
                         // 付费正式课有效期已过期但名下有未激活的单个激活码有效期超过指定天数的认为是付费正式课用户
                         if (self::checkNoActiveFormalClassStatus($studentInfo['id'])) {
                             $data['student_status'] = DssStudentModel::STATUS_BUY_NORMAL_COURSE;
-                        }else{
+                        } else {
                             $data['student_status'] = DssStudentModel::STATUS_HAS_EXPIRED;
                         }
                     } else {

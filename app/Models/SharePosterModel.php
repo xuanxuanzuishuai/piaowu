@@ -187,9 +187,10 @@ class SharePosterModel extends Model
     /**
      * 获取海报信息
      * @param $posterIds
+     * @param int $type
      * @return array|null
      */
-    public static function getPostersByIds($posterIds)
+    public static function getPostersByIds($posterIds, $type = self::TYPE_CHECKIN_UPLOAD)
     {
         $sp = self::getTableNameWithDb();
         $s  = DssStudentModel::getTableNameWithDb();
@@ -220,7 +221,7 @@ class SharePosterModel extends Model
             AND uw.app_id = " . Constants::SMART_APP_ID . "
         WHERE sp.id in ( " . implode(',', $posterIds) . " )
             AND sp.verify_status = " . self::VERIFY_STATUS_WAIT . "
-            AND sp.type = " . self::TYPE_CHECKIN_UPLOAD;
+            AND sp.type = " . $type;
         $db = self::dbRO();
         return $db->queryAll($sql);
     }
