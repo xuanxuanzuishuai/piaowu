@@ -21,6 +21,7 @@ use App\Models\Dss\DssErpPackageV1Model;
 use App\Models\Dss\DssStudentModel;
 use App\Models\EmployeeModel;
 use App\Models\Erp\ErpPackageV1Model;
+use App\Models\Erp\ErpStudentAccountModel;
 use App\Models\ParamMapModel;
 use App\Models\ThirdPartBillModel;
 use App\Services\Queue\ThirdPartBillTopic;
@@ -68,6 +69,13 @@ class ThirdPartBillService
                     ];
                 }
             }
+            //检测课包价格是否正确
+            $packageData = DssErpPackageV1Model::getRecord(['id' => $params['package_id']],['price_json']);
+            if(empty($packageData)){
+                throw new RunTimeException(['package_not_available','import']);
+            }
+            $priceJSON = json_decode($packageData['price_json'], true);
+            $packagePriceMoney = empty($priceJSON[ErpStudentAccountModel::SUB_TYPE_CNY]) ? 0 : $priceJSON[ErpStudentAccountModel::SUB_TYPE_CNY];
             // 检查所有的手机号/订单号/实付金额是否合法, 并返回所有错误的记录
             $invalidMobiles = $invalidTradeNo = $invalidDssAmount = [];
             foreach ($data as &$v) {
@@ -84,6 +92,9 @@ class ThirdPartBillService
                     $v['dss_amount'] = 1;
                 } else {
                     $v['dss_amount'] *= 100;
+                    if ($v['dss_amount'] > $packagePriceMoney) {
+                        $invalidDssAmount[] = $v;
+                    }
                 }
             }
         } catch (\Exception $e) {

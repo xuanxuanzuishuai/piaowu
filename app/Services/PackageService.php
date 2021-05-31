@@ -44,11 +44,17 @@ class PackageService
      */
     public static function getPackageBySubType($subType)
     {
-        $packageData = DssErpPackageV1Model::getPackageIds($subType);
-        if (empty($packageData)) {
+        $packageIdsData = DssErpPackageV1Model::getPackageIds($subType);
+        if (empty($packageIdsData)) {
             return [];
         }
-        return DssErpPackageV1Model::getRecords(['id' => array_column($packageData,'package_id')], ['id', 'name']);
+        $packageData = DssErpPackageV1Model::getRecords(['id' => array_column($packageIdsData, 'package_id')], ['id', 'name', 'price_json']);
+        foreach ($packageData as &$pv) {
+            //课包金额
+            $priceJSON = json_decode($pv['price_json'], true);
+            $pv['price_money'] = empty($priceJSON[ErpStudentAccountModel::SUB_TYPE_CNY]) ? 0 : ($priceJSON[ErpStudentAccountModel::SUB_TYPE_CNY] / 100);
+        }
+        return $packageData;
     }
 
 

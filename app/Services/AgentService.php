@@ -1510,7 +1510,7 @@ class AgentService
             $whereStudentIds = array_column($dssStudentList, 'id');
         }
 
-        //订单状态 支付时间
+        //订单状态
         $giftCodeWhere = ' ';
         if (!empty($params['code_status'])) {
             if ($params['code_status'] != DssGiftCodeModel::CODE_STATUS_INVALID) {
@@ -1518,12 +1518,6 @@ class AgentService
             } else {
                 $giftCodeWhere .= ' AND gc.code_status=' . DssGiftCodeModel::CODE_STATUS_INVALID;
             }
-        }
-        if (!empty($params['pay_start_time'])) {
-            $giftCodeWhere .= ' AND gc.create_time>=' . $params['pay_start_time'];
-        }
-        if (!empty($params['pay_end_time'])) {
-            $giftCodeWhere .= ' AND gc.create_time<=' . $params['pay_end_time'];
         }
         $agentBillWhere = ' ';
         //目标代理商ID列表
@@ -1537,6 +1531,13 @@ class AgentService
             $agentBillWhere .= ' AND  ab.student_id in( ' . implode(',', $whereStudentIds) . ')';
         }
         $agentBillWhere .= ' AND ab.action_type != ' . AgentAwardDetailModel::AWARD_ACTION_TYPE_REGISTER;
+        //订单支付时间
+        if (!empty($params['pay_start_time'])) {
+            $agentBillWhere .= ' AND ab.create_time>=' . $params['pay_start_time'];
+        }
+        if (!empty($params['pay_end_time'])) {
+            $agentBillWhere .= ' AND ab.create_time<=' . $params['pay_end_time'];
+        }
         //订单ID 购买产品包
         if (!empty($params['parent_bill_id'])) {
             $agentBillWhere .= ' AND ab.ext_parent_bill_id =\'' . $params['parent_bill_id'] . '\'';
@@ -2062,8 +2063,9 @@ class AgentService
             $oneItem = [
                 'package_id' => $value['package_id']
             ];
+            //已下架课包不在前端展示
             if (in_array($value['package_id'], $notAvailable)) {
-                $oneItem['error_message'] = Lang::getWord('package_not_available_for_sale');
+                break;
             }
             if (!empty($value['cover'])) {
                 $oneItem['product_img'] = $value['cover'];
