@@ -845,6 +845,8 @@ class SharePosterService
         if (empty($res)) {
             throw new RunTimeException(['share_poster_add_fail']);
         }
+        //系统自动审核
+        QueueService::checkPoster(['id' => $res, 'app_id' => Constants::SMART_APP_ID]);
         return $res;
     }
 

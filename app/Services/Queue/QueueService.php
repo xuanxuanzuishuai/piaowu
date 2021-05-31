@@ -500,4 +500,21 @@ class QueueService
         }
         return true;
     }
+
+    /**
+     * ocr审核海报
+     * @param $data
+     * @return bool
+     */
+    public static function checkPoster($data): bool
+    {
+        try {
+            $topic = new CheckPosterSyncTopic();
+            $topic->checkPoster($data)->publish(5);
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), $data ?? []);
+            return false;
+        }
+        return true;
+    }
 }

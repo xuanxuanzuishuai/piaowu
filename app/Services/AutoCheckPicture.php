@@ -6,16 +6,14 @@ namespace App\Services;
 
 use App\Libs\AliOSS;
 use App\Libs\Constants;
-use App\Libs\Dss;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
-use App\Models\Dss\DssReferralActivityModel;
-use App\Models\Dss\DssSharePosterModel;
 use App\Models\EmployeeModel;
 use App\Models\SharePosterModel;
+use App\Models\WeekActivityModel;
 
 class AutoCheckPicture
 {
@@ -33,8 +31,8 @@ class AutoCheckPicture
             return null;
         }
         $result = $record['result'];
-        $activity = DssReferralActivityModel::getById($result['activity_id']);
-        if (empty($activity) || $activity['status'] != 1) {
+        $activity = WeekActivityModel::getById($result['activity_id'], ['id', 'enable_status', 'start_time']);
+        if (empty($activity) || $activity['enable_status'] != 2) {
             SimpleLogger::error('not found activity', ['id' => $result['activity_id']]);
             return null;
         }
@@ -55,7 +53,7 @@ class AutoCheckPicture
             $redis->expire($cacheKey, self::$redisExpire);
         }
         $letterIden = $redis->hget($cacheKey, $date);
-        return [$date, $letterIden, AliOSS::replaceCdnDomainForDss($result['img_url'])];
+        return [$date, $letterIden, AliOSS::replaceCdnDomainForDss($result['image_path'])];
     }
 
     /**
@@ -70,7 +68,7 @@ class AutoCheckPicture
         }
         switch ($data['app_id']) {
             case Constants::SMART_APP_ID: //智能陪练 类型为上传截图领奖且未审核的
-                $result = DssSharePosterModel::getRecord(['id' => $data['id'],'type' => DssSharePosterModel::TYPE_UPLOAD_IMG,'status' => SharePosterModel::VERIFY_STATUS_WAIT],['student_id','activity_id','img_url']);
+                $result = SharePosterModel::getRecord(['id' => $data['id'],'type' => SharePosterModel::TYPE_WEEK_UPLOAD,'verify_status' => SharePosterModel::VERIFY_STATUS_WAIT],['student_id','activity_id','image_path']);
                 break;
             default:
                 break;
@@ -82,13 +80,13 @@ class AutoCheckPicture
         }
         //查询本周活动是否有系统审核拒绝的
         $conds = [
-            'student_id'  => $result['student_id'],
-            'activity_id' => $result['activity_id'],
-            'type'        => DssSharePosterModel::TYPE_UPLOAD_IMG,
-            'status'      => SharePosterModel::VERIFY_STATUS_UNQUALIFIED,
-            'operator_id' => EmployeeModel::SYSTEM_EMPLOYEE_ID
+            'student_id'    => $result['student_id'],
+            'activity_id'   => $result['activity_id'],
+            'type'          => SharePosterModel::TYPE_WEEK_UPLOAD,
+            'verify_status' => SharePosterModel::VERIFY_STATUS_UNQUALIFIED,
+            'verify_user'   => EmployeeModel::SYSTEM_EMPLOYEE_ID
         ];
-        $historyRecord = DssSharePosterModel::getRecord($conds, ['id']);
+        $historyRecord = SharePosterModel::getRecord($conds, ['id']);
         return compact('result', 'historyRecord');
     }
 
@@ -142,9 +140,11 @@ class AutoCheckPicture
         if (!$status) {
             return;
         }
-        $params['poster_ids'] = [$data['id']];
+        $poster_id  = $data['id'];
+        $params['employee_id']  = EmployeeModel::SYSTEM_EMPLOYEE_ID;
         if ($status > 0) {
-            (new Dss())->checkPosterApproval($params);
+            //审核通过
+            SharePosterService::approvalPoster([$poster_id], $params);
         } else {
             switch ($status) {
                 case SharePosterModel::SYSTEM_REFUSE_CODE_NEW: //未使用最新海报
@@ -165,7 +165,8 @@ class AutoCheckPicture
                 default:
                     break;
             }
-            (new Dss())->checkPosterRefused($params);
+            //审核拒绝
+            SharePosterService::refusedPoster($poster_id, $params);
         }
     }
 

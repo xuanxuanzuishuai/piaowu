@@ -21,8 +21,6 @@ class Dss
     const GET_TRAIL_INFO = '/op/user/get_trail_log';//得到用户的购买体验课信息
     const GET_ACTIVITY_INFO = '/op/referral/activity_info';//周周有礼活动页
     const UPLOAD_SHARE_POSTER = '/op/referral/upload_share_poster';//周周有礼上传图片信息
-    const CHECK_POSTER_APPROVAL = '/op/share_poster/check_poster_approval';//自动审核图片-通过
-    const CHECK_POSTER_REFUSED = '/op/share_poster/check_poster_refused';//自动审核图片-拒绝
 
     private $host;
 
@@ -168,35 +166,4 @@ class Dss
         }
         return $res;
     }
-
-    /**
-     * 自动审核图片-审核通过
-     * @param $params
-     * @return array|bool
-     * @throws RunTimeException
-     */
-    public function checkPosterApproval($params)
-    {
-        $res = self::commonAPI(self::CHECK_POSTER_APPROVAL, $params, 'POST');
-        if ($res['code'] != Valid::CODE_SUCCESS) {
-            throw new RunTimeException(['check_failure']);
-        }
-        return $res;
-    }
-
-    /**
-     * 自动审核图片-审核拒绝
-     * @param $params
-     * @return array|bool
-     * @throws RunTimeException
-     */
-    public function checkPosterRefused($params)
-    {
-        $res = self::commonAPI(self::CHECK_POSTER_REFUSED, $params, 'POST');
-        if ($res['code'] != Valid::CODE_SUCCESS) {
-            throw new RunTimeException(['check_failure']);
-        }
-        return $res;
-    }
-
 }
