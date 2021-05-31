@@ -88,9 +88,14 @@ class ActivityPosterModel extends Model
         if (empty($activityPosterList)) {
             return false;
         }
+        // 传入的总数和原有总数不相等说明一定是不一样的
+        if (count($activityPosterList) != count($posterIdArr)) {
+            return true;
+        }
+        // 相等 判断交集是否相等，不相等说明不一样
         $posterIds = array_column($activityPosterList, 'poster_id');
         $arrayIntersect = array_intersect($posterIds, $posterIdArr);
-        return count($arrayIntersect) == count($posterIdArr) ? false : true;
+        return count($arrayIntersect) == count($activityPosterList) ? false : true;
     }
     
     /**

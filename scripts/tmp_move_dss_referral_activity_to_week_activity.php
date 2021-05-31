@@ -82,7 +82,7 @@ foreach ($referralActivityList as $referral) {
             'create_time' => $referral['create_time'],
             'update_time' => $referral['update_time'],
             'operator_id' => EmployeeModel::SYSTEM_EMPLOYEE_ID,
-            'award_rule' => '',
+            'award_rule' => '稍后更新',
             'remark' => $referral['remark'],
             'poster' => [$templatePosterId],
         ], EmployeeModel::SYSTEM_EMPLOYEE_ID);
@@ -99,8 +99,10 @@ foreach ($referralActivityList as $referral) {
             throw new Exception('update_week_status; activity_id=' . $activityId);
         }
     } catch (Exception $e) {
-        $failInfo['fail_data']['data'] = $referral;
-        $failInfo['fail_data']['err'] = $e->getMessage();
+        $failInfo['fail_data'][] = [
+            'id' => $referral['id'],
+            'err' => $e->getMessage(),
+        ];
     }
 }
 

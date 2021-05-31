@@ -244,7 +244,16 @@ class WeekActivityService
         }
         // 获取海报库图片信息
         $posterUrlList = TemplatePosterModel::getRecords(['id' => array_column($posterList, 'poster_id')]);
-        $activityInfo['poster'] = $posterUrlList ?? [];
+        // 保持海报顺序一致
+        $posterIdInfoArr = array_column($posterUrlList, null, 'id');
+        $activityInfo['poster'] = [];
+        foreach ($posterList as $item) {
+            if (!isset($posterIdInfoArr[$item['poster_id']])) {
+                continue;
+            }
+            $activityInfo['poster'][] = $posterIdInfoArr[$item['poster_id']];
+        }
+
         return self::formatActivityInfo($activityInfo, []);
     }
 
@@ -521,12 +530,15 @@ class WeekActivityService
             'image' => $posterUrl,
         ];
         $logId = MessageService::saveSendLog($manualData);
-        // 放到nsq队列中一个个处理
-        MessageService::manualPushMessage(
-            $logId,
-            array_column($boundUsers, 'uuid'),
-            $employeeId
-        );
+        $uuidArr = array_chunk(array_column($boundUsers, 'uuid'), 1000);
+        foreach ($uuidArr as $_uuid) {
+            // 放到nsq队列中一个个处理
+            MessageService::manualPushMessage(
+                $logId,
+                $_uuid,
+                $employeeId
+            );
+        }
         return true;
     }
 

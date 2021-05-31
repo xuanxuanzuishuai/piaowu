@@ -145,7 +145,7 @@ class MonthActivityService
                 $activityInfo['poster'][$k]['example_url'] = !empty($p['example_path']) ? AliOSS::replaceCdnDomainForDss($p['example_path']) : '';
             }
         }
-        $info = $activityInfo;
+        $info = WeekActivityService::formatActivityTimeStatus($activityInfo);
         $info['format_start_time'] = date("Y-m-d H:i:s", $activityInfo['start_time']);
         $info['format_end_time'] = date("Y-m-d H:i:s", $activityInfo['end_time']);
         $info['format_create_time'] = date("Y-m-d H:i:s", $activityInfo['create_time']);
@@ -156,9 +156,6 @@ class MonthActivityService
         $info['create_poster_button_url'] = AliOSS::replaceCdnDomainForDss($activityInfo['create_poster_button_img']);
         $info['make_poster_tip_word'] = Util::textDecode($activityInfo['make_poster_tip_word']);
         $info['share_poster_tip_word'] = Util::textDecode($activityInfo['share_poster_tip_word']);
-
-        $time = time();
-        $info['activity_status_zh'] = WeekActivityService::getActivityStartDict($activityInfo, $time);
 
         if (empty($info['remark'])) {
             $info['remark'] = $extInfo['remark'] ?? '';
