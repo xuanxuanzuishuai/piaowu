@@ -43,7 +43,7 @@ class WeekActivityModel extends Model
             $where['activity_id'] = $params['activity_id'];
         }
         if (!empty($params['status'])) {
-            $where['status'] = $params['status'];
+            $where['enable_status'] = $params['status'];
         }
 
         $total = self::getCount($where);

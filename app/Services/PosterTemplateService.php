@@ -113,55 +113,23 @@ class PosterTemplateService
      */
     private static function formatPosterInfo($row)
     {
-        $formatData = [];
-        if (isset($row['id'])) {
-            $formatData['poster_id'] = $row['id'];
-        }
-        if (isset($row['poster_name'])) {
-            $formatData['poster_name'] = $row['poster_name'];
-        }
         if (isset($row['name'])) {
-            $formatData['poster_name'] = $row['name'];
-        }
-        if (isset($row['poster_url'])) {
-            $formatData['poster_url'] = $row['poster_url'];
-            $formatData['full_poster_url'] = AliOSS::signUrls($row['poster_url']);
-        }
-        if (isset($row['poster_path'])) {
-            $formatData['poster_path'] = $row['poster_path'];
-            $formatData['full_poster_url'] = AliOSS::signUrls($row['poster_path']);
-        }
-        if (isset($row['example_url'])) {
-            $formatData['example_url'] = $row['example_url'];
-            $formatData['full_example_url'] = AliOSS::signUrls($row['example_url']);
-        }
-        if (isset($row['example_path'])) {
-            $formatData['example_path'] = $row['example_path'];
-            $formatData['full_example_url'] = AliOSS::signUrls($row['example_path']);
+            $row['poster_name'] = $row['name'];
         }
         if (isset($row['poster_status'])) {
-            $formatData['poster_status'] = $row['poster_status'];
-            $formatData['poster_status_zh'] = DictConstants::get(DictConstants::SHARE_POSTER_CHECK_STATUS, $row['poster_status']);
+            $row['poster_status_zh'] = DictConstants::get(DictConstants::SHARE_POSTER_CHECK_STATUS, $row['poster_status']);
         }
         if (isset($row['status'])) {
-            $formatData['poster_status'] = $row['status'];
-            $formatData['poster_status_zh'] = DictConstants::get(DictConstants::SHARE_POSTER_CHECK_STATUS, $row['status']);
+            $row['poster_status'] = $row['status'];
+            $row['poster_status_zh'] = DictConstants::get(DictConstants::SHARE_POSTER_CHECK_STATUS, $row['status']);
         }
         if (isset($row['update_time'])) {
-            $formatData['update_time'] = date('Y-m-d H:i', $row['update_time']);
+            $row['update_time'] = date('Y-m-d H:i', $row['update_time']);
         }
         if (isset($row['operator_name'])) {
-            $formatData['operator_name'] = $row['operator_name'] ?? '';
+            $row['operator_name'] = $row['operator_name'] ?? '';
         }
-        if (isset($row['order_num'])) {
-            $formatData['order_num'] = $row['order_num'];
-        }
-        if (isset($row['op_poster_id'])) {
-            $formatData['op_poster_id'] = $row['op_poster_id'];
-        }
-        $formatData['poster_id'] = $row['poster_id'] ?? 0;
-        $formatData['example_id'] = $row['example_id'] ?? 0;
-        return $formatData;
+        return $row;
     }
 
     /**
@@ -507,13 +475,14 @@ class PosterTemplateService
         // 查询活动对应海报
         $posterList = PosterService::getActivityPosterList($activityInfo);
         $channel = self::getChannelByType($type);
+        $extParams = [
+            'user_current_status' => $userDetail['student_status'] ?? 0,
+            'a' => $activityId,
+        ];
         foreach ($posterList as &$item) {
             $item = self::formatPosterInfo($item);
-            $extParams = [
-                'p' => $item['poster_id'],
-                'user_current_status' => $userDetail['student_status'] ?? 0,
-                'a' => $activityId,
-            ];
+            // 海报图：
+            $extParams['p'] = $item['poster_id'];
             $poster = PosterService::generateQRPosterAliOss(
                 $item['poster_path'],
                 $posterConfig,
@@ -522,7 +491,21 @@ class PosterTemplateService
                 $channel,
                 $extParams
             );
-            $item['poster_complete_example'] = $poster['poster_save_full_path'];
+            $item['poster_url'] = $poster['poster_save_full_path'];
+            // 样例图：
+            if (empty($item['example_id']) || empty($item['example_path'])) {
+                continue;
+            }
+            $extParams['p'] = $item['example_id'];
+            $poster = PosterService::generateQRPosterAliOss(
+                $item['example_path'],
+                $posterConfig,
+                $studentId,
+                DssUserQrTicketModel::STUDENT_TYPE,
+                $channel,
+                $extParams
+            );
+            $item['example_url'] = $poster['poster_save_full_path'];
         }
 
         // 查询活动配置
