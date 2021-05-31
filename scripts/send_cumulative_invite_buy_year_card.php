@@ -95,7 +95,7 @@ foreach ($list as $award) {
     }
 
     // 发放奖励
-    for ($i=0; $i<$awardNum; $i++) {
+    for ($i = $refCumulativeNum[$award['uuid']]; $i < $awardNum; $i++) {
         $status = ErpUserEventTaskModel::EVENT_TASK_STATUS_COMPLETE;
         $reason = '';
         $taskResult = $erp->addEventTaskAward($award['finish_task_uuid'], $taskId, $status, 0, $award['uuid'], ['reason' => $reason]);
@@ -160,7 +160,7 @@ if ($currDay == 16) {
         }
 
         // 发放奖励
-        for ($i=0; $i<$awardNum; $i++) {
+        for ($i = $refCumulativeNum[$award['uuid']]; $i < $awardNum; $i++) {
             $status = ErpUserEventTaskModel::EVENT_TASK_STATUS_COMPLETE;
             $reason = '';
             $taskResult = $erp->addEventTaskAward($award['finish_task_uuid'], $taskId, $status, 0, $award['uuid'], ['reason' => $reason]);
