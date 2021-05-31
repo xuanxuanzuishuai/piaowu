@@ -182,7 +182,7 @@ class WeekActivityService
             }
         }
 
-        $info = $activityInfo;
+        $info = self::formatActivityTimeStatus($activityInfo);
         $info['format_start_time'] = date("Y-m-d H:i:s", $activityInfo['start_time']);
         $info['format_end_time'] = date("Y-m-d H:i:s", $activityInfo['end_time']);
         $info['format_create_time'] = date("Y-m-d H:i:s", $activityInfo['create_time']);
@@ -195,9 +195,6 @@ class WeekActivityService
         $info['guide_word'] = Util::textDecode($activityInfo['guide_word']);
         $info['share_word'] = Util::textDecode($activityInfo['share_word']);
 
-        $time = time();
-        $info['activity_status_zh'] = self::getActivityStartDict($activityInfo, $time);
-
         if (empty($info['remark'])) {
             $info['remark'] = $extInfo['remark'] ?? '';
         }
@@ -209,20 +206,22 @@ class WeekActivityService
      * 获取活动开始文字
      * @param $activityInfo
      * @param $time
-     * @return string
+     * @return array
      */
-    public static function getActivityStartDict($activityInfo, $time)
+    public static function formatActivityTimeStatus($activityInfo, $time = 0)
     {
-        if ($activityInfo['start_time'] <= $time && $activityInfo['end_time'] >= $time) {
-            $activityStatusZh = OperationActivityModel::ACTIVITY_STATUS_ZH['already_start'];
-        } elseif ($activityInfo['start_time'] > $time) {
-            $activityStatusZh = OperationActivityModel::ACTIVITY_STATUS_ZH['no_start'];
-        } elseif ($activityInfo['end_time'] < $time) {
-            $activityStatusZh = OperationActivityModel::ACTIVITY_STATUS_ZH['already_over'];
-        } else {
-            $activityStatusZh = '';
+        if (empty($time)) {
+            $time = time();
         }
-        return $activityStatusZh;
+        if ($activityInfo['start_time'] <= $time && $activityInfo['end_time'] >= $time) {
+            $activityInfo['activity_time_status'] = OperationActivityModel::TIME_STATUS_ONGOING;
+        } elseif ($activityInfo['start_time'] > $time) {
+            $activityInfo['activity_time_status'] = OperationActivityModel::TIME_STATUS_PENDING;
+        } elseif ($activityInfo['end_time'] < $time) {
+            $activityInfo['activity_time_status'] = OperationActivityModel::TIME_STATUS_FINISHED;
+        }
+        $activityInfo['activity_status_zh'] = DictService::getKeyValue('activity_time_status', $activityInfo['activity_time_status']);
+        return $activityInfo;
     }
 
     /**
@@ -585,6 +584,7 @@ class WeekActivityService
         }
         foreach ($list as &$item) {
             $item['id'] = $item['activity_id'];
+            $item = self::formatActivityTimeStatus($item);
         }
         return [$list, $total];
     }

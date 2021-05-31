@@ -469,7 +469,7 @@ class PosterTemplateService
             return $data;
         }
         $posterConfig = PosterService::getPosterConfig();
-        $userDetail = StudentService::dssStudentStatusCheck($studentId);
+        $userDetail = StudentService::dssStudentStatusCheck($studentId, false);
         $userInfo = [
             'nickname' => $userDetail['student_info']['name'] ?? '',
             'headimgurl' => StudentService::getStudentThumb($userDetail['student_info']['thumb'])
@@ -516,7 +516,7 @@ class PosterTemplateService
         }
         // 周周领奖限制检测
         if ($type == TemplatePosterModel::STANDARD_POSTER) {
-            if ($data['student_status'] != DssStudentModel::STATUS_BUY_NORMAL_COURSE) {
+            if ($userDetail['student_status'] != DssStudentModel::STATUS_BUY_NORMAL_COURSE) {
                 $activityInfo['error'] = Lang::getWord('only_year_user_enter_event');
             }
         }

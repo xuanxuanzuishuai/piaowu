@@ -146,13 +146,16 @@ class WeekActivityModel extends Model
         if (empty($active)) {
             return self::getRecords(['ORDER' => ['id' => 'DESC'], 'LIMIT' => [0, $limit]]);
         }
-        $list = self::getRecords(['id[<=]' => $active['id'], 'ORDER' => ['id' => 'DESC'], 'LIMIT' => [0, $limit]]);
+        $list = self::getRecords(
+            [
+                'id[<=]' => $active['id'],
+                'enable_status' => OperationActivityModel::ENABLE_STATUS_ON,
+                'ORDER' => ['id' => 'DESC'],
+                'LIMIT' => [0, $limit]
+            ]
+        );
         $now = time();
         foreach ($list as $key => &$item) {
-            if ($item['enable_status'] != OperationActivityModel::ENABLE_STATUS_ON) {
-                unset($list[$key]);
-                continue;
-            }
             $item['active'] = Constants::STATUS_FALSE;
             if ($now - $item['start_time'] >= Util::TIMESTAMP_12H) {
                 $item['active'] = Constants::STATUS_TRUE;

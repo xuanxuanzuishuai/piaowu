@@ -859,7 +859,8 @@ class SharePosterService
      */
     public static function approvalPoster($id, $params = [])
     {
-        $posters = SharePosterModel::getPostersByIds($id);
+        $type = $params['type'] ?? SharePosterModel::TYPE_WEEK_UPLOAD;
+        $posters = SharePosterModel::getPostersByIds($id, $type);
         if (count($posters) != count($id)) {
             throw new RunTimeException(['get_share_poster_error']);
         }
@@ -894,10 +895,10 @@ class SharePosterService
 
             //计算当前真正应该获得的奖励
             $where = [
-                'id[!]'      => $poster['id'],
-                'student_id' => $poster['student_id'],
-                'type'       => SharePosterModel::TYPE_WEEK_UPLOAD,
-                'status'     => SharePosterModel::VERIFY_STATUS_QUALIFIED,
+                'id[!]'         => $poster['id'],
+                'student_id'    => $poster['student_id'],
+                'type'          => SharePosterModel::TYPE_WEEK_UPLOAD,
+                'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED,
                 'create_time[>=]' => $divisionTime,
             ];
             $count = SharePosterModel::getCount($where);

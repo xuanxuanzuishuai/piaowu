@@ -26,12 +26,10 @@ class OperationActivityModel extends Model
     const ENABLE_STATUS_ON = 2;         // 启用
     const ENABLE_STATUS_DISABLE = 3;    // 已禁用
 
-    // 活动开始状态描述
-    const ACTIVITY_STATUS_ZH = [
-        'no_start' => '未开始',
-        'already_start' => '已开始',
-        'already_over' => '已结束'
-    ];
+    const TIME_STATUS_PENDING = 1;
+    const TIME_STATUS_ONGOING = 2;
+    const TIME_STATUS_FINISHED = 3;
+
 
     /**
      * 当前阶段为付费正式课且未参加当前活动的学员手微信open_id

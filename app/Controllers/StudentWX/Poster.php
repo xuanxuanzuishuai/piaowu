@@ -126,6 +126,7 @@ class Poster extends ControllerBase
                 throw new RunTimeException(['record_not_found']);
             }
             $params['type'] = SharePosterModel::TYPE_WEEK_UPLOAD;
+            $params['user_id'] = $student['id'];
             list($posters, $total) = SharePosterService::sharePosterList($params);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
