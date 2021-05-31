@@ -12,6 +12,7 @@ use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\EmployeeModel;
+use App\Models\OperationActivityModel;
 use App\Models\SharePosterModel;
 use App\Models\WeekActivityModel;
 
@@ -32,7 +33,7 @@ class AutoCheckPicture
         }
         $result = $record['result'];
         $activity = WeekActivityModel::getById($result['activity_id'], ['id', 'enable_status', 'start_time']);
-        if (empty($activity) || $activity['enable_status'] != 2) {
+        if (empty($activity) || $activity['enable_status'] != OperationActivityModel::ENABLE_STATUS_ON) {
             SimpleLogger::error('not found activity', ['id' => $result['activity_id']]);
             return null;
         }
