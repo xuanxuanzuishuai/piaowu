@@ -9,7 +9,6 @@ use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
 use App\Libs\NewSMS;
-use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\ActivityExtModel;
@@ -241,24 +240,8 @@ class WeekActivityService
         if (empty($activityInfo)) {
             throw new RunTimeException(['record_not_found']);
         }
-        // 获取海报列表
-        $posterList = ActivityPosterModel::getListByActivityId($activityId);
-        if (empty($posterList)) {
-            SimpleLogger::info("getDetailById_get_poster_is_empty", ['activity_id' => $activityId]);
-            throw new RunTimeException(['record_not_found'], ['activity_id' => $activityId]);
-        }
-        // 获取海报库图片信息
-        $posterUrlList = TemplatePosterModel::getRecords(['id' => array_column($posterList, 'poster_id')]);
-        // 保持海报顺序一致
-        $posterIdInfoArr = array_column($posterUrlList, null, 'id');
-        $activityInfo['poster'] = [];
-        foreach ($posterList as $item) {
-            if (!isset($posterIdInfoArr[$item['poster_id']])) {
-                continue;
-            }
-            $activityInfo['poster'][] = $posterIdInfoArr[$item['poster_id']];
-        }
-
+        // 获取活动海报
+        $activityInfo['poster'] = PosterService::getActivityPosterList($activityInfo);
         return self::formatActivityInfo($activityInfo, []);
     }
 

@@ -15,6 +15,7 @@ define('LANG_ROOT', PROJECT_ROOT . '/lang');
 require_once PROJECT_ROOT . '/vendor/autoload.php';
 
 use App\Libs\MysqlDB;
+use App\Libs\SimpleLogger;
 use App\Models\Dss\DssReferralActivityModel;
 use App\Models\EmployeeModel;
 use App\Models\Erp\ErpEventModel;
@@ -98,6 +99,12 @@ foreach ($referralActivityList as $referral) {
         if (is_null($updateRes)) {
             throw new Exception('update_week_status; activity_id=' . $activityId);
         }
+        SimpleLogger::info("tmp_move_dss_referral_activity_to_week_activity", [
+            'referral_activity_id' => $referral['id'],
+            'template_poster_id' => $templatePosterId,
+            'activity_id' => $activityId,
+            'referral_activity_name' => $referral['name']
+        ]);
     } catch (Exception $e) {
         $failInfo['fail_data'][] = [
             'id' => $referral['id'],
