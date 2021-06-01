@@ -198,7 +198,12 @@ class WeekActivityService
         if (empty($info['remark'])) {
             $info['remark'] = $extInfo['remark'] ?? '';
         }
-
+        if (!empty($info['award_rule'])) {
+            $awardRule = $info['award_rule'];
+        } else {
+            $awardRule = $extInfo['award_rule'] ?? '';
+        }
+        $info['award_rule'] = Util::textDecode($awardRule);
         return $info;
     }
 
@@ -258,7 +263,7 @@ class WeekActivityService
     }
 
     /**
-     * 添加周周领奖活动
+     * 修改周周领奖活动
      * @param $data
      * @param $employeeId
      * @return bool

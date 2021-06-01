@@ -160,7 +160,12 @@ class MonthActivityService
         if (empty($info['remark'])) {
             $info['remark'] = $extInfo['remark'] ?? '';
         }
-
+        if (!empty($info['award_rule'])) {
+            $awardRule = $info['award_rule'];
+        } else {
+            $awardRule = $extInfo['award_rule'] ?? '';
+        }
+        $info['award_rule'] = Util::textDecode($awardRule);
         return $info;
     }
 
@@ -182,7 +187,16 @@ class MonthActivityService
             SimpleLogger::info("getDetailById_get_poster_is_empty", ['activity_id' => $activityId]);
             // 获取海报库图片信息
             $posterUrlList = TemplatePosterModel::getRecords(['id' => array_column($posterList, 'poster_id')]);
-            $activityInfo['poster'] = $posterUrlList ?? [];
+
+            // 保持海报顺序一致
+            $posterIdInfoArr = array_column($posterUrlList, null, 'id');
+            $activityInfo['poster'] = [];
+            foreach ($posterList as $item) {
+                if (!isset($posterIdInfoArr[$item['poster_id']])) {
+                    continue;
+                }
+                $activityInfo['poster'][] = $posterIdInfoArr[$item['poster_id']];
+            }
         }
 
         return self::formatActivityInfo($activityInfo, []);
@@ -237,7 +251,7 @@ class MonthActivityService
     }
 
     /**
-     * 添加周周领奖活动
+     * 修改周周领奖活动
      * @param $data
      * @param $employeeId
      * @return bool
@@ -274,7 +288,6 @@ class MonthActivityService
             'activity_id' => $activityId,
             'start_time' => Util::getDayFirstSecondUnix($data['start_time']),
             'end_time' => Util::getDayLastSecondUnix($data['end_time']),
-            'enable_status' => OperationActivityModel::ENABLE_STATUS_OFF,
             'banner' => $data['banner'] ?? '',
             'make_poster_button_img' => $data['make_poster_button_img'] ?? '',
             'make_poster_tip_word' => !empty($data['make_poster_tip_word']) ? Util::textEncode($data['make_poster_tip_word']) : '',
@@ -282,7 +295,7 @@ class MonthActivityService
             'create_poster_button_img' => $data['create_poster_button_img'] ?? '',
             'share_poster_tip_word' => !empty($data['share_poster_tip_word']) ? Util::textEncode($data['share_poster_tip_word']) : '',
             'operator_id' => $employeeId,
-            'create_time' => $time,
+            'update_time' => $time,
         ];
 
         $activityExtData = [
