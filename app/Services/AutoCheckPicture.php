@@ -32,7 +32,7 @@ class AutoCheckPicture
             return null;
         }
         $result = $record['result'];
-        $activity = WeekActivityModel::getById($result['activity_id'], ['id', 'enable_status', 'start_time']);
+        $activity = WeekActivityModel::getRecord(['activity_id' => [$result['activity_id']]], ['id', 'enable_status', 'start_time']);
         if (empty($activity) || $activity['enable_status'] != OperationActivityModel::ENABLE_STATUS_ON) {
             SimpleLogger::error('not found activity', ['id' => $result['activity_id']]);
             return null;
