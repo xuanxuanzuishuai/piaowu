@@ -378,6 +378,8 @@ class DictConstants {
             'student_invite_send_points_start_time', // 我的邀请人发放积分开始时间
             'buy_trail_re_mini_sis_p_id', //智能体验营小程序已购买转介绍海报底图id
             'cumulative_invite_buy_year_card',    // 累计邀请购买年卡
+            'refused_poster_url', // 海报审核未通过跳转地址
+            'week_activity_url', // 周周有奖活动地址
         ]
     ];
 

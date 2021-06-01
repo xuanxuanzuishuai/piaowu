@@ -3,6 +3,7 @@ namespace App\Services;
 
 
 use App\Libs\Constants;
+use App\Libs\DictConstants;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
@@ -264,7 +265,7 @@ class PushMessageService
     {
         $urlArr = [
             ErpEventModel::TYPE_IS_REFERRAL => $_ENV['STUDENT_AWARD_POINTS_URL'],
-            ErpEventModel::DAILY_UPLOAD_POSTER => $_ENV["WECHAT_FRONT_DOMAIN"] . "/student/poster"
+            ErpEventModel::DAILY_UPLOAD_POSTER => $_ENV["REFERRAL_FRONT_DOMAIN"] . DictConstants::get(DictConstants::REFERRAL_CONFIG, 'week_activity_url'),
         ];
         $url = $urlArr[$awardDetailInfo['type']] ?? '';
         $activityName  = '';

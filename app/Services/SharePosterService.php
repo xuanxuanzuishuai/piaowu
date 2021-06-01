@@ -103,9 +103,8 @@ class SharePosterService
         if (!empty($poster['points_award_id'])) {
             $ids = explode(',', $poster['points_award_id']);
             if (!empty($ids)) {
-                $awards = ErpUserEventTaskAwardGoldLeafModel::getRecords(['id' => $ids], ['award_num']);
-                $awards = array_sum(array_column($awards, 'award_num')) ?: 0;
-                $poster['award_amount'] = $awards;
+                $awards = ErpUserEventTaskAwardGoldLeafModel::getList(['id' => $ids]);
+                $poster['award_amount'] = $awards['total_award_num'] ?? 0;
             }
         }
         $poster['activity_name'] = $poster['activity_name'] . '(' . date('m月d日', $poster['start_time']) . '-' . date('m月d日', $poster['end_time']) . ')';

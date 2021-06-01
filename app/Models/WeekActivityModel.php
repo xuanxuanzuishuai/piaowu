@@ -162,7 +162,7 @@ class WeekActivityModel extends Model
             }
             $item = self::formatOne($item);
         }
-        return $list;
+        return array_reverse($list);
     }
 
     /**

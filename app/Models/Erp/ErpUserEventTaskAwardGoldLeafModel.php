@@ -39,7 +39,7 @@ class ErpUserEventTaskAwardGoldLeafModel extends ErpModel
      * @param array $fields
      * @return array
      */
-    public static function getList(array $where, array $limit, array $order = ['ID_DESC'], array $fields = []): array
+    public static function getList(array $where, array $limit = [], array $order = ['ID_DESC'], array $fields = []): array
     {
         //获取库+表完整名称
         $awardTableName = self::getTableNameWithDb();
@@ -49,7 +49,11 @@ class ErpUserEventTaskAwardGoldLeafModel extends ErpModel
         $returnList = ['list' => [], 'total' => 0, 'total_award_num' => 0];
         $sqlWhere = [];
         if (!empty($where['id'])) {
-            $sqlWhere[] = 'a.id=' . $where['id'];
+            if (is_array($where['id'])) {
+                $sqlWhere[] = 'a.id in ('.implode(',', $where['id']).')';
+            } else {
+                $sqlWhere[] = 'a.id=' . $where['id'];
+            }
         }
         if (!empty($where['user_id'])) {
             $sqlWhere[] = 'a.user_id=' . $where['user_id'];
@@ -60,7 +64,7 @@ class ErpUserEventTaskAwardGoldLeafModel extends ErpModel
         if (!empty($where['status'])) {
             if (is_array($where['status'])) {
                 $sqlWhere[] = 'a.status in (' . implode(',', $where['status']) . ')';
-            }else {
+            } else {
                 $sqlWhere[] = 'a.status=' . $where['status'];
             }
         }

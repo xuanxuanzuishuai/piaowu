@@ -18,7 +18,9 @@ use App\Libs\Util;
 use App\Models\ActivityExtModel;
 use App\Models\ActivityPosterModel;
 use App\Models\Dss\DssAiPlayRecordCHModel;
+use App\Models\Dss\DssCategoryV1Model;
 use App\Models\Dss\DssCollectionModel;
+use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Erp\ErpEventTaskModel;
 use App\Models\Erp\ErpStudentModel;
@@ -404,7 +406,8 @@ class ActivityService
                 'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED
             ];
             $shareRecord = SharePosterModel::getRecord($where);
-            if (!empty($shareRecord)) {
+            $lastPayInfo = DssGiftCodeModel::getUserFirstPayInfo($student['id'], DssCategoryV1Model::DURATION_TYPE_NORMAL, 'asc');
+            if (!empty($shareRecord) || $lastPayInfo['buy_time'] > $activity['end_time']) {
                 $activity['is_show'] = Constants::STATUS_FALSE;
             } else {
                 $available = true;
@@ -415,7 +418,7 @@ class ActivityService
         if (!$available) {
             $error = Lang::getWord('wait_for_next_event');
         }
-        return ['error' => $error, 'list' => $list];
+        return ['error' => $error, 'list' => $list, 'available' => $available];
     }
 
     /**

@@ -1076,7 +1076,7 @@ class MessageService
         $appId  = DssUserWeiXinModel::dealAppId($params['app_id'] ?? '');
         $name   = $params['activity_name'] ?? '';
         $status = $params['status'] ?? '';
-        $url    = $_ENV["WECHAT_FRONT_DOMAIN"] . "/student/referral?tag=2";
+        $url    = $_ENV["REFERRAL_FRONT_DOMAIN"] . DictConstants::get(DictConstants::REFERRAL_CONFIG, 'refused_poster_url');
 
         //审核未通过客服消息
         if ($status == SharePosterModel::VERIFY_STATUS_UNQUALIFIED) {

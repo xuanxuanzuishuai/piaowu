@@ -68,7 +68,12 @@ class TemplatePosterWordModel extends Model
             return json_decode($cache, true);
         }
 
-        $list = self::getRecords(['status' => $status]);
+        $list = self::getRecords(
+            [
+                'status' => $status,
+                'ORDER' => ['update_time' => 'DESC']
+            ]
+        );
         if (!empty($list)) {
             $redis->setex($cacheKey, Util::TIMESTAMP_ONEDAY, json_encode($list));
         }

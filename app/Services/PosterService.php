@@ -244,11 +244,18 @@ class PosterService
         if (empty($allPosterIds)) {
             return [];
         }
-        $field = ['name', 'poster_id', 'poster_path', 'example_id', 'example_path', 'order_num'];
+        $field = ['id', 'name', 'poster_id', 'poster_path', 'example_id', 'example_path', 'order_num'];
         $where = [
             'id' => $allPosterIds,
-            'ORDER' => ['order_num' => 'ASC']
         ];
-        return TemplatePosterModel::getRecords($where, $field);
+        $posterList = TemplatePosterModel::getRecords($where, $field);
+        $posterList = array_column($posterList, null, 'id');
+        $res = [];
+        foreach ($allPosterIds as $id) {
+            if (isset($posterList[$id])) {
+                $res[] = $posterList[$id];
+            }
+        }
+        return $res;
     }
 }
