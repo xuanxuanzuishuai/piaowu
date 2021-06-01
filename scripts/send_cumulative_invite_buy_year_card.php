@@ -56,7 +56,7 @@ if (empty($list)) {
 $currDay = date("d");
 if ($currDay <= 16) {
     // 16号发放的40000累计邀请奖励都是发放的上一个月的
-    $refAwardStartTime = strtotime(date('Y-m-01 00:00:00'));
+    $refAwardStartTime = strtotime(date('Y-m-17 00:00:00', strtotime(" - 1 month")));
     $refAwardEndTime = strtotime(date("Y-m-01 00:00:00", strtotime(" + 1 month")));
 } else {
     // 17号才开始处理本月累计邀请，所有发放累计邀请奖励记录创建时间是从17号开始
