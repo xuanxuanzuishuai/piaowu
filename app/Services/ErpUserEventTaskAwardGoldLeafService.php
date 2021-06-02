@@ -42,8 +42,11 @@ class ErpUserEventTaskAwardGoldLeafService
             ErpUserEventTaskAwardGoldLeafModel::STATUS_DISABLED,
         ];
         $list = ErpUserEventTaskAwardGoldLeafModel::getList($params, $limit);
-        $returnList['total'] = $list['total'];
-        $returnList['total_num'] = $list['total_award_num'];
+        $returnList = [
+            'total' => $list['total'],
+            'total_num' => $list['total_award_num'],
+            'list' => [],
+        ];
 
         // 如果自己是推荐人，显示被推荐人的手机号
         $buyerStudentMobileArr = [];

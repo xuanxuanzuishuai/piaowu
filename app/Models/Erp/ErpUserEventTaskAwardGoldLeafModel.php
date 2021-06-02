@@ -1,11 +1,10 @@
 <?php
-
-
+/**
+ * 金叶子积分表
+ */
 namespace App\Models\Erp;
 
-
 use App\Libs\Util;
-use App\Models\Dss\DssStudentModel;
 
 class ErpUserEventTaskAwardGoldLeafModel extends ErpModel
 {
@@ -39,7 +38,7 @@ class ErpUserEventTaskAwardGoldLeafModel extends ErpModel
      * @param array $fields
      * @return array
      */
-    public static function getList(array $where, array $limit = [], array $order = ['ID_DESC'], array $fields = []): array
+    public static function getList(array $where, array $limit = [], array $order = ['id' => 'DESC'], array $fields = []): array
     {
         //获取库+表完整名称
         $awardTableName = self::getTableNameWithDb();
@@ -47,63 +46,56 @@ class ErpUserEventTaskAwardGoldLeafModel extends ErpModel
         $studentTableName = ErpStudentModel::getTableNameWithDb();
 
         $returnList = ['list' => [], 'total' => 0, 'total_award_num' => 0];
-        $sqlWhere = [];
+        $sqlWhere = "1=1";
         if (!empty($where['id'])) {
             if (is_array($where['id'])) {
-                $sqlWhere[] = 'a.id in ('.implode(',', $where['id']).')';
+                $sqlWhere .= ' AND a.id in ('.implode(',', $where['id']).')';
             } else {
-                $sqlWhere[] = 'a.id=' . $where['id'];
+                $sqlWhere .= ' AND a.id=' . $where['id'];
             }
         }
         if (!empty($where['user_id'])) {
-            $sqlWhere[] = 'a.user_id=' . $where['user_id'];
+            $sqlWhere .= ' AND a.user_id=' . $where['user_id'];
         }
         if (!empty($where['uuid'])) {
-            $sqlWhere[] = 'a.uuid=' . $where['uuid'];
+            $sqlWhere .= " AND a.uuid='" . $where['uuid'] . "'";
         }
         if (!empty($where['status'])) {
             if (is_array($where['status'])) {
-                $sqlWhere[] = 'a.status in (' . implode(',', $where['status']) . ')';
+                $sqlWhere .= ' AND a.status in (' . implode(',', $where['status']) . ')';
             } else {
-                $sqlWhere[] = 'a.status=' . $where['status'];
+                $sqlWhere .= ' AND a.status=' . $where['status'];
             }
         }
         $db = self::dbRO();
-        $count = $db->queryAll('select count(*) as total from ' . $awardTableName . ' as a where ' . implode(" AND ", $sqlWhere));
+        $count = $db->queryAll('select count(*) as total from ' . $awardTableName . ' as a where ' . $sqlWhere);
         if ($count[0]['total'] <= 0) {
             return $returnList;
         }
         $returnList['total'] = $count[0]['total'];
 
         // 计算金额总数 - 等于作废不计算总数
-        $awardNumList = $db->queryAll('select `a`.`status`, `a`.`award_num` from ' . $awardTableName .' as a  where ' . implode(' AND ', $sqlWhere));
+        $awardNumList = $db->queryAll('select `a`.`status`, `a`.`award_num` from ' . $awardTableName .' as a  where ' . $sqlWhere);
         foreach ($awardNumList as $item) {
             if ($item['status'] != self::STATUS_DISABLED) {
                 $returnList['total_award_num'] += $item['award_num'];
             }
         }
-
-        $listSql = 'select a.*,et.name as event_name,s.mobile from ' . $awardTableName . ' as a' .
-            ' left join ' . $eventTaskTableName . ' as et on et.id=a.event_task_id' .
-            ' left join ' . $studentTableName . ' as s on s.id=a.user_id' .
-            ' where ' . implode(' AND ', $sqlWhere);
-
-        $sqlOrder = [];
-        foreach ($order as $_sort) {
-            switch ($_sort) {
-                default:
-                    $sqlOrder[] = 'id DESC';
+        if (!empty($order)) {
+            foreach ($order as $_key => $_sort) {
+                $sqlOrder[] = $_key . ' '. $_sort;
             }
-        }
-        if (!empty($sqlOrder)) {
-            $listSql .= ' order by ' . implode(',', $sqlOrder);
-        }
-
-        if (!empty($limit)) {
-            $listSql .= ' limit ' . $limit[1] . ' offset ' . $limit[0];
+            $sqlOrder = !empty($sqlOrder) ? ' order by ' . implode(',', $sqlOrder) : '';
+        } else {
+            $sqlOrder = "";
         }
 
-        $returnList['list'] = $db->queryAll($listSql);
+        $sqlFields = !empty($fields) ? implode(',', $fields) : 'a.*,et.name as event_name,s.mobile';
+        $sqlLimit  = !empty($limit) ? ' limit ' . $limit[1] . ' offset ' . $limit[0] : '';
+        $returnList['list'] = $db->queryAll('select ' . $sqlFields . ' from ' . $awardTableName . ' as a' .
+                ' left join ' . $eventTaskTableName . ' as et on et.id=a.event_task_id' .
+                ' left join ' . $studentTableName . ' as s on s.id=a.user_id' .
+                ' where ' . $sqlWhere . $sqlOrder . $sqlLimit) ?? [];
 
         return $returnList;
     }
@@ -136,7 +128,7 @@ class ErpUserEventTaskAwardGoldLeafModel extends ErpModel
         if (!empty($where['event_task_id'])) {
             if (is_array($where['event_task_id'])) {
                 $whereSqlStr[] = ' `event_task_id` in (' . implode(',', $where['event_task_id']) . ')';
-            }else {
+            } else {
                 $whereSqlStr[] = ' `event_task_id`=' . $where['event_task_id'];
             }
         }
