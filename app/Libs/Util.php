@@ -874,9 +874,15 @@ class Util
      */
     public static function errorCapture($message, $data = [])
     {
-        SimpleLogger::error($message, $data);
         $sentryClient = new \Raven_Client($_ENV['SENTRY_NOTIFY_URL']);
-        $sentryClient->captureMessage($message, $data);
+        $otherInfo = '';
+        if (!empty($data)) {
+            foreach ($data as $k => $v) {
+                $str = PHP_EOL . "{$k}: " . $v;
+                $otherInfo .= $str;
+            }
+        }
+        $sentryClient->captureMessage('write_uid: ' . SimpleLogger::getWriteUid() . PHP_EOL . 'info: ' . $message . $otherInfo);
     }
 
     /**

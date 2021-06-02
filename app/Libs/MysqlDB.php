@@ -63,7 +63,11 @@ class MysqlDB
         $this->name = $configName;
 
         $configData = self::getConfig($configName);
-        $this->client = new Medoo($configData);
+        try {
+            $this->client = new Medoo($configData);
+        } catch (\Exception $exception) {
+            SentryClient::captureException($exception, ['config_name' => $configName, 'server' => $configData['server']]);
+        }
     }
 
     public function __call($name, $arguments)
@@ -89,7 +93,8 @@ class MysqlDB
                     'error' => $error,
                     'last_query' => $this->client->last(),
                     'method' => $name,
-                    'arguments' => $arguments
+                    'arguments' => $arguments,
+                    'write_uid' => SimpleLogger::getWriteUid(),
                 ];
                 $extra = [
                     'extra' => [

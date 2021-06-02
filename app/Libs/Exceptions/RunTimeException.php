@@ -81,20 +81,8 @@ class RunTimeException extends \Exception
         return $errorData;
     }
 
-    public function sendCaptureMessage($data)
-    {
-        $sentryClient = new \Raven_Client($_ENV['SENTRY_NOTIFY_URL']);
-        $sentryClient->captureMessage('RUNTIME EXCEPTION: ' . $this->getMessage(), null, $data);
-    }
-
     public function getData()
     {
         return $this->data;
-    }
-
-    public static function makeAppErrorData(string $error)
-    {
-        $instance = new RunTimeException([$error]);
-        return $instance->getAppErrorData();
     }
 }

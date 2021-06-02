@@ -35,6 +35,8 @@ class SimpleLogger
 {
     private static $logger = null;
 
+    public static $writeUid = null;
+
     public static function getLogger()
     {
         if (self::$logger == null) {
@@ -93,7 +95,9 @@ class SimpleLogger
 
             private function generateUid($length)
             {
-                return substr(hash('md5', uniqid('', true)), 0, $length);
+                $uid = substr(hash('md5', uniqid('', true)), 0, $length);
+                SimpleLogger::$writeUid = $uid;
+                return $uid;
             }
         };
     }
@@ -131,5 +135,10 @@ class SimpleLogger
     public static function emergency($msg, $data)
     {
         self::getLogger()->emergency($msg, $data);
+    }
+
+    public static function getWriteUid()
+    {
+        return self::$writeUid;
     }
 }

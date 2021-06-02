@@ -12,23 +12,6 @@ namespace App\Libs;
 class SentryClient
 {
     /**
-     * Sentry 上报
-     * @param $message
-     * @param $data
-     * @param array $trace
-     */
-    public static function captureError($message, $data, $trace = [])
-    {
-        $extra = [
-            'extra' => [
-                'stack_trace' => $trace
-            ]
-        ];
-        $sentryClient = new \Raven_Client($_ENV['SENTRY_NOTIFY_URL']);
-        $sentryClient->captureMessage($message, $data, $extra);
-    }
-
-    /**
      * Sentry 上报异常
      * @param \Exception $exception
      * @param $data
@@ -40,7 +23,14 @@ class SentryClient
                 'stack_trace' => $exception->getTrace()
             ]
         ];
+        $otherInfo = '';
+        if (!empty($data)) {
+            foreach ($data as $k => $v) {
+                $str = PHP_EOL . "{$k}: " . $v;
+                $otherInfo .= $str;
+            }
+        }
         $sentryClient = new \Raven_Client($_ENV['SENTRY_NOTIFY_URL']);
-        $sentryClient->captureMessage($exception->getMessage(), $data, $extra);
+        $sentryClient->captureMessage('write_uid: ' . SimpleLogger::getWriteUid() . PHP_EOL . 'exception info: ' . $exception->getMessage() . $otherInfo, [], $extra);
     }
 }
