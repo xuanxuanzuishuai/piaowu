@@ -66,6 +66,7 @@ class SimpleLogger
             public function __construct($length = 32)
             {
                 if (!empty($_SERVER['HTTP_IDENTIFY'])) {
+                    SimpleLogger::$writeUid = $_SERVER['HTTP_IDENTIFY'];
                     $this->uid = $_SERVER['HTTP_IDENTIFY'];
                 }
                 else {
