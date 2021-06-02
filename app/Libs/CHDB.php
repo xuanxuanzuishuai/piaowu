@@ -50,10 +50,14 @@ class CHDB
         $this->name = $configName;
 
         $configData = self::getConfig($configName);
-        $this->client = new Client($configData);
-        $this->client->database($configData['database_name']);
-        $this->client->setTimeout(5);       // 10 seconds
-        $this->client->setConnectTimeOut(5); // 5 seconds
+        try {
+            $this->client = new Client($configData);
+            $this->client->database($configData['database_name']);
+            $this->client->setTimeout(5);       // 10 seconds
+            $this->client->setConnectTimeOut(5); // 5 seconds
+        } catch (\Exception $exception) {
+            SentryClient::captureException($exception, ['db' => 'click_house', 'config_name' => $configName, 'server' => $configData['server']]);
+        }
     }
 
     public static function getConfig($configType)

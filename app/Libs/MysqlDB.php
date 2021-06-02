@@ -66,7 +66,7 @@ class MysqlDB
         try {
             $this->client = new Medoo($configData);
         } catch (\Exception $exception) {
-            SentryClient::captureException($exception, ['config_name' => $configName, 'server' => $configData['server']]);
+            SentryClient::captureException($exception, ['db' => 'mysql', 'config_name' => $configName, 'server' => $configData['server']]);
         }
     }
 
