@@ -23,14 +23,15 @@ class ActivityDuanWuService
     public static $cacheKeyRankCnt = 'OP_REFEREE_RANK_CNT_FOR_DUANWU';
     
     /**
+     * 活动详情
      * @param $params
      * @return array
-     * 活动详情
+     * @throws \App\Libs\Exceptions\RunTimeException
+     * @throws \App\Libs\KeyErrorRC4Exception
      */
     public static function activityInfo($params)
     {
         $uid = $params['user_info']['user_id'];
-        //$uid = 92;   //TODO 上线时注释
         
         $redis = RedisDB::getConn();
         $userRank = $redis->hget(self::$cacheKeyRefereeRank, $uid);
@@ -49,7 +50,7 @@ class ActivityDuanWuService
                     $encourageTips = "加油，再邀请1人购买体验卡并练琴，即可获得50元京东卡奖励";
                     break;
                 case $rankUserCnt >= 200:
-                    $rankCnt = $redis->hget(self::$cacheKeyRankCnt, 200);
+                    $rankCnt = (int)$redis->hget(self::$cacheKeyRankCnt, 200);
                     $diff = $rankCnt + 1;
                     $encourageTips = "加油，再邀请{$diff}人购买体验卡并练琴，即可获得50元京东卡奖励";
                     break;
@@ -107,8 +108,8 @@ class ActivityDuanWuService
         $userStatusInfo = StudentService::dssStudentStatusCheck($uid);   // 获取用户当前状态
         $userStatus = $userStatusInfo['student_status'];
         
-        $inviteUrlApp = $activityConfig['app_url'] ?? '';
-        if (!$inviteUrlApp) {
+        $appUrl = $activityConfig['app_url'] ?? '';
+        if (!$appUrl) {
             $path = $activityConfig['app_poster_path'] ?? '';
             $config = DictConstants::getSet(DictConstants::TEMPLATE_POSTER_CONFIG);
             $channelId = DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'BUY_TRAIL_REFERRAL_MINIAPP_STUDENT_INVITE_STUDENT');
@@ -118,8 +119,6 @@ class ActivityDuanWuService
                 'p' => PosterModel::getIdByPath($path, ['name' => '端午节活动']),
                 'user_current_status' => $userStatus,
             ];
-            //$uid = 12;   //TODO 上线时注释
-            //$channelId = 1;   //TODO 上线时注释
             $posterImgFile = PosterService::generateQRPosterAliOss(
                 $path,
                 $config,
@@ -128,25 +127,32 @@ class ActivityDuanWuService
                 $channelId,
                 $extParams
             );
-            $inviteUrlApp = $posterImgFile['poster_save_full_path'] ?? '';
+            $appUrl = $posterImgFile['poster_save_full_path'] ?? '';
         }
+        $userStatusZh = DssStudentModel::STUDENT_IDENTITY_ZH_MAP[$userStatus] ?? '';
         
+        $wxUrl = $activityConfig['wx_url'];
+        Util::urlAddParams($wxUrl, ['activity_id'=>$activityId]);
+        Util::urlAddParams($appUrl, ['activity_id'=>$activityId]);
         $result = [
             'activity_id' => $activityId,
             'user_status' => $userStatus,
+            'user_status_zh' => $userStatusZh,
             'rank_tips' => $rankTips,
             'encourage_tips' => $encourageTips,
-            'invite_url_wx' => $activityConfig['wx_url'],
-            'invite_url_app' => $inviteUrlApp,
+            'invite_url_wx' => $wxUrl,
+            'invite_url_app' => $appUrl,
         ];
         
         return $result;
     }
     
     /**
-     * @param $params
-     * @return array
      * 推荐列表
+     * @param $params
+     * @param $page
+     * @param $count
+     * @return array
      */
     public static function refereeList($params, $page, $count)
     {
@@ -156,15 +162,16 @@ class ActivityDuanWuService
         ];
         
         $uid = $params['user_info']['user_id'];
-        //$uid = 92;   //TODO 上线时注释
         
         $where = ['referee_id' => $uid];
-        $startTime = strtotime('2021-06-10');
-        $endTime = strtotime('2021-06-20');
-        //$startTime = 1602717330;   //TODO 上线时注释
-        //$endTime = 1602737330;   //TODO 上线时注释
+        
+        $startDate = DictConstants::get(DictConstants::ACTIVITY_DUANWU_CONFIG, 'activity_start_time');
+        $endDate = DictConstants::get(DictConstants::ACTIVITY_DUANWU_CONFIG, 'activity_end_time');
+        $startTime = strtotime($startDate);
+        $endTime = strtotime($endDate);
         $where['create_time[>=]'] = $startTime;
         $where['create_time[<=]'] = $endTime;
+        
         $returnList['invite_total_num'] = StudentReferralStudentStatisticsModel::getCount($where);
         if ($returnList['invite_total_num'] <= 0) {
             return $returnList;

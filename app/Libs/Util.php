@@ -1087,5 +1087,32 @@ class Util
         }
         return false;
     }
-
+    
+    /**
+     * url后添加参数
+     * @param $url
+     * @param $params
+     */
+    public static function urlAddParams(&$url, $params)
+    {
+        if (empty($url)) {
+            return;
+        }
+        $query = parse_url($url, PHP_URL_QUERY);
+        parse_str($query, $data);
+        foreach ($params as $key => $value) {
+            if (isset($data[$key])) {
+                unset($params[$key]);
+            }
+        }
+        if (empty($params)) {
+            return;
+        }
+        if (strpos($url, '?')===false) {
+            $url .= '?';
+        } else {
+            $url .= '&';
+        }
+        $url .= http_build_query($params);
+    }
 }

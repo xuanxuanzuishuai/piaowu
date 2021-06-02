@@ -19,6 +19,7 @@ define('PROJECT_ROOT', realpath(__DIR__ . '/..'));
 // require composer autoload
 require_once PROJECT_ROOT . '/vendor/autoload.php';
 
+use App\Libs\DictConstants;
 use App\Libs\File;
 use App\Libs\MysqlDB;
 use App\Libs\RedisDB;
@@ -51,6 +52,22 @@ switch ($functionName) {
     default:
         echo 'function not exists' . PHP_EOL;
         break;
+}
+
+function getPamars()
+{
+    $args = $_SERVER['argv'];
+    $params = array_slice($args, 2);
+    $formatParams = [];
+    if ($params) {
+        foreach ($params as $param) {
+            preg_match('/^--(\w+)=(.+)$/', $param, $match);
+            if ($match) {
+                $formatParams[$match[1]] = $match[2];
+            }
+        }
+    }
+    return $formatParams;
 }
 
 /**
@@ -91,17 +108,8 @@ function getStudentEarliestTime($studentId, $startTime, $endTime)
 /**
  * 统计排名
  */
-function refereeData()
+function refereeData($startTime, $endTime)
 {
-    $argv2 = $_SERVER['argv'][2] ?? '';
-    $testFlag = $argv2 == 'test';
-    
-    $startTime = strtotime('2021-06-10');
-    $endTime = strtotime('2021-06-20');
-    if ($testFlag) {
-        $startTime = 1602717330;   //TODO dev环境测试
-        $endTime = 1602737330;   //TODO dev环境测试
-    }
     $db = MysqlDB::getDB();
     $maxId = 0;
     $refereeData = [];
@@ -125,10 +133,6 @@ function refereeData()
         $maxId = max(array_column($res, 'id'));
         foreach ($res as $re) {
             $studentId = $re['student_id'];
-            if ($testFlag) {
-                $startTime = 1000;   //TODO dev环境测试
-                $endTime = 2000000000;   //TODO dev环境测试
-            }
             $earliestTime = getStudentEarliestTime($studentId, $startTime, $endTime);
             $refereeId = $re['referee_id'];
             if ($earliestTime) {
@@ -164,10 +168,22 @@ function refereeData()
 
 /**
  * 缓存数据
+ * 测试脚本 php scripts/activity_duanwu.php cacheRefereeRank --start=2021-06-10 --end=2021-06-20
+ * 线上脚本 php scripts/activity_duanwu.php cacheRefereeRank
  */
 function cacheRefereeRank()
 {
-    $refereeData = refereeData();
+    $startDate = DictConstants::get(DictConstants::ACTIVITY_DUANWU_CONFIG, 'activity_start_time');
+    $endDate = DictConstants::get(DictConstants::ACTIVITY_DUANWU_CONFIG, 'activity_end_time');
+    $startTime = strtotime($startDate);   //活动开始时间
+    $endTime = strtotime($endDate);   //活动结束时间
+    
+    //如果传了参数,优先使用传参
+    $params = getPamars();
+    isset($params['start']) && $startTime = strtotime($params['start']);
+    isset($params['end']) && $endTime = strtotime($params['end']);
+    
+    $refereeData = refereeData($startTime, $endTime);
     SimpleLogger::info('cache_referee_rank_data', $refereeData);
     $cacheKeyRefereeRank = ActivityDuanWuService::$cacheKeyRefereeRank;
     $cacheKeyRankCnt = ActivityDuanWuService::$cacheKeyRankCnt;
@@ -184,10 +200,22 @@ function cacheRefereeRank()
 
 /**
  * 京东卡奖励结果
+ * 测试脚本 php scripts/activity_duanwu.php statisticsJingDongKa --start=2021-06-10 --end=2021-06-20
+ * 线上脚本 php scripts/activity_duanwu.php statisticsJingDongKa
  */
 function statisticsJingDongKa()
 {
-    $refereeData = refereeData();
+    $startDate = DictConstants::get(DictConstants::ACTIVITY_DUANWU_CONFIG, 'activity_start_time');
+    $endDate = DictConstants::get(DictConstants::ACTIVITY_DUANWU_CONFIG, 'activity_end_time');
+    $startTime = strtotime($startDate);   //活动开始时间
+    $endTime = strtotime($endDate);   //活动结束时间
+    
+    //如果传了参数,优先使用传参
+    $params = getPamars();
+    isset($params['start']) && $startTime = strtotime($params['start']);
+    isset($params['end']) && $endTime = strtotime($params['end']);
+    
+    $refereeData = refereeData($startTime, $endTime);
     SimpleLogger::info('statistics_referee_rank_data', $refereeData);
     $refereeData = array_slice($refereeData, 0, 200);
     $csvData = [];
@@ -210,20 +238,23 @@ function statisticsJingDongKa()
 
 /**
  * 金叶子奖励结果
+ * 测试脚本 php scripts/activity_duanwu.php statisticsJinYeZi --start=2021-06-10 --end=2021-06-20 --end1=2021-07-01 --refund=0
+ * 线上脚本 php scripts/activity_duanwu.php statisticsJinYeZi
  */
 function statisticsJinYeZi()
 {
-    $argv2 = $_SERVER['argv'][2] ?? '';
-    $testFlag = $argv2 == 'test';
+    $startDate = DictConstants::get(DictConstants::ACTIVITY_DUANWU_CONFIG, 'activity_start_time');
+    $endDate = DictConstants::get(DictConstants::ACTIVITY_DUANWU_CONFIG, 'activity_end_time');
+    $startTime = strtotime($startDate);   //推荐开始时间
+    $endTime = strtotime($endDate);   //推荐结束时间
+    $endTime1 = strtotime('2021-07-01');   //开年卡结束时间
     
-    $startTime = strtotime('2021-06-10');
-    $endTime = strtotime('2021-06-20');
-    $endTime1 = strtotime('2021-07-01');
-    if ($testFlag) {
-        $startTime = 1000000000;   //TODO dev环境测试
-        $endTime = 3000000000;   //TODO dev环境测试
-        $endTime1 = 3000000000;   //TODO dev环境测试
-    }
+    //如果传了参数,优先使用传参
+    $params = getPamars();
+    isset($params['start']) && $startTime = strtotime($params['start']);
+    isset($params['end']) && $endTime = strtotime($params['end']);
+    isset($params['end1']) && $endTime1 = strtotime($params['end1']);
+    
     $db = MysqlDB::getDB(MysqlDB::CONFIG_SLAVE);
     $maxId = 0;
     $refereeData = [];
@@ -258,10 +289,15 @@ function statisticsJinYeZi()
             $mobile = $re['mobile'];
             //判断被推荐用户是否退费
             $pres = DssGiftCodeModel::hadPurchasePackageByType($studentId, DssPackageExtModel::PACKAGE_TYPE_NORMAL);
-            if ($testFlag) {
-                $pres = [1];   //TODO dev环境测试
+            
+            $refund = 1;   //退费
+            if ($pres) {
+                $refund = 0;
             }
-            if ($pres) {   //未退费
+            //如果传了参数,优先使用传参
+            isset($params['refund']) && $refund = $params['refund'];
+            
+            if (!$refund) {   //未退费
                 if (isset($refereeData[$refereeId])) {
                     $refereeData[$refereeId]['referee_cnt']++;
                 } else {

@@ -631,7 +631,7 @@ class DictConstants {
     const ACTIVITY_DUANWU_CONFIG = [
         'type' => 'activity_duanwu_config',
         'keys' => [
-            'wx_url','app_url','app_poster_path','activity_id'
+            'wx_url','app_url','app_poster_path','activity_id','activity_start_time','activity_end_time',
         ]
     ];
     
