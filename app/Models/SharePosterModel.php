@@ -421,7 +421,7 @@ class SharePosterModel extends Model
         FROM
         $sp sp ";
 
-        $order = " ORDER BY id DESC ";
+        $order = " ORDER BY create_time DESC ";
         $limit = Util::limitation($params['page'], $params['count']);
         $sql = $sql . $join . $where . $order . $limit;
         $posters = $db->queryAll($sql, $map);

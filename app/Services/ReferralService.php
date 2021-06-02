@@ -38,6 +38,7 @@ use App\Models\PosterModel;
 use App\Models\StudentReferralStudentDetailModel;
 use App\Models\StudentReferralStudentStatisticsModel;
 use App\Models\WeChatAwardCashDealModel;
+use App\Services\Queue\QueueService;
 use App\Services\Queue\SaveTicketTopic;
 
 class ReferralService
@@ -1071,26 +1072,28 @@ class ReferralService
      * @param array $extParams
      * @return mixed|string|string[]|null
      * @throws \App\Libs\KeyErrorRC4Exception
+     * @throws RunTimeException
      */
     public static function getUserQrTicket(int $userId, int $channelId, array $extParams = [])
     {
         //获取学生转介绍学生二维码资源数据
-        $res = DssUserQrTicketModel::getUserQrRecord($userId, DssUserQrTicketModel::STUDENT_TYPE, $channelId,
-            DssUserQrTicketModel::LANDING_TYPE_MINIAPP);
+        $type = DssUserQrTicketModel::STUDENT_TYPE;
+        $landingType = DssUserQrTicketModel::LANDING_TYPE_MINIAPP;
+        $res = DssUserQrTicketModel::getUserQrRecord($userId, $type, $channelId, $landingType);
         if (!empty($res['qr_ticket'])) {
             return $res['qr_ticket'];
         } else {
-            $data = [
-                'user_id' => $userId,
-                'type' => DssUserQrTicketModel::STUDENT_TYPE,
-                'channel_id' => $channelId,
-                'landing_type' => DssUserQrTicketModel::LANDING_TYPE_MINIAPP,
-                'ext_params' => $extParams
-            ];
-            (new SaveTicketTopic())->sendTicket($data)->publish();
-            return RC4::encrypt($_ENV['COOKIE_SECURITY_KEY'], DssUserQrTicketModel::STUDENT_TYPE . "_" . $userId);
+            QueueService::genTicket(
+                [
+                    'user_id'      => $userId,
+                    'type'         => $type,
+                    'channel_id'   => $channelId,
+                    'landing_type' => $landingType,
+                    'ext'          => $extParams
+                ]
+            );
+            return RC4::encrypt($_ENV['COOKIE_SECURITY_KEY'], $type . "_" . $userId);
         }
-
     }
 
 

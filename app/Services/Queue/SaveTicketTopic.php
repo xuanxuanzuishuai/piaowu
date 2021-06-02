@@ -7,6 +7,7 @@ class SaveTicketTopic extends BaseTopic
     const TOPIC_NAME = "save_ticket";
 
     const EVENT_SEND_TICKET= 'send_ticket';
+    const EVENT_GENERATE_TICKET= 'generate_ticket';
 
 
     /**
@@ -26,6 +27,18 @@ class SaveTicketTopic extends BaseTopic
     public function sendTicket(array $data)
     {
         $this->setEventType(self::EVENT_SEND_TICKET);
+        $this->setMsgBody($data);
+        return $this;
+    }
+
+    /**
+     * 生成Ticket
+     * @param array $data
+     * @return $this
+     */
+    public function genTicket(array $data)
+    {
+        $this->setEventType(self::EVENT_GENERATE_TICKET);
         $this->setMsgBody($data);
         return $this;
     }

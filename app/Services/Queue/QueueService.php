@@ -517,4 +517,36 @@ class QueueService
         }
         return true;
     }
+
+    /**
+     * 保存 QR Ticket
+     * @param $data
+     * @return bool
+     */
+    public static function saveTicket($data)
+    {
+        try {
+            (new SaveTicketTopic())->sendTicket($data)->publish();
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), $data);
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 生成 QR Ticket
+     * @param $data
+     * @return bool
+     */
+    public static function genTicket($data)
+    {
+        try {
+            (new SaveTicketTopic())->genTicket($data)->publish();
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), $data);
+            return false;
+        }
+        return true;
+    }
 }

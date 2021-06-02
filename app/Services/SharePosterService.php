@@ -34,12 +34,14 @@ use App\Models\WeChatAwardCashDealModel;
 use App\Models\WeekActivityModel;
 use App\Services\Queue\QueueService;
 use App\Libs\HttpHelper;
+use I18N\Lang;
 
 class SharePosterService
 {
     public static $redisExpire = 432000; // 12小时
 
     const KEY_POSTER_VERIFY_LOCK = 'POSTER_VERIFY_LOCK';
+    const KEY_POSTER_UPLOAD_LOCK = 'POSTER_UPLOAD_LOCK';
 
     /**
      * 上传截图列表
@@ -803,6 +805,14 @@ class SharePosterService
         $studentId = $params['student_id'] ?? 0;
         $imagePath = $params['image_path'] ?? '';
 
+        // 上传并发处理，但不显示任何错误内容，用户无感
+        $redis = RedisDB::getConn();
+        $lockKey = self::KEY_POSTER_UPLOAD_LOCK . $params['student_id'] . $params['activity_id'];
+        $lock = $redis->set($lockKey, $uploadRecord['id'] ?? 0, 'EX', 3, 'NX');
+        if (empty($lock)) {
+            throw new RunTimeException(['']);
+        }
+
         //获取学生信息
         $studentDetail = StudentService::dssStudentStatusCheck($studentId, false);
         if ($studentDetail['student_status'] != DssStudentModel::STATUS_BUY_NORMAL_COURSE) {
@@ -831,7 +841,6 @@ class SharePosterService
             'create_time' => $time,
             'update_time' => $time,
         ];
-        // @TODO: 接入自动审核
         if (empty($uploadRecord) || $uploadRecord['verify_status'] == SharePosterModel::VERIFY_STATUS_UNQUALIFIED) {
             $res = SharePosterModel::insertRecord($data);
         } else {
@@ -1007,9 +1016,11 @@ class SharePosterService
     /**
      * 截图审核详情
      * @param $id
+     * @param array $userInfo
      * @return array|mixed
+     * @throws RunTimeException
      */
-    public static function sharePosterDetail($id)
+    public static function sharePosterDetail($id, $userInfo = [])
     {
         if (empty($id)) {
             return [];
@@ -1028,9 +1039,16 @@ class SharePosterService
         if ($poster['poster_status'] == SharePosterModel::VERIFY_STATUS_QUALIFIED) {
             $poster['can_upload'] = Constants::STATUS_FALSE;
         }
+        $error = '';
+        if (!empty($userInfo['user_id'])) {
+            $userDetail = StudentService::dssStudentStatusCheck($userInfo['user_id']);
+            if ($userDetail['student_status'] != DssStudentModel::STATUS_BUY_NORMAL_COURSE) {
+                $error = Lang::getWord('only_year_user_enter_event');
+            }
+        }
         $poster = self::formatOne($poster);
         $activity = ActivityService::getByTypeAndId(TemplatePosterModel::STANDARD_POSTER, $poster['activity_id']);
-        return ['poster' => $poster, 'activity' => $activity];
+        return ['poster' => $poster, 'activity' => $activity, 'error' => $error];
     }
 
 }

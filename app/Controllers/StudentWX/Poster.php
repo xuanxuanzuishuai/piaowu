@@ -156,7 +156,8 @@ class Poster extends ControllerBase
             if ($result['code'] != Valid::CODE_SUCCESS) {
                 return $response->withJson($result, StatusCode::HTTP_OK);
             }
-            $poster = SharePosterService::sharePosterDetail($params['id']);
+            $userInfo = $this->ci['user_info'];
+            $poster = SharePosterService::sharePosterDetail($params['id'], $userInfo);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }

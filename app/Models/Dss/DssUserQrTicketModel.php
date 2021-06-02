@@ -9,6 +9,7 @@ use App\Models\QRCodeModel;
 use App\Models\UserWeiXinModel;
 use App\Services\MiniAppQrService;
 use App\Services\PosterService;
+use App\Services\Queue\QueueService;
 
 class DssUserQrTicketModel extends DssModel
 {
@@ -105,17 +106,16 @@ class DssUserQrTicketModel extends DssModel
             );
         }
         // INSERT NEW TICKET DATA INTO DSS
-        (new Dss())->saveTicket(
-            [
-                'user_id'      => $userID,
-                'qr_ticket'    => $ticket,
-                'qr_url'       => $imagePath,
-                'channel_id'   => $channelID,
-                'type'         => $type,
-                'landing_type' => $landingType,
-                'ext'          => json_encode($extParamsDict)
-            ]
-        );
+        $data = [
+            'user_id'      => $userID,
+            'qr_ticket'    => $ticket,
+            'qr_url'       => $imagePath,
+            'channel_id'   => $channelID,
+            'type'         => $type,
+            'landing_type' => $landingType,
+            'ext'          => json_encode($extParamsDict)
+        ];
+        QueueService::saveTicket($data);
         return $imagePath;
     }
 

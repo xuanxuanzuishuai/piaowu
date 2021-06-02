@@ -12,6 +12,7 @@ use App\Controllers\ControllerBase;
 use App\Libs\AliOSS;
 use App\Libs\DictConstants;
 use App\Libs\Erp;
+use App\Libs\Dss;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\PhpMail;
@@ -731,9 +732,17 @@ class Consumer extends ControllerBase
         try {
             switch ($params['event_type']) {
                 case SaveTicketTopic::EVENT_SEND_TICKET:
-                    DssUserQrTicketModel::getUserQrURL($params['msg_body']['user_id'], $params['msg_body']['type'],
-                        $params['msg_body']['channel_id'], $params['msg_body']['landing_type'],
-                        $params['msg_body']['ext_params']);
+                    (new Dss())->saveTicket($params['msg_body']);
+                    break;
+
+                case SaveTicketTopic::EVENT_GENERATE_TICKET:
+                    DssUserQrTicketModel::getUserQrURL(
+                        $params['msg_body']['user_id'],
+                        $params['msg_body']['type'],
+                        $params['msg_body']['channel_id'],
+                        $params['msg_body']['landing_type'],
+                        $params['msg_body']['ext']
+                    );
                     break;
             }
         } catch (RunTimeException $runTimeException) {

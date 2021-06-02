@@ -479,7 +479,7 @@ class PosterTemplateService
         $channel = self::getChannelByType($type);
         $extParams = [
             'user_current_status' => $userDetail['student_status'] ?? 0,
-            'a' => $activityId,
+            'a' => $activityInfo['activity_id'],
         ];
         foreach ($posterList as &$item) {
             $item = self::formatPosterInfo($item);
