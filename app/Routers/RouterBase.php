@@ -65,7 +65,7 @@ class RouterBase
             $duration = $endTime - $startTime;
             SimpleLogger::debug(__FILE__ . ":" . __LINE__ . " == RESPONSE path: $uri END ==",
                 ['duration' => $duration, 'body' => $body]);
-            if (intval($duration) > 5) {
+            if (intval($duration) > 2) {
                 Util::errorCapture('uri time out, please check: ' . $uri, ['duration' => $duration]);
             }
             return $response;
