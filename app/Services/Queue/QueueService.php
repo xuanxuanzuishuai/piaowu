@@ -13,6 +13,7 @@ use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Services\MessageService;
 use App\Services\PushMessageService;
+use App\Services\StudentService;
 use Exception;
 
 class QueueService
@@ -545,6 +546,29 @@ class QueueService
             (new SaveTicketTopic())->genTicket($data)->publish();
         } catch (Exception $e) {
             SimpleLogger::error($e->getMessage(), $data);
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 预生成小程序码
+     * @param string $openId
+     * @param array $data
+     * @return bool
+     */
+    public static function preGenerateQrCode($openId = '', $data = [])
+    {
+        if (empty($openId) && empty($data['user_id'])) {
+            return false;
+        }
+        if (!empty($data['user_id']) && StudentService::isAnonymousStudentId($data['user_id'])) {
+            return false;
+        }
+        try {
+            (new SaveTicketTopic())->preGenQrCode(['open_id' => $openId, 'user_id' => $data['user_id']])->publish();
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), [$openId, $data]);
             return false;
         }
         return true;

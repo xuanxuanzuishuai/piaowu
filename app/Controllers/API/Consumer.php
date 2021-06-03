@@ -31,9 +31,11 @@ use App\Models\StudentAccountAwardPointsLogModel;
 use App\Services\AutoCheckPicture;
 use App\Services\CashGrantService;
 use App\Services\MessageService;
+use App\Services\PosterTemplateService;
 use App\Services\Queue\CheckPosterSyncTopic;
 use App\Services\Queue\DurationTopic;
 use App\Services\Queue\PushMessageTopic;
+use App\Services\Queue\QueueService;
 use App\Services\Queue\SaveTicketTopic;
 use App\Services\Queue\StudentAccountAwardPointsTopic;
 use App\Services\Queue\ThirdPartBillTopic;
@@ -223,6 +225,7 @@ class Consumer extends ControllerBase
             switch ($params['event_type']) {
                 case PushMessageTopic::EVENT_WECHAT_INTERACTION:
                     MessageService::interActionDealMessage($params['msg_body']);
+                    QueueService::preGenerateQrCode($params['msg_body']);
                     break;
 
                 case PushMessageTopic::EVENT_USER_BIND_WECHAT:
@@ -290,6 +293,8 @@ class Consumer extends ControllerBase
 
                 case PushMessageTopic::EVENT_RECORD_USER_ACTIVE:
                     UserService::recordUserActiveConsumer($params['msg_body']);
+                    QueueService::preGenerateQrCode('', $params['msg_body']);
+
                     break;
             }
         } catch (RunTimeException $e) {
@@ -743,6 +748,10 @@ class Consumer extends ControllerBase
                         $params['msg_body']['landing_type'],
                         $params['msg_body']['ext']
                     );
+                    break;
+
+                case SaveTicketTopic::EVENT_PRE_GENERATE_QR_CODE:
+                    PosterTemplateService::preGenQRCode($params['msg_body']['open_id'], $params['msg_body']['user_id']);
                     break;
             }
         } catch (RunTimeException $runTimeException) {

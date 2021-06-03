@@ -23,7 +23,8 @@ class DictConstants {
             'REFERRAL_MINIAPP_STUDENT_INVITE_STUDENT',
             'POSTER_LANDING_49_STUDENT_INVITE_STUDENT',
             'BUY_TRAIL_REFERRAL_MINIAPP_STUDENT_INVITE_STUDENT',//智能陪练一级智能体验营小程序已购买转介绍
-            'APP_CAPSULE_INVITE_CHANNEL'
+            'APP_CAPSULE_INVITE_CHANNEL',
+            'CHANNEL_STANDARD_POSTER', // 标准海报渠道
         ]
     ];
 

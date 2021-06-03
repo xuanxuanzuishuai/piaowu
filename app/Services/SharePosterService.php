@@ -58,7 +58,47 @@ class SharePosterService
         if (!empty($posters)) {
             $reasonDict = DictService::getTypeMap(Constants::DICT_TYPE_SHARE_POSTER_CHECK_REASON);
             $statusDict = DictService::getTypeMap(Constants::DICT_TYPE_SHARE_POSTER_CHECK_STATUS);
+            // 积分奖励
+            $pointsAwardIds = array_column($posters, 'points_award_id');
+            $pointsAwardIds = array_filter($pointsAwardIds);
+            $pointsAwardInfo = [];
+            if (!empty($pointsAwardIds)) {
+                $pointsAwardInfo = ErpUserEventTaskAwardGoldLeafModel::getList(['id' => $pointsAwardIds]);
+                $pointsAwardInfo = array_column($pointsAwardInfo['list'], null, 'id');
+            }
+            // 红包奖励
+            $awardIds = array_column($posters, 'award_id');
+            $awardIds = array_filter($awardIds);
+            $awardInfo = [];
+            if (!empty($awardIds)) {
+                $awardInfo = ErpUserEventTaskAwardModel::getRecords(
+                    ['id' => $awardIds],
+                    ['id', 'award_amount', 'award_type', 'status', 'reason']
+                );
+                $awardInfo = array_column($awardInfo, null, 'id');
+            }
+
             foreach ($posters as &$poster) {
+                $poster['award_amount'] = 0;
+                $poster['award_type'] = '';
+                // 红包奖励
+                $ids = explode(',', $poster['award_id']);
+                foreach ($ids as $_id) {
+                    if (!isset($awardInfo[$_id])) {
+                        continue;
+                    }
+                    $poster['award_amount'] += $awardInfo[$_id]['award_amount'] ?? 0;
+                    $poster['award_type'] = $awardInfo[$_id]['award_type'] ?? '';
+                }
+                // 积分奖励
+                $ids = explode(',', $poster['points_award_id']);
+                foreach ($ids as $_id) {
+                    if (!isset($pointsAwardInfo[$_id])) {
+                        continue;
+                    }
+                    $poster['award_amount'] += $pointsAwardInfo[$_id]['award_num'] ?? 0;
+                    $poster['award_type'] = ErpStudentAccountModel::SUB_TYPE_GOLD_LEAF;
+                }
                 $poster = self::formatOne($poster, $statusDict, $reasonDict);
             }
         }
@@ -100,16 +140,8 @@ class SharePosterService
             $poster['reason_str'][] = $poster['remark'];
         }
         $poster['reason_str'] = implode('/', $poster['reason_str']);
-
-        $poster['award_amount'] = 0;
-        if (!empty($poster['points_award_id'])) {
-            $ids = explode(',', $poster['points_award_id']);
-            if (!empty($ids)) {
-                $awards = ErpUserEventTaskAwardGoldLeafModel::getList(['id' => $ids]);
-                $poster['award_amount'] = $awards['total_award_num'] ?? 0;
-            }
-        }
         $poster['activity_name'] = $poster['activity_name'] . '(' . date('m月d日', $poster['start_time']) . '-' . date('m月d日', $poster['end_time']) . ')';
+        $poster['award'] = self::formatAwardInfo($poster['award_amount'], $poster['award_type']);
         return $poster;
     }
 
@@ -308,15 +340,24 @@ class SharePosterService
         return $update > 0;
     }
 
-    public static function formatAwardInfo($amount, $type, $subType = '')
+    /**
+     * 格式化奖励信息
+     * @param $amount
+     * @param $type
+     * @return string
+     */
+    public static function formatAwardInfo($amount, $type)
     {
+        if (empty($amount)) {
+            return '';
+        }
         if ($type == 1) {
             //金钱单位：分
             return ($amount / 100) . '元';
         } elseif ($type == 2) {
             //时间单位：天
             return $amount . '天';
-        } elseif ($type == 3 && $subType == ErpStudentAccountModel::SUB_TYPE_GOLD_LEAF ) {
+        } elseif ($type == ErpStudentAccountModel::SUB_TYPE_GOLD_LEAF) {
             // 积分
             return $amount . '金叶子';
         }
@@ -433,19 +474,17 @@ class SharePosterService
                 $_pointsAwardInfo = !empty($pointsAwardArr[$v['points_award_id']]) ? $pointsAwardArr[$v['points_award_id']] : [];
                 // 积分奖励
                 $_awardNum =  $_pointsAwardInfo['award_num'] ?? 0;
-                $_awardType =  ErpEventTaskModel::AWARD_TYPE_INTEGRATION;
+                $_awardType =  ErpStudentAccountModel::SUB_TYPE_GOLD_LEAF;
                 $awardStatusZh = ErpReferralService::AWARD_STATUS[$_pointsAwardInfo['status']];
                 $failReasonZh = "";
-                $_awardTypeSubType = ErpStudentAccountModel::SUB_TYPE_GOLD_LEAF;
             }else {
                 // 老版现金奖励
                 $_awardNum =  !empty($awardInfo[$v['award_id']]) ? $awardInfo[$v['award_id']]['award_amount'] : 0;
                 $_awardType =  !empty($awardInfo[$v['award_id']]) ? $awardInfo[$v['award_id']]['award_type'] : 0;
                 list($awardStatusZh, $failReasonZh) = !empty($v['award_id']) ? self::displayAwardExplain($awardInfo[$v['award_id']], $awardInfo[$v['award_id']], $redPackDeal[$v['award_id']] ?? null) : [];
-                $_awardTypeSubType = '';
             }
 
-            $data['list'][$k]['award'] = self::formatAwardInfo($_awardNum, $_awardType, $_awardTypeSubType);
+            $data['list'][$k]['award'] = self::formatAwardInfo($_awardNum, $_awardType);
             $data['list'][$k]['award_status_zh'] = $awardStatusZh;
             $data['list'][$k]['fail_reason_zh'] = $failReasonZh;
         }
@@ -844,6 +883,7 @@ class SharePosterService
         if (empty($uploadRecord) || $uploadRecord['verify_status'] == SharePosterModel::VERIFY_STATUS_UNQUALIFIED) {
             $res = SharePosterModel::insertRecord($data);
         } else {
+            unset($data['create_time']);
             $count = SharePosterModel::updateRecord($uploadRecord['id'], $data);
             if (empty($count)) {
                 throw new RunTimeException(['update_fail']);

@@ -414,6 +414,7 @@ class SharePosterModel extends Model
             sp.verify_reason,
             sp.remark,
             sp.points_award_id,
+            sp.award_id,
             sp.type,
             ac.name activity_name,
             ac.start_time,

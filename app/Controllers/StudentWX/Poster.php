@@ -49,7 +49,7 @@ class Poster extends ControllerBase
 
         try {
             $userInfo = $this->ci['user_info'];
-            $data = PosterTemplateService::getPosterList($userInfo['user_id'], $params['type'], $params['activity_id'] ?? 0, $params['ext'] ?? true);
+            $data = PosterTemplateService::getPosterList($userInfo['user_id'], $params['type'], $params['activity_id'] ?? 0, $params);
 
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());

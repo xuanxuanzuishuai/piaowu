@@ -4,6 +4,7 @@ namespace App\Services;
 use App\Libs\AliOSS;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\ActivityPosterModel;
@@ -11,6 +12,7 @@ use App\Models\ActivityExtModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssTemplatePosterModel;
 use App\Models\Dss\DssUserQrTicketModel;
+use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\PosterModel;
 use App\Models\TemplatePosterModel;
 use App\Models\TemplatePosterWordModel;
@@ -18,6 +20,8 @@ use I18N\Lang;
 
 class PosterTemplateService
 {
+    // 预生成小程序码标记
+    const KEY_PRE_GENERATE_CODE = 'pre_generate_code_';
     /**
      * 海报模板列表
      * @param $studentId
@@ -127,6 +131,12 @@ class PosterTemplateService
         }
         if (isset($row['operator_name'])) {
             $row['operator_name'] = $row['operator_name'] ?? '';
+        }
+        if (!empty($row['poster_path'])) {
+            $row['poster_url'] = AliOSS::replaceCdnDomainForDss($row['poster_path']);
+        }
+        if (!empty($row['example_path'])) {
+            $row['example_url'] = AliOSS::replaceCdnDomainForDss($row['example_path']);
         }
         return $row;
     }
@@ -455,12 +465,12 @@ class PosterTemplateService
      * @param $studentId
      * @param $type
      * @param int $activityId
-     * @param false $withExt
+     * @param array $ext
      * @return array
      * @throws \App\Libs\Exceptions\RunTimeException
      * @throws \App\Libs\KeyErrorRC4Exception
      */
-    public static function getPosterList($studentId, $type, $activityId = 0, $withExt = false)
+    public static function getPosterList($studentId, $type, $activityId = 0, $ext = [])
     {
         $data = ['list' => [], 'activity' => []];
         // 查询活动：
@@ -483,6 +493,9 @@ class PosterTemplateService
         ];
         foreach ($posterList as &$item) {
             $item = self::formatPosterInfo($item);
+            if (empty($ext['poster'])) {
+                continue;
+            }
             // 海报图：
             $extParams['p'] = $item['poster_id'];
             $poster = PosterService::generateQRPosterAliOss(
@@ -494,26 +507,8 @@ class PosterTemplateService
                 $extParams
             );
             $item['poster_url'] = $poster['poster_save_full_path'];
-            // 样例图：
-            if (empty($item['example_id']) || empty($item['example_path'])) {
-                continue;
-            }
-            $extParams['p'] = $item['example_id'];
-            $poster = PosterService::generateQRPosterAliOss(
-                $item['example_path'],
-                $posterConfig,
-                $studentId,
-                DssUserQrTicketModel::STUDENT_TYPE,
-                $channel,
-                $extParams
-            );
-            $item['example_url'] = $poster['poster_save_full_path'];
         }
-
-        // 查询活动配置
-        if ($withExt) {
-            $activityInfo['ext'] = ActivityExtModel::getActivityExt($activityInfo['activity_id']);
-        }
+        $activityInfo['ext'] = ActivityExtModel::getActivityExt($activityInfo['activity_id']);
         // 周周领奖限制检测
         $canUploadFlag = true;
         if ($type == TemplatePosterModel::STANDARD_POSTER) {
@@ -548,6 +543,61 @@ class PosterTemplateService
             return DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'POSTER_LANDING_49_STUDENT_INVITE_STUDENT');
         }
         // 标准海报渠道ID
-        return DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'APP_CAPSULE_INVITE_CHANNEL');
+        return DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'CHANNEL_STANDARD_POSTER');
+    }
+
+    /**
+     * 预生成小程序码
+     * @param string $openId
+     * @param int $userId
+     * @return bool
+     * @throws RunTimeException
+     * @throws \App\Libs\KeyErrorRC4Exception
+     */
+    public static function preGenQRCode($openId = '', $userId = 0)
+    {
+        if (empty($openId) && empty($userId)) {
+            return false;
+        }
+        if (!empty($openId)) {
+            $user = DssUserWeiXinModel::getByOpenId($openId);
+        }
+        if (!empty($userId)) {
+            $user = DssStudentModel::getByid($userId);
+            $user['user_id'] = $user['id'] ?? 0;
+        }
+        if (empty($user['user_id'])) {
+            return false;
+        }
+        $redis    = RedisDB::getConn();
+        $cacheKey = self::KEY_PRE_GENERATE_CODE . $user['user_id'];
+        $cache    = $redis->get($cacheKey);
+        if (!empty($cache)) {
+            return false;
+        }
+        $userDetail = StudentService::dssStudentStatusCheck($user['user_id'], false);
+        $extParams  = ['user_current_status' => $userDetail['student_status'] ?? 0];
+        $typeList   = [TemplatePosterModel::STANDARD_POSTER, TemplatePosterModel::INDIVIDUALITY_POSTER];
+        foreach ($typeList as $type) {
+            $channelId    = self::getChannelByType($type);
+            $activityInfo = ActivityService::getByTypeAndId($type);
+            if (empty($activityInfo)) {
+                continue;
+            }
+            $extParams['a'] = $activityInfo['activity_id'];
+            $posterList     = PosterService::getActivityPosterList($activityInfo);
+            foreach ($posterList as $poster) {
+                $extParams['p'] = $poster['poster_id'];
+                DssUserQrTicketModel::getUserQrURL(
+                    $user['user_id'],
+                    DssUserWeiXinModel::USER_TYPE_STUDENT,
+                    $channelId,
+                    DssUserQrTicketModel::LANDING_TYPE_MINIAPP,
+                    $extParams
+                );
+            }
+        }
+        $redis->setex($cacheKey, Util::TIMESTAMP_1H, time());
+        return true;
     }
 }

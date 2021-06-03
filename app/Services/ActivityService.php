@@ -393,20 +393,17 @@ class ActivityService
         if (empty($list)) {
             return [];
         }
-        $student = DssStudentModel::getById($params['user_info']['user_id']);
-        if (empty($student)) {
-            SimpleLogger::error('STUDENT NOT FOUND', [$params]);
-        }
+        $userId = $params['user_info']['user_id'];
         $available = false;
         foreach ($list as $key => &$activity) {
             $activity['is_show'] = Constants::STATUS_TRUE;
             $where = [
-                'student_id' => $student['id'],
+                'student_id' => $userId,
                 'activity_id' => $activity['activity_id'],
                 'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED
             ];
             $shareRecord = SharePosterModel::getRecord($where);
-            $lastPayInfo = DssGiftCodeModel::getUserFirstPayInfo($student['id'], DssCategoryV1Model::DURATION_TYPE_NORMAL, 'asc');
+            $lastPayInfo = DssGiftCodeModel::getUserFirstPayInfo($userId, DssCategoryV1Model::DURATION_TYPE_NORMAL, 'asc');
             if (!empty($shareRecord) || $lastPayInfo['buy_time'] > $activity['end_time']) {
                 $activity['is_show'] = Constants::STATUS_FALSE;
             } else {

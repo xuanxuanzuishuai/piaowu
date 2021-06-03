@@ -42,3 +42,7 @@ INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`)
 VALUES
 ('REFERRAL_CONFIG', '转介绍配置', 'refused_poster_url', '/operation/activity/awards/recordList?awtype=week', '海报审核未通过跳转地址'),
 ('REFERRAL_CONFIG', '转介绍配置', 'week_activity_url', '/operation/activity/awards/index', '周周有奖活动首页地址');
+
+INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
+VALUES
+  ('STUDENT_INVITE', '学生转介绍渠道', 'CHANNEL_STANDARD_POSTER', '3419', '标准海报渠道'),
