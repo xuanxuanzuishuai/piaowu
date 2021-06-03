@@ -79,8 +79,8 @@ class EmployeePrivilegeService
      */
     public static function checkEmployeeDataPermission($employee)
     {
-        //超级管理员拥有所有权限,其他角色拥有查看自己创建的数据的权限
-        if (self::checkIsSuperAdmin($employee)) {
+        $roleDataPermissionData = RoleModel::getRecord(['id' => $employee['role_id']], ['data_permission']);
+        if ($roleDataPermissionData['data_permission'] == RoleModel::DATA_PERMISSION_ALL) {
             $onlyReadSelf = false;
         } else {
             $onlyReadSelf = true;

@@ -22,6 +22,9 @@ class RoleModel extends Model
     const ORG_TYPE_INTERNAL = 0; //内部
     const ORG_TYPE_DIRECT = 1; //直营
     const ORG_TYPE_EXTERNAL = 2; //外部
+    //数据权限:1查看全部 2查看自己
+    const DATA_PERMISSION_ALL = 1;
+    const DATA_PERMISSION_SELF = 2;
 
     public static function getRoles()
     {

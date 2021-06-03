@@ -704,6 +704,11 @@ class DictConstants {
             'wx_url','app_url','app_poster_path','activity_id','activity_start_time','activity_end_time',
         ]
     ];
+    //数据权限类型
+    const DATA_PERMISSION_TYPE = [
+        'type' => 'data_permission_type',
+        'keys' => ['1', '2']
+    ];
     
     /**
      * 单个获取op系统dict配置数据

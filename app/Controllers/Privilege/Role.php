@@ -22,10 +22,9 @@ class Role extends ControllerBase
     /**
      * @param Request $request
      * @param Response $response
-     * @param $args
      * @return Response
      */
-    public function list(Request $request, Response $response, $args)
+    public function list(Request $request, Response $response)
     {
         $roles = RoleService::selectRoleByOrg();
         return $response->withJson([
@@ -39,10 +38,9 @@ class Role extends ControllerBase
     /**
      * @param Request $request
      * @param Response $response
-     * @param $args
      * @return Response
      */
-    public function detail(Request $request, Response $response, $args)
+    public function detail(Request $request, Response $response)
     {
         $rules = [
             [
@@ -74,10 +72,9 @@ class Role extends ControllerBase
     /**
      * @param Request $request
      * @param Response $response
-     * @param $args
      * @return Response
      */
-    public function modify(Request $request, Response $response, $args)
+    public function modify(Request $request, Response $response)
     {
         $rules = [
             [
@@ -89,6 +86,11 @@ class Role extends ControllerBase
                 'key' => 'name',
                 'type' => 'required',
                 'error_code' => 'role_name_is_required'
+            ],
+            [
+                'key' => 'data_permission',
+                'type' => 'required',
+                'error_code' => 'data_permission_is_required'
             ]
         ];
         $params = $request->getParams();

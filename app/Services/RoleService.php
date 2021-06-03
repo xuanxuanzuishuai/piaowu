@@ -25,7 +25,8 @@ class RoleService
         $update = [
             'name' => $params['name'],
             'desc' => $params['desc'] ?? '',
-            'group_ids' => implode(',', $params['group_ids'])
+            'group_ids' => implode(',', $params['group_ids']),
+            'data_permission' => $params['data_permission'],
         ];
 
         if (empty($role)) {
