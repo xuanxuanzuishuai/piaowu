@@ -110,6 +110,8 @@ function refereeData($startTime, $endTime)
     $refereeData = [];
     $statisticsTable = StudentReferralStudentStatisticsModel::getTableNameWithDb();
     $studentTable = DssStudentModel::getTableNameWithDb();
+    $startDate = date('Ymd', $startTime);
+    $endDate = date('Ymd', $endTime);
     while (true) {
         $sql = "
             SELECT
@@ -122,8 +124,8 @@ function refereeData($startTime, $endTime)
                 AND a.create_time >= {$startTime}
                 AND a.create_time <= {$endTime}
                 AND b.has_review_course = 2
-                AND b.sub_start_date < {$endTime}
-                AND b.sub_end_date > {$startTime}
+                AND b.sub_start_date <= {$endDate}
+                AND b.sub_end_date >= {$startDate}
             ORDER BY a.id ASC
             LIMIT 0,1000;
         ";
