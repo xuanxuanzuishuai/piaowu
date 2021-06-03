@@ -48,18 +48,22 @@ class ErpUserEventTaskAwardGoldLeafService
             'list' => [],
         ];
 
-        // 如果自己是推荐人，显示被推荐人的手机号
-        $buyerStudentMobileArr = [];
+        // 获取被推荐人的手机号
+        if (!empty($list['list'])) {
+            $finishTaskUuid = array_column($list['list'], 'finish_task_uuid');
+            $buyerStudentMobileArr = DssStudentModel::getRecords(['uuid' => array_unique($finishTaskUuid)], ['uuid','mobile']);
+            $buyerStudentMobileArr = array_column($buyerStudentMobileArr, 'mobile', 'uuid');
+        } else {
+            $buyerStudentMobileArr = [];
+        }
 
         foreach ($list['list'] as $item) {
             $item['buyer_student_mobile'] = '';
             // 判断本条奖励是不是推荐人奖励 - 如果是推荐人获取被推荐人的手机号
             if ($item['to'] == ErpEventTaskModel::AWARD_TO_REFERRER) {
-                if (!isset($buyerStudentMobileArr[$item['finish_task_uuid']])) {
-                    $buyerStudentInfo = DssStudentModel::getRecord(['uuid' => $item['finish_task_uuid']], ['mobile']);
-                    !empty($buyerStudentInfo) && $buyerStudentMobileArr[$item['finish_task_uuid']] = Util::hideUserMobile($buyerStudentInfo['mobile']);
+                if (isset($buyerStudentMobileArr[$item['finish_task_uuid']])) {
+                    $item['buyer_student_mobile'] = Util::hideUserMobile($buyerStudentMobileArr[$item['finish_task_uuid']]);
                 }
-                $item['buyer_student_mobile'] = $buyerStudentMobileArr[$item['finish_task_uuid']];
             }
             $returnList['list'][] = self::formatGoldLeafInfo($item, $isBackend);
         }
