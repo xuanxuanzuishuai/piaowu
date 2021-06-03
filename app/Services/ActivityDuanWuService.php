@@ -34,6 +34,62 @@ class ActivityDuanWuService
     {
         $uid = $params['user_info']['user_id'];
         
+        //端午活动配置
+        $activityConfig = DictConstants::getSet(DictConstants::ACTIVITY_DUANWU_CONFIG);
+        $activityId = $activityConfig['activity_id'] ?? 0;
+        $userStatusInfo = StudentService::dssStudentStatusCheck($uid);   // 获取用户当前状态
+        $userStatus = $userStatusInfo['student_status'];
+        $userStatusZh = DssStudentModel::STUDENT_IDENTITY_ZH_MAP[$userStatus] ?? '';
+        $appUrl = $activityConfig['app_url'] ?? '';
+        if (!$appUrl) {
+            $path = $activityConfig['app_poster_path'] ?? '';
+            $config = DictConstants::getSet(DictConstants::TEMPLATE_POSTER_CONFIG);
+            $channelId = DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'BUY_TRAIL_REFERRAL_MINIAPP_STUDENT_INVITE_STUDENT');
+            // 埋点 - 活动id,海报id,用户身份
+            $extParams = [
+                'a' => $activityId,
+                'p' => PosterModel::getIdByPath($path, ['name' => '端午节活动']),
+                'user_current_status' => $userStatus,
+            ];
+            $posterImgFile = PosterService::generateQRPosterAliOss(
+                $path,
+                $config,
+                $uid,
+                DssUserWeiXinModel::USER_TYPE_STUDENT,
+                $channelId,
+                $extParams
+            );
+            $appUrl = $posterImgFile['poster_save_full_path'] ?? '';
+        }
+        $wxUrl = $activityConfig['wx_url'];
+        Util::urlAddParams($wxUrl, ['activity_id'=>$activityId]);
+        Util::urlAddParams($appUrl, ['activity_id'=>$activityId]);
+        $urlVersion = $activityConfig['url_version'] ?? '0';
+        
+        //活动开始结束时间
+        $startDate = DictConstants::get(DictConstants::ACTIVITY_DUANWU_CONFIG, 'activity_start_time');
+        $endDate = DictConstants::get(DictConstants::ACTIVITY_DUANWU_CONFIG, 'activity_end_time');
+        $startTime = strtotime($startDate);
+        $endTime = strtotime($endDate);
+        //学生信息
+        $studentInfo = DssStudentModel::getStudentInfo($uid, null);
+        $has_review_course = $studentInfo['has_review_course'] ?? '0';
+        $sub_start_date = $studentInfo['sub_start_date'] ?? '0';
+        $sub_end_date = $studentInfo['sub_end_date'] ?? '0';
+        if ($has_review_course != 2 || $sub_start_date > $endTime || $sub_end_date < $startTime) {
+            $result = [
+                'activity_id' => $activityId,
+                'user_status' => $userStatus,
+                'user_status_zh' => $userStatusZh,
+                'rank_tips' => '未上榜',
+                'encourage_tips' => '该活动仅限年卡用户参与，赶快去付费年卡参与活动吧~',
+                'poster_url_version' => $urlVersion,
+                'invite_url_wx' => $wxUrl,
+                'invite_url_app' => $appUrl,
+            ];
+            return $result;
+        }
+        
         $redis = RedisDB::getConn();
         $cacheKeyRankKeys = self::$cacheKeyRefereeRankKeys;
         $keysStr = $redis->get($cacheKeyRankKeys);
@@ -85,28 +141,28 @@ class ActivityDuanWuService
                 case $rank > 10 && $rank <= 90:
                     $rankTips = "第{$rank}名";
                     $rankCnt = $redis->hget($cacheKeyRankCnt, 10);
-                    $diff = $rankCnt - $refereeCnt;
+                    $diff = $rankCnt - $refereeCnt + 1;
                     $diff < 1 && $diff = 1;
                     $encourageTips = "加油，再邀请{$diff}人购买体验卡并练琴，即可获得200元京东卡奖励";
                     break;
                 case $rank > 90 && $rank <= 200:
                     $rankTips = "第{$rank}名";
                     $rankCnt = $redis->hget($cacheKeyRankCnt, 90);
-                    $diff = $rankCnt - $refereeCnt;
+                    $diff = $rankCnt - $refereeCnt + 1;
                     $diff < 1 && $diff = 1;
                     $encourageTips = "加油，再邀请{$diff}人购买体验卡并练琴，即可获得100元京东卡奖励";
                     break;
                 case $rank > 200 && $rank <= 300:
                     $rankTips = "第{$rank}名";
                     $rankCnt = $redis->hget($cacheKeyRankCnt, 200);
-                    $diff = $rankCnt - $refereeCnt;
+                    $diff = $rankCnt - $refereeCnt + 1;
                     $diff < 1 && $diff = 1;
                     $encourageTips = "加油，再邀请{$diff}人购买体验卡并练琴，即可获得50元京东卡奖励";
                     break;
                 case $rank > 300:
                     $rankTips = "第300+";
                     $rankCnt = $redis->hget($cacheKeyRankCnt, 200);
-                    $diff = $rankCnt - $refereeCnt;
+                    $diff = $rankCnt - $refereeCnt + 1;
                     $diff < 1 && $diff = 1;
                     $encourageTips = "加油，再邀请{$diff}人购买体验卡并练琴，即可获得50元京东卡奖励";
                     break;
@@ -116,39 +172,6 @@ class ActivityDuanWuService
                     break;
             }
         }
-        //端午活动排至配置
-        $activityConfig = DictConstants::getSet(DictConstants::ACTIVITY_DUANWU_CONFIG);
-        
-        $activityId = $activityConfig['activity_id'] ?? 0;
-        $userStatusInfo = StudentService::dssStudentStatusCheck($uid);   // 获取用户当前状态
-        $userStatus = $userStatusInfo['student_status'];
-        
-        $appUrl = $activityConfig['app_url'] ?? '';
-        if (!$appUrl) {
-            $path = $activityConfig['app_poster_path'] ?? '';
-            $config = DictConstants::getSet(DictConstants::TEMPLATE_POSTER_CONFIG);
-            $channelId = DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'BUY_TRAIL_REFERRAL_MINIAPP_STUDENT_INVITE_STUDENT');
-            // 埋点 - 活动id,海报id,用户身份
-            $extParams = [
-                'a' => $activityId,
-                'p' => PosterModel::getIdByPath($path, ['name' => '端午节活动']),
-                'user_current_status' => $userStatus,
-            ];
-            $posterImgFile = PosterService::generateQRPosterAliOss(
-                $path,
-                $config,
-                $uid,
-                DssUserWeiXinModel::USER_TYPE_STUDENT,
-                $channelId,
-                $extParams
-            );
-            $appUrl = $posterImgFile['poster_save_full_path'] ?? '';
-        }
-        $userStatusZh = DssStudentModel::STUDENT_IDENTITY_ZH_MAP[$userStatus] ?? '';
-        $wxUrl = $activityConfig['wx_url'];
-        Util::urlAddParams($wxUrl, ['activity_id'=>$activityId]);
-        Util::urlAddParams($appUrl, ['activity_id'=>$activityId]);
-        $urlVersion = $activityConfig['url_version'] ?? '0';
         
         $result = [
             'activity_id' => $activityId,

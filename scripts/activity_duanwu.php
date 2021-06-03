@@ -108,17 +108,23 @@ function refereeData($startTime, $endTime)
     $db = MysqlDB::getDB();
     $maxId = 0;
     $refereeData = [];
+    $statisticsTable = StudentReferralStudentStatisticsModel::getTableNameWithDb();
+    $studentTable = DssStudentModel::getTableNameWithDb();
     while (true) {
         $sql = "
             SELECT
-                id,referee_id,student_id
+                a.id,a.referee_id,a.student_id,b.mobile
             FROM
-                student_referral_student_statistics
+                {$statisticsTable} a
+                INNER JOIN {$studentTable} b ON b.id = a.referee_id
             WHERE
-                create_time >= {$startTime}
-                AND create_time <= {$endTime} AND last_stage > 0
-                AND id > {$maxId}
-            ORDER BY id ASC
+                a.id > {$maxId}
+                AND a.create_time >= {$startTime}
+                AND a.create_time <= {$endTime}
+                AND b.has_review_course = 2
+                AND b.sub_start_date < {$endTime}
+                AND b.sub_end_date > {$startTime}
+            ORDER BY a.id ASC
             LIMIT 0,1000;
         ";
         $res = $db->queryAll($sql);
@@ -130,6 +136,7 @@ function refereeData($startTime, $endTime)
             $studentId = $re['student_id'];
             $earliestTime = getStudentEarliestTime($studentId, $startTime, $endTime);
             $refereeId = $re['referee_id'];
+            $mobile = $re['mobile'];
             if ($earliestTime) {
                 if (isset($refereeData[$refereeId])) {
                     $refereeData[$refereeId]['referee_cnt']++;
@@ -139,6 +146,7 @@ function refereeData($startTime, $endTime)
                 } else {
                     $refereeData[$refereeId] = [
                         'referee_id' => $refereeId,
+                        'mobile' => $mobile,
                         'referee_cnt' => 1,
                         'earliest_time' => $earliestTime,
                     ];
@@ -265,15 +273,9 @@ function statisticsJingDongKa()
     $csvData[] = [
         '排名', '用户id', '手机号', '推荐人数', '最早练琴时间'
     ];
-    $dbSlave = MysqlDB::getDB(MysqlDB::CONFIG_SLAVE);
-    $studentTable = DssStudentModel::getTableNameWithDb();
     foreach ($refereeData as $refereeDatum) {
-        $studentId = $refereeDatum['referee_id'];
-        $mobileSql = "SELECT mobile from {$studentTable} where id = {$studentId};";
-        $mobileRes = $dbSlave->queryAll($mobileSql);
-        $mobile = $mobileRes[0]['mobile'] ?? '';
         $csvData[] = [
-            $refereeDatum['rank'], $refereeDatum['referee_id'], $mobile, $refereeDatum['referee_cnt'], $refereeDatum['earliest_time'],
+            $refereeDatum['rank'], $refereeDatum['referee_id'], $refereeDatum['mobile'], $refereeDatum['referee_cnt'], $refereeDatum['earliest_time'],
         ];
     }
     File::exportFile('京东卡奖励结果排名', $csvData);
@@ -307,17 +309,19 @@ function statisticsJinYeZi()
     while (true) {
         $sql = "
             SELECT
-                a.id,a.referee_id,a.student_id,c.mobile
+                a.id,a.referee_id,a.student_id,b.mobile
             FROM
                 {$statisticsTable} a
-                INNER JOIN {$studentTable} c ON c.id = a.referee_id
+                INNER JOIN {$studentTable} b ON b.id = a.referee_id
             WHERE
                 a.id > {$maxId}
                 AND a.create_time >= {$startTime}
                 AND a.create_time <= {$endTime}
-                AND c.has_review_course = 0
-                AND EXISTS ( SELECT 1 FROM {$detailTable} b WHERE b.student_id = a.student_id AND b.create_time >= {$startTime} AND b.create_time <= {$endTime1} AND b.stage = 2 )
-            ORDER BY id ASC
+                AND b.has_review_course = 2
+                AND b.sub_start_date < {$endTime}
+                AND b.sub_end_date > {$startTime}
+                AND EXISTS ( SELECT 1 FROM {$detailTable} c WHERE c.student_id = a.student_id AND c.create_time >= {$startTime} AND c.create_time <= {$endTime1} AND b.stage = 2 )
+            ORDER BY a.id ASC
             LIMIT 0,1000;
         ";
         $res = $db->queryAll($sql);
