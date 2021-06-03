@@ -33,7 +33,6 @@ class ActivityDuanWuService
     public static function activityInfo($params)
     {
         $uid = $params['user_info']['user_id'];
-        
         //端午活动配置
         $activityConfig = DictConstants::getSet(DictConstants::ACTIVITY_DUANWU_CONFIG);
         $activityId = $activityConfig['activity_id'] ?? 0;
@@ -41,7 +40,7 @@ class ActivityDuanWuService
         $userStatus = $userStatusInfo['student_status'];
         $userStatusZh = DssStudentModel::STUDENT_IDENTITY_ZH_MAP[$userStatus] ?? '';
         $appUrl = $activityConfig['app_url'] ?? '';
-        if (!$appUrl) {
+        if (!$appUrl) {   //未配置APP链接,生成个性化推荐图片
             $path = $activityConfig['app_poster_path'] ?? '';
             $config = DictConstants::getSet(DictConstants::TEMPLATE_POSTER_CONFIG);
             $channelId = DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'BUY_TRAIL_REFERRAL_MINIAPP_STUDENT_INVITE_STUDENT');
@@ -76,7 +75,7 @@ class ActivityDuanWuService
         $has_review_course = $studentInfo['has_review_course'] ?? '0';
         $sub_start_date = $studentInfo['sub_start_date'] ?? '0';
         $sub_end_date = $studentInfo['sub_end_date'] ?? '0';
-        if ($has_review_course != 2 || $sub_start_date > $endTime || $sub_end_date < $startTime) {
+        if ($has_review_course != 2 || $sub_start_date > date('Ymd', $endTime) || $sub_end_date < date('Ymd', $startTime)) {
             $result = [
                 'activity_id' => $activityId,
                 'user_status' => $userStatus,
@@ -89,7 +88,6 @@ class ActivityDuanWuService
             ];
             return $result;
         }
-        
         $redis = RedisDB::getConn();
         $cacheKeyRankKeys = self::$cacheKeyRefereeRankKeys;
         $keysStr = $redis->get($cacheKeyRankKeys);
