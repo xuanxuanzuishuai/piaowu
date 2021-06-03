@@ -31,6 +31,6 @@ class SentryClient
             }
         }
         $sentryClient = new \Raven_Client($_ENV['SENTRY_NOTIFY_URL']);
-        $sentryClient->captureMessage('write_uid: ' . SimpleLogger::getWriteUid() . PHP_EOL . 'exception info: ' . $exception->getMessage() . $otherInfo, [], $extra);
+        $sentryClient->captureMessage('log_uid: ' . SimpleLogger::getWriteUid() . PHP_EOL . 'exception info: ' . $exception->getMessage() . $otherInfo, [], $extra);
     }
 }

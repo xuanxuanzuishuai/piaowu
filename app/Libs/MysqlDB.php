@@ -94,7 +94,7 @@ class MysqlDB
                     'last_query' => $this->client->last(),
                     'method' => $name,
                     'arguments' => $arguments,
-                    'write_uid' => SimpleLogger::getWriteUid(),
+                    'log_uid' => SimpleLogger::getWriteUid(),
                 ];
                 $extra = [
                     'extra' => [

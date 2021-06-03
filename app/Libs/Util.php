@@ -882,7 +882,7 @@ class Util
                 $otherInfo .= $str;
             }
         }
-        $sentryClient->captureMessage('write_uid: ' . SimpleLogger::getWriteUid() . PHP_EOL . 'info: ' . $message . $otherInfo);
+        $sentryClient->captureMessage('log_uid: ' . SimpleLogger::getWriteUid() . PHP_EOL . 'info: ' . $message . $otherInfo);
     }
 
     /**
