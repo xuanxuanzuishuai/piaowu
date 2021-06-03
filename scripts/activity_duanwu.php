@@ -115,7 +115,7 @@ function refereeData($startTime, $endTime)
     while (true) {
         $sql = "
             SELECT
-                a.id,a.referee_id,a.student_id,b.mobile
+                a.id,a.referee_id,a.student_id,b.mobile,b.has_review_course,b.sub_start_date,b.sub_end_date
             FROM
                 {$statisticsTable} a
                 INNER JOIN {$studentTable} b ON b.id = a.referee_id
@@ -123,9 +123,6 @@ function refereeData($startTime, $endTime)
                 a.id > {$maxId}
                 AND a.create_time >= {$startTime}
                 AND a.create_time <= {$endTime}
-                AND b.has_review_course = 2
-                AND b.sub_start_date <= {$endDate}
-                AND b.sub_end_date >= {$startDate}
             ORDER BY a.id ASC
             LIMIT 0,1000;
         ";
@@ -139,7 +136,11 @@ function refereeData($startTime, $endTime)
             $earliestTime = getStudentEarliestTime($studentId, $startTime, $endTime);
             $refereeId = $re['referee_id'];
             $mobile = $re['mobile'];
-            if ($earliestTime) {
+            $validYear = 0;   //判断年卡用户
+            if ($re['has_review_course'] == 2 && $re['sub_start_date'] <= $endDate && $re['sub_end_date'] >= $startDate) {
+                $validYear = 1;
+            }
+            if ($earliestTime && $validYear) {
                 if (isset($refereeData[$refereeId])) {
                     $refereeData[$refereeId]['referee_cnt']++;
                     if ($refereeData[$refereeId]['earliest_time'] > $earliestTime) {
