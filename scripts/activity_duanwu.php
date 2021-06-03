@@ -105,7 +105,7 @@ function getStudentEarliestTime($studentId, $startTime, $endTime)
  */
 function refereeData($startTime, $endTime)
 {
-    $db = MysqlDB::getDB();
+    $db = MysqlDB::getDB(MysqlDB::CONFIG_SLAVE);
     $maxId = 0;
     $refereeData = [];
     $statisticsTable = StudentReferralStudentStatisticsModel::getTableNameWithDb();
