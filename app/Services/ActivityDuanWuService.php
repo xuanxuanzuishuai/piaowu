@@ -18,9 +18,10 @@ use App\Models\StudentReferralStudentStatisticsModel;
 class ActivityDuanWuService
 {
     
-    public static $cacheKeyEarliestTime = 'OP_STUDENT_EARLIEST_PLAY_TIME_FOR_DUANWU';
-    public static $cacheKeyRefereeRank = 'OP_REFEREE_RANK_FOR_DUANWU';
-    public static $cacheKeyRankCnt = 'OP_REFEREE_RANK_CNT_FOR_DUANWU';
+    public static $cacheKeyEarliestTime = 'OP_STUDENT_EARLIEST_PLAY_TIME_FOR_DUANWU';   //学生最早练琴时间缓存
+    public static $cacheKeyRefereeRankKeys = 'OP_REFEREE_RANK_KEYS_FOR_DUANWU';   //二阶段渐进式更新数据的key
+    public static $cacheKeyRefereeRank = 'OP_REFEREE_RANK_FOR_DUANWU';   //用户排名信息缓存
+    public static $cacheKeyRankCnt = 'OP_REFEREE_RANK_CNT_FOR_DUANWU';   //排名对应推荐人数缓存
     
     /**
      * 活动详情
@@ -34,10 +35,24 @@ class ActivityDuanWuService
         $uid = $params['user_info']['user_id'];
         
         $redis = RedisDB::getConn();
-        $userRank = $redis->hget(self::$cacheKeyRefereeRank, $uid);
+        $cacheKeyRankKeys = self::$cacheKeyRefereeRankKeys;
+        $keysStr = $redis->get($cacheKeyRankKeys);
+        if ($keysStr) {
+            $keysArr = json_decode($keysStr, true);
+            $lastStartTime = $keysArr['last_start_time'];
+            $lastEndTime = $keysArr['last_end_time'];
+            $lastTime = $keysArr['last_time'];
+            $cacheKeyRefereeRank = self::$cacheKeyRefereeRank . '_' . $lastStartTime . '_' . $lastEndTime . '_' . $lastTime;
+            $cacheKeyRankCnt = self::$cacheKeyRankCnt . '_' . $lastStartTime . '_' . $lastEndTime . '_' . $lastTime;
+        } else {
+            $cacheKeyRefereeRank = self::$cacheKeyRefereeRank;
+            $cacheKeyRankCnt = self::$cacheKeyRankCnt;
+        }
+        
+        $userRank = $redis->hget($cacheKeyRefereeRank, $uid);
         
         if (empty($userRank)) {   //用户没有有效邀请用户,没有排名
-            $rankUserCnt = $redis->hlen(self::$cacheKeyRankCnt);   //有排名人数
+            $rankUserCnt = $redis->hlen($cacheKeyRankCnt);   //有排名人数
             $rankTips = "未上榜";
             switch (true) {
                 case $rankUserCnt < 10:
@@ -50,7 +65,7 @@ class ActivityDuanWuService
                     $encourageTips = "加油，再邀请1人购买体验卡并练琴，即可获得50元京东卡奖励";
                     break;
                 case $rankUserCnt >= 200:
-                    $rankCnt = (int)$redis->hget(self::$cacheKeyRankCnt, 200);
+                    $rankCnt = (int)$redis->hget($cacheKeyRankCnt, 200);
                     $diff = $rankCnt + 1;
                     $encourageTips = "加油，再邀请{$diff}人购买体验卡并练琴，即可获得50元京东卡奖励";
                     break;
@@ -69,28 +84,28 @@ class ActivityDuanWuService
                     break;
                 case $rank > 10 && $rank <= 90:
                     $rankTips = "第{$rank}名";
-                    $rankCnt = $redis->hget(self::$cacheKeyRankCnt, 10);
+                    $rankCnt = $redis->hget($cacheKeyRankCnt, 10);
                     $diff = $rankCnt - $refereeCnt;
                     $diff < 1 && $diff = 1;
                     $encourageTips = "加油，再邀请{$diff}人购买体验卡并练琴，即可获得200元京东卡奖励";
                     break;
                 case $rank > 90 && $rank <= 200:
                     $rankTips = "第{$rank}名";
-                    $rankCnt = $redis->hget(self::$cacheKeyRankCnt, 90);
+                    $rankCnt = $redis->hget($cacheKeyRankCnt, 90);
                     $diff = $rankCnt - $refereeCnt;
                     $diff < 1 && $diff = 1;
                     $encourageTips = "加油，再邀请{$diff}人购买体验卡并练琴，即可获得100元京东卡奖励";
                     break;
                 case $rank > 200 && $rank <= 300:
                     $rankTips = "第{$rank}名";
-                    $rankCnt = $redis->hget(self::$cacheKeyRankCnt, 200);
+                    $rankCnt = $redis->hget($cacheKeyRankCnt, 200);
                     $diff = $rankCnt - $refereeCnt;
                     $diff < 1 && $diff = 1;
                     $encourageTips = "加油，再邀请{$diff}人购买体验卡并练琴，即可获得50元京东卡奖励";
                     break;
                 case $rank > 300:
                     $rankTips = "第300+";
-                    $rankCnt = $redis->hget(self::$cacheKeyRankCnt, 200);
+                    $rankCnt = $redis->hget($cacheKeyRankCnt, 200);
                     $diff = $rankCnt - $refereeCnt;
                     $diff < 1 && $diff = 1;
                     $encourageTips = "加油，再邀请{$diff}人购买体验卡并练琴，即可获得50元京东卡奖励";
@@ -101,7 +116,7 @@ class ActivityDuanWuService
                     break;
             }
         }
-        
+        //端午活动排至配置
         $activityConfig = DictConstants::getSet(DictConstants::ACTIVITY_DUANWU_CONFIG);
         
         $activityId = $activityConfig['activity_id'] ?? 0;
@@ -130,16 +145,18 @@ class ActivityDuanWuService
             $appUrl = $posterImgFile['poster_save_full_path'] ?? '';
         }
         $userStatusZh = DssStudentModel::STUDENT_IDENTITY_ZH_MAP[$userStatus] ?? '';
-        
         $wxUrl = $activityConfig['wx_url'];
         Util::urlAddParams($wxUrl, ['activity_id'=>$activityId]);
         Util::urlAddParams($appUrl, ['activity_id'=>$activityId]);
+        $urlVersion = $activityConfig['url_version'] ?? '0';
+        
         $result = [
             'activity_id' => $activityId,
             'user_status' => $userStatus,
             'user_status_zh' => $userStatusZh,
             'rank_tips' => $rankTips,
             'encourage_tips' => $encourageTips,
+            'poster_url_version' => $urlVersion,
             'invite_url_wx' => $wxUrl,
             'invite_url_app' => $appUrl,
         ];

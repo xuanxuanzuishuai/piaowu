@@ -71,42 +71,37 @@ function getPamars()
 }
 
 /**
- * @param $studentId
- * @return int
  * 获取学生最早学习记录时间
+ * @param $studentId
+ * @param $startTime
+ * @param $endTime
+ * @return int
  */
 function getStudentEarliestTime($studentId, $startTime, $endTime)
 {
     $redis = RedisDB::getConn();
     $cacheKeyEarliestTime = ActivityDuanWuService::$cacheKeyEarliestTime;
-    if ($redis->exists($cacheKeyEarliestTime)) {
-        $cacheData = $redis->hget($cacheKeyEarliestTime, $studentId);
-        if ($cacheData) {
-            if ($cacheData >= $startTime && $cacheData <= $endTime) {
-                return (int)$cacheData;
-            } else {
-                $redis->hdel($cacheKeyEarliestTime, $studentId);
-            }
+    $cacheData = $redis->hget($cacheKeyEarliestTime, $studentId);
+    if ($cacheData) {
+        if ($cacheData >= $startTime && $cacheData <= $endTime) {
+            return (int)$cacheData;
+        } else {
+            $redis->hdel($cacheKeyEarliestTime, $studentId);
         }
-        $earliestTime = DssAiPlayRecordCHModel::getStudentEarliestPlayTime($studentId, $startTime, $endTime);
-        if ($earliestTime) {
-            $redis->hset($cacheKeyEarliestTime, $studentId, $earliestTime);
-            return (int)$earliestTime;
-        }
-    } else {
-        $earliestTime = DssAiPlayRecordCHModel::getStudentEarliestPlayTime($studentId, $startTime, $endTime);
-        if ($earliestTime) {
-            $redis->hset($cacheKeyEarliestTime, $studentId, $earliestTime);
-            $second = strtotime('2021-07-01') - time();
-            $redis->expire($cacheKeyEarliestTime, $second);
-            return (int)$earliestTime;
-        }
+    }
+    $earliestTime = DssAiPlayRecordCHModel::getStudentEarliestPlayTime($studentId, $startTime, $endTime);
+    if ($earliestTime) {
+        $redis->hset($cacheKeyEarliestTime, $studentId, $earliestTime);
+        return (int)$earliestTime;
     }
     return 0;
 }
 
 /**
  * 统计排名
+ * @param $startTime
+ * @param $endTime
+ * @return array
  */
 function refereeData($startTime, $endTime)
 {
@@ -152,6 +147,12 @@ function refereeData($startTime, $endTime)
         }
     }
     
+    //设置 "学生最早练琴时间缓存" 过期时间
+    $cacheKeyEarliestTime = ActivityDuanWuService::$cacheKeyEarliestTime;
+    $second = strtotime('2021-07-01') - time();
+    $redis = RedisDB::getConn();
+    $second >0 && $redis->expire($cacheKeyEarliestTime, $second);
+    
     $arrCnt = $arrTime = [];
     foreach ($refereeData as $refereeDataE) {
         $arrCnt[] = $refereeDataE['referee_cnt'];
@@ -177,17 +178,46 @@ function cacheRefereeRank()
     $endDate = DictConstants::get(DictConstants::ACTIVITY_DUANWU_CONFIG, 'activity_end_time');
     $startTime = strtotime($startDate);   //活动开始时间
     $endTime = strtotime($endDate);   //活动结束时间
+    $keepTime = 180;   //最小保持时间3分钟
+    $oldExpire = 300;   //老数据过期时间
     
     //如果传了参数,优先使用传参
     $params = getPamars();
     isset($params['start']) && $startTime = strtotime($params['start']);
     isset($params['end']) && $endTime = strtotime($params['end']);
+    isset($params['keep_time']) && $keepTime = strtotime($params['keep_time']);
+    isset($params['old_expire']) && $oldExpire = strtotime($params['old_expire']);
     
     $refereeData = refereeData($startTime, $endTime);
     SimpleLogger::info('cache_referee_rank_data', $refereeData);
-    $cacheKeyRefereeRank = ActivityDuanWuService::$cacheKeyRefereeRank;
-    $cacheKeyRankCnt = ActivityDuanWuService::$cacheKeyRankCnt;
     $redis = RedisDB::getConn();
+    $time = time();
+    $cacheKeyRankKeys = ActivityDuanWuService::$cacheKeyRefereeRankKeys;
+    $keysStr = $redis->get($cacheKeyRankKeys);
+    if ($keysStr) {
+        $keysArr = json_decode($keysStr, true);
+        $lastStartTime = $keysArr['last_start_time'];
+        $lastEndTime = $keysArr['last_end_time'];
+        $lastTime = $keysArr['last_time'];
+        $cacheKeyRefereeRankOld = ActivityDuanWuService::$cacheKeyRefereeRank . '_' . $lastStartTime . '_' . $lastEndTime . '_' . $lastTime;
+        $cacheKeyRankCntOld = ActivityDuanWuService::$cacheKeyRankCnt . '_' . $lastStartTime . '_' . $lastEndTime . '_' . $lastTime;
+        $cacheKeyRefereeRankNew = '';
+        $cacheKeyRankCntNew = '';
+        if ($time - $lastTime > $keepTime || $startTime != $lastStartTime || $endTime != $lastEndTime) {   //缓存大于保持时间,或者不同开始结束时间,更新缓存key
+            $cacheKeyRefereeRankNew = ActivityDuanWuService::$cacheKeyRefereeRank . '_' . $startTime . '_' . $endTime . '_' . $time;
+            $cacheKeyRankCntNew = ActivityDuanWuService::$cacheKeyRankCnt . '_' . $startTime . '_' . $endTime . '_' . $time;
+            $keysStr = json_encode(['last_start_time' => $startTime, 'last_end_time' => $endTime, 'last_time' => $time]);
+        }
+    } else {
+        $cacheKeyRefereeRankOld = ActivityDuanWuService::$cacheKeyRefereeRank;
+        $cacheKeyRankCntOld = ActivityDuanWuService::$cacheKeyRankCnt;
+        $cacheKeyRefereeRankNew = ActivityDuanWuService::$cacheKeyRefereeRank . '_' . $startTime . '_' . $endTime . '_' . $time;
+        $cacheKeyRankCntNew = ActivityDuanWuService::$cacheKeyRankCnt . '_' . $startTime . '_' . $endTime . '_' . $time;
+        $keysStr = json_encode(['last_start_time' => $startTime, 'last_end_time' => $endTime, 'last_time' => $time]);
+    }
+    //如果换新的缓存key,数据存入新key
+    $cacheKeyRefereeRank = $cacheKeyRefereeRankNew ? $cacheKeyRefereeRankNew : $cacheKeyRefereeRankOld;
+    $cacheKeyRankCnt = $cacheKeyRankCntNew ? $cacheKeyRankCntNew : $cacheKeyRankCntOld;
     foreach ($refereeData as $refereeDataE) {
         $rank = $refereeDataE['rank'];
         $refereeId = $refereeDataE['referee_id'];
@@ -195,6 +225,19 @@ function cacheRefereeRank()
         $jsonStr = json_encode($refereeDataE);
         $redis->hset($cacheKeyRefereeRank, $refereeId, $jsonStr);
         $redis->hset($cacheKeyRankCnt, $rank, $refereeCnt);
+    }
+    
+    $second = strtotime('2021-07-01') - time();
+    if ($cacheKeyRefereeRankNew && $cacheKeyRankCntNew) {
+        //新版本缓存过期时间更新为2021-07-01过期
+        $redis->expire($cacheKeyRefereeRankNew, $second);
+        $redis->expire($cacheKeyRankCntNew, $second);
+        //老版本缓存过期时间更新为5分钟后过期
+        $redis->expire($cacheKeyRefereeRankOld, $oldExpire);
+        $redis->expire($cacheKeyRankCntOld, $oldExpire);
+        //更新缓存key
+        $redis->set($cacheKeyRankKeys, $keysStr);
+        $redis->expire($cacheKeyRankKeys, $second);
     }
 }
 
