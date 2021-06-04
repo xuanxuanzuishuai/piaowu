@@ -141,6 +141,28 @@ class SharePosterService
         }
         $poster['reason_str'] = implode('/', $poster['reason_str']);
         $poster['activity_name'] = $poster['activity_name'] . '(' . date('m月d日', $poster['start_time']) . '-' . date('m月d日', $poster['end_time']) . ')';
+        if (!isset($poster['award_amount'])) {
+            $poster['award_amount'] = 0;
+            $poster['award_type'] = 0;
+            if (!empty($poster['points_award_id'])) {
+                $ids = explode(',', $poster['points_award_id']);
+                $pointsAwardInfo = ErpUserEventTaskAwardGoldLeafModel::getList(['id' => $ids]);
+                $pointsAwardInfo = array_column($pointsAwardInfo['list'], 'award_num');
+                $poster['award_amount'] = array_sum($pointsAwardInfo);
+                $poster['award_type'] = ErpStudentAccountModel::SUB_TYPE_GOLD_LEAF;
+            }
+            if (!empty($poster['award_id'])) {
+                $ids = explode(',', $poster['award_id']);
+                $awardInfo = ErpUserEventTaskAwardModel::getRecords(
+                    ['id' => $ids],
+                    ['id', 'award_amount', 'award_type', 'status', 'reason']
+                );
+                $awardInfo = array_column($awardInfo, null, 'id');
+                $poster['award_amount'] = array_sum(array_column($awardInfo, 'award_amount'));
+                $_one = array_pop($awardInfo);
+                $poster['award_type'] = $_one['award_type'] ?? '';
+            }
+        }
         $poster['award'] = self::formatAwardInfo($poster['award_amount'], $poster['award_type']);
         return $poster;
     }
@@ -351,16 +373,19 @@ class SharePosterService
         if (empty($amount)) {
             return '';
         }
-        if ($type == 1) {
+        if ($type == ErpUserEventTaskAwardModel::AWARD_TYPE_CASH) {
             //金钱单位：分
             return ($amount / 100) . '元';
-        } elseif ($type == 2) {
+        }
+        if ($type == ErpUserEventTaskAwardModel::AWARD_TYPE_DURATION) {
             //时间单位：天
             return $amount . '天';
-        } elseif ($type == ErpStudentAccountModel::SUB_TYPE_GOLD_LEAF) {
-            // 积分
-            return $amount . '金叶子';
         }
+        if ($type == ErpStudentAccountModel::SUB_TYPE_GOLD_LEAF) {
+            // 积分
+            return $amount;
+        }
+        return '';
     }
 
 
@@ -1081,7 +1106,7 @@ class SharePosterService
         }
         $error = '';
         if (!empty($userInfo['user_id'])) {
-            $userDetail = StudentService::dssStudentStatusCheck($userInfo['user_id']);
+            $userDetail = StudentService::dssStudentStatusCheck($userInfo['user_id'], false);
             if ($userDetail['student_status'] != DssStudentModel::STATUS_BUY_NORMAL_COURSE) {
                 $error = Lang::getWord('only_year_user_enter_event');
             }
