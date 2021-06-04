@@ -8,6 +8,8 @@ class Constants
     const SELF_APP_ID = 19;
     //智能陪练应用id
     const SMART_APP_ID = 8;
+    //真人陪练应用id
+    const REAL_APP_ID = 1;
     //智能陪练获客小程序的busi_type
     const SMART_MINI_BUSI_TYPE = 8;
     //智能陪练服务号的busi_type

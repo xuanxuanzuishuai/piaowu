@@ -10,6 +10,7 @@ namespace App\Controllers\API;
 
 use App\Controllers\ControllerBase;
 use App\Libs\AliOSS;
+use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\Dss;
@@ -815,7 +816,15 @@ class Consumer extends ControllerBase
                                 break;
                             }
                         }
-                        AutoCheckPicture::checkSharePosters($params['msg_body'], $status);
+                    }
+                    //审核后续处理
+                    switch ($params['app_id']) {
+                        case Constants::SMART_APP_ID: //智能陪练
+                            AutoCheckPicture::mindCheckSharePosters($params['msg_body'], $status);
+                            break;
+                        case Constants::REAL_APP_ID: //真人陪练
+                            AutoCheckPicture::realCheckSharePosters($params['msg_body'], $status);
+                            break;
                     }
                     break;
             }

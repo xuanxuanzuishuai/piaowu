@@ -9,9 +9,11 @@ use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\RedisDB;
+use App\Libs\Referral;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\EmployeeModel;
+use App\Models\Erp\ReferralPosterModel;
 use App\Models\OperationActivityModel;
 use App\Models\SharePosterModel;
 use App\Models\WeekActivityModel;
@@ -32,29 +34,53 @@ class AutoCheckPicture
             return null;
         }
         $result = $record['result'];
-        $activity = WeekActivityModel::getRecord(['activity_id' => [$result['activity_id']]], ['id', 'enable_status', 'start_time']);
-        if (empty($activity) || $activity['enable_status'] != OperationActivityModel::ENABLE_STATUS_ON) {
-            SimpleLogger::error('not found activity', ['id' => $result['activity_id']]);
-            return null;
-        }
-        $start_time = date('m-d', $activity['start_time']);
-        $start_time = str_replace('-', '.', $start_time);
-        $date = '';
-        foreach (str_split($start_time) as $key => $val) {
-            if ($key != strlen($start_time) - 1 && $val == '0') {
-                continue;
-            }
-            $date .= $val;
+        switch ($data['app_id']) {
+            case Constants::SMART_APP_ID: //智能陪练
+                $activity = WeekActivityModel::getRecord(['activity_id' => [$result['activity_id']]], ['id', 'enable_status', 'start_time']);
+                if (empty($activity) || $activity['enable_status'] != OperationActivityModel::ENABLE_STATUS_ON) {
+                    SimpleLogger::error('not found activity', ['id' => $result['activity_id']]);
+                    return null;
+                }
+                $start_time = date('m-d', $activity['start_time']);
+                $start_time = str_replace('-', '.', $start_time);
+                $date = '';
+                foreach (str_split($start_time) as $key => $val) {
+                    if ($key != strlen($start_time) - 1 && $val == '0') {
+                        continue;
+                    }
+                    $date .= $val;
+                }
+                $imagePath = AliOSS::replaceCdnDomainForDss($result['image_path']);
+                $activityDate = date('Y-m-d', $activity['start_time']);
+                break;
+            case Constants::REAL_APP_ID: //真人陪练
+                $issue_number =  $result['issue_number'];
+                if (empty($issue_number) || mb_strpos($issue_number, '年') === false || mb_strpos($issue_number, '-') === false) {
+                    return null;
+                }
+                $imagePath = $_ENV['QINIU_DOMAIN_ERP'] . $result['img_url'];
+
+                $start = mb_strpos($issue_number, '年') + 1;
+                $end   = mb_strpos($issue_number, '-');
+                $date  = mb_substr($issue_number, $start, $end-$start);
+
+                $activityTime = mb_substr($issue_number, 0, $end);
+                $activityTime = str_replace('年', '-', $activityTime);
+                $activityDate = str_replace('.', '-', $activityTime);
+
+                break;
+            default:
+                break;
         }
         $redis = RedisDB::getConn();
         $cacheKey = 'letterIden';
         if (!$redis->hexists($cacheKey, $date)) {
-            $letterIden = self::transformDate($activity['start_time']);
+            $letterIden = self::transformDate($activityDate);
             $redis->hset($cacheKey, $date, $letterIden);
             $redis->expire($cacheKey, self::$redisExpire);
         }
         $letterIden = $redis->hget($cacheKey, $date);
-        return [$date, $letterIden, AliOSS::replaceCdnDomainForDss($result['image_path'])];
+        return [$date, $letterIden, $imagePath];
     }
 
     /**
@@ -71,6 +97,9 @@ class AutoCheckPicture
             case Constants::SMART_APP_ID: //智能陪练 类型为上传截图领奖且未审核的
                 $result = SharePosterModel::getRecord(['id' => $data['id'],'type' => SharePosterModel::TYPE_WEEK_UPLOAD,'verify_status' => SharePosterModel::VERIFY_STATUS_WAIT],['student_id','activity_id','image_path']);
                 break;
+            case Constants::REAL_APP_ID: //真人陪练
+                $result = ReferralPosterModel::getRecord(['id' => $data['id'], 'status' => ReferralPosterModel::CHECK_STATUS_WAIT],['student_id','issue_number','img_url']);
+                break;
             default:
                 break;
         }
@@ -80,14 +109,33 @@ class AutoCheckPicture
             return null;
         }
         //查询本周活动是否有系统审核拒绝的
-        $conds = [
-            'student_id'    => $result['student_id'],
-            'activity_id'   => $result['activity_id'],
-            'type'          => SharePosterModel::TYPE_WEEK_UPLOAD,
-            'verify_status' => SharePosterModel::VERIFY_STATUS_UNQUALIFIED,
-            'verify_user'   => EmployeeModel::SYSTEM_EMPLOYEE_ID
-        ];
-        $historyRecord = SharePosterModel::getRecord($conds, ['id']);
+        switch ($data['app_id']) {
+            case Constants::SMART_APP_ID: //智能陪练
+                $conds = [
+                    'student_id'    => $result['student_id'],
+                    'activity_id'   => $result['activity_id'],
+                    'type'          => SharePosterModel::TYPE_WEEK_UPLOAD,
+                    'verify_status' => SharePosterModel::VERIFY_STATUS_UNQUALIFIED,
+                    'verify_user'   => EmployeeModel::SYSTEM_EMPLOYEE_ID
+                ];
+                $historyRecord = SharePosterModel::getRecord($conds, ['id']);
+                break;
+            case Constants::REAL_APP_ID: //真人陪练
+                $conds = [
+                    'student_id'   => $result['student_id'],
+                    'issue_number' => $result['issue_number'],
+                    'type'         => ReferralPosterModel::CLIENT_TYPE_USER,
+                    'check_admin'  => EmployeeModel::SYSTEM_EMPLOYEE_ID,
+                ];
+                $historyRecord = ReferralPosterModel::getRecord($conds, ['id','upload_times']);
+                if (empty($historyRecord) || $historyRecord['upload_times'] < 1) {
+                    $historyRecord = null;
+                }
+                break;
+            default:
+                break;
+        }
+
         return compact('result', 'historyRecord');
     }
 
@@ -98,10 +146,10 @@ class AutoCheckPicture
      */
     public static function transformDate($date)
     {
-        $date       = explode('-', date('Y-m-d', $date));
+        $dateArray  = explode('-', $date);
         $array      = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
         $letterIden = '';
-        foreach ($date as $key => $val) {
+        foreach ($dateArray as $key => $val) {
             switch ($key) {
                 case 0:
                     $yearDate = str_split($val, 1);
@@ -114,16 +162,11 @@ class AutoCheckPicture
                     $letterIden .= $array[$month - 1] ?? 'A';
                     break;
                 case 2:
-                    if ($val < 8) {
-                        $day = 0;
-                    } elseif ($val < 15) {
-                        $day = 1;
-                    } elseif ($val < 22) {
-                        $day = 2;
-                    } else {
-                        $day = 3;
-                    }
-                    $letterIden .= $array[$day] ?? 'A';
+                    $monDate    = date('Y-m', strtotime($date));
+                    $monday     = Util::getMonday($monDate);
+                    $monday     = array_flip($monday);
+                    $mondayKey  = $monday[$date] ?? 0;
+                    $letterIden .= $array[$mondayKey] ?? 'A';
                     break;
             }
         }
@@ -131,12 +174,12 @@ class AutoCheckPicture
     }
 
     /**
-     * 审核结果
+     * 智能陪练-审核后续处理
      * @param $data
      * @param $status
      * @throws RunTimeException
      */
-    public static function checkSharePosters($data, $status)
+    public static function mindCheckSharePosters($data, $status)
     {
         if (!$status) {
             return;
@@ -169,6 +212,49 @@ class AutoCheckPicture
             //审核拒绝
             SharePosterService::refusedPoster($poster_id, $params);
         }
+    }
+
+    /**
+     * 真人陪练-审核后续处理
+     * @param $data
+     * @param $checkStatus
+     */
+    public static function realCheckSharePosters($data, $checkStatus)
+    {
+        if (!$checkStatus) {
+            return;
+        }
+        $remark      = '';
+        $reason_ids  = '';
+        $poster_ids  = $data['id'];
+        $check_admin = EmployeeModel::SYSTEM_EMPLOYEE_ID;
+        if ($checkStatus > 0) {
+            $status = ReferralPosterModel::CHECK_STATUS_QUALIFIED;
+        } else {
+            $status = ReferralPosterModel::CHECK_STATUS_UNQUALIFIED;
+            switch ($checkStatus) {
+                case ReferralPosterModel::SYSTEM_REFUSE_CODE_NEW: //未使用最新海报
+                    $reason_ids = ReferralPosterModel::SYSTEM_REFUSE_REASON_CODE_NEW;
+                    break;
+                case ReferralPosterModel::SYSTEM_REFUSE_CODE_TIME: //朋友圈保留时长不足12小时，请重新上传
+                    $reason_ids = ReferralPosterModel::SYSTEM_REFUSE_REASON_CODE_TIME;
+                    break;
+                case ReferralPosterModel::SYSTEM_REFUSE_CODE_GROUP: //分享分组可见
+                    $reason_ids = ReferralPosterModel::SYSTEM_REFUSE_REASON_CODE_GROUP;
+                    break;
+                case ReferralPosterModel::SYSTEM_REFUSE_CODE_FRIEND: //请发布到朋友圈并截取朋友圈照片
+                    $reason_ids = ReferralPosterModel::SYSTEM_REFUSE_REASON_CODE_FRIEND;
+                    break;
+                case ReferralPosterModel::SYSTEM_REFUSE_CODE_UPLOAD: //上传截图出错
+                    $reason_ids = ReferralPosterModel::SYSTEM_REFUSE_REASON_CODE_UPLOAD;
+                    break;
+                default:
+                    break;
+            }
+        }
+        $requestArray = compact('status', 'poster_ids', 'reason_ids', 'remark', 'check_admin');
+        //调用referral-审核接口
+        (new Referral())->realCheckPoster($requestArray);
     }
 
     /**

@@ -1104,8 +1104,9 @@ class Util
      * @param $content
      * @return bool
      */
-    public static function sensitiveWordFilter($keyWordRules,$content){
-        if(empty($keyWordRules) || empty($content)) {
+    public static function sensitiveWordFilter($keyWordRules, $content)
+    {
+        if (empty($keyWordRules) || empty($content)) {
             return false;
         }
         $content = str_replace(" ", "", $content);
@@ -1143,5 +1144,25 @@ class Util
             $url .= '&';
         }
         $url .= http_build_query($params);
+    }
+
+    /**
+     * 获取指定月的周一
+     * @param string $month date(Y-m)
+     * @return array
+     */
+    public static function getMonday($month)
+    {
+        if (empty($month)) {
+            $month = date("Y-m");
+        }
+        $maxDay  = date('t', strtotime($month . "-01"));
+        $mondays = array();
+        for ($i = 1; $i <= $maxDay; $i++) {
+            if (date('w', strtotime($month . "-" . $i)) == 1) {
+                $mondays[] = $month . "-" . ($i > 9 ? '' : '0') . $i;
+            }
+        }
+        return $mondays;
     }
 }
