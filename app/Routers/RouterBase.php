@@ -65,7 +65,7 @@ class RouterBase
             $duration = $endTime - $startTime;
             SimpleLogger::debug(__FILE__ . ":" . __LINE__ . " == RESPONSE path: $uri END ==",
                 ['duration' => $duration, 'body' => $body]);
-            if (intval($duration) > 2) {
+            if (intval($duration) > 5) {
                 Util::errorCapture('the execution time is too long, please check: ' . $uri, ['duration' => $duration]);
             }
             return $response;
