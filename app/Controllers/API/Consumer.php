@@ -296,6 +296,9 @@ class Consumer extends ControllerBase
                     QueueService::preGenerateQrCode('', $params['msg_body']);
 
                     break;
+                case PushMessageTopic::EVENT_PUSH_BATCH_MANUAL_RULE_WX:
+                    MessageService::batchPushWeekActivityInfo($params['msg_body']);
+                    break;
             }
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());

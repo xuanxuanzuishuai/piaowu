@@ -219,7 +219,7 @@ class NewSMS
      */
     public function sendAttendActSMS($mobile, $sign, $startTime)
     {
-        $msg = "温馨提示：“上传截图领奖”活动已于{$startTime}开始，您的金叶子还未领取！请进入小叶子智能陪练服务号，点击推荐有奖参与。详情咨询课管老师";
+        $msg = "温馨提示：“上传截图领奖”活动已于{$startTime}开始，您的金叶子还未领取！请进入小叶子智能陪练服务号，点击福利中心参与。详情咨询课管老师";
         // phone_number 支持以逗号隔开的字符串
         $data = [
             'sign_name' => $sign,

@@ -16,6 +16,7 @@ class PushMessageTopic extends BaseTopic
     const EVENT_PUSH_WX_UUID = 'push_wx_uuid';
     const EVENT_PUSH_WX = 'push_wx';
     const EVENT_PUSH_MANUAL_RULE_WX = 'push_manual_rule_wx'; //手动推送微信
+    const EVENT_PUSH_BATCH_MANUAL_RULE_WX = 'batch_push_manual_rule_wx'; //分批手动推送微信
     const EVENT_PUSH_CHECKIN_MESSAGE = 'push_checkin_message'; //打卡海报审核消息
 
     const EVENT_WECHAT_INTERACTION = 'wechat_interaction';  // 微信交互

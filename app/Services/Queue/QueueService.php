@@ -152,6 +152,10 @@ class QueueService
             $deferMax = intval($count/2);
 
             foreach ($students as $student) {
+                // 用户最后活跃时间距离当前已过50个小时不发送
+                if (!PushMessageService::checkLastActiveTime($student['open_id'])) {
+                    continue;
+                }
                 $msgBody = [
                     'student_id'    => $student['user_id'],
                     'open_id'       => $student['open_id'],
@@ -163,11 +167,8 @@ class QueueService
                     'employee_id'   => $employeeId,
                     'activity_type' => $activityType
                 ];
-                if (PushMessageService::checkLastActiveTime($student['open_id'])) {
-                    $topic->pushWX($msgBody)->publish(rand(0, $deferMax));
-                }
+                $topic->pushWX($msgBody)->publish(rand(0, $deferMax));
             }
-
         } catch (Exception $e) {
             SimpleLogger::error($e->getMessage(), $msgBody ?? []);
             return false;
@@ -569,6 +570,28 @@ class QueueService
             (new SaveTicketTopic())->preGenQrCode(['open_id' => $openId, 'user_id' => $data['user_id']])->publish();
         } catch (Exception $e) {
             SimpleLogger::error($e->getMessage(), [$openId, $data]);
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 手动批量推送消息 - 周周有奖后台提醒发送功能
+     * @param int $logId message_manual_push_log表主键
+     * @param array $uuidArr 用户的uuid
+     * @param int $employeeId 操作人id
+     * @return bool
+     */
+    public static function manualBatchPushRuleWxByUuid($logId, $uuidArr, $employeeId)
+    {
+        try {
+            (new PushMessageTopic())->pushWX([
+                'uuids' => $uuidArr,
+                'log_id' => $logId,
+                'employee_id' => $employeeId,
+            ], PushMessageTopic::EVENT_PUSH_BATCH_MANUAL_RULE_WX)->publish();
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), $uuidArr);
             return false;
         }
         return true;

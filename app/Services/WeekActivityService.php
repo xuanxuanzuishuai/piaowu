@@ -20,6 +20,7 @@ use App\Models\OperationActivityModel;
 use App\Models\SharePosterModel;
 use App\Models\TemplatePosterModel;
 use App\Models\WeekActivityModel;
+use App\Services\Queue\QueueService;
 
 class WeekActivityService
 {
@@ -518,14 +519,19 @@ class WeekActivityService
             'image' => $posterUrl,
         ];
         $logId = MessageService::saveSendLog($manualData);
-        $uuidArr = array_chunk(array_column($boundUsers, 'uuid'), 1000);
-        foreach ($uuidArr as $_uuid) {
-            // 放到nsq队列中一个个处理
-            MessageService::manualPushMessage(
-                $logId,
-                $_uuid,
-                $employeeId
-            );
+        $uuidArr = [];
+        $userTotal = count($boundUsers);
+        $lastNum = $userTotal - 1;
+        for ($i = 0; $i < $userTotal; $i++) {
+            $uuidArr[] = $boundUsers[$i]['uuid'];
+            if (count($uuidArr) >= 1000 || $i == $lastNum) {
+                QueueService::manualBatchPushRuleWxByUuid(
+                    $logId,
+                    $uuidArr,
+                    $employeeId
+                );
+                $uuidArr = [];
+            }
         }
         return true;
     }

@@ -1090,4 +1090,21 @@ class MessageService
         }
         return true;
     }
+
+    /**
+     * 手动推送周周有奖活动信息
+     * @param $data
+     * @return bool
+     */
+    public static function batchPushWeekActivityInfo($data)
+    {
+        $logId = $data['log_id'] ?? 0;
+        $uuidArr = $data['uuids'] ?? [];
+        $employeeId = $data['employee_id'] ?? 0;
+        if (empty($logId) || empty($uuidArr)) {
+            return false;
+        }
+        self::manualPushMessage($logId, $uuidArr, $employeeId);
+        return true;
+    }
 }
