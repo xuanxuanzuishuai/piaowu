@@ -133,39 +133,39 @@ class ActivityDuanWuService
             $refereeCnt = $rankInfo['referee_cnt'];
             switch (true) {
                 case $rank <= 10:
-                    $rankTips = "第{$rank}名";
+                    $rankTips = "{$rank}";
                     $encourageTips = "加油，继续邀请好友购买体验卡并练琴~不要被后面超过哦";
                     break;
                 case $rank > 10 && $rank <= 90:
-                    $rankTips = "第{$rank}名";
+                    $rankTips = "{$rank}";
                     $rankCnt = $redis->hget($cacheKeyRankCnt, 10);
                     $diff = $rankCnt - $refereeCnt + 1;
                     $diff < 1 && $diff = 1;
                     $encourageTips = "加油，再邀请{$diff}人购买体验卡并练琴，即可获得200元京东卡奖励";
                     break;
                 case $rank > 90 && $rank <= 200:
-                    $rankTips = "第{$rank}名";
+                    $rankTips = "{$rank}";
                     $rankCnt = $redis->hget($cacheKeyRankCnt, 90);
                     $diff = $rankCnt - $refereeCnt + 1;
                     $diff < 1 && $diff = 1;
                     $encourageTips = "加油，再邀请{$diff}人购买体验卡并练琴，即可获得100元京东卡奖励";
                     break;
                 case $rank > 200 && $rank <= 300:
-                    $rankTips = "第{$rank}名";
+                    $rankTips = "{$rank}";
                     $rankCnt = $redis->hget($cacheKeyRankCnt, 200);
                     $diff = $rankCnt - $refereeCnt + 1;
                     $diff < 1 && $diff = 1;
                     $encourageTips = "加油，再邀请{$diff}人购买体验卡并练琴，即可获得50元京东卡奖励";
                     break;
                 case $rank > 300:
-                    $rankTips = "第300+";
+                    $rankTips = "300+";
                     $rankCnt = $redis->hget($cacheKeyRankCnt, 200);
                     $diff = $rankCnt - $refereeCnt + 1;
                     $diff < 1 && $diff = 1;
                     $encourageTips = "加油，再邀请{$diff}人购买体验卡并练琴，即可获得50元京东卡奖励";
                     break;
                 default:
-                    $rankTips = "第300+";
+                    $rankTips = "300+";
                     $encourageTips = "加油，邀请人购买体验卡并练琴，即可获得京东卡奖励";
                     break;
             }
