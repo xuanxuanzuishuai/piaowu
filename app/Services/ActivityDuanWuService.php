@@ -107,7 +107,7 @@ class ActivityDuanWuService
         
         if (empty($userRank)) {   //用户没有有效邀请用户,没有排名
             $rankUserCnt = $redis->hlen($cacheKeyRankCnt);   //有排名人数
-            $rankTips = "未上榜";
+            $rankTips = "300+";
             switch (true) {
                 case $rankUserCnt < 10:
                     $encourageTips = "加油，再邀请1人购买体验卡并练琴，即可获得200元京东卡奖励";
