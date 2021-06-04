@@ -11,6 +11,7 @@ namespace App\Controllers\Employee;
 use App\Controllers\ControllerBase;
 use App\Libs\Constants;
 use App\Libs\Dict;
+use App\Libs\DictConstants;
 use App\Libs\DingDing;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
@@ -586,5 +587,24 @@ class Employee extends ControllerBase
 
     }
 
-
+    /**
+     * 获取角色ID
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getEmployeeRole(Request $request, Response $response)
+    {
+        //当前只可以获取到超级管理员，代理商运营，预存订单财务审核三种角色ID数据
+        $params = $request->getParams();
+        if (!empty($params['role_name'])) {
+            $roleIdDict[$params['role_name']] = DictConstants::get(DictConstants::ROLE_ID, $params['role_name']);
+        } else {
+            $roleIdDict = DictConstants::getSet(DictConstants::ROLE_ID);
+        }
+        return $response->withJson([
+            'code' => 0,
+            'data' => $roleIdDict
+        ], StatusCode::HTTP_OK);
+    }
 }

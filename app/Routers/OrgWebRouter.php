@@ -58,6 +58,7 @@ class OrgWebRouter extends RouterBase
         '/employee/employee/getEmployeeListWithRole' => array('method' => array('get'), 'call' => '\App\Controllers\Employee\Employee:getEmployeeListWithRole'),
         '/employee/employee/set_ding_mobile' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Employee:setDingMobile'),
         '/employee/employee/del_ding_mobile' => array('method' => array('post'), 'call' => '\App\Controllers\Employee\Employee:delDingMobile'),
+        '/employee/employee/getEmployeeRole' => array('method' => array('get'), 'call' => '\App\Controllers\Employee\Employee:getEmployeeRole'),
         //机构批量分配课管(course consultant)
         '/org_web/employee/user_external_information' => ['method' => ['post'], 'call' => Employee::class . ':userExternalInformation', 'middles' => [EmployeeAuthCheckMiddleWare::class, OrgWebMiddleware::class]],
         '/org_web/employee/get_external_information' => ['method' => ['get'], 'call' => Employee::class . ':getExternalInformation', 'middles' => [EmployeeAuthCheckMiddleWare::class, OrgWebMiddleware::class]],

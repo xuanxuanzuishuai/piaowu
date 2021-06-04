@@ -709,6 +709,15 @@ class DictConstants {
         'type' => 'data_permission_type',
         'keys' => ['1', '2']
     ];
+    //角色ID
+    const ROLE_ID=[
+        'type' => 'role_id',
+        'keys' => [
+            'SUPER_MANAGE_ROLE_ID',//超级管理员角色ID
+            'AGENT_MANAGE_ROLE_ID',//代理商运营角色ID
+            'AGENT_STORAGE_FINANCE_ROLE_ID',//预存订单财务审核角色ID
+        ]
+    ];
     
     /**
      * 单个获取op系统dict配置数据
