@@ -303,6 +303,9 @@ function statisticsJinYeZi()
     isset($params['end']) && $endTime = strtotime($params['end']);
     isset($params['end1']) && $endTime1 = strtotime($params['end1']);
     
+    $startDate = date('Ymd', $startTime);
+    $endDate = date('Ymd', $endTime);
+    
     $db = MysqlDB::getDB(MysqlDB::CONFIG_SLAVE);
     $maxId = 0;
     $refereeData = [];
@@ -321,8 +324,8 @@ function statisticsJinYeZi()
                 AND a.create_time >= {$startTime}
                 AND a.create_time <= {$endTime}
                 AND b.has_review_course = 2
-                AND b.sub_start_date < {$endTime}
-                AND b.sub_end_date > {$startTime}
+                AND b.sub_start_date < {$endDate}
+                AND b.sub_end_date > {$startDate}
                 AND EXISTS ( SELECT 1 FROM {$detailTable} c WHERE c.student_id = a.student_id AND c.create_time >= {$startTime} AND c.create_time <= {$endTime1} AND c.stage = 2 )
             ORDER BY a.id ASC
             LIMIT 0,1000;
