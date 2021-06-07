@@ -59,6 +59,8 @@ class WeChatMiniPro
     const API_TAGS_BATCH_UNTAG    = '/cgi-bin/tags/members/batchuntagging';
     // 获取用户身上的标签列表
     const API_TAGS_GETIDLIST      = '/cgi-bin/tags/getidlist';
+    // 获取小程序码
+    const GET_MINIAPP_CODE_IMAGE  = '/wxa/getwxacodeunlimit';
 
 
     public $nowWxApp; //当前的微信应用
@@ -126,6 +128,15 @@ class WeChatMiniPro
     {
         $client = new Client(['debug' => false]);
 
+        $timeout = 0;
+        if (!empty($params['timeout'])) {
+            $timeout = $params['timeout'];
+            unset($params['timeout']);
+        }
+        if (!empty($this->timeout) && empty($timeout)) {
+            $timeout = $this->timeout;
+        }
+
         if ($method == 'GET') {
             $data = empty($params) ? [] : ['query' => $params];
         } elseif ($method == 'POST') {
@@ -133,11 +144,8 @@ class WeChatMiniPro
             $data = ['body' => json_encode($params, JSON_UNESCAPED_UNICODE)];
             $data['headers'] = ['Content-Type' => 'application/json'];
             // 部分接口不需要等待响应
-            if (!empty($params['timeout'])) {
-                $data['timeout'] = $params['timeout'];
-            }
-            if (!empty($this->timeout) && empty($data['timeout'])) {
-                $data['timeout'] = $this->timeout;
+            if (!empty($timeout)) {
+                $data['timeout'] = $timeout;
             }
         } elseif ($method == 'POST_FORM_DATA') {
             $method = 'POST';
@@ -184,10 +192,11 @@ class WeChatMiniPro
      */
     public function getMiniappCodeImage($paramsId, $retry = false)
     {
-        $api = self::WX_HOST . '/wxa/getwxacodeunlimit?access_token=' . $this->getAccessToken();
+        $api = $this->apiUrl(self::GET_MINIAPP_CODE_IMAGE);
         $scene = '&param_id=' . $paramsId;
         $requestParams = [
-            'scene' => substr($scene, 0, 32)
+            'scene' => substr($scene, 0, 32),
+            'timeout' => 10,
         ];
         $res = $this->requestJson($api, $requestParams, 'POST');
         if (is_string($res) && strlen($res) > 0) {

@@ -878,7 +878,7 @@ class SharePosterService
         }
 
         //获取学生信息
-        $studentDetail = StudentService::dssStudentStatusCheck($studentId, false);
+        $studentDetail = StudentService::dssStudentStatusCheck($studentId, false, null);
         if ($studentDetail['student_status'] != DssStudentModel::STATUS_BUY_NORMAL_COURSE) {
             throw new RunTimeException(['student_status_disable']);
         }
@@ -1106,7 +1106,7 @@ class SharePosterService
         }
         $error = '';
         if (!empty($userInfo['user_id'])) {
-            $userDetail = StudentService::dssStudentStatusCheck($userInfo['user_id'], false);
+            $userDetail = StudentService::dssStudentStatusCheck($userInfo['user_id'], false, null);
             if ($userDetail['student_status'] != DssStudentModel::STATUS_BUY_NORMAL_COURSE) {
                 $error = Lang::getWord('only_year_user_enter_event');
             }

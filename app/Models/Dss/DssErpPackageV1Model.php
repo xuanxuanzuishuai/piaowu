@@ -45,6 +45,7 @@ class DssErpPackageV1Model extends DssModel
 
     /**
      * 获取正式课产品包id
+     * @param int $saleShop
      * @return array
      */
     public static function getNormalPackageIds($saleShop = self::SALE_SHOP_AI_PLAY)
@@ -55,7 +56,8 @@ class DssErpPackageV1Model extends DssModel
     /**
      * 新产品包ids----已上架、已下架
      * @param $subType
-     * @param $status
+     * @param int $status
+     * @param int $saleShop
      * @return array
      */
     public static function getPackageIds($subType, $status = DssErpPackageGoodsV1Model::SUCCESS_NORMAL, $saleShop = self::SALE_SHOP_AI_PLAY)

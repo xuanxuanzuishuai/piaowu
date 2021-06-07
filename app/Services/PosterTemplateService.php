@@ -22,6 +22,7 @@ class PosterTemplateService
 {
     // 预生成小程序码标记
     const KEY_PRE_GENERATE_CODE = 'pre_generate_code_';
+    const KEY_PRE_GENERATE_CODE_LOCK = 'pre_generate_code_lock_';
     /**
      * 海报模板列表
      * @param $studentId
@@ -479,7 +480,7 @@ class PosterTemplateService
             return $data;
         }
         $posterConfig = PosterService::getPosterConfig();
-        $userDetail = StudentService::dssStudentStatusCheck($studentId, false);
+        $userDetail = StudentService::dssStudentStatusCheck($studentId, false, null);
         $userInfo = [
             'nickname' => $userDetail['student_info']['name'] ?? '',
             'headimgurl' => StudentService::getStudentThumb($userDetail['student_info']['thumb'])
@@ -569,13 +570,19 @@ class PosterTemplateService
         if (empty($user['user_id'])) {
             return false;
         }
-        $redis    = RedisDB::getConn();
+        $redis   = RedisDB::getConn();
+        $lockKey = self::KEY_PRE_GENERATE_CODE_LOCK . $user['user_id'];
+        $lock = $redis->set($lockKey, time(), 'EX', 60, 'NX');
+        if (empty($lock)) {
+            return false;
+        }
+
         $cacheKey = self::KEY_PRE_GENERATE_CODE . $user['user_id'];
         $cache    = $redis->get($cacheKey);
         if (!empty($cache)) {
             return false;
         }
-        $userDetail = StudentService::dssStudentStatusCheck($user['user_id'], false);
+        $userDetail = StudentService::dssStudentStatusCheck($user['user_id'], false, null);
         $extParams  = ['user_current_status' => $userDetail['student_status'] ?? 0];
         $typeList   = [TemplatePosterModel::STANDARD_POSTER, TemplatePosterModel::INDIVIDUALITY_POSTER];
         foreach ($typeList as $type) {

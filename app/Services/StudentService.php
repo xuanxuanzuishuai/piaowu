@@ -33,6 +33,7 @@ class StudentService
      * 获取学生当前状态
      * @param $studentId
      * @param bool $isWechat
+     * @param int $saleShop
      * @return array $studentStatus
      * @throws RunTimeException
      */
@@ -104,6 +105,7 @@ class StudentService
     /**
      * 检查用户是否存在未激活的激活码并且单条激活码日期超过指定天数的激活码
      * @param $studentId
+     * @param int $saleShop
      * @return bool 存在返回true 不存在false
      */
     public static function checkNoActiveFormalClassStatus($studentId, $saleShop = DssErpPackageV1Model::SALE_SHOP_AI_PLAY)
