@@ -323,7 +323,7 @@ function statisticsJinYeZi()
                 AND b.has_review_course = 2
                 AND b.sub_start_date < {$endTime}
                 AND b.sub_end_date > {$startTime}
-                AND EXISTS ( SELECT 1 FROM {$detailTable} c WHERE c.student_id = a.student_id AND c.create_time >= {$startTime} AND c.create_time <= {$endTime1} AND b.stage = 2 )
+                AND EXISTS ( SELECT 1 FROM {$detailTable} c WHERE c.student_id = a.student_id AND c.create_time >= {$startTime} AND c.create_time <= {$endTime1} AND c.stage = 2 )
             ORDER BY a.id ASC
             LIMIT 0,1000;
         ";
