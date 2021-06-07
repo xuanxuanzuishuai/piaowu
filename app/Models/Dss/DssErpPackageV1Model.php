@@ -47,9 +47,9 @@ class DssErpPackageV1Model extends DssModel
      * 获取正式课产品包id
      * @return array
      */
-    public static function getNormalPackageIds()
+    public static function getNormalPackageIds($saleShop = self::SALE_SHOP_AI_PLAY)
     {
-        return array_column(self::getPackageIds(DssCategoryV1Model::DURATION_TYPE_NORMAL), 'package_id');
+        return array_column(self::getPackageIds(DssCategoryV1Model::DURATION_TYPE_NORMAL, DssErpPackageGoodsV1Model::SUCCESS_NORMAL, $saleShop), 'package_id');
     }
 
     /**
@@ -58,15 +58,17 @@ class DssErpPackageV1Model extends DssModel
      * @param $status
      * @return array
      */
-    public static function getPackageIds($subType, $status = DssErpPackageGoodsV1Model::SUCCESS_NORMAL)
+    public static function getPackageIds($subType, $status = DssErpPackageGoodsV1Model::SUCCESS_NORMAL, $saleShop = self::SALE_SHOP_AI_PLAY)
     {
         $db = self::dbRO();
         $where = [
             'p.status[!]'=>self::STATUS_WAIT_SALE,
             'p.is_custom'=>self::PACKAGE_IS_NOT_CUSTOM,
-            'p.sale_shop'=>self::SALE_SHOP_AI_PLAY,
             'c.sub_type'=>$subType,
         ];
+        if (!empty($saleShop)) {
+            $where['p.sale_shop'] = $saleShop;
+        }
         if(!empty($status)){
            $where['pg.status'] = $status;
         }

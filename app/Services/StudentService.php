@@ -36,7 +36,7 @@ class StudentService
      * @return array $studentStatus
      * @throws RunTimeException
      */
-    public static function dssStudentStatusCheck($studentId, $isWechat = true)
+    public static function dssStudentStatusCheck($studentId, $isWechat = true, $saleShop = DssErpPackageV1Model::SALE_SHOP_AI_PLAY)
     {
         //获取学生信息
         $studentInfo = DssStudentModel::getRecord(['id' => $studentId]);
@@ -72,7 +72,7 @@ class StudentService
                     $appStatus = self::checkSubStatus($studentInfo['sub_status'], $studentInfo['sub_end_date']);
                     if (empty($appStatus)) {
                         // 付费正式课有效期已过期但名下有未激活的单个激活码有效期超过指定天数的认为是付费正式课用户
-                        if (self::checkNoActiveFormalClassStatus($studentInfo['id'])) {
+                        if (self::checkNoActiveFormalClassStatus($studentInfo['id'], $saleShop)) {
                             $data['student_status'] = DssStudentModel::STATUS_BUY_NORMAL_COURSE;
                         } else {
                             $data['student_status'] = DssStudentModel::STATUS_HAS_EXPIRED;
@@ -106,7 +106,7 @@ class StudentService
      * @param $studentId
      * @return bool 存在返回true 不存在false
      */
-    public static function checkNoActiveFormalClassStatus($studentId)
+    public static function checkNoActiveFormalClassStatus($studentId, $saleShop = DssErpPackageV1Model::SALE_SHOP_AI_PLAY)
     {
         $isExistFormalClass = false;
         // list($isCheck, $expireDay) = DictConstants::get(DssDictService::CHECK_NO_ACTIVE_CODE_EXPIRE_TIME, ['is_check_no_active_code_expire', 'no_active_code_expire_day']);
@@ -119,7 +119,7 @@ class StudentService
         // 获取未激活的兑换码
         $giftCodeList = DssGiftCodeModel::getRecords(['buyer' => $studentId, 'code_status' => DssGiftCodeModel::CODE_STATUS_NOT_REDEEMED]);
         // 获取正式课ids
-        $noExpireCodeIdList = DssErpPackageV1Model::getNormalPackageIds();
+        $noExpireCodeIdList = DssErpPackageV1Model::getNormalPackageIds($saleShop);
         // 检查是否过期
         foreach ($giftCodeList as $codeInfo) {
             // 非正式课
