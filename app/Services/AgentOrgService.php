@@ -544,7 +544,7 @@ class AgentOrgService
                 continue;
             }
             if (!Util::isChineseText($value['real_name'])){
-                $errorInfo[] = array_merge($value, ['error_msg' => '超过10个字或包含了数字与特殊字符']);
+                $errorInfo[] = array_merge($value, ['error_msg' => '真实姓名超过10个字或包含了数字与特殊字符']);
                 continue;
             }
             if ($mobileCount[$value['mobile']] > 1) {

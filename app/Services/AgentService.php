@@ -1944,7 +1944,7 @@ class AgentService
                     $extParams = [
                         'p' => PosterModel::getIdByPath($item['value']),
                         'app_id' => UserCenter::AUTH_APP_ID_OP_AGENT,
-                        'text' => self::agentWordWaterMark($agentInfo['organization'] ?? ''),
+                        'text' => self::agentWordWaterMark($agentId),
                     ];
 
                     $posterUrl = PosterService::generateQRPosterAliOss(
@@ -1964,19 +1964,18 @@ class AgentService
 
     /**
      * 代理文字水印
-     * @param string $organization
+     * @param int $agentId
      * @return array|array[]
      */
-    public static function agentWordWaterMark(string $organization): array
+    public static function agentWordWaterMark(int $agentId): array
     {
-        if (empty($organization)) {
-            return [];
-        }
+        $orgData = AgentOrganizationModel::getRecord(['agent_id' => $agentId, 'status' => AgentOrganizationModel::STATUS_OK], ['name']);
+        if (empty($orgData['name'])) return [];
         $config = PosterService::getPosterConfig(DictConstants::AGENT_POSTER_CONFIG);
 
         return [
             [
-                'word' => $organization,
+                'word' => $orgData['name'],
                 "x" => $config['ORGANIZATION_WORD_X'],
                 "y" => $config['ORGANIZATION_WORD_Y'],
                 "size" => $config['ORGANIZATION_WORD_SIZE'],

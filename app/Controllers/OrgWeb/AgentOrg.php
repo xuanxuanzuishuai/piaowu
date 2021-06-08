@@ -281,7 +281,7 @@ class AgentOrg extends ControllerBase
             return $response->withJson(Valid::addErrors([], 'org_student_import', 'must_excel_format'));
         }
         //临时文件完整存储路径
-        $filename = '/tmp/import_org_student_no' . md5(rand() . time()) . '.' . $extension;
+        $filename = $_ENV['STATIC_FILE_SAVE_PATH'] . '/' . md5(rand() . time()) . '.' . $extension;
         if (move_uploaded_file($_FILES['filename']['tmp_name'], $filename) == false) {
             return $response->withJson(Valid::addErrors([], 'org_student_import', 'move_file_fail'));
         }
