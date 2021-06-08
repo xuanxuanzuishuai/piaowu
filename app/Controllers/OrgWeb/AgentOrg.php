@@ -154,11 +154,11 @@ class AgentOrg extends ControllerBase
         }
         list($params['page'], $params['count']) = Util::formatPageCount($params);
         try {
-            $logData = AgentOrgService::studentList($params);
+            $data = AgentOrgService::studentList($params);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
-        return HttpHelper::buildResponse($response, $logData);
+        return HttpHelper::buildResponse($response, $data);
     }
 
 
@@ -280,7 +280,7 @@ class AgentOrg extends ControllerBase
             $employee = $this->ci['employee'];
             // 检查订单数据
             AgentOrgService::studentImportAdd($filename, $employee, $params);
-        } catch (RuntimeException $e) {
+        } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         } finally {
             //删除临时文件

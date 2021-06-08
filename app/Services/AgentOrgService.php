@@ -140,7 +140,12 @@ class AgentOrgService
      */
     public static function orgStaticsData($agentId)
     {
-        return AgentOrganizationModel::getRecord(['agent_id' => $agentId], ['agent_id', 'id(org_id)', 'name', 'quantity', 'amount']);
+        $data = AgentOrganizationModel::getRecord(['agent_id' => $agentId], ['agent_id', 'id(org_id)', 'name', 'quantity', 'amount']);
+        if (empty($data)) {
+            return [];
+        }
+        $data['amount'] = Util::yuan($data['amount'], 0);
+        return $data;
     }
 
     /**
@@ -310,8 +315,8 @@ class AgentOrgService
 
         if (!empty($orgStudent)){
             foreach ($orgStudent as $value){
-                if ($value['status'] == AgentOrganizationStudentModel::STATUS_NORMAL && $value['org_id'] == $params['agent_id']){
-                    throw new RunTimeException(['student_exist']);
+                if ($value['status'] == AgentOrganizationStudentModel::STATUS_NORMAL && $value['org_id'] == $orgData['org_id']){
+                    throw new RunTimeException(['student_org_exist']);
                 }
 
                 if ($value['status'] == AgentOrganizationStudentModel::STATUS_NORMAL){
@@ -423,7 +428,7 @@ class AgentOrgService
                     $counter++;
                     continue;
                 }
-                if ($row > 200) throw new RunTimeException(['file_over_maximum_limits']);
+                if ($row > 200) throw new \Exception('file_over_maximum_limits');
 
                 $data[] = [
                     'mobile'    => $mobile,
@@ -431,10 +436,11 @@ class AgentOrgService
                 ];
             }
             // 检查数据是否为空
-            if (empty($data)) throw new RunTimeException(['data_can_not_be_empty', 'import']);
-        } catch (\Exception $e) {
+            if (empty($data)) throw new \Exception('data_can_not_be_empty');
+        }catch (\Exception $e){
             throw new RunTimeException([$e->getMessage()]);
         }
+
 
         [$studentInfo, $errorInfo] = self::checkStudentData($data);
         if (empty($errorInfo)) {
@@ -501,9 +507,11 @@ class AgentOrgService
                 'student' => $studentInfo,
                 'opn'     => array_column($opn, 'opn_id'),
             ]);
+            self::sendEmail($employee['email'], [], count($studentInfo));
+        } else {
+            self::sendEmail($employee['email'], $errorInfo);
+            throw new RunTimeException(['data_error_see_email']);
         }
-
-        self::sendEmail($employee['email'], $errorInfo, count($studentInfo));
         return true;
     }
 
