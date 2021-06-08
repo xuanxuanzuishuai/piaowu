@@ -1161,4 +1161,92 @@ class Util
         }
         return $mondays;
     }
+
+    /**
+     * 获取短标识+1后的标识
+     * @param string $sortId 当前标识
+     * @param int $j 需要改变的位置
+     * @return string           返回sortId加1后的标识
+     */
+    public static function getIncrSortId(string $sortId, int $j = 6)
+    {
+        $isAdd = false;
+        $ordNum = ord($sortId[$j - 1]);
+        switch ($ordNum) {
+            case 57:    // 9->A
+                $ordNum = 65;
+                break;
+
+            case 90:    // Z->a
+                $ordNum = 97;
+                break;
+
+            case 122:   // z->0
+                $isAdd = true;
+                $ordNum = 48;
+                break;
+            default:
+                $ordNum += 1;
+        }
+        $sortId[$j - 1] = chr($ordNum);
+        if ($isAdd) {
+            $sortId = self::getIncrSortId($sortId, $j - 1);
+        }
+        return $sortId;
+    }
+
+    /**
+     * 设置锁
+     * @param string $lockName redis key
+     * @param int $ttl 过期时间默认5分钟
+     * @return bool
+     */
+    public static function setLock(string $lockName, int $ttl = Util::TIMESTAMP_5M)
+    {
+        // 如果传入空， 则必定返回已锁定的状态
+        if (empty($lockName)) {
+            return false;
+        }
+        return !empty(RedisDB::getConn()->set($lockName, 1, 'EX', $ttl, 'NX'));
+    }
+
+    /**
+     * 释放锁
+     * @param string $lockName redis key
+     * @return bool
+     */
+    public static function unLock(string $lockName)
+    {
+        // 如果传入空， 则必定返回已解除锁
+        if (empty($lockName)) {
+            return true;
+        }
+        return !empty(RedisDB::getConn()->del([$lockName]));
+    }
+
+    /**
+     * 解密qr_ticket
+     * @param $qrTicket
+     * @return array
+     */
+    public static function decryptQrTicketInfo($qrTicket)
+    {
+        $referrerUserId = RC4::decrypt($_ENV['COOKIE_SECURITY_KEY'], $qrTicket);
+        $referrerUserId = explode('_', $referrerUserId);
+        $qrTicketInfo ['type'] = $referrerUserId[0] ?? 0;
+        $qrTicketInfo ['user_id'] = $referrerUserId[1] ?? 0;
+        return $qrTicketInfo;
+    }
+
+    /**
+     * 判断是否中文字符
+     *
+     * @param string $text
+     * @return bool
+     */
+    public static function isChineseText(string $text): bool
+    {
+        if (preg_match("/^[\x80-\xff]{6,30}$/", $text)) return true;
+        return false;
+    }
 }

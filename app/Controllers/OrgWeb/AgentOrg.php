@@ -182,6 +182,12 @@ class AgentOrg extends ControllerBase
                 'error_code' => 'real_name_is_required',
             ],
             [
+                'key'        => 'real_name',
+                'type'       => 'lengthMax',
+                'value'      => 10,
+                'error_code' => 'real_name_length_error',
+            ],
+            [
                 'key'        => 'mobile',
                 'type'       => 'required',
                 'error_code' => 'mobile_is_required'
@@ -196,6 +202,9 @@ class AgentOrg extends ControllerBase
         $params['operator_id'] = self::getEmployeeId();
 
         try {
+            if (!Util::isChineseText($params['real_name'])){
+                throw new RunTimeException(['is_chinese_text']);
+            }
             AgentOrgService::addStudent($params);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
@@ -272,7 +281,7 @@ class AgentOrg extends ControllerBase
             return $response->withJson(Valid::addErrors([], 'org_student_import', 'must_excel_format'));
         }
         //临时文件完整存储路径
-        $filename = '/tmp/import_trade_no_' . md5(rand() . time()) . '.' . $extension;
+        $filename = '/tmp/import_org_student_no' . md5(rand() . time()) . '.' . $extension;
         if (move_uploaded_file($_FILES['filename']['tmp_name'], $filename) == false) {
             return $response->withJson(Valid::addErrors([], 'org_student_import', 'move_file_fail'));
         }

@@ -239,7 +239,7 @@ class AgentOrgService
                     'id' => $studentIds
                 ],
                 [
-                    'id', 'uuid', 'mobile', 'name', 'real_name', 'create_time', 'sub_end_date', 'has_review_course'
+                    'id', 'uuid', 'mobile', 'name', 'real_name', 'create_time', 'sub_end_date', 'has_review_course', 'thumb'
                 ]
             );
 
@@ -260,9 +260,8 @@ class AgentOrgService
 
         foreach ($studentInfo as &$value) {
             $validStatus = 1;
-            if ($value['sub_end_date'] < date("Ymd")) {
-                $validStatus = 2;
-            }
+            if ($value['sub_end_date'] < date("Ymd")) $validStatus = 2;
+            $value['thumb']            = StudentService::getStudentThumb($value['thumb']);
             $value['valid_status']     = DssStudentModel::VALID_STATUS[$validStatus];
             $value['current_progress'] = DssStudentModel::CURRENT_PROGRESS[$value['has_review_course']];
             $value['create_time_show'] = date('Y-m-d H:i:s', $value['create_time']);
@@ -428,7 +427,7 @@ class AgentOrgService
                     $counter++;
                     continue;
                 }
-                if ($row > 200) throw new \Exception('file_over_maximum_limits');
+                if ($row > 201) throw new \Exception('file_over_maximum_limits');
 
                 $data[] = [
                     'mobile'    => $mobile,
@@ -441,23 +440,13 @@ class AgentOrgService
             throw new RunTimeException([$e->getMessage()]);
         }
 
+        $orgData = self::existAgentOrg($params['agent_id']);
 
-        [$studentInfo, $errorInfo] = self::checkStudentData($data);
+        [$studentInfo, $insertStudentIds, $updateStudentIds, $errorInfo] = self::checkStudentData($data, $orgData['org_id']);
+
         if (empty($errorInfo)) {
-
-            $orgData = self::existAgentOrg($params['agent_id']);
-
-            $studentIds = array_column($studentInfo, 'student_id');
-
-            $orgStudent = AgentOrganizationStudentModel::getRecords(
-                ['org_id' => $orgData['org_id']],
-                ['student_id', 'status']);
-
-            $orgStudentIds    = array_column($orgStudent, 'student_id');
-            $insertStudentIds = array_diff($studentIds, $orgStudentIds);
-
             $time = time();
-            $insertStudentInfo = [];
+            $insertStudentInfo = $updateStudentInfo = [];
             if (!empty($insertStudentIds)) {
                 foreach ($insertStudentIds as $id) {
                     $insertStudentInfo[] = [
@@ -468,10 +457,6 @@ class AgentOrgService
                     ];
                 }
             }
-
-            $updateStudentInfo = [];
-            $updateStudentIds  = array_diff($studentIds, $insertStudentInfo);
-
             if (!empty($updateStudentIds)) {
                 $updateStudentInfo = [
                     'where' => [
@@ -517,17 +502,34 @@ class AgentOrgService
 
     /**
      * 学生信息校验
+     *
      * @param array $data
+     * @param int $orgId
      * @return array|array[]
      */
-    private static function checkStudentData(array $data): array
+    private static function checkStudentData(array $data, int $orgId): array
     {
-        $mobiles     = array_column($data, 'mobile');
+        $mobiles     = array_filter(array_column($data, 'mobile'));
         $mobileCount = array_count_values($mobiles);
-        $studentInfo = DssStudentModel::getRecords(['mobile' => $mobiles], ['mobile', 'id']);
-        $studentInfo = array_column($studentInfo, 'id', 'mobile');
+        $studentData = DssStudentModel::getRecords(['mobile' => $mobiles], ['mobile', 'id']);
+        $studentInfo = array_column($studentData, 'id', 'mobile');
 
-        $errorInfo = [];
+        $studentIds = array_column($studentData, 'id');
+
+        $noSelfOrgStudent = AgentOrganizationStudentModel::getRecords([
+            'student_id' => $studentIds,
+            'org_id[!]'  => $orgId,
+            'status'     => AgentOrganizationStudentModel::STATUS_NORMAL
+        ], ['student_id']);
+
+        $noSelfOrgStudentIds = array_column($noSelfOrgStudent, 'student_id');
+
+        $orgStudent = AgentOrganizationStudentModel::getRecords([
+            'org_id'     => $orgId,
+            'student_id' => $studentIds,
+        ], ['student_id', 'status']);
+        $orgStudentStatus = array_column($orgStudent, 'status', 'student_id');
+        $updateInfo = $insertInfo = $errorInfo = [];
         foreach ($data as &$value) {
             if (empty($value['mobile'])) {
                 $errorInfo[] = array_merge($value, ['error_msg' => '手机号为空']);
@@ -541,6 +543,10 @@ class AgentOrgService
                 $errorInfo[] = array_merge($value, ['error_msg' => '真实姓名为空']);
                 continue;
             }
+            if (!Util::isChineseText($value['real_name'])){
+                $errorInfo[] = array_merge($value, ['error_msg' => '超过10个字或包含了数字与特殊字符']);
+                continue;
+            }
             if ($mobileCount[$value['mobile']] > 1) {
                 $errorInfo[] = array_merge($value, ['error_msg' => '手机号重复']);
                 continue;
@@ -550,9 +556,24 @@ class AgentOrgService
                 $errorInfo[] = array_merge($value, ['error_msg' => '非小叶子智能陪练用户']);
                 continue;
             }
+
             $value['student_id'] = $studentInfo[$value['mobile']];
+
+            if (in_array($value['student_id'], $noSelfOrgStudentIds)) {
+                $errorInfo[] = array_merge($value, ['error_msg' => '已是其他机构在读学员']);
+                continue;
+            }
+
+            if ($orgStudentStatus[$value['student_id']] == AgentOrganizationStudentModel::STATUS_NORMAL) {
+                $errorInfo[] = array_merge($value, ['error_msg' => '已是该机构在读学员']);
+                continue;
+            } elseif ($orgStudentStatus[$value['student_id']] == AgentOrganizationStudentModel::STATUS_DISABLE) {
+                $updateInfo[] = $value['student_id'];
+            } else {
+                $insertInfo[] = $value['student_id'];
+            }
         }
-        return [$data, $errorInfo];
+        return [$data, $insertInfo, $updateInfo, $errorInfo];
     }
 
     /**
