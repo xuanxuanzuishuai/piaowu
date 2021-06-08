@@ -609,17 +609,25 @@ class AgentStorageService
                 throw new RunTimeException(['insert_failure']);
             }
             //拆分预存订单为多个子年卡记录
-            AgentPreStorageDetailModel::batchInsert(array_fill(0, $agentStorageData['package_amount'], [
+            $detailRes = AgentPreStorageDetailModel::batchInsert(array_fill(0, $agentStorageData['package_amount'], [
                 'pre_storage_id' => $storageId,
                 'status' => AgentPreStorageDetailModel::STATUS_NOT_CONSUMED,
                 'create_time' => $time
             ]));
+            if (empty($detailRes)) {
+                $db->rollBack();
+                throw new RunTimeException(['insert_failure']);
+            }
             //更新代理商扩展信息表中预存订单年卡剩余数量
-            AgentInfoModel::updateRecord($agentStorageData['agent_id'], ["quantity[+]" => $agentStorageData['package_amount']]);
-            //将支付时间开始，截止到当前时间，此代理商作为成单代理商角色的订单与预存订单拆分的子年卡记录进行一一对应消费
-            self::agentStorageConsumer($agentStorageData['agent_id']);
+            $infoRes = AgentInfoModel::batchUpdateRecord(["quantity[+]" => $agentStorageData['package_amount']], ['agent_id' => $agentStorageData['agent_id']]);
+            if (empty($infoRes)) {
+                $db->rollBack();
+                throw new RunTimeException(['update_failure']);
+            }
         }
         $db->commit();
+        //将支付时间开始，截止到当前时间，此代理商作为成单代理商角色的订单与预存订单拆分的子年卡记录进行一一对应消费
+        self::agentStorageConsumer($agentStorageData['agent_id']);
         return true;
     }
 
@@ -631,7 +639,7 @@ class AgentStorageService
     public static function agentStorageConsumer($agentId)
     {
         //检测代理商剩余年卡数量是否大于0
-        $agentData = AgentInfoModel::getRecord(['agent_id' => $agentId], ['quantity[Int]', 'id']);
+        $agentData = AgentInfoModel::getRecord(['agent_id' => $agentId], ['quantity[Int]', 'id', 'amount']);
         if ($agentData['quantity'] <= 0) {
             SimpleLogger::info('agent storage quantity eq or lt 0 ', $agentData);
             return true;
@@ -712,7 +720,7 @@ class AgentStorageService
         }
         $processLogRes = AgentPreStorageProcessLogModel::batchInsert($processLogInsertData);
         $refundRes = AgentPreStorageRefundModel::batchInsert($refundInsertData);
-        $agentInfoRes = AgentInfoModel::batchUpdateRecord(['quantity[-]' => $consumerAmount, 'amount[+]' => $refundAmount], ['agent_id' => $agentId, 'quantity' => $agentData['quantity']]);
+        $agentInfoRes = AgentInfoModel::batchUpdateRecord(['quantity[-]' => $consumerAmount, 'amount[+]' => $refundAmount], ['agent_id' => $agentId, 'quantity' => $agentData['quantity'], 'amount' => $agentData['amount']]);
         if (empty($processLogRes) || empty($refundRes) || empty($agentInfoRes)) {
             SimpleLogger::info('agent storage log data update fail ', []);
             return false;

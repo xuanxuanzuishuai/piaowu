@@ -72,7 +72,7 @@ class AgentService
             'division_model' => $params['division_model'] ?? 0,
             'country_code' => $params['country_code'],
             'create_time' => $time,
-            'organization' => $params['organization'],
+            'organization' => !empty($params['organization']) ?? '',
         ];
         if (self::checkAgentExists($agentInsertData['mobile'], $agentInsertData['country_code'])) {
             throw new RunTimeException(['agent_have_exist']);
