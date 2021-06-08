@@ -19,12 +19,12 @@ VALUES
 -- 权限设置
 set @parentMenuId = (select id from privilege where unique_en_name = 'agent_manage');
 INSERT INTO `privilege`( `name`, `uri`, `created_time`, `method`, `is_menu`, `menu_name`, `parent_id`, `unique_en_name`, `status`)
-VALUES ('代理商退款申请', '/op_web/agent_storage/refund_add', unix_timestamp(), 'post', 0, '', 0, 'agent_storage_refund_add', 1);
+VALUES ('代理商退款申请', '/op_web/agent_storage/refund_add', unix_timestamp(), 'post', 0, '', 0, 'agent_refund_add', 1);
 INSERT INTO `privilege`( `name`, `uri`, `created_time`, `method`, `is_menu`, `menu_name`, `parent_id`, `unique_en_name`, `status`)
-VALUES ('代理商退款编辑', '/op_web/agent_storage/refund_update', unix_timestamp(), 'post', 0, '', 0, 'agent_storage_refund_update', 1);
+VALUES ('代理商退款编辑', '/op_web/agent_storage/refund_update', unix_timestamp(), 'post', 0, '', 0, 'agent_refund_update', 1);
 INSERT INTO `privilege`( `name`, `uri`, `created_time`, `method`, `is_menu`, `menu_name`, `parent_id`, `unique_en_name`, `status`)
-VALUES ('代理商退款详情', '/op_web/agent_storage/refund_detail', unix_timestamp(), 'get', 0, '', 0, 'agent_storage_refund_detail', 1);
+VALUES ('代理商退款详情', '/op_web/agent_storage/refund_detail', unix_timestamp(), 'get', 0, '', 0, 'agent_refund_detail', 1);
 INSERT INTO `privilege`( `name`, `uri`, `created_time`, `method`, `is_menu`, `menu_name`, `parent_id`, `unique_en_name`, `status`)
-VALUES ('代理商退款列表', '/op_web/agent_storage/refund_list', unix_timestamp(), 'get', 1, '退款列表', @parentMenuId, 'agent_storage_refund_list', 1);
+VALUES ('代理商退款列表', '/op_web/agent_storage/refund_list', unix_timestamp(), 'get', 1, '退款列表', @parentMenuId, 'agent_refund_list', 1);
 INSERT INTO `privilege`( `name`, `uri`, `created_time`, `method`, `is_menu`, `menu_name`, `parent_id`, `unique_en_name`, `status`)
-VALUES ('代理商退款审核', '/op_web/agent_storage/refund_verify', unix_timestamp(), 'post', 0, '', 0, 'agent_storage_refund_verify', 1);
+VALUES ('代理商退款审核', '/op_web/agent_storage/refund_verify', unix_timestamp(), 'post', 0, '', 0, 'agent_refund_verify', 1);

@@ -21,14 +21,20 @@ class AgentPreStorageReviewLogModel extends Model
     const LOG_TYPE_REJECT = 3;
     const TYPE_RESET_PUSH = 4;
 
-
+    const REFUND_TYPE_MAP = [
+        self::LOG_TYPE_SUBMIT   => '申请退款',
+        self::LOG_TYPE_APPROVED => '审核通过',
+        self::LOG_TYPE_REJECT   => '驳回',
+        self::TYPE_RESET_PUSH   => '重新提交',
+    ];
     /**
      * 获取记录
      *
      * @param int $refundId
+     * @param int $type
      * @return array
      */
-    public static function getLogList(int $refundId): array
+    public static function getLogList(int $refundId, int $type = self::DATA_TYPE_REFUND): array
     {
 
         $db = MysqlDB::getDB();
@@ -49,6 +55,7 @@ class AgentPreStorageReviewLogModel extends Model
             [
                 "AND" => [
                     'data_id' => $refundId,
+                    'data_type' => $type,
                 ],
                 "ORDER" => [self::$table . ".create_time" => 'DESC'],
             ]

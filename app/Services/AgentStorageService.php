@@ -48,18 +48,7 @@ class AgentStorageService
         ];
 
 
-        $amount = self::checkAmount($refundInsertData['agent_id'], $refundInsertData['amount']);
-
-        //agent数据
-        $agentUpdateData = [
-            'where' => [
-                'agent_id' => $refundInsertData['agent_id'],
-                'amount' => $amount,
-            ],
-            'data' => [
-                'amount' => $amount - $refundInsertData['amount']
-            ]
-        ];
+        self::checkAmount($refundInsertData['agent_id'], $refundInsertData['amount']);
 
         //log数据
         $log = [
@@ -73,7 +62,7 @@ class AgentStorageService
         $db = MysqlDB::getDB();
         $db->beginTransaction();
 
-        $res = AgentPreStorageRefundModel::add($refundInsertData, $agentUpdateData, $log);
+        $res = AgentPreStorageRefundModel::add($refundInsertData, $log);
 
         if (empty($res)) {
             $db->rollBack();
@@ -124,7 +113,6 @@ class AgentStorageService
             'data' => [
                 'amount' => Util::fen($params['amount']),
                 'status' => AgentPreStorageRefundModel::STATUS_VERIFY_WAIT,
-                'remark' => $params['remark'] ?? '',
             ],
         ];
         $refund = AgentPreStorageRefundModel::getById($refundUpdateData['where']['id']);
@@ -133,18 +121,7 @@ class AgentStorageService
             throw new RunTimeException(['agent_refund_not_exist']);
         }
 
-        $amount = self::checkAmount($refund['agent_id'], $refundUpdateData['data']['amount']);
-
-        //agent数据
-        $agentAmountData = [
-            'where' => [
-                'id' => $refund['agent_id'],
-                'amount' => $amount,
-            ],
-            'data' => [
-                'amount' => $amount - $refundUpdateData['data']['amount']
-            ]
-        ];
+        self::checkAmount($refund['agent_id'], $refundUpdateData['data']['amount']);
 
         //log数据
         $log = [
@@ -158,7 +135,7 @@ class AgentStorageService
 
         $db = MysqlDB::getDB();
         $db->beginTransaction();
-        $res = AgentPreStorageRefundModel::update($refundUpdateData, $agentAmountData, $log);
+        $res = AgentPreStorageRefundModel::update($refundUpdateData, [], $log);
         if (empty($res)) {
             $db->rollBack();
             throw new RunTimeException(['update_failure']);
@@ -201,6 +178,7 @@ class AgentStorageService
             'remark' => $params['remark'] ?? '',
         ];
 
+
         $agentAmountData = [];
 
         if ($params['operation'] == AgentPreStorageRefundModel::STATUS_VERIFY_PASS) {
@@ -210,24 +188,25 @@ class AgentStorageService
 
             $log['type'] = AgentPreStorageRefundModel::STATUS_VERIFY_PASS;
 
+            $amount = self::checkAmount($refund['agent_id'],$refund['amount']);
+
+            //agent数据
+            $agentAmountData = [
+                'where' => [
+                    'agent_id' => $refund['agent_id'],
+                    'amount' => $refund['amount'],
+                ],
+                'data' => [
+                    'amount' => $amount['amount'] - $refund['amount']
+                ]
+            ];
+
         } elseif ($params['operation'] == AgentPreStorageRefundModel::STATUS_VERIFY_REBUT) {
             $refundUpdateData['data'] = [
                 'status' => AgentPreStorageRefundModel::STATUS_VERIFY_REBUT,
                 'remark' => $params['remark'],
             ];
             $log['type'] = AgentPreStorageRefundModel::STATUS_VERIFY_REBUT;
-
-            $agentInfo = AgentInfoModel::getRecord(['agent_id' => $refund['agent_id']]);
-            //agent数据
-            $agentAmountData = [
-                'where' => [
-                    'id' => $refund['agent_id'],
-                    'amount' => $agentInfo['amount'],
-                ],
-                'data' => [
-                    'amount' => $agentInfo['amount'] + $refund['amount']
-                ]
-            ];
 
         } else {
             return false;
@@ -799,12 +778,12 @@ class AgentStorageService
             ]);
 
             $detail['status_show']      = $dictData[DictConstants::CHECK_STATUS['type']][$detail['status']]['value'];
-            $detail['amount']           = Util::yuan($detail['amount']);
+            $detail['amount']           = (int)Util::yuan($detail['amount']);
             $detail['create_time_show'] = date('Y-m-d H:i:s', $detail['create_time']);
             $detail['operation_log']    = AgentPreStorageReviewLogModel::getLogList($refundId);
 
             foreach ($detail['operation_log'] as &$value) {
-                $value['type_show']        = $dictData[DictConstants::AGENT_STORAGE_APPROVED_ACTION['type']][$value['type']]['value'] ?? '';
+                $value['type_show']        = AgentPreStorageReviewLogModel::REFUND_TYPE_MAP[$value['type']];
                 $value['create_time_show'] = date('Y-m-d H:i:s', $value['create_time']);
             }
         }

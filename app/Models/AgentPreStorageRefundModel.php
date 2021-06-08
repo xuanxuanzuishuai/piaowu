@@ -31,21 +31,15 @@ class AgentPreStorageRefundModel extends Model
     /**
      * 新增代理退款申请
      * @param array $refundData
-     * @param array $agentAmountData
      * @param array $log
      * @return bool
      */
-    public static function add(array $refundData, array $agentAmountData,array $log): bool
+    public static function add(array $refundData, array $log): bool
     {
         //记录代理商退款申请数据
         $refundId = self::insertRecord($refundData);
         if (empty($refundId)) {
             SimpleLogger::error('insert agent pre storage refund data error', $refundData);
-            return false;
-        }
-        $updateRow = AgentInfoModel::batchUpdateRecord($agentAmountData['data'], $agentAmountData['where']);
-        if (empty($updateRow)) {
-            SimpleLogger::error('update agent amount data error', $agentAmountData);
             return false;
         }
 

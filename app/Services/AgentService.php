@@ -422,6 +422,7 @@ class AgentService
             $agv['referral_student_count'] = $spreadData[$agv['id']]['total']['s_count'];
             //推广订单总数
             $agv['referral_bill_count'] = $spreadData[$agv['id']]['total']['b_count'];
+            $agv['amount'] = Util::yuan($agv['amount']);
 
         });
         $agentList['list'] = self::formatAgentData($agentList['list']);
