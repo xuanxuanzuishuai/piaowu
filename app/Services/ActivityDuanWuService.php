@@ -61,7 +61,7 @@ class ActivityDuanWuService
             $appUrl = $posterImgFile['poster_save_full_path'] ?? '';
         }
         $wxUrl = $activityConfig['wx_url'];
-        Util::urlAddParams($wxUrl, ['activity_id'=>$activityId]);
+        Util::urlAddParams($wxUrl, ['activity_id'=>$activityId, 'source'=>'dbf']);
         Util::urlAddParams($appUrl, ['activity_id'=>$activityId]);
         $urlVersion = $activityConfig['url_version'] ?? '0';
         
