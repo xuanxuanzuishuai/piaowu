@@ -192,30 +192,32 @@ class AgentOrgService
 
     /**
      * 获取机构学生信息
+     *
      * @param array $params
      * @return array
+     * @throws RunTimeException
      */
     public static function studentList(array $params): array
     {
+        $orgData = self::existAgentOrg($params['agent_id']);
+
         $data = [
             'total_count' => 0,
             'list' => []
         ];
 
         $count = AgentOrganizationStudentModel::getCount([
-            'org_id' => $params['agent_id'],
+            'org_id' => $orgData['org_id'],
             'status'   => AgentOrganizationStudentModel::STATUS_NORMAL,
         ]);
 
-        if (empty($count)) {
-            return $data;
-        }
+        if (empty($count)) return $data;
 
         $data['total_count'] = $count;
 
         $info = AgentOrganizationStudentModel::getRecords(
             [
-                'org_id'   => $params['agent_id'],
+                'org_id'   => $orgData['org_id'],
                 'status'   => AgentOrganizationStudentModel::STATUS_NORMAL,
                 'ORDER'    => ['id' => 'DESC'],
                 'LIMIT'    => [($params['page'] - 1) * $params['count'], $params['count']]
@@ -264,6 +266,27 @@ class AgentOrgService
     }
 
     /**
+     * 机构是否存在
+     *
+     * @param int $agentId
+     * @return array
+     * @throws RunTimeException
+     */
+    private static function existAgentOrg(int $agentId): array
+    {
+        if (empty($agentId)) throw new RunTimeException(['agent_org_id_required']);
+
+        $orgData = AgentOrganizationModel::getRecord([
+            'agent_id' => $agentId,
+            'status'   => AgentOrganizationModel::STATUS_OK
+        ], ['id(org_id)']);
+
+        if (empty($orgData)) throw new RunTimeException(['agent_org_id_required']);
+
+        return $orgData;
+    }
+
+    /**
      * 添加机构学员
      *
      * @param array $params
@@ -272,6 +295,9 @@ class AgentOrgService
      */
     public static function addStudent(array $params): bool
     {
+
+        $orgData = self::existAgentOrg($params['agent_id']);
+
         $studentInfo = DssStudentModel::getRecord(['mobile' => $params['mobile']],['id(student_id)']);
 
         if (empty($studentInfo)){
@@ -292,7 +318,7 @@ class AgentOrgService
                     throw new RunTimeException(['student_bind_org']);
                 }
 
-                if ($value['org_id'] == $params['agent_id']){
+                if ($value['org_id'] == $orgData['org_id']){
                     $isUpdate = 1;
                 }
             }
@@ -305,13 +331,13 @@ class AgentOrgService
                     'update_time' => time(),
                     'operator_id' => $params['operator_id'],
                 ],
-                ['org_id' => $params['agent_id'], 'student_id' => $studentInfo['student_id']]
+                ['org_id' => $orgData['org_id'], 'student_id' => $studentInfo['student_id']]
             );
 
         } else {
             $success = AgentOrganizationStudentModel::insertRecord([
                 'status'      => AgentOrganizationStudentModel::STATUS_NORMAL,
-                'org_id'      => $params['agent_id'],
+                'org_id'      => $orgData['org_id'],
                 'student_id'  => $studentInfo['student_id'],
                 'create_time' => time(),
                 'operator_id' => $params['operator_id'],
@@ -323,7 +349,7 @@ class AgentOrgService
         }
 
         $opn = AgentOrganizationOpnModel::getRecords([
-            'org_id' => $params['agent_id'],
+            'org_id' => $orgData['org_id'],
             'status' => AgentOrganizationOpnModel::STATUS_OK,
         ], ['opn_id']);
 
@@ -349,13 +375,15 @@ class AgentOrgService
      */
     public static function delStudent(array $params): bool
     {
+        $orgData = self::existAgentOrg($params['agent_id']);
+
         $success = AgentOrganizationStudentModel::batchUpdateRecord(
             [
                 'status'      => AgentOrganizationStudentModel::STATUS_DISABLE,
                 'update_time' => time(),
                 'operator_id' => $params['operator_id'],
             ],
-            ['org_id' => $params['agent_id'], 'student_id' => $params['student_id']]
+            ['org_id' => $orgData['org_id'], 'student_id' => $params['student_id']]
         );
 
         if (empty($success)) {
@@ -410,10 +438,13 @@ class AgentOrgService
 
         [$studentInfo, $errorInfo] = self::checkStudentData($data);
         if (empty($errorInfo)) {
+
+            $orgData = self::existAgentOrg($params['agent_id']);
+
             $studentIds = array_column($studentInfo, 'student_id');
 
             $orgStudent = AgentOrganizationStudentModel::getRecords(
-                ['org_id' => $params['agent_id']],
+                ['org_id' => $orgData['org_id']],
                 ['student_id', 'status']);
 
             $orgStudentIds    = array_column($orgStudent, 'student_id');
@@ -424,7 +455,7 @@ class AgentOrgService
             if (!empty($insertStudentIds)) {
                 foreach ($insertStudentIds as $id) {
                     $insertStudentInfo[] = [
-                        'org_id'      => $params['agent_id'],
+                        'org_id'      => $orgData['org_id'],
                         'student_id'  => $id,
                         'create_time' => $time,
                         'operator_id' => $employee['id']
@@ -438,7 +469,7 @@ class AgentOrgService
             if (!empty($updateStudentIds)) {
                 $updateStudentInfo = [
                     'where' => [
-                        'org_id'     => $params['agent_id'],
+                        'org_id'     => $orgData['org_id'],
                         'student_id' => $updateStudentIds,
                     ],
                     'data'  => [
@@ -462,7 +493,7 @@ class AgentOrgService
             }
 
             $opn = AgentOrganizationOpnModel::getRecords([
-                'org_id' => $params['agent_id'],
+                'org_id' => $orgData['org_id'],
                 'status' => AgentOrganizationOpnModel::STATUS_OK,
             ], ['opn_id']);
 
@@ -491,29 +522,24 @@ class AgentOrgService
         $errorInfo = [];
         foreach ($data as &$value) {
             if (empty($value['mobile'])) {
-                $errorInfo[]            = $value;
-                $errorInfo['error_msg'] = '手机号为空';
+                $errorInfo[] = array_merge($value, ['error_msg' => '手机号为空']);
                 continue;
             }
             if (!Util::isChineseMobile($value['mobile'])) {
-                $errorInfo[]            = $value;
-                $errorInfo['error_msg'] = '手机号错误';
+                $errorInfo[] = array_merge($value, ['error_msg' => '手机号错误']);
                 continue;
             }
             if (empty($value['real_name'])) {
-                $errorInfo[]            = $value;
-                $errorInfo['error_msg'] = '真实姓名为空';
+                $errorInfo[] = array_merge($value, ['error_msg' => '真实姓名为空']);
                 continue;
             }
             if ($mobileCount[$value['mobile']] > 1) {
-                $errorInfo[]            = $value;
-                $errorInfo['error_msg'] = '手机号重复显示';
+                $errorInfo[] = array_merge($value, ['error_msg' => '手机号重复']);
                 continue;
             }
 
             if (empty($studentInfo[$value['mobile']])) {
-                $errorInfo[]            = $value;
-                $errorInfo['error_msg'] = '非小叶子智能陪练用户';
+                $errorInfo[] = array_merge($value, ['error_msg' => '非小叶子智能陪练用户']);
                 continue;
             }
             $value['student_id'] = $studentInfo[$value['mobile']];
@@ -536,7 +562,7 @@ class AgentOrgService
         $content = "本次批量导入在读学员已完成，总共导入{$number}人";
         if (!empty($errorInfo)) {
             $title    = '批量导入在读学员错误数据';
-            $fontSize = '5';
+            $fontSize = '3';
             $content  = '<table border="1" style="border-collapse: collapse;" width="400">
                 <caption style="text-align:left"><font size=' . $fontSize . '>检测在读学员上传表，以下内容为错误数据，请更新完后重新上传表:</font></caption>
                 <thead>

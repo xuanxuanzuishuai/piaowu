@@ -153,7 +153,11 @@ class AgentOrg extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         list($params['page'], $params['count']) = Util::formatPageCount($params);
-        $logData = AgentOrgService::studentList($params);
+        try {
+            $logData = AgentOrgService::studentList($params);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
         return HttpHelper::buildResponse($response, $logData);
     }
 
