@@ -112,6 +112,7 @@ class AgentStorageService
             'data' => [
                 'amount' => Util::fen($params['amount']),
                 'status' => AgentPreStorageRefundModel::STATUS_VERIFY_WAIT,
+                'remark' => $params['remark'] ?? '',
             ],
         ];
         $refund = AgentPreStorageRefundModel::getById($refundUpdateData['where']['id']);
@@ -129,7 +130,6 @@ class AgentStorageService
             'data_type' => AgentPreStorageReviewLogModel::DATA_TYPE_REFUND,
             'data_id' => $refund['id'],
             'type' => AgentPreStorageReviewLogModel::TYPE_RESET_PUSH,
-            'remark' => $params['remark'] ?? '',
         ];
 
         $db = MysqlDB::getDB();
@@ -203,7 +203,6 @@ class AgentStorageService
         } elseif ($params['operation'] == AgentPreStorageRefundModel::STATUS_VERIFY_REBUT) {
             $refundUpdateData['data'] = [
                 'status' => AgentPreStorageRefundModel::STATUS_VERIFY_REBUT,
-                'remark' => $params['remark'],
             ];
             $log['type'] = AgentPreStorageRefundModel::STATUS_VERIFY_REBUT;
 
