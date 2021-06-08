@@ -56,7 +56,6 @@ class AgentStorageService
             'create_time' => $time,
             'data_type' => AgentPreStorageReviewLogModel::DATA_TYPE_REFUND,
             'type' => AgentPreStorageReviewLogModel::LOG_TYPE_SUBMIT,
-            'remark' => $params['remark'] ?? '',
         ];
 
         $db = MysqlDB::getDB();
@@ -194,10 +193,10 @@ class AgentStorageService
             $agentAmountData = [
                 'where' => [
                     'agent_id' => $refund['agent_id'],
-                    'amount' => $refund['amount'],
+                    'amount' => $amount,
                 ],
                 'data' => [
-                    'amount' => $amount['amount'] - $refund['amount']
+                    'amount' => $amount - $refund['amount']
                 ]
             ];
 

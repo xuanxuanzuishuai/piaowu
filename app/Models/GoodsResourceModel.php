@@ -57,6 +57,7 @@ class GoodsResourceModel extends Model
                         'app_id' => UserCenter::AUTH_APP_ID_OP_AGENT,
                         'lt' => $params['lt'] ?? DssUserQrTicketModel::LANDING_TYPE_MINIAPP,
                         'package_id' => $params['package_id'] ?? 0,
+                        'text' => AgentService::agentWordWaterMark($agentInfo['organization'] ?? ''),
                     ];
                     $posterUrl = PosterService::generateQRPosterAliOss(
                         $item['value'],

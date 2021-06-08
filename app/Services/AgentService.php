@@ -1883,7 +1883,7 @@ class AgentService
      * @param string $organization
      * @return array|array[]
      */
-    private static function agentWordWaterMark(string $organization): array
+    public static function agentWordWaterMark(string $organization): array
     {
         if (empty($organization)) {
             return [];
@@ -1892,18 +1892,18 @@ class AgentService
 
         return [
             [
-                'text_' => $organization,
+                'word' => $organization,
                 "x" => $config['ORGANIZATION_WORD_X'],
-                "y" . $config['ORGANIZATION_WORD_Y'],
-                "size" . $config['ORGANIZATION_WORD_SIZE'],
-                "color" . $config['ORGANIZATION_WORD_COLOR'],
+                "y" => $config['ORGANIZATION_WORD_Y'],
+                "size" => $config['ORGANIZATION_WORD_SIZE'],
+                "color" => $config['ORGANIZATION_WORD_COLOR'],
             ],
             [
-                'text_' => '倾情推荐',
+                'word' => '倾情推荐',
                 "x" => $config['RECOMMEND_WORD_X'],
-                "y" . $config['RECOMMEND_WORD_Y'],
-                "size" . $config['RECOMMEND_WORD_SIZE'],
-                "color" . $config['RECOMMEND_WORD_COLOR'],
+                "y" => $config['RECOMMEND_WORD_Y'],
+                "size" => $config['RECOMMEND_WORD_SIZE'],
+                "color" => $config['RECOMMEND_WORD_COLOR'],
             ],
         ];
     }
