@@ -612,4 +612,22 @@ class QueueService
         }
         return true;
     }
+
+    /**
+     * 修改学员姓名及推送收藏
+     *
+     * @param array $data
+     * @param int $delay
+     * @return bool
+     */
+    public static function updateStudentNameAndCollect(array $data, int $delay = 0)
+    {
+        try {
+            (new StudentOpernTopic())->pushStudentInfo($data)->publish(rand(1, $delay));
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), [$data]);
+            return false;
+        }
+        return true;
+    }
 }

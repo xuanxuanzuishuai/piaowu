@@ -49,6 +49,7 @@ class AgentMiniAppRouter extends RouterBase
         // 机构信息
         '/agent/org/cover_data' => ['method' => ['get'], 'call' => Agent::class . ':orgCoverData'],
         '/agent/org/opn_list' => ['method' => ['get'], 'call' => Agent::class . ':orgOpnList'],
+        '/agent/org/student_list' => ['method' => ['get'], 'call' => Agent::class . ':orgStudentList'],
 
     ];
 }

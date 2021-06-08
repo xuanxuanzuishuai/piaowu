@@ -623,6 +623,14 @@ class DictConstants {
         'keys' => [1, 2, 3, 4, 5, 6, 7, 8, 9,]
     ];
 
+    //机构代理批量导入学生据发送邮件地址列表
+    const AGENT_ORG_EMAILS = [
+        'type' => 'agent_org_emails',
+        'keys' => [
+            'import_student', //导入学生
+        ]
+    ];
+
     //测试使用代理商ID
     const COMPANY_TEST_AGENT_IDS = [
         'type' => 'company_test_agent_ids',

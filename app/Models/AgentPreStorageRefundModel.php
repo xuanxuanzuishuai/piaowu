@@ -73,7 +73,7 @@ class AgentPreStorageRefundModel extends Model
         }
 
         if (!empty($agentAmountData)){
-            $agentUpdateRow = AgentInfoModel::batchUpdateRecord($agentAmountData['data'], $agentAmountData['where']);
+            $agentUpdateRow = AgentOrganizationModel::batchUpdateRecord($agentAmountData['data'], $agentAmountData['where']);
             if (empty($agentUpdateRow)) {
                 SimpleLogger::error('update agent amount data error', $agentAmountData);
                 return false;

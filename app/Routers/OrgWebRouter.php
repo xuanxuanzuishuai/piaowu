@@ -230,5 +230,11 @@ class OrgWebRouter extends RouterBase
         '/op_web/agent_org/opn_list' => ['method' => ['get'], 'call' => AgentOrg::class . ':orgOpnList'],
         '/op_web/agent_org/statics' => ['method' => ['get'], 'call' => AgentOrg::class . ':orgStaticsData'],
 
+        '/op_web/agent_org/student_add' => ['method' => ['post'], 'call' => AgentOrg::class . ':studentAdd'],
+        '/op_web/agent_org/student_list' => ['method' => ['get'], 'call' => AgentOrg::class . ':studentList'],
+        '/op_web/agent_org/student_del' => ['method' => ['post'], 'call' => AgentOrg::class . ':studentDel'],
+        '/op_web/agent_org/student_import' => ['method' => ['post'], 'call' => AgentOrg::class . ':studentImport'],
+
+
     ];
 }

@@ -46,6 +46,19 @@ class DssStudentModel extends DssModel
         6 => '体验期过期',
     ];
 
+    //当前进度
+    const CURRENT_PROGRESS = [
+        self::REVIEW_COURSE_NO   => '已注册',
+        self::REVIEW_COURSE_49   => '付费体验课',
+        self::REVIEW_COURSE_1980 => '付费正式课',
+    ];
+
+    //有效状态
+    const VALID_STATUS = [
+        1 => '未过期',
+        2 => '已过期',
+    ];
+
     /**
      * 根据班级ID获取学生
      * @param $collectionId

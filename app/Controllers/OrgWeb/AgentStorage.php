@@ -477,8 +477,8 @@ class AgentStorage extends ControllerBase
     {
         $rules = [
             [
-                'key' => 'agent_id',
-                'type' => 'required',
+                'key'        => 'agent_id',
+                'type'       => 'required',
                 'error_code' => 'agent_id_is_required'
             ]
         ];
@@ -491,4 +491,5 @@ class AgentStorage extends ControllerBase
         $logData = AgentStorageService::getAgentPreStorageProcessLog($params);
         return HttpHelper::buildResponse($response, $logData);
     }
+
 }

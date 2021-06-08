@@ -407,4 +407,24 @@ class Agent extends ControllerBase
         $data = AgentOrgService::orgMiniOpnList($this->ci['user_info']['user_id']);
         return HttpHelper::buildResponse($response, $data);
     }
+
+
+    /**
+     * 线下代理机构关联曲谱教材合集列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function orgStudentList(Request $request, Response $response)
+    {
+        try {
+            $params = $request->getParams();
+            $params['agent_id'] = $this->ci['user_info']['user_id'];
+            list($params['page'], $params['count']) = Util::formatPageCount($params);
+            $data = AgentOrgService::studentList($params);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
+        return HttpHelper::buildResponse($response, $data);
+    }
 }

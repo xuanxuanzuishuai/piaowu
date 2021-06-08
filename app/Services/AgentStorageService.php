@@ -14,7 +14,6 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
 use App\Libs\Util;
 use App\Models\AgentAwardBillExtModel;
-use App\Models\AgentInfoModel;
 use App\Models\AgentOrganizationModel;
 use App\Models\AgentPreStorageRefundModel;
 use App\Models\AgentPreStorageReviewLogModel;
@@ -84,7 +83,7 @@ class AgentStorageService
      */
     private static function checkAmount(int $agentId, int $refundAmount): int
     {
-        $amount = AgentInfoModel::getRecord(['agent_id' => $agentId], ['amount']);
+        $amount = AgentOrganizationModel::getRecord(['agent_id' => $agentId], ['amount']);
 
         if ($amount['amount'] < $refundAmount) {
             throw new RunTimeException(['agent_amount_not_enough']);
@@ -793,4 +792,6 @@ class AgentStorageService
         }
         return $detail;
     }
+
+
 }
