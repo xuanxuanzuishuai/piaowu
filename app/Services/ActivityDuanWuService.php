@@ -70,6 +70,14 @@ class ActivityDuanWuService
         $endDate = DictConstants::get(DictConstants::ACTIVITY_DUANWU_CONFIG, 'activity_end_time');
         $startTime = strtotime($startDate);
         $endTime = strtotime($endDate);
+        $time = time();
+        $defaultTips = '';
+        if ($time < $startTime) {
+            $defaultTips = '活动未开始，敬请期待';
+        }
+        if ($time > $endTime) {
+            $defaultTips = '活动已结束，感谢参与';
+        }
         //学生信息
         $studentInfo = DssStudentModel::getStudentInfo($uid, null);
         $has_review_course = $studentInfo['has_review_course'] ?? '0';
@@ -81,7 +89,7 @@ class ActivityDuanWuService
                 'user_status' => $userStatus,
                 'user_status_zh' => $userStatusZh,
                 'rank_tips' => '未上榜',
-                'encourage_tips' => '该活动仅限年卡用户参与，赶快去付费年卡参与活动吧~',
+                'encourage_tips' => $defaultTips ? $defaultTips : '该活动仅限年卡用户参与，赶快去付费年卡参与活动吧~',
                 'poster_url_version' => $urlVersion,
                 'invite_url_wx' => $wxUrl,
                 'invite_url_app' => $appUrl,
@@ -176,7 +184,7 @@ class ActivityDuanWuService
             'user_status' => $userStatus,
             'user_status_zh' => $userStatusZh,
             'rank_tips' => $rankTips,
-            'encourage_tips' => $encourageTips,
+            'encourage_tips' => $defaultTips ? $defaultTips : $encourageTips,
             'poster_url_version' => $urlVersion,
             'invite_url_wx' => $wxUrl,
             'invite_url_app' => $appUrl,
