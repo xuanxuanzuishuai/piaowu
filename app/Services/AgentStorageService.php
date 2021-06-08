@@ -44,6 +44,7 @@ class AgentStorageService
             'remark' => $params['remark'] ?? '',
             'employee_id' => $employeeId,
             'create_time' => $time,
+            'update_time' => $time,
             'type' => AgentPreStorageRefundModel::TYPE_REFUND_AMOUNT,
         ];
 
@@ -113,6 +114,7 @@ class AgentStorageService
                 'amount' => Util::fen($params['amount']),
                 'status' => AgentPreStorageRefundModel::STATUS_VERIFY_WAIT,
                 'remark' => $params['remark'] ?? '',
+                'update_time' => $time,
             ],
         ];
         $refund = AgentPreStorageRefundModel::getById($refundUpdateData['where']['id']);
@@ -163,6 +165,7 @@ class AgentStorageService
                 'status' => AgentPreStorageRefundModel::STATUS_VERIFY_WAIT,
             ]
         ];
+        $refundUpdateData['data']['update_time'] = $time;
 
         $refund = AgentPreStorageRefundModel::getById($refundUpdateData['where']['id']);
         if (empty($refund)) {
@@ -181,9 +184,7 @@ class AgentStorageService
         $agentAmountData = [];
 
         if ($params['operation'] == AgentPreStorageRefundModel::STATUS_VERIFY_PASS) {
-            $refundUpdateData['data'] = [
-                'status' => AgentPreStorageRefundModel::STATUS_VERIFY_PASS
-            ];
+            $refundUpdateData['data']['status'] = AgentPreStorageRefundModel::STATUS_VERIFY_PASS;
 
             $log['type'] = AgentPreStorageRefundModel::STATUS_VERIFY_PASS;
 
@@ -201,9 +202,8 @@ class AgentStorageService
             ];
 
         } elseif ($params['operation'] == AgentPreStorageRefundModel::STATUS_VERIFY_REBUT) {
-            $refundUpdateData['data'] = [
-                'status' => AgentPreStorageRefundModel::STATUS_VERIFY_REBUT,
-            ];
+            $refundUpdateData['data']['status'] = AgentPreStorageRefundModel::STATUS_VERIFY_PASS;
+
             $log['type'] = AgentPreStorageRefundModel::STATUS_VERIFY_REBUT;
 
         } else {

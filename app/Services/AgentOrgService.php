@@ -358,12 +358,12 @@ class AgentOrgService
      * 批量导入操作
      *
      * @param string $filename
-     * @param int $operatorId
+     * @param array $employee
      * @param array $params
      * @return bool
      * @throws RunTimeException
      */
-    public static function studentImportAdd(string $filename, int $operatorId, array $params)
+    public static function studentImportAdd(string $filename, array $employee, array $params)
     {
         try {
             $fileType     = ucfirst(pathinfo($filename)["extension"]);
@@ -399,10 +399,10 @@ class AgentOrgService
 
         [$studentInfo, $errorInfo] = self::checkStudentData($data);
         if (empty($errorInfo)) {
-            $studentIds = array_column($studentInfo, 'id');
+            $studentIds = array_column($studentInfo, 'student_id');
 
             $orgStudent = AgentOrganizationStudentModel::getRecords(
-                ['agent_id' => $params['agent_id']],
+                ['org_id' => $params['agent_id']],
                 ['student_id', 'status']);
 
             $orgStudentIds    = array_column($orgStudent, 'student_id');
@@ -416,7 +416,7 @@ class AgentOrgService
                         'org_id'      => $params['agent_id'],
                         'student_id'  => $id,
                         'create_time' => $time,
-                        'operator_id' => $operatorId
+                        'operator_id' => $employee['id']
                     ];
                 }
             }
@@ -432,7 +432,7 @@ class AgentOrgService
                     ],
                     'data'  => [
                         'update_time' => $time,
-                        'operator_id' => $operatorId,
+                        'operator_id' => $employee['id'],
                         'status'      => AgentOrganizationStudentModel::STATUS_NORMAL
                     ]
                 ];
@@ -461,7 +461,7 @@ class AgentOrgService
             ]);
         }
 
-        self::sendEmail($errorInfo, count($studentInfo));
+        self::sendEmail($employee['email'], $errorInfo, count($studentInfo));
         return true;
     }
 
@@ -512,11 +512,15 @@ class AgentOrgService
 
     /**
      * 发送邮件
+     * @param string $email
      * @param array $errorInfo
      * @param int $number
+     * @return bool
      */
-    private static function sendEmail(array $errorInfo = [], int $number = 0)
+    private static function sendEmail(string $email = '', array $errorInfo = [], int $number = 0)
     {
+        if (empty($email)) return false;
+
         $title = '批量导入在读学员完成';
         $content = "本次批量导入在读学员已完成，总共导入{$number}人";
         if (!empty($errorInfo)) {
@@ -540,8 +544,8 @@ class AgentOrgService
             $content .= '</tbody></table><br><br>';
         }
 
-        $emailsConfig = DictConstants::get(DictConstants::AGENT_ORG_EMAILS, 'import_student');
+        PhpMail::sendEmail($email, $title, $content);
 
-        PhpMail::sendEmail($emailsConfig, $title, $content);
+        return true;
     }
 }

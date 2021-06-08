@@ -246,9 +246,9 @@ class AgentOrg extends ControllerBase
             return $response->withJson(Valid::addErrors([], 'org_student_import', 'move_file_fail'));
         }
         try {
-            $employeeId = $this->ci['employee']['id'];
+            $employee = $this->ci['employee'];
             // 检查订单数据
-            AgentOrgService::studentImportAdd($filename, $employeeId, $params);
+            AgentOrgService::studentImportAdd($filename, $employee, $params);
         } catch (RuntimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         } finally {

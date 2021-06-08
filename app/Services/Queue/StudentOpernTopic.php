@@ -12,7 +12,7 @@ class StudentOpernTopic extends BaseTopic
 {
     const TOPIC_NAME = "common_push";
 
-    const EVENT_TYPE_UPDATE_STUDENT_INFO = 'update_student_name_and_collect';
+    const EVENT_TYPE_UPDATE_STUDENT_INFO = 'update_student_real_name_push_collect';
 
     /**
      * ThirdPartBillTopic constructor.

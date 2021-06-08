@@ -129,7 +129,10 @@ class AgentPreStorageRefundModel extends Model
             ],
             [
                 "AND" => $where,
-                "ORDER" => [self::$table . ".id" => 'DESC'],
+                "ORDER" => [
+                    self::$table . ".update_time" => 'DESC',
+                    self::$table . ".id" => 'DESC',
+                ],
                 "LIMIT" => [$offset, $limit],
             ]
         );
