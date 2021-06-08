@@ -20,8 +20,8 @@ define('PROJECT_ROOT', realpath(__DIR__ . '/..'));
 require_once PROJECT_ROOT . '/vendor/autoload.php';
 
 use App\Libs\DictConstants;
-use App\Libs\File;
 use App\Libs\MysqlDB;
+use App\Libs\PhpMail;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Models\Dss\DssAiPlayRecordCHModel;
@@ -254,7 +254,7 @@ function cacheRefereeRank()
 
 /**
  * 京东卡奖励结果
- * 测试脚本 php scripts/activity_duanwu.php statisticsJingDongKa --start=2021-06-10 --end=2021-06-20
+ * 测试脚本 php scripts/activity_duanwu.php statisticsJingDongKa --start=2021-06-10 --end=2021-06-20 --res=mail
  * 线上脚本 php scripts/activity_duanwu.php statisticsJingDongKa
  */
 function statisticsJingDongKa()
@@ -281,12 +281,17 @@ function statisticsJingDongKa()
             $refereeDatum['rank'], $refereeDatum['referee_id'], $refereeDatum['mobile'], $refereeDatum['referee_cnt'], $refereeDatum['earliest_time'],
         ];
     }
-    File::exportFile('京东卡奖励结果排名', $csvData);
+    $path = '/tmp/statisticsJingDongKa.csv';
+    if (isset($params['res']) && $params['res'] == 'mail') {
+        sendMail($path, $csvData, '京东卡奖励结果排名');
+    } else {
+        showResult($path, $csvData);
+    }
 }
 
 /**
  * 金叶子奖励结果
- * 测试脚本 php scripts/activity_duanwu.php statisticsJinYeZi --start=2021-06-10 --end=2021-06-20 --end1=2021-07-01 --refund=0
+ * 测试脚本 php scripts/activity_duanwu.php statisticsJinYeZi --start=2021-06-10 --end=2021-06-20 --end1=2021-07-01 --refund=0 --res=mail
  * 线上脚本 php scripts/activity_duanwu.php statisticsJinYeZi
  */
 function statisticsJinYeZi()
@@ -383,5 +388,49 @@ function statisticsJinYeZi()
             $refereeDatum['rank'], $refereeDatum['referee_id'], $refereeDatum['mobile'], $refereeDatum['referee_cnt'],
         ];
     }
-    File::exportFile('京东卡奖励结果排名', $csvData);
+    $path = '/tmp/statisticsJinYeZi.csv';
+    if (isset($params['res']) && $params['res'] == 'mail') {
+        sendMail($path, $csvData, '金叶子奖励结果排名');
+    } else {
+        showResult($path, $csvData);
+    }
+}
+
+/**
+ * 写入csv文件
+ * @param $path
+ * @param $data
+ */
+function saveCsvFile($path, $data)
+{
+    $fp = fopen($path, 'w+');
+    foreach ($data as $value) {
+        fputcsv($fp, $value);
+    }
+    fclose($fp);
+}
+
+/**
+ * 直接cli输出结果
+ * @param $path
+ * @param $data
+ */
+function showResult($path, $data)
+{
+    saveCsvFile($path, $data);
+    echo file_get_contents($path);
+    unlink($path);
+}
+
+/**
+ * 发送结果邮件
+ * @param $path
+ * @param $data
+ * @param $content
+ */
+function sendMail($path, $data, $content)
+{
+    saveCsvFile($path, $data);
+    PhpMail::sendEmail('sunchanghui@xiaoyezi.com', '端午节活动', $content, $path);
+    unlink($path);
 }
