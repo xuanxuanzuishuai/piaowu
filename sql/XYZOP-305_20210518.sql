@@ -86,3 +86,6 @@ INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES
 ('ACTIVITY_ENABLE_STATUS', '活动启用状态', '1', '待启用', ''),
 ('ACTIVITY_ENABLE_STATUS', '活动启用状态', '2', '启用', ''),
 ('ACTIVITY_ENABLE_STATUS', '活动启用状态', '3', '已禁用', '');
+
+-- 更新排序，必须要在脚本跑完之后才能更新
+update template_poster set order_num=100 WHERE order_num=0;
