@@ -135,7 +135,9 @@ class PosterService
             return $imagePath;
         }
         $tmpFileFullPath = $_ENV['STATIC_FILE_SAVE_PATH'] . '/' . md5($ticket . $paramId) . '.jpg';
-        chmod($tmpFileFullPath, 0755);
+        if (file_exists($tmpFileFullPath)) {
+            chmod($tmpFileFullPath, 0755);
+        }
 
         $bytesWrite = file_put_contents($tmpFileFullPath, $res);
         if (empty($bytesWrite)) {
