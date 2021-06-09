@@ -493,12 +493,14 @@ class PosterTemplateService
             'a' => $activityInfo['activity_id'],
         ];
         foreach ($posterList as &$item) {
+            $extParams['p'] = $item['poster_id'];
             $item = self::formatPosterInfo($item);
             if (empty($ext['poster'])) {
+                $userQrUrl = DssUserQrTicketModel::getUserQrURL($studentId, DssUserQrTicketModel::STUDENT_TYPE, $channel, DssUserQrTicketModel::LANDING_TYPE_MINIAPP, $extParams);
+                $item['qr_code_url'] = AliOSS::replaceCdnDomainForDss($userQrUrl);
                 continue;
             }
             // 海报图：
-            $extParams['p'] = $item['poster_id'];
             $poster = PosterService::generateQRPosterAliOss(
                 $item['poster_path'],
                 $posterConfig,

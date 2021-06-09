@@ -894,7 +894,7 @@ class SharePosterService
         $uploadRecord = SharePosterModel::getRecord($where, $field);
         if (!empty($uploadRecord['verify_status'])
             && $uploadRecord['verify_status'] == SharePosterModel::VERIFY_STATUS_QUALIFIED) {
-            throw new RunTimeException(['stop_repeat_upload']);
+            throw new RunTimeException(['wait_for_next_event']);
         }
         $time = time();
         $data = [
