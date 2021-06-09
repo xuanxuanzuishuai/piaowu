@@ -162,7 +162,7 @@ function refereeData($startTime, $endTime)
     $cacheKeyEarliestTime = ActivityDuanWuService::$cacheKeyEarliestTime;
     $second = strtotime('2021-07-01') - time();
     $redis = RedisDB::getConn();
-    $second >0 && $redis->expire($cacheKeyEarliestTime, $second);
+    $redis->expire($cacheKeyEarliestTime, $second);
     
     $arrCnt = $arrTime = [];
     foreach ($refereeData as $refereeDataE) {
@@ -199,10 +199,15 @@ function cacheRefereeRank()
     isset($params['keep_time']) && $keepTime = strtotime($params['keep_time']);
     isset($params['old_expire']) && $oldExpire = strtotime($params['old_expire']);
     
+    $time = time();
+    //活动结束一个小时后,不再更新缓存,直接返回
+    if ($time > $endTime + 3600) {
+        return;
+    }
+    
     $refereeData = refereeData($startTime, $endTime);
     SimpleLogger::info('cache_referee_rank_data', $refereeData);
     $redis = RedisDB::getConn();
-    $time = time();
     $cacheKeyRankKeys = ActivityDuanWuService::$cacheKeyRefereeRankKeys;
     $keysStr = $redis->get($cacheKeyRankKeys);
     if ($keysStr) {
