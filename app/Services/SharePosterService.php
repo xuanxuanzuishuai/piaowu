@@ -671,7 +671,7 @@ class SharePosterService
             $awardId   = implode(',', $awardIds);
             $pointsId  = implode(',', $pointsIds);
             SharePosterModel::updateRecord($poster['id'], ['award_id' => $awardId, 'points_award_id'=> $pointsId]);
-            MessageService::sendTaskAwardPointsMessage(['points_award_ids' => $pointsIds]);
+            QueueService::sharePosterAwardMessage(['points_award_ids' => $pointsIds]);
         }
         return true;
     }

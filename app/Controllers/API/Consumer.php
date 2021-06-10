@@ -288,6 +288,7 @@ class Consumer extends ControllerBase
                 case PushMessageTopic::EVENT_UPLOAD_SCREENSHOT_AWARD:
                 case PushMessageTopic::EVENT_PAY_TRIAL:
                 case PushMessageTopic::EVENT_NORMAL_COURSE:
+                case PushMessageTopic::EVENT_SHARE_POSTER_MESSAGE:
                     MessageService::sendTaskAwardPointsMessage($params['msg_body']);
                     break;
 

@@ -47,6 +47,7 @@ class PushMessageTopic extends BaseTopic
     const EVENT_MONTH_REWARD_WED = 'month_reward_wed'; //月月有奖 星期三消息
     const EVENT_MONTH_REWARD_FRI = 'month_reward_fri'; //月月有奖 星期五消息
     const EVENT_MONTH_REWARD_SUN = 'month_reward_sun'; //月月有奖 星期日消息
+    const EVENT_SHARE_POSTER_MESSAGE = 'share_poster_award'; // 截图审核通过消息
 
     public function __construct($publishTime = null)
     {
@@ -150,6 +151,19 @@ class PushMessageTopic extends BaseTopic
      * @return $this
      */
     public function webPageMessage($data, $eventType = self::EVENT_WEB_PAGE_CLICK)
+    {
+        $this->setEventType($eventType);
+        $this->setMsgBody($data);
+        return $this;
+    }
+
+    /**
+     * 截图审核-消息
+     * @param $data
+     * @param string $eventType
+     * @return $this
+     */
+    public function sharePosterAwardMessage($data, $eventType = self::EVENT_SHARE_POSTER_MESSAGE)
     {
         $this->setEventType($eventType);
         $this->setMsgBody($data);

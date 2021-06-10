@@ -596,4 +596,20 @@ class QueueService
         }
         return true;
     }
+
+    /**
+     * 截图审核-消息
+     * @param $data
+     * @return bool
+     */
+    public static function sharePosterAwardMessage($data)
+    {
+        try {
+            (new PushMessageTopic())->sharePosterAwardMessage($data)->publish(5);
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), $data);
+            return false;
+        }
+        return true;
+    }
 }
