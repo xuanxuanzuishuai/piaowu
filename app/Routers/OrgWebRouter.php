@@ -14,6 +14,7 @@ use App\Controllers\Employee\Auth;
 use App\Controllers\Employee\Employee;
 use App\Controllers\OrgWeb\Admin;
 use App\Controllers\OrgWeb\Agent;
+use App\Controllers\OrgWeb\AgentOrg;
 use App\Controllers\OrgWeb\AgentStorage;
 use App\Controllers\OrgWeb\AppPush;
 use App\Controllers\OrgWeb\Area;
@@ -24,6 +25,7 @@ use App\Controllers\OrgWeb\Message;
 use App\Controllers\OrgWeb\Employee as OrgWebEmployee;
 use App\Controllers\OrgWeb\EmployeeActivity;
 use App\Controllers\OrgWeb\MonthActivity;
+use App\Controllers\OrgWeb\Opn;
 use App\Controllers\OrgWeb\Package;
 use App\Controllers\OrgWeb\PosterTemplateWord;
 use App\Controllers\OrgWeb\SharePoster;
@@ -219,6 +221,14 @@ class OrgWebRouter extends RouterBase
         '/op_web/agent_storage/refund_verify' => ['method' => ['post'], 'call' => AgentStorage::class . ':refundVerify'],
         '/op_web/agent_storage/refund_detail' => ['method' => ['get'], 'call' => AgentStorage::class . ':refundDetail'],
         '/op_web/agent_storage/refund_list' => ['method' => ['get'], 'call' => AgentStorage::class . ':refundList'],
+
+        //曲谱教材
+        '/op_web/opn/drop_down_search' => ['method' => ['get'], 'call' => Opn::class . ':dropDownSearch'],
+
+        //代理商机构
+        '/op_web/agent_org/opn_relation' => ['method' => ['post'], 'call' => AgentOrg::class . ':orgOpnRelation'],
+        '/op_web/agent_org/opn_list' => ['method' => ['get'], 'call' => AgentOrg::class . ':orgOpnList'],
+        '/op_web/agent_org/statics' => ['method' => ['get'], 'call' => AgentOrg::class . ':orgStaticsData'],
 
     ];
 }

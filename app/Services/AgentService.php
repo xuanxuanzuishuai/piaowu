@@ -23,6 +23,7 @@ use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\AgentApplicationModel;
 use App\Models\AgentAwardBillExtModel;
 use App\Models\AgentAwardDetailModel;
+use App\Models\AgentOrganizationModel;
 use App\Models\BillMapModel;
 use App\Models\AgentDivideRulesModel;
 use App\Models\AgentModel;
@@ -68,11 +69,10 @@ class AgentService
             'uuid' => self::agentAuth($params['name'], $params['mobile']),
             'mobile' => $params['mobile'],
             'name' => $params['name'],
-            'type' => $params['agent_type'] ?? 0,
+            'type' => $params['agent_type'],
             'division_model' => $params['division_model'] ?? 0,
             'country_code' => $params['country_code'],
             'create_time' => $time,
-            'organization' => !empty($params['organization']) ?? '',
         ];
         if (self::checkAgentExists($agentInsertData['mobile'], $agentInsertData['country_code'])) {
             throw new RunTimeException(['agent_have_exist']);
@@ -99,9 +99,17 @@ class AgentService
         if (!empty($params['package_id'])) {
             $packageIds = explode(',',$params['package_id']);
         }
+        //agent_organization
+        $organizationInsertData = [];
+        if ($params['agent_type'] == AgentModel::TYPE_OFFLINE) {
+            $organizationInsertData = [
+                'name' => empty($params['organization']) ? '' : trim($params['organization']),
+                'create_time' => $time,
+            ];
+        }
         $db = MysqlDB::getDB();
         $db->beginTransaction();
-        $res = AgentModel::add($agentInsertData, $agentDivideRulesInsertData, $agentInfoInsertData,$packageIds, $params['app_id']);
+        $res = AgentModel::add($agentInsertData, $agentDivideRulesInsertData, $agentInfoInsertData,$packageIds, $params['app_id'], $organizationInsertData);
         if (empty($res)) {
             $db->rollBack();
             throw new RunTimeException(['insert_failure']);
@@ -138,7 +146,6 @@ class AgentService
             'country_code' => $params['country_code'],
             'update_time' => $time,
             'division_model' => $params['division_model'] ?? 0,
-            'organization' => $params['organization'] ?? '',
         ];
         //agent_divide_rules数据
         $agentDivideRulesInsertData = [
@@ -163,9 +170,21 @@ class AgentService
         if (!empty($params['package_id'])) {
             $packageIds = explode(',',$params['package_id']);
         }
+        //agent_organization
+        $organizationData = [];
+        if ($params['agent_type'] == AgentModel::TYPE_OFFLINE) {
+            $organizationData = ['name' => empty($params['organization']) ? '' : trim($params['organization'])];
+            $orgData = AgentOrganizationModel::getRecord(['agent_id' => $params['agent_id']], ['id']);
+            if (empty($orgData)) {
+                $organizationData['agent_id'] = $params['agent_id'];
+                $organizationData['create_time'] = $time;
+            } else {
+                $organizationData['update_time'] = $time;
+            }
+        }
         $db = MysqlDB::getDB();
         $db->beginTransaction();
-        $res = AgentModel::update($params['agent_id'], $agentUpdateData, $agentDivideRulesInsertData, $agentInfoUpdateData, $packageIds, $params['app_id']);
+        $res = AgentModel::update($params['agent_id'], $agentUpdateData, $agentDivideRulesInsertData, $agentInfoUpdateData, $packageIds, $params['app_id'], $organizationData);
         if (empty($res)) {
             $db->rollBack();
             throw new RunTimeException(['update_failure']);
@@ -345,7 +364,6 @@ class AgentService
         if (!empty($detail)) {
             $bindData = UserWeiXinModel::userBindData($agentId, UserWeiXinModel::USER_TYPE_AGENT, UserWeiXinModel::BUSI_TYPE_AGENT_MINI, UserCenter::AUTH_APP_ID_OP_AGENT);
             $detail['wx_bind_status'] = empty($bindData) ? 0 : 1;
-            $detail['amount'] = Util::yuan($detail['amount']);
         }
         //获取代理商售卖课包列表数据
         $detail['package_list'] = AgentSalePackageModel::getPackageData($agentId, UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT);
@@ -1139,6 +1157,8 @@ class AgentService
         $agentInfo['config']     = self::getPackageList($agentId);
         $agentInfo['parent']     = AgentModel::getRecord(['id' => $agentInfo['parent_id']]);
         $agentInfo['show_status'] = self::getAgentStatus($agentInfo);
+        //是否是线下代理模式
+        $agentInfo['is_offline_agent'] = ($agentInfo['type'] == AgentModel::TYPE_OFFLINE) ? true : false;
         $agentInfo = self::formatFrontAgentData($agentInfo);
         return $agentInfo;
     }

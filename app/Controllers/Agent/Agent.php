@@ -9,6 +9,7 @@ use App\Libs\KeyErrorRC4Exception;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\AgentOperationLogModel;
+use App\Services\AgentOrgService;
 use App\Services\AgentService;
 use App\Services\CommonServiceForApp;
 use App\Services\PackageService;
@@ -383,4 +384,27 @@ class Agent extends ControllerBase
         return HttpHelper::buildResponse($response, $data);
     }
 
+    /**
+     * 线下代理机构封面展示数据
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function orgCoverData(/** @noinspection PhpUnusedParameterInspection */ Request $request, Response $response)
+    {
+        $data = AgentOrgService::orgMiniCoverData($this->ci['user_info']['user_id']);
+        return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
+     * 线下代理机构关联曲谱教材合集列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function orgOpnList(/** @noinspection PhpUnusedParameterInspection */ Request $request, Response $response)
+    {
+        $data = AgentOrgService::orgMiniOpnList($this->ci['user_info']['user_id']);
+        return HttpHelper::buildResponse($response, $data);
+    }
 }

@@ -418,10 +418,12 @@ class Util
 
     /**
      * 获取七牛图片完整链接地址
-     * @param $img
+     * @param string $img       图片路径
+     * @param string $domain    域名
+     * @param string $folder    文件夹目录
      * @return string
      */
-    public static function getQiNiuFullImgUrl($img)
+    public static function getQiNiuFullImgUrl($img, $domain, $folder)
     {
         if (empty($img)) {
             return '';
@@ -429,13 +431,7 @@ class Util
         if (preg_match("/^(http:\/\/|https:\/\/).*$/", $img)) {
             return $img;
         }
-        list($domain, $qiniuFolder) = DictService::getKeyValuesByArray(
-            Constants::DICT_TYPE_SYSTEM_ENV,
-            [
-                'QINIU_DOMAIN_10',
-                'QINIU_FOLDER_10'
-            ]);
-        $img_url = 'https://' . $domain . '/' . $qiniuFolder . "/" . $img;
+        $img_url = 'https://' . $domain . '/' . $folder . "/" . $img;
         return $img_url;
     }
 

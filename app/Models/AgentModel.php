@@ -49,9 +49,10 @@ class AgentModel extends Model
      * @param $agentInfoInsertData
      * @param $packageIds
      * @param $appId
+     * @param $organizationInsertData
      * @return bool
      */
-    public static function add($agentData, $agentDivideRulesInsertData, $agentInfoInsertData, $packageIds, $appId)
+    public static function add($agentData, $agentDivideRulesInsertData, $agentInfoInsertData, $packageIds, $appId, $organizationInsertData)
     {
         //记录代理商基础数据
         $agentId = self::insertRecord($agentData);
@@ -80,6 +81,15 @@ class AgentModel extends Model
                 return false;
             }
         }
+        //线下代理机构扩展信息
+        if (!empty($organizationInsertData)) {
+            $organizationInsertData['agent_id'] = $agentId;
+            $orgId = AgentOrganizationModel::insertRecord($organizationInsertData);
+            if (empty($orgId)) {
+                SimpleLogger::error('insert agent organization data error', $organizationInsertData);
+                return false;
+            }
+        }
         return true;
     }
 
@@ -91,9 +101,10 @@ class AgentModel extends Model
      * @param $agentInfoUpdateData
      * @param $packageIds
      * @param $appId
+     * @param $organizationUpdateData
      * @return bool
      */
-    public static function update($agentId, $agentUpdateData, $agentDivideRulesInsertData, $agentInfoUpdateData, $packageIds, $appId)
+    public static function update($agentId, $agentUpdateData, $agentDivideRulesInsertData, $agentInfoUpdateData, $packageIds, $appId, $organizationUpdateData)
     {
         //编辑代理商基础数据
         $baseUpdateRes = AgentModel::updateRecord($agentId, $agentUpdateData);
@@ -138,6 +149,19 @@ class AgentModel extends Model
                 return false;
             }
         }
+        //线下代理机构扩展信息
+        $orgId = true;
+        if (!empty($organizationUpdateData)) {
+            if (!empty($organizationUpdateData['update_time'])) {
+                $orgId = AgentOrganizationModel::updateRecord($agentId, $organizationUpdateData);
+            } else {
+                $orgId = AgentOrganizationModel::insertRecord($organizationUpdateData);
+            }
+        }
+        if (empty($orgId)) {
+            SimpleLogger::error('update agent organization data error', $organizationUpdateData);
+            return false;
+        }
         return true;
     }
 
@@ -154,6 +178,7 @@ class AgentModel extends Model
             [
                 "[><]" . AgentInfoModel::$table => ['id' => 'agent_id'],
                 "[><]" . AgentDivideRulesModel::$table => ['id' => 'agent_id'],
+                "[>]" . AgentOrganizationModel::$table => ['id' => 'agent_id'],
                 "[><]" . EmployeeModel::$table => ['employee_id' => 'id'],
                 "[>]" . EmployeeModel::$table . '(EA)' => ['service_employee_id' => 'id'],
 
@@ -168,15 +193,13 @@ class AgentModel extends Model
                 self::$table . '.name',
                 self::$table . '.country_code',
                 self::$table . '.division_model',
-                self::$table . '.organization',
+                AgentOrganizationModel::$table . '.name(organization)',
                 AgentInfoModel::$table . '.country',
                 AgentInfoModel::$table . '.province',
                 AgentInfoModel::$table . '.city',
                 AgentInfoModel::$table . '.district',
                 AgentInfoModel::$table . '.address',
                 AgentInfoModel::$table . '.remark',
-                AgentInfoModel::$table . '.quantity',
-                AgentInfoModel::$table . '.amount',
                 AgentDivideRulesModel::$table . '.app_id',
                 AgentDivideRulesModel::$table . '.rule',
                 EmployeeModel::$table . '.name(e_name)',
@@ -214,6 +237,7 @@ class AgentModel extends Model
             [
                 "[><]" . AgentInfoModel::$table => ['id' => 'agent_id'],
                 "[><]" . EmployeeModel::$table => ['employee_id' => 'id'],
+                "[>]" . AgentOrganizationModel::$table => ['id' => 'agent_id'],
                 "[>]" . EmployeeModel::$table . "(e)" => ['service_employee_id' => 'id'],
                 "[>]" . AgentDivideRulesModel::$table => ['id' => 'agent_id'],
             ],
@@ -232,8 +256,8 @@ class AgentModel extends Model
                 AgentInfoModel::$table . '.city',
                 AgentInfoModel::$table . '.district',
                 AgentInfoModel::$table . '.address',
-                AgentInfoModel::$table . '.quantity',
-                AgentInfoModel::$table . '.amount',
+                AgentOrganizationModel::$table . '.quantity',
+                AgentOrganizationModel::$table . '.amount',
                 EmployeeModel::$table . '.name(e_name)',
                 AgentDivideRulesModel::$table . '.app_id',
                 'e.name(e_s_name)'

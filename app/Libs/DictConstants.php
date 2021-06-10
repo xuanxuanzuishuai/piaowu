@@ -511,13 +511,6 @@ class DictConstants {
         ]
     ];
 
-    /**前缀为ERP的配置，数据均配置在erp数据库中erp_dict数据表，不再op系统重复配置，保持数据的唯一性**/
-    //新产品包状态
-    const ERP_PACKAGE_V1_STATUS = [
-        'type' => 'package_v1_status',
-        'keys' => ['-1', '0', '1']
-    ];
-
     const DSS_PERSONAL_LINK_PACKAGE_ID = [
         'type' => 'personal_link_package_id',
         'keys' => [
@@ -535,15 +528,6 @@ class DictConstants {
         ]
     ];
 
-    /**
-     * erp阿里云config
-     */
-    const ERP_ALI_OSS_CONFIG = [
-        'type' => 'ALI_OSS_CONFIG',
-        'keys' => [
-            'shop_cdn_domain'
-        ]
-    ];
     const DSS_WEIXIN_STUDENT_CONFIG = [
         'type' => 'WEIXIN_STUDENT_CONFIG',
         'keys' => [
@@ -718,7 +702,36 @@ class DictConstants {
             'AGENT_STORAGE_FINANCE_ROLE_ID',//预存订单财务审核角色ID
         ]
     ];
-    
+
+    /**前缀为ERP的配置，数据均配置在erp数据库中erp_dict数据表，不再op系统重复配置，保持数据的唯一性,配置写在此区域**/
+    //新产品包状态
+    const ERP_PACKAGE_V1_STATUS = [
+        'type' => 'package_v1_status',
+        'keys' => ['-1', '0', '1']
+    ];
+
+    /**
+     * erp阿里云config
+     */
+    const ERP_ALI_OSS_CONFIG = [
+        'type' => 'ALI_OSS_CONFIG',
+        'keys' => [
+            'shop_cdn_domain'
+        ]
+    ];
+
+
+    /**
+     * erp系统配置
+     */
+    const ERP_SYSTEM_ENV = [
+        'type' => 'system_env',
+        'keys' => [
+            'QINIU_DOMAIN_1',//七牛目录(ERP)
+            'QINIU_FOLDER_1',//七牛Domain(ERP)
+        ]
+    ];
+
     /**
      * 单个获取op系统dict配置数据
      * @param $type

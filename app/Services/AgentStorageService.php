@@ -15,6 +15,7 @@ use App\Libs\MysqlDB;
 use App\Libs\Util;
 use App\Models\AgentAwardBillExtModel;
 use App\Models\AgentInfoModel;
+use App\Models\AgentOrganizationModel;
 use App\Models\AgentPreStorageRefundModel;
 use App\Models\AgentPreStorageReviewLogModel;
 use App\Models\AgentModel;
@@ -597,7 +598,7 @@ class AgentStorageService
                 throw new RunTimeException(['insert_failure']);
             }
             //更新代理商扩展信息表中预存订单年卡剩余数量
-            $infoRes = AgentInfoModel::batchUpdateRecord(["quantity[+]" => $agentStorageData['package_amount']], ['agent_id' => $agentStorageData['agent_id']]);
+            $infoRes = AgentOrganizationModel::batchUpdateRecord(["quantity[+]" => $agentStorageData['package_amount']], ['agent_id' => $agentStorageData['agent_id']]);
             if (empty($infoRes)) {
                 $db->rollBack();
                 throw new RunTimeException(['update_failure']);
@@ -617,7 +618,7 @@ class AgentStorageService
     public static function agentStorageConsumer($agentId)
     {
         //检测代理商剩余年卡数量是否大于0
-        $agentData = AgentInfoModel::getRecord(['agent_id' => $agentId], ['quantity[Int]', 'id', 'amount']);
+        $agentData = AgentOrganizationModel::getRecord(['agent_id' => $agentId], ['quantity[Int]', 'id', 'amount']);
         if ($agentData['quantity'] <= 0) {
             SimpleLogger::info('agent storage quantity eq or lt 0 ', $agentData);
             return true;
@@ -701,7 +702,7 @@ class AgentStorageService
         }
         $processLogRes = AgentPreStorageProcessLogModel::batchInsert($processLogInsertData);
         $refundRes = AgentPreStorageRefundModel::batchInsert($refundInsertData);
-        $agentInfoRes = AgentInfoModel::batchUpdateRecord(['quantity[-]' => $consumerAmount, 'amount[+]' => $refundAmount], ['agent_id' => $agentId, 'quantity' => $agentData['quantity'], 'amount' => $agentData['amount']]);
+        $agentInfoRes = AgentOrganizationModel::batchUpdateRecord(['quantity[-]' => $consumerAmount, 'amount[+]' => $refundAmount], ['agent_id' => $agentId, 'quantity' => $agentData['quantity'], 'amount' => $agentData['amount']]);
         if (empty($processLogRes) || empty($refundRes) || empty($agentInfoRes)) {
             SimpleLogger::info('agent storage log data update fail ', []);
             $db->rollBack();

@@ -42,10 +42,13 @@ class AgentMiniAppRouter extends RouterBase
         '/agent/sec_agent/update'   => ['method' => ['post'], 'call' => Agent::class . ':secAgentUpdate'],
         '/agent/sec_agent/freeze'   => ['method' => ['post'], 'call' => Agent::class . ':secAgentFreeze'],
         '/agent/sec_agent/unfreeze' => ['method' => ['post'], 'call' => Agent::class . ':secAgentUnfreeze'],
-
+        // 售卖课包
         '/agent/package/list' => ['method' => ['get'], 'call' => Agent::class . ':packageList'],
         '/agent/package/detail' => ['method' => ['get'], 'call' => Agent::class . ':packageDetail'],
         '/agent/package/share' => ['method' => ['get'], 'call' => Agent::class . ':packageShareInfo'],
+        // 机构信息
+        '/agent/org/cover_data' => ['method' => ['get'], 'call' => Agent::class . ':orgCoverData'],
+        '/agent/org/opn_list' => ['method' => ['get'], 'call' => Agent::class . ':orgOpnList'],
 
     ];
 }
