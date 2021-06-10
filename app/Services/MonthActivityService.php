@@ -259,7 +259,6 @@ class MonthActivityService
 
         // 判断海报是否有变化，没有变化不操作
         $isDelPoster = ActivityPosterModel::diffPosterChange($activityId, $data['poster']);
-
         // 开始处理更新数据
         $time = time();
         // 检查是否有海报

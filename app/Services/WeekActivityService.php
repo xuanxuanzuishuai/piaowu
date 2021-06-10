@@ -126,8 +126,6 @@ class WeekActivityService
         // 检查奖励规则 - 不能为空， 去掉html标签以及emoji表情后不能大于1000个字符
         if (empty($data['award_rule'])) {
             return 'award_rule_is_required';
-        } elseif (!empty($data['award_rule']) && mb_strlen(Util::filterEmoji(strip_tags($data['award_rule']))) > 1000) {
-            return 'award_rule_length_invalid';
         }
 
         return '';

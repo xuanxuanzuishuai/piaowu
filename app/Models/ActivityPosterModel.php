@@ -85,8 +85,9 @@ class ActivityPosterModel extends Model
             return false;
         }
         $activityPosterList = self::getListByActivityId($activityId);
+        // 没有活动需要添加
         if (empty($activityPosterList)) {
-            return false;
+            return true;
         }
         // 传入的总数和原有总数不相等说明一定是不一样的
         if (count($activityPosterList) != count($posterIdArr)) {
