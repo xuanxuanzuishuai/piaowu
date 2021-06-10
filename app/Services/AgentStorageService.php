@@ -517,8 +517,8 @@ class AgentStorageService
             $value['agent_name'] = $agentData[$value['agent_id']]['name'];
             $value['payment_mode_show'] = $dictData[DictConstants::PAYMENT_MODE['type']][$value['payment_mode']]['value'];
             $value['status_show'] = $dictData[DictConstants::CHECK_STATUS['type']][$value['status']]['value'];
-            $value['total_amount'] = ($value['package_amount'] * $value['package_unit_price']) / 100;
-            $value['package_unit_price'] = $value['package_unit_price'] / 100;
+            $value['total_amount'] = Util::yuan(($value['package_amount'] * $value['package_unit_price']));
+            $value['package_unit_price'] = Util::yuan($value['package_unit_price']);
             $value['payment_time_show'] = date('Y-m-d H:i:s', $value['payment_time']);
             $value['payment_screen_shot_oss_url'] = AliOSS::signUrls($value['payment_screen_shot']);
         }
@@ -556,7 +556,7 @@ class AgentStorageService
         $db = MysqlDB::getDB();
         $db->beginTransaction();
         //第一步：修改数据状态
-        $statusRes = AgentPreStorageModel::updateRecord($storageId, ['status' => $status]);
+        $statusRes = AgentPreStorageModel::updateRecord($storageId, ['status' => $status, 'update_time' => $time]);
         if (empty($statusRes)) {
             $db->rollBack();
             throw new RunTimeException(['update_failure']);
@@ -623,14 +623,16 @@ class AgentStorageService
             SimpleLogger::info('agent storage quantity eq or lt 0 ', $agentData);
             return true;
         }
+        //订单观察期
+        $intervalTimeDays = DictConstants::get(DictConstants::AGENT_STORAGE_CONFIG, 'interval_time_days');
         //获取代理商预存订单信息
-        $canConsumerStorageData = array_column(AgentPreStorageModel::getPreStorageRemainingNormalCardData($agentId, DictConstants::get(DictConstants::AGENT_STORAGE_CONFIG, 'interval_time_days')), null, 'id');
+        $canConsumerStorageData = array_column(AgentPreStorageModel::getPreStorageRemainingNormalCardData($agentId, $intervalTimeDays), null, 'id');
         if (empty($canConsumerStorageData)) {
             SimpleLogger::info('agent no can consumer storage ', []);
             return true;
         };
         //获取支付时间后并且此代理商作为成单代理商角色的订单
-        $agentBillData = AgentAwardBillExtModel::getAgentAsSignerNormalBill($agentId, max(array_column($canConsumerStorageData, 'payment_time')));
+        $agentBillData = AgentAwardBillExtModel::getAgentAsSignerNormalBill($agentId, max(array_column($canConsumerStorageData, 'payment_time')), strtotime('-' . $intervalTimeDays . ' days'));
         if (empty($agentBillData)) {
             SimpleLogger::info('agent no recommend bill ', []);
             return true;
@@ -694,6 +696,7 @@ class AgentStorageService
             $detailUpdateRes = AgentPreStorageDetailModel::updateRecord($suv['id'], $suv['data']);
             if (empty($detailUpdateRes)) {
                 SimpleLogger::info('agent storage detail consumer update fail ', []);
+                $db->rollBack();
                 return false;
             }
         }
@@ -702,6 +705,7 @@ class AgentStorageService
         $agentInfoRes = AgentInfoModel::batchUpdateRecord(['quantity[-]' => $consumerAmount, 'amount[+]' => $refundAmount], ['agent_id' => $agentId, 'quantity' => $agentData['quantity'], 'amount' => $agentData['amount']]);
         if (empty($processLogRes) || empty($refundRes) || empty($agentInfoRes)) {
             SimpleLogger::info('agent storage log data update fail ', []);
+            $db->rollBack();
             return false;
         }
         $db->commit();

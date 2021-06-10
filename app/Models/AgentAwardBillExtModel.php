@@ -41,10 +41,11 @@ class AgentAwardBillExtModel extends Model
     /**
      * 获取代理商作为成单人角色且没有进行预存订单消费的推荐订单
      * @param int $agentId
-     * @param $createTime
+     * @param $createMinTime
+     * @param $createMaxTime
      * @return array|null
      */
-    public static function getAgentAsSignerNormalBill($agentId, $createTime)
+    public static function getAgentAsSignerNormalBill($agentId, $createMinTime, $createMaxTime)
     {
         $db = MysqlDB::getDB();
         return $db->select(
@@ -59,7 +60,8 @@ class AgentAwardBillExtModel extends Model
             [
                 self::$table . '.signer_agent_id' => $agentId,
                 self::$table . '.package_type' => self::PACKAGE_TYPE_YEAR,
-                AgentAwardDetailModel::$table . '.create_time[>=]' => $createTime,
+                AgentAwardDetailModel::$table . '.create_time[>=]' => $createMinTime,
+                AgentAwardDetailModel::$table . '.create_time[<=]' => $createMaxTime,
                 AgentPreStorageDetailModel::$table . '.id' => null,
                 'ORDER' => [self::$table . '.id' => 'DESC']
             ]
