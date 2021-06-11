@@ -46,3 +46,16 @@ VALUES
 INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
 VALUES
   ('STUDENT_INVITE', '学生转介绍渠道', 'CHANNEL_STANDARD_POSTER', '3419', '标准海报渠道'),
+
+
+
+-- 审核驳回原因：
+-- 2x - 打卡截图审核
+INSERT INTO `dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
+VALUES
+('share_poster_check_reason', '分享截图审核原因', '21', '不可设置私密或分组可见，请重新分享', '打卡截图审核原因'),
+('share_poster_check_reason', '分享截图审核原因', '22', '请上传分享朋友圈的截图', '打卡截图审核原因'),
+('share_poster_check_reason', '分享截图审核原因', '23', '请按照示例，截图朋友圈，再上传截图 ', '打卡截图审核原因');
+update dict set  `key_value` = '分享分组可见' where `type` = 'share_poster_check_reason' and `key_code` = '1';
+update dict set  `key_value` = '未使用最新海报' where `type` = 'share_poster_check_reason' and `key_code` = '2';
+update dict set  `key_value` = '上传截图出错' where `type` = 'share_poster_check_reason' and `key_code` = '3';

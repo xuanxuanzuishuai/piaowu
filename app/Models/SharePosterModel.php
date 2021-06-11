@@ -261,13 +261,12 @@ class SharePosterModel extends Model
     {
         $where = " WHERE 1 = 1 ";
         $map = [];
+        $student = [];
         if (!empty($params['student_mobile'])) {
-            $where .= " AND s.mobile = :student_mobile ";
-            $map[':student_mobile'] = $params['student_mobile'];
+            $student = DssStudentModel::getRecord(['mobile' => $params['student_mobile']], ['id']);
         }
         if (!empty($params['student_name'])) {
-            $where .= " AND s.name like :student_name ";
-            $map[':student_name'] = "%" . $params['student_name'] . "%";
+            $student = DssStudentModel::getRecord(['name[~]' => $params['student_name']], ['id']);
         }
 
         if (!empty($params['activity_id'])) {
@@ -300,6 +299,10 @@ class SharePosterModel extends Model
         if (!empty($params['id'])) {
             $where .= " AND sp.id = :id ";
             $map[':id'] = $params['id'];
+        }
+        if (!empty($student['id'])) {
+            $where .= " AND sp.student_id = :student_id ";
+            $map[':student_id'] = $student['id'];
         }
         $s = DssStudentModel::getTableNameWithDb();
         $ac = OperationActivityModel::getTableNameWithDb();
