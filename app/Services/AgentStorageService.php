@@ -237,6 +237,7 @@ class AgentStorageService
         if (empty($agentData) || !empty($agentData['p_id'])) {
             throw new RunTimeException(['agent_info_error']);
         }
+        $params['payment_serial_number'] = trim($params['payment_serial_number']);
         //检测流水号是否存在
         $paymentSerialNumber = AgentPreStorageModel::getRecords(['payment_serial_number' => $params['payment_serial_number']], ['id']);
         if (!empty($paymentSerialNumber)) {
@@ -294,6 +295,7 @@ class AgentStorageService
         if ($agentStorageData['status'] == AgentPreStorageModel::STATUS_APPROVED) {
             throw new RunTimeException(['agent_storage_data_status_stop_update']);
         }
+        $params['payment_serial_number'] = trim($params['payment_serial_number']);
         //检测流水号是否存在
         $paymentSerialNumber = AgentPreStorageModel::getRecords(['id[!]' => $params['storage_id'], 'payment_serial_number' => $params['payment_serial_number']], ['id']);
         if (!empty($paymentSerialNumber)) {
@@ -308,7 +310,6 @@ class AgentStorageService
         $db = MysqlDB::getDB();
         $db->beginTransaction();
         $storageUpdateRes = AgentPreStorageModel::updateRecord($params['storage_id'], [
-            'agent_id' => $params['agent_id'],
             'package_amount' => $params['package_amount'],
             'package_unit_price' => $params['package_unit_price'] * 100,
             'payment_serial_number' => $params['payment_serial_number'],
@@ -517,7 +518,7 @@ class AgentStorageService
             $value['payment_mode_show'] = $dictData[DictConstants::PAYMENT_MODE['type']][$value['payment_mode']]['value'];
             $value['status_show'] = $dictData[DictConstants::CHECK_STATUS['type']][$value['status']]['value'];
             $value['total_amount'] = Util::yuan(($value['package_amount'] * $value['package_unit_price']));
-            $value['package_unit_price'] = Util::yuan($value['package_unit_price']);
+            $value['package_unit_price'] = Util::yuan($value['package_unit_price'], 0);
             $value['payment_time_show'] = date('Y-m-d H:i:s', $value['payment_time']);
             $value['payment_screen_shot_oss_url'] = AliOSS::signUrls($value['payment_screen_shot']);
         }
