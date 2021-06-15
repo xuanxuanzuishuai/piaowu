@@ -11,6 +11,7 @@ namespace App\Models;
 use App\Libs\Constants;
 use App\Libs\MysqlDB;
 use App\Libs\RedisDB;
+use App\Libs\Util;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 
@@ -98,7 +99,10 @@ WHERE
             }
         }
         if (!empty($activity)) {
-            $redis->setex($cacheKey, OperationActivityModel::ACTIVITY_CACHE_EXPIRE, json_encode($activity));
+            // 获取过期时间
+            $expireSecond = Util::getDayFirstSecondUnix(date("Y-m-d", strtotime("+1 day")));
+            $expireSecond = $expireSecond - time();
+            $redis->setex($cacheKey, $expireSecond, json_encode($activity));
         }
         return $activity;
     }
