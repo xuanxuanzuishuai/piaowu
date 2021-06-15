@@ -2,7 +2,6 @@
 namespace App\Services;
 
 use App\Libs\RedisDB;
-use App\Libs\SimpleLogger;
 
 class WechatTokenService
 {
@@ -131,15 +130,37 @@ class WechatTokenService
             return [];
         }
         $redis = RedisDB::getConn();
-        $keys = self::USER_TOKEN_KEY . implode('_', [$app_id, $user_type, $user_id]) . '*';
-        $list = $redis->keys($keys);
-        foreach ($list as $token) {
-            $key = self::getTokenKey($redis->get($token));
-            $ret = $redis->get($key);
-            if (!empty($ret)) {
-                $list[] = $key;
+        $keyPattern = self::USER_TOKEN_KEY . implode('_', [$app_id, $user_type, $user_id]) . '*';
+        //使用scan游标方式遍历处理目标key
+        $stopTag = true;
+        //游标
+        $cursor = 0;
+        //目标缓存键数组
+        $keys = [];
+        while ($stopTag === true) {
+            $patternData = $redis->scan($cursor, ['MATCH' => $keyPattern]);
+            if ($patternData[0] == 0) {
+                $stopTag = false;
+            } else {
+                $cursor = $patternData[0];
             }
+            $keys = array_merge($keys, $patternData[1]);
         }
-        return $list;
+        if (empty($keys)) {
+            return $keys;
+        }
+        $keys = array_unique($keys);
+        $userTokenPipLineRes = $redis->pipeline(function ($pipe) use ($keys) {
+            foreach ($keys as $ck) {
+                $pipe->get($ck);
+            }
+        });
+        $userTokenCacheKeyValMap = array_combine($keys, $userTokenPipLineRes);
+
+        //再次获取微信token的缓存key
+        foreach ($userTokenCacheKeyValMap as $weChatTokenSuffix) {
+            $keys[] = WechatTokenService::getTokenKey($weChatTokenSuffix);
+        }
+        return $keys;
     }
 }
