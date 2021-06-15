@@ -818,7 +818,7 @@ class Consumer extends ControllerBase
                         }
                     }
                     //审核后续处理
-                    switch ($params['app_id']) {
+                    switch ($params['msg_body']['app_id']) {
                         case Constants::SMART_APP_ID: //智能陪练
                             AutoCheckPicture::mindCheckSharePosters($params['msg_body'], $status);
                             break;

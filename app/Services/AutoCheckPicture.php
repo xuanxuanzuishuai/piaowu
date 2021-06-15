@@ -254,6 +254,7 @@ class AutoCheckPicture
         }
         $requestArray = compact('status', 'poster_ids', 'reason_ids', 'remark', 'check_admin');
         //调用referral-审核接口
+        SimpleLogger::info('check_result', $requestArray);
         (new Referral())->realCheckPoster($requestArray);
     }
 
