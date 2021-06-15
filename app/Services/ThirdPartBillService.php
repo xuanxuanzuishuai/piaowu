@@ -157,18 +157,12 @@ class ThirdPartBillService
     public static function thirdBillPush($data)
     {
         try {
-            //计算延时时间
-            $dataCount = count($data);
-            if ($dataCount <= 100) {
-                $deferRand = mt_rand(1, 60);
-            } elseif (($dataCount > 100) && ($dataCount <= 200)) {
-                $deferRand = mt_rand(1, 90);
-            } else {
-                $deferRand = mt_rand(1, 180);
-            }
+            //计算延时时间:由于dss订单支付成功消费者出现并发问题，此处强制每个消息间隔3秒投递
+            $defer = 1;
             $queue = new ThirdPartBillTopic();
             foreach ($data as $v) {
-                $queue->import($v)->publish($deferRand);
+                $queue->import($v)->publish($defer);
+                $defer += 3;
             }
         } catch (\Exception $e) {
             throw new RunTimeException([$e->getMessage()]);
