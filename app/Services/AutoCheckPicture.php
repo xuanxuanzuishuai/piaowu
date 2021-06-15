@@ -127,8 +127,8 @@ class AutoCheckPicture
                     'type'         => ReferralPosterModel::CLIENT_TYPE_USER,
                     'check_admin'  => EmployeeModel::SYSTEM_EMPLOYEE_ID,
                 ];
-                $historyRecord = ReferralPosterModel::getRecord($conds, ['id','upload_times']);
-                if (empty($historyRecord) || $historyRecord['upload_times'] < 1) {
+                $historyRecord = ReferralPosterModel::getRecord($conds, ['id']);
+                if (empty($historyRecord)) {
                     $historyRecord = null;
                 }
                 break;
@@ -291,6 +291,10 @@ class AutoCheckPicture
         if (!$response) {
             return false;
         }
+        //针对纯图片 返回值特殊处理
+        if (empty($response['ret'])) {
+            return -5;
+        }
         $result = array();
         //过滤掉识别率低的
         foreach ($response['ret'] as $val) {
@@ -369,8 +373,8 @@ class AutoCheckPicture
                 $status = -3;
                 break;
             }
-            //上传时间处理 根据坐标定位
-            if (($shareIden || $shareCorner) && !$issetDate && Util::sensitiveWordFilter($dateKeyword, $word) == true) {
+            //上传时间处理 角标||字符串||关键字之后
+            if (($shareIden || $shareCorner || $leafKeyWord) && !$issetDate && Util::sensitiveWordFilter($dateKeyword, $word) == true) {
                 //如果包含年月
                 if (Util::sensitiveWordFilter(['年', '月', '日'], $word) == true) {
                     if (mb_strpos($word, '年') === false) {
