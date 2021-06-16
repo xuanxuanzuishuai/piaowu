@@ -2065,7 +2065,7 @@ class AgentService
             ];
             //已下架课包不在前端展示
             if (in_array($value['package_id'], $notAvailable)) {
-                break;
+                continue;
             }
             if (!empty($value['cover'])) {
                 $oneItem['product_img'] = $value['cover'];
