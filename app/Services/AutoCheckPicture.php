@@ -67,7 +67,7 @@ class AutoCheckPicture
                 $activityTime = mb_substr($issue_number, 0, $end);
                 $activityTime = str_replace('年', '-', $activityTime);
                 $activityDate = str_replace('.', '-', $activityTime);
-
+                $activityDate = date('Y-m-d', strtotime($activityDate));
                 break;
             default:
                 break;
@@ -337,7 +337,7 @@ class AutoCheckPicture
                 $word = str_replace('(', '', $word);
             }
             //识别到角标且在删除之前的
-            if (preg_match($patten, $word) && !$shareOwner && $shareType) {
+            if (preg_match($patten, $word) && !$shareOwner) {
                 $issetCorner = true;
                 if ($word === $checkDate) {
                     $shareCorner = true;
@@ -460,7 +460,7 @@ class AutoCheckPicture
                     break;
                 }
                 //判定是否被屏蔽 特殊情况:发布时间和删除下标相同
-                if (!$shareOwner && isset($result[$key + 1]) && Util::sensitiveWordFilter(['删除','智能陪练','：','册','删'], $result[$key + 1]['word']) == false) {
+                if (!$shareOwner && isset($result[$key + 1]) && Util::sensitiveWordFilter(['删除','智能陪练','：','册','删','1'], $result[$key + 1]['word']) == false) {
                     $shareDisplay = false;
                 }
             }
