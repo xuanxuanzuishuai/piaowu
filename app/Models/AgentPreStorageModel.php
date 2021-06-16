@@ -52,7 +52,8 @@ class AgentPreStorageModel extends Model
                 self::$table . '.status' => self::STATUS_APPROVED,
                 AgentPreStorageDetailModel::$table . '.status' => AgentPreStorageDetailModel::STATUS_NOT_CONSUMED,
                 'GROUP' => [self::$table . '.id'],
-                'ORDER' => [self::$table . '.id' => 'ASC']
+                'ORDER' => [self::$table . '.id' => 'ASC'],
+                'LIMIT' => [0, 1]
             ]
         );
     }

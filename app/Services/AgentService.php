@@ -24,6 +24,7 @@ use App\Models\AgentApplicationModel;
 use App\Models\AgentAwardBillExtModel;
 use App\Models\AgentAwardDetailModel;
 use App\Models\AgentOrganizationModel;
+use App\Models\AgentServiceEmployeeModel;
 use App\Models\BillMapModel;
 use App\Models\AgentDivideRulesModel;
 use App\Models\AgentModel;
@@ -46,7 +47,6 @@ use App\Models\ParamMapModel;
 use App\Models\UserWeiXinInfoModel;
 use App\Models\PosterModel;
 use App\Models\UserWeiXinModel;
-use I18N\Lang;
 use Medoo\Medoo;
 
 class AgentService
@@ -65,7 +65,6 @@ class AgentService
         $agentInsertData = [
             'employee_id' => $employeeId,
             'parent_id' => $params['parent_id'] ?? 0,
-            'service_employee_id' => empty($params['service_employee_id']) ? 0 : $params['service_employee_id'],
             'uuid' => self::agentAuth($params['name'], $params['mobile']),
             'mobile' => $params['mobile'],
             'name' => $params['name'],
@@ -76,6 +75,16 @@ class AgentService
         ];
         if (self::checkAgentExists($agentInsertData['mobile'], $agentInsertData['country_code'])) {
             throw new RunTimeException(['agent_have_exist']);
+        }
+        //agent_service_employee
+        $serviceEmployeeInsertData = [];
+        if (!empty($params['service_employee_id']) && is_array($params['service_employee_id'])) {
+            foreach ($params['service_employee_id'] as $se) {
+                $serviceEmployeeInsertData[] = [
+                    'employee_id' => $se,
+                    'create_time' => $time,
+                ];
+            }
         }
         //agent_divide_rules数据
         $agentDivideRulesInsertData = [
@@ -109,7 +118,7 @@ class AgentService
         }
         $db = MysqlDB::getDB();
         $db->beginTransaction();
-        $res = AgentModel::add($agentInsertData, $agentDivideRulesInsertData, $agentInfoInsertData,$packageIds, $params['app_id'], $organizationInsertData);
+        $res = AgentModel::add($agentInsertData, $agentDivideRulesInsertData, $agentInfoInsertData,$packageIds, $params['app_id'], $organizationInsertData, $serviceEmployeeInsertData);
         if (empty($res)) {
             $db->rollBack();
             throw new RunTimeException(['insert_failure']);
@@ -142,11 +151,33 @@ class AgentService
             'mobile' => $params['mobile'],
             'name' => $params['name'],
             'type' => $params['agent_type'],
-            'service_employee_id' => empty($params['service_employee_id']) ? 0 : (int)$params['service_employee_id'],
             'country_code' => $params['country_code'],
             'update_time' => $time,
             'division_model' => $params['division_model'] ?? 0,
         ];
+        //agent_service_employee
+        $serviceEmployeeUpdateData = [];
+        if (!empty($params['service_employee_id']) && is_array($params['service_employee_id'])) {
+            $serviceEmployeeData = array_column(AgentServiceEmployeeModel::getRecords(['agent_id' => $params['agent_id'],'status'=>AgentServiceEmployeeModel::STATUS_OK], ['id', 'employee_id']), null, 'employee_id');
+            $delEmployeeId = array_diff(array_keys($serviceEmployeeData), $params['service_employee_id']);
+            $serviceEmployeeUpdateData['del'] = $serviceEmployeeUpdateData['add'] = [];
+            if (!empty($delEmployeeId)) {
+                foreach ($delEmployeeId as $delEid)
+                    $serviceEmployeeUpdateData['del'][] = [
+                        'id' => $serviceEmployeeData[$delEid]['id'],
+                        'update_data' => ['status' => AgentServiceEmployeeModel::STATUS_DEL, 'update_time' => $time],
+                    ];
+            }
+            $addEmployeeId = array_diff($params['service_employee_id'], array_keys($serviceEmployeeData));
+            if (!empty($addEmployeeId)) {
+                foreach ($addEmployeeId as $addEid)
+                    $serviceEmployeeUpdateData['add'][] = [
+                        'agent_id' => $params['agent_id'],
+                        'employee_id' => $addEid,
+                        'create_time' => $time,
+                    ];
+            }
+        }
         //agent_divide_rules数据
         $agentDivideRulesInsertData = [
             'app_id' => $params['app_id'],
@@ -173,18 +204,19 @@ class AgentService
         //agent_organization
         $organizationData = [];
         if ($params['agent_type'] == AgentModel::TYPE_OFFLINE) {
-            $organizationData = ['name' => empty($params['organization']) ? '' : trim($params['organization'])];
+            $organizationData['data'] = ['name' => empty($params['organization']) ? '' : trim($params['organization'])];
             $orgData = AgentOrganizationModel::getRecord(['agent_id' => $params['agent_id']], ['id']);
             if (empty($orgData)) {
-                $organizationData['agent_id'] = $params['agent_id'];
-                $organizationData['create_time'] = $time;
+                $organizationData['data']['agent_id'] = $params['agent_id'];
+                $organizationData['data']['create_time'] = $time;
             } else {
-                $organizationData['update_time'] = $time;
+                $organizationData['data']['update_time'] = $time;
+                $organizationData['id'] = $orgData['id'];
             }
         }
         $db = MysqlDB::getDB();
         $db->beginTransaction();
-        $res = AgentModel::update($params['agent_id'], $agentUpdateData, $agentDivideRulesInsertData, $agentInfoUpdateData, $packageIds, $params['app_id'], $organizationData);
+        $res = AgentModel::update($params['agent_id'], $agentUpdateData, $agentDivideRulesInsertData, $agentInfoUpdateData, $packageIds, $params['app_id'], $organizationData, $serviceEmployeeUpdateData);
         if (empty($res)) {
             $db->rollBack();
             throw new RunTimeException(['update_failure']);
@@ -192,7 +224,16 @@ class AgentService
             $db->commit();
         }
         //操作日志记录
-        self::agentDataUpdateOpLogEvent($params['agent_id'], $employeeId, ['agent_type' => $params['agent_type'], 'division_model' => $params['division_model']], AgentOperationLogModel::OP_TYPE_AGENT_DATA_UPDATE);
+        self::agentDataUpdateOpLogEvent(
+            $params['agent_id'],
+            $employeeId,
+            [
+                'agent_type' => $params['agent_type'],
+                'division_model' => $params['division_model'],
+                'organization_name' => $params['organization'],
+                'package_ids' => $packageIds
+            ],
+            AgentOperationLogModel::OP_TYPE_AGENT_DATA_UPDATE);
         return true;
     }
 
@@ -367,6 +408,7 @@ class AgentService
         }
         //获取代理商售卖课包列表数据
         $detail['package_list'] = AgentSalePackageModel::getPackageData($agentId, UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT);
+        $detail['service_employee_data'] = array_combine(explode(',',$detail['service_employee_id']),explode(',',$detail['e_s_name']));
         return $detail;
     }
 
@@ -406,13 +448,7 @@ class AgentService
             }
             $where[AgentModel::$table . '.employee_id'] = $employeeId['id'];
         }
-        if (!empty($params['service_employee_name'])) {
-            $serviceEmployeeIds = EmployeeModel::getRecords(['name[~]' => $params['service_employee_name']], ['id']);
-            if (empty($serviceEmployeeIds)) {
-                return $data;
-            }
-            $where[AgentModel::$table . '.service_employee_id'] = array_column($serviceEmployeeIds,'id');
-        }
+
         if (!empty($params['name'])) {
             $where[AgentModel::$table . '.name[~]'] = $params['name'];
         }
@@ -422,9 +458,21 @@ class AgentService
         //数据权限
         if ($params['only_read_self']) {
             $where["OR"] = [
-                AgentModel::$table . '.service_employee_id' => $currentEmployeeId,
                 AgentModel::$table . '.employee_id' => $currentEmployeeId,
+                'AND' => [
+                    AgentServiceEmployeeModel::$table . '.employee_id' => $currentEmployeeId,
+                    AgentServiceEmployeeModel::$table . '.status' => AgentServiceEmployeeModel::STATUS_OK,
+                ]
             ];
+        } else {
+            if (!empty($params['service_employee_name'])) {
+                $serviceEmployeeIds = EmployeeModel::getRecords(['name[~]' => $params['service_employee_name']], ['id']);
+                if (empty($serviceEmployeeIds)) {
+                    return $data;
+                }
+                $where[AgentServiceEmployeeModel::$table . '.employee_id'] = array_column($serviceEmployeeIds,'id');
+                $where[AgentServiceEmployeeModel::$table . '.status'] = AgentServiceEmployeeModel::STATUS_OK;
+            }
         }
         $agentList = AgentModel::list($where, $params['page'], $params['count']);
         if (empty($agentList['list'])) {
@@ -2291,7 +2339,7 @@ class AgentService
      */
     public static function getAgentIdByEmployeeId($employeeId)
     {
-        $parentIdData = AgentModel::getRecords(["OR" => ['service_employee_id' => $employeeId, 'employee_id' => $employeeId]], ['id']);
+        $parentIdData = AgentModel::getAgentByEmployee($employeeId);
         if (empty($parentIdData)) {
             return [];
         }

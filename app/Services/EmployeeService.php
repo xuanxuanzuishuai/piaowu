@@ -435,4 +435,23 @@ class EmployeeService
         $params['course_manage_id'] = $privilegeParams['course_manage_id'] ?? null;
         return $params;
     }
+
+    /**
+     * 模糊搜索员工
+     * @param $params
+     * @return array
+     */
+    public static function fuzzySearch($params)
+    {
+
+        if (!empty($params['name'])) {
+            $where['name[~]'] = $params['name'];
+        }
+        if (empty($where)) {
+            return [];
+        }
+        $where['status'] = EmployeeModel::STATUS_NORMAL;
+        $list = EmployeeModel::getRecords($where, ['id', 'name']);
+        return $list;
+    }
 }

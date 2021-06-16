@@ -78,8 +78,10 @@ class AgentOrgService
                 'opn_id', 'id'
             ]), null, 'opn_id');
         $haveRelationOpnIds = array_column($haveRelationOpnList, 'opn_id');
-        $opnDelDiff = array_diff($haveRelationOpnIds, $params['opn_id']);
-        $opnAddDiff = array_diff($params['opn_id'], $haveRelationOpnIds);
+        //去重
+        $opnIdArr = array_unique($params['opn_id']);
+        $opnDelDiff = array_diff($haveRelationOpnIds, $opnIdArr);
+        $opnAddDiff = array_diff($opnIdArr, $haveRelationOpnIds);
         $delData = $addData = [];
         //取消关联关系的曲谱教材ID
         if (!empty($opnDelDiff)) {
@@ -127,7 +129,7 @@ class AgentOrgService
      */
     public static function orgStaticsData($agentId)
     {
-        return AgentOrganizationModel::getRecord(['agent_id' => $agentId], ['agent_id', 'id', 'name', 'quantity', 'amount']);
+        return AgentOrganizationModel::getRecord(['agent_id' => $agentId], ['agent_id', 'id(org_id)', 'name', 'quantity', 'amount']);
     }
 
     /**

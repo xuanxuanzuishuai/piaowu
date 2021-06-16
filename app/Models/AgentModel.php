@@ -12,6 +12,7 @@ namespace App\Models;
 use App\Libs\MysqlDB;
 use App\Libs\NewSMS;
 use App\Libs\SimpleLogger;
+use App\Services\EmployeeService;
 
 class AgentModel extends Model
 {
@@ -50,9 +51,10 @@ class AgentModel extends Model
      * @param $packageIds
      * @param $appId
      * @param $organizationInsertData
+     * @param $serviceEmployeeInsertData
      * @return bool
      */
-    public static function add($agentData, $agentDivideRulesInsertData, $agentInfoInsertData, $packageIds, $appId, $organizationInsertData)
+    public static function add($agentData, $agentDivideRulesInsertData, $agentInfoInsertData, $packageIds, $appId, $organizationInsertData, $serviceEmployeeInsertData)
     {
         //记录代理商基础数据
         $agentId = self::insertRecord($agentData);
@@ -90,6 +92,17 @@ class AgentModel extends Model
                 return false;
             }
         }
+        //代理商与负责员工关联
+        if (!empty($serviceEmployeeInsertData)) {
+            foreach ($serviceEmployeeInsertData as &$sv) {
+                $sv['agent_id'] = $agentId;
+            }
+            $seId = AgentServiceEmployeeModel::batchInsert($serviceEmployeeInsertData);
+            if (empty($seId)) {
+                SimpleLogger::error('insert agent service employee data error', $serviceEmployeeInsertData);
+                return false;
+            }
+        }
         return true;
     }
 
@@ -102,9 +115,10 @@ class AgentModel extends Model
      * @param $packageIds
      * @param $appId
      * @param $organizationUpdateData
+     * @param $serviceEmployeeUpdateData
      * @return bool
      */
-    public static function update($agentId, $agentUpdateData, $agentDivideRulesInsertData, $agentInfoUpdateData, $packageIds, $appId, $organizationUpdateData)
+    public static function update($agentId, $agentUpdateData, $agentDivideRulesInsertData, $agentInfoUpdateData, $packageIds, $appId, $organizationUpdateData, $serviceEmployeeUpdateData)
     {
         //编辑代理商基础数据
         $baseUpdateRes = AgentModel::updateRecord($agentId, $agentUpdateData);
@@ -150,16 +164,33 @@ class AgentModel extends Model
             }
         }
         //线下代理机构扩展信息
-        $orgId = true;
         if (!empty($organizationUpdateData)) {
-            if (!empty($organizationUpdateData['update_time'])) {
-                $orgId = AgentOrganizationModel::updateRecord($agentId, $organizationUpdateData);
+            if (!empty($organizationUpdateData['id'])) {
+                $orgId = AgentOrganizationModel::updateRecord($organizationUpdateData['id'], $organizationUpdateData['data']);
             } else {
-                $orgId = AgentOrganizationModel::insertRecord($organizationUpdateData);
+                $orgId = AgentOrganizationModel::insertRecord($organizationUpdateData['data']);
+            }
+            if (empty($orgId)) {
+                SimpleLogger::error('update agent organization data error', $organizationUpdateData);
+                return false;
             }
         }
-        if (empty($orgId)) {
-            SimpleLogger::error('update agent organization data error', $organizationUpdateData);
+        //代理商与负责员工关联
+        $seId = true;
+        if (empty($serviceEmployeeUpdateData)) {
+            $seId = AgentServiceEmployeeModel::batchUpdateRecord(['status' => AgentServiceEmployeeModel::STATUS_DEL, 'update_time'=>time()], ['agent_id' => $agentId]);
+        } elseif (!empty($serviceEmployeeUpdateData['del'])) {
+            foreach ($serviceEmployeeUpdateData['del'] as $dev) {
+                $seId = AgentServiceEmployeeModel::updateRecord($dev['id'], $dev['update_data']);
+                if (empty($seId)) {
+                    return false;
+                }
+            }
+        } elseif (!empty($serviceEmployeeUpdateData['add'])) {
+            $seId = AgentServiceEmployeeModel::batchInsert($serviceEmployeeUpdateData['add']);
+        }
+        if (empty($seId)) {
+            SimpleLogger::error('insert agent service employee data error', $serviceEmployeeUpdateData);
             return false;
         }
         return true;
@@ -173,43 +204,41 @@ class AgentModel extends Model
     public static function detail($agentId)
     {
         $db = MysqlDB::getDB();
-        $data = $db->select(
-            self::$table,
-            [
-                "[><]" . AgentInfoModel::$table => ['id' => 'agent_id'],
-                "[><]" . AgentDivideRulesModel::$table => ['id' => 'agent_id'],
-                "[>]" . AgentOrganizationModel::$table => ['id' => 'agent_id'],
-                "[><]" . EmployeeModel::$table => ['employee_id' => 'id'],
-                "[>]" . EmployeeModel::$table . '(EA)' => ['service_employee_id' => 'id'],
-
-            ],
-            [
-                self::$table . '.id',
-                self::$table . '.mobile',
-                self::$table . '.service_employee_id',
-                self::$table . '.employee_id',
-                self::$table . '.type',
-                self::$table . '.status',
-                self::$table . '.name',
-                self::$table . '.country_code',
-                self::$table . '.division_model',
-                AgentOrganizationModel::$table . '.name(organization)',
-                AgentInfoModel::$table . '.country',
-                AgentInfoModel::$table . '.province',
-                AgentInfoModel::$table . '.city',
-                AgentInfoModel::$table . '.district',
-                AgentInfoModel::$table . '.address',
-                AgentInfoModel::$table . '.remark',
-                AgentDivideRulesModel::$table . '.app_id',
-                AgentDivideRulesModel::$table . '.rule',
-                EmployeeModel::$table . '.name(e_name)',
-                'EA.name(e_s_name)',
-            ],
-            [
-                self::$table . '.id' => $agentId,
-                AgentDivideRulesModel::$table . '.status' => AgentDivideRulesModel::STATUS_OK,
-            ]
-        );
+        $sql = 'SELECT
+                    a.`id`,
+                    a.`mobile`,
+                    a.`employee_id`,
+                    a.`type`,
+                    a.`status`,
+                    a.`name`,
+                    a.`country_code`,
+                    a.`division_model`,
+                    ao.`name` AS `organization`,
+                    ai.`country`,
+                    ai.`province`,
+                    ai.`city`,
+                    ai.`district`,
+                    ai.`address`,
+                    ai.`remark`,
+                    ad.`app_id`,
+                    ad.`rule`,
+                    e.`name` AS `e_name`,
+                    GROUP_CONCAT( `ea`.`name` ) AS `e_s_name`,
+                    GROUP_CONCAT( `ea`.`id` ) AS `service_employee_id` 
+                FROM
+                    '.self::$table.' as a
+                    INNER JOIN '.AgentInfoModel::$table.' as ai ON a.`id` = ai.`agent_id`
+                    INNER JOIN '.AgentDivideRulesModel::$table.' as ad ON a.`id` = ad.`agent_id`
+                    LEFT JOIN '.AgentOrganizationModel::$table.' as ao ON a.`id` = ao.`agent_id`
+                    INNER JOIN '.EmployeeModel::$table.' as e ON a.`employee_id` = e.`id`
+                    LEFT JOIN '.AgentServiceEmployeeModel::$table.' as `ase` ON a.`id` = `ase`.`agent_id`
+                    LEFT JOIN '.EmployeeModel::$table.' as `ea` ON `ase`.`employee_id` = `ea`.`id` 
+                WHERE
+                    a.id = ' . $agentId . ' 
+                    AND ad.status = ' . AgentDivideRulesModel::STATUS_OK . ' 
+                GROUP BY
+                    a.id;';
+        $data = $db->queryAll($sql);
         return $data[0];
     }
 
@@ -224,14 +253,19 @@ class AgentModel extends Model
     {
         $data = ['count' => 0, 'list' => [],];
         $db = MysqlDB::getDB();
-        $data['count'] = $db->count(self::$table, [
+        $countData = $db->select(self::$table, [
             "[><]" . AgentInfoModel::$table => ['id' => 'agent_id'],
-        ], [self::$table . '.id'], $where);
-        if (empty($data['count'])) {
+            "[>]" . AgentServiceEmployeeModel::$table => ['id' => 'agent_id'],
+        ], [self::$table . '.id'], ["AND" => $where, "GROUP" => self::$table . ".id"]);
+
+
+
+        if (empty($countData)) {
             return $data;
         }
+        $data['count'] = count($countData);
         $offset = ($page - 1) * $limit;
-        $where[AgentDivideRulesModel::$table.'.status'] = AgentDivideRulesModel::STATUS_OK;
+        $where[AgentDivideRulesModel::$table . '.status'] = AgentDivideRulesModel::STATUS_OK;
         $data['list'] = $db->select(
             self::$table,
             [
@@ -240,6 +274,7 @@ class AgentModel extends Model
                 "[>]" . AgentOrganizationModel::$table => ['id' => 'agent_id'],
                 "[>]" . EmployeeModel::$table . "(e)" => ['service_employee_id' => 'id'],
                 "[>]" . AgentDivideRulesModel::$table => ['id' => 'agent_id'],
+                "[>]" . AgentServiceEmployeeModel::$table => ['id'=>'agent_id']
             ],
             [
                 self::$table . '.id',
@@ -248,7 +283,6 @@ class AgentModel extends Model
                 self::$table . '.create_time',
                 self::$table . '.employee_id',
                 self::$table . '.type',
-                self::$table . '.service_employee_id',
                 self::$table . '.name',
                 self::$table . '.division_model',
                 AgentInfoModel::$table . '.country',
@@ -260,10 +294,10 @@ class AgentModel extends Model
                 AgentOrganizationModel::$table . '.amount',
                 EmployeeModel::$table . '.name(e_name)',
                 AgentDivideRulesModel::$table . '.app_id',
-                'e.name(e_s_name)'
             ],
             [
                 "AND" => $where,
+                "GROUP" => self::$table . ".id",
                 "ORDER" => [self::$table . ".id" => 'DESC'],
                 "LIMIT" => [$offset, $limit],
             ]
@@ -319,18 +353,18 @@ class AgentModel extends Model
         }
         $db = MysqlDB::getDB();
         $field = [
-            self::$table.'.id',
-            self::$table.'.parent_id',
-            self::$table.'.employee_id',
-            self::$table.'.uuid',
-            self::$table.'.mobile',
-            self::$table.'.name',
-            self::$table.'.country_code',
-            self::$table.'.status',
-            self::$table.'.create_time',
-            self::$table.'.update_time',
-            self::$table.'.type',
-            self::$table.'.service_employee_id'
+            self::$table . '.id',
+            self::$table . '.parent_id',
+            self::$table . '.employee_id',
+            self::$table . '.uuid',
+            self::$table . '.mobile',
+            self::$table . '.name',
+            self::$table . '.country_code',
+            self::$table . '.status',
+            self::$table . '.create_time',
+            self::$table . '.update_time',
+            self::$table . '.type',
+            self::$table . '.service_employee_id'
         ];
         $res = $db->select(
             self::$table,
@@ -368,8 +402,35 @@ class AgentModel extends Model
                     agent AS a
                     LEFT JOIN agent AS b ON a.parent_id = b.id 
                 WHERE
-                    a.id in(".implode(',',$agentIds).");";
+                    a.id in(" . implode(',', $agentIds) . ");";
         $data = $db->queryAll($sql);
         return $data;
+    }
+
+    /**
+     * 获取某个员工可以看到的代理商ID列表
+     * @param $employeeId
+     * @return array
+     */
+    public static function getAgentByEmployee($employeeId)
+    {
+        $db = MysqlDB::getDB();
+        return $db->select(
+            self::$table,
+            [
+                '[>]' . AgentServiceEmployeeModel::$table => ['id' => 'agent_id']
+            ],
+            [self::$table . '.id'],
+            [
+                'OR' => [
+                    self::$table . '.employee_id' => $employeeId,
+                    'AND' => [
+                        AgentServiceEmployeeModel::$table . '.employee_id' => $employeeId,
+                        AgentServiceEmployeeModel::$table . '.status' => AgentServiceEmployeeModel::STATUS_OK,
+                    ]
+                ],
+                'GROUP' => self::$table . '.id',
+            ]
+        );
     }
 }

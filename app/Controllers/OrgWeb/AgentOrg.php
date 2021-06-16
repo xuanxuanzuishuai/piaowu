@@ -100,7 +100,6 @@ class AgentOrg extends ControllerBase
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        list($params['page'], $params['count']) = Util::formatPageCount($params);
         $logData = AgentOrgService::orgStaticsData($params);
         return HttpHelper::buildResponse($response, $logData);
     }

@@ -27,18 +27,7 @@ class Opn extends ControllerBase
      */
     public function dropDownSearch(Request $request, Response $response)
     {
-        $rules = [
-            [
-                'key' => 'opn_name',
-                'type' => 'required',
-                'error_code' => 'opn_name_is_required'
-            ]
-        ];
         $params = $request->getParams();
-        $result = Valid::appValidate($params, $rules);
-        if ($result['code'] != Valid::CODE_SUCCESS) {
-            return $response->withJson($result, StatusCode::HTTP_OK);
-        }
         $list = ErpOpnService::opnDropDownSearch($params);
         return HttpHelper::buildResponse($response, $list);
     }

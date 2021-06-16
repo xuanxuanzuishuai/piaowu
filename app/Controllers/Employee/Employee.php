@@ -607,4 +607,20 @@ class Employee extends ControllerBase
             'data' => $roleIdDict
         ], StatusCode::HTTP_OK);
     }
+
+    /**
+     * 员工模糊搜索
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function fuzzySearch(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        $list = EmployeeService::fuzzySearch($params);
+        return $response->withJson([
+            'code' => 0,
+            'data' => $list
+        ], StatusCode::HTTP_OK);
+    }
 }

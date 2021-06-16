@@ -19,10 +19,18 @@ class ErpOpnService
      */
     public static function opnDropDownSearch($params)
     {
-        $where = [
-            'name[~]' => $params['opn_name'] . '%',
-            'type' => OpnCollectionModel::TYPE_SIGN_UP,
-        ];
+        $where = [];
+        if (!empty($params['opn_name'])) {
+            $where['name[~]'] = $params['opn_name'];
+        }
+
+        if (!empty($params['opn_id'])) {
+            $where['id'] = $params['opn_id'];
+        }
+        if (empty($where)) {
+            return [];
+        }
+        $where['type'] = OpnCollectionModel::TYPE_SIGN_UP;
         return OpnCollectionModel::getRecords($where, ['id', 'name']);
     }
 }

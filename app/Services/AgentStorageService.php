@@ -565,7 +565,7 @@ class AgentStorageService
             'data_id' => $storageId,
             'data_type' => AgentPreStorageReviewLogModel::DATA_TYPE_PRE_STORAGE,
             'type' => $status,
-            'remark'=> $remark,
+            'remark'=> (string)$remark,
             'reviewer_uid' => $employeeId,
             'create_time' => $time,
         ]);
@@ -631,7 +631,7 @@ class AgentStorageService
             return true;
         };
         //获取支付时间后并且此代理商作为成单代理商角色的订单
-        $agentBillData = AgentAwardBillExtModel::getAgentAsSignerNormalBill($agentId, max(array_column($canConsumerStorageData, 'payment_time')), strtotime('-' . $intervalTimeDays . ' days'));
+        $agentBillData = AgentAwardBillExtModel::getAgentAsSignerNormalBill($agentId, array_column($canConsumerStorageData, 'payment_time')[0], strtotime('-' . $intervalTimeDays . ' days'));
         if (empty($agentBillData)) {
             SimpleLogger::info('agent no recommend bill ', []);
             return true;
