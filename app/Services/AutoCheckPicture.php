@@ -360,7 +360,7 @@ class AutoCheckPicture
             if (!$issetCorner && $shareType && (mb_strlen($word) > 5 || Util::sensitiveWordFilter($contentKeyword, $word) == true)) {
                 $shareKeyword = true;
             }
-            if (mb_strpos($word, '删除') !== false) {
+            if (Util::sensitiveWordFilter(['删除', '册除'], $word) == true) {
                 $issetDel = true;
                 $gobalIssetDel = true;
             }
