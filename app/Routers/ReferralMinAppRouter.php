@@ -56,6 +56,11 @@ class ReferralMinAppRouter extends RouterBase
             'call'    => Landing::class . ':playReview',
             'middles' => [ReferralMinAppAuthCheckMiddleware::class],
         ],
+        '/referral_miniapp/landing/assistant_info' => [
+            'method'  => ['get'],
+            'call'    => Landing::class . ':assistantInfo',
+            'middles' => [ReferralMinAppAuthCheckMiddleware::class],
+        ],
 
 
     ];

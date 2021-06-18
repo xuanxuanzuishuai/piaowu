@@ -1195,4 +1195,24 @@ class ReferralService
         $endTime = strtotime($subEndDate) + 86400;
         return $endTime > time();
     }
+
+    /**
+     * 获取助教老师微信
+     * @param $openid
+     * @return array|false|mixed
+     */
+    public static function assistantInfo($openid)
+    {
+        $userType  = DssUserWeiXinModel::USER_TYPE_STUDENT;
+        $status    = DssUserWeiXinModel::STATUS_NORMAL;
+        $busiType  = DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP;
+        $assistant = DssUserWeiXinModel::getWxQr($openid, $userType, $status, $busiType);
+        $assistant = end($assistant) ?? [];
+        if (empty($assistant) || empty($assistant['wx_qr']) || empty($assistant['wx_num'])) {
+            SimpleLogger::error('assistant wx_info is empty', compact($openid));
+            return array();
+        }
+        $assistant['wx_qr'] = AliOSS::replaceCdnDomainForDss($assistant['wx_qr']);
+        return $assistant;
+    }
 }

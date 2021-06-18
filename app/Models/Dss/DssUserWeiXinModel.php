@@ -192,7 +192,8 @@ class DssUserWeiXinModel extends DssModel
                 '[><]' . DssEmployeeModel::$table => [DssStudentModel::$table . '.assistant_id' => 'id']
             ],
             [
-                DssEmployeeModel::$table . '.wx_qr'
+                DssEmployeeModel::$table . '.wx_qr',
+                DssEmployeeModel::$table . '.wx_num'
             ],
             [
                 DssUserWeiXinModel::$table . '.open_id'   => $openid,

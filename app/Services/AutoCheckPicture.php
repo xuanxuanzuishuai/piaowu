@@ -432,7 +432,9 @@ class AutoCheckPicture
                         $end         = $issetDel ? (mb_strpos($word, $endWord) - $start) : mb_strlen($word) - 1;
                         $string      = mb_substr($word, $start, $end);
                         $screenDate = date('Y-m-d ' . str_replace('：', ':', $string), strtotime('-1 day'));//截图时间
-                        $screenDate = date('Y-m-d H:i', strtotime($screenDate) + $hours);
+                        if (mb_substr($string, 0, mb_strpos($string, '：')) < 12) {
+                            $screenDate = date('Y-m-d H:i', strtotime($screenDate) + $hours);
+                        }
                     } else {
                         $beginWord  = '昨天';
                         $endWord    = '删除';

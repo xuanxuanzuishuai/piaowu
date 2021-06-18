@@ -168,6 +168,23 @@ class Landing extends ControllerBase
         return HttpHelper::buildResponse($response, $pageData);
     }
 
+    /**
+     * 助教老师信息
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function assistantInfo(Request $request, Response $response)
+    {
+        try {
+            $data = ReferralService::assistantInfo($this->ci['referral_miniapp_openid']);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+
+        return HttpHelper::buildResponse($response, $data);
+    }
+
 
 
 }
