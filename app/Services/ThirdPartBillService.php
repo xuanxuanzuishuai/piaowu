@@ -92,7 +92,7 @@ class ThirdPartBillService
                     $v['dss_amount'] = 1;
                 } else {
                     $v['dss_amount'] *= 100;
-                    if ($v['dss_amount'] > $packagePriceMoney) {
+                    if ((int)$v['dss_amount'] > $packagePriceMoney) {
                         $invalidDssAmount[] = $v;
                     }
                 }
