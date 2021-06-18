@@ -230,6 +230,7 @@ class OrgWebRouter extends RouterBase
         //代理商机构
         '/op_web/agent_org/opn_relation' => ['method' => ['post'], 'call' => AgentOrg::class . ':orgOpnRelation'],
         '/op_web/agent_org/opn_list' => ['method' => ['get'], 'call' => AgentOrg::class . ':orgOpnList'],
+        '/op_web/agent_org/opn_del_relation' => ['method' => ['post'], 'call' => AgentOrg::class . ':orgOpnDelRelation'],
         '/op_web/agent_org/statics' => ['method' => ['get'], 'call' => AgentOrg::class . ':orgStaticsData'],
 
         '/op_web/agent_org/student_add' => ['method' => ['post'], 'call' => AgentOrg::class . ':studentAdd'],

@@ -76,6 +76,10 @@ class AgentService
         if (self::checkAgentExists($agentInsertData['mobile'], $agentInsertData['country_code'])) {
             throw new RunTimeException(['agent_have_exist']);
         }
+        //线下代理，机构名称必填
+        if (($params['agent_type'] === AgentModel::TYPE_OFFLINE) && (empty($params['organization']))) {
+            throw new RunTimeException(['agent_org_name_required']);
+        }
         //agent_service_employee
         $serviceEmployeeInsertData = [];
         if (!empty($params['service_employee_id']) && is_array($params['service_employee_id'])) {
@@ -145,6 +149,10 @@ class AgentService
         }
         if (count($agentExists) > 1) {
             throw new RunTimeException(['agent_mobile_is_repeat']);
+        }
+        //线下代理，机构名称必填
+        if (($params['agent_type'] === AgentModel::TYPE_OFFLINE) && (empty($params['organization']))) {
+            throw new RunTimeException(['agent_org_name_required']);
         }
         //agent数据
         $agentUpdateData = [
@@ -408,7 +416,7 @@ class AgentService
         }
         //获取代理商售卖课包列表数据
         $detail['package_list'] = AgentSalePackageModel::getPackageData($agentId, UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT);
-        $detail['service_employee_data'] = array_combine(explode(',',$detail['service_employee_id']),explode(',',$detail['e_s_name']));
+        $detail['service_employee_data'] = empty($detail['service_employee_id']) ? [] : array_combine(explode(',', $detail['service_employee_id']), explode(',', $detail['e_s_name']));
         return $detail;
     }
 

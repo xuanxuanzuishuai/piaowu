@@ -53,6 +53,33 @@ class AgentOrg extends ControllerBase
         return HttpHelper::buildResponse($response, []);
     }
 
+    /**
+     * 代理商机构专属曲谱教材取消关联
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function orgOpnDelRelation(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'relation_id',
+                'type' => 'required',
+                'error_code' => 'org_opn_relation_id_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            AgentOrgService::orgOpnDelRelation($params, self::getEmployeeId());
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, []);
+    }
 
     /**
      * 代理商机构专属曲谱教材列表

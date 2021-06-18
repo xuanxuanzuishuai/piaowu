@@ -55,7 +55,31 @@ class AgentOrgService
             }
         }
         $db->commit();
+        self::pushStudentFavoriteCollection($params['agent_org_id'], $opnCheckData['add']);
         return true;
+    }
+
+    /**
+     * 机构专属教材自动收藏推送消息队列
+     * @param $agentOrgId
+     * @param array $opnCollectionIds
+     * @return bool
+     */
+    private static function pushStudentFavoriteCollection($agentOrgId, array $opnCollectionIds)
+    {
+        if (empty($opnCollectionIds) || empty($agentOrgId)) {
+            return false;
+        }
+        //获取当前机构有效状态的在读学员
+        $agentOrgStudentIds = AgentOrganizationStudentModel::getRecords(['org_id' => $agentOrgId, 'status' => AgentOrganizationStudentModel::STATUS_NORMAL], 'student_id');
+        if (empty($agentOrgStudentIds)) {
+            return false;
+        }
+        $studentsInfo = DssStudentModel::getRecords(['id' => $agentOrgStudentIds], ['id(student_id)', 'real_name']);
+        return QueueService::updateStudentNameAndCollect([
+            'student' => $studentsInfo,
+            'opn' => $opnCollectionIds,
+        ]);
     }
 
     /**
@@ -111,6 +135,28 @@ class AgentOrgService
         }
         return ['add' => $addData, 'del' => $delData, 'res' => $checkRes];
     }
+
+    /**
+     * 代理商机构专属曲谱教材取消关联
+     * @param int $relationId
+     * @param int $employeeId
+     * @return bool
+     * @throws RunTimeException
+     */
+    public static function orgOpnDelRelation($relationId, $employeeId)
+    {
+        $affectRow = AgentOrganizationOpnModel::updateRecord($relationId,
+            [
+                'status' => AgentOrganizationOpnModel::STATUS_REMOVE,
+                'operator_id' => $employeeId,
+                'update_time' => time(),
+            ]);
+        if (empty($affectRow)) {
+            throw new RunTimeException(['update_failure']);
+        }
+        return true;
+    }
+
 
     /**
      * 获取代理机构专属曲谱列表
