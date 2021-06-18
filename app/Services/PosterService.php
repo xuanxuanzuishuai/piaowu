@@ -286,4 +286,97 @@ class PosterService
         }
         return $res;
     }
+
+    /**
+     * 生成带用户二维码的海报
+     * @param $posterPath
+     * @param $config
+     * @param $userId
+     * @param $type
+     * @param $channelId
+     * @param array $extParams
+     * @return array|string[]
+     * @throws \App\Libs\Exceptions\RunTimeException
+     * @throws \App\Libs\KeyErrorRC4Exception
+     */
+    public static function generateQrPoster($posterPath, $config, $userId, $type, $channelId, array $extParams = [])
+    {
+        //通过oss合成海报并保存
+        //海报资源
+        $emptyRes = ['poster_save_full_path' => '', 'unique' => ''];
+        $exists = AliOSS::doesObjectExist($posterPath);
+        if (empty($exists)) {
+            SimpleLogger::info('poster oss file is not exits', [$posterPath]);
+            return $emptyRes;
+        }
+        //用户二维码
+        $userQrInfo = MiniAppQrService::getUserMiniAppQr($userId, $type, $channelId, DssUserQrTicketModel::LANDING_TYPE_MINIAPP, $extParams);
+        if (empty($userQrInfo['qr_path'])) {
+            SimpleLogger::info('user qr make fail', [$userId, $type, $channelId]);
+            return $emptyRes;
+        }
+        $exists = AliOSS::doesObjectExist($userQrInfo['qr_path']);
+        if (empty($exists)) {
+            SimpleLogger::info('user qr oss file not exits', [$userQrInfo['qr_path']]);
+            return $emptyRes;
+        }
+        //海报添加水印
+        //先将内容编码成Base64结果
+        //将结果中的加号（+）替换成连接号（-）
+        //将结果中的正斜线（/）替换成下划线（_）
+        //将结果中尾部的等号（=）全部保留
+        $waterImgEncode = str_replace(
+            ["+", "/"],
+            ["-", "_"],
+            base64_encode($userQrInfo['qr_path'] . "?x-oss-process=image/resize,limit_0,w_" . $config['QR_WIDTH'] . ",h_" . $config['QR_HEIGHT'])
+        );
+        $waterMark = [
+            "image_" . $waterImgEncode,
+            "x_" . $config['QR_X'],
+            "y_" . $config['QR_Y'],
+            "g_sw",//插入的基准位置以左下角作为原点
+        ];
+        $waterMarkStr[] = implode(",", $waterMark);
+        $imgSize = [
+            "w_" . $config['POSTER_WIDTH'],
+            "h_" . $config['POSTER_HEIGHT'],
+            "limit_0",//强制图片缩放
+        ];
+        $imgSizeStr = implode(",", $imgSize) . '/';
+
+        if (!empty($extParams['text'])) {
+            if (count($extParams['text']) == count($extParams['text'], COUNT_RECURSIVE)) {
+                $textParam[] = $extParams['text'];
+            } else {
+                $textParam = $extParams['text'];
+            }
+
+            foreach ($textParam as $text) {
+                $wordMark = [
+                    "text_" . str_replace(
+                        ["+", "/"],
+                        ["-", "_"],
+                        base64_encode($text['word'])
+                    ),
+                    "x_" . $text['x'],
+                    "y_" . $text['y'],
+                    "size_" . $text['size'],
+                    "color_" . $text['color'],
+                    "g_nw",
+                ];
+                $waterMarkStr[] = implode(",", $wordMark);
+            }
+        }
+        $resImageUrl = AliOSS::signUrls($posterPath, "", "", "", true, $waterMarkStr, $imgSizeStr);
+        $user_current_status = $extParams['user_current_status'] ?? DssStudentModel::STATUS_REGISTER;
+
+        //返回数据
+        return [
+            'poster_save_full_path' => $resImageUrl,
+            'unique' => $userQrInfo['qr_id'] . ".jpg",
+            'poster_id' => $extParams['p'] ?? 0,
+            'user_current_status' => $user_current_status,
+            'user_current_status_zh' => DssStudentModel::STUDENT_IDENTITY_ZH_MAP[$user_current_status] ?? '',
+        ];
+    }
 }

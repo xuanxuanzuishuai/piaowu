@@ -27,6 +27,8 @@ class CHDB
     private $client;
     private $name;
 
+    const OP = 'op';    // op服务库
+
     /**
      * @param null $configType
      * @return CHDB
@@ -63,6 +65,16 @@ class CHDB
     public static function getConfig($configType)
     {
         switch ($configType) {
+            case self::OP:
+                return [
+                    'host' => $_ENV['CHDB_HOST'],
+                    'port' => $_ENV['CHDB_PORT'],
+                    'username' => $_ENV['CHDB_USERNAME'],
+                    'password' => $_ENV['CHDB_PASSWORD'],
+                    'database_name' => $_ENV['CHDB_OP_DATABASE'],
+                    'timeout' => $_ENV['CHDB_TIMEOUT'],
+                    'connect_timeout' => $_ENV['CHDB_CONNECT_TIMEOUT'],
+                ];
             case 'default':
             default:
                 return [

@@ -1027,4 +1027,31 @@ class WeChatMiniPro
             'secret' => $this->secret,
         ];
     }
+
+    /**
+     * 生成带参数的小程序码
+     * 注意参数最长32位
+     * @param string $miniAppQrId
+     * @param bool $retry
+     * @param int $timeout
+     * @return bool|string
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
+    public function getMiniAppImage($miniAppQrId, $retry = false, $timeout = 2)
+    {
+        $api = $this->apiUrl(self::GET_MINIAPP_CODE_IMAGE);
+        $requestParams = [
+            'scene' => substr($miniAppQrId, 0, 32),
+        ];
+        $this->timeout = $timeout;
+        $res = $this->requestJson($api, $requestParams, 'POST');
+        if (is_string($res) && strlen($res) > 0) {
+            return $res;
+        } elseif (is_array($res) && in_array($res['errcode'], [40001,42001]) && !$retry) {
+            $this->refreshAccessToken();
+            return $this->getMiniappCodeImage($miniAppQrId, true);
+        }
+        SimpleLogger::error("[WeChatMiniPro] get mini app code error", [$res]);
+        return false;
+    }
 }

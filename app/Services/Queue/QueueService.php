@@ -690,4 +690,38 @@ class QueueService
         }
         return true;
     }
+
+    /**
+     * 发送待生成小程序码id到队列
+     * @param $data
+     * @param $deferTime
+     * @return bool
+     */
+    public static function sendWaitCreateMiniAppQrId($data, $deferTime = 0)
+    {
+        try {
+            (new WechatTopic())->waitCreateMiniAppQrId($data)->publish($deferTime);
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), $data);
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 启动批量生成小程序码id的任务
+     * @param $data
+     * @param $deferTime
+     * @return bool
+     */
+    public static function startCreateMiniAppId($data = [], $deferTime = 0)
+    {
+        try {
+            (new WechatTopic())->startCreateMiniAppId($data)->publish($deferTime);
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), $data);
+            return false;
+        }
+        return true;
+    }
 }

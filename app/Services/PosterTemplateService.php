@@ -490,19 +490,19 @@ class PosterTemplateService
         $posterList = PosterService::getActivityPosterList($activityInfo);
         $channel = self::getChannelByType($type);
         $extParams = [
-            'user_current_status' => $userDetail['student_status'] ?? 0,
-            'a' => $activityInfo['activity_id'],
+            'user_status' => $userDetail['student_status'] ?? 0,
+            'activity_id' => $activityInfo['activity_id'],
         ];
         foreach ($posterList as &$item) {
-            $extParams['p'] = $item['poster_id'];
+            $extParams['poster_id'] = $item['poster_id'];
             $item = self::formatPosterInfo($item);
             if (empty($ext['poster'])) {
-                $userQrUrl = DssUserQrTicketModel::getUserQrURL($studentId, DssUserQrTicketModel::STUDENT_TYPE, $channel, DssUserQrTicketModel::LANDING_TYPE_MINIAPP, $extParams);
-                $item['qr_code_url'] = AliOSS::replaceCdnDomainForDss($userQrUrl);
+                $userQrInfo = MiniAppQrService::getUserMiniAppQr($studentId, DssUserQrTicketModel::STUDENT_TYPE, $channel, DssUserQrTicketModel::LANDING_TYPE_MINIAPP, $extParams);
+                $item['qr_code_url'] = AliOSS::replaceCdnDomainForDss($userQrInfo['qr_path']);
                 continue;
             }
             // 海报图：
-            $poster = PosterService::generateQRPosterAliOss(
+            $poster = PosterService::generateQRPoster(
                 $item['poster_path'],
                 $posterConfig,
                 $studentId,

@@ -13,6 +13,7 @@ use App\Libs\SimpleLogger;
 use App\Models\BillMapModel;
 use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\ParamMapModel;
+use App\Models\QrInfoOpCHModel;
 use App\Models\StudentInviteModel;
 use App\Models\StudentReferralStudentStatisticsModel;
 
@@ -51,12 +52,18 @@ class StudentInviteService
      * @param $qrTicket
      * @return bool|array
      */
-    public static function checkQrTicketIdentity($qrTicket)
+    public static function checkQrTicketIdentity($qrTicket, $qrId = "")
     {
-        $identityData = ParamMapModel::getParamByQrTicket($qrTicket);
-        if (empty($identityData)) {
-            $identityData = DssUserQrTicketModel::getRecord(['qr_ticket' => $qrTicket]);
+        if (!empty($qrId)) {
+            // 如果qrId不为空读取clickhouse
+            $identityData = MiniAppQrService::getQrInfoById($qrId);
+        } else {
+            $identityData = ParamMapModel::getParamByQrTicket($qrTicket);
+            if (empty($identityData)) {
+                $identityData = DssUserQrTicketModel::getRecord(['qr_ticket' => $qrTicket]);
+            }
         }
+
         //数据不存在
         if (empty($identityData)) {
             SimpleLogger::info('not find ticket user', ['ticket' => $qrTicket]);
@@ -81,7 +88,7 @@ class StudentInviteService
             'record_res' => false,
         ];
         //注册:通过qr_ticket区分推荐人的身份：代理商 学生
-        $qrTicketIdentityData = self::checkQrTicketIdentity($qrTicket);
+        $qrTicketIdentityData = self::checkQrTicketIdentity($qrTicket, $extParams['qr_id']);
         if (empty($qrTicketIdentityData)) {
             return $res;
         }
@@ -126,18 +133,12 @@ class StudentInviteService
         $bindReferralInfo = StudentReferralStudentStatisticsModel::getRecord(['student_id' => $studentId], ['activity_id', 'referee_employee_id', 'referee_id']);
         if (empty($bindReferralInfo)) {
             //新绑定逻辑条件检测 - 先读取clickhouse，如果没有查询param_map表
-            $billMapInfo = BillMapModel::getRecord(['student_id' => $studentId, 'bill_id' => $parentBillId]);
+            $billMapInfo = BillMapModel::getRecords(['student_id' => $studentId, 'bill_id' => $parentBillId]);
+            if (!empty($billMapInfo)) {
+                $qrTicketIdentityData = MiniAppQrService::getQrInfoById($billMapInfo['param_map_id']);
+            }
             if (empty($qrTicketIdentityData)) {
                 $qrTicketIdentityData = BillMapModel::paramMapDataByBillId($parentBillId, $studentId);
-            }
-            if(empty($qrTicketIdentityData) && $billMapInfo['user_id']){
-                $qrTicketIdentityData = [
-                    'a' => 0,
-                    'e' => 0,
-                    'type' => $billMapInfo['type'],
-                    'user_id' => $billMapInfo['user_id'],
-                    'buy_channel'=>$billMapInfo['buy_channel'],
-                ];
             }
         } else {
             $qrTicketIdentityData = [

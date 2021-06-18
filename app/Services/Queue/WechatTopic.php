@@ -13,6 +13,8 @@ class WechatTopic extends BaseTopic
     const TOPIC_NAME = "operation_wechat";
 
     const EVENT_UPDATE_USER_TAG = 'update_user_tag';
+    const EVENT_GET_MINI_APP_QR = 'get_mini_app_qr';                      // 请求微信生成小程序码
+    const EVENT_CREATE_MINI_APP_ID = 'create_mini_app_identification';    // 生成小程序码标识
 
     /**
      * @param null $publishTime
@@ -31,6 +33,30 @@ class WechatTopic extends BaseTopic
     public function updateUserTag($data)
     {
         $this->setEventType(self::EVENT_UPDATE_USER_TAG);
+        $this->setMsgBody($data);
+        return $this;
+    }
+
+    /**
+     * 发送待生成小程序码id到队列
+     * @param $data
+     * @return $this
+     */
+    public function waitCreateMiniAppQrId($data)
+    {
+        $this->setEventType(self::EVENT_GET_MINI_APP_QR);
+        $this->setMsgBody($data);
+        return $this;
+    }
+
+    /**
+     * 启动生成小程序码id的任务
+     * @param $data
+     * @return $this
+     */
+    public function startCreateMiniAppId($data)
+    {
+        $this->setEventType(self::EVENT_CREATE_MINI_APP_ID);
         $this->setMsgBody($data);
         return $this;
     }

@@ -32,6 +32,7 @@ use App\Models\StudentAccountAwardPointsLogModel;
 use App\Services\AutoCheckPicture;
 use App\Services\CashGrantService;
 use App\Services\MessageService;
+use App\Services\MiniAppQrService;
 use App\Services\PosterTemplateService;
 use App\Services\Queue\CheckPosterSyncTopic;
 use App\Services\Queue\DurationTopic;
@@ -692,13 +693,22 @@ class Consumer extends ControllerBase
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-
         try {
             switch ($params['event_type']) {
                 // 更新用户标签-消费者
                 case WechatTopic::EVENT_UPDATE_USER_TAG:
                     WechatService::updateUserTag($params['msg_body']);
                     break;
+                // 生成小程序码标识
+                case WechatTopic::EVENT_CREATE_MINI_APP_ID:
+                    MiniAppQrService::createMiniAppId();
+                    break;
+                // 生成小程序码
+                case WechatTopic::EVENT_GET_MINI_APP_QR:
+                    MiniAppQrService::getMiniAppQr($params['msg_body']);
+                    break;
+                default:
+                    SimpleLogger::error("Consumer::wechatConsumer event_type error", ['params' => $params]);
             }
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());

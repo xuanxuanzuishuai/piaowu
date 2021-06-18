@@ -771,6 +771,18 @@ class DictConstants {
         ]
     ];
 
+    // 生成微信小程序码配置
+    const MINI_APP_QR = [
+        'type' => 'mini_app_qr',
+        'keys' => [
+            'current_max_id',                   // 当前生成的最大标识
+            'create_id_num',                    // 生成标识数量
+            'wait_create_mini_qr_set_key',      // 等待生成小程序码集合key
+            'get_mini_app_qr_second_num',       // 获取小程序码每秒请求数量 - 这个要考虑到微信每秒接受请求的数量调整
+            'start_generation_threshold_num',   // 启动生成小程序标识任务数量阀值
+        ],
+    ];
+
     /**前缀为ERP的配置，数据均配置在erp数据库中erp_dict数据表，不再op系统重复配置，保持数据的唯一性,配置写在此区域**/
     //新产品包状态
     const ERP_PACKAGE_V1_STATUS = [

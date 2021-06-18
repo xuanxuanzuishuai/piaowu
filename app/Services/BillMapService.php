@@ -33,7 +33,7 @@ class BillMapService
             $paramInfo['c'] = $subInfo['c'] ?? 0;
         } elseif(!empty($sceneData['r'])){
             //获取票据对应的用户身份类型
-            $identityData = StudentInviteService::checkQrTicketIdentity($sceneData['r']);
+            $identityData = StudentInviteService::checkQrTicketIdentity($sceneData['r'], $sceneData['qr_id']);
             if (empty($identityData)) {
                 SimpleLogger::error('qr ticket error', ['scene_data' => $sceneData]);
                 return false;
