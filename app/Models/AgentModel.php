@@ -12,7 +12,6 @@ namespace App\Models;
 use App\Libs\MysqlDB;
 use App\Libs\NewSMS;
 use App\Libs\SimpleLogger;
-use App\Services\EmployeeService;
 
 class AgentModel extends Model
 {
@@ -177,16 +176,15 @@ class AgentModel extends Model
         }
         //代理商与负责员工关联
         $seId = true;
-        if (empty($serviceEmployeeUpdateData)) {
-            $seId = AgentServiceEmployeeModel::batchUpdateRecord(['status' => AgentServiceEmployeeModel::STATUS_DEL, 'update_time'=>time()], ['agent_id' => $agentId]);
-        } elseif (!empty($serviceEmployeeUpdateData['del'])) {
+        if (!empty($serviceEmployeeUpdateData['del'])) {
             foreach ($serviceEmployeeUpdateData['del'] as $dev) {
                 $seId = AgentServiceEmployeeModel::updateRecord($dev['id'], $dev['update_data']);
                 if (empty($seId)) {
                     return false;
                 }
             }
-        } elseif (!empty($serviceEmployeeUpdateData['add'])) {
+        }
+        if (!empty($serviceEmployeeUpdateData['add'])) {
             $seId = AgentServiceEmployeeModel::batchInsert($serviceEmployeeUpdateData['add']);
         }
         if (empty($seId)) {

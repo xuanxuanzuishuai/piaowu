@@ -32,30 +32,14 @@ class AgentOrgService
      */
     public static function orgOpnRelation($params, $employeeId)
     {
-        $opnCheckData = self::opnRelationCheck($params, $employeeId);
-        if (empty($opnCheckData['res'])) {
-            return true;
-        }
-        $db = MysqlDB::getDB();
-        $db->beginTransaction();
-        if (!empty($opnCheckData['add'])) {
-            $relationId = AgentOrganizationOpnModel::batchInsert($opnCheckData['add']);
+        $opnAddData = self::opnRelationCheck($params, $employeeId);
+        if (!empty($opnAddData)) {
+            $relationId = AgentOrganizationOpnModel::batchInsert($opnAddData);
             if (empty($relationId)) {
-                $db->rollBack();
                 throw new RunTimeException(['insert_failure']);
             }
+            self::pushStudentFavoriteCollection($params['agent_org_id'], array_column($opnAddData, 'opn_id'));
         }
-        if (!empty($opnCheckData['del'])) {
-            foreach ($opnCheckData['del'] as $du) {
-                $affectRow = AgentOrganizationOpnModel::updateRecord($du['id'], $du['update_data']);
-                if (empty($affectRow)) {
-                    $db->rollBack();
-                    throw new RunTimeException(['update_failure']);
-                }
-            }
-        }
-        $db->commit();
-        self::pushStudentFavoriteCollection($params['agent_org_id'], $opnCheckData['add']);
         return true;
     }
 
@@ -91,7 +75,6 @@ class AgentOrgService
     private static function opnRelationCheck($params, $employeeId)
     {
         $time = time();
-        $checkRes = false;
         //检测曲谱教材是否重复
         $haveRelationOpnList = array_column(AgentOrganizationOpnModel::getRecords(
             [
@@ -101,29 +84,11 @@ class AgentOrgService
             [
                 'opn_id', 'id'
             ]), null, 'opn_id');
-        $haveRelationOpnIds = array_column($haveRelationOpnList, 'opn_id');
         //去重
-        $opnIdArr = array_unique($params['opn_id']);
-        $opnDelDiff = array_diff($haveRelationOpnIds, $opnIdArr);
-        $opnAddDiff = array_diff($opnIdArr, $haveRelationOpnIds);
-        $delData = $addData = [];
-        //取消关联关系的曲谱教材ID
-        if (!empty($opnDelDiff)) {
-            $checkRes = true;
-            foreach ($opnDelDiff as $dv) {
-                $delData[] = [
-                    'id' => $haveRelationOpnList[$dv]['id'],
-                    'update_data' => [
-                        'status' => AgentOrganizationOpnModel::STATUS_REMOVE,
-                        'update_time' => $time,
-                        'operator_id' => $employeeId,
-                    ],
-                ];
-            }
-        }
+        $opnAddDiff = array_diff(array_unique($params['opn_id']), array_column($haveRelationOpnList, 'opn_id'));
+        $addData = [];
         //新增关联关系的曲谱教材ID
         if (!empty($opnAddDiff)) {
-            $checkRes = true;
             foreach ($opnAddDiff as $av) {
                 $addData[] = [
                     'org_id' => $params['agent_org_id'],
@@ -133,7 +98,7 @@ class AgentOrgService
                 ];
             }
         }
-        return ['add' => $addData, 'del' => $delData, 'res' => $checkRes];
+        return $addData;
     }
 
     /**

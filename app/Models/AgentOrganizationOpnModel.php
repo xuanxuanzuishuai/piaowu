@@ -39,11 +39,11 @@ class AgentOrganizationOpnModel extends Model
         if (empty($orgData)) {
             return $data;
         }
+        $data['org_id'] = $orgData['id'];
         $totalCount = AgentOrganizationOpnModel::getCount(['org_id' => $orgData['id'], 'status' => self::STATUS_OK]);
         if (empty($totalCount)) {
             return $data;
         }
-        $data['org_id'] = $orgData['id'];
         $data['total_count'] = $totalCount;
         //从库对象
         $db = self::dbRO();

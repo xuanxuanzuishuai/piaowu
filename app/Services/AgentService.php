@@ -77,7 +77,7 @@ class AgentService
             throw new RunTimeException(['agent_have_exist']);
         }
         //线下代理，机构名称必填
-        if (($params['agent_type'] === AgentModel::TYPE_OFFLINE) && (empty($params['organization']))) {
+        if (($params['agent_type'] == AgentModel::TYPE_OFFLINE) && (empty($params['organization']))) {
             throw new RunTimeException(['agent_org_name_required']);
         }
         //agent_service_employee
@@ -151,7 +151,7 @@ class AgentService
             throw new RunTimeException(['agent_mobile_is_repeat']);
         }
         //线下代理，机构名称必填
-        if (($params['agent_type'] === AgentModel::TYPE_OFFLINE) && (empty($params['organization']))) {
+        if (($params['agent_type'] == AgentModel::TYPE_OFFLINE) && (empty($params['organization']))) {
             throw new RunTimeException(['agent_org_name_required']);
         }
         //agent数据
@@ -165,7 +165,7 @@ class AgentService
         ];
         //agent_service_employee
         $serviceEmployeeUpdateData = [];
-        if (!empty($params['service_employee_id']) && is_array($params['service_employee_id'])) {
+        if (is_array($params['service_employee_id'])) {
             $serviceEmployeeData = array_column(AgentServiceEmployeeModel::getRecords(['agent_id' => $params['agent_id'],'status'=>AgentServiceEmployeeModel::STATUS_OK], ['id', 'employee_id']), null, 'employee_id');
             $delEmployeeId = array_diff(array_keys($serviceEmployeeData), $params['service_employee_id']);
             $serviceEmployeeUpdateData['del'] = $serviceEmployeeUpdateData['add'] = [];
