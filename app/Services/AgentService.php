@@ -77,7 +77,7 @@ class AgentService
             throw new RunTimeException(['agent_have_exist']);
         }
         //线下代理，机构名称必填
-        if (($params['agent_type'] == AgentModel::TYPE_OFFLINE) && (empty($params['organization']))) {
+        if (($params['agent_type'] == AgentModel::TYPE_OFFLINE) && (empty(trim($params['organization'])))) {
             throw new RunTimeException(['agent_org_name_required']);
         }
         //agent_service_employee
@@ -116,7 +116,7 @@ class AgentService
         $organizationInsertData = [];
         if ($params['agent_type'] == AgentModel::TYPE_OFFLINE) {
             $organizationInsertData = [
-                'name' => empty($params['organization']) ? '' : trim($params['organization']),
+                'name' => trim($params['organization']),
                 'create_time' => $time,
             ];
         }
@@ -151,7 +151,7 @@ class AgentService
             throw new RunTimeException(['agent_mobile_is_repeat']);
         }
         //线下代理，机构名称必填
-        if (($params['agent_type'] == AgentModel::TYPE_OFFLINE) && (empty($params['organization']))) {
+        if (($params['agent_type'] == AgentModel::TYPE_OFFLINE) && (empty(trim($params['organization'])))) {
             throw new RunTimeException(['agent_org_name_required']);
         }
         //agent数据
@@ -212,7 +212,7 @@ class AgentService
         //agent_organization
         $organizationData = [];
         if ($params['agent_type'] == AgentModel::TYPE_OFFLINE) {
-            $organizationData['data'] = ['name' => empty($params['organization']) ? '' : trim($params['organization'])];
+            $organizationData['data'] = ['name' => trim($params['organization'])];
             $orgData = AgentOrganizationModel::getRecord(['agent_id' => $params['agent_id']], ['id']);
             if (empty($orgData)) {
                 $organizationData['data']['agent_id'] = $params['agent_id'];
@@ -416,7 +416,14 @@ class AgentService
         }
         //获取代理商售卖课包列表数据
         $detail['package_list'] = AgentSalePackageModel::getPackageData($agentId, UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT);
-        $detail['service_employee_data'] = empty($detail['service_employee_id']) ? [] : array_combine(explode(',', $detail['service_employee_id']), explode(',', $detail['e_s_name']));
+        $detail['service_employee_data'] = [];
+        if (!empty($detail['service_employee_id'])) {
+            $employeeIds = explode(',', $detail['service_employee_id']);
+            $employeeName = explode(',', $detail['e_s_name']);
+            foreach ($employeeIds as $lk => $lv) {
+                $detail['service_employee_data'][] = ['id' => $lv, 'name' => $employeeName[$lk]];
+            }
+        }
         return $detail;
     }
 
@@ -1305,6 +1312,7 @@ class AgentService
             'parent_id'    => $agentId,
             'country_code' => $params['country_code'] ?? NewSMS::DEFAULT_COUNTRY_CODE,
             'app_id'       => UserCenter::AUTH_APP_ID_OP_AGENT,
+            'agent_type'   => 0,
         ];
         return self::addAgent($data, 0);
     }
