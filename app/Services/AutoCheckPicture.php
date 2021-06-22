@@ -459,8 +459,13 @@ class AutoCheckPicture
                     $status = -2;
                     break;
                 }
-                //判定是否被屏蔽 特殊情况:发布时间和删除下标相同
-                if (!$shareOwner && isset($result[$key + 1]) && Util::sensitiveWordFilter(['删除','智能陪练','：','册','删','1'], $result[$key + 1]['word']) == false) {
+                /**
+                 * 判定是否被屏蔽
+                 * 特殊情况:发布时间和删除下标相同
+                 * 特殊情况:日期最后一位当做屏蔽给处理了
+                 */
+                $last_date_word = mb_substr($word, mb_strlen($word) - 1);
+                if (!$shareOwner && isset($result[$key + 1]) && Util::sensitiveWordFilter(['删除','智能陪练','：','册','删','1',$last_date_word,'除'], $result[$key + 1]['word']) == false) {
                     $shareDisplay = false;
                 }
             }
