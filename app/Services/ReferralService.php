@@ -1209,7 +1209,6 @@ class ReferralService
         $assistant = DssUserWeiXinModel::getWxQr($openid, $userType, $status, $busiType);
         $assistant = end($assistant) ?? [];
         if (empty($assistant) || empty($assistant['wx_qr']) || empty($assistant['wx_num'])) {
-            SimpleLogger::error('assistant wx_info is empty', compact($openid));
             return array();
         }
         $assistant['wx_qr'] = AliOSS::replaceCdnDomainForDss($assistant['wx_qr']);
