@@ -72,4 +72,9 @@ class Constants
     const ERP_DICT_ACCOUNT_NAME_TYPE = 'student_account_app_type';
     // 积分账户类型  - 现金
     const ERP_ACCOUNT_NAME_CASH = '8_1001';
+
+    // 版权区域代码
+    const DICT_COPYRIGHT_CODE_CN = 'CN'; // 大陆版权
+    const DICT_COPYRIGHT_CODE_CN_GAT = 'CN:GAT'; // 港澳台版权
+    const DICT_COPYRIGHT_CODE_OVERSEAS = 'OVERSEAS'; // 海外版权
 }

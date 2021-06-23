@@ -11,6 +11,8 @@ namespace App\Services\Queue;
 use App\Libs\DictConstants;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
+use App\Models\Dss\DssEmployeeModel;
+use App\Models\EmployeeModel;
 use App\Services\MessageService;
 use App\Services\PushMessageService;
 use App\Services\StudentService;
@@ -642,6 +644,48 @@ class QueueService
             $topic->checkAutoActivate($data)->publish(5);
         } catch (Exception $e) {
             SimpleLogger::error($e->getMessage(), $data ?? []);
+        }
+    }
+
+    /**
+     * 赠送时长
+     * @param $uuid
+     * @param $applyType
+     * @param $goodsNum
+     * @param $channel
+     * @param int $operatorId
+     * @param null $msg
+     * @return bool
+     */
+    public static function giftDuration($uuid, $applyType, $goodsNum, $channel, $operatorId = 0, $msg = null)
+    {
+        try {
+            $topic = new GiftCoursesTopic();
+            if (!is_array($uuid)) {
+                $uuid = [$uuid];
+            }
+
+            if (!empty($operatorId)) {
+                $operatorName = DssEmployeeModel::getById($operatorId)['name'];
+            } else {
+                $operatorId = EmployeeModel::SYSTEM_EMPLOYEE_ID;
+                $operatorName = EmployeeModel::SYSTEM_EMPLOYEE_NAME;
+            }
+            foreach ($uuid as $value) {
+                $msgBody = [
+                    'uuid' => $value,
+                    'apply_type' => $applyType,
+                    'goods_num' => $goodsNum,
+                    'channel' => $channel,
+                    'operator_id' => $operatorId,
+                    'operator_name' => $operatorName,
+                    'msg' => $msg
+                ];
+                $topic->giftDuration($msgBody)->publish();
+            }
+
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), $msgBody ?? []);
             return false;
         }
         return true;

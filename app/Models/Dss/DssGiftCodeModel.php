@@ -29,6 +29,27 @@ class DssGiftCodeModel extends DssModel
     const PACKAGE_V1_NOT = 0;
 
     /**
+     * 生成渠道
+     * 1 机构
+     * 2 个人
+     * 3 其他(停用)
+     * 4 erp兑换
+     * 5 erp购买订单
+     */
+    const BUYER_TYPE_ORG          = 1;
+    const BUYER_TYPE_STUDENT      = 2;
+    const BUYER_TYPE_OTHER        = 3;
+    const BUYER_TYPE_ERP_EXCHANGE = 4;
+    const BUYER_TYPE_ERP_ORDER    = 5;
+    const BUYER_TYPE_REFERRAL     = 6;
+    const BUYER_TYPE_AI_REFERRAL  = 7; // AI转介绍
+    /** 发货方式 */
+    const APPLY_TYPE_NONE  = 0; // 不发货
+    const APPLY_TYPE_AUTO  = 1; // 自动使用激活码
+    const APPLY_TYPE_SMS   = 2; // 短信发送激活码
+    const APPLY_TYPE_DELAY = 3; //延时使用激活码
+
+    /**
      * 激活码时间单位
      * 1 天
      * 2 月

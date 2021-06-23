@@ -251,8 +251,10 @@ class Student extends ControllerBase
 
     public function menuTest(Request $request, Response $response)
     {
-        $params = $request->getParams();
-        $wechat = WeChatMiniPro::factory(Constants::SMART_APP_ID, DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER);
+        $params   = $request->getParams();
+        $appId    = $params['appid'] ?? Constants::SMART_APP_ID;
+        $busiType = $params['busi_type'] ?? DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER;
+        $wechat   = WeChatMiniPro::factory($appId, $busiType);
         $res = '';
         if (method_exists($wechat, $params['function'])) {
             $res = call_user_func_array([$wechat, $params['function']], $params['params'] ?? []);

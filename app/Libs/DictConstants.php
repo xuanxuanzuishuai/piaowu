@@ -604,6 +604,13 @@ class DictConstants {
         ]
     ];
 
+    const WEB_PROMOTION_CONFIG = [
+        'type' => 'WEB_PROMOTION_CONFIG',
+        'keys' => [
+            'allowed_channel',
+        ]
+    ];
+
     // 签名秘钥
     const SERVICE_SIGN_KEY = [
         'type' => 'SERVICE_SIGN_KEY',

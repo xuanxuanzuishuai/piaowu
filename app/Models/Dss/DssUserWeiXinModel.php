@@ -27,6 +27,7 @@ class DssUserWeiXinModel extends DssModel
     const BUSI_TYPE_STUDENT_MINAPP = 7; // 学生app推广小程序
     const BUSI_TYPE_REFERRAL_MINAPP = 8; // 转介绍小程序
     const BUSI_TYPE_SHOW_MINAPP = 10; //学生测评分享小程序
+    const BUSI_TYPE_AI_PLAY_MINAPP = 12;    //上音社合作-小叶子AI智能陪练小程序
 
     /**
      * 处理App ID 默认值

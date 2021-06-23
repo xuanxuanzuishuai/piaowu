@@ -33,6 +33,7 @@ class RouterFactory
     const CLIENT_SHOW_MINI = 'show_miniapp';
     const CLIENT_ERP_API = 'erp';
     const CLIENT_REFERRAL_MINI_APP = 'referral_miniapp'; // 体验营小程序
+    const CLIENT_AI_PLAY_MINI_APP = 'ai_play_miniapp'; // 上音社合作-小叶子AI智能陪练小程序
 
 
     /**
@@ -49,6 +50,7 @@ class RouterFactory
         self::CLIENT_STUDENT_WEB => StudentWebRouter::class, // WEB端
         self::CLIENT_ERP_API => ErpRouter::class, // ERP
         self::CLIENT_REFERRAL_MINI_APP => ReferralMinAppRouter::class, // 体验营小程序
+        self::CLIENT_AI_PLAY_MINI_APP => AIPlayMiniAppRouter::class, // 上音社合作-小叶子AI智能陪练小程序
     ];
 
     /**

@@ -16,6 +16,8 @@ use Slim\Http\StatusCode;
 class OpernCenter
 {
     const version = "1.4";
+
+    const DEFAULT_APP_VER = '5.0.0';
     // 曲谱资源的appId
     const PRO_ID_AI_STUDENT = 1; // 爱学琴
     const PRO_ID_MUSIC_CENTER = 2; // 直营
@@ -50,6 +52,14 @@ class OpernCenter
 
     const OPERN_CENTER_ERROR = ['err_no'=>'opern_center_error', 'err_msg'=>'曲谱中心异常'];
 
+    // mp11 老师唱谱资源
+    // mp4 示范视频资源
+    // mp8 郎朗示范视频
+    // score_sync_video 同步示范视频
+    // ai_solfege_70 AI唱谱
+    // png 图片
+    const RESOURCE_TYPE_DEFAULT = 'mp4,mp8,mp11,score_sync_video,ai_solfege_70';
+
     // 新的独立opn服务
     const NEW_SERVICE_API = [
         self::OPERN_API_CATEGORIES,
@@ -81,13 +91,11 @@ class OpernCenter
      * @param string $method
      * @return bool|mixed
      */
-    private function commonAPI($api,  $data = [], $method = 'GET')
+    private function commonAPI($api, $data = [], $method = 'GET')
     {
-
-        $serviceHost = DictConstants::get(DictConstants::SERVICE, 'opern_host');
-
+        $serviceHost = $_ENV['OPERN_HOST'] ?: DictConstants::get(DictConstants::SERVICE, 'opern_host');
         if (in_array($api, self::NEW_SERVICE_API)) {
-            $newServiceHost = DictConstants::get(DictConstants::SERVICE, 'new_opern_host');
+            $newServiceHost = $_ENV['OPERN_NEW_HOST'] ?: DictConstants::get(DictConstants::SERVICE, 'new_opern_host');
             if (!empty($newServiceHost)) {
                 $serviceHost = $newServiceHost;
             }
@@ -207,7 +215,7 @@ class OpernCenter
      * @param $resourceTypes
      * @return array|bool|mixed
      */
-    public function lessons($collectionId, $page, $pageSize = self::DEFAULT_PAGE_SIZE, $withResources=1, $resourceTypes='mp4,mp8')
+    public function lessons($collectionId, $page, $pageSize = self::DEFAULT_PAGE_SIZE, $withResources = 1, $resourceTypes = 'mp4,mp8')
     {
         $result = self::commonAPI(self::OPERN_API_LESSONS, [
             'pro_id' => $this->proId,
@@ -231,7 +239,7 @@ class OpernCenter
      * @param bool $noCdn
      * @return array|bool|mixed
      */
-    public function lessonsByIds($lessonIds, $withResources=1, $resourceTypes='dynamic', $noCdn = false)
+    public function lessonsByIds($lessonIds, $withResources = 1, $resourceTypes = 'dynamic', $noCdn = false)
     {
         if (is_array($lessonIds)) {
             $lessonIds = implode(",", $lessonIds);

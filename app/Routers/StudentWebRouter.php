@@ -9,6 +9,7 @@
 namespace App\Routers;
 
 use App\Controllers\Agent\Agent;
+use App\Controllers\StudentWeb\Landing;
 use App\Controllers\StudentWeb\Order;
 use App\Controllers\StudentWeb\Recall;
 use App\Controllers\StudentWeb\Student;
@@ -48,5 +49,9 @@ class StudentWebRouter extends RouterBase
         '/student_web/recall/index' => ['method' => ['get'], 'call' => Recall::class . ':index', 'middles' => [RecallAuthCheckMiddleware::class]],
         '/student_web/config/country_code' => ['method' => ['get'], 'call' => Agent::class . ':countryCode', 'middles' => []],
         '/student_web/event/web_page' => ['method' => ['post'], 'call' => Student::class . ':webPageEvent'],
+        // 小叶子智能陪练免费领取5天体验时长页
+        // H5 首页
+        '/student_web/landing/index' => ['method' => ['get'], 'call' => Landing::class . ':index', 'middles' => []],
+        '/student_web/landing/register' => ['method' => ['get'], 'call' => Landing::class . ':register', 'middles' => []],
     ];
 }
