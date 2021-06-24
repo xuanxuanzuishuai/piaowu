@@ -28,5 +28,6 @@ create table qr_info (
      create_time DateTime comment '创建时间',
      INDEX index_qr_id qr_id TYPE minmax GRANULARITY 3,
      INDEX index_qr_ticket qr_ticket TYPE minmax GRANULARITY 3,
+     INDEX index_qr_sign qr_sign TYPE minmax GRANULARITY 3,
      INDEX index_user_id user_id TYPE minmax GRANULARITY 3
 )ENGINE=ReplicatedMergeTree('/clickhouse/tables/qr_info/{shard}', '{replica}') order by qr_id;

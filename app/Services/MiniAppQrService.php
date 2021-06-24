@@ -269,7 +269,7 @@ class MiniAppQrService
         }
 
         SimpleLogger::error('getMiniAppQrImage upload img start ', [$appId, $busiType, $miniAppQrId, $res]);
-        $imagePath = $_ENV['ENV_NAME'] . '/' . AliOSS::DIR_MINIAPP_CODE . '/' . $miniAppQrId . ".png";
+        $imagePath = $_ENV['ENV_NAME'] . '/' . AliOSS::DIR_MINIAPP_CODE . '/' . $miniAppQrId . ".jpg";
         AliOSS::uploadFile($imagePath, $tmpFileFullPath);
         unlink($tmpFileFullPath);
 
