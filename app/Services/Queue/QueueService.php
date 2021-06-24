@@ -717,6 +717,9 @@ class QueueService
     public static function startCreateMiniAppId($data = [], $deferTime = 0)
     {
         try {
+            if (empty($data)) {
+                $data['time'] = time();
+            }
             (new WechatTopic())->startCreateMiniAppId($data)->publish($deferTime);
         } catch (Exception $e) {
             SimpleLogger::error($e->getMessage(), $data);

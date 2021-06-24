@@ -174,7 +174,7 @@ class MiniAppQrService
             return true;
         }
         $isChExists = QrInfoOpCHModel::getQrInfoById($qrId, ['qr_path']);
-        if (empty($isChExists)) {
+        if (!empty($isChExists)) {
             SimpleLogger::error("checkQrIdExists mini app qr id is ch exists", ['qr_id' => $qrId]);
             return true;
         }
@@ -205,7 +205,7 @@ class MiniAppQrService
         $qrImageInfo = self::getMiniAppQrImage($miniAppQrId);
         if (!empty($qrImageInfo['qr_path'])) {
             // 成功： 写入redis待使用队列， 以及redis小程序码详细信息的hash
-            $redis->sadd(self::REDIS_WAIT_USE_MINI_APP_ID_LIST, [$qrImageInfo['qr_path']]);
+            $redis->sadd(self::REDIS_WAIT_USE_MINI_APP_ID_LIST, [$miniAppQrId]);
             $redis->hset(self::REDIS_WAIT_USE_MINI_APP_ID_INFO, $miniAppQrId, json_encode(['qr_path' => $qrImageInfo['qr_path']]));
             // 从失败队列里移除
             $redis->hdel(self::REDIS_FAIL_MINI_APP_ID_LIST, $miniAppQrId);
@@ -252,8 +252,11 @@ class MiniAppQrService
         // 请求微信，获取小程序码图片
         $res = $wechat->getMiniAppImage($miniAppQrId);
         if ($res === false) {
+            SimpleLogger::error('getMiniAppQrImage wechat get qr image error', [$appId, $busiType, $miniAppQrId, $res]);
             return $qrImageInfo;
         }
+
+        SimpleLogger::error('getMiniAppQrImage download img start ', [$appId, $busiType, $miniAppQrId, $res]);
         $tmpFileFullPath = $_ENV['STATIC_FILE_SAVE_PATH'] . '/' . $miniAppQrId . '.jpg';
         if (file_exists($tmpFileFullPath)) {
             chmod($tmpFileFullPath, 0755);
@@ -264,6 +267,8 @@ class MiniAppQrService
             SimpleLogger::error('save miniapp code image file error', [$miniAppQrId]);
             return $qrImageInfo;
         }
+
+        SimpleLogger::error('getMiniAppQrImage upload img start ', [$appId, $busiType, $miniAppQrId, $res]);
         $imagePath = $_ENV['ENV_NAME'] . '/' . AliOSS::DIR_MINIAPP_CODE . '/' . $miniAppQrId . ".png";
         AliOSS::uploadFile($imagePath, $tmpFileFullPath);
         unlink($tmpFileFullPath);
@@ -313,9 +318,9 @@ class MiniAppQrService
         }
         // CH没有查到获取一个待使用的小程序码信息
         $redis = RedisDB::getConn();
-        $qrInfo['qr_id'] = $redis->spop(self::REDIS_FAIL_MINI_APP_ID_LIST, 1);
+        $qrInfo['qr_id'] = $redis->spop(self::REDIS_WAIT_USE_MINI_APP_ID_LIST);
         $miniAppIdInfo = $redis->hget(self::REDIS_WAIT_USE_MINI_APP_ID_INFO, $qrInfo['qr_id']);
-        $miniAppIdInfo = json_encode($miniAppIdInfo, true);
+        $miniAppIdInfo = json_decode($miniAppIdInfo, true);
         $qrInfo['qr_path'] = $miniAppIdInfo['qr_path'];
 
         // 把小程序码和信息关联并且写入到CH

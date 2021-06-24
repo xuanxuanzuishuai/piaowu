@@ -27,7 +27,9 @@ class BillMapService
     public static function mapDataRecord($sceneData, $parentBillId, $studentId)
     {
         //检测票据是否存在param_map中
-        if (isset($sceneData['param_id']) && !empty($sceneData['param_id'])) {
+        if (!empty($sceneData['qr_id'])) {
+            $paramInfo = MiniAppQrService::getQrInfoById($sceneData['qr_id']);
+        } elseif (isset($sceneData['param_id']) && !empty($sceneData['param_id'])) {
             $paramInfo = ParamMapModel::getParamByQrById($sceneData['param_id']);
             $subInfo = json_decode($paramInfo['param_info'], true);
             $paramInfo['c'] = $subInfo['c'] ?? 0;
@@ -58,7 +60,7 @@ class BillMapService
             return false;
         }
         $insertData = [
-            'param_map_id' => $paramInfo['id'],
+            'param_map_id' => $paramInfo['qr_id'] ?? $paramInfo['id'],  //qr_id 存在说明是预生成二维码
             'bill_id' => $parentBillId,
             'student_id' => $studentId,
             'user_id' => $paramInfo['user_id'],

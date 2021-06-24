@@ -45,7 +45,12 @@ class QrInfoOpCHModel
             $fieldStr = '`' . implode('`,`', $fields) . '`';
         }
         $sql  = "SELECT " . $fieldStr . " FROM " . self::$table;
-        $sql .= is_array($qrId) ? " WHERE qr_id in (:qr_id)" : " WHERE qr_id=:qr_id";
+        if (is_array($qrId)) {
+            $sql .= " WHERE qr_id in (:qr_id)";
+        } else {
+            $sql .= " WHERE qr_id=:qr_id";
+            $qrId = (string)$qrId;
+        }
         $db   = CHDB::getDB(CHDB::OP);
         $data = $db->queryAll($sql, ['qr_id' => $qrId]);
         return $data[0] ?? [];
@@ -101,8 +106,8 @@ class QrInfoOpCHModel
             'busies_type',
             'user_status',
             'qr_data',
-            'qr_ticket',
             'create_time',
+            'qr_ticket',
         ];
         $db     = CHDB::getDB(CHDB::OP);
         $res    = $db->insert(self::$table, $insertData, $fields);

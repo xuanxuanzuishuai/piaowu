@@ -16,6 +16,7 @@ use App\Libs\MysqlDB;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
+use App\Libs\Util;
 use App\Libs\WeChat\MsgErrorCode;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Libs\WeChat\WXBizDataCrypt;
@@ -94,8 +95,7 @@ class ShowMiniAppService
 
         // 推荐人信息：
         if (!empty($sceneData['r'])) {
-            $referrerInfo = DssUserQrTicketModel::getRecord(['qr_ticket' => $sceneData['r']], ['user_id']);
-            $referrerUserId = $referrerInfo['user_id'];
+            $referrerUserId = Util::decryptQrTicketInfo($sceneData['r'])['user_id'] ?? '';;
         } else {
             $referrerUserId = null;
         }

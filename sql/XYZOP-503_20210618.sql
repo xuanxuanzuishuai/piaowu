@@ -2,8 +2,10 @@
 INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES
 ('mini_app_qr', '生成微信小程序码配置', 'current_max_id', '000000', '当前生成的最大标识'),
 ('mini_app_qr', '生成微信小程序码配置', 'create_id_num', '10', '生成标识数量'),
+('mini_app_qr', '生成微信小程序码配置', 'start_generation_threshold_num', '20', '启用生成小程序码标识队列阀值，使用数量%阀值=0启动'),
 ('mini_app_qr', '生成微信小程序码配置', 'get_mini_app_qr_second_num', '50', '获取小程序码每秒请求数量');
 
+ALTER TABLE `bill_map` MODIFY COLUMN `param_map_id` varchar(32) NOT NULL DEFAULT '' COMMENT '小程序码标识、param_map数据表id' AFTER `user_id`;
 
 -- clickhouse
 create database op_prod;

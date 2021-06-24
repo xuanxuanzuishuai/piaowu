@@ -841,8 +841,7 @@ class ReferralService
 
         // 推荐人信息：
         if (!empty($sceneData['r'])) {
-            $referrerInfo = DssUserQrTicketModel::getRecord(['qr_ticket' => $sceneData['r']], ['user_id']);
-            $referrerUserId = $referrerInfo['user_id'] ?? '';
+            $referrerUserId = Util::decryptQrTicketInfo($sceneData['r'])['user_id'] ?? '';
         } else {
             $referrerUserId = null;
         }

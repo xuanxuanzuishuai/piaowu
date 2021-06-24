@@ -133,7 +133,7 @@ class StudentInviteService
         $bindReferralInfo = StudentReferralStudentStatisticsModel::getRecord(['student_id' => $studentId], ['activity_id', 'referee_employee_id', 'referee_id']);
         if (empty($bindReferralInfo)) {
             //新绑定逻辑条件检测 - 先读取clickhouse，如果没有查询param_map表
-            $billMapInfo = BillMapModel::getRecords(['student_id' => $studentId, 'bill_id' => $parentBillId]);
+            $billMapInfo = BillMapModel::getRecord(['student_id' => $studentId, 'bill_id' => $parentBillId]);
             if (!empty($billMapInfo)) {
                 $qrTicketIdentityData = MiniAppQrService::getQrInfoById($billMapInfo['param_map_id']);
             }
