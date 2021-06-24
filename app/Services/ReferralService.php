@@ -1208,7 +1208,7 @@ class ReferralService
         $busiType  = DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP;
         $assistant = DssUserWeiXinModel::getWxQr($openid, $userType, $status, $busiType);
         $assistant = end($assistant) ?? [];
-        if (empty($assistant) || empty($assistant['wx_qr']) || empty($assistant['wx_num'])) {
+        if (empty($assistant) || empty($assistant['wx_qr'])) {
             return array();
         }
         $assistant['wx_qr'] = AliOSS::replaceCdnDomainForDss($assistant['wx_qr']);
