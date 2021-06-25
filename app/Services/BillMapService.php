@@ -29,7 +29,9 @@ class BillMapService
         //检测票据是否存在param_map中
         if (isset($sceneData['param_id']) && !empty($sceneData['param_id'])) {
             $paramInfo = ParamMapModel::getParamByQrById($sceneData['param_id']);
-        } else {
+            $subInfo = json_decode($paramInfo['param_info'], true);
+            $paramInfo['c'] = $subInfo['c'] ?? 0;
+        } elseif(!empty($sceneData['r'])){
             //获取票据对应的用户身份类型
             $identityData = StudentInviteService::checkQrTicketIdentity($sceneData['r']);
             if (empty($identityData)) {
@@ -40,6 +42,16 @@ class BillMapService
             if ($identityData['type'] == ParamMapModel::TYPE_STUDENT) {
                 $paramInfo = MiniAppQrService::getSmartQRAliOss($studentId, $identityData['type'], $sceneData);
             }
+        }elseif(!empty($sceneData['c'])){
+            $paramInfo = [
+                'id'        => 0,
+                'user_id'   => 0,
+                'type'      => ParamMapModel::TYPE_STUDENT,
+                'c'         => $sceneData['c'],
+            ];
+        }else{
+            SimpleLogger::error('empty scene_data', ['scene_data' => $sceneData]);
+            return false;
         }
         if (empty($paramInfo)) {
             SimpleLogger::error('param info empty', ['scene_data' => $sceneData]);
@@ -51,7 +63,8 @@ class BillMapService
             'student_id' => $studentId,
             'user_id' => $paramInfo['user_id'],
             'create_time' => time(),
-            'type' => $paramInfo['type']
+            'type' => $paramInfo['type'],
+            'buy_channel'=>$paramInfo['c'] ?? 0,
         ];
         $id = BillMapModel::insertRecord($insertData);
         if (empty($id)) {

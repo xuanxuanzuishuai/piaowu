@@ -51,7 +51,8 @@ class BillMapModel extends Model
                                 pm.param_info ->> '$.e' AS e,
                                 pm.param_info ->> '$.a' AS a,
                                 pm.user_id, 
-                                pm.type
+                                pm.type,
+                                ab.buy_channel
                             FROM
                                 " . self::$table . " AS ab
                                 INNER JOIN " . ParamMapModel::$table . " AS pm ON ab.param_map_id = pm.id 

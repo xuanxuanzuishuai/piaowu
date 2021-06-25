@@ -154,6 +154,9 @@ class Order extends ControllerBase
             $sceneData = [];
             if (!empty($params['param_id'])) {
                 $sceneData = ReferralActivityService::getParamsInfo($params['param_id']);
+                $sceneData['param_id'] = $sceneData['id'];
+            }elseif(!empty($params['channel_id'])){
+                $sceneData['c'] = $params['channel_id'];
             }
             // 检查购买人当前绑定的代理是否一致
             if (!empty($sceneData['user_id']) && $sceneData['type'] == ParamMapModel::TYPE_AGENT) {
@@ -203,7 +206,7 @@ class Order extends ControllerBase
             $ret = ErpOrderV1Service::createOrder($params['package_id'], $studentInfo, $payChannel, $params['pay_type'], $employeeUuid, $channel, $params['gift_res']);
             if (!empty($sceneData['user_id']) && !empty($ret['order_id'])) {
                 // 保存agent_bill_map数据
-                BillMapService::mapDataRecord(['param_id' => $sceneData['id']], $ret['order_id'], $studentInfo['id']);
+                BillMapService::mapDataRecord($sceneData, $ret['order_id'], $studentInfo['id']);
             }
         } catch (RuntimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());

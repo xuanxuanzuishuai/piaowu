@@ -101,6 +101,7 @@ class StudentReferralStudentService
                     'create_time' => $time,
                     'referee_employee_id' => $qrTicketIdentityData['e'] ?? 0,
                     'activity_id' => $qrTicketIdentityData['a'] ?? 0,
+                    'buy_channel'=>$qrTicketIdentityData['buy_channel'] ?? 0,
                 ]
             );
         } elseif ($bindReferralInfo['last_stage'] < StudentReferralStudentStatisticsModel::STAGE_TRIAL) {

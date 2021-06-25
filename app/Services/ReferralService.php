@@ -97,6 +97,7 @@ class ReferralService
                 'referee_id[Int]',
                 'referee_employee_id[Int]',
                 'activity_id[Int]',
+                'buy_channel[Int]',
                 'create_time'
             ]);
         return self::formatStudentInvite($listData);
@@ -131,12 +132,13 @@ class ReferralService
         $activityData = array_column(OperationActivityModel::getRecords([
             'id' => array_unique(array_column($listData['list'], 'activity_id'))
         ], ['name', 'id']), null, 'id');
+
         foreach ($listData['list'] as $lk => &$lv) {
             $lv['student_name'] = $studentDetail[$lv['student_id']]['name'];
             $lv['student_uuid'] = $studentDetail[$lv['student_id']]['uuid'];
             $lv['student_mobile_hidden'] = Util::hideUserMobile($studentDetail[$lv['student_id']]['mobile']);
             $lv['register_time'] = $studentDetail[$lv['student_id']]['create_time'];
-            $lv['channel_name'] = $channelData[$studentDetail[$lv['student_id']]['channel_id']]['name'];
+            $lv['channel_name'] = $channelData['buy_channel']['name'] ?? '';
             $lv['last_stage_show'] = $dictData[$lv['last_stage']];
 
             $lv['referrer_mobile_hidden'] = Util::hideUserMobile($studentDetail[$lv['referee_id']]['mobile']);
@@ -166,7 +168,7 @@ class ReferralService
             $statisticsWhere['create_time[<=]'] = $params['referral_e_create_time'];
         }
         //当前进度
-        if (is_numeric($params['last_stage']) && isset($params['last_stage'])) {
+        if (isset($params['last_stage']) && is_numeric($params['last_stage'])) {
             $statisticsWhere['last_stage'] = $params['last_stage'];
         }
 

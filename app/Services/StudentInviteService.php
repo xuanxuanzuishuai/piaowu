@@ -125,14 +125,28 @@ class StudentInviteService
         //通过订单ID获取成单人的映射关系：已存在学生转介绍绑定关系的老数据跳过检测
         $bindReferralInfo = StudentReferralStudentStatisticsModel::getRecord(['student_id' => $studentId], ['activity_id', 'referee_employee_id', 'referee_id']);
         if (empty($bindReferralInfo)) {
-            //新绑定逻辑条件检测
-            $qrTicketIdentityData = BillMapModel::paramMapDataByBillId($parentBillId, $studentId);
+            //新绑定逻辑条件检测 - 先读取clickhouse，如果没有查询param_map表
+            $billMapInfo = BillMapModel::getRecord(['student_id' => $studentId, 'bill_id' => $parentBillId]);
+            if (empty($qrTicketIdentityData)) {
+                $qrTicketIdentityData = BillMapModel::paramMapDataByBillId($parentBillId, $studentId);
+            }
+            if(empty($qrTicketIdentityData) && $billMapInfo['user_id']){
+                $qrTicketIdentityData = [
+                    'a' => 0,
+                    'e' => 0,
+                    'type' => $billMapInfo['type'],
+                    'user_id' => $billMapInfo['user_id'],
+                ];
+            }
+            $qrTicketIdentityData['buy_channel'] = $billMapInfo['buy_channel'];
         } else {
             $qrTicketIdentityData = [
                 'a' => $bindReferralInfo['activity_id'],
                 'e' => $bindReferralInfo['referee_employee_id'],
                 'type' => ParamMapModel::TYPE_STUDENT,
-                'user_id' => $bindReferralInfo['referee_id']];
+                'user_id' => $bindReferralInfo['referee_id'],
+                'buy_channel'=>$bindReferralInfo['buy_channel'],
+            ];
         }
         if (empty($qrTicketIdentityData) || ($qrTicketIdentityData['user_id'] == $studentId)) {
             return false;

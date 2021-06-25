@@ -103,7 +103,12 @@ class Pay extends ControllerBase
             $orderId = $res['order_id'] ?? '';
             //转介绍订单关系绑定
             $sceneData = ShowMiniAppService::getSceneData($params['scene'] ?? '');
-            if (!empty($orderId) && !empty($sceneData)) {
+            if (!empty($orderId)) {
+                if(empty($sceneData) && $params['channel_id']){
+                    $sceneData = [
+                        'c' => $params['channel_id'],
+                    ];
+                }
                 BillMapService::mapDataRecord($sceneData, $orderId, $student['id']);
             }
             $res['data']['bill'] = [
