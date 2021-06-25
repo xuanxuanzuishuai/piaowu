@@ -644,6 +644,8 @@ class SharePosterService
                     'task_id' => $taskId
                 ];
             }
+            //智能产品激活
+            QueueService::autoActivate(['student_uuid' => $poster['uuid'], 'passed_time' => time(),'app_id' => Constants::SMART_APP_ID]);
         }
         if (!empty($needAwardList)) {
             QueueService::addUserPosterAward($needAwardList);

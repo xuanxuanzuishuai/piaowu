@@ -630,4 +630,20 @@ class QueueService
         }
         return true;
     }
+
+    /**
+     * 真人智能-自动激活
+     * @param $data
+     */
+    public static function autoActivate($data)
+    {
+        try {
+            $topic = new AutoActivate();
+            $topic->checkAutoActivate($data)->publish(5);
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), $data ?? []);
+            return false;
+        }
+        return true;
+    }
 }
