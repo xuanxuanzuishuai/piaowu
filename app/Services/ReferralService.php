@@ -775,8 +775,8 @@ class ReferralService
         $data['share_scene'] = '';
         $data['scene_data'] = '';
         $data['subscribe_status'] = null;
-        $packageType = PayServices::PACKAGE_990;
         $isAgent = false;
+        $refereeStudent = [];
 
         // 推荐人信息：
         if (!empty($sceneData['r'])) {
@@ -789,36 +789,24 @@ class ReferralService
         // 转介绍注册时用的推荐人ticket参数
         $data['referrer_info']['uuid'] = '';
         $data['referrer_info']['ticket'] = $sceneData['r'];
-
         // 判断当前ticket是否是代理商
         if ($sceneData['type'] == DssUserQrTicketModel::AGENT_TYPE) {
-            $packageType = PayServices::PACKAGE_0;
             $isAgent = true;
         } elseif ($sceneData['type'] == DssUserQrTicketModel::STUDENT_TYPE && $referrerUserId) {
             $refereeStudent = DssStudentModel::getRecord(['id' => $referrerUserId]);
             $data['referrer_info']['uuid'] = $refereeStudent['uuid'] ?? '';
             list($data['subscribe_status']) = self::formatStudentSubscribeStatus($refereeStudent['has_review_course'], $refereeStudent['sub_status'], $refereeStudent['sub_end_date']);
-            if ($refereeStudent['has_review_course'] == DssStudentModel::REVIEW_COURSE_1980) {
-                $packageType = PayServices::PACKAGE_0;
-            }else{
-                $giftCode = DssGiftCodeModel::hadPurchasePackageByType($referrerUserId, DssPackageExtModel::PACKAGE_TYPE_NORMAL);
-                if (!empty($giftCode)){
-                    $packageType = PayServices::PACKAGE_0;
-                }
-            }
-        }
-        // 是否可0元购买开关
-        $enableFlag = DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'zero_package_enable');
-        if (empty($enableFlag) && $packageType == PayServices::PACKAGE_0) {
-            $packageType = PayServices::PACKAGE_1;
         }
 
         //产品包
-        $data['pkg'] = $packageType;
+        $data['pkg'] = self::getMiniAppPackage($sceneData, $refereeStudent);
 
         //用户信息
-        $mobile = DssUserWeiXinModel::getUserInfoBindWX($openid, self::REFERRAL_MINI_APP_ID,
-            DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP);
+        $mobile = DssUserWeiXinModel::getUserInfoBindWX(
+            $openid,
+            self::REFERRAL_MINI_APP_ID,
+            DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP
+        );
         if (!empty($mobile) && isset($mobile[0]['mobile'])) {
             $data['mobile'] = $mobile[0]['mobile'];
             $data['uuid'] = $mobile[0]['uuid'];
@@ -836,7 +824,7 @@ class ReferralService
             $paramId = $sceneData['param_id'];
             $shareScene = urlencode('&param_id=' . $paramId);
         } else {
-            $shareScene = self::makeReferralMiniShareScene($mobile[0],$sceneData);
+            $shareScene = self::makeReferralMiniShareScene($mobile[0], $sceneData);
         }
 
         $data['share_scene'] = $shareScene;
@@ -1220,5 +1208,46 @@ class ReferralService
         }
         $assistant['wx_qr'] = AliOSS::replaceCdnDomainForDss($assistant['wx_qr']);
         return $assistant;
+    }
+
+    /**
+     * 获取小程序pkg参数
+     * @param array $sceneData
+     * @param array $referee
+     * @return int
+     */
+    public static function getMiniAppPackage($sceneData = [], $referee = [])
+    {
+        $package = PayServices::PACKAGE_990;
+        // 0元单：
+        // 代理
+        // 推荐人是年卡或者购买过年卡
+        if ($sceneData['type'] == DssUserQrTicketModel::AGENT_TYPE) {
+            $package = PayServices::PACKAGE_0;
+        } elseif ($sceneData['type'] == DssUserQrTicketModel::STUDENT_TYPE) {
+            if (!empty($referee['has_review_course']) && $referee['has_review_course'] == DssStudentModel::REVIEW_COURSE_1980) {
+                $package = PayServices::PACKAGE_0;
+            } elseif (!empty($referee['id'])) {
+                $giftCode = DssGiftCodeModel::hadPurchasePackageByType($referee['id'], DssPackageExtModel::PACKAGE_TYPE_NORMAL);
+                if (!empty($giftCode)) {
+                    $package = PayServices::PACKAGE_0;
+                }
+            }
+        }
+        // 指定渠道的0元单
+        if ($package != PayServices::PACKAGE_0 && !empty($sceneData['c'])) {
+            $allowedChannel = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'allowed_0_channel');
+            $allowedChannel = json_decode($allowedChannel, true);
+            if (in_array($sceneData['c'], $allowedChannel)) {
+                $package = PayServices::PACKAGE_0;
+            }
+        }
+
+        // 是否可0元购买开关
+        $enableFlag = DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'zero_package_enable');
+        if (empty($enableFlag) && $package == PayServices::PACKAGE_0) {
+            $package = PayServices::PACKAGE_1;
+        }
+        return $package;
     }
 }

@@ -397,6 +397,7 @@ class DictConstants {
             'cumulative_invite_buy_year_card',    // 累计邀请购买年卡
             'refused_poster_url', // 海报审核未通过跳转地址
             'week_activity_url', // 周周有奖活动地址
+            'allowed_0_channel', // 指定0元的渠道
         ]
     ];
 
