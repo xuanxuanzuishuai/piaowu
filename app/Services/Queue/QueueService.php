@@ -562,6 +562,8 @@ class QueueService
      */
     public static function preGenerateQrCode($openId = '', $data = [])
     {
+        // TODO 20210625 用户交互预生成停止， 启用新的预生成逻辑。
+        return true;
         if (empty($openId) && empty($data['user_id'])) {
             return false;
         }
@@ -634,6 +636,54 @@ class QueueService
     }
 
     /**
+     * 发送待生成小程序码id到队列
+     * @param $data
+     * @param $deferTime
+     * @param $secondNum
+     * @return bool
+     */
+    public static function sendWaitCreateMiniAppQrId($data, $deferTime = 0, $secondNum = 1)
+    {
+        try {
+            if (empty($data)) {
+                return false;
+            }
+            $secondNum = $secondNum > 0 ? $secondNum : 1;
+            $topic = new WechatTopic();
+            foreach ($data as $i => $item) {
+                // 计算延时  - 每秒50， 队列延时1秒
+                $defer = $i + $deferTime;
+                $topic->waitCreateMiniAppQrId($item)->publish(intval($defer / $secondNum));
+            }
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), $data);
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 启动批量生成小程序码id的任务
+     * @param $data
+     * @param $deferTime
+     * @return bool
+     */
+    public static function startCreateMiniAppId($data = [], $deferTime = 0)
+    {
+        try {
+            if (empty($data)) {
+                $data['time'] = time();
+            }
+            (new WechatTopic())->startCreateMiniAppId($data)->publish($deferTime);
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), $data);
+            return false;
+        }
+        return true;
+    }
+
+
+    /**
      * 真人智能-自动激活
      * @param $data
      */
@@ -686,43 +736,6 @@ class QueueService
 
         } catch (Exception $e) {
             SimpleLogger::error($e->getMessage(), $msgBody ?? []);
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * 发送待生成小程序码id到队列
-     * @param $data
-     * @param $deferTime
-     * @return bool
-     */
-    public static function sendWaitCreateMiniAppQrId($data, $deferTime = 0)
-    {
-        try {
-            (new WechatTopic())->waitCreateMiniAppQrId($data)->publish($deferTime);
-        } catch (Exception $e) {
-            SimpleLogger::error($e->getMessage(), $data);
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * 启动批量生成小程序码id的任务
-     * @param $data
-     * @param $deferTime
-     * @return bool
-     */
-    public static function startCreateMiniAppId($data = [], $deferTime = 0)
-    {
-        try {
-            if (empty($data)) {
-                $data['time'] = time();
-            }
-            (new WechatTopic())->startCreateMiniAppId($data)->publish($deferTime);
-        } catch (Exception $e) {
-            SimpleLogger::error($e->getMessage(), $data);
             return false;
         }
         return true;

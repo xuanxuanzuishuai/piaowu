@@ -441,14 +441,18 @@ class ReferralActivityService
         if (empty($paramId)) {
             return [];
         }
-        $result = ParamMapModel::getById($paramId);
-        $merge = [
-            'type' => $result['type'],
-            'user_id' => $result['user_id'],
-            'id' => $result['id'],
-        ];
-        $info = json_decode($result['param_info'], true);
-        return array_merge($merge, $info);
+        $paramInfo = MiniAppQrService::getQrInfoById($paramId);
+        if (empty($paramInfo)) {
+            $result = ParamMapModel::getById($paramId);
+            $merge = [
+                'type' => $result['type'],
+                'user_id' => $result['user_id'],
+                'id' => $result['id'],
+            ];
+            $info = json_decode($result['param_info'], true);
+            $paramInfo = array_merge($merge, $info);
+        }
+        return $paramInfo;
     }
 
     /**

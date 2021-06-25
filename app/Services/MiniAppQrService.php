@@ -18,6 +18,7 @@ use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Libs\Util;
 use App\Libs\WeChat\WeChatMiniPro;
+use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\ParamMapModel;
@@ -146,18 +147,22 @@ class MiniAppQrService
 
             // 开始生成，并放入到待生成小程序码的队列
             $sortId = $maxId;
+            $sendQueueArr = [];
             for ($i = 0; $i < $createIdNum; $i++) {
                 $sortId = Util::getIncrSortId($sortId);
-                // 每秒50， 队列延时
-                QueueService::sendWaitCreateMiniAppQrId([
-                    'mini_app_qr_id' => $sortId,
-                ], intval($i/$secondNum));
+                $sendQueueArr[] = ['mini_app_qr_id' => $sortId];
             }
-            // 更新最大值
+
+            // 更新最大值 - 记录最后一次生成qr_id
             $updateRes = DictService::updateValue(DictConstants::MINI_APP_QR['type'], 'current_max_id', $sortId);
             if (empty($updateRes)) {
                 SimpleLogger::error("createMiniAppId update current_max_id error", ['current_max_id' => $sortId]);
             }
+
+            // 放入队列
+            QueueService::sendWaitCreateMiniAppQrId($sendQueueArr, 0, $secondNum);
+            unset($sendQueueArr);
+
             SimpleLogger::info("createMiniAppId end success", ['current_max_id' => $sortId]);
         } catch (RunTimeException $e) {
             SimpleLogger::error("createMiniAppId exception error", ['err' => $e->getMessage()]);
@@ -226,7 +231,9 @@ class MiniAppQrService
             if (intval($failNum) < 10) {
                 $failNum +=1;
                 QueueService::sendWaitCreateMiniAppQrId([
-                    'mini_app_qr_id' => $miniAppQrId,
+                    [
+                        'mini_app_qr_id' => $miniAppQrId,
+                    ]
                 ], $failNum * 15);
                 $redis->hincrby(self::REDIS_FAIL_MINI_APP_ID_LIST, $miniAppQrId, 1);
             }
@@ -236,11 +243,11 @@ class MiniAppQrService
 
     /**
      * 获取小程序标识对应的小程序码图片路径
-     * @param $appId
-     * @param array $params
+     * @param $miniAppQrId
+     * @param int $appId
      * @param int $busiType
-     * @return array|string
-     * @throws \App\Libs\Exceptions\RunTimeException
+     * @return array
+     * @throws RunTimeException
      */
     public static function getMiniAppQrImage($miniAppQrId, $appId = Constants::SMART_APP_ID, $busiType = DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP)
     {
@@ -304,7 +311,7 @@ class MiniAppQrService
         $qrData = [
             'qr_id'        => "",
             'qr_path'      => "",
-            'qr_sign'    => "",
+            'qr_sign'      => "",
             'user_id'      => $userId,
             'user_type'    => $userType,
             'channel_id'   => $channel,
@@ -312,8 +319,8 @@ class MiniAppQrService
             'activity_id'  => $extParams['activity_id'] ?? 0,
             'employee_id'  => $extParams['employee_id'] ?? 0,
             'poster_id'    => $extParams['poster_id'] ?? 0,
-            'app_id'       => $extParams['app_id'] ?? 0,
-            'busies_type'  => $extParams['busies_type'] ?? 0,
+            'app_id'       => $extParams['app_id'] ?? Constants::SMART_APP_ID,
+            'busies_type'  => $extParams['busies_type'] ?? DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP,
             'user_status'  => $extParams['user_status'] ?? 0,
         ];
         // 根据小程序码主要信息，查询CH
@@ -328,6 +335,12 @@ class MiniAppQrService
         // CH没有查到获取一个待使用的小程序码信息
         $redis = RedisDB::getConn();
         $qrInfo['qr_id'] = $redis->spop(self::REDIS_WAIT_USE_MINI_APP_ID_LIST);
+        // 如果qr_id 为空，需要立即启动生成小程序
+        if (empty($qrInfo['qr_id'])) {
+            QueueService::startCreateMiniAppId();
+            return $qrInfo;
+        }
+
         $miniAppIdInfo = $redis->hget(self::REDIS_WAIT_USE_MINI_APP_ID_INFO, $qrInfo['qr_id']);
         $miniAppIdInfo = json_decode($miniAppIdInfo, true);
         $qrInfo['qr_path'] = $miniAppIdInfo['qr_path'];
@@ -405,6 +418,9 @@ class MiniAppQrService
     public static function getQrInfoById($qrId, $fileds = [])
     {
         $qrInfo = QrInfoOpCHModel::getQrInfoById($qrId, $fileds);
+        if (empty($qrInfo)) {
+            return [];
+        }
         // 兼容原有方法使用字段名称的统一
         $qrInfo['param_id'] = $qrInfo['qr_id'] ?? 0;
         $qrInfo['type'] = $qrInfo['user_type'] ?? 0;
@@ -413,6 +429,7 @@ class MiniAppQrService
         $qrInfo['e'] = $qrInfo['employee_id'] ?? 0;
         $qrInfo['a'] = $qrInfo['activity_id'] ?? 0;
         $qrInfo['user_current_status'] = $qrInfo['user_status'] ?? 0;
+        $qrInfo['id'] = $qrInfo['qr_id'] ?? 0;
         return array_merge(json_decode($qrInfo['qr_data'], true), $qrInfo);
     }
 }
