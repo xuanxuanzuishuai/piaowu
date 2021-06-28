@@ -129,10 +129,10 @@ class Landing extends ControllerBase
                 QueueService::giftDuration($uuid, DssGiftCodeModel::APPLY_TYPE_AUTO, 5, DssGiftCodeModel::BUYER_TYPE_STUDENT);
             }
             $data = [
-                'give'    => $give,
-                'uuid'    => $uuid,
-                'channel' => $channelId,
-                'msg'     => Lang::getWord($word),
+                'give'       => $give,
+                'uuid'       => $uuid,
+                'msg'        => Lang::getWord($word),
+                'channel_id' => $channelId,
                 'student_status' => $studentStatus['student_status'] ?? 0,
                 'register_time'  => $registerTime,
             ];

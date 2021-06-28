@@ -227,7 +227,11 @@ class WeChatMiniPro
     public function refreshAccessToken()
     {
         list($appId, $busiType) = explode('_', $this->nowWxApp);
-        if ($appId == Constants::SMART_APP_ID && $busiType == DssUserWeiXinModel::BUSI_TYPE_SHOW_MINAPP){
+        $selfBusiList = [
+            DssUserWeiXinModel::BUSI_TYPE_SHOW_MINAPP,
+            DssUserWeiXinModel::BUSI_TYPE_AI_PLAY_MINAPP
+        ];
+        if ($appId == Constants::SMART_APP_ID && in_array($busiType, $selfBusiList)) {
             $this->requestAccessToken();
         } elseif ($appId == Constants::SMART_APP_ID) {
             $data = (new Dss())->updateAccessToken(['busi_type' => $busiType]);

@@ -52,6 +52,6 @@ class StudentWebRouter extends RouterBase
         // 小叶子智能陪练免费领取5天体验时长页
         // H5 首页
         '/student_web/landing/index' => ['method' => ['get'], 'call' => Landing::class . ':index', 'middles' => []],
-        '/student_web/landing/register' => ['method' => ['get'], 'call' => Landing::class . ':register', 'middles' => []],
+        '/student_web/landing/register' => ['method' => ['post'], 'call' => Landing::class . ':register', 'middles' => []],
     ];
 }
