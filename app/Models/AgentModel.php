@@ -229,7 +229,7 @@ class AgentModel extends Model
                     INNER JOIN '.AgentDivideRulesModel::$table.' as ad ON a.`id` = ad.`agent_id`
                     LEFT JOIN '.AgentOrganizationModel::$table.' as ao ON a.`id` = ao.`agent_id`
                     INNER JOIN '.EmployeeModel::$table.' as e ON a.`employee_id` = e.`id`
-                    LEFT JOIN '.AgentServiceEmployeeModel::$table.' as `ase` ON a.`id` = `ase`.`agent_id`
+                    LEFT JOIN ' . AgentServiceEmployeeModel::$table . ' as `ase` ON a.`id` = `ase`.`agent_id` AND ase.status = ' . AgentServiceEmployeeModel::STATUS_OK . '
                     LEFT JOIN '.EmployeeModel::$table.' as `ea` ON `ase`.`employee_id` = `ea`.`id` 
                 WHERE
                     a.id = ' . $agentId . ' 

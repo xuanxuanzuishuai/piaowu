@@ -224,7 +224,7 @@ class AgentOrgService
             [
                 'org_id'   => $orgData['org_id'],
                 'status'   => AgentOrganizationStudentModel::STATUS_NORMAL,
-                'ORDER'    => ['id' => 'DESC'],
+                'ORDER'    => ['update_time' => 'DESC'],
                 'LIMIT'    => [($params['page'] - 1) * $params['count'], $params['count']]
             ],
             [
@@ -243,7 +243,7 @@ class AgentOrgService
                 ]
             );
 
-            $data['list'] = self::formatStudentSearchResult($studentInfo);
+            $data['list'] = self::formatStudentSearchResult($info,$studentInfo);
         }
 
         return $data;
@@ -253,12 +253,14 @@ class AgentOrgService
     /**
      * 格式化 学生信息数据
      * @param array $studentInfo
+     * @param array $info
      * @return array
      */
-    private static function formatStudentSearchResult(array $studentInfo): array
+    private static function formatStudentSearchResult(array $info, array $studentInfo): array
     {
-
-        foreach ($studentInfo as &$value) {
+        $studentInfo = array_column($studentInfo, null, 'id');
+        foreach ($info as &$value) {
+            $value = array_merge($value, $studentInfo[$value['student_id']]);
             $validStatus = 1;
             if ($value['sub_end_date'] < date("Ymd")) $validStatus = 2;
             $value['thumb']            = StudentService::getStudentThumb($value['thumb']);
@@ -266,7 +268,7 @@ class AgentOrgService
             $value['current_progress'] = DssStudentModel::CURRENT_PROGRESS[$value['has_review_course']];
             $value['create_time_show'] = date('Y-m-d H:i:s', $value['create_time']);
         }
-        return $studentInfo;
+        return $info;
     }
 
     /**
@@ -327,12 +329,12 @@ class AgentOrgService
                 }
             }
         }
-
+        $time = time();
         if ($isUpdate) {
             $success = AgentOrganizationStudentModel::batchUpdateRecord(
                 [
                     'status'      => AgentOrganizationStudentModel::STATUS_NORMAL,
-                    'update_time' => time(),
+                    'update_time' => $time,
                     'operator_id' => $params['operator_id'],
                 ],
                 ['org_id' => $orgData['org_id'], 'student_id' => $studentInfo['student_id']]
@@ -343,7 +345,8 @@ class AgentOrgService
                 'status'      => AgentOrganizationStudentModel::STATUS_NORMAL,
                 'org_id'      => $orgData['org_id'],
                 'student_id'  => $studentInfo['student_id'],
-                'create_time' => time(),
+                'create_time' => $time,
+                'update_time' => $time,
                 'operator_id' => $params['operator_id'],
             ]);
         }
@@ -453,6 +456,7 @@ class AgentOrgService
                         'org_id'      => $orgData['org_id'],
                         'student_id'  => $id,
                         'create_time' => $time,
+                        'update_time' => $time,
                         'operator_id' => $employee['id']
                     ];
                 }
@@ -515,20 +519,22 @@ class AgentOrgService
         $studentInfo = array_column($studentData, 'id', 'mobile');
 
         $studentIds = array_column($studentData, 'id');
+        $noSelfOrgStudentIds = $orgStudentStatus = [];
+        if (!empty($studentIds)) {
+            $noSelfOrgStudent = AgentOrganizationStudentModel::getRecords([
+                'student_id' => $studentIds,
+                'org_id[!]' => $orgId,
+                'status' => AgentOrganizationStudentModel::STATUS_NORMAL
+            ], ['student_id']);
 
-        $noSelfOrgStudent = AgentOrganizationStudentModel::getRecords([
-            'student_id' => $studentIds,
-            'org_id[!]'  => $orgId,
-            'status'     => AgentOrganizationStudentModel::STATUS_NORMAL
-        ], ['student_id']);
+            $noSelfOrgStudentIds = array_column($noSelfOrgStudent, 'student_id');
 
-        $noSelfOrgStudentIds = array_column($noSelfOrgStudent, 'student_id');
-
-        $orgStudent = AgentOrganizationStudentModel::getRecords([
-            'org_id'     => $orgId,
-            'student_id' => $studentIds,
-        ], ['student_id', 'status']);
-        $orgStudentStatus = array_column($orgStudent, 'status', 'student_id');
+            $orgStudent = AgentOrganizationStudentModel::getRecords([
+                'org_id' => $orgId,
+                'student_id' => $studentIds,
+            ], ['student_id', 'status']);
+            $orgStudentStatus = array_column($orgStudent, 'status', 'student_id');
+        }
         $updateInfo = $insertInfo = $errorInfo = [];
         foreach ($data as &$value) {
             if (empty($value['mobile'])) {
