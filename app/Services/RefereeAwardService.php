@@ -6,6 +6,7 @@ use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
+use App\Models\Dss\DssErpPackageV1Model;
 use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssPackageExtModel;
 use App\Models\Dss\DssStudentModel;
@@ -87,8 +88,8 @@ class RefereeAwardService
      */
     public static function dssShouldCompleteEventTask($student, $package, $parentBillId)
     {
-        // 真人业务不发奖
-        if ($package['app_id'] != DssPackageExtModel::APP_AI) {
+        // 真人业务或者非智能商城包不发奖
+        if ($package['app_id'] != DssPackageExtModel::APP_AI || $package['sale_shop'] != DssErpPackageV1Model::SALE_SHOP_AI_PLAY) {
             return false;
         }
         //绑定关系处理逻辑

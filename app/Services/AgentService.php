@@ -1938,7 +1938,7 @@ class AgentService
     public static function agentAwardLogic($studentInfo, $parentBillId, $packageInfo)
     {
         //真人赠送智能课包直接返回
-        if ($packageInfo['app_id'] != Constants::SMART_APP_ID) {
+        if ($packageInfo['app_id'] != Constants::SMART_APP_ID || $packageInfo['sale_shop'] != DssErpPackageV1Model::SALE_SHOP_AI_PLAY) {
             return false;
         }
         //检测当前订单是否已经有奖励发放记录
