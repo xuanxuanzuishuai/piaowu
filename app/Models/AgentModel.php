@@ -270,7 +270,6 @@ class AgentModel extends Model
                 "[><]" . AgentInfoModel::$table => ['id' => 'agent_id'],
                 "[><]" . EmployeeModel::$table => ['employee_id' => 'id'],
                 "[>]" . AgentOrganizationModel::$table => ['id' => 'agent_id'],
-                "[>]" . EmployeeModel::$table . "(e)" => ['service_employee_id' => 'id'],
                 "[>]" . AgentDivideRulesModel::$table => ['id' => 'agent_id'],
                 "[>]" . AgentServiceEmployeeModel::$table => ['id'=>'agent_id']
             ],

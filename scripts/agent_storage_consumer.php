@@ -19,7 +19,7 @@ define('LANG_ROOT', PROJECT_ROOT . '/lang');
 require_once PROJECT_ROOT . '/vendor/autoload.php';
 
 use App\Libs\SimpleLogger;
-use App\Models\AgentInfoModel;
+use App\Models\AgentOrganizationModel;
 use App\Services\AgentStorageService;
 use Dotenv\Dotenv;
 
@@ -32,7 +32,7 @@ $dotEnv->overload();
 SimpleLogger::info('agent storage consumer start', []);
 $startTime = time();
 //查询存在可以消费预存订单数据的一级代理商
-$agentData = AgentInfoModel::getRecords(['quantity[>]' => 0], ['agent_id']);
+$agentData = AgentOrganizationModel::getRecords(['quantity[>]' => 0], ['agent_id']);
 if (empty($agentData)) {
     SimpleLogger::info('agent storage empty', []);
     return false;
