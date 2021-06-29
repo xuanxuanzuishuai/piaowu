@@ -10,8 +10,6 @@ namespace App\Models;
 
 
 use App\Libs\MysqlDB;
-use App\Models\Erp\OpnArtistModel;
-use App\Models\Erp\OpnCollectionModel;
 
 class AgentOrganizationOpnModel extends Model
 {
@@ -45,29 +43,14 @@ class AgentOrganizationOpnModel extends Model
             return $data;
         }
         $data['total_count'] = $totalCount;
-        //从库对象
-        $db = self::dbRO();
-        $agentOrgOpnTable = self::getTableNameWithDb();
-        $erpOpnTable = OpnCollectionModel::getTableNameWithDb();
-        $erpOpnArtistTable = OpnArtistModel::getTableNameWithDb();
-        $sql = 'SELECT
-                    `a`.`id` as relation_id,
-                    `a`.`opn_id`,
-                    `b`.`name`,
-                    `b`.`author`,
-                    `b`.`press`,
-                    `c`.`name` AS `artist_name` 
-                FROM
-                    ' . $agentOrgOpnTable . ' AS `a`
-                    INNER JOIN ' . $erpOpnTable . ' AS b ON `a`.`opn_id` = b.id
-                    LEFT JOIN ' . $erpOpnArtistTable . ' AS c ON c.id = b.artist_id 
-                WHERE
-                    `a`.`org_id` = ' . $orgData['id'] . '
-                    AND `a`.`status` = ' . self::STATUS_OK . '
-                    AND `b`.`type` = ' . OpnCollectionModel::TYPE_SIGN_UP . ' 
-                ORDER BY `a`.`id` DESC 
-                LIMIT ' . ($page - 1) * $limit . ',' . $limit;
-        $data['list'] = $db->queryAll($sql);
+        $data['list'] = AgentOrganizationOpnModel::getRecords(
+            [
+                'org_id' => $orgData['id'],
+                'status' => self::STATUS_OK,
+                'LIMIT' => [($page - 1) * $limit, $limit],
+                'ORDER' => ['id' => 'DESC']
+            ],
+            ['id(relation_id)', 'opn_id']);
         return $data;
     }
 

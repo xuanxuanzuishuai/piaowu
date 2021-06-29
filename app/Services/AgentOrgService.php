@@ -130,7 +130,18 @@ class AgentOrgService
      */
     public static function orgOpnList($params)
     {
-        return AgentOrganizationOpnModel::getOrgOpnList($params['agent_id'], $params['page'], $params['count']);
+        $list = AgentOrganizationOpnModel::getOrgOpnList($params['agent_id'], $params['page'], $params['count']);
+        if (empty($list['list'])) {
+            return $list;
+        }
+        $opnCollectionData = array_column(OpnCollectionModel::getCollectionDataById(array_column($list['list'], 'opn_id')), null, 'id');
+        foreach ($list['list'] as &$lv) {
+            $lv['name'] = (string)$opnCollectionData[$lv['opn_id']]['name'];
+            $lv['author'] = (string)$opnCollectionData[$lv['opn_id']]['author'];
+            $lv['press'] = (string)$opnCollectionData[$lv['opn_id']]['press'];
+            $lv['artist_name'] = (string)$opnCollectionData[$lv['opn_id']]['artist_name'];
+        }
+        return $list;
     }
 
     /**
