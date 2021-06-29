@@ -117,10 +117,11 @@ class MiniAppQrService
     {
         try {
             // 获取配置
-            list($maxId, $createIdNum, $secondNum) = DictConstants::get(DictConstants::MINI_APP_QR, [
+            list($maxId, $createIdNum, $secondNum, $waitMaxNum) = DictConstants::get(DictConstants::MINI_APP_QR, [
                 'current_max_id',               // 当前已用的最大标识
                 'create_id_num',                // 需要生成的数量
                 'get_mini_app_qr_second_num',   // 每秒请求数量 - 计算消息队列的延迟
+                'wait_mini_qr_max_num',         // 待使用的小程序码最大数量
             ]);
             SimpleLogger::info("createMiniAppId start", [$maxId, $createIdNum, $secondNum]);
             // 检查配置
@@ -128,6 +129,14 @@ class MiniAppQrService
                 SimpleLogger::error("createMiniAppId config error", [$maxId, $createIdNum, $secondNum]);
                 return false;
             }
+            // 如果redis里面总数超过指定数量不继续生产 - 防止生成过多待使用数据
+            $redis = RedisDB::getConn();
+            $waitRedisNum = $redis->scard(self::REDIS_WAIT_USE_MINI_APP_ID_LIST);
+            if ($waitRedisNum >= $waitMaxNum) {
+                SimpleLogger::error("createMiniAppId redis wait num max", [$maxId, $createIdNum, $secondNum, $waitMaxNum, $waitRedisNum]);
+                return false;
+            }
+
             // 设置锁 - 同一时间只能有一个脚本执行
             $lock = Util::setLock(self::REDIS_CREATE_MINI_APP_ID_LOCK);
             if (!$lock) {

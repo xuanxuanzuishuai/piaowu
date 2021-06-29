@@ -780,6 +780,7 @@ class DictConstants {
             'wait_create_mini_qr_set_key',      // 等待生成小程序码集合key
             'get_mini_app_qr_second_num',       // 获取小程序码每秒请求数量 - 这个要考虑到微信每秒接受请求的数量调整
             'start_generation_threshold_num',   // 启动生成小程序标识任务数量阀值
+            'wait_mini_qr_max_num',             // 待使用的小程序码最大数量
         ],
     ];
 

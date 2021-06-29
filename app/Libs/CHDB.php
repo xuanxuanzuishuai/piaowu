@@ -67,13 +67,13 @@ class CHDB
         switch ($configType) {
             case self::OP:
                 return [
-                    'host' => $_ENV['CHDB_HOST'],
-                    'port' => $_ENV['CHDB_PORT'],
-                    'username' => $_ENV['CHDB_USERNAME'],
-                    'password' => $_ENV['CHDB_PASSWORD'],
+                    'host' => $_ENV['CHDB_OP_HOST'],
+                    'port' => $_ENV['CHDB_OP_PORT'],
+                    'username' => $_ENV['CHDB_OP_USERNAME'],
+                    'password' => $_ENV['CHDB_OP_PASSWORD'],
                     'database_name' => $_ENV['CHDB_OP_DATABASE'],
-                    'timeout' => $_ENV['CHDB_TIMEOUT'],
-                    'connect_timeout' => $_ENV['CHDB_CONNECT_TIMEOUT'],
+                    'timeout' => $_ENV['CHDB_OP_TIMEOUT'],
+                    'connect_timeout' => $_ENV['CHDB_OP_CONNECT_TIMEOUT'],
                 ];
             case 'default':
             default:

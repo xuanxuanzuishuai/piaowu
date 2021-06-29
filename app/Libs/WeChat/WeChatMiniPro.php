@@ -1049,7 +1049,7 @@ class WeChatMiniPro
             return $res;
         } elseif (is_array($res) && in_array($res['errcode'], [40001,42001]) && !$retry) {
             $this->refreshAccessToken();
-            return $this->getMiniappCodeImage($miniAppQrId, true);
+            return $this->getMiniAppImage($miniAppQrId, true);
         }
         SimpleLogger::error("[WeChatMiniPro] get mini app code error", [$res]);
         return false;
