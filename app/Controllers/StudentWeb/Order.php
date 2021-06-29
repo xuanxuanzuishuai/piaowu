@@ -204,7 +204,7 @@ class Order extends ControllerBase
             }
 
             $ret = ErpOrderV1Service::createOrder($params['package_id'], $studentInfo, $payChannel, $params['pay_type'], $employeeUuid, $channel, $params['gift_res']);
-            if (!empty($sceneData['user_id']) && !empty($ret['order_id'])) {
+            if (!empty($sceneData) && !empty($ret['order_id'])) {
                 // 保存agent_bill_map数据
                 BillMapService::mapDataRecord($sceneData, $ret['order_id'], $studentInfo['id']);
             }

@@ -122,7 +122,7 @@ class ReferralService
         $dictData = DictConstants::getSet(DictConstants::AGENT_USER_STAGE);
         //批量获取渠道信息
         $channelData = array_column(DssChannelModel::getRecords([
-            'id' => array_unique(array_column($studentDetail, 'channel_id'))
+            'id' => array_unique(array_column($listData['list'], 'buy_channel'))
         ], ['name', 'id']), null, 'id');
         //批量获取员工信息
         $employeeData = array_column(DssEmployeeModel::getRecords([
@@ -138,7 +138,7 @@ class ReferralService
             $lv['student_uuid'] = $studentDetail[$lv['student_id']]['uuid'];
             $lv['student_mobile_hidden'] = Util::hideUserMobile($studentDetail[$lv['student_id']]['mobile']);
             $lv['register_time'] = $studentDetail[$lv['student_id']]['create_time'];
-            $lv['channel_name'] = $channelData['buy_channel']['name'] ?? '';
+            $lv['buy_channel_name'] = $channelData[$lv['buy_channel']]['name'] ?? '';
             $lv['last_stage_show'] = $dictData[$lv['last_stage']];
 
             $lv['referrer_mobile_hidden'] = Util::hideUserMobile($studentDetail[$lv['referee_id']]['mobile']);
@@ -188,6 +188,11 @@ class ReferralService
             }
             $statisticsWhere['activity_id'] = array_column($activityData, 'id');
         }
+        //购买渠道
+        if (!empty($params['buy_channel'])) {
+            $statisticsWhere['buy_channel'] = (int)$params['buy_channel'];
+        }
+
         //推荐人手机号
         $referralStudentWhere = [];
         if (!empty($params['referral_mobile'])) {
