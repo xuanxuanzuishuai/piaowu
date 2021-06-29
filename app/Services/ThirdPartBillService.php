@@ -361,7 +361,7 @@ class ThirdPartBillService
         }
 
         //如果是代理商创建的体验课订单，记录订单与代理的映射关系
-        if (($data['status'] == ThirdPartBillModel::STATUS_SUCCESS) && ($params['third_identity_type'] == ThirdPartBillModel::THIRD_IDENTITY_TYPE_AGENT)) {
+        if ($data['status'] == ThirdPartBillModel::STATUS_SUCCESS) {
             $billMapRes = BillMapService::mapDataRecord(['param_id' => $paramMapInfo['id']], $result['data']['order_id'], $data['student_id']);
             if ($billMapRes) {
                 //补发奖励
