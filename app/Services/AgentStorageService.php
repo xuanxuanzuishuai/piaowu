@@ -202,7 +202,7 @@ class AgentStorageService
             ];
 
         } elseif ($params['operation'] == AgentPreStorageRefundModel::STATUS_VERIFY_REBUT) {
-            $refundUpdateData['data']['status'] = AgentPreStorageRefundModel::STATUS_VERIFY_PASS;
+            $refundUpdateData['data']['status'] = AgentPreStorageRefundModel::STATUS_VERIFY_REBUT;
 
             $log['type'] = AgentPreStorageRefundModel::STATUS_VERIFY_REBUT;
 
