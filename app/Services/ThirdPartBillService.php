@@ -299,11 +299,7 @@ class ThirdPartBillService
             'third_identity_type' => (int)$params['third_identity_type'],
             'paid_in_price' => $params['dss_amount'],
         ];
-        $paramMapInfo = [];
-        //当第三方角色是代理商时候获取代理商转介绍二维码
-        if (!empty($params['third_identity_id']) && ($params['third_identity_type'] == ThirdPartBillModel::THIRD_IDENTITY_TYPE_AGENT)) {
-            $paramMapInfo = MiniAppQrService::getSmartQRAliOss($params['third_identity_id'], ParamMapModel::TYPE_AGENT,['c'=>$params['channel_id']]);
-        }
+        $paramMapInfo = MiniAppQrService::getSmartQRAliOss($params['third_identity_id'], ParamMapModel::TYPE_AGENT,['c'=>$params['channel_id']]);
         //检测学生数据是否存在：不存在时注册新用户
         $student = DssStudentModel::getRecord(['mobile' => $data['mobile']]);
         if (empty($student)) {
