@@ -18,7 +18,6 @@ use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Libs\Util;
 use App\Libs\WeChat\WeChatMiniPro;
-use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\ParamMapModel;
@@ -116,6 +115,13 @@ class MiniAppQrService
      */
     public static function createMiniAppId()
     {
+        // 设置锁 - 同一时间只能有一个脚本执行
+        $lock = Util::setLock(self::REDIS_CREATE_MINI_APP_ID_LOCK);
+        if (!$lock) {
+            SimpleLogger::info("createMiniAppId is lock", []);
+            return false;
+        }
+
         try {
             // 获取配置
             list($maxId, $createIdNum, $secondNum, $waitMaxNum) = DictConstants::get(DictConstants::MINI_APP_QR, [
@@ -135,13 +141,6 @@ class MiniAppQrService
             $waitRedisNum = $redis->scard(self::REDIS_WAIT_USE_MINI_APP_ID_LIST);
             if ($waitRedisNum >= $waitMaxNum) {
                 SimpleLogger::error("createMiniAppId redis wait num max", [$maxId, $createIdNum, $secondNum, $waitMaxNum, $waitRedisNum]);
-                return false;
-            }
-
-            // 设置锁 - 同一时间只能有一个脚本执行
-            $lock = Util::setLock(self::REDIS_CREATE_MINI_APP_ID_LOCK);
-            if (!$lock) {
-                SimpleLogger::info("createMiniAppId is lock", []);
                 return false;
             }
 
@@ -237,8 +236,8 @@ class MiniAppQrService
                 ], $failNum * 15);
                 $redis->hincrby(self::REDIS_FAIL_MINI_APP_ID_LIST, $miniAppQrId, 1);
             }
-
         }
+        return true;
     }
 
     /**
