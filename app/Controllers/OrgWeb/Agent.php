@@ -76,6 +76,17 @@ class Agent extends ControllerBase
                 'value' => 20,
                 'error_code' => 'organization_max_length_is_20'
             ],
+            [
+                'key' => 'leads_allot_type',
+                'type' => 'required',
+                'error_code' => 'leads_allot_type_is_required'
+            ],
+            [
+                'key' => 'leads_allot_type',
+                'type' => 'in',
+                'value' => [1, 2, 3],
+                'error_code' => 'leads_allot_type_is_error'
+            ],
         ];
 
         $params = $request->getParams();
@@ -152,6 +163,17 @@ class Agent extends ControllerBase
                 'type' => 'lengthMax',
                 'value' => 20,
                 'error_code' => 'organization_max_length_is_20'
+            ],
+            [
+                'key' => 'leads_allot_type',
+                'type' => 'required',
+                'error_code' => 'leads_allot_type_is_required'
+            ],
+            [
+                'key' => 'leads_allot_type',
+                'type' => 'in',
+                'value' => [1, 2, 3],
+                'error_code' => 'leads_allot_type_is_error'
             ],
         ];
 

@@ -42,6 +42,11 @@ class AgentModel extends Model
     const DIVISION_MODEL_LEADS = 1;
     const DIVISION_MODEL_LEADS_AND_SALE = 2;
 
+    //线索分配类型：1自动分配 2不分配 3分配助教
+    const LEADS_ALLOT_TYPE_AUTOMATION = 1;
+    const LEADS_ALLOT_TYPE_STOP = 2;
+    const LEADS_ALLOT_TYPE_ASSISTANT = 3;
+
     /**
      * 新增代理账户
      * @param $agentData
@@ -211,6 +216,9 @@ class AgentModel extends Model
                     a.`name`,
                     a.`country_code`,
                     a.`division_model`,
+                    a.`division_model`,
+                    a.`leads_allot_type`,
+                    a.`assistant_id`,
                     ao.`name` AS `organization`,
                     ai.`country`,
                     ai.`province`,
@@ -263,14 +271,12 @@ class AgentModel extends Model
         }
         $data['count'] = count($countData);
         $offset = ($page - 1) * $limit;
-        $where[AgentDivideRulesModel::$table . '.status'] = AgentDivideRulesModel::STATUS_OK;
         $data['list'] = $db->select(
             self::$table,
             [
                 "[><]" . AgentInfoModel::$table => ['id' => 'agent_id'],
                 "[><]" . EmployeeModel::$table => ['employee_id' => 'id'],
                 "[>]" . AgentOrganizationModel::$table => ['id' => 'agent_id'],
-                "[>]" . AgentDivideRulesModel::$table => ['id' => 'agent_id'],
                 "[>]" . AgentServiceEmployeeModel::$table => ['id'=>'agent_id']
             ],
             [
@@ -282,6 +288,7 @@ class AgentModel extends Model
                 self::$table . '.type',
                 self::$table . '.name',
                 self::$table . '.division_model',
+                self::$table . '.leads_allot_type',
                 AgentInfoModel::$table . '.country',
                 AgentInfoModel::$table . '.province',
                 AgentInfoModel::$table . '.city',
@@ -290,7 +297,6 @@ class AgentModel extends Model
                 AgentOrganizationModel::$table . '.quantity',
                 AgentOrganizationModel::$table . '.amount',
                 EmployeeModel::$table . '.name(e_name)',
-                AgentDivideRulesModel::$table . '.app_id',
             ],
             [
                 "AND" => $where,
@@ -394,7 +400,9 @@ class AgentModel extends Model
                     b.id AS p_id,
                     b.status AS p_status,
                     IF ( b.division_model IS NULL, a.division_model, b.division_model ) AS division_model, 
-                    IF ( b.type IS NULL, a.type, b.type ) AS agent_type
+                    IF ( b.type IS NULL, a.type, b.type ) AS agent_type,
+                    IF ( b.leads_allot_type IS NULL, a.leads_allot_type, b.leads_allot_type ) AS allot_type,
+                    IF ( b.assistant_id IS NULL, a.assistant_id, b.assistant_id ) AS assistant
                 FROM
                     agent AS a
                     LEFT JOIN agent AS b ON a.parent_id = b.id 

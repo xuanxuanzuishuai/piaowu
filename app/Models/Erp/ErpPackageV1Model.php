@@ -108,9 +108,9 @@ class ErpPackageV1Model extends ErpModel
         $sql = "SELECT
                     id,name 
                 FROM
-                    erp_package_v1 
+                    " . self::$table . " 
                 WHERE
-                    id IN ( ".implode(',', $packageIds)." ) 
+                    id IN ( " . implode(',', $packageIds) . " ) 
                     AND channel & :channel 
                     AND status=" . $status;
         $map = [

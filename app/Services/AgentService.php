@@ -35,6 +35,7 @@ use App\Models\AreaCityModel;
 use App\Models\AreaProvinceModel;
 use App\Models\Dss\DssCategoryV1Model;
 use App\Models\Dss\DssDictModel;
+use App\Models\Dss\DssEmployeeModel;
 use App\Models\Dss\DssErpPackageV1Model;
 use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssStudentModel;
@@ -61,6 +62,19 @@ class AgentService
     public static function addAgent($params, $employeeId)
     {
         $time = time();
+        if (self::checkAgentExists($params['mobile'], $params['country_code'])) {
+            throw new RunTimeException(['agent_have_exist']);
+        }
+        //线下代理，机构名称必填
+        if (($params['agent_type'] == AgentModel::TYPE_OFFLINE) && (empty(trim($params['organization'])))) {
+            throw new RunTimeException(['agent_org_name_required']);
+        }
+        //线索分配类型与助教ID检测
+        if ($params['leads_allot_type'] != AgentModel::LEADS_ALLOT_TYPE_ASSISTANT) {
+            $params['assistant_id'] = 0;
+        } else if (($params['leads_allot_type'] == AgentModel::LEADS_ALLOT_TYPE_ASSISTANT) && (empty($params['assistant_id']))) {
+            throw new RunTimeException(['assistant_id_is_required']);
+        }
         //agent数据
         $agentInsertData = [
             'employee_id' => $employeeId,
@@ -68,18 +82,14 @@ class AgentService
             'uuid' => self::agentAuth($params['name'], $params['mobile']),
             'mobile' => $params['mobile'],
             'name' => $params['name'],
-            'type' => $params['agent_type'],
-            'division_model' => $params['division_model'] ?? 0,
-            'country_code' => $params['country_code'],
+            'type' => (int)$params['agent_type'],
+            'division_model' => (int)$params['division_model'],
+            'country_code' => (int)$params['country_code'],
             'create_time' => $time,
+            'leads_allot_type' => (int)$params['leads_allot_type'],
+            'assistant_id' => (int)$params['assistant_id'],
         ];
-        if (self::checkAgentExists($agentInsertData['mobile'], $agentInsertData['country_code'])) {
-            throw new RunTimeException(['agent_have_exist']);
-        }
-        //线下代理，机构名称必填
-        if (($params['agent_type'] == AgentModel::TYPE_OFFLINE) && (empty(trim($params['organization'])))) {
-            throw new RunTimeException(['agent_org_name_required']);
-        }
+
         //agent_service_employee
         $serviceEmployeeInsertData = [];
         if (!empty($params['service_employee_id']) && is_array($params['service_employee_id'])) {
@@ -154,14 +164,22 @@ class AgentService
         if (($params['agent_type'] == AgentModel::TYPE_OFFLINE) && (empty(trim($params['organization'])))) {
             throw new RunTimeException(['agent_org_name_required']);
         }
+        //线索分配类型与助教ID检测
+        if ($params['leads_allot_type'] != AgentModel::LEADS_ALLOT_TYPE_ASSISTANT) {
+            $params['assistant_id'] = 0;
+        } else if (($params['leads_allot_type'] == AgentModel::LEADS_ALLOT_TYPE_ASSISTANT) && (empty($params['assistant_id']))) {
+            throw new RunTimeException(['assistant_id_is_required']);
+        }
         //agent数据
         $agentUpdateData = [
             'mobile' => $params['mobile'],
             'name' => $params['name'],
-            'type' => $params['agent_type'],
-            'country_code' => $params['country_code'],
+            'type' => (int)$params['agent_type'],
+            'country_code' => (int)$params['country_code'],
             'update_time' => $time,
-            'division_model' => $params['division_model'] ?? 0,
+            'division_model' => (int)$params['division_model'],
+            'leads_allot_type' => (int)$params['leads_allot_type'],
+            'assistant_id' => (int)$params['assistant_id'],
         ];
         //agent_service_employee
         $serviceEmployeeUpdateData = [];
@@ -239,7 +257,9 @@ class AgentService
                 'agent_type' => $params['agent_type'],
                 'division_model' => $params['division_model'],
                 'organization_name' => $params['organization'],
-                'package_ids' => $packageIds
+                'package_ids' => $packageIds,
+                'leads_allot_type' => $params['leads_allot_type'],
+                'assistant_id' => $params['assistant_id'],
             ],
             AgentOperationLogModel::OP_TYPE_AGENT_DATA_UPDATE);
         return true;
@@ -409,11 +429,12 @@ class AgentService
     {
         //详情
         $detail = AgentModel::detail($agentId);
-        //微信数据:是否绑定,昵称
-        if (!empty($detail)) {
-            $bindData = UserWeiXinModel::userBindData($agentId, UserWeiXinModel::USER_TYPE_AGENT, UserWeiXinModel::BUSI_TYPE_AGENT_MINI, UserCenter::AUTH_APP_ID_OP_AGENT);
-            $detail['wx_bind_status'] = empty($bindData) ? 0 : 1;
+        if(empty($detail)){
+            return [];
         }
+        //微信数据:是否绑定,昵称
+        $bindData = UserWeiXinModel::userBindData($agentId, UserWeiXinModel::USER_TYPE_AGENT, UserWeiXinModel::BUSI_TYPE_AGENT_MINI, UserCenter::AUTH_APP_ID_OP_AGENT);
+        $detail['wx_bind_status'] = empty($bindData) ? 0 : 1;
         //获取代理商售卖课包列表数据
         $detail['package_list'] = AgentSalePackageModel::getPackageData($agentId, UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT);
         $detail['service_employee_data'] = [];
@@ -423,6 +444,10 @@ class AgentService
             foreach ($employeeIds as $lk => $lv) {
                 $detail['service_employee_data'][] = ['id' => $lv, 'name' => $employeeName[$lk]];
             }
+        }
+        //助教信息
+        if (!empty($detail['assistant_id'])) {
+            $detail['assistant_name'] = DssEmployeeModel::getRecord(['id' => $detail['assistant_id']], 'name');
         }
         return $detail;
     }
@@ -439,22 +464,22 @@ class AgentService
         $where = [AgentModel::$table . '.parent_id' => 0];
         $data = ['list' => [], 'count' => 0];
         if (!empty($params['agent_id'])) {
-            $where[AgentModel::$table . '.id'] = $params['agent_id'];
+            $where[AgentModel::$table . '.id'] = (int)$params['agent_id'];
         }
         if (!empty($params['mobile'])) {
-            $where[AgentModel::$table . '.mobile'] = $params['mobile'];
+            $where[AgentModel::$table . '.mobile'] = (int)$params['mobile'];
         }
         if (!empty($params['agent_type'])) {
-            $where[AgentModel::$table . '.type'] = $params['agent_type'];
+            $where[AgentModel::$table . '.type'] = (int)$params['agent_type'];
         }
         if (!empty($params['status'])) {
-            $where[AgentModel::$table . '.status'] = $params['status'];
+            $where[AgentModel::$table . '.status'] = (int)$params['status'];
         }
         if (!empty($params['create_start_time'])) {
-            $where[AgentModel::$table . '.create_time[>=]'] = $params['create_start_time'];
+            $where[AgentModel::$table . '.create_time[>=]'] = (int)$params['create_start_time'];
         }
         if (!empty($params['create_end_time'])) {
-            $where[AgentModel::$table . '.create_time[<=]'] = $params['create_end_time'];
+            $where[AgentModel::$table . '.create_time[<=]'] = (int)$params['create_end_time'];
         }
         if (!empty($params['employee_name'])) {
             $employeeId = EmployeeModel::getRecord(['name' => $params['employee_name']], ['id']);
@@ -468,7 +493,10 @@ class AgentService
             $where[AgentModel::$table . '.name[~]'] = $params['name'];
         }
         if (!empty($params['division_model'])) {
-            $where[AgentModel::$table . '.division_model'] = $params['division_model'];
+            $where[AgentModel::$table . '.division_model'] = (int)$params['division_model'];
+        }
+        if (!empty($params['leads_allot_type'])) {
+            $where[AgentModel::$table . '.leads_allot_type'] = (int)$params['leads_allot_type'];
         }
         //数据权限
         if ($params['only_read_self']) {
@@ -526,7 +554,7 @@ class AgentService
         if (!empty($cityIds)) {
             $city = array_column(AreaCityModel::getRecords(['id' => $cityIds], ['id', 'city_name']), null, 'id');
         }
-        $dict = DictConstants::getTypesMap([DictConstants::AGENT_TYPE['type'], DictConstants::AGENT['type'], DictConstants::PACKAGE_APP_NAME['type'], DictConstants::AGENT_DIVISION_MODEL['type']]);
+        $dict = DictConstants::getTypesMap([DictConstants::AGENT_TYPE['type'], DictConstants::AGENT['type'], DictConstants::PACKAGE_APP_NAME['type'], DictConstants::AGENT_DIVISION_MODEL['type'],DictConstants::AGENT_LEADS_ALLOT_TYPE['type']]);
         foreach ($agentData as &$agv) {
             // 省
             if (!empty($agv['province'])) {
@@ -541,6 +569,7 @@ class AgentService
             $agv['status_name'] = $dict[DictConstants::AGENT['type']][$agv['status']]['value'];
             $agv['app_id_name'] = empty($agv['app_id']) ? '' : $dict[DictConstants::PACKAGE_APP_NAME['type']][$agv['app_id']]['value'];
             $agv['division_model_name'] = empty($agv['division_model']) ? '' : $dict[DictConstants::AGENT_DIVISION_MODEL['type']][$agv['division_model']]['value'];
+            $agv['leads_allot_name'] = empty($agv['leads_allot_type']) ? '' : $dict[DictConstants::AGENT_LEADS_ALLOT_TYPE['type']][$agv['leads_allot_type']]['value'];
         }
         return $agentData;
     }
@@ -1313,6 +1342,9 @@ class AgentService
             'country_code' => $params['country_code'] ?? NewSMS::DEFAULT_COUNTRY_CODE,
             'app_id'       => UserCenter::AUTH_APP_ID_OP_AGENT,
             'agent_type'   => 0,
+            'leads_allot_type' => 0,
+            'assistant_id' => 0,
+            'division_model' => 0,
         ];
         return self::addAgent($data, 0);
     }
@@ -2244,22 +2276,26 @@ class AgentService
      * 通过订单ID获取映射代理商数据,检测社群分班条件
      * @param $parentBillId
      * @param $studentId
-     * @return bool
+     * @return array
      */
     public static function distributionClassCondition($parentBillId, $studentId)
     {
-        //分班条件:代理渠道购买并且代理商分成模式为线索+售卖不分班，其余均可以分班
+        $res = [
+            'allot_type' => AgentModel::LEADS_ALLOT_TYPE_AUTOMATION,//线索分配类型：1自动分配 2不分配 3分配助教
+            'assistant_id' => 0,//助教ID，当分配类型是3分配助教时，此参数有效，其余类型为0
+        ];
         //订单映射数据
         $mapData = BillMapModel::get($parentBillId, $studentId, BillMapModel::USER_TYPE_AGENT);
         if (empty($mapData)) {
-            return true;
+            return $res;
         }
         //代理商数据
         $agentData = AgentModel::getAgentParentData([$mapData['user_id']]);
-        if ($agentData[0]['division_model'] == AgentModel::DIVISION_MODEL_LEADS_AND_SALE) {
-            return false;
-        }
-        return true;
+        $res = [
+            'allot_type' => $agentData[0]['allot_type'],
+            'assistant_id' => $agentData[0]['assistant'],
+        ];
+        return $res;
     }
 
     /**
@@ -2389,13 +2425,18 @@ class AgentService
                 }
             }
         }
+        //代理模式为线下代理+线索分配模式为不分配：不可手动分配助教
+        $res = false;
         if (!empty($agentId)) {
             $agentInfo = AgentModel::getAgentParentData($agentId);
-            if (in_array(AgentModel::TYPE_OFFLINE, array_column($agentInfo, 'agent_type'))) {
-                return true;
+            foreach ($agentInfo as $ak => $av) {
+                if (($av['agent_type'] == AgentModel::TYPE_OFFLINE) && ($av['allot_type'] == AgentModel::LEADS_ALLOT_TYPE_STOP)) {
+                    $res = true;
+                    break;
+                }
             }
         }
-        return  false;
+        return $res;
     }
 
     /**

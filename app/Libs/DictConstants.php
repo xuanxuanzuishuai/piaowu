@@ -528,6 +528,12 @@ class DictConstants {
         'keys' => ['1', '2']
     ];
 
+    //代理线索分配类型：1自动分配 2不分配 3分配助教
+    const AGENT_LEADS_ALLOT_TYPE = [
+        'type' => 'agent_leads_allot_type',
+        'keys' => ['1', '2', '3']
+    ];
+
     // 发送邮件设置
     const SEND_MAIL_CONFIG = [
         'type' => 'send_mail_config',

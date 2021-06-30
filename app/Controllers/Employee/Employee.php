@@ -13,6 +13,7 @@ use App\Libs\Constants;
 use App\Libs\Dict;
 use App\Libs\DictConstants;
 use App\Libs\DingDing;
+use App\Libs\Dss;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\Util;
@@ -622,5 +623,31 @@ class Employee extends ControllerBase
             'code' => 0,
             'data' => $list
         ], StatusCode::HTTP_OK);
+    }
+
+
+
+    /**
+     * 获取助教列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getAssistantList(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'assistant_name',
+                'type' => 'required',
+                'error_code' => 'assistant_name_is_required'
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $data = (new Dss())->getAssistantList($params);
+        return HttpHelper::buildResponse($response, $data);
     }
 }

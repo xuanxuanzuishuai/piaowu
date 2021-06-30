@@ -382,7 +382,7 @@ class Dss extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         $condition = AgentService::distributionClassCondition($params['parent_bill_id'], $params['student_id']);
-        return HttpHelper::buildResponse($response, (int)$condition);
+        return HttpHelper::buildResponse($response, $condition);
     }
 
     /**
