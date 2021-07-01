@@ -158,8 +158,7 @@ class PackageService
             throw new RunTimeException(['package_not_available']);
         }
 
-        $goods = ErpPackageGoodsV1Model::goodsListByPackageId($packageId, ErpPackageGoodsV1Model::SUCCESS_NORMAL);
-
+        $goods = ErpPackageGoodsV1Model::goodsListByPackageId($packageId, [ErpPackageGoodsV1Model::SUCCESS_NORMAL,ErpPackageV1Model::STATUS_ON_AFTER_SALE]);
         $package['need_address'] = DssCategoryV1Model::containObject($goods);
         $package['goods'] = ErpPackageGoodsV1Service::formatGoods($goods);
         $package['flags'] = json_decode($package['flags'], 1);

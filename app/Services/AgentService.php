@@ -1271,7 +1271,7 @@ class AgentService
         if (empty($package)) {
             throw new RunTimeException(['record_not_found']);
         }
-        if ($package['status'] != ErpPackageV1Model::STATUS_ON_SALE) {
+        if (!($package['status'] == ErpPackageV1Model::STATUS_ON_SALE || $package['status'] == ErpPackageV1Model::STATUS_ON_AFTER_SALE)) {
             throw new RunTimeException(['package_not_available_for_sale']);
         }
         $logo = DictConstants::get(DictConstants::AGENT_CONFIG, 'share_card_logo');
@@ -2172,8 +2172,7 @@ class AgentService
         }
         // 查询不可用产品包ID
         $allPackageIds = array_column($list, 'package_id');
-        $notAvailable = DssErpPackageV1Model::getRecords(['id' => $allPackageIds, 'status[!]' => DssErpPackageV1Model::STATUS_ON_SALE], 'id');
-
+        $notAvailable = DssErpPackageV1Model::getRecords(['id' => $allPackageIds, 'status[!]' => [ErpPackageV1Model::STATUS_ON_SALE,ErpPackageV1Model::STATUS_ON_AFTER_SALE]], 'id');
         $data = [];
         foreach ($list as $value) {
             $oneItem = [
