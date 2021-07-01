@@ -119,6 +119,9 @@ class QrInfoOpCHModel
             $insertData[]        = $qrInfo;
         }
 
+        if (empty($insertData)) {
+            return false;
+        }
         $db     = CHDB::getDB(CHDB::OP);
         $res    = $db->insert(self::$table, $insertData, $fields);
         if (empty($res)) {

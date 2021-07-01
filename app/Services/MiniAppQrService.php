@@ -218,8 +218,8 @@ class MiniAppQrService
         $qrImageInfo = self::getMiniAppQrImage($miniAppQrId);
         if (!empty($qrImageInfo['qr_path'])) {
             // 成功： 写入redis待使用队列， 以及redis小程序码详细信息的hash
-            $redis->sadd(self::REDIS_WAIT_USE_MINI_APP_ID_LIST, [$miniAppQrId]);
             $redis->hset(self::REDIS_WAIT_USE_MINI_APP_ID_INFO, $miniAppQrId, json_encode(['qr_path' => $qrImageInfo['qr_path']]));
+            $redis->sadd(self::REDIS_WAIT_USE_MINI_APP_ID_LIST, [$miniAppQrId]);
             // 从失败队列里移除
             $redis->hdel(self::REDIS_FAIL_MINI_APP_ID_LIST, $miniAppQrId);
         } else {
@@ -337,6 +337,7 @@ class MiniAppQrService
         // 如果qr_id 为空，需要立即启动生成小程序
         if (empty($qrInfo['qr_id'])) {
             QueueService::startCreateMiniAppId();
+            Util::errorCapture("getUserMiniAppQr error is redis empty", []);
             return $qrInfo;
         }
 
@@ -414,7 +415,7 @@ class MiniAppQrService
      * @param string[] $fileds
      * @return array
      */
-    public static function getQrInfoById($qrId, $fileds = [])
+    public static function getQrInfoById($qrId, $fileds = [], $extendArr = [])
     {
         $qrInfo = QrInfoOpCHModel::getQrInfoById($qrId, $fileds);
         if (empty($qrInfo)) {
@@ -429,6 +430,7 @@ class MiniAppQrService
         $qrInfo['a'] = $qrInfo['activity_id'] ?? 0;
         $qrInfo['user_current_status'] = $qrInfo['user_status'] ?? 0;
         $qrInfo['id'] = $qrInfo['qr_id'] ?? 0;
-        return array_merge(json_decode($qrInfo['qr_data'], true), $qrInfo);
+        $qrData = !empty($qrInfo['qr_data']) ? json_decode($qrInfo['qr_data'], true) : [];
+        return array_merge($qrData, $qrInfo, $extendArr);
     }
 }
