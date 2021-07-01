@@ -8,6 +8,10 @@ use App\Libs\Util;
 
 class SourceMaterialModel extends Model
 {
+    const NOT_ENABLED_STATUS = 1;//未启用
+
+    const ENABLED_STATUS = 2;//已启用
+
     public static $table = "source_material";
 
     public static $enableStatusLists = [

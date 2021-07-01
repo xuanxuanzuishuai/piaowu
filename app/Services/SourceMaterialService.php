@@ -87,10 +87,11 @@ class SourceMaterialService
         $dictInfos = DictService::getList(self::SOURCE_TYPE_CONFIG);
         $dictInfos = !empty($dictInfos) ? array_column($dictInfos, 'key_value', 'key_code') : [];
         foreach ($lists as &$val) {
-            $val['type_value']   = $dictInfos[$val['type']] ?? '';
-            $val['image_path']   = AliOSS::replaceCdnDomainForDss($val['image_path']);
+            $val['status']        = $val['enable_status'];
+            $val['type_value']    = $dictInfos[$val['type']] ?? '';
+            $val['image_path']    = AliOSS::replaceCdnDomainForDss($val['image_path']);
             $val['enable_status'] = SourceMaterialModel::$enableStatusLists[$val['enable_status']] ?? '未知';
-            $val['create_time']  = date('Y-m-d H:i:s', $val['create_time']);
+            $val['create_time']   = date('Y-m-d H:i:s', $val['create_time']);
         }
         return compact('lists', 'totalCount');
     }
@@ -143,7 +144,7 @@ class SourceMaterialService
     public static function editEnableStatus($id, $enableStatus, $employeeId)
     {
         $sourceMaterial = SourceMaterialModel::getRecord(['id' => $id]);
-        if (empty($sourceMaterial) || $sourceMaterial['enable_status'] != 1) {
+        if (empty($sourceMaterial) || $sourceMaterial['enable_status'] != SourceMaterialModel::NOT_ENABLED_STATUS) {
             throw new RunTimeException(['record_not_found']);
         }
         $update = [

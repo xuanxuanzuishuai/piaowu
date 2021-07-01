@@ -40,7 +40,7 @@ class SourceMaterial extends ControllerBase
             [
                 'key' => 'name',
                 'type' => 'lengthMax',
-                'value' => 5,
+                'value' => 30,
                 'error_code' => 'name_length_invalid'
             ],
             [
