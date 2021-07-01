@@ -136,9 +136,9 @@ class StudentInviteService
                     'e' => 0,
                     'type' => $billMapInfo['type'],
                     'user_id' => $billMapInfo['user_id'],
+                    'buy_channel'=>$billMapInfo['buy_channel'],
                 ];
             }
-            $qrTicketIdentityData['buy_channel'] = $billMapInfo['buy_channel'];
         } else {
             $qrTicketIdentityData = [
                 'a' => $bindReferralInfo['activity_id'],
