@@ -178,7 +178,7 @@ class PackageService
         }
         $package['details'] = $details;
         if ($package['end_time'] < time() || (!empty($package['out_time']) && $package['out_time'] < time())) {
-            $package['status'] = ErpPackageV1Model::STATUS_OFF_SALE;
+            $package['status'] = (string)ErpPackageV1Model::STATUS_OFF_SALE;
         }
 
         return $package;
