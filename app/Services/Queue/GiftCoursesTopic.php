@@ -15,13 +15,14 @@ class GiftCoursesTopic extends BaseTopic
     const EVENT_ACTIVITY_GIFT = 'activity_gift';
 
     /**
-     * StudentSyncTopic constructor.
+     * GiftCoursesTopic constructor.
      * @param null $publishTime
+     * @param int $sourceAppId
      * @throws \Exception
      */
-    public function __construct($publishTime = null)
+    public function __construct($publishTime = null, $sourceAppId = QueueService::FROM_OP)
     {
-        parent::__construct(self::TOPIC_NAME, $publishTime);
+        parent::__construct(self::TOPIC_NAME, $publishTime, $sourceAppId);
     }
 
     /**

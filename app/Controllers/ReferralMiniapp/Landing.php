@@ -31,10 +31,6 @@ class Landing extends ControllerBase
         try {
             $params = $request->getParams();
             $sceneData = ReferralService::getSceneData(urldecode($params['scene'] ?? ''));
-            $channel = $params['channel_id'];
-            if (empty($sceneData['c']) && !empty($channel)) {
-                $sceneData['c'] = $channel;
-            }
             $pageData = ReferralService::getMiniAppIndexData($sceneData, $this->ci['referral_miniapp_openid']);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());

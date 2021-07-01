@@ -20,7 +20,7 @@ use Exception;
 
 class QueueService
 {
-
+    const FROM_DSS = 10;
     const FROM_OP = 19;
 
     private static function getDeferMax($count)
@@ -660,7 +660,7 @@ class QueueService
     public static function giftDuration($uuid, $applyType, $goodsNum, $channel, $operatorId = 0, $msg = null)
     {
         try {
-            $topic = new GiftCoursesTopic();
+            $topic = new GiftCoursesTopic(null, self::FROM_DSS);
             if (!is_array($uuid)) {
                 $uuid = [$uuid];
             }
