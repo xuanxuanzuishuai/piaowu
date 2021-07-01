@@ -147,6 +147,9 @@ class ErpPackageV1Model extends ErpModel
             p.status,
             p.channel,
             p.sale_shop,
+            p.start_time,
+            p.end_time,
+            p.out_time,
             c.sub_type,
             sum(pg.o_price) o_price,
             sum(pg.r_price) r_price

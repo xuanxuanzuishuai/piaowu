@@ -178,7 +178,7 @@ class PackageService
             }, $thumbs['details']);
         }
         $package['details'] = $details;
-        if ($package['status'] != ErpPackageV1Model::STATUS_ON_SALE) {
+        if ($package['end_time'] < time() || (!empty($package['out_time']) && $package['out_time'] < time())) {
             $package['status'] = ErpPackageV1Model::STATUS_OFF_SALE;
         }
 

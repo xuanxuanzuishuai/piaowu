@@ -768,8 +768,8 @@ class DictConstants {
     /**前缀为ERP的配置，数据均配置在erp数据库中erp_dict数据表，不再op系统重复配置，保持数据的唯一性,配置写在此区域**/
     //新产品包状态
     const ERP_PACKAGE_V1_STATUS = [
-        'type' => 'package_v1_status',
-        'keys' => ['-1', '0', '1']
+        'type' => 'package_v1_status_new',
+        'keys' => ['-1', '0', '1', '2']
     ];
 
     /**
