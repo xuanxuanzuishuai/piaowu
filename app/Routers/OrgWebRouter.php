@@ -29,6 +29,7 @@ use App\Controllers\OrgWeb\Opn;
 use App\Controllers\OrgWeb\Package;
 use App\Controllers\OrgWeb\PosterTemplateWord;
 use App\Controllers\OrgWeb\SharePoster;
+use App\Controllers\OrgWeb\SourceMaterial;
 use App\Controllers\OrgWeb\StudentAccount;
 use App\Controllers\OrgWeb\WeekActivity;
 use App\Controllers\Referral\Award;
@@ -238,6 +239,12 @@ class OrgWebRouter extends RouterBase
         '/op_web/agent_org/student_del' => ['method' => ['post'], 'call' => AgentOrg::class . ':studentDel'],
         '/op_web/agent_org/student_import' => ['method' => ['post'], 'call' => AgentOrg::class . ':studentImport'],
 
+        //素材库管理
+        '/op_web/source_material/source_save'      => ['method' => ['post'], 'call' => SourceMaterial::class . ':sourceSave'],
+        '/op_web/source_material/source_list'     => ['method' => ['post'], 'call' => SourceMaterial::class . ':sourceList'],
+        '/op_web/source_material/enable_status'     => ['method' => ['post'], 'call' => SourceMaterial::class . ':editEnableStatus'],
+        '/op_web/source_material/source_type_add' => ['method' => ['post'], 'call' => SourceMaterial::class . ':sourceTypeAdd'],
+        '/op_web/source_material/source_type_list' => ['method' => ['get'], 'call' => SourceMaterial::class . ':sourceTypeList'],
 
     ];
 }
