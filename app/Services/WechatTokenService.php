@@ -8,12 +8,14 @@ class WechatTokenService
     const cacheKeyTokenPri = "op_wechat_token_";
     const USER_TOKEN_KEY = 'op_user_token_';
     public static $redisExpire = 2592000; // 30 days
+
     /**
      * 获取token key
      * @param $token
      * @return string
      */
-    public static function getTokenKey($token) {
+    public static function getTokenKey($token)
+    {
         return self::cacheKeyTokenPri . $token;
     }
 
@@ -93,7 +95,8 @@ class WechatTokenService
      * @param $token
      * @return mixed|string
      */
-    public static function getTokenInfo($token) {
+    public static function getTokenInfo($token)
+    {
         $key = self::getTokenKey($token);
         $redis = RedisDB::getConn();
         $ret = $redis->get($key);
@@ -124,43 +127,22 @@ class WechatTokenService
         }
         return true;
     }
+
     public static function getUserTokenKeyPattern($user_id, $user_type = null, $app_id = null)
     {
         if (empty($user_id)) {
             return [];
         }
         $redis = RedisDB::getConn();
-        $keyPattern = self::USER_TOKEN_KEY . implode('_', [$app_id, $user_type, $user_id]) . '*';
-        //使用scan游标方式遍历处理目标key
-        $stopTag = true;
-        //游标
-        $cursor = 0;
-        //目标缓存键数组
-        $keys = [];
-        while ($stopTag === true) {
-            $patternData = $redis->scan($cursor, ['MATCH' => $keyPattern]);
-            if ($patternData[0] == 0) {
-                $stopTag = false;
-            } else {
-                $cursor = $patternData[0];
+        $keys = self::USER_TOKEN_KEY . implode('_', [$app_id, $user_type, $user_id]) . '*';
+        $list = $redis->keys($keys);
+        foreach ($list as $token) {
+            $key = self::getTokenKey($redis->get($token));
+            $ret = $redis->get($key);
+            if (!empty($ret)) {
+                $list[] = $key;
             }
-            $keys = array_merge($keys, $patternData[1]);
         }
-        if (empty($keys)) {
-            return $keys;
-        }
-        $keys = array_unique($keys);
-        $userTokenPipLineRes = $redis->pipeline(function ($pipe) use ($keys) {
-            foreach ($keys as $ck) {
-                $pipe->get($ck);
-            }
-        });
-        $userTokenCacheKeyValMap = array_combine($keys, $userTokenPipLineRes);
-
-        //再次获取微信token的缓存key
-        foreach ($userTokenCacheKeyValMap as $weChatTokenSuffix) {
-            $keys[] = WechatTokenService::getTokenKey($weChatTokenSuffix);
-        }
-        return $keys;
+        return $list;
     }
 }
