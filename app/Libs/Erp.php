@@ -40,7 +40,8 @@ class Erp
     const API_MODIFY_TASK = '/api/dss/modify_task';
     const API_AWARD_BASE_INFO = '/api/dss/task_award_info';
     const API_USER_GET_RED_PACKET_CALL = '/api/app/user_get_red_packet_call_back';  //积分兑换红包 - 红包被用户成功领取通知erp接口地址
-
+    const API_REFUND_FINISH_TIME = '/ai_dss/billV1/refund_finish_time';  //获取订单退单时间erp接口地址
+    
     // 地址管理
     const API_STUDENT_ADDRESS_LIST = '/ai_dss/student/address_list';
     const API_STUDENT_MODIFY_ADDRESS = '/ai_dss/student/modify_address';
@@ -741,5 +742,23 @@ class Erp
             $params['type'] = $eventType;
         }
         return ['code' => Valid::CODE_SUCCESS, 'data' => ErpEventModel::wholeEvents($params)];
+    }
+    
+    /**
+     * 获取订单退单时间
+     * @param array $arrBillId
+     * @return array|bool
+     */
+    public function getRefundTime($arrBillId = [])
+    {
+        if (empty($arrBillId)) {
+            return [];
+        }
+        $strBillId = implode(',', $arrBillId);
+        $params = [
+            'order_id' => $strBillId,
+        ];
+        $response = HttpHelper::requestJson($this->host . self::API_REFUND_FINISH_TIME, $params);
+        return $response;
     }
 }

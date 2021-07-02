@@ -104,11 +104,11 @@ class RefereeAwardService
             SimpleLogger::info("RefereeAwardService::dssShouldCompleteEventTask", ['err' => 'no_fond_referee', 'student' => $student, 'package' => $package]);
             return false;
         }
-        $referralUser = DssStudentModel::getRecord(['id' => $referralInfo['referee_id']]);
-        if ($referralUser['has_review_course'] != DssStudentModel::REVIEW_COURSE_1980) {
-            SimpleLogger::info("RefereeAwardService::dssShouldCompleteEventTask", ['err' => 'no_REVIEW_COURSE_1980', 'student' => $student, 'package' => $package]);
-            return false;
-        }
+        //$referralUser = DssStudentModel::getRecord(['id' => $referralInfo['referee_id']]);
+        //if ($referralUser['has_review_course'] != DssStudentModel::REVIEW_COURSE_1980) {
+        //    SimpleLogger::info("RefereeAwardService::dssShouldCompleteEventTask", ['err' => 'no_REVIEW_COURSE_1980', 'student' => $student, 'package' => $package]);
+        //    return false;
+        //}
 
         // 升级
         if ($package['package_type'] > $student['has_review_course']) {

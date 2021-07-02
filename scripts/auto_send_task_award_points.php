@@ -28,25 +28,27 @@ use App\Services\CashGrantService;
 use App\Services\Queue\PushMessageTopic;
 use Dotenv\Dotenv;
 
-$dotenv = new Dotenv(PROJECT_ROOT,'.env');
+$dotenv = new Dotenv(PROJECT_ROOT, '.env');
 $dotenv->load();
 $dotenv->overload();
 
 // 获取到期发待发放和发放失败的积分列表, 只读取award_type 为空或者指定的award_node
+$whereTime = strtotime(date("Y-m-d 00:00:00")) - 17 * Util::TIMESTAMP_ONEDAY;
 $where = [
     'status' => [ErpUserEventTaskAwardGoldLeafModel::STATUS_WAITING, ErpUserEventTaskAwardGoldLeafModel::STATUS_GIVE_FAIL],
     'award_node' => [''],
+    'create_time[>=]' => $whereTime,
 ];
 $pointsList= ErpUserEventTaskAwardGoldLeafModel::getRecords($where);
 if (empty($pointsList)) {
-    SimpleLogger::info("script::auto_send_task_award_points",['info' => "is_empty_points_list", 'where' => $where]);
+    SimpleLogger::info("script::auto_send_task_award_points", ['info' => "is_empty_points_list", 'where' => $where]);
     return 'success';
 }
 
 // 获取完成任务的人uuid 和 id
 $studentUuid = array_column($pointsList, 'finish_task_uuid');
 $studentIdList = DssStudentModel::getRecords(['uuid' => $studentUuid], ['id','uuid']);
-$studentIdToUuid = array_column($studentIdList,'uuid', 'id');
+$studentIdToUuid = array_column($studentIdList, 'uuid', 'id');
 // 获取转介绍关系
 $refList = StudentReferralStudentStatisticsModel::getRecords(['student_id' => array_column($studentIdList, 'id')]);
 // 取得介绍人的uuid 和 id
@@ -74,8 +76,8 @@ foreach ($pointsList as $points) {
     if ($points['status'] == ErpUserEventTaskAwardGoldLeafModel::STATUS_WAITING) {
         // 如果待发放的没有到期，则不发放
         $delayTime = $points['create_time'] + $points['delay'];
-
-        if ($delayTime > $time) {
+        $daytime = strtotime(date('Ymd', $time));
+        if ($delayTime >= $daytime) {   //如果待发放时间大于今天0点,不发放
             continue;
         }
 
@@ -91,7 +93,16 @@ foreach ($pointsList as $points) {
         $verifyArr['event_task_id'] =$points['event_task_id'];
         $verifyArr['uuid'] =$points['finish_task_uuid'];
         $verifyArr['app_id'] = Constants::SMART_APP_ID;
-        $verify = CashGrantService::awardAndRefundVerify($verifyArr);
+        //$verify = CashGrantService::awardAndRefundVerify($verifyArr);
+        $verify = true;
+        $billId = $points['bill_id'];
+        //订单退款时间
+        $refundTimeInfo = $erp->getRefundTime([$billId]);
+        $refundTime = $refundTimeInfo['data'][$billId][0]['refund_time'] ?? 0;
+        SimpleLogger::info("script::auto_send_task_award_points", ['refund_data' => $refundTime]);
+        if ($refundTime > 0 && $refundTime <= $delayTime) {   //如果15天内退费,不发放奖励
+            $verify = false;
+        }
         if (!$verify) {
             SimpleLogger::info('script::auto_send_task_award_points', ['info' => 'refund verify not pass', 'param' => $points]);
             $status = ErpUserEventTaskAwardGoldLeafModel::STATUS_DISABLED;
@@ -114,6 +125,6 @@ foreach ($pointsList as $points) {
     // 积分发放成功后 把消息放入到 客服消息队列
     if (!empty($taskResult['data'])) {
         $pushMessageData = ['points_award_ids' => $taskResult['data']['points_award_ids']];
-        (new PushMessageTopic())->pushWX($pushMessageData,PushMessageTopic::EVENT_PAY_TRIAL)->publish(5);
+        (new PushMessageTopic())->pushWX($pushMessageData, PushMessageTopic::EVENT_PAY_TRIAL)->publish(5);
     }
 }
