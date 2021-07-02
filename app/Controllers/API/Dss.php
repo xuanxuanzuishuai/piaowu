@@ -346,7 +346,7 @@ class Dss extends ControllerBase
         $appId = DssUserWeiXinModel::dealAppId($params['app_id']);
         try {
             WechatTokenService::delTokenByUserId($params['user_id'], $userType, $appId);
-            UserService::recordUserActiveConsumer($params['user_id']);
+            UserService::recordUserActiveConsumer($params);
         } catch (RunTimeException $e) {
             SimpleLogger::error('token logout error', [$e->getAppErrorData()]);
         }
