@@ -324,7 +324,7 @@ class MiniAppQrService
         ];
         // 根据小程序码主要信息，查询CH
         $qrSign = self::createQrSign($qrData);
-        $qrImage = QrInfoOpCHModel::getQrInfoBySign($qrSign);
+        $qrImage = QrInfoOpCHModel::getQrInfoBySign($qrSign, ['qr_path', 'qr_id']);
         // CH查到直接返回qr_path, qr_id
         if (!empty($qrImage) && AliOSS::doesObjectExist($qrImage['qr_path'])) {
             $qrInfo['qr_path'] = $qrImage['qr_path'];

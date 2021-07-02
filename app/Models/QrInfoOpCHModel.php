@@ -40,9 +40,26 @@ class QrInfoOpCHModel
      */
     public static function getQrInfoById($qrId, $fields = [])
     {
-        $fieldStr = '*';
         if (!empty($fields)) {
             $fieldStr = '`' . implode('`,`', $fields) . '`';
+        } else {
+            $fieldStr = '`' . implode('`,`', [
+                'qr_id',
+                'qr_path',
+                'qr_sign',
+                'qr_ticket',
+                'user_id',
+                'user_type',
+                'channel_id',
+                'landing_type',
+                'activity_id',
+                'employee_id',
+                'poster_id',
+                'app_id',
+                'busies_type',
+                'user_status',
+                'qr_data',
+                ]) . '`';
         }
         $sql  = "SELECT " . $fieldStr . " FROM " . self::$table;
         if (is_array($qrId)) {

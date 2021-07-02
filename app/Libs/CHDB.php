@@ -11,6 +11,7 @@ namespace App\Libs;
 
 use ClickHouseDB\Client;
 use ClickHouseDB\Statement;
+use ClickHouseDB\Transport\Http;
 
 /**
  * Class CHDB
@@ -74,6 +75,7 @@ class CHDB
                     'database_name' => $_ENV['CHDB_OP_DATABASE'],
                     'timeout' => $_ENV['CHDB_OP_TIMEOUT'],
                     'connect_timeout' => $_ENV['CHDB_OP_CONNECT_TIMEOUT'],
+                    'auth_method'     => Http::AUTH_METHOD_QUERY_STRING,
                 ];
             case 'default':
             default:
