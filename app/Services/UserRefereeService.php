@@ -250,11 +250,10 @@ class UserRefereeService
             } else {
                 // 被推荐人购买年卡：
                 // XYZOP-555
-                $totalInfos = DssGiftCodeModel::getRecord(['parent_bill_id' => $parentBillId], ['id', 'valid_num', 'valid_units']);
-                if (empty($totalInfos)) {
+                $totalInfo = DssGiftCodeModel::getRecord(['parent_bill_id' => $parentBillId], ['id', 'valid_num', 'valid_units']);
+                if (empty($totalInfo)) {
                     return $taskIds;
                 }
-                $totalInfo = $totalInfos[0];
                 $level = 0;
                 switch ($totalInfo['valid_units']) {
                     case DssGiftCodeModel::CODE_TIME_DAY:
