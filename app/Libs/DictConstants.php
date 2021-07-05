@@ -593,6 +593,7 @@ class DictConstants {
             'mini_001_package_id',
             'zero_order_remark',
             'zero_package_enable',
+            'broadcast_config_users',
         ]
     ];
 

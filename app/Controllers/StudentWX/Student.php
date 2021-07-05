@@ -323,4 +323,20 @@ class Student extends ControllerBase
         }
         return HttpHelper::buildResponse($response, $data);
     }
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function broadcast(Request $request, Response $response)
+    {
+        try {
+            $params = $request->getParams();
+            $data = ReferralService::getBroadcastData($params);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
+        return HttpHelper::buildResponse($response, $data);
+    }
 }

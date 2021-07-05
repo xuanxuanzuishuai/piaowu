@@ -1249,4 +1249,19 @@ class Util
         if (preg_match("/^[\x80-\xff]{6,30}$/", $text)) return true;
         return false;
     }
+
+    /**
+     * 根据匹配模式返回指定字符串
+     * @param $text
+     * @param string $pattern
+     * @return array
+     */
+    public static function getCharacterByPattern($text, $pattern = "/[\x{4e00}-\x{9fa5}]/u")
+    {
+        if (empty($text)) {
+            return [];
+        }
+        preg_match_all($pattern, $text, $data);
+        return $data;
+    }
 }

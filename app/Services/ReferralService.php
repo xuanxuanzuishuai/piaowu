@@ -55,6 +55,8 @@ class ReferralService
 
     const BUY_NAME_CACHE_KEY = 'zero_order_buy_name'; //0元订单 缓存用户名称
 
+    // 弹幕优化
+    const KEY_BROADCAST_CACHE = 'web_page_broadcast_cache';
     // 转介绍小程序
     const REFERRAL_MINI_APP_ID = 2;
 
@@ -1249,5 +1251,48 @@ class ReferralService
             $package = PayServices::PACKAGE_1;
         }
         return $package;
+    }
+
+    /**
+     * 弹幕优化
+     * @param array $params
+     * @return array|mixed
+     */
+    public static function getBroadcastData($params = [])
+    {
+        $redis = RedisDB::getConn();
+        $cache = $redis->get(self::KEY_BROADCAST_CACHE);
+        $cache = json_decode($cache, true);
+        if (!empty($cache)) {
+            return $cache;
+        }
+        $users = DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'broadcast_config_users');
+        $users = json_decode($users, true);
+        if (empty($users)) {
+            return [];
+        }
+        $info = DssStudentModel::getRecords(['id' => $users], ['id', 'name', 'thumb']);
+        if (empty($info)) {
+            return [];
+        }
+
+        $formatName = function ($name) {
+            $names = Util::getCharacterByPattern($name);
+            $names = $names[0] ?? [];
+            if (empty($names)) {
+                return '';
+            }
+            return array_shift($names) . '*' . array_pop($names);
+        };
+        foreach ($info as &$item) {
+            if (!empty($item['thumb'])) {
+                $item['thumb'] = AliOSS::replaceCdnDomainForDss($item['thumb']);
+            }
+            if (!empty($item['name'])) {
+                $item['name'] = $formatName($item['name']);
+            }
+        }
+        $redis->set(self::KEY_BROADCAST_CACHE, json_encode($info));
+        return $info;
     }
 }

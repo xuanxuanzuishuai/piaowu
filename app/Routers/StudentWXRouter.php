@@ -59,5 +59,8 @@ class StudentWXRouter extends RouterBase
         //端午节活动
         '/student_wx/duanwu_activity/activity_info' => ['method' => ['get'], 'call' => DuanWuActivity::class . ':activityInfo'],
         '/student_wx/duanwu_activity/referee_list' => ['method' => ['get'], 'call' => DuanWuActivity::class . ':refereeList'],
+
+        // 弹幕优化：
+        '/student_wx/landing/broadcast' => ['method' => ['get'], 'call' => Student::class . ':broadcast', 'middles' => []],
     ];
 }
