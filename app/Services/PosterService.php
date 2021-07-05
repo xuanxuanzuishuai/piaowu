@@ -295,11 +295,12 @@ class PosterService
      * @param $type
      * @param $channelId
      * @param array $extParams
+     * @param array $userQrInfo
      * @return array|string[]
      * @throws \App\Libs\Exceptions\RunTimeException
      * @throws \App\Libs\KeyErrorRC4Exception
      */
-    public static function generateQrPoster($posterPath, $config, $userId, $type, $channelId, array $extParams = [])
+    public static function generateQrPoster($posterPath, $config, $userId, $type, $channelId, array $extParams = [], $userQrInfo= [])
     {
         //通过oss合成海报并保存
         //海报资源
@@ -310,9 +311,11 @@ class PosterService
             return $emptyRes;
         }
         //用户二维码
-        $userQrInfo = MiniAppQrService::getUserMiniAppQr($userId, $type, $channelId, DssUserQrTicketModel::LANDING_TYPE_MINIAPP, $extParams);
+        if (empty($userQrInfo)) {
+            $userQrInfo = MiniAppQrService::getUserMiniAppQr($userId, $type, $channelId, DssUserQrTicketModel::LANDING_TYPE_MINIAPP, $extParams);
+        }
         if (empty($userQrInfo['qr_path'])) {
-            SimpleLogger::info('user qr make fail', [$userId, $type, $channelId]);
+            SimpleLogger::info('user qr make fail', [$userId, $type, $channelId, $userQrInfo]);
             return $emptyRes;
         }
         $exists = AliOSS::doesObjectExist($userQrInfo['qr_path']);

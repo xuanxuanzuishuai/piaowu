@@ -490,15 +490,30 @@ class PosterTemplateService
         $posterList = PosterService::getActivityPosterList($activityInfo);
         $channel = self::getChannelByType($type);
         $extParams = [
-            'user_status' => $userDetail['student_status'] ?? 0,
+            'user_current_status' => $userDetail['student_status'] ?? 0,
             'activity_id' => $activityInfo['activity_id'],
         ];
+
+        $userQrParams = [];
+        foreach ($posterList as &$item) {
+            $_tmp['poster_id'] = $item['poster_id'];
+            $_tmp['user_id'] = $studentId;
+            $_tmp['user_type'] = DssUserQrTicketModel::STUDENT_TYPE;
+            $_tmp['channel_id'] = $channel;
+            $_tmp['landing_type'] = DssUserQrTicketModel::LANDING_TYPE_MINIAPP;
+            $_tmp['qr_sign'] = MiniAppQrService::createQrSign($_tmp);
+            $userQrParams[] = $_tmp;
+
+            $item['qr_sign'] = $_tmp['qr_sign'];
+        }
+        unset($item);
+        $userQrArr = MiniAppQrService::getUserMiniAppQrList($userQrParams);
+
         foreach ($posterList as &$item) {
             $extParams['poster_id'] = $item['poster_id'];
             $item = self::formatPosterInfo($item);
             if (empty($ext['poster'])) {
-                $userQrInfo = MiniAppQrService::getUserMiniAppQr($studentId, DssUserQrTicketModel::STUDENT_TYPE, $channel, DssUserQrTicketModel::LANDING_TYPE_MINIAPP, $extParams);
-                $item['qr_code_url'] = AliOSS::replaceCdnDomainForDss($userQrInfo['qr_path']);
+                $item['qr_code_url'] = AliOSS::replaceCdnDomainForDss($userQrArr[$item['qr_sign']]['qr_path']);
                 continue;
             }
             // 海报图：
@@ -508,7 +523,8 @@ class PosterTemplateService
                 $studentId,
                 DssUserQrTicketModel::STUDENT_TYPE,
                 $channel,
-                $extParams
+                $extParams,
+                $userQrArr[$item['qr_sign']] ?? []
             );
             $item['poster_url'] = $poster['poster_save_full_path'];
         }

@@ -324,7 +324,7 @@ class MiniAppQrService
         ];
         // 根据小程序码主要信息，查询CH
         $qrSign = self::createQrSign($qrData);
-        $qrImage = QrInfoOpCHModel::getQrInfoBySign($qrSign, ['qr_path', 'qr_id']);
+        $qrImage = QrInfoOpCHModel::getQrInfoBySign($qrSign, ['qr_path', 'qr_id'])[0] ?? [];
         // CH查到直接返回qr_path, qr_id
         if (!empty($qrImage) && AliOSS::doesObjectExist($qrImage['qr_path'])) {
             $qrInfo['qr_path'] = $qrImage['qr_path'];
@@ -367,6 +367,76 @@ class MiniAppQrService
     }
 
     /**
+     * 批量获取一个未使用的小程序码信息 (图片url、id)
+     * @param array $qrParams
+     * @param bool $isFullUrl
+     * @return array
+     */
+    public static function getUserMiniAppQrList(array $qrParams = [], $isFullUrl = false)
+    {
+        $returnQrSignArr = [];
+        $saveQrData = [];
+        // 根据小程序码主要信息，查询CH
+        $qrImageArr = QrInfoOpCHModel::getQrInfoBySign(array_column($qrParams, 'qr_sign'), ['qr_path', 'qr_id', 'qr_sign']);
+        $qrSignData = array_column($qrImageArr, null, 'qr_sign');
+        $redis = RedisDB::getConn();
+        SimpleLogger::info("getUserMiniAppQrList qrSignData", [$qrImageArr, $qrSignData]);
+        foreach ($qrParams as $_qrParam) {
+            $_qrSign = $_qrParam['qr_sign'];
+            if (isset($qrSignData[$_qrSign])) {
+                $returnQrSignArr[$_qrSign] = [
+                    'qr_id' => $qrSignData[$_qrSign]['qr_id'],
+                    'qr_path' => $isFullUrl ? AliOSS::replaceCdnDomainForDss($qrSignData[$_qrSign]['qr_path']) : $qrSignData[$_qrSign]['qr_path'],
+                ];
+            } else {
+                // CH没有查到获取一个待使用的小程序码信息
+                $qrId = $redis->spop(self::REDIS_WAIT_USE_MINI_APP_ID_LIST);
+                // 如果qr_id 为空，需要立即启动生成小程序
+                if (empty($qrId)) {
+                    QueueService::startCreateMiniAppId();
+                    Util::errorCapture("getUserMiniAppQr error is redis empty", []);
+                    return $returnQrSignArr;
+                }
+
+                $miniAppIdInfo = $redis->hget(self::REDIS_WAIT_USE_MINI_APP_ID_INFO, $qrId);
+                $miniAppIdInfo = json_decode($miniAppIdInfo, true);
+                // 更新小程序码使用数量
+                $useQrNum = $redis->incr(self::REDIS_USE_MINI_APP_QR_NUM);
+                // 如果达到阀值 启用生成小程序码标识队列
+                $num = DictConstants::get(DictConstants::MINI_APP_QR, 'start_generation_threshold_num');
+                if (fmod($useQrNum, $num) == 0) {
+                    QueueService::startCreateMiniAppId();
+                }
+                // 清理缓存
+                $redis->hdel(self::REDIS_WAIT_USE_MINI_APP_ID_INFO, [$qrId]);
+
+                // 把小程序码和信息关联并且写入到CH
+                $saveQrData[] = [
+                    'qr_id'        => $qrId,
+                    'qr_path'      => $miniAppIdInfo['qr_path'],
+                    'qr_sign'      => $_qrSign,
+                    'user_id'      => $_qrParam['user_id'],
+                    'user_type'    => $_qrParam['user_type'],
+                    'channel_id'   => $_qrParam['channel_id'],
+                    'landing_type' => $_qrParam['landing_type'],
+                    'activity_id'  => $extParams['activity_id'] ?? 0,
+                    'employee_id'  => $extParams['employee_id'] ?? 0,
+                    'poster_id'    => $extParams['poster_id'] ?? 0,
+                    'app_id'       => $extParams['app_id'] ?? Constants::SMART_APP_ID,
+                    'busies_type'  => $extParams['busies_type'] ?? DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP,
+                    'user_status'  => $extParams['user_status'] ?? 0,
+                ];
+                $returnQrSignArr[$_qrSign] = [
+                    'qr_id' => $qrId,
+                    'qr_path' => $isFullUrl ? AliOSS::replaceCdnDomainForDss($miniAppIdInfo['qr_path']) : $miniAppIdInfo['qr_path'],
+                ];
+            }
+        }
+        QrInfoOpCHModel::saveQrInfo($saveQrData);
+        return $returnQrSignArr;
+    }
+
+    /**
      * 生成qr ticket
      * @param $qrData
      * @return string
@@ -403,6 +473,9 @@ class MiniAppQrService
         }
         if (!empty($qrData['user_current_status'])) {
             $createTicketData['user_current_status'] = $qrData['user_current_status'];
+        }
+        if (!empty($qrData['user_status'])) {
+            $createTicketData['user_status'] = $qrData['user_status'];
         }
         ksort($createTicketData);
         $paramsStr = http_build_query($createTicketData);

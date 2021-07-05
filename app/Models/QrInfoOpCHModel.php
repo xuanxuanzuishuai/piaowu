@@ -26,10 +26,16 @@ class QrInfoOpCHModel
         if (!empty($fields)) {
             $fieldStr = '`' . implode('`,`', $fields) . '`';
         }
-        $sql  = "SELECT " . $fieldStr . " FROM " . self::$table . " WHERE qr_sign=:qr_sign";
+        $sql  = "SELECT " . $fieldStr . " FROM " . self::$table;
+        if (is_array($qrSign)) {
+            $sql .= " WHERE qr_sign in (:qr_sign)";
+        } else {
+            $sql .= " WHERE qr_sign=:qr_sign";
+            $qrSign = (string)$qrSign;
+        }
         $db   = CHDB::getDB(CHDB::OP);
         $data = $db->queryAll($sql, ['qr_sign' => $qrSign]);
-        return $data[0] ?? [];
+        return $data ?? [];
     }
 
     /**
@@ -144,6 +150,7 @@ class QrInfoOpCHModel
         if (empty($res)) {
             SimpleLogger::error("saveQrInfo error", ['qr_data' => $qrData]);
         }
+        SimpleLogger::info("saveQrInfo save qr info", ['qr_data' => $insertData]);
         return true;
     }
 }

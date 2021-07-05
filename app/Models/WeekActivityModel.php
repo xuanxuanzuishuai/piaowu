@@ -7,6 +7,7 @@ namespace App\Models;
 
 use App\Libs\Constants;
 use App\Libs\MysqlDB;
+use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\Erp\ErpEventModel;
 
