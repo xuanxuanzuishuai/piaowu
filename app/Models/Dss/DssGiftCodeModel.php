@@ -299,4 +299,33 @@ class DssGiftCodeModel extends DssModel
                 LIMIT 0, 50";
         return $db->queryAll($sql) ?? [];
     }
+    
+    /**
+     * 获取用户所有智能商城正式时长订单
+     * @param $buyer
+     * @return int|mixed
+     */
+    public function getUserNormalPayNum($buyer)
+    {
+        $appId = DssPackageExtModel::APP_AI;
+        $shop = DssErpPackageV1Model::SALE_SHOP_AI_PLAY;
+        $type = DssCategoryV1Model::DURATION_TYPE_NORMAL;
+        $sql = "
+            SELECT
+                    count(1) as num
+            FROM  gift_code gc
+            INNER JOIN  erp_package_v1 p ON gc.bill_package_id = p.id
+            INNER JOIN  erp_package_goods_v1 pg ON pg.package_id = p.id
+            INNER JOIN  erp_goods_v1 g ON g.id = pg.goods_id
+            INNER JOIN  erp_category_v1 c ON c.id = g.category_id
+            WHERE
+                    gc.buyer = {$buyer}
+                    AND gc.bill_app_id = {$appId}
+                    AND p.sale_shop = {$shop}
+                    AND c.sub_type = {$type};
+        ";
+        $db = self::dbRO();
+        $result = $db->queryAll($sql);
+        return $result ? $result[0]['num'] : 0;
+    }
 }
