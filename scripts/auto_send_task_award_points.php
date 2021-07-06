@@ -33,7 +33,7 @@ $dotenv->load();
 $dotenv->overload();
 
 // 获取到期发待发放和发放失败的积分列表, 只读取award_type 为空或者指定的award_node
-$whereTime = strtotime(date("Y-m-d 00:00:00")) - 17 * Util::TIMESTAMP_ONEDAY;
+$whereTime = strtotime(date("Y-m-d 00:00:00")) - 30 * Util::TIMESTAMP_ONEDAY;
 $where = [
     'status' => [ErpUserEventTaskAwardGoldLeafModel::STATUS_WAITING, ErpUserEventTaskAwardGoldLeafModel::STATUS_GIVE_FAIL],
     'award_node' => [''],
@@ -64,6 +64,18 @@ foreach ($refList as $item) {
     }
     // 被推荐人对应的推荐人uuid
     $studentRef[$_stu_uuid] = $refUuidArr[$item['referee_id']];
+}
+
+$erp = new Erp();
+$refundTimeMap = [];
+$arrBillId = array_column($pointsList, 'bill_id');
+$batchBillId = array_chunk($arrBillId, 100);
+foreach ($batchBillId as $billIds) {
+    $refundInfo = $erp->getRefundTime($billIds);
+    $refundTimes = $refundInfo['data']??[];
+    foreach ($refundTimes as $billId => $refundTime) {
+        $refundTimeMap[$billId] = empty($refundTime) ? 0 : min($refundTime);
+    }
 }
 
 $eventTypeList = [];
@@ -97,8 +109,7 @@ foreach ($pointsList as $points) {
         $verify = true;
         $billId = $points['bill_id'];
         //订单退款时间
-        $refundTimeInfo = $erp->getRefundTime([$billId]);
-        $refundTime = $refundTimeInfo['data'][$billId][0]['refund_time'] ?? 0;
+        $refundTime = $refundTimeMap[$billId] ?? 0;
         SimpleLogger::info("script::auto_send_task_award_points", ['refund_data' => $refundTime]);
         if ($refundTime > 0 && $refundTime <= $delayTime) {   //如果15天内退费,不发放奖励
             $verify = false;

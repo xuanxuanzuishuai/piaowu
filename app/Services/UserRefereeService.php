@@ -290,18 +290,17 @@ class UserRefereeService
                         }
                         break;
                 }
-                $firstBuyTime = $refereeInfo['first_pay_normal_info']['create_time'] ?? 0;
-                if ($level && $time - $firstBuyTime <= 7*24*3600) {   //第一次购买年卡7天内
-                    $level = 4;
-                }
                 if ($level) {
                     $levelMap = [
                         1 => 0,
                         2 => 1,
                         3 => 2,
-                        4 => 3,
                     ];
                     $taskIds[] = RefereeAwardService::getDssYearPayTaskId($levelMap[$level]);
+                }
+                $firstBuyTime = $refereeInfo['first_pay_normal_info']['create_time'] ?? 0;
+                if ($level && $time - $firstBuyTime <= 7*24*3600) {   //第一次购买年卡7天内,给推荐人和被推荐人额外奖励
+                    $taskIds[] = RefereeAwardService::getDssYearPayTaskId(3);
                 }
             }
         }
