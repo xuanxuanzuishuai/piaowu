@@ -419,12 +419,12 @@ class MiniAppQrService
                     'user_type'    => $_qrParam['user_type'],
                     'channel_id'   => $_qrParam['channel_id'],
                     'landing_type' => $_qrParam['landing_type'],
-                    'activity_id'  => $extParams['activity_id'] ?? 0,
-                    'employee_id'  => $extParams['employee_id'] ?? 0,
-                    'poster_id'    => $extParams['poster_id'] ?? 0,
-                    'app_id'       => $extParams['app_id'] ?? Constants::SMART_APP_ID,
-                    'busies_type'  => $extParams['busies_type'] ?? DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP,
-                    'user_status'  => $extParams['user_status'] ?? 0,
+                    'activity_id'  => $_qrParam['activity_id'] ?? 0,
+                    'employee_id'  => $_qrParam['employee_id'] ?? 0,
+                    'poster_id'    => $_qrParam['poster_id'] ?? 0,
+                    'app_id'       => $_qrParam['app_id'] ?? Constants::SMART_APP_ID,
+                    'busies_type'  => $_qrParam['busies_type'] ?? DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP,
+                    'user_status'  => $_qrParam['user_status'] ?? 0,
                 ];
                 $returnQrSignArr[$_qrSign] = [
                     'qr_id' => $qrId,

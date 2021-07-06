@@ -496,6 +496,7 @@ class PosterTemplateService
 
         $userQrParams = [];
         foreach ($posterList as &$item) {
+            $_tmp = $extParams;
             $_tmp['poster_id'] = $item['poster_id'];
             $_tmp['user_id'] = $studentId;
             $_tmp['user_type'] = DssUserQrTicketModel::STUDENT_TYPE;

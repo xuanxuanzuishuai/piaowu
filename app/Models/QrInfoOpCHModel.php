@@ -12,7 +12,7 @@ use App\Libs\SimpleLogger;
 
 class QrInfoOpCHModel
 {
-    public static $table = 'qr_info';
+    public static $table = 'qr_info_all';
 
     /**
      * 获取二维码id的信息
