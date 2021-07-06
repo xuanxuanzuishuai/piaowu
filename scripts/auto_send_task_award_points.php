@@ -73,8 +73,9 @@ $batchBillId = array_chunk($arrBillId, 100);
 foreach ($batchBillId as $billIds) {
     $refundInfo = $erp->getRefundTime($billIds);
     $refundTimes = $refundInfo['data']??[];
-    foreach ($refundTimes as $billId => $refundTime) {
-        $refundTimeMap[$billId] = empty($refundTime) ? 0 : min($refundTime);
+    foreach ($refundTimes as $billId => $refundTimee) {
+        $arrRefundTime = array_column($refundTimee, 'refund_time');
+        $refundTimeMap[$billId] = empty($arrRefundTime) ? 0 : min($arrRefundTime);
     }
 }
 
@@ -110,7 +111,7 @@ foreach ($pointsList as $points) {
         $billId = $points['bill_id'];
         //订单退款时间
         $refundTime = $refundTimeMap[$billId] ?? 0;
-        SimpleLogger::info("script::auto_send_task_award_points", ['refund_data' => $refundTime]);
+        SimpleLogger::info("script::auto_send_task_award_points", ['refund_data' => $refundTime, 'delay_time' => $delayTime]);
         if ($refundTime > 0 && $refundTime <= $delayTime) {   //如果15天内退费,不发放奖励
             $verify = false;
         }
