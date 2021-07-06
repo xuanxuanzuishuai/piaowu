@@ -758,6 +758,6 @@ class Erp
         $params = [
             'order_id' => $strBillId,
         ];
-        return HttpHelper::requestJson($this->host . self::API_REFUND_FINISH_TIME, $params);
+        return HttpHelper::requestJson($this->host . self::API_REFUND_FINISH_TIME, $params, 'POST');
     }
 }
