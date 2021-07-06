@@ -76,6 +76,7 @@ class Landing extends ControllerBase
         try {
             $appId       = $params['app_id'] ?? Constants::SMART_APP_ID;
             $busiType    = $params['busi_type'] ?? DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER;
+            $userType    = DssUserWeiXinModel::USER_TYPE_STUDENT;
             $channelId   = $params['channel_id'] ?? 0;
             $mobile      = $params['mobile'];
             $countryCode = $params['country_code'] ?? NewSMS::DEFAULT_COUNTRY_CODE;
@@ -106,7 +107,7 @@ class Landing extends ControllerBase
                         $openId = $info['openid'];
                     }
                 }
-                $info = UserService::studentRegisterBound($appId, $mobile, $channelId, $openId, $busiType);
+                $info = UserService::studentRegisterBound($appId, $mobile, $channelId, $openId, $busiType, $userType);
                 if (empty($info['student_id'])) {
                     throw new RunTimeException(['user_register_fail']);
                 }
