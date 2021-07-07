@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Models\Dss\DssUserWeiXinModel;
+use Medoo\Medoo;
 
 class WechatTokenService
 {
@@ -149,14 +150,12 @@ class WechatTokenService
             [
                 'user_id' => $user_id,
                 'user_type' => $user_type,
-                'ORDER' => ['id' => 'DESC'],
-                'LIMIT' => [0, 50]
             ],
             [
-                'user_id',
-                'user_type',
-                'app_id',
-                'open_id',
+                "open_id" => Medoo::raw('DISTINCT open_id'),
+                "user_id",
+                "user_type",
+                "app_id",
             ]
         );
         $delKeys = [];
