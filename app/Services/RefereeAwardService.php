@@ -109,24 +109,24 @@ class RefereeAwardService
         //    SimpleLogger::info("RefereeAwardService::dssShouldCompleteEventTask", ['err' => 'no_REVIEW_COURSE_1980', 'student' => $student, 'package' => $package]);
         //    return false;
         //}
-
-        // 升级
-        if ($package['package_type'] > $student['has_review_course']) {
+        
+        //升级成体验用户
+        if ($package['package_type'] == DssPackageExtModel::PACKAGE_TYPE_TRIAL && $package['package_type'] > $student['has_review_course']) {
             return true;
-        } else {
-            // 年包 && 首购智能陪练正式课
-            if ($package['package_type'] == DssPackageExtModel::PACKAGE_TYPE_NORMAL) {
-                $billInfo = DssGiftCodeModel::getGiftCodeDetailByBillId($parentBillId);
-                $isCustom = $billInfo[0]['is_custom'] ?? DssErpPackageV1Model::PACKAGE_IS_CUSTOM;
-                if ($isCustom == DssErpPackageV1Model::PACKAGE_IS_CUSTOM) {
-                    return false;
-                }
-                $hadPurchaseCount = DssGiftCodeModel::getUserNormalPayNum($student['id']);
-                if ($hadPurchaseCount <= 1) {
-                    return true;
-                }
+        }
+        //购买年包
+        if ($package['package_type'] == DssPackageExtModel::PACKAGE_TYPE_NORMAL) {
+            $billInfo = DssGiftCodeModel::getGiftCodeDetailByBillId($parentBillId);
+            $isCustom = $billInfo[0]['is_custom'] ?? DssErpPackageV1Model::PACKAGE_IS_CUSTOM;
+            if ($isCustom == DssErpPackageV1Model::PACKAGE_IS_CUSTOM) {   //年包是自定义包,不发奖励
+                return false;
+            }
+            $hadPurchaseCount = DssGiftCodeModel::getUserNormalPayNum($student['id']);
+            if ($hadPurchaseCount <= 1) {
+                return true;
             }
         }
+        
         return false;
     }
 
