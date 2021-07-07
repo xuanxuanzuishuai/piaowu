@@ -34,7 +34,7 @@ class WechatTokenService
         $redis = RedisDB::getConn();
         $cacheKey = self::getUserTokenKey($user_id, $user_type, $app_id, $open_id);
         $cache = $redis->get($cacheKey);
-        if (!empty($cache)) {
+        if (!empty($cache) && !empty(self::getTokenInfo($cache))) {
             return $cache;
         }
         $token = bin2hex(openssl_random_pseudo_bytes(16));
@@ -90,6 +90,7 @@ class WechatTokenService
         $userKey = self::getUserTokenKeyByToken($token);
         if (!empty($userKey)) {
             $redis->expire($userKey, self::$redisExpire);
+            $redis->expire(self::getTokenKey($token), self::$redisExpire);
         }
     }
 
