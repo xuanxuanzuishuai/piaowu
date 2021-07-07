@@ -319,7 +319,7 @@ class DssGiftCodeModel extends DssModel
         $type = DssCategoryV1Model::DURATION_TYPE_NORMAL;
         $sql = "
             SELECT
-                count(DISTINCT gc.id) as num
+                count(DISTINCT gc.parent_bill_id) as num
             FROM {$tb1} gc
             INNER JOIN {$tb2} p ON gc.bill_package_id = p.id
             INNER JOIN {$tb3} pg ON pg.package_id = p.id
