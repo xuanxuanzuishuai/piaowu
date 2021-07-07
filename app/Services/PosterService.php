@@ -302,6 +302,7 @@ class PosterService
      */
     public static function generateQrPoster($posterPath, $config, $userId, $type, $channelId, array $extParams = [], $userQrInfo= [])
     {
+        SimpleLogger::info('generateQrPoster start', []);
         //通过oss合成海报并保存
         //海报资源
         $emptyRes = ['poster_save_full_path' => '', 'unique' => ''];
@@ -373,6 +374,7 @@ class PosterService
         $resImageUrl = AliOSS::signUrls($posterPath, "", "", "", true, $waterMarkStr, $imgSizeStr);
         $user_current_status = $extParams['user_current_status'] ?? DssStudentModel::STATUS_REGISTER;
 
+        SimpleLogger::info('generateQrPoster end', []);
         //返回数据
         return [
             'poster_save_full_path' => $resImageUrl,

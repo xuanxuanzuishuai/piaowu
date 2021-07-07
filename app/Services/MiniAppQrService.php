@@ -320,7 +320,7 @@ class MiniAppQrService
             'poster_id'    => $extParams['poster_id'] ?? 0,
             'app_id'       => $extParams['app_id'] ?? Constants::SMART_APP_ID,
             'busies_type'  => $extParams['busies_type'] ?? DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP,
-            'user_status'  => $extParams['user_status'] ?? 0,
+            'user_status'  => $extParams['user_status'] ?? ($extParams['user_current_status'] ??  0),
         ];
         // 根据小程序码主要信息，查询CH
         $qrSign = self::createQrSign($qrData);
@@ -424,7 +424,7 @@ class MiniAppQrService
                     'poster_id'    => $_qrParam['poster_id'] ?? 0,
                     'app_id'       => $_qrParam['app_id'] ?? Constants::SMART_APP_ID,
                     'busies_type'  => $_qrParam['busies_type'] ?? DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP,
-                    'user_status'  => $_qrParam['user_status'] ?? 0,
+                    'user_status'  => $extParams['user_status'] ?? ($extParams['user_current_status'] ??  0),
                 ];
                 $returnQrSignArr[$_qrSign] = [
                     'qr_id' => $qrId,
@@ -444,39 +444,25 @@ class MiniAppQrService
     public static function createQrSign($qrData)
     {
         $createTicketData = [];
-        if (!empty($qrData['user_id'])) {
-            $createTicketData['user_id'] = $qrData['user_id'];
+        $signField = [
+            'user_id'             => 'user_id',
+            'user_type'           => 'user_type',
+            'landing_type'        => 'landing_type',
+            'channel_id'          => 'channel_id',
+            'activity_id'         => 'activity_id',
+            'employee_id'         => 'employee_id',
+            'poster_id'           => 'poster_id',
+            'app_id'              => 'app_id',
+            'busies_type'         => 'busies_type',
+            'user_current_status' => 'user_current_status',
+            'user_status'         => 'user_status',
+        ];
+        foreach ($signField as $paramsFiled => $createField) {
+            if (isset($qrData[$paramsFiled]) && !Util::emptyExceptZero($qrData[$paramsFiled])) {
+                $createTicketData[$createField] = $qrData[$paramsFiled];
+            }
         }
-        if (!empty($qrData['user_type'])) {
-            $createTicketData['user_type'] = $qrData['user_type'];
-        }
-        if (!empty($qrData['landing_type'])) {
-            $createTicketData['landing_type'] = $qrData['landing_type'];
-        }
-        if (!empty($qrData['channel_id'])) {
-            $createTicketData['channel_id'] = $qrData['channel_id'];
-        }
-        if (!empty($qrData['activity_id'])) {
-            $createTicketData['activity_id'] = $qrData['activity_id'];
-        }
-        if (!empty($qrData['employee_id'])) {
-            $createTicketData['employee_id'] = $qrData['employee_id'];
-        }
-        if (!empty($qrData['poster_id'])) {
-            $createTicketData['poster_id'] = $qrData['poster_id'];
-        }
-        if (!empty($qrData['app_id'])) {
-            $createTicketData['app_id'] = $qrData['app_id'];
-        }
-        if (!empty($qrData['busies_type'])) {
-            $createTicketData['busies_type'] = $qrData['busies_type'];
-        }
-        if (!empty($qrData['user_current_status'])) {
-            $createTicketData['user_current_status'] = $qrData['user_current_status'];
-        }
-        if (!empty($qrData['user_status'])) {
-            $createTicketData['user_status'] = $qrData['user_status'];
-        }
+
         ksort($createTicketData);
         $paramsStr = http_build_query($createTicketData);
         return md5($paramsStr);

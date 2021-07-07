@@ -149,6 +149,7 @@ class QrInfoOpCHModel
         $res    = $db->insert(self::$table, $insertData, $fields);
         if (empty($res)) {
             SimpleLogger::error("saveQrInfo error", ['qr_data' => $qrData]);
+            return false;
         }
         SimpleLogger::info("saveQrInfo save qr info", ['qr_data' => $insertData]);
         return true;

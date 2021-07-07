@@ -8,7 +8,7 @@ INSERT INTO `dict`(`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES
 
 ALTER TABLE `bill_map` MODIFY COLUMN `param_map_id` varchar(32) NOT NULL DEFAULT '' COMMENT '小程序码标识、param_map数据表id' AFTER `user_id`;
 
--- clickhouse
+-- clickhouse -
 create database op_prod;
 create table qr_info (
      qr_id String Default '' comment '二维码唯一标识',
