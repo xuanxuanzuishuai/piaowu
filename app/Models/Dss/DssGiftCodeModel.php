@@ -305,24 +305,32 @@ class DssGiftCodeModel extends DssModel
      * @param $buyer
      * @return int|mixed
      */
-    public function getUserNormalPayNum($buyer)
+    public static function getUserNormalPayNum($buyer)
     {
+        $tb1 = self::$table;
+        $tb2 = DssErpPackageV1Model::$table;
+        $tb3 = DssErpPackageGoodsV1Model::$table;
+        $tb4 = DssGoodsV1Model::$table;
+        $tb5 = DssCategoryV1Model::$table;
+        
         $appId = DssPackageExtModel::APP_AI;
         $shop = DssErpPackageV1Model::SALE_SHOP_AI_PLAY;
+        $status = DssErpPackageGoodsV1Model::SUCCESS_NORMAL;
         $type = DssCategoryV1Model::DURATION_TYPE_NORMAL;
         $sql = "
             SELECT
-                    count(1) as num
-            FROM  gift_code gc
-            INNER JOIN  erp_package_v1 p ON gc.bill_package_id = p.id
-            INNER JOIN  erp_package_goods_v1 pg ON pg.package_id = p.id
-            INNER JOIN  erp_goods_v1 g ON g.id = pg.goods_id
-            INNER JOIN  erp_category_v1 c ON c.id = g.category_id
+                count(DISTINCT gc.id) as num
+            FROM {$tb1} gc
+            INNER JOIN {$tb2} p ON gc.bill_package_id = p.id
+            INNER JOIN {$tb3} pg ON pg.package_id = p.id
+            INNER JOIN {$tb4} g ON g.id = pg.goods_id
+            INNER JOIN {$tb5} c ON c.id = g.category_id
             WHERE
-                    gc.buyer = {$buyer}
-                    AND gc.bill_app_id = {$appId}
-                    AND p.sale_shop = {$shop}
-                    AND c.sub_type = {$type};
+                gc.buyer = {$buyer}
+                AND gc.bill_app_id = {$appId}
+                AND p.sale_shop = {$shop}
+                AND pg.status = {$status}
+                AND c.sub_type = {$type};
         ";
         $db = self::dbRO();
         $result = $db->queryAll($sql);
