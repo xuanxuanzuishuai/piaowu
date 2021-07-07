@@ -177,6 +177,7 @@ class DssGiftCodeModel extends DssModel
                 "gc.code_status",
                 "gc.buy_time",
                 "p.name (package_name)",
+                "p.is_custom",
             ],
             [
                 "gc.parent_bill_id" => $parentBillIds

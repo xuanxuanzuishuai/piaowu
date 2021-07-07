@@ -116,6 +116,11 @@ class RefereeAwardService
         } else {
             // 年包 && 首购智能陪练正式课
             if ($package['package_type'] == DssPackageExtModel::PACKAGE_TYPE_NORMAL) {
+                $billInfo = DssGiftCodeModel::getGiftCodeDetailByBillId($parentBillId);
+                $isCustom = $billInfo[0]['is_custom'] ?? DssErpPackageV1Model::PACKAGE_IS_CUSTOM;
+                if ($isCustom == DssErpPackageV1Model::PACKAGE_IS_CUSTOM) {
+                    return false;
+                }
                 $hadPurchaseCount = DssGiftCodeModel::getUserNormalPayNum($student['id']);
                 if ($hadPurchaseCount <= 1) {
                     return true;
