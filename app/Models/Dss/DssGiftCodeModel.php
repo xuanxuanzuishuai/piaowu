@@ -248,7 +248,7 @@ class DssGiftCodeModel extends DssModel
     }
 
     /**
-     * 获取学生购买记录列表
+     * 获取学生购买记录:以订单ID分组（同一个课包会包含多个商品，但是数据合并为一条）
      * @param $studentId
      * @param $subTypes
      * @param $appIds
@@ -278,6 +278,7 @@ class DssGiftCodeModel extends DssModel
                 'gc.bill_app_id' => $appIds,
                 'c.sub_type' => $subTypes,
                 'pg.status' => DssErpPackageGoodsV1Model::SUCCESS_NORMAL,
+                'GROUP' => 'gc.parent_bill_id',
             ]);
         return $records;
     }
