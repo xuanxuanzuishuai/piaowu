@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
+use App\Models\Dss\DssUserWeiXinModel;
 
 class WechatTokenService
 {
@@ -131,51 +132,51 @@ class WechatTokenService
         return true;
     }
 
+    /**
+     * 获取所有待删除token key
+     * @param $user_id
+     * @param null $user_type
+     * @param null $app_id
+     * @return array
+     */
     public static function getUserTokenKeyPattern($user_id, $user_type = null, $app_id = null)
     {
         if (empty($user_id)) {
             return [];
         }
         $redis = RedisDB::getConn();
-        $keyPattern = self::USER_TOKEN_KEY . implode('_', [$app_id, $user_type, $user_id]) . '*';
-        //使用scan游标方式遍历处理目标key
-        $stopTag = true;
-        //游标
-        $cursor = 0;
-        //目标缓存键数组
-        $keys = [];
-        //当前数据库key总量，设定scan每次扫描的count参数
-        $dbSize = $redis->dbsize();
-        $count = 100000;
-        if ($dbSize >= 100000) {
-            $count = 200000;
-        }
-        SimpleLogger::info('scan start', ['time' => time()]);
-        while ($stopTag === true) {
-            $patternData = $redis->scan($cursor, ['MATCH' => $keyPattern, 'COUNT' => $count]);
-            if ($patternData[0] == 0) {
-                $stopTag = false;
-            } else {
-                $cursor = $patternData[0];
+        $allUserWeixin = DssUserWeiXinModel::getRecords(
+            [
+                'user_id' => $user_id,
+                'user_type' => $user_type,
+                'ORDER' => ['id' => 'DESC'],
+                'LIMIT' => [0, 50]
+            ],
+            [
+                'user_id',
+                'user_type',
+                'app_id',
+                'open_id',
+            ]
+        );
+        $delKeys = [];
+        $userKeys = [];
+        foreach ($allUserWeixin as $item) {
+            $tmp = self::getUserTokenKey(
+                $item['user_id'],
+                $item['user_type'],
+                $item['app_id'],
+                $item['open_id']
+            );
+            if (!isset($userKeys[$tmp])) {
+                $delKeys[] = $tmp;
+                $token = $redis->get($tmp);
+                if (!empty($token)) {
+                    $delKeys[] = self::getTokenKey($token);
+                }
+                $userKeys[$tmp] = $tmp;
             }
-            $keys = array_merge($keys, $patternData[1]);
         }
-        SimpleLogger::info('scan end', ['time' => time(), 'keys' => $keys]);
-        if (empty($keys)) {
-            return $keys;
-        }
-        $keys = array_unique($keys);
-        $userTokenPipLineRes = $redis->pipeline(function ($pipe) use ($keys) {
-            foreach ($keys as $ck) {
-                $pipe->get($ck);
-            }
-        });
-        $userTokenCacheKeyValMap = array_combine($keys, $userTokenPipLineRes);
-
-        //再次获取微信token的缓存key
-        foreach ($userTokenCacheKeyValMap as $weChatTokenSuffix) {
-            $keys[] = WechatTokenService::getTokenKey($weChatTokenSuffix);
-        }
-        return $keys;
+        return $delKeys;
     }
 }
