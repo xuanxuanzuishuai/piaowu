@@ -31,7 +31,7 @@ class UserRefereeService
     const EVENT_TASK_STATUS_COMPLETE = 2;
     const REFERRAL_AWARD_RULE_VERSION = 2;   //奖励规则版本
     const REFERRAL_AWARD_RULE_VERSION_CACHE_KEY = 'referral_award_rule_version';   //奖励规则版本缓存key
-    const REFERRAL_AWARD_RULE_VERSION_START = '2021-07-08';   //奖励规则开始时间
+    const REFERRAL_AWARD_RULE_VERSION_CHECK_END_DATE = '2021-07-10';   //奖励规则校验结束时间
     /**
      * 转介绍奖励入口
      * @param $appId
@@ -238,12 +238,12 @@ class UserRefereeService
         $time = time();
         
         $redis = RedisDB::getConn();
-        //新版本规则第一次上线时,删除旧规则缓存
-        if ($time >= strtotime(self::REFERRAL_AWARD_RULE_VERSION_START)) {
+        //新版本规则第一次上线时,删除旧规则缓存 (极端情况如果校验时间结束之前都没有请求,不会更新规则缓存,所以代码上线后手动清理缓存)
+        if ($time < strtotime(self::REFERRAL_AWARD_RULE_VERSION_CHECK_END_DATE)) {
             $version = $redis->get(self::REFERRAL_AWARD_RULE_VERSION_CACHE_KEY);
             if (empty($version) || $version != self::REFERRAL_AWARD_RULE_VERSION) {
                 //删除旧规则缓存
-                DictModel::delCache(DictConstants::NODE_RELATE_TASK, 'dict_list_');
+                DictModel::delCache(DictConstants::NODE_RELATE_TASK['type'], 'dict_list_');
                 //设置version缓存为当前版本
                 $redis->set(self::REFERRAL_AWARD_RULE_VERSION_CACHE_KEY, self::REFERRAL_AWARD_RULE_VERSION);
             }
