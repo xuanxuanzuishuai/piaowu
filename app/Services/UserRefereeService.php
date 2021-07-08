@@ -6,9 +6,11 @@ use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\AgentAwardDetailModel;
+use App\Models\DictModel;
 use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssPackageExtModel;
 use App\Models\Dss\DssStudentModel;
@@ -27,7 +29,9 @@ class UserRefereeService
     const EVENT_TYPE_BUY = 'event_type_buy';
     /** 任务状态 */
     const EVENT_TASK_STATUS_COMPLETE = 2;
-
+    const REFERRAL_AWARD_RULE_VERSION = 2;   //奖励规则版本
+    const REFERRAL_AWARD_RULE_VERSION_CACHE_KEY = 'referral_award_rule_version';   //奖励规则版本缓存key
+    const REFERRAL_AWARD_RULE_VERSION_START = '2021-07-08';   //奖励规则开始时间
     /**
      * 转介绍奖励入口
      * @param $appId
@@ -232,6 +236,19 @@ class UserRefereeService
     {
         $taskIds = [];
         $time = time();
+        
+        $redis = RedisDB::getConn();
+        //新版本规则第一次上线时,删除旧规则缓存
+        if ($time >= strtotime(self::REFERRAL_AWARD_RULE_VERSION_START)) {
+            $version = $redis->get(self::REFERRAL_AWARD_RULE_VERSION_CACHE_KEY);
+            if (empty($version) || $version != self::REFERRAL_AWARD_RULE_VERSION) {
+                //删除旧规则缓存
+                DictModel::delCache(DictConstants::NODE_RELATE_TASK, 'dict_list_');
+                //设置version缓存为当前版本
+                $redis->set(self::REFERRAL_AWARD_RULE_VERSION_CACHE_KEY, self::REFERRAL_AWARD_RULE_VERSION);
+            }
+        }
+        
         // 推荐人当前状态：非付费正式课：
         if ($refereeInfo['has_review_course'] != DssStudentModel::REVIEW_COURSE_1980) {
             // XYZOP-555 : 奖励推荐人500金叶子：(推荐人是体验课用户, 被推荐人购买体验课)
