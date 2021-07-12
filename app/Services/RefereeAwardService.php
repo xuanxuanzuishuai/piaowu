@@ -6,6 +6,7 @@ use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
+use App\Models\Dss\DssCategoryV1Model;
 use App\Models\Dss\DssErpPackageV1Model;
 use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssPackageExtModel;
@@ -129,7 +130,36 @@ class RefereeAwardService
         
         return false;
     }
-
+    
+    /**
+     * 判断是否应该发放奖励
+     * @param $studentId
+     * @param $package
+     * @return bool
+     */
+    public static function dssShouldGetAward($studentId, $package)
+    {
+        // 真人业务或者非智能商城包不发奖
+        if ($package['app_id'] != DssPackageExtModel::APP_AI || $package['sale_shop'] != DssErpPackageV1Model::SALE_SHOP_AI_PLAY) {
+            SimpleLogger::info("RefereeAwardService::dssShouldGetAward", ['err' => 'invalid_package', 'package' => $package]);
+            return false;
+        }
+        // 没有转介绍关系不发奖
+        $referralInfo = StudentReferralStudentStatisticsModel::getRecord(['student_id' => $studentId]);
+        if (empty($referralInfo)) {
+            SimpleLogger::info("RefereeAwardService::dssShouldGetAward", ['err' => 'no_fond_referee', 'student' => $studentId]);
+            return false;
+        }
+        //购买年包
+        if ($package['sub_type'] == DssCategoryV1Model::DURATION_TYPE_NORMAL) {
+            $hadPurchaseCount = DssGiftCodeModel::getUserNormalPayNum($studentId);
+            if ($hadPurchaseCount == 0) {   //未购买过年包
+                return true;
+            }
+        }
+        return false;
+    }
+    
     /**
      * 红包审核
      * @param $params

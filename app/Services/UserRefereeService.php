@@ -11,6 +11,8 @@ use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\AgentAwardDetailModel;
 use App\Models\DictModel;
+use App\Models\Dss\DssCategoryV1Model;
+use App\Models\Dss\DssErpPackageV1Model;
 use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssPackageExtModel;
 use App\Models\Dss\DssStudentModel;
@@ -32,6 +34,40 @@ class UserRefereeService
     const REFERRAL_AWARD_RULE_VERSION = 2;   //奖励规则版本
     const REFERRAL_AWARD_RULE_VERSION_CACHE_KEY = 'referral_award_rule_version';   //奖励规则版本缓存key
     const REFERRAL_AWARD_RULE_VERSION_CHECK_END_DATE = '2021-07-10';   //奖励规则校验结束时间
+    
+    const AWARD_CONFIG = [
+        [
+            [
+                'award_total' => 5000, 'award_normal' => 5000, 'award_extra' => 0, 'award_CNY' => 50, 'award_name' => '儿童实验玩具',
+                'award_img_url' => 'https://oss-ai-peilian-app.xiaoyezi.com/ertongshiyanwanju_5000.png', 'award_img_url_@2x' => 'https://oss-ai-peilian-app.xiaoyezi.com/ertongshiyanwanju_5000@2x.png',
+            ],
+            [
+                'award_total' => 25000, 'award_normal' => 5000, 'award_extra' => 20000, 'award_CNY' => 250, 'award_name' => '机器狗', 'award_img_url' => '',
+                'award_img_url' => 'https://oss-ai-peilian-app.xiaoyezi.com/jiqigou_25000.png', 'award_img_url_@2x' => 'https://oss-ai-peilian-app.xiaoyezi.com/jiqigou_25000@2x.png',
+            ],
+        ],
+        [
+            [
+                'award_total' => 10000, 'award_normal' => 10000, 'award_extra' => 0, 'award_CNY' => 100, 'award_name' => '画笔', 'award_img_url' => '',
+                'award_img_url' => 'https://oss-ai-peilian-app.xiaoyezi.com/huabi_10000.png', 'award_img_url_@2x' => 'https://oss-ai-peilian-app.xiaoyezi.com/huabi_10000@2x.png',
+            ],
+            [
+                'award_total' => 30000, 'award_normal' => 10000, 'award_extra' => 20000, 'award_CNY' => 300, 'award_name' => '宝宝高清数码相机', 'award_img_url' => '',
+                'award_img_url' => 'https://oss-ai-peilian-app.xiaoyezi.com/shumaxiangji_30000.png', 'award_img_url_@2x' => 'https://oss-ai-peilian-app.xiaoyezi.com/shumaxiangji_30000@2x.png',
+            ],
+        ],
+        [
+            [
+                'award_total' => 15000, 'award_normal' => 15000, 'award_extra' => 0, 'award_CNY' => 150, 'award_name' => '小黄人行李箱', 'award_img_url' => '',
+                'award_img_url' => 'https://oss-ai-peilian-app.xiaoyezi.com/xiaohuangrenxinglixiang_15000.png', 'award_img_url_@2x' => 'https://oss-ai-peilian-app.xiaoyezi.com/xiaohuangrenxinglixiang_15000@2x.png',
+            ],
+            [
+                'award_total' => 35000, 'award_normal' => 15000, 'award_extra' => 20000, 'award_CNY' => 350, 'award_name' => '天文望远镜', 'award_img_url' => '',
+                'award_img_url' => 'https://oss-ai-peilian-app.xiaoyezi.com/tianwenwangyuanjing_35000.png', 'award_img_url_@2x' => 'https://oss-ai-peilian-app.xiaoyezi.com/tianwenwangyuanjing_35000@2x.png',
+            ],
+        ],
+    ];
+    
     /**
      * 转介绍奖励入口
      * @param $appId
@@ -258,7 +294,7 @@ class UserRefereeService
             ) {
                 $taskIds[] = RefereeAwardService::getDssTrailPayTaskId();
             }
-        } elseif (strtotime($refereeInfo['sub_end_date'])+86400>=$time && $refereeInfo['sub_status']==DssStudentModel::SUB_STATUS_ON) {
+        } elseif (strtotime($refereeInfo['sub_end_date'])+Util::TIMESTAMP_ONEDAY>=$time && $refereeInfo['sub_status']==DssStudentModel::SUB_STATUS_ON) {
             // 推荐人状态：付费正式课
             // 被推荐人购买体验课：
             if ($packageType == DssPackageExtModel::PACKAGE_TYPE_TRIAL) {
@@ -316,14 +352,70 @@ class UserRefereeService
                     $taskIds[] = RefereeAwardService::getDssYearPayTaskId($levelMap[$level]);
                 }
                 $firstBuyTime = $refereeInfo['first_pay_normal_info']['create_time'] ?? 0;
-                if ($level && $time - $firstBuyTime <= 7*24*3600) {   //第一次购买年卡7天内,给推荐人和被推荐人额外奖励
+                if ($level && $time - $firstBuyTime <= Util::TIMESTAMP_ONEWEEK) {   //第一次购买年卡7天内,给推荐人和被推荐人额外奖励
                     $taskIds[] = RefereeAwardService::getDssYearPayTaskId(3);
                 }
             }
         }
         return $taskIds;
     }
-
+    
+    /**
+     * 根据学生ID和想要购买的包ID获取可能获取的奖励
+     * @param $studentId
+     * @param $packageId
+     * @param $uuid
+     * @return array
+     */
+    public static function getAwardInfo($params)
+    {
+        $studentId = $params['student_id'];
+        $packageId = $params['package_id'];
+        $result = [];
+        $packageInfo = DssErpPackageV1Model::getPackageById($packageId);
+        if (!RefereeAwardService::dssShouldGetAward($studentId, $packageInfo)) {
+            SimpleLogger::info('UserRefereeService::getAwardInfo', ['err' => 'invalid_dssShouldGetAward']);
+            return $result;
+        }
+        $num = $packageInfo['num'] ?? 0;   //课包有效天数
+        $subType = $packageInfo['sub_type'] ?? 0;   //课包时长类型
+        $refereeRelation = StudentReferralStudentStatisticsModel::getRecord(['student_id' => $studentId]);
+        $refereeInfo = DssStudentModel::getRecord(['id' => $refereeRelation['referee_id']]);
+        $refereeInfo['student_id'] = $studentId;
+        $refereeInfo['first_pay_normal_info'] = DssGiftCodeModel::getUserFirstPayInfo($refereeRelation['referee_id']);
+        SimpleLogger::info('UserRefereeService::getAwardInfo', ['ref' => $refereeInfo, 'stu_id' => $studentId]);
+        $time = time();
+        if (strtotime($refereeInfo['sub_end_date']) + Util::TIMESTAMP_ONEDAY >= $time   //年卡未过期
+            &&
+            $refereeInfo['sub_status'] == DssStudentModel::SUB_STATUS_ON   //年卡状态正常
+            &&
+            $subType == DSSCategoryV1Model::DURATION_TYPE_NORMAL   //正式时长课包
+        ) {
+            $index1 = -1;
+            if ($num >= 361 && $num <= 371) {
+                $index1 = 0;
+            }
+            if ($num >= 544 && $num <= 554) {
+                $index1 = 1;
+            }
+            if ($num >= 727) {
+                $index1 = 2;
+            }
+            $index2 = 0;
+            $endTime = 0;
+            $firstBuyTime = $refereeInfo['first_pay_normal_info']['create_time'] ?? 0;
+            if ($time - $firstBuyTime <= Util::TIMESTAMP_ONEWEEK) {   //第一次购买年卡7天内,给推荐人和被推荐人额外奖励
+                $index2 = 1;
+                $endTime = $firstBuyTime + Util::TIMESTAMP_ONEWEEK;
+            }
+            $result = self::AWARD_CONFIG[$index1][$index2] ?? [];
+            if ($result) {
+                $result['award_extra_end_date'] = $endTime ? date('Y/m/d H:i:s', $endTime) : '';
+            }
+        }
+        return $result;
+    }
+    
     /**
      * 查询被推荐人是推荐人指定时间内成功推荐的第几个人
      * 时间是 自然月，  类型年卡

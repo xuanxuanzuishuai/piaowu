@@ -64,5 +64,8 @@ class DSSRouter extends RouterBase
         '/dss/share_poster/approval' => ['method' => ['post'], 'call' => Dss::class . ':approvalPoster'],
         '/dss/share_poster/refused'  => ['method' => ['post'], 'call' => Dss::class . ':refusedPoster'],
         '/dss/activity/list'         => ['method' => ['get'], 'call' => Dss::class . ':activityList'],
+
+        // 转介绍专属售卖落地页 - 好友推荐专属奖励
+        '/dss/referral/awards' => ['method' => ['get'], 'call' => Dss::class . ':getAwardInfo'],
     ];
 }

@@ -818,4 +818,48 @@ class Dss extends ControllerBase
         }
         return HttpHelper::buildResponse($response, ['activities' => $data, 'total_count' => $total]);
     }
+    
+    /**
+     * 转介绍专属售卖落地页 - 好友推荐专属奖励
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public static function getAwardInfo(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'student_id',
+                'type' => 'required',
+                'error_code' => 'student_id_is_required',
+            ],
+            [
+                'key' => 'student_id',
+                'type' => 'integer',
+                'error_code' => 'student_id_is_integer',
+            ],
+            [
+                'key' => 'package_id',
+                'type' => 'required',
+                'error_code' => 'package_id_is_required',
+            ],
+            [
+                'key' => 'package_id',
+                'type' => 'integer',
+                'error_code' => 'package_id_is_integer'
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            $res = UserRefereeService::getAwardInfo($params);
+        } catch (RunTimeException $e) {
+            SimpleLogger::info("Op::UserRefereeService::getAwardInfo error", ['params' => $params, 'err' => $e->getData()]);
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, $res);
+    }
 }
