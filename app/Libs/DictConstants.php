@@ -611,6 +611,14 @@ class DictConstants {
         ]
     ];
 
+    // 小叶子AI智能陪练小程序
+    const AI_PLAY_MINI_APP_CONFIG = [
+        'type' => 'AI_PLAY_MINI_APP_CONFIG',
+        'keys' => [
+            'verify_switch', // 审核开关
+        ]
+    ];
+
     // 签名秘钥
     const SERVICE_SIGN_KEY = [
         'type' => 'SERVICE_SIGN_KEY',

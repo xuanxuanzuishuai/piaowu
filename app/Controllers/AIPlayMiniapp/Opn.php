@@ -9,6 +9,7 @@
 namespace App\Controllers\AIPlayMiniapp;
 
 use App\Controllers\ControllerBase;
+use App\Libs\DictConstants;
 use App\Libs\HttpHelper;
 use App\Libs\OpernCenter;
 use App\Libs\Util;
@@ -51,6 +52,10 @@ class Opn extends ControllerBase
         $collection = $opn->collectionsByIds([$params['collection_id']]);
         $collection = $collection['data'][0] ?? [];
         $resourceTypes = 'mp4';
+        $switch = DictConstants::get(DictConstants::AI_PLAY_MINI_APP_CONFIG, 'verify_switch');
+        if (!empty($switch)) {
+            $resourceTypes = '';
+        }
         $result = $opn->lessons($params['collection_id'], $pageId, $pageLimit, 1, $resourceTypes);
         if (empty($result) || !empty($result['errors'])) {
             return $response->withJson($result, StatusCode::HTTP_OK);
@@ -98,6 +103,10 @@ class Opn extends ControllerBase
         // 示范视频和曲谱图片
         $withResources = 1;
         $resourceTypes = 'mp4,png';
+        $switch = DictConstants::get(DictConstants::AI_PLAY_MINI_APP_CONFIG, 'verify_switch');
+        if (!empty($switch)) {
+            $resourceTypes = 'png';
+        }
         $result = $opn->lessonsByIds($params['lesson_id'], $withResources, $resourceTypes);
         if (empty($result) || !empty($result['errors'])) {
             return $response->withJson($result, StatusCode::HTTP_OK);
