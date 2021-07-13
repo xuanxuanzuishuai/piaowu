@@ -14,9 +14,11 @@ use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\ActivityExtModel;
 use App\Models\ActivityPosterModel;
+use App\Models\Erp\ErpStudentAccountModel;
 use App\Models\OperationActivityModel;
 use App\Models\RtActivityModel;
 use App\Models\RtActivityRuleModel;
+use Medoo\Medoo;
 
 class RtActivityService
 {
@@ -44,6 +46,27 @@ class RtActivityService
             return 'start_time_eq_end_time';
         }
 
+        // 结束时间不能小于等于当前时间
+        if ($endTime <= time()) {
+            return 'end_time_eq_time';
+        }
+
+        if ($data['buy_day'] >= 1000 || $data['buy_day'] <= 0) {
+            return 'buy_day_error';
+        }
+        if ($data['coupon_num'] >= 1000 || $data['coupon_num'] <= 0) {
+            return 'coupon_num_error';
+        }
+
+        if (!empty($data['referral_student_is_award'])) {
+            if (empty($data['referral_award']['delay_day']) || $data['referral_award']['delay_day'] >= 100 || $data['referral_award']['delay_day'] <= 0) {
+                return 'referral_award_error';
+            }
+            if (empty($data['referral_award']['amount']) || $data['referral_award']['amount'] >= 100000 || $data['referral_award']['amount'] <= 0) {
+                return 'amount_error';
+            }
+        }
+
         // 检查奖励规则 - 不能为空
         if (empty($data['award_rule'])) {
             return 'award_rule_is_required';
@@ -56,9 +79,10 @@ class RtActivityService
      * 格式化数据
      * @param $activityInfo
      * @param $extInfo
+     * @param $ruleInfo
      * @return mixed
      */
-    public static function formatActivityInfo($activityInfo, $extInfo)
+    public static function formatActivityInfo($activityInfo, $extInfo, $ruleInfo = [])
     {
         // 处理海报
         if (!empty($activityInfo['poster_list']) && is_array($activityInfo['poster_list'])) {
@@ -93,6 +117,11 @@ class RtActivityService
             $awardRule = $extInfo['award_rule'] ?? '';
         }
         $info['award_rule'] = Util::textDecode($awardRule);
+
+        if (!empty($ruleInfo)) {
+            $ruleInfo['referral_award'] = json_decode($ruleInfo['referral_award'], true);
+            $info = array_merge($ruleInfo, $info);
+        }
         return $info;
     }
 
@@ -121,12 +150,18 @@ class RtActivityService
             'end_time' => Util::getDayLastSecondUnix($data['end_time']),
             'enable_status' => OperationActivityModel::ENABLE_STATUS_OFF,
             'rule_type' => $data['rule_type'] ?? 0,
+            'year_card_sale_url' => $data['year_card_sale_url'] ?? '',
             'employee_invite_word' => !empty($data['employee_invite_word']) ? Util::textEncode($data['employee_invite_word']) : '',
             'student_invite_word' => !empty($data['student_invite_word']) ? Util::textEncode($data['student_invite_word']) : '',
             'operator_id' => $employeeId,
             'create_time' => $time,
         ];
 
+        $referralAward = [
+            "delay" => !empty($data['referral_award']['delay_day']) ? $data['referral_award']['delay_day']*Util::TIMESTAMP_ONEDAY : 0,
+            "amount" => !empty($data['referral_award']['amount']) ? $data['referral_award']['amount'] : 0,
+            "account_sub_type" => ErpStudentAccountModel::SUB_TYPE_GOLD_LEAF,
+        ];
         $rtActivityRuleData = [
             'activity_id' => 0,
             'rule_type' => $data['rule_type'] ?? 0,
@@ -136,7 +171,7 @@ class RtActivityService
             'coupon_id' => $data['coupon_num'] ?? '',
             'join_user_status' => $data['join_user_status'] ?? '',
             'referral_student_is_award' => $data['referral_student_is_award'] ?? 0,
-            'referral_award' => !empty($data['referral_award']) ? json_encode($data['referral_award']) : json_encode([]),
+            'referral_award' => json_encode($referralAward),
             'other_data' => json_encode([]),
             'operator_id' => $employeeId,
             'create_time' => $time,
@@ -234,102 +269,133 @@ class RtActivityService
 
         // 开始处理更新数据
         $time = time();
-        $activityData = [
-            'name' => $data['name'] ?? '',
-            'update_time' => $time,
-        ];
 
-        $rtActivityData = [
-            'name' => $activityData['name'],
-            'start_time' => Util::getDayFirstSecondUnix($data['start_time']),
-            'end_time' => Util::getDayLastSecondUnix($data['end_time']),
-            'rule_type' => $data['rule_type'] ?? 0,
-            'employee_invite_word' => !empty($data['employee_invite_word']) ? Util::textEncode($data['employee_invite_word']) : '',
-            'student_invite_word' => !empty($data['student_invite_word']) ? Util::textEncode($data['student_invite_word']) : '',
-            'operator_id' => $employeeId,
-            'update_time' => $time,
-        ];
-
-        $activityExtData = [
-            'award_rule' => !empty($data['award_rule']) ? Util::textEncode($data['award_rule']) : '',
-            'remark' => $data['remark'] ?? ''
-        ];
-
-        $rtActivityRuleData = [
-            'rule_type' => $data['rule_type'] ?? 0,
-            'buy_day' => $data['buy_day'] ?? 0,
-            'coupon_num' => $data['coupon_num'] ?? 0,
-            'student_coupon_num' => 1,
-            'coupon_id' => $data['coupon_num'] ?? '',
-            'join_user_status' => $data['join_user_status'] ?? '',
-            'referral_student_is_award' => $data['referral_student_is_award'] ?? 0,
-            'referral_award' => !empty($data['referral_award']) ? json_encode($data['referral_award']) : json_encode([]),
-            'other_data' => json_encode([]),
-            'operator_id' => $employeeId,
-            'create_time' => $time,
-        ];
-
-        // 处理海报写入数组
-        $posterArr = [];
-        foreach ($data['poster'] as $_tmpPosterId) {
-            $posterArr[] = [
-                'poster_id' => $_tmpPosterId,
-                'poster_ascription' => ActivityPosterModel::POSTER_ASCRIPTION_STUDENT,
+        // 待启用状态下更新配置信息
+        if ($activityInfo['enable_status'] == OperationActivityModel::ENABLE_STATUS_OFF) {
+            $activityData = [
+                'name' => $data['name'] ?? '',
+                'update_time' => $time,
             ];
-        }
-        foreach ($data['employee_poster'] as $_tmpEmployeePosterId) {
-            $posterArr[] = [
-                'poster_id' => $_tmpEmployeePosterId,
-                'poster_ascription' => ActivityPosterModel::POSTER_ASCRIPTION_EMPLOYEE,
+
+            $rtActivityData = [
+                'name' => $activityData['name'],
+                'start_time' => Util::getDayFirstSecondUnix($data['start_time']),
+                'end_time' => Util::getDayLastSecondUnix($data['end_time']),
+                'rule_type' => $data['rule_type'] ?? 0,
+                'year_card_sale_url' => $data['year_card_sale_url'] ?? '',
+                'employee_invite_word' => !empty($data['employee_invite_word']) ? Util::textEncode($data['employee_invite_word']) : '',
+                'student_invite_word' => !empty($data['student_invite_word']) ? Util::textEncode($data['student_invite_word']) : '',
+                'operator_id' => $employeeId,
+                'update_time' => $time,
+            ];
+
+            $referralAward = [
+                "delay" => !empty($data['referral_award']['delay_day']) ? $data['referral_award']['delay_day']*Util::TIMESTAMP_ONEDAY : 0,
+                "amount" => !empty($data['referral_award']['amount']) ? $data['referral_award']['amount'] : 0,
+                "account_sub_type" => ErpStudentAccountModel::SUB_TYPE_GOLD_LEAF,
+            ];
+            $rtActivityRuleData = [
+                'rule_type' => $data['rule_type'] ?? 0,
+                'buy_day' => $data['buy_day'] ?? 0,
+                'coupon_num' => $data['coupon_num'] ?? 0,
+                'student_coupon_num' => 1,
+                'coupon_id' => $data['coupon_num'] ?? '',
+                'join_user_status' => $data['join_user_status'] ?? '',
+                'referral_student_is_award' => $data['referral_student_is_award'] ?? 0,
+                'referral_award' => json_encode($referralAward),
+                'other_data' => json_encode([]),
+                'operator_id' => $employeeId,
+                'create_time' => $time,
+            ];
+
+            $activityExtData = [
+                'award_rule' => !empty($data['award_rule']) ? Util::textEncode($data['award_rule']) : '',
+                'remark' => $data['remark'] ?? ''
+            ];
+
+            // 处理海报写入数组
+            $posterArr = [];
+            foreach ($data['poster'] as $_tmpPosterId) {
+                $posterArr[] = [
+                    'poster_id' => $_tmpPosterId,
+                    'poster_ascription' => ActivityPosterModel::POSTER_ASCRIPTION_STUDENT,
+                ];
+            }
+            foreach ($data['employee_poster'] as $_tmpEmployeePosterId) {
+                $posterArr[] = [
+                    'poster_id' => $_tmpEmployeePosterId,
+                    'poster_ascription' => ActivityPosterModel::POSTER_ASCRIPTION_EMPLOYEE,
+                ];
+            }
+        } elseif ($activityInfo['enable_status'] == OperationActivityModel::ENABLE_STATUS_ON) {
+            // 启用状态只可以编辑备注和年卡连接
+            $activityExtData = [
+                'remark' => $data['remark'] ?? ''
+            ];
+            $rtActivityData = [
+                'rule_type' => $data['rule_type'] ?? 0,
+            ];
+        } else {
+            // 禁用状态下只可以编辑备注
+            $activityExtData = [
+                'remark' => $data['remark'] ?? ''
             ];
         }
 
         $db = MysqlDB::getDB();
         $db->beginTransaction();
         // 更新活动总表信息
-        $res = OperationActivityModel::batchUpdateRecord($activityData, ['id' => $activityId]);
-        if (is_null($res)) {
-            $db->rollBack();
-            SimpleLogger::info("RtActivityService:edit update operation_activity fail", ['data' => $activityData, 'activity_id' => $activityId]);
-            throw new RunTimeException(["update week activity fail"]);
+        if (!empty($activityData)) {
+            $res = OperationActivityModel::batchUpdateRecord($activityData, ['id' => $activityId]);
+            if (is_null($res)) {
+                $db->rollBack();
+                SimpleLogger::info("RtActivityService:edit update operation_activity fail", ['data' => $activityData, 'activity_id' => $activityId]);
+                throw new RunTimeException(["update week activity fail"]);
+            }
         }
-        // 待启用状态下更新配置信息 - 启用状态或禁用状态下只可以编辑备注
-        if ($activityInfo['enable_status'] == OperationActivityModel::ENABLE_STATUS_OFF) {
+
+        // 更新活动配置
+        if (!empty($rtActivityData)) {
             $res = RtActivityModel::batchUpdateRecord($rtActivityData, ['activity_id' => $activityId]);
             if (is_null($res)) {
                 $db->rollBack();
                 SimpleLogger::info("RtActivityService:edit update RtActivityModel fail", ['data' => $rtActivityData, 'activity_id' => $activityId]);
                 throw new RunTimeException(["update week activity fail"]);
             }
+        }
 
+        // 更新活动规则
+        if (!empty($rtActivityRuleData)) {
             $res = RtActivityRuleModel::batchUpdateRecord($rtActivityRuleData, ['activity_id' => $activityId]);
             if (is_null($res)) {
                 $db->rollBack();
                 SimpleLogger::info("RtActivityService:edit update RtActivityRuleModel fail", ['data' => $rtActivityRuleData, 'activity_id' => $activityId]);
                 throw new RunTimeException(["update week activity fail"]);
             }
-        } else {
-            $activityExtData = [
-                'remark' => $data['remark'] ?? ''
-            ];
         }
 
         // 更新扩展信息
-        $activityExtData['activity_id'] = $activityId;
-        $res = ActivityExtModel::batchUpdateRecord($activityExtData, ['activity_id' => $activityId]);
-        if (is_null($res)) {
-            $db->rollBack();
-            SimpleLogger::info("RtActivityService:edit update activity_ext fail", ['data' => $activityExtData, 'activity_id' => $activityId]);
-            throw new RunTimeException(["update week activity fail"]);
+        if (!empty($activityExtData)) {
+            $activityExtData['activity_id'] = $activityId;
+            $res = ActivityExtModel::batchUpdateRecord($activityExtData, ['activity_id' => $activityId]);
+            if (is_null($res)) {
+                $db->rollBack();
+                SimpleLogger::info("RtActivityService:edit update activity_ext fail", ['data' => $activityExtData, 'activity_id' => $activityId]);
+                throw new RunTimeException(["update week activity fail"]);
+            }
         }
-        // 删除原有的海报
-        ActivityPosterModel::batchUpdateRecord(['is_del' => ActivityPosterModel::IS_DEL_TRUE], ['activity_id' => $activityId]);
-        // 写入新的活动与海报的关系
-        $activityPosterRes = ActivityPosterModel::batchInsertActivityPoster($activityId, $posterArr);
-        if (empty($activityPosterRes)) {
-            $db->rollBack();
-            SimpleLogger::info("RtActivityService:edit batch insert activity_poster fail", ['data' => $data, 'activity_id' => $activityId]);
-            throw new RunTimeException(["add week activity fail"]);
+
+        // 更新海报
+        if (!empty($posterArr)) {
+            // 删除原有的海报
+            ActivityPosterModel::batchUpdateRecord(['is_del' => ActivityPosterModel::IS_DEL_TRUE], ['activity_id' => $activityId]);
+            // 写入新的活动与海报的关系
+            $activityPosterRes = ActivityPosterModel::batchInsertActivityPoster($activityId, $posterArr);
+            if (empty($activityPosterRes)) {
+                $db->rollBack();
+                SimpleLogger::info("RtActivityService:edit batch insert activity_poster fail", ['data' => $data, 'activity_id' => $activityId]);
+                throw new RunTimeException(["add week activity fail"]);
+            }
         }
 
         $db->commit();
@@ -390,7 +456,10 @@ class RtActivityService
         }
         // 获取活动海报
         $activityInfo['poster_list'] = PosterService::getActivityPosterList($activityInfo);
-        return self::formatActivityInfo($activityInfo, $activityExt);
+
+        // 获取奖励规则
+        $ruleInfo = RtActivityRuleModel::getRecord(['activity_id' => $activityId]);
+        return self::formatActivityInfo($activityInfo, $activityExt, $ruleInfo);
     }
 
     /**
@@ -432,5 +501,75 @@ class RtActivityService
         }
 
         return true;
+    }
+
+    /**
+     * 获取RT优惠券活动名称 第一条是当前正在使用的活动
+     * @param $ruleType
+     * @param $activityName
+     * @param $page
+     * @param $count
+     * @return array
+     */
+    public static function getRtActivityList($ruleType, $activityName, $page, $count)
+    {
+        $limit = [($page - 1) * $count, $count];
+        $fields = ['activity_id', 'name', 'start_time', 'end_time', 'enable_status'];
+        list($activityList) = RtActivityModel::searchList(['name' => $activityName, 'rule_type' => $ruleType], $limit, [], $fields);
+        $time = time();
+        foreach ($activityList as $k => $v) {
+            if (OperationActivityModel::checkActivityEnableStatusOn($v, $time)) {
+                array_unshift($activityList, $v);
+                unset($activityList[$k]);
+            }
+        }
+        return $activityList;
+    }
+
+    /**
+     * 批量获取RT亲友优惠券活动id详情
+     * @param $ruleType
+     * @param $activityName
+     * @param $page
+     * @param $count
+     * @return array
+     */
+    public static function getRtActivityInfo($activityIds)
+    {
+        $returnActivityList = [];
+        $activityIdArr = explode(',', $activityIds);
+        if (empty($activityIdArr)) {
+            return $returnActivityList;
+        }
+        $activityList = RtActivityModel::getRecords(['activity_id' => $activityIdArr]);
+        if (empty($activityList)) {
+            return $returnActivityList;
+        }
+        $activityRuleList = RtActivityRuleModel::getRecords(['activity_id' => $activityIdArr]);
+        $activityRuleList = array_column($activityRuleList, null, 'activity_id');
+
+        foreach ($activityList as $item) {
+            $rule = $activityRuleList[$item['activity_id']] ?? [];
+            $returnActivityList[$item['activity_id']] = self::formatActivityInfo($item, [], $rule);
+        }
+        return $returnActivityList;
+    }
+
+    /**
+     * rt亲友优惠券活动
+     * 获取活动已绑定过的优惠券批次Id
+     * @return array
+     */
+    public static function getRtActivityCouponIdList()
+    {
+        $couponIdArr = [];
+        $activityList = RtActivityRuleModel::getRecords([], ['coupon_id' => Medoo::raw('DISTINCT coupon_id')]);
+        if (empty($activityList)) {
+            return $couponIdArr;
+        }
+        foreach ($activityList as $item) {
+            $couponIdArr = array_merge($couponIdArr, explode(',', $item['coupon_id']));
+        }
+        return ['list' => array_unique($couponIdArr)];
     }
 }

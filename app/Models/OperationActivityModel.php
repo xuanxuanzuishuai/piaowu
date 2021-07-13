@@ -110,4 +110,18 @@ WHERE
         }
         return $activity;
     }
+
+    /**
+     * 检查活动某个时间点是否是启用状态
+     * @param $activityInfo
+     * @param int $time
+     * @return bool
+     */
+    public static function checkActivityEnableStatusOn($activityInfo, $time = 0) {
+        $time = !empty($time) ? $time : time();
+        if ($activityInfo['start_time'] >= $time && $activityInfo['end_time'] <= $time && $activityInfo['enable_status'] == self::ENABLE_STATUS_ON) {
+            return true;
+        }
+        return false;
+    }
 }

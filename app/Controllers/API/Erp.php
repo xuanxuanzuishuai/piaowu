@@ -12,7 +12,9 @@ use App\Libs\HttpHelper;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Libs\Valid;
+use App\Models\OperationActivityModel;
 use App\Services\ErpUserEventTaskAwardGoldLeafService;
+use App\Services\RtActivityService;
 use App\Services\UserPointsExchangeOrderService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -122,5 +124,27 @@ class Erp extends ControllerBase
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
         return HttpHelper::buildResponse($response, $res);
+    }
+
+    /**
+     * rt亲友优惠券活动列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function rtActivityList(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        try {
+            $ruleType = OperationActivityModel::RULE_TYPE_ASSISTANT;
+            $page = 1;
+            $count = 1000;
+            $activityName = $params['name'] ?? '';
+            $activityList = RtActivityService::getRtActivityList($ruleType, $activityName, $page, $count);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+
+        return HttpHelper::buildResponse($response, $activityList);
     }
 }

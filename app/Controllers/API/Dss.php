@@ -17,7 +17,9 @@ use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\MessagePushRulesModel;
+use App\Models\OperationActivityModel;
 use App\Models\PosterModel;
+use App\Models\RtActivityModel;
 use App\Models\SharePosterModel;
 use App\Models\TemplatePosterModel;
 use App\Models\UserPointsExchangeOrderWxModel;
@@ -30,6 +32,7 @@ use App\Services\AgentService;
 use App\Services\ReferralActivityService;
 use App\Libs\Exceptions\RunTimeException;
 use App\Services\ReferralService;
+use App\Services\RtActivityService;
 use App\Services\SharePosterService;
 use App\Services\ThirdPartBillService;
 use App\Services\UserPointsExchangeOrderService;
@@ -862,4 +865,61 @@ class Dss extends ControllerBase
         }
         return HttpHelper::buildResponse($response, $res);
     }
+
+    /**
+     * rt亲友优惠券活动列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function rtActivityList(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        try {
+            $ruleType = OperationActivityModel::RULE_TYPE_ASSISTANT;
+            $page = 1;
+            $count = 1000;
+            $activityName = $params['name'] ?? '';
+            $activityList = RtActivityService::getRtActivityList($ruleType, $activityName, $page, $count);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, $activityList);
+    }
+
+    /**
+     * rt亲友优惠券活动详情
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function rtActivityInfo(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        try {
+            $activityIds = $params['activity_ids'] ?? '';
+            $activityList = RtActivityService::getRtActivityInfo($activityIds);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, $activityList);
+    }
+
+    /**
+     * rt亲友优惠券活动
+     * 获取活动已绑定过的优惠券批次Id
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function rtActivityCouponIdList(Request $request, Response $response)
+    {
+        try {
+            $activityList = RtActivityService::getRtActivityCouponIdList();
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, $activityList);
+    }
+
 }

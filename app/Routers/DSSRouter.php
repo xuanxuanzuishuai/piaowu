@@ -67,5 +67,11 @@ class DSSRouter extends RouterBase
 
         // 转介绍专属售卖落地页 - 好友推荐专属奖励
         '/dss/referral/awards' => ['method' => ['get'], 'call' => Dss::class . ':getAwardInfo'],
+
+        /** rt亲友优惠券活动 */
+        '/dss/rt_activity/list' => ['method' => ['get'], 'call' => Dss::class . ':rtActivityList'],
+        '/dss/rt_activity/info' => ['method' => ['get'], 'call' => Dss::class . ':rtActivityInfo'],
+        '/dss/rt_activity/coupon_id_list' => ['method' => ['get'], 'call' => Dss::class . ':rtActivityCouponIdList'],
+        '/dss/rt_activity/coupon_user_list' => ['method' => ['get'], 'call' => Dss::class . ':rtActivityInfo'],
     ];
 }

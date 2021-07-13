@@ -17,9 +17,10 @@ class RtActivityModel extends Model
      * @param $params
      * @param $limit
      * @param array $order
+     * @param array $fields
      * @return array
      */
-    public static function searchList($params, $limit, $order = [])
+    public static function searchList($params, $limit, $order = [], $fields = [])
     {
         $where = [];
         if (!empty($params['name'])) {
@@ -59,7 +60,7 @@ class RtActivityModel extends Model
         }
         $where['ORDER'] = $order;
 
-        $list = self::getRecords($where);
+        $list = self::getRecords($where, $fields);
         return [$list, $total];
     }
 
