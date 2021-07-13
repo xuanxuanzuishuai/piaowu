@@ -64,6 +64,15 @@ class DictConstants {
         ]
     ];
 
+    // 活动类型名字
+    const ACTIVITY_RULE_TYPE_ZH = [
+        'type' => 'ACTIVITY_RULE_TYPE_ZH',
+        'keys' => [
+            '1',    // 社群活动
+            '2',    // 课管活动
+        ]
+    ];
+
     // 阿里云config
     const ALI_OSS_CONFIG = [
         'type' => 'ALI_OSS_CONFIG',

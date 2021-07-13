@@ -19,6 +19,9 @@ class ActivityPosterModel extends Model
     const IS_DEL_TRUE = 1; //已删除
     const IS_DEL_FALSE = 0; //未删除
 
+    const POSTER_ASCRIPTION_STUDENT = 0;    // 学生使用的海报
+    const POSTER_ASCRIPTION_EMPLOYEE = 1;   // 员工使用的海报
+
     const KEY_ACTIVITY_POSTER = 'ACTIVITY_POSTER_';
 
     /**
@@ -50,6 +53,7 @@ class ActivityPosterModel extends Model
     }
 
     /**
+     * @deprecated 请使用新方法 batchInsertActivityPoster
      * 批量写入活动海报
      * @param $activityId
      * @param $posterIds
@@ -65,6 +69,39 @@ class ActivityPosterModel extends Model
                 'poster_id' => $posterId,
                 'status' => self::NORMAL_STATUS,
             ];
+        }
+        $activityPosterRes = self::batchInsert($activityPoster);
+        if (empty($activityPosterRes)) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 批量写入活动海报
+     * @param $activityId
+     * @param $posterIdArr
+     * @return bool
+     */
+    public static function batchInsertActivityPoster($activityId, $posterIdArr)
+    {
+        // 写入新的活动与海报的关系
+        $activityPoster = [];
+        foreach ($posterIdArr as $posterInfo) {
+            $posterId = $posterInfo['poster_id'] ?? 0;
+            $posterAscription = $posterInfo['poster_ascription'] ?? self::POSTER_ASCRIPTION_STUDENT;
+            if (empty($posterId)) {
+                return false;
+            }
+            $activityPoster[] = [
+                'activity_id' => $activityId,
+                'poster_id' => $posterId,
+                'status' => self::NORMAL_STATUS,
+                'poster_ascription' => $posterAscription,
+            ];
+        }
+        if (empty($activityPoster)) {
+            return false;
         }
         $activityPosterRes = self::batchInsert($activityPoster);
         if (empty($activityPosterRes)) {

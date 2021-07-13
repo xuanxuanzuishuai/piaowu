@@ -27,6 +27,10 @@ class OperationActivityModel extends Model
     const ENABLE_STATUS_ON = 2;         // 启用
     const ENABLE_STATUS_DISABLE = 3;    // 已禁用
 
+    // 活动类型
+    const RULE_TYPE_COURSE = 2; // 课管活动
+    const RULE_TYPE_ASSISTANT = 1; // 社群活动
+
     const TIME_STATUS_PENDING = 1;
     const TIME_STATUS_ONGOING = 2;
     const TIME_STATUS_FINISHED = 3;

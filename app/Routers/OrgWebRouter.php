@@ -28,6 +28,7 @@ use App\Controllers\OrgWeb\MonthActivity;
 use App\Controllers\OrgWeb\Opn;
 use App\Controllers\OrgWeb\Package;
 use App\Controllers\OrgWeb\PosterTemplateWord;
+use App\Controllers\OrgWeb\RtActivity;
 use App\Controllers\OrgWeb\SharePoster;
 use App\Controllers\OrgWeb\SourceMaterial;
 use App\Controllers\OrgWeb\StudentAccount;
@@ -245,6 +246,12 @@ class OrgWebRouter extends RouterBase
         '/op_web/source_material/enable_status'     => ['method' => ['post'], 'call' => SourceMaterial::class . ':editEnableStatus'],
         '/op_web/source_material/source_type_add' => ['method' => ['post'], 'call' => SourceMaterial::class . ':sourceTypeAdd'],
         '/op_web/source_material/source_type_list' => ['method' => ['get'], 'call' => SourceMaterial::class . ':sourceTypeList'],
+
+        // 亲友优惠券活动管理
+        '/op_web/rt_activity/save' => ['method' => ['post'], 'call' => RtActivity::class . ':save'],
+        '/op_web/rt_activity/list' => ['method' => ['get'], 'call' => RtActivity::class . ':list'],
+        '/op_web/rt_activity/detail' => ['method' => ['get'], 'call' => RtActivity::class . ':detail'],
+        '/op_web/rt_activity/enable_status' => ['method' => ['post'], 'call' => RtActivity::class . ':editEnableStatus'],
 
     ];
 }
