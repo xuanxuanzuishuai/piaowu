@@ -10,6 +10,7 @@ use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
+use App\Models\FreeCodeLogModel;
 use App\Services\CommonServiceForApp;
 use App\Services\Queue\QueueService;
 use App\Services\StudentService;
@@ -128,6 +129,12 @@ class Landing extends ControllerBase
             if ($give && !empty($uuid)) {
                 $studentStatus = StudentService::dssStudentStatusCheck($userId);
                 QueueService::giftDuration($uuid, DssGiftCodeModel::APPLY_TYPE_AUTO, 5, DssGiftCodeModel::BUYER_TYPE_STUDENT);
+                $logData = [
+                    'user_id' => $userId,
+                    'user_uuid' => $uuid,
+                    'create_time' => time()
+                ];
+                FreeCodeLogModel::insertRecord($logData);
             }
             $data = [
                 'give'       => $give,
