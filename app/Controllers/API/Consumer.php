@@ -304,6 +304,9 @@ class Consumer extends ControllerBase
                 case PushMessageTopic::EVENT_PUSH_BATCH_MANUAL_RULE_WX:
                     MessageService::batchPushWeekActivityInfo($params['msg_body']);
                     break;
+                case PushMessageTopic::EVENT_TASK_GOLD_LEAF:
+                    MessageService::sendTaskGoldLeafMessage($params['msg_body']);
+
             }
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());

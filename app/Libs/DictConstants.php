@@ -771,11 +771,12 @@ class DictConstants {
         ]
     ];
 
-    // 任务branch
-    const TASK_DEFAULT_BANNER = [
-        'type' => 'task_default_banner',
+    // 学生任务默认配置
+    const STUDENT_TASK_DEFAULT = [
+        'type' => 'student_task_default',
         'keys' => [
-            'default',
+            'banner',
+            'message_config_id',
         ],
     ];
 

@@ -9,6 +9,7 @@
 namespace App\Libs;
 
 use App\Libs\Exceptions\RunTimeException;
+use App\Models\CountingActivityAwardModel;
 use App\Models\Dss\DssErpPackageV1Model;
 use App\Models\Erp\ErpEventModel;
 use GuzzleHttp\Client;
@@ -81,11 +82,9 @@ class Erp
     const API_STUDENT_COUPON_PAGE = '/api/student_coupon/page';
 
     //获取快递详情
-    const API_EXPRESS_DETAILS = '/api/';//TODO::缺失
-    //获取商品信息
-    const API_GOODS_DETAILS = '/api/';//TODO::缺失
+    const API_EXPRESS_DETAILS = '/api/logistics/detail';
     //发货
-    const API_DELIVER_GOODS = '/api/';//TODO::缺失
+    const API_DELIVER_GOODS = '/api/logistics/create';
 
 
     //发放优惠券
@@ -813,19 +812,18 @@ class Erp
      */
     public function getExpressDetails(string $uniqueId): array
     {
-        $result = HttpHelper::requestJson($this->host . self::API_EXPRESS_DETAILS,  ['unique_id' => $uniqueId]);
-        return $result['data'] ?? [];
-    }
+        $redis = RedisDB::getConn();
 
-    /**
-     * 获取商品信息
-     * @param array $params
-     * @return array
-     */
-    public function getGoodsDetails(array $params): array
-    {
-        $result = HttpHelper::requestJson($this->host . self::API_GOODS_DETAILS,  $params);
-        return $result['data'] ?? [];
+        $cacheKey = sprintf(CountingActivityAwardModel::REDIS_EXPRESS_KEY, $uniqueId);
+        $cache = $redis->get($cacheKey);
+        if (!empty($cache)) return json_decode($cache, true);
+
+        $result = HttpHelper::requestJson($this->host . self::API_EXPRESS_DETAILS,  ['unique_id' => $uniqueId]);
+        $data = $result['data'] ?? [];
+
+        if (!empty($data)) $redis->set($cacheKey, json_encode($data), 'EX', Util::TIMESTAMP_1H);
+
+        return $data;
     }
 
     /**

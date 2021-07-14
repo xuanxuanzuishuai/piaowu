@@ -49,6 +49,8 @@ class PushMessageTopic extends BaseTopic
     const EVENT_MONTH_REWARD_SUN = 'month_reward_sun'; //月月有奖 星期日消息
     const EVENT_SHARE_POSTER_MESSAGE = 'share_poster_award'; // 截图审核通过消息
 
+    const EVENT_TASK_GOLD_LEAF = 'task_grant_gold_leaf'; // 任务发放金叶子
+
     public function __construct($publishTime = null)
     {
         parent::__construct(self::TOPIC_NAME, $publishTime);
@@ -169,4 +171,20 @@ class PushMessageTopic extends BaseTopic
         $this->setMsgBody($data);
         return $this;
     }
+
+    /**
+     * 发放金叶子
+     * @param $data
+     * @param string $eventType
+     * @return $this
+     */
+    public function sendGoldLeafWxMessage($data, $eventType = self::EVENT_TASK_GOLD_LEAF)
+    {
+        $this->setEventType($eventType);
+        $this->setMsgBody($data);
+        return $this;
+    }
+
+
+
 }

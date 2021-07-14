@@ -759,4 +759,41 @@ class QueueService
         return true;
     }
 
+
+    /**
+     * ERP发放金叶子
+     *
+     * @param array $data
+     * @param int $delay
+     * @return bool
+     */
+    public static function grantGoldLeaf(array $data, int $delay = 0)
+    {
+        try {
+            (new GoldLeafTopic())->grantGoldLeaf($data)->publish($delay);
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), [$data]);
+            return false;
+        }
+        return true;
+    }
+
+
+    /**
+     * 金叶子发放微信消息
+     * @param array $data
+     * @return bool
+     */
+    public static function sendGoldLeafWxMessage(array $data)
+    {
+        try {
+            $topic = new PushMessageTopic();
+            $topic->sendGoldLeafWxMessage($data)->publish(0);
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), $data);
+            return false;
+        }
+        return true;
+    }
+
 }

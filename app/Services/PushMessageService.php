@@ -280,4 +280,27 @@ class PushMessageService
             'activityName' => $activityName,
         ];
     }
+
+
+    /**
+     * 发放金叶子推送消息
+     *
+     * @param array $info
+     */
+    public static function sendTaskGoldLeafMessage(array $info)
+    {
+
+        $appId = Constants::SMART_APP_ID;
+        //得到奖励用户的微信信息
+        $userInfo = UserService::getUserWeiXinInfoByUserId($appId, $info['student_id'], DssUserWeiXinModel::USER_TYPE_STUDENT, DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER);
+        if (empty($userInfo)) {
+            SimpleLogger::info('not found user weixin info', $info);
+            return;
+        }
+
+        $configId = DictConstants::get(DictConstants::STUDENT_TASK_DEFAULT, 'message_config_id');
+
+        self::notifyUserCustomizeMessage($configId, $info, $userInfo['open_id'], $appId);
+    }
+
 }

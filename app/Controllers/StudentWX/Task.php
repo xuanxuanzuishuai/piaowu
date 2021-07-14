@@ -73,7 +73,7 @@ class Task extends ControllerBase
         try {
             $data = TaskService::getAwardDetails($params['activity_id'], $this->ci['user_info']['user_id']);
         } catch (RunTimeException $e) {
-            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
         return HttpHelper::buildResponse($response, $data);
     }
@@ -108,7 +108,7 @@ class Task extends ControllerBase
         try {
             $data = TaskService::getExpressInfo($params['activity_id'], $this->ci['user_info']['user_id'],$params['unique_id']);
         } catch (RunTimeException $e) {
-            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
         return HttpHelper::buildResponse($response, $data);
     }
@@ -139,7 +139,7 @@ class Task extends ControllerBase
         try {
             $data = TaskService::getGoodsInfo($params['activity_id']);
         } catch (RunTimeException $e) {
-            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
         return HttpHelper::buildResponse($response, $data);
     }
@@ -170,7 +170,7 @@ class Task extends ControllerBase
         try {
             TaskService::signUp($params['activity_id'],$this->ci['user_info']['user_id']);
         } catch (RunTimeException $e) {
-            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
         return HttpHelper::buildResponse($response,[]);
     }
@@ -200,7 +200,7 @@ class Task extends ControllerBase
         try {
             TaskService::getRewards($params['activity_id'],$this->ci['user_info']['user_id'],$params['erp_address_id'],$params['address_detail']);
         } catch (RunTimeException $e) {
-            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
         return HttpHelper::buildResponse($response,[]);
     }

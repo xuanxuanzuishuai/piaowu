@@ -1107,4 +1107,19 @@ class MessageService
         self::manualPushMessage($logId, $uuidArr, $employeeId);
         return true;
     }
+
+    /**
+     * 发放金叶子微信消息
+     *
+     * @param $data
+     * @return bool
+     */
+    public static function sendTaskGoldLeafMessage($data)
+    {
+        $data['url'] = $_ENV['STUDENT_AWARD_POINTS_URL'];
+
+        PushMessageService::sendTaskGoldLeafMessage($data);
+
+        return true;
+    }
 }
