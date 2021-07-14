@@ -14,10 +14,13 @@ use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\ActivityExtModel;
 use App\Models\ActivityPosterModel;
+use App\Models\Dss\DssStudentModel;
 use App\Models\Erp\ErpStudentAccountModel;
+use App\Models\Erp\ErpStudentCouponV1Model;
 use App\Models\OperationActivityModel;
 use App\Models\RtActivityModel;
 use App\Models\RtActivityRuleModel;
+use App\Models\RtCouponReceiveRecordModel;
 use Medoo\Medoo;
 
 class RtActivityService
@@ -571,5 +574,104 @@ class RtActivityService
             $couponIdArr = array_merge($couponIdArr, explode(',', $item['coupon_id']));
         }
         return ['list' => array_unique($couponIdArr)];
+    }
+    
+    /**
+     *
+     * @param $params
+     * @param $page
+     * @param $limit
+     * @return array
+     */
+    public static function activityInfoList($params, $page, $limit)
+    {
+        //$params = [
+        //    'activity_id' => 3,
+        //    'rule_type' => 0,
+        //    'dss_employee_id' => 10805,
+        //    'dss_employee_name' => 'test',
+        //    'erp_employee_id' => '10805',
+        //    'erp_employee_name' => 'test',
+        //    'invite_uid' => 283130,
+        //    'invite_mobile' => '18239051727',
+        //    'receive_uid' => 283130,
+        //    'receive_mobile' => '18239051727',
+        //    'status' => 0,
+        //    'coupon_status' => 0,
+        //    'create_time_start' => 0,
+        //    'create_time_end' => 111,
+        //    'order_id' => '',
+        //    'has_review_course' => 0,
+        //];
+        if ($params['status']) {
+            switch ($params['status']) {
+                case 1:   // 未领取
+                    $params['status'] = RtCouponReceiveRecordModel::NOT_REVEIVED_STATUS;
+                    break;
+                case 2:   // 已领取(未使用)
+                    $params['status'] = RtCouponReceiveRecordModel::REVEIVED_STATUS;
+                    $params['coupon_status'] = ErpStudentCouponV1Model::STATUS_UNUSE;
+                    break;
+                case 3:   // 已使用
+                    $params['status'] = RtCouponReceiveRecordModel::REVEIVED_STATUS;
+                    $params['coupon_status'] = ErpStudentCouponV1Model::STATUS_USED;
+                    break;
+                case 4:   // 已过期
+                    $params['status'] = RtCouponReceiveRecordModel::REVEIVED_STATUS;
+                    $params['coupon_status'] = ErpStudentCouponV1Model::STATUS_EXPIRE;
+                    break;
+                case 5:   // 已作废
+                    $params['status'] = RtCouponReceiveRecordModel::REVEIVED_STATUS;
+                    $params['coupon_status'] = ErpStudentCouponV1Model::STATUS_ABANDONED;
+                    break;
+            }
+        }
+        $count = RtCouponReceiveRecordModel::getActivityInfoList($params, 'count');
+        $totalCount = $count[0]['num'] ?? 0;
+        $offset = ($page - 1) * $limit;
+        $offset = $offset < 0 ? 0 : $offset;
+        list($result, $where) = RtCouponReceiveRecordModel::getActivityInfoList($params, 'list', $offset, $limit);
+        $result = array_map(function ($v) {
+            return self::formatListData($v);
+        }, $result);
+        $returnData = ['total_count' => $totalCount, 'list' => $result, 'where' => $where];
+        return $returnData;
+    }
+    
+    private static function formatListData($data)
+    {
+        $data['rule_type_zh'] = DictConstants::get(DictConstants::ACTIVITY_RULE_TYPE_ZH, $data['rule_type']);
+        $data['dss_employee_id_name'] = $data['dss_employee_id'] . '/' . $data['dss_employee_name'];
+        $data['erp_employee_id_name'] = $data['dss_employee_id'] . '/' . $data['dss_employee_name'];
+        if ($data['rule_type'] == RtActivityModel::ACTIVITY_RULE_TYPE_SHEQUN) {   // 社群活动
+            $data['erp_employee_id_name'] = '-';
+        }
+        if ($data['rule_type'] == RtActivityModel::ACTIVITY_RULE_TYPE_KEGUAN) {   // 课管活动
+            $data['dss_employee_id_name'] = '-';
+        }
+        $data['has_review_course_zh'] = DssStudentModel::CURRENT_PROGRESS[$data['has_review_course']];
+        $data['create_date'] = $data['create_time'] ? date('Y-m-d H:i:s', $data['create_time']) : '-';
+        $data['expired_start_date'] = $data['expired_start_time'] ? date('Y-m-d H:i:s', $data['expired_start_time']) : '-';
+        $data['expired_end_date'] = $data['expired_end_time'] ? date('Y-m-d H:i:s', $data['expired_end_time']) : '-';
+        $data['order_id'] = $data['order_id'] ? $data['order_id'] : '-';
+        $data['status_zh'] = '-';
+        if ($data['status'] == RtCouponReceiveRecordModel::NOT_REVEIVED_STATUS) {
+            $data['status_zh'] = '未领取';
+        }
+        if ($data['status'] == RtCouponReceiveRecordModel::REVEIVED_STATUS) {
+            if ($data['coupon_status'] == ErpStudentCouponV1Model::STATUS_UNUSE) {
+                $data['status_zh'] = '已领取(未使用)';
+            }
+            if ($data['coupon_status'] == ErpStudentCouponV1Model::STATUS_USED) {
+                $data['status_zh'] = '已使用';
+            }
+            if ($data['coupon_status'] == ErpStudentCouponV1Model::STATUS_EXPIRE) {
+                $data['status_zh'] = '已过期';
+            }
+            if ($data['coupon_status'] == ErpStudentCouponV1Model::STATUS_ABANDONED) {
+                $data['status_zh'] = '已作废';
+            }
+        }
+        return $data;
     }
 }

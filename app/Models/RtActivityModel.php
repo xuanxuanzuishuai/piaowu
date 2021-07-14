@@ -11,7 +11,10 @@ use App\Libs\Util;
 class RtActivityModel extends Model
 {
     public static $table = 'rt_activity';
-
+    
+    const ACTIVITY_RULE_TYPE_SHEQUN = 1;   // 社群活动
+    const ACTIVITY_RULE_TYPE_KEGUAN = 2;   // 课管活动
+    
     /**
      * 获取活动列表
      * @param $params

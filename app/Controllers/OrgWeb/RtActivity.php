@@ -238,4 +238,38 @@ class RtActivity extends ControllerBase
         }
         return HttpHelper::buildResponse($response, []);
     }
+    
+    /**
+     * 活动明细
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function activityInfoList(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'count',
+                'type' => 'integer',
+                'error_code' => 'count_is_integer',
+            ],
+            [
+                'key' => 'page',
+                'type' => 'integer',
+                'error_code' => 'page_is_integer',
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            list($page, $limit) = Util::formatPageCount($params);
+            $data = RtActivityService::activityInfoList($params, $page, $limit);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData(), $e->getData());
+        }
+        return HttpHelper::buildResponse($response, $data);
+    }
 }
