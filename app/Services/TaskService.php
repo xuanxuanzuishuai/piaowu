@@ -18,6 +18,7 @@ use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\ActivityExtModel;
 use App\Models\CountingActivityAwardModel;
+use App\Models\CountingActivityBlackModel;
 use App\Models\CountingActivityModel;
 use App\Models\CountingActivityMutexModel;
 use App\Models\CountingActivitySignModel;
@@ -93,18 +94,6 @@ class TaskService
         );
 
         if (!empty($mutex)) {
-
-            //前置黑名单
-            $blacklistData = DictConstants::getTypesMap([DictConstants::COUNTING_TASK_BLACKLIST['type']]);
-            $blacklist = $blacklistData[DictConstants::COUNTING_TASK_BLACKLIST['type']] ?? [];
-
-            foreach ($blacklist as $v) {
-                $ids = explode(',', $v['value']);
-                if (in_array($studentId,$ids)){
-                    unset($list[$v['code']]);
-                }
-            }
-
             $mutexIds      = []; //互斥的活动id
             $mutexActivity = []; //互斥活动对应关系
             foreach ($mutex as $m) {
@@ -113,6 +102,19 @@ class TaskService
             }
 
             if (!empty($mutexIds)) {
+
+                //前置黑名单
+                $blackList = CountingActivityBlackModel::getRecords([
+                    'student_id' => $studentId,
+                    'op_activity_id' => $mutexIds,
+                    'status' => CountingActivityBlackModel::NORMAL_STATUS,
+                ],['op_activity_id']);
+                if (!empty($blackList)){
+                    foreach ($blackList as $black){
+                        unset($list[$black['op_activity_id']]);
+                    }
+                }
+
                 //是否在互斥任务黑名单
                 $sign = CountingActivitySignModel::getRecords([
                     'award_status'   => CountingActivitySignModel::AWARD_STATUS_RECEIVED,

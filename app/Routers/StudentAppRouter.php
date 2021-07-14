@@ -145,5 +145,21 @@ class StudentAppRouter extends RouterBase
             'call' => Task::class . ':getRewards',
             'middles' => [AppAuthMiddleWare::class]
         ],
+
+        '/student_app/student/address_list' => [
+            'method' => ['get'],
+            'call' => \App\Controllers\StudentWeb\Student::class . ':addressList',
+            'middles' => [AppAuthMiddleWare::class]
+        ],
+        '/student_app/student/modify_address' => [
+            'method' => ['post'],
+            'call' => \App\Controllers\StudentWeb\Student::class . ':modifyAddress',
+            'middles' => [AppAuthMiddleWare::class]
+        ],
+        '/student_app/area/get_by_parent_code' => [
+            'method' => ['get'],
+            'call' => \App\Controllers\StudentWeb\Area::class . ':getByParentCode',
+            'middles' => [AppAuthMiddleWare::class]
+        ],
     ];
 }
