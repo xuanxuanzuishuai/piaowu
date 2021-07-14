@@ -36,6 +36,25 @@ class Invite extends ControllerBase
     }
 
     /**
+     *  转介绍学员列表，包括rt活动优惠券信息
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function listAndCoupon(Request $request, Response $response)
+    {
+        try {
+            $params = $request->getParams();
+            list($params['page'], $params['count']) = Util::formatPageCount($params);
+            $list = ReferralService::getReferralListAndCoupon($params);
+        } catch (RuntimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, $list);
+    }
+
+
+    /**
      * 当前这个人的推荐人信息
      * @param Request $request
      * @param Response $response

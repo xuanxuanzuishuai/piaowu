@@ -12,6 +12,7 @@ use App\Libs\HttpHelper;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Libs\Valid;
+use App\Models\Dss\DssStudentModel;
 use App\Models\OperationActivityModel;
 use App\Models\RtActivityModel;
 use App\Services\ErpUserEventTaskAwardGoldLeafService;
@@ -146,7 +147,13 @@ class Erp extends ControllerBase
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
 
-        return HttpHelper::buildResponse($response, $activityList);
+        return HttpHelper::buildResponse($response, [
+            'list' => $activityList,
+            'student_status' => [
+                DssStudentModel::REVIEW_COURSE_49 => DssStudentModel::CURRENT_PROGRESS[DssStudentModel::REVIEW_COURSE_49],
+                DssStudentModel::REVIEW_COURSE_1980 => DssStudentModel::CURRENT_PROGRESS[DssStudentModel::REVIEW_COURSE_1980],
+            ]
+        ]);
     }
 
     /**

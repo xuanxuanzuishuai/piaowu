@@ -4,6 +4,7 @@
 namespace App\Routers;
 
 use App\Controllers\API\Erp;
+use App\Controllers\Referral\Invite;
 use App\Middleware\OrgWebMiddleware;
 use App\Middleware\SignMiddleware;
 
@@ -19,7 +20,11 @@ class ErpRouter extends RouterBase
         '/erp/integral/gold_leaf_list' => ['method' => ['get'], 'call' => Erp::class . ':goldLeafList'],
 
         /** rt亲友优惠券活动 */
-        '/erp/rt_activity/list'       => ['method' => ['get'], 'call' => Erp::class . ':rtActivityList'],
+        '/erp/rt_activity/list' => ['method' => ['get'], 'call' => Erp::class . ':rtActivityList'],
+
+
+        '/erp/referral/list_and_coupon' => ['method' => ['get'], 'call' => Invite::class . ':listAndCoupon'],   // 转介绍学员列表，包括rt活动优惠券信息
+
         '/erp/rt_activity/get_poster' => ['method' => ['post'], 'call' => Erp::class . ':getRtPoster'],
     ];
 

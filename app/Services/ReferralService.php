@@ -165,17 +165,6 @@ class ReferralService
     {
         //推荐时间
         $statisticsWhere['id[>]'] = 0;
-        if (!empty($params['referral_s_create_time'])) {
-            $statisticsWhere['create_time[>=]'] = $params['referral_s_create_time'];
-        }
-        if (!empty($params['referral_e_create_time'])) {
-            $statisticsWhere['create_time[<=]'] = $params['referral_e_create_time'];
-        }
-        //当前进度
-        if (isset($params['last_stage']) && is_numeric($params['last_stage'])) {
-            $statisticsWhere['last_stage'] = $params['last_stage'];
-        }
-
         //员工
         if (!empty($params['employee_name'])) {
             $employeeData = DssEmployeeModel::getRecords(['name[~]' => $params['employee_name']], ['id[Int]']);
@@ -192,6 +181,15 @@ class ReferralService
             }
             $statisticsWhere['activity_id'] = array_column($activityData, 'id');
         }
+        // 活动id
+        if (!empty($params['activity_id'])) {
+            if (!empty($statisticsWhere['activity_id'])) {
+                $tmpActivityId = is_array($params['activity_id']) ? $params['activity_id'] : [$params['activity_id']];
+                $statisticsWhere['activity_id'] = array_merge($statisticsWhere['activity_id'], $tmpActivityId);
+            } else {
+                $statisticsWhere['activity_id'] = $params['activity_id'];
+            }
+        }
         //购买渠道
         if (!empty($params['buy_channel'])) {
             $statisticsWhere['buy_channel'] = (int)$params['buy_channel'];
@@ -207,14 +205,12 @@ class ReferralService
             $referralStudentWhere['uuid'] = $params['referral_uuid'];
         }
         if (!empty($referralStudentWhere)) {
-            $referralStudentList = DssStudentModel::getRecords($referralStudentWhere,['id[Int]']);
-            if (!empty($referralStudentList)) {
-                $statisticsWhere['referee_id'] = array_column($referralStudentList,'id');
-            }else {
-                $statisticsWhere['referee_id'] = 0;
+            $referralStudentList = DssStudentModel::getRecords($referralStudentWhere, ['id[Int]']);
+            if (empty($referralStudentList)) {
+                return [];
             }
+            $statisticsWhere['referee_id'] = array_column($referralStudentList, 'id');
         }
-
         //学员手机号
         $studentWhere = $studentIds = [];
         if (!empty($params['mobile'])) {
@@ -228,8 +224,13 @@ class ReferralService
         if (!empty($params['channel_id'])) {
             $studentWhere['channel_id'] = (int)$params['channel_id'];
         }
+        // 学员id
+        if (!empty($params['student_id'])) {
+            $studentIds = is_array($params['student_id']) ? $params['student_id'] : [$params['student_id']];
+        }
         if (!empty($studentWhere)) {
-            $studentIds = array_column(DssStudentModel::getRecords($studentWhere, ['id[Int]']), 'id');
+            $tmpStudentIds = array_column(DssStudentModel::getRecords($studentWhere, ['id[Int]']), 'id');
+            $studentIds = array_merge($tmpStudentIds, $studentIds);
             if (empty($studentIds)) {
                 return [];
             }
@@ -258,6 +259,45 @@ class ReferralService
         if (!empty($studentIds)) {
             $statisticsWhere['student_id'] = $studentIds;
         }
+        // DSS分享海报的员工
+        if (!empty($params['share_employee_name'])) {
+            $employeeData = DssEmployeeModel::getRecords(['name[~]' => $params['share_employee_name']], ['uuid']);
+            if (empty($employeeData)) {
+                return [];
+            }
+            $statisticsWhere['share_employee_uuid'] = array_column($employeeData, 'uuid');
+        }
+
+        $fieldsNameList = [
+            'assistant_id'                     => 'assistant_id',             // DSS助教id
+            'has_review_course'                => 'has_review_course',        // DSS学生当前身份
+            'coupon_expire_end_time'           => 'coupon_expire_end_time',   // 优惠券过期时间范围结束时间
+            'coupon_expire_start_time'         => 'coupon_expire_start_time',   // 优惠券过期时间范围开始时间
+            'student_last_stage'               => 'student_last_stage',       // 被推荐人当前状态  年卡、体验卡
+            'ref_first_buy_year_s_create_time' => 'ref_first_buy_year_s_create_time',       // 推荐人初次购买开始时间
+            'ref_first_buy_year_e_create_time' => 'ref_first_buy_year_e_create_time',       // 推荐人初次购买结束时间
+            'course_manage_id'                 => 'course_manage_id',           // 课管
+            'referral_s_create_time'           => 'create_time[>=]',
+            'referral_e_create_time'           => 'create_time[<=]',
+            'last_stage'                       => 'last_stage',
+        ];
+        foreach ($fieldsNameList as $paramsFiled => $sqlField) {
+            if (!empty($params[$paramsFiled])) {
+                $statisticsWhere[$sqlField] = $params[$paramsFiled];
+            }
+        }
+        unset($paramsFiled, $sqlField);
+
+        // 0是筛选条件
+        $zeroFieldsNameList = [
+            'referral_sign' => 'referral_sign',            // 转介绍标识,标记
+        ];
+        foreach ($zeroFieldsNameList as $paramsFiled => $sqlField) {
+            if (isset($params[$paramsFiled]) && !Util::emptyExceptZero($params[$paramsFiled])) {
+                $statisticsWhere[$sqlField] = $params[$paramsFiled];
+            }
+        }
+
         return $statisticsWhere;
     }
 
@@ -1300,5 +1340,76 @@ class ReferralService
         }
         $redis->set(self::KEY_BROADCAST_CACHE, json_encode($info));
         return $info;
+    }
+
+    /**
+     * 转介绍学员列表，包括rt活动优惠券信息
+     * @param $params
+     * @return array
+     */
+    public static function getReferralListAndCoupon($params)
+    {
+        $returnData = [
+            "total_count" => 0,
+            "list" => []
+        ];
+
+        // 组合搜索条件
+        $whereData = self::formatReferralListWhere($params);
+        if (empty($whereData)) {
+            return $returnData;
+        }
+        // 处理搜索条件，增加表别名
+        $limit = [($params['page']-1), $params['count']];
+        $refList = StudentReferralStudentStatisticsModel::getStudentReferralList($whereData, $limit);
+        if (empty($refList['list'])) {
+            return $returnData;
+        }
+        // TODO qingfeng
+        // $channelIds = array_values(DictConstants::getSet(DictConstants::RT_CHANNEL_CONFIG));
+        $channelIds = [1,2];
+        // 处理其他数据  转介绍活动名称、转介绍标识（rt、rh）
+        $activityIds = [];
+        $userIds = [];
+
+        foreach ($refList['list'] as &$item) {
+            $activityIds[] = $item['activity_id'];
+            $userIds[] = $item['student_id'];
+            $userIds[] = $item['referee_id'];
+            $item['is_rt_channel'] = 0;
+            if (in_array($item['buy_channel'], $channelIds)) {
+                $item['is_rt_channel'] = 1;
+            }
+        }
+        unset($item);
+        // 获取活动名称
+        if (!empty($activityIds)) {
+            $activityList = OperationActivityModel::getRecords(['id' => $activityIds], ['name','id']);
+            $activityList = array_column($activityList, 'name', 'id');
+        }
+
+        // 获取学生信息
+        if (!empty($userIds)) {
+            $studentList = DssStudentModel::getRecords(['id' => $userIds], ['id', 'uuid', 'name', 'course_manage_id', 'first_pay_time']);
+            $studentList = array_column($studentList, null, 'id');
+        }
+        // 补充信息
+        foreach ($refList['list'] as &$item) {
+            $item['activity_name'] = $activityList[$item['activity_id']] ?? '';
+            $item['student_status_zh'] = DssStudentModel::CURRENT_PROGRESS[$item['last_stage']];
+            $studentInfo = $studentList[$item['student_id']] ?? [];
+            $refInfo = $studentList[$item['referee_id']] ?? [];
+            $item['student_name'] = $studentInfo['name'] ?? '';
+            $item['student_uuid'] = $studentInfo['uuid'] ?? '';
+            $item['referee_name'] = $refInfo['name'] ?? '';
+            $item['referee_uuid'] = $refInfo['uuid'] ?? '';
+            $item['referee_course_manage_id'] = $refInfo['course_manage_id'] ?? 0;
+            $item['ref_first_buy_year_e_create_time'] = $refInfo['first_pay_time'] ?? 0;
+        }
+        unset($item);
+
+        $returnData['total_count'] = $refList['total_count'];
+        $returnData['list'] = $refList['list'];
+        return $returnData;
     }
 }

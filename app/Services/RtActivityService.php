@@ -24,11 +24,11 @@ use App\Models\EmployeeModel;
 use App\Models\OperationActivityModel;
 use App\Models\RtActivityModel;
 use App\Models\RtActivityRuleModel;
+use App\Models\StudentReferralStudentStatisticsModel;
 use App\Models\RtCouponReceiveRecordModel;
 use Medoo\Medoo;
 use App\Libs\Erp;
 use App\Models\EmployeeActivityModel;
-use App\Models\StudentReferralStudentStatisticsModel;
 use App\Models\TemplatePosterModel;
 
 
@@ -548,13 +548,18 @@ class RtActivityService
      * @param $activityName
      * @param $page
      * @param $count
+     * @param $enableStatus
      * @return array
      */
-    public static function getRtActivityList($ruleType, $activityName, $page, $count)
+    public static function getRtActivityList($ruleType, $activityName, $page, $count, $enableStatus = [])
     {
         $limit = [($page - 1) * $count, $count];
         $fields = ['activity_id', 'name', 'start_time', 'end_time', 'enable_status'];
-        list($activityList) = RtActivityModel::searchList(['name' => $activityName, 'rule_type' => $ruleType], $limit, [], $fields);
+        $where = ['name' => $activityName, 'rule_type' => $ruleType];
+        if (!empty($enableStatus)) {
+            $where['enable_status'] = $enableStatus;
+        }
+        list($activityList) = RtActivityModel::searchList($where, $limit, [], $fields);
         $time = time();
         foreach ($activityList as $k => $v) {
             if (OperationActivityModel::checkActivityEnableStatusOn($v, $time)) {
@@ -610,6 +615,26 @@ class RtActivityService
             $couponIdArr = array_merge($couponIdArr, explode(',', $item['coupon_id']));
         }
         return ['list' => array_unique($couponIdArr)];
+    }
+
+    /**
+     * rt亲友优惠券活动
+     * 获取领取Rt学员优惠券的转介绍学员数量
+     * 当前Rt学员优惠券未过期+当前阶段为付费体验课（有可用的优惠券，未付费的学员）
+     * @return array
+     */
+    public static function rtActivityCouponUserList($params)
+    {
+        $returnData = [
+            "total_count" => 0,
+        ];
+        $assistantIds = $params['assistant_ids'] ?? "";
+        if (empty($assistantIds)) {
+            return $returnData;
+        }
+        $assistantIds = explode(',', $assistantIds);
+        $returnData['total_count'] = StudentReferralStudentStatisticsModel::getAssistantStudentCount($assistantIds);
+        return $returnData;
     }
 
     /**

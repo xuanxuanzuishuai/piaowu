@@ -20,6 +20,7 @@ class DSSRouter extends RouterBase
         '/dss/employee_activity/get_poster'  => ['method' => ['get'], 'call' => Dss::class . ':getPoster'],
 
         '/dss/referral/list' => ['method' => ['get'], 'call' => Invite::class . ':list'],
+        '/dss/referral/list_and_coupon' => ['method' => ['get'], 'call' => Invite::class . ':listAndCoupon'],   // 转介绍学员列表，包括rt活动优惠券信息
         '/dss/referral/referral_info' => ['method' => ['get'], 'call' => Invite::class . ':referralDetail'],
         '/dss/referral/batch_referral_info' => ['method' => ['get','post'], 'call' => Invite::class . ':batchReferralDetail'],
         '/dss/referral/referee_all_user' => ['method' => ['get'], 'call' => Invite::class . ':refereeAllUser'],
@@ -72,7 +73,7 @@ class DSSRouter extends RouterBase
         '/dss/rt_activity/list' => ['method' => ['get'], 'call' => Dss::class . ':rtActivityList'],
         '/dss/rt_activity/info' => ['method' => ['get'], 'call' => Dss::class . ':rtActivityInfo'],
         '/dss/rt_activity/coupon_id_list' => ['method' => ['get'], 'call' => Dss::class . ':rtActivityCouponIdList'],
-        '/dss/rt_activity/coupon_user_list' => ['method' => ['get'], 'call' => Dss::class . ':rtActivityInfo'],
+        '/dss/rt_activity/coupon_user_list' => ['method' => ['get'], 'call' => Dss::class . ':rtActivityCouponUserList'],
         '/dss/rt_activity/get_poster'        => ['method' => ['post'], 'call' => Dss::class . ':getRtPoster'],
         '/dss/rt_activity/get_referral_nums' => ['method' => ['post'], 'call' => Dss::class . ':getReferralNums'],
     ];

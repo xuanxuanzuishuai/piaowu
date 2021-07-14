@@ -880,7 +880,7 @@ class Dss extends ControllerBase
             $page = 1;
             $count = 1000;
             $activityName = $params['name'] ?? '';
-            $activityList = RtActivityService::getRtActivityList($ruleType, $activityName, $page, $count);
+            $activityList = RtActivityService::getRtActivityList($ruleType, $activityName, $page, $count, explode(',', $params['enable_status']));
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
@@ -921,6 +921,37 @@ class Dss extends ControllerBase
         }
         return HttpHelper::buildResponse($response, $activityList);
     }
+
+    /**
+     * rt亲友优惠券活动
+     * 获取领取Rt学员优惠券的转介绍学员数量
+     * 当前Rt学员优惠券未过期+当前阶段为付费体验课（有可用的优惠券，未付费的学员）
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function rtActivityCouponUserList(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'assistant_ids',
+                'type' => 'required',
+                'error_code' => 'assistant_ids_is_required',
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            $info = RtActivityService::rtActivityCouponUserList($params);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, $info);
+    }
+
 
 
     /**
