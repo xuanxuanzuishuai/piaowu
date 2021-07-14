@@ -771,6 +771,14 @@ class DictConstants {
         ]
     ];
 
+    // 任务branch
+    const TASK_DEFAULT_BANNER = [
+        'type' => 'task_default_banner',
+        'keys' => [
+            'default',
+        ],
+    ];
+
     // 生成微信小程序码配置
     const MINI_APP_QR = [
         'type' => 'mini_app_qr',

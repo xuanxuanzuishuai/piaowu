@@ -1,24 +1,21 @@
 <?php
 /**
- * Created by PhpStorm.
- * User: llp
- * Date: 2021/6/10
- * Time: 10:52
+ * 计数任务基础信息表
+ *
+ * User: xingkuiYu
+ * Date: 2021/7/13
+ * Time: 10:35 AM
  */
 
 namespace App\Models;
 
 
-use App\Libs\MysqlDB;
-use App\Libs\SimpleLogger;
-use App\Libs\UserCenter;
-
 class CountingActivityModel extends Model
 {
     public static $table = "counting_activity";
 
-    const ENABLE_STATUS = 2;
-    const DISABLE_STATUS = 1;
+    const DISABLE_STATUS = 1; //禁用
+    const NORMAL_STATUS = 2; //启用
 
     public static function createActivity($data, $operator_id, $now){
 

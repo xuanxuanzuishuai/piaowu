@@ -13,6 +13,7 @@ use App\Controllers\StudentWX\RtActivity;
 use App\Controllers\StudentWX\DuanWuActivity;
 use App\Controllers\StudentWX\GoldLeafShop;
 use App\Controllers\StudentWX\Poster;
+use App\Controllers\StudentWX\Task;
 use App\Middleware\WeChatAuthCheckMiddleware;
 use App\Middleware\WeChatOpenIdCheckMiddleware;
 use App\Controllers\StudentWX\Student;
@@ -71,6 +72,16 @@ class StudentWXRouter extends RouterBase
         '/student_wx/rt_activity/receive_coupon' => ['method' => ['post'], 'call'   => RtActivity::class . ':receiveCoupon'],
         '/student_wx/rt_activity/coupon_collect' => ['method' => ['post'], 'call'   => RtActivity::class . ':couponCollect'],
         '/student_wx/rt_activity/get_invite_record' => ['method' => ['post'], 'call'   => RtActivity::class . ':getInviteRecord'],
+
+
+        //任务中心
+        '/student_wx/task/list' => ['method' => ['get'], 'call' => Task::class . ':list'],
+        '/student_wx/task/award_record' => ['method' => ['get'], 'call' => Task::class . ':awardRecord'],
+        '/student_wx/task/get_award_details' => ['method' => ['get'], 'call' => Task::class . ':getAwardDetails'],
+        '/student_wx/task/get_express_info' => ['method' => ['get'], 'call' => Task::class . ':getExpressInfo'],
+        '/student_wx/task/get_goods_info' => ['method' => ['get'], 'call' => Task::class . ':getGoodsInfo'],
+        '/student_wx/task/sign_up' => ['method' => ['post'], 'call' => Task::class . ':signUp'],
+        '/student_wx/task/get_rewards' => ['method' => ['post'], 'call' => Task::class . ':getRewards'],
 
     ];
 }

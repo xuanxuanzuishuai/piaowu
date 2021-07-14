@@ -256,7 +256,7 @@ class CountingActivityService
         if($golden_leaf){
             $leaf = [
                 'op_activity_id' => $opActivityId,
-                'type'           => CountingAwardConfigModel::LEAF_TYPE,
+                'type'           => CountingAwardConfigModel::GOLD_LEAF_TYPE,
                 'amount'         => $golden_leaf,
                 'storage'        => 0,
                 'status'         => CountingAwardConfigModel::INVALID_STATUS,

@@ -153,33 +153,33 @@ class CountingActivitySignModel extends Model
         if (empty($userId)) {
             return [];
         }
-        $ca = 'operation_dev.counting_activity';
-        $caa = 'operation_dev.counting_activity_award';
+        $ca      = 'operation_dev.counting_activity';
+        $caa     = 'operation_dev.counting_activity_award';
         $student = DssStudentModel::getById($userId);
         if (empty($student)) {
             return [];
         }
         $weekActivityDetail = SharePosterModel::getWeekPosterList(['user_id' => $userId]);
-        $field = "cas.id,cas.op_activity_id,ca.name,cas.create_time,cas.qualified_status,cas.award_time,
+        $field              = "cas.id,cas.op_activity_id,ca.name,cas.create_time,cas.qualified_status,cas.award_time,
                   caa.unique_id";
-        $table = self::$table;
-        $join = "
+        $table              = self::$table;
+        $join               = "
         INNER JOIN $ca ca ON cas.op_activity_id = ca.op_activity_id
         LEFT JOIN $caa caa on caa.sign_id = cas.id AND caa.type = " . 2;
-        $where = 'student_id = :student_id';
-        $map = [':student_id' => $userId];
-        $order = " ORDER BY cas.id DESC ";
-        $sql = "
+        $where              = 'student_id = :student_id';
+        $map                = [':student_id' => $userId];
+        $order              = " ORDER BY cas.id DESC ";
+        $sql                = "
         SELECT %s
         FROM %s cas
         %s
         WHERE %s
         ";
-        $db = MysqlDB::getDB();
+        $db                 = MysqlDB::getDB();
         // @TODO:filter data unique
         // get logistics data
         $signRecordDetails = [];
-        $records = $db->queryAll(sprintf($sql, $field, $table, $join, $where) . $order, $map);
+        $records           = $db->queryAll(sprintf($sql, $field, $table, $join, $where) . $order, $map);
         foreach ($records as $item) {
             if (!empty($signRecordDetails[$item['id']])) {
                 $signRecordDetails[$item['id']] = $item;
@@ -193,5 +193,32 @@ class CountingActivitySignModel extends Model
             return $item;
         });
         return [$student, $weekActivityDetail, $signRecordDetails];
+
+    }
+
+    /**
+     * 获取已参与的领奖任务
+     * @param int $studentId
+     * @return array
+     */
+    public static function getActivitySignInfo(int $studentId): array
+    {
+        $db   = MysqlDB::getDB();
+        $data = $db->select(
+            self::$table,
+            [
+                '[><]' . CountingActivityModel::$table => ['op_activity_id' => 'op_activity_id'],
+            ],
+            [
+                self::$table . '.op_activity_id',
+                self::$table . '.award_time',
+                CountingActivityModel::$table . '.name',
+            ],
+            [
+                self::$table . '.student_id'   => $studentId,
+                self::$table . '.award_status' => self::AWARD_STATUS_RECEIVED,
+                'ORDER'                        => [self::$table . '.award_time' => 'DESC']
+            ]);
+        return empty($data) ? [] : $data;
     }
 }

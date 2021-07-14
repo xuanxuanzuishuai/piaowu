@@ -740,4 +740,23 @@ class QueueService
         }
         return true;
     }
+
+    /**
+     * 任务发放奖励
+     *
+     * @param array $data
+     * @param int $delay
+     * @return bool
+     */
+    public static function countingAward(array $data, int $delay = 0)
+    {
+        try {
+            (new GrantAwardTopic())->countingAward($data)->publish($delay);
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), [$data]);
+            return false;
+        }
+        return true;
+    }
+
 }
