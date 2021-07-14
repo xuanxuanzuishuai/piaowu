@@ -12,6 +12,7 @@ use App\Controllers\API\OSS;
 use App\Controllers\API\UICtl;
 use App\Controllers\Employee\Auth;
 use App\Controllers\Employee\Employee;
+use App\Controllers\OrgWeb\ActivitySign;
 use App\Controllers\OrgWeb\Admin;
 use App\Controllers\OrgWeb\Agent;
 use App\Controllers\OrgWeb\AgentOrg;
@@ -265,5 +266,8 @@ class OrgWebRouter extends RouterBase
         '/op_web/counting_activity/editStatus'=>['method'=>['post'],'call'=>CountingActivity::class . ':editStatus'],
         '/op_web/counting_activity/editActivity'=>['method'=>['post'],'call'=>CountingActivity::class . ':editActivity'],
         '/op_web/logistics/goods_list'=>['method'=>['get'],'call'=>CountingActivity::class . ':getAwardList'],
+        // 周周领奖-计数任务
+        '/op_web/activity_sign/list' => ['method' => ['get'], 'call' => ActivitySign::class . ':list'],
+        '/op_web/activity_sign/user_list' => ['method' => ['get'], 'call' => ActivitySign::class . ':userList'],
     ];
 }

@@ -13,9 +13,11 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
+use App\Libs\Util;
 use App\Models\ActivityExtModel;
 use App\Models\CountingActivityModel;
 use App\Models\CountingActivityMutesModel;
+use App\Models\CountingActivitySignModel;
 use App\Models\CountingAwardConfigModel;
 use App\Models\OperationActivityModel;
 
@@ -302,5 +304,46 @@ class CountingActivityService
 
 
 
+    }
+
+    /**
+     * 用户参与列表
+     * @param array $params
+     * @return array
+     */
+    public static function getSignList($params = [])
+    {
+        list($list, $total) = CountingActivitySignModel::list($params);
+        $list = self::formatSign($list);
+        return [$list, $total];
+    }
+
+    /**
+     * 用户参与详情
+     * @param $userId
+     * @param array $params
+     * @return array
+     */
+    public static function getUserSignList($userId, $params = [])
+    {
+        list($student, $weekActivityDetail, $signRecordDetails) = CountingActivitySignModel::getUserRecords($userId, $params);
+        return [$student, $weekActivityDetail, $signRecordDetails];
+    }
+
+
+    /**
+     * 参与记录数据格式化
+     * @param array $data
+     * @return array|mixed
+     */
+    public static function formatSign($data = [])
+    {
+        foreach ($data as &$item) {
+            $item['mobile'] = Util::hideUserMobile($item['mobile']);
+            if ($item['qualified_status'] == CountingActivitySignModel::QUALIFIED_STATUS_NO) {
+                $item['award_status'] = $item['qualified_status'];
+            }
+        }
+        return $data;
     }
 }
