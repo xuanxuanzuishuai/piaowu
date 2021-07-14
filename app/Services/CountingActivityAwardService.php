@@ -19,6 +19,10 @@ use App\Services\Queue\QueueService;
 
 class CountingActivityAwardService
 {
+    //erp接口参数数据
+    const EVENT_TYPE = 1;
+    const SOURCE_TYPE = 6002;
+
     /**
      * 任务列表
      *
@@ -29,7 +33,7 @@ class CountingActivityAwardService
     {
         $sign = CountingActivityAwardModel::getRecords([
             'sign_id' => $signId,
-            'award_status' => CountingActivityAwardModel::SHIPPING_STATUS_BEFORE,
+            'shipping_status' => CountingActivityAwardModel::SHIPPING_STATUS_BEFORE,
         ]);
 
 
@@ -73,19 +77,22 @@ class CountingActivityAwardService
 
         $countingActivity = CountingActivityModel::getRecord([
             'op_activity_id' => $data['op_activity_id']
-        ],['event_task_id','name','instruction']);
+        ],['task_id','name','instruction']);
 
         //发放金叶子
-        $leaf = [
+        $leaf['msg_body'] = [
             'student_uuid' => $student['uuid'],
             'app_id' => Constants::SMART_APP_ID,
             'sub_type' => ErpStudentAccountModel::SUB_TYPE_GOLD_LEAF,
             'num' => $data['amount'],
-            'event_type' => 1,
-            'event_task_id' => $countingActivity['event_task_id'],
+            'event_task_id' => $countingActivity['task_id'],
+            'source_type' => self::SOURCE_TYPE,
+            'remark' => $countingActivity['name']
         ];
+        $leaf['event_type'] = self::EVENT_TYPE;
 
-        $ret = QueueService::grantGoldLeaf($leaf);
+        //post请求
+        $ret = (new Erp())->grantGoldLeaf($leaf);
         if (!$ret) return false;
         $ret = CountingActivityAwardModel::updateStatus($data['id']);
         if (empty($ret)) return false;
@@ -115,16 +122,16 @@ class CountingActivityAwardService
         }
 
         $params = [
-            'order_id'   => $data['unique_id'],
-            'plat_id'    => CountingActivityAwardModel::UNIQUE_ID_PREFIX,
-            'app_id'     => Constants::SMART_APP_ID,
-            'sale_shop'  => CountingActivityAwardModel::SALE_SHOP,
-            'goods_id'   => $data['goods_id'],
-            'goods_code' => $data['goods_code'],
-            'mobile'     => $student['mobile'],
-            'uuid'       => $student['student_uuid'],
-            'num'        => $data['amount'],
-            'address_id' => $data['erp_address_id'],
+            'order_id'     => $data['unique_id'],
+            'plat_id'      => CountingActivityAwardModel::UNIQUE_ID_PREFIX,
+            'app_id'       => Constants::SMART_APP_ID,
+            'sale_shop'    => CountingActivityAwardModel::SALE_SHOP,
+            'goods_id'     => $data['goods_id'],
+            'goods_code'   => $data['goods_code'],
+            'mobile'       => $student['mobile'],
+            'student_uuid' => $student['uuid'],
+            'num'          => $data['amount'],
+            'address_id'   => $data['erp_address_id'],
         ];
 
         $res = (new Erp())->deliverGoods($params);

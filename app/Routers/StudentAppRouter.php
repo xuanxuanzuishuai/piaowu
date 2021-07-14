@@ -15,6 +15,7 @@ use App\Controllers\StudentApp\Poster;
 use App\Controllers\StudentWX\Activity;
 use App\Controllers\StudentWX\Poster AS WXPoster;
 use App\Controllers\StudentApp\ReferralActivity;
+use App\Controllers\StudentWX\Task;
 use App\Middleware\AppAuthMiddleWare;
 
 class StudentAppRouter extends RouterBase
@@ -105,6 +106,43 @@ class StudentAppRouter extends RouterBase
         '/student_app/duanwu_activity/referee_list' => [
             'method' => ['get'],
             'call'   => DuanWuActivity::class . ':refereeList',
+            'middles' => [AppAuthMiddleWare::class]
+        ],
+
+        //任务中心
+        '/student_app/task/list' => [
+            'method' => ['get'],
+            'call' => Task::class . ':list',
+            'middles' => [AppAuthMiddleWare::class]
+        ],
+        '/student_app/task/award_record' => [
+            'method' => ['get'],
+            'call' => Task::class . ':awardRecord',
+            'middles' => [AppAuthMiddleWare::class]
+        ],
+        '/student_app/task/get_award_details' => [
+            'method' => ['get'],
+            'call' => Task::class . ':getAwardDetails',
+            'middles' => [AppAuthMiddleWare::class]
+        ],
+        '/student_app/task/get_express_info' => [
+            'method' => ['get'],
+            'call' => Task::class . ':getExpressInfo',
+            'middles' => [AppAuthMiddleWare::class]
+        ],
+        '/student_app/task/get_goods_info' => [
+            'method' => ['get'],
+            'call' => Task::class . ':getGoodsInfo',
+            'middles' => [AppAuthMiddleWare::class]
+        ],
+        '/student_app/task/sign_up' => [
+            'method' => ['post'],
+            'call' => Task::class . ':signUp',
+            'middles' => [AppAuthMiddleWare::class]
+        ],
+        '/student_app/task/get_rewards' => [
+            'method' => ['post'],
+            'call' => Task::class . ':getRewards',
             'middles' => [AppAuthMiddleWare::class]
         ],
     ];

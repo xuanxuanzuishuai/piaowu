@@ -182,11 +182,11 @@ class TaskService
             } elseif(empty($activitySign[$value['op_activity_id']]) && $value['sign_end_time'] < time()){
                 //未报名且过了报名截止时间
                 $status = 3;
-            } elseif ( $activitySign['award_status'] == CountingActivitySignModel::AWARD_STATUS_RECEIVED){
+            } elseif ( $activitySign[$value['op_activity_id']]['award_status'] == CountingActivitySignModel::AWARD_STATUS_RECEIVED){
                 $status = 5;
-            }elseif ($activitySign['award_status'] == CountingActivitySignModel::AWARD_STATUS_PENDING && $activitySign['qualified_status'] == CountingActivitySignModel::QUALIFIED_STATUS_YES ){
+            }elseif ($activitySign[$value['op_activity_id']]['award_status'] == CountingActivitySignModel::AWARD_STATUS_PENDING && $activitySign[$value['op_activity_id']]['qualified_status'] == CountingActivitySignModel::QUALIFIED_STATUS_YES ){
                 $status = 4;
-            } elseif ($activitySign['qualified_status'] == CountingActivitySignModel::QUALIFIED_STATUS_NO && $value['join_end_time'] < time()){
+            } elseif ($activitySign[$value['op_activity_id']]['qualified_status'] == CountingActivitySignModel::QUALIFIED_STATUS_NO && $value['join_end_time'] < time()){
                 //未达标且过了参与截止时间
                 $status = 6;
             }else{
@@ -197,6 +197,7 @@ class TaskService
                 'reminder_pop' => $value['reminder_pop'] ? AliOSS::replaceCdnDomainForDss($value['reminder_pop']) : '',
                 'award_thumbnail' => $value['award_thumbnail'] ? AliOSS::replaceCdnDomainForDss($value['award_thumbnail']) : '',
                 'rule_type' =>$value['rule_type'],
+                'rule_type_name' => CountingActivityModel::RULE_TYPE_MAP[$value['rule_type']],
                 'nums' =>$value['nums'],
                 'title' =>$value['title'],
                 'name' =>$value['name'],
@@ -254,14 +255,14 @@ class TaskService
         foreach ($award as $item) {
             if ($item['type'] == CountingActivityAwardModel::TYPE_ENTITY) {
 
-                if (!isset($record[$item['op_activity_id']][$item['unique_id']])) {
-                    $record[$item['op_activity_id']][$item['unique_id']] = [
+                if (!isset($record[$item['op_activity_id']][$item['express_number']])) {
+                    $record[$item['op_activity_id']][$item['express_number']] = [
                         'type'        => $item['type'],
                         'status_show' => CountingActivityAwardModel::SHIPPING_STATUS_GOLD_LEAF_MAP[$item['shipping_status']],
                     ];
                 }
 
-                $record[$item['op_activity_id']][$item['unique_id']]['goods'][] = [
+                $record[$item['op_activity_id']][$item['express_number']]['goods'][] = [
                     'unique_id' => $item['unique_id'],
                     'amount'    => $item['amount'],
                     'goods_id'  => $item['goods_id'],
@@ -330,15 +331,15 @@ class TaskService
         $record = [];
         foreach ($award as $value) {
 
-            if (!isset($record[$value['unique_id']])){
-                $value['status_show'] = CountingActivityAwardModel::SHIPPING_STATUS_GOLD_LEAF_MAP[$value['shipping_status']];
+            if (!isset($record[$value['express_number']])){
+                $value['status_show'] = CountingActivityAwardModel::SHIPPING_STATUS_ENTITY_MAP[$value['shipping_status']];
                 if (!empty($value['express_number'])){
                     $value['status_show'] = $logisticsStatus[$value['logistics_status']] ?? '';
                 }
                 $value['award_time_show'] = date('Y-m-d H:i:s', $value['create_time']);
                 $record[$value['unique_id']] = $value;
             }
-            $record[$value['unique_id']]['goods'][] = [
+            $record[$value['express_number']]['goods'][] = [
                 'amount' => $value['amount'],
                 'goods_id' => $value['goods_id'],
                 'goods_name' => $goodsInfo[$value['goods_id']]['name'] ?? '',
@@ -381,6 +382,7 @@ class TaskService
 
         $ret['logistics_no'] = $expressInfo['logistics_no'] ?? '';
         $ret['company'] = $expressInfo['company'] ?? '';
+        $ret['address_detail'] = $award['address_detail'] ?? '{}';
 
         $deliver[] = [
             'node' => '已发货',
@@ -495,7 +497,7 @@ class TaskService
      * @return bool
      * @throws RunTimeException
      */
-    public static function getRewards(int $activityId, int $studentId,int $erpAddressId = 0, string $addressDetail = '')
+    public static function getRewards(int $activityId, int $studentId,int $erpAddressId = 0, string $addressDetail = '{}')
     {
         $countingActivity = CountingActivityModel::getRecords([
             'op_activity_id'   => $activityId,
@@ -528,6 +530,7 @@ class TaskService
                 $activityAward[] = [
                     'sign_id'         => $sign['id'],
                     'student_id'      => $studentId,
+                    'shipping_status' => CountingActivityAwardModel::SHIPPING_STATUS_BEFORE,
                     'type'            => $item['type'],
                     'unique_id'       => '',
                     'goods_id'        => 0,
@@ -539,9 +542,11 @@ class TaskService
                     'address_detail'  => '{}',
                 ];
             } else {
+                if (empty($erpAddressId)) throw new RunTimeException(['address_id_must_be_integer']);
                 $activityAward[] = [
                     'sign_id'         => $sign['id'],
                     'student_id'      => $studentId,
+                    'shipping_status' => CountingActivityAwardModel::SHIPPING_STATUS_BEFORE,
                     'type'            => $item['type'],
                     'unique_id'       => CountingActivityAwardModel::UNIQUE_ID_PREFIX . sprintf("%08d",
                             $sign['id']) . sprintf("%02d", $key),

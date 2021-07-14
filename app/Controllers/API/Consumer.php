@@ -888,7 +888,7 @@ class Consumer extends ControllerBase
         }
         switch ($params['event_type']) {
             case GrantAwardTopic::COUNTING_AWARD_TICKET:
-                CountingActivityAwardService::grantCountingAward($params['msg_body']['sign']);
+                CountingActivityAwardService::grantCountingAward($params['msg_body']['sign_id']);
                 break;
             case GrantAwardTopic::COUNTING_AWARD_LOGISTICS_SYNC:
                 //解析物流信息，获取最新状态

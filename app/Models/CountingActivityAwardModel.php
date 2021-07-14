@@ -46,7 +46,7 @@ class CountingActivityAwardModel extends Model
         self::SHIPPING_STATUS_DELIVERED => '已发货',
         self::SHIPPING_STATUS_CENTRE => '发货中',
         self::SHIPPING_STATUS_NO_NEED => '无需发货',
-        self::SHIPPING_STATUS_FAIL => '发货失败',
+        self::SHIPPING_STATUS_FAIL => '发货中',
     ];
 
     const UNIQUE_ID_PREFIX = 1001;
@@ -62,7 +62,7 @@ class CountingActivityAwardModel extends Model
      */
     public static function updateStatus(int $id, int $shippingStatus = self::SHIPPING_STATUS_CENTRE)
     {
-        $ret = self::updateRecord($id, $shippingStatus);
+        $ret = self::updateRecord($id, ['shipping_status' => $shippingStatus]);
         if (empty($ret)) SimpleLogger::error('counting_activity_award update status error', [$id]);
         return $ret;
     }

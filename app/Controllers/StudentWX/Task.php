@@ -198,7 +198,7 @@ class Task extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         try {
-            TaskService::getRewards($params['activity_id'],$this->ci['user_info']['user_id'],$params['erp_address_id'],$params['address_detail']);
+            TaskService::getRewards($params['activity_id'],$this->ci['user_info']['user_id'],$params['erp_address_id'] ?? 0,$params['address_detail'] ?? '{}');
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }

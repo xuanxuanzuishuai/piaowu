@@ -11,6 +11,7 @@ namespace App\Libs;
 use App\Libs\Exceptions\RunTimeException;
 use App\Models\CountingActivityAwardModel;
 use App\Models\Dss\DssErpPackageV1Model;
+use App\Models\Erp\ErpDictModel;
 use App\Models\Erp\ErpEventModel;
 use GuzzleHttp\Client;
 use Slim\Http\StatusCode;
@@ -89,6 +90,8 @@ class Erp
     const API_LOGISTICS_STATUS_DATA = '/api/logistics/list';
     //发放优惠券
     const API_GRANT_COUPON = '/api/student_coupon/distribution';
+    //发放金叶子
+    const API_GRANT_GOLD_LEAF = '/api/consumer/%sstudent_account_callback_referral';
 
     private $host;
 
@@ -874,4 +877,22 @@ class Erp
         }
         return empty($data['data']) ? [] : $data['data'];
     }
+
+    /**
+     * 发放金叶子
+     * @param $params
+     * @return bool
+     */
+    public function grantGoldLeaf(array $params): bool
+    {
+        $url = sprintf(self::API_GRANT_GOLD_LEAF,
+            ErpDictModel::getKeyValue(Constants::DICT_TYPE_SYSTEM_ENV, Constants::DICT_KEY_NSQ_TOPIC_PREFIX));
+        $result = HttpHelper::requestJson($this->host . $url, $params, 'POST');
+        if ($result['code'] == 0) {
+            return true;
+        }
+        return false;
+    }
+
+
 }

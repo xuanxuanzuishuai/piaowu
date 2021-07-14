@@ -20,6 +20,11 @@ class CountingActivityModel extends Model
     const RULE_TYPE_CONTINU = 1; // 连续
     const RULE_TYPE_COUNT = 2; //累计
 
+    const RULE_TYPE_MAP = [
+      self::RULE_TYPE_CONTINU => '连续',
+      self::RULE_TYPE_COUNT => '累计',
+    ];
+
     public static function createActivity($data, $operator_id, $now){
 
         return self::insertRecord([
