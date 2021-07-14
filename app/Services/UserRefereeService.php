@@ -385,7 +385,9 @@ class UserRefereeService
         $refereeInfo['first_pay_normal_info'] = DssGiftCodeModel::getUserFirstPayInfo($refereeRelation['referee_id']);
         SimpleLogger::info('UserRefereeService::getAwardInfo', ['ref' => $refereeInfo, 'stu_id' => $studentId]);
         $time = time();
-        if (strtotime($refereeInfo['sub_end_date']) + Util::TIMESTAMP_ONEDAY >= $time   //年卡未过期
+        if ($refereeInfo['has_review_course'] == DssStudentModel::REVIEW_COURSE_1980   //年卡
+            &&
+            strtotime($refereeInfo['sub_end_date']) + Util::TIMESTAMP_ONEDAY >= $time   //年卡未过期
             &&
             $refereeInfo['sub_status'] == DssStudentModel::SUB_STATUS_ON   //年卡状态正常
             &&
