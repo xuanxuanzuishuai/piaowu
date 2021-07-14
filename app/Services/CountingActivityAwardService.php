@@ -175,6 +175,7 @@ class CountingActivityAwardService
                 'logistics_status' => $logisticsStatus,
                 'shipping_status' => $expressInfo['status'],
                 'express_number' => $expressInfo['logistics_no'],
+                'logistics_company' => $expressInfo['company'],
             ],
             [
                 'unique_id' => $uniqueId,

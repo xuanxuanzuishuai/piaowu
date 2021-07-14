@@ -87,7 +87,7 @@ class Order extends ControllerBase
             $package['gift_group'] =  ErpGiftGoodsV1Model::getOnlineGroupGifts($params['package_id'], true);
 
             // 现金账户余额
-            $user['cash'] = ErpUserService::getStudentCash($studentInfo['uuid']);
+            $user['cash'] = ErpUserService::getStudentAccountInfo($studentInfo['uuid']);
             $defaultAddress = ErpOrderV1Service::getStudentDefaultAddress($studentInfo['uuid']);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());

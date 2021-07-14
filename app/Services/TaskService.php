@@ -22,6 +22,7 @@ use App\Models\CountingActivityModel;
 use App\Models\CountingActivityMutexModel;
 use App\Models\CountingActivitySignModel;
 use App\Models\CountingAwardConfigModel;
+use App\Models\Dss\DssStudentModel;
 use App\Services\Queue\QueueService;
 
 class TaskService
@@ -39,11 +40,18 @@ class TaskService
     {
         $ret = [
             'popup' => false,
+            'gold_leaf' => 0,
             'banner' => [],
             'list'  => []
         ];
 
         if (empty($studentId)) return $ret;
+
+        $studentInfo = DssStudentModel::getById($studentId);
+
+        if (empty($studentInfo)) return $ret;
+
+        $ret['gold_leaf'] = ErpUserService::getStudentAccountInfo($studentInfo['uuid'],ErpUserService::ACCOUNT_SUB_TYPE_GOLD_LEAF);
 
         $redis = RedisDB::getConn();
         $cacheTime = $redis->hget(self::TASK_LIST_NEWEST_VISIT_TIME, $studentId);
@@ -80,8 +88,20 @@ class TaskService
         );
 
         if (!empty($mutex)) {
-            $mutexIds      = [];
-            $mutexActivity = [];
+
+            //前置黑名单
+            $blacklistData = DictConstants::getTypesMap([DictConstants::COUNTING_TASK_BLACKLIST['type']]);
+            $blacklist = $blacklistData[DictConstants::COUNTING_TASK_BLACKLIST['type']] ?? [];
+
+            foreach ($blacklist as $v) {
+                $ids = explode(',', $v['value']);
+                if (in_array($studentId,$ids)){
+                    unset($list[$v['code']]);
+                }
+            }
+
+            $mutexIds      = []; //互斥的活动id
+            $mutexActivity = []; //互斥活动对应关系
             foreach ($mutex as $m) {
                 $mutexActivity['mutex_op_activity_id'][] = $m['op_activity_id'];
                 $mutexIds[]                              = $m['mutex_op_activity_id'];
@@ -97,9 +117,11 @@ class TaskService
 
                 if (!empty($sign)) {
                     foreach ($sign as $s) {
-                        //互斥活动 参与时间小于当前活动时间
-                        if ($s['award_time'] < $list[$s['op_activity_id']]['first_effect_time']) {
-                            unset($list[$s['op_activity_id']]);
+                        foreach ($mutexActivity[$s['op_activity_id']] as $mutexActivityId){
+                            //互斥活动 参与时间小于当前活动时间
+                            if ($s['award_time'] < $list[$mutexActivityId]['first_effect_time']) {
+                                unset($list[$mutexActivityId]);
+                            }
                         }
                     }
                 }
@@ -107,7 +129,6 @@ class TaskService
         }
 
         if (empty($list)) return $ret;
-
 
         //参与的活动记录
         $activitySign = CountingActivitySignModel::getRecords([
@@ -212,8 +233,6 @@ class TaskService
 
         if (empty($activity)) return [];
 
-        $activityList = array_column($activity,null,'op_activity_id');
-
         $opActivityIds = array_column($activity,'op_activity_id');
 
         $award = CountingActivityAwardModel::getRecords([
@@ -222,32 +241,48 @@ class TaskService
             'ORDER'          => ['type' => 'DESC']
         ], ['op_activity_id', 'type', 'unique_id', 'shipping_status', 'goods_id', 'amount']);
 
-        $goodsIds = array_column($award, 'goods_id');
+        $goodsIds = array_filter(array_unique(array_column($award, 'goods_id')));
 
-
-        //商品信息
-        $goodsInfo = (new Erp())->getLogisticsGoodsList(['goods_id' => implode(',',$goodsIds)]);
-        $goodsInfo = array_column($goodsInfo['data']['list'] ?? [],'name','id');
-
-        foreach ($award as $item) {
-            if (!empty($activityList[$item['op_activity_id']]['status']) && $item['type'] == CountingActivityAwardModel::TYPE_ENTITY) {
-                $activityList[$item['op_activity_id']]['status_show'] = CountingActivityAwardModel::SHIPPING_STATUS_ENTITY_MAP[$item['shipping_status']];
-            } else {
-                $activityList[$item['op_activity_id']]['status_show'] = CountingActivityAwardModel::SHIPPING_STATUS_GOLD_LEAF_MAP[$item['shipping_status']];
-            }
-            $activityList[$item['op_activity_id']]['goods'][] = [
-                'type'            => $item['type'],
-                'unique_id'       => $item['unique_id'],
-                'shipping_status' => $item['shipping_status'],
-                'goods_id'        => $item['goods_id'],
-                'amount'          => $item['amount'],
-                'name'            => $goodsInfo[$item['goods_id']] ?? '',
-            ];
-
-            $activityList[$item['op_activity_id']]['award_time_show'] = date('Y-m-d H:i:s', $activityList[$item['op_activity_id']]['award_time']);
+        $goodsInfo = [];
+        if (!empty($goodsIds)){
+            //商品信息
+            $goodsInfo = (new Erp())->getLogisticsGoodsList(['goods_id' => implode(',',$goodsIds)]);
+            $goodsInfo = array_column($goodsInfo['data']['list'] ?? [],'name','id');
         }
 
-        return array_values($activityList);
+        $record = [];
+        foreach ($award as $item) {
+            if ($item['type'] == CountingActivityAwardModel::TYPE_ENTITY) {
+
+                if (!isset($record[$item['op_activity_id']][$item['unique_id']])) {
+                    $record[$item['op_activity_id']][$item['unique_id']] = [
+                        'type'        => $item['type'],
+                        'status_show' => CountingActivityAwardModel::SHIPPING_STATUS_GOLD_LEAF_MAP[$item['shipping_status']],
+                    ];
+                }
+
+                $record[$item['op_activity_id']][$item['unique_id']]['goods'][] = [
+                    'unique_id' => $item['unique_id'],
+                    'amount'    => $item['amount'],
+                    'goods_id'  => $item['goods_id'],
+                    'name'      => $goodsInfo[$item['goods_id']] ?? '',
+                ];
+
+            } else {
+                $record[$item['op_activity_id']][] = [
+                    'type'        => $item['type'],
+                    'status_show' => CountingActivityAwardModel::SHIPPING_STATUS_ENTITY_MAP[$item['shipping_status']],
+                    'amount'      => $item['amount'],
+                ];
+            }
+        }
+
+        foreach ($activity as &$value){
+            $value['award_time_show'] = date('Y-m-d H:i:s', $value['award_time']);
+            $value['record'] = array_values($record[$value['op_activity_id']]);
+        }
+
+        return $activity;
     }
 
 
@@ -276,25 +311,46 @@ class TaskService
             'student_id' => $studentId,
             'op_activity_id' => $activityId,
             'type' => CountingActivityAwardModel::TYPE_ENTITY
-        ],['goods_id','unique_id','amount','erp_address_id','address_detail','logistics_status','company','express_number','create_time']);
+        ],['goods_id','unique_id','amount','shipping_status','logistics_status','erp_address_id','address_detail','logistics_company','logistics_status','express_number','create_time']);
 
         if (empty($award)) throw new RunTimeException(['activity_award_is_disable']);
 
-        $goodsIds = array_column($award,'goods_id');
 
-        //商品信息
-        $goods = (new Erp())->getLogisticsGoodsList(['goods_id' => implode(',',$goodsIds)]);
-        $goodsInfo = array_column($goods['data']['list'] ?? [],null,'id');
+        $goodsIds = array_filter(array_unique(array_column($award, 'goods_id')));
 
-        foreach ($award as &$value) {
-            $value['goods_name'] = $goodsInfo[$value['goods_id']]['name'] ?? '';
-            $value['thumb_url'] = $goodsInfo[$value['goods_id']]['thumb_url'] ?? '';
-            $value['goods_attribute'] = $goodsInfo[$value['goods_id']]['goods_attribute'] ?? '';
-            $value['award_time_show'] = date('Y-m-d H:i:s', $value['create_time']);
+        $goodsInfo = [];
+        if (!empty($goodsIds)){
+            //商品信息
+            $goodsInfo = (new Erp())->getLogisticsGoodsList(['goods_id' => implode(',',$goodsIds)]);
+            $goodsInfo = array_column($goodsInfo['data']['list'] ?? [],null,'id');
         }
 
+        $logisticsStatus = DictConstants::get(DictConstants::MATERIAL_LOGISTICS_STATUS,DictConstants::MATERIAL_LOGISTICS_STATUS['keys']);
 
-        return $award;
+        $record = [];
+        foreach ($award as $value) {
+
+            if (!isset($record[$value['unique_id']])){
+                $value['status_show'] = CountingActivityAwardModel::SHIPPING_STATUS_GOLD_LEAF_MAP[$value['shipping_status']];
+                if (!empty($value['express_number'])){
+                    $value['status_show'] = $logisticsStatus[$value['logistics_status']] ?? '';
+                }
+                $value['award_time_show'] = date('Y-m-d H:i:s', $value['create_time']);
+                $record[$value['unique_id']] = $value;
+            }
+            $record[$value['unique_id']]['goods'][] = [
+                'amount' => $value['amount'],
+                'goods_id' => $value['goods_id'],
+                'goods_name' => $goodsInfo[$value['goods_id']]['name'] ?? '',
+                'thumb_url' => $goodsInfo[$value['goods_id']]['thumb_url'] ?? '',
+                'goods_attribute' => $goodsInfo[$value['goods_id']]['goods_attribute'] ?? '',
+            ];
+
+            unset($record[$value['unique_id']]['goods_id'],$record[$value['unique_id']]['amount']);
+
+        }
+
+        return array_values($record);
     }
 
     /**

@@ -16,20 +16,49 @@ class ErpUserService
     const ACCOUNT_SUB_TYPE_STUDENT_POINTS = 3001;//学生积分余额
     const ACCOUNT_SUB_TYPE_CASH = 1001; // 学生现金账户
 
+    const ACCOUNT_SUB_TYPE_GOLD_LEAF = 3002; // 学生金叶子账户
+
     /**
-     * 获取学生现金余额
-     * @param $uuid
-     * @return float|int
+     * 获取学生账户信息
+     * @param string $uuid
+     * @param int|array $subType
+     * @return float|int|array|mixed
      */
-    public static function getStudentCash($uuid)
+    public static function getStudentAccountInfo(string $uuid, $subType = self::ACCOUNT_SUB_TYPE_CASH)
     {
-        $erp = new Erp();
+        $subTypes = [];
+        if (is_array($subType)) {
+            $ret = [];
+            foreach ($subType as $value) {
+                $ret[$value] = 0;
+            }
+            $subTypes = $subType;
+        } else {
+            $ret = 0;
+            $subTypes[] = $subType;
+        }
+
+        $erp      = new Erp();
         $accounts = $erp->studentAccount($uuid);
         if (!isset($accounts['code']) || empty($accounts['data'])) {
-            return 0;
+            return $ret;
         }
         $accounts = array_column($accounts['data'], null, 'sub_type');
-        $cash = $accounts[self::ACCOUNT_SUB_TYPE_CASH];
-        return ($cash['total_num'] * 100 - $cash['out_time_num'] * 100);
+
+        $data = [];
+
+        foreach ($subTypes as $item) {
+            $account = $accounts[$item];
+
+            if ($item == self::ACCOUNT_SUB_TYPE_CASH) {
+                $data[$item] = ($account['total_num'] * 100 - $account['out_time_num'] * 100);
+            } else {
+                $data[$item] = $account['total_num'];
+            }
+        }
+
+        if (is_array($subType)) return $data;
+
+        return $data[$subType];
     }
 }

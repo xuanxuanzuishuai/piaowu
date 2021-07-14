@@ -69,6 +69,11 @@ class APIRouter extends RouterBase
             'method' => ['post'],
             'call' => Consumer::class . ':checkPoster',
             'middles' => [],
-        ]
+        ],
+        '/api/consumer/grant_award' => [
+            'method' => ['post'],
+            'call' => Consumer::class . ':grantAward',
+            'middles' => [],
+        ],
     ];
 }
