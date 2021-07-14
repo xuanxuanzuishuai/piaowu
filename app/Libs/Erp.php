@@ -702,6 +702,9 @@ class Erp
             'package_type' => $extParams['package_type'] ?? 0,
             'task_award_id' => $awardId,
             'invite_detail_id' => $extParams['invite_detail_id'] ?? 0,
+            'activity_id' => $extParams['activity_id'] ?? 0,
+            'delay' => $extParams['delay'] ?? 0,
+            'amount' => $extParams['amount'] ?? 0,
         ];
         return HttpHelper::requestJson($this->host . self::API_ADD_EVENT_TASK_AWARD, $params, 'POST');
     }

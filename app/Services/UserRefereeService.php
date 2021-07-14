@@ -19,6 +19,7 @@ use App\Models\Dss\DssStudentModel;
 use App\Models\Erp\ErpUserEventTaskAwardGoldLeafModel;
 use App\Models\ErpSlaveModels\ErpStudentCouponV1Model;
 use App\Models\ParamMapModel;
+use App\Models\RtActivityRuleModel;
 use App\Models\RtCouponReceiveRecordModel;
 use App\Models\StudentInviteModel;
 use App\Models\StudentReferralStudentDetailModel;
@@ -237,11 +238,18 @@ class UserRefereeService
             // 获取用户购买年卡时的转介绍信息
             $studentYearCardStageInfo = StudentReferralStudentDetailModel::getRecord(['student_id' => $studentId, 'stage' => $studentInviteStage], ['id']);
             $erp = new Erp();
-            foreach ($refTaskId as $taskId) {
+            foreach ($refTaskId as $taskInfo) {
+                $taskId = $taskInfo['task_id'];
+                $activityId = $taskInfo['activity_id'] ?? 0;
+                $delay = $taskInfo['delay'] ?? 0;
+                $amount = $taskInfo['amount'] ?? 0;
                 $taskResult = $erp->addEventTaskAward($studentInfo['uuid'], $taskId, $sendStatus, 0, $refereeInfo['uuid'], [
                     'bill_id' => $parentBillId,
                     'package_type' => $packageType,
                     'invite_detail_id' => $studentYearCardStageInfo['id'],
+                    'activity_id' => $activityId,
+                    'delay' => $delay,
+                    'amount' => $amount,
                 ]);
                 SimpleLogger::info("UserRefereeService::dssCompleteEventTask", [
                     'params' => [
@@ -288,7 +296,7 @@ class UserRefereeService
         // 判断用户是否有RT优惠券
         $haveCoupon = false;
         $uuid = $studentInfo['uuid'];
-        $res = RtCouponReceiveRecordModel::getRecord(['receive_uuid' => $uuid, 'status' => RtCouponReceiveRecordModel::REVEIVED_STATUS], ['id,student_coupon_id']);
+        $res = RtCouponReceiveRecordModel::getRecord(['receive_uuid' => $uuid, 'status' => RtCouponReceiveRecordModel::REVEIVED_STATUS], ['id,activity_id,student_coupon_id']);
         if ($res) {
             $pageInfo = (new Erp())->getStudentCouponPageById([$res['student_coupon_id']]);
             $info = $pageInfo['data']['list'][0] ?? [];
@@ -304,7 +312,20 @@ class UserRefereeService
         if ($haveCoupon && $packageType == DssPackageExtModel::PACKAGE_TYPE_NORMAL) {
             $totalInfo = DssGiftCodeModel::getRecord(['parent_bill_id' => $parentBillId], ['id', 'valid_num', 'valid_units']);
             if (!empty($totalInfo) && $totalInfo['valid_num'] >= 361) {
-                $taskIds[] = DictConstants::get(DictConstants::RT_ACTIVITY_CONFIG, 'award_event_task_id');
+                $activityId = $res['activity_id'] ?? 0;
+                if ($activityId) {
+                    $activityInfo = RtActivityRuleModel::getRecord(['activity_id' => $activityId], ['referral_award']);
+                    $referralAward = json_decode($activityInfo['referral_award'] ?? '', true);
+                    if ($referralAward) {
+                        //$taskIds[] = DictConstants::get(DictConstants::RT_ACTIVITY_CONFIG, 'award_event_task_id');
+                        $taskIds[] = [
+                            'task_id' => DictConstants::get(DictConstants::RT_ACTIVITY_CONFIG, 'award_event_task_id'),
+                            'activity_id' => $activityId,
+                            'delay' => $referralAward['delay'] ?? 0,
+                            'amount' => $referralAward['amount'] ?? 0,
+                        ];
+                    }
+                }
             }
         }
         
@@ -315,14 +336,20 @@ class UserRefereeService
                 &&
                 $packageType == DssPackageExtModel::PACKAGE_TYPE_TRIAL
             ) {
-                $taskIds[] = RefereeAwardService::getDssTrailPayTaskId();
+                //$taskIds[] = RefereeAwardService::getDssTrailPayTaskId();
+                $taskIds[] = [
+                    'task_id' => RefereeAwardService::getDssTrailPayTaskId(),
+                ];
             }
         } elseif (strtotime($refereeInfo['sub_end_date'])+Util::TIMESTAMP_ONEDAY>=$time && $refereeInfo['sub_status']==DssStudentModel::SUB_STATUS_ON) {
             // 推荐人状态：付费正式课
             // 被推荐人购买体验课：
             if ($packageType == DssPackageExtModel::PACKAGE_TYPE_TRIAL) {
                 /** 推荐人购买体验卡 - 不在需要判断数量 现在发放的都是固定奖励 */
-                $taskIds[] = RefereeAwardService::getDssTrailPayTaskId(1);
+                //$taskIds[] = RefereeAwardService::getDssTrailPayTaskId(1);
+                $taskIds[] = [
+                    'task_id' => RefereeAwardService::getDssTrailPayTaskId(1),
+                ];
             } else {
                 // 被推荐人购买年卡：
                 // XYZOP-555
@@ -346,11 +373,17 @@ class UserRefereeService
                         2 => 1,
                         3 => 2,
                     ];
-                    $taskIds[] = RefereeAwardService::getDssYearPayTaskId($levelMap[$level]);
+                    //$taskIds[] = RefereeAwardService::getDssYearPayTaskId($levelMap[$level]);
+                    $taskIds[] = [
+                        'task_id' => RefereeAwardService::getDssYearPayTaskId($levelMap[$level]),
+                    ];
                 }
                 $firstBuyTime = $refereeInfo['first_pay_normal_info']['create_time'] ?? 0;
                 if ($level && $time - $firstBuyTime <= Util::TIMESTAMP_ONEWEEK) {   //第一次购买年卡7天内,给推荐人和被推荐人额外奖励
-                    $taskIds[] = RefereeAwardService::getDssYearPayTaskId(3);
+                    //$taskIds[] = RefereeAwardService::getDssYearPayTaskId(3);
+                    $taskIds[] = [
+                        'task_id' => RefereeAwardService::getDssYearPayTaskId(3),
+                    ];
                 }
             }
         }
