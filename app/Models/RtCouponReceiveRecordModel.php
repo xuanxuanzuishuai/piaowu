@@ -63,11 +63,13 @@ class RtCouponReceiveRecordModel extends Model
         if ($coupon_status = $search['coupon_status']??0) {   // erp优惠券状态(1未使用 2 已使用 3已失效 4已作废)
             $whereStr .= " AND g.status='{$coupon_status}'";
         }
-        if ($create_time_start = $search['create_time_start']??0) {   // 推荐时间-开始
-            $whereStr .= " AND a.create_time>='{$create_time_start}'";
+        if ($create_date_start = $search['create_time_start']??'') {   // 推荐时间-开始
+            $create_time_start = strtotime($create_date_start);
+            $whereStr .= " AND i.create_time>='{$create_time_start}'";
         }
-        if ($create_time_end = $search['create_time_end']??0) {   // 推荐时间-结束
-            $whereStr .= " AND a.create_time<='{$create_time_end}'";
+        if ($create_date_end = $search['create_time_end']??0) {   // 推荐时间-结束
+            $create_time_end = strtotime($create_date_end);
+            $whereStr .= " AND i.create_time<='{$create_time_end}'";
         }
         if ($order_id = $search['order_id']??'') {   // 订单号
             $whereStr .= " AND h.order_id='{$order_id}'";
