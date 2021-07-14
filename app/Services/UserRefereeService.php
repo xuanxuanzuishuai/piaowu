@@ -52,7 +52,7 @@ class UserRefereeService
                 'award_img_url' => 'https://oss-ai-peilian-app.xiaoyezi.com/huabi_10000.png', 'award_img_url_@2x' => 'https://oss-ai-peilian-app.xiaoyezi.com/huabi_10000@2x.png',
             ],
             [
-                'award_total' => 30000, 'award_normal' => 10000, 'award_extra' => 20000, 'award_CNY' => 300, 'award_name' => '宝宝高清数码相机', 'award_img_url' => '',
+                'award_total' => 30000, 'award_normal' => 10000, 'award_extra' => 20000, 'award_CNY' => 300, 'award_name' => '宝宝数码相机', 'award_img_url' => '',
                 'award_img_url' => 'https://oss-ai-peilian-app.xiaoyezi.com/shumaxiangji_30000.png', 'award_img_url_@2x' => 'https://oss-ai-peilian-app.xiaoyezi.com/shumaxiangji_30000@2x.png',
             ],
         ],
