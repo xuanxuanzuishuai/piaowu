@@ -75,6 +75,8 @@ class Erp
     const API_TASK_COMPLETE_INFO = '/api/dss/get_task_complete';
     // 批量发放用户奖励积分
     const API_BATCH_AWARD_POINTS = '/api/operation/award_points';
+    // 优惠券发放明细列表
+    const API_STUDENT_COUPON_PAGE = '/api/student_coupon/page';
 
     private $host;
 
@@ -759,5 +761,31 @@ class Erp
             'order_id' => $strBillId,
         ];
         return HttpHelper::requestJson($this->host . self::API_REFUND_FINISH_TIME, $params, 'POST');
+    }
+
+    /**
+     * 获取学生优惠券信息
+     * @param array $id
+     * @return array|bool
+     */
+    public function getStudentCouponPageById($id = [])
+    {
+        if (empty($id)) {
+            return [];
+        }
+        $strId = implode(',', $id);
+        $params = [
+            'student_coupon_id' => $strId,
+        ];
+        return HttpHelper::requestJson($this->host . self::API_STUDENT_COUPON_PAGE, $params, 'GET');
+    }
+
+    /**
+     * 获取商品列表
+     * @param $params
+     * @return array|bool
+     */
+    public function getLogisticsGoodsList($params){
+        return HttpHelper::requestJson($this->host . self::API_LOGISTICS_GOODS_LIST, $params);
     }
 }

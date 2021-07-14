@@ -23,8 +23,9 @@ use App\Models\Erp\ErpEventModel;
 use App\Models\Erp\ErpEventTaskModel;
 use App\Models\Erp\ErpUserEventTaskAwardGoldLeafModel;
 use App\Models\Erp\ErpUserEventTaskModel;
+use App\Models\OperationActivityModel;
+use App\Models\RtActivityModel;
 use App\Models\StudentReferralStudentStatisticsModel;
-use App\Services\CashGrantService;
 use App\Services\Queue\PushMessageTopic;
 use Dotenv\Dotenv;
 
@@ -109,6 +110,10 @@ foreach ($pointsList as $points) {
         $refundTime = $refundTimeMap[$billId] ?? 0;
         SimpleLogger::info("script::auto_send_task_award_points", ['refund_data' => $refundTime, 'delay_time' => $delayTime]);
         if ($refundTime > 0 && $refundTime <= $delayTime) {   //如果15天内退费,不发放奖励
+            $verify = false;
+        }
+        $aInfo = RtActivityModel::getRecord(['activity_id' => $points['activity_id']], ['enable_status']);
+        if (empty($aInfo) || $aInfo['enable_status'] == OperationActivityModel::ENABLE_STATUS_DISABLE) {   // RT活动状态已禁用
             $verify = false;
         }
         if (!$verify) {

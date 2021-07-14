@@ -72,7 +72,27 @@ class DictConstants {
             '2',    // 课管活动
         ]
     ];
-
+    
+    // RT活动优惠券状态
+    const RT_ACTIVITY_COUPON_STATUS = [
+        'type' => 'RT_ACTIVITY_COUPON_STATUS',
+        'keys' => [
+            '1',    // 未领取
+            '2',    // 已领取(未使用)
+            '3',    // 已使用
+            '4',    // 已过期
+            '5',    // 已作废
+        ]
+    ];
+    
+    // RT活动优惠券状态
+    const RT_ACTIVITY_CONFIG = [
+        'type' => 'RT_ACTIVITY_CONFIG',
+        'keys' => [
+            'award_event_task_id',    // 推荐人奖励任务id
+        ]
+    ];
+    
     // 阿里云config
     const ALI_OSS_CONFIG = [
         'type' => 'ALI_OSS_CONFIG',

@@ -17,13 +17,14 @@ use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssPackageExtModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Erp\ErpUserEventTaskAwardGoldLeafModel;
+use App\Models\ErpSlaveModels\ErpStudentCouponV1Model;
 use App\Models\ParamMapModel;
+use App\Models\RtCouponReceiveRecordModel;
 use App\Models\StudentInviteModel;
 use App\Models\StudentReferralStudentDetailModel;
 use App\Models\StudentReferralStudentStatisticsModel;
 use App\Services\Queue\PushMessageTopic;
 use App\Services\Queue\QueueService;
-
 
 class UserRefereeService
 {
@@ -222,7 +223,8 @@ class UserRefereeService
         $refereeInfo['first_pay_normal_info'] = DssGiftCodeModel::getUserFirstPayInfo($refereeRelation['referee_id']);
         SimpleLogger::info('UserRefereeService::dssCompleteEventTask', ['ref' => $refereeInfo, 'stu_id' => $studentId]);
         
-        $refTaskId = self::getTaskIdByType($packageType, $trialType, $refereeInfo, $appId, $parentBillId);
+        $studentInfo = DssStudentModel::getById($studentId);
+        $refTaskId = self::getTaskIdByType($packageType, $trialType, $refereeInfo, $appId, $parentBillId, $studentInfo);
         SimpleLogger::info("UserRefereeService::dssCompleteEventTask", ['taskid' => $refTaskId]);
         
         if (!empty($refTaskId)) {
@@ -234,7 +236,6 @@ class UserRefereeService
             }
             // 获取用户购买年卡时的转介绍信息
             $studentYearCardStageInfo = StudentReferralStudentDetailModel::getRecord(['student_id' => $studentId, 'stage' => $studentInviteStage], ['id']);
-            $studentInfo = DssStudentModel::getById($studentId);
             $erp = new Erp();
             foreach ($refTaskId as $taskId) {
                 $taskResult = $erp->addEventTaskAward($studentInfo['uuid'], $taskId, $sendStatus, 0, $refereeInfo['uuid'], [
@@ -268,7 +269,7 @@ class UserRefereeService
      * @param $appId
      * @return int|string|array
      */
-    public static function getTaskIdByType($packageType, $trialType, $refereeInfo, $appId, $parentBillId)
+    public static function getTaskIdByType($packageType, $trialType, $refereeInfo, $appId, $parentBillId, $studentInfo)
     {
         $taskIds = [];
         $time = time();
@@ -282,6 +283,28 @@ class UserRefereeService
                 DictModel::delCache(DictConstants::NODE_RELATE_TASK['type'], 'dict_list_');
                 //设置version缓存为当前版本
                 $redis->set(self::REFERRAL_AWARD_RULE_VERSION_CACHE_KEY, self::REFERRAL_AWARD_RULE_VERSION);
+            }
+        }
+        // 判断用户是否有RT优惠券
+        $haveCoupon = false;
+        $uuid = $studentInfo['uuid'];
+        $res = RtCouponReceiveRecordModel::getRecord(['receive_uuid' => $uuid, 'status' => RtCouponReceiveRecordModel::REVEIVED_STATUS], ['id,student_coupon_id']);
+        if ($res) {
+            $pageInfo = (new Erp())->getStudentCouponPageById([$res['student_coupon_id']]);
+            $info = $pageInfo['data']['list'][0] ?? [];
+            if ($info
+                &&
+                $info['expired_end_time'] > time()
+                &&
+                in_array($info['student_coupon_status']??0, [ErpStudentCouponV1Model::STATUS_UNUSE, ErpStudentCouponV1Model::STATUS_USED])
+            ) {
+                $haveCoupon = true;
+            }
+        }
+        if ($haveCoupon && $packageType == DssPackageExtModel::PACKAGE_TYPE_NORMAL) {
+            $totalInfo = DssGiftCodeModel::getRecord(['parent_bill_id' => $parentBillId], ['id', 'valid_num', 'valid_units']);
+            if (!empty($totalInfo) && $totalInfo['valid_num'] >= 361) {
+                $taskIds[] = DictConstants::get(DictConstants::RT_ACTIVITY_CONFIG, 'award_event_task_id');
             }
         }
         
@@ -308,40 +331,14 @@ class UserRefereeService
                     return $taskIds;
                 }
                 $level = 0;
-                switch ($totalInfo['valid_units']) {
-                    case DssGiftCodeModel::CODE_TIME_DAY:
-                        if ($totalInfo['valid_num']>=361 && $totalInfo['valid_num']<=371) {
-                            $level = 1;
-                        }
-                        if ($totalInfo['valid_num']>=544 && $totalInfo['valid_num']<=554) {
-                            $level = 2;
-                        }
-                        if ($totalInfo['valid_num']>=727) {
-                            $level = 3;
-                        }
-                        break;
-                    case DssGiftCodeModel::CODE_TIME_MONTH:
-                        if ($totalInfo['valid_num']>=12 && $totalInfo['valid_num']<=17) {
-                            $level = 1;
-                        }
-                        if ($totalInfo['valid_num']>=18 && $totalInfo['valid_num']<=23) {
-                            $level = 2;
-                        }
-                        if ($totalInfo['valid_num']>=24) {
-                            $level = 3;
-                        }
-                        break;
-                    case DssGiftCodeModel::CODE_TIME_YEAR:
-                        if ($totalInfo['valid_num']==1) {
-                            $level = 1;
-                        }
-                        if ($totalInfo['valid_num']>1 && $totalInfo['valid_num']<2) {
-                            $level = 2;
-                        }
-                        if ($totalInfo['valid_num']>=2) {
-                            $level = 3;
-                        }
-                        break;
+                if ($totalInfo['valid_num']>=361 && $totalInfo['valid_num']<=371) {
+                    $level = 1;
+                }
+                if ($totalInfo['valid_num']>=544 && $totalInfo['valid_num']<=554) {
+                    $level = 2;
+                }
+                if ($totalInfo['valid_num']>=727) {
+                    $level = 3;
                 }
                 if ($level) {
                     $levelMap = [
