@@ -206,10 +206,13 @@ class CountingActivitySignModel extends Model
 
     /**
      * 获取已参与的领奖任务
+     *
      * @param int $studentId
+     * @param int $page
+     * @param int $count
      * @return array
      */
-    public static function getActivitySignInfo(int $studentId): array
+    public static function getActivitySignInfo(int $studentId,int $page, int $count): array
     {
         $db   = MysqlDB::getDB();
         $data = $db->select(
@@ -225,8 +228,31 @@ class CountingActivitySignModel extends Model
             [
                 self::$table . '.student_id'   => $studentId,
                 self::$table . '.award_status' => self::AWARD_STATUS_RECEIVED,
-                'ORDER'                        => [self::$table . '.award_time' => 'DESC']
+                'ORDER'                        => [self::$table . '.award_time' => 'DESC'],
+                'LIMIT'                        => [($page - 1) * $count, $count]
             ]);
         return empty($data) ? [] : $data;
+    }
+
+    /**
+     * 获取已参与的领奖任务
+     *
+     * @param int $studentId
+     * @return int
+     */
+    public static function getActivitySignCount(int $studentId): int
+    {
+        return MysqlDB::getDB()->count(
+            self::$table,
+            [
+                '[><]' . CountingActivityModel::$table => ['op_activity_id' => 'op_activity_id'],
+            ],
+            [
+                self::$table . '.op_activity_id',
+            ],
+            [
+                self::$table . '.student_id'   => $studentId,
+                self::$table . '.award_status' => self::AWARD_STATUS_RECEIVED,
+            ]);
     }
 }

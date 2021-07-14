@@ -35,23 +35,28 @@ class TaskService
      *
      * @param int $studentId
      * @return array
+     * @throws RunTimeException
      */
     public static function getCountingActivityList(int $studentId): array
     {
         $ret = [
-            'popup' => false,
+            'popup'     => false,
             'gold_leaf' => 0,
-            'banner' => [],
-            'list'  => []
+            'banner'    => [],
+            'list'      => [],
+            'user_info' => [],
         ];
 
         if (empty($studentId)) return $ret;
 
-        $studentInfo = DssStudentModel::getById($studentId);
+        $userStatusInfo = StudentService::dssStudentStatusCheck($studentId);   // 获取用户当前状态
+        $ret['user_info'] = [
+            'uuid' => $userStatusInfo['student_info']['uuid'],
+            'student_status' => $userStatusInfo['student_status'],
+            'student_status_zh' => DssStudentModel::STUDENT_IDENTITY_ZH_MAP[$userStatusInfo['student_status']] ?? '',
+        ];
 
-        if (empty($studentInfo)) return $ret;
-
-        $ret['gold_leaf'] = ErpUserService::getStudentAccountInfo($studentInfo['uuid'],ErpUserService::ACCOUNT_SUB_TYPE_GOLD_LEAF);
+        $ret['gold_leaf'] = ErpUserService::getStudentAccountInfo($userStatusInfo['student_info']['uuid'],ErpUserService::ACCOUNT_SUB_TYPE_GOLD_LEAF);
 
         $redis = RedisDB::getConn();
         $cacheTime = $redis->hget(self::TASK_LIST_NEWEST_VISIT_TIME, $studentId);
@@ -161,14 +166,31 @@ class TaskService
 
         $activitySign = array_column($sign, null, 'op_activity_id');
 
+        $activityIds = array_keys($list);
+
         $activityExt = ActivityExtModel::getRecords([
-            'activity_id' => array_keys($list)
+            'activity_id' => $activityIds
         ], [
             'activity_id', 'award_rule'
         ]);
 
         $activityExt = array_column($activityExt, 'award_rule', 'activity_id');
 
+        $config = CountingAwardConfigModel::getRecords([
+            'op_activity_id' => $activityIds,
+            'status'         => CountingAwardConfigModel::EFFECTIVE_STATUS,
+        ], [
+            'type', 'op_activity_id'
+        ]);
+
+        foreach ($config as $item) {
+            if ($item['type'] == CountingAwardConfigModel::PRODUCT_TYPE) {
+                $list[$item['op_activity_id']]['goods_type'] = CountingAwardConfigModel::PRODUCT_TYPE;
+            } elseif ($item['type'] != CountingAwardConfigModel::PRODUCT_TYPE && !isset($list[$item['op_activity_id']]['goods_type'])) {
+                $list[$item['op_activity_id']]['goods_type'] = CountingAwardConfigModel::GOLD_LEAF_TYPE;
+                $list[$item['op_activity_id']]['goods_gold_leaf_number'] = $item['amount'];
+            }
+        }
 
         $ret = [];
         $banner = [];
@@ -210,6 +232,8 @@ class TaskService
                 'show_status' => $statusList[$status],
                 'cumulative_nums' => $activitySign[$value['op_activity_id']]['cumulative_nums'] ?? 0,
                 'continue_nums' => $activitySign[$value['op_activity_id']]['continue_nums'] ?? 0,
+                'goods_type' => $value['goods_type'],
+                'goods_gold_leaf_number' => $value['goods_gold_leaf_number'] ?? 0,
             ];
         }
 
@@ -225,21 +249,34 @@ class TaskService
      * 领奖记录
      *
      * @param int $studentId
+     * @param int $page
+     * @param int $count
      * @return array
      */
-    public static function getAwardRecord(int $studentId):array
+    public static function getAwardRecord(int $studentId, int $page, int $count):array
     {
 
-        $activity = CountingActivitySignModel::getActivitySignInfo($studentId);
+        $ret = [
+            'count' => 0,
+            'list' => [],
+        ];
 
-        if (empty($activity)) return [];
+        $number = CountingActivitySignModel::getActivitySignCount($studentId);
+
+        if (empty($number)) return $ret;
+
+        $ret['count'] = $number;
+
+        $activity = CountingActivitySignModel::getActivitySignInfo($studentId, $page, $count);
+
+        if (empty($activity)) return $ret;
 
         $opActivityIds = array_column($activity,'op_activity_id');
 
         $award = CountingActivityAwardModel::getRecords([
             'op_activity_id' => $opActivityIds,
             'student_id'     => $studentId,
-            'ORDER'          => ['type' => 'DESC']
+            'ORDER'          => ['type' => 'ASC']
         ], ['op_activity_id', 'type', 'unique_id', 'shipping_status', 'goods_id', 'amount']);
 
         $goodsIds = array_filter(array_unique(array_column($award, 'goods_id')));
@@ -258,7 +295,7 @@ class TaskService
                 if (!isset($record[$item['op_activity_id']][$item['express_number']])) {
                     $record[$item['op_activity_id']][$item['express_number']] = [
                         'type'        => $item['type'],
-                        'status_show' => CountingActivityAwardModel::SHIPPING_STATUS_GOLD_LEAF_MAP[$item['shipping_status']],
+                        'status_show' => CountingActivityAwardModel::SHIPPING_STATUS_ENTITY_MAP[$item['shipping_status']],
                     ];
                 }
 
@@ -272,7 +309,7 @@ class TaskService
             } else {
                 $record[$item['op_activity_id']][] = [
                     'type'        => $item['type'],
-                    'status_show' => CountingActivityAwardModel::SHIPPING_STATUS_ENTITY_MAP[$item['shipping_status']],
+                    'status_show' => CountingActivityAwardModel::SHIPPING_STATUS_GOLD_LEAF_MAP[$item['shipping_status']],
                     'amount'      => $item['amount'],
                 ];
             }
@@ -283,7 +320,9 @@ class TaskService
             $value['record'] = array_values($record[$value['op_activity_id']]);
         }
 
-        return $activity;
+        $ret['list'] = $activity;
+
+        return $ret;
     }
 
 
@@ -326,7 +365,7 @@ class TaskService
             $goodsInfo = array_column($goodsInfo['data']['list'] ?? [],null,'id');
         }
 
-        $logisticsStatus = DictConstants::get(DictConstants::MATERIAL_LOGISTICS_STATUS,DictConstants::MATERIAL_LOGISTICS_STATUS['keys']);
+        $logisticsStatus = DictConstants::getSet(DictConstants::MATERIAL_LOGISTICS_STATUS);
 
         $record = [];
         foreach ($award as $value) {
@@ -337,7 +376,7 @@ class TaskService
                     $value['status_show'] = $logisticsStatus[$value['logistics_status']] ?? '';
                 }
                 $value['award_time_show'] = date('Y-m-d H:i:s', $value['create_time']);
-                $record[$value['unique_id']] = $value;
+                $record[$value['express_number']] = $value;
             }
             $record[$value['express_number']]['goods'][] = [
                 'amount' => $value['amount'],
@@ -405,10 +444,13 @@ class TaskService
     {
         $nodeArr = [];
         foreach ($record as &$value){
-            if (in_array($value['node'],$nodeArr)){
+            if (in_array($value['node'], $nodeArr)) {
                 $value['node'] = '';
+            } else {
+                $nodeArr[] = $value['node'];
             }
             $value['acceptTime'] = Util::formatTimeToChinese(strtotime($value['acceptTime']));
+
         }
         return $record;
     }

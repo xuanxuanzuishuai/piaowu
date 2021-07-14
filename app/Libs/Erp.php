@@ -823,10 +823,12 @@ class Erp
         if (!empty($cache)) return json_decode($cache, true);
 
         $result = HttpHelper::requestJson($this->host . self::API_EXPRESS_DETAILS,  ['order_id' => $uniqueId]);
-        $data = $result['data'] ?? [];
 
-        if (!empty($data)) $redis->set($cacheKey, json_encode($data), 'EX', Util::TIMESTAMP_1H);
-
+        $data = [];
+        if ($result['code'] == 0 && !empty($result['data'])){
+            $data = $result['data'];
+            $redis->set($cacheKey, json_encode($data), 'EX', Util::TIMESTAMP_1H);
+        }
         return $data;
     }
 

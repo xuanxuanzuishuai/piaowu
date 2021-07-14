@@ -11,6 +11,7 @@ namespace App\Controllers\StudentWX;
 use App\Controllers\ControllerBase;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
+use App\Libs\Util;
 use App\Libs\Valid;
 use App\Services\TaskService;
 use Slim\Http\Request;
@@ -29,7 +30,11 @@ class Task extends ControllerBase
      */
     public function list(Request $request, Response $response)
     {
-        $data = TaskService::getCountingActivityList($this->ci['user_info']['user_id']);
+        try {
+            $data = TaskService::getCountingActivityList($this->ci['user_info']['user_id']);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
         return HttpHelper::buildResponse($response, $data);
     }
 
@@ -42,8 +47,9 @@ class Task extends ControllerBase
      */
     public function awardRecord(Request $request, Response $response)
     {
-
-        $data = TaskService::getAwardRecord($this->ci['user_info']['user_id']);
+        $params = $request->getParams();
+        list($page, $count) = Util::formatPageCount($params);
+        $data = TaskService::getAwardRecord($this->ci['user_info']['user_id'], $page, $count);
         return HttpHelper::buildResponse($response, $data);
     }
 
