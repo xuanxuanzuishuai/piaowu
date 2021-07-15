@@ -378,13 +378,14 @@ class UserRefereeService
                         'task_id' => RefereeAwardService::getDssYearPayTaskId($levelMap[$level]),
                     ];
                 }
-                $firstBuyTime = $refereeInfo['first_pay_normal_info']['create_time'] ?? 0;
-                if ($level && $time - $firstBuyTime <= Util::TIMESTAMP_ONEWEEK) {   //第一次购买年卡7天内,给推荐人和被推荐人额外奖励
-                    //$taskIds[] = RefereeAwardService::getDssYearPayTaskId(3);
-                    $taskIds[] = [
-                        'task_id' => RefereeAwardService::getDssYearPayTaskId(3),
-                    ];
-                }
+                // XYZOP-577 去掉7天新人奖励
+                //$firstBuyTime = $refereeInfo['first_pay_normal_info']['create_time'] ?? 0;
+                //if ($level && $time - $firstBuyTime <= Util::TIMESTAMP_ONEWEEK) {   //第一次购买年卡7天内,给推荐人和被推荐人额外奖励
+                //    //$taskIds[] = RefereeAwardService::getDssYearPayTaskId(3);
+                //    $taskIds[] = [
+                //        'task_id' => RefereeAwardService::getDssYearPayTaskId(3),
+                //    ];
+                //}
             }
         }
         return $taskIds;
@@ -435,11 +436,12 @@ class UserRefereeService
             }
             $index2 = 0;
             $endTime = 0;
-            $firstBuyTime = $refereeInfo['first_pay_normal_info']['create_time'] ?? 0;
-            if ($time - $firstBuyTime <= Util::TIMESTAMP_ONEWEEK) {   //第一次购买年卡7天内,给推荐人和被推荐人额外奖励
-                $index2 = 1;
-                $endTime = $firstBuyTime + Util::TIMESTAMP_ONEWEEK;
-            }
+            // XYZOP-577 去掉7天新人奖励
+            //$firstBuyTime = $refereeInfo['first_pay_normal_info']['create_time'] ?? 0;
+            //if ($time - $firstBuyTime <= Util::TIMESTAMP_ONEWEEK) {   //第一次购买年卡7天内,给推荐人和被推荐人额外奖励
+            //    $index2 = 1;
+            //    $endTime = $firstBuyTime + Util::TIMESTAMP_ONEWEEK;
+            //}
             $result = self::AWARD_CONFIG[$index1][$index2] ?? [];
             if ($result) {
                 $result['award_extra_end_date'] = $endTime ? date('Y/m/d H:i:s', $endTime) : '';
