@@ -603,24 +603,6 @@ class RtActivityService
      */
     public static function activityInfoList($params, $page, $limit)
     {
-        //$params = [
-        //    'activity_id' => 3,
-        //    'rule_type' => 0,
-        //    'dss_employee_id' => 10805,
-        //    'dss_employee_name' => 'test',
-        //    'erp_employee_id' => '10805',
-        //    'erp_employee_name' => 'test',
-        //    'invite_uid' => 283130,
-        //    'invite_mobile' => '18239051727',
-        //    'receive_uid' => 283130,
-        //    'receive_mobile' => '18239051727',
-        //    'status' => 0,
-        //    'coupon_status' => 0,
-        //    'create_time_start' => 0,
-        //    'create_time_end' => 111,
-        //    'order_id' => '',
-        //    'has_review_course' => 0,
-        //];
         if ($params['status']) {
             switch ($params['status']) {
                 case 1:   // 未领取

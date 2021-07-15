@@ -94,10 +94,10 @@ class RtCouponReceiveRecordModel extends Model
                 FROM
                     {$tablea} AS `a`
                     INNER JOIN {$tableb} AS `b` ON `a`.`activity_id` = `b`.`activity_id`
-                    LEFT JOIN {$tablec} AS `c` ON `a`.`employee_uuid` = `c`.`uuid`
-                    LEFT JOIN {$tabled} AS `d` ON `a`.`employee_uuid` = `d`.`uuid`
-                    INNER JOIN {$tablee} AS `e` ON `a`.`invite_uuid` = `e`.`uuid`
-                    INNER JOIN {$tablef} AS `f` ON `a`.`receive_uuid` = `f`.`uuid`
+                    LEFT JOIN {$tablec} AS `c` ON `a`.`employee_uid` = `c`.`id`
+                    LEFT JOIN {$tabled} AS `d` ON `a`.`employee_uid` = `d`.`id`
+                    INNER JOIN {$tablee} AS `e` ON `a`.`invite_uid` = `e`.`id`
+                    INNER JOIN {$tablef} AS `f` ON `a`.`receive_uid` = `f`.`id`
                     LEFT JOIN {$tableg} AS `g` ON `a`.`student_coupon_id` = `g`.`id`
                     LEFT JOIN {$tableh} AS `h` ON `a`.`student_coupon_id` = `h`.`student_coupon_id`
                     LEFT JOIN {$tablei} AS `i` ON `f`.`id` = `i`.`student_id`
@@ -134,10 +134,10 @@ class RtCouponReceiveRecordModel extends Model
             FROM
                 {$tablea} AS `a`
                 INNER JOIN {$tableb} AS `b` ON `a`.`activity_id` = `b`.`activity_id`
-                LEFT JOIN {$tablec} AS `c` ON `a`.`employee_uuid` = `c`.`uuid`
-                LEFT JOIN {$tabled} AS `d` ON `a`.`employee_uuid` = `d`.`uuid`
-                INNER JOIN {$tablee} AS `e` ON `a`.`invite_uuid` = `e`.`uuid`
-                INNER JOIN {$tablef} AS `f` ON `a`.`receive_uuid` = `f`.`uuid`
+                LEFT JOIN {$tablec} AS `c` ON `a`.`employee_uid` = `c`.`id`
+                LEFT JOIN {$tabled} AS `d` ON `a`.`employee_uid` = `d`.`id`
+                INNER JOIN {$tablee} AS `e` ON `a`.`invite_uid` = `e`.`id`
+                INNER JOIN {$tablef} AS `f` ON `a`.`receive_uid` = `f`.`id`
                 LEFT JOIN {$tableg} AS `g` ON `a`.`student_coupon_id` = `g`.`id`
                 LEFT JOIN {$tableh} AS `h` ON `a`.`student_coupon_id` = `h`.`student_coupon_id`
                 LEFT JOIN {$tablei} AS `i` ON `f`.`id` = `i`.`student_id`
