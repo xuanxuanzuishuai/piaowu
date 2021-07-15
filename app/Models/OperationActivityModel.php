@@ -117,9 +117,10 @@ WHERE
      * @param int $time
      * @return bool
      */
-    public static function checkActivityEnableStatusOn($activityInfo, $time = 0) {
+    public static function checkActivityEnableStatusOn($activityInfo, int $time = 0)
+    {
         $time = !empty($time) ? $time : time();
-        if ($activityInfo['start_time'] >= $time && $activityInfo['end_time'] <= $time && $activityInfo['enable_status'] == self::ENABLE_STATUS_ON) {
+        if ($activityInfo['enable_status'] == self::ENABLE_STATUS_ON && $activityInfo['start_time'] <= $time && $activityInfo['end_time'] >= $time) {
             return true;
         }
         return false;

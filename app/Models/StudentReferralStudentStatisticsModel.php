@@ -178,7 +178,7 @@ class StudentReferralStudentStatisticsModel extends Model
             }
         }
         //当前阶段
-        if (!empty($where['has_review_course'])) {
+        if (isset($where['has_review_course']) && !Util::emptyExceptZero($where['has_review_course'])) {
             $joinSql[md5($studentTable)] = " INNER JOIN " . $studentTable . " ON s.id=r.student_id";
             if (is_array($where['has_review_course'])) {
                 $sqlWhere .= ' AND s.has_review_course in (' . implode(',', $where['has_review_course']) . ')';
@@ -189,9 +189,7 @@ class StudentReferralStudentStatisticsModel extends Model
         //转介绍标识
         if (isset($where['referral_sign']) && !Util::emptyExceptZero($where['referral_sign'])) {
             $joinSql[md5($studentTable)] = " INNER JOIN " . $studentTable . " ON s.id=r.student_id";
-            // TODO qingfeng  这里要替换成变量
-            // $channelIds                  = array_values(DictConstants::getSet(DictConstants::RT_CHANNEL_CONFIG));
-            $channelIds = [1, 2];
+            $channelIds                  = array_values(DictConstants::getSet(DictConstants::RT_CHANNEL_CONFIG));
             if ($where['referral_sign'] == 1) {
                 // 查领取额的优惠券
                 $sqlWhere .= ' AND r.buy_channel in (' . implode(',', $channelIds) . ')';

@@ -567,9 +567,10 @@ class RtActivityService
             if (OperationActivityModel::checkActivityEnableStatusOn($v, $time)) {
                 array_unshift($activityList, $v);
                 unset($activityList[$k]);
+                break;
             }
         }
-        return $activityList;
+        return array_values($activityList);
     }
 
     /**
@@ -1311,4 +1312,59 @@ class RtActivityService
         return $data['rt_channel_v1'] ?? 0;
     }
 
+    /**
+     * 修改RT亲友优惠券活动年卡连接和备注
+     * @param $data
+     * @param $employeeId
+     * @return bool
+     * @throws RunTimeException
+     */
+    public static function editActivityRemark($data, $employeeId)
+    {
+        // 检查是否存在
+        if (empty($data['activity_id'])) {
+            throw new RunTimeException(['record_not_found']);
+        }
+        $activityId = intval($data['activity_id']);
+        $activityInfo = RtActivityModel::getRecord(['activity_id' => $activityId]);
+        if (empty($activityInfo)) {
+            throw new RunTimeException(['record_not_found']);
+        }
+
+        $activityExtData = [
+            'remark' => $data['remark'] ?? ''
+        ];
+        if ($activityInfo['enable_status'] == OperationActivityModel::ENABLE_STATUS_ON) {
+            // 启用状态只可以编辑备注和年卡连接
+            $rtActivityData = [
+                'rule_type' => $data['rule_type'] ?? 0,
+            ];
+        }
+
+        $db = MysqlDB::getDB();
+        $db->beginTransaction();
+        // 更新活动配置
+        if (!empty($rtActivityData)) {
+            $res = RtActivityModel::batchUpdateRecord($rtActivityData, ['activity_id' => $activityId]);
+            if (is_null($res)) {
+                $db->rollBack();
+                SimpleLogger::info("RtActivityService:edit update RtActivityModel fail", ['data' => $rtActivityData, 'activity_id' => $activityId]);
+                throw new RunTimeException(["update week activity fail"]);
+            }
+        }
+        // 更新扩展信息
+        if (!empty($activityExtData)) {
+            $activityExtData['activity_id'] = $activityId;
+            $res = ActivityExtModel::batchUpdateRecord($activityExtData, ['activity_id' => $activityId]);
+            if (is_null($res)) {
+                $db->rollBack();
+                SimpleLogger::info("RtActivityService:edit update activity_ext fail", ['data' => $activityExtData, 'activity_id' => $activityId]);
+                throw new RunTimeException(["update week activity fail"]);
+            }
+        }
+
+        $db->commit();
+
+        return true;
+    }
 }

@@ -108,6 +108,11 @@ class RtActivity extends ControllerBase
                 'key' => 'activity_id',
                 'type' => 'integer',
                 'error_code' => 'activity_id_is_integer'
+            ],
+            [
+                'key' => 'year_card_sale_url',
+                'type' => 'required',
+                'error_code' => 'year_card_sale_url_is_required'
             ]
         ];
         $params = $request->getParams();
@@ -271,5 +276,55 @@ class RtActivity extends ControllerBase
             return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData(), $e->getData());
         }
         return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
+     * 只修改活动的年卡连接和备注
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function saveRemark(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'year_card_sale_url',
+                'type' => 'required',
+                'error_code' => 'year_card_sale_url_is_required'
+            ],
+            [
+                'key' => 'remark',
+                'type' => 'required',
+                'error_code' => 'remark_is_required'
+            ],
+            [
+                'key' => 'remark',
+                'type' => 'lengthMax',
+                'value' => 50,
+                'error_code' => 'remark_length_invalid'
+            ],
+            [
+                'key' => 'activity_id',
+                'type' => 'required',
+                'error_code' => 'activity_id_is_required'
+            ],
+            [
+                'key' => 'activity_id',
+                'type' => 'integer',
+                'error_code' => 'activity_id_is_integer'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            $employeeId = $this->getEmployeeId();
+            RtActivityService::editActivityRemark($params, $employeeId);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData(), $e->getData());
+        }
+        return HttpHelper::buildResponse($response, []);
     }
 }

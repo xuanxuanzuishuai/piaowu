@@ -249,6 +249,7 @@ class OrgWebRouter extends RouterBase
 
         // 亲友优惠券活动管理
         '/op_web/rt_activity/save' => ['method' => ['post'], 'call' => RtActivity::class . ':save'],
+        '/op_web/rt_activity/save_remark' => ['method' => ['post'], 'call' => RtActivity::class . ':saveRemark'],
         '/op_web/rt_activity/list' => ['method' => ['get'], 'call' => RtActivity::class . ':list'],
         '/op_web/rt_activity/detail' => ['method' => ['get'], 'call' => RtActivity::class . ':detail'],
         '/op_web/rt_activity/enable_status' => ['method' => ['post'], 'call' => RtActivity::class . ':editEnableStatus'],

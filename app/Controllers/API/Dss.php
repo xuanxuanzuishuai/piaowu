@@ -880,7 +880,8 @@ class Dss extends ControllerBase
             $page = 1;
             $count = 1000;
             $activityName = $params['name'] ?? '';
-            $activityList = RtActivityService::getRtActivityList($ruleType, $activityName, $page, $count, explode(',', $params['enable_status']));
+            $enableStatus = isset($params['enable_status']) ? explode(',', $params['enable_status']) : [];
+            $activityList = RtActivityService::getRtActivityList($ruleType, $activityName, $page, $count, $enableStatus);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }

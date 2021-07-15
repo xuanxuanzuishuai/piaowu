@@ -267,6 +267,19 @@ class ReferralService
             }
             $statisticsWhere['share_employee_uuid'] = array_column($employeeData, 'uuid');
         }
+        // 课管uuid
+        if (!empty($params['course_manage_uuid'])) {
+            $employeeData = DssEmployeeModel::getRecords(['uuid' => $params['course_manage_uuid']], ['id']);
+            if (empty($employeeData)) {
+                return [];
+            }
+            // 放入到参数
+            if (!empty($params['course_manage_id'])) {
+                $params['course_manage_id'] = array_merge([$params['course_manage_id']], array_column($employeeData, 'id'));
+            } else {
+                $params['course_manage_id'] = array_column($employeeData, 'id');
+            }
+        }
 
         $fieldsNameList = [
             'assistant_id'                     => 'assistant_id',             // DSS助教id
@@ -1365,12 +1378,11 @@ class ReferralService
         if (empty($refList['list'])) {
             return $returnData;
         }
-        // TODO qingfeng
-        // $channelIds = array_values(DictConstants::getSet(DictConstants::RT_CHANNEL_CONFIG));
-        $channelIds = [1,2];
+        $channelIds = array_values(DictConstants::getSet(DictConstants::RT_CHANNEL_CONFIG));
         // 处理其他数据  转介绍活动名称、转介绍标识（rt、rh）
         $activityIds = [];
         $userIds = [];
+        $employeeIds = [];
 
         foreach ($refList['list'] as &$item) {
             $activityIds[] = $item['activity_id'];
@@ -1390,20 +1402,33 @@ class ReferralService
 
         // 获取学生信息
         if (!empty($userIds)) {
-            $studentList = DssStudentModel::getRecords(['id' => $userIds], ['id', 'uuid', 'name', 'course_manage_id', 'first_pay_time']);
-            $studentList = array_column($studentList, null, 'id');
+            $studentListInfo = DssStudentModel::getRecords(['id' => $userIds], ['id', 'uuid', 'name', 'course_manage_id', 'first_pay_time']);
+            foreach ($studentListInfo as $item) {
+                $studentList[$item['id']] = $item;
+                $employeeIds[] = $item['course_manage_id'];
+            }
+            unset($item);
         }
+
+        // 获取员工信息
+        if (!empty($employeeIds)) {
+            $employeeList = DssEmployeeModel::getRecords(['id' => $employeeIds], ['id','uuid']);
+            $employeeList = array_column($employeeList, null, 'id');
+        }
+
         // 补充信息
         foreach ($refList['list'] as &$item) {
             $item['activity_name'] = $activityList[$item['activity_id']] ?? '';
             $item['student_status_zh'] = DssStudentModel::CURRENT_PROGRESS[$item['last_stage']];
             $studentInfo = $studentList[$item['student_id']] ?? [];
             $refInfo = $studentList[$item['referee_id']] ?? [];
+            $refCourseInfo = !empty($refInfo) ? ($employeeList[$refInfo['course_manage_id']] ?? []) : [];
             $item['student_name'] = $studentInfo['name'] ?? '';
             $item['student_uuid'] = $studentInfo['uuid'] ?? '';
             $item['referee_name'] = $refInfo['name'] ?? '';
             $item['referee_uuid'] = $refInfo['uuid'] ?? '';
             $item['referee_course_manage_id'] = $refInfo['course_manage_id'] ?? 0;
+            $item['referee_course_manage_uuid'] = $refCourseInfo['uuid'] ?? 0;
             $item['ref_first_buy_year_e_create_time'] = $refInfo['first_pay_time'] ?? 0;
         }
         unset($item);
