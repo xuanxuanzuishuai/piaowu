@@ -774,6 +774,16 @@ class DictConstants {
         ]
     ];
 
+    /**
+     * rt渠道config
+     */
+    const RT_CHANNEL_CONFIG = [
+        'type' => 'RT_CHANNEL_CONFIG',
+        'keys' => [
+            'rt_channel_v1'
+        ]
+    ];
+
 
     /**
      * erp系统配置

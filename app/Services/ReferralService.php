@@ -134,7 +134,8 @@ class ReferralService
         $activityData = array_column(OperationActivityModel::getRecords([
             'id' => array_unique(array_column($listData['list'], 'activity_id'))
         ], ['name', 'id']), null, 'id');
-
+        //rt渠道
+        $rtChannel = RtActivityService::getRtChannel();
         foreach ($listData['list'] as $lk => &$lv) {
             $lv['student_name'] = $studentDetail[$lv['student_id']]['name'];
             $lv['student_uuid'] = $studentDetail[$lv['student_id']]['uuid'];
@@ -149,6 +150,7 @@ class ReferralService
 
             $lv['employee_name'] = !empty($lv['referee_employee_id']) ? $employeeData[$lv['referee_employee_id']]['name'] : '';
             $lv['activity_name'] = !empty($lv['activity_id']) ? $activityData[$lv['activity_id']]['name'] : '';
+            $lv['is_rt_channel'] = $lv['buy_channel'] == $rtChannel ? RtActivityService::RT_CHANNEL_REFERRAL : RtActivityService::NOT_RT_CHANNEL_REFERRAL;
         }
         return $listData;
     }
@@ -313,9 +315,12 @@ class ReferralService
      */
     public static function getReferralInfo($appId, $studentId, $parentBillId = '')
     {
+        $rtChannel = RtActivityService::getRtChannel();
         if ($appId == Constants::SMART_APP_ID) {
-            $referralData = StudentReferralStudentStatisticsModel::getRecord(['student_id' => $studentId], ['referee_id']);
+            $referralData = StudentReferralStudentStatisticsModel::getRecord(['student_id' => $studentId], ['referee_id','buy_channel']);
             if (!empty($referralData)) {
+                $referralData['is_rt_channel'] = $referralData['buy_channel'] == $rtChannel ? RtActivityService::RT_CHANNEL_REFERRAL : RtActivityService::NOT_RT_CHANNEL_REFERRAL;
+                unset($referralData['buy_channel']);
                 return $referralData;
             }
             if (empty($parentBillId)) {
@@ -328,7 +333,8 @@ class ReferralService
                 } else {
                     //通过订单ID获取成单人的映射关系
                     $mapData = BillMapModel::paramMapDataByBillId($parentBillId, $studentId);
-                    return ['referee_id' => (int)$mapData['user_id']];
+                    $is_rt_channel = $mapData['buy_channel'] == $rtChannel ? RtActivityService::RT_CHANNEL_REFERRAL : RtActivityService::NOT_RT_CHANNEL_REFERRAL;
+                    return ['referee_id' => (int)$mapData['user_id'],'is_rt_channel' => $is_rt_channel];
                 }
             }
         }

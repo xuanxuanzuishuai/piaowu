@@ -922,4 +922,77 @@ class Dss extends ControllerBase
         return HttpHelper::buildResponse($response, $activityList);
     }
 
+
+    /**
+     * 获取海报
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getRtPoster(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key'        => 'employee_id',
+                'type'       => 'required',
+                'error_code' => 'employee_id_is_required'
+            ],
+            [
+                'key'        => 'employee_uuid',
+                'type'       => 'required',
+                'error_code' => 'employee_uuid_is_required'
+            ],
+            [
+                'key'        => 'app_id',
+                'type'       => 'required',
+                'error_code' => 'app_id_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            $params['type'] = RtActivityModel::ACTIVITY_RULE_TYPE_SHEQUN;
+            $activity  = RtActivityService::getPoster($params);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, $activity);
+    }
+
+    /**
+     * 批量获取转介绍人数
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getReferralNums(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'referee_ids',
+                'type' => 'required',
+                'error_code' => 'referee_ids_is_required'
+            ],
+            [
+                'key' => 'activity_id',
+                'type' => 'required',
+                'error_code' => 'activity_id_is_required'
+            ],
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            $activity = RtActivityService::getReferralNums($params);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, $activity);
+    }
 }

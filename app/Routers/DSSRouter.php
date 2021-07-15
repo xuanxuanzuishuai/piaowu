@@ -73,5 +73,7 @@ class DSSRouter extends RouterBase
         '/dss/rt_activity/info' => ['method' => ['get'], 'call' => Dss::class . ':rtActivityInfo'],
         '/dss/rt_activity/coupon_id_list' => ['method' => ['get'], 'call' => Dss::class . ':rtActivityCouponIdList'],
         '/dss/rt_activity/coupon_user_list' => ['method' => ['get'], 'call' => Dss::class . ':rtActivityInfo'],
+        '/dss/rt_activity/get_poster'        => ['method' => ['post'], 'call' => Dss::class . ':getRtPoster'],
+        '/dss/rt_activity/get_referral_nums' => ['method' => ['post'], 'call' => Dss::class . ':getReferralNums'],
     ];
 }

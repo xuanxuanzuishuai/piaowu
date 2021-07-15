@@ -4,6 +4,7 @@
 namespace App\Models;
 
 
+use App\Libs\MysqlDB;
 use App\Models\Dss\DssEmployeeModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Erp\ErpEmployeeModel;
@@ -17,7 +18,13 @@ class RtCouponReceiveRecordModel extends Model
     const REVEIVED_STATUS = 1; //已领取
 
     const NOT_REVEIVED_STATUS = 0; //未领取
-    
+
+    public static function info($where, $fields = '*')
+    {
+        $db = MysqlDB::getDB();
+        return $db->get(static::$table, $fields, $where);
+    }
+
     /**
      * @param $search
      * @param $type
@@ -86,7 +93,7 @@ class RtCouponReceiveRecordModel extends Model
         $tableg = ErpStudentCouponV1Model::getTableNameWithDb();
         $tableh = ErpOrderCouponV1Model::getTableNameWithDb();
         $tablei = StudentReferralStudentStatisticsModel::getTableNameWithDb();
-        
+
         if ($type == 'count') {   //总数
             $sql = "
                 SELECT
@@ -106,7 +113,7 @@ class RtCouponReceiveRecordModel extends Model
             $count = $db->queryAll($sql);
             return $count;
         }
-        
+
         $sql = "
             SELECT
                 `a`.`id`,
@@ -147,7 +154,7 @@ class RtCouponReceiveRecordModel extends Model
             LIMIT {$offset},{$limit}
         ";
         $records = $db->queryAll($sql);
-        
+
         return [$records, $whereStr];
     }
 

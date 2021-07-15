@@ -358,4 +358,43 @@ class DssGiftCodeModel extends DssModel
         $result = $db->queryAll($sql);
         return $result ? $result[0]['num'] : 0;
     }
+
+    /**
+     * 首次购买正式卡相关信息
+     * @param $buyer
+     * @return array|null
+     */
+    public static function getUserFirstBuyInfo($buyer)
+    {
+        $tb1 = self::$table;
+        $tb2 = DssErpPackageV1Model::$table;
+        $tb3 = DssErpPackageGoodsV1Model::$table;
+        $tb4 = DssGoodsV1Model::$table;
+        $tb5 = DssCategoryV1Model::$table;
+
+        $appId = DssPackageExtModel::APP_AI;
+        $shop = DssErpPackageV1Model::SALE_SHOP_AI_PLAY;
+        $status = DssErpPackageGoodsV1Model::SUCCESS_NORMAL;
+        $type = DssCategoryV1Model::DURATION_TYPE_NORMAL;
+        $sql = "
+            SELECT
+                gc.code_status,
+                gc.valid_num,
+                gc.valid_units,
+                gc.buy_time,
+                gc.be_active_time
+            FROM {$tb1} gc
+            INNER JOIN {$tb2} p ON gc.bill_package_id = p.id
+            INNER JOIN {$tb3} pg ON pg.package_id = p.id
+            INNER JOIN {$tb4} g ON g.id = pg.goods_id
+            INNER JOIN {$tb5} c ON c.id = g.category_id
+            WHERE
+                gc.buyer = {$buyer}
+                AND gc.bill_app_id = {$appId}
+                AND p.sale_shop = {$shop}
+                AND pg.status = {$status}
+                AND c.sub_type = {$type} ORDER BY gc.id ASC LIMIT 1 ;
+        ";
+        return  self::dbRO()->queryAll($sql);
+    }
 }

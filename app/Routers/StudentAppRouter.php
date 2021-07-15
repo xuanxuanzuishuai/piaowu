@@ -12,6 +12,7 @@ use App\Controllers\StudentApp\App;
 use App\Controllers\StudentApp\Auth;
 use App\Controllers\StudentApp\DuanWuActivity;
 use App\Controllers\StudentApp\Poster;
+use App\Controllers\StudentApp\RtActivity;
 use App\Controllers\StudentWX\Activity;
 use App\Controllers\StudentWX\Poster AS WXPoster;
 use App\Controllers\StudentApp\ReferralActivity;
@@ -64,18 +65,6 @@ class StudentAppRouter extends RouterBase
 
         ],
 
-        //端午节活动
-        '/student_app/duanwu_activity/activity_info' => [
-            'method' => ['get'],
-            'call'   => DuanWuActivity::class . ':activityInfo',
-            'middles' => [AppAuthMiddleWare::class]
-        ],
-        '/student_app/duanwu_activity/referee_list' => [
-            'method' => ['get'],
-            'call'   => DuanWuActivity::class . ':refereeList',
-            'middles' => [AppAuthMiddleWare::class]
-        ],
-
         // 月月有奖 && 周周领奖
         // 海报列表
         '/student_app/poster/list' => [
@@ -108,5 +97,43 @@ class StudentAppRouter extends RouterBase
             'call' => WXPoster::class . ':shareDetail',
             'middles' => [AppAuthMiddleWare::class]
         ],
+        //端午节活动
+        '/student_app/duanwu_activity/activity_info' => [
+            'method' => ['get'],
+            'call'   => DuanWuActivity::class . ':activityInfo',
+            'middles' => [AppAuthMiddleWare::class]
+        ],
+        '/student_app/duanwu_activity/referee_list' => [
+            'method' => ['get'],
+            'call'   => DuanWuActivity::class . ':refereeList',
+            'middles' => [AppAuthMiddleWare::class]
+        ],
+        //RT优惠券
+        '/student_app/rt_activity/invite_index' => [
+            'method' => ['post'],
+            'call'   => RtActivity::class . ':inviteIndex',
+        ],
+        '/student_app/rt_activity/invited_index' => [
+            'method' => ['post'],
+            'call'   => RtActivity::class . ':invitedIndex',
+        ],
+        '/student_app/rt_activity/get_poster' => [
+            'method' => ['post'],
+            'call'   => RtActivity::class . ':getPoster',
+            'middles' => [AppAuthMiddleWare::class]
+        ],
+         '/student_app/rt_activity/receive_coupon' => [
+            'method' => ['post'],
+            'call'   => RtActivity::class . ':receiveCoupon',
+            'middles' => [AppAuthMiddleWare::class]
+        ],
+        '/student_app/rt_activity/coupon_collecte' => [
+            'method' => ['post'],
+            'call'   => RtActivity::class . ':couponCollecte',
+            'middles' => [AppAuthMiddleWare::class]
+        ],
+
+
+
     ];
 }

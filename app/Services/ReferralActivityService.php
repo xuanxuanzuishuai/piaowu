@@ -147,7 +147,6 @@ class ReferralActivityService
             SimpleLogger::error('Error get image size', [$activity]);
             return $res;
         }
-
         $userQrPath = self::getEmployeeActivityQr($activity, $employeeId);
         $res['poster'] = self::genEmployeePoster(
             $activity['employee_poster'],
@@ -177,6 +176,16 @@ class ReferralActivityService
             throw new RunTimeException(['employee_activity_landing_url not set']);
         }
         $qrURL = $url . '?' . http_build_query(['activity_id' => $activity['id'], 'employee_id' => $employeeId, 'app_id' => $activity['app_id']]);
+        return self::commonActivityQr($qrURL);
+    }
+
+    /**
+     * 公用获取带参二维码
+     * @param $qrURL
+     * @return string
+     */
+    public static function commonActivityQr($qrURL)
+    {
         list($filePath, $fileName) = QRCodeModel::genImage($qrURL, time());
         chmod($filePath, 0755);
         //上传二维码到阿里oss

@@ -78,6 +78,17 @@ class Erp
     // 优惠券发放明细列表
     const API_STUDENT_COUPON_PAGE = '/api/student_coupon/page';
 
+    //获取快递详情
+    const API_EXPRESS_DETAILS = '/api/';//TODO::缺失
+    //获取商品信息
+    const API_GOODS_DETAILS = '/api/';//TODO::缺失
+    //发货
+    const API_DELIVER_GOODS = '/api/';//TODO::缺失
+
+
+    //发放优惠券
+    const API_GRANT_COUPON = '/api/student_coupon/distribution';
+
     private $host;
 
     public function __construct()
@@ -790,5 +801,50 @@ class Erp
      */
     public function getLogisticsGoodsList($params){
         return HttpHelper::requestJson($this->host . self::API_LOGISTICS_GOODS_LIST, $params);
+    }
+
+
+    /**
+     * 获取快递详情
+     * @param string $uniqueId
+     * @return array
+     */
+    public function getExpressDetails(string $uniqueId): array
+    {
+        $result = HttpHelper::requestJson($this->host . self::API_EXPRESS_DETAILS,  ['unique_id' => $uniqueId]);
+        return $result['data'] ?? [];
+    }
+
+    /**
+     * 获取商品信息
+     * @param array $params
+     * @return array
+     */
+    public function getGoodsDetails(array $params): array
+    {
+        $result = HttpHelper::requestJson($this->host . self::API_GOODS_DETAILS,  $params);
+        return $result['data'] ?? [];
+    }
+
+    /**
+     * 发货
+     * @param array $params
+     * @return array|bool
+     */
+    public function deliverGoods(array $params)
+    {
+        return HttpHelper::requestJson($this->host . self::API_DELIVER_GOODS, $params, 'POST');
+    }
+
+
+
+    /**
+     * 领取优惠券
+     * @param $params
+     * @return array|bool
+     */
+    public function grantCoupon($params)
+    {
+        return HttpHelper::requestJson($this->host . self::API_GRANT_COUPON, $params, 'POST');
     }
 }

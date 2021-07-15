@@ -14,17 +14,53 @@ use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\ActivityExtModel;
 use App\Models\ActivityPosterModel;
+use App\Models\Dss\DssEmployeeModel;
 use App\Models\Dss\DssStudentModel;
+use App\Models\Erp\ErpEmployeeModel;
 use App\Models\Erp\ErpStudentAccountModel;
 use App\Models\Erp\ErpStudentCouponV1Model;
+use App\Models\Dss\DssGiftCodeModel;
+use App\Models\EmployeeModel;
 use App\Models\OperationActivityModel;
 use App\Models\RtActivityModel;
 use App\Models\RtActivityRuleModel;
 use App\Models\RtCouponReceiveRecordModel;
 use Medoo\Medoo;
+use App\Libs\Erp;
+use App\Models\EmployeeActivityModel;
+use App\Models\StudentReferralStudentStatisticsModel;
+use App\Models\TemplatePosterModel;
+
 
 class RtActivityService
 {
+    const GRANT_WAY_USER   = 3; //优惠券发放方式-用户领取
+
+    const GRANT_PURPOSE_JILI    = 3; //发放目的-激励
+
+    const DEFAULT_NUM = 1;//默认领取数量
+
+    //活动状态
+    const ACTIVITY_NORMAL      = 1; //正常
+    const ACTIVITY_NOT_STARTED = 2; //未开始
+    const ACTIVITY_IS_END      = 3; //已结束
+
+    //领取状态
+    const COUPON_IS_SUCCESS   = 1; //领取成功
+    const COUPON_IS_NOT_ALLOW = 2; //用户不符合条件
+    const COUPON_IS_FINISH    = 3; //代金券已领完
+
+    //转介绍rt参与标识
+    const RT_CHANNEL_REFERRAL     = 1; //参与
+    const NOT_RT_CHANNEL_REFERRAL = 0; //未参与
+
+
+    public static $timeArray = [
+        'day' => '天',
+        'hour' => '小时',
+        'minute' => '分钟',
+    ];
+
     /**
      * 检查是否允许添加 - 检查添加必要的参数
      * @param $data
@@ -575,7 +611,7 @@ class RtActivityService
         }
         return ['list' => array_unique($couponIdArr)];
     }
-    
+
     /**
      * 活动明细
      * $params = [
@@ -637,7 +673,7 @@ class RtActivityService
         $returnData = ['total_count' => $totalCount, 'list' => $result, 'where' => $where];
         return $returnData;
     }
-    
+
     private static function formatListData($data)
     {
         $data['rule_type_zh'] = DictConstants::get(DictConstants::ACTIVITY_RULE_TYPE_ZH, $data['rule_type']);
@@ -674,4 +710,535 @@ class RtActivityService
         }
         return $data;
     }
+
+
+
+    /**
+     * 推荐人首页
+     * @param $request
+     * @return array
+     * @throws RunTimeException
+     */
+    public static function inviteIndex($request)
+    {
+        $time = time();
+        $activityId = $request['activity_id'];
+        $uid = $request['user_info']['user_id'] ?? 0; //todo rt 283130
+        //校验活动
+        $activity = RtActivityModel::getRecord(['activity_id'   => $activityId, 'enable_status' => RtActivityModel::ENABLED_STATUS]);
+        if (empty($activity) || $activity['start_time'] > $time) {
+            return ['status' => self::ACTIVITY_NOT_STARTED];
+        }
+        if ($activity['end_time'] < $time) {
+            return ['status' => self::ACTIVITY_IS_END];
+        }
+        $timeRemaining = self::timeRemaining($activity['end_time']);
+        $activityExt   = ActivityExtModel::getRecord(['activity_id' => $activityId]);
+        //邀请人
+        if (!empty($uid)) {
+            //获取剩余优惠券数量
+            $remainNums = self::remainCouponNums($activityId, $uid);
+            //查询邀请记录
+            $conds = [
+                'activity_id' => $activityId,
+                'invite_uid'  => $uid,
+                'LIMIT'       => 50,
+                'ORDER'       => ['id' => 'DESC'],
+            ];
+            $inviteArray = RtCouponReceiveRecordModel::getRecords($conds, ['invite_uid','receive_uid', 'status']);
+            if (!empty($inviteArray)) {
+                $receiveUids = array_column($inviteArray, 'receive_uid');//被推荐人
+                $studentInfos = DssStudentModel::getRecords(['id' => $receiveUids], ['id', 'mobile']);
+                $studentArray = !empty($studentInfos) ? array_column($studentInfos, 'mobile', 'id') : [];
+                //查询转介绍记录
+                $referralInfos = StudentReferralStudentStatisticsModel::getRecords(['student_id' => $receiveUids,'activity_id' =>$activityId],['student_id','create_time']);
+                $referralArray = !empty($referralInfos) ? array_column($referralInfos, 'create_time', 'student_id') : [];
+                $inviteRecord = [];
+                foreach ($inviteArray as $val) {
+                    if (!isset($studentArray[$val['receive_uid']]) || !isset($referralArray[$val['receive_uid']])) {
+                        continue;
+                    }
+                    $inviteRecord[] = [
+                        'mobile'      => Util::hideUserMobile($studentArray[$val['receive_uid']]),
+                        'create_time' => date('Y-m-d H:i:s', $referralArray[$val['receive_uid']]),
+                        'status'      => $val['status'],
+                    ];
+                }
+            }
+        }
+        $data = [
+            'status'         => self::ACTIVITY_NORMAL,
+            'remain_nums'    => $remainNums ?? 0,
+            'activity_ext'   => $activityExt['award_rule'] ?? '',
+            'time_remaining' => empty($timeRemaining) ? '活动已结束，请等待下期活动' : sprintf('活动时间仅剩%s', $timeRemaining),
+            'invate_record'  => $inviteRecord ?? [],
+        ];
+        return $data;
+    }
+
+    /**
+     * 被邀人首页
+     * @param $request
+     * @return array|int[]
+     */
+    public static function invitedIndex($request)
+    {
+        $activityId = $request['activity_id'];
+        //获取学生信息
+        $inviteInfo = DssStudentModel::getRecord(['id' => $request['invite_uid']], ['thumb']);
+        if (empty($inviteInfo)) {
+            throw new RunTimeException(['record_not_found']);
+        }
+        //校验活动
+        $time = time();
+        $activity = RtActivityModel::getRecord(['activity_id'   => $activityId, 'enable_status' => RtActivityModel::ENABLED_STATUS]);
+        if (empty($activity) || $activity['start_time'] > $time) {
+            return ['status' => self::ACTIVITY_NOT_STARTED];
+        }
+        if ($activity['end_time'] < $time) {
+            return ['status' => self::ACTIVITY_IS_END];
+        }
+        $timeRemaining = self::timeRemaining($activity['end_time']);
+        $activityExt   = ActivityExtModel::getRecord(['activity_id' => $activityId]);
+
+        $data = [
+            'status'         => self::ACTIVITY_NORMAL,
+            'invite_avatar'  => $inviteInfo['thumb'] ? AliOSS::replaceCdnDomainForDss($inviteInfo['thumb']) : '',
+            'activity_ext'   => $activityExt['award_rule'] ?? '',
+            'time_remaining' => empty($timeRemaining) ? '活动已结束，请等待下期活动' : sprintf('活动时间仅剩%s', $timeRemaining),
+        ];
+        return $data;
+    }
+
+    /**
+     * 剩余时间处理
+     * @param $toTime
+     * @return string
+     */
+    public static function timeRemaining($toTime)
+    {
+        $timeRemaining = '';
+        $remaining      = Util::timeRemaining($toTime + 50);
+        foreach ($remaining as $key => $val) {
+            if ($val <= 0) {
+                continue;
+            }
+            if ($key == 'second') {
+                if (!empty($timeRemaining)) {
+                    continue;
+                }
+                $key           = 'minute';
+                $val           = 1;
+                $timeRemaining .= $val . self::$timeArray[$key];
+            } else {
+                $timeRemaining .= $val . self::$timeArray[$key];
+            }
+        }
+        return $timeRemaining;
+    }
+
+    /**
+     * 校验邀请人资格
+     * @param $activityId
+     * @param $studentId
+     * @return bool
+     * @throws RunTimeException
+     */
+    public static function checkAllowSend($activityId, $studentId)
+    {
+        $activity = RtActivityModel::getRecord(['activity_id' => $activityId]);
+        if (empty($activity)) {
+            throw new RunTimeException(['record_not_found']);
+        }
+        $time = time();
+        $dayTime = 3600 * 24;
+        if ($activity['end_time'] < time()) {
+            return false;
+        }
+        //查询活动规则
+        $rule = RtActivityRuleModel::getRecord(['activity_id' => $activity['activity_id']], ['buy_day', 'coupon_num']);
+        if (empty($rule)) {
+            return false;
+        }
+        $buyDayTime = $rule['buy_day'] * $dayTime; //购买天数
+        //首次购买年卡记录
+        $data = DssGiftCodeModel::getUserFirstBuyInfo($studentId);
+        if (empty($data)) {
+            return false;
+        }
+        $data  = end($data);
+        switch ($activity['rule_type']) {
+            case RtActivityModel::COMMUNITY_TYPE_STATUS:
+                //首次购买年卡X天内
+                if ($time > $data['buy_time'] + $buyDayTime) {
+                    return false;
+                }
+                break;
+            case RtActivityModel::MANAGEMENT_TYPE_STATUS:
+                //首次购买年卡(含)X天以上
+                if ($time > $data['buy_time'] + $buyDayTime) {
+                    return false;
+                }
+                break;
+        }
+        //激活码未激活|已退费
+        if ($data['code_status'] != DssGiftCodeModel::CODE_STATUS_HAS_REDEEMED) {
+            return false;
+        }
+        //激活码已过期
+        $duration = Util::formatDurationSecond($data['valid_units'], $dayTime);
+        $expireTimes = $duration * $data['valid_num'] + $data['be_active_time'];
+        if ($time > $expireTimes) {
+            return false;
+        }
+        return $activity;
+    }
+
+    /**
+     * 校验被请人资格
+     * @param $activityId
+     * @param $student
+     * @return false|mixed
+     */
+    public static function checkAllowReceive($activityId, $student, $isNew)
+    {
+        $time = time();
+        //查询是否已领取
+        $record = RtCouponReceiveRecordModel::info(['activity_id' => $activityId, 'receive_uid' => $student['id']], 'id');
+        if (!empty($record)) {
+            return false;
+        }
+        //校验活动
+        $activity = RtActivityModel::getRecord(['activity_id' => $activityId, 'enable_status' => RtActivityModel::ENABLED_STATUS]);
+        if (empty($activity) || $activity['start_time'] > $time || $activity['end_time'] < $time) {
+            return false;
+        }
+        //校验用户是否有资格领取
+        $rule = RtActivityRuleModel::info(['activity_id' => $activity['activity_id']], ['join_user_status','coupon_id']);
+        if (empty($rule['join_user_status'])) {
+            return false;
+        }
+        $joinStatusArray = explode(',', $rule['join_user_status']);
+        //未注册
+        if (in_array(RtActivityRuleModel::NOT_REGISTER, $joinStatusArray)) {
+            $isRegister = $isNew && ($student['create_time'] + 3600 > $time) ? true : false;
+        }
+        //已注册
+        if (in_array(RtActivityRuleModel::IS_REGISTER, $joinStatusArray)) {
+            $notRegister = true;
+            //已有年卡
+            if ($student['has_review_course'] == DssStudentModel::STATUS_BUY_NORMAL_COURSE) {
+                $notRegister = false;
+            }
+            //已有转介绍关系
+            $referral = StudentReferralStudentStatisticsModel::getRecord(['student_id' => $student['id']]);
+            if (!empty($referral)) {
+                $notRegister = false;
+            }
+        }
+        if (!$isRegister && !$notRegister) {
+            return false;
+        }
+        $activity['coupon_id'] = $rule['coupon_id'];
+        return $activity;
+    }
+
+    /**
+     * 获取海报
+     * @param $request
+     * @return array
+     * @throws RunTimeException
+     */
+    public static function getPoster($request)
+    {
+        //学生获取海报前 校验是否有资格
+        if (empty($request['type'])) {
+            //获取学生信息
+            $studentUid = DssStudentModel::getRecord(['id' => $request['student_id']], 'id');
+            if (empty($studentUid)) {
+                throw new RunTimeException(['record_not_found']);
+            }
+            $posterAscription = ActivityPosterModel::POSTER_ASCRIPTION_STUDENT;
+            $activity = self::checkAllowSend($request['activity_id'], $request['student_id']);
+            if (!$activity) {
+                return ['status' => self::ACTIVITY_NOT_STARTED];
+            }
+        } else {
+            $posterAscription = ActivityPosterModel::POSTER_ASCRIPTION_EMPLOYEE;
+            switch ($request['type']) {
+                case RtActivityModel::ACTIVITY_RULE_TYPE_SHEQUN: //社群
+                    $conds    = [
+                        'start_time[<=]' => time(),
+                        'end_time[>=]'   => time(),
+                        'enable_status'  => RtActivityModel::ENABLED_STATUS,
+                    ];
+                    $activity = RtActivityModel::getRecord($conds);
+                    if (empty($activity)) {
+                        return [];
+                    }
+                    break;
+                case RtActivityModel::ACTIVITY_RULE_TYPE_KEGUAN: //课管
+                    //校验用户是否符合参与条件
+                    $activity = RtActivityModel::getRecord(['activity_id' => $request['activity_id']]);
+                    if (empty($activity)) {
+                        throw new RunTimeException(['record_not_found']);
+                    }
+                    break;
+                default:
+                    throw new RunTimeException(['record_not_found']);
+            }
+        }
+        //获取buy_type
+        $rule = RtActivityRuleModel::getRecord(['activity_id' => $activity['activity_id']], ['buy_day']);
+        if (empty($rule)) {
+            throw new RunTimeException(['record_not_found']);
+        }
+        //课管计划任务调用直接返回
+        if ($request['type'] == RtActivityModel::ACTIVITY_RULE_TYPE_KEGUAN && empty($request['employee_id'])) {
+            return ['buy_day' => $rule['buy_day']];
+        }
+
+        //查询海报
+        $conds    = [
+            'activity_id'       => $request['activity_id'],
+            'status'            => ActivityPosterModel::NORMAL_STATUS,
+            'is_del'            => ActivityPosterModel::IS_DEL_FALSE,
+            'poster_ascription' => $posterAscription
+        ];
+        $posterId = ActivityPosterModel::getRecord($conds, 'poster_id');
+        if (empty($posterId)) {
+            throw new RunTimeException(['record_not_found']);
+        }
+        $posterPath = TemplatePosterModel::getRecord(['id' => $posterId, 'status' => TemplatePosterModel::NORMAL_STATUS], 'poster_path');
+        if (empty($posterPath)) {
+            throw new RunTimeException(['record_not_found']);
+        }
+        $setting   = EmployeeActivityModel::$activityPosterConfig;
+        $posterUrl = AliOSS::replaceCdnDomainForDss($posterPath);
+        list($imageWidth, $imageHeight) = getimagesize($posterUrl);
+        if (empty($imageHeight) || empty($imageWidth)) {
+            throw new RunTimeException(['data_error']);
+        }
+        // todo H5地址
+        $url = DictConstants::get(DictConstants::EMPLOYEE_ACTIVITY_ENV, 'employee_activity_landing_url');
+        if (empty($url)) {
+            throw new RunTimeException(['record_not_found']);
+        }
+        $params = [
+            'activity_id'   => $request['activity_id'],
+            'employee_id'   => $request['employee_id'],
+            'employee_uuid' => $request['employee_uuid'],
+            'invite_uid'   => $studentUid ?? ''
+        ];
+        $qrURL = $url . '?' . http_build_query(array_filter($params));
+        $userQrPath = ReferralActivityService::commonActivityQr($qrURL);
+        $posterInfo = ReferralActivityService::genEmployeePoster(
+            $posterPath,
+            $imageWidth,
+            $imageHeight,
+            $userQrPath,
+            $setting['qr_width'],
+            $setting['qr_height'],
+            $setting['qr_x'],
+            $setting['qr_y']
+        );
+        unset($posterInfo['qr_url']);
+        if (!empty($request['type'])) {
+            $posterInfo['invite_word'] = $activity['student_invite_word'];
+        } else {
+            $posterInfo['invite_word'] = $activity['employee_invite_word'];
+        }
+        $posterInfo['status']  = self::ACTIVITY_NORMAL;
+        $posterInfo['buy_day'] = $rule['buy_day'];
+        return $posterInfo;
+    }
+
+
+    /**
+     * 发放优惠券
+     * @param $request
+     * @return bool
+     * @throws RunTimeException
+     */
+    public static function receiveCoupon($request)
+    {
+        $redisKey = sprintf('receive_coupon_%s', $request['student_id']);
+//        $repeat   = Util::preventRepeatSubmit($redisKey);
+//        if (!$repeat) {
+//            throw new RunTimeException(['request_repeat']);
+//        }
+        $activityId = $request['activity_id'];
+        //学生信息
+        $student = DssStudentModel::getRecord(['id' => $request['student_id']], ['id','uuid','has_review_course','create_time']);
+        if (empty($student)) {
+            throw new RunTimeException(['record_not_found']);
+        }
+        //邀请人信息
+        $inviteInfo = DssStudentModel::getRecord(['id' => $request['invite_uid']], ['id','uuid']);
+        if (empty($inviteInfo)) {
+            throw new RunTimeException(['record_not_found']);
+        }
+        //校验是否有资格领取
+        $activity = self::checkAllowReceive($activityId, $student, $request['is_new']);
+        if (!$activity) {
+            return ['status' => self::COUPON_IS_NOT_ALLOW];
+        }
+        //查询员工信息
+        switch ($activity['rule_type']) {
+            case RtActivityModel::ACTIVITY_RULE_TYPE_SHEQUN: //社群
+                $employeeUuid = DssEmployeeModel::getRecord(['id' => $request['employee_id']], 'uuid');
+                break;
+            case RtActivityModel::ACTIVITY_RULE_TYPE_KEGUAN: //课管
+                $employeeUuid = ErpEmployeeModel::getRecord(['id' => $request['employee_id']], 'uuid');
+                break;
+            default:
+                throw new RunTimeException(['record_not_found']);
+        }
+        if ($employeeUuid != $request['employee_uuid']) {
+            throw new RunTimeException(['record_not_found']);
+        }
+        //符合领取条件-后置操作1.0元领取体验卡 2.订单映射记录 3.领取优惠券 3.记录邀请关系
+        /**
+         * 0元领取体验卡
+         */
+        $packageId = PayServices::getPackageIDByParameterPkg(PayServices::PACKAGE_0);
+        $res = ErpOrderV1Service::createZeroOrder($packageId, $student, '');
+        if (empty($res)) {
+            throw new RunTimeException(['create_bill_error']);
+        }
+        /**
+         * 订单映射记录
+         */
+        $sceneData = $request['scene'];
+        $res = BillMapService::mapDataRecord($sceneData, $res['order_id'], $student['id']);
+        if (empty($res)) {
+            SimpleLogger::error('insert bill_map error ', ['order_id' => $res['order_id']]);
+        }
+        /**
+         * 领取优惠券
+         */
+        //查询剩余优惠券数量
+        $remainNums = self::remainCouponNums($activityId, $request['invite_uid']);
+        $status = RtCouponReceiveRecordModel::NOT_REVEIVED_STATUS; //未领取
+        if ($remainNums > 0) {
+            $params = [
+                'grant_purpose' => self::GRANT_PURPOSE_JILI,
+                'grant_way'     => self::GRANT_WAY_USER,
+                'num'           => self::DEFAULT_NUM,
+                'coupon_id'     => $activity['coupon_id'],
+                'uuids'         => [$student['uuid']],
+                'grant_time'    => time(),
+                'remark'        => '',
+            ];
+            $res = (new Erp())->grantCoupon($params);
+            if (empty($res)) {
+                throw new RunTimeException(['grant_coupon_is_error']);
+            }
+            $status = RtCouponReceiveRecordModel::REVEIVED_STATUS; //已领取
+        }
+        $insertData = [
+            'activity_id'       => $activityId,
+            'rule_type'         => $activity['rule_type'],
+            'employee_uid'      => $request['employee_id'],
+            'employee_uuid'     => $request['employee_uuid'],
+            'invite_uid'        => $inviteInfo['id'],
+            'invite_uuid'       => $inviteInfo['uuid'],
+            'receive_uid'       => $student['id'],
+            'receive_uuid'      => $student['uuid'],
+            'coupon_id'         => $res['coupon_id'] ?? '',
+            'student_coupon_id' => $res['student_coupon_id'] ?? '',
+            'status'            => $status,
+            'create_time'       => time(),
+        ];
+        $res = RtCouponReceiveRecordModel::insertRecord($insertData);
+        if (empty($res)) {
+            SimpleLogger::error('insert rt_coupon_receive_record error ', $insertData);
+        }
+        return ['status' => $remainNums > 0 ? self::COUPON_IS_SUCCESS : self::COUPON_IS_FINISH];
+    }
+
+    /**
+     * 查询当前活动 邀请人剩余优惠券数量
+     * @param $activityId
+     * @param $invateUuid
+     * @return int|mixed|number
+     * @throws RunTimeException
+     */
+    public static function remainCouponNums($activityId, $inviteUid)
+    {
+        //查询邀请人优惠券总数
+        $conds['activity_id'] = $activityId;
+        $couponNum = RtActivityRuleModel::getRecord($conds, 'coupon_num');
+        if (empty($couponNum)) {
+            throw new RunTimeException(['record_not_found']);
+        }
+        //查询已发放优惠券总数
+        $conds['invite_uid'] = $inviteUid;
+        $conds['status']     = RtCouponReceiveRecordModel::REVEIVED_STATUS;
+        $grantNum            = RtCouponReceiveRecordModel::getCount($conds);
+        return ($couponNum - $grantNum) < 0 ? 0 : $couponNum - $grantNum;
+    }
+
+    /**
+     * 领取优惠券后-获取页面信息
+     * @param $request
+     * @return array
+     * @throws RunTimeException
+     */
+    public static function couponCollecte($request)
+    {
+        $activity = RtActivityModel::getRecord(['activity_id' => $request['activity_id']], ['year_card_sale_url']);
+        if (empty($activity)) {
+            throw new RunTimeException(['record_not_found']);
+        }
+        $student = DssStudentModel::getRecord(['id' => $request['student_id']], ['id','assistant_id']);
+        if (empty($student['assistant_id'])) {
+            return ['scheme' => $activity['year_card_sale_url']];
+        }
+        $employee = EmployeeModel::getRecord(['id' => $student['assistant_id']], ['wx_qr', 'wx_num']);
+        //优惠券有效期获取
+        $studentCouponId = RtCouponReceiveRecordModel::info(['activity_id' => $request['activity_id'], 'receive_uid' => $student['id']], 'student_coupon_id');
+        if (!empty($studentCouponId)) {
+            $endTime = ErpStudentCouponV1Model::getRecord(['id' => $studentCouponId], 'expired_end_time');
+        }
+        $data = [
+            'wx_num'   => $employee['wx_num'] ?? '',
+            'wx_qr'    => !empty($employee['wx_qr']) ? AliOSS::replaceCdnDomainForDss($employee['wx_qr']) : '',
+            'scheme'   => $activity['year_card_sale_url'],
+            'end_date' => !empty($endTime) ? date('Y-m-d H:i:s', $endTime) : ''
+        ];
+        return $data;
+    }
+
+    /**
+     * 批量获取转介绍人数
+     * @param $request
+     * @return array|null
+     * @throws RunTimeException
+     */
+    public static function getReferralNums($request)
+    {
+        if (!is_array($request['referee_ids'])) {
+            throw new RunTimeException(['referee_ids_is_error']);
+        }
+        if (count($request['referee_ids']) > 500) {
+            throw new RunTimeException(['referee_ids_over_quantity']);
+        }
+        $request['referee_ids'] = [92,93,94];
+        $refereeIds = implode(',', $request['referee_ids']);
+        $data = StudentReferralStudentStatisticsModel::getReferralCount($refereeIds, $request['activity_id']);
+
+        return $data;
+    }
+
+    /**
+     * 获取rt渠道
+     * @return int|mixed
+     */
+    public static function getRtChannel()
+    {
+        $data = DictConstants::getSet(DictConstants::RT_CHANNEL_CONFIG);
+        return $data['rt_channel_v1'] ?? 0;
+    }
+
 }

@@ -19,7 +19,8 @@ class ErpRouter extends RouterBase
         '/erp/integral/gold_leaf_list' => ['method' => ['get'], 'call' => Erp::class . ':goldLeafList'],
 
         /** rt亲友优惠券活动 */
-        '/erp/rt_activity/list' => ['method' => ['get'], 'call' => CourseManagement::class . ':rtActivityList'],
+        '/erp/rt_activity/list'       => ['method' => ['get'], 'call' => Erp::class . ':rtActivityList'],
+        '/erp/rt_activity/get_poster' => ['method' => ['post'], 'call' => Erp::class . ':getRtPoster'],
     ];
 
 }

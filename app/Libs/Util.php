@@ -1264,4 +1264,70 @@ class Util
         preg_match_all($pattern, $text, $data);
         return $data;
     }
+
+    /**
+     * 计算剩余时间
+     * @param $to_time
+     * @return array|int[]
+     */
+    public static function timeRemaining($to_time)
+    {
+        if ($to_time <= time()) {
+            return array('day' => 0, 'hour' => 0, 'minute' => 0, 'second' => 0);
+        }
+        $second = $to_time - time();
+        $day = floor($second/(3600*24)); //天
+        $second = $second%(3600*24);
+        $hour = floor($second/3600); //时
+        $second = $second % 3600;
+        $minute = floor($second/60);//分
+        $second = $second%60; //秒
+
+        return array('day' => $day, 'hour' => $hour, 'minute' => $minute, 'second' => $second);
+    }
+
+    /**
+     * 防重复提交
+     * @param $redis_key
+     * @param int $expire
+     * @return bool true=可以继续处理 false=重复请求，不可以继续处理
+     */
+    public static function preventRepeatSubmit($redis_key, $expire = 3)
+    {
+        $redis = RedisDB::getConn();
+        $ttl   = $redis->ttl($redis_key);
+        if ($ttl == -1) {
+            $redis->del($redis_key);
+        }
+        $result = $redis->set($redis_key, 1, ['nx', 'ex' => $expire]);
+        if ($result) {
+            return true;
+        }
+        return false;
+    }
+
+
+    /**
+     * 物流时间格式化
+     *
+     * @param int $time
+     * @return string
+     */
+    public static function formatTimeToChinese(int $time = 0): string
+    {
+
+        //获取当天0点时间戳
+        $today     = strtotime('today');
+        $yesterday = strtotime('yesterday');
+
+        if ($today < $time) {
+            return '今天 ' . date('H:i', $time);
+        } elseif ($yesterday < $time) {
+            return '昨天 ' . date('H:i', $time);
+        } elseif (date('Y') == date('Y', $time)) {
+            return date('m:d H:i', $time);
+        } else {
+            return date('Y-m-d H:i', $time);
+        }
+    }
 }
