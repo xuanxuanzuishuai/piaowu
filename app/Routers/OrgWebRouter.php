@@ -20,6 +20,7 @@ use App\Controllers\OrgWeb\AppPush;
 use App\Controllers\OrgWeb\Area;
 use App\Controllers\OrgWeb\Bill;
 use App\Controllers\OrgWeb\Channel;
+use App\Controllers\OrgWeb\CountingActivity;
 use App\Controllers\OrgWeb\Dept;
 use App\Controllers\OrgWeb\Message;
 use App\Controllers\OrgWeb\Employee as OrgWebEmployee;
@@ -258,5 +259,11 @@ class OrgWebRouter extends RouterBase
         // 亲友优惠券活动明细
         '/op_web/rt_activity/activity_info_list' => ['method' => ['post'], 'call' => RtActivity::class . ':activityInfoList'],
 
+        //统计活动
+        '/op_web/counting_activity/create'=>['method'=>['post'],'call'=>CountingActivity::class . ':create'],
+        '/op_web/counting_activity/list'=>['method'=>['get'],'call'=>CountingActivity::class . ':getActivityList'],
+        '/op_web/counting_activity/editStatus'=>['method'=>['post'],'call'=>CountingActivity::class . ':editStatus'],
+        '/op_web/counting_activity/editActivity'=>['method'=>['post'],'call'=>CountingActivity::class . ':editActivity'],
+        '/op_web/logistics/goods_list'=>['method'=>['get'],'call'=>CountingActivity::class . ':getAwardList'],
     ];
 }

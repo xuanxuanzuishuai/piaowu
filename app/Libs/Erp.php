@@ -41,7 +41,9 @@ class Erp
     const API_AWARD_BASE_INFO = '/api/dss/task_award_info';
     const API_USER_GET_RED_PACKET_CALL = '/api/app/user_get_red_packet_call_back';  //积分兑换红包 - 红包被用户成功领取通知erp接口地址
     const API_REFUND_FINISH_TIME = '/ai_dss/billV1/refund_finish_time';  //获取订单退单时间erp接口地址
-    
+    const API_LOGISTICS_GOODS_LIST = '/api/logistics/goods_list';  //获取订单退单时间erp接口地址
+
+
     // 地址管理
     const API_STUDENT_ADDRESS_LIST = '/ai_dss/student/address_list';
     const API_STUDENT_MODIFY_ADDRESS = '/ai_dss/student/modify_address';
