@@ -171,13 +171,25 @@ class CountingActivity extends ControllerBase
             return HttpHelper::buildResponse($response, $result);
         }catch (RuntimeException $e){
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+
         }
     }
 
     public function getCountingActivityDetail(Request $request, Response $response)
     {
-        $op_activity_id = $request->getParam('op_activity_id');
-        $detail = CountingActivityService::getCountDetail($op_activity_id);
+        $params = $request->getParams();
+
+        $rules = [
+            ['key' => 'op_activity_id','type' => 'required', 'error_code' => 'op_activity_id_is_required']
+        ];
+
+        $result = Valid::appValidate($params, $rules);
+
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $detail = CountingActivityService::getCountDetail($params['op_activity_id']);
         return HttpHelper::buildResponse($response, $detail);
 
     }
