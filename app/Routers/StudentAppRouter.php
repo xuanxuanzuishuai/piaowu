@@ -12,7 +12,6 @@ use App\Controllers\StudentApp\App;
 use App\Controllers\StudentApp\Auth;
 use App\Controllers\StudentApp\DuanWuActivity;
 use App\Controllers\StudentApp\Poster;
-use App\Controllers\StudentApp\RtActivity;
 use App\Controllers\StudentWX\Activity;
 use App\Controllers\StudentWX\Poster AS WXPoster;
 use App\Controllers\StudentApp\ReferralActivity;
@@ -108,32 +107,5 @@ class StudentAppRouter extends RouterBase
             'call'   => DuanWuActivity::class . ':refereeList',
             'middles' => [AppAuthMiddleWare::class]
         ],
-        //RT优惠券
-        '/student_app/rt_activity/invite_index' => [
-            'method' => ['post'],
-            'call'   => RtActivity::class . ':inviteIndex',
-        ],
-        '/student_app/rt_activity/invited_index' => [
-            'method' => ['post'],
-            'call'   => RtActivity::class . ':invitedIndex',
-        ],
-        '/student_app/rt_activity/get_poster' => [
-            'method' => ['post'],
-            'call'   => RtActivity::class . ':getPoster',
-            'middles' => [AppAuthMiddleWare::class]
-        ],
-         '/student_app/rt_activity/receive_coupon' => [
-            'method' => ['post'],
-            'call'   => RtActivity::class . ':receiveCoupon',
-            'middles' => [AppAuthMiddleWare::class]
-        ],
-        '/student_app/rt_activity/coupon_collecte' => [
-            'method' => ['post'],
-            'call'   => RtActivity::class . ':couponCollecte',
-            'middles' => [AppAuthMiddleWare::class]
-        ],
-
-
-
     ];
 }

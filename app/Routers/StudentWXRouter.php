@@ -9,6 +9,7 @@
 namespace App\Routers;
 
 
+use App\Controllers\StudentApp\RtActivity;
 use App\Controllers\StudentWX\DuanWuActivity;
 use App\Controllers\StudentWX\GoldLeafShop;
 use App\Controllers\StudentWX\Poster;
@@ -62,5 +63,13 @@ class StudentWXRouter extends RouterBase
 
         // 弹幕优化：
         '/student_wx/landing/broadcast' => ['method' => ['get'], 'call' => Student::class . ':broadcast', 'middles' => []],
+
+        //RT优惠券
+        '/student_wx/rt_activity/invite_index' => ['method' => ['post'], 'call'   => RtActivity::class . ':inviteIndex','middles' => []],
+        '/student_wx/rt_activity/invited_index' => ['method' => ['post'], 'call'   => RtActivity::class . ':invitedIndex','middles' => []],
+        '/student_wx/rt_activity/get_poster' => ['method' => ['post'], 'call'   => RtActivity::class . ':getPoster'],
+        '/student_wx/rt_activity/receive_coupon' => ['method' => ['post'], 'call'   => RtActivity::class . ':receiveCoupon'],
+        '/student_wx/rt_activity/coupon_collecte' => ['method' => ['post'], 'call'   => RtActivity::class . ':couponCollecte'],
+
     ];
 }

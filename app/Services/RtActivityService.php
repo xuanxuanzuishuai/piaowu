@@ -808,6 +808,7 @@ class RtActivityService
      * 被邀人首页
      * @param $request
      * @return array|int[]
+     * @throws RunTimeException
      */
     public static function invitedIndex($request)
     {
@@ -929,6 +930,7 @@ class RtActivityService
      * 校验被请人资格
      * @param $activityId
      * @param $student
+     * @param $isNew
      * @return false|mixed
      */
     public static function checkAllowReceive($activityId, $student, $isNew)
@@ -977,8 +979,9 @@ class RtActivityService
     /**
      * 获取海报
      * @param $request
-     * @return array
+     * @return array|int[]
      * @throws RunTimeException
+     * @throws \App\Libs\KeyErrorRC4Exception
      */
     public static function getPoster($request)
     {
