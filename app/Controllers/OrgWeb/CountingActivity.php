@@ -151,6 +151,12 @@ class CountingActivity extends ControllerBase
         return HttpHelper::buildResponse($response, $result);
     }
 
+    /**
+     * 更新活动
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
     public function editActivity(Request $request, Response $response){
         $params = $request->getParams();
         $result = $this->_checkParams($params);
@@ -158,13 +164,21 @@ class CountingActivity extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
+        $operator_id = $this->getEmployeeId();
+
         try{
-
+            CountingActivityService::editActivity($params, $operator_id);
+            return HttpHelper::buildResponse($response, $result);
         }catch (RuntimeException $e){
-
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
-        $result = CountingActivityService::editActivity($params);
+    }
 
+    public function getCountingActivityDetail(Request $request, Response $response)
+    {
+        $op_activity_id = $request->getParam('op_activity_id');
+        $detail = CountingActivityService::getCountDetail($op_activity_id);
+        return HttpHelper::buildResponse($response, $detail);
 
     }
 

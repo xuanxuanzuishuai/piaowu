@@ -36,6 +36,7 @@ use App\Controllers\OrgWeb\SourceMaterial;
 use App\Controllers\OrgWeb\StudentAccount;
 use App\Controllers\OrgWeb\WeekActivity;
 use App\Controllers\Referral\Award;
+use App\Middleware\AdminLogMiddleware;
 use App\Middleware\EmployeeAuthCheckMiddleWare;
 use App\Middleware\EmployeePrivilegeMiddleWare;
 use App\Middleware\OrgWebMiddleware;
@@ -262,6 +263,7 @@ class OrgWebRouter extends RouterBase
 
         //统计活动
         '/op_web/counting_activity/create'=>['method'=>['post'],'call'=>CountingActivity::class . ':create'],
+        '/op_web/counting_activity/detail'=>['method'=>['get'],'call'=>CountingActivity::class . ':getCountingActivityDetail'],
         '/op_web/counting_activity/list'=>['method'=>['get'],'call'=>CountingActivity::class . ':getActivityList'],
         '/op_web/counting_activity/editStatus'=>['method'=>['post'],'call'=>CountingActivity::class . ':editStatus'],
         '/op_web/counting_activity/editActivity'=>['method'=>['post'],'call'=>CountingActivity::class . ':editActivity'],

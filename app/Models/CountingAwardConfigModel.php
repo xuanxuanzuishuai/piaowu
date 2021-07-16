@@ -17,14 +17,13 @@ class CountingAwardConfigModel extends Model
     public static $table = "counting_award_config";
 
     //状态
-    const NORMAL_STATUS = 1; //有效
     const INVALID_STATUS = 2; //无效
-
+    const EFFECTIVE_STATUS = 1; //有效
     //类型
     const GOLD_LEAF_TYPE = 1; //类型 金叶子
     const PRODUCT_TYPE = 2; //类型 实物
 
-
+    //类型
     const UNIQUE_ID_PREFIX = '1001';
 
 

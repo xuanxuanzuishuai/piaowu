@@ -434,7 +434,7 @@ class TaskService
 
         $awardConfig = CountingAwardConfigModel::getRecords([
             'op_activity_id' => $activityId,
-            'status' => CountingAwardConfigModel::NORMAL_STATUS,
+            'status' => CountingAwardConfigModel::EFFECTIVE_STATUS,
         ]);
 
         if (empty($awardConfig)) throw new RunTimeException(['operator_failure']);

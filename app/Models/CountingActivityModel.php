@@ -17,6 +17,9 @@ class CountingActivityModel extends Model
     const DISABLE_STATUS = 1; //禁用
     const NORMAL_STATUS = 2; //启用
 
+    const RULE_TYPE_CONTINU = 1; // 连续
+    const RULE_TYPE_COUNT = 2; //累计
+
     public static function createActivity($data, $operator_id, $now){
 
         return self::insertRecord([
