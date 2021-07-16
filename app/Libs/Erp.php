@@ -42,8 +42,7 @@ class Erp
     const API_AWARD_BASE_INFO = '/api/dss/task_award_info';
     const API_USER_GET_RED_PACKET_CALL = '/api/app/user_get_red_packet_call_back';  //积分兑换红包 - 红包被用户成功领取通知erp接口地址
     const API_REFUND_FINISH_TIME = '/ai_dss/billV1/refund_finish_time';  //获取订单退单时间erp接口地址
-    const API_LOGISTICS_GOODS_LIST = '/api/logistics/goods_list';  //获取订单退单时间erp接口地址
-
+    const API_LOGISTICS_GOODS_LIST = '/api/logistics/goods_list';  //获取实物商品列表
 
     // 地址管理
     const API_STUDENT_ADDRESS_LIST = '/ai_dss/student/address_list';
@@ -86,8 +85,8 @@ class Erp
     //发货
     const API_DELIVER_GOODS = '/api/logistics/create';
     const API_EVENT_EDIT = '/api/dss/event/edit'; //创建event
-
-
+    //通过唯一标示批量查询物流单号以及物流状态
+    const API_LOGISTICS_STATUS_DATA = '/api/logistics/list';
     //发放优惠券
     const API_GRANT_COUPON = '/api/student_coupon/distribution';
 
@@ -219,6 +218,7 @@ class Erp
 
     /**
      * 获取商品包详情
+     * @param $packageId
      * @param $uuid
      * @param int $channel
      * @return null
@@ -284,6 +284,7 @@ class Erp
      * @param $taskId
      * @param $startTime
      * @param $endTime
+     * @param $name
      * @return array|bool
      */
     public function copyTask($taskId, $startTime, $endTime, $name)
@@ -431,7 +432,7 @@ class Erp
 
     /**
      * 学生地址列表
-     * @param $params
+     * @param $uuid
      * @return array|bool
      */
     public function getStudentAddressList($uuid)
@@ -697,7 +698,7 @@ class Erp
      * @param $eventTaskId
      * @param $status
      * @param $refereeUid
-     * @param $packageType
+     * @param $awardId
      * @param $extParams
      * @return array|bool
      */
@@ -761,7 +762,7 @@ class Erp
         }
         return ['code' => Valid::CODE_SUCCESS, 'data' => ErpEventModel::wholeEvents($params)];
     }
-    
+
     /**
      * 获取订单退单时间
      * @param array $arrBillId
@@ -805,7 +806,6 @@ class Erp
         return HttpHelper::requestJson($this->host . self::API_LOGISTICS_GOODS_LIST, $params);
     }
 
-
     /**
      * 获取快递详情
      * @param string $uniqueId
@@ -819,7 +819,7 @@ class Erp
         $cache = $redis->get($cacheKey);
         if (!empty($cache)) return json_decode($cache, true);
 
-        $result = HttpHelper::requestJson($this->host . self::API_EXPRESS_DETAILS,  ['unique_id' => $uniqueId]);
+        $result = HttpHelper::requestJson($this->host . self::API_EXPRESS_DETAILS,  ['order_id' => $uniqueId]);
         $data = $result['data'] ?? [];
 
         if (!empty($data)) $redis->set($cacheKey, json_encode($data), 'EX', Util::TIMESTAMP_1H);
@@ -858,5 +858,20 @@ class Erp
     {
         $params['app_id'] = Constants::SMART_APP_ID;
         return HttpHelper::requestJson($this->host . self::API_EVENT_EDIT, $params, 'POST');
+    }
+
+    /**
+     * 通过唯一标示批量查询物流单号以及物流状态
+     * @param $params
+     * @param $timeOut
+     * @return array
+     */
+    public function getLogisticsStatusData($params, $timeOut)
+    {
+        $data = HttpHelper::requestJson($this->host . self::API_LOGISTICS_STATUS_DATA, $params, 'GET', ['timeout' => $timeOut]);
+        if ($data === false) {
+            return [];
+        }
+        return empty($data['data']) ? [] : $data['data'];
     }
 }

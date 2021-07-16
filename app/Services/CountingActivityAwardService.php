@@ -138,7 +138,47 @@ class CountingActivityAwardService
         return true;
     }
 
-
-
-
+    /**
+     * 请求erp获取实物发货信息和物流信息
+     * @param $uniqueId
+     * @return bool
+     */
+    public static function syncAwardLogistics($uniqueId)
+    {
+        $expressInfo = (new Erp())->getExpressDetails($uniqueId);
+        if (empty($expressInfo['logistics_detail'])) {
+            return false;
+        }
+        $logisticsStatus = 0;
+        //解析物流信息，获取最新状态
+        switch ($expressInfo['logistics_detail'][0]['node']) {
+            case "已签收":
+                $logisticsStatus = CountingActivityAwardModel::LOGISTICS_STATUS_SIGN;
+                break;
+            case "派件中":
+                $logisticsStatus = CountingActivityAwardModel::LOGISTICS_STATUS_IN_DISPATCH;
+                break;
+            case "运输中":
+                $logisticsStatus = CountingActivityAwardModel::LOGISTICS_STATUS_IN_TRANSIT;
+                break;
+            case "已揽收":
+                $logisticsStatus = CountingActivityAwardModel::LOGISTICS_STATUS_COLLECT;
+                break;
+            default:
+                SimpleLogger::error('logistics node data error',[$expressInfo]);
+        }
+        if (empty($logisticsStatus)) {
+            return false;
+        }
+        CountingActivityAwardModel::batchUpdateRecord(
+            [
+                'logistics_status' => $logisticsStatus,
+                'shipping_status' => $expressInfo['status'],
+                'express_number' => $expressInfo['logistics_no'],
+            ],
+            [
+                'unique_id' => $uniqueId,
+            ]);
+        return true;
+    }
 }

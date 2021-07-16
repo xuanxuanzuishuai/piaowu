@@ -793,7 +793,7 @@ class DictConstants {
         ],
     ];
 
-    /**前缀为ERP的配置，数据均配置在erp数据库中erp_dict数据表，不再op系统重复配置，保持数据的唯一性,配置写在此区域**/
+    /**前缀为ERP的配置，数据均配置在erp数据库中erp_dict数据表，不再op系统重复配置，保持数据的唯一性,配置写在此区域start**/
     //新产品包状态
     const ERP_PACKAGE_V1_STATUS = [
         'type' => 'package_v1_status_new',
@@ -809,6 +809,18 @@ class DictConstants {
             'shop_cdn_domain'
         ]
     ];
+
+    /**
+     * erp系统配置
+     */
+    const ERP_SYSTEM_ENV = [
+        'type' => 'system_env',
+        'keys' => [
+            'QINIU_DOMAIN_1',//七牛目录(ERP)
+            'QINIU_FOLDER_1',//七牛Domain(ERP)
+        ]
+    ];
+    /**前缀为ERP的配置，数据均配置在erp数据库中erp_dict数据表，不再op系统重复配置，保持数据的唯一性,配置写在此区域end**/
 
     /**
      * rt渠道config
@@ -832,20 +844,21 @@ class DictConstants {
         ]
     ];
 
-
-
-
     /**
-     * erp系统配置
+     * 周周领奖任务之计数任务活动，禁止参与的账户黑名单
      */
-    const ERP_SYSTEM_ENV = [
-        'type' => 'system_env',
-        'keys' => [
-            'QINIU_DOMAIN_1',//七牛目录(ERP)
-            'QINIU_FOLDER_1',//七牛Domain(ERP)
-        ]
+    const COUNTING_TASK_BLACKLIST = [
+        'type' => 'counting_task_blacklist',
+        'keys' => [1]
     ];
 
+    /**
+     * 实物奖品物流状态
+     */
+    const MATERIAL_LOGISTICS_STATUS = [
+        'type' => 'material_logistics_status',
+        'keys' => [1, 2, 3, 4]
+    ];
     /**
      * 单个获取op系统dict配置数据
      * @param $type

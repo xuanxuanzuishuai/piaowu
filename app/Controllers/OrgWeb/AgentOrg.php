@@ -74,7 +74,7 @@ class AgentOrg extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         try {
-            AgentOrgService::orgOpnDelRelation($params, self::getEmployeeId());
+            AgentOrgService::orgOpnDelRelation($params['relation_id'], self::getEmployeeId());
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }

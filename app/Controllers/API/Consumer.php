@@ -850,6 +850,12 @@ class Consumer extends ControllerBase
         return HttpHelper::buildResponse($response, []);
     }
 
+    /**
+     * 周周领奖:计数任务相关
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
     public function grantAward(Request $request, Response $response)
     {
         $params = $request->getParams();
@@ -880,15 +886,17 @@ class Consumer extends ControllerBase
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-
-        try {
-            switch ($params['event_type']) {
-                case GrantAwardTopic::COUNTING_AWARD_TICKET:
-                    CountingActivityAwardService::grantCountingAward($params['msg_body']['sign']);
-                    break;
-            }
-        } catch (RunTimeException $e) {
-            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        switch ($params['event_type']) {
+            case GrantAwardTopic::COUNTING_AWARD_TICKET:
+                CountingActivityAwardService::grantCountingAward($params['msg_body']['sign']);
+                break;
+            case GrantAwardTopic::COUNTING_AWARD_LOGISTICS_SYNC:
+                //解析物流信息，获取最新状态
+                CountingActivityAwardService::syncAwardLogistics($params['msg_body']['unique_id']);
+                break;
+            default:
+                SimpleLogger::error('unknown event type', ['params' => $params]);
+                break;
         }
         return HttpHelper::buildResponse($response, []);
     }

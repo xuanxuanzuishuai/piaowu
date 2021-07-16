@@ -14,26 +14,35 @@ use App\Libs\SimpleLogger;
 class CountingActivityAwardModel extends Model
 {
     public static $table = 'counting_activity_award';
-
-
+    //商品类型
     const TYPE_GOLD_LEAF = 1; //类型 金叶子
     const TYPE_ENTITY = 2; //类型 实物
-
-    const SHIPPING_STATUS_BEFORE = 1; //待发货
-    const SHIPPING_STATUS_CENTRE = 2; //发货中
-    const SHIPPING_STATUS_BACK = 3; //已发货
-
+    //发货单状态:0废除 1待发货 2已发货 3发货中 4无需发货 -1发货失败
+    const SHIPPING_STATUS_DEL = 0;
+    const SHIPPING_STATUS_BEFORE = 1;
+    const SHIPPING_STATUS_DELIVERED = 2;
+    const SHIPPING_STATUS_CENTRE = 3;
+    const SHIPPING_STATUS_NO_NEED = 4;
+    const SHIPPING_STATUS_FAIL = -1;
+    //金叶子发货状态
     const SHIPPING_STATUS_GOLD_LEAF_MAP = [
         1 => '未到账',
         2 => '已到账',
     ];
 
     const SHIPPING_STATUS_ENTITY_MAP = [
+        self::SHIPPING_STATUS_DEL => '废除',
         self::SHIPPING_STATUS_BEFORE => '待发货',
+        self::SHIPPING_STATUS_DELIVERED => '已发货',
         self::SHIPPING_STATUS_CENTRE => '发货中',
-        self::SHIPPING_STATUS_BACK => '已发货',
+        self::SHIPPING_STATUS_NO_NEED => '无需发货',
+        self::SHIPPING_STATUS_FAIL => '发货失败',
     ];
-
+    //物流状态：1已揽收 2运输中 3派件中 4已签收
+    const LOGISTICS_STATUS_COLLECT = 1;
+    const LOGISTICS_STATUS_IN_TRANSIT = 2;
+    const LOGISTICS_STATUS_IN_DISPATCH = 3;
+    const LOGISTICS_STATUS_SIGN = 4;
     const UNIQUE_ID_PREFIX = 1001;
     const SALE_SHOP = 6;
 
