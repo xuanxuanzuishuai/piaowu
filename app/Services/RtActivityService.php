@@ -765,47 +765,47 @@ class RtActivityService
         if ($activity['end_time'] < $time) {
             return ['status' => self::ACTIVITY_IS_END];
         }
-        $timeRemaining = self::timeRemaining($activity['end_time']);
+        $timeRemaining = $activity['end_time'] - $time;
         $activityExt   = ActivityExtModel::getRecord(['activity_id' => $activityId]);
-        //邀请人
-        if (!empty($uid)) {
-            //获取剩余优惠券数量
-            $remainNums = self::remainCouponNums($activityId, $uid);
-            //查询邀请记录
-            $conds = [
-                'activity_id' => $activityId,
-                'invite_uid'  => $uid,
-                'LIMIT'       => 50,
-                'ORDER'       => ['id' => 'DESC'],
-            ];
-            $inviteArray = RtCouponReceiveRecordModel::getRecords($conds, ['invite_uid','receive_uid', 'status']);
-            if (!empty($inviteArray)) {
-                $receiveUids = array_column($inviteArray, 'receive_uid');//被推荐人
-                $studentInfos = DssStudentModel::getRecords(['id' => $receiveUids], ['id', 'mobile']);
-                $studentArray = !empty($studentInfos) ? array_column($studentInfos, 'mobile', 'id') : [];
-                //查询转介绍记录
-                $referralInfos = StudentReferralStudentStatisticsModel::getRecords(['student_id' => $receiveUids,'activity_id' =>$activityId],['student_id','create_time']);
-                $referralArray = !empty($referralInfos) ? array_column($referralInfos, 'create_time', 'student_id') : [];
-                $inviteRecord = [];
-                foreach ($inviteArray as $val) {
-                    if (!isset($studentArray[$val['receive_uid']]) || !isset($referralArray[$val['receive_uid']])) {
-                        continue;
-                    }
-                    $inviteRecord[] = [
-                        'mobile'      => Util::hideUserMobile($studentArray[$val['receive_uid']]),
-                        'create_time' => date('Y-m-d H:i:s', $referralArray[$val['receive_uid']]),
-                        'status'      => $val['status'],
-                    ];
-                }
-            }
-        }
         $data = [
             'status'         => self::ACTIVITY_NORMAL,
-            'remain_nums'    => $remainNums ?? 0,
             'activity_ext'   => $activityExt['award_rule'] ?? '',
-            'time_remaining' => empty($timeRemaining) ? '活动已结束，请等待下期活动' : sprintf('活动时间仅剩%s', $timeRemaining),
-            'invate_record'  => $inviteRecord ?? [],
+            'time_remaining' => $timeRemaining,
         ];
+        if (empty($uid)) {
+            return $data;
+        }
+        //获取剩余优惠券数量
+        $remainNums = self::remainCouponNums($activityId, $uid);
+        //查询邀请记录
+        $conds = [
+            'activity_id' => $activityId,
+            'invite_uid'  => $uid,
+            'LIMIT'       => 50,
+            'ORDER'       => ['id' => 'DESC'],
+        ];
+        $inviteArray = RtCouponReceiveRecordModel::getRecords($conds, ['invite_uid','receive_uid', 'status']);
+        if (!empty($inviteArray)) {
+            $receiveUids = array_column($inviteArray, 'receive_uid');//被推荐人
+            $studentInfos = DssStudentModel::getRecords(['id' => $receiveUids], ['id', 'mobile']);
+            $studentArray = !empty($studentInfos) ? array_column($studentInfos, 'mobile', 'id') : [];
+            //查询转介绍记录
+            $referralInfos = StudentReferralStudentStatisticsModel::getRecords(['student_id' => $receiveUids,'activity_id' =>$activityId],['student_id','create_time']);
+            $referralArray = !empty($referralInfos) ? array_column($referralInfos, 'create_time', 'student_id') : [];
+            $inviteRecord = [];
+            foreach ($inviteArray as $val) {
+                if (!isset($studentArray[$val['receive_uid']]) || !isset($referralArray[$val['receive_uid']])) {
+                    continue;
+                }
+                $inviteRecord[] = [
+                    'mobile'      => Util::hideUserMobile($studentArray[$val['receive_uid']]),
+                    'create_time' => date('Y-m-d H:i:s', $referralArray[$val['receive_uid']]),
+                    'status'      => $val['status'],
+                ];
+            }
+        }
+        $data['remain_nums']   = $remainNums ?? 0;
+        $data['invate_record'] = $inviteRecord ?? [];
         return $data;
     }
 
@@ -832,45 +832,17 @@ class RtActivityService
         if ($activity['end_time'] < $time) {
             return ['status' => self::ACTIVITY_IS_END];
         }
-        $timeRemaining = self::timeRemaining($activity['end_time']);
+        $timeRemaining = $activity['end_time'] - $time;
         $activityExt   = ActivityExtModel::getRecord(['activity_id' => $activityId]);
 
         $data = [
             'status'         => self::ACTIVITY_NORMAL,
             'invite_avatar'  => $inviteInfo['thumb'] ? AliOSS::replaceCdnDomainForDss($inviteInfo['thumb']) : AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb')),
             'activity_ext'   => $activityExt['award_rule'] ?? '',
-            'time_remaining' => empty($timeRemaining) ? '活动已结束，请等待下期活动' : sprintf('活动时间仅剩%s', $timeRemaining),
+            'time_remaining' => $timeRemaining,
         ];
         return $data;
     }
-
-    /**
-     * 剩余时间处理
-     * @param $toTime
-     * @return string
-     */
-    public static function timeRemaining($toTime)
-    {
-        $timeRemaining = '';
-        $remaining      = Util::timeRemaining($toTime + 50);
-        foreach ($remaining as $key => $val) {
-            if ($val <= 0) {
-                continue;
-            }
-            if ($key == 'second') {
-                if (!empty($timeRemaining)) {
-                    continue;
-                }
-                $key           = 'minute';
-                $val           = 1;
-                $timeRemaining .= $val . self::$timeArray[$key];
-            } else {
-                $timeRemaining .= $val . self::$timeArray[$key];
-            }
-        }
-        return $timeRemaining;
-    }
-
     /**
      * 校验邀请人资格
      * @param $activityId

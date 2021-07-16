@@ -185,7 +185,7 @@ class RtActivity extends ControllerBase
      * @param Response $response
      * @return Response
      */
-    public function couponCollecte(Request $request, Response $response)
+    public function couponCollect(Request $request, Response $response)
     {
         $rules = [
             [
