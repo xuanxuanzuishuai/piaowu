@@ -529,7 +529,7 @@ class RtActivityService
         }
         // 如果是启用 检查时间是否冲突
         if ($enableStatus == OperationActivityModel::ENABLE_STATUS_ON) {
-            $startActivity = RtActivityModel::checkTimeConflict($activityInfo['start_time'], $activityInfo['end_time']);
+            $startActivity = RtActivityModel::checkTimeConflict($activityInfo);
             if (!empty($startActivity)) {
                 throw new RunTimeException(['activity_time_conflict_id', '', '', array_column($startActivity, 'activity_id')]);
             }

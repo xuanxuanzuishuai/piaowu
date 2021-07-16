@@ -84,12 +84,13 @@ class RtActivityModel extends Model
      * @param $exceptActId
      * @return array
      */
-    public static function checkTimeConflict($startTime, $endTime, $exceptActId = 0)
+    public static function checkTimeConflict($activityInfo)
     {
         $where = [
-            'start_time[<=]' => $endTime,
-            'end_time[>=]' => $startTime,
+            'start_time[<=]' => $activityInfo['end_time'],
+            'end_time[>=]' => $activityInfo['start_time'],
             'enable_status' => OperationActivityModel::ENABLE_STATUS_ON,
+            'rule_type' => $activityInfo['rule_type'],
         ];
         if (!empty($exceptActId)) {
             $where['id[!]'] = $exceptActId;
