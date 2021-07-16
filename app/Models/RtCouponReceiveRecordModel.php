@@ -64,7 +64,7 @@ class RtCouponReceiveRecordModel extends Model
         if ($receive_mobile = $search['receive_mobile']??'') {   // 受邀人手机号
             $whereStr .= " AND f.mobile='{$receive_mobile}'";
         }
-        if ($status = $search['status']??-1 >= 0) {   // op优惠券状态(0未领取 1已领取)
+        if (($status = $search['status']??-1) >= 0) {   // op优惠券状态(0未领取 1已领取)
             $whereStr .= " AND a.status='{$status}'";
         }
         if ($coupon_status = $search['coupon_status']??0) {   // erp优惠券状态(1未使用 2 已使用 3已失效 4已作废)
