@@ -106,7 +106,7 @@ class Student extends ControllerBase
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
-        return HttpHelper::buildResponse($response, ['token' => $token]);
+        return HttpHelper::buildResponse($response, ['token' => $token,'is_new' => $info['is_new'] ?? 0]);
     }
 
     /** token失效时获取token

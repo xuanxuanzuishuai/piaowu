@@ -831,7 +831,7 @@ class RtActivityService
 
         $data = [
             'status'         => self::ACTIVITY_NORMAL,
-            'invite_avatar'  => $inviteInfo['thumb'] ? AliOSS::replaceCdnDomainForDss($inviteInfo['thumb']) : '',
+            'invite_avatar'  => $inviteInfo['thumb'] ? AliOSS::replaceCdnDomainForDss($inviteInfo['thumb']) : AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb')),
             'activity_ext'   => $activityExt['award_rule'] ?? '',
             'time_remaining' => empty($timeRemaining) ? '活动已结束，请等待下期活动' : sprintf('活动时间仅剩%s', $timeRemaining),
         ];
@@ -892,6 +892,9 @@ class RtActivityService
         //首次购买年卡记录
         $data = DssGiftCodeModel::getUserFirstBuyInfo($studentId);
         if (empty($data)) {
+            return false;
+        }
+        if ($data['valid_units'] != DssGiftCodeModel::CODE_TIME_YEAR || ($data['valid_units'] == DssGiftCodeModel::CODE_TIME_DAY && $data['valid_num'] < 360)) {
             return false;
         }
         $data  = end($data);
@@ -991,6 +994,8 @@ class RtActivityService
             if (!$activity) {
                 return ['status' => self::ACTIVITY_NOT_STARTED];
             }
+            //被邀人首页链接
+            $scheme = DictConstants::get(DictConstants::RT_ACTIVITY_INDEX, 'rt_invited');
         } else {
             $posterAscription = ActivityPosterModel::POSTER_ASCRIPTION_EMPLOYEE;
             switch ($request['type']) {
@@ -1016,6 +1021,11 @@ class RtActivityService
                 default:
                     throw new RunTimeException(['record_not_found']);
             }
+            //邀请人首页链接
+            $scheme = DictConstants::get(DictConstants::RT_ACTIVITY_INDEX, 'rt_invite');
+        }
+        if (empty($scheme)) {
+            throw new RunTimeException(['record_not_found']);
         }
         //获取buy_type
         $rule = RtActivityRuleModel::getRecord(['activity_id' => $activity['activity_id']], ['buy_day']);
@@ -1049,11 +1059,6 @@ class RtActivityService
         if (empty($imageHeight) || empty($imageWidth)) {
             throw new RunTimeException(['data_error']);
         }
-        // todo H5地址
-        $url = DictConstants::get(DictConstants::EMPLOYEE_ACTIVITY_ENV, 'employee_activity_landing_url');
-        if (empty($url)) {
-            throw new RunTimeException(['record_not_found']);
-        }
         //学生调用海报记录 ParamMap
         if ($request['type'] == RtActivityModel::ACTIVITY_RULE_TYPE_STUDENT) {
             $paramMapId = self::addParamMap($request['student_id'], $activity['activity_id'], $templatePosterPath['poster_id']);
@@ -1068,7 +1073,7 @@ class RtActivityService
             'invite_uid'    => $studentUid ?? '',
             'param_id'      => $paramMapId ?? ''
         ];
-        $qrURL = $url . '?' . http_build_query(array_filter($params));
+        $qrURL = $scheme . '?' . http_build_query(array_filter($params));
         $userQrPath = ReferralActivityService::commonActivityQr($qrURL);
         $posterInfo = ReferralActivityService::genEmployeePoster(
             $templatePosterPath['poster_path'],
@@ -1122,7 +1127,9 @@ class RtActivityService
             'param_info'  => $paramInfo,
             'create_time' => time(),
         ];
-        return ParamMapModel::insertRecord($insert);
+        ParamMapModel::insertRecord($insert);
+        $result = ParamMapModel::getRecord(['param_info' => $paramInfo], ['id']);
+        return $result['id'];
     }
 
 
@@ -1135,10 +1142,10 @@ class RtActivityService
     public static function receiveCoupon($request)
     {
         $redisKey = sprintf('receive_coupon_%s', $request['student_id']);
-//        $repeat   = Util::preventRepeatSubmit($redisKey);
-//        if (!$repeat) {
-//            throw new RunTimeException(['request_repeat']);
-//        }
+        $repeat   = Util::preventRepeatSubmit($redisKey);
+        if (!$repeat) {
+            throw new RunTimeException(['request_repeat']);
+        }
         $activityId = $request['activity_id'];
         //学生信息
         $student = DssStudentModel::getRecord(['id' => $request['student_id']], ['id','uuid','has_review_course','create_time']);
@@ -1295,7 +1302,6 @@ class RtActivityService
         if (count($request['referee_ids']) > 500) {
             throw new RunTimeException(['referee_ids_over_quantity']);
         }
-        $request['referee_ids'] = [92,93,94];
         $refereeIds = implode(',', $request['referee_ids']);
         $data = StudentReferralStudentStatisticsModel::getReferralCount($refereeIds, $request['activity_id']);
 

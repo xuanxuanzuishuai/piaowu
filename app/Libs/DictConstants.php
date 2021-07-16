@@ -784,6 +784,19 @@ class DictConstants {
         ]
     ];
 
+    /**
+     * rt活动页url
+     */
+    const RT_ACTIVITY_INDEX = [
+        'type' => 'RT_ACTIVITY_INDEX',
+        'keys' => [
+            'rt_invite',
+            'rt_invited'
+        ]
+    ];
+
+
+
 
     /**
      * erp系统配置

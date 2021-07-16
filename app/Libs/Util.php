@@ -1299,7 +1299,7 @@ class Util
         if ($ttl == -1) {
             $redis->del($redis_key);
         }
-        $result = $redis->set($redis_key, 1, ['nx', 'ex' => $expire]);
+        $result = $redis->set($redis_key, 1, 'EX', $expire, 'NX');
         if ($result) {
             return true;
         }
