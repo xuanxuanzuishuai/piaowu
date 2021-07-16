@@ -670,22 +670,22 @@ class RtActivityService
         if ($params['status']) {
             switch ($params['status']) {
                 case 1:   // 未领取
-                    $params['status'] = RtCouponReceiveRecordModel::NOT_REVEIVED_STATUS;
+                    $params['record_status'] = RtCouponReceiveRecordModel::NOT_REVEIVED_STATUS;
                     break;
                 case 2:   // 已领取(未使用)
-                    $params['status'] = RtCouponReceiveRecordModel::REVEIVED_STATUS;
+                    $params['record_status'] = RtCouponReceiveRecordModel::REVEIVED_STATUS;
                     $params['coupon_status'] = ErpStudentCouponV1Model::STATUS_UNUSE;
                     break;
                 case 3:   // 已使用
-                    $params['status'] = RtCouponReceiveRecordModel::REVEIVED_STATUS;
+                    $params['record_status'] = RtCouponReceiveRecordModel::REVEIVED_STATUS;
                     $params['coupon_status'] = ErpStudentCouponV1Model::STATUS_USED;
                     break;
                 case 4:   // 已过期
-                    $params['status'] = RtCouponReceiveRecordModel::REVEIVED_STATUS;
+                    $params['record_status'] = RtCouponReceiveRecordModel::REVEIVED_STATUS;
                     $params['coupon_status'] = ErpStudentCouponV1Model::STATUS_EXPIRE;
                     break;
                 case 5:   // 已作废
-                    $params['status'] = RtCouponReceiveRecordModel::REVEIVED_STATUS;
+                    $params['record_status'] = RtCouponReceiveRecordModel::REVEIVED_STATUS;
                     $params['coupon_status'] = ErpStudentCouponV1Model::STATUS_ABANDONED;
                     break;
             }
@@ -701,7 +701,12 @@ class RtActivityService
         $returnData = ['total_count' => $totalCount, 'list' => $result, 'where' => $where];
         return $returnData;
     }
-
+    
+    /**
+     * 格式化数据格式
+     * @param $data
+     * @return mixed
+     */
     private static function formatListData($data)
     {
         $data['rule_type_zh'] = DictConstants::get(DictConstants::ACTIVITY_RULE_TYPE_ZH, $data['rule_type']);
@@ -719,10 +724,10 @@ class RtActivityService
         $data['expired_end_date'] = $data['expired_end_time'] ? date('Y-m-d H:i:s', $data['expired_end_time']) : '-';
         $data['order_id'] = $data['order_id'] ? $data['order_id'] : '-';
         $data['status_zh'] = '-';
-        if ($data['status'] == RtCouponReceiveRecordModel::NOT_REVEIVED_STATUS) {
+        if ($data['record_status'] == RtCouponReceiveRecordModel::NOT_REVEIVED_STATUS) {
             $data['status_zh'] = '未领取';
         }
-        if ($data['status'] == RtCouponReceiveRecordModel::REVEIVED_STATUS) {
+        if ($data['record_status'] == RtCouponReceiveRecordModel::REVEIVED_STATUS) {
             if ($data['coupon_status'] == ErpStudentCouponV1Model::STATUS_UNUSE) {
                 $data['status_zh'] = '已领取(未使用)';
             }
