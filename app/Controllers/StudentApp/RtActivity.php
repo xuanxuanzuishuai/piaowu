@@ -7,6 +7,7 @@ namespace App\Controllers\StudentApp;
 use App\Controllers\ControllerBase;
 use App\Libs\HttpHelper;
 use App\Libs\Valid;
+use App\Models\RtActivityModel;
 use App\Services\RtActivityService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -114,6 +115,7 @@ class RtActivity extends ControllerBase
         try {
             $params = $request->getParams();
             $params['student_id'] = $this->ci['user_info']['user_id'];
+            $params['type'] = RtActivityModel::ACTIVITY_RULE_TYPE_STUDENT;
             $data = RtActivityService::getPoster($params);
         } catch (\Exception $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
@@ -147,9 +149,9 @@ class RtActivity extends ControllerBase
                 'error_code' => 'is_new_is_required'
             ],
             [
-                'key'        => 'scene',
+                'key'        => 'param_id',
                 'type'       => 'required',
-                'error_code' => 'scene_is_required'
+                'error_code' => 'param_id_is_required'
             ],
             [
                 'key'        => 'employee_id',

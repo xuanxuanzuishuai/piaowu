@@ -10,6 +10,7 @@ use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
+use App\Libs\RC4;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\ActivityExtModel;
@@ -22,6 +23,7 @@ use App\Models\Erp\ErpStudentCouponV1Model;
 use App\Models\Dss\DssGiftCodeModel;
 use App\Models\EmployeeModel;
 use App\Models\OperationActivityModel;
+use App\Models\ParamMapModel;
 use App\Models\RtActivityModel;
 use App\Models\RtActivityRuleModel;
 use App\Models\StudentReferralStudentStatisticsModel;
@@ -977,7 +979,7 @@ class RtActivityService
     public static function getPoster($request)
     {
         //学生获取海报前 校验是否有资格
-        if (empty($request['type'])) {
+        if ($request['type'] == RtActivityModel::ACTIVITY_RULE_TYPE_STUDENT) {
             //获取学生信息
             $studentUid = DssStudentModel::getRecord(['id' => $request['student_id']], 'id');
             if (empty($studentUid)) {
@@ -993,6 +995,7 @@ class RtActivityService
             switch ($request['type']) {
                 case RtActivityModel::ACTIVITY_RULE_TYPE_SHEQUN: //社群
                     $conds    = [
+                        'rule_type' => RtActivityModel::ACTIVITY_RULE_TYPE_SHEQUN,
                         'start_time[<=]' => time(),
                         'end_time[>=]'   => time(),
                         'enable_status'  => RtActivityModel::ENABLED_STATUS,
@@ -1004,7 +1007,7 @@ class RtActivityService
                     break;
                 case RtActivityModel::ACTIVITY_RULE_TYPE_KEGUAN: //课管
                     //校验用户是否符合参与条件
-                    $activity = RtActivityModel::getRecord(['activity_id' => $request['activity_id']]);
+                    $activity = RtActivityModel::getRecord(['activity_id' => $request['activity_id'],'rule_type' => RtActivityModel::ACTIVITY_RULE_TYPE_KEGUAN]);
                     if (empty($activity)) {
                         throw new RunTimeException(['record_not_found']);
                     }
@@ -1025,7 +1028,7 @@ class RtActivityService
 
         //查询海报
         $conds    = [
-            'activity_id'       => $request['activity_id'],
+            'activity_id'       => $activity['activity_id'],
             'status'            => ActivityPosterModel::NORMAL_STATUS,
             'is_del'            => ActivityPosterModel::IS_DEL_FALSE,
             'poster_ascription' => $posterAscription
@@ -1034,12 +1037,13 @@ class RtActivityService
         if (empty($posterId)) {
             throw new RunTimeException(['record_not_found']);
         }
-        $posterPath = TemplatePosterModel::getRecord(['id' => $posterId, 'status' => TemplatePosterModel::NORMAL_STATUS], 'poster_path');
-        if (empty($posterPath)) {
+        //获取海报
+        $templatePosterPath = TemplatePosterModel::getRecord(['id' => $posterId, 'status' => TemplatePosterModel::NORMAL_STATUS], ['poster_path','poster_id']);
+        if (empty($templatePosterPath)) {
             throw new RunTimeException(['record_not_found']);
         }
         $setting   = EmployeeActivityModel::$activityPosterConfig;
-        $posterUrl = AliOSS::replaceCdnDomainForDss($posterPath);
+        $posterUrl = AliOSS::replaceCdnDomainForDss($templatePosterPath['poster_path']);
         list($imageWidth, $imageHeight) = getimagesize($posterUrl);
         if (empty($imageHeight) || empty($imageWidth)) {
             throw new RunTimeException(['data_error']);
@@ -1049,16 +1053,24 @@ class RtActivityService
         if (empty($url)) {
             throw new RunTimeException(['record_not_found']);
         }
+        //学生调用海报记录 ParamMap
+        if ($request['type'] == RtActivityModel::ACTIVITY_RULE_TYPE_STUDENT) {
+            $paramMapId = self::addParamMap($request['student_id'], $activity['activity_id'], $templatePosterPath['poster_id']);
+            if (!$paramMapId) {
+                throw new RunTimeException(['record_not_found']);
+            }
+        }
         $params = [
-            'activity_id'   => $request['activity_id'],
+            'activity_id'   => $activity['activity_id'],
             'employee_id'   => $request['employee_id'],
             'employee_uuid' => $request['employee_uuid'],
-            'invite_uid'   => $studentUid ?? ''
+            'invite_uid'    => $studentUid ?? '',
+            'param_id'      => $paramMapId ?? ''
         ];
         $qrURL = $url . '?' . http_build_query(array_filter($params));
         $userQrPath = ReferralActivityService::commonActivityQr($qrURL);
         $posterInfo = ReferralActivityService::genEmployeePoster(
-            $posterPath,
+            $templatePosterPath['poster_path'],
             $imageWidth,
             $imageHeight,
             $userQrPath,
@@ -1075,7 +1087,41 @@ class RtActivityService
         }
         $posterInfo['status']  = self::ACTIVITY_NORMAL;
         $posterInfo['buy_day'] = $rule['buy_day'];
+        $posterInfo['activity_id'] = $activity['activity_id'];
         return $posterInfo;
+    }
+
+    /**
+     * ParamMap插入
+     * @param $userId
+     * @param $activityId
+     * @param $posterId
+     * @return int|mixed|string|null
+     * @throws \App\Libs\KeyErrorRC4Exception
+     */
+    public static function addParamMap($userId, $activityId, $posterId)
+    {
+        $ticket = RC4::encrypt($_ENV['COOKIE_SECURITY_KEY'], ParamMapModel::TYPE_STUDENT . "_" . $userId);
+        $paramInfo = [
+            'r' => $ticket,
+            'c' => self::getRtChannel(),
+            'a' => $activityId,
+            'p' => $posterId,
+            'user_current_status' => DssStudentModel::STATUS_BUY_NORMAL_COURSE
+        ];
+        $paramInfo = json_encode($paramInfo);
+        $result = ParamMapModel::getRecord(['param_info' => $paramInfo], ['id']);
+        if (!empty($result)) {
+            return $result['id'];
+        }
+        $insert = [
+            'app_id'      => Constants::SMART_APP_ID,
+            'type'        => ParamMapModel::TYPE_STUDENT,
+            'user_id'     => $userId,
+            'param_info'  => $paramInfo,
+            'create_time' => time(),
+        ];
+        return ParamMapModel::insertRecord($insert);
     }
 
 
@@ -1127,15 +1173,14 @@ class RtActivityService
          * 0元领取体验卡
          */
         $packageId = PayServices::getPackageIDByParameterPkg(PayServices::PACKAGE_0);
-        $res = ErpOrderV1Service::createZeroOrder($packageId, $student, '');
+        $res = ErpOrderV1Service::createZeroOrder($packageId, $student);
         if (empty($res)) {
             throw new RunTimeException(['create_bill_error']);
         }
         /**
          * 订单映射记录
          */
-        $sceneData = $request['scene'];
-        $res = BillMapService::mapDataRecord($sceneData, $res['order_id'], $student['id']);
+        $res = BillMapService::mapDataRecord(['param_id' => $request['param_id']], $res['order_id'], $student['id']);
         if (empty($res)) {
             SimpleLogger::error('insert bill_map error ', ['order_id' => $res['order_id']]);
         }

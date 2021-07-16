@@ -171,16 +171,6 @@ class Erp extends ControllerBase
                 'error_code' => 'activity_id_is_required'
             ],
             [
-                'key' => 'employee_id',
-                'type' => 'required',
-                'error_code' => 'employee_id_is_required'
-            ],
-            [
-                'key' => 'employee_uuid',
-                'type' => 'required',
-                'error_code' => 'employee_uuid_is_required'
-            ],
-            [
                 'key' => 'app_id',
                 'type' => 'required',
                 'error_code' => 'app_id_is_required'
