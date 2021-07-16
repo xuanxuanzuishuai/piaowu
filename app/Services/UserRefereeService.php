@@ -21,11 +21,8 @@ use App\Models\ErpSlaveModels\ErpStudentCouponV1Model;
 use App\Models\ParamMapModel;
 use App\Models\RtActivityRuleModel;
 use App\Models\RtCouponReceiveRecordModel;
-use App\Models\StudentInviteModel;
 use App\Models\StudentReferralStudentDetailModel;
 use App\Models\StudentReferralStudentStatisticsModel;
-use App\Services\Queue\PushMessageTopic;
-use App\Services\Queue\QueueService;
 
 class UserRefereeService
 {
@@ -44,27 +41,27 @@ class UserRefereeService
                 'award_img_url' => 'https://oss-ai-peilian-app.xiaoyezi.com/ertongshiyanwanju_5000.png', 'award_img_url_@2x' => 'https://oss-ai-peilian-app.xiaoyezi.com/ertongshiyanwanju_5000@2x.png',
             ],
             [
-                'award_total' => 25000, 'award_normal' => 5000, 'award_extra' => 20000, 'award_CNY' => 250, 'award_name' => '机器狗', 'award_img_url' => '',
+                'award_total' => 25000, 'award_normal' => 5000, 'award_extra' => 20000, 'award_CNY' => 250, 'award_name' => '机器狗',
                 'award_img_url' => 'https://oss-ai-peilian-app.xiaoyezi.com/jiqigou_25000.png', 'award_img_url_@2x' => 'https://oss-ai-peilian-app.xiaoyezi.com/jiqigou_25000@2x.png',
             ],
         ],
         [
             [
-                'award_total' => 10000, 'award_normal' => 10000, 'award_extra' => 0, 'award_CNY' => 100, 'award_name' => '画笔', 'award_img_url' => '',
+                'award_total' => 10000, 'award_normal' => 10000, 'award_extra' => 0, 'award_CNY' => 100, 'award_name' => '画笔',
                 'award_img_url' => 'https://oss-ai-peilian-app.xiaoyezi.com/huabi_10000.png', 'award_img_url_@2x' => 'https://oss-ai-peilian-app.xiaoyezi.com/huabi_10000@2x.png',
             ],
             [
-                'award_total' => 30000, 'award_normal' => 10000, 'award_extra' => 20000, 'award_CNY' => 300, 'award_name' => '宝宝数码相机', 'award_img_url' => '',
+                'award_total' => 30000, 'award_normal' => 10000, 'award_extra' => 20000, 'award_CNY' => 300, 'award_name' => '宝宝数码相机',
                 'award_img_url' => 'https://oss-ai-peilian-app.xiaoyezi.com/shumaxiangji_30000.png', 'award_img_url_@2x' => 'https://oss-ai-peilian-app.xiaoyezi.com/shumaxiangji_30000@2x.png',
             ],
         ],
         [
             [
-                'award_total' => 15000, 'award_normal' => 15000, 'award_extra' => 0, 'award_CNY' => 150, 'award_name' => '小黄人行李箱', 'award_img_url' => '',
+                'award_total' => 15000, 'award_normal' => 15000, 'award_extra' => 0, 'award_CNY' => 150, 'award_name' => '小黄人行李箱',
                 'award_img_url' => 'https://oss-ai-peilian-app.xiaoyezi.com/xiaohuangrenxinglixiang_15000.png', 'award_img_url_@2x' => 'https://oss-ai-peilian-app.xiaoyezi.com/xiaohuangrenxinglixiang_15000@2x.png',
             ],
             [
-                'award_total' => 35000, 'award_normal' => 15000, 'award_extra' => 20000, 'award_CNY' => 350, 'award_name' => '天文望远镜', 'award_img_url' => '',
+                'award_total' => 35000, 'award_normal' => 15000, 'award_extra' => 20000, 'award_CNY' => 350, 'award_name' => '天文望远镜',
                 'award_img_url' => 'https://oss-ai-peilian-app.xiaoyezi.com/tianwenwangyuanjing_35000.png', 'award_img_url_@2x' => 'https://oss-ai-peilian-app.xiaoyezi.com/tianwenwangyuanjing_35000@2x.png',
             ],
         ],
@@ -275,6 +272,8 @@ class UserRefereeService
      * @param $trialType
      * @param $refereeInfo
      * @param $appId
+     * @param $parentBillId
+     * @param $studentInfo
      * @return int|string|array
      */
     public static function getTaskIdByType($packageType, $trialType, $refereeInfo, $appId, $parentBillId, $studentInfo)
@@ -295,8 +294,8 @@ class UserRefereeService
         }
         // 判断用户是否有RT优惠券
         $haveCoupon = false;
-        $uuid = $studentInfo['uuid'];
-        $res = RtCouponReceiveRecordModel::getRecord(['receive_uuid' => $uuid, 'status' => RtCouponReceiveRecordModel::REVEIVED_STATUS], ['id,activity_id,student_coupon_id']);
+        $uuid = $studentInfo['id'];
+        $res = RtCouponReceiveRecordModel::getRecord(['receive_uid' => $uuid, 'status' => RtCouponReceiveRecordModel::REVEIVED_STATUS], ['id,activity_id,student_coupon_id']);
         if ($res) {
             $pageInfo = (new Erp())->getStudentCouponPageById([$res['student_coupon_id']]);
             $info = $pageInfo['data']['list'][0] ?? [];
@@ -393,9 +392,7 @@ class UserRefereeService
     
     /**
      * 根据学生ID和想要购买的包ID获取可能获取的奖励
-     * @param $studentId
-     * @param $packageId
-     * @param $uuid
+     * @param $params
      * @return array
      */
     public static function getAwardInfo($params)
@@ -456,6 +453,7 @@ class UserRefereeService
      * @param $refereeInfo
      * @param $startPoint
      * @param int $type
+     * @param int $noChangeNumber
      * @return int
      */
     public static function getRefereeCount($refereeInfo, $startPoint, $type = DssStudentModel::REVIEW_COURSE_1980, $noChangeNumber = 1000)
