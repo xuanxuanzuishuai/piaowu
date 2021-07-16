@@ -429,7 +429,7 @@ class RtActivityService
         // 更新海报
         if (!empty($posterArr)) {
             // 删除原有的海报
-            ActivityPosterModel::batchUpdateRecord(['is_del' => ActivityPosterModel::IS_DEL_TRUE], ['activity_id' => $activityId]);
+            ActivityPosterModel::delActivityPoster($activityId);
             // 写入新的活动与海报的关系
             $activityPosterRes = ActivityPosterModel::batchInsertActivityPoster($activityId, $posterArr);
             if (empty($activityPosterRes)) {

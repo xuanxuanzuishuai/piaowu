@@ -167,4 +167,22 @@ class ActivityPosterModel extends Model
             $redis->del([$cacheKey]);
         }
     }
+
+    /**
+     * 删除海报
+     * @param $activityId
+     * @return bool
+     */
+    public static function delActivityPoster($activityId)
+    {
+        ActivityPosterModel::batchUpdateRecord(['is_del' => ActivityPosterModel::IS_DEL_TRUE], ['activity_id' => $activityId]);
+        
+        $redis = RedisDB::getConn();
+        $poster = self::getRecords(['activity_id' => $activityId]);
+        foreach ($poster as $item) {
+            $cacheKey = self::KEY_ACTIVITY_POSTER . implode('_', [$activityId, self::NORMAL_STATUS, self::IS_DEL_FALSE]);
+            $redis->del([$cacheKey]);
+        }
+        return true;
+    }
 }
