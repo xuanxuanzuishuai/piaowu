@@ -14,9 +14,6 @@ use App\Libs\Util;
 use App\Models\Dss\DssStudentModel;
 use App\Services\DictService;
 
-// use App\Models\CountingActivityModel;
-// use App\Models\CountingActivityAwardModel;
-
 class CountingActivitySignModel extends Model
 {
     public static $table = "counting_activity_sign";
@@ -33,6 +30,10 @@ class CountingActivitySignModel extends Model
         self::AWARD_STATUS_PENDING       => '待领取',
         self::AWARD_STATUS_RECEIVED      => '已领取',
     ];
+    const QUALIFIED_STATUS_DICT = [
+        self::QUALIFIED_STATUS_NO  => '未达标',
+        self::QUALIFIED_STATUS_YES => '已达标',
+    ];
 
     /**
      * 参与记录列表
@@ -41,23 +42,17 @@ class CountingActivitySignModel extends Model
      */
     public static function list($params = [])
     {
-        // @TODO: table name and model const
-        $s = DssStudentModel::getTableNameWithDb();
+        $s   = DssStudentModel::getTableNameWithDb();
         $cas = self::getTableNameWithDb();
-        // $ca = CountingActivityModel::getTableNameWithDb();
-        // $caa = CountingActivityAwardModel::getTableNameWithDb();
-        $ca = 'operation_dev.counting_activity';
-        $caa = 'operation_dev.counting_activity_award';
-        $a = OperationActivityModel::getTableNameWithDb();
+        $ca  = CountingActivityModel::getTableNameWithDb();
+        $a   = OperationActivityModel::getTableNameWithDb();
 
         list($where, $map) = self::formatWhere($params);
         list($page, $count) = Util::formatPageCount($params);
-        // @TODO: Model const
         $join = "
         INNER JOIN $s s ON cas.student_id = s.id
         INNER JOIN $ca ca ON cas.op_activity_id = ca.op_activity_id
-        INNER JOIN $a a on a.id = ca.op_activity_id
-        LEFT JOIN $caa caa on caa.sign_id = cas.id AND caa.type = " . 2;
+        INNER JOIN $a a on a.id = ca.op_activity_id";
         $limit = Util::limitation($page, $count);
         $sql = "
         SELECT %s
@@ -67,7 +62,20 @@ class CountingActivitySignModel extends Model
         ";
 
         $db = self::dbRO();
-        $listField = "s.id,s.uuid,s.name,s.mobile,cas.continue_nums,cas.cumulative_nums,cas.op_activity_id,a.name,cas.award_status,cas.award_time,caa.unique_id";
+        $listField = "
+        s.id as student_id,
+        s.uuid,
+        s.name as student_name,
+        s.mobile,
+        a.name,
+        cas.id,
+        cas.continue_nums,
+        cas.cumulative_nums,
+        cas.op_activity_id,
+        cas.qualified_status,
+        cas.award_status,
+        cas.award_time
+        ";
         $totalField = "count(cas.id) as total";
         $total = $db->queryAll(sprintf($sql, $totalField, $join, $where), $map);
         $total = $total[0]['total'] ?? 0;
@@ -128,11 +136,11 @@ class CountingActivitySignModel extends Model
             $map[':award_time_e'] = $params['award_time_e'];
         }
         if (!empty($params['activity_id'])) {
-            $where[] = "cas.activity_id = :activity_id";
+            $where[] = "a.id = :activity_id";
             $map[':activity_id'] = $params['activity_id'];
         }
         if (!empty($params['activity_name'])) {
-            $where[] = "cas.activity_name like :activity_name";
+            $where[] = "a.name like :activity_name";
             $map[':activity_name'] = Util::sqlLike($params['activity_name']);
         }
         if (!empty($params['award_status'])) {
@@ -153,47 +161,47 @@ class CountingActivitySignModel extends Model
         if (empty($userId)) {
             return [];
         }
-        $ca      = 'operation_dev.counting_activity';
-        $caa     = 'operation_dev.counting_activity_award';
-        $student = DssStudentModel::getById($userId);
+        $a       = OperationActivityModel::$table;
+        $ca      = CountingActivityModel::$table;
+        $caa     = CountingActivityAwardModel::$table;
+        $student = DssStudentModel::getRecord(['id' => $userId], ['id', 'name', 'uuid', 'mobile']);
         if (empty($student)) {
             return [];
         }
-        $weekActivityDetail = SharePosterModel::getWeekPosterList(['user_id' => $userId]);
-        $field              = "cas.id,cas.op_activity_id,ca.name,cas.create_time,cas.qualified_status,cas.award_time,
-                  caa.unique_id";
-        $table              = self::$table;
-        $join               = "
-        INNER JOIN $ca ca ON cas.op_activity_id = ca.op_activity_id
-        LEFT JOIN $caa caa on caa.sign_id = cas.id AND caa.type = " . 2;
-        $where              = 'student_id = :student_id';
-        $map                = [':student_id' => $userId];
-        $order              = " ORDER BY cas.id DESC ";
-        $sql                = "
-        SELECT %s
-        FROM %s cas
-        %s
-        WHERE %s
-        ";
-        $db                 = MysqlDB::getDB();
-        // @TODO:filter data unique
-        // get logistics data
-        $signRecordDetails = [];
-        $records           = $db->queryAll(sprintf($sql, $field, $table, $join, $where) . $order, $map);
-        foreach ($records as $item) {
-            if (!empty($signRecordDetails[$item['id']])) {
-                $signRecordDetails[$item['id']] = $item;
-            }
-        }
-        // @TODO: format data
+        $posterList = SharePosterModel::getWeekPosterList(['user_id' => $userId]);
+        $weekActivityDetail = $posterList[0] ?? [];
+        $field = [
+            self::$table . '.id',
+            self::$table . '.op_activity_id',
+            self::$table . '.create_time',
+            self::$table . '.qualified_status',
+            self::$table . '.award_time',
+            $ca . '.name',
+            $a . '.name as activity_name',
+        ];
+
+        $join = [
+            '[><]' . $a => ['op_activity_id' => 'id'],
+            '[><]' . $ca => ['op_activity_id' => 'op_activity_id'],
+            '[>]' . $caa => ['id' => 'sign_id'],
+        ];
+
+        $where   = [
+            self::$table . '.student_id' => $userId,
+            $caa . '.type' => CountingActivityAwardModel::TYPE_ENTITY,
+            'ORDER' => [self::$table . '.id' => 'DESC'],
+            'LIMIT' => [1000]
+        ];
+
+        $db = MysqlDB::getDB();
+        // 查询参与记录
+        $signRecordDetails = $db->select(self::$table, $join, $field, $where);
         $statusDict = DictService::getTypeMap(Constants::DICT_TYPE_SHARE_POSTER_CHECK_STATUS);
-        array_walk($weekActivityDetail, function ($item) use ($statusDict) {
+        array_walk($weekActivityDetail, function (&$item) use ($statusDict) {
             $item['create_time'] = Util::formatTimestamp($item['create_time']);
             $item['status_name'] = $statusDict[$item['poster_status']];
-            return $item;
         });
         return [$student, $weekActivityDetail, $signRecordDetails];
-
     }
 
     /**

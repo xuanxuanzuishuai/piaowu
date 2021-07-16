@@ -371,8 +371,12 @@ class SharePosterModel extends Model
         ];
 
         if (!empty($params['activity_id'])) {
-            $where .= " AND sp.activity_id = :activity_id ";
-            $map[':activity_id'] = $params['activity_id'];
+            if (is_array($params['activity_id'])) {
+                $where .= " AND sp.activity_id in (".implode(',', $params['activity_id']).") ";
+            } else {
+                $where .= " AND sp.activity_id = :activity_id ";
+                $map[':activity_id'] = $params['activity_id'];
+            }
         }
 
         if (!empty($params['poster_status'])) {
@@ -381,8 +385,12 @@ class SharePosterModel extends Model
         }
 
         if (!empty($params['user_id'])) {
-            $where .= " AND sp.student_id = :student_id ";
-            $map[':student_id'] = $params['user_id'];
+            if (is_array($params['user_id'])) {
+                $where .= " AND sp.student_id in (".implode(',', $params['user_id']).") ";
+            } else {
+                $where .= " AND sp.student_id = :student_id ";
+                $map[':student_id'] = $params['user_id'];
+            }
         }
 
         if (!empty($params['id'])) {
@@ -426,7 +434,7 @@ class SharePosterModel extends Model
         $sp sp ";
 
         $order = " ORDER BY create_time DESC ";
-        $limit = Util::limitation($params['page'], $params['count']);
+        $limit = empty($params['no_limit']) ? Util::limitation($params['page'], $params['count']) : '';
         $sql = $sql . $join . $where . $order . $limit;
         $posters = $db->queryAll($sql, $map);
 

@@ -17,13 +17,14 @@ use App\Libs\UserCenter;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\ActivityExtModel;
+use App\Models\CountingActivityAwardModel;
 use App\Models\CountingActivityModel;
 use App\Models\CountingActivityMutexModel;
 use App\Models\CountingActivitySignModel;
+use App\Models\CountingActivityUserStatisticModel;
 use App\Models\CountingAwardConfigModel;
 use App\Models\EmployeeModel;
 use App\Models\OperationActivityModel;
-
 
 class CountingActivityService
 {
@@ -546,6 +547,7 @@ class CountingActivityService
     public static function getUserSignList($userId, $params = [])
     {
         list($student, $weekActivityDetail, $signRecordDetails) = CountingActivitySignModel::getUserRecords($userId, $params);
+        $signRecordDetails = self::fillSignRecordsLogistics($signRecordDetails, true);
         return [$student, $weekActivityDetail, $signRecordDetails];
     }
 
@@ -557,11 +559,78 @@ class CountingActivityService
      */
     public static function formatSign($data = [])
     {
+        // 补充物流数据
+        $data = self::fillSignRecordsLogistics($data);
+        // 补充全局计数
+        $data = self::fillSignRecordsStatistic($data);
         foreach ($data as &$item) {
             $item['mobile'] = Util::hideUserMobile($item['mobile']);
             if ($item['qualified_status'] == CountingActivitySignModel::QUALIFIED_STATUS_NO) {
                 $item['award_status'] = $item['qualified_status'];
             }
+            $item['award_status_name'] = CountingActivitySignModel::AWARD_STATUS_DICT[$item['award_status']] ?? '';
+            $item['qualified_status_name'] = CountingActivitySignModel::QUALIFIED_STATUS_DICT[$item['qualified_status']] ?? '';
+        }
+        return $data;
+    }
+
+    /**
+     * 查询学生全局数据
+     * @param array $data
+     * @return array
+     */
+    public static function fillSignRecordsStatistic($data = [])
+    {
+        $allIds = array_column($data, 'student_id');
+        if (empty($allIds)) {
+            return [];
+        }
+        $statistics = CountingActivityUserStatisticModel::getUserData($allIds);
+        foreach ($data as &$item) {
+            $item['cumulative_nums'] = $statistics[$item['student_id']]['cumulative_nums'] ?? 0;
+            $item['continue_nums'] = $statistics[$item['student_id']]['continue_nums'] ?? 0;
+        }
+        return $data;
+    }
+
+    /**
+     * 查询参与记录物流信息
+     * @param array $data
+     * @param bool $withGoods
+     * @return array
+     */
+    public static function fillSignRecordsLogistics($data = [], $withGoods = false)
+    {
+        $allIds = array_column($data, 'id');
+        if (empty($allIds)) {
+            return [];
+        }
+        // 拼装物流信息
+        $logisticsFields = ['id', 'goods_id', 'sign_id', 'address_detail', 'express_number', 'logistics_status'];
+        $logisticsData = [];
+        $where = [
+            'sign_id' => $allIds,
+            'type' => CountingActivityAwardModel::TYPE_ENTITY,
+        ];
+        $awards = CountingActivityAwardModel::getRecords($where, $logisticsFields);
+        foreach ($awards as $award) {
+            if (!empty($award['address_detail'])) {
+                $award['address_detail'] = json_decode($award['address_detail'], true);
+            }
+            $logisticsData[$award['sign_id']][] = $award;
+        }
+        // 拼装奖品及数量信息
+        $goodsData = [];
+        if ($withGoods) {
+            $goods = self::getAwardList(implode(',', array_column($awards, 'goods_id')));
+            foreach ($goods as $item) {
+                $goodsData[$item['id']] = $item;
+            }
+        }
+        // 补全物流信息
+        foreach ($data as &$item) {
+            $item['logistics'] = $logisticsData[$item['id']] ?? [];
+            $item['goods'] = $goodsData[$item['goods_id']] ?? [];
         }
         return $data;
     }

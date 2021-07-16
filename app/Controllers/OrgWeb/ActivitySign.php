@@ -30,7 +30,7 @@ class ActivitySign extends ControllerBase
         try {
             list($list, $total) = CountingActivityService::getSignList($params);
         } catch (RunTimeException $e) {
-            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
         return HttpHelper::buildResponse($response, [
             'list' => $list,
@@ -62,7 +62,7 @@ class ActivitySign extends ControllerBase
         try {
             list($student, $weekActivityDetail, $signRecordDetails) = CountingActivityService::getUserSignList($params['user_id'], $params);
         } catch (RunTimeException $e) {
-            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
         return HttpHelper::buildResponse($response, [
             'student' => $student,

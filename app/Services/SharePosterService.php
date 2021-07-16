@@ -15,6 +15,7 @@ use App\Libs\AliOSS;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
+use App\Models\CountingActivityUserStatisticModel;
 use App\Models\Dss\DssEventTaskModel;
 use App\Models\Dss\DssReferralActivityModel;
 use App\Models\Dss\DssSharePosterModel;
@@ -622,7 +623,11 @@ class SharePosterService
                 'verify_status' => $poster['poster_status']
             ];
             $update = SharePosterModel::batchUpdateRecord($updateData, $where);
-
+            // 更新学生全局周周数据统计
+            if ($type == SharePosterModel::TYPE_WEEK_UPLOAD) {
+                $redis->del([CountingActivityUserStatisticModel::KEY_USER_STATISTIC . $poster['student_id']]);
+                CountingActivityUserStatisticModel::setUpdateFlag($poster['student_id']);
+            }
             //计算当前真正应该获得的奖励
             $where = [
                 'id[!]'         => $poster['id'],
