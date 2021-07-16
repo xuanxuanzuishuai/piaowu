@@ -131,7 +131,7 @@ class RtActivityService
                 $tmpPoster = $p;
                 $tmpPoster['poster_url'] = AliOSS::replaceCdnDomainForDss($p['poster_path']);
                 $tmpPoster['example_url'] = !empty($p['example_path']) ? AliOSS::replaceCdnDomainForDss($p['example_path']) : '';
-                if ($p['poster_ascription'] == ActivityPosterModel::POSTER_ASCRIPTION_STUDENT) {
+                if ($p['poster_ascription'] == ActivityPosterModel::POSTER_ASCRIPTION_EMPLOYEE) {
                     $activityInfo['employee_poster'][] = $tmpPoster;
                 } else {
                     $activityInfo['poster'][] = $tmpPoster;
@@ -209,7 +209,7 @@ class RtActivityService
             'buy_day' => $data['buy_day'] ?? 0,
             'coupon_num' => $data['coupon_num'] ?? 0,
             'student_coupon_num' => 1,
-            'coupon_id' => $data['coupon_num'] ?? '',
+            'coupon_id' => $data['coupon_id'] ?? '',
             'join_user_status' => $data['join_user_status'] ?? '',
             'referral_student_is_award' => $data['referral_student_is_award'] ?? 0,
             'referral_award' => json_encode($referralAward),
@@ -340,7 +340,7 @@ class RtActivityService
                 'buy_day' => $data['buy_day'] ?? 0,
                 'coupon_num' => $data['coupon_num'] ?? 0,
                 'student_coupon_num' => 1,
-                'coupon_id' => $data['coupon_num'] ?? '',
+                'coupon_id' => $data['coupon_id'] ?? '',
                 'join_user_status' => $data['join_user_status'] ?? '',
                 'referral_student_is_award' => $data['referral_student_is_award'] ?? 0,
                 'referral_award' => json_encode($referralAward),
@@ -374,7 +374,7 @@ class RtActivityService
                 'remark' => $data['remark'] ?? ''
             ];
             $rtActivityData = [
-                'rule_type' => $data['rule_type'] ?? 0,
+                'year_card_sale_url' => $data['year_card_sale_url'] ?? '',
             ];
         } else {
             // 禁用状态下只可以编辑备注
@@ -1343,7 +1343,7 @@ class RtActivityService
         if ($activityInfo['enable_status'] == OperationActivityModel::ENABLE_STATUS_ON) {
             // 启用状态只可以编辑备注和年卡连接
             $rtActivityData = [
-                'rule_type' => $data['rule_type'] ?? 0,
+                'year_card_sale_url' => $data['year_card_sale_url'] ?? '',
             ];
         }
 
