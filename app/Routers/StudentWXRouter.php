@@ -9,7 +9,7 @@
 namespace App\Routers;
 
 
-use App\Controllers\StudentApp\RtActivity;
+use App\Controllers\StudentWX\RtActivity;
 use App\Controllers\StudentWX\DuanWuActivity;
 use App\Controllers\StudentWX\GoldLeafShop;
 use App\Controllers\StudentWX\Poster;

@@ -1,7 +1,7 @@
 <?php
 
 
-namespace App\Controllers\StudentApp;
+namespace App\Controllers\StudentWX;
 
 
 use App\Controllers\ControllerBase;
