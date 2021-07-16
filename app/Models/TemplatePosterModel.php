@@ -81,7 +81,8 @@ class TemplatePosterModel extends Model
     
         $resWeek = self::getActivityByPidAndType($id, 'week');
         $resMonth = self::getActivityByPidAndType($id, 'month');
-        return [$resWeek, $resMonth];
+        $resRt = self::getActivityByPidAndType($id, 'rt');
+        return [$resWeek, $resMonth, $resRt];
     }
     
     /**
@@ -101,6 +102,9 @@ class TemplatePosterModel extends Model
         }
         if ($type == 'month') {
             $table3 = MonthActivityModel::$table;
+        }
+        if ($type == 'rt') {
+            $table3 = RtActivityModel::$table;
         }
         if (empty($table3)) {
             return [];

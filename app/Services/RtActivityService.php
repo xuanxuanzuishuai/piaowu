@@ -565,8 +565,8 @@ class RtActivityService
         $time = time();
         foreach ($activityList as $k => $v) {
             if (OperationActivityModel::checkActivityEnableStatusOn($v, $time)) {
-                array_unshift($activityList, $v);
                 unset($activityList[$k]);
+                array_unshift($activityList, $v);
                 break;
             }
         }

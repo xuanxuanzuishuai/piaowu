@@ -326,10 +326,11 @@ class PosterTemplateService
     public static function offlinePosterCheck($params)
     {
         $id = $params['id'];
-        list($resWeek, $resMonth) = TemplatePosterModel::getActivityByPosterId($id);
+        list($resWeek, $resMonth, $resRt) = TemplatePosterModel::getActivityByPosterId($id);
         $arrWeekId = array_values(array_unique(array_column($resWeek, 'activity_id')));
         $arrMonthId = array_values(array_unique(array_column($resMonth, 'activity_id')));
-        return [$arrWeekId, $arrMonthId];
+        $resRtId = array_values(array_unique(array_column($resRt, 'activity_id')));
+        return [$arrWeekId, $arrMonthId, $resRtId];
     }
     
     /**
