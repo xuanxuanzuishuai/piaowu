@@ -16,8 +16,8 @@ use App\Models\Dss\DssErpPackageV1Model;
 use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssPackageExtModel;
 use App\Models\Dss\DssStudentModel;
+use App\Models\Erp\ErpStudentCouponV1Model;
 use App\Models\Erp\ErpUserEventTaskAwardGoldLeafModel;
-use App\Models\ErpSlaveModels\ErpStudentCouponV1Model;
 use App\Models\ParamMapModel;
 use App\Models\RtActivityRuleModel;
 use App\Models\RtCouponReceiveRecordModel;
@@ -38,31 +38,37 @@ class UserRefereeService
         [
             [
                 'award_total' => 5000, 'award_normal' => 5000, 'award_extra' => 0, 'award_CNY' => 50, 'award_name' => '儿童实验玩具',
-                'award_img_url' => 'https://oss-ai-peilian-app.xiaoyezi.com/ertongshiyanwanju_5000.png', 'award_img_url_@2x' => 'https://oss-ai-peilian-app.xiaoyezi.com/ertongshiyanwanju_5000@2x.png',
+                'award_img_url' => 'https://oss-ai-peilian-app.xiaoyezi.com/ertongshiyanwanju_5000.png',
+                'award_img_url_@2x' => 'https://oss-ai-peilian-app.xiaoyezi.com/ertongshiyanwanju_5000@2x.png',
             ],
             [
                 'award_total' => 25000, 'award_normal' => 5000, 'award_extra' => 20000, 'award_CNY' => 250, 'award_name' => '机器狗',
-                'award_img_url' => 'https://oss-ai-peilian-app.xiaoyezi.com/jiqigou_25000.png', 'award_img_url_@2x' => 'https://oss-ai-peilian-app.xiaoyezi.com/jiqigou_25000@2x.png',
+                'award_img_url' => 'https://oss-ai-peilian-app.xiaoyezi.com/jiqigou_25000.png',
+                'award_img_url_@2x' => 'https://oss-ai-peilian-app.xiaoyezi.com/jiqigou_25000@2x.png',
             ],
         ],
         [
             [
                 'award_total' => 10000, 'award_normal' => 10000, 'award_extra' => 0, 'award_CNY' => 100, 'award_name' => '画笔',
-                'award_img_url' => 'https://oss-ai-peilian-app.xiaoyezi.com/huabi_10000.png', 'award_img_url_@2x' => 'https://oss-ai-peilian-app.xiaoyezi.com/huabi_10000@2x.png',
+                'award_img_url' => 'https://oss-ai-peilian-app.xiaoyezi.com/huabi_10000.png',
+                'award_img_url_@2x' => 'https://oss-ai-peilian-app.xiaoyezi.com/huabi_10000@2x.png',
             ],
             [
                 'award_total' => 30000, 'award_normal' => 10000, 'award_extra' => 20000, 'award_CNY' => 300, 'award_name' => '宝宝数码相机',
-                'award_img_url' => 'https://oss-ai-peilian-app.xiaoyezi.com/shumaxiangji_30000.png', 'award_img_url_@2x' => 'https://oss-ai-peilian-app.xiaoyezi.com/shumaxiangji_30000@2x.png',
+                'award_img_url' => 'https://oss-ai-peilian-app.xiaoyezi.com/shumaxiangji_30000.png',
+                'award_img_url_@2x' => 'https://oss-ai-peilian-app.xiaoyezi.com/shumaxiangji_30000@2x.png',
             ],
         ],
         [
             [
                 'award_total' => 15000, 'award_normal' => 15000, 'award_extra' => 0, 'award_CNY' => 150, 'award_name' => '小黄人行李箱',
-                'award_img_url' => 'https://oss-ai-peilian-app.xiaoyezi.com/xiaohuangrenxinglixiang_15000.png', 'award_img_url_@2x' => 'https://oss-ai-peilian-app.xiaoyezi.com/xiaohuangrenxinglixiang_15000@2x.png',
+                'award_img_url' => 'https://oss-ai-peilian-app.xiaoyezi.com/xiaohuangrenxinglixiang_15000.png',
+                'award_img_url_@2x' => 'https://oss-ai-peilian-app.xiaoyezi.com/xiaohuangrenxinglixiang_15000@2x.png',
             ],
             [
                 'award_total' => 35000, 'award_normal' => 15000, 'award_extra' => 20000, 'award_CNY' => 350, 'award_name' => '天文望远镜',
-                'award_img_url' => 'https://oss-ai-peilian-app.xiaoyezi.com/tianwenwangyuanjing_35000.png', 'award_img_url_@2x' => 'https://oss-ai-peilian-app.xiaoyezi.com/tianwenwangyuanjing_35000@2x.png',
+                'award_img_url' => 'https://oss-ai-peilian-app.xiaoyezi.com/tianwenwangyuanjing_35000.png',
+                'award_img_url_@2x' => 'https://oss-ai-peilian-app.xiaoyezi.com/tianwenwangyuanjing_35000@2x.png',
             ],
         ],
     ];
