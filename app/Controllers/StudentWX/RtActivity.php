@@ -38,8 +38,37 @@ class RtActivity extends ControllerBase
         }
         try {
             $params = $request->getParams();
-            $params['user_info'] = $this->ci['user_info'] ?? [];
             $data = RtActivityService::inviteIndex($params);
+        } catch (\Exception $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
+        return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
+     * 获取邀请记录
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getInviteRecord(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'activity_id',
+                'type' => 'required',
+                'error_code' => 'id_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            $params = $request->getParams();
+            $params['student_id'] = $this->ci['user_info']['user_id'];
+            $data = RtActivityService::getInviteRecord($params);
         } catch (\Exception $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }

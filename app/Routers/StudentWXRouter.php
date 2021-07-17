@@ -70,6 +70,7 @@ class StudentWXRouter extends RouterBase
         '/student_wx/rt_activity/get_poster' => ['method' => ['post'], 'call'   => RtActivity::class . ':getPoster'],
         '/student_wx/rt_activity/receive_coupon' => ['method' => ['post'], 'call'   => RtActivity::class . ':receiveCoupon'],
         '/student_wx/rt_activity/coupon_collect' => ['method' => ['post'], 'call'   => RtActivity::class . ':couponCollect'],
+        '/student_wx/rt_activity/get_invite_record' => ['method' => ['post'], 'call'   => RtActivity::class . ':getInviteRecord'],
 
     ];
 }

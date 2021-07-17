@@ -756,7 +756,6 @@ class RtActivityService
     {
         $time = time();
         $activityId = $request['activity_id'];
-        $uid = $request['user_info']['user_id'] ?? 0; //todo rt 283130
         //校验活动
         $activity = RtActivityModel::getRecord(['activity_id'   => $activityId, 'enable_status' => RtActivityModel::ENABLED_STATUS]);
         if (empty($activity) || $activity['start_time'] > $time) {
@@ -772,27 +771,38 @@ class RtActivityService
             'activity_ext'   => $activityExt['award_rule'] ?? '',
             'time_remaining' => $timeRemaining,
         ];
-        if (empty($uid)) {
-            return $data;
-        }
+        return $data;
+    }
+
+
+    /**
+     * 获取邀请记录
+     * @param $request
+     * @return array
+     * @throws RunTimeException
+     */
+    public static function getInviteRecord($request)
+    {
+        $activityId   = $request['activity_id'];
+        $uid          = $request['user_info']['user_id'];
+        $inviteRecord = [];
         //获取剩余优惠券数量
         $remainNums = self::remainCouponNums($activityId, $uid);
         //查询邀请记录
-        $conds = [
+        $conds       = [
             'activity_id' => $activityId,
             'invite_uid'  => $uid,
             'LIMIT'       => 50,
             'ORDER'       => ['id' => 'DESC'],
         ];
-        $inviteArray = RtCouponReceiveRecordModel::getRecords($conds, ['invite_uid','receive_uid', 'status']);
+        $inviteArray = RtCouponReceiveRecordModel::getRecords($conds, ['invite_uid', 'receive_uid', 'status']);
         if (!empty($inviteArray)) {
-            $receiveUids = array_column($inviteArray, 'receive_uid');//被推荐人
+            $receiveUids  = array_column($inviteArray, 'receive_uid');//被推荐人
             $studentInfos = DssStudentModel::getRecords(['id' => $receiveUids], ['id', 'mobile']);
             $studentArray = !empty($studentInfos) ? array_column($studentInfos, 'mobile', 'id') : [];
             //查询转介绍记录
-            $referralInfos = StudentReferralStudentStatisticsModel::getRecords(['student_id' => $receiveUids,'activity_id' =>$activityId],['student_id','create_time']);
+            $referralInfos = StudentReferralStudentStatisticsModel::getRecords(['student_id'  => $receiveUids, 'activity_id' => $activityId], ['student_id', 'create_time']);
             $referralArray = !empty($referralInfos) ? array_column($referralInfos, 'create_time', 'student_id') : [];
-            $inviteRecord = [];
             foreach ($inviteArray as $val) {
                 if (!isset($studentArray[$val['receive_uid']]) || !isset($referralArray[$val['receive_uid']])) {
                     continue;
@@ -804,8 +814,10 @@ class RtActivityService
                 ];
             }
         }
-        $data['remain_nums']   = $remainNums ?? 0;
-        $data['invate_record'] = $inviteRecord ?? [];
+        $data = [
+            'remain_nums'   => $remainNums,
+            'invate_record' => $inviteRecord,
+        ];
         return $data;
     }
 
