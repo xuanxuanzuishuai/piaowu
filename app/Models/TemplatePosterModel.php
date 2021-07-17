@@ -96,16 +96,12 @@ class TemplatePosterModel extends Model
         $time = time();
         $table1 = self::$table;
         $table2 = ActivityPosterModel::$table;
-        $table3 = '';
-        if ($type == 'week') {
-            $table3 = WeekActivityModel::$table;
-        }
-        if ($type == 'month') {
-            $table3 = MonthActivityModel::$table;
-        }
-        if ($type == 'rt') {
-            $table3 = RtActivityModel::$table;
-        }
+        $activityTable = [
+            'week' => WeekActivityModel::$table,
+            'month' => MonthActivityModel::$table,
+            'rt' => RtActivityModel::$table,
+        ];
+        $table3 = $activityTable[$type] ?? '';
         if (empty($table3)) {
             return [];
         }

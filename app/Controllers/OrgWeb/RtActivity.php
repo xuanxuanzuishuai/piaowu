@@ -101,7 +101,7 @@ class RtActivity extends ControllerBase
             [
                 'key' => 'remark',
                 'type' => 'lengthMax',
-                'value' => 50,
+                'value' => 100,
                 'error_code' => 'remark_length_invalid'
             ],
             [
@@ -300,7 +300,7 @@ class RtActivity extends ControllerBase
             [
                 'key' => 'remark',
                 'type' => 'lengthMax',
-                'value' => 50,
+                'value' => 100,
                 'error_code' => 'remark_length_invalid'
             ],
             [

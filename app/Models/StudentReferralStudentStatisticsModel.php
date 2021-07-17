@@ -247,7 +247,7 @@ class StudentReferralStudentStatisticsModel extends Model
         }
 
         $listSql  = "SELECT " . implode(',', $fields) . " from " . $refTable;
-        $pageListSql = $listSql . implode(' ', $joinSql) . $sqlWhere . ' order by r.id limit ' . $limit[0] . ',' . $limit[1];
+        $pageListSql = $listSql . implode(' ', $joinSql) . $sqlWhere . ' order by r.id desc limit ' . $limit[0] . ',' . $limit[1];
         $pageList  = $db->queryAll($pageListSql);
 
         $returnData['list'] = is_array($pageList) ? $pageList : [];
