@@ -869,7 +869,6 @@ class RtActivityService
             throw new RunTimeException(['record_not_found']);
         }
         $time = time();
-        $dayTime = 3600 * 24;
         if ($activity['end_time'] < time()) {
             return false;
         }
@@ -878,16 +877,17 @@ class RtActivityService
         if (empty($rule)) {
             return false;
         }
-        $buyDayTime = $rule['buy_day'] * $dayTime; //购买天数
+        $buyDayTime = $rule['buy_day'] * Util::TIMESTAMP_ONEDAY; //购买天数
         //首次购买年卡记录
         $data = DssGiftCodeModel::getUserFirstBuyInfo($studentId);
         if (empty($data)) {
             return false;
         }
-        if ($data['valid_units'] != DssGiftCodeModel::CODE_TIME_YEAR || ($data['valid_units'] == DssGiftCodeModel::CODE_TIME_DAY && $data['valid_num'] < 360)) {
+        $data = end($data);
+        $duration = Util::formatDurationDay($data['valid_units'], $data['valid_num']);
+        if ($duration < 360) {
             return false;
         }
-        $data  = end($data);
         switch ($activity['rule_type']) {
             case RtActivityModel::COMMUNITY_TYPE_STATUS:
                 //首次购买年卡X天内
@@ -907,8 +907,7 @@ class RtActivityService
             return false;
         }
         //激活码已过期
-        $duration = Util::formatDurationSecond($data['valid_units'], $dayTime);
-        $expireTimes = $duration * $data['valid_num'] + $data['be_active_time'];
+        $expireTimes = $duration * Util::TIMESTAMP_ONEDAY + $data['be_active_time'];
         if ($time > $expireTimes) {
             return false;
         }
@@ -943,7 +942,7 @@ class RtActivityService
         $joinStatusArray = explode(',', $rule['join_user_status']);
         //未注册
         if (in_array(RtActivityRuleModel::NOT_REGISTER, $joinStatusArray)) {
-            $isRegister = $isNew && ($student['create_time'] + 3600 > $time) ? true : false;
+            $isRegister = $isNew && ($student['create_time'] + Util::TIMESTAMP_1H > $time);
         }
         //已注册
         if (in_array(RtActivityRuleModel::IS_REGISTER, $joinStatusArray)) {
@@ -1173,7 +1172,8 @@ class RtActivityService
          * 0元领取体验卡
          */
         $packageId = PayServices::getPackageIDByParameterPkg(PayServices::PACKAGE_0);
-        $res = ErpOrderV1Service::createZeroOrder($packageId, $student);
+        $remark = DictConstants::get(DictConstants::RT_ACTIVITY_INDEX, 'rt_activity_remark');
+        $res = ErpOrderV1Service::createZeroOrder($packageId, $student, $remark);
         if (empty($res)) {
             throw new RunTimeException(['create_bill_error']);
         }

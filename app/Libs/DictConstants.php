@@ -791,7 +791,8 @@ class DictConstants {
         'type' => 'RT_ACTIVITY_INDEX',
         'keys' => [
             'rt_invite',
-            'rt_invited'
+            'rt_invited',
+            'rt_activity_remark'
         ]
     ];
 

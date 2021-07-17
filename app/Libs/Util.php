@@ -1051,19 +1051,23 @@ class Util
     }
 
     /**
-     * 年月日 转换成秒
+     * 年月日 转换成天
      * @param $units
-     * @param $num
-     * @return float|int
+     * @param $dayNums
+     * @return float|int|mixed
      */
-    public static function formatDurationSecond($units, $num)
+    public static function formatDurationDay($units, $dayNums)
     {
-        if ($units == DssGiftCodeModel::CODE_TIME_YEAR) {
-            $duration = $num * 366;
-        } elseif ($units == DssGiftCodeModel::CODE_TIME_MONTH) {
-            $duration = $num * 31;
-        } else {
-            $duration = $num;
+        switch ($units) {
+            case DssGiftCodeModel::CODE_TIME_YEAR: //年
+                $duration = $dayNums * 366;
+                break;
+            case DssGiftCodeModel::CODE_TIME_MONTH: //月
+                $duration = $dayNums * 31;
+                break;
+            default: //非年月 返回天数
+                $duration = $dayNums;
+                break;
         }
         return $duration;
     }

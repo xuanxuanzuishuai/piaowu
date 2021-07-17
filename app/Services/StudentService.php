@@ -129,7 +129,7 @@ class StudentService
                 continue;
             }
             // 判断单个兑换码未激活的时间是否超过设定时间，单位天
-            $codeExpireDay = Util::formatDurationSecond($codeInfo['valid_units'], $codeInfo['valid_num']);
+            $codeExpireDay = Util::formatDurationDay($codeInfo['valid_units'], $codeInfo['valid_num']);
             if ($codeExpireDay > $expireDay) {
                 $isExistFormalClass = true;
                 break;
