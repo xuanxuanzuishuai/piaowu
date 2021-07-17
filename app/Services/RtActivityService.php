@@ -795,7 +795,7 @@ class RtActivityService
             'LIMIT'       => 50,
             'ORDER'       => ['id' => 'DESC'],
         ];
-        $inviteArray = RtCouponReceiveRecordModel::getRecords($conds, ['invite_uid', 'receive_uid', 'status']);
+        $inviteArray = RtCouponReceiveRecordModel::getRecords($conds, ['invite_uid', 'receive_uid','student_coupon_id']);
         if (!empty($inviteArray)) {
             $receiveUids  = array_column($inviteArray, 'receive_uid');//被推荐人
             $studentInfos = DssStudentModel::getRecords(['id' => $receiveUids], ['id', 'mobile']);
@@ -803,6 +803,14 @@ class RtActivityService
             //查询转介绍记录
             $referralInfos = StudentReferralStudentStatisticsModel::getRecords(['student_id'  => $receiveUids, 'activity_id' => $activityId], ['student_id', 'create_time']);
             $referralArray = !empty($referralInfos) ? array_column($referralInfos, 'create_time', 'student_id') : [];
+            //优惠券使用状态
+            $studentCouponId = array_filter(array_column($inviteArray, 'student_coupon_id'));
+            $couponLists = [];
+            if (!empty($studentCouponId)) {
+                $coupon = (new Erp())->getStudentCouponPageById($studentCouponId);
+                $couponLists = $coupon['data']['list'] ?? [];
+                $couponLists = !empty($couponLists) ? array_column($couponLists, 'student_coupon_status_zh', 'student_coupon_id') : [];
+            }
             foreach ($inviteArray as $val) {
                 if (!isset($studentArray[$val['receive_uid']]) || !isset($referralArray[$val['receive_uid']])) {
                     continue;
@@ -810,7 +818,7 @@ class RtActivityService
                 $inviteRecord[] = [
                     'mobile'      => Util::hideUserMobile($studentArray[$val['receive_uid']]),
                     'create_time' => date('Y-m-d H:i:s', $referralArray[$val['receive_uid']]),
-                    'status'      => $val['status'],
+                    'statusTxt'   => $couponLists[$val['student_coupon_id']] ?? '未领取',
                 ];
             }
         }
@@ -1266,7 +1274,7 @@ class RtActivityService
         if (empty($student['assistant_id'])) {
             return ['scheme' => $activity['year_card_sale_url']];
         }
-        $employee = EmployeeModel::getRecord(['id' => $student['assistant_id']], ['wx_qr', 'wx_num']);
+        $employee = DssEmployeeModel::getRecord(['id' => $student['assistant_id']], ['wx_qr', 'wx_num']);
         //优惠券有效期获取
         $studentCouponId = RtCouponReceiveRecordModel::info(['activity_id' => $request['activity_id'], 'receive_uid' => $student['id']], 'student_coupon_id');
         if (!empty($studentCouponId)) {
