@@ -187,8 +187,8 @@ class RtActivityService
         $rtActivityData = [
             'name' => $activityData['name'],
             'activity_id' => 0,
-            'start_time' => Util::getDayFirstSecondUnix($data['start_time']),
-            'end_time' => Util::getDayLastSecondUnix($data['end_time']),
+            'start_time' => strtotime($data['start_time']),
+            'end_time' => strtotime($data['end_time']),
             'enable_status' => OperationActivityModel::ENABLE_STATUS_OFF,
             'rule_type' => $data['rule_type'] ?? 0,
             'year_card_sale_url' => $data['year_card_sale_url'] ?? '',
@@ -320,8 +320,8 @@ class RtActivityService
 
             $rtActivityData = [
                 'name' => $activityData['name'],
-                'start_time' => Util::getDayFirstSecondUnix($data['start_time']),
-                'end_time' => Util::getDayLastSecondUnix($data['end_time']),
+                'start_time' => strtotime($data['start_time']),
+                'end_time' => strtotime($data['end_time']),
                 'rule_type' => $data['rule_type'] ?? 0,
                 'year_card_sale_url' => $data['year_card_sale_url'] ?? '',
                 'employee_invite_word' => !empty($data['employee_invite_word']) ? Util::textEncode($data['employee_invite_word']) : '',
