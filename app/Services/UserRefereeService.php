@@ -301,7 +301,7 @@ class UserRefereeService
         // 判断用户是否有RT优惠券
         $haveCoupon = false;
         $uuid = $studentInfo['id'];
-        $res = RtCouponReceiveRecordModel::getRecord(['receive_uid' => $uuid, 'status' => RtCouponReceiveRecordModel::REVEIVED_STATUS], ['id,activity_id,student_coupon_id']);
+        $res = RtCouponReceiveRecordModel::getRecord(['receive_uid' => $uuid, 'status' => RtCouponReceiveRecordModel::REVEIVED_STATUS], ['id','activity_id','student_coupon_id']);
         if ($res) {
             $pageInfo = (new Erp())->getStudentCouponPageById([$res['student_coupon_id']]);
             $info = $pageInfo['data']['list'][0] ?? [];
