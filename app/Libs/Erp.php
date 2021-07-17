@@ -845,6 +845,7 @@ class Erp
      */
     public function grantCoupon($params)
     {
-        return HttpHelper::requestJson($this->host . self::API_GRANT_COUPON, $params, 'POST');
+        $result = HttpHelper::requestJson($this->host . self::API_GRANT_COUPON, $params, 'POST');
+        return $result['data'] ?? [];
     }
 }

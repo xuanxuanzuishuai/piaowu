@@ -784,7 +784,7 @@ class RtActivityService
     public static function getInviteRecord($request)
     {
         $activityId   = $request['activity_id'];
-        $uid          = $request['user_info']['user_id'];
+        $uid          = $request['student_id'];
         $inviteRecord = [];
         //获取剩余优惠券数量
         $remainNums = self::remainCouponNums($activityId, $uid);
@@ -1204,6 +1204,7 @@ class RtActivityService
             if (empty($res)) {
                 throw new RunTimeException(['grant_coupon_is_error']);
             }
+            $res = end($res);
             $status = RtCouponReceiveRecordModel::REVEIVED_STATUS; //已领取
         }
         $insertData = [
