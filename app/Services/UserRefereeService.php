@@ -316,7 +316,8 @@ class UserRefereeService
         }
         if ($haveCoupon && $packageType == DssPackageExtModel::PACKAGE_TYPE_NORMAL) {
             $totalInfo = DssGiftCodeModel::getRecord(['parent_bill_id' => $parentBillId], ['id', 'valid_num', 'valid_units']);
-            if (!empty($totalInfo) && $totalInfo['valid_num'] >= 361) {
+            $days = DictConstants::get(DictConstants::OFFICIAL_DURATION_CONFIG, 'year_days');
+            if (!empty($totalInfo) && $totalInfo['valid_num'] >= $days) {
                 $activityId = $res['activity_id'] ?? 0;
                 if ($activityId) {
                     $activityInfo = RtActivityRuleModel::getRecord(['activity_id' => $activityId], ['referral_award']);
