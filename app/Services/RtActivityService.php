@@ -708,13 +708,12 @@ class RtActivityService
     private static function formatListData($data)
     {
         $data['rule_type_zh'] = DictConstants::get(DictConstants::ACTIVITY_RULE_TYPE_ZH, $data['rule_type']);
-        $data['dss_employee_id_name'] = $data['dss_employee_id'] . '/' . $data['dss_employee_name'];
-        $data['erp_employee_id_name'] = $data['dss_employee_id'] . '/' . $data['dss_employee_name'];
+        $data['dss_share_employee_id_name'] = $data['dss_share_employee_id'] . '/' . $data['dss_share_employee_name'];
         if ($data['rule_type'] == RtActivityModel::ACTIVITY_RULE_TYPE_SHEQUN) {   // 社群活动
-            $data['erp_employee_id_name'] = '-';
+            $data['dss_belong_employee_id_name'] = $data['dss_assistant_id'] . '/' . $data['dss_assistant_name'];
         }
         if ($data['rule_type'] == RtActivityModel::ACTIVITY_RULE_TYPE_KEGUAN) {   // 课管活动
-            $data['dss_employee_id_name'] = '-';
+            $data['dss_belong_employee_id_name'] = $data['dss_course_manage_id'] . '/' . $data['dss_course_manage_name'];
         }
         $data['has_review_course_zh'] = DssStudentModel::CURRENT_PROGRESS[$data['has_review_course']];
         $data['create_date'] = $data['create_time'] ? date('Y-m-d H:i:s', $data['create_time']) : '-';

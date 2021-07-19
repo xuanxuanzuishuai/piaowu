@@ -45,7 +45,7 @@ $where = [
 ];
 $pointsList= ErpUserEventTaskAwardGoldLeafModel::getRecords($where);
 if (empty($pointsList)) {
-    SimpleLogger::info("script::auto_send_task_award_points", ['info' => "is_empty_points_list", 'where' => $where]);
+    SimpleLogger::info("script::auto_send_rt_award_points", ['info' => "is_empty_points_list", 'where' => $where]);
     return 'success';
 }
 
@@ -108,7 +108,7 @@ foreach ($pointsList as $points) {
         $billId = $points['bill_id'];
         //订单退款时间
         $refundTime = $refundTimeMap[$billId] ?? 0;
-        SimpleLogger::info("script::auto_send_task_award_points", ['refund_data' => $refundTime, 'delay_time' => $delayTime]);
+        SimpleLogger::info("script::auto_send_rt_award_points", ['refund_data' => $refundTime, 'delay_time' => $delayTime]);
         if ($refundTime > 0 && $refundTime <= $delayTime) {   //如果15天内退费,不发放奖励
             $verify = false;
         }
@@ -117,14 +117,14 @@ foreach ($pointsList as $points) {
             $verify = false;
         }
         if (!$verify) {
-            SimpleLogger::info('script::auto_send_task_award_points', ['info' => 'refund verify not pass', 'param' => $points]);
+            SimpleLogger::info('script::auto_send_rt_award_points', ['info' => 'refund verify not pass', 'param' => $points]);
             $status = ErpUserEventTaskAwardGoldLeafModel::STATUS_DISABLED;
             $reason = ErpUserEventTaskAwardGoldLeafModel::REASON_RETURN_COST;
         }
     }
     $referrerUuid = $studentRef[$points['finish_task_uuid']] ?? '';
     $taskResult = $erp->addEventTaskAward($points['finish_task_uuid'], $points['event_task_id'], $status, $points['id'], $referrerUuid, ['reason' => $reason]);
-    SimpleLogger::info("script::auto_send_task_award_points", [
+    SimpleLogger::info("script::auto_send_rt_award_points", [
         'params' => $points,
         'response' => $taskResult,
         'status' => $status,
