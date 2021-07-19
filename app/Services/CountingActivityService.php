@@ -8,15 +8,17 @@
 
 namespace App\Services;
 
+use App\Libs\AliOSS;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Libs\Util;
+use App\Libs\Valid;
 use App\Models\ActivityExtModel;
 use App\Models\CountingActivityModel;
-use App\Models\CountingActivityMutesModel;
+use App\Models\CountingActivityMutexModel;
 use App\Models\CountingActivitySignModel;
 use App\Models\CountingAwardConfigModel;
 use App\Models\EmployeeModel;
@@ -28,24 +30,31 @@ class CountingActivityService
     public static function getCountDetail($op_activity_id){
         //获取互动详情
         $detail = CountingActivityModel::getRecord(['op_activity_id'=>$op_activity_id]);
+
         if(empty($detail)){
             return [];
         }
+
+        $detail['banner_url']           = $detail['banner'] ? AliOSS::replaceCdnDomainForDss($detail['banner']) : '';
+        $detail['reminder_pop_url']     = $detail['reminder_pop'] ? AliOSS::replaceCdnDomainForDss($detail['reminder_pop']) : '';
+        $detail['award_thumbnail_url']  = $detail['award_thumbnail'] ? AliOSS::replaceCdnDomainForDss($detail['award_thumbnail']) : '';
+
         $detail['mutex_activitys'] = []; //互斥活动
         $detail['golden_leaf'] = []; //金叶子
         $detail['goods_list']  = []; //实物商品
 
 
         //获取互斥活动
-        $mutex_list = CountingActivityMutesModel::getRecords(['op_activity_id'=>$op_activity_id, 'status'=>CountingActivityMutesModel::EFFECTIVE_STATUS],['op_activity_id','mutex_op_activity_id','status' ]);
+        $mutex_list = CountingActivityMutexModel::getRecords(['op_activity_id'=>$op_activity_id, 'status'=>CountingActivityMutexModel::NORMAL_STATUS],['id','op_activity_id','mutex_op_activity_id','status' ]);
         if($mutex_list){
             $mutexIds = array_column($mutex_list, 'mutex_op_activity_id');
-            $mutex_activitys = CountingActivityModel::getRecords(['op_activity_id'=>$mutexIds], ['name','rule_type','nums','start_time','end_time']);
+            $mutex_activitys = CountingActivityModel::getRecords(['op_activity_id'=>$mutexIds], ['id','name','rule_type','nums','start_time','end_time']);
             $detail['mutex_activitys'] = $mutex_activitys;
         }
 
         //获取实物奖励
-        $awardList = CountingAwardConfigModel::getRecords(['op_activity_id'=>$op_activity_id, 'status'=>CountingAwardConfigModel::EFFECTIVE_STATUS]);
+        $awardList = CountingAwardConfigModel::getRecords(['op_activity_id'=>$op_activity_id, 'status'=>CountingAwardConfigModel::EFFECTIVE_STATUS],['id','amount','storage','goods_id','goods_code','status','create_time','type']);
+
         if($awardList){
             $goodsIds = [];
             foreach ($awardList as $one){
@@ -66,12 +75,16 @@ class CountingActivityService
 
                 foreach ($awardList as $one){
                     if($one['type'] == CountingAwardConfigModel::PRODUCT_TYPE){
-                        $one['goodsInfo'] = $goodsList[$one['goods_id']];
+                        $one['goodsInfo'] = $goodsList[$one['goods_id']] ?? [];
                         $detail['goods_list'][]  = $one;
                     }
                 }
             }
         }
+
+        //获取规则说明
+        $activity_ext = ActivityExtModel::getRecord(['activity_id'=>$op_activity_id]);
+        $detail['award_rule'] = $activity_ext['award_rule'] ?? '';
 
         return $detail;
     }
@@ -96,13 +109,11 @@ class CountingActivityService
         if(empty($where)){
             return [];
         }
-
-        $where['status'] = 1;
-
+        
         $erp = new Erp();
-        $list = $erp->getLogisticsGoodsList($where, $where);
+        $list = $erp->getLogisticsGoodsList($where);
 
-        return compact('list');
+        return $list;
 
     }
 
@@ -119,7 +130,8 @@ class CountingActivityService
         }
 
         $activityInfo = CountingActivityModel::getRecord(['id'=>$op_activity_id],['first_effect_time','status']);
-        if($activityInfo['status'] == $status){
+
+        if(empty($activityInfo) || $activityInfo['status'] == $status){
             return false;
         }
 
@@ -152,7 +164,7 @@ class CountingActivityService
             $where['op_activity_id'] = $params['op_activity_id'];
         }
         if(!empty($params['type'])){
-            $where['type'] = $params['type'];
+            $where['rule_type'] = $params['rule_type'];
         }
         if(!empty($params['status'])){
             $where['status'] = $params['status'];
@@ -179,7 +191,7 @@ class CountingActivityService
 
         $where['LIMIT'] = [($page - 1) * $pageSize, $pageSize];
 
-        $list = CountingActivityModel::getRecords($where, ['op_activity_id','name','start_time','end_time','sign_end_time','join_end_time','remark','rule_type','nums','status','operator_id','create_time']);
+        $list = CountingActivityModel::getRecords($where, ['id','op_activity_id','name','start_time','end_time','sign_end_time','join_end_time','remark','rule_type','nums','status','operator_id','create_time']);
 
         $operator_ids = array_column($list, 'operator_id');
         $employees = EmployeeModel::getRecords(['id'=>array_unique($operator_ids)],['id','name']);
@@ -238,6 +250,7 @@ class CountingActivityService
             return false;
         }
 
+
         try {
             $db->beginTransaction();
 
@@ -264,9 +277,11 @@ class CountingActivityService
             }
 
             //add 奖品配置
-            $awardRes = self::addAwardConfig($data, $opActivityId, $now, $operator_id);
-            if(!$awardRes){
-                throw new RunTimeException('error: insert CountingAwardConfig fail');
+            if(!empty($data['golden_leaf']) || !empty($data['goods_list'])){
+                $awardRes = self::addAwardConfig($data, $opActivityId, $now, $operator_id);
+                if(!$awardRes){
+                    throw new RunTimeException('error: insert CountingAwardConfig fail');
+                }
             }
 
             //add activity_ext
@@ -285,7 +300,6 @@ class CountingActivityService
 
         }catch (RunTimeException $e){
             SimpleLogger::error("[CountingActivityService createCountingActivity] error", ['errors' => $e->getMessage()]);
-
             $db->rollBack();
 
             return false;
@@ -312,7 +326,7 @@ class CountingActivityService
             $row = [
                 'op_activity_id'    => $opActivityId,
                 'mutex_op_activity_id'  => $rowId,
-                'status'                => CountingActivityMutesModel::EFFECTIVE_STATUS,
+                'status'                => CountingActivityMutexModel::NORMAL_STATUS,
                 'create_time'           => $now,
                 'update_time'           => $now,
                 'operator_id'           => $operator_id
@@ -320,7 +334,7 @@ class CountingActivityService
 
             $mutexData[] = $row;
         }
-        return CountingActivityMutesModel::batchInsert($mutexData);
+        return CountingActivityMutexModel::batchInsert($mutexData);
 
     }
 
@@ -360,102 +374,137 @@ class CountingActivityService
             }
         }
 
-        return CountingAwardConfigModel::batchInsert($award_config);
-    }
-
-    public static function editActivity($params, $operator_id){
-        $activitInfo = CountingActivityModel::getRecord(['op_activity_id'=>$params['op_activity_id']]);
-        $now = time();
-
-        $data = [
-            'name' => $params['name'],
-            'remark'   => $params['remark'],
-        ];
-
-        //已启用
-        if($activitInfo['status'] == CountingActivityModel::NORMAL_STATUS){
-            if($activitInfo['sign_end_time'] != $params['sign_end_time'] && $params['sign_end_time'] > $activitInfo['sign_end_time']){
-                $data['sign_end_time'] = $params['sign_end_time'];
-            }else{
-                throw new RuntimeException('sign_end_time Not in advance');
-            }
-
-            if($activitInfo['join_end_time'] != $params['join_end_time'] && $params['join_end_time'] > $activitInfo['join_end_time']){
-                $data['join_end_time'] = $params['join_end_time'];
-            }else{
-                throw new RuntimeException('join_end_time Not in advance');
-            }
-
-            if($activitInfo['end_time'] != $params['end_time'] && $params['end_time'] > $activitInfo['end_time']){
-                $data['end_time'] = $params['end_time'];
-            }else{
-                throw new RuntimeException('end_time Not in advance');
-            }
-        }else{//未启用
-
-            $data = self::getInitInsertData($params, $operator_id, $now);
-            //更新活动表
-            CountingActivityModel::updateRecord($activitInfo['id'], $data);
-
-            //获取互斥列表
-            $mutexList = CountingActivityMutesModel::getRecords(['op_activity_id'=>$activitInfo['op_activity_id'],'status'=>CountingActivityMutesModel::EFFECTIVE_STATUS], ['mutex_op_activity_id']);
-
-            //删除互斥任务
-            $delMutexIds = array_diff(array_column($mutexList, 'mutex_op_activity_id'), $params['mutex_activity_ids']);
-            if($delMutexIds){
-                CountingActivityMutesModel::batchUpdateRecord(['status'=>CountingActivityMutesModel::INVALID_STATUS], ['op_activity_id'=>$activitInfo['op_activity_id'], 'mutex_op_activity_id'=>$delMutexIds]);
-            }
-
-            //增加互斥任务
-            $addMutexIds = array_diff($params['mutex_activity_ids'], array_column($mutexList, 'mutex_op_activity_id'));
-
-            if($addMutexIds && self::checkMutex($addMutexIds)){
-                $addMutex = self::addMutexInfo($addMutexIds, $activitInfo['op_activity_id'], $now, $operator_id);
-                if(!$addMutex){
-                    throw new RunTimeException('error: insert CountingActivityMutes fail');
-                }
-            }
-
-            //获取金叶子配置并且更新
-            $award_config = [];
-            $leafInfo = CountingAwardConfigModel::getRecord(['status'=>CountingAwardConfigModel::EFFECTIVE_STATUS, 'type'=>CountingAwardConfigModel::GOLD_LEAF_TYPE, 'op_activity_id'=>$activitInfo['op_activity_id']]);
-            $A = $params['golden_leaf'] ?? 0;
-            $B = $leafInfo['amount'] ?? 0;
-
-            if($A != $B){
-                //把金叶子奖励置为失效
-                CountingAwardConfigModel::batchUpdateRecord(['status'=>CountingAwardConfigModel::INVALID_STATUS,'update_time'=>$now], ['op_activity_id' => $activitInfo['op_activity_id'], 'status'=>CountingAwardConfigModel::EFFECTIVE_STATUS, 'type'=>CountingAwardConfigModel::GOLD_LEAF_TYPE]);
-                if($A){ //添加金叶子
-                    $award_config['golden_leaf'] = $A;
-                }
-            }
-
-            $paramsGoods = array_column($params['goods_list'], null, 'goods_id');
-            //获取现有奖品
-            $goodsList   = CountingAwardConfigModel::getRecords(['status'=>CountingAwardConfigModel::EFFECTIVE_STATUS, 'op_activity_id' => $activitInfo['op_activity_id'], 'type'=>CountingAwardConfigModel::PRODUCT_TYPE],['goods_id','storage','amount']);
-            $goodsList = array_column($goodsList, null, 'goods_id');
-
-            //先把所有商品置为时效状态
-            if($paramsGoods != $goodsList){
-                CountingAwardConfigModel::batchUpdateRecord(['status'=>CountingAwardConfigModel::INVALID_STATUS,'update_time'=>$now], ['op_activity_id' => $activitInfo['op_activity_id'],'status'=>CountingAwardConfigModel::EFFECTIVE_STATUS, 'type'=>CountingAwardConfigModel::PRODUCT_TYPE]);
-                if(!empty($params['goods_list'])){
-                    $award_config['goods_list'] = $params['goods_list'] ?? [];
-                }
-            }
-
-            //添加奖品
-            self::addAwardConfig($award_config, $activitInfo['op_activity_id'], $now, $operator_id);
+        if($award_config){
+            return CountingAwardConfigModel::batchInsert($award_config);
         }
     }
 
-    public static function getInitInsertData($data, $operator_id, $now){
-        return [
+    public static function editActivity($params, $operator_id){
+
+        try{
+            $activitInfo = CountingActivityModel::getRecord(['op_activity_id'=>$params['op_activity_id']]);
+            if(empty($activitInfo)){
+                throw new RuntimeException('sign_end_time Not in advance');
+            }
+
+            $now = time();
+            $activityData = [
+                'remark'   => $params['remark'],
+            ];
+            $db = MysqlDB::getDB();
+            $db->beginTransaction();
+
+            //已启用
+            if($activitInfo['status'] == CountingActivityModel::NORMAL_STATUS){
+                if($activitInfo['sign_end_time'] != $params['sign_end_time'] && $params['sign_end_time'] > $activitInfo['sign_end_time']){
+                    $activityData['sign_end_time'] = $params['sign_end_time'];
+                }else{
+                    throw new RuntimeException('sign_end_time Not in advance');
+                }
+
+                if($activitInfo['join_end_time'] != $params['join_end_time'] && $params['join_end_time'] > $activitInfo['join_end_time']){
+                    $activityData['join_end_time'] = $params['join_end_time'];
+                }else{
+                    throw new RuntimeException('join_end_time Not in advance');
+                }
+
+                if($activitInfo['end_time'] != $params['end_time'] && $params['end_time'] > $activitInfo['end_time']){
+                    $activityData['end_time'] = $params['end_time'];
+                }else{
+                    throw new RuntimeException('end_time Not in advance');
+                }
+            }else{//未启用
+                $activityData = self::getInitInsertData($params, $operator_id, $now, $activitInfo['op_activity_id']);
+
+                //获取互斥列表
+                $mutexList = CountingActivityMutexModel::getRecords(['op_activity_id'=>$activitInfo['op_activity_id'],'status'=>CountingActivityMutexModel::NORMAL_STATUS], ['mutex_op_activity_id']);
+
+                //删除互斥任务
+                $delMutexIds = array_diff(array_column($mutexList, 'mutex_op_activity_id'), $params['mutex_activity_ids']);
+                if($delMutexIds){
+                    $delRes = CountingActivityMutexModel::batchUpdateRecord(['status'=>CountingActivityMutexModel::DISABLE_STATUS], ['op_activity_id'=>$activitInfo['op_activity_id'], 'mutex_op_activity_id'=>$delMutexIds]);
+                    if(!$delRes){
+                        throw new RuntimeException('error：del Mutex fail');
+                    }
+                }
+
+                //增加互斥任务
+                $addMutexIds = array_diff($params['mutex_activity_ids'], array_column($mutexList, 'mutex_op_activity_id'));
+
+                if($addMutexIds && self::checkMutex($addMutexIds)){
+                    $addMutex = self::addMutexInfo($addMutexIds, $activitInfo['op_activity_id'], $now, $operator_id);
+                    if(!$addMutex){
+                        throw new RunTimeException('error: insert CountingActivityMutes fail');
+                    }
+                }
+
+                //获取金叶子配置并且更新
+                $award_config = [];
+                $leafInfo = CountingAwardConfigModel::getRecord(['status'=>CountingAwardConfigModel::EFFECTIVE_STATUS, 'type'=>CountingAwardConfigModel::GOLD_LEAF_TYPE, 'op_activity_id'=>$activitInfo['op_activity_id']]);
+                $A = $params['golden_leaf'] ?? 0;
+                $B = $leafInfo['amount'] ?? 0;
+
+                if($A != $B){
+                    //把金叶子奖励置为失效
+                    $editRes = CountingAwardConfigModel::batchUpdateRecord(['status'=>CountingAwardConfigModel::INVALID_STATUS,'update_time'=>$now], ['op_activity_id' => $activitInfo['op_activity_id'], 'status'=>CountingAwardConfigModel::EFFECTIVE_STATUS, 'type'=>CountingAwardConfigModel::GOLD_LEAF_TYPE]);
+                    if(!$editRes){
+                        throw new RunTimeException('error：del golden_leaf fail');
+                    }
+                    if($A){ //添加金叶子
+                        $award_config['golden_leaf'] = $A;
+                    }
+                }
+
+                $paramsGoods = array_column($params['goods_list'], null, 'goods_id');
+                //获取现有奖品
+                $goodsList   = CountingAwardConfigModel::getRecords(['status'=>CountingAwardConfigModel::EFFECTIVE_STATUS, 'op_activity_id' => $activitInfo['op_activity_id'], 'type'=>CountingAwardConfigModel::PRODUCT_TYPE],['goods_id','storage','amount']);
+                $goodsList = array_column($goodsList, null, 'goods_id');
+
+                //先把所有商品置为时效状态
+                if($paramsGoods != $goodsList){
+                    $delGoods = CountingAwardConfigModel::batchUpdateRecord(['status'=>CountingAwardConfigModel::INVALID_STATUS,'update_time'=>$now], ['op_activity_id' => $activitInfo['op_activity_id'],'status'=>CountingAwardConfigModel::EFFECTIVE_STATUS, 'type'=>CountingAwardConfigModel::PRODUCT_TYPE]);
+                    if(!$delGoods){
+                        throw new RunTimeException('error：del goods fail');
+                    }
+
+                    if(!empty($params['goods_list'])){
+                        $award_config['goods_list'] = $params['goods_list'] ?? [];
+                    }
+                }
+
+                //添加奖品
+                if($award_config){
+                    $addRes = self::addAwardConfig($award_config, $activitInfo['op_activity_id'], $now, $operator_id);
+                    if(!$addRes){
+                        throw new RunTimeException('error：add award fail');
+                    }
+                }
+            }
+
+            $activityData = ['sign_end_time'=>1628438400];
+            //更新活动表
+            $res = CountingActivityModel::updateRecord($activitInfo['id'], $activityData);
+            if(!$res){
+                throw new RunTimeException('error：add award fail');
+            }
+            $db->commit();
+            return true;
+        }catch (RuntimeException $e){
+            $db->rollBack();
+            return Valid::addErrors([], "login_name", $e->getMessage());
+            return false;
+        }
+
+    }
+
+    public static function getInitInsertData($data, $operator_id, $now, $activity_id = 0){
+        $data = [
             'op_activity_id'    => $data['op_activity_id'],
             'name'              => $data['name'],
-            'start_time'        => $data['start_time'],
-            'end_time'          => $data['end_time'],
-            'sign_end_time'     => $data['sign_end_time'],
-            'join_end_time'     => $data['join_end_time'],
+            'start_time'        => strtotime($data['start_time']),
+            'end_time'          => strtotime($data['end_time']),
+            'sign_end_time'     => strtotime($data['sign_end_time']),
+            'join_end_time'     => strtotime($data['join_end_time']),
             'remark'            => $data['remark'],
             'rule_type'         => $data['rule_type'],
             'nums'              => $data['nums'],
@@ -465,10 +514,15 @@ class CountingActivityService
             'reminder_pop'      => $data['reminder_pop'],
             'award_thumbnail'   => $data['award_thumbnail'],
             'status'            => CountingActivityModel::DISABLE_STATUS,
-            'create_time'       => $now,
-            'update_time'       => $now,
+//            'update_time'       => $now,
             'operator_id'       => $operator_id
         ];
+        if(!$activity_id){
+            $data['create_time'] = $now;
+        }
+
+        return $data;
+
     }
 
     /**

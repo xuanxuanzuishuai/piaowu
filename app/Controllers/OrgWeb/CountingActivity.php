@@ -72,10 +72,28 @@ class CountingActivity extends ControllerBase
      * @return Response
      */
     public function editStatus(Request $request, Response $response){
-        $op_activity_id = $request->getParam('op_activity_id');
-        $status      = $request->getParam('status');
 
-        $result = CountingActivityService::editStatus($op_activity_id, $status);
+        $params = $request->getParams();
+
+        $rules = [
+            [
+                'key' => 'id',
+                'type' => 'required',
+                'error_code' => 'id_is_required'
+            ],
+            [
+                'key' => 'status',
+                'type' => 'required',
+                'error_code' => 'status_is_required'
+            ]
+        ];
+
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $result = CountingActivityService::editStatus($params['id'], $params['status']);
 
         if($result){
             return HttpHelper::buildResponse($response,[]);
@@ -147,8 +165,7 @@ class CountingActivity extends ControllerBase
         $params = $request->getParams();
 
         $result = CountingActivityService::getAwardList($params);
-
-        return HttpHelper::buildResponse($response, $result);
+        return $response->withJson($result, StatusCode::HTTP_OK);
     }
 
     /**
@@ -180,7 +197,11 @@ class CountingActivity extends ControllerBase
         $params = $request->getParams();
 
         $rules = [
-            ['key' => 'op_activity_id','type' => 'required', 'error_code' => 'op_activity_id_is_required']
+            [
+                'key' => 'op_activity_id',
+                'type' => 'required',
+                'error_code' => 'op_activity_id_is_required'
+            ]
         ];
 
         $result = Valid::appValidate($params, $rules);
