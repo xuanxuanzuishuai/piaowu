@@ -17,11 +17,9 @@ use App\Models\ActivityExtModel;
 use App\Models\ActivityPosterModel;
 use App\Models\Dss\DssEmployeeModel;
 use App\Models\Dss\DssStudentModel;
-use App\Models\Erp\ErpEmployeeModel;
 use App\Models\Erp\ErpStudentAccountModel;
 use App\Models\Erp\ErpStudentCouponV1Model;
 use App\Models\Dss\DssGiftCodeModel;
-use App\Models\EmployeeModel;
 use App\Models\OperationActivityModel;
 use App\Models\ParamMapModel;
 use App\Models\RtActivityModel;
@@ -893,7 +891,8 @@ class RtActivityService
         }
         $data = end($data);
         $duration = Util::formatDurationDay($data['valid_units'], $data['valid_num']);
-        if ($duration < 360) {
+        $days = DictConstants::get(DictConstants::OFFICIAL_DURATION_CONFIG, 'year_days');
+        if ($duration < $days) {
             return false;
         }
         switch ($activity['rule_type']) {
@@ -905,7 +904,7 @@ class RtActivityService
                 break;
             case RtActivityModel::MANAGEMENT_TYPE_STATUS:
                 //首次购买年卡(含)X天以上
-                if ($time > $data['buy_time'] + $buyDayTime) {
+                if ($time < $data['buy_time'] + $buyDayTime) {
                     return false;
                 }
                 break;
@@ -932,11 +931,15 @@ class RtActivityService
     public static function checkAllowReceive($activityId, $student, $isNew)
     {
         $time = time();
-        //查询是否已领取
-        $record = RtCouponReceiveRecordModel::info(['activity_id' => $activityId, 'receive_uid' => $student['id']], 'id');
-        if (!empty($record)) {
-            return false;
+        //查询是否已领取 若已领取跳转对应页
+        $record = RtCouponReceiveRecordModel::info(['activity_id' => $activityId, 'receive_uid' => $student['id']], ['id','status']);
+        if ($record['status'] == RtCouponReceiveRecordModel::REVEIVED_STATUS) {
+            return ['status' => self::COUPON_IS_SUCCESS];
         }
+        if ($record['status'] == RtCouponReceiveRecordModel::NOT_REVEIVED_STATUS) {
+            return ['status' => self::COUPON_IS_FINISH];
+        }
+
         //校验活动
         $activity = RtActivityModel::getRecord(['activity_id' => $activityId, 'enable_status' => RtActivityModel::ENABLED_STATUS]);
         if (empty($activity) || $activity['start_time'] > $time || $activity['end_time'] < $time) {
@@ -1164,10 +1167,8 @@ class RtActivityService
         //查询员工信息
         switch ($activity['rule_type']) {
             case RtActivityModel::ACTIVITY_RULE_TYPE_SHEQUN: //社群
-                $employeeUuid = DssEmployeeModel::getRecord(['id' => $request['employee_id']], 'uuid');
-                break;
             case RtActivityModel::ACTIVITY_RULE_TYPE_KEGUAN: //课管
-                $employeeUuid = ErpEmployeeModel::getRecord(['id' => $request['employee_id']], 'uuid');
+                $employeeUuid = DssEmployeeModel::getRecord(['id' => $request['employee_id']], 'uuid');
                 break;
             default:
                 throw new RunTimeException(['record_not_found']);

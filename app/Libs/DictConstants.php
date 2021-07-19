@@ -92,6 +92,14 @@ class DictConstants {
             'award_event_task_id',    // 推荐人奖励任务id
         ]
     ];
+
+    //正式时长配置
+    const OFFICIAL_DURATION_CONFIG = [
+        'type' => 'OFFICIAL_DURATION_CONFIG',
+        'keys' => [
+            'year_days',    //年卡对应天数
+        ]
+    ];
     
     // 阿里云config
     const ALI_OSS_CONFIG = [
