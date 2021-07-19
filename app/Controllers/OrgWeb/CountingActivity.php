@@ -163,9 +163,8 @@ class CountingActivity extends ControllerBase
      */
     public function getAwardList(Request $request, Response $response){
         $params = $request->getParams();
-
         $result = CountingActivityService::getAwardList($params);
-        return $response->withJson($result, StatusCode::HTTP_OK);
+        return HttpHelper::buildResponse($response, $result);
     }
 
     /**
@@ -183,13 +182,13 @@ class CountingActivity extends ControllerBase
 
         $operator_id = $this->getEmployeeId();
 
-        try{
-            CountingActivityService::editActivity($params, $operator_id);
-            return HttpHelper::buildResponse($response, $result);
-        }catch (RuntimeException $e){
-            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
-
+        $res = CountingActivityService::editActivity($params, $operator_id);
+        if($res === true){
+            return HttpHelper::buildResponse($response, []);
+        }else{
+            return $response->withJson($res,StatusCode::HTTP_OK);
         }
+
     }
 
     public function getCountingActivityDetail(Request $request, Response $response)

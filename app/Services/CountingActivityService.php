@@ -49,7 +49,10 @@ class CountingActivityService
         $mutex_list = CountingActivityMutexModel::getRecords(['op_activity_id'=>$op_activity_id, 'status'=>CountingActivityMutexModel::NORMAL_STATUS],['id','op_activity_id','mutex_op_activity_id','status' ]);
         if($mutex_list){
             $mutexIds = array_column($mutex_list, 'mutex_op_activity_id');
-            $mutex_activitys = CountingActivityModel::getRecords(['op_activity_id'=>$mutexIds], ['id','name','rule_type','nums','start_time','end_time']);
+            $mutex_activitys = CountingActivityModel::getRecords(['op_activity_id'=>$mutexIds], ['id','op_activity_id','remark','name','rule_type','nums','start_time','end_time']);
+            foreach ($mutex_activitys as &$val){
+                $val['rule_type_name'] = $val['rule_type'] == CountingActivityModel::RULE_TYPE_CONTINU ? '连续' : '累计';
+            }
             $detail['mutex_activitys'] = $mutex_activitys;
         }
 
@@ -95,26 +98,12 @@ class CountingActivityService
      * @return array
      */
     public static function getAwardList($params){
-        $where = [];
-        if(!empty($params['goods_id'])){
-            $where['goods_id'] = $params['goods_id'];
-        }
-
-        if(!empty($params['goods_name'])) {
-            $where['goods_name'] = $params['goods_name'];
-        }
-        if(!empty($params['category_id'])) {
-            $where['category_id'] = $params['category_id'];
-        }
-
-        if(empty($where)){
-            return [];
-        }
-        
         $erp = new Erp();
-        $list = $erp->getLogisticsGoodsList($where);
+        $list = $erp->getLogisticsGoodsList($params);
 
-        return $list;
+        return $list['data']['list'] ?? [];
+
+
 
     }
 
@@ -215,9 +204,6 @@ class CountingActivityService
      * @return bool
      */
     public static function checkMutex($mutexIds){
-
-
-
         $info = CountingActivityModel::getRecords(['op_activity_id'=>$mutexIds], ['op_activity_id']);
 
         if(empty($info)){
@@ -246,11 +232,9 @@ class CountingActivityService
         $db = MysqlDB::getDB();
 
         //判断互斥活动是否合法
-
         if(!empty($data['mutex_activity_ids']) && false === self::checkMutex($data['mutex_activity_ids'])){
             return false;
         }
-
 
         try {
             $db->beginTransaction();
@@ -394,7 +378,6 @@ class CountingActivityService
             ];
             $db = MysqlDB::getDB();
             $db->beginTransaction();
-
             //已启用
             if($activitInfo['status'] == CountingActivityModel::NORMAL_STATUS){
                 if($activitInfo['sign_end_time'] != $params['sign_end_time'] && $params['sign_end_time'] > $activitInfo['sign_end_time']){
@@ -463,11 +446,7 @@ class CountingActivityService
 
                 //先把所有商品置为时效状态
                 if($paramsGoods != $goodsList){
-                    $delGoods = CountingAwardConfigModel::batchUpdateRecord(['status'=>CountingAwardConfigModel::INVALID_STATUS,'update_time'=>$now], ['op_activity_id' => $activitInfo['op_activity_id'],'status'=>CountingAwardConfigModel::EFFECTIVE_STATUS, 'type'=>CountingAwardConfigModel::PRODUCT_TYPE]);
-                    if(!$delGoods){
-                        throw new RunTimeException('error：del goods fail');
-                    }
-
+                    CountingAwardConfigModel::batchUpdateRecord(['status'=>CountingAwardConfigModel::INVALID_STATUS,'update_time'=>$now], ['op_activity_id' => $activitInfo['op_activity_id'],'status'=>CountingAwardConfigModel::EFFECTIVE_STATUS, 'type'=>CountingAwardConfigModel::PRODUCT_TYPE]);
                     if(!empty($params['goods_list'])){
                         $award_config['goods_list'] = $params['goods_list'] ?? [];
                     }
@@ -482,17 +461,22 @@ class CountingActivityService
                 }
             }
 
-            $activityData = ['sign_end_time'=>1628438400];
             //更新活动表
             $res = CountingActivityModel::updateRecord($activitInfo['id'], $activityData);
+
             if(!$res){
                 throw new RunTimeException('error：add award fail');
             }
+
+            ActivityExtModel::batchUpdateRecord([
+                'award_rule'  => $params['award_rule']
+            ],['activity_id' => $activitInfo['op_activity_id']]);
+
             $db->commit();
             return true;
         }catch (RuntimeException $e){
             $db->rollBack();
-            return Valid::addErrors([], "login_name", $e->getMessage());
+            return Valid::addErrors([],'edit_error', "edit activity error");
             return false;
         }
 
@@ -515,11 +499,12 @@ class CountingActivityService
             'reminder_pop'      => $data['reminder_pop'],
             'award_thumbnail'   => $data['award_thumbnail'],
             'status'            => CountingActivityModel::DISABLE_STATUS,
-//            'update_time'       => $now,
             'operator_id'       => $operator_id
         ];
         if(!$activity_id){
             $data['create_time'] = $now;
+        }else{
+            $data['update_time'] = $now;
         }
 
         return $data;
