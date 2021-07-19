@@ -41,10 +41,10 @@ class CountingActivity extends ControllerBase
 
         $result = CountingActivityService::createCountingActivity($params, $operator_id);
 
-        if($result){
+        if($result === true){
             return HttpHelper::buildResponse($response, []);
         }else{
-            return HttpHelper::buildOrgWebErrorResponse($response, 'error');
+            return HttpHelper::buildErrorResponse($response, $result);
         }
     }
 
@@ -93,12 +93,11 @@ class CountingActivity extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
-        $result = CountingActivityService::editStatus($params['id'], $params['status']);
-
-        if($result){
-            return HttpHelper::buildResponse($response,[]);
-        }else{
-            return HttpHelper::buildOrgWebErrorResponse($response, 'error');
+        try{
+            $result = CountingActivityService::editStatus($params['id'], $params['status']);
+            return HttpHelper::buildResponse($response,$result);
+        }catch (RuntimeException $e){
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
     }
 
@@ -164,7 +163,12 @@ class CountingActivity extends ControllerBase
     public function getAwardList(Request $request, Response $response){
         $params = $request->getParams();
         $result = CountingActivityService::getAwardList($params);
-        return HttpHelper::buildResponse($response, $result);
+
+        if($result['code'] == Valid::CODE_SUCCESS){
+            return HttpHelper::buildResponse($response, $result['data']);
+        }else{
+            return HttpHelper::buildErrorResponse($response, $result);
+        }
     }
 
     /**
@@ -186,7 +190,7 @@ class CountingActivity extends ControllerBase
         if($res === true){
             return HttpHelper::buildResponse($response, []);
         }else{
-            return $response->withJson($res,StatusCode::HTTP_OK);
+            return HttpHelper::buildErrorResponse($response,$res);
         }
 
     }
