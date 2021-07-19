@@ -752,19 +752,20 @@ class RtActivityService
     public static function inviteIndex($request)
     {
         $time = time();
+        $status = self::ACTIVITY_NORMAL;
         $activityId = $request['activity_id'];
         //校验活动
         $activity = RtActivityModel::getRecord(['activity_id'   => $activityId, 'enable_status' => RtActivityModel::ENABLED_STATUS]);
         if (empty($activity) || $activity['start_time'] > $time) {
-            return ['status' => self::ACTIVITY_NOT_STARTED];
+            $status = self::ACTIVITY_NOT_STARTED;
         }
         if ($activity['end_time'] < $time) {
-            return ['status' => self::ACTIVITY_IS_END];
+            $status = self::ACTIVITY_IS_END;
         }
         $timeRemaining = $activity['end_time'] - $time;
         $activityExt   = ActivityExtModel::getRecord(['activity_id' => $activityId]);
         $data = [
-            'status'         => self::ACTIVITY_NORMAL,
+            'status'         => $status,
             'activity_ext'   => $activityExt['award_rule'] ?? '',
             'time_remaining' => $timeRemaining,
         ];
@@ -834,6 +835,7 @@ class RtActivityService
      */
     public static function invitedIndex($request)
     {
+        $status = self::ACTIVITY_NORMAL;
         $activityId = $request['activity_id'];
         //获取学生信息
         $inviteInfo = DssStudentModel::getRecord(['id' => $request['invite_uid']], ['thumb']);
@@ -844,16 +846,16 @@ class RtActivityService
         $time = time();
         $activity = RtActivityModel::getRecord(['activity_id'   => $activityId, 'enable_status' => RtActivityModel::ENABLED_STATUS]);
         if (empty($activity) || $activity['start_time'] > $time) {
-            return ['status' => self::ACTIVITY_NOT_STARTED];
+            $status = self::ACTIVITY_NOT_STARTED;
         }
         if ($activity['end_time'] < $time) {
-            return ['status' => self::ACTIVITY_IS_END];
+            $status = self::ACTIVITY_IS_END;
         }
         $timeRemaining = $activity['end_time'] - $time;
         $activityExt   = ActivityExtModel::getRecord(['activity_id' => $activityId]);
 
         $data = [
-            'status'         => self::ACTIVITY_NORMAL,
+            'status'         => $status,
             'invite_avatar'  => $inviteInfo['thumb'] ? AliOSS::replaceCdnDomainForDss($inviteInfo['thumb']) : AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb')),
             'activity_ext'   => $activityExt['award_rule'] ?? '',
             'time_remaining' => $timeRemaining,
@@ -930,15 +932,6 @@ class RtActivityService
     public static function checkAllowReceive($activityId, $student, $isNew)
     {
         $time = time();
-        //查询是否已领取 若已领取跳转对应页
-        $record = RtCouponReceiveRecordModel::info(['activity_id' => $activityId, 'receive_uid' => $student['id']], ['id','status']);
-        if ($record['status'] == RtCouponReceiveRecordModel::REVEIVED_STATUS) {
-            return ['status' => self::COUPON_IS_SUCCESS];
-        }
-        if ($record['status'] == RtCouponReceiveRecordModel::NOT_REVEIVED_STATUS) {
-            return ['status' => self::COUPON_IS_FINISH];
-        }
-
         //校验活动
         $activity = RtActivityModel::getRecord(['activity_id' => $activityId, 'enable_status' => RtActivityModel::ENABLED_STATUS]);
         if (empty($activity) || $activity['start_time'] > $time || $activity['end_time'] < $time) {
@@ -1076,18 +1069,19 @@ class RtActivityService
         ];
         $qrURL = $scheme . '?' . http_build_query(array_filter($params));
         $userQrPath = ReferralActivityService::commonActivityQr($qrURL);
+        $posterConfig = PosterService::getPosterConfig();
         $posterInfo = ReferralActivityService::genEmployeePoster(
             $templatePosterPath['poster_path'],
             $imageWidth,
             $imageHeight,
             $userQrPath,
-            $setting['qr_width'],
-            $setting['qr_height'],
-            $setting['qr_x'],
-            $setting['qr_y']
+            $posterConfig['QR_WIDTH'],
+            $posterConfig['QR_HEIGHT'],
+            $posterConfig['QR_X'],
+            $posterConfig['QR_Y']
         );
         unset($posterInfo['qr_url']);
-        if (!empty($request['type'])) {
+        if ($request['type'] == RtActivityModel::ACTIVITY_RULE_TYPE_STUDENT) {
             $posterInfo['invite_word'] = $activity['student_invite_word'];
         } else {
             $posterInfo['invite_word'] = $activity['employee_invite_word'];
@@ -1157,6 +1151,14 @@ class RtActivityService
         $inviteInfo = DssStudentModel::getRecord(['id' => $request['invite_uid']], ['id','uuid']);
         if (empty($inviteInfo)) {
             throw new RunTimeException(['record_not_found']);
+        }
+        //查询是否已领取 若已领取跳转对应页
+        $record = RtCouponReceiveRecordModel::info(['activity_id' => $activityId, 'receive_uid' => $student['id']], ['id','status']);
+        if (!empty($record) && $record['status'] == RtCouponReceiveRecordModel::REVEIVED_STATUS) {
+            return ['status' => self::COUPON_IS_SUCCESS];
+        }
+        if (!empty($record) && $record['status'] == RtCouponReceiveRecordModel::NOT_REVEIVED_STATUS) {
+            return ['status' => self::COUPON_IS_FINISH];
         }
         //校验是否有资格领取
         $activity = self::checkAllowReceive($activityId, $student, $request['is_new']);
