@@ -108,8 +108,8 @@ class RtCouponReceiveRecordModel extends Model
                     LEFT JOIN {$tableDE} AS `de1` ON `rcrr`.`employee_uid` = `de1`.`id`
                     INNER JOIN {$tableDS} AS `ds1` ON `rcrr`.`invite_uid` = `ds1`.`id`
                     INNER JOIN {$tableDS} AS `ds2` ON `rcrr`.`receive_uid` = `ds2`.`id`
-                    LEFT JOIN {$tableDE} AS `de2` ON `ds2`.`assistant_id` = `de2`.`id`
-                    LEFT JOIN {$tableDE} AS `de3` ON `ds2`.`course_manage_id` = `de3`.`id`
+                    LEFT JOIN {$tableDE} AS `de2` ON `ds1`.`assistant_id` = `de2`.`id`
+                    LEFT JOIN {$tableDE} AS `de3` ON `ds1`.`course_manage_id` = `de3`.`id`
                     LEFT JOIN {$tableESC} AS `esc` ON `rcrr`.`student_coupon_id` = `esc`.`id`
                     LEFT JOIN {$tableEOC} AS `eoc` ON `rcrr`.`student_coupon_id` = `eoc`.`student_coupon_id`
                     LEFT JOIN {$tableSRSS} AS `srss` ON `rcrr`.`receive_uid` = `srss`.`student_id`
@@ -150,8 +150,8 @@ class RtCouponReceiveRecordModel extends Model
                 LEFT JOIN {$tableDE} AS `de1` ON `rcrr`.`employee_uid` = `de1`.`id`
                 INNER JOIN {$tableDS} AS `ds1` ON `rcrr`.`invite_uid` = `ds1`.`id`
                 INNER JOIN {$tableDS} AS `ds2` ON `rcrr`.`receive_uid` = `ds2`.`id`
-                LEFT JOIN {$tableDE} AS `de2` ON `ds2`.`assistant_id` = `de2`.`id`
-                LEFT JOIN {$tableDE} AS `de3` ON `ds2`.`course_manage_id` = `de3`.`id`
+                LEFT JOIN {$tableDE} AS `de2` ON `ds1`.`assistant_id` = `de2`.`id`
+                LEFT JOIN {$tableDE} AS `de3` ON `ds1`.`course_manage_id` = `de3`.`id`
                 LEFT JOIN {$tableESC} AS `esc` ON `rcrr`.`student_coupon_id` = `esc`.`id`
                 LEFT JOIN {$tableEOC} AS `eoc` ON `rcrr`.`student_coupon_id` = `eoc`.`student_coupon_id`
                 LEFT JOIN {$tableSRSS} AS `srss` ON `rcrr`.`receive_uid` = `srss`.`student_id`
