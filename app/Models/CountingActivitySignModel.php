@@ -159,14 +159,14 @@ class CountingActivitySignModel extends Model
     public static function getUserRecords($userId = 0, $params = [])
     {
         if (empty($userId)) {
-            return [];
+            return [[], [], []];
         }
         $a       = OperationActivityModel::$table;
         $ca      = CountingActivityModel::$table;
         $caa     = CountingActivityAwardModel::$table;
         $student = DssStudentModel::getRecord(['id' => $userId], ['id', 'name', 'uuid', 'mobile']);
         if (empty($student)) {
-            return [];
+            return [[], [], []];
         }
         $posterList = SharePosterModel::getWeekPosterList(['user_id' => $userId]);
         $weekActivityDetail = $posterList[0] ?? [];
@@ -177,7 +177,7 @@ class CountingActivitySignModel extends Model
             self::$table . '.qualified_status',
             self::$table . '.award_time',
             $ca . '.name',
-            $a . '.name as activity_name',
+            $a . '.name (activity_name)',
         ];
 
         $join = [

@@ -525,6 +525,10 @@ class CountingActivityService
     {
         list($list, $total) = CountingActivitySignModel::list($params);
         $list = self::formatSign($list);
+        // 补充物流数据
+        $list = self::fillSignRecordsLogistics($list);
+        // 补充全局计数
+        $list = self::fillSignRecordsStatistic($list);
         return [$list, $total];
     }
 
@@ -537,6 +541,7 @@ class CountingActivityService
     public static function getUserSignList($userId, $params = [])
     {
         list($student, $weekActivityDetail, $signRecordDetails) = CountingActivitySignModel::getUserRecords($userId, $params);
+        $signRecordDetails = self::formatSign($signRecordDetails);
         $signRecordDetails = self::fillSignRecordsLogistics($signRecordDetails, true);
         return [$student, $weekActivityDetail, $signRecordDetails];
     }
@@ -545,16 +550,18 @@ class CountingActivityService
     /**
      * 参与记录数据格式化
      * @param array $data
+     * @param bool $withGoods
      * @return array|mixed
      */
     public static function formatSign($data = [])
     {
-        // 补充物流数据
-        $data = self::fillSignRecordsLogistics($data);
-        // 补充全局计数
-        $data = self::fillSignRecordsStatistic($data);
+        if (empty($data)) {
+            return [];
+        }
         foreach ($data as &$item) {
-            $item['mobile'] = Util::hideUserMobile($item['mobile']);
+            if (isset($item['mobile'])) {
+                $item['mobile'] = Util::hideUserMobile($item['mobile']);
+            }
             if ($item['qualified_status'] == CountingActivitySignModel::QUALIFIED_STATUS_NO) {
                 $item['award_status'] = $item['qualified_status'];
             }
@@ -595,6 +602,7 @@ class CountingActivityService
         if (empty($allIds)) {
             return [];
         }
+        $allIds = array_unique($allIds);
         // 拼装物流信息
         $logisticsFields = ['id', 'goods_id', 'sign_id', 'address_detail', 'express_number', 'logistics_status'];
         $logisticsData = [];
