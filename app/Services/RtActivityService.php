@@ -125,7 +125,7 @@ class RtActivityService
     {
         // 处理海报
         if (!empty($activityInfo['poster_list']) && is_array($activityInfo['poster_list'])) {
-            foreach ($activityInfo['poster_list'] as $k => $p) {
+            foreach ($activityInfo['poster_list'] as $p) {
                 $tmpPoster = $p;
                 $tmpPoster['poster_url'] = AliOSS::replaceCdnDomainForDss($p['poster_path']);
                 $tmpPoster['example_url'] = !empty($p['example_path']) ? AliOSS::replaceCdnDomainForDss($p['example_path']) : '';
@@ -768,7 +768,7 @@ class RtActivityService
         $activityExt   = ActivityExtModel::getRecord(['activity_id' => $activityId]);
         $data = [
             'status'         => $status,
-            'activity_ext'   => $activityExt['award_rule'] ?? '',
+            'activity_ext'   => !empty($activityExt['award_rule']) ? Util::textDecode($activityExt['award_rule']) : '',
             'time_remaining' => $timeRemaining,
         ];
         return $data;
@@ -859,7 +859,7 @@ class RtActivityService
         $data = [
             'status'         => $status,
             'invite_avatar'  => $inviteInfo['thumb'] ? AliOSS::replaceCdnDomainForDss($inviteInfo['thumb']) : AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb')),
-            'activity_ext'   => $activityExt['award_rule'] ?? '',
+            'activity_ext'   => !empty($activityExt['award_rule']) ? Util::textDecode($activityExt['award_rule']) : '',
             'time_remaining' => $timeRemaining,
         ];
         return $data;
@@ -1083,9 +1083,9 @@ class RtActivityService
         );
         unset($posterInfo['qr_url']);
         if ($request['type'] == RtActivityModel::ACTIVITY_RULE_TYPE_STUDENT) {
-            $posterInfo['invite_word'] = $activity['student_invite_word'];
+            $posterInfo['invite_word'] = Util::textDecode($activity['student_invite_word']);
         } else {
-            $posterInfo['invite_word'] = $activity['employee_invite_word'];
+            $posterInfo['invite_word'] = Util::textDecode($activity['employee_invite_word']);
         }
         $posterInfo['status']  = self::ACTIVITY_NORMAL;
         $posterInfo['buy_day'] = $rule['buy_day'];
@@ -1128,11 +1128,10 @@ class RtActivityService
         return $result['id'];
     }
 
-
     /**
      * 发放优惠券
      * @param $request
-     * @return bool
+     * @return int[]
      * @throws RunTimeException
      */
     public static function receiveCoupon($request)
