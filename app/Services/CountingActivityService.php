@@ -118,12 +118,12 @@ class CountingActivityService
 
         $activityInfo = CountingActivityModel::getRecord(['id'=>$op_activity_id],['id','first_effect_time','status']);
 
-        if($activityInfo['first_effect_time']){
-            throw new RuntimeException(['Cannot be enabled again']);
-        }
-
         if(empty($activityInfo) || $activityInfo['status'] == $status){
             throw new RuntimeException(['edit error']);
+        }
+
+        if($activityInfo['first_effect_time'] && $status == CountingActivityModel::NORMAL_STATUS){
+            throw new RuntimeException(['Cannot be enabled again']);
         }
 
         $data = [
@@ -370,7 +370,7 @@ class CountingActivityService
 
             $activitInfo = CountingActivityModel::getRecord(['op_activity_id'=>$params['op_activity_id']]);
 
-            if($activitInfo['first_effect_time']){
+            if($activitInfo['first_effect_time'] && $activitInfo['status'] == CountingActivityModel::DISABLE_STATUS){
                 throw new RuntimeException(['Disuse,Cannot be enabled again']);
             }
 
@@ -382,8 +382,10 @@ class CountingActivityService
             $activityData = [
                 'remark'   => $params['remark'],
             ];
+
             $db = MysqlDB::getDB();
             $db->beginTransaction();
+
             //已启用
             if($activitInfo['status'] == CountingActivityModel::NORMAL_STATUS){
                 if($activitInfo['sign_end_time'] != $params['sign_end_time'] && $params['sign_end_time'] > $activitInfo['sign_end_time']){
