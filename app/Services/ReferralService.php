@@ -1373,8 +1373,10 @@ class ReferralService
             return $returnData;
         }
         // 处理搜索条件，增加表别名
-        $limit = [($params['page']-1), $params['count']];
+        $limit = [($params['page']-1) * $params['count'], $params['count']];
         $refList = StudentReferralStudentStatisticsModel::getStudentReferralList($whereData, $limit);
+        $returnData['total_count'] = $refList['total_count'] ?? 0;
+
         if (empty($refList['list'])) {
             return $returnData;
         }
@@ -1433,7 +1435,6 @@ class ReferralService
         }
         unset($item);
 
-        $returnData['total_count'] = $refList['total_count'];
         $returnData['list'] = $refList['list'];
         return $returnData;
     }
