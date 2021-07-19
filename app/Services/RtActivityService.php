@@ -758,10 +758,10 @@ class RtActivityService
         $activityId = $request['activity_id'];
         //校验活动
         $activity = RtActivityModel::getRecord(['activity_id'   => $activityId, 'enable_status' => RtActivityModel::ENABLED_STATUS]);
-        if (empty($activity) || $activity['start_time'] > $time) {
+        if ($activity['start_time'] > $time) {
             $status = self::ACTIVITY_NOT_STARTED;
         }
-        if ($activity['end_time'] < $time) {
+        if (empty($activity) || $activity['end_time'] < $time) {
             $status = self::ACTIVITY_IS_END;
         }
         $timeRemaining = $activity['end_time'] - $time;
@@ -847,10 +847,10 @@ class RtActivityService
         //校验活动
         $time = time();
         $activity = RtActivityModel::getRecord(['activity_id'   => $activityId, 'enable_status' => RtActivityModel::ENABLED_STATUS]);
-        if (empty($activity) || $activity['start_time'] > $time) {
+        if ($activity['start_time'] > $time) {
             $status = self::ACTIVITY_NOT_STARTED;
         }
-        if ($activity['end_time'] < $time) {
+        if (empty($activity) || $activity['end_time'] < $time) {
             $status = self::ACTIVITY_IS_END;
         }
         $timeRemaining = $activity['end_time'] - $time;
@@ -1049,7 +1049,6 @@ class RtActivityService
         if (empty($templatePosterPath)) {
             throw new RunTimeException(['record_not_found']);
         }
-        $setting   = EmployeeActivityModel::$activityPosterConfig;
         $posterUrl = AliOSS::replaceCdnDomainForDss($templatePosterPath['poster_path']);
         list($imageWidth, $imageHeight) = getimagesize($posterUrl);
         if (empty($imageHeight) || empty($imageWidth)) {
@@ -1213,11 +1212,10 @@ class RtActivityService
                 'remark'        => '',
             ];
             $res = (new Erp())->grantCoupon($params);
-            if (empty($res)) {
-                throw new RunTimeException(['grant_coupon_is_error']);
+            if (!empty($res)) {
+                $res    = end($res);
+                $status = RtCouponReceiveRecordModel::REVEIVED_STATUS; //已领取
             }
-            $res = end($res);
-            $status = RtCouponReceiveRecordModel::REVEIVED_STATUS; //已领取
         }
         $insertData = [
             'activity_id'       => $activityId,
