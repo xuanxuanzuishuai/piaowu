@@ -34,7 +34,6 @@ $dotenv->load();
 $dotenv->overload();
 
 // 获取到期发待发放和发放失败的积分列表, 只读取award_type 为空或者指定的award_node
-$time = time();
 $daytime = strtotime(date('Y-m-d'));
 $whereTime = $daytime - 6 * Util::TIMESTAMP_ONEDAY;
 $where = [

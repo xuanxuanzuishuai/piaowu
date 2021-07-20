@@ -694,7 +694,8 @@ class RtActivityService
             $data['dss_belong_employee_id_name'] = $data['dss_course_manage_id'] . '/' . $data['dss_course_manage_name'];
         }
         $data['dss_belong_employee_id_name'] == '/' && $data['dss_belong_employee_id_name'] = '-';
-        $data['has_review_course_zh'] = DssStudentModel::CURRENT_PROGRESS[$data['has_review_course']];
+        $courseStr = DictConstants::getSet(DictConstants::HAS_REVIEW_COURSE);
+        $data['has_review_course_zh'] = $courseStr[$data['has_review_course']] ?? '-';
         $data['create_date'] = $data['create_time'] ? date('Y-m-d H:i:s', $data['create_time']) : '-';
         $data['expired_start_date'] = $data['expired_start_time'] ? date('Y-m-d H:i:s', $data['expired_start_time']) : '-';
         $data['expired_end_date'] = $data['expired_end_time'] ? date('Y-m-d H:i:s', $data['expired_end_time']) : '-';
