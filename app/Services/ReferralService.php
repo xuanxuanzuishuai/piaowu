@@ -283,7 +283,6 @@ class ReferralService
 
         $fieldsNameList = [
             'assistant_id'                     => 'assistant_id',             // DSS助教id
-            'has_review_course'                => 'has_review_course',        // DSS学生当前身份
             'coupon_expire_end_time'           => 'coupon_expire_end_time',   // 优惠券过期时间范围结束时间
             'coupon_expire_start_time'         => 'coupon_expire_start_time',   // 优惠券过期时间范围开始时间
             'student_last_stage'               => 'student_last_stage',       // 被推荐人当前状态  年卡、体验卡
@@ -292,7 +291,6 @@ class ReferralService
             'course_manage_id'                 => 'course_manage_id',           // 课管
             'referral_s_create_time'           => 'create_time[>=]',
             'referral_e_create_time'           => 'create_time[<=]',
-            'last_stage'                       => 'last_stage',
         ];
         foreach ($fieldsNameList as $paramsFiled => $sqlField) {
             if (!empty($params[$paramsFiled])) {
@@ -304,6 +302,8 @@ class ReferralService
         // 0是筛选条件
         $zeroFieldsNameList = [
             'referral_sign' => 'referral_sign',            // 转介绍标识,标记
+            'last_stage'                       => 'last_stage',
+            'has_review_course'                => 'has_review_course',        // DSS学生当前身份
         ];
         foreach ($zeroFieldsNameList as $paramsFiled => $sqlField) {
             if (isset($params[$paramsFiled]) && !Util::emptyExceptZero($params[$paramsFiled])) {

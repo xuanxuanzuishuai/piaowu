@@ -160,22 +160,13 @@ class StudentReferralStudentStatisticsModel extends Model
         }
         // 推荐人初次购买时间
         if (!empty($where['ref_first_buy_year_s_create_time'])) {
-            $joinSql[md5($studentRTable)] = " INNER JOIN " . $studentTable . " ON s.id=r.referee_id and ";
             $sqlWhere .= ' AND s_r.first_pay_time >=' . $where['ref_first_buy_year_s_create_time'];
         }
         if (!empty($where['ref_first_buy_year_e_create_time'])) {
-            $joinSql[md5($studentRTable)] = " INNER JOIN " . $studentTable . " ON s.id=r.referee_id and ";
             $sqlWhere .= ' AND s_r.first_pay_time <=' . $where['ref_first_buy_year_e_create_time'];
         }
         if (!empty($where['ref_first_buy_year_s_create_time']) || !empty($where['ref_first_buy_year_e_create_time'])) {
-            if (is_array($where['has_review_course'])) {
-                $where['has_review_course'][]=DssStudentModel::REVIEW_COURSE_1980;
-            } else {
-                $where['has_review_course'] = [
-                    $where['has_review_course'],
-                    DssStudentModel::REVIEW_COURSE_1980,
-                ];
-            }
+            $joinSql[md5($studentRTable)] = " INNER JOIN " . $studentRTable . " ON s_r.id=r.referee_id and s_r.has_review_course=" . DssStudentModel::REVIEW_COURSE_1980;
         }
         //当前阶段
         if (isset($where['has_review_course']) && !Util::emptyExceptZero($where['has_review_course'])) {

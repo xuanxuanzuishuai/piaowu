@@ -294,11 +294,6 @@ class RtActivity extends ControllerBase
             ],
             [
                 'key' => 'remark',
-                'type' => 'required',
-                'error_code' => 'remark_is_required'
-            ],
-            [
-                'key' => 'remark',
                 'type' => 'lengthMax',
                 'value' => 100,
                 'error_code' => 'remark_length_invalid'
