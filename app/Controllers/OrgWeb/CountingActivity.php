@@ -95,7 +95,7 @@ class CountingActivity extends ControllerBase
 
         try{
             $result = CountingActivityService::editStatus($params['id'], $params['status']);
-            return HttpHelper::buildResponse($response,$result);
+            return HttpHelper::buildResponse($response, []);
         }catch (RuntimeException $e){
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }

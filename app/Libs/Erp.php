@@ -85,6 +85,7 @@ class Erp
     const API_EXPRESS_DETAILS = '/api/logistics/detail';
     //发货
     const API_DELIVER_GOODS = '/api/logistics/create';
+    const API_EVENT_EDIT = '/api/dss/event/edit'; //创建event
 
 
     //发放优惠券
@@ -846,5 +847,16 @@ class Erp
     {
         $result = HttpHelper::requestJson($this->host . self::API_GRANT_COUPON, $params, 'POST');
         return $result['data'] ?? [];
+    }
+
+    /**
+     * 运营活动添加事件和奖励任务
+     * @param $params
+     * @return array|bool
+     */
+    public function addEventAndEventTask($params)
+    {
+        $params['app_id'] = Constants::SMART_APP_ID;
+        return HttpHelper::requestJson($this->host . self::API_EVENT_EDIT, $params, 'POST');
     }
 }

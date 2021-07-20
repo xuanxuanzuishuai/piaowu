@@ -24,10 +24,13 @@ use App\Models\CountingActivitySignModel;
 use App\Models\CountingActivityUserStatisticModel;
 use App\Models\CountingAwardConfigModel;
 use App\Models\EmployeeModel;
+use App\Models\Erp\ErpEventTaskModel;
 use App\Models\OperationActivityModel;
 
 class CountingActivityService
 {
+    public static $EVENT_TYPE = 101; //op运营活动
+
     public static function getCountDetail($op_activity_id){
         //获取互动详情
         $detail = CountingActivityModel::getRecord(['op_activity_id'=>$op_activity_id]);
@@ -116,7 +119,7 @@ class CountingActivityService
             throw new RuntimeException(['status not in enum']);
         }
 
-        $activityInfo = CountingActivityModel::getRecord(['id'=>$op_activity_id],['id','first_effect_time','status']);
+        $activityInfo = CountingActivityModel::getRecord(['id'=>$op_activity_id],['id','first_effect_time','status','name','remark','start_time','end_time']);
 
         if(empty($activityInfo) || $activityInfo['status'] == $status){
             throw new RuntimeException(['edit error']);
@@ -130,13 +133,48 @@ class CountingActivityService
             'status'=>$status
         ];
 
+
         $now = time();
         if($activityInfo['first_effect_time'] == 0 && $status == CountingActivityModel::NORMAL_STATUS){
             $data['first_effect_time'] = $now;
         }
 
         $data['update_time'] = $now;
-        return CountingActivityModel::updateRecord($op_activity_id, $data);
+
+        $erp = new Erp();
+
+        $award['type'] = ErpEventTaskModel::AWARD_TYPE_INTEGRATION;
+        $award['amount'] = 0;
+        $award['source_type'] = 0;
+        $award['account_sub_type'] = 0;
+        $award['to']= 0;
+        $award['need_check']= 0;
+        $award['task_flag']= 0;
+
+        $event = [
+            'name' => $activityInfo['name'] . 'op运营系统计数任务事件' . time(),
+            'task_name' => '"' . $activityInfo['name'] . '"活动奖励',
+            'desc' => $activityInfo['remark'],
+            'type' => self::$EVENT_TYPE,
+            'start_time' => $activityInfo['start_time'],
+            'end_time' => $activityInfo['end_time'],
+            'awards' => [$award],
+        ];
+        $res = $erp->addEventAndEventTask($event);
+        if($res['code'] == Valid::CODE_SUCCESS){
+            $data['event_id'] = $res['data']['event_id'];
+            $data['task_id'] = $res['data']['tasks'][0];
+        }else{
+            throw new RuntimeException(['event error']);
+        }
+
+        $res = CountingActivityModel::updateRecord($op_activity_id, $data);
+        if($res){
+            return true;
+        }else{
+            throw new RuntimeException(['edit activity status fail']);
+        }
+
     }
     /**
      * 获取列表
@@ -148,6 +186,11 @@ class CountingActivityService
     public static function getCountingList($params, $page, $pageSize){
 
         $where = [];
+
+        if(!empty($params['mutex_activity_id'])){
+            $where['op_activity_id[!]'] = $params['mutex_activity_id'];
+        }
+
         if(!empty($params['name'])){
             $where['name[~]'] = $params['name'];
         }
@@ -181,7 +224,6 @@ class CountingActivityService
         $where['ORDER'] = ['id' => 'DESC'];
 
         $where['LIMIT'] = [($page - 1) * $pageSize, $pageSize];
-
         $list = CountingActivityModel::getRecords($where, ['id','op_activity_id','name','start_time','end_time','sign_end_time','join_end_time','remark','rule_type','nums','status','operator_id','create_time']);
 
         $operator_ids = array_column($list, 'operator_id');
@@ -190,7 +232,7 @@ class CountingActivityService
 
         foreach ($list as &$one){
             $one['status_text'] = $one['status'] == CountingActivityModel::NORMAL_STATUS ? '启用中' : '已禁用';
-            $one['rule_type_name'] = $one['rule_type'] == CountingActivityModel::RULE_TYPE_CONTINU ? '连续' : '累积';
+            $one['rule_type_name'] = $one['rule_type'] == CountingActivityModel::RULE_TYPE_CONTINU ? '连续' : '累计';
             $one['operator_name'] = $employees[$one['operator_id']]['name'];
         }
 
@@ -379,29 +421,45 @@ class CountingActivityService
             }
 
             $now = time();
-            $activityData = [
-                'remark'   => $params['remark'],
-            ];
 
             $db = MysqlDB::getDB();
             $db->beginTransaction();
 
             //已启用
             if($activitInfo['status'] == CountingActivityModel::NORMAL_STATUS){
+
+                $activityData = [
+                    'remark'   => $params['remark'],
+                    'update_time' => $now
+                ];
+
+                if($activitInfo['rule_type'] == CountingActivityModel::RULE_TYPE_COUNT && $params['rule_type'] == CountingActivityModel::RULE_TYPE_CONTINU){
+                    throw new RuntimeException(['Rules cannot be edited']);
+                }else{
+                    $activityData['rule_type'] = $params['rule_type'];
+                }
+
+                if($activitInfo['nums'] < $params['nums']){
+                    throw new RuntimeException(['Cannot be greater than the original value']);
+                }else{
+                    $activityData['nums'] = $params['nums'];
+                }
+
+
                 if($activitInfo['sign_end_time'] != $params['sign_end_time'] && $params['sign_end_time'] > $activitInfo['sign_end_time']){
-                    $activityData['sign_end_time'] = $params['sign_end_time'];
+                    $activityData['sign_end_time'] = strtotime($params['sign_end_time']);
                 }else{
                     throw new RuntimeException(['sign_end_time Not in advance']);
                 }
 
                 if($activitInfo['join_end_time'] != $params['join_end_time'] && $params['join_end_time'] > $activitInfo['join_end_time']){
-                    $activityData['join_end_time'] = $params['join_end_time'];
+                    $activityData['join_end_time'] = strtotime($params['join_end_time']);
                 }else{
                     throw new RuntimeException(['join_end_time Not in advance']);
                 }
 
                 if($activitInfo['end_time'] != $params['end_time'] && $params['end_time'] > $activitInfo['end_time']){
-                    $activityData['end_time'] = $params['end_time'];
+                    $activityData['end_time'] = strtotime($params['end_time']);
                 }else{
                     throw new RuntimeException(['end_time Not in advance']);
                 }
@@ -438,10 +496,7 @@ class CountingActivityService
 
                 if($A != $B){
                     //把金叶子奖励置为失效
-                    $editRes = CountingAwardConfigModel::batchUpdateRecord(['status'=>CountingAwardConfigModel::INVALID_STATUS,'update_time'=>$now], ['op_activity_id' => $activitInfo['op_activity_id'], 'status'=>CountingAwardConfigModel::EFFECTIVE_STATUS, 'type'=>CountingAwardConfigModel::GOLD_LEAF_TYPE]);
-                    if(!$editRes){
-                        throw new RunTimeException(['error：del golden_leaf fail']);
-                    }
+                    CountingAwardConfigModel::batchUpdateRecord(['status'=>CountingAwardConfigModel::INVALID_STATUS,'update_time'=>$now], ['op_activity_id' => $activitInfo['op_activity_id'], 'status'=>CountingAwardConfigModel::EFFECTIVE_STATUS, 'type'=>CountingAwardConfigModel::GOLD_LEAF_TYPE]);
                     if($A){ //添加金叶子
                         $award_config['golden_leaf'] = $A;
                     }
@@ -468,12 +523,11 @@ class CountingActivityService
                     }
                 }
             }
-
             //更新活动表
             $res = CountingActivityModel::updateRecord($activitInfo['id'], $activityData);
 
             if(!$res){
-                throw new RunTimeException(['error：add award fail']);
+                throw new RunTimeException(['error：edit activity fail']);
             }
 
             ActivityExtModel::batchUpdateRecord([
@@ -513,6 +567,11 @@ class CountingActivityService
         }else{
             $data['update_time'] = $now;
         }
+        $count = CountingActivityModel::getCount(['name'=>$data['name'],'op_activity_id[!]'=>$activity_id]);
+        if($count){
+            throw new RuntimeException(['Duplicate activity name']);
+        }
+
 
         return $data;
 
