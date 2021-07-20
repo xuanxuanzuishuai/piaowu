@@ -322,7 +322,7 @@ class UserRefereeService
                 if ($activityId) {
                     $activityInfo = RtActivityRuleModel::getRecord(['activity_id' => $activityId], ['referral_award']);
                     $referralAward = json_decode($activityInfo['referral_award'] ?? '', true);
-                    if ($referralAward) {
+                    if ($referralAward && ($referralAward['amount'] ?? 0) > 0) {
                         //$taskIds[] = DictConstants::get(DictConstants::RT_ACTIVITY_CONFIG, 'award_event_task_id');
                         $taskIds[] = [
                             'task_id' => DictConstants::get(DictConstants::RT_ACTIVITY_CONFIG, 'award_event_task_id'),
