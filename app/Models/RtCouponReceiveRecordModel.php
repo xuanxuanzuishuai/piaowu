@@ -70,11 +70,30 @@ class RtCouponReceiveRecordModel extends Model
         if ($receive_mobile = $search['receive_mobile']??'') {   // 受邀人手机号
             $whereStr .= " AND ds2.mobile='{$receive_mobile}'";
         }
-        if (($status = $search['record_status']??-1) >= 0) {   // op优惠券状态(0未领取 1已领取)
-            $whereStr .= " AND rcrr.status='{$status}'";
-        }
-        if ($coupon_status = $search['coupon_status']??0) {   // erp优惠券状态(1未使用 2 已使用 3已失效 4已作废)
-            $whereStr .= " AND esc.status='{$coupon_status}'";
+        if ($status = $search['status']??0) {
+            $time = time();
+            $noReveivedStatus = self::NOT_REVEIVED_STATUS;
+            $unuseStatus = ErpStudentCouponV1Model::STATUS_UNUSE;
+            $usedStatus = ErpStudentCouponV1Model::STATUS_USED;
+            $expireStatus = ErpStudentCouponV1Model::STATUS_EXPIRE;
+            $abandonedStatus = ErpStudentCouponV1Model::STATUS_ABANDONED;
+            switch ($status) {
+                case 1:   // 未领取
+                    $whereStr .= " AND rcrr.status='{$noReveivedStatus}'";
+                    break;
+                case 2:   // 已领取(未使用)
+                    $whereStr .= " AND esc.status='{$unuseStatus}' AND esc.expired_end_time>='{$time}'";
+                    break;
+                case 3:   // 已使用
+                    $whereStr .= " AND esc.status='{$usedStatus}'";
+                    break;
+                case 4:   // 已过期
+                    $whereStr .= " AND (esc.status='{$expireStatus}' OR (esc.status='{$unuseStatus}' AND esc.expired_end_time<'{$time}'))";
+                    break;
+                case 5:   // 已作废
+                    $whereStr .= " AND esc.status='{$abandonedStatus}'";
+                    break;
+            }
         }
         if ($create_date_start = $search['create_time_start']??'') {   // 推荐时间-开始
             $create_time_start = strtotime($create_date_start);
