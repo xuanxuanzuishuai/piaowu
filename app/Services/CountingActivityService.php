@@ -9,6 +9,7 @@
 namespace App\Services;
 
 use App\Libs\AliOSS;
+use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
@@ -26,6 +27,7 @@ use App\Models\CountingAwardConfigModel;
 use App\Models\EmployeeModel;
 use App\Models\Erp\ErpEventTaskModel;
 use App\Models\OperationActivityModel;
+use Slim\Http\Stream;
 
 class CountingActivityService
 {
@@ -594,6 +596,71 @@ class CountingActivityService
     }
 
     /**
+     * @param array $params
+     * @return array
+     */
+    public static function exportSignList($params = [])
+    {
+        $exportCount = DictConstants::get(DictConstants::ORG_WEB_CONFIG, 'export_amount');
+        $exportTotal = DictConstants::get(DictConstants::ORG_WEB_CONFIG, 'export_total');
+        $params['count'] = $exportCount;
+        $resData = [];
+        $counter = $exportCount;
+        list($list, $total) = CountingActivitySignModel::list($params);
+        $list = self::formatSign($list);
+        $list = self::fillSignRecordsLogistics($list);
+        $list = self::fillSignRecordsStatistic($list);
+        $resData = array_merge($resData, $list);
+        if ($total > $exportCount) {
+            $totalPages = intval($total/$params['count']);
+            if (!empty(fmod($total, $params['count']))) {
+                $totalPages += 1;
+            }
+            for ($i = 1; $i <= $totalPages; $i++) {
+                $params['page'] = $i;
+                list($list, $total) = CountingActivitySignModel::list($params);
+                $list = self::formatSign($list);
+                $list = self::fillSignRecordsLogistics($list);
+                $list = self::fillSignRecordsStatistic($list);
+                $counter += $exportCount;
+                if (!empty($list)) {
+                    $resData = array_merge($resData, $list);
+                }
+                if ($counter > $exportTotal) {
+                    break;
+                }
+            }
+        }
+        $file = $_ENV['STATIC_FILE_SAVE_PATH'] .'/'. md5(rand()) .'.csv';
+        $fh = fopen($file, 'a+');
+        $header = ["学生id","学生uuid","学生昵称","学生手机号","参与活动id","参与活动名称","连续期数","累计期数","领取状态","领取时间","物流单号"];
+        fputcsv($fh, $header);
+        foreach ($resData as $item) {
+            $logistics = [];
+            foreach ($item['logistics'] as $logistic) {
+                if (!empty($logistic['express_number'])) {
+                    $logistics[] = $logistic['express_number'];
+                }
+            }
+            $row = [
+                $item['student_id'],
+                "'".$item['uuid'],
+                $item['student_name'],
+                $item['mobile'],
+                $item['op_activity_id'],
+                $item['name'],
+                $item['continue_nums'],
+                $item['cumulative_nums'],
+                $item['award_status_name'],
+                Util::formatTimestamp($item['award_time'], '', 'Ymd H:i:s'),
+                implode(',', $logistics)
+            ];
+            fputcsv($fh, $row);
+        }
+        return [new Stream($fh), $file];
+    }
+
+    /**
      * 用户参与详情
      * @param $userId
      * @param array $params
@@ -611,7 +678,6 @@ class CountingActivityService
     /**
      * 参与记录数据格式化
      * @param array $data
-     * @param bool $withGoods
      * @return array|mixed
      */
     public static function formatSign($data = [])
@@ -639,14 +705,20 @@ class CountingActivityService
      */
     public static function fillSignRecordsStatistic($data = [])
     {
-        $allIds = array_column($data, 'student_id');
-        if (empty($allIds)) {
-            return [];
-        }
-        $statistics = CountingActivityUserStatisticModel::getUserData($allIds);
+        $userIds = [];
         foreach ($data as &$item) {
-            $item['cumulative_nums'] = $statistics[$item['student_id']]['cumulative_nums'] ?? 0;
-            $item['continue_nums'] = $statistics[$item['student_id']]['continue_nums'] ?? 0;
+            if (is_null($item['cumulative_nums'])) {
+                $userIds[$item['student_id']] = $item['student_id'];
+            }
+        }
+        $userData = CountingActivityUserStatisticModel::updateUserData($userIds);
+        foreach ($data as &$item) {
+            if (empty($item['cumulative_nums'])) {
+                $item['cumulative_nums'] = $userData[$item['student_id']]['cumulative_nums'] ?? 0;
+            }
+            if (empty($item['continue_nums'])) {
+                $item['continue_nums'] = $userData[$item['student_id']]['continue_nums'] ?? 0;
+            }
         }
         return $data;
     }
@@ -680,10 +752,13 @@ class CountingActivityService
         }
         // 拼装奖品及数量信息
         $goodsData = [];
-        if ($withGoods) {
-            $goods = self::getAwardList(implode(',', array_column($awards, 'goods_id')));
+        $goodsIds = array_unique(array_column($awards, 'goods_id'));
+        if ($withGoods && !empty($goodsIds)) {
+            $params = ['goods_id' => implode(',', $goodsIds)];
+            $goods = self::getAwardList($params);
+            $goods = $goods['data']['list'];
             foreach ($goods as $item) {
-                $goodsData[$item['id']] = $item;
+                $goodsData[$item['id']]['list'][] = $item;
             }
         }
         // 补全物流信息

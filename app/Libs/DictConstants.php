@@ -176,7 +176,9 @@ class DictConstants {
             'config_role',
             'push_user_template',
             'third_part_import_bill_template',
-            'batch_import_reward_points_template'
+            'batch_import_reward_points_template',
+            'export_amount',
+            'export_total',
         ]
     ];
 

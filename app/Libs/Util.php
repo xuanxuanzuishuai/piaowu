@@ -276,12 +276,13 @@ class Util
      * 时间转化字符串
      * @param $date
      * @param string $empty
+     * @param string $format
      * @return false|string
      */
-    public static function formatTimestamp($date, $empty = '-')
+    public static function formatTimestamp($date, $empty = '-', $format = 'Y-m-d H:i:s')
     {
         if (!empty($date)) {
-            return date('Y-m-d H:i:s', $date);
+            return date($format, $date);
         }
         return $empty;
     }

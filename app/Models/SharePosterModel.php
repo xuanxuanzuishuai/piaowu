@@ -111,7 +111,13 @@ class SharePosterModel extends Model
     private static function getCheckinPosterList($params)
     {
         $where = " WHERE sp.type = :type ";
-        $map = [':type' => $params['type'] ?? self::TYPE_CHECKIN_UPLOAD];
+        $map   = [':type' => $params['type'] ?? self::TYPE_CHECKIN_UPLOAD];
+        $sp    = self::getTableNameWithDb();
+        $s     = DssStudentModel::getTableNameWithDb();
+        $e     = DssEmployeeModel::getTableNameWithDb();
+        $erp_a = ErpUserEventTaskAwardModel::getTableNameWithDb();
+        $erp_t = ErpUserEventTaskModel::getTableNameWithDb();
+        $join  = " INNER JOIN $s s ON s.id = sp.student_id ";
         if (!empty($params['student_name'])) {
             $where .= " AND s.name like :student_name ";
             $map[':student_name'] = "%" . $params['student_name'] . "%";
@@ -123,6 +129,8 @@ class SharePosterModel extends Model
         if (!empty($params['task_id'])) {
             $where .= " AND erp_t.event_task_id = :task_id ";
             $map[':task_id'] = $params['task_id'];
+            $join .= " LEFT JOIN $erp_a erp_a ON erp_a.id = sp.award_id ";
+            $join .= " LEFT JOIN $erp_t erp_t ON erp_t.id = erp_a.uet_id ";
         }
         if (!empty($params['start_time'])) {
             $where .= " AND sp.create_time >= :start_time";
@@ -140,15 +148,6 @@ class SharePosterModel extends Model
             $where .= " AND sp.ext->>'$.node_order' = :day";
             $map[':day'] = $params['day'];
         }
-        
-        $sp = self::getTableNameWithDb();
-        $s  = DssStudentModel::getTableNameWithDb();
-        $e  = DssEmployeeModel::getTableNameWithDb();
-        $erp_a = ErpUserEventTaskAwardModel::getTableNameWithDb();
-        $erp_t = ErpUserEventTaskModel::getTableNameWithDb();
-        $join = " INNER JOIN $s s ON s.id = sp.student_id ";
-        $join .= " LEFT JOIN $erp_a erp_a ON erp_a.id = sp.award_id ";
-        $join .= " LEFT JOIN $erp_t erp_t ON erp_t.id = erp_a.uet_id ";
         $join .= " LEFT JOIN $e e ON e.id = sp.verify_user ";
         $db = self::dbRO();
         $totalCount = $db->queryAll("SELECT count(sp.id) count FROM $sp sp $join $where ", $map);

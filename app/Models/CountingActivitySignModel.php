@@ -46,14 +46,17 @@ class CountingActivitySignModel extends Model
         $cas = self::getTableNameWithDb();
         $ca  = CountingActivityModel::getTableNameWithDb();
         $a   = OperationActivityModel::getTableNameWithDb();
+        $caus = CountingActivityUserStatisticModel::getTableNameWithDb();
 
         list($where, $map) = self::formatWhere($params);
         list($page, $count) = Util::formatPageCount($params);
         $join = "
         INNER JOIN $s s ON cas.student_id = s.id
         INNER JOIN $ca ca ON cas.op_activity_id = ca.op_activity_id
+        LEFT JOIN $caus caus ON cas.student_id = caus.student_id
         INNER JOIN $a a on a.id = ca.op_activity_id";
         $limit = Util::limitation($page, $count);
+        $order = ' ORDER BY cas.id DESC ';
         $sql = "
         SELECT %s
         FROM $cas cas
@@ -69,8 +72,8 @@ class CountingActivitySignModel extends Model
         s.mobile,
         a.name,
         cas.id,
-        cas.continue_nums,
-        cas.cumulative_nums,
+        caus.continue_nums,
+        caus.cumulative_nums,
         cas.op_activity_id,
         cas.qualified_status,
         cas.award_status,
@@ -82,7 +85,7 @@ class CountingActivitySignModel extends Model
         if (empty($total)) {
             return [[], 0];
         }
-        $list = $db->queryAll(sprintf($sql, $listField, $join, $where) . $limit, $map);
+        $list = $db->queryAll(sprintf($sql, $listField, $join, $where) . $order . $limit, $map);
         return [$list, $total];
     }
 
@@ -112,19 +115,19 @@ class CountingActivitySignModel extends Model
             $map[':mobile'] = $params['mobile'];
         }
         if (!empty($params['cumulative_nums_s'])) {
-            $where[] = "cas.cumulative_nums >= :cumulative_nums_s";
+            $where[] = "caus.cumulative_nums >= :cumulative_nums_s";
             $map[':cumulative_nums_s'] = $params['cumulative_nums_s'];
         }
         if (!empty($params['cumulative_nums_e'])) {
-            $where[] = "cas.cumulative_nums <= :cumulative_nums_e";
+            $where[] = "caus.cumulative_nums <= :cumulative_nums_e";
             $map[':cumulative_nums_e'] = $params['cumulative_nums_e'];
         }
         if (!empty($params['continue_nums_s'])) {
-            $where[] = "cas.continue_nums >= :continue_nums_s";
+            $where[] = "caus.continue_nums >= :continue_nums_s";
             $map[':continue_nums_s'] = $params['continue_nums_s'];
         }
         if (!empty($params['continue_nums_e'])) {
-            $where[] = "cas.continue_nums <= :continue_nums_e";
+            $where[] = "caus.continue_nums <= :continue_nums_e";
             $map[':continue_nums_e'] = $params['continue_nums_e'];
         }
         if (!empty($params['award_time_s'])) {
@@ -143,7 +146,7 @@ class CountingActivitySignModel extends Model
             $where[] = "a.name like :activity_name";
             $map[':activity_name'] = Util::sqlLike($params['activity_name']);
         }
-        if (!empty($params['award_status'])) {
+        if (!Util::emptyExceptZero($params['award_status'])) {
             $where[] = "cas.award_status = :award_status";
             $map[':award_status'] = $params['award_status'];
         }
@@ -163,7 +166,6 @@ class CountingActivitySignModel extends Model
         }
         $a       = OperationActivityModel::$table;
         $ca      = CountingActivityModel::$table;
-        $caa     = CountingActivityAwardModel::$table;
         $student = DssStudentModel::getRecord(['id' => $userId], ['id', 'name', 'uuid', 'mobile']);
         if (empty($student)) {
             return [[], [], []];
@@ -183,12 +185,10 @@ class CountingActivitySignModel extends Model
         $join = [
             '[><]' . $a => ['op_activity_id' => 'id'],
             '[><]' . $ca => ['op_activity_id' => 'op_activity_id'],
-            '[>]' . $caa => ['id' => 'sign_id'],
         ];
 
         $where   = [
             self::$table . '.student_id' => $userId,
-            $caa . '.type' => CountingActivityAwardModel::TYPE_ENTITY,
             'ORDER' => [self::$table . '.id' => 'DESC'],
             'LIMIT' => [1000]
         ];

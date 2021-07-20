@@ -39,6 +39,31 @@ class ActivitySign extends ControllerBase
     }
 
     /**
+     * 参与列表-导出
+     * @param Request $request
+     * @param Response $response
+     * @return \Slim\Http\Message|Response
+     */
+    public function listExport(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        try {
+            [$body, $file] = CountingActivityService::exportSignList($params);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return $response
+            ->withHeader('Cache-Control', 'no-cache')
+            ->withHeader('Content-Type', 'application/download')
+            ->withHeader('Content-Type', 'text/csv')
+            ->withHeader('Content-Length', filesize($file))
+            ->withHeader('Accept-Ranges', filesize($file))
+            ->withHeader('Content-Disposition', 'attachment; filename="'.date('Ymd').'.csv"')
+            ->withHeader('Expires', '0')
+            ->withBody($body);
+    }
+
+    /**
      * 用户参与详情
      * @param Request $request
      * @param Response $response
