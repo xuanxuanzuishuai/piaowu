@@ -46,9 +46,10 @@ class RtActivityService
     const ACTIVITY_IS_END      = 3; //已结束
 
     //领取状态
-    const COUPON_IS_SUCCESS   = 1; //领取成功
-    const COUPON_IS_NOT_ALLOW = 2; //用户不符合条件
-    const COUPON_IS_FINISH    = 3; //代金券已领完
+    const COUPON_IS_SUCCESS         = 1; //领取成功
+    const COUPON_IS_NOT_ALLOW       = 2; //用户不符合条件
+    const COUPON_IS_FINISH          = 3; //代金券已领完
+    const COUPON_ACTIVITY_IS_FINISH = 4; //活动已结束
 
     //转介绍rt参与标识
     const RT_CHANNEL_REFERRAL     = 1; //参与
@@ -791,16 +792,25 @@ class RtActivityService
             if (!empty($studentCouponId)) {
                 $coupon = (new Erp())->getStudentCouponPageById($studentCouponId);
                 $couponLists = $coupon['data']['list'] ?? [];
-                $couponLists = !empty($couponLists) ? array_column($couponLists, 'student_coupon_status_zh', 'student_coupon_id') : [];
+                $couponLists = !empty($couponLists) ? array_column($couponLists, null, 'student_coupon_id') : [];
             }
             foreach ($inviteArray as $val) {
                 if (!isset($studentArray[$val['receive_uid']]) || !isset($referralArray[$val['receive_uid']])) {
                     continue;
                 }
+                $statusTxt = '未领取';
+                if (isset($couponLists[$val['student_coupon_id']])) {
+                    $couponData = $couponLists[$val['student_coupon_id']];
+                    if ($couponData['student_coupon_status'] == ErpStudentCouponV1Model::STATUS_UNUSE && $couponData['expired_end_time'] < time()) {
+                        $statusTxt = '已过期';
+                    } else {
+                        $statusTxt = $couponData['student_coupon_status_zh'];
+                    }
+                }
                 $inviteRecord[] = [
                     'mobile'      => Util::hideUserMobile($studentArray[$val['receive_uid']]),
                     'create_time' => date('Y-m-d H:i:s', $referralArray[$val['receive_uid']]),
-                    'statusTxt'   => $couponLists[$val['student_coupon_id']] ?? '未领取',
+                    'statusTxt'   => $statusTxt,
                 ];
             }
         }
@@ -913,42 +923,18 @@ class RtActivityService
      * @param $isNew
      * @return false|mixed
      */
-    public static function checkAllowReceive($activityId, $student, $isNew)
+    public static function checkAllowReceive($student)
     {
-        $time = time();
-        //校验活动
-        $activity = RtActivityModel::getRecord(['activity_id' => $activityId, 'enable_status' => RtActivityModel::ENABLED_STATUS]);
-        if (empty($activity) || $activity['start_time'] > $time || $activity['end_time'] < $time) {
+        //已购买年卡|体验卡
+        if ($student['has_review_course'] != DssStudentModel::STATUS_REGISTER) {
             return false;
         }
-        //校验用户是否有资格领取
-        $rule = RtActivityRuleModel::info(['activity_id' => $activity['activity_id']], ['join_user_status','coupon_id']);
-        if (empty($rule['join_user_status'])) {
+        //已有转介绍关系
+        $referral = StudentReferralStudentStatisticsModel::getRecord(['student_id' => $student['id']]);
+        if (!empty($referral)) {
             return false;
         }
-        $joinStatusArray = explode(',', $rule['join_user_status']);
-        //未注册
-        if (in_array(RtActivityRuleModel::NOT_REGISTER, $joinStatusArray)) {
-            $isRegister = $isNew && ($student['create_time'] + Util::TIMESTAMP_1H > $time);
-        }
-        //已注册
-        if (in_array(RtActivityRuleModel::IS_REGISTER, $joinStatusArray)) {
-            $notRegister = true;
-            //已有年卡
-            if ($student['has_review_course'] == DssStudentModel::STATUS_BUY_NORMAL_COURSE) {
-                $notRegister = false;
-            }
-            //已有转介绍关系
-            $referral = StudentReferralStudentStatisticsModel::getRecord(['student_id' => $student['id']]);
-            if (!empty($referral)) {
-                $notRegister = false;
-            }
-        }
-        if (!$isRegister && !$notRegister) {
-            return false;
-        }
-        $activity['coupon_id'] = $rule['coupon_id'];
-        return $activity;
+        return true;
     }
 
     /**
@@ -1043,12 +1029,14 @@ class RtActivityService
                 throw new RunTimeException(['record_not_found']);
             }
         }
+        $channel_id = self::getRtChannel();
         $params = [
             'activity_id'   => $activity['activity_id'],
             'employee_id'   => $request['employee_id'],
             'employee_uuid' => $request['employee_uuid'],
             'invite_uid'    => $studentUid ?? '',
-            'param_id'      => $paramMapId ?? ''
+            'param_id'      => $paramMapId ?? '',
+            'channel_id'    => $channel_id
         ];
         $qrURL = $scheme . '?' . http_build_query(array_filter($params));
         $userQrPath = ReferralActivityService::commonActivityQr($qrURL);
@@ -1142,9 +1130,20 @@ class RtActivityService
         if (!empty($record) && $record['status'] == RtCouponReceiveRecordModel::NOT_REVEIVED_STATUS) {
             return ['status' => self::COUPON_IS_FINISH];
         }
+        //校验活动
+        $activity = RtActivityModel::getRecord(['activity_id' => $activityId, 'enable_status' => RtActivityModel::ENABLED_STATUS]);
+        if (empty($activity) || $activity['end_time'] < time()) {
+            return ['status' => self::COUPON_ACTIVITY_IS_FINISH];
+        }
+        //校验用户是否有资格领取
+        $rule = RtActivityRuleModel::info(['activity_id' => $activity['activity_id']], ['coupon_id']);
+        if (empty($rule)) {
+            throw new RunTimeException(['record_not_found']);
+        }
+        $activity['coupon_id'] = $rule['coupon_id'];
         //校验是否有资格领取
-        $activity = self::checkAllowReceive($activityId, $student, $request['is_new']);
-        if (!$activity) {
+        $isAllow = self::checkAllowReceive($activityId, $student);
+        if (!$isAllow) {
             return ['status' => self::COUPON_IS_NOT_ALLOW];
         }
         //查询员工信息
@@ -1216,7 +1215,7 @@ class RtActivityService
         if (empty($res)) {
             SimpleLogger::error('insert rt_coupon_receive_record error ', $insertData);
         }
-        return ['status' => $remainNums > 0 ? self::COUPON_IS_SUCCESS : self::COUPON_IS_FINISH];
+        return ['status' => ($remainNums > 0 && !empty($res)) ? self::COUPON_IS_SUCCESS : self::COUPON_IS_FINISH];
     }
 
     /**
