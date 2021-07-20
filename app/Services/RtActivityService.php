@@ -918,10 +918,8 @@ class RtActivityService
 
     /**
      * 校验被请人资格
-     * @param $activityId
      * @param $student
-     * @param $isNew
-     * @return false|mixed
+     * @return bool
      */
     public static function checkAllowReceive($student)
     {
@@ -1142,7 +1140,7 @@ class RtActivityService
         }
         $activity['coupon_id'] = $rule['coupon_id'];
         //校验是否有资格领取
-        $isAllow = self::checkAllowReceive($activityId, $student);
+        $isAllow = self::checkAllowReceive($student);
         if (!$isAllow) {
             return ['status' => self::COUPON_IS_NOT_ALLOW];
         }
@@ -1191,9 +1189,9 @@ class RtActivityService
                 'grant_time'    => time(),
                 'remark'        => '',
             ];
-            $res = (new Erp())->grantCoupon($params);
-            if (!empty($res)) {
-                $res    = end($res);
+            $couponRes = (new Erp())->grantCoupon($params);
+            if (!empty($couponRes)) {
+                $res    = end($couponRes);
                 $status = RtCouponReceiveRecordModel::REVEIVED_STATUS; //已领取
             }
         }
@@ -1215,13 +1213,13 @@ class RtActivityService
         if (empty($res)) {
             SimpleLogger::error('insert rt_coupon_receive_record error ', $insertData);
         }
-        return ['status' => ($remainNums > 0 && !empty($res)) ? self::COUPON_IS_SUCCESS : self::COUPON_IS_FINISH];
+        return ['status' => ($remainNums > 0 && !empty($couponRes)) ? self::COUPON_IS_SUCCESS : self::COUPON_IS_FINISH];
     }
 
     /**
      * 查询当前活动 邀请人剩余优惠券数量
      * @param $activityId
-     * @param $invateUuid
+     * @param $inviteUid
      * @return int|mixed|number
      * @throws RunTimeException
      */
@@ -1253,9 +1251,6 @@ class RtActivityService
             throw new RunTimeException(['record_not_found']);
         }
         $student = DssStudentModel::getRecord(['id' => $request['student_id']], ['id','assistant_id']);
-        if (empty($student['assistant_id'])) {
-            return ['scheme' => $activity['year_card_sale_url']];
-        }
         $employee = DssEmployeeModel::getRecord(['id' => $student['assistant_id']], ['wx_qr', 'wx_num']);
         //优惠券有效期获取
         $studentCouponId = RtCouponReceiveRecordModel::info(['activity_id' => $request['activity_id'], 'receive_uid' => $student['id']], 'student_coupon_id');
