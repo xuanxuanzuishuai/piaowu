@@ -104,7 +104,8 @@ class RtCouponReceiveRecordModel extends Model
             $whereStr .= " AND srss.create_time<='{$create_time_end}'";
         }
         if ($order_id = $search['order_id']??'') {   // 订单号
-            $whereStr .= " AND eoc.order_id='{$order_id}'";
+            $orderStatusEnable = ErpOrderCouponV1Model::STATUS_ENABLE;
+            $whereStr .= " AND eoc.order_id='{$order_id}' AND eoc.status='{$orderStatusEnable}'";
         }
         if ($has_review_course = $search['has_review_course']??0) {   // 受邀人当前身份
             $whereStr .= " AND ds2.has_review_course='{$has_review_course}'";
