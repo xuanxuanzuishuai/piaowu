@@ -1000,7 +1000,10 @@ class RtActivityService
         if ($request['type'] == RtActivityModel::ACTIVITY_RULE_TYPE_KEGUAN && empty($request['employee_id'])) {
             return ['buy_day' => $rule['buy_day']];
         }
-
+        //社群列表调用直接返回
+        if ($request['type'] == RtActivityModel::ACTIVITY_RULE_TYPE_SHEQUN && empty($request['employee_id'])) {
+            return ['activity_id' => $activity['activity_id'], 'buy_day' => $rule['buy_day']];
+        }
         //查询海报
         $conds    = [
             'activity_id'       => $activity['activity_id'],
