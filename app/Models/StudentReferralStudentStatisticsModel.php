@@ -111,6 +111,7 @@ class StudentReferralStudentStatisticsModel extends Model
                 "r.last_stage",
                 'c.expired_start_time as coupon_expired_start_time',
                 'c.expired_end_time as coupon_expired_end_time',
+                'c.status as coupon_status',
                 'rr.employee_uid',
                 'rr.employee_uuid',
                 // 推荐人、被推荐人 姓名和uuid这里sql确定不了
