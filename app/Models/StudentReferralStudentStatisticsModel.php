@@ -160,10 +160,10 @@ class StudentReferralStudentStatisticsModel extends Model
         }
         // 推荐人初次购买时间
         if (!empty($where['ref_first_buy_year_s_create_time'])) {
-            $sqlWhere .= ' AND s_r.first_pay_time >=' . $where['ref_first_buy_year_s_create_time'];
+            $sqlWhere .= ' AND s_r.pay_vip_time >=' . $where['ref_first_buy_year_s_create_time'];
         }
         if (!empty($where['ref_first_buy_year_e_create_time'])) {
-            $sqlWhere .= ' AND s_r.first_pay_time <=' . $where['ref_first_buy_year_e_create_time'];
+            $sqlWhere .= ' AND s_r.pay_vip_time <=' . $where['ref_first_buy_year_e_create_time'];
         }
         if (!empty($where['ref_first_buy_year_s_create_time']) || !empty($where['ref_first_buy_year_e_create_time'])) {
             $joinSql[md5($studentRTable)] = " INNER JOIN " . $studentRTable . " ON s_r.id=r.referee_id and s_r.has_review_course=" . DssStudentModel::REVIEW_COURSE_1980;
