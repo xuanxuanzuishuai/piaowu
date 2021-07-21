@@ -876,7 +876,7 @@ class Dss extends ControllerBase
     {
         $params = $request->getParams();
         try {
-            $ruleType = OperationActivityModel::RULE_TYPE_ASSISTANT;
+            $ruleType = $params['rule_type'] ?? '';
             $page = 1;
             $count = 1000;
             $activityName = $params['name'] ?? '';

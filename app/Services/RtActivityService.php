@@ -555,11 +555,12 @@ class RtActivityService
     public static function getRtActivityList($ruleType, $activityName, $page, $count, $enableStatus = [])
     {
         $limit = [($page - 1) * $count, $count];
-        $fields = ['activity_id', 'name', 'start_time', 'end_time', 'enable_status'];
-        $where = ['name' => $activityName, 'rule_type' => $ruleType];
-        if (!empty($enableStatus)) {
-            $where['enable_status'] = $enableStatus;
-        }
+        $fields = ['activity_id', 'name', 'start_time', 'end_time', 'enable_status','rule_type'];
+        $where = [];
+        !empty($ruleType) && $where['rule_type'] = explode(',', $ruleType);
+        !empty($enableStatus) && $where['enable_status'] = $enableStatus;
+        !empty($activityName) && $where['name'] = $activityName;
+
         list($activityList) = RtActivityModel::searchList($where, $limit, [], $fields);
         $time = time();
         foreach ($activityList as $k => $v) {

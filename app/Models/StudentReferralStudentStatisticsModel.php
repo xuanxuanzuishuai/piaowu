@@ -118,9 +118,6 @@ class StudentReferralStudentStatisticsModel extends Model
             ];
         }
 
-        $joinSql[md5($studentTable)] = " LEFT JOIN " . $studentTable . " ON s.id=r.student_id";
-        $joinSql[md5($recordTable)]  = " LEFT JOIN " . $recordTable . " ON rr.receive_uid = s.id";
-        $joinSql[md5($couponTable)]  = " LEFT JOIN " . $couponTable . " ON c.id=rr.student_coupon_id";
         $sqlWhere = ' WHERE 1=1';
 
         // 学生id
@@ -236,6 +233,11 @@ class StudentReferralStudentStatisticsModel extends Model
         if (empty($returnData['total_count'])) {
             return $returnData;
         }
+
+        // 必要字段所需的left join, select count(*) 排除 left join
+        !isset($joinSql[md5($studentTable)]) && $joinSql[md5($studentTable)] = " LEFT JOIN " . $studentTable . " ON s.id=r.student_id";
+        !isset($joinSql[md5($recordTable)]) && $joinSql[md5($recordTable)]  = " LEFT JOIN " . $recordTable . " ON rr.receive_uid = s.id";
+        !isset($joinSql[md5($couponTable)]) && $joinSql[md5($couponTable)]  = " LEFT JOIN " . $couponTable . " ON c.id=rr.student_coupon_id";
 
         $listSql  = "SELECT " . implode(',', $fields) . " from " . $refTable;
         $pageListSql = $listSql . implode(' ', $joinSql) . $sqlWhere . ' order by r.id desc limit ' . $limit[0] . ',' . $limit[1];
