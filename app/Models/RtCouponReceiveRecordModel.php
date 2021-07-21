@@ -162,6 +162,7 @@ class RtCouponReceiveRecordModel extends Model
                 `esc`.`expired_start_time`,
                 `esc`.`expired_end_time`,
                 `eoc`.`order_id`,
+                `eoc`.`status` AS `order_status`,
                 `srss`.`create_time`
             FROM
                 {$tableRCRR} AS `rcrr`
