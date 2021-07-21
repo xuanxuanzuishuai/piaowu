@@ -229,7 +229,7 @@ class Student extends ControllerBase
         $studentId = $this->ci['user_info']['user_id'];
         $data = [];
         if ($this->ci['user_info']['app_id'] == Constants::SMART_APP_ID) {
-            $data = DssStudentModel::getRecord(['id' => $studentId], ['uuid']);
+            $data = DssStudentModel::getRecord(['id' => $studentId], ['uuid','mobile']);
         }
         return HttpHelper::buildResponse($response, $data);
     }
