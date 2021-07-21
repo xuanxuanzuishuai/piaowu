@@ -15,6 +15,7 @@ use App\Libs\Util;
 use App\Libs\Valid;
 use App\Services\AgentOrgService;
 use App\Services\CountingActivityService;
+use App\Services\CountingActivitySignService;
 use Psr\Container\ContainerInterface;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -135,7 +136,11 @@ class CountingActivity extends ControllerBase
 
         $ymd = date('Y-m-d H:i:s');
 
-        if($params['start_time'] < $ymd){
+        if(!empty($params['op_activity_id'])){
+            $isEnable = CountingActivityService::isEnable($params['op_activity_id']);
+        }
+
+        if(empty($isEnable) && $params['start_time'] < $ymd){
             return Valid::addAppErrors([], 'start_time_is_small');
         }
 
@@ -162,6 +167,7 @@ class CountingActivity extends ControllerBase
      */
     public function getAwardList(Request $request, Response $response){
         $params = $request->getParams();
+        $params['status'] = 1;
         $result = CountingActivityService::getAwardList($params);
 
         if($result['code'] == Valid::CODE_SUCCESS){
@@ -215,7 +221,6 @@ class CountingActivity extends ControllerBase
 
         $detail = CountingActivityService::getCountDetail($params['op_activity_id']);
         return HttpHelper::buildResponse($response, $detail);
-
     }
 
 }

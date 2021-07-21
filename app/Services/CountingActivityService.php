@@ -31,7 +31,7 @@ use Slim\Http\Stream;
 
 class CountingActivityService
 {
-    public static $EVENT_TYPE = 101; //op运营活动
+    public static $EVENT_TYPE = 16; //op运营活动
 
     public static function getCountDetail($op_activity_id){
         //获取互动详情
@@ -118,17 +118,17 @@ class CountingActivityService
     public static function editStatus($op_activity_id, $status){
 
         if(!in_array($status, [CountingActivityModel::NORMAL_STATUS, CountingActivityModel::DISABLE_STATUS])){
-            throw new RuntimeException(['status not in enum']);
+            throw new RuntimeException(['status_is_invalid']);
         }
 
         $activityInfo = CountingActivityModel::getRecord(['id'=>$op_activity_id],['id','first_effect_time','status','name','remark','start_time','end_time']);
 
         if(empty($activityInfo) || $activityInfo['status'] == $status){
-            throw new RuntimeException(['edit error']);
+            throw new RuntimeException(['update_failure']);
         }
 
         if($activityInfo['first_effect_time'] && $status == CountingActivityModel::NORMAL_STATUS){
-            throw new RuntimeException(['Cannot be enabled again']);
+            throw new RuntimeException(['activity_disable_not_start']);
         }
 
         $data = [
@@ -145,7 +145,7 @@ class CountingActivityService
 
         $erp = new Erp();
 
-        $award['type'] = ErpEventTaskModel::AWARD_TYPE_INTEGRATION;
+        $award['type'] = ErpEventTaskModel::OP_ACTIVITY;
         $award['amount'] = 0;
         $award['source_type'] = 0;
         $award['account_sub_type'] = 0;
@@ -154,7 +154,7 @@ class CountingActivityService
         $award['task_flag']= 0;
 
         $event = [
-            'name' => $activityInfo['name'] . 'op运营系统计数任务事件' . time(),
+            'name' => $activityInfo['name'] . 'op计数' . $op_activity_id,
             'task_name' => '"' . $activityInfo['name'] . '"活动奖励',
             'desc' => $activityInfo['remark'],
             'type' => self::$EVENT_TYPE,
@@ -167,14 +167,14 @@ class CountingActivityService
             $data['event_id'] = $res['data']['event_id'];
             $data['task_id'] = $res['data']['tasks'][0];
         }else{
-            throw new RuntimeException(['event error']);
+            throw new RuntimeException(['erp_create_user_event_task_award_fail']);
         }
 
         $res = CountingActivityModel::updateRecord($op_activity_id, $data);
         if($res){
             return true;
         }else{
-            throw new RuntimeException(['edit activity status fail']);
+            throw new RuntimeException(['update_disabled_fail']);
         }
 
     }
@@ -287,7 +287,7 @@ class CountingActivityService
             //add 活动表
             $opActivityId = self::addActivity($data, $now);
             if(!$operator_id){
-                throw new RunTimeException(['error: insert OperationActivity fail']);
+                throw new RunTimeException(['insert_failure'],[$data]);
             }
 
             //add counting_activity 主表信息
@@ -295,14 +295,14 @@ class CountingActivityService
             $insertData = self::getInitInsertData($data, $operator_id, $now);
             $countActivityId = CountingActivityModel::insertRecord($insertData);
             if(!$countActivityId){
-                throw new RunTimeException(['error: insert CountingActivity fail']);
+                throw new RunTimeException(['insert_failure'],[$insertData]);
             }
 
             //add 互斥信息
             if (!empty($data['mutex_activity_ids'])){
                 $inRes = self::addMutexInfo($data['mutex_activity_ids'], $opActivityId, $now, $operator_id);
                 if(!$inRes){
-                    throw new RunTimeException(['error: insert CountingActivityMutes fail']);
+                    throw new RunTimeException(['insert_failure'],['msg'=>'添加互斥任务失败',$data['mutex_activity_ids'], $opActivityId, $now, $operator_id]);
                 }
             }
 
@@ -310,18 +310,19 @@ class CountingActivityService
             if(!empty($data['golden_leaf']) || !empty($data['goods_list'])){
                 $awardRes = self::addAwardConfig($data, $opActivityId, $now, $operator_id);
                 if(!$awardRes){
-                    throw new RunTimeException(['error: insert CountingAwardConfig fail']);
+                    throw new RunTimeException(['insert_failure'],['msg'=>'添加奖品失败',$data, $opActivityId, $now, $operator_id]);
                 }
             }
 
             //add activity_ext
-            $extRes = ActivityExtModel::insertRecord([
+            $extData = [
                 'activity_id' => $opActivityId,
                 'award_rule'  => $data['award_rule']
-            ]);
+            ];
+            $extRes = ActivityExtModel::insertRecord($extData);
 
             if(!$extRes){
-                throw new RunTimeException(['error: insert ActivityExt fail']);
+                throw new RunTimeException(['insert_failure'],$extData);
             }
 
             $db->commit();
@@ -329,7 +330,7 @@ class CountingActivityService
             return true;
 
         }catch (RunTimeException $e){
-            SimpleLogger::error("[CountingActivityService createCountingActivity] error", ['errors' => $e->getAppErrorData()]);
+            SimpleLogger::error("[CountingActivityService createCountingActivity] error", ['errors' => $e->getData()]);
             $db->rollBack();
             return $e->getAppErrorData();
         }
@@ -379,6 +380,7 @@ class CountingActivityService
                 'amount'         => $golden_leaf,
                 'storage'        => 0,
                 'goods_id'       => 0,
+                'goods_code'     => '',
                 'status'         => CountingAwardConfigModel::EFFECTIVE_STATUS,
                 'create_time'    => $now,
                 'operator_id'    => $operator_id,
@@ -388,6 +390,9 @@ class CountingActivityService
 
 
         if(!empty($data['goods_list'])){
+            $goods_ids = array_column($data['goods_list'],'goods_id');
+            $goodsList = self::getAwardList(['goods_id'=>implode(',',$goods_ids)]);
+            $goodsList = array_column($goodsList['data']['list'], null, 'id');
             foreach ($data['goods_list'] as $row){
                 $goods = [
                     'op_activity_id' => $opActivityId,
@@ -395,6 +400,7 @@ class CountingActivityService
                     'amount'         => $row['amount'],
                     'storage'        => $row['storage'],
                     'goods_id'       => $row['goods_id'],
+                    'goods_code'     => $goodsList[$row['goods_id']]['code'] ?? '',
                     'status'         => CountingAwardConfigModel::EFFECTIVE_STATUS,
                     'create_time'    => $now,
                     'operator_id'    => $operator_id,
@@ -409,40 +415,40 @@ class CountingActivityService
     }
 
     public static function editActivity($params, $operator_id){
-
         try{
+            $db = MysqlDB::getDB();
+            $db->beginTransaction();
 
             $activitInfo = CountingActivityModel::getRecord(['op_activity_id'=>$params['op_activity_id']]);
 
-            if($activitInfo['first_effect_time'] && $activitInfo['status'] == CountingActivityModel::DISABLE_STATUS){
-                throw new RuntimeException(['Disuse,Cannot be enabled again']);
-            }
-
             if(empty($activitInfo)){
-                throw new RuntimeException(['sign_end_time Not in advance']);
+                throw new RuntimeException(['activity_award_is_disable']);
             }
 
+            if($activitInfo['first_effect_time'] && $activitInfo['status'] == CountingActivityModel::DISABLE_STATUS){
+                throw new RuntimeException(['activity_already_over']);
+            }
             $now = time();
-
-            $db = MysqlDB::getDB();
-            $db->beginTransaction();
 
             //已启用
             if($activitInfo['status'] == CountingActivityModel::NORMAL_STATUS){
 
                 $activityData = [
                     'remark'   => $params['remark'],
-                    'update_time' => $now
+                    'update_time' => $now,
+                    'banner'   => $params['banner'],
+                    'reminder_pop'  => $params['reminder_pop'],
+                    'award_thumbnail' => $params['award_thumbnail']
                 ];
 
                 if($activitInfo['rule_type'] == CountingActivityModel::RULE_TYPE_COUNT && $params['rule_type'] == CountingActivityModel::RULE_TYPE_CONTINU){
-                    throw new RuntimeException(['Rules cannot be edited']);
+                    throw new RuntimeException(['rules_cannot_be_edited']);
                 }else{
                     $activityData['rule_type'] = $params['rule_type'];
                 }
 
                 if($activitInfo['nums'] < $params['nums']){
-                    throw new RuntimeException(['Cannot be greater than the original value']);
+                    throw new RuntimeException(['cannot_be_greater_than_the_original_value']);
                 }else{
                     $activityData['nums'] = $params['nums'];
                 }
@@ -451,19 +457,19 @@ class CountingActivityService
                 if($activitInfo['sign_end_time'] != $params['sign_end_time'] && $params['sign_end_time'] > $activitInfo['sign_end_time']){
                     $activityData['sign_end_time'] = strtotime($params['sign_end_time']);
                 }else{
-                    throw new RuntimeException(['sign_end_time Not in advance']);
+                    throw new RuntimeException(['sign_end_time_not_in_advance']);
                 }
 
                 if($activitInfo['join_end_time'] != $params['join_end_time'] && $params['join_end_time'] > $activitInfo['join_end_time']){
                     $activityData['join_end_time'] = strtotime($params['join_end_time']);
                 }else{
-                    throw new RuntimeException(['join_end_time Not in advance']);
+                    throw new RuntimeException(['join_end_time_not_in_advance']);
                 }
 
                 if($activitInfo['end_time'] != $params['end_time'] && $params['end_time'] > $activitInfo['end_time']){
                     $activityData['end_time'] = strtotime($params['end_time']);
                 }else{
-                    throw new RuntimeException(['end_time Not in advance']);
+                    throw new RuntimeException(['end_time_not_in_advance']);
                 }
             }else{//未启用
                 $activityData = self::getInitInsertData($params, $operator_id, $now, $activitInfo['op_activity_id']);
@@ -476,7 +482,7 @@ class CountingActivityService
                 if($delMutexIds){
                     $delRes = CountingActivityMutexModel::batchUpdateRecord(['status'=>CountingActivityMutexModel::DISABLE_STATUS], ['op_activity_id'=>$activitInfo['op_activity_id'], 'mutex_op_activity_id'=>$delMutexIds]);
                     if(!$delRes){
-                        throw new RuntimeException(['error：del Mutex fail']);
+                        throw new RuntimeException(['del_mutex_fail'],$delMutexIds);
                     }
                 }
 
@@ -486,7 +492,7 @@ class CountingActivityService
                 if($addMutexIds && self::checkMutex($addMutexIds)){
                     $addMutex = self::addMutexInfo($addMutexIds, $activitInfo['op_activity_id'], $now, $operator_id);
                     if(!$addMutex){
-                        throw new RunTimeException(['error: insert CountingActivityMutes fail']);
+                        throw new RunTimeException(['add_mutex_fail']);
                     }
                 }
 
@@ -521,7 +527,7 @@ class CountingActivityService
                 if($award_config){
                     $addRes = self::addAwardConfig($award_config, $activitInfo['op_activity_id'], $now, $operator_id);
                     if(!$addRes){
-                        throw new RunTimeException(['error：add award fail']);
+                        throw new RunTimeException(['add_award_fail']);
                     }
                 }
             }
@@ -529,7 +535,7 @@ class CountingActivityService
             $res = CountingActivityModel::updateRecord($activitInfo['id'], $activityData);
 
             if(!$res){
-                throw new RunTimeException(['error：edit activity fail']);
+                throw new RunTimeException(['update_disabled_fail']);
             }
 
             ActivityExtModel::batchUpdateRecord([
@@ -767,5 +773,13 @@ class CountingActivityService
             $item['goods'] = $goodsData[$item['goods_id']] ?? [];
         }
         return $data;
+    }
+
+    /**
+     * @return int
+     */
+    public static function isEnable($op_activity_id)
+    {
+        return CountingActivityModel::getCount(['op_activity_id'=>$op_activity_id, 'status'=>CountingActivityModel::NORMAL_STATUS]);
     }
 }
