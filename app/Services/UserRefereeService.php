@@ -321,9 +321,15 @@ class UserRefereeService
             if (!empty($totalInfo) && $totalInfo['valid_num'] >= $days) {
                 $activityId = $res['activity_id'] ?? 0;
                 if ($activityId) {
-                    $activityInfo = RtActivityRuleModel::getRecord(['activity_id' => $activityId], ['referral_award']);
+                    $activityInfo = RtActivityRuleModel::getRecord(['activity_id' => $activityId], ['referral_award','referral_student_is_award']);
+                    $referralAwardStatus = $activityInfo['referral_student_is_award'] ?? 0;
                     $referralAward = json_decode($activityInfo['referral_award'] ?? '', true);
-                    if ($referralAward && ($referralAward['amount'] ?? 0) > 0) {
+                    if ($referralAwardStatus == RtActivityRuleModel::AWARD_YES
+                        &&
+                        $referralAward
+                        &&
+                        ($referralAward['amount'] ?? 0) > 0
+                    ) {
                         //$taskIds[] = DictConstants::get(DictConstants::RT_ACTIVITY_CONFIG, 'award_event_task_id');
                         $taskIds[] = [
                             'task_id' => DictConstants::get(DictConstants::RT_ACTIVITY_CONFIG, 'award_event_task_id'),
