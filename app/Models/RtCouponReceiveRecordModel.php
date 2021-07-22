@@ -58,14 +58,14 @@ class RtCouponReceiveRecordModel extends Model
             $ruleType2 = RtActivityModel::ACTIVITY_RULE_TYPE_KEGUAN;
             $whereStr .= " AND ((rcrr.rule_type='{$ruleType1}' AND de2.name='{$erp_belong_employee_name}') OR (rcrr.rule_type='{$ruleType2}' AND de3.name='{$erp_belong_employee_name}'))";
         }
-        if ($invite_uid = $search['invite_uid']??0) {   // 邀请人UID
-            $whereStr .= " AND ds1.id='{$invite_uid}'";
+        if ($invite_uid = $search['invite_uid']??0) {   // 邀请人UUID
+            $whereStr .= " AND ds1.uuid='{$invite_uid}'";
         }
         if ($invite_mobile = $search['invite_mobile']??'') {   // 邀请人手机号
             $whereStr .= " AND ds1.mobile='{$invite_mobile}'";
         }
-        if ($receive_uid = $search['receive_uid']??0) {   // 受邀人UID
-            $whereStr .= " AND ds2.id='{$receive_uid}'";
+        if ($receive_uid = $search['receive_uid']??0) {   // 受邀人UUID
+            $whereStr .= " AND ds2.uuid='{$receive_uid}'";
         }
         if ($receive_mobile = $search['receive_mobile']??'') {   // 受邀人手机号
             $whereStr .= " AND ds2.mobile='{$receive_mobile}'";
@@ -105,7 +105,8 @@ class RtCouponReceiveRecordModel extends Model
         }
         if ($order_id = $search['order_id']??'') {   // 订单号
             $orderStatusEnable = ErpOrderCouponV1Model::STATUS_ENABLE;
-            $whereStr .= " AND eoc.order_id='{$order_id}' AND eoc.status='{$orderStatusEnable}'";
+            $couponStatusUsed = ErpStudentCouponV1Model::STATUS_USED;
+            $whereStr .= " AND eoc.order_id='{$order_id}' AND eoc.status='{$orderStatusEnable}' AND esc.status='{$couponStatusUsed}'";
         }
         if ($has_review_course = $search['has_review_course']??0) {   // 受邀人当前身份
             $whereStr .= " AND ds2.has_review_course='{$has_review_course}'";
@@ -152,9 +153,9 @@ class RtCouponReceiveRecordModel extends Model
                 `de2`.`name` AS `dss_assistant_name`,
                 `de3`.`id` AS `dss_course_manage_id`,
                 `de3`.`name` AS `dss_course_manage_name`,
-                `ds1`.`id` AS `invite_uid`,
+                `ds1`.`uuid` AS `invite_uid`,
                 `ds1`.`mobile` AS `invite_mobile`,
-                `ds2`.`id` AS `receive_uid`,
+                `ds2`.`uuid` AS `receive_uid`,
                 `ds2`.`mobile` AS `receive_mobile`,
                 `ds2`.`has_review_course`,
                 `ds2`.`sub_start_date`,

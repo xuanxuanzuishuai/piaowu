@@ -702,7 +702,14 @@ class RtActivityService
         $data['create_date'] = $data['create_time'] ? date('Y-m-d H:i:s', $data['create_time']) : '-';
         $data['expired_start_date'] = $data['expired_start_time'] ? date('Y-m-d H:i:s', $data['expired_start_time']) : '-';
         $data['expired_end_date'] = $data['expired_end_time'] ? date('Y-m-d H:i:s', $data['expired_end_time']) : '-';
-        $data['order_id'] = $data['order_id'] ? ($data['order_status']==ErpOrderCouponV1Model::STATUS_ENABLE ? $data['order_id'] : '-') : '-';
+        if ($data['coupon_status'] == ErpStudentCouponV1Model::STATUS_USED
+            &&
+            $data['order_status']==ErpOrderCouponV1Model::STATUS_ENABLE
+        ) {
+            $data['order_id'] = $data['order_id'] ?? '-';
+        } else {
+            $data['order_id'] = '-';
+        }
         $data['status_zh'] = '-';
         if ($data['record_status'] == RtCouponReceiveRecordModel::NOT_REVEIVED_STATUS) {
             $data['status_zh'] = DictConstants::get(DictConstants::RT_ACTIVITY_COUPON_STATUS, 1);
