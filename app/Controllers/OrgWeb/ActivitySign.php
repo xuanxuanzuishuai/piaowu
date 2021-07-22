@@ -16,6 +16,7 @@ use App\Services\CountingActivityService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
+use Slim\Http\Stream;
 
 class ActivitySign extends ControllerBase
 {
@@ -47,20 +48,24 @@ class ActivitySign extends ControllerBase
     public function listExport(Request $request, Response $response)
     {
         $params = $request->getParams();
-        try {
-            [$body, $file] = CountingActivityService::exportSignList($params);
-        } catch (RunTimeException $e) {
-            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        $list = CountingActivityService::exportSignList($params);
+        if (empty($list)) {
+            return $response->withStatus(StatusCode::HTTP_NO_CONTENT);
         }
+        $stream = fopen('php://memory', 'w+');
+        foreach ($list as $fields) {
+            fputcsv($stream, $fields);
+        }
+
+        rewind($stream);
+
         return $response
-            ->withHeader('Cache-Control', 'no-cache')
+            ->withHeader('Cache-Control', 'no-store, no-cache')
             ->withHeader('Content-Type', 'application/download')
             ->withHeader('Content-Type', 'text/csv')
-            ->withHeader('Content-Length', filesize($file))
-            ->withHeader('Accept-Ranges', filesize($file))
+            ->withHeader('Content-Transfer-Encoding', 'binary')
             ->withHeader('Content-Disposition', 'attachment; filename="'.date('Ymd').'.csv"')
-            ->withHeader('Expires', '0')
-            ->withBody($body);
+            ->withBody(new Stream($stream));
     }
 
     /**

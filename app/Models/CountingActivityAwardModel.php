@@ -30,6 +30,13 @@ class CountingActivityAwardModel extends Model
     const LOGISTICS_STATUS_IN_DISPATCH = 3;
     const LOGISTICS_STATUS_SIGN = 4;
 
+    const LOGISTICS_STATUS_MAP = [
+        self::LOGISTICS_STATUS_COLLECT => '已揽收',
+        self::LOGISTICS_STATUS_IN_TRANSIT => '运输中',
+        self::LOGISTICS_STATUS_IN_DISPATCH => '派件中',
+        self::LOGISTICS_STATUS_SIGN => '已签收',
+    ];
+
 
     //发货单状态:0废除 1待发货 2已发货 3发货中 4无需发货 -1发货失败
     const SHIPPING_STATUS_DEL = 0;

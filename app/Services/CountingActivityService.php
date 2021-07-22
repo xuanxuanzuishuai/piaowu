@@ -23,13 +23,11 @@ use App\Models\CountingActivityAwardModel;
 use App\Models\CountingActivityModel;
 use App\Models\CountingActivityMutexModel;
 use App\Models\CountingActivitySignModel;
-use App\Models\CountingActivityUserStatisticModel;
 use App\Models\CountingAwardConfigModel;
 use App\Models\EmployeeModel;
 use App\Models\Erp\ErpEventTaskModel;
 use App\Models\OperationActivityModel;
 use App\Services\Queue\QueueService;
-use Slim\Http\Stream;
 
 class CountingActivityService
 {
@@ -613,8 +611,6 @@ class CountingActivityService
         $list = self::formatSign($list);
         // 补充物流数据
         $list = self::fillSignRecordsLogistics($list);
-        // 补充全局计数
-        $list = self::fillSignRecordsStatistic($list);
         return [$list, $total];
     }
 
@@ -632,7 +628,6 @@ class CountingActivityService
         list($list, $total) = CountingActivitySignModel::list($params);
         $list = self::formatSign($list);
         $list = self::fillSignRecordsLogistics($list);
-        $list = self::fillSignRecordsStatistic($list);
         $resData = array_merge($resData, $list);
         if ($total > $exportCount) {
             $totalPages = intval($total/$params['count']);
@@ -644,7 +639,6 @@ class CountingActivityService
                 list($list, $total) = CountingActivitySignModel::list($params);
                 $list = self::formatSign($list);
                 $list = self::fillSignRecordsLogistics($list);
-                $list = self::fillSignRecordsStatistic($list);
                 $counter += $exportCount;
                 if (!empty($list)) {
                     $resData = array_merge($resData, $list);
@@ -654,10 +648,8 @@ class CountingActivityService
                 }
             }
         }
-        $file = $_ENV['STATIC_FILE_SAVE_PATH'] .'/'. md5(rand()) .'.csv';
-        $fh = fopen($file, 'a+');
         $header = ["学生id","学生uuid","学生昵称","学生手机号","参与活动id","参与活动名称","连续期数","累计期数","领取状态","领取时间","物流单号"];
-        fputcsv($fh, $header);
+        $rows = [$header];
         foreach ($resData as $item) {
             $logistics = [];
             foreach ($item['logistics'] as $logistic) {
@@ -678,9 +670,9 @@ class CountingActivityService
                 Util::formatTimestamp($item['award_time'], '', 'Ymd H:i:s'),
                 implode(',', $logistics)
             ];
-            fputcsv($fh, $row);
+            $rows[] = $row;
         }
-        return [new Stream($fh), $file];
+        return $rows;
     }
 
     /**
@@ -722,31 +714,6 @@ class CountingActivityService
     }
 
     /**
-     * 查询学生全局数据
-     * @param array $data
-     * @return array
-     */
-    public static function fillSignRecordsStatistic($data = [])
-    {
-        $userIds = [];
-        foreach ($data as &$item) {
-            if (is_null($item['cumulative_nums'])) {
-                $userIds[$item['student_id']] = $item['student_id'];
-            }
-        }
-        $userData = CountingActivityUserStatisticModel::updateUserData($userIds);
-        foreach ($data as &$item) {
-            if (empty($item['cumulative_nums'])) {
-                $item['cumulative_nums'] = $userData[$item['student_id']]['cumulative_nums'] ?? 0;
-            }
-            if (empty($item['continue_nums'])) {
-                $item['continue_nums'] = $userData[$item['student_id']]['continue_nums'] ?? 0;
-            }
-        }
-        return $data;
-    }
-
-    /**
      * 查询参与记录物流信息
      * @param array $data
      * @param bool $withGoods
@@ -760,19 +727,13 @@ class CountingActivityService
         }
         $allIds = array_unique($allIds);
         // 拼装物流信息
-        $logisticsFields = ['id', 'goods_id', 'sign_id', 'address_detail', 'express_number', 'logistics_status'];
+        $logisticsFields = ['id', 'goods_id', 'sign_id', 'address_detail', 'express_number', 'logistics_status', 'logistics_company', 'amount'];
         $logisticsData = [];
         $where = [
             'sign_id' => $allIds,
             'type' => CountingActivityAwardModel::TYPE_ENTITY,
         ];
         $awards = CountingActivityAwardModel::getRecords($where, $logisticsFields);
-        foreach ($awards as $award) {
-            if (!empty($award['address_detail'])) {
-                $award['address_detail'] = json_decode($award['address_detail'], true);
-            }
-            $logisticsData[$award['sign_id']][] = $award;
-        }
         // 拼装奖品及数量信息
         $goodsData = [];
         $goodsIds = array_unique(array_column($awards, 'goods_id'));
@@ -784,10 +745,18 @@ class CountingActivityService
                 $goodsData[$item['id']]['list'][] = $item;
             }
         }
+        foreach ($awards as $award) {
+            if (!empty($award['address_detail'])) {
+                $award['address_detail'] = json_decode($award['address_detail'], true);
+            }
+            $award['logistics_status_name'] = !empty($award['logistics_status']) ? CountingActivityAwardModel::LOGISTICS_STATUS_MAP[$award['logistics_status']] : '';
+            $award['goods'] = $goodsData[$award['goods_id']] ?? [];
+            $logisticsData[$award['sign_id']][] = $award;
+
+        }
         // 补全物流信息
         foreach ($data as &$item) {
             $item['logistics'] = $logisticsData[$item['id']] ?? [];
-            $item['goods'] = $goodsData[$item['goods_id']] ?? [];
         }
         return $data;
     }
