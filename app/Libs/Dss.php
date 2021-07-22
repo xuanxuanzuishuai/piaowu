@@ -21,6 +21,8 @@ class Dss
     const GET_TRAIL_INFO = '/op/user/get_trail_log';//得到用户的购买体验课信息
     const GET_ACTIVITY_INFO = '/op/referral/activity_info';//周周有礼活动页
     const UPLOAD_SHARE_POSTER = '/op/referral/upload_share_poster';//周周有礼上传图片信息
+    const ASSISTANT_LIST = '/op/employee/assistant_list';//获取助教列表
+    const WEIXIN_INFO = '/op/user/get_weixin_info'; //同步获取微信信息
 
     private $host;
 
@@ -165,5 +167,30 @@ class Dss
             throw new RunTimeException(['update_failure']);
         }
         return $res;
+    }
+
+    /**
+     * 获取助教列表
+     * @param $params
+     * @return array|bool
+     */
+    public function getAssistantList($params)
+    {
+        $res = self::commonAPI(self::ASSISTANT_LIST, $params, 'GET');
+        if ($res['code'] != Valid::CODE_SUCCESS) {
+            SimpleLogger::error('role employee data', [$res, $params]);
+            return [];
+        }
+        return !empty($res['data']) ? $res['data'] : [];
+    }
+
+    public function getWeixinInfo($params)
+    {
+        $res = self::commonAPI(self::WEIXIN_INFO, $params, 'GET');
+        if ($res['code'] != Valid::CODE_SUCCESS) {
+            SimpleLogger::error('role employee data', [$res, $params]);
+            return [];
+        }
+        return !empty($res['weixin_info']) ? $res['weixin_info'] : [];
     }
 }
