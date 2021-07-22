@@ -141,20 +141,21 @@ class CountingActivity extends ControllerBase
         }
 
         if(empty($isEnable) && $params['start_time'] < $ymd){
-            return Valid::addAppErrors([], 'start_time_is_small');
+            return Valid::addAppErrors([], 'start_time_must_greater_than_current_time');
         }
 
         if($params['sign_end_time'] < $params['start_time']){
-            return Valid::addAppErrors([], 'sign_end_time_is_small');
+            return Valid::addAppErrors([], 'sign_time_must_greater_than_start_time');
         }
 
         if($params['join_end_time'] < $params['sign_end_time']){
-            return Valid::addAppErrors([], 'join_end_time_is_small');
+            return Valid::addAppErrors([], 'join_time_must_greater_than_sign_time');
         }
 
         if($params['end_time'] < $params['join_end_time']){
-            return Valid::addAppErrors([], 'end_time_is_small');
+            return Valid::addAppErrors([], 'end_time_must_greater_than_join_time');
         }
+
 
         return ['code'=>0];
     }
@@ -222,5 +223,6 @@ class CountingActivity extends ControllerBase
         $detail = CountingActivityService::getCountDetail($params['op_activity_id']);
         return HttpHelper::buildResponse($response, $detail);
     }
+
 
 }

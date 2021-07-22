@@ -697,6 +697,17 @@ class QueueService
         }
     }
 
+
+    public static function editQualified($data)
+    {
+        try {
+            $topic = new StudentActivity();
+            $topic->editQualified($data)->publish(5);
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), $data ?? []);
+        }
+    }
+
     /**
      * 赠送时长
      * @param $uuid

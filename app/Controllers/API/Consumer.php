@@ -32,6 +32,7 @@ use App\Models\StudentAccountAwardPointsLogModel;
 use App\Services\AutoCheckPicture;
 use App\Services\CashGrantService;
 use App\Services\CountingActivityAwardService;
+use App\Services\CountingActivitySignService;
 use App\Services\MessageService;
 use App\Services\MiniAppQrService;
 use App\Services\PosterTemplateService;
@@ -901,4 +902,14 @@ class Consumer extends ControllerBase
         return HttpHelper::buildResponse($response, []);
     }
 
+    public function refreshCountingNum(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        switch ($params['event_type']){
+            case StudentActivity::EDIT_QUALIFIED:
+                $countingActivtyId = $params['id'];
+                CountingActivitySignService::refreshCountingNum($countingActivtyId);
+                break;
+        }
+    }
 }

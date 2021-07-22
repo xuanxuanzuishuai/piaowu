@@ -12,19 +12,27 @@ use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
 use App\Models\CountingActivityModel;
 use App\Models\CountingActivitySignModel;
+use App\Models\CountingActivityUserStatisticModel;
 use App\Models\SharePosterModel;
 use Medoo\Medoo;
 
 class CountingActivitySignService
 {
+
+
+    public static $now;
+    public static $allActivity_list;
+
     /**
      * 统计参与的报名活动信息
-     * @param int $studentId
+     * @param $studentId
+     * @param null $statistics_time
+     * @return false|int|mixed|string|null
      */
-    public static function countSign($studentId){
+    public static function countSign($studentId, $statistics_time = null){
+        self::$now = time();
 
-        $now = time();
-
+        //查询是否报名
         $signList = CountingActivitySignModel::getRecords(['student_id'=>$studentId, 'qualified_status'=>CountingActivitySignModel::QUALIFIED_STATUS_NO, 'award_status'=>CountingActivitySignModel::AWARD_STATUS_NOT_QUALIFIED]);
 
         if(empty($signList)){
@@ -32,7 +40,9 @@ class CountingActivitySignService
             return false;
         }
         $activityIds = array_column($signList, 'op_activity_id');
-        $activityList = CountingActivityModel::getRecords(['op_activity_id[in]'=>$activityIds, 'status'=>CountingActivityModel::NORMAL_STATUS, 'sign_end_time[>]'=>$now, 'start_time[<]'=>$now], ['op_activity_id','nums','rule_type']);
+
+        //查询报名的活动是否有效
+        $activityList = CountingActivityModel::getRecords(['op_activity_id[in]'=>$activityIds, 'status'=>CountingActivityModel::NORMAL_STATUS, 'sign_end_time[>]'=>self::$now, 'start_time[<]'=>self::$now], ['op_activity_id','nums','rule_type']);
         $activityList = array_column($activityList, null, 'op_activity_id');
 
         if(empty($activityList)){
@@ -41,18 +51,60 @@ class CountingActivitySignService
         }
 
         foreach ($signList as $one){
+
             if(!isset($activityList[$one['op_activity_id']])) {
                 SimpleLogger::error('empty counting_activity',$one);
-            }else{
-                $res = self::updateSign($one, $activityList[$one['op_activity_id']], $now);
-                if(!$res){
-                    SimpleLogger::error('更新计数任务统计失败',[$one, $activityList[$one['op_activity_id']], $now]);
-                }
-                return $res;
+                continue; //报名活动不存在则跳过
             }
+
+            //统计历史
+            list($cumulativeNum, $continuityNum) = self::getContinuityActivityNum($one, 0);
+            $res = self::incStatic($one['student_id'], $cumulativeNum, $continuityNum);
+            if(!$res){
+                SimpleLogger::error('insert Statistic fail',[$one, $cumulativeNum, $continuityNum]);
+            }
+
+            //获取连续和累计
+            if(is_null($statistics_time)){//正常流程
+                list($cumulativeNum, $continuityNum) = self::getContinuityActivityNum($one, $one['create_time']);
+                $res = self::updateSign($one, $activityList[$one['op_activity_id']], $cumulativeNum, $continuityNum);
+                if(!$res){
+                    SimpleLogger::error('edit sign fail',[$one, $cumulativeNum, $continuityNum]);
+                }
+            }else{//脚本执行指定时间
+                list($cumulativeNum, $continuityNum) = self::getContinuityActivityNum($one, $statistics_time);
+                $res = self::updateSign($one, $activityList[$one['op_activity_id']], $cumulativeNum, $continuityNum);
+                if(!$res){
+                    SimpleLogger::error('update history sign fail',[$one, $cumulativeNum, $continuityNum]);
+                }
+            }
+
+            if(!$res){
+                SimpleLogger::error('更新计数任务统计失败',[$one, $activityList[$one['op_activity_id']], self::$now]);
+            }
+            return $res;
         }
+    }
 
+    /**
+     * 累加统计表
+     * @param $student_id
+     * @param $cumulativeNum
+     * @param $continuityNum
+     */
+    public static function incStatic($student_id, $cumulativeNum, $continuityNum){
+        $first = CountingActivityUserStatisticModel::getRecord(['student_id'=>$student_id]);
 
+        $data = [
+            'cumulative_nums'   => $cumulativeNum,
+            'continue_nums'     => $continuityNum,
+        ];
+        if(empty($first)){
+            $data['student_id'] = $student_id;
+            return CountingActivityUserStatisticModel::insertRecord($data);
+        }else{
+            return CountingActivityUserStatisticModel::updateRecord($first['id'], $data);
+        }
     }
 
     /**
@@ -62,10 +114,9 @@ class CountingActivitySignService
      * @param $now
      * @return int|null
      */
-    public static function updateSign($sign, $activity, $now){
-        $cumulativeNum = self::getCumulativeNum($sign);
-        $continuityNum = self::getContinuityActivityNum($sign);
+    public static function updateSign($sign, $activity, $cumulativeNum, $continuityNum){
 
+        $now = self::$now;
 //        echo json_encode([$cumulativeNum, $continuityNum]);die;
         $updateData = [
             'cumulative_nums' => $cumulativeNum,
@@ -91,36 +142,33 @@ class CountingActivitySignService
 
     }
 
-    /**
-     * 获取累计活动
-     * @param $student_id
-     * @return int|number
-     */
-    public static function getCumulativeNum($sign){
-        $where = [
-            'student_id' => $sign['student_id'],
-            'type'       => SharePosterModel::TYPE_WEEK_UPLOAD,
-            'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED,
-            'create_time[>=]'=>$sign['create_time']
-        ];
-        return SharePosterModel::getCount($where);
+    public static function getAllActivity($startTime){
+        if($startTime === 0){
+            $limit = '';
+        }else{
+            $limit = ' LIMIT 10';
+        }
+
+        if(!isset(self::$allActivity_list[$startTime])){
+            $sql = "SELECT wa.activity_id,wa.start_time, wa.end_time FROM week_activity as wa INNER JOIN share_poster as sp 
+                on wa.activity_id=sp.activity_id where type = " . SharePosterModel::TYPE_WEEK_UPLOAD
+                . " AND verify_status= " . SharePosterModel::VERIFY_STATUS_QUALIFIED
+                . " GROUP BY wa.activity_id ORDER BY wa.start_time DESC " . $limit;
+            $db = MysqlDB::getDB();
+            $activityList = $db->queryAll($sql);
+            self::$allActivity_list[$startTime] = $activityList;
+        }
+        return self::$allActivity_list[$startTime];
     }
 
     /**
-     * 获取连续性活动
+     * 获取活动总数
      * @param $student_id
      * @return int
      */
-    public static function getContinuityActivityNum($sign){
-        //查询周周领奖有效活动
-        $sql = "SELECT wa.activity_id,wa.start_time, wa.end_time FROM week_activity as wa INNER JOIN share_poster as sp 
-                on wa.activity_id=sp.activity_id where type = " . SharePosterModel::TYPE_WEEK_UPLOAD
-                . " AND verify_status= " . SharePosterModel::VERIFY_STATUS_QUALIFIED
-                . " GROUP BY wa.activity_id ORDER BY wa.start_time DESC LIMIT 10";
-
-        $db = MysqlDB::getDB();
-        $activityList = $db->queryAll($sql);
-
+    public static function getContinuityActivityNum($sign, $startTime){
+        //查询所有周周领奖有效活动
+        $activityList = self::getAllActivity($startTime);
         $ids = array_column($activityList, 'activity_id');
 
         $where = [
@@ -129,17 +177,16 @@ class CountingActivitySignService
             'type'            => SharePosterModel::TYPE_WEEK_UPLOAD,
             'verify_status'   => SharePosterModel::VERIFY_STATUS_QUALIFIED,
             'ORDER'           => ['id'=>'DESC'],
-            'create_time[>=]'=>$sign['create_time']
+            'create_time[>=]' => $startTime
         ];
         //查询当前用户参加的活动
         $sharePosterList = SharePosterModel::getRecords($where, ['activity_id', 'create_time']);
 
         $count = 0;
-
         foreach ($sharePosterList as $k => $one){
             $week_activity = $activityList[$k];
             //1. 学生参与活动列表 和 所有活动列表 都按照时间降序排序
-            //2. 对比用户参与活动和所有活动的 start_time、end_time、活动ID 是否都能按顺序对上
+            //2. 对比用户参与活动和所有活动的活动ID 是否都能按顺序对上
             //3. 为true表示存在连续性
             if($week_activity['activity_id'] == $one['activity_id']){
                 $count ++;
@@ -148,10 +195,15 @@ class CountingActivitySignService
                 break;
             }
         }
-        return $count;
+        return [count($sharePosterList), $count];
     }
 
 
+    /**
+     * 刷新达标期数
+     * @param $countingId
+     * @return false
+     */
     public static function refreshCountingNum($countingId){
 
         $activity = CountingActivityModel::getById($countingId);
@@ -161,8 +213,9 @@ class CountingActivitySignService
             return false;
         }
         $where = [
-            'op_activity_id' => $activity['op_activity_id'],
             'GROUP' => 'student_id',
+            'op_activity_id'    => $activity['op_activity_id'],
+            'qualified_status'  => CountingActivitySignModel::QUALIFIED_STATUS_NO
         ];
         $signList = CountingActivitySignModel::getRecords($where, ['student_id','create_time']);
 
@@ -179,9 +232,9 @@ class CountingActivitySignService
             ];
 
             $count = SharePosterModel::getRecord($where,['c'=>Medoo::raw('count(id)'),'student_id']);
-
+            list($cumulativeNum, $continuityNum) = self::getContinuityActivityNum($sign, $sign['create_time']);
             if($count){
-                self::updateSign($sign, $activity, time());
+                self::updateSign($sign, $activity, $cumulativeNum, $continuityNum);
             }
         }
     }

@@ -623,6 +623,11 @@ class SharePosterService
                 'verify_status' => $poster['poster_status']
             ];
             $update = SharePosterModel::batchUpdateRecord($updateData, $where);
+
+            if($update){
+                CountingActivitySignService::countSign($poster['student_id']);
+            }
+
             //计算当前真正应该获得的奖励
             $where = [
                 'id[!]'         => $poster['id'],

@@ -75,5 +75,10 @@ class APIRouter extends RouterBase
             'call' => Consumer::class . ':grantAward',
             'middles' => [],
         ],
+        '/api/consumer/refreshCountingNum' => [
+            'method' => ['post'],
+            'call' => Consumer::class . ':refreshCountingNum',
+            'middles' => [],
+        ]
     ];
 }
