@@ -191,6 +191,6 @@ class Dss
             SimpleLogger::error('role employee data', [$res, $params]);
             return [];
         }
-        return !empty($res['weixin_info']) ? $res['weixin_info'] : [];
+        return !empty($res['data']['weixin_info']) ? $res['data']['weixin_info'] : [];
     }
 }
