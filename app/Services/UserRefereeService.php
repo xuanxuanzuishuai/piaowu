@@ -305,6 +305,7 @@ class UserRefereeService
         if ($res) {
             $pageInfo = (new Erp())->getStudentCouponPageById([$res['student_coupon_id']]);
             $info = $pageInfo['data']['list'][0] ?? [];
+            SimpleLogger::info('UserRefereeService::getTaskIdByType', ['info' => $info]);
             if ($info
                 &&
                 $info['expired_end_time'] > time()
