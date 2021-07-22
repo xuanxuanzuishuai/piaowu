@@ -103,8 +103,8 @@ class RtCouponReceiveRecordModel extends Model
             $create_time_end = strtotime($create_date_end);
             $whereStr .= " AND srss.create_time<='{$create_time_end}'";
         }
+        $orderStatusEnable = ErpOrderCouponV1Model::STATUS_ENABLE;
         if ($order_id = $search['order_id']??'') {   // 订单号
-            $orderStatusEnable = ErpOrderCouponV1Model::STATUS_ENABLE;
             $couponStatusUsed = ErpStudentCouponV1Model::STATUS_USED;
             $whereStr .= " AND eoc.order_id='{$order_id}' AND eoc.status='{$orderStatusEnable}' AND esc.status='{$couponStatusUsed}'";
         }
@@ -132,7 +132,7 @@ class RtCouponReceiveRecordModel extends Model
                     LEFT JOIN {$tableDE} AS `de2` ON `ds1`.`assistant_id` = `de2`.`id`
                     LEFT JOIN {$tableDE} AS `de3` ON `ds1`.`course_manage_id` = `de3`.`id`
                     LEFT JOIN {$tableESC} AS `esc` ON `rcrr`.`student_coupon_id` = `esc`.`id`
-                    LEFT JOIN {$tableEOC} AS `eoc` ON `rcrr`.`student_coupon_id` = `eoc`.`student_coupon_id`
+                    LEFT JOIN {$tableEOC} AS `eoc` ON `rcrr`.`student_coupon_id` = `eoc`.`student_coupon_id` AND `eoc`.`status` = {$orderStatusEnable}
                     LEFT JOIN {$tableSRSS} AS `srss` ON `rcrr`.`receive_uid` = `srss`.`student_id`
                 WHERE {$whereStr}
             ";
@@ -175,7 +175,7 @@ class RtCouponReceiveRecordModel extends Model
                 LEFT JOIN {$tableDE} AS `de2` ON `ds1`.`assistant_id` = `de2`.`id`
                 LEFT JOIN {$tableDE} AS `de3` ON `ds1`.`course_manage_id` = `de3`.`id`
                 LEFT JOIN {$tableESC} AS `esc` ON `rcrr`.`student_coupon_id` = `esc`.`id`
-                LEFT JOIN {$tableEOC} AS `eoc` ON `rcrr`.`student_coupon_id` = `eoc`.`student_coupon_id`
+                LEFT JOIN {$tableEOC} AS `eoc` ON `rcrr`.`student_coupon_id` = `eoc`.`student_coupon_id` AND `eoc`.`status` = {$orderStatusEnable}
                 LEFT JOIN {$tableSRSS} AS `srss` ON `rcrr`.`receive_uid` = `srss`.`student_id`
             WHERE {$whereStr}
             ORDER BY
