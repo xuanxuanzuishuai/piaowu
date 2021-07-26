@@ -232,7 +232,7 @@ class TaskService
                 'instruction' =>$value['instruction'],
                 'award_rule' => $activityExt[$value['op_activity_id']] ?? '',
                 'sign_end_time' => $value['sign_end_time'],
-                'sign_end_time_format' => date('Y') == date('Y',time()) ? date('m.d',$value['sign_end_time']) : date('Y.m.d',$value['sign_end_time']),
+                'sign_end_time_format' => date('Y', $value['sign_end_time']) == date('Y',time()) ? date('m.d',$value['sign_end_time']) : date('Y.m.d',$value['sign_end_time']),
                 'status' => $status,
                 'show_status' => $statusList[$status],
                 'cumulative_nums' => $activitySign[$value['op_activity_id']]['cumulative_nums'] ?? 0,
@@ -282,7 +282,7 @@ class TaskService
             'op_activity_id' => $opActivityIds,
             'student_id'     => $studentId,
             'ORDER'          => ['type' => 'ASC']
-        ], ['op_activity_id', 'type', 'unique_id', 'shipping_status', 'goods_id', 'amount', 'logistics_status']);
+        ], ['op_activity_id', 'type', 'unique_id', 'shipping_status', 'goods_id', 'amount', 'logistics_status', 'express_number']);
 
         $goodsIds = array_filter(array_unique(array_column($award, 'goods_id')));
 
@@ -293,6 +293,8 @@ class TaskService
             $goodsInfo = array_column($goodsInfo['data']['list'] ?? [],'name','id');
         }
 
+        $logisticsStatus = DictConstants::getSet(DictConstants::MATERIAL_LOGISTICS_STATUS);
+
         $record = [];
         foreach ($award as $item) {
             if ($item['type'] == CountingActivityAwardModel::TYPE_ENTITY) {
@@ -301,7 +303,7 @@ class TaskService
                     if (empty($item['express_number'])){
                         $statusShow = CountingActivityAwardModel::SHIPPING_STATUS_ENTITY_MAP[$item['shipping_status']];
                     }else{
-                        $statusShow = CountingActivityAwardModel::LOGISTICS_STATUS_MAP[$item['logistics_status']];
+                        $statusShow = $logisticsStatus[$item['logistics_status']];
                     }
                     $record[$item['op_activity_id']][$item['express_number']] = [
                         'type'        => $item['type'],

@@ -223,7 +223,7 @@ class CountingActivitySignModel extends Model
             [
                 self::$table . '.op_activity_id',
                 self::$table . '.award_time',
-                CountingActivityModel::$table . '.name',
+                CountingActivityModel::$table . '.title',
             ],
             [
                 self::$table . '.student_id'   => $studentId,

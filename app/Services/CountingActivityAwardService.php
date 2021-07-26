@@ -88,7 +88,7 @@ class CountingActivityAwardService
             'num' => $data['amount'],
             'event_task_id' => $countingActivity['task_id'],
             'source_type' => self::SOURCE_TYPE,
-            'remark' => $countingActivity['name']
+            'remark' => $countingActivity['title']
         ];
         $leaf['event_type'] = self::EVENT_TYPE;
 
@@ -102,7 +102,7 @@ class CountingActivityAwardService
             'student_id'  => $data['student_id'],
             'uuid'        => $student['uuid'],
             'amount'      => $data['amount'],
-            'name'        => $countingActivity['name'],
+            'name'        => $countingActivity['title'],
             'instruction' => $countingActivity['instruction'],
         ]);
         return true;
