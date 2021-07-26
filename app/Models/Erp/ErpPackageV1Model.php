@@ -21,10 +21,11 @@ class ErpPackageV1Model extends ErpModel
     const IS_SHOW = 1;
     const IS_NOT_SHOW = 0;
 
-    // 商品包状态 -1 已下架 0 未上架 1 已上架
+    // 商品包状态 -1 已下架 0 未上架 1 已上架 2已上架未到售卖时间
     const STATUS_OFF_SALE = -1;
     const STATUS_WAIT_SALE = 0;
     const STATUS_ON_SALE = 1;
+    const STATUS_ON_AFTER_SALE = 2;
 
     /**
      * 获取课包列表
@@ -98,10 +99,10 @@ class ErpPackageV1Model extends ErpModel
      * 根据课包ID和售卖渠道获取数据
      * @param $packageIds
      * @param $channel
-     * @param $status
+     * @param array $status
      * @return array|null
      */
-    public static function getPackageInfoByIdChannel($packageIds, $channel, $status)
+    public static function getPackageInfoByIdChannel($packageIds, $channel, array $status)
     {
         //获取数据库对象
         $db = self::dbRO();
@@ -112,7 +113,7 @@ class ErpPackageV1Model extends ErpModel
                 WHERE
                     id IN ( " . implode(',', $packageIds) . " ) 
                     AND channel & :channel 
-                    AND status=" . $status;
+                    AND status in(" . implode(',', $status) .")";
         $map = [
             ":channel" => $channel
         ];

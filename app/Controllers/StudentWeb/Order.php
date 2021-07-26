@@ -397,14 +397,15 @@ class Order extends ControllerBase
                     }
                 }
             }
-            if (!is_null($agent)) {
+            //购买方式为代理商推广：代理商线索分配类型为不分配时，继续展示公众号二维码
+            if ($agent['leads_allot_type'] == AgentModel::LEADS_ALLOT_TYPE_STOP) {
                 $defaultNickName = '小叶子老师';
                 $defaultThumb = AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::AGENT_CONFIG, 'default_thumb'));
                 $assistantInfo['wx_nick'] = $assistantInfo['wx_nick'] ?: $defaultNickName;
                 $assistantInfo['wx_thumb'] = $assistantInfo['wx_thumb'] ?: $defaultThumb;
             }
             $data = array_merge([
-                'model' => $agent['division_model'] ?? 0,
+                'model' => ($agent['leads_allot_type'] != AgentModel::LEADS_ALLOT_TYPE_STOP) ? 1 : 0,
                 'ai_qr_url' => $qrCodeUrl,
             ], $assistantInfo);
         } catch (RunTimeException $e) {

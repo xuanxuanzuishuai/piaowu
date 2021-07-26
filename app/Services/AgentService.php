@@ -446,6 +446,7 @@ class AgentService
             }
         }
         //助教信息
+        $detail['assistant_name'] = '';
         if (!empty($detail['assistant_id'])) {
             $detail['assistant_name'] = DssEmployeeModel::getRecord(['id' => $detail['assistant_id']], 'name');
         }
@@ -2150,7 +2151,7 @@ class AgentService
             default:
                 return [];
         }
-        return ErpPackageV1Model::getPackageInfoByIdChannel($packageIds, ErpPackageV1Model::CHANNEL_OP_AGENT, ErpPackageV1Model::STATUS_ON_SALE);
+        return ErpPackageV1Model::getPackageInfoByIdChannel($packageIds, ErpPackageV1Model::CHANNEL_OP_AGENT, [ErpPackageV1Model::STATUS_ON_SALE, ErpPackageV1Model::STATUS_ON_AFTER_SALE]);
     }
 
     /**
