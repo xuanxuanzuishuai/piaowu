@@ -45,7 +45,7 @@ class CountingActivityAwardService
 
         //验证奖励库存
         $storage = CountingAwardConfigModel::getRecords([
-            'op_activity_id' => $sign['op_activity_id'],
+            'op_activity_id' => $sign[0]['op_activity_id'],
             'status' => CountingAwardConfigModel::EFFECTIVE_STATUS,
         ]);
 
