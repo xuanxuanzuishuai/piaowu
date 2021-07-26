@@ -535,6 +535,8 @@ class TaskService
             throw new RunTimeException(['insert_failure']);
         }
 
+        QueueService::signCountingActivityUp(['id'=>$result]);
+
         return true;
     }
 

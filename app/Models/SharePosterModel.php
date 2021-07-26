@@ -439,4 +439,52 @@ class SharePosterModel extends Model
 
         return [$posters, $totalCount];
     }
+
+    /**
+     * 获取学生参加的活动
+     * @param $ids
+     * @param $studentId
+     * @param $startTime
+     * @return array|null'
+     */
+    public static function getStudentSignActivity($ids, $studentId,$startTime){
+        //查询当前用户参加的活动
+        $sql = 'SELECT sp.`activity_id`,sp.`create_time` 
+                FROM '.self::$table.' AS sp LEFT JOIN '.WeekActivityModel::$table.' AS wa 
+                ON sp.activity_id=wa.activity_id WHERE sp.`activity_id` IN ('.$ids.') 
+                AND sp.`student_id`='.$studentId.' 
+                AND sp.`type`='.SharePosterModel::TYPE_WEEK_UPLOAD.' 
+                AND sp.`verify_status`='.SharePosterModel::VERIFY_STATUS_QUALIFIED.' 
+                AND sp.`create_time`>='.$startTime.' 
+                ORDER BY wa.create_time DESC';
+
+        $db = MysqlDB::getDB();
+        $sharePosterList = $db->queryAll($sql);
+        return $sharePosterList;
+    }
+
+    /**
+     * 获取所有有效的周周领奖活动
+     * @param $pageSize
+     * @return array|null
+     */
+    public static function getAllWeekActivity($pageSize){
+
+        if($pageSize){
+            $limit = ' LIMIT ' . $pageSize;
+        }else{
+            $limit = '';
+        }
+
+        $sql = 'SELECT wa.activity_id,wa.start_time, wa.end_time 
+                FROM '.WeekActivityModel::$table.' as wa INNER JOIN '.self::$table.' as sp 
+                on wa.activity_id=sp.activity_id 
+                where type = ' . SharePosterModel::TYPE_WEEK_UPLOAD
+                . ' AND verify_status= ' . SharePosterModel::VERIFY_STATUS_QUALIFIED
+                . ' GROUP BY wa.activity_id ORDER BY wa.start_time DESC ' . $limit;
+        $db = MysqlDB::getDB();
+        $activityList = $db->queryAll($sql);
+
+        return $activityList;
+    }
 }

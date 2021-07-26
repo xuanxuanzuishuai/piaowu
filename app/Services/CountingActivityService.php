@@ -592,12 +592,10 @@ class CountingActivityService
         }
         $count = CountingActivityModel::getCount(['name'=>$data['name'],'op_activity_id[!]'=>$activity_id]);
         if($count){
-            throw new RuntimeException(['Duplicate activity name']);
+            throw new RuntimeException(['repeat_activity_name']);
         }
 
-
         return $data;
-
     }
 
     /**

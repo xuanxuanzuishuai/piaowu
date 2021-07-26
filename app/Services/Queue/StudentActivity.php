@@ -13,7 +13,7 @@ class StudentActivity extends BaseTopic
 {
     const TOPIC_NAME = "student_activity";
     const EDIT_QUALIFIED = 'edit_qualified';
-
+    const SIGN_UP = 'sign_up';
 
     /**
      * @param null $publishTime
@@ -32,6 +32,13 @@ class StudentActivity extends BaseTopic
     public function editQualified($data)
     {
         $this->setEventType(self::EDIT_QUALIFIED);
+        $this->setMsgBody($data);
+        return $this;
+    }
+
+    public function signUp($data)
+    {
+        $this->setEventType(self::SIGN_UP);
         $this->setMsgBody($data);
         return $this;
     }

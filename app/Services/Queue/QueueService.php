@@ -697,12 +697,28 @@ class QueueService
         }
     }
 
-
+    /**
+     * 更新达标期数
+     * @param $data
+     */
     public static function editQualified($data)
     {
         try {
             $topic = new StudentActivity();
             $topic->editQualified($data)->publish(5);
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), $data ?? []);
+        }
+    }
+
+    /**
+     * 报名
+     * @param $data
+     */
+    public static function signCountingActivityUp($data){
+        try {
+            $topic = new StudentActivity();
+            $topic->signUp($data)->publish(5);
         } catch (Exception $e) {
             SimpleLogger::error($e->getMessage(), $data ?? []);
         }

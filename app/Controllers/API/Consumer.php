@@ -43,6 +43,7 @@ use App\Services\Queue\PushMessageTopic;
 use App\Services\Queue\QueueService;
 use App\Services\Queue\SaveTicketTopic;
 use App\Services\Queue\StudentAccountAwardPointsTopic;
+use App\Services\Queue\StudentActivity;
 use App\Services\Queue\ThirdPartBillTopic;
 use App\Services\Queue\UserPointsExchangeRedPackTopic;
 use App\Services\Queue\WechatTopic;
@@ -902,6 +903,12 @@ class Consumer extends ControllerBase
         return HttpHelper::buildResponse($response, []);
     }
 
+    /**
+     * 计数任务相关
+     * @param Request $request
+     * @param Response $response
+     * @throws RunTimeException
+     */
     public function refreshCountingNum(Request $request, Response $response)
     {
         $params = $request->getParams();
@@ -910,6 +917,10 @@ class Consumer extends ControllerBase
                 $countingActivtyId = $params['id'];
                 CountingActivitySignService::refreshCountingNum($countingActivtyId);
                 break;
+            case StudentActivity::EDIT_QUALIFIED:
+                $id = $params['id'];
+                CountingActivitySignService::signAction($id);
+
         }
     }
 }

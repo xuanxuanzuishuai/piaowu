@@ -23,7 +23,6 @@ use Slim\Http\StatusCode;
 
 class CountingActivity extends ControllerBase
 {
-
     /**
      * 添加活动
      * @param Request $request
@@ -109,8 +108,8 @@ class CountingActivity extends ControllerBase
             ['key' => 'name',           'type' => 'required', 'error_code' => 'name_is_required'],
             ['key' => 'start_time',     'type' => 'required', 'error_code' => 'start_time_is_required'],
             ['key' => 'end_time',       'type' => 'required', 'error_code' => 'end_time_is_required'],
-            ['key' => 'sign_end_time',  'type' => 'required', 'error_code' => 'sign_end_time_is_required'],
-            ['key' => 'join_end_time',  'type' => 'required', 'error_code' => 'join_end_time_is_required'],
+            ['key' => 'sign_end_time',  'type' => 'required', 'error_code' => 'sign_time_must_greater_than_start_time'],
+            ['key' => 'join_end_time',  'type' => 'required', 'error_code' => 'join_time_must_greater_than_sign_time'],
             ['key' => 'rule_type',      'type' => 'required', 'error_code' => 'rule_type_is_required'],
             ['key' => 'nums',           'type' => 'required', 'error_code' => 'nums_is_required'],
             ['key' => 'title',          'type' => 'required', 'error_code' => 'title_is_required'],
