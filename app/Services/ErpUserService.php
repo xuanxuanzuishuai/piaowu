@@ -51,9 +51,9 @@ class ErpUserService
             $account = $accounts[$item];
 
             if ($item == self::ACCOUNT_SUB_TYPE_CASH) {
-                $data[$item] = ($account['total_num'] * 100 - $account['out_time_num'] * 100);
+                $data[$item] = ($account['total_num'] * 100 - $account['out_time_num'] * 100) ?? 0;
             } else {
-                $data[$item] = $account['total_num'];
+                $data[$item] = $account['total_num'] ?? 0;
             }
         }
 

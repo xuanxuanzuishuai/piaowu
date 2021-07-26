@@ -21,7 +21,7 @@ class CountingActivityAwardModel extends Model
     //金叶子发货状态
     const SHIPPING_STATUS_GOLD_LEAF_MAP = [
         1 => '未到账',
-        3 => '已到账',
+        2 => '已到账',
     ];
 
     //物流状态：1已揽收 2运输中 3派件中 4已签收

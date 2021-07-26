@@ -8,6 +8,7 @@
 
 namespace App\Services;
 
+use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Models\CountingActivityAwardModel;
 use App\Libs\Constants;
@@ -94,7 +95,7 @@ class CountingActivityAwardService
         //post请求
         $ret = (new Erp())->grantGoldLeaf($leaf);
         if (!$ret) return false;
-        $ret = CountingActivityAwardModel::updateStatus($data['id']);
+        $ret = CountingActivityAwardModel::updateStatus($data['id'],CountingActivityAwardModel::SHIPPING_STATUS_DELIVERED);
         if (empty($ret)) return false;
         //推动微信消息
         QueueService::sendGoldLeafWxMessage([
@@ -187,6 +188,10 @@ class CountingActivityAwardService
             [
                 'unique_id' => $uniqueId,
             ]);
+
+        $redis = RedisDB::getConn();
+        $cacheKey = sprintf(CountingActivityAwardModel::REDIS_EXPRESS_KEY, $uniqueId);
+        $redis->del([$cacheKey]);
         return true;
     }
 }

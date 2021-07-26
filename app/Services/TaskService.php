@@ -50,7 +50,7 @@ class TaskService
 
         if (empty($studentId)) return $ret;
 
-        $userStatusInfo = StudentService::dssStudentStatusCheck($studentId);   // 获取用户当前状态
+        $userStatusInfo = StudentService::dssStudentStatusCheck($studentId, false);   // 获取用户当前状态
         $ret['user_info'] = [
             'uuid' => $userStatusInfo['student_info']['uuid'],
             'student_status' => $userStatusInfo['student_status'],
@@ -58,6 +58,8 @@ class TaskService
         ];
 
         $ret['gold_leaf'] = ErpUserService::getStudentAccountInfo($userStatusInfo['student_info']['uuid'],ErpUserService::ACCOUNT_SUB_TYPE_GOLD_LEAF);
+
+        if ($userStatusInfo['student_status'] != DssStudentModel::STATUS_BUY_NORMAL_COURSE) return $ret;
 
         $redis = RedisDB::getConn();
         $cacheTime = $redis->hget(self::TASK_LIST_NEWEST_VISIT_TIME, $studentId);
@@ -83,7 +85,8 @@ class TaskService
             $opActivityIds[] = $value['op_activity_id'];
             $list[$value['op_activity_id']] = $value;
             //是否有新任务
-            if ($value['first_effect_time'] > $cacheTime) $ret['popup'] = true;
+            $contrast = $value['first_effect_time'] > $value['start_time'] ? $value['first_effect_time'] : $value['start_time'];
+            if ($contrast > $cacheTime) $ret['popup'] = true;
         }
 
         //互斥任务
@@ -97,7 +100,7 @@ class TaskService
             $mutexIds      = []; //互斥的活动id
             $mutexActivity = []; //互斥活动对应关系
             foreach ($mutex as $m) {
-                $mutexActivity['mutex_op_activity_id'][] = $m['op_activity_id'];
+                $mutexActivity[$m['mutex_op_activity_id']][] = $m['op_activity_id'];
                 $mutexIds[]                              = $m['mutex_op_activity_id'];
             }
 
@@ -182,7 +185,7 @@ class TaskService
             'op_activity_id' => $activityIds,
             'status'         => CountingAwardConfigModel::EFFECTIVE_STATUS,
         ], [
-            'type', 'op_activity_id'
+            'type', 'op_activity_id', 'amount'
         ]);
 
         foreach ($config as $item) {
@@ -190,7 +193,7 @@ class TaskService
                 $list[$item['op_activity_id']]['goods_type'] = CountingAwardConfigModel::PRODUCT_TYPE;
             } elseif ($item['type'] != CountingAwardConfigModel::PRODUCT_TYPE && !isset($list[$item['op_activity_id']]['goods_type'])) {
                 $list[$item['op_activity_id']]['goods_type'] = CountingAwardConfigModel::GOLD_LEAF_TYPE;
-                $list[$item['op_activity_id']]['goods_gold_leaf_number'] = $item['amount'];
+                $list[$item['op_activity_id']]['goods_gold_leaf_number'] = (int)$item['amount'];
             }
         }
 
@@ -279,7 +282,7 @@ class TaskService
             'op_activity_id' => $opActivityIds,
             'student_id'     => $studentId,
             'ORDER'          => ['type' => 'ASC']
-        ], ['op_activity_id', 'type', 'unique_id', 'shipping_status', 'goods_id', 'amount']);
+        ], ['op_activity_id', 'type', 'unique_id', 'shipping_status', 'goods_id', 'amount', 'logistics_status']);
 
         $goodsIds = array_filter(array_unique(array_column($award, 'goods_id')));
 
@@ -295,9 +298,14 @@ class TaskService
             if ($item['type'] == CountingActivityAwardModel::TYPE_ENTITY) {
 
                 if (!isset($record[$item['op_activity_id']][$item['express_number']])) {
+                    if (empty($item['express_number'])){
+                        $statusShow = CountingActivityAwardModel::SHIPPING_STATUS_ENTITY_MAP[$item['shipping_status']];
+                    }else{
+                        $statusShow = CountingActivityAwardModel::LOGISTICS_STATUS_MAP[$item['logistics_status']];
+                    }
                     $record[$item['op_activity_id']][$item['express_number']] = [
                         'type'        => $item['type'],
-                        'status_show' => CountingActivityAwardModel::SHIPPING_STATUS_ENTITY_MAP[$item['shipping_status']],
+                        'status_show' => $statusShow,
                     ];
                 }
 
