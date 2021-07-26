@@ -84,9 +84,6 @@ class TaskService
         foreach ($countingActivity as $value){
             $opActivityIds[] = $value['op_activity_id'];
             $list[$value['op_activity_id']] = $value;
-            //是否有新任务
-            $contrast = $value['first_effect_time'] > $value['start_time'] ? $value['first_effect_time'] : $value['start_time'];
-            if ($contrast > $cacheTime) $ret['popup'] = true;
         }
 
         //互斥任务
@@ -107,12 +104,19 @@ class TaskService
             if (!empty($mutexIds)) {
 
                 //前置黑名单
-                $blackList = CountingActivityBlackModel::getRecords([
+                $blackIds = CountingActivityBlackModel::getRecords([
                     'student_id' => $studentId,
                     'op_activity_id' => $mutexIds,
                     'status' => CountingActivityBlackModel::NORMAL_STATUS,
                 ],['op_activity_id']);
-                if (!empty($blackList)){
+                if (!empty($blackIds)){
+
+                    //互斥黑名单任务
+                    $blackList = CountingActivityMutexModel::getRecords([
+                        'mutex_op_activity_id' => array_values(array_filter(array_unique(array_column($blackIds,'op_activity_id')))),
+                        'status'         => CountingActivityMutexModel::NORMAL_STATUS
+                    ], ['op_activity_id', 'mutex_op_activity_id']
+                    );
                     foreach ($blackList as $black){
                         unset($list[$black['op_activity_id']]);
                     }
@@ -147,7 +151,7 @@ class TaskService
         ]);
 
         //格式化数据
-        [$ret['list'],$ret['banner']] = self::formatListData($list,$activitySign);
+        [$ret['list'], $ret['banner'], $ret['popup']] = self::formatListData($list, $activitySign, $cacheTime);
 
         //记录任务中心访问时间
         $redis->hset(self::TASK_LIST_NEWEST_VISIT_TIME, $studentId, time());
@@ -157,7 +161,7 @@ class TaskService
     }
 
 
-    private static function formatListData(array $list, array $sign) :array
+    private static function formatListData(array $list, array $sign, int $cacheTime) :array
     {
         $statusList = [
             1 => '立即报名',
@@ -199,7 +203,12 @@ class TaskService
 
         $ret = [];
         $banner = [];
+        $popup = false;
         foreach ($list as $value){
+
+            //是否有新任务
+            $contrast = $value['first_effect_time'] > $value['start_time'] ? $value['first_effect_time'] : $value['start_time'];
+            if ($contrast > $cacheTime) $popup = true;
 
             if(!empty($value['banner'])) $banner[] = AliOSS::replaceCdnDomainForDss($value['banner']);
 
@@ -246,7 +255,7 @@ class TaskService
             $defaultBanner = DictConstants::get(DictConstants::STUDENT_TASK_DEFAULT, 'banner');
             $banner[] = AliOSS::replaceCdnDomainForDss($defaultBanner);
         }
-        return [$ret,$banner];
+        return [$ret, $banner, $popup];
 
     }
 
