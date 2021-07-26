@@ -38,13 +38,14 @@ class CountingActivityAwardModel extends Model
     ];
 
 
-    //发货单状态:0废除 1待发货 2已发货 3发货中 4无需发货 -1发货失败
+    //发货单状态:0废除 1待发货 2已发货 3发货中 4无需发货 -1发货失败 -10 因库存不足导致待发货且不发货
     const SHIPPING_STATUS_DEL = 0;
     const SHIPPING_STATUS_BEFORE = 1;
     const SHIPPING_STATUS_DELIVERED = 2;
     const SHIPPING_STATUS_CENTRE = 3;
     const SHIPPING_STATUS_NO_NEED = 4;
     const SHIPPING_STATUS_FAIL = -1;
+    const SHIPPING_STATUS_SPECIAL = -10;
 
 
     const SHIPPING_STATUS_ENTITY_MAP = [
@@ -54,6 +55,7 @@ class CountingActivityAwardModel extends Model
         self::SHIPPING_STATUS_CENTRE => '发货中',
         self::SHIPPING_STATUS_NO_NEED => '无需发货',
         self::SHIPPING_STATUS_FAIL => '发货中',
+        self::SHIPPING_STATUS_SPECIAL => '待发货',
     ];
 
     const UNIQUE_ID_PREFIX = 1001;
@@ -78,9 +80,10 @@ class CountingActivityAwardModel extends Model
      * 批量奖励信息
      * @param array $activityAward
      * @param int $signId
+     * @param array $configStorage
      * @return bool
      */
-    public static function grantAward(array $activityAward,int $signId)
+    public static function grantAward(array $activityAward, int $signId, array $configStorage = []): bool
     {
         if (empty($activityAward) || empty($signId)) return false;
         $insertRow = self::batchInsert($activityAward);
@@ -101,6 +104,23 @@ class CountingActivityAwardModel extends Model
         if (empty($updateRow)) {
             SimpleLogger::error('update counting_activity_sign data error', [$signId]);
             return false;
+        }
+
+        if (!empty($configStorage)) {
+            foreach ($configStorage as $storage) {
+                $configUpdateRow = CountingAwardConfigModel::batchUpdateRecord([
+                    'quantity' => $storage['quantity'] - $storage['amount']
+                ], [
+                    'op_activity_id' => $storage['op_activity_id'],
+                    'goods_id'       => $storage['goods_id'],
+                    'status'         => $storage['status'],
+                    'quantity'       => $storage['quantity'],
+                ]);
+                if (empty($configUpdateRow)) {
+                    SimpleLogger::error('update counting_award_config data error', [$configStorage, $storage]);
+                    return false;
+                }
+            }
         }
 
         return true;

@@ -230,7 +230,7 @@ class TaskService
                 'name' =>$value['name'],
                 'op_activity_id' =>$value['op_activity_id'],
                 'instruction' =>$value['instruction'],
-                'award_rule' => $activityExt[$value['op_activity_id']] ?? '',
+                'award_rule' => Util::textDecode($activityExt[$value['op_activity_id']] ?? ''),
                 'sign_end_time' => $value['sign_end_time'],
                 'sign_end_time_format' => date('Y', $value['sign_end_time']) == date('Y',time()) ? date('m.d',$value['sign_end_time']) : date('Y.m.d',$value['sign_end_time']),
                 'status' => $status,
@@ -578,6 +578,34 @@ class TaskService
 
         if (empty($awardConfig)) throw new RunTimeException(['operator_failure']);
 
+
+        //验证奖励库存
+        $storage = CountingAwardConfigModel::getRecords([
+            'op_activity_id' => $activityId,
+            'status' => CountingAwardConfigModel::EFFECTIVE_STATUS,
+        ]);
+
+        $mark = true;
+
+        $configStorage = [];
+        foreach ($storage as $s){
+            if ($s['type'] != CountingActivityAwardModel::TYPE_ENTITY)  continue;
+
+            if (($s['quantity'] - $s['amount'] ) < 0) {
+                $mark = false;
+                $configStorage = [];
+                break;
+            }
+
+            $configStorage[] = [
+                'op_activity_id' => $s['op_activity_id'],
+                'status'         => $s['status'],
+                'goods_id'       => $s['goods_id'],
+                'quantity'       => $s['quantity'],
+                'amount'         => $s['amount'],
+            ];
+        }
+
         $time = time();
 
         $activityAward = [];
@@ -602,7 +630,7 @@ class TaskService
                 $activityAward[] = [
                     'sign_id'         => $sign['id'],
                     'student_id'      => $studentId,
-                    'shipping_status' => CountingActivityAwardModel::SHIPPING_STATUS_BEFORE,
+                    'shipping_status' => $mark ? CountingActivityAwardModel::SHIPPING_STATUS_BEFORE : CountingActivityAwardModel::SHIPPING_STATUS_SPECIAL,
                     'type'            => $item['type'],
                     'unique_id'       => CountingActivityAwardModel::UNIQUE_ID_PREFIX . sprintf("%08d",
                             $sign['id']) . sprintf("%02d", $key),
@@ -620,7 +648,7 @@ class TaskService
         $db = MysqlDB::getDB();
         $db->beginTransaction();
 
-        $res = CountingActivityAwardModel::grantAward($activityAward, $sign['id']);
+        $res = CountingActivityAwardModel::grantAward($activityAward, $sign['id'], $configStorage);
 
         if (empty($res)) {
             $db->rollBack();

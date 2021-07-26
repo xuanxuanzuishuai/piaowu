@@ -8,12 +8,12 @@
 
 namespace App\Services;
 
-use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Models\CountingActivityAwardModel;
 use App\Libs\Constants;
 use App\Libs\Erp;
 use App\Models\CountingActivityModel;
+use App\Models\CountingAwardConfigModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Erp\ErpStudentAccountModel;
 use App\Services\Queue\QueueService;
@@ -43,6 +43,24 @@ class CountingActivityAwardService
             return false;
         }
 
+        //验证奖励库存
+        $storage = CountingAwardConfigModel::getRecords([
+            'op_activity_id' => $sign['op_activity_id'],
+            'status' => CountingAwardConfigModel::EFFECTIVE_STATUS,
+        ]);
+
+        $mark = true;
+
+        foreach ($storage as $s){
+            if ($s['type'] != CountingActivityAwardModel::TYPE_ENTITY)  continue;
+
+            if (($s['quantity'] - $s['amount'] ) < 0) {
+                $mark = false;
+                break;
+            }
+        }
+
+
         foreach ($sign as $item){
 
             switch ($item['type']) {
@@ -50,7 +68,7 @@ class CountingActivityAwardService
                     CountingActivityAwardService::grantGoldLeaf($item);
                     break;
                 case CountingActivityAwardModel::TYPE_ENTITY:
-                    CountingActivityAwardService::grantEntity($item);
+                    CountingActivityAwardService::grantEntity($item,$mark);
                     break;
                 default:
                     SimpleLogger::error('counting_activity_award data type error', [$item]);
@@ -78,7 +96,7 @@ class CountingActivityAwardService
 
         $countingActivity = CountingActivityModel::getRecord([
             'op_activity_id' => $data['op_activity_id']
-        ],['task_id','name','instruction']);
+        ],['task_id','name','instruction','title']);
 
         //发放金叶子
         $leaf['msg_body'] = [
@@ -112,10 +130,16 @@ class CountingActivityAwardService
      * 请求erp邮递实物
      *
      * @param array $data
+     * @param bool $mark
      * @return bool
      */
-    public static function grantEntity(array $data): bool
+    public static function grantEntity(array $data,bool $mark = true): bool
     {
+        if (!$mark) {
+            CountingActivityAwardModel::updateStatus($data['id'], CountingActivityAwardModel::SHIPPING_STATUS_SPECIAL);
+            return true;
+        }
+
         $student = DssStudentModel::getById($data['student_id']);
         if (empty($student)) {
             SimpleLogger::error('counting_activity_award data type error', $data);
@@ -130,7 +154,7 @@ class CountingActivityAwardService
             'goods_id'     => $data['goods_id'],
             'goods_code'   => $data['goods_code'],
             'mobile'       => $student['mobile'],
-            'student_uuid' => $student['uuid'],
+            'uuid'         => $student['uuid'],
             'num'          => $data['amount'],
             'address_id'   => $data['erp_address_id'],
         ];
@@ -153,7 +177,7 @@ class CountingActivityAwardService
      */
     public static function syncAwardLogistics($uniqueId)
     {
-        $expressInfo = (new Erp())->getExpressDetails($uniqueId);
+        $expressInfo = (new Erp())->getExpressDetails($uniqueId, false);
         if (empty($expressInfo['logistics_detail'])) {
             return false;
         }
@@ -189,9 +213,6 @@ class CountingActivityAwardService
                 'unique_id' => $uniqueId,
             ]);
 
-        $redis = RedisDB::getConn();
-        $cacheKey = sprintf(CountingActivityAwardModel::REDIS_EXPRESS_KEY, $uniqueId);
-        $redis->del([$cacheKey]);
         return true;
     }
 }

@@ -812,14 +812,16 @@ class Erp
     /**
      * 获取快递详情
      * @param string $uniqueId
+     * @param bool $readCache
      * @return array
      */
-    public function getExpressDetails(string $uniqueId): array
+    public function getExpressDetails(string $uniqueId, bool $readCache = true): array
     {
         $redis = RedisDB::getConn();
 
+        $cache = [];
         $cacheKey = sprintf(CountingActivityAwardModel::REDIS_EXPRESS_KEY, $uniqueId);
-        $cache = $redis->get($cacheKey);
+        if ($readCache) $cache = $redis->get($cacheKey);
         if (!empty($cache)) return json_decode($cache, true);
 
         $result = HttpHelper::requestJson($this->host . self::API_EXPRESS_DETAILS,  ['order_id' => $uniqueId]);
