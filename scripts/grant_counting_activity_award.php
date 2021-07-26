@@ -41,7 +41,7 @@ SimpleLogger::info('grant counting activity award start', []);
 $time = time() - Util::TIMESTAMP_1H;
 //获取超过1小时未发放的数据
 $award = CountingActivityAwardModel::getRecords([
-    'enable_status'   => CountingActivityAwardModel::SHIPPING_STATUS_BEFORE,
+    'shipping_status' => CountingActivityAwardModel::SHIPPING_STATUS_BEFORE,
     'create_time[<=]' => $time,
     'ORDER'           => ['create_time' => 'ASC'],
     'LIMIT'           => [0, 100]
