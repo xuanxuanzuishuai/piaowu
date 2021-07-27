@@ -23,6 +23,7 @@ use App\Controllers\OrgWeb\Bill;
 use App\Controllers\OrgWeb\Channel;
 use App\Controllers\OrgWeb\CountingActivity;
 use App\Controllers\OrgWeb\Dept;
+use App\Controllers\OrgWeb\LandingRecall;
 use App\Controllers\OrgWeb\Message;
 use App\Controllers\OrgWeb\Employee as OrgWebEmployee;
 use App\Controllers\OrgWeb\EmployeeActivity;
@@ -272,5 +273,15 @@ class OrgWebRouter extends RouterBase
         '/op_web/activity_sign/list' => ['method' => ['get'], 'call' => ActivitySign::class . ':list'],
         '/op_web/activity_sign/list_export' => ['method' => ['get'], 'call' => ActivitySign::class . ':listExport'],
         '/op_web/activity_sign/user_list' => ['method' => ['get'], 'call' => ActivitySign::class . ':userList'],
+
+        // Landing页召回
+        '/op_web/landing_recall/ext_info' => ['method' => ['get'], 'call' => LandingRecall::class . ':extInfo'],
+        '/op_web/landing_recall/save' => ['method' => ['post'], 'call' => LandingRecall::class . ':save'],
+        '/op_web/landing_recall/list' => ['method' => ['get'], 'call' => LandingRecall::class . ':list'],
+        '/op_web/landing_recall/detail' => ['method' => ['get'], 'call' => LandingRecall::class . ':detail'],
+        '/op_web/landing_recall/enable_status' => ['method' => ['post'], 'call' => LandingRecall::class . ':editEnableStatus'],
+        '/op_web/landing_recall/send_msg' => ['method' => ['post'], 'call' => LandingRecall::class . ':sendMsg'],
+        '/op_web/landing_recall/send_count' => ['method' => ['get'], 'call' => LandingRecall::class . ':sendCount'],
+        
     ];
 }

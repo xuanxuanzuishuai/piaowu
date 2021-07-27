@@ -10,6 +10,7 @@ namespace App\Controllers\StudentWeb;
 
 use App\Controllers\ControllerBase;
 use App\Libs\AliOSS;
+use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
@@ -19,6 +20,7 @@ use App\Libs\RC4;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Libs\Valid;
+use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\AgentModel;
 use App\Models\Dss\DssCategoryV1Model;
 use App\Models\Dss\DssCollectionModel;
@@ -38,6 +40,7 @@ use App\Services\MiniAppQrService;
 use App\Services\PackageService;
 use App\Services\PayServices;
 use App\Services\ReferralActivityService;
+use App\Services\UserService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -412,5 +415,97 @@ class Order extends ControllerBase
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
         return HttpHelper::buildResponse($response, $data);
+    }
+    
+    /**
+     * landing页召回创建订单(未注册用户,自动注册完成后创建订单)
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function LandingRecallCreateOrder(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'pkg',
+                'type' => 'required',
+                'error_code' => 'package_id_is_required',
+            ],
+            [
+                'key' => 'pkg',
+                'type' => 'integer',
+                'error_code' => 'package_id_must_be_integer',
+            ],
+            [
+                'key' => 'pay_channel',
+                'type' => 'required',
+                'error_code' => 'pay_channel_is_required',
+            ],
+            [
+                'key' => 'pay_channel',
+                'type' => 'integer',
+                'error_code' => 'pay_channel_must_be_integer',
+            ],
+            [
+                'key' => 'mobile',
+                'type' => 'required',
+                'error_code' => 'mobile_is_required',
+            ],
+            [
+                'key' => 'pay_url',
+                'type' => 'required',
+                'error_code' => 'pay_url_is_required',
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            $appId = Constants::SMART_APP_ID;
+            $busiType = Constants::SMART_WX_SERVICE;
+            $userType = Constants::USER_TYPE_STUDENT;
+            $openId = null;
+            if ($params['wx_code'] ?? '') {   //微信打开获取openId
+                $data = WeChatMiniPro::factory($appId, $busiType)->getWeixnUserOpenIDAndAccessTokenByCode($params['wx_code']);
+                if (empty($data) || empty($data['openid'])) {
+                    throw new RunTimeException(['can_not_obtain_open_id']);
+                }
+                $openId = $data['openid'];
+            }
+            $channel = DictConstants::get(DictConstants::LANDING_RECALL_CHANNEL, 'landing_recall_channel');
+            $student = DssStudentModel::getRecord(['mobile' => $params['mobile']], ['id', 'uuid', 'has_review_course']);
+            if (!empty($student)) {
+                if ($student['has_review_course'] != DssStudentModel::REVIEW_COURSE_NO) {   //判断用户身份
+                    if ($student['has_review_course'] == DssStudentModel::REVIEW_COURSE_49) {
+                        throw new RunTimeException(['has_trialed']);
+                    } else {
+                        throw new RunTimeException(['student_down_stage_not_allowed']);
+                    }
+                }
+            } else {
+                //未注册用户自动注册
+                $student = UserService::studentRegisterBound($appId, $params['mobile'], $channel, $openId, $busiType, $userType);
+                $student['id'] = $student['student_id'];
+            }
+            $packageId = $params['pkg'];
+            $packageInfo = DssErpPackageV1Model::getPackageById($packageId);
+            if (empty($packageInfo) || $packageInfo['package_status'] != DssErpPackageV1Model::STATUS_ON_SALE) {
+                throw new RunTimeException(['package_not_available']);
+            }
+            $studentInfo['id'] = $student['id'];
+            $studentInfo['uuid'] = $student['uuid'];
+            $studentInfo['open_id'] = $openId;
+            $studentInfo['address_id'] = 0;
+            
+            $payChannel = PayServices::payChannelToV1($params['pay_channel']);
+            SimpleLogger::info('Order_LandingRecallCreateOrder_params', ['params' => $params, 'student' => $studentInfo]);
+            $ret = ErpOrderV1Service::createOrder($packageId, $studentInfo, $payChannel, 1, null, $channel, null);
+            SimpleLogger::info('Order_LandingRecallCreateOrder_res', ['res' => $ret]);
+        } catch (RuntimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
+        return HttpHelper::buildResponse($response, $ret);
     }
 }

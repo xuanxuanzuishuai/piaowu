@@ -59,5 +59,8 @@ class StudentWebRouter extends RouterBase
         '/student_web/student/send_code' => ['method' => ['get'], 'call' => Student::class . ':sendCode', 'middles' => []],
         '/student_web/student/free_order' => ['method' => ['get'], 'call' => Student::class . ':freeOrder', 'middles' => []],
         '/student_web/student/get_assistant_info' => ['method' => ['get'], 'call' => Student::class . ':getAssistantInfo', 'middles' => []],
+        
+        // Landing页召回,创建订单
+        '/student_web/order/landing_recall_create_order' => ['method' => ['post'], 'call' => Landing::class . ':LandingRecallCreateOrder', 'middles' => []],
     ];
 }

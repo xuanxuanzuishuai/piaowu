@@ -10,4 +10,6 @@ namespace App\Models\Dss;
 class DssChannelModel extends DssModel
 {
     public static $table = "channel";
+    
+    const STATUS_ENABLE = 1;
 }

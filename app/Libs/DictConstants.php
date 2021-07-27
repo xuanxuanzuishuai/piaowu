@@ -883,7 +883,39 @@ class DictConstants {
             'erp_rt_activity_name',
         ]
     ];
-
+    
+    /**
+     * landing页召回目标人群
+     */
+    const LANDING_RECALL_TARGET = [
+        'type' => 'LANDING_RECALL_TARGET',
+        'keys' => [1, 2]
+    ];
+    
+    /**
+     * landing页召回时机
+     */
+    const LANDING_RECALL_SEND_TIME = [
+        'type' => 'LANDING_RECALL_SEND_TIME',
+        'keys' => [5, 30, 60]
+    ];
+    
+    /**
+     * landing页召回页面url
+     */
+    const LANDING_RECALL_URL = [
+        'type' => 'LANDING_RECALL_URL',
+        'keys' => ['landing_recall_url']
+    ];
+    
+    /**
+     * landing页召回注册和购买渠道号
+     */
+    const LANDING_RECALL_CHANNEL = [
+        'type' => 'LANDING_RECALL_CHANNEL',
+        'keys' => ['landing_recall_channel']
+    ];
+    
     /**
      * 单个获取op系统dict配置数据
      * @param $type

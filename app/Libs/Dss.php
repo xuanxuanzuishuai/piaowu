@@ -23,6 +23,7 @@ class Dss
     const UPLOAD_SHARE_POSTER = '/op/referral/upload_share_poster';//周周有礼上传图片信息
     const ASSISTANT_LIST = '/op/employee/assistant_list';//获取助教列表
     const WEIXIN_INFO = '/op/user/get_weixin_info'; //同步获取微信信息
+    const GET_SHORT_URL = '/op/sms/get_short_url'; //获取短链
 
     private $host;
 
@@ -192,5 +193,23 @@ class Dss
             return [];
         }
         return !empty($res['data']['weixin_info']) ? $res['data']['weixin_info'] : [];
+    }
+    
+    /**
+     * 从DSS获取短链
+     * @param $url
+     * @return array|bool
+     * @throws RunTimeException
+     */
+    public function getShortUrl($url)
+    {
+        $params = [
+            'url' => $url,
+        ];
+        $res = self::commonAPI(self::GET_SHORT_URL, $params, 'POST');
+        if ($res['code'] != Valid::CODE_SUCCESS) {
+            throw new RunTimeException(['update_failure']);
+        }
+        return $res;
     }
 }
