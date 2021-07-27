@@ -120,8 +120,8 @@ class CountingActivity extends ControllerBase
             //类型限制
             ['key' => 'nums',           'type' => 'integer', 'error_code' => 'nums_is_integer'],
             //长度限制
-            ['key' => 'name',           'type' => 'lengthMax', 'error_code' => 'name_length_error','value'=> 50],
-            ['key' => 'remark',         'type' => 'lengthMax', 'error_code' => 'remark_length_error','value'=> 50],
+            ['key' => 'name',           'type' => 'lengthMax', 'error_code' => 'real_name_length_error','value'=> 50],
+            ['key' => 'remark',         'type' => 'lengthMax', 'error_code' => 'remark_length_invalid','value'=> 50],
             //范围限制
             ['key' => 'nums',           'type' => 'max', 'value' => 10, 'error_code' => 'nums_between_1_10'],
             ['key' => 'nums',           'type' => 'min', 'value' => 1, 'error_code' => 'nums_between_1_10'],

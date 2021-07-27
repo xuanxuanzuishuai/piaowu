@@ -93,7 +93,7 @@ class CountingActivityService
 
         //获取规则说明
         $activity_ext = ActivityExtModel::getRecord(['activity_id'=>$op_activity_id]);
-        $detail['award_rule'] = $activity_ext['award_rule'] ?? '';
+        $detail['award_rule'] = !empty($activity_ext['award_rule']) ? Util::textDecode($activity_ext['award_rule']) : '';
 
         return $detail;
     }
@@ -528,13 +528,14 @@ class CountingActivityService
                 $goodsList   = CountingAwardConfigModel::getRecords(['status'=>CountingAwardConfigModel::EFFECTIVE_STATUS, 'op_activity_id' => $activitInfo['op_activity_id'], 'type'=>CountingAwardConfigModel::PRODUCT_TYPE],['goods_id','storage','amount']);
                 $goodsList = array_column($goodsList, null, 'goods_id');
 
-                //先把所有商品置为时效状态
+                //先把所有商品置为失效状态
                 if($paramsGoods != $goodsList){
                     CountingAwardConfigModel::batchUpdateRecord(['status'=>CountingAwardConfigModel::INVALID_STATUS,'update_time'=>$now], ['op_activity_id' => $activitInfo['op_activity_id'],'status'=>CountingAwardConfigModel::EFFECTIVE_STATUS, 'type'=>CountingAwardConfigModel::PRODUCT_TYPE]);
                     if(!empty($params['goods_list'])){
                         $award_config['goods_list'] = $params['goods_list'] ?? [];
                     }
                 }
+
 
                 //添加奖品
                 $addRes = self::addAwardConfig($award_config, $activitInfo['op_activity_id'], $now, $operator_id);
@@ -549,9 +550,8 @@ class CountingActivityService
             if(!$res){
                 throw new RunTimeException(['update_disabled_fail']);
             }
-
             ActivityExtModel::batchUpdateRecord([
-                'award_rule'  => $params['award_rule']
+                'award_rule'  => Util::textEncode($params['award_rule'])
             ],['activity_id' => $activitInfo['op_activity_id']]);
 
             $db->commit();

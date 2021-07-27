@@ -93,6 +93,7 @@ class CountingActivitySignService
             'cumulative_nums'   => $cumulativeNum,
             'continue_nums'     => $continuityNum,
         ];
+
         if(empty($first)){
             $data['student_id'] = $student_id;
             return CountingActivityUserStatisticModel::insertRecord($data);
@@ -122,6 +123,8 @@ class CountingActivitySignService
         $continuityNumIsComplete = $continuityNum >= $activity['nums'] && $activity['rule_type'] == CountingActivityModel::RULE_TYPE_CONTINU;
 
         if($cumulativeNumIsComplete || $continuityNumIsComplete){
+            $updateData['cumulative_nums']  = $activity['nums'];
+            $updateData['continue_nums']    = $activity['nums'];
             $updateData['qualified_status'] = CountingActivitySignModel::QUALIFIED_STATUS_YES;
             $updateData['award_status']     = CountingActivitySignModel::AWARD_STATUS_PENDING;
             $updateData['qualified_time']   = $now;
@@ -154,19 +157,18 @@ class CountingActivitySignService
         $activityList = self::getAllActivity($pageSize);
         $ids = implode(',', array_column($activityList, 'activity_id'));
         $sharePosterList = SharePosterModel::getStudentSignActivity($ids,$sign['student_id'],$startTime);
+        $sharePosterList = array_column($sharePosterList,null, 'activity_id');
+
 
 //        echo json_encode([$sharePosterList, $activityList]);die;
         $count = 0;
-        foreach ($sharePosterList as $k => $one){
-            $week_activity = $activityList[$k];
-            //1. 学生参与活动列表 和 所有活动列表 都按照时间降序排序
-            //2. 对比用户参与活动和所有活动的活动ID 是否都能按顺序对上
-            //3. 为true表示存在连续性
-            if($week_activity['activity_id'] == $one['activity_id']){
+        foreach ($activityList as $one){
+            if(isset($sharePosterList[$one['activity_id']])){
                 $count ++;
             }else{
-                //不存在表示连续性中断
-                break;
+                if($one['end_time'] < self::$now){//如果没参加且当前活动未结束，则继续统计
+                    break;
+                }
             }
         }
         return [count($sharePosterList), $count];

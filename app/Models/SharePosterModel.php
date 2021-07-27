@@ -456,7 +456,7 @@ class SharePosterModel extends Model
                 AND sp.`type`='.SharePosterModel::TYPE_WEEK_UPLOAD.' 
                 AND sp.`verify_status`='.SharePosterModel::VERIFY_STATUS_QUALIFIED.' 
                 AND sp.`create_time`>='.$startTime.' 
-                ORDER BY wa.create_time DESC';
+                ORDER BY wa.create_time DESC,wa.end_time DESC';
 
         $db = MysqlDB::getDB();
         $sharePosterList = $db->queryAll($sql);
@@ -481,7 +481,7 @@ class SharePosterModel extends Model
                 on wa.activity_id=sp.activity_id 
                 where type = ' . SharePosterModel::TYPE_WEEK_UPLOAD
                 . ' AND verify_status= ' . SharePosterModel::VERIFY_STATUS_QUALIFIED
-                . ' GROUP BY wa.activity_id ORDER BY wa.start_time DESC ' . $limit;
+                . ' GROUP BY wa.activity_id ORDER BY wa.start_time DESC,wa.end_time DESC ' . $limit;
         $db = MysqlDB::getDB();
         $activityList = $db->queryAll($sql);
 
