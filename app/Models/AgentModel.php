@@ -367,7 +367,6 @@ class AgentModel extends Model
             self::$table . '.create_time',
             self::$table . '.update_time',
             self::$table . '.type',
-            self::$table . '.service_employee_id'
         ];
         $res = $db->select(
             self::$table,
