@@ -39,7 +39,7 @@ class CountingActivitySignService
         $activityIds = array_column($signList, 'op_activity_id');
 
         //查询报名的活动是否有效
-        $activityList = CountingActivityModel::getRecords(['op_activity_id[in]'=>$activityIds, 'status'=>CountingActivityModel::NORMAL_STATUS, 'sign_end_time[>]'=>self::$now,'join_end_time[>]'=>self::$now, 'start_time[<]'=>self::$now], ['op_activity_id','nums','rule_type']);
+        $activityList = CountingActivityModel::getRecords(['op_activity_id[in]'=>$activityIds], ['op_activity_id','start_time','join_end_time','nums','rule_type']);
         $activityList = array_column($activityList, null, 'op_activity_id');
 
         if(empty($activityList)){
@@ -48,7 +48,8 @@ class CountingActivitySignService
         }
 
         //全量统计
-        list($cumulativeNum, $continuityNum) = self::getContinuityActivityNum(['student_id' => $studentId],0,0);
+        list($cumulativeNum, $continuityNum) = self::getContinuityActivityNum(['student_id' => $studentId], 0, 0, self::$now);
+
         $res = self::incStatic($studentId, $cumulativeNum, $continuityNum);
         if(!$res){
             SimpleLogger::error('insert Statistic fail',[$studentId, $cumulativeNum, $continuityNum]);
@@ -60,15 +61,20 @@ class CountingActivitySignService
                 SimpleLogger::error('empty counting_activity',$one);
                 continue; //报名活动不存在则跳过
             }
+
+            $activity = $activityList[$one['op_activity_id']];
+
             //获取连续和累计
             if(is_null($statistics_time)){//正常流程
-                list($cumulativeNum, $continuityNum) = self::getContinuityActivityNum($one, $one['create_time'], 10);
+
+                list($cumulativeNum, $continuityNum) = self::getContinuityActivityNum($one, $activity['start_time'], 10, $activity['join_end_time']);
+
                 $res = self::updateSign($one, $activityList[$one['op_activity_id']], $cumulativeNum, $continuityNum);
                 if(!$res){
                     SimpleLogger::error('edit sign fail',[$one, $cumulativeNum, $continuityNum]);
                 }
             }else{//脚本执行指定时间
-                list($cumulativeNum, $continuityNum) = self::getContinuityActivityNum($one, $statistics_time,10);
+                list($cumulativeNum, $continuityNum) = self::getContinuityActivityNum($one, $statistics_time, 10, self::$now);
                 $res = self::updateSign($one, $activityList[$one['op_activity_id']], $cumulativeNum, $continuityNum);
                 if(!$res){
                     SimpleLogger::error('update history sign fail',[$one, $cumulativeNum, $continuityNum]);
@@ -149,11 +155,11 @@ class CountingActivitySignService
      * @param $student_id
      * @return int
      */
-    public static function getContinuityActivityNum($sign, $startTime, $pageSize){
+    public static function getContinuityActivityNum($sign, $startTime, $pageSize, $end_time){
         //查询所有周周领奖有效活动
         $activityList = self::getAllActivity($pageSize);
         $ids = implode(',', array_column($activityList, 'activity_id'));
-        $sharePosterList = SharePosterModel::getStudentSignActivity($ids,$sign['student_id'],$startTime);
+        $sharePosterList = SharePosterModel::getStudentSignActivity($ids, $sign['student_id'], $startTime, $end_time);
         $sharePosterList = array_column($sharePosterList,null, 'activity_id');
 
 
@@ -205,7 +211,7 @@ class CountingActivitySignService
             ];
 
             $count = SharePosterModel::getRecord($where,['c'=>Medoo::raw('count(id)'),'student_id']);
-            list($cumulativeNum, $continuityNum) = self::getContinuityActivityNum($sign, $sign['create_time'],10);
+            list($cumulativeNum, $continuityNum) = self::getContinuityActivityNum($sign, $activity['start_time'], 10,$activity['join_end_time']);
             if($count){
                 self::updateSign($sign, $activity, $cumulativeNum, $continuityNum);
             }
@@ -225,13 +231,13 @@ class CountingActivitySignService
                 throw new RuntimeException(['empty sign']);
             }
 
-            $activityInfo = CountingActivityModel::getRecord(['op_activity_id'=>$sign['op_activity_id'], 'status'=>CountingActivityModel::NORMAL_STATUS, 'sign_end_time[>]'=>self::$now,'join_end_time[>]'=>self::$now, 'start_time[<]'=>self::$now], ['op_activity_id','start_time','nums','rule_type']);
+            $activityInfo = CountingActivityModel::getRecord(['op_activity_id'=>$sign['op_activity_id']], ['op_activity_id','start_time','nums','rule_type','join_end_time']);
 
             if(empty($activityInfo)){
                 throw new RuntimeException(['empty countingActivity']);
             }
 
-            list($cumulativeNum, $continuityNum) = self::getContinuityActivityNum($sign, $activityInfo['start_time'],10);
+            list($cumulativeNum, $continuityNum) = self::getContinuityActivityNum($sign, $activityInfo['start_time'], 10, $activityInfo['join_end_time']);
 
             self::updateSign($sign, $activityInfo, $cumulativeNum, $continuityNum);
         }catch (RuntimeException $e){

@@ -447,7 +447,7 @@ class SharePosterModel extends Model
      * @param $startTime
      * @return array|null'
      */
-    public static function getStudentSignActivity($ids, $studentId,$startTime){
+    public static function getStudentSignActivity($ids, $studentId, $startTime, $endTime){
         //查询当前用户参加的活动
         $sql = 'SELECT sp.`activity_id`,sp.`create_time` 
                 FROM '.self::$table.' AS sp LEFT JOIN '.WeekActivityModel::$table.' AS wa 
@@ -456,6 +456,7 @@ class SharePosterModel extends Model
                 AND sp.`type`='.SharePosterModel::TYPE_WEEK_UPLOAD.' 
                 AND sp.`verify_status`='.SharePosterModel::VERIFY_STATUS_QUALIFIED.' 
                 AND sp.`create_time`>='.$startTime.' 
+                AND sp.`create_time`<'.$endTime.'
                 ORDER BY wa.create_time DESC,wa.end_time DESC';
 
         $db = MysqlDB::getDB();

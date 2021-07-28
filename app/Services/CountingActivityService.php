@@ -407,6 +407,7 @@ class CountingActivityService
                     'type'           => CountingAwardConfigModel::PRODUCT_TYPE,
                     'amount'         => $row['amount'],
                     'storage'        => $row['storage'],
+                    'quantity'       => $row['storage'],
                     'goods_id'       => $row['goods_id'],
                     'goods_code'     => $goodsList[$row['goods_id']]['code'] ?? '',
                     'status'         => CountingAwardConfigModel::EFFECTIVE_STATUS,
