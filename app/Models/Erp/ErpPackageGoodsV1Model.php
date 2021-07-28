@@ -14,7 +14,7 @@ class ErpPackageGoodsV1Model extends ErpModel
         $map = [':package_id' => $packageId];
         if (is_array($status)) {
             $where .= ' and pg.status in ( :status )';
-            $map[':status'] = $status;
+            $map[':status'] = implode(',', $status);
         } elseif (!is_null($status)) {
             $where .= ' and pg.status = :status ';
             $map[':status'] = $status;
