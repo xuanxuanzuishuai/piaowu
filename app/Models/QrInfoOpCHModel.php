@@ -64,6 +64,8 @@ class QrInfoOpCHModel
                 'app_id',
                 'busies_type',
                 'user_status',
+                'qr_type',
+                'create_type',
                 'qr_data',
                 ]) . '`';
         }
@@ -101,6 +103,8 @@ class QrInfoOpCHModel
             'app_id',
             'busies_type',
             'user_status',
+            'qr_type',
+            'create_type',
             'create_time',
             'qr_ticket',
             'qr_data',
@@ -112,7 +116,7 @@ class QrInfoOpCHModel
                 continue;
             }
             // 注意数字字段顺序需要和$fields顺序一致
-            $qrInfo              = [
+            $qrInfo = [
                 'qr_id'        => $v['qr_id'],
                 'qr_path'      => $v['qr_path'] ?? '',
                 'qr_sign'      => $v['qr_sign'] ?? '',
@@ -126,6 +130,8 @@ class QrInfoOpCHModel
                 'app_id'       => isset($v['app_id']) ? intval($v['app_id']) : 0,
                 'busies_type'  => isset($v['busies_type']) ? intval($v['busies_type']) : 0,
                 'user_status'  => isset($v['user_status']) ? intval($v['user_status']) : 0,
+                'qr_type'      => isset($v['qr_type']) ? intval($v['qr_type']) : 0,
+                'create_type'  => isset($v['create_type']) ? intval($v['create_type']) : 0,
                 'create_time'  => $time,
             ];
             $qrInfo['qr_ticket'] = RC4::encrypt($_ENV['COOKIE_SECURITY_KEY'], $qrInfo['user_type'] . "_" . $qrInfo['user_id']);

@@ -36,6 +36,7 @@ use App\Services\CountingActivitySignService;
 use App\Services\MessageService;
 use App\Services\MiniAppQrService;
 use App\Services\PosterTemplateService;
+use App\Services\QrInfoService;
 use App\Services\Queue\CheckPosterSyncTopic;
 use App\Services\Queue\DurationTopic;
 use App\Services\Queue\GrantAwardTopic;
@@ -712,6 +713,10 @@ class Consumer extends ControllerBase
                 // 生成小程序码
                 case WechatTopic::EVENT_GET_MINI_APP_QR:
                     MiniAppQrService::getMiniAppQr($params['msg_body']);
+                    break;
+                // 生成待使用的二维码标识
+                case WechatTopic::EVENT_CREATE_WAIT_USE_QR_ID:
+                    QrInfoService::createQrId($params['msg_body']);
                     break;
                 default:
                     SimpleLogger::error("Consumer::wechatConsumer event_type error", ['params' => $params]);

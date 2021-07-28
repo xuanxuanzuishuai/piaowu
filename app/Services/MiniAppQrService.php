@@ -124,45 +124,29 @@ class MiniAppQrService
 
         try {
             // 获取配置
-            list($maxId, $createIdNum, $secondNum, $waitMaxNum) = DictConstants::get(DictConstants::MINI_APP_QR, [
-                'current_max_id',               // 当前已用的最大标识
+            list($createIdNum, $secondNum) = DictConstants::get(DictConstants::MINI_APP_QR, [
                 'create_id_num',                // 需要生成的数量
                 'get_mini_app_qr_second_num',   // 每秒请求数量 - 计算消息队列的延迟
-                'wait_mini_qr_max_num',         // 待使用的小程序码最大数量
             ]);
-            SimpleLogger::info("createMiniAppId start", [$maxId, $createIdNum, $secondNum]);
+            SimpleLogger::info("createMiniAppId start", [$secondNum]);
             // 检查配置
-            if (empty($maxId) || empty($createIdNum) || empty($secondNum)) {
-                SimpleLogger::error("createMiniAppId config error", [$maxId, $createIdNum, $secondNum]);
-                return false;
-            }
-            // 如果redis里面总数超过指定数量不继续生产 - 防止生成过多待使用数据
-            $redis = RedisDB::getConn();
-            $waitRedisNum = $redis->scard(self::REDIS_WAIT_USE_MINI_APP_ID_LIST);
-            if ($waitRedisNum >= $waitMaxNum) {
-                SimpleLogger::error("createMiniAppId redis wait num max", [$maxId, $createIdNum, $secondNum, $waitMaxNum, $waitRedisNum]);
+            if (empty($secondNum) || empty($createIdNum)) {
+                SimpleLogger::error("createMiniAppId config error", [$secondNum, $createIdNum]);
                 return false;
             }
 
-            // 开始生成，并放入到待生成小程序码的队列
-            $sortId = $maxId;
+            $redis = RedisDB::getConn();
+            // 获取待使用的二维码标识，并放入到待生成小程序码的队列
             $sendQueueArr = [];
             for ($i = 0; $i < $createIdNum; $i++) {
-                $sortId = Util::getIncrSortId($sortId);
-                $sendQueueArr[] = ['mini_app_qr_id' => $sortId];
-            }
-
-            // 更新最大值 - 记录最后一次生成qr_id
-            $updateRes = DictService::updateValue(DictConstants::MINI_APP_QR['type'], 'current_max_id', $sortId);
-            if (empty($updateRes)) {
-                SimpleLogger::error("createMiniAppId update current_max_id error", ['current_max_id' => $sortId]);
+                $sendQueueArr[] = ['mini_app_qr_id' => QrInfoService::getWaitUseQrId($redis)];
             }
 
             // 放入队列
             QueueService::sendWaitCreateMiniAppQrId($sendQueueArr, 0, $secondNum);
             unset($sendQueueArr);
 
-            SimpleLogger::info("createMiniAppId end success", ['current_max_id' => $sortId]);
+            SimpleLogger::info("createMiniAppId end success", []);
         } catch (RunTimeException $e) {
             SimpleLogger::error("createMiniAppId exception error", ['err' => $e->getMessage()]);
             return false;
@@ -323,7 +307,7 @@ class MiniAppQrService
             'user_status'  => $extParams['user_status'] ?? ($extParams['user_current_status'] ??  0),
         ];
         // 根据小程序码主要信息，查询CH
-        $qrSign = self::createQrSign($qrData);
+        $qrSign = QrInfoService::createQrSign($qrData);
         $qrImage = QrInfoOpCHModel::getQrInfoBySign($qrSign, ['qr_path', 'qr_id'])[0] ?? [];
         // CH查到直接返回qr_path, qr_id
         if (!empty($qrImage) && AliOSS::doesObjectExist($qrImage['qr_path'])) {
@@ -434,38 +418,6 @@ class MiniAppQrService
         }
         QrInfoOpCHModel::saveQrInfo($saveQrData);
         return $returnQrSignArr;
-    }
-
-    /**
-     * 生成qr ticket
-     * @param $qrData
-     * @return string
-     */
-    public static function createQrSign($qrData)
-    {
-        $createTicketData = [];
-        $signField = [
-            'user_id'             => 'user_id',
-            'user_type'           => 'user_type',
-            'landing_type'        => 'landing_type',
-            'channel_id'          => 'channel_id',
-            'activity_id'         => 'activity_id',
-            'employee_id'         => 'employee_id',
-            'poster_id'           => 'poster_id',
-            'app_id'              => 'app_id',
-            'busies_type'         => 'busies_type',
-            'user_current_status' => 'user_current_status',
-            'user_status'         => 'user_status',
-        ];
-        foreach ($signField as $paramsFiled => $createField) {
-            if (isset($qrData[$paramsFiled]) && !Util::emptyExceptZero($qrData[$paramsFiled])) {
-                $createTicketData[$createField] = $qrData[$paramsFiled];
-            }
-        }
-
-        ksort($createTicketData);
-        $paramsStr = http_build_query($createTicketData);
-        return md5($paramsStr);
     }
 
     /**

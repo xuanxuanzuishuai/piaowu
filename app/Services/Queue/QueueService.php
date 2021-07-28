@@ -682,6 +682,25 @@ class QueueService
         return true;
     }
 
+    /**
+     * 启动生成待使用二维码标识
+     * @param $data
+     * @param $deferTime
+     * @return bool
+     */
+    public static function startCreateWaitUseQrId($data = [], $deferTime = 0)
+    {
+        try {
+            if (empty($data)) {
+                $data['time'] = time();
+            }
+            (new WechatTopic())->startCreateWaitUseQrId($data)->publish($deferTime);
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), $data);
+            return false;
+        }
+        return true;
+    }
 
     /**
      * 真人智能-自动激活

@@ -793,6 +793,8 @@ class DictConstants {
             'get_mini_app_qr_second_num',       // 获取小程序码每秒请求数量 - 这个要考虑到微信每秒接受请求的数量调整
             'start_generation_threshold_num',   // 启动生成小程序标识任务数量阀值
             'wait_mini_qr_max_num',             // 待使用的小程序码最大数量
+            'wait_use_qr_max_num',              // 待使用的二维码最大数量
+            'create_wait_use_qr_num',           // 每次生成待使用的二维码数量
         ],
     ];
 
