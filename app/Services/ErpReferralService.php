@@ -1,6 +1,9 @@
 <?php
 namespace App\Services;
 
+use App\Libs\Exceptions\RunTimeException;
+use App\Models\Erp\ErpReferralUserRefereeModel;
+
 class ErpReferralService
 {
     /** 转介绍事件 */
@@ -54,4 +57,28 @@ class ErpReferralService
 
     //task对应都node名称key
     const TASK_RELATE_NODE_KEY = 'task_relate_node_key';
+
+    /**
+     * 获取推荐人信息数据
+     * @param array $params
+     * @return array|mixed
+     * @throws RunTimeException
+     */
+    public static function refereeList($params = [])
+    {
+        $ids = $params['ids'] ?? [];
+        $field = $params['field'] ?? ['referee_id', 'referee_type'];
+
+        if (empty($ids)) {
+            return [];
+        }
+        if (!is_array($ids)) {
+            $ids = explode(',', $ids);
+            $ids = array_unique(array_filter($ids));
+        }
+        if (count($ids) > 1000) {
+            throw new RunTimeException(['over_max_allow_num']);
+        }
+        return ErpReferralUserRefereeModel::getRecords(['user_id' => $ids], $field);
+    }
 }

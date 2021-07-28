@@ -22,13 +22,17 @@ class SignMiddleware extends MiddlewareBase
     {
         $params = $request->getParams();
         $sign = $params['sign'] ?? '';
-        $service_name = $params['service_name'] ?? '';
-        $service_key = DictConstants::get(DictConstants::SERVICE_SIGN_KEY, $service_name);
-        if (is_null($service_key)) {
+        $serviceName = $params['service_name'] ?? '';
+        if (empty($sign)) {
+            $sign = $request->getHeaderLine('sign');
+            $serviceName = $request->getHeaderLine('service');
+        }
+        $serviceKey = DictConstants::get(DictConstants::SERVICE_SIGN_KEY, $serviceName);
+        if (is_null($serviceKey)) {
             $errs = Valid::addErrors([], 'service_name', 'service_name_not_found');
             return $response->withJson($errs, 200);
         }
-        $paramsCreateSign = self::createSign($params, $service_key);
+        $paramsCreateSign = self::createSign($params, $serviceKey);
         if ($sign != $paramsCreateSign) {
             $errs = Valid::addErrors([], 'sign', 'sign_error');
             SimpleLogger::info("SignMiddleware sign error", ['sign' => $paramsCreateSign, 'params' => $params]);
