@@ -9,7 +9,6 @@
 namespace App\Services;
 
 use App\Libs\Exceptions\RunTimeException;
-use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
 use App\Models\CountingActivityModel;
 use App\Models\CountingActivitySignModel;
@@ -19,8 +18,6 @@ use Medoo\Medoo;
 
 class CountingActivitySignService
 {
-
-
     public static $now;
     public static $allActivity_list;
 
@@ -223,7 +220,7 @@ class CountingActivitySignService
     public static function signAction($signId){
         $sign = CountingActivitySignModel::getById($signId);
         self::$now = time();
-
+        try{
             if(empty($sign)){
                 throw new RuntimeException(['empty sign']);
             }
@@ -236,9 +233,10 @@ class CountingActivitySignService
 
             list($cumulativeNum, $continuityNum) = self::getContinuityActivityNum($sign, $activityInfo['start_time'],10);
 
-
             self::updateSign($sign, $activityInfo, $cumulativeNum, $continuityNum);
-
+        }catch (RuntimeException $e){
+            SimpleLogger::error('报名更新计数任务失败',[$signId]);
+        }
 
     }
 

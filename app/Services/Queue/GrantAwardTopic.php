@@ -9,7 +9,8 @@ class GrantAwardTopic extends BaseTopic
     const COUNTING_AWARD_TICKET= 'counting_activity_award';
     //计数任务物流信息更新
     const COUNTING_AWARD_LOGISTICS_SYNC= 'counting_award_logistics_sync';
-
+    const EDIT_QUALIFIED = 'edit_qualified'; //更新达标期数
+    const SIGN_UP = 'sign_up'; //报名
 
     /**
      * @param null $publishTime
@@ -43,4 +44,29 @@ class GrantAwardTopic extends BaseTopic
         $this->setMsgBody($data);
         return $this;
     }
+
+    /**
+     * 更新达标期数
+     * @param $data
+     * @return $this
+     */
+    public function editQualified($data)
+    {
+        $this->setEventType(self::EDIT_QUALIFIED);
+        $this->setMsgBody($data);
+        return $this;
+    }
+
+    /**
+     * 报名操作
+     * @param $data
+     * @return $this
+     */
+    public function signUp($data)
+    {
+        $this->setEventType(self::SIGN_UP);
+        $this->setMsgBody($data);
+        return $this;
+    }
+
 }

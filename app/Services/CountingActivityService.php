@@ -536,11 +536,16 @@ class CountingActivityService
                     }
                 }
 
-
                 //添加奖品
-                $addRes = self::addAwardConfig($award_config, $activitInfo['op_activity_id'], $now, $operator_id);
-                if(!$addRes){
-                    throw new RunTimeException(['add_award_fail']);
+                if(empty($paramsGoods) && empty($A)){
+                    throw new RuntimeException(['activity_award_is_disable']);
+                }
+
+                if(!empty($award_config)){
+                    $addRes = self::addAwardConfig($award_config, $activitInfo['op_activity_id'], $now, $operator_id);
+                    if(!$addRes){
+                        throw new RunTimeException(['add_award_fail']);
+                    }
                 }
 
             }

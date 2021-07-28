@@ -43,7 +43,6 @@ use App\Services\Queue\PushMessageTopic;
 use App\Services\Queue\QueueService;
 use App\Services\Queue\SaveTicketTopic;
 use App\Services\Queue\StudentAccountAwardPointsTopic;
-use App\Services\Queue\StudentActivity;
 use App\Services\Queue\ThirdPartBillTopic;
 use App\Services\Queue\UserPointsExchangeRedPackTopic;
 use App\Services\Queue\WechatTopic;
@@ -896,31 +895,18 @@ class Consumer extends ControllerBase
                 //解析物流信息，获取最新状态
                 CountingActivityAwardService::syncAwardLogistics($params['msg_body']['unique_id']);
                 break;
+            case GrantAwardTopic::EDIT_QUALIFIED:
+                $countingActivtyId = $params['msg_body']['id'];
+                CountingActivitySignService::refreshCountingNum($countingActivtyId);
+                break;
+            case GrantAwardTopic::SIGN_UP:
+                $id = $params['msg_body']['id'];
+                CountingActivitySignService::signAction($id);
+                break;
             default:
                 SimpleLogger::error('unknown event type', ['params' => $params]);
                 break;
         }
         return HttpHelper::buildResponse($response, []);
-    }
-
-    /**
-     * 计数任务相关
-     * @param Request $request
-     * @param Response $response
-     * @throws RunTimeException
-     */
-    public function refreshCountingNum(Request $request, Response $response)
-    {
-        $params = $request->getParams();
-        switch ($params['event_type']){
-            case StudentActivity::EDIT_QUALIFIED:
-                $countingActivtyId = $params['id'];
-                CountingActivitySignService::refreshCountingNum($countingActivtyId);
-                break;
-            case StudentActivity::EDIT_QUALIFIED:
-                $id = $params['id'];
-                CountingActivitySignService::signAction($id);
-
-        }
     }
 }
