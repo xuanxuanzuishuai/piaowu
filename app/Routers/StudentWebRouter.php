@@ -53,5 +53,11 @@ class StudentWebRouter extends RouterBase
         // H5 首页
         '/student_web/landing/index' => ['method' => ['get'], 'call' => Landing::class . ':index', 'middles' => []],
         '/student_web/landing/register' => ['method' => ['post'], 'call' => Landing::class . ':register', 'middles' => []],
+
+        //课管主动关联转介绍关系
+        '/student_web/student/activity_index' => ['method' => ['get'], 'call' => Student::class . ':activityIndex', 'middles' => []],
+        '/student_web/student/send_code' => ['method' => ['get'], 'call' => Student::class . ':sendCode', 'middles' => []],
+        '/student_web/student/free_order' => ['method' => ['get'], 'call' => Student::class . ':freeOrder', 'middles' => []],
+        '/student_web/student/get_assistant_info' => ['method' => ['get'], 'call' => Student::class . ':getAssistantInfo', 'middles' => []],
     ];
 }

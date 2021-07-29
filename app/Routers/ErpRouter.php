@@ -26,6 +26,9 @@ class ErpRouter extends RouterBase
         '/erp/referral/list_and_coupon' => ['method' => ['get'], 'call' => Invite::class . ':listAndCoupon'],   // 转介绍学员列表，包括rt活动优惠券信息
 
         '/erp/rt_activity/get_poster' => ['method' => ['post'], 'call' => Erp::class . ':getRtPoster'],
+
+        '/erp/rt_activity/get_activity_lists'  => ['method' => ['get'], 'call' => Erp::class . ':getActivityLists'],
+        '/erp/rt_activity/get_activity_scheme' => ['method' => ['post'], 'call' => Erp::class . ':getActivityScheme'],
     ];
 
 }

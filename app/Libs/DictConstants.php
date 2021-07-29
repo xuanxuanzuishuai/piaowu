@@ -795,6 +795,9 @@ class DictConstants {
             'wait_mini_qr_max_num',             // 待使用的小程序码最大数量
             'wait_use_qr_max_num',              // 待使用的二维码最大数量
             'create_wait_use_qr_num',           // 每次生成待使用的二维码数量
+            'qr_type_mini',                     // qr_path类型-小程序码
+            'qr_type_html',                     // qr_path类型-html码
+            'qr_type_none',                     // qr_path类型-无二维码
         ],
     ];
 
@@ -864,6 +867,23 @@ class DictConstants {
         'type' => 'material_logistics_status',
         'keys' => [1, 2, 3, 4]
     ];
+
+    /**
+     * 课管主动关联转介绍关系配置
+     */
+    const TRANSFER_RELATION_CONFIG = [
+        'type' => 'TRANSFER_RELATION_CONFIG',
+        'keys' => [
+            'erp_channel_id',
+            'user_relation_status',
+            'erp_backstage_status',
+            'erp_invited_index',
+            'free_order_remark',
+            'erp_routine_activity_name',
+            'erp_rt_activity_name',
+        ]
+    ];
+
     /**
      * 单个获取op系统dict配置数据
      * @param $type

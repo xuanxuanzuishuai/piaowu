@@ -190,4 +190,69 @@ class Erp extends ControllerBase
         }
         return HttpHelper::buildResponse($response, $activity);
     }
+
+    /**
+     * 获取活动列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getActivityLists(Request $request, Response $response)
+    {
+        try {
+            $result = RtActivityService::getActivityLists();
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, $result);
+    }
+
+    /**
+     * 课管主动转介绍关系-获取活动链接
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * @throws \App\Libs\KeyErrorRC4Exception
+     */
+    public function getActivityScheme(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'uuid',
+                'type' => 'required',
+                'error_code' => 'uuid_is_required'
+            ],
+            [
+                'key' => 'mobile',
+                'type' => 'required',
+                'error_code' => 'mobile_is_required'
+            ],
+            [
+                'key' => 'type',
+                'type' => 'required',
+                'error_code' => 'type_is_required'
+            ],
+            [
+                'key' => 'employee_id',
+                'type' => 'required',
+                'error_code' => 'employee_id_is_required'
+            ],
+            [
+                'key' => 'employee_uuid',
+                'type' => 'required',
+                'error_code' => 'employee_uuid_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            $result = RtActivityService::getActivityScheme($params);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, $result);
+    }
 }

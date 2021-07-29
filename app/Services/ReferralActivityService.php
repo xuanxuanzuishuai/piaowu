@@ -217,7 +217,8 @@ class ReferralActivityService
         $qrWidth,
         $qrHeight,
         $qrX,
-        $qrY
+        $qrY,
+        $useSSL = true
     ) {
         // 海报资源：
         $posterAliOssFileExits = AliOSS::doesObjectExist($imagePath);
@@ -245,7 +246,7 @@ class ReferralActivityService
             "limit_0",//强制图片缩放
         ];
         $imgSizeStr = implode(",", $imgSize) . '/';
-        $resImgFile = AliOSS::signUrls($imagePath, "", "", "", false, $waterMarkStr, $imgSizeStr);
+        $resImgFile = AliOSS::signUrls($imagePath, "", "", "", $useSSL, $waterMarkStr, $imgSizeStr);
         //返回数据
         return ['poster_save_full_path' => $resImgFile, 'qr_url' => $qrPath];
     }

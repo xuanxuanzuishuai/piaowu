@@ -16,7 +16,9 @@ use App\Libs\HttpHelper;
 use App\Libs\Valid;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
+use App\Services\CommonServiceForApp;
 use App\Services\RecallLandingService;
+use App\Services\RtActivityService;
 use App\Services\WechatTokenService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -183,5 +185,137 @@ class Student extends ControllerBase
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
         return HttpHelper::buildResponse($response, []);
+    }
+
+    /**
+     * 课管主动建立转介绍关系-用户端首页
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function activityIndex(Request $request, Response $response)
+    {
+        try {
+            $rules = [
+                [
+                    'key' => 'qr_id',
+                    'type' => 'required',
+                    'error_code' => 'qr_id_is_required',
+                ],
+            ];
+
+            $params = $request->getParams();
+            $result = Valid::appValidate($params, $rules);
+            if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+                return $response->withJson($result, StatusCode::HTTP_OK);
+            }
+            $data = RtActivityService::activityIndex($params);
+        } catch (RuntimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
+        return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
+     * 发送验证码
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function sendCode(Request $request, Response $response)
+    {
+        try {
+            $rules = [
+                [
+                    'key' => 'qr_id',
+                    'type' => 'required',
+                    'error_code' => 'qr_id_is_required',
+                ],
+            ];
+
+            $params = $request->getParams();
+            $result = Valid::appValidate($params, $rules);
+            if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+                return $response->withJson($result, StatusCode::HTTP_OK);
+            }
+            $qrInfo = RtActivityService::getQrInfoById($params['qr_id']);
+            $errorCode = CommonServiceForApp::sendValidateCode($qrInfo['invited_mobile'], CommonServiceForApp::SIGN_WX_STUDENT_APP);
+            if (!empty($errorCode)) {
+                $result = Valid::addAppErrors([], $errorCode);
+                return $response->withJson($result, StatusCode::HTTP_OK);
+            }
+        } catch (RuntimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
+        return HttpHelper::buildResponse($response, []);
+    }
+
+
+    /**
+     * 0元下单
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function freeOrder(Request $request, Response $response)
+    {
+        try {
+            $rules = [
+                [
+                    'key' => 'sms_code',
+                    'type' => 'required',
+                    'error_code' => 'qr_id_is_required',
+                ],
+                [
+                    'key' => 'qr_id',
+                    'type' => 'required',
+                    'error_code' => 'qr_id_is_required',
+                ]
+            ];
+
+            $params = $request->getParams();
+            $result = Valid::appValidate($params, $rules);
+            if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+                return $response->withJson($result, StatusCode::HTTP_OK);
+            }
+            $qrInfo = RtActivityService::getQrInfoById($params['qr_id']);
+            if (!CommonServiceForApp::checkValidateCode($qrInfo["invited_mobile"], $params["sms_code"])) {
+                return $response->withJson(Valid::addAppErrors([], 'validate_code_error'), StatusCode::HTTP_OK);
+            }
+            $qrInfo['mobile'] = $qrInfo['invited_mobile'];
+            RtActivityService::handleFreeOrder($qrInfo);
+        } catch (RuntimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
+        return HttpHelper::buildResponse($response, []);
+    }
+
+
+    /**
+     * 获取助教信息
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getAssistantInfo(Request $request, Response $response)
+    {
+        try {
+            $rules = [
+                [
+                    'key' => 'qr_id',
+                    'type' => 'required',
+                    'error_code' => 'qr_id_is_required',
+                ]
+            ];
+            $params = $request->getParams();
+            $result = Valid::appValidate($params, $rules);
+            if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+                return $response->withJson($result, StatusCode::HTTP_OK);
+            }
+            $result = RtActivityService::getAssistantInfo($params);
+        } catch (RuntimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
+        return HttpHelper::buildResponse($response, $result);
     }
 }

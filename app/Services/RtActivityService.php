@@ -17,12 +17,14 @@ use App\Models\ActivityExtModel;
 use App\Models\ActivityPosterModel;
 use App\Models\Dss\DssEmployeeModel;
 use App\Models\Dss\DssStudentModel;
+use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\Erp\ErpOrderCouponV1Model;
 use App\Models\Erp\ErpStudentAccountModel;
 use App\Models\Erp\ErpStudentCouponV1Model;
 use App\Models\Dss\DssGiftCodeModel;
 use App\Models\OperationActivityModel;
 use App\Models\ParamMapModel;
+use App\Models\QrInfoOpCHModel;
 use App\Models\RtActivityModel;
 use App\Models\RtActivityRuleModel;
 use App\Models\StudentReferralStudentStatisticsModel;
@@ -55,6 +57,10 @@ class RtActivityService
     //转介绍rt参与标识
     const RT_CHANNEL_REFERRAL     = 1; //参与
     const NOT_RT_CHANNEL_REFERRAL = 0; //未参与
+
+    //活动类型
+    const ACTIVITY_ROUTINE = 1; //常规活动
+    const ACTIVITY_RT      = 2; //RT活动
 
 
     public static $timeArray = [
@@ -1169,22 +1175,12 @@ class RtActivityService
             throw new RunTimeException(['record_not_found']);
         }
         //符合领取条件-后置操作1.0元领取体验卡 2.订单映射记录 3.领取优惠券 3.记录邀请关系
-        /**
-         * 0元领取体验卡
-         */
-        $packageId = PayServices::getPackageIDByParameterPkg(PayServices::PACKAGE_0);
-        $remark = DictConstants::get(DictConstants::RT_ACTIVITY_INDEX, 'rt_activity_remark');
-        $res = ErpOrderV1Service::createZeroOrder($packageId, $student, $remark);
-        if (empty($res)) {
-            throw new RunTimeException(['create_bill_error']);
-        }
-        /**
-         * 订单映射记录
-         */
-        $res = BillMapService::mapDataRecord(['param_id' => $request['param_id']], $res['order_id'], $student['id']);
-        if (empty($res)) {
-            SimpleLogger::error('insert bill_map error ', ['order_id' => $res['order_id']]);
-        }
+        $qrInfo = [
+            'param_id' => $request['param_id'],
+            'channel_id' => self::getRtChannel()
+        ];
+        //0元下单
+        self::handleFreeOrder($qrInfo, true, $student);
         /**
          * 领取优惠券
          */
@@ -1363,4 +1359,295 @@ class RtActivityService
 
         return true;
     }
+
+    /**
+     * 获取活动列表
+     * @return array
+     */
+    public static function getActivityLists()
+    {
+        list($RoutineName, $rtName) = DictConstants::get(DictConstants::TRANSFER_RELATION_CONFIG, ['erp_routine_activity_name', 'erp_rt_activity_name']);
+        $data[] = ['activity_id' => 0, 'name' => $RoutineName, 'type' => self::ACTIVITY_ROUTINE];
+        $conds    = [
+            'rule_type'      => RtActivityModel::ACTIVITY_RULE_TYPE_KEGUAN,
+            'start_time[<=]' => time(),
+            'end_time[>=]'   => time(),
+            'enable_status'  => RtActivityModel::ENABLED_STATUS,
+        ];
+        $activity = RtActivityModel::getRecord($conds, ['activity_id']);
+        if (empty($activity)) {
+            return $data;
+        }
+        array_push($data, ['activity_id' => $activity['activity_id'], 'name' => $rtName, 'type' => self::ACTIVITY_RT]);
+        return $data;
+    }
+
+
+    /**
+     * 课管主动转介绍关系-获取活动链接
+     * @param $request
+     * @return string[]
+     * @throws RunTimeException
+     * @throws \App\Libs\KeyErrorRC4Exception
+     */
+    public static function getActivityScheme($request)
+    {
+        //手机号验证
+        if (!Util::isMobile($request['mobile'])) {
+            throw new RunTimeException(["invited_invalid_mobile"]);
+        }
+        //推荐人信息校验
+        $student = DssStudentModel::getRecord(['uuid' => $request['uuid']], ['id']);
+        if (empty($student)) {
+            throw new RunTimeException(["invitee_invalid_uuid"]);
+        }
+        //员工信息校验
+        $employee = DssEmployeeModel::getRecord(['id' => $request['employee_id']], ['id', 'uuid']);
+        if (empty($employee) || $employee['uuid'] != $request['employee_uuid']) {
+            throw new RunTimeException(["employee_invalid_uuid"]);
+        }
+        //被推荐人信息查询 可能是未注册用户
+        $invitedStudent = DssStudentModel::getRecord(['mobile' => $request['mobile']], ['id']);
+        switch ($request['type']) {
+            case self::ACTIVITY_ROUTINE:
+                $invitedStudentId = $invitedStudent['id'] ?? 0;
+                if (!empty($invitedStudentId)) {
+                    //检测是否可以建立学生转介绍学生绑定关系
+                    $checkResult = StudentReferralStudentService::checkBindReferralCondition($invitedStudentId, true);
+                    if ($checkResult) {
+                        throw new RunTimeException(["invited_is_transfer_relation"]);
+                    }
+                }
+                //获取渠道和H5链接
+                list($channelId, $scheme) = DictConstants::get(DictConstants::TRANSFER_RELATION_CONFIG, ['erp_channel_id', 'erp_invited_index']);
+                if (empty($channelId) || empty($scheme)) {
+                    throw new RunTimeException(["record_not_found"]);
+                }
+                //获取qrId
+                $data        = [
+                    'student_id'  => $student['id'],
+                    'channel_id'  => $channelId,
+                    'employee_id' => $employee['id'],
+                    'mobile'      => $request['mobile'],
+                ];
+                $qrId    = self::getOpChQrId($data);
+                if (!$qrId) {
+                    throw new RunTimeException(["create_qr_id_error"]);
+                }
+                $activityUrl = sprintf('%s?qr_id=%s', $scheme, $qrId);
+                break;
+            case self::ACTIVITY_RT:
+                $posterAscription = ActivityPosterModel::POSTER_ASCRIPTION_STUDENT;
+                $activity = self::checkAllowSend($request['activity_id'], $student['id']);
+                if (!$activity) {
+                    throw new RunTimeException(["referee_not_conformity"]);
+                }
+                //被邀人首页链接
+                $scheme = DictConstants::get(DictConstants::RT_ACTIVITY_INDEX, 'rt_invited');
+                if (empty($scheme)) {
+                    throw new RunTimeException(['record_not_found']);
+                }
+                //获取渠道
+                $channelId = self::getRtChannel();
+                if (empty($channelId)) {
+                    throw new RunTimeException(['record_not_found']);
+                }
+                //查询海报
+                $conds = [
+                    'activity_id'       => $activity['activity_id'],
+                    'status'            => ActivityPosterModel::NORMAL_STATUS,
+                    'is_del'            => ActivityPosterModel::IS_DEL_FALSE,
+                    'poster_ascription' => $posterAscription
+                ];
+                $posterId = ActivityPosterModel::getRecord($conds, 'poster_id');
+                if (empty($posterId)) {
+                    throw new RunTimeException(['record_not_found']);
+                }
+                //获取海报
+                $templatePosterPath = TemplatePosterModel::getRecord(['id' => $posterId, 'status' => TemplatePosterModel::NORMAL_STATUS], ['poster_id']);
+                if (empty($templatePosterPath)) {
+                    throw new RunTimeException(['record_not_found']);
+                }
+                //记录 ParamMap
+                $paramMapId = self::addParamMap($student['id'], $activity['activity_id'], $templatePosterPath['poster_id']);
+                if (!$paramMapId) {
+                    throw new RunTimeException(['record_not_found']);
+                }
+                $params = [
+                    'activity_id'   => $activity['activity_id'],
+                    'employee_id'   => $request['employee_id'],
+                    'employee_uuid' => $request['employee_uuid'],
+                    'invite_uid'    => $student['id'] ?? '',
+                    'param_id'      => $paramMapId,
+                    'channel_id'    => $channelId
+                ];
+                $activityUrl = $scheme . '?' . http_build_query(array_filter($params));
+                break;
+            default:
+                throw new RunTimeException(['record_not_found']);
+        }
+        return ['activityUrl' => $activityUrl];
+    }
+    /**
+     * 获取qrId
+     * @param $request
+     * @return null
+     * @throws RunTimeException
+     */
+    public static function getOpChQrId($request)
+    {
+        // 获取配置
+        $qrType = DictConstants::get(DictConstants::MINI_APP_QR, 'qr_type_none');
+        $createType = DictConstants::get(DictConstants::TRANSFER_RELATION_CONFIG, 'erp_backstage_status');
+        $studentStatus = StudentService::dssStudentStatusCheck($request['student_id']);
+        $qrData = [
+            'user_id'        => $request['student_id'],
+            'user_type'      => DssUserQrTicketModel::STUDENT_TYPE,
+            'channel_id'     => $request['channel_id'],
+            'employee_id'    => $request['employee_id'],
+            'user_status'    => $studentStatus['student_status'],
+            'app_id'         => Constants::SMART_APP_ID,
+            'invited_mobile' => $request['mobile'],
+            'qr_type'        => $qrType,
+            'create_type'    => $createType
+        ];
+        $qrInfo = QrInfoService::getQrIdList([$qrData]);
+        $qrId = !empty($qrInfo) ? end($qrInfo)['qr_id'] : null;
+        return $qrId;
+    }
+
+    /**
+     * 课管主动建立转介绍关系-用户端首页
+     * @param $request
+     * @return array
+     * @throws RunTimeException
+     */
+    public static function activityIndex($request)
+    {
+        $qrInfo = self::getQrInfoById($request['qr_id']);
+        $inviteInfo = DssStudentModel::getRecord(['id' => $qrInfo['user_id']], ['thumb','mobile']);
+        if (empty($inviteInfo)) {
+            throw new RunTimeException(['record_not_found']);
+        }
+        //获取邀请人头像
+        $thumb = $inviteInfo['thumb'] ?? DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb');
+        $avatar = AliOSS::replaceCdnDomainForDss($thumb);
+        $result = [
+            'avatar' => $avatar,
+            'invitee_mobile' => Util::hideUserMobile($inviteInfo['mobile']),
+            'invited_mobile' => Util::hideUserMobile($qrInfo['invited_mobile'])
+        ];
+        return $result;
+    }
+
+    /**
+     * 0元下单
+     * @param $request
+     * @param false $isRegister
+     * @param array $student
+     * @return bool
+     * @throws RunTimeException
+     */
+    public static function handleFreeOrder($request, $isRegister = false, $student = [])
+    {
+        //校验数据
+        if (!is_array($request)) {
+            throw new RunTimeException(['invalid_data']);
+        }
+        $paramsArray = ['mobile', 'channel_id','qr_id','param_id'];
+        if ($isRegister) {
+            unset($paramsArray['mobile']);
+            if (empty($student['id']) || empty($student['uuid'])) {
+                throw new RunTimeException(['id_and_uuid_not_null']);
+            }
+        }
+        foreach ($paramsArray as $val) {
+            if (in_array($val, ['qr_id', 'param_id'])) {
+                if (empty($request['qr_id']) && empty($request['param_id'])) {
+                    throw new RunTimeException(['qr_id_or_paramId_not_null']);
+                }
+                continue;
+            }
+            if (empty($request[$val])) {
+                throw new RunTimeException([$val . '_not_null']);
+            }
+        }
+
+        //未注册用户先注册
+        if (!$isRegister) {
+            $appId         = Constants::SMART_APP_ID;
+            $busiType      = Constants::SMART_WX_SERVICE;
+            $userType      = Constants::USER_TYPE_STUDENT;
+            $openid        = $request['openid'] ?? null;
+            $student       = UserService::studentRegisterBound($appId, $request['mobile'], $request['channel_id'], $openid, $busiType, $userType);
+            $student['id'] = $student['student_id'];
+        }
+
+        /**
+         * 0元领取体验卡
+         */
+        $packageId = PayServices::getPackageIDByParameterPkg(PayServices::PACKAGE_0);
+        $remark    = DictConstants::get(DictConstants::TRANSFER_RELATION_CONFIG, 'free_order_remark');
+        $res       = ErpOrderV1Service::createZeroOrder($packageId, $student, $remark);
+        if (empty($res)) {
+            throw new RunTimeException(['create_bill_error']);
+        }
+        /**
+         * 订单映射记录
+         */
+        $res = BillMapService::mapDataRecord($request, $res['order_id'], $student['id']);
+        if (empty($res)) {
+            SimpleLogger::error('insert bill_map error ', ['order_id' => $res['order_id']]);
+        }
+        return true;
+    }
+
+    /**
+     * 获取助教信息
+     * @param $request
+     * @return array
+     * @throws RunTimeException
+     */
+    public static function getAssistantInfo($request)
+    {
+        $qrInfo  = self::getQrInfoById($request['qr_id']);
+        $student = DssStudentModel::getRecord(['mobile' => $qrInfo['invited_mobile']], ['assistant_id']);
+        if (empty($student)) {
+            throw new RunTimeException(['record_not_found']);
+        }
+        $employee = DssEmployeeModel::getRecord(['id' => $student['assistant_id']], ['wx_qr', 'wx_num']);
+        $result   = [
+            'wx_num' => $employee['wx_num'] ?? '',
+            'wx_qr'  => !empty($employee['wx_qr']) ? AliOSS::replaceCdnDomainForDss($employee['wx_qr']) : '',
+        ];
+        return $result;
+    }
+
+    /**
+     * 获取qrInfo
+     * @param $qrId
+     * @param int $channelId
+     * @return array|mixed
+     * @throws RunTimeException
+     */
+    public static function getQrInfoById($qrId, $channelId = 0)
+    {
+        if (!$channelId) {
+            $erpChannelId = DictConstants::get(DictConstants::TRANSFER_RELATION_CONFIG, 'erp_channel_id');
+            $channelId    = $erpChannelId;
+        }
+        $qrInfo = QrInfoOpCHModel::getQrInfoById($qrId);
+        if (empty($qrInfo) || $qrInfo['channel_id'] != $channelId) {
+            throw new RunTimeException(['record_not_found']);
+        }
+        if (!empty($erpChannelId)) {
+            $invitedMobile = json_decode($qrInfo['qr_data'], true)['invited_mobile'] ?? '';
+            if (empty($invitedMobile)) {
+                throw new RunTimeException(['record_not_found']);
+            }
+            $qrInfo['invited_mobile'] = $invitedMobile;
+        }
+        return $qrInfo;
+    }
+
 }
