@@ -508,16 +508,16 @@ class AgentService
             $where[AgentOrganizationModel::$table . '.organization[~]'] = $params['organization'];
         }
 
-        if (!empty($params['country'])) {
-            $where[AgentInfoModel::$table . '.country'] = (int)$params['country'];
+        if (!empty($params['country_code'])) {
+            $where[AgentInfoModel::$table . '.country'] = (int)$params['country_code'];
         }
 
-        if (!empty($params['province'])) {
-            $where[AgentInfoModel::$table . '.province'] = (int)$params['province'];
+        if (!empty($params['province_code'])) {
+            $where[AgentInfoModel::$table . '.province'] = (int)$params['province_code'];
         }
 
-        if (!empty($params['city'])) {
-            $where[AgentInfoModel::$table . '.city'] = (int)$params['city'];
+        if (!empty($params['city_code'])) {
+            $where[AgentInfoModel::$table . '.city'] = (int)$params['city_code'];
         }
 
         //数据权限
@@ -540,21 +540,26 @@ class AgentService
             }
         }
 
-        if (empty($params['order'])) {
-            $order = [AgentModel::$table . '.id' => 'DESC'];
-        } else {
-            $orderParam = str_split($params['order']);
-            if (($orderParam[0] & 1) != 0) $order[AgentModel::$table . '.total_rsc'] = 'DESC';
-            if (($orderParam[0] & 2) != 0) $order[AgentModel::$table . '.total_rbc'] = 'DESC';
-            if (($orderParam[0] & 4) != 0) $order[AgentModel::$table . '.sec_agent_count'] = 'DESC';
+//        if (empty($params['order'])) {
+//            $order = [AgentModel::$table . '.id' => 'DESC'];
+//        } else {
+//            $orderParam = str_split($params['order']);
+//            if (($orderParam[0] & 1) != 0) $order[AgentModel::$table . '.total_rsc'] = 'DESC';
+//            if (($orderParam[0] & 2) != 0) $order[AgentModel::$table . '.total_rbc'] = 'DESC';
+//            if (($orderParam[0] & 4) != 0) $order[AgentModel::$table . '.sec_agent_count'] = 'DESC';
+//
+//            if (($orderParam[1] & 1) != 0) $order[AgentModel::$table . '.total_rsc'] = 'ASC';
+//            if (($orderParam[1] & 2) != 0) $order[AgentModel::$table . '.total_rbc'] = 'ASC';
+//            if (($orderParam[1] & 4) != 0) $order[AgentModel::$table . '.sec_agent_count'] = 'ASC';
+//
+//            if (empty($order)) throw new RunTimeException(['operator_failure']);
+//
+//        }
 
-            if (($orderParam[1] & 1) != 0) $order[AgentModel::$table . '.total_rsc'] = 'ASC';
-            if (($orderParam[1] & 2) != 0) $order[AgentModel::$table . '.total_rbc'] = 'ASC';
-            if (($orderParam[1] & 4) != 0) $order[AgentModel::$table . '.sec_agent_count'] = 'ASC';
+        if(!empty($params['sort_order'])) $order[AgentModel::$table . '.total_rsc'] = $params['sort_order'];
+        if(!empty($params['sort_student'])) $order[AgentModel::$table . '.total_rbc'] = $params['sort_student'];
 
-            if (empty($order)) throw new RunTimeException(['operator_failure']);
-
-        }
+        $order[AgentModel::$table . '.id'] = 'DESC';
 
         $agentList = AgentModel::list($where, $order, $params['page'], $params['count']);
         if (empty($agentList['list'])) {

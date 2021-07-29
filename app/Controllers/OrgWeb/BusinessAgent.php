@@ -32,6 +32,11 @@ class BusinessAgent extends ControllerBase
     {
         $rules = [
             [
+                'key' => 'name',
+                'type' => 'required',
+                'error_code' => 'name_is_required'
+            ],
+            [
                 'key' => 'mobile',
                 'type' => 'required',
                 'error_code' => 'mobile_is_required'
@@ -120,6 +125,11 @@ class BusinessAgent extends ControllerBase
     public function update(Request $request, Response $response)
     {
         $rules = [
+            [
+                'key' => 'name',
+                'type' => 'required',
+                'error_code' => 'name_is_required'
+            ],
             [
                 'key' => 'agent_id',
                 'type' => 'required',
@@ -220,11 +230,37 @@ class BusinessAgent extends ControllerBase
         $params = $request->getParams();
         list($params['page'], $params['count']) = Util::formatPageCount($params);
         $params['only_read_self'] = self::getEmployeeDataPermission();
+        $params['agent_type'] = AgentModel::TYPE_OFFLINE;
         try {
             $data = AgentService::listAgent($params, self::getEmployeeId());
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
+        return HttpHelper::buildResponse($response, $data);
+    }
+
+
+    /**
+     * 代理商账户详情
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function detail(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'agent_id',
+                'type' => 'required',
+                'error_code' => 'agent_id_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $data = AgentService::detailAgent($params['agent_id']);
         return HttpHelper::buildResponse($response, $data);
     }
 
