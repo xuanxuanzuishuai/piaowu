@@ -505,7 +505,7 @@ class AgentService
         }
 
         if(!empty($params['organization'])){
-            $where[AgentOrganizationModel::$table . '.organization[~]'] = $params['organization'];
+            $where[AgentOrganizationModel::$table . '.name[~]'] = $params['organization'];
         }
 
         if (!empty($params['country_code'])) {
@@ -2437,7 +2437,7 @@ class AgentService
         $firstAgentId = [];
         $firstAgentWhere = [];
         if (!empty($params['first_agent_name'])) {
-            $firstAgentWhere['name[~]'] = $params['first_agent_name'];
+            $firstAgentWhere['name'] = $params['first_agent_name'];
         }
         if (is_numeric($params['first_agent_id'])) {
             $firstAgentWhere['id'] = $params['first_agent_id'];
@@ -2461,7 +2461,7 @@ class AgentService
             $secondAgentWhere['parent_id'] = $firstAgentId;
         }
         if (!empty($params['second_agent_name'])) {
-            $secondAgentWhere['name[~]'] = $params['second_agent_name'];
+            $secondAgentWhere['name'] = $params['second_agent_name'];
         }
         if (is_numeric($params['second_agent_id'])) {
             $secondAgentWhere['id'] = $params['second_agent_id'];
@@ -2474,7 +2474,7 @@ class AgentService
             }
         }
         //一级和二级同时搜索
-        if (!empty($firstAgentId) && (!empty($secondAgentWhere['name[~]']) || !empty($secondAgentWhere['id']))) {
+        if (!empty($firstAgentId) && (!empty($secondAgentWhere['name']) || !empty($secondAgentWhere['id']))) {
             if (empty($secondAgentId)) {
                 return [];
             } else {

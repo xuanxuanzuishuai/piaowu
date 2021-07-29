@@ -178,7 +178,6 @@ class OrgWebRouter extends RouterBase
         '/op_web/agent_business/list' => ['method' => ['get'], 'call' => AgentOrg::class . ':list'],
         '/op_web/agent_business/freeze' => ['method' => ['post'], 'call' => AgentOrg::class . ':freezeAgent'],
         '/op_web/agent_business/unfreeze' => ['method' => ['post'], 'call' => AgentOrg::class . ':unfreezeAgent'],
-        '/op_web/agent_business/statics' => ['method' => ['get'], 'call' => AgentOrg::class . ':agentStaticsData'],
 
 
         // 代理商预存订单

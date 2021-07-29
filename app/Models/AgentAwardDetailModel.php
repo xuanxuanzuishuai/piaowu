@@ -102,8 +102,8 @@ class AgentAwardDetailModel extends Model
         }
 
         if (!empty($where['start_time']) && !empty($where['end_time'])) {
-            $bexWhere = " and ad.create_time between {$where['start_time']} and {$where['end_time']}";
-            $bexOrWhere = " and ad.create_time between {$where['start_time']} and {$where['end_time']}";
+            $bexWhere .= " and ad.create_time between {$where['start_time']} and {$where['end_time']}";
+            $bexOrWhere .= " and ad.create_time between {$where['start_time']} and {$where['end_time']}";
         }
 
         $baseSql = 'SELECT

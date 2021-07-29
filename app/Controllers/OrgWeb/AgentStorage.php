@@ -137,11 +137,11 @@ class AgentStorage extends ControllerBase
                 'type' => 'required',
                 'error_code' => 'payment_time_is_required'
             ],
-            [
-                'key' => 'payment_screen_shot',
-                'type' => 'required',
-                'error_code' => 'payment_screen_shot_is_required'
-            ]
+//            [
+//                'key' => 'payment_screen_shot',
+//                'type' => 'required',
+//                'error_code' => 'payment_screen_shot_is_required'
+//            ]
         ];
 
         $params = $request->getParams();

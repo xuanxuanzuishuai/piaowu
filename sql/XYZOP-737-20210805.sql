@@ -12,3 +12,9 @@ VALUES ('商家代理添加', '/op_web/agent_business/add', unix_timestamp(), 'p
  update `privilege` set menu_name = '在线代理'  where  unique_en_name = 'agent_list';
  update `dict` set key_value = '分销代理'  where `type` = 'agent_type' and key_code = 1;
  update `dict` set key_value = '商家代理'  where `type` = 'agent_type' and key_code = 3;
+
+
+
+ INSERT INTO `operation_pre`.`dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES (
+ 'order_type', '订单类型', '1', '体验卡', ''),
+ 'order_type', '订单类型', '2', '正式年卡', '');
