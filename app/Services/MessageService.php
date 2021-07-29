@@ -1052,6 +1052,9 @@ class MessageService
             SimpleLogger::info("MessageService::sendTaskAwardPointsMessage>>",['info' => "not_found", "awardDetailInfo" => $awardDetailList]);
             return false;
         }
+        $ext = [
+            'activity_id' => $msgBody['activity_id'] ?? 0
+        ];
         foreach ($awardDetailList as $item) {
             $awardDetailInfo = $item;
             $awardDetailInfo['app_id'] = Constants::SMART_APP_ID;
@@ -1059,7 +1062,7 @@ class MessageService
             $eventInfo = ErpEventModel::getRecord(['id' => $eventTaskInfo['event_id']]);
             $awardDetailInfo['type'] = $eventInfo['type'];
             $awardDetailInfo['get_award_uuid'] = $awardDetailInfo['finish_task_uuid'];
-            PushMessageService::sendAwardPointsMessage($awardDetailInfo);
+            PushMessageService::sendAwardPointsMessage($awardDetailInfo, $ext);
         }
         return true;
     }

@@ -646,7 +646,8 @@ class SharePosterService
                 $needAwardList[] = [
                     'id' => $poster['id'],
                     'uuid' => $poster['uuid'],
-                    'task_id' => $taskId
+                    'task_id' => $taskId,
+                    'activity_id' => $poster['activity_id']
                 ];
             }
             //智能产品激活
@@ -678,7 +679,7 @@ class SharePosterService
             $awardId   = implode(',', $awardIds);
             $pointsId  = implode(',', $pointsIds);
             SharePosterModel::updateRecord($poster['id'], ['award_id' => $awardId, 'points_award_id'=> $pointsId]);
-            QueueService::sharePosterAwardMessage(['points_award_ids' => $pointsIds]);
+            QueueService::sharePosterAwardMessage(['points_award_ids' => $pointsIds, 'activity_id' => $poster['activity_id'] ?? 0]);
         }
         return true;
     }
