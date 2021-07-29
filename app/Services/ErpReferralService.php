@@ -67,8 +67,6 @@ class ErpReferralService
     public static function refereeList($params = [])
     {
         $ids = $params['ids'] ?? [];
-        $field = $params['field'] ?? ['referee_id', 'referee_type'];
-
         if (empty($ids)) {
             return [];
         }
@@ -79,6 +77,6 @@ class ErpReferralService
         if (count($ids) > 1000) {
             throw new RunTimeException(['over_max_allow_num']);
         }
-        return ErpReferralUserRefereeModel::getRecords(['user_id' => $ids], $field);
+        return ErpReferralUserRefereeModel::getRefereeList($ids);
     }
 }
