@@ -457,6 +457,11 @@ class SharePosterModel extends Model
                 AND sp.`verify_status`='.SharePosterModel::VERIFY_STATUS_QUALIFIED.' 
                 AND sp.`create_time`>='.$startTime.' 
                 AND sp.`create_time`<'.$endTime.'
+                AND  (
+                        wa.start_time between '.$startTime.' AND '.$endTime.'
+                        OR wa.end_time between '.$startTime.' AND '.$endTime.'
+                        OR (wa.start_time <= '.$startTime.' AND wa.end_time > '.$endTime.')
+                     )
                 ORDER BY wa.create_time DESC,wa.end_time DESC';
 
         $db = MysqlDB::getDB();

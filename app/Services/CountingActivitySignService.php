@@ -69,13 +69,13 @@ class CountingActivitySignService
 
                 list($cumulativeNum, $continuityNum) = self::getContinuityActivityNum($one, $activity['start_time'], 10, $activity['join_end_time']);
 
-                $res = self::updateSign($one, $activityList[$one['op_activity_id']], $cumulativeNum, $continuityNum);
+                $res = self::updateSign($one, $activity, $cumulativeNum, $continuityNum);
                 if(!$res){
                     SimpleLogger::error('edit sign fail',[$one, $cumulativeNum, $continuityNum]);
                 }
             }else{//脚本执行指定时间
                 list($cumulativeNum, $continuityNum) = self::getContinuityActivityNum($one, $statistics_time, 10, self::$now);
-                $res = self::updateSign($one, $activityList[$one['op_activity_id']], $cumulativeNum, $continuityNum);
+                $res = self::updateSign($one, $activity, $cumulativeNum, $continuityNum);
                 if(!$res){
                     SimpleLogger::error('update history sign fail',[$one, $cumulativeNum, $continuityNum]);
                 }
@@ -126,10 +126,13 @@ class CountingActivitySignService
         $continuityNumIsComplete = $continuityNum >= $activity['nums'] && $activity['rule_type'] == CountingActivityModel::RULE_TYPE_CONTINU;
 
         if($cumulativeNumIsComplete || $continuityNumIsComplete){
+            if(isset($sign['award_status']) && $sign['award_status'] == CountingActivitySignModel::AWARD_STATUS_NOT_QUALIFIED){
+                $updateData['award_status'] = CountingActivitySignModel::AWARD_STATUS_PENDING;
+            }
+
             $updateData['cumulative_nums']  = $activity['nums'];
             $updateData['continue_nums']    = $activity['nums'];
             $updateData['qualified_status'] = CountingActivitySignModel::QUALIFIED_STATUS_YES;
-            $updateData['award_status']     = CountingActivitySignModel::AWARD_STATUS_PENDING;
             $updateData['qualified_time']   = $now;
         }
 
@@ -194,9 +197,9 @@ class CountingActivitySignService
         $where = [
             'GROUP' => 'student_id',
             'op_activity_id'    => $activity['op_activity_id'],
-            'qualified_status'  => CountingActivitySignModel::QUALIFIED_STATUS_NO
+//            'qualified_status'  => CountingActivitySignModel::QUALIFIED_STATUS_NO
         ];
-        $signList = CountingActivitySignModel::getRecords($where, ['student_id','create_time']);
+        $signList = CountingActivitySignModel::getRecords($where, ['student_id','create_time','award_status']);
 
         foreach ($signList as $sign){
             $where = [
