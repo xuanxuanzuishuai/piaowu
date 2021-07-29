@@ -151,12 +151,14 @@ class AgentOrgService
      */
     public static function orgStaticsData($agentId)
     {
+        $detail = AgentService::agentStaticsData((int)$agentId);
+
         $data = AgentOrganizationModel::getRecord(['agent_id' => $agentId], ['agent_id', 'id(org_id)', 'name', 'quantity', 'amount']);
         if (empty($data)) {
             return [];
         }
         $data['amount'] = Util::yuan($data['amount'], 0);
-        return $data;
+        return array_merge($detail, $data);
     }
 
     /**

@@ -313,6 +313,7 @@ class AgentModel extends Model
                 AgentInfoModel::$table . '.address',
                 AgentOrganizationModel::$table . '.quantity',
                 AgentOrganizationModel::$table . '.amount',
+                AgentOrganizationModel::$table . '.name(organization)',
                 EmployeeModel::$table . '.name(e_name)',
             ],
             [

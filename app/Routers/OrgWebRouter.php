@@ -20,7 +20,6 @@ use App\Controllers\OrgWeb\AgentStorage;
 use App\Controllers\OrgWeb\AppPush;
 use App\Controllers\OrgWeb\Area;
 use App\Controllers\OrgWeb\Bill;
-use App\Controllers\OrgWeb\BusinessAgent;
 use App\Controllers\OrgWeb\Channel;
 use App\Controllers\OrgWeb\CountingActivity;
 use App\Controllers\OrgWeb\Dept;
@@ -173,12 +172,13 @@ class OrgWebRouter extends RouterBase
         '/op_web/agent/update_package_relation_agent' => ['method' => ['post'], 'call' => Agent::class . ':updateAgentRelationToPackage'],
 
         //商家代理
-        '/op_web/agent_business/add' => ['method' => ['post'], 'call' => BusinessAgent::class . ':add'],
-        '/op_web/agent_business/update' => ['method' => ['post'], 'call' => BusinessAgent::class . ':update'],
-        '/op_web/agent_business/detail' => ['method' => ['get'], 'call' => BusinessAgent::class . ':detail'],
-        '/op_web/agent_business/list' => ['method' => ['get'], 'call' => BusinessAgent::class . ':list'],
-        '/op_web/agent_business/freeze' => ['method' => ['post'], 'call' => BusinessAgent::class . ':freezeAgent'],
-        '/op_web/agent_business/unfreeze' => ['method' => ['post'], 'call' => BusinessAgent::class . ':unfreezeAgent'],
+        '/op_web/agent_business/add' => ['method' => ['post'], 'call' => AgentOrg::class . ':add'],
+        '/op_web/agent_business/update' => ['method' => ['post'], 'call' => AgentOrg::class . ':update'],
+        '/op_web/agent_business/detail' => ['method' => ['get'], 'call' => AgentOrg::class . ':detail'],
+        '/op_web/agent_business/list' => ['method' => ['get'], 'call' => AgentOrg::class . ':list'],
+        '/op_web/agent_business/freeze' => ['method' => ['post'], 'call' => AgentOrg::class . ':freezeAgent'],
+        '/op_web/agent_business/unfreeze' => ['method' => ['post'], 'call' => AgentOrg::class . ':unfreezeAgent'],
+        '/op_web/agent_business/statics' => ['method' => ['get'], 'call' => AgentOrg::class . ':agentStaticsData'],
 
 
         // 代理商预存订单

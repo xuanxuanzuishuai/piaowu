@@ -162,9 +162,9 @@ class AgentService
             throw new RunTimeException(['agent_mobile_is_repeat']);
         }
         //线下代理，机构名称必填
-        if (($params['agent_type'] == AgentModel::TYPE_OFFLINE) && (empty(trim($params['organization'])))) {
-            throw new RunTimeException(['agent_org_name_required']);
-        }
+//        if (($params['agent_type'] == AgentModel::TYPE_OFFLINE) && (empty(trim($params['organization'])))) {
+//            throw new RunTimeException(['agent_org_name_required']);
+//        }
         //线索分配类型与助教ID检测
         if ($params['leads_allot_type'] != AgentModel::LEADS_ALLOT_TYPE_ASSISTANT) {
             $params['assistant_id'] = 0;
