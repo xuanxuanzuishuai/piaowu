@@ -424,7 +424,7 @@ class MiniAppQrService
                     'poster_id'    => $_qrParam['poster_id'] ?? 0,
                     'app_id'       => $_qrParam['app_id'] ?? Constants::SMART_APP_ID,
                     'busies_type'  => $_qrParam['busies_type'] ?? DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP,
-                    'user_status'  => $extParams['user_status'] ?? ($extParams['user_current_status'] ??  0),
+                    'user_status'  => $_qrParam['user_status'] ?? ($_qrParam['user_current_status'] ??  0),
                 ];
                 $returnQrSignArr[$_qrSign] = [
                     'qr_id' => $qrId,
