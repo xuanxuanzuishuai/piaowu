@@ -124,18 +124,25 @@ class MiniAppQrService
 
         try {
             // 获取配置
-            list($createIdNum, $secondNum) = DictConstants::get(DictConstants::MINI_APP_QR, [
+            list($createIdNum, $secondNum, $waitMaxNum) = DictConstants::get(DictConstants::MINI_APP_QR, [
                 'create_id_num',                // 需要生成的数量
                 'get_mini_app_qr_second_num',   // 每秒请求数量 - 计算消息队列的延迟
+                'wait_mini_qr_max_num',         // 待使用的小程序码最大数量
             ]);
             SimpleLogger::info("createMiniAppId start", [$secondNum]);
             // 检查配置
             if (empty($secondNum) || empty($createIdNum)) {
-                SimpleLogger::error("createMiniAppId config error", [$secondNum, $createIdNum]);
+                SimpleLogger::info("createMiniAppId config error", [$secondNum, $createIdNum]);
+                return false;
+            }
+            // 如果redis里面总数超过指定数量不继续生产 - 防止生成过多待使用数据
+            $redis = RedisDB::getConn();
+            $waitRedisNum = $redis->scard(self::REDIS_WAIT_USE_MINI_APP_ID_LIST);
+            if ($waitRedisNum >= $waitMaxNum) {
+                SimpleLogger::info("createMiniAppId redis wait num max", [$createIdNum, $secondNum, $waitMaxNum, $waitRedisNum]);
                 return false;
             }
 
-            $redis = RedisDB::getConn();
             // 获取待使用的二维码标识，并放入到待生成小程序码的队列
             $sendQueueArr = [];
             for ($i = 0; $i < $createIdNum; $i++) {

@@ -113,7 +113,11 @@ class QrInfoOpCHModel
         foreach ($qrData as $v) {
             if (empty($v['qr_id'])) {
                 SimpleLogger::error("saveQrInfo error qr_id empty", ['qr_info' => $v]);
-                continue;
+                break;
+            }
+            if (empty($v['user_id'])) {
+                SimpleLogger::info("saveQrInfo error user_id empty", ['qr_info' => $v]);
+                break;
             }
             // 注意数字字段顺序需要和$fields顺序一致
             $qrInfo = [
