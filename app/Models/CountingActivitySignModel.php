@@ -170,8 +170,6 @@ class CountingActivitySignModel extends Model
         if (empty($student)) {
             return [[], [], []];
         }
-        $posterList = SharePosterModel::getWeekPosterList(['user_id' => $userId]);
-        $weekActivityDetail = $posterList[0] ?? [];
         $field = [
             self::$table . '.id',
             self::$table . '.op_activity_id',
@@ -196,12 +194,7 @@ class CountingActivitySignModel extends Model
         $db = MysqlDB::getDB();
         // 查询参与记录
         $signRecordDetails = $db->select(self::$table, $join, $field, $where);
-        $statusDict = DictService::getTypeMap(Constants::DICT_TYPE_SHARE_POSTER_CHECK_STATUS);
-        array_walk($weekActivityDetail, function (&$item) use ($statusDict) {
-            $item['create_time'] = Util::formatTimestamp($item['create_time']);
-            $item['status_name'] = $statusDict[$item['poster_status']];
-        });
-        return [$student, $weekActivityDetail, $signRecordDetails];
+        return [$student, $signRecordDetails];
     }
 
     /**

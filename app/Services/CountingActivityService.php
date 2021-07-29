@@ -638,7 +638,7 @@ class CountingActivityService
             if (!empty(fmod($total, $params['count']))) {
                 $totalPages += 1;
             }
-            for ($i = 1; $i <= $totalPages; $i++) {
+            for ($i = 2; $i <= $totalPages; $i++) {
                 $params['page'] = $i;
                 list($list, $total) = CountingActivitySignModel::list($params);
                 $list = self::formatSign($list);
@@ -687,10 +687,10 @@ class CountingActivityService
      */
     public static function getUserSignList($userId, $params = [])
     {
-        list($student, $weekActivityDetail, $signRecordDetails) = CountingActivitySignModel::getUserRecords($userId, $params);
+        list($student, $signRecordDetails) = CountingActivitySignModel::getUserRecords($userId, $params);
         $signRecordDetails = self::formatSign($signRecordDetails);
         $signRecordDetails = self::fillSignRecordsLogistics($signRecordDetails, true);
-        return [$student, $weekActivityDetail, $signRecordDetails];
+        return [$student, $signRecordDetails];
     }
 
 

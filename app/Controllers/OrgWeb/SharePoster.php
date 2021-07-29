@@ -30,7 +30,9 @@ class SharePoster extends ControllerBase
     public function list(Request $request, Response $response)
     {
         $params = $request->getParams();
-        $params['type'] = SharePosterModel::TYPE_CHECKIN_UPLOAD;
+        if (empty($params['type'])) {
+            $params['type'] = SharePosterModel::TYPE_CHECKIN_UPLOAD;
+        }
         list($params['page'], $params['count']) = Util::formatPageCount($params);
         list($posters, $totalCount) = SharePosterService::sharePosterList($params);
 

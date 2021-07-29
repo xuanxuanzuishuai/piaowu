@@ -90,13 +90,12 @@ class ActivitySign extends ControllerBase
         }
 
         try {
-            list($student, $weekActivityDetail, $signRecordDetails) = CountingActivityService::getUserSignList($params['user_id'], $params);
+            list($student, $signRecordDetails) = CountingActivityService::getUserSignList($params['user_id'], $params);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
         return HttpHelper::buildResponse($response, [
             'student' => $student,
-            'week_detail' => $weekActivityDetail,
             'sign_detail' => $signRecordDetails
         ]);
     }
