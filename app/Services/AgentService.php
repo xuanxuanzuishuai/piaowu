@@ -17,6 +17,7 @@ use App\Libs\MysqlDB;
 use App\Libs\NewSMS;
 use App\Libs\RC4;
 use App\Libs\RedisDB;
+use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Libs\Util;
 use App\Libs\WeChat\WeChatMiniPro;
@@ -390,7 +391,7 @@ class AgentService
         //推广人数量
         $agentIds = array_column($agentList, 'id');
         $agentIdStr = implode(',', $agentIds);
-        $dataTree = array_fill_keys($agentIds, []);
+        $dataTree = array_fill_keys($parentAgentIds, []);
         $referralStudents = array_column(AgentUserModel::getAgentStudentCount($agentIdStr), null, 'agent_id');
         //等级分组
         $levelGroup = [];
@@ -2740,5 +2741,29 @@ class AgentService
             ], ['agent_id']) ?? [],
             'agent_id'
         )));
+    }
+
+
+    /**
+     * 统计一级代理商已及其下级的代理运营汇总数据
+     * @param int $agentId 一级代理商ID
+     * @return bool
+     */
+    public static function staticsAgentOperationSummaryData($agentId)
+    {
+        //检测代理是否是一级代理
+        $agentData = AgentModel::getRecord(['id' => $agentId], ['id', 'parent_id']);
+        if (empty($agentData) || ($agentData['parent_id'] != 0)) {
+            SimpleLogger::error('agent is not first level', ['agent' => $agentData]);
+            return false;
+        }
+        //统计数据
+        $spreadData = self::agentSpreadData([$agentData['id']]);
+        if (empty($spreadData[$agentId])) {
+            SimpleLogger::error('agent statics data empty', ['agent' => $spreadData]);
+            return false;
+        }
+        AgentModel::updateAgentOperationSummaryData($agentData['id'], $spreadData[$agentId]);
+        return true;
     }
 }

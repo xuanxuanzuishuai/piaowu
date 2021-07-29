@@ -271,7 +271,7 @@ class AgentAwardService
         if (!empty($bindData)) {
             //检查用户是否存在与代理商的注册关系数据
             $bindId = true;
-            $normalBindData = AgentUserModel::getRecord(['agent_id' => $bindData['agent_id'], 'user_id' => $bindData['user_id'], "ORDER"=>["id"=>"DESC"]], ['id', 'stage', 'deadline']);
+            $normalBindData = AgentUserModel::getRecord(['agent_id' => $bindData['agent_id'], 'user_id' => $bindData['user_id'], "ORDER" => ["id" => "DESC"]], ['id', 'stage', 'deadline']);
             if (empty($normalBindData) ||
                 (
                     (

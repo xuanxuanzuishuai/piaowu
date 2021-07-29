@@ -457,4 +457,50 @@ class AgentModel extends Model
             ]
         );
     }
+
+    /**
+     * 统计一级代理商已及其下级的代理运营汇总数据
+     * @param array $agentId
+     * @param array $spreadData
+     * @return bool
+     */
+    public static function updateAgentOperationSummaryData($agentId, $spreadData)
+    {
+        //一级代理商数据
+        $sql = 'UPDATE agent 
+                        SET 
+                            direct_rsc = ' . $spreadData['self']['s_count'] . ',
+                            sec_rsc = ' . ($spreadData['total']['s_count'] - $spreadData['self']['s_count']) . ',
+                            total_rsc = ' . $spreadData['total']['s_count'] . ',
+                            direct_rbc = ' . $spreadData['self']['b_count'] . ',
+                            sec_rbc = ' . ($spreadData['total']['b_count'] - $spreadData['self']['b_count']) . ',
+                            total_rbc = ' . $spreadData['total']['b_count'] . ',
+                            sec_agent_count = ' . $spreadData['son_num'] . '
+                        WHERE
+                            id=' . $agentId . ';';
+        $delWhere['id'][] = $agentId;
+        //二级代理数据
+        if (isset($spreadData['son']) && !empty($spreadData['son'])) {
+            foreach ($spreadData['son'] as $sk => $sv) {
+                $sql .= 'UPDATE agent 
+                        SET 
+                            direct_rsc = ' . $sv['s_count'] . ',
+                            sec_rsc = 0,
+                            total_rsc = ' . $sv['s_count'] . ',
+                            direct_rbc = ' . $sv['b_count'] . ',
+                            sec_rbc = 0,
+                            total_rbc = ' . $sv['b_count'] . ',
+                            sec_agent_count = 0
+                        WHERE
+                            id=' . $sk . ';';
+                $delWhere['id'][] = $sk;
+            }
+        }
+        $db = MysqlDB::getDB();
+        $db->queryAll($sql);
+        SimpleLogger::info('agent statics query result', ['agent_id' => $agentId, 'db_error_msg' => $db->error()]);
+        //删除缓存
+        self::batchDelCache($delWhere);
+        return true;
+    }
 }

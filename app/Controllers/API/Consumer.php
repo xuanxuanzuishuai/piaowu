@@ -29,6 +29,7 @@ use App\Models\EmployeeModel;
 use App\Models\Erp\ErpStudentModel;
 use App\Models\StudentAccountAwardPointsFileModel;
 use App\Models\StudentAccountAwardPointsLogModel;
+use App\Services\AgentService;
 use App\Services\AutoCheckPicture;
 use App\Services\CashGrantService;
 use App\Services\CountingActivityAwardService;
@@ -37,6 +38,7 @@ use App\Services\MessageService;
 use App\Services\MiniAppQrService;
 use App\Services\PosterTemplateService;
 use App\Services\QrInfoService;
+use App\Services\Queue\AgentTopic;
 use App\Services\Queue\CheckPosterSyncTopic;
 use App\Services\Queue\DurationTopic;
 use App\Services\Queue\GrantAwardTopic;
@@ -907,6 +909,53 @@ class Consumer extends ControllerBase
             case GrantAwardTopic::SIGN_UP:
                 $id = $params['msg_body']['id'];
                 CountingActivitySignService::signAction($id);
+                break;
+            default:
+                SimpleLogger::error('unknown event type', ['params' => $params]);
+                break;
+        }
+        return HttpHelper::buildResponse($response, []);
+    }
+
+    /**
+     * 智能业务代理商业务消费者相关
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function agent(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        $rules = [
+            [
+                'key' => 'topic_name',
+                'type' => 'required',
+                'error_code' => 'topic_name_is_required',
+            ],
+            [
+                'key' => 'source_app_id',
+                'type' => 'required',
+                'error_code' => 'source_app_id_is_required',
+            ],
+            [
+                'key' => 'event_type',
+                'type' => 'required',
+                'error_code' => 'event_type_is_required',
+            ],
+            [
+                'key' => 'msg_body',
+                'type' => 'required',
+                'error_code' => 'msg_body_is_required',
+            ],
+        ];
+
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        switch ($params['event_type']) {
+            case AgentTopic::STATIC_SUMMARY_DATA:
+                AgentService::staticsAgentOperationSummaryData($params['msg_body']['agent_id']);
                 break;
             default:
                 SimpleLogger::error('unknown event type', ['params' => $params]);

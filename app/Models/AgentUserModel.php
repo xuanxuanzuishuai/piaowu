@@ -84,7 +84,7 @@ class AgentUserModel extends Model
     }
 
     /**
-     * 根据agent_id获取代理的推广学员数量：绑定中或已解绑状态的所有学员
+     * 根据agent_id获取代理的推广学员数量：绑定中的学员(已解绑状态不再考虑)
      * @param $agentIds
      * @return array|null
      */
@@ -98,6 +98,7 @@ class AgentUserModel extends Model
                     ' . self::$table . ' 
                 WHERE
                     agent_id IN (' . $agentIds . ')
+                    and deadline >=' . time() . ' 
                     and stage !=' . self::STAGE_REGISTER . ' 
                 GROUP BY
                     agent_id;';

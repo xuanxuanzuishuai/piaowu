@@ -23,7 +23,7 @@ class AgentAwardExtService
 {
     /**
      * 记录代理商奖励订单的扩展信息
-     * @param $agentAwardDetailId
+     * @param int $agentAwardDetailId 奖励详情ID
      * @return bool
      */
     public static function addAgentAwardExtData($agentAwardDetailId)
