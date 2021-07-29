@@ -128,7 +128,7 @@ class UserService
     {
         if ($appId == Constants::SMART_APP_ID) {
            return (new Dss())->studentRegisterBound([
-                'mobile' => $mobile,
+                'mobile' => (string)$mobile,
                 'channel_id' => $channelId,
                 'open_id' => $openId,
                 'busi_type' => $busiType,

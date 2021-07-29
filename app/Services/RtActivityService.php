@@ -1414,7 +1414,7 @@ class RtActivityService
                 if (!empty($invitedStudentId)) {
                     //检测是否可以建立学生转介绍学生绑定关系
                     $checkResult = StudentReferralStudentService::checkBindReferralCondition($invitedStudentId, true);
-                    if ($checkResult) {
+                    if (!$checkResult) {
                         throw new RunTimeException(["invited_is_transfer_relation"]);
                     }
                 }
@@ -1533,7 +1533,7 @@ class RtActivityService
         $thumb = $inviteInfo['thumb'] ?? DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb');
         $avatar = AliOSS::replaceCdnDomainForDss($thumb);
         $result = [
-            'avatar' => $avatar,
+            'avatar'         => $avatar,
             'invitee_mobile' => Util::hideUserMobile($inviteInfo['mobile']),
             'invited_mobile' => Util::hideUserMobile($qrInfo['invited_mobile'])
         ];
