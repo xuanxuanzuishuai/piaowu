@@ -255,7 +255,27 @@ class Agent extends ControllerBase
      */
     public function list(Request $request, Response $response)
     {
+        $rules = [
+            [
+                'key' => 'sort_param',
+                'type' => 'in',
+                'value' => ['order', 'student'],
+                'error_code' => 'sort_param_is_error'
+            ],
+            [
+                'key' => 'sort_type',
+                'type' => 'in',
+                'value' => ['desc', 'asc', ''],
+                'error_code' => 'sort_type_is_error'
+            ],
+        ];
+
         $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
         list($params['page'], $params['count']) = Util::formatPageCount($params);
         $params['only_read_self'] = self::getEmployeeDataPermission();
         try {

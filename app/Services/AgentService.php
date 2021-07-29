@@ -540,24 +540,10 @@ class AgentService
             }
         }
 
-//        if (empty($params['order'])) {
-//            $order = [AgentModel::$table . '.id' => 'DESC'];
-//        } else {
-//            $orderParam = str_split($params['order']);
-//            if (($orderParam[0] & 1) != 0) $order[AgentModel::$table . '.total_rsc'] = 'DESC';
-//            if (($orderParam[0] & 2) != 0) $order[AgentModel::$table . '.total_rbc'] = 'DESC';
-//            if (($orderParam[0] & 4) != 0) $order[AgentModel::$table . '.sec_agent_count'] = 'DESC';
-//
-//            if (($orderParam[1] & 1) != 0) $order[AgentModel::$table . '.total_rsc'] = 'ASC';
-//            if (($orderParam[1] & 2) != 0) $order[AgentModel::$table . '.total_rbc'] = 'ASC';
-//            if (($orderParam[1] & 4) != 0) $order[AgentModel::$table . '.sec_agent_count'] = 'ASC';
-//
-//            if (empty($order)) throw new RunTimeException(['operator_failure']);
-//
-//        }
-
-        if(!empty($params['sort_order'])) $order[AgentModel::$table . '.total_rsc'] = strtoupper($params['sort_order']);
-        if(!empty($params['sort_student'])) $order[AgentModel::$table . '.total_rbc'] = strtoupper($params['sort_student']);
+        if (!empty($params['sort_param']) && !empty($params['sort_type'])) {
+            if($params['sort_param'] == 'order') $order[AgentModel::$table . '.total_rbc'] = strtoupper($params['sort_type']);
+            if($params['sort_param'] == 'student') $order[AgentModel::$table . '.total_rsc'] = strtoupper($params['sort_type']);
+        }
 
         $order[AgentModel::$table . '.id'] = 'DESC';
 
@@ -565,17 +551,31 @@ class AgentService
         if (empty($agentList['list'])) {
             return $agentList;
         }
-        $agentList['list'] = self::formatAgentData($agentList['list']);
+
+        $e_s_ids = array_column($agentList['list'],'e_s_id');
+        $esIds = [];
+        foreach ($e_s_ids as $value) {
+            if (!empty($value)) {
+                $esIds = array_merge($esIds, explode(',', $value));
+            }
+        }
+
+        $agentList['list'] = self::formatAgentData($agentList['list'], array_filter(array_unique($esIds)));
         return $agentList;
     }
 
     /**
      * 格式化数据
      * @param $agentData
+     * @param $esIds
      * @return mixed
      */
-    private static function formatAgentData($agentData)
+    private static function formatAgentData($agentData, $esIds = [])
     {
+        $employeeName = [];
+        if (!empty($esIds)) {
+            $employeeName = array_column(EmployeeModel::getRecords(['id' => $esIds, 'status' => EmployeeModel::STATUS_NORMAL], ['id', 'name']) ?? [], 'name', 'id');
+        }
         $province = $city = [];
         $provinceIds = array_column($agentData, 'province');
         $cityIds = array_column($agentData, 'city');
@@ -587,6 +587,17 @@ class AgentService
         }
         $dict = DictConstants::getTypesMap([DictConstants::AGENT_TYPE['type'], DictConstants::AGENT['type'], DictConstants::PACKAGE_APP_NAME['type'], DictConstants::AGENT_DIVISION_MODEL['type'],DictConstants::AGENT_LEADS_ALLOT_TYPE['type']]);
         foreach ($agentData as &$agv) {
+            $agv['e_s_name'] = '';
+            //负责员工
+            if (!empty($agv['e_s_id'])){
+                $eIds = explode(',', $agv['e_s_id']);
+                $name = [];
+                foreach ($eIds as $eId){
+                    $name[] = $employeeName[$eId];
+                }
+                $agv['e_s_name'] = implode(',',array_filter($name));
+            }
+
             // 省
             if (!empty($agv['province'])) {
                 $agv['province_name'] = $province[$agv['province']]['province_name'];

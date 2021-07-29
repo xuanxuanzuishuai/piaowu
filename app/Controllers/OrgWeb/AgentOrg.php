@@ -508,16 +508,16 @@ class AgentOrg extends ControllerBase
     {
         $rules = [
             [
-                'key' => 'sort_student',
+                'key' => 'sort_param',
                 'type' => 'in',
-                'value' => ['desc', 'asc', ''],
-                'error_code' => 'sort_student_is_error'
+                'value' => ['order', 'student'],
+                'error_code' => 'sort_param_is_error'
             ],
             [
-                'key' => 'sort_order',
+                'key' => 'sort_type',
                 'type' => 'in',
                 'value' => ['desc', 'asc', ''],
-                'error_code' => 'sort_order_is_error'
+                'error_code' => 'sort_type_is_error'
             ],
         ];
 

@@ -12,6 +12,7 @@ namespace App\Models;
 use App\Libs\MysqlDB;
 use App\Libs\NewSMS;
 use App\Libs\SimpleLogger;
+use Medoo\Medoo;
 
 class AgentModel extends Model
 {
@@ -315,6 +316,7 @@ class AgentModel extends Model
                 AgentOrganizationModel::$table . '.amount',
                 AgentOrganizationModel::$table . '.name(organization)',
                 EmployeeModel::$table . '.name(e_name)',
+                'e_s_id' => Medoo::raw('group_concat('. AgentServiceEmployeeModel::$table.'.employee_id)')
             ],
             [
                 "AND" => $where,
