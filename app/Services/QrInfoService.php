@@ -215,25 +215,19 @@ class QrInfoService
             } else {
                 // CH没有查到获取一个待使用的小程序码信息
                 $qrId = self::getWaitUseQrId($redis);
-                // 把小程序码和信息关联并且写入到CH
-                $_tmpSaveData = [
-                    'qr_id'        => $qrId,
-                    'qr_path'      => '',
-                    'qr_sign'      => $_qrSign,
-                    'user_id'      => $_qrParam['user_id'] ?? 0,
-                    'user_type'    => $_qrParam['user_type'] ?? 0,
-                    'channel_id'   => $_qrParam['channel_id'] ?? 0,
-                    'landing_type' => $_qrParam['landing_type'] ?? 0,
-                    'activity_id'  => $_qrParam['activity_id'] ?? 0,
-                    'employee_id'  => $_qrParam['employee_id'] ?? 0,
-                    'poster_id'    => $_qrParam['poster_id'] ?? 0,
-                    'app_id'       => $_qrParam['app_id'] ?? Constants::SMART_APP_ID,
-                    'busies_type'  => $_qrParam['busies_type'] ?? DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP,
-                    'user_status'  => $_qrParam['user_status'] ?? ($_qrParam['user_current_status'] ?? 0),
-                    'create_type'  => $_qrParam['create_type'] ?? DictConstants::get(DictConstants::TRANSFER_RELATION_CONFIG, 'user_relation_status'),
-                    'qr_type'      => $_qrParam['qr_type'] ?? DictConstants::get(DictConstants::MINI_APP_QR, 'qr_type_none'),
-                ];
+                // 把信息关联并且写入到CH - 补全数据
+                $_tmpSaveData                = $_qrParam;
+                $_tmpSaveData['qr_id']       = $qrId;
+                $_tmpSaveData['qr_path']     = '';
+                $_tmpSaveData['qr_sign']     = $_qrSign;
+                $_tmpSaveData['app_id']      = $_qrParam['app_id'] ?? Constants::SMART_APP_ID;
+                $_tmpSaveData['busies_type'] = $_qrParam['busies_type'] ?? DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP;
+                $_tmpSaveData['user_status'] = $_qrParam['user_status'] ?? ($_qrParam['user_current_status'] ?? 0);
+                $_tmpSaveData['create_type'] = $_qrParam['create_type'] ?? DictConstants::get(DictConstants::TRANSFER_RELATION_CONFIG, 'user_relation_status');
+                $_tmpSaveData['qr_type']     = $_qrParam['qr_type'] ?? DictConstants::get(DictConstants::MINI_APP_QR, 'qr_type_none');
                 $saveQrData[] = $_tmpSaveData;
+
+                // 把必要的信息直接整理好返回给调用者 - 不需要再查询数据库
                 $_tmp = [];
                 foreach ($selectField as $_sf) {
                     if (isset($_tmpSaveData[$_sf])) {
@@ -244,14 +238,17 @@ class QrInfoService
                 }
                 unset($_sf);
             }
-            $isFullUrl && $_tmp['qr_path'] = AliOSS::replaceCdnDomainForDss($_tmp['qr_path']);
+            $_tmp['qr_full_path'] = '';
+            $isFullUrl && $_tmp['qr_full_path'] = AliOSS::replaceCdnDomainForDss($_tmp['qr_path']);
             $returnQrSignArr[$_qrSign] = $_tmp;
         }
 
-        // 写入ch
-        $res = QrInfoOpCHModel::saveQrInfo($saveQrData);
-        if (empty($res)) {
-            return [];
+        // 如果数据不为空再写入ch
+        if (!empty($saveQrData)) {
+            $res = QrInfoOpCHModel::saveQrInfo($saveQrData);
+            if (empty($res)) {
+                return [];
+            }
         }
 
         // 返回 [qr_id,qr_sign,qr_ticket,$field]
