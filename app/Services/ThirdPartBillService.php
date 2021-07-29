@@ -299,7 +299,11 @@ class ThirdPartBillService
             'third_identity_type' => (int)$params['third_identity_type'],
             'paid_in_price' => $params['dss_amount'],
         ];
-        $paramMapInfo = MiniAppQrService::getSmartQRAliOss($params['third_identity_id'], ParamMapModel::TYPE_AGENT,['c'=>$params['channel_id']]);
+        //当第三方角色是代理商时候获取代理商转介绍二维码
+        $paramMapInfo = [];
+        if (!empty($params['third_identity_id']) && ($params['third_identity_type'] == ThirdPartBillModel::THIRD_IDENTITY_TYPE_AGENT)) {
+            $paramMapInfo = MiniAppQrService::getSmartQRAliOss($params['third_identity_id'], ParamMapModel::TYPE_AGENT, ['c' => $params['channel_id']]);
+        }
         //检测学生数据是否存在：不存在时注册新用户
         $student = DssStudentModel::getRecord(['mobile' => $data['mobile']]);
         if (empty($student)) {
@@ -357,7 +361,7 @@ class ThirdPartBillService
         }
 
         //如果是代理商创建的体验课订单，记录订单与代理的映射关系
-        if ($data['status'] == ThirdPartBillModel::STATUS_SUCCESS) {
+        if (($data['status'] == ThirdPartBillModel::STATUS_SUCCESS) && !empty($paramMapInfo)) {
             $billMapRes = BillMapService::mapDataRecord(['param_id' => $paramMapInfo['id']], $result['data']['order_id'], $data['student_id']);
             if ($billMapRes) {
                 //补发奖励

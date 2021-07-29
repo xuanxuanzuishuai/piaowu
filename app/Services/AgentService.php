@@ -2286,7 +2286,7 @@ class AgentService
         ];
         //订单映射数据
         $mapData = BillMapModel::get($parentBillId, $studentId, BillMapModel::USER_TYPE_AGENT);
-        if (empty($mapData)) {
+        if (empty($mapData) || empty($mapData['user_id'])) {
             return $res;
         }
         //代理商数据
