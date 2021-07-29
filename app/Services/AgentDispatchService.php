@@ -126,12 +126,13 @@ class AgentDispatchService
         }
 
         //体验卡禁止重复购买
-        if ((self::$haveBuyTrailOrder === true) && (self::$firstBuyTrailOrder === false)) {
-            self::$dispatchResultType = AgentDispatchLogModel::RESULT_TYPE_REPEAT_BUY_TRAIL;
-            SimpleLogger::info('trail stop repeat buy', []);
-            return [];
+        if (self::$packageType == DssPackageExtModel::PACKAGE_TYPE_TRIAL) {
+            if ((self::$haveBuyTrailOrder === true) && (self::$firstBuyTrailOrder === false)) {
+                self::$dispatchResultType = AgentDispatchLogModel::RESULT_TYPE_REPEAT_BUY_TRAIL;
+                SimpleLogger::info('trail stop repeat buy', []);
+                return [];
+            }
         }
-
         //已购买年卡，再次购买体验卡
         if ((self::$haveBuyNormalOrder === true) && (self::$packageType == DssPackageExtModel::PACKAGE_TYPE_TRIAL)) {
             self::$dispatchResultType = AgentDispatchLogModel::RESULT_TYPE_HAVE_BUY_NORMAL_AFTER_STOP_BUY_TRAIL;
