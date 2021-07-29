@@ -556,8 +556,8 @@ class AgentService
 //
 //        }
 
-        if(!empty($params['sort_order'])) $order[AgentModel::$table . '.total_rsc'] = $params['sort_order'];
-        if(!empty($params['sort_student'])) $order[AgentModel::$table . '.total_rbc'] = $params['sort_student'];
+        if(!empty($params['sort_order'])) $order[AgentModel::$table . '.total_rsc'] = strtoupper($params['sort_order']);
+        if(!empty($params['sort_student'])) $order[AgentModel::$table . '.total_rbc'] = strtoupper($params['sort_student']);
 
         $order[AgentModel::$table . '.id'] = 'DESC';
 
@@ -1581,6 +1581,23 @@ class AgentService
             }
             $agentWhere = ' AND (a.id in(' . implode(',', $employeeAgentIdList) . '))';
         }
+
+        if(!empty($params['first_agent'])){
+            if (is_numeric($params['first_agent'])) {
+                $params['first_agent_id'] = $params['first_agent'];
+            }else{
+                $params['first_agent_name'] = $params['first_agent'];
+            }
+        }
+
+        if (!empty($params['second_agent'])){
+            if (is_numeric($params['second_agent'])) {
+                $params['second_agent_id'] = $params['second_agent'];
+            }else{
+                $params['second_agent_name'] = $params['second_agent'];
+            }
+        }
+
         //代理数据
         $searchAgentIdList = self::getSearchAgentIdList($params);
         if (is_array($searchAgentIdList) && !empty($searchAgentIdList)) {
@@ -1675,6 +1692,21 @@ class AgentService
         }
 
         $agentBillWhere = ' ';
+        if(!empty($params['first_agent'])){
+            if (is_numeric($params['first_agent'])) {
+                $params['first_agent_id'] = $params['first_agent'];
+            }else{
+                $params['first_agent_name'] = $params['first_agent'];
+            }
+        }
+
+        if (!empty($params['second_agent'])){
+            if (is_numeric($params['second_agent'])) {
+                $params['second_agent_id'] = $params['second_agent'];
+            }else{
+                $params['second_agent_name'] = $params['second_agent'];
+            }
+        }
         //目标代理商ID列表
         $searchAgentIdList = self::getSearchAgentIdList($params);
         if (is_array($searchAgentIdList) && !empty($searchAgentIdList)) {
@@ -1739,9 +1771,26 @@ class AgentService
         }
         //成单的代理—ID搜索
         $signerAgentIdList = [];
+
+        if (!empty($params['signer_agent'])){
+            if (is_numeric($params['signer_agent'])) {
+                $params['signer_agent_id'] = $params['signer_agent'];
+            }else{
+                $params['signer_agent_name'] = $params['signer_agent'];
+            }
+        }
+
         if (!empty($params['signer_agent_id'])) {
             $signerAgentIdList[] = $params['signer_agent_id'];
         }
+        if (!empty($params['signer_agent_name'])) {
+            $signerAgents = AgentModel::getRecords(['name[~]' => $params['signer_agent_name']], ['id']);
+            if (empty($signerAgents)) {
+                return [];
+            }
+            $signerAgentIdList = array_merge($signerAgentIdList, array_column($signerAgents, 'id'));
+        }
+
         if (!empty($signerAgentIdList)) {
             $agentAwardBillExtWhere .= " AND " . $agentAwardBillExtTable . ".signer_agent_id in (" . implode(',', $signerAgentIdList) . ")";
         } elseif ($params['only_read_self']) {
@@ -2366,10 +2415,13 @@ class AgentService
      */
     private static function getSearchAgentIdList($params)
     {
-        if (empty($params['first_agent_id']) &&
+        if (empty($params['first_agent_name']) &&
+            empty($params['first_agent_id']) &&
+            empty($params['second_agent_name']) &&
             empty($params['second_agent_id'])) {
             return false;
         }
+
         //一级代理数据
         $firstAgentId = [];
         $firstAgentWhere = [];

@@ -11,3 +11,4 @@ VALUES ('商家代理添加', '/op_web/agent_business/add', unix_timestamp(), 'p
 
  update `privilege` set menu_name = '在线代理'  where  unique_en_name = 'agent_list';
  update `dict` set key_value = '分销代理'  where `type` = 'agent_type' and key_code = 1;
+ update `dict` set key_value = '商家代理'  where `type` = 'agent_type' and key_code = 3;

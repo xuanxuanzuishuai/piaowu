@@ -34,7 +34,7 @@ class AgentModel extends Model
     const TYPE_DICT = [
         self::TYPE_DISTRIBUTION => '分销渠道',
         self::TYPE_INDIVIDUAL_PARENT => '个人家长代理',
-        self::TYPE_OFFLINE => '线下代理',
+        self::TYPE_OFFLINE => '商家代理',
         self::TYPE_INDIVIDUAL_TEACHER => '个人老师代理',
     ];
 
@@ -47,7 +47,7 @@ class AgentModel extends Model
 
     //线下代理
     const OFFLINE_TYPE_MAP = [
-        self::TYPE_OFFLINE => '线下代理',
+        self::TYPE_OFFLINE => '商家代理',
     ];
 
     //分成模式:1线索获量 2线索获量+售卖模式
