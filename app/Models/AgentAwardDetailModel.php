@@ -35,14 +35,13 @@ class AgentAwardDetailModel extends Model
     /**
      * 推广订单列表列表
      * @param $agentBillWhere
-     * @param $giftCodeWhere
      * @param $agentWhere
      * @param $agentAwardBillExtWhere
      * @param $page
      * @param $limit
      * @return array
      */
-    public static function agentBillsList($agentBillWhere, $giftCodeWhere, $agentWhere, $agentAwardBillExtWhere, $page, $limit)
+    public static function agentBillsList($agentBillWhere, $agentWhere, $agentAwardBillExtWhere, $page, $limit)
     {
         //获取从库对象
         $db = self::dbRO();
@@ -50,7 +49,6 @@ class AgentAwardDetailModel extends Model
         $opAgentAwardDetailTableName = self::getTableNameWithDb();
         $opAgentTableName = AgentModel::getTableNameWithDb();
         $opAgentAwardBillExtTableName = AgentAwardBillExtModel::getTableNameWithDb();
-        $dssGiftCodeTableName = DssGiftCodeModel::getTableNameWithDb();
 
         $baseSql = 'SELECT query_field                                    
                     FROM
@@ -89,12 +87,25 @@ class AgentAwardDetailModel extends Model
      * @param $page
      * @param $limit
      * @param $onlyCount
+     * @param array $where
      * @return array|null
      */
-    public static function getAgentRecommendDuplicationBill($agentIds, $onlyCount = true, $page = 1, $limit = 20)
+    public static function getAgentRecommendDuplicationBill($agentIds, $onlyCount = true, $page = 1, $limit = 20, array $where = [] )
     {
         $data = ['count' => 0, 'list' => []];
         $db = MysqlDB::getDB();
+
+        $bexWhere = $bexOrWhere = '';
+        if (!empty($where['package_type'])) {
+            $bexWhere   = " and bex.package_type = {$where['package_type']}";
+            $bexOrWhere = " and bex.package_type = {$where['package_type']}";
+        }
+
+        if (!empty($where['start_time']) && !empty($where['end_time'])) {
+            $bexWhere = " and ad.create_time between {$where['start_time']} and {$where['end_time']}";
+            $bexOrWhere = " and ad.create_time between {$where['start_time']} and {$where['end_time']}";
+        }
+
         $baseSql = 'SELECT
                  :sql_filed
             FROM
@@ -102,12 +113,12 @@ class AgentAwardDetailModel extends Model
                 INNER JOIN agent_award_detail AS ad ON ad.ext_parent_bill_id = bex.parent_bill_id 
             WHERE
                 (
-                    (bex.signer_agent_id IN (' . $agentIds . ') and bex.signer_agent_status='.AgentModel::STATUS_OK.')
+                    (bex.signer_agent_id IN (' . $agentIds . ') and bex.signer_agent_status='.AgentModel::STATUS_OK.$bexWhere.')
                     OR (
-                        bex.own_agent_id IN (' . $agentIds . ') and bex.own_agent_status='.AgentModel::STATUS_OK.'
+                        bex.own_agent_id IN (' . $agentIds . ') and bex.own_agent_status='.AgentModel::STATUS_OK.$bexWhere.'
                         AND ( ( ad.ext ->> \'$.division_model\' = ' . AgentModel::DIVISION_MODEL_LEADS . '  AND bex.is_first_order = ' . AgentAwardBillExtModel::IS_FIRST_ORDER_YES . ' ) OR ( ad.ext ->> \'$.division_model\' = ' . AgentModel::DIVISION_MODEL_LEADS_AND_SALE . ' ) ) 
-                        AND ad.action_type != ' . self::AWARD_ACTION_TYPE_REGISTER . '
-                        AND ad.is_bind != (' . self::IS_BIND_STATUS_NO . ') 
+                        AND ad.action_type != ' . self::AWARD_ACTION_TYPE_REGISTER .'
+                        AND ad.is_bind != ' . self::IS_BIND_STATUS_NO . $bexOrWhere .' 
                     ) 
                 ) 
             ORDER BY

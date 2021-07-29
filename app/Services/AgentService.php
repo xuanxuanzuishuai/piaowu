@@ -23,6 +23,7 @@ use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\AgentApplicationModel;
 use App\Models\AgentAwardBillExtModel;
 use App\Models\AgentAwardDetailModel;
+use App\Models\AgentInfoModel;
 use App\Models\AgentOrganizationModel;
 use App\Models\AgentServiceEmployeeModel;
 use App\Models\BillMapModel;
@@ -81,7 +82,7 @@ class AgentService
             'parent_id' => $params['parent_id'] ?? 0,
             'uuid' => self::agentAuth($params['name'], $params['mobile']),
             'mobile' => $params['mobile'],
-            'name' => $params['name'],
+            'name' => $params['name'] ?? '',
             'type' => (int)$params['agent_type'],
             'division_model' => (int)$params['division_model'],
             'country_code' => (int)$params['country_code'],
@@ -459,6 +460,7 @@ class AgentService
      * @param $params
      * @param $currentEmployeeId
      * @return array
+     * @throws RunTimeException
      */
     public static function listAgent($params, $currentEmployeeId)
     {
@@ -472,6 +474,8 @@ class AgentService
         }
         if (!empty($params['agent_type'])) {
             $where[AgentModel::$table . '.type'] = (int)$params['agent_type'];
+        }else{
+            $where[AgentModel::$table . '.type'] = array_keys(AgentModel::ONLINE_TYPE_MAP);
         }
         if (!empty($params['status'])) {
             $where[AgentModel::$table . '.status'] = (int)$params['status'];
@@ -499,6 +503,23 @@ class AgentService
         if (!empty($params['leads_allot_type'])) {
             $where[AgentModel::$table . '.leads_allot_type'] = (int)$params['leads_allot_type'];
         }
+
+        if(!empty($params['organization'])){
+            $where[AgentOrganizationModel::$table . '.organization[~]'] = $params['organization'];
+        }
+
+        if (!empty($params['country'])) {
+            $where[AgentInfoModel::$table . '.country'] = (int)$params['country'];
+        }
+
+        if (!empty($params['province'])) {
+            $where[AgentInfoModel::$table . '.province'] = (int)$params['province'];
+        }
+
+        if (!empty($params['city'])) {
+            $where[AgentInfoModel::$table . '.city'] = (int)$params['city'];
+        }
+
         //数据权限
         if ($params['only_read_self']) {
             $where["OR"] = [
@@ -518,23 +539,27 @@ class AgentService
                 $where[AgentServiceEmployeeModel::$table . '.status'] = AgentServiceEmployeeModel::STATUS_OK;
             }
         }
-        $agentList = AgentModel::list($where, $params['page'], $params['count']);
+
+        if (empty($params['order'])) {
+            $order = [AgentModel::$table . '.id' => 'DESC'];
+        } else {
+            $orderParam = str_split($params['order']);
+            if (($orderParam[0] & 1) != 0) $order[AgentModel::$table . '.total_rsc'] = 'DESC';
+            if (($orderParam[0] & 2) != 0) $order[AgentModel::$table . '.total_rbc'] = 'DESC';
+            if (($orderParam[0] & 4) != 0) $order[AgentModel::$table . '.sec_agent_count'] = 'DESC';
+
+            if (($orderParam[1] & 1) != 0) $order[AgentModel::$table . '.total_rsc'] = 'ASC';
+            if (($orderParam[1] & 2) != 0) $order[AgentModel::$table . '.total_rbc'] = 'ASC';
+            if (($orderParam[1] & 4) != 0) $order[AgentModel::$table . '.sec_agent_count'] = 'ASC';
+
+            if (empty($order)) throw new RunTimeException(['operator_failure']);
+
+        }
+
+        $agentList = AgentModel::list($where, $order, $params['page'], $params['count']);
         if (empty($agentList['list'])) {
             return $agentList;
         }
-        $firstAgentIds = array_column($agentList['list'], 'id');
-        $spreadData = self::agentSpreadData($firstAgentIds);
-        //推广数据
-        array_walk($agentList['list'], function (&$agv) use ($spreadData) {
-            //二级代理数量
-            $agv['secondary_count'] = $spreadData[$agv['id']]['son_num'];
-            //推广学员总数
-            $agv['referral_student_count'] = $spreadData[$agv['id']]['total']['s_count'];
-            //推广订单总数
-            $agv['referral_bill_count'] = $spreadData[$agv['id']]['total']['b_count'];
-            $agv['amount'] = Util::yuan($agv['amount']);
-
-        });
         $agentList['list'] = self::formatAgentData($agentList['list']);
         return $agentList;
     }
@@ -859,6 +884,14 @@ class AgentService
         if ($type == AgentModel::LEVEL_FIRST) {
             //获取直接绑定用户
             $agentIdArr = [$agentId];
+        } elseif (!empty($params['children_agent_id'])) {
+            $secondAgentList = AgentModel::getRecords(['parent_id' => $agentId,'id' => $params['children_agent_id']], ['id']);
+            //不属于该代理下
+            if (empty($secondAgentList)) {
+                return $returnData;
+            }
+            $agentIdArr = [$params['children_agent_id']];
+
         } else {
             //获取二级代理绑定用户
             $secondAgentList = AgentModel::getRecords(['parent_id' => $agentId], ['id', 'name']);
@@ -1086,12 +1119,12 @@ class AgentService
     /**
      * 获取代理商的 推广订单列表
      * @param $agentId
-     * @param $level
+     * @param array $params
      * @param $page
      * @param $limit
      * @return array
      */
-    public static function getAgentOrderList($agentId, $level, $page, $limit)
+    public static function getAgentOrderList($agentId, array $params, $page, $limit)
     {
         $agentNameArr = [];
         $returnData = [
@@ -1099,9 +1132,17 @@ class AgentService
             'total' => 0,
         ];
         //获取直接绑定还是代理绑定
-        if ($level == AgentModel::LEVEL_FIRST) {
+        if ($params['type'] == AgentModel::LEVEL_FIRST) {
             //获取直接绑定用户
             $agentIdArr = [$agentId];
+        } elseif (!empty($params['children_agent_id'])) {
+            $secondAgentList = AgentModel::getRecords(['parent_id' => $agentId,'id' => $params['children_agent_id']], ['id']);
+            //不属于该代理下
+            if (empty($secondAgentList)) {
+                return $returnData;
+            }
+            $agentIdArr = [$params['children_agent_id']];
+
         } else {
             //获取二级代理绑定用户
             $secondAgentList = AgentModel::getRecords(['parent_id' => $agentId], ['id','name']);
@@ -1116,7 +1157,8 @@ class AgentService
                 return $returnData;
             }
         }
-        $orderList = AgentAwardDetailModel::getAgentRecommendDuplicationBill(implode(',', $agentIdArr), false, $page, $limit);
+
+        $orderList = AgentAwardDetailModel::getAgentRecommendDuplicationBill(implode(',', $agentIdArr), false, $page, $limit, $params);
         if (empty($orderList['count'])) {
             return $returnData;
         }
@@ -1627,15 +1669,6 @@ class AgentService
             $whereStudentIds = array_column($dssStudentList, 'id');
         }
 
-        //订单状态
-        $giftCodeWhere = ' ';
-        if (!empty($params['code_status'])) {
-            if ($params['code_status'] != DssGiftCodeModel::CODE_STATUS_INVALID) {
-                $giftCodeWhere .= ' AND gc.code_status !=' . DssGiftCodeModel::CODE_STATUS_INVALID;
-            } else {
-                $giftCodeWhere .= ' AND gc.code_status=' . DssGiftCodeModel::CODE_STATUS_INVALID;
-            }
-        }
         $agentBillWhere = ' ';
         //目标代理商ID列表
         $searchAgentIdList = self::getSearchAgentIdList($params);
@@ -1699,17 +1732,10 @@ class AgentService
                 return [];
             }
         }
-        //成单的代理——姓名/ID搜索，模糊搜索即可
+        //成单的代理—ID搜索
         $signerAgentIdList = [];
         if (!empty($params['signer_agent_id'])) {
             $signerAgentIdList[] = $params['signer_agent_id'];
-        }
-        if (!empty($params['signer_agent_name'])) {
-            $signerAgents = AgentModel::getRecords(['name[~]' => $params['signer_agent_name']], ['id']);
-            if (empty($signerAgents)) {
-                return [];
-            }
-            $signerAgentIdList = array_merge($signerAgentIdList, array_column($signerAgents, 'id'));
         }
         if (!empty($signerAgentIdList)) {
             $agentAwardBillExtWhere .= " AND " . $agentAwardBillExtTable . ".signer_agent_id in (" . implode(',', $signerAgentIdList) . ")";
@@ -1722,8 +1748,12 @@ class AgentService
             $signerAgentIdList[] = $params['is_first_order'];
             $agentAwardBillExtWhere .= " AND " . $agentAwardBillExtTable . ".is_first_order =" . $params['is_first_order'];
         }
+        //订单类型
+        if (!empty($params['package_type'])){
+            $agentAwardBillExtWhere .= " AND " . $agentAwardBillExtTable . ".package_type =" . $params['package_type'];
+        }
+
         return [
-            'gift_code_where' => $giftCodeWhere,
             'agent_bill_where' => $agentBillWhere,
             'award_bill_ext_where' => $agentAwardBillExtWhere,
             'agent_where' => $agentWhere,
@@ -1747,7 +1777,7 @@ class AgentService
         }
         //获取推荐订单列表
         list($recommendBillsList['count'], $recommendBillsList['list']) = AgentAwardDetailModel:: agentBillsList(
-            $whereData['agent_bill_where'], $whereData['gift_code_where'],
+            $whereData['agent_bill_where'],
             $whereData['agent_where'], $whereData['award_bill_ext_where'],
             $params['page'], $params['count']);
         if (empty($recommendBillsList['count'])) {
@@ -2094,7 +2124,7 @@ class AgentService
 
 
     /**
-     * 一级代理模糊搜索
+     * 代理模糊搜索
      * @param $params
      * @return array
      */
@@ -2107,6 +2137,12 @@ class AgentService
         if (!empty($params['name'])) {
             $where[AgentModel::$table . '.name[~]'] = $params['name'];
         }
+
+        if (!empty($params['parent_id'])) {
+            $where[AgentModel::$table . '.parent_id'] = $params['parent_id'];
+        }
+
+
         $agentType = 0;
         if (!empty($params['channel_id'])) {
             $agentType = self::getAgentTypeByChannel($params['channel_id']);
@@ -2325,9 +2361,7 @@ class AgentService
      */
     private static function getSearchAgentIdList($params)
     {
-        if (empty($params['first_agent_name']) &&
-            empty($params['first_agent_id']) &&
-            empty($params['second_agent_name']) &&
+        if (empty($params['first_agent_id']) &&
             empty($params['second_agent_id'])) {
             return false;
         }

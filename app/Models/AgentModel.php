@@ -38,6 +38,18 @@ class AgentModel extends Model
         self::TYPE_INDIVIDUAL_TEACHER => '个人老师代理',
     ];
 
+    //线上代理
+    const ONLINE_TYPE_MAP = [
+        self::TYPE_DISTRIBUTION => '分销代理',
+        self::TYPE_INDIVIDUAL_PARENT => '个人家长代理',
+        self::TYPE_INDIVIDUAL_TEACHER => '个人老师代理',
+    ];
+
+    //线下代理
+    const OFFLINE_TYPE_MAP = [
+        self::TYPE_OFFLINE => '线下代理',
+    ];
+
     //分成模式:1线索获量 2线索获量+售卖模式
     const DIVISION_MODEL_LEADS = 1;
     const DIVISION_MODEL_LEADS_AND_SALE = 2;
@@ -251,17 +263,19 @@ class AgentModel extends Model
     /**
      * 获取代理账户列表
      * @param $where
+     * @param $order
      * @param $page
      * @param $limit
      * @return array
      */
-    public static function list($where, $page, $limit)
+    public static function list($where, $order, $page, $limit)
     {
         $data = ['count' => 0, 'list' => [],];
         $db = MysqlDB::getDB();
         $countData = $db->select(self::$table, [
             "[><]" . AgentInfoModel::$table => ['id' => 'agent_id'],
             "[>]" . AgentServiceEmployeeModel::$table => ['id' => 'agent_id'],
+            "[>]" . AgentOrganizationModel::$table => ['id' => 'agent_id'],
         ], [self::$table . '.id'], ["AND" => $where, "GROUP" => self::$table . ".id"]);
 
 
@@ -289,6 +303,9 @@ class AgentModel extends Model
                 self::$table . '.name',
                 self::$table . '.division_model',
                 self::$table . '.leads_allot_type',
+                self::$table . '.total_rsc',
+                self::$table . '.total_rbc',
+                self::$table . '.sec_agent_count',
                 AgentInfoModel::$table . '.country',
                 AgentInfoModel::$table . '.province',
                 AgentInfoModel::$table . '.city',
@@ -301,7 +318,7 @@ class AgentModel extends Model
             [
                 "AND" => $where,
                 "GROUP" => self::$table . ".id",
-                "ORDER" => [self::$table . ".id" => 'DESC'],
+                "ORDER" => $order,
                 "LIMIT" => [$offset, $limit],
             ]
         );

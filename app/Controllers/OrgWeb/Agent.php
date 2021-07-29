@@ -13,6 +13,7 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\Util;
 use App\Libs\Valid;
+use App\Models\AgentModel;
 use App\Models\AgentOperationLogModel;
 use App\Services\AgentService;
 use Slim\Http\Request;
@@ -54,6 +55,12 @@ class Agent extends ControllerBase
                 'key' => 'agent_type',
                 'type' => 'required',
                 'error_code' => 'agent_type_is_required'
+            ],
+            [
+                'key' => 'agent_type',
+                'type' => 'in',
+                'value' => array_keys(AgentModel::ONLINE_TYPE_MAP),
+                'error_code' => 'agent_type_is_error'
             ],
             [
                 'key' => 'country_code',
@@ -251,11 +258,12 @@ class Agent extends ControllerBase
         $params = $request->getParams();
         list($params['page'], $params['count']) = Util::formatPageCount($params);
         $params['only_read_self'] = self::getEmployeeDataPermission();
-        $data = AgentService::listAgent($params, self::getEmployeeId());
-        return $response->withJson([
-            'code' => Valid::CODE_SUCCESS,
-            'data' => $data
-        ], StatusCode::HTTP_OK);
+        try {
+            $data = AgentService::listAgent($params, self::getEmployeeId());
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, $data);
     }
 
     /**
@@ -465,7 +473,7 @@ class Agent extends ControllerBase
     }
 
     /**
-     * 一级代理模糊搜索
+     * 代理模糊搜索
      * @param Request $request
      * @param Response $response
      * @return Response
