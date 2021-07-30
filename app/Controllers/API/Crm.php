@@ -27,7 +27,7 @@ class Crm extends ControllerBase
     {
         $rules = [
             [
-                'key' => 'ids',
+                'key' => 'uuids',
                 'type' => 'required',
                 'error_code' => 'ids_is_required',
             ]

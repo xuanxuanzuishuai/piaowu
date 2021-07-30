@@ -41,7 +41,7 @@ class ErpReferralUserRefereeModel extends ErpModel
         INNER JOIN {$s} s on s.id = rur.user_id 
         INNER JOIN {$s} r on r.id = rur.referee_id 
         ";
-        $where = "rur.user_id in (".implode(',', $ids).")";
+        $where = "s.uuid in ('".implode("','", $ids)."')";
         return $db->queryAll(sprintf($sql, $field, $join, $where));
     }
 }

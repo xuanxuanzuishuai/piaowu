@@ -66,7 +66,7 @@ class ErpReferralService
      */
     public static function refereeList($params = [])
     {
-        $ids = $params['ids'] ?? [];
+        $ids = $params['uuids'] ?? [];
         if (empty($ids)) {
             return [];
         }
