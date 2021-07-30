@@ -489,11 +489,13 @@ class Order extends ControllerBase
                 $student = UserService::studentRegisterBound($appId, $params['mobile'], $channel, $openId, $busiType, $userType);
                 $student['id'] = $student['student_id'];
             }
-            $packageId = $params['pkg'];
+            $pkg = $params['pkg'];
+            $packageId = PayServices::getPackageIDByParameterPkg($pkg);
             $packageInfo = DssErpPackageV1Model::getPackageById($packageId);
             if (empty($packageInfo) || $packageInfo['package_status'] != DssErpPackageV1Model::STATUS_ON_SALE) {
                 throw new RunTimeException(['package_not_available']);
             }
+            $pkgChannel = $packageInfo['channel'];
             $studentInfo['id'] = $student['id'];
             $studentInfo['uuid'] = $student['uuid'];
             $studentInfo['open_id'] = $openId;
@@ -501,7 +503,17 @@ class Order extends ControllerBase
             
             $payChannel = PayServices::payChannelToV1($params['pay_channel']);
             SimpleLogger::info('Order_LandingRecallCreateOrder_params', ['params' => $params, 'student' => $studentInfo]);
-            $ret = ErpOrderV1Service::createOrder($packageId, $studentInfo, $payChannel, 1, null, $channel, null);
+            $payUrl = $params['pay_url'];
+            $resp = ErpOrderV1Service::createOrder($packageId, $studentInfo, $payChannel, 1, '', $pkgChannel, [], $payUrl);
+            $billId = $resp['order_id'];
+            $params = $resp['data'];
+            $ret = [
+                'bill' => [
+                    'id' => $billId
+                ],
+                'params' => $params,
+            ];
+            
             SimpleLogger::info('Order_LandingRecallCreateOrder_res', ['res' => $ret]);
         } catch (RuntimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
