@@ -50,7 +50,6 @@ class PushMessageTopic extends BaseTopic
     const EVENT_SHARE_POSTER_MESSAGE = 'share_poster_award'; // 截图审核通过消息
 
     const EVENT_TASK_GOLD_LEAF = 'task_grant_gold_leaf'; // 任务发放金叶子
-    const EVENT_LANDING_RECALL = 'landing_recall'; // 任务发放金叶子
 
     public function __construct($publishTime = null)
     {
@@ -180,19 +179,6 @@ class PushMessageTopic extends BaseTopic
      * @return $this
      */
     public function sendGoldLeafWxMessage($data, $eventType = self::EVENT_TASK_GOLD_LEAF)
-    {
-        $this->setEventType($eventType);
-        $this->setMsgBody($data);
-        return $this;
-    }
-    
-    /**
-     * 发放LandingRecall短信和语音
-     * @param $data
-     * @param string $eventType
-     * @return $this
-     */
-    public function sendLandingRecall($data, $eventType = self::EVENT_LANDING_RECALL)
     {
         $this->setEventType($eventType);
         $this->setMsgBody($data);

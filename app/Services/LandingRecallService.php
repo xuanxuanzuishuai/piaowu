@@ -5,14 +5,13 @@
 
 namespace App\Services;
 
-use App\Controllers\OrgWeb\LandingRecall;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
 use App\Models\Dss\DssChannelModel;
 use App\Models\LandingRecallLogModel;
 use App\Models\LandingRecallModel;
-use App\Services\Queue\PushMessageTopic;
+use App\Services\Queue\DssPushMessageTopic;
 use Exception;
 
 class LandingRecallService
@@ -259,7 +258,7 @@ class LandingRecallService
             'voice_call_type' => $voiceCallType,
         ];
         try {
-            (new PushMessageTopic())->sendLandingRecall($pushMessageData)->publish();
+            (new DssPushMessageTopic())->sendLandingRecall($pushMessageData)->publish();
         } catch (Exception $e) {
             SimpleLogger::error('landing_recall_send_sms_error', [$e->getMessage()]);
         }
