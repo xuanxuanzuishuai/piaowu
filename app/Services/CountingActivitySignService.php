@@ -29,9 +29,17 @@ class CountingActivitySignService
      */
     public static function countSign($studentId, $statistics_time = null){
         self::$now = time();
+
+        //全量统计
+        list($cumulativeNum, $continuityNum) = self::getContinuityActivityNum(['student_id' => $studentId], 0, 0, self::$now);
+         
+        $res = self::incStatic($studentId, $cumulativeNum, $continuityNum);
+        if(!$res){
+            SimpleLogger::error('insert Statistic fail',[$studentId, $cumulativeNum, $continuityNum]);
+        }
+
         //查询是否报名
         $signList = CountingActivitySignModel::getRecords(['student_id'=>$studentId, 'qualified_status'=>CountingActivitySignModel::QUALIFIED_STATUS_NO, 'award_status'=>CountingActivitySignModel::AWARD_STATUS_NOT_QUALIFIED]);
-
         if(empty($signList)){
             SimpleLogger::error('用户未报名活动',[$studentId]);
             return false;
@@ -45,14 +53,6 @@ class CountingActivitySignService
         if(empty($activityList)){
             SimpleLogger::error('用户报名的计数任务不存在',[$activityIds]);
             return false;
-        }
-
-        //全量统计
-        list($cumulativeNum, $continuityNum) = self::getContinuityActivityNum(['student_id' => $studentId], 0, 0, self::$now);
-
-        $res = self::incStatic($studentId, $cumulativeNum, $continuityNum);
-        if(!$res){
-            SimpleLogger::error('insert Statistic fail',[$studentId, $cumulativeNum, $continuityNum]);
         }
 
         foreach ($signList as $one){

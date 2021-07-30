@@ -705,7 +705,7 @@ class QueueService
     {
         try {
             $topic = new GrantAwardTopic();
-            $topic->editQualified($data)->publish(5);
+            $topic->editQualified($data)->publish();
         } catch (Exception $e) {
             SimpleLogger::error($e->getMessage(), $data ?? []);
         }
@@ -718,7 +718,7 @@ class QueueService
     public static function signCountingActivityUp($data){
         try {
             $topic = new GrantAwardTopic();
-            $topic->signUp($data)->publish(5);
+            $topic->signUp($data)->publish();
         } catch (Exception $e) {
             SimpleLogger::error($e->getMessage(), $data ?? []);
         }
