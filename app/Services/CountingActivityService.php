@@ -9,7 +9,6 @@
 namespace App\Services;
 
 use App\Libs\AliOSS;
-use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
@@ -31,8 +30,6 @@ use App\Services\Queue\QueueService;
 
 class CountingActivityService
 {
-    public static $EVENT_TYPE = 16; //op运营活动
-
     public static function getCountDetail($op_activity_id){
         //获取互动详情
         $detail = CountingActivityModel::getRecord(['op_activity_id'=>$op_activity_id]);
@@ -159,7 +156,7 @@ class CountingActivityService
         $data = [];
         $erp = new Erp();
 
-        $award['type'] = ErpEventTaskModel::OP_ACTIVITY;
+        $award['type'] = ErpEventTaskModel::AWARD_TYPE_OBJECT_AWARD;
         $award['amount'] = 0;
         $award['source_type'] = 0;
         $award['account_sub_type'] = 0;
@@ -171,7 +168,7 @@ class CountingActivityService
             'name' => $activityInfo['name'] . 'op计数' . $activityInfo['op_activity_id'],
             'task_name' => '"' . $activityInfo['name'] . '"活动奖励',
             'desc' => $activityInfo['remark'],
-            'type' => self::$EVENT_TYPE,
+            'type' => ErpEventTaskModel::EVENT_TYPE_OP_ACTIVITY,
             'start_time' => $activityInfo['start_time'],
             'end_time' => $activityInfo['end_time'],
             'awards' => [$award],
@@ -325,7 +322,7 @@ class CountingActivityService
             //add activity_ext
             $extData = [
                 'activity_id' => $opActivityId,
-                'award_rule'  => $data['award_rule']
+                'award_rule'  => Util::textEncode($data['award_rule']),
             ];
             $extRes = ActivityExtModel::insertRecord($extData);
 

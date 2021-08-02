@@ -17,6 +17,9 @@ class ErpEventTaskModel extends ErpModel
     const AWARD_TYPE_CASH = 1; // 现金
     const AWARD_TYPE_DURATION = 2; // 有效期时长
     const AWARD_TYPE_INTEGRATION = 3; // 积分
+    const AWARD_TYPE_MEDAL_AWARD = 4;//奖章
+    const AWARD_TYPE_OBJECT_AWARD = 5;//实物
+    const AWARD_TYPE_SUIT_AWARD = 6;//套装
 
 
 
@@ -24,7 +27,11 @@ class ErpEventTaskModel extends ErpModel
     const BUY = 4; //购买
     const COMMUNITY_DURATION_POSTER = 6; //课时达标且审核通过
     const REISSUE_AWARD = 13; //补发红包
-    const OP_ACTIVITY = 101;  //op运营系统活动任务
+    const TASK_TYPE_OP_ACTIVITY = 101;  //op运营系统活动
+
+    //event_type
+    const EVENT_TYPE_OP_ACTIVITY = 101; //op运营系统活动事件
+
 
     /**
      * 检测任务奖励完成状态
