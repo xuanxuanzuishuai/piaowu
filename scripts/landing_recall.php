@@ -71,8 +71,6 @@ if ($recalls) {
         $channel = $recall['channel'];
         $endTime = $minTime - $sendTime * 60;
         $startTime = $endTime - 60;
-        $endTime = 1627467660;
-        $startTime = 1627467300;
         
         $validData = [];
         //未注册
@@ -151,8 +149,7 @@ if ($recalls) {
             
             if (!$redis->exists($redisKeyF)) {
                 LandingRecallService::sendSmsAndVoiceProduct($mobile, $countryCode, $url, $smsContent, $voiceCallType);
-                $redis->set($redisKeyF, 1);
-                $redis->expire($redisKeyF, Util::TIMESTAMP_ONEDAY);
+                $redis->setex($redisKeyF, Util::TIMESTAMP_ONEDAY, 1);
                 $time = time();
                 $date = date('Y-m-d', $time);
                 $insertData = [
