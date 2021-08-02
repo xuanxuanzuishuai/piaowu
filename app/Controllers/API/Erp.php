@@ -241,6 +241,11 @@ class Erp extends ControllerBase
                 'key' => 'employee_uuid',
                 'type' => 'required',
                 'error_code' => 'employee_uuid_is_required'
+            ],
+            [
+                'key' => 'activity_id',
+                'type' => 'required',
+                'error_code' => 'activity_id_is_required'
             ]
         ];
         $params = $request->getParams();

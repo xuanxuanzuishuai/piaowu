@@ -1040,7 +1040,7 @@ class RtActivityService
         }
         //学生调用海报记录 ParamMap
         if ($request['type'] == RtActivityModel::ACTIVITY_RULE_TYPE_STUDENT) {
-            $paramMapId = self::addParamMap($request['student_id'], $activity['activity_id'], $templatePosterPath['poster_id']);
+            $paramMapId = self::addParamMap($request['student_id'], $activity['activity_id'], $templatePosterPath['poster_id'], $request['employee_id']);
             if (!$paramMapId) {
                 throw new RunTimeException(['record_not_found']);
             }
@@ -1087,13 +1087,14 @@ class RtActivityService
      * @return int|mixed|string|null
      * @throws \App\Libs\KeyErrorRC4Exception
      */
-    public static function addParamMap($userId, $activityId, $posterId)
+    public static function addParamMap($userId, $activityId, $posterId, $employeeId)
     {
         $ticket = RC4::encrypt($_ENV['COOKIE_SECURITY_KEY'], ParamMapModel::TYPE_STUDENT . "_" . $userId);
         $paramInfo = [
             'r' => $ticket,
             'c' => self::getRtChannel(),
             'a' => $activityId,
+            'e' => $employeeId,
             'p' => $posterId,
             'user_current_status' => DssStudentModel::STATUS_BUY_NORMAL_COURSE
         ];
@@ -1469,7 +1470,7 @@ class RtActivityService
                     throw new RunTimeException(['record_not_found']);
                 }
                 //记录 ParamMap
-                $paramMapId = self::addParamMap($student['id'], $activity['activity_id'], $templatePosterPath['poster_id']);
+                $paramMapId = self::addParamMap($student['id'], $activity['activity_id'], $templatePosterPath['poster_id'], $request['employee_id']);
                 if (!$paramMapId) {
                     throw new RunTimeException(['record_not_found']);
                 }

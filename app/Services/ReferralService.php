@@ -136,6 +136,8 @@ class ReferralService
         ], ['name', 'id']), null, 'id');
         //rt渠道
         $rtChannel = RtActivityService::getRtChannel();
+        $routineChannelId = DictConstants::get(DictConstants::TRANSFER_RELATION_CONFIG, 'erp_channel_id');
+
         foreach ($listData['list'] as $lk => &$lv) {
             $lv['student_name'] = $studentDetail[$lv['student_id']]['name'];
             $lv['student_uuid'] = $studentDetail[$lv['student_id']]['uuid'];
@@ -151,6 +153,9 @@ class ReferralService
             $lv['employee_name'] = !empty($lv['referee_employee_id']) ? $employeeData[$lv['referee_employee_id']]['name'] : '';
             $lv['activity_name'] = !empty($lv['activity_id']) ? $activityData[$lv['activity_id']]['name'] : '';
             $lv['is_rt_channel'] = $lv['buy_channel'] == $rtChannel ? RtActivityService::RT_CHANNEL_REFERRAL : RtActivityService::NOT_RT_CHANNEL_REFERRAL;
+            if (in_array($lv['buy_channel'], [$rtChannel, $routineChannelId])) {
+                $lv['employee_name'] = '';
+            }
         }
         return $listData;
     }
