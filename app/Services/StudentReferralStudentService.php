@@ -26,7 +26,7 @@ class StudentReferralStudentService
      * @param false $checkMind  (是否有智能转介绍关系)
      * @return bool
      */
-    public static function checkBindReferralCondition($studentId, $checkMind = false)
+    public static function checkBindReferralCondition($studentId, $checkMind = false, $erpStudentId = 0)
     {
         /**
          * 不可以建立绑定关系的条件
@@ -45,10 +45,14 @@ class StudentReferralStudentService
             SimpleLogger::info('has erp referral relation', ['erp_referral_info' => $erpReferralUserRefereeData]);
             return false;
         }
-        //存在智能转介绍关系
+        //存在智能或者真人转介绍关系
         if ($checkMind) {
             $referralData = StudentReferralStudentStatisticsModel::getRecord(['student_id' => $studentId], ['referee_id', 'buy_channel']);
             if (!empty($referralData)) {
+                return false;
+            }
+            $erpReferralUserRefereeData = ErpReferralUserRefereeModel::getRecord(['user_id' => $erpStudentId], ['id']);
+            if (!empty($erpReferralUserRefereeData)) {
                 return false;
             }
         }

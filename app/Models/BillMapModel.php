@@ -51,6 +51,7 @@ class BillMapModel extends Model
                                 pm.param_info ->> '$.r' AS qr_ticket,
                                 pm.param_info ->> '$.e' AS e,
                                 pm.param_info ->> '$.a' AS a,
+                                pm.param_info ->> '$.create_type' AS create_type,
                                 pm.user_id, 
                                 pm.type,
                                 ab.buy_channel

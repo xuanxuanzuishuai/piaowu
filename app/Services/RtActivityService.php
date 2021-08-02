@@ -22,6 +22,7 @@ use App\Models\Erp\ErpOrderCouponV1Model;
 use App\Models\Erp\ErpStudentAccountModel;
 use App\Models\Erp\ErpStudentCouponV1Model;
 use App\Models\Dss\DssGiftCodeModel;
+use App\Models\Erp\ErpStudentModel;
 use App\Models\OperationActivityModel;
 use App\Models\ParamMapModel;
 use App\Models\QrInfoOpCHModel;
@@ -1087,7 +1088,7 @@ class RtActivityService
      * @return int|mixed|string|null
      * @throws \App\Libs\KeyErrorRC4Exception
      */
-    public static function addParamMap($userId, $activityId, $posterId, $employeeId)
+    public static function addParamMap($userId, $activityId, $posterId, $employeeId, $createType = 0)
     {
         $ticket = RC4::encrypt($_ENV['COOKIE_SECURITY_KEY'], ParamMapModel::TYPE_STUDENT . "_" . $userId);
         $paramInfo = [
@@ -1096,6 +1097,7 @@ class RtActivityService
             'a' => $activityId,
             'e' => $employeeId,
             'p' => $posterId,
+            'create_type' => $createType,
             'user_current_status' => DssStudentModel::STATUS_BUY_NORMAL_COURSE
         ];
         $paramInfo = json_encode($paramInfo);
@@ -1409,12 +1411,14 @@ class RtActivityService
         }
         //被推荐人信息查询 可能是未注册用户
         $invitedStudent = DssStudentModel::getRecord(['mobile' => $request['mobile']], ['id']);
+        $erpStudent = ErpStudentModel::getRecord(['mobile' => $request['mobile']], ['id']);
         switch ($request['type']) {
             case self::ACTIVITY_ROUTINE:
                 $invitedStudentId = $invitedStudent['id'] ?? 0;
-                if (!empty($invitedStudentId)) {
+                $erpStudentId = $erpStudent['id'] ?? 0;
+                if (!empty($invitedStudentId) || !empty($erpStudentId)) {
                     //检测是否可以建立学生转介绍学生绑定关系
-                    $checkResult = StudentReferralStudentService::checkBindReferralCondition($invitedStudentId, true);
+                    $checkResult = StudentReferralStudentService::checkBindReferralCondition($invitedStudentId, true, $erpStudentId);
                     if (!$checkResult) {
                         throw new RunTimeException(["invited_is_transfer_relation"]);
                     }
@@ -1470,7 +1474,7 @@ class RtActivityService
                     throw new RunTimeException(['record_not_found']);
                 }
                 //记录 ParamMap
-                $paramMapId = self::addParamMap($student['id'], $activity['activity_id'], $templatePosterPath['poster_id'], $request['employee_id']);
+                $paramMapId = self::addParamMap($student['id'], $activity['activity_id'], $templatePosterPath['poster_id'], $request['employee_id'], self::ACTIVITY_ROUTINE);
                 if (!$paramMapId) {
                     throw new RunTimeException(['record_not_found']);
                 }
@@ -1557,7 +1561,7 @@ class RtActivityService
         }
         $paramsArray = ['mobile', 'channel_id','qr_id','param_id'];
         if ($isRegister) {
-            unset($paramsArray['mobile']);
+            array_shift($paramsArray);
             if (empty($student['id']) || empty($student['uuid'])) {
                 throw new RunTimeException(['id_and_uuid_not_null']);
             }
