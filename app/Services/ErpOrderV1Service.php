@@ -121,12 +121,14 @@ class ErpOrderV1Service
         if (PayServices::isTrialPackage($packageId)) {
             self::checkHadPurchaseTrail($studentId);
         }
-
+        if ($callback && strpos($callback, 'http') === false) {
+            $callback = $_ENV['REFERRAL_HOST'] . $callback;
+        }
         $callbacks  = self::callbacks($channel, $payChannel);
         $successUrl = $callback ?? $callbacks['success_url'];
         $cancelUrl  = $callback ?? $callbacks['cancel_url'];
-
-        // create bill
+        $resultUrl = $callback ?? $callbacks['result_url'];
+        
         $erp = new Erp();
         $result = $erp->createBillV1([
             'uuid'          => $student['uuid'],
@@ -140,7 +142,7 @@ class ErpOrderV1Service
             'pay_channel'   => $payChannel, // 三方支付渠道
             'success_url'   => $successUrl ?? null, // 支付宝web 支付成功跳转链接
             'cancel_url'    => $cancelUrl ?? null, // 支付宝web 支付失败跳转链接
-            'result_url'    => $callbacks['result_url'] ?? null, // 微信H5 支付结果跳转链接
+            'result_url'    => $resultUrl ?? null, // 微信H5 支付结果跳转链接
             'employee_uuid' => $employeeUuid, // 成单人
             'gift_goods'    => $giftGoods, //选择的赠品
         ]);
