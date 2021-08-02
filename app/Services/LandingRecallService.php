@@ -31,6 +31,7 @@ class LandingRecallService
         }
         $time = time();
         $data['create_time'] = $time;
+        $data['update_time'] = $time;
         $data['operator_id'] = $employeeId;
         
         // 保存活动总表信息

@@ -11,5 +11,5 @@ class DssChannelModel extends DssModel
 {
     public static $table = "channel";
     
-    const STATUS_ENABLE = 1;
+    const STATUS_ENABLE = '1';
 }
