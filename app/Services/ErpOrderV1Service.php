@@ -122,7 +122,7 @@ class ErpOrderV1Service
             self::checkHadPurchaseTrail($studentId);
         }
         if ($callback && strpos($callback, 'http') === false) {
-            $callback = $_ENV['REFERRAL_HOST'] . $callback;
+            $callback = $_ENV['REFERRAL_FRONT_DOMAIN'] . $callback;
         }
         $callbacks  = self::callbacks($channel, $payChannel);
         $successUrl = $callback ?? $callbacks['success_url'];
