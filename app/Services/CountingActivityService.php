@@ -118,7 +118,7 @@ class CountingActivityService
             throw new RuntimeException(['status_is_invalid']);
         }
 
-        $activityInfo = CountingActivityModel::getRecord(['id'=>$op_activity_id],['id','op_activity_id','first_effect_time','status','name','remark','start_time','end_time']);
+        $activityInfo = CountingActivityModel::getRecord(['id'=>$op_activity_id],['id','op_activity_id','title','first_effect_time','status','name','remark','start_time','end_time']);
 
         if(empty($activityInfo) || $activityInfo['status'] == $status){
             throw new RuntimeException(['update_failure']);
@@ -166,7 +166,7 @@ class CountingActivityService
 
         $event = [
             'name' => $activityInfo['name'] . 'op计数' . $activityInfo['op_activity_id'],
-            'task_name' => '"' . $activityInfo['name'] . '"活动奖励',
+            'task_name' => $activityInfo['title'],
             'desc' => $activityInfo['remark'],
             'type' => ErpEventTaskModel::EVENT_TYPE_OP_ACTIVITY,
             'start_time' => $activityInfo['start_time'],
@@ -447,7 +447,7 @@ class CountingActivityService
                     'banner'   => $params['banner'],
                     'reminder_pop'  => $params['reminder_pop'],
                     'award_thumbnail' => $params['award_thumbnail'],
-                    'title'           => $params['title'],
+//                    'title'           => $params['title'],
                     'instruction'     => $params['instruction'],
                 ];
 
