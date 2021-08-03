@@ -59,9 +59,30 @@ if ($recalls) {
     
     $channelTable = DssChannelModel::getTableNameWithDb();
     $channelStatus = DssChannelModel::STATUS_ENABLE;
-    $sqlChannel = "SELECT id,parent_id FROM {$channelTable} WHERE `status` = {$channelStatus};";
+    $sqlChannel = "SELECT id,parent_id FROM {$channelTable} WHERE `status` = '{$channelStatus}';";
     $channels = $dbRO->queryAll($sqlChannel);
     $channelMap = array_column($channels, 'parent_id', 'id');
+    $channelLv1Map = [];
+    foreach ($channelMap as $id => $parentId) {
+        $tmpId = $id;
+        $lv1ParentId = 0;
+        $index = 0;
+        while (true) {
+            if (!isset($channelMap[$tmpId])) {
+                break;
+            }
+            $parentId = $channelMap[$tmpId];
+            if ($parentId == 0) {
+                $lv1ParentId = $tmpId;
+                break;
+            }
+            $tmpId = $parentId;
+            if ($index++ >= 30) {   //防止错误数据发生死循环
+                break;
+            }
+        }
+        $channelLv1Map[$id] = $lv1ParentId;
+    }
     
     foreach ($recalls as $recall) {
         $target = $recall['target_population'];
@@ -112,22 +133,7 @@ if ($recalls) {
             $allowChannels = empty($channel)?[]:explode(',', $channel);
             foreach ($mobileInfos as $mobileInfo) {
                 $channelId = $mobileInfo['channel_id'];
-                $channelIdLevel1 = 0;   //一级渠道ID
-                $index = 0;
-                while (true) {
-                    if (!isset($channelMap[$channelId])) {
-                        break;
-                    }
-                    $parentId = $channelMap[$channelId];
-                    if ($parentId == 0) {
-                        $channelIdLevel1 = $channelId;
-                        break;
-                    }
-                    $channelId = $parentId;
-                    if ($index++ >= 30) {   //防止错误数据发生死循环
-                        break;
-                    }
-                }
+                $channelIdLevel1 = $channelLv1Map[$channelId] ?? 0;   //一级渠道ID
                 //渠道合法
                 if ($channelIdLevel1 && in_array($channelIdLevel1, $allowChannels)) {
                     $mobile = $mobileInfo['mobile'];
