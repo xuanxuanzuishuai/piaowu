@@ -444,11 +444,11 @@ class CountingActivityService
                 $activityData = [
                     'remark'   => $params['remark'],
                     'update_time' => $now,
-//                    'banner'   => $params['banner'],
-//                    'reminder_pop'  => $params['reminder_pop'],
-//                    'award_thumbnail' => $params['award_thumbnail'],
-//                    'title'           => $params['title'],
-//                    'instruction'     => $params['instruction'],
+                    'banner'   => $params['banner'],
+                    'reminder_pop'  => $params['reminder_pop'],
+                    'award_thumbnail' => $params['award_thumbnail'],
+                    'title'           => $params['title'],
+                    'instruction'     => $params['instruction'],
                 ];
 
                 if($activitInfo['rule_type'] == CountingActivityModel::RULE_TYPE_COUNT && $params['rule_type'] == CountingActivityModel::RULE_TYPE_CONTINU){

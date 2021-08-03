@@ -204,7 +204,7 @@ class CountingActivitySignService
         foreach ($signList as $sign){
             $where = [
                 'student_id' => $sign['student_id'],
-                'create_time[>=]' => $sign['create_time'],
+                'create_time[>=]' => $activity['start_time'],
                 'GROUP' => 'student_id',
                 'type'            => SharePosterModel::TYPE_WEEK_UPLOAD,
                 'verify_status'   => SharePosterModel::VERIFY_STATUS_QUALIFIED,
@@ -214,7 +214,10 @@ class CountingActivitySignService
             ];
 
             $count = SharePosterModel::getRecord($where,['c'=>Medoo::raw('count(id)'),'student_id']);
+
             list($cumulativeNum, $continuityNum) = self::getContinuityActivityNum($sign, $activity['start_time'], 10,$activity['join_end_time']);
+
+
             if($count){
                 self::updateSign($sign, $activity, $cumulativeNum, $continuityNum);
             }
