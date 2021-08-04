@@ -270,7 +270,8 @@ class StudentService
         $mobileArrLine = [];  //mobile 对应的excel行号
         $errData = [];  // 错误数据
         // 检测excel本身数据是否存在问题
-        foreach ($excelData as $_k => $_time) {
+        foreach ($excelData as $_k => &$_time) {
+            !empty($_time['B']) && $_time['B'] = (string)$_time['B'];
             // uuid 和 mobile 都是空 认为是错误数据
             if (empty($_time['A']) && empty($_time['B'])) {
                 $errData[] = self::formatErrData($_time['A'], $_time['B'], 'uuid_mobile_is_empty');
