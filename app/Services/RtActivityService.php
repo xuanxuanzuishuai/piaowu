@@ -1409,19 +1409,12 @@ class RtActivityService
         if (empty($employee) || $employee['uuid'] != $request['employee_uuid']) {
             throw new RunTimeException(["employee_invalid_uuid"]);
         }
-        //被推荐人信息查询 可能是未注册用户
-        $invitedStudent = DssStudentModel::getRecord(['mobile' => $request['mobile']], ['id']);
-        $erpStudent = ErpStudentModel::getRecord(['mobile' => $request['mobile']], ['id']);
+
         switch ($request['type']) {
             case self::ACTIVITY_ROUTINE:
-                $invitedStudentId = $invitedStudent['id'] ?? 0;
-                $erpStudentId = $erpStudent['id'] ?? 0;
-                if (!empty($invitedStudentId) || !empty($erpStudentId)) {
-                    //检测是否可以建立学生转介绍学生绑定关系
-                    $checkResult = StudentReferralStudentService::checkBindReferralCondition($invitedStudentId, true, $erpStudentId);
-                    if (!$checkResult) {
-                        throw new RunTimeException(["invited_is_transfer_relation"]);
-                    }
+                $checkResult = StudentReferralStudentService::checkBindReferralByMobile($request['mobile']);
+                if (!$checkResult) {
+                    throw new RunTimeException(["invited_is_transfer_relation"]);
                 }
                 //获取渠道和H5链接
                 list($channelId, $scheme) = DictConstants::get(DictConstants::TRANSFER_RELATION_CONFIG, ['erp_channel_id', 'erp_invited_index']);

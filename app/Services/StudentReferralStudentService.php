@@ -23,17 +23,11 @@ class StudentReferralStudentService
     /**
      * 检测是否可以建立学生转介绍学生绑定关系
      * @param $studentId
-     * @param false $checkMind  (是否有智能转介绍关系)
      * @return bool
      */
-    public static function checkBindReferralCondition($studentId, $checkMind = false, $erpStudentId = 0)
+    public static function checkBindReferralCondition($studentId)
     {
-        /**
-         * 不可以建立绑定关系的条件
-         * 1.存在真人转介绍关系
-         * 2.存在智能转介绍关系
-         * 3.已购买过年卡（智能年卡，真人送智能年卡）
-         */
+        //不可以建立绑定关系的条件:1存在真人转介绍关系 2已购买过年卡（智能年卡，真人送智能年卡）
         //存在真人转介绍关系
         $erpReferralUserRefereeData = [];
         $dssStudentData = DssStudentModel::getRecord(['id' => $studentId], ['uuid', 'mobile']);
@@ -45,21 +39,52 @@ class StudentReferralStudentService
             SimpleLogger::info('has erp referral relation', ['erp_referral_info' => $erpReferralUserRefereeData]);
             return false;
         }
-        //存在智能或者真人转介绍关系
-        if ($checkMind) {
-            $referralData = StudentReferralStudentStatisticsModel::getRecord(['student_id' => $studentId], ['referee_id', 'buy_channel']);
-            if (!empty($referralData)) {
-                return false;
-            }
-            $erpReferralUserRefereeData = ErpReferralUserRefereeModel::getRecord(['user_id' => $erpStudentId], ['id']);
-            if (!empty($erpReferralUserRefereeData)) {
-                return false;
-            }
-        }
         //已购买过年卡
         $normalPackage = DssGiftCodeModel::getUserFirstPayInfo($studentId);
         if (!empty($normalPackage)) {
             SimpleLogger::info('has buy normal package', ['normal_package' => $normalPackage]);
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 根据手机号判断用户是否能建立转介绍关系
+     * @param $mobile
+     * @return bool
+     */
+    public static function checkBindReferralByMobile($mobile)
+    {
+        //被推荐人信息查询 可能是未注册用户
+        $dssStudent = DssStudentModel::getRecord(['mobile' => $mobile], ['id','has_review_course']);
+        $erpStudent = ErpStudentModel::getRecord(['mobile' => $mobile], ['id']);
+        //若为非注册用户直接返回
+        if (empty($dssStudent) && empty($erpStudent)) {
+            return true;
+        }
+        /**
+         * 已注册用户判断
+         * 1、是否有真人或智能转介绍关系
+         * 2、是否有年卡
+         * 3、是否有体验卡
+         */
+        if (!empty($dssStudent)) {
+            $dssReferralData = StudentReferralStudentStatisticsModel::getRecord(['student_id' => $dssStudent['id']], ['id']);
+            if (!empty($dssReferralData)) {
+                return false;
+            }
+        }
+        if (!empty($erpStudent)) {
+            $erpReferralData = ErpReferralUserRefereeModel::getRecord(['user_id' => $erpStudent['id']], ['id']);
+            if (!empty($erpReferralData)) {
+                return false;
+            }
+        }
+        $normalPackage = DssGiftCodeModel::getUserFirstPayInfo($dssStudent['id']);
+        if (!empty($normalPackage)) {
+            return false;
+        }
+        if ($dssStudent['has_review_course'] == DssStudentModel::REVIEW_COURSE_49) {
             return false;
         }
         return true;
