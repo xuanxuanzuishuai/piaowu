@@ -145,7 +145,7 @@ if ($recalls) {
                 }
             }
         }
-        
+        SimpleLogger::info('LANDING_RECALL_VALID_DATA_' . $minTime, ['recall' => $recall, 'data' => $validData]);
         //消息队列发送短信
         foreach ($validData as $validDatum) {
             $mobile = $validDatum['mobile'];

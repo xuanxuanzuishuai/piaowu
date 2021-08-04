@@ -505,6 +505,13 @@ class Order extends ControllerBase
             SimpleLogger::info('Order_LandingRecallCreateOrder_params', ['params' => $params, 'student' => $studentInfo]);
             $payUrl = $params['pay_url'];
             $resp = ErpOrderV1Service::createOrder($packageId, $studentInfo, $payChannel, 1, '', $pkgChannel, [], $payUrl);
+            
+            $sceneData['c'] = $channel;
+            if (!empty($sceneData) && !empty($resp['order_id'])) {
+                // 保存agent_bill_map数据
+                BillMapService::mapDataRecord($sceneData, $resp['order_id'], $studentInfo['id']);
+            }
+            
             $billId = $resp['order_id'];
             $params = $resp['data'];
             $ret = [
