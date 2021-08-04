@@ -26,7 +26,7 @@ class QrInfoService
     const REDIS_CREATE_QR_ID_LOCK = 'create_qr_id_lock';    // 生成二维码码标识锁
 
     /**
-     * 生成qr ticket
+     * 生成qr_sign
      * @param $qrData
      * @return string
      */
@@ -62,7 +62,7 @@ class QrInfoService
 
 
     /**
-     * 获取一个待使用的标记(qr_id)
+     * 获取指定数量的待使用的qr_id
      * @param $getQrNum
      * @param int $tryNum
      * @return mixed
@@ -174,7 +174,7 @@ class QrInfoService
 
 
     /**
-     * 批量获取一个待使用的二维码信息 (图片url、id)
+     * 生成数据对应的qr_id - 支持批量 - 普通二维码需要传入qr_path
      * @param array $qrParams
      * @param array $field
      * @param bool $isFullUrl
@@ -213,7 +213,7 @@ class QrInfoService
                 // 把信息关联并且写入到CH - 补全数据
                 $_tmpSaveData                = $_qrParam;
                 $_tmpSaveData['qr_id']       = $qrId;
-                $_tmpSaveData['qr_path']     = '';
+                $_tmpSaveData['qr_path']     = $_qrParam['qr_path'] ?? '';
                 $_tmpSaveData['qr_sign']     = $_qrSign;
                 $_tmpSaveData['app_id']      = $_qrParam['app_id'] ?? Constants::SMART_APP_ID;
                 $_tmpSaveData['busies_type'] = $_qrParam['busies_type'] ?? DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP;

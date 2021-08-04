@@ -286,7 +286,7 @@ class MiniAppQrService
     }
 
     /**
-     * 获取一个未使用的小程序码信息 (图片url、id)
+     * 获取一个用户的小程序码对应的qr_id
      * @param $userId
      * @param $userType
      * @param $channel
@@ -360,7 +360,7 @@ class MiniAppQrService
     }
 
     /**
-     * 批量获取一个未使用的小程序码信息 (图片url、id)
+     * 批量获取用户的小程序码对应的qr_id
      * @param array $qrParams
      * @param bool $isFullUrl
      * @return array
