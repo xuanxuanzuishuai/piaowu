@@ -49,6 +49,11 @@ class LandingRecallService
      */
     public static function edit($data, $employeeId)
     {
+        $activityInfo = LandingRecallModel::getRecord(['id' => $data['id']]);
+        if (empty($activityInfo)) {
+            throw new RunTimeException(['record_not_found']);
+        }
+        $data['enable_status'] = $activityInfo['enable_status'];
         $checkAllow = self::checkAllow($data);
         if (!empty($checkAllow)) {
             throw new RunTimeException([$checkAllow]);
