@@ -75,4 +75,26 @@ class BillMapService
         }
         return true;
     }
+
+    /**
+     * 根据订单号和学生id获取转介绍信息
+     * @param string $parentBillId
+     * @param int $studentId
+     * @return array
+     */
+    public static function getQrInfoByBillId(string $parentBillId, int $studentId)
+    {
+        //新绑定逻辑条件检测 - 先读取clickhouse，如果没有查询param_map表
+        $billMapInfo = BillMapModel::getRecord(['student_id' => $studentId, 'bill_id' => $parentBillId]);
+        if (empty($billMapInfo)) {
+            return [];
+        }
+        $qrInfo  = MiniAppQrService::getQrInfoById($billMapInfo['param_map_id'], [], ['buy_channel'=>$billMapInfo['buy_channel']]);
+        if (empty($qrInfo)) {
+            $paramMapInfo = ParamMapModel::getRecord(['id' => $billMapInfo['param_map_id']]);
+            $paramInfo = !empty($paramMapInfo['param_info']) ? json_decode($paramMapInfo['param_info'], true) : [];
+            $qrInfo = !empty($paramMapInfo) ? array_merge($paramInfo, $paramMapInfo) : [];
+        }
+        return $qrInfo;
+    }
 }

@@ -385,7 +385,8 @@ class ReferralService
                     return [];
                 } else {
                     //通过订单ID获取成单人的映射关系
-                    $mapData = BillMapModel::paramMapDataByBillId($parentBillId, $studentId);
+                    // $mapData = BillMapModel::paramMapDataByBillId($parentBillId, $studentId);
+                    $mapData = BillMapService::getQrInfoByBillId($parentBillId, $studentId);
                     $is_rt_channel = $mapData['buy_channel'] == $rtChannel ? RtActivityService::RT_CHANNEL_REFERRAL : RtActivityService::NOT_RT_CHANNEL_REFERRAL;
                     return ['referee_id' => (int)$mapData['user_id'],'is_rt_channel' => $is_rt_channel];
                 }

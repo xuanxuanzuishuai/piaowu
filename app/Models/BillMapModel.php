@@ -37,6 +37,7 @@ class BillMapModel extends Model
 
 
     /**
+     * @deprecated  改用新的方法  BillMapService::getQrInfoByBillId
      * 获取订单映射数据
      * @param string $parentBillId
      * @param int $studentId

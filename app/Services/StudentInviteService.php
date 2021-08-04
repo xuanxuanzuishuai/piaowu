@@ -134,12 +134,7 @@ class StudentInviteService
         if (empty($bindReferralInfo)) {
             //新绑定逻辑条件检测 - 先读取clickhouse，如果没有查询param_map表
             $billMapInfo = BillMapModel::getRecord(['student_id' => $studentId, 'bill_id' => $parentBillId]);
-            if (!empty($billMapInfo)) {
-                $qrTicketIdentityData = MiniAppQrService::getQrInfoById($billMapInfo['param_map_id'], [], ['buy_channel'=>$billMapInfo['buy_channel']]);
-            }
-            if (empty($qrTicketIdentityData)) {
-                $qrTicketIdentityData = BillMapModel::paramMapDataByBillId($parentBillId, $studentId);
-            }
+            $qrTicketIdentityData = BillMapService::getQrInfoByBillId($parentBillId, $studentId);
             if(empty($qrTicketIdentityData) && $billMapInfo['user_id']){
                 $qrTicketIdentityData = [
                     'a' => 0,
