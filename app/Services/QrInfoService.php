@@ -21,7 +21,7 @@ use Predis\Client;
 
 class QrInfoService
 {
-    const REDIS_WAIT_USE_QR_SET   = 'wait_use_qr_set';    // 等待使用的二维码标识
+    private const REDIS_WAIT_USE_QR_SET   = 'wait_use_qr_set';    // 等待使用的二维码标识
     const REDIS_USE_QR_NUM        = 'use_qr_num';         // 二维码标识已使用数量
     const REDIS_CREATE_QR_ID_LOCK = 'create_qr_id_lock';    // 生成二维码码标识锁
 
@@ -63,19 +63,16 @@ class QrInfoService
 
     /**
      * 获取一个待使用的标记(qr_id)
-     * @param Client|null $redis
+     * @param $getQrNum
      * @param int $tryNum
      * @return mixed
      */
-    public static function getWaitUseQrId(Client $redis = null, $tryNum = 0)
+    public static function getWaitUseQrId($getQrNum, int $tryNum = 0)
     {
-        if (empty($redis)) {
-            $redis = RedisDB::getConn();
-        }
-        // CH没有查到获取一个待使用的小程序码信息
-        $qrId = $redis->spop(self::REDIS_WAIT_USE_QR_SET);
-        // 如果qr_id 为空，需要立即启动生成小程序
-        if (empty($qrId)) {
+        $redis = RedisDB::getConn();
+        // 获取待使用总数， 如果总数低于需要的数量 启用生成标识对了， 并且延时1秒再次获取，最多重试3次，超过3次有多少返回多少
+        $num = $redis->scard(self::REDIS_WAIT_USE_QR_SET);
+        if ($num < $getQrNum) {
             // 只启用一次生成服务即可
             if ($tryNum == 0) {
                 QueueService::startCreateWaitUseQrId(['is_qr_empty' => 'true']);
@@ -83,25 +80,24 @@ class QrInfoService
             }
 
             // 重试3次，每次等待1秒
-            if ($tryNum >= 3) {
-                return "";
+            if ($tryNum < 3) {
+                sleep(1);
+                $tryNum += 1;
+                return self::getWaitUseQrId($getQrNum, $tryNum);
             }
-            sleep(1);
-            $tryNum += 1;
-            return self::getWaitUseQrId($redis, $tryNum);
         }
 
-        // 更新小程序码使用数量
-        $useQrNum = $redis->incr(self::REDIS_USE_QR_NUM);
-
+        // 获取待使用的标识数量
+        $qrIdArr = $redis->spop(self::REDIS_WAIT_USE_QR_SET, $getQrNum);
+        // 更新使用的标识数量
+        $useQrNum = $redis->incrby(self::REDIS_USE_QR_NUM, $getQrNum);
         // 如果达到阀值(已使用数量-每次生成数量-10000) 启用生成标识队列
         $num = DictConstants::get(DictConstants::MINI_APP_QR, 'create_wait_use_qr_num');
-
-        if ($useQrNum%($num - $num/2) == 0) {
+        if ($useQrNum % ($num - $num / 2) == 0) {
             QueueService::startCreateWaitUseQrId();
         }
 
-        return $qrId;
+        return $getQrNum == 1 ? ($qrIdArr[0] ?? '') :$qrIdArr;
     }
 
     /**
@@ -207,14 +203,13 @@ class QrInfoService
         $qrImageArr = QrInfoOpCHModel::getQrInfoBySign($qrSignArr, $selectField);
         $qrSignData = array_column($qrImageArr, null, 'qr_sign');
         // 获取待使用的qr_id
-        $redis = RedisDB::getConn();
         foreach ($qrParams as $_qrParam) {
             $_qrSign = $_qrParam['qr_sign'];
             if (isset($qrSignData[$_qrSign])) {
                 $_tmp = $qrSignData[$_qrSign];
             } else {
                 // CH没有查到获取一个待使用的小程序码信息
-                $qrId = self::getWaitUseQrId($redis);
+                $qrId = self::getWaitUseQrId(1);
                 // 把信息关联并且写入到CH - 补全数据
                 $_tmpSaveData                = $_qrParam;
                 $_tmpSaveData['qr_id']       = $qrId;

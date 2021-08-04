@@ -144,10 +144,12 @@ class MiniAppQrService
             }
 
             // 获取待使用的二维码标识，并放入到待生成小程序码的队列
+            $qrIdArr = QrInfoService::getWaitUseQrId($createIdNum);
             $sendQueueArr = [];
-            for ($i = 0; $i < $createIdNum; $i++) {
-                $sendQueueArr[] = ['mini_app_qr_id' => QrInfoService::getWaitUseQrId($redis)];
+            foreach ($qrIdArr as $_qrId) {
+                $sendQueueArr[] = ['mini_app_qr_id' => $_qrId];
             }
+            unset($_qrId);
 
             // 放入队列
             QueueService::sendWaitCreateMiniAppQrId($sendQueueArr, 0, $secondNum);
