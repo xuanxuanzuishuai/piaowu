@@ -262,7 +262,7 @@ class LandingRecallService
     {
         $pushMessageData = [
             'mobile' => $mobile,
-            'auth_mobile' => urlencode(Util::authcode($mobile, 'ENCODE', self::LANDING_RECALL_AUTH_KEY)),
+            'auth_mobile' => Util::authcode($mobile, 'ENCODE', self::LANDING_RECALL_AUTH_KEY),
             'country_code' => $countryCode,
             'base_url' => $url,
             'sms_content' => $smsContent,
