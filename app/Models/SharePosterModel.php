@@ -18,6 +18,7 @@ use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\Erp\ErpUserEventTaskAwardModel;
 use App\Models\Erp\ErpUserEventTaskModel;
 use App\Services\ReferralService;
+use Medoo\Medoo;
 
 class SharePosterModel extends Model
 {
@@ -477,19 +478,25 @@ class SharePosterModel extends Model
     public static function getAllWeekActivity($pageSize){
 
         if($pageSize){
-            $limit = ' LIMIT ' . $pageSize;
+            $limit = $pageSize;
         }else{
-            $limit = '';
+            $limit = null;
         }
 
-        $sql = 'SELECT wa.activity_id,wa.start_time, wa.end_time 
-                FROM '.WeekActivityModel::$table.' as wa INNER JOIN '.self::$table.' as sp 
-                on wa.activity_id=sp.activity_id 
-                where type = ' . SharePosterModel::TYPE_WEEK_UPLOAD
-                . ' AND verify_status= ' . SharePosterModel::VERIFY_STATUS_QUALIFIED
-                . ' GROUP BY wa.activity_id ORDER BY wa.start_time DESC,wa.end_time DESC ' . $limit;
-        $db = MysqlDB::getDB();
-        $activityList = $db->queryAll($sql);
+        $where = [
+            'type'=>SharePosterModel::TYPE_WEEK_UPLOAD,
+            'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED,
+        ];
+
+        $ids = self::getRecords($where,['activity_id'=>Medoo::raw('distinct activity_id')]);
+        $ids = array_column($ids, 'activity_id');
+
+        $where = [
+            'activity_id' => $ids,
+            'ORDER' => ['start_time' => 'DESC', 'end_time'=>'DESC' ,'activity_id'=>'DESC'],
+            'LIMIT' => $limit
+        ];
+        $activityList = WeekActivityModel::getRecords($where, ['activity_id','start_time','end_time']);
 
         return $activityList;
     }
