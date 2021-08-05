@@ -89,11 +89,14 @@ class BillMapService
         if (empty($billMapInfo)) {
             return [];
         }
-        $qrInfo  = MiniAppQrService::getQrInfoById($billMapInfo['param_map_id'], [], ['buy_channel'=>$billMapInfo['buy_channel']]);
+        $extData = ['buy_channel'=>$billMapInfo['buy_channel']];
+        $qrInfo  = MiniAppQrService::getQrInfoById($billMapInfo['param_map_id'], [], $extData);
         if (empty($qrInfo)) {
             $paramMapInfo = ParamMapModel::getRecord(['id' => $billMapInfo['param_map_id']]);
-            $paramInfo = !empty($paramMapInfo['param_info']) ? json_decode($paramMapInfo['param_info'], true) : [];
-            $qrInfo = !empty($paramMapInfo) ? array_merge($paramInfo, $paramMapInfo) : [];
+            if (!empty($paramMapInfo)) {
+                $paramInfo = !empty($paramMapInfo['param_info']) ? json_decode($paramMapInfo['param_info'], true) : [];
+                $qrInfo = array_merge($paramInfo, $paramMapInfo, $extData);
+            }
         }
         return $qrInfo;
     }
