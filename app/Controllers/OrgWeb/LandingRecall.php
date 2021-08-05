@@ -259,4 +259,34 @@ class LandingRecall extends ControllerBase
         
         return HttpHelper::buildResponse($response, $result);
     }
+    
+    /**
+     * 手机号解密
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function decodeSign(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'sign',
+                'type' => 'required',
+                'error_code' => 'sign_is_required'
+            ],
+        ];
+        
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            $result = LandingRecallService::decodeSign($params['sign'] ?? '');
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        
+        return HttpHelper::buildResponse($response, $result);
+    }
 }

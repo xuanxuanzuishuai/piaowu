@@ -8,6 +8,7 @@ namespace App\Services;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
+use App\Libs\Util;
 use App\Models\Dss\DssChannelModel;
 use App\Models\LandingRecallLogModel;
 use App\Models\LandingRecallModel;
@@ -16,6 +17,9 @@ use Exception;
 
 class LandingRecallService
 {
+    
+    const LANDING_RECALL_AUTH_KEY = 'landing_recall';
+    
     /**
      * 添加Recall规则
      * @param $data
@@ -258,6 +262,7 @@ class LandingRecallService
     {
         $pushMessageData = [
             'mobile' => $mobile,
+            'auth_mobile' => urlencode(Util::authcode($mobile, 'ENCODE', self::LANDING_RECALL_AUTH_KEY)),
             'country_code' => $countryCode,
             'base_url' => $url,
             'sms_content' => $smsContent,
@@ -286,5 +291,16 @@ class LandingRecallService
             ];
         }
         return $result;
+    }
+    
+    /**
+     * 发送短信统计
+     * @param $sign
+     * @return array|null
+     */
+    public static function decodeSign($sign)
+    {
+        $mobile = Util::authcode($sign, 'DECODE', self::LANDING_RECALL_AUTH_KEY);
+        return ['mobile' => $mobile];
     }
 }

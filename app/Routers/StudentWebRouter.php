@@ -9,6 +9,7 @@
 namespace App\Routers;
 
 use App\Controllers\Agent\Agent;
+use App\Controllers\OrgWeb\LandingRecall;
 use App\Controllers\StudentWeb\Landing;
 use App\Controllers\StudentWeb\Order;
 use App\Controllers\StudentWeb\Recall;
@@ -62,5 +63,8 @@ class StudentWebRouter extends RouterBase
         
         // Landing页召回,创建订单
         '/student_web/order/landing_recall_create_order' => ['method' => ['post'], 'call' => Order::class . ':LandingRecallCreateOrder', 'middles' => []],
+        // Landing页召回,解密手机号
+        '/student_web/landing_recall/decode_sign' => ['method' => ['get'], 'call' => LandingRecall::class . ':decodeSign', 'middles' => []],
+        
     ];
 }

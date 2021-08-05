@@ -452,6 +452,12 @@ class Order extends ControllerBase
                 'error_code' => 'mobile_is_required',
             ],
             [
+                'key' => 'mobile',
+                'type' => 'regex',
+                'value' => Constants::MOBILE_REGEX,
+                'error_code' => 'student_mobile_format_is_error'
+            ],
+            [
                 'key' => 'pay_url',
                 'type' => 'required',
                 'error_code' => 'pay_url_is_required',
