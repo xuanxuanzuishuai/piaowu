@@ -12,6 +12,7 @@ use App\Controllers\ControllerBase;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\KeyErrorRC4Exception;
+use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\Dss\DssStudentModel;
 use App\Models\SharePosterModel;
@@ -127,6 +128,7 @@ class Poster extends ControllerBase
             }
             $params['type'] = SharePosterModel::TYPE_WEEK_UPLOAD;
             $params['user_id'] = $student['id'];
+            list($params['page'], $params['count']) = Util::formatPageCount($params);
             list($posters, $total) = SharePosterService::sharePosterList($params);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());

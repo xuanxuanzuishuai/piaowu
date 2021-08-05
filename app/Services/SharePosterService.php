@@ -123,7 +123,7 @@ class SharePosterService
         $imgSizeH = DictConstants::get(DictConstants::ALI_OSS_CONFIG, 'img_size_h');
         $poster['status_name'] = $statusDict[$poster['poster_status']];
         $poster['reason_str']  = self::reasonToStr($poster['verify_reason'], $reasonDict);
-        $poster['mobile']      = Util::hideUserMobile($poster['mobile']);
+        $poster['mobile'] = isset($poster['mobile']) ? Util::hideUserMobile($poster['mobile']) : '';
         $poster['create_time'] = date('Y-m-d H:i', $poster['create_time']);
         $poster['check_time']  = Util::formatTimestamp($poster['check_time'], '');
         $poster['img_url']     = AliOSS::signUrls(
@@ -755,7 +755,7 @@ class SharePosterService
         if (empty($id)) {
             return [];
         }
-        list($posters) = SharePosterModel::getWeekPosterList(['id' => $id]);
+        list($posters) = SharePosterModel::getWeekPosterList(['id' => $id, 'no_limit' => true]);
         $poster = $posters[0];
         if (empty($poster)) {
             return [];
