@@ -21,6 +21,8 @@ class TemplatePosterModel extends Model
     const INDIVIDUALITY_POSTER = 1; //个性化海报
     const STANDARD_POSTER = 2; //标准海报
 
+    const STANDARD_POSTER_TXT = '标准海报';
+
     /**
      * @param $params
      * @return array

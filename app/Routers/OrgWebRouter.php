@@ -291,6 +291,17 @@ class OrgWebRouter extends RouterBase
         '/op_web/landing_recall/enable_status' => ['method' => ['post'], 'call' => LandingRecall::class . ':editEnableStatus'],
         '/op_web/landing_recall/send_msg' => ['method' => ['post'], 'call' => LandingRecall::class . ':sendMsg'],
         '/op_web/landing_recall/send_count' => ['method' => ['get'], 'call' => LandingRecall::class . ':sendCount'],
-        
+
+        //分享配置
+        '/op_web/source_material/share_save'      => ['method' => ['post'], 'call' => SourceMaterial::class . ':shareSave'],
+        '/op_web/source_material/share_detail'      => ['method' => ['get'], 'call' => SourceMaterial::class . ':shareDetail'],
+        //banner配置
+        '/op_web/source_material/banner_save'      => ['method' => ['post'], 'call' => SourceMaterial::class . ':bannerSave'],
+        '/op_web/source_material/banner_lists'     => ['method' => ['post'], 'call' => SourceMaterial::class . ':bannerLists'],
+        '/op_web/source_material/select_lists'     => ['method' => ['get'], 'call' => SourceMaterial::class . ':selectLists'],
+        '/op_web/source_material/banner_detail'    => ['method' => ['get'], 'call' => SourceMaterial::class . ':bannerDetail'],
+        '/op_web/source_material/banner_edit_enable_status'      => ['method' => ['post'], 'call' => SourceMaterial::class . ':bannerEditEnableStatus'],
+
+
     ];
 }

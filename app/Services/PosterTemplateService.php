@@ -14,6 +14,7 @@ use App\Models\Dss\DssTemplatePosterModel;
 use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\PosterModel;
+use App\Models\ShareMaterialConfig;
 use App\Models\TemplatePosterModel;
 use App\Models\TemplatePosterWordModel;
 use I18N\Lang;
@@ -254,6 +255,7 @@ class PosterTemplateService
             foreach ($res as $k => $value) {
                 $row = self::formatOpPosterInfo($value);
                 $row['display_order_num'] = $value['order_num'];
+                $row['poster_type'] = TemplatePosterModel::STANDARD_POSTER_TXT;
                 $data[] = $row;
             }
         }
@@ -375,7 +377,7 @@ class PosterTemplateService
             }
             $needUpdate['example_id'] = $exampleId;
         }
-        
+
         //更新activity_poster表数据
         if (isset($params['status'])) {
             $id = $params['id'];
@@ -386,9 +388,11 @@ class PosterTemplateService
             if (isset($statusMap[$params['status']])) {
                 ActivityPosterModel::editPosterStatus($id, $statusMap[$params['status']]);
                 ActivityPosterModel::delRedisCache($id);
+                //更新share_material_config表数据
+                ShareMaterialConfig::batchUpdateRecord(['show_status' => $params['status']], ['poster_id' => $id, 'type' => ShareMaterialConfig::POSTER_TYPE]);
             }
         }
-        
+
         TemplatePosterModel::updateRecord($params['id'], $needUpdate);
         return $needUpdate;
     }
@@ -461,8 +465,8 @@ class PosterTemplateService
         isset($params['content']) && $needUpdate['content'] = Util::textEncode($params['content']);
         isset($params['status']) && $needUpdate['status'] = $params['status'];
         TemplatePosterWordModel::updateRecord($params['id'], $needUpdate);
-        //清除前端展示文案缓存
-        TemplatePosterWordModel::delWordListCache();
+        //更新share_material_config表数据
+        ShareMaterialConfig::batchUpdateRecord(['show_status' => $params['status']], ['poster_id' => $params['id'], 'type' => ShareMaterialConfig::POSTER_WORD_TYPE]);
         return $needUpdate;
     }
 
