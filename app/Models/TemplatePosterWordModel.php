@@ -81,6 +81,20 @@ class TemplatePosterWordModel extends Model
     }
 
     /**
+     * 清除前端展示缓存
+     */
+    public static function delWordListCache()
+    {
+        $arr = [
+            self::NORMAL_STATUS,
+            self::DISABLE_STATUS
+        ];
+        foreach ($arr as $value) {
+            RedisDB::getConn()->del([self::KEY_WORD_LIST . $value]);
+        }
+     }
+
+    /**
      * 格式化数据
      * @param $item
      * @return mixed

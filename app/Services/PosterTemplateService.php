@@ -415,6 +415,8 @@ class PosterTemplateService
             SimpleLogger::error('template poster word add data fail', $data);
             throw new RunTimeException(['template_poster_word_add_data_fail']);
         }
+        //清除前端展示文案缓存
+        TemplatePosterWordModel::delWordListCache();
         return true;
     }
     
@@ -459,6 +461,8 @@ class PosterTemplateService
         isset($params['content']) && $needUpdate['content'] = Util::textEncode($params['content']);
         isset($params['status']) && $needUpdate['status'] = $params['status'];
         TemplatePosterWordModel::updateRecord($params['id'], $needUpdate);
+        //清除前端展示文案缓存
+        TemplatePosterWordModel::delWordListCache();
         return $needUpdate;
     }
 
