@@ -206,6 +206,7 @@ class SharePosterModel extends Model
             sp.ext->>'$.valid_time' valid_time,
             sp.ext->>'$.node_order' day,
             sp.create_time,
+            sp.type,
             ac.name activity_name,
             uw.open_id,
             s.uuid,
@@ -475,21 +476,13 @@ class SharePosterModel extends Model
      * @param $pageSize
      * @return array|null
      */
-    public static function getAllWeekActivity($pageSize){
+    public static function getAllWeekActivity($ids, $pageSize){
 
         if($pageSize){
             $limit = $pageSize;
         }else{
             $limit = null;
         }
-
-        $where = [
-            'type'=>SharePosterModel::TYPE_WEEK_UPLOAD,
-            'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED,
-        ];
-
-        $ids = self::getRecords($where,['activity_id'=>Medoo::raw('distinct activity_id')]);
-        $ids = array_column($ids, 'activity_id');
 
         $where = [
             'activity_id' => $ids,

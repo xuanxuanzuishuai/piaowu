@@ -624,8 +624,8 @@ class SharePosterService
             ];
             $update = SharePosterModel::batchUpdateRecord($updateData, $where);
 
-            if($update){
-                CountingActivitySignService::countSign($poster['student_id']);
+            if($update && $poster['type'] == SharePosterModel::TYPE_WEEK_UPLOAD){
+                CountingActivitySignService::countSign($poster['student_id'], null, $poster['activity_id']);
             }
 
             //计算当前真正应该获得的奖励

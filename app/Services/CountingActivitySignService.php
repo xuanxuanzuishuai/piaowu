@@ -9,6 +9,7 @@
 namespace App\Services;
 
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Models\CountingActivityModel;
 use App\Models\CountingActivitySignModel;
@@ -20,6 +21,7 @@ class CountingActivitySignService
 {
     public static $now;
     public static $allActivity_list;
+    public static $activity_ids_key = 'week_activity_id_list_cache_key';
 
     /**
      * 统计参与的报名活动信息
@@ -27,8 +29,10 @@ class CountingActivitySignService
      * @param null $statistics_time
      * @return false|int|mixed|string|null
      */
-    public static function countSign($studentId, $statistics_time = null){
+    public static function countSign($studentId, $statistics_time = null, $op_activity_id = 0){
         self::$now = time();
+
+        self::cache_op_activity_ids([$op_activity_id]);
 
         //全量统计
         list($cumulativeNum, $continuityNum) = self::getContinuityActivityNum(['student_id' => $studentId], 0, 0, self::$now);
@@ -147,7 +151,10 @@ class CountingActivitySignService
 
     public static function getAllActivity($pageSize){
         if(!isset(self::$allActivity_list[$pageSize])){
-            $activityList = SharePosterModel::getAllWeekActivity($pageSize);
+            $redis = RedisDB::getConn();
+            $ids = $redis->smembers(self::$activity_ids_key);
+
+            $activityList = SharePosterModel::getAllWeekActivity($ids, $pageSize);
             self::$allActivity_list[$pageSize] = $activityList;
         }
         return self::$allActivity_list[$pageSize];
@@ -164,8 +171,6 @@ class CountingActivitySignService
         $ids = implode(',', array_column($activityList, 'activity_id'));
         $sharePosterList = SharePosterModel::getStudentSignActivity($ids, $sign['student_id'], $startTime, $end_time);
         $sharePosterList = array_column($sharePosterList,null, 'activity_id');
-
-
 //        echo json_encode([$sharePosterList, $activityList]);die;
         $count = 0;
         foreach ($activityList as $one){
@@ -252,4 +257,20 @@ class CountingActivitySignService
 
     }
 
+
+    public static function cache_op_activity_ids(array $ids){
+        $redis = RedisDB::getConn();
+
+        if(empty($redis->smembers(self::$activity_ids_key))){
+            $where = [
+                'type'=>SharePosterModel::TYPE_WEEK_UPLOAD,
+                'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED,
+            ];
+            $ids = SharePosterModel::getRecords($where,['activity_id'=>Medoo::raw('distinct activity_id')]);
+            $ids = array_column($ids, 'activity_id');
+
+        }
+
+        $redis->sadd(self::$activity_ids_key, $ids);
+    }
 }
