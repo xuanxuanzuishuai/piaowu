@@ -92,9 +92,9 @@ class QrInfoService
         // 更新使用的标识数量
         $useQrNum = $redis->incrby(self::REDIS_USE_QR_NUM, $getQrNum);
         // 如果达到阀值(已使用数量-每次生成数量-10000) 启用生成标识队列
-        // 启用数量计算 :: 剩余数量 < 0.8*300000
+        // 启用数量计算 :: 剩余数量 < 0.2*300000
         $createUseNum = DictConstants::get(DictConstants::MINI_APP_QR, 'create_wait_use_qr_num');
-        if (($num - $getQrNum) <= 0.8 * $createUseNum) {
+        if (($num - $getQrNum) <= 0.2 * $createUseNum) {
             QueueService::startCreateWaitUseQrId();
         }
 
