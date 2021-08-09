@@ -13,6 +13,7 @@ use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Dss;
 use App\Libs\HttpHelper;
+use App\Libs\PandaService;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
@@ -240,6 +241,11 @@ class WeChatMiniPro
             }
         } elseif ($appId == UserCenter::AUTH_APP_ID_OP_AGENT) {
             $this->requestAccessToken();
+        } elseif ($appId == UserCenter::APP_ID_PRACTICE){
+            $data = (new PandaService())->updateAccessToken();
+            if (!empty($data['access_token'])) {
+                $this->setAccessToken($data['access_token']);
+            }
         } else {
             SimpleLogger::info('UNKNOW APPID', [$appId, $busiType]);
         }

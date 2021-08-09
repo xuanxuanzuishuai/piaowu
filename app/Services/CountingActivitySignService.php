@@ -162,8 +162,11 @@ class CountingActivitySignService
 
     /**
      * 获取活动总数
-     * @param $student_id
-     * @return int
+     * @param $sign
+     * @param $startTime
+     * @param $pageSize
+     * @param $end_time
+     * @return array
      */
     public static function getContinuityActivityNum($sign, $startTime, $pageSize, $end_time){
         //查询所有周周领奖有效活动
