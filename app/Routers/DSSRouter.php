@@ -76,5 +76,13 @@ class DSSRouter extends RouterBase
         '/dss/rt_activity/coupon_user_list' => ['method' => ['get','post'], 'call' => Dss::class . ':rtActivityCouponUserList'],
         '/dss/rt_activity/get_poster'        => ['method' => ['post'], 'call' => Dss::class . ':getRtPoster'],
         '/dss/rt_activity/get_referral_nums' => ['method' => ['post'], 'call' => Dss::class . ':getReferralNums'],
+
+        //金叶子商城
+        '/dss/sale_shop/button_info' => ['method' => ['get'], 'call' => Dss::class . ':buttonInfo'],
+        '/dss/sale_shop/poster_lists' => ['method' => ['get'], 'call' => Dss::class . ':posterLists'],
+        '/dss/sale_shop/poster_word_lists' => ['method' => ['get'], 'call' => Dss::class . ':posterWordLists'],
+        '/dss/sale_shop/user_reward_details' => ['method' => ['get'], 'call' => Dss::class . ':userRewardDetails'],
+        '/dss/sale_shop/banner_info' => ['method' => ['get'], 'call' => Dss::class . ':bannerInfo'],
+
     ];
 }

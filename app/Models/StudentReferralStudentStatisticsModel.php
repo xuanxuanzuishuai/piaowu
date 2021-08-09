@@ -269,4 +269,28 @@ class StudentReferralStudentStatisticsModel extends Model
         ";
         return $db->queryAll($sql);
     }
+
+
+    /**
+     * 获取推荐人信息-按照推荐购买年卡数排序
+     * @param int $limit
+     * @return array|null
+     */
+    public static function getReferralBySort($limit = 20)
+    {
+        $db        = MysqlDB::getDB();
+        $table     = self::$table;
+        $lastStage = self::STAGE_FORMAL;
+
+        $sql = " SELECT
+                    `referee_id`,
+                    count( 1 ) AS num 
+                FROM {$table}
+                WHERE
+                `last_stage` = {$lastStage} 
+                GROUP BY `referee_id` ORDER BY num DESC LIMIT {$limit}
+        ";
+
+        return $db->queryAll($sql);
+    }
 }

@@ -5,16 +5,24 @@ namespace App\Services;
 
 
 use App\Libs\AliOSS;
+use App\Libs\Constants;
+use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
+use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\BannerConfigModel;
 use App\Models\DictModel;
+use App\Models\Dss\DssStudentModel;
+use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\EmployeeModel;
+use App\Models\Erp\ErpPackageV1Model;
+use App\Models\Erp\ErpStudentAccountDetail;
 use App\Models\ShareConfigModel;
 use App\Models\ShareMaterialConfig;
 use App\Models\SourceMaterialModel;
+use App\Models\StudentReferralStudentStatisticsModel;
 use App\Models\TemplatePosterModel;
 use App\Models\TemplatePosterWordModel;
 
@@ -24,6 +32,11 @@ class SourceMaterialService
     const SOURCE_TYPE_CONFIG = 'source_type_config';
 
     const SOURCE_ENABLE_STATUS = 'source_enable_status';
+
+    const IS_DISPLAY  = 1;  //显示
+    const NOT_DISPLAY = 2; //隐藏
+
+    const WAN_UNIT = 10000; //单位万
 
     /**
      * 素材添加
@@ -173,14 +186,18 @@ class SourceMaterialService
      */
     public static function shareAdd($request)
     {
-        $time = time();
+        $shareInfo = ShareConfigModel::getRecord([]);
+        if ($shareInfo) {
+            throw new RunTimeException(["record_exist"]);
+        }
+        $time      = time();
         $shareInfo = [
             'image_path'  => $request['image_path'],
             'remark'      => $request['remark'],
             'operator_id' => $request['employee_id'],
             'create_time' => $time,
         ];
-        $db = MysqlDB::getDB();
+        $db        = MysqlDB::getDB();
         $db->beginTransaction();
         //保存活动总表信息
         $shareConfigId = ShareConfigModel::insertRecord($shareInfo);
@@ -194,7 +211,7 @@ class SourceMaterialService
             $shareMaterialInfo[] = [
                 'share_config_id' => $shareConfigId,
                 'type'            => ShareMaterialConfig::POSTER_TYPE,
-                'poster_id'       => $val,
+                'material_id'     => $val,
                 'operator_id'     => $request['employee_id'],
                 'create_time'     => $time
             ];
@@ -203,7 +220,7 @@ class SourceMaterialService
             $shareMaterialInfo[] = [
                 'share_config_id' => $shareConfigId,
                 'type'            => ShareMaterialConfig::POSTER_WORD_TYPE,
-                'poster_id'       => $val,
+                'material_id'     => $val,
                 'operator_id'     => $request['employee_id'],
                 'create_time'     => $time
             ];
@@ -226,11 +243,11 @@ class SourceMaterialService
      */
     public static function shareEdit($request)
     {
-        $shareInfo = ShareConfigModel::getRecord($request['id']);
+        $shareInfo = ShareConfigModel::getRecord(['id' => $request['id']]);
         if (empty($shareInfo)) {
             throw new RunTimeException(['record_not_found']);
         }
-        $time = time();
+        $time      = time();
         $shareInfo = [
             'image_path'  => $request['image_path'],
             'remark'      => $request['remark'],
@@ -238,12 +255,12 @@ class SourceMaterialService
             'update_time' => $time,
         ];
         //处理海报分享语关联数据
-        $shareMaterialData = ShareMaterialConfig::getRecords(['share_config_id' => $request['id'], 'status' => ShareMaterialConfig::NORMAL_STATUS], ['poster_id','type']);
+        $shareMaterialData = ShareMaterialConfig::getRecords(['share_config_id' => $request['id'], 'status' => ShareMaterialConfig::NORMAL_STATUS], ['material_id','type']);
         foreach ($shareMaterialData as $val) {
             if ($val['type'] == ShareMaterialConfig::POSTER_WORD_TYPE) {
-                $posterWordIds[] = $val['poster_id'];
+                $posterWordIds[] = $val['material_id'];
             } elseif ($val['type'] == ShareMaterialConfig::POSTER_TYPE) {
-                $posterIds[] = $val['poster_id'];
+                $posterIds[] = $val['material_id'];
             }
         }
         //海报
@@ -253,7 +270,7 @@ class SourceMaterialService
             $shareMaterialInfo[] = [
                 'share_config_id' => $request['id'],
                 'type'            => ShareMaterialConfig::POSTER_TYPE,
-                'poster_id'       => $val,
+                'material_id'     => $val,
                 'operator_id'     => $request['employee_id'],
                 'create_time'     => $time
             ];
@@ -265,7 +282,7 @@ class SourceMaterialService
             $shareMaterialInfo[] = [
                 'share_config_id' => $request['id'],
                 'type'            => ShareMaterialConfig::POSTER_WORD_TYPE,
-                'poster_id'       => $val,
+                'material_id'     => $val,
                 'operator_id'     => $request['employee_id'],
                 'create_time'     => $time
             ];
@@ -285,7 +302,7 @@ class SourceMaterialService
                 'status' => ShareMaterialConfig::DISABLE_STATUS,
                 'update_time' => $time
             ];
-            $updateShareMaterialRes = ShareMaterialConfig::batchUpdateRecord($updatePosterInfo, ['poster_id' => $diffUpdatePosterIds, 'type' => ShareMaterialConfig::POSTER_TYPE]);
+            $updateShareMaterialRes = ShareMaterialConfig::batchUpdateRecord($updatePosterInfo, ['material_id' => $diffUpdatePosterIds, 'type' => ShareMaterialConfig::POSTER_TYPE]);
             if (empty($updateShareMaterialRes)) {
                 $db->rollBack();
                 SimpleLogger::info("shareEdit edit share_material_config fail", ['data' => $shareMaterialInfo]);
@@ -297,7 +314,7 @@ class SourceMaterialService
                 'status' => ShareMaterialConfig::DISABLE_STATUS,
                 'update_time' => $time
             ];
-            $updateShareMaterialRes = ShareMaterialConfig::batchUpdateRecord($updatePosterWordInfo, ['poster_id' => $diffUpdatePosterWordIds, 'type' => ShareMaterialConfig::POSTER_WORD_TYPE]);
+            $updateShareMaterialRes = ShareMaterialConfig::batchUpdateRecord($updatePosterWordInfo, ['material_id' => $diffUpdatePosterWordIds, 'type' => ShareMaterialConfig::POSTER_WORD_TYPE]);
             if (empty($updateShareMaterialRes)) {
                 $db->rollBack();
                 SimpleLogger::info("shareEdit edit share_material_config fail", ['data' => $shareMaterialInfo]);
@@ -331,14 +348,14 @@ class SourceMaterialService
         $shareMaterialInfo = ShareMaterialConfig::getRecords(['share_config_id' => $shareInfo['id'], 'status' => ShareMaterialConfig::NORMAL_STATUS, 'show_status' => ShareMaterialConfig::NORMAL_SHOW_STATUS]);
         foreach ($shareMaterialInfo as $val) {
             if ($val['type'] == ShareMaterialConfig::POSTER_WORD_TYPE) {
-                $posterWordIds[] = $val['poster_id'];
+                $posterWordIds[] = $val['material_id'];
             } elseif ($val['type'] == ShareMaterialConfig::POSTER_TYPE) {
-                $posterIds[] = $val['poster_id'];
+                $posterIds[] = $val['material_id'];
             }
         }
         //获取海报列表
         if (!empty($posterIds)) {
-            $posterLists = TemplatePosterModel::getRecords(['id' => $posterIds], ['id','name','poster_path']);
+            $posterLists = TemplatePosterModel::getRecords(['id' => $posterIds], ['id', 'name', 'poster_path']);
             foreach ($posterLists as $key => &$val) {
                 $val['poster_path'] = AliOSS::replaceCdnDomainForDss($val['poster_path']);
                 $val['poster_type'] = TemplatePosterModel::STANDARD_POSTER_TXT;
@@ -354,11 +371,11 @@ class SourceMaterialService
             }
         }
         $data = [
-            'id'              => $shareInfo['id'],
-            'image_path'      => AliOSS::replaceCdnDomainForDss($shareInfo['image_path']),
-            'remark'          => $shareInfo['remark'],
-            'posterLists'     => $posterLists ?? [],
-            'posterWorkLists' => $posterWorkLists ?? [],
+            'id'                => $shareInfo['id'],
+            'image_path'        => AliOSS::replaceCdnDomainForDss($shareInfo['image_path']),
+            'remark'            => $shareInfo['remark'],
+            'poster_lists'      => $posterLists ?? [],
+            'poster_work_lists' => $posterWorkLists ?? [],
         ];
         return $data;
     }
@@ -384,7 +401,7 @@ class SourceMaterialService
             'site_type'   => $request['site_type'],
             'user_group'  => $request['user_group'],
             'start_time'  => strtotime($request['start_time']),
-            'end_time'    => strtotime($request['start_time']),
+            'end_time'    => strtotime($request['end_time']),
             'image_type'  => $request['image_type'],
             'image_path'  => $request['image_path'],
             'jump_rule'   => $request['jump_rule'],
@@ -425,6 +442,9 @@ class SourceMaterialService
     public static function bannerEditEnableStatus($request)
     {
         $bannerConfigInfo = BannerConfigModel::getRecord(['id' => $request['id']]);
+        if ($bannerConfigInfo['status'] == $request['enable_status']) {
+            throw new RunTimeException(['invalid_status']);
+        }
         if (empty($bannerConfigInfo)) {
             throw new RunTimeException(['record_not_found']);
         }
@@ -522,6 +542,211 @@ class SourceMaterialService
 
         return $bannerInfo;
     }
+
+    /**
+     * 获取button信息
+     * @param $request
+     * @return array
+     * @throws RunTimeException
+     */
+    public static function getHtmlButtonInfo($request)
+    {
+        $student = DssStudentModel::getRecord(['id' => $request['student_id']], ['id']);
+        if (empty($student)) {
+            throw new RunTimeException(['record_not_found']);
+        }
+        $goldLeaf    = self::getGoldLeafMaxNum();
+        $time        = time();
+        $conds       = [
+            'status'         => BannerConfigModel::NORMAL_STATUS,
+            'start_time[<=]' => $time,
+            'end_time[>=]'   => $time,
+            'ORDER'          => ['order' => 'ASC', 'create_time' => 'DESC']
+        ];
+        $bannerLists = BannerConfigModel::getRecords($conds, ['id', 'image_path']);
+        foreach ($bannerLists as &$val) {
+            $val['image_path'] = AliOSS::replaceCdnDomainForDss($val['image_path']);
+        }
+        $data = [
+            'gold_leaf_num' => ceil($goldLeaf / self::WAN_UNIT),
+            'banner_list'   => $bannerLists
+        ];
+        return $data;
+    }
+
+
+    /**
+     * 获取海报列表
+     * @param $request
+     * @return array
+     * @throws RunTimeException
+     * @throws \App\Libs\KeyErrorRC4Exception
+     */
+    public static function getPosterLists($request)
+    {
+        $student = DssStudentModel::getRecord(['id' => $request['student_id']], ['id']);
+        if (empty($student)) {
+            throw new RunTimeException(['record_not_found']);
+        }
+        $goldLeaf   = self::getGoldLeafMaxNum();
+        $shareInfo  = self::shareDetail();
+        $posterList = $shareInfo['poster_lists'];
+        if (!empty($posterList)) {
+            $posterList = self::getCommonPosterLists($posterList, ['student_id' => $request['student_id'], 'channel_id' => $request['channel_id']]);
+        }
+        $data = [
+            'amount'        => ceil($goldLeaf / ErpPackageV1Model::DEFAULT_SCALE_NUM),
+            'gold_leaf_num' => ceil($goldLeaf / self::WAN_UNIT),
+            'lists'         => $posterList
+        ];
+        return $data;
+    }
+
+    /**
+     * 分享语列表
+     * @param $request
+     * @return array
+     * @throws RunTimeException
+     */
+    public static function getPosterWordLists($request)
+    {
+        $student = DssStudentModel::getRecord(['id' => $request['student_id']], ['id']);
+        if (empty($student)) {
+            throw new RunTimeException(['record_not_found']);
+        }
+        $shareInfo  = self::shareDetail();
+        return ['lists' => $shareInfo['poster_work_lists']];
+    }
+
+    /**
+     * app-获取banner及小程序信息
+     * @param $request
+     * @return array
+     * @throws RunTimeException
+     */
+    public static function bannerInfo($request)
+    {
+        $shareInfo  = ShareConfigModel::getRecord([]);
+        $bannerInfo = self::getHtmlButtonInfo($request);
+
+        $wechat          = WeChatMiniPro::factory(Constants::SMART_APP_ID, Constants::SMART_APP_ID);
+        $wechatInitialId = DictConstants::get(DictConstants::WECHAT_INITIAL_ID, $wechat->nowWxApp);
+        $webpageUrl      = DictConstants::get(DictConstants::SALE_SHOP_CONFIG, 'home_index');
+        $qrType          = DictConstants::get(DictConstants::MINI_APP_QR, 'qr_type_mini');
+        $studentStatus   = StudentService::dssStudentStatusCheck($request['student_id']);
+        $qrData = [
+            'user_id'        => $request['student_id'],
+            'user_type'      => DssUserQrTicketModel::STUDENT_TYPE,
+            'channel_id'     => $request['channel_id'],
+            'user_status'    => $studentStatus['student_status'],
+            'app_id'         => Constants::SMART_APP_ID,
+            'qr_type'        => $qrType,
+        ];
+        $qrInfo = QrInfoService::getQrIdList([$qrData]);
+        $qrId = !empty($qrInfo) ? end($qrInfo)['qr_id'] : null;
+        if (empty($qrId)) {
+            throw new RunTimeException(["create_qr_id_error"]);
+        }
+        $bannerInfo['mini_app'] = [
+            'title'           => $shareInfo['remark'],
+            'description'     => '',
+            'userName'        => $wechatInitialId,
+            'path'            => sprintf('pages/index?%s', urlencode('scene=' . $qrId)),
+            'previewImageUrl' => AliOSS::replaceCdnDomainForDss($shareInfo['image_path']),
+            'webpageUrl'      => $webpageUrl
+        ];
+        return $bannerInfo;
+    }
+
+
+    /**
+     * 跑马灯数据-获取用户金叶子相关信息
+     * @return array
+     */
+    public static function userRewardDetails()
+    {
+        //获取邀请用户年卡数量前20人
+        $referral = StudentReferralStudentStatisticsModel::getReferralBySort();
+        if (empty($referral)) {
+            return [];
+        }
+        $referral    = array_column($referral, null, 'referee_id');
+        $referralIds = array_keys($referral);
+        //获取推荐人信息
+        $student = DssStudentModel::getRecords(['id' => $referralIds], ['id', 'name', 'mobile', 'thumb']);
+        if (empty($student)) {
+            return [];
+        }
+        $student       = array_column($student, null, 'id');
+        $accountDetail = ErpStudentAccountDetail::getUserRewardTotal($referralIds);
+        if (empty($accountDetail)) {
+            return [];
+        }
+        //用户默认头像
+        $defaultAvatar =  AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb'));
+        foreach ($accountDetail as &$val) {
+            $studentInfo = $student[$val['student_id']] ?? [];
+            if (empty($studentInfo)) {
+                continue;
+            }
+            $val['invite_num']    = $referral[$val['student_id']]['num'] ?? 0;
+            $val['gold_leat_num'] = ceil($val['total'] / ErpPackageV1Model::DEFAULT_SCALE_NUM);
+            $val['name']          = $studentInfo['name'] ?: sprintf('尾号%s', substr($studentInfo['mobile'], 7));
+            $val['avatar']        = !empty($studentInfo['thumb']) ? AliOSS::replaceCdnDomainForDss($studentInfo['thumb']) : $defaultAvatar;
+        }
+        return $accountDetail;
+    }
+
+    /**
+     * 海报批量获取小程序码
+     * @param $posterList
+     * @param $extData
+     * @return mixed
+     * @throws RunTimeException
+     * @throws \App\Libs\KeyErrorRC4Exception
+     */
+    public static function getCommonPosterLists($posterList, $extParams)
+    {
+        $posterConfig = PosterService::getPosterConfig();
+        foreach ($posterList as &$item) {
+            $_tmp['poster_id']    = $item['id'];
+            $_tmp['user_id']      = $extParams['student_id'];
+            $_tmp['user_type']    = DssUserQrTicketModel::STUDENT_TYPE;
+            $_tmp['channel_id']   = $extParams['channel_id'];
+            $_tmp['landing_type'] = DssUserQrTicketModel::LANDING_TYPE_NORMAL;
+            $_tmp['qr_sign']      = QrInfoService::createQrSign($_tmp);
+            $userQrParams[]       = $_tmp;
+            $item['qr_sign']      = $_tmp['qr_sign'];
+        }
+        unset($item);
+        $userQrArr = MiniAppQrService::getUserMiniAppQrList($userQrParams);
+        foreach ($posterList as &$item) {
+            $extParams['poster_id'] = $item['id'];
+            // 海报图：
+            $poster = PosterService::generateQRPoster(
+                $item['poster_path'],
+                $posterConfig,
+                $extParams['student_id'],
+                DssUserQrTicketModel::STUDENT_TYPE,
+                $extParams['channel_id'],
+                $extParams,
+                $userQrArr[$item['qr_sign']] ?? []
+            );
+            $item['image_path'] = $poster['poster_save_full_path'];
+        }
+        return $posterList;
+    }
+
+
+    /**
+     * 获取推荐人可获得金叶子最大数
+     * @return mixed
+     */
+    public static function getGoldLeafMaxNum()
+    {
+        return DictService::getKeyValue('SALE_SHOP_CONFIG', 'GOLD_LEAF_MAX_NUM');
+    }
+
 
 
 

@@ -389,7 +389,7 @@ class PosterTemplateService
                 ActivityPosterModel::editPosterStatus($id, $statusMap[$params['status']]);
                 ActivityPosterModel::delRedisCache($id);
                 //更新share_material_config表数据
-                ShareMaterialConfig::batchUpdateRecord(['show_status' => $params['status']], ['poster_id' => $id, 'type' => ShareMaterialConfig::POSTER_TYPE]);
+                ShareMaterialConfig::batchUpdateRecord(['show_status' => $params['status']], ['material_id' => $id, 'type' => ShareMaterialConfig::POSTER_TYPE]);
             }
         }
 
@@ -466,7 +466,9 @@ class PosterTemplateService
         isset($params['status']) && $needUpdate['status'] = $params['status'];
         TemplatePosterWordModel::updateRecord($params['id'], $needUpdate);
         //更新share_material_config表数据
-        ShareMaterialConfig::batchUpdateRecord(['show_status' => $params['status']], ['poster_id' => $params['id'], 'type' => ShareMaterialConfig::POSTER_WORD_TYPE]);
+        ShareMaterialConfig::batchUpdateRecord(['show_status' => $params['status']], ['material_id' => $params['id'], 'type' => ShareMaterialConfig::POSTER_WORD_TYPE]);
+        //清除前端展示文案缓存
+        TemplatePosterWordModel::delWordListCache();
         return $needUpdate;
     }
 

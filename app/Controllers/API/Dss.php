@@ -34,6 +34,8 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Services\ReferralService;
 use App\Services\RtActivityService;
 use App\Services\SharePosterService;
+use App\Services\SourceMaterialService;
+use App\Services\StudentService;
 use App\Services\ThirdPartBillService;
 use App\Services\UserPointsExchangeOrderService;
 use App\Services\UserRefereeService;
@@ -1017,4 +1019,158 @@ class Dss extends ControllerBase
         }
         return HttpHelper::buildResponse($response, $activity);
     }
+
+    /**
+     * 获取button信息
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function buttonInfo(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'student_id',
+                'type' => 'required',
+                'error_code' => 'student_id_is_required',
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            $data = SourceMaterialService::getHtmlButtonInfo($params);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, $data);
+    }
+
+
+    /**
+     * 获取海报列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * @throws \App\Libs\KeyErrorRC4Exception
+     */
+    public function posterLists(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'student_id',
+                'type' => 'required',
+                'error_code' => 'student_id_is_required',
+            ],
+            [
+                'key' => 'channel_id',
+                'type' => 'required',
+                'error_code' => 'channel_id_is_required',
+            ]
+
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            $data = SourceMaterialService::getPosterLists($params);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
+     * 分享语列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function posterWordLists(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'student_id',
+                'type' => 'required',
+                'error_code' => 'student_id_is_required',
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            $data = SourceMaterialService::getPosterWordLists($params);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
+     * 跑马灯数据-获取用户金叶子相关信息
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function userRewardDetails(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'student_id',
+                'type' => 'required',
+                'error_code' => 'student_id_is_required',
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            $data = SourceMaterialService::userRewardDetails();
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
+     * 获取banner信息
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function bannerInfo(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'student_id',
+                'type' => 'required',
+                'error_code' => 'student_id_is_required',
+            ],
+            [
+                'key' => 'channel_id',
+                'type' => 'required',
+                'error_code' => 'channel_id_is_required',
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            $data = SourceMaterialService::bannerInfo($params);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, $data);
+    }
+
 }

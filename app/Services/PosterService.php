@@ -379,7 +379,7 @@ class PosterService
         return [
             'poster_save_full_path' => $resImageUrl,
             'unique' => $userQrInfo['qr_id'] . ".jpg",
-            'poster_id' => $extParams['p'] ?? 0,
+            'poster_id' => $extParams['poster_id'] ?? ($extParams['p'] ?? 0),
             'user_current_status' => $user_current_status,
             'user_current_status_zh' => DssStudentModel::STUDENT_IDENTITY_ZH_MAP[$user_current_status] ?? '',
         ];

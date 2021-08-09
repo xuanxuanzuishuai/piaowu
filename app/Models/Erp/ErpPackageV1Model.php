@@ -27,6 +27,9 @@ class ErpPackageV1Model extends ErpModel
     const STATUS_ON_SALE = 1;
     const STATUS_ON_AFTER_SALE = 2;
 
+    /** 积分兑换比例 默认比例 */
+    const DEFAULT_SCALE_NUM = 100;
+
     /**
      * 获取课包列表
      * @param $where

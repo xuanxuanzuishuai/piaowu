@@ -915,6 +915,24 @@ class DictConstants {
         'type' => 'LANDING_RECALL_CHANNEL',
         'keys' => ['landing_recall_channel']
     ];
+
+    /**
+     * 金叶子商城配置
+     */
+    const SALE_SHOP_CONFIG = [
+        'type' => 'SALE_SHOP_CONFIG',
+        'keys' => ['home_index']
+    ];
+
+    /**
+     * wechat小程序原始id
+     */
+    const WECHAT_INITIAL_ID = [
+        'type' => 'wechat_initial_id',
+        'keys' => ['8_8']
+    ];
+
+
     
     /**
      * 单个获取op系统dict配置数据

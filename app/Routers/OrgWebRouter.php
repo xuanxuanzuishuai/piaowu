@@ -300,7 +300,7 @@ class OrgWebRouter extends RouterBase
         '/op_web/source_material/banner_lists'     => ['method' => ['post'], 'call' => SourceMaterial::class . ':bannerLists'],
         '/op_web/source_material/select_lists'     => ['method' => ['get'], 'call' => SourceMaterial::class . ':selectLists'],
         '/op_web/source_material/banner_detail'    => ['method' => ['get'], 'call' => SourceMaterial::class . ':bannerDetail'],
-        '/op_web/source_material/banner_edit_enable_status'      => ['method' => ['post'], 'call' => SourceMaterial::class . ':bannerEditEnableStatus'],
+        '/op_web/source_material/banner_edit_enable_status'      => ['method' => ['get'], 'call' => SourceMaterial::class . ':bannerEditEnableStatus'],
 
 
     ];
