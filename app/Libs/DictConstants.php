@@ -921,7 +921,7 @@ class DictConstants {
      */
     const SALE_SHOP_CONFIG = [
         'type' => 'SALE_SHOP_CONFIG',
-        'keys' => ['home_index']
+        'keys' => ['home_index','dafault_banner']
     ];
 
     /**

@@ -25,6 +25,7 @@ use App\Models\SourceMaterialModel;
 use App\Models\StudentReferralStudentStatisticsModel;
 use App\Models\TemplatePosterModel;
 use App\Models\TemplatePosterWordModel;
+use App\Libs\RedisDB;
 
 class SourceMaterialService
 {
@@ -264,28 +265,30 @@ class SourceMaterialService
             }
         }
         //海报
-        $diffAddPosterIds    = array_diff($request['poster_id'], $posterIds ?? []);
-        $diffUpdatePosterIds = array_diff($posterIds ?? [], $request['poster_id']);
-        foreach ($diffAddPosterIds as $val) {
-            $shareMaterialInfo[] = [
-                'share_config_id' => $request['id'],
-                'type'            => ShareMaterialConfig::POSTER_TYPE,
-                'material_id'     => $val,
-                'operator_id'     => $request['employee_id'],
-                'create_time'     => $time
-            ];
+        $diffPoster = $request['poster_id'] === $posterIds ? true : false;
+        if (!$diffPoster) {
+            foreach ($request['poster_id'] as $val) {
+                $shareMaterialInfo[] = [
+                    'share_config_id' => $request['id'],
+                    'type'            => ShareMaterialConfig::POSTER_TYPE,
+                    'material_id'     => $val,
+                    'operator_id'     => $request['employee_id'],
+                    'create_time'     => $time
+                ];
+            }
         }
         //分享语
-        $diffAddPosterWordIds    = array_diff($request['poster_word_id'], $posterWordIds ?? []);
-        $diffUpdatePosterWordIds = array_diff($posterWordIds ?? [], $request['poster_word_id']);
-        foreach ($diffAddPosterWordIds as $val) {
-            $shareMaterialInfo[] = [
-                'share_config_id' => $request['id'],
-                'type'            => ShareMaterialConfig::POSTER_WORD_TYPE,
-                'material_id'     => $val,
-                'operator_id'     => $request['employee_id'],
-                'create_time'     => $time
-            ];
+        $diffPosterWord = $request['poster_word_id'] === $posterWordIds ? true : false;
+        if (!$diffPosterWord) {
+            foreach ($request['poster_word_id'] as $val) {
+                $shareMaterialInfo[] = [
+                    'share_config_id' => $request['id'],
+                    'type'            => ShareMaterialConfig::POSTER_WORD_TYPE,
+                    'material_id'     => $val,
+                    'operator_id'     => $request['employee_id'],
+                    'create_time'     => $time
+                ];
+            }
         }
         $db = MysqlDB::getDB();
         $db->beginTransaction();
@@ -297,24 +300,24 @@ class SourceMaterialService
             throw new RunTimeException(["edit share config fail"]);
         }
         //保存海报分享语关联数据
-        if (!empty($diffUpdatePosterIds)) {
+        if (!$diffPoster) {
             $updatePosterInfo = [
                 'status' => ShareMaterialConfig::DISABLE_STATUS,
                 'update_time' => $time
             ];
-            $updateShareMaterialRes = ShareMaterialConfig::batchUpdateRecord($updatePosterInfo, ['material_id' => $diffUpdatePosterIds, 'type' => ShareMaterialConfig::POSTER_TYPE]);
+            $updateShareMaterialRes = ShareMaterialConfig::batchUpdateRecord($updatePosterInfo, ['share_config_id' => $request['id'], 'type' => ShareMaterialConfig::POSTER_TYPE]);
             if (empty($updateShareMaterialRes)) {
                 $db->rollBack();
                 SimpleLogger::info("shareEdit edit share_material_config fail", ['data' => $shareMaterialInfo]);
                 throw new RunTimeException(["edit share material config fail"]);
             }
         }
-        if (!empty($diffUpdatePosterWordIds)) {
+        if (!$diffPosterWord) {
             $updatePosterWordInfo = [
                 'status' => ShareMaterialConfig::DISABLE_STATUS,
                 'update_time' => $time
             ];
-            $updateShareMaterialRes = ShareMaterialConfig::batchUpdateRecord($updatePosterWordInfo, ['material_id' => $diffUpdatePosterWordIds, 'type' => ShareMaterialConfig::POSTER_WORD_TYPE]);
+            $updateShareMaterialRes = ShareMaterialConfig::batchUpdateRecord($updatePosterWordInfo, ['share_config_id' => $request['id'], 'type' => ShareMaterialConfig::POSTER_WORD_TYPE]);
             if (empty($updateShareMaterialRes)) {
                 $db->rollBack();
                 SimpleLogger::info("shareEdit edit share_material_config fail", ['data' => $shareMaterialInfo]);
@@ -343,7 +346,7 @@ class SourceMaterialService
     {
         $shareInfo = ShareConfigModel::getRecord([]);
         if (empty($shareInfo)) {
-            throw new RunTimeException(['record_not_found']);
+            return [];
         }
         $shareMaterialInfo = ShareMaterialConfig::getRecords(['share_config_id' => $shareInfo['id'], 'status' => ShareMaterialConfig::NORMAL_STATUS, 'show_status' => ShareMaterialConfig::NORMAL_SHOW_STATUS]);
         foreach ($shareMaterialInfo as $val) {
@@ -501,14 +504,6 @@ class SourceMaterialService
 
         $time = time();
         foreach ($lists as &$val) {
-            $val['site_type_txt']  = $shareSiteType[$val['site_type']] ?? '';
-            $val['user_group_txt'] = $shareUserGroup[$val['user_group']] ?? '';
-            $val['start_time']     = date('Y-m-d H:i:s', $val['start_time']);
-            $val['end_time']       = date('Y-m-d H:i:s', $val['end_time']);
-            $val['operator_name']  = $employeeInfo[$val['operator_id']] ?? '';
-            $val['image_path']     = AliOSS::replaceCdnDomainForDss($val['image_path']);
-            $val['create_time']    = date('Y-m-d H:i:s', $val['create_time']);
-            $val['jump_url']       = $val['jump_rule'] == BannerConfigModel::IS_ALLOW_JUMP ? urldecode($val['jump_url']) : '';
             //状态展示处理
             if (in_array($val['status'], [BannerConfigModel::INITIAL_STATUS, BannerConfigModel::DISABLE_STATUS])) {
                 $val['status_txt'] = BannerConfigModel::$statusArray[$val['status']] ?? '未知';
@@ -521,6 +516,14 @@ class SourceMaterialService
                     $val['status_txt'] = BannerConfigModel::HAS_ENDED;
                 }
             }
+            $val['site_type_txt']  = $shareSiteType[$val['site_type']] ?? '';
+            $val['user_group_txt'] = $shareUserGroup[$val['user_group']] ?? '';
+            $val['start_time']     = date('Y-m-d H:i:s', $val['start_time']);
+            $val['end_time']       = date('Y-m-d H:i:s', $val['end_time']);
+            $val['operator_name']  = $employeeInfo[$val['operator_id']] ?? '';
+            $val['image_path']     = AliOSS::replaceCdnDomainForDss($val['image_path']);
+            $val['create_time']    = date('Y-m-d H:i:s', $val['create_time']);
+            $val['jump_url']       = $val['jump_rule'] == BannerConfigModel::IS_ALLOW_JUMP ? urldecode($val['jump_url']) : '';
         }
         return compact('lists', 'totalCount');
     }
@@ -563,9 +566,14 @@ class SourceMaterialService
             'end_time[>=]'   => $time,
             'ORDER'          => ['order' => 'ASC', 'create_time' => 'DESC']
         ];
-        $bannerLists = BannerConfigModel::getRecords($conds, ['id', 'image_path']);
+        $bannerLists = BannerConfigModel::getRecords($conds, ['id', 'image_path','jump_url']);
+        $defaultBanner = DictConstants::get(DictConstants::SALE_SHOP_CONFIG, 'dafault_banner');
+        if (empty($bannerLists)) {
+            array_push($bannerLists, ['id' => 1, 'image_path' => $defaultBanner, 'jump_url' => '']);
+        }
         foreach ($bannerLists as &$val) {
             $val['image_path'] = AliOSS::replaceCdnDomainForDss($val['image_path']);
+            $val['jump_url']   = urldecode($val['jump_url']);
         }
         $data = [
             'gold_leaf_num' => ceil($goldLeaf / self::WAN_UNIT),
@@ -590,7 +598,7 @@ class SourceMaterialService
         }
         $goldLeaf   = self::getGoldLeafMaxNum();
         $shareInfo  = self::shareDetail();
-        $posterList = $shareInfo['poster_lists'];
+        $posterList = $shareInfo['poster_lists'] ?? [];
         if (!empty($posterList)) {
             $posterList = self::getCommonPosterLists($posterList, ['student_id' => $request['student_id'], 'channel_id' => $request['channel_id']]);
         }
@@ -615,7 +623,7 @@ class SourceMaterialService
             throw new RunTimeException(['record_not_found']);
         }
         $shareInfo  = self::shareDetail();
-        return ['lists' => $shareInfo['poster_work_lists']];
+        return ['lists' => $shareInfo['poster_work_lists'] ?? []];
     }
 
     /**
@@ -648,11 +656,11 @@ class SourceMaterialService
             throw new RunTimeException(["create_qr_id_error"]);
         }
         $bannerInfo['mini_app'] = [
-            'title'           => $shareInfo['remark'],
+            'title'           => $shareInfo['remark'] ?? '',
             'description'     => '',
             'userName'        => $wechatInitialId,
             'path'            => sprintf('pages/index?%s', urlencode('scene=' . $qrId)),
-            'previewImageUrl' => AliOSS::replaceCdnDomainForDss($shareInfo['image_path']),
+            'previewImageUrl' => !empty($shareInfo['image_path']) ? AliOSS::replaceCdnDomainForDss($shareInfo['image_path']) : '',
             'webpageUrl'      => $webpageUrl
         ];
         return $bannerInfo;
@@ -665,6 +673,13 @@ class SourceMaterialService
      */
     public static function userRewardDetails()
     {
+        // 从redis缓存读取
+        $redis = RedisDB::getConn();
+        $cacheKey = 'user_reward_datails';
+        $value = $redis->get($cacheKey);
+        if (!empty($value)) {
+            return json_decode($value, true);
+        }
         //获取邀请用户年卡数量前20人
         $referral = StudentReferralStudentStatisticsModel::getReferralBySort();
         if (empty($referral)) {
@@ -694,6 +709,7 @@ class SourceMaterialService
             $val['name']          = $studentInfo['name'] ?: sprintf('尾号%s', substr($studentInfo['mobile'], 7));
             $val['avatar']        = !empty($studentInfo['thumb']) ? AliOSS::replaceCdnDomainForDss($studentInfo['thumb']) : $defaultAvatar;
         }
+        $redis->setex($cacheKey, Util::TIMESTAMP_1H, json_encode($accountDetail));
         return $accountDetail;
     }
 
