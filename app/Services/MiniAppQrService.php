@@ -143,6 +143,8 @@ class MiniAppQrService
                 return false;
             }
 
+            SimpleLogger::info("createMiniAppId get wait use qr id", []);
+
             // 获取待使用的二维码标识，并放入到待生成小程序码的队列
             $qrIdArr = QrInfoService::getWaitUseQrId($createIdNum);
             $sendQueueArr = [];
@@ -150,6 +152,8 @@ class MiniAppQrService
                 $sendQueueArr[] = ['mini_app_qr_id' => $_qrId];
             }
             unset($_qrId);
+
+            SimpleLogger::info("createMiniAppId send queue wait use qr id", []);
 
             // 放入队列
             QueueService::sendWaitCreateMiniAppQrId($sendQueueArr, 0, $secondNum);

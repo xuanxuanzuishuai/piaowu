@@ -494,13 +494,23 @@ class ReferralService
             }
             unlink($tmpFileFullPath);
         }
-        $userQrPath = DssUserQrTicketModel::getUserQrURL(
+
+        // 获取小程序码 - 如果获取小程序码失败，返回空
+        $userQrInfo = MiniAppQrService::getUserMiniAppQr(
             $studentInfo['id'],
             DssUserQrTicketModel::STUDENT_TYPE,
             self::getChannelByDay($day),
             DssUserQrTicketModel::LANDING_TYPE_MINIAPP,
-            ['p' => $posterInfo['id']]
+            ['poster_id' => $posterInfo['id']]
         );
+        $userQrPath = $userQrInfo['qr_path'] ?? "";
+        if (empty($userQrPath)) {
+            return [
+                'poster_save_full_path' => '',
+                'unique' => md5($studentInfo['id'] . $day . $posterInfo['path']) . ".jpg"
+            ];
+        }
+
         $waterImgEncode = str_replace(["+", "/"], ["-", "_"],
             base64_encode($thumb . "?x-oss-process=image/resize,w_90,h_90/circle,r_100/format,png"));
         $waterMark = [];
