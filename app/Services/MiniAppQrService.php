@@ -448,6 +448,7 @@ class MiniAppQrService
         $qrInfo['c'] = $qrInfo['channel_id'] ?? 0;
         $qrInfo['e'] = $qrInfo['employee_id'] ?? 0;
         $qrInfo['a'] = $qrInfo['activity_id'] ?? 0;
+        $qrInfo['p'] = $qrInfo['poster_id'] ?? 0;
         $qrInfo['user_current_status'] = $qrInfo['user_status'] ?? 0;
         $qrInfo['id'] = $qrInfo['qr_id'] ?? 0;
         $qrData = !empty($qrInfo['qr_data']) ? json_decode($qrInfo['qr_data'], true) : [];
