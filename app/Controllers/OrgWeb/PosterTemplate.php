@@ -293,7 +293,7 @@ class PosterTemplate extends ControllerBase
             if ($result['code'] != Valid::CODE_SUCCESS) {
                 return $response->withJson($result, StatusCode::HTTP_OK);
             }
-            list($arrWeekId, $arrMonthId, $resRtId) = PosterTemplateService::offlinePosterCheck($params);
+            list($arrWeekId, $arrMonthId, $resRtId, $shareConfigId) = PosterTemplateService::offlinePosterCheck($params);
             $arrErrorMsg = [];
             $arrWeekId = array_map(function ($v) {
                 return 'ID'.$v;
@@ -304,9 +304,13 @@ class PosterTemplate extends ControllerBase
             $resRtId = array_map(function ($v) {
                 return 'ID'.$v;
             }, $resRtId);
+            $shareConfigId = array_map(function ($v) {
+                return 'ID'.$v;
+            }, $shareConfigId);
             $arrWeekId && $arrErrorMsg[] = '周周有奖活动' . implode('、', $arrWeekId);
             $arrMonthId && $arrErrorMsg[] = '月月有奖活动' . implode('、', $arrMonthId);
             $resRtId && $arrErrorMsg[] = 'RT亲友优惠券活动' . implode('、', $resRtId);
+            $shareConfigId && $arrErrorMsg[] = '金叶子商城分享配置' . implode('、', $shareConfigId);
             if ($arrErrorMsg) {
                 $strErrorMsgPart = implode('；', $arrErrorMsg);
                 $strErrorMsg = sprintf(Lang::getWord('template_poster_offline_tips'), $strErrorMsgPart);

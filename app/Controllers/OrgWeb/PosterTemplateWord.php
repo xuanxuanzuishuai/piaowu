@@ -14,6 +14,7 @@ use App\Libs\HttpHelper;
 use App\Libs\Valid;
 use App\Models\TemplatePosterModel;
 use App\Services\PosterTemplateService;
+use I18N\Lang;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -136,5 +137,43 @@ class PosterTemplateWord extends ControllerBase
         return HttpHelper::buildResponse($response, [
             'data' => $info
         ]);
+    }
+
+    /**
+     * 海报文案下线前校验
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function offlineWordListCheck(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'id',
+                'type' => 'required',
+                'error_code' => 'id_is_required'
+            ]
+        ];
+        //验证合法性
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $shareMaterialConfigId = PosterTemplateService::offlineWordListCheck($params);
+        $shareMaterialConfigId = array_map(function ($v) {
+            return 'ID'.$v;
+        }, $shareMaterialConfigId);
+        $arrErrorMsg = [];
+        $shareMaterialConfigId && $arrErrorMsg[] = '金叶子商城分享配置' . implode('、', $shareMaterialConfigId);
+        if ($arrErrorMsg) {
+            $strErrorMsgPart = implode('；', $arrErrorMsg);
+            $strErrorMsg = sprintf(Lang::getWord('template_poster_word_offline_tips'), $strErrorMsgPart);
+            $data = ['err_msg' => $strErrorMsg];
+            return HttpHelper::buildResponse($response, $data);
+        } else {
+            return HttpHelper::buildResponse($response, ['err_msg' => '']);
+        }
+
     }
 }

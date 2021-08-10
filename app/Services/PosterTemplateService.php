@@ -332,7 +332,14 @@ class PosterTemplateService
         $arrWeekId = array_values(array_unique(array_column($resWeek, 'activity_id')));
         $arrMonthId = array_values(array_unique(array_column($resMonth, 'activity_id')));
         $resRtId = array_values(array_unique(array_column($resRt, 'activity_id')));
-        return [$arrWeekId, $arrMonthId, $resRtId];
+        //金叶子商城分享配置-校验
+        $conds = [
+            'material_id' => $id,
+            'type'        => ShareMaterialConfig::POSTER_TYPE,
+            'status'      => ShareMaterialConfig::NORMAL_STATUS
+        ];
+        $shareConfigId = ShareMaterialConfig::getRecord($conds, ['share_config_id']);
+        return [$arrWeekId, $arrMonthId, $resRtId, $shareConfigId];
     }
     
     /**
@@ -636,5 +643,23 @@ class PosterTemplateService
         }
         $redis->setex($cacheKey, Util::TIMESTAMP_1H, time());
         return true;
+    }
+
+    /**
+     * 海报文案下线前校验
+     * @param $request
+     * @return mixed
+     */
+    public static function offlineWordListCheck($request)
+    {
+        $id = $request['id'];
+        //金叶子商城分享配置校验
+        $conds = [
+            'material_id' => $id,
+            'type'        => ShareMaterialConfig::POSTER_WORD_TYPE,
+            'status'      => ShareMaterialConfig::NORMAL_STATUS
+        ];
+        $shareConfigId = ShareMaterialConfig::getRecord($conds, ['share_config_id']);
+        return $shareConfigId;
     }
 }

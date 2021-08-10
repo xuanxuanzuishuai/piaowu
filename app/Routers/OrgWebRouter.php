@@ -125,6 +125,8 @@ class OrgWebRouter extends RouterBase
         '/org_web/poster_template_word/wordList' => ['method' => ['get'], 'call' => PosterTemplateWord::class . ':wordList'],
         '/org_web/poster_template_word/getWordInfo' => ['method' => ['get'], 'call' => PosterTemplateWord::class . ':getWordInfo'],
         '/org_web/poster_template_word/editWordInfo' => ['method' => ['post'], 'call' => PosterTemplateWord::class . ':editWordInfo'],
+        '/org_web/poster_template_word/offline_word_list_check' => ['method' => ['get'], 'call' => PosterTemplateWord::class . ':offlineWordListCheck'],
+
 
 
         // 打卡截图审核：

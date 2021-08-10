@@ -359,26 +359,46 @@ class SourceMaterialService
         //获取海报列表
         if (!empty($posterIds)) {
             $posterLists = TemplatePosterModel::getRecords(['id' => $posterIds], ['id', 'name', 'poster_path']);
-            foreach ($posterLists as $key => &$val) {
-                $val['poster_path'] = AliOSS::replaceCdnDomainForDss($val['poster_path']);
-                $val['poster_type'] = TemplatePosterModel::STANDARD_POSTER_TXT;
-                $val['order']       = $key + 1;
+            $posterLists = !empty($posterLists) ? array_column($posterLists, null, 'id') : [];
+            $posterInfos = [];
+            foreach ($posterIds as $key => $val) {
+                if (!isset($posterLists[$val])) {
+                    continue;
+                }
+                $posterInfos[] = [
+                    'id'          => $val,
+                    'name'        => $posterLists[$val]['name'],
+                    'image_path'  => $posterLists[$val]['poster_path'],
+                    'poster_path' => AliOSS::replaceCdnDomainForDss($posterLists[$val]['poster_path']),
+                    'poster_type' => TemplatePosterModel::STANDARD_POSTER_TXT,
+                    'order'       => $key + 1
+                ];
             }
         }
+
         //获取分享语列表
         if (!empty($posterWordIds)) {
             $posterWorkLists = TemplatePosterWordModel::getRecords(['id' => $posterWordIds], ['id', 'content']);
-            foreach ($posterWorkLists as $key => &$val) {
-                $val['content'] = Util::textDecode($val['content']);
-                $val['order']   = $key + 1;
+            $posterWorkLists = !empty($posterWorkLists) ? array_column($posterWorkLists, null, 'id') : [];
+            $posterWordInfos = [];
+            foreach ($posterWordIds as $key => $val) {
+                if (!isset($posterWorkLists[$val])) {
+                    continue;
+                }
+                $posterWordInfos[] = [
+                    'id'      => $val,
+                    'content' => Util::textDecode($posterWorkLists[$val]['content']),
+                    'order'   => $key + 1
+                ];
+
             }
         }
         $data = [
             'id'                => $shareInfo['id'],
             'image_path'        => AliOSS::replaceCdnDomainForDss($shareInfo['image_path']),
             'remark'            => $shareInfo['remark'],
-            'poster_lists'      => $posterLists ?? [],
-            'poster_work_lists' => $posterWorkLists ?? [],
+            'poster_lists'      => $posterInfos ?? [],
+            'poster_work_lists' => $posterWordInfos ?? [],
         ];
         return $data;
     }
@@ -659,7 +679,7 @@ class SourceMaterialService
             'title'           => $shareInfo['remark'] ?? '',
             'description'     => '',
             'userName'        => $wechatInitialId,
-            'path'            => sprintf('pages/index?%s', urlencode('scene=' . $qrId)),
+            'path'            => sprintf('pages/index?scene=%s', $qrId),
             'previewImageUrl' => !empty($shareInfo['image_path']) ? AliOSS::replaceCdnDomainForDss($shareInfo['image_path']) : '',
             'webpageUrl'      => $webpageUrl
         ];
@@ -740,7 +760,7 @@ class SourceMaterialService
             $extParams['poster_id'] = $item['id'];
             // 海报图：
             $poster = PosterService::generateQRPoster(
-                $item['poster_path'],
+                $item['image_path'],
                 $posterConfig,
                 $extParams['student_id'],
                 DssUserQrTicketModel::STUDENT_TYPE,

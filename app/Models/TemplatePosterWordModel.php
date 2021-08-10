@@ -30,6 +30,16 @@ class TemplatePosterWordModel extends Model
         if ($totalCount == 0) {
             return [[], $pageId, $pageLimit, 0];
         }
+        $where = [
+            'ORDER' => [
+                'status' => 'DESC',
+                'update_time' => 'DESC'
+            ],
+            'LIMIT' => [($pageId - 1) * $pageLimit, $pageLimit]
+        ];
+        if (!empty($params['status'])) {
+            $where[self::$table . '.status'] = $params['status'];
+        }
         $res = $db->select(
             self::$table,
             [
@@ -42,13 +52,7 @@ class TemplatePosterWordModel extends Model
                 self::$table . '.status',
                 self::$table . '.update_time'
             ],
-            [
-                'ORDER' => [
-                    'status' => 'DESC',
-                    'update_time' => 'DESC'
-                ],
-                'LIMIT' => [($pageId - 1) * $pageLimit, $pageLimit]
-            ]
+            $where
         );
         return [$res, $pageId, $pageLimit, $totalCount];
     }
