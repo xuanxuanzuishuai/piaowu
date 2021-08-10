@@ -29,7 +29,10 @@ class CHDB
     private $name;
 
     const OP = 'op';    // op服务库
-
+    
+    // build oneself clickhouse
+    const CONFIG_BO = 'build_oneself';
+    
     /**
      * @param null $configType
      * @return CHDB
@@ -47,7 +50,16 @@ class CHDB
 
         return self::$instances[$configType];
     }
-
+    
+    /**
+     * 自建clickhouse
+     * @return CHDB
+     */
+    public static function getBODB()
+    {
+        return self::getDB(self::CONFIG_BO);
+    }
+    
     public function __construct($configName = 'default')
     {
         $this->name = $configName;
@@ -75,6 +87,17 @@ class CHDB
                     'database_name' => $_ENV['CHDB_OP_DATABASE'],
                     'timeout' => $_ENV['CHDB_OP_TIMEOUT'],
                     'connect_timeout' => $_ENV['CHDB_OP_CONNECT_TIMEOUT'],
+                    'auth_method'     => Http::AUTH_METHOD_QUERY_STRING,
+                ];
+            case self::CONFIG_BO:
+                return [
+                    'host'            => $_ENV['CHDB_BO_HOST'],
+                    'port'            => $_ENV['CHDB_BO_PORT'],
+                    'username'        => $_ENV['CHDB_BO_USERNAME'],
+                    'password'        => $_ENV['CHDB_BO_PASSWORD'],
+                    'database_name'   => $_ENV['CHDB_BO_DATABASE'],
+                    'timeout'         => $_ENV['CHDB_BO_TIMEOUT'],
+                    'connect_timeout' => $_ENV['CHDB_BO_CONNECT_TIMEOUT'],
                     'auth_method'     => Http::AUTH_METHOD_QUERY_STRING,
                 ];
             case 'default':

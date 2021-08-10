@@ -25,6 +25,7 @@ require_once PROJECT_ROOT . '/vendor/autoload.php';
 use App\Libs\DictConstants;
 use App\Libs\SimpleLogger;
 use App\Libs\RedisDB;
+use App\Models\CHModel\AprViewStudentModel;
 use App\Services\ReferralService;
 use DateTime;
 use Dotenv\Dotenv;
@@ -85,7 +86,8 @@ foreach ($collectionInfo as $collectionId => $collection) {
         $dayList[$dayDiff] = $dayDiff;
         
         $day = date("Y-m-d", strtotime("+".($dayDiff-1)." days", $teachingStartTime));
-        $playInfo = DssAiPlayRecordCHModel::getStudentBetweenTimePlayRecord(intval($student['id']), strtotime($day), strtotime($day . ' 23:59:59'));
+        //$playInfo = DssAiPlayRecordCHModel::getStudentBetweenTimePlayRecord(intval($student['id']), strtotime($day), strtotime($day . ' 23:59:59'));
+        $playInfo = AprViewStudentModel::getStudentBetweenTimePlayRecord(intval($student['id']), strtotime($day), strtotime($day . ' 23:59:59'));
         $sd = array_sum(array_column($playInfo, 'sum_duration'));
         $lc = count(array_unique(array_column($playInfo, 'lesson_id')));
         $student['wechat']        = ReferralService::getWechatInfoForPush($student);

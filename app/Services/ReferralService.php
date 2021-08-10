@@ -20,6 +20,7 @@ use App\Libs\SimpleLogger;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Libs\WeChat\WXBizDataCrypt;
 use App\Models\BillMapModel;
+use App\Models\CHModel\AprViewStudentModel;
 use App\Models\Dss\DssAiPlayRecordCHModel;
 use App\Models\Dss\DssChannelModel;
 use App\Models\Dss\DssCollectionModel;
@@ -641,8 +642,8 @@ class ReferralService
             return [];
         }
         $day = date("Y-m-d", strtotime("-1 days", $today->getTimestamp()));
-        $playInfo = DssAiPlayRecordCHModel::getStudentBetweenTimePlayRecord(intval($studentId), strtotime($day),
-            strtotime($day . ' 23:59:59'));
+        //$playInfo = DssAiPlayRecordCHModel::getStudentBetweenTimePlayRecord(intval($studentId), strtotime($day), strtotime($day . ' 23:59:59'));
+        $playInfo = AprViewStudentModel::getStudentBetweenTimePlayRecord(intval($studentId), strtotime($day), strtotime($day . ' 23:59:59'));
         $sd = array_sum(array_column($playInfo, 'sum_duration'));
         $lc = count(array_unique(array_column($playInfo, 'lesson_id')));
         $sendData['lesson_count'] = $lc;

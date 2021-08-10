@@ -17,6 +17,7 @@ use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\ActivityExtModel;
 use App\Models\ActivityPosterModel;
+use App\Models\CHModel\AprViewStudentModel;
 use App\Models\Dss\DssAiPlayRecordCHModel;
 use App\Models\Dss\DssCategoryV1Model;
 use App\Models\Dss\DssCollectionModel;
@@ -249,7 +250,8 @@ class ActivityService
         //练琴数据
         $playRecordStartTime = strtotime(min(array_column($nodeData, 'node_play_date')));
         $playRecordEndTime = strtotime(max(array_column($nodeData, 'node_play_date'))) + Util::TIMESTAMP_ONEDAY;
-        $playRecordData = array_column(DssAiPlayRecordCHModel::getStudentBetweenTimePlayRecord($studentId, $playRecordStartTime, $playRecordEndTime), null, 'create_date');
+        //$playRecordData = array_column(DssAiPlayRecordCHModel::getStudentBetweenTimePlayRecord($studentId, $playRecordStartTime, $playRecordEndTime), null, 'create_date');
+        $playRecordData = array_column(AprViewStudentModel::getStudentBetweenTimePlayRecord($studentId, $playRecordStartTime, $playRecordEndTime), null, 'create_date');
         //截图上传数据
         $nodeIdList = array_column($nodeData, 'node_id');
         $posterData = array_column(SharePosterModel::signInNodePoster($studentId, implode(',', $nodeIdList)), null, 'node_id');

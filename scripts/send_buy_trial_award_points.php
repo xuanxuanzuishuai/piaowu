@@ -9,6 +9,7 @@ namespace App;
 use App\Libs\Erp;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
+use App\Models\CHModel\AprViewStudentModel;
 use App\Models\Dss\DssAiPlayRecordCHModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Erp\ErpUserEventTaskAwardGoldLeafModel;
@@ -61,8 +62,8 @@ foreach ($pointsList as $points) {
     // 12天内没有练琴记录本次不发放
     // 计算是否有练琴记录
     $studentInfo = DssStudentModel::getRecord(['uuid' => $points['finish_task_uuid']], ['id']);
-    //$aiPlayList = DssAiPlayRecordCHModel::getStudentBetweenTimePlayRecord((int)$studentInfo['id'], (int)$points['create_time'], $taskLastTime);
-    $earliestTime = DssAiPlayRecordCHModel::getStudentEarliestPlayTime((int)$studentInfo['id'], (int)$points['create_time'], $taskLastTime);   //最早练琴时间
+    //$earliestTime = DssAiPlayRecordCHModel::getStudentEarliestPlayTime((int)$studentInfo['id'], (int)$points['create_time'], $taskLastTime);   //最早练琴时间
+    $earliestTime = AprViewStudentModel::getStudentEarliestPlayTime((int)$studentInfo['id'], (int)$points['create_time'], $taskLastTime);   //最早练琴时间
     SimpleLogger::info("script::auto_send_buy_trial_award_points", ['info'=>'aiplay','data'=> $earliestTime, 'award_info' => $points, 'taskLastTime' => $taskLastTime,'time' => $time]);
     // 没有练琴记录-检查是否超过12天，超过标记不发放， 没超过不处理
     if ($earliestTime == 0) {

@@ -24,6 +24,7 @@ use App\Libs\MysqlDB;
 use App\Libs\PhpMail;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
+use App\Models\CHModel\AprViewStudentModel;
 use App\Models\Dss\DssAiPlayRecordCHModel;
 use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssPackageExtModel;
@@ -89,7 +90,8 @@ function getStudentEarliestTime($studentId, $startTime, $endTime)
             $redis->hdel($cacheKeyEarliestTime, $studentId);
         }
     }
-    $earliestTime = DssAiPlayRecordCHModel::getStudentEarliestPlayTime($studentId, $startTime, $endTime);
+    //$earliestTime = DssAiPlayRecordCHModel::getStudentEarliestPlayTime($studentId, $startTime, $endTime);
+    $earliestTime = AprViewStudentModel::getStudentEarliestPlayTime($studentId, $startTime, $endTime);
     if ($earliestTime) {
         $redis->hset($cacheKeyEarliestTime, $studentId, $earliestTime);
         return (int)$earliestTime;

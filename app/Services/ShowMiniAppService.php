@@ -21,6 +21,7 @@ use App\Libs\WeChat\MsgErrorCode;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Libs\WeChat\WXBizDataCrypt;
 use App\Libs\WeChat\WXBizMsgCrypt;
+use App\Models\CHModel\AprViewStudentModel;
 use App\Models\Dss\DssAiPlayRecordCHModel;
 use App\Models\Dss\DssAiPlayRecordModel;
 use App\Models\Dss\DssAuthModel;
@@ -180,7 +181,8 @@ class ShowMiniAppService
                     $data['headimgurl'] = $wxData['headimgurl'];
                 }
                 // 练琴天数
-                $accumulateDays = DssAiPlayRecordCHModel::getStudentPlayDayCount($user_id);
+                //$accumulateDays = DssAiPlayRecordCHModel::getStudentPlayDayCount($user_id);
+                $accumulateDays = AprViewStudentModel::getStudentPlayDayCount($user_id);
                 // 查询推荐者练习曲目
                 [$percentage, $numbers] = self::getReferrerPlayData($user_id);
             }
@@ -204,12 +206,14 @@ class ShowMiniAppService
     public static function getReferrerPlayData($referrer_id)
     {
         // 练习曲目数量
-        $numbers = DssAiPlayRecordCHModel::getStudentLessonCount($referrer_id);
+        //$numbers = DssAiPlayRecordCHModel::getStudentLessonCount($referrer_id);
+        $numbers = AprViewStudentModel::getStudentLessonCount($referrer_id);
         $numbers = $numbers[0]['lesson_count'] ?? 0;
         // 练琴提升百分比
         $percentage = 0;
         $minScore = 1;
-        $result = DssAiPlayRecordCHModel::getStudentMaxAndMinScore($referrer_id);
+        //$result = DssAiPlayRecordCHModel::getStudentMaxAndMinScore($referrer_id);
+        $result = AprViewStudentModel::getStudentMaxAndMinScore($referrer_id);
         foreach ($result as $key => $value) {
             $diff = $value['max_score'] - $value['min_score'];
             if ($diff > $percentage && $diff > 10) {

@@ -13,6 +13,7 @@ use App\Libs\AIPLCenter;
 use App\Libs\AliOSS;
 use App\Libs\OpernCenter;
 use App\Libs\Valid;
+use App\Models\CHModel\AprViewRecordModel;
 use App\Models\Dss\DssAiPlayRecordCHModel;
 use App\Models\Dss\DssAiPlayRecordModel;
 use App\Models\Dss\DssStudentModel;
@@ -35,7 +36,8 @@ class AIPlayRecordService
             return [];
         }
 
-        $report = DssAiPlayRecordCHModel::getRecordIdInfo($recordId);
+        //$report = DssAiPlayRecordCHModel::getRecordIdInfo($recordId);
+        $report = AprViewRecordModel::getRecordIdInfo($recordId);
         if (empty($report)) {
             $report = [];
         }
