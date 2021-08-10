@@ -39,11 +39,12 @@ $minTime = strtotime(date('YmdHi00'));
 
 $db = MysqlDB::getDB();
 
+$landingRecallTable = LandingRecallModel::$table;
 $enableStatus = LandingRecallModel::ENABLE_STATUS_ON;
 $sqlLandingRecall = "
     SELECT
-        target_population,send_time,sms_content,voice_call_type,channel
-    FROM landing_recall WHERE enable_status = {$enableStatus};
+        id,target_population,send_time,sms_content,voice_call_type,channel
+    FROM {$landingRecallTable} WHERE enable_status = {$enableStatus};
 ";
 
 $recalls = $db->queryAll($sqlLandingRecall);
@@ -85,6 +86,7 @@ if ($recalls) {
     }
     
     foreach ($recalls as $recall) {
+        $recallId = $recall['id'];
         $target = $recall['target_population'];
         $sendTime = $recall['send_time'];
         $smsContent = $recall['sms_content'];
@@ -111,6 +113,7 @@ if ($recalls) {
                 $mobile = $mobileInfo['mobile'];
                 $countryCode = $mobileInfo['country_code'];
                 $validData[] = [
+                    'id' => $recallId,
                     'mobile' => $mobile,
                     'country_code' => $countryCode,
                 ];
@@ -139,6 +142,7 @@ if ($recalls) {
                     $mobile = $mobileInfo['mobile'];
                     $countryCode = $mobileInfo['country_code'];
                     $validData[] = [
+                        'id' => $recallId,
                         'mobile' => $mobile,
                         'country_code' => $countryCode,
                     ];
@@ -148,6 +152,7 @@ if ($recalls) {
         SimpleLogger::info('LANDING_RECALL_VALID_DATA_' . $minTime, ['recall' => $recall, 'data' => $validData]);
         //消息队列发送短信
         foreach ($validData as $validDatum) {
+            $landingRecallId = $validDatum['id'];
             $mobile = $validDatum['mobile'];
             $countryCode = $validDatum['country_code'];
             
@@ -159,6 +164,7 @@ if ($recalls) {
                 $time = time();
                 $date = date('Y-m-d', $time);
                 $insertData = [
+                    'landing_recall_id' => $landingRecallId,
                     'mobile' => $mobile,
                     'sms' => 1,
                     'voice' => $voiceCallType?1:0,
