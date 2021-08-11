@@ -132,8 +132,7 @@ class ActivityPosterModel extends Model
         }
         // 相等 判断交集是否相等，不相等说明不一样
         $posterIds = array_column($activityPosterList, 'poster_id');
-        $arrayIntersect = array_intersect($posterIds, $posterIdArr);
-        return count($arrayIntersect) == count($activityPosterList) ? false : true;
+        return implode('', $posterIds) == implode('', $posterIdArr) ? false : true;
     }
     
     /**
