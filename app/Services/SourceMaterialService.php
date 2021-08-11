@@ -19,6 +19,7 @@ use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\EmployeeModel;
 use App\Models\Erp\ErpPackageV1Model;
 use App\Models\Erp\ErpStudentAccountDetail;
+use App\Models\Erp\ErpStudentModel;
 use App\Models\ShareConfigModel;
 use App\Models\ShareMaterialConfig;
 use App\Models\SourceMaterialModel;
@@ -428,7 +429,7 @@ class SourceMaterialService
             'image_type'  => $request['image_type'],
             'image_path'  => $request['image_path'],
             'jump_rule'   => $request['jump_rule'],
-            'jump_url'    => !empty($request['jump_url']) ? urlencode($request['jump_url']) : '',
+            'jump_url'    => $request['jump_rule'] == BannerConfigModel::IS_ALLOW_JUMP ? urlencode($request['jump_url']) : '',
             'order'       => $request['order'],
             'remark'      => $request['remark'],
             'operator_id' => $request['employee_id'],
@@ -584,16 +585,16 @@ class SourceMaterialService
             'status'         => BannerConfigModel::NORMAL_STATUS,
             'start_time[<=]' => $time,
             'end_time[>=]'   => $time,
-            'ORDER'          => ['order' => 'ASC', 'create_time' => 'DESC']
+            'ORDER'          => ['create_time' => 'DESC']
         ];
-        $bannerLists = BannerConfigModel::getRecords($conds, ['id', 'image_path','jump_url']);
+        $bannerLists = BannerConfigModel::getRecords($conds, ['id', 'image_path','jump_url','jump_rule']);
         $defaultBanner = DictConstants::get(DictConstants::SALE_SHOP_CONFIG, 'dafault_banner');
         if (empty($bannerLists)) {
             array_push($bannerLists, ['id' => 1, 'image_path' => $defaultBanner, 'jump_url' => '']);
         }
         foreach ($bannerLists as &$val) {
             $val['image_path'] = AliOSS::replaceCdnDomainForDss($val['image_path']);
-            $val['jump_url']   = urldecode($val['jump_url']);
+            $val['jump_url']   = $val['jump_rule'] == BannerConfigModel::IS_ALLOW_JUMP ? urldecode($val['jump_url']) : '';
         }
         $data = [
             'gold_leaf_num' => ceil($goldLeaf / self::WAN_UNIT),
@@ -708,24 +709,34 @@ class SourceMaterialService
         $referral    = array_column($referral, null, 'referee_id');
         $referralIds = array_keys($referral);
         //获取推荐人信息
-        $student = DssStudentModel::getRecords(['id' => $referralIds], ['id', 'name', 'mobile', 'thumb']);
+        $student = DssStudentModel::getRecords(['id' => $referralIds], ['id', 'name', 'mobile', 'thumb','uuid']);
         if (empty($student)) {
             return [];
         }
-        $student       = array_column($student, null, 'id');
-        $accountDetail = ErpStudentAccountDetail::getUserRewardTotal($referralIds);
+        $student = array_column($student, null, 'uuid');
+        $uuids   = array_column($student, 'uuid');
+
+        //获取erp学生信息
+        $erpStudent = ErpStudentModel::getRecords(['uuid' => $uuids], ['id','uuid']);
+        if (empty($erpStudent)) {
+            return [];
+        }
+        $erpStudent    = array_column($erpStudent, 'uuid', 'id');
+        $erpStudentIds = array_keys($erpStudent);
+        $accountDetail = ErpStudentAccountDetail::getUserRewardTotal($erpStudentIds);
         if (empty($accountDetail)) {
             return [];
         }
         //用户默认头像
         $defaultAvatar =  AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb'));
         foreach ($accountDetail as &$val) {
-            $studentInfo = $student[$val['student_id']] ?? [];
+            $uuid        = $erpStudent[$val['student_id']] ?? '';
+            $studentInfo = $student[$uuid] ?? [];
             if (empty($studentInfo)) {
                 continue;
             }
-            $val['invite_num']    = $referral[$val['student_id']]['num'] ?? 0;
-            $val['gold_leat_num'] = ceil($val['total'] / ErpPackageV1Model::DEFAULT_SCALE_NUM);
+            $val['invite_num']    = $referral[$studentInfo['id']]['num'] ?? 0;
+            $val['gold_leat_num'] = ceil($val['total'] / (ErpPackageV1Model::DEFAULT_SCALE_NUM * self::WAN_UNIT));
             $val['name']          = $studentInfo['name'] ?: sprintf('尾号%s', substr($studentInfo['mobile'], 7));
             $val['avatar']        = !empty($studentInfo['thumb']) ? AliOSS::replaceCdnDomainForDss($studentInfo['thumb']) : $defaultAvatar;
         }

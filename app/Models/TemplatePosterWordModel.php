@@ -25,7 +25,11 @@ class TemplatePosterWordModel extends Model
     public static function getList($params)
     {
         $db = MysqlDB::getDB();
-        $totalCount = $db->count(self::$table);
+        $conds = [];
+        if (!empty($params['status'])) {
+            $conds[self::$table . '.status'] = $params['status'];
+        }
+        $totalCount = self::getCount($conds);
         list($pageId, $pageLimit) = Util::appPageLimit($params);
         if ($totalCount == 0) {
             return [[], $pageId, $pageLimit, 0];
@@ -37,8 +41,8 @@ class TemplatePosterWordModel extends Model
             ],
             'LIMIT' => [($pageId - 1) * $pageLimit, $pageLimit]
         ];
-        if (!empty($params['status'])) {
-            $where[self::$table . '.status'] = $params['status'];
+        if (!empty($conds)) {
+            $where = array_merge($where, $conds);
         }
         $res = $db->select(
             self::$table,
