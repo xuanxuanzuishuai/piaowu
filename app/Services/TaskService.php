@@ -95,6 +95,17 @@ class TaskService
             }
         }
 
+        //前置黑名单
+        $blackIds = CountingActivityBlackModel::getRecords([
+            'student_id' => $studentId,
+            'op_activity_id' => $opActivityIds,
+            'status' => CountingActivityBlackModel::NORMAL_STATUS,
+        ],['op_activity_id']);
+        if (!empty($blackIds)){
+            foreach ($blackIds as $black){
+                unset($list[$black['op_activity_id']]);
+            }
+        }
 
         //互斥任务
         $mutex = CountingActivityMutexModel::getRecords([
@@ -112,25 +123,6 @@ class TaskService
             }
 
             if (!empty($mutexIds)) {
-
-                //前置黑名单
-                $blackIds = CountingActivityBlackModel::getRecords([
-                    'student_id' => $studentId,
-                    'op_activity_id' => $mutexIds,
-                    'status' => CountingActivityBlackModel::NORMAL_STATUS,
-                ],['op_activity_id']);
-                if (!empty($blackIds)){
-
-                    //互斥黑名单任务
-                    $blackList = CountingActivityMutexModel::getRecords([
-                        'mutex_op_activity_id' => array_values(array_filter(array_unique(array_column($blackIds,'op_activity_id')))),
-                        'status'         => CountingActivityMutexModel::NORMAL_STATUS
-                    ], ['op_activity_id', 'mutex_op_activity_id']
-                    );
-                    foreach ($blackList as $black){
-                        unset($list[$black['op_activity_id']]);
-                    }
-                }
 
                 //是否在互斥任务黑名单
                 $sign = CountingActivitySignModel::getRecords([
