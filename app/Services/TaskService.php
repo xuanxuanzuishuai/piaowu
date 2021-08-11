@@ -82,17 +82,8 @@ class TaskService
         $opActivityIds = [];
         $list = [];
         foreach ($countingActivity as $value){
-            $isInBlack = CountingActivityBlackModel::getRecords([
-                'student_id' => $studentId,
-                'op_activity_id' => $value['op_activity_id'],
-                'status' => CountingActivityBlackModel::NORMAL_STATUS,
-            ],['op_activity_id']);
-            if(!empty($isInBlack)){
-                continue;
-            }else{
-                $opActivityIds[] = $value['op_activity_id'];
-                $list[$value['op_activity_id']] = $value;
-            }
+            $opActivityIds[] = $value['op_activity_id'];
+            $list[$value['op_activity_id']] = $value;
         }
 
         //前置黑名单
@@ -101,8 +92,20 @@ class TaskService
             'op_activity_id' => $opActivityIds,
             'status' => CountingActivityBlackModel::NORMAL_STATUS,
         ],['op_activity_id']);
+
         if (!empty($blackIds)){
-            foreach ($blackIds as $black){
+
+            foreach ($blackIds as $activityId){
+                unset($list[$activityId['op_activity_id']]);
+            }
+
+            //互斥黑名单任务
+            $blackList = CountingActivityMutexModel::getRecords([
+                'mutex_op_activity_id' => array_values(array_filter(array_unique(array_column($blackIds,'op_activity_id')))),
+                'status'         => CountingActivityMutexModel::NORMAL_STATUS
+            ], ['op_activity_id', 'mutex_op_activity_id']
+            );
+            foreach ($blackList as $black){
                 unset($list[$black['op_activity_id']]);
             }
         }
