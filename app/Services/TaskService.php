@@ -82,9 +82,19 @@ class TaskService
         $opActivityIds = [];
         $list = [];
         foreach ($countingActivity as $value){
-            $opActivityIds[] = $value['op_activity_id'];
-            $list[$value['op_activity_id']] = $value;
+            $isInBlack = CountingActivityBlackModel::getRecords([
+                'student_id' => $studentId,
+                'op_activity_id' => $value['op_activity_id'],
+                'status' => CountingActivityBlackModel::NORMAL_STATUS,
+            ],['op_activity_id']);
+            if(!empty($isInBlack)){
+                continue;
+            }else{
+                $opActivityIds[] = $value['op_activity_id'];
+                $list[$value['op_activity_id']] = $value;
+            }
         }
+
 
         //互斥任务
         $mutex = CountingActivityMutexModel::getRecords([
