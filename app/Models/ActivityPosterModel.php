@@ -130,9 +130,9 @@ class ActivityPosterModel extends Model
         if (count($activityPosterList) != count($posterIdArr)) {
             return true;
         }
-        // 相等 判断交集是否相等，不相等说明不一样
+        //判断是否顺序改变
         $posterIds = array_column($activityPosterList, 'poster_id');
-        return implode('', $posterIds) == implode('', $posterIdArr) ? false : true;
+        return implode(',', $posterIds) == implode(',', $posterIdArr) ? false : true;
     }
     
     /**
