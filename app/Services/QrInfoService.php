@@ -141,6 +141,10 @@ class QrInfoService
             $sendQueueArr = [];
             for ($i = 0; $i < $createIdNum; $i++) {
                 $sortId         = Util::getIncrSortId($sortId);
+                // 如果全是数字跳过
+                if (preg_match('/^[0-9]+$/', $sortId)) {
+                    continue;
+                }
                 $sendQueueArr[] = $sortId;
                 if ($i % 1000 == 0) {
                     $redis->sadd(self::REDIS_WAIT_USE_QR_SET, $sendQueueArr);
