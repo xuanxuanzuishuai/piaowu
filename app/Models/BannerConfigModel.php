@@ -69,7 +69,7 @@ class BannerConfigModel extends Model
         if (!empty($limit)) {
             $where['LIMIT'] = $limit;
         }
-        $where['ORDER'] = ['order' => 'ASC','create_time' => 'DESC'];
+        $where['ORDER'] = ['create_time' => 'DESC'];
         $list = self::getRecords($where);
         return [$list, $total];
     }

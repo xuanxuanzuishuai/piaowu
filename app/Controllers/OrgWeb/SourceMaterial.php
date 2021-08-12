@@ -215,7 +215,7 @@ class SourceMaterial extends ControllerBase
             [
                 'key'        => 'image_path',
                 'type'       => 'required',
-                'error_code' => 'image_path_is_required'
+                'error_code' => 'share_image_path_is_required'
             ],
             [
                 'key'        => 'remark',

@@ -195,7 +195,7 @@ class SourceMaterialService
         $time      = time();
         $shareInfo = [
             'image_path'  => $request['image_path'],
-            'remark'      => $request['remark'],
+            'remark'      =>  Util::textEncode($request['remark']),
             'operator_id' => $request['employee_id'],
             'create_time' => $time,
         ];
@@ -252,7 +252,7 @@ class SourceMaterialService
         $time      = time();
         $shareInfo = [
             'image_path'  => $request['image_path'],
-            'remark'      => $request['remark'],
+            'remark'      => Util::textEncode($request['remark']),
             'operator_id' => $request['employee_id'],
             'update_time' => $time,
         ];
@@ -397,7 +397,7 @@ class SourceMaterialService
         $data = [
             'id'                => $shareInfo['id'],
             'image_path'        => AliOSS::replaceCdnDomainForDss($shareInfo['image_path']),
-            'remark'            => $shareInfo['remark'],
+            'remark'            => Util::textDecode($shareInfo['remark']),
             'poster_lists'      => $posterInfos ?? [],
             'poster_work_lists' => $posterWordInfos ?? [],
         ];
@@ -585,7 +585,7 @@ class SourceMaterialService
             'status'         => BannerConfigModel::NORMAL_STATUS,
             'start_time[<=]' => $time,
             'end_time[>=]'   => $time,
-            'ORDER'          => ['create_time' => 'DESC']
+            'ORDER'          => ['order' => 'ASC','create_time' => 'DESC']
         ];
         $bannerLists = BannerConfigModel::getRecords($conds, ['id', 'image_path','jump_url','jump_rule']);
         $defaultBanner = DictConstants::get(DictConstants::SALE_SHOP_CONFIG, 'dafault_banner');
@@ -597,7 +597,7 @@ class SourceMaterialService
             $val['jump_url']   = $val['jump_rule'] == BannerConfigModel::IS_ALLOW_JUMP ? urldecode($val['jump_url']) : '';
         }
         $data = [
-            'gold_leaf_num' => ceil($goldLeaf / self::WAN_UNIT),
+            'gold_leaf_num' => $goldLeaf / self::WAN_UNIT,
             'banner_list'   => $bannerLists
         ];
         return $data;
@@ -625,7 +625,7 @@ class SourceMaterialService
         }
         $data = [
             'amount'        => ceil($goldLeaf / ErpPackageV1Model::DEFAULT_SCALE_NUM),
-            'gold_leaf_num' => ceil($goldLeaf / self::WAN_UNIT),
+            'gold_leaf_num' => $goldLeaf / self::WAN_UNIT,
             'lists'         => $posterList
         ];
         return $data;
@@ -677,7 +677,7 @@ class SourceMaterialService
             throw new RunTimeException(["create_qr_id_error"]);
         }
         $bannerInfo['mini_app'] = [
-            'title'           => $shareInfo['remark'] ?? '',
+            'title'           => Util::textDecode($shareInfo['remark']) ?? '',
             'description'     => '',
             'userName'        => $wechatInitialId,
             'path'            => sprintf('pages/index?scene=%s', $qrId),
