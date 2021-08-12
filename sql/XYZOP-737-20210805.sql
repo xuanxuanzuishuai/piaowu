@@ -15,6 +15,6 @@ VALUES ('商家代理添加', '/op_web/agent_business/add', unix_timestamp(), 'p
 
 
 
- INSERT INTO `operation_pre`.`dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`) VALUES (
- 'order_type', '订单类型', '1', '体验卡', ''),
- 'order_type', '订单类型', '2', '正式年卡', '');
+ INSERT INTO `operation_pre`.`dict` (`type`, `key_name`, `key_code`, `key_value`, `desc`)
+ VALUES ('order_type', '订单类型', '1', '体验卡', ''),
+ ('order_type', '订单类型', '2', '正式年卡', '');

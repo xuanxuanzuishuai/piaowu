@@ -240,10 +240,11 @@ class AgentService
                 $organizationData['data']['update_time'] = $time;
                 $organizationData['id'] = $orgData['id'];
             }
+            $organizationData['data'] = array_filter($organizationData['data']);
         }
         $db = MysqlDB::getDB();
         $db->beginTransaction();
-        $res = AgentModel::update($params['agent_id'], $agentUpdateData, $agentDivideRulesInsertData, $agentInfoUpdateData, $packageIds, $params['app_id'], $organizationData, $serviceEmployeeUpdateData);
+        $res = AgentModel::update($params['agent_id'], $agentUpdateData, $agentDivideRulesInsertData, array_filter($agentInfoUpdateData), $packageIds, $params['app_id'], $organizationData, $serviceEmployeeUpdateData);
         if (empty($res)) {
             $db->rollBack();
             throw new RunTimeException(['update_failure']);
@@ -520,6 +521,7 @@ class AgentService
             $where[AgentInfoModel::$table . '.city'] = (int)$params['city_code'];
         }
 
+        $where[AgentServiceEmployeeModel::$table . '.status'] = AgentServiceEmployeeModel::STATUS_OK;
         //数据权限
         if ($params['only_read_self']) {
             $where["OR"] = [
@@ -536,7 +538,6 @@ class AgentService
                     return $data;
                 }
                 $where[AgentServiceEmployeeModel::$table . '.employee_id'] = array_column($serviceEmployeeIds,'id');
-                $where[AgentServiceEmployeeModel::$table . '.status'] = AgentServiceEmployeeModel::STATUS_OK;
             }
         }
 
@@ -2437,7 +2438,7 @@ class AgentService
         $firstAgentId = [];
         $firstAgentWhere = [];
         if (!empty($params['first_agent_name'])) {
-            $firstAgentWhere['name'] = $params['first_agent_name'];
+            $firstAgentWhere['name[~]'] = $params['first_agent_name'];
         }
         if (is_numeric($params['first_agent_id'])) {
             $firstAgentWhere['id'] = $params['first_agent_id'];
@@ -2461,7 +2462,7 @@ class AgentService
             $secondAgentWhere['parent_id'] = $firstAgentId;
         }
         if (!empty($params['second_agent_name'])) {
-            $secondAgentWhere['name'] = $params['second_agent_name'];
+            $secondAgentWhere['name[~]'] = $params['second_agent_name'];
         }
         if (is_numeric($params['second_agent_id'])) {
             $secondAgentWhere['id'] = $params['second_agent_id'];
@@ -2474,7 +2475,7 @@ class AgentService
             }
         }
         //一级和二级同时搜索
-        if (!empty($firstAgentId) && (!empty($secondAgentWhere['name']) || !empty($secondAgentWhere['id']))) {
+        if (!empty($firstAgentId) && (!empty($secondAgentWhere['name[~]']) || !empty($secondAgentWhere['id']))) {
             if (empty($secondAgentId)) {
                 return [];
             } else {

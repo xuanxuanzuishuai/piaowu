@@ -238,10 +238,10 @@ class AgentStorageService
         }
         $params['payment_serial_number'] = trim($params['payment_serial_number']);
         //检测流水号是否存在
-//        $paymentSerialNumber = AgentPreStorageModel::getRecords(['payment_serial_number' => $params['payment_serial_number']], ['id']);
-//        if (!empty($paymentSerialNumber)) {
-//            throw new RunTimeException(['payment_serial_number_is_exits']);
-//        }
+        $paymentSerialNumber = AgentPreStorageModel::getRecords(['payment_serial_number' => $params['payment_serial_number']], ['id']);
+        if (!empty($paymentSerialNumber)) {
+            throw new RunTimeException(['payment_serial_number_is_exits']);
+        }
         $time = time();
         $db = MysqlDB::getDB();
         $db->beginTransaction();
