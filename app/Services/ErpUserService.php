@@ -48,6 +48,9 @@ class ErpUserService
         $data = [];
 
         foreach ($subTypes as $item) {
+            if (!isset($accounts[$item])) {
+                continue;
+            }
             $account = $accounts[$item];
 
             if ($item == self::ACCOUNT_SUB_TYPE_CASH) {
@@ -59,6 +62,6 @@ class ErpUserService
 
         if (is_array($subType)) return $data;
 
-        return $data[$subType];
+        return $data[$subType] ?? 0;
     }
 }

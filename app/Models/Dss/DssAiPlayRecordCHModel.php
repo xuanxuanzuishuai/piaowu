@@ -163,6 +163,8 @@ class DssAiPlayRecordCHModel
            score_speed_average,
            score_rank,
            lesson_id,
+           is_phrase,
+           hand,
            record_id
         FROM
            {table}

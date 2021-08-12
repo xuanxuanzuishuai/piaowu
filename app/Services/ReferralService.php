@@ -768,7 +768,7 @@ class ReferralService
 
         $where = ['referee_id' => $studentInfo['id']];
         // 是我的奖金页面的邀请名单，只读取到发放积分开始的日期
-        if ($params['award_type'] == ErpEventTaskModel::AWARD_TYPE_CASH) {
+        if (isset($params['award_type']) && $params['award_type'] == ErpEventTaskModel::AWARD_TYPE_CASH) {
             // 获取开始发放积分的时间节点
             $stopTime = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'student_invite_send_points_start_time');
             $where['create_time[<]'] = $stopTime;

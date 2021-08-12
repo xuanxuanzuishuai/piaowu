@@ -206,7 +206,8 @@ class Order extends ControllerBase
                 throw new RunTimeException(['must_bind_gift_group']);
             }
 
-            $ret = ErpOrderV1Service::createOrder($params['package_id'], $studentInfo, $payChannel, $params['pay_type'], $employeeUuid, $channel, $params['gift_res']);
+            $giftGoods = $params['gift_res'] ?? [];
+            $ret = ErpOrderV1Service::createOrder($params['package_id'], $studentInfo, $payChannel, $params['pay_type'], $employeeUuid, $channel, $giftGoods);
             if (!empty($sceneData) && !empty($ret['order_id'])) {
                 // 保存agent_bill_map数据
                 BillMapService::mapDataRecord($sceneData, $ret['order_id'], $studentInfo['id']);
