@@ -28,24 +28,26 @@ class AprViewRecordModel extends CHOBModel
         $chdb = CHDB::getBODB();
         $sql  = "
             SELECT
-               input_type,
-               audio_url,
-               student_id,
-               score_rank,
-               score_final,
-               score_complete,
-               score_pitch,
-               score_rhythm,
-               score_speed,
-               score_speed_average,
-               score_rank,
-               lesson_id,
-               record_id
+                input_type,
+                audio_url,
+                student_id,
+                score_rank,
+                score_final,
+                score_complete,
+                score_pitch,
+                score_rhythm,
+                score_speed,
+                score_speed_average,
+                score_rank,
+                lesson_id,
+                record_id,
+                is_phrase,
+                hand
             FROM
-               {table}
+                {table}
             WHERE
-               record_id = {id}
-               order by ts desc
+                record_id = {id}
+                order by ts desc
             limit 1 by id
         ";
         $result = $chdb->queryAll($sql, ['table' => self::$table, 'id' => $recordId]);

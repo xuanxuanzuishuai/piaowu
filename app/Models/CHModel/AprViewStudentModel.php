@@ -59,7 +59,7 @@ class AprViewStudentModel extends CHOBModel
                 select
                     student_id,
                     duration,
-                    toDate(create_time) AS create_date,
+                    toDate(end_time) AS create_date,
                     record_id,
                     track_id,
                     lesson_id
@@ -106,7 +106,7 @@ class AprViewStudentModel extends CHOBModel
                 select
                     student_id,
                     duration,
-                    toDate(create_time) AS create_date,
+                    toDate(end_time) AS create_date,
                     record_id,
                     track_id,
                     lesson_id
@@ -209,19 +209,19 @@ class AprViewStudentModel extends CHOBModel
         $chDB = CHDB::getBODB();
         $sql = "
             SELECT
-                student_id,create_time
+                student_id,end_time
             FROM
                 {table}
             WHERE
                 student_id = {$studentId}
                 AND duration > 0
-                AND create_time >= {$startTime}
-                AND create_time <= {$endTime}
+                AND end_time >= {$startTime}
+                AND end_time <= {$endTime}
             ORDER BY
-                create_time ASC
+                end_time ASC
             LIMIT 0,1
         ";
         $res = $chDB->queryAll($sql, ['table' => self::$table]);
-        return $res ? $res[0]['create_time'] : 0;
+        return $res ? $res[0]['end_time'] : 0;
     }
 }
