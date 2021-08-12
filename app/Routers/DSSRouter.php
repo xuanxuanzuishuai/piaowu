@@ -84,5 +84,11 @@ class DSSRouter extends RouterBase
         '/dss/sale_shop/user_reward_details' => ['method' => ['get'], 'call' => Dss::class . ':userRewardDetails'],
         '/dss/sale_shop/banner_info' => ['method' => ['get'], 'call' => Dss::class . ':bannerInfo'],
 
+        //周周领奖白名单
+        '/dss/week_white/create' => ['method' => ['post'], 'call' => Dss::class . ':createWeekWhiteList'],
+        '/dss/week_white/list' => ['method' => ['get'], 'call' => Dss::class . ':getWeekWhiteList'],
+        '/dss/week_white/del' => ['method' => ['post'], 'call' => Dss::class . ':delWeekWhite'],
+        '/dss/white_record/list' => ['method' => ['get'], 'call' => Dss::class . ':getWeekWhiteRecord'],
+
     ];
 }

@@ -191,4 +191,13 @@ class DssStudentModel extends DssModel
         }
         return $data;
     }
+
+    /**
+     * 根据uuid获取信息
+     * @param $uuids
+     * @return array
+     */
+    public static function getUuids($uuids){
+        return self::dbRO()->select(self::$table, ['uuid','mobile'], ['uuid'=>$uuids, 'status'=>self::STATUS_NORMAL]);
+    }
 }

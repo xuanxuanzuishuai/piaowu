@@ -43,6 +43,8 @@ use App\Services\UserService;
 use App\Services\WechatService;
 use App\Services\WechatTokenService;
 use App\Services\WeekActivityService;
+use App\Services\WeekWhiteListService;
+use App\Services\WhiteRecordService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -1171,6 +1173,119 @@ class Dss extends ControllerBase
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
         return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
+     * 添加周周领奖白名单
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function createWeekWhiteList(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+
+        $rules = [
+            [
+                'key'           => 'uuids',
+                'type'          => 'required',
+                'error_code'    => 'uuids_is_required'
+            ],
+            [
+                'key'           => 'operator_id',
+                'type'          => 'required',
+                'error_code'    => 'operator_id_is_required'
+            ],
+        ];
+
+        $result = Valid::appValidate($params, $rules);
+
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+
+        $uuids = explode("\n", $params['uuids']);
+        $operator_id = $params['operator_id'];
+
+        $res = WeekWhiteListService::create($uuids, $operator_id);
+
+        if($res){
+            return HttpHelper::buildResponse($response, $res);
+        }
+        return HttpHelper::buildErrorResponse($response, $res);
+    }
+
+
+    /**
+     * 获取列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getWeekWhiteList(Request $request, Response $response){
+        $params = $request->getParams();
+
+        list($page, $pageSize) = Util::formatPageCount($params);
+
+        $list = WeekWhiteListService::getWhiteList($params, $page, $pageSize);
+
+        return HttpHelper::buildResponse($response, $list);
+
+    }
+
+
+    /**
+     * 删除记录
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function delWeekWhite(Request $request, Response $response){
+        $params = $request->getParams();
+        $rules = [
+            [
+                'key'           => 'id',
+                'type'          => 'required',
+                'error_code'    => 'id_not_exist'
+            ],
+            [
+                'key'           => 'operator_id',
+                'type'          => 'required',
+                'error_code'    => 'uuids_is_required'
+            ],
+        ];
+
+        $result = Valid::appValidate($params, $rules);
+
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $res = WeekWhiteListService::del($params['id'], $params['operator_id']);
+
+        if($res){
+            return HttpHelper::buildResponse($response,[]);
+        }
+
+        return HttpHelper::buildErrorResponse($response,['del_failure']);
+    }
+
+    /**
+     * 操作记录列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getWeekWhiteRecord(Request $request, Response $response){
+        $params = $request->getParams();
+
+        list($page, $pageSize) = Util::formatPageCount($params);
+
+        $list = WhiteRecordService::list($params, $page, $pageSize);
+
+        return HttpHelper::buildResponse($response, $list);
+
     }
 
 }
