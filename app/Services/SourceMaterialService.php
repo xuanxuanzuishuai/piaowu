@@ -396,6 +396,7 @@ class SourceMaterialService
         }
         $data = [
             'id'                => $shareInfo['id'],
+            'image_url'         => $shareInfo['image_path'],
             'image_path'        => AliOSS::replaceCdnDomainForDss($shareInfo['image_path']),
             'remark'            => Util::textDecode($shareInfo['remark']),
             'poster_lists'      => $posterInfos ?? [],
@@ -561,6 +562,7 @@ class SourceMaterialService
         if (empty($bannerInfo)) {
             throw new RunTimeException(['record_not_found']);
         }
+        $bannerInfo['image_url']  = $bannerInfo['image_path'];
         $bannerInfo['image_path'] = AliOSS::replaceCdnDomainForDss($bannerInfo['image_path']);
         $bannerInfo['jump_url']   = $bannerInfo['jump_rule'] == BannerConfigModel::IS_ALLOW_JUMP ? urldecode($bannerInfo['jump_url']) : '';
 
