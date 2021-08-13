@@ -413,6 +413,9 @@ class SourceMaterialService
      */
     public static function bannerSave($request)
     {
+        if (!Util::checkPositiveInteger($request['order'])) {
+            throw new RunTimeException(['order_is_positive_integer']);
+        }
         $time = time();
         if (strtotime($request['start_time']) >= strtotime($request['end_time'])) {
             throw new RunTimeException(['start_time_eq_end_time']);

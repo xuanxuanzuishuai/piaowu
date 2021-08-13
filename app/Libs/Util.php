@@ -1404,4 +1404,18 @@ class Util
             return $keyc.str_replace('=', '', base64_encode($result));
         }
     }
+
+
+    /**
+     * 校验正整数
+     * @param $param
+     * @return bool
+     */
+    public static function checkPositiveInteger($param)
+    {
+        if (!preg_match("/^[1-9][0-9]*$/", $param)) {
+            return false;
+        }
+        return true;
+    }
 }
