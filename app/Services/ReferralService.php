@@ -394,7 +394,7 @@ class ReferralService
                     // $mapData = BillMapModel::paramMapDataByBillId($parentBillId, $studentId);
                     $mapData = BillMapService::getQrInfoByBillId($parentBillId, $studentId);
                     $is_rt_channel = $mapData['buy_channel'] == $rtChannel ? RtActivityService::RT_CHANNEL_REFERRAL : RtActivityService::NOT_RT_CHANNEL_REFERRAL;
-                    return ['referee_id' => (int)$mapData['user_id'],'is_rt_channel' => $is_rt_channel];
+                    return ['referee_id' => $mapData['type'] == BillMapModel::USER_TYPE_STUDENT ? (int)$mapData['user_id'] : 0,'is_rt_channel' => $is_rt_channel];
                 }
             }
         }
