@@ -98,7 +98,7 @@ class BillMapService
                 $qrInfo = array_merge($paramInfo, $paramMapInfo, $extData);
             }
         }
-        $qrInfo['type'] = $billMapInfo['type'];
+        !empty($qrInfo) && $qrInfo['type'] = $billMapInfo['type'];
         return $qrInfo;
     }
 }
