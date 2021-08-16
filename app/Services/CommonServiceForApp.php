@@ -44,9 +44,6 @@ class CommonServiceForApp
      */
     public static function sendValidateCode($mobile, $sign, $countryCode = NewSMS::DEFAULT_COUNTRY_CODE)
     {
-        if (empty($countryCode)) {
-            $countryCode = NewSMS::DEFAULT_COUNTRY_CODE;
-        }
         $redis = RedisDB::getConn();
         $cacheKey = self::VALIDATE_CODE_CACHE_KEY_PRI . $countryCode . $mobile;
         $sendTimeCacheKey = self::VALIDATE_CODE_TIME_CACHE_KEY_PRI . $countryCode . $mobile;

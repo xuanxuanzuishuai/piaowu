@@ -65,6 +65,10 @@ class StudentWebRouter extends RouterBase
         '/student_web/order/landing_recall_create_order' => ['method' => ['post'], 'call' => Order::class . ':LandingRecallCreateOrder', 'middles' => []],
         // Landing页召回,解密手机号
         '/student_web/landing_recall/decode_sign' => ['method' => ['get'], 'call' => LandingRecall::class . ':decodeSign', 'middles' => []],
-        
+
+        //发送验证码
+        '/student_web/student/send_sms_code' => ['method' => ['get'], 'call'   => Student::class . ':sendSmsCode', 'middles' => []],
+        //鲸鱼数据记录
+        '/student_web/student/whale_data_record' => ['method' => ['get'], 'call'   => Student::class . ':whaleDataRecord', 'middles' => []],
     ];
 }

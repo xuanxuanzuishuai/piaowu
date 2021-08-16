@@ -318,4 +318,71 @@ class Student extends ControllerBase
         }
         return HttpHelper::buildResponse($response, $result);
     }
+
+    /**
+     * 发送注册验证码
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function sendSmsCode(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key'        => 'mobile',
+                'type'       => 'required',
+                'error_code' => 'mobile_is_required'
+            ],
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $errorCode = CommonServiceForApp::sendValidateCode($params['mobile'], CommonServiceForApp::SIGN_WX_STUDENT_APP);
+        if (!empty($errorCode)) {
+            $result = Valid::addAppErrors([], $errorCode);
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        return HttpHelper::buildResponse($response, []);
+    }
+
+
+    /**
+     * 数据记录
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function whaleDataRecord(Request $request, Response $response)
+    {
+        try {
+            $rules  = [
+                [
+                    'key'        => 'mobile',
+                    'type'       => 'required',
+                    'error_code' => 'mobile_is_required'
+                ],
+                [
+                    'key'        => 'sms_code',
+                    'type'       => 'required',
+                    'error_code' => 'sms_code_is_required',
+                ],
+            ];
+            $params = $request->getParams();
+            $result = Valid::appValidate($params, $rules);
+            if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+                return $response->withJson($result, StatusCode::HTTP_OK);
+            }
+            if (!CommonServiceForApp::checkValidateCode($params["mobile"], $params["sms_code"])) {
+                return $response->withJson(Valid::addAppErrors([], 'validate_code_error'), StatusCode::HTTP_OK);
+            }
+            RtActivityService::whaleDataRecord($params);
+        } catch (RuntimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
+        return HttpHelper::buildResponse($response, []);
+    }
 }

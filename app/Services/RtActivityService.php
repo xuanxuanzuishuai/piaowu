@@ -23,6 +23,7 @@ use App\Models\Erp\ErpStudentAccountModel;
 use App\Models\Erp\ErpStudentCouponV1Model;
 use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Erp\ErpStudentModel;
+use App\Models\ExternalUserDataRecordModel;
 use App\Models\OperationActivityModel;
 use App\Models\ParamMapModel;
 use App\Models\QrInfoOpCHModel;
@@ -1646,6 +1647,49 @@ class RtActivityService
             $qrInfo['invited_mobile'] = $invitedMobile;
         }
         return $qrInfo;
+    }
+
+    /**
+     * 数据记录
+     * @param $request
+     * @return bool
+     * @throws RunTimeException
+     */
+    public static function whaleDataRecord($request)
+    {
+        //防点击过快
+        $redisKey = sprintf('whale_data_record_%s', $request['mobile']);
+        $repeat   = Util::preventRepeatSubmit($redisKey);
+        if (!$repeat) {
+            throw new RunTimeException(['request_repeat']);
+        }
+
+       //查询数据是否存在
+        $record = ExternalUserDataRecordModel::getRecord(['mobile' => $request['mobile']], ['id']);
+        if ($record) {
+            return true;
+        }
+
+        //注册用户
+        $appId         = Constants::SMART_APP_ID;
+        $userType      = Constants::USER_TYPE_STUDENT;
+        $student       = UserService::studentRegisterBound($appId, $request['mobile'], $request['channel_id'], null, null, $userType);
+        if (empty($student)) {
+            throw new RunTimeException(['user_register_fail']);
+        }
+
+        //记录数据
+        $insertData = [
+            'mobile'      => $request['mobile'],
+            'student_id'  => $student['student_id'],
+            'create_time' => time(),
+        ];
+        $res = ExternalUserDataRecordModel::insertRecord($insertData);
+        if (empty($res)) {
+            SimpleLogger::info("whaleDataRecord: insert fail", $insertData);
+            throw new RunTimeException(["insert_failure"]);
+        }
+        return true;
     }
 
 }
