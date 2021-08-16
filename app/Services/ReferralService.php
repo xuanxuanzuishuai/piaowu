@@ -484,18 +484,21 @@ class ReferralService
             $posterConfig = json_decode($posterConfig, true);
         }
 
+        SimpleLogger::info("save file start", []);
         $fileName = md5($headImageUrl);
         $thumb = $_ENV['ENV_NAME'] . '/' . AliOSS::DIR_REFERRAL . '/' . $fileName . '.jpg';
         if (!AliOSS::doesObjectExist($thumb)) {
             $tmpFileFullPath = $_ENV['STATIC_FILE_SAVE_PATH'] . "/" . $fileName . ".jpg";
             chmod($tmpFileFullPath, 0755);
             file_put_contents($tmpFileFullPath, file_get_contents($headImageUrl));
+            SimpleLogger::info("upload file start", []);
             if (file_exists($tmpFileFullPath)) {
                 AliOSS::uploadFile($thumb, $tmpFileFullPath);
             }
             unlink($tmpFileFullPath);
         }
 
+        SimpleLogger::info("create qr start", []);
         // 获取小程序码 - 如果获取小程序码失败，返回空
         $userQrInfo = MiniAppQrService::getUserMiniAppQr(
             $studentInfo['id'],
@@ -512,6 +515,7 @@ class ReferralService
             ];
         }
 
+        SimpleLogger::info("create user poster start", []);
         $waterImgEncode = str_replace(["+", "/"], ["-", "_"],
             base64_encode($thumb . "?x-oss-process=image/resize,w_90,h_90/circle,r_100/format,png"));
         $waterMark = [];
