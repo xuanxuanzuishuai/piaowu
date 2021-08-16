@@ -85,7 +85,7 @@ class BillMapService
     public static function getQrInfoByBillId(string $parentBillId, int $studentId)
     {
         //新绑定逻辑条件检测 - 先读取clickhouse，如果没有查询param_map表
-        $billMapInfo = BillMapModel::getRecord(['student_id' => $studentId, 'bill_id' => $parentBillId]);
+        $billMapInfo = BillMapModel::getRecord(['student_id' => $studentId, 'bill_id' => $parentBillId, 'type'=>BillMapModel::USER_TYPE_STUDENT]);
         if (empty($billMapInfo)) {
             return [];
         }
