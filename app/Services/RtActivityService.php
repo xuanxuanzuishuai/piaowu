@@ -1663,24 +1663,25 @@ class RtActivityService
         if (!$repeat) {
             throw new RunTimeException(['request_repeat']);
         }
-
-       //查询数据是否存在
-        $record = ExternalUserDataRecordModel::getRecord(['mobile' => $request['mobile']], ['id']);
-        if ($record) {
-            return true;
+        //是否已注册
+        $student = DssStudentModel::getRecord(['mobile' => $request['mobile']], ['id']);
+        if ($student) {
+            $record = ExternalUserDataRecordModel::getRecord(['student_id' => $student['id']], ['id']);
+            if ($record) {
+                return true;
+            }
+            $student['student_id'] = $student['id'];
+        } else {
+            //注册用户
+            $appId         = Constants::SMART_APP_ID;
+            $userType      = Constants::USER_TYPE_STUDENT;
+            $student       = UserService::studentRegisterBound($appId, $request['mobile'], $request['channel_id'] ?? 0, null, null, $userType);
+            if (empty($student)) {
+                throw new RunTimeException(['user_register_fail']);
+            }
         }
-
-        //注册用户
-        $appId         = Constants::SMART_APP_ID;
-        $userType      = Constants::USER_TYPE_STUDENT;
-        $student       = UserService::studentRegisterBound($appId, $request['mobile'], $request['channel_id'], null, null, $userType);
-        if (empty($student)) {
-            throw new RunTimeException(['user_register_fail']);
-        }
-
         //记录数据
         $insertData = [
-            'mobile'      => $request['mobile'],
             'student_id'  => $student['student_id'],
             'create_time' => time(),
         ];

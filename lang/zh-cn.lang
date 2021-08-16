@@ -415,3 +415,9 @@ invited_is_transfer_relation='被推荐人当前不符合绑定条件，提交�
 referee_not_conformity='推荐人不符合条件'
 create_qr_id_error='创建qr_id失败'
 already_has_enable_rule='已经存在已启用状态的规则'
+template_poster_word_offline_tips='该海报文案在%s中使用，请确认是否下线该海报文案'
+share_image_path_is_required='分享图不能为空'
+poster_word_id_is_required='海报分享语不能为空'
+order_is_positive_integer='排序必须为正整数'
+sms_code_is_required='验证码不能为空'
+
