@@ -42,7 +42,7 @@ try {
 }
 foreach ($parentAgentData as $val) {
     try {
-        $topicObj->staticSummaryData(['agent_id' => $val['id']])->publish(mt_rand(0, 600));
+        $topicObj->staticSummaryData(['agent_id' => $val['id']])->publish(mt_rand(0, 240));
     } catch (\Exception $e) {
         SimpleLogger::error($e->getMessage(), ['queue_data' => $val]);
     }
