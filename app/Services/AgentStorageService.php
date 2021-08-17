@@ -62,14 +62,14 @@ class AgentStorageService
         $db = MysqlDB::getDB();
         $db->beginTransaction();
 
-        $res = AgentPreStorageRefundModel::add($refundInsertData, $log);
-
-        if (empty($res)) {
+        $refundId = AgentPreStorageRefundModel::add($refundInsertData, $log);
+        if (empty($refundId)) {
             $db->rollBack();
             throw new RunTimeException(['insert_failure']);
         } else {
             $db->commit();
         }
+        self::verifyRefund(['refund_id' => $refundId, 'operation' => AgentPreStorageRefundModel::STATUS_VERIFY_PASS, 'remark' => '自动审核'], EmployeeModel::SYSTEM_EMPLOYEE_ID);
         return true;
     }
 
@@ -89,7 +89,6 @@ class AgentStorageService
         if ($amount['amount'] < $refundAmount) {
             throw new RunTimeException(['agent_amount_not_enough']);
         }
-
         return $amount['amount'];
     }
 
@@ -156,7 +155,6 @@ class AgentStorageService
      */
     public static function verifyRefund(array $params, int $employeeId): bool
     {
-
         $time = time();
 
         $refundUpdateData = [
@@ -273,6 +271,7 @@ class AgentStorageService
             throw new RunTimeException(['insert_failure']);
         }
         $db->commit();
+        self::approvalAgentPreStorage($storageId, AgentPreStorageModel::STATUS_APPROVED, '自动审核', EmployeeModel::SYSTEM_EMPLOYEE_ID);
         return true;
     }
 
@@ -784,7 +783,6 @@ class AgentStorageService
             $detail['amount']           = (int)Util::yuan($detail['amount']);
             $detail['create_time_show'] = date('Y-m-d H:i:s', $detail['create_time']);
             $detail['operation_log']    = AgentPreStorageReviewLogModel::getLogList($refundId);
-
             foreach ($detail['operation_log'] as &$value) {
                 $value['type_show']        = AgentPreStorageReviewLogModel::REFUND_TYPE_MAP[$value['type']];
                 $value['create_time_show'] = date('Y-m-d H:i:s', $value['create_time']);
