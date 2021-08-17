@@ -22,6 +22,9 @@ class QrInfoOpCHModel
      */
     public static function getQrInfoBySign($qrSign, array $fields = [])
     {
+        if (empty($qrSign)) {
+            return [];
+        }
         $fieldStr = '*';
         if (!empty($fields)) {
             $fieldStr = '`' . implode('`,`', $fields) . '`';
