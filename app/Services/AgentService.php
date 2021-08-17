@@ -442,10 +442,22 @@ class AgentService
         $detail['package_list'] = AgentSalePackageModel::getPackageData($agentId, UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT);
         $detail['service_employee_data'] = [];
         if (!empty($detail['service_employee_id'])) {
-            $employeeIds = explode(',', $detail['service_employee_id']);
-            $employeeName = explode(',', $detail['e_s_name']);
-            foreach ($employeeIds as $lk => $lv) {
-                $detail['service_employee_data'][] = ['id' => $lv, 'name' => $employeeName[$lk]];
+
+            $employeeList = AgentServiceEmployeeModel::getRecords([
+                'agent_id' => $detail['id'],
+                'status' => AgentServiceEmployeeModel::STATUS_OK
+            ],['employee_id']);
+
+            if (!empty($employeeList)){
+                $employeeIds = array_column($employeeList,'employee_id');
+                $employeeNameList = EmployeeModel::getRecords([
+                    'id'     => $employeeIds,
+                    'status' => EmployeeModel::STATUS_NORMAL,
+                ], ['id', 'name']);
+
+                foreach ($employeeNameList as $value) {
+                    $detail['service_employee_data'][] = ['id' => $value['id'], 'name' => $value['name']];
+                }
             }
         }
         //助教信息
@@ -538,6 +550,7 @@ class AgentService
                     return $data;
                 }
                 $where[AgentServiceEmployeeModel::$table . '.employee_id'] = array_column($serviceEmployeeIds,'id');
+                $where[AgentServiceEmployeeModel::$table . '.status'] = AgentServiceEmployeeModel::STATUS_OK;
             }
         }
 
@@ -583,7 +596,7 @@ class AgentService
     {
         $employeeName = [];
         if (!empty($esIds)) {
-            $employeeName = array_column(EmployeeModel::getRecords(['id' => $esIds, 'status' => EmployeeModel::STATUS_NORMAL], ['id', 'name']) ?? [], 'name', 'id');
+            $employeeName = array_column(EmployeeModel::getRecords(['id' => $esIds], ['id', 'name']) ?? [], 'name', 'id');
         }
         $province = $city = [];
         $provinceIds = array_column($agentData, 'province');
