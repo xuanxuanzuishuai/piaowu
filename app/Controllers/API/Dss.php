@@ -44,6 +44,7 @@ use App\Services\WechatService;
 use App\Services\WechatTokenService;
 use App\Services\WeekActivityService;
 use App\Services\WeekWhiteListService;
+use App\Services\WhiteGrantRecordService;
 use App\Services\WhiteRecordService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -1286,6 +1287,83 @@ class Dss extends ControllerBase
 
         return HttpHelper::buildResponse($response, $list);
 
+    }
+
+    /**
+     * 获取发放记录
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getWhiteGrantRecord(Request $request, Response $response){
+        $params = $request->getParams();
+
+        list($page, $pageSize) = Util::formatPageCount($params);
+
+        $list = WhiteGrantRecordService::list($params, $page, $pageSize);
+
+        return HttpHelper::buildResponse($response, $list);
+    }
+
+    /**
+     * 更新发放记录
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function updateGrantRecord(Request $request, Response $response){
+        $params = $request->getParams();
+        $rules = [
+            [
+                'key'           => 'id',
+                'type'          => 'required',
+                'error_code'    => 'id_not_exist'
+            ],
+            [
+                'key'           => 'remark',
+                'type'          => 'required',
+                'error_code'    => 'remark_is_required'
+            ],
+        ];
+
+        $result = Valid::appValidate($params, $rules);
+
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $res = WhiteGrantRecordService::updateGrantRecord($params);
+
+        if($res['code'] != Valid::CODE_SUCCESS){
+            return $response->withJson($res);
+        }
+
+        return HttpHelper::buildResponse($response, []);
+    }
+
+    public function manualGrant(Request $request, Response $response){
+        $params = $request->getParams();
+        $rules = [
+            [
+                'key'           => 'id',
+                'type'          => 'required',
+                'error_code'    => 'id_not_exist'
+            ],
+        ];
+
+        $result = Valid::appValidate($params, $rules);
+
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $res = WhiteGrantRecordService::manualGrant($params);
+
+        if($res['code'] != Valid::CODE_SUCCESS){
+            return $response->withJson($res);
+        }
+
+        return HttpHelper::buildResponse($response, []);
     }
 
 }

@@ -22,7 +22,7 @@ class ErpReferralService
 
     /** 任务状态 */
     const EVENT_TASK_STATUS_COMPLETE = 2;
-
+    const EVENT_TASK_STATUS_UNCOMPLETE = 1;
     /** 奖励状态状态 */
     const AWARD_STATUS_REJECTED = 0; //不发放
     const AWARD_STATUS_WAITING = 1; //待发放

@@ -13,12 +13,19 @@ class WeChatPackage
     private $appId;
     private $certPem;
     private $keyPem;
-    function __construct($appId, $busiType)
+    function __construct($appId, $busiType, $from = 0)
     {
-        $this->mchId = DictConstants::get(DictConstants::WECHAT_MCHID, $appId . '_' . $busiType);
+        if($from){
+            //周周领奖配置
+            $this->mchId = DictConstants::get(DictConstants::WECHAT_TRANSFER_TO_USER, $appId . '_' . $busiType);
+            $this->certPem = DictConstants::get(DictConstants::WECHAT_TRANSFER_CERT_PEM, $appId . '_' . $busiType);
+            $this->keyPem = DictConstants::get(DictConstants::WECHAT_TRANSFER_KEY_PEM, $appId . '_' . $busiType);
+        }else{
+            $this->mchId = DictConstants::get(DictConstants::WECHAT_MCHID, $appId . '_' . $busiType);
+            $this->certPem = DictConstants::get(DictConstants::WECHAT_API_CERT_PEM, $appId . '_' . $busiType);
+            $this->keyPem = DictConstants::get(DictConstants::WECHAT_API_KEY_PEM, $appId . '_' . $busiType);
+        }
         $this->appId = DictConstants::get(DictConstants::WECHAT_APPID, $appId . '_' . $busiType);
-        $this->certPem = DictConstants::get(DictConstants::WECHAT_API_CERT_PEM, $appId . '_' . $busiType);
-        $this->keyPem = DictConstants::get(DictConstants::WECHAT_API_KEY_PEM, $appId . '_' . $busiType);
         $this->client = new Client();
     }
 

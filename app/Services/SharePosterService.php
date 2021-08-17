@@ -32,6 +32,7 @@ use App\Models\TemplatePosterModel;
 use App\Models\TemplatePosterWordModel;
 use App\Models\WeChatAwardCashDealModel;
 use App\Models\WeekActivityModel;
+use App\Models\WeekWhiteListModel;
 use App\Services\Queue\QueueService;
 use I18N\Lang;
 
@@ -596,6 +597,11 @@ class SharePosterService
             throw new RunTimeException(['get_share_poster_error']);
         }
 
+        //根据uuid获取白名单
+        $uuids = array_column($posters, 'uuid');
+        $whiteList = WeekWhiteListModel::getRecords(['uuid'=>$uuids, 'status'=>WeekWhiteListModel::NORMAL_STATUS],['uuid']);
+        $whiteList = array_column($whiteList, null, 'uuid');
+
         $divisionTime = DictConstants::get(DictConstants::NORMAL_UPLOAD_POSTER_DIVISION_TIME, 'division_time');
         $taskConfig = DictConstants::getSet(DictConstants::NORMAL_UPLOAD_POSTER_TASK);
 
@@ -643,11 +649,19 @@ class SharePosterService
                 $taskId = $taskConfig[$count] ?? $taskConfig['-1'];
             }
             if (!empty($update) && empty($poster['points_award_ids'])) {
+
+                if($poster['type'] == SharePosterModel::TYPE_WEEK_UPLOAD && isset($whiteList[$poster['uuid']])){
+                    $status = ErpReferralService::EVENT_TASK_STATUS_UNCOMPLETE;
+                }else{
+                    $status = ErpReferralService::EVENT_TASK_STATUS_COMPLETE;
+                }
+
                 $needAwardList[] = [
                     'id' => $poster['id'],
                     'uuid' => $poster['uuid'],
                     'task_id' => $taskId,
-                    'activity_id' => $poster['activity_id']
+                    'activity_id' => $poster['activity_id'],
+                    'status'    => $status,
                 ];
             }
             //智能产品激活
@@ -670,7 +684,8 @@ class SharePosterService
             return false;
         }
         foreach ($data as $poster) {
-            $res = (new Erp())->addEventTaskAward($poster['uuid'], $poster['task_id'], ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
+            $status = $poster['status'] ?? ErpReferralService::EVENT_TASK_STATUS_COMPLETE;
+            $res = (new Erp())->addEventTaskAward($poster['uuid'], $poster['task_id'], $status);
             if (empty($res['data'])) {
                 SimpleLogger::error('ERP_CREATE_USER_EVENT_TASK_AWARD_FAIL', [$poster]);
             }

@@ -2,7 +2,7 @@
 /**
  * Created by PhpStorm.
  * User: llp
- * Date: 2021/1/28
+ * Date: 2021/8/13
  * Time: 11:34
  */
 
@@ -10,6 +10,7 @@ namespace App\Services;
 
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
+use App\Models\Dss\DssStudentModel;
 use App\Models\WeekWhiteListModel;
 use App\Models\WhiteRecordModel;
 
@@ -20,10 +21,9 @@ class WhiteRecordService
         return WhiteRecordModel::batchInsert($data);
     }
 
-    public static function createOne($uuid, $mobile, $type, $operator_id){
+    public static function createOne($uuid, $type, $operator_id){
         $data = [
             'uuid'  => $uuid,
-            'mobile'=> $mobile,
             'type'  => $type,
             'operator_id' => $operator_id,
             'create_time' => time(),
@@ -32,6 +32,13 @@ class WhiteRecordService
         return WhiteRecordModel::insertRecord($data);
     }
 
+    /**
+     * 获取操作记录列表
+     * @param $params
+     * @param $page
+     * @param $pageSize
+     * @return array
+     */
     public static function list($params, $page, $pageSize){
 
         $where = [];
@@ -40,7 +47,8 @@ class WhiteRecordService
         }
 
         if(!empty($params['mobile'])){
-            $where['mobile'] = $params['mobile'];
+            $studentId = DssStudentModel::getRecord(['mobile'=>$params['mobile']],'id');
+            $where['student_id'] = $studentId ?? 0;
         }
 
         $total = WhiteRecordModel::getCount($where);
@@ -52,11 +60,8 @@ class WhiteRecordService
         $where['LIMIT'] = [($page - 1) * $pageSize, $pageSize];
         $list = WhiteRecordModel::getRecords($where);
 
-        foreach ($list as &$one){
-            $one['type_text'] = WhiteRecordModel::$types[$one['type']];
-        }
+        $list = WeekWhiteListService::initList($list);
+
         return compact('list', 'total');
-
-
     }
 }

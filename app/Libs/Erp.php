@@ -25,6 +25,8 @@ class Erp
     const AWARD_RELATE_COMMUNITY = 2;
     const AWARD_RELATE_REFEREE = 3;
 
+    const SOURCE_TYPE_OP_TO_MONEY = 7001; //OP系统扣减兑换现金
+
     const API_CREATE_BILL = '/ai_dss/bill/create_bill';
     const API_BILL_DETAIL = '/ai_dss/bill/detail';
     const API_PACKAGE_LIST = '/ai_dss/package/package_list';
@@ -92,6 +94,9 @@ class Erp
     const API_GRANT_COUPON = '/api/student_coupon/distribution';
     //发放金叶子
     const API_GRANT_GOLD_LEAF = '/api/consumer/%sstudent_account_callback_referral';
+    //用户余额扣减
+    const API_REDUCE_ACCOUNT = '/api/student_account/deduct';
+
 
     private $host;
 
@@ -893,6 +898,16 @@ class Erp
             ErpDictModel::getKeyValue(Constants::DICT_TYPE_SYSTEM_ENV, Constants::DICT_KEY_NSQ_TOPIC_PREFIX));
         $result = HttpHelper::requestJson($this->host . $url, $params, 'POST');
         if ($result['code'] == 0) {
+            return true;
+        }
+        return false;
+    }
+
+
+    public function reduce_account($params){
+        $this->host = 'erp-pre.xiaoyezi.com';
+        $res = self::commonAPI(self::API_REDUCE_ACCOUNT, $params, 'POST');
+        if($res && $res['code'] == Valid::CODE_SUCCESS){
             return true;
         }
         return false;

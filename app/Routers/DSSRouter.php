@@ -89,6 +89,9 @@ class DSSRouter extends RouterBase
         '/dss/week_white/list' => ['method' => ['get'], 'call' => Dss::class . ':getWeekWhiteList'],
         '/dss/week_white/del' => ['method' => ['post'], 'call' => Dss::class . ':delWeekWhite'],
         '/dss/white_record/list' => ['method' => ['get'], 'call' => Dss::class . ':getWeekWhiteRecord'],
+        '/dss/white_grant/list' => ['method' => ['get'], 'call' => Dss::class . ':getWhiteGrantRecord'],
+        '/dss/white_grant/update' => ['method' => ['post'], 'call' => Dss::class . ':updateGrantRecord'],
+        '/dss/white_grant/manualGrant' => ['method' => ['post'], 'call' => Dss::class . ':manualGrant'],
 
     ];
 }

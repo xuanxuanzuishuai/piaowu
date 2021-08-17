@@ -10,8 +10,10 @@ namespace App\Services;
 
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
+use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\Dss\DssStudentModel;
+use App\Models\EmployeeModel;
 use App\Models\WeekWhiteListModel;
 use App\Models\WhiteRecordModel;
 
@@ -24,31 +26,24 @@ class WeekWhiteListService
      * @throws RunTimeException
      */
     public static function create($uuids, $operator_id){
-
-        $errData = [];
-
         //检测是否重复
         $uniqueIds = array_unique($uuids);
         $repeatIds = array_values(array_diff_assoc($uuids, $uniqueIds));
+        $errData['repeatIds'] = $repeatIds;
 
-        if($repeatIds){
-            $errData['repeatIds'] = $repeatIds;
-        }
 
         //检测是否存在
         $uuidList = DssStudentModel::getUuids($uniqueIds);
         $uuidList = array_column($uuidList, null, 'uuid');
         $diff = array_diff($uniqueIds, array_keys($uuidList));
-        if($diff){
-            $errData['not_exists'] = array_values($diff);
-        }
+        $errData['not_exists'] = array_values($diff);
+
 
         //检测是否添加过
         $exists = WeekWhiteListModel::getRecords(['uuid'=>$uniqueIds],'uuid');
-        if($exists){
-            $errData['exists'] = $exists;
-        }
-        if($errData){
+        $errData['exists'] = $exists;
+
+        if($errData['repeatIds'] || $errData['not_exists'] || $errData['exists']){
             return ['errorList' => $errData];
         }
 
@@ -59,8 +54,8 @@ class WeekWhiteListService
         foreach ($uniqueIds as $uuid){
 
             $row = [
+                'student_id' => $uuidList[$uuid]['id'],
                 'uuid'  => $uuid,
-                'mobile' => $uuidList[$uuid]['mobile'],
                 'operator_id'   => $operator_id,
                 'create_time'   => $now,
                 'status'        => WeekWhiteListModel::NORMAL_STATUS
@@ -69,7 +64,6 @@ class WeekWhiteListService
 
             $log = [
                 'uuid' => $uuid,
-                'mobile' => $row['mobile'],
                 'operator_id' => $operator_id,
                 'type'   => WhiteRecordModel::TYPE_ADD
             ];
@@ -118,8 +112,10 @@ class WeekWhiteListService
             $where['uuid'] = $params['uuid'];
         }
 
+        $studentInfo = [];
         if(!empty($params['mobile'])){
-            $where['mobile'] = $params['mobile'];
+            $studentInfo = DssStudentModel::getRecord(['mobile'=>$params['mobile']],['id','uuid','mobile']);
+            $where['student_id'] = $studentInfo['id'] ?? 0;
         }
 
         $total = WeekWhiteListModel::getCount($where);
@@ -131,7 +127,46 @@ class WeekWhiteListService
         $where['LIMIT'] = [($page - 1) * $pageSize, $pageSize];
 
         $list = WeekWhiteListModel::getRecords($where);
+
+        $list = self::initList($studentInfo, $list);
+
         return compact('list', 'total');
+    }
+
+    public static function initList($list){
+
+        $uuids = array_column($list, 'uuid');
+        $students = DssStudentModel::getUuids($uuids);
+        $students = array_column($students, null, 'uuid');
+
+        $course_manage_ids = array_column($list, 'course_manage_id');
+        $operator_ids = array_column($list, 'operator_id');
+
+
+        $operator_ids = array_unique(array_merge($course_manage_ids, $operator_ids));
+
+        $employees = EmployeeModel::getRecords(['id'=>$operator_ids],['id','name']);
+
+        $employees = array_column($employees, null, 'id');
+
+        foreach ($list as &$one){
+            $one['mobile']          = Util::hideUserMobile($students[$one['uuid']]['mobile'] ?? '');
+            $one['operator_name']   = $employees[$one['operator_id']]['name'] ?? '系统';
+
+            if(isset($one['type_text'])){
+                $one['type_text'] = WhiteRecordModel::$types[$one['type']];
+            }
+
+            if(isset($one['course_manage_id'])){
+                $one['course_manage_name'] = $employees[$one['course_manage_id']]['name'] ?? '';
+            }
+
+            if(isset($one['grant_money'])){
+                $one['grant_money'] = $one['grant_money'] / 100;
+            }
+        }
+
+        return $list;
     }
 
     /**
@@ -158,7 +193,7 @@ class WeekWhiteListService
                 throw new RunTimeException(['update_failure']);
             }
 
-            $insert = WhiteRecordService::createOne($info['uuid'], $info['mobile'], WhiteRecordModel::TYPE_DEL, $operator_id);
+            $insert = WhiteRecordService::createOne($info['uuid'], WhiteRecordModel::TYPE_DEL, $operator_id);
 
             if(!$insert){
                 throw new RunTimeException(['insert_failure']);
@@ -170,8 +205,5 @@ class WeekWhiteListService
             $db->rollBack();
             return false;
         }
-
     }
-
-
 }

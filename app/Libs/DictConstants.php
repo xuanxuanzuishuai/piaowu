@@ -333,6 +333,31 @@ class DictConstants {
         ]
     ];
 
+    //微信白名单转账配置
+    const WECHAT_TRANSFER_TO_USER = [
+        'type' => 'wechat_transfer_mchid',
+        'keys' => [
+            '8_1',
+        ],
+    ];
+
+    //微信白名单转账cert配置
+    const WECHAT_TRANSFER_CERT_PEM = [
+        'type' => 'wechat_transfer_cert_pem',
+        'keys' => [
+            '8_1',
+        ],
+    ];
+
+    //微信白名单转账key配置
+    const WECHAT_TRANSFER_KEY_PEM = [
+        'type' => 'wechat_transfer_key_pem',
+        'keys' => [
+            '8_1',
+        ],
+    ];
+
+
     //不同应用的微信商户号
     const WECHAT_MCHID = [
         'type' => 'wechat_mchid',
