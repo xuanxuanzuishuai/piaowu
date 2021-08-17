@@ -426,9 +426,10 @@ class AgentService
     /**
      * 获取代理账户详情
      * @param $agentId
+     * @param $isShow
      * @return array
      */
-    public static function detailAgent($agentId)
+    public static function detailAgent($agentId, $isShow = true)
     {
         //详情
         $detail = AgentModel::detail($agentId);
@@ -443,20 +444,28 @@ class AgentService
         $detail['service_employee_data'] = [];
         if (!empty($detail['service_employee_id'])) {
 
-            $employeeList = AgentServiceEmployeeModel::getRecords([
-                'agent_id' => $detail['id'],
-                'status' => AgentServiceEmployeeModel::STATUS_OK
-            ],['employee_id']);
+            if ($isShow) {
+                $employeeIds = explode(',', $detail['service_employee_id']);
+                $employeeName = explode(',', $detail['e_s_name']);
+                foreach ($employeeIds as $lk => $lv) {
+                    $detail['service_employee_data'][] = ['id' => $lv, 'name' => $employeeName[$lk]];
+                }
+            } else {
+                $employeeList = AgentServiceEmployeeModel::getRecords([
+                    'agent_id' => $detail['id'],
+                    'status' => AgentServiceEmployeeModel::STATUS_OK
+                ],['employee_id']);
 
-            if (!empty($employeeList)){
-                $employeeIds = array_column($employeeList,'employee_id');
-                $employeeNameList = EmployeeModel::getRecords([
-                    'id'     => $employeeIds,
-                    'status' => EmployeeModel::STATUS_NORMAL,
-                ], ['id', 'name']);
+                if (!empty($employeeList)){
+                    $employeeIds = array_column($employeeList,'employee_id');
+                    $employeeNameList = EmployeeModel::getRecords([
+                        'id'     => $employeeIds,
+                        'status' => EmployeeModel::STATUS_NORMAL,
+                    ], ['id', 'name']);
 
-                foreach ($employeeNameList as $value) {
-                    $detail['service_employee_data'][] = ['id' => $value['id'], 'name' => $value['name']];
+                    foreach ($employeeNameList as $value) {
+                        $detail['service_employee_data'][] = ['id' => $value['id'], 'name' => $value['name']];
+                    }
                 }
             }
         }

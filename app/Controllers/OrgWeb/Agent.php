@@ -218,7 +218,7 @@ class Agent extends ControllerBase
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        $data = AgentService::detailAgent($params['agent_id']);
+        $data = AgentService::detailAgent($params['agent_id'],false);
         return HttpHelper::buildResponse($response, $data);
     }
 
