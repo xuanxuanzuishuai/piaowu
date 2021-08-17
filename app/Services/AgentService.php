@@ -522,7 +522,6 @@ class AgentService
             $where[AgentInfoModel::$table . '.city'] = (int)$params['city_code'];
         }
 
-        $where[AgentServiceEmployeeModel::$table . '.status'] = AgentServiceEmployeeModel::STATUS_OK;
         //数据权限
         if ($params['only_read_self']) {
             $where["OR"] = [
@@ -554,25 +553,33 @@ class AgentService
             return $agentList;
         }
 
-        $e_s_ids = array_column($agentList['list'],'e_s_id');
-        $esIds = [];
-        foreach ($e_s_ids as $value) {
-            if (!empty($value)) {
-                $esIds = array_merge($esIds, explode(',', $value));
-            }
+
+        $agentIds = array_column($agentList['list'],'id');
+
+        $agentEmployee = AgentServiceEmployeeModel::getRecords([
+            'agent_id' => $agentIds,
+            'status' => AgentServiceEmployeeModel::STATUS_OK
+        ],['agent_id','employee_id']);
+
+        $esIds = array_column($agentEmployee,'employee_id');
+
+        $agentEmployeeIds = [];
+        foreach ($agentEmployee as $value) {
+            $agentEmployeeIds[$value['agent_id']][] = $value['employee_id'];
         }
 
-        $agentList['list'] = self::formatAgentData($agentList['list'], array_filter(array_unique($esIds)));
+        $agentList['list'] = self::formatAgentData($agentList['list'], $agentEmployeeIds, array_filter(array_unique($esIds)));
         return $agentList;
     }
 
     /**
      * 格式化数据
      * @param $agentData
+     * @param $agentEmployeeIds
      * @param $esIds
      * @return mixed
      */
-    private static function formatAgentData($agentData, $esIds = [])
+    private static function formatAgentData($agentData, $agentEmployeeIds = [] ,$esIds = [])
     {
         $employeeName = [];
         if (!empty($esIds)) {
@@ -591,11 +598,10 @@ class AgentService
         foreach ($agentData as &$agv) {
             $agv['e_s_name'] = '';
             //负责员工
-            if (!empty($agv['e_s_id'])){
-                $eIds = explode(',', $agv['e_s_id']);
+            if (!empty($agentEmployeeIds[$agv['id']])){
                 $name = [];
-                foreach ($eIds as $eId){
-                    $name[] = $employeeName[$eId];
+                foreach ($agentEmployeeIds[$agv['id']] as $eId){
+                    $name[] = $employeeName[$eId] ?? '';
                 }
                 $agv['e_s_name'] = implode(',',array_filter($name));
             }

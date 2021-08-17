@@ -316,7 +316,6 @@ class AgentModel extends Model
                 AgentOrganizationModel::$table . '.amount',
                 AgentOrganizationModel::$table . '.name(organization)',
                 EmployeeModel::$table . '.name(e_name)',
-                'e_s_id' => Medoo::raw('group_concat('. AgentServiceEmployeeModel::$table.'.employee_id)')
             ],
             [
                 "AND" => $where,
