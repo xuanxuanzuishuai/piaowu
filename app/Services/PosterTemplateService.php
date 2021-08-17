@@ -505,6 +505,9 @@ class PosterTemplateService
         ];
         // 查询活动对应海报
         $posterList = PosterService::getActivityPosterList($activityInfo);
+        if (empty($posterList)) {
+            return $data;
+        }
         $channel = self::getChannelByType($type);
         $extParams = [
             'user_current_status' => $userDetail['student_status'] ?? 0,
