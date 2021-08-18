@@ -128,6 +128,11 @@ class WhiteGrantRecordService
         $student = DssStudentModel::getRecord(['uuid'=>$grantInfo['uuid']]);
 
         $nextData['student'] = $student;
+        $nextData['grantInfo'] = $grantInfo;
+        $nextData['awardNum']   = $grantInfo['grant_money'];
+        $nextData['operator_uuid'] = $params['operator_id'];
+        $nextData['awardIds'] = explode(',', $grantInfo['award_ids']);
+        $nextData['uuid'] = $grantInfo['uuid'];
         try{
             switch ($grantInfo['grant_step']){
                 case WhiteGrantRecordModel::GRANT_STEP_1:
@@ -141,30 +146,19 @@ class WhiteGrantRecordService
                         return Valid::addErrors([], 'manualGrant', 'emptyData');
                     }
 
-                    $nextData['grantInfo'] = $grantInfo;
-                    $nextData['uuid'] = $grantInfo['uuid'];
-                    $nextData['list'] = $list;
-
+                    $nextData['list'] = $list[$grantInfo['uuid']];
                     WhiteGrantRecordService::grant($nextData);
                     break;
                 case WhiteGrantRecordModel::GRANT_STEP_3:
-                    $nextData = [
-                        'student' => ['uuid' => $grantInfo['uuid']],
-                        'awardNum'   => $grantInfo['grant_money'],
-                        'operator_uuid' => $params['operator_id']
-                    ];
                     WhiteGrantRecordService::deduction($nextData);
                     break;
                 case WhiteGrantRecordModel::GRANT_STEP_4:
-                    $nextData = [
-                        'student' => ['uuid' => $grantInfo['uuid']]
-                    ];
                     WhiteGrantRecordService::getBindInfo($nextData);
                     break;
                 case WhiteGrantRecordModel::GRANT_STEP_5:
-                    $userWeixin = UserWeiXinModel::getRecord(['user_id' => $student['id']],['status','open_id']);
-                    $nextData['open_id'] = $userWeixin['open_id'];
-                    WhiteGrantRecordService::weixinToAccount($nextData);
+                    $wechatSubscribeInfo = DssWechatOpenIdListModel::getUuidOpenIdInfo([$student['uuid']]);
+                    $nextData['open_id'] = $wechatSubscribeInfo[0]['open_id'];
+                    WhiteGrantRecordService::sendPackage($nextData);
                     break;
                 default:
                     return Valid::addErrors([], 'manualGrant', 'stepNotDefind');
@@ -201,7 +195,8 @@ class WhiteGrantRecordService
     public static function sendDataToErp($next){
         $taskArr = [];
         $awardNum = $next['grantInfo']['grant_money'] ?? 0;
-        $awardIds = $next['grantInfo']['awardIds'] ?? [];
+        $awardIds = $next['grantInfo']['award_ids'] ?? [];
+
         if($awardIds){
             $awardIds = explode(',', $awardIds);
         }
@@ -313,6 +308,7 @@ class WhiteGrantRecordService
         $insert = [
             'bill_no'           => $data['bill_no'] ?? 0,
             'uuid'              => $student['uuid'] ?? '',
+            'open_id'           => $data['nextData']['open_id'],
             'grant_money'       => $data['awardNum'],
             'reason'            => $data['msg'],
             'status'            => $status,
