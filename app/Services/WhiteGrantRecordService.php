@@ -12,20 +12,15 @@ use App\Libs\Constants;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
-use App\Libs\Util;
 use App\Libs\Valid;
 use App\Libs\WeChatPackage;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\Dss\DssWechatOpenIdListModel;
-use App\Models\EmployeeModel;
 use App\Models\Erp\ErpStudentAccountModel;
 use App\Models\Erp\ErpUserEventTaskAwardGoldLeafModel;
-use App\Models\Erp\ErpUserEventTaskAwardModel;
-use App\Models\UserWeiXinModel;
 use App\Models\WeChatAwardCashDealModel;
 use App\Models\WhiteGrantRecordModel;
-use function AlibabaCloud\Client\json;
 
 class WhiteGrantRecordService
 {
@@ -133,7 +128,7 @@ class WhiteGrantRecordService
 
         $nextData['student'] = $student;
         $nextData['grantInfo'] = $grantInfo;
-        $nextData['awardNum']   = $grantInfo['grant_money'] / 100;
+        $nextData['awardNum']   = $grantInfo['grant_money'];
         $nextData['operator_uuid'] = $params['operator_id'];
         $nextData['awardIds'] = explode(',', $grantInfo['award_ids']);
         $nextData['uuid'] = $grantInfo['uuid'];
@@ -245,7 +240,7 @@ class WhiteGrantRecordService
         $mchBillNo = self::getMchBillNo($next);
 
         $openId = $next['open_id'];
-        $value = $next['awardNum'] * 100;
+        $value = $next['awardNum'];
 
         $resultData = $wx->sendPackage($mchBillNo, $actName, $sendName, $openId, $value, $wishing, 'redPack');
 
@@ -253,14 +248,10 @@ class WhiteGrantRecordService
             throw new RunTimeException(['fail'],['nextData'=>$next,'result_code'=>$resultData['err_code'],'bill_no'=>$mchBillNo ,'step'=>WhiteGrantRecordModel::GRANT_STEP_5,'awardNum' => $next['awardNum'] * 100, 'msg' =>WeChatAwardCashDealModel::getWeChatErrorMsg($resultData['err_code'])]);
         }
 
-        $data = [
-            'msg' => '发放成功',
-            'step'=>WhiteGrantRecordModel::GRANT_STEP_0,
-            'bill_no' => $mchBillNo,
-            'awardNum' => $next['awardNum'],
-        ];
+        $next['bill_no']=$mchBillNo;
+        $next['awardNum'] = $value;
 
-        self::create($next['student'], $data,WhiteGrantRecordModel::STATUS_GIVE);
+        self::create($next['student'], ['nextData' => $next,'msg'=>'发放成功','step'=>WhiteGrantRecordModel::GRANT_STEP_0],WhiteGrantRecordModel::STATUS_GIVE);
     }
 
     /**
@@ -297,7 +288,6 @@ class WhiteGrantRecordService
             throw new RunTimeException(['fail'],['nextData'=>$next, 'step'=>WhiteGrantRecordModel::GRANT_STEP_3,'awardNum' => $next['awardNum'], 'msg' => '金叶子扣减失败']);
         }
 
-        $next['awardNum'] = $next['awardNum'] / 100;
         self::getBindInfo($next);
     }
 
@@ -312,8 +302,8 @@ class WhiteGrantRecordService
         $insert = [
             'bill_no'           => $data['bill_no'] ?? 0,
             'uuid'              => $student['uuid'] ?? '',
-            'open_id'           => $data['nextData']['open_id'],
-            'grant_money'       => $data['awardNum'],
+            'open_id'           => $data['nextData']['open_id'] ?? '',
+            'grant_money'       => $data['nextData']['awardNum'],
             'reason'            => $data['msg'],
             'status'            => $status,
             'task_info'         => json_encode($data['taskArr'] ?? []),
@@ -376,7 +366,7 @@ class WhiteGrantRecordService
         $where = [
             'status'=>ErpUserEventTaskAwardGoldLeafModel::STATUS_WAITING,
             'award_node' => 'week_award',
-            "review_time[<>]" => [$s, $e],
+            "create_time[<>]" => [$s, $e],
         ];
 
         if(!empty($ids)){

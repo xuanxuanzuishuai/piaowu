@@ -1205,8 +1205,8 @@ class Dss extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
+        $uuids = explode("\n", trim($params['uuids'],"\n"));
 
-        $uuids = explode("\n", $params['uuids']);
         $operator_id = $params['operator_id'];
 
         $res = WeekWhiteListService::create($uuids, $operator_id);

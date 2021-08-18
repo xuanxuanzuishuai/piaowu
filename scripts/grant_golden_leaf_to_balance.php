@@ -15,25 +15,12 @@ define('LANG_ROOT', PROJECT_ROOT . '/lang');
 
 require_once PROJECT_ROOT . '/vendor/autoload.php';
 
-use App\Libs\DictConstants;
-use App\Libs\Erp;
+
 use App\Libs\Exceptions\RunTimeException;
-use App\Libs\MysqlDB;
-use App\Libs\PhpMail;
-use App\Libs\SimpleLogger;
-use App\Models\BillMapModel;
 use App\Models\Dss\DssStudentModel;
-use App\Models\Dss\DssWechatOpenIdListModel;
-use App\Models\Erp\ErpUserEventTaskAwardGoldLeafModel;
-use App\Models\ParamMapModel;
-use App\Models\StudentReferralStudentStatisticsModel;
-use App\Models\UserWeiXinModel;
 use App\Models\WhiteGrantRecordModel;
-use App\Services\ErpReferralService;
 use App\Services\WhiteGrantRecordService;
-use App\Services\WxSendMoneyToUserService;
 use Dotenv\Dotenv;
-use Medoo\Medoo;
 
 $dotenv = new Dotenv(PROJECT_ROOT, '.env');
 $dotenv->load();

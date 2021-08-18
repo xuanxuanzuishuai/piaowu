@@ -784,6 +784,9 @@ class SharePosterService
         if ($poster['poster_status'] == SharePosterModel::VERIFY_STATUS_QUALIFIED) {
             $poster['can_upload'] = Constants::STATUS_FALSE;
         }
+
+        $gold_leaf = ErpUserEventTaskAwardGoldLeafModel::getRecord(['id'=>$poster['points_award_id']], ['status']);
+        $poster['gold_leaf_status'] = $gold_leaf['status'];
         $error = '';
         if (!empty($userInfo['user_id'])) {
             $userDetail = StudentService::dssStudentStatusCheck($userInfo['user_id'], false, null);

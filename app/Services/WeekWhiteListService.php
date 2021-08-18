@@ -40,7 +40,8 @@ class WeekWhiteListService
 
 
         //检测是否添加过
-        $exists = WeekWhiteListModel::getRecords(['uuid'=>$uniqueIds],'uuid');
+        $exists = WeekWhiteListModel::getRecords(['uuid'=>$uniqueIds, 'status'=>WeekWhiteListModel::NORMAL_STATUS],'uuid');
+
         $errData['exists'] = $exists;
 
         if($errData['repeatIds'] || $errData['not_exists'] || $errData['exists']){
@@ -65,7 +66,8 @@ class WeekWhiteListService
             $log = [
                 'uuid' => $uuid,
                 'operator_id' => $operator_id,
-                'type'   => WhiteRecordModel::TYPE_ADD
+                'type'   => WhiteRecordModel::TYPE_ADD,
+                'create_time'   => $now,
             ];
             $logData[] = $log;
         }
