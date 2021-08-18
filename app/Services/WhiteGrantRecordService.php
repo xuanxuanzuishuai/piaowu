@@ -245,7 +245,7 @@ class WhiteGrantRecordService
         $resultData = $wx->sendPackage($mchBillNo, $actName, $sendName, $openId, $value, $wishing, 'redPack');
 
         if(!$resultData || trim($resultData['result_code']) != WeChatAwardCashDealModel::RESULT_SUCCESS_CODE) {
-            throw new RunTimeException(['fail'],['nextData'=>$next,'result_code'=>$resultData['err_code'],'bill_no'=>$mchBillNo ,'step'=>WhiteGrantRecordModel::GRANT_STEP_5,'awardNum' => $next['awardNum'] * 100, 'msg' =>WeChatAwardCashDealModel::getWeChatErrorMsg($resultData['err_code'])]);
+            throw new RunTimeException(['fail'],['nextData'=>$next,'result_code'=>$resultData['err_code'],'bill_no'=>$mchBillNo ,'step'=>WhiteGrantRecordModel::GRANT_STEP_5,'awardNum' => $next['awardNum'], 'msg' =>WeChatAwardCashDealModel::getWeChatErrorMsg($resultData['err_code'])]);
         }
 
         $next['bill_no']=$mchBillNo;
@@ -277,7 +277,7 @@ class WhiteGrantRecordService
         $data = [
             'uuid' => $next['student']['uuid'],
             'datatype' => ErpStudentAccountModel::DATA_TYPE_LEAF,
-            'num'   => $next['awardNum'],
+            'num'   => $next['awardNum'] * 100,
             'source_type' => Erp::SOURCE_TYPE_OP_TO_MONEY,
             'operator_uuid' => $next['operator_id'] ?? 0,
             'remark'    => 'OP系统扣减兑换现金',
