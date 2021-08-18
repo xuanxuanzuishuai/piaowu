@@ -24,6 +24,7 @@ class Dss
     const ASSISTANT_LIST = '/op/employee/assistant_list';//获取助教列表
     const WEIXIN_INFO = '/op/user/get_weixin_info'; //同步获取微信信息
     const GET_SHORT_URL = '/op/sms/get_short_url'; //获取短链
+    const GET_STUDENT_IDENTITY = '/op/user/get_student_identity'; //获取用户的状态
 
     private $host;
 
@@ -211,5 +212,20 @@ class Dss
             throw new RunTimeException(['update_failure']);
         }
         return $res;
+    }
+
+    /**
+     * 获取用户的状态
+     * @param $params
+     * @return array|mixed
+     */
+    public function getStudentIdentity($params)
+    {
+        $res = self::commonAPI(self::GET_STUDENT_IDENTITY, $params, 'GET');
+        if ($res['code'] != Valid::CODE_SUCCESS) {
+            SimpleLogger::error('get student identity error', [$res, $params]);
+            return [];
+        }
+        return !empty($res['data']) ? $res['data'] : [];
     }
 }

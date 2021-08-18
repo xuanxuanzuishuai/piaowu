@@ -231,6 +231,8 @@ class Student extends ControllerBase
         if ($this->ci['user_info']['app_id'] == Constants::SMART_APP_ID) {
             $data = DssStudentModel::getRecord(['id' => $studentId], ['uuid','mobile']);
         }
+        $studentStatus = (new Dss())->getStudentIdentity(['student_id' => $studentId]);
+        $data['student_status'] = $studentStatus['student_status'];
         return HttpHelper::buildResponse($response, $data);
     }
 

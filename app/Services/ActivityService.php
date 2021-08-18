@@ -137,6 +137,8 @@ class ActivityService
         $data['award'] = self::taskAwardCompleteStatus($studentData['uuid'], $activityData['event_id']);
         //打卡天数
         $data['days'] = $nodeData['days'];
+        $data['collection_id'] = $studentData['collection_id']; //班级id
+        $data['collection_status'] = $activityData['collection_status'] ?? 0; //班期状态
         return $data;
     }
 
@@ -190,6 +192,8 @@ class ActivityService
             ($collectionData['event_id'] != DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'collection_event_id'))) {
             return $activityData;
         }
+        //班期状态
+        $collectionStatus = WechatService::getCollectionTeachingStatus($collectionData);
         //班级打卡是否已开始:由于2021.3.2规则改动不再考虑截止时间，但是之前的活动使用旧规则依然考虑活动截止时间
         $dividingLineTime = DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG,'new_old_rule_dividing_line_time');
         $activityEndTime = strtotime("+7 day", $collectionData['teaching_start_time'] - 1);
@@ -202,6 +206,7 @@ class ActivityService
                 'activity_start_time' => $collectionData['teaching_start_time'],
                 'activity_end_time' => $activityEndTime,
                 'event_id' => $collectionData['event_id'],
+                'collection_status' => $collectionStatus
             ];
         }
         return $activityData;

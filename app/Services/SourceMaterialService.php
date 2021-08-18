@@ -700,7 +700,7 @@ class SourceMaterialService
     {
         // 从redis缓存读取
         $redis = RedisDB::getConn();
-        $cacheKey = 'user_reward_datails';
+        $cacheKey = 'user_reward_details';
         $value = $redis->get($cacheKey);
         if (!empty($value)) {
             return json_decode($value, true);
@@ -731,6 +731,7 @@ class SourceMaterialService
         if (empty($accountDetail)) {
             return [];
         }
+        array_multisort(array_column($accountDetail, 'total'), SORT_DESC, $accountDetail);
         //用户默认头像
         $defaultAvatar =  AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb'));
         foreach ($accountDetail as &$val) {

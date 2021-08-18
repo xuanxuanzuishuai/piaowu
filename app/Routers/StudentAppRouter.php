@@ -15,6 +15,7 @@ use App\Controllers\StudentApp\Poster;
 use App\Controllers\StudentWX\Activity;
 use App\Controllers\StudentWX\Poster AS WXPoster;
 use App\Controllers\StudentApp\ReferralActivity;
+use App\Controllers\StudentWX\Student;
 use App\Controllers\StudentWX\Task;
 use App\Middleware\AppAuthMiddleWare;
 
@@ -161,5 +162,28 @@ class StudentAppRouter extends RouterBase
             'call' => \App\Controllers\StudentWeb\Area::class . ':getByParentCode',
             'middles' => [AppAuthMiddleWare::class]
         ],
+
+        /* 五日打卡返学费相关 */
+        '/student_app/sign/upload'            => [
+            'method'  => ['post'],
+            'call'    => Activity::class . ':signInUpload',
+            'middles' => [AppAuthMiddleWare::class]
+        ],
+        '/student_app/sign/data'              => [
+            'method'  => ['get'],
+            'call'    => Activity::class . ':signInData',
+            'middles' => [AppAuthMiddleWare::class]
+        ],
+        '/student_app/sign/copy_writing'      => [
+            'method'  => ['get'],
+            'call'    => Activity::class . ':signInCopyWriting',
+            'middles' => [AppAuthMiddleWare::class]
+        ],
+        '/student_app/student/account_detail' => [
+            'method'  => ['get'],
+            'call'    => Student::class . ':accountDetail',
+            'middles' => [AppAuthMiddleWare::class]
+        ],
+
     ];
 }

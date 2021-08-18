@@ -31,7 +31,7 @@ class ErpStudentAccountDetail extends  ErpModel
                 WHERE operate_type = {$operateType}
                   AND sub_type = {$subType}
                   AND student_id IN ({$studentIds})
-                  GROUP BY student_id ORDER BY total DESC
+                  GROUP BY student_id 
                 ";
 
         return self::dbRO()->queryAll($sql);
