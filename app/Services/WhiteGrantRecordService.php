@@ -47,6 +47,10 @@ class WhiteGrantRecordService
             $where['status'] = $params['status'];
         }
 
+        if(!empty($params['id'])){
+            $where['id'] = $params['id'];
+        }
+
         if(!empty($params['mobile'])){
             $studentInfo = DssStudentModel::getRecord(['mobile'=>$params['mobile']],['id','uuid','mobile']);
             $where['uuid'] = $studentInfo['uuid'] ?? 0;
@@ -129,7 +133,7 @@ class WhiteGrantRecordService
 
         $nextData['student'] = $student;
         $nextData['grantInfo'] = $grantInfo;
-        $nextData['awardNum']   = $grantInfo['grant_money'];
+        $nextData['awardNum']   = $grantInfo['grant_money'] / 100;
         $nextData['operator_uuid'] = $params['operator_id'];
         $nextData['awardIds'] = explode(',', $grantInfo['award_ids']);
         $nextData['uuid'] = $grantInfo['uuid'];
