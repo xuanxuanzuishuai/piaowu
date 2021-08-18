@@ -121,14 +121,14 @@ class WeekWhiteListService
         $total = WeekWhiteListModel::getCount($where);
 
         if ($total <= 0) {
-            return [[], 0];
+            return ['list'=>[], 'total'=>0];
         }
 
         $where['LIMIT'] = [($page - 1) * $pageSize, $pageSize];
 
         $list = WeekWhiteListModel::getRecords($where);
 
-        $list = self::initList($studentInfo, $list);
+        $list = self::initList($list);
 
         return compact('list', 'total');
     }
@@ -152,8 +152,9 @@ class WeekWhiteListService
         foreach ($list as &$one){
             $one['mobile']          = Util::hideUserMobile($students[$one['uuid']]['mobile'] ?? '');
             $one['operator_name']   = $employees[$one['operator_id']]['name'] ?? '系统';
+            $one['student_id']      = $students[$one['uuid']]['id'];
 
-            if(isset($one['type_text'])){
+            if(isset($one['type'])){
                 $one['type_text'] = WhiteRecordModel::$types[$one['type']];
             }
 

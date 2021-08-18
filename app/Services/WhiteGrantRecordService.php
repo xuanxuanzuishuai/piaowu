@@ -8,6 +8,7 @@
 
 namespace App\Services;
 
+use App\Libs\Constants;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
@@ -15,6 +16,7 @@ use App\Libs\Util;
 use App\Libs\Valid;
 use App\Libs\WeChatPackage;
 use App\Models\Dss\DssStudentModel;
+use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\Dss\DssWechatOpenIdListModel;
 use App\Models\EmployeeModel;
 use App\Models\Erp\ErpStudentAccountModel;
@@ -23,6 +25,7 @@ use App\Models\Erp\ErpUserEventTaskAwardModel;
 use App\Models\UserWeiXinModel;
 use App\Models\WeChatAwardCashDealModel;
 use App\Models\WhiteGrantRecordModel;
+use function AlibabaCloud\Client\json;
 
 class WhiteGrantRecordService
 {
@@ -45,8 +48,8 @@ class WhiteGrantRecordService
         }
 
         if(!empty($params['mobile'])){
-            $studentId = DssStudentModel::getRecord(['mobile'=>$params['mobile']],['id','']);
-            $where['student_id'] = $studentId ?? 0;
+            $studentInfo = DssStudentModel::getRecord(['mobile'=>$params['mobile']],['id','uuid','mobile']);
+            $where['uuid'] = $studentInfo['uuid'] ?? 0;
         }
 
         if(!empty($params['course_manage_id'])){
@@ -56,13 +59,21 @@ class WhiteGrantRecordService
         $total = WhiteGrantRecordModel::getCount($where);
 
         if ($total <= 0) {
-            return [[], 0];
+            return ['list'=>[], 'total'=>0];
         }
 
         $where['LIMIT'] = [($page - 1) * $pageSize, $pageSize];
 
         $list = WhiteGrantRecordModel::getRecords($where);
+        $uuids = array_column($list, 'uuid');
 
+        $wechatSubscribeInfo = DssWechatOpenIdListModel::getUuidOpenIdInfo($uuids);
+        $wechatSubscribeInfo = array_column($wechatSubscribeInfo, null, 'uuid');
+
+        foreach ($list as &$one){
+            $one['is_bind_wx'] = $wechatSubscribeInfo[$one['uuid']]['bind_status'] ?? DssUserWeiXinModel::STATUS_DISABLE;
+            $one['is_bind_gzh'] = $wechatSubscribeInfo[$one['uuid']]['subscribe_status'] ?? DssWechatOpenIdListModel::UNSUBSCRIBE_WE_CHAT;
+        }
 
         $list = WeekWhiteListService::initList($list);
 
@@ -102,7 +113,7 @@ class WhiteGrantRecordService
     /**
      * 手动发放
      * @param $params
-     * @return array
+     * @return array|int[]
      */
     public static function manualGrant($params){
         $grantInfo = WhiteGrantRecordModel::getRecord(['id'=>$params['id']]);
@@ -117,7 +128,6 @@ class WhiteGrantRecordService
         $student = DssStudentModel::getRecord(['uuid'=>$grantInfo['uuid']]);
 
         $nextData['student'] = $student;
-
         try{
             switch ($grantInfo['grant_step']){
                 case WhiteGrantRecordModel::GRANT_STEP_1:
@@ -140,7 +150,7 @@ class WhiteGrantRecordService
                 case WhiteGrantRecordModel::GRANT_STEP_3:
                     $nextData = [
                         'student' => ['uuid' => $grantInfo['uuid']],
-                        'award_num'   => $grantInfo['grant_money'],
+                        'awardNum'   => $grantInfo['grant_money'],
                         'operator_uuid' => $params['operator_id']
                     ];
                     WhiteGrantRecordService::deduction($nextData);
@@ -167,18 +177,16 @@ class WhiteGrantRecordService
     }
 
     /**
-     * 自动发放
-     * @param $uuid
-     * @param $list
-     * @return false
+     * 发放
+     * @param $next
+     * @throws RunTimeException
      */
     public static function grant($next){
-
 
         if(empty($next['student']) || $next['student']['status'] != DssStudentModel::STATUS_NORMAL){
             $gold_leaf_ids = array_column($next['list'], 'id');
             $taskArr['fail'] = $gold_leaf_ids;
-            throw new RunTimeException(['fail'],['nextData'=>$next, 'step'=>WhiteGrantRecordModel::GRANT_STEP_1,'award_num' => 0, 'msg' => '用户账号异常', 'taskArr'=> $taskArr]);
+            throw new RunTimeException(['fail'],['nextData'=>$next, 'step'=>WhiteGrantRecordModel::GRANT_STEP_1,'awardNum' => 0, 'msg' => '用户账号异常', 'taskArr'=> $taskArr]);
         }
         //调用erp
         self::sendDataToErp($next);
@@ -187,110 +195,127 @@ class WhiteGrantRecordService
 
     /**
      * 修改发放状态为已发放
-     * @param $uuid
-     * @param $list
-     * @return array
+     * @param $next
+     * @throws RunTimeException
      */
     public static function sendDataToErp($next){
         $taskArr = [];
-        $award_num = $next['grantInfo']['grant_money'] ?? 0;
+        $awardNum = $next['grantInfo']['grant_money'] ?? 0;
+        $awardIds = $next['grantInfo']['awardIds'] ?? [];
+        if($awardIds){
+            $awardIds = explode(',', $awardIds);
+        }
+
         foreach ($next['list'] as $one){
             //修改状态为已发放
-            $res = (new Erp())->addEventTaskAward($next['uuid'], $one['event_task_id'], ErpReferralService::EVENT_TASK_STATUS_COMPLETE);
-
+            $res = (new Erp())->addEventTaskAward($next['uuid'], $one['event_task_id'], ErpReferralService::EVENT_TASK_STATUS_COMPLETE, $one['id']);
             if ($res['code'] == Valid::CODE_SUCCESS) {
                 $taskArr['succ'][] = $one['id'];
-                $award_num += $one['award_num'];
+                $awardNum += $one['award_num'];
             }else{
                 SimpleLogger::error('ERP_CREATE_USER_EVENT_TASK_AWARD_FAIL', [$one]);
                 $taskArr['fail'][] = $one['id'];
             }
+            $awardIds[] = $one['id'];
         }
 
         //2.金叶子发放失败
         if(!empty($taskArr['fail'])){
-            throw new RunTimeException(['fail'],['nextData'=>$next, 'step'=>WhiteGrantRecordModel::GRANT_STEP_2,'award_num' => $award_num, 'msg' => '金叶子发放失败', 'taskArr' => $taskArr]);
+            throw new RunTimeException(['fail'],['nextData'=>$next, 'step'=>WhiteGrantRecordModel::GRANT_STEP_2,'awardNum' => $awardNum, 'msg' => '金叶子发放失败', 'taskArr' => $taskArr]);
         }
 
-        $next['award_num'] = $award_num;
-
+        $next['awardNum'] = $awardNum;
+        $next['awardIds'] = $awardIds;
         self::deduction($next);
 
     }
 
-    //微信转账
-    public static function weixinToAccount($next){
+    /**
+     * 微信发放红包
+     * @param $next
+     * @throws RunTimeException
+     */
+    public static function sendPackage($next){
 
-        $wx = new WeChatPackage(8,1,1);
+        $appId    = Constants::SMART_APP_ID;
+        $busiType = DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER;
+        $wx = new WeChatPackage($appId,$busiType,WeChatPackage::WEEK_FROM);
+        $keyCode = 'REISSUE_PIC_WORD';
+        list($actName, $sendName, $wishing) = CashGrantService::getRedPackConfigWord($keyCode);
 
-        $mchBillNo = 'ym' . time();
-        $actName  = '测试发红包';
-        $sendName = '测试商户名称';
+        $mchBillNo = self::getMchBillNo($next);
+
         $openId = $next['open_id'];
-        $value = 1;
-        $wishing = '祝福语';
+        $value = $next['awardNum'] * 100;
 
         $resultData = $wx->sendPackage($mchBillNo, $actName, $sendName, $openId, $value, $wishing, 'redPack');
 
-        if(trim($resultData['result_code']) != WeChatAwardCashDealModel::RESULT_SUCCESS_CODE) {
-            throw new RunTimeException(['fail'],['nextData'=>$next, 'step'=>WhiteGrantRecordModel::GRANT_STEP_5,'award_num' => $next['award_num'] * 100, 'msg' =>$resultData['return_msg']]);
+        if(!$resultData || trim($resultData['result_code']) != WeChatAwardCashDealModel::RESULT_SUCCESS_CODE) {
+            throw new RunTimeException(['fail'],['nextData'=>$next,'result_code'=>$resultData['err_code'],'bill_no'=>$mchBillNo ,'step'=>WhiteGrantRecordModel::GRANT_STEP_5,'awardNum' => $next['awardNum'] * 100, 'msg' =>WeChatAwardCashDealModel::getWeChatErrorMsg($resultData['err_code'])]);
         }
-
 
         $data = [
             'msg' => '发放成功',
-            'is_bind_wx' => WhiteGrantRecordModel::BIND_WX_NORMAL,
-            'is_bind_gzh' => WhiteGrantRecordModel::BIND_GZH_NORMAL,
             'step'=>WhiteGrantRecordModel::GRANT_STEP_0,
+            'bill_no' => $mchBillNo,
+            'awardNum' => $next['awardNum'],
         ];
 
         self::create($next['student'], $data,WhiteGrantRecordModel::STATUS_GIVE);
     }
 
     /**
-     * 扣减
-     * @param $uuid
-     * @param $award_num
-     * @param $operator_uuid
-     * @return bool
+     * 获取订单ID
+     * @param $next
+     * @return mixed|string
+     */
+    public static function getMchBillNo($next)
+    {
+        if (!empty($next['grantInfo']) && in_array($next['grantInfo']['reason'], [WeChatAwardCashDealModel::CA_ERROR, WeChatAwardCashDealModel::SYSTEMERROR])) {
+            return $next['grantInfo']['bill_no'];
+        } else {
+            return $_ENV['ENV_NAME'] . min($next['awardIds'] ) . $next['awardNum'] . date('Ymd');
+        }
+    }
+
+    /**
+     * 扣减金叶子
+     * @param $next
+     * @throws RunTimeException
      */
     public static function deduction($next){
         $data = [
             'uuid' => $next['student']['uuid'],
             'datatype' => ErpStudentAccountModel::DATA_TYPE_LEAF,
-            'num'   => $next['award_num'],
+            'num'   => $next['awardNum'],
             'source_type' => Erp::SOURCE_TYPE_OP_TO_MONEY,
-            'operator_uuid' => $next['operator_uuid'],
+            'operator_uuid' => $next['operator_id'] ?? 0,
             'remark'    => 'OP系统扣减兑换现金',
         ];
 
         $res = (new Erp())->reduce_account($data);
         if(!$res){
-            throw new RunTimeException(['fail'],['nextData'=>$next, 'step'=>WhiteGrantRecordModel::GRANT_STEP_3,'award_num' => $next['award_num'], 'msg' => '金叶子扣减失败']);
+            throw new RunTimeException(['fail'],['nextData'=>$next, 'step'=>WhiteGrantRecordModel::GRANT_STEP_3,'awardNum' => $next['awardNum'], 'msg' => '金叶子扣减失败']);
         }
 
-        $next['award_num'] = $next['award_num'] / 100;
+        $next['awardNum'] = $next['awardNum'] / 100;
         self::getBindInfo($next);
     }
 
     /**
      * 创建
      * @param $student
-     * @param $award_num
+     * @param $data
      * @param $status
-     * @param $msg
-     * @param int $operator_id
      */
     public static function create($student, $data, $status){
-
         $now = time();
         $insert = [
+            'bill_no'           => $data['bill_no'] ?? 0,
             'uuid'              => $student['uuid'] ?? '',
-            'grant_money'       => $data['award_num'],
+            'grant_money'       => $data['awardNum'],
+            'reason'            => $data['msg'],
             'status'            => $status,
-            'remark'            => $data['msg'],
-            'is_bind_wx'        => $data['is_bind_wx'] ?? '-',
-            'is_bind_gzh'       => $data['is_bind_gzh'] ?? '-',
             'task_info'         => json_encode($data['taskArr'] ?? []),
             'course_manage_id'  => $student['course_manage_id'] ?? 0,
             'grant_step'        => $data['step'],
@@ -298,66 +323,60 @@ class WhiteGrantRecordService
             'grant_time'        => $status == WhiteGrantRecordModel::STATUS_GIVE ? $now : 0,
             'create_time'       => $now,
             'update_time'       => 0,
+            'award_ids'         => implode(',', $data['nextData']['awardIds']),
+            'result_code'       => $data['result_code'] ?? '',
+            'remark'            => '',
         ];
 
         if(isset($data['nextData']['grantInfo']['id'])){
             $id = $data['nextData']['grantInfo']['id'];
             WhiteGrantRecordModel::updateRecord($id, $insert);
         }else{
-            WhiteGrantRecordModel::insertRecord($insert);
+
+            $res = WhiteGrantRecordModel::insertRecord($insert);
         }
 
     }
 
     /**
      * 获取绑定微信、公众号等信息
-     * @param $student
-     * @return array
+     * @param $next
+     * @throws RunTimeException
      */
     public static function getBindInfo($next){
-        $is_bind_wx = WhiteGrantRecordModel::BIND_WX_DESIABLE;
-        $is_bing_gzh = WhiteGrantRecordModel::BIND_GZH_DESIABLE;
 
-        //是否绑定微信
-        $userWeixin = UserWeiXinModel::getRecord(['user_id' => $next['student']['id']],['status','open_id']);
-        if($userWeixin && $userWeixin['status'] == UserWeiXinModel::STATUS_NORMAL){
-            $is_bind_wx = WhiteGrantRecordModel::BIND_WX_NORMAL;
+        $wechatSubscribeInfo = DssWechatOpenIdListModel::getUuidOpenIdInfo([$next['student']['uuid']]);
+        $wechatSubscribeInfo = array_column($wechatSubscribeInfo, null, 'uuid');
+        $subscribeStatus = $wechatSubscribeInfo[$next['student']['uuid']]['subscribe_status'];
+        $bindStatus = $wechatSubscribeInfo[$next['student']['uuid']]['bind_status'];
+        $openId = $wechatSubscribeInfo[$next['student']['uuid']]['open_id'];
 
-            //是否绑定公众号
-            $wechat = DssWechatOpenIdListModel::getRecord(['openid' => $userWeixin['open_id']], ['status']);
-            if($wechat && $wechat['status'] == DssWechatOpenIdListModel::SUBSCRIBE_WE_CHAT){
-                $is_bing_gzh = WhiteGrantRecordModel::BIND_GZH_NORMAL;
-            }
-        }else{
-            $is_bing_gzh = '-';
+        if($bindStatus != DssUserWeiXinModel::STATUS_NORMAL || $subscribeStatus != DssWechatOpenIdListModel::SUBSCRIBE_WE_CHAT){
+            $msg = $bindStatus != DssUserWeiXinModel::STATUS_NORMAL ? '未绑定微信' : '未关注公众号';
+            throw new RunTimeException(['fail'],['nextData'=>$next, 'step'=>WhiteGrantRecordModel::GRANT_STEP_4, 'awardNum' => 0, 'msg' => $msg]);
         }
 
-        if($is_bind_wx != WhiteGrantRecordModel::BIND_WX_NORMAL || $is_bing_gzh != WhiteGrantRecordModel::BIND_GZH_NORMAL){
-            $msg = $is_bind_wx != WhiteGrantRecordModel::BIND_WX_NORMAL ? '未绑定微信' : '未关注公众号';
-            throw new RunTimeException(['fail'],['nextData'=>$next, 'step'=>WhiteGrantRecordModel::GRANT_STEP_4, 'award_num' => 0, 'msg' => $msg , 'is_bind_wx' => $is_bind_wx, 'is_bind_gzh'=>$is_bing_gzh]);
-        }
-
-        $next['open_id'] = $userWeixin['open_id'];
+        $next['open_id'] = $openId;
 
         //5.微信转账
-        self::weixinToAccount($next);
+        self::sendPackage($next);
 
     }
 
+    /**
+     * 获取awardList
+     * @param array $ids
+     * @return array
+     */
     public static function getAwardList($ids = []){
-
-        $keyCode = 'REISSUE_PIC_WORD';
-        list($actName, $sendName, $wishing) = CashGrantService::getRedPackConfigWord($keyCode);
-        $a = [$actName, $sendName, $wishing];
-        echo json_encode($a,256);die;
 
         $s = strtotime(date('Y-m-01', strtotime('-1 month')));
         $e = strtotime('-1 day', strtotime(date('Y-m-01 23:59:59')));
 
         $where = [
             'status'=>ErpUserEventTaskAwardGoldLeafModel::STATUS_WAITING,
-            'award_node' => 'award_node',
-            "create_time[<>]" => [$s, $e],
+            'award_node' => 'week_award',
+            "review_time[<>]" => [$s, $e],
         ];
 
         if(!empty($ids)){
@@ -370,7 +389,6 @@ class WhiteGrantRecordService
             'award_num',
             'event_task_id'
         ];
-
         $list = ErpUserEventTaskAwardGoldLeafModel::getRecords($where, $fields);
 
         $studentList = [];

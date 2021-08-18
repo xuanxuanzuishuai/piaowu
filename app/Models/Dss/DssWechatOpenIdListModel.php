@@ -33,6 +33,7 @@ class DssWechatOpenIdListModel extends DssModel
         $sql = "
         SELECT 
             s.uuid,
+            uw.open_id,
             uw.`status` bind_status,
             wol.status subscribe_status
         FROM 

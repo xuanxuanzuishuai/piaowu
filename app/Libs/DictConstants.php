@@ -357,6 +357,13 @@ class DictConstants {
         ],
     ];
 
+    //获取白名单红包密钥
+    const WECHAT_TRANSFER_KEY = [
+        'type' => 'wechat_transfer_key',
+        'keys' => [
+            '8_1',
+        ],
+    ];
 
     //不同应用的微信商户号
     const WECHAT_MCHID = [
@@ -956,7 +963,6 @@ class DictConstants {
         'type' => 'wechat_initial_id',
         'keys' => ['8_8']
     ];
-
 
     
     /**

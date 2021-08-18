@@ -13,17 +13,22 @@ class WeChatPackage
     private $appId;
     private $certPem;
     private $keyPem;
+    private $signKey;
+    const BASE_FROM = 0; //原始配置
+    const WEEK_FROM = 1; //周周领奖
     function __construct($appId, $busiType, $from = 0)
     {
-        if($from){
+        if($from == self::WEEK_FROM){
             //周周领奖配置
             $this->mchId = DictConstants::get(DictConstants::WECHAT_TRANSFER_TO_USER, $appId . '_' . $busiType);
             $this->certPem = DictConstants::get(DictConstants::WECHAT_TRANSFER_CERT_PEM, $appId . '_' . $busiType);
             $this->keyPem = DictConstants::get(DictConstants::WECHAT_TRANSFER_KEY_PEM, $appId . '_' . $busiType);
+            $this->signKey = DictConstants::get(DictConstants::WECHAT_TRANSFER_KEY, $appId . '_' . $busiType);
         }else{
             $this->mchId = DictConstants::get(DictConstants::WECHAT_MCHID, $appId . '_' . $busiType);
             $this->certPem = DictConstants::get(DictConstants::WECHAT_API_CERT_PEM, $appId . '_' . $busiType);
             $this->keyPem = DictConstants::get(DictConstants::WECHAT_API_KEY_PEM, $appId . '_' . $busiType);
+            $this->signKey = 'wNHWo4BD6SuNUTL42usTungVYzYYQT9t';
         }
         $this->appId = DictConstants::get(DictConstants::WECHAT_APPID, $appId . '_' . $busiType);
         $this->client = new Client();
@@ -48,7 +53,7 @@ class WeChatPackage
      * @param $xmlData
      * @return string|string[]
      */
-    public static function _getSign($xmlData)
+    public static function _getSign($xmlData, $signKey)
     {
         $res = @simplexml_load_string($xmlData, NULL, LIBXML_NOCDATA);
         $res = json_decode(json_encode($res), true);
@@ -61,7 +66,7 @@ class WeChatPackage
             }
         }
 
-        $stringSignTemp = "{$stringA}key=" . 'wNHWo4BD6SuNUTL42usTungVYzYYQT9t';
+        $stringSignTemp = "{$stringA}key=" . $signKey;
         $sign = md5($stringSignTemp);
 
         $xmlData = str_replace("{sign}", $sign, $xmlData);
@@ -278,7 +283,8 @@ class WeChatPackage
                 <nonce_str>{$inputObj->get_nonce_str()}</nonce_str>
             </xml>
 eof;
-        $newXmlData = self:: _getSign($xml);
+
+        $newXmlData = self:: _getSign($xml, $this->signKey);
         $data['api_url'] = 'https://api.mch.weixin.qq.com/mmpaymkttransfers/sendredpack';
         $data['xml_data'] = $newXmlData;
         return $data;
@@ -296,7 +302,7 @@ eof;
                 <nonce_str>{$inputObj->get_nonce_str()}</nonce_str>
             </xml>
 eof;
-        $newXmlData = self:: _getSign($xml);
+        $newXmlData = self:: _getSign($xml, $this->signKey);
         $data['api_url'] = 'https://api.mch.weixin.qq.com/mmpaymkttransfers/gethbinfo';
         $data['xml_data'] = $newXmlData;
         return $data;

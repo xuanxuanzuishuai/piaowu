@@ -17,13 +17,6 @@ class WhiteGrantRecordModel extends Model
     const STATUS_GIVE_FAIL = 2; // 发放失败
     const STATUS_GIVE_NOT_GRANT = 3; // 不予发放
 
-    //是否绑定微信
-    const BIND_WX_NORMAL = 1; //已绑定
-    const BIND_WX_DESIABLE = 2; //未绑定
-
-    //是否绑定公众号
-    const BIND_GZH_NORMAL = 1; //已绑定
-    const BIND_GZH_DESIABLE = 2; //未绑定
 
     //发放步骤
     const GRANT_STEP_0 = 0; //成功

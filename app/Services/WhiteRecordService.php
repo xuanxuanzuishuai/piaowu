@@ -47,19 +47,18 @@ class WhiteRecordService
         }
 
         if(!empty($params['mobile'])){
-            $studentId = DssStudentModel::getRecord(['mobile'=>$params['mobile']],'id');
-            $where['student_id'] = $studentId ?? 0;
+            $studentInfo = DssStudentModel::getRecord(['mobile'=>$params['mobile']],['id','uuid','mobile']);
+            $where['uuid'] = $studentInfo['uuid'] ?? 0;
         }
 
         $total = WhiteRecordModel::getCount($where);
 
         if ($total <= 0) {
-            return [[], 0];
+            return ['list'=>[], 'total'=>0];
         }
 
         $where['LIMIT'] = [($page - 1) * $pageSize, $pageSize];
         $list = WhiteRecordModel::getRecords($where);
-
         $list = WeekWhiteListService::initList($list);
 
         return compact('list', 'total');
