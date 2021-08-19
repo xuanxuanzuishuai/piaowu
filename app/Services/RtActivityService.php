@@ -9,6 +9,7 @@ use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\HttpHelper;
 use App\Libs\MysqlDB;
 use App\Libs\RC4;
 use App\Libs\SimpleLogger;
@@ -1036,7 +1037,9 @@ class RtActivityService
             throw new RunTimeException(['record_not_found']);
         }
         $posterUrl = AliOSS::replaceCdnDomainForDss($templatePosterPath['poster_path']);
-        list($imageWidth, $imageHeight) = getimagesize($posterUrl);
+        $imgInfo = HttpHelper::requestJson($posterUrl . "?x-oss-process=image/info", [], 'GET');
+        $imageHeight = isset($imgInfo['ImageHeight']) ? $imgInfo['ImageHeight']['value'] : 0;
+        $imageWidth = isset($imgInfo['ImageWidth']) ? $imgInfo['ImageWidth']['value'] : 0;
         if (empty($imageHeight) || empty($imageWidth)) {
             throw new RunTimeException(['data_error']);
         }
