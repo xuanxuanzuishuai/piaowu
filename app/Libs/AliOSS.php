@@ -564,4 +564,40 @@ class AliOSS
         return $tmpSavePath;
     }
 
+    /**
+     * 上传内容保存为文件
+     * @param $objName
+     * @param $fileUrl
+     * @return bool
+     */
+    public static function putObject($objName, $fileUrl)
+    {
+        list($accessKeyId, $accessKeySecret, $bucket, $endpoint) = DictConstants::get(
+            DictConstants::ALI_OSS_CONFIG,
+            [
+                'access_key_id',
+                'access_key_secret',
+                'bucket',
+                'endpoint'
+            ]
+        );
+
+        try {
+            $ch = curl_init();
+            $timeout = 0;
+            curl_setopt($ch, CURLOPT_URL, $fileUrl);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $timeout);
+            $fileContext = curl_exec($ch);
+            curl_close($ch);
+
+            SimpleLogger::info("qingfeng-upload-oss", []);
+            $ossClient = new OssClient($accessKeyId, $accessKeySecret, $endpoint);
+            $ossClient->putObject($bucket, $objName, $fileContext);
+        } catch (OssException $e) {
+            SimpleLogger::error($e->getMessage(), []);
+            return false;
+        }
+        return true;
+    }
 }
