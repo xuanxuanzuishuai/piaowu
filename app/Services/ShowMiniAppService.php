@@ -186,35 +186,6 @@ class ShowMiniAppService
     }
 
     /**
-     * 获取推荐人练琴提升百分比和练琴曲目数
-     * @param $referrer_id
-     * @return array
-     */
-    public static function getReferrerPlayData($referrer_id)
-    {
-        // 练习曲目数量
-        //$numbers = DssAiPlayRecordCHModel::getStudentLessonCount($referrer_id);
-        $numbers = AprViewStudentModel::getStudentLessonCount($referrer_id);
-        $numbers = $numbers[0]['lesson_count'] ?? 0;
-        // 练琴提升百分比
-        $percentage = 0;
-        $minScore = 1;
-        //$result = DssAiPlayRecordCHModel::getStudentMaxAndMinScore($referrer_id);
-        $result = AprViewStudentModel::getStudentMaxAndMinScore($referrer_id);
-        foreach ($result as $key => $value) {
-            $diff = $value['max_score'] - $value['min_score'];
-            if ($diff > $percentage && $diff > 10) {
-                $percentage = $diff;
-                $minScore = $value['min_score'];
-            }
-        }
-        if (empty($percentage)) {
-            return [$percentage, $numbers];
-        }
-        return [round($percentage / $minScore * 100), $numbers];
-    }
-
-    /**
      * 处理最近购买文案
      * @param $recentPurchase
      * @return array
