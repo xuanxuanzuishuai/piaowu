@@ -9,6 +9,11 @@
 namespace App\Models;
 
 
+use App\Libs\MysqlDB;
+use App\Models\Dss\DssEmployeeModel;
+use App\Models\Dss\DssStudentModel;
+
+
 class WhiteGrantRecordModel extends Model
 {
     public static $table = "white_grant_record";
@@ -28,4 +33,50 @@ class WhiteGrantRecordModel extends Model
     const GRANT_STEP_5 = 5; //微信发红包失败
 
     const ENVIRONMENT_NOE_EXISTS = 'NOT_ENV_SATISFY';  // 环境不对
+
+
+    public static function getList($params, $page, $pageSize){
+        $dssStudent = DssStudentModel::getTableNameWithDb();
+        $dssEmployee = DssEmployeeModel::getTableNameWithDb();
+
+        $where = ' 1=1 ';
+        if(!empty($params['uuid'])){
+            $where  .= "AND uuid = '{$params['uuid']}'";
+        }
+
+        if(!empty($params['status'])){
+            $where  .= ' AND status = ' . $params['status'];
+        }
+
+        if(!empty($params['id'])){
+            $where  .= ' AND id = ' . $params['id'];
+        }
+
+        if(!empty($params['mobile'])){
+            $where  .= ' AND id = ' . $params['id'];
+        }
+
+        if(!empty($params['course_manage_id'])){
+            $where .= ' AND s.course_manage_id in ('. implode(',', $params['course_manage_id']) . ')';
+        }
+
+        $db = MysqlDB::getDB();
+
+        $countSql = "SELECT count(1) as count FROM " . self::$table . ' as g  LEFT JOIN ' . $dssStudent . ' as s' . ' ON g.uuid = s.uuid' .
+            ' LEFT JOIN ' . $dssEmployee . ' as e on s.course_manage_id=e.id ';
+
+        $count = $db->queryAll($countSql);
+
+        $limit = ' LIMIT ' . ($page - 1) * $pageSize .',' . $pageSize;
+
+        $sql = 'SELECT g.*,e.name as course_manage_name FROM ' . self::$table .
+            ' as g  LEFT JOIN ' . $dssStudent . ' as s' . ' ON g.uuid = s.uuid' .
+            ' LEFT JOIN ' . $dssEmployee . ' as e on s.course_manage_id=e.id WHERE ' .
+            $where . ' ORDER BY id DESC ' . $limit;
+
+        $list = $db->queryAll($sql);
+
+        return [$list, $count[0]['count']];
+
+    }
 }

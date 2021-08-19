@@ -15,6 +15,7 @@ use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Libs\WeChatPackage;
+use App\Models\Dss\DssEmployeeModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\Dss\DssWechatOpenIdListModel;
@@ -34,41 +35,8 @@ class WhiteGrantRecordService
      * @return array
      */
     public static function list($params, $page, $pageSize){
-        $where = [];
-        if(!empty($params['uuid'])){
-            $where['uuid'] = $params['uuid'];
-        }
 
-        if(!empty($params['status'])){
-            $where['status'] = $params['status'];
-        }
-
-        if(!empty($params['id'])){
-            $where['id'] = $params['id'];
-        }
-
-        if(!empty($params['mobile'])){
-            $studentInfo = DssStudentModel::getRecord(['mobile'=>$params['mobile']],['id','uuid','mobile']);
-            $where['uuid'] = $studentInfo['uuid'] ?? 0;
-        }
-
-        if(!empty($params['course_manage_id'])){
-            $where['course_manage_id'] = $params['course_manage_id'];
-        }
-
-        $total = WhiteGrantRecordModel::getCount($where);
-
-        if ($total <= 0) {
-            return ['list'=>[], 'total'=>0];
-        }
-
-        $where['LIMIT'] = [($page - 1) * $pageSize, $pageSize];
-        $where['ORDER'] = ['id'=>'DESC'];
-        $list = WhiteGrantRecordModel::getRecords($where);
-        $uuids = array_column($list, 'uuid');
-
-        $wechatSubscribeInfo = DssWechatOpenIdListModel::getUuidOpenIdInfo($uuids);
-        $wechatSubscribeInfo = array_column($wechatSubscribeInfo, null, 'uuid');
+        list($list , $total) = WhiteGrantRecordModel::getList($params, $page, $pageSize);
 
         foreach ($list as &$one){
             $one['is_bind_wx'] = $wechatSubscribeInfo[$one['uuid']]['bind_status'] ?? DssUserWeiXinModel::STATUS_DISABLE;

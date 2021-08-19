@@ -198,6 +198,6 @@ class DssStudentModel extends DssModel
      * @return array
      */
     public static function getUuids($uuids){
-        return self::dbRO()->select(self::$table, ['id', 'uuid','mobile'], ['uuid'=>$uuids, 'status'=>self::STATUS_NORMAL]);
+        return self::dbRO()->select(self::$table, ['id', 'uuid','mobile','course_manage_id'], ['uuid'=>$uuids, 'status'=>self::STATUS_NORMAL]);
     }
 }
