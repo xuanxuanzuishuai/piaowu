@@ -11,7 +11,7 @@ namespace App\Services;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
 use App\Libs\Util;
-use App\Libs\Valid;
+use App\Models\Dss\DssEmployeeModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\EmployeeModel;
 use App\Models\WeekWhiteListModel;
@@ -23,7 +23,7 @@ class WeekWhiteListService
      * 添加白名单
      * @param $uuids
      * @param $operator_id
-     * @throws RunTimeException
+     * @return array[]|bool
      */
     public static function create($uuids, $operator_id){
         //检测是否重复
@@ -114,7 +114,6 @@ class WeekWhiteListService
             $where['uuid'] = $params['uuid'];
         }
 
-        $studentInfo = [];
         if(!empty($params['mobile'])){
             $studentInfo = DssStudentModel::getRecord(['mobile'=>$params['mobile']],['id','uuid','mobile']);
             $where['student_id'] = $studentInfo['id'] ?? 0;
@@ -127,7 +126,7 @@ class WeekWhiteListService
         }
 
         $where['LIMIT'] = [($page - 1) * $pageSize, $pageSize];
-
+        $where['ORDER'] = ['id'=>'DESC'];
         $list = WeekWhiteListModel::getRecords($where);
 
         $list = self::initList($list);
@@ -147,7 +146,7 @@ class WeekWhiteListService
 
         $operator_ids = array_unique(array_merge($course_manage_ids, $operator_ids));
 
-        $employees = EmployeeModel::getRecords(['id'=>$operator_ids],['id','name']);
+        $employees = DssEmployeeModel::getRecords(['id'=>$operator_ids],['id','name']);
 
         $employees = array_column($employees, null, 'id');
 

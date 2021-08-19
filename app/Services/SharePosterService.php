@@ -15,7 +15,6 @@ use App\Libs\AliOSS;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
-use App\Models\CountingActivityUserStatisticModel;
 use App\Models\Dss\DssEventTaskModel;
 use App\Models\Dss\DssReferralActivityModel;
 use App\Models\Dss\DssSharePosterModel;
@@ -605,12 +604,13 @@ class SharePosterService
         $divisionTime = DictConstants::get(DictConstants::NORMAL_UPLOAD_POSTER_DIVISION_TIME, 'division_time');
         $taskConfig = DictConstants::getSet(DictConstants::NORMAL_UPLOAD_POSTER_TASK);
 
+        $now = time();
         $updateData = [
             'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED,
-            'verify_time'   => time(),
+            'verify_time'   => $now,
             'verify_user'   => $params['employee_id'] ?? 0,
             'remark'        => $params['remark'] ?? '',
-            'update_time'   => time(),
+            'update_time'   => $now,
         ];
         $redis = RedisDB::getConn();
         $needAwardList = [];
@@ -649,8 +649,10 @@ class SharePosterService
                 $taskId = $taskConfig[$count] ?? $taskConfig['-1'];
             }
             if (!empty($update) && empty($poster['points_award_ids'])) {
-
-                if($poster['type'] == SharePosterModel::TYPE_WEEK_UPLOAD && isset($whiteList[$poster['uuid']])){
+                $endDate = DictConstants::get(DictConstants::WEEK_WHITE_TERM_OF_VALIDITY, 'term_of_validity');
+                $endDate = strtotime($endDate);
+                //是周周领奖&在白名单内&在指定时间内
+                if($poster['type'] == SharePosterModel::TYPE_WEEK_UPLOAD && isset($whiteList[$poster['uuid']]) && $endDate >= $now){
                     $status = ErpReferralService::EVENT_TASK_STATUS_UNCOMPLETE;
                 }else{
                     $status = ErpReferralService::EVENT_TASK_STATUS_COMPLETE;

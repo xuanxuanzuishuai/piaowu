@@ -8,10 +8,7 @@
 
 namespace App\Services;
 
-use App\Libs\Exceptions\RunTimeException;
-use App\Libs\MysqlDB;
 use App\Models\Dss\DssStudentModel;
-use App\Models\WeekWhiteListModel;
 use App\Models\WhiteRecordModel;
 
 class WhiteRecordService
@@ -58,6 +55,7 @@ class WhiteRecordService
         }
 
         $where['LIMIT'] = [($page - 1) * $pageSize, $pageSize];
+        $where['ORDER'] = ['id'=>'DESC'];
         $list = WhiteRecordModel::getRecords($where);
         $list = WeekWhiteListService::initList($list);
 

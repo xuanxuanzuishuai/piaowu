@@ -14,6 +14,7 @@ use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\Erp\ErpEventModel;
 use App\Models\Erp\ErpEventTaskModel;
+use App\Models\Erp\ErpUserEventTaskAwardGoldLeafModel;
 use App\Models\Erp\ErpUserEventTaskAwardModel;
 use App\Models\OperationActivityModel;
 use App\Models\SharePosterModel;
@@ -128,7 +129,14 @@ class PushMessageService
             ErpEventModel::TYPE_IS_REISSUE_AWARD => 240,
             ErpEventModel::DAILY_UPLOAD_POSTER => 259
         ];
-        $temId = $baseArr[$awardDetailInfo['type']] ?? NULL;
+
+        if($awardDetailInfo['award_node'] == ErpUserEventTaskAwardGoldLeafModel::WEEK_WHITE_WEEK_AWARD){
+            //如果是周周领奖白名单用户
+            $temId = 712;
+        }else{
+            $temId = $baseArr[$awardDetailInfo['type']] ?? NULL;
+        }
+
         if (empty($temId)) {
             $to = $awardDetailInfo['uuid'] == $awardDetailInfo['get_award_uuid'] ? ErpEventTaskModel::AWARD_TO_BE_REFERRER : ErpEventTaskModel::AWARD_TO_REFERRER;
             $temId = WeChatConfigModel::getRecord(['event_task_id' => $awardDetailInfo['event_task_id'], 'to' => $to] , 'id');

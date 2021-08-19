@@ -29,6 +29,7 @@ class ErpUserEventTaskAwardGoldLeafModel extends ErpModel
     // 奖励节点
     const AWARD_NODE_BUY_TRIAL = 'buy_trial_card';    // 购买体验卡
     const AWARD_NODE_CUMULATIVE_INVITE_BUY_YEAR = 'cumulative_invite_buy_year_card';    // 累计邀请购买年卡
+    const WEEK_WHITE_WEEK_AWARD = 'week_award';
 
     /**
      * 获取任务积分奖励列表

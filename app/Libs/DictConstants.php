@@ -357,6 +357,14 @@ class DictConstants {
         ],
     ];
 
+    //周周领奖白名单有效期
+    const WEEK_WHITE_TERM_OF_VALIDITY = [
+        'type' => 'week_white_config',
+        'keys' => [
+            'term_of_validity',
+        ],
+    ];
+
     //获取白名单红包密钥
     const WECHAT_TRANSFER_KEY = [
         'type' => 'wechat_transfer_key',

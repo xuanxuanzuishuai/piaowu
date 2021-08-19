@@ -14,6 +14,7 @@ class WeChatPackage
     private $certPem;
     private $keyPem;
     private $signKey;
+    const BASE_KEY = 'wNHWo4BD6SuNUTL42usTungVYzYYQT9t';
     const BASE_FROM = 0; //原始配置
     const WEEK_FROM = 1; //周周领奖
     function __construct($appId, $busiType, $from = 0)
@@ -28,7 +29,7 @@ class WeChatPackage
             $this->mchId = DictConstants::get(DictConstants::WECHAT_MCHID, $appId . '_' . $busiType);
             $this->certPem = DictConstants::get(DictConstants::WECHAT_API_CERT_PEM, $appId . '_' . $busiType);
             $this->keyPem = DictConstants::get(DictConstants::WECHAT_API_KEY_PEM, $appId . '_' . $busiType);
-            $this->signKey = 'wNHWo4BD6SuNUTL42usTungVYzYYQT9t';
+            $this->signKey = self::BASE_KEY;
         }
         $this->appId = DictConstants::get(DictConstants::WECHAT_APPID, $appId . '_' . $busiType);
         $this->client = new Client();
