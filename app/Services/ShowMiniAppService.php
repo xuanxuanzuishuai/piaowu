@@ -180,20 +180,7 @@ class ShowMiniAppService
                     $data['nickname'] = $wxData['nickname'];
                     $data['headimgurl'] = $wxData['headimgurl'];
                 }
-                // 练琴天数
-                //$accumulateDays = DssAiPlayRecordCHModel::getStudentPlayDayCount($user_id);
-                $accumulateDays = AprViewStudentModel::getStudentPlayDayCount($user_id);
-                // 查询推荐者练习曲目
-                [$percentage, $numbers] = self::getReferrerPlayData($user_id);
             }
-        }
-        //推荐文案
-        if ($percentage && $accumulateDays) {
-            $data['text'] = sprintf('我家宝贝在小叶子练琴<span>%d</span>天，弹奏得分提升了<span>%d%%</span>，就连老师都说进步飞快，值得推荐！', $accumulateDays, $percentage);
-        } elseif ($accumulateDays >= 5) {
-            $data['text'] = sprintf('我家宝贝在小叶子练琴<span>%d</span>天，共练习了<span>%d</span>首曲子，错音变少了，也学会了主动练琴，值得推荐！', $accumulateDays, $numbers);
-        } else {
-            $data['text'] = '自从有了小叶子，孩子错音变少了，学会主动练琴了，也给你家宝贝一个提升的机会！';
         }
         return $data;
     }
