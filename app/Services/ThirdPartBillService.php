@@ -265,6 +265,7 @@ class ThirdPartBillService
             $statusDict = DictConstants::getSet(DictConstants::THIRD_PART_BILL_STATUS);
             foreach ($billList['records'] as $k => &$v) {
                 $v['status_zh'] = $statusDict[$v['status']];
+                $v['mobile']    = Util::hideUserMobile($v['mobile']);
                 $records[$k] = $v;
             }
         }
