@@ -9,13 +9,14 @@
 namespace App\Services;
 
 use App\Libs\Constants;
+use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\NewSMS;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Libs\WeChatPackage;
-use App\Models\Dss\DssEmployeeModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\Dss\DssWechatOpenIdListModel;
@@ -37,6 +38,9 @@ class WhiteGrantRecordService
     public static function list($params, $page, $pageSize){
 
         list($list , $total) = WhiteGrantRecordModel::getList($params, $page, $pageSize);
+        if(!$total){
+            return compact('list', 'total');
+        }
         $uuids = array_column($list, 'uuid');
         $wechatSubscribeInfo = DssWechatOpenIdListModel::getUuidOpenIdInfo($uuids);
         $wechatSubscribeInfo = array_column($wechatSubscribeInfo, null, 'uuid');
@@ -127,12 +131,8 @@ class WhiteGrantRecordService
                     WhiteGrantRecordService::deduction($nextData);
                     break;
                 case WhiteGrantRecordModel::GRANT_STEP_4:
-                    WhiteGrantRecordService::getBindInfo($nextData);
-                    break;
                 case WhiteGrantRecordModel::GRANT_STEP_5:
-                    $wechatSubscribeInfo = DssWechatOpenIdListModel::getUuidOpenIdInfo([$student['uuid']]);
-                    $nextData['open_id'] = $wechatSubscribeInfo[0]['open_id'];
-                    WhiteGrantRecordService::sendPackage($nextData);
+                    WhiteGrantRecordService::getBindInfo($nextData);
                     break;
                 default:
                     return Valid::addErrors([], 'manualGrant', 'stepNotDefind');
@@ -240,7 +240,7 @@ class WhiteGrantRecordService
      */
     public static function getMchBillNo($next)
     {
-        if (!empty($next['grantInfo']) && in_array($next['grantInfo']['reason'], [WeChatAwardCashDealModel::CA_ERROR, WeChatAwardCashDealModel::SYSTEMERROR])) {
+        if (!empty($next['grantInfo']) && in_array($next['grantInfo']['result_code'], [WeChatAwardCashDealModel::CA_ERROR, WeChatAwardCashDealModel::SYSTEMERROR])) {
             return $next['grantInfo']['bill_no'];
         } else {
             return $_ENV['ENV_NAME'] . min($next['awardIds'] ) . $next['awardNum'] . date('Ymd');
@@ -302,11 +302,29 @@ class WhiteGrantRecordService
             $id = $data['nextData']['grantInfo']['id'];
             WhiteGrantRecordModel::updateRecord($id, $insert);
         }else{
-
-            $res = WhiteGrantRecordModel::insertRecord($insert);
+            WhiteGrantRecordModel::insertRecord($insert);
         }
 
+        self::sendSms($student['mobile'], $status, $insert['grant_money']);
     }
+
+    public static function sendSms($mobile, $status, $leaf){
+        $m = date('m', strtotime('-1 month'));
+        if($status == WhiteGrantRecordModel::STATUS_GIVE){
+            $msg = '亲爱的用户:您在'. $m .'月份参与的限定福利活动，共计获得'. $leaf .'金叶子,专属福利已发放至您的账户,请进入【小叶子智能陪练公众号】领取红包。';
+        }
+
+        if($status == WhiteGrantRecordModel::STATUS_GIVE_FAIL){
+            $msg = '亲爱的用户:您在'. $m .'月份参与的限定福利活动，共计获得'.$leaf.'金叶子,专属福利发放失败，可以联系您的课管重新发放。';
+        }
+
+        if(empty($msg)){
+            return false;
+        }
+
+        return (new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host')))->sendCommonSms($msg, $mobile);
+    }
+
 
     /**
      * 获取绑定微信、公众号等信息

@@ -22,6 +22,7 @@ use App\Libs\WeChatPackage;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\WeChatAwardCashDealModel;
 use App\Models\WhiteGrantRecordModel;
+use App\Services\WhiteGrantRecordService;
 use Dotenv\Dotenv;
 
 $dotenv = new Dotenv(PROJECT_ROOT, '.env');
@@ -33,10 +34,10 @@ $dotenv->overload();
 class obj{
 
     public function run(){
-
         $now = time();
         $list = WhiteGrantRecordModel::getRecords(['status'=>WhiteGrantRecordModel::STATUS_GIVE], ['id', 'bill_no']);
         $weChatPackage = new WeChatPackage(Constants::SMART_APP_ID, DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER, WeChatPackage::WEEK_FROM);
+
         foreach ($list as $one){
 
             $resultData = $weChatPackage->getRedPackBillInfo($one['bill_no']);
@@ -46,7 +47,6 @@ class obj{
             if ($resultData['result_code'] == WeChatAwardCashDealModel::RESULT_FAIL_CODE) {
                 $resultCode = $resultData['err_code'];
                 $status     = WhiteGrantRecordModel::STATUS_GIVE_FAIL;
-                $reason     = WeChatAwardCashDealModel::getWeChatErrorMsg($resultData['err_code']);
             } else {
                 //已领取
                 if (in_array($resultData['status'], [WeChatAwardCashDealModel::RECEIVED])) {
@@ -69,13 +69,12 @@ class obj{
 
             $data = [
                 'update_time' => $now,
-                'reason'      => $reason,
+                'reason'      => WeChatAwardCashDealModel::getWeChatErrorMsg($resultCode),
                 'result_code' => $resultCode,
                 'status'      => $status,
             ];
 
             WhiteGrantRecordModel::updateRecord($one['id'], $data);
-
         }
 
 

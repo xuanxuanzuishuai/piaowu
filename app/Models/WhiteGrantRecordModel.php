@@ -34,7 +34,6 @@ class WhiteGrantRecordModel extends Model
 
     const ENVIRONMENT_NOE_EXISTS = 'NOT_ENV_SATISFY';  // 环境不对
 
-
     public static function getList($params, $page, $pageSize){
         $dssStudent = DssStudentModel::getTableNameWithDb();
         $dssEmployee = DssEmployeeModel::getTableNameWithDb();
@@ -52,18 +51,22 @@ class WhiteGrantRecordModel extends Model
             $where  .= ' AND g.id = ' . $params['id'];
         }
 
+        $leftStudent = '';
+        $leftEmployee = '';
         if(!empty($params['mobile'])){
-            $where  .= ' AND s.mobile = ' . $params['mobile'];
+            $where  .= ' AND s.mobile = ' . "'{$params['mobile']}'";
+            $leftStudent = ' LEFT JOIN ' . $dssStudent . ' as s' . ' ON g.uuid = s.uuid ';
         }
 
         if(!empty($params['course_manage_id'])){
             $where .= ' AND s.course_manage_id in ('. implode(',', $params['course_manage_id']) . ')';
+            $leftEmployee = ' LEFT JOIN ' . $dssEmployee . ' as e on s.course_manage_id=e.id ';
         }
 
         $db = MysqlDB::getDB();
 
-        $countSql = "SELECT count(1) as count FROM " . self::$table . ' as g  LEFT JOIN ' . $dssStudent . ' as s' . ' ON g.uuid = s.uuid' .
-            ' LEFT JOIN ' . $dssEmployee . ' as e on s.course_manage_id=e.id WHERE' . $where;
+        $countSql = "SELECT count(1) as count FROM " . self::$table . ' as g  ' . $leftStudent . $leftEmployee .
+            '  WHERE' . $where;
 
         $count = $db->queryAll($countSql);
 
@@ -75,7 +78,6 @@ class WhiteGrantRecordModel extends Model
             $where . ' ORDER BY id DESC ' . $limit;
 
         $list = $db->queryAll($sql);
-
 
         return [$list, $count[0]['count']];
 

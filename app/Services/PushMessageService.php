@@ -19,6 +19,7 @@ use App\Models\Erp\ErpUserEventTaskAwardModel;
 use App\Models\OperationActivityModel;
 use App\Models\SharePosterModel;
 use App\Models\WeChatConfigModel;
+use App\Models\WeekWhiteListModel;
 
 class PushMessageService
 {
@@ -130,7 +131,7 @@ class PushMessageService
             ErpEventModel::DAILY_UPLOAD_POSTER => 259
         ];
 
-        if($awardDetailInfo['award_node'] == ErpUserEventTaskAwardGoldLeafModel::WEEK_WHITE_WEEK_AWARD){
+        if($awardDetailInfo['award_node'] == ErpUserEventTaskAwardGoldLeafModel::WEEK_WHITE_WEEK_AWARD && (WeekWhiteListModel::getCount(['status'=>WeekWhiteListModel::NORMAL_STATUS,'uuid'=>$awardDetailInfo['uuid']]))){
             //如果是周周领奖白名单用户
             $temId = 712;
         }else{

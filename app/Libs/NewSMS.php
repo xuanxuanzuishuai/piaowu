@@ -250,4 +250,27 @@ class NewSMS
         ];
         return self::sendSMS($data);
     }
+
+
+    /**
+     * 发送短信通用模版
+     * @param $msg
+     * @param $mobile
+     * @param string $sign
+     * @return bool
+     */
+    public function sendCommonSms($msg, $mobile, $sign = ''){
+
+        if(empty($sign)){
+            $sign = CommonServiceForApp::SIGN_AI_PEILIAN;
+        }
+
+        $data = [
+            'sign_name' => $sign,
+            'phone_number' => $mobile,
+            'content' => $msg,
+        ];
+        return self::sendSMS($data);
+    }
+
 }
