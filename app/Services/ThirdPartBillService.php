@@ -197,6 +197,10 @@ class ThirdPartBillService
             $where .= ' and t.mobile = :mobile ';
             $map[':mobile'] = $params['mobile'];
         }
+        if (!empty($params['uuid'])) {
+            $where .= ' and s.uuid = :uuid ';
+            $map[':uuid'] = $params['uuid'];
+        }
         if (!empty($params['trade_no'])) {
             $where .= ' and t.trade_no = :trade_no ';
             $map[':trade_no'] = $params['trade_no'];
