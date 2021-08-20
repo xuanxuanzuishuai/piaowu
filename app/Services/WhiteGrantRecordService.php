@@ -46,6 +46,7 @@ class WhiteGrantRecordService
         $wechatSubscribeInfo = array_column($wechatSubscribeInfo, null, 'uuid');
 
         foreach ($list as &$one){
+            $one['reason'] = in_array($one['status'], [WhiteGrantRecordModel::STATUS_GIVE, WhiteGrantRecordModel::STATUS_GIVE_NOT_SUCC]) ? '' : $one['reason'];
             $one['current_open_id'] = $wechatSubscribeInfo[$one['uuid']]['open_id'] ?? '';
             $one['is_bind_wx'] = $wechatSubscribeInfo[$one['uuid']]['bind_status'] ?? DssUserWeiXinModel::STATUS_DISABLE;
             $one['is_bind_gzh'] = $wechatSubscribeInfo[$one['uuid']]['subscribe_status'] ?? DssWechatOpenIdListModel::UNSUBSCRIBE_WE_CHAT;
@@ -283,14 +284,13 @@ class WhiteGrantRecordService
             'uuid'              => $student['uuid'] ?? '',
             'open_id'           => $data['nextData']['open_id'] ?? '',
             'grant_money'       => $data['nextData']['awardNum'],
-            'reason'            => $data['msg'],
+            'reason'            => $status == WhiteGrantRecordModel::STATUS_GIVE_FAIL ? $data['msg'] : '',
             'status'            => $status,
             'task_info'         => json_encode($data['taskArr'] ?? []),
             'course_manage_id'  => $student['course_manage_id'] ?? 0,
             'grant_step'        => $data['step'],
             'operator_id'       => $data['nextData']['operator_id'] ?? 0,
             'grant_time'        => $status == WhiteGrantRecordModel::STATUS_GIVE ? $now : 0,
-            'create_time'       => $now,
             'update_time'       => 0,
             'award_ids'         => implode(',', $data['nextData']['awardIds']),
             'result_code'       => $data['result_code'] ?? '',
@@ -302,6 +302,7 @@ class WhiteGrantRecordService
             $id = $data['nextData']['grantInfo']['id'];
             WhiteGrantRecordModel::updateRecord($id, $insert);
         }else{
+            $insert['create_time'] = $now;
             WhiteGrantRecordModel::insertRecord($insert);
         }
 
@@ -386,5 +387,47 @@ class WhiteGrantRecordService
         }
 
         return $studentList;
+    }
+
+    public static function getWeekRedPkgStatus($data){
+
+        $now = time();
+        $weChatPackage = new WeChatPackage(Constants::SMART_APP_ID, DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER, WeChatPackage::WEEK_FROM);
+
+        $resultData = $weChatPackage->getRedPackBillInfo($data['bill_no']);
+
+        SimpleLogger::info("wx red pack query", ['mch_billno' => $data['bill_no'], 'data' => $resultData]);
+
+        if ($resultData['result_code'] == WeChatAwardCashDealModel::RESULT_FAIL_CODE) {
+            $resultCode = $resultData['err_code'];
+            $status     = WhiteGrantRecordModel::STATUS_GIVE_FAIL;
+        } else {
+            //已领取
+            if (in_array($resultData['status'], [WeChatAwardCashDealModel::RECEIVED])) {
+                $status = WhiteGrantRecordModel::STATUS_GIVE_NOT_SUCC;
+                $resultCode = $resultData['status'];
+            }
+
+            //发放失败/退款中/已退款
+            if (in_array($resultData['status'], [WeChatAwardCashDealModel::REFUND, WeChatAwardCashDealModel::RFUND_ING, WeChatAwardCashDealModel::FAILED])) {
+                $status = WhiteGrantRecordModel::STATUS_GIVE_FAIL;
+                $resultCode = $resultData['status'];
+            }
+
+            //发放中/已发放待领取
+            if (in_array($resultData['status'], [WeChatAwardCashDealModel::SENDING, WeChatAwardCashDealModel::SENT])) {
+                $status = WhiteGrantRecordModel::STATUS_GIVE;
+                $resultCode = $resultData['status'];
+            }
+        }
+
+        $data = [
+            'update_time' => $now,
+            'reason'      => WeChatAwardCashDealModel::getWeChatErrorMsg($resultCode),
+            'result_code' => $resultCode,
+            'status'      => $status,
+        ];
+
+        WhiteGrantRecordModel::updateRecord($data['id'], $data);
     }
 }

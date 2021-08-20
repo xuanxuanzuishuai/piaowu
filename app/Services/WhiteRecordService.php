@@ -45,11 +45,15 @@ class WhiteRecordService
 
         if(!empty($params['mobile'])){
             $studentInfo = DssStudentModel::getRecord(['mobile'=>$params['mobile']],['id','uuid','mobile']);
-            $where['uuid'] = $studentInfo['uuid'] ?? 0;
+            if(!empty($where['uuid']) && $where['uuid'] != $studentInfo['uuid']){
+                return ['list'=>[], 'total'=>0];
+            }else{
+                $where['uuid'] = $studentInfo['uuid'] ?? 0;
+            }
+
         }
 
         $total = WhiteRecordModel::getCount($where);
-
         if ($total <= 0) {
             return ['list'=>[], 'total'=>0];
         }

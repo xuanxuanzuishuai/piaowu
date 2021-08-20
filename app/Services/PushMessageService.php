@@ -131,7 +131,9 @@ class PushMessageService
             ErpEventModel::DAILY_UPLOAD_POSTER => 259
         ];
 
-        if($awardDetailInfo['award_node'] == ErpUserEventTaskAwardGoldLeafModel::WEEK_WHITE_WEEK_AWARD && (WeekWhiteListModel::getCount(['status'=>WeekWhiteListModel::NORMAL_STATUS,'uuid'=>$awardDetailInfo['uuid']]))){
+        $endDate = DictConstants::get(DictConstants::WEEK_WHITE_TERM_OF_VALIDITY, 'term_of_validity');
+        $endDate = strtotime($endDate);
+        if($endDate >= time() && $awardDetailInfo['award_node'] == ErpUserEventTaskAwardGoldLeafModel::WEEK_WHITE_WEEK_AWARD && (WeekWhiteListModel::getCount(['status'=>WeekWhiteListModel::NORMAL_STATUS,'uuid'=>$awardDetailInfo['uuid']]))){
             //如果是周周领奖白名单用户
             $temId = 712;
         }else{

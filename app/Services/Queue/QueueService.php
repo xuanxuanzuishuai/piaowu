@@ -824,4 +824,37 @@ class QueueService
         return true;
     }
 
+    /**
+     * 白名单发放红包
+     * @param $data
+     * @return bool
+     */
+    public static function weekWhiteGrandLeaf($data){
+        try {
+            $topic = new WeekActivityTopic();
+            $topic->weekWhiteGrandLeaf($data)->publish(0);
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), $data);
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 获取发放红包状态
+     * @param $data
+     * @return bool
+     */
+    public static function getWeekWhiteSendRedPkgStatus($data){
+        try {
+            $topic = new WeekActivityTopic();
+            $topic->getWeekWhiteSendRedPkgStatus($data)->publish(0);
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), $data);
+            return false;
+        }
+        return true;
+    }
+
+
 }

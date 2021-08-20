@@ -29,6 +29,7 @@ use App\Models\EmployeeModel;
 use App\Models\Erp\ErpStudentModel;
 use App\Models\StudentAccountAwardPointsFileModel;
 use App\Models\StudentAccountAwardPointsLogModel;
+use App\Models\WhiteGrantRecordModel;
 use App\Services\AgentService;
 use App\Services\AutoCheckPicture;
 use App\Services\CashGrantService;
@@ -49,6 +50,7 @@ use App\Services\Queue\StudentAccountAwardPointsTopic;
 use App\Services\Queue\ThirdPartBillTopic;
 use App\Services\Queue\UserPointsExchangeRedPackTopic;
 use App\Services\Queue\WechatTopic;
+use App\Services\Queue\WeekActivityTopic;
 use App\Services\RefereeAwardService;
 use App\Services\StudentAccountAwardPointsLogService;
 use App\Services\StudentService;
@@ -56,6 +58,7 @@ use App\Services\ThirdPartBillService;
 use App\Services\UserRefereeService;
 use App\Services\UserService;
 use App\Services\WechatService;
+use App\Services\WhiteGrantRecordService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -962,5 +965,63 @@ class Consumer extends ControllerBase
                 break;
         }
         return HttpHelper::buildResponse($response, []);
+    }
+
+    /**
+     * 周周领奖相关
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function weekWhiteGrandLeaf(Request $request, Response $response){
+        $params = $request->getParams();
+        $rules = [
+            [
+                'key' => 'topic_name',
+                'type' => 'required',
+                'error_code' => 'topic_name_is_required',
+            ],
+            [
+                'key' => 'source_app_id',
+                'type' => 'required',
+                'error_code' => 'source_app_id_is_required',
+            ],
+            [
+                'key' => 'event_type',
+                'type' => 'required',
+                'error_code' => 'event_type_is_required',
+            ],
+            [
+                'key' => 'msg_body',
+                'type' => 'required',
+                'error_code' => 'msg_body_is_required',
+            ],
+        ];
+
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $data = $params['msg_body'];
+
+        switch ($params['event_type']) {
+            case WeekActivityTopic::EVENT_WHITE_GRANT_RED_PKG:
+                try {
+                    WhiteGrantRecordService::grant($data);
+                }catch (RuntimeException $e){
+                    WhiteGrantRecordService::create($data['student'], $e->getData(),WhiteGrantRecordModel::STATUS_GIVE_FAIL);
+                }
+                break;
+            case WeekActivityTopic::EVENT_GET_WHITE_GRANT_STATUS:
+                WhiteGrantRecordService::getWeekRedPkgStatus($data);
+                break;
+            default:
+                SimpleLogger::error('unknown event type', ['params' => $params]);
+                break;
+        }
+        return HttpHelper::buildResponse($response, []);
+
+
     }
 }

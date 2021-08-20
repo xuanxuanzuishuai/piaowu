@@ -15,10 +15,8 @@ define('LANG_ROOT', PROJECT_ROOT . '/lang');
 
 require_once PROJECT_ROOT . '/vendor/autoload.php';
 
-
-use App\Libs\Exceptions\RunTimeException;
 use App\Models\Dss\DssStudentModel;
-use App\Models\WhiteGrantRecordModel;
+use App\Services\Queue\QueueService;
 use App\Services\WhiteGrantRecordService;
 use Dotenv\Dotenv;
 
@@ -42,7 +40,6 @@ class obj{
 
         $studentList = $this->getAwardList();
 
-
         foreach ($studentList as $uuid => $list){
             $student = DssStudentModel::getRecord(['uuid' => $uuid, 'status'=>DssStudentModel::STATUS_NORMAL], ['id','uuid','mobile','course_manage_id','status']);
             $data = [
@@ -50,12 +47,8 @@ class obj{
                 'list'=>$list,
                 'student'=>$student,
             ];
-            try {
-                WhiteGrantRecordService::grant($data);
-            }catch (RuntimeException $e){
-                WhiteGrantRecordService::create($student, $e->getData(),WhiteGrantRecordModel::STATUS_GIVE_FAIL);
-            }
 
+            QueueService::weekWhiteGrandLeaf($data);
         }
     }
     /**

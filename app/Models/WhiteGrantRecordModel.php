@@ -59,6 +59,7 @@ class WhiteGrantRecordModel extends Model
         }
 
         if(!empty($params['course_manage_id'])){
+            $leftStudent = ' LEFT JOIN ' . $dssStudent . ' as s' . ' ON g.uuid = s.uuid ';
             $where .= ' AND s.course_manage_id in ('. implode(',', $params['course_manage_id']) . ')';
             $leftEmployee = ' LEFT JOIN ' . $dssEmployee . ' as e on s.course_manage_id=e.id ';
         }
