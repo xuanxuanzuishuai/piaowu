@@ -244,7 +244,7 @@ class AprViewStudentModel extends CHOBModel
         $studentNotNostalgicDuration     = self::getStudentNotNostalgicDuration($studentId, $startTime, $endTime);
         $studentTotalSum['lesson_count'] = $lessonCountAndDate['lesson_count'] ?? 0;
         $studentTotalSum['play_day']     = $lessonCountAndDate['play_day'] ?? 0;
-        $studentTotalSum['sum_duration'] = (string)($studentUiEntryOldDuration['sum_duration'] + $studentNotNostalgicDuration['sum_duration']);
+        $studentTotalSum['sum_duration'] = (string)(ceil(($studentUiEntryOldDuration['sum_duration'] + $studentNotNostalgicDuration['sum_duration'])/60));
         return $studentTotalSum;
     }
 
