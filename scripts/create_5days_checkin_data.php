@@ -26,6 +26,7 @@ use App\Libs\DictConstants;
 use App\Libs\SimpleLogger;
 use App\Libs\RedisDB;
 use App\Models\CHModel\AprViewStudentModel;
+use App\Services\ActivityService;
 use App\Services\ReferralService;
 use DateTime;
 use Dotenv\Dotenv;
@@ -94,7 +95,10 @@ foreach ($collectionInfo as $collectionId => $collection) {
         $student['lesson_count']  = $lc;
         $student['duration_sum']  = $sd ?? 0;
         if (!empty($student['duration_sum']) || empty($dayDiff)) {
-            list($content1, $content2, $posterImgFile) = ReferralService::getCheckinSendData($dayDiff, $student);
+            $params = [
+                'from_type' => ActivityService::FROM_TYPE_PUSH
+            ];
+            list($content1, $content2, $posterImgFile) = ReferralService::getCheckinSendData($dayDiff, $student, $params);
             $student['content1']      = $content1;
             $student['content2']      = $content2;
             $student['posterImgFile'] = $posterImgFile;

@@ -423,8 +423,9 @@ class ReferralService
      * @param $studentInfo
      * @return array
      */
-    public static function getCheckinSendData($day, $studentInfo)
+    public static function getCheckinSendData($day, $studentInfo, $params)
     {
+        $fromType = $params['from_type']; //用于区分来源
         $configData = DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'day_' . $day);
         if (empty($configData)) {
             SimpleLogger::error('EMPTY CONFIG', [$day]);
@@ -436,7 +437,7 @@ class ReferralService
         $content1 = str_replace('{page_url}', $pageUrl, $content1);
         $content2 = Util::textDecode($configData['content2'] ?? '');
         $posterData = self::getPosterByDay($day);
-        $posterImage = self::genCheckinPoster($posterData, $day, $studentInfo);
+        $posterImage = self::genCheckinPoster($posterData, $day, $studentInfo, $fromType);
         return [$content1, $content2, $posterImage];
     }
 
@@ -463,7 +464,7 @@ class ReferralService
      * @param $studentInfo
      * @return array
      */
-    public static function genCheckinPoster($posterInfo, $day, $studentInfo)
+    public static function genCheckinPoster($posterInfo, $day, $studentInfo, $fromType)
     {
         if (empty($posterInfo)) {
             return [];
@@ -501,11 +502,13 @@ class ReferralService
         }
 
         SimpleLogger::info("create qr start", []);
+        //获取对应渠道
+        $channelId = self::getChannelByDay($day, $fromType);
         // 获取小程序码 - 如果获取小程序码失败，返回空
         $userQrInfo = MiniAppQrService::getUserMiniAppQr(
             $studentInfo['id'],
             DssUserQrTicketModel::STUDENT_TYPE,
-            self::getChannelByDay($day),
+            $channelId,
             DssUserQrTicketModel::LANDING_TYPE_MINIAPP,
             ['poster_id' => $posterInfo['id']]
         );
@@ -582,14 +585,16 @@ class ReferralService
         return $r;
     }
 
+
     /**
-     * 获取海报渠道
+     * 获取海报渠道-根据来源(app|miniapp|h5)
      * @param $day
-     * @return string
+     * @param $fromType
+     * @return mixed|string
      */
-    public static function getChannelByDay($day)
+    public static function getChannelByDay($day, $fromType)
     {
-        $config = DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'day_channel');
+        $config = DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'day_channel_' . $fromType);
         $config = json_decode($config, true);
         return $config[$day] ?? '';
     }

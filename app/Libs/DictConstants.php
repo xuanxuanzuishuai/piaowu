@@ -457,6 +457,9 @@ class DictConstants {
             'day_poster_config',
             'new_old_rule_dividing_line_time',
             'task_ids',
+            'day_channel_app',
+            'day_channel_wx',
+            'day_channel_push',
         ],
     ];
     // 转介绍相关配置

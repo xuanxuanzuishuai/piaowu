@@ -34,6 +34,10 @@ use I18N\Lang;
 class ActivityService
 {
 
+    const FROM_TYPE_APP  = 'app'; //app
+    const FROM_TYPE_WX   = 'wx'; //微信
+    const FROM_TYPE_PUSH = 'push'; //push
+
     /**
      * 打卡活动上传截图
      * @param $studentId
@@ -328,10 +332,10 @@ class ActivityService
      * @param $nodeId
      * @return array
      */
-    public static function signInCopyWriting($studentId, $nodeId)
+    public static function signInCopyWriting($studentId, $params)
     {
-        $studentInfo = ReferralService::getUserInfoForSendData($studentId, strtotime($nodeId));
-        list($content1, $content2, $poster) = ReferralService::getCheckinSendData($studentInfo['day'], $studentInfo);
+        $studentInfo = ReferralService::getUserInfoForSendData($studentId, strtotime($params['node_id']));
+        list($content1, $content2, $poster) = ReferralService::getCheckinSendData($studentInfo['day'], $studentInfo, $params);
         return ['text' => $content2, 'poster' => $poster['poster_save_full_path']];
     }
 

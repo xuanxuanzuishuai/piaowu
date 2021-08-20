@@ -166,17 +166,17 @@ class StudentAppRouter extends RouterBase
         /* 五日打卡返学费相关 */
         '/student_app/sign/upload'            => [
             'method'  => ['post'],
-            'call'    => Activity::class . ':signInUpload',
+            'call'    => \App\Controllers\StudentApp\Activity::class . ':signInUpload',
             'middles' => [AppAuthMiddleWare::class]
         ],
         '/student_app/sign/data'              => [
             'method'  => ['get'],
-            'call'    => Activity::class . ':signInData',
+            'call'    => \App\Controllers\StudentApp\Activity::class . ':signInData',
             'middles' => [AppAuthMiddleWare::class]
         ],
         '/student_app/sign/copy_writing'      => [
             'method'  => ['get'],
-            'call'    => Activity::class . ':signInCopyWriting',
+            'call'    => \App\Controllers\StudentApp\Activity::class . ':signInCopyWriting',
             'middles' => [AppAuthMiddleWare::class]
         ],
         '/student_app/student/account_detail' => [

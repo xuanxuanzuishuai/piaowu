@@ -1,12 +1,8 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: llp
- * Date: 2020/12/10
- * Time: 10:41 AM
- */
 
-namespace App\Controllers\StudentWX;
+
+namespace App\Controllers\StudentApp;
+
 
 use App\Controllers\ControllerBase;
 use App\Libs\Exceptions\RunTimeException;
@@ -17,10 +13,8 @@ use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
 
-
 class Activity extends ControllerBase
 {
-
     /**
      * 节点打卡截图上传
      * @param Request $request
@@ -31,13 +25,13 @@ class Activity extends ControllerBase
     {
         $rules = [
             [
-                'key' => 'node_id',
-                'type' => 'required',
+                'key'        => 'node_id',
+                'type'       => 'required',
                 'error_code' => 'node_id_is_required'
             ],
             [
-                'key' => 'image_path',
-                'type' => 'required',
+                'key'        => 'image_path',
+                'type'       => 'required',
                 'error_code' => 'image_path_is_required'
             ]
         ];
@@ -65,7 +59,7 @@ class Activity extends ControllerBase
      * @param Response $response
      * @return Response
      */
-    public function signInData(/** @noinspection PhpUnusedParameterInspection */Request $request, Response $response)
+    public function signInData(Request $request, Response $response)
     {
         $data = ActivityService::getSignInData($this->ci['user_info']['user_id']);
         return HttpHelper::buildResponse($response, $data);
@@ -81,8 +75,8 @@ class Activity extends ControllerBase
     {
         $rules = [
             [
-                'key' => 'node_id',
-                'type' => 'required',
+                'key'        => 'node_id',
+                'type'       => 'required',
                 'error_code' => 'node_id_is_required'
             ]
         ];
@@ -93,22 +87,9 @@ class Activity extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         $params = $request->getParams();
-        $params['from_type'] = ActivityService::FROM_TYPE_WX;
-        $data = ActivityService::signInCopyWriting($this->ci['user_info']['user_id'],$params);
+        $params['from_type'] = ActivityService::FROM_TYPE_APP;
+        $data   = ActivityService::signInCopyWriting($this->ci['user_info']['user_id'], $params);
         return HttpHelper::buildResponse($response, $data);
     }
 
-    /**
-     * 周周有奖活动列表
-     * @param Request $request
-     * @param Response $response
-     * @return Response
-     */
-    public function weekActivityList(Request $request, Response $response)
-    {
-        $params = $request->getParams();
-        $params['user_info'] = $this->ci['user_info'];
-        $data = ActivityService::getWeekActivityList($params);
-        return HttpHelper::buildResponse($response, $data);
-    }
 }
