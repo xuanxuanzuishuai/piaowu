@@ -143,6 +143,7 @@ class ActivityService
         $data['days'] = $nodeData['days'];
         $data['collection_id'] = $studentData['collection_id']; //班级id
         $data['collection_status'] = $activityData['collection_status'] ?? 0; //班期状态
+        $data['teaching_start_time'] = date('Y-m-d H:i:s', $activityData['teaching_start_time']);
         return $data;
     }
 
@@ -336,7 +337,7 @@ class ActivityService
     {
         $studentInfo = ReferralService::getUserInfoForSendData($studentId, strtotime($params['node_id']));
         list($content1, $content2, $poster) = ReferralService::getCheckinSendData($studentInfo['day'], $studentInfo, $params);
-        return ['text' => $content2, 'poster' => $poster['poster_save_full_path']];
+        return ['text' => $content2, 'poster' => $poster['poster_save_full_path'], 'channel_id' => $poster['channel_id'] ?? 0];
     }
 
     /**

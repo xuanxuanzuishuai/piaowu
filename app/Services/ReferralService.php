@@ -516,7 +516,8 @@ class ReferralService
         if (empty($userQrPath)) {
             return [
                 'poster_save_full_path' => '',
-                'unique' => md5($studentInfo['id'] . $day . $posterInfo['path']) . ".jpg"
+                'unique' => md5($studentInfo['id'] . $day . $posterInfo['path']) . ".jpg",
+                'channel_id' => $channelId
             ];
         }
 
@@ -560,7 +561,8 @@ class ReferralService
         $resImgFile = AliOSS::signUrls($posterInfo['path'], "", "", "", false, $waterMarkStr, $imgSizeStr);
         return [
             'poster_save_full_path' => $resImgFile,
-            'unique' => md5($studentInfo['id'] . $day . $posterInfo['path']) . ".jpg"
+            'unique' => md5($studentInfo['id'] . $day . $posterInfo['path']) . ".jpg",
+            'channel_id' => $channelId
         ];
     }
 
@@ -587,7 +589,7 @@ class ReferralService
 
 
     /**
-     * 获取海报渠道-根据来源(app|miniapp|h5)
+     * 获取海报渠道-根据来源(app|wx|push)
      * @param $day
      * @param $fromType
      * @return mixed|string
