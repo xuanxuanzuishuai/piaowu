@@ -23,6 +23,10 @@ class TemplatePosterModel extends Model
 
     const STANDARD_POSTER_TXT = '标准海报';
 
+    //练琴数据 1需要 2不需要
+    const PRACTISE_WANT = 1;
+    const PRACTISE_NOT_WANT = 2;
+
     /**
      * @param $params
      * @return array
@@ -59,6 +63,7 @@ class TemplatePosterModel extends Model
                self::$table . '.poster_path',
                self::$table . '.status',
                self::$table . '.order_num',
+               self::$table . '.practise',
                self::$table . '.update_time',
                self::$table . '.example_path',
             ],

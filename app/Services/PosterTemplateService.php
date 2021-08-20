@@ -9,6 +9,7 @@ use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\ActivityPosterModel;
 use App\Models\ActivityExtModel;
+use App\Models\CHModel\AprViewStudentModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssTemplatePosterModel;
 use App\Models\Dss\DssUserQrTicketModel;
@@ -220,6 +221,9 @@ class PosterTemplateService
         if (isset($row['update_time'])) {
             $row['update_time'] = date('Y-m-d H:i', $row['update_time']);
         }
+        if (isset($row['practise'])) {
+            $row['practise_zh'] = $row['practise'] == TemplatePosterModel::PRACTISE_WANT ? '是' : '否';
+        }
         return $row;
     }
     
@@ -290,6 +294,7 @@ class PosterTemplateService
             'status' => $params['status'],
             'order_num' => $params['order_num'],
             'type' => $params['type'],
+            'practise' => $params['practise'] ?? TemplatePosterModel::PRACTISE_NOT_WANT,
             'operate_id' => $operateId,
             'create_time' => $time,
             'update_time' => $time,
@@ -358,7 +363,8 @@ class PosterTemplateService
         isset($params['example_path']) && $needUpdate['example_path'] = $params['example_path'];
         isset($params['status']) && $needUpdate['status'] = $params['status'];
         isset($params['order_num']) && $needUpdate['order_num'] = $params['order_num'];
-        
+        isset($params['practise']) && $needUpdate['practise'] = $params['practise'];
+
         if (isset($needUpdate['poster_path'])) {
             $posterPath = $params['poster_path'];
             $posterParams = [
@@ -503,6 +509,10 @@ class PosterTemplateService
             'nickname' => $userDetail['student_info']['name'] ?? '',
             'headimgurl' => StudentService::getStudentThumb($userDetail['student_info']['thumb'])
         ];
+
+        //练琴数据
+        $practise = AprViewStudentModel::getStudentTotalSum($studentId);
+
         // 查询活动对应海报
         $posterList = PosterService::getActivityPosterList($activityInfo);
         if (empty($posterList)) {
@@ -569,6 +579,7 @@ class PosterTemplateService
         $data['student_status'] = $userDetail['student_status'];
         $data['student_status_zh'] = DssStudentModel::STUDENT_IDENTITY_ZH_MAP[$userDetail['student_status']] ?? DssStudentModel::STATUS_REGISTER;
         $data['can_upload'] = $canUploadFlag;
+        $data['practise'] = $practise;
         return $data;
     }
 

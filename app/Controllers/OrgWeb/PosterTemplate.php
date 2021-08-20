@@ -75,7 +75,13 @@ class PosterTemplate extends ControllerBase
 	            'type' => 'max',
 	            'value' => 100,
 	            'error_code' => 'order_num_between_1_100'
-            ]
+            ],
+            [
+                'key' => 'practise',
+                'type' => 'in',
+                'value' => [TemplatePosterModel::PRACTISE_WANT,TemplatePosterModel::PRACTISE_NOT_WANT],
+                'error_code' => 'practise_is_error'
+            ],
         ];
         //验证合法性
         $params = $request->getParams();
@@ -146,7 +152,13 @@ class PosterTemplate extends ControllerBase
 		        'type' => 'max',
 		        'value' => 100,
 		        'error_code' => 'order_num_between_1_100'
-	        ]
+	        ],
+            [
+                'key' => 'practise',
+                'type' => 'in',
+                'value' => [TemplatePosterModel::PRACTISE_WANT,TemplatePosterModel::PRACTISE_NOT_WANT],
+                'error_code' => 'practise_is_error'
+            ],
         ];
         //验证合法性
         $params = $request->getParams();

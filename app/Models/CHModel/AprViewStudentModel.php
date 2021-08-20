@@ -225,4 +225,119 @@ class AprViewStudentModel extends CHOBModel
         $res = $chDB->queryAll($sql, ['table' => self::$table]);
         return $res ? $res[0]['end_time'] : 0;
     }
+
+
+    /**
+     * 获取学生练琴统计
+     * @param int $studentId
+     * @param string $startTime
+     * @param string $endTime
+     * @return array
+     */
+    public static function getStudentTotalSum(int $studentId, string $startTime = "", string $endTime = ""): array
+    {
+        //获取用户的练琴曲目&天数
+        $lessonCountAndDate = self::getStudentLessonCountAndData($studentId, $startTime, $endTime);
+        //获取怀旧模式练琴时长
+        $studentUiEntryOldDuration = self::getStudentUiEntryOldDuration($studentId, $startTime, $endTime);
+        //获取用户非怀旧模式练琴时长
+        $studentNotNostalgicDuration     = self::getStudentNotNostalgicDuration($studentId, $startTime, $endTime);
+        $studentTotalSum['lesson_count'] = $lessonCountAndDate['lesson_count'] ?? 0;
+        $studentTotalSum['play_day']     = $lessonCountAndDate['play_day'] ?? 0;
+        $studentTotalSum['sum_duration'] = (string)($studentUiEntryOldDuration['sum_duration'] + $studentNotNostalgicDuration['sum_duration']);
+        return $studentTotalSum;
+    }
+
+    /**
+     * 统计学生练琴天数&曲子数
+     * @param int $studentId
+     * @param string $startTime
+     * @param string $endTime
+     * @return array
+     */
+    public static function getStudentLessonCountAndData(
+        int $studentId,
+        string $startTime = "",
+        string $endTime = ""
+    ): array {
+        $chDb = CHDB::getBODB();
+        $sql  = "
+            SELECT COUNT(DISTINCT (lesson_id))      AS lesson_count,
+                COUNT(DISTINCT toDate(end_time)) AS play_day
+            FROM " . self::$table . "
+            WHERE student_id = {$studentId}";
+
+        if (!empty($startTime)) {
+            $sql .= " and end_time > {$startTime}";
+        }
+
+        if (!empty($endTime)) {
+            $sql .= " and end_time < {$endTime}";
+        }
+
+        $playSumData = $chDb->queryAll($sql);
+        return $playSumData[0] ?? [];
+    }
+
+    /**
+     * 怀旧模式，获取用户练琴时长
+     * @param int $studentId
+     * @param string $startTime
+     * @param string $endTime
+     * @return array
+     */
+    public static function getStudentUiEntryOldDuration($studentId, $startTime = "", $endTime = "")
+    {
+        $chDb = CHDB::getBODB();
+        $sql = "
+            select 
+                sum(duration) as sum_duration 
+            from 
+                ".self::$table."
+            where
+                duration > 0
+                and (track_id = '' or track_id = '0')
+                and student_id = {$studentId}";
+
+        if (!empty($startTime)) {
+            $sql .= " and end_time > {$startTime}";
+        }
+        if (!empty($endTime)) {
+            $sql .= " and end_time < {$endTime}";
+        }
+
+        return $chDb->queryAll($sql)[0];
+    }
+
+    /**
+     * 非怀旧模式 获取用户练琴时长
+     * @param int $studentId
+     * @param string $startTime
+     * @param string $endTime
+     * @return array
+     */
+    public static function getStudentNotNostalgicDuration(int $studentId, $startTime = "", $endTime = ""):array
+    {
+        $chDb = CHDB::getBODB();
+        $sql = "select sum(duration) as sum_duration from (select
+                    duration
+                from
+                    ".self::$table."
+                where
+                    duration > 0
+                    and track_id != ''
+                    and track_id != 0
+                    and student_id = {$studentId} ";
+
+        if (!empty($startTime)) {
+            $sql .= " and end_time > {$startTime}";
+        }
+
+        if (!empty($endTime)) {
+            $sql .= " and end_time < {$endTime}";
+        }
+        $sql .= " order by duration desc limit 1 by track_id) as sd";
+
+        return $chDb->queryAll($sql)[0];
+    }
 }
