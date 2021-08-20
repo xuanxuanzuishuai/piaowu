@@ -68,6 +68,7 @@ class AprViewStudentModel extends CHOBModel
                 where
                     duration > 0
                     and track_id != ''
+                    and track_id != '0'
                     and student_id in (:student_id)
                     and end_time >= :start_time
                     and end_time <= :end_time
@@ -114,7 +115,7 @@ class AprViewStudentModel extends CHOBModel
                     {table}
                 where
                     duration > 0
-                    and track_id = ''
+                    and (track_id = '' or track_id = '0')
                     and student_id in (:student_id)
                     and end_time >= :start_time
                     and end_time <= :end_time
