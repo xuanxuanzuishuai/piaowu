@@ -326,7 +326,7 @@ class AprViewStudentModel extends CHOBModel
                 where
                     duration > 0
                     and track_id != ''
-                    and track_id != 0
+                    and track_id != '0'
                     and student_id = {$studentId} ";
 
         if (!empty($startTime)) {
