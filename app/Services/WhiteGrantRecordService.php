@@ -37,8 +37,12 @@ class WhiteGrantRecordService
     public static function list($params, $page, $pageSize){
 
         list($list , $total) = WhiteGrantRecordModel::getList($params, $page, $pageSize);
+        $uuids = array_column($list, 'uuid');
+        $wechatSubscribeInfo = DssWechatOpenIdListModel::getUuidOpenIdInfo($uuids);
+        $wechatSubscribeInfo = array_column($wechatSubscribeInfo, null, 'uuid');
 
         foreach ($list as &$one){
+            $one['current_open_id'] = $wechatSubscribeInfo[$one['uuid']]['open_id'] ?? '';
             $one['is_bind_wx'] = $wechatSubscribeInfo[$one['uuid']]['bind_status'] ?? DssUserWeiXinModel::STATUS_DISABLE;
             $one['is_bind_gzh'] = $wechatSubscribeInfo[$one['uuid']]['subscribe_status'] ?? DssWechatOpenIdListModel::UNSUBSCRIBE_WE_CHAT;
         }
@@ -275,7 +279,7 @@ class WhiteGrantRecordService
     public static function create($student, $data, $status){
         $now = time();
         $insert = [
-            'bill_no'           => $data['bill_no'] ?? 0,
+            'bill_no'           => $data['nextData']['bill_no'] ?? 0,
             'uuid'              => $student['uuid'] ?? '',
             'open_id'           => $data['nextData']['open_id'] ?? '',
             'grant_money'       => $data['nextData']['awardNum'],

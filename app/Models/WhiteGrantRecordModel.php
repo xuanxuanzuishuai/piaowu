@@ -41,19 +41,19 @@ class WhiteGrantRecordModel extends Model
 
         $where = ' 1=1 ';
         if(!empty($params['uuid'])){
-            $where  .= "AND uuid = '{$params['uuid']}'";
+            $where  .= "AND g.uuid = '{$params['uuid']}'";
         }
 
         if(!empty($params['status'])){
-            $where  .= ' AND status = ' . $params['status'];
+            $where  .= ' AND g.status = ' . $params['status'];
         }
 
         if(!empty($params['id'])){
-            $where  .= ' AND id = ' . $params['id'];
+            $where  .= ' AND g.id = ' . $params['id'];
         }
 
         if(!empty($params['mobile'])){
-            $where  .= ' AND id = ' . $params['id'];
+            $where  .= ' AND s.mobile = ' . $params['mobile'];
         }
 
         if(!empty($params['course_manage_id'])){
@@ -63,7 +63,7 @@ class WhiteGrantRecordModel extends Model
         $db = MysqlDB::getDB();
 
         $countSql = "SELECT count(1) as count FROM " . self::$table . ' as g  LEFT JOIN ' . $dssStudent . ' as s' . ' ON g.uuid = s.uuid' .
-            ' LEFT JOIN ' . $dssEmployee . ' as e on s.course_manage_id=e.id ';
+            ' LEFT JOIN ' . $dssEmployee . ' as e on s.course_manage_id=e.id WHERE' . $where;
 
         $count = $db->queryAll($countSql);
 
@@ -75,6 +75,7 @@ class WhiteGrantRecordModel extends Model
             $where . ' ORDER BY id DESC ' . $limit;
 
         $list = $db->queryAll($sql);
+
 
         return [$list, $count[0]['count']];
 
