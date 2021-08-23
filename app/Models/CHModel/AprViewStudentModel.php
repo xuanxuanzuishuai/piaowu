@@ -73,8 +73,8 @@ class AprViewStudentModel extends CHOBModel
                     and end_time >= :start_time
                     and end_time <= :end_time
                 order by
-                    ts desc
-                limit 1 by id) as ta
+                    duration desc
+                limit 1 by student_id,track_id) as ta
             group by
                 student_id,
                 create_date,
