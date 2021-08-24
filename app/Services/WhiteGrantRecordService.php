@@ -112,7 +112,7 @@ class WhiteGrantRecordService
         $nextData['awardNum']   = $grantInfo['grant_money'];
         $nextData['operator_uuid'] = $params['operator_id'];
         $nextData['operator_id'] = $params['operator_id'];
-        $nextData['awardIds'] = explode(',', $grantInfo['award_ids']);
+        $nextData['awardIds'] = $grantInfo['award_ids'] ? explode(',', $grantInfo['award_ids']) : [];
         $nextData['uuid'] = $grantInfo['uuid'];
         try{
             switch ($grantInfo['grant_step']){
@@ -171,33 +171,32 @@ class WhiteGrantRecordService
      */
     public static function sendDataToErp($next){
         $taskArr = [];
-        $awardNum = $next['grantInfo']['grant_money'] ?? 0;
-        $awardIds = $next['grantInfo']['award_ids'] ?? [];
-
-        if($awardIds){
-            $awardIds = explode(',', $awardIds);
-        }
+        $awardNum = 0;
+        $awardIds = $next['awardIds'] ?? [];
 
         foreach ($next['list'] as $one){
             //修改状态为已发放
             $res = (new Erp())->addEventTaskAward($next['uuid'], $one['event_task_id'], ErpReferralService::EVENT_TASK_STATUS_COMPLETE, $one['id']);
+
+            $awardNum += $one['award_num'];
             if ($res['code'] == Valid::CODE_SUCCESS) {
                 $taskArr['succ'][] = $one['id'];
-                $awardNum += $one['award_num'];
             }else{
                 SimpleLogger::error('ERP_CREATE_USER_EVENT_TASK_AWARD_FAIL', [$one]);
                 $taskArr['fail'][] = $one['id'];
             }
+
             $awardIds[] = $one['id'];
         }
+
+        $next['awardNum'] = $next['grantInfo']['grant_money'] ?? $awardNum;
+        $next['awardIds'] = $awardIds;
 
         //2.金叶子发放失败
         if(!empty($taskArr['fail'])){
             throw new RunTimeException(['fail'],['nextData'=>$next, 'step'=>WhiteGrantRecordModel::GRANT_STEP_2,'awardNum' => $awardNum, 'msg' => '金叶子发放失败', 'taskArr' => $taskArr]);
         }
 
-        $next['awardNum'] = $awardNum;
-        $next['awardIds'] = $awardIds;
         self::deduction($next);
 
     }
@@ -285,7 +284,6 @@ class WhiteGrantRecordService
             'bill_no'           => $data['nextData']['bill_no'] ?? 0,
             'uuid'              => $student['uuid'] ?? '',
             'open_id'           => $data['nextData']['open_id'] ?? '',
-            'grant_money'       => $data['nextData']['awardNum'],
             'reason'            => $status == WhiteGrantRecordModel::STATUS_GIVE_FAIL ? $data['msg'] : '',
             'status'            => $status,
             'task_info'         => json_encode($data['taskArr'] ?? []),
@@ -294,7 +292,7 @@ class WhiteGrantRecordService
             'operator_id'       => $data['nextData']['operator_id'] ?? 0,
             'grant_time'        => $status == WhiteGrantRecordModel::STATUS_GIVE ? $now : 0,
             'update_time'       => 0,
-            'award_ids'         => implode(',', $data['nextData']['awardIds']),
+            'award_ids'         => implode(',', $data['nextData']['awardIds'] ?? []),
             'result_code'       => $data['result_code'] ?? '',
             'remark'            => $data['nextData']['remark'] ?? 0,
         ];
@@ -304,6 +302,7 @@ class WhiteGrantRecordService
             $id = $data['nextData']['grantInfo']['id'];
             WhiteGrantRecordModel::updateRecord($id, $insert);
         }else{
+            $insert['grant_money'] = $data['nextData']['awardNum'] ?? 0;
             $insert['create_time'] = $now;
             WhiteGrantRecordModel::insertRecord($insert);
         }
@@ -321,7 +320,8 @@ class WhiteGrantRecordService
             $msg = '亲爱的用户:您在'. $m .'月份参与的限定福利活动，共计获得'.$leaf.'金叶子,专属福利发放失败，可以联系您的课管重新发放。';
         }
 
-        if(empty($msg)){
+        if(empty($msg) || empty($leaf)){
+            SimpleLogger::error('weehWhiteSendSmsFail', [$mobile, $status, $leaf]);
             return false;
         }
 

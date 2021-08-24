@@ -27,6 +27,7 @@ use App\Models\Erp\ErpUserEventTaskAwardGoldLeafModel;
 use App\Models\WeChatAwardCashDealModel;
 use App\Models\WhiteGrantRecordModel;
 use App\Services\CashGrantService;
+use App\Services\WhiteGrantRecordService;
 use Dotenv\Dotenv;
 
 $dotenv = new Dotenv(PROJECT_ROOT, '.env');
@@ -51,7 +52,6 @@ class obj{
         $this->startTime = '2021-07-01 00:00:00';
         $this->endTime   = '2021-07-24 23:59:59';
         $this->eventTaskId = [476,477,478];
-
     }
 
     public function run(){
@@ -64,7 +64,7 @@ class obj{
             $this->batch_exec($tmpList);
         }
 
-        echo json_encode(['actual'=>$this->uuidStatus, 'should'=>$awardList]);die;
+        echo json_encode(['actual'=>$this->uuidStatus, 'should'=>$awardList], 256);die;
     }
 
     /**
@@ -88,6 +88,7 @@ class obj{
                 'course_manage_id'  => $course_manage_ids[$one['uuid']]['course_manage_id'],
                 'grant_money'       => 0,
                 'operator_id'       => 0,
+                'mobile'            => $course_manage_ids[$one['uuid']]['mobile'],
             ];
 
             if(isset($accountSucc[$one['uuid']])){
@@ -148,9 +149,9 @@ class obj{
             $res = (new Erp())->reduce_account($data);
         }
 
-        if(!$res){ //扣除金叶子成功发红包
+        $this->uuidGrant['grant_money'] = $leaf;
+        if(!$res){
             $this->uuidGrant['open_id'] = $openId;
-            $this->uuidGrant['grant_money'] = $leaf;
             $this->uuidGrant['reason'] = '金叶子扣减失败';
             $this->uuidGrant['status'] = WhiteGrantRecordModel::STATUS_GIVE_FAIL;
             $this->uuidGrant['grant_step'] = WhiteGrantRecordModel::GRANT_STEP_3;
@@ -180,13 +181,9 @@ class obj{
         ]);
 
         if($this->debug){
-            $resultData = true;
+            $resultData = ['result_code'=>'SUCCESS'];
         }else{
             $resultData = $wx->sendPackage($mchBillNo, $actName, $sendName, $openId, $leaf, $wishing, 'redPack');
-        }
-
-        if($this->debug){
-            $this->uuidStatus['sendInfo'][] = [$one['uuid'] => $leaf];
         }
 
         $this->uuidGrant['open_id'] = $openId;
@@ -196,7 +193,7 @@ class obj{
 
         if(empty($resultData) || trim($resultData['result_code']) != WeChatAwardCashDealModel::RESULT_SUCCESS_CODE){
             $this->uuidGrant['bill_no'] = $mchBillNo;
-            $this->uuidGrant['reason'] = '发送红包失败';
+            $this->uuidGrant['reason'] = WeChatAwardCashDealModel::getWeChatErrorMsg($resultData['err_code']);
             $this->uuidGrant['status'] = WhiteGrantRecordModel::STATUS_GIVE_FAIL;
             $this->uuidGrant['result_code'] = $resultData['err_code'] ?? '';
             $this->create($this->uuidGrant);
@@ -207,6 +204,7 @@ class obj{
             $this->uuidGrant['result_code'] = $resultData['err_code'] ?? '';
             $this->create($this->uuidGrant);
         }
+
     }
 
     public function getOpenIds($uuids){
@@ -304,10 +302,16 @@ class obj{
             'remark'            => '手动发放'
         ];
 
-        if($this->debug){
-            return true;
+        $info = [
+            'leaf' => $insert['grant_money'],
+            'reason' => $insert['reason'],
+        ];
+        $this->uuidStatus['sendInfo'][] = [$insert['uuid'] => $info];
+
+        if(!$this->debug){
+            WhiteGrantRecordModel::insertRecord($insert);
+            WhiteGrantRecordService::sendSms($data['mobile'], $insert['status'], $insert['grant_money']);
         }
-        WhiteGrantRecordModel::insertRecord($insert);
 
     }
 
@@ -316,7 +320,7 @@ class obj{
         $where = [
             'uuid' => $uuids,
         ];
-        $res = DssStudentModel::getRecords($where, ['uuid', 'course_manage_id']);
+        $res = DssStudentModel::getRecords($where, ['uuid','mobile' ,'course_manage_id']);
 
         return array_column($res, null, 'uuid');
 
