@@ -9,7 +9,6 @@
 namespace App\Models;
 
 
-use App\Libs\MysqlDB;
 use App\Models\Dss\DssStudentModel;
 
 
@@ -60,16 +59,18 @@ class WhiteGrantRecordModel extends Model
             $where .= ' AND s.course_manage_id in ('. implode(',', $params['course_manage_id']) . ')';
         }
 
-        $db = MysqlDB::getDB();
+        $db = self::dbRO();
 
-        $countSql = "SELECT count(1) as count FROM " . self::$table . ' as g  ' . $leftStudent .
+        $whiteGrantRecordTable = self::getTableNameWithDb();
+
+        $countSql = "SELECT count(1) as count FROM " . $whiteGrantRecordTable . ' as g  ' . $leftStudent .
             '  WHERE' . $where;
 
         $count = $db->queryAll($countSql);
 
         $limit = ' LIMIT ' . ($page - 1) * $pageSize .',' . $pageSize;
 
-        $sql = 'SELECT g.*,s.course_manage_id FROM ' . self::$table .
+        $sql = 'SELECT g.*,s.course_manage_id FROM ' . $whiteGrantRecordTable .
             ' as g  LEFT JOIN ' . $dssStudent . ' as s' . ' ON g.uuid = s.uuid WHERE ' .
             $where . ' ORDER BY id DESC ' . $limit;
 
