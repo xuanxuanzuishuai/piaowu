@@ -420,4 +420,5 @@ share_image_path_is_required='分享图不能为空'
 poster_word_id_is_required='海报分享语不能为空'
 order_is_positive_integer='排序必须为正整数'
 sms_code_is_required='验证码不能为空'
+poster_or_personality_poster_is_required='请选择海报模板'
 

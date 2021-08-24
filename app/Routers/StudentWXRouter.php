@@ -83,5 +83,7 @@ class StudentWXRouter extends RouterBase
         '/student_wx/task/sign_up' => ['method' => ['post'], 'call' => Task::class . ':signUp'],
         '/student_wx/task/get_rewards' => ['method' => ['post'], 'call' => Task::class . ':getRewards'],
 
+        /* 跑马灯数据 */
+        '/student_wx/activity/user_reward_details' => ['method' => ['get'], 'call' => Activity::class . ':userRewardDetails'],
     ];
 }

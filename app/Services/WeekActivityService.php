@@ -60,6 +60,12 @@ class WeekActivityService
             'strategy_img' => $data['strategy_img'] ?? '',
             'operator_id' => $employeeId,
             'create_time' => $time,
+            'personality_poster_button_img' => $data['personality_poster_button_img'],
+            'poster_prompt' => !empty($data['poster_prompt']) ? Util::textEncode($data['poster_prompt']) : '',
+            'poster_make_button_img' => $data['poster_make_button_img'],
+            'share_poster_prompt' => !empty($data['share_poster_prompt']) ? Util::textEncode($data['share_poster_prompt']) : '',
+            'retention_copy' => !empty($data['retention_copy']) ? Util::textEncode($data['retention_copy']) : '',
+            'poster_order' => $data['poster_order'],
         ];
 
         $activityExtData = [
@@ -94,7 +100,8 @@ class WeekActivityService
             throw new RunTimeException(["add week activity fail"]);
         }
         // 保存海报关联关系
-        $activityPosterRes = ActivityPosterModel::batchAddActivityPoster($activityId, $data['poster']);
+        $posterArray = array_merge($data['personality_poster'], $data['poster']);
+        $activityPosterRes = ActivityPosterModel::batchAddActivityPoster($activityId, $posterArray);
         if (empty($activityPosterRes)) {
             $db->rollBack();
             SimpleLogger::info("WeekActivityService:add batch insert activity_poster fail", ['data' => $data]);
@@ -192,6 +199,11 @@ class WeekActivityService
         $info['strategy_url'] = AliOSS::replaceCdnDomainForDss($activityInfo['strategy_img']);
         $info['guide_word'] = Util::textDecode($activityInfo['guide_word']);
         $info['share_word'] = Util::textDecode($activityInfo['share_word']);
+        $info['personality_poster_button_url'] = AliOSS::replaceCdnDomainForDss($activityInfo['personality_poster_button_img']);
+        $info['poster_prompt'] = Util::textDecode($activityInfo['poster_prompt']);
+        $info['poster_make_button_url'] = AliOSS::replaceCdnDomainForDss($activityInfo['poster_make_button_img']);
+        $info['share_poster_prompt'] = Util::textDecode($activityInfo['share_poster_prompt']);
+        $info['retention_copy'] = Util::textDecode($activityInfo['retention_copy']);
 
         if (empty($info['remark'])) {
             $info['remark'] = $extInfo['remark'] ?? '';
@@ -241,7 +253,19 @@ class WeekActivityService
         }
         // 获取活动海报
         $activityInfo['poster'] = PosterService::getActivityPosterList($activityInfo);
-        return self::formatActivityInfo($activityInfo, []);
+
+        $activityInfo = self::formatActivityInfo($activityInfo, []);
+        $activityInfo['personality_poster'] = [];
+        foreach ($activityInfo['poster'] as $key => $val) {
+            if ($val['type'] == TemplatePosterModel::STANDARD_POSTER) {
+                continue;
+            }
+            if ($val['type'] == TemplatePosterModel::INDIVIDUALITY_POSTER) {
+                $activityInfo['personality_poster'][] = $val;
+                unset($activityInfo['poster'][$key]);
+            }
+        }
+        return $activityInfo;
     }
 
     /**
@@ -268,8 +292,8 @@ class WeekActivityService
         }
 
         // 判断海报是否有变化，没有变化不操作
-        $isDelPoster = ActivityPosterModel::diffPosterChange($activityId, $data['poster']);
-
+        $posterArray = array_merge($data['personality_poster'], $data['poster']);
+        $isDelPoster = ActivityPosterModel::diffPosterChange($activityId, $posterArray);
         // 开始处理更新数据
         $time = time();
         // 检查是否有海报
@@ -291,6 +315,12 @@ class WeekActivityService
             'strategy_img' => $data['strategy_img'] ?? '',
             'operator_id' => $employeeId,
             'update_time' => $time,
+            'personality_poster_button_img' => $data['personality_poster_button_img'],
+            'poster_prompt' => !empty($data['poster_prompt']) ? Util::textEncode($data['poster_prompt']) : '',
+            'poster_make_button_img' => $data['poster_make_button_img'],
+            'share_poster_prompt' => !empty($data['share_poster_prompt']) ? Util::textEncode($data['share_poster_prompt']) : '',
+            'retention_copy' => !empty($data['retention_copy']) ? Util::textEncode($data['retention_copy']) : '',
+            'poster_order' => $data['poster_order'],
         ];
 
         $activityExtData = [
@@ -332,7 +362,7 @@ class WeekActivityService
                 throw new RunTimeException(["update week activity fail"]);
             }
             // 写入新的活动与海报的关系
-            $activityPosterRes = ActivityPosterModel::batchAddActivityPoster($activityId, $data['poster']);
+            $activityPosterRes = ActivityPosterModel::batchAddActivityPoster($activityId, $posterArray);
             if (empty($activityPosterRes)) {
                 $db->rollBack();
                 SimpleLogger::info("WeekActivityService:add batch insert activity_poster fail", ['data' => $weekActivityData, 'activity_id' => $activityId]);

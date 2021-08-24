@@ -25,6 +25,13 @@ class PosterTemplateService
     // 预生成小程序码标记
     const KEY_PRE_GENERATE_CODE = 'pre_generate_code_';
     const KEY_PRE_GENERATE_CODE_LOCK = 'pre_generate_code_lock_';
+
+    //参与类型 周周或月月
+    protected static $typeArray = [
+        1 => 'month',
+        2 => 'week',
+    ];
+
     /**
      * 海报模板列表
      * @param $studentId
@@ -497,6 +504,9 @@ class PosterTemplateService
      */
     public static function getPosterList($studentId, $type, $activityId = 0, $ext = [])
     {
+        if (!in_array($type, array_keys(self::$typeArray))) {
+            throw new RunTimeException(['invalid_data']);
+        }
         $data = ['list' => [], 'activity' => []];
         // 查询活动：
         $activityInfo = ActivityService::getByTypeAndId($type, $activityId);
@@ -518,7 +528,11 @@ class PosterTemplateService
         if (empty($posterList)) {
             return $data;
         }
-        $channel = self::getChannelByType($type);
+        //周周领奖 海报排序处理
+        if ($activityInfo['poster_order'] == TemplatePosterModel::POSTER_ORDER) {
+            array_multisort(array_column($posterList, 'type'), SORT_DESC, $posterList);
+        }
+        $channel = self::getChannel($type, $ext['from_type']);
         $extParams = [
             'user_current_status' => $userDetail['student_status'] ?? 0,
             'activity_id' => $activityInfo['activity_id'],
@@ -543,7 +557,7 @@ class PosterTemplateService
         foreach ($posterList as &$item) {
             $extParams['poster_id'] = $item['poster_id'];
             $item = self::formatPosterInfo($item);
-            if (empty($ext['poster'])) {
+            if ($item['type'] == TemplatePosterModel::INDIVIDUALITY_POSTER) {
                 $item['qr_code_url'] = AliOSS::replaceCdnDomainForDss($userQrArr[$item['qr_sign']]['qr_path']);
                 continue;
             }
@@ -675,5 +689,17 @@ class PosterTemplateService
         ];
         $shareConfigId = ShareMaterialConfig::getRecord($conds, ['share_config_id']);
         return $shareConfigId;
+    }
+
+    /**
+     * 获取渠道
+     * @param $type
+     * @param $fromType
+     * @return array|mixed|null
+     */
+    public static function getChannel($type, $fromType)
+    {
+        $type = self::$typeArray[$type];
+        return DictConstants::get(DictConstants::ACTIVITY_CONFIG, sprintf('channel_%s_%s', $type, $fromType));
     }
 }

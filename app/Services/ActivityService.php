@@ -372,6 +372,8 @@ class ActivityService
             'make_poster_button_img',
             'award_detail_img',
             'create_poster_button_img',
+            'personality_poster_button_img',
+            'poster_make_button_img',
         ];
         foreach ($imageList as $key) {
             $activity[$key . '_url'] = '';
@@ -385,6 +387,9 @@ class ActivityService
             'share_poster_tip_word',
             'guide_word',
             'share_word',
+            'poster_prompt',
+            'share_poster_prompt',
+            'retention_copy',
         ];
         foreach ($textList as $key) {
             if (!empty($activity[$key])) {

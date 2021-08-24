@@ -270,7 +270,7 @@ class PosterService
         if (empty($allPosterIds)) {
             return [];
         }
-        $field = ['id', 'name', 'poster_id', 'poster_path', 'example_id', 'example_path', 'order_num', 'practise'];
+        $field = ['id', 'name', 'poster_id', 'poster_path', 'example_id', 'example_path', 'order_num', 'practise','type'];
         $where = [
             'id' => array_column($allPosterIds, 'poster_id'),
         ];

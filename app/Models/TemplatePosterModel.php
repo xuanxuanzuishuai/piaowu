@@ -27,6 +27,8 @@ class TemplatePosterModel extends Model
     const PRACTISE_WANT = 1;
     const PRACTISE_NOT_WANT = 2;
 
+    const POSTER_ORDER = 2; //海报列表排序 1.个性海报在前(默认) 2.标准海报在前
+
     /**
      * @param $params
      * @return array

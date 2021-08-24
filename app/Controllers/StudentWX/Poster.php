@@ -16,6 +16,7 @@ use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\Dss\DssStudentModel;
 use App\Models\SharePosterModel;
+use App\Services\ActivityService;
 use App\Services\PosterTemplateService;
 use App\Services\SharePosterService;
 use Slim\Http\Request;
@@ -50,6 +51,7 @@ class Poster extends ControllerBase
 
         try {
             $userInfo = $this->ci['user_info'];
+            $params['from_type'] = ActivityService::FROM_TYPE_WX;
             $data = PosterTemplateService::getPosterList($userInfo['user_id'], $params['type'], $params['activity_id'] ?? 0, $params);
 
         } catch (RunTimeException $e) {

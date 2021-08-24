@@ -70,7 +70,7 @@ class StudentAppRouter extends RouterBase
         // 海报列表
         '/student_app/poster/list' => [
             'method' => ['get'],
-            'call' => WXPoster::class . ':list',
+            'call' => Poster::class . ':list',
             'middles' => [AppAuthMiddleWare::class]
         ],
         '/student_app/poster/upload' => [
@@ -182,6 +182,13 @@ class StudentAppRouter extends RouterBase
         '/student_app/student/account_detail' => [
             'method'  => ['get'],
             'call'    => Student::class . ':accountDetail',
+            'middles' => [AppAuthMiddleWare::class]
+        ],
+
+        /* 跑马灯数据 */
+        '/student_app/activity/user_reward_details' => [
+            'method'  => ['get'],
+            'call'    => \App\Controllers\StudentApp\Activity::class . ':userRewardDetails',
             'middles' => [AppAuthMiddleWare::class]
         ],
 

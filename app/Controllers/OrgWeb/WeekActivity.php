@@ -113,15 +113,64 @@ class WeekActivity extends ControllerBase
                 'error_code' => 'remark_length_invalid'
             ],
             [
-                'key' => 'poster',
-                'type' => 'required',
-                'error_code' => 'poster_is_invalid'
-            ],
-            [
                 'key' => 'activity_id',
                 'type' => 'integer',
                 'error_code' => 'activity_id_is_integer'
-            ]
+            ],
+            [
+                'key' => 'personality_poster_button_img',
+                'type' => 'required',
+                'error_code' => 'personality_poster_button_img_is_required'
+            ],
+            [
+                'key' => 'poster_prompt',
+                'type' => 'required',
+                'error_code' => 'poster_prompt_is_required'
+            ],
+            [
+                'key' => 'poster_prompt',
+                'type' => 'lengthMax',
+                'value' => 50,
+                'error_code' => 'poster_prompt_length_invalid'
+            ],
+            [
+                'key' => 'poster_make_button_img',
+                'type' => 'required',
+                'error_code' => 'poster_make_button_img_is_required'
+            ],
+            [
+                'key' => 'share_poster_prompt',
+                'type' => 'required',
+                'error_code' => 'share_poster_prompt_is_required'
+            ],
+            [
+                'key' => 'share_poster_prompt',
+                'type' => 'lengthMax',
+                'value' => 80,
+                'error_code' => 'share_poster_prompt_length_invalid'
+            ],
+            [
+                'key' => 'retention_copy',
+                'type' => 'required',
+                'error_code' => 'retention_copy_is_required'
+            ],
+            [
+                'key' => 'retention_copy',
+                'type' => 'lengthMax',
+                'value' => 50,
+                'error_code' => 'retention_copy_length_invalid'
+            ],
+            [
+                'key' => 'poster_order',
+                'type' => 'required',
+                'error_code' => 'poster_order_is_required'
+            ],
+            [
+                'key' => 'poster_order',
+                'type' => 'integer',
+                'error_code' => 'poster_order_is_integer'
+            ],
+
         ];
         $params = $request->getParams();
         $result = Valid::validate($params, $rules);
@@ -130,6 +179,9 @@ class WeekActivity extends ControllerBase
         }
         try {
             $employeeId = $this->getEmployeeId();
+            if (empty($params['poster']) || !empty($params['personality_poster'])) {
+                throw new RunTimeException(['poster_or_personality_poster_is_required']);
+            }
             if (!empty($params['activity_id'])) {
                 WeekActivityService::edit($params, $employeeId);
             } else {

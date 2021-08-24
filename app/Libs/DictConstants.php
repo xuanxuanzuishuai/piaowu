@@ -975,6 +975,19 @@ class DictConstants {
         'keys' => ['8_8']
     ];
 
+    /**
+     * 通用活动配置
+     */
+    const ACTIVITY_CONFIG = [
+         'type' => 'ACTIVITY_CONFIG',
+         'keys' => [
+             'channel_week_wx',
+             'channel_week_app',
+             'channel_month_wx',
+             'channel_month_app',
+         ]
+    ];
+
     
     /**
      * 单个获取op系统dict配置数据

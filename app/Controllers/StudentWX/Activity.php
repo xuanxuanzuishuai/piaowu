@@ -13,6 +13,7 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\Valid;
 use App\Services\ActivityService;
+use App\Services\SourceMaterialService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -109,6 +110,22 @@ class Activity extends ControllerBase
         $params = $request->getParams();
         $params['user_info'] = $this->ci['user_info'];
         $data = ActivityService::getWeekActivityList($params);
+        return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
+     * 跑马灯数据-获取用户金叶子相关信息
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function userRewardDetails(Request $request, Response $response)
+    {
+        try {
+            $data = SourceMaterialService::userRewardDetails();
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
         return HttpHelper::buildResponse($response, $data);
     }
 }
