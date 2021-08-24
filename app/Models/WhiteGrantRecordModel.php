@@ -10,7 +10,6 @@ namespace App\Models;
 
 
 use App\Libs\MysqlDB;
-use App\Models\Dss\DssEmployeeModel;
 use App\Models\Dss\DssStudentModel;
 
 
@@ -36,7 +35,6 @@ class WhiteGrantRecordModel extends Model
 
     public static function getList($params, $page, $pageSize){
         $dssStudent = DssStudentModel::getTableNameWithDb();
-        $dssEmployee = DssEmployeeModel::getTableNameWithDb();
 
         $where = ' 1=1 ';
         if(!empty($params['uuid'])){
@@ -52,7 +50,6 @@ class WhiteGrantRecordModel extends Model
         }
 
         $leftStudent = '';
-        $leftEmployee = '';
         if(!empty($params['mobile'])){
             $where  .= ' AND s.mobile = ' . "'{$params['mobile']}'";
             $leftStudent = ' LEFT JOIN ' . $dssStudent . ' as s' . ' ON g.uuid = s.uuid ';
@@ -61,21 +58,19 @@ class WhiteGrantRecordModel extends Model
         if(!empty($params['course_manage_id'])){
             $leftStudent = ' LEFT JOIN ' . $dssStudent . ' as s' . ' ON g.uuid = s.uuid ';
             $where .= ' AND s.course_manage_id in ('. implode(',', $params['course_manage_id']) . ')';
-            $leftEmployee = ' LEFT JOIN ' . $dssEmployee . ' as e on s.course_manage_id=e.id ';
         }
 
         $db = MysqlDB::getDB();
 
-        $countSql = "SELECT count(1) as count FROM " . self::$table . ' as g  ' . $leftStudent . $leftEmployee .
+        $countSql = "SELECT count(1) as count FROM " . self::$table . ' as g  ' . $leftStudent .
             '  WHERE' . $where;
 
         $count = $db->queryAll($countSql);
 
         $limit = ' LIMIT ' . ($page - 1) * $pageSize .',' . $pageSize;
 
-        $sql = 'SELECT g.*,e.name as course_manage_name FROM ' . self::$table .
-            ' as g  LEFT JOIN ' . $dssStudent . ' as s' . ' ON g.uuid = s.uuid' .
-            ' LEFT JOIN ' . $dssEmployee . ' as e on s.course_manage_id=e.id WHERE ' .
+        $sql = 'SELECT g.*,s.course_manage_id FROM ' . self::$table .
+            ' as g  LEFT JOIN ' . $dssStudent . ' as s' . ' ON g.uuid = s.uuid WHERE ' .
             $where . ' ORDER BY id DESC ' . $limit;
 
         $list = $db->queryAll($sql);

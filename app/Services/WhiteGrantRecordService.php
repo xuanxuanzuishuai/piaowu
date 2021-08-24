@@ -41,6 +41,8 @@ class WhiteGrantRecordService
         if(!$total){
             return compact('list', 'total');
         }
+
+        //获取绑定状态
         $uuids = array_column($list, 'uuid');
         $wechatSubscribeInfo = DssWechatOpenIdListModel::getUuidOpenIdInfo($uuids);
         $wechatSubscribeInfo = array_column($wechatSubscribeInfo, null, 'uuid');
@@ -421,13 +423,13 @@ class WhiteGrantRecordService
             }
         }
 
-        $data = [
+        $updateData = [
             'update_time' => $now,
             'reason'      => WeChatAwardCashDealModel::getWeChatErrorMsg($resultCode),
             'result_code' => $resultCode,
             'status'      => $status,
         ];
 
-        WhiteGrantRecordModel::updateRecord($data['id'], $data);
+        WhiteGrantRecordModel::updateRecord($data['id'], $updateData);
     }
 }

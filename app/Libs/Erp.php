@@ -96,7 +96,8 @@ class Erp
     const API_GRANT_GOLD_LEAF = '/api/consumer/%sstudent_account_callback_referral';
     //用户余额扣减
     const API_REDUCE_ACCOUNT = '/api/student_account/deduct';
-
+    //查询账户余额
+    const API_STUDENT_ACCOUNT_BALANXE = '/api/student_account/balance';
 
     private $host;
 
@@ -904,13 +905,30 @@ class Erp
     }
 
 
+    /**
+     * 扣减金叶子
+     * @param $params
+     * @return bool
+     */
     public function reduce_account($params){
-        $this->host = 'erp-pre.xiaoyezi.com';
         $res = self::commonAPI(self::API_REDUCE_ACCOUNT, $params, 'POST');
         if($res && $res['code'] == Valid::CODE_SUCCESS){
             return true;
         }
         return false;
+    }
+
+    /**
+     * 获取用户账户信息
+     * @param $params
+     * @return array|mixed
+     */
+    public function getStudentAccount($params){
+        $data = self::commonAPI(self::API_STUDENT_ACCOUNT_BALANXE, $params);
+        if ($data === false) {
+            return [];
+        }
+        return empty($data['data']) ? [] : $data['data'];
     }
 
 

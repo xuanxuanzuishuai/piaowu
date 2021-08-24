@@ -140,20 +140,18 @@ class WeekWhiteListService
         $students = DssStudentModel::getUuids($uuids);
 
         $students = array_column($students, null, 'uuid');
-
         $course_manage_ids = array_column($students, 'course_manage_id');
         $operator_ids = array_column($list, 'operator_id');
-
         $operator_ids = array_unique(array_merge($course_manage_ids, $operator_ids));
-
         $employees = DssEmployeeModel::getRecords(['id'=>$operator_ids],['id','name']);
-
         $employees = array_column($employees, null, 'id');
+
 
         foreach ($list as &$one){
             $one['mobile']          = Util::hideUserMobile($students[$one['uuid']]['mobile'] ?? '');
             $one['operator_name']   = $employees[$one['operator_id']]['name'] ?? '系统';
             $one['student_id']      = $students[$one['uuid']]['id'];
+            $one['course_manage_name'] = $employees[$one['course_manage_id']]['name'];
 
             if(isset($one['type'])){
                 $one['type_text'] = WhiteRecordModel::$types[$one['type']];
