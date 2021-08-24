@@ -223,12 +223,14 @@ class WhiteGrantRecordService
             $resultData = $wx->sendPackage($mchBillNo, $actName, $sendName, $openId, $value, $wishing, 'redPack');
 
             if(!$resultData || trim($resultData['result_code']) != WeChatAwardCashDealModel::RESULT_SUCCESS_CODE) {
+                SimpleLogger::error('sendErr5', ['resultData'=>$resultData,'bill_no'=>$mchBillNo,'actName'=>$actName, 'sendName'=>$sendName, 'openId'=>$openId, 'value'=>$value, 'wishing'=>$wishing]);
                 throw new RunTimeException(['fail'],['nextData'=>$next,'result_code'=>$resultData['err_code'],'bill_no'=>$mchBillNo ,'step'=>WhiteGrantRecordModel::GRANT_STEP_5,'awardNum' => $next['awardNum'], 'msg' =>WeChatAwardCashDealModel::getWeChatErrorMsg($resultData['err_code'])]);
             }
 
             $next['bill_no']=$mchBillNo;
             $next['awardNum'] = $value;
         }else{
+            SimpleLogger::error('envErr', [$_ENV['ENV_NAME'], $next]);
             throw new RunTimeException(['fail'],['nextData'=>$next,'result_code'=>WhiteGrantRecordModel::ENVIRONMENT_NOE_EXISTS ,'step'=>WhiteGrantRecordModel::GRANT_STEP_5,'awardNum' => $next['awardNum'], 'msg' =>'环境不正确']);
         }
 
