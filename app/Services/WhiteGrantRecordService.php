@@ -309,7 +309,7 @@ class WhiteGrantRecordService
             WhiteGrantRecordModel::insertRecord($insert);
         }
 
-        self::sendSms($student['mobile'], $status, $insert['grant_money']);
+        self::sendSms($student['mobile'], $status, $data['nextData']['awardNum']);
     }
 
     public static function sendSms($mobile, $status, $leaf){
