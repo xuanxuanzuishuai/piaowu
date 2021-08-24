@@ -393,7 +393,7 @@ eof;
         curl_setopt($ch, CURLOPT_POSTFIELDS, $vars);
         $data = curl_exec($ch);
         curl_close($ch);
-        SimpleLogger::info('envErr', $data);
+        SimpleLogger::info('envErr', [$data]);
         return $data;
     }
 
