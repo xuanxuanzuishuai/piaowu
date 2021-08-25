@@ -253,18 +253,18 @@ class WeekActivityService
         }
         // 获取活动海报
         $activityInfo['poster'] = PosterService::getActivityPosterList($activityInfo);
-
         $activityInfo = self::formatActivityInfo($activityInfo, []);
-        $activityInfo['personality_poster'] = [];
-        foreach ($activityInfo['poster'] as $key => $val) {
+        $poster = [];
+        $personality_poster = [];
+        foreach ($activityInfo['poster'] as $val) {
             if ($val['type'] == TemplatePosterModel::STANDARD_POSTER) {
-                continue;
-            }
-            if ($val['type'] == TemplatePosterModel::INDIVIDUALITY_POSTER) {
-                $activityInfo['personality_poster'][] = $val;
-                unset($activityInfo['poster'][$key]);
+                $poster[] = $val;
+            } elseif ($val['type'] == TemplatePosterModel::INDIVIDUALITY_POSTER) {
+                $personality_poster[] = $val;
             }
         }
+        $activityInfo['poster'] = $poster;
+        $activityInfo['personality_poster'] = $personality_poster;
         return $activityInfo;
     }
 

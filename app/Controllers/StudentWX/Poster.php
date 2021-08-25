@@ -17,6 +17,7 @@ use App\Libs\Valid;
 use App\Models\Dss\DssStudentModel;
 use App\Models\SharePosterModel;
 use App\Services\ActivityService;
+use App\Services\PosterService;
 use App\Services\PosterTemplateService;
 use App\Services\SharePosterService;
 use Slim\Http\Request;
@@ -166,6 +167,42 @@ class Poster extends ControllerBase
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
         return HttpHelper::buildResponse($response, $poster);
+    }
+
+    /**
+     * 获取小程序码
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getQrPath(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key'        => 'channel_id',
+                'type'       => 'required',
+                'error_code' => 'channel_id_is_required'
+            ],
+            [
+                'key'        => 'poster_id',
+                'type'       => 'required',
+                'error_code' => 'poster_id_is_required'
+            ]
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            $userInfo             = $this->ci['user_info'];
+            $params['student_id'] = $userInfo['user_id'];
+            $data                 = PosterService::getQrPath($params);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
+        return HttpHelper::buildResponse($response, $data);
     }
 
 }

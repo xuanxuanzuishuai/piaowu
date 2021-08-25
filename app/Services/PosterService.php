@@ -4,6 +4,7 @@ namespace App\Services;
 use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\DictConstants;
+use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\ActivityPosterModel;
@@ -383,5 +384,36 @@ class PosterService
             'user_current_status' => $user_current_status,
             'user_current_status_zh' => DssStudentModel::STUDENT_IDENTITY_ZH_MAP[$user_current_status] ?? '',
         ];
+    }
+
+    /**
+     * 获取小程序码
+     * @param $request
+     * @return mixed
+     * @throws RunTimeException
+     */
+    public static function getQrPath($request)
+    {
+        $studentId  = $request['student_id'];
+        $userDetail = StudentService::dssStudentStatusCheck($studentId, false, null);
+        $qrType     = DictConstants::get(DictConstants::MINI_APP_QR, 'qr_type_mini');
+
+        $qrData = [
+            'poster_id'           => $request['poster_id'],
+            'user_id'             => $studentId,
+            'user_type'           => DssUserQrTicketModel::STUDENT_TYPE,
+            'channel_id'          => $request['channel_id'],
+            'landing_type'        => DssUserQrTicketModel::LANDING_TYPE_MINIAPP,
+            'user_current_status' => $userDetail['student_status'] ?? 0,
+            'activity_id'         => $request['activity_id'] ?? 0,
+            'qr_type'             => $qrType,
+            'app_id'              => Constants::SMART_APP_ID,
+        ];
+        $qrInfo = QrInfoService::getQrIdList([$qrData]);
+        $qrPath = !empty($qrInfo) ? end($qrInfo)['qr_full_path'] : null;
+        if (empty($qrPath)) {
+            throw new RunTimeException(['invalid_data']);
+        }
+        return $qrPath;
     }
 }

@@ -192,5 +192,12 @@ class StudentAppRouter extends RouterBase
             'middles' => [AppAuthMiddleWare::class]
         ],
 
+        //获取小程序码
+        '/student_app/poster/get_qr_path' => [
+            'method' => ['get'],
+            'call' => Poster::class . ':getQrPath',
+            'middles' => [AppAuthMiddleWare::class],
+        ],
+
     ];
 }

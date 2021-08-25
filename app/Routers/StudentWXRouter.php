@@ -51,6 +51,7 @@ class StudentWXRouter extends RouterBase
         // 海报列表
         '/student_wx/poster/list'          => ['method' => ['get'], 'call' => Poster::class . ':list'],
         '/student_wx/poster/upload'        => ['method' => ['post'], 'call' => Poster::class . ':upload'],
+        '/student_wx/poster/get_qr_path'   => ['method' => ['get'], 'call' => Poster::class . ':getQrPath'],
         '/student_wx/text/list'            => ['method' => ['get'], 'call' => Poster::class . ':wordList'],
         '/student_wx/activity/list'        => ['method' => ['get'], 'call' => Activity::class . ':weekActivityList'],
         '/student_wx/share_poster/list'    => ['method' => ['get'], 'call' => Poster::class . ':shareList'],
