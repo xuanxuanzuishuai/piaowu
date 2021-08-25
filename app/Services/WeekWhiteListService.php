@@ -151,7 +151,7 @@ class WeekWhiteListService
             $one['mobile']          = Util::hideUserMobile($students[$one['uuid']]['mobile'] ?? '');
             $one['operator_name']   = $employees[$one['operator_id']]['name'] ?? '系统';
             $one['student_id']      = $students[$one['uuid']]['id'];
-            $one['course_manage_name'] = $employees[$one['course_manage_id']]['name'];
+            $one['course_manage_name'] = $employees[$one['course_manage_id']]['name'] ?? '';
 
             if(isset($one['type'])){
                 $one['type_text'] = WhiteRecordModel::$types[$one['type']];

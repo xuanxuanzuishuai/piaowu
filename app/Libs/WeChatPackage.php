@@ -325,6 +325,9 @@ eof;
         $getNewData = "";
         switch ($sendType) {
             case 'redPack':
+
+                $this->frequency();//检测发送红包频率
+
                 $this->set_mch_billno($mchBillNo);                //唯一订单号
                 $this->set_send_name($sendName);  // 红包发送者名称  商户名称
                 $this->set_act_name($actName);  // 活动名称 猜灯谜抢红包活动
@@ -355,6 +358,21 @@ eof;
         } catch (Exception $e) {
             SimpleLogger::error("wechat package erors", [$e->getMessage()]);
             return [];
+        }
+    }
+
+
+    /**
+     * @param int $max
+     * 发送微信红包频率每秒最大不能超过 max=30
+     */
+    public function frequency($max = 30){
+        $cacheKey = $this->mchId . time();
+        $rdb = RedisDB::getConn();
+        $val = $rdb->incr($cacheKey);
+        $rdb->expire($cacheKey,3);
+        if($val > $max){
+            sleep(1);
         }
     }
 

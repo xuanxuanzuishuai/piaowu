@@ -113,7 +113,6 @@ class obj{
                     $this->uuidGrant['open_id'] = $openId;
 
                     $this->create($this->uuidGrant);
-                    return false;
                 }
 
             }else{

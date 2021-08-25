@@ -405,23 +405,27 @@ class WhiteGrantRecordService
         if ($resultData['result_code'] == WeChatAwardCashDealModel::RESULT_FAIL_CODE) {
             $resultCode = $resultData['err_code'];
             $status     = WhiteGrantRecordModel::STATUS_GIVE_FAIL;
+            $step = WhiteGrantRecordModel::GRANT_STEP_5;
         } else {
             //已领取
             if (in_array($resultData['status'], [WeChatAwardCashDealModel::RECEIVED])) {
                 $status = WhiteGrantRecordModel::STATUS_GIVE_NOT_SUCC;
                 $resultCode = $resultData['status'];
+                $step = WhiteGrantRecordModel::GRANT_STEP_0;
             }
 
             //发放失败/退款中/已退款
             if (in_array($resultData['status'], [WeChatAwardCashDealModel::REFUND, WeChatAwardCashDealModel::RFUND_ING, WeChatAwardCashDealModel::FAILED])) {
                 $status = WhiteGrantRecordModel::STATUS_GIVE_FAIL;
                 $resultCode = $resultData['status'];
+                $step = WhiteGrantRecordModel::GRANT_STEP_5;
             }
 
             //发放中/已发放待领取
             if (in_array($resultData['status'], [WeChatAwardCashDealModel::SENDING, WeChatAwardCashDealModel::SENT])) {
                 $status = WhiteGrantRecordModel::STATUS_GIVE;
                 $resultCode = $resultData['status'];
+                $step = WhiteGrantRecordModel::GRANT_STEP_0;
             }
         }
 
@@ -430,6 +434,7 @@ class WhiteGrantRecordService
             'reason'      => WeChatAwardCashDealModel::getWeChatErrorMsg($resultCode),
             'result_code' => $resultCode,
             'status'      => $status,
+            'grant_step'  => $step,
         ];
 
         WhiteGrantRecordModel::updateRecord($data['id'], $updateData);
