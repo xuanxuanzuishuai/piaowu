@@ -456,7 +456,7 @@ class WechatService
         }
         //延迟时间
         $delayTime = $messageRule['setting']['delay_time'];
-        MessageService::realSendMessage(['delay_time' => $delayTime, 'rule_id' => $ruleId, 'open_id' => $userOpenId, 'app_id' => $appId, 'is_verify' => false]);
+        MessageService::realSendMessage(['delay_time' => $delayTime, 'rule_id' => $ruleId, 'open_id' => $userOpenId, 'app_id' => $appId]);
         return true;
     }
 
@@ -491,7 +491,13 @@ class WechatService
         }
         //延迟时间
         $delayTime = $messageRule['setting']['delay_time'];
-        MessageService::realSendMessage(['delay_time' => $delayTime, 'rule_id' => $ruleId, 'open_id' => $userOpenId, 'app_id' => $appId, 'is_verify' => false]);
+        MessageService::realSendMessage([
+            'delay_time' => $delayTime,
+            'rule_id'    => $ruleId,
+            'open_id'    => $userOpenId,
+            'app_id'     => $appId,
+            'user_id'    => $user['user_id']
+        ]);
         return true;
     }
 

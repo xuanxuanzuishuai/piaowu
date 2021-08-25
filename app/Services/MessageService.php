@@ -325,11 +325,9 @@ class MessageService
         //实际发送前再次确认带过来的规则是否适用
         $data = self::transformOpenidRelateRule($data);
         //校验是否超过发送消息限制
-        if (empty($data['is_verify']) || $data['is_verify']) {
-            $verify = self::preSendVerify($data['open_id'], $data['rule_id']);
-            if (empty($verify)) {
-                return;
-            }
+        $verify = self::preSendVerify($data['open_id'], $data['rule_id']);
+        if (empty($verify)) {
+            return;
         }
         $messageRule = self::getMessagePushRuleByID($data['rule_id']);
         //发送客服消息
@@ -458,11 +456,21 @@ class MessageService
     private static function dealPosterByRule($data, $item)
     {
         //走关注规则，无法获取转介绍二维码
-        if ($data['rule_id'] == DictConstants::get(DictConstants::MESSAGE_RULE, 'subscribe_rule_id') ||
-            $data['rule_id'] == DictConstants::get(DictConstants::MESSAGE_RULE, 'life_subscribe_rule_id')
+        if (in_array($data['rule_id'], DictConstants::getValues(DictConstants::MESSAGE_RULE,
+            ['subscribe_rule_id', 'life_subscribe_rule_id']))
         ) {
             $posterImgFile = ['poster_save_full_path' => $item['value'], 'unique' => md5($data['open_id'].$item['value']) . '.jpg', 'user_current_status' => DssStudentModel::STATUS_REGISTER];
-        } else {
+        } elseif ($data['rule_id'] == DictConstants::get(DictConstants::MESSAGE_RULE,'invite_friend_rule_id')) {
+            //真人邀请好友
+            $config = DictConstants::getSet(DictConstants::TEMPLATE_POSTER_CONFIG);
+            //用户二维码图片信息在referral项目中获取
+            $posterImgFile = PosterService::generateLifeQRPosterAliOss(
+                $item['path'],
+                $config,
+                $data['user_id']
+            );
+
+        }else {
             //非关注拼接转介绍二维码
             $userInfo = DssUserWeiXinModel::getByOpenId($data['open_id']);
             if (empty($userInfo['user_id'])) {
@@ -566,6 +574,7 @@ class MessageService
         if (empty($ruleId)) {
             return;
         }
+
         //是否超过次数限制
         if (self::judgeOverMessageRuleLimit($openId, $ruleId)) {
             return;
@@ -627,6 +636,10 @@ class MessageService
      */
     public static function judgeOverMessageRuleLimit($openId, $ruleId)
     {
+        if (self::pushMessageFilterRule($ruleId)){
+            return false;
+        }
+
         $redis = RedisDB::getConn();
 
         $ruleInfo = MessagePushRulesModel::getById($ruleId);
@@ -663,6 +676,29 @@ class MessageService
     }
 
     /**
+     * 消息推送是否验证次数
+     * @param int $ruleId
+     * @return bool
+     */
+    private static function pushMessageFilterRule(int $ruleId): bool
+    {
+        //首关  邀请好友
+        if (in_array($ruleId, DictConstants::getValues(DictConstants::MESSAGE_RULE,
+            [
+                'subscribe_rule_id',
+                'life_subscribe_rule_id',
+                'invite_friend_rule_id',
+                'invite_friend_pay_rule_id',
+                'invite_friend_not_pay_rule_id'
+            ]))
+        ) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * 记录用户有效时间消息发送的条数
      * @param $openId
      * @param $ruleId
@@ -670,12 +706,10 @@ class MessageService
     public static function recordUserMessageRuleLimit($openId, $ruleId)
     {
         //首关  邀请好友  不记录
-        if ($ruleId == DictConstants::get(DictConstants::MESSAGE_RULE, 'subscribe_rule_id') ||
-            $ruleId == DictConstants::get(DictConstants::MESSAGE_RULE, 'invite_friend_pay_rule_id') ||
-            $ruleId == DictConstants::get(DictConstants::MESSAGE_RULE, 'invite_friend_not_pay_rule_id')
-        ) {
-            return;
+        if (self::pushMessageFilterRule($ruleId)){
+            return false;
         }
+
         $redis = RedisDB::getConn();
         $ruleInfo = MessagePushRulesModel::getById($ruleId);
         $timeConfig = json_decode($ruleInfo['time'], true);
@@ -705,13 +739,6 @@ class MessageService
     public static function interActionDealMessage(array $msgBody, int $appId = 0)
     {
         $openId = $msgBody['FromUserName'];
-        $ruleId = self::judgeUserRelateRuleId($openId, $appId);
-        if (!empty($ruleId)) {
-            $data = self::preSendVerify($openId, $ruleId, $appId);
-            if (!empty($data)) {
-                self::realSendMessage($data);
-            }
-        }
 
         $msgType = $msgBody['MsgType'];
 
@@ -738,6 +765,14 @@ class MessageService
                     break;
                 default:
                     break;
+            }
+        }
+
+        $ruleId = self::judgeUserRelateRuleId($openId, $appId);
+        if (!empty($ruleId)) {
+            $data = self::preSendVerify($openId, $ruleId, $appId);
+            if (!empty($data)) {
+                self::realSendMessage($data);
             }
         }
 

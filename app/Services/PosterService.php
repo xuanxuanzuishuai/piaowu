@@ -5,6 +5,7 @@ use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\Referral;
 use App\Libs\SimpleLogger;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\ActivityPosterModel;
@@ -412,5 +413,125 @@ class PosterService
         }
         $qrPath = AliOSS::replaceCdnDomainForDss($userQrArr['qr_path']);
         return ['qr_path' => $qrPath];
+    }
+
+    /**
+     * 真人生成带用户QR码海报
+     * @param $posterPath
+     * @param $config
+     * @param $userId
+     * @param array $extParams
+     * @return array|string[]
+     */
+    public static function generateLifeQRPosterAliOss(
+        $posterPath,
+        $config,
+        $userId,
+        $extParams = []
+    ) {
+        //通过oss合成海报并保存
+        //海报资源
+        $emptyRes = ['poster_save_full_path' => '', 'unique' => ''];
+        $exists = AliOSS::doesObjectExist($posterPath);
+        if (empty($exists)) {
+            SimpleLogger::info('poster oss file is not exits', [$posterPath]);
+            return $emptyRes;
+        }
+
+        //小程序码
+        $userQrUrl = self::generateLifeQrAliOss($userId);
+        if (empty($userQrUrl)) {
+            SimpleLogger::info('user qr make fail', [$userId]);
+            return $emptyRes;
+        }
+
+        //海报添加水印
+        //先将内容编码成Base64结果
+        //将结果中的加号（+）替换成连接号（-）
+        //将结果中的正斜线（/）替换成下划线（_）
+        //将结果中尾部的等号（=）全部保留
+        $waterImgEncode = str_replace(
+            ["+", "/"],
+            ["-", "_"],
+            base64_encode($userQrUrl . "?x-oss-process=image/resize,limit_0,w_" . $config['QR_WIDTH'] . ",h_" . $config['QR_HEIGHT'])
+        );
+        $waterMark = [
+            "image_" . $waterImgEncode,
+            "x_" . $config['QR_X'],
+            "y_" . $config['QR_Y'],
+            "g_sw",//插入的基准位置以左下角作为原点
+        ];
+        $waterMarkStr[] = implode(",", $waterMark);
+        $imgSize = [
+            "w_" . $config['POSTER_WIDTH'],
+            "h_" . $config['POSTER_HEIGHT'],
+            "limit_0",//强制图片缩放
+        ];
+        $imgSizeStr = implode(",", $imgSize) . '/';
+
+        if (!empty($extParams['text'])) {
+
+            if (count($extParams['text']) == count($extParams['text'], COUNT_RECURSIVE)) {
+                $textParam[] = $extParams['text'];
+            } else {
+                $textParam = $extParams['text'];
+            }
+
+            foreach ($textParam as $text) {
+                $wordMark = [
+                    "text_" . str_replace(
+                        ["+", "/"],
+                        ["-", "_"],
+                        base64_encode($text['word'])
+                    ),
+                    "x_" . $text['x'],
+                    "y_" . $text['y'],
+                    "size_" . $text['size'],
+                    "color_" . $text['color'],
+                    "g_nw",
+                ];
+                $waterMarkStr[] = implode(",", $wordMark);
+            }
+        }
+        $resImageUrl = AliOSS::signUrls($posterPath, "", "", "", true, $waterMarkStr, $imgSizeStr);
+
+        //返回数据
+        return [
+            'poster_save_full_path' => $resImageUrl,
+            'unique' => md5($userId . $posterPath . $userQrUrl) . ".jpg",
+            'poster_id' => $extParams['p'] ?? 0,
+        ];
+    }
+
+    /**
+     * 真人生成小程序码上传OSS
+     * @param int $userId
+     * @return string
+     */
+    public static function generateLifeQrAliOss(int $userId): string
+    {
+        //用户二维码
+        $userQrUrl = $_ENV['ENV_NAME'] . '/' . AliOSS::DIR_MINIAPP_CODE . '/op_life_qr_ticket/' . $userId . '.jpg';
+        $exists    = AliOSS::doesObjectExist($userQrUrl);
+        if (empty($exists)) {
+
+            //referral项目获取用户的二维码图片
+            $qrData = (new Referral())->getUserOrImg([
+                'student_id' => $userId,
+                'channel_id' => $_ENV['USER_RECOMMEND_STANDARD_POSTER']
+            ]);
+            if ($qrData['code'] != 0) {
+                SimpleLogger::info('user qr referral request data error', [$qrData]);
+                return '';
+            }
+
+            //下载本地getUserOrImg
+            $tmpSavePath = AliOSS::saveTmpFile($qrData['qr_url']);
+            //上传
+            AliOSS::uploadFile($userQrUrl, $tmpSavePath);
+            unlink($tmpSavePath);
+        }
+
+        return $userQrUrl;
     }
 }
