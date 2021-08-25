@@ -636,7 +636,7 @@ class MessageService
      */
     public static function judgeOverMessageRuleLimit($openId, $ruleId)
     {
-        if (self::pushMessageFilterRule($ruleId)){
+        if (self::isActiveClickPushMessage($ruleId)){
             return false;
         }
 
@@ -676,26 +676,21 @@ class MessageService
     }
 
     /**
-     * 消息推送是否验证次数
+     * 是否主动点击推送消息
      * @param int $ruleId
      * @return bool
      */
-    private static function pushMessageFilterRule(int $ruleId): bool
+    private static function isActiveClickPushMessage(int $ruleId): bool
     {
         //首关  邀请好友
-        if (in_array($ruleId, DictConstants::getValues(DictConstants::MESSAGE_RULE,
+        return in_array($ruleId, DictConstants::getValues(DictConstants::MESSAGE_RULE,
             [
                 'subscribe_rule_id',
                 'life_subscribe_rule_id',
                 'invite_friend_rule_id',
                 'invite_friend_pay_rule_id',
                 'invite_friend_not_pay_rule_id'
-            ]))
-        ) {
-            return false;
-        }
-
-        return true;
+            ]));
     }
 
     /**
@@ -706,7 +701,7 @@ class MessageService
     public static function recordUserMessageRuleLimit($openId, $ruleId)
     {
         //首关  邀请好友  不记录
-        if (self::pushMessageFilterRule($ruleId)){
+        if (self::isActiveClickPushMessage($ruleId)){
             return false;
         }
 
@@ -744,7 +739,7 @@ class MessageService
 
         // 消息推送事件
         if ($msgType == 'event') {
-            $event = $msgType['Event'];
+            $event = $msgBody['Event'];
             SimpleLogger::info('student weixin event: ' . $event, []);
             switch ($event) {
                 case 'subscribe':
@@ -794,7 +789,7 @@ class MessageService
 
         // 消息推送事件
         if ($msgType == 'event') {
-            $event = $msgType['Event'];
+            $event = $msgBody['Event'];
             SimpleLogger::info('life student weixin event: ' . $event, []);
             switch ($event) {
                 case 'subscribe':
