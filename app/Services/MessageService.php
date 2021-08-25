@@ -84,6 +84,12 @@ class MessageService
             return [];
         }
         $detail = MessagePushRulesModel::getById($id);
+
+        $detail['img_must'] = in_array($id, DictConstants::getValues(DictConstants::MESSAGE_RULE,
+        [
+            'invite_friend_pay_rule_id',
+            'invite_friend_not_pay_rule_id'
+        ]));
         return self::ruleFormat($detail);
     }
 
@@ -834,12 +840,11 @@ class MessageService
         }else{
             switch ($keyEvent) {
                 // 付费推荐好友
-                case 'STUDENT_PUSH_MSG_SHARE_AWARD':
+                case 'STUDENT_PUSH_MSG_USER_SHARE':
                     WechatService::studentPushMsgUserShare($userOpenId, DictConstants::get(DictConstants::MESSAGE_RULE, 'invite_friend_pay_rule_id'));
                     break;
-
                 // 未付费推荐好友
-                case 'STUDENT_PUSH_MSG_USER_SHARE':
+                case 'STUDENT_PUSH_MSG_SHARE_AWARD':
                     WechatService::studentPushMsgUserShare($userOpenId, DictConstants::get(DictConstants::MESSAGE_RULE, 'invite_friend_not_pay_rule_id'));
                     break;
             }
