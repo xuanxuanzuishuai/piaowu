@@ -51,6 +51,9 @@ class PushMessageTopic extends BaseTopic
 
     const EVENT_TASK_GOLD_LEAF = 'task_grant_gold_leaf'; // 任务发放金叶子
 
+
+    const EVENT_WECHAT_LIFE_INTERACTION = 'wechat_life_interaction';  // 真人微信交互
+
     public function __construct($publishTime = null)
     {
         parent::__construct(self::TOPIC_NAME, $publishTime);

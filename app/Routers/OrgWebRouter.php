@@ -145,6 +145,12 @@ class OrgWebRouter extends RouterBase
         '/op_web/message/rule_update_status' => ['method' => ['post'], 'call' => Message::class . ':ruleUpdateStatus'],
         '/op_web/message/rule_update'        => ['method' => ['post'], 'call' => Message::class . ':ruleUpdate'],
 
+        //真人消息
+        '/op_web/message_life/rules_list'         => ['method' => ['get'], 'call' => Message::class . ':lifeRulesList'],
+        '/op_web/message_life/rule_detail'        => ['method' => ['get'], 'call' => Message::class . ':ruleDetail'],
+        '/op_web/message_life/rule_update_status' => ['method' => ['post'], 'call' => Message::class . ':ruleUpdateStatus'],
+        '/op_web/message_life/rule_update'        => ['method' => ['post'], 'call' => Message::class . ':ruleUpdate'],
+
         // 手动推送：
         '/op_web/message/manual_last_push' => ['method' => ['get'], 'call' => Message::class . ':manualLastPush'],
         '/op_web/message/manual_push'      => ['method' => ['post'], 'call' => Message::class . ':manualPush'],

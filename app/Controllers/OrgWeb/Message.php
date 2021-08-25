@@ -7,6 +7,7 @@
 namespace App\Controllers\OrgWeb;
 
 use App\Controllers\ControllerBase;
+use App\Libs\Constants;
 use App\Libs\HttpHelper;
 use App\Libs\Valid;
 use App\Services\MessageService;
@@ -27,8 +28,33 @@ class Message extends ControllerBase
      */
     public function rulesList(Request $request, Response $response)
     {
+        $params = $request->getParams();
+        $params['app_id'] = Constants::SMART_APP_ID;
         try {
-            $params = $request->getParams();
+            list($rules, $totalCount) = MessageService::rulesList($params);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+
+        return HttpHelper::buildResponse($response, [
+            'rules'       => $rules,
+            'total_count' => $totalCount
+        ]);
+    }
+
+
+    /**
+     * @param Request $request Request
+     * @param Response $response Response
+     * @return Response
+     * 真人推送规则列表
+     */
+    public function lifeRulesList(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+
+        $params['app_id'] = Constants::REAL_APP_ID;
+        try {
             list($rules, $totalCount) = MessageService::rulesList($params);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
@@ -92,7 +118,7 @@ class Message extends ControllerBase
             [
                 'key'        => 'status',
                 'type'       => 'in',
-                'value'      => MessagePushRulesModel::RULE_STATUS_DICT,
+                'value'      => array_keys(MessagePushRulesModel::RULE_STATUS_DICT),
                 'error_code' => 'status_is_invalid'
             ]
         ];

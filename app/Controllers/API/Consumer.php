@@ -236,7 +236,10 @@ class Consumer extends ControllerBase
             switch ($params['event_type']) {
                 case PushMessageTopic::EVENT_WECHAT_INTERACTION:
                     MessageService::interActionDealMessage($params['msg_body']);
-                    QueueService::preGenerateQrCode($params['msg_body']);
+                    break;
+
+                case PushMessageTopic::EVENT_WECHAT_LIFE_INTERACTION:
+                    MessageService::lifeInterActionDealMessage($params['msg_body']);
                     break;
 
                 case PushMessageTopic::EVENT_USER_BIND_WECHAT:

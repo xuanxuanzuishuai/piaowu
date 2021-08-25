@@ -26,7 +26,8 @@ class PushMessageService
 
     const MESSAGE_TIMEOUT = 180000; // 微信消息超时时间50小时
     const APPID_BUSI_TYPE_DICT = [
-        Constants::SMART_APP_ID => DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER
+        Constants::SMART_APP_ID => DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER,
+        Constants::REAL_APP_ID  => DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER,
     ];
     /**
      * 红包奖励相关的微信消息

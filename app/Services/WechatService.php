@@ -19,6 +19,8 @@ use App\Models\Dss\DssCollectionModel;
 use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
+use App\Models\Erp\ErpUserWeiXinModel;
+use App\Models\MessagePushRulesModel;
 
 class WechatService
 {
@@ -400,4 +402,98 @@ class WechatService
         $redis = RedisDB::getConn();
         return $redis->hdel(self::KEY_USER_CURRENT_MENU_TAG, [$openId]);
     }
+
+
+    /**
+     * 验证微信绑定状态
+     * @param string $openId
+     * @param int $appId
+     * @param bool $sendMessage
+     * @return array|false
+     */
+    public static function verifyBind($openId, $appId, $sendMessage = true)
+    {
+        //当前用户
+        $userInfo = DssUserWeiXinModel::getByOpenId($openId);
+        //当前用户属于何种用户分类
+        if (empty($userInfo['user_id']) && $sendMessage) {
+            //未绑定
+            $url = $_ENV["REFERRER_REGISTER_URL"];
+            $result = '您未绑定，请点击<a href="' . $url . '"> 绑定 </a>。';
+
+            //客服消息 - 文本消息
+            PushMessageService::notifyUserWeixinTextInfo($appId, $openId, $result);
+
+            return false;
+        }
+        return $userInfo;
+    }
+
+    /**
+     * 公众号菜单
+     * "推荐好友"按钮
+     * @param string $userOpenId
+     * @param int $ruleId
+     * @param int $appId
+     * @return bool
+     */
+    public static function studentPushMsgUserShare(string $userOpenId, int $ruleId = 0, int $appId = 0):bool
+    {
+        if (empty($ruleId)) return false;
+
+        $appId = DssUserWeiXinModel::dealAppId($appId);
+
+        $user = self::verifyBind($userOpenId,$appId);
+        if ($user === false) {
+            return false;
+        }
+
+        //是否开启
+        $messageRule = MessageService::getMessagePushRuleByID($ruleId);
+        if ($messageRule['is_active'] != MessagePushRulesModel::STATUS_ENABLE) {
+            SimpleLogger::info('message rule not active ', ['rule_id' => $ruleId]);
+            return false;
+        }
+        //延迟时间
+        $delayTime = $messageRule['setting']['delay_time'];
+        MessageService::realSendMessage(['delay_time' => $delayTime, 'rule_id' => $ruleId, 'open_id' => $userOpenId, 'app_id' => $appId, 'is_verify' => false]);
+        return true;
+    }
+
+
+    /**
+     * 真人公众号菜单
+     * "推荐好友"按钮
+     * @param string $userOpenId
+     * @param int $ruleId
+     * @param int $appId
+     * @return bool
+     */
+    public static function lifeStudentPushMsgUserShare(string $userOpenId, int $ruleId = 0, int $appId = Constants::REAL_APP_ID): bool
+    {
+        if (empty($ruleId)) return false;
+
+        $user = ErpUserWeiXinModel::getUserInfoByOpenId($userOpenId);
+
+        if (empty($user['user_id'])) {
+            //提醒注册
+            $content = '要先<a href="' . $_ENV['WEIXIN_STUDENT_VUE_URL'] . "signup_2018" . '">［注册］</a>才能邀请朋友哦！
+    注册后生成你的专属海报，用这个海报邀请朋友才能计算赠课数量哦😝';
+            PushMessageService::notifyUserWeixinTextInfo($appId, $userOpenId, $content);
+            return false;
+        }
+
+        //是否开启
+        $messageRule = MessageService::getMessagePushRuleByID($ruleId);
+        if ($messageRule['is_active'] != MessagePushRulesModel::STATUS_ENABLE) {
+            SimpleLogger::info('message rule not active ', ['rule_id' => $ruleId]);
+            return false;
+        }
+        //延迟时间
+        $delayTime = $messageRule['setting']['delay_time'];
+        MessageService::realSendMessage(['delay_time' => $delayTime, 'rule_id' => $ruleId, 'open_id' => $userOpenId, 'app_id' => $appId, 'is_verify' => false]);
+        return true;
+    }
+
+
 }

@@ -433,6 +433,10 @@ class DictConstants {
             'month_reward_wed_rule_id',
             'month_reward_fri_rule_id',
             'month_reward_sun_rule_id',
+            'life_subscribe_rule_id',
+            'invite_friend_rule_id',
+            'invite_friend_pay_rule_id',
+            'invite_friend_not_pay_rule_id',
         ]
     ];
 

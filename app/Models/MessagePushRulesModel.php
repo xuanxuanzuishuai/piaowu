@@ -13,14 +13,13 @@ use App\Libs\Util;
 class MessagePushRulesModel extends Model
 {
     public static $table = 'message_push_rules';
-    // 状态: 0未启用;1启用;2禁用;
+    // 状态: 0禁用;1启用;
     const STATUS_DISABLE = 0;
     const STATUS_ENABLE  = 1;
-    const STATUS_DOWN    = 2;
 
     const RULE_STATUS_DICT = [
-        self::STATUS_DISABLE,
-        self::STATUS_ENABLE
+        self::STATUS_DISABLE => '禁用',
+        self::STATUS_ENABLE => '启用'
     ];
 
     const PUSH_TYPE_CUSTOMER = 1; // 客服消息
@@ -76,7 +75,7 @@ class MessagePushRulesModel extends Model
         $limit      = Util::limitation($page, $count);
         $countField = "count(id) as total";
         $field      = "`id`,`name`,`type`,`target`,`is_active`,time->>'$.desc' as `display_time`,`update_time`,`remark`";
-        $sql        = "SELECT %s FROM ".self::$table;
+        $sql        = "SELECT %s FROM ".self::$table." WHERE app_id = {$params['app_id']}";
 
         $db    = MysqlDB::getDB();
         $total = $db->queryAll(sprintf($sql, $countField));

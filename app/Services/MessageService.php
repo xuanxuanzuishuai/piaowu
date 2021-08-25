@@ -12,6 +12,7 @@ use App\Libs\DictConstants;
 use App\Libs\NewSMS;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
+use App\Libs\UserCenter;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Libs\Util;
 use App\Libs\AliOSS;
@@ -32,6 +33,7 @@ use App\Models\SharePosterModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\UserPointsExchangeOrderModel;
+use App\Models\UserWeixinModel;
 use App\Models\WeChatConfigModel;
 use App\Services\Queue\QueueService;
 use App\Services\Queue\SaBpDataTopic;
@@ -157,7 +159,7 @@ class MessageService
         $rule['display_type']      = MessagePushRulesModel::PUSH_TYPE_DICT[$rule['type']] ?? '';
         $rule['display_target']    = MessagePushRulesModel::PUSH_TARGET_DICT[$rule['target']] ?? '';
         $rule['update_time']       = date('Y-m-d H:i:s', $rule['update_time']);
-        $rule['display_is_active'] = DictService::getKeyValue('message_rule_active_status', $rule['is_active']);
+        $rule['display_is_active'] = MessagePushRulesModel::RULE_STATUS_DICT[$rule['is_active']];
         // 解析【推送时间】字段
         if (!isset($rule['display_time']) && isset($rule['time'])) {
             $time = json_decode($rule['time'], true);
@@ -323,9 +325,11 @@ class MessageService
         //实际发送前再次确认带过来的规则是否适用
         $data = self::transformOpenidRelateRule($data);
         //校验是否超过发送消息限制
-        $verify = self::preSendVerify($data['open_id'], $data['rule_id']);
-        if (empty($verify)) {
-            return;
+        if (empty($data['is_verify']) || $data['is_verify']) {
+            $verify = self::preSendVerify($data['open_id'], $data['rule_id']);
+            if (empty($verify)) {
+                return;
+            }
         }
         $messageRule = self::getMessagePushRuleByID($data['rule_id']);
         //发送客服消息
@@ -454,7 +458,9 @@ class MessageService
     private static function dealPosterByRule($data, $item)
     {
         //走关注规则，无法获取转介绍二维码
-        if ($data['rule_id'] == DictConstants::get(DictConstants::MESSAGE_RULE, 'subscribe_rule_id')) {
+        if ($data['rule_id'] == DictConstants::get(DictConstants::MESSAGE_RULE, 'subscribe_rule_id') ||
+            $data['rule_id'] == DictConstants::get(DictConstants::MESSAGE_RULE, 'life_subscribe_rule_id')
+        ) {
             $posterImgFile = ['poster_save_full_path' => $item['value'], 'unique' => md5($data['open_id'].$item['value']) . '.jpg', 'user_current_status' => DssStudentModel::STATUS_REGISTER];
         } else {
             //非关注拼接转介绍二维码
@@ -663,8 +669,11 @@ class MessageService
      */
     public static function recordUserMessageRuleLimit($openId, $ruleId)
     {
-        //首关不记录
-        if ($ruleId == DictConstants::get(DictConstants::MESSAGE_RULE, 'subscribe_rule_id')) {
+        //首关  邀请好友  不记录
+        if ($ruleId == DictConstants::get(DictConstants::MESSAGE_RULE, 'subscribe_rule_id') ||
+            $ruleId == DictConstants::get(DictConstants::MESSAGE_RULE, 'invite_friend_pay_rule_id') ||
+            $ruleId == DictConstants::get(DictConstants::MESSAGE_RULE, 'invite_friend_not_pay_rule_id')
+        ) {
             return;
         }
         $redis = RedisDB::getConn();
@@ -689,11 +698,13 @@ class MessageService
     }
 
     /**
-     * @param $openId
+     * @param array $msgBody
+     * @param int $appId
      * 用户与微信交互后的消息处理
      */
-    public static function interActionDealMessage($openId, $appId = null)
+    public static function interActionDealMessage(array $msgBody, int $appId = 0)
     {
+        $openId = $msgBody['FromUserName'];
         $ruleId = self::judgeUserRelateRuleId($openId, $appId);
         if (!empty($ruleId)) {
             $data = self::preSendVerify($openId, $ruleId, $appId);
@@ -701,8 +712,109 @@ class MessageService
                 self::realSendMessage($data);
             }
         }
+
+        $msgType = $msgBody['MsgType'];
+
+        // 消息推送事件
+        if ($msgType == 'event') {
+            $event = $msgType['Event'];
+            SimpleLogger::info('student weixin event: ' . $event, []);
+            switch ($event) {
+                case 'subscribe':
+                    // 关注公众号
+                    $data = self::preSendVerify($openId, DictConstants::get(DictConstants::MESSAGE_RULE, 'subscribe_rule_id'));
+                    if (!empty($data)) {
+                        MessageService::realSendMessage($data);
+                    }
+                    break;
+                case 'CLICK':
+                    // 点击自定义菜单事件
+                    self::menuClickEventHandler($msgBody);
+                    break;
+                case 'unsubscribe':
+                    //取消关注公众号
+                    self::clearMessageRuleLimit($openId);
+                    WechatService::clearCurrentTag($openId);
+                    break;
+                default:
+                    break;
+            }
+        }
+
         // 记录用户公众号"登录"行为
         WechatService::wechatInteractionLog($openId);
+    }
+
+
+
+    /**
+     * @param array $msgBody
+     * 真人用户与微信交互后的消息处理
+     */
+    public static function lifeInterActionDealMessage(array $msgBody)
+    {
+        $openId = $msgBody['FromUserName'];
+
+        $msgType = $msgBody['MsgType'];
+
+        // 消息推送事件
+        if ($msgType == 'event') {
+            $event = $msgType['Event'];
+            SimpleLogger::info('life student weixin event: ' . $event, []);
+            switch ($event) {
+                case 'subscribe':
+                    // 关注公众号
+                    $data = self::preSendVerify($openId, DictConstants::get(DictConstants::MESSAGE_RULE, 'life_subscribe_rule_id'));
+                    if (!empty($data)) {
+                        $data['is_verify'] = false;
+                        $data['app_id']  = Constants::REAL_APP_ID;
+                        MessageService::realSendMessage($data);
+                    }
+                    break;
+                case 'CLICK':
+                    // 点击自定义菜单事件
+                    self::MenuClickEventHandler($msgBody, Constants::REAL_APP_ID);
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+
+    /**
+     * 自定义点击事件
+     * @param array $msgBody
+     * @param int $appId
+     * @return bool
+     */
+    public static function menuClickEventHandler(array $msgBody,int $appId = 0)
+    {
+        // 自定义KEY事件
+        $keyEvent = $msgBody['EventKey'];
+        // 事件发送者
+        $userOpenId = $msgBody['FromUserName'];
+        if ($appId == Constants::REAL_APP_ID){
+            switch ($keyEvent) {
+                // 推荐好友
+                case 'PUSH_MSG_USER_SHARE':
+                    WechatService::lifeStudentPushMsgUserShare($userOpenId, DictConstants::get(DictConstants::MESSAGE_RULE, 'invite_friend_rule_id'));
+                    break;
+            }
+        }else{
+            switch ($keyEvent) {
+                // 付费推荐好友
+                case 'STUDENT_PUSH_MSG_SHARE_AWARD':
+                    WechatService::studentPushMsgUserShare($userOpenId, DictConstants::get(DictConstants::MESSAGE_RULE, 'invite_friend_pay_rule_id'));
+                    break;
+
+                // 未付费推荐好友
+                case 'STUDENT_PUSH_MSG_USER_SHARE':
+                    WechatService::studentPushMsgUserShare($userOpenId, DictConstants::get(DictConstants::MESSAGE_RULE, 'invite_friend_not_pay_rule_id'));
+                    break;
+            }
+        }
+        return false;
     }
 
     /**
