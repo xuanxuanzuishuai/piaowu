@@ -665,7 +665,7 @@ class SourceMaterialService
         $wechat          = WeChatMiniPro::factory(Constants::SMART_APP_ID, Constants::SMART_APP_ID);
         $wechatInitialId = DictConstants::get(DictConstants::WECHAT_INITIAL_ID, $wechat->nowWxApp);
         $webpageUrl      = DictConstants::get(DictConstants::SALE_SHOP_CONFIG, 'home_index');
-        $qrType          = DictConstants::get(DictConstants::MINI_APP_QR, 'qr_type_mini');
+        $qrType          = DictConstants::get(DictConstants::MINI_APP_QR, 'qr_type_none');
         $studentStatus   = StudentService::dssStudentStatusCheck($request['student_id']);
         $qrData = [
             'user_id'        => $request['student_id'],

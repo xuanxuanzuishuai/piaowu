@@ -396,24 +396,19 @@ class PosterService
     {
         $studentId  = $request['student_id'];
         $userDetail = StudentService::dssStudentStatusCheck($studentId, false, null);
-        $qrType     = DictConstants::get(DictConstants::MINI_APP_QR, 'qr_type_mini');
-
         $qrData = [
             'poster_id'           => $request['poster_id'],
-            'user_id'             => $studentId,
-            'user_type'           => DssUserQrTicketModel::STUDENT_TYPE,
-            'channel_id'          => $request['channel_id'],
-            'landing_type'        => DssUserQrTicketModel::LANDING_TYPE_MINIAPP,
             'user_current_status' => $userDetail['student_status'] ?? 0,
             'activity_id'         => $request['activity_id'] ?? 0,
-            'qr_type'             => $qrType,
             'app_id'              => Constants::SMART_APP_ID,
         ];
-        $qrInfo = QrInfoService::getQrIdList([$qrData]);
-        $qrPath = !empty($qrInfo) ? end($qrInfo)['qr_full_path'] : null;
-        if (empty($qrPath)) {
+        $userType = DssUserQrTicketModel::STUDENT_TYPE;
+        $landingType = DssUserQrTicketModel::LANDING_TYPE_MINIAPP;
+        $userQrArr = MiniAppQrService::getUserMiniAppQr($studentId, $userType, $request['channel_id'], $landingType, $qrData);
+        if (empty($userQrArr['qr_path'])) {
             throw new RunTimeException(['invalid_data']);
         }
-        return $qrPath;
+        $qrPath = AliOSS::replaceCdnDomainForDss($userQrArr['qr_path']);
+        return ['qr_path' => $qrPath];
     }
 }

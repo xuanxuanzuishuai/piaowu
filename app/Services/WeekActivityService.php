@@ -25,6 +25,9 @@ use App\Services\Queue\QueueService;
 class WeekActivityService
 {
 
+    const WEEK_ACTIVITY_TYPE = 1; //周周活动类型
+    const MONTH_ACTIVITY_TYPE = 2; //月月活动类型
+
     /**
      * 添加周周领奖活动
      * @param $data
@@ -34,7 +37,7 @@ class WeekActivityService
      */
     public static function add($data, $employeeId)
     {
-        $checkAllowAdd = self::checkAllowAdd($data);
+        $checkAllowAdd = self::checkAllowAdd($data, self::WEEK_ACTIVITY_TYPE);
         if (!empty($checkAllowAdd)) {
             throw new RunTimeException([$checkAllowAdd]);
         }
@@ -100,7 +103,7 @@ class WeekActivityService
             throw new RunTimeException(["add week activity fail"]);
         }
         // 保存海报关联关系
-        $posterArray = array_merge($data['personality_poster'], $data['poster']);
+        $posterArray = array_merge($data['personality_poster'] ?? [], $data['poster'] ?? []);
         $activityPosterRes = ActivityPosterModel::batchAddActivityPoster($activityId, $posterArray);
         if (empty($activityPosterRes)) {
             $db->rollBack();
@@ -116,10 +119,10 @@ class WeekActivityService
      * @param $data
      * @return bool
      */
-    public static function checkAllowAdd($data)
+    public static function checkAllowAdd($data, $type = self::MONTH_ACTIVITY_TYPE)
     {
         // 海报不能为空
-        if (empty($data['poster'])) {
+        if (empty($data['poster']) && $type == self::MONTH_ACTIVITY_TYPE) {
             return 'poster_is_required';
         }
 
@@ -277,7 +280,7 @@ class WeekActivityService
      */
     public static function edit($data, $employeeId)
     {
-        $checkAllowAdd = self::checkAllowAdd($data);
+        $checkAllowAdd = self::checkAllowAdd($data, self::WEEK_ACTIVITY_TYPE);
         if (!empty($checkAllowAdd)) {
             throw new RunTimeException([$checkAllowAdd]);
         }
@@ -292,7 +295,7 @@ class WeekActivityService
         }
 
         // 判断海报是否有变化，没有变化不操作
-        $posterArray = array_merge($data['personality_poster'], $data['poster']);
+        $posterArray = array_merge($data['personality_poster'] ?? [], $data['poster'] ?? []);
         $isDelPoster = ActivityPosterModel::diffPosterChange($activityId, $posterArray);
         // 开始处理更新数据
         $time = time();

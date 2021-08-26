@@ -179,7 +179,7 @@ class WeekActivity extends ControllerBase
         }
         try {
             $employeeId = $this->getEmployeeId();
-            if (empty($params['poster']) || empty($params['personality_poster'])) {
+            if (empty($params['poster']) && empty($params['personality_poster'])) {
                 throw new RunTimeException(['poster_or_personality_poster_is_required']);
             }
             if (!empty($params['activity_id'])) {
