@@ -15,7 +15,9 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Libs\NewSMS;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
+use App\Libs\Util;
 use App\Libs\Valid;
+use App\Libs\WeChat\WeChatMiniPro;
 use App\Libs\WeChatPackage;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
@@ -28,6 +30,9 @@ use App\Models\WhiteGrantRecordModel;
 class WhiteGrantRecordService
 {
 
+    const LIMIT_MAX_SEND_MONEY = 9000;//红包最大发放金额(单位:分)
+
+    public static $WeChatMiniPro;
     /**
      * 获取发放列表
      * @param $params
@@ -209,26 +214,34 @@ class WhiteGrantRecordService
     public static function sendPackage($next){
 
         if (($_ENV['ENV_NAME'] == 'pre' && in_array($next['open_id'], explode(',', RedisDB::getConn()->get('red_pack_white_open_id')))) || $_ENV['ENV_NAME'] == 'prod') {
-            $appId    = Constants::SMART_APP_ID;
-            $busiType = DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER;
-            $wx = new WeChatPackage($appId,$busiType,WeChatPackage::WEEK_FROM);
             $keyCode = 'REISSUE_PIC_WORD';
             list($actName, $sendName, $wishing) = CashGrantService::getRedPackConfigWord($keyCode);
 
-            $mchBillNo = self::getMchBillNo($next);
-
-            $openId = $next['open_id'];
-            $value = $next['awardNum'];
-
+            //发送红包
+            $appId      = Constants::SMART_APP_ID;
+            $busiType   = DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER;
+            $mchBillNo  = self::getMchBillNo($next);
+            $openId     = $next['open_id'];
+            $value      = $next['awardNum'];
+            $wx = new WeChatPackage($appId,$busiType,WeChatPackage::WEEK_FROM);
             $resultData = $wx->sendPackage($mchBillNo, $actName, $sendName, $openId, $value, $wishing, 'redPack');
+
+            //获取用户头像
+            self::$WeChatMiniPro = WeChatMiniPro::factory($appId,$busiType);
+            list($nickname, $headimgurl) = WhiteGrantRecordService::getUserWxInfo($openId);
+
+            $next['nickname']   = $nickname;
+            $next['headimgurl'] = $headimgurl;
+            $next['bill_no']    = $mchBillNo;
+            $next['awardNum']   = $value;
 
             if(!$resultData || trim($resultData['result_code']) != WeChatAwardCashDealModel::RESULT_SUCCESS_CODE) {
                 SimpleLogger::error('sendErr5', ['resultData'=>$resultData,'bill_no'=>$mchBillNo,'actName'=>$actName, 'sendName'=>$sendName, 'openId'=>$openId, 'value'=>$value, 'wishing'=>$wishing]);
                 throw new RunTimeException(['fail'],['nextData'=>$next,'result_code'=>$resultData['err_code'],'bill_no'=>$mchBillNo ,'step'=>WhiteGrantRecordModel::GRANT_STEP_5,'awardNum' => $next['awardNum'], 'msg' =>WeChatAwardCashDealModel::getWeChatErrorMsg($resultData['err_code'])]);
             }
 
-            $next['bill_no']=$mchBillNo;
-            $next['awardNum'] = $value;
+
+
         }else{
             SimpleLogger::error('envErr', [$_ENV['ENV_NAME'], $next]);
             throw new RunTimeException(['fail'],['nextData'=>$next,'result_code'=>WhiteGrantRecordModel::ENVIRONMENT_NOE_EXISTS ,'step'=>WhiteGrantRecordModel::GRANT_STEP_5,'awardNum' => $next['awardNum'], 'msg' =>'环境不正确']);
@@ -293,6 +306,8 @@ class WhiteGrantRecordService
             'grant_step'        => $data['step'],
             'operator_id'       => $data['nextData']['operator_id'] ?? 0,
             'grant_time'        => $status == WhiteGrantRecordModel::STATUS_GIVE ? $now : 0,
+            'nickname'          => $data['nextData']['nickname'] ?? '',
+            'headimgurl'        => $data['nextData']['headimgurl'] ?? '',
             'update_time'       => 0,
             'award_ids'         => implode(',', $data['nextData']['awardIds'] ?? []),
             'result_code'       => $data['result_code'] ?? '',
@@ -310,6 +325,12 @@ class WhiteGrantRecordService
         }
 
         self::sendSms($student['mobile'], $status, $data['nextData']['awardNum']);
+
+        //发送红包成功时发送微信消息
+        if($insert['status'] == WhiteGrantRecordModel::STATUS_GIVE){
+            self::pushSuccMsg($insert['open_id'], $data['nextData']['awardNum']);
+        }
+
     }
 
     public static function sendSms($mobile, $status, $leaf){
@@ -351,9 +372,22 @@ class WhiteGrantRecordService
 
         $next['open_id'] = $openId;
 
+        self::checkQuota($next);
+
+    }
+
+    /**
+     * 检测是否超额发放
+     * @param $next
+     * @throws RunTimeException
+     */
+    public static function checkQuota($next){
+        if(intval($next['awardNum']) > self::LIMIT_MAX_SEND_MONEY){
+            throw new RunTimeException(['fail'],['nextData'=>$next, 'step'=>WhiteGrantRecordModel::GRANT_STEP_4, 'awardNum' => 0, 'msg' => '异常数据,超过单月发放上限']);
+        }
+
         //5.微信转账
         self::sendPackage($next);
-
     }
 
     /**
@@ -438,5 +472,38 @@ class WhiteGrantRecordService
         ];
 
         WhiteGrantRecordModel::updateRecord($data['id'], $updateData);
+    }
+
+    /**
+     * 获取用户头像信息
+     * @param $appId
+     * @param $busiType
+     * @param $openId
+     * @return array|string[]
+     * @throws RunTimeException
+     */
+    public static function getUserWxInfo($openId){
+        $userWxInfo = self::$WeChatMiniPro->getUserInfo($openId);
+        if($userWxInfo['subscribe'] == 1){
+            return [$userWxInfo['nickname'], $userWxInfo['headimgurl']];
+        }
+        return ['', ''];
+    }
+
+    public static function pushSuccMsg($openId, $leaf, $old = false){
+        $obj = self::$WeChatMiniPro;
+        if($old){
+            $m = '2021年8月2日0点到2021年8月25日17点50分';
+            $msg = '亲爱的用户:您在'.$m.'期间参与限定福利活动的专属福利已发放,请领取~';
+        }else{
+            $m = date('m', strtotime('-1 month'));
+            $msg = '亲爱的用户:您在'.$m .'月份参与的限定福利活动，共计获得'.$leaf.'金叶子,专属福利已发放,请领取~';
+        }
+        $content = Util::textDecode($msg);
+        $res = $obj->sendText($openId, $content);
+        if($res['errcode'] != 0){
+            SimpleLogger::info("whiteSendMsgFail", ['data' => $res,'openId'=>$openId,'leaf'=>$leaf,'old'=>$old]);
+        }
+
     }
 }

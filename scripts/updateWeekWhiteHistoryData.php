@@ -49,8 +49,8 @@ class obj{
     public $uuidGrant;
     public function __construct(){
         $this->uuids     = $this->getUUids();
-        $this->startTime = '2021-07-01 00:00:00';
-        $this->endTime   = '2021-07-24 23:59:59';
+        $this->startTime = '2021-08-02 00:00:00';
+        $this->endTime   = '2021-08-25 17:50:00';
         $this->eventTaskId = [476,477,478];
     }
 
@@ -310,6 +310,9 @@ class obj{
         if(!$this->debug){
             WhiteGrantRecordModel::insertRecord($insert);
             WhiteGrantRecordService::sendSms($data['mobile'], $insert['status'], $insert['grant_money']);
+            if($insert['status'] == WhiteGrantRecordModel::STATUS_GIVE){
+                WhiteGrantRecordService::pushSuccMsg($insert['open_id'], $data['grant_money'], true);
+            }
         }
 
     }
