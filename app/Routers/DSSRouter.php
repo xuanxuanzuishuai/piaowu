@@ -55,11 +55,12 @@ class DSSRouter extends RouterBase
         '/dss/student/update_tag' => ['method' => ['get'], 'call' => Dss::class . ':updateUserTag'],
         // 积分兑换红包列表
         '/dss/points/exchange_red_pack_list' => ['method' => ['get'], 'call' => Dss::class . ':pointsExchangeRedPackList'],
+        '/dss/awards/red_pack_list' => ['method' => ['get', 'post'], 'call' => Dss::class . ':awardRedPackList'],
         // dss手动重试发送积分红包
         '/dss/points/retry_exchange_red_pack' => ['method' => ['post'], 'call' => Dss::class . ':retryExchangeRedPack'],
 
         // SHARE_POSER:
-        '/dss/share_poster/list'     => ['method' => ['get'], 'call' => Dss::class . ':posterList'],
+        '/dss/share_poster/list'     => ['method' => ['get', 'post'], 'call' => Dss::class . ':posterList'],
         '/dss/share_poster/get'      => ['method' => ['get'], 'call' => Dss::class . ':getSharePoster'],
         '/dss/share_poster/upload'   => ['method' => ['post'], 'call' => Dss::class . ':uploadSharePoster'],
         '/dss/share_poster/approval' => ['method' => ['post'], 'call' => Dss::class . ':approvalPoster'],

@@ -3,6 +3,7 @@ namespace App\Models\Erp;
 
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
+use App\Models\Dss\DssStudentModel;
 use App\Models\EmployeeModel;
 use App\Models\WeChatAwardCashDealModel;
 
@@ -343,5 +344,131 @@ WHERE a.create_time >= {$time} AND a.status IN (" . self::STATUS_WAITING . "," .
         return $db->queryAll($sql);
     }
 
+    /**
+     * 通用红包审核 - 转介绍二期奖励列表
+     * 注： 注意和 self::getAward 方法的区别
+     * @param $page
+     * @param $count
+     * @param $params
+     * @return array
+     */
+    public static function awardRedPackList($params, $page, $count)
+    {
+        $returnList = ['records' => [], 'total_count' => 0];
+        $where = ' where 1=1 ';
+        $map = [];
+        $dssStudentJoin = '';
+        $userAwardTable = self::getTableNameWithDb();
+        $userEventTable = ErpUserEventTaskModel::getTableNameWithDb();
+        $eventTable = ErpEventTaskModel::getTableNameWithDb();
+        $studentTable = ErpStudentModel::getTableNameWithDb();
+        $dssStudentTable = DssStudentModel::getTableNameWithDb();
+
+        if (!empty($params['student_uuid'])) {
+            $where .= " and s.uuid in ('" . implode("','", $params['student_uuid']) . "') ";
+        }
+        if (!empty($params['referrer_name'])) {
+            $where .= ' and r.name like :referrer_name ';
+            $map[':referrer_name'] = "%{$params['referrer_name']}%";
+        }
+        if (!empty($params['student_mobile'])) {
+            $where .= ' and s.mobile like :student_mobile ';
+            $map[':student_mobile'] = "{$params['student_mobile']}%";
+        }
+        if (!empty($params['referrer_mobile'])) {
+            $where .= ' and r.mobile like :referrer_mobile ';
+            $map[':referrer_mobile'] = "{$params['referrer_mobile']}%";
+        }
+        if (!empty($params['event_task_id'])) {
+            if (is_array($params['event_task_id'])) {
+                $where .= " and t.id in ('" . implode("','", $params['event_task_id']) . "') ";
+            } else {
+                $where .= " and t.id =" . intval($params['event_task_id']) . ") ";
+            }
+        }
+        if (isset($params['award_status'])) {
+            $where .= ' and a.status = :award_status ';
+            $map[':award_status'] = $params['award_status'];
+        }
+        if (isset($params['reviewer_id'])) {
+            $where .= ' and a.reviewer_id = :reviewer_id ';
+            $map[':reviewer_id'] = $params['reviewer_id'];
+        }
+        if (!empty($params['s_review_time'])) {
+            $where .= ' and a.review_time >= :s_review_time ';
+            $map[':s_review_time'] = $params['s_review_time'];
+        }
+        if (!empty($params['e_review_time'])) {
+            $where .= ' and a.review_time <= :e_review_time ';
+            $map[':e_review_time'] = $params['e_review_time'];
+        }
+        if (!empty($params['s_create_time'])) {
+            $where .= ' and a.create_time >= :s_create_time ';
+            $map[':s_create_time'] = $params['s_create_time'];
+        }
+        if (!empty($params['e_create_time'])) {
+            $where .= ' and a.create_time <= :e_create_time ';
+            $map[':e_create_time'] = $params['e_create_time'];
+        }
+        if (!empty($params['app_id'])) {
+            $where .= ' and u.app_id = :app_id ';
+            $map[':app_id'] = $params['app_id'];
+        }
+        if (!empty($params['award_type'])) {
+            $where .= ' and a.award_type = :award_type ';
+            $map[':award_type'] = $params['award_type'];
+        }
+        if (!empty($params['not_award_status'])) {
+            $where  .= " and a.status not in ('" . implode("','", $params['not_award_status']) . "')";
+        }
+        if (!empty($params['assistant_ids'])) {
+            array_walk($params['assistant_ids'], function (&$id) {
+                $id = intval($id);
+            });
+            $where  .= " and dss_s.assistant_id in (" . implode(",", $params['assistant_ids']) . ")";
+            $dssStudentJoin = " inner join {$dssStudentTable} dss_s on dss_s.uuid=s.uuid";
+        }
+
+        $y = self::USER_TYPE_STUDENT;
+        $joinCondition = "
+           inner join {$userEventTable} u on u.id = a.uet_id and u.user_id = a.user_id and u.user_type = {$y}
+           inner join {$eventTable} t on t.id = u.event_task_id
+           inner join {$studentTable} s on s.id = a.user_id 
+        " . $dssStudentJoin;
+        $sql = "select 
+           s.id     student_id,
+           s.uuid   student_uuid,
+           s.mobile referee_mobile,
+           a.status award_status,
+           s.name   student_name,
+           s.mobile student_mobile,
+           u.event_task_id,
+           t.name   event_task_name,
+           t.type   event_task_type,
+           t.award,
+           a.id user_event_task_award_id,
+           a.award_amount,
+           a.award_type,
+           a.review_time,
+           a.reviewer_id,
+           a.reason,
+           a.delay,
+           a.create_time
+        from {$userAwardTable} a
+        {$joinCondition}
+        {$where}";
+
+        $limit = Util::limitation($page, $count);
+
+        $db = self::dbRO();
+        $totalCount = $db->queryAll("select count(*) count from ({$sql}) sa", $map);
+        $returnList['total_count'] = $totalCount[0]['count'] ?? 0;
+        if ($returnList['total_count'] <= 0) {
+            return $returnList;
+        }
+        $records = $db->queryAll("{$sql} order by a.create_time desc {$limit}", $map);
+        $returnList['records'] = is_array($records) ? $records : [];
+        return $returnList;
+    }
 
 }

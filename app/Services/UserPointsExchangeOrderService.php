@@ -117,36 +117,22 @@ class UserPointsExchangeOrderService
         return $returnData;
     }
 
+    /**
+     * 获取积分兑换红包记录列表
+     * @param $params
+     * @param $page
+     * @param $count
+     * @return array[]
+     */
     public static function getList($params, $page, $count)
     {
-        $returnList = ['records' => [], 'total_count' => []];
-        $where = [];
-        if (!empty($params['student_uuid'])) {
-            $where['uuid'] = $params['student_uuid'];
-        }
-        if (!empty($params['reviewer_id'])) {
-            $where['operator_id'] = $params['reviewer_id'];
-        }
-        if (!empty($params['student_mobile'])) {
-            $studentList = DssStudentModel::getRecords(['mobile' => $params['student_mobile']], ['uuid']);
-            $where['uuid'] = array_column($studentList,'uuid');
-        }
-        if (!Util::emptyExceptZero($params['award_status'])) {
-            $where['status'] = $params['award_status'];
-        }
-        if (!empty($params['s_create_time'])) {
-            $where['create_time[>=]'] = $params['s_create_time'];
-        }
-        if (!empty($params['e_create_time'])) {
-            $where['create_time[<]'] = $params['e_create_time'];
-        }
-        $returnList['total_count'] = UserPointsExchangeOrderWxModel::getCount($where);
-
-        $where['LIMIT'] = [($page-1)*$count, $count];
-        $where['ORDER'] = ['id' => 'DESC'];
-        $list = UserPointsExchangeOrderWxModel::getRecords($where);
+        $returnList = ['records' => [], 'total_count' => 0];
 
 
+        // 如果存在助教id，需要连表查询
+        $pointsData = UserPointsExchangeOrderWxModel::getList($params, $page, $count);
+        $returnList['total_count'] = $pointsData['total_count'] ?? 0;
+        $list = $pointsData['list'] ?? [];
         foreach ($list as $_key => $_info) {
             $list[$_key]['student_uuid'] = $_info['uuid'];
             $list[$_key]['award_status_zh'] = UserPointsExchangeOrderWxModel::STATUS_DICT[$_info['status']];

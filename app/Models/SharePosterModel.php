@@ -305,13 +305,20 @@ class SharePosterModel extends Model
             $where .= " AND sp.student_id = :student_id ";
             $map[':student_id'] = $student['id'];
         }
+        if (!empty($params['assistant_ids']) && is_array($params['assistant_ids'])) {
+            array_walk($params['assistant_ids'], function (&$val) {
+                $val = intval($val);
+            });
+            $where .= " AND s.assistant_id in (" . implode($params['assistant_ids'], ',') . ") ";
+        }
+
         $s = DssStudentModel::getTableNameWithDb();
         $ac = OperationActivityModel::getTableNameWithDb();
         $e = DssEmployeeModel::getTableNameWithDb();
         $sp = self::getTableNameWithDb();
 
         $join = "
-        STRAIGHT_JOIN
+        LEFT JOIN
         {$s} s ON s.id = sp.student_id
         STRAIGHT_JOIN
         {$ac} ac ON ac.id = sp.activity_id

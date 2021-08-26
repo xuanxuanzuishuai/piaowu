@@ -17,16 +17,15 @@ use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\MessagePushRulesModel;
-use App\Models\OperationActivityModel;
 use App\Models\PosterModel;
 use App\Models\RtActivityModel;
 use App\Models\SharePosterModel;
-use App\Models\TemplatePosterModel;
 use App\Models\UserPointsExchangeOrderWxModel;
 use App\Models\WeChatAwardCashDealModel;
 use App\Services\BillMapService;
 use App\Services\DssDictService;
 use App\Services\ErpUserEventTaskAwardGoldLeafService;
+use App\Services\ErpUserEventTaskAwardService;
 use App\Services\PosterService;
 use App\Services\AgentService;
 use App\Services\ReferralActivityService;
@@ -35,7 +34,6 @@ use App\Services\ReferralService;
 use App\Services\RtActivityService;
 use App\Services\SharePosterService;
 use App\Services\SourceMaterialService;
-use App\Services\StudentService;
 use App\Services\ThirdPartBillService;
 use App\Services\UserPointsExchangeOrderService;
 use App\Services\UserRefereeService;
@@ -692,6 +690,7 @@ class Dss extends ControllerBase
             if (!empty($params['type']) && $params['type'] == SharePosterModel::TYPE_CHECKIN_UPLOAD) {
                 $params['type'] = SharePosterModel::TYPE_WEEK_UPLOAD;
             }
+            list($params['page'], $params['count']) = Util::formatPageCount($params);
             list($list, $total) = SharePosterModel::getPosterList($params);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
@@ -1366,4 +1365,44 @@ class Dss extends ControllerBase
         return HttpHelper::buildResponse($response, []);
     }
 
+    /**
+     * 通用红包审核列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function awardRedPackList(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'event_task_id',
+                'type' => 'required',
+                'error_code' => 'event_task_id_is_required'
+            ],
+            [
+                'key' => 'count',
+                'type' => 'integer',
+                'error_code' => 'count_is_integer'
+            ],
+            [
+                'key' => 'page',
+                'type' => 'integer',
+                'error_code' => 'page_is_integer'
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        list($page, $count) = Util::formatPageCount($params);
+        // 积分兑换红包的节点
+        if ($params['event_task_id'] == DssDictService::getKeyValue(DictConstants::NODE_SETTING, 'points_exchange_red_pack_id')) {
+            $returnList = UserPointsExchangeOrderService::getList($params, $page, $count);
+        } else {
+            $returnList = ErpUserEventTaskAwardService::awardRedPackList($params, $page, $count);
+        }
+        return HttpHelper::buildResponse($response, $returnList);
+    }
 }
+
