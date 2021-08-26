@@ -128,12 +128,6 @@ class WeekActivity extends ControllerBase
                 'error_code' => 'poster_prompt_is_required'
             ],
             [
-                'key' => 'poster_prompt',
-                'type' => 'lengthMax',
-                'value' => 50,
-                'error_code' => 'poster_prompt_length_invalid'
-            ],
-            [
                 'key' => 'poster_make_button_img',
                 'type' => 'required',
                 'error_code' => 'poster_make_button_img_is_required'
@@ -144,21 +138,9 @@ class WeekActivity extends ControllerBase
                 'error_code' => 'share_poster_prompt_is_required'
             ],
             [
-                'key' => 'share_poster_prompt',
-                'type' => 'lengthMax',
-                'value' => 80,
-                'error_code' => 'share_poster_prompt_length_invalid'
-            ],
-            [
                 'key' => 'retention_copy',
                 'type' => 'required',
                 'error_code' => 'retention_copy_is_required'
-            ],
-            [
-                'key' => 'retention_copy',
-                'type' => 'lengthMax',
-                'value' => 50,
-                'error_code' => 'retention_copy_length_invalid'
             ],
             [
                 'key' => 'poster_order',
