@@ -29,6 +29,12 @@ class TemplatePosterModel extends Model
 
     const POSTER_ORDER = 2; //海报列表排序 1.个性海报在前(默认) 2.标准海报在前
 
+    //练琴数据展示文案
+    public static $practiseArray = [
+        1 => '是',
+        2 => '否',
+    ];
+
     /**
      * @param $params
      * @return array

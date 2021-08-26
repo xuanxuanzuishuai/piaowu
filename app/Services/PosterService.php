@@ -281,6 +281,7 @@ class PosterService
         foreach ($allPosterIds as $p) {
             if (isset($posterList[$p['poster_id']])) {
                 $tmpPoster = $posterList[$p['poster_id']];
+                $tmpPoster['practise_zh'] = TemplatePosterModel::$practiseArray[$tmpPoster['practise']] ?? '否';
                 $tmpPoster['poster_ascription'] = $p['poster_ascription'];
                 $res[] = $tmpPoster;
             }
