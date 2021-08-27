@@ -85,5 +85,10 @@ class APIRouter extends RouterBase
             'call' => Consumer::class . ':weekWhiteGrandLeaf',
             'middles' => [],
         ],
+        '/api/consumer/change_mobile' => [
+            'method' => ['post'],
+            'call' => Consumer::class . ':changeMobile',
+            'middles' => [],
+        ],
     ];
 }

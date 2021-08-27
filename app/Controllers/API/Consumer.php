@@ -1027,4 +1027,44 @@ class Consumer extends ControllerBase
 
 
     }
+
+    /**
+     * 用户修改登录手机号
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function changeMobile(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        $rules = [
+            [
+                'key' => 'topic_name',
+                'type' => 'required',
+                'error_code' => 'topic_name_is_required',
+            ],
+            [
+                'key' => 'source_app_id',
+                'type' => 'required',
+                'error_code' => 'source_app_id_is_required',
+            ],
+            [
+                'key' => 'event_type',
+                'type' => 'required',
+                'error_code' => 'event_type_is_required',
+            ],
+            [
+                'key' => 'msg_body',
+                'type' => 'required',
+                'error_code' => 'msg_body_is_required',
+            ],
+        ];
+
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        UserService::userChangeLoginMobile($params['msg_body']);
+        return HttpHelper::buildResponse($response, []);
+    }
 }

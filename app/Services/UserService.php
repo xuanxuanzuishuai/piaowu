@@ -11,6 +11,7 @@ namespace App\Services;
 use App\Libs\Constants;
 use App\Libs\Dss;
 use App\Libs\RedisDB;
+use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
@@ -163,5 +164,28 @@ class UserService
             WechatService::updateUserTagByUserId($data['user_id']);
         }
         return true;
+    }
+
+    /**用户修改登录手机号 清除登录信息
+     * @param $data
+     */
+    public static function userChangeLoginMobile($data)
+    {
+        if (!in_array(Constants::SMART_APP_ID ,$data['auth_app_id'])) {
+            SimpleLogger::info('not support deal', []);
+            return;
+        }
+
+        $student = DssStudentModel::getRecord(['uuid' => $data['uuid']]);
+
+        if (empty($student)) {
+            SimpleLogger::info('not found student', []);
+        }
+
+        //清除微信登录信息
+        WechatTokenService::delTokenByUserId($student['id'], DssUserWeiXinModel::USER_TYPE_STUDENT, Constants::SMART_APP_ID);
+
+        //清除app登录信息
+        AppTokenService::delUserTokenByUserId($student['id'], Constants::SMART_APP_ID);
     }
 }

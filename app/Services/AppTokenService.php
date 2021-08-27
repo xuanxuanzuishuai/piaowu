@@ -67,6 +67,18 @@ class AppTokenService
     }
 
     /**
+     * 清除token有效
+     * @param $userId
+     * @param $appId
+     */
+    public static function delUserTokenByUserId($userId, $appId)
+    {
+        $userKey = self::getUserTokenKey($userId, $appId);
+        $redis = RedisDB::getConn();
+        $redis->del([$userKey]);
+    }
+
+    /**
      * 刷新token过期时间
      * @param $token
      */
