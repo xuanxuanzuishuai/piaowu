@@ -83,6 +83,6 @@ class DssModel
 
     public static function createCacheKey($type, $pri)
     {
-        return $type.$pri;
+        return $pri . $type;
     }
 }

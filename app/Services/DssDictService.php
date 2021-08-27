@@ -55,6 +55,9 @@ class DssDictService
      */
     public static function getKeyValue($type, $keyCode)
     {
+        if (is_array($type) && isset($type['type'])) {
+            $type = $type['type'];
+        }
         return DictModel::getKeyValue($type, $keyCode);
     }
 
@@ -66,7 +69,7 @@ class DssDictService
      */
     public static function getKeyValuesByArray($type, $keyCodes)
     {
-        return DictModel::getKeyValuesByArray($type, $keyCodes);
+        return DictModel::getKeyValuesByArray($type['type'], $keyCodes);
     }
 
 
