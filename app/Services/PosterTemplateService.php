@@ -557,21 +557,7 @@ class PosterTemplateService
         foreach ($posterList as &$item) {
             $extParams['poster_id'] = $item['poster_id'];
             $item = self::formatPosterInfo($item);
-            if ($item['type'] == TemplatePosterModel::INDIVIDUALITY_POSTER) {
-                $item['qr_code_url'] = AliOSS::replaceCdnDomainForDss($userQrArr[$item['qr_sign']]['qr_path']);
-                continue;
-            }
-            // 海报图：
-            $poster = PosterService::generateQRPoster(
-                $item['poster_path'],
-                $posterConfig,
-                $studentId,
-                DssUserQrTicketModel::STUDENT_TYPE,
-                $channel,
-                $extParams,
-                $userQrArr[$item['qr_sign']] ?? []
-            );
-            $item['poster_url'] = $poster['poster_save_full_path'];
+            $item['qr_code_url'] = AliOSS::replaceCdnDomainForDss($userQrArr[$item['qr_sign']]['qr_path']);
         }
         $activityInfo['ext'] = ActivityExtModel::getActivityExt($activityInfo['activity_id']);
         // 周周领奖限制检测
