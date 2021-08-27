@@ -1021,7 +1021,7 @@ class ReferralService
             $mobile = $jsonMobile['purePhoneNumber'];
             $countryCode = $jsonMobile['countryCode'];
         }
-
+        $countryCode = $countryCode ?: CommonServiceForApp::DEFAULT_COUNTRY_CODE;
         $userInfo = (new Dss())->studentRegisterBound([
             'mobile' => $mobile,
             'channel_id' => $channel ?: DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL,
