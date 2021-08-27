@@ -139,6 +139,7 @@ class Erp
 
         } catch (\Exception $e) {
             SimpleLogger::error(__FILE__ . ':' . __LINE__, [print_r($e->getMessage(), true)]);
+            SentryClient::captureException($e, ['error' => $e->getMessage()]);
         }
         return false;
     }

@@ -110,6 +110,7 @@ class HttpHelper
             SimpleLogger::error("[HttpHelper] send request error", [
                 'error_message' => $e->getMessage()
             ]);
+            SentryClient::captureException($e, ['error_message' => $e->getMessage()]);
             return false;
         }
 
