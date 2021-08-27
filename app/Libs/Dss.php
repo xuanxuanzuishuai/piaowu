@@ -71,7 +71,7 @@ class Dss
     {
         $data = self::commonAPI(self::ADD_STUDENT, $params, 'POST');
         if ($data['code'] != Valid::CODE_SUCCESS) {
-            throw new RunTimeException(['update_fail']);
+            throw new RunTimeException(['user_register_fail']);
         }
         return !empty($data['data']) ? $data['data'] : NULL;
     }
