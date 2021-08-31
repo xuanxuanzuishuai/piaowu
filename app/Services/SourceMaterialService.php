@@ -745,7 +745,7 @@ class SourceMaterialService
             $val['name']          = $studentInfo['name'] ?: sprintf('尾号%s', substr($studentInfo['mobile'], 7));
             $val['avatar']        = !empty($studentInfo['thumb']) ? AliOSS::replaceCdnDomainForDss($studentInfo['thumb']) : $defaultAvatar;
         }
-        $redis->setex($cacheKey, Util::TIMESTAMP_1H, json_encode($accountDetail));
+        $redis->setex($cacheKey, Util::TIMESTAMP_12H, json_encode($accountDetail));
         return $accountDetail;
     }
 

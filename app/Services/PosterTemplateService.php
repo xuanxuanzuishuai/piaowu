@@ -528,9 +528,11 @@ class PosterTemplateService
         if (empty($posterList)) {
             return $data;
         }
+        $typeColumn             = array_column($posterList, 'type');
+        $activityPosteridColumn = array_column($posterList, 'activity_poster_id');
         //周周领奖 海报排序处理
         if ($activityInfo['poster_order'] == TemplatePosterModel::POSTER_ORDER) {
-            array_multisort(array_column($posterList, 'type'), SORT_DESC, $posterList);
+            array_multisort($typeColumn, SORT_DESC, $activityPosteridColumn, SORT_ASC, $posterList);
         }
         $channel = self::getChannel($type, $ext['from_type']);
         $extParams = [
@@ -594,6 +596,7 @@ class PosterTemplateService
         $data['student_status_zh'] = DssStudentModel::STUDENT_IDENTITY_ZH_MAP[$userDetail['student_status']] ?? DssStudentModel::STATUS_REGISTER;
         $data['can_upload'] = $canUploadFlag;
         $data['practise'] = $practise;
+        $data['uuid'] = $userDetail['student_info']['uuid'];
         return $data;
     }
 

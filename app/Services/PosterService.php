@@ -283,6 +283,7 @@ class PosterService
                 $tmpPoster = $posterList[$p['poster_id']];
                 $tmpPoster['practise_zh'] = TemplatePosterModel::$practiseArray[$tmpPoster['practise']] ?? '否';
                 $tmpPoster['poster_ascription'] = $p['poster_ascription'];
+                $tmpPoster['activity_poster_id'] = $p['id'];
                 $res[] = $tmpPoster;
             }
         }
