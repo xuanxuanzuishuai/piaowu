@@ -491,6 +491,9 @@ class WhiteGrantRecordService
     }
 
     public static function pushSuccMsg($openId, $leaf, $old = false){
+        if(is_null(self::$WeChatMiniPro)){
+            self::$WeChatMiniPro = WeChatMiniPro::factory(Constants::SMART_APP_ID, DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER);
+        }
         $obj = self::$WeChatMiniPro;
         if($old){
             $m = '2021年8月2日0点到2021年8月25日17点50分';
