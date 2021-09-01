@@ -79,11 +79,6 @@ class RtActivityService
      */
     public static function checkAllowAdd($data)
     {
-        // 海报不能为空
-        if (empty($data['poster'])) {
-            return 'poster_is_required';
-        }
-
         // 员工海报不能为空
         if (empty($data['employee_poster'])) {
             return 'employee_poster_is_required';
@@ -235,12 +230,6 @@ class RtActivityService
 
         // 处理海报写入数组
         $posterArr = [];
-        foreach ($data['poster'] as $_tmpPosterId) {
-            $posterArr[] = [
-                'poster_id' => $_tmpPosterId,
-                'poster_ascription' => ActivityPosterModel::POSTER_ASCRIPTION_STUDENT,
-            ];
-        }
         foreach ($data['employee_poster'] as $_tmpEmployeePosterId) {
             $posterArr[] = [
                 'poster_id' => $_tmpEmployeePosterId,
@@ -365,12 +354,6 @@ class RtActivityService
 
             // 处理海报写入数组
             $posterArr = [];
-            foreach ($data['poster'] as $_tmpPosterId) {
-                $posterArr[] = [
-                    'poster_id' => $_tmpPosterId,
-                    'poster_ascription' => ActivityPosterModel::POSTER_ASCRIPTION_STUDENT,
-                ];
-            }
             foreach ($data['employee_poster'] as $_tmpEmployeePosterId) {
                 $posterArr[] = [
                     'poster_id' => $_tmpEmployeePosterId,
@@ -962,6 +945,7 @@ class RtActivityService
      */
     public static function getPoster($request)
     {
+        $channel_id = self::getRtChannel();
         //学生获取海报前 校验是否有资格
         if ($request['type'] == RtActivityModel::ACTIVITY_RULE_TYPE_STUDENT) {
             //获取学生信息
@@ -974,8 +958,26 @@ class RtActivityService
             if (!$activity) {
                 return ['status' => self::ACTIVITY_NOT_STARTED];
             }
+
+            //转介绍关系
+            $paramMapId = self::addParamMap($request['student_id'], $activity['activity_id'], 0, $request['employee_id']);
+            if (!$paramMapId) {
+                throw new RunTimeException(['record_not_found']);
+            }
+
             //被邀人首页链接
             $scheme = DictConstants::get(DictConstants::RT_ACTIVITY_INDEX, 'rt_invited');
+
+            $params = [
+                'activity_id'   => $activity['activity_id'],
+                'employee_id'   => $request['employee_id'],
+                'employee_uuid' => $request['employee_uuid'],
+                'invite_uid'    => $studentUid ?? '',
+                'param_id'      => $paramMapId,
+                'channel_id'    => $channel_id
+            ];
+            $qrURL = $scheme . '?' . http_build_query(array_filter($params));
+            return ['qrURL' => $qrURL];
         } else {
             $posterAscription = ActivityPosterModel::POSTER_ASCRIPTION_EMPLOYEE;
             switch ($request['type']) {
@@ -1043,14 +1045,6 @@ class RtActivityService
         if (empty($imageHeight) || empty($imageWidth)) {
             throw new RunTimeException(['data_error']);
         }
-        //学生调用海报记录 ParamMap
-        if ($request['type'] == RtActivityModel::ACTIVITY_RULE_TYPE_STUDENT) {
-            $paramMapId = self::addParamMap($request['student_id'], $activity['activity_id'], $templatePosterPath['poster_id'], $request['employee_id']);
-            if (!$paramMapId) {
-                throw new RunTimeException(['record_not_found']);
-            }
-        }
-        $channel_id = self::getRtChannel();
         $params = [
             'activity_id'   => $activity['activity_id'],
             'employee_id'   => $request['employee_id'],

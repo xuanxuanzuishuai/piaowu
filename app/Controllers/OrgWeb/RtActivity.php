@@ -79,19 +79,9 @@ class RtActivity extends ControllerBase
                 'error_code' => 'employee_invite_word_is_required'
             ],
             [
-                'key' => 'student_invite_word',
-                'type' => 'required',
-                'error_code' => 'student_invite_word_is_invalid'
-            ],
-            [
                 'key' => 'employee_poster',
                 'type' => 'required',
                 'error_code' => 'employee_poster_is_invalid'
-            ],
-            [
-                'key' => 'poster',
-                'type' => 'required',
-                'error_code' => 'poster_is_invalid'
             ],
             [
                 'key' => 'award_rule',
