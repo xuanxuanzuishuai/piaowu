@@ -36,7 +36,8 @@ class RouterFactory
     const CLIENT_REFERRAL_MINI_APP = 'referral_miniapp'; // 体验营小程序
     const CLIENT_AI_PLAY_MINI_APP = 'ai_play_miniapp'; // 上音社合作-小叶子AI智能陪练小程序
     const CLIENT_REAL_REFERRAL_MINI_APP = 'real_referral_miniapp'; // 真人转介绍小程序
-
+    const CLIENT_REAL_STUDENT_WX = 'real_student_wx'; // 真人业务线学生微信端
+    const CLIENT_REAL_STUDENT_APP = 'real_student_app'; // 真人业务线学生app端
 
 
     /**
@@ -56,6 +57,8 @@ class RouterFactory
         self::CLIENT_REFERRAL_MINI_APP => ReferralMinAppRouter::class, // 体验营小程序
         self::CLIENT_AI_PLAY_MINI_APP => AIPlayMiniAppRouter::class, // 上音社合作-小叶子AI智能陪练小程序
         self::CLIENT_REAL_REFERRAL_MINI_APP => RealReferralMinAppRouter::class, // 真人转介绍小程序
+        self::CLIENT_REAL_STUDENT_WX => RealStudentWXRouter::class, // 真人业务线学生微信端
+        self::CLIENT_REAL_STUDENT_APP => RealStudentWXRouter::class, // 真人业务线学生app端
     ];
 
     /**
