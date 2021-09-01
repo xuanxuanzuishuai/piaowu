@@ -2,6 +2,7 @@
 namespace App\Services;
 
 use App\Libs\AliOSS;
+use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\RedisDB;
@@ -40,7 +41,7 @@ class PosterTemplateService
      * @return array
      * @throws \App\Libs\Exceptions\RunTimeException
      */
-    public static function templatePosterList($studentId, $templateType, $activityId = NULL)
+    public static function templatePosterList($studentId, $templateType, $activityId = null)
     {
         //获取学生当前状态
         $studentDetail = StudentService::dssStudentStatusCheck($studentId);
@@ -81,21 +82,8 @@ class PosterTemplateService
         if (empty($templateList)) {
             return $data;
         }
-//        //区分海报类型获取不同数据
-//        if ($templateType == TemplatePosterWordModel::INDIVIDUALITY_POSTER) {
-//            //练琴数据
-//            $playRecord = DssAiPlayRecordModel::getStudentSumByDate($studentId, 0, time());
-//            if ($playRecord) {
-//                $data['student_info']['play_days'] = count($playRecord);
-//                $data['student_info']['total_duration'] = ceil(array_sum(array_column($playRecord, 'sum_duration')) / 60);
-//            }
-//            //个性化渠道ID
-//            $channelId = DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'POSTER_LANDING_49_STUDENT_INVITE_STUDENT');
-//        } else {
-            //标准海报渠道ID
-            $channelId = DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'APP_CAPSULE_INVITE_CHANNEL');
-//        }
-       //获取海报/二维码宽高配置数据
+        $channelId = DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'APP_CAPSULE_INVITE_CHANNEL');
+        //获取海报/二维码宽高配置数据
         $posterConfig = DictConstants::getSet(DictConstants::TEMPLATE_POSTER_CONFIG);
         foreach ($templateList as $k => $value) {
             $qrExtentParams = ['a' => $activityId, 'user_current_status' => $studentDetail['student_status'], 'p' => $value['op_poster_id']];
@@ -110,7 +98,8 @@ class PosterTemplateService
                 $posterConfig['QR_WIDTH'],
                 $posterConfig['QR_HEIGHT'],
                 $posterConfig['QR_X'],
-                $posterConfig['QR_Y'])['poster_save_full_path'];
+                $posterConfig['QR_Y']
+            )['poster_save_full_path'];
             unset($row['poster_url']);
             unset($row['example_url']);
             $data['template_list']['list'][] = $row;
@@ -254,13 +243,15 @@ class PosterTemplateService
     }
     
     /**
-     * @param $params
-     * @return array
      * 处理模板图数据
+     * @param $params
+     * @param $pageId
+     * @param $pageLimit
+     * @return array
      */
-    public static function getList($params)
+    public static function getList($params, $pageId, $pageLimit)
     {
-        list($res, $pageId, $pageLimit, $totalCount) = TemplatePosterModel::getList($params);
+        list($res, $totalCount) = TemplatePosterModel::getList($params, $pageId, $pageLimit);
         $data = [];
         if (!empty($res)) {
             foreach ($res as $k => $value) {
@@ -270,7 +261,7 @@ class PosterTemplateService
                 $data[] = $row;
             }
         }
-        return [$data, $pageId, $pageLimit, $totalCount];
+        return [$data, $totalCount];
     }
     
     /**
@@ -305,6 +296,7 @@ class PosterTemplateService
             'operate_id' => $operateId,
             'create_time' => $time,
             'update_time' => $time,
+            'app_id' => $params['app_id'],
         ];
         
         $posterPath = $params['poster_path'];
@@ -337,21 +329,48 @@ class PosterTemplateService
      * @return mixed
      * @throws RunTimeException
      */
-    public static function offlinePosterCheck($params)
+    public static function offlinePosterCheck($params, $appId)
     {
         $id = $params['id'];
-        list($resWeek, $resMonth, $resRt) = TemplatePosterModel::getActivityByPosterId($id);
-        $arrWeekId = array_values(array_unique(array_column($resWeek, 'activity_id')));
-        $arrMonthId = array_values(array_unique(array_column($resMonth, 'activity_id')));
-        $resRtId = array_values(array_unique(array_column($resRt, 'activity_id')));
-        //金叶子商城分享配置-校验
-        $conds = [
-            'material_id' => $id,
-            'type'        => ShareMaterialConfig::POSTER_TYPE,
-            'status'      => ShareMaterialConfig::NORMAL_STATUS
-        ];
-        $shareConfigId = ShareMaterialConfig::getRecord($conds, ['share_config_id']);
-        return [$arrWeekId, $arrMonthId, $resRtId, $shareConfigId];
+        $arrWeekId = $arrMonthId = $arrRtId = $shareConfigId = [];
+        if ($appId == Constants::REAL_APP_ID) {   //真人
+            $resWeek = ActivityPosterModel::getActivityByPidAndType($id, 'real_week');
+            $resMonth = ActivityPosterModel::getActivityByPidAndType($id, 'real_month');
+            $arrWeekId = array_values(array_unique(array_column($resWeek, 'activity_id')));
+            $arrMonthId = array_values(array_unique(array_column($resMonth, 'activity_id')));
+        } elseif ($appId == Constants::SMART_APP_ID) {   //智能
+            $resWeek = ActivityPosterModel::getActivityByPidAndType($id, 'week');
+            $resMonth = ActivityPosterModel::getActivityByPidAndType($id, 'month');
+            $resRt = ActivityPosterModel::getActivityByPidAndType($id, 'rt');
+            $arrWeekId = array_values(array_unique(array_column($resWeek, 'activity_id')));
+            $arrMonthId = array_values(array_unique(array_column($resMonth, 'activity_id')));
+            $arrRtId = array_values(array_unique(array_column($resRt, 'activity_id')));
+            //金叶子商城分享配置-校验
+            $conds = [
+                'material_id' => $id,
+                'type'        => ShareMaterialConfig::POSTER_TYPE,
+                'status'      => ShareMaterialConfig::NORMAL_STATUS
+            ];
+            $shareConfigId = ShareMaterialConfig::getRecord($conds, ['share_config_id']);
+        }
+        $arrErrorMsg = [];
+        $arrWeekId = array_map(function ($v) {
+            return 'ID'.$v;
+        }, $arrWeekId);
+        $arrMonthId = array_map(function ($v) {
+            return 'ID'.$v;
+        }, $arrMonthId);
+        $resRtId = array_map(function ($v) {
+            return 'ID'.$v;
+        }, $arrRtId);
+        $shareConfigId = array_map(function ($v) {
+            return 'ID'.$v;
+        }, $shareConfigId);
+        $arrWeekId && $arrErrorMsg[] = '周周有奖活动'.implode('、', $arrWeekId);
+        $arrMonthId && $arrErrorMsg[] = '月月有奖活动'.implode('、', $arrMonthId);
+        $resRtId && $arrErrorMsg[] = 'RT亲友优惠券活动'.implode('、', $resRtId);
+        $shareConfigId && $arrErrorMsg[] = '金叶子商城分享配置'.implode('、', $shareConfigId);
+        return $arrErrorMsg;
     }
     
     /**
@@ -432,7 +451,8 @@ class PosterTemplateService
             'status'  => $params['status'],
             'create_time' => $time,
             'update_time' => $time,
-            'operate_id' => $operateId
+            'operate_id' => $operateId,
+            'app_id' => $params['app_id'],
         ];
         $res = TemplatePosterWordModel::insertRecord($data);
         if (empty($res)) {
@@ -445,20 +465,22 @@ class PosterTemplateService
     }
     
     /**
-     * @param $params
-     * @return array
      * 海报模板图文案列表
+     * @param $params
+     * @param $pageId
+     * @param $pageLimit
+     * @return array
      */
-    public static function getWordList($params)
+    public static function getWordList($params, $pageId, $pageLimit)
     {
-        list($res, $pageId, $pageLimit, $totalCount) = TemplatePosterWordModel::getList($params);
+        list($res, $totalCount) = TemplatePosterWordModel::getList($params, $pageId, $pageLimit);
         $data = [];
         if (!empty($res)) {
             foreach ($res as $k => $value) {
                 $data[] = self::formatOpWordInfo($value);
             }
         }
-        return [$data, $pageId, $pageLimit, $totalCount];
+        return [$data, $totalCount];
     }
     
     /**

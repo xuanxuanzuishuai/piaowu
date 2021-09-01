@@ -1,8 +1,9 @@
 <?php
 /**
+ * 真人 - 海报文案
  * Created by PhpStorm.
- * User: yuxuan
- * Date: 2020/06/10
+ * User: sunchanghui
+ * Date: 2021-09-01 14:26:52
  * Time: 5:14 PM
  */
 
@@ -21,7 +22,7 @@ use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
 
-class PosterTemplateWord extends ControllerBase
+class RealPosterTemplateWord extends ControllerBase
 {
     /**
      * 海报文案添加
@@ -56,7 +57,7 @@ class PosterTemplateWord extends ControllerBase
             //参数校验
             $employeeId = $this->getEmployeeId();
             $params['type'] = TemplatePosterModel::INDIVIDUALITY_POSTER;
-            $params['app_id'] = Constants::SMART_APP_ID;
+            $params['app_id'] = Constants::REAL_APP_ID;
             PosterTemplateService::addWordData($params, $employeeId);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
@@ -73,7 +74,7 @@ class PosterTemplateWord extends ControllerBase
     public function wordList(Request $request, Response $response)
     {
         $params = $request->getParams();
-        $params['app_id'] = Constants::SMART_APP_ID;
+        $params['app_id'] = Constants::REAL_APP_ID;
         list($pageId, $pageLimit) = Util::appPageLimit($params);
         list($list, $totalCount) = PosterTemplateService::getWordList($params, $pageId, $pageLimit);
         return HttpHelper::buildResponse($response, [
@@ -163,7 +164,7 @@ class PosterTemplateWord extends ControllerBase
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        $params['app_id'] = Constants::SMART_APP_ID;
+        $params['app_id'] = Constants::REAL_APP_ID;
         $shareMaterialConfigId = PosterTemplateService::offlineWordListCheck($params);
         $shareMaterialConfigId = array_map(function ($v) {
             return 'ID'.$v;

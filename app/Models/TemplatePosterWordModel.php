@@ -21,18 +21,27 @@ class TemplatePosterWordModel extends Model
     const NORMAL_STATUS = 2; //上线
 
     const KEY_WORD_LIST = 'TEMPLATE_POSTER_WORD';
-
-    public static function getList($params)
+    
+    /**
+     * 文案列表
+     * @param $params
+     * @param $pageId
+     * @param $pageLimit
+     * @return array
+     */
+    public static function getList($params, $pageId, $pageLimit)
     {
         $db = MysqlDB::getDB();
         $conds = [];
         if (!empty($params['status'])) {
             $conds[self::$table . '.status'] = $params['status'];
         }
+        if (!empty($params['app_id'])) {
+            $conds[self::$table . '.app_id'] = $params['app_id'];
+        }
         $totalCount = self::getCount($conds);
-        list($pageId, $pageLimit) = Util::appPageLimit($params);
         if ($totalCount == 0) {
-            return [[], $pageId, $pageLimit, 0];
+            return [[], 0];
         }
         $where = [
             'ORDER' => [
@@ -58,7 +67,7 @@ class TemplatePosterWordModel extends Model
             ],
             $where
         );
-        return [$res, $pageId, $pageLimit, $totalCount];
+        return [$res, $totalCount];
     }
 
     /**
@@ -100,7 +109,7 @@ class TemplatePosterWordModel extends Model
         foreach ($arr as $value) {
             RedisDB::getConn()->del([self::KEY_WORD_LIST . $value]);
         }
-     }
+    }
 
     /**
      * 格式化数据

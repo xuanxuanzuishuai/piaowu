@@ -7,8 +7,8 @@
  */
 
 namespace App\Models;
+
 use App\Libs\MysqlDB;
-use App\Libs\Util;
 
 class TemplatePosterModel extends Model
 {
@@ -34,33 +34,37 @@ class TemplatePosterModel extends Model
         1 => '是',
         2 => '否',
     ];
-
+    
     /**
-     * @param $params
-     * @return array
      * 海报模板图列表
+     * @param $params
+     * @param $pageId
+     * @param $pageLimit
+     * @return array
      */
-    public static function getList($params)
+    public static function getList($params, $pageId, $pageLimit)
     {
         $db = MysqlDB::getDB();
-
+        
         $where = [
             self::$table . '.type' => $params['type'],
         ];
         if (!empty($params['status']) && in_array($params['status'], [self::DISABLE_STATUS, self::STANDARD_POSTER])) {
             $where[self::$table . '.status'] = $params['status'];
         }
+        if (!empty($params['app_id'])) {
+            $where[self::$table . '.app_id'] = $params['app_id'];
+        }
         $totalCount = $db->count(
             self::$table,
             $where
         );
-    
-        list($pageId, $pageLimit) = Util::appPageLimit($params);
         if ($totalCount == 0) {
-            return [[], $pageId, $pageLimit, 0];
+            return [[], 0];
         }
         
-        $res = $db->select(self::$table,
+        $res = $db->select(
+            self::$table,
             [
                 '[>]' . EmployeeModel::$table => ['operate_id' => 'id']
             ],
@@ -84,64 +88,5 @@ class TemplatePosterModel extends Model
             ], $where)
         );
         return [$res, $pageId, $pageLimit, $totalCount];
-    }
-    
-    /**
-     * @param $id
-     * @return array
-     * 获取正在使用该海报的月月有奖,周周有奖活动
-     */
-    public static function getActivityByPosterId($id)
-    {
-    
-        $resWeek = self::getActivityByPidAndType($id, 'week');
-        $resMonth = self::getActivityByPidAndType($id, 'month');
-        $resRt = self::getActivityByPidAndType($id, 'rt');
-        return [$resWeek, $resMonth, $resRt];
-    }
-    
-    /**
-     * @param $id
-     * @param $type
-     * @return array|null
-     * 获取正在使用该海报的月月有奖,周周有奖活动
-     */
-    public static function getActivityByPidAndType($id, $type)
-    {
-        $time = time();
-        $table1 = self::$table;
-        $table2 = ActivityPosterModel::$table;
-        $activityTable = [
-            'week' => WeekActivityModel::$table,
-            'month' => MonthActivityModel::$table,
-            'rt' => RtActivityModel::$table,
-        ];
-        $table3 = $activityTable[$type] ?? '';
-        if (empty($table3)) {
-            return [];
-        }
-        $status1 = self::NORMAL_STATUS;
-        $status21 = ActivityPosterModel::NORMAL_STATUS;
-        $status22 = ActivityPosterModel::IS_DEL_FALSE;
-        $status31 = OperationActivityModel::ENABLE_STATUS_OFF;
-        $status32 = OperationActivityModel::ENABLE_STATUS_ON;
-        $sql = "
-            SELECT
-                {$table2}.id,{$table2}.activity_id
-            FROM
-                {$table1}
-                INNER JOIN {$table2} ON {$table1}.id = {$table2}.poster_id
-                INNER JOIN {$table3} ON {$table2}.activity_id = {$table3}.activity_id
-            WHERE
-                {$table1}.id = {$id}
-                AND {$table1}.`status` = {$status1}
-                AND {$table2}.`status` = {$status21}
-                AND {$table2}.`is_del` = {$status22}
-                AND {$table3}.enable_status IN ( {$status31}, {$status32} )
-                AND {$table3}.end_time > {$time}
-        ";
-        $db = MysqlDB::getDB();
-        $res = $db->queryAll($sql);
-        return $res;
     }
 }

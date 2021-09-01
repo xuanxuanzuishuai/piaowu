@@ -19,9 +19,9 @@ use App\Models\Erp\ErpUserEventTaskAwardModel;
 use App\Models\Erp\ErpUserEventTaskModel;
 use App\Services\ReferralService;
 
-class SharePosterModel extends Model
+class RealSharePosterModel extends Model
 {
-    public static $table = "share_poster";
+    public static $table = "real_share_poster";
     //审核状态 1待审核 2合格 3不合格
     const VERIFY_STATUS_WAIT = 1;
     const VERIFY_STATUS_QUALIFIED = 2;

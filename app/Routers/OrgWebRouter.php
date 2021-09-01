@@ -319,5 +319,30 @@ class OrgWebRouter extends RouterBase
         '/op_web/activity_center/edit_weight' => ['method' => ['post'], 'call' => ActivityCenter::class . ':editWeight'],
         '/op_web/activity_center/update' => ['method' => ['post'], 'call' => ActivityCenter::class . ':editActivity'],
 
+        //真人转介绍管理 - 个性化海报,标准海报,文案
+        '/org_web/real_poster_template/individualityList' => ['method' => ['get'], 'call' => RealPosterTemplate::class . ':individualityList'],
+        '/org_web/real_poster_template/standardList' => ['method' => ['get'], 'call' => RealPosterTemplate::class . ':standardList'],
+        '/org_web/real_poster_template/individualityAdd' => ['method' => ['post'], 'call' => RealPosterTemplate::class . ':individualityAdd'],
+        '/org_web/real_poster_template/standardAdd' => ['method' => ['post'], 'call' => RealPosterTemplate::class . ':standardAdd'],
+        '/org_web/real_poster_template/getPosterInfo' => ['method' => ['get'], 'call' => RealPosterTemplate::class . ':getPosterInfo'],
+        '/org_web/real_poster_template/editPosterInfo' => ['method' => ['post'], 'call' => RealPosterTemplate::class . ':editPosterInfo'],
+        '/org_web/real_poster_template/offlinePosterCheck' => ['method' => ['get'], 'call' => RealPosterTemplate::class . ':offlinePosterCheck'],
+        '/org_web/real_poster_template_word/addWord' => ['method' => ['post'], 'call' => RealPosterTemplateWord::class . ':addWord'],
+        '/org_web/real_poster_template_word/wordList' => ['method' => ['get'], 'call' => RealPosterTemplateWord::class . ':wordList'],
+        '/org_web/real_poster_template_word/getWordInfo' => ['method' => ['get'], 'call' => RealPosterTemplateWord::class . ':getWordInfo'],
+        '/org_web/real_poster_template_word/editWordInfo' => ['method' => ['post'], 'call' => RealPosterTemplateWord::class . ':editWordInfo'],
+        '/org_web/real_poster_template_word/offline_word_list_check' => ['method' => ['get'], 'call' => RealPosterTemplateWord::class . ':offlineWordListCheck'],
+        //真人转介绍管理 - 周周有奖
+        '/op_web/real_week_activity/save' => ['method' => ['post'], 'call' => RealWeekActivity::class . ':save'],
+        '/op_web/real_week_activity/list' => ['method' => ['get'], 'call' => RealWeekActivity::class . ':list'],
+        '/op_web/real_week_activity/detail' => ['method' => ['get'], 'call' => RealWeekActivity::class . ':detail'],
+        '/op_web/real_week_activity/enable_status' => ['method' => ['post'], 'call' => RealWeekActivity::class . ':editEnableStatus'],
+        '/op_web/real_week_activity/send_msg' => ['method' => ['post'], 'call' => RealWeekActivity::class . ':sendMsg'],
+        '/op_web/real_week_activity/push_weixin_msg' => ['method' => ['post'], 'call' => RealWeekActivity::class . ':pushWeixinMsg'],
+        //真人转介绍管理 - 月月有奖
+        '/op_web/real_month_activity/save' => ['method' => ['post'], 'call' => RealMonthActivity::class . ':save'],
+        '/op_web/real_month_activity/list' => ['method' => ['get'], 'call' => RealMonthActivity::class . ':list'],
+        '/op_web/real_month_activity/detail' => ['method' => ['get'], 'call' => RealMonthActivity::class . ':detail'],
+        '/op_web/real_month_activity/enable_status' => ['method' => ['post'], 'call' => RealMonthActivity::class . ':editEnableStatus'],
     ];
 }

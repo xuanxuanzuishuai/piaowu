@@ -156,7 +156,8 @@ class ActivityPosterModel extends Model
      * @param $posId
      * 删除缓存
      */
-    public static function delRedisCache($posId) {
+    public static function delRedisCache($posId)
+    {
         $db = MysqlDB::getDB();
         $res = $db->select(self::$table, ['activity_id'], ['poster_id' => $posId]);
         $arrActId = array_column($res, 'activity_id');
@@ -182,5 +183,48 @@ class ActivityPosterModel extends Model
         }
         RedisDB::getConn()->del($cacheKey);
         return true;
+    }
+    
+    /**
+     * 海报参加的活动
+     * @param $posterId
+     * @param $type
+     * @return array|null
+     */
+    public static function getActivityByPidAndType($posterId, $type)
+    {
+        $time = time();
+        $table1 = self::$table;
+        $activityTable = [
+            'week' => WeekActivityModel::$table,
+            'month' => MonthActivityModel::$table,
+            'rt' => RtActivityModel::$table,
+            'real_week' => RealWeekActivityModel::$table,
+            'real_month' => RealMonthActivityModel::$table,
+        ];
+        $table2 = $activityTable[$type] ?? '';
+        if (empty($table3)) {
+            return [];
+        }
+        $status11 = ActivityPosterModel::NORMAL_STATUS;
+        $status12 = ActivityPosterModel::IS_DEL_FALSE;
+        $status21 = OperationActivityModel::ENABLE_STATUS_OFF;
+        $status22 = OperationActivityModel::ENABLE_STATUS_ON;
+        $sql = "
+            SELECT
+                {$table1}.id,{$table1}.activity_id
+            FROM
+                {$table1}
+                INNER JOIN {$table2} ON {$table2}.activity_id = {$table1}.activity_id
+            WHERE
+                {$table1}.poster_id = {$posterId}
+                AND {$table1}.status = {$status11}
+                AND {$table1}.is_del = {$status12}
+                AND {$table2}.enable_status IN ({$status21},{$status22})
+                AND {$table2}.end_time > {$time}
+        ";
+        $db = MysqlDB::getDB();
+        $res = $db->queryAll($sql);
+        return $res;
     }
 }

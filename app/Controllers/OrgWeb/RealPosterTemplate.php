@@ -1,8 +1,9 @@
 <?php
 /**
+ * 真人 - 海报列表
  * Created by PhpStorm.
- * User: yuxuan
- * Date: 2020/06/10
+ * User: sunchanghui
+ * Date: 2021-09-01 14:26:52
  * Time: 5:14 PM
  */
 
@@ -21,7 +22,7 @@ use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
 
-class PosterTemplate extends ControllerBase
+class RealPosterTemplate extends ControllerBase
 {
     /**
      * 个性化海报添加
@@ -80,7 +81,7 @@ class PosterTemplate extends ControllerBase
             [
                 'key' => 'practise',
                 'type' => 'in',
-                'value' => [TemplatePosterModel::PRACTISE_WANT, TemplatePosterModel::PRACTISE_NOT_WANT],
+                'value' => [TemplatePosterModel::PRACTISE_WANT,TemplatePosterModel::PRACTISE_NOT_WANT],
                 'error_code' => 'practise_is_error'
             ],
         ];
@@ -94,14 +95,14 @@ class PosterTemplate extends ControllerBase
         try {
             $employeeId = $this->getEmployeeId();
             $params['type'] = TemplatePosterModel::INDIVIDUALITY_POSTER;
-            $params['app_id'] = Constants::SMART_APP_ID;
+            $params['app_id'] = Constants::REAL_APP_ID;
             PosterTemplateService::addData($params, $employeeId);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
         return HttpHelper::buildResponse($response, []);
     }
-    
+
     /**
      * @param Request $request
      * @param Response $response
@@ -149,7 +150,7 @@ class PosterTemplate extends ControllerBase
             [
                 'key' => 'practise',
                 'type' => 'in',
-                'value' => [TemplatePosterModel::PRACTISE_WANT, TemplatePosterModel::PRACTISE_NOT_WANT],
+                'value' => [TemplatePosterModel::PRACTISE_WANT,TemplatePosterModel::PRACTISE_NOT_WANT],
                 'error_code' => 'practise_is_error'
             ],
         ];
@@ -164,14 +165,14 @@ class PosterTemplate extends ControllerBase
             $employeeId = $this->getEmployeeId();
             $params['type'] = TemplatePosterModel::STANDARD_POSTER;
             $params['example_path'] = $params['example_path'] ?? '';
-            $params['app_id'] = Constants::SMART_APP_ID;
+            $params['app_id'] = Constants::REAL_APP_ID;
             PosterTemplateService::addData($params, $employeeId);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
         return HttpHelper::buildResponse($response, []);
     }
-    
+
     /**
      * @param Request $request
      * @param Response $response
@@ -182,7 +183,7 @@ class PosterTemplate extends ControllerBase
     {
         $params = $request->getParams();
         $params['type'] = TemplatePosterModel::INDIVIDUALITY_POSTER;
-        $params['app_id'] = Constants::SMART_APP_ID;
+        $params['app_id'] = Constants::REAL_APP_ID;
         list($pageId, $pageLimit) = Util::appPageLimit($params);
         list($list, $totalCount) = PosterTemplateService::getList($params, $pageId, $pageLimit);
         return HttpHelper::buildResponse($response, [
@@ -190,7 +191,7 @@ class PosterTemplate extends ControllerBase
             'total_count' => $totalCount
         ]);
     }
-    
+
     /**
      * @param Request $request
      * @param Response $response
@@ -201,7 +202,7 @@ class PosterTemplate extends ControllerBase
     {
         $params = $request->getParams();
         $params['type'] = TemplatePosterModel::STANDARD_POSTER;
-        $params['app_id'] = Constants::SMART_APP_ID;
+        $params['app_id'] = Constants::REAL_APP_ID;
         list($pageId, $pageLimit) = Util::appPageLimit($params);
         list($list, $totalCount) = PosterTemplateService::getList($params, $pageId, $pageLimit);
         return HttpHelper::buildResponse($response, [
@@ -209,7 +210,7 @@ class PosterTemplate extends ControllerBase
             'total_count' => $totalCount
         ]);
     }
-    
+
     /**
      * @param Request $request
      * @param Response $response
@@ -236,7 +237,7 @@ class PosterTemplate extends ControllerBase
             'data' => $info
         ]);
     }
-    
+
     /**
      * @param Request $request
      * @param Response $response
@@ -296,7 +297,7 @@ class PosterTemplate extends ControllerBase
             if ($result['code'] != Valid::CODE_SUCCESS) {
                 return $response->withJson($result, StatusCode::HTTP_OK);
             }
-            $arrErrorMsg = PosterTemplateService::offlinePosterCheck($params, Constants::SMART_APP_ID);
+            $arrErrorMsg = PosterTemplateService::offlinePosterCheck($params, Constants::REAL_APP_ID);
             if ($arrErrorMsg) {
                 $strErrorMsgPart = implode('；', $arrErrorMsg);
                 $strErrorMsg = sprintf(Lang::getWord('template_poster_offline_tips'), $strErrorMsgPart);
