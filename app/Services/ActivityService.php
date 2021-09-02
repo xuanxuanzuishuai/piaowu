@@ -34,8 +34,10 @@ use I18N\Lang;
 class ActivityService
 {
 
-    const FROM_TYPE_APP  = 'app'; //app
-    const FROM_TYPE_WX   = 'wx'; //微信
+    const FROM_TYPE_APP  = 'app'; //智能app
+    const FROM_TYPE_WX   = 'wx'; //智能微信
+    const FROM_TYPE_REAL_STUDENT_APP = 'real_student_app'; //真人app
+    const FROM_TYPE_REAL_STUDENT_WX = 'real_student_wx'; //真人学生微信
     const FROM_TYPE_PUSH = 'push'; //push
 
     /**

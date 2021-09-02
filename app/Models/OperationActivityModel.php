@@ -27,9 +27,13 @@ class OperationActivityModel extends Model
     const ENABLE_STATUS_ON = 2;         // 启用
     const ENABLE_STATUS_DISABLE = 3;    // 已禁用
 
-    // 活动类型
+    // 亲友优惠券活动类型
     const RULE_TYPE_COURSE = 2; // 课管活动
     const RULE_TYPE_ASSISTANT = 1; // 社群活动
+
+    // 转介绍运营活动类型
+    const TYPE_MONTH_ACTIVITY = 1;//月月有奖
+    const TYPE_WEEK_ACTIVITY = 2;//周周领奖
 
     const TIME_STATUS_PENDING = 1;
     const TIME_STATUS_ONGOING = 2;

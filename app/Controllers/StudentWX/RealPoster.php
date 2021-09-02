@@ -15,10 +15,12 @@ use App\Libs\KeyErrorRC4Exception;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\Dss\DssStudentModel;
+use App\Models\OperationActivityModel;
 use App\Models\SharePosterModel;
 use App\Services\ActivityService;
 use App\Services\PosterService;
 use App\Services\PosterTemplateService;
+use App\Services\RealActivityService;
 use App\Services\SharePosterService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -31,21 +33,26 @@ use Slim\Http\StatusCode;
  */
 class RealPoster extends ControllerBase
 {
-
     /**
-     * 海报列表
+     * 获取周周领奖和月月有奖活动海报列表
      * @param Request $request
      * @param Response $response
      * @return Response
      * @throws KeyErrorRC4Exception
      */
-    public function list(Request $request, Response $response)
+    public function getWeekOrMonthPosterList(Request $request, Response $response)
     {
         $rules = [
             [
                 'key' => 'type',
                 'type' => 'required',
-                'error_code' => 'type_is_required'
+                'error_code' => 'activity_type_is_required'
+            ],
+            [
+                'key' => 'type',
+                'type' => 'in',
+                'value' => [OperationActivityModel::TYPE_MONTH_ACTIVITY, OperationActivityModel::TYPE_WEEK_ACTIVITY],
+                'error_code' => 'activity_type_is_error'
             ]
         ];
 
@@ -56,8 +63,8 @@ class RealPoster extends ControllerBase
         }
 
         try {
-            $params['from_type'] = ActivityService::FROM_TYPE_WX;
-            $data = PosterTemplateService::getPosterList($this->ci['user_info']['user_id'], $params['type'], $params['activity_id'] ?? 0, $params);
+            $params['from_type'] = ActivityService::FROM_TYPE_REAL_STUDENT_WX;
+            $data = RealActivityService::getWeekOrMonthActivityData($this->ci['user_info']['user_id'], $params['type'], $params['activity_id'] ?? 0, $params);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }

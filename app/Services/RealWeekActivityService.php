@@ -24,10 +24,6 @@ use App\Services\Queue\QueueService;
 
 class RealWeekActivityService
 {
-
-    const WEEK_ACTIVITY_TYPE = 1; //周周活动类型
-    const MONTH_ACTIVITY_TYPE = 2; //月月活动类型
-
     /**
      * 添加周周领奖活动
      * @param $data
@@ -37,7 +33,7 @@ class RealWeekActivityService
      */
     public static function add($data, $employeeId)
     {
-        $checkAllowAdd = self::checkAllowAdd($data, self::WEEK_ACTIVITY_TYPE);
+        $checkAllowAdd = self::checkAllowAdd($data, OperationActivityModel::TYPE_WEEK_ACTIVITY);
         if (!empty($checkAllowAdd)) {
             throw new RunTimeException([$checkAllowAdd]);
         }
@@ -117,12 +113,13 @@ class RealWeekActivityService
     /**
      * 检查是否允许添加 - 检查添加必要的参数
      * @param $data
+     * @param $type
      * @return bool
      */
-    public static function checkAllowAdd($data, $type = self::MONTH_ACTIVITY_TYPE)
+    public static function checkAllowAdd($data, $type = OperationActivityModel::TYPE_MONTH_ACTIVITY)
     {
         // 海报不能为空
-        if (empty($data['poster']) && $type == self::MONTH_ACTIVITY_TYPE) {
+        if (empty($data['poster']) && $type == OperationActivityModel::TYPE_MONTH_ACTIVITY) {
             return 'poster_is_required';
         }
 
@@ -280,7 +277,7 @@ class RealWeekActivityService
      */
     public static function edit($data, $employeeId)
     {
-        $checkAllowAdd = self::checkAllowAdd($data, self::WEEK_ACTIVITY_TYPE);
+        $checkAllowAdd = self::checkAllowAdd($data, OperationActivityModel::TYPE_WEEK_ACTIVITY);
         if (!empty($checkAllowAdd)) {
             throw new RunTimeException([$checkAllowAdd]);
         }
@@ -453,6 +450,7 @@ class RealWeekActivityService
         }
         return true;
     }
+
     /**
      * 发送参与活动短信
      * @param $activityId
@@ -481,7 +479,7 @@ class RealWeekActivityService
         $successNum = 0;
 
         foreach ($students as $student) {
-            $i ++;
+            $i++;
             if ($student['country_code'] == NewSMS::DEFAULT_COUNTRY_CODE) {
                 $mobiles[] = $student['mobile'];
             }
