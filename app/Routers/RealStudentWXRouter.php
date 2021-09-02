@@ -9,11 +9,8 @@
 namespace App\Routers;
 
 
-use App\Controllers\StudentWX\Poster;
-use App\Controllers\StudentWX\RealPoster;
+use App\Controllers\StudentWX\RealActivity;
 use App\Middleware\RealStudentWeChatAuthCheckMiddleware;
-use App\Controllers\StudentWX\Student;
-use App\Controllers\StudentWX\Activity;
 
 /**
  * 真人业务线学生微信端接口路由文件
@@ -26,5 +23,5 @@ class RealStudentWXRouter extends RouterBase
     public $middleWares = [RealStudentWeChatAuthCheckMiddleware::class];
     protected $uriConfig = [
         // 月月有奖 && 周周领奖
-        '/real_student_wx/poster/list' => ['method' => ['post'], 'call' => RealPoster::class . ':list'],];
+        '/real_student_wx/activity/week_month' => ['method' => ['post'], 'call' => RealActivity::class . ':getWeekOrMonthActivity'],];
 }

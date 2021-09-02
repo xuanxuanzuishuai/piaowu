@@ -1,7 +1,10 @@
 <?php
+
 namespace App\Models\Erp;
 
 use App\Libs\Constants;
+use App\Libs\UserCenter;
+
 class ErpStudentModel extends ErpModel
 {
     public static $table = 'erp_student';
@@ -13,7 +16,7 @@ class ErpStudentModel extends ErpModel
      * @param array $fields
      * @return mixed
      */
-    public static function getListByUuidAndMobile($uuidArr,$mobileArr, $fields =[])
+    public static function getListByUuidAndMobile($uuidArr, $mobileArr, $fields = [])
     {
         if (!empty($uuidArr) && !empty($mobileArr)) {
             $studentWhere = [
@@ -22,15 +25,15 @@ class ErpStudentModel extends ErpModel
                     'mobile' => $mobileArr
                 ],
             ];
-        }elseif (!empty($uuidArr)) {
+        } elseif (!empty($uuidArr)) {
             $studentWhere = [
                 'uuid' => $uuidArr,
             ];
-        }elseif (!empty($mobileArr)) {
+        } elseif (!empty($mobileArr)) {
             $studentWhere = [
                 'mobile' => $mobileArr
             ];
-        }else {
+        } else {
             return [];
         }
 
@@ -58,7 +61,7 @@ class ErpStudentModel extends ErpModel
                 {$table} .thumb,
                 {$erpStudentAppModel} .first_pay_time,
                 {$erpStudentAppModel} .status
-            FROM {$table} 
+            FROM {$table}
             INNER JOIN {$erpStudentAppModel}  ON {$table}.id = {$erpStudentAppModel}.student_id
             WHERE
                 {$table}.id = {$studentId}
@@ -67,4 +70,34 @@ class ErpStudentModel extends ErpModel
         return self::dbRO()->queryAll($sql);
     }
 
+
+
+    /**
+     * 获取学生基础信息
+     * @param $studentId
+     * @return array
+     */
+    public static function getStudentInfoById($studentId)
+    {
+        $db = self::dbRO();
+        $info = $db->select(self::$table,
+            [
+                "[>]" . ErpStudentAppModel::$table => ['id' => 'student_id']
+            ],
+            [
+                self::$table . '.id',
+                self::$table . '.uuid',
+                self::$table . '.name',
+                self::$table . '.mobile',
+                self::$table . '.thumb',
+                self::$table . '.channel_id',
+                ErpStudentAppModel::$table . '.status',
+                ErpStudentAppModel::$table . '.first_pay_time',
+            ],
+            [
+                self::$table . '.id' => $studentId,
+                ErpStudentAppModel::$table . '.app_id' => Constants::REAL_APP_ID,
+            ]);
+        return $info;
+    }
 }

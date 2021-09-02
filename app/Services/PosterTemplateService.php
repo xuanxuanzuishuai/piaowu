@@ -113,7 +113,7 @@ class PosterTemplateService
      * @return array
      * 格式化某一条的信息
      */
-    private static function formatPosterInfo($row)
+    public static function formatPosterInfo($row)
     {
         if (isset($row['name'])) {
             $row['poster_name'] = $row['name'];

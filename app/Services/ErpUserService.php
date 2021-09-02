@@ -8,7 +8,9 @@
 
 namespace App\Services;
 
+use App\Libs\DictConstants;
 use App\Libs\Erp;
+use App\Libs\Util;
 
 class ErpUserService
 {
@@ -63,5 +65,23 @@ class ErpUserService
         if (is_array($subType)) return $data;
 
         return $data[$subType] ?? 0;
+    }
+
+    /**
+     * 获取学生头像展示地址
+     * @param $thumb
+     * @return string|string[]
+     */
+    public static function getStudentThumbUrl($thumb)
+    {
+
+        $dictConfig = array_column(DictConstants::getErpDictArr(DictConstants::ERP_SYSTEM_ENV['type'], ['QINIU_DOMAIN_1', 'QINIU_FOLDER_1', 'student_default_thumb'])[DictConstants::ERP_SYSTEM_ENV['type']], 'value', 'code');
+        if (empty($thumb)) {
+            $thumbUrl = Util::getQiNiuFullImgUrl($dictConfig['student_default_thumb'], $dictConfig['QINIU_DOMAIN_1'], $dictConfig['QINIU_FOLDER_1']);
+        } else {
+            $thumbUrl = Util::getQiNiuFullImgUrl($thumb, $dictConfig['QINIU_DOMAIN_1'], $dictConfig['QINIU_FOLDER_1']);
+
+        }
+        return $thumbUrl;
     }
 }

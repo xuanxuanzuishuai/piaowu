@@ -31,16 +31,15 @@ use Slim\Http\StatusCode;
  * Class StudentWXRouter
  * @package App\Routers
  */
-class RealPoster extends ControllerBase
+class RealActivity extends ControllerBase
 {
     /**
      * 获取周周领奖和月月有奖活动海报列表
      * @param Request $request
      * @param Response $response
      * @return Response
-     * @throws KeyErrorRC4Exception
      */
-    public function getWeekOrMonthPosterList(Request $request, Response $response)
+    public function getWeekOrMonthActivity(Request $request, Response $response)
     {
         $rules = [
             [
@@ -61,10 +60,9 @@ class RealPoster extends ControllerBase
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-
+        $params['from_type'] = ActivityService::FROM_TYPE_REAL_STUDENT_WX;
         try {
-            $params['from_type'] = ActivityService::FROM_TYPE_REAL_STUDENT_WX;
-            $data = RealActivityService::getWeekOrMonthActivityData($this->ci['user_info']['user_id'], $params['type'], $params['activity_id'] ?? 0, $params);
+            $data = RealActivityService::getWeekOrMonthActivityData($this->ci['user_info']['user_id'], $params['type'], $params['from_type']);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }

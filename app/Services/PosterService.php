@@ -300,9 +300,7 @@ class PosterService
      * @param $channelId
      * @param array $extParams
      * @param array $userQrInfo
-     * @return array|string[]
-     * @throws \App\Libs\Exceptions\RunTimeException
-     * @throws \App\Libs\KeyErrorRC4Exception
+     * @return array
      */
     public static function generateQrPoster($posterPath, $config, $userId, $type, $channelId, array $extParams = [], $userQrInfo= [])
     {
