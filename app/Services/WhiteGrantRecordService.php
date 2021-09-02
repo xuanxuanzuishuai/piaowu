@@ -316,26 +316,33 @@ class WhiteGrantRecordService
         ];
 
         if(isset($data['nextData']['grantInfo']['id'])){
+            $createTime = WhiteGrantRecordModel::getRecord(['id'=>$data['nextData']['grantInfo']['id']],'create_time');
             $insert['update_time'] = $now;
             $id = $data['nextData']['grantInfo']['id'];
             WhiteGrantRecordModel::updateRecord($id, $insert);
         }else{
+            $createTime = $now;
             $insert['grant_money'] = $data['nextData']['awardNum'] ?? 0;
             $insert['create_time'] = $now;
             WhiteGrantRecordModel::insertRecord($insert);
         }
 
-        self::sendSms($student['mobile'], $status, $data['nextData']['awardNum']);
+        self::sendSms($student['mobile'], $status, $data['nextData']['awardNum'], $createTime);
 
         //发送红包成功时发送微信消息
         if($insert['status'] == WhiteGrantRecordModel::STATUS_GIVE){
-            self::pushSuccMsg($insert['open_id'], $data['nextData']['awardNum']);
+            self::pushSuccMsg($insert['open_id'], $data['nextData']['awardNum'], $createTime);
         }
 
     }
 
-    public static function sendSms($mobile, $status, $leaf){
-        $m = date('m', strtotime('-1 month'));
+    public static function sendSms($mobile, $status, $leaf, $now, $old = false){
+        if($old){
+            $m = '2021年8月2日0点到2021年8月25日17点50分';
+        }else{
+            $date = date('Y-m-d H:i:s', $now);
+            $m = date('m', strtotime($date . ' -1 month'));
+        }
         if($status == WhiteGrantRecordModel::STATUS_GIVE){
             $msg = '亲爱的用户:您在'. $m .'月份参与的限定福利活动，共计获得'. $leaf .'金叶子,专属福利已发放至您的账户,请进入【小叶子智能陪练公众号】领取红包。';
         }
@@ -494,7 +501,7 @@ class WhiteGrantRecordService
         return ['', ''];
     }
 
-    public static function pushSuccMsg($openId, $leaf, $old = false){
+    public static function pushSuccMsg($openId, $leaf, $now, $old = false){
         if(is_null(self::$WeChatMiniPro)){
             self::$WeChatMiniPro = WeChatMiniPro::factory(Constants::SMART_APP_ID, DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER);
         }
@@ -503,7 +510,8 @@ class WhiteGrantRecordService
             $m = '2021年8月2日0点到2021年8月25日17点50分';
             $msg = '亲爱的用户:您在'.$m.'期间参与限定福利活动的专属福利已发放,请领取~';
         }else{
-            $m = date('m', strtotime('-1 month'));
+            $date = date('Y-m-d H:i:s', $now);
+            $m = date('m', strtotime($date . ' -1 month'));
             $msg = '亲爱的用户:您在'.$m .'月份参与的限定福利活动，共计获得'.$leaf.'金叶子,专属福利已发放,请领取~';
         }
         $content = Util::textDecode($msg);

@@ -56,6 +56,8 @@ class obj{
 
     public function run(){
 
+
+
         $awardList = $this->getAwardList();
 
         $n = ceil(count($awardList) / $this->batch_num);
@@ -313,9 +315,9 @@ class obj{
             $insert['headimgurl'] = $headimgurl;
 
             WhiteGrantRecordModel::insertRecord($insert);
-            WhiteGrantRecordService::sendSms($data['mobile'], $insert['status'], $insert['grant_money']);
+            WhiteGrantRecordService::sendSms($data['mobile'], $insert['status'], $insert['grant_money'], $insert['create_time'], true);
             if($insert['status'] == WhiteGrantRecordModel::STATUS_GIVE){
-                WhiteGrantRecordService::pushSuccMsg($insert['open_id'], $data['grant_money'], true);
+                WhiteGrantRecordService::pushSuccMsg($insert['open_id'], $data['grant_money'], $insert['create_time'], true);
             }
         }
 
