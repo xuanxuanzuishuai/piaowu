@@ -9,6 +9,7 @@
 namespace App\Controllers\StudentWX;
 
 use App\Controllers\ControllerBase;
+use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\KeyErrorRC4Exception;
@@ -107,6 +108,7 @@ class Poster extends ControllerBase
     {
         try {
             $params = $request->getParams();
+            $params['app_id'] = Constants::SMART_APP_ID;
             $data = SharePosterService::getShareWordList($params);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());

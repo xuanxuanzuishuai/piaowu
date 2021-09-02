@@ -39,6 +39,7 @@ class MiniAppQrService
     const REDIS_WAIT_USE_MINI_APP_ID_LIST = 'wait_user_mini_app_list';    // 等待使用的小程序码标识 - redis_key
     const REDIS_FAIL_MINI_APP_ID_LIST     = 'fail_mini_app_list';         // 小程序码生成失败的标识列表 - redis_key
     const REDIS_USE_MINI_APP_QR_NUM       = 'use_mini_app_qr_num';         // 小程序码已使用数量 - redis_key
+    const REDIS_WAIT_USE_MINI_QR_ID       = 'mini_app_wait_use_qr_id_list';  // 等待使用的小程序码标识 - redis_key  set集合
 
     /**
      * 获取用户QR码图片路径：智能小程序
@@ -113,10 +114,18 @@ class MiniAppQrService
      * 生产待使用的微信小程序码标识
      * @return bool
      */
-    public static function createMiniAppId()
+    public static function createMiniAppId($params)
     {
-        // 设置锁 - 同一时间只能有一个脚本执行
-        $lock = Util::setLock(self::REDIS_CREATE_MINI_APP_ID_LOCK);
+        $appId = $params['app_id'] ?? 0;
+        $busiesType = $params['busies_type'] ?? 0;
+        if (empty($appId) || empty($busiesType)) {
+            SimpleLogger::info("createMiniAppId is app_id or busies_type is empty", ['params' => $params]);
+            return false;
+        }
+        $signPrefix = self::getRedisKeyMiniQrIdSignPrefix($appId, $busiesType);
+        // 设置锁 - 同一时间同一个app_id+busies_type只能有一个脚本执行
+        $lockKey = $signPrefix . self::REDIS_CREATE_MINI_APP_ID_LOCK;
+        $lock = Util::setLock($lockKey);
         if (!$lock) {
             SimpleLogger::info("createMiniAppId is lock", []);
             return false;
@@ -125,9 +134,9 @@ class MiniAppQrService
         try {
             // 获取配置
             list($createIdNum, $secondNum, $waitMaxNum) = DictConstants::get(DictConstants::MINI_APP_QR, [
-                'create_id_num',                // 需要生成的数量
-                'get_mini_app_qr_second_num',   // 每秒请求数量 - 计算消息队列的延迟
-                'wait_mini_qr_max_num',         // 待使用的小程序码最大数量
+                $signPrefix . 'create_id_num', // 需要生成的数量
+                'get_mini_app_qr_second_num',                       // 每秒请求数量 - 计算消息队列的延迟
+                'wait_mini_qr_max_num',                             // 待使用的小程序码最大数量
             ]);
             SimpleLogger::info("createMiniAppId start", [$secondNum]);
             // 检查配置
@@ -137,24 +146,27 @@ class MiniAppQrService
             }
             // 如果redis里面总数超过指定数量不继续生产 - 防止生成过多待使用数据
             $redis = RedisDB::getConn();
-            $waitRedisNum = $redis->scard(self::REDIS_WAIT_USE_MINI_APP_ID_LIST);
+            $waitRedisNum = $redis->scard($signPrefix . self::REDIS_WAIT_USE_MINI_QR_ID);
+
             if ($waitRedisNum >= $waitMaxNum) {
                 SimpleLogger::info("createMiniAppId redis wait num max", [$createIdNum, $secondNum, $waitMaxNum, $waitRedisNum]);
                 return false;
             }
 
             SimpleLogger::info("createMiniAppId get wait use qr id", []);
-
             // 获取待使用的二维码标识，并放入到待生成小程序码的队列
             $qrIdArr = QrInfoService::getWaitUseQrId($createIdNum);
             $sendQueueArr = [];
             foreach ($qrIdArr as $_qrId) {
-                $sendQueueArr[] = ['mini_app_qr_id' => $_qrId];
+                $sendQueueArr[] = [
+                    'mini_app_qr_id' => $_qrId,
+                    'app_id' => $appId,
+                    'busies_type' => $busiesType
+                ];
             }
             unset($_qrId);
 
             SimpleLogger::info("createMiniAppId send queue wait use qr id", []);
-
             // 放入队列
             QueueService::sendWaitCreateMiniAppQrId($sendQueueArr, 0, $secondNum);
             unset($sendQueueArr);
@@ -165,7 +177,7 @@ class MiniAppQrService
             return false;
         } finally {
             // 释放锁
-            Util::unLock(self::REDIS_CREATE_MINI_APP_ID_LOCK);
+            Util::unLock($lockKey);
         }
         return true;
     }
@@ -175,10 +187,18 @@ class MiniAppQrService
      * @param $qrId
      * @return bool
      */
-    public static function checkQrIdExists($qrId)
+    public static function checkQrIdExists($appId, $busiesType, $qrId)
     {
         $redis = RedisDB::getConn();
-        $isRedisExists = $redis->sismember(self::REDIS_WAIT_USE_MINI_APP_ID_LIST, $qrId);
+
+        // TODO 这里当self::REDIS_WAIT_USE_MINI_APP_ID_LIST redis里面的数据为空后，可以删除这个逻辑
+        if ($appId == Constants::SMART_APP_ID && $busiesType == Constants::SMART_MINI_BUSI_TYPE) {
+            $isRedisExists = $redis->sismember(self::REDIS_WAIT_USE_MINI_APP_ID_LIST, $qrId);
+        }
+        // 检查redis 同一个app_id,busies_type缓存中是否已经存在
+        if (empty($isRedisExists)) {
+            $isRedisExists = $redis->sismember(self::getRedisKeyMiniQrIdSignPrefix($appId, $busiesType) . self::REDIS_WAIT_USE_MINI_QR_ID, $qrId);
+        }
         if (!empty($isRedisExists)) {
             SimpleLogger::error("checkQrIdExists mini app qr id is redis exists", ['qr_id' => $qrId]);
             return true;
@@ -198,27 +218,31 @@ class MiniAppQrService
      */
     public static function getMiniAppQr($data)
     {
+        $appId = $params['app_id'] ?? 0;
+        $busiesType = $params['busies_type'] ?? 0;
         $miniAppQrId = $data['mini_app_qr_id'] ?? '';
-        if (empty($miniAppQrId)) {
-            SimpleLogger::info("getMiniAppQr is id empty", ['data' => $data]);
+        if (empty($appId) || empty($busiesType) || empty($miniAppQrId)) {
+            SimpleLogger::info("getMiniAppQr is data error", ['data' => $data]);
             return false;
         }
+        $signPrefix = self::getRedisKeyMiniQrIdSignPrefix($appId, $busiesType);
+
         $redis = RedisDB::getConn();
         // 查询CH和REDIS是否存在， 存在放弃
-        $isExists = self::checkQrIdExists($miniAppQrId);
+        $isExists = self::checkQrIdExists($appId, $busiesType, $miniAppQrId);
         if (!empty($isExists)) {
             SimpleLogger::info("getMiniAppQr is qr_id is exists", ['data' => $data]);
             return false;
         }
 
         // 发起请求微信接口 2秒超时
-        $qrImageInfo = self::getMiniAppQrImage($miniAppQrId);
+        $qrImageInfo = self::getMiniAppQrImage($miniAppQrId, $appId, $busiesType);
         if (!empty($qrImageInfo['qr_path'])) {
             // 成功： 写入redis待使用队列， 以及redis小程序码详细信息的hash
-            $redis->hset(self::REDIS_WAIT_USE_MINI_APP_ID_INFO, $miniAppQrId, json_encode(['qr_path' => $qrImageInfo['qr_path']]));
-            $redis->sadd(self::REDIS_WAIT_USE_MINI_APP_ID_LIST, [$miniAppQrId]);
+            $redis->hset($signPrefix . self::REDIS_WAIT_USE_MINI_APP_ID_INFO, $miniAppQrId, json_encode(['qr_path' => $qrImageInfo['qr_path']]));
+            $redis->sadd($signPrefix . self::REDIS_WAIT_USE_MINI_QR_ID, [$miniAppQrId]);
             // 从失败队列里移除
-            $redis->hdel(self::REDIS_FAIL_MINI_APP_ID_LIST, $miniAppQrId);
+            $redis->hdel($signPrefix . self::REDIS_FAIL_MINI_APP_ID_LIST, $miniAppQrId);
         } else {
             SimpleLogger::info("getMiniAppQr is error; retry info", ['data' => $data]);
             // 失败： 失败次数+1 用 hash  id=>失败次数，  同时根据失败次数计算延时时间单位秒
@@ -229,9 +253,11 @@ class MiniAppQrService
                 QueueService::sendWaitCreateMiniAppQrId([
                     [
                         'mini_app_qr_id' => $miniAppQrId,
+                        'app_id' => $appId,
+                        'busies_type' => $busiesType,
                     ]
                 ], $failNum * 15);
-                $redis->hincrby(self::REDIS_FAIL_MINI_APP_ID_LIST, $miniAppQrId, 1);
+                $redis->hincrby($signPrefix . self::REDIS_FAIL_MINI_APP_ID_LIST, $miniAppQrId, 1);
             }
         }
         return true;
@@ -245,7 +271,7 @@ class MiniAppQrService
      * @return array
      * @throws RunTimeException
      */
-    public static function getMiniAppQrImage($miniAppQrId, $appId = Constants::SMART_APP_ID, $busiType = DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP)
+    public static function getMiniAppQrImage($miniAppQrId, $appId, $busiType)
     {
         $qrImageInfo = [
             'qr_path' => '',
@@ -281,7 +307,7 @@ class MiniAppQrService
         }
 
         SimpleLogger::error('getMiniAppQrImage upload img start ', [$appId, $busiType, $miniAppQrId, $res]);
-        $imagePath = $_ENV['ENV_NAME'] . '/' . AliOSS::DIR_MINIAPP_CODE . '/' . $miniAppQrId . ".jpg";
+        $imagePath = $_ENV['ENV_NAME'] . '/' . AliOSS::DIR_MINIAPP_CODE . '/' . $appId . '_' . $busiType . '/' . $miniAppQrId . ".jpg";
         AliOSS::uploadFile($imagePath, $tmpFileFullPath);
         unlink($tmpFileFullPath);
 
@@ -291,6 +317,8 @@ class MiniAppQrService
 
     /**
      * 获取一个用户的小程序码对应的qr_id
+     * @param $appId
+     * @param $busiesType
      * @param $userId
      * @param $userType
      * @param $channel
@@ -298,7 +326,7 @@ class MiniAppQrService
      * @param array $extParams
      * @return string[]
      */
-    public static function getUserMiniAppQr($userId, $userType, $channel, $landingType, array $extParams = [])
+    public static function getUserMiniAppQr($appId, $busiesType, $userId, $userType, $channel, $landingType, array $extParams = [])
     {
         $qrInfo = [
             'qr_path' => '',
@@ -315,12 +343,12 @@ class MiniAppQrService
             'activity_id'  => $extParams['activity_id'] ?? 0,
             'employee_id'  => $extParams['employee_id'] ?? 0,
             'poster_id'    => $extParams['poster_id'] ?? 0,
-            'app_id'       => $extParams['app_id'] ?? Constants::SMART_APP_ID,
-            'busies_type'  => $extParams['busies_type'] ?? DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP,
+            'app_id'       => $appId,
+            'busies_type'  => $busiesType,
             'user_status'  => $extParams['user_status'] ?? ($extParams['user_current_status'] ??  0),
         ];
         // 根据小程序码主要信息，查询CH
-        $qrSign = QrInfoService::createQrSign($qrData);
+        $qrSign = QrInfoService::createQrSign($qrData, $appId, $busiesType);
         $qrImage = QrInfoOpCHModel::getQrInfoBySign($qrSign, ['qr_path', 'qr_id'])[0] ?? [];
         // CH查到直接返回qr_path, qr_id
         if (!empty($qrImage) && AliOSS::doesObjectExist($qrImage['qr_path'])) {
@@ -329,36 +357,12 @@ class MiniAppQrService
             return $qrInfo;
         }
         // CH没有查到获取一个待使用的小程序码信息
-        $redis = RedisDB::getConn();
-        $qrInfo['qr_id'] = $redis->spop(self::REDIS_WAIT_USE_MINI_APP_ID_LIST);
-        // 如果qr_id 为空，需要立即启动生成小程序
-        if (empty($qrInfo['qr_id'])) {
-            QueueService::startCreateMiniAppId();
-            Util::errorCapture("getUserMiniAppQr error is redis empty", []);
-            return $qrInfo;
-        }
-
-        $miniAppIdInfo = $redis->hget(self::REDIS_WAIT_USE_MINI_APP_ID_INFO, $qrInfo['qr_id']);
-        $miniAppIdInfo = json_decode($miniAppIdInfo, true);
-        $qrInfo['qr_path'] = $miniAppIdInfo['qr_path'];
-
+        $redisQrInfo = self::getWaitUseQrId($appId, $busiesType);
         // 把小程序码和信息关联并且写入到CH
-        $qrData['qr_id'] = $qrInfo['qr_id'];
-        $qrData['qr_path'] = $qrInfo['qr_path'];
+        $qrData['qr_id'] = $redisQrInfo['qr_id'];
+        $qrData['qr_path'] = $redisQrInfo['qr_path'];
         $qrData['qr_sign'] = $qrSign;
         QrInfoOpCHModel::saveQrInfo([$qrData]);
-
-        // 更新小程序码使用数量
-        $useQrNum = $redis->incr(self::REDIS_USE_MINI_APP_QR_NUM);
-
-        // 如果达到阀值 启用生成小程序码标识队列
-        $num = DictConstants::get(DictConstants::MINI_APP_QR, 'start_generation_threshold_num');
-        if (fmod($useQrNum, $num) == 0) {
-            QueueService::startCreateMiniAppId();
-        }
-
-        // 清理缓存
-        $redis->hdel(self::REDIS_WAIT_USE_MINI_APP_ID_INFO, [$qrInfo['qr_id']]);
 
         return $qrInfo;
     }
@@ -369,14 +373,13 @@ class MiniAppQrService
      * @param bool $isFullUrl
      * @return array
      */
-    public static function getUserMiniAppQrList(array $qrParams = [], $isFullUrl = false)
+    public static function getUserMiniAppQrList($appId, $busiesType, array $qrParams = [], $isFullUrl = false)
     {
         $returnQrSignArr = [];
         $saveQrData = [];
         // 根据小程序码主要信息，查询CH
         $qrImageArr = QrInfoOpCHModel::getQrInfoBySign(array_column($qrParams, 'qr_sign'), ['qr_path', 'qr_id', 'qr_sign']);
         $qrSignData = array_column($qrImageArr, null, 'qr_sign');
-        $redis = RedisDB::getConn();
         SimpleLogger::info("getUserMiniAppQrList qrSignData", [$qrImageArr, $qrSignData]);
         foreach ($qrParams as $_qrParam) {
             $_qrSign = $_qrParam['qr_sign'];
@@ -387,30 +390,12 @@ class MiniAppQrService
                 ];
             } else {
                 // CH没有查到获取一个待使用的小程序码信息
-                $qrId = $redis->spop(self::REDIS_WAIT_USE_MINI_APP_ID_LIST);
-                // 如果qr_id 为空，需要立即启动生成小程序
-                if (empty($qrId)) {
-                    QueueService::startCreateMiniAppId();
-                    Util::errorCapture("getUserMiniAppQr error is redis empty", []);
-                    return $returnQrSignArr;
-                }
-
-                $miniAppIdInfo = $redis->hget(self::REDIS_WAIT_USE_MINI_APP_ID_INFO, $qrId);
-                $miniAppIdInfo = json_decode($miniAppIdInfo, true);
-                // 更新小程序码使用数量
-                $useQrNum = $redis->incr(self::REDIS_USE_MINI_APP_QR_NUM);
-                // 如果达到阀值 启用生成小程序码标识队列
-                $num = DictConstants::get(DictConstants::MINI_APP_QR, 'start_generation_threshold_num');
-                if (fmod($useQrNum, $num) == 0) {
-                    QueueService::startCreateMiniAppId();
-                }
-                // 清理缓存
-                $redis->hdel(self::REDIS_WAIT_USE_MINI_APP_ID_INFO, [$qrId]);
+                $redisQrInfo = self::getWaitUseQrId($appId, $busiesType);
 
                 // 把小程序码和信息关联并且写入到CH
                 $saveQrData[] = [
-                    'qr_id'        => $qrId,
-                    'qr_path'      => $miniAppIdInfo['qr_path'],
+                    'qr_id'        => $redisQrInfo['qr_id'],
+                    'qr_path'      => $redisQrInfo['qr_path'],
                     'qr_sign'      => $_qrSign,
                     'user_id'      => $_qrParam['user_id'],
                     'user_type'    => $_qrParam['user_type'],
@@ -424,17 +409,20 @@ class MiniAppQrService
                     'user_status'  => $_qrParam['user_status'] ?? ($_qrParam['user_current_status'] ??  0),
                 ];
                 $returnQrSignArr[$_qrSign] = [
-                    'qr_id' => $qrId,
-                    'qr_path' => $isFullUrl ? AliOSS::replaceCdnDomainForDss($miniAppIdInfo['qr_path']) : $miniAppIdInfo['qr_path'],
+                    'qr_id' => $redisQrInfo['qr_id'],
+                    'qr_path' => $isFullUrl ? AliOSS::replaceCdnDomainForDss($redisQrInfo['qr_path']) : $redisQrInfo['qr_path'],
                 ];
             }
         }
-        QrInfoOpCHModel::saveQrInfo($saveQrData);
+        if (!empty($saveQrData)) {
+            QrInfoOpCHModel::saveQrInfo($saveQrData);
+        }
         return $returnQrSignArr;
     }
 
     /**
      * 获取二维码id的详情
+     * 字段可以自定义就自定义，字段越少越快
      * @param $qrId
      * @param string[] $fileds
      * @return array
@@ -446,6 +434,7 @@ class MiniAppQrService
             return [];
         }
         // 兼容原有方法使用字段名称的统一
+        // 注意：新功能切记不要使用下面的映射字段名字， 后期可能会删除掉 ：： 新功能用完整字段
         $qrInfo['param_id'] = $qrInfo['qr_id'] ?? 0;
         $qrInfo['type'] = $qrInfo['user_type'] ?? 0;
         $qrInfo['r'] = $qrInfo['qr_ticket'] ?? "";
@@ -457,5 +446,89 @@ class MiniAppQrService
         $qrInfo['id'] = $qrInfo['qr_id'] ?? 0;
         $qrData = !empty($qrInfo['qr_data']) ? json_decode($qrInfo['qr_data'], true) : [];
         return array_merge($qrData, $qrInfo, $extendArr);
+    }
+
+    /**
+     * 启动生成小程序码队列
+     * @param $appId
+     * @param $busiesType
+     */
+    public static function startCreateMiniAppId($appId, $busiesType)
+    {
+        switch ($appId . '_' . $busiesType) {
+            case Constants::SMART_APP_ID . '_' . Constants::SMART_MINI_BUSI_TYPE:
+                // 启动 智能小程序码生成队列
+                QueueService::startCreateMiniAppId();
+                break;
+            case Constants::REAL_APP_ID . '_' . Constants::REAL_MINI_BUSI_TYPE:
+                // 启动 真人小程序码生成队列
+                QueueService::realStartCreateMiniAppId();
+                break;
+            default:
+        }
+    }
+
+    /**
+     * 批量获取待使用的小程序码对应的qr_id
+     * @param $getQrNum
+     * @param int $tryNum
+     * @return mixed
+     */
+    public static function getWaitUseQrId($appId, $busiesType)
+    {
+        $signPrefix = self::getRedisKeyMiniQrIdSignPrefix($appId, $busiesType);
+
+        $redis = RedisDB::getConn();
+        if ($appId == Constants::SMART_APP_ID && $busiesType == Constants::SMART_MINI_BUSI_TYPE) {
+            // TODO qingfeng.lian 新老redis key 兼容；这里当老的redis数据为空时，可以删除这里的逻辑
+            $qrInfo['qr_id'] = $redis->spop(self::REDIS_WAIT_USE_MINI_APP_ID_LIST);
+        }
+        if (empty($qrInfo)) {
+            $qrInfo['qr_id'] = $redis->spop($signPrefix . self::REDIS_WAIT_USE_MINI_QR_ID);
+
+        }
+        // 如果qr_id 为空，需要立即启动生成小程序
+        if (empty($qrInfo['qr_id'])) {
+            self::startCreateMiniAppId($appId, $busiesType);
+            Util::errorCapture("getUserMiniAppQr error is redis empty", []);
+            return $qrInfo;
+        }
+
+        if ($appId == Constants::SMART_APP_ID && $busiesType == Constants::SMART_MINI_BUSI_TYPE) {
+            // TODO qingfeng.lian 新老redis key 兼容；这里当老的redis数据为空时，可以删除这里的逻辑
+            $miniAppIdInfo = $redis->hget(self::REDIS_WAIT_USE_MINI_APP_ID_INFO, $qrInfo['qr_id']);
+        }
+        if (empty($miniAppIdInfo)) {
+            $miniAppIdInfo = $redis->hget($signPrefix . self::REDIS_WAIT_USE_MINI_APP_ID_INFO, $qrInfo['qr_id']);
+        }
+        $miniAppIdInfo = json_decode($miniAppIdInfo, true);
+        $qrInfo['qr_path'] = $miniAppIdInfo['qr_path'];
+
+        // 把小程序码和信息关联并且写入到CH
+        $qrData['qr_id'] = $qrInfo['qr_id'];
+        $qrData['qr_path'] = $qrInfo['qr_path'];
+
+        // 如果达到阀值 启用生成小程序码标识队列
+        $createUseNum = DictConstants::get(DictConstants::MINI_APP_QR, $signPrefix . 'create_id_num');
+        $num = $redis->scard($signPrefix . self::REDIS_WAIT_USE_MINI_QR_ID);
+        if ($num <= 0.4 * $createUseNum) {
+            self::startCreateMiniAppId($appId, $busiesType);
+        }
+
+        // 清理缓存
+        $redis->hdel(self::REDIS_WAIT_USE_MINI_APP_ID_INFO, [$qrInfo['qr_id']]);
+
+        return $qrData;
+    }
+
+    /**
+     * 获取小程序码 redis 前缀
+     * @param $appId
+     * @param $busiesType
+     * @return string
+     */
+    private static function getRedisKeyMiniQrIdSignPrefix($appId, $busiesType): string
+    {
+        return $appId . '_' . $busiesType . '_';
     }
 }

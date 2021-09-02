@@ -716,7 +716,7 @@ class Consumer extends ControllerBase
                     break;
                 // 生成小程序码标识
                 case WechatTopic::EVENT_CREATE_MINI_APP_ID:
-                    MiniAppQrService::createMiniAppId();
+                    MiniAppQrService::createMiniAppId($params['msg_body']);
                     break;
                 // 生成小程序码
                 case WechatTopic::EVENT_GET_MINI_APP_QR:

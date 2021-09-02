@@ -79,18 +79,23 @@ class TemplatePosterWordModel extends Model
     {
         $redis = RedisDB::getConn();
         $status = $params['status'] ?: self::NORMAL_STATUS;
-        $cacheKey = self::KEY_WORD_LIST . $status;
+        $where = [
+            'status' => $status,
+            'ORDER' => ['update_time' => 'DESC']
+        ];
+        if (!empty($params['app_id'])) {
+            $cacheKey = $params['app_id'] . self::KEY_WORD_LIST . $status;
+            $where['app_id'] = $params['app_id'];
+        } else {
+            $cacheKey = self::KEY_WORD_LIST . $status;
+        }
         $cache = $redis->get($cacheKey);
         if (!empty($cache)) {
             return json_decode($cache, true);
         }
 
-        $list = self::getRecords(
-            [
-                'status' => $status,
-                'ORDER' => ['update_time' => 'DESC']
-            ]
-        );
+
+        $list = self::getRecords($where);
         if (!empty($list)) {
             $redis->setex($cacheKey, Util::TIMESTAMP_ONEDAY, json_encode($list));
         }

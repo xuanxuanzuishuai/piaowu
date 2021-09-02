@@ -67,6 +67,7 @@ class Poster extends ControllerBase
     {
         //接收数据
         $params = $request->getParams();
+        $params['app_id'] = Constants::SMART_APP_ID;
         list($params['page'], $params['count']) = Util::formatPageCount($params);
         //获取数据
         $activityData = PosterTemplateService::templatePosterWordList($params);

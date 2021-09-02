@@ -155,6 +155,9 @@ class PosterTemplateService
         $where = [
             "status" => TemplatePosterWordModel::NORMAL_STATUS
         ];
+        if (empty($params['app_id'])) {
+            $where['app_id'] = $params['app_id'];
+        }
         $startCount = ($params['page'] - 1) * $params['count'];
         $dataCount = TemplatePosterWordModel::getCount($where);
         $list['count'] = $dataCount;
@@ -570,13 +573,13 @@ class PosterTemplateService
             $_tmp['user_type'] = DssUserQrTicketModel::STUDENT_TYPE;
             $_tmp['channel_id'] = $channel;
             $_tmp['landing_type'] = DssUserQrTicketModel::LANDING_TYPE_MINIAPP;
-            $_tmp['qr_sign'] = QrInfoService::createQrSign($_tmp);
+            $_tmp['qr_sign'] = QrInfoService::createQrSign($_tmp, Constants::SMART_APP_ID, DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP);
             $userQrParams[] = $_tmp;
 
             $item['qr_sign'] = $_tmp['qr_sign'];
         }
         unset($item);
-        $userQrArr = MiniAppQrService::getUserMiniAppQrList($userQrParams);
+        $userQrArr = MiniAppQrService::getUserMiniAppQrList(Constants::SMART_APP_ID, DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP, $userQrParams);
 
         foreach ($posterList as &$item) {
             $extParams['poster_id'] = $item['poster_id'];

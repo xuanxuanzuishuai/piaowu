@@ -8,6 +8,7 @@
 
 namespace App\Services\Queue;
 
+use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
@@ -663,7 +664,7 @@ class QueueService
     }
 
     /**
-     * 启动批量生成小程序码id的任务
+     * 智能 - 启动批量生成小程序码id的任务
      * @param $data
      * @param $deferTime
      * @return bool
@@ -674,6 +675,8 @@ class QueueService
             if (empty($data)) {
                 $data['time'] = time();
             }
+            $data['app_id']      = Constants::SMART_APP_ID;
+            $data['busies_type'] = Constants::SMART_MINI_BUSI_TYPE;
             (new WechatTopic())->startCreateMiniAppId($data)->publish($deferTime);
         } catch (Exception $e) {
             SimpleLogger::error($e->getMessage(), $data);
@@ -874,4 +877,33 @@ class QueueService
         }
         return true;
     }
+    /***********************************************************************/
+    /******************** 真人业务的消息队列 start ****************************/
+    /***********************************************************************/
+
+    /**
+     * 真人 - 启动批量生成小程序码id的任务
+     * @param $data
+     * @param $deferTime
+     * @return bool
+     */
+    public static function realStartCreateMiniAppId($data = [], $deferTime = 0)
+    {
+        try {
+            if (empty($data)) {
+                $data['time'] = time();
+            }
+            $data['app_id'] = Constants::REAL_APP_ID;
+            $data['busies_type'] = Constants::REAL_MINI_BUSI_TYPE;
+            (new WechatTopic())->startCreateMiniAppId($data)->publish($deferTime);
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), $data);
+            return false;
+        }
+        return true;
+    }
+
+    /***********************************************************************/
+    /******************** 真人业务的消息队列 end ******************************/
+    /***********************************************************************/
 }

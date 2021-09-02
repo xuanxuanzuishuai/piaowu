@@ -242,7 +242,9 @@ class WeChatMiniPro
             if (!empty($data['access_token'])) {
                 $this->setAccessToken($data['access_token']);
             }
-        } elseif ($appId == UserCenter::AUTH_APP_ID_OP_AGENT) {
+        } elseif ($appId == UserCenter::AUTH_APP_ID_OP_AGENT ||
+            ($appId == Constants::REAL_APP_ID && $busiType == Constants::REAL_MINI_BUSI_TYPE)
+        ) {
             $this->requestAccessToken();
         } elseif ($appId == UserCenter::APP_ID_PRACTICE){
             $data = (new PandaService())->updateAccessToken();

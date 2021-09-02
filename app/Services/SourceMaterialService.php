@@ -16,6 +16,7 @@ use App\Models\BannerConfigModel;
 use App\Models\DictModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserQrTicketModel;
+use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\EmployeeModel;
 use App\Models\Erp\ErpPackageV1Model;
 use App\Models\Erp\ErpStudentAccountDetail;
@@ -379,7 +380,7 @@ class SourceMaterialService
 
         //获取分享语列表
         if (!empty($posterWordIds)) {
-            $posterWorkLists = TemplatePosterWordModel::getRecords(['id' => $posterWordIds], ['id', 'content']);
+            $posterWorkLists = TemplatePosterWordModel::getRecords(['id' => $posterWordIds, 'app_id' => Constants::SMART_APP_ID], ['id', 'content']);
             $posterWorkLists = !empty($posterWorkLists) ? array_column($posterWorkLists, null, 'id') : [];
             $posterWordInfos = [];
             foreach ($posterWordIds as $key => $val) {
@@ -766,12 +767,12 @@ class SourceMaterialService
             $_tmp['user_type']    = DssUserQrTicketModel::STUDENT_TYPE;
             $_tmp['channel_id']   = $extParams['channel_id'];
             $_tmp['landing_type'] = DssUserQrTicketModel::LANDING_TYPE_NORMAL;
-            $_tmp['qr_sign']      = QrInfoService::createQrSign($_tmp);
+            $_tmp['qr_sign'] = QrInfoService::createQrSign($_tmp, Constants::SMART_APP_ID, DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP);
             $userQrParams[]       = $_tmp;
             $item['qr_sign']      = $_tmp['qr_sign'];
         }
         unset($item);
-        $userQrArr = MiniAppQrService::getUserMiniAppQrList($userQrParams);
+        $userQrArr = MiniAppQrService::getUserMiniAppQrList(Constants::SMART_APP_ID, DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP, $userQrParams);
         foreach ($posterList as &$item) {
             $extParams['poster_id'] = $item['id'];
             // 海报图：

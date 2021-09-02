@@ -317,7 +317,7 @@ class PosterService
         }
         //用户二维码
         if (empty($userQrInfo)) {
-            $userQrInfo = MiniAppQrService::getUserMiniAppQr($userId, $type, $channelId, DssUserQrTicketModel::LANDING_TYPE_MINIAPP, $extParams);
+            $userQrInfo = MiniAppQrService::getUserMiniAppQr(Constants::SMART_APP_ID, Constants::SMART_MINI_BUSI_TYPE, $userId, $type, $channelId, DssUserQrTicketModel::LANDING_TYPE_MINIAPP, $extParams);
         }
         if (empty($userQrInfo['qr_path'])) {
             SimpleLogger::info('user qr make fail', [$userId, $type, $channelId, $userQrInfo]);
@@ -407,7 +407,7 @@ class PosterService
         ];
         $userType = DssUserQrTicketModel::STUDENT_TYPE;
         $landingType = DssUserQrTicketModel::LANDING_TYPE_MINIAPP;
-        $userQrArr = MiniAppQrService::getUserMiniAppQr($studentId, $userType, $request['channel_id'], $landingType, $qrData);
+        $userQrArr = MiniAppQrService::getUserMiniAppQr(Constants::SMART_APP_ID, Constants::SMART_MINI_BUSI_TYPE, $studentId, $userType, $request['channel_id'], $landingType, $qrData);
         if (empty($userQrArr['qr_path'])) {
             throw new RunTimeException(['invalid_data']);
         }

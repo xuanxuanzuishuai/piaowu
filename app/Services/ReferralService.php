@@ -489,14 +489,6 @@ class ReferralService
         $fileName = md5($headImageUrl);
         $thumb = $_ENV['ENV_NAME'] . '/' . AliOSS::DIR_REFERRAL . '/' . $fileName . '.jpg';
         if (!AliOSS::doesObjectExist($thumb)) {
-            // $tmpFileFullPath = $_ENV['STATIC_FILE_SAVE_PATH'] . "/" . $fileName . ".jpg";
-            // chmod($tmpFileFullPath, 0755);
-            // file_put_contents($tmpFileFullPath, file_get_contents($headImageUrl));
-            // SimpleLogger::info("upload file start", []);
-            // if (file_exists($tmpFileFullPath)) {
-            //     AliOSS::uploadFile($thumb, $tmpFileFullPath);
-            // }
-            // unlink($tmpFileFullPath);
             SimpleLogger::info("upload file start", []);
             AliOSS::putObject($thumb, $headImageUrl);
         }
@@ -506,6 +498,8 @@ class ReferralService
         $channelId = self::getChannelByDay($day, $fromType);
         // 获取小程序码 - 如果获取小程序码失败，返回空
         $userQrInfo = MiniAppQrService::getUserMiniAppQr(
+            Constants::SMART_APP_ID,
+            Constants::SMART_MINI_BUSI_TYPE,
             $studentInfo['id'],
             DssUserQrTicketModel::STUDENT_TYPE,
             $channelId,
