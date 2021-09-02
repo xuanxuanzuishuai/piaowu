@@ -45,12 +45,14 @@ use App\Services\Queue\DurationTopic;
 use App\Services\Queue\GrantAwardTopic;
 use App\Services\Queue\PushMessageTopic;
 use App\Services\Queue\QueueService;
+use App\Services\Queue\RealReferralTopic;
 use App\Services\Queue\SaveTicketTopic;
 use App\Services\Queue\StudentAccountAwardPointsTopic;
 use App\Services\Queue\ThirdPartBillTopic;
 use App\Services\Queue\UserPointsExchangeRedPackTopic;
 use App\Services\Queue\WechatTopic;
 use App\Services\Queue\WeekActivityTopic;
+use App\Services\RealSharePosterService;
 use App\Services\RefereeAwardService;
 use App\Services\StudentAccountAwardPointsLogService;
 use App\Services\StudentService;
@@ -103,6 +105,7 @@ class Consumer extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         WeChatMiniPro::factory($params['msg_body']['app_id'], $params['msg_body']['busi_type'])->setAccessToken($params['msg_body']['access_token']);
+        return HttpHelper::buildResponse($response, []);
     }
 
 
@@ -316,7 +319,6 @@ class Consumer extends ControllerBase
                     break;
                 case PushMessageTopic::EVENT_TASK_GOLD_LEAF:
                     MessageService::sendTaskGoldLeafMessage($params['msg_body']);
-
             }
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
@@ -355,7 +357,7 @@ class Consumer extends ControllerBase
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        try{
+        try {
             $lastId = 0;
             switch ($params['event_type']) {
                 case ThirdPartBillTopic::EVENT_TYPE_IMPORT:
@@ -364,7 +366,7 @@ class Consumer extends ControllerBase
                 default:
                     SimpleLogger::error('consume_third_part_bill', ['unknown_event_type' => $params]);
             }
-        }catch (RunTimeException $runTimeException){
+        } catch (RunTimeException $runTimeException) {
             return HttpHelper::buildErrorResponse($response, $runTimeException->getAppErrorData());
         }
         return HttpHelper::buildResponse($response, ['last_id' => $lastId]);
@@ -442,8 +444,8 @@ class Consumer extends ControllerBase
 
             //查询student信息 and 组装请求数据
             $requestErpData = StudentAccountAwardPointsLogService::excelDataToLogData($excelData);
-            $uuidArr = array_diff(array_column($requestErpData,'uuid'), [null]);
-            $mobileArr = array_diff(array_column($requestErpData,'mobile'), [null]);
+            $uuidArr = array_diff(array_column($requestErpData, 'uuid'), [null]);
+            $mobileArr = array_diff(array_column($requestErpData, 'mobile'), [null]);
             $studentList = ErpStudentModel::getListByUuidAndMobile($uuidArr, $mobileArr, ['id','uuid','mobile']);
             // 生成新的以 uuid 和 mobile为key 的数组
             $uuidInfoList = [];
@@ -461,7 +463,7 @@ class Consumer extends ControllerBase
                 $_student_info = !empty($_info['uuid']) ? $uuidInfoList[$_info['uuid']] : $mobileInfoList[$_info['mobile']];
                 // 如果student_id不存在，直接按失败处理 ,  $_student_info is NULL or empty continue and add $errData
                 if (!$_student_info) {
-                    $errData[] = StudentService::formatErrData($_info['uuid'], $_info['mobile'],'学生不存在', $_info['num']);
+                    $errData[] = StudentService::formatErrData($_info['uuid'], $_info['mobile'], '学生不存在', $_info['num']);
                     continue;
                 }
                 $batchInsertData[$_key] = $_info;
@@ -495,7 +497,7 @@ class Consumer extends ControllerBase
                 'batch_id' => 'op_' . $info['id'],  //批次号
                 'remark' => $msgBody['remark'],
             ]);
-            SimpleLogger::info("consumer::studentAccountAwardPoints request erp request",['res' => $requestErpRes, 'fileid'=>$info['id']]);
+            SimpleLogger::info("consumer::studentAccountAwardPoints request erp request", ['res' => $requestErpRes, 'fileid'=>$info['id']]);
 
             if (isset($requestErpRes['code']) && $requestErpRes['code'] == 0) {
                 $failList = $requestErpRes['data']['fail_list'];
@@ -510,14 +512,13 @@ class Consumer extends ControllerBase
                     }
                 }
                 // 保存发放日志
-                SimpleLogger::info("consumer::studentAccountAwardPoints batch insert start",['fileid'=>$info['id']]);
-                $batchInsertDataChunk = array_chunk($batchInsertData,2000);
+                SimpleLogger::info("consumer::studentAccountAwardPoints batch insert start", ['fileid'=>$info['id']]);
+                $batchInsertDataChunk = array_chunk($batchInsertData, 2000);
                 foreach ($batchInsertDataChunk as $_chunk) {
                     StudentAccountAwardPointsLogModel::batchInsert($_chunk);
                 }
-                SimpleLogger::info("consumer::studentAccountAwardPoints batch insert end",['fileid'=>$info['id']]);
-
-            }else {
+                SimpleLogger::info("consumer::studentAccountAwardPoints batch insert end", ['fileid'=>$info['id']]);
+            } else {
                 // 发放失败， 不写入日志
                 $failList = $requestErpData;
                 $fail_num = count($requestErpData);
@@ -976,7 +977,8 @@ class Consumer extends ControllerBase
      * @param Response $response
      * @return Response
      */
-    public function weekWhiteGrandLeaf(Request $request, Response $response){
+    public function weekWhiteGrandLeaf(Request $request, Response $response)
+    {
         $params = $request->getParams();
         $rules = [
             [
@@ -1012,8 +1014,8 @@ class Consumer extends ControllerBase
             case WeekActivityTopic::EVENT_WHITE_GRANT_RED_PKG:
                 try {
                     WhiteGrantRecordService::grant($data);
-                }catch (RuntimeException $e){
-                    WhiteGrantRecordService::create($data['student'], $e->getData(),WhiteGrantRecordModel::STATUS_GIVE_FAIL);
+                } catch (RuntimeException $e) {
+                    WhiteGrantRecordService::create($data['student'], $e->getData(), WhiteGrantRecordModel::STATUS_GIVE_FAIL);
                 }
                 break;
             case WeekActivityTopic::EVENT_GET_WHITE_GRANT_STATUS:
@@ -1024,8 +1026,6 @@ class Consumer extends ControllerBase
                 break;
         }
         return HttpHelper::buildResponse($response, []);
-
-
     }
 
     /**
@@ -1059,12 +1059,63 @@ class Consumer extends ControllerBase
                 'error_code' => 'msg_body_is_required',
             ],
         ];
-
+        
         $result = Valid::validate($params, $rules);
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         UserService::userChangeLoginMobile($params['msg_body']);
+        return HttpHelper::buildResponse($response, []);
+    }
+    
+    /**
+     * 真人转介绍
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function realReferral(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        $rules = [
+            [
+                'key' => 'topic_name',
+                'type' => 'required',
+                'error_code' => 'topic_name_is_required',
+            ],
+            [
+                'key' => 'source_app_id',
+                'type' => 'required',
+                'error_code' => 'source_app_id_is_required',
+            ],
+            [
+                'key' => 'event_type',
+                'type' => 'required',
+                'error_code' => 'event_type_is_required',
+            ],
+            [
+                'key' => 'msg_body',
+                'type' => 'required',
+                'error_code' => 'msg_body_is_required',
+            ],
+        ];
+        
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        
+        $data = $params['msg_body'];
+        
+        switch ($params['event_type']) {
+            case RealReferralTopic::REAL_SEND_POSTER_AWARD:
+                RealSharePosterService::addUserAward($data);
+                break;
+            default:
+                SimpleLogger::error('unknown event type', ['params' => $params]);
+                break;
+        }
+        
         return HttpHelper::buildResponse($response, []);
     }
 }

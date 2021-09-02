@@ -489,6 +489,7 @@ class QueueService
 
         MessageService::sendMessage($data, $ruleId, null, Util::TIMESTAMP_1H);
     }
+    
     /**
      * 截图审核通过发奖
      * @param $data
@@ -505,7 +506,24 @@ class QueueService
         }
         return true;
     }
-
+    
+    /**
+     * 真人 - 截图审核通过发奖
+     * @param $data
+     * @return bool
+     */
+    public static function addRealUserPosterAward($data)
+    {
+        try {
+            $topic = new RealReferralTopic();
+            $topic->realSendPosterAward($data)->publish(5);
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), [$data]);
+            return false;
+        }
+        return true;
+    }
+    
     /**
      * ocr审核海报
      * @param $data

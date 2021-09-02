@@ -12,7 +12,6 @@ use App\Libs\DictConstants;
 use App\Libs\NewSMS;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
-use App\Libs\UserCenter;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Libs\Util;
 use App\Libs\AliOSS;
@@ -32,8 +31,6 @@ use App\Models\PosterModel;
 use App\Models\SharePosterModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
-use App\Models\UserPointsExchangeOrderModel;
-use App\Models\UserWeixinModel;
 use App\Models\WeChatConfigModel;
 use App\Services\Queue\QueueService;
 use App\Services\Queue\SaBpDataTopic;
@@ -478,11 +475,10 @@ class MessageService
     private static function dealPosterByRule($data, $item)
     {
         //走关注规则，无法获取转介绍二维码
-        if (in_array($data['rule_id'], DictConstants::getValues(DictConstants::MESSAGE_RULE,
-            ['subscribe_rule_id', 'life_subscribe_rule_id']))
+        if (in_array($data['rule_id'], DictConstants::getValues(DictConstants::MESSAGE_RULE, ['subscribe_rule_id', 'life_subscribe_rule_id']))
         ) {
-            $posterImgFile = ['poster_save_full_path' => $item['value'], 'unique' => md5($data['open_id'].$item['value']) . '.jpg', 'user_current_status' => DssStudentModel::STATUS_REGISTER];
-        } elseif ($data['rule_id'] == DictConstants::get(DictConstants::MESSAGE_RULE,'invite_friend_rule_id')) {
+            $posterImgFile = ['poster_save_full_path' => $item['value'], 'unique' => md5($data['open_id'].$item['value']).'.jpg', 'user_current_status' => DssStudentModel::STATUS_REGISTER];
+        } elseif ($data['rule_id'] == DictConstants::get(DictConstants::MESSAGE_RULE, 'invite_friend_rule_id')) {
             //真人邀请好友
             $config = DictConstants::getSet(DictConstants::TEMPLATE_POSTER_CONFIG);
             //用户二维码图片信息在referral项目中获取
@@ -491,8 +487,7 @@ class MessageService
                 $config,
                 $data['user_id']
             );
-
-        }else {
+        } else {
             //非关注拼接转介绍二维码
             $userInfo = DssUserWeiXinModel::getByOpenId($data['open_id']);
             if (empty($userInfo['user_id'])) {
@@ -658,7 +653,7 @@ class MessageService
      */
     public static function judgeOverMessageRuleLimit($openId, $ruleId)
     {
-        if (self::isActiveClickPushMessage($ruleId)){
+        if (self::isActiveClickPushMessage($ruleId)) {
             return false;
         }
 
@@ -705,14 +700,13 @@ class MessageService
     private static function isActiveClickPushMessage(int $ruleId): bool
     {
         //首关  邀请好友
-        return in_array($ruleId, DictConstants::getValues(DictConstants::MESSAGE_RULE,
-            [
-                'subscribe_rule_id',
-                'life_subscribe_rule_id',
-                'invite_friend_rule_id',
-                'invite_friend_pay_rule_id',
-                'invite_friend_not_pay_rule_id'
-            ]));
+        return in_array($ruleId, DictConstants::getValues(DictConstants::MESSAGE_RULE, [
+            'subscribe_rule_id',
+            'life_subscribe_rule_id',
+            'invite_friend_rule_id',
+            'invite_friend_pay_rule_id',
+            'invite_friend_not_pay_rule_id'
+        ]));
     }
 
     /**
@@ -723,7 +717,7 @@ class MessageService
     public static function recordUserMessageRuleLimit($openId, $ruleId)
     {
         //首关  邀请好友  不记录
-        if (self::isActiveClickPushMessage($ruleId)){
+        if (self::isActiveClickPushMessage($ruleId)) {
             return false;
         }
 
@@ -847,20 +841,20 @@ class MessageService
      * @param int $appId
      * @return bool
      */
-    public static function menuClickEventHandler(array $msgBody,int $appId = 0)
+    public static function menuClickEventHandler(array $msgBody, int $appId = 0)
     {
         // 自定义KEY事件
         $keyEvent = $msgBody['EventKey'];
         // 事件发送者
         $userOpenId = $msgBody['FromUserName'];
-        if ($appId == Constants::REAL_APP_ID){
+        if ($appId == Constants::REAL_APP_ID) {
             switch ($keyEvent) {
                 // 推荐好友
                 case 'PUSH_MSG_USER_SHARE':
                     WechatService::lifeStudentPushMsgUserShare($userOpenId, DictConstants::get(DictConstants::MESSAGE_RULE, 'invite_friend_rule_id'));
                     break;
             }
-        }else{
+        } else {
             switch ($keyEvent) {
                 // 付费推荐好友
                 case 'STUDENT_PUSH_MSG_USER_SHARE':
@@ -1219,7 +1213,7 @@ class MessageService
     {
         $awardDetailList = ErpUserEventTaskAwardGoldLeafModel::getRecords(['id' => $msgBody['points_award_ids']]);
         if (empty($awardDetailList)) {
-            SimpleLogger::info("MessageService::sendTaskAwardPointsMessage>>",['info' => "not_found", "awardDetailInfo" => $awardDetailList]);
+            SimpleLogger::info("MessageService::sendTaskAwardPointsMessage>>", ['info' => "not_found", "awardDetailInfo" => $awardDetailList]);
             return false;
         }
         $ext = [
@@ -1263,7 +1257,34 @@ class MessageService
         }
         return true;
     }
-
+    
+    /**
+     * 真人 - 发送审核消息
+     * @param $openId
+     * @param array $params
+     * @return bool
+     * @throws RunTimeException
+     */
+    public static function sendRealPosterVerifyMessage($openId, $params = [])
+    {
+        $appId  = DssUserWeiXinModel::dealAppId($params['app_id'] ?? '');
+        $name   = $params['activity_name'] ?? '';
+        $status = $params['status'] ?? '';
+        $url    = $_ENV["REFERRAL_FRONT_DOMAIN"] . DictConstants::get(DictConstants::REFERRAL_CONFIG, 'real_refused_poster_url');
+        
+        //审核未通过客服消息
+        if ($status == SharePosterModel::VERIFY_STATUS_UNQUALIFIED) {
+            $wechat = WeChatMiniPro::factory($appId, PushMessageService::APPID_BUSI_TYPE_DICT[$appId]);
+            $content = '您好，您上传的截图审核结束，详情如下：'. PHP_EOL.
+                       '任务名称：周周领奖'. PHP_EOL.
+                       '任务内容：'.$name. PHP_EOL.
+                       '完成情况：未通过'. PHP_EOL.
+                       '<a href="'.$url.'">【点此消息】查看更多任务记录，或进入“当前活动”重新上传</a>';
+            $wechat->sendText($openId, $content);
+        }
+        return true;
+    }
+    
     /**
      * 手动推送周周有奖活动信息
      * @param $data

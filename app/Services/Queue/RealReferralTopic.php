@@ -1,15 +1,13 @@
 <?php
 
-
 namespace App\Services\Queue;
 
-
-class ExchangePointsRedPackTopic extends BaseTopic
+class RealReferralTopic extends BaseTopic
 {
-    const TOPIC_NAME = "exchange_points_red_pack";
-
-    const SEND_RED_PACK = 'send_red_pack'; //发送红包
-
+    const TOPIC_NAME = "real_referral";
+    
+    const REAL_SEND_POSTER_AWARD = 'real_send_poster_award'; // 截图审核通过发奖
+    
     /**
      * @param null $publishTime
      * @throws \Exception
@@ -18,17 +16,16 @@ class ExchangePointsRedPackTopic extends BaseTopic
     {
         parent::__construct(self::TOPIC_NAME, $publishTime);
     }
-
+    
     /**
-     * 发送红包
+     * 真人 - 审核截图发送奖励
      * @param $data
      * @return $this
      */
-    public function sendRedPack($data)
+    public function realSendPosterAward($data)
     {
-        $this->setEventType(self::SEND_RED_PACK);
+        $this->setEventType(self::REAL_SEND_POSTER_AWARD);
         $this->setMsgBody($data);
         return $this;
     }
-
 }

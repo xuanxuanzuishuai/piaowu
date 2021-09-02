@@ -484,6 +484,7 @@ class DictConstants {
             'refused_poster_url', // 海报审核未通过跳转地址
             'week_activity_url', // 周周有奖活动地址
             'allowed_0_channel', // 指定0元的渠道
+            'real_refused_poster_url', // 真人 - 海报审核未通过跳转地址
         ]
     ];
 
@@ -1139,7 +1140,7 @@ class DictConstants {
         }
         foreach ($data as $k => $v) {
             // 过滤敏感key_code
-            if (in_array($v['key_code'],$filterCode)){
+            if (in_array($v['key_code'], $filterCode)) {
                 continue;
             }
             $dictList[$v['type']][] = [

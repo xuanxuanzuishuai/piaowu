@@ -32,13 +32,17 @@ use App\Controllers\OrgWeb\MonthActivity;
 use App\Controllers\OrgWeb\Opn;
 use App\Controllers\OrgWeb\Package;
 use App\Controllers\OrgWeb\PosterTemplateWord;
+use App\Controllers\OrgWeb\RealMonthActivity;
+use App\Controllers\OrgWeb\RealPosterTemplate;
+use App\Controllers\OrgWeb\RealPosterTemplateWord;
+use App\Controllers\OrgWeb\RealSharePoster;
+use App\Controllers\OrgWeb\RealWeekActivity;
 use App\Controllers\OrgWeb\RtActivity;
 use App\Controllers\OrgWeb\SharePoster;
 use App\Controllers\OrgWeb\SourceMaterial;
 use App\Controllers\OrgWeb\StudentAccount;
 use App\Controllers\OrgWeb\WeekActivity;
 use App\Controllers\Referral\Award;
-use App\Middleware\AdminLogMiddleware;
 use App\Middleware\EmployeeAuthCheckMiddleWare;
 use App\Middleware\EmployeePrivilegeMiddleWare;
 use App\Middleware\OrgWebMiddleware;
@@ -311,14 +315,6 @@ class OrgWebRouter extends RouterBase
         '/op_web/source_material/banner_detail'    => ['method' => ['get'], 'call' => SourceMaterial::class . ':bannerDetail'],
         '/op_web/source_material/banner_edit_enable_status'      => ['method' => ['get'], 'call' => SourceMaterial::class . ':bannerEditEnableStatus'],
 
-        //活动中心
-        '/op_web/activity_center/add' => ['method' => ['post'], 'call' => ActivityCenter::class . ':create'],
-        '/op_web/activity_center/list' => ['method' => ['get'], 'call' => ActivityCenter::class . ':getActivityList'],
-        '/op_web/activity_center/detail' => ['method' => ['get'], 'call' => ActivityCenter::class . ':getActivityDetail'],
-        '/op_web/activity_center/edit_status' => ['method' => ['post'], 'call' => ActivityCenter::class . ':editStatus'],
-        '/op_web/activity_center/edit_weight' => ['method' => ['post'], 'call' => ActivityCenter::class . ':editWeight'],
-        '/op_web/activity_center/update' => ['method' => ['post'], 'call' => ActivityCenter::class . ':editActivity'],
-
         //真人转介绍管理 - 个性化海报,标准海报,文案
         '/org_web/real_poster_template/individualityList' => ['method' => ['get'], 'call' => RealPosterTemplate::class . ':individualityList'],
         '/org_web/real_poster_template/standardList' => ['method' => ['get'], 'call' => RealPosterTemplate::class . ':standardList'],
@@ -344,5 +340,9 @@ class OrgWebRouter extends RouterBase
         '/op_web/real_month_activity/list' => ['method' => ['get'], 'call' => RealMonthActivity::class . ':list'],
         '/op_web/real_month_activity/detail' => ['method' => ['get'], 'call' => RealMonthActivity::class . ':detail'],
         '/op_web/real_month_activity/enable_status' => ['method' => ['post'], 'call' => RealMonthActivity::class . ':editEnableStatus'],
+        //真人转介绍管理 - 分享截图审核
+        '/org_web/share_poster/list' => ['method' => ['get'], 'call' => RealSharePoster::class . ':list'],
+        '/org_web/share_poster/approved' => ['method' => ['post'], 'call' => RealSharePoster::class . ':approved'],
+        '/org_web/share_poster/refused' => ['method' => ['post'], 'call' => RealSharePoster::class . ':refused'],
     ];
 }
