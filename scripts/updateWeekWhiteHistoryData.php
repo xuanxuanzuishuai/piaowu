@@ -308,6 +308,10 @@ class obj{
         $this->uuidStatus['sendInfo'][] = [$insert['uuid'] => $info];
 
         if(!$this->debug){
+            list($nickname, $headimgurl) = WhiteGrantRecordService::getUserWxInfo($insert['open_id']);
+            $insert['nickname']   = $nickname;
+            $insert['headimgurl'] = $headimgurl;
+
             WhiteGrantRecordModel::insertRecord($insert);
             WhiteGrantRecordService::sendSms($data['mobile'], $insert['status'], $insert['grant_money']);
             if($insert['status'] == WhiteGrantRecordModel::STATUS_GIVE){

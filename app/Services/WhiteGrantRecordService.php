@@ -53,6 +53,7 @@ class WhiteGrantRecordService
         $wechatSubscribeInfo = array_column($wechatSubscribeInfo, null, 'uuid');
 
         foreach ($list as &$one){
+            $one['nickname'] = Util::textDecode($one['nickname']);
             $one['reason'] = in_array($one['status'], [WhiteGrantRecordModel::STATUS_GIVE, WhiteGrantRecordModel::STATUS_GIVE_NOT_SUCC]) ? '' : $one['reason'];
             $one['current_open_id'] = $wechatSubscribeInfo[$one['uuid']]['open_id'] ?? '';
             $one['is_bind_wx'] = $wechatSubscribeInfo[$one['uuid']]['bind_status'] ?? DssUserWeiXinModel::STATUS_DISABLE;
@@ -483,9 +484,12 @@ class WhiteGrantRecordService
      * @throws RunTimeException
      */
     public static function getUserWxInfo($openId){
+        if(is_null(self::$WeChatMiniPro)){
+            self::$WeChatMiniPro = WeChatMiniPro::factory(Constants::SMART_APP_ID, DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER);
+        }
         $userWxInfo = self::$WeChatMiniPro->getUserInfo($openId);
         if($userWxInfo['subscribe'] == 1){
-            return [$userWxInfo['nickname'], $userWxInfo['headimgurl']];
+            return [Util::textEncode($userWxInfo['nickname']), $userWxInfo['headimgurl']];
         }
         return ['', ''];
     }
