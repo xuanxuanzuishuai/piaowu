@@ -81,9 +81,16 @@ class Constants
     const ERP_DICT_ACCOUNT_NAME_TYPE = 'student_account_app_type';
     // 积分账户类型  - 现金
     const ERP_ACCOUNT_NAME_CASH = '8_1001';
+    const ERP_ACCOUNT_NAME_MAGIC = '3001';  // 魔法石；配合app_id:  1_3001=魔法石
 
     // 版权区域代码
     const DICT_COPYRIGHT_CODE_CN = 'CN'; // 大陆版权
     const DICT_COPYRIGHT_CODE_CN_GAT = 'CN:GAT'; // 港澳台版权
     const DICT_COPYRIGHT_CODE_OVERSEAS = 'OVERSEAS'; // 海外版权
+
+    // 用户产生奖励发放节点
+    const WEEK_SHARE_POSTER_AWARD_NODE = 'week_award';  // 周周领奖上传分享截图奖励节点标记
+    // 奖励发送人身份
+    const STUDENT_ID_INVITER = 1;   // 邀请人
+    const STUDENT_ID_INVITEES = 1;  // 受邀人
 }

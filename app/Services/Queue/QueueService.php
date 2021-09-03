@@ -921,6 +921,37 @@ class QueueService
         return true;
     }
 
+    /**
+     * 真人 - 用户积分(魔法石)入账
+     * @param $uuid
+     * @param $amount
+     * @param $sourceType
+     * @param $remark
+     * @param $createTime
+     * @param $deferTime
+     * @return bool
+     */
+    public static function erpMagicStoneNormalCredited($uuid, $amount, $sourceType, $remark, $createTime, $deferTime = 0)
+    {
+        try {
+            $data = [
+                'app_id' => Constants::REAL_APP_ID,
+                'student_uuid' => $uuid,
+                'sub_type' => Constants::ERP_ACCOUNT_NAME_MAGIC,
+                'source_type' => $sourceType,
+                'remark' => $remark,
+                'num' => $amount,
+                'create_time' => $createTime,
+                'expire_time' => $createTime,
+            ];
+            (new ErpStudentAccountTopic())->erpNormalCredited($data)->publish($deferTime);
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), $data);
+            return false;
+        }
+        return true;
+    }
+
     /***********************************************************************/
     /******************** 真人业务的消息队列 end ******************************/
     /***********************************************************************/

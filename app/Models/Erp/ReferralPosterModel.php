@@ -29,4 +29,24 @@ class ReferralPosterModel extends ErpModel
     const SYSTEM_REFUSE_REASON_CODE_GROUP  = 1; //分享分组可见
     const SYSTEM_REFUSE_REASON_CODE_FRIEND = 9; //请发布到朋友圈并截取朋友圈照片
     const SYSTEM_REFUSE_REASON_CODE_UPLOAD = 4; //上传截图出错
+
+
+    /**
+     * 获取erp中学生审核通过的上传截图奖励
+     * @param $studentId
+     * @param $createTime
+     * @param $posterId
+     * @return number
+     */
+    public static function getStudentSharePosterSuccessNum($studentId, $createTime, $posterId)
+    {
+        $sqlWhere = [
+            'student_id' => $studentId,
+            'status'     => self::CHECK_STATUS_QUALIFIED,
+            'create_time[>=]' => $createTime,
+            'id[!]' => $posterId
+        ];
+        $db = self::dbRO();
+        return $db->count(self::$table, $sqlWhere);
+    }
 }

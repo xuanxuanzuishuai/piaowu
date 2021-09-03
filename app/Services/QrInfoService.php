@@ -22,8 +22,8 @@ use Predis\Client;
 class QrInfoService
 {
     private const REDIS_WAIT_USE_QR_SET   = 'wait_use_qr_set';    // 等待使用的二维码标识
-    const REDIS_USE_QR_NUM        = 'use_qr_num';         // 二维码标识已使用数量
-    const REDIS_CREATE_QR_ID_LOCK = 'create_qr_id_lock';    // 生成二维码码标识锁
+    const         REDIS_USE_QR_NUM        = 'use_qr_num';         // 二维码标识已使用数量
+    const         REDIS_CREATE_QR_ID_LOCK = 'create_qr_id_lock';    // 生成二维码码标识锁
 
     /**
      * 生成qr_sign
@@ -35,11 +35,8 @@ class QrInfoService
      */
     public static function createQrSign($qrData, $appId, $busiesType): string
     {
-        if (!self::checkQrPathType($qrData)) {
-            throw new RunTimeException(['qr_type_error'], [$qrData, $appId, $busiesType]);
-        }
         $createTicketData = [];
-        $signField = [
+        $signField        = [
             'user_id'             => 'user_id',                 // 用户id
             'user_type'           => 'user_type',               // 用户类型
             'landing_type'        => 'landing_type',            // landing页类型
@@ -61,12 +58,12 @@ class QrInfoService
         if (empty($createTicketData)) {
             throw new RunTimeException(["create_sign_error"], [$qrData, $appId, $busiesType]);
         }
-        $createTicketData['app_id'] = $appId;           // 业务id
-        $createTicketData['busies_type'] = $busiesType; // 场景id
+        // $createTicketData['app_id']      = $appId;           // 业务id
+        // $createTicketData['busies_type'] = $busiesType; // 场景id
 
         ksort($createTicketData);
         $paramsStr = http_build_query($createTicketData);
-        return md5($paramsStr);
+        return md5($paramsStr . '_appId_' . $appId . '_busiesType_' . $busiesType);
     }
 
 
@@ -107,7 +104,7 @@ class QrInfoService
             QueueService::startCreateWaitUseQrId();
         }
 
-        return $getQrNum == 1 ? ($qrIdArr[0] ?? '') :$qrIdArr;
+        return $getQrNum == 1 ? ($qrIdArr[0] ?? '') : $qrIdArr;
     }
 
     /**
@@ -149,7 +146,7 @@ class QrInfoService
             $sortId       = $maxId;
             $sendQueueArr = [];
             for ($i = 0; $i < $createIdNum; $i++) {
-                $sortId         = Util::getIncrSortId($sortId);
+                $sortId = Util::getIncrSortId($sortId);
                 // 如果全是数字跳过
                 if (preg_match('/^[0-9]+$/', $sortId)) {
                     continue;
@@ -197,17 +194,17 @@ class QrInfoService
     public static function getQrIdList(array $qrParams, array $field = [], bool $isFullUrl = false)
     {
         $returnQrSignArr = [];
-        $saveQrData = [];
+        $saveQrData      = [];
 
         if (empty($qrParams)) {
             return $returnQrSignArr;
         }
         // 生成qr_sign, qr_ticket
-        $qrSignArr  = [];
+        $qrSignArr = [];
         foreach ($qrParams as $key => &$item) {
-            $sign              = self::createQrSign($item, Constants::SMART_APP_ID, DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP);
-            $qrSignArr[]       = $sign;
-            $item['qr_sign']   = $sign;
+            $sign                   = self::createQrSign($item, Constants::SMART_APP_ID, DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP);
+            $qrSignArr[]            = $sign;
+            $item['qr_sign']        = $sign;
             $returnQrSignArr[$sign] = [];
         }
         unset($item);
@@ -234,7 +231,7 @@ class QrInfoService
                 $_tmpSaveData['user_status'] = $_qrParam['user_status'] ?? ($_qrParam['user_current_status'] ?? 0);
                 $_tmpSaveData['create_type'] = $_qrParam['create_type'] ?? DictConstants::get(DictConstants::TRANSFER_RELATION_CONFIG, 'user_relation_status');
                 $_tmpSaveData['qr_type']     = $_qrParam['qr_type'] ?? DictConstants::get(DictConstants::MINI_APP_QR, 'qr_type_none');
-                $saveQrData[] = $_tmpSaveData;
+                $saveQrData[]                = $_tmpSaveData;
 
                 // 把必要的信息直接整理好返回给调用者 - 不需要再查询数据库
                 $_tmp = [];
@@ -268,24 +265,4 @@ class QrInfoService
         }
         return $qrSignList;
     }
-
-    /**
-     * 检测qr_type=3时，qr_path不能为空
-     * @param $qrInfo
-     * @return bool
-     */
-    public static function checkQrPathType($qrInfo)
-    {
-        if (!isset($qrInfo['qr_path']) || !isset($qrInfo['qr_type'])) {
-            return false;
-        }
-        if (empty($qrInfo['qr_path']) && $qrInfo['qr_type'] != DictConstants::get(DictConstants::MINI_APP_QR, 'qr_type_none')) {
-            return false;
-        }
-        if (!empty($qrInfo['qr_path']) && $qrInfo['qr_type'] == DictConstants::get(DictConstants::MINI_APP_QR, 'qr_type_none')) {
-            return false;
-        }
-        return true;
-    }
-
 }
