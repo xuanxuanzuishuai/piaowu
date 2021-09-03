@@ -39,7 +39,7 @@ $dotenv->overload();
 class obj{
 
     public $debug = true;
-    public $batch_num = 500; //批量执行总数 max 500
+    public $batch_num = 200; //批量执行总数 max 500
     public $sendRedNumBym = 0; //累计每秒发送红包数量
     public $uuids;
     public $startTime;
@@ -336,6 +336,10 @@ class obj{
 
     public function getUUids(){
         return [
+            368928617222164859,
+            368935072625119540,
+            231420718529368443,
+            309960965972087092,//以上为测试数据
             354206646337065268,
             344004305692447099,
             291420473160421755,
