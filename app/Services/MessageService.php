@@ -489,7 +489,7 @@ class MessageService
             // 埋点 - 海报id、用户身份
             $userStatus  = StudentService::dssStudentStatusCheck($userInfo['user_id']); // 获取用户当前状态
             $posterName = $item['name'] ?? ''; // message_push_rules表中name字段作为海报名称
-            $posterImgFile = PosterService::generateQRPosterAliOss(
+            $posterImgFile = PosterService::generateQRPoster(
                 $item['path'],
                 $config,
                 $userInfo['user_id'],
