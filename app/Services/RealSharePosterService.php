@@ -9,10 +9,10 @@
 namespace App\Services;
 
 use App\Libs\Constants;
-use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\AliOSS;
 use App\Libs\RedisDB;
+use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\EmployeeModel;
 use App\Models\RealSharePosterModel;
@@ -86,9 +86,6 @@ class RealSharePosterService
         if (count($posters) != count($id)) {
             throw new RunTimeException(['get_share_poster_error']);
         }
-        
-        $taskConfig = DictConstants::getSet(DictConstants::NORMAL_UPLOAD_POSTER_TASK);
-        
         $now = time();
         $updateData = [
             'verify_status' => RealSharePosterModel::VERIFY_STATUS_QUALIFIED,
@@ -111,28 +108,13 @@ class RealSharePosterService
                 'verify_status' => $poster['poster_status']
             ];
             $update = RealSharePosterModel::batchUpdateRecord($updateData, $where);
-            
-            //计算当前真正应该获得的奖励
-            $where = [
-                'id[!]'         => $poster['id'],
-                'student_id'    => $poster['student_id'],
-                'type'          => RealSharePosterModel::TYPE_WEEK_UPLOAD,
-                'verify_status' => RealSharePosterModel::VERIFY_STATUS_QUALIFIED,
-            ];
-            $count = RealSharePosterModel::getCount($where);
-            $taskId = $taskConfig[$count] ?? $taskConfig['-1'];
             if (!empty($update)) {
-                $needAwardList[] = [
-                    'id' => $poster['id'],
-                    'uuid' => $poster['uuid'],
-                    'task_id' => $taskId,
-                    'activity_id' => $poster['activity_id'],
-                ];
+                $needAwardList[] = $poster['id'];
             }
             //真人产品激活
             QueueService::autoActivate(['student_uuid' => $poster['uuid'], 'passed_time' => time(),'app_id' => Constants::REAL_APP_ID]);
         }
-        //TODO 真人奖励激活
+        //真人奖励激活
         if (!empty($needAwardList)) {
             QueueService::addRealUserPosterAward($needAwardList);
         }
@@ -149,20 +131,9 @@ class RealSharePosterService
         if (empty($data)) {
             return false;
         }
-        //TODO 等待庆丰的发放奖励接口
-        //foreach ($data as $poster) {
-        //    $status = $poster['status'] ?? ErpReferralService::EVENT_TASK_STATUS_COMPLETE;
-        //    $res = (new Erp())->addEventTaskAward($poster['uuid'], $poster['task_id'], $status);
-        //    if (empty($res['data'])) {
-        //        SimpleLogger::error('ERP_CREATE_USER_EVENT_TASK_AWARD_FAIL', [$poster]);
-        //    }
-        //    $awardIds  = $res['data']['user_award_ids'] ?? [];
-        //    $pointsIds = $res['data']['points_award_ids'] ?? [];
-        //    $awardId   = implode(',', $awardIds);
-        //    $pointsId  = implode(',', $pointsIds);
-        //    SharePosterModel::updateRecord($poster['id'], ['award_id' => $awardId, 'points_award_id'=> $pointsId]);
-        //    QueueService::sharePosterAwardMessage(['points_award_ids' => $pointsIds, 'activity_id' => $poster['activity_id'] ?? 0]);
-        //}
+        SimpleLogger::info('RealSharePosterService_addUserAward', ['data' => $data]);
+        //发放奖励接口
+        RealUserAwardMagicStoneService::sendUserMagicStoneAward($data);
         return true;
     }
     

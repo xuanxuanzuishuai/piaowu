@@ -10,6 +10,7 @@ namespace App\Services;
 use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\NewSMS;
+use App\Libs\RealDictConstants;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\WeChat\WeChatMiniPro;
@@ -1267,10 +1268,10 @@ class MessageService
      */
     public static function sendRealPosterVerifyMessage($openId, $params = [])
     {
-        $appId  = DssUserWeiXinModel::dealAppId($params['app_id'] ?? '');
-        $name   = $params['activity_name'] ?? '';
+        $appId = DssUserWeiXinModel::dealAppId($params['app_id'] ?? '');
+        $name = $params['activity_name'] ?? '';
         $status = $params['status'] ?? '';
-        $url    = $_ENV["REFERRAL_FRONT_DOMAIN"] . DictConstants::get(DictConstants::REFERRAL_CONFIG, 'real_refused_poster_url');
+        $url = RealDictConstants::get(RealDictConstants::REAL_REFERRAL_CONFIG, 'real_refused_poster_url');
         
         //审核未通过客服消息
         if ($status == SharePosterModel::VERIFY_STATUS_UNQUALIFIED) {

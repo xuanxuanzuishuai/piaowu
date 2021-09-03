@@ -17,4 +17,12 @@ class RealDictConstants extends DictConstants
             '-1',
         ]
     ];
+    
+    // 真人转介绍相关配置
+    const REAL_REFERRAL_CONFIG = [
+        'type' => 'REAL_REFERRAL_CONFIG',
+        'keys' => [
+            'real_refused_poster_url', //海报审核未通过跳转地址
+        ]
+    ];
 }
