@@ -61,11 +61,11 @@ class RealMonthActivity extends ControllerBase
                 'type' => 'required',
                 'error_code' => 'make_poster_button_img_is_required'
             ],
-            [
-                'key' => 'make_poster_tip_word',
-                'type' => 'required',
-                'error_code' => 'make_poster_tip_word_is_required'
-            ],
+            //[
+            //    'key' => 'make_poster_tip_word',
+            //    'type' => 'required',
+            //    'error_code' => 'make_poster_tip_word_is_required'
+            //],
             [
                 'key' => 'award_detail_img',
                 'type' => 'required',
@@ -81,11 +81,11 @@ class RealMonthActivity extends ControllerBase
                 'type' => 'required',
                 'error_code' => 'share_poster_tip_word_is_required'
             ],
-            [
-                'key' => 'create_poster_button_img',
-                'type' => 'required',
-                'error_code' => 'create_poster_button_img_is_required'
-            ],
+            //[
+            //    'key' => 'create_poster_button_img',
+            //    'type' => 'required',
+            //    'error_code' => 'create_poster_button_img_is_required'
+            //],
             [
                 'key' => 'poster',
                 'type' => 'required',

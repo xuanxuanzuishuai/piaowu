@@ -203,7 +203,7 @@ class ActivityPosterModel extends Model
             'real_month' => RealMonthActivityModel::$table,
         ];
         $table2 = $activityTable[$type] ?? '';
-        if (empty($table3)) {
+        if (empty($table2)) {
             return [];
         }
         $status11 = ActivityPosterModel::NORMAL_STATUS;

@@ -86,7 +86,6 @@ class RealWeekActivityModel extends Model
                 'w.id',
                 'w.name',
                 'w.activity_id',
-                'w.event_id',
                 'w.guide_word',
                 'w.share_word',
                 'w.start_time',

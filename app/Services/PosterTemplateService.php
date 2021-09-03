@@ -716,7 +716,7 @@ class PosterTemplateService
             'status'      => ShareMaterialConfig::NORMAL_STATUS
         ];
         $shareConfigId = ShareMaterialConfig::getRecord($conds, ['share_config_id']);
-        return $shareConfigId;
+        return $shareConfigId ?? [];
     }
 
     /**

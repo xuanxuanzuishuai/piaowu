@@ -43,22 +43,17 @@ class RealWeekActivity extends ControllerBase
                 'value' => 50,
                 'error_code' => 'name_length_invalid'
             ],
-            [
-                'key' => 'event_id',
-                'type' => 'required',
-                'error_code' => 'event_id_is_required'
-            ],
-            [
-                'key' => 'guide_word',
-                'type' => 'required',
-                'error_code' => 'guide_word_is_required'
-            ],
-            [
-                'key' => 'guide_word',
-                'type' => 'lengthMax',
-                'value' => 1000,
-                'error_code' => 'guide_word_length_invalid'
-            ],
+            //[
+            //    'key' => 'guide_word',
+            //    'type' => 'required',
+            //    'error_code' => 'guide_word_is_required'
+            //],
+            //[
+            //    'key' => 'guide_word',
+            //    'type' => 'lengthMax',
+            //    'value' => 1000,
+            //    'error_code' => 'guide_word_length_invalid'
+            //],
             [
                 'key' => 'share_word',
                 'type' => 'required',
@@ -126,16 +121,16 @@ class RealWeekActivity extends ControllerBase
                 'type' => 'required',
                 'error_code' => 'personality_poster_button_img_is_required'
             ],
-            [
-                'key' => 'poster_prompt',
-                'type' => 'required',
-                'error_code' => 'poster_prompt_is_required'
-            ],
-            [
-                'key' => 'poster_make_button_img',
-                'type' => 'required',
-                'error_code' => 'poster_make_button_img_is_required'
-            ],
+            //[
+            //    'key' => 'poster_prompt',
+            //    'type' => 'required',
+            //    'error_code' => 'poster_prompt_is_required'
+            //],
+            //[
+            //    'key' => 'poster_make_button_img',
+            //    'type' => 'required',
+            //    'error_code' => 'poster_make_button_img_is_required'
+            //],
             [
                 'key' => 'share_poster_prompt',
                 'type' => 'required',
@@ -156,7 +151,6 @@ class RealWeekActivity extends ControllerBase
                 'type' => 'integer',
                 'error_code' => 'poster_order_is_integer'
             ],
-
         ];
         $params = $request->getParams();
         $result = Valid::validate($params, $rules);
@@ -343,7 +337,7 @@ class RealWeekActivity extends ControllerBase
                 'key' => 'activity_id',
                 'type' => 'required',
                 'error_code' => 'activity_id_is_required'
-            ]
+            ],
         ];
 
         $params = $request->getParams();
