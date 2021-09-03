@@ -92,5 +92,5 @@ class Constants
     const WEEK_SHARE_POSTER_AWARD_NODE = 'week_award';  // 周周领奖上传分享截图奖励节点标记
     // 奖励发送人身份
     const STUDENT_ID_INVITER = 1;   // 邀请人
-    const STUDENT_ID_INVITEES = 1;  // 受邀人
+    const STUDENT_ID_INVITEES = 2;  // 受邀人
 }

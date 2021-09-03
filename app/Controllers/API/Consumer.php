@@ -1111,6 +1111,9 @@ class Consumer extends ControllerBase
             case RealReferralTopic::REAL_SEND_POSTER_AWARD:
                 $res = RealSharePosterService::addUserAward($data);
                 break;
+            case RealReferralTopic::REAL_SHARE_POSTER_MESSAGE:
+                MessageService::sendRealSharePosterMessage($params['msg_body']);
+                break;
             default:
                 SimpleLogger::error('unknown event type', ['params' => $params]);
                 break;

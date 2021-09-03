@@ -30,15 +30,18 @@ class RealUserAwardMagicStoneService
      * @param $sharePosterId
      * @param $uuid
      * @param int $userType
+     * @param array $sharePosterInfo
      * @return bool
      * @throws RunTimeException
      */
-    private static function createStudentAward($sharePosterId, $uuid, $userType = Constants::USER_TYPE_STUDENT)
+    private static function createStudentAward($sharePosterId, $uuid, $userType = Constants::USER_TYPE_STUDENT, array $sharePosterInfo = [])
     {
         $time       = time();
         $awardDelay = 0;
         // 获取分享截图审核 - 检查是否已经审核通过， 只有审核通过的才可以发奖
-        $sharePosterInfo = RealSharePosterModel::getRecord(['id' => $sharePosterId]);
+        if (empty($sharePoserInfo)) {
+            $sharePosterInfo = RealSharePosterModel::getRecord(['id' => $sharePosterId]);
+        }
         if (empty($sharePosterInfo) || $sharePosterInfo['verify_status'] != RealSharePosterModel::VERIFY_STATUS_QUALIFIED) {
             SimpleLogger::info(['share_poser_status_error'], [$sharePosterId, $uuid, $userType]);
             throw new RunTimeException(['share_poser_status_error']);
@@ -98,8 +101,8 @@ class RealUserAwardMagicStoneService
         // 请求erp发放积分 - nsq通知erp积分入账
         QueueService::erpMagicStoneNormalCredited(
             $sharePosterInfo['student_id'],
-            ErpStudentAccountTopic::UPLOAD_POSTER_ACTION,
             $awardAmount,
+            ErpStudentAccountTopic::UPLOAD_POSTER_ACTION,
             '截图审核通过',
             $time
         );
@@ -129,17 +132,17 @@ class RealUserAwardMagicStoneService
         $awardConfig = DictConstants::getSet(RealDictConstants::REAL_SHARE_POSTER_AWARD_RULE);
         // 获取最后一次奖励阶梯
         $lastAwardNum = 0;
-        foreach ($awardConfig as $_awardNum) {
-            if ($_awardNum > $lastAwardNum) {
-                $lastAwardNum = $_awardNum;
+        foreach ($awardConfig as $_awardKey => $_awardNum) {
+            if ($_awardKey > $lastAwardNum) {
+                $lastAwardNum = $_awardKey;
             }
         }
-        unset($_awardNum);
+        unset($_awardNum, $_awardKey);
 
         // 如果当前阶梯小于最后一个阶梯奖励，读取erp旧数据重新计算奖励
         if ($count < $lastAwardNum) {
             $divisionTime = ErpDictModel::getKeyValue('student_poster_change_award', 'division_time');
-            $erpCount     = ReferralPosterModel::getStudentSharePosterSuccessNum($studentId, $divisionTime, $poserId);
+            $erpCount     = ReferralPosterModel::getStudentSharePosterSuccessNum($studentId, $divisionTime);
             $count        += $erpCount;
         }
         return $awardConfig[$count] ?? $awardConfig['-1'];
@@ -147,14 +150,14 @@ class RealUserAwardMagicStoneService
 
     /**
      * 真人 - 发放用户奖励(魔法石)
-     * @param $sharePosterIds
+     * @param array $sharePosterIds
      * @return bool
      * @throws RunTimeException
      */
-    public static function sendUserMagicStoneAward($sharePosterIds)
+    public static function sendUserMagicStoneAward(array $sharePosterIds)
     {
         // 获取海报对应的学生id
-        $sharePosterList = RealSharePosterModel::getRecords(['id' => $sharePosterIds], ['student_id', 'id']);
+        $sharePosterList = RealSharePosterModel::getRecords(['id' => $sharePosterIds]);
         if (empty($sharePosterList)) {
             throw new RunTimeException(['poster_not_found'], [$sharePosterIds]);
         }
@@ -167,14 +170,15 @@ class RealUserAwardMagicStoneService
         $sharePosterIdArr = array_column($sharePosterList, null, 'id');
         // 发放奖励
         foreach ($sharePosterIds as $id) {
-            $_studentId = $sharePosterIdArr[$id] ?? 0;
-            $uuid       = $studentUuidArr[$_studentId]['uuid'] ?? '';
-            if (empty($_studentId) || empty($uuid)) {
+            $_sharePoserInfo = $sharePosterIdArr[$id] ?? [];
+            $_studentId      = $_sharePoserInfo['student_id'] ?? 0;
+            $uuid            = $studentUuidArr[$_studentId]['uuid'] ?? '';
+            if (empty($_sharePoserInfo) || empty($_studentId) || empty($uuid)) {
                 // 如果student_id 或者 uuid 为空，则不发放积分 ，报警sentry
-                Util::errorCapture("sendUserMagicStoneAward_error", [$sharePosterIds, $_studentId, $uuid]);
+                Util::errorCapture("sendUserMagicStoneAward_error", [$sharePosterIds, $_sharePoserInfo, $_studentId, $uuid]);
                 continue;
             }
-            self::createStudentAward($id, $uuid);
+            self::createStudentAward($id, $uuid, $sharePosterIdArr[$id], $_sharePoserInfo);
         }
         return true;
     }

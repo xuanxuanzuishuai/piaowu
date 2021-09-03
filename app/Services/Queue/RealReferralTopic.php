@@ -7,6 +7,7 @@ class RealReferralTopic extends BaseTopic
     const TOPIC_NAME = "real_referral";
     
     const REAL_SEND_POSTER_AWARD = 'real_send_poster_award'; // 截图审核通过发奖
+    const REAL_SHARE_POSTER_MESSAGE = 'real_share_poster_message';   // 推送分享海报审核消息
     
     /**
      * @param null $publishTime

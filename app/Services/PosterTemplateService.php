@@ -155,7 +155,7 @@ class PosterTemplateService
         $where = [
             "status" => TemplatePosterWordModel::NORMAL_STATUS
         ];
-        if (empty($params['app_id'])) {
+        if (!empty($params['app_id'])) {
             $where['app_id'] = $params['app_id'];
         }
         $startCount = ($params['page'] - 1) * $params['count'];

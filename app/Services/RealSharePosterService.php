@@ -15,7 +15,9 @@ use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\EmployeeModel;
+use App\Models\RealSharePosterAwardModel;
 use App\Models\RealSharePosterModel;
+use App\Models\RealWeekActivityModel;
 use App\Services\Queue\QueueService;
 
 class RealSharePosterService
@@ -70,6 +72,57 @@ class RealSharePosterService
             }
         }
         return [$posters, $totalCount];
+    }
+
+    /**
+     * 上传截图审核历史记录
+     * @param $params
+     * @param $page
+     * @param $count
+     * @return array
+     */
+    public static function sharePosterHistory($params, $page, $count)
+    {
+        $returnData = ['total_count' => 0, 'list' => []];
+        // 获取列表
+        $sharePosterData = RealSharePosterModel::getSharePosterHistory($params, $page, $count);
+        // 格式化信息
+        if (empty($sharePosterData['list'])) {
+            return $returnData;
+        }
+        $activityIds = [];
+        $sharePosterIds = [];
+        foreach ($sharePosterData['list'] as $_item) {
+            $activityIds[] = $_item['activity_id'];
+            $sharePosterIds[] = $_item['id'];
+        }
+        unset($_item);
+        // 获取活动名称列表
+        $activityList = RealWeekActivityModel::getRecords(['activity_id' => $activityIds]);
+        $activityList = array_column($activityList, null, 'activity_id');
+        // 获取奖励信息
+        $awardList = RealSharePosterAwardModel::getRecords(['share_poster_id' => $sharePosterIds]);
+        $awardList = array_column($awardList, null, 'share_poster_id');
+        // 组合数据
+        foreach ($sharePosterData['list'] as &$_item) {
+            $_awardInfo = $awardList[$_item['id']] ?? [];
+            $_activityInfo = $activityList[$_item['activity_id']] ?? [];
+
+            $_item['award_type'] = $_awardInfo['award_type'] ?? 0;
+            $_item['award_num'] = $_awardInfo['award_num'] ?? 0;
+            $_item['activity_start_time'] = '';
+            $_item['activity_end_time'] = '';
+            $_item['activity_name'] = '';
+
+            if (!empty($_activityInfo)) {
+                $_item['activity_start_time'] = date("m月d日", $_activityInfo['start_time']);
+                $_item['activity_end_time'] = date("m月d日", $_activityInfo['end_time']);
+                $_item['activity_name'] = $_activityInfo['name'];
+            }
+        }
+        unset($_item);
+
+        return $sharePosterData;
     }
 
     /**
@@ -177,5 +230,66 @@ class RealSharePosterService
         }
         
         return $update > 0;
+    }
+
+    /**
+     * 真人 - 截图审核详情
+     * @param $id
+     * @param array $userInfo
+     * @return array|mixed
+     * @throws RunTimeException
+     */
+    public static function realSharePosterDetail($id, $userInfo = [])
+    {
+        $returnData = [];
+        if (empty($id)) {
+            return $returnData;
+        }
+        $sharePosterInfo = RealSharePosterModel::getRecord(['id' => $id]);
+        if (empty($sharePosterInfo)) {
+            return $returnData;
+        }
+        $sharePosterInfo['can_upload'] = Constants::STATUS_TRUE;
+        // TODO qingfeng.lian 利鹏提供方法  /real_student_wx/activity/can_participate_week
+        // 是否可重新上传
+        $activities = [];
+        $allIds = array_column($activities, 'activity_id');
+        if (!in_array($sharePosterInfo['activity_id'], $allIds)) {
+            $sharePosterInfo['can_upload'] = Constants::STATUS_FALSE;
+        }
+        if ($sharePosterInfo['verify_status'] == RealSharePosterModel::VERIFY_STATUS_QUALIFIED) {
+            $sharePosterInfo['can_upload'] = Constants::STATUS_FALSE;
+        }
+
+        $statusDict = DictService::getTypeMap(Constants::DICT_TYPE_SHARE_POSTER_CHECK_STATUS);
+        $reasonDict = DictService::getTypeMap(Constants::DICT_TYPE_SHARE_POSTER_CHECK_REASON);
+
+        $returnData['can_upload'] = Constants::STATUS_TRUE;
+        $returnData['verify_status'] = $sharePosterInfo['verify_status'];
+        $returnData['status_name'] = $statusDict[$sharePosterInfo['verify_status']] ?? $sharePosterInfo['verify_status'];
+        $returnData['image_url'] = AliOSS::replaceCdnDomainForDss($sharePosterInfo['image_path']);
+        $returnData['award_amount'] = 0;
+        $returnData['award_type'] = 0;
+        $returnData['reason_str'] = '';
+
+
+        // 根据状态判断展示逻辑
+        switch ($sharePosterInfo['verify_status']) {
+            case RealSharePosterModel::VERIFY_STATUS_WAIT: // 审核中
+                break;
+            case RealSharePosterModel::VERIFY_STATUS_QUALIFIED: // 审核通过
+                // 获取奖励
+                $awardInfo = RealSharePosterAwardModel::getRecord(['share_poster_id' => $id]);
+                $returnData['award_amount'] = $awardInfo['award_num'] ?? 0;
+                $returnData['award_type'] = $awardInfo['award_type'] ?? 0;
+                break;
+            case RealSharePosterModel::VERIFY_STATUS_UNQUALIFIED: // 未通过
+                $returnData['reason_str'] = self::reasonToStr(explode(',', $sharePosterInfo['reason']), $reasonDict);
+                break;
+            default:
+                return $returnData;
+        }
+
+        return $returnData;
     }
 }

@@ -9,6 +9,7 @@
 namespace App\Models;
 
 use App\Libs\Constants;
+use App\Libs\MysqlDB;
 use App\Libs\Util;
 use App\Models\Erp\ErpStudentModel;
 use App\Models\Erp\ErpUserWeiXinModel;
@@ -197,5 +198,33 @@ class RealSharePosterModel extends Model
         $posters = $db->queryAll($sql, $map);
 
         return [$posters, $totalCount];
+    }
+
+    /**
+     * 获取上传截图历史记录
+     * @param $data
+     * @param $page
+     * @param $count
+     * @return array
+     */
+    public static function getSharePosterHistory($data, $page, $count)
+    {
+        $returnData = ['total_count' => 0, 'list' => []];
+        $where = [
+        ];
+        if (!empty($data['student_id'])) {
+            $where['student_id'] = $data['student_id'];
+        }
+
+        $returnData['total_count'] = self::getCount($where);
+        if (empty($returnData['total_count'])) {
+            return $returnData;
+        }
+
+        // 读取具体信息
+        $where['LIMIT'] = [($page-1)*$count, $count];
+        $where['ORDER'] = ['id' => 'DESC'];
+        $returnData['list'] = self::getRecords($where);
+        return $returnData;
     }
 }

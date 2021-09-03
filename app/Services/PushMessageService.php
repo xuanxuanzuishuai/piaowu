@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Libs\Constants;
 use App\Libs\DictConstants;
+use App\Libs\Erp;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
@@ -14,9 +15,13 @@ use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\Erp\ErpEventModel;
 use App\Models\Erp\ErpEventTaskModel;
+use App\Models\Erp\ErpStudentModel;
 use App\Models\Erp\ErpUserEventTaskAwardGoldLeafModel;
 use App\Models\Erp\ErpUserEventTaskAwardModel;
+use App\Models\Erp\ErpUserWeiXinModel;
 use App\Models\OperationActivityModel;
+use App\Models\RealSharePosterModel;
+use App\Models\RealUserAwardMagicStoneModel;
 use App\Models\SharePosterModel;
 use App\Models\WeChatConfigModel;
 use App\Models\WeekWhiteListModel;
@@ -317,4 +322,50 @@ class PushMessageService
         self::notifyUserCustomizeMessage($configId, $info, $userInfo['open_id'], $appId);
     }
 
+    /**
+     * 真人 - 消息推送
+     * @param array $awardDetailInfo  奖励信息
+     * @param array $ext 扩展信息
+     * @return bool
+     */
+    public static function realSendMessage(array $awardDetailInfo, array $ext = [])
+    {
+        // 只限真人
+        if ($awardDetailInfo['app_id'] != Constants::REAL_APP_ID) {
+            return false;
+        }
+
+        // 获取奖励id
+        $baseTemId = self::realGetWechatConfigId($awardDetailInfo);
+        if (empty($baseTemId)) {
+            SimpleLogger::info('not found tem id', ['award' => $awardDetailInfo]);
+            return false;
+        }
+
+        // 获取用户绑定的微信信息
+        $userBindWxInfo = ErpUserWeiXinModel::getStudentWxInfo($awardDetailInfo['student_id']);
+        if (empty($userBindWxInfo)) {
+            SimpleLogger::info('not found user weixin info', [$awardDetailInfo]);
+            return false;
+        }
+        // 发送微信消息 - 关键字替换
+        self::notifyUserCustomizeMessage($baseTemId, $ext, $userBindWxInfo['open_id'], $awardDetailInfo['app_id']);
+        // 返回结果
+        return true;
+    }
+
+    /**
+     * 真人 - 获取奖励id
+     * @param $awardInfo
+     * @return int
+     */
+    public static function realGetWechatConfigId($awardInfo)
+    {
+        //当前奖励要发放的数据库的消息模板
+        $baseArr = [
+            // 上传截图
+            RealSharePosterModel::TYPE_CHECKIN_UPLOAD => 259
+        ];
+        return $baseArr[$awardInfo['type']] ?? 0;
+    }
 }

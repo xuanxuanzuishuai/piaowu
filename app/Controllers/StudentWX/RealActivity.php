@@ -9,15 +9,20 @@
 namespace App\Controllers\StudentWX;
 
 use App\Controllers\ControllerBase;
+use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\Util;
 use App\Libs\Valid;
+use App\Models\Erp\ErpStudentModel;
+use App\Models\OperationActivityModel;
+use App\Models\RealSharePosterModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\SharePosterModel;
 use App\Services\ActivityService;
 use App\Services\PosterService;
 use App\Services\RealActivityService;
+use App\Services\RealSharePosterService;
 use App\Services\SharePosterService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -121,50 +126,56 @@ class RealActivity extends ControllerBase
     }
 
     /**
-     * 文案列表
+     * 真人 - 周周领奖分享海报文案列表
      * @param Request $request
      * @param Response $response
      * @return Response
      */
-    public function wordList(Request $request, Response $response)
+    public function realSharePosterWordList(Request $request, Response $response)
     {
-        $params = $request->getParams();
-        $data = SharePosterService::getShareWordList($params);
+        try {
+            $params = $request->getParams();
+            $params['app_id'] = Constants::REAL_APP_ID;
+            $data = SharePosterService::sharePosterWordList($params);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
         return HttpHelper::buildResponse($response, $data);
     }
 
     /**
-     * 截图上传历史记录
+     * 真人 - 截图上传历史记录
      * @param Request $request
      * @param Response $response
      * @return Response
      */
-    public function shareList(Request $request, Response $response)
+    public function sharePosterHistory(Request $request, Response $response)
     {
         try {
             $params = $request->getParams();
+            // TODO qingfeng.lian 需要确认通过客服消息点击进入时这个user_info能不能获取到
             $userInfo = $this->ci['user_info'];
-            $student = DssStudentModel::getById($userInfo['user_id']);
+            $student = ErpStudentModel::getById($userInfo['user_id']);
             if (empty($student)) {
                 throw new RunTimeException(['record_not_found']);
             }
-            $params['type'] = SharePosterModel::TYPE_WEEK_UPLOAD;
-            $params['user_id'] = $student['id'];
-            list($params['page'], $params['count']) = Util::formatPageCount($params);
-            list($posters, $total) = SharePosterService::sharePosterList($params);
+            $params['type'] = RealSharePosterModel::TYPE_WEEK_UPLOAD;
+            $params['student_id'] = $student['id'];
+            list($page, $count) = Util::formatPageCount($params);
+            $res = RealSharePosterService::sharePosterHistory($params, $page, $count);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
-        return HttpHelper::buildResponse($response, ['list' => $posters, 'total' => $total]);
+        return HttpHelper::buildResponse($response, $res);
     }
 
     /**
-     * 截图审核详情
+     * 真人 - 截图审核详情
      * @param Request $request
      * @param Response $response
      * @return Response
      */
-    public function shareDetail(Request $request, Response $response)
+    public function sharePosterDetail(Request $request, Response $response)
     {
         try {
             $rules = [
@@ -180,8 +191,9 @@ class RealActivity extends ControllerBase
             if ($result['code'] != Valid::CODE_SUCCESS) {
                 return $response->withJson($result, StatusCode::HTTP_OK);
             }
-            $userInfo = $this->ci['user_info'];
-            $poster = SharePosterService::sharePosterDetail($params['id'], $userInfo);
+            // $userInfo = $this->ci['user_info'];
+            $userInfo = [];
+            $poster = RealSharePosterService::realSharePosterDetail($params['id'], $userInfo);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }

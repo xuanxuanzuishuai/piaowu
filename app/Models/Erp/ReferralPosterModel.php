@@ -35,16 +35,14 @@ class ReferralPosterModel extends ErpModel
      * 获取erp中学生审核通过的上传截图奖励
      * @param $studentId
      * @param $createTime
-     * @param $posterId
      * @return number
      */
-    public static function getStudentSharePosterSuccessNum($studentId, $createTime, $posterId)
+    public static function getStudentSharePosterSuccessNum($studentId, $createTime)
     {
         $sqlWhere = [
             'student_id' => $studentId,
             'status'     => self::CHECK_STATUS_QUALIFIED,
             'create_time[>=]' => $createTime,
-            'id[!]' => $posterId
         ];
         $db = self::dbRO();
         return $db->count(self::$table, $sqlWhere);

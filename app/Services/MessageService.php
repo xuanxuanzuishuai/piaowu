@@ -29,6 +29,10 @@ use App\Models\MessageManualPushLogModel;
 use App\Models\MessageRecordLogModel;
 use App\Models\MessageRecordModel;
 use App\Models\PosterModel;
+use App\Models\RealSharePosterAwardModel;
+use App\Models\RealSharePosterModel;
+use App\Models\RealUserAwardMagicStoneModel;
+use App\Models\RealWeekActivityModel;
 use App\Models\SharePosterModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
@@ -1283,6 +1287,54 @@ class MessageService
                        '<a href="'.$url.'">【点此消息】查看更多任务记录，或进入“当前活动”重新上传</a>';
             $wechat->sendText($openId, $content);
         }
+        return true;
+    }
+
+    /**
+     * 真人 - 发送分享截图审核结果消息
+     * @param $openId
+     * @param array $params
+     * @return bool
+     * @throws RunTimeException
+     */
+    public static function sendRealSharePosterMessage($params)
+    {
+        $sharePosterId = $params['share_poster_id'] ?? 0;
+        if (empty($sharePosterId)) {
+            SimpleLogger::info("sendRealSharePosterMessage share_poster_id empty", [$params]);
+            return false;
+        }
+        // 获取海报对应的奖励id
+        $sharePosterAwardInfo = RealSharePosterAwardModel::getRecord(['share_poster_id' => $sharePosterId]);
+        if (empty($sharePosterAwardInfo)) {
+            SimpleLogger::info("sendRealSharePosterMessage share_poster_info empty", [$params]);
+            return false;
+        }
+        // 获取奖励详细信息
+        $awardInfo = RealUserAwardMagicStoneModel::getRecord(['id' => $sharePosterAwardInfo['award_id']]);
+        if (empty($awardInfo)) {
+            SimpleLogger::info("sendRealSharePosterMessage award_info empty", [$params, $sharePosterAwardInfo]);
+            return false;
+        }
+
+        // 指定必要字段
+        $awardInfo['type'] = RealSharePosterModel::TYPE_CHECKIN_UPLOAD;
+        $awardInfo['app_id'] = Constants::REAL_APP_ID;
+
+        // 获取活动信息
+        $activityInfo = RealWeekActivityModel::getRecord(['activity_id' => $awardInfo['activity_id']]);
+        if (empty($activityInfo)) {
+            SimpleLogger::info("sendRealSharePosterMessage activity not found", [$params, $awardInfo, $sharePosterAwardInfo]);
+            return false;
+        }
+
+        // TODO qingfeng.lian 参与记录的连接
+        $ext = [
+            'activity_name' => $activityInfo['name'],
+            'url' => '',
+            'award_amount' => $awardInfo['award_amount']
+        ];
+        PushMessageService::realSendMessage($awardInfo, $ext);
         return true;
     }
     

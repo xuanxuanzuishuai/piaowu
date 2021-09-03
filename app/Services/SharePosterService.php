@@ -801,4 +801,25 @@ class SharePosterService
         return ['poster' => $poster, 'activity' => $activity, 'error' => $error];
     }
 
+    /**
+     * 获取当前上线状态的分享海报文案列表
+     * @param $params
+     * @return array
+     * @throws RunTimeException
+     */
+    public static function sharePosterWordList($params)
+    {
+        $where = ['status' => TemplatePosterWordModel::NORMAL_STATUS];
+        !empty($params['app_id']) && $where['app_id'] = $params['app_id'];
+
+        $list = TemplatePosterWordModel::getRecords($where, ['id', 'content']);
+        if (empty($list)) {
+            return [];
+        }
+        foreach ($list as &$item) {
+            $item = TemplatePosterWordModel::formatOne($item);
+        }
+        unset($item);
+        return $list;
+    }
 }

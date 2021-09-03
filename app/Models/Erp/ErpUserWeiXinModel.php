@@ -53,4 +53,21 @@ class ErpUserWeiXinModel extends ErpModel
         $user['open_id'] = $openId;
         return $user;
     }
+
+    /**
+     * 真人 - 根据学生id获取用户当前绑定的微信
+     * @param $userId
+     * @return array|mixed
+     */
+    public static function getStudentWxInfo($userId)
+    {
+        $userWxInfo = self::getRecord([
+            'user_id' => $userId,
+            'app_id' => Constants::REAL_APP_ID,
+            'user_type' => self::PANDA_USER_APP,
+            'status' => self::STATUS_NORMAL,
+            'busi_type' => self::BUSI_TYPE_STUDENT_SERVER,
+        ]);
+        return is_array($userWxInfo) ? $userWxInfo : [];
+    }
 }
