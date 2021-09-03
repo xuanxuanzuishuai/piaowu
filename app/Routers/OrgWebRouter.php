@@ -341,8 +341,9 @@ class OrgWebRouter extends RouterBase
         '/op_web/real_month_activity/detail' => ['method' => ['get'], 'call' => RealMonthActivity::class . ':detail'],
         '/op_web/real_month_activity/enable_status' => ['method' => ['post'], 'call' => RealMonthActivity::class . ':editEnableStatus'],
         //真人转介绍管理 - 分享截图审核
-        '/org_web/share_poster/list' => ['method' => ['get'], 'call' => RealSharePoster::class . ':list'],
-        '/org_web/share_poster/approved' => ['method' => ['post'], 'call' => RealSharePoster::class . ':approved'],
-        '/org_web/share_poster/refused' => ['method' => ['post'], 'call' => RealSharePoster::class . ':refused'],
+        '/org_web/real_week_activity/activity_list' => ['method' => ['get'], 'call' => RealWeekActivity::class . ':activityList'],
+        '/org_web/real_share_poster/list' => ['method' => ['get'], 'call' => RealSharePoster::class . ':list'],
+        '/org_web/real_share_poster/approved' => ['method' => ['post'], 'call' => RealSharePoster::class . ':approved'],
+        '/org_web/real_share_poster/refused' => ['method' => ['post'], 'call' => RealSharePoster::class . ':refused'],
     ];
 }

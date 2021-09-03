@@ -12,13 +12,10 @@ use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\AliOSS;
-use App\Libs\Operation;
 use App\Libs\RedisDB;
 use App\Libs\Util;
 use App\Models\EmployeeModel;
-use App\Models\RealSharePosterAwardModel;
 use App\Models\RealSharePosterModel;
-use App\Libs\Erp;
 use App\Services\Queue\QueueService;
 
 class RealSharePosterService
@@ -78,11 +75,11 @@ class RealSharePosterService
     /**
      * 审核通过、发放奖励
      * @param $id
-     * @param $employeeId
+     * @param array $params
      * @return bool
      * @throws RunTimeException
      */
-    public static function approval($id, $employeeId)
+    public static function approvalPoster($id, $params = [])
     {
         $type = RealSharePosterModel::TYPE_WEEK_UPLOAD;
         $posters = RealSharePosterModel::getPostersByIds($id, $type);
@@ -96,8 +93,8 @@ class RealSharePosterService
         $updateData = [
             'verify_status' => RealSharePosterModel::VERIFY_STATUS_QUALIFIED,
             'verify_time'   => $now,
-            'verify_user'   => $employeeId,
-            'remark'        => '',
+            'verify_user'   => $params['employee_id'] ?? 0,
+            'remark'        => $params['remark'] ?? '',
             'update_time'   => $now,
         ];
         $redis = RedisDB::getConn();
@@ -172,13 +169,11 @@ class RealSharePosterService
     /**
      * 审核不通过
      * @param $posterId
-     * @param $employeeId
-     * @param $reason
-     * @param $remark
-     * @return int|null
+     * @param array $params
+     * @return bool
      * @throws RunTimeException
      */
-    public static function refused($posterId, $employeeId, $reason, $remark)
+    public static function refusedPoster($posterId, $params = [])
     {
         if (empty($reason) && empty($remark)) {
             throw new RunTimeException(['please_select_reason']);
@@ -196,10 +191,10 @@ class RealSharePosterService
         $update = RealSharePosterModel::updateRecord($poster['id'], [
             'verify_status' => $status,
             'verify_time'   => $time,
-            'verify_user'   => $employeeId,
-            'verify_reason' => implode(',', $reason),
+            'verify_user'   => $params['employee_id'],
+            'verify_reason' => implode(',', $params['reason']),
             'update_time'   => $time,
-            'remark'        => $remark ?? '',
+            'remark'        => $params['remark'] ?? '',
         ]);
         // 审核不通过, 发送模版消息
         if ($update > 0) {

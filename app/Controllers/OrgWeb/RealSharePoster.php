@@ -12,7 +12,7 @@ use App\Controllers\ControllerBase;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\Valid;
-use App\Models\SharePosterModel;
+use App\Models\RealSharePosterModel;
 use App\Services\RealSharePosterService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -33,7 +33,7 @@ class RealSharePoster extends ControllerBase
             if (empty($params['activity_id'])) {
                 throw new RunTimeException(['activity_id_cant_not_null']);
             }
-            $params['type'] = SharePosterModel::TYPE_UPLOAD_IMG;
+            $params['type'] = RealSharePosterModel::TYPE_WEEK_UPLOAD;
             list($posters, $totalCount) = RealSharePosterService::sharePosterList($params);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
@@ -70,7 +70,8 @@ class RealSharePoster extends ControllerBase
         $employeeId = self::getEmployeeId();
         
         try {
-            $result = RealSharePosterService::approval($params['poster_ids'], $employeeId);
+            $params['employee_id']  = $employeeId;
+            $result = RealSharePosterService::approvalPoster($params['poster_ids'], $params);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
@@ -103,7 +104,8 @@ class RealSharePoster extends ControllerBase
         $employeeId = self::getEmployeeId();
         
         try {
-            $result = RealSharePosterService::refused($params['poster_id'], $employeeId, $params['reason'], $params['remark']);
+            $params['employee_id']  = $employeeId;
+            $result = RealSharePosterService::refusedPoster($params['poster_id'], $params);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }

@@ -3,7 +3,6 @@
 
 namespace App\Services;
 
-
 use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
@@ -15,6 +14,7 @@ use App\Libs\Util;
 use App\Models\EmployeeModel;
 use App\Models\Erp\ReferralPosterModel;
 use App\Models\OperationActivityModel;
+use App\Models\RealSharePosterModel;
 use App\Models\SharePosterModel;
 use App\Models\WeekActivityModel;
 
@@ -95,10 +95,10 @@ class AutoCheckPicture
         }
         switch ($data['app_id']) {
             case Constants::SMART_APP_ID: //智能陪练 类型为上传截图领奖且未审核的
-                $result = SharePosterModel::getRecord(['id' => $data['id'],'type' => SharePosterModel::TYPE_WEEK_UPLOAD,'verify_status' => SharePosterModel::VERIFY_STATUS_WAIT],['student_id','activity_id','image_path']);
+                $result = SharePosterModel::getRecord(['id' => $data['id'],'type' => SharePosterModel::TYPE_WEEK_UPLOAD, 'verify_status' => SharePosterModel::VERIFY_STATUS_WAIT], ['student_id', 'activity_id', 'image_path']);
                 break;
             case Constants::REAL_APP_ID: //真人陪练
-                $result = ReferralPosterModel::getRecord(['id' => $data['id'], 'status' => ReferralPosterModel::CHECK_STATUS_WAIT],['student_id','issue_number','img_url']);
+                $result = ReferralPosterModel::getRecord(['id' => $data['id'], 'status' => ReferralPosterModel::CHECK_STATUS_WAIT], ['student_id', 'issue_number', 'img_url']);
                 break;
             default:
                 break;
@@ -213,13 +213,54 @@ class AutoCheckPicture
             SharePosterService::refusedPoster($poster_id, $params);
         }
     }
-
+    
     /**
-     * 真人陪练-审核后续处理
+     * 真人陪练-审核后续处理-OP系统
      * @param $data
      * @param $checkStatus
      */
-    public static function realCheckSharePosters($data, $checkStatus)
+    public static function realCheckSharePosters($data, $status)
+    {
+        if (!$status) {
+            return;
+        }
+        $poster_id  = $data['id'];
+        $params['employee_id']  = EmployeeModel::SYSTEM_EMPLOYEE_ID;
+        if ($status > 0) {
+            //审核通过
+            RealSharePosterService::approvalPoster([$poster_id], $params);
+        } else {
+            switch ($status) {
+                case RealSharePosterModel::SYSTEM_REFUSE_CODE_NEW: //未使用最新海报
+                    $params['reason'] = [RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_NEW];
+                    break;
+                case RealSharePosterModel::SYSTEM_REFUSE_CODE_TIME: //朋友圈保留时长不足12小时，请重新上传
+                    $params['reason'] = [RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_TIME];
+                    break;
+                case RealSharePosterModel::SYSTEM_REFUSE_CODE_GROUP: //分享分组可见
+                    $params['reason'] = [RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_GROUP];
+                    break;
+                case RealSharePosterModel::SYSTEM_REFUSE_CODE_FRIEND: //请发布到朋友圈并截取朋友圈照片
+                    $params['reason'] = [RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_FRIEND];
+                    break;
+                case RealSharePosterModel::SYSTEM_REFUSE_CODE_UPLOAD: //上传截图出错
+                    $params['reason'] = [RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_UPLOAD];
+                    break;
+                default:
+                    break;
+            }
+            //审核拒绝
+            RealSharePosterService::refusedPoster($poster_id, $params);
+        }
+    }
+    
+    /**
+     * 真人陪练-审核后续处理-废弃
+     * @deprecated
+     * @param $data
+     * @param $checkStatus
+     */
+    public static function realCheckSharePostersBak($data, $checkStatus)
     {
         if (!$checkStatus) {
             return;

@@ -61,7 +61,7 @@ class RealSharePosterModel extends Model
      * @param int $type
      * @return array|null
      */
-    public static function getPostersByIds($posterIds, $type = self::TYPE_CHECKIN_UPLOAD)
+    public static function getPostersByIds($posterIds, $type = self::TYPE_WEEK_UPLOAD)
     {
         $sp = self::getTableNameWithDb();
         $s  = ErpStudentModel::getTableNameWithDb();

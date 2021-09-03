@@ -14,7 +14,7 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\Util;
 use App\Libs\Valid;
-use App\Services\MonthActivityService;
+use App\Services\RealMonthActivityService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -111,9 +111,9 @@ class RealMonthActivity extends ControllerBase
         try {
             $employeeId = $this->getEmployeeId();
             if (!empty($params['activity_id'])) {
-                MonthActivityService::edit($params, $employeeId);
+                RealMonthActivityService::edit($params, $employeeId);
             } else {
-                MonthActivityService::add($params, $employeeId);
+                RealMonthActivityService::add($params, $employeeId);
             }
         } catch (RuntimeException $e) {
             return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData(), $e->getData());
@@ -148,7 +148,7 @@ class RealMonthActivity extends ControllerBase
         }
         try {
             list($page, $limit) = Util::formatPageCount($params);
-            $data = MonthActivityService::searchList($params, $page, $limit);
+            $data = RealMonthActivityService::searchList($params, $page, $limit);
         } catch (RunTimeException $e) {
             return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData(), $e->getData());
         }
@@ -181,7 +181,7 @@ class RealMonthActivity extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         try {
-            $data = MonthActivityService::getDetailById($params['activity_id']);
+            $data = RealMonthActivityService::getDetailById($params['activity_id']);
         } catch (RunTimeException $e) {
             return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData(), $e->getData());
         }
@@ -225,7 +225,7 @@ class RealMonthActivity extends ControllerBase
         }
         try {
             $employeeId = $this->getEmployeeId();
-            MonthActivityService::editEnableStatus($params['activity_id'], $params['enable_status'], $employeeId);
+            RealMonthActivityService::editEnableStatus($params['activity_id'], $params['enable_status'], $employeeId);
         } catch (RunTimeException $e) {
             return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData(), $e->getData());
         }

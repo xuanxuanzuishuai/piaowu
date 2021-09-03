@@ -841,11 +841,11 @@ class Consumer extends ControllerBase
                         $status = AutoCheckPicture::checkByOcr($postInfo);
                         if ($status !== 2) { //审核不通过 则打到人工审核
                             break;
-//                            $record = AutoCheckPicture::getSharePostersHistoryRecord($params['msg_body']);
-//                            //审核不通过 且之前同期有记录的 则打到人工
-//                            if (!empty($record['historyRecord'])) {
-//                                break;
-//                            }
+                            //$record = AutoCheckPicture::getSharePostersHistoryRecord($params['msg_body']);
+                            ////审核不通过 且之前同期有记录的 则打到人工
+                            //if (!empty($record['historyRecord'])) {
+                            //    break;
+                            //}
                         }
                     }
                     //审核后续处理
@@ -1109,7 +1109,7 @@ class Consumer extends ControllerBase
         
         switch ($params['event_type']) {
             case RealReferralTopic::REAL_SEND_POSTER_AWARD:
-                RealSharePosterService::addUserAward($data);
+                $res = RealSharePosterService::addUserAward($data);
                 break;
             default:
                 SimpleLogger::error('unknown event type', ['params' => $params]);

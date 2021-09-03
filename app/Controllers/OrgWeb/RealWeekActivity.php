@@ -212,7 +212,24 @@ class RealWeekActivity extends ControllerBase
         }
         return HttpHelper::buildResponse($response, $data);
     }
-
+    
+    /**
+     * 截图审核-活动列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function activityList(Request $request, Response $response)
+    {
+        try {
+            $params = $request->getParams();
+            list($data, $total) = RealWeekActivityService::getSelectList($params);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, ['activities' => $data, 'total_count' => $total]);
+    }
+    
     /**
      * 获取event事件列表
      * @param Request $request

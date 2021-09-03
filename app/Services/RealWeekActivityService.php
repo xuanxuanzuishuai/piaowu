@@ -40,7 +40,7 @@ class RealWeekActivityService
         $time = time();
         $activityData = [
             'name' => $data['name'] ?? '',
-            'app_id' => Constants::SMART_APP_ID,
+            'app_id' => Constants::REAL_APP_ID,
             'create_time' => $time,
         ];
         $weekActivityData = [
