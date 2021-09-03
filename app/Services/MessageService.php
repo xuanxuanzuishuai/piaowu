@@ -758,11 +758,14 @@ class MessageService
                 case 'CLICK':
                     // 点击自定义菜单事件
                     self::menuClickEventHandler($msgBody);
+                    //自定义点击事件不再触发其他推送
+                    return;
                     break;
                 case 'unsubscribe':
                     //取消关注公众号
                     self::clearMessageRuleLimit($openId);
                     WechatService::clearCurrentTag($openId);
+                    return;
                     break;
                 default:
                     break;
