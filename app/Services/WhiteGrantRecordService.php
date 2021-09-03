@@ -30,7 +30,7 @@ use App\Models\WhiteGrantRecordModel;
 class WhiteGrantRecordService
 {
 
-    const LIMIT_MAX_SEND_MONEY = 9000;//红包最大发放金额(单位:分)
+    const LIMIT_MAX_SEND_MONEY = 10000;//红包最大发放金额(单位:分)
 
     public static $WeChatMiniPro;
     /**
@@ -495,7 +495,7 @@ class WhiteGrantRecordService
             self::$WeChatMiniPro = WeChatMiniPro::factory(Constants::SMART_APP_ID, DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER);
         }
         $userWxInfo = self::$WeChatMiniPro->getUserInfo($openId);
-        if($userWxInfo['subscribe'] == 1){
+        if(isset($userWxInfo['subscribe']) && $userWxInfo['subscribe'] == 1){
             return [Util::textEncode($userWxInfo['nickname']), $userWxInfo['headimgurl']];
         }
         return ['', ''];
