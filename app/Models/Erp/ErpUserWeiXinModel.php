@@ -24,24 +24,26 @@ class ErpUserWeiXinModel extends ErpModel
      * @return mixed
      * @throws \App\Libs\Exceptions\RunTimeException
      */
-    public static function getUserInfoByOpenId(string $openId)
+    public static function getUserInfoByOpenId(string $openId, $businessType = null)
     {
         $db = self::dbRO();
-
+        $businessType = $businessType ?? self::BUSI_TYPE_STUDENT_SERVICE;
         $user = $db->get(
             self::$table,
             [
                 "[><]" . ErpStudentAppModel::$table => ['user_id' => 'student_id'],
+                "[><]" . ErpStudentModel::$table => ['user_id' => 'id'],
             ],
             [
                 self::$table . '.user_id',
                 ErpStudentAppModel::$table . '.status',
                 ErpStudentAppModel::$table . '.create_time',
+                ErpStudentModel::$table . '.mobile',
             ],
             [
                 "AND" => [
                     self::$table . '.user_type'            => self::USER_TYPE_STUDENT,
-                    self::$table . '.busi_type'            => self::BUSI_TYPE_STUDENT_SERVICE,
+                    self::$table . '.busi_type'            => $businessType,
                     self::$table . '.open_id'              => $openId,
                     self::$table . '.app_id'               => self::PANDA_USER_APP,
                     ErpStudentAppModel::$table . '.app_id' => self::PANDA_USER_APP

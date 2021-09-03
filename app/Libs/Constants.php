@@ -16,6 +16,8 @@ class Constants
     const SMART_WX_SERVICE = 1;
     //真人陪练服务号的busi_type
     const LIFE_WX_SERVICE = 1;
+    //真人转介绍小程序的busi_type
+    const REAL_MINI_BUSI_TYPE = 8;
 
     //用户类型定义
     const USER_TYPE_STUDENT = 1; //学生

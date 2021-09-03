@@ -35,6 +35,8 @@ class RouterFactory
     const CLIENT_CRM_API = 'crm';
     const CLIENT_REFERRAL_MINI_APP = 'referral_miniapp'; // 体验营小程序
     const CLIENT_AI_PLAY_MINI_APP = 'ai_play_miniapp'; // 上音社合作-小叶子AI智能陪练小程序
+    const CLIENT_REAL_REFERRAL_MINI_APP = 'real_referral_miniapp'; // 真人转介绍小程序
+
 
 
     /**
@@ -53,6 +55,7 @@ class RouterFactory
         self::CLIENT_CRM_API => CrmRouter::class, // CRM
         self::CLIENT_REFERRAL_MINI_APP => ReferralMinAppRouter::class, // 体验营小程序
         self::CLIENT_AI_PLAY_MINI_APP => AIPlayMiniAppRouter::class, // 上音社合作-小叶子AI智能陪练小程序
+        self::CLIENT_REAL_REFERRAL_MINI_APP => RealReferralMinAppRouter::class, // 真人转介绍小程序
     ];
 
     /**

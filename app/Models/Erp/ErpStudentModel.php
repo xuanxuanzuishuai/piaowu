@@ -1,6 +1,7 @@
 <?php
 namespace App\Models\Erp;
 
+use App\Libs\Constants;
 class ErpStudentModel extends ErpModel
 {
     public static $table = 'erp_student';
@@ -36,4 +37,34 @@ class ErpStudentModel extends ErpModel
         $studentList = ErpStudentModel::getRecords($studentWhere, $fields);
         return $studentList;
     }
+
+    /**
+     * 获取用户信息
+     * @param $studentId
+     * @return array|null
+     */
+    public static function getUserInfo($studentId)
+    {
+        $table              = self::$table;
+        $erpStudentAppModel = ErpStudentAppModel::$table;
+        $appId              = Constants::USER_TYPE_STUDENT;
+
+        $sql = "
+            SELECT
+                {$table} .id,
+                {$table} .name,
+                {$table} .uuid,
+                {$table} .mobile,
+                {$table} .thumb,
+                {$erpStudentAppModel} .first_pay_time,
+                {$erpStudentAppModel} .status
+            FROM {$table} 
+            INNER JOIN {$erpStudentAppModel}  ON {$table}.id = {$erpStudentAppModel}.student_id
+            WHERE
+                {$table}.id = {$studentId}
+                AND {$erpStudentAppModel}.app_id = {$appId}
+        ";
+        return self::dbRO()->queryAll($sql);
+    }
+
 }

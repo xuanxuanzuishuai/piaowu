@@ -98,6 +98,8 @@ class Erp
     const API_REDUCE_ACCOUNT = '/api/student_account/deduct';
     //查询账户余额
     const API_STUDENT_ACCOUNT_BALANXE = '/api/student_account/balance';
+    //真人转介绍学生注册
+    const REFEREE_STUDENT_REGISTER = '/op/user/register_bound';
 
     private $host;
 
@@ -930,6 +932,21 @@ class Erp
             return [];
         }
         return empty($data['data']) ? [] : $data['data'];
+    }
+
+    /**
+     * 真人转介绍学生注册
+     * @param $params
+     * @return array|bool
+     * @throws RunTimeException
+     */
+    public function refereeStudentRegister($params)
+    {
+        $response = HttpHelper::requestJson($this->host . self::REFEREE_STUDENT_REGISTER, $params, 'POST');
+        if ($response['code'] != Valid::CODE_SUCCESS) {
+            throw new RunTimeException(['user_register_fail']);
+        }
+        return $response['data'];
     }
 
 

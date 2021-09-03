@@ -313,14 +313,14 @@ class DictConstants {
     const WECHAT_APPID = [
         'type' => 'wechat_app_id',
         'keys' => [
-            '8_1', '8_8', '21_9','8_10', '8_12'
+            '8_1', '8_8', '21_9','8_10', '8_12', '1_8'
         ]
     ];
     //不同应用的微信app_secret
     const WECHAT_APP_SECRET = [
         'type' => 'wechat_app_secret',
         'keys' => [
-            '8_1', '8_8', '21_9','8_10', '8_12'
+            '8_1', '8_8', '21_9','8_10', '8_12', '1_8'
         ]
     ];
 
@@ -996,6 +996,15 @@ class DictConstants {
     const ACTIVITY_CENTER_SHOW_RULE = [
         'type' => 'activity_center_show_rule',
         'keys' => [1, 2, 3, 4, 5]
+    ];
+
+
+    //真人转介绍小程序配置
+    const REAL_REFERRAL_CONFIG = [
+        'type' => 'real_referral_config',
+        'keys' => [
+            'register_default_channel'
+        ]
     ];
 
 
