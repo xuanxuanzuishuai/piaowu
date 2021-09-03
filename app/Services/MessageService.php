@@ -496,7 +496,7 @@ class MessageService
                 DssUserWeiXinModel::USER_TYPE_STUDENT,
                 $channelId,
                 [
-                    'p' => PosterModel::getIdByPath($item['path'], ['name' => $posterName]),
+                    'poster_id' => PosterModel::getIdByPath($item['path'], ['name' => $posterName]),
                     'user_current_status' => $userStatus['student_status']
                 ]
             );
@@ -765,6 +765,10 @@ class MessageService
                     //取消关注公众号
                     self::clearMessageRuleLimit($openId);
                     WechatService::clearCurrentTag($openId);
+                    return;
+                    break;
+                case 'TEMPLATESENDJOBFINISH':
+                    //群发回调 不做处理
                     return;
                     break;
                 default:
