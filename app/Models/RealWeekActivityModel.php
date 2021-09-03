@@ -178,8 +178,34 @@ class RealWeekActivityModel extends Model
     private static function formatOne($item)
     {
         if (!empty($item['name'])) {
-            $item['name'] = $item['name'].'('.date('m月d日', $item['start_time']).'-'.date('m月d日', $item['end_time']).')';
+            $item['name'] = $item['name'] . '(' . date('m月d日', $item['start_time']) . '-' . date('m月d日', $item['end_time']) . ')';
         }
         return $item;
+    }
+
+    /**
+     * 获取时间可参与的周周有奖活动:数量和时间指定
+     * @param int $limit
+     * @param int $time
+     * @return array|mixed
+     */
+    public static function getStudentCanSignWeekActivity($limit, $time)
+    {
+        $activityData = self::getRecords(
+            [
+                'start_time[<]' => $time,
+                'end_time[>]' => $time,
+                'enable_status' => OperationActivityModel::ENABLE_STATUS_ON,
+                'ORDER' => ['id' => "DESC"],
+                'LIMIT' => $limit
+            ],
+            [
+                'id',
+                'activity_id',
+                'poster_order',
+                'end_time',
+                'name',
+            ]);
+        return empty($activityData) ? [] : $activityData;
     }
 }

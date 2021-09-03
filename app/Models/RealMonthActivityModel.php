@@ -115,4 +115,27 @@ class RealMonthActivityModel extends Model
 
         return self::getRecords($where);
     }
+
+    /**
+     * 获取当前时间可参与的一个月月有奖活动
+     * @param int $limit
+     * @return array|mixed
+     */
+    public static function getStudentCanSignMonthActivity($limit)
+    {
+        $time = time();
+        $activityData = self::getRecord(
+            [
+                'start_time[<]' => $time,
+                'end_time[>]' => $time,
+                'enable_status' => OperationActivityModel::ENABLE_STATUS_ON,
+                'ORDER' => ['id' => "DESC"],
+                'LIMIT' => $limit
+            ],
+            [
+                'id',
+                'activity_id',
+            ]);
+        return empty($activityData) ? [] : $activityData;
+    }
 }

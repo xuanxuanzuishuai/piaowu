@@ -11,14 +11,13 @@ namespace App\Controllers\StudentApp;
 use App\Controllers\ControllerBase;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
-use App\Libs\KeyErrorRC4Exception;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\Dss\DssStudentModel;
 use App\Models\SharePosterModel;
 use App\Services\ActivityService;
 use App\Services\PosterService;
-use App\Services\PosterTemplateService;
+use App\Services\RealActivityService;
 use App\Services\SharePosterService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -29,37 +28,37 @@ use Slim\Http\StatusCode;
  * Class StudentWXRouter
  * @package App\Routers
  */
-class RealPoster extends ControllerBase
+class RealActivity extends ControllerBase
 {
-
     /**
-     * 海报列表
+     * 获取周周领奖活动海报列表
      * @param Request $request
      * @param Response $response
      * @return Response
-     * @throws KeyErrorRC4Exception
      */
-    public function list(Request $request, Response $response)
+    public function getWeekActivity(/** @noinspection PhpUnusedParameterInspection */
+        Request $request, Response $response)
     {
-        $rules = [
-            [
-                'key' => 'type',
-                'type' => 'required',
-                'error_code' => 'type_is_required'
-            ]
-        ];
-
-        $params = $request->getParams();
-        $result = Valid::appValidate($params, $rules);
-        if ($result['code'] != Valid::CODE_SUCCESS) {
-            return $response->withJson($result, StatusCode::HTTP_OK);
-        }
-
         try {
-            $userInfo = $this->ci['user_info'];
-            $params['from_type'] = ActivityService::FROM_TYPE_WX;
-            $data = PosterTemplateService::getPosterList($userInfo['user_id'], $params['type'], $params['activity_id'] ?? 0, $params);
+            $data = RealActivityService::weekActivityData($this->ci['user_info']['user_id'], ActivityService::FROM_TYPE_REAL_STUDENT_APP);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
+        return HttpHelper::buildResponse($response, $data);
+    }
 
+
+    /**
+     * 获取月月有奖活动海报列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getMonthActivity(/** @noinspection PhpUnusedParameterInspection */
+        Request $request, Response $response)
+    {
+        try {
+            $data = RealActivityService::monthActivityData($this->ci['user_info']['user_id'], ActivityService::FROM_TYPE_REAL_STUDENT_APP);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
@@ -67,12 +66,25 @@ class RealPoster extends ControllerBase
     }
 
     /**
-     * 截图上传
+     * 获取可参与周周领奖活动列表
      * @param Request $request
      * @param Response $response
      * @return Response
      */
-    public function upload(Request $request, Response $response)
+    public function getCanParticipateWeekActivityList(/** @noinspection PhpUnusedParameterInspection */
+        Request $request, Response $response)
+    {
+        $data = RealActivityService::getCanParticipateWeekActivityIds(['id' => $this->ci['user_info']['user_id'], 'first_pay_time' => $this->ci['user_info']['first_pay_time'],], 2);
+        return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
+     * 周周有奖活动海报截图上传
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function weekActivityPosterScreenShotUpload(Request $request, Response $response)
     {
         $rules = [
             [
@@ -93,13 +105,19 @@ class RealPoster extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         try {
-            $userInfo = $this->ci['user_info'];
-            $params['student_id'] = $userInfo['user_id'];
-            $data = SharePosterService::uploadSharePoster($params);
+            //上传并发处理
+            $lockKey = 'real_week_lock_' . $this->ci['user_info']['user_id'] . '_' . $params['activity_id'];
+            $lock = Util::setLock($lockKey, 15);
+            if (!$lock) {
+                throw new RunTimeException(['']);
+            }
+            RealActivityService::weekActivityPosterScreenShotUpload($this->ci['user_info']['user_id'], $params['activity_id'], $params['image_path']);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        } finally {
+            Util::unLock($lockKey);
         }
-        return HttpHelper::buildResponse($response, $data);
+        return HttpHelper::buildResponse($response, []);
     }
 
     /**
@@ -110,12 +128,8 @@ class RealPoster extends ControllerBase
      */
     public function wordList(Request $request, Response $response)
     {
-        try {
-            $params = $request->getParams();
-            $data = SharePosterService::getShareWordList($params);
-        } catch (RunTimeException $e) {
-            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
-        }
+        $params = $request->getParams();
+        $data = SharePosterService::getShareWordList($params);
         return HttpHelper::buildResponse($response, $data);
     }
 

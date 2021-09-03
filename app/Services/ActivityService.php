@@ -414,6 +414,8 @@ class ActivityService
         }
         $userId = $params['user_info']['user_id'];
         $available = false;
+        //获取账户首次付费年卡时间
+        $lastPayInfo = DssGiftCodeModel::getUserFirstPayInfo($userId, DssCategoryV1Model::DURATION_TYPE_NORMAL, 'asc');
         foreach ($list as $key => &$activity) {
             $activity['is_show'] = Constants::STATUS_TRUE;
             $where = [
@@ -422,7 +424,6 @@ class ActivityService
                 'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED
             ];
             $shareRecord = SharePosterModel::getRecord($where);
-            $lastPayInfo = DssGiftCodeModel::getUserFirstPayInfo($userId, DssCategoryV1Model::DURATION_TYPE_NORMAL, 'asc');
             if (!empty($shareRecord) || $lastPayInfo['buy_time'] > $activity['end_time']) {
                 $activity['is_show'] = Constants::STATUS_FALSE;
             } else {

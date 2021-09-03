@@ -98,6 +98,6 @@ class ErpStudentModel extends ErpModel
                 self::$table . '.id' => $studentId,
                 ErpStudentAppModel::$table . '.app_id' => Constants::REAL_APP_ID,
             ]);
-        return $info;
+        return empty($info) ? [] : $info[0];
     }
 }

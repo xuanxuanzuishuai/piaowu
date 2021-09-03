@@ -9,11 +9,8 @@
 namespace App\Routers;
 
 
-use App\Controllers\StudentWX\Poster;
-use App\Controllers\StudentWX\RealActivity;
-use App\Middleware\RealStudentWeChatAuthCheckMiddleware;
-use App\Controllers\StudentWX\Student;
-use App\Controllers\StudentWX\Activity;
+use App\Controllers\StudentApp\RealActivity;
+use App\Middleware\RealStudentAppAuthCheckMiddleware;
 
 /**
  * 真人业务线学生app端接口路由文件
@@ -23,9 +20,12 @@ use App\Controllers\StudentWX\Activity;
 class RealStudentAppRouter extends RouterBase
 {
     protected $logFilename = 'operation_real_student_app.log';
-    public $middleWares = [RealStudentWeChatAuthCheckMiddleware::class];
+    public $middleWares = [RealStudentAppAuthCheckMiddleware::class];
     protected $uriConfig = [
         // 月月有奖 && 周周领奖
-        '/real_student_app/poster/list' => ['method' => ['post'], 'call' => RealActivity::class . ':list'],
+        '/real_student_app/activity/week' => ['method' => ['post'], 'call' => RealActivity::class . ':getWeekActivity'],
+        '/real_student_app/activity/month' => ['method' => ['post'], 'call' => RealActivity::class . ':getMonthActivity'],
+        '/real_student_app/activity/can_participate_week' => ['method' => ['post'], 'call' => RealActivity::class . ':getCanParticipateWeekActivityList'],
+        '/real_student_wx/activity/week_poster_upload' => ['method' => ['post'], 'call' => RealActivity::class . ':weekActivityPosterScreenShotUpload'],
     ];
 }

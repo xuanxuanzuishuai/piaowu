@@ -58,7 +58,7 @@ class RouterFactory
         self::CLIENT_AI_PLAY_MINI_APP => AIPlayMiniAppRouter::class, // 上音社合作-小叶子AI智能陪练小程序
         self::CLIENT_REAL_REFERRAL_MINI_APP => RealReferralMinAppRouter::class, // 真人转介绍小程序
         self::CLIENT_REAL_STUDENT_WX => RealStudentWXRouter::class, // 真人业务线学生微信端
-        self::CLIENT_REAL_STUDENT_APP => RealStudentWXRouter::class, // 真人业务线学生app端
+        self::CLIENT_REAL_STUDENT_APP => RealStudentAppRouter::class, // 真人业务线学生app端
     ];
 
     /**
