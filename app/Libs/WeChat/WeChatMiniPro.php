@@ -151,6 +151,9 @@ class WeChatMiniPro
         } elseif ($method == 'POST_FORM_DATA') {
             $method = 'POST';
             $data = $params;
+            if (!empty($timeout)) {
+                $data['timeout'] = $timeout;
+            }
         } else {
             return false;
         }
@@ -451,7 +454,24 @@ class WeChatMiniPro
                 ]
             ],
         ];
-        return $this->requestJson($api, $params, 'POST_FORM_DATA');
+        $i = 0;
+        while (true) {
+            $params['timeout'] = 1;
+            $result = $this->requestJson($api, $params, 'POST_FORM_DATA');
+            if (empty($result['media_id'])) {
+                $i++;
+                SimpleLogger::info('retry img: ' . $i, []);
+                if ($i <= 2) {
+                    $result = $this->requestJson($api, $params, 'POST_FORM_DATA');
+                } else {
+                    unset($params['timeout']);
+                    $result = $this->requestJson($api, $params, 'POST_FORM_DATA');
+                }
+            }
+            break;
+        }
+
+        return $result;
     }
 
     /**
