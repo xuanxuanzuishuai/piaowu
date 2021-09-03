@@ -456,7 +456,7 @@ class WeChatMiniPro
         ];
         $i = 0;
         while (true) {
-            $params['timeout'] = 1;
+            $params['timeout'] = 2;
             $result = $this->requestJson($api, $params, 'POST_FORM_DATA');
             if (empty($result['media_id'])) {
                 $i++;
