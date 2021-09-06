@@ -8,9 +8,13 @@
 
 namespace App\Services;
 
+use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\Util;
+use App\Models\Erp\ErpCourseModel;
+use App\Models\Erp\ErpStudentAppModel;
+use App\Models\Erp\ErpStudentModel;
 
 class ErpUserService
 {
@@ -40,7 +44,7 @@ class ErpUserService
             $subTypes[] = $subType;
         }
 
-        $erp      = new Erp();
+        $erp = new Erp();
         $accounts = $erp->studentAccount($uuid);
         if (!isset($accounts['code']) || empty($accounts['data'])) {
             return $ret;
@@ -83,5 +87,36 @@ class ErpUserService
 
         }
         return $thumbUrl;
+    }
+
+    /**
+     * 获取学生默认名称
+     * @param $mobile
+     * @return string
+     */
+    public static function getStudentDefaultName($mobile)
+    {
+        return '宝贝' . substr($mobile, 7, 4);
+    }
+
+    /**
+     * 获取真人学生的付费状态
+     * @param $studentId
+     * @return array
+     */
+    public static function getStudentStatus($studentId)
+    {
+        //检测学生付费状态
+        $studentAppData = ErpStudentAppModel::getRecord(['student_id' => $studentId, 'app_id' => Constants::REAL_APP_ID], ['status']);
+        $payStatusData['pay_status'] = $studentAppData['status'];
+        //付费用户剩余正式课程数量
+        if ($studentAppData['status'] == ErpStudentAppModel::STATUS_PAID) {
+            $norCourseRemainNum = ErpCourseService::getUserRemainCourseNum($studentId, ErpCourseModel::TYPE_NORMAL);
+            if ($norCourseRemainNum <= 0) {
+                $payStatusData['pay_status'] = ErpStudentAppModel::STATUS_PAID_NO_REMAINING_COURSES;
+            }
+        }
+        $payStatusData['status_zh'] = ErpStudentAppModel::$statusMap[$studentAppData['status']];
+        return $payStatusData;
     }
 }

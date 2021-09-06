@@ -124,7 +124,7 @@ class RealMonthActivityModel extends Model
     public static function getStudentCanSignMonthActivity($limit)
     {
         $time = time();
-        $activityData = self::getRecord(
+        $activityData = self::getRecords(
             [
                 'start_time[<]' => $time,
                 'end_time[>]' => $time,
@@ -133,8 +133,15 @@ class RealMonthActivityModel extends Model
                 'LIMIT' => $limit
             ],
             [
-                'id',
                 'activity_id',
+                'banner',
+                'make_poster_button_img',
+                'make_poster_tip_word',
+                'award_detail_img',
+                'create_poster_button_img',
+                'share_poster_tip_word',
+                'retention_copy',
+                'name',
             ]);
         return empty($activityData) ? [] : $activityData;
     }

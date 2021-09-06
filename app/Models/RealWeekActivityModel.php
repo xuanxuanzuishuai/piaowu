@@ -182,7 +182,7 @@ class RealWeekActivityModel extends Model
     }
 
     /**
-     * 获取时间可参与的周周有奖活动:数量和时间指定
+     * 获取当前时间可参与的周周有奖活动:数量和时间指定
      * @param int $limit
      * @param int $time
      * @return array|mixed
@@ -198,11 +198,23 @@ class RealWeekActivityModel extends Model
                 'LIMIT' => $limit
             ],
             [
-                'id',
-                'activity_id',
-                'poster_order',
-                'end_time',
                 'name',
+                'activity_id',
+                'guide_word',
+                'share_word',
+                'banner',
+                'share_button_img',
+                'award_detail_img',
+                'upload_button_img',
+                'strategy_img',
+                'personality_poster_button_img',
+                'poster_prompt',
+                'poster_make_button_img',
+                'share_poster_prompt',
+                'retention_copy',
+                'poster_order',
+                'start_time',
+                'end_time',
             ]);
         return empty($activityData) ? [] : $activityData;
     }

@@ -16,7 +16,8 @@ class ErpStudentAppModel extends ErpModel
     const STATUS_FINISH = 41;       // 已完课
     const STATUS_NOT_ATTEND = 5;    // 未出席
     const STATUS_CANCEL = 6;        // 已取消
-    const STATUS_PAID = 7;          // 付费
+    const STATUS_PAID = 7;          // 付费并有可用课程
+    const STATUS_PAID_NO_REMAINING_COURSES = -1;//付费但无可用课程
 
     public static $statusMap = [
         self::STATUS_DEFAULT => '未定义',
@@ -28,6 +29,7 @@ class ErpStudentAppModel extends ErpModel
         self::STATUS_NOT_ATTEND => '未出席',
         self::STATUS_CANCEL => '已取消',
         self::STATUS_PAID => '付费',
+        self::STATUS_PAID_NO_REMAINING_COURSES => '付费无可用课程',
     ];
 
     public static function getRegisterRoughCount()

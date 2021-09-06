@@ -5,11 +5,9 @@ namespace App\Services;
 use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
-use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\ActivityExtModel;
 use App\Models\Dss\DssUserQrTicketModel;
-use App\Models\Erp\ErpCourseModel;
 use App\Models\Erp\ErpStudentAppModel;
 use App\Models\Erp\ErpStudentModel;
 use App\Models\OperationActivityModel;
@@ -38,18 +36,21 @@ class RealActivityService
         ];
         //获取学生信息
         $studentDetail = ErpStudentModel::getStudentInfoById($studentId);
+        if (empty($studentDetail)) {
+            throw new RunTimeException(['student_not_exist']);
+        }
+        //资格检测
+        $checkRes = ErpUserService::getStudentStatus($studentId);
         $data['student_info'] = [
             'uuid' => $studentDetail['uuid'],
-            'nickname' => $studentDetail['name'] ?? '',
-            'headimgurl' => ErpUserService::getStudentThumbUrl($studentDetail['thumb']),
-            'student_status' => $studentDetail['status'],
-            'student_status_zh' => ErpStudentAppModel::$statusMap[$studentDetail['status']],
+            'pay_status' => $checkRes['pay_status'],
+            'pay_status_zh' => $checkRes['status_zh'],
+            'thumb' => ErpUserService::getStudentThumbUrl($studentDetail['thumb']),
         ];
-        //周周领奖学生必须已付费
-        if ($data['student_info']['student_status'] != ErpStudentAppModel::STATUS_PAID) {
+        if ($checkRes['pay_status'] != ErpStudentAppModel::STATUS_PAID) {
             return $data;
         }
-        //检测当前学生是否可以上传周周领奖截图
+        //检测当前学生是否可以看到上传截图按钮
         $data['can_upload'] = empty(self::getCanParticipateWeekActivityIds($studentDetail, 2)) ? false : true;
         list($data['list'], $data['activity']) = self::initWeekOrMonthActivityData(OperationActivityModel::TYPE_WEEK_ACTIVITY, $fromType, $studentDetail);
         return $data;
@@ -72,12 +73,17 @@ class RealActivityService
         ];
         //获取学生信息
         $studentDetail = ErpStudentModel::getStudentInfoById($studentId);
+        if (empty($studentDetail)) {
+            throw new RunTimeException(['student_not_exist']);
+        }
+        //资格检测
+        $checkRes = ErpUserService::getStudentStatus($studentId);
         $data['student_info'] = [
             'uuid' => $studentDetail['uuid'],
-            'nickname' => $studentDetail['name'] ?? '',
-            'headimgurl' => ErpUserService::getStudentThumbUrl($studentDetail['thumb']),
-            'student_status' => $studentDetail['status'],
-            'student_status_zh' => ErpStudentAppModel::$statusMap[$studentDetail['status']],
+            'nickname' => !empty($studentDetail['name']) ? $studentDetail['name'] : ErpUserService::getStudentDefaultName($studentDetail['mobile']),
+            'pay_status' => $checkRes['pay_status'],
+            'pay_status_zh' => $checkRes['status_zh'],
+            'thumb' => ErpUserService::getStudentThumbUrl($studentDetail['thumb']),
         ];
         list($data['list'], $data['activity']) = self::initWeekOrMonthActivityData(OperationActivityModel::TYPE_MONTH_ACTIVITY, $fromType, $studentDetail);
         return $data;
@@ -162,12 +168,12 @@ class RealActivityService
             );
             $item['poster_url'] = $poster['poster_save_full_path'];
         }
-        $activityData['ext'] = ActivityExtModel::getActivityExt($activityData['activity_id']);
-        return [$posterList, $activityData];
+        $activityData['award_rule'] = ActivityExtModel::getActivityExt($activityData['activity_id'])['award_rule'];
+        return [$posterList, ActivityService::formatData($activityData)];
     }
 
     /**
-     * 检测当前学生是否可以上传周周领奖截图
+     * 获取可参与周周领奖活动列表：最多两期活动
      * @param $studentData
      * @param $limitActivity
      * @return array
@@ -175,7 +181,8 @@ class RealActivityService
     public static function getCanParticipateWeekActivityIds($studentData, $limitActivity)
     {
         //获取最新两个最新可参与的周周领奖活动
-        $activityData = RealWeekActivityModel::getStudentCanSignWeekActivity($limitActivity, time());
+        $time = time();
+        $activityData = RealWeekActivityModel::getStudentCanSignWeekActivity($limitActivity, $time);
         if (empty($activityData)) {
             return [];
         }
@@ -201,12 +208,22 @@ class RealActivityService
             return [];
         }
         $result = [];
-        $activityData = array_column($activityData, null, 'activity_id');
-        foreach ($diffActivityIds as $aid) {
-            $result[] = [
-                'activity_id' => $aid,
-                'name' => $activityData[$aid]['name'],
-            ];
+        //活动排序
+        if ((count($diffActivityIds) == 2) && (($time - $activityData[0]['start_time']) <= Util::TIMESTAMP_12H)) {
+            foreach (array_reverse($activityData) as $al) {
+                $result[] = [
+                    'activity_id' => $al['activity_id'],
+                    'name' => $al['name'],
+                ];
+            }
+        } else {
+            $activityData = array_column($activityData, null, 'activity_id');
+            foreach ($diffActivityIds as $aid) {
+                $result[] = [
+                    'activity_id' => $aid,
+                    'name' => $activityData[$aid]['name'],
+                ];
+            }
         }
         return $result;
     }
@@ -222,8 +239,8 @@ class RealActivityService
     public static function weekActivityPosterScreenShotUpload($studentId, $activityId, $imagePath)
     {
         //资格检测
-        $checkRes = self::weekActivityPScreenUploadCCheck($studentId);
-        if (empty($checkRes)) {
+        $checkRes = ErpUserService::getStudentStatus($studentId);
+        if ($checkRes['pay_status'] != ErpStudentAppModel::STATUS_PAID) {
             throw new RunTimeException(['student_status_disable']);
         }
         //审核通过不允许上传截图
@@ -260,26 +277,5 @@ class RealActivityService
         //系统自动审核
         QueueService::checkPoster(['id' => $res, 'app_id' => Constants::REAL_APP_ID]);
         return $res;
-    }
-
-    /**
-     * 周周有奖活动海报截图上传资格检测
-     * @param $studentId
-     * @return bool
-     */
-    private static function weekActivityPScreenUploadCCheck($studentId)
-    {
-        //检测学生是否可以参加上传截图：正式课付费并且剩余课程数量大于0
-        $studentDetail = ErpStudentModel::getStudentInfoById($studentId);
-        //周周领奖学生必须已付费
-        if ($studentDetail['status'] != ErpStudentAppModel::STATUS_PAID) {
-            return false;
-        }
-        //付费用户剩余课程数量
-        $norCourseRemainNum = ErpCourseService::getUserRemainCourseNum($studentId, ErpCourseModel::TYPE_NORMAL);
-        if ($norCourseRemainNum <= 0) {
-            return false;
-        }
-        return true;
     }
 }
