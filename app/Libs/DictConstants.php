@@ -994,7 +994,7 @@ class DictConstants {
              'channel_week_real_student_wx',
              'channel_week_real_student_app',
              'channel_month_real_student_wx',
-             'channel_month_real_student_wx',
+             'channel_month_real_student_app',
          ]
     ];
 

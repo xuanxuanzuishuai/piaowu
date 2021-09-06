@@ -12,6 +12,8 @@ use App\Libs\Util;
 class RealWeekActivityModel extends Model
 {
     public static $table = 'real_week_activity';
+    //真人周周有奖并发锁缓存key
+    const REAL_WEEK_LOCK_KEY = 'real_week_lock_';
 
     /**
      * 获取周周领奖活动列表和总数

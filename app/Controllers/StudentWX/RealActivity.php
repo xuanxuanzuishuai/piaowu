@@ -18,6 +18,7 @@ use App\Models\Erp\ErpStudentModel;
 use App\Models\OperationActivityModel;
 use App\Models\RealSharePosterModel;
 use App\Models\Dss\DssStudentModel;
+use App\Models\RealWeekActivityModel;
 use App\Models\SharePosterModel;
 use App\Services\ActivityService;
 use App\Services\PosterService;
@@ -110,13 +111,12 @@ class RealActivity extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         try {
-            //上传并发处理
-            $lockKey = 'real_week_lock_' . $this->ci['user_info']['user_id'] . '_' . $params['activity_id'];
-            $lock = Util::setLock($lockKey, 15);
-            if (!$lock) {
-                throw new RunTimeException(['']);
+            //上传并发处理:一个账户针对同一个活动15秒内上传截图只允许进行一次有效动作
+            $lockKey = RealWeekActivityModel::REAL_WEEK_LOCK_KEY . $this->ci['user_info']['user_id'] . '_' . $params['activity_id'];
+            $lock = Util::setLock($lockKey, 5);
+            if ($lock) {
+                RealActivityService::weekActivityPosterScreenShotUpload($this->ci['user_info']['user_id'], $params['activity_id'], $params['image_path']);
             }
-            RealActivityService::weekActivityPosterScreenShotUpload($this->ci['user_info']['user_id'], $params['activity_id'], $params['image_path']);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         } finally {

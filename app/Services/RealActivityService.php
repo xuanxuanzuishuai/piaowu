@@ -9,6 +9,7 @@ use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\ActivityExtModel;
 use App\Models\Dss\DssUserQrTicketModel;
+use App\Models\Erp\ErpCourseModel;
 use App\Models\Erp\ErpStudentAppModel;
 use App\Models\Erp\ErpStudentModel;
 use App\Models\OperationActivityModel;
@@ -220,20 +221,17 @@ class RealActivityService
      */
     public static function weekActivityPosterScreenShotUpload($studentId, $activityId, $imagePath)
     {
-
-        //获取学生信息
-        $studentDetail = ErpStudentModel::getStudentInfoById($studentId);
-        //周周领奖学生必须已付费
-        if ($studentDetail['status'] != ErpStudentAppModel::STATUS_PAID) {
+        //资格检测
+        $checkRes = self::weekActivityPScreenUploadCCheck($studentId);
+        if (empty($checkRes)) {
             throw new RunTimeException(['student_status_disable']);
         }
         //审核通过不允许上传截图
         $uploadRecord = RealSharePosterModel::getRecord([
             'student_id' => $studentId,
             'activity_id' => $activityId,
-            'verify_status' => RealSharePosterModel::VERIFY_STATUS_QUALIFIED,
             'ORDER' => ['id' => 'DESC']
-        ], 'verify_status');
+        ], ['verify_status', 'id']);
         if (!empty($uploadRecord) && ($uploadRecord['verify_status'] == RealSharePosterModel::VERIFY_STATUS_QUALIFIED)) {
             throw new RunTimeException(['wait_for_next_event']);
         }
@@ -262,5 +260,26 @@ class RealActivityService
         //系统自动审核
         QueueService::checkPoster(['id' => $res, 'app_id' => Constants::REAL_APP_ID]);
         return $res;
+    }
+
+    /**
+     * 周周有奖活动海报截图上传资格检测
+     * @param $studentId
+     * @return bool
+     */
+    private static function weekActivityPScreenUploadCCheck($studentId)
+    {
+        //检测学生是否可以参加上传截图：正式课付费并且剩余课程数量大于0
+        $studentDetail = ErpStudentModel::getStudentInfoById($studentId);
+        //周周领奖学生必须已付费
+        if ($studentDetail['status'] != ErpStudentAppModel::STATUS_PAID) {
+            return false;
+        }
+        //付费用户剩余课程数量
+        $norCourseRemainNum = ErpCourseService::getUserRemainCourseNum($studentId, ErpCourseModel::TYPE_NORMAL);
+        if ($norCourseRemainNum <= 0) {
+            return false;
+        }
+        return true;
     }
 }
