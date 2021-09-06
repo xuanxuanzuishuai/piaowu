@@ -56,14 +56,22 @@ try {
     SimpleLogger::error($e->getMessage(), []);
     return false;
 }
-foreach ($awardData as $avl) {
-    $delay = mt_rand(0, 10);
-    try {
-        $topicObj->countingSyncAwardLogistics(['unique_id' => $avl['unique_id']])->publish($delay);
-    } catch (\Exception $e) {
-        SimpleLogger::error($e->getMessage(), ['data' => $avl]);
-        return false;
+//聚合那边的接口频率是60次/s,建议每秒不超过20次
+$totalCount = count($awardData);
+$batchLimit = 20;
+$delayTime = 0;
+$batchTimes = ceil($totalCount / $batchLimit);
+for ($i = 1; $i <= $batchTimes; $i++) {
+    $tmpAwardData = array_slice($awardData, ($i - 1) * $batchLimit, $batchLimit);
+    foreach ($tmpAwardData as $avl) {
+        try {
+            $topicObj->countingSyncAwardLogistics(['unique_id' => $avl['unique_id']])->publish($delayTime);
+        } catch (\Exception $e) {
+            SimpleLogger::error($e->getMessage(), ['data' => $avl]);
+            return false;
+        }
     }
+    $delayTime += 2;
 }
 $endMemory = memory_get_usage();
 $endTime = time();

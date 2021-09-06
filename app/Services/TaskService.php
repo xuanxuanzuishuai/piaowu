@@ -159,10 +159,12 @@ class TaskService
         [$ret['list'], $ret['banner'], $ret['popup']] = self::formatListData($list, $activitySign, $cacheTime);
 
         //记录任务中心访问时间
-        $redis->hset(self::TASK_LIST_NEWEST_VISIT_TIME, $studentId, time());
-
+        $redis->hset(self::TASK_LIST_NEWEST_VISIT_TIME, $studentId, $time);
+        //投递消息队列获取物流信息
+        if (empty($cacheTime) || (($time - $cacheTime) > 3600)) {
+            self::pushQueueSyncAwardLogistics($studentId);
+        }
         return $ret;
-
     }
 
 
@@ -675,5 +677,33 @@ class TaskService
         return true;
     }
 
-
+    /**
+     * 推送消息队列获取物流消息
+     * @param $studentId
+     * @return bool
+     */
+    public static function pushQueueSyncAwardLogistics($studentId)
+    {
+        //实物奖励数据列表:一个月之内，未签收，发货状态正常条件的实物奖励数据
+        $awardData = CountingActivityAwardModel::getRecords(
+            [
+                'student_id' => $studentId,
+                'type' => CountingActivityAwardModel::TYPE_ENTITY,
+                'logistics_status[<]' => CountingActivityAwardModel::LOGISTICS_STATUS_SIGN,
+                'shipping_status' => [
+                    CountingActivityAwardModel::SHIPPING_STATUS_BEFORE,
+                    CountingActivityAwardModel::SHIPPING_STATUS_DELIVERED,
+                    CountingActivityAwardModel::SHIPPING_STATUS_CENTRE,
+                ],
+                'create_time[>=]' => strtotime('-1 month'),
+            ], ['id', 'unique_id']);
+        if (empty($awardData)) {
+            SimpleLogger::info('award data empty', []);
+            return true;
+        }
+        foreach ($awardData as $avl) {
+            QueueService::syncCountingAwardLogistics(['unique_id' => $avl['unique_id']]);
+        }
+        return true;
+    }
 }

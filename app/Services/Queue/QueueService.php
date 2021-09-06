@@ -856,5 +856,20 @@ class QueueService
         return true;
     }
 
-
+    /**
+     * 周周领奖任务之计数任务奖励，实物发货物流信息同步
+     * @param array $data
+     * @param int $delay
+     * @return bool
+     */
+    public static function syncCountingAwardLogistics(array $data, int $delay = 0)
+    {
+        try {
+            (new GrantAwardTopic())->countingSyncAwardLogistics($data)->publish($delay);
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), [$data]);
+            return false;
+        }
+        return true;
+    }
 }
