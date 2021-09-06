@@ -2,8 +2,6 @@
 
 namespace App\Models\Erp;
 
-use App\Libs\Constants;
-use App\Libs\WeChat\WeChatMiniPro;
 
 class ErpUserWeiXinModel extends ErpModel
 {

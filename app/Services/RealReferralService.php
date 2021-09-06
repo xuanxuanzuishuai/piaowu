@@ -7,8 +7,12 @@ namespace App\Services;
 use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\DictConstants;
+use App\Libs\Erp;
+use App\Libs\Exceptions\RunTimeException;
+use App\Libs\RedisDB;
 use App\Libs\Referral;
 use App\Libs\SimpleLogger;
+use App\Libs\Util;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Libs\WeChat\WXBizDataCrypt;
 use App\Models\Erp\ErpStudentAppModel;
@@ -23,6 +27,79 @@ class RealReferralService
     const NOT_LOGIN_ZH = '未登录';
 
     const NOT_BIND_ZH = '未绑定';
+
+    /**
+     * 注册
+     * @param $params
+     * @return array
+     * @throws RunTimeException
+     */
+    public static function register($params)
+    {
+        $openid = $params['openid'];
+        $appId      = Constants::REAL_APP_ID;
+        $busiType   = Constants::REAL_MINI_BUSI_TYPE;
+        $userType   = Constants::USER_TYPE_STUDENT;
+        $weChat     = WeChatMiniPro::factory($appId, $busiType);
+        $sessionKey = $weChat->getSessionKey($openid, $params['wx_code'] ?? '');
+        //解密用户手机号
+        $jsonMobile = self::decodeMobile($params['iv'], $params['encrypted_data'], $sessionKey);
+        if (empty($jsonMobile)) {
+            throw new RunTimeException(['authorization_error']);
+        }
+        $mobile      = $jsonMobile['purePhoneNumber'];
+        $countryCode = $jsonMobile['countryCode'];
+        //查询账号是否存在
+        $studentInfo = ErpStudentModel::getRecord(['mobile' => $mobile]);
+        $isNew       = false;
+        //默认渠道
+        $channel = DictConstants::get(DictConstants::REAL_REFERRAL_CONFIG, 'register_default_channel');
+        if (empty($studentInfo)) {
+            $isNew = true;
+            //获取转介绍相关信息
+            if (!empty($params['qr_id'])) {
+                $qrData    = MiniAppQrService::getQrInfoById($params['qr_id'], ['user_id', 'channel_id']);
+                $refereeId = $qrData['user_id'];
+                $channel   = !empty($qrData['channel_id']) ? $qrData['channel_id'] : $channel;
+
+            }
+            $registerData = [
+                'app_id'       => $appId,
+                'busi_type'    => $busiType,
+                'open_id'      => $openid,
+                'mobile'       => $mobile,
+                'channel_id'   => $channel,
+                'country_code' => $countryCode,
+                'user_type'    => $userType
+            ];
+            //注册用户
+            $studentInfo = (new Erp())->refereeStudentRegister($registerData);
+            if (empty($studentInfo)) {
+                throw new RunTimeException(['user_register_fail']);
+            }
+            $studentInfo['id'] = $studentInfo['student_id'];
+            //建立转介绍关系
+            if (!empty($refereeId)) {
+                (new Referral())->setReferralUserReferee([
+                    'referee_id' => $refereeId,
+                    'user_id'    => $studentInfo['id'],
+                    'type'       => Constants::USER_TYPE_STUDENT,
+                    'app_id'     => $appId,
+                ]);
+            }
+        }
+        //生成token
+        $token = WechatTokenService::generateToken($studentInfo['id'], $userType, $appId, $openid);
+        $result = [
+            'is_new'     => $isNew,
+            'openid'     => $openid,
+            'token'      => $token,
+            'mobile'     => $mobile,
+            'uuid'       => $studentInfo['uuid'],
+            'student_id' => $studentInfo['id']
+        ];
+        return $result;
+    }
 
     /**
      * 解密手机号
@@ -70,6 +147,8 @@ class RealReferralService
             //获取推荐人相关信息
             $referrerInfo = self::getReferralIndexData($qrData['user_id']);
         }
+        //获取注册人数
+        $referrerInfo['register_num'] = ErpStudentAppModel::getRegisterRoughCount();
         $data['mobile']         = $userWeiXin['mobile'] ?? 0;
         $data['poster_id']      = $qrData['poster_id'] ?? 0;
         $data['channel_id']     = $qrData['channel_id'] ?? 0;
@@ -96,7 +175,8 @@ class RealReferralService
             return ['student_status' => self::NOT_BIND_ZH];
         }
         //获取学生状态
-        $studentStatus = (new Referral())->getStudentStatus(['student_id' => $studentId]);
+        $result = (new erp())->getStudentStatus(['student_id' => $studentId]);
+        $studentStatus = $result['user_pay_status'] ?? '未知';
         return ['student_status' => $studentStatus];
     }
 
@@ -127,11 +207,16 @@ class RealReferralService
      */
     public static function getReferralIndexData($refereeId)
     {
+        $redis    = RedisDB::getConn();
+        $cacheKey = sprintf('real_referral_index_data_%s', $refereeId);
+        if ($redis->exists($cacheKey)) {
+            $result = json_decode($redis->get($cacheKey), true);
+            return $result;
+        }
         $result = [
             'nick_name'    => '',
             'thumb'        => '',
             'play_days'    => 0,
-            'register_num' => 0,
         ];
         //账户数据
         $userData = ErpStudentModel::getUserInfo($refereeId);
@@ -161,27 +246,38 @@ class RealReferralService
         }
         if (empty($result['nick_name']) && empty($result['thumb'])) {
             $result['nick_name'] = $userData['name'];
-            if (!empty($userData['thumb'])) {
-                $result['thumb'] = $_ENV['QINIU_DOMAIN_ERP'] . $userData['thumb'];
-            }
+            $result['thumb'] = self::getErpStudentAvatar($userData['thumb']);
         }
         if (!empty($userData['first_pay_time'])) {
             $days = (strtotime(date("Y-m-d 00:00:00", time())) - strtotime(date("Y-m-d 00:00:00",
                         $userData['first_pay_time']))) / 86400;
             $result['play_days'] = $days + 1;
         }
-        if (empty($result['thumb'])) {
-            $thumb           = DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO, 'default_thumb');
-            $result['thumb'] = AliOSS::replaceCdnDomainForDss($thumb);
-        }
         if (empty($result['nick_name'])) {
             $result['nick_name'] = '你的好友';
         } else {
             $result['nick_name'] = mb_substr($result['nick_name'], 0, 7);
         }
-        //注册人数
-        $result['register_num'] = ErpStudentAppModel::getRegisterRoughCount();
+        $cacheData = json_encode($result);
+        $redis->setex($cacheKey, Util::TIMESTAMP_12H, $cacheData);
         return $result;
+    }
+
+    /**
+     * erp学生头像处理
+     * @param $thumb
+     * @return string
+     */
+    public static function getErpStudentAvatar($thumb)
+    {
+        $config = DictConstants::ERP_SYSTEM_ENV;
+        if (empty($thumb)) {
+            $thumb = DictConstants::getErpDict($config, 'student_default_thumb');
+        }
+        $dictConfig = DictConstants::getErpDictArr($config['type'], ['QINIU_DOMAIN_1', 'QINIU_FOLDER_1']);
+        $dictConfig = array_column($dictConfig[$config['type']], 'value', 'code');
+        $avatar = Util::getQiNiuFullImgUrl($thumb, $dictConfig['QINIU_DOMAIN_1'], $dictConfig['QINIU_FOLDER_1']);
+        return $avatar;
     }
 
 }

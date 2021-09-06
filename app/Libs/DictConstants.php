@@ -313,14 +313,14 @@ class DictConstants {
     const WECHAT_APPID = [
         'type' => 'wechat_app_id',
         'keys' => [
-            '8_1', '8_8', '21_9','8_10', '8_12', '1_8'
+            '8_1', '8_8', '21_9','8_10', '8_12', '1_13'
         ]
     ];
     //不同应用的微信app_secret
     const WECHAT_APP_SECRET = [
         'type' => 'wechat_app_secret',
         'keys' => [
-            '8_1', '8_8', '21_9','8_10', '8_12', '1_8'
+            '8_1', '8_8', '21_9','8_10', '8_12', '1_13'
         ]
     ];
 
@@ -873,6 +873,7 @@ class DictConstants {
         'keys' => [
             'QINIU_DOMAIN_1',//七牛目录(ERP)
             'QINIU_FOLDER_1',//七牛Domain(ERP)
+            'student_default_thumb' //默认学生头像
         ]
     ];
     /**前缀为ERP的配置，数据均配置在erp数据库中erp_dict数据表，不再op系统重复配置，保持数据的唯一性,配置写在此区域end**/

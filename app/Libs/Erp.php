@@ -100,6 +100,8 @@ class Erp
     const API_STUDENT_ACCOUNT_BALANXE = '/api/student_account/balance';
     //真人转介绍学生注册
     const REFEREE_STUDENT_REGISTER = '/op/user/register_bound';
+    //神策埋点学生基础数据
+    const SENSORS_STUDENT_BASE_DATA = '/api/app/sensors/profile/student';
 
     private $host;
 
@@ -948,6 +950,19 @@ class Erp
         }
         return $response['data'];
     }
+
+    /**
+     * 获取学生状态
+     * @param $params
+     * @return array|mixed
+     */
+    public function getStudentStatus($params)
+    {
+        $response = HttpHelper::requestJson($this->host . self::SENSORS_STUDENT_BASE_DATA, $params, 'POST');
+        return $response['data'] ?? [];
+    }
+
+
 
 
 }
