@@ -163,15 +163,15 @@ class QrInfoOpCHModel
             return false;
         }
         if (!isset($qrData['qr_path']) || !isset($qrData['qr_type'])) {
-            SimpleLogger::info("checkSaveQrData error user_id empty", [$qrData]);
+            SimpleLogger::info("checkSaveQrData error qr_path or qr_type empty", [$qrData]);
             return false;
         }
         if (empty($qrData['qr_path']) && $qrData['qr_type'] != DictConstants::get(DictConstants::MINI_APP_QR, 'qr_type_none')) {
-            SimpleLogger::info("checkSaveQrData error user_id empty", [$qrData]);
+            SimpleLogger::info("checkSaveQrData error qr_path  or qr_type error", [$qrData]);
             return false;
         }
         if (!empty($qrData['qr_path']) && $qrData['qr_type'] == DictConstants::get(DictConstants::MINI_APP_QR, 'qr_type_none')) {
-            SimpleLogger::info("checkSaveQrData error user_id empty", [$qrData]);
+            SimpleLogger::info("checkSaveQrData error qr_path  or qr_type error", [$qrData]);
             return false;
         }
         return true;
