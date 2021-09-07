@@ -98,6 +98,11 @@ class RealMonthActivity extends ControllerBase
                 'error_code' => 'remark_length_invalid'
             ],
             [
+                'key' => 'retention_copy',
+                'type' => 'required',
+                'error_code' => 'retention_copy_is_required'
+            ],
+            [
                 'key' => 'activity_id',
                 'type' => 'integer',
                 'error_code' => 'activity_id_is_integer'

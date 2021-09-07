@@ -52,6 +52,7 @@ class RealMonthActivityService
             'share_poster_tip_word' => !empty($data['share_poster_tip_word']) ? Util::textEncode($data['share_poster_tip_word']) : '',
             'operator_id' => $employeeId,
             'create_time' => $time,
+            'retention_copy' => !empty($data['retention_copy']) ? Util::textEncode($data['retention_copy']) : '',
         ];
 
         $activityExtData = [

@@ -123,16 +123,13 @@ class RealWeekActivityModel extends Model
      * @param $exceptActId
      * @return array
      */
-    public static function checkTimeConflict($startTime, $endTime, $eventId, $exceptActId = 0)
+    public static function checkTimeConflict($startTime, $endTime, $exceptActId = 0)
     {
         $where = [
             'start_time[<=]' => $endTime,
             'end_time[>=]' => $startTime,
             'enable_status' => OperationActivityModel::ENABLE_STATUS_ON,
         ];
-        if (!empty($eventId)) {
-            $where['event_id'] = $eventId;
-        }
         if (!empty($exceptActId)) {
             $where['id[!]'] = $exceptActId;
         }

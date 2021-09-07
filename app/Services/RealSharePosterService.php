@@ -199,6 +199,8 @@ class RealSharePosterService
      */
     public static function refusedPoster($posterId, $params = [])
     {
+        $reason = $params['reason'] ?? '';
+        $remark = $params['remark'] ?? '';
         if (empty($reason) && empty($remark)) {
             throw new RunTimeException(['please_select_reason']);
         }
@@ -216,17 +218,18 @@ class RealSharePosterService
             'verify_status' => $status,
             'verify_time'   => $time,
             'verify_user'   => $params['employee_id'],
-            'verify_reason' => implode(',', $params['reason']),
+            'verify_reason' => implode(',', $reason),
             'update_time'   => $time,
-            'remark'        => $params['remark'] ?? '',
+            'remark'        => $remark,
         ]);
         // 审核不通过, 发送模版消息
         if ($update > 0) {
-            $vars = [
-                'activity_name' => $poster['activity_name'],
-                'status' => $status
-            ];
-            MessageService::sendRealPosterVerifyMessage($poster['open_id'], $vars);
+            //$vars = [
+            //    'activity_name' => $poster['activity_name'],
+            //    'status' => $status
+            //];
+            //MessageService::sendRealPosterVerifyMessage($poster['open_id'], $vars)
+            QueueService::realSendPosterAwardMessage(["share_poster_id" => $posterId]);
         }
         
         return $update > 0;

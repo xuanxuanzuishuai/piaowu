@@ -46,7 +46,6 @@ class RealWeekActivityService
         $weekActivityData = [
             'name' => $activityData['name'],
             'activity_id' => 0,
-            'event_id' => $data['event_id'] ?? 0,
             'guide_word' => !empty($data['guide_word']) ? Util::textEncode($data['guide_word']) : '',
             'share_word' => !empty($data['share_word']) ? Util::textEncode($data['share_word']) : '',
             'start_time' => Util::getDayFirstSecondUnix($data['start_time']),
@@ -61,18 +60,18 @@ class RealWeekActivityService
             'create_time' => $time,
             'personality_poster_button_img' => $data['personality_poster_button_img'],
             'poster_prompt' => !empty($data['poster_prompt']) ? Util::textEncode($data['poster_prompt']) : '',
-            'poster_make_button_img' => $data['poster_make_button_img'],
+            'poster_make_button_img' => $data['poster_make_button_img'] ?? '',
             'share_poster_prompt' => !empty($data['share_poster_prompt']) ? Util::textEncode($data['share_poster_prompt']) : '',
             'retention_copy' => !empty($data['retention_copy']) ? Util::textEncode($data['retention_copy']) : '',
             'poster_order' => $data['poster_order'],
         ];
-
+        
         $activityExtData = [
             'activity_id' => 0,
             'award_rule' => !empty($data['award_rule']) ? Util::textEncode($data['award_rule']) : '',
             'remark' => $data['remark'] ?? ''
         ];
-
+        
         $db = MysqlDB::getDB();
         $db->beginTransaction();
         // 保存活动总表信息
@@ -409,7 +408,7 @@ class RealWeekActivityService
         }
         // 如果是启用 检查时间是否冲突
         if ($enableStatus == OperationActivityModel::ENABLE_STATUS_ON) {
-            $startActivity = RealWeekActivityModel::checkTimeConflict($activityInfo['start_time'], $activityInfo['end_time'], $activityInfo['event_id']);
+            $startActivity = RealWeekActivityModel::checkTimeConflict($activityInfo['start_time'], $activityInfo['end_time']);
             if (!empty($startActivity)) {
                 throw new RunTimeException(['activity_time_conflict_id', '', '', array_column($startActivity, 'activity_id')]);
             }
