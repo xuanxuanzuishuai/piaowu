@@ -4,7 +4,6 @@
 namespace App\Services;
 
 
-use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Erp;
@@ -36,7 +35,7 @@ class RealReferralService
      */
     public static function register($params)
     {
-        $openid = $params['openid'];
+        $openid     = $params['openid'];
         $appId      = Constants::REAL_APP_ID;
         $busiType   = Constants::REAL_MINI_BUSI_TYPE;
         $userType   = Constants::USER_TYPE_STUDENT;
@@ -51,52 +50,47 @@ class RealReferralService
         $countryCode = $jsonMobile['countryCode'];
         //查询账号是否存在
         $studentInfo = ErpStudentModel::getRecord(['mobile' => $mobile]);
-        $isNew       = false;
+        $isNew       = !empty($studentInfo) ? true : false;
         //默认渠道
         $channel = DictConstants::get(DictConstants::REAL_REFERRAL_CONFIG, 'register_default_channel');
+        //获取转介绍相关信息
+        if (!empty($params['qr_id'])) {
+            $qrData    = MiniAppQrService::getQrInfoById($params['qr_id'], ['user_id', 'channel_id']);
+            $refereeId = $qrData['user_id'];
+            $channel   = !empty($qrData['channel_id']) ? $qrData['channel_id'] : $channel;
+        }
+        $registerData = [
+            'app_id'       => $appId,
+            'busi_type'    => $busiType,
+            'open_id'      => $openid,
+            'mobile'       => $mobile,
+            'channel_id'   => $channel,
+            'country_code' => $countryCode,
+            'user_type'    => $userType
+        ];
+        //注册用户
+        $studentInfo = (new Erp())->refereeStudentRegister($registerData);
         if (empty($studentInfo)) {
-            $isNew = true;
-            //获取转介绍相关信息
-            if (!empty($params['qr_id'])) {
-                $qrData    = MiniAppQrService::getQrInfoById($params['qr_id'], ['user_id', 'channel_id']);
-                $refereeId = $qrData['user_id'];
-                $channel   = !empty($qrData['channel_id']) ? $qrData['channel_id'] : $channel;
-
-            }
-            $registerData = [
-                'app_id'       => $appId,
-                'busi_type'    => $busiType,
-                'open_id'      => $openid,
-                'mobile'       => $mobile,
-                'channel_id'   => $channel,
-                'country_code' => $countryCode,
-                'user_type'    => $userType
-            ];
-            //注册用户
-            $studentInfo = (new Erp())->refereeStudentRegister($registerData);
-            if (empty($studentInfo)) {
-                throw new RunTimeException(['user_register_fail']);
-            }
-            $studentInfo['id'] = $studentInfo['student_id'];
-            //建立转介绍关系
-            if (!empty($refereeId)) {
-                (new Referral())->setReferralUserReferee([
-                    'referee_id' => $refereeId,
-                    'user_id'    => $studentInfo['id'],
-                    'type'       => Constants::USER_TYPE_STUDENT,
-                    'app_id'     => $appId,
-                ]);
-            }
+            throw new RunTimeException(['user_register_fail']);
+        }
+        //建立转介绍关系
+        if (empty($studentInfo) && !empty($refereeId)) {
+            (new Referral())->setReferralUserReferee([
+                'referee_id' => $refereeId,
+                'user_id'    => $studentInfo['id'],
+                'type'       => Constants::USER_TYPE_STUDENT,
+                'app_id'     => $appId,
+            ]);
         }
         //生成token
-        $token = WechatTokenService::generateToken($studentInfo['id'], $userType, $appId, $openid);
+        $token  = WechatTokenService::generateToken($studentInfo['id'], $userType, $appId, $openid);
         $result = [
             'is_new'     => $isNew,
             'openid'     => $openid,
             'token'      => $token,
             'mobile'     => $mobile,
             'uuid'       => $studentInfo['uuid'],
-            'student_id' => $studentInfo['id']
+            'student_id' => $studentInfo['student_id']
         ];
         return $result;
     }
@@ -138,7 +132,7 @@ class RealReferralService
     public static function index($params)
     {
         //获取学生列表
-        $studentLists      = self::getStudentLists();
+        $studentLists = self::getStudentLists();
         //查询是否绑定
         $userWeiXin = ErpUserWeiXinModel::getUserInfoByOpenId($params['open_id'], Constants::REAL_MINI_BUSI_TYPE);
         //获取转介绍相关信息
@@ -149,12 +143,12 @@ class RealReferralService
         }
         //获取注册人数
         $referrerInfo['register_num'] = ErpStudentAppModel::getRegisterRoughCount();
-        $data['mobile']         = $userWeiXin['mobile'] ?? 0;
-        $data['poster_id']      = $qrData['poster_id'] ?? 0;
-        $data['channel_id']     = $qrData['channel_id'] ?? 0;
-        $data['is_bind']        = $userWeiXin['user_id'] ? true : false;
-        $data['top_info']       = $studentLists;
-        $data['referrer_info']  = $referrerInfo ?? [];
+        $data['mobile']               = $userWeiXin['mobile'] ?? 0;
+        $data['poster_id']            = $qrData['poster_id'] ?? 0;
+        $data['channel_id']           = $qrData['channel_id'] ?? 0;
+        $data['is_bind']              = $userWeiXin['user_id'] ? true : false;
+        $data['top_info']             = $studentLists;
+        $data['referrer_info']        = $referrerInfo ?? [];
         return $data;
     }
 
@@ -175,7 +169,7 @@ class RealReferralService
             return ['student_status' => self::NOT_BIND_ZH];
         }
         //获取学生状态
-        $result = (new erp())->getStudentStatus(['student_id' => $studentId]);
+        $result        = (new erp())->getStudentStatus(['student_id' => $studentId]);
         $studentStatus = $result['user_pay_status'] ?? '未知';
         return ['student_status' => $studentStatus];
     }
@@ -214,9 +208,9 @@ class RealReferralService
             return $result;
         }
         $result = [
-            'nick_name'    => '',
-            'thumb'        => '',
-            'play_days'    => 0,
+            'nick_name' => '',
+            'thumb'     => '',
+            'play_days' => 0,
         ];
         //账户数据
         $userData = ErpStudentModel::getUserInfo($refereeId);
@@ -246,10 +240,10 @@ class RealReferralService
         }
         if (empty($result['nick_name']) && empty($result['thumb'])) {
             $result['nick_name'] = $userData['name'];
-            $result['thumb'] = self::getErpStudentAvatar($userData['thumb']);
+            $result['thumb']     = self::getErpStudentAvatar($userData['thumb']);
         }
         if (!empty($userData['first_pay_time'])) {
-            $days = (strtotime(date("Y-m-d 00:00:00", time())) - strtotime(date("Y-m-d 00:00:00",
+            $days                = (strtotime(date("Y-m-d 00:00:00", time())) - strtotime(date("Y-m-d 00:00:00",
                         $userData['first_pay_time']))) / 86400;
             $result['play_days'] = $days + 1;
         }
@@ -276,7 +270,7 @@ class RealReferralService
         }
         $dictConfig = DictConstants::getErpDictArr($config['type'], ['QINIU_DOMAIN_1', 'QINIU_FOLDER_1']);
         $dictConfig = array_column($dictConfig[$config['type']], 'value', 'code');
-        $avatar = Util::getQiNiuFullImgUrl($thumb, $dictConfig['QINIU_DOMAIN_1'], $dictConfig['QINIU_FOLDER_1']);
+        $avatar     = Util::getQiNiuFullImgUrl($thumb, $dictConfig['QINIU_DOMAIN_1'], $dictConfig['QINIU_FOLDER_1']);
         return $avatar;
     }
 

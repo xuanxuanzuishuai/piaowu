@@ -11,7 +11,7 @@ class ErpStudentAppModel extends ErpModel
     {
         $table = self::$table;
         $appId = Constants::USER_TYPE_STUDENT;
-        return self::dbRO()->count($table, null, null, ['app_id' => $appId]);
+        return self::dbRO()->count($table, ['app_id' => $appId]);
     }
 
 }
