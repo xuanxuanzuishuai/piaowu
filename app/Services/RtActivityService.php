@@ -310,7 +310,7 @@ class RtActivityService
         $time = time();
 
         // 待启用状态下更新配置信息
-        if ($activityInfo['enable_status'] == OperationActivityModel::ENABLE_STATUS_OFF) {
+        if (in_array($activityInfo['enable_status'],[OperationActivityModel::ENABLE_STATUS_OFF, OperationActivityModel::ENABLE_STATUS_ON]) ) {
             $activityData = [
                 'name' => $data['name'] ?? '',
                 'update_time' => $time,
@@ -977,7 +977,10 @@ class RtActivityService
                 'channel_id'    => $channel_id
             ];
             $qrURL = $scheme . '?' . http_build_query(array_filter($params));
-            return ['qrURL' => $qrURL];
+            return [
+                'status'=> self::ACTIVITY_NORMAL,
+                'qrURL' => $qrURL
+            ];
         } else {
             $posterAscription = ActivityPosterModel::POSTER_ASCRIPTION_EMPLOYEE;
             switch ($request['type']) {
