@@ -9,6 +9,7 @@
 namespace App\Routers;
 
 
+use App\Controllers\StudentWX\ActivityCenter;
 use App\Controllers\StudentWX\RtActivity;
 use App\Controllers\StudentWX\DuanWuActivity;
 use App\Controllers\StudentWX\GoldLeafShop;
@@ -86,5 +87,9 @@ class StudentWXRouter extends RouterBase
 
         /* 跑马灯数据 */
         '/student_wx/activity/user_reward_details' => ['method' => ['get'], 'call' => Activity::class . ':userRewardDetails'],
+
+        //活动中心
+        '/student_wx/activity_center/list' => ['method' => ['get'], 'call' => ActivityCenter::class . ':getList'],
+
     ];
 }

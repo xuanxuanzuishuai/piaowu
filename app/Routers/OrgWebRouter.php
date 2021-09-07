@@ -12,6 +12,7 @@ use App\Controllers\API\OSS;
 use App\Controllers\API\UICtl;
 use App\Controllers\Employee\Auth;
 use App\Controllers\Employee\Employee;
+use App\Controllers\OrgWeb\ActivityCenter;
 use App\Controllers\OrgWeb\ActivitySign;
 use App\Controllers\OrgWeb\Admin;
 use App\Controllers\OrgWeb\Agent;
@@ -310,6 +311,13 @@ class OrgWebRouter extends RouterBase
         '/op_web/source_material/banner_detail'    => ['method' => ['get'], 'call' => SourceMaterial::class . ':bannerDetail'],
         '/op_web/source_material/banner_edit_enable_status'      => ['method' => ['get'], 'call' => SourceMaterial::class . ':bannerEditEnableStatus'],
 
+        //活动中心
+        '/op_web/activity_center/add' => ['method' => ['post'], 'call' => ActivityCenter::class . ':create'],
+        '/op_web/activity_center/list' => ['method' => ['get'], 'call' => ActivityCenter::class . ':getActivityList'],
+        '/op_web/activity_center/detail' => ['method' => ['get'], 'call' => ActivityCenter::class . ':getActivityDetail'],
+        '/op_web/activity_center/edit_status' => ['method' => ['post'], 'call' => ActivityCenter::class . ':editStatus'],
+        '/op_web/activity_center/edit_weight' => ['method' => ['post'], 'call' => ActivityCenter::class . ':editWeight'],
+        '/op_web/activity_center/update' => ['method' => ['post'], 'call' => ActivityCenter::class . ':editActivity'],
 
     ];
 }

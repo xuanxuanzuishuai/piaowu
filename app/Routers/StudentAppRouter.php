@@ -8,6 +8,7 @@
 
 namespace App\Routers;
 
+use App\Controllers\StudentApp\ActivityCenter;
 use App\Controllers\StudentApp\App;
 use App\Controllers\StudentApp\Auth;
 use App\Controllers\StudentApp\DuanWuActivity;
@@ -196,6 +197,13 @@ class StudentAppRouter extends RouterBase
         '/student_app/poster/get_qr_path' => [
             'method' => ['get'],
             'call' => Poster::class . ':getQrPath',
+            'middles' => [AppAuthMiddleWare::class],
+        ],
+
+        //活动中心
+        '/student_app/activity_center/list' => [
+            'method'  => ['get'],
+            'call'    => ActivityCenter::class . ':getList',
             'middles' => [AppAuthMiddleWare::class],
         ],
 

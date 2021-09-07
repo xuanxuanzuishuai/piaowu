@@ -992,7 +992,13 @@ class DictConstants {
          ]
     ];
 
-    
+    //活动中心显示规则配置
+    const ACTIVITY_CENTER_SHOW_RULE = [
+        'type' => 'activity_center_show_rule',
+        'keys' => [1, 2, 3, 4, 5]
+    ];
+
+
     /**
      * 单个获取op系统dict配置数据
      * @param $type
