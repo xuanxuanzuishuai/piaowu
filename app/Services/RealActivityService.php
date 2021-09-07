@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Libs\AliOSS;
 use App\Libs\Constants;
+use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\Util;
 use App\Models\ActivityExtModel;
@@ -32,6 +33,7 @@ class RealActivityService
             'list' => [],
             'activity' => [],
             'student_info' => [],
+            'channel_list' => [],
             'can_upload' => false
         ];
         //获取学生信息
@@ -53,6 +55,8 @@ class RealActivityService
         //检测当前学生是否可以看到上传截图按钮
         $data['can_upload'] = empty(self::getCanParticipateWeekActivityIds($studentDetail, 2)) ? false : true;
         list($data['list'], $data['activity']) = self::initWeekOrMonthActivityData(OperationActivityModel::TYPE_WEEK_ACTIVITY, $fromType, $studentDetail);
+        //渠道获取
+        list($data['channel_list']['first']) = DictConstants::getValues(DictConstants::ACTIVITY_CONFIG, ['channel_week_' . $fromType]);
         return $data;
     }
 
@@ -70,13 +74,14 @@ class RealActivityService
             'list' => [],
             'activity' => [],
             'student_info' => [],
+            'channel_list' => [],
         ];
         //获取学生信息
         $studentDetail = ErpStudentModel::getStudentInfoById($studentId);
         if (empty($studentDetail)) {
             throw new RunTimeException(['student_not_exist']);
         }
-        //资格检测
+        //状态获取
         $checkRes = ErpUserService::getStudentStatus($studentId);
         $data['student_info'] = [
             'uuid' => $studentDetail['uuid'],
@@ -86,6 +91,8 @@ class RealActivityService
             'thumb' => ErpUserService::getStudentThumbUrl($studentDetail['thumb']),
         ];
         list($data['list'], $data['activity']) = self::initWeekOrMonthActivityData(OperationActivityModel::TYPE_MONTH_ACTIVITY, $fromType, $studentDetail);
+        //渠道获取
+        list($data['channel_list']['first'], $data['channel_list']['second']) = DictConstants::getValues(DictConstants::ACTIVITY_CONFIG, ['channel_month_' . $fromType, 'channel_month_' . $fromType . '_second']);
         return $data;
     }
 

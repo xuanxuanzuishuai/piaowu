@@ -18,7 +18,6 @@ use App\Libs\Util;
 use App\Models\ActivityExtModel;
 use App\Models\ActivityPosterModel;
 use App\Models\CHModel\AprViewStudentModel;
-use App\Models\Dss\DssAiPlayRecordCHModel;
 use App\Models\Dss\DssCategoryV1Model;
 use App\Models\Dss\DssCollectionModel;
 use App\Models\Dss\DssGiftCodeModel;
@@ -332,7 +331,7 @@ class ActivityService
     /**
      * 打卡活动文案&海报
      * @param $studentId
-     * @param $nodeId
+     * @param $params
      * @return array
      */
     public static function signInCopyWriting($studentId, $params)

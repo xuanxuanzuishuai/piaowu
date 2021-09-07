@@ -995,6 +995,8 @@ class DictConstants {
              'channel_week_real_student_app',
              'channel_month_real_student_wx',
              'channel_month_real_student_app',
+             'channel_month_real_student_wx_second',
+             'channel_month_real_student_app_second',
          ]
     ];
 
@@ -1056,7 +1058,6 @@ class DictConstants {
         if (empty($keys)) {
             return [];
         }
-
         // 如果给的$keys中有不在$type['keys']里的直接返回空
         if (!empty(array_diff($keys, $type['keys']))) {
             return [];
