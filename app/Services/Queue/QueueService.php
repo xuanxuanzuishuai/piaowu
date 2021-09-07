@@ -832,7 +832,8 @@ class QueueService
     public static function weekWhiteGrandLeaf($data){
         try {
             $topic = new WeekActivityTopic();
-            $topic->weekWhiteGrandLeaf($data)->publish(0);
+            $rand = rand(0,3600);
+            $topic->weekWhiteGrandLeaf($data)->publish($rand);
         } catch (Exception $e) {
             SimpleLogger::error($e->getMessage(), $data);
             return false;
@@ -848,7 +849,8 @@ class QueueService
     public static function getWeekWhiteSendRedPkgStatus($data){
         try {
             $topic = new WeekActivityTopic();
-            $topic->getWeekWhiteSendRedPkgStatus($data)->publish(0);
+            $rand = rand(0,240);
+            $topic->getWeekWhiteSendRedPkgStatus($data)->publish($rand);
         } catch (Exception $e) {
             SimpleLogger::error($e->getMessage(), $data);
             return false;
