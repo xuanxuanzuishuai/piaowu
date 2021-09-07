@@ -327,7 +327,6 @@ class OrgWebRouter extends RouterBase
         '/org_web/real_poster_template_word/wordList' => ['method' => ['get'], 'call' => RealPosterTemplateWord::class . ':wordList'],
         '/org_web/real_poster_template_word/getWordInfo' => ['method' => ['get'], 'call' => RealPosterTemplateWord::class . ':getWordInfo'],
         '/org_web/real_poster_template_word/editWordInfo' => ['method' => ['post'], 'call' => RealPosterTemplateWord::class . ':editWordInfo'],
-        '/org_web/real_poster_template_word/offline_word_list_check' => ['method' => ['get'], 'call' => RealPosterTemplateWord::class . ':offlineWordListCheck'],
         //真人转介绍管理 - 周周有奖
         '/op_web/real_week_activity/save' => ['method' => ['post'], 'call' => RealWeekActivity::class . ':save'],
         '/op_web/real_week_activity/list' => ['method' => ['get'], 'call' => RealWeekActivity::class . ':list'],
