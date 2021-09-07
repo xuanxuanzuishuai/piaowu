@@ -195,7 +195,7 @@ class RealActivity extends ControllerBase
     }
 
     /**
-     * 获取小程序码
+     * 真人 - 获取小程序码
      * @param Request $request
      * @param Response $response
      * @return Response
@@ -223,11 +223,10 @@ class RealActivity extends ControllerBase
         try {
             $userInfo = $this->ci['user_info'];
             $params['student_id'] = $userInfo['user_id'];
-            $data = PosterService::getQrPath($params);
+            $data = RealSharePosterService::getQrPath($params);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
         return HttpHelper::buildResponse($response, $data);
     }
-
 }

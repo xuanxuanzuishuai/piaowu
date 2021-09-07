@@ -29,7 +29,11 @@ class RealStudentAppRouter extends RouterBase
         '/real_student_wx/activity/week_poster_upload' => ['method' => ['post'], 'call' => RealActivity::class . ':weekActivityPosterScreenShotUpload'],
         '/real_student_app/poster/list' => ['method' => ['post'], 'call' => RealActivity::class . ':list'],
         '/real_student_app/activity/share_poster_history' => ['method' => ['post'], 'call' => RealActivity::class . ':sharePosterHistory'],
+        '/real_student_app/activity/share_poster_detail' => ['method' => ['post'], 'call' => RealActivity::class . ':sharePosterDetail'],
+
         // 周周领奖分享海报文案列表
         '/real_student_app/poster/word_list' => ['method' => ['post'], 'call' => RealActivity::class . ':realSharePosterWordList'],
+        // 月月有奖二次分享海报对应的二维码
+        '/real_student_app/poster/get_qr_path'   => ['method' => ['post'], 'call' => RealActivity::class . ':getQrPath'],
     ];
 }

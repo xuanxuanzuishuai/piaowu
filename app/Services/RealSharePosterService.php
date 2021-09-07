@@ -14,6 +14,7 @@ use App\Libs\AliOSS;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
+use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\EmployeeModel;
 use App\Models\RealSharePosterAwardModel;
 use App\Models\RealSharePosterModel;
@@ -286,12 +287,41 @@ class RealSharePosterService
                 }
                 // no break; 审核通过和不通过的公用部分
             case RealSharePosterModel::VERIFY_STATUS_UNQUALIFIED: // 未通过
-                $returnData['reason_str'] = self::reasonToStr(explode(',', $sharePosterInfo['reason']), $reasonDict);
+                $returnData['reason_str'] = self::reasonToStr(explode(',', $sharePosterInfo['verify_reason']), $reasonDict);
                 break;
             default:
                 return $returnData;
         }
 
         return $returnData;
+    }
+
+    /**
+     * 真人 - 获取小程序码
+     * @param $request
+     * @return mixed
+     * @throws RunTimeException
+     */
+    public static function getQrPath($request)
+    {
+        $studentId  = $request['student_id'] ?? 0;
+        $channelId  = $request['channel_id'] ?? 0;
+        if (empty($studentId) || empty($channelId)) {
+            throw new RunTimeException(['params_error'], [$request]);
+        }
+        $userStatus = ErpUserService::getStudentStatus($studentId);
+        $qrData = [
+            'poster_id'           => $request['poster_id'],
+            'user_current_status' => $userStatus['pay_status'] ?? 0,
+            'activity_id'         => $request['activity_id'] ?? 0,
+        ];
+        $userType = Constants::USER_TYPE_STUDENT;
+        $landingType = DssUserQrTicketModel::LANDING_TYPE_MINIAPP;
+        $userQrArr = MiniAppQrService::getUserMiniAppQr(Constants::REAL_APP_ID, Constants::REAL_MINI_BUSI_TYPE, $studentId, $userType, $channelId, $landingType, $qrData);
+        if (empty($userQrArr['qr_path'])) {
+            throw new RunTimeException(['invalid_data']);
+        }
+        $qrPath = AliOSS::replaceCdnDomainForDss($userQrArr['qr_path']);
+        return ['qr_path' => $qrPath];
     }
 }

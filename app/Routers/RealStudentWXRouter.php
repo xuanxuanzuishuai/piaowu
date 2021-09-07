@@ -31,5 +31,8 @@ class RealStudentWXRouter extends RouterBase
         '/real_student_wx/activity/share_poster_detail' => ['method' => ['post'], 'call' => RealActivity::class . ':sharePosterDetail'],
         // 月月有奖 && 周周领奖 分享海报文案列表
         '/real_student_wx/poster/word_list'   => ['method' => ['post'], 'call' => RealActivity::class . ':realSharePosterWordList'],
+        // 月月有奖二次分享海报对应的二维码
+        '/real_student_wx/poster/get_qr_path'   => ['method' => ['post'], 'call' => RealActivity::class . ':getQrPath'],
+
     ];
 }

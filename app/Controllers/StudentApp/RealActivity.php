@@ -18,6 +18,7 @@ use App\Models\SharePosterModel;
 use App\Services\ActivityService;
 use App\Services\PosterService;
 use App\Services\RealActivityService;
+use App\Services\RealSharePosterService;
 use App\Services\SharePosterService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -159,12 +160,12 @@ class RealActivity extends ControllerBase
     }
 
     /**
-     * 截图审核详情
+     * 真人 - 截图审核详情
      * @param Request $request
      * @param Response $response
      * @return Response
      */
-    public function shareDetail(Request $request, Response $response)
+    public function sharePosterDetail(Request $request, Response $response)
     {
         try {
             $rules = [
@@ -180,8 +181,7 @@ class RealActivity extends ControllerBase
             if ($result['code'] != Valid::CODE_SUCCESS) {
                 return $response->withJson($result, StatusCode::HTTP_OK);
             }
-            $userInfo = $this->ci['user_info'];
-            $poster = SharePosterService::sharePosterDetail($params['id'], $userInfo);
+            $poster = RealSharePosterService::realSharePosterDetail($params['id']);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
@@ -189,7 +189,7 @@ class RealActivity extends ControllerBase
     }
 
     /**
-     * 获取小程序码
+     * 真人 - 获取小程序码
      * @param Request $request
      * @param Response $response
      * @return Response
