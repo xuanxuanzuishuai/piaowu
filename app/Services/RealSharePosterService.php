@@ -173,7 +173,7 @@ class RealSharePosterService
         }
         return true;
     }
-    
+
     /**
      * 截图审核-发奖-消费者
      * @param $data
@@ -186,7 +186,13 @@ class RealSharePosterService
         }
         SimpleLogger::info('RealSharePosterService_addUserAward', ['data' => $data]);
         //发放奖励接口
-        RealUserAwardMagicStoneService::sendUserMagicStoneAward($data);
+        try {
+            RealUserAwardMagicStoneService::sendUserMagicStoneAward($data);
+        } catch (RunTimeException $e) {
+            SimpleLogger::info('RealSharePosterService_addUserAward', ['data' => $data]);
+            Util::errorCapture("RealSharePosterService_addUserAward_error", [$data, $e->getMessage()]);
+
+        }
         return true;
     }
     
@@ -238,11 +244,9 @@ class RealSharePosterService
     /**
      * 真人 - 截图审核详情
      * @param $id
-     * @param array $userInfo
-     * @return array|mixed
-     * @throws RunTimeException
+     * @return array
      */
-    public static function realSharePosterDetail($id, $userInfo = [])
+    public static function realSharePosterDetail($id)
     {
         $returnData = [];
         if (empty($id)) {
@@ -252,22 +256,11 @@ class RealSharePosterService
         if (empty($sharePosterInfo)) {
             return $returnData;
         }
-        $sharePosterInfo['can_upload'] = Constants::STATUS_TRUE;
-        // TODO qingfeng.lian 利鹏提供方法  /real_student_wx/activity/can_participate_week
-        // 是否可重新上传
-        $activities = [];
-        $allIds = array_column($activities, 'activity_id');
-        if (!in_array($sharePosterInfo['activity_id'], $allIds)) {
-            $sharePosterInfo['can_upload'] = Constants::STATUS_FALSE;
-        }
-        if ($sharePosterInfo['verify_status'] == RealSharePosterModel::VERIFY_STATUS_QUALIFIED) {
-            $sharePosterInfo['can_upload'] = Constants::STATUS_FALSE;
-        }
 
         $statusDict = DictService::getTypeMap(Constants::DICT_TYPE_SHARE_POSTER_CHECK_STATUS);
         $reasonDict = DictService::getTypeMap(Constants::DICT_TYPE_SHARE_POSTER_CHECK_REASON);
 
-        $returnData['can_upload'] = Constants::STATUS_TRUE;
+        $returnData['can_upload'] = Constants::STATUS_FALSE;
         $returnData['verify_status'] = $sharePosterInfo['verify_status'];
         $returnData['status_name'] = $statusDict[$sharePosterInfo['verify_status']] ?? $sharePosterInfo['verify_status'];
         $returnData['image_url'] = AliOSS::replaceCdnDomainForDss($sharePosterInfo['image_path']);
@@ -278,14 +271,20 @@ class RealSharePosterService
 
         // 根据状态判断展示逻辑
         switch ($sharePosterInfo['verify_status']) {
-            case RealSharePosterModel::VERIFY_STATUS_WAIT: // 审核中
-                break;
             case RealSharePosterModel::VERIFY_STATUS_QUALIFIED: // 审核通过
                 // 获取奖励
-                $awardInfo = RealSharePosterAwardModel::getRecord(['share_poster_id' => $id]);
+                $awardInfo                  = RealSharePosterAwardModel::getRecord(['share_poster_id' => $id]);
                 $returnData['award_amount'] = $awardInfo['award_num'] ?? 0;
-                $returnData['award_type'] = $awardInfo['award_type'] ?? 0;
+                $returnData['award_type']   = $awardInfo['award_type'] ?? 0;
                 break;
+            case RealSharePosterModel::VERIFY_STATUS_WAIT || RealSharePosterModel::VERIFY_STATUS_UNQUALIFIED:
+                //获取最新两个最新可参与的周周领奖活动
+                $activityData = RealWeekActivityModel::getStudentCanSignWeekActivity(2, time());
+                // 获取是否能重新上传 - 在可参与范围内，并且是审核中的
+                if (in_array($sharePosterInfo['activity_id'], array_column($activityData, 'activity_id'))) {
+                    $returnData['can_upload'] = Constants::STATUS_TRUE;
+                }
+                // no break; 审核通过和不通过的公用部分
             case RealSharePosterModel::VERIFY_STATUS_UNQUALIFIED: // 未通过
                 $returnData['reason_str'] = self::reasonToStr(explode(',', $sharePosterInfo['reason']), $reasonDict);
                 break;

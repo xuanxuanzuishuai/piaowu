@@ -15,11 +15,8 @@ use App\Libs\HttpHelper;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\Erp\ErpStudentModel;
-use App\Models\OperationActivityModel;
 use App\Models\RealSharePosterModel;
-use App\Models\Dss\DssStudentModel;
 use App\Models\RealWeekActivityModel;
-use App\Models\SharePosterModel;
 use App\Services\ActivityService;
 use App\Services\PosterService;
 use App\Services\RealActivityService;
@@ -153,7 +150,6 @@ class RealActivity extends ControllerBase
     {
         try {
             $params = $request->getParams();
-            // TODO qingfeng.lian 需要确认通过客服消息点击进入时这个user_info能不能获取到
             $userInfo = $this->ci['user_info'];
             $student = ErpStudentModel::getById($userInfo['user_id']);
             if (empty($student)) {
@@ -191,9 +187,7 @@ class RealActivity extends ControllerBase
             if ($result['code'] != Valid::CODE_SUCCESS) {
                 return $response->withJson($result, StatusCode::HTTP_OK);
             }
-            // $userInfo = $this->ci['user_info'];
-            $userInfo = [];
-            $poster = RealSharePosterService::realSharePosterDetail($params['id'], $userInfo);
+            $poster = RealSharePosterService::realSharePosterDetail($params['id']);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }

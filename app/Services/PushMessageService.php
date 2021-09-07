@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Erp;
+use App\Libs\RealDictConstants;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
@@ -362,10 +363,6 @@ class PushMessageService
     public static function realGetWechatConfigId($awardInfo)
     {
         //当前奖励要发放的数据库的消息模板
-        $baseArr = [
-            // 上传截图
-            RealSharePosterModel::TYPE_CHECKIN_UPLOAD => 259
-        ];
-        return $baseArr[$awardInfo['type']] ?? 0;
+        return RealDictConstants::get(RealDictConstants::REAL_SHARE_POSTER_CONFIG, $awardInfo['verify_status']);
     }
 }

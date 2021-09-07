@@ -676,7 +676,7 @@ class SourceMaterialService
             'app_id'         => Constants::SMART_APP_ID,
             'qr_type'        => $qrType,
         ];
-        $qrInfo = QrInfoService::getQrIdList([$qrData]);
+        $qrInfo = QrInfoService::getQrIdList(Constants::SMART_APP_ID, Constants::SMART_MINI_BUSI_TYPE, [$qrData]);
         $qrId = !empty($qrInfo) ? end($qrInfo)['qr_id'] : null;
         if (empty($qrId)) {
             throw new RunTimeException(["create_qr_id_error"]);

@@ -1304,6 +1304,33 @@ class MessageService
             SimpleLogger::info("sendRealSharePosterMessage share_poster_id empty", [$params]);
             return false;
         }
+        $sharePosterInfo = RealSharePosterModel::getRecord(['id' => $sharePosterId]);
+        if (empty($sharePosterInfo)) {
+            SimpleLogger::info("sendRealSharePosterMessage share_poster empty", [$params]);
+            return false;
+        }
+        // 获取活动信息
+        $activityInfo = RealWeekActivityModel::getRecord(['activity_id' => $sharePosterInfo['activity_id']]);
+        if (empty($activityInfo)) {
+            SimpleLogger::info("sendRealSharePosterMessage activity not found", [$params, $sharePosterInfo]);
+            return false;
+        }
+
+        if ($sharePosterInfo == RealSharePosterModel::VERIFY_STATUS_UNQUALIFIED) {
+            // 审核未通过，发消息
+            $ext = [
+                'activity_name' => $activityInfo['name'],
+                'url' => RealDictConstants::get(RealDictConstants::REAL_REFERRAL_CONFIG, 'real_refused_poster_url'),
+            ];
+            $awardInfo['type'] = RealSharePosterModel::TYPE_CHECKIN_UPLOAD;
+            $awardInfo['app_id'] = Constants::REAL_APP_ID;
+            $awardInfo['verify_status'] = RealSharePosterModel::VERIFY_STATUS_UNQUALIFIED;
+            PushMessageService::realSendMessage($awardInfo, $ext);
+        } elseif ($sharePosterInfo == RealSharePosterModel::VERIFY_STATUS_WAIT) {
+            // 待审核 不能发送消息
+            SimpleLogger::info("sendRealSharePosterMessage share_poster VERIFY_STATUS_WAIT", [$params]);
+            return false;
+        }
         // 获取海报对应的奖励id
         $sharePosterAwardInfo = RealSharePosterAwardModel::getRecord(['share_poster_id' => $sharePosterId]);
         if (empty($sharePosterAwardInfo)) {
@@ -1320,18 +1347,11 @@ class MessageService
         // 指定必要字段
         $awardInfo['type'] = RealSharePosterModel::TYPE_CHECKIN_UPLOAD;
         $awardInfo['app_id'] = Constants::REAL_APP_ID;
+        $awardInfo['verify_status'] = RealSharePosterModel::VERIFY_STATUS_QUALIFIED;
 
-        // 获取活动信息
-        $activityInfo = RealWeekActivityModel::getRecord(['activity_id' => $awardInfo['activity_id']]);
-        if (empty($activityInfo)) {
-            SimpleLogger::info("sendRealSharePosterMessage activity not found", [$params, $awardInfo, $sharePosterAwardInfo]);
-            return false;
-        }
-
-        // TODO qingfeng.lian 参与记录的连接
         $ext = [
             'activity_name' => $activityInfo['name'],
-            'url' => '',
+            'url' => RealDictConstants::get(RealDictConstants::REAL_REFERRAL_CONFIG, 'real_month_award_url'),
             'award_amount' => $awardInfo['award_amount']
         ];
         PushMessageService::realSendMessage($awardInfo, $ext);

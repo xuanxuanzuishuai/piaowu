@@ -108,6 +108,7 @@ class RealUserAwardMagicStoneService
         );
 
         // 发送消息
+        QueueService::realSendPosterAwardMessage(["share_poster_id" => $sharePosterId]);
 
         // 返回结果
         return true;

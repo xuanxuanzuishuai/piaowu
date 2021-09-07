@@ -29,4 +29,16 @@ class RealReferralTopic extends BaseTopic
         $this->setMsgBody($data);
         return $this;
     }
+
+    /**
+     * 真人 - 微信消息 - 审核截图发送奖励
+     * @param $data
+     * @return $this
+     */
+    public function realSendPosterAwardMessage($data)
+    {
+        $this->setEventType(self::REAL_SHARE_POSTER_MESSAGE);
+        $this->setMsgBody($data);
+        return $this;
+    }
 }

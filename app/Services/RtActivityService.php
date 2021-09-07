@@ -1510,7 +1510,7 @@ class RtActivityService
             'qr_type'        => $qrType,
             'create_type'    => $createType
         ];
-        $qrInfo = QrInfoService::getQrIdList([$qrData]);
+        $qrInfo = QrInfoService::getQrIdList(Constants::SMART_APP_ID, Constants::SMART_MINI_BUSI_TYPE, [$qrData]);
         $qrId = !empty($qrInfo) ? end($qrInfo)['qr_id'] : null;
         return $qrId;
     }

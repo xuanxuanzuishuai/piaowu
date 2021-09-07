@@ -5,24 +5,18 @@
 
 namespace App\Services;
 
-
 use App\Libs\AliOSS;
-use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
-use App\Models\Dss\DssUserQrTicketModel;
-use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\QrInfoOpCHModel;
 use App\Services\Queue\QueueService;
-use Predis\Client;
 
 class QrInfoService
 {
     private const REDIS_WAIT_USE_QR_SET   = 'wait_use_qr_set';    // 等待使用的二维码标识
-    const         REDIS_USE_QR_NUM        = 'use_qr_num';         // 二维码标识已使用数量
     const         REDIS_CREATE_QR_ID_LOCK = 'create_qr_id_lock';    // 生成二维码码标识锁
 
     /**
@@ -95,8 +89,6 @@ class QrInfoService
 
         // 获取待使用的标识数量
         $qrIdArr = $redis->spop(self::REDIS_WAIT_USE_QR_SET, $getQrNum);
-        // 更新使用的标识数量
-        $useQrNum = $redis->incrby(self::REDIS_USE_QR_NUM, $getQrNum);
         // 如果达到阀值(已使用数量-每次生成数量-10000) 启用生成标识队列
         // 启用数量计算 :: 剩余数量 < 0.2*300000
         $createUseNum = DictConstants::get(DictConstants::MINI_APP_QR, 'create_wait_use_qr_num');
@@ -112,12 +104,12 @@ class QrInfoService
      * @param $params
      * @return bool
      */
-    public static function createQrId($params)
+    public static function createQrId($params): bool
     {
         // 设置锁 - 同一时间只能有一个脚本执行
         $lock = Util::setLock(self::REDIS_CREATE_QR_ID_LOCK);
         if (!$lock) {
-            SimpleLogger::info("createQrId is lock", []);
+            SimpleLogger::info("createQrId is lock", [$params]);
             return false;
         }
 
@@ -128,7 +120,7 @@ class QrInfoService
                 'create_wait_use_qr_num',       // 每次生成待使用的二维码码数量
                 'wait_use_qr_max_num',          // 待使用的二维码码最大数量
             ]);
-            SimpleLogger::info("createQrId start", [$maxId, $createIdNum]);
+            SimpleLogger::info("createQrId start", [$maxId, $createIdNum, $params]);
             // 检查配置
             if (empty($maxId) || empty($createIdNum)) {
                 SimpleLogger::info("createQrId config error", [$maxId, $createIdNum]);
@@ -166,6 +158,8 @@ class QrInfoService
             $updateRes = DictService::updateValue(DictConstants::MINI_APP_QR['type'], 'current_max_id', $sortId);
             if (empty($updateRes)) {
                 SimpleLogger::error("createQrId update current_max_id error", ['current_max_id' => $sortId]);
+                Util::errorCapture("createQrId update current_max_id error", ['current_max_id' => $sortId]);
+                throw new RunTimeException(["createQrId_update_current_max_id_error"], ['current_max_id' => $sortId]);
             }
 
             // 更新缓存
@@ -186,12 +180,22 @@ class QrInfoService
 
     /**
      * 生成数据对应的qr_id - 支持批量 - 普通二维码需要传入qr_path
+     * @param numeric $appId
+     * @param numeric $busiesType
      * @param array $qrParams
      * @param array $field
      * @param bool $isFullUrl
      * @return array
+     * @throws RunTimeException
+     * 使用场景和注意事项
+     * --------- 可使用场景 --------
+     * 1.生成无二维码的qr_id时 - 可使用
+     * 2.生成h5二维码对应的qr_id时(h5二维码需要自己生成) - 可使用
+     * 3.注意qr_type值，无二维码qr_type=3, h5二维码 qr_type=2
+     * -------- 不可使用场景 --------
+     * 1.生成小程序专属二维码 - 不可使用
      */
-    public static function getQrIdList(array $qrParams, array $field = [], bool $isFullUrl = false)
+    public static function getQrIdList($appId, $busiesType, array $qrParams, array $field = [], bool $isFullUrl = false): array
     {
         $returnQrSignArr = [];
         $saveQrData      = [];
@@ -201,8 +205,8 @@ class QrInfoService
         }
         // 生成qr_sign, qr_ticket
         $qrSignArr = [];
-        foreach ($qrParams as $key => &$item) {
-            $sign                   = self::createQrSign($item, Constants::SMART_APP_ID, DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP);
+        foreach ($qrParams as &$item) {
+            $sign                   = self::createQrSign($item, $appId, $busiesType);
             $qrSignArr[]            = $sign;
             $item['qr_sign']        = $sign;
             $returnQrSignArr[$sign] = [];
@@ -219,15 +223,16 @@ class QrInfoService
             if (isset($qrSignData[$_qrSign])) {
                 $_tmp = $qrSignData[$_qrSign];
             } else {
-                // CH没有查到获取一个待使用的小程序码信息
+                /** CH没有查到获取一个待使用的小程序码信息 */
+                // 获取一个空白待使用的qr_id
                 $qrId = self::getWaitUseQrId(1);
                 // 把信息关联并且写入到CH - 补全数据
                 $_tmpSaveData                = $_qrParam;
                 $_tmpSaveData['qr_id']       = $qrId;
                 $_tmpSaveData['qr_path']     = $_qrParam['qr_path'] ?? '';
                 $_tmpSaveData['qr_sign']     = $_qrSign;
-                $_tmpSaveData['app_id']      = $_qrParam['app_id'] ?? Constants::SMART_APP_ID;
-                $_tmpSaveData['busies_type'] = $_qrParam['busies_type'] ?? DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP;
+                $_tmpSaveData['app_id']      = $appId;
+                $_tmpSaveData['busies_type'] = $busiesType;
                 $_tmpSaveData['user_status'] = $_qrParam['user_status'] ?? ($_qrParam['user_current_status'] ?? 0);
                 $_tmpSaveData['create_type'] = $_qrParam['create_type'] ?? DictConstants::get(DictConstants::TRANSFER_RELATION_CONFIG, 'user_relation_status');
                 $_tmpSaveData['qr_type']     = $_qrParam['qr_type'] ?? DictConstants::get(DictConstants::MINI_APP_QR, 'qr_type_none');
@@ -257,12 +262,7 @@ class QrInfoService
             }
         }
 
-        // 返回 [qr_id,qr_sign,qr_ticket,$field]
-        // 去掉key
-        $qrSignList = [];
-        foreach ($returnQrSignArr as $_qrSign) {
-            $qrSignList[] = $_qrSign;
-        }
-        return $qrSignList;
+        // 去掉key - 返回 [qr_id,qr_sign,qr_ticket,$field]
+        return array_values($returnQrSignArr);
     }
 }

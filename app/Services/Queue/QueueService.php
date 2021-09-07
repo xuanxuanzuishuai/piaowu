@@ -506,7 +506,7 @@ class QueueService
         }
         return true;
     }
-    
+
     /**
      * 真人 - 截图审核通过发奖
      * @param $data
@@ -523,7 +523,7 @@ class QueueService
         }
         return true;
     }
-    
+
     /**
      * ocr审核海报
      * @param $data
@@ -947,6 +947,22 @@ class QueueService
             (new ErpStudentAccountTopic())->erpNormalCredited($data)->publish($deferTime);
         } catch (Exception $e) {
             SimpleLogger::error($e->getMessage(), $data);
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 真人 - 微信消息 - 审核截图发送奖励
+     * @param $data
+     * @return bool
+     */
+    public static function realSendPosterAwardMessage($data)
+    {
+        try {
+            (new RealReferralTopic())->realSendPosterAwardMessage($data)->publish(5);
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), [$data]);
             return false;
         }
         return true;
