@@ -230,31 +230,36 @@ class RealActivityService
 
     /**
      * 周周有奖活动海报截图上传
-     * @param $studentId
+     * @param $studentData
      * @param $activityId
      * @param $imagePath
      * @return int|mixed|null|string
      * @throws RunTimeException
      */
-    public static function weekActivityPosterScreenShotUpload($studentId, $activityId, $imagePath)
+    public static function weekActivityPosterScreenShotUpload($studentData, $activityId, $imagePath)
     {
+        $time = time();
         //资格检测
-        $checkRes = ErpUserService::getStudentStatus($studentId);
+        $checkRes = ErpUserService::getStudentStatus($studentData['id']);
         if ($checkRes['pay_status'] != ErpStudentAppModel::STATUS_PAID) {
             throw new RunTimeException(['student_status_disable']);
         }
+        //活动检测:获取最新两个最新可参与的周周领奖活动
+        $canParticipateWeekActivityIds = self::getCanParticipateWeekActivityIds($studentData, 2);
+        if (!in_array($activityId, array_column($canParticipateWeekActivityIds, 'activity_id'))) {
+            throw new RunTimeException(['wait_for_next_event']);
+        }
         //审核通过不允许上传截图
         $uploadRecord = RealSharePosterModel::getRecord([
-            'student_id' => $studentId,
+            'student_id' => $studentData['id'],
             'activity_id' => $activityId,
             'ORDER' => ['id' => 'DESC']
         ], ['verify_status', 'id']);
         if (!empty($uploadRecord) && ($uploadRecord['verify_status'] == RealSharePosterModel::VERIFY_STATUS_QUALIFIED)) {
             throw new RunTimeException(['wait_for_next_event']);
         }
-        $time = time();
         $data = [
-            'student_id' => $studentId,
+            'student_id' => $studentData['id'],
             'type' => RealSharePosterModel::TYPE_WEEK_UPLOAD,
             'activity_id' => $activityId,
             'image_path' => $imagePath,

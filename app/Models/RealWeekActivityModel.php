@@ -119,7 +119,6 @@ class RealWeekActivityModel extends Model
      * 检查活动时间，与已启用活动有时间冲突，不可启用
      * @param $startTime
      * @param $endTime
-     * @param $eventId
      * @param $exceptActId
      * @return array
      */

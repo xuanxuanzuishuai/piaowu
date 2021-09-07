@@ -108,11 +108,11 @@ class RealActivity extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         try {
-            //上传并发处理:一个账户针对同一个活动15秒内上传截图只允许进行一次有效动作
+            //上传并发处理:一个账户针对同一个活动5秒内上传截图只允许进行一次有效动作
             $lockKey = RealWeekActivityModel::REAL_WEEK_LOCK_KEY . $this->ci['user_info']['user_id'] . '_' . $params['activity_id'];
             $lock = Util::setLock($lockKey, 5);
             if ($lock) {
-                RealActivityService::weekActivityPosterScreenShotUpload($this->ci['user_info']['user_id'], $params['activity_id'], $params['image_path']);
+                RealActivityService::weekActivityPosterScreenShotUpload(['id' => $this->ci['user_info']['user_id'], 'first_pay_time' => $this->ci['user_info']['first_pay_time'],], $params['activity_id'], $params['image_path']);
             }
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
