@@ -83,6 +83,7 @@ class RealMonthActivityModel extends Model
                 'w.create_time',
                 'w.update_time',
                 'w.operator_id',
+                'w.retention_copy',
                 'a.award_rule',
                 'a.remark',
             ],
