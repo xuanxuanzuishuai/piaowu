@@ -72,7 +72,7 @@ class UserPointsExchangeOrderWxModel extends Model
             $whereUuid = array_merge(array_column($studentList, 'uuid'), $whereUuid);
         }
         if (!empty($whereUuid)) {
-            $where .= " AND {$pointsTable}.uuid' in ('" . implode("','", $whereUuid) . "')";
+            $where .= " AND {$pointsTable}.uuid in ('" . implode("','", $whereUuid) . "')";
         }
         if (!empty($params['reviewer_id'])) {
             $where .= " AND {$pointsTable}.operator_id={$params['reviewer_id']}";
