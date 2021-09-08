@@ -27,7 +27,6 @@ class RealStudentAppRouter extends RouterBase
         '/real_student_app/activity/month' => ['method' => ['post'], 'call' => RealActivity::class . ':getMonthActivity'],
         '/real_student_app/activity/can_participate_week' => ['method' => ['post'], 'call' => RealActivity::class . ':getCanParticipateWeekActivityList'],
         '/real_student_wx/activity/week_poster_upload' => ['method' => ['post'], 'call' => RealActivity::class . ':weekActivityPosterScreenShotUpload'],
-        '/real_student_app/poster/list' => ['method' => ['post'], 'call' => RealActivity::class . ':list'],
         '/real_student_app/activity/share_poster_history' => ['method' => ['post'], 'call' => RealActivity::class . ':sharePosterHistory'],
         '/real_student_app/activity/share_poster_detail' => ['method' => ['post'], 'call' => RealActivity::class . ':sharePosterDetail'],
 

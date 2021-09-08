@@ -9,11 +9,14 @@
 namespace App\Controllers\StudentApp;
 
 use App\Controllers\ControllerBase;
+use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\Dss\DssStudentModel;
+use App\Models\Erp\ErpStudentModel;
+use App\Models\RealSharePosterModel;
 use App\Models\RealWeekActivityModel;
 use App\Models\SharePosterModel;
 use App\Services\ActivityService;
@@ -135,28 +138,28 @@ class RealActivity extends ControllerBase
     }
 
     /**
-     * 截图上传历史记录
+     * 真人 - 截图上传历史记录
      * @param Request $request
      * @param Response $response
      * @return Response
      */
-    public function shareList(Request $request, Response $response)
+    public function sharePosterHistory(Request $request, Response $response)
     {
         try {
             $params = $request->getParams();
             $userInfo = $this->ci['user_info'];
-            $student = DssStudentModel::getById($userInfo['user_id']);
+            $student = ErpStudentModel::getById($userInfo['user_id']);
             if (empty($student)) {
                 throw new RunTimeException(['record_not_found']);
             }
-            $params['type'] = SharePosterModel::TYPE_WEEK_UPLOAD;
-            $params['user_id'] = $student['id'];
-            list($params['page'], $params['count']) = Util::formatPageCount($params);
-            list($posters, $total) = SharePosterService::sharePosterList($params);
+            $params['type'] = RealSharePosterModel::TYPE_WEEK_UPLOAD;
+            $params['student_id'] = $student['id'];
+            list($page, $count) = Util::formatPageCount($params);
+            $res = RealSharePosterService::sharePosterHistory($params, $page, $count);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
-        return HttpHelper::buildResponse($response, ['list' => $posters, 'total' => $total]);
+        return HttpHelper::buildResponse($response, $res);
     }
 
     /**
@@ -217,11 +220,28 @@ class RealActivity extends ControllerBase
         try {
             $userInfo = $this->ci['user_info'];
             $params['student_id'] = $userInfo['user_id'];
-            $data = PosterService::getQrPath($params);
+            $data = RealSharePosterService::getQrPath($params);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
         return HttpHelper::buildResponse($response, $data);
     }
 
+    /**
+     * 真人 - 周周领奖分享海报文案列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function realSharePosterWordList(Request $request, Response $response)
+    {
+        try {
+            $params = $request->getParams();
+            $params['app_id'] = Constants::REAL_APP_ID;
+            $data = SharePosterService::sharePosterWordList($params);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
+        return HttpHelper::buildResponse($response, $data);
+    }
 }
