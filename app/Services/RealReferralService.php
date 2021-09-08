@@ -65,13 +65,16 @@ class RealReferralService
             $channel   = !empty($qrData['channel_id']) ? $qrData['channel_id'] : $channel;
         }
         $registerData = [
-            'app_id'       => $appId,
-            'busi_type'    => $busiType,
-            'open_id'      => $openid,
-            'mobile'       => $mobile,
-            'channel_id'   => $channel,
-            'country_code' => $countryCode,
-            'user_type'    => $userType
+            'app_id'          => $appId,
+            'busi_type'       => $busiType,
+            'open_id'         => $openid,
+            'mobile'          => $mobile,
+            'channel_id'      => $channel,
+            'country_code'    => $countryCode,
+            'user_type'       => $userType,
+            'referee_id'      => '0',
+            'referee_user_id' => $refereeId ?? '',
+            'referee_type'    => Constants::USER_TYPE_STUDENT
         ];
         //注册用户
         $studentInfo = (new Erp())->refereeStudentRegister($registerData);
@@ -88,7 +91,7 @@ class RealReferralService
             ]);
         }
         //生成token
-        $token  = WechatTokenService::generateToken($studentInfo['id'], $userType, $appId, $openid);
+        $token  = WechatTokenService::generateToken($studentInfo['student_id'], $userType, $appId, $openid);
         $result = [
             'is_new'     => $isNew,
             'openid'     => $openid,
@@ -213,9 +216,10 @@ class RealReferralService
             return $result;
         }
         $result = [
-            'nick_name' => '',
-            'thumb'     => '',
-            'play_days' => 0,
+            'nick_name'   => '',
+            'thumb'       => '',
+            'play_days'   => 0,
+            'invite_uuid' => '',
         ];
         //账户数据
         $userData = ErpStudentModel::getUserInfo($refereeId);
@@ -225,7 +229,7 @@ class RealReferralService
         $userData = end($userData);
         $appid = Constants::REAL_APP_ID;
         $busiType = Constants::LIFE_WX_SERVICE;
-
+        $result['invite_uuid'] = $userData['uuid'];
         //微信数据
         $where  = [
             'user_id'   => $refereeId,
