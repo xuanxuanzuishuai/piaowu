@@ -949,8 +949,8 @@ class RtActivityService
         //学生获取海报前 校验是否有资格
         if ($request['type'] == RtActivityModel::ACTIVITY_RULE_TYPE_STUDENT) {
             //获取学生信息
-            $studentUid = DssStudentModel::getRecord(['id' => $request['student_id']], 'id');
-            if (empty($studentUid)) {
+            $studentInfo = DssStudentModel::getRecord(['id' => $request['student_id']], ['id','uuid']);
+            if (empty($studentInfo)) {
                 throw new RunTimeException(['record_not_found']);
             }
             $posterAscription = ActivityPosterModel::POSTER_ASCRIPTION_STUDENT;
@@ -972,7 +972,8 @@ class RtActivityService
                 'activity_id'   => $activity['activity_id'],
                 'employee_id'   => $request['employee_id'],
                 'employee_uuid' => $request['employee_uuid'],
-                'invite_uid'    => $studentUid ?? '',
+                'invite_uid'    => $studentInfo['id'] ?? '',
+                'invitee_uuid'  => $studentInfo['uuid'] ?? '',
                 'param_id'      => $paramMapId,
                 'channel_id'    => $channel_id
             ];
