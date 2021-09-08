@@ -65,7 +65,11 @@ class UserPointsExchangeOrderWxModel extends Model
         $whereUuid = [];
         $joinTable = '';
         if (!empty($params['student_uuid'])) {
-            $whereUuid[] = $params['student_uuid'];
+            if (is_array($params['student_uuid'])) {
+                $whereUuid = array_merge($whereUuid, $params['student_uuid']);
+            } else {
+                $whereUuid[] = $params['student_uuid'];
+            }
         }
         if (!empty($params['student_mobile'])) {
             $studentList = DssStudentModel::getRecords(['mobile' => $params['student_mobile']], ['uuid']);
