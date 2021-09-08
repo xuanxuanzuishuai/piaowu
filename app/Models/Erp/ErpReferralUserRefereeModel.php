@@ -8,10 +8,12 @@
 
 namespace App\Models\Erp;
 
+use App\Libs\Constants;
 
 class ErpReferralUserRefereeModel extends ErpModel
 {
     public static $table = 'referral_user_referee';
+    const REFEREE_TYPE_STUDENT = 1; // 学生
 
     /**
      * 获取推荐人信息数据
@@ -43,5 +45,28 @@ class ErpReferralUserRefereeModel extends ErpModel
         ";
         $where = "s.uuid in ('".implode("','", $ids)."')";
         return $db->queryAll(sprintf($sql, $field, $join, $where));
+    }
+
+    /**
+     * 获取推荐人信息-按照推荐购买年卡数排序
+     * @param numeric $limit
+     * @return array
+     */
+    public static function getReferralBySort($limit = 20): array
+    {
+        $db              = self::dbRO();
+        $table           = self::getTableNameWithDb();
+        $studentAppTable = ErpStudentAppModel::getTableNameWithDb();
+        $lastStage       = ErpStudentAppModel::STATUS_PAID;
+        $appId           = Constants::REAL_APP_ID;
+        $refereeType     = self::REFEREE_TYPE_STUDENT;
+
+        $sql = 'SELECT r.`referee_id`,count( 1 ) AS num FROM ' . $table . ' as r' .
+            ' INNER JOIN ' . $studentAppTable . ' as s ON s.student_id=r.referee_id AND s.status=' . $lastStage .
+            ' WHERE r.app_id=' . $appId . ' AND r.referee_type=' . $refereeType .
+            ' GROUP BY r.`referee_id` ORDER BY num DESC LIMIT ' . $limit;
+
+        $list = $db->queryAll($sql);
+        return is_array($list) ? $list : [];
     }
 }

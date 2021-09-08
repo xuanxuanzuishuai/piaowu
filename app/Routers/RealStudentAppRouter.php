@@ -34,5 +34,7 @@ class RealStudentAppRouter extends RouterBase
         '/real_student_app/poster/word_list' => ['method' => ['post'], 'call' => StudentActivity::class . ':realSharePosterWordList'],
         // 月月有奖二次分享海报对应的二维码
         '/real_student_app/poster/get_qr_path'   => ['method' => ['post'], 'call' => StudentActivity::class . ':getQrPath'],
+        // 月月有奖二次分享跑马灯数据
+        '/real_student_app/activity/award_top_list'   => ['method' => ['post'], 'call' => StudentActivity::class . ':realUserRewardTopList'],
     ];
 }

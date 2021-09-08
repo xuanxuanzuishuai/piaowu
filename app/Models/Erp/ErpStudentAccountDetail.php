@@ -11,16 +11,16 @@ class ErpStudentAccountDetail extends  ErpModel
     const TYPE_ENTER = 1; // 入账
 
     const SUB_TYPE_GOLD_LEAF = 3002; //金叶子积分
+    const SUB_TYPE_MAGIC_STONE = 3001; //魔法石积分
 
     /**
      * 批量获取金叶子总数-根据用户id
      * @return array|null
      */
-    public static function getUserRewardTotal($studentIds)
+    public static function getUserRewardTotal($studentIds, $subType = self::SUB_TYPE_GOLD_LEAF)
     {
         $table       = self::$table;
         $operateType = self::TYPE_ENTER;
-        $subType     = self::SUB_TYPE_GOLD_LEAF;
         $studentIds  = implode(",", $studentIds);
 
         $sql         = "SELECT 

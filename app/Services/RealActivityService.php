@@ -6,9 +6,15 @@ use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\RealDictConstants;
+use App\Libs\RedisDB;
 use App\Libs\Util;
 use App\Models\ActivityExtModel;
+use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserQrTicketModel;
+use App\Models\Erp\ErpPackageV1Model;
+use App\Models\Erp\ErpReferralUserRefereeModel;
+use App\Models\Erp\ErpStudentAccountDetail;
 use App\Models\Erp\ErpStudentAppModel;
 use App\Models\Erp\ErpStudentModel;
 use App\Models\OperationActivityModel;
@@ -289,5 +295,89 @@ class RealActivityService
         //系统自动审核
         QueueService::checkPoster(['id' => $res, 'app_id' => Constants::REAL_APP_ID]);
         return $res;
+    }
+
+    /**
+     * 真人 - 跑马灯数据-获取用户金叶子相关信息
+     * @param $topNum
+     * @return array
+     */
+    public static function realUserRewardTopList($topNum = 20)
+    {
+        // 获取预设的手机号 (智能的账号) 和 其他配置
+        list($mobileStr, $magicStone) = RealDictConstants::get(RealDictConstants::REAL_TWO_SHARE_POSTER_TOP_CONFIG, [ 'mobile_invitee_num', 'magic_stone']);
+        $mobileInviteeNumArr = json_decode($mobileStr, true);
+        $userList = DssStudentModel::getRecords(['mobile' => array_keys($mobileInviteeNumArr)], ['id', 'name', 'mobile', 'thumb']);
+        $userList = array_column($userList, null, 'mobile');
+        $accountDetail = [];
+        foreach ($userList as $item) {
+            $_userInviteeNum = $mobileInviteeNumArr[$item['mobile']] ?: 0;
+            $accountDetail[] = [
+                'student_id' => $item['id'],
+                'invite_num' => $_userInviteeNum,
+                'magic_stone_num' => ceil($_userInviteeNum * $magicStone),
+                'avatar' => ErpUserService::getStudentThumbUrl($item['thumb']),
+                'name' => $item['name'] ?: ErpUserService::getStudentDefaultName($item['name']),
+            ];
+        }
+        unset($item);
+
+        // 排序 - 邀请人数
+        array_multisort(array_column($accountDetail, 'invite_num'), SORT_DESC, $accountDetail);
+        // 排序 - 魔法石总数量
+        array_multisort(array_column($accountDetail, 'magic_stone_num'), SORT_DESC, $accountDetail);
+
+
+        /** 真实数据查询 - 暂时注释 */
+        // // 从redis缓存读取
+        // $redis = RedisDB::getConn();
+        // $cacheKey = Constants::REAL_APP_ID .'_user_reward_details';
+        // $value = $redis->get($cacheKey);
+        // if (!empty($value)) {
+        //     return json_decode($value, true);
+        // }
+        // // 获取邀请年卡前20名用户已到账魔法石数量， 倒序
+        // $referralTopList = ErpReferralUserRefereeModel::getReferralBySort($topNum);
+        // if (empty($referralTopList)) {
+        //     return [];
+        // }
+        // // 获取推荐人信息
+        // $referral = [];
+        // $referralIds = [];
+        // foreach ($referralTopList as $item) {
+        //     $referral[$item['referee_id']] = $item;
+        //     $referralIds[] = $item['referee_id'];
+        // }
+        // unset($item, $referralTopList);
+        // $referralUserList = ErpStudentModel::getRecords(['id' => $referralIds], ['id', 'name', 'mobile', 'thumb','uuid']);
+        // if (empty($referralUserList)) {
+        //     return [];
+        // }
+        // $referralUserList = array_column($referralUserList, null, 'id');
+        // // 获取用户入账总数
+        // $accountDetail = ErpStudentAccountDetail::getUserRewardTotal($referralIds, ErpStudentAccountDetail::SUB_TYPE_MAGIC_STONE);
+        // if (empty($accountDetail)) {
+        //     return [];
+        // }
+        // // 根据入账总数排序
+        // array_multisort(array_column($accountDetail, 'total'), SORT_DESC, $accountDetail);
+        //
+        // // 组装数据
+        // foreach ($accountDetail as &$val) {
+        //     $_thumb = $referralUserList[$val['referee_id']]['thumb'] ?? '';
+        //     $_name = $referralUserList[$val['referee_id']]['name'] ?? '';
+        //     // 邀请人数
+        //     $val['invite_num']    = $referral[$val['referee_id']]['num'] ?? 0;
+        //     // 魔法石积分 - 单位万
+        //     $val['magic_stone_num'] = ceil($val['total'] / (ErpPackageV1Model::DEFAULT_SCALE_NUM * SourceMaterialService::WAN_UNIT));
+        //     // 昵称
+        //     $val['name']          = $_name ?: ErpUserService::getStudentThumbUrl($_thumb);
+        //     // 头像
+        //     $val['avatar']        = ErpUserService::getStudentDefaultName($_thumb);
+        // }
+        // unset($val);
+        //
+        // $redis->setex($cacheKey, Util::TIMESTAMP_12H, json_encode($accountDetail));
+        return $accountDetail;
     }
 }

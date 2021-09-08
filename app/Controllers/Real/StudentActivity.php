@@ -226,4 +226,20 @@ class StudentActivity extends ControllerBase
         }
         return HttpHelper::buildResponse($response, $data);
     }
+
+    /**
+     * 真人 - 获取月月有奖二次跑马灯数据
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function realUserRewardTopList(Request $request, Response $response)
+    {
+        try {
+            $data = RealActivityService::realUserRewardTopList();
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
+        return HttpHelper::buildResponse($response, $data);
+    }
 }

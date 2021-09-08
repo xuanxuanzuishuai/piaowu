@@ -36,4 +36,13 @@ class RealDictConstants extends DictConstants
             '3',  // 审核状态 - 审核未通过消息id
         ]
     ];
+
+    // 真人二次分享页面跑马灯数据
+    const REAL_TWO_SHARE_POSTER_TOP_CONFIG = [
+        'type' => 'REAL_TWO_SHARE_POSTER_TOP_CONFIG',
+        'keys' => [
+            'mobile_invitee_num', // 手机号对应邀请人数
+            'magic_stone',
+        ],
+    ];
 }
