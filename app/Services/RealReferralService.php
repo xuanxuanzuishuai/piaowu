@@ -40,14 +40,19 @@ class RealReferralService
         $busiType   = Constants::REAL_MINI_BUSI_TYPE;
         $userType   = Constants::USER_TYPE_STUDENT;
         $weChat     = WeChatMiniPro::factory($appId, $busiType);
-        $sessionKey = $weChat->getSessionKey($openid, $params['wx_code'] ?? '');
-        //解密用户手机号
-        $jsonMobile = self::decodeMobile($params['iv'], $params['encrypted_data'], $sessionKey);
-        if (empty($jsonMobile)) {
-            throw new RunTimeException(['authorization_error']);
+        if (empty($params['mobile'])) {
+            $sessionKey = $weChat->getSessionKey($openid, $params['wx_code'] ?? '');
+            //解密用户手机号
+            $jsonMobile = self::decodeMobile($params['iv'], $params['encrypted_data'], $sessionKey);
+            if (empty($jsonMobile)) {
+                throw new RunTimeException(['authorization_error']);
+            }
+            $mobile      = $jsonMobile['purePhoneNumber'];
+            $countryCode = $jsonMobile['countryCode'];
+        } else {
+            $mobile      = $params['mobile'];
+            $countryCode = $params['country_code'];
         }
-        $mobile      = $jsonMobile['purePhoneNumber'];
-        $countryCode = $jsonMobile['countryCode'];
         //查询账号是否存在
         $studentInfo = ErpStudentModel::getRecord(['mobile' => $mobile]);
         $isNew       = empty($studentInfo) ? true : false;
@@ -77,7 +82,7 @@ class RealReferralService
         if ($isNew && !empty($refereeId)) {
             (new Referral())->setReferralUserReferee([
                 'referee_id' => $refereeId,
-                'user_id'    => $studentInfo['id'],
+                'user_id'    => $studentInfo['student_id'],
                 'type'       => Constants::USER_TYPE_STUDENT,
                 'app_id'     => $appId,
             ]);
@@ -231,7 +236,7 @@ class RealReferralService
                 'id' => 'DESC'
             ],
         ];
-        $openId = ErpUserWeiXinModel::getRecord($where, ['open_id']);
+        $openId = ErpUserWeiXinModel::getRecord($where, 'open_id');
         if (!empty($openId)) {
             $wechat = WeChatMiniPro::factory($appid, $busiType);
             $wechatInfo = $wechat->getUserInfo($openId);

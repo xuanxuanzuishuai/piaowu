@@ -422,11 +422,13 @@ class PosterService
      * @return array|string[]
      */
     public static function generateLifeQRPosterAliOss(
-        $posterPath,
+        $item,
         $config,
         $userId,
         $extParams = []
     ) {
+        $posterPath = $item['path'];
+        $posterId   = $item['poster_id'];
         //通过oss合成海报并保存
         //海报资源
         $emptyRes = ['poster_save_full_path' => '', 'unique' => ''];
@@ -436,12 +438,19 @@ class PosterService
             return $emptyRes;
         }
 
-        //小程序码
-        $userQrUrl = self::generateLifeQrAliOss($userId);
-        if (empty($userQrUrl)) {
+        //获取真人小程序码
+        $params = [
+            'student_id' => $userId,
+            'poster_id'  => $posterId,
+            'channel_id' => $_ENV['USER_RECOMMEND_STANDARD_POSTER']
+        ];
+        $userQrData = RealSharePosterService::getQrPath($params);
+        if (empty($userQrData)) {
             SimpleLogger::info('user qr make fail', [$userId]);
             return $emptyRes;
         }
+        $userQrUrl = $userQrData['qr_path'];
+
 
         //海报添加水印
         //先将内容编码成Base64结果
@@ -501,35 +510,4 @@ class PosterService
         ];
     }
 
-    /**
-     * 真人生成小程序码上传OSS
-     * @param int $userId
-     * @return string
-     */
-    public static function generateLifeQrAliOss(int $userId): string
-    {
-        //用户二维码
-        $userQrUrl = $_ENV['ENV_NAME'] . '/' . AliOSS::DIR_MINIAPP_CODE . '/op_life_qr_ticket/' . $userId . '.jpg';
-        $exists    = AliOSS::doesObjectExist($userQrUrl);
-        if (empty($exists)) {
-
-            //referral项目获取用户的二维码图片
-            $qrData = (new Referral())->getUserOrImg([
-                'student_id' => $userId,
-                'channel_id' => $_ENV['USER_RECOMMEND_STANDARD_POSTER']
-            ]);
-            if ($qrData['code'] != 0) {
-                SimpleLogger::info('user qr referral request data error', [$qrData]);
-                return '';
-            }
-
-            //下载本地getUserOrImg
-            $tmpSavePath = AliOSS::saveTmpFile($qrData['qr_url']);
-            //上传
-            AliOSS::uploadFile($userQrUrl, $tmpSavePath);
-            unlink($tmpSavePath);
-        }
-
-        return $userQrUrl;
-    }
 }

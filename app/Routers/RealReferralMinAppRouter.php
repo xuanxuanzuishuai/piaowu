@@ -27,6 +27,12 @@ class RealReferralMinAppRouter extends RouterBase
             'call'    => Landing::class . ':getStudentStatus',
             'middles' => [RealReferralMinAppAuthCheckMiddleware::class],
         ],
+        '/real_referral_miniapp/landing/login' => [
+            'method'  => ['post'],
+            'call'    => Landing::class . ':login',
+            'middles' => [RealReferralMinAppAuthCheckMiddleware::class],
+        ],
+
 
 
     ];

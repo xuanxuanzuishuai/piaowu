@@ -196,6 +196,7 @@ class MessageService
             foreach ($content as $key => &$value) {
                 if ($value['type'] == WeChatConfigModel::CONTENT_TYPE_IMG) {
                     $value['path']  = $value['value'];
+                    $value['poster_id']  = $value['poster_id'];
                     $value['value'] = AliOSS::replaceCdnDomainForDss($value['value']);
                 } elseif ($value['type'] == WeChatConfigModel::CONTENT_TYPE_TEXT) {
                     $value['value'] = Util::textDecode($value['value']);
@@ -488,7 +489,7 @@ class MessageService
             $config = DictConstants::getSet(DictConstants::TEMPLATE_POSTER_CONFIG);
             //用户二维码图片信息在referral项目中获取
             $posterImgFile = PosterService::generateLifeQRPosterAliOss(
-                $item['path'],
+                $item,
                 $config,
                 $data['user_id']
             );
