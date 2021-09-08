@@ -2,9 +2,10 @@
 
 namespace App\Services;
 
+use App\Libs\Constants;
 use App\Libs\RedisDB;
-use App\Libs\SimpleLogger;
 use App\Models\Dss\DssUserWeiXinModel;
+use App\Models\Erp\ErpUserWeiXinModel;
 use Medoo\Medoo;
 
 class WechatTokenService
@@ -123,9 +124,12 @@ class WechatTokenService
         $redis->del($list);
     }
 
-    public static function delTokenByUserId($user_id, $user_type = null, $app_id = null)
+    public static function delTokenByUserId($user_id, $user_type = null, $app_id = Constants::SMART_APP_ID)
     {
         $redis = RedisDB::getConn();
+        if (!is_array($app_id)) {
+            $app_id = [$app_id];
+        }
         $list = self::getUserTokenKeyPattern($user_id, $user_type, $app_id);
         if (!empty($list)) {
             $redis->del($list);
@@ -140,24 +144,31 @@ class WechatTokenService
      * @param null $app_id
      * @return array
      */
-    public static function getUserTokenKeyPattern($user_id, $user_type = null, $app_id = null)
+    public static function getUserTokenKeyPattern($user_id, $user_type, $app_id)
     {
         if (empty($user_id)) {
             return [];
         }
         $redis = RedisDB::getConn();
-        $allUserWeixin = DssUserWeiXinModel::getRecords(
-            [
-                'user_id' => $user_id,
-                'user_type' => $user_type,
-            ],
-            [
-                "open_id" => Medoo::raw('DISTINCT open_id'),
-                "user_id",
-                "user_type",
-                "app_id",
-            ]
-        );
+        $field = [
+            'user_id' => $user_id,
+            'user_type' => $user_type,
+        ];
+        $where = [
+            "open_id" => Medoo::raw('DISTINCT open_id'),
+            "user_id",
+            "user_type",
+            "app_id",
+        ];
+        $smartUserWeixin = [];
+        $realUserWeixin = [];
+        if (in_array(Constants::SMART_APP_ID, $app_id)) {
+            $smartUserWeixin = DssUserWeiXinModel::getRecords($field, $where);
+        }
+        if (in_array(Constants::REAL_APP_ID, $app_id)) {
+            $realUserWeixin = ErpUserWeiXinModel::getRecords($field, $where);
+        }
+        $allUserWeixin = array_merge($smartUserWeixin, $realUserWeixin);
         $delKeys = [];
         $userKeys = [];
         foreach ($allUserWeixin as $item) {

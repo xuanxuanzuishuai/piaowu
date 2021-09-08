@@ -50,7 +50,7 @@ class RealReferralService
         $countryCode = $jsonMobile['countryCode'];
         //查询账号是否存在
         $studentInfo = ErpStudentModel::getRecord(['mobile' => $mobile]);
-        $isNew       = !empty($studentInfo) ? true : false;
+        $isNew       = empty($studentInfo) ? true : false;
         //默认渠道
         $channel = DictConstants::get(DictConstants::REAL_REFERRAL_CONFIG, 'register_default_channel');
         //获取转介绍相关信息
@@ -74,7 +74,7 @@ class RealReferralService
             throw new RunTimeException(['user_register_fail']);
         }
         //建立转介绍关系
-        if (empty($studentInfo) && !empty($refereeId)) {
+        if ($isNew && !empty($refereeId)) {
             (new Referral())->setReferralUserReferee([
                 'referee_id' => $refereeId,
                 'user_id'    => $studentInfo['id'],
@@ -218,20 +218,22 @@ class RealReferralService
             return $result;
         }
         $userData = end($userData);
+        $appid = Constants::REAL_APP_ID;
+        $busiType = Constants::LIFE_WX_SERVICE;
+
         //微信数据
         $where  = [
             'user_id'   => $refereeId,
             'user_type' => Constants::USER_TYPE_STUDENT,
-            'busi_type' => Constants::REAL_MINI_BUSI_TYPE,
-            'app_id'    => Constants::REAL_APP_ID,
+            'busi_type' => $busiType,
+            'app_id'    => $appid,
             'ORDER'     => [
                 'id' => 'DESC'
             ],
         ];
         $openId = ErpUserWeiXinModel::getRecord($where, ['open_id']);
         if (!empty($openId)) {
-            $wechat = WeChatMiniPro::factory(Constants::REAL_APP_ID, Constants::REAL_MINI_BUSI_TYPE);
-
+            $wechat = WeChatMiniPro::factory($appid, $busiType);
             $wechatInfo = $wechat->getUserInfo($openId);
             if (!empty($wechatInfo) && is_null($wechatInfo['errcode'])) {
                 $result['nick_name'] = $wechatInfo['nickname'];

@@ -171,7 +171,8 @@ class UserService
      */
     public static function userChangeLoginMobile($data)
     {
-        if (!in_array(Constants::SMART_APP_ID ,$data['auth_app_id'])) {
+        $appIdArray = [Constants::SMART_APP_ID, Constants::REAL_APP_ID];
+        if (empty(array_intersect($appIdArray, $data['auth_app_id']))) {
             SimpleLogger::info('not support deal', []);
             return;
         }
@@ -183,7 +184,7 @@ class UserService
         }
 
         //清除微信登录信息
-        WechatTokenService::delTokenByUserId($student['id'], DssUserWeiXinModel::USER_TYPE_STUDENT, Constants::SMART_APP_ID);
+        WechatTokenService::delTokenByUserId($student['id'], DssUserWeiXinModel::USER_TYPE_STUDENT, $appIdArray);
 
         //清除app登录信息
         AppTokenService::delUserTokenByUserId($student['id'], Constants::SMART_APP_ID);
