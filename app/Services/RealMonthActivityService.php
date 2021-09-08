@@ -46,9 +46,7 @@ class RealMonthActivityService
             'enable_status' => OperationActivityModel::ENABLE_STATUS_OFF,
             'banner' => $data['banner'] ?? '',
             'make_poster_button_img' => $data['make_poster_button_img'] ?? '',
-            'make_poster_tip_word' => !empty($data['make_poster_tip_word']) ? Util::textEncode($data['make_poster_tip_word']) : '',
             'award_detail_img' => $data['award_detail_img'] ?? '',
-            'create_poster_button_img' => $data['create_poster_button_img'] ?? '',
             'share_poster_tip_word' => !empty($data['share_poster_tip_word']) ? Util::textEncode($data['share_poster_tip_word']) : '',
             'operator_id' => $employeeId,
             'create_time' => $time,
@@ -153,8 +151,6 @@ class RealMonthActivityService
         $info['banner_url'] = AliOSS::replaceCdnDomainForDss($activityInfo['banner']);
         $info['make_poster_button_url'] = AliOSS::replaceCdnDomainForDss($activityInfo['make_poster_button_img']);
         $info['award_detail_url'] = AliOSS::replaceCdnDomainForDss($activityInfo['award_detail_img']);
-        $info['create_poster_button_url'] = AliOSS::replaceCdnDomainForDss($activityInfo['create_poster_button_img']);
-        $info['make_poster_tip_word'] = Util::textDecode($activityInfo['make_poster_tip_word']);
         $info['share_poster_tip_word'] = Util::textDecode($activityInfo['share_poster_tip_word']);
 
         if (empty($info['remark'])) {
@@ -273,9 +269,7 @@ class RealMonthActivityService
             'end_time' => Util::getDayLastSecondUnix($data['end_time']),
             'banner' => $data['banner'] ?? '',
             'make_poster_button_img' => $data['make_poster_button_img'] ?? '',
-            'make_poster_tip_word' => !empty($data['make_poster_tip_word']) ? Util::textEncode($data['make_poster_tip_word']) : '',
             'award_detail_img' => $data['award_detail_img'] ?? '',
-            'create_poster_button_img' => $data['create_poster_button_img'] ?? '',
             'share_poster_tip_word' => !empty($data['share_poster_tip_word']) ? Util::textEncode($data['share_poster_tip_word']) : '',
             'operator_id' => $employeeId,
             'update_time' => $time,

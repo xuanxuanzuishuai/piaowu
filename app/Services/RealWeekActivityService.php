@@ -46,7 +46,6 @@ class RealWeekActivityService
         $weekActivityData = [
             'name' => $activityData['name'],
             'activity_id' => 0,
-            'guide_word' => !empty($data['guide_word']) ? Util::textEncode($data['guide_word']) : '',
             'share_word' => !empty($data['share_word']) ? Util::textEncode($data['share_word']) : '',
             'start_time' => Util::getDayFirstSecondUnix($data['start_time']),
             'end_time' => Util::getDayLastSecondUnix($data['end_time']),
@@ -59,8 +58,6 @@ class RealWeekActivityService
             'operator_id' => $employeeId,
             'create_time' => $time,
             'personality_poster_button_img' => $data['personality_poster_button_img'],
-            'poster_prompt' => !empty($data['poster_prompt']) ? Util::textEncode($data['poster_prompt']) : '',
-            'poster_make_button_img' => $data['poster_make_button_img'] ?? '',
             'share_poster_prompt' => !empty($data['share_poster_prompt']) ? Util::textEncode($data['share_poster_prompt']) : '',
             'retention_copy' => !empty($data['retention_copy']) ? Util::textEncode($data['retention_copy']) : '',
             'poster_order' => $data['poster_order'],
@@ -196,11 +193,8 @@ class RealWeekActivityService
         $info['award_detail_url'] = AliOSS::replaceCdnDomainForDss($activityInfo['award_detail_img']);
         $info['upload_button_url'] = AliOSS::replaceCdnDomainForDss($activityInfo['upload_button_img']);
         $info['strategy_url'] = AliOSS::replaceCdnDomainForDss($activityInfo['strategy_img']);
-        $info['guide_word'] = Util::textDecode($activityInfo['guide_word']);
         $info['share_word'] = Util::textDecode($activityInfo['share_word']);
         $info['personality_poster_button_url'] = AliOSS::replaceCdnDomainForDss($activityInfo['personality_poster_button_img']);
-        $info['poster_prompt'] = Util::textDecode($activityInfo['poster_prompt']);
-        $info['poster_make_button_url'] = AliOSS::replaceCdnDomainForDss($activityInfo['poster_make_button_img']);
         $info['share_poster_prompt'] = Util::textDecode($activityInfo['share_poster_prompt']);
         $info['retention_copy'] = Util::textDecode($activityInfo['retention_copy']);
 
@@ -303,7 +297,6 @@ class RealWeekActivityService
         $weekActivityData = [
             'activity_id' => $activityId,
             'name' => $activityData['name'],
-            'guide_word' => !empty($data['guide_word']) ? Util::textEncode($data['guide_word']) : '',
             'share_word' => !empty($data['share_word']) ? Util::textEncode($data['share_word']) : '',
             'start_time' => Util::getDayFirstSecondUnix($data['start_time']),
             'end_time' => Util::getDayLastSecondUnix($data['end_time']),
@@ -315,8 +308,6 @@ class RealWeekActivityService
             'operator_id' => $employeeId,
             'update_time' => $time,
             'personality_poster_button_img' => $data['personality_poster_button_img'],
-            'poster_prompt' => !empty($data['poster_prompt']) ? Util::textEncode($data['poster_prompt']) : '',
-            'poster_make_button_img' => $data['poster_make_button_img'],
             'share_poster_prompt' => !empty($data['share_poster_prompt']) ? Util::textEncode($data['share_poster_prompt']) : '',
             'retention_copy' => !empty($data['retention_copy']) ? Util::textEncode($data['retention_copy']) : '',
             'poster_order' => $data['poster_order'],
