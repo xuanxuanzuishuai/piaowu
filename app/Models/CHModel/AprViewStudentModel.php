@@ -10,6 +10,7 @@ namespace App\Models\CHModel;
 
 
 use App\Libs\CHDB;
+use App\Models\Dss\DssReviewCourseTaskModel;
 
 class AprViewStudentModel extends CHOBModel
 {
@@ -236,48 +237,29 @@ class AprViewStudentModel extends CHOBModel
      */
     public static function getStudentTotalSum(int $studentId, string $startTime = "", string $endTime = ""): array
     {
+
         //获取用户的练琴曲目&天数
-        $lessonCountAndDate = self::getStudentLessonCountAndData($studentId, $startTime, $endTime);
-        //获取怀旧模式练琴时长
-        $studentUiEntryOldDuration = self::getStudentUiEntryOldDuration($studentId, $startTime, $endTime);
-        //获取用户非怀旧模式练琴时长
-        $studentNotNostalgicDuration     = self::getStudentNotNostalgicDuration($studentId, $startTime, $endTime);
+        $lessonCountAndDate = AprViewTotalAllModel::getStudentLessonCountAndData($studentId);
         $studentTotalSum['lesson_count'] = $lessonCountAndDate['lesson_count'] ?? 0;
         $studentTotalSum['play_day']     = $lessonCountAndDate['play_day'] ?? 0;
-        $studentTotalSum['sum_duration'] = (string)(ceil(($studentUiEntryOldDuration['sum_duration'] + $studentNotNostalgicDuration['sum_duration'])/60));
-        return $studentTotalSum;
-    }
 
-    /**
-     * 统计学生练琴天数&曲子数
-     * @param int $studentId
-     * @param string $startTime
-     * @param string $endTime
-     * @return array
-     */
-    public static function getStudentLessonCountAndData(
-        int $studentId,
-        string $startTime = "",
-        string $endTime = ""
-    ): array {
-        $chDb = CHDB::getBODB();
-        $sql  = "
-            SELECT COUNT(DISTINCT (lesson_id))      AS lesson_count,
-                COUNT(DISTINCT toDate(end_time)) AS play_day
-            FROM " . self::$table . "
-            WHERE student_id = {$studentId}";
+        $where = [
+            'student_id' => $studentId,
+        ];
 
         if (!empty($startTime)) {
-            $sql .= " and end_time > {$startTime}";
+            $where['create_time[>]'] = $startTime;
         }
 
         if (!empty($endTime)) {
-            $sql .= " and end_time < {$endTime}";
+            $where['create_time[<=]'] = $startTime;
         }
 
-        $playSumData = $chDb->queryAll($sql);
-        return $playSumData[0] ?? [];
+        $studentTotalSum['sum_duration'] = DssReviewCourseTaskModel::getStudentReviewDuration($where);
+
+        return $studentTotalSum;
     }
+
 
     /**
      * 怀旧模式，获取用户练琴时长
