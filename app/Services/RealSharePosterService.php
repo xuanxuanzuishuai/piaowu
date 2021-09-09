@@ -322,6 +322,6 @@ class RealSharePosterService
             throw new RunTimeException(['invalid_data']);
         }
         $qrPath = AliOSS::replaceCdnDomainForDss($userQrArr['qr_path']);
-        return ['qr_path' => $qrPath];
+        return ['qr_path' => $qrPath, 'origin_qr_path' => $userQrArr['qr_path']];
     }
 }

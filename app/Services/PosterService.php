@@ -449,7 +449,7 @@ class PosterService
             SimpleLogger::info('user qr make fail', [$userId]);
             return $emptyRes;
         }
-        $userQrUrl = $userQrData['qr_path'];
+        $userQrUrl = $userQrData['origin_qr_path'];
 
 
         //海报添加水印
