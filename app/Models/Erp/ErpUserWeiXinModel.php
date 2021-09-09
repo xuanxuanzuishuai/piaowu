@@ -46,6 +46,7 @@ class ErpUserWeiXinModel extends ErpModel
                     self::$table . '.busi_type'            => $businessType,
                     self::$table . '.open_id'              => $openId,
                     self::$table . '.app_id'               => self::PANDA_USER_APP,
+                    self::$table . '.status'               => self::STATUS_NORMAL,
                     ErpStudentAppModel::$table . '.app_id' => self::PANDA_USER_APP
                 ],
             ]

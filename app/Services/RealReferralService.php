@@ -27,6 +27,8 @@ class RealReferralService
 
     const NOT_BIND_ZH = '未绑定';
 
+    const DEFAULT_REFEREE_ID = 10000;
+
     /**
      * 注册
      * @param $params
@@ -72,7 +74,7 @@ class RealReferralService
             'channel_id'      => $channel,
             'country_code'    => $countryCode,
             'user_type'       => $userType,
-            'referee_id'      => '0',
+            'referee_id'      => self::DEFAULT_REFEREE_ID,
             'referee_user_id' => $refereeId ?? '',
             'referee_type'    => Constants::USER_TYPE_STUDENT
         ];
@@ -81,6 +83,7 @@ class RealReferralService
         if (empty($studentInfo)) {
             throw new RunTimeException(['user_register_fail']);
         }
+        /*
         //建立转介绍关系
         if ($isNew && !empty($refereeId)) {
             (new Referral())->setReferralUserReferee([
@@ -90,6 +93,7 @@ class RealReferralService
                 'app_id'     => $appId,
             ]);
         }
+        */
         //生成token
         $token  = WechatTokenService::generateToken($studentInfo['student_id'], $userType, $appId, $openid);
         $result = [
