@@ -65,21 +65,22 @@ class MessagePushRulesModel extends Model
     ];
 
     /**
-     * @param $params
+     * @param string $where
+     * @param int $page
+     * @param int $count
      * @return array
      * 推送规则列表
      */
-    public static function rulesList($params)
+    public static function rulesList(string $where, int $page, int $count)
     {
-        list($page, $count) = Util::formatPageCount($params);
         $limit      = Util::limitation($page, $count);
         $countField = "count(id) as total";
         $field      = "`id`,`name`,`type`,`target`,`is_active`,time->>'$.desc' as `display_time`,`update_time`,`remark`";
-        $sql        = "SELECT %s FROM ".self::$table." WHERE app_id = {$params['app_id']}";
+        $sql        = "SELECT %s FROM ".self::$table." WHERE ";
 
         $db    = MysqlDB::getDB();
-        $total = $db->queryAll(sprintf($sql, $countField));
-        $rules = $db->queryAll(sprintf($sql, $field) . $limit);
+        $total = $db->queryAll(sprintf($sql, $countField) . $where);
+        $rules = $db->queryAll(sprintf($sql, $field) . $where . $limit);
         return [$rules, $total[0]['total'] ?? 0];
     }
 }

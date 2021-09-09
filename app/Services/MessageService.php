@@ -62,7 +62,23 @@ class MessageService
      */
     public static function rulesList($params)
     {
-        list($rules, $totalCount) = MessagePushRulesModel::rulesList($params);
+        $where = " app_id = {$params['app_id']}";
+
+        if (!empty($params['is_active'])) {
+            $where .= " and is_active = {$params['is_active']}";
+        }
+
+        if (!empty($params['name'])) {
+            $where .= " and name like '%{$params['name']}%'";
+        }
+
+        if (!empty($params['target'])) {
+            $where .= " and target = {$params['target']}";
+        }
+
+        list($page, $count) = Util::formatPageCount($params);
+
+        list($rules, $totalCount) = MessagePushRulesModel::rulesList($where,$page,$count);
 
         if (!empty($rules)) {
             foreach ($rules as &$rule) {
@@ -129,7 +145,7 @@ class MessageService
         ];
         $posterConfig = DictConstants::getSet(DictConstants::TEMPLATE_POSTER_CONFIG);
         foreach ($keyTypeDict as $key => $type) {
-            if (isset($params[$key]) && !Util::emptyExceptZero($params[$key])) {
+            if (isset($params[$key]) && !Util::emptyExceptZero(trim($params[$key]))) {
                 $item = [];
                 if ($type == WeChatConfigModel::CONTENT_TYPE_IMG) {
                     $item = $posterConfig;
