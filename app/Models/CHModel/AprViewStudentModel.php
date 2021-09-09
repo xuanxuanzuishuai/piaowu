@@ -255,7 +255,8 @@ class AprViewStudentModel extends CHOBModel
             $where['create_time[<=]'] = $startTime;
         }
 
-        $studentTotalSum['sum_duration'] = DssReviewCourseTaskModel::getStudentReviewDuration($where);
+        $sumDuration = DssReviewCourseTaskModel::getStudentReviewDuration($where);
+        $studentTotalSum['sum_duration'] = intval($sumDuration);
 
         return $studentTotalSum;
     }
