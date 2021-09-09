@@ -410,8 +410,8 @@ class MiniAppQrService
                     'activity_id'  => $_qrParam['activity_id'] ?? 0,
                     'employee_id'  => $_qrParam['employee_id'] ?? 0,
                     'poster_id'    => $_qrParam['poster_id'] ?? 0,
-                    'app_id'       => $_qrParam['app_id'] ?? Constants::SMART_APP_ID,
-                    'busies_type'  => $_qrParam['busies_type'] ?? DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP,
+                    'app_id'       => $appId,
+                    'busies_type'  => $busiesType,
                     'user_status'  => $_qrParam['user_status'] ?? ($_qrParam['user_current_status'] ?? 0),
                     'qr_type'      => DictConstants::get(DictConstants::MINI_APP_QR, 'qr_type_mini'),
                 ];

@@ -125,9 +125,10 @@ class QrInfoOpCHModel
             }
 
             // 删除已独立的字段，保留剩余字段
-            foreach ($qrInfo as $f) {
-                unset($v[$f]);
+            foreach ($qrInfo as $_field => $_val) {
+                unset($v[$_field]);
             }
+            unset($_field, $_val);
             $qrInfo['qr_data'] = json_encode($v);
 
             $insertData[] = $qrInfo;
