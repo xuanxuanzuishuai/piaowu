@@ -5,15 +5,14 @@
 
 namespace App\Services;
 
-use App\Controllers\OrgWeb\RealSharePoster;
 use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
 use App\Libs\RealDictConstants;
-use App\Libs\SentryClient;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
+use App\Models\EmployeeModel;
 use App\Models\Erp\ErpDictModel;
 use App\Models\Erp\ErpStudentModel;
 use App\Models\Erp\ReferralPosterModel;
@@ -34,12 +33,12 @@ class RealUserAwardMagicStoneService
      * @return bool
      * @throws RunTimeException
      */
-    private static function createStudentAward($sharePosterId, $uuid, $userType = Constants::USER_TYPE_STUDENT, array $sharePosterInfo = [])
+    private static function createStudentAward($sharePosterId, $uuid, array $sharePosterInfo = [], $userType = Constants::USER_TYPE_STUDENT)
     {
         $time       = time();
         $awardDelay = 0;
         // 获取分享截图审核 - 检查是否已经审核通过， 只有审核通过的才可以发奖
-        if (empty($sharePoserInfo)) {
+        if (empty($sharePosterInfo)) {
             $sharePosterInfo = RealSharePosterModel::getRecord(['id' => $sharePosterId]);
         }
         if (empty($sharePosterInfo) || $sharePosterInfo['verify_status'] != RealSharePosterModel::VERIFY_STATUS_QUALIFIED) {
@@ -64,7 +63,7 @@ class RealUserAwardMagicStoneService
             'award_time'       => $time + $awardDelay,
             'award_to'         => Constants::STUDENT_ID_INVITER,    // 上传截图奖励： 当做是给邀请人的奖励
             'award_delay'      => $awardDelay,
-            'reviewer_id'      => $sharePosterInfo['verify_user'],
+            'reviewer_id'      => $sharePosterInfo['verify_user'] ?? EmployeeModel::SYSTEM_EMPLOYEE_ID,
             'review_reason'    => $sharePosterInfo['verify_reason'] ?? '',
             'review_time'      => $time,
             'remark'           => $sharePosterInfo['remark'] ?? '',
@@ -179,7 +178,7 @@ class RealUserAwardMagicStoneService
                 Util::errorCapture("sendUserMagicStoneAward_error", [$sharePosterIds, $_sharePoserInfo, $_studentId, $uuid]);
                 continue;
             }
-            self::createStudentAward($id, $uuid, $sharePosterIdArr[$id], $_sharePoserInfo);
+            self::createStudentAward($id, $uuid, $_sharePoserInfo);
         }
         return true;
     }

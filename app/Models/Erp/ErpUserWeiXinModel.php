@@ -2,6 +2,8 @@
 
 namespace App\Models\Erp;
 
+use App\Libs\Constants;
+
 class ErpUserWeiXinModel extends ErpModel
 {
     public static $table = 'erp_user_weixin';

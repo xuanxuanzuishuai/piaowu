@@ -344,7 +344,7 @@ class PushMessageService
         }
 
         // 获取用户绑定的微信信息
-        $userBindWxInfo = ErpUserWeiXinModel::getStudentWxInfo($awardDetailInfo['student_id']);
+        $userBindWxInfo = ErpUserWeiXinModel::getStudentWxInfo($awardDetailInfo['user_id']);
         if (empty($userBindWxInfo)) {
             SimpleLogger::info('not found user weixin info', [$awardDetailInfo]);
             return false;

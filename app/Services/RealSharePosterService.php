@@ -18,6 +18,7 @@ use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\EmployeeModel;
 use App\Models\RealSharePosterAwardModel;
 use App\Models\RealSharePosterModel;
+use App\Models\RealUserAwardMagicStoneModel;
 use App\Models\RealWeekActivityModel;
 use App\Services\Queue\QueueService;
 
@@ -110,7 +111,7 @@ class RealSharePosterService
             $_activityInfo = $activityList[$_item['activity_id']] ?? [];
 
             $_item['award_type'] = $_awardInfo['award_type'] ?? 0;
-            $_item['award_num'] = $_awardInfo['award_num'] ?? 0;
+            $_item['award_amount'] = $_awardInfo['award_amount'] ?? 0;
             $_item['activity_start_time'] = '';
             $_item['activity_end_time'] = '';
             $_item['activity_name'] = '';
@@ -274,9 +275,14 @@ class RealSharePosterService
         switch ($sharePosterInfo['verify_status']) {
             case RealSharePosterModel::VERIFY_STATUS_QUALIFIED: // 审核通过
                 // 获取奖励
-                $awardInfo                  = RealSharePosterAwardModel::getRecord(['share_poster_id' => $id]);
-                $returnData['award_amount'] = $awardInfo['award_num'] ?? 0;
-                $returnData['award_type']   = $awardInfo['award_type'] ?? 0;
+                $awardInfo = RealSharePosterAwardModel::getRecord(['share_poster_id' => $id]);
+                if (!empty($awardInfo)) {
+                    $returnData['award_amount'] = $awardInfo['award_amount'];
+                    $returnData['award_type']   = $awardInfo['award_type'];
+                    // 获取发放状态
+                    $sendAwardInfo = RealUserAwardMagicStoneModel::getRecord(['id' => $awardInfo['award_id']], ['award_status']);
+                    $returnData['award_status'] = $sendAwardInfo['award_status'] ?? RealUserAwardMagicStoneModel::STATUS_WAITING;
+                }
                 break;
             case RealSharePosterModel::VERIFY_STATUS_WAIT || RealSharePosterModel::VERIFY_STATUS_UNQUALIFIED:
                 //获取最新两个最新可参与的周周领奖活动
