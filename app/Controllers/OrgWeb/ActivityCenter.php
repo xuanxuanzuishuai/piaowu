@@ -30,12 +30,12 @@ class ActivityCenter extends ControllerBase
     public function create(Request $request, Response $response)
     {
         $params = $request->getParams();
-        $result = $this->_checkParams($params);
-        if ($result['code'] != Valid::CODE_SUCCESS) {
-            return $response->withJson($result, StatusCode::HTTP_OK);
-        }
 
         try {
+            $result = $this->_checkParams($params);
+            if ($result['code'] != Valid::CODE_SUCCESS) {
+                return $response->withJson($result, StatusCode::HTTP_OK);
+            }
             ActivityCenterService::createActivity($params, self::getEmployeeId());
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
@@ -147,6 +147,11 @@ class ActivityCenter extends ControllerBase
         return HttpHelper::buildResponse($response, []);
     }
 
+    /**
+     * @param array $params
+     * @return array|int[]
+     * @throws RunTimeException
+     */
     private static function _checkParams(array $params)
     {
         $rules = [
@@ -159,7 +164,6 @@ class ActivityCenter extends ControllerBase
             ['key' => 'show_rule', 'type' => 'required', 'error_code' => 'show_rule_is_required'],
             ['key' => 'button', 'type' => 'required', 'error_code' => 'button_is_required'],
             ['key' => 'channel', 'type' => 'required', 'error_code' => 'channel_is_required'],
-            ['key' => 'label', 'type' => 'required', 'error_code' => 'label_is_required'],
             ['key' => 'label', 'type' => 'lengthMax', 'value' => 6, 'error_code' => 'label_max_length_is_20'],
 
         ];
@@ -168,6 +172,18 @@ class ActivityCenter extends ControllerBase
 
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $result;
+        }
+
+        Util::containEmoji($params['name'], true);
+        Util::containEmoji($params['button'], true);
+        Util::containEmoji($params['label'], true);
+
+        if (!Util::isChineseText($params['button'])){
+            throw new RunTimeException(['param_is_chinese_text']);
+        }
+
+        if (!Util::isChineseText($params['label']) && !empty($params['label'])){
+            throw new RunTimeException(['param_is_chinese_text']);
         }
 
         return ['code' => 0];
@@ -183,12 +199,12 @@ class ActivityCenter extends ControllerBase
     public function editActivity(Request $request, Response $response)
     {
         $params = $request->getParams();
-        $result = $this->_checkParams($params);
-        if ($result['code'] != Valid::CODE_SUCCESS) {
-            return $response->withJson($result, StatusCode::HTTP_OK);
-        }
 
         try {
+            $result = $this->_checkParams($params);
+            if ($result['code'] != Valid::CODE_SUCCESS) {
+                return $response->withJson($result, StatusCode::HTTP_OK);
+            }
             ActivityCenterService::editActivity($params);
         } catch (RuntimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());

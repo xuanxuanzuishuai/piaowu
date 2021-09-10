@@ -13,7 +13,6 @@ use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Models\ActivityCenterModel;
-use App\Models\Dss\DssErpPackageModel;
 use App\Models\Dss\DssGiftCodeDetailedModel;
 use App\Models\Dss\DssPackageExtModel;
 use App\Models\Dss\DssStudentModel;
@@ -36,7 +35,7 @@ class ActivityCenterService
             'banner'      => $params['banner'],
             'show_rule'   => $params['show_rule'],
             'button'      => $params['button'],
-            'label'       => $params['label'],
+            'label'       => $params['label'] ?? '',
             'channel'     => $params['channel'],
             'weight'      => 0,
             'status'      => ActivityCenterModel::STATUS_OK,
@@ -76,12 +75,10 @@ class ActivityCenterService
             $where .= " and find_in_set({$params['channel']}, channel)";
         }
 
-        if (!empty($params['show_rule'][0])){
+        if (!empty($params['show_rule'][1])) {
+            $where .= " and (find_in_set({$params['show_rule'][1]}, show_rule) or find_in_set({$params['show_rule'][0]}, show_rule))";
+        } elseif (!empty($params['show_rule'][0])) {
             $where .= " and find_in_set({$params['show_rule'][0]}, show_rule)";
-        }
-
-        if (!empty($params['show_rule'][1])){
-            $where .= " or find_in_set({$params['show_rule'][1]}, show_rule)";
         }
 
         $data = ActivityCenterModel::list($where, $page, $pageSize);
@@ -172,7 +169,7 @@ class ActivityCenterService
             'banner'      => $params['banner'],
             'show_rule'   => $params['show_rule'],
             'button'      => $params['button'],
-            'label'       => $params['label'],
+            'label'       => $params['label'] ?? '',
             'channel'     => $params['channel'],
             'update_time' => time(),
         ];
@@ -220,6 +217,7 @@ class ActivityCenterService
         }
 
         $params['show_rule'] = self::showRule($student);
+        $params['status']    = ActivityCenterModel::STATUS_OK;
 
         return self::getList($params, $page, $count);
     }
