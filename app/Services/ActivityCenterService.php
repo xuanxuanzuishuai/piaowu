@@ -294,7 +294,7 @@ class ActivityCenterService
 
         foreach ($detail as $value) {
             //体验卡结束时间大于年卡开始时间
-            if ($value['code_end_date'] > $yearCard['code_start_date']) {
+            if ($value['code_end_date']  >= $yearCard['code_start_date'] - 1) {
                 return true;
             }
         }
