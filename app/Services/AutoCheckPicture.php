@@ -254,51 +254,6 @@ class AutoCheckPicture
     }
     
     /**
-     * 真人陪练-审核后续处理-废弃
-     * @deprecated
-     * @param $data
-     * @param $checkStatus
-     */
-    public static function realCheckSharePostersBak($data, $checkStatus)
-    {
-        if (!$checkStatus) {
-            return;
-        }
-        $remark      = '';
-        $reason_ids  = '';
-        $poster_ids  = $data['id'];
-        $check_admin = EmployeeModel::SYSTEM_EMPLOYEE_ID;
-        if ($checkStatus > 0) {
-            $status = ReferralPosterModel::CHECK_STATUS_QUALIFIED;
-        } else {
-            $status = ReferralPosterModel::CHECK_STATUS_UNQUALIFIED;
-            switch ($checkStatus) {
-                case ReferralPosterModel::SYSTEM_REFUSE_CODE_NEW: //未使用最新海报
-                    $reason_ids = ReferralPosterModel::SYSTEM_REFUSE_REASON_CODE_NEW;
-                    break;
-                case ReferralPosterModel::SYSTEM_REFUSE_CODE_TIME: //朋友圈保留时长不足12小时，请重新上传
-                    $reason_ids = ReferralPosterModel::SYSTEM_REFUSE_REASON_CODE_TIME;
-                    break;
-                case ReferralPosterModel::SYSTEM_REFUSE_CODE_GROUP: //分享分组可见
-                    $reason_ids = ReferralPosterModel::SYSTEM_REFUSE_REASON_CODE_GROUP;
-                    break;
-                case ReferralPosterModel::SYSTEM_REFUSE_CODE_FRIEND: //请发布到朋友圈并截取朋友圈照片
-                    $reason_ids = ReferralPosterModel::SYSTEM_REFUSE_REASON_CODE_FRIEND;
-                    break;
-                case ReferralPosterModel::SYSTEM_REFUSE_CODE_UPLOAD: //上传截图出错
-                    $reason_ids = ReferralPosterModel::SYSTEM_REFUSE_REASON_CODE_UPLOAD;
-                    break;
-                default:
-                    break;
-            }
-        }
-        $requestArray = compact('status', 'poster_ids', 'reason_ids', 'remark', 'check_admin');
-        //调用referral-审核接口
-        SimpleLogger::info('check_result', $requestArray);
-        (new Referral())->realCheckPoster($requestArray);
-    }
-
-    /**
      * ocr审核海报
      * @param $data [图片|需要校验的角标日期]
      * @return int|bool
