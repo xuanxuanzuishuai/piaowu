@@ -34,7 +34,7 @@ class ActivityCenterService
             'name'        => $params['name'],
             'url'         => $params['url'],
             'banner'      => $params['banner'],
-            'show_rule'   => $params['show'],
+            'show_rule'   => $params['show_rule'],
             'button'      => $params['button'],
             'label'       => $params['label'],
             'channel'     => $params['channel'],
@@ -64,13 +64,13 @@ class ActivityCenterService
         $where = '1 = 1';
 
         if (!empty($params['name'])) {
-            $where .= " and name like {$params['name']}";
+            $where .= " and a.name like '%{$params['name']}%'";
         }
         if (!empty($params['url'])) {
-            $where .= " and url = {$params['url']}";
+            $where .= " and url = '{$params['url']}'";
         }
         if (!empty($params['status'])) {
-            $where .= " and status = {$params['status']}";
+            $where .= " and a.status = {$params['status']}";
         }
         if (!empty($params['channel'])){
             $where .= " and find_in_set({$params['channel']}, channel)";
@@ -100,10 +100,10 @@ class ActivityCenterService
             $showRule   = explode(',', $list['show_rule']);
             $showRoleZh = [];
             foreach ($showRule as $s) {
-                $showRoleZh[] = $dict[DictConstants::ACTIVITY_CENTER_SHOW_RULE['type']][$s]['value'];;
+                $showRoleZh[] = $dict[DictConstants::ACTIVITY_CENTER_SHOW_RULE['type']][$s]['value'];
             }
 
-            $list['show_role_zh'] = implode(',', $showRoleZh);
+            $list['show_rule_zh'] = implode(',', $showRoleZh);
             $list['channel_zh'] = implode(',', $channelZh);
             $list['banner_url'] = AliOSS::replaceCdnDomainForDss($list['banner']);
 
@@ -170,7 +170,7 @@ class ActivityCenterService
             'name'        => $params['name'],
             'url'         => $params['url'],
             'banner'      => $params['banner'],
-            'show_rule'   => $params['show'],
+            'show_rule'   => $params['show_rule'],
             'button'      => $params['button'],
             'label'       => $params['label'],
             'channel'     => $params['channel'],

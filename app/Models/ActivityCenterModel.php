@@ -67,7 +67,7 @@ class ActivityCenterModel extends Model
         $data = ['count' => 0, 'list' => []];
         $db   = MysqlDB::getDB();
 
-        $total = $db->queryAll("SELECT count(id) as count FROM {$a} WHERE {$where}");
+        $total = $db->queryAll("SELECT count(id) as count FROM {$a} a WHERE {$where}");
 
         if (empty($total[0]['count'])) {
             return $data;
