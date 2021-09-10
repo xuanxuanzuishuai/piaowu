@@ -70,11 +70,11 @@ class RealUserAwardMagicStoneService
             'finish_task_uuid' => $uuid,
             'create_time'      => $time,
         ];
-        $sharePosterAwardData       = [
+        $sharePosterAwardData = [
             'share_poster_id' => $sharePosterId,
             'award_id'        => 0,
             'award_type'      => Constants::ERP_ACCOUNT_NAME_MAGIC,
-            'award_num'       => $awardAmount,
+            'award_amount'    => $awardAmount,
             'create_time'     => $time,
         ];
 
