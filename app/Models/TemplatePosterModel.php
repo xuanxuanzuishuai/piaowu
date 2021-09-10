@@ -87,6 +87,6 @@ class TemplatePosterModel extends Model
                 'LIMIT' => [($pageId - 1) * $pageLimit, $pageLimit]
             ], $where)
         );
-        return [$res, $pageId, $pageLimit, $totalCount];
+        return [$res, $totalCount];
     }
 }
