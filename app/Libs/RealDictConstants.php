@@ -25,6 +25,7 @@ class RealDictConstants extends DictConstants
             'real_refused_poster_url', //海报审核未通过跳转地址
             'real_share_poster_history_url', // 用户分享海报历史记录连接
             'real_month_award_url', // 月月有奖地址
+            'register_default_channel', //注册默认渠道
         ]
     ];
 

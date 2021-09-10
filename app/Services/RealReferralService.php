@@ -8,6 +8,7 @@ use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\RealDictConstants;
 use App\Libs\RedisDB;
 use App\Libs\Referral;
 use App\Libs\SimpleLogger;
@@ -59,7 +60,7 @@ class RealReferralService
         $studentInfo = ErpStudentModel::getRecord(['mobile' => $mobile]);
         $isNew       = empty($studentInfo) ? true : false;
         //默认渠道
-        $channel = DictConstants::get(DictConstants::REAL_REFERRAL_CONFIG, 'register_default_channel');
+        $channel = RealDictConstants::get(RealDictConstants::REAL_REFERRAL_CONFIG, 'register_default_channel');
         //获取转介绍相关信息
         if (!empty($params['qr_id'])) {
             $qrData    = MiniAppQrService::getQrInfoById($params['qr_id'], ['user_id', 'channel_id']);
