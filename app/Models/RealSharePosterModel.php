@@ -78,19 +78,11 @@ class RealSharePosterModel extends Model
             sp.ext->>'$.node_order' day,
             sp.create_time,
             sp.type,
-            ac.name activity_name,
-            uw.open_id,
             s.uuid,
             s.mobile
         FROM
             $sp sp
         INNER JOIN $s s ON s.id = sp.student_id
-        LEFT JOIN $ac ac on ac.id = sp.activity_id
-        LEFT JOIN $uw uw ON uw.user_id = sp.student_id
-            AND uw.user_type = " . ErpUserWeiXinModel::USER_TYPE_STUDENT . "
-            AND uw.status = " . ErpUserWeiXinModel::STATUS_NORMAL . "
-            AND uw.busi_type = " . ErpUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER . "
-            AND uw.app_id = " . Constants::REAL_APP_ID . "
         WHERE sp.id in ( " . implode(',', $posterIds) . " )
             AND sp.verify_status = " . self::VERIFY_STATUS_WAIT . "
             AND sp.type = " . $type;
