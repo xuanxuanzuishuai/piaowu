@@ -847,15 +847,16 @@ class Consumer extends ControllerBase
                             //    break;
                             //}
                         }
-                    }
-                    //审核后续处理
-                    switch ($params['msg_body']['app_id']) {
-                        case Constants::SMART_APP_ID: //智能陪练
-                            AutoCheckPicture::mindCheckSharePosters($params['msg_body'], $status);
-                            break;
-                        case Constants::REAL_APP_ID: //真人陪练
-                            AutoCheckPicture::realCheckSharePosters($params['msg_body'], $status);
-                            break;
+
+                        //审核后续处理
+                        switch ($params['msg_body']['app_id']) {
+                            case Constants::SMART_APP_ID: //智能陪练
+                                AutoCheckPicture::mindCheckSharePosters($params['msg_body'], $status);
+                                break;
+                            case Constants::REAL_APP_ID: //真人陪练
+                                AutoCheckPicture::realCheckSharePosters($params['msg_body'], $status);
+                                break;
+                        }
                     }
                     break;
             }

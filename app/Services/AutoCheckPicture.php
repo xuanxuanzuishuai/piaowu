@@ -13,6 +13,7 @@ use App\Libs\Util;
 use App\Models\EmployeeModel;
 use App\Models\OperationActivityModel;
 use App\Models\RealSharePosterModel;
+use App\Models\RealWeekActivityModel;
 use App\Models\SharePosterModel;
 use App\Models\WeekActivityModel;
 
@@ -52,20 +53,19 @@ class AutoCheckPicture
                 $activityDate = date('Y-m-d', $activity['start_time']);
                 break;
             case Constants::REAL_APP_ID: //真人陪练
-                $issue_number =  $result['issue_number'];
-                if (empty($issue_number) || mb_strpos($issue_number, '年') === false || mb_strpos($issue_number, '-') === false) {
+                // 获取活动信息
+                $activityInfo = RealWeekActivityModel::getRecord(['activity_id' => $result['activity_id']], ['id', 'activity_id', 'enable_status', 'start_time']);
+                // 检查活动是否启动，未启用不能自动审核
+                if (empty($activityInfo) || $activityInfo['enable_status'] != OperationActivityModel::ENABLE_STATUS_ON) {
+                    SimpleLogger::error('not found activity', ['id' => $result['activity_id']]);
                     return null;
                 }
                 $imagePath = $_ENV['QINIU_DOMAIN_ERP'] . $result['img_url'];
 
-                $start = mb_strpos($issue_number, '年') + 1;
-                $end   = mb_strpos($issue_number, '-');
-                $date  = mb_substr($issue_number, $start, $end-$start);
-
-                $activityTime = mb_substr($issue_number, 0, $end);
-                $activityTime = str_replace('年', '-', $activityTime);
-                $activityDate = str_replace('.', '-', $activityTime);
-                $activityDate = date('Y-m-d', strtotime($activityDate));
+                // 获取日期 - 月.日
+                $date = date("n.j", $activityInfo['start_time']);
+                // 获取日期 - 年-月-日
+                $activityDate = date("Y-m-d", $activityInfo['start_time']);
                 break;
             default:
                 break;
@@ -96,7 +96,14 @@ class AutoCheckPicture
                 $result = SharePosterModel::getRecord(['id' => $data['id'],'type' => SharePosterModel::TYPE_WEEK_UPLOAD, 'verify_status' => SharePosterModel::VERIFY_STATUS_WAIT], ['student_id', 'activity_id', 'image_path']);
                 break;
             case Constants::REAL_APP_ID: //真人陪练
-                $result = ReferralPosterModel::getRecord(['id' => $data['id'], 'status' => ReferralPosterModel::CHECK_STATUS_WAIT], ['student_id', 'issue_number', 'img_url']);
+                $result = RealSharePosterModel::getRecord(
+                    [
+                        'id'            => $data['id'],
+                        'type'          => RealSharePosterModel::TYPE_WEEK_UPLOAD,
+                        'verify_status' => RealSharePosterModel::VERIFY_STATUS_WAIT,
+                    ],
+                    ['student_id', 'activity_id', 'image_path']
+                );
                 break;
             default:
                 break;
@@ -107,25 +114,19 @@ class AutoCheckPicture
             return null;
         }
         //查询本周活动是否有系统审核拒绝的
+        $conds = [
+            'student_id'    => $result['student_id'],
+            'activity_id'   => $result['activity_id'],
+            'type'          => SharePosterModel::TYPE_WEEK_UPLOAD,
+            'verify_status' => SharePosterModel::VERIFY_STATUS_UNQUALIFIED,
+            'verify_user'   => EmployeeModel::SYSTEM_EMPLOYEE_ID
+        ];
         switch ($data['app_id']) {
             case Constants::SMART_APP_ID: //智能陪练
-                $conds = [
-                    'student_id'    => $result['student_id'],
-                    'activity_id'   => $result['activity_id'],
-                    'type'          => SharePosterModel::TYPE_WEEK_UPLOAD,
-                    'verify_status' => SharePosterModel::VERIFY_STATUS_UNQUALIFIED,
-                    'verify_user'   => EmployeeModel::SYSTEM_EMPLOYEE_ID
-                ];
                 $historyRecord = SharePosterModel::getRecord($conds, ['id']);
                 break;
             case Constants::REAL_APP_ID: //真人陪练
-                $conds = [
-                    'student_id'   => $result['student_id'],
-                    'issue_number' => $result['issue_number'],
-                    'type'         => ReferralPosterModel::CLIENT_TYPE_USER,
-                    'check_admin'  => EmployeeModel::SYSTEM_EMPLOYEE_ID,
-                ];
-                $historyRecord = ReferralPosterModel::getRecord($conds, ['id']);
+                $historyRecord = RealSharePosterModel::getRecord($conds, ['id']);
                 if (empty($historyRecord)) {
                     $historyRecord = null;
                 }
