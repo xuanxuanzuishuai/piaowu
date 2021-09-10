@@ -1317,42 +1317,47 @@ class MessageService
             return false;
         }
 
-        if ($sharePosterInfo == RealSharePosterModel::VERIFY_STATUS_UNQUALIFIED) {
-            // 审核未通过，发消息
-            $ext = [
-                'activity_name' => $activityInfo['name'],
-                'url' => RealDictConstants::get(RealDictConstants::REAL_REFERRAL_CONFIG, 'real_refused_poster_url'),
-            ];
-            $awardInfo['type'] = RealSharePosterModel::TYPE_CHECKIN_UPLOAD;
-            $awardInfo['app_id'] = Constants::REAL_APP_ID;
-            $awardInfo['verify_status'] = RealSharePosterModel::VERIFY_STATUS_UNQUALIFIED;
-            PushMessageService::realSendMessage($awardInfo, $ext);
-        } elseif ($sharePosterInfo == RealSharePosterModel::VERIFY_STATUS_WAIT) {
-            // 待审核 不能发送消息
-            SimpleLogger::info("sendRealSharePosterMessage share_poster VERIFY_STATUS_WAIT", [$params]);
-            return false;
+        switch ($sharePosterInfo['verify_status']) {
+            case RealSharePosterModel::VERIFY_STATUS_UNQUALIFIED: // 审核未通过，发消息
+                $jumpLink = RealDictConstants::get(RealDictConstants::REAL_REFERRAL_CONFIG, 'real_refused_poster_url');
+                $awardInfo['type'] = RealSharePosterModel::TYPE_CHECKIN_UPLOAD;
+                $awardInfo['app_id'] = Constants::REAL_APP_ID;
+                $awardInfo['verify_status'] = RealSharePosterModel::VERIFY_STATUS_UNQUALIFIED;
+                break;
+            case RealSharePosterModel::VERIFY_STATUS_WAIT:  // 待审核 不能发送消息
+                break;
+            case RealSharePosterModel::VERIFY_STATUS_QUALIFIED: // 审核通过
+                // 获取海报对应的奖励id
+                $sharePosterAwardInfo = RealSharePosterAwardModel::getRecord(['share_poster_id' => $sharePosterId]);
+                if (empty($sharePosterAwardInfo)) {
+                    SimpleLogger::info("sendRealSharePosterMessage share_poster_info empty", [$params]);
+                    return false;
+                }
+                // 获取奖励详细信息
+                $awardInfo = RealUserAwardMagicStoneModel::getRecord(['id' => $sharePosterAwardInfo['award_id']]);
+                if (empty($awardInfo)) {
+                    SimpleLogger::info("sendRealSharePosterMessage award_info empty", [$params, $sharePosterAwardInfo]);
+                    return false;
+                }
+
+                // 指定必要字段
+                $awardInfo['type'] = RealSharePosterModel::TYPE_CHECKIN_UPLOAD;
+                $awardInfo['app_id'] = Constants::REAL_APP_ID;
+                $awardInfo['verify_status'] = RealSharePosterModel::VERIFY_STATUS_QUALIFIED;
+                $jumpLink = RealDictConstants::get(RealDictConstants::REAL_REFERRAL_CONFIG, 'real_month_award_url');
+                break;
+            default:
+                // 待审核 不能发送消息
+                SimpleLogger::info("sendRealSharePosterMessage share_poster VERIFY_STATUS_WAIT", [$params]);
+                break;
         }
-        // 获取海报对应的奖励id
-        $sharePosterAwardInfo = RealSharePosterAwardModel::getRecord(['share_poster_id' => $sharePosterId]);
-        if (empty($sharePosterAwardInfo)) {
-            SimpleLogger::info("sendRealSharePosterMessage share_poster_info empty", [$params]);
-            return false;
-        }
-        // 获取奖励详细信息
-        $awardInfo = RealUserAwardMagicStoneModel::getRecord(['id' => $sharePosterAwardInfo['award_id']]);
+
         if (empty($awardInfo)) {
-            SimpleLogger::info("sendRealSharePosterMessage award_info empty", [$params, $sharePosterAwardInfo]);
             return false;
         }
-
-        // 指定必要字段
-        $awardInfo['type'] = RealSharePosterModel::TYPE_CHECKIN_UPLOAD;
-        $awardInfo['app_id'] = Constants::REAL_APP_ID;
-        $awardInfo['verify_status'] = RealSharePosterModel::VERIFY_STATUS_QUALIFIED;
-
         $ext = [
             'activity_name' => $activityInfo['name'],
-            'url' => RealDictConstants::get(RealDictConstants::REAL_REFERRAL_CONFIG, 'real_month_award_url'),
+            'url' => !empty($jumpLink) ? $jumpLink : '',
             'award_amount' => $awardInfo['award_amount']
         ];
         PushMessageService::realSendMessage($awardInfo, $ext);
