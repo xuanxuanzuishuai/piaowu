@@ -802,7 +802,7 @@ class RtActivityService
                 $statusTxt = '未领取';
                 if (isset($couponLists[$val['student_coupon_id']])) {
                     $couponData = $couponLists[$val['student_coupon_id']];
-                    if ($couponData['student_coupon_status'] == ErpStudentCouponV1Model::STATUS_UNUSE && $couponData['expired_end_time'] < time()) {
+                    if ($couponData['student_coupon_status'] == ErpStudentCouponV1Model::STATUS_EXPIRE || ($couponData['student_coupon_status'] == ErpStudentCouponV1Model::STATUS_UNUSE && $couponData['expired_end_time'] < time())) {
                         $statusTxt = '已过期';
                     } else {
                         $statusTxt = $couponData['student_coupon_status_zh'];
@@ -953,7 +953,6 @@ class RtActivityService
             if (empty($studentInfo)) {
                 throw new RunTimeException(['record_not_found']);
             }
-            $posterAscription = ActivityPosterModel::POSTER_ASCRIPTION_STUDENT;
             $activity = self::checkAllowSend($request['activity_id'], $request['student_id']);
             if (!$activity) {
                 return ['status' => self::ACTIVITY_NOT_STARTED];
