@@ -195,7 +195,7 @@ class RealActivityService
     {
         //获取最新两个最新可参与的周周领奖活动
         $time = time();
-        $activityData = RealWeekActivityModel::getStudentCanSignWeekActivity($limitActivity, $time);
+        $activityData = RealWeekActivityModel::getStudentCanSignWeekActivity($limitActivity, 0);
         if (empty($activityData)) {
             return [];
         }

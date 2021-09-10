@@ -183,16 +183,20 @@ class RealWeekActivityModel extends Model
      * @param int $time
      * @return array|mixed
      */
-    public static function getStudentCanSignWeekActivity($limit, $time)
+    public static function getStudentCanSignWeekActivity($limit, $time = 0)
     {
+        $where = [
+            'enable_status' => OperationActivityModel::ENABLE_STATUS_ON,
+            'ORDER' => ['start_time' => "DESC"],
+            'start_time[<]' => !empty($time) ? $time : time(),    // 确保当前活动已经开始 - 过滤掉预先创建但未到开始时间的活动
+            'LIMIT' => $limit
+        ];
+        if (!empty($time)) {
+            $where['start_time[<]'] = $time;
+            $where['end_time[>]'] = $time;
+        }
         $activityData = self::getRecords(
-            [
-                'start_time[<]' => $time,
-                'end_time[>]' => $time,
-                'enable_status' => OperationActivityModel::ENABLE_STATUS_ON,
-                'ORDER' => ['id' => "DESC"],
-                'LIMIT' => $limit
-            ],
+            $where,
             [
                 'name',
                 'activity_id',
@@ -208,7 +212,8 @@ class RealWeekActivityModel extends Model
                 'poster_order',
                 'start_time',
                 'end_time',
-            ]);
+            ]
+        );
         return empty($activityData) ? [] : $activityData;
     }
 }

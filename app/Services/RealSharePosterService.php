@@ -171,7 +171,7 @@ class RealSharePosterService
         }
         //真人奖励激活
         if (!empty($needAwardList)) {
-            QueueService::addRealUserPosterAward($needAwardList);
+            QueueService::addRealUserPosterAward(['share_poster_ids' => $needAwardList]);
         }
         return true;
     }
@@ -286,7 +286,7 @@ class RealSharePosterService
                 break;
             case RealSharePosterModel::VERIFY_STATUS_WAIT || RealSharePosterModel::VERIFY_STATUS_UNQUALIFIED:
                 //获取最新两个最新可参与的周周领奖活动
-                $activityData = RealWeekActivityModel::getStudentCanSignWeekActivity(2, time());
+                $activityData = RealWeekActivityModel::getStudentCanSignWeekActivity(2);
                 // 获取是否能重新上传 - 在可参与范围内，并且是审核中的
                 if (in_array($sharePosterInfo['activity_id'], array_column($activityData, 'activity_id'))) {
                     $returnData['can_upload'] = Constants::STATUS_TRUE;

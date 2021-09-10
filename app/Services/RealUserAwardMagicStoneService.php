@@ -99,7 +99,7 @@ class RealUserAwardMagicStoneService
 
         // 请求erp发放积分 - nsq通知erp积分入账
         QueueService::erpMagicStoneNormalCredited(
-            $sharePosterInfo['student_id'],
+            $uuid,
             $awardAmount,
             ErpStudentAccountTopic::UPLOAD_POSTER_ACTION,
             '截图审核通过',
@@ -154,8 +154,12 @@ class RealUserAwardMagicStoneService
      * @return bool
      * @throws RunTimeException
      */
-    public static function sendUserMagicStoneAward(array $sharePosterIds)
+    public static function sendUserMagicStoneAward(array $params)
     {
+        $sharePosterIds = $params['share_poster_ids'] ?? [];
+        if (empty($sharePosterIds)) {
+            throw new RunTimeException(['share_poster_ids_empty'], [$sharePosterIds]);
+        }
         // 获取海报对应的学生id
         $sharePosterList = RealSharePosterModel::getRecords(['id' => $sharePosterIds]);
         if (empty($sharePosterList)) {
