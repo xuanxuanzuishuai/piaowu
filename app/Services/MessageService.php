@@ -1323,6 +1323,7 @@ class MessageService
                 $awardInfo['type'] = RealSharePosterModel::TYPE_CHECKIN_UPLOAD;
                 $awardInfo['app_id'] = Constants::REAL_APP_ID;
                 $awardInfo['verify_status'] = RealSharePosterModel::VERIFY_STATUS_UNQUALIFIED;
+                $awardInfo['user_id'] = $sharePosterInfo['student_id'];
                 break;
             case RealSharePosterModel::VERIFY_STATUS_WAIT:  // 待审核 不能发送消息
                 break;
