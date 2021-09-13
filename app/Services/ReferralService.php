@@ -1338,6 +1338,19 @@ class ReferralService
         if (empty($enableFlag) && $package == PayServices::PACKAGE_0) {
             $package = PayServices::PACKAGE_1;
         }
+
+        //金叶子商城渠道集合
+        $goldShopChannelIds = DictConstants::get(DictConstants::SALE_SHOP_CONFIG, 'channel_ids');
+        $existChannel = false;
+        if (!empty($goldShopChannelIds) && !empty($sceneData['c'])) {
+            if (in_array($sceneData['c'], explode(',', $goldShopChannelIds))) {
+                $existChannel = true;
+            }
+        }
+        //金叶子商城课包替换
+        if ($package == PayServices::PACKAGE_0 && $existChannel) {
+            $package = PayServices::PACKAGE_1;
+        }
         return $package;
     }
 

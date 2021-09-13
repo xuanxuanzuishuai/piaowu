@@ -968,7 +968,7 @@ class DictConstants {
      */
     const SALE_SHOP_CONFIG = [
         'type' => 'SALE_SHOP_CONFIG',
-        'keys' => ['home_index','dafault_banner']
+        'keys' => ['home_index','dafault_banner','channel_ids']
     ];
 
     /**
