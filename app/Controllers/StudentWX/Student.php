@@ -14,6 +14,7 @@ use App\Libs\DictConstants;
 use App\Libs\Dss;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
+use App\Libs\NewSMS;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Libs\Valid;
@@ -63,6 +64,7 @@ class Student extends ControllerBase
             WechatTokenService::deleteToken($oldToken);
         }
 
+        empty($params['country_code']) && $params['country_code'] = NewSMS::DEFAULT_COUNTRY_CODE;
         try {
             $appId = $params['app_id'] ?? NULL;
             if (empty($appId)) {
@@ -165,6 +167,7 @@ class Student extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
+        empty($params['country_code']) &&  $params['country_code']=NewSMS::DEFAULT_COUNTRY_CODE;
         $errorCode = CommonServiceForApp::sendValidateCode($params['mobile'], CommonServiceForApp::SIGN_WX_STUDENT_APP, $params['country_code']);
         if (!empty($errorCode)) {
             $result = Valid::addAppErrors([], $errorCode);
