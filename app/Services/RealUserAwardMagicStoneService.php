@@ -68,6 +68,7 @@ class RealUserAwardMagicStoneService
             'review_time'      => $time,
             'remark'           => $sharePosterInfo['remark'] ?? '',
             'finish_task_uuid' => $uuid,
+            'batch_id' => self::getBatchId(),
             'create_time'      => $time,
         ];
         $sharePosterAwardData = [
@@ -103,7 +104,8 @@ class RealUserAwardMagicStoneService
             $awardAmount,
             ErpStudentAccountTopic::UPLOAD_POSTER_ACTION,
             '截图审核通过',
-            $time
+            $time,
+            $studentAwardMagicStoneData['batch_id']
         );
 
         // 发送消息
@@ -185,5 +187,14 @@ class RealUserAwardMagicStoneService
             self::createStudentAward($id, $uuid, $_sharePoserInfo);
         }
         return true;
+    }
+
+    /**
+     * 生成batch_id
+     * @return false|string
+     */
+    public static function getBatchId()
+    {
+        return substr(md5(uniqid()), 0, 6);
     }
 }

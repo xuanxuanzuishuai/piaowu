@@ -928,10 +928,11 @@ class QueueService
      * @param $sourceType
      * @param $remark
      * @param $createTime
+     * @param $batchId
      * @param $deferTime
      * @return bool
      */
-    public static function erpMagicStoneNormalCredited($uuid, $amount, $sourceType, $remark, $createTime, $deferTime = 0)
+    public static function erpMagicStoneNormalCredited($uuid, $amount, $sourceType, $remark, $createTime, $batchId = '', $deferTime = 0)
     {
         try {
             $data = [
@@ -944,6 +945,8 @@ class QueueService
                 'create_time' => $createTime,
                 'expire_time' => $createTime,
             ];
+            // batch_id 如果不需要不会带这个参数
+            !empty($batchId) && $data['batch_id'] = $batchId;
             (new ErpStudentAccountTopic())->erpNormalCredited($data)->publish($deferTime);
         } catch (Exception $e) {
             SimpleLogger::error($e->getMessage(), $data);
