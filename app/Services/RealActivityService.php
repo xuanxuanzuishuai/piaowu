@@ -194,7 +194,7 @@ class RealActivityService
      */
     public static function getCanParticipateWeekActivityIds($studentData, $limitActivity)
     {
-        //获取最新两个最新可参与的周周领奖活动
+        //已开始的活动，按照开始时间倒叙排序，第一活动如果处在有效期内则返回最近的两个活动，否则返回第一个活动
         $time = time();
         $activityData = RealWeekActivityModel::getStudentCanSignWeekActivity($limitActivity, 0);
         if (empty($activityData)) {
@@ -205,6 +205,9 @@ class RealActivityService
         foreach ($activityData as $val) {
             if ($val['end_time'] >= $studentData['first_pay_time']) {
                 $canJoinActivityIds[] = $val['activity_id'];
+            }
+            if ($val['end_time'] < $time) {
+                break;
             }
         }
         if (empty($canJoinActivityIds)) {

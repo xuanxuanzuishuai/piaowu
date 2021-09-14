@@ -246,9 +246,10 @@ class RealSharePosterService
     /**
      * 真人 - 截图审核详情
      * @param $id
+     * @param $studentData
      * @return array
      */
-    public static function realSharePosterDetail($id)
+    public static function realSharePosterDetail($id, $studentData)
     {
         $returnData = [];
         if (empty($id)) {
@@ -286,7 +287,7 @@ class RealSharePosterService
                 break;
             case RealSharePosterModel::VERIFY_STATUS_WAIT || RealSharePosterModel::VERIFY_STATUS_UNQUALIFIED:
                 //获取最新两个最新可参与的周周领奖活动
-                $activityData = RealWeekActivityModel::getStudentCanSignWeekActivity(2);
+                $activityData = RealActivityService::getCanParticipateWeekActivityIds($studentData, 2);
                 // 获取是否能重新上传 - 在可参与范围内，并且是审核中的
                 if (in_array($sharePosterInfo['activity_id'], array_column($activityData, 'activity_id'))) {
                     $returnData['can_upload'] = Constants::STATUS_TRUE;

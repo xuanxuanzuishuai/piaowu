@@ -187,7 +187,7 @@ class StudentActivity extends ControllerBase
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        $poster = RealSharePosterService::realSharePosterDetail($params['id']);
+        $poster = RealSharePosterService::realSharePosterDetail($params['id'], ['id' => $this->ci['user_info']['user_id'], 'first_pay_time' => $this->ci['user_info']['first_pay_time'],]);
         return HttpHelper::buildResponse($response, $poster);
     }
 

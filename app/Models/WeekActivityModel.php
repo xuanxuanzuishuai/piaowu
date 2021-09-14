@@ -148,10 +148,12 @@ class WeekActivityModel extends Model
      */
     public static function getSelectList($params)
     {
+        //已开始的活动，按照开始时间倒叙排序，第一活动如果处在有效期内则返回最近的两个活动，否则返回第一个活动
+        $now = time();
         $limit = $params['limit'] ?? 2;
         $active = OperationActivityModel::getActiveActivity(TemplatePosterModel::STANDARD_POSTER);
         if (empty($active)) {
-            return self::getRecords(['ORDER' => ['id' => 'DESC'], 'LIMIT' => [0, $limit]]);
+            return self::getRecords(['enable_status' => OperationActivityModel::ENABLE_STATUS_ON, 'ORDER' => ['start_time' => 'DESC'], 'LIMIT' => [0, 1]]);
         }
         $list = self::getRecords(
             [
@@ -161,7 +163,6 @@ class WeekActivityModel extends Model
                 'LIMIT' => [0, $limit]
             ]
         );
-        $now = time();
         foreach ($list as $key => &$item) {
             $item['active'] = Constants::STATUS_FALSE;
             if ($now - $item['start_time'] >= Util::TIMESTAMP_12H) {
