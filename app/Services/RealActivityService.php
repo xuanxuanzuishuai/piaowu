@@ -52,6 +52,7 @@ class RealActivityService
         $data['student_info'] = [
             'uuid' => $studentDetail['uuid'],
             'pay_status' => $checkRes['pay_status'],
+            'nickname' => !empty($studentDetail['name']) ? $studentDetail['name'] : ErpUserService::getStudentDefaultName($studentDetail['mobile']),
             'pay_status_zh' => $checkRes['status_zh'],
             'thumb' => ErpUserService::getStudentThumbUrl($studentDetail['thumb']),
         ];
