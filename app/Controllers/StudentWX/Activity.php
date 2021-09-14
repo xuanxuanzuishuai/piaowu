@@ -128,4 +128,57 @@ class Activity extends ControllerBase
         }
         return HttpHelper::buildResponse($response, $data);
     }
+
+    /**
+     * 拼团首页
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function collageIndex(Request $request, Response $response)
+    {
+        try {
+            $data = ActivityService::collageIndex();
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
+     * 拼团详情页
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function collageDetail(Request $request, Response $response)
+    {
+        try {
+            $params = $request->getParams();
+            $params['from_type'] = ActivityService::FROM_TYPE_WX;
+            $params['student_id'] = $this->ci['user_info']['user_id'];
+            $data = ActivityService::collageDetail($params);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
+     * 获取助教信息
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function assistantInfo(Request $request, Response $response)
+    {
+        try {
+            $params = $request->getParams();
+            $params['student_id'] = $this->ci['user_info']['user_id'];
+            $data = ActivityService::assistantInfo($params);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, $data);
+    }
 }

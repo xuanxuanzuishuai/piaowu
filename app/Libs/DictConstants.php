@@ -1016,6 +1016,17 @@ class DictConstants {
     ];
 
 
+    //虚拟拼团配置
+    const COLLAGE_CONFIG = [
+        'type' => 'COLLAGE_CONFIG',
+        'keys' => [
+            'package',
+            'channel_wx',
+            'channel_app',
+        ]
+    ];
+
+
     /**
      * 单个获取op系统dict配置数据
      * @param $type

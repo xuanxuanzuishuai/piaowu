@@ -91,5 +91,11 @@ class StudentWXRouter extends RouterBase
         //活动中心
         '/student_wx/activity_center/list' => ['method' => ['get'], 'call' => ActivityCenter::class . ':getList'],
 
+        /* 虚拟拼团 */
+        '/student_wx/activity/collage_index' => ['method' => ['get'], 'call' => Activity::class . ':collageIndex','middles' => []],
+        '/student_wx/activity/collage_detail' => ['method' => ['get'], 'call' => Activity::class . ':collageDetail'],
+        '/student_wx/activity/assistant_info' => ['method' => ['get'], 'call' => Activity::class . ':assistantInfo'],
+
+
     ];
 }

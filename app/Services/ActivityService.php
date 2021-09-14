@@ -20,6 +20,8 @@ use App\Models\ActivityPosterModel;
 use App\Models\CHModel\AprViewStudentModel;
 use App\Models\Dss\DssCategoryV1Model;
 use App\Models\Dss\DssCollectionModel;
+use App\Models\Dss\DssEmployeeModel;
+use App\Models\Dss\DssGiftCodeDetailedModel;
 use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Erp\ErpEventTaskModel;
@@ -36,6 +38,11 @@ class ActivityService
     const FROM_TYPE_APP  = 'app'; //智能app
     const FROM_TYPE_WX   = 'wx'; //智能微信
     const FROM_TYPE_PUSH = 'push'; //push
+
+    const COLLAGE_STATUS_BUY_COURSE = 1; //已购买该体验营
+    const COLLAGE_STATUS_BUY_TEST_COURSE = 2; //已购买正式课
+    const COLLAGE_STATUS_BUY_TEST_COURSE_CAMP = 3; //已购买体验课
+    const COLLAGE_STATUS_NORMAL = 4; //允许参团
 
     /**
      * 打卡活动上传截图
@@ -477,5 +484,66 @@ class ActivityService
             return false;
         }
         return RedisDB::getConn()->del($delKeys);
+    }
+
+    /**
+     * 拼团详情页
+     * @param $params
+     * @return array
+     */
+    public static function collageDetail($params)
+    {
+        $studentId = $params['student_id'];
+        //获取渠道和课包
+        list($channel,$package) =  DictConstants::getValues(DictConstants::COLLAGE_CONFIG, ['channel_' . $params['from_type'],'package']);
+        //是否已购买该产品包
+        $giftCode = DssGiftCodeModel::getRecord(['apply_user' => $studentId, 'bill_package_id' => $package], 'id');
+        if (!empty($giftCode)) {
+            $status = self::COLLAGE_STATUS_BUY_COURSE;
+            return compact('status', 'channel', 'package');
+        }
+        //查询学生状态
+        $student = DssStudentModel::getRecord(['id' => $studentId], ['has_review_course']);
+        if ($student['has_review_course'] == DssStudentModel::REVIEW_COURSE_1980) {
+            $status = self::COLLAGE_STATUS_BUY_TEST_COURSE;
+        } elseif ($student['has_review_course'] == DssStudentModel::REVIEW_COURSE_49) {
+            $status = self::COLLAGE_STATUS_BUY_TEST_COURSE_CAMP;
+        } else {
+            $status = self::COLLAGE_STATUS_NORMAL;
+        }
+        return compact('status', 'channel', 'package');
+    }
+
+    /**
+     * 拼团首页
+     * @return array|null
+     */
+    public static function collageIndex()
+    {
+        $result = DssGiftCodeDetailedModel::studentDetails();
+        foreach ($result as &$val) {
+            $val['thumb'] = AliOSS::replaceCdnDomainForDss($val['thumb']);
+        }
+        return $result;
+    }
+
+    /**
+     * 获取助教信息
+     * @param $params
+     * @return array
+     * @throws RunTimeException
+     */
+    public static function assistantInfo($params)
+    {
+        $student = DssStudentModel::getRecord(['id' => $params['student_id']], ['assistant_id']);
+        if (empty($student)) {
+            throw new RunTimeException(['record_not_found']);
+        }
+        $employee = DssEmployeeModel::getRecord(['id' => $student['assistant_id']], ['wx_qr', 'wx_num']);
+        $result   = [
+            'wx_num' => $employee['wx_num'] ?? '',
+            'wx_qr'  => !empty($employee['wx_qr']) ? AliOSS::replaceCdnDomainForDss($employee['wx_qr']) : '',
+        ];
+        return $result;
     }
 }

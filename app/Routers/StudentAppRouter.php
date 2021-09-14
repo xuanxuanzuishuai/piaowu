@@ -12,6 +12,7 @@ use App\Controllers\StudentApp\ActivityCenter;
 use App\Controllers\StudentApp\App;
 use App\Controllers\StudentApp\Auth;
 use App\Controllers\StudentApp\DuanWuActivity;
+use App\Controllers\StudentApp\Order;
 use App\Controllers\StudentApp\Poster;
 use App\Controllers\StudentWX\Activity;
 use App\Controllers\StudentWX\Poster AS WXPoster;
@@ -207,5 +208,26 @@ class StudentAppRouter extends RouterBase
             'middles' => [AppAuthMiddleWare::class],
         ],
 
+        /* 虚拟拼团相关 */
+        '/student_app/activity/collage_index' => [
+            'method'  => ['get'],
+            'call'    => \App\Controllers\StudentApp\Activity::class . ':collageIndex',
+            'middles' => [],
+        ],
+        '/student_app/activity/collage_detail' => [
+            'method'  => ['get'],
+            'call'    => \App\Controllers\StudentApp\Activity::class . ':collageDetail',
+            'middles' => [AppAuthMiddleWare::class],
+        ],
+        '/student_app/activity/assistant_info' => [
+            'method'  => ['get'],
+            'call'    => \App\Controllers\StudentApp\Activity::class . ':assistantInfo',
+            'middles' => [AppAuthMiddleWare::class],
+        ],
+        '/student_app/order/create_bill' => [
+            'method'  => ['post'],
+            'call'    => Order::class . ':createBill',
+            'middles' => [AppAuthMiddleWare::class],
+        ],
     ];
 }
