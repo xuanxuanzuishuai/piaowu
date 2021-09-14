@@ -264,9 +264,15 @@ class SharePosterModel extends Model
         $student = [];
         if (!empty($params['student_mobile'])) {
             $student = DssStudentModel::getRecord(['mobile' => $params['student_mobile']], ['id']);
+            if (empty($student)) {
+                return [[], 0];
+            }
         }
         if (!empty($params['student_name'])) {
             $student = DssStudentModel::getRecord(['name[~]' => $params['student_name']], ['id']);
+            if (empty($student)) {
+                return [[], 0];
+            }
         }
 
         if (!empty($params['activity_id'])) {

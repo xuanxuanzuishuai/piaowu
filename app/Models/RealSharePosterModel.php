@@ -102,9 +102,15 @@ class RealSharePosterModel extends Model
         $student = [];
         if (!empty($params['student_mobile'])) {
             $student = ErpStudentModel::getRecord(['mobile' => $params['student_mobile']], ['id']);
+            if (empty($student)) {
+                return [[], 0];
+            }
         }
         if (!empty($params['student_name'])) {
             $student = ErpStudentModel::getRecord(['name[~]' => $params['student_name']], ['id']);
+            if (empty($student)) {
+                return [[], 0];
+            }
         }
         if (!empty($params['activity_id'])) {
             $where .= " AND sp.activity_id = :activity_id ";
