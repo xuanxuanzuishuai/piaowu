@@ -64,7 +64,7 @@ class MessageService
     {
         $where = " app_id = {$params['app_id']}";
 
-        if (!empty($params['is_active'])) {
+        if (!Util::emptyExceptZero($params['is_active'])) {
             $where .= " and is_active = {$params['is_active']}";
         }
 
