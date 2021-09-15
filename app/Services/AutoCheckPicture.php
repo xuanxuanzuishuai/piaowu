@@ -35,22 +35,11 @@ class AutoCheckPicture
         $result = $record['result'];
         switch ($data['app_id']) {
             case Constants::SMART_APP_ID: //智能陪练
-                $activity = WeekActivityModel::getRecord(['activity_id' => [$result['activity_id']]], ['id', 'enable_status', 'start_time']);
-                if (empty($activity) || $activity['enable_status'] != OperationActivityModel::ENABLE_STATUS_ON) {
+                $activityInfo = WeekActivityModel::getRecord(['activity_id' => [$result['activity_id']]], ['id', 'enable_status', 'start_time']);
+                if (empty($activityInfo) || $activityInfo['enable_status'] != OperationActivityModel::ENABLE_STATUS_ON) {
                     SimpleLogger::error('not found activity', ['id' => $result['activity_id']]);
                     return null;
                 }
-                $start_time = date('m-d', $activity['start_time']);
-                $start_time = str_replace('-', '.', $start_time);
-                $date = '';
-                foreach (str_split($start_time) as $key => $val) {
-                    if ($key != strlen($start_time) - 1 && $val == '0') {
-                        continue;
-                    }
-                    $date .= $val;
-                }
-                $imagePath = AliOSS::replaceCdnDomainForDss($result['image_path']);
-                $activityDate = date('Y-m-d', $activity['start_time']);
                 break;
             case Constants::REAL_APP_ID: //真人陪练
                 // 获取活动信息
@@ -60,16 +49,16 @@ class AutoCheckPicture
                     SimpleLogger::error('not found activity', ['id' => $result['activity_id']]);
                     return null;
                 }
-                $imagePath = $_ENV['QINIU_DOMAIN_ERP'] . $result['img_url'];
-
-                // 获取日期 - 月.日
-                $date = date("n.j", $activityInfo['start_time']);
-                // 获取日期 - 年-月-日
-                $activityDate = date("Y-m-d", $activityInfo['start_time']);
                 break;
             default:
-                break;
+                SimpleLogger::error('app_id error', ['id' => $result['activity_id']]);
+                return null;
         }
+        $imagePath = AliOSS::replaceCdnDomainForDss($result['image_path']);
+        // 获取日期 - 月.日
+        $date = date("n.j", $activityInfo['start_time']);
+        // 获取日期 - 年-月-日
+        $activityDate = date("Y-m-d", $activityInfo['start_time']);
         $redis = RedisDB::getConn();
         $cacheKey = 'letterIden';
         if (!$redis->hexists($cacheKey, $date)) {
