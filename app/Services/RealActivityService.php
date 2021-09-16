@@ -314,22 +314,24 @@ class RealActivityService
         $userList = DssStudentModel::getRecords(['mobile' => array_keys($mobileInviteeNumArr)], ['id', 'name', 'mobile', 'thumb']);
         $userList = array_column($userList, null, 'mobile');
         $accountDetail = [];
-        foreach ($userList as $item) {
-            $_userInviteeNum = $mobileInviteeNumArr[$item['mobile']] ?: 0;
+        if (empty($mobileInviteeNumArr) || !is_array($mobileInviteeNumArr)) {
+            return $accountDetail;
+        }
+        foreach ($mobileInviteeNumArr as $_mobile => $_invitee) {
+            $_userInfo       = $userList[$_mobile] ?? ['thumb' => '', 'name' => '', 'id' => 0, 'mobile' => ''];
             $accountDetail[] = [
-                'student_id' => $item['id'],
-                'invite_num' => $_userInviteeNum,
-                'magic_stone_num' => ceil($_userInviteeNum * $magicStone),
-                'avatar' => ErpUserService::getStudentThumbUrl($item['thumb']),
-                'name' => $item['name'] ?: ErpUserService::getStudentDefaultName($item['name']),
+                'student_id'      => $_userInfo['id'] ?? 0,
+                'invite_num'      => $_invitee,
+                'magic_stone_num' => ceil($_invitee * $magicStone),
+                'avatar'          => ErpUserService::getStudentThumbUrl($_userInfo['thumb']),
+                'name'            => $_userInfo['name'] ?: ErpUserService::getStudentDefaultName($_mobile),
             ];
         }
-        unset($item);
 
         // 排序 - 邀请人数
         array_multisort(array_column($accountDetail, 'invite_num'), SORT_DESC, $accountDetail);
-        // 排序 - 魔法石总数量
-        array_multisort(array_column($accountDetail, 'magic_stone_num'), SORT_DESC, $accountDetail);
+        // 排序 - 魔法石总数量 - 魔法石是通过邀请人数计算得出，所以不需要在安装魔法石总数量排序
+        // array_multisort(array_column($accountDetail, 'magic_stone_num'), SORT_DESC, $accountDetail);
 
 
         /** 真实数据查询 - 暂时注释 */
