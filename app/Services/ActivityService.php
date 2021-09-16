@@ -25,9 +25,11 @@ use App\Models\Dss\DssEmployeeModel;
 use App\Models\Dss\DssGiftCodeDetailedModel;
 use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssStudentModel;
+use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\Erp\ErpEventTaskModel;
 use App\Models\Erp\ErpStudentModel;
 use App\Models\Erp\ErpUserEventTaskAwardModel;
+use App\Models\InviteActivityModel;
 use App\Models\OperationActivityModel;
 use App\Models\SharePosterModel;
 use App\Models\WeekActivityModel;
@@ -554,5 +556,108 @@ class ActivityService
             'wx_qr'            => !empty($employee['wx_qr']) ? AliOSS::replaceCdnDomainForDss($employee['wx_qr']) : '',
         ];
         return $result;
+    }
+    
+    /**
+     * 邀请领奖活动
+     * @param int $studentId 学生ID
+     * @param int $fromType 来源类型:微信 app
+     * @return array
+     * @throws RunTimeException
+     */
+    public static function inviteActivityData($studentId, $fromType)
+    {
+        $data = [
+            'list' => [],
+            'activity' => [],
+            'student_info' => [],
+            'channel_list' => [],
+        ];
+        //获取学生信息
+        $studentDetail = ErpStudentModel::getStudentInfoById($studentId);
+        if (empty($studentDetail)) {
+            throw new RunTimeException(['student_not_exist']);
+        }
+        //状态获取
+        $checkRes = ErpUserService::getStudentStatus($studentId);
+        $data['student_info'] = [
+            'uuid' => $studentDetail['uuid'],
+            'nickname' => !empty($studentDetail['name']) ? $studentDetail['name'] : ErpUserService::getStudentDefaultName($studentDetail['mobile']),
+            'pay_status' => $checkRes['pay_status'],
+            'pay_status_zh' => $checkRes['status_zh'],
+            'thumb' => ErpUserService::getStudentThumbUrl($studentDetail['thumb']),
+        ];
+        list($data['list'], $data['activity']) = self::initActivityData(OperationActivityModel::TYPE_INVITE_ACTIVITY, $fromType, $studentDetail);
+        //渠道获取
+        list($data['channel_list']['first']) = DictConstants::getValues(DictConstants::ACTIVITY_CONFIG, ['channel_invite_' . $fromType]);
+        return $data;
+    }
+    
+    /**
+     * 初始化周周月月活动的基础数据
+     * @param $activityType
+     * @param $fromType
+     * @param $studentDetail
+     * @return array
+     * @throws RunTimeException
+     */
+    private static function initActivityData($activityType, $fromType, $studentDetail)
+    {
+        //查询当前有效的活动
+        $activityData = [];
+        if ($activityType == OperationActivityModel::TYPE_INVITE_ACTIVITY) {
+            $activityData = InviteActivityModel::getStudentCanSignMonthActivity(1);
+        }
+        if (empty($activityData)) {
+            return [[], []];
+        } else {
+            $activityData = $activityData[0];
+        }
+        //海报定位参数配置
+        $posterConfig = PosterService::getPosterConfig();
+        //查询活动对应海报
+        $posterList = PosterService::getActivityPosterList($activityData);
+        if (empty($posterList)) {
+            return [[], []];
+        }
+        //获取渠道ID配置
+        $channel = PosterTemplateService::getChannel($activityType, $fromType);
+        $extParams = [
+            'user_status' => $studentDetail['status'],
+            'activity_id' => $activityData['activity_id'],
+        ];
+        //获取小程序二维码
+        $userQrParams = [];
+        foreach ($posterList as &$item) {
+            $_tmp = $extParams;
+            $_tmp['poster_id'] = $item['poster_id'];
+            $_tmp['user_id'] = $studentDetail['id'];
+            $_tmp['user_type'] = DssUserQrTicketModel::STUDENT_TYPE;
+            $_tmp['channel_id'] = $channel;
+            $_tmp['landing_type'] = DssUserQrTicketModel::LANDING_TYPE_MINIAPP;
+            $_tmp['qr_sign'] = QrInfoService::createQrSign($_tmp, Constants::SMART_APP_ID, Constants::SMART_MINI_BUSI_TYPE);
+            $userQrParams[] = $_tmp;
+            $item['qr_sign'] = $_tmp['qr_sign'];
+        }
+        unset($item);
+        $userQrArr = MiniAppQrService::getUserMiniAppQrList(Constants::SMART_APP_ID, Constants::SMART_MINI_BUSI_TYPE, $userQrParams);
+        //处理数据
+        foreach ($posterList as &$item) {
+            $extParams['poster_id'] = $item['poster_id'];
+            $item = PosterTemplateService::formatPosterInfo($item);
+            // 海报图：
+            $poster = PosterService::generateQRPoster(
+                $item['poster_path'],
+                $posterConfig,
+                $studentDetail['id'],
+                DssUserQrTicketModel::STUDENT_TYPE,
+                $channel,
+                $extParams,
+                $userQrArr[$item['qr_sign']] ?? []
+            );
+            $item['poster_url'] = $poster['poster_save_full_path'];
+        }
+        $activityData['award_rule'] = ActivityExtModel::getActivityExt($activityData['activity_id'])['award_rule'];
+        return [$posterList, ActivityService::formatData($activityData)];
     }
 }

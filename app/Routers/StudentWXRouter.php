@@ -99,5 +99,7 @@ class StudentWXRouter extends RouterBase
         '/student_wx/activity/assistant_info' => ['method' => ['get'], 'call' => Activity::class . ':assistantInfo'],
 
 
+        //邀请活动 - 活动详情
+        '/student_wx/invite_activity/activity_info' => ['method' => ['post'], 'call' => Activity::class . ':getInviteActivity'],
     ];
 }

@@ -34,6 +34,8 @@ class OperationActivityModel extends Model
     // 转介绍运营活动类型
     const TYPE_MONTH_ACTIVITY = 1;//月月有奖
     const TYPE_WEEK_ACTIVITY = 2;//周周领奖
+    const TYPE_INVITE_ACTIVITY = 3;//邀请领奖
+
     // 活动时间状态
     const TIME_STATUS_PENDING = 1;//待开始
     const TIME_STATUS_ONGOING = 2;//进行中

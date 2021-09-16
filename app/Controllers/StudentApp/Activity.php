@@ -162,4 +162,21 @@ class Activity extends ControllerBase
         return HttpHelper::buildResponse($response, $data);
     }
 
+    
+    /**
+     * 邀请活动详情
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getInviteActivity(Request $request, Response $response)
+    {
+        try {
+            $fromType = ActivityService::FROM_TYPE_APP;
+            $data = ActivityService::inviteActivityData($this->ci['user_info']['user_id'], $fromType);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
+        return HttpHelper::buildResponse($response, $data);
+    }
 }

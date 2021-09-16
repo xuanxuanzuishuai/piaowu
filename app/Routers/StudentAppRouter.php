@@ -245,5 +245,12 @@ class StudentAppRouter extends RouterBase
             'call' => GoldLeafShop::class . ':ruleDesc',
             'middles' => []
         ],
+
+        //邀请活动 - 活动详情
+        '/student_app/invite_activity/activity_info' => [
+            'method' => ['post'],
+            'call' => \App\Controllers\StudentApp\Activity::class.':getInviteActivity',
+            'middles' => [AppAuthMiddleWare::class],
+        ],
     ];
 }

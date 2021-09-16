@@ -6,6 +6,7 @@ use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\NewSMS;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
@@ -18,11 +19,13 @@ use App\Models\Dss\DssPackageExtModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Erp\ErpStudentCouponV1Model;
 use App\Models\Erp\ErpUserEventTaskAwardGoldLeafModel;
+use App\Models\FreeCodeLogModel;
 use App\Models\ParamMapModel;
 use App\Models\RtActivityRuleModel;
 use App\Models\RtCouponReceiveRecordModel;
 use App\Models\StudentReferralStudentDetailModel;
 use App\Models\StudentReferralStudentStatisticsModel;
+use App\Services\Queue\QueueService;
 
 class UserRefereeService
 {

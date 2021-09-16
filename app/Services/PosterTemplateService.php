@@ -31,6 +31,7 @@ class PosterTemplateService
     protected static $typeArray = [
         1 => 'month',
         2 => 'week',
+        3 => 'invite',
     ];
 
     /**
