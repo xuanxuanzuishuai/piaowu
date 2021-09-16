@@ -38,7 +38,7 @@ class ActivityCenter extends ControllerBase
             }
             ActivityCenterService::createActivity($params, self::getEmployeeId());
         } catch (RunTimeException $e) {
-            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
         return HttpHelper::buildResponse($response, []);
     }
