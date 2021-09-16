@@ -21,14 +21,14 @@ class RealReferralMinAppAuthCheckMiddleware extends MiddlewareBase
     {
         $token  = $request->getHeaderLine('token');
         $params = $request->getParams();
+        $appId    = Constants::REAL_APP_ID;
+        $busiType = Constants::REAL_MINI_BUSI_TYPE;
+        $wechat   = WeChatMiniPro::factory($appId, $busiType);
         if (empty($token)) {
             if (empty($params['wx_code'])) {
                 return $response->withJson(Valid::addAppErrors([], StatusCode::HTTP_UNAUTHORIZED)); // 401
             }
-            $appId    = Constants::REAL_APP_ID;
-            $busiType = Constants::REAL_MINI_BUSI_TYPE;
             $userType = DssUserWeiXinModel::USER_TYPE_STUDENT;
-            $wechat   = WeChatMiniPro::factory($appId, $busiType);
             $data     = $wechat->code2Session($params['wx_code']);
             if (empty($data['openid'])) {
                 return $response->withJson(Valid::addAppErrors([], StatusCode::HTTP_UNAUTHORIZED)); // 401
@@ -50,6 +50,10 @@ class RealReferralMinAppAuthCheckMiddleware extends MiddlewareBase
         } else {
             $data = WechatTokenService::getTokenInfo($token);
             if (empty($data)) {
+                return $response->withJson(Valid::addAppErrors([], StatusCode::HTTP_UNAUTHORIZED)); // 401
+            }
+            $sessionKey =  $wechat->getSessionKey($data['open_id']);
+            if (empty($sessionKey)) {
                 return $response->withJson(Valid::addAppErrors([], StatusCode::HTTP_UNAUTHORIZED)); // 401
             }
             $this->container['real_referral_miniapp_userid']   = $data['user_id'];
