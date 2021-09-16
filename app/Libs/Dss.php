@@ -26,6 +26,8 @@ class Dss
     const GET_SHORT_URL = '/op/sms/get_short_url'; //获取短链
     const GET_STUDENT_IDENTITY = '/op/user/get_student_identity'; //获取用户的状态
     const CREATE_APP_BILL = '/op/user/create_app_bill'; //app下单
+    const BILL_STATUS = '/op/user/bill_status'; //支付查询结果
+    const GET_WX_APP_ASSISTANT = '/op/user/get_wx_app_assistant'; //小程序客服
 
     private $host;
 
@@ -240,6 +242,36 @@ class Dss
         $res = self::commonAPI(self::CREATE_APP_BILL, $params, 'POST');
         if ($res['code'] != Valid::CODE_SUCCESS) {
             SimpleLogger::error('create app bill error', [$res, $params]);
+            return [];
+        }
+        return !empty($res['data']) ? $res['data'] : [];
+    }
+
+    /**
+     * 支付查询结果
+     * @param $params
+     * @return array|mixed
+     */
+    public function billStatus($params)
+    {
+        $res = self::commonAPI(self::BILL_STATUS, $params, 'POST');
+        if ($res['code'] != Valid::CODE_SUCCESS) {
+            SimpleLogger::error('bill status error', [$res, $params]);
+            return [];
+        }
+        return !empty($res['data']) ? $res['data'] : [];
+    }
+
+    /**
+     * 小程序客服
+     * @param $params
+     * @return array|mixed
+     */
+    public function getWxAppAssistant($params)
+    {
+        $res = self::commonAPI(self::GET_WX_APP_ASSISTANT, $params, 'POST');
+        if ($res['code'] != Valid::CODE_SUCCESS) {
+            SimpleLogger::error('get wx app assistant error', [$res, $params]);
             return [];
         }
         return !empty($res['data']) ? $res['data'] : [];

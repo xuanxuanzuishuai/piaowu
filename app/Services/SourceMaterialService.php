@@ -663,7 +663,7 @@ class SourceMaterialService
         $shareInfo  = ShareConfigModel::getRecord([]);
         $bannerInfo = self::getHtmlButtonInfo($request);
 
-        $wechat          = WeChatMiniPro::factory(Constants::SMART_APP_ID, Constants::SMART_APP_ID);
+        $wechat          = WeChatMiniPro::factory(Constants::SMART_APP_ID, Constants::SMART_MINI_BUSI_TYPE);
         $wechatInitialId = DictConstants::get(DictConstants::WECHAT_INITIAL_ID, $wechat->nowWxApp);
         $webpageUrl      = DictConstants::get(DictConstants::SALE_SHOP_CONFIG, 'home_index');
         $qrType          = DictConstants::get(DictConstants::MINI_APP_QR, 'qr_type_none');

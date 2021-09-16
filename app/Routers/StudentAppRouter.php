@@ -229,5 +229,10 @@ class StudentAppRouter extends RouterBase
             'call'    => Order::class . ':createBill',
             'middles' => [AppAuthMiddleWare::class],
         ],
+        '/student_app/order/bill_status' => [
+            'method'  => ['post'],
+            'call'    => Order::class . ':billStatus',
+            'middles' => [AppAuthMiddleWare::class],
+        ],
     ];
 }

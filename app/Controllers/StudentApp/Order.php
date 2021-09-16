@@ -5,6 +5,7 @@ namespace App\Controllers\StudentApp;
 
 
 use App\Controllers\ControllerBase;
+use App\Libs\Dss;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\Valid;
@@ -49,6 +50,35 @@ class Order extends ControllerBase
             $params = $request->getParams();
             $params['student_id'] = $this->ci['user_info']['user_id'];
             $data = OrderService::createAppBill($params);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
+     * 支付结果查询
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function billStatus(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key'        => 'bill_id',
+                'type'       => 'required',
+                'error_code' => 'bill_id_is_required',
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            $params = $request->getParams();
+            $data = (new Dss())->billStatus($params);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }

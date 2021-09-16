@@ -11,6 +11,7 @@ namespace App\Services;
 use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\DictConstants;
+use App\Libs\Dss;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
@@ -539,10 +540,15 @@ class ActivityService
         if (empty($student)) {
             throw new RunTimeException(['record_not_found']);
         }
+        //获取小程序客服信息
+        $assistant = (new Dss())->getWxAppAssistant(['assistant_id' => $student['assistant_id']]);
         $employee = DssEmployeeModel::getRecord(['id' => $student['assistant_id']], ['wx_qr', 'wx_num']);
-        $result   = [
-            'wx_num' => $employee['wx_num'] ?? '',
-            'wx_qr'  => !empty($employee['wx_qr']) ? AliOSS::replaceCdnDomainForDss($employee['wx_qr']) : '',
+        $result = [
+            'original_id'      => $assistant['original_id'],
+            'miniprogram_type' => $assistant['miniprogram_type'],
+            'path'             => $assistant['path'],
+            'wx_num'           => $employee['wx_num'] ?? '',
+            'wx_qr'            => !empty($employee['wx_qr']) ? AliOSS::replaceCdnDomainForDss($employee['wx_qr']) : '',
         ];
         return $result;
     }
