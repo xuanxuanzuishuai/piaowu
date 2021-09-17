@@ -101,13 +101,13 @@ class RealSharePosterModel extends Model
         $map = [];
         $student = [];
         if (!empty($params['student_mobile'])) {
-            $student = ErpStudentModel::getRecord(['mobile' => $params['student_mobile']], ['id']);
+            $student = ErpStudentModel::getRecords(['mobile' => $params['student_mobile']], ['id']);
             if (empty($student)) {
                 return [[], 0];
             }
         }
         if (!empty($params['student_name'])) {
-            $student = ErpStudentModel::getRecord(['name[~]' => $params['student_name']], ['id']);
+            $student = ErpStudentModel::getRecords(['name[~]' => $params['student_name']], ['id']);
             if (empty($student)) {
                 return [[], 0];
             }
@@ -140,9 +140,9 @@ class RealSharePosterModel extends Model
             $where .= " AND sp.id = :id ";
             $map[':id'] = $params['id'];
         }
-        if (!empty($student['id'])) {
-            $where .= " AND sp.student_id = :student_id ";
-            $map[':student_id'] = $student['id'];
+        if (!empty($student)) {
+            $student_id = implode(',', array_column($student, 'id'));
+            $where .= " AND sp.student_id in ({$student_id}) ";
         }
         if (!empty($params['assistant_ids']) && is_array($params['assistant_ids'])) {
             array_walk($params['assistant_ids'], function (&$val) {

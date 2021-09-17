@@ -287,14 +287,14 @@ class RealMonthActivityService
         $res = OperationActivityModel::batchUpdateRecord($activityData, ['id' => $activityId]);
         if (is_null($res)) {
             $db->rollBack();
-            SimpleLogger::info("WeekActivityService:add update operation_activity fail", ['data' => $activityData, 'activity_id' => $activityId]);
+            SimpleLogger::info("MonthActivityService:add update operation_activity fail", ['data' => $activityData, 'activity_id' => $activityId]);
             throw new RunTimeException(["update week activity fail"]);
         }
         // 更新周周领奖配置信息
         $res = RealMonthActivityModel::batchUpdateRecord($monthActivityData, ['activity_id' => $activityId]);
         if (is_null($res)) {
             $db->rollBack();
-            SimpleLogger::info("WeekActivityService:add update week_activity fail", ['data' => $monthActivityData, 'activity_id' => $activityId]);
+            SimpleLogger::info("MonthActivityService:add update week_activity fail", ['data' => $monthActivityData, 'activity_id' => $activityId]);
             throw new RunTimeException(["update week activity fail"]);
         }
         // 更新周周领奖扩展信息
@@ -302,7 +302,7 @@ class RealMonthActivityService
         $res = ActivityExtModel::batchUpdateRecord($activityExtData, ['activity_id' => $activityId]);
         if (is_null($res)) {
             $db->rollBack();
-            SimpleLogger::info("WeekActivityService:add update activity_ext fail", ['data' => $activityExtData, 'activity_id' => $activityId]);
+            SimpleLogger::info("MonthActivityService:add update activity_ext fail", ['data' => $activityExtData, 'activity_id' => $activityId]);
             throw new RunTimeException(["update week activity fail"]);
         }
         // 当海报有变化时删除原有的海报
@@ -311,14 +311,14 @@ class RealMonthActivityService
             $res = ActivityPosterModel::batchUpdateRecord(['is_del' => ActivityPosterModel::IS_DEL_TRUE], ['activity_id' => $activityId]);
             if (is_null($res)) {
                 $db->rollBack();
-                SimpleLogger::info("WeekActivityService:add is del activity_poster fail", ['data' => $data, 'activity_id' => $activityId]);
+                SimpleLogger::info("MonthActivityService:add is del activity_poster fail", ['data' => $data, 'activity_id' => $activityId]);
                 throw new RunTimeException(["update week activity fail"]);
             }
             // 写入新的活动与海报的关系
             $activityPosterRes = ActivityPosterModel::batchAddActivityPoster($activityId, $data['poster']);
             if (empty($activityPosterRes)) {
                 $db->rollBack();
-                SimpleLogger::info("WeekActivityService:add batch insert activity_poster fail", ['data' => $data, 'activity_id' => $activityId]);
+                SimpleLogger::info("MonthActivityService:add batch insert activity_poster fail", ['data' => $data, 'activity_id' => $activityId]);
                 throw new RunTimeException(["add week activity fail"]);
             }
         }
