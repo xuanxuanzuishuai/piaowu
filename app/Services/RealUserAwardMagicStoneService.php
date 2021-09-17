@@ -142,7 +142,7 @@ class RealUserAwardMagicStoneService
         unset($_awardNum, $_awardKey);
 
         // 如果当前阶梯小于最后一个阶梯奖励，读取erp旧数据重新计算奖励
-        if ($count < $lastAwardNum) {
+        if ($count <= $lastAwardNum) {
             $divisionTime = ErpDictModel::getKeyValue('student_poster_change_award', 'division_time');
             $erpCount     = ReferralPosterModel::getStudentSharePosterSuccessNum($studentId, $divisionTime);
             $count        += $erpCount;

@@ -72,21 +72,23 @@ class ErpUserService
     }
 
     /**
-     * 获取学生头像展示地址
-     * @param $thumb
+     * 获取学生头像展示地址:支持批量获取
+     * @param $thumbs
      * @return string|string[]
      */
-    public static function getStudentThumbUrl($thumb)
+    public static function getStudentThumbUrl($thumbs)
     {
-
         $dictConfig = array_column(DictConstants::getErpDictArr(DictConstants::ERP_SYSTEM_ENV['type'], ['QINIU_DOMAIN_1', 'QINIU_FOLDER_1', 'student_default_thumb'])[DictConstants::ERP_SYSTEM_ENV['type']], 'value', 'code');
-        if (empty($thumb)) {
-            $thumbUrl = Util::getQiNiuFullImgUrl($dictConfig['student_default_thumb'], $dictConfig['QINIU_DOMAIN_1'], $dictConfig['QINIU_FOLDER_1']);
-        } else {
-            $thumbUrl = Util::getQiNiuFullImgUrl($thumb, $dictConfig['QINIU_DOMAIN_1'], $dictConfig['QINIU_FOLDER_1']);
+        foreach ($thumbs as $tk=>$tv){
+            if (empty($tv)) {
+                $thumbUrl = Util::getQiNiuFullImgUrl($dictConfig['student_default_thumb'], $dictConfig['QINIU_DOMAIN_1'], $dictConfig['QINIU_FOLDER_1']);
+            } else {
+                $thumbUrl = Util::getQiNiuFullImgUrl($tv, $dictConfig['QINIU_DOMAIN_1'], $dictConfig['QINIU_FOLDER_1']);
 
+            }
+            $thumbs[$tk] = $thumbUrl;
         }
-        return $thumbUrl;
+        return $thumbs;
     }
 
     /**

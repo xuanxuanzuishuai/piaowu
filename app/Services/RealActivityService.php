@@ -54,7 +54,7 @@ class RealActivityService
             'pay_status' => $checkRes['pay_status'],
             'nickname' => !empty($studentDetail['name']) ? $studentDetail['name'] : ErpUserService::getStudentDefaultName($studentDetail['mobile']),
             'pay_status_zh' => $checkRes['status_zh'],
-            'thumb' => ErpUserService::getStudentThumbUrl($studentDetail['thumb']),
+            'thumb' => ErpUserService::getStudentThumbUrl([$studentDetail['thumb']])[0],
         ];
         if ($checkRes['pay_status'] != ErpStudentAppModel::STATUS_PAID) {
             return $data;
@@ -95,7 +95,7 @@ class RealActivityService
             'nickname' => !empty($studentDetail['name']) ? $studentDetail['name'] : ErpUserService::getStudentDefaultName($studentDetail['mobile']),
             'pay_status' => $checkRes['pay_status'],
             'pay_status_zh' => $checkRes['status_zh'],
-            'thumb' => ErpUserService::getStudentThumbUrl($studentDetail['thumb']),
+            'thumb' => ErpUserService::getStudentThumbUrl([$studentDetail['thumb']])[0],
         ];
         list($data['list'], $data['activity']) = self::initWeekOrMonthActivityData(OperationActivityModel::TYPE_MONTH_ACTIVITY, $fromType, $studentDetail);
         //渠道获取
@@ -311,20 +311,28 @@ class RealActivityService
         // 获取预设的手机号 (智能的账号) 和 其他配置
         list($mobileStr, $magicStone) = RealDictConstants::get(RealDictConstants::REAL_TWO_SHARE_POSTER_TOP_CONFIG, [ 'mobile_invitee_num', 'magic_stone']);
         $mobileInviteeNumArr = json_decode($mobileStr, true);
-        $userList = DssStudentModel::getRecords(['mobile' => array_keys($mobileInviteeNumArr)], ['id', 'name', 'mobile', 'thumb']);
+        $mobileList = [];
+        foreach ($mobileInviteeNumArr as $mk=>$mv){
+            $mobileList[] = (string)$mk;
+        }
+        $userList = ErpStudentModel::getRecords(['mobile' => $mobileList], ['id', 'name', 'mobile', 'thumb']);
         $userList = array_column($userList, null, 'mobile');
         $accountDetail = [];
         if (empty($mobileInviteeNumArr) || !is_array($mobileInviteeNumArr)) {
             return $accountDetail;
         }
+        //设置头像数据和默认头像数据
+        $thumbData = array_column($userList, 'thumb', 'id');
+        $thumbData[0] = '';
+        $thumbList = ErpUserService::getStudentThumbUrl($thumbData);
         foreach ($mobileInviteeNumArr as $_mobile => $_invitee) {
-            $_userInfo       = $userList[$_mobile] ?? ['thumb' => '', 'name' => '', 'id' => 0, 'mobile' => ''];
+            $_userInfo = $userList[$_mobile] ?? ['thumb' => '', 'name' => '', 'id' => 0, 'mobile' => ''];
             $accountDetail[] = [
-                'student_id'      => $_userInfo['id'] ?? 0,
-                'invite_num'      => $_invitee,
+                'student_id' => $_userInfo['id'] ?? 0,
+                'invite_num' => $_invitee,
                 'magic_stone_num' => ceil($_invitee * $magicStone),
-                'avatar'          => ErpUserService::getStudentThumbUrl($_userInfo['thumb']),
-                'name'            => $_userInfo['name'] ?: ErpUserService::getStudentDefaultName($_mobile),
+                'avatar' => $thumbList[$_userInfo['id']],
+                'name' => $_userInfo['name'] ?: ErpUserService::getStudentDefaultName($_mobile),
             ];
         }
 
