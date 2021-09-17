@@ -66,7 +66,7 @@ class Order extends ControllerBase
     {
         $rules = [
             [
-                'key'        => 'bill_id',
+                'key'        => 'order_id',
                 'type'       => 'required',
                 'error_code' => 'bill_id_is_required',
             ],
@@ -78,10 +78,10 @@ class Order extends ControllerBase
         }
         try {
             $params = $request->getParams();
-            $data = (new Dss())->billStatus($params);
+            $data = (new Dss())->billStatus(['bill_id' => $params['order_id']]);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
-        return HttpHelper::buildResponse($response, $data);
+        return HttpHelper::buildResponse($response, ['order_status' => $data['bill_status']]);
     }
 }

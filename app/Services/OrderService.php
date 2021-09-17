@@ -28,6 +28,9 @@ class OrderService
         }
         $params['uuid'] = $studentInfo['uuid'];
         $result = (new Dss())->createAppBill($params);
+        if (!empty($result)) {
+            $result['order_id'] = $result['bill'];
+        }
         return $result;
     }
 }

@@ -498,7 +498,7 @@ class ActivityService
         //获取渠道和课包
         list($channel,$package) =  DictConstants::getValues(DictConstants::COLLAGE_CONFIG, ['channel_' . $params['from_type'],'package']);
         //是否已购买该产品包
-        $giftCode = DssGiftCodeModel::getRecord(['apply_user' => $studentId, 'bill_package_id' => $package], 'id');
+        $giftCode = DssGiftCodeModel::getRecord(['buyer' => $studentId, 'bill_package_id' => $package], 'id');
         if (!empty($giftCode)) {
             $status = self::COLLAGE_STATUS_BUY_COURSE;
             return compact('status', 'channel', 'package');

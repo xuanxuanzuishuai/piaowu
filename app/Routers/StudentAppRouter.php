@@ -224,13 +224,13 @@ class StudentAppRouter extends RouterBase
             'call'    => \App\Controllers\StudentApp\Activity::class . ':assistantInfo',
             'middles' => [AppAuthMiddleWare::class],
         ],
-        '/student_app/order/create_bill' => [
+        '/student_app/order/create' => [
             'method'  => ['post'],
             'call'    => Order::class . ':createBill',
             'middles' => [AppAuthMiddleWare::class],
         ],
-        '/student_app/order/bill_status' => [
-            'method'  => ['post'],
+        '/student_app/order/status' => [
+            'method'  => ['get'],
             'call'    => Order::class . ':billStatus',
             'middles' => [AppAuthMiddleWare::class],
         ],
