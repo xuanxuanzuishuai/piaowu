@@ -99,19 +99,6 @@ class RealSharePosterModel extends Model
     {
         $where = " WHERE 1 = 1 ";
         $map = [];
-        $student = [];
-        if (!empty($params['student_mobile'])) {
-            $student = ErpStudentModel::getRecords(['mobile' => $params['student_mobile']], ['id']);
-            if (empty($student)) {
-                return [[], 0];
-            }
-        }
-        if (!empty($params['student_name'])) {
-            $student = ErpStudentModel::getRecords(['name[~]' => $params['student_name']], ['id']);
-            if (empty($student)) {
-                return [[], 0];
-            }
-        }
         if (!empty($params['activity_id'])) {
             $where .= " AND sp.activity_id = :activity_id ";
             $map[':activity_id'] = $params['activity_id'];
@@ -132,6 +119,13 @@ class RealSharePosterModel extends Model
             $where .= " AND sp.type = :type";
             $map[':type'] = $params['type'];
         }
+        if (!empty($params['student_mobile'])) {
+            $where .= " AND s.mobile = :mobile ";
+            $map[':mobile'] = $params['student_mobile'];
+        }
+        if (!empty($params['student_name'])) {
+            $where .= " AND s.name LIKE '%{$params['student_name']}%' ";
+        }
         if (!empty($params['uuid'])) {
             $where .= " AND s.uuid = :uuid ";
             $map[':uuid'] = $params['uuid'];
@@ -139,10 +133,6 @@ class RealSharePosterModel extends Model
         if (!empty($params['id'])) {
             $where .= " AND sp.id = :id ";
             $map[':id'] = $params['id'];
-        }
-        if (!empty($student)) {
-            $student_id = implode(',', array_column($student, 'id'));
-            $where .= " AND sp.student_id in ({$student_id}) ";
         }
         if (!empty($params['assistant_ids']) && is_array($params['assistant_ids'])) {
             array_walk($params['assistant_ids'], function (&$val) {
