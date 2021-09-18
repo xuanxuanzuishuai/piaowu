@@ -72,7 +72,7 @@ class Order extends ControllerBase
             $studentInfo['address_id'] = $params['address_id'] ?? true;
             $studentInfo['package_sub_type'] = $packageInfo['sub_type'];
             $employeeUuid = !empty($params['employee_id']) ? RC4::decrypt($_ENV['COOKIE_SECURITY_KEY'], $params['employee_id']) : null;
-            $platform = $request->getHeader('platform');
+            $platform = $request->getHeader('platform')[0];
             if ($platform == 'ios') {
                 $channel = ErpPackageV1Model::CHANNEL_IOS;
             } elseif($platform == 'android') {
