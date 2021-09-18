@@ -67,7 +67,11 @@ class RealSharePosterService
                 $poster['status_name'] = $statusDict[$poster['poster_status']] ?? $posters['poster_status'];
                 $poster['create_time'] = date('Y-m-d H:i', $poster['create_time']);
                 $poster['check_time'] = !empty($poster['check_time']) ? date('Y-m-d H:i', $poster['check_time']) : '';
-                $poster['reason_str'] = self::reasonToStr(explode(',', $poster['reason']), $reasonDict);
+                $reason_str = self::reasonToStr(explode(',', $poster['reason']), $reasonDict);
+                if (!empty($poster['remark'])) {
+                    !empty($reason_str) ? $reason_str .= '/'.$poster['remark'] : $reason_str .= $poster['remark'];
+                }
+                $poster['reason_str'] = $reason_str;
                 if ($poster['operator_id'] == EmployeeModel::SYSTEM_EMPLOYEE_ID) {
                     $poster['operator_name'] = EmployeeModel::SYSTEM_EMPLOYEE_NAME;
                 }
@@ -295,6 +299,9 @@ class RealSharePosterService
                 // no break; 审核通过和不通过的公用部分
             case RealSharePosterModel::VERIFY_STATUS_UNQUALIFIED: // 未通过
                 $returnData['reason_str'] = self::reasonToStr(explode(',', $sharePosterInfo['verify_reason']), $reasonDict);
+                if (!empty($sharePosterInfo['remark'])) {
+                    !empty($returnData['reason_str']) ? $returnData['reason_str'] .= '/' . $sharePosterInfo['remark'] : $returnData['reason_str'] .=  $sharePosterInfo['remark'];
+                }
                 break;
             default:
                 return $returnData;
