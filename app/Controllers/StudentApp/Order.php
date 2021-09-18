@@ -72,9 +72,15 @@ class Order extends ControllerBase
             $studentInfo['address_id'] = $params['address_id'] ?? true;
             $studentInfo['package_sub_type'] = $packageInfo['sub_type'];
             $employeeUuid = !empty($params['employee_id']) ? RC4::decrypt($_ENV['COOKIE_SECURITY_KEY'], $params['employee_id']) : null;
-            $channel = Util::isWx() ? ErpPackageV1Model::CHANNEL_WX : ErpPackageV1Model::CHANNEL_H5;
+            $platform = $request->getHeader('platform');
+            if ($platform == 'ios') {
+                $channel = ErpPackageV1Model::CHANNEL_IOS;
+            } elseif($platform == 'android') {
+                $channel = ErpPackageV1Model::CHANNEL_ANDROID;
+            } else {
+                $channel = ErpPackageV1Model::CHANNEL_H5;
+            }
             $payChannel = PayServices::payChannelToV1($params['pay_channel']);
-
 
             $userWeixin = DssUserWeiXinModel::getByUserId($studentId);
             $studentInfo['open_id'] = $userWeixin['open_id'] ?? null;

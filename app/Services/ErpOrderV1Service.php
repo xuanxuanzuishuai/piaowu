@@ -209,6 +209,11 @@ class ErpOrderV1Service
                 ['success_url', 'cancel_url', 'result_url']);
         }
 
+        //app内支付
+        if (in_array($channel, [ErpPackageV1Model::CHANNEL_ANDROID, ErpPackageV1Model::CHANNEL_IOS])) {
+            $resultUrl = 'aipeilian.xiaoyezi.com://';
+        }
+
         return [
             'success_url' => $successUrl,
             'result_url' => $resultUrl,
