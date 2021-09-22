@@ -166,7 +166,7 @@ class AutoCheckPicture
                     $monday     = Util::getMonday($monDate);
                     $monday     = array_flip($monday);
                     $mondayKey  = $monday[$date] ?? 0;
-                    $letterIden .= $array[$mondayKey] ?? 'A';
+                    $letterIden .= $array[$mondayKey] ?? 'F';
                     break;
             }
         }
