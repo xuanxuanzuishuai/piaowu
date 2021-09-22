@@ -521,9 +521,10 @@ class ActivityService
      */
     public static function collageIndex()
     {
-        $result = DssGiftCodeDetailedModel::studentDetails();
-        foreach ($result as &$val) {
-            $val['thumb'] = AliOSS::replaceCdnDomainForDss($val['thumb']);
+        $studentInfos = DssGiftCodeDetailedModel::studentDetails();
+        $result = [];
+        foreach ($studentInfos as $val) {
+            $result[] = ReferralService::getStudentThumb($val);
         }
         return $result;
     }

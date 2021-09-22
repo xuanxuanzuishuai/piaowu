@@ -128,7 +128,16 @@ class ErpOrderV1Service
         $successUrl = $callback ?? $callbacks['success_url'];
         $cancelUrl  = $callback ?? $callbacks['cancel_url'];
         $resultUrl = $callback ?? $callbacks['result_url'];
-        
+
+        /**
+         * 特殊处理 由于课包配置app售卖渠道后 会在app首页展示
+         * 此处判断若为app渠道且课包为虚拟拼团对应的课包 则把渠道转为微信渠道
+         */
+        $collagePackageId = DictConstants::get(DictConstants::COLLAGE_CONFIG, 'package');
+        if (in_array($channel, [ErpPackageV1Model::CHANNEL_ANDROID, ErpPackageV1Model::CHANNEL_IOS]) && $packageId == $collagePackageId) {
+            $channel = ErpPackageV1Model::CHANNEL_WX;
+        }
+
         $erp = new Erp();
         $result = $erp->createBillV1([
             'uuid'          => $student['uuid'],
@@ -192,6 +201,12 @@ class ErpOrderV1Service
                     ['success_url_v1', 'cancel_url_v1', 'result_url_v1']
                 );
             }
+        }
+        //app内支付
+        if (in_array($channel, [ErpPackageV1Model::CHANNEL_ANDROID, ErpPackageV1Model::CHANNEL_IOS])) {
+            list($successUrl, $cancelUrl, $resultUrl) = DssDictService::getKeyValuesByArray(
+                DictConstants::DSS_APP_CONFIG_STUDENT,
+                ['success_url', 'cancel_url', 'result_url']);
         }
 
         return [

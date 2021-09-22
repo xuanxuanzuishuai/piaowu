@@ -1474,4 +1474,35 @@ class ReferralService
         $returnData['list'] = $refList['list'];
         return $returnData;
     }
+
+    /**
+     * 获取用户头像
+     * @param $studentInfo
+     * @return false|mixed|string
+     * @throws RunTimeException
+     */
+    public static function getStudentThumb($studentInfo)
+    {
+        $redis    = RedisDB::getConn();
+        $cacheKey = sprintf('student_thumb_%s', $studentInfo['id']);
+        if ($redis->exists($cacheKey)) {
+            $data = json_decode($redis->get($cacheKey), true);
+            return $data;
+        }
+        $wechat = WeChatMiniPro::factory(Constants::SMART_APP_ID, Constants::SMART_WX_SERVICE);
+        if (!empty($studentInfo['open_id'])) {
+            $data = $wechat->getUserInfo($studentInfo['open_id']);
+            $data['thumb'] = $data['headimgurl'] ?? '';
+        }
+        if (empty($data['thumb'])) {
+            $defaultImge        = AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO,
+                'default_thumb'));
+            $data['thumb'] = !empty($studentInfo['thumb']) ? AliOSS::replaceCdnDomainForDss($studentInfo['thumb']) : $defaultImge;
+        }
+        $data['id'] = $studentInfo['id'];
+        $cacheData = json_encode($data);
+        $redis->setex($cacheKey, Util::TIMESTAMP_12H, $cacheData);
+
+        return $data;
+    }
 }
