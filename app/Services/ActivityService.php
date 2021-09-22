@@ -574,18 +574,17 @@ class ActivityService
             'channel_list' => [],
         ];
         //获取学生信息
-        $studentDetail = ErpStudentModel::getStudentInfoById($studentId);
+        $studentDetail = StudentService::dssStudentStatusCheck($studentId, false, null);
         if (empty($studentDetail)) {
             throw new RunTimeException(['student_not_exist']);
         }
         //状态获取
-        $checkRes = ErpUserService::getStudentStatus($studentId);
         $data['student_info'] = [
-            'uuid' => $studentDetail['uuid'],
-            'nickname' => !empty($studentDetail['name']) ? $studentDetail['name'] : ErpUserService::getStudentDefaultName($studentDetail['mobile']),
-            'pay_status' => $checkRes['pay_status'],
-            'pay_status_zh' => $checkRes['status_zh'],
-            'thumb' => ErpUserService::getStudentThumbUrl($studentDetail['thumb']),
+            'uuid' => $studentDetail['student_info']['uuid'],
+            'nickname' => $studentDetail['student_info']['name'] ?? '',
+            'pay_status' => $studentDetail['student_status'],
+            'pay_status_zh' => DssStudentModel::STUDENT_IDENTITY_ZH_MAP[$studentDetail['student_status']] ?? DssStudentModel::STATUS_REGISTER,
+            'thumb' => StudentService::getStudentThumb($studentDetail['student_info']['thumb']),
         ];
         list($data['list'], $data['activity']) = self::initActivityData(OperationActivityModel::TYPE_INVITE_ACTIVITY, $fromType, $studentDetail);
         //渠道获取
@@ -623,7 +622,7 @@ class ActivityService
         //获取渠道ID配置
         $channel = PosterTemplateService::getChannel($activityType, $fromType);
         $extParams = [
-            'user_status' => $studentDetail['status'],
+            'user_status' => $studentDetail['student_status'] ?? 0,
             'activity_id' => $activityData['activity_id'],
         ];
         //获取小程序二维码
@@ -631,7 +630,7 @@ class ActivityService
         foreach ($posterList as &$item) {
             $_tmp = $extParams;
             $_tmp['poster_id'] = $item['poster_id'];
-            $_tmp['user_id'] = $studentDetail['id'];
+            $_tmp['user_id'] = $studentDetail['student_info']['id'];
             $_tmp['user_type'] = DssUserQrTicketModel::STUDENT_TYPE;
             $_tmp['channel_id'] = $channel;
             $_tmp['landing_type'] = DssUserQrTicketModel::LANDING_TYPE_MINIAPP;
@@ -649,7 +648,7 @@ class ActivityService
             $poster = PosterService::generateQRPoster(
                 $item['poster_path'],
                 $posterConfig,
-                $studentDetail['id'],
+                $studentDetail['student_info']['id'],
                 DssUserQrTicketModel::STUDENT_TYPE,
                 $channel,
                 $extParams,
