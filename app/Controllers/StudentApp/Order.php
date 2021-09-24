@@ -5,7 +5,7 @@ namespace App\Controllers\StudentApp;
 
 
 use App\Controllers\ControllerBase;
-use App\Libs\Dss;
+use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\RC4;
@@ -103,7 +103,7 @@ class Order extends ControllerBase
             [
                 'key'        => 'order_id',
                 'type'       => 'required',
-                'error_code' => 'bill_id_is_required',
+                'error_code' => 'order_id_is_required',
             ],
         ];
         $params = $request->getParams();
@@ -111,12 +111,13 @@ class Order extends ControllerBase
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        try {
-            $params = $request->getParams();
-            $data = (new Dss())->billStatus(['bill_id' => $params['order_id']]);
-        } catch (RunTimeException $e) {
-            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+
+        $erp = new Erp();
+        $order = $erp->billStatusV1($params);
+        $status = 0;
+        if (!empty($order['data'])) {
+            $status = $order['data']['order_status'];
         }
-        return HttpHelper::buildResponse($response, ['order_status' => $data['bill_status']]);
+        return HttpHelper::buildResponse($response, ['order_status' => $status]);
     }
 }
