@@ -25,7 +25,6 @@ class Dss
     const WEIXIN_INFO = '/op/user/get_weixin_info'; //同步获取微信信息
     const GET_SHORT_URL = '/op/sms/get_short_url'; //获取短链
     const GET_STUDENT_IDENTITY = '/op/user/get_student_identity'; //获取用户的状态
-    const CREATE_APP_BILL = '/op/user/create_app_bill'; //app下单
     const BILL_STATUS = '/op/user/bill_status'; //支付查询结果
     const GET_WX_APP_ASSISTANT = '/op/user/get_wx_app_assistant'; //小程序客服
 
@@ -227,21 +226,6 @@ class Dss
         $res = self::commonAPI(self::GET_STUDENT_IDENTITY, $params, 'GET');
         if ($res['code'] != Valid::CODE_SUCCESS) {
             SimpleLogger::error('get student identity error', [$res, $params]);
-            return [];
-        }
-        return !empty($res['data']) ? $res['data'] : [];
-    }
-
-    /**
-     * app下单
-     * @param $params
-     * @return array|mixed
-     */
-    public function createAppBill($params)
-    {
-        $res = self::commonAPI(self::CREATE_APP_BILL, $params, 'POST');
-        if ($res['code'] != Valid::CODE_SUCCESS) {
-            SimpleLogger::error('create app bill error', [$res, $params]);
             return [];
         }
         return !empty($res['data']) ? $res['data'] : [];

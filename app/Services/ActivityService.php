@@ -521,8 +521,10 @@ class ActivityService
      */
     public static function collageIndex()
     {
-        $studentInfos = DssGiftCodeDetailedModel::studentDetails();
-        $result = [];
+        $studentDetails = DssGiftCodeModel::studentDetails();
+        $studentIds     = array_column($studentDetails, 'buyer');
+        $studentInfos   = DssStudentModel::getRecords(['id' => $studentIds], ['id', 'thumb']);
+        $result         = [];
         foreach ($studentInfos as $val) {
             $result[] = ReferralService::getStudentThumb($val);
         }

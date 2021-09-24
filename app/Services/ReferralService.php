@@ -1483,26 +1483,33 @@ class ReferralService
      */
     public static function getStudentThumb($studentInfo)
     {
+        $result['id'] = $studentInfo['id'];
         $redis    = RedisDB::getConn();
         $cacheKey = sprintf('student_thumb_%s', $studentInfo['id']);
         if ($redis->exists($cacheKey)) {
-            $data = json_decode($redis->get($cacheKey), true);
-            return $data;
+            $cacheData = json_decode($redis->get($cacheKey), true);
+            return $cacheData;
         }
         $wechat = WeChatMiniPro::factory(Constants::SMART_APP_ID, Constants::SMART_WX_SERVICE);
-        if (!empty($studentInfo['open_id'])) {
-            $data = $wechat->getUserInfo($studentInfo['open_id']);
-            $data['thumb'] = $data['headimgurl'] ?? '';
+        $conds = [
+          'user_id' => $studentInfo['id'],
+          'status' => DssUserWeiXinModel::STATUS_NORMAL,
+          'app_id' => Constants::SMART_APP_ID,
+          'busi_type' => Constants::SMART_WX_SERVICE,
+        ];
+        $userWeiXin = DssUserWeiXinModel::getRecord($conds, ['open_id']);
+        if (!empty($userWeiXin['open_id'])) {
+            $data = $wechat->getUserInfo($userWeiXin['open_id']);
+            $result['thumb'] = $data['headimgurl'] ?? '';
         }
-        if (empty($data['thumb'])) {
+        if (empty($result['thumb'])) {
             $defaultImge        = AliOSS::replaceCdnDomainForDss(DictConstants::get(DictConstants::STUDENT_DEFAULT_INFO,
                 'default_thumb'));
-            $data['thumb'] = !empty($studentInfo['thumb']) ? AliOSS::replaceCdnDomainForDss($studentInfo['thumb']) : $defaultImge;
+            $result['thumb'] = !empty($studentInfo['thumb']) ? AliOSS::replaceCdnDomainForDss($studentInfo['thumb']) : $defaultImge;
         }
-        $data['id'] = $studentInfo['id'];
-        $cacheData = json_encode($data);
+        $cacheData = json_encode($result);
         $redis->setex($cacheKey, Util::TIMESTAMP_12H, $cacheData);
 
-        return $data;
+        return $result;
     }
 }

@@ -397,4 +397,27 @@ class DssGiftCodeModel extends DssModel
         ";
         return  self::dbRO()->queryAll($sql);
     }
+    /**
+     * 获取最近购买体验课的2个学生信息
+     * @return array|null
+     */
+    public static function studentDetails()
+    {
+        $limit       = 2;
+        $table       = self::$table;
+        $packageIdArr    = array_column(DssPackageExtModel::getPackages([
+            'package_type' => DssPackageExtModel::PACKAGE_TYPE_TRIAL,
+            'app_id'       => DssPackageExtModel::APP_AI
+        ]), 'package_id');
+        $v1PackageIdArr  = DssErpPackageV1Model::getTrailPackageIds();
+        $packageIdIdArrs = array_merge($packageIdArr, $v1PackageIdArr);
+        $packageIdArrays = implode(',', $packageIdIdArrs);
+        $sql = " SELECT
+                   buyer
+                FROM {$table}
+                WHERE bill_package_id in ({$packageIdArrays})
+                ORDER BY id DESC LIMIT {$limit}
+        ";
+        return self::dbRO()->queryAll($sql);
+    }
 }
