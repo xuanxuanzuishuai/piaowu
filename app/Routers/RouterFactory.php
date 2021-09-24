@@ -38,6 +38,7 @@ class RouterFactory
     const CLIENT_REAL_REFERRAL_MINI_APP = 'real_referral_miniapp'; // 真人转介绍小程序
     const CLIENT_REAL_STUDENT_WX = 'real_student_wx'; // 真人业务线学生微信端
     const CLIENT_REAL_STUDENT_APP = 'real_student_app'; // 真人业务线学生app端
+    const CLIENT_REF_API = 'ref'; // 真人业务线学生app端
 
 
     /**
@@ -59,6 +60,8 @@ class RouterFactory
         self::CLIENT_REAL_REFERRAL_MINI_APP => RealReferralMinAppRouter::class, // 真人转介绍小程序
         self::CLIENT_REAL_STUDENT_WX => RealStudentWXRouter::class, // 真人业务线学生微信端
         self::CLIENT_REAL_STUDENT_APP => RealStudentAppRouter::class, // 真人业务线学生app端
+        self::CLIENT_REF_API => REFRoute::class, // referral_backend
+
     ];
 
     /**
