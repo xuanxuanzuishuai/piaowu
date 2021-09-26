@@ -113,6 +113,7 @@ class Order extends ControllerBase
         }
 
         $erp = new Erp();
+        $params['order_id'] = substr($params['order_id'], 0, strlen($params['order_id'])-1);
         $order = $erp->billStatusV1($params);
         $status = 0;
         if (!empty($order['data'])) {
