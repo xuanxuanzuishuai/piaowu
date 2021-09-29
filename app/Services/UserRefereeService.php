@@ -422,6 +422,9 @@ class UserRefereeService
      */
     public static function getAwardInfo($params)
     {
+        // 2021.09.29， 10.1之后受邀人没有奖励了，所以下面的信息不应该在展示了
+        return [];
+
         $studentId = $params['student_id'];
         $packageId = $params['package_id'];
         $result = [];
