@@ -6,6 +6,7 @@ use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\NewSMS;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
@@ -18,14 +19,17 @@ use App\Models\Dss\DssPackageExtModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Erp\ErpStudentCouponV1Model;
 use App\Models\Erp\ErpUserEventTaskAwardGoldLeafModel;
+use App\Models\FreeCodeLogModel;
 use App\Models\ParamMapModel;
 use App\Models\RtActivityRuleModel;
 use App\Models\RtCouponReceiveRecordModel;
 use App\Models\StudentReferralStudentDetailModel;
 use App\Models\StudentReferralStudentStatisticsModel;
+use App\Services\Queue\QueueService;
 
 class UserRefereeService
 {
+    use TraitUserRefereeService;
     const EVENT_TYPE_REGISTER = 'event_type_register';
     const EVENT_TYPE_BUY = 'event_type_buy';
     /** 任务状态 */
@@ -131,9 +135,11 @@ class UserRefereeService
         if ($appId == Constants::SMART_APP_ID) {
             //学生信息
             // 转介绍二期，注册不再给奖励，只存占位数据
-            (new Erp())->updateTask($uuid,
+            (new Erp())->updateTask(
+                $uuid,
                 RefereeAwardService::getDssRegisterTaskId(),
-                self::EVENT_TASK_STATUS_COMPLETE);
+                self::EVENT_TASK_STATUS_COMPLETE
+            );
         }
     }
 
@@ -300,8 +306,8 @@ class UserRefereeService
         }
         // 判断用户是否有RT优惠券
         $haveCoupon = false;
-        $uuid = $studentInfo['id'];
-        $res = RtCouponReceiveRecordModel::getRecord(['receive_uid' => $uuid, 'status' => RtCouponReceiveRecordModel::REVEIVED_STATUS], ['id','activity_id','student_coupon_id']);
+        $uid = $studentInfo['id'];
+        $res = RtCouponReceiveRecordModel::getRecord(['receive_uid' => $uid, 'status' => RtCouponReceiveRecordModel::REVEIVED_STATUS], ['id','activity_id','student_coupon_id']);
         if ($res) {
             $pageInfo = (new Erp())->getStudentCouponPageById([$res['student_coupon_id']]);
             $info = $pageInfo['data']['list'][0] ?? [];
@@ -341,66 +347,71 @@ class UserRefereeService
                 }
             }
         }
-        
-        // 推荐人当前状态：非付费正式课：
-        if ($refereeInfo['has_review_course'] != DssStudentModel::REVIEW_COURSE_1980) {
-            // XYZOP-555 : 奖励推荐人500金叶子：(推荐人是体验课用户, 被推荐人购买体验课)
-            if ($refereeInfo['has_review_course'] == DssStudentModel::REVIEW_COURSE_49
-                &&
-                $packageType == DssPackageExtModel::PACKAGE_TYPE_TRIAL
-            ) {
-                //$taskIds[] = RefereeAwardService::getDssTrailPayTaskId();
-                $taskIds[] = [
-                    'task_id' => RefereeAwardService::getDssTrailPayTaskId(),
-                ];
-            }
-        } elseif (strtotime($refereeInfo['sub_end_date'])+Util::TIMESTAMP_ONEDAY>=$time && $refereeInfo['sub_status']==DssStudentModel::SUB_STATUS_ON) {
-            // 推荐人状态：付费正式课
-            // 被推荐人购买体验课：
-            if ($packageType == DssPackageExtModel::PACKAGE_TYPE_TRIAL) {
-                /** 推荐人购买体验卡 - 不在需要判断数量 现在发放的都是固定奖励 */
-                //$taskIds[] = RefereeAwardService::getDssTrailPayTaskId(1);
-                $taskIds[] = [
-                    'task_id' => RefereeAwardService::getDssTrailPayTaskId(1),
-                ];
-            } else {
-                // 被推荐人购买年卡：
-                // XYZOP-555
-                $totalInfo = DssGiftCodeModel::getRecord(['parent_bill_id' => $parentBillId], ['id', 'valid_num', 'valid_units']);
-                if (empty($totalInfo)) {
-                    return $taskIds;
-                }
-                $level = 0;
-                if ($totalInfo['valid_num']>=361 && $totalInfo['valid_num']<=371) {
-                    $level = 1;
-                }
-                if ($totalInfo['valid_num']>=544 && $totalInfo['valid_num']<=554) {
-                    $level = 2;
-                }
-                if ($totalInfo['valid_num']>=727) {
-                    $level = 3;
-                }
-                if ($level) {
-                    $levelMap = [
-                        1 => 0,
-                        2 => 1,
-                        3 => 2,
-                    ];
-                    //$taskIds[] = RefereeAwardService::getDssYearPayTaskId($levelMap[$level]);
-                    $taskIds[] = [
-                        'task_id' => RefereeAwardService::getDssYearPayTaskId($levelMap[$level]),
-                    ];
-                }
-                // XYZOP-577 去掉7天新人奖励
-                //$firstBuyTime = $refereeInfo['first_pay_normal_info']['create_time'] ?? 0;
-                //if ($level && $time - $firstBuyTime <= Util::TIMESTAMP_ONEWEEK) {   //第一次购买年卡7天内,给推荐人和被推荐人额外奖励
-                //    //$taskIds[] = RefereeAwardService::getDssYearPayTaskId(3);
-                //    $taskIds[] = [
-                //        'task_id' => RefereeAwardService::getDssYearPayTaskId(3),
-                //    ];
-                //}
-            }
-        }
+
+        $taskIds = self::getStudentRefereeAwardTaskId($packageType, $refereeInfo, $parentBillId);
+
+        // if (   // 年卡未过期推荐人
+        //     $refereeInfo['has_review_course'] == DssStudentModel::REVIEW_COURSE_1980
+        //     && strtotime($refereeInfo['sub_end_date']) + Util::TIMESTAMP_ONEDAY >= $time
+        //     && $refereeInfo['sub_status'] == DssStudentModel::SUB_STATUS_ON
+        // ) {
+        //     // 被推荐人购买体验课：
+        //     if ($packageType == DssPackageExtModel::PACKAGE_TYPE_TRIAL) {
+        //         /** 推荐人购买体验卡 - 不在需要判断数量 现在发放的都是固定奖励 */
+        //         $taskIds[] = [
+        //             'task_id' => RefereeAwardService::getDssTrailPayTaskId(1),
+        //         ];
+        //     } else {
+        //         // 被推荐人购买年卡：
+        //         // XYZOP-555
+        //         $totalInfo = DssGiftCodeModel::getRecord(['parent_bill_id' => $parentBillId], ['id', 'valid_num', 'valid_units']);
+        //         if (empty($totalInfo)) {
+        //             return $taskIds;
+        //         }
+        //         $level = 0;
+        //         if ($totalInfo['valid_num']>=361 && $totalInfo['valid_num']<=371) {
+        //             $level = 1;
+        //         }
+        //         if ($totalInfo['valid_num']>=544 && $totalInfo['valid_num']<=554) {
+        //             $level = 2;
+        //         }
+        //         if ($totalInfo['valid_num']>=727) {
+        //             $level = 3;
+        //         }
+        //         if ($level) {
+        //             $levelMap = [
+        //                 1 => 0,
+        //                 2 => 1,
+        //                 3 => 2,
+        //             ];
+        //             $taskIds[] = [
+        //                 'task_id' => RefereeAwardService::getDssYearPayTaskId($levelMap[$level]),
+        //             ];
+        //         }
+        //         // XYZOP-577 去掉7天新人奖励
+        //         //$firstBuyTime = $refereeInfo['first_pay_normal_info']['create_time'] ?? 0;
+        //         //if ($level && $time - $firstBuyTime <= Util::TIMESTAMP_ONEWEEK) {   //第一次购买年卡7天内,给推荐人和被推荐人额外奖励
+        //         //    $taskIds[] = [
+        //         //        'task_id' => RefereeAwardService::getDssYearPayTaskId(3),
+        //         //    ];
+        //         //}
+        //     }
+        // } else {   // 非年卡未过期推荐人
+        //     // AIPL-19207 : 奖励推荐人5天赠送时长：(推荐人是非年卡未过期用户, 被推荐人购买体验课)
+        //     if ($packageType == DssPackageExtModel::PACKAGE_TYPE_TRIAL) {
+        //         $ruid = $refereeInfo['id'];
+        //         $ruuid = $refereeInfo['uuid'];
+        //         QueueService::giftDuration($ruuid, DssGiftCodeModel::APPLY_TYPE_AUTO, 5, DssGiftCodeModel::BUYER_TYPE_AI_REFERRAL);
+        //         $logData = [
+        //             'user_id' => $ruid,
+        //             'user_uuid' => $ruuid,
+        //             'create_time' => $time,
+        //         ];
+        //         FreeCodeLogModel::insertRecord($logData);
+        //         $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
+        //         $sms->sendInviteGiftSMS($refereeInfo['mobile'], $studentInfo['mobile']);
+        //     }
+        // }
         return $taskIds;
     }
     
