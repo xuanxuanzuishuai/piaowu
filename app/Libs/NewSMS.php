@@ -21,18 +21,65 @@ class NewSMS
 
     private $url;
 
+    // 短信类型
+    const SMS_TYPE_VERIFICATION_CODE = 1;   // 验证码类短信
+    const SMS_TYPE_NOTICE = 2;              // 通知类短信
+    const SMS_TYPE_MARKETING = 3;           // 营销类短信
+
+    // 短息服务商
+    const SMS_SERVICE_KSYUN = 'ksyun';  // 金山云短信服务商
+    // 个个服务商发送短信相关接口
+    const SMS_API_MAP = [
+        self::SMS_SERVICE_KSYUN => [
+            'send_one'        => '/api/ksyun/send',         // 发送单条
+            'batch_send'      => '/api/ksyun/batch/send',   // 批量发送 - 但是短信内容相同
+            'batch_diff_send' => '/api/ksyun/diff/send'],   // 批量发送 - 但是短信内容不相同
+    ];
+
     public function __construct($url)
     {
         $this->url = $url;
     }
 
+    /**
+     * 确定服务商返回本次请求的接口地址
+     * @param string $useIntApi 服务商名称
+     * @param string $sendDataType 发送数据的类型
+     * @return string
+     */
+    private function getApiUrl($serviceProviderName, $data): string
+    {
+        switch ($serviceProviderName) {
+            case self::SMS_SERVICE_KSYUN:   // 金山云
+                if (isset($data['sms_list'])) {
+                    // 批量发送内容不相同短信
+                    $api = self::SMS_API_MAP[self::SMS_SERVICE_KSYUN]['batch_diff_send'] ?? '';
+                } elseif (isset($data['mobiles'])) {
+                    // 批量发送内容相同的短息
+                    $api = self::SMS_API_MAP[self::SMS_SERVICE_KSYUN]['batch_send'] ?? '';
+                } else {
+                    // 发送单条
+                    $api = self::SMS_API_MAP[self::SMS_SERVICE_KSYUN]['send_one'] ?? '';
+                }
+                break;
+            default:    // 创蓝
+                $api = self::API_INT_SEND;
+                break;
+        }
+        return $api;
+    }
+
     private function sendSMS($data, $useIntApi = false)
     {
         $client = new Client();
-
-        $api = $useIntApi ? self::API_INT_SEND : self::API_SEND;
-
         try {
+            // 确定服务商返回本次请求的接口地址
+            $serviceProviderName = $useIntApi ? '' : self::SMS_SERVICE_KSYUN;
+            $api = self::getApiUrl($serviceProviderName, $data);
+            if (empty($api)) {
+                SimpleLogger::error('api_is_empty', ['code' => 'send sms exception', $data,$useIntApi]);
+                return false;
+            }
             $response = $client->request('POST', $this->url . $api, [
                 'body' => json_encode($data),
                 'debug' => false,
@@ -66,9 +113,10 @@ class NewSMS
      * @param string $mobile 手机
      * @param string $content 内容
      * @param string $countryCode 国家代码
+     * @param string $smsType 短信类型
      * @return bool
      */
-    public function send($sign, $mobile, $content, $countryCode = self::DEFAULT_COUNTRY_CODE)
+    private function send($sign, $mobile, $content, $countryCode = self::DEFAULT_COUNTRY_CODE, $smsType = self::SMS_TYPE_NOTICE)
     {
         if (empty($countryCode) || $countryCode == self::DEFAULT_COUNTRY_CODE) {
             $phone_number = $mobile;
@@ -79,38 +127,10 @@ class NewSMS
             'sign_name' => $sign,
             'phone_number' => $phone_number,
             'content' => $content,
+            'sms_type' => $smsType,
         ];
         return self::sendSMS($data, !empty($countryCode) && $countryCode != self::DEFAULT_COUNTRY_CODE);
     }
-
-    /**
-     * @param $sign
-     * @param $mobileData array [['mobile'=>'15900000000','country_code'=>'86'],['mobile'=>'15900000000','country_code'=>'86']]
-     * @param $content
-     * @param string $countryCode
-     * @return bool
-     */
-    public function batchSend($sign, $mobileData, $content, $countryCode = NewSMS::DEFAULT_COUNTRY_CODE)
-    {
-        $result = true;
-        foreach ($mobileData as $item) {
-            if (empty($item['country_code']) || $item['country_code'] == self::DEFAULT_COUNTRY_CODE) {
-                $phone_number = $item['mobile'];
-            } else {
-                $phone_number = self::COUNTRY_CODE_PREFIX . $item['country_code'] . $item['mobile'];
-            }
-
-            $data = [
-                'sign_name' => $sign,
-                'phone_number' => $phone_number,
-                'content' => $content,
-            ];
-            $result = self::sendSMS($data, $item['country_code'] != self::DEFAULT_COUNTRY_CODE);
-        }
-        return $result;
-
-    }
-
 
     /**
      * 发送短信验证码
@@ -122,92 +142,7 @@ class NewSMS
      */
     public function sendValidateCode($targetMobile, $msg, $sign, $countryCode = NewSMS::DEFAULT_COUNTRY_CODE)
     {
-        return self::send($sign, $targetMobile, $msg, $countryCode);
-    }
-
-    public function sendExchangeGiftCode($targetMobile, $code, $sign, $countryCode = NewSMS::DEFAULT_COUNTRY_CODE)
-    {
-        $msg = "您的激活码为：{$code}。您也可关注微信公众号【小叶子智能陪练】，在【我的账户】查询激活码。";
-
-        return self::send($sign, $targetMobile, $msg, $countryCode);
-
-    }
-
-    public function sendFreeGiftCode($targetMobile, $code, $sign)
-    {
-
-        $msg = "您的激活码为：{$code}。您也可关注微信公众号【小叶子智能陪练】，在【我的账户】查询激活码。";
-
-        $data = [
-            'sign_name' => $sign,
-            'phone_number' => $targetMobile,
-            'content' => $msg,
-        ];
-        return self::sendSMS($data);
-    }
-
-    /**
-     * 发送点评短信
-     * @param $targetMobile
-     * @param $sign
-     * @param $wechatcs
-     * @param string $countryCode
-     * @return bool
-     */
-    public function sendEvaluationMessage($targetMobile, $sign, $wechatcs, $countryCode = self::DEFAULT_COUNTRY_CODE)
-    {
-        $now = time();
-        $time = date("Y-m-d", $now);
-        // 获取当前周的第几天 周日是 0 周一到周六是 1 - 6
-        $w = date('w', strtotime($time));
-        // 1. $w = 0，周日+1； 2. $w > 0, 8 - $w
-        $add = $w > 0 ? 8 - $w : 1;
-        $start = strtotime("$time + " . $add . ' days');
-        $week_start = date('Y-m-d', $start);
-
-        $msg = "您已成功购买小叶子智能陪练课，将于{$week_start}（周一）开课，时长两周。
-《1》在哪体验智能陪练？点击链接，下载【小叶子智能陪练】App：http://t.cn/AiBPajzr
-《2》在哪收老师点评？关注微信公众号【小叶子智能陪练】并绑定购买手机号！
-《3》遇到问题怎么办？1V1助教老师微信：{$wechatcs}";
-
-        if ($now > strtotime('2020-01-13') && $now < strtotime('2020-01-27')) {
-            $msg = "您已成功购买小叶子智能陪练课。由于受春节放假影响，课程将延期至2020-2-3统一开课，时长两周。为表歉意，在此期间您可以正常使用APP，开课前助教老师会统一延长 App 课程的使用期限。
-※请立即添加助教老师微信：{$wechatcs}，并发送购课手机号。";
-        }
-
-        return self::send(CommonServiceForApp::SIGN_STUDENT_APP, $targetMobile, $msg);
-    }
-
-    /**
-     * 点评完成通知
-     * @param $targetMobile
-     * @param string $countryCode
-     * @return bool
-     */
-    public function sendReviewCompleteNotify($targetMobile, $countryCode = self::DEFAULT_COUNTRY_CODE)
-    {
-        $content = "亲爱的小叶子家长您好！您今天的智能陪练课的点评已经生成，快在公众号里查看吧！未关注公众号的用户关注【小叶子智能陪练】公众号并绑定手机号，明天就能收到点评啦~";
-        return self::send(CommonServiceForApp::SIGN_STUDENT_APP, $targetMobile, $content);
-    }
-
-
-    /**
-     * 发送班级分配完成短信
-     * @param $targetMobile
-     * @param $sign
-     * @param $collectionList
-     * @param string $countryCode
-     * @return bool
-     */
-    public function sendCollectionCompleteNotify($targetMobile, $sign, $collectionList, $countryCode = NewSMS::DEFAULT_COUNTRY_CODE)
-    {
-
-        $teachingStartDate = date("Y-m-d", $collectionList['teaching_start_time']);
-        $teachingEndDate = date("Y-m-d", $collectionList['teaching_end_time']);
-        $week = Util::getShortWeekName($collectionList['teaching_start_time']);
-        $days = Util::dateBetweenDays($teachingStartDate, $teachingEndDate);
-        $msg = "恭喜您成功购买小叶子智能陪练，开营前邀请您试用智能陪练！请您尽快关注微信公众号【小叶子智能陪练】绑定账号获得APP下载链接，我们的课程将于{$teachingStartDate}（{$week}）开始，时长{$days}天，请您务必查看开营指引【".$collectionList['collection_url']."】。如有疑问，请拨打客服电话：".$_ENV['AI_SERVER_TEL']."。";
-        return self::send($sign, $targetMobile, $msg, $countryCode);
+        return self::send($sign, $targetMobile, $msg, $countryCode, self::SMS_TYPE_VERIFICATION_CODE);
     }
 
     /**
@@ -223,8 +158,9 @@ class NewSMS
         // phone_number 支持以逗号隔开的字符串
         $data = [
             'sign_name' => $sign,
-            'phone_number' => implode(',', $mobile),
+            'mobiles' => $mobile,
             'content' => $msg,
+            'sms_type' => self::SMS_TYPE_NOTICE,
         ];
         return self::sendSMS($data);
     }
@@ -247,6 +183,7 @@ class NewSMS
             'sign_name' => $sign,
             'phone_number' => $mobile,
             'content' => $msg,
+            'sms_type' => self::SMS_TYPE_NOTICE,
         ];
         return self::sendSMS($data);
     }
@@ -259,9 +196,10 @@ class NewSMS
      * @param string $sign
      * @return bool
      */
-    public function sendCommonSms($msg, $mobile, $sign = ''){
+    public function sendCommonSms($msg, $mobile, $sign = '')
+    {
 
-        if(empty($sign)){
+        if (empty($sign)) {
             $sign = CommonServiceForApp::SIGN_AI_PEILIAN;
         }
 
@@ -269,8 +207,27 @@ class NewSMS
             'sign_name' => $sign,
             'phone_number' => $mobile,
             'content' => $msg,
+            'sms_type' => self::SMS_TYPE_NOTICE,
         ];
         return self::sendSMS($data);
     }
-
+    
+    /**
+     * 发送参加活动的提醒
+     * @param $mobile
+     * @param $mobile1
+     * @return bool
+     */
+    public function sendInviteGiftSMS($mobile, $mobile1)
+    {
+        $mobile1 = Util::hideUserMobile($mobile1);
+        $msg = "您已成功邀请好友（{$mobile1}），5天奖励时长已发放。请在【小叶子智能陪练】公众号-【我的账户】中查看。";
+        $data = [
+            'sign_name' => CommonServiceForApp::SIGN_AI_PEILIAN,
+            'phone_number' => $mobile,
+            'content' => $msg,
+            'sms_type' => self::SMS_TYPE_NOTICE,
+        ];
+        return self::sendSMS($data);
+    }
 }
