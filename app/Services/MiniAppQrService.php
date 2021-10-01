@@ -491,7 +491,7 @@ class MiniAppQrService
             // TODO qingfeng.lian 新老redis key 兼容；这里当老的redis数据为空时，可以删除这里的逻辑
             $qrInfo['qr_id'] = $redis->spop(self::REDIS_WAIT_USE_MINI_APP_ID_LIST);
         }
-        if (empty($qrInfo)) {
+        if (empty($qrInfo['qr_id'])) {
             $qrInfo['qr_id'] = $redis->spop($signPrefix . self::REDIS_WAIT_USE_MINI_QR_ID);
 
         }
