@@ -589,6 +589,9 @@ class ActivityService
         list($data['list'], $data['activity']) = self::initActivityData(OperationActivityModel::TYPE_INVITE_ACTIVITY, $fromType, $studentDetail);
         //渠道获取
         list($data['channel_list']['first']) = DictConstants::getValues(DictConstants::ACTIVITY_CONFIG, ['channel_invite_' . $fromType]);
+
+        //练琴数据
+        $data['practise'] = AprViewStudentModel::getStudentTotalSum($studentId);
         return $data;
     }
     
