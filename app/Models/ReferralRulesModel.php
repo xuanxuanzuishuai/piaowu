@@ -6,16 +6,15 @@
 namespace App\Models;
 
 use App\Libs\MysqlDB;
-use App\Models\Dss\DssPackageExtModel;
 
 class ReferralRulesModel extends Model
 {
     public static $table = 'referral_rules';
 
     const TYPE_REAL_STUDENT_REFEREE = 1;    // 真人学生转介绍学生
-    const TYPE_REAL_AGENT_REFEREE   = 2;    // 真人合伙人转介绍学生
-    const TYPE_AI_STUDENT_REFEREE   = 3;    // 智能学生转介绍学生
-    const TYPE_AI_AGENT_REFEREE     = 4;    // 智能合伙人转介绍学生
+    const TYPE_REAL_AGENT_REFEREE = 2;    // 真人合伙人转介绍学生
+    const TYPE_AI_STUDENT_REFEREE = 3;    // 智能学生转介绍学生
+    const TYPE_AI_AGENT_REFEREE = 4;    // 智能合伙人转介绍学生
 
 
     /**
@@ -57,5 +56,34 @@ class ReferralRulesModel extends Model
         $returnData = $baseRuleInfo;
         $returnData['rule_list'] = is_array($ruleList) ? $ruleList : [];
         return $returnData;
+    }
+
+    /**
+     * 添加奖励规则
+     * @param $baseData
+     * @param $trailRuleData
+     * @param $normalRule
+     * @return bool|int|mixed|null|string
+     */
+    public static function addRule($baseData, $trailRuleData, $normalRule)
+    {
+        $db = MysqlDB::getDB();
+        $db->beginTransaction();
+        $ruleId = self::insertRecord($baseData);
+        if (empty($ruleId)) {
+            $db->rollBack();
+            return false;
+        }
+        $mergeData = array_merge($normalRule, $trailRuleData);
+        array_walk($mergeData, function (&$mv) use ($ruleId) {
+            $mv['rule_id'] = $ruleId;
+        });
+        $ruleRewardId = ReferralRulesRewardModel::batchInsert($mergeData);
+        if (empty($ruleRewardId)) {
+            $db->rollBack();
+            return false;
+        }
+        $db->commit();
+        return $ruleId;
     }
 }
