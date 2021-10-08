@@ -6,7 +6,6 @@ use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
-use App\Libs\NewSMS;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
@@ -19,13 +18,11 @@ use App\Models\Dss\DssPackageExtModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Erp\ErpStudentCouponV1Model;
 use App\Models\Erp\ErpUserEventTaskAwardGoldLeafModel;
-use App\Models\FreeCodeLogModel;
 use App\Models\ParamMapModel;
 use App\Models\RtActivityRuleModel;
 use App\Models\RtCouponReceiveRecordModel;
 use App\Models\StudentReferralStudentDetailModel;
 use App\Models\StudentReferralStudentStatisticsModel;
-use App\Services\Queue\QueueService;
 
 class UserRefereeService
 {
@@ -236,7 +233,7 @@ class UserRefereeService
         $studentInfo = DssStudentModel::getById($studentId);
         $refTaskId = self::getTaskIdByType($packageType, $trialType, $refereeInfo, $appId, $parentBillId, $studentInfo);
         SimpleLogger::info("UserRefereeService::dssCompleteEventTask", ['taskid' => $refTaskId]);
-        
+
         if (!empty($refTaskId)) {
             $sendStatus = ErpUserEventTaskAwardGoldLeafModel::STATUS_WAITING;
             $studentInviteStage =  StudentReferralStudentStatisticsModel::STAGE_FORMAL;
@@ -348,24 +345,15 @@ class UserRefereeService
             }
         }
 
-        // 推荐人当前状态：非付费正式课：
-        if ($refereeInfo['has_review_course'] != DssStudentModel::REVIEW_COURSE_1980) {
-            // XYZOP-555 : 奖励推荐人500金叶子：(推荐人是体验课用户, 被推荐人购买体验课)
-            if ($refereeInfo['has_review_course'] == DssStudentModel::REVIEW_COURSE_49
-                &&
-                $packageType == DssPackageExtModel::PACKAGE_TYPE_TRIAL
-            ) {
-                //$taskIds[] = RefereeAwardService::getDssTrailPayTaskId();
-                $taskIds[] = [
-                    'task_id' => RefereeAwardService::getDssTrailPayTaskId(),
-                ];
+        // 生成和发放学生转介绍学生奖励
+        try {
+            $awardRes = self::createStudentRefereeAward($packageType, $refereeInfo, $parentBillId, $studentInfo);
+            if (!$awardRes) {
+                SimpleLogger::info("createStudentRefereeAward error", [$appId, $packageType, $refereeInfo, $parentBillId, $studentInfo]);
+                throw new RunTimeException(['createStudentRefereeAward_error']);
             }
-        } elseif (strtotime($refereeInfo['sub_end_date'])+Util::TIMESTAMP_ONEDAY>=$time) {
-            // 推荐人状态：付费正式课
-            $sendSwitch = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'invited_year_reward_distribution_switch');
-            if ($sendSwitch == Constants::STATUS_TRUE) {
-                $taskIds = self::getStudentRefereeAwardTaskId($packageType, $refereeInfo, $parentBillId);
-            }
+        } catch (RunTimeException $e) {
+            SimpleLogger::info(['createStudentRefereeAward_error'], [$appId, $packageType, $refereeInfo, $parentBillId, $studentInfo]);
         }
         return $taskIds;
     }
