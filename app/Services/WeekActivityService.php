@@ -486,7 +486,7 @@ class WeekActivityService
                 $mobiles[] = $student['mobile'];
             }
 
-            if ($i >= 1000) {
+            if ($i >= 200) {
                 $result = $sms->sendAttendActSMS($mobiles, $sign, $startTime);
                 if ($result) {
                     $successNum += count($mobiles);
@@ -496,7 +496,7 @@ class WeekActivityService
             }
         }
 
-        // 剩余数量小于1000
+        // 剩余数量小于200
         if (!empty($mobiles)) {
             $result = $sms->sendAttendActSMS($mobiles, $sign, $startTime);
             if ($result) {
