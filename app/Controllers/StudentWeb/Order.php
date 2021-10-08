@@ -207,7 +207,15 @@ class Order extends ControllerBase
             }
 
             $giftGoods = $params['gift_res'] ?? [];
-            $ret = ErpOrderV1Service::createOrder($params['package_id'], $studentInfo, $payChannel, $params['pay_type'], $employeeUuid, $channel, $giftGoods);
+
+            // 0元体验课订单
+            list($packageId, $remark) = DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, ['agent_mini_0_package_id', 'agent_zero_order_remark']);
+            if ($params['package_id'] == $packageId) {
+                $ret = ErpOrderV1Service::createZeroOrder($packageId, $studentInfo, $remark);
+            } else {
+                $ret = ErpOrderV1Service::createOrder($params['package_id'], $studentInfo, $payChannel, $params['pay_type'], $employeeUuid, $channel, $giftGoods);
+            }
+
             if (!empty($sceneData) && !empty($ret['order_id'])) {
                 // 保存agent_bill_map数据
                 BillMapService::mapDataRecord($sceneData, $ret['order_id'], $studentInfo['id']);

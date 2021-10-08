@@ -1,0 +1,22 @@
+INSERT INTO `dict` (
+	`type`,
+	`key_name`,
+	`key_code`,
+	`key_value`,
+	`desc`
+)
+VALUES
+	(
+		'WEB_STUDENT_CONFIG',
+		'AI练琴WEB设置',
+		'agent_mini_0_package_id',
+		'3263',
+	'0元体验营产品包'
+	),
+	(
+		'WEB_STUDENT_CONFIG',
+		'AI练琴WEB设置',
+		'agent_zero_order_remark',
+		'代理0元购课',
+	'代理0元订单备注'
+	);
