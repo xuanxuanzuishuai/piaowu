@@ -201,6 +201,7 @@ class ActivityPosterModel extends Model
             'rt' => RtActivityModel::$table,
             'real_week' => RealWeekActivityModel::$table,
             'real_month' => RealMonthActivityModel::$table,
+            'invite_activity' => InviteActivityModel::$table,
         ];
         $table2 = $activityTable[$type] ?? '';
         if (empty($table2)) {

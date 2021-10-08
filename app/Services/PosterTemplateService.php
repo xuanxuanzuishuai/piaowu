@@ -349,6 +349,13 @@ class PosterTemplateService
             $arrWeekId = array_values(array_unique(array_column($resWeek, 'activity_id')));
             $arrMonthId = array_values(array_unique(array_column($resMonth, 'activity_id')));
             $arrRtId = array_values(array_unique(array_column($resRt, 'activity_id')));
+            // 邀请有礼
+            $inviteActivity = ActivityPosterModel::getActivityByPidAndType($id, 'invite_activity');
+            $inviteActivityId = array_values(array_unique(array_column($inviteActivity, 'activity_id')));
+            $inviteActivityId = array_map(function ($v) {
+                return 'ID' . $v;
+            }, $inviteActivityId);
+
             //金叶子商城分享配置-校验
             $conds = [
                 'material_id' => $id,
@@ -374,6 +381,7 @@ class PosterTemplateService
         $arrMonthId && $arrErrorMsg[] = '月月有奖活动'.implode('、', $arrMonthId);
         $resRtId && $arrErrorMsg[] = 'RT亲友优惠券活动'.implode('、', $resRtId);
         $shareConfigId && $arrErrorMsg[] = '金叶子商城分享配置'.implode('、', $shareConfigId);
+        !empty($inviteActivityId) && $arrErrorMsg[] = '邀请有礼活动' . implode('、', $inviteActivityId);
         return $arrErrorMsg;
     }
     
