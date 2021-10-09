@@ -34,10 +34,10 @@ class OperationActivityModel extends Model
     // 转介绍运营活动类型
     const TYPE_MONTH_ACTIVITY = 1;//月月有奖
     const TYPE_WEEK_ACTIVITY = 2;//周周领奖
-
-    const TIME_STATUS_PENDING = 1;
-    const TIME_STATUS_ONGOING = 2;
-    const TIME_STATUS_FINISHED = 3;
+    // 活动时间状态
+    const TIME_STATUS_PENDING = 1;//待开始
+    const TIME_STATUS_ONGOING = 2;//进行中
+    const TIME_STATUS_FINISHED = 3;//已结束
 
 
     /**
@@ -132,5 +132,72 @@ WHERE
             return true;
         }
         return false;
+    }
+
+    /**
+     * 获取活动列表
+     * - 后期应该在operation_activity 增加基础字段， 然后直接读取operation_activity表数据
+     * @param $activityType
+     * @param array $fields
+     * @return array
+     */
+    public static function getActivityList($activityType, array $fields = []): array
+    {
+        $activityList = [];
+        switch ($activityType) {
+            case self::TYPE_GRADUATION_ACTIVITY:
+                $activityList = GraduationActivityModel::getRecords(['ORDER' => ['create_time' => 'DESC']], $fields);
+                break;
+            default:
+                break;
+        }
+        return [
+            'list' => is_array($activityList) ? $activityList : []
+        ];
+    }
+
+    /**
+     * 活动时间状态和sql的查询条件映射
+     * @param $timeStatus
+     * @return array
+     */
+    public static function timeStatusMapToSqlWhere($timeStatus)
+    {
+        $where = [];
+        $time = time();
+        switch ($timeStatus) {
+            case self::TIME_STATUS_PENDING://待开始
+                $where['start_time[>]'] = $time;
+                break;
+            case self::TIME_STATUS_ONGOING://进行中
+                $where['start_time[<=]'] = $time;
+                $where['end_time[>=]'] = $time;
+                break;
+            case self::TIME_STATUS_FINISHED://已结束
+                $where['end_time[<]'] = $time;
+                break;
+            default:
+                return $where;
+        }
+        return $where;
+    }
+
+    /**
+     * 活动时间状态
+     * @param $startTime
+     * @param $endTime
+     * @return int
+     */
+    public static function sqlDataMapToTimeStatus($startTime, $endTime)
+    {
+        $time = time();
+        if ($startTime <= $time && $endTime >= $time) {
+            $timeStatus = self::TIME_STATUS_ONGOING;
+        } elseif ($startTime > $time) {
+            $timeStatus = self::TIME_STATUS_PENDING;
+        } else {
+            $timeStatus = self::TIME_STATUS_FINISHED;
+        }
+        return $timeStatus;
     }
 }

@@ -24,12 +24,16 @@ class EmployeePrivilegeMiddleWare extends MiddlewareBase
         $pathStr = preg_replace('/\/[0-9]+/', '/', $pathStr);
         $privilege = PrivilegeModel::getPIdByUri($pathStr, $method);
         $pIds = EmployeePrivilegeService::getEmployeePIds($this->container['employee']);
+        $isHavePermission = EmployeePrivilegeService::hasPermission($privilege, $pIds, $pathStr, $method);
+
+        $this->container['operation_button'] = EmployeePrivilegeService::getEmployeeOperationButton(
+            $this->container['employee'],$isHavePermission,$pIds,$privilege);
 
         //超级管理员跳过权限 roleid －1
         if (EmployeePrivilegeService::checkIsSuperAdmin($this->container['employee'])) {
             return $response = $next($request, $response);
         }
-        if (EmployeePrivilegeService::hasPermission($privilege, $pIds, $pathStr, $method)) {
+        if ($isHavePermission) {
             return $response = $next($request, $response);
         } else {
             $errs = Valid::addErrors(['code'=> 1], 'author', 'no_privilege');

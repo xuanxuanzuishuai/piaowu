@@ -87,4 +87,51 @@ class EmployeePrivilegeService
         }
         return $onlyReadSelf;
     }
+
+
+    /**
+     * 获取当前权限所属的上级菜单下所有的操作功能按钮数据
+     * @param $employee
+     * @param $isHavePermission
+     * @param $hasPermissionIds
+     * @param $currentPrivilege
+     * @return array
+     */
+    public static function getEmployeeOperationButton($employee, $isHavePermission, $hasPermissionIds, $currentPrivilege)
+    {
+        $operationButton = [];
+        if ($currentPrivilege['is_menu'] == PrivilegeModel::IS_MENU) {
+            $where = [
+                'OR' => [
+                    'id' => $currentPrivilege['id'],
+                    'parent_id' => $currentPrivilege['id'],
+                ],
+                'status' => PrivilegeModel::STATUS_NORMAL
+            ];
+        } else {
+            $where = [
+                'parent_id' => $currentPrivilege['parent_id'],
+                'status' => PrivilegeModel::STATUS_NORMAL
+            ];
+        }
+        $privilegeData = PrivilegeModel::getRecords($where, ['id', 'operation_button']);
+        if (empty($privilegeData)) {
+            return $operationButton;
+        }
+        $isSuperAdmin = self::checkIsSuperAdmin($employee);
+        if ($isSuperAdmin) {
+            $operationButton = array_column($privilegeData, 'operation_button');
+        } elseif (empty($isHavePermission)) {
+            return $operationButton;
+        } else {
+            //交集
+            $privilegeIntersectData = array_intersect(array_column($privilegeData, 'id'), $hasPermissionIds);
+            foreach ($privilegeData as $pv) {
+                if (in_array($pv['id'], $privilegeIntersectData)) {
+                    $operationButton[] = $pv['operation_button'];
+                }
+            }
+        }
+        return $operationButton;
+    }
 }

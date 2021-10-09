@@ -102,4 +102,16 @@ class ControllerBase
     {
         return $this->ci['employee']['only_read_self'];
     }
+
+    /**
+     * 获取账户操作功能按钮
+     * @return mixed
+     */
+    public function getEmployeeOperationButton()
+    {
+        return $this->ci['operation_button'];
+    }
+
+
+
 }
