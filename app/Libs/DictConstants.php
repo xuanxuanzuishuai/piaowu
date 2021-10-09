@@ -687,6 +687,8 @@ class DictConstants {
             'zero_order_remark',
             'zero_package_enable',
             'broadcast_config_users',
+            'agent_mini_0_package_id',
+            'agent_zero_order_remark'
         ]
     ];
 
