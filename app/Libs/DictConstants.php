@@ -217,6 +217,10 @@ class DictConstants {
             'QR_HEIGHT',
             'POSTER_WIDTH',
             'POSTER_HEIGHT',
+            'QR_ID_X',
+            'QR_ID_Y',
+            'QR_ID_SIZE',
+            'QR_ID_COLOR',
         ]
     ];
 

@@ -350,6 +350,15 @@ class PosterService
         ];
         $imgSizeStr = implode(",", $imgSize) . '/';
 
+        //添加文字水印【qr_id】
+        $extParams['text'] = [
+            'word'  => $userQrInfo['qr_id'],
+            'x'     => $config['QR_ID_X'],
+            'y'     => $config['QR_ID_Y'],
+            'size'  => $config['QR_ID_SIZE'],
+            'color' => $config['QR_ID_COLOR'],
+        ];
+
         if (!empty($extParams['text'])) {
             if (count($extParams['text']) == count($extParams['text'], COUNT_RECURSIVE)) {
                 $textParam[] = $extParams['text'];
@@ -368,7 +377,7 @@ class PosterService
                     "y_" . $text['y'],
                     "size_" . $text['size'],
                     "color_" . $text['color'],
-                    "g_nw",
+                    "g_sw",
                 ];
                 $waterMarkStr[] = implode(",", $wordMark);
             }
