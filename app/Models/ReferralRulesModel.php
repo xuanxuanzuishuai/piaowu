@@ -21,16 +21,16 @@ class ReferralRulesModel extends Model
      * 根据邀请人身份获取当前正在执行的奖励规则
      * @param $inviteStudentIdentity
      * @param $ruleType
-     * @param $packageType
+     * @param array $packageType
      * @return array
      */
-    public static function getCurrentRunRuleInfoByInviteStudentIdentity($inviteStudentIdentity, $ruleType, $packageType = []): array
+    public static function getCurrentRunRuleInfoByInviteStudentIdentity($inviteStudentIdentity, $ruleType, array $packageType = []): array
     {
         $returnData = [];
         $time = time();
         $db = MysqlDB::getDB();
         // 获取奖励规则基本信息
-        $baseSql = 'SELECT id FROM ' . self::$table . ' WHERE `type`=:type AND `start_time`>=:start_time AND `end_time`<=:end_time AND `status`=:status';
+        $baseSql = 'SELECT id FROM ' . self::$table . ' WHERE `type`=:type AND `start_time`<=:start_time AND `end_time`>:end_time AND `status`=:status';
         $baseRuleInfo = $db->queryAll($baseSql, [
             ':type' => $ruleType,
             ':start_time' => $time,
@@ -41,11 +41,11 @@ class ReferralRulesModel extends Model
             return $returnData;
         }
         // 获取详细奖励规则
-        $ruleSql = 'SELECT * FROM ' . ReferralRulesRewardModel::$table . ' WHERE `rule_id`=:rule_id AND `status`=:status AND inviter_status & :inviter_status';
+        $ruleSql = 'SELECT * FROM ' . ReferralRulesRewardModel::$table . ' WHERE `rule_id`=:rule_id AND `status`=:status AND invited_status & :invited_status';
         $ruleSqlWhere = [
             ':rule_id' => $baseRuleInfo[0]['id'],
             ':status' => OperationActivityModel::ENABLE_STATUS_ON,
-            ':inviter_status' => $inviteStudentIdentity,
+            ':invited_status' => $inviteStudentIdentity,
         ];
         // 如果指定了产品包类型，则只搜索对应的产品包奖励规则
         if (!empty($packageType)) {
