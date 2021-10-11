@@ -527,7 +527,7 @@ class MiniAppQrService
         // 如果达到阀值 启用生成小程序码标识队列
         $createUseNum = DictService::getKeyValue(DictConstants::MINI_APP_QR['type'], $signPrefix . 'create_id_num');
         $num = $redis->scard($signPrefix . self::REDIS_WAIT_USE_MINI_QR_ID);
-        if ($num <= 0.4 * $createUseNum) {
+        if ($num <= 0.7 * $createUseNum) {
             self::startCreateMiniAppId($appId, $busiesType);
         }
 
