@@ -498,12 +498,17 @@ class MiniAppQrService
         // 如果qr_id 为空，需要立即启动生成小程序
         if (empty($qrInfo['qr_id'])) {
             self::startCreateMiniAppId($appId, $busiesType);
-            Util::errorCapture("getUserMiniAppQr error is redis empty", []);
+            SimpleLogger::info("getUserMiniAppQr error is redis empty", [$qrInfo, $appId, $busiesType, $tryNum]);
             if ($tryNum == 0) {
                 sleep(2);
                 return self::getWaitUseQrId($appId, $busiesType, 1);
             }
+            // 第二次重新生成失败则报sentry
+            if ($tryNum == 1) {
+                Util::errorCapture("getUserMiniAppQr error is redis empty", [$qrInfo, $appId, $busiesType, $tryNum]);
+            }
         }
+        SimpleLogger::info("getUserMiniAppQr qr_id", [$qrInfo, $appId, $busiesType, $tryNum]);
 
         if ($appId == Constants::SMART_APP_ID && $busiesType == Constants::SMART_MINI_BUSI_TYPE) {
             // TODO qingfeng.lian 新老redis key 兼容；这里当老的redis数据为空时，可以删除这里的逻辑
