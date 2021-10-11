@@ -487,14 +487,8 @@ class MiniAppQrService
     {
         $signPrefix = self::getRedisKeyMiniQrIdSignPrefix($appId, $busiesType);
         $redis = RedisDB::getConn();
-        if ($appId == Constants::SMART_APP_ID && $busiesType == Constants::SMART_MINI_BUSI_TYPE) {
-            // TODO qingfeng.lian 新老redis key 兼容；这里当老的redis数据为空时，可以删除这里的逻辑
-            $qrInfo['qr_id'] = $redis->spop(self::REDIS_WAIT_USE_MINI_APP_ID_LIST);
-        }
-        if (empty($qrInfo['qr_id'])) {
-            $qrInfo['qr_id'] = $redis->spop($signPrefix . self::REDIS_WAIT_USE_MINI_QR_ID);
 
-        }
+        $qrInfo['qr_id'] = $redis->spop($signPrefix . self::REDIS_WAIT_USE_MINI_QR_ID);
         // 如果qr_id 为空，需要立即启动生成小程序
         if (empty($qrInfo['qr_id'])) {
             self::startCreateMiniAppId($appId, $busiesType);
@@ -510,13 +504,7 @@ class MiniAppQrService
         }
         SimpleLogger::info("getUserMiniAppQr qr_id", [$qrInfo, $appId, $busiesType, $tryNum]);
 
-        if ($appId == Constants::SMART_APP_ID && $busiesType == Constants::SMART_MINI_BUSI_TYPE) {
-            // TODO qingfeng.lian 新老redis key 兼容；这里当老的redis数据为空时，可以删除这里的逻辑
-            $miniAppIdInfo = $redis->hget(self::REDIS_WAIT_USE_MINI_APP_ID_INFO, $qrInfo['qr_id']);
-        }
-        if (empty($miniAppIdInfo)) {
-            $miniAppIdInfo = $redis->hget($signPrefix . self::REDIS_WAIT_USE_MINI_APP_ID_INFO, $qrInfo['qr_id']);
-        }
+        $miniAppIdInfo = $redis->hget($signPrefix . self::REDIS_WAIT_USE_MINI_APP_ID_INFO, $qrInfo['qr_id']);
         $miniAppIdInfo = json_decode($miniAppIdInfo, true);
         $qrInfo['qr_path'] = $miniAppIdInfo['qr_path'];
 
@@ -533,10 +521,6 @@ class MiniAppQrService
 
         // 清理缓存
         $redis->hdel($signPrefix . self::REDIS_WAIT_USE_MINI_APP_ID_INFO, [$qrInfo['qr_id']]);
-        if ($appId == Constants::SMART_APP_ID && $busiesType == Constants::SMART_MINI_BUSI_TYPE) {
-            // TODO qingfeng.lian 新老redis key 兼容；这里当老的redis数据为空时，可以删除这里的逻辑
-            $redis->hdel(self::REDIS_WAIT_USE_MINI_APP_ID_INFO, [$qrInfo['qr_id']]);
-        }
         return $qrData;
     }
 
