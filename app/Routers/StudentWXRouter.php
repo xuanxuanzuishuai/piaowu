@@ -47,6 +47,7 @@ class StudentWXRouter extends RouterBase
 
         /** 积分商城 start */
         '/student_wx/points_shop/gold_leaf_list' => ['method' => ['get'], 'call' => GoldLeafShop::class . ':goldLeafList'],  // 获取待发放金叶子积分明细
+        '/student_wx/points_shop/rule_desc' => ['method' => ['get'], 'call' => GoldLeafShop::class . ':ruleDesc', 'middles' => []],
 
         // 月月有奖 && 周周领奖
         // 海报列表

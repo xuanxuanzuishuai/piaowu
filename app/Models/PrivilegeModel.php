@@ -29,6 +29,19 @@ class PrivilegeModel extends Model
     const STATUS_CANCEL = 0;
     const STATUS_NORMAL = 1;
 
+    //操作按钮枚举值
+    const OPERATION_BUTTON_ENUM_ADD = 'add';
+    const OPERATION_BUTTON_ENUM_UPDATE = 'update';
+    const OPERATION_BUTTON_ENUM_DETAIL = 'detail';
+    const OPERATION_BUTTON_ENUM_ENABLE = 'enable';
+    const OPERATION_BUTTON_ENUM_COPY = 'copy';
+    const OPERATION_BUTTON_ENUMS = [
+        self::OPERATION_BUTTON_ENUM_UPDATE,
+        self::OPERATION_BUTTON_ENUM_DETAIL,
+        self::OPERATION_BUTTON_ENUM_ENABLE,
+        self::OPERATION_BUTTON_ENUM_COPY,
+    ];
+
     /**
      * @param string $uri
      * @param string $method

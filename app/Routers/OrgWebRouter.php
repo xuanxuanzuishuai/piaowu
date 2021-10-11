@@ -22,6 +22,7 @@ use App\Controllers\OrgWeb\AppPush;
 use App\Controllers\OrgWeb\Area;
 use App\Controllers\OrgWeb\Bill;
 use App\Controllers\OrgWeb\Channel;
+use App\Controllers\OrgWeb\CopyManage;
 use App\Controllers\OrgWeb\CountingActivity;
 use App\Controllers\OrgWeb\Dept;
 use App\Controllers\OrgWeb\GraduationActivity;
@@ -385,6 +386,10 @@ class OrgWebRouter extends RouterBase
         '/op_web/referral/rule_list' => ['method' => ['get'], 'call' => ReferralRule::class . ':list'],
         '/op_web/referral/rule_enable' => ['method' => ['post'], 'call' => ReferralRule::class . ':enable'],
         '/op_web/referral/rule_copy' => ['method' => ['post'], 'call' => ReferralRule::class . ':copy'],
+
+        //通用文案管理
+        '/op_web/copy/list' => ['method' => ['get'], 'call' => CopyManage::class . ':list'],
+        '/op_web/copy/update' => ['method' => ['post'], 'call' => CopyManage::class . ':update'],
 
     ];
 }

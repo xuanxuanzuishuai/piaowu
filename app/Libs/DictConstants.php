@@ -1083,7 +1083,7 @@ class DictConstants {
             '16', // 智能业务线邀请人状态：正式时长已过期未续费
         ]
     ];
-    // 转介绍奖励规则配置邀请人状态
+    // 转介绍奖励规则类型
     const REFERRAL_RULE_TYPE = [
         'type' => 'referral_rule_type',
         'keys' => [

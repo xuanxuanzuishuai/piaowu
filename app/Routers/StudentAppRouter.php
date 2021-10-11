@@ -12,6 +12,7 @@ use App\Controllers\StudentApp\ActivityCenter;
 use App\Controllers\StudentApp\App;
 use App\Controllers\StudentApp\Auth;
 use App\Controllers\StudentApp\DuanWuActivity;
+use App\Controllers\StudentApp\GoldLeafShop;
 use App\Controllers\StudentApp\Order;
 use App\Controllers\StudentApp\Poster;
 use App\Controllers\StudentWX\Activity;
@@ -238,6 +239,11 @@ class StudentAppRouter extends RouterBase
             'method'  => ['get'],
             'call'    => Order::class . ':billStatus',
             'middles' => [AppAuthMiddleWare::class],
+        ],
+        '/student_app/points_shop/rule_desc' => [
+            'method' => ['get'],
+            'call' => GoldLeafShop::class . ':ruleDesc',
+            'middles' => []
         ],
     ];
 }

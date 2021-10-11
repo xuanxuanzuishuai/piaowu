@@ -32,6 +32,7 @@ class ReferralRuleService
         if (empty($addRes)) {
             throw new RunTimeException(['insert_failure']);
         }
+        AdminOpLogService::opLogAdd($operatorId, [ReferralRulesModel::$table => $baseData], [ReferralRulesModel::$table => ['data_id' => $addRes]]);
         return $addRes;
     }
 
@@ -47,12 +48,15 @@ class ReferralRuleService
      */
     public static function update($params, $operatorId)
     {
-        $ruleData = ReferralRulesModel::getRecord(['id' => $params['rule_id']], ['id', 'status']);
+        $ruleData = ReferralRulesModel::getRecord(['id' => $params['rule_id']], ['id(data_id)', 'status','name','type','start_time','end_time','remark']);
         if (empty($ruleData)) {
             throw new RunTimeException(['record_not_found']);
         }
+        $newData = $oldData = [];
         if (in_array($ruleData['status'], [OperationActivityModel::ENABLE_STATUS_DISABLE, OperationActivityModel::ENABLE_STATUS_ON])) {
             $updateRes = ReferralRulesModel::updateRecord($params['rule_id'], ['remark' => $params['remark'], 'update_time' => time()]);
+            $newData = [ReferralRulesModel::$table => ['remark' => $params['remark']]];
+            $oldData = [ReferralRulesModel::$table => ['data_id' => $params['rule_id']]];
         } elseif ($ruleData['status'] == OperationActivityModel::ENABLE_STATUS_OFF) {
             //基础数据
             $baseData = self::ruleBaseDataCheck($params['name'], $params['start_time'], $params['end_time'], $params['remark']);
@@ -61,10 +65,14 @@ class ReferralRuleService
             //付费正式时长奖励规则检测
             $normalRule = self::normalRuleDataCheck($params['normal_rule']);
             $updateRes = ReferralRulesModel::updateRule($params['rule_id'], $baseData, $trailRuleData, $normalRule, $operatorId);
+            $newData = [ReferralRulesModel::$table => $baseData];
+            $oldData = [ReferralRulesModel::$table => $ruleData];
         }
         if (empty($updateRes)) {
             throw new RunTimeException(['update_failure']);
         }
+        AdminOpLogService::opLogAdd($operatorId, $newData, $oldData);
+
         return $updateRes;
     }
 
@@ -81,6 +89,8 @@ class ReferralRuleService
     private static function ruleBaseDataCheck($name, $startTime, $endTime, $remark, $ruleType = ReferralRulesModel::TYPE_AI_STUDENT_REFEREE)
     {
         $time = time();
+        $startTime = strtotime($startTime);
+        $endTime = strtotime($endTime);
         //时间关系检测
         if (($endTime <= $time) || ($endTime <= $startTime)) {
             throw new RunTimeException(['end_time_error']);
@@ -93,7 +103,7 @@ class ReferralRuleService
             'type' => $ruleType,
             'start_time' => $startTime,
             'end_time' => $endTime,
-            'remark' => trim($remark),
+            'remark' => Util::textEncode(trim($remark)),
         ];
         return $baseData;
     }
@@ -331,9 +341,9 @@ class ReferralRuleService
             throw new RunTimeException(['record_not_found']);
         }
         $data['name'] = $detailData['name'];
-        $data['start_time'] = $detailData['start_time'];
-        $data['end_time'] = $detailData['end_time'];
-        $data['remark'] = $detailData['remark'];
+        $data['start_time'] = date("Y-m-d H:i:s", $detailData['start_time']);
+        $data['end_time'] = date("Y-m-d H:i:s", $detailData['end_time']);
+        $data['remark'] = Util::textDecode($detailData['remark']);
         $data['status'] = $detailData['status'];
         //奖励规则数据
         $awardData = ReferralRulesRewardModel::getRecords(
@@ -363,7 +373,7 @@ class ReferralRuleService
             $tmpData = array_merge($rewardCondition, $restrictions);
             $tmpData['invited_award_type'] = $rewardDetails['invited'][0]['award_type'];
             $tmpData['invited_award_amount'] = $rewardDetails['invited'][0]['award_amount'];
-            $tmpData['invited_status'] = array_keys(self::formatInvitedStatus($dv['invited_status']));
+            $tmpData['invited_status'] = array_column(self::formatInvitedStatus($dv['invited_status']), 'invited_status');
             $tmpData['status'] = $dv['status'];
             if ($dv['type'] == ReferralRulesRewardModel::REWARD_RULE_TYPE_TRAIL) {
                 //体验卡
@@ -389,7 +399,10 @@ class ReferralRuleService
         $invitedStatusFormat = [];
         foreach ($dictConfig as $k => $v) {
             if (intval($invitedStatus) & intval($k)) {
-                $invitedStatusFormat[$k] = $v;
+                $invitedStatusFormat[$k] = [
+                    'invited_status' => (string)$k,
+                    'invited_status_name' => $v
+                ];
             }
         }
         return $invitedStatusFormat;
@@ -434,7 +447,6 @@ class ReferralRuleService
      */
     private static function formatListData($data)
     {
-        $time = time();
         $dictConfig = DictConstants::getTypesMap([DictConstants::REFERRAL_RULE_TYPE['type'], DictConstants::ACTIVITY_ENABLE_STATUS['type'], DictConstants::ACTIVITY_TIME_STATUS['type']]);
         foreach ($data['list'] as &$lv) {
             $lv['rule_type_name'] = $dictConfig[DictConstants::REFERRAL_RULE_TYPE['type']][$lv['type']]['value'];
@@ -443,6 +455,7 @@ class ReferralRuleService
             $lv['time_status_name'] = $dictConfig[DictConstants::ACTIVITY_TIME_STATUS['type']][OperationActivityModel::sqlDataMapToTimeStatus($lv['start_time'], $lv['end_time'])]['value'];
             $lv['start_time'] = date('Y-m-d H:i:s', $lv['start_time']);
             $lv['end_time'] = date('Y-m-d H:i:s', $lv['end_time']);
+            $lv['remark'] = Util::textDecode($lv['remark']);
         }
         return $data;
     }
@@ -487,6 +500,10 @@ class ReferralRuleService
         if (empty($updateRes)) {
             throw new RunTimeException(['update_failure']);
         }
+        AdminOpLogService::opLogAdd(
+            $operatorId,
+            [ReferralRulesModel::$table => ['status' => $enableStatus],],
+            [ReferralRulesModel::$table => ['status' => $ruleData['status'], 'data_id' => $ruleId]]);
         return true;
     }
 

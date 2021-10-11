@@ -9,6 +9,7 @@
 namespace App\Routers;
 
 
+use App\Controllers\Real\MagicStoneShop;
 use App\Controllers\Real\StudentActivity;
 use App\Middleware\RealStudentAppAndWxAuthCheckMiddleware;
 
@@ -36,6 +37,7 @@ class RealStudentWXRouter extends RouterBase
         '/real_student_wx/poster/get_qr_path'   => ['method' => ['post'], 'call' => StudentActivity::class . ':getQrPath'],
         // 月月有奖二次分享跑马灯数据
         '/real_student_wx/activity/award_top_list'   => ['method' => ['post'], 'call' => StudentActivity::class . ':realUserRewardTopList'],
-
+        //魔法石商城规则说明文案
+        '/real_student_wx/magic_stone_shop/rule_desc' => ['method' => ['get'], 'call' => MagicStoneShop::class . ':ruleDesc', 'middles' => []],
     ];
 }

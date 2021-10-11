@@ -120,17 +120,24 @@ class EmployeePrivilegeService
         }
         $isSuperAdmin = self::checkIsSuperAdmin($employee);
         if ($isSuperAdmin) {
-            $operationButton = array_column($privilegeData, 'operation_button');
+            $operationButton['btn'] = PrivilegeModel::OPERATION_BUTTON_ENUMS;
+            $operationButton['is_add'] = true;
         } elseif (empty($isHavePermission)) {
             return $operationButton;
         } else {
+            $operationButton['is_add'] = false;
+            $operationTmpButton = [];
             //交集
             $privilegeIntersectData = array_intersect(array_column($privilegeData, 'id'), $hasPermissionIds);
             foreach ($privilegeData as $pv) {
                 if (in_array($pv['id'], $privilegeIntersectData)) {
-                    $operationButton[] = $pv['operation_button'];
+                    $operationTmpButton[] = $pv['operation_button'];
                 }
             }
+            if (in_array(PrivilegeModel::OPERATION_BUTTON_ENUM_ADD, $operationTmpButton)) {
+                $operationButton['is_add'] = true;
+            }
+            $operationButton['btn'] = array_intersect(PrivilegeModel::OPERATION_BUTTON_ENUMS, $operationTmpButton);
         }
         return $operationButton;
     }

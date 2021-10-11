@@ -46,19 +46,9 @@ class ReferralRule extends ControllerBase
                 'error_code' => 'start_time_is_required'
             ],
             [
-                'key' => 'start_time',
-                'type' => 'integer',
-                'error_code' => 'start_time_is_positive_integer'
-            ],
-            [
                 'key' => 'end_time',
                 'type' => 'required',
                 'error_code' => 'end_time_is_required'
-            ],
-            [
-                'key' => 'end_time',
-                'type' => 'integer',
-                'error_code' => 'end_time_is_positive_integer'
             ],
             [
                 'key' => 'trail_rule',
@@ -122,19 +112,9 @@ class ReferralRule extends ControllerBase
                 'error_code' => 'start_time_is_required'
             ],
             [
-                'key' => 'start_time',
-                'type' => 'integer',
-                'error_code' => 'start_time_is_positive_integer'
-            ],
-            [
                 'key' => 'end_time',
                 'type' => 'required',
                 'error_code' => 'end_time_is_required'
-            ],
-            [
-                'key' => 'end_time',
-                'type' => 'integer',
-                'error_code' => 'end_time_is_positive_integer'
             ],
             [
                 'key' => 'trail_rule',

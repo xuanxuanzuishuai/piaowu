@@ -12,6 +12,8 @@ use App\Libs\HttpHelper;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Libs\Valid;
+use App\Models\CopyManageModel;
+use App\Services\CopyManageService;
 use App\Services\ErpUserEventTaskAwardGoldLeafService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -51,5 +53,17 @@ class GoldLeafShop extends ControllerBase
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
         return HttpHelper::buildResponse($response, $res);
+    }
+
+    /**
+     * 获取金叶子商城规则说明文案
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function ruleDesc(/** @noinspection PhpUnusedParameterInspection */ Request $request, Response $response)
+    {
+        $data = CopyManageService::getRuleDesc(CopyManageModel::RULE_DESC_TYPE_DSS_GOLD_LEAF);
+        return HttpHelper::buildResponse($response, $data);
     }
 }
