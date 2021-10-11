@@ -463,8 +463,4 @@ rule_id_is_required='规则ID不能为空'
 rule_type_must_be_integer='规则类型必须是整型'
 rule_type_is_error='规则类型参数不合法'
 rule_id_must_be_integer='规则ID必须是整型'
-
-
-
-
 sms_code_or_password_is_required'验证码或者密码不能全部为空'
