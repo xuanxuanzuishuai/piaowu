@@ -139,17 +139,20 @@ trait TraitUserRefereeService
                 // 补全数据
                 $_award['batch_id']         = $batchId;
                 $_award['invite_detail_id'] = $studentStageInfo['id'];
+
+                // 如果是金叶子还需要通知erp 产生待发放记录
+                switch ($_award['award_type']) {
+                    case Constants::AWARD_TYPE_GOLD_LEAF:
+                        $goldLeafIds                               = self::sendAwardGoldLeaf($_award);
+                        $_award['other_data']['erp_gold_leaf_ids'] = implode(',', $goldLeafIds);
+                        break;
+                }
+
                 // 增加一条发放记录
                 $_awardId = ReferralUserAwardModel::addOne($_award);
                 if (!$_awardId) {
                     SimpleLogger::info("save_award_error", [$_award, $_awardId]);
                     continue;
-                }
-                // 如果是金叶子还需要通知erp 产生待发放记录
-                switch ($_award['award_type']) {
-                    case Constants::AWARD_TYPE_GOLD_LEAF:
-                        self::sendAwardGoldLeaf($_award);
-                        break;
                 }
                 SimpleLogger::info("save_award_record_success", [$_award, $_awardId]);
             }
@@ -282,8 +285,9 @@ trait TraitUserRefereeService
     /**
      * 请求erp - 生成待发放奖励 - 金叶子
      * @param $awardInfo
+     * @return array
      */
-    public static function sendAwardGoldLeaf($awardInfo)
+    public static function sendAwardGoldLeaf($awardInfo): array
     {
         $awardStatus = $awardInfo['award_status'] ?? ReferralUserAwardModel::STATUS_WAITING;
         $taskResult  = (new Erp())->addEventTaskAward($awardInfo['finish_task_uuid'], $awardInfo['task_award_id'], $awardStatus, 0, $awardInfo['invited_uuid'], [
@@ -293,6 +297,7 @@ trait TraitUserRefereeService
             'activity_id'      => 0,
             'delay'            => $awardInfo['award_delay'],
             'amount'           => $awardInfo['award_amount'],
+            'award_to'         => $awardInfo['award_to']
         ]);
         SimpleLogger::info("UserRefereeService::dssCompleteEventTask", [
             'params'   => [
@@ -300,6 +305,8 @@ trait TraitUserRefereeService
             ],
             'response' => $taskResult,
         ]);
+        $pointsIds = $taskResult['data']['points_award_ids'] ?? [];
+        return is_array($pointsIds) ? $pointsIds : [];
     }
 
     /**

@@ -31,6 +31,10 @@ class ReferralUserAwardModel extends Model
     const AWARD_CONDITION = [
         'play_times' => 'play_times',   // 练琴时间单位秒
     ];
+    // 其它字段定义
+    const OTHER_DATA = [
+        'erp_gold_leaf_ids' => 'erp_gold_leaf_ids', // erp_user_event_task_award_gold_leaf表主键
+    ];
 
     /**
      * 增加一条记录
@@ -64,6 +68,7 @@ class ReferralUserAwardModel extends Model
             'create_time'      => $time,
             'batch_id'         => $data['batch_id'] ?? '',
             'award_condition'  => json_encode($data['award_condition'] ?? []),
+            'other_data'       => json_encode($data['other_data'] ?? []),
         ];
         $id         = self::insertRecord($insertData);
         return intval($id);
@@ -95,7 +100,7 @@ class ReferralUserAwardModel extends Model
         self::updateRecord($awardId, [
             'award_status'  => self::STATUS_GIVE,
             'reviewer_id'   => EmployeeModel::SYSTEM_EMPLOYEE_ID,
-            'review_reason' => self::REASON_RETURN_COST,
+            'review_reason' => '',
             'review_time'   => time()
         ]);
         return true;

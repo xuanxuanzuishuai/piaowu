@@ -76,6 +76,8 @@ class ScriptSendReferralUserAward
 
         // 发放奖励
         foreach ($awardList as $_award) {
+            $otherData = json_decode($_award['other_data'], true);
+            $erpTaskAwardId = $otherData[ReferralUserAwardModel::OTHER_DATA['erp_gold_leaf_ids']] ?? '';
             $pushMsgTaskId = UserRefereeService::getAwardTaskId($_award['award_type'], $_award['package_type']);
             $sendAwardData = [
                 'is_refund' => false,   // 是否退费
@@ -100,7 +102,7 @@ class ScriptSendReferralUserAward
                 /** 奖励时长 && 未退费 */
                 ReferralUserAwardModel::successSendAward($_award['id']);
                 // 赠送自动激活码
-                QueueService::giftDuration($_award['uuid'], DssGiftCodeModel::APPLY_TYPE_AUTO, $_award['award_amount'], DssGiftCodeModel::BUYER_TYPE_STUDENT);
+                QueueService::giftDuration($_award['uuid'], DssGiftCodeModel::APPLY_TYPE_AUTO, $_award['award_amount'], DssGiftCodeModel::BUYER_TYPE_AI_REFERRAL);
                 $billInfo = DssGiftCodeModel::getRecord(['parent_bill_id' => $_award['bill_id']], ['id', 'valid_num', 'valid_units', 'parent_bill_id']);
                 $sendAwardData['push_amount'] = $billInfo['valid_num'] ?? 0;
             } elseif ($_award['award_type'] == Constants::AWARD_TYPE_GOLD_LEAF && $sendAwardData['is_refund']) {
@@ -108,7 +110,7 @@ class ScriptSendReferralUserAward
                 ReferralUserAwardModel::disabledAwardByRefund($_award['id']);
                 // 更新erp库对应的奖励记录为已作废
                 UserRefereeService::sendAwardGoldLeaf(array_merge($_award, [
-                    'task_award_id' => $pushMsgTaskId,
+                    'task_award_id' => $erpTaskAwardId,
                     'award_status'  => ErpUserEventTaskAwardGoldLeafModel::STATUS_DISABLED,
                 ]));
                 $sendAwardData['push_amount'] = $_award['award_amount'];
@@ -117,7 +119,7 @@ class ScriptSendReferralUserAward
                 ReferralUserAwardModel::successSendAward($_award['id']);
                 // 更新erp库对应的奖励记录为发放成功 - 并且发放金叶子
                 UserRefereeService::sendAwardGoldLeaf(array_merge($_award, [
-                    'task_award_id' => $pushMsgTaskId,
+                    'task_award_id' => $erpTaskAwardId,
                     'award_status'  => ErpUserEventTaskAwardGoldLeafModel::STATUS_REVIEWING, // 等于2代表的是本次会把奖励直接发放给用户
                 ]));
             } else {
@@ -158,6 +160,8 @@ class ScriptSendReferralUserAward
         }
 
         foreach ($awardList as $_award) {
+            $otherData = json_decode($_award['other_data'], true);
+            $erpTaskAwardId = $otherData[ReferralUserAwardModel::OTHER_DATA['erp_gold_leaf_ids']] ?? '';
             $pushMsgTaskId = UserRefereeService::getAwardTaskId($_award['award_type'], $_award['package_type']);
             // 奖励条件
             $awardCondition = json_decode($_award['award_condition'], true);
@@ -173,21 +177,32 @@ class ScriptSendReferralUserAward
                 /** 作废 - 指定时间段内没有练琴，并且最后练琴时间已经超过当前时间 */
                 SimpleLogger::info("play_time_not_found", [$playEndTime, $earliestTime]);
                 ReferralUserAwardModel::disabledAwardByNoPlay($_award['id']);
+                switch ($_award['award_type']) {
+                    case Constants::AWARD_TYPE_GOLD_LEAF:   // 作废金叶子
+                        // 更新erp库对应的奖励记录为作废
+                        UserRefereeService::sendAwardGoldLeaf(array_merge($_award, [
+                            'task_award_id' => $erpTaskAwardId,
+                            'award_status'  => ErpUserEventTaskAwardGoldLeafModel::STATUS_REVIEWING, // 等于2代表的是本次会把奖励直接发放给用户
+                        ]));
+                        $sendPushMsg = true;
+                        break;
+                    default:
+                        SimpleLogger::info("sendAwardNodeByTrailAward_not_award_type", [$_award, $playEndTime, $earliestTime]);
+                        break;
+                }
             } elseif (!empty($earliestTime) && $earliestTime >= $awardCondition[ReferralUserAwardModel::AWARD_CONDITION['play_times']]) {
                 /** 满足发放 - 练琴时间大于等于获得奖励的最低时间 */
-                ReferralUserAwardModel::disabledAwardByNoPlay($_award['id']);
+                ReferralUserAwardModel::successSendAward($_award['id']);
                 switch ($_award['award_type']) {
                     case Constants::AWARD_TYPE_GOLD_LEAF:   // 发放金叶子
-                        ReferralUserAwardModel::successSendAward($_award['id']);
                         // 更新erp库对应的奖励记录为发放成功 - 并且发放金叶子
                         UserRefereeService::sendAwardGoldLeaf(array_merge($_award, [
-                            'task_award_id' => $pushMsgTaskId,
+                            'task_award_id' => $erpTaskAwardId,
                             'award_status'  => ErpUserEventTaskAwardGoldLeafModel::STATUS_REVIEWING, // 等于2代表的是本次会把奖励直接发放给用户
                         ]));
                         $sendPushMsg = true;
                         break;
                     case Constants::AWARD_TYPE_TIME:    // 奖励时长
-                        ReferralUserAwardModel::successSendAward($_award['id']);
                         // 赠送自动激活码
                         QueueService::giftDuration($_award['uuid'], DssGiftCodeModel::APPLY_TYPE_AUTO, $_award['award_amount'], DssGiftCodeModel::BUYER_TYPE_STUDENT);
                         $sendPushMsg = true;
