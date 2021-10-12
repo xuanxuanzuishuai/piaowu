@@ -165,9 +165,10 @@ class AutoCheckPicture
      * 智能陪练-审核后续处理
      * @param $data
      * @param $status
+     * @param $errCode
      * @throws RunTimeException
      */
-    public static function mindCheckSharePosters($data, $status)
+    public static function mindCheckSharePosters($data, $status, $errCode)
     {
         if (!$status) {
             return;
@@ -177,43 +178,47 @@ class AutoCheckPicture
         if ($status > 0) {
             //审核通过
             SharePosterService::approvalPoster([$poster_id], $params);
-        } else {
-            switch ($status) {
-                case SharePosterModel::SYSTEM_REFUSE_CODE_NEW: //未使用最新海报
-                    $params['reason'] = [SharePosterModel::SYSTEM_REFUSE_REASON_CODE_NEW];
-                    break;
-                case SharePosterModel::SYSTEM_REFUSE_CODE_TIME: //朋友圈保留时长不足12小时，请重新上传
-                    $params['reason'] = [SharePosterModel::SYSTEM_REFUSE_REASON_CODE_TIME];
-                    break;
-                case SharePosterModel::SYSTEM_REFUSE_CODE_GROUP: //分享分组可见
-                    $params['reason'] = [SharePosterModel::SYSTEM_REFUSE_REASON_CODE_GROUP];
-                    break;
-                case SharePosterModel::SYSTEM_REFUSE_CODE_FRIEND: //请发布到朋友圈并截取朋友圈照片
-                    $params['reason'] = [SharePosterModel::SYSTEM_REFUSE_REASON_CODE_FRIEND];
-                    break;
-                case SharePosterModel::SYSTEM_REFUSE_CODE_UPLOAD: //上传截图出错
-                    $params['reason'] = [SharePosterModel::SYSTEM_REFUSE_REASON_CODE_UPLOAD];
-                    break;
-                case SharePosterModel::SYSTEM_REFUSE_CODE_USER: //海报生成和上传非同一用户
-                    $params['reason'] = [SharePosterModel::SYSTEM_REFUSE_REASON_CODE_USER];
-                    break;
-                case SharePosterModel::SYSTEM_REFUSE_CODE_ACTIVITY_ID: //海报生成和上传非同一活动
-                    $params['reason'] = [SharePosterModel::SYSTEM_REFUSE_REASON_CODE_ACTIVITY_ID];
-                    break;
-                default:
-                    break;
+        } elseif (!empty($errCode)) {
+            foreach ($errCode as $value){
+                switch ($value) {
+                    case SharePosterModel::SYSTEM_REFUSE_CODE_NEW: //未使用最新海报
+                        $params['reason'] = [SharePosterModel::SYSTEM_REFUSE_REASON_CODE_NEW];
+                        break;
+                    case SharePosterModel::SYSTEM_REFUSE_CODE_TIME: //朋友圈保留时长不足12小时，请重新上传
+                        $params['reason'] = [SharePosterModel::SYSTEM_REFUSE_REASON_CODE_TIME];
+                        break;
+                    case SharePosterModel::SYSTEM_REFUSE_CODE_GROUP: //分享分组可见
+                        $params['reason'] = [SharePosterModel::SYSTEM_REFUSE_REASON_CODE_GROUP];
+                        break;
+                    case SharePosterModel::SYSTEM_REFUSE_CODE_FRIEND: //请发布到朋友圈并截取朋友圈照片
+                        $params['reason'] = [SharePosterModel::SYSTEM_REFUSE_REASON_CODE_FRIEND];
+                        break;
+                    case SharePosterModel::SYSTEM_REFUSE_CODE_UPLOAD: //上传截图出错
+                        $params['reason'] = [SharePosterModel::SYSTEM_REFUSE_REASON_CODE_UPLOAD];
+                        break;
+                    case SharePosterModel::SYSTEM_REFUSE_CODE_USER: //海报生成和上传非同一用户
+                        $params['reason'] = [SharePosterModel::SYSTEM_REFUSE_REASON_CODE_USER];
+                        break;
+                    case SharePosterModel::SYSTEM_REFUSE_CODE_ACTIVITY_ID: //海报生成和上传非同一活动
+                        $params['reason'] = [SharePosterModel::SYSTEM_REFUSE_REASON_CODE_ACTIVITY_ID];
+                        break;
+                    default:
+                        break;
+                }
             }
             //审核拒绝
             SharePosterService::refusedPoster($poster_id, $params);
         }
     }
-    
+
     /**
      * 真人陪练-审核后续处理-OP系统
      * @param $data
-     * @param $checkStatus
+     * @param $status
+     * @param $errCode
+     * @throws RunTimeException
      */
-    public static function realCheckSharePosters($data, $status)
+    public static function realCheckSharePosters($data, $status,$errCode)
     {
         if (!$status) {
             return;
@@ -223,31 +228,33 @@ class AutoCheckPicture
         if ($status > 0) {
             //审核通过
             RealSharePosterService::approvalPoster([$poster_id], $params);
-        } else {
-            switch ($status) {
-                case RealSharePosterModel::SYSTEM_REFUSE_CODE_NEW: //未使用最新海报
-                    $params['reason'] = [RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_NEW];
-                    break;
-                case RealSharePosterModel::SYSTEM_REFUSE_CODE_TIME: //朋友圈保留时长不足12小时，请重新上传
-                    $params['reason'] = [RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_TIME];
-                    break;
-                case RealSharePosterModel::SYSTEM_REFUSE_CODE_GROUP: //分享分组可见
-                    $params['reason'] = [RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_GROUP];
-                    break;
-                case RealSharePosterModel::SYSTEM_REFUSE_CODE_FRIEND: //请发布到朋友圈并截取朋友圈照片
-                    $params['reason'] = [RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_FRIEND];
-                    break;
-                case RealSharePosterModel::SYSTEM_REFUSE_CODE_UPLOAD: //上传截图出错
-                    $params['reason'] = [RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_UPLOAD];
-                    break;
-                case SharePosterModel::SYSTEM_REFUSE_CODE_USER: //海报生成和上传非同一用户
-                    $params['reason'] = [SharePosterModel::SYSTEM_REFUSE_REASON_CODE_USER];
-                    break;
-                case SharePosterModel::SYSTEM_REFUSE_CODE_ACTIVITY_ID: //海报生成和上传非同一活动
-                    $params['reason'] = [SharePosterModel::SYSTEM_REFUSE_REASON_CODE_ACTIVITY_ID];
-                    break;
-                default:
-                    break;
+        } elseif (!empty($errCode)) {
+            foreach ($errCode as $value){
+                switch ($value) {
+                    case RealSharePosterModel::SYSTEM_REFUSE_CODE_NEW: //未使用最新海报
+                        $params['reason'] = [RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_NEW];
+                        break;
+                    case RealSharePosterModel::SYSTEM_REFUSE_CODE_TIME: //朋友圈保留时长不足12小时，请重新上传
+                        $params['reason'] = [RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_TIME];
+                        break;
+                    case RealSharePosterModel::SYSTEM_REFUSE_CODE_GROUP: //分享分组可见
+                        $params['reason'] = [RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_GROUP];
+                        break;
+                    case RealSharePosterModel::SYSTEM_REFUSE_CODE_FRIEND: //请发布到朋友圈并截取朋友圈照片
+                        $params['reason'] = [RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_FRIEND];
+                        break;
+                    case RealSharePosterModel::SYSTEM_REFUSE_CODE_UPLOAD: //上传截图出错
+                        $params['reason'] = [RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_UPLOAD];
+                        break;
+                    case SharePosterModel::SYSTEM_REFUSE_CODE_USER: //海报生成和上传非同一用户
+                        $params['reason'] = [SharePosterModel::SYSTEM_REFUSE_REASON_CODE_USER];
+                        break;
+                    case SharePosterModel::SYSTEM_REFUSE_CODE_ACTIVITY_ID: //海报生成和上传非同一活动
+                        $params['reason'] = [SharePosterModel::SYSTEM_REFUSE_REASON_CODE_ACTIVITY_ID];
+                        break;
+                    default:
+                        break;
+                }
             }
             //审核拒绝
             RealSharePosterService::refusedPoster($poster_id, $params);
@@ -290,7 +297,8 @@ class AutoCheckPicture
         }
         //针对纯图片 返回值特殊处理
         if (empty($response['ret'])) {
-            return -5;
+//            return -5;
+            $errCode[] = -5;
         }
         $result = array();
         //过滤掉识别率低的
@@ -319,6 +327,7 @@ class AutoCheckPicture
 //        $issetCorner = false;   //分享-角标是否存在
         $isSameUser = true;     //海报生成与上传是否为同一用户
         $isSameActivity = true; //海报生成与上传是否为同一活动
+        $errCode = [];
 
         $status = 0; //-1|-2.审核不通过 0.过滤 2.审核通过
         $patten = "/^(([1-9]|(10|11|12))\.([1-2][0-9]|3[0-1]|[0-9]))$/"; //角标规则匹配
@@ -370,7 +379,8 @@ class AutoCheckPicture
             //屏蔽类型-设置私密照片
             if ($shareOwner && mb_strpos($word, '私密照片') !== false) {
                 $status = -3;
-                break;
+                $errCode[] = -3;
+//                break;
             }
 
             //判断海报合成和上传是否为同一用户以及是否为同一活动
@@ -397,13 +407,15 @@ class AutoCheckPicture
 
                 if (empty($uploadInfo) || $composeUser != $uploadInfo['student_id']) {
                     $status = -6;
+                    $errCode[] = -6;
                     $isSameUser = false;
-                    break;
+//                    break;
                 }
                 if (empty($uploadInfo) || $composeCheckActivity != $uploadInfo['activity_id']) {
                     $status = -7;
+                    $errCode[] = -7;
                     $isSameActivity = false;
-                    break;
+//                    break;
                 }
             }
 
@@ -428,7 +440,8 @@ class AutoCheckPicture
                 }
                 if (mb_strpos($word, '分钟前') !== false) {
                     $status = -2;
-                    break;
+                    $errCode[] = -2;
+//                    break;
                 }
                 if (mb_strpos($word, '：') !== false && mb_strlen($word) == 5) {
                     $word_str = str_replace('：', 0, $word);
@@ -490,10 +503,14 @@ class AutoCheckPicture
                 } else {
                     if ($status == -1 && !$shareIden) {
                         $status = -1;
-                        break;
+                        $errCode[] = -1;
+//                        break;
+                    }else{
+                        $status = -2;
+                        $errCode[] = -2;
+//                        break;
                     }
-                    $status = -2;
-                    break;
+
                 }
                 /**
                  * 判定是否被屏蔽
@@ -511,19 +528,21 @@ class AutoCheckPicture
             $status = 0;
         }
         if ($status < 0) {
-            return $status;
+            return [$status,array_unique($errCode)];
         }
         //包含朋友圈或详情 且没有删除
         if ($shareType && !$gobalIssetDel) {
-            return -4;
+            $errCode[] = -4;
+            return [-4,array_unique($errCode)];
         }
         //未识别到角标&&未识别到右下角标识&&未识别到小叶子
         if (!$shareIden && !$leafKeyWord) {
-            return -5;
+            $errCode[] = -5;
+            return [-5,array_unique($errCode)];
         }
         if ($shareType && $shareKeyword && $shareOwner && $shareDate && $shareDisplay && $shareIden && $isSameUser && $isSameActivity) {
             $status = 2;
         }
-        return $status;
+        return [$status,[]];
     }
 }

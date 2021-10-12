@@ -347,6 +347,7 @@ class MiniAppQrService
             'app_id'       => $appId,
             'busies_type'  => $busiesType,
             'user_status'  => $extParams['user_status'] ?? ($extParams['user_current_status'] ??  0),
+            'check_active_id'  =>  PosterService::getCheckActivityId($appId),
         ];
         // 根据小程序码主要信息，查询CH
         $qrSign = QrInfoService::createQrSign($qrData, $appId, $busiesType);
@@ -364,7 +365,6 @@ class MiniAppQrService
         $qrData['qr_path'] = $redisQrInfo['qr_path'];
         $qrData['qr_sign'] = $qrSign;
         $qrData['qr_type'] = DictConstants::get(DictConstants::MINI_APP_QR, 'qr_type_mini');
-        $qrData['check_active_id'] = PosterService::getCheckActivityId($appId);
         QrInfoOpCHModel::saveQrInfo([$qrData]);
 
         $qrInfo['qr_path'] = $redisQrInfo['qr_path'];

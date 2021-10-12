@@ -842,7 +842,7 @@ class Consumer extends ControllerBase
                     }
                     $postInfo = AutoCheckPicture::getSharePosters($params['msg_body']);
                     if (!empty($postInfo)) {
-                        $status = AutoCheckPicture::checkByOcr($postInfo,$params['msg_body']);
+                        list($status,$errCode) = AutoCheckPicture::checkByOcr($postInfo,$params['msg_body']);
                         if ($status !== 2) { //审核不通过 则打到人工审核
                             break;
                             //$record = AutoCheckPicture::getSharePostersHistoryRecord($params['msg_body']);
@@ -855,10 +855,10 @@ class Consumer extends ControllerBase
                         //审核后续处理
                         switch ($params['msg_body']['app_id']) {
                             case Constants::SMART_APP_ID: //智能陪练
-                                AutoCheckPicture::mindCheckSharePosters($params['msg_body'], $status);
+                                AutoCheckPicture::mindCheckSharePosters($params['msg_body'], $status, $errCode);
                                 break;
                             case Constants::REAL_APP_ID: //真人陪练
-                                AutoCheckPicture::realCheckSharePosters($params['msg_body'], $status);
+                                AutoCheckPicture::realCheckSharePosters($params['msg_body'], $status, $errCode);
                                 break;
                         }
                     }

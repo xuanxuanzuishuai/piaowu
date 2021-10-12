@@ -28,6 +28,7 @@ use App\Services\ErpUserEventTaskAwardGoldLeafService;
 use App\Services\ErpUserEventTaskAwardService;
 use App\Services\PosterService;
 use App\Services\AgentService;
+use App\Services\RealSharePosterService;
 use App\Services\ReferralActivityService;
 use App\Libs\Exceptions\RunTimeException;
 use App\Services\ReferralService;

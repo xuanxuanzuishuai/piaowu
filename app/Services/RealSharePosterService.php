@@ -51,6 +51,24 @@ class RealSharePosterService
         }
         return implode('/', $str);
     }
+
+    public static function reasonToArr($reason, $dict = [])
+    {
+        if (is_string($reason)) {
+            $reason = explode(',', $reason);
+        }
+        if (empty($reason)) {
+            return '';
+        }
+        if (empty($dict)) {
+            $dict = DictService::getTypeMap(Constants::DICT_TYPE_SHARE_POSTER_CHECK_REASON);
+        }
+        $str = [];
+        foreach ($reason as $item) {
+            $str[] = $dict[$item] ?? $item;
+        }
+        return $str;
+    }
     
     /**
      * 上传截图列表
@@ -74,6 +92,7 @@ class RealSharePosterService
                     !empty($reason_str) ? $reason_str .= '/'.$poster['remark'] : $reason_str .= $poster['remark'];
                 }
                 $poster['reason_str'] = $reason_str;
+                $poster['reason_arr'] = self::reasonToArr(explode(',', $poster['reason']), $reasonDict);
                 if ($poster['operator_id'] == EmployeeModel::SYSTEM_EMPLOYEE_ID) {
                     $poster['operator_name'] = EmployeeModel::SYSTEM_EMPLOYEE_NAME;
                 }
@@ -344,11 +363,11 @@ class RealSharePosterService
     public static function parseUnique($uniqueCode)
     {
         $qrInfo          = QrInfoOpCHModel::getQrInfoById($uniqueCode);
-        $studentUuid     = DssStudentModel::getRecord(['id' => $qrInfo['user_id']], ['uuid']);
+        $studentInfo     = DssStudentModel::getRecord(['id' => $qrInfo['user_id']], ['uuid']);
         $checkActivityId = json_decode($qrInfo['qr_data'])['check_active_id'] ?? 0;
         return [
-            'uuid'        => $studentUuid ?? 0,
-            'activity_id' => $checkActivityId
+            'uuid'        => $studentInfo['uuid'] ?? 0,
+            'check_activity_id' => $checkActivityId
         ];
     }
 }
