@@ -24,6 +24,7 @@ use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Services\ReferralActivityService;
 use App\Services\ReferralService;
+use App\Services\StudentService;
 use App\Services\UserService;
 use App\Services\WechatService;
 use App\Services\WechatTokenService;
@@ -98,7 +99,9 @@ class Student extends ControllerBase
                 $channelId = $sceneData['c'];
             }
             $info = UserService::studentRegisterBound($appId, $params['mobile'], $channelId, $data['openid'], $busiType, $userType, $params["referee_id"]);
-
+            if (empty($info['is_new'])) {
+                StudentService::studentLoginActivePushQueue($appId, $info['student_id'], Constants::DSS_STUDENT_LOGIN_TYPE_WX);
+            }
             $token = WechatTokenService::generateToken(
                 $info['student_id'],
                 DssUserWeiXinModel::USER_TYPE_STUDENT,
@@ -138,7 +141,7 @@ class Student extends ControllerBase
 
         $token = WechatTokenService::generateToken($boundInfo["user_id"], $this->ci['user_type'],
             $this->ci["app_id"], $openId);
-
+        StudentService::studentLoginActivePushQueue($this->ci["app_id"], $boundInfo['user_id'], Constants::DSS_STUDENT_LOGIN_TYPE_WX);
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => ["token" => $token]

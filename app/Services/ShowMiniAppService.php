@@ -10,6 +10,7 @@ namespace App\Services;
 
 
 use App\Libs\AliOSS;
+use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Dss;
 use App\Libs\MysqlDB;
@@ -295,7 +296,11 @@ class ShowMiniAppService
             }
             $mobile = $jsonMobile['purePhoneNumber'];
         }
-
+        //检测用户是否已存在
+        $studentExists = DssStudentModel::getRecord(['mobile' => $mobile], ['id']);
+        if (!empty($studentExists)) {
+            StudentService::studentLoginActivePushQueue(Constants::SMART_APP_ID, $studentExists['id'], Constants::DSS_STUDENT_LOGIN_TYPE_SHOW_MINI);
+        }
         $userInfo = (new Dss())->studentRegisterBound([
             'mobile'       => $mobile,
             'channel_id'   => $channel ?: DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'REFERRAL_MINIAPP_STUDENT_INVITE_STUDENT'),

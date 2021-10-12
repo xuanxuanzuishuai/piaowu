@@ -125,6 +125,8 @@ class Landing extends ControllerBase
                     $give = false;
                     $word = 'only_new_user_allowed';
                 }
+                StudentService::studentLoginActivePushQueue($appId, $student['id'], Constants::DSS_STUDENT_LOGIN_TYPE_H5);
+
             }
             if ($give && !empty($uuid)) {
                 $studentStatus = StudentService::dssStudentStatusCheck($userId);

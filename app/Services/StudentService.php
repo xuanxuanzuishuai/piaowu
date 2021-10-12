@@ -11,9 +11,11 @@ namespace App\Services;
 
 
 use App\Libs\AliOSS;
+use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\PhpMail;
+use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Spreadsheet;
 use App\Libs\Util;
@@ -24,11 +26,17 @@ use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\Erp\ErpPackageV1Model;
 use App\Models\Erp\ErpStudentModel;
 use App\Models\StudentAccountAwardPointsFileModel;
+use App\Services\Queue\RealStudentActiveTopic;
 use App\Services\Queue\StudentAccountAwardPointsTopic;
+use App\Services\Queue\StudentActiveTopic;
 use I18N\Lang;
 
 class StudentService
 {
+    //不同进度的学生数量缓存设置
+    const STUDENT_REVIEW_COURSE_COUNT_CACHE = 'src_count_';
+    const STUDENT_REVIEW_COURSE_COUNT_CACHE_EXPIRE_TIME = 60;
+
     /**
      * 获取学生当前状态
      * @param $studentId
@@ -389,5 +397,71 @@ class StudentService
     public static function isAnonymousStudentId($id)
     {
         return $id < 0;
+    }
+
+
+    /**
+     * 获取不同进度的学生数量
+     * @param $hasReviewCourses
+     * @return null|number|string
+     */
+    public static function getStudentCountByReviewCourse($hasReviewCourses)
+    {
+        asort($hasReviewCourses);
+        $redis = RedisDB::getConn();
+        $cacheData = $redis->get(self::STUDENT_REVIEW_COURSE_COUNT_CACHE . implode(',', $hasReviewCourses));
+        if (empty($cacheData)) {
+            $cacheData = self::setStudentCountByReviewCourse($hasReviewCourses);
+        }
+        return $cacheData;
+    }
+
+    /**
+     * 设置不同进度的学生数量
+     * @param $hasReviewCourses
+     * @return number
+     */
+    public static function setStudentCountByReviewCourse($hasReviewCourses)
+    {
+        $studentCount = DssStudentModel::getCount(['has_review_course' => $hasReviewCourses]);
+        $redis = RedisDB::getConn();
+        $redis->setex(self::STUDENT_REVIEW_COURSE_COUNT_CACHE . implode(',', $hasReviewCourses), self::STUDENT_REVIEW_COURSE_COUNT_CACHE_EXPIRE_TIME, (int)$studentCount);
+        return $studentCount;
+    }
+
+    /**
+     * 账户粒子激活消息队列推送
+     * @param $appId
+     * @param $studentId
+     * @param $activeType
+     * @return bool
+     */
+    public static function studentLoginActivePushQueue($appId, $studentId, $activeType)
+    {
+        try {
+            if ($appId == Constants::SMART_APP_ID) {
+                $topicObj = new StudentActiveTopic();
+                $pushData = [
+                    'student_id' => $studentId,
+                    'active_time' => time(),
+                    'active_type' => $activeType,
+                ];
+            } elseif ($appId == Constants::REAL_APP_ID) {
+                $studentData = ErpStudentModel::getRecord(['id' => $studentId], ['uuid']);
+                $topicObj = new RealStudentActiveTopic();
+                $pushData = [
+                    'uuid' => $studentData['uuid'],
+                    'active_type' => $activeType,
+                    'active_time' => time()
+                ];
+            } else {
+                return false;
+            }
+            $topicObj->studentLoginActive($pushData)->publish();
+        } catch (\Exception $e) {
+            SimpleLogger::error($e->getMessage(), []);
+            return false;
+        }
+        return true;
     }
 }

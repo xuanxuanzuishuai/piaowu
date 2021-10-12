@@ -40,6 +40,7 @@ use App\Services\MiniAppQrService;
 use App\Services\PackageService;
 use App\Services\PayServices;
 use App\Services\ReferralActivityService;
+use App\Services\StudentService;
 use App\Services\UserService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -499,6 +500,8 @@ class Order extends ControllerBase
                         throw new RunTimeException(['student_down_stage_not_allowed']);
                     }
                 }
+                StudentService::studentLoginActivePushQueue($appId, $student['id'], Constants::DSS_STUDENT_LOGIN_TYPE_H5);
+
             } else {
                 //未注册用户自动注册
                 $student = UserService::studentRegisterBound($appId, $params['mobile'], $channel, $openId, $busiType, $userType);

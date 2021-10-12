@@ -59,6 +59,10 @@ class RealReferralService
         //查询账号是否存在
         $studentInfo = ErpStudentModel::getRecord(['mobile' => $mobile]);
         $isNew       = empty($studentInfo) ? true : false;
+        //粒子激活
+        if(!empty($studentInfo)){
+            StudentService::studentLoginActivePushQueue($appId, $studentInfo['student_id'], Constants::REAL_STUDENT_LOGIN_TYPE_REFERRAL_MINI);
+        }
         //默认渠道
         $channel = RealDictConstants::get(RealDictConstants::REAL_REFERRAL_CONFIG, 'register_default_channel');
         //获取转介绍相关信息

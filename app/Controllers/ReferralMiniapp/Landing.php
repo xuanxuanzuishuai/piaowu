@@ -41,10 +41,10 @@ class Landing extends ControllerBase
 
     /**
      * 注册
-     *
      * @param Request $request
      * @param Response $response
      * @return Response
+     * @throws \App\Libs\KeyErrorRC4Exception
      */
     public function register(Request $request, Response $response)
     {

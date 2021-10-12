@@ -1015,6 +1015,11 @@ class ReferralService
             $mobile = $jsonMobile['purePhoneNumber'];
             $countryCode = $jsonMobile['countryCode'];
         }
+        //检测用户是否已存在
+        $studentExists = DssStudentModel::getRecord(['mobile' => $mobile], ['id']);
+        if (!empty($studentExists)) {
+            StudentService::studentLoginActivePushQueue(Constants::SMART_APP_ID, $studentExists['id'], Constants::DSS_STUDENT_LOGIN_TYPE_REFERRAL_MINI);
+        }
         $countryCode = $countryCode ?: CommonServiceForApp::DEFAULT_COUNTRY_CODE;
         $userInfo = (new Dss())->studentRegisterBound([
             'mobile' => $mobile,

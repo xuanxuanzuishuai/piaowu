@@ -1559,6 +1559,8 @@ class RtActivityService
             if (empty($student['id']) || empty($student['uuid'])) {
                 throw new RunTimeException(['id_and_uuid_not_null']);
             }
+            StudentService::studentLoginActivePushQueue(Constants::SMART_APP_ID, $student['id'], Constants::DSS_STUDENT_LOGIN_TYPE_H5);
+
         }
         foreach ($paramsArray as $val) {
             if (in_array($val, ['qr_id', 'param_id'])) {
