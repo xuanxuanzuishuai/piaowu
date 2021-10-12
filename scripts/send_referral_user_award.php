@@ -81,7 +81,7 @@ class ScriptSendReferralUserAward
             $pushMsgTaskId = UserRefereeService::getAwardTaskId($_award['award_type'], $_award['package_type']);
             $sendAwardData = [
                 'is_refund' => false,   // 是否退费
-                'push_amount' => 0,     // 奖励额度 奖励是时长时：是购买产品包的天数；奖励是金叶子时：金叶子数量
+                'push_amount' => '',     // 奖励额度 奖励是时长时：是购买产品包的天数；奖励是金叶子时：金叶子数量
             ];
             // 如果是待发放需要校验是否退费
             if ($_award['award_status'] == ReferralUserAwardModel::STATUS_WAITING) {
@@ -103,8 +103,7 @@ class ScriptSendReferralUserAward
                 ReferralUserAwardModel::successSendAward($_award['id']);
                 // 赠送自动激活码
                 QueueService::giftDuration($_award['uuid'], DssGiftCodeModel::APPLY_TYPE_AUTO, $_award['award_amount'], DssGiftCodeModel::BUYER_TYPE_AI_REFERRAL);
-                $billInfo = DssGiftCodeModel::getRecord(['parent_bill_id' => $_award['bill_id']], ['id', 'valid_num', 'valid_units', 'parent_bill_id']);
-                $sendAwardData['push_amount'] = $billInfo['valid_num'] ?? 0;
+                $sendAwardData['push_amount'] = $_award['award_amount'] . '天';
             } elseif ($_award['award_type'] == Constants::AWARD_TYPE_GOLD_LEAF && $sendAwardData['is_refund']) {
                 /** 奖励金叶子 && 已退费 */
                 ReferralUserAwardModel::disabledAwardByRefund($_award['id']);
@@ -112,8 +111,9 @@ class ScriptSendReferralUserAward
                 UserRefereeService::sendAwardGoldLeaf(array_merge($_award, [
                     'task_award_id' => $erpTaskAwardId,
                     'award_status'  => ErpUserEventTaskAwardGoldLeafModel::STATUS_DISABLED,
+                    'event_task_id' => $pushMsgTaskId,
                 ]));
-                $sendAwardData['push_amount'] = $_award['award_amount'];
+                continue;
             } elseif ($_award['award_type'] == Constants::AWARD_TYPE_GOLD_LEAF && !$sendAwardData['is_refund']) {
                 /** 奖励金叶子 && 未退费 */
                 ReferralUserAwardModel::successSendAward($_award['id']);
@@ -121,7 +121,9 @@ class ScriptSendReferralUserAward
                 UserRefereeService::sendAwardGoldLeaf(array_merge($_award, [
                     'task_award_id' => $erpTaskAwardId,
                     'award_status'  => ErpUserEventTaskAwardGoldLeafModel::STATUS_REVIEWING, // 等于2代表的是本次会把奖励直接发放给用户
+                    'event_task_id' => $pushMsgTaskId,
                 ]));
+                $sendAwardData['push_amount'] = $_award['award_amount'];
             } else {
                 /** 未知条件不处理 */
                 SimpleLogger::info('scriptSendReferralUserAward_award_type_error', [$_award['award_type']]);
@@ -132,7 +134,7 @@ class ScriptSendReferralUserAward
             SimpleLogger::info('scriptSendReferralUserAward_award_send_success', [$_award]);
 
             // 推送消息
-            UserRefereeService::pushUserMsg($pushMsgTaskId, $_award['award_to'], $_award['user_id'], $_award['uuid'], [
+            UserRefereeService::pushUserMsg($pushMsgTaskId, $_award['award_to'], $_award['uuid'], $_award['user_id'], [
                 'amount' => $sendAwardData['push_amount'],
             ]);
         }
@@ -183,6 +185,7 @@ class ScriptSendReferralUserAward
                         UserRefereeService::sendAwardGoldLeaf(array_merge($_award, [
                             'task_award_id' => $erpTaskAwardId,
                             'award_status'  => ErpUserEventTaskAwardGoldLeafModel::STATUS_REVIEWING, // 等于2代表的是本次会把奖励直接发放给用户
+                            'event_task_id' => $pushMsgTaskId,
                         ]));
                         $sendPushMsg = true;
                         break;
@@ -199,6 +202,7 @@ class ScriptSendReferralUserAward
                         UserRefereeService::sendAwardGoldLeaf(array_merge($_award, [
                             'task_award_id' => $erpTaskAwardId,
                             'award_status'  => ErpUserEventTaskAwardGoldLeafModel::STATUS_REVIEWING, // 等于2代表的是本次会把奖励直接发放给用户
+                            'event_task_id' => $pushMsgTaskId,
                         ]));
                         $sendPushMsg = true;
                         break;
@@ -213,7 +217,7 @@ class ScriptSendReferralUserAward
                 }
                 // 推送消息
                 if (isset($sendPushMsg) && $sendPushMsg == true) {
-                    UserRefereeService::pushUserMsg($pushMsgTaskId, $_award['award_to'], $_award['user_id'], $_award['uuid'], [
+                    UserRefereeService::pushUserMsg($pushMsgTaskId, $_award['award_to'], $_award['uuid'], $_award['user_id'], [
                         'amount' => $_award['award_amount'],
                     ]);
                 }

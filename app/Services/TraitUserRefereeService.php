@@ -290,7 +290,7 @@ trait TraitUserRefereeService
     public static function sendAwardGoldLeaf($awardInfo): array
     {
         $awardStatus = $awardInfo['award_status'] ?? ReferralUserAwardModel::STATUS_WAITING;
-        $taskResult  = (new Erp())->addEventTaskAward($awardInfo['finish_task_uuid'], $awardInfo['task_award_id'], $awardStatus, 0, $awardInfo['invited_uuid'], [
+        $taskResult  = (new Erp())->addEventTaskAward($awardInfo['finish_task_uuid'], $awardInfo['event_task_id'], $awardStatus, $awardInfo['task_award_id'], $awardInfo['invited_uuid'], [
             'bill_id'          => $awardInfo['bill_id'],
             'package_type'     => $awardInfo['package_type'],
             'invite_detail_id' => $awardInfo['invite_detail_id'],

@@ -318,7 +318,11 @@ class PushMessageService
             return;
         }
 
-        $configId = DictConstants::get(DictConstants::STUDENT_TASK_DEFAULT, 'message_config_id');
+        if (!empty($info['wechat_config_id'])) {
+            $configId = $info['wechat_config_id'];
+        } else {
+            $configId = DictConstants::get(DictConstants::STUDENT_TASK_DEFAULT, 'message_config_id');
+        }
 
         self::notifyUserCustomizeMessage($configId, $info, $userInfo['open_id'], $appId);
     }
