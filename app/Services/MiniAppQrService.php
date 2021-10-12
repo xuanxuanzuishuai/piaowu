@@ -34,12 +34,12 @@ class MiniAppQrService
     //代理商小程序转介绍票据前缀
     const AGENT_TICKET_PREFIX = 'ag_';
 
-    const REDIS_CREATE_MINI_APP_ID_LOCK   = 'create_mini_app_id_lock';    // 生成小程序码标识锁 - redis_key
-    const REDIS_WAIT_USE_MINI_APP_ID_INFO = 'wait_use_mini_app_info';     // 等待使用的小程序码信息 - redis_key
-    const REDIS_WAIT_USE_MINI_APP_ID_LIST = 'wait_user_mini_app_list';    // 等待使用的小程序码标识 - redis_key
-    const REDIS_FAIL_MINI_APP_ID_LIST     = 'fail_mini_app_list';         // 小程序码生成失败的标识列表 - redis_key
-    const REDIS_USE_MINI_APP_QR_NUM       = 'use_mini_app_qr_num';         // 小程序码已使用数量 - redis_key
-    const REDIS_WAIT_USE_MINI_QR_ID       = 'mini_app_wait_use_qr_id_list';  // 等待使用的小程序码标识 - redis_key  set集合
+    const REDIS_CREATE_MINI_APP_ID_LOCK   = 'create_mini_app_id_lock_new';    // 生成小程序码标识锁 - redis_key
+    const REDIS_WAIT_USE_MINI_APP_ID_INFO = 'wait_use_mini_app_info_new';     // 等待使用的小程序码信息 - redis_key
+    const REDIS_WAIT_USE_MINI_APP_ID_LIST = 'wait_user_mini_app_list_new';    // 等待使用的小程序码标识 - redis_key
+    const REDIS_FAIL_MINI_APP_ID_LIST     = 'fail_mini_app_list_new';         // 小程序码生成失败的标识列表 - redis_key
+    const REDIS_USE_MINI_APP_QR_NUM       = 'use_mini_app_qr_num_new';         // 小程序码已使用数量 - redis_key
+    const REDIS_WAIT_USE_MINI_QR_ID       = 'mini_app_wait_use_qr_id_list_new';  // 等待使用的小程序码标识 - redis_key  set集合
 
     /**
      * 获取用户QR码图片路径：智能小程序

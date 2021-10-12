@@ -385,7 +385,7 @@ class AutoCheckPicture
 
             //判断海报合成和上传是否为同一用户以及是否为同一活动
             $wordLength =  strlen($word);
-            if (ctype_alnum($word) && ($wordLength == 6 || $wordLength == 8)) {
+            if (ctype_alnum($word) && $wordLength == 8) {
                 $replaceMap = [
                     0=>'O',
                     1=>'I',

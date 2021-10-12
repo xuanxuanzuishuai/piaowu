@@ -58,7 +58,7 @@ class RealSharePosterService
             $reason = explode(',', $reason);
         }
         if (empty($reason)) {
-            return '';
+            return [];
         }
         if (empty($dict)) {
             $dict = DictService::getTypeMap(Constants::DICT_TYPE_SHARE_POSTER_CHECK_REASON);

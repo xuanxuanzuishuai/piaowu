@@ -16,8 +16,8 @@ use App\Services\Queue\QueueService;
 
 class QrInfoService
 {
-    private const REDIS_WAIT_USE_QR_SET   = 'wait_use_qr_set';    // 等待使用的二维码标识
-    const         REDIS_CREATE_QR_ID_LOCK = 'create_qr_id_lock';    // 生成二维码码标识锁
+    private const REDIS_WAIT_USE_QR_SET   = 'wait_use_qr_set_new';    // 等待使用的二维码标识
+    const         REDIS_CREATE_QR_ID_LOCK = 'create_qr_id_lock_new';    // 生成二维码码标识锁
 
     /**
      * 生成qr_sign
