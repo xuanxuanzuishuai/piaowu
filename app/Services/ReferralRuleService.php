@@ -371,7 +371,7 @@ class ReferralRuleService
             $rewardCondition = json_decode($dv['reward_condition'], true);
             $rewardDetails = json_decode($dv['reward_details'], true);
             $tmpData = array_merge($rewardCondition, $restrictions);
-            $tmpData['invited_award_type'] = $rewardDetails['invited'][0]['award_type'];
+            $tmpData['invited_award_type'] = (string)$rewardDetails['invited'][0]['award_type'];
             $tmpData['invited_award_amount'] = $rewardDetails['invited'][0]['award_amount'];
             $tmpData['invited_status'] = array_column(self::formatInvitedStatus($dv['invited_status']), 'invited_status');
             $tmpData['status'] = $dv['status'];
@@ -380,7 +380,7 @@ class ReferralRuleService
                 $data['trail_rule'][] = $tmpData;
             } elseif ($dv['type'] == ReferralRulesRewardModel::REWARD_RULE_TYPE_NORMAL) {
                 //正式时长
-                $tmpData['invitee_award_type'] = $rewardDetails['invitee'][0]['award_type'];
+                $tmpData['invitee_award_type'] = (string)$rewardDetails['invitee'][0]['award_type'];
                 $tmpData['invitee_award_amount'] = $rewardDetails['invitee'][0]['award_amount'];
                 $data['normal_rule'][] = $tmpData;
             }
