@@ -205,6 +205,11 @@ trait TraitUserRefereeService
                 $_awardTo  = Constants::STUDENT_ID_INVITEE;
             }
             foreach ($_awardList as $_award) {
+                // 检查当前奖励规则是否有效的 - 无效的不发放奖励
+                if (self::checkAwardRuleIsInvalid($_award)) {
+                    SimpleLogger::info("composeAwardData_award_amount_is_zero", [$ruleAwardInfo, $packageType, $billInfo]);
+                    continue;
+                }
                 $taskId            = self::getAwardTaskId($_award['award_type'], $packageType);
                 $returnAwardData[] = [
                     'award_type'       => $_award['award_type'],        // 奖励类型
@@ -264,6 +269,22 @@ trait TraitUserRefereeService
         }
 
         return true;
+    }
+
+    /**
+     * 检查当前奖励规则是否有效的 - 无效的不发放奖励
+     * 注意：这里的无效指的是即使产生奖励用户也没有收到实际奖励，例如奖励额度是0
+     * 注意：这里的无效和奖励开关是不同的
+     * @param $awardRule
+     * @return bool
+     */
+    private static function checkAwardRuleIsInvalid($awardRule): bool
+    {
+        // 检查奖励额度是否有效 - 小于0不发放
+        if ($awardRule['award_amount'] <= 0) {
+            return true;
+        }
+        return false;
     }
 
     /**
