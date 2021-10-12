@@ -24,6 +24,8 @@ use App\Controllers\OrgWeb\Bill;
 use App\Controllers\OrgWeb\Channel;
 use App\Controllers\OrgWeb\CountingActivity;
 use App\Controllers\OrgWeb\Dept;
+use App\Controllers\OrgWeb\GraduationActivity;
+use App\Controllers\OrgWeb\InviteActivity;
 use App\Controllers\OrgWeb\LandingRecall;
 use App\Controllers\OrgWeb\Message;
 use App\Controllers\OrgWeb\Employee as OrgWebEmployee;
@@ -37,6 +39,7 @@ use App\Controllers\OrgWeb\RealPosterTemplate;
 use App\Controllers\OrgWeb\RealPosterTemplateWord;
 use App\Controllers\OrgWeb\RealSharePoster;
 use App\Controllers\OrgWeb\RealWeekActivity;
+use App\Controllers\OrgWeb\ReferralRule;
 use App\Controllers\OrgWeb\RtActivity;
 use App\Controllers\OrgWeb\SharePoster;
 use App\Controllers\OrgWeb\SourceMaterial;
@@ -314,6 +317,20 @@ class OrgWebRouter extends RouterBase
         '/op_web/source_material/select_lists'     => ['method' => ['get'], 'call' => SourceMaterial::class . ':selectLists'],
         '/op_web/source_material/banner_detail'    => ['method' => ['get'], 'call' => SourceMaterial::class . ':bannerDetail'],
         '/op_web/source_material/banner_edit_enable_status'      => ['method' => ['get'], 'call' => SourceMaterial::class . ':bannerEditEnableStatus'],
+        // 分享截图审核列表
+        '/op_web/share_poster/list'     => ['method' => ['get'], 'call' => SharePoster::class . ':verifySharePosterList'],
+        // 分享截图审核 - 活动列表
+        '/op_web/share_poster/activity_list'     => ['method' => ['get'], 'call' => SharePoster::class . ':activityList'],
+        // 分享截图审核
+        '/op_web/share_poster/verify'     => ['method' => ['post'], 'call' => SharePoster::class . ':verifyPoster'],
+        // 结班分享领奖 - 参与记录列表
+        '/op_web/graduation/record_list'     => ['method' => ['get'], 'call' => GraduationActivity::class . ':graduationRecordList'],
+        // 结班分享领奖 - 参与详情
+        '/op_web/graduation/user_record_detail'     => ['method' => ['get'], 'call' => GraduationActivity::class . ':graduationUserRecordDetail'],
+
+        /********************************************************************************************************************************************************
+         * 真人业务线管理后台接口统一放到下面
+        ********************************************************************************************************************************************************/
 
         //真人转介绍管理 - 个性化海报,标准海报,文案
         '/org_web/real_poster_template/individualityList' => ['method' => ['get'], 'call' => RealPosterTemplate::class . ':individualityList'],
@@ -344,5 +361,30 @@ class OrgWebRouter extends RouterBase
         '/org_web/real_share_poster/list' => ['method' => ['get'], 'call' => RealSharePoster::class . ':list'],
         '/org_web/real_share_poster/approved' => ['method' => ['post'], 'call' => RealSharePoster::class . ':approved'],
         '/org_web/real_share_poster/refused' => ['method' => ['post'], 'call' => RealSharePoster::class . ':refused'],
+        '/org_web/real_share_poster/parse_unique' => ['method' => ['post'], 'call' => RealSharePoster::class . ':parseUnique'],
+
+
+        //活动中心
+        '/op_web/activity_center/add' => ['method' => ['post'], 'call' => ActivityCenter::class . ':create'],
+        '/op_web/activity_center/list' => ['method' => ['get'], 'call' => ActivityCenter::class . ':getActivityList'],
+        '/op_web/activity_center/detail' => ['method' => ['get'], 'call' => ActivityCenter::class . ':getActivityDetail'],
+        '/op_web/activity_center/edit_status' => ['method' => ['post'], 'call' => ActivityCenter::class . ':editStatus'],
+        '/op_web/activity_center/edit_weight' => ['method' => ['post'], 'call' => ActivityCenter::class . ':editWeight'],
+        '/op_web/activity_center/update' => ['method' => ['post'], 'call' => ActivityCenter::class . ':editActivity'],
+
+        // 邀请有奖
+        '/op_web/invite_activity/save' => ['method' => ['post'], 'call' => InviteActivity::class . ':save'],
+        '/op_web/invite_activity/list' => ['method' => ['get'], 'call' => InviteActivity::class . ':list'],
+        '/op_web/invite_activity/detail' => ['method' => ['get'], 'call' => InviteActivity::class . ':detail'],
+        '/op_web/invite_activity/enable_status' => ['method' => ['post'], 'call' => InviteActivity::class . ':editEnableStatus'],
+
+        //智能业务线转介绍规则
+        '/op_web/referral/rule_add' => ['method' => ['post'], 'call' => ReferralRule::class . ':add'],
+        '/op_web/referral/rule_update' => ['method' => ['post'], 'call' => ReferralRule::class . ':update'],
+        '/op_web/referral/rule_detail' => ['method' => ['get'], 'call' => ReferralRule::class . ':detail'],
+        '/op_web/referral/rule_list' => ['method' => ['get'], 'call' => ReferralRule::class . ':list'],
+        '/op_web/referral/rule_enable' => ['method' => ['post'], 'call' => ReferralRule::class . ':enable'],
+        '/op_web/referral/rule_copy' => ['method' => ['post'], 'call' => ReferralRule::class . ':copy'],
+
     ];
 }

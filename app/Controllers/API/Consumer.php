@@ -842,7 +842,7 @@ class Consumer extends ControllerBase
                     }
                     $postInfo = AutoCheckPicture::getSharePosters($params['msg_body']);
                     if (!empty($postInfo)) {
-                        $status = AutoCheckPicture::checkByOcr($postInfo);
+                        $status = AutoCheckPicture::checkByOcr($postInfo,$params['msg_body']);
                         if ($status !== 2) { //审核不通过 则打到人工审核
                             break;
                             //$record = AutoCheckPicture::getSharePostersHistoryRecord($params['msg_body']);

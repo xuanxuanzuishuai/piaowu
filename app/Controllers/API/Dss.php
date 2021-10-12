@@ -825,6 +825,29 @@ class Dss extends ControllerBase
         }
         return HttpHelper::buildResponse($response, ['activities' => $data, 'total_count' => $total]);
     }
+
+    public static function parseUnique(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'unique_code',
+                'type' => 'required',
+                'error_code' => 'unique_code_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        try {
+           $data = RealSharePosterService::parseUnique($params['unique_code']);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, $data);
+    }
     
     /**
      * 转介绍专属售卖落地页 - 好友推荐专属奖励

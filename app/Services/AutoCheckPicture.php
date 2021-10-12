@@ -194,6 +194,12 @@ class AutoCheckPicture
                 case SharePosterModel::SYSTEM_REFUSE_CODE_UPLOAD: //上传截图出错
                     $params['reason'] = [SharePosterModel::SYSTEM_REFUSE_REASON_CODE_UPLOAD];
                     break;
+                case SharePosterModel::SYSTEM_REFUSE_CODE_USER: //海报生成和上传非同一用户
+                    $params['reason'] = [SharePosterModel::SYSTEM_REFUSE_REASON_CODE_USER];
+                    break;
+                case SharePosterModel::SYSTEM_REFUSE_CODE_ACTIVITY_ID: //海报生成和上传非同一活动
+                    $params['reason'] = [SharePosterModel::SYSTEM_REFUSE_REASON_CODE_ACTIVITY_ID];
+                    break;
                 default:
                     break;
             }
@@ -234,6 +240,12 @@ class AutoCheckPicture
                 case RealSharePosterModel::SYSTEM_REFUSE_CODE_UPLOAD: //上传截图出错
                     $params['reason'] = [RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_UPLOAD];
                     break;
+                case SharePosterModel::SYSTEM_REFUSE_CODE_USER: //海报生成和上传非同一用户
+                    $params['reason'] = [SharePosterModel::SYSTEM_REFUSE_REASON_CODE_USER];
+                    break;
+                case SharePosterModel::SYSTEM_REFUSE_CODE_ACTIVITY_ID: //海报生成和上传非同一活动
+                    $params['reason'] = [SharePosterModel::SYSTEM_REFUSE_REASON_CODE_ACTIVITY_ID];
+                    break;
                 default:
                     break;
             }
@@ -241,13 +253,14 @@ class AutoCheckPicture
             RealSharePosterService::refusedPoster($poster_id, $params);
         }
     }
-    
+
     /**
      * ocr审核海报
      * @param $data [图片|需要校验的角标日期]
+     * @param $msgBody
      * @return int|bool
      */
-    public static function checkByOcr($data)
+    public static function checkByOcr($data,$msgBody)
     {
         list($checkDate,$letterIden,$image) = $data;
 
@@ -293,18 +306,20 @@ class AutoCheckPicture
         $contentKeyword = ['小叶子', '琴', '练琴', '很棒', '求赞']; //内容关键字
         $dateKeyword    = ['年', '月', '日', '昨天', '天前', '小时前', '分钟前','上午', '：']; //日期关键字
 
-        $shareType    = false; //分享-类型为朋友圈
-        $shareKeyword = false; //分享-关键字存在
-        $shareOwner   = false; //分享-自己朋友圈
-        $shareCorner  = false; //分享-角标
-        $shareDate    = false; //分享-日期超过12小时
-        $shareDisplay = true;  //分享-是否显示
-        $shareIden    = false; //分享-海报底部字母标识
-        $leafKeyWord  = false; //分享-小叶子关键字
+        $shareType    = false;  //分享-类型为朋友圈
+        $shareKeyword = false;  //分享-关键字存在
+        $shareOwner   = false;  //分享-自己朋友圈
+//        $shareCorner  = false;  //分享-角标
+        $shareDate    = false;  //分享-日期超过12小时
+        $shareDisplay = true;   //分享-是否显示
+        $shareIden    = false;  //分享-海报底部字母标识
+        $leafKeyWord  = false;  //分享-小叶子关键字
         $gobalIssetDel = false; //分享-全局存在删除
         $issetDate     = false; //分享-全局存在时间
+//        $issetCorner = false;   //分享-角标是否存在
+        $isSameUser = true;     //海报生成与上传是否为同一用户
+        $isSameActivity = true; //海报生成与上传是否为同一活动
 
-        $issetCorner = false;  //分享-角标是否存在
         $status = 0; //-1|-2.审核不通过 0.过滤 2.审核通过
         $patten = "/^(([1-9]|(10|11|12))\.([1-2][0-9]|3[0-1]|[0-9]))$/"; //角标规则匹配
         foreach ($result as $key => $val) {
@@ -317,18 +332,18 @@ class AutoCheckPicture
             }
             //判断2.角标
             //特殊处理 部分图片日期如5.10 会识别为(5.10
-            if (strstr($word, '(')) {
-                $word = str_replace('(', '', $word);
-            }
-            //识别到角标且在删除之前的
-            if (preg_match($patten, $word) && !$shareOwner) {
-                $issetCorner = true;
-                if ($word === $checkDate) {
-                    $shareCorner = true;
-                } else {
-                    $status = -1;
-                }
-            }
+//            if (strstr($word, '(')) {
+//                $word = str_replace('(', '', $word);
+//            }
+//            //识别到角标且在删除之前的
+//            if (preg_match($patten, $word) && !$shareOwner) {
+//                $issetCorner = true;
+//                if ($word === $checkDate) {
+//                    $shareCorner = true;
+//                } else {
+//                    $status = -1;
+//                }
+//            }
             //小叶子关键字
             if (mb_strpos($word, '小叶子') !== false) {
                 $leafKeyWord = true;
@@ -341,7 +356,7 @@ class AutoCheckPicture
                 $shareIden = true;
             }
             //判断3.关键字
-            if (!$issetCorner && $shareType && (mb_strlen($word) > 5 || Util::sensitiveWordFilter($contentKeyword, $word) == true)) {
+            if ($shareType && (mb_strlen($word) > 5 || Util::sensitiveWordFilter($contentKeyword, $word) == true)) {
                 $shareKeyword = true;
             }
             if (Util::sensitiveWordFilter(['删除', '册除'], $word) == true) {
@@ -357,8 +372,43 @@ class AutoCheckPicture
                 $status = -3;
                 break;
             }
+
+            //判断海报合成和上传是否为同一用户以及是否为同一活动
+            $wordLength =  strlen($word);
+            if (ctype_alnum($word) && ($wordLength == 6 || $wordLength == 8)) {
+                $replaceMap = [
+                    0=>'O',
+                    1=>'I',
+                    2=>'Z',
+                    5=>'S',
+                    7=>'T',
+                    8=>'B',
+                ];
+                $word = str_replace(array_keys($replaceMap),array_values($replaceMap),strtoupper($word));
+                $composeInfo = MiniAppQrService::getQrInfoById($word);
+                $composeUser = $composeInfo['user_id'] ?? 0;
+                $composeCheckActivity = $composeInfo['check_active_id'] ?? 0;
+
+                if ($msgBody['app_id'] == Constants::REAL_APP_ID) {
+                    $uploadInfo = RealSharePosterModel::getRecord(['id' => $msgBody['id']], ['student_id', 'activity_id']);
+                } elseif ($msgBody['app_id'] == Constants::SMART_APP_ID) {
+                    $uploadInfo = SharePosterModel::getRecord(['id' => $msgBody['id']], ['student_id', 'activity_id']);
+                }
+
+                if (empty($uploadInfo) || $composeUser != $uploadInfo['student_id']) {
+                    $status = -6;
+                    $isSameUser = false;
+                    break;
+                }
+                if (empty($uploadInfo) || $composeCheckActivity != $uploadInfo['activity_id']) {
+                    $status = -7;
+                    $isSameActivity = false;
+                    break;
+                }
+            }
+
             //上传时间处理 角标||字符串||关键字之后
-            if (($shareIden || $shareCorner || $leafKeyWord) && !$issetDate && Util::sensitiveWordFilter($dateKeyword, $word) == true) {
+            if (($shareIden || $leafKeyWord) && !$issetDate && Util::sensitiveWordFilter($dateKeyword, $word) == true) {
                 //如果包含年月
                 if (Util::sensitiveWordFilter(['年', '月', '日'], $word) == true) {
                     if (mb_strpos($word, '年') === false) {
@@ -468,10 +518,10 @@ class AutoCheckPicture
             return -4;
         }
         //未识别到角标&&未识别到右下角标识&&未识别到小叶子
-        if (!$issetCorner && !$shareIden && !$leafKeyWord) {
+        if (!$shareIden && !$leafKeyWord) {
             return -5;
         }
-        if ($shareType && $shareKeyword && $shareOwner && $shareDate && $shareDisplay && ($shareCorner || $shareIden )) {
+        if ($shareType && $shareKeyword && $shareOwner && $shareDate && $shareDisplay && $shareIden && $isSameUser && $isSameActivity) {
             $status = 2;
         }
         return $status;

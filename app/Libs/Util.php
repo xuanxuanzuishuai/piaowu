@@ -1173,23 +1173,23 @@ class Util
      * @param int $j 需要改变的位置
      * @return string           返回sortId加1后的标识
      */
-    public static function getIncrSortId(string $sortId, int $j = 6)
+    public static function getIncrSortId(string $sortId, int $j = 8)
     {
         $isAdd = false;
         $ordNum = ord($sortId[$j - 1]);
         switch ($ordNum) {
-            case 57:    // 9->A
+//            case 57:    // 9->A
+//                $ordNum = 65;
+//                break;
+
+            case 90:    // Z->A
                 $ordNum = 65;
                 break;
 
-            case 90:    // Z->a
-                $ordNum = 97;
-                break;
-
-            case 122:   // z->0
-                $isAdd = true;
-                $ordNum = 48;
-                break;
+//            case 122:   // z->0
+//                $isAdd = true;
+//                $ordNum = 48;
+//                break;
             default:
                 $ordNum += 1;
         }

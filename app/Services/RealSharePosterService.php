@@ -14,8 +14,10 @@ use App\Libs\AliOSS;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
+use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\EmployeeModel;
+use App\Models\QrInfoOpCHModel;
 use App\Models\RealSharePosterAwardModel;
 use App\Models\RealSharePosterModel;
 use App\Models\RealUserAwardMagicStoneModel;
@@ -337,5 +339,16 @@ class RealSharePosterService
         }
         $qrPath = AliOSS::replaceCdnDomainForDss($userQrArr['qr_path']);
         return ['qr_path' => $qrPath, 'origin_qr_path' => $userQrArr['qr_path']];
+    }
+
+    public static function parseUnique($uniqueCode)
+    {
+        $qrInfo          = QrInfoOpCHModel::getQrInfoById($uniqueCode);
+        $studentUuid     = DssStudentModel::getRecord(['id' => $qrInfo['user_id']], ['uuid']);
+        $checkActivityId = json_decode($qrInfo['qr_data'])['check_active_id'] ?? 0;
+        return [
+            'uuid'        => $studentUuid ?? 0,
+            'activity_id' => $checkActivityId
+        ];
     }
 }

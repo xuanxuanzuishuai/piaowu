@@ -12,8 +12,10 @@ use App\Models\ActivityPosterModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\Dss\DssUserWeiXinModel;
+use App\Models\OperationActivityModel;
 use App\Models\PosterModel;
 use App\Models\QRCodeModel;
+use App\Models\RealWeekActivityModel;
 use App\Models\TemplatePosterModel;
 
 class PosterService
@@ -517,6 +519,18 @@ class PosterService
             'unique' => md5($userId . $posterPath . $userQrUrl) . ".jpg",
             'poster_id' => $extParams['p'] ?? 0,
         ];
+    }
+
+    //获取当前真人或智能周周活动的ID
+    public static function getCheckActivityId($appId)
+    {
+        if ($appId == Constants::REAL_APP_ID) {
+            $activityData = RealWeekActivityModel::getStudentCanSignWeekActivity(1, time());
+        } elseif ($appId == Constants::SMART_APP_ID) {
+            $activityData = OperationActivityModel::getActiveActivity(TemplatePosterModel::STANDARD_POSTER);
+        }
+
+        return $activityData['activity_id'] ?? 0;
     }
 
 }

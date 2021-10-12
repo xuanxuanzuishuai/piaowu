@@ -140,9 +140,9 @@ class QrInfoService
             for ($i = 0; $i < $createIdNum; $i++) {
                 $sortId = Util::getIncrSortId($sortId);
                 // 如果全是数字跳过
-                if (preg_match('/^[0-9]+$/', $sortId)) {
-                    continue;
-                }
+//                if (preg_match('/^[0-9]+$/', $sortId)) {
+//                    continue;
+//                }
                 $sendQueueArr[] = $sortId;
                 if ($i % 1000 == 0) {
                     $redis->sadd(self::REDIS_WAIT_USE_QR_SET, $sendQueueArr);
@@ -214,6 +214,8 @@ class QrInfoService
         unset($item);
 
         $selectField = array_merge($field, ['qr_path', 'qr_id', 'qr_sign', 'qr_ticket']);
+        //获取海报自动审核校验活动ID
+        $checkActiveId = PosterService::getCheckActivityId($appId);
         // 查询ch
         $qrImageArr = QrInfoOpCHModel::getQrInfoBySign($qrSignArr, $selectField);
         $qrSignData = array_column($qrImageArr, null, 'qr_sign');
@@ -236,6 +238,7 @@ class QrInfoService
                 $_tmpSaveData['user_status'] = $_qrParam['user_status'] ?? ($_qrParam['user_current_status'] ?? 0);
                 $_tmpSaveData['create_type'] = $_qrParam['create_type'] ?? DictConstants::get(DictConstants::TRANSFER_RELATION_CONFIG, 'user_relation_status');
                 $_tmpSaveData['qr_type']     = $_qrParam['qr_type'] ?? DictConstants::get(DictConstants::MINI_APP_QR, 'qr_type_none');
+                $_tmpSaveData['check_active_id'] = $checkActiveId;
                 $saveQrData[]                = $_tmpSaveData;
 
                 // 把必要的信息直接整理好返回给调用者 - 不需要再查询数据库

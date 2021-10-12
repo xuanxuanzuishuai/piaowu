@@ -55,7 +55,7 @@ class ShowMiniAppService
         $sceneData = [];
         if (substr($scene, 0, 3) == '&r=') {
             parse_str($scene, $sceneData);
-        } elseif (ctype_alnum($scene) && strlen($scene) == 6) {
+        } elseif (ctype_alnum($scene) && strlen($scene) >= 6) {
             $sceneData = MiniAppQrService::getQrInfoById($scene);
         } elseif (strpos($scene, 'param_id')) {
             parse_str($scene, $params);

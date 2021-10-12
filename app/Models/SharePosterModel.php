@@ -53,6 +53,8 @@ class SharePosterModel extends Model
     const SYSTEM_REFUSE_CODE_GROUP  = -3; //分享分组可见
     const SYSTEM_REFUSE_CODE_FRIEND = -4; //请发布到朋友圈并截取朋友圈照片
     const SYSTEM_REFUSE_CODE_UPLOAD = -5; //上传截图出错
+    const SYSTEM_REFUSE_CODE_USER   = -6; //海报生成和上传非同一用户
+    const SYSTEM_REFUSE_CODE_ACTIVITY_ID = -7; //海报生成和上传非同一活动
 
     //系统审核拒绝原因code
     const SYSTEM_REFUSE_REASON_CODE_NEW    = 2; //未使用最新海报
@@ -60,6 +62,8 @@ class SharePosterModel extends Model
     const SYSTEM_REFUSE_REASON_CODE_GROUP  = 1; //分享分组可见
     const SYSTEM_REFUSE_REASON_CODE_FRIEND = 11; //请发布到朋友圈并截取朋友圈照片
     const SYSTEM_REFUSE_REASON_CODE_UPLOAD = 3; //上传截图出错
+    const SYSTEM_REFUSE_REASON_CODE_USER = 13; //海报生成和上传非同一用户
+    const SYSTEM_REFUSE_REASON_CODE_ACTIVITY_ID = 14; //海报生成和上传非同一活动
 
     /**
      * 获取打卡活动节点截图数据
