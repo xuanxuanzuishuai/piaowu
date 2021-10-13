@@ -109,6 +109,7 @@ trait TraitUserRefereeService
      */
     private static function createStudentAward($packageType, $ruleInfo, $billInfo, $refereeInfo, $studentInfo): bool
     {
+        SimpleLogger::info("createStudentAward_start", [$packageType, $ruleInfo, $billInfo, $refereeInfo, $studentInfo]);
         $awardList = [];
         if (empty($ruleInfo) || empty($ruleInfo['rule_list'])) {
             throw new RunTimeException(["rule_empty"], [$packageType, $ruleInfo]);
@@ -174,6 +175,7 @@ trait TraitUserRefereeService
      */
     private static function composeAwardData($ruleAwardInfo, $packageType, $refereeInfo, $studentInfo, $billInfo): array
     {
+        SimpleLogger::info("composeAwardData_start", [$ruleAwardInfo, $packageType, $refereeInfo, $studentInfo, $billInfo]);
         // 解析限制条件
         $restrictions = json_decode($ruleAwardInfo['restrictions'], true);
         // 解析奖励明细
@@ -214,7 +216,7 @@ trait TraitUserRefereeService
                 $returnAwardData[] = [
                     'award_type'       => $_award['award_type'],        // 奖励类型
                     'award_node'       => $awardNode,                   // 奖励类型标记
-                    'task_award_id'    => $taskId,                      // 任务id
+                    'event_task_id'    => $taskId,                      // 任务id
                     'award_rule_id'    => $ruleAwardInfo['id'],         // 规则id
                     'award_time'       => $awardDelay + time(),         // 发放时间（单位s）
                     'award_delay'      => $awardDelay,                  // 发放时间（单位s）
@@ -338,6 +340,7 @@ trait TraitUserRefereeService
      */
     public static function getAwardTaskId($awardType, $packageType)
     {
+        SimpleLogger::info("getAwardTaskId_start", [$awardType, $packageType]);
         // 获取奖励对应的task_id
         list($taskIdTrailAwardGoldLeft, $taskIdTrailAwardTime, $taskIdNormalAwardGoldLeft, $taskIdNormalAwardTime) = DictConstants::get(DictConstants::REFERRAL_CONFIG, [
             'trial_award_gold_left_task_id',

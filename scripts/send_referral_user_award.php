@@ -208,7 +208,7 @@ class ScriptSendReferralUserAward
                         break;
                     case Constants::AWARD_TYPE_TIME:    // 奖励时长
                         // 赠送自动激活码
-                        QueueService::giftDuration($_award['uuid'], DssGiftCodeModel::APPLY_TYPE_AUTO, $_award['award_amount'], DssGiftCodeModel::BUYER_TYPE_STUDENT);
+                        QueueService::giftDuration($_award['uuid'], DssGiftCodeModel::APPLY_TYPE_AUTO, $_award['award_amount'], DssGiftCodeModel::BUYER_TYPE_AI_REFERRAL);
                         $sendPushMsg = true;
                         break;
                     default:
