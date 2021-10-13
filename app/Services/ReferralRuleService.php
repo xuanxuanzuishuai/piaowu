@@ -7,6 +7,7 @@ use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\Util;
+use App\Models\Dss\DssStudentModel;
 use App\Models\OperationActivityModel;
 use App\Models\ReferralRulesModel;
 use App\Models\ReferralRulesRewardModel;
@@ -48,7 +49,7 @@ class ReferralRuleService
      */
     public static function update($params, $operatorId)
     {
-        $ruleData = ReferralRulesModel::getRecord(['id' => $params['rule_id']], ['id(data_id)', 'status','name','type','start_time','end_time','remark']);
+        $ruleData = ReferralRulesModel::getRecord(['id' => $params['rule_id']], ['id(data_id)', 'status', 'name', 'type', 'start_time', 'end_time', 'remark']);
         if (empty($ruleData)) {
             throw new RunTimeException(['record_not_found']);
         }
@@ -56,7 +57,7 @@ class ReferralRuleService
         if (in_array($ruleData['status'], [OperationActivityModel::ENABLE_STATUS_DISABLE, OperationActivityModel::ENABLE_STATUS_ON])) {
             $updateRes = ReferralRulesModel::updateRecord($params['rule_id'], ['remark' => $params['remark'], 'update_time' => time()]);
             $newData = [ReferralRulesModel::$table => ['remark' => $params['remark']]];
-            $oldData = [ReferralRulesModel::$table => ['data_id' => $params['rule_id']]];
+            $oldData = [ReferralRulesModel::$table => ['remark' => $ruleData['remark'], 'data_id' => $params['rule_id']]];
         } elseif ($ruleData['status'] == OperationActivityModel::ENABLE_STATUS_OFF) {
             //基础数据
             $baseData = self::ruleBaseDataCheck($params['name'], $params['start_time'], $params['end_time'], $params['remark']);
@@ -422,10 +423,10 @@ class ReferralRuleService
         }
         //规则名称
         if (!empty($params['rule_name'])) {
-            $where['name'] = trim($params['rule_name']);
+            $where['name[~]'] = trim($params['rule_name']);
         }
         //规则类型
-        if (!empty($params['rule_type']) && in_array($params['rule_type'], [ReferralRulesModel::TYPE_AI_STUDENT_REFEREE])) {
+        if (!empty($params['rule_type'])) {
             $where['type'] = $params['rule_type'];
         }
         //规则启用状态
@@ -548,5 +549,47 @@ class ReferralRuleService
             throw new RunTimeException(['insert_failure']);
         }
         return $copyRes;
+    }
+
+    /**
+     * 转介绍规则：获取学生作为受邀人/邀请人可得奖励的最大值
+     * @param $studentId
+     * @param $identityType
+     * @param $awardType
+     * @return int|mixed
+     */
+    public static function getStudentMaxReferralAwardData($studentId, $identityType, $awardType)
+    {
+        $awardMaxAmount = 0;
+        $studentData = DssStudentModel::getRecord(['id' => $studentId], ['has_review_course', 'sub_end_date']);
+        $studentReferralIdentityStatus = TraitUserRefereeService::getReferralStudentIdentity($studentData);
+
+        //正式时长&体验卡奖励数据
+        $awardData = ReferralRulesModel::getCurrentRunRuleInfoByInviteStudentIdentity($studentReferralIdentityStatus, ReferralRulesModel::TYPE_AI_STUDENT_REFEREE);
+        if (empty($awardData)) {
+            return $awardMaxAmount;
+        }
+        $rewardDetails = array_column($awardData['rule_list'], 'reward_details');
+        $rewardDetailsFormat = $awardsData = [];
+        foreach ($rewardDetails as $akl => $avl) {
+            $rewardDetailsFormat[] = json_decode($avl, true);
+        };
+        $invitedAwards = array_column($rewardDetailsFormat, 'invited');
+        $inviteeAwards = array_column($rewardDetailsFormat, 'invitee');
+        //邀请人
+        if (($identityType == Constants::STUDENT_ID_INVITER) && !empty($invitedAwards)) {
+            foreach ($invitedAwards as $k => $v) {
+                foreach ($v as $vv) {
+                    $awardsData[$vv['award_type']][] = $vv['award_amount'];
+                }
+            }
+        } else if (($identityType == Constants::STUDENT_ID_INVITEE) && !empty($inviteeAwards)) {
+            foreach ($inviteeAwards as $ek => $ev) {
+                foreach ($ev as $evv) {
+                    $awardsData[$evv['award_type']][] = $evv['award_amount'];
+                }
+            }
+        }
+        return empty($awardsData[$awardType]) ? $awardMaxAmount : max($awardsData[$awardType]);
     }
 }

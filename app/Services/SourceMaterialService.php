@@ -584,7 +584,7 @@ class SourceMaterialService
         if (empty($student)) {
             throw new RunTimeException(['record_not_found']);
         }
-        $goldLeaf    = self::getGoldLeafMaxNum();
+        $goldLeaf    = ReferralRuleService::getStudentMaxReferralAwardData($request['student_id'], Constants::STUDENT_ID_INVITER, Constants::AWARD_TYPE_GOLD_LEAF);
         $time        = time();
         $conds       = [
             'status'         => BannerConfigModel::NORMAL_STATUS,
@@ -622,7 +622,7 @@ class SourceMaterialService
         if (empty($student)) {
             throw new RunTimeException(['record_not_found']);
         }
-        $goldLeaf   = self::getGoldLeafMaxNum();
+        $goldLeaf    = ReferralRuleService::getStudentMaxReferralAwardData($request['student_id'], Constants::STUDENT_ID_INVITER, Constants::AWARD_TYPE_GOLD_LEAF);
         $shareInfo  = self::shareDetail();
         $posterList = $shareInfo['poster_lists'] ?? [];
         if (!empty($posterList)) {

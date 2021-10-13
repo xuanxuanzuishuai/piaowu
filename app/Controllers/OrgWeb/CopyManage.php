@@ -21,7 +21,7 @@ use Slim\Http\StatusCode;
 class CopyManage extends ControllerBase
 {
     /**
-     * 转介绍奖励规则新增
+     * 文案编辑
      * @param Request $request
      * @param Response $response
      * @return Response
@@ -65,7 +65,7 @@ class CopyManage extends ControllerBase
     }
 
     /**
-     * 转介绍奖励规则新增
+     * 文案列表
      * @param Request $request
      * @param Response $response
      * @return Response
