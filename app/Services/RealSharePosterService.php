@@ -346,6 +346,10 @@ class RealSharePosterService
         $qrInfo          = QrInfoOpCHModel::getQrInfoById($uniqueCode);
         $studentInfo     = DssStudentModel::getRecord(['id' => $qrInfo['user_id']], ['uuid']);
         $checkActivityId = json_decode($qrInfo['qr_data'])['check_active_id'] ?? 0;
+
+        if (empty($data['uuid']) || empty($data['check_activity_id'])){
+            throw new RunTimeException(['record_not_found']);
+        }
         return [
             'uuid'        => $studentInfo['uuid'] ?? 0,
             'check_activity_id' => $checkActivityId

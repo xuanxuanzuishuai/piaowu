@@ -5,6 +5,7 @@ namespace App\Services;
 
 use App\Libs\AliOSS;
 use App\Libs\Constants;
+use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\RedisDB;
@@ -265,7 +266,7 @@ class AutoCheckPicture
      * ocr审核海报
      * @param $data [图片|需要校验的角标日期]
      * @param $msgBody
-     * @return int|bool
+     * @return array|false
      */
     public static function checkByOcr($data,$msgBody)
     {
@@ -325,6 +326,7 @@ class AutoCheckPicture
         $gobalIssetDel = false; //分享-全局存在删除
         $issetDate     = false; //分享-全局存在时间
 //        $issetCorner = false;   //分享-角标是否存在
+        $issetUnique = false;   //是否设置唯一码
         $isSameUser = true;     //海报生成与上传是否为同一用户
         $isSameActivity = true; //海报生成与上传是否为同一活动
         $errCode = [];
@@ -386,6 +388,7 @@ class AutoCheckPicture
             //判断海报合成和上传是否为同一用户以及是否为同一活动
             $wordLength =  strlen($word);
             if (ctype_alnum($word) && $wordLength == 8) {
+                $issetUnique = true;
                 $replaceMap = [
                     0=>'O',
                     1=>'I',
@@ -405,15 +408,22 @@ class AutoCheckPicture
                     $uploadInfo = SharePosterModel::getRecord(['id' => $msgBody['id']], ['student_id', 'activity_id']);
                 }
 
-                if (empty($uploadInfo) || $composeUser != $uploadInfo['student_id']) {
+                if (empty($uploadInfo['student_id']) || $composeUser != $uploadInfo['student_id']) {
                     $status = -6;
                     $errCode[] = -6;
                     $isSameUser = false;
 //                    break;
                 }
-                if (empty($uploadInfo) || $composeCheckActivity != $uploadInfo['activity_id']) {
-                    $status = -7;
-                    $errCode[] = -7;
+
+//                $checkActivityIdStr = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'week_activity_id_effect');
+//                $checkActivityIdArr = [];
+//                if (empty($checkActivityIdStr)) {
+//                    $checkActivityIdArr = explode(',', $checkActivityIdStr);
+//                }
+//                if (empty($uploadInfo['activity_id']) || ($composeCheckActivity != $uploadInfo['activity_id'] && !in_array($composeCheckActivity, $checkActivityIdArr))) {
+                if (empty($uploadInfo['activity_id']) || $composeCheckActivity != $uploadInfo['activity_id']) {
+                    $status         = -7;
+                    $errCode[]      = -7;
                     $isSameActivity = false;
 //                    break;
                 }
@@ -536,11 +546,11 @@ class AutoCheckPicture
             return [-4,array_unique($errCode)];
         }
         //未识别到角标&&未识别到右下角标识&&未识别到小叶子
-        if (!$shareIden && !$leafKeyWord) {
+        if (!$shareIden && !$leafKeyWord && !$issetUnique) {
             $errCode[] = -5;
             return [-5,array_unique($errCode)];
         }
-        if ($shareType && $shareKeyword && $shareOwner && $shareDate && $shareDisplay && $shareIden && $isSameUser && $isSameActivity) {
+        if ($shareType && $shareKeyword && $shareOwner && $shareDate && $shareDisplay && $shareIden && $isSameUser && $isSameActivity && $issetUnique) {
             $status = 2;
         }
         return [$status,[]];
